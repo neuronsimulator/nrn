@@ -509,6 +509,18 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
 
 
     /**
+     * Generate the string representing the parameters in a function call
+     *
+     * The procedure parameters are stored in a vector of 4-tuples each representing a parameter.
+     *
+     * \param params The parameters that should be concatenated into the function parameter
+     * declaration
+     * \return The string representing the function call parameters
+     */
+    static std::string get_arg_str(const ParamVector& params);
+
+
+    /**
      * Check if function or procedure node has parameter with given name
      *
      * \tparam T Node type (either procedure or function)
@@ -894,7 +906,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * Arguments for external functions called from generated code
      * \return A string representing the arguments passed to an external function
      */
-    virtual const char* external_method_arguments() noexcept = 0;
+    virtual const std::string external_method_arguments() noexcept = 0;
 
 
     /**
@@ -906,7 +918,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * \param table
      * \return      A string representing the parameters of the function
      */
-    virtual const char* external_method_parameters(bool table = false) noexcept = 0;
+    virtual const ParamVector external_method_parameters(bool table = false) noexcept = 0;
 
 
     /**

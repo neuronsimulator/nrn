@@ -408,7 +408,7 @@ void CodegenCoreneuronCppVisitor::print_check_table_thread_function() {
 
     printer->add_newline(2);
     auto name = method_name("check_table_thread");
-    auto parameters = external_method_parameters(true);
+    auto parameters = get_parameter_str(external_method_parameters(true));
 
     printer->fmt_push_block("static void {} ({})", name, parameters);
     printer->add_line("setup_instance(nt, ml);");
@@ -695,10 +695,7 @@ void CodegenCoreneuronCppVisitor::add_variable_point_process(
 }
 
 std::string CodegenCoreneuronCppVisitor::internal_method_arguments() {
-    if (ion_variable_struct_required()) {
-        return "id, pnodecount, inst, ionvar, data, indexes, thread, nt, v";
-    }
-    return "id, pnodecount, inst, data, indexes, thread, nt, v";
+    return get_arg_str(internal_method_parameters());
 }
 
 
@@ -706,34 +703,42 @@ std::string CodegenCoreneuronCppVisitor::internal_method_arguments() {
  * @todo: figure out how to correctly handle qualifiers
  */
 CodegenCoreneuronCppVisitor::ParamVector CodegenCoreneuronCppVisitor::internal_method_parameters() {
-    ParamVector params;
-    params.emplace_back("", "int", "", "id");
-    params.emplace_back("", "int", "", "pnodecount");
-    params.emplace_back("", fmt::format("{}*", instance_struct()), "", "inst");
+    ParamVector params = {{"", "int", "", "id"},
+                          {"", "int", "", "pnodecount"},
+                          {"", fmt::format("{}*", instance_struct()), "", "inst"}};
     if (ion_variable_struct_required()) {
         params.emplace_back("", "IonCurVar&", "", "ionvar");
     }
-    params.emplace_back("", "double*", "", "data");
-    params.emplace_back("const ", "Datum*", "", "indexes");
-    params.emplace_back("", "ThreadDatum*", "", "thread");
-    params.emplace_back("", "NrnThread*", "", "nt");
-    params.emplace_back("", "double", "", "v");
+    ParamVector other_params = {{"", "double*", "", "data"},
+                                {"const ", "Datum*", "", "indexes"},
+                                {"", "ThreadDatum*", "", "thread"},
+                                {"", "NrnThread*", "", "nt"},
+                                {"", "double", "", "v"}};
+    params.insert(params.end(), other_params.begin(), other_params.end());
     return params;
 }
 
 
-const char* CodegenCoreneuronCppVisitor::external_method_arguments() noexcept {
-    return "id, pnodecount, data, indexes, thread, nt, ml, v";
+const std::string CodegenCoreneuronCppVisitor::external_method_arguments() noexcept {
+    return get_arg_str(external_method_parameters());
 }
 
 
-const char* CodegenCoreneuronCppVisitor::external_method_parameters(bool table) noexcept {
+const CodegenCppVisitor::ParamVector CodegenCoreneuronCppVisitor::external_method_parameters(
+    bool table) noexcept {
+    ParamVector args = {{"", "int", "", "id"},
+                        {"", "int", "", "pnodecount"},
+                        {"", "double*", "", "data"},
+                        {"", "Datum*", "", "indexes"},
+                        {"", "ThreadDatum*", "", "thread"},
+                        {"", "NrnThread*", "", "nt"},
+                        {"", "Memb_list*", "", "ml"}};
     if (table) {
-        return "int id, int pnodecount, double* data, Datum* indexes, "
-               "ThreadDatum* thread, NrnThread* nt, Memb_list* ml, int tml_id";
+        args.emplace_back("", "int", "", "tml_id");
+    } else {
+        args.emplace_back("", "double", "", "v");
     }
-    return "int id, int pnodecount, double* data, Datum* indexes, "
-           "ThreadDatum* thread, NrnThread* nt, Memb_list* ml, double v";
+    return args;
 }
 
 
@@ -750,10 +755,7 @@ std::string CodegenCoreneuronCppVisitor::nrn_thread_arguments() const {
  * same mod file itself
  */
 std::string CodegenCoreneuronCppVisitor::nrn_thread_internal_arguments() {
-    if (ion_variable_struct_required()) {
-        return "id, pnodecount, inst, ionvar, data, indexes, thread, nt, v";
-    }
-    return "id, pnodecount, inst, data, indexes, thread, nt, v";
+    return get_arg_str(internal_method_parameters());
 }
 
 
@@ -779,7 +781,7 @@ std::string CodegenCoreneuronCppVisitor::replace_if_verbatim_variable(std::strin
         }
     }
     if (name == naming::THREAD_ARGS_PROTO) {
-        name = external_method_parameters();
+        name = get_parameter_str(external_method_parameters());
     }
     return name;
 }
@@ -2750,10 +2752,10 @@ void CodegenCoreneuronCppVisitor::print_net_receive() {
     printing_net_receive = true;
     if (!info.artificial_cell) {
         const auto& name = method_name("net_receive");
-        ParamVector params;
-        params.emplace_back("", "Point_process*", "", "pnt");
-        params.emplace_back("", "int", "", "weight_index");
-        params.emplace_back("", "double", "", "flag");
+        ParamVector params = {
+            {"", "Point_process*", "", "pnt"},
+            {"", "int", "", "weight_index"},
+            {"", "double", "", "flag"}};
         printer->add_newline(2);
         printer->fmt_push_block("static void {}({})", name, get_parameter_str(params));
         printer->add_line("NrnThread* nt = nrn_threads + pnt->_tid;");
@@ -2785,7 +2787,7 @@ void CodegenCoreneuronCppVisitor::print_net_receive() {
  */
 void CodegenCoreneuronCppVisitor::print_derivimplicit_kernel(const Block& block) {
     auto ext_args = external_method_arguments();
-    auto ext_params = external_method_parameters();
+    auto ext_params = get_parameter_str(external_method_parameters());
     auto suffix = info.mod_suffix;
     auto list_num = info.derivimplicit_list_num;
     auto block_name = block.get_node_name();
@@ -2796,7 +2798,7 @@ void CodegenCoreneuronCppVisitor::print_derivimplicit_kernel(const Block& block)
 
     printer->push_block("namespace");
             printer->fmt_push_block("struct _newton_{}_{}", block_name, info.mod_suffix);
-            printer->fmt_push_block("int operator()({}) const", external_method_parameters());
+            printer->fmt_push_block("int operator()({}) const", get_parameter_str(external_method_parameters()));
     auto const instance = fmt::format("auto* const inst = static_cast<{0}*>(ml->instance);",
                                       instance_struct());
     auto const slist1 = fmt::format("auto const& slist{} = {};",

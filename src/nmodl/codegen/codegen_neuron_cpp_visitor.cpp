@@ -456,30 +456,31 @@ void CodegenNeuronCppVisitor::add_variable_point_process(
 }
 
 std::string CodegenNeuronCppVisitor::internal_method_arguments() {
-    return "_ml, inst, id, _ppvar, _thread, _nt";
+    const auto& args = internal_method_parameters();
+    return get_arg_str(args);
 }
 
 
-CodegenNeuronCppVisitor::ParamVector CodegenNeuronCppVisitor::internal_method_parameters() {
-    ParamVector params;
-    params.emplace_back("", "_nrn_mechanism_cache_range*", "", "_ml");
-    params.emplace_back("", fmt::format("{}&", instance_struct()), "", "inst");
-    params.emplace_back("", "size_t", "", "id");
-    params.emplace_back("", "Datum*", "", "_ppvar");
-    params.emplace_back("", "Datum*", "", "_thread");
-    params.emplace_back("", "NrnThread*", "", "_nt");
+CodegenCppVisitor::ParamVector CodegenNeuronCppVisitor::internal_method_parameters() {
+    ParamVector params = {{"", "_nrn_mechanism_cache_range*", "", "_ml"},
+                          {"", fmt::format("{}&", instance_struct()), "", "inst"},
+                          {"", "size_t", "", "id"},
+                          {"", "Datum*", "", "_ppvar"},
+                          {"", "Datum*", "", "_thread"},
+                          {"", "NrnThread*", "", "_nt"}};
     return params;
 }
 
 
 /// TODO: Edit for NEURON
-const char* CodegenNeuronCppVisitor::external_method_arguments() noexcept {
+const std::string CodegenNeuronCppVisitor::external_method_arguments() noexcept {
     return {};
 }
 
 
 /// TODO: Edit for NEURON
-const char* CodegenNeuronCppVisitor::external_method_parameters(bool table) noexcept {
+const CodegenCppVisitor::ParamVector CodegenNeuronCppVisitor::external_method_parameters(
+    bool table) noexcept {
     return {};
 }
 
@@ -1369,12 +1370,11 @@ void CodegenNeuronCppVisitor::print_make_node_data() const {
                             node_data_struct(),
                             info.mod_suffix);
 
-    std::vector<std::string> make_node_data_args;
-    make_node_data_args.push_back("_ml_arg.nodeindices");
-    make_node_data_args.push_back("_nt.node_voltage_storage()");
-    make_node_data_args.push_back("_nt.node_d_storage()");
-    make_node_data_args.push_back("_nt.node_rhs_storage()");
-    make_node_data_args.push_back("_ml_arg.nodecount");
+    std::vector<std::string> make_node_data_args = {"_ml_arg.nodeindices",
+                                                    "_nt.node_voltage_storage()",
+                                                    "_nt.node_d_storage()",
+                                                    "_nt.node_rhs_storage()",
+                                                    "_ml_arg.nodecount"};
 
     printer->fmt_push_block("return {}", node_data_struct());
     printer->add_multi_line(fmt::format("{}", fmt::join(make_node_data_args, ",\n")));
@@ -1440,10 +1440,11 @@ void CodegenNeuronCppVisitor::print_initial_block(const InitialBlock* node) {
 void CodegenNeuronCppVisitor::print_global_function_common_code(BlockType type,
                                                                 const std::string& function_name) {
     std::string method = function_name.empty() ? compute_method_name(type) : function_name;
-    std::string args =
-        "_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, Memb_list* _ml_arg, int "
-        "_type";
-    printer->fmt_push_block("void {}({})", method, args);
+    ParamVector args = {{"", "const _nrn_model_sorted_token&", "", "_sorted_token"},
+                        {"", "NrnThread*", "", "_nt"},
+                        {"", "Memb_list*", "", "_ml_arg"},
+                        {"", "int", "", "_type"}};
+    printer->fmt_push_block("void {}({})", method, get_parameter_str(args));
 
     printer->add_line("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};");
     printer->fmt_line("auto inst = make_instance_{}(_lmr);", info.mod_suffix);
@@ -1483,10 +1484,15 @@ void CodegenNeuronCppVisitor::print_nrn_init(bool skip_init_check) {
 void CodegenNeuronCppVisitor::print_nrn_jacob() {
     printer->add_newline(2);
 
-    printer->fmt_push_block(
-        "static void {}(_nrn_model_sorted_token const& _sorted_token, NrnThread* "
-        "_nt, Memb_list* _ml_arg, int _type)",
-        method_name(naming::NRN_JACOB_METHOD));  // begin function
+    ParamVector args = {{"", "const _nrn_model_sorted_token&", "", "_sorted_token"},
+                        {"", "NrnThread*", "", "_nt"},
+                        {"", "Memb_list*", "", "_ml_arg"},
+                        {"", "int", "", "_type"}};
+
+    printer->fmt_push_block("static void {}({})",
+                            method_name(naming::NRN_JACOB_METHOD),
+                            get_parameter_str(args));  // begin function
+
 
     printer->add_multi_line(
         "_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};");
@@ -1692,11 +1698,10 @@ CodegenNeuronCppVisitor::ParamVector CodegenNeuronCppVisitor::nrn_current_parame
         throw std::runtime_error("Not implemented.");
     }
 
-    ParamVector params;
-    params.emplace_back("", "_nrn_mechanism_cache_range*", "", "_ml");
-    params.emplace_back("", "NrnThread*", "", "_nt");
-    params.emplace_back("", "Datum*", "", "_ppvar");
-    params.emplace_back("", "Datum*", "", "_thread");
+    ParamVector params = {{"", "_nrn_mechanism_cache_range*", "", "_ml"},
+                          {"", "NrnThread*", "", "_nt"},
+                          {"", "Datum*", "", "_ppvar"},
+                          {"", "Datum*", "", "_thread"}};
 
     if (info.thread_callback_register) {
         auto type_name = fmt::format("{}&", thread_variables_struct());
@@ -2119,10 +2124,9 @@ void CodegenNeuronCppVisitor::print_net_receive() {
         return;
     }
 
-    ParamVector args;
-    args.emplace_back("", "Point_process*", "", "_pnt");
-    args.emplace_back("", "double*", "", "_args");
-    args.emplace_back("", "double", "", "flag");
+    ParamVector args = {{"", "Point_process*", "", "_pnt"},
+                        {"", "double*", "", "_args"},
+                        {"", "double", "", "flag"}};
 
     printer->fmt_push_block("static void nrn_net_receive_{}({})",
                             info.mod_suffix,

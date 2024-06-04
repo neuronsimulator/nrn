@@ -34,23 +34,25 @@ bool CodegenCppVisitor::ion_variable_struct_required() const {
     return optimize_ion_variable_copies() && info.ion_has_write_variable();
 }
 
+std::string CodegenCppVisitor::get_arg_str(const ParamVector& params) {
+    std::vector<std::string> variables;
+    for (const auto& param: params) {
+        variables.push_back(std::get<3>(param));
+    }
+    return fmt::format("{}", fmt::join(variables, ", "));
+}
+
 
 std::string CodegenCppVisitor::get_parameter_str(const ParamVector& params) {
-    std::string str;
-    bool is_first = true;
+    std::vector<std::string> variables;
     for (const auto& param: params) {
-        if (is_first) {
-            is_first = false;
-        } else {
-            str += ", ";
-        }
-        str += fmt::format("{}{} {}{}",
-                           std::get<0>(param),
-                           std::get<1>(param),
-                           std::get<2>(param),
-                           std::get<3>(param));
+        variables.push_back(fmt::format("{}{} {}{}",
+                                        std::get<0>(param),
+                                        std::get<1>(param),
+                                        std::get<2>(param),
+                                        std::get<3>(param)));
     }
-    return str;
+    return fmt::format("{}", fmt::join(variables, ", "));
 }
 
 
