@@ -250,7 +250,6 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
         return;
     }
     int* pdata = ml->pdata;
-    int layout = Layout::SoA;
     int cnt = ml->nodecount;
     // ml padding does not matter (but target padding does matter)
 
@@ -388,7 +387,6 @@ void permute_data(double* vec, int n, int* p) {
 void permute_ml(Memb_list* ml, int type, NrnThread& nt) {
     int sz = corenrn.get_prop_param_size()[type];
     int psz = corenrn.get_prop_dparam_size()[type];
-    int layout = Layout::SoA;
     permute(ml->data, ml->nodecount, sz, ml->_permute);
     permute(ml->pdata, ml->nodecount, psz, ml->_permute);
 

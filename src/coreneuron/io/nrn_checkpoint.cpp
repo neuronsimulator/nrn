@@ -224,7 +224,6 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
         auto& nrn_is_artificial_ = corenrn.get_is_artificial();
 
         int sz = nrn_prop_param_size_[type];
-        int layout = Layout::SoA;
         int* semantics = memb_func[type].dparam_semantics;
 
         if (!nrn_is_artificial_[type]) {
@@ -457,7 +456,6 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
             Memb_list* ml = tml->ml;
             double* d = nullptr;
             Datum* pd = nullptr;
-            int layout = Layout::SoA;
             int dsz = corenrn.get_prop_param_size()[type];
             int pdsz = corenrn.get_prop_dparam_size()[type];
             int aln_cntml = nrn_soa_padded_size(ml->nodecount);

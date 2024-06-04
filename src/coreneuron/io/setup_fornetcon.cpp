@@ -61,7 +61,6 @@ static int* fornetcon_slot(const int mtype,
                            const int instance,
                            const int fnslot,
                            const NrnThread& nt) {
-    int layout = Layout::SoA;
     int sz = corenrn.get_prop_dparam_size()[mtype];
     Memb_list* ml = nt._ml_list[mtype];
     int* fn = nullptr;
