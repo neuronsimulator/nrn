@@ -86,6 +86,13 @@ jobs:
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
                 -DNRN_ENABLE_RX3D=OFF -DNMODL_SANITIZERS=address
               sanitizer: address
+          - os: macOS-14
+            config:
+              build_mode: cmake
+              # TODO: investigate rxd test timeouts in this build and re-enable them
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
+                -DNRN_ENABLE_RX3D=OFF -DNMODL_SANITIZERS=address
+              sanitizer: thread
       fail-fast: false
 
     steps:
@@ -113,14 +120,18 @@ jobs:
           brew unlink mpich
           brew install openmpi
           brew install --cask xquartz
+          if [[ "${{matrix.os}}" == "macOS-14" ]]; then
+            brew install cmake
+            echo "$(brew --prefix)/opt/cmake/bin" >> $GITHUB_PATH
+          fi
           echo "$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
           if [[ "${{matrix.os}}" == "macOS-13" ]]; then
-              echo CMAKE_BUILD_PARALLEL_LEVEL=4 >> $GITHUB_ENV
-              echo CTEST_PARALLEL_LEVEL=4 >> $GITHUB_ENV
+            echo CMAKE_BUILD_PARALLEL_LEVEL=4 >> $GITHUB_ENV
+            echo CTEST_PARALLEL_LEVEL=4 >> $GITHUB_ENV
           else
-              echo CMAKE_BUILD_PARALLEL_LEVEL=3 >> $GITHUB_ENV
-              echo CTEST_PARALLEL_LEVEL=3 >> $GITHUB_ENV
+            echo CMAKE_BUILD_PARALLEL_LEVEL=3 >> $GITHUB_ENV
+            echo CTEST_PARALLEL_LEVEL=3 >> $GITHUB_ENV
           fi
           echo CI_OS_NAME=osx >> $GITHUB_ENV
         shell: bash

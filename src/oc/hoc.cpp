@@ -1,3 +1,5 @@
+#pragma STDC FENV_ACCESS ON
+
 #include <../../nrnconf.h>
 #include "hoc.h"
 #include "hocstr.h"
