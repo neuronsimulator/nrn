@@ -338,7 +338,6 @@ void watch_activate_clear() {
                 // uses it. There is probably a better way to do this.
                 int* pdata = ml->pdata;
                 int nodecount = ml->nodecount;
-                int layout = Layout::SoA;
                 for (int iml = 0; iml < nodecount; ++iml) {
                     for (int i = first; i <= last; ++i) {
                         int* pd = pdata + nrn_i_layout(iml, nodecount, i, dparam_size);
@@ -381,7 +380,6 @@ void nrn2core_transfer_watch_condition(int tid,
     int nodecount = ml->nodecount;
     int i = watch_index;
     int dparam_size = corenrn.get_prop_dparam_size()[pnttype];
-    int layout = Layout::SoA;
     int* pd = pdata + nrn_i_layout(iml, nodecount, i, dparam_size);
 
     // activate the WatchCondition
