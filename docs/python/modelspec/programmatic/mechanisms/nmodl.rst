@@ -929,10 +929,10 @@ Description:
     200 subsequent calls to the procedure and if the calculation takes more 
     time than an interpolated table lookup. 
 
-    Also note that for any argument value outside of the interpolation range,
-    the returned value of a function with a TABLE will always be the value at
-    the boundary. In mathematical form, assuming the table interpolates values
-    in the range ``[a, b]``:
+    Also note that, if ``usetable_<suffix> = 1``, for any argument value
+    outside of the interpolation range, the returned value of a function with a
+    TABLE will always be the value at the boundary. In mathematical form,
+    assuming the table interpolates values in the range ``[a, b]``:
 
     .. math::
 
