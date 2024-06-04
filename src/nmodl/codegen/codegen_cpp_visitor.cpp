@@ -6,6 +6,8 @@
  */
 #include "codegen/codegen_cpp_visitor.hpp"
 
+#include <filesystem>
+
 #include "config/config.h"
 
 #include "ast/all.hpp"
@@ -1144,6 +1146,11 @@ void CodegenCppVisitor::setup(const Program& node) {
     CodegenHelperVisitor v;
     info = v.analyze(node);
     info.mod_file = mod_filename;
+
+    if (info.mod_suffix == "") {
+        info.mod_suffix = std::filesystem::path(mod_filename).stem();
+    }
+    info.rsuffix = info.point_process ? "" : "_" + info.mod_suffix;
 
     if (!info.vectorize) {
         logger->warn(

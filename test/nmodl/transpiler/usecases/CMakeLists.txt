@@ -12,6 +12,7 @@ set(NMODL_USECASE_DIRS
     point_process
     parameter
     func_in_breakpoint
+    suffix
     table
     recursion)
 

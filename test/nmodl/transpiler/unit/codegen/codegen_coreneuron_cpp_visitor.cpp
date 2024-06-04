@@ -781,7 +781,7 @@ SCENARIO("Check that top verbatim blocks are well generated", "[codegen][top ver
 
 
             double a = 2.;
-            foo_(nt);
+            foo_temp(nt);
             &tqitem;
             pnodecount+id;)";
             REQUIRE_THAT(generated, ContainsSubstring(expected_code));
@@ -845,7 +845,7 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
     })";
             REQUIRE_THAT(gpu_generated, ContainsSubstring(gpu_net_send_expected_code));
             std::string net_receive_kernel_expected_code =
-                R"(static inline void net_receive_kernel_(double t, Point_process* pnt, _Instance* inst, NrnThread* nt, Memb_list* ml, int weight_index, double flag) {
+                R"(static inline void net_receive_kernel_temp(double t, Point_process* pnt, temp_Instance* inst, NrnThread* nt, Memb_list* ml, int weight_index, double flag) {
         int tid = pnt->_tid;
         int id = pnt->_i_instance;
         double v = 0;
@@ -868,7 +868,7 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
     })";
             REQUIRE_THAT(generated, ContainsSubstring(net_receive_kernel_expected_code));
             std::string net_receive_expected_code =
-                R"(static void net_receive_(Point_process* pnt, int weight_index, double flag) {
+                R"(static void net_receive_temp(Point_process* pnt, int weight_index, double flag) {
         NrnThread* nt = nrn_threads + pnt->_tid;
         Memb_list* ml = get_memb_list(nt);
         NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;
@@ -883,14 +883,15 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
         nrb->_cnt++;
     })";
             REQUIRE_THAT(generated, ContainsSubstring(net_receive_expected_code));
-            std::string net_buf_receive_expected_code = R"(void net_buf_receive_(NrnThread* nt) {
+            std::string net_buf_receive_expected_code =
+                R"(void net_buf_receive_temp(NrnThread* nt) {
         Memb_list* ml = get_memb_list(nt);
         if (!ml) {
             return;
         }
 
         NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;
-        auto* const inst = static_cast<_Instance*>(ml->instance);
+        auto* const inst = static_cast<temp_Instance*>(ml->instance);
         int count = nrb->_displ_cnt;
         #pragma omp simd
         #pragma ivdep
@@ -904,7 +905,7 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
                 int weight_index = nrb->_weight_index[index];
                 double flag = nrb->_nrb_flag[index];
                 Point_process* point_process = nt->pntprocs + offset;
-                net_receive_kernel_(t, point_process, inst, nt, ml, weight_index, flag);
+                net_receive_kernel_temp(t, point_process, inst, nt, ml, weight_index, flag);
             }
         }
         nrb->_displ_cnt = 0;
@@ -930,7 +931,7 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
     })";
             REQUIRE_THAT(generated, ContainsSubstring(net_init_expected_code));
             std::string set_pnt_receive_expected_code =
-                "set_pnt_receive(mech_type, net_receive_, net_init, num_net_receive_args());";
+                "set_pnt_receive(mech_type, net_receive_temp, net_init, num_net_receive_args());";
             REQUIRE_THAT(generated, ContainsSubstring(set_pnt_receive_expected_code));
         }
     }
@@ -957,7 +958,7 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
         double* weights = nt->weights;
         Datum* indexes = ml->pdata;
         ThreadDatum* thread = ml->_thread;
-        auto* const inst = static_cast<_Instance*>(ml->instance);
+        auto* const inst = static_cast<temp_Instance*>(ml->instance);
 
         a = 1.0;
         auto& nsb = ml->_net_send_buffer;
@@ -1009,7 +1010,7 @@ SCENARIO("Check that codegen generate event functions well", "[codegen][net_even
         THEN("New code is generated for for_netcons") {
             auto const generated = get_coreneuron_cpp_code(nmodl_text);
             std::string net_receive_kernel_expected_code =
-                R"(static inline void net_receive_kernel_(double t, Point_process* pnt, _Instance* inst, NrnThread* nt, Memb_list* ml, int weight_index, double flag) {
+                R"(static inline void net_receive_kernel_temp(double t, Point_process* pnt, temp_Instance* inst, NrnThread* nt, Memb_list* ml, int weight_index, double flag) {
         int tid = pnt->_tid;
         int id = pnt->_i_instance;
         double v = 0;
@@ -1067,9 +1068,9 @@ SCENARIO("Some tests on derivimplicit", "[codegen][derivimplicit_solver]") {
         THEN("Correct code is generated") {
             auto const generated = get_coreneuron_cpp_code(nmodl_text);
             std::string newton_state_expected_code = R"(namespace {
-        struct _newton_state_ {
+        struct _newton_state_temp {
             int operator()(int id, int pnodecount, double* data, Datum* indexes, ThreadDatum* thread, NrnThread* nt, Memb_list* ml, double v) const {
-                auto* const inst = static_cast<_Instance*>(ml->instance);
+                auto* const inst = static_cast<temp_Instance*>(ml->instance);
                 double* savstate1 = static_cast<double*>(thread[dith1()].pval);
                 auto const& slist1 = inst->global->slist1;
                 auto const& dlist1 = inst->global->dlist1;
@@ -1089,8 +1090,8 @@ SCENARIO("Some tests on derivimplicit", "[codegen][derivimplicit_solver]") {
     })";
             REQUIRE_THAT(generated, ContainsSubstring(newton_state_expected_code));
             std::string state_expected_code =
-                R"(int state_(int id, int pnodecount, double* data, Datum* indexes, ThreadDatum* thread, NrnThread* nt, Memb_list* ml, double v) {
-        auto* const inst = static_cast<_Instance*>(ml->instance);
+                R"(int state_temp(int id, int pnodecount, double* data, Datum* indexes, ThreadDatum* thread, NrnThread* nt, Memb_list* ml, double v) {
+        auto* const inst = static_cast<temp_Instance*>(ml->instance);
         double* savstate1 = (double*) thread[dith1()].pval;
         auto const& slist1 = inst->global->slist1;
         auto& slist2 = inst->global->slist2;
@@ -1098,7 +1099,7 @@ SCENARIO("Some tests on derivimplicit", "[codegen][derivimplicit_solver]") {
         for (int i=0; i<1; i++) {
             savstate1[i*pnodecount+id] = data[slist1[i]*pnodecount+id];
         }
-        int reset = nrn_newton_thread(static_cast<NewtonSpace*>(*newtonspace1(thread)), 1, slist2, _newton_state_{}, dlist2, id, pnodecount, data, indexes, thread, nt, ml, v);
+        int reset = nrn_newton_thread(static_cast<NewtonSpace*>(*newtonspace1(thread)), 1, slist2, _newton_state_temp{}, dlist2, id, pnodecount, data, indexes, thread, nt, ml, v);
         return reset;
     })";
             REQUIRE_THAT(generated, ContainsSubstring(state_expected_code));
