@@ -497,13 +497,7 @@ void Phase2::transform_int_data(int elem0,
                                 int* pdata,
                                 int i,
                                 int dparam_size,
-                                int layout,
                                 int n_node_) {
-
-    if(layout != Layout::SoA) {
-        throw std::runtime_error("find me. wpqqq");
-    }
-
     for (int iml = 0; iml < nodecount; ++iml) {
         int* pd = pdata + nrn_i_layout(iml, nodecount, i, dparam_size);
         int ix = *pd;  // relative to beginning of _actual_*
@@ -677,12 +671,10 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
                 int s = semantics[i];
                 switch (s) {
                 case -1:  // area
-                    transform_int_data(
-                        nt._actual_area - nt._data, cnt, pdata, i, szdp, layout, nt.end);
+                    transform_int_data(nt._actual_area - nt._data, cnt, pdata, i, szdp, nt.end);
                     break;
                 case -9:  // diam
-                    transform_int_data(
-                        nt._actual_diam - nt._data, cnt, pdata, i, szdp, layout, nt.end);
+                    transform_int_data(nt._actual_diam - nt._data, cnt, pdata, i, szdp, nt.end);
                     break;
                 case -5:  // pointer assumes a pointer to membrane voltage
                     // or mechanism data in this thread. The value of the
@@ -700,7 +692,7 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
                     // after this loop instead of the former voltage only
                     /**
                     transform_int_data(
-                        nt._actual_v - nt._data, cnt, pdata, i, szdp, layout, nt.end);
+                        nt._actual_v - nt._data, cnt, pdata, i, szdp, nt.end);
                      **/
                     break;
                 default:
