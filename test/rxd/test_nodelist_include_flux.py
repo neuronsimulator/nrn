@@ -1,7 +1,7 @@
 def test_nodelist_include_flux(neuron_nosave_instance):
+    diff = 1e-15
     h, rxd, _ = neuron_nosave_instance
     dend1 = h.Section("dend1")
-    diff = 1e-15
     cyt = rxd.Region(dend1.wholetree(), nrn_region="i")
     ca1 = rxd.Species(cyt, name="ca1", charge=2, initial=0)
     ca2 = rxd.Species(cyt, name="ca2", charge=2, initial=0)

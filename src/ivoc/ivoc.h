@@ -1,5 +1,4 @@
-#ifndef oc_h
-#define oc_h
+#pragma once
 
 #include <Dispatch/iohandler.h>
 #include <Dispatch/dispatcher.h>
@@ -85,5 +84,3 @@ class Oc {
     static Cursor* help_cursor_;
     static Observable* notify_change_;
 };
-
-#endif

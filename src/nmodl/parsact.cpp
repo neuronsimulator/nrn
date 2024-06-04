@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 
 /*
  * some parse actions to reduce size of parse.ypp the installation routines can
@@ -222,7 +222,7 @@ void vectorize_scan_for_func(Item* q1, Item* q2) {
     for (q = q1; q != q2; q = q->next) {
         if (q->itemtype == SYMBOL) {
             Symbol* s = SYM(q);
-            if ((s->usage & FUNCT) && !(s->subtype & (EXTDEF))) {
+            if ((s->usage & FUNCT) && !(s->subtype & (EXTDEF | EXTDEF_RANDOM))) {
                 if (q->next->itemtype == SYMBOL && strcmp(SYM(q->next)->name, "(") == 0) {
                     int b = func_arg_examine(q->next, q2);
                     if (b == 0) { /* no args */
@@ -845,7 +845,7 @@ void hocfunc(Symbol* n, Item* qpar1, Item* qpar2) /*interface between modl and h
 /* ARGSUSED */
 void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int blocktype) {
     Item* q;
-    if (SYM(qname)->subtype & EXTDEF) {
+    if (SYM(qname)->subtype & (EXTDEF | EXTDEF_RANDOM)) {
         if (strcmp(SYM(qname)->name, "nrn_pointing") == 0) {
             // TODO: this relies on undefined behaviour in C++. &*foo is not
             // guaranteed to be equivalent to foo if foo is null. See
@@ -914,6 +914,8 @@ void vectorize_use_func(Item* qname, Item* qpar1, Item* qexpr, Item* qpar2, int 
             } else {
                 diag("net_move", "only allowed in NET_RECEIVE block");
             }
+        } else if (SYM(qname)->subtype & EXTDEF_RANDOM) {
+            replacstr(qname, extdef_rand[SYM(qname)->name]);
         }
         return;
     }

@@ -8,11 +8,8 @@ bokeh<3
 ipython
 cython<3
 packaging
-pytest
+pytest<=8.1.1 # potential bug from 8.2.0 due to parallelism?
 pytest-cov
 mpi4py
 numpy
 find_libpython
-
-# For python 3.12
-setuptools

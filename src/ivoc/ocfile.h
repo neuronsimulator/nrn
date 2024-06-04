@@ -1,5 +1,4 @@
-#ifndef ocfile_h
-#define ocfile_h
+#pragma once
 
 #include <string>
 class File;
@@ -64,5 +63,3 @@ class OcFile {
 
 bool isDirExist(const std::string& path);
 bool makePath(const std::string& path);
-
-#endif

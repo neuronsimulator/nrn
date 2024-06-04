@@ -1,6 +1,4 @@
-
-#ifndef hocdec_h
-#define hocdec_h
+#pragma once
 #define INCLUDEHOCH 1
 
 #include "neuron/container/generic_data_handle.hpp"
@@ -224,10 +222,6 @@ struct HocParmUnits { /* units for symbol values */
 
 #include "oc_ansi.h"
 
-void* emalloc(size_t n);
-void* ecalloc(size_t n, size_t size);
-void* erealloc(void* ptr, size_t n);
-
 extern Inst *hoc_progp, *hoc_progbase, *hoc_prog, *hoc_prog_parse_recover;
 extern Inst* hoc_pc;
 
@@ -298,7 +292,4 @@ int num_procs;
 int* tids;
 int node_num;
 int mytid;
-#endif
-
-
 #endif

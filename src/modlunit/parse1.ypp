@@ -1,8 +1,9 @@
 %{
 /* /local/src/master/nrn/src/modlunit/parse1.y,v 1.11 1999/02/27 21:13:50 hines Exp */
 
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 #include <stdlib.h>
+#include <cstring>
 #include "model.h"
 
 /* Constructs a parse tree. No translation is done, ie. on exit printing
@@ -102,6 +103,7 @@ extern int lexcontext;
 %type	<qp>	initstmt bablk
 %token  <qp>    CONDUCTANCE
 %type   <qp>    conducthint
+%token  <qp>    RANDOM
 
 /* precedence in expressions--- low to high */
 %left   OR
@@ -751,6 +753,8 @@ nrnstmt: /*nothing*/
 	| nrnstmt ELECTRODE_CURRENT nrnlist
 		{ P1{nrn_list($2,$3);}}
 	| nrnstmt RANGE nrnlist
+		{ P1{nrn_list($2, $3);}}
+	| nrnstmt RANDOM nrnlist
 		{ P1{nrn_list($2, $3);}}
 	| nrnstmt GLOBAL nrnlist
 		{ P1{nrn_list($2, $3);}}

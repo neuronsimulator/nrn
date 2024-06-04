@@ -22,8 +22,7 @@
  * OF THIS SOFTWARE.
  */
 
-#ifndef iv__scope_h
-#define iv__scope_h
+#pragma once
 
 #include <InterViews/iv.h>
 
@@ -42,8 +41,6 @@
 #include <OS/leave-scope.h>
 
 #define u_char _lib_os(u_char)
-
-#endif
 
 #endif
 

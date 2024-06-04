@@ -8,8 +8,8 @@
 #include <../nrnoc/section.h>
 #include <../nrnoc/nrn_ansi.h>
 #include <../nrnoc/multicore.h>
-#include <nrnwrap_Python.h>
-#include <nrnpython.h>
+#include "nrnwrap_Python.h"
+#include "nrnpython.h"
 
 #include <thread>
 #include <vector>
@@ -988,10 +988,10 @@ extern "C" void clear_rates() {
         }
 
         free(react->state_idx);
-        SAFE_FREE(react->ecs_state);
+        free(react->ecs_state);
         prev = react;
         react = react->next;
-        SAFE_FREE(prev);
+        free(prev);
     }
     _reactions = NULL;
     /*clear extracellular reactions*/

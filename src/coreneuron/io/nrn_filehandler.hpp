@@ -127,17 +127,12 @@ class FileHandler {
         mapinfo->name = std::string(name);
 
         if (nseg) {
-            std::vector<int> sec, seg;
+            auto sec = read_vector<int>(nseg);
+            auto seg = read_vector<int>(nseg);
+
             std::vector<double> lfp_factors;
-
-            sec.reserve(nseg);
-            seg.reserve(nseg);
-            lfp_factors.reserve(total_lfp_factors);
-
-            read_array<int>(&sec[0], nseg);
-            read_array<int>(&seg[0], nseg);
             if (total_lfp_factors > 0) {
-                read_array<double>(&lfp_factors[0], total_lfp_factors);
+                lfp_factors = read_vector<double>(total_lfp_factors);
             }
 
             int factor_offset = 0;

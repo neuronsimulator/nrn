@@ -30,12 +30,7 @@ License along with this library; if not, write to the Free Software
 Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#ifndef _RandomInteger_h
-#ifdef __GNUG__
-//#pragma interface
-#endif
-#define _RandomInteger_h 1
-
+#pragma once
 // RandomInteger uses a random number generator to generate an integer
 // in a specified range.  By default the range is 0..1.  Since in my
 // experience random numbers are often needed for a wide variety of
@@ -171,5 +166,3 @@ inline int RandomInteger:: asInt()
 {
   return int(asLong());
 }
-
-#endif

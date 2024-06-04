@@ -1,10 +1,12 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/cabcode.cpp,v 1.37 1999/07/08 14:24:59 hines Exp */
 
-#define HOC_L_LIST 1
+#include <regex>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
+#define HOC_L_LIST 1
 #include "section.h"
 #include "nrn_ansi.h"
 #include "nrniv_mf.h"
@@ -12,6 +14,36 @@
 #include "parse.hpp"
 #include "hocparse.h"
 #include "membdef.h"
+
+static char* escape_bracket(const char* s) {
+    static char* b;
+    const char* p1;
+    char* p2;
+    if (!b) {
+        b = new char[256];
+    }
+    for (p1 = s, p2 = b; *p1; ++p1, ++p2) {
+        switch (*p1) {
+        case '<':
+            *p2 = '[';
+            break;
+        case '>':
+            *p2 = ']';
+            break;
+        case '[':
+        case ']':
+            *p2 = '\\';
+            *(++p2) = *p1;
+            break;
+        default:
+            *p2 = *p1;
+            break;
+        }
+    }
+    *p2 = '\0';
+    return b;
+}
+
 
 extern int hoc_execerror_messages;
 #define symlist hoc_symlist
@@ -287,17 +319,19 @@ void new_sections(Object* ob, Symbol* sym, Item** pitm, int size) {
     }
 }
 
+/// @brief Creates a new section and registers with the global section list
+Section* section_new(Symbol* sym) {
+    Section* sec = new_section(nullptr, sym, 0);
+    auto itm = lappendsec(section_list, sec);
+    sec->prop->dparam[8] = {neuron::container::do_not_search, itm};
+    return sec;
+}
+
 #if USE_PYTHON
 struct NPySecObj;
 Section* nrnpy_newsection(NPySecObj* v) {
-    Item* itm;
-    Section* sec;
-    sec = new_section((Object*) 0, (Symbol*) 0, 0);
-#if USE_PYTHON
+    auto sec = section_new(nullptr);
     sec->prop->dparam[PROP_PY_INDEX] = static_cast<void*>(v);
-#endif
-    itm = lappendsec(section_list, sec);
-    sec->prop->dparam[8] = itm;
     return sec;
 }
 #endif
@@ -1364,6 +1398,24 @@ void rangepoint(void) /* symbol at pc, return value on stack */
     rangevareval();
 }
 
+void rangeobjeval(void) /* symbol at pc, section location on stack, return object on stack*/
+{
+    Symbol* s{(pc++)->sym};
+    assert(s->subtype == NMODLRANDOM);  // the only possibility at the moment
+    double d = xpop();
+    Section* sec{nrn_sec_pop()};
+    auto const i = node_index(sec, d);
+    Prop* m = nrn_mechanism_check(s->u.rng.type, sec, i);
+    Object* ob = nrn_nmodlrandom_wrap(m, s);
+    hoc_push_object(ob);
+}
+
+void rangeobjevalmiddle(void) /* symbol at pc, return object on stack*/
+{
+    hoc_pushx(0.5);
+    rangeobjeval();
+}
+
 int node_index(Section* sec, double x) /* returns nearest index to x */
 {
     int i;
@@ -1979,8 +2031,8 @@ void forall_section(void) {
         Section* sec = hocSEC(qsec);
         qsec = qsec->next;
         if (buf[0]) {
-            hoc_regexp_compile(buf);
-            if (!hoc_regexp_search(secname(sec))) {
+            std::regex pattern(escape_bracket(buf));
+            if (!std::regex_match(secname(sec), pattern)) {
                 continue;
             }
         }
@@ -2011,8 +2063,8 @@ void hoc_ifsec(void) {
 
     s = hoc_strpop();
     Sprintf(buf, ".*%s.*", *s);
-    hoc_regexp_compile(buf);
-    if (hoc_regexp_search(secname(chk_access()))) {
+    std::regex pattern(escape_bracket(buf));
+    if (std::regex_match(secname(chk_access()), pattern)) {
         hoc_execute(relative(savepc));
     }
     if (!hoc_returning)
@@ -2020,8 +2072,8 @@ void hoc_ifsec(void) {
 }
 
 void issection(void) { /* returns true if string is the access section */
-    hoc_regexp_compile(gargstr(1));
-    if (hoc_regexp_search(secname(chk_access()))) {
+    std::regex pattern(escape_bracket(gargstr(1)));
+    if (std::regex_match(secname(chk_access()), pattern)) {
         hoc_retpushx(1.);
     } else {
         hoc_retpushx(0.);

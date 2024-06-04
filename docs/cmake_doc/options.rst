@@ -12,14 +12,14 @@ together using the following instructions:
 .. code-block:: shell
 
    git clone https://github.com/neuronsimulator/nrn           # latest development branch
-   git clone https://github.com/neuronsimulator/nrn -b 8.0.0  # specific release version 8.0.0
+   git clone https://github.com/neuronsimulator/nrn -b 8.2.3  # specific release version 8.2.3
    cd nrn
 
 ..
 
    .. warning:: To build NEURON from source you either need to clone the
    NEURON Git repository or download a source code archive that includes
-   Git submodules, such as the ``full-src-package-X.Y.Z.tar.gz`` file in
+   Git submodules, such as the ``nrn-full-src-package-X.Y.Z.tar.gz`` file in
    the `NEURON
    releases <https://github.com/neuronsimulator/nrn/releases>`__ on
    GitHub. The tarballs like ``Source code (tar.gz)`` or
@@ -404,8 +404,8 @@ NMODL options
 
 To see all the NMODL CMake options you can look in https://github.com/BlueBrain/nmodl/blob/master/CMakeLists.txt.
 
-NMODL_ENABLE_PYTHON_BINDINGS:BOOL=ON
-------------------------------------
+NMODL_ENABLE_PYTHON_BINDINGS:BOOL=OFF
+-------------------------------------
   Enable pybind11 based python bindings
 
   Using this option the user can use the NMODL python package to use NMODL via python. For more information look at
@@ -579,6 +579,15 @@ NRN_COVERAGE_FILES:STRING=
 
   ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
 
+  For a list of all the cpp files changed in a pull request, consider
+  copy/pasting the ``;`` separated list obtained with
+
+  .. code-block:: shell
+
+     a=`git diff --name-only master | grep '\.cpp'`
+     echo $a | sed 's/ /;/g'
+
+
 NRN_SANITIZERS:STRING=
 ----------------------
   Enable some combination of AddressSanitizer, LeakSanitizer, ThreadSanitizer
@@ -588,6 +597,11 @@ NRN_SANITIZERS:STRING=
   Note that on macOS it can be a little intricate to combine
   ``-DNRN_SANITIZERS=address`` with the use of Python virtual environments; if
   you attempt this then the CMake code should recommend a solution.
+
+  Note: the ``address`` sanitizer also prints leak infornation when a
+  launch exits. That can be avoided with
+
+  ``export ASAN_OPTIONS=detect_leaks=0``
 
 Miscellaneous Rarely used options specific to NEURON:
 =====================================================
@@ -648,3 +662,15 @@ NRN_PYTHON_EXTRA_FOR_TESTS:STRING=
   built with support for, for use in tests of error messages and reporting.
   For these purposes, minor versions (3.X and 3.Y) are considered different
   and patch versions (3.8.X and 3.8.Y) are considered to be the same.
+
+NRN_ENABLE_MATH_OPT:BOOL=OFF
+-------------------------------------
+  Enable extra math optimisations.
+
+  When using compilers like GCC and Clang, one needs to explicitly use compiler
+  flags like `-funsafe-math-optimizations` in order to generate SIMD/vectorised
+  code using vector math library. This flag adds these extra compiler flags
+  to enable SIMD code.
+
+  Note: Compilers like Intel, NVHPC, Cray etc enable such optimisations
+  by default.

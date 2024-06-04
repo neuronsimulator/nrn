@@ -3,25 +3,21 @@
 
 #include "hoc.h"
 #include "parse.hpp"
-#include <math.h>
+#include <cmath>
 #include "equation.h"
 #include "nrnunits.h"
 
 #include "nrn_ansi.h"
 #include "ocfunc.h"
 
+#include "oc_mcran4.hpp"
 
 extern void hoc_nrnmpi_init();
 
 #if PVM
 extern int numprocs(), myproc(), psync();
 #endif
-#if 0
-extern int	hoc_co();
-#endif
-#if DOS || defined(WIN32)
-extern double erf(), erfc(); /* supplied by unix */
-#endif
+
 #if defined(WIN32)
 extern void hoc_winio_show(int b);
 #endif
@@ -197,9 +193,6 @@ static struct { /* Builtin functions with multiple or variable args */
                  {"myproc", myproc},
                  {"psync", psync},
 #endif
-#if DOS
-                 {"settext", hoc_settext},
-#endif
 #if defined(WIN32)
                  {"WinExec", hoc_win_exec},
 #endif
@@ -231,7 +224,6 @@ double hoc_default_dll_loaded_;
 char* neuron_home;
 const char* nrn_mech_dll;      /* but actually only for NEURON mswin and linux */
 int nrn_noauto_dlopen_nrnmech; /* 0 except when binary special. */
-int use_mcell_ran4_;
 int nrn_xopen_broadcast_;
 
 void hoc_init(void) /* install constants and built-ins table */
@@ -255,7 +247,7 @@ void hoc_init(void) /* install constants and built-ins table */
         }
     }
 
-    use_mcell_ran4_ = 0;
+    set_use_mcran4(false);
     nrn_xopen_broadcast_ = 255;
     extern void hoc_init_space(void);
     hoc_init_space();
