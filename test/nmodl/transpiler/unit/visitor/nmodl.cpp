@@ -41,7 +41,6 @@ std::string run_nmodl_visitor(const std::string& text) {
 }
 
 SCENARIO("Convert AST back to NMODL form", "[visitor][nmodl]") {
-    TempFile unit("Unit.inc", nmodl_valid_constructs.at("unit_statement_1").input);
     for (const auto& construct: nmodl_valid_constructs) {
         auto test_case = construct.second;
         const std::string& input_nmodl_text = reindent_text(test_case.input);

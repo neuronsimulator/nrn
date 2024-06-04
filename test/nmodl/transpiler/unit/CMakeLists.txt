@@ -167,6 +167,10 @@ foreach(
                        "${_environment_vars_list}")
 endforeach()
 
+# Generate include files used in test input, see test/unit/utils/nmodl_constructs.cpp
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Unit.inc" "UNITSON \n UNITSOFF \n UNITSON \n UNITSOFF")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/included.file" "TITLE")
+
 # =============================================================================
 # pybind11 tests
 # =============================================================================
