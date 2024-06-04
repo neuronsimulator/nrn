@@ -107,7 +107,7 @@ static int nrn_original_aos_index(int etype, int ix, NrnThread& nt, int** ml_pin
     int p = ix - (eml->data - nt._data);
     assert(p >= 0 && p < eml->_nodecount_padded * esz);
     int ei_instance, ei;
-    nrn_inverse_i_layout(p, ei_instance, ecnt, ei, esz, elayout);
+    nrn_inverse_i_layout(p, ei_instance, ecnt, ei, esz);
     if (elayout == Layout::SoA) {
         if (eml->_permute) {
             if (!ml_pinv[etype]) {
@@ -547,12 +547,7 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
         }
         assert(mtype >= 0);
         int icnt, isz;
-        nrn_inverse_i_layout(ix,
-                             icnt,
-                             ml->nodecount,
-                             isz,
-                             corenrn.get_prop_param_size()[mtype],
-                             corenrn.get_mech_data_layout()[mtype]);
+        nrn_inverse_i_layout(ix, icnt, ml->nodecount, isz, corenrn.get_prop_param_size()[mtype]);
         if (ml_pinv[mtype]) {
             icnt = ml_pinv[mtype][icnt];
         }
