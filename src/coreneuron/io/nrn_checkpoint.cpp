@@ -479,8 +479,8 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
                 if (ml->_permute) {
                     jp = ml->_permute[j];
                 }
-                d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz, layout);
-                pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz, layout);
+                d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz);
+                pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz);
                 (*corenrn.get_bbcore_write()[type])(
                     nullptr, nullptr, &dcnt, &icnt, 0, aln_cntml, d, pd, ml->_thread, &nt, ml, 0.0);
             }
@@ -507,8 +507,8 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
                     jp = ml->_permute[j];
                 }
 
-                d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz, layout);
-                pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz, layout);
+                d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz);
+                pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz);
 
                 (*corenrn.get_bbcore_write()[type])(
                     dArray, iArray, &dcnt, &icnt, 0, aln_cntml, d, pd, ml->_thread, &nt, ml, 0.0);
@@ -556,8 +556,7 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
         if (ml_pinv[mtype]) {
             icnt = ml_pinv[mtype][icnt];
         }
-        ix = nrn_i_layout(
-            icnt, ml->nodecount, isz, corenrn.get_prop_param_size()[mtype], AOS_LAYOUT);
+        ix = nrn_i_layout(icnt, ml->nodecount, isz, corenrn.get_prop_param_size()[mtype]);
 
         fh << vtype << "\n";
         fh << mtype << "\n";

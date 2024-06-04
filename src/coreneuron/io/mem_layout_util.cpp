@@ -31,21 +31,9 @@ size_t nrn_soa_byte_align(size_t size) {
     return size;
 }
 
-int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
-    if (layout != Layout::SoA) {  // for SoA, n might be larger due to cnt padding
-        throw std::runtime_error("find it vueri");
-    }
-
-    switch (layout) {
-    case Layout::AoS:
-        return icnt * sz + isz;
-    case Layout::SoA:
-        int padded_cnt = nrn_soa_padded_size(cnt, layout);
-        return icnt + isz * padded_cnt;
-    }
-
-    nrn_assert(false);
-    return 0;
+int nrn_i_layout(int icnt, int cnt, int isz, int sz) {
+    int padded_cnt = nrn_soa_padded_size(cnt, Layout::SoA);
+    return icnt + isz * padded_cnt;
 }
 
 std::array<int, 3> legacy2soaos_index(int legacy_index, const std::vector<int>& array_dims) {

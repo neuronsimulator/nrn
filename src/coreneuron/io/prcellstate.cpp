@@ -70,13 +70,13 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
             }
             if (receives_events) {
                 fprintf(f, "%d nri %d\n", cix, pntindex);
-                int k = nrn_i_layout(i, cnt, 1, psize, layout);
+                int k = nrn_i_layout(i, cnt, 1, psize);
                 Point_process* pp = (Point_process*) nt._vdata[ml->pdata[k]];
                 pnt2index[pp] = pntindex;
                 ++pntindex;
             }
             for (int j = 0; j < size; ++j) {
-                int k = nrn_i_layout(i, cnt, j, size, layout);
+                int k = nrn_i_layout(i, cnt, j, size);
                 fprintf(f, " %d %d %.*g\n", cix, j, precision, ml->data[k]);
             }
         }

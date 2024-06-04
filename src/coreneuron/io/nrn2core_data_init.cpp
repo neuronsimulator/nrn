@@ -218,8 +218,7 @@ static void nrn2core_tqueue() {
                     int movable_index = nrn_i_layout(target_instance,
                                                      ml->nodecount,
                                                      type2movable[target_type],
-                                                     corenrn.get_prop_dparam_size()[target_type],
-                                                     corenrn.get_mech_data_layout()[target_type]);
+                                                     corenrn.get_prop_dparam_size()[target_type]);
                     void** movable_arg = nt._vdata + ml->pdata[movable_index];
                     TQItem* old_movable_arg = (TQItem*) (*movable_arg);
 #if CORENRN_DEBUG_QUEUE
@@ -342,7 +341,7 @@ void watch_activate_clear() {
                 int layout = corenrn.get_mech_data_layout()[type];
                 for (int iml = 0; iml < nodecount; ++iml) {
                     for (int i = first; i <= last; ++i) {
-                        int* pd = pdata + nrn_i_layout(iml, nodecount, i, dparam_size, layout);
+                        int* pd = pdata + nrn_i_layout(iml, nodecount, i, dparam_size);
                         *pd = 0;
                     }
                 }
@@ -383,7 +382,7 @@ void nrn2core_transfer_watch_condition(int tid,
     int i = watch_index;
     int dparam_size = corenrn.get_prop_dparam_size()[pnttype];
     int layout = corenrn.get_mech_data_layout()[pnttype];
-    int* pd = pdata + nrn_i_layout(iml, nodecount, i, dparam_size, layout);
+    int* pd = pdata + nrn_i_layout(iml, nodecount, i, dparam_size);
 
     // activate the WatchCondition
     *pd = 2 + triggered;

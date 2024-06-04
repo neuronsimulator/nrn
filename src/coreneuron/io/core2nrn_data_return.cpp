@@ -164,8 +164,8 @@ static void core2nrn_corepointer(int tid, NrnThreadMembList* tml) {
         if (ml->_permute) {
             jp = ml->_permute[j];
         }
-        d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz, layout);
-        pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz, layout);
+        d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz);
+        pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz);
         (*corenrn.get_bbcore_write()[type])(
             nullptr, nullptr, &dcnt, &icnt, 0, aln_cntml, d, pd, ml->_thread, &nt, ml, 0.0);
     }
@@ -186,8 +186,8 @@ static void core2nrn_corepointer(int tid, NrnThreadMembList* tml) {
             jp = ml->_permute[j];
         }
 
-        d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz, layout);
-        pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz, layout);
+        d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz);
+        pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz);
 
         (*corenrn.get_bbcore_write()[type])(dArray.get(),
                                             iArray.get(),
@@ -252,7 +252,7 @@ static void c2n_nmodlrandom(int tid, NrnThreadMembList* tml) {
             if (ml->_permute) {
                 jp = ml->_permute[j];
             }
-            int pv = ml->pdata[nrn_i_layout(jp, n, ix, pdsz, layout)];
+            int pv = ml->pdata[nrn_i_layout(jp, n, ix, pdsz)];
             nrnran123_State* state = (nrnran123_State*) nt._vdata[pv];
             uint32_t seq;
             char which;
@@ -395,8 +395,7 @@ static void core2nrn_watch() {
                     int iml_permute = permute ? permute[iml] : iml;
                     Core2NrnWatchInfoItem& wiv = watch_info[iml];
                     for (int ix = first; ix <= last; ++ix) {
-                        int datum =
-                            pdata[nrn_i_layout(iml_permute, nodecount, ix, dparam_size, layout)];
+                        int datum = pdata[nrn_i_layout(iml_permute, nodecount, ix, dparam_size)];
                         if (datum & 2) {  // activated
                             bool above_thresh = bool(datum & 1);
                             wiv.push_back(std::pair<int, bool>(ix, above_thresh));
