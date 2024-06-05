@@ -500,7 +500,7 @@ for (i=0; i < z.nvsize_; ++i) {
         auto const vec_sav_rhs = nt->node_sav_rhs_storage();
         for (i = 0; i < n; ++i) {
             Node* nd = ml->nodelist[i];
-            int j = nd->eqn_index_;
+            int j = nd->eqn_index_ - 1;
             Extnode* nde = nd->extnode;
             double cdvm;
             if (nde) {

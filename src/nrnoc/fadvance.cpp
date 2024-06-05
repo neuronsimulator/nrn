@@ -676,7 +676,7 @@ void nrn_print_matrix(NrnThread* _nt) {
         } else {
             std::cout << &_nt->_sp13mat << std::endl;
             int n = _nt->_sp13mat->cols();
-            for (int i = 0; i < n; ++i) {
+            for (int i = 1; i <= n; ++i) {
                 Printf("%d %g\n", i, _nt->actual_rhs(i));
             }
         }

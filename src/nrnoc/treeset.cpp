@@ -351,8 +351,7 @@ void update_sp13_rhs_based_on_actual_rhs(NrnThread* nt) {
  */
 void update_actual_d_based_on_sp13_mat(NrnThread* nt) {
     for (int i = 0; i < nt->end; ++i) {
-        int index = nt->_v_node[i]->diag_value;
-        nt->actual_d(i) = nt->_sp13mat->coeffRef(index, index);
+        nt->actual_d(i) = *nt->_v_node[i]->_d_matelm;
     }
 }
 
@@ -361,8 +360,7 @@ void update_actual_d_based_on_sp13_mat(NrnThread* nt) {
  */
 void update_sp13_mat_based_on_actual_d(NrnThread* nt) {
     for (int i = 0; i < nt->end; ++i) {
-        int index = nt->_v_node[i]->diag_value;
-        nt->_sp13mat->coeffRef(index, index) = nt->actual_d(i);
+        *nt->_v_node[i]->_d_matelm = nt->actual_d(i);
     }
 }
 
@@ -394,7 +392,7 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     if (use_sparse13) {
         nrn_thread_error("nrn_rhs use_sparse13");
         int neqn = _nt->_sp13mat->cols();
-        for (int i = 0; i < neqn; ++i) {
+        for (int i = 1; i <= neqn; ++i) {
             _nt->_sp13_rhs[i] = 0.;
         }
         for (int i = i1; i < i3; ++i) {
@@ -576,11 +574,9 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
             // Update entries in sp13_mat
             *nd->_a_matelm += nd_a;
             *nd->_b_matelm += nd_b; /* b may have value from lincir */
-            int index = nd->diag_value;
-            _nt->_sp13mat->coeffRef(index, index) -= nd_b;
+            *nd->_d_matelm -= nd_b;
             // used to update NODED (sparse13 matrix) using NODEA and NODEB ("SoA")
-            index = parent_nd->diag_value;
-            _nt->_sp13mat->coeffRef(index, index) -= nd_a;
+            *parent_nd->_d_matelm -= nd_a;
             // Also update the Node's d value in the SoA storage (is this needed?)
             vec_d[i] -= nd_b;
             vec_d[parent_i] -= nd_a;
@@ -1989,9 +1985,9 @@ static void nrn_matrix_node_alloc(void) {
         }
         /*printf(" %d extracellular nodes\n", extn);*/
         neqn += extn;
-        nt->_sp13_rhs = (double*) ecalloc(neqn, sizeof(double));
+        nt->_sp13_rhs = (double*) ecalloc(neqn + 1, sizeof(double));
         nt->_sp13mat = new Eigen::MatrixXd(neqn, neqn);
-        for (in = 0, i = 0; in < nt->end; ++in, ++i) {
+        for (in = 0, i = 1; in < nt->end; ++in, ++i) {
             nt->_v_node[in]->eqn_index_ = i;
             if (nt->_v_node[in]->extnode) {
                 i += nlayer;
@@ -2005,26 +2001,26 @@ static void nrn_matrix_node_alloc(void) {
             pnd = nt->_v_parent[in];
             i = nd->eqn_index_;
             nt->_sp13_rhs[i] = nt->actual_rhs(in);
-            nd->diag_value = i;
+            nd->_d_matelm = &nt->_sp13mat->coeffRef(i - 1, i - 1);
             if (nde) {
                 for (int ie = 0; ie < nlayer; ++ie) {
-                    int k = i + ie;
-                    nde->_d[ie] = &nt->_sp13mat->coeffRef(k, k);
+                    int k = i + ie + 1;
+                    nde->_d[ie] = &nt->_sp13mat->coeffRef(k - 1, k - 1);
                     nde->_rhs[ie] = nt->_sp13_rhs + k;
-                    nde->_x21[ie] = &nt->_sp13mat->coeffRef(k, k - 1);
-                    nde->_x12[ie] = &nt->_sp13mat->coeffRef(k - 1, k);
+                    nde->_x21[ie] = &nt->_sp13mat->coeffRef(k - 1, k - 2);
+                    nde->_x12[ie] = &nt->_sp13mat->coeffRef(k - 2, k - 1);
                 }
             }
             if (pnd) {
                 j = pnd->eqn_index_;
-                nd->_a_matelm = &nt->_sp13mat->coeffRef(j, i);
-                nd->_b_matelm = &nt->_sp13mat->coeffRef(i, j);
+                nd->_a_matelm = &nt->_sp13mat->coeffRef(j - 1, i - 1);
+                nd->_b_matelm = &nt->_sp13mat->coeffRef(i - 1, j - 1);
                 if (nde && pnd->extnode)
                     for (int ie = 0; ie < nlayer; ++ie) {
-                        int kp = j + ie;
-                        int k = i + ie;
-                        nde->_a_matelm[ie] = &nt->_sp13mat->coeffRef(kp, k);
-                        nde->_b_matelm[ie] = &nt->_sp13mat->coeffRef(k, kp);
+                        int kp = j + ie + 1;
+                        int k = i + ie + 1;
+                        nde->_a_matelm[ie] = &nt->_sp13mat->coeffRef(kp - 1, k - 1);
+                        nde->_b_matelm[ie] = &nt->_sp13mat->coeffRef(k - 1, kp - 1);
                     }
             } else { /* not needed if index starts at 1 */
                 nd->_a_matelm = nullptr;

@@ -72,7 +72,7 @@ void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
         } else {
             jt = start + j - nnode;
         }
-        ptree_[plen_] = &_nt->_sp13mat->coeffRef(it, jt);
+        ptree_[plen_] = &_nt->_sp13mat->coeffRef(it - 1, jt - 1);
         ++plen_;
     }
 }

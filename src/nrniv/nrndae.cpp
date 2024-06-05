@@ -6,8 +6,6 @@
 #include "treeset.h"
 #include "utils/enumerate.h"
 
-#include <Eigen/Eigen>
-
 extern int secondorder;
 
 static NrnDAEPtrList nrndae_list;
@@ -49,7 +47,7 @@ void nrndae_alloc() {
         neqn += _nt->_ecell_memb_list->nodecount * nlayer;
     }
     for (NrnDAE* item: nrndae_list) {
-        item->alloc(neqn);
+        item->alloc(neqn + 1);
         neqn += item->extra_eqn_count();
     }
 }
@@ -200,35 +198,48 @@ NrnDAE::~NrnDAE() {
     if (elayer_) {
         delete[] elayer_;
     }
+    //	if (nrndae_list->count() == 0) {
+    //		use_sparse13 = 0;
+    //	}
     nrn_matrix_node_free();
 }
 
 
 int NrnDAE::extra_eqn_count() {
+    // printf("NrnDAE::extra_eqn_count %lx\n", (long)this);
+    // printf("  nnode_=%d g_->nrow()=%d\n", nnode_, g_->nrow());
     return c_->nrow() - nnode_;
 }
 
 void NrnDAE::dkmap(std::vector<neuron::container::data_handle<double>>& pv,
                    std::vector<neuron::container::data_handle<double>>& pvdot) {
+    // printf("NrnDAE::dkmap\n");
     NrnThread* _nt = nrn_threads;
     for (int i = nnode_; i < size_; ++i) {
-        pv[bmap_[i]] = neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                              y_.data() + i};
-        pvdot[bmap_[i]] = neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                                 _nt->_sp13_rhs + bmap_[i]};
+        // printf("bmap_[%d] = %d\n", i, bmap_[i]);
+        pv[bmap_[i] - 1] = neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                                  y_.data() + i};
+        pvdot[bmap_[i] - 1] =
+            neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                   _nt->_sp13_rhs + bmap_[i]};
     }
 }
 
 void NrnDAE::update() {
+    // printf("NrnDAE::update %lx\n", (long)this);
     NrnThread* _nt = nrn_threads;
     // note that the following is correct also for states that refer
     // to the internal potential of a segment. i.e rhs is v + vext[0]
     for (int i = 0; i < size_; ++i) {
         y_[i] += _nt->_sp13_rhs[bmap_[i]];
     }
+    // for (int i=0; i < size_; ++i) printf(" i=%d bmap_[i]=%d y_[i]=%g\n", i, bmap_[i],
+    // y_->elem(i));
 }
 
 void NrnDAE::init() {
+    // printf("NrnDAE::init %lx\n", (long)this);
+    // printf("init size_=%d %d %d %d\n", size_, y_->size(), y0_->size(), b_->size());
     Vect& y0 = *y0_;
 
     v2y();
@@ -275,7 +286,8 @@ void NrnDAE::dkres(double* y, double* yprime, double* delta) {
     // representation of the y and yprime
 
     for (int i = 0; i < size_; ++i) {
-        yptmp_[i] = yprime[bmap_[i]];
+        // printf("%d %d %g %g\n", i, bmap_[i]-1, y[bmap_[i]-1], yprime[bmap_[i]-1]);
+        yptmp_[i] = yprime[bmap_[i] - 1];
     }
     Vect* cyp;
     if (assumed_identity_) {
@@ -289,7 +301,7 @@ void NrnDAE::dkres(double* y, double* yprime, double* delta) {
         cyp = &cyp_;
     }
     for (int i = 0; i < size_; ++i) {
-        delta[bmap_[i]] -= (*cyp)[i];
+        delta[bmap_[i] - 1] -= (*cyp)[i];
     }
 }
 
