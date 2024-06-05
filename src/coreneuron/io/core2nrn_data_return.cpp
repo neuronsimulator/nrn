@@ -349,12 +349,8 @@ void core2nrn_data_return() {
             int layout = Layout::SoA;
             int sz = corenrn.get_prop_param_size()[mtype];
             const std::vector<int>& array_dims = corenrn.get_array_dims()[mtype];
-            if (layout == Layout::SoA) {
-                int stride = ml->_nodecount_padded;
-                soaos_copy_cnrn2nrn(n, stride, cndat, mdata, array_dims, permute);
-            } else { /* AoS */
-                aos2aos_copy(n, sz, cndat, mdata);
-            }
+            int stride = ml->_nodecount_padded;
+            soaos_copy_cnrn2nrn(n, stride, cndat, mdata, array_dims, permute);
 
             core2nrn_corepointer(tid, tml);
             c2n_nmodlrandom(tid, tml);
