@@ -175,7 +175,7 @@ void nrn_writes_conc(int type, int /* unused */) {
 }
 
 void _nrn_layout_reg(int type, int layout) {
-    corenrn.get_mech_data_layout()[type] = layout;
+    corenrn.get_mech_data_layout()[type] = Layout::SoA;
 }
 
 void hoc_register_net_receive_buffering(NetBufReceive_t f, int type) {
