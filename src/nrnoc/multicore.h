@@ -28,8 +28,8 @@ actual_v, etc.
 
 #include "membfunc.h"
 namespace Eigen {
-    template <typename _Scalar, int _Options, typename _StorageIndex>
-    class SparseMatrix;
+template <typename _Scalar, int _Options, typename _StorageIndex>
+class SparseMatrix;
 }
 
 #include <cstddef>
@@ -93,12 +93,12 @@ struct NrnThread {
     int* _v_parent_index;
     Node** _v_node;
     Node** _v_parent;
-    double* _sparse_rhs;           /* rhs matrix for sparse13 solver. updates to and from this vector
-                                    need to be transfered to actual_rhs */
+    double* _sparse_rhs; /* rhs matrix for sparse13 solver. updates to and from this vector
+                          need to be transfered to actual_rhs */
     Eigen::SparseMatrix<double, 1, int>* _sparseMat{}; /* handle to general sparse matrix */
-    Memb_list* _ecell_memb_list; /* normally nullptr */
-    Node** _ecell_children;      /* nodes with no extcell but parent has it */
-    void* _vcv;                  /* replaces old cvode_instance and nrn_cvode_ */
+    Memb_list* _ecell_memb_list;                       /* normally nullptr */
+    Node** _ecell_children;                            /* nodes with no extcell but parent has it */
+    void* _vcv; /* replaces old cvode_instance and nrn_cvode_ */
 
 #if 1
     double _ctime; /* computation time in seconds (using nrnmpi_wtime) */
