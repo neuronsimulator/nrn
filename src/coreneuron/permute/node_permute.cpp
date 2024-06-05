@@ -308,20 +308,12 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
                     int edata0 = eml->data - nt._data;
                     int ecnt = eml->nodecount;
                     int esz = corenrn.get_prop_param_size()[etype];
-                    int elayout = Layout::SoA;
                     int* e_permute = eml->_permute;
                     int i_ecnt, i_esz, padded_ecnt;
                     int ix = *pd - edata0;
-                    if (elayout == Layout::AoS) {
-                        padded_ecnt = ecnt;
-                        i_ecnt = ix / esz;
-                        i_esz = ix % esz;
-                    } else {  // SoA
-                        assert(elayout == Layout::SoA);
-                        padded_ecnt = nrn_soa_padded_size(ecnt);
-                        i_ecnt = ix % padded_ecnt;
-                        i_esz = ix / padded_ecnt;
-                    }
+                    padded_ecnt = nrn_soa_padded_size(ecnt);
+                    i_ecnt = ix % padded_ecnt;
+                    i_esz = ix / padded_ecnt;
                     int i_ecnt_new = e_permute ? e_permute[i_ecnt] : i_ecnt;
                     int ix_new = nrn_i_layout(i_ecnt_new, ecnt, i_esz, esz);
                     *pd = ix_new + edata0;
@@ -331,7 +323,6 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
             }
         } else if (s >= 0 && s < 1000) {  // ion
             int etype = s;
-            int elayout = Layout::SoA;
             Memb_list* eml = nt._ml_list[etype];
             int edata0 = eml->data - nt._data;
             int ecnt = eml->nodecount;
@@ -342,16 +333,9 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
                 int ix = *pd - edata0;
                 // from ix determine i_ecnt and i_esz (need to permute i_ecnt)
                 int i_ecnt, i_esz, padded_ecnt;
-                if (elayout == Layout::AoS) {
-                    padded_ecnt = ecnt;
-                    i_ecnt = ix / esz;
-                    i_esz = ix % esz;
-                } else {  // SoA
-                    assert(elayout == Layout::SoA);
-                    padded_ecnt = nrn_soa_padded_size(ecnt);
-                    i_ecnt = ix % padded_ecnt;
-                    i_esz = ix / padded_ecnt;
-                }
+                padded_ecnt = nrn_soa_padded_size(ecnt);
+                i_ecnt = ix % padded_ecnt;
+                i_esz = ix / padded_ecnt;
                 int i_ecnt_new = e_permute[i_ecnt];
                 int ix_new = nrn_i_layout(i_ecnt_new, ecnt, i_esz, esz);
                 *pd = ix_new + edata0;
