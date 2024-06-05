@@ -15,6 +15,9 @@ namespace coreneuron {
 /// calculate size after padding for specific memory layout
 // Warning: this function is declared extern in nrniv_decl.h
 int nrn_soa_padded_size(int cnt, int layout) {
+    if(layout != Layout::SoA) {
+        throw std::runtime_error("find me. weqcv");
+    }
     return soa_padded_size<NRN_SOA_PAD>(cnt, layout);
 }
 
