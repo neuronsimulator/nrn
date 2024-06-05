@@ -1,24 +1,37 @@
 #include <../../nrnconf.h>
 #include "matrixmap.h"
 #include <vector>
+using std::vector;
 
 #include <Eigen/Eigen>
 
 MatrixMap::MatrixMap(Matrix& mat)
-    : m_(mat) {}
+    : m_(mat)
+    , plen_(0)
+    , ptree_(NULL)
+    , pm_(NULL) {}
 
 MatrixMap::MatrixMap(Matrix* mat)
-    : m_(*mat) {}
+    : m_(*mat)
+    , plen_(0)
+    , ptree_(NULL)
+    , pm_(NULL) {}
+
+MatrixMap::~MatrixMap() {
+    mmfree();
+}
 
 void MatrixMap::mmfree() {
-    pm_.clear();
-    pm_.shrink_to_fit();
-    ptree_.clear();
-    ptree_.shrink_to_fit();
+    // safe to delete NULL pointers
+    delete[] ptree_;
+    delete[] pm_;
+    ptree_ = NULL;
+    pm_ = NULL;
 }
 
 void MatrixMap::add(double fac) {
     for (int i = 0; i < plen_; ++i) {
+        // printf("i=%d %g += %g * %g\n", i, *ptree_[i], fac, *pm_[i]);
         *ptree_[i] += fac * (*pm_[i]);
     }
 }
@@ -26,18 +39,23 @@ void MatrixMap::add(double fac) {
 void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
     NrnThread* _nt = nrn_threads;
     mmfree();
+    // how many elements
+    int nrow = m_.nrow();
+    int ncol = m_.ncol();
+    // printf("MatrixMap::alloc nrow=%d ncol=%d\n", nrow, ncol);
 
     plen_ = 0;
-    std::vector<int> nonzero_i, nonzero_j;
+    vector<int> nonzero_i, nonzero_j;
     m_.nonzeros(nonzero_i, nonzero_j);
-    pm_.resize(nonzero_i.size());
-    ptree_.resize(nonzero_i.size());
+    pm_ = new double*[nonzero_i.size()];
+    ptree_ = new double*[nonzero_i.size()];
     for (int k = 0; k < nonzero_i.size(); k++) {
         const int i = nonzero_i[k];
         const int j = nonzero_j[k];
         int it;
         if (i < nnode) {
             it = nodes[i]->eqn_index_ + layer[i];
+            // printf("i=%d it=%d area=%g\n", i, it, nodes[i]->area);
             if (layer[i] > 0 && !nodes[i]->extnode) {
                 it = 0;
             }
