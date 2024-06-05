@@ -338,7 +338,7 @@ void watch_activate_clear() {
                 // uses it. There is probably a better way to do this.
                 int* pdata = ml->pdata;
                 int nodecount = ml->nodecount;
-                int layout = corenrn.get_mech_data_layout()[type];
+                int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[type]);
                 for (int iml = 0; iml < nodecount; ++iml) {
                     for (int i = first; i <= last; ++i) {
                         int* pd = pdata + nrn_i_layout(iml, nodecount, i, dparam_size);
@@ -381,7 +381,7 @@ void nrn2core_transfer_watch_condition(int tid,
     int nodecount = ml->nodecount;
     int i = watch_index;
     int dparam_size = corenrn.get_prop_dparam_size()[pnttype];
-    int layout = corenrn.get_mech_data_layout()[pnttype];
+    int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[pnttype]);
     int* pd = pdata + nrn_i_layout(iml, nodecount, i, dparam_size);
 
     // activate the WatchCondition
@@ -418,7 +418,7 @@ void nrn2core_patstim_share_info() {
     NrnThread* nt = nrn_threads + 0;
     Memb_list* ml = nt->_ml_list[type];
     if (ml) {
-        int layout = corenrn.get_mech_data_layout()[type];
+        int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[type]);
         int sz = corenrn.get_prop_param_size()[type];
         int psz = corenrn.get_prop_dparam_size()[type];
         int _cntml = ml->nodecount;

@@ -57,7 +57,7 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
     int size = corenrn.get_prop_param_size()[type];
     int psize = corenrn.get_prop_dparam_size()[type];
     bool receives_events = corenrn.get_pnt_receive()[type];
-    int layout = corenrn.get_mech_data_layout()[type];
+    int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[type]);
     int cnt = ml->nodecount;
     for (int iorig = 0; iorig < ml->nodecount; ++iorig) {  // original index
         int i = ml_permute(iorig, ml);                     // present index
