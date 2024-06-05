@@ -118,17 +118,7 @@ static int nrn_i_layout(int icnt, int cnt, int isz, int sz) {
 #endif  // !CORENRN_BUILD
 
 template <typename T>
-void permute(T* data, int cnt, int sz, int layout, int* p) {
-#if CORENRN_BUILD
-    if (layout != Layout::SoA) {  // for SoA, n might be larger due to cnt padding
-        throw std::runtime_error("find it djiwo");
-    }
-#else
-    if (layout != 0) {  // for SoA, n might be larger due to cnt padding
-        throw std::runtime_error("find it dhwei");
-    }
-#endif
-
+void permute(T* data, int cnt, int sz, int* p) {
     // data(p[icnt], isz) <- data(icnt, isz)
     // this does not change data, merely permutes it.
     // assert len(p) == cnt
@@ -415,8 +405,8 @@ void permute_ml(Memb_list* ml, int type, NrnThread& nt) {
     int sz = corenrn.get_prop_param_size()[type];
     int psz = corenrn.get_prop_dparam_size()[type];
     int layout = Layout::SoA;
-    permute(ml->data, ml->nodecount, sz, layout, ml->_permute);
-    permute(ml->pdata, ml->nodecount, psz, layout, ml->_permute);
+    permute(ml->data, ml->nodecount, sz, ml->_permute);
+    permute(ml->pdata, ml->nodecount, psz, ml->_permute);
 
     update_pdata_values(ml, type, nt);
 }
