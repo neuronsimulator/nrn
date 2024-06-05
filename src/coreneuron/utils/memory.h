@@ -12,6 +12,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <memory>
+#include <stdexcept>
 
 #if CORENRN_BUILD
 #include "coreneuron/utils/nrn_assert.h"
@@ -228,7 +229,7 @@ template <int chunk>
 inline int soa_padded_size(int cnt, int layout) {
 #if CORENRN_BUILD
     if (layout == Layout::AoS) {
-        return cnt;
+        throw std::runtime_error("find me. diwoehi");
     } else {
         return ((cnt + chunk - 1) / chunk) * chunk;
     }
