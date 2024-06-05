@@ -172,10 +172,6 @@ class CoreNeuron {
         return nrn_prop_dparam_size;
     }
 
-    auto& get_mech_data_layout() {
-        return nrn_mech_data_layout;
-    }
-
     auto& get_is_artificial() {
         return nrn_is_artificial;
     }
