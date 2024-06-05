@@ -192,8 +192,8 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
         }
     }
 
-    data_write(fh, nt._actual_a, nt.end, 1, 0, nt._permute);
-    data_write(fh, nt._actual_b, nt.end, 1, 0, nt._permute);
+    data_write(fh, nt._actual_a, nt.end, 1, nt._permute);
+    data_write(fh, nt._actual_b, nt.end, 1, nt._permute);
 
 #if CHKPNTDEBUG
     for (int i = 0; i < nt.end; ++i) {
@@ -201,11 +201,11 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
     }
 #endif
 
-    data_write(fh, nt._actual_area, nt.end, 1, 0, nt._permute);
-    data_write(fh, nt._actual_v, nt.end, 1, 0, nt._permute);
+    data_write(fh, nt._actual_area, nt.end, 1, nt._permute);
+    data_write(fh, nt._actual_v, nt.end, 1, nt._permute);
 
     if (nt._actual_diam) {
-        data_write(fh, nt._actual_diam, nt.end, 1, 0, nt._permute);
+        data_write(fh, nt._actual_diam, nt.end, 1, nt._permute);
     }
 
     auto& memb_func = corenrn.get_memb_funcs();
@@ -243,7 +243,7 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
             delete[] nd_ix;
         }
 
-        data_write(fh, ml->data, cnt, sz, layout, ml->_permute);
+        data_write(fh, ml->data, cnt, sz, ml->_permute);
 
         sz = nrn_prop_dparam_size_[type];
         if (sz) {
@@ -653,8 +653,7 @@ T* CheckPoints::soa2aos(T* data, int cnt, int sz, int* permute) const {
 }
 
 template <typename T>
-void CheckPoints::data_write(FileHandler& F, T* data, int cnt, int sz, int layout, int* permute)
-    const {
+void CheckPoints::data_write(FileHandler& F, T* data, int cnt, int sz, int* permute) const {
     T* d = soa2aos(data, cnt, sz, permute);
     F.write_array<T>(d, cnt * sz);
     delete[] d;
