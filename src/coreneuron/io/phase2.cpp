@@ -634,7 +634,7 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
     // Some pdata may index into data which has been reordered from AoS to
     // SoA. The four possibilities are if semantics is -1 (area), -5 (pointer),
     // -9 (diam), // or 0-999 (ion variables).
-    // Note that pdata has a layout and the // type block in nt.data into which
+    // Note that pdata has a layout and the type block in nt.data into which
     // it indexes, has a layout.
 
     // For faster search of tmls[i].type == type, use a map.
