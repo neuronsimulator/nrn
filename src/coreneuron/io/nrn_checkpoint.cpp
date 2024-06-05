@@ -635,9 +635,9 @@ bool CheckPoints::initialize() {
 
 template <typename T>
 T* CheckPoints::soa2aos(T* data, int cnt, int sz, int* permute) const {
-    // inverse of F -> data. Just a copy if layout=1. If SoA,
-    // original file order depends on padding and permutation.
-    // Good for a, b, area, v, diam, Memb_list.data, or anywhere values do not change.
+    // inverse of F -> data. The original file order depends on padding and
+    // permutation.  Good for a, b, area, v, diam, Memb_list.data, or anywhere
+    // values do not change.
     T* d = new T[cnt * sz];
     int align_cnt = nrn_soa_padded_size(cnt);
     for (int i = 0; i < cnt; ++i) {
