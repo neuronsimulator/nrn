@@ -189,7 +189,7 @@ struct VoidFunc {
 };
 extern void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
 
-extern void _nrn_layout_reg(int, int);
+extern void _nrn_layout_reg(int);
 extern void _nrn_thread_reg0(int i, void (*f)(ThreadDatum*));
 extern void _nrn_thread_reg1(int i, void (*f)(ThreadDatum*));
 
