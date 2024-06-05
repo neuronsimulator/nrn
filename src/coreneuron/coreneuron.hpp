@@ -219,4 +219,13 @@ class CoreNeuron {
 
 extern CoreNeuron corenrn;
 
+inline int assert_layout_is_soa(int layout) {
+    if(layout != Layout::SoA) {
+        throw std::runtime_error("find me. aiuwo");
+    }
+
+    return layout;
+}
+
+
 }  // namespace coreneuron

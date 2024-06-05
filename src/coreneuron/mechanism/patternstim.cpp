@@ -79,7 +79,7 @@ void nrn_mkPatternStim(const char* fname, double tstop) {
     NrnThread* nt = nrn_threads + pnt->_tid;
 
     Memb_list* ml = nt->_ml_list[type];
-    int layout = corenrn.get_mech_data_layout()[type];
+    int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[type]);
     int sz = corenrn.get_prop_param_size()[type];
     int psz = corenrn.get_prop_dparam_size()[type];
     int _cntml = ml->nodecount;
@@ -148,7 +148,7 @@ static NrnThreadMembList* alloc_nrn_thread_memb(NrnThread* nt, int type) {
     // NrnThread arrays but there should not be many of these instances.
     int psize = corenrn.get_prop_param_size()[type];
     int dsize = corenrn.get_prop_dparam_size()[type];
-    int layout = corenrn.get_mech_data_layout()[type];
+    int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[type]);
     tml->ml = (Memb_list*) ecalloc(1, sizeof(Memb_list));
     tml->ml->nodecount = 1;
     tml->ml->_nodecount_padded = tml->ml->nodecount;

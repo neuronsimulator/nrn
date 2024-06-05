@@ -153,7 +153,7 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
                 n_data += n_data_padded;
             }
             for (int i = 0; i < n_mech; ++i) {
-                int layout = corenrn.get_mech_data_layout()[mech_types[i]];
+                int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[mech_types[i]]);
                 int n = nodecounts[i];
                 int sz = corenrn.get_prop_param_size()[mech_types[i]];
                 n_data = nrn_soa_byte_align(n_data);
@@ -175,7 +175,7 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
         offset += n_data_padded;
     }
     for (int i = 0; i < n_mech; ++i) {
-        int layout = corenrn.get_mech_data_layout()[mech_types[i]];
+        int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[mech_types[i]]);
         int n = nodecounts[i];
         int sz = corenrn.get_prop_param_size()[mech_types[i]];
         int dsz = corenrn.get_prop_dparam_size()[mech_types[i]];
@@ -306,7 +306,7 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
         n_data += n_data_padded;
     }
     for (int i = 0; i < n_mech; ++i) {
-        int layout = corenrn.get_mech_data_layout()[mech_types[i]];
+        int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[mech_types[i]]);
         int n = nodecounts[i];
         int sz = corenrn.get_prop_param_size()[mech_types[i]];
         n_data = nrn_soa_byte_align(n_data);
@@ -335,7 +335,7 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
     for (int i = 0; i < n_mech; ++i) {
         auto& tml = tmls[i];
         int type = mech_types[i];
-        int layout = corenrn.get_mech_data_layout()[type];
+        int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[type]);
         offset = nrn_soa_byte_align(offset);
 
         tml.type = type;
@@ -652,7 +652,7 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
 
     for (auto tml = nt.tml; tml; tml = tml->next) {
         int type = tml->index;
-        int layout = corenrn.get_mech_data_layout()[type];
+        int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[type]);
         int* pdata = tml->ml->pdata;
         int cnt = tml->ml->nodecount;
         int szdp = corenrn.get_prop_dparam_size()[type];
@@ -889,7 +889,7 @@ void Phase2::get_info_from_bbcore(NrnThread& nt,
         int dsz = corenrn.get_prop_param_size()[type];
         int pdsz = corenrn.get_prop_dparam_size()[type];
         int cntml = ml->nodecount;
-        int layout = corenrn.get_mech_data_layout()[type];
+        int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[type]);
         for (int j = 0; j < cntml; ++j) {
             int jp = j;
             if (ml->_permute) {
@@ -1066,7 +1066,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
     for (auto tml = nt.tml; tml; tml = tml->next) {
         Memb_list* ml = tml->ml;
         int type = tml->index;
-        int layout = corenrn.get_mech_data_layout()[type];
+        int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[type]);
         int n = ml->nodecount;
         int sz = nrn_prop_param_size_[type];
         offset = nrn_soa_byte_align(offset);
@@ -1106,7 +1106,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
         int szdp = nrn_prop_dparam_size_[type];
 
         const std::vector<int>& array_dims = corenrn.get_array_dims()[type];
-        int layout = corenrn.get_mech_data_layout()[type];
+        int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[type]);
 
         ml->nodeindices = (int*) ecalloc_align(ml->nodecount, sizeof(int));
         std::copy(tmls[itml].nodeindices.begin(), tmls[itml].nodeindices.end(), ml->nodeindices);

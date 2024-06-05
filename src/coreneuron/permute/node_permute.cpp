@@ -260,7 +260,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
         return;
     }
     int* pdata = ml->pdata;
-    int layout = corenrn.get_mech_data_layout()[type];
+    int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[type]);
     int cnt = ml->nodecount;
     // ml padding does not matter (but target padding does matter)
 
@@ -318,7 +318,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
                     int edata0 = eml->data - nt._data;
                     int ecnt = eml->nodecount;
                     int esz = corenrn.get_prop_param_size()[etype];
-                    int elayout = corenrn.get_mech_data_layout()[etype];
+                    int elayout = assert_layout_is_soa(corenrn.get_mech_data_layout()[etype]);
                     int* e_permute = eml->_permute;
                     int i_ecnt, i_esz, padded_ecnt;
                     int ix = *pd - edata0;
@@ -341,7 +341,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
             }
         } else if (s >= 0 && s < 1000) {  // ion
             int etype = s;
-            int elayout = corenrn.get_mech_data_layout()[etype];
+            int elayout = assert_layout_is_soa(corenrn.get_mech_data_layout()[etype]);
             Memb_list* eml = nt._ml_list[etype];
             int edata0 = eml->data - nt._data;
             int ecnt = eml->nodecount;
@@ -414,7 +414,7 @@ void permute_data(double* vec, int n, int* p) {
 void permute_ml(Memb_list* ml, int type, NrnThread& nt) {
     int sz = corenrn.get_prop_param_size()[type];
     int psz = corenrn.get_prop_dparam_size()[type];
-    int layout = corenrn.get_mech_data_layout()[type];
+    int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[type]);
     permute(ml->data, ml->nodecount, sz, layout, ml->_permute);
     permute(ml->pdata, ml->nodecount, psz, layout, ml->_permute);
 

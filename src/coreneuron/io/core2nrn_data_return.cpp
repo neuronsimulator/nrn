@@ -151,7 +151,7 @@ static void core2nrn_corepointer(int tid, NrnThreadMembList* tml) {
     Memb_list* ml = tml->ml;
     double* d = nullptr;
     Datum* pd = nullptr;
-    int layout = corenrn.get_mech_data_layout()[type];
+    int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[type]);
     int dsz = corenrn.get_prop_param_size()[type];
     int pdsz = corenrn.get_prop_dparam_size()[type];
     int aln_cntml = nrn_soa_padded_size(ml->nodecount);
@@ -238,7 +238,7 @@ static void c2n_nmodlrandom(int tid, NrnThreadMembList* tml) {
     }
     NrnThread& nt = nrn_threads[tid];
     Memb_list* ml = tml->ml;
-    int layout = corenrn.get_mech_data_layout()[type];
+    int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[type]);
     int pdsz = corenrn.get_prop_dparam_size()[type];
     int aln_cntml = nrn_soa_padded_size(ml->nodecount);
     int n = ml->nodecount;
@@ -346,7 +346,7 @@ void core2nrn_data_return() {
             // a double* for each param_size mech instance.
             int* permute = ml->_permute;
             double* cndat = ml->data;
-            int layout = corenrn.get_mech_data_layout()[mtype];
+            int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[mtype]);
             int sz = corenrn.get_prop_param_size()[mtype];
             const std::vector<int>& array_dims = corenrn.get_array_dims()[mtype];
             if (layout == Layout::SoA) {
@@ -387,7 +387,7 @@ static void core2nrn_watch() {
                 int* permute = ml._permute;
                 int* pdata = (int*) ml.pdata;
                 int dparam_size = corenrn.get_prop_dparam_size()[type];
-                int layout = corenrn.get_mech_data_layout()[type];
+                int layout = assert_layout_is_soa(corenrn.get_mech_data_layout()[type]);
                 int first, last;
                 watch_datum_indices(type, first, last);
                 int watch_begin = first;
