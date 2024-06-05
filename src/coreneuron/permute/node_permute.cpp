@@ -121,6 +121,16 @@ static int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
 
 template <typename T>
 void permute(T* data, int cnt, int sz, int layout, int* p) {
+#if CORENRN_BUILD
+    if (layout != Layout::SoA) {  // for SoA, n might be larger due to cnt padding
+        throw std::runtime_error("find it djiwo");
+    }
+#else
+    if (layout != 0) {  // for SoA, n might be larger due to cnt padding
+        throw std::runtime_error("find it dhwei");
+    }
+#endif
+
     // data(p[icnt], isz) <- data(icnt, isz)
     // this does not change data, merely permutes it.
     // assert len(p) == cnt
@@ -384,16 +394,16 @@ void update_parent_index(int* vec, int vec_size, const std::vector<int>& permute
 
 #endif  // not CORENRN_BUILD
         //
-template<class T>
-void permute_1d(T *const data, int n, int* p) {
-  if(p == nullptr || data == nullptr || n <= 0) {
-    return;
-  }
+template <class T>
+void permute_1d(T* const data, int n, int* p) {
+    if (p == nullptr || data == nullptr || n <= 0) {
+        return;
+    }
 
-  auto tmp = std::vector<T>(data, data+n);
-  for(int i = 0; i < n; ++i) {
-    data[p[i]] = tmp[i];
-  }
+    auto tmp = std::vector<T>(data, data + n);
+    for (int i = 0; i < n; ++i) {
+        data[p[i]] = tmp[i];
+    }
 }
 
 
