@@ -1,3 +1,5 @@
+#include <Eigen/Eigen>
+
 #include <../../nrnconf.h>
 #include <errno.h>
 #include "nrn_ansi.h"
@@ -14,7 +16,6 @@
 
 #include <utility>
 
-#include <Eigen/Eigen>
 
 extern void setup_topology(), v_setup_vectors();
 extern void recalc_diam();

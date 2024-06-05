@@ -27,14 +27,9 @@ actual_v, etc.
 */
 
 #include "membfunc.h"
+#include <Eigen/Sparse>
 
 #include <cstddef>
-
-namespace Eigen {
-template <typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols>
-class Matrix;
-using MatrixXd = Matrix<double, -1, -1, 0, -1, -1>;
-}  // namespace Eigen
 
 typedef struct NrnThreadMembList { /* patterned after CvMembList in cvodeobj.h */
     struct NrnThreadMembList* next;
@@ -97,7 +92,7 @@ struct NrnThread {
     Node** _v_parent;
     double* _sparse_rhs;           /* rhs matrix for sparse13 solver. updates to and from this vector
                                     need to be transfered to actual_rhs */
-    Eigen::MatrixXd* _sparseMat{}; /* handle to general sparse matrix */
+    Eigen::SparseMatrix<double, Eigen::RowMajor>* _sparseMat{}; /* handle to general sparse matrix */
     Memb_list* _ecell_memb_list; /* normally nullptr */
     Node** _ecell_children;      /* nodes with no extcell but parent has it */
     void* _vcv;                  /* replaces old cvode_instance and nrn_cvode_ */

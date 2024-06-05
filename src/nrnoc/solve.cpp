@@ -58,6 +58,7 @@ node.v + extnode.v[0]
 #include "ocnotify.h"
 #include "section.h"
 #include <Eigen/Eigen>
+#include <Eigen/LU>
 #include "treeset.h"
 
 #include <stdio.h>
@@ -364,11 +365,10 @@ void nrn_solve(NrnThread* _nt) {
     }
 #else
     if (use_sparse13) {
-        int e;
         nrn_thread_error("solve use_sparse13");
         update_sp13_mat_based_on_actual_d(_nt);
         update_sp13_rhs_based_on_actual_rhs(_nt);
-        Eigen::FullPivLU<Eigen::MatrixXd> lu{*_nt->_sparseMat};
+        Eigen::SparseLU<Eigen::SparseMatrix<double, Eigen::RowMajor>> lu(*_nt->_sparseMat);
         Eigen::Map<Eigen::VectorXd> rhs(_nt->_sparse_rhs + 1, _nt->_sparseMat->cols());
         rhs = lu.solve(rhs);
         update_actual_d_based_on_sp13_mat(_nt);
