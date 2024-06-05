@@ -93,7 +93,6 @@ class CoreNeuron {
     std::vector<std::vector<int>> nrn_array_dims;
     std::vector<int> nrn_prop_param_size;
     std::vector<int> nrn_prop_dparam_size;
-    std::vector<int> nrn_mech_data_layout; /* 1 AoS (default), 0 SoA */
     /* array is parallel to memb_func. All are 0 except 1 for ARTIFICIAL_CELL */
     std::vector<short> nrn_artcell_qindex;
     std::vector<bool> nrn_is_artificial;
