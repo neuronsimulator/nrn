@@ -1999,9 +1999,9 @@ static void nrn_matrix_node_alloc(void) {
             }
         }
         for (in = 0; in < nt->end; ++in) {
-            const Node *nd = nt->_v_node[in];
+            const Node* nd = nt->_v_node[in];
             const Extnode* nde = nd->extnode;
-            const Node *pnd = nt->_v_parent[in];
+            const Node* pnd = nt->_v_parent[in];
             int i = nd->eqn_index_;
             nt->_sparseMat->coeffRef(i - 1, i - 1) = 0.;
             if (nde) {
