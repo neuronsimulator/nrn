@@ -329,20 +329,20 @@ vm += dvi-dvx
 */
 
 /*
- * Update actual_rhs based on _sp13_rhs used for sparse13 solver
+ * Update actual_rhs based on _sparse_rhs used for sparse13 solver
  */
 void update_actual_rhs_based_on_sp13_rhs(NrnThread* nt) {
     for (int i = 0; i < nt->end; i++) {
-        nt->actual_rhs(i) = nt->_sp13_rhs[nt->_v_node[i]->eqn_index_];
+        nt->actual_rhs(i) = nt->_sparse_rhs[nt->_v_node[i]->eqn_index_];
     }
 }
 
 /*
- * Update _sp13_rhs used for sparse13 solver based on changes on actual_rhs
+ * Update _sparse_rhs used for sparse13 solver based on changes on actual_rhs
  */
 void update_sp13_rhs_based_on_actual_rhs(NrnThread* nt) {
     for (int i = 0; i < nt->end; i++) {
-        nt->_sp13_rhs[nt->_v_node[i]->eqn_index_] = nt->actual_rhs(i);
+        nt->_sparse_rhs[nt->_v_node[i]->eqn_index_] = nt->actual_rhs(i);
     }
 }
 
@@ -391,9 +391,9 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     auto* const vec_rhs = nt.node_rhs_storage();
     if (use_sparse13) {
         nrn_thread_error("nrn_rhs use_sparse13");
-        int neqn = _nt->_sp13mat->cols();
+        int neqn = _nt->_sparseMat->cols();
         for (int i = 1; i <= neqn; ++i) {
-            _nt->_sp13_rhs[i] = 0.;
+            _nt->_sparse_rhs[i] = 0.;
         }
         for (int i = i1; i < i3; ++i) {
             NODERHS(_nt->_v_node[i]) = 0.;
@@ -496,7 +496,7 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     }
 
     if (use_sparse13) {
-        _nt->_sp13mat->setZero();
+        _nt->_sparseMat->setZero();
     }
 
     // Make sure the SoA node diagonals are also zeroed (is this needed?)
@@ -1882,12 +1882,12 @@ void node_data(void) {
 void nrn_matrix_node_free() {
     NrnThread* nt;
     FOR_THREADS(nt) {
-        if (nt->_sp13_rhs) {
-            free(std::exchange(nt->_sp13_rhs, nullptr));
+        if (nt->_sparse_rhs) {
+            free(std::exchange(nt->_sparse_rhs, nullptr));
         }
-        if (nt->_sp13mat) {
-            delete nt->_sp13mat;
-            nt->_sp13mat = nullptr;
+        if (nt->_sparseMat) {
+            delete nt->_sparseMat;
+            nt->_sparseMat = nullptr;
         }
     }
     diam_changed = 1;
@@ -1957,16 +1957,16 @@ static void nrn_matrix_node_alloc(void) {
 
     nrn_method_consistent();
     nt = nrn_threads;
-    /*printf("use_sparse13=%d sp13mat=%lx rhs=%lx\n", use_sparse13, (long)nt->_sp13mat,
+    /*printf("use_sparse13=%d sp13mat=%lx rhs=%lx\n", use_sparse13, (long)nt->_sparseMat,
      * (long)nt->_actual_rhs);*/
     if (use_sparse13) {
-        if (nt->_sp13mat) {
+        if (nt->_sparseMat) {
             return;
         } else {
             nrn_matrix_node_free();
         }
     } else {
-        if (nt->_sp13mat) {
+        if (nt->_sparseMat) {
             v_structure_change = 1;
             v_setup_vectors();
             return;
@@ -1985,8 +1985,8 @@ static void nrn_matrix_node_alloc(void) {
         }
         /*printf(" %d extracellular nodes\n", extn);*/
         neqn += extn;
-        nt->_sp13_rhs = (double*) ecalloc(neqn + 1, sizeof(double));
-        nt->_sp13mat = new Eigen::MatrixXd(neqn, neqn);
+        nt->_sparse_rhs = (double*) ecalloc(neqn + 1, sizeof(double));
+        nt->_sparseMat = new Eigen::MatrixXd(neqn, neqn);
         for (in = 0, i = 1; in < nt->end; ++in, ++i) {
             nt->_v_node[in]->eqn_index_ = i;
             if (nt->_v_node[in]->extnode) {
@@ -2000,27 +2000,27 @@ static void nrn_matrix_node_alloc(void) {
             nde = nd->extnode;
             pnd = nt->_v_parent[in];
             i = nd->eqn_index_;
-            nt->_sp13_rhs[i] = nt->actual_rhs(in);
-            nd->_d_matelm = &nt->_sp13mat->coeffRef(i - 1, i - 1);
+            nt->_sparse_rhs[i] = nt->actual_rhs(in);
+            nd->_d_matelm = &nt->_sparseMat->coeffRef(i - 1, i - 1);
             if (nde) {
                 for (int ie = 0; ie < nlayer; ++ie) {
                     int k = i + ie + 1;
-                    nde->_d[ie] = &nt->_sp13mat->coeffRef(k - 1, k - 1);
-                    nde->_rhs[ie] = nt->_sp13_rhs + k;
-                    nde->_x21[ie] = &nt->_sp13mat->coeffRef(k - 1, k - 2);
-                    nde->_x12[ie] = &nt->_sp13mat->coeffRef(k - 2, k - 1);
+                    nde->_d[ie] = &nt->_sparseMat->coeffRef(k - 1, k - 1);
+                    nde->_rhs[ie] = nt->_sparse_rhs + k;
+                    nde->_x21[ie] = &nt->_sparseMat->coeffRef(k - 1, k - 2);
+                    nde->_x12[ie] = &nt->_sparseMat->coeffRef(k - 2, k - 1);
                 }
             }
             if (pnd) {
                 j = pnd->eqn_index_;
-                nd->_a_matelm = &nt->_sp13mat->coeffRef(j - 1, i - 1);
-                nd->_b_matelm = &nt->_sp13mat->coeffRef(i - 1, j - 1);
+                nd->_a_matelm = &nt->_sparseMat->coeffRef(j - 1, i - 1);
+                nd->_b_matelm = &nt->_sparseMat->coeffRef(i - 1, j - 1);
                 if (nde && pnd->extnode)
                     for (int ie = 0; ie < nlayer; ++ie) {
                         int kp = j + ie + 1;
                         int k = i + ie + 1;
-                        nde->_a_matelm[ie] = &nt->_sp13mat->coeffRef(kp - 1, k - 1);
-                        nde->_b_matelm[ie] = &nt->_sp13mat->coeffRef(k - 1, kp - 1);
+                        nde->_a_matelm[ie] = &nt->_sparseMat->coeffRef(kp - 1, k - 1);
+                        nde->_b_matelm[ie] = &nt->_sparseMat->coeffRef(k - 1, kp - 1);
                     }
             } else { /* not needed if index starts at 1 */
                 nd->_a_matelm = nullptr;

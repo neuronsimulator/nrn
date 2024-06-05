@@ -672,10 +672,10 @@ void nrn_print_matrix(NrnThread* _nt) {
     Node* nd;
     if (use_sparse13) {
         if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
-            std::cout << &_nt->_sp13mat << std::endl;
+            std::cout << &_nt->_sparseMat << std::endl;
         } else {
-            std::cout << &_nt->_sp13mat << std::endl;
-            int n = _nt->_sp13mat->cols();
+            std::cout << &_nt->_sparseMat << std::endl;
+            int n = _nt->_sparseMat->cols();
             for (int i = 1; i <= n; ++i) {
                 Printf("%d %g\n", i, _nt->actual_rhs(i));
             }

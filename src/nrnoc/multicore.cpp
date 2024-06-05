@@ -339,14 +339,14 @@ void nrn_threads_create(int n, bool parallel) {
                 for (j = 0; j < BEFORE_AFTER_SIZE; ++j) {
                     nt->tbl[j] = (NrnThreadBAList*) 0;
                 }
-                nt->_sp13_rhs = nullptr;
+                nt->_sparse_rhs = nullptr;
                 nt->_v_parent_index = 0;
                 nt->_v_node = 0;
                 nt->_v_parent = 0;
                 nt->_ecell_memb_list = 0;
                 nt->_ecell_child_cnt = 0;
                 nt->_ecell_children = NULL;
-                nt->_sp13mat = nullptr;
+                nt->_sparseMat = nullptr;
                 nt->_ctime = 0.0;
                 nt->_vcv = 0;
                 nt->_node_data_offset = 0;
@@ -440,9 +440,9 @@ void nrn_threads_free() {
             free(nt->_ecell_children);
             nt->_ecell_children = NULL;
         }
-        if (nt->_sp13mat) {
-            delete nt->_sp13mat;
-            nt->_sp13mat = nullptr;
+        if (nt->_sparseMat) {
+            delete nt->_sparseMat;
+            nt->_sparseMat = nullptr;
         }
         nt->end = 0;
         nt->ncell = 0;
