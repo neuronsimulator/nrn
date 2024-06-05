@@ -50,7 +50,7 @@ class CheckPoints {
     template <typename T>
     void data_write(FileHandler& F, T* data, int cnt, int sz, int layout, int* permute) const;
     template <typename T>
-    T* soa2aos(T* data, int cnt, int sz, int layout, int* permute) const;
+    T* soa2aos(T* data, int cnt, int sz, int* permute) const;
     void write_tqueue(TQItem* q, NrnThread& nt, FileHandler& fh) const;
     void write_tqueue(NrnThread& nt, FileHandler& fh) const;
     void restore_tqitem(int type, std::shared_ptr<Phase2::EventTypeBase> event, NrnThread& nt);
