@@ -248,7 +248,7 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
         sz = nrn_prop_dparam_size_[type];
         if (sz) {
             // need to update some values according to Datum semantics.
-            int* d = soa2aos(ml->pdata, cnt, sz, layout, ml->_permute);
+            int* d = soa2aos(ml->pdata, cnt, sz, ml->_permute);
             std::vector<int> pointer2type;  // voltage or mechanism type (starts empty)
             if (!nrn_is_artificial_[type]) {
                 for (int i_instance = 0; i_instance < cnt; ++i_instance) {
@@ -634,29 +634,19 @@ bool CheckPoints::initialize() {
 }
 
 template <typename T>
-T* CheckPoints::soa2aos(T* data, int cnt, int sz, int layout, int* permute) const {
-    if (layout != Layout::SoA) {
-        throw std::runtime_error("find me. anjp");
-    }
-
+T* CheckPoints::soa2aos(T* data, int cnt, int sz, int* permute) const {
     // inverse of F -> data. Just a copy if layout=1. If SoA,
     // original file order depends on padding and permutation.
     // Good for a, b, area, v, diam, Memb_list.data, or anywhere values do not change.
     T* d = new T[cnt * sz];
-    if (layout == Layout::AoS) {
-        for (int i = 0; i < cnt * sz; ++i) {
-            d[i] = data[i];
+    int align_cnt = nrn_soa_padded_size(cnt);
+    for (int i = 0; i < cnt; ++i) {
+        int ip = i;
+        if (permute) {
+            ip = permute[i];
         }
-    } else if (layout == Layout::SoA) {
-        int align_cnt = nrn_soa_padded_size(cnt);
-        for (int i = 0; i < cnt; ++i) {
-            int ip = i;
-            if (permute) {
-                ip = permute[i];
-            }
-            for (int j = 0; j < sz; ++j) {
-                d[i * sz + j] = data[ip + j * align_cnt];
-            }
+        for (int j = 0; j < sz; ++j) {
+            d[i * sz + j] = data[ip + j * align_cnt];
         }
     }
     return d;
@@ -665,7 +655,7 @@ T* CheckPoints::soa2aos(T* data, int cnt, int sz, int layout, int* permute) cons
 template <typename T>
 void CheckPoints::data_write(FileHandler& F, T* data, int cnt, int sz, int layout, int* permute)
     const {
-    T* d = soa2aos(data, cnt, sz, layout, permute);
+    T* d = soa2aos(data, cnt, sz, permute);
     F.write_array<T>(d, cnt * sz);
     delete[] d;
 }
