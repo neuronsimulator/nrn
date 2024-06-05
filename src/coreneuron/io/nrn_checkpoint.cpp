@@ -635,6 +635,10 @@ bool CheckPoints::initialize() {
 
 template <typename T>
 T* CheckPoints::soa2aos(T* data, int cnt, int sz, int layout, int* permute) const {
+    if (layout != Layout::SoA) {
+        throw std::runtime_error("find me. anjp");
+    }
+
     // inverse of F -> data. Just a copy if layout=1. If SoA,
     // original file order depends on padding and permutation.
     // Good for a, b, area, v, diam, Memb_list.data, or anywhere values do not change.
