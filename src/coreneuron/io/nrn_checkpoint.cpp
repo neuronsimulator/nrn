@@ -100,22 +100,13 @@ static int nrn_original_aos_index(int etype, int ix, NrnThread& nt, int** ml_pin
     Memb_list* eml = nt._ml_list[etype];
     int ecnt = eml->nodecount;
     int esz = corenrn.get_prop_param_size()[etype];
-    int elayout = Layout::SoA;
     // current index into eml->data is a  function
-    // of elayout, eml._permute, ei_instance, ei, and
+    // of eml._permute, ei_instance, ei, and
     // eml padding.
     int p = ix - (eml->data - nt._data);
     assert(p >= 0 && p < eml->_nodecount_padded * esz);
     int ei_instance, ei;
     nrn_inverse_i_layout(p, ei_instance, ecnt, ei, esz);
-    if (elayout == Layout::SoA) {
-        if (eml->_permute) {
-            if (!ml_pinv[etype]) {
-                ml_pinv[etype] = inverse_permute(eml->_permute, eml->nodecount);
-            }
-            ei_instance = ml_pinv[etype][ei_instance];
-        }
-    }
     return ei_instance * esz + ei;
 }
 
