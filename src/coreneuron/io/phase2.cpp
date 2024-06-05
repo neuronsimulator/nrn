@@ -87,11 +87,7 @@ int (*nrn2core_get_dat2_vecplay_inst_)(int tid,
 
 namespace coreneuron {
 template <typename T>
-void mech_data_layout_transform(T* data, int cnt, const std::vector<int>& array_dims, int layout) {
-    if (layout == Layout::AoS) {
-        throw std::runtime_error("AoS memory layout not implemented.");
-    }
-
+void mech_data_layout_transform(T* data, int cnt, const std::vector<int>& array_dims) {
     int n_vars = array_dims.size();
     int row_width = std::accumulate(array_dims.begin(), array_dims.end(), 0);
     int padded_cnt = nrn_soa_padded_size(cnt);
@@ -116,9 +112,9 @@ void mech_data_layout_transform(T* data, int cnt, const std::vector<int>& array_
 }
 
 template <typename T>
-inline void mech_data_layout_transform(T* data, int cnt, int sz, int layout) {
+inline void mech_data_layout_transform(T* data, int cnt, int sz) {
     std::vector<int> array_dims(sz, 1);
-    mech_data_layout_transform(data, cnt, array_dims, layout);
+    mech_data_layout_transform(data, cnt, array_dims);
 }
 
 
@@ -1111,12 +1107,12 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
         ml->nodeindices = (int*) ecalloc_align(ml->nodecount, sizeof(int));
         std::copy(tmls[itml].nodeindices.begin(), tmls[itml].nodeindices.end(), ml->nodeindices);
 
-        mech_data_layout_transform<double>(ml->data, n, array_dims, layout);
+        mech_data_layout_transform<double>(ml->data, n, array_dims);
 
         if (szdp) {
             ml->pdata = (int*) ecalloc_align(nrn_soa_padded_size(n) * szdp, sizeof(int));
             std::copy(tmls[itml].pdata.begin(), tmls[itml].pdata.end(), ml->pdata);
-            mech_data_layout_transform<int>(ml->pdata, n, szdp, layout);
+            mech_data_layout_transform<int>(ml->pdata, n, szdp);
 
 #if CHKPNTDEBUG  // Not substantive. Only for debugging.
             Memb_list_chkpnt* mlc = ntc.mlmap[type];
