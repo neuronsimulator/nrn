@@ -418,7 +418,6 @@ void nrn2core_patstim_share_info() {
     NrnThread* nt = nrn_threads + 0;
     Memb_list* ml = nt->_ml_list[type];
     if (ml) {
-        int layout = Layout::SoA;
         int sz = corenrn.get_prop_param_size()[type];
         int psz = corenrn.get_prop_dparam_size()[type];
         int _cntml = ml->nodecount;
@@ -426,14 +425,6 @@ void nrn2core_patstim_share_info() {
         int _iml = 0;  // Assume singleton here and in (*nrn2core_patternstim_)(info) below.
         double* _p = ml->data;
         Datum* _ppvar = ml->pdata;
-        if (layout == Layout::AoS) {
-            _p += _iml * sz;
-            _ppvar += _iml * psz;
-        } else if (layout == Layout::SoA) {
-            ;
-        } else {
-            assert(0);
-        }
 
         void** info = pattern_stim_info_ref(_iml, _cntml, _p, _ppvar, nullptr, nt, ml, 0.0);
         (*nrn2core_patternstim_)(info);
