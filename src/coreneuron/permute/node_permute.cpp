@@ -121,6 +121,16 @@ static int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
 
 template <typename T>
 void permute(T* data, int cnt, int sz, int layout, int* p) {
+#if CORENRN_BUILD
+    if (layout != Layout::SoA) {  // for SoA, n might be larger due to cnt padding
+        throw std::runtime_error("find it djiwo");
+    }
+#else
+    if (layout != 0) {  // for SoA, n might be larger due to cnt padding
+        throw std::runtime_error("find it dhwei");
+    }
+#endif
+
     // data(p[icnt], isz) <- data(icnt, isz)
     // this does not change data, merely permutes it.
     // assert len(p) == cnt

@@ -32,6 +32,10 @@ size_t nrn_soa_byte_align(size_t size) {
 }
 
 int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
+    if (layout != Layout::SoA) {  // for SoA, n might be larger due to cnt padding
+        throw std::runtime_error("find it vueri");
+    }
+
     switch (layout) {
     case Layout::AoS:
         return icnt * sz + isz;
