@@ -1117,15 +1117,11 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
 #if CHKPNTDEBUG  // Not substantive. Only for debugging.
             Memb_list_chkpnt* mlc = ntc.mlmap[type];
             mlc->pdata_not_permuted = (int*) coreneuron::ecalloc_align(n * szdp, sizeof(int));
-            if (layout == Layout::SoA) {  // transpose and unpad
-                int align_cnt = nrn_soa_padded_size(n);
-                for (int i = 0; i < n; ++i) {
-                    for (int j = 0; j < szdp; ++j) {
-                        mlc->pdata_not_permuted[i * szdp + j] = ml->pdata[i + j * align_cnt];
-                    }
+            int align_cnt = nrn_soa_padded_size(n);
+            for (int i = 0; i < n; ++i) {
+                for (int j = 0; j < szdp; ++j) {
+                    mlc->pdata_not_permuted[i * szdp + j] = ml->pdata[i + j * align_cnt];
                 }
-            } else {
-                throw std::runtime_error("Critically buggy code!");
             }
 #endif
         } else {
