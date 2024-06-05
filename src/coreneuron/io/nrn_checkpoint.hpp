@@ -48,7 +48,7 @@ class CheckPoints {
     void write_phase2(NrnThread& nt) const;
 
     template <typename T>
-    void data_write(FileHandler& F, T* data, int cnt, int sz, int layout, int* permute) const;
+    void data_write(FileHandler& F, T* data, int cnt, int sz, int* permute) const;
     template <typename T>
     T* soa2aos(T* data, int cnt, int sz, int* permute) const;
     void write_tqueue(TQItem* q, NrnThread& nt, FileHandler& fh) const;
