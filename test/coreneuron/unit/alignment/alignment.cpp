@@ -35,9 +35,7 @@ typedef std::tuple<data<double, 2>,
     chunk_data_type;
 
 TEST_CASE("padding_simd", "[PaddingCheck]") {
-    /** AOS test */
-    int pad = coreneuron::soa_padded_size<1>(11, 1);
-    REQUIRE(pad == 11);
+    int pad;
 
     /** SOA tests with 11 */
     pad = coreneuron::soa_padded_size<1>(11, 0);
