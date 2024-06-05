@@ -499,6 +499,11 @@ void Phase2::transform_int_data(int elem0,
                                 int dparam_size,
                                 int layout,
                                 int n_node_) {
+
+    if(layout != Layout::SoA) {
+        throw std::runtime_error("find me. wpqqq");
+    }
+
     for (int iml = 0; iml < nodecount; ++iml) {
         int* pd = pdata + nrn_i_layout(iml, nodecount, i, dparam_size);
         int ix = *pd;  // relative to beginning of _actual_*
