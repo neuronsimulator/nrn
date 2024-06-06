@@ -2025,7 +2025,7 @@ static void nrn_matrix_node_alloc(void) {
                     }
             }
         }
-        // nt->_sparseMat->makeCompressed();
+        nt->_sparseMat->makeCompressed();
         for (in = 0; in < nt->end; ++in) {
             Node *nd, *pnd;
             Extnode* nde;
