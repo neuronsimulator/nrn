@@ -368,6 +368,7 @@ void nrn_solve(NrnThread* _nt) {
         nrn_thread_error("solve use_sparse13");
         update_sp13_mat_based_on_actual_d(_nt);
         update_sp13_rhs_based_on_actual_rhs(_nt);
+        _nt->_sparseMat->makeCompressed();
         Eigen::SparseLU<Eigen::SparseMatrix<double, Eigen::RowMajor>> lu(*_nt->_sparseMat);
         Eigen::Map<Eigen::VectorXd> rhs(_nt->_sparse_rhs + 1, _nt->_sparseMat->cols());
         rhs = lu.solve(rhs);
