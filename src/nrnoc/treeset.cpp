@@ -1998,69 +1998,84 @@ static void nrn_matrix_node_alloc(void) {
                 i += nlayer;
             }
         }
-        for (in = 0; in < nt->end; ++in) {
-            const Node* nd = nt->_v_node[in];
-            const Extnode* nde = nd->extnode;
-            const Node* pnd = nt->_v_parent[in];
-            int i = nd->eqn_index_;
-            nt->_sparseMat->coeffRef(i - 1, i - 1) = 0.;
-            if (nde) {
-                for (int ie = 0; ie < nlayer; ++ie) {
-                    int k = i + ie + 1;
-                    nt->_sparseMat->coeffRef(k - 1, k - 1) = 0.;
-                    nt->_sparseMat->coeffRef(k - 1, k - 2) = 0;
-                    nt->_sparseMat->coeffRef(k - 2, k - 1) = 0;
+        {
+            // sparse13 was a linked list of single values and so we were able to have
+            // stable pointers on internal values.
+            // Eigen::SparseMatrix is more like a vector, that is reallocated when needed
+            // and so pointers will be invalidate.
+            // More over, when solving with SparseLU, the matrix is compressed and the
+            // internal state is fully changed.
+            // setFromTriplets is an efficient way of having an already compressed matrix.
+            // We can safely get stable pointers as long as we don't insert new value with
+            // coeff() and coeffRef().
+            std::vector<Eigen::Triplet<double>> triplets{};
+            for (in = 0; in < nt->end; ++in) {
+                const Node* nd = nt->_v_node[in];
+                const Extnode* nde = nd->extnode;
+                const Node* pnd = nt->_v_parent[in];
+                int i = nd->eqn_index_;
+                triplets.emplace_back(i - 1, i - 1, 0.);
+                if (nde) {
+                    for (int ie = 0; ie < nlayer; ++ie) {
+                        int k = i + ie + 1;
+                        triplets.emplace_back(k - 1, k - 1, 0.);
+                        triplets.emplace_back(k - 1, k - 2, 0.);
+                        triplets.emplace_back(k - 2, k - 1, 0.);
+                    }
+                }
+                if (pnd) {
+                    int j = pnd->eqn_index_;
+                    triplets.emplace_back(j - 1, i - 1, 0.);
+                    triplets.emplace_back(i - 1, j - 1, 0.);
+                    if (nde && pnd->extnode)
+                        for (int ie = 0; ie < nlayer; ++ie) {
+                            triplets.emplace_back(j + ie, i + ie, 0.);
+                            triplets.emplace_back(i + ie, j + ie, 0.);
+                        }
                 }
             }
-            if (pnd) {
-                int j = pnd->eqn_index_;
-                nt->_sparseMat->coeffRef(j - 1, i - 1);
-                nt->_sparseMat->coeffRef(i - 1, j - 1);
-                if (nde && pnd->extnode)
-                    for (int ie = 0; ie < nlayer; ++ie) {
-                        int kp = j + ie + 1;
-                        int k = i + ie + 1;
-                        nt->_sparseMat->coeffRef(kp - 1, k - 1) = 0;
-                        nt->_sparseMat->coeffRef(k - 1, kp - 1) = 0;
-                    }
-            }
+            nt->_sparseMat->setFromTriplets(triplets.begin(), triplets.end());
         }
-        nt->_sparseMat->makeCompressed();
-        for (in = 0; in < nt->end; ++in) {
-            Node *nd, *pnd;
-            Extnode* nde;
-            nd = nt->_v_node[in];
-            nde = nd->extnode;
-            pnd = nt->_v_parent[in];
-            i = nd->eqn_index_;
-            nt->_sparse_rhs[i] = nt->actual_rhs(in);
-            nd->_d_matelm = &nt->_sparseMat->coeffRef(i - 1, i - 1);
-            if (nde) {
-                for (int ie = 0; ie < nlayer; ++ie) {
-                    int k = i + ie + 1;
-                    nde->_d[ie] = &nt->_sparseMat->coeffRef(k - 1, k - 1);
-                    nde->_rhs[ie] = nt->_sparse_rhs + k;
-                    nde->_x21[ie] = &nt->_sparseMat->coeffRef(k - 1, k - 2);
-                    nde->_x12[ie] = &nt->_sparseMat->coeffRef(k - 2, k - 1);
-                }
-            }
-            if (pnd) {
-                j = pnd->eqn_index_;
-                nd->_a_matelm = &nt->_sparseMat->coeffRef(j - 1, i - 1);
-                nd->_b_matelm = &nt->_sparseMat->coeffRef(i - 1, j - 1);
-                if (nde && pnd->extnode)
-                    for (int ie = 0; ie < nlayer; ++ie) {
-                        int kp = j + ie + 1;
-                        int k = i + ie + 1;
-                        nde->_a_matelm[ie] = &nt->_sparseMat->coeffRef(kp - 1, k - 1);
-                        nde->_b_matelm[ie] = &nt->_sparseMat->coeffRef(k - 1, kp - 1);
-                    }
-            } else { /* not needed if index starts at 1 */
-                nd->_a_matelm = nullptr;
-                nd->_b_matelm = nullptr;
-            }
-        }
+        // Add some new nodes
         nrndae_alloc();
+        nt->_sparseMat->makeCompressed();
+        {
+            // Now that we have our stable matrix, let's extract pointers.
+            for (in = 0; in < nt->end; ++in) {
+                Node *nd, *pnd;
+                Extnode* nde;
+                nd = nt->_v_node[in];
+                nde = nd->extnode;
+                pnd = nt->_v_parent[in];
+                i = nd->eqn_index_;
+                nt->_sparse_rhs[i] = nt->actual_rhs(in);
+                nd->_d_matelm = &nt->_sparseMat->coeffRef(i - 1, i - 1);
+                if (nde) {
+                    for (int ie = 0; ie < nlayer; ++ie) {
+                        int k = i + ie + 1;
+                        nde->_d[ie] = &nt->_sparseMat->coeffRef(k - 1, k - 1);
+                        nde->_rhs[ie] = nt->_sparse_rhs + k;
+                        nde->_x21[ie] = &nt->_sparseMat->coeffRef(k - 1, k - 2);
+                        nde->_x12[ie] = &nt->_sparseMat->coeffRef(k - 2, k - 1);
+                    }
+                }
+                if (pnd) {
+                    j = pnd->eqn_index_;
+                    nd->_a_matelm = &nt->_sparseMat->coeffRef(j - 1, i - 1);
+                    nd->_b_matelm = &nt->_sparseMat->coeffRef(i - 1, j - 1);
+                    if (nde && pnd->extnode)
+                        for (int ie = 0; ie < nlayer; ++ie) {
+                            int kp = j + ie + 1;
+                            int k = i + ie + 1;
+                            nde->_a_matelm[ie] = &nt->_sparseMat->coeffRef(kp - 1, k - 1);
+                            nde->_b_matelm[ie] = &nt->_sparseMat->coeffRef(k - 1, kp - 1);
+                        }
+                } else { /* not needed if index starts at 1 */
+                    nd->_a_matelm = nullptr;
+                    nd->_b_matelm = nullptr;
+                }
+            }
+        }
     } else {
         FOR_THREADS(nt) {
             assert(nrndae_extra_eqn_count() == 0);

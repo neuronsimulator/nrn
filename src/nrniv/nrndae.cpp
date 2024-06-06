@@ -8,7 +8,7 @@
 
 extern int secondorder;
 
-static NrnDAEPtrList nrndae_list;
+static std::list<NrnDAE*> nrndae_list;
 
 int nrndae_list_is_empty() {
     return nrndae_list.empty() ? 1 : 0;
