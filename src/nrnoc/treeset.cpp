@@ -2029,8 +2029,10 @@ static void nrn_matrix_node_alloc(void) {
                     triplets.emplace_back(i - 1, j - 1, 0.);
                     if (nde && pnd->extnode)
                         for (int ie = 0; ie < nlayer; ++ie) {
-                            triplets.emplace_back(j + ie, i + ie, 0.);
-                            triplets.emplace_back(i + ie, j + ie, 0.);
+                            int kp = j + ie + 1;
+                            int k = i + ie + 1;
+                            triplets.emplace_back(kp - 1, k - 1, 0.);
+                            triplets.emplace_back(k - 1, kp - 1, 0.);
                         }
                 }
             }
