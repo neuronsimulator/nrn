@@ -21,7 +21,8 @@ void MatrixMap::add(double fac) {
     for (int i = 0; i < plen_; ++i) {
         auto [j, k] = ptree_[i];
         if (j != -1) {
-            // std::cerr << "modifying '" << nrn_threads->_sparseMat->coeff(j -1, k - 1) << "' (" << j - 1 << ", " << k - 1 << ") with " << fac * (*pm_[i]) << std::endl;
+            // std::cerr << "modifying '" << nrn_threads->_sparseMat->coeff(j -1, k - 1) << "' (" <<
+            // j - 1 << ", " << k - 1 << ") with " << fac * (*pm_[i]) << std::endl;
             nrn_threads->_sparseMat->coeffRef(j - 1, k - 1) += fac * (*pm_[i]);
         }
     }
@@ -61,7 +62,8 @@ void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
         if (it == 0 || jt == 0) {
             ptree_.emplace_back(-1, -1);
         } else {
-            std::cerr << "someone touch me in the heart!: (" << it << ", " << jt << ")" << std::endl;
+            std::cerr << "someone touch me in the heart!: (" << it << ", " << jt << ")"
+                      << std::endl;
             ptree_.emplace_back(it, jt);
             _nt->_sparseMat->coeffRef(it - 1, jt - 1) = 0.;
         }
