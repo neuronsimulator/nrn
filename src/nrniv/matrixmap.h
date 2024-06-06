@@ -117,5 +117,5 @@ class MatrixMap {
     // the map
     int plen_ = 0;
     std::vector<double*> pm_{};
-    std::vector<double*> ptree_{};
+    std::vector<std::pair<int, int>> ptree_{};
 };

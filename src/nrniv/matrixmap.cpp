@@ -19,20 +19,23 @@ void MatrixMap::mmfree() {
 
 void MatrixMap::add(double fac) {
     for (int i = 0; i < plen_; ++i) {
-        *ptree_[i] += fac * (*pm_[i]);
+        auto [j, k] = ptree_[i];
+        if (j != -1) {
+            // std::cerr << "modifying '" << nrn_threads->_sparseMat->coeff(j -1, k - 1) << "' (" << j - 1 << ", " << k - 1 << ") with " << fac * (*pm_[i]) << std::endl;
+            nrn_threads->_sparseMat->coeffRef(j - 1, k - 1) += fac * (*pm_[i]);
+        }
     }
 }
 
 void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
-    static double place_holder = 0.;
     NrnThread* _nt = nrn_threads;
     mmfree();
 
-    plen_ = 0;
     std::vector<int> nonzero_i, nonzero_j;
     m_.nonzeros(nonzero_i, nonzero_j);
-    pm_.resize(nonzero_i.size());
-    ptree_.resize(nonzero_i.size());
+    pm_.reserve(nonzero_i.size());
+    ptree_.reserve(nonzero_i.size());
+    plen_ = nonzero_i.size();
     for (int k = 0; k < nonzero_i.size(); k++) {
         const int i = nonzero_i[k];
         const int j = nonzero_j[k];
@@ -46,7 +49,7 @@ void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
             it = start + i - nnode;
         }
         int jt;
-        pm_[plen_] = m_.mep(i, j);
+        pm_.push_back(m_.mep(i, j));
         if (j < nnode) {
             jt = nodes[j]->eqn_index_ + layer[j];
             if (layer[j] > 0 && !nodes[j]->extnode) {
@@ -56,10 +59,11 @@ void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
             jt = start + j - nnode;
         }
         if (it == 0 || jt == 0) {
-            ptree_[plen_] = &place_holder;
+            ptree_.emplace_back(-1, -1);
         } else {
-            ptree_[plen_] = &_nt->_sparseMat->coeffRef(it - 1, jt - 1);
+            std::cerr << "someone touch me in the heart!: (" << it << ", " << jt << ")" << std::endl;
+            ptree_.emplace_back(it, jt);
+            _nt->_sparseMat->coeffRef(it - 1, jt - 1) = 0.;
         }
-        ++plen_;
     }
 }
