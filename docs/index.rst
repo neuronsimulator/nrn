@@ -52,7 +52,7 @@ and more (use the links on the side or search).
    :caption: NMODLanguage:
    :hidden:
 
-   nmodl/index
+   nmodl/tutorials
 
 .. toctree::
    :maxdepth: 2
