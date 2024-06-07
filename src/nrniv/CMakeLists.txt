@@ -457,6 +457,7 @@ if(NRN_ENABLE_MPI)
       list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
 
       add_library(${libname}_lib SHARED ${NRN_NRNMPI_SRC_FILES})
+      target_link_libraries(${libname}_lib fmt::fmt)
       target_include_directories(${libname}_lib BEFORE PUBLIC ${include})
       # Note that we do not link here to libmpi. That is dlopen first.
       if(MINGW) # type msmpi only
