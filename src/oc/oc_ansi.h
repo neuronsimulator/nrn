@@ -55,9 +55,8 @@ void ivoc_help(const char*);
 Symbol* hoc_lookup(const char*);
 
 [[noreturn]] void hoc_execerror(const char*, const char*);
-template <typename ...T>
-[[noreturn]] void hoc_execerror_fmt(const std::string& fmt, T&&... args)
-{
+template <typename... T>
+[[noreturn]] void hoc_execerror_fmt(const std::string& fmt, T&&... args) {
     auto s = fmt::format(fmt, std::forward<T>(args)...);
     hoc_execerror(s.c_str(), nullptr);
 }

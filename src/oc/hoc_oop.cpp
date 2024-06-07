@@ -605,7 +605,8 @@ void hoc_newobj(void) { /* template at pc+1 */
 #if USE_PYTHON
     } else { /* Assignment to OBJECTTMP not allowed */
         Object* o = hoc_obj_look_inside_stack(narg);
-        hoc_execerror("Assignment to $o only allowed if caller arg was declared as objref", nullptr);
+        hoc_execerror("Assignment to $o only allowed if caller arg was declared as objref",
+                      nullptr);
     }
 #endif
 }
@@ -933,7 +934,7 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
             if (narg) {  // need to pop the arc length to push ndim
                 if (narg > 1) {
                     hoc_execerror_fmt("'{}' range variable can have only one arc length parameter",
-                                    sym->name);
+                                      sym->name);
                 }
                 x = xpop();
             }
@@ -958,7 +959,7 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
         if (narg) {
             if (narg > 1) {
                 hoc_execerror_fmt("'{}' range object can have only one arg length parameter",
-                                sym->name);
+                                  sym->name);
             }
             x = xpop();
         }
@@ -1054,8 +1055,8 @@ void hoc_object_component() {
                 sym = hoc_table_lookup(sym0->name, obp->ctemplate->symtable);
                 if (!sym || sym->cpublic != PUBLIC_TYPE) {
                     auto err = fmt::format("'{}' not a public member of '{}'",
-                            sym0->name,
-                            obp->ctemplate->sym->name);
+                                           sym0->name,
+                                           obp->ctemplate->sym->name);
                     std::cerr << err << std::endl;
                     hoc_execerror(err.c_str(), nullptr);
                 }
@@ -1104,9 +1105,9 @@ void hoc_object_component() {
                         hoc_push_ndim(2);
                     } else {
                         hoc_execerror_fmt("'{}.{}' is array not function. Use '{}[...]' syntax",
-                                        hoc_object_name(obp),
-                                        sym->name,
-                                        sym->name);
+                                          hoc_object_name(obp),
+                                          sym->name,
+                                          sym->name);
                     }
                 }
             }
@@ -1132,9 +1133,9 @@ void hoc_object_component() {
                         hoc_push_ndim(1);
                     } else {
                         hoc_execerror_fmt("'{}.{}' is array not function. Use '{}[...]' syntax",
-                                        hoc_object_name(obp),
-                                        sym->name,
-                                        sym->name);
+                                          hoc_object_name(obp),
+                                          sym->name,
+                                          sym->name);
                     }
                 }
                 nindex = araypt(sym, OBJECTVAR);
@@ -1145,7 +1146,8 @@ void hoc_object_component() {
         break;
     case STRING:
         if (nindex) {
-            hoc_execerror_fmt("'{}' string can't have function arguments or array indices", sym->name);
+            hoc_execerror_fmt("'{}' string can't have function arguments or array indices",
+                              sym->name);
         }
         hoc_pop_defer();
         hoc_pushstr(OPSTR(sym));
@@ -1308,9 +1310,9 @@ void hoc_object_component() {
                         hoc_push_ndim(1);
                     } else {
                         hoc_execerror_fmt("'{}.{}' is array not function. Use '{}[...]' syntax",
-                                        hoc_object_name(obp),
-                                        sym->name,
-                                        sym->name);
+                                          hoc_object_name(obp),
+                                          sym->name,
+                                          sym->name);
                     }
                 }
             }
