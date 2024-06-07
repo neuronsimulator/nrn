@@ -9,4 +9,3 @@ template <typename... T>
     auto s = fmt::format(fmt, std::forward<T>(args)...);
     hoc_execerror(s.c_str(), nullptr);
 }
-
