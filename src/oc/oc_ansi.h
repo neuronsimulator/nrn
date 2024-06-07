@@ -1,4 +1,6 @@
 #pragma once
+#include <fmt/format.h>
+
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 
@@ -53,6 +55,13 @@ void ivoc_help(const char*);
 Symbol* hoc_lookup(const char*);
 
 [[noreturn]] void hoc_execerror(const char*, const char*);
+template <typename ...T>
+[[noreturn]] void hoc_execerror_fmt(const std::string& fmt, T&&... args)
+{
+    auto s = fmt::format(fmt, std::forward<T>(args)...);
+    hoc_execerror(s.c_str(), nullptr);
+}
+
 [[noreturn]] void hoc_execerr_ext(const char* fmt, ...);
 char* hoc_object_name(Object*);
 void hoc_retpushx(double);
