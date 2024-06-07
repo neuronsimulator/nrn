@@ -1,6 +1,6 @@
 #include <../../nrnconf.h>
 
-#include <fmt/format.h>
+#include "utils/formatting.hpp"
 
 #include <stdlib.h>
 #include <classreg.h>
