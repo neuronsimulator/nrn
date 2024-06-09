@@ -57,4 +57,4 @@ It's a good idea to use artificial neurons for prototyping networks for two reas
 
 Brette R, Rudolph M, Carnevale T, Hines M, Beeman D, Bower JM, Diesmann M, Morrison A, et al. (2007) Simulation of networks of spiking neurons: A review of tools and strategies. J Comp Neurosci 23:349-98.
 
-`Source code available from ModelDB via accession number 83319. <https://senselab.med.yale.edu/ModelDB/ShowModel?model=83319#tabs-1>`_
+`Source code available from ModelDB via accession number 83319. <https://modeldb.science/83319>`_

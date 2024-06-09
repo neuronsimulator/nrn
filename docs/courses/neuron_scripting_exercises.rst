@@ -78,7 +78,7 @@ Connect the two cells with a gap junction (see :ref:`halfgap.mod <halfgap_mod_sc
 Exercise 5
 ----------
 
-Download the model from http://modeldb.yale.edu/126814 Create a Python script that loads the model, injects current into the center of the soma from t=2 to t=4 ms sufficient to generate an action potential, and records and plots membrane potential, sodium current, and potassium current as functions of time from t=0 to t=10 ms.
+Download the model from https://modeldb.science/126814 Create a Python script that loads the model, injects current into the center of the soma from t=2 to t=4 ms sufficient to generate an action potential, and records and plots membrane potential, sodium current, and potassium current as functions of time from t=0 to t=10 ms.
 
 *Hint*: ``h.load_file('mosinit.hoc')``
 
