@@ -216,7 +216,7 @@ static HocMech* common_register(const char** m,
     if (hm->after_step) {
         stat = after_step;
     }
-    register_mech(m, hm_alloc, cur, jacob, stat, initialize, -1, 0);
+    register_mech(m, hm_alloc, cur, jacob, stat, initialize, -1, 0, 0);
     type = nrn_get_mechtype(m[1]);
 
     // parm_default currently empty. That is ok. But fill in if

@@ -133,7 +133,7 @@ static void mk_mech(std::istream& s) {
         fflush(stderr);
     }
     /* will have to put this back if any mod file refers to diam */
-    //	register_mech(morph_mech, morph_alloc, (Pfri)0, (Pfri)0, (Pfri)0, (Pfri)0, -1, 0);
+    //	register_mech(morph_mech, morph_alloc, (Pfri)0, (Pfri)0, (Pfri)0, (Pfri)0, -1, 0, 0);
 
     /// Calling _reg functions for the default mechanisms from the file mech/cfile/cabvars.h
     for (int i = 0; mechanism[i]; i++) {

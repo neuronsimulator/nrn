@@ -42,13 +42,14 @@ void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, doubl
 extern double nrn_ion_charge(Symbol*);
 extern Point_process* ob2pntproc(Object*);
 extern Point_process* ob2pntproc_0(Object*);
-void register_mech(const char**, Pvmp, nrn_cur_t, nrn_jacob_t, nrn_state_t, nrn_init_t, int, int);
+void register_mech(const char**, Pvmp, nrn_cur_t, nrn_jacob_t, nrn_state_t, nrn_init_t, int, int, int);
 int point_register_mech(const char**,
                         Pvmp,
                         nrn_cur_t,
                         nrn_jacob_t,
                         nrn_state_t,
                         nrn_init_t,
+                        int,
                         int,
                         int,
                         void* (*) (Object*),

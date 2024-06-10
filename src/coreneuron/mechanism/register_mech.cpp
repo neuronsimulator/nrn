@@ -119,7 +119,8 @@ int register_mech(const char** m,
                   mod_f_t private_constructor,
                   mod_f_t private_destructor,
                   int /* nrnpointerindex */,
-                  int vectorized) {
+                  int thread_safe,
+                  int thread_variable_count) {
     auto& memb_func = corenrn.get_memb_funcs();
 
     int type = nrn_get_mechtype(m[1]);
@@ -147,8 +148,8 @@ int register_mech(const char** m,
     memb_func[type].destructor = nullptr;
     memb_func[type].private_constructor = private_constructor;
     memb_func[type].private_destructor = private_destructor;
-    memb_func[type].thread_safe = vectorized ? 1 : 0;
-    memb_func[type].thread_size_ = vectorized ? (vectorized - 1) : 0;
+    memb_func[type].thread_safe = thread_safe;
+    memb_func[type].thread_size_ = thread_variable_count;
     memb_func[type].thread_mem_init_ = nullptr;
     memb_func[type].thread_cleanup_ = nullptr;
     memb_func[type].thread_table_check_ = nullptr;
@@ -349,7 +350,8 @@ int point_register_mech(const char** m,
                         int nrnpointerindex,
                         mod_f_t constructor,
                         mod_f_t destructor,
-                        int vectorized) {
+                        int thread_safe,
+                        int thread_variable_count) {
     const Symbol* s = m[1];
     register_mech(m,
                   alloc,
@@ -360,7 +362,8 @@ int point_register_mech(const char** m,
                   private_constructor,
                   private_destructor,
                   nrnpointerindex,
-                  vectorized);
+                  thread_safe,
+                  thread_variable_count);
     register_constructor(constructor);
     register_destructor(destructor);
     return point_reg_helper(s);

@@ -368,7 +368,7 @@ void hoc_last_init(void) {
     }
     SectionList_reg();
     SectionRef_reg();
-    register_mech(morph_mech, morph_alloc, nullptr, nullptr, nullptr, nullptr, -1, 0);
+    register_mech(morph_mech, morph_alloc, nullptr, nullptr, nullptr, nullptr, -1, 0, 0);
     hoc_register_parm_default(MORPHOLOGY, &morph_parm_default);
     neuron::mechanism::register_data_fields(MORPHOLOGY, neuron::mechanism::field<double>{"diam"});
     hoc_register_prop_size(MORPHOLOGY, 1, 0);
@@ -450,7 +450,8 @@ void initialize_memb_func(int mechtype,
                           Pvmp alloc,
                           nrn_state_t stat,
                           nrn_init_t initialize,
-                          int vectorized);
+                          int thread_safe,
+                          int thread_variable_count);
 void check_mech_version(const char** m);
 int count_variables_in_mechanism(const char** m2, int modltypemax);
 void register_mech_vars(const char** var_buffers,
@@ -467,7 +468,8 @@ void nrn_register_mech_common(const char** m,
                               nrn_state_t stat,
                               nrn_init_t initialize,
                               int nrnpointerindex, /* if -1 then there are none */
-                              int vectorized) {
+                              int thread_safe,
+                              int thread_variable_count) {
     // initialize at first entry, it will be incremented at exit of the function
     static int mechtype = 2; /* 0 unused, 1 for cable section */
     int modltype;
@@ -479,7 +481,7 @@ void nrn_register_mech_common(const char** m,
 
     reallocate_mech_data(mechtype);
 
-    initialize_memb_func(mechtype, cur, jacob, alloc, stat, initialize, vectorized);
+    initialize_memb_func(mechtype, cur, jacob, alloc, stat, initialize, thread_safe, thread_variable_count);
 
     check_mech_version(m);
 
@@ -653,7 +655,8 @@ void initialize_memb_func(int mechtype,
                           Pvmp alloc,
                           nrn_state_t stat,
                           nrn_init_t initialize,
-                          int vectorized) {
+                          int thread_safe,
+                          int thread_variable_count) {
     assert(mechtype >= memb_list.size());
     memb_list.resize(mechtype + 1);
     memb_func.resize(mechtype + 1);
@@ -667,8 +670,8 @@ void initialize_memb_func(int mechtype,
     memb_func[mechtype].state = stat;
     memb_func[mechtype].set_initialize(initialize);
     memb_func[mechtype].destructor = nullptr;
-    memb_func[mechtype].thread_safe = vectorized ? 1 : 0;
-    memb_func[mechtype].thread_size_ = vectorized ? (vectorized - 1) : 0;
+    memb_func[mechtype].thread_safe = thread_safe;
+    memb_func[mechtype].thread_size_ = thread_variable_count;
     memb_func[mechtype].thread_mem_init_ = nullptr;
     memb_func[mechtype].thread_cleanup_ = nullptr;
     memb_func[mechtype].thread_table_check_ = nullptr;
@@ -726,9 +729,10 @@ void register_mech(const char** m,
                    nrn_state_t stat,
                    nrn_init_t initialize,
                    int nrnpointerindex, /* if -1 then there are none */
-                   int vectorized) {
+                   int thread_safe,
+                   int thread_variable_count) {
     int mechtype = n_memb_func;
-    nrn_register_mech_common(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized);
+    nrn_register_mech_common(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, thread_safe, thread_variable_count);
     if (nrnpy_reg_mech_p_) {
         (*nrnpy_reg_mech_p_)(mechtype);
     }
@@ -1033,8 +1037,8 @@ int point_register_mech(const char** m,
                         nrn_state_t stat,
                         nrn_init_t initialize,
                         int nrnpointerindex,
-                        int vectorized,
-
+                        int thread_safe,
+                        int thread_variable_count,
                         void* (*constructor)(Object*),
                         void (*destructor)(void*),
                         Member_func* fmember) {
@@ -1047,7 +1051,7 @@ int point_register_mech(const char** m,
     hoc_symlist = s->u.ctemplate->symtable;
     s->u.ctemplate->steer = steer_point_process;
     s->u.ctemplate->is_point_ = pointtype;
-    nrn_register_mech_common(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized);
+    nrn_register_mech_common(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, thread_safe, thread_variable_count);
     nrn_pnt_template_[n_memb_func - 1] = s->u.ctemplate;
     s2 = hoc_lookup(m[1]);
     hoc_symlist = sl;

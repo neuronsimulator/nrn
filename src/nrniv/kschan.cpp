@@ -838,11 +838,12 @@ void KSChan::add_channel(const char** m) {
                                          nrn_init,
                                          -1,
                                          1,
+                                         0,
                                          hoc_create_pnt,
                                          hoc_destroy_pnt,
                                          member_func);
     } else {
-        register_mech(m, nrn_alloc, nrn_cur, nrn_jacob, nrn_state, nrn_init, -1, 1);
+        register_mech(m, nrn_alloc, nrn_cur, nrn_jacob, nrn_state, nrn_init, -1, 1, 0);
     }
     hoc_built_in_symlist = hoc_symlist;
     hoc_symlist = sav;

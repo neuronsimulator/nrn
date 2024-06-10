@@ -89,7 +89,8 @@ void ion_reg(const char* name, double valence) {
                       nullptr,
                       nullptr,
                       -1,
-                      1);
+                      1,
+                      0);
         mechtype = nrn_get_mechtype(mech[1]);
         _nrn_layout_reg(mechtype, SOA_LAYOUT);
         hoc_register_prop_size(mechtype, nparm, 1);
