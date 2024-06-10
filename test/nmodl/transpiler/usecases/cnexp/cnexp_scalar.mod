@@ -1,5 +1,5 @@
 NEURON {
-  SUFFIX leonhard
+    SUFFIX cnexp_scalar
 }
 
 STATE { x }

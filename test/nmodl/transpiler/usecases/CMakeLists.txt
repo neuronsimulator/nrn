@@ -1,20 +1,20 @@
 set(NMODL_USECASE_DIRS
-    cnexp_scalar
-    cnexp_array
-    func_proc
-    func_proc_pnt
-    global_breakpoint
+    cnexp
+    function
+    procedure
+    global
     hodgkin_huxley
     nonspecific_current
     neuron_variables
+    net_event
+    net_move
     net_receive
     net_send
     point_process
     parameter
-    func_in_breakpoint
     suffix
     table
-    recursion)
+    useion)
 
 foreach(usecase ${NMODL_USECASE_DIRS})
   add_test(NAME usecase_${usecase}

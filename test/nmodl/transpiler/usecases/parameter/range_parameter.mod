@@ -1,5 +1,5 @@
 NEURON {
-    POINT_PROCESS test_parameter
+    POINT_PROCESS range_parameter
     RANGE x, y
 }
 

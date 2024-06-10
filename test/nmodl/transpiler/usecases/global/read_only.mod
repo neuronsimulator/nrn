@@ -1,5 +1,5 @@
 NEURON {
-    SUFFIX leonhard
+    SUFFIX read_only
     GLOBAL c
 }
 
