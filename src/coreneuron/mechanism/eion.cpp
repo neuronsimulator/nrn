@@ -280,4 +280,6 @@ void second_order_cur(NrnThread* _nt, int secondorder) {
     }
 }
 }  // namespace coreneuron
+#else
+#error " -- !! Find me! vheri"
 #endif

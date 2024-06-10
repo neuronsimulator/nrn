@@ -156,6 +156,8 @@ int register_mech(const char** m,
     memb_func[type].is_point = 0;
     memb_func[type].setdata_ = nullptr;
     memb_func[type].dparam_semantics = nullptr;
+#else
+#error " --- !! Find me! uwnb"
 #endif
     register_all_variables_offsets(type, &m[2]);
     return type;

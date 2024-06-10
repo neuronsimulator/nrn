@@ -87,6 +87,8 @@ void nrn_finitialize(int setv, double v) {
             }
         }
     }
+#else
+#error " --- !!! Find me! vyie"
 #endif
 
     init_net_events();
