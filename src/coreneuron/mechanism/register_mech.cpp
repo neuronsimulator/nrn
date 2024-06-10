@@ -147,7 +147,6 @@ int register_mech(const char** m,
     memb_func[type].destructor = nullptr;
     memb_func[type].private_constructor = private_constructor;
     memb_func[type].private_destructor = private_destructor;
-#if VECTORIZE
     memb_func[type].thread_safe = vectorized ? 1 : 0;
     memb_func[type].thread_size_ = vectorized ? (vectorized - 1) : 0;
     memb_func[type].thread_mem_init_ = nullptr;
@@ -156,9 +155,7 @@ int register_mech(const char** m,
     memb_func[type].is_point = 0;
     memb_func[type].setdata_ = nullptr;
     memb_func[type].dparam_semantics = nullptr;
-#else
-#error " --- !! Find me! uwnb"
-#endif
+
     register_all_variables_offsets(type, &m[2]);
     return type;
 }

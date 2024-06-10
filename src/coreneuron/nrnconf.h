@@ -30,7 +30,6 @@ using Symbol = char;
 #define VEC_RHS(i)  (_nt->_actual_rhs[(i)])
 #define VEC_V(i)    (_nt->_actual_v[(i)])
 #define VEC_AREA(i) (_nt->_actual_area[(i)])
-#define VECTORIZE   1
 
 extern double celsius;
 extern double pi;

@@ -9,9 +9,6 @@ and obscure to benefit most users.
 .. code-block::
     none
 
-    #define VECTORIZE	1	/* hope this speeds up simulations on a Cray */ 
-    				/* this is no longer optional */ 
-     
     #define EXTRACELLULAR	1	/* extracellular membrane mechanism */ 
      
     #define DIAMLIST	1	/* section contains diameter info */ 

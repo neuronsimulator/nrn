@@ -44,7 +44,7 @@ void nrn_finitialize(int setv, double v) {
     nrn_thread_table_check();
     clear_event_queue();
     nrn_spike_exchange_init();
-#if VECTORIZE
+
     nrn_play_init(); /* Vector.play */
                      /// Play events should be executed before initializing events
     for (int i = 0; i < nrn_nthread; ++i) {
@@ -87,9 +87,6 @@ void nrn_finitialize(int setv, double v) {
             }
         }
     }
-#else
-#error " --- !!! Find me! vyie"
-#endif
 
     init_net_events();
     for (int i = 0; i < nrn_nthread; ++i) {
