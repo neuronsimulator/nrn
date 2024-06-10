@@ -43,7 +43,8 @@ struct Memb_func {
     mod_f_t private_constructor;
     mod_f_t private_destructor;
     Symbol* sym;
-    int vectorized;
+    // int vectorized;
+    int thread_safe;                        /* Boolean, is the mechanism thread-safe. */
     int thread_size_;                       /* how many Datum needed in Memb_list if vectorized */
     void (*thread_mem_init_)(ThreadDatum*); /* after Memb_list._thread is allocated */
     void (*thread_cleanup_)(ThreadDatum*);  /* before Memb_list._thread is freed */
