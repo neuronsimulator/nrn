@@ -14,6 +14,8 @@
 #include <set>
 #include <vector>
 
+#include "ode_py.hpp"
+
 namespace py = pybind11;
 using namespace py::literals;
 
@@ -28,27 +30,24 @@ void SolveLinearSystemExecutor::operator()() {
                                  "do_cse"_a = elimination,
                                  "function_calls"_a = function_calls,
                                  "tmp_unique_prefix"_a = tmp_unique_prefix);
-    py::exec(R"(
-                import builtins
-                builtins.nmodl_python_binding_check = False
-                from nmodl.ode import solve_lin_system
-                exception_message = ""
-                try:
-                    solutions, new_local_vars = solve_lin_system(eq_strings,
-                                                                 state_vars,
-                                                                 vars,
-                                                                 function_calls,
-                                                                 tmp_unique_prefix,
-                                                                 small_system,
-                                                                 do_cse)
-                except Exception as e:
-                    # if we fail, fail silently and return empty string
-                    solutions = [""]
-                    new_local_vars = [""]
-                    exception_message = str(e)
-                )",
-             py::globals(),
-             locals);
+    std::string script = R"(
+exception_message = ""
+try:
+    solutions, new_local_vars = solve_lin_system(eq_strings,
+                                                 state_vars,
+                                                 vars,
+                                                 function_calls,
+                                                 tmp_unique_prefix,
+                                                 small_system,
+                                                 do_cse)
+except Exception as e:
+    # if we fail, fail silently and return empty string
+    solutions = [""]
+    new_local_vars = [""]
+    exception_message = str(e)
+)";
+
+    py::exec(nmodl::pybind_wrappers::ode_py + script, locals);
     // returns a vector of solutions, i.e. new statements to add to block:
     solutions = locals["solutions"].cast<std::vector<std::string>>();
     // and a vector of new local variables that need to be declared in the block:
@@ -63,24 +62,21 @@ void SolveNonLinearSystemExecutor::operator()() {
                                  "state_vars"_a = state_vars,
                                  "vars"_a = vars,
                                  "function_calls"_a = function_calls);
-    py::exec(R"(
-                import builtins
-                builtins.nmodl_python_binding_check = False
-                from nmodl.ode import solve_non_lin_system
-                exception_message = ""
-                try:
-                    solutions = solve_non_lin_system(equation_strings,
-                                                     state_vars,
-                                                     vars,
-                                                     function_calls)
-                except Exception as e:
-                    # if we fail, fail silently and return empty string
-                    solutions = [""]
-                    new_local_vars = [""]
-                    exception_message = str(e)
-                )",
-             py::globals(),
-             locals);
+    std::string script = R"(
+exception_message = ""
+try:
+    solutions = solve_non_lin_system(equation_strings,
+                                     state_vars,
+                                     vars,
+                                     function_calls)
+except Exception as e:
+    # if we fail, fail silently and return empty string
+    solutions = [""]
+    new_local_vars = [""]
+    exception_message = str(e)
+)";
+
+    py::exec(nmodl::pybind_wrappers::ode_py + script, locals);
     // returns a vector of solutions, i.e. new statements to add to block:
     solutions = locals["solutions"].cast<std::vector<std::string>>();
     // may also return a python exception message:
@@ -98,39 +94,33 @@ void DiffeqSolverExecutor::operator()() {
         // replace x' = f(x) differential equation
         // with forwards Euler timestep:
         // x = x + f(x) * dt
-        py::exec(R"(
-                import builtins
-                builtins.nmodl_python_binding_check = False
-                from nmodl.ode import forwards_euler2c
-                exception_message = ""
-                try:
-                    solution = forwards_euler2c(equation_string, dt_var, vars, function_calls)
-                except Exception as e:
-                    # if we fail, fail silently and return empty string
-                    solution = ""
-                    exception_message = str(e)
-            )",
-                 py::globals(),
-                 locals);
+        std::string script = R"(
+exception_message = ""
+try:
+    solution = forwards_euler2c(equation_string, dt_var, vars, function_calls)
+except Exception as e:
+    # if we fail, fail silently and return empty string
+    solution = ""
+    exception_message = str(e)
+)";
+
+        py::exec(nmodl::pybind_wrappers::ode_py + script, locals);
     } else if (method == codegen::naming::CNEXP_METHOD) {
         // replace x' = f(x) differential equation
         // with analytic solution for x(t+dt) in terms of x(t)
         // x = ...
-        py::exec(R"(
-                import builtins
-                builtins.nmodl_python_binding_check = False
-                from nmodl.ode import integrate2c
-                exception_message = ""
-                try:
-                    solution = integrate2c(equation_string, dt_var, vars,
-                                           use_pade_approx)
-                except Exception as e:
-                    # if we fail, fail silently and return empty string
-                    solution = ""
-                    exception_message = str(e)
-            )",
-                 py::globals(),
-                 locals);
+        std::string script = R"(
+exception_message = ""
+try:
+    solution = integrate2c(equation_string, dt_var, vars,
+                           use_pade_approx)
+except Exception as e:
+    # if we fail, fail silently and return empty string
+    solution = ""
+    exception_message = str(e)
+)";
+
+        py::exec(nmodl::pybind_wrappers::ode_py + script, locals);
     } else {
         // nothing to do, but the caller should know.
         return;
@@ -141,25 +131,22 @@ void DiffeqSolverExecutor::operator()() {
 
 void AnalyticDiffExecutor::operator()() {
     auto locals = py::dict("expressions"_a = expressions, "vars"_a = used_names_in_block);
-    py::exec(R"(
-                            import builtins
-                            builtins.nmodl_python_binding_check = False
-                            from nmodl.ode import differentiate2c
-                            exception_message = ""
-                            try:
-                                rhs = expressions[-1].split("=", 1)[1]
-                                solution = differentiate2c(rhs,
-                                                           "v",
-                                                           vars,
-                                                           expressions[:-1]
-                                           )
-                            except Exception as e:
-                                # if we fail, fail silently and return empty string
-                                solution = ""
-                                exception_message = str(e)
-                        )",
-             py::globals(),
-             locals);
+    std::string script = R"(
+exception_message = ""
+try:
+    rhs = expressions[-1].split("=", 1)[1]
+    solution = differentiate2c(rhs,
+                               "v",
+                               vars,
+                               expressions[:-1]
+               )
+except Exception as e:
+    # if we fail, fail silently and return empty string
+    solution = ""
+    exception_message = str(e)
+)";
+
+    py::exec(nmodl::pybind_wrappers::ode_py + script, locals);
     solution = locals["solution"].cast<std::string>();
     exception_message = locals["exception_message"].cast<std::string>();
 }

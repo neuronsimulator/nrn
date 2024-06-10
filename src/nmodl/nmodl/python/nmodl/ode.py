@@ -19,8 +19,10 @@ if major >= 1 and minor >= 7:
     known_functions = import_module("sympy.printing.c").known_functions_C99
 else:
     known_functions = import_module("sympy.printing.ccode").known_functions_C99
-known_functions.pop("Abs")
-known_functions["abs"] = "fabs"
+
+if "Abs" in known_functions:
+    known_functions.pop("Abs")
+    known_functions["abs"] = "fabs"
 
 
 if not ((major >= 1) and (minor >= 2)):
