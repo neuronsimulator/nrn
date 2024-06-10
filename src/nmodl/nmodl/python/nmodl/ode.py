@@ -215,9 +215,7 @@ def _interweave_eqs(F, J):
     """Interweave F and J equations so that they are printed in code
     rowwise from the equation J x = F. For example:
 
-    F = [F_0,
-         F_1,
-         F_2]
+    F = [F_0, F_1, F_2]
 
     (Jmat is not the actual J in the argument, it is here to the sake of
     clarity)
@@ -225,29 +223,10 @@ def _interweave_eqs(F, J):
             J_1, J_4, J_7
             J_2, J_5, J_8]
     (J is the actual input with the following ordering)
-    J = [J_0,
-         J_3,
-         J_6,
-         J_1,
-         J_4,
-         J_7,
-         J_2,
-         J_5,
-         J_8]
+    J = [J_0, J_3, J_6, J_1, J_4, J_7, J_2, J_5, J_8]
 
     What we want is:
-    code = [F_0,
-            J_0,
-            J_3,
-            J_6,
-            F_1,
-            J_1,
-            J_4,
-            J_7,
-            F_2,
-            J_2,
-            J_5,
-            J_8]
+    code = [F_0, J_0, J_3, J_6, F_1, J_1, J_4, J_7, F_2, J_2, J_5, J_8]
 
     Args:
         F: F vector
