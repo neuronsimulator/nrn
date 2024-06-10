@@ -667,7 +667,6 @@ void initialize_memb_func(int mechtype,
     memb_func[mechtype].state = stat;
     memb_func[mechtype].set_initialize(initialize);
     memb_func[mechtype].destructor = nullptr;
-    // memb_func[mechtype].vectorized = vectorized ? 1 : 0;
     memb_func[mechtype].thread_safe = vectorized ? 1 : 0;
     memb_func[mechtype].thread_size_ = vectorized ? (vectorized - 1) : 0;
     memb_func[mechtype].thread_mem_init_ = nullptr;
