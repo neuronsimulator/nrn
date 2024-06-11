@@ -812,7 +812,7 @@ void nrn_thread_table_check(neuron::model_sorted_token const& sorted_token) {
     for (auto [id, tml]: table_check_) {
         Memb_list* ml = tml->ml;
         memb_func[tml->index].thread_table_check_(
-            ml, 0, ml->pdata[0], ml->_thread, nrn_threads + id, tml->index, sorted_token);
+            ml, 0, ml->pdata[0], ml->_thread, nullptr, nrn_threads + id, tml->index, sorted_token);
     }
 }
 

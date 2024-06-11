@@ -296,12 +296,12 @@ void parout() {
     if (vectorize) {
         Lappendstr(defs_list,
                    "\n\
-#define _threadargscomma_ _ml, _iml, _ppvar, _thread, _nt,\n\
-#define _threadargsprotocomma_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
-#define _internalthreadargsprotocomma_ _nrn_mechanism_cache_range* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
-#define _threadargs_ _ml, _iml, _ppvar, _thread, _nt\n\
-#define _threadargsproto_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt\n\
-#define _internalthreadargsproto_ _nrn_mechanism_cache_range* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt\n\
+#define _threadargscomma_ _ml, _iml, _ppvar, _thread, _globals, _nt,\n\
+#define _threadargsprotocomma_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, double* _globals, NrnThread* _nt,\n\
+#define _internalthreadargsprotocomma_ _nrn_mechanism_cache_range* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, double* _globals, NrnThread* _nt,\n\
+#define _threadargs_ _ml, _iml, _ppvar, _thread, _globals, _nt\n\
+#define _threadargsproto_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, double* _globals, NrnThread* _nt\n\
+#define _internalthreadargsproto_ _nrn_mechanism_cache_range* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, double* _globals, NrnThread* _nt\n\
 ");
     } else {
         Lappendstr(defs_list,
@@ -644,7 +644,7 @@ extern void nrn_promote(Prop*, int, int);\n\
                 if (s->subtype & ARRAY) {
                     Sprintf(buf,
                             "#define %s%s (_thread1data + %d)\n\
-#define %s (_thread[_gth].get<double*>() + %d)\n",
+#define %s (_globals + %d)\n",
                             s->name,
                             suffix,
                             gind,
@@ -653,7 +653,7 @@ extern void nrn_promote(Prop*, int, int);\n\
                 } else {
                     Sprintf(buf,
                             "#define %s%s _thread1data[%d]\n\
-#define %s _thread[_gth].get<double*>()[%d]\n",
+#define %s _globals[%d]\n",
                             s->name,
                             suffix,
                             gind,
@@ -2781,6 +2781,7 @@ void out_nt_ml_frag(List* p) {
                "  _ml = &_lmr;\n"
                "  _cntml = _ml_arg->_nodecount;\n"
                "  Datum *_thread{_ml_arg->_thread};\n"
+               "  double* _globals{_thread[_gth].get<double*>()};\n"
                "  for (_iml = 0; _iml < _cntml; ++_iml) {\n"
                "    _ppvar = _ml_arg->_pdata[_iml];\n"
                "    _nd = _ml_arg->_nodelist[_iml];\n"
