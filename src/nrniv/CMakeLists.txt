@@ -157,11 +157,8 @@ set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_MODFILE_CPP}
     ${NRN_SCOPMATH_SRC_FILES}
     ${NRN_SPARSE_SRC_FILES}
-    ${NRN_SUNDIALS_SRC_FILES})
-
-if(NRN_ENABLE_MPI)
-  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_PARALLEL_SRC_FILES})
-endif()
+    ${NRN_SUNDIALS_SRC_FILES}
+    ${NRN_PARALLEL_SRC_FILES})
 
 if(NRN_ENABLE_MPI_DYNAMIC)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp)
@@ -171,12 +168,6 @@ endif()
 
 if(MINGW)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/dlfcn.c)
-endif()
-
-# NRN_ENABLE_MODULE_INSTALL will create a separate nrnpython lib
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  # Include nrnpython in nrniv - useful for single lib neuron and wheels
-  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNPYTHON_SRC_FILES})
 endif()
 
 if(NOT NRN_ENABLE_INTERVIEWS)
@@ -415,7 +406,7 @@ cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  target_include_directories(nrniv_lib PUBLIC "${NRN_DEFAULT_PYTHON_INCLUDES}")
+  target_link_libraries(nrniv_lib nrnpython)
 endif()
 if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv_lib Threads::Threads)
@@ -456,10 +447,6 @@ endif()
 # =============================================================================
 # Link with all libraries
 # =============================================================================
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  target_link_libraries(nrniv_lib ${NRN_DEFAULT_PYTHON_LIBRARIES})
-endif()
-
 if(NRN_ENABLE_MPI)
   if(NRN_ENABLE_MPI_DYNAMIC)
     list(LENGTH NRN_MPI_LIBNAME_LIST _num_mpi)
@@ -502,7 +489,7 @@ if(NRN_ENABLE_INTERVIEWS)
   include_directories(${IV_INCLUDE_DIR})
   target_link_libraries(nrniv_lib interviews)
 else()
-  target_include_directories(nrniv_lib PUBLIC ${NRN_IVOS_SRC_DIR} ${PROJECT_BINARY_DIR}/src/ivos)
+  target_include_directories(nrniv_lib PUBLIC ${NRN_IVOS_SRC_DIR})
 endif()
 
 if(IV_ENABLE_X11_DYNAMIC)

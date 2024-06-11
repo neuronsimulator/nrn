@@ -1,5 +1,6 @@
 #pragma once
 #include <string_view>
+#include <vector>
 /**
  * Declarations of global symbols in NEURON that have to be populated with python-version-specific
  * values when dynamic Python is enabled. These are set by the nrnpython_reg_real function, and
@@ -24,7 +25,7 @@ namespace neuron::python {
 struct impl_ptrs {
     Object* (*callable_with_args)(Object*, int narg){};
     double (*call_func)(Object*, int, int*){};
-    char* (*call_picklef)(char*, std::size_t size, int narg, std::size_t* retsize){};
+    std::vector<char> (*call_picklef)(const std::vector<char>&, int narg){};
     void (*call_python_with_section)(Object*, Section*){};
     void (*cmdtool)(Object*, int type, double x, double y, int kd){};
     int (*guigetstr)(Object*, char**){};
@@ -43,9 +44,9 @@ struct impl_ptrs {
     Object* (*mpi_alltoall_type)(int, int){};
     double (*object_to_double)(Object*){};
     void* (*opaque_obj2pyobj)(Object*){};
-    Object* (*pickle2po)(char*, std::size_t size){};
+    Object* (*pickle2po)(const std::vector<char>&){};
     Object* (*po2ho)(PyObject*){};
-    char* (*po2pickle)(Object*, std::size_t* size){};
+    std::vector<char> (*po2pickle)(Object*){};
     double (*praxis_efun)(Object* pycallable, Object* hvec){};
     int (*pysame)(Object* o1, Object* o2){};
     void (*py2n_component)(Object*, Symbol*, int, int){};

@@ -14,6 +14,7 @@ set(HEADER_FILES_TO_INSTALL
     gnu/nrnran123.h
     nrniv/backtrace_utils.h
     nrniv/bbsavestate.h
+    nrniv/neuronapi.h
     nrnmpi/nrnmpidec.h
     nrnoc/cabvars.h
     nrnoc/md1redef.h
@@ -100,11 +101,9 @@ set(OC_FILE_LIST
     memory.cpp
     mswinprt.cpp
     nonlin.cpp
-    ocerf.cpp
     plot.cpp
     plt.cpp
     scoprand.cpp
-    settext.cpp
     symbol.cpp
     version.cpp
     x.cpp
@@ -204,14 +203,7 @@ endif()
 # =============================================================================
 set(NRNIV_FILE_LIST
     backtrace_utils.cpp
-    bbs.cpp
     bbsavestate.cpp
-    bbsdirect.cpp
-    bbslocal.cpp
-    bbslsrv.cpp
-    bbslsrv2.cpp
-    bbsrcli.cpp
-    bbssrv.cpp
     classreg.cpp
     cxprop.cpp
     datapath.cpp
@@ -230,6 +222,7 @@ set(NRNIV_FILE_LIST
     netpar.cpp
     nmodlrandom.cpp
     nonlinz.cpp
+    neuronapi.cpp
     nrncore_write.cpp
     nrncore_write/callbacks/nrncore_callbacks.cpp
     nrncore_write/data/cell_group.cpp
@@ -243,7 +236,6 @@ set(NRNIV_FILE_LIST
     nvector_nrnserial_ld.cpp
     nvector_nrnthread.cpp
     nvector_nrnthread_ld.cpp
-    ocbbs.cpp
     ocjump.cpp
     partrans.cpp
     ppshape.cpp
@@ -359,20 +351,6 @@ set(SCOPMATH_FILES_LIST
 
 set(NRNMPI_FILES_LIST nrnmpi.cpp memory_usage.cpp bbsmpipack.cpp mpispike.cpp)
 
-# nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
-set(NRNPYTHON_FILES_LIST
-    nrnpython.cpp
-    nrnpy_hoc.cpp
-    nrnpy_nrn.cpp
-    nrnpy_p2h.cpp
-    grids.cpp
-    rxd.cpp
-    rxd_extracellular.cpp
-    rxd_intracellular.cpp
-    rxd_vol.cpp
-    rxd_marching_cubes.cpp
-    rxd_llgramarea.cpp)
-
 # built-in mod files
 set(MODFILE_BASE_NAMES
     apcount
@@ -424,7 +402,6 @@ set(NMODL_FILES_LIST
     simultan.cpp
     solve.cpp
     symbol.cpp
-    units.cpp
     version.cpp)
 
 set(IVOS_FILES_LIST observe.cpp resource.cpp)
@@ -432,6 +409,16 @@ set(IVOS_FILES_LIST observe.cpp resource.cpp)
 set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
 
 set(NRN_MUSIC_FILES_LIST nrnmusic.cpp)
+
+set(NRN_PARALLEL_FILES_LIST
+    bbs.cpp
+    bbsclimpi.cpp
+    bbsdirectmpi.cpp
+    bbslocal.cpp
+    bbslsrv.cpp
+    bbssrv2mpi.cpp
+    bbssrvmpi.cpp
+    ocbbs.cpp)
 
 # =============================================================================
 # Top level directories under src
@@ -447,6 +434,7 @@ set(NRN_MODLUNIT_SRC_DIR ${PROJECT_SOURCE_DIR}/src/modlunit)
 set(NRN_NMODL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nmodl)
 set(NRN_IVOS_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivos)
 set(NRN_MUSIC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/neuronmusic)
+set(NRN_PARALLEL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/parallel)
 
 # =============================================================================
 # Create source file lists by gathering from various directories
@@ -460,16 +448,17 @@ nrn_create_file_list(NRN_NODEORDEROPTIM_SRC_FILES ${NRN_NODEORDEROPTIM_SRC_DIR}
 list(APPEND NRN_NODEORDEROPTIM_SRC_FILES ${PROJECT_SOURCE_DIR}/src/coreneuron/utils/lpt.cpp)
 nrn_create_file_list(NRN_NRNCVODE_SRC_FILES ${NRN_NRNCVODE_SRC_DIR} ${NRNCVODE_FILE_LIST})
 nrn_create_file_list(NRN_NRNIV_SRC_FILES ${NRN_NRNIV_SRC_DIR} ${NRNIV_FILE_LIST})
-nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
-                     nvector_nrnparallel_ld.cpp)
-nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/shared
-                     nvector_parallel.c)
+nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${NRN_PARALLEL_SRC_DIR} ${NRN_PARALLEL_FILES_LIST})
+if(NRN_ENABLE_MPI)
+  nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
+                       nvector_nrnparallel_ld.cpp)
+  nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/shared
+                       nvector_parallel.c)
+endif()
 nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPARSE_FILES_LIST})
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRNMPI_FILES_LIST})
-nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
-                     ${NRNPYTHON_FILES_LIST})
 nrn_create_file_list(NRN_MODFILE_BASE_NAMES src/nrnoc ${MODFILE_BASE_NAMES})
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.cpp)
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)
@@ -480,6 +469,7 @@ nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmp
 nrn_create_file_list(NRN_IVOS_SRC_FILES ${NRN_IVOS_SRC_DIR} ${IVOS_FILES_LIST})
 nrn_create_file_list(NRN_MUSIC_SRC_FILES ${NRN_MUSIC_SRC_DIR} ${NRN_MUSIC_FILES_LIST})
 list(APPEND NRN_OC_SRC_FILES ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
+list(APPEND NRN_NMODL_SRC_FILES ${NRN_MODLUNIT_SRC_DIR}/units.cpp)
 
 # =============================================================================
 # Create mswin install lists needed for setup_exe target
@@ -487,7 +477,13 @@ list(APPEND NRN_OC_SRC_FILES ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
 if(MINGW)
   set(MSWIN_SRC_DIR ${PROJECT_SOURCE_DIR}/src/mswin)
   nrn_create_file_list(MSWIN_FILES ${PROJECT_SOURCE_DIR}/src/parallel test0.hoc test0.py)
+
   list(APPEND MSWIN_FILES ${MSWIN_SRC_DIR}/notes.txt)
+
+  list(APPEND NRN_MODLUNIT_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/extra/d2upath.cpp)
+  list(APPEND NRN_NMODL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/extra/d2upath.cpp)
+  list(APPEND NRN_OC_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/extra/d2upath.cpp)
+
   nrn_create_file_list(MSWIN_BIN_FILES ${MSWIN_SRC_DIR} nrniv.ico nrniv10.ico nmodl2a.ico)
   nrn_create_file_list(
     MSWIN_LIB_FILES
