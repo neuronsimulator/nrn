@@ -59,12 +59,13 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run:  |
           echo "-------- NEURON wheel --------";
-          python setup.py build_ext bdist_wheel;
-          neuron_wheel=dist/NEURON*.whl;
+          python -m pip install cibuildwheel
+          CIBW_BUILD="cp311*" cibuildwheel
+          neuron_wheel=wheelhouse/NEURON*.whl;
           echo "-------- install wheel --------"
           python -m pip install $neuron_wheel;
           echo "-------- now build docs--------";
-          python setup.py docs;
+          python _setup.py docs;
           echo "-------- disable jekyll--------";
           pushd docs/_build;
           touch .nojekyll;

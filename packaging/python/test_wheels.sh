@@ -7,7 +7,7 @@ set -xe
 # on uname -m. Note that this is just wheel testing script.
 ARCH_DIR=`uname -m`
 
-if [ ! -f setup.py ]; then
+if [ ! -f _setup.py ]; then
     echo "Error: Please launch $0 from the root dir"
     exit 1
 fi
