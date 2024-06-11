@@ -11,7 +11,7 @@ NEURON's extensions to the NBSR language are described in:
 
 .. toctree:: :maxdepth: 1
 
-    nmodl2.rst
+    nmodl_neuron_extension.rst
 
 
 .. _modeldescriptionlanguage:
