@@ -777,7 +777,7 @@ static void funchack(Symbol* n, bool ishoc, int hack) {
             "size_t const _iml{};\n"
             "_ppvar = _local_prop ? _nrn_mechanism_access_dparam(_local_prop) : nullptr;\n"
             "_thread = _extcall_thread.data();\n"
-                             " double* _globals = nullptr; // 2\n"
+            " double* _globals = nullptr; // 2\n"
             "_nt = nrn_threads;\n");
     } else {  // _npy_...
         q = lappendstr(procfunc,
