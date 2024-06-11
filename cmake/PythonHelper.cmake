@@ -113,7 +113,7 @@ function(nrn_find_python)
     execute_process(
       COMMAND
         ${CMAKE_COMMAND} "-DPython_EXECUTABLE:STRING=${opt_NAME}"
-        "-DPython_COMPONENTS=${dev_component};Interpreter" -S
+        "-DPython_COMPONENTS=${dev_component};Interpreter;NumPy" -S
         ${CMAKE_SOURCE_DIR}/cmake/ExecuteFindPython -B
         ${CMAKE_BINARY_DIR}/ExecuteFindPython_${pyexe_hash}
       RESULT_VARIABLE result
