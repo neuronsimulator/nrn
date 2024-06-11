@@ -1021,7 +1021,7 @@ Description:
         # Print "Temperature for voltage 0.32 is 37"
         print("Temperature for voltage ", 0.32, " is ", temp)
 
-    .. image:: ../../../images/function_table_vT.png
+    .. image:: /python/images/function_table_vT.png
         :align: center
 
     Then whenever tau1(x) is called in the NMODL file, or tau1_k3st(x) is called from python, the
@@ -1070,7 +1070,7 @@ Description:
 
         tau2_<MOD_SUFFIX>(2.5, 30) # This is 63,75
 
-    .. image:: ../../../images/function_table_vkT.png
+    .. image:: /python/images/function_table_vkT.png
         :align: center
 
 

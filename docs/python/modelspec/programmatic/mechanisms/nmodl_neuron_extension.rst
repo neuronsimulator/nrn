@@ -749,4 +749,4 @@ Description:
 
 .. _python_verbatim:
 
-.. include:: ../../../../nmodl/verbatim.rst
+.. include:: /nmodl/verbatim.rst
