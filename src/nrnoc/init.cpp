@@ -481,7 +481,8 @@ void nrn_register_mech_common(const char** m,
 
     reallocate_mech_data(mechtype);
 
-    initialize_memb_func(mechtype, cur, jacob, alloc, stat, initialize, thread_safe, thread_variable_count);
+    initialize_memb_func(
+        mechtype, cur, jacob, alloc, stat, initialize, thread_safe, thread_variable_count);
 
     check_mech_version(m);
 
@@ -732,7 +733,15 @@ void register_mech(const char** m,
                    int thread_safe,
                    int thread_variable_count) {
     int mechtype = n_memb_func;
-    nrn_register_mech_common(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, thread_safe, thread_variable_count);
+    nrn_register_mech_common(m,
+                             alloc,
+                             cur,
+                             jacob,
+                             stat,
+                             initialize,
+                             nrnpointerindex,
+                             thread_safe,
+                             thread_variable_count);
     if (nrnpy_reg_mech_p_) {
         (*nrnpy_reg_mech_p_)(mechtype);
     }
@@ -1051,7 +1060,15 @@ int point_register_mech(const char** m,
     hoc_symlist = s->u.ctemplate->symtable;
     s->u.ctemplate->steer = steer_point_process;
     s->u.ctemplate->is_point_ = pointtype;
-    nrn_register_mech_common(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, thread_safe, thread_variable_count);
+    nrn_register_mech_common(m,
+                             alloc,
+                             cur,
+                             jacob,
+                             stat,
+                             initialize,
+                             nrnpointerindex,
+                             thread_safe,
+                             thread_variable_count);
     nrn_pnt_template_[n_memb_func - 1] = s->u.ctemplate;
     s2 = hoc_lookup(m[1]);
     hoc_symlist = sl;

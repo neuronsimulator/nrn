@@ -75,7 +75,7 @@ struct Memb_func {
     nrn_ode_spec_t ode_spec;
     nrn_ode_matsol_t ode_matsol;
     nrn_ode_synonym_t ode_synonym;
-    Pvmi singchan_; /* managed by kschan for variable step methods */
+    Pvmi singchan_;                   /* managed by kschan for variable step methods */
     int thread_safe;                  /* Boolean, is the mechanism thread-safe. */
     int thread_size_;                 /* how many Datum needed in Memb_list if vectorized */
     void (*thread_mem_init_)(Datum*); /* after Memb_list._thread is allocated */
