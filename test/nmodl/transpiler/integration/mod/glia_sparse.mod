@@ -2,7 +2,6 @@
 
 NEURON {
     SUFFIX glia
-    RANGE alfa, beta
     RANGE Aalfa, Valfa, Abeta, Vbeta
 }
 
