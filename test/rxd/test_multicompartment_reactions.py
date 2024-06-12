@@ -76,7 +76,15 @@ def test_multicompartment_reactions(neuron_instance):
     )
 
     h.finitialize(-65)
-
+    assert (
+        abs(
+            serca._evaluate(
+                location=(cyt, sec, 0.5), instruction="do_1d", units="mM/ms"
+            )
+            - 1.1818723974275922e-06
+        )
+        < tol
+    )
     cae_init = (0.0017 - cac_init * fc) / fe
     ca[er].concentration = cae_init
 
@@ -85,6 +93,7 @@ def test_multicompartment_reactions(neuron_instance):
             node.concentration = 2
 
     h.CVode().re_init()
+
     h.continuerun(1000)
     if not save_path:
         max_err = compare_data(data)

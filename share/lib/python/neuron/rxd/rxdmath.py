@@ -4,6 +4,13 @@ from .rxdException import RxDException
 from . import initializer
 
 
+_pymethods = {
+    "vtrap": lambda x, y: y * (1.0 - x / y / 2.0)
+    if abs(x / y) < 1e-6
+    else x / (math.exp(x / y) - 1.0)
+}
+
+
 def _vectorized(f, objs):
     if hasattr(objs, "__len__"):
         return numpy.array([f(obj) for obj in objs])
@@ -179,6 +186,13 @@ class _Function:
     def _semi_compile(self, region, instruction):
         return "%s(%s)" % (self._fname, self._obj._semi_compile(region, instruction))
 
+    def _evaluate(self, location, instruction):
+        return eval(
+            f"{self._fname}({self._obj._evaluate(location, instruction)})",
+            math.__dict__,
+            _pymethods,
+        )
+
     def _involved_species(self, the_dict):
         self._obj._involved_species(the_dict)
 
@@ -226,6 +240,13 @@ class _Function2:
             self._fname,
             self._obj1._semi_compile(region, instruction),
             self._obj2._semi_compile(region, instruction),
+        )
+
+    def _evaluate(self, location, instruction):
+        return eval(
+            f"{self._fname}({self._obj1._evaluate(location, instruction)}, {self._obj2._evaluate(location, instruction)})",
+            math.__dict__,
+            _pymethods,
         )
 
     def _involved_species(self, the_dict):
@@ -538,6 +559,11 @@ class _Product:
         self._a._involved_species(the_dict)
         self._b._involved_species(the_dict)
 
+    def _evaluate(self, location, instruction):
+        return self._a._evaluate(location, instruction) * self._b._evaluate(
+            location, instruction
+        )
+
 
 class _Quotient:
     def __init__(self, a, b):
@@ -595,6 +621,11 @@ class _Quotient:
         self._a._involved_species(the_dict)
         self._b._involved_species(the_dict)
 
+    def _evaluate(self, location, instruction):
+        return self._a._evaluate(location, instruction) / self._b._evaluate(
+            location, instruction
+        )
+
 
 class _Reaction:
     def __init__(self, lhs, rhs, direction):
@@ -632,6 +663,7 @@ class _Arithmeticed:
         self._valid_reaction_term = valid_reaction_term
         self._compiled_form = None
 
+    """
     def _evaluate(self, location):
         if self._compiled_form is None:
             self._compiled_form = _compile(self)
@@ -649,6 +681,7 @@ class _Arithmeticed:
             # this could happen in 3D
             raise RxDException(f"found {len(value)} values; expected 1.")
         return value[0]
+    """
 
     # Change any Species to _ExtracellularSpecies so _semi_compile gives the
     # _grid_id and not the species _id
@@ -690,7 +723,6 @@ class _Arithmeticed:
         return new_arith
 
     def _short_repr(self):
-
         items = []
         counts = []
         for item, count in self._items.items():
@@ -776,6 +808,23 @@ class _Arithmeticed:
                 result += i
         if not result:
             result = "0"
+        return result
+
+    def _evaluate(self, location, instruction):
+        items = []
+        counts = []
+        items_append = items.append
+        counts_append = counts.append
+        for item, count in zip(list(self._items.keys()), list(self._items.values())):
+            if count:
+                try:
+                    items_append(item._evaluate(location, instruction))
+                except AttributeError:
+                    items_append(item)
+                counts_append(count)
+        result = 0
+        for i, c in zip(items, counts):
+            result += c * i
         return result
 
     def _involved_species(self, the_dict):
@@ -889,6 +938,10 @@ class Vm(_Arithmeticed, object):
         @property
         def _voltage_dependent(self):
             return True
+
+        def _evaluate(_, location, instruction):
+            _, sec, x = location
+            return sec(x).v
 
     def __init__(self):
         super(Vm, self).__init__(Vm._Vm(), valid_reaction_term=True)
