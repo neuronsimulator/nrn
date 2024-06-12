@@ -12,8 +12,10 @@
 #include <cmath>
 #include <ctime>
 #include <regex>
+#include <stdexcept>
 
 #include "ast/all.hpp"
+#include "codegen/codegen_cpp_visitor.hpp"
 #include "codegen/codegen_utils.hpp"
 #include "codegen_naming.hpp"
 #include "config/config.h"
@@ -747,7 +749,11 @@ std::string CodegenNeuronCppVisitor::get_variable_name(const std::string& name,
 void CodegenNeuronCppVisitor::print_standard_includes() {
     printer->add_newline();
     printer->add_multi_line(R"CODE(
+        #include <Eigen/Dense>
+        #include <Eigen/LU>
+        #include <crout/crout.hpp>
         #include <math.h>
+        #include <newton/newton.hpp>
         #include <stdio.h>
         #include <stdlib.h>
     )CODE");
@@ -809,6 +815,13 @@ void CodegenNeuronCppVisitor::print_sdlists_init([[maybe_unused]] bool print_ini
     printer->pop_block();
 }
 
+CodegenCppVisitor::ParamVector CodegenNeuronCppVisitor::functor_params() {
+    return ParamVector{{"", "NrnThread*", "", "_nt"},
+                       {"", fmt::format("{}&", instance_struct()), "", "inst"},
+                       {"", "int", "", "id"},
+                       {"", "double", "", "v"},
+                       {"", "Datum*", "", "_thread"}};
+}
 
 void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_initializers) {
     const auto value_initialize = print_initializers ? "{}" : "";
@@ -1640,7 +1653,6 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
 /*                                 Print nrn_state routine                              */
 /****************************************************************************************/
 
-
 /// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_nrn_state() {
     if (!nrn_state_required()) {
@@ -2041,6 +2053,7 @@ void CodegenNeuronCppVisitor::print_codegen_routines() {
     print_data_structures(true);
     print_nrn_alloc();
     print_function_prototypes();
+    print_functors_definitions();
     print_global_variables_for_hoc();
     print_thread_memory_callbacks();
     print_compute_functions();  // only nrn_cur and nrn_state
@@ -2048,6 +2061,11 @@ void CodegenNeuronCppVisitor::print_codegen_routines() {
     print_mechanism_register();
     print_namespace_end();
 }
+
+void CodegenNeuronCppVisitor::print_ion_variable() {
+    throw std::runtime_error("Not implemented.");
+}
+
 
 void CodegenNeuronCppVisitor::print_net_send_call(const ast::FunctionCall& node) {
     auto const& arguments = node.get_arguments();

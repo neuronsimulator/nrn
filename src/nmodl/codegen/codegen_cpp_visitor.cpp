@@ -13,7 +13,9 @@
 #include "ast/all.hpp"
 #include "codegen/codegen_helper_visitor.hpp"
 #include "codegen/codegen_utils.hpp"
+#include "visitors/defuse_analyze_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
+#include "visitors/symtab_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
 namespace nmodl {
@@ -21,7 +23,10 @@ namespace codegen {
 
 using namespace ast;
 
+using visitor::DefUseAnalyzeVisitor;
+using visitor::DUState;
 using visitor::RenameVisitor;
+using visitor::SymtabVisitor;
 
 using symtab::syminfo::NmodlType;
 
@@ -617,6 +622,152 @@ void CodegenCppVisitor::rename_function_arguments() {
 }
 
 
+bool CodegenCppVisitor::is_functor_const(const ast::StatementBlock& variable_block,
+                                         const ast::StatementBlock& functor_block) {
+    // Create complete_block with both variable declarations (done in variable_block) and solver
+    // part (done in functor_block) to be able to run the SymtabVisitor and DefUseAnalyzeVisitor
+    // then and get the proper DUChains for the variables defined in the variable_block
+    ast::StatementBlock complete_block(functor_block);
+    // Typically variable_block has only one statement, a statement containing the declaration
+    // of the local variables
+    for (const auto& statement: variable_block.get_statements()) {
+        complete_block.insert_statement(complete_block.get_statements().begin(), statement);
+    }
+
+    // Create Symbol Table for complete_block
+    auto model_symbol_table = std::make_shared<symtab::ModelSymbolTable>();
+    SymtabVisitor(model_symbol_table.get()).visit_statement_block(complete_block);
+    // Initialize DefUseAnalyzeVisitor to generate the DUChains for the variables defined in the
+    // variable_block
+    DefUseAnalyzeVisitor v(*complete_block.get_symbol_table());
+
+    // Check the DUChains for all the variables in the variable_block
+    // If variable is defined in complete_block don't add const quilifier in operator()
+    auto is_functor_const = true;
+    const auto& variables = collect_nodes(variable_block, {ast::AstNodeType::LOCAL_VAR});
+    for (const auto& variable: variables) {
+        const auto& chain = v.analyze(complete_block, variable->get_node_name());
+        is_functor_const = !(chain.eval() == DUState::D || chain.eval() == DUState::LD ||
+                             chain.eval() == DUState::CD);
+        if (!is_functor_const) {
+            break;
+        }
+    }
+
+    return is_functor_const;
+}
+
+
+void CodegenCppVisitor::print_functors_definitions() {
+    for (const auto& functor_name: info.functor_names) {
+        printer->add_newline(2);
+        print_functor_definition(*functor_name.first);
+    }
+}
+
+void CodegenCppVisitor::print_functor_definition(const ast::EigenNewtonSolverBlock& node) {
+    // functor that evaluates F(X) and J(X) for
+    // Newton solver
+    auto float_type = default_float_data_type();
+    int N = node.get_n_state_vars()->get_value();
+
+    const auto functor_name = info.functor_names[&node];
+    printer->fmt_push_block("struct {}", functor_name);
+
+    auto params = functor_params();
+    for (const auto& param: params) {
+        printer->fmt_line("{}{} {};", std::get<0>(param), std::get<1>(param), std::get<3>(param));
+    }
+
+    if (ion_variable_struct_required()) {
+        print_ion_variable();
+    }
+
+    print_statement_block(*node.get_variable_block(), false, false);
+    printer->add_newline();
+
+    printer->push_block("void initialize()");
+    print_statement_block(*node.get_initialize_block(), false, false);
+    printer->pop_block();
+    printer->add_newline();
+
+    printer->fmt_line("{}({})", functor_name, get_parameter_str(params));
+    printer->increase_indent();
+    auto initializers = std::vector<std::string>();
+    for (const auto& param: params) {
+        initializers.push_back(fmt::format("{0}({0})", std::get<3>(param)));
+    }
+
+    printer->add_multi_line(": " + fmt::format("{}", fmt::join(initializers, ", ")));
+    printer->decrease_indent();
+    printer->add_line("{}");
+
+    printer->add_indent();
+
+    const auto& variable_block = *node.get_variable_block();
+    const auto& functor_block = *node.get_functor_block();
+
+    printer->fmt_text(
+        "void operator()(const Eigen::Matrix<{0}, {1}, 1>& nmodl_eigen_xm, Eigen::Matrix<{0}, {1}, "
+        "1>& nmodl_eigen_fm, "
+        "Eigen::Matrix<{0}, {1}, {1}>& nmodl_eigen_jm) {2}",
+        float_type,
+        N,
+        is_functor_const(variable_block, functor_block) ? "const " : "");
+    printer->push_block();
+    printer->fmt_line("const {}* nmodl_eigen_x = nmodl_eigen_xm.data();", float_type);
+    printer->fmt_line("{}* nmodl_eigen_j = nmodl_eigen_jm.data();", float_type);
+    printer->fmt_line("{}* nmodl_eigen_f = nmodl_eigen_fm.data();", float_type);
+    print_statement_block(functor_block, false, false);
+    printer->pop_block();
+    printer->add_newline();
+
+    // assign newton solver results in matrix X to state vars
+    printer->push_block("void finalize()");
+    print_statement_block(*node.get_finalize_block(), false, false);
+    printer->pop_block();
+
+    printer->pop_block(";");
+}
+
+
+void CodegenCppVisitor::print_eigen_linear_solver(const std::string& float_type, int N) {
+    if (N <= 4) {
+        // Faster compared to LU, given the template specialization in Eigen.
+        printer->add_multi_line(R"CODE(
+            bool invertible;
+            nmodl_eigen_jm.computeInverseWithCheck(nmodl_eigen_jm_inv,invertible);
+            nmodl_eigen_xm = nmodl_eigen_jm_inv*nmodl_eigen_fm;
+            if (!invertible) assert(false && "Singular or ill-conditioned matrix (Eigen::inverse)!");
+        )CODE");
+    } else {
+        // In Eigen the default storage order is ColMajor.
+        // Crout's implementation requires matrices stored in RowMajor order (C++-style arrays).
+        // Therefore, the transposeInPlace is critical such that the data() method to give the rows
+        // instead of the columns.
+        printer->add_line("if (!nmodl_eigen_jm.IsRowMajor) nmodl_eigen_jm.transposeInPlace();");
+
+        // pivot vector
+        printer->fmt_line("Eigen::Matrix<int, {}, 1> pivot;", N);
+        printer->fmt_line("Eigen::Matrix<{0}, {1}, 1> rowmax;", float_type, N);
+
+        // In-place LU-Decomposition (Crout Algo) : Jm is replaced by its LU-decomposition
+        printer->fmt_line(
+            "if (nmodl::crout::Crout<{0}>({1}, nmodl_eigen_jm.data(), pivot.data(), rowmax.data()) "
+            "< 0) assert(false && \"Singular or ill-conditioned matrix (nmodl::crout)!\");",
+            float_type,
+            N);
+
+        // Solve the linear system : Forward/Backward substitution part
+        printer->fmt_line(
+            "nmodl::crout::solveCrout<{0}>({1}, nmodl_eigen_jm.data(), nmodl_eigen_fm.data(), "
+            "nmodl_eigen_xm.data(), pivot.data());",
+            float_type,
+            N);
+    }
+}
+
+
 /****************************************************************************************/
 /*                              Main code printing entry points                         */
 /****************************************************************************************/
@@ -882,6 +1033,60 @@ void CodegenCppVisitor::visit_solution_expression(const SolutionExpression& node
     } else {
         block->accept(*this);
     }
+}
+
+
+void CodegenCppVisitor::visit_eigen_newton_solver_block(const ast::EigenNewtonSolverBlock& node) {
+    // solution vector to store copy of state vars for Newton solver
+    printer->add_newline();
+
+    auto float_type = default_float_data_type();
+    int N = node.get_n_state_vars()->get_value();
+    printer->fmt_line("Eigen::Matrix<{}, {}, 1> nmodl_eigen_xm;", float_type, N);
+    printer->fmt_line("{}* nmodl_eigen_x = nmodl_eigen_xm.data();", float_type);
+
+    print_statement_block(*node.get_setup_x_block(), false, false);
+
+    // call newton solver with functor and X matrix that contains state vars
+    printer->add_line("// call newton solver");
+    printer->fmt_line("{} newton_functor({});",
+                      info.functor_names[&node],
+                      get_arg_str(functor_params()));
+    printer->add_line("newton_functor.initialize();");
+    printer->add_line(
+        "int newton_iterations = nmodl::newton::newton_solver(nmodl_eigen_xm, newton_functor);");
+    printer->add_line(
+        "if (newton_iterations < 0) assert(false && \"Newton solver did not converge!\");");
+
+    // assign newton solver results in matrix X to state vars
+    print_statement_block(*node.get_update_states_block(), false, false);
+    printer->add_line("newton_functor.finalize();");
+}
+
+
+void CodegenCppVisitor::visit_eigen_linear_solver_block(const ast::EigenLinearSolverBlock& node) {
+    printer->add_newline();
+
+    const std::string float_type = default_float_data_type();
+    int N = node.get_n_state_vars()->get_value();
+    printer->fmt_line("Eigen::Matrix<{0}, {1}, 1> nmodl_eigen_xm, nmodl_eigen_fm;", float_type, N);
+    printer->fmt_line("Eigen::Matrix<{0}, {1}, {1}> nmodl_eigen_jm;", float_type, N);
+    if (N <= 4) {
+        printer->fmt_line("Eigen::Matrix<{0}, {1}, {1}> nmodl_eigen_jm_inv;", float_type, N);
+    }
+    printer->fmt_line("{}* nmodl_eigen_x = nmodl_eigen_xm.data();", float_type);
+    printer->fmt_line("{}* nmodl_eigen_j = nmodl_eigen_jm.data();", float_type);
+    printer->fmt_line("{}* nmodl_eigen_f = nmodl_eigen_fm.data();", float_type);
+    print_statement_block(*node.get_variable_block(), false, false);
+    print_statement_block(*node.get_initialize_block(), false, false);
+    print_statement_block(*node.get_setup_x_block(), false, false);
+
+    printer->add_newline();
+    print_eigen_linear_solver(float_type, N);
+    printer->add_newline();
+
+    print_statement_block(*node.get_update_states_block(), false, false);
+    print_statement_block(*node.get_finalize_block(), false, false);
 }
 
 

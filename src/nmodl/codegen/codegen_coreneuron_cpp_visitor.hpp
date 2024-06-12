@@ -392,22 +392,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
     void print_function_tables(const ast::FunctionTableBlock& node);
 
 
-    bool is_functor_const(const ast::StatementBlock& variable_block,
-                          const ast::StatementBlock& functor_block);
-
-
-    /**
-     * \brief Based on the \c EigenNewtonSolverBlock passed print the definition needed for its
-     * functor
-     *
-     * \param node \c EigenNewtonSolverBlock for which to print the functor
-     */
-    void print_functor_definition(const ast::EigenNewtonSolverBlock& node);
-
-
-    virtual void print_eigen_linear_solver(const std::string& float_type, int N);
-
-
     /****************************************************************************************/
     /*                             Code-specific helper routines                            */
     /****************************************************************************************/
@@ -684,7 +668,7 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
     /**
      * Print the ion variable struct
      */
-    virtual void print_ion_variable();
+    void print_ion_variable() override;
 
 
     /**
@@ -753,15 +737,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
      *
      */
     void print_nrn_destructor() override;
-
-
-    /**
-     * Go through the map of \c EigenNewtonSolverBlock s and their corresponding functor names
-     * and print the functor definitions before the definitions of the functions of the generated
-     * file
-     *
-     */
-    void print_functors_definitions();
 
 
     /**
@@ -1048,12 +1023,10 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     void visit_derivimplicit_callback(const ast::DerivimplicitCallback& node) override;
-    void visit_eigen_newton_solver_block(const ast::EigenNewtonSolverBlock& node) override;
-    void visit_eigen_linear_solver_block(const ast::EigenLinearSolverBlock& node) override;
     void visit_for_netcon(const ast::ForNetcon& node) override;
     void visit_watch_statement(const ast::WatchStatement& node) override;
 
-
+    ParamVector functor_params() override;
 
   public:
     /****************************************************************************************/

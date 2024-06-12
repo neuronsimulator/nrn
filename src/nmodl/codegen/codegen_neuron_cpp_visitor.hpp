@@ -688,6 +688,9 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     void print_codegen_routines() override;
 
 
+    void print_ion_variable() override;
+
+
     /****************************************************************************************/
     /*                            Overloaded visitor routines                               */
     /****************************************************************************************/
@@ -702,7 +705,7 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     /****************************************************************************************/
     /*          Public printing routines for code generation for use in unit tests          */
     /****************************************************************************************/
-
+    ParamVector functor_params() override;
 
     /**
      * Print the structure that wraps all range and int variables required for the NMODL

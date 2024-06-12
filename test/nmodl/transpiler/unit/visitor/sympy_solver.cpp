@@ -2349,7 +2349,8 @@ SCENARIO("Code generation for EigenNewtonSolver", "[visitor][solver][sympy][deri
                 R"(struct functor_cacum_0 {
         NrnThread* nt;
         cacum_Instance* inst;
-        int id, pnodecount;
+        int id;
+        int pnodecount;
         double v;
         const Datum* indexes;
         double* data;
@@ -2360,18 +2361,23 @@ SCENARIO("Code generation for EigenNewtonSolver", "[visitor][solver][sympy][deri
             old_cai = inst->cai[id];
         }
 
-        functor_cacum_0(NrnThread* nt, cacum_Instance* inst, int id, int pnodecount, double v, const Datum* indexes, double* data, ThreadDatum* thread) : nt{nt}, inst{inst}, id{id}, pnodecount{pnodecount}, v{v}, indexes{indexes}, data{data}, thread{thread} {}
+        functor_cacum_0(NrnThread* nt, cacum_Instance* inst, int id, int pnodecount, double v, const Datum* indexes, double* data, ThreadDatum* thread)
+            : nt(nt), inst(inst), id(id), pnodecount(pnodecount), v(v), indexes(indexes), data(data), thread(thread)
+        {}
         void operator()(const Eigen::Matrix<double, 1, 1>& nmodl_eigen_xm, Eigen::Matrix<double, 1, 1>& nmodl_eigen_fm, Eigen::Matrix<double, 1, 1>& nmodl_eigen_jm) const {
             const double* nmodl_eigen_x = nmodl_eigen_xm.data();
             double* nmodl_eigen_j = nmodl_eigen_jm.data();
             double* nmodl_eigen_f = nmodl_eigen_fm.data();
             nmodl_eigen_f[static_cast<int>(0)] =  -nmodl_eigen_x[static_cast<int>(0)] * nt->_dt / inst->tau[id] - nmodl_eigen_x[static_cast<int>(0)] + inst->cai0[id] * nt->_dt / inst->tau[id] + old_cai - 5000000.0 * nt->_dt * inst->ica[id] / (F * inst->depth[id]);
             nmodl_eigen_j[static_cast<int>(0)] =)";
+
+
             std::string expected_functor_cacum_1_definition =
                 R"(struct functor_cacum_1 {
         NrnThread* nt;
         cacum_Instance* inst;
-        int id, pnodecount;
+        int id;
+        int pnodecount;
         double v;
         const Datum* indexes;
         double* data;
@@ -2382,18 +2388,23 @@ SCENARIO("Code generation for EigenNewtonSolver", "[visitor][solver][sympy][deri
             old_cai = inst->cai[id];
         }
 
-        functor_cacum_1(NrnThread* nt, cacum_Instance* inst, int id, int pnodecount, double v, const Datum* indexes, double* data, ThreadDatum* thread) : nt{nt}, inst{inst}, id{id}, pnodecount{pnodecount}, v{v}, indexes{indexes}, data{data}, thread{thread} {}
+        functor_cacum_1(NrnThread* nt, cacum_Instance* inst, int id, int pnodecount, double v, const Datum* indexes, double* data, ThreadDatum* thread)
+            : nt(nt), inst(inst), id(id), pnodecount(pnodecount), v(v), indexes(indexes), data(data), thread(thread)
+        {}
         void operator()(const Eigen::Matrix<double, 1, 1>& nmodl_eigen_xm, Eigen::Matrix<double, 1, 1>& nmodl_eigen_fm, Eigen::Matrix<double, 1, 1>& nmodl_eigen_jm) const {
             const double* nmodl_eigen_x = nmodl_eigen_xm.data();
             double* nmodl_eigen_j = nmodl_eigen_jm.data();
             double* nmodl_eigen_f = nmodl_eigen_fm.data();
             nmodl_eigen_f[static_cast<int>(0)] =  -nmodl_eigen_x[static_cast<int>(0)] * nt->_dt / inst->tau[id] - nmodl_eigen_x[static_cast<int>(0)] + inst->cai0[id] * nt->_dt / inst->tau[id] + old_cai - 5000000.0 * nt->_dt * inst->ica[id] / (F * inst->depth[id]);
             nmodl_eigen_j[static_cast<int>(0)] =)";
+
+
             std::string expected_functor_cacum_2_definition =
                 R"(struct functor_cacum_2 {
         NrnThread* nt;
         cacum_Instance* inst;
-        int id, pnodecount;
+        int id;
+        int pnodecount;
         double v;
         const Datum* indexes;
         double* data;
@@ -2404,7 +2415,9 @@ SCENARIO("Code generation for EigenNewtonSolver", "[visitor][solver][sympy][deri
             old_cai = inst->cai[id];
         }
 
-        functor_cacum_2(NrnThread* nt, cacum_Instance* inst, int id, int pnodecount, double v, const Datum* indexes, double* data, ThreadDatum* thread) : nt{nt}, inst{inst}, id{id}, pnodecount{pnodecount}, v{v}, indexes{indexes}, data{data}, thread{thread} {}
+        functor_cacum_2(NrnThread* nt, cacum_Instance* inst, int id, int pnodecount, double v, const Datum* indexes, double* data, ThreadDatum* thread)
+            : nt(nt), inst(inst), id(id), pnodecount(pnodecount), v(v), indexes(indexes), data(data), thread(thread)
+        {}
         void operator()(const Eigen::Matrix<double, 1, 1>& nmodl_eigen_xm, Eigen::Matrix<double, 1, 1>& nmodl_eigen_fm, Eigen::Matrix<double, 1, 1>& nmodl_eigen_jm) const {
             const double* nmodl_eigen_x = nmodl_eigen_xm.data();
             double* nmodl_eigen_j = nmodl_eigen_jm.data();
