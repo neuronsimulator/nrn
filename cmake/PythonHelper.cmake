@@ -181,11 +181,10 @@ function(nrn_find_python)
       PARENT_SCOPE)
 endfunction()
 
-# For each Python in NRN_PYTHON_EXECUTABLES, find its version number, its
-# include directory, and its library path. Store those in the new lists
-# NRN_PYTHON_VERSIONS, NRN_PYTHON_INCLUDES, NRN_PYTHON_NUMPY_INCLUDES, and
-# NRN_PYTHON_LIBRARIES. Set NRN_PYTHON_COUNT to be the length of those lists,
-# and NRN_PYTHON_ITERATION_LIMIT to be NRN_PYTHON_COUNT - 1.
+# For each Python in NRN_PYTHON_EXECUTABLES, find its version number, its include directory, and its
+# library path. Store those in the new lists NRN_PYTHON_VERSIONS, NRN_PYTHON_INCLUDES,
+# NRN_PYTHON_NUMPY_INCLUDES, and NRN_PYTHON_LIBRARIES. Set NRN_PYTHON_COUNT to be the length of
+# those lists, and NRN_PYTHON_ITERATION_LIMIT to be NRN_PYTHON_COUNT - 1.
 set(NRN_PYTHON_EXECUTABLES)
 set(NRN_PYTHON_VERSIONS)
 set(NRN_PYTHON_INCLUDES)
