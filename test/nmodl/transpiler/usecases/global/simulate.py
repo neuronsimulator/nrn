@@ -68,7 +68,7 @@ i3 = 0.66 < t
 assert np.all(y0[i0] == g_w_init)
 assert np.all(y0[i1] == g_w1)
 assert np.all(y0[i2] == 33.3)
-assert np.all(y0[i3] == z0)
+assert np.all(y0[i3] == z0 + z0**2)
 
 # The values on thread 1:
 assert y1[i0] == g_w_init
@@ -76,4 +76,4 @@ assert y1[i0] == g_w_init
 # `g_w` from Python.
 # assert np.all(y0[i1] == g_w1)
 assert np.all(y1[i2] == 34.3)
-assert np.all(y1[i3] == z1)
+assert np.all(y1[i3] == z1 + z1**2)

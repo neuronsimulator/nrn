@@ -181,6 +181,11 @@ void CodegenNeuronCppVisitor::print_check_table_function_prototypes() {
     printer->push_block();
     printer->add_line("_nrn_mechanism_cache_range _lmc{_sorted_token, *_nt, *_ml, _type};");
     printer->fmt_line("auto inst = make_instance_{}(_lmc);", info.mod_suffix);
+    if (!codegen_thread_variables.empty()) {
+        printer->fmt_line("auto _thread_vars = {}(_thread[{}].get<double*>());",
+                          thread_variables_struct(),
+                          info.thread_var_thread_id);
+    }
 
     for (const auto& function: info.functions_with_table) {
         auto method_name_str = function->get_node_name();
@@ -388,6 +393,11 @@ void CodegenNeuronCppVisitor::print_hoc_py_wrapper_function_body(
         )CODE");
     }
     printer->fmt_line("auto inst = make_instance_{}(_lmc);", info.mod_suffix);
+    if (!codegen_thread_variables.empty()) {
+        printer->fmt_line("auto _thread_vars = {}(_thread[{}].get<double*>());",
+                          thread_variables_struct(),
+                          info.thread_var_thread_id);
+    }
     if (info.function_uses_table(block_name)) {
         printer->fmt_line("{}{}({});",
                           table_function_prefix(),
@@ -458,12 +468,16 @@ std::string CodegenNeuronCppVisitor::internal_method_arguments() {
 
 
 CodegenCppVisitor::ParamVector CodegenNeuronCppVisitor::internal_method_parameters() {
-    ParamVector params = {{"", "_nrn_mechanism_cache_range&", "", "_lmc"},
-                          {"", fmt::format("{}&", instance_struct()), "", "inst"},
-                          {"", "size_t", "", "id"},
-                          {"", "Datum*", "", "_ppvar"},
-                          {"", "Datum*", "", "_thread"},
-                          {"", "NrnThread*", "", "_nt"}};
+    ParamVector params;
+    params.emplace_back("", "_nrn_mechanism_cache_range&", "", "_lmc");
+    params.emplace_back("", fmt::format("{}&", instance_struct()), "", "inst");
+    params.emplace_back("", "size_t", "", "id");
+    params.emplace_back("", "Datum*", "", "_ppvar");
+    params.emplace_back("", "Datum*", "", "_thread");
+    if (!codegen_thread_variables.empty()) {
+        params.emplace_back("", fmt::format("{}&", thread_variables_struct()), "", "_thread_vars");
+    }
+    params.emplace_back("", "NrnThread*", "", "_nt");
     return params;
 }
 
