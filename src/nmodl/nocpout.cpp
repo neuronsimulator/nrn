@@ -369,7 +369,7 @@ void parout() {
                 continue;
             }
             if (s->subtype & ARRAY) {
-                Sprintf(buf, "extern double* %s;\n", s->name);
+                Sprintf(buf, "extern double %s[];\n", s->name);
             } else {
                 Sprintf(buf, "extern double %s;\n", s->name);
             }
