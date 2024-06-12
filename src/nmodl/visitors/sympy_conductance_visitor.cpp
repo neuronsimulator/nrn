@@ -74,14 +74,8 @@ std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
                                                          binary_expr_index[lhs_str]) +
                                                      1);
             // differentiate dI/dV
-            auto analytic_diff =
-                pywrap::EmbeddedPythonLoader::get_instance().api()->create_ads_executor();
-            analytic_diff->expressions = expressions;
-            analytic_diff->used_names_in_block = used_names_in_block;
-            (*analytic_diff)();
-            auto dIdV = analytic_diff->solution;
-            auto exception_message = analytic_diff->exception_message;
-            pywrap::EmbeddedPythonLoader::get_instance().api()->destroy_ads_executor(analytic_diff);
+            auto analytic_diff = pywrap::EmbeddedPythonLoader::get_instance().api().analytic_diff;
+            auto [dIdV, exception_message] = analytic_diff(expressions, used_names_in_block);
             if (!exception_message.empty()) {
                 logger->warn("SympyConductance :: python exception: {}", exception_message);
             }

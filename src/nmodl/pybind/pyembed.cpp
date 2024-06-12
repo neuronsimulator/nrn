@@ -4,13 +4,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "pybind/pyembed.hpp"
 
 #include <cstdlib>
 #include <dlfcn.h>
 #include <filesystem>
+#include <pybind11/embed.h>
+
 
 #include "config/config.h"
-#include "pybind/pyembed.hpp"
 #include "utils/logger.hpp"
 
 #define STRINGIFY(x) #x
@@ -22,15 +24,43 @@ namespace nmodl {
 
 namespace pybind_wrappers {
 
+using nmodl_init_pybind_wrapper_api_fpointer = decltype(&nmodl_init_pybind_wrapper_api);
+
 bool EmbeddedPythonLoader::have_wrappers() {
 #if defined(NMODL_STATIC_PYWRAPPER)
-    static auto wrapper_api = nmodl::pybind_wrappers::init_pybind_wrap_api();
-    wrappers = &wrapper_api;
-    return true;
+    auto* init = &nmodl_init_pybind_wrapper_api;
 #else
-    wrappers = static_cast<pybind_wrap_api*>(dlsym(RTLD_DEFAULT, "nmodl_wrapper_api"));
-    return wrappers != nullptr;
+    auto* init = (nmodl_init_pybind_wrapper_api_fpointer) (dlsym(RTLD_DEFAULT,
+                                                                 "nmodl_init_pybind_wrapper_api"));
 #endif
+
+    if (init != nullptr) {
+        wrappers = init();
+    }
+
+    return init != nullptr;
+}
+
+void assert_compatible_python_versions() {
+    // This code is imported and slightly modified from PyBind11 because this
+    // is primarly in details for internal usage
+    // License of PyBind11 is BSD-style
+
+    std::string compiled_ver = fmt::format("{}.{}", PY_MAJOR_VERSION, PY_MINOR_VERSION);
+    auto pPy_GetVersion = (const char* (*) (void) ) dlsym(RTLD_DEFAULT, "Py_GetVersion");
+    if (pPy_GetVersion == nullptr) {
+        throw std::runtime_error("Unable to find the function `Py_GetVersion`");
+    }
+    const char* runtime_ver = pPy_GetVersion();
+    std::size_t len = compiled_ver.size();
+    if (std::strncmp(runtime_ver, compiled_ver.c_str(), len) != 0 ||
+        (runtime_ver[len] >= '0' && runtime_ver[len] <= '9')) {
+        throw std::runtime_error(
+            fmt::format("Python version mismatch. nmodl has been compiled with python {} and is "
+                        "being run with python {}",
+                        compiled_ver,
+                        runtime_ver));
+    }
 }
 
 void EmbeddedPythonLoader::load_libraries() {
@@ -49,26 +79,7 @@ void EmbeddedPythonLoader::load_libraries() {
         throw std::runtime_error("Failed to dlopen");
     }
 
-    // This code is imported from PyBind11 because this is primarly in details for internal usage
-    // License of PyBind11 is BSD-style
-    {
-        std::string compiled_ver = fmt::format("{}.{}", PY_MAJOR_VERSION, PY_MINOR_VERSION);
-        const char* (*fun)(void) = (const char* (*) (void) ) dlsym(pylib_handle, "Py_GetVersion");
-        if (fun == nullptr) {
-            logger->critical("Unable to find the function `Py_GetVersion`");
-            throw std::runtime_error("Unable to find the function `Py_GetVersion`");
-        }
-        const char* runtime_ver = fun();
-        std::size_t len = compiled_ver.size();
-        if (std::strncmp(runtime_ver, compiled_ver.c_str(), len) != 0 ||
-            (runtime_ver[len] >= '0' && runtime_ver[len] <= '9')) {
-            logger->critical(
-                "nmodl has been compiled with python {} and is being run with python {}",
-                compiled_ver,
-                runtime_ver);
-            throw std::runtime_error("Python version mismatch between compile-time and runtime.");
-        }
-    }
+    assert_compatible_python_versions();
 
     if (std::getenv("NMODLHOME") == nullptr) {
         logger->critical("NMODLHOME environment variable must be set to load embedded python");
@@ -91,25 +102,36 @@ void EmbeddedPythonLoader::load_libraries() {
 }
 
 void EmbeddedPythonLoader::populate_symbols() {
-    wrappers = static_cast<pybind_wrap_api*>(dlsym(pybind_wrapper_handle, "nmodl_wrapper_api"));
-    if (!wrappers) {
+#if defined(NMODL_STATIC_PYWRAPPER)
+    auto* init = &nmodl_init_pybind_wrapper_api;
+#else
+    // By now it's been dynamically loaded with `RTLD_GLOBAL`.
+    auto* init = (nmodl_init_pybind_wrapper_api_fpointer) (dlsym(RTLD_DEFAULT,
+                                                                 "nmodl_init_pybind_wrapper_api"));
+#endif
+
+    if (!init) {
         const auto errstr = dlerror();
         logger->critical("Tried but failed to load pybind wrapper symbols");
         logger->critical(errstr);
         throw std::runtime_error("Failed to dlsym");
     }
+
+    wrappers = init();
 }
 
 void EmbeddedPythonLoader::unload() {
     if (pybind_wrapper_handle) {
         dlclose(pybind_wrapper_handle);
+        pybind_wrapper_handle = nullptr;
     }
     if (pylib_handle) {
         dlclose(pylib_handle);
+        pylib_handle = nullptr;
     }
 }
 
-const pybind_wrap_api* EmbeddedPythonLoader::api() {
+const pybind_wrap_api& EmbeddedPythonLoader::api() {
     return wrappers;
 }
 

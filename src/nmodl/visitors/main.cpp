@@ -106,7 +106,7 @@ int main(int argc, const char* argv[]) {
         {std::make_shared<VerbatimVisitor>(), "verbatim", "VerbatimVisitor"},
     };
 
-    nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance().api()->initialize_interpreter();
+    nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance().api().initialize_interpreter();
 
     for (const auto& filename: files) {
         logger->info("Processing {}", filename.string());
@@ -128,7 +128,7 @@ int main(int argc, const char* argv[]) {
         }
     }
 
-    nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance().api()->finalize_interpreter();
+    nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance().api().finalize_interpreter();
 
     return 0;
 }

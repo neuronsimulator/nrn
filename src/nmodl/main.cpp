@@ -486,7 +486,7 @@ int main(int argc, const char* argv[]) {
         if (sympy_conductance || sympy_analytic || sparse_solver_exists(*ast)) {
             nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance()
                 .api()
-                ->initialize_interpreter();
+                .initialize_interpreter();
             if (sympy_conductance) {
                 logger->info("Running sympy conductance visitor");
                 SympyConductanceVisitor().visit_program(*ast);
@@ -507,7 +507,7 @@ int main(int argc, const char* argv[]) {
             }
             nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance()
                 .api()
-                ->finalize_interpreter();
+                .finalize_interpreter();
         }
 
         {

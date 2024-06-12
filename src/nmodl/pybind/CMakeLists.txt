@@ -30,6 +30,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ode_py.hpp.inc ${CMAKE_CURRENT_BINARY
 add_library(pyembed pyembed.cpp)
 set_property(TARGET pyembed PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(pyembed PRIVATE util)
+target_link_libraries(pyembed PRIVATE fmt::fmt)
 
 if(NOT LINK_AGAINST_PYTHON)
   add_library(pywrapper SHARED ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
@@ -40,6 +41,8 @@ else()
   set_property(TARGET pywrapper PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_compile_definitions(pyembed PRIVATE NMODL_STATIC_PYWRAPPER=1)
 endif()
+
+target_link_libraries(pywrapper PRIVATE fmt::fmt)
 
 target_include_directories(pyembed PRIVATE ${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
 target_include_directories(pywrapper PRIVATE ${pybind11_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
