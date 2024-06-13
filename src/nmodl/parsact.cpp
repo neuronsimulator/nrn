@@ -766,7 +766,8 @@ static void funchack(Symbol* n, bool ishoc, int hack) {
                              "  size_t const _iml{};\n"
                              "  _ppvar = _nrn_mechanism_access_dparam(_p);\n"
                              "  _thread = _extcall_thread.data();\n"
-                             " double* _globals = nullptr; // 1\n"
+                             "  double* _globals = nullptr;\n"
+                             "  if (gind) { _globals = _thread[_gth].get<double*>(); }\n"
                              "  _nt = static_cast<NrnThread*>(_pnt->_vnt);\n");
     } else if (ishoc) {
         hocfunc_setdata_item(n, lappendstr(procfunc, ""));
@@ -777,7 +778,8 @@ static void funchack(Symbol* n, bool ishoc, int hack) {
             "size_t const _iml{};\n"
             "_ppvar = _local_prop ? _nrn_mechanism_access_dparam(_local_prop) : nullptr;\n"
             "_thread = _extcall_thread.data();\n"
-            " double* _globals = nullptr; // 2\n"
+            "double* _globals = nullptr;\n"
+            "if (gind) { _globals = _thread[_gth].get<double*>(); }\n"
             "_nt = nrn_threads;\n");
     } else {  // _npy_...
         q = lappendstr(procfunc,
@@ -789,7 +791,8 @@ static void funchack(Symbol* n, bool ishoc, int hack) {
                              "size_t const _iml{};\n"
                              "_ppvar = _nrn_mechanism_access_dparam(_prop);\n"
                              "_thread = _extcall_thread.data();\n"
-                             " double* _globals = nullptr; // 3\n"
+                             "double* _globals = nullptr;\n"
+                             "if (gind) { _globals = _thread[_gth].get<double*>(); }\n"
                              "_nt = nrn_threads;\n");
     }
     if (n == last_func_using_table) {

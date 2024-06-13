@@ -536,7 +536,8 @@ void c_out_vectorize() {
     P("_ni = _ml_arg->_nodeindices;\n");
     P("_cntml = _ml_arg->_nodecount;\n");
     P("_thread = _ml_arg->_thread;\n");
-    P("double* _globals = _thread[_gth].get<double*>(); // 4\n");
+    P("double* _globals = nullptr;\n");
+    P("if (gind != 0) { _globals = _thread[_gth].get<double*>(); }\n");
     /*check_tables();*/
     P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
     P(" _ppvar = _ml_arg->_pdata[_iml];\n");
@@ -599,7 +600,8 @@ void c_out_vectorize() {
         P("_ni = _ml_arg->_nodeindices;\n");
         P("_cntml = _ml_arg->_nodecount;\n");
         P("_thread = _ml_arg->_thread;\n");
-        P("double* _globals = _thread[_gth].get<double*>(); // 5\n");
+        P("double* _globals = nullptr;\n");
+        P("if (gind != 0) { _globals = _thread[_gth].get<double*>(); }\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
         P(" _ppvar = _ml_arg->_pdata[_iml];\n");
         ext_vdef();
@@ -666,7 +668,8 @@ void c_out_vectorize() {
         P("_ni = _ml_arg->_nodeindices;\n");
         P("_cntml = _ml_arg->_nodecount;\n");
         P("_thread = _ml_arg->_thread;\n");
-        P("double* _globals = _thread[_gth].get<double*>(); // 6\n");
+        P("double* _globals = nullptr;\n");
+        P("if (gind != 0) { _globals = _thread[_gth].get<double*>(); }\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
         if (electrode_current) {
             P(" _nd = _ml_arg->_nodelist[_iml];\n");
@@ -703,7 +706,8 @@ void c_out_vectorize() {
         P("_ni = _ml_arg->_nodeindices;\n");
         P("size_t _cntml = _ml_arg->_nodecount;\n");
         P("_thread = _ml_arg->_thread;\n");
-        P("double* _globals = _thread[_gth].get<double*>();// 7\n");
+        P("double* _globals = nullptr;\n");
+        P("if (gind != 0) { _globals = _thread[_gth].get<double*>(); }\n");
         P("for (size_t _iml = 0; _iml < _cntml; ++_iml) {\n");
         P(" _ppvar = _ml_arg->_pdata[_iml];\n");
         P(" _nd = _ml_arg->_nodelist[_iml];\n");

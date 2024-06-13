@@ -601,7 +601,7 @@ extern void nrn_promote(Prop*, int, int);\n\
     }
     /* per thread global data */
     gind = 0;
-    if (vectorize)
+    if (vectorize) {
         SYMLISTITER {
             s = SYM(q);
             if (s->nrntype & (NRNGLOBAL) && s->assigned_to_ == 1) {
@@ -612,8 +612,11 @@ extern void nrn_promote(Prop*, int, int);\n\
                 }
             }
         }
+    }
     /* double scalars declared internally */
     Lappendstr(defs_list, "/* declare global and static user variables */\n");
+    Sprintf(buf, "int gind = %d;\n", gind);
+    Lappendstr(defs_list, buf);
     if (gind) {
         Sprintf(buf,
                 "static int _thread1data_inuse = 0;\nstatic double _thread1data[%d];\n#define _gth "
@@ -2781,7 +2784,8 @@ void out_nt_ml_frag(List* p) {
                "  _ml = &_lmr;\n"
                "  _cntml = _ml_arg->_nodecount;\n"
                "  Datum *_thread{_ml_arg->_thread};\n"
-               "  double* _globals{_thread[_gth].get<double*>()};\n"
+               "  double* _globals = nullptr;\n"
+               "  if (gind != 0) { _globals = _thread[_gth].get<double*>(); }\n"
                "  for (_iml = 0; _iml < _cntml; ++_iml) {\n"
                "    _ppvar = _ml_arg->_pdata[_iml];\n"
                "    _nd = _ml_arg->_nodelist[_iml];\n"
