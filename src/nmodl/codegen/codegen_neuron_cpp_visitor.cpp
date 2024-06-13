@@ -2161,6 +2161,10 @@ void CodegenNeuronCppVisitor::print_net_receive() {
     printer->add_line("auto * _ppvar = _nrn_mechanism_access_dparam(_pnt->prop);");
 
     printer->fmt_line("auto inst = make_instance_{}(_lmc);", info.mod_suffix);
+    printer->fmt_line("// nocmodl has a nullptr dereference for thread variables.");
+    printer->fmt_line("// NMODL will fail to compile at a later point, because of");
+    printer->fmt_line("// missing '_thread_vars'.");
+    printer->fmt_line("Datum * _thread = nullptr;");
 
     printer->add_line("size_t id = 0;");
     printer->add_line("double t = _nt->_t;");
