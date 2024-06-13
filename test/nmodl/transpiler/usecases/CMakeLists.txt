@@ -4,6 +4,7 @@ set(NMODL_USECASE_DIRS
     procedure
     global
     hodgkin_huxley
+    kinetic
     nonspecific_current
     neuron_variables
     net_event

@@ -1,5 +1,5 @@
 NEURON {
-    SUFFIX pump
+    SUFFIX X2Y
     RANGE X, Y
     NONSPECIFIC_CURRENT il
 }
