@@ -1,3 +1,5 @@
+#pragma once
+
 #include <memory>
 #include <string>
 
@@ -23,7 +25,9 @@ class Blame {
     size_t blame_line = 0;
 };
 
-std::unique_ptr<Blame> make_blame(size_t blame_line);
+enum class BlameLevel { Short, Detailed };
+
+std::unique_ptr<Blame> make_blame(size_t blame_line, BlameLevel = BlameLevel::Short);
 
 }  // namespace utils
 }  // namespace nmodl

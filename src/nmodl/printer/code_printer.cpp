@@ -8,12 +8,13 @@
 #include "printer/code_printer.hpp"
 #include "utils/blame.hpp"
 #include "utils/string_utils.hpp"
+#include <memory>
 
 namespace nmodl {
 namespace printer {
 
-CodePrinter::CodePrinter(const std::string& filename, size_t blame_line)
-    : blame_line(blame_line) {
+CodePrinter::CodePrinter(const std::string& filename, std::unique_ptr<utils::Blame> blame)
+    : blame_printer(std::move(blame)) {
     if (filename.empty()) {
         throw std::runtime_error("Empty filename for CodePrinter");
     }
@@ -112,8 +113,9 @@ void CodePrinter::pop_block(const std::string_view& suffix, std::size_t num_newl
 }
 
 void CodePrinter::blame() {
-    auto blame_printer = utils::make_blame(blame_line);
-    (*blame_printer)(std::cout, current_line);
+    if (blame_printer != nullptr) {
+        (*blame_printer)(std::cout, current_line);
+    }
 }
 
 

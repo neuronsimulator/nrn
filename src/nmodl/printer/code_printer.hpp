@@ -22,6 +22,8 @@
 #include <sstream>
 #include <string_view>
 
+#include "utils/blame.hpp"
+
 namespace nmodl {
 /// implementation of various printers
 namespace printer {
@@ -45,20 +47,20 @@ class CodePrinter {
     std::streambuf* sbuf = nullptr;
     std::unique_ptr<std::ostream> result;
     size_t current_line = 1;
-    size_t blame_line = 0;
+    std::unique_ptr<utils::Blame> blame_printer;
     size_t indent_level = 0;
     const size_t NUM_SPACES = 4;
 
   public:
-    CodePrinter(size_t blame_line = 0)
+    CodePrinter(std::unique_ptr<utils::Blame> blame)
         : result(std::make_unique<std::ostream>(std::cout.rdbuf()))
-        , blame_line(blame_line) {}
+        , blame_printer(std::move(blame)) {}
 
-    CodePrinter(std::ostream& stream, size_t blame_line = 0)
+    CodePrinter(std::ostream& stream, std::unique_ptr<utils::Blame> blame)
         : result(std::make_unique<std::ostream>(stream.rdbuf()))
-        , blame_line(blame_line) {}
+        , blame_printer(std::move(blame)) {}
 
-    CodePrinter(const std::string& filename, size_t blame_line = 0);
+    CodePrinter(const std::string& filename, std::unique_ptr<utils::Blame> blame);
 
     ~CodePrinter() {
         ofs.close();

@@ -3,6 +3,8 @@
 #include "string_utils.hpp"
 #include <filesystem>
 #include <fmt/format.h>
+#include <stdexcept>
+#include <string>
 
 #if NMODL_ENABLE_BACKWARD
 #include <backward.hpp>
@@ -86,21 +88,51 @@ class ShortBlame: public Blame {
         size_t trace_id = first_relevant_trace(tr, st);
         backward::ResolvedTrace trace = tr.resolve(st[trace_id]);
 
-        std::string trace_label = "";
         return trace_printer.format(trace, "");
     }
 
     BackwardTracePrinter trace_printer;
 };
-#else
-class ShortBlame: public NoBlame {
+
+
+class DetailedBlame: public Blame {
   public:
-    using NoBlame::NoBlame;
+    using Blame::Blame;
+
+  protected:
+    std::string format() const override {
+        backward::StackTrace st;
+        st.load_here(32);
+
+        backward::TraceResolver tr;
+
+        size_t first_trace_id = first_relevant_trace(tr, st);
+
+        std::string full_trace = "\n\n --- Backtrace ----------------\n";
+        for (int i = st.size() - 1; i >= first_trace_id; --i) {
+            backward::ResolvedTrace trace = tr.resolve(st[i]);
+            full_trace += trace_printer.format(trace, std::to_string(i) + ":");
+        }
+        return full_trace;
+    }
+
+    BackwardTracePrinter trace_printer;
 };
+
+
+#else
+using ShortBlame = NoBlame;
+using DetailedBlame = NoBlame;
 #endif
 
-std::unique_ptr<Blame> make_blame(size_t blame_line) {
-    return std::make_unique<ShortBlame>(blame_line);
+std::unique_ptr<Blame> make_blame(size_t blame_line, BlameLevel blame_level) {
+    if (blame_level == BlameLevel::Short) {
+        return std::make_unique<ShortBlame>(blame_line);
+    } else if (blame_level == BlameLevel::Detailed) {
+        return std::make_unique<DetailedBlame>(blame_line);
+    } else {
+        throw std::runtime_error("Unknown blame_level.");
+    }
 }
 
 }  // namespace utils
