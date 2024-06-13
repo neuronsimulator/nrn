@@ -96,6 +96,9 @@ class SemanticAnalysisVisitor: public ConstAstVisitor {
     /// random function first arg must be random_var
     void visit_function_call(const ast::FunctionCall& node) override;
 
+    bool check_name_conflict(const ast::Program& node);
+
+    bool check_table_vars(const ast::Program& node);
   public:
     SemanticAnalysisVisitor(bool accel_backend = false)
         : accel_backend(accel_backend) {}
