@@ -872,11 +872,6 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
     }
 
     if (!info.thread_variables.empty()) {
-        printer->fmt_line("int thread_data_in_use{};", value_initialize);
-        printer->fmt_line("{} thread_data[{}] /* TODO init thread_data */;",
-                          float_type,
-                          info.thread_var_data_size);
-
         size_t prefix_sum = 0;
         for (size_t i = 0; i < info.thread_variables.size(); ++i) {
             const auto& var = info.thread_variables[i];
@@ -884,10 +879,28 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
 
             prefix_sum += var->get_length();
         }
+    }
+
+    if (!info.top_local_variables.empty()) {
+        size_t prefix_sum = info.thread_var_data_size;
+        size_t n_thread_vars = codegen_thread_variables.size();
+        for (size_t i = 0; i < info.top_local_variables.size(); ++i) {
+            const auto& var = info.top_local_variables[i];
+            codegen_thread_variables.push_back({var, n_thread_vars + i, prefix_sum});
+
+            prefix_sum += var->get_length();
+        }
+    }
+
+    if (!codegen_thread_variables.empty()) {
+        auto thread_data_size = info.thread_var_data_size + info.top_local_thread_size;
+        printer->fmt_line("int thread_data_in_use{};", value_initialize);
+        printer->fmt_line("{} thread_data[{}];", float_type, thread_data_size);
 
         codegen_global_variables.push_back(make_symbol("thread_data_in_use"));
+
         auto symbol = make_symbol("thread_data");
-        symbol->set_as_array(info.thread_var_data_size);
+        symbol->set_as_array(thread_data_size);
         codegen_global_variables.push_back(symbol);
     }
 
@@ -1253,7 +1266,7 @@ void CodegenNeuronCppVisitor::print_thread_memory_callbacks() {
     printer->push_block(fmt::format("if({})", inuse));
     printer->fmt_line("_thread[{}] = {{neuron::container::do_not_search, new double[{}]{{}}}};",
                       thread_data_index,
-                      info.thread_var_data_size);
+                      info.thread_var_data_size + info.top_local_thread_size);
     printer->pop_block();
     printer->push_block("else");
     printer->fmt_line("_thread[{}] = {{neuron::container::do_not_search, {}}};",
