@@ -2496,7 +2496,7 @@ int iondef(int* p_pointercount) {
 
     if (diamdec) { /* must be last */
         Sprintf(buf,
-                "#define diam	*_ppvar[%d].get<double*>()\n",
+                "#define diam	(*(_ml->dptr_field<%d>(_iml)))\n",
                 ioncount + *p_pointercount + num_random_vars);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
@@ -2504,7 +2504,7 @@ int iondef(int* p_pointercount) {
     if (areadec) { /* must be last, if we add any more the administrative
             procedures must be redone */
         Sprintf(buf,
-                "#define area	*_ppvar[%d].get<double*>()\n",
+                "#define area	(*(_ml->dptr_field<%d>(_iml)))\n",
                 ioncount + *p_pointercount + num_random_vars + diamdec);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
