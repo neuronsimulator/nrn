@@ -2367,7 +2367,7 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         nrn_sort_node_data(node_token, cache);
         assert(node_data.is_sorted());
         // TODO: maybe we should separate out cache population from sorting.
-        std::size_t n{};  // eww
+        std::size_t n{};
         model.apply_to_mechanisms([&cache, &n, &mech_tokens](auto& mech_data) {
             // TODO do we need to pass `node_token` to `nrn_sort_mech_data`?
             nrn_sort_mech_data(mech_tokens[n], cache, mech_data);
