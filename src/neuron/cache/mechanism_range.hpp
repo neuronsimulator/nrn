@@ -183,8 +183,8 @@ struct MechanismRange {
      * mechanism type will be distributed across multiple NrnThread objects and processed by
      * different threads, and the mechanism data will be permuted so that the instances owned by a
      * given thread are contiguous. In that case the MechanismRange for the 0th thread would have an
-     * @c m_data_offset of zero, and the MechanismRange for the next thread would have an @c m_data_offset of
-     * the number of instances in the 0th thread.
+     * @c m_data_offset of zero, and the MechanismRange for the next thread would have an @c
+     * m_data_offset of the number of instances in the 0th thread.
      *
      * @see @ref nrn_sort_mech_data.
      */
