@@ -572,6 +572,8 @@ endif()
 # =============================================================================
 add_subdirectory(src/sparse13)
 add_subdirectory(src/gnu)
+add_subdirectory(src/modlunit)
+add_subdirectory(src/nmodl)
 add_subdirectory(src/nrniv)
 
 # Collect the environment variables that are needed to execute NEURON from the build directory. This

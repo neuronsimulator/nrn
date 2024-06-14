@@ -351,59 +351,6 @@ set(SCOPMATH_FILES_LIST
 
 set(NRNMPI_FILES_LIST nrnmpi.cpp memory_usage.cpp bbsmpipack.cpp mpispike.cpp)
 
-# built-in mod files
-set(MODFILE_BASE_NAMES
-    apcount
-    exp2syn
-    expsyn
-    feature
-    hh
-    intfire1
-    intfire2
-    intfire4
-    netstim
-    oclmp
-    passive
-    pattern
-    ppmark
-    stim
-    svclmp
-    syn
-    vclmp)
-
-set(MODLUNIT_FILES_LIST
-    consist.cpp
-    declare.cpp
-    init.cpp
-    io.cpp
-    kinunit.cpp
-    list.cpp
-    model.cpp
-    nrnunit.cpp
-    passn.cpp
-    symbol.cpp
-    units.cpp
-    units1.cpp
-    version.cpp)
-
-set(NMODL_FILES_LIST
-    consist.cpp
-    deriv.cpp
-    discrete.cpp
-    init.cpp
-    io.cpp
-    kinetic.cpp
-    list.cpp
-    modl.cpp
-    nocpout.cpp
-    noccout.cpp
-    parsact.cpp
-    netrec_discon.cpp
-    simultan.cpp
-    solve.cpp
-    symbol.cpp
-    version.cpp)
-
 set(IVOS_FILES_LIST observe.cpp resource.cpp)
 
 set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
@@ -430,8 +377,6 @@ set(NRN_IVOC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivoc)
 set(NRN_NODEORDEROPTIM_SRC_DIR ${PROJECT_SOURCE_DIR}/src/coreneuron/permute)
 set(NRN_NRNCVODE_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrncvode)
 set(NRN_NRNIV_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrniv)
-set(NRN_MODLUNIT_SRC_DIR ${PROJECT_SOURCE_DIR}/src/modlunit)
-set(NRN_NMODL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nmodl)
 set(NRN_IVOS_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivos)
 set(NRN_MUSIC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/neuronmusic)
 set(NRN_PARALLEL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/parallel)
@@ -459,11 +404,8 @@ nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPA
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRNMPI_FILES_LIST})
-nrn_create_file_list(NRN_MODFILE_BASE_NAMES src/nrnoc ${MODFILE_BASE_NAMES})
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.cpp)
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)
-nrn_create_file_list(NRN_MODLUNIT_SRC_FILES ${NRN_MODLUNIT_SRC_DIR} ${MODLUNIT_FILES_LIST})
-nrn_create_file_list(NRN_NMODL_SRC_FILES ${NRN_NMODL_SRC_DIR} ${NMODL_FILES_LIST})
 nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmpi
                      ${MPI_DYNAMIC_INCLUDE})
 nrn_create_file_list(NRN_IVOS_SRC_FILES ${NRN_IVOS_SRC_DIR} ${IVOS_FILES_LIST})
