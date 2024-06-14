@@ -63,12 +63,22 @@ struct MechanismRange {
 
   protected:
     /**
-     * @brief Hidden helper constructor used by MechanismRange and MechanismInstance.
+     * @brief Calls `MechanismRange(mech_type, offset, offset)`.
      */
     MechanismRange(int mech_type, std::size_t offset)
+        : MechanismRange(mech_type, offset, offset) {}
+
+    /**
+     * @brief Sets up the pointers for data (not pdata) and the offsets.
+     *
+     * @param data_offset the offset for data (not pdata).
+     * @param dptr_offset the offset for pdata.
+     */
+    MechanismRange(int mech_type, std::size_t data_offset, std::size_t dptr_offset)
         : m_data_ptrs{mechanism::get_data_ptrs<double>(mech_type)}
         , m_data_array_dims{mechanism::get_array_dims<double>(mech_type)}
-        , m_offset{offset} {
+        , m_data_offset{data_offset}
+        , m_dptr_offset{dptr_offset} {
         assert((mech_type < 0) ||
                (mechanism::get_field_count<double>(mech_type) == NumFloatingPointFields));
     }
@@ -84,7 +94,7 @@ struct MechanismRange {
     [[nodiscard]] double* data_array(std::size_t instance) {
         static_assert(variable < NumFloatingPointFields);
         // assert(array_size == m_data_array_dims[variable]);
-        return std::next(m_data_ptrs[variable], array_size * (m_offset + instance));
+        return std::next(m_data_ptrs[variable], array_size * (m_data_offset + instance));
     }
 
     template <int variable, int array_size>
@@ -119,7 +129,7 @@ struct MechanismRange {
         // assert(ind.field < NumFloatingPointFields);
         auto const array_dim = m_data_array_dims[ind.field];
         // assert(ind.array_index < array_dim);
-        return m_data_ptrs[ind.field][array_dim * (m_offset + instance) + ind.array_index];
+        return m_data_ptrs[ind.field][array_dim * (m_data_offset + instance) + ind.array_index];
     }
 
     /**
@@ -131,13 +141,13 @@ struct MechanismRange {
     template <int variable>
     [[nodiscard]] double* dptr_field(std::size_t instance) {
         static_assert(variable < NumDatumFields);
-        return m_pdata_ptrs[variable][m_offset + instance];
+        return m_pdata_ptrs[variable][m_dptr_offset + instance];
     }
 
     template <int variable>
     [[nodiscard]] double* const* dptr_field_ptr() {
         static_assert(variable < NumDatumFields);
-        return m_pdata_ptrs[variable] + m_offset;
+        return m_pdata_ptrs[variable] + m_dptr_offset;
     }
 
   protected:
@@ -178,7 +188,8 @@ struct MechanismRange {
      *
      * @see @ref nrn_sort_mech_data.
      */
-    std::size_t m_offset{};
+    std::size_t m_data_offset{};  // Offset into the SoA mechanism data.
+    std::size_t m_dptr_offset{};  // Offset into the dptr data.
 };
 /**
  * @brief Specialised version of MechanismRange for a single instance.
@@ -202,7 +213,7 @@ struct MechanismInstance: MechanismRange<NumFloatingPointFields, NumDatumFields>
      * @param prop Handle to a single mechanism instance.
      */
     MechanismInstance(Prop* prop)
-        : base_type{_nrn_mechanism_get_type(prop), mechanism::_get::_current_row(prop)} {
+        : base_type{_nrn_mechanism_get_type(prop), mechanism::_get::_current_row(prop), 0} {
         if (!prop) {
             // grrr...see cagkftab test where setdata is not called(?) and extcall_prop is null(?)
             return;
@@ -211,8 +222,9 @@ struct MechanismInstance: MechanismRange<NumFloatingPointFields, NumDatumFields>
             assert(field < NumDatumFields);
             auto& datum = _nrn_mechanism_access_dparam(prop)[field];
             m_dptr_cache[field] = datum.template get<double*>();
-            this->m_dptr_datums[field] = &m_dptr_cache[field];
+            this->m_dptr_datums[field] = &(m_dptr_cache[field]);
         });
+
         this->m_pdata_ptrs = m_dptr_datums.data();
     }
 
@@ -234,7 +246,8 @@ struct MechanismInstance: MechanismRange<NumFloatingPointFields, NumDatumFields>
         if (this != &other) {
             this->m_data_ptrs = other.m_data_ptrs;
             this->m_data_array_dims = other.m_data_array_dims;
-            this->m_offset = other.m_offset;
+            this->m_data_offset = other.m_data_offset;
+            this->m_dptr_offset = other.m_dptr_offset;
             m_dptr_cache = other.m_dptr_cache;
             for (auto i = 0; i < NumDatumFields; ++i) {
                 m_dptr_datums[i] = &m_dptr_cache[i];
