@@ -1,15 +1,16 @@
 begintemplate ModelViewGUI
-public b, sh, selsub, selsec, selpp, selected, grph, pgrph
+public b, sh, selsub, selsec, selpp, selected, grph, pgrph, do_netcon_graph
 external nil, hoc_sf_
 
-objref modelview, this, b, sh, bsh, g, bg
-objref all, svec, xvec, psh, yvec, tobj, xpvec
+objref modelview, this, b, sh, bsh, g, bg, netcon_graph, bnetcon_graph
+objref all, svec, xvec, psh, yvec, tobj, xpvec, pyobj
 strdef tstr
 
 proc init() {
 	x = 0
 	j = 0
 	sh_map_ = 0
+	netcon_graph_map_ = 0
 	g_map_ = 0
 	spacepl_ = 0
 	modelview=$o1
@@ -20,6 +21,7 @@ proc init() {
 proc destroy() {
 	if (sh_map_) { sh_dismiss() }
 	if (g_map_) { g_dismiss() }
+	if (netcon_graph_map_) {netcon_graph_dismiss() }
 	modelview.destroy()
 	objref modelview, sh, bsh, g, bg
 	objref all, svec, xvec, psh, yvec, xpvec
@@ -125,6 +127,30 @@ proc lspsh() {
 proc sh_dismiss() {
 	sh_map_ = 0
 	bsh.unmap()
+}
+
+proc netcon_graph_dismiss() {
+	netcon_graph_map_ = 0
+	netcon_graph.unmap()
+}
+
+proc do_netcon_graph() {
+	has_python = nrnpython("import neuron")
+	if (has_python) {
+		pyobj = new PythonObject()
+		if (!netcon_graph_map_) {
+			bnetcon_graph = new VBox()
+			bnetcon_graph.save("")
+			bnetcon_graph.ref(this)
+			bnetcon_graph.intercept(1)
+			netcon_graph = new Graph()
+			bnetcon_graph.intercept(0)
+			bnetcon_graph.map("NetCon connections", 100, 100, 500, 500)
+			bnetcon_graph.dismiss_action("netcon_graph_dismiss()")
+			netcon_graph_map_ = 1
+		}
+		pyobj.neuron._show_cell_connectivity_grid(netcon_graph)
+	}
 }
 
 proc selsub() {
