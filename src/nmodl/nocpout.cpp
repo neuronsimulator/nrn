@@ -1942,12 +1942,13 @@ void bablk(int ba, int type, Item* q1, Item* q2) {
     insertstr(q1, buf);
     q = q1->next;
     vectorize_substitute(insertstr(q, ""), "Datum* _ppvar;");
-    qv = insertstr(q,
-                   "_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, "
-                   "_ml_arg->_type()}; auto* const "
-                   "_ml = &_lmr;\n"
-                   "double* _globals = nullptr;\n"
-                   "if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n");
+    qv = insertstr(
+        q,
+        "_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, "
+        "_ml_arg->_type()}; auto* const "
+        "_ml = &_lmr;\n"
+        "double* _globals = nullptr;\n"
+        "if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n");
     qv = insertstr(q, "_ppvar = _ppd;\n");
     movelist(qb, q2, procfunc);
 
