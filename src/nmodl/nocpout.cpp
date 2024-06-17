@@ -3153,7 +3153,8 @@ void net_init(Item* qinit, Item* qp2) {
                          "  auto* const _ml = &_ml_real;\n"
                          "  size_t const _iml{};\n"
                          "  Datum* _ppvar = _nrn_mechanism_access_dparam(_pnt->_prop);\n"
-                         "  Datum* _thread = (Datum*)0;\n"
+                         "  Datum* _thread = nullptr;\n"
+                         "  double* _globals = nullptr;\n"
                          "  NrnThread* _nt = (NrnThread*)_pnt->_vnt;\n");
     if (net_init_q1_) {
         diag("NET_RECEIVE block can contain only one INITIAL block", (char*) 0);
