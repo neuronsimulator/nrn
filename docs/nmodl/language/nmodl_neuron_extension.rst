@@ -1,4 +1,4 @@
-.. _nmodl2:
+.. _nmodl_neuron_extension:
 
 .. _nmodltoneuron:
 

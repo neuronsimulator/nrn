@@ -7,12 +7,7 @@ NMODL
 This document describes how to use the NBSR model description language 
 to add membrane mechanisms to NEURON. 
 
-NEURON's extensions to the NBSR language are described in:
-
-.. toctree:: :maxdepth: 1
-
-    nmodl_neuron_extension.rst
-
+NEURON's extensions to the NBSR language are described in :ref:`nmodl_neuron_extension`.
 
 .. _modeldescriptionlanguage:
 
