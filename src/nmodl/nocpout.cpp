@@ -739,17 +739,13 @@ extern void nrn_promote(Prop*, int, int);\n\
     Lappendstr(defs_list, "{0, 0, 0}\n};\n");
     Lappendstr(defs_list, "static double _sav_indep;\n");
     if (ba_index_ > 0) {
-        Lappendstr(defs_list,
-                   "static void _ba1(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, "
-                   "Memb_list* _ml, size_t _iml, _nrn_model_sorted_token const&)");
-        for (i = 2; i <= ba_index_; ++i) {
+        for (int i = 1; i <= ba_index_; ++i) {
             Sprintf(buf,
-                    ", _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* "
-                    "_ml, size_t _iml, _nrn_model_sorted_token const&)",
+                    "static void _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* "
+                    "_ml, size_t _iml, _nrn_model_sorted_token const&);\n",
                     i);
             Lappendstr(defs_list, buf);
         }
-        Lappendstr(defs_list, ";\n");
     }
 
     /******** what normally goes into cabvars.h structures */
