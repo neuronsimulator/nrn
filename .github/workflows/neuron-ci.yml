@@ -172,7 +172,7 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt
-          python -m pip install --upgrade -r external/nmodl/requirements.txt
+          python -m pip install -r external/nmodl/requirements.txt
           python -m pip install --upgrade -r ci_requirements.txt
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
