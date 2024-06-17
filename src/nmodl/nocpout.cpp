@@ -544,11 +544,6 @@ extern void nrn_promote(Prop*, int, int);\n\
         }
     }
 
-    emit_check_table_thread = 0;
-    if (vectorize && check_tables_threads(defs_list)) {
-        emit_check_table_thread = 1;
-    }
-
     /* per thread top LOCAL */
     /* except those that are marked assigned_to_ == 2 stay static double */
     if (vectorize && toplocal_) {
@@ -689,6 +684,11 @@ extern void nrn_promote(Prop*, int, int);\n\
             }
             Lappendstr(defs_list, buf);
         }
+    }
+
+    emit_check_table_thread = 0;
+    if (vectorize && check_tables_threads(defs_list)) {
+        emit_check_table_thread = 1;
     }
 
     Lappendstr(defs_list, "/* some parameters have upper and lower limits */\n");

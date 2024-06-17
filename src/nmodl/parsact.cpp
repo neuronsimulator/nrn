@@ -378,6 +378,7 @@ int check_tables_threads(List* p) {
                    "\n"
                    "static void _check_table_thread(_threadargsprotocomma_ int _type, "
                    "_nrn_model_sorted_token const& _sorted_token) {\n"
+                   "  if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); } \n"
                    "  _nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml, _type};\n"
                    "  {\n"
                    "    auto* const _ml = &_lmr;\n");
