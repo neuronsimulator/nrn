@@ -18,7 +18,7 @@ static std::vector<double> parm_default{DEF_cm};
 extern "C" void capac_reg_(void) {
     int mechtype;
     /* all methods deal with capacitance in special ways */
-    register_mech(mechanism, cap_alloc, nullptr, nullptr, nullptr, cap_init, -1, 1);
+    register_mech(mechanism, cap_alloc, nullptr, nullptr, nullptr, cap_init, -1, 1, 0);
     mechtype = nrn_get_mechtype(mechanism[1]);
     hoc_register_parm_default(mechtype, &parm_default);
     using neuron::mechanism::field;

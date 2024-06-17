@@ -481,7 +481,7 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
     for (ii = 0; ii < n_memb_func; ++ii) {
         i = memb_order_[ii];
         if (mlcnt[i]) {
-            if (_nt->id > 0 && memb_func[i].vectorized == 0) {
+            if (_nt->id > 0 && memb_func[i].thread_safe == 0) {
                 hoc_execerror(memb_func[i].sym->name, "is not thread safe");
             }
             /*printf("thread_memblist_setup %lx type=%d cnt=%d\n", (long)nth, i, mlcnt[i]);*/

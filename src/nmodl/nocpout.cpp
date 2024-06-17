@@ -1219,10 +1219,11 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
                     "\
 	_pointtype = point_register_mech(_mechanism,\n\
 	 nrn_alloc,%s, nrn_init,\n\
-	 hoc_nrnpointerindex, %d,\n\
+	 hoc_nrnpointerindex, %d, %d,\n\
 	 _hoc_create_pnt, _hoc_destroy_pnt, _member_func);\n",
                     brkpnt_str_,
-                    vectorize ? 1 + thread_data_index : 0);
+                    vectorize ? 1 : 0,
+                    thread_data_index);
             Lappendstr(defs_list, buf);
             if (destructorfunc->next != destructorfunc) {
                 Lappendstr(defs_list, "	register_destructor(_destructor);\n");
@@ -1230,9 +1231,10 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
         } else {
             Sprintf(buf,
                     "\
-	register_mech(_mechanism, nrn_alloc,%s, nrn_init, hoc_nrnpointerindex, %d);\n",
+	register_mech(_mechanism, nrn_alloc,%s, nrn_init, hoc_nrnpointerindex, %d, %d);\n",
                     brkpnt_str_,
-                    vectorize ? 1 + thread_data_index : 0);
+                    vectorize ? 1 : 0,
+                    thread_data_index);
             Lappendstr(defs_list, buf);
         }
         if (vectorize && thread_data_index) {

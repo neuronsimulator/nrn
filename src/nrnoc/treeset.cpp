@@ -1702,7 +1702,7 @@ void v_setup_vectors(void) {
                  data. For this reason, for now, an otherwise thread-safe artificial
                  cell model is declared by nmodl as thread-unsafe.
                 */
-                if (memb_func[i].vectorized == 0) {
+                if (memb_func[i].thread_safe == 0) {
                     pnt->_vnt = nrn_threads;
                 } else {
                     pnt->_vnt = nrn_threads + nti;

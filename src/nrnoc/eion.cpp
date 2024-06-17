@@ -179,7 +179,7 @@ void ion_reg(const char* name, double valence) {
     mechanism[5] = nullptr; /* buf[4] not used above */
     s = hoc_lookup(buf[0].c_str());
     if (!s || s->type != MECHANISM || memb_func[s->subtype].alloc != ion_alloc) {
-        register_mech(mechanism, ion_alloc, ion_cur, nullptr, nullptr, ion_init, -1, 1);
+        register_mech(mechanism, ion_alloc, ion_cur, nullptr, nullptr, ion_init, -1, 1, 0);
         hoc_symbol_limits(hoc_lookup(buf[2].c_str()), 1e-12, 1e9);
         hoc_symbol_limits(hoc_lookup(buf[3].c_str()), 1e-12, 1e9);
         hoc_symbol_units(hoc_lookup(buf[1].c_str()), "mV");

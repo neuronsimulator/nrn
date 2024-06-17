@@ -43,7 +43,7 @@ struct Memb_func {
     mod_f_t private_constructor;
     mod_f_t private_destructor;
     Symbol* sym;
-    int vectorized;
+    int thread_safe;                        /* Boolean, is the mechanism thread-safe. */
     int thread_size_;                       /* how many Datum needed in Memb_list if vectorized */
     void (*thread_mem_init_)(ThreadDatum*); /* after Memb_list._thread is allocated */
     void (*thread_cleanup_)(ThreadDatum*);  /* before Memb_list._thread is freed */
@@ -99,7 +99,8 @@ extern int register_mech(const char** m,
                          mod_f_t private_constructor,
                          mod_f_t private_destructor,
                          int nrnpointerindex,
-                         int vectorized);
+                         int thread_safe,
+                         int thread_variable_count);
 extern int point_register_mech(const char**,
                                mod_alloc_t alloc,
                                mod_f_t cur,
@@ -111,7 +112,8 @@ extern int point_register_mech(const char**,
                                int nrnpointerindex,
                                mod_f_t constructor,
                                mod_f_t destructor,
-                               int vectorized);
+                               int thread_safe,
+                               int thread_variable_count);
 extern void register_constructor(mod_f_t constructor);
 using NetBufReceive_t = void (*)(NrnThread*);
 extern void hoc_register_net_receive_buffering(NetBufReceive_t, int);

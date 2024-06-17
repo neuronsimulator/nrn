@@ -89,7 +89,8 @@ void ion_reg(const char* name, double valence) {
                       nullptr,
                       nullptr,
                       -1,
-                      1);
+                      1,
+                      0);
         mechtype = nrn_get_mechtype(mech[1]);
         _nrn_layout_reg(mechtype, SOA_LAYOUT);
         hoc_register_prop_size(mechtype, nparm, 1);
@@ -139,7 +140,7 @@ the USEION statement of any model using this ion\n",
     }
 }
 
-#if VECTORIZE
+
 #define erev   pd[CNRN_FLAT_INDEX_IML_ROW(0)] /* From Eion */
 #define conci  pd[CNRN_FLAT_INDEX_IML_ROW(1)]
 #define conco  pd[CNRN_FLAT_INDEX_IML_ROW(2)]
@@ -280,4 +281,3 @@ void second_order_cur(NrnThread* _nt, int secondorder) {
     }
 }
 }  // namespace coreneuron
-#endif

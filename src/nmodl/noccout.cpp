@@ -31,8 +31,6 @@ extern Symbol* cvode_nrn_cur_solve_;
 extern Symbol* cvode_nrn_current_solve_;
 extern List* state_discon_list_;
 
-/* VECTORIZE has not been optional for years. We leave the define there but */
-/* we no longer update the #else clauses. */
 extern int vectorize;
 static List* vectorize_replacements; /* pairs of item pointer, strings */
 extern int electrode_current;        /* 1 means we should watch out for extracellular

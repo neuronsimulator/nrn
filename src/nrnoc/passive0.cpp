@@ -15,7 +15,7 @@ static std::vector<double> parm_default{DEF_g, DEF_e};
 
 extern "C" void passive0_reg_(void) {
     int mechtype;
-    register_mech(mechanism, pas_alloc, pas_cur, pas_jacob, nullptr, nullptr, -1, 1);
+    register_mech(mechanism, pas_alloc, pas_cur, pas_jacob, nullptr, nullptr, -1, 1, 0);
     mechtype = nrn_get_mechtype(mechanism[1]);
     hoc_register_parm_default(mechtype, &parm_default);
     using neuron::mechanism::field;

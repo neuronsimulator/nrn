@@ -98,7 +98,7 @@ static std::vector<double> param_default{
 };
 
 extern "C" void extracell_reg_(void) {
-    register_mech(mechanism, extcell_alloc, nullptr, nullptr, nullptr, extcell_init, -1, 1);
+    register_mech(mechanism, extcell_alloc, nullptr, nullptr, nullptr, extcell_init, -1, 1, 0);
     int const i = nrn_get_mechtype(mechanism[1]);
     assert(i == EXTRACELL);
     hoc_register_parm_default(EXTRACELL, &param_default);
