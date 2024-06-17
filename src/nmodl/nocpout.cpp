@@ -615,8 +615,12 @@ extern void nrn_promote(Prop*, int, int);\n\
     }
     /* double scalars declared internally */
     Lappendstr(defs_list, "/* declare global and static user variables */\n");
-    Sprintf(buf, "int gind = %d;\n", gind);
+    Sprintf(buf, "#define gind %d\n", gind);
     Lappendstr(defs_list, buf);
+    if (!gind) {
+        Sprintf(buf, "#define _gth 0\n");
+        Lappendstr(defs_list, buf);
+    }
     if (gind) {
         Sprintf(buf,
                 "static int _thread1data_inuse = 0;\nstatic double _thread1data[%d];\n#define _gth "
@@ -1582,6 +1586,8 @@ void ldifusreg() {
             "_nrn_model_sorted_token const& _sorted_token) {\n"
             "  _nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _ml_arg->_type()};\n"
             "  auto* const _ml = &_lmr;\n"
+            "  double* _globals = nullptr;\n"
+            "  if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n"
             "  *_pdvol = ",
             n,
             n);
@@ -2785,7 +2791,7 @@ void out_nt_ml_frag(List* p) {
                "  _cntml = _ml_arg->_nodecount;\n"
                "  Datum *_thread{_ml_arg->_thread};\n"
                "  double* _globals = nullptr;\n"
-               "  if (gind != 0) { _globals = _thread[_gth].get<double*>(); }\n"
+               "  if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n"
                "  for (_iml = 0; _iml < _cntml; ++_iml) {\n"
                "    _ppvar = _ml_arg->_pdata[_iml];\n"
                "    _nd = _ml_arg->_nodelist[_iml];\n"
@@ -3051,7 +3057,7 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
         "  auto* const _ml = &_ml_real;\n"
         "  size_t const _iml{};\n");
     q = insertstr(qstmt, "  _ppvar = _nrn_mechanism_access_dparam(_pnt->_prop);\n");
-    vectorize_substitute(insertstr(q, ""), "  _thread = nullptr; _nt = (NrnThread*)_pnt->_vnt;");
+    vectorize_substitute(insertstr(q, ""), "  _thread = nullptr; double* _globals = nullptr; _nt = (NrnThread*)_pnt->_vnt;");
     if (debugging_) {
         if (0) {
             insertstr(qstmt, " assert(_tsav <= t); _tsav = t;");

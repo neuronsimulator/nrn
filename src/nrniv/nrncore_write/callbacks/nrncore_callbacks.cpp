@@ -553,10 +553,10 @@ int nrnthread_dat2_corepointer_mech(int tid,
     icnt = 0;
     // data size and allocate
     for (int i = 0; i < ml->nodecount; ++i) {
-        (*nrn_bbcore_write_[type])(NULL, NULL, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, &nt);
+        (*nrn_bbcore_write_[type])(nullptr, nullptr, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, nullptr, &nt);
     }
-    dArray = NULL;
-    iArray = NULL;
+    dArray = nullptr;
+    iArray = nullptr;
     if (icnt) {
         iArray = new int[icnt];
     }
@@ -567,7 +567,7 @@ int nrnthread_dat2_corepointer_mech(int tid,
     // data values
     for (int i = 0; i < ml->nodecount; ++i) {
         (*nrn_bbcore_write_[type])(
-            dArray, iArray, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, &nt);
+            dArray, iArray, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, nullptr, &nt);
     }
 
     return 1;
@@ -593,7 +593,7 @@ int core2nrn_corepointer_mech(int tid, int type, int icnt, int dcnt, int* iArray
     int dk = 0;
     // data values
     for (int i = 0; i < ml->nodecount; ++i) {
-        (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, ml, i, ml->pdata[i], ml->_thread, &nt);
+        (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, ml, i, ml->pdata[i], ml->_thread, nullptr, &nt);
     }
     assert(dk == dcnt);
     assert(ik == icnt);

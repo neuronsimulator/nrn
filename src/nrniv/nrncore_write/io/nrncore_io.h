@@ -37,7 +37,7 @@ void write_uint32vec(std::vector<uint32_t>& vec, FILE* f);
 // also for read
 struct Memb_list;
 using bbcore_write_t =
-    void (*)(double*, int*, int*, int*, Memb_list*, std::size_t, Datum*, Datum*, NrnThread*);
+    void (*)(double*, int*, int*, int*, Memb_list*, std::size_t, Datum*, Datum*, double*, NrnThread*);
 
 void write_nrnthread_task(const char*, CellGroup* cgs, bool append);
 void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt);
