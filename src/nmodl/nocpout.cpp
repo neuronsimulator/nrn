@@ -2782,20 +2782,21 @@ void out_nt_ml_frag(List* p) {
     vectorize_substitute(lappendstr(p, ""), "  Datum* _ppvar;\n");
     vectorize_substitute(lappendstr(p, ""), "  size_t _iml;");
     vectorize_substitute(lappendstr(p, ""), "  _nrn_mechanism_cache_range* _ml;");
-    Lappendstr(p,
-               "  Node* _nd{};\n"
-               "  double _v{};\n"
-               "  int _cntml;\n"
-               "  _nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n"
-               "  _ml = &_lmr;\n"
-               "  _cntml = _ml_arg->_nodecount;\n"
-               "  Datum *_thread{_ml_arg->_thread};\n"
-               "  double* _globals = nullptr;\n"
-               "  if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n"
-               "  for (_iml = 0; _iml < _cntml; ++_iml) {\n"
-               "    _ppvar = _ml_arg->_pdata[_iml];\n"
-               "    _nd = _ml_arg->_nodelist[_iml];\n"
-               "    v = NODEV(_nd);\n");
+    Lappendstr(
+        p,
+        "  Node* _nd{};\n"
+        "  double _v{};\n"
+        "  int _cntml;\n"
+        "  _nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n"
+        "  _ml = &_lmr;\n"
+        "  _cntml = _ml_arg->_nodecount;\n"
+        "  Datum *_thread{_ml_arg->_thread};\n"
+        "  double* _globals = nullptr;\n"
+        "  if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n"
+        "  for (_iml = 0; _iml < _cntml; ++_iml) {\n"
+        "    _ppvar = _ml_arg->_pdata[_iml];\n"
+        "    _nd = _ml_arg->_nodelist[_iml];\n"
+        "    v = NODEV(_nd);\n");
 }
 
 void cvode_emit_interface() {
@@ -3057,7 +3058,9 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
         "  auto* const _ml = &_ml_real;\n"
         "  size_t const _iml{};\n");
     q = insertstr(qstmt, "  _ppvar = _nrn_mechanism_access_dparam(_pnt->_prop);\n");
-    vectorize_substitute(insertstr(q, ""), "  _thread = nullptr; double* _globals = nullptr; _nt = (NrnThread*)_pnt->_vnt;");
+    vectorize_substitute(
+        insertstr(q, ""),
+        "  _thread = nullptr; double* _globals = nullptr; _nt = (NrnThread*)_pnt->_vnt;");
     if (debugging_) {
         if (0) {
             insertstr(qstmt, " assert(_tsav <= t); _tsav = t;");

@@ -760,15 +760,16 @@ static void funchack(Symbol* n, bool ishoc, int hack) {
                    "    hoc_execerror(\"POINT_PROCESS data instance not valid\", NULL);\n"
                    "  }\n");
         q = lappendstr(procfunc, "  _setdata(_p);\n");
-        vectorize_substitute(q,
-                             "  _nrn_mechanism_cache_instance _ml_real{_p};\n"
-                             "  auto* const _ml = &_ml_real;\n"
-                             "  size_t const _iml{};\n"
-                             "  _ppvar = _nrn_mechanism_access_dparam(_p);\n"
-                             "  _thread = _extcall_thread.data();\n"
-                             "  double* _globals = nullptr;\n"
-                             "  if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n"
-                             "  _nt = static_cast<NrnThread*>(_pnt->_vnt);\n");
+        vectorize_substitute(
+            q,
+            "  _nrn_mechanism_cache_instance _ml_real{_p};\n"
+            "  auto* const _ml = &_ml_real;\n"
+            "  size_t const _iml{};\n"
+            "  _ppvar = _nrn_mechanism_access_dparam(_p);\n"
+            "  _thread = _extcall_thread.data();\n"
+            "  double* _globals = nullptr;\n"
+            "  if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n"
+            "  _nt = static_cast<NrnThread*>(_pnt->_vnt);\n");
     } else if (ishoc) {
         hocfunc_setdata_item(n, lappendstr(procfunc, ""));
         vectorize_substitute(
@@ -785,15 +786,16 @@ static void funchack(Symbol* n, bool ishoc, int hack) {
         q = lappendstr(procfunc,
                        "  neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
                        "  _ppvar = _nrn_mechanism_access_dparam(_prop);\n");
-        vectorize_substitute(q,
-                             "_nrn_mechanism_cache_instance _ml_real{_prop};\n"
-                             "auto* const _ml = &_ml_real;\n"
-                             "size_t const _iml{};\n"
-                             "_ppvar = _nrn_mechanism_access_dparam(_prop);\n"
-                             "_thread = _extcall_thread.data();\n"
-                             "double* _globals = nullptr;\n"
-                             "if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n"
-                             "_nt = nrn_threads;\n");
+        vectorize_substitute(
+            q,
+            "_nrn_mechanism_cache_instance _ml_real{_prop};\n"
+            "auto* const _ml = &_ml_real;\n"
+            "size_t const _iml{};\n"
+            "_ppvar = _nrn_mechanism_access_dparam(_prop);\n"
+            "_thread = _extcall_thread.data();\n"
+            "double* _globals = nullptr;\n"
+            "if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n"
+            "_nt = nrn_threads;\n");
     }
     if (n == last_func_using_table) {
         qp = lappendstr(procfunc, "");
