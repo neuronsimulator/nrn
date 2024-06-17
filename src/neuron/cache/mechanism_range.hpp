@@ -204,7 +204,7 @@ struct MechanismInstance: MechanismRange<NumFloatingPointFields, NumDatumFields>
     MechanismInstance(Prop* prop)
         : base_type{_nrn_mechanism_get_type(prop), mechanism::_get::_current_row(prop)} {
         if (!prop) {
-            // grrr...see cagkftab test where setdata is not called(?) and extcall_prop is null(?)
+            // see cagkftab test where setdata is not called(?) and extcall_prop is null(?)
             return;
         }
         indices_to_cache(_nrn_mechanism_get_type(prop), [this, prop](auto field) {
