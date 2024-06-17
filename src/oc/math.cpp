@@ -1,3 +1,7 @@
+#ifndef __INTEL_LLVM_COMPILER
+#pragma STDC FENV_ACCESS ON
+#endif
+
 #include <../../nrnconf.h>
 /* a fake change */
 /* /local/src/master/nrn/src/oc/math.cpp,v 1.6 1999/07/16 13:43:10 hines Exp */

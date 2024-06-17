@@ -122,7 +122,7 @@ pointer-to-integer taken from the index column:
 
     struct data_handle_double_manual {
       double* const* ptr_to_array_base;
-      unsigned long* ptr_to_current_row;
+      std::shared_ptr<unsigned long> ptr_to_current_row;
       double& get_value() {
         return (*ptr_to_array_base)[*ptr_to_current_row];
       }
@@ -138,10 +138,11 @@ template, *i.e.* we use ``data_handle<double>`` in place of ``data_handle_double
 
     You may wonder what happens when an entry is deleted from the data structures. In this case the
     storage for the **data** of the deleted element (*i.e.* its ``a`` and ``b`` values) is released
-    and made available for re-use, but its entry in the index vector is not freed and the
+    and made available for re-use, but its entry in the index vector is not freed immediately and instead the
     pointed-to integer is updated with a sentinel value. This means that data handles that referred
     to now-deleted entries (``a`` and ``b`` values) can detect that they are no longer valid and
-    will not return invalid values.
+    will not return invalid values. Once the last reference to a deleted row is destroyed the memory
+    for storing the stable identifier is deleted.
 
 Of course, this indirection also means that these data handles are not especially performant, but
 in general they are intended to solve otherwise-tedious bookkeeping problems, and
@@ -931,26 +932,3 @@ Similarly, usage of ``area`` in generated code may be able to be simplified.
 Most likely, the best approach is to uniformly handle ``area`` and ``diam`` in the same way as Node
 voltages, both in terms of the underlying data structure and how they are accessed in the generated
 code.
-
-Analyze the bookkeeping overhead
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-There a crude printf-based tool to access memory usage of the datastructures
-``print_local_memory_usage`` and ``print_memory_stats``.
-This provides some kind of breakdown between the actual data, the "active" bookkeeping costs
-(the currently-used index columns, as explained above), and also the "wasted" overhead of values
-that have their deletion deferred in order to avoid leaving any data handles "in the wild" from
-accidentally dereferencing freed pointers.
-
-The need to "leak" the stable identifiers could be avoided by replacing the
-"raw pointer to integer" idea with a reference counted integer, with bitpacking
-and all.
-
-Alternatively, this "wasted" storage could, be recovered after a full traversal of all data
-structures that hold ``data_handle<T>`` or ``generic_data_handle`` that collapses handles that are
-in previously-valid-but-not-any-more (once valid?) state into "null" (never valid?) state.
-
-Reporting and monitoring the scale of this "waste" is much easier than recovering it, which should
-only be done **if** this is **shown** to be a real problem.
-
-Measurements at BBP have shown that under certain conditions the amount of
-"leaked" stable identifiers adds up.
