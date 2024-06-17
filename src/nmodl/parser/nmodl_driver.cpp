@@ -27,9 +27,16 @@ std::shared_ptr<ast::Program> NmodlDriver::parse_stream(std::istream& in) {
     NmodlLexer scanner(*this, &in);
     NmodlParser parser(scanner, *this);
 
+    parser_stream << "parser trace:" << std::endl;
+
     scanner.set_debug(trace_scanner);
     parser.set_debug_level(trace_parser);
+    parser.set_debug_stream(parser_stream);
+
     parser.parse();
+
+    logger->trace(parser_stream.str());
+
     return astRoot;
 }
 
@@ -153,6 +160,8 @@ void NmodlDriver::parse_error(const NmodlLexer& scanner,
     oss << scanner.get_curr_line() << '\n';
     oss << std::string(location.begin.column - 1, '-');
     oss << "^\n";
+    // output the logs if running with `trace` verbosity
+    logger->trace(parser_stream.str());
     throw std::runtime_error(oss.str());
 }
 

@@ -69,7 +69,7 @@ class NmodlDriver {
     bool trace_scanner = false;
 
     /// enable debug output in the bison parser
-    bool trace_parser = false;
+    bool trace_parser = true;
 
     /// print messages from lexer/parser
     bool verbose = false;
@@ -83,6 +83,9 @@ class NmodlDriver {
     /// The list of open files, and the location of the request.
     /// \a nullptr is pushed as location for the top NMODL file
     std::unordered_map<std::string, const location*> open_files;
+
+    /// The stream where Bison will dump its logs
+    std::ostringstream parser_stream;
 
   public:
     /// file or input stream name (used by scanner for position), see todo
@@ -139,15 +142,15 @@ class NmodlDriver {
      * Emit a parsing error
      * \throw std::runtime_error
      */
-    static void parse_error(const location& location, const std::string& message);
+    void parse_error(const location& location, const std::string& message);
 
     /**
      * Emit a parsing error. Takes additionally a Lexer instance to print code context
      * \throw std::runtime_error
      */
-    static void parse_error(const NmodlLexer& scanner,
-                            const location& location,
-                            const std::string& message);
+    void parse_error(const NmodlLexer& scanner,
+                     const location& location,
+                     const std::string& message);
 
     /**
      * Ensure \a file argument given to the INCLUDE directive is valid:
@@ -156,8 +159,7 @@ class NmodlDriver {
      *
      * \return unquoted string
      */
-    static std::string check_include_argument(const location& location,
-                                              const std::string& filename);
+    std::string check_include_argument(const location& location, const std::string& filename);
 };
 
 /** \} */  // end of parser
