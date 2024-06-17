@@ -16,3 +16,4 @@ nbsphinx
 jinja2
 sphinx-design
 packaging==21.3
+tenacity<8.4
