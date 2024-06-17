@@ -742,8 +742,7 @@ extern void nrn_promote(Prop*, int, int);\n\
         for (int i = 1; i <= ba_index_; ++i) {
             Sprintf(buf,
                     "static void _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, "
-                    "Memb_list* "
-                    "_ml, size_t _iml, _nrn_model_sorted_token const&);\n",
+                    "Memb_list* _ml, size_t _iml, _nrn_model_sorted_token const&);\n",
                     i);
             Lappendstr(defs_list, buf);
         }
