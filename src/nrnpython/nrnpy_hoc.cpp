@@ -178,7 +178,10 @@ static PyObject* hoc_ac_safe(PyObject* self, PyObject* args) {
 }
 
 static PyMethodDef HocMethods[] = {
-    {"execute", nrnexec_safe, METH_VARARGS, "Execute a hoc command, return 1 on success, 0 on failure."},
+    {"execute",
+     nrnexec_safe,
+     METH_VARARGS,
+     "Execute a hoc command, return 1 on success, 0 on failure."},
     {"hoc_ac", hoc_ac_safe, METH_VARARGS, "Get (or set) the scalar hoc_ac_."},
     {NULL, NULL, 0, NULL}};
 

@@ -935,8 +935,7 @@ static PyObject* NPySecObj_z3d_safe(NPySecObj* self, PyObject* args) {
 }
 
 // returns arc position value at index of 3d list
-static PyObject* NPySecObj_arc3d(NPySecObj* self,
-                                 PyObject* args) {
+static PyObject* NPySecObj_arc3d(NPySecObj* self, PyObject* args) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
     int n, i;
@@ -2818,8 +2817,14 @@ static int rv_setitem_safe(PyObject* self, Py_ssize_t ix, PyObject* value) {
 }
 
 static PyMethodDef NPySecObj_methods[] = {
-    {"name", (PyCFunction) NPySecObj_name_safe, METH_NOARGS, "Section name (same as hoc secname())"},
-    {"hname", (PyCFunction) NPySecObj_name_safe, METH_NOARGS, "Section name (same as hoc secname())"},
+    {"name",
+     (PyCFunction) NPySecObj_name_safe,
+     METH_NOARGS,
+     "Section name (same as hoc secname())"},
+    {"hname",
+     (PyCFunction) NPySecObj_name_safe,
+     METH_NOARGS,
+     "Section name (same as hoc secname())"},
     {"has_membrane",
      (PyCFunction) NPySecObj_has_membrane_safe,
      METH_VARARGS,
@@ -3000,7 +3005,10 @@ static PyMethodDef NPyMechObj_methods[] = {
      (PyCFunction) NPyMechObj_name_safe,
      METH_NOARGS,
      "Mechanism name (same as hoc suffix for density mechanism)"},
-    {"is_ion", (PyCFunction) NPyMechObj_is_ion_safe, METH_NOARGS, "Returns True if an ion mechanism"},
+    {"is_ion",
+     (PyCFunction) NPyMechObj_is_ion_safe,
+     METH_NOARGS,
+     "Returns True if an ion mechanism"},
     {"segment",
      (PyCFunction) NPyMechObj_segment_safe,
      METH_NOARGS,

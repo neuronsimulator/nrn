@@ -1,30 +1,30 @@
 #pragma once
 #include <exception>
-#include<stdexcept>
+#include <stdexcept>
+#include <type_traits>
 
 namespace nrn {
 namespace detail {
+
+template <class T, class = void>
+struct error_value_impl;
+
+template <>
+struct error_value_impl<PyObject*> {
+    static PyObject* value() {
+        return nullptr;
+    }
+};
+
 template <class T>
-T error_value();
+struct error_value_impl<
+    T,
+    typename std::enable_if<std::is_integral_v<T> && std::is_signed_v<T>>::type> {
+    static T value() {
+        return -1;
+    }
+};
 
-template <>
-inline PyObject* error_value<PyObject*>() {
-    return nullptr;
-}
-
-template <>
-inline int error_value<int>() {
-    return -1;
-}
-
-template <>
-inline long error_value<long>() {
-    return -1;
-}
-
-// template<> ssize_t error_value<ssize_t>() {
-//   return -1;
-// }
 }  // namespace detail
 
 template <class F, class... Args>
@@ -32,7 +32,7 @@ struct convert_cxx_exceptions_trait {
     using return_type = typename std::result_of<F(Args...)>::type;
 
     static return_type error_value() {
-        return detail::error_value<return_type>();
+        return detail::error_value_impl<return_type>::value();
     }
 };
 
@@ -53,4 +53,3 @@ static typename convert_cxx_exceptions_trait<F, Args...>::return_type convert_cx
     return convert_cxx_exceptions_trait<F, Args...>::error_value();
 }
 }  // namespace nrn
-
