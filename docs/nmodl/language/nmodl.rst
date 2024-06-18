@@ -445,12 +445,19 @@ POINTER
 Basically what is needed is a way to implement the Python statement 
 
 .. code-block::
-    none
+    python
     
     section1(x1).mech1.var1 =  section2(x2).mech2.var2
 
-efficiently from within a mechanism without having to explicitly connect them 
-through assignment at the Python level everytime the :samp:`{var2}` might change. 
+or the HOC statement
+
+.. code-block::
+    none
+    
+    section1.var1_mech1(x1) =  section2.var2_mech2(x2) 
+
+efficiently from within a mechanism, without having to explicitly connect them 
+through assignment at the Python/HOC level everytime the :samp:`{var2}` might change. 
  
 First of all, the variables which point to the values in some other mechanism 
 are declared within the NEURON block via 
@@ -464,26 +471,35 @@ are declared within the NEURON block via
 
 These variables are used exactly like normal variables in the sense that 
 they can be used on the left or right hand side of assignment statements 
-and used as arguments in function calls. They can also be accessed from HOC 
-just like normal variables. 
+and used as arguments in function calls. They can also be accessed from
+Python/HOC just like normal variables. 
 It is essential that the user set up the pointers to point to the correct 
 variables. This is done by first making sure that the proper mechanisms 
 are inserted into the sections and the proper point processes are actually 
-"located" in a section. Then, at the Python level each POINTER variable 
-that exists should be set up via the command: 
+"located" in a section. Then, at the Python/HOC level each POINTER variable 
+that exists should be set up via the command
 
 .. code-block::
     python
 
     mechanism_object._ref_somepointer = source_obj._ref_varname
 
+in Python or
+
+.. code-block::
+    none
+
+    	setpointer pointer, variable 
+
+in HOC.
+
 Here mechanism_object (a point process object or a density mechanism) and
-the other arguments
+the other arguments (in Python) or pointer and variable (in HOC)
 have enough implicit/explicit information to 
 determine their exact segment and mechanism location. For a continuous 
 mechanism, this means the section and location information. For a point 
 process it means the object. The reference may also be to any NEURON variable 
-or voltage, e.g. ``soma(0.5)._ref_v``. 
+or voltage, e.g. ``soma(0.5)._ref_v`` in Python. 
 See ``nrn/share/examples/nrniv/nmodl/(tstpnt1.py and tstpnt2.py)`` for examples of usage. 
  
 For example, consider a synapse which requires a presynaptic potential 
@@ -503,7 +519,16 @@ Then
     syn = h.Syn(section(0.8)) 
     syn._ref_vpre = axon(1)._ref_v
 
-will allow the ``syn`` object located at ``section(0.8)`` to know the voltage at the distal end of the axon 
+in Python or
+
+.. code-block::
+    none
+
+    objref syn 
+    somedendrite {syn = new Syn(.8)} 
+    setpointer syn.vpre, axon.v(1) 
+
+in HOC will allow the ``syn`` object located at ``section(0.8)`` to know the voltage at the distal end of the axon 
 section. As a variation on that example, if one supposed that the synapse 
 needed the presynaptic transmitter concentration (call it tpre) calculated 
 from a point process model called "release" (with object reference 
@@ -515,6 +540,14 @@ statement would be
 
     syn._ref_trpe = rel._ref_ACH_release
 
+in Python or
+
+.. code-block::
+    none
+
+    setpointer syn.tpre, rel.AcH_release 
+
+in HOC.
 
 The caveat is that tight coupling between states in different models 
 may cause numerical instability. When this happens, 
@@ -532,7 +565,7 @@ and different instances cannot be called in parallel.
 
 .. note::
 
-    For density mechanisms, one cannot pass in e.g. ``h.hh`` as this raises a TypeError;
+    For density mechanisms, one cannot pass in e.g. ``h.hh`` in Python as this raises a TypeError;
     one can, however, pass in ``nrn.hh`` where ``nrn`` is defined via ``from neuron import nrn``.
 
 
