@@ -1,5 +1,7 @@
 #include "nrn_ansi.h"
 #include "nrnpython.h"
+#include <exception>
+#include <stdexcept>
 #include <structmember.h>
 #include <InterViews/resource.h>
 #include "nrniv_mf.h"
@@ -1906,7 +1908,7 @@ static PyObject* var_of_mech_next(NPyVarOfMechIter* self) {
     return (PyObject*) r;
 }
 
-static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
+static PyObject* segment_getattro_impl(NPySegObj* self, PyObject* pyname) {
     Section* sec = self->pysec_->sec_;
     if (!sec->prop) {
         PyErr_SetString(PyExc_ReferenceError, "nrn.Segment can't access a deleted section");
@@ -2019,6 +2021,25 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
     }
     Py_DECREF(pyname);
     return result;
+}
+
+template<class F, class ...Args>
+static PyObject* convert_cxx_exceptions(F f, Args&&... args) {
+  try {
+    return f(std::forward<Args>(args)...);
+  } catch (const std::runtime_error& e) {
+    PyErr_SetString(PyExc_RuntimeError, e.what());
+  } catch (std::exception& e) {
+    PyErr_SetString(PyExc_Exception, e.what());
+  } catch (...) {
+    PyErr_SetString(PyExc_Exception, "Unknown C++ exception.");
+  }
+
+  return nullptr;
+}
+
+static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
+  return convert_cxx_exceptions(segment_getattro_impl, self, pyname);
 }
 
 int nrn_pointer_assign(Prop* prop, Symbol* sym, PyObject* value) {
