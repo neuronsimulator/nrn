@@ -1053,7 +1053,7 @@ Description:
 
         table_tau1_<MOD_SUFFIX>(tau1_vec, v_vec)
 
-    Here is a FUNCTION_TABLE defined with:
+    Here is a FUNCTION_TABLE defined in Python with:
 
     .. code-block:: python
 
@@ -1068,7 +1068,7 @@ Description:
     .. image:: /python/images/function_table_vT.png
         :align: center
 
-    Then whenever tau1(x) is called in the NMODL file, or tau1_k3st(x) is called from python, the
+    Then whenever tau1(x) is called in the NMODL file, or tau1_k3st(x) is called from Python, the
     interpolated value of the array is returned.
     A useful feature of FUNCTION_TABLEs is that prior to developing the Vector database, they can
     be attached to a scalar value as in
