@@ -96,7 +96,7 @@ void CheckPoints::write_checkpoint(NrnThread* nt, int nb_threads) const {
 // handles POINTER
 static int nrn_original_aos_index(int etype, int ix, NrnThread& nt, int** ml_pinv) {
     // Determine ei_instance and ei from etype and ix.
-    // Deal with existing permutation and SoA.
+    // Deal with existing permutation.
     Memb_list* eml = nt._ml_list[etype];
     int ecnt = eml->nodecount;
     int esz = corenrn.get_prop_param_size()[etype];
@@ -107,6 +107,12 @@ static int nrn_original_aos_index(int etype, int ix, NrnThread& nt, int** ml_pin
     assert(p >= 0 && p < eml->_nodecount_padded * esz);
     int ei_instance, ei;
     nrn_inverse_i_layout(p, ei_instance, ecnt, ei, esz);
+    if (eml->_permute) {
+        if (!ml_pinv[etype]) {
+            ml_pinv[etype] = inverse_permute(eml->_permute, eml->nodecount);
+        }
+        ei_instance = ml_pinv[etype][ei_instance];
+    }
     return ei_instance * esz + ei;
 }
 
