@@ -346,7 +346,7 @@ Description:
 
     At the NEURON user level, all variables and functions associated with a POINT_PROCESS
     are accessed via the normal object syntax. A point process, call it ``pnt`` is inserted into (or moved to)
-    the currently specified section at location, ``0 < x < 1``, with the function, ``pnt.loc(x)``. See :py:meth:`pnt.get_loc`
+    the currently specified section at location, ``0 < x < 1``, with the function, ``pnt.loc(x)``. See :meth:`pnt.get_loc`
     
     If a point process is created with no argument then it is not located anywhere.
     If an argument is present and there is a currently accessed section then the point process is placed there.
@@ -354,9 +354,9 @@ Description:
 
     ``pnt.has_loc()`` returns 1 if the point process is located in a section and returns 0 if not located.
     If a point process has no location then attempts to access its variables or get its location will
-    produce an error message. See :py:meth:`pnt.has_loc`
+    produce an error message. See :meth:`pnt.has_loc`
     
-    One finds the location of a point process via the function,  ``x = pnt.get_loc()``. See :py:meth:`pnt.get_loc` 
+    One finds the location of a point process via the function,  ``x = pnt.get_loc()``. See :meth:`pnt.get_loc` 
 
     
     The function returns the x location at the center of the segment where the process was placed and pushes the section name onto the stack so that it becomes the currently accessed section. The stack must be popped with pop_section() at a subsequent time. BE SURE TO POP THE SECTION STACK! This can be a dangerous function in the sense that if the stack is not popped, then section access is completely screwed up.
