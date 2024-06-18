@@ -9,9 +9,10 @@ bokeh<3
 # do not check import of next line
 ipython
 plotnine
-numpy
+numpy<2
 plotly
 nbsphinx
 jinja2
 sphinx-design
 packaging==21.3
+tenacity<8.4

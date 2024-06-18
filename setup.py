@@ -403,7 +403,7 @@ def setup_package():
     NRN_COLLECT_DIRS = ["bin", "lib", "include", "share"]
 
     docs_require = []  # sphinx, themes, etc
-    maybe_rxd_reqs = ["numpy", "Cython<3"] if Components.RX3D else []
+    maybe_rxd_reqs = ["numpy<2", "Cython<3"] if Components.RX3D else []
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ["pytest-runner"] if "test" in sys.argv else []
 
@@ -566,7 +566,12 @@ def setup_package():
             if f[0] != "_"
         ],
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
-        install_requires=["numpy>=1.9.3", "packaging", "find_libpython", "setuptools"]
+        install_requires=[
+            "numpy>=1.9.3,<2",
+            "packaging",
+            "find_libpython",
+            "setuptools",
+        ]
         + maybe_patchelf,
         tests_require=["flake8", "pytest"],
         setup_requires=["wheel"] + maybe_docs + maybe_test_runner + maybe_rxd_reqs,
