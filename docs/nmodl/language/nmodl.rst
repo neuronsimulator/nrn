@@ -56,7 +56,7 @@ Also, FUNCTION's written in a model are global and may be used in other
 models if they do not involve range variables. 
 
 History
-"""""""
+~~~~~~~
 
 MODL (model description language) was originally developed at 
 the NBSR (National Biomedical Simulation 
@@ -82,7 +82,7 @@ available from NBSR. A brief description of MODL is in the document entitled,
 "SCoP Language Summary". 
 
 Usage
-"""""
+~~~~~
 
 The easiest way to write membrane mechanisms is by analogy with the 
 examples. The example files come in pairs with a .mod and .hoc extension. 
@@ -112,7 +112,7 @@ this use the command:
 leaving off the file extension. For more information about units `click here <units_within_nmodl>`_.
 
 Rationale
-"""""""""
+~~~~~~~~~
 
 Our first nerve simulation program, :program:`CABLE`, contained several built-in 
 membrane mechanisms, including radial calcium diffusion, calcium channel, 
@@ -217,21 +217,21 @@ Further discussion of the numerical methods used by NEURON are found
 here.
 
 Basic NMODL Statements
-~~~~~~~~~~~~~~~~~~~~~~
+======================
 
 Only a small part of the full model description language is relevant to 
 neuron mechanisms.  The important concepts held in common are 
 the declaration of all variables as 
 
 TITLE
-"""""
+~~~~~
 
 Description:
     Title of the mechanism. Doesn't play any role to the code generation.
 
 
 COMMENT
-"""""""
+~~~~~~~
 
 Description:
     Comments of the code. ``COMMENT`` blocks start with ``COMMENT`` and end with ``ENDCOMMENT``.
@@ -258,7 +258,7 @@ Description:
 
 
 DEFINE
-""""""
+~~~~~~
 
 Description:
     Defines an integer macro variable. The name of the variable can be used in the rest of the mod
@@ -271,7 +271,7 @@ Description:
 
 
 UNITS
-"""""
+~~~~~
 
 Description:
     The statements in the UNITS block define new names for units in terms of existing names in
@@ -328,7 +328,7 @@ Description:
 .. _nmodl_parameter:
 
 PARAMETER
-"""""""""
+~~~~~~~~~
 
 
 Description:
@@ -357,7 +357,7 @@ Description:
 
 
 STATE
-"""""
+~~~~~
 
 
 Description:
@@ -376,7 +376,7 @@ Description:
 
 
 ASSIGNED
-""""""""
+~~~~~~~~
 
 
 Description:
@@ -387,7 +387,7 @@ Description:
 
 
 CONSTANT
-""""""""
+~~~~~~~~
 
 
 Description:
@@ -411,7 +411,7 @@ purpose.
 
 
 LOCAL
-"""""
+~~~~~~~
 
 
 Description:
@@ -431,7 +431,7 @@ Description:
 
 
 INDEPENDENT
-"""""""""""
+~~~~~~~~~~~
 
 
 Description:
@@ -440,7 +440,7 @@ Description:
     is always time, :data:`t`. 
 
 POINTER
-"""""""
+~~~~~~~
 
 Basically what is needed is a way to implement the Python statement 
 
@@ -570,7 +570,7 @@ and different instances cannot be called in parallel.
 
 
 INCLUDE
-"""""""
+~~~~~~~
 
 
 Description:
@@ -599,7 +599,7 @@ Description:
     Other blocks which play similar roles in NMODL and MODL are 
 
 BREAKPOINT
-""""""""""
+~~~~~~~~~~
 
 
 Description:
@@ -621,7 +621,7 @@ Description:
 
 
 DERIVATIVE
-""""""""""
+~~~~~~~~~~
 
 
 Description:
@@ -654,7 +654,7 @@ Description:
 
 
 NET_RECEIVE
-"""""""""""
+~~~~~~~~~~~
 
 Description:
     The NET_RECEIVE block is called by the NetCon event delivery system when an event arrives at
@@ -684,7 +684,7 @@ Description:
 
 
 CONSTRUCTOR
-"""""""""""
+~~~~~~~~~~~
 
 Description:
     .. code-block::
@@ -700,7 +700,7 @@ Description:
 
 
 DESTRUCTOR
-""""""""""
+~~~~~~~~~~
 
 Description:
     .. code-block::
@@ -716,14 +716,14 @@ Description:
 
 
 LINEAR
-""""""
+~~~~~~
 
 Description:
     ``TODO``: Add description and existing example mod file
 
 
 NONLINEAR
-"""""""""
+~~~~~~~~~
 
 
 Description:
@@ -742,7 +742,7 @@ Description:
 
 
 KINETIC
-"""""""
+~~~~~~~
 
 
 Description:
@@ -754,7 +754,7 @@ Description:
 
 
 CONSERVE
-""""""""
+~~~~~~~~
 
 Description:
     This statement's fundamental idea is to systematically account for conservation of material.
@@ -780,7 +780,7 @@ Description:
 
 
 COMPARTMENT
-"""""""""""
+~~~~~~~~~~~
 
 Description:
     The compartment volumes needed by the KINETIC scheme are given using the ``COMPARTMENT``
@@ -814,7 +814,7 @@ Description:
         COMPARTMENT i, a[i]*b { s }
 
 LONGITUDINAL_DIFFUSION
-""""""""""""""""""""""
+~~~~~~~~~~~~~~~~~~~~~~
 
 Description:
     This statement specifies that this mechanism includes nonlocal diffusion, i.e. longitudinal
@@ -840,7 +840,7 @@ Description:
 
 
 PROCEDURE
-"""""""""
+~~~~~~~~~
 
 
 Description:
@@ -897,7 +897,7 @@ Description:
 
 
 FUNCTION
-""""""""
+~~~~~~~~
 
 
 Description:
@@ -910,7 +910,7 @@ Description:
 
 
 TABLE
-"""""
+~~~~~
 
 
 Description:
@@ -987,7 +987,7 @@ Description:
 
 
 INITIAL
-"""""""
+~~~~~~~
 
 
 Description:
@@ -1029,7 +1029,7 @@ Description:
 
 
 DISCRETE
-""""""""
+~~~~~~~~
 
 Description:
     ``TODO``: Add description
