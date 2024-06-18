@@ -298,7 +298,9 @@ $python_exe -m pip install --upgrade setuptools
 
 
 # install numpy, pytest and neuron
-$python_exe -m pip install numpy pytest
+# we install setuptools because since python 3.12 it is no more installed
+# by default
+$python_exe -m pip install "numpy<2" pytest setuptools
 $python_exe -m pip install $python_wheel
 $python_exe -m pip show neuron \
     || $python_exe -m pip show neuron-nightly \
