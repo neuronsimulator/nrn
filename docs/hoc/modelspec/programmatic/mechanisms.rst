@@ -9,4 +9,3 @@ Dynamics (Channels, etc...)
     linmod.rst
     ste.rst
     mechanisms/mech.rst
-    mechanisms/nmodl.rst
