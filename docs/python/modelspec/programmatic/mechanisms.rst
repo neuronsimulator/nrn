@@ -1,6 +1,9 @@
 Dynamics (Channels, etc...)
 ---------------------------
 
+For mechanism specification with the NMODLanguage,
+see :ref:`nmodl` and :ref:`nmodl_neuron_extension`.
+
 .. toctree::
     :maxdepth: 3
 
