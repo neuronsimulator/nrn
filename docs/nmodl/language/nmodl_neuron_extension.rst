@@ -665,11 +665,19 @@ Description:
     Basically what is needed is a way to implement the Python statement 
 
     .. code-block::
+        python
 
         section1(x).mech1.var1 =  section2(x2).mech2.var2 
 
+    or the HOC statement
+
+    .. code-block::
+        none
+
+        section1.var1_mech1(x1) =  section2.var2_mech2(x2) 
+
     efficiently from within a mechanism without having to explicitly connect them 
-    through assignment at the Python level everytime the :samp:`{var2}` might change. 
+    through assignment at the Python/HOC level everytime the :samp:`{var2}` might change. 
      
     First of all, the variables which point to the values in some other mechanism 
     are declared within the NEURON block via 
@@ -682,15 +690,22 @@ Description:
 
     These variables are used exactly like normal variables in the sense that 
     they can be used on the left or right hand side of assignment statements 
-    and used as arguments in function calls. They can also be accessed from Python 
+    and used as arguments in function calls. They can also be accessed from Python/HOC
     just like normal variables. 
+
     It is essential that the user set up the pointers to point to the correct 
     variables. This is done by first making sure that the proper mechanisms 
     are inserted into the sections and the proper point processes are actually 
-    "located" in a section. Then, at the hoc level each POINTER variable 
-    that exists should be set up via the command: 
+    "located" in a section.
     
-    The Python h.setpointer function is called with a syntax for POINT_PROCESS and SUFFIX (density) mechanisms respectively of
+    In HOC, each POINTER variable that exists should be set up via the command
+    
+    .. code-block::
+        none
+
+        setpointer pointer, variable 
+   
+    In Python, the :func:`h.setpointer` function is called with a syntax for POINT_PROCESS and SUFFIX (density) mechanisms respectively of
 
     .. code-block::
         python
@@ -729,8 +744,18 @@ Description:
         syn = h.Syn(section(0.8)) 
         h.setpointer(axon(1)._ref_v, 'vpre', syn)
 
-    will allow the ``syn`` object located at ``section(0.8)`` to know the voltage at the distal end of the axon 
-    section. As a variation on that example, if one supposed that the synapse 
+    in Python or
+
+    .. code-block::
+        none
+
+        objref syn 
+        somedendrite {syn = new Syn(.8)} 
+        setpointer syn.vpre, axon.v(1) 
+
+    in HOC will allow the ``syn`` object located at ``section(0.8)`` 
+    to know the voltage at the distal end of the axon section. 
+    As a variation on that example, if one supposed that the synapse 
     needed the presynaptic transmitter concentration (call it :samp:`{tpre}`) calculated 
     from a point process model called "release" (with object reference 
     :samp:`{rel}`, say) then the 
@@ -741,6 +766,14 @@ Description:
 
         h.setpointer(rel._ref_ACH_release, 'trpe', syn)
 
+    in Python or
+
+    .. code-block::
+        none
+
+        setpointer syn.tpre, rel.AcH_release 
+
+    in HOC.
      
     The caveat is that tight coupling between states in different models 
     may cause numerical instability. When this happens, 
