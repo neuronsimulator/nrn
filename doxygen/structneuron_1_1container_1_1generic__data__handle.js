@@ -1,0 +1,25 @@
+var structneuron_1_1container_1_1generic__data__handle =
+[
+    [ "generic_data_handle", "structneuron_1_1container_1_1generic__data__handle.html#afce05f57433288c0132856c211112467", null ],
+    [ "generic_data_handle", "structneuron_1_1container_1_1generic__data__handle.html#a941ddcf417d9ebc62b99f24bb56a3e9f", null ],
+    [ "generic_data_handle", "structneuron_1_1container_1_1generic__data__handle.html#adbcb22b02a617c53f93a6641a8cc9fba", null ],
+    [ "generic_data_handle", "structneuron_1_1container_1_1generic__data__handle.html#abaefb7067df7ba9c6fa4f0626fe35335", null ],
+    [ "generic_data_handle", "structneuron_1_1container_1_1generic__data__handle.html#add3f3d9e00a7a9cced24d646173265ec", null ],
+    [ "generic_data_handle", "structneuron_1_1container_1_1generic__data__handle.html#add3f3d9e00a7a9cced24d646173265ec", null ],
+    [ "get", "structneuron_1_1container_1_1generic__data__handle.html#aa4e163e868cfcfc9d6340fb506d2bc0a", null ],
+    [ "holds", "structneuron_1_1container_1_1generic__data__handle.html#a44e1003dbf1c1efcc87d83065d91b6e7", null ],
+    [ "literal_value", "structneuron_1_1container_1_1generic__data__handle.html#a76a82952dc86a18c8662786af82a4b12", null ],
+    [ "operator data_handle< T >", "structneuron_1_1container_1_1generic__data__handle.html#aea5eb5ad747fae2e003719de6731a2ae", null ],
+    [ "operator=", "structneuron_1_1container_1_1generic__data__handle.html#ada4aa99bcb46bd68bc7f69b58737d6bb", null ],
+    [ "operator=", "structneuron_1_1container_1_1generic__data__handle.html#ada4aa99bcb46bd68bc7f69b58737d6bb", null ],
+    [ "refers_to_a_modern_data_structure", "structneuron_1_1container_1_1generic__data__handle.html#a7976690d773416695d8775f62c09c499", null ],
+    [ "throw_error", "structneuron_1_1container_1_1generic__data__handle.html#a8ca20b969dc0e8c944712f281e4e77a1", null ],
+    [ "type_name", "structneuron_1_1container_1_1generic__data__handle.html#af5c59e1ac44dbb3e4cfad723c67c1166", null ],
+    [ "operator<<", "structneuron_1_1container_1_1generic__data__handle.html#aeaabc03706d27508bb9a20bd4b5a02b2", null ],
+    [ "can_be_stored_literally_v", "structneuron_1_1container_1_1generic__data__handle.html#a7171404e64c0caf87603f0d0be63bc5d", null ],
+    [ "m_array_dim", "structneuron_1_1container_1_1generic__data__handle.html#aad721cca401b280d379c0e31540b56ca", null ],
+    [ "m_array_index", "structneuron_1_1container_1_1generic__data__handle.html#aeea659b1057223a1d91c4fb016de213e", null ],
+    [ "m_container", "structneuron_1_1container_1_1generic__data__handle.html#ac8e9d48db8741512e9af8ff32101bf15", null ],
+    [ "m_offset", "structneuron_1_1container_1_1generic__data__handle.html#a897e6fc8cffc56567f7ba26ee29892e3", null ],
+    [ "m_type", "structneuron_1_1container_1_1generic__data__handle.html#a70a39ddcd2631eb4f0700b8329660a6c", null ]
+];

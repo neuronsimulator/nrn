@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System Calls &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=87e54e7c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Error Handling" href="errors.html" />
+    <link rel="prev" title="Timer" href="timer.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">NEURON HOC documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-links">Quick Links</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#basic-programming">Basic Programming</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="hoc.html">HOC Language</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mathematics.html">Mathematics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="strings.html">Strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="guidesign.html">GUI Design</a></li>
+<li class="toctree-l3"><a class="reference internal" href="references.html">Pointers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="timer.html">Timer</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">System Calls</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#path-manipulation">Path Manipulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#machine-identification">Machine Identification</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#execute-a-command">Execute a Command</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#timing">Timing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#miscellaneous">Miscellaneous</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="errors.html">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dynamiccode.html">Dynamic Code Loading and Execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="projectmanagement.html">Project Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-from-hoc.html">HOC accessing Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="internals.html">Debugging and Internals Access</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#model-specification">Model Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#simulation-control">Simulation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#visualization">Visualization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#analysis">Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">NEURON HOC documentation</a></li>
+      <li class="breadcrumb-item active">System Calls</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+        
+        <a href="../../..html/../python/programming/system.html" > Switch to Python</a>
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/hoc/programming/system.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a href="#chdir" title="Link to this definition">chdir</a> &middot; <a href="#getcwd" title="Link to this definition">getcwd</a> &middot; <a href="#machine_name" title="Link to this definition">machine_name</a> &middot; <a href="#neuronhome" title="Link to this definition">neuronhome</a> &middot; <a href="#nrn_load_dll" title="Link to this definition">nrn_load_dll</a> &middot; <a href="#nrnversion" title="Link to this definition">nrnversion</a> &middot; <a href="#show_winio" title="Link to this definition">show_winio</a> &middot; <a href="#startsw" title="Link to this definition">startsw</a> &middot; <a href="#stopsw" title="Link to this definition">stopsw</a> &middot; <a href="#system" title="Link to this definition">system</a> &middot; <a href="#unix_mac_pc" title="Link to this definition">unix_mac_pc</a> &middot; <a href="#WinExec" title="Link to this definition">WinExec</a></p><section id="system-calls">
+<h1>System Calls<a class="headerlink" href="#system-calls" title="Link to this heading"></a></h1>
+<section id="path-manipulation">
+<h2>Path Manipulation<a class="headerlink" href="#path-manipulation" title="Link to this heading"></a></h2>
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="chdir">
+<span class="sig-name descname"><span class="pre">chdir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#chdir" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">chdir(&quot;path&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Change working directory to the indicated path. Returns 0 if successful
+otherwise -1, ie the usual unix os shell return style.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="getcwd">
+<span class="sig-name descname"><span class="pre">getcwd</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#getcwd" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">string</span> <span class="pre">=</span> <span class="pre">getcwd()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns absolute path of current working directory in unix format.
+The last character of the path name is ‘/’.
+Must be less than
+1000 characters long.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="neuronhome">
+<span class="sig-name descname"><span class="pre">neuronhome</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#neuronhome" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Name:</dt><dd><p>neuronhome – installation path</p>
+</dd>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">string</span> <span class="pre">=</span> <span class="pre">neuronhome()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns the full installation path in unix format or, if it exists, the
+NEUROHOME environment variable in unix format.</p>
+<p>Note that for unix, it isn’t exactly the installation path
+but the
+–prefix/share/nrn directory where –prefix is the
+location specified during installation. For the mswin version it is the location
+selected during installation and the value is derived from the location
+of neuron.exe in neuronhome()/bin/neuron.exe.
+For mac it is the folder that contains the neuron
+executable program.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<hr class="docutils" />
+<section id="machine-identification">
+<h2>Machine Identification<a class="headerlink" href="#machine-identification" title="Link to this heading"></a></h2>
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="machine_name">
+<span class="sig-name descname"><span class="pre">machine_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#machine_name" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">strdef</span> <span class="pre">name</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">machine_name(name)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>returns the hostname of the machine.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="unix_mac_pc">
+<span class="sig-name descname"><span class="pre">unix_mac_pc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#unix_mac_pc" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">type</span> <span class="pre">=</span> <span class="pre">unix_mac_pc()</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Return 1 if unix, 2 if mac, 3 if mswin, or 4 if mac osx darwin
+is the operating system. This
+is useful when deciding if a machine specific function can be called or
+a dll can be loaded.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="nrnversion">
+<span class="sig-name descname"><span class="pre">nrnversion</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nrnversion" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">versionstring</span> <span class="pre">=</span> <span class="pre">nrnversion()</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">string</span> <span class="pre">=</span> <span class="pre">nrnversion(i)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Returns a string consisting of version information.
+When this function was introduced the majorstring was “5.6”
+and the branch string was “2004/01/22 Main (36)”.
+Now the arg can range from 0 to 6. The value of 6 returns
+the args passed to configure. When this function was last changed
+the return values were</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>oc&gt;nrnversion()
+NEURON -- VERSION 7.1 (296:ff4976021aae) 2009-02-27
+oc&gt;for i=0,6 print i,&quot;: &quot;, nrnversion(i)
+0 : 7.1
+1 : NEURON -- VERSION 7.1 (296:ff4976021aae) 2009-02-27
+2 : VERSION 7.1 (296:ff4976021aae)
+3 : ff4976021aae
+4 : 2009-02-27
+5 : 296
+6 : &#39;--prefix=/home/hines/neuron/nrnmpi&#39; &#39;--srcdir=../nrn&#39; &#39;--with-paranrn&#39; &#39;--with-nrnpython&#39;
+oc&gt;
+</pre></div>
+</div>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>An arg of 7 now returns a space separated string of the arguments used
+during launch.
+e.g.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ nrniv -nobanner -c &#39;nrnversion()&#39; -c &#39;nrnversion(7)&#39;
+NEURON -- VERSION 7.2 twophase_multisend (534:2160ccb31406) 2010-12-09
+nrniv -nobanner -c nrnversion() -c nrnversion(7)
+$
+</pre></div>
+</div>
+<p>An arg of 8 now returns the host-triplet. E.g.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ nrniv -nobanner -c &#39;nrnversion(8)&#39;
+x86_64-unknown-linux-gnu
+</pre></div>
+</div>
+<p>An arg of 9 now returns “1” if the neuron main program was launched,
+“2” if the library was loaded by Python, and “0” if the launch
+progam is unknown</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ nrniv -nobanner -c &#39;nrnversion(9)&#39;
+1
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ python 2&lt;/dev/null
+&gt;&gt;&gt; from neuron import h
+&gt;&gt;&gt; h.nrnversion(9)
+&#39;2&#39;
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+</section>
+<hr class="docutils" />
+<section id="execute-a-command">
+<h2>Execute a Command<a class="headerlink" href="#execute-a-command" title="Link to this heading"></a></h2>
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="WinExec">
+<span class="sig-name descname"><span class="pre">WinExec</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#WinExec" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">WinExec(&quot;mswin</span> <span class="pre">command&quot;)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>MSWin version only.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="system">
+<span class="sig-name descname"><span class="pre">system</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#system" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>Name:</dt><dd><p>system — issue a shell command</p>
+</dd>
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">exitcode</span> <span class="pre">=</span> <span class="pre">system(cmdstr)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">exitcode</span> <span class="pre">=</span> <span class="pre">system(cmdstr,</span> <span class="pre">stdout_str)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Executes <em>cmdstr</em> as though it had been typed as
+command to a unix shell from the terminal.  HOC waits until the command is
+completed. If the second strdef arg is present, it receives the stdout stream
+from the command. Only available memory limits the line length and
+number of lines.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">system(&quot;ls&quot;)</span></code></dt><dd><p>Prints a directory listing in the console terminal window.
+will take up where it left off when the user types the <code class="docutils literal notranslate"><span class="pre">exit</span></code>
+command</p>
+</dd>
+</dl>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Fully functional on unix, mswin under cygwin, and mac osx.</p>
+<p>Does not work on the mac os 9 version.</p>
+<p>Following is obsolete:
+Under mswin, executes the string under the cygwin sh.exe in <code class="file docutils literal notranslate"><span class="pre">$NEURONHOME/bin</span></code>
+via the wrapper, <code class="file docutils literal notranslate"><span class="pre">$NEURONHOME/lib/nrnsys.sh</span></code>. Normally, stdout is directed to
+the file <code class="file docutils literal notranslate"><span class="pre">tmpdos2.tmp</span></code> in the working directory and this is copied to the
+terminal. The neuron.exe busy waits until the nrnsys.sh script creates
+a tmpdos1.tmp file signaling that the system command has completed.
+Redirection of stdout to a file can only be done with the idiom
+“command &gt; filename”. No other redirection is possible except by modifying
+<code class="file docutils literal notranslate"><span class="pre">nrnsys.sh</span></code>.</p>
+</div>
+</dd></dl>
+
+</section>
+<hr class="docutils" />
+<section id="timing">
+<h2>Timing<a class="headerlink" href="#timing" title="Link to this heading"></a></h2>
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="startsw">
+<span class="sig-name descname"><span class="pre">startsw</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#startsw" title="Link to this definition"></a></dt>
+<dd><p>Initializes a stopwatch with a resolution of 0.01 second. See <a class="reference internal" href="#stopsw" title="stopsw"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">stopsw()</span></code></a>.</p>
+</dd></dl>
+
+<hr class="docutils" />
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="stopsw">
+<span class="sig-name descname"><span class="pre">stopsw</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#stopsw" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Returns the time in seconds since the stopwatch was last initialized with a <a class="reference internal" href="#startsw" title="startsw"><code class="xref hoc hoc-func docutils literal notranslate"><span class="pre">startsw()</span></code></a> .</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>startsw()
+for i=1,1000000 { x = sin(.2) ]
+stopsw()
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Really the idiom</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>x = startsw()
+//...
+startsw() - x
+</pre></div>
+</div>
+<p>should be used since it allows nested timing intervals.</p>
+</div>
+</dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="timer.html#Timer" title="Timer"><code class="xref hoc hoc-class docutils literal notranslate"><span class="pre">Timer</span></code></a></p>
+</div>
+</section>
+<hr class="docutils" />
+<section id="miscellaneous">
+<h2>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Link to this heading"></a></h2>
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="nrn_load_dll">
+<span class="sig-name descname"><span class="pre">nrn_load_dll</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nrn_load_dll" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">nrn_load_dll(dll_file_name)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>Loads a dll containing membrane mechanisms. This works for mswin, mac,
+and linux.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="hoc function">
+<dt class="sig sig-object hoc" id="show_winio">
+<span class="sig-name descname"><span class="pre">show_winio</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#show_winio" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Syntax:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">show_winio(0or1)</span></code></p>
+</dd>
+<dt>Description:</dt><dd><p>MSWin and Mac version only. Hides or shows the console window.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="timer.html" class="btn btn-neutral float-left" title="Timer" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="errors.html" class="btn btn-neutral float-right" title="Error Handling" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

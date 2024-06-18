@@ -1,0 +1,27 @@
+var extcelln_8cpp =
+[
+    [ "_ode_count", "extcelln_8cpp.html#a02fa5d002984e51cfde1032332dc4acd", null ],
+    [ "check_if_extracellular_in_use", "extcelln_8cpp.html#aa13dd59d41591e73d76158a20ab462b3", null ],
+    [ "ext_con_coef", "extcelln_8cpp.html#a3ba534326b9e83c9e632307ab48a8ea9", null ],
+    [ "extcell_2d_alloc", "extcelln_8cpp.html#ab63f8e10ff73f136f95c50286a45f099", null ],
+    [ "extcell_alloc", "extcelln_8cpp.html#a8b555616433ef9b3e87f1f31655fe6ce", null ],
+    [ "extcell_init", "extcelln_8cpp.html#a20ee7fcff9034c9cfd0b079faf85fbe3", null ],
+    [ "extcell_node_create", "extcelln_8cpp.html#ad4936725fc2df1d7634501f3d307b34a", null ],
+    [ "extnode_alloc_elements", "extcelln_8cpp.html#a7c77ecc2330ce30f79844f53fe5a3080", null ],
+    [ "extnode_free_elements", "extcelln_8cpp.html#af7b8a04d384e362c20896c657d258832", null ],
+    [ "extracell_reg_", "extcelln_8cpp.html#a317975b72895e41f3c7a34799782520e", null ],
+    [ "nlayer_extracellular", "extcelln_8cpp.html#a4a570b3cfd356566724e4f0d3cd10990", null ],
+    [ "nrn_rhs_ext", "extcelln_8cpp.html#ab5f85d5b1300da95fc3fdc19022e3254", null ],
+    [ "nrn_setup_ext", "extcelln_8cpp.html#af635f112ec789f43728d26ffafa9d4f5", null ],
+    [ "nrn_update_2d", "extcelln_8cpp.html#a17729a8400bd6b537f13410c467eb2b0", null ],
+    [ "update_existing_extnode", "extcelln_8cpp.html#ae6c542579734bd942ee5a549b114bef2", null ],
+    [ "update_extracellular_reg", "extcelln_8cpp.html#acaf2be4a8b3b793ecdfe18852da75cfd", null ],
+    [ "update_parmsize", "extcelln_8cpp.html#a5b032cf206ee5c0753cc322d8b949efe", null ],
+    [ "limits", "extcelln_8cpp.html#a229746bf9111c80c67383053e247f703", null ],
+    [ "mechanism", "extcelln_8cpp.html#ad8c77986ae3b7460cc9c174300fa0ff2", null ],
+    [ "nparm", "extcelln_8cpp.html#a2795fd6a3f3d202d682f6003464f1404", null ],
+    [ "nrn_nlayer_extracellular", "extcelln_8cpp.html#a27e8f9c12852bd3b14acf650121b8259", null ],
+    [ "nrn_use_daspk_", "extcelln_8cpp.html#ab967529d86880103ba2bfd0fbe164246", null ],
+    [ "param_default", "extcelln_8cpp.html#a809ffbf59154248363fe829ddcd7b0a3", null ],
+    [ "units", "extcelln_8cpp.html#a0a14fbe893fe29c9accc9fdad4750531", null ]
+];

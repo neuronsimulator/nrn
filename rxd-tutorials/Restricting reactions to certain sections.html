@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Restricting reactions to a part of a region &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=87e54e7c" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=f930bc37"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Example: Degradable buffer" href="degradable_buffer.html" />
+    <link rel="prev" title="Extracellular reaction-diffusion tutorial" href="extracellular.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Python tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Python RXD tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Reaction-Diffusion%20tutorial.html">Reaction-diffusion introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="basic-initialization.html">Initialization Strategies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Changing%20initial%20conditions%20and%20parameters.html">Varying initial concentrations and parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="thresholds.html">Reaction-diffusion thresholds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extracellular.html">Extracellular reaction-diffusion tutorial</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Restricting reactions to a part of a region</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Setup-NEURON-library-and-imports">Setup NEURON library and imports</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Setup-the-model">Setup the model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Morphology-and-discretization">Morphology and discretization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#The-rxd.Region">The rxd.Region</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#The-rxd.Species">The rxd.Species</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#The-rxd.Reaction-and-its-localization">The rxd.Reaction and its localization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Run-and-visualize-the-simulation">Run and visualize the simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="degradable_buffer.html">Example: Degradable buffer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="circadian.html">Example: Circadian rhythm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calcium%20waves.html">Example: Calcium waves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="combining%20currents%20from%20mod%20files%20with%20rxd.html">Example: combining MOD file ion channels with rxd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ip3-demo.html">IP3 demo</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Python RXD tutorials</a></li>
+      <li class="breadcrumb-item active">Restricting reactions to a part of a region</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/rxd-tutorials/Restricting reactions to certain sections.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Restricting-reactions-to-a-part-of-a-region">
+<h1>Restricting reactions to a part of a region<a class="headerlink" href="#Restricting-reactions-to-a-part-of-a-region" title="Link to this heading"></a></h1>
+<p>A version of this notebook may be run online via Google Colab at <a class="reference external" href="https://tinyurl.com/neuron-restricted-reaction">https://tinyurl.com/neuron-restricted-reaction</a> (make a copy or open in playground mode).</p>
+<section id="Overview">
+<h2>Overview<a class="headerlink" href="#Overview" title="Link to this heading"></a></h2>
+<p>Reactions may be restricted to only occur in a given part of an <code class="docutils literal notranslate"><span class="pre">rxd.Region</span></code> by multiplying the rate by an indicator variable, that is an <code class="docutils literal notranslate"><span class="pre">rxd.Parameter</span></code> that takes the value <code class="docutils literal notranslate"><span class="pre">1</span></code> in the subregion where the reaction is to occur and <code class="docutils literal notranslate"><span class="pre">0</span></code> elsewhere.</p>
+<p>Let’s consider an example.</p>
+</section>
+<section id="Setup-NEURON-library-and-imports">
+<h2>Setup NEURON library and imports<a class="headerlink" href="#Setup-NEURON-library-and-imports" title="Link to this heading"></a></h2>
+<p>Let’s import our usual NEURON libraries and definitions. Remember you can use either <code class="docutils literal notranslate"><span class="pre">um</span></code> or <code class="docutils literal notranslate"><span class="pre">µm</span></code> for micron.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">rxd</span>
+<span class="kn">from</span> <span class="nn">neuron.units</span> <span class="kn">import</span> <span class="n">mV</span><span class="p">,</span> <span class="n">ms</span><span class="p">,</span> <span class="n">um</span><span class="p">,</span> <span class="n">mM</span>
+
+<span class="c1">## needed for standard run system</span>
+<span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;stdrun.hoc&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.0
+</pre></div></div>
+</div>
+<p>Now import <code class="docutils literal notranslate"><span class="pre">plotly</span></code>, a graphics library. (You could easily modify this code to use other graphics libraries like <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code>, <code class="docutils literal notranslate"><span class="pre">plotnine</span></code>, or <code class="docutils literal notranslate"><span class="pre">bokeh</span></code>.)</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">plotly.graph_objects</span> <span class="k">as</span> <span class="nn">go</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Setup-the-model">
+<h2>Setup the model<a class="headerlink" href="#Setup-the-model" title="Link to this heading"></a></h2>
+</section>
+<section id="Morphology-and-discretization">
+<h2>Morphology and discretization<a class="headerlink" href="#Morphology-and-discretization" title="Link to this heading"></a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">left</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+<span class="n">right</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">)</span>
+
+<span class="n">left</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span> <span class="n">right</span><span class="o">.</span><span class="n">nseg</span> <span class="o">=</span> <span class="mi">101</span>
+<span class="n">left</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">right</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="mi">101</span>
+
+<span class="n">right</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">left</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+right
+</pre></div></div>
+</div>
+</section>
+<section id="The-rxd.Region">
+<h2>The rxd.Region<a class="headerlink" href="#The-rxd.Region" title="Link to this heading"></a></h2>
+<p>Our region will be present on both the <code class="docutils literal notranslate"><span class="pre">left</span></code> and the <code class="docutils literal notranslate"><span class="pre">right</span></code> sections. Since they define our entire “cell”, we will pick one and put the <code class="docutils literal notranslate"><span class="pre">rxd.Region</span></code> on the <code class="docutils literal notranslate"><span class="pre">.wholetree()</span></code> that is connected to it.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cytosol</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Region</span><span class="p">(</span><span class="n">left</span><span class="o">.</span><span class="n">wholetree</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="The-rxd.Species">
+<h2>The rxd.Species<a class="headerlink" href="#The-rxd.Species" title="Link to this heading"></a></h2>
+<p>Let’s begin by defining our initialization rule. The concentration will initially be 0 everywhere except for nodes between 90 and 110 microns from the left edge of <code class="docutils literal notranslate"><span class="pre">left</span></code> (that is, the last 10 microns of <code class="docutils literal notranslate"><span class="pre">left</span></code> and the first 10 microns of <code class="docutils literal notranslate"><span class="pre">right</span></code>).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">initial_protein</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="k">if</span> <span class="mi">90</span> <span class="o">*</span> <span class="n">um</span> <span class="o">&lt;</span> <span class="n">h</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">left</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">110</span> <span class="o">*</span> <span class="n">um</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">mM</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</div>
+<p>Now the species definition itself.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">protein</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Species</span><span class="p">(</span><span class="n">cytosol</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="n">initial_protein</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="The-rxd.Reaction-and-its-localization">
+<h2>The rxd.Reaction and its localization<a class="headerlink" href="#The-rxd.Reaction-and-its-localization" title="Link to this heading"></a></h2>
+<p>We need an <code class="docutils literal notranslate"><span class="pre">rxd.Parameter</span></code> indicator variable to indicate the sections where the reaction is to take place. In parallel to how we defined the initial concentration of the species above, it is often simplest to define the values using a function of the node (here 1 in the <code class="docutils literal notranslate"><span class="pre">right</span></code> section; 0 otherwise):</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">active_region_value</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">right</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</div>
+<p>Now the indicator variable <code class="docutils literal notranslate"><span class="pre">rxd.Parameter</span></code> itself:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">in_region</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">cytosol</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">active_region_value</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>For the reaction (here an <code class="docutils literal notranslate"><span class="pre">rxd.Rate</span></code> but could be an <code class="docutils literal notranslate"><span class="pre">rxd.Reaction</span></code> or <code class="docutils literal notranslate"><span class="pre">rxd.MultiCompartmentReaction</span></code> as well), note that we multiply by the value of <code class="docutils literal notranslate"><span class="pre">in_region</span></code>, so when that value is <code class="docutils literal notranslate"><span class="pre">1</span></code> the reaction happens and when it is <code class="docutils literal notranslate"><span class="pre">0</span></code>, the reaction does not.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">production_rate</span> <span class="o">=</span> <span class="mf">0.002</span> <span class="o">*</span> <span class="n">mM</span> <span class="o">/</span> <span class="n">ms</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">reaction</span> <span class="o">=</span> <span class="n">rxd</span><span class="o">.</span><span class="n">Rate</span><span class="p">(</span><span class="n">protein</span><span class="p">,</span> <span class="n">production_rate</span> <span class="o">*</span> <span class="n">in_region</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Run-and-visualize-the-simulation">
+<h2>Run and visualize the simulation<a class="headerlink" href="#Run-and-visualize-the-simulation" title="Link to this heading"></a></h2>
+<p>Always initialize your simulations.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span> <span class="o">*</span> <span class="n">mV</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.0
+</pre></div></div>
+</div>
+<p>We’ll plot the protein concentrations against their distance from the left edge of the left section (i.e. from <code class="docutils literal notranslate"><span class="pre">left(0)</span></code>).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="n">fig</span><span class="p">):</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">protein</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">concentration</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">left</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">protein</span><span class="o">.</span><span class="n">nodes</span><span class="p">]</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;t = </span><span class="si">{</span><span class="n">h</span><span class="o">.</span><span class="n">t</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2"> ms&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>Plot the initial conditions, then advance for 25 ms, plot, advance again, etc.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">advance_count</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="n">advance_count</span> <span class="o">*</span> <span class="mi">25</span> <span class="o">*</span> <span class="n">ms</span><span class="p">)</span>
+    <span class="n">plot</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">xaxis_title</span><span class="o">=</span><span class="s2">&quot;Position (µm)&quot;</span><span class="p">,</span> <span class="n">yaxis_title</span><span class="o">=</span><span class="s2">&quot;Concentration (mM)&quot;</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">renderer</span><span class="o">=</span><span class="s2">&quot;notebook_connected&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<script type="text/javascript">
+window.PlotlyConfig = {MathJaxConfig: 'local'};
+if (window.MathJax && window.MathJax.Hub && window.MathJax.Hub.Config) {window.MathJax.Hub.Config({SVG: {font: "STIX-Web"}});}
+if (typeof require !== 'undefined') {
+require.undef("plotly");
+requirejs.config({
+    paths: {
+        'plotly': ['https://cdn.plot.ly/plotly-2.32.0.min']
+    }
+});
+require(['plotly'], function(Plotly) {
+    window._Plotly = Plotly;
+});
+}
+</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<div>                            <div id="ca6aa323-6965-467c-94f8-0c3045ba7757" class="plotly-graph-div" style="height:525px; width:100%;"></div>            <script type="text/javascript">                require(["plotly"], function(Plotly) {                    window.PLOTLYENV=window.PLOTLYENV || {};                                    if (document.getElementById("ca6aa323-6965-467c-94f8-0c3045ba7757")) {                    Plotly.newPlot(                        "ca6aa323-6965-467c-94f8-0c3045ba7757",                        [{"name":"t = 0 ms","x":[0.5,1.5,2.5,3.5000000000000004,4.5,5.5,6.5,7.5,8.5,9.5,10.5,11.5,12.5,13.5,14.499999999999998,15.5,16.5,17.5,18.5,19.5,20.5,21.5,22.5,23.5,24.5,25.5,26.5,27.500000000000004,28.499999999999996,29.499999999999996,30.5,31.5,32.5,33.5,34.5,35.5,36.5,37.5,38.5,39.5,40.5,41.5,42.5,43.5,44.5,45.5,46.5,47.5,48.5,49.5,50.5,51.5,52.5,53.5,54.5,55.50000000000001,56.50000000000001,57.49999999999999,58.49999999999999,59.5,60.5,61.5,62.5,63.5,64.5,65.5,66.5,67.5,68.5,69.5,70.5,71.5,72.5,73.5,74.5,75.5,76.5,77.5,78.5,79.5,80.5,81.5,82.5,83.5,84.5,85.5,86.5,87.5,88.5,89.5,90.5,91.5,92.5,93.5,94.5,95.5,96.5,97.5,98.5,99.5,100.5,101.5,102.5,103.5,104.5,105.5,106.5,107.5,108.5,109.5,110.5,111.5,112.5,113.5,114.5,115.5,116.5,117.5,118.5,119.5,120.5,121.5,122.5,123.5,124.5,125.5,126.5,127.5,128.5,129.5,130.5,131.5,132.5,133.5,134.5,135.5,136.5,137.5,138.5,139.5,140.5,141.5,142.5,143.5,144.5,145.5,146.5,147.5,148.5,149.5,150.5,151.5,152.5,153.5,154.5,155.5,156.5,157.5,158.5,159.5,160.5,161.5,162.5,163.5,164.5,165.5,166.5,167.5,168.5,169.5,170.5,171.5,172.5,173.5,174.5,175.5,176.5,177.5,178.5,179.5,180.5,181.5,182.5,183.5,184.5,185.5,186.5,187.5,188.5,189.5,190.5,191.5,192.5,193.5,194.5,195.5,196.5,197.5,198.5,199.5,200.5,201.5],"y":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"type":"scatter"},{"name":"t = 25 ms","x":[0.5,1.5,2.5,3.5000000000000004,4.5,5.5,6.5,7.5,8.5,9.5,10.5,11.5,12.5,13.5,14.499999999999998,15.5,16.5,17.5,18.5,19.5,20.5,21.5,22.5,23.5,24.5,25.5,26.5,27.500000000000004,28.499999999999996,29.499999999999996,30.5,31.5,32.5,33.5,34.5,35.5,36.5,37.5,38.5,39.5,40.5,41.5,42.5,43.5,44.5,45.5,46.5,47.5,48.5,49.5,50.5,51.5,52.5,53.5,54.5,55.50000000000001,56.50000000000001,57.49999999999999,58.49999999999999,59.5,60.5,61.5,62.5,63.5,64.5,65.5,66.5,67.5,68.5,69.5,70.5,71.5,72.5,73.5,74.5,75.5,76.5,77.5,78.5,79.5,80.5,81.5,82.5,83.5,84.5,85.5,86.5,87.5,88.5,89.5,90.5,91.5,92.5,93.5,94.5,95.5,96.5,97.5,98.5,99.5,100.5,101.5,102.5,103.5,104.5,105.5,106.5,107.5,108.5,109.5,110.5,111.5,112.5,113.5,114.5,115.5,116.5,117.5,118.5,119.5,120.5,121.5,122.5,123.5,124.5,125.5,126.5,127.5,128.5,129.5,130.5,131.5,132.5,133.5,134.5,135.5,136.5,137.5,138.5,139.5,140.5,141.5,142.5,143.5,144.5,145.5,146.5,147.5,148.5,149.5,150.5,151.5,152.5,153.5,154.5,155.5,156.5,157.5,158.5,159.5,160.5,161.5,162.5,163.5,164.5,165.5,166.5,167.5,168.5,169.5,170.5,171.5,172.5,173.5,174.5,175.5,176.5,177.5,178.5,179.5,180.5,181.5,182.5,183.5,184.5,185.5,186.5,187.5,188.5,189.5,190.5,191.5,192.5,193.5,194.5,195.5,196.5,197.5,198.5,199.5,200.5,201.5],"y":[4.093423792931142e-31,1.2201586405273658e-30,4.4049408177085485e-30,1.6019450081875175e-29,5.780059415631611e-29,2.066719980262888e-28,7.321894625578809e-28,2.569902737555449e-27,8.935561340952808e-27,3.077507229292685e-26,1.0498034161925736e-25,3.546561669499344e-25,1.1864680744967057e-24,3.930170251522525e-24,1.2889336999444552e-23,4.184756711508764e-23,1.344888100943053e-22,4.277929537197281e-22,1.3466887518719058e-21,4.19508635756367e-21,1.2930279782034956e-20,3.9429465989010647e-20,1.1894104983995742e-19,3.548884031435734e-19,1.0472529892729564e-18,3.0560544117689196e-18,8.81798712991166e-18,2.51550562679098e-17,7.093759300967278e-17,1.9772888390518508e-16,5.446942681701745e-16,1.4827582836024445e-15,3.988117543738748e-15,1.0597174699936149e-14,2.781510207664274e-14,7.210790421359417e-14,1.8460325229537748e-13,4.66650877125515e-13,1.1646153414677157e-12,2.8691381800875548e-12,6.976527007212403e-12,1.6741168391996466e-11,3.963969094979795e-11,9.260014579331064e-11,2.1338727149826024e-10,4.849968850204553e-10,1.0870784012433435e-09,2.402547110298922e-09,5.234914215476971e-09,1.124375129374229e-08,2.38020453504708e-08,4.965422097857113e-08,1.0206446198437915e-07,2.0668422628852936e-07,4.122805485377822e-07,8.099718812973206e-07,1.5670330479057443e-06,2.9850928585020065e-06,5.598225284169513e-06,1.0334709586807527e-05,1.8777833861851804e-05,3.3576664579743706e-05,5.907746307843951e-05,0.00010226990062772769,0.0001741676198098744,0.00029176632005727354,0.0004807382306840983,0.0007790205686479382,0.0012414257193385182,0.001945329224610073,0.0029973657085316263,0.004540874389105155,0.00676358554876007,0.009904742060045862,0.014260538859064382,0.020186491095847015,0.028095178554547538,0.03844783802087267,0.05173855794025774,0.06847041573102884,0.089123784857404,0.11411815977778955,0.14377006614026436,0.178250745620327,0.21754810283201492,0.26143766146915565,0.3094668477705066,0.3609557620103726,0.415015813664276,0.4705854243930591,0.5264797932271236,0.5814498618548489,0.6342444683817449,0.6836694709832843,0.7286384172066461,0.7682109900669124,0.8016176617037654,0.8282712985788141,0.8477684341433388,0.8598841726938125,0.8645649820262077,0.8619729443475119,0.8502835435557224,0.8299871200155913,0.8016921640148814,0.766177090657008,0.7243863946505086,0.6774173095870699,0.6264942732592516,0.5729304069085316,0.5180774759041159,0.4632679618155924,0.40975451225411774,0.35865282755049477,0.31089384922026947,0.2671899887773769,0.22801830787763694,0.19362138137811555,0.16402443176680487,0.1390655623806358,0.11843477785926658,0.10171706380235866,0.08843506456494026,0.0780876990119212,0.07018217567744851,0.06425808550886448,0.059903367712104784,0.0567628268838202,0.054540461685020164,0.052997144457372275,0.051945212324198256,0.05124136484157358,0.05077898931904006,0.05048072241794737,0.05029175843179018,0.05017416374004244,0.05010226801906614,0.05005907656324837,0.05003357624018124,0.05001877763643717,0.05001033461899537,0.0500055981842756,0.05000298507454352,0.050001567024977024,0.05000080996837181,0.050000412279042714,0.05000020668358886,0.05000010206419594,0.05000004965411168,0.05000002380200135,0.050000011243734134,0.050000005234907954,0.05000000240254523,0.050000001087078264,0.05000000048499742,0.05000000021338807,0.05000000009260104,0.050000000039640606,0.05000000001674208,0.050000000006977435,0.05000000000287006,0.050000000001165563,0.0500000000004676,0.05000000000018555,0.05000000000007306,0.050000000000028764,0.050000000000011535,0.05000000000000492,0.050000000000002424,0.05000000000000148,0.05000000000000113,0.05000000000000095,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092,0.05000000000000092],"type":"scatter"},{"name":"t = 50 ms","x":[0.5,1.5,2.5,3.5000000000000004,4.5,5.5,6.5,7.5,8.5,9.5,10.5,11.5,12.5,13.5,14.499999999999998,15.5,16.5,17.5,18.5,19.5,20.5,21.5,22.5,23.5,24.5,25.5,26.5,27.500000000000004,28.499999999999996,29.499999999999996,30.5,31.5,32.5,33.5,34.5,35.5,36.5,37.5,38.5,39.5,40.5,41.5,42.5,43.5,44.5,45.5,46.5,47.5,48.5,49.5,50.5,51.5,52.5,53.5,54.5,55.50000000000001,56.50000000000001,57.49999999999999,58.49999999999999,59.5,60.5,61.5,62.5,63.5,64.5,65.5,66.5,67.5,68.5,69.5,70.5,71.5,72.5,73.5,74.5,75.5,76.5,77.5,78.5,79.5,80.5,81.5,82.5,83.5,84.5,85.5,86.5,87.5,88.5,89.5,90.5,91.5,92.5,93.5,94.5,95.5,96.5,97.5,98.5,99.5,100.5,101.5,102.5,103.5,104.5,105.5,106.5,107.5,108.5,109.5,110.5,111.5,112.5,113.5,114.5,115.5,116.5,117.5,118.5,119.5,120.5,121.5,122.5,123.5,124.5,125.5,126.5,127.5,128.5,129.5,130.5,131.5,132.5,133.5,134.5,135.5,136.5,137.5,138.5,139.5,140.5,141.5,142.5,143.5,144.5,145.5,146.5,147.5,148.5,149.5,150.5,151.5,152.5,153.5,154.5,155.5,156.5,157.5,158.5,159.5,160.5,161.5,162.5,163.5,164.5,165.5,166.5,167.5,168.5,169.5,170.5,171.5,172.5,173.5,174.5,175.5,176.5,177.5,178.5,179.5,180.5,181.5,182.5,183.5,184.5,185.5,186.5,187.5,188.5,189.5,190.5,191.5,192.5,193.5,194.5,195.5,196.5,197.5,198.5,199.5,200.5,201.5],"y":[2.8450258690574227e-18,4.7798848914434694e-18,9.901259835773737e-18,2.1479398770042774e-17,4.677986126422226e-17,1.013752092424806e-16,2.1819847597914737e-16,4.662822028919329e-16,9.891819312999454e-16,2.0831047899393766e-15,4.354475842449094e-15,9.035114146694492e-15,1.8607487695212217e-14,3.8034837153634836e-14,7.716111650552929e-14,1.5535383419596799e-13,3.1040978849812424e-13,6.154917689984437e-13,1.2110609021427417e-12,2.3645588723009136e-12,4.580978573786899e-12,8.80590493390971e-12,1.6795038850358803e-11,3.1780672129249115e-11,5.966285425079384e-11,1.1111886240429987e-10,2.0530446296894576e-10,3.7628766320803934e-10,6.841271435680633e-10,1.2337674766327495e-09,2.206957734605864e-09,3.915647848017062e-09,6.890441236924077e-09,1.2025670697698437e-08,2.08149668387244e-08,3.572989786304747e-08,6.082234909286161e-08,1.0267292808861766e-07,1.7186850481857557e-07,2.852796421907467e-07,4.6953312957357155e-07,7.662488804974922e-07,1.239849989835815e-06,1.989078890554e-06,3.16378341160827e-06,4.989098380864921e-06,7.79986601660766e-06,1.208903425065684e-05,1.8574862508805095e-05,2.8293053436180026e-05,4.2721401166725124e-05,6.394615799910169e-05,9.488098895982621e-05,0.00013955097553696483,0.00020345545472902587,0.00029402428071378673,0.0004211820501397508,0.000598033554258257,0.0008416807852989898,0.001174176792829456,0.001623614155638169,0.00222533549989458,0.0030232402198912376,0.004071145461376104,0.0054341409610835795,0.007189857353891247,0.009429547360212955,0.01225886059567214,0.015798177739050234,0.020182360860753763,0.025559776342723082,0.03209045733119945,0.03994329590395721,0.04929219215924614,0.06031113820579806,0.07316827817824449,0.08801905808080411,0.10499865718693592,0.12421397035304764,0.14573548152347177,0.1695894261614852,0.19575067791589426,0.224136807145341,0.2546037423122647,0.2869434183305029,0.3208837199086553,0.3560909266329973,0.39217474623819526,0.42869589133717456,0.46517602201416336,0.5011097514707186,0.5359783029065377,0.5692643199418305,0.6004672748316618,0.6291188906182087,0.6547979948210116,0.6771442507031641,0.6958702634094431,0.7107716273308965,0.7217345627752544,0.7287408797912223,0.7319201011060142,0.7293486719471894,0.721346280313087,0.7082694058777087,0.6905523080941934,0.6686957527146143,0.643253858602781,0.6148195201541231,0.5840089207658589,0.5514456950402215,0.5177453172598906,0.48350028744513995,0.4492666517763856,0.41555233119963797,0.3828076428840336,0.35141828856025414,0.32170095845942975,0.29390156795650835,0.26819601519098496,0.24469323079485936,0.2234401932225013,0.2044285110272072,0.18760213037263418,0.1728657131032188,0.16009324627812044,0.1491364844370659,0.13983288558362644,0.13201277451296284,0.125505545953458,0.12014479867002925,0.1157723647182503,0.11224126123071773,0.10941764269670128,0.10718186836032824,0.10542882213493117,0.10406763241962948,0.10302093829768426,0.10222383914438277,0.10162264918594872,0.10117355945042106,0.10084128897867332,0.1005977868644841,0.10042102796332095,0.10029392879974691,0.1002033967588213,0.1001395151789243,0.1000948593307188,0.10006393315761332,0.10004271365928799,0.10002828847940219,0.1000185721813553,0.10001208747498486,0.10000779896630722,0.10000498858329936,0.1000031634908281,0.10000198891398579,0.1000012397577675,0.10000076619770404,0.10000046950494902,0.10000028526424322,0.10000017186015416,0.10000010266843368,0.10000006081994794,0.1000000357286242,0.1000000208142957,0.10000001202531908,0.10000000689025772,0.10000000391555214,0.10000000220690754,0.10000000123374071,0.10000000068411231,0.10000000037627887,0.1000000002052987,0.10000000011111461,0.10000000005965937,0.10000000003177754,0.10000000001679209,0.10000000000880305,0.10000000000457819,0.10000000000236181,0.1000000000012083,0.10000000000061275,0.10000000000030768,0.10000000000015263,0.10000000000007445,0.10000000000003534,0.10000000000001592,0.10000000000000636,0.10000000000000166,0.09999999999999938,0.0999999999999982,0.09999999999999758,0.09999999999999722,0.09999999999999715,0.09999999999999715,0.09999999999999715,0.09999999999999715,0.09999999999999715,0.09999999999999715,0.09999999999999715,0.09999999999999715],"type":"scatter"},{"name":"t = 75 ms","x":[0.5,1.5,2.5,3.5000000000000004,4.5,5.5,6.5,7.5,8.5,9.5,10.5,11.5,12.5,13.5,14.499999999999998,15.5,16.5,17.5,18.5,19.5,20.5,21.5,22.5,23.5,24.5,25.5,26.5,27.500000000000004,28.499999999999996,29.499999999999996,30.5,31.5,32.5,33.5,34.5,35.5,36.5,37.5,38.5,39.5,40.5,41.5,42.5,43.5,44.5,45.5,46.5,47.5,48.5,49.5,50.5,51.5,52.5,53.5,54.5,55.50000000000001,56.50000000000001,57.49999999999999,58.49999999999999,59.5,60.5,61.5,62.5,63.5,64.5,65.5,66.5,67.5,68.5,69.5,70.5,71.5,72.5,73.5,74.5,75.5,76.5,77.5,78.5,79.5,80.5,81.5,82.5,83.5,84.5,85.5,86.5,87.5,88.5,89.5,90.5,91.5,92.5,93.5,94.5,95.5,96.5,97.5,98.5,99.5,100.5,101.5,102.5,103.5,104.5,105.5,106.5,107.5,108.5,109.5,110.5,111.5,112.5,113.5,114.5,115.5,116.5,117.5,118.5,119.5,120.5,121.5,122.5,123.5,124.5,125.5,126.5,127.5,128.5,129.5,130.5,131.5,132.5,133.5,134.5,135.5,136.5,137.5,138.5,139.5,140.5,141.5,142.5,143.5,144.5,145.5,146.5,147.5,148.5,149.5,150.5,151.5,152.5,153.5,154.5,155.5,156.5,157.5,158.5,159.5,160.5,161.5,162.5,163.5,164.5,165.5,166.5,167.5,168.5,169.5,170.5,171.5,172.5,173.5,174.5,175.5,176.5,177.5,178.5,179.5,180.5,181.5,182.5,183.5,184.5,185.5,186.5,187.5,188.5,189.5,190.5,191.5,192.5,193.5,194.5,195.5,196.5,197.5,198.5,199.5,200.5,201.5],"y":[4.622704156329135e-13,6.165689676865337e-13,9.729637485356038e-13,1.640660772215885e-12,2.821013589380295e-12,4.863237654851169e-12,8.359059331715005e-12,1.4299480835074894e-11,2.4331096639816954e-11,4.117154708671307e-11,6.927803034226926e-11,1.1591572326051188e-10,1.9285400245422215e-10,3.1904153454048207e-10,5.247971141132282e-10,8.583312533267044e-10,1.3958265670121386e-09,2.2569135095656437e-09,3.6282672572585313e-09,5.799340312815702e-09,9.216097637257577e-09,1.4561260455029285e-08,2.287329318272737e-08,3.5721587853769226e-08,5.546254257169098e-08,8.561118526103445e-08,1.3137654728031327e-07,2.0042726395417147e-07,3.039782660947885e-07,4.583216358418483e-07,6.869667822345933e-07,1.0236094565438998e-06,1.5162185363214362e-06,2.2326170323126983e-06,3.2680427052334665e-06,4.755307375347362e-06,6.878335648861619e-06,9.890056043530455e-06,1.4135842082808264e-05,2.0083958017755706e-05,2.836475136195101e-05,3.982064725599327e-05,5.556932870257547e-05,7.708281787134967e-05,0.00010628548701435577,0.00014567429638937383,0.00019846474699007134,0.0002687661063638261,0.00036178936776945476,0.0004840910817740773,0.0006438555964843918,0.0008512172983685798,0.0011186231036969382,0.0014612336632135324,0.0018973594768626144,0.0024489253604125104,0.003141953480445428,0.004007051534236427,0.005079888695927614,0.00640163782797099,0.008019358365695738,0.009986290471319423,0.012362027814282396,0.015212533993972835,0.018609966523917425,0.0226322727868325,0.02736252476462971,0.032887963909257946,0.03929873442805997,0.046686292577526586,0.05514149122030619,0.06475235267283518,0.07560155835715476,0.0877637004038006,0.10130235741019541,0.11626707318726315,0.13269033258074958,0.15058464134631816,0.16993982662015042,0.19072067987322355,0.21286506462899887,0.23628260613073931,0.26085406929578997,0.2864315147169428,0.31283930050959907,0.3398759711186323,0.3673170437467333,0.3949186700564494,0.4224221166354869,0.4495589739250872,0.47605697146012893,0.5016462488776503,0.5260659086107102,0.5490706586878066,0.5704373435308843,0.5899711577026767,0.6075113424719653,0.6229361777676183,0.6361671021590806,0.6471718201911684,0.6559662886888034,0.66266551026999,0.6652831018196816,0.664029646521211,0.6591098786004864,0.6507687886092159,0.6392867723341424,0.6249739768888333,0.6081640220425906,0.5892072924388972,0.568464006418995,0.5462972693849881,0.5230663140433739,0.4991201168393611,0.4747915601275655,0.45039228412330595,0.42620834268396735,0.4024967439070945,0.3794829219337556,0.35735915177125055,0.3362838859007344,0.31638196127953644,0.29774559924647664,0.2804360996920986,0.2644861152665027,0.24990238165061157,0.23666877598324657,0.22474957709516555,0.2140928076781335,0.20463354913770962,0.19629713372926372,0.18900213467043492,0.18266309226264102,0.17719293169076933,0.17250504525319077,0.16851502758855924,0.16514206645626356,0.16231000340978285,0.15994808806233343,0.15799145652576188,0.15638136908788813,0.15506524447312026,0.1539965283811655,0.15313443274667865,0.15244357966096744,0.1518935804975467,0.15145857681817612,0.15111676540126887,0.15084992548087706,0.15064296221178033,0.1504834766328015,0.15036136908550563,0.15026848021400424,0.15019827134144237,0.15014554417785458,0.15010619842824255,0.15007702488986005,0.15005553099619057,0.15003979542124002,0.15002834824188951,0.15002007321264324,0.1500141288868015,0.15000988557876796,0.15000687546935706,0.15000475348248762,0.15000326688722354,0.15000223188941425,0.15000151576285625,0.1500010233256411,0.15000068679097567,0.15000045821332741,0.15000030391190347,0.1500002003868224,0.15000013135203483,0.15000008559640712,0.15000005545367998,0.15000003571630027,0.15000002287015415,0.15000001455940554,0.150000009215006,0.15000000579869993,0.15000000362789218,0.15000000225669352,0.1500000013956968,0.15000000085825368,0.1500000005247495,0.1500000003190111,0.15000000019283327,0.15000000011590045,0.15000000006926567,0.1500000000411606,0.1500000000243205,0.15000000001428837,0.15000000000834635,0.1500000000048472,0.15000000000279862,0.1500000000016067,0.15000000000091815,0.15000000000052444,0.15000000000030395,0.1500000000001873,0.15000000000013708],"type":"scatter"},{"name":"t = 100 ms","x":[0.5,1.5,2.5,3.5000000000000004,4.5,5.5,6.5,7.5,8.5,9.5,10.5,11.5,12.5,13.5,14.499999999999998,15.5,16.5,17.5,18.5,19.5,20.5,21.5,22.5,23.5,24.5,25.5,26.5,27.500000000000004,28.499999999999996,29.499999999999996,30.5,31.5,32.5,33.5,34.5,35.5,36.5,37.5,38.5,39.5,40.5,41.5,42.5,43.5,44.5,45.5,46.5,47.5,48.5,49.5,50.5,51.5,52.5,53.5,54.5,55.50000000000001,56.50000000000001,57.49999999999999,58.49999999999999,59.5,60.5,61.5,62.5,63.5,64.5,65.5,66.5,67.5,68.5,69.5,70.5,71.5,72.5,73.5,74.5,75.5,76.5,77.5,78.5,79.5,80.5,81.5,82.5,83.5,84.5,85.5,86.5,87.5,88.5,89.5,90.5,91.5,92.5,93.5,94.5,95.5,96.5,97.5,98.5,99.5,100.5,101.5,102.5,103.5,104.5,105.5,106.5,107.5,108.5,109.5,110.5,111.5,112.5,113.5,114.5,115.5,116.5,117.5,118.5,119.5,120.5,121.5,122.5,123.5,124.5,125.5,126.5,127.5,128.5,129.5,130.5,131.5,132.5,133.5,134.5,135.5,136.5,137.5,138.5,139.5,140.5,141.5,142.5,143.5,144.5,145.5,146.5,147.5,148.5,149.5,150.5,151.5,152.5,153.5,154.5,155.5,156.5,157.5,158.5,159.5,160.5,161.5,162.5,163.5,164.5,165.5,166.5,167.5,168.5,169.5,170.5,171.5,172.5,173.5,174.5,175.5,176.5,177.5,178.5,179.5,180.5,181.5,182.5,183.5,184.5,185.5,186.5,187.5,188.5,189.5,190.5,191.5,192.5,193.5,194.5,195.5,196.5,197.5,198.5,199.5,200.5,201.5],"y":[2.838522893440312e-10,3.3954780853319613e-10,4.608279128017908e-10,6.690319671699478e-10,1.0002856634036391e-09,1.5110632306284412e-09,2.2867156886018354e-09,3.4540748289218164e-09,5.19973128101028e-09,7.796239588641592e-09,1.1639383518855427e-08,1.7300817210117695e-08,2.5601979505320252e-08,3.771728312013246e-08,5.531736206572448e-08,8.076681295104567e-08,1.1739562641485433e-07,1.698696642178708e-07,2.4469344516062636e-07,3.5088857478773e-07,5.009038770459479e-07,7.118292224488643e-07,1.0070048327030308e-06,1.4181421805925459e-06,1.9881022568677766e-06,2.774512738575305e-06,3.854448263814001e-06,5.330448350802592e-06,7.33820614323323e-06,1.00563285822652e-05,1.3718644975888788e-05,1.8629626031134454e-05,2.5183568461113677e-05,3.3888299802499346e-05,4.539426173298089e-05,6.052993456741549e-05,8.034466612043738e-05,0.00010616005876151312,0.0001396311417687187,0.00018281860295848271,0.00023827336342241084,0.0003091347399823911,0.00039924333840747855,0.000513269642407823,0.0006568589945256795,0.0008367932913056519,0.0010611692239088754,0.0013395922764240706,0.0016833849409655162,0.002105806719683017,0.0026222824638980962,0.0032506344623632016,0.004011312455793967,0.00492761445508468,0.006025889918444635,0.007335715551455011,0.00889003279759341,0.010725235058306427,0.012881191901849961,0.015401197074136766,0.018331827099059554,0.021722697733208153,0.025626106595254508,0.030096551984430512,0.035190120276918146,0.040963737360088265,0.0474742833188412,0.05477757397813873,0.06292721784645189,0.07197336237326292,0.08196134906933344,0.09293030274582546,0.10491168568259146,0.11792785268992946,0.13199064752208534,0.1471000846737298,0.1632431629928299,0.18039285854979706,0.19850734362668107,0.21752947639553236,0.23738660176792323,0.2579906980150818,0.2792388961541984,0.30101438992482893,0.3231877436717668,0.34561859391205046,0.36815772816231285,0.3906495121575536,0.41293462435732436,0.43485304507996464,0.4562472371954788,0.476965446483536,0.49686504292023764,0.5158158196268392,0.5337031642459302,0.5504310182621556,0.5659245433087705,0.5801324197437363,0.59302871157755,0.6046142429246709,0.6149174441731915,0.6240446405859378,0.6299797715611756,0.6328835447516947,0.6328920451069606,0.6301648341076086,0.6248825884747722,0.617244339976753,0.6074643882083263,0.5957689660537022,0.5823927427297496,0.5675752517135746,0.5515573304684771,0.5345776557825419,0.5168694529137567,0.4986574488745642,0.48015513044379077,0.46156235628106806,0.44306336029422017,0.4248251706491388,0.40699645598845274,0.3897067979926036,0.3730663777881055,0.35716605324122025,0.34207779516238845,0.3278554431033109,0.31453573589040107,0.30213956836080885,0.29067342392860357,0.28013093251690613,0.2704945048938377,0.26173699734402034,0.2538233646548629,0.24671226433738086,0.24035758056526263,0.23470984223742894,0.2297175155974369,0.22532815775099482,0.22148942301523805,0.21814991915119364,0.21525991505381517,0.21277190532110463,0.21064104025185032,0.20882543222162997,0.207286351080325,0.2059883222477395,0.20489914162251524,0.20398982134232072,0.2032344799271117,0.2026101894917805,0.20209679161785132,0.20167669220898782,0.20133464429702,0.20105752637922428,0.2008341225080923,0.20065490906491498,0.20051185196030905,0.20039821694012883,0.20030839474662177,0.20023774209686118,0.2001824387915743,0.2001393607505517,0.20010596837526004,0.2000802093520203,0.20006043481577657,0.2000453276802476,0.20003384189065065,0.20002515135658408,0.200018607362703,0.20001370332262686,0.20001004582780305,0.20000733104011598,0.2000053255787189,0.20000385115311747,0.20000277229242408,0.20000198661249788,0.20000141714682093,0.2000010063426044,0.20000071139048864,0.20000050061443375,0.2000003506984223,0.20000024456904184,0.2000001697886074,0.20000011734301695,0.20000008073278178,0.20000005529539416,0.20000003770308555,0.20000002559271796,0.20000001729460018,0.20000001163490816,0.20000000779254093,0.2000000051959903,0.20000000344945135,0.20000000228017403,0.20000000150115899,0.20000000098487303,0.20000000064483867,0.20000000042282146,0.2000000002799831,0.20000000019083936,0.2000000001392079,0.20000000011558575],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmapgl":[{"type":"heatmapgl","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"title":{"text":"Position (\u00b5m)"}},"yaxis":{"title":{"text":"Concentration (mM)"}}},                        {"responsive": true}                    ).then(function(){
+
+var gd = document.getElementById('ca6aa323-6965-467c-94f8-0c3045ba7757');
+var x = new MutationObserver(function (mutations, observer) {{
+        var display = window.getComputedStyle(gd).display;
+        if (!display || display === 'none') {{
+            console.log([gd, 'removed!']);
+            Plotly.purge(gd);
+            observer.disconnect();
+        }}
+}});
+
+// Listen for the removal of the full notebook cells
+var notebookContainer = gd.closest('#notebook-container');
+if (notebookContainer) {{
+    x.observe(notebookContainer, {childList: true});
+}}
+
+// Listen for the clearing of the current output cell
+var outputEl = gd.closest('.output');
+if (outputEl) {{
+    x.observe(outputEl, {childList: true});
+}}
+
+                        })                };                });            </script>        </div></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="extracellular.html" class="btn btn-neutral float-left" title="Extracellular reaction-diffusion tutorial" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="degradable_buffer.html" class="btn btn-neutral float-right" title="Example: Degradable buffer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

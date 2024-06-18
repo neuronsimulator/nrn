@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scripting NEURON basics &mdash; NEURON  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=87e54e7c" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=6933245a" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/design-tabs.js?v=f930bc37"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Ball and stick 1: Basic cell" href="ball-and-stick-1.html" />
+    <link rel="prev" title="Introduction to Python" href="pythontutorial.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            NEURON
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Building:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cmake_doc/index.html">CMake Build Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/developer.html">Developer Builds</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../videos/index.html">Training videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/index.html">Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../courses/exercises2018.html">NEURON Course Exercises</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://neuron.yale.edu/phpBB">The NEURON forum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications about NEURON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications-using-neuron.html">Publications using NEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NEURON scripting:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../scripting.html">Running Python and HOC scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../python/index.html">NEURON Python documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hoc/index.html">NEURON HOC documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../otherscripting.html">Other scripting languages</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Python tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="pythontutorial.html">Introduction to Python</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Scripting NEURON basics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#What-is-NEURON?">What is NEURON?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Step-1:-Import-the-neuron-module-into-Python">Step 1: Import the neuron module into Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Step-2:-Create-a-cell">Step 2: Create a cell</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Aside-1:-NEURON's-h.topology-function">Aside 1: NEURON’s h.topology function</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Aside-2:-The-psection-method">Aside 2: The psection method</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#Step-3:-Set-the-cell's-morphological-properties">Step 3: Set the cell’s morphological properties</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Aside-3:-Python's-dir-function">Aside 3: Python’s dir function</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Aside-4:-Getting-more-help">Aside 4: Getting more help</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Biophysical-mechanisms">Biophysical mechanisms</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#Step-4:-Insert-ion-channels">Step 4: Insert ion channels</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Aside-5:-Sections-and-segments">Aside 5: Sections and segments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Aside-6:-Accessing-segment-variables">Aside 6: Accessing segment variables</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#Step-5:-Insert-a-stimulus">Step 5: Insert a stimulus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Step-6:-Set-up-recording-variables">Step 6: Set up recording variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Step-7:-Run-the-simulation">Step 7: Run the simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Step-8:-Plot-the-results">Step 8: Plot the results</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Using-bokeh">Using bokeh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Using-matplotlib">Using matplotlib</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#Step-9:-Saving-and-loading-results">Step 9: Saving and loading results</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#CSV">CSV</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#JSON">JSON</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Pickles">Pickles</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-1.html">Ball and stick 1: Basic cell</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-2.html">Ball and stick 2: Build a ring network of ball-and-stick cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-3.html">Ball and stick 3: Extensible network of cells</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ball-and-stick-4.html">Ball and stick 4: Parallel vs serial mode</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../rxd-tutorials/index.html">Python RXD tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../coreneuron/index.html">CoreNEURON</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">NMODLanguage:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../nmodl/index.html">NMODLanguage</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../scm/index.html">NEURON SCM and Release</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">NEURON Development topics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../doxygen.html">C/C++ API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Removed Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../removed_features.html">Removed Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Changelog</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">NEURON 8.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-1">NEURON 8.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#neuron-8-0">NEURON 8.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#contributors">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html#feedback-help">Feedback / Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">NEURON</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Python tutorials</a></li>
+      <li class="breadcrumb-item active">Scripting NEURON basics</li>
+<li class="wy-breadcrumbs-aside">
+    
+    
+</li>
+
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/scripting-neuron-basics.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Scripting-NEURON-basics">
+<h1>Scripting NEURON basics<a class="headerlink" href="#Scripting-NEURON-basics" title="Link to this heading"></a></h1>
+<p>The objectives of this part of the tutorial are to get familiar with basic operations of NEURON using Python. In this worksheet we will:</p>
+<ul class="simple">
+<li><p>Create a passive cell membrane in NEURON.</p></li>
+<li><p>Create a synaptic stimulus onto the neuron.</p></li>
+<li><p>Modify parameters of the membrane and stimulus.</p></li>
+<li><p>Visualize results with bokeh.</p></li>
+</ul>
+<section id="What-is-NEURON?">
+<h2>What is NEURON?<a class="headerlink" href="#What-is-NEURON?" title="Link to this heading"></a></h2>
+<p>The NEURON simulation environment is a powerful engine for performing simulations of neurons and biophysical neural networks. It permits the construction of biologically realistic membranes with active and passive ion channels, combined with virtual connectivity and electrophysiology tools to drive and measure neuron and network behaviors.</p>
+</section>
+<section id="Step-1:-Import-the-neuron-module-into-Python">
+<h2>Step 1: Import the neuron module into Python<a class="headerlink" href="#Step-1:-Import-the-neuron-module-into-Python" title="Link to this heading"></a></h2>
+<p>Any code that is not part of Python’s Built-in Functions must be imported. The Python interface to NEURON goes through the neuron module, especially the neuron.h submodule. The neuron module has additional submodules, including neuron.rxd for reaction-diffusion dynamics, neuron.gui2 for Jupyter-compatible PlotShape graphs, and neuron.gui for Interviews-based GUI tools. The neuron.h submodule also allows loading files, executing code, and calling functions written in HOC, an older scripting
+language supported by NEURON. This allows the continued use of HOC libraries in Python code.</p>
+<p>To import neuron, we could use:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">neuron</span>
+</pre></div>
+</div>
+</div>
+<p>If the above succeeded, it produces no output (in recent versions of NEURON), so how can we know what version of NEURON we have? Simple: ask for the <code class="docutils literal notranslate"><span class="pre">__version__</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">neuron</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<p>There are only a limited number of functions avaiable directly from the neuron module. In practice, we usually want to directly import the submodules we need; i.e. do something like the below instead:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span>
+</pre></div>
+</div>
+</div>
+<p>When using NEURON, you will always want the h submodule. You may or may not need to import the additional submodules mentioned above. If you do, they can be imported separately or loaded in one line with a comma separated list, as in:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="kn">import</span> <span class="n">h</span><span class="p">,</span> <span class="n">rxd</span>
+</pre></div>
+</div>
+</div>
+<p>NB: When importing h, etc like this, there is usually no need for importing neuron separately.</p>
+<p><p>NEURON assumes certain default units (concentration in mM, time in ms, voltage in mV), but units can be specified explicitly by importing unit definitions from neuron.units. Even if you are using the default units, being explicit makes your code more readable by others. For example:</p>
+</p><div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">neuron.units</span> <span class="kn">import</span> <span class="n">ms</span><span class="p">,</span> <span class="n">mV</span>
+</pre></div>
+</div>
+</div>
+<p>If the above gives you an error, then you are using a version of NEURON older than 7.7. Update before proceeding.</p>
+</section>
+<section id="Step-2:-Create-a-cell">
+<h2>Step 2: Create a cell<a class="headerlink" href="#Step-2:-Create-a-cell" title="Link to this heading"></a></h2>
+<p>A Section is the basic morphological building-block in NEURON. We typically think of a Section as an unbranched cable, but it can also be used to represent a soma. Thus a simple model neuron with only a soma can be created as in:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">soma</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Section</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;soma&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>There is no output, so how can we tell that we successfully created a Section?</p>
+<section id="Aside-1:-NEURON's-h.topology-function">
+<h3>Aside 1: NEURON’s h.topology function<a class="headerlink" href="#Aside-1:-NEURON's-h.topology-function" title="Link to this heading"></a></h3>
+<p><p>NEURON’s h.topology() function displays the topological structure of the entire model, indicating which sections are connected to which sections, where they are connected, and how many segments each section is divided into.</p>
+</p><p><p>If you’re following along with our example, there’s not much to see yet since there is only one section, but it does demonstrate that the soma has been created and has one segment (one dash is shown):</p>
+</p><div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">topology</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+|-|       soma(0-1)
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.0
+</pre></div></div>
+</div>
+<p>The h.topology() function displays its data to screen and returns 1.0 indicating success (this function always succeeds). Note: This function is only for displaying data; other methods must be used to store the data in a variable for programmatic analysis.</p>
+</section>
+<section id="Aside-2:-The-psection-method">
+<h3>Aside 2: The psection method<a class="headerlink" href="#Aside-2:-The-psection-method" title="Link to this heading"></a></h3>
+<p><p>Every NEURON section has a psection method (think: properties of the section) that returns a Python dictionary providing a structured data representation of the properties of the section.</p>
+</p><p><p>For example, we can query the soma via:</p>
+</p><div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">soma</span><span class="o">.</span><span class="n">psection</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;point_processes&#39;: {},
+ &#39;density_mechs&#39;: {},
+ &#39;ions&#39;: {},
+ &#39;morphology&#39;: {&#39;L&#39;: 100.0,
+  &#39;diam&#39;: [500.0],
+  &#39;pts3d&#39;: [],
+  &#39;parent&#39;: None,
+  &#39;trueparent&#39;: None},
+ &#39;nseg&#39;: 1,
+ &#39;Ra&#39;: 35.4,
+ &#39;cm&#39;: [1.0],
+ &#39;regions&#39;: set(),
+ &#39;species&#39;: set(),
+ &#39;name&#39;: &#39;soma&#39;,
+ &#39;hoc_internal_name&#39;: &#39;__nrnsec_0x5644f8478c70&#39;,
+ &#39;cell&#39;: None}
+</pre></div></div>
+</div>
+<p>The results tell us the soma is a cylinder with length 100 microns, diameter 500 microns, axial resistivity 35.4 ohm*cm, and specific membrance capacitance 1 μF/cm2.</p>
+<p>Note: calling this method does not itself print anything to the screen. Instead it returns a dictionary. We see the contents of the dictionary only because we are running interactively; from a script, nothing would be printed unless we explicitly printed it with print, or, better pretty-printed it with pprint.pprint.</p>
+<p>Since this is a dictionary, we can extract any properties we want using square brackets. For example, the length of the section is:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">soma</span><span class="o">.</span><span class="n">psection</span><span class="p">()[</span><span class="s2">&quot;morphology&quot;</span><span class="p">][</span><span class="s2">&quot;L&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+100.0
+</pre></div></div>
+</div>
+<p>All of these values can be individually accessed in more efficient ways, but psection provides an overview of the full properties of the section.</p>
+<p>For example, the length of the soma is more efficiently available (and settable) via:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">soma</span><span class="o">.</span><span class="n">L</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+100.0
+</pre></div></div>
+</div>
+<p>soma.psection()[‘morphology’][‘diam’] is a list (of length 1 here), with each entry corresponding to the value for each segment. Similarly for soma.psection()[‘cm’], etc.</p>
+<p>Important: You may have noticed that the default diameter is 500 μm, which is excessively large for mammalian neurons. It’s the default because it’s appropriate for the squid giant axons studied by Hodgkin and Huxley. NEURON also uses squid-relevant values for axial resistivity (soma.Ra) and temperature (h.celsius). These should all be adjusted for mammalian models.</p>
+</section>
+</section>
+<section id="Step-3:-Set-the-cell's-morphological-properties">
+<h2>Step 3: Set the cell’s morphological properties<a class="headerlink" href="#Step-3:-Set-the-cell's-morphological-properties" title="Link to this heading"></a></h2>
+<p>Since we’re simulating a soma, the default length of 100 μm and diameter of 500 μm are inappropriate. Let’s set the length (L) and diameter (diam) to 20 μm instead:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">soma</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">soma</span><span class="o">.</span><span class="n">diam</span> <span class="o">=</span> <span class="mi">20</span>
+</pre></div>
+</div>
+</div>
+<p>In many models, you will have cells consisting of many connected sections. In brief, this can be done using the Section’s connect method. That will be described in a subsequent part of the tutorial. For now though, we consider only the soma.</p>
+<section id="Aside-3:-Python's-dir-function">
+<h3>Aside 3: Python’s dir function<a class="headerlink" href="#Aside-3:-Python's-dir-function" title="Link to this heading"></a></h3>
+<p>We can also probe objects with Python’s built-in dir() function. Let’s see what it says about soma.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">dir</span><span class="p">(</span><span class="n">soma</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;L&#39;,
+ &#39;Ra&#39;,
+ &#39;__call__&#39;,
+ &#39;__class__&#39;,
+ &#39;__contains__&#39;,
+ &#39;__delattr__&#39;,
+ &#39;__dir__&#39;,
+ &#39;__doc__&#39;,
+ &#39;__eq__&#39;,
+ &#39;__format__&#39;,
+ &#39;__ge__&#39;,
+ &#39;__getattribute__&#39;,
+ &#39;__getstate__&#39;,
+ &#39;__gt__&#39;,
+ &#39;__hash__&#39;,
+ &#39;__init__&#39;,
+ &#39;__init_subclass__&#39;,
+ &#39;__iter__&#39;,
+ &#39;__le__&#39;,
+ &#39;__lt__&#39;,
+ &#39;__module__&#39;,
+ &#39;__ne__&#39;,
+ &#39;__new__&#39;,
+ &#39;__reduce__&#39;,
+ &#39;__reduce_ex__&#39;,
+ &#39;__repr__&#39;,
+ &#39;__setattr__&#39;,
+ &#39;__sizeof__&#39;,
+ &#39;__str__&#39;,
+ &#39;__subclasshook__&#39;,
+ &#39;allseg&#39;,
+ &#39;arc3d&#39;,
+ &#39;cell&#39;,
+ &#39;children&#39;,
+ &#39;connect&#39;,
+ &#39;diam3d&#39;,
+ &#39;disconnect&#39;,
+ &#39;has_membrane&#39;,
+ &#39;hname&#39;,
+ &#39;hoc_internal_name&#39;,
+ &#39;insert&#39;,
+ &#39;is_pysec&#39;,
+ &#39;n3d&#39;,
+ &#39;name&#39;,
+ &#39;nseg&#39;,
+ &#39;orientation&#39;,
+ &#39;parentseg&#39;,
+ &#39;psection&#39;,
+ &#39;pt3dadd&#39;,
+ &#39;pt3dchange&#39;,
+ &#39;pt3dclear&#39;,
+ &#39;pt3dinsert&#39;,
+ &#39;pt3dremove&#39;,
+ &#39;pt3dstyle&#39;,
+ &#39;push&#39;,
+ &#39;rallbranch&#39;,
+ &#39;same&#39;,
+ &#39;spine3d&#39;,
+ &#39;subtree&#39;,
+ &#39;trueparentseg&#39;,
+ &#39;uninsert&#39;,
+ &#39;wholetree&#39;,
+ &#39;x3d&#39;,
+ &#39;y3d&#39;,
+ &#39;z3d&#39;]
+</pre></div></div>
+</div>
+<p>This tells us all of the Python methods and variables associated with the object. Any methods with two leading and trailing underscores are reserved by Python. The other items in the list are additional members of soma that we can call. To see all of the functions, variables, etc available through NEURON’s h submodule, try:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">textwrap</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">(</span><span class="n">h</span><span class="p">))))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+APCount, AlphaSynapse, Avogadro_constant, BBSaveState, CVode, DEG,
+Deck, E, Exp2Syn, ExpSyn, FARADAY, FInitializeHandler, File, GAMMA,
+GUIMath, Glyph, Graph, HBox, IClamp, Impedance, IntFire1, IntFire2,
+IntFire4, KSChan, KSGate, KSState, KSTrans, L, LinearMechanism, List,
+Matrix, MechanismStandard, MechanismType, NMODLRandom, NetCon,
+NetStim, OClamp, PHI, PI, PPShape, PWManager, ParallelContext,
+PatternStim, PlotShape, PointProcessMark, Pointer, PtrVector,
+PythonObject, R, Ra, Random, RangeVarPlot, SEClamp, SaveState,
+Section, SectionBrowser, SectionList, SectionRef, Shape,
+StateTransitionEvent, StringFunctions, SymChooser, TextEditor, Timer,
+VBox, VClamp, ValueFieldEditor, Vector, __abs__, __add__, __bool__,
+__call__, __class__, __delattr__, __delitem__, __dir__, __doc__,
+__eq__, __format__, __ge__, __getattribute__, __getitem__,
+__getstate__, __gt__, __hash__, __init__, __init_subclass__, __iter__,
+__le__, __len__, __lt__, __module__, __mul__, __ne__, __neg__,
+__new__, __next__, __pos__, __radd__, __reduce__, __reduce_ex__,
+__repr__, __rmul__, __rsub__, __rtruediv__, __setattr__, __setitem__,
+__setstate__, __sizeof__, __str__, __sub__, __subclasshook__,
+__truediv__, _pysec, abs, access, allobjects, allobjectvars, allsec,
+arc3d, area, argtype, atan, atan2, attr_praxis, axis, baseattr,
+batch_run, batch_save, begintemplate, boolean_dialog, break,
+capacitance, cas, celsius, chdir, checkpoint, clamp_resist, cm,
+connect, continue, continue_dialog, coredump_on_error,
+coreneuron_handle, cos, create, debug, default_dll_loaded_,
+define_shape, delete, delete_section, depvar, diam, diam3d,
+diam_changed, dik_dv_, dina_dv_, disconnect, distance, doEvents,
+doNotify, double, dt, e_extracellular, e_fastpas, e_pas, ek, el_hh,
+else, ena, endtemplate, eps_IntFire4, eqinit, eqn, erf, erfc,
+execerror, execute, execute1, exp, external, extracellular, fadvance,
+fastpas, fclamp, fclampi, fclampv, fcurrent, finitialize, fit_praxis,
+float_epsilon, fmatrix, for, forall, forsec, fprint, frecord_init,
+fscan, fstim, fstimi, fsyn, fsyng, fsyni, func, g_fastpas, g_pas,
+getSpineArea, getcwd, getstr, ghk, gk_hh, gkbar_hh, gl_hh, gna_hh,
+gnabar_hh, graph, graphmode, h_hh, help, hh, hinf_hh, hname, hoc_ac_,
+hoc_cross_x_, hoc_cross_y_, hoc_obj_, hoc_pointer_, hoc_stdout,
+hocobjptr, htau_hh, i_cap, i_membrane, i_membrane_, i_pas,
+ib_IntFire4, if, ifsec, ik, il_hh, ina, initnrn, insert,
+install_vector_fitness, int, ion_charge, ion_register, ion_style,
+ismembrane, issection, iterator, iterator_statement, ivoc_style,
+k_ion, keep_nseg_parm, ki, ki0_k_ion, ko, ko0_k_ion, libpython_path,
+load_file, load_func, load_proc, load_template, local, localobj, log,
+log10, lw, m_hh, machine_name, make_mechanism, make_pointprocess,
+mcell_ran4, mcell_ran4_init, minf_hh, morphology, mtau_hh, n3d, n_hh,
+na_ion, nai, nai0_na_ion, name_declared, nao, nao0_na_ion, nernst,
+neuronhome, new, ninf_hh, nlayer_extracellular, node_data,
+nrn_feenableexcept, nrn_get_config_key, nrn_get_config_val,
+nrn_load_dll, nrn_mallinfo, nrn_netrec_state_adjust,
+nrn_num_config_keys, nrn_shape_changed_, nrn_sparse_partrans,
+nrnallpointmenu, nrnallsectionmenu, nrnglobalmechmenu,
+nrniv_bind_thread, nrnmechmenu, nrnmpi_init, nrnpointmenu, nrnpython,
+nrnsecmenu, nrnunit_use_legacy, nrnversion, nseg, ntau_hh, numarg,
+obfunc, object_id, object_pop, object_push, object_pushed, objectvar,
+objref, parent_connection, parent_node, parent_section, pas, plot,
+plotx, ploty, plt, pop_section, print, print_local_memory_usage,
+print_session, printf, prmat, proc, prstim, psection, pt3dadd,
+pt3dchange, pt3dclear, pt3dconst, pt3dinsert, pt3dremove, pt3dstyle,
+public, push_section, pval_praxis, pwman_place, quit, rallbranch,
+rates_hh, read, ref, regraph, retrieveaudit, return, ri, ropen, same,
+sav_g, sav_rhs, save_session, saveaudit, secname, secondorder,
+section_exists, section_orientation, section_owner, sectionname,
+setSpineArea, setcolor, setdata_feature, setdata_hh, setdata_pas,
+setpointer, show_errmess_always, show_winio, sin, solve, spine3d,
+sprint, sqrt, sred, sscanf, startsw, stop, stop_praxis, stoprun,
+stopsw, strcmp, strdef, string_dialog, symbols, system, t, tanh,
+taueps_IntFire4, this_node, this_section, topology, uninsert, units,
+unix_mac_pc, use_mcell_ran4, usetable_hh, v, variable_domain, vext,
+vtrap_hh, while, wopen, x3d, xbutton, xc, xcheckbox, xfixedvalue, xg,
+xlabel, xmenu, xopen, xopen_broadcast_, xpanel, xpvalue, xradiobutton,
+xraxial, xred, xslider, xstatebutton, xvalue, xvarlabel, y3d, z3d
+</pre></div></div>
+</div>
+<p>(The ‘, ‘.join(…) tells Python to build a string out of the list returned by dir where the items are separated from each other with a comma and a space. The textwrap.fill(…) tells Python to split long lines into multiple lines, by default a maximum of 70 characters long.)</p>
+</section>
+<section id="Aside-4:-Getting-more-help">
+<h3>Aside 4: Getting more help<a class="headerlink" href="#Aside-4:-Getting-more-help" title="Link to this heading"></a></h3>
+<p>In addition to probing objects with dir(), help from docstrings is available using help().</p>
+<p>For example, from dir(soma) above, we know that there is a connect method available. Let’s inquire about that:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">help</span><span class="p">(</span><span class="n">soma</span><span class="o">.</span><span class="n">connect</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Help on built-in function connect:
+
+connect(...) method of nrn.Section instance
+    childSection.connect(parentSection, [parentX], [childEnd]) or
+    childSection.connect(parentSegment, [childEnd])
+
+</pre></div></div>
+</div>
+<p>When running interactively in Jupyter, the same information is available in a window that can be popped out by prefacing the method/function/etc with a question mark; e.g.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">?</span>soma.connect
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Biophysical-mechanisms">
+<h3>Biophysical mechanisms<a class="headerlink" href="#Biophysical-mechanisms" title="Link to this heading"></a></h3>
+<p>NEURON comes with a few built in biophysical mechanisms that can be added to a model:</p>
+<table border="1" class="docutils"><colgroup><col width="26%" /><col width="74%"  /></colgroup><tbody valign="top"><tr class="row-odd"><td><p>pas</p>
+</td><td><p>Passive (“leak”) channel.</p>
+</td></tr><tr class="row-even"><td><p>extracellular</p>
+</td><td><p>For simulating effects of nonzero extracellular potential, as may happen with leaky patch clamps, or detailed propertes of the myelin sheath.</p>
+</td></tr><tr class="row-odd"><td><p>hh</p>
+</td><td><p>Hodgkin-Huxley sodium, potassium, and leakage channels.</p>
+</td></tr></tbody></table><p>Thousands of additional mechanisms (for A-currents, etc) are available as MOD files as part of published model codes on ModelDB.</p>
+</section>
+</section>
+<section id="Step-4:-Insert-ion-channels">
+<h2>Step 4: Insert ion channels<a class="headerlink" href="#Step-4:-Insert-ion-channels" title="Link to this heading"></a></h2>
+<p>A section’s insert method is used to insert density mechanisms (i.e. anything where we don’t want to specify every single instance separately). Let’s insert Hodgkin-Huxley channels into the soma’s membrane. We do this by passing ‘hh’ as the mechanism type:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">soma</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s2">&quot;hh&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+soma
+</pre></div></div>
+</div>
+<p>The section is returned so that multiple insertions can be chained together if desired.</p>
+<p>We note that Hodgkin-Huxley channel kinetics are based on the squid giant axon. If that’s not your model organism, then for your actual modeling projects, you’ll want to use other kinetics, either by downloading them from online resources like ModelDB or by writing them yourself in NMODL or NeuroML.</p>
+<section id="Aside-5:-Sections-and-segments">
+<h3>Aside 5: Sections and segments<a class="headerlink" href="#Aside-5:-Sections-and-segments" title="Link to this heading"></a></h3>
+<p>A NEURON Section is considered a piece of cable. Depending on the resolution desired, it may be necessary to divide the cable into a number of segments where voltage varies linearly between centers of adjacent segments. The number of segments within a section is given by the variable, <code class="docutils literal notranslate"><span class="pre">nseg</span></code>. The total ionic current across the segment membrane is approximately the area of the segment multiplied by the ionic current density at the center of the segment. To access a part of the section, specify
+a value between 0 and 1, where 0 is typically the end closest to the soma and 1 is the distal end. Because nseg divides the cable into equal-length parts, it should be an odd number so that to address the middle of the cable, (0.5), gives the middle segment.</p>
+<p>To summarize, we access sections by their name and segments by some location on the section.</p>
+<ul class="simple">
+<li><p>Section: <code class="docutils literal notranslate"><span class="pre">section</span></code></p></li>
+<li><p>Segment: <code class="docutils literal notranslate"><span class="pre">section(loc)</span></code></p></li>
+</ul>
+<p>Using the Python <code class="docutils literal notranslate"><span class="pre">type</span></code> function can tell us what a variable is:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;type(soma) = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">soma</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;type(soma(0.5)) = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+type(soma) = &lt;class &#39;nrn.Section&#39;&gt;
+type(soma(0.5)) = &lt;class &#39;nrn.Segment&#39;&gt;
+</pre></div></div>
+</div>
+</section>
+<section id="Aside-6:-Accessing-segment-variables">
+<h3>Aside 6: Accessing segment variables<a class="headerlink" href="#Aside-6:-Accessing-segment-variables" title="Link to this heading"></a></h3>
+<p>Segment variables follow the idiom:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>section(loc).var
+</pre></div>
+</div>
+<p>And for mechanisms on the segment:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>section(loc).mech.var
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>section(loc).var_mech
+</pre></div>
+</div>
+<p>The first form is preferred.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mech</span> <span class="o">=</span> <span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">hh</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">dir</span><span class="p">(</span><span class="n">mech</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;__class__&#39;, &#39;__delattr__&#39;, &#39;__dir__&#39;, &#39;__doc__&#39;, &#39;__eq__&#39;, &#39;__format__&#39;, &#39;__ge__&#39;, &#39;__getattribute__&#39;, &#39;__getstate__&#39;, &#39;__gt__&#39;, &#39;__hash__&#39;, &#39;__init__&#39;, &#39;__init_subclass__&#39;, &#39;__iter__&#39;, &#39;__le__&#39;, &#39;__lt__&#39;, &#39;__module__&#39;, &#39;__ne__&#39;, &#39;__new__&#39;, &#39;__reduce__&#39;, &#39;__reduce_ex__&#39;, &#39;__repr__&#39;, &#39;__setattr__&#39;, &#39;__sizeof__&#39;, &#39;__str__&#39;, &#39;__subclasshook__&#39;, &#39;el&#39;, &#39;gk&#39;, &#39;gkbar&#39;, &#39;gl&#39;, &#39;gna&#39;, &#39;gnabar&#39;, &#39;h&#39;, &#39;il&#39;, &#39;is_ion&#39;, &#39;m&#39;, &#39;n&#39;, &#39;name&#39;, &#39;rates&#39;, &#39;segment&#39;, &#39;vtrap&#39;]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">mech</span><span class="o">.</span><span class="n">gkbar</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">hh</span><span class="o">.</span><span class="n">gkbar</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.036
+0.036
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="Step-5:-Insert-a-stimulus">
+<h2>Step 5: Insert a stimulus<a class="headerlink" href="#Step-5:-Insert-a-stimulus" title="Link to this heading"></a></h2>
+<p>Let’s insert a current clamp (an IClamp object) into the center of the soma to induce some membrane dynamics.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">iclamp</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">IClamp</span><span class="p">(</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>An IClamp is a Point Process. Point processes are point sources of current. When making a new PointProcess, you pass the segment to which it will bind.</p>
+<p>Again, with the dir function, we can validate that iclamp is an object and contains some useful parameters. Let’s look at some of those parameters. We use a list comprehension to ignore those elements of the dir that start with double underscores (and are thus Python magic methods and not functions/variables intended to be used directly).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">([</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">iclamp</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">item</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;__&quot;</span><span class="p">)])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;amp&#39;, &#39;baseattr&#39;, &#39;delay&#39;, &#39;dur&#39;, &#39;get_loc&#39;, &#39;get_segment&#39;, &#39;has_loc&#39;, &#39;hname&#39;, &#39;hocobjptr&#39;, &#39;i&#39;, &#39;loc&#39;, &#39;same&#39;]
+</pre></div></div>
+</div>
+<p>In particular, we notice three key properties of a current clamp: amp – the amplitude (in nA), delay – the time the current clamp switches on (in ms), and dur – how long (in ms) the current clamp stays on. Let’s set these values:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">iclamp</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">iclamp</span><span class="o">.</span><span class="n">dur</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">iclamp</span><span class="o">.</span><span class="n">amp</span> <span class="o">=</span> <span class="mf">0.9</span>
+</pre></div>
+</div>
+</div>
+<p>Let’s use psection to get a representation of the soma model:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">soma</span><span class="o">.</span><span class="n">psection</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;point_processes&#39;: {&#39;IClamp&#39;: {IClamp[0]}},
+ &#39;density_mechs&#39;: {&#39;hh&#39;: {&#39;gnabar&#39;: [0.12],
+   &#39;gkbar&#39;: [0.036],
+   &#39;gl&#39;: [0.0003],
+   &#39;el&#39;: [-54.3],
+   &#39;gna&#39;: [0.0],
+   &#39;gk&#39;: [0.0],
+   &#39;il&#39;: [0.0],
+   &#39;m&#39;: [0.0],
+   &#39;h&#39;: [0.0],
+   &#39;n&#39;: [0.0]}},
+ &#39;ions&#39;: {&#39;na&#39;: {&#39;ena&#39;: [50.0],
+   &#39;nai&#39;: [10.0],
+   &#39;nao&#39;: [140.0],
+   &#39;ina&#39;: [0.0],
+   &#39;dina_dv_&#39;: [0.0]},
+  &#39;k&#39;: {&#39;ek&#39;: [-77.0],
+   &#39;ki&#39;: [54.4],
+   &#39;ko&#39;: [2.5],
+   &#39;ik&#39;: [0.0],
+   &#39;dik_dv_&#39;: [0.0]}},
+ &#39;morphology&#39;: {&#39;L&#39;: 20.0,
+  &#39;diam&#39;: [20.0],
+  &#39;pts3d&#39;: [],
+  &#39;parent&#39;: None,
+  &#39;trueparent&#39;: None},
+ &#39;nseg&#39;: 1,
+ &#39;Ra&#39;: 35.4,
+ &#39;cm&#39;: [1.0],
+ &#39;regions&#39;: set(),
+ &#39;species&#39;: set(),
+ &#39;name&#39;: &#39;soma&#39;,
+ &#39;hoc_internal_name&#39;: &#39;__nrnsec_0x5644f8478c70&#39;,
+ &#39;cell&#39;: None}
+</pre></div></div>
+</div>
+</section>
+<section id="Step-6:-Set-up-recording-variables">
+<h2>Step 6: Set up recording variables<a class="headerlink" href="#Step-6:-Set-up-recording-variables" title="Link to this heading"></a></h2>
+<p>The cell should be configured to run a simulation. However, we need to indicate which variables we wish to record; these will be stored in a NEURON Vector (h.Vector object). For now, we will record the membrane potential, which is soma(0.5).v and the corresponding time points (h.t). References to variables are available by preceding the last part of the variable name with a <code class="docutils literal notranslate"><span class="pre">_ref_</span></code></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">v</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">soma</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">_ref_v</span><span class="p">)</span>  <span class="c1"># Membrane potential vector</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">_ref_t</span><span class="p">)</span>  <span class="c1"># Time stamp vector</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Step-7:-Run-the-simulation">
+<h2>Step 7: Run the simulation<a class="headerlink" href="#Step-7:-Run-the-simulation" title="Link to this heading"></a></h2>
+<p>By default, the NEURON h module provides the low level fadvance function for advancing one time step. For higher-level simulation control specification, we load NEURON’s stdrun library:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;stdrun.hoc&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.0
+</pre></div></div>
+</div>
+<p>We can then initialize our simulation such that our cell has a resting membrane potential of -65 mV:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">finitialize</span><span class="p">(</span><span class="o">-</span><span class="mi">65</span> <span class="o">*</span> <span class="n">mV</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.0
+</pre></div></div>
+</div>
+<p>And now continue the simulation from the current time (0) until 40 ms:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">h</span><span class="o">.</span><span class="n">continuerun</span><span class="p">(</span><span class="mi">40</span> <span class="o">*</span> <span class="n">ms</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.0
+</pre></div></div>
+</div>
+<p>(For those who are interested: we initialized to a resting membrane potential of -65 mV because that’s the default reversal potential for the hh channels, the only channel (set) inserted in this model.)</p>
+<p>(Strictly speaking, we didn’t need to specify the units here – recall they were defined above in the from neuron.units import ms, mV – as they are the defaults assumed by NEURON, but it is good practice to be explicitly clear.)</p>
+</section>
+<section id="Step-8:-Plot-the-results">
+<h2>Step 8: Plot the results<a class="headerlink" href="#Step-8:-Plot-the-results" title="Link to this heading"></a></h2>
+<section id="Using-bokeh">
+<h3>Using bokeh<a class="headerlink" href="#Using-bokeh" title="Link to this heading"></a></h3>
+<p><p>When working in Jupyter with an active internet connection, it is often convenient to use the bokeh module for plotting, as it provides interactive graphs that can be panned, zoomed, and saved from the Jupyter notebook.</p>
+</p><p>Let’s load bokeh and tell it to output to the Jupyter notebook:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">bokeh.io</span> <span class="kn">import</span> <span class="n">output_notebook</span>
+<span class="kn">import</span> <span class="nn">bokeh.plotting</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">output_notebook</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<div class="bk-root">
+        <a href="https://bokeh.org" target="_blank" class="bk-logo bk-logo-small bk-logo-notebook"></a>
+        <span id="1002">Loading BokehJS ...</span>
+    </div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="output_javascript"></div>
+<script type="text/javascript">
+var element = document.currentScript.previousSibling.previousSibling;
+(function(root) {
+  function now() {
+    return new Date();
+  }
+
+  const force = true;
+
+  if (typeof root._bokeh_onload_callbacks === "undefined" || force === true) {
+    root._bokeh_onload_callbacks = [];
+    root._bokeh_is_loading = undefined;
+  }
+
+const JS_MIME_TYPE = 'application/javascript';
+  const HTML_MIME_TYPE = 'text/html';
+  const EXEC_MIME_TYPE = 'application/vnd.bokehjs_exec.v0+json';
+  const CLASS_NAME = 'output_bokeh rendered_html';
+
+  /**
+   * Render data to the DOM node
+   */
+  function render(props, node) {
+    const script = document.createElement("script");
+    node.appendChild(script);
+  }
+
+  /**
+   * Handle when an output is cleared or removed
+   */
+  function handleClearOutput(event, handle) {
+    const cell = handle.cell;
+
+    const id = cell.output_area._bokeh_element_id;
+    const server_id = cell.output_area._bokeh_server_id;
+    // Clean up Bokeh references
+    if (id != null && id in Bokeh.index) {
+      Bokeh.index[id].model.document.clear();
+      delete Bokeh.index[id];
+    }
+
+    if (server_id !== undefined) {
+      // Clean up Bokeh references
+      const cmd_clean = "from bokeh.io.state import curstate; print(curstate().uuid_to_server['" + server_id + "'].get_sessions()[0].document.roots[0]._id)";
+      cell.notebook.kernel.execute(cmd_clean, {
+        iopub: {
+          output: function(msg) {
+            const id = msg.content.text.trim();
+            if (id in Bokeh.index) {
+              Bokeh.index[id].model.document.clear();
+              delete Bokeh.index[id];
+            }
+          }
+        }
+      });
+      // Destroy server and session
+      const cmd_destroy = "import bokeh.io.notebook as ion; ion.destroy_server('" + server_id + "')";
+      cell.notebook.kernel.execute(cmd_destroy);
+    }
+  }
+
+  /**
+   * Handle when a new output is added
+   */
+  function handleAddOutput(event, handle) {
+    const output_area = handle.output_area;
+    const output = handle.output;
+
+    // limit handleAddOutput to display_data with EXEC_MIME_TYPE content only
+    if ((output.output_type != "display_data") || (!Object.prototype.hasOwnProperty.call(output.data, EXEC_MIME_TYPE))) {
+      return
+    }
+
+    const toinsert = output_area.element.find("." + CLASS_NAME.split(' ')[0]);
+
+    if (output.metadata[EXEC_MIME_TYPE]["id"] !== undefined) {
+      toinsert[toinsert.length - 1].firstChild.textContent = output.data[JS_MIME_TYPE];
+      // store reference to embed id on output_area
+      output_area._bokeh_element_id = output.metadata[EXEC_MIME_TYPE]["id"];
+    }
+    if (output.metadata[EXEC_MIME_TYPE]["server_id"] !== undefined) {
+      const bk_div = document.createElement("div");
+      bk_div.innerHTML = output.data[HTML_MIME_TYPE];
+      const script_attrs = bk_div.children[0].attributes;
+      for (let i = 0; i < script_attrs.length; i++) {
+        toinsert[toinsert.length - 1].firstChild.setAttribute(script_attrs[i].name, script_attrs[i].value);
+        toinsert[toinsert.length - 1].firstChild.textContent = bk_div.children[0].textContent
+      }
+      // store reference to server id on output_area
+      output_area._bokeh_server_id = output.metadata[EXEC_MIME_TYPE]["server_id"];
+    }
+  }
+
+  function register_renderer(events, OutputArea) {
+
+    function append_mime(data, metadata, element) {
+      // create a DOM node to render to
+      const toinsert = this.create_output_subarea(
+        metadata,
+        CLASS_NAME,
+        EXEC_MIME_TYPE
+      );
+      this.keyboard_manager.register_events(toinsert);
+      // Render to node
+      const props = {data: data, metadata: metadata[EXEC_MIME_TYPE]};
+      render(props, toinsert[toinsert.length - 1]);
+      element.append(toinsert);
+      return toinsert
+    }
+
+    /* Handle when an output is cleared or removed */
+    events.on('clear_output.CodeCell', handleClearOutput);
+    events.on('delete.Cell', handleClearOutput);
+
+    /* Handle when a new output is added */
+    events.on('output_added.OutputArea', handleAddOutput);
+
+    /**
+     * Register the mime type and append_mime function with output_area
+     */
+    OutputArea.prototype.register_mime_type(EXEC_MIME_TYPE, append_mime, {
+      /* Is output safe? */
+      safe: true,
+      /* Index of renderer in `output_area.display_order` */
+      index: 0
+    });
+  }
+
+  // register the mime type if in Jupyter Notebook environment and previously unregistered
+  if (root.Jupyter !== undefined) {
+    const events = require('base/js/events');
+    const OutputArea = require('notebook/js/outputarea').OutputArea;
+
+    if (OutputArea.prototype.mime_types().indexOf(EXEC_MIME_TYPE) == -1) {
+      register_renderer(events, OutputArea);
+    }
+  }
+  if (typeof (root._bokeh_timeout) === "undefined" || force === true) {
+    root._bokeh_timeout = Date.now() + 5000;
+    root._bokeh_failed_load = false;
+  }
+
+  const NB_LOAD_WARNING = {'data': {'text/html':
+     "<div style='background-color: #fdd'>\n"+
+     "<p>\n"+
+     "BokehJS does not appear to have successfully loaded. If loading BokehJS from CDN, this \n"+
+     "may be due to a slow or bad network connection. Possible fixes:\n"+
+     "</p>\n"+
+     "<ul>\n"+
+     "<li>re-rerun `output_notebook()` to attempt to load from CDN again, or</li>\n"+
+     "<li>use INLINE resources instead, as so:</li>\n"+
+     "</ul>\n"+
+     "<code>\n"+
+     "from bokeh.resources import INLINE\n"+
+     "output_notebook(resources=INLINE)\n"+
+     "</code>\n"+
+     "</div>"}};
+
+  function display_loaded() {
+    const el = document.getElementById("1002");
+    if (el != null) {
+      el.textContent = "BokehJS is loading...";
+    }
+    if (root.Bokeh !== undefined) {
+      if (el != null) {
+        el.textContent = "BokehJS " + root.Bokeh.version + " successfully loaded.";
+      }
+    } else if (Date.now() < root._bokeh_timeout) {
+      setTimeout(display_loaded, 100)
+    }
+  }
+
+  function run_callbacks() {
+    try {
+      root._bokeh_onload_callbacks.forEach(function(callback) {
+        if (callback != null)
+          callback();
+      });
+    } finally {
+      delete root._bokeh_onload_callbacks
+    }
+    console.debug("Bokeh: all callbacks have finished");
+  }
+
+  function load_libs(css_urls, js_urls, callback) {
+    if (css_urls == null) css_urls = [];
+    if (js_urls == null) js_urls = [];
+
+    root._bokeh_onload_callbacks.push(callback);
+    if (root._bokeh_is_loading > 0) {
+      console.debug("Bokeh: BokehJS is being loaded, scheduling callback at", now());
+      return null;
+    }
+    if (js_urls == null || js_urls.length === 0) {
+      run_callbacks();
+      return null;
+    }
+    console.debug("Bokeh: BokehJS not loaded, scheduling load and callback at", now());
+    root._bokeh_is_loading = css_urls.length + js_urls.length;
+
+    function on_load() {
+      root._bokeh_is_loading--;
+      if (root._bokeh_is_loading === 0) {
+        console.debug("Bokeh: all BokehJS libraries/stylesheets loaded");
+        run_callbacks()
+      }
+    }
+
+    function on_error(url) {
+      console.error("failed to load " + url);
+    }
+
+    for (let i = 0; i < css_urls.length; i++) {
+      const url = css_urls[i];
+      const element = document.createElement("link");
+      element.onload = on_load;
+      element.onerror = on_error.bind(null, url);
+      element.rel = "stylesheet";
+      element.type = "text/css";
+      element.href = url;
+      console.debug("Bokeh: injecting link tag for BokehJS stylesheet: ", url);
+      document.body.appendChild(element);
+    }
+
+    for (let i = 0; i < js_urls.length; i++) {
+      const url = js_urls[i];
+      const element = document.createElement('script');
+      element.onload = on_load;
+      element.onerror = on_error.bind(null, url);
+      element.async = false;
+      element.src = url;
+      console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
+      document.head.appendChild(element);
+    }
+  };
+
+  function inject_raw_css(css) {
+    const element = document.createElement("style");
+    element.appendChild(document.createTextNode(css));
+    document.body.appendChild(element);
+  }
+
+  const js_urls = ["https://cdn.bokeh.org/bokeh/release/bokeh-2.4.3.min.js", "https://cdn.bokeh.org/bokeh/release/bokeh-gl-2.4.3.min.js", "https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.4.3.min.js", "https://cdn.bokeh.org/bokeh/release/bokeh-tables-2.4.3.min.js", "https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-2.4.3.min.js"];
+  const css_urls = [];
+
+  const inline_js = [    function(Bokeh) {
+      Bokeh.set_log_level("info");
+    },
+function(Bokeh) {
+    }
+  ];
+
+  function run_inline_js() {
+    if (root.Bokeh !== undefined || force === true) {
+          for (let i = 0; i < inline_js.length; i++) {
+      inline_js[i].call(root, root.Bokeh);
+    }
+if (force === true) {
+        display_loaded();
+      }} else if (Date.now() < root._bokeh_timeout) {
+      setTimeout(run_inline_js, 100);
+    } else if (!root._bokeh_failed_load) {
+      console.log("Bokeh: BokehJS failed to load within specified timeout.");
+      root._bokeh_failed_load = true;
+    } else if (force !== true) {
+      const cell = $(document.getElementById("1002")).parents('.cell').data().cell;
+      cell.output_area.append_execute_result(NB_LOAD_WARNING)
+    }
+  }
+
+  if (root._bokeh_is_loading === 0) {
+    console.debug("Bokeh: BokehJS loaded, going straight to plotting");
+    run_inline_js();
+  } else {
+    load_libs(css_urls, js_urls, function() {
+      console.debug("Bokeh: BokehJS plotting callback run at", now());
+      run_inline_js();
+    });
+  }
+}(window));
+</script></div>
+</div>
+<p>Now we plot membrane potential vs time.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">x_axis_label</span><span class="o">=</span><span class="s2">&quot;t (ms)&quot;</span><span class="p">,</span> <span class="n">y_axis_label</span><span class="o">=</span><span class="s2">&quot;v (mV)&quot;</span><span class="p">)</span>
+<span class="n">f</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">line_width</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<div class="bk-root" id="a1e52267-2278-4c90-aa9d-13950ed13905" data-root-id="1003"></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="output_javascript"></div>
+<script type="text/javascript">
+var element = document.currentScript.previousSibling.previousSibling;
+(function(root) {
+  function embed_document(root) {
+  const docs_json = {"dac9d5cd-7799-4ef7-a411-8436cdc95c7f":{"defs":[],"roots":{"references":[{"attributes":{"below":[{"id":"1012"}],"center":[{"id":"1015"},{"id":"1019"}],"left":[{"id":"1016"}],"renderers":[{"id":"1038"}],"title":{"id":"1040"},"toolbar":{"id":"1027"},"x_range":{"id":"1004"},"x_scale":{"id":"1008"},"y_range":{"id":"1006"},"y_scale":{"id":"1010"}},"id":"1003","subtype":"Figure","type":"Plot"},{"attributes":{"tools":[{"id":"1020"},{"id":"1021"},{"id":"1022"},{"id":"1023"},{"id":"1024"},{"id":"1025"}]},"id":"1027","type":"Toolbar"},{"attributes":{},"id":"1049","type":"Selection"},{"attributes":{"axis_label":"v (mV)","coordinates":null,"formatter":{"id":"1043"},"group":null,"major_label_policy":{"id":"1044"},"ticker":{"id":"1017"}},"id":"1016","type":"LinearAxis"},{"attributes":{},"id":"1020","type":"PanTool"},{"attributes":{},"id":"1021","type":"WheelZoomTool"},{"attributes":{},"id":"1047","type":"AllLabels"},{"attributes":{"overlay":{"id":"1026"}},"id":"1022","type":"BoxZoomTool"},{"attributes":{},"id":"1023","type":"SaveTool"},{"attributes":{},"id":"1024","type":"ResetTool"},{"attributes":{},"id":"1006","type":"DataRange1d"},{"attributes":{},"id":"1025","type":"HelpTool"},{"attributes":{},"id":"1044","type":"AllLabels"},{"attributes":{"coordinates":null,"data_source":{"id":"1034"},"glyph":{"id":"1035"},"group":null,"hover_glyph":null,"muted_glyph":{"id":"1037"},"nonselection_glyph":{"id":"1036"},"view":{"id":"1039"}},"id":"1038","type":"GlyphRenderer"},{"attributes":{},"id":"1004","type":"DataRange1d"},{"attributes":{"bottom_units":"screen","coordinates":null,"fill_alpha":0.5,"fill_color":"lightgrey","group":null,"left_units":"screen","level":"overlay","line_alpha":1.0,"line_color":"black","line_dash":[4,4],"line_width":2,"right_units":"screen","syncable":false,"top_units":"screen"},"id":"1026","type":"BoxAnnotation"},{"attributes":{},"id":"1046","type":"BasicTickFormatter"},{"attributes":{},"id":"1008","type":"LinearScale"},{"attributes":{"coordinates":null,"group":null},"id":"1040","type":"Title"},{"attributes":{},"id":"1010","type":"LinearScale"},{"attributes":{"line_color":"#1f77b4","line_width":2,"x":{"field":"x"},"y":{"field":"y"}},"id":"1035","type":"Line"},{"attributes":{"line_alpha":0.1,"line_color":"#1f77b4","line_width":2,"x":{"field":"x"},"y":{"field":"y"}},"id":"1036","type":"Line"},{"attributes":{"axis_label":"t (ms)","coordinates":null,"formatter":{"id":"1046"},"group":null,"major_label_policy":{"id":"1047"},"ticker":{"id":"1013"}},"id":"1012","type":"LinearAxis"},{"attributes":{},"id":"1043","type":"BasicTickFormatter"},{"attributes":{},"id":"1013","type":"BasicTicker"},{"attributes":{"source":{"id":"1034"}},"id":"1039","type":"CDSView"},{"attributes":{"axis":{"id":"1012"},"coordinates":null,"group":null,"ticker":null},"id":"1015","type":"Grid"},{"attributes":{},"id":"1017","type":"BasicTicker"},{"attributes":{"data":{"x":[0.0,0.025,0.05,0.075,0.09999999999999999,0.12499999999999999,0.15,0.17500000000000002,0.20000000000000004,0.22500000000000006,0.25000000000000006,0.2750000000000001,0.3000000000000001,0.3250000000000001,0.35000000000000014,0.37500000000000017,0.4000000000000002,0.4250000000000002,0.45000000000000023,0.47500000000000026,0.5000000000000002,0.5250000000000001,0.55,0.575,0.5999999999999999,0.6249999999999998,0.6499999999999997,0.6749999999999996,0.6999999999999995,0.7249999999999994,0.7499999999999993,0.7749999999999992,0.7999999999999992,0.8249999999999991,0.849999999999999,0.8749999999999989,0.8999999999999988,0.9249999999999987,0.9499999999999986,0.9749999999999985,0.9999999999999984,1.0249999999999984,1.0499999999999983,1.0749999999999982,1.099999999999998,1.124999999999998,1.149999999999998,1.1749999999999978,1.1999999999999977,1.2249999999999976,1.2499999999999976,1.2749999999999975,1.2999999999999974,1.3249999999999973,1.3499999999999972,1.3749999999999971,1.399999999999997,1.424999999999997,1.4499999999999968,1.4749999999999968,1.4999999999999967,1.5249999999999966,1.5499999999999965,1.5749999999999964,1.5999999999999963,1.6249999999999962,1.6499999999999961,1.674999999999996,1.699999999999996,1.7249999999999959,1.7499999999999958,1.7749999999999957,1.7999999999999956,1.8249999999999955,1.8499999999999954,1.8749999999999953,1.8999999999999952,1.9249999999999952,1.949999999999995,1.974999999999995,1.999999999999995,2.024999999999995,2.0499999999999954,2.0749999999999957,2.099999999999996,2.1249999999999964,2.149999999999997,2.174999999999997,2.1999999999999975,2.224999999999998,2.2499999999999982,2.2749999999999986,2.299999999999999,2.3249999999999993,2.3499999999999996,2.375,2.4000000000000004,2.4250000000000007,2.450000000000001,2.4750000000000014,2.5000000000000018,2.525000000000002,2.5500000000000025,2.575000000000003,2.600000000000003,2.6250000000000036,2.650000000000004,2.6750000000000043,2.7000000000000046,2.725000000000005,2.7500000000000053,2.7750000000000057,2.800000000000006,2.8250000000000064,2.8500000000000068,2.875000000000007,2.9000000000000075,2.925000000000008,2.950000000000008,2.9750000000000085,3.000000000000009,3.0250000000000092,3.0500000000000096,3.07500000000001,3.1000000000000103,3.1250000000000107,3.150000000000011,3.1750000000000114,3.2000000000000117,3.225000000000012,3.2500000000000124,3.275000000000013,3.300000000000013,3.3250000000000135,3.350000000000014,3.375000000000014,3.4000000000000146,3.425000000000015,3.4500000000000153,3.4750000000000156,3.500000000000016,3.5250000000000163,3.5500000000000167,3.575000000000017,3.6000000000000174,3.6250000000000178,3.650000000000018,3.6750000000000185,3.700000000000019,3.725000000000019,3.7500000000000195,3.77500000000002,3.8000000000000203,3.8250000000000206,3.850000000000021,3.8750000000000213,3.9000000000000217,3.925000000000022,3.9500000000000224,3.9750000000000227,4.000000000000023,4.0250000000000234,4.050000000000024,4.075000000000024,4.1000000000000245,4.125000000000025,4.150000000000025,4.175000000000026,4.200000000000026,4.225000000000026,4.250000000000027,4.275000000000027,4.300000000000027,4.325000000000028,4.350000000000028,4.375000000000028,4.400000000000029,4.425000000000029,4.4500000000000295,4.47500000000003,4.50000000000003,4.5250000000000306,4.550000000000031,4.575000000000031,4.600000000000032,4.625000000000032,4.650000000000032,4.675000000000033,4.700000000000033,4.725000000000033,4.750000000000034,4.775000000000034,4.8000000000000345,4.825000000000035,4.850000000000035,4.8750000000000355,4.900000000000036,4.925000000000036,4.950000000000037,4.975000000000037,5.000000000000037,5.025000000000038,5.050000000000038,5.075000000000038,5.100000000000039,5.125000000000039,5.150000000000039,5.17500000000004,5.20000000000004,5.2250000000000405,5.250000000000041,5.275000000000041,5.300000000000042,5.325000000000042,5.350000000000042,5.375000000000043,5.400000000000043,5.425000000000043,5.450000000000044,5.475000000000044,5.500000000000044,5.525000000000045,5.550000000000045,5.5750000000000455,5.600000000000046,5.625000000000046,5.6500000000000465,5.675000000000047,5.700000000000047,5.725000000000048,5.750000000000048,5.775000000000048,5.800000000000049,5.825000000000049,5.850000000000049,5.87500000000005,5.90000000000005,5.9250000000000504,5.950000000000051,5.975000000000051,6.0000000000000515,6.025000000000052,6.050000000000052,6.075000000000053,6.100000000000053,6.125000000000053,6.150000000000054,6.175000000000054,6.200000000000054,6.225000000000055,6.250000000000055,6.275000000000055,6.300000000000056,6.325000000000056,6.3500000000000565,6.375000000000057,6.400000000000057,6.4250000000000576,6.450000000000058,6.475000000000058,6.500000000000059,6.525000000000059,6.550000000000059,6.57500000000006,6.60000000000006,6.62500000000006,6.650000000000061,6.675000000000061,6.7000000000000615,6.725000000000062,6.750000000000062,6.7750000000000625,6.800000000000063,6.825000000000063,6.850000000000064,6.875000000000064,6.900000000000064,6.925000000000065,6.950000000000065,6.975000000000065,7.000000000000066,7.025000000000066,7.050000000000066,7.075000000000067,7.100000000000067,7.1250000000000675,7.150000000000068,7.175000000000068,7.200000000000069,7.225000000000069,7.250000000000069,7.27500000000007,7.30000000000007,7.32500000000007,7.350000000000071,7.375000000000071,7.400000000000071,7.425000000000072,7.450000000000072,7.4750000000000725,7.500000000000073,7.525000000000073,7.5500000000000735,7.575000000000074,7.600000000000074,7.625000000000075,7.650000000000075,7.675000000000075,7.700000000000076,7.725000000000076,7.750000000000076,7.775000000000077,7.800000000000077,7.8250000000000774,7.850000000000078,7.875000000000078,7.9000000000000785,7.925000000000079,7.950000000000079,7.97500000000008,8.00000000000008,8.025000000000079,8.050000000000077,8.075000000000076,8.100000000000074,8.125000000000073,8.150000000000071,8.17500000000007,8.200000000000069,8.225000000000067,8.250000000000066,8.275000000000064,8.300000000000063,8.325000000000061,8.35000000000006,8.375000000000059,8.400000000000057,8.425000000000056,8.450000000000054,8.475000000000053,8.500000000000052,8.52500000000005,8.550000000000049,8.575000000000047,8.600000000000046,8.625000000000044,8.650000000000043,8.675000000000042,8.70000000000004,8.725000000000039,8.750000000000037,8.775000000000036,8.800000000000034,8.825000000000033,8.850000000000032,8.87500000000003,8.900000000000029,8.925000000000027,8.950000000000026,8.975000000000025,9.000000000000023,9.025000000000022,9.05000000000002,9.075000000000019,9.100000000000017,9.125000000000016,9.150000000000015,9.175000000000013,9.200000000000012,9.22500000000001,9.250000000000009,9.275000000000007,9.300000000000006,9.325000000000005,9.350000000000003,9.375000000000002,9.4,9.424999999999999,9.449999999999998,9.474999999999996,9.499999999999995,9.524999999999993,9.549999999999992,9.57499999999999,9.599999999999989,9.624999999999988,9.649999999999986,9.674999999999985,9.699999999999983,9.724999999999982,9.74999999999998,9.774999999999979,9.799999999999978,9.824999999999976,9.849999999999975,9.874999999999973,9.899999999999972,9.92499999999997,9.949999999999969,9.974999999999968,9.999999999999966,10.024999999999965,10.049999999999963,10.074999999999962,10.09999999999996,10.12499999999996,10.149999999999958,10.174999999999956,10.199999999999955,10.224999999999953,10.249999999999952,10.27499999999995,10.29999999999995,10.324999999999948,10.349999999999946,10.374999999999945,10.399999999999944,10.424999999999942,10.44999999999994,10.47499999999994,10.499999999999938,10.524999999999936,10.549999999999935,10.574999999999934,10.599999999999932,10.62499999999993,10.64999999999993,10.674999999999928,10.699999999999926,10.724999999999925,10.749999999999924,10.774999999999922,10.79999999999992,10.82499999999992,10.849999999999918,10.874999999999917,10.899999999999915,10.924999999999914,10.949999999999912,10.97499999999991,10.99999999999991,11.024999999999908,11.049999999999907,11.074999999999905,11.099999999999904,11.124999999999902,11.1499999999999,11.1749999999999,11.199999999999898,11.224999999999897,11.249999999999895,11.274999999999894,11.299999999999892,11.324999999999891,11.34999999999989,11.374999999999888,11.399999999999887,11.424999999999885,11.449999999999884,11.474999999999882,11.499999999999881,11.52499999999988,11.549999999999878,11.574999999999877,11.599999999999875,11.624999999999874,11.649999999999872,11.674999999999871,11.69999999999987,11.724999999999868,11.749999999999867,11.774999999999865,11.799999999999864,11.824999999999863,11.849999999999861,11.87499999999986,11.899999999999858,11.924999999999857,11.949999999999855,11.974999999999854,11.999999999999853,12.024999999999851,12.04999999999985,12.074999999999848,12.099999999999847,12.124999999999845,12.149999999999844,12.174999999999843,12.199999999999841,12.22499999999984,12.249999999999838,12.274999999999837,12.299999999999836,12.324999999999834,12.349999999999833,12.374999999999831,12.39999999999983,12.424999999999828,12.449999999999827,12.474999999999826,12.499999999999824,12.524999999999823,12.549999999999821,12.57499999999982,12.599999999999818,12.624999999999817,12.649999999999816,12.674999999999814,12.699999999999813,12.724999999999811,12.74999999999981,12.774999999999809,12.799999999999807,12.824999999999806,12.849999999999804,12.874999999999803,12.899999999999801,12.9249999999998,12.949999999999799,12.974999999999797,12.999999999999796,13.024999999999794,13.049999999999793,13.074999999999791,13.09999999999979,13.124999999999789,13.149999999999787,13.174999999999786,13.199999999999784,13.224999999999783,13.249999999999782,13.27499999999978,13.299999999999779,13.324999999999777,13.349999999999776,13.374999999999774,13.399999999999773,13.424999999999772,13.44999999999977,13.474999999999769,13.499999999999767,13.524999999999766,13.549999999999764,13.574999999999763,13.599999999999762,13.62499999999976,13.649999999999759,13.674999999999757,13.699999999999756,13.724999999999755,13.749999999999753,13.774999999999752,13.79999999999975,13.824999999999749,13.849999999999747,13.874999999999746,13.899999999999745,13.924999999999743,13.949999999999742,13.97499999999974,13.999999999999739,14.024999999999737,14.049999999999736,14.074999999999735,14.099999999999733,14.124999999999732,14.14999999999973,14.174999999999729,14.199999999999728,14.224999999999726,14.249999999999725,14.274999999999723,14.299999999999722,14.32499999999972,14.349999999999719,14.374999999999718,14.399999999999716,14.424999999999715,14.449999999999713,14.474999999999712,14.49999999999971,14.524999999999709,14.549999999999708,14.574999999999706,14.599999999999705,14.624999999999703,14.649999999999702,14.6749999999997,14.699999999999699,14.724999999999698,14.749999999999696,14.774999999999695,14.799999999999693,14.824999999999692,14.84999999999969,14.87499999999969,14.899999999999688,14.924999999999686,14.949999999999685,14.974999999999683,14.999999999999682,15.02499999999968,15.04999999999968,15.074999999999678,15.099999999999676,15.124999999999675,15.149999999999674,15.174999999999672,15.19999999999967,15.22499999999967,15.249999999999668,15.274999999999666,15.299999999999665,15.324999999999664,15.349999999999662,15.37499999999966,15.39999999999966,15.424999999999658,15.449999999999656,15.474999999999655,15.499999999999654,15.524999999999652,15.54999999999965,15.57499999999965,15.599999999999648,15.624999999999647,15.649999999999645,15.674999999999644,15.699999999999642,15.72499999999964,15.74999999999964,15.774999999999638,15.799999999999637,15.824999999999635,15.849999999999634,15.874999999999632,15.89999999999963,15.92499999999963,15.949999999999628,15.974999999999627,15.999999999999625,16.024999999999626,16.049999999999624,16.074999999999623,16.09999999999962,16.12499999999962,16.14999999999962,16.174999999999617,16.199999999999616,16.224999999999614,16.249999999999613,16.27499999999961,16.29999999999961,16.32499999999961,16.349999999999607,16.374999999999606,16.399999999999604,16.424999999999603,16.4499999999996,16.4749999999996,16.4999999999996,16.524999999999597,16.549999999999596,16.574999999999594,16.599999999999593,16.62499999999959,16.64999999999959,16.67499999999959,16.699999999999587,16.724999999999586,16.749999999999584,16.774999999999583,16.79999999999958,16.82499999999958,16.84999999999958,16.874999999999577,16.899999999999576,16.924999999999574,16.949999999999573,16.97499999999957,16.99999999999957,17.02499999999957,17.049999999999567,17.074999999999566,17.099999999999564,17.124999999999563,17.14999999999956,17.17499999999956,17.19999999999956,17.224999999999557,17.249999999999556,17.274999999999554,17.299999999999553,17.32499999999955,17.34999999999955,17.37499999999955,17.399999999999547,17.424999999999546,17.449999999999545,17.474999999999543,17.49999999999954,17.52499999999954,17.54999999999954,17.574999999999537,17.599999999999536,17.624999999999535,17.649999999999533,17.67499999999953,17.69999999999953,17.72499999999953,17.749999999999527,17.774999999999526,17.799999999999525,17.824999999999523,17.849999999999522,17.87499999999952,17.89999999999952,17.924999999999518,17.949999999999516,17.974999999999515,17.999999999999513,18.024999999999512,18.04999999999951,18.07499999999951,18.099999999999508,18.124999999999506,18.149999999999505,18.174999999999503,18.199999999999502,18.2249999999995,18.2499999999995,18.274999999999498,18.299999999999496,18.324999999999495,18.349999999999493,18.374999999999492,18.39999999999949,18.42499999999949,18.449999999999488,18.474999999999486,18.499999999999485,18.524999999999483,18.549999999999482,18.57499999999948,18.59999999999948,18.624999999999478,18.649999999999476,18.674999999999475,18.699999999999473,18.724999999999472,18.74999999999947,18.77499999999947,18.799999999999468,18.824999999999466,18.849999999999465,18.874999999999464,18.899999999999462,18.92499999999946,18.94999999999946,18.974999999999458,18.999999999999456,19.024999999999455,19.049999999999454,19.074999999999452,19.09999999999945,19.12499999999945,19.149999999999448,19.174999999999446,19.199999999999445,19.224999999999444,19.249999999999442,19.27499999999944,19.29999999999944,19.324999999999438,19.349999999999437,19.374999999999435,19.399999999999434,19.424999999999432,19.44999999999943,19.47499999999943,19.499999999999428,19.524999999999427,19.549999999999425,19.574999999999424,19.599999999999422,19.62499999999942,19.64999999999942,19.674999999999418,19.699999999999417,19.724999999999415,19.749999999999414,19.774999999999412,19.79999999999941,19.82499999999941,19.849999999999408,19.874999999999407,19.899999999999405,19.924999999999404,19.949999999999402,19.9749999999994,19.9999999999994,20.024999999999398,20.049999999999397,20.074999999999395,20.099999999999394,20.124999999999392,20.14999999999939,20.17499999999939,20.199999999999388,20.224999999999387,20.249999999999385,20.274999999999384,20.299999999999383,20.32499999999938,20.34999999999938,20.37499999999938,20.399999999999377,20.424999999999375,20.449999999999374,20.474999999999373,20.49999999999937,20.52499999999937,20.54999999999937,20.574999999999367,20.599999999999365,20.624999999999364,20.649999999999363,20.67499999999936,20.69999999999936,20.72499999999936,20.749999999999357,20.774999999999356,20.799999999999354,20.824999999999353,20.84999999999935,20.87499999999935,20.89999999999935,20.924999999999347,20.949999999999346,20.974999999999344,20.999999999999343,21.02499999999934,21.04999999999934,21.07499999999934,21.099999999999337,21.124999999999336,21.149999999999334,21.174999999999333,21.19999999999933,21.22499999999933,21.24999999999933,21.274999999999327,21.299999999999326,21.324999999999324,21.349999999999323,21.37499999999932,21.39999999999932,21.42499999999932,21.449999999999317,21.474999999999316,21.499999999999314,21.524999999999313,21.54999999999931,21.57499999999931,21.59999999999931,21.624999999999307,21.649999999999306,21.674999999999304,21.699999999999303,21.7249999999993,21.7499999999993,21.7749999999993,21.799999999999297,21.824999999999296,21.849999999999294,21.874999999999293,21.89999999999929,21.92499999999929,21.94999999999929,21.974999999999287,21.999999999999286,22.024999999999284,22.049999999999283,22.07499999999928,22.09999999999928,22.12499999999928,22.149999999999277,22.174999999999276,22.199999999999275,22.224999999999273,22.24999999999927,22.27499999999927,22.29999999999927,22.324999999999267,22.349999999999266,22.374999999999265,22.399999999999263,22.42499999999926,22.44999999999926,22.47499999999926,22.499999999999257,22.524999999999256,22.549999999999255,22.574999999999253,22.599999999999252,22.62499999999925,22.64999999999925,22.674999999999248,22.699999999999246,22.724999999999245,22.749999999999243,22.774999999999242,22.79999999999924,22.82499999999924,22.849999999999238,22.874999999999236,22.899999999999235,22.924999999999233,22.949999999999232,22.97499999999923,22.99999999999923,23.024999999999228,23.049999999999226,23.074999999999225,23.099999999999223,23.124999999999222,23.14999999999922,23.17499999999922,23.199999999999218,23.224999999999216,23.249999999999215,23.274999999999213,23.299999999999212,23.32499999999921,23.34999999999921,23.374999999999208,23.399999999999206,23.424999999999205,23.449999999999203,23.474999999999202,23.4999999999992,23.5249999999992,23.549999999999198,23.574999999999196,23.599999999999195,23.624999999999194,23.649999999999192,23.67499999999919,23.69999999999919,23.724999999999188,23.749999999999186,23.774999999999185,23.799999999999184,23.824999999999182,23.84999999999918,23.87499999999918,23.899999999999178,23.924999999999176,23.949999999999175,23.974999999999174,23.999999999999172,24.02499999999917,24.04999999999917,24.074999999999168,24.099999999999167,24.124999999999165,24.149999999999164,24.174999999999162,24.19999999999916,24.22499999999916,24.249999999999158,24.274999999999157,24.299999999999155,24.324999999999154,24.349999999999152,24.37499999999915,24.39999999999915,24.424999999999148,24.449999999999147,24.474999999999145,24.499999999999144,24.524999999999142,24.54999999999914,24.57499999999914,24.599999999999138,24.624999999999137,24.649999999999135,24.674999999999134,24.699999999999132,24.72499999999913,24.74999999999913,24.774999999999128,24.799999999999127,24.824999999999125,24.849999999999124,24.874999999999122,24.89999999999912,24.92499999999912,24.949999999999118,24.974999999999117,24.999999999999115,25.024999999999114,25.049999999999113,25.07499999999911,25.09999999999911,25.12499999999911,25.149999999999107,25.174999999999105,25.199999999999104,25.224999999999103,25.2499999999991,25.2749999999991,25.2999999999991,25.324999999999097,25.349999999999095,25.374999999999094,25.399999999999093,25.42499999999909,25.44999999999909,25.47499999999909,25.499999999999087,25.524999999999086,25.549999999999084,25.574999999999083,25.59999999999908,25.62499999999908,25.64999999999908,25.674999999999077,25.699999999999076,25.724999999999074,25.749999999999073,25.77499999999907,25.79999999999907,25.82499999999907,25.849999999999067,25.874999999999066,25.899999999999064,25.924999999999063,25.94999999999906,25.97499999999906,25.99999999999906,26.024999999999057,26.049999999999056,26.074999999999054,26.099999999999053,26.12499999999905,26.14999999999905,26.17499999999905,26.199999999999047,26.224999999999046,26.249999999999044,26.274999999999043,26.29999999999904,26.32499999999904,26.34999999999904,26.374999999999037,26.399999999999036,26.424999999999034,26.449999999999033,26.47499999999903,26.49999999999903,26.52499999999903,26.549999999999027,26.574999999999026,26.599999999999024,26.624999999999023,26.64999999999902,26.67499999999902,26.69999999999902,26.724999999999017,26.749999999999016,26.774999999999014,26.799999999999013,26.82499999999901,26.84999999999901,26.87499999999901,26.899999999999007,26.924999999999006,26.949999999999005,26.974999999999003,26.999999999999,27.024999999999,27.049999999999,27.074999999998997,27.099999999998996,27.124999999998995,27.149999999998993,27.17499999999899,27.19999999999899,27.22499999999899,27.249999999998987,27.274999999998986,27.299999999998985,27.324999999998983,27.349999999998982,27.37499999999898,27.39999999999898,27.424999999998978,27.449999999998976,27.474999999998975,27.499999999998973,27.524999999998972,27.54999999999897,27.57499999999897,27.599999999998968,27.624999999998966,27.649999999998965,27.674999999998963,27.699999999998962,27.72499999999896,27.74999999999896,27.774999999998958,27.799999999998956,27.824999999998955,27.849999999998953,27.874999999998952,27.89999999999895,27.92499999999895,27.949999999998948,27.974999999998946,27.999999999998945,28.024999999998943,28.049999999998942,28.07499999999894,28.09999999999894,28.124999999998938,28.149999999998936,28.174999999998935,28.199999999998933,28.224999999998932,28.24999999999893,28.27499999999893,28.299999999998928,28.324999999998926,28.349999999998925,28.374999999998924,28.399999999998922,28.42499999999892,28.44999999999892,28.474999999998918,28.499999999998916,28.524999999998915,28.549999999998914,28.574999999998912,28.59999999999891,28.62499999999891,28.649999999998908,28.674999999998906,28.699999999998905,28.724999999998904,28.749999999998902,28.7749999999989,28.7999999999989,28.824999999998898,28.849999999998897,28.874999999998895,28.899999999998894,28.924999999998892,28.94999999999889,28.97499999999889,28.999999999998888,29.024999999998887,29.049999999998885,29.074999999998884,29.099999999998882,29.12499999999888,29.14999999999888,29.174999999998878,29.199999999998877,29.224999999998875,29.249999999998874,29.274999999998872,29.29999999999887,29.32499999999887,29.349999999998868,29.374999999998867,29.399999999998865,29.424999999998864,29.449999999998862,29.47499999999886,29.49999999999886,29.524999999998858,29.549999999998857,29.574999999998855,29.599999999998854,29.624999999998852,29.64999999999885,29.67499999999885,29.699999999998848,29.724999999998847,29.749999999998845,29.774999999998844,29.799999999998843,29.82499999999884,29.84999999999884,29.87499999999884,29.899999999998837,29.924999999998835,29.949999999998834,29.974999999998833,29.99999999999883,30.02499999999883,30.04999999999883,30.074999999998827,30.099999999998825,30.124999999998824,30.149999999998823,30.17499999999882,30.19999999999882,30.22499999999882,30.249999999998817,30.274999999998816,30.299999999998814,30.324999999998813,30.34999999999881,30.37499999999881,30.39999999999881,30.424999999998807,30.449999999998806,30.474999999998804,30.499999999998803,30.5249999999988,30.5499999999988,30.5749999999988,30.599999999998797,30.624999999998796,30.649999999998794,30.674999999998793,30.69999999999879,30.72499999999879,30.74999999999879,30.774999999998787,30.799999999998786,30.824999999998784,30.849999999998783,30.87499999999878,30.89999999999878,30.92499999999878,30.949999999998777,30.974999999998776,30.999999999998774,31.024999999998773,31.04999999999877,31.07499999999877,31.09999999999877,31.124999999998767,31.149999999998766,31.174999999998764,31.199999999998763,31.22499999999876,31.24999999999876,31.27499999999876,31.299999999998757,31.324999999998756,31.349999999998754,31.374999999998753,31.39999999999875,31.42499999999875,31.44999999999875,31.474999999998747,31.499999999998746,31.524999999998744,31.549999999998743,31.57499999999874,31.59999999999874,31.62499999999874,31.649999999998737,31.674999999998736,31.699999999998735,31.724999999998733,31.74999999999873,31.77499999999873,31.79999999999873,31.824999999998727,31.849999999998726,31.874999999998725,31.899999999998723,31.92499999999872,31.94999999999872,31.97499999999872,31.999999999998717,32.02499999999872,32.049999999998725,32.07499999999873,32.09999999999874,32.12499999999874,32.14999999999875,32.174999999998754,32.19999999999876,32.224999999998765,32.24999999999877,32.274999999998776,32.29999999999878,32.32499999999879,32.34999999999879,32.3749999999988,32.399999999998805,32.42499999999881,32.449999999998816,32.47499999999882,32.49999999999883,32.52499999999883,32.54999999999884,32.574999999998845,32.59999999999885,32.624999999998856,32.64999999999886,32.67499999999887,32.69999999999887,32.72499999999888,32.749999999998884,32.77499999999889,32.799999999998896,32.8249999999989,32.84999999999891,32.87499999999891,32.89999999999892,32.924999999998924,32.94999999999893,32.974999999998936,32.99999999999894,33.02499999999895,33.04999999999895,33.07499999999896,33.099999999998964,33.12499999999897,33.149999999998975,33.17499999999898,33.19999999999899,33.22499999999899,33.249999999999,33.274999999999004,33.29999999999901,33.324999999999015,33.34999999999902,33.37499999999903,33.39999999999903,33.42499999999904,33.449999999999044,33.47499999999905,33.499999999999055,33.52499999999906,33.549999999999066,33.57499999999907,33.59999999999908,33.62499999999908,33.64999999999909,33.674999999999095,33.6999999999991,33.724999999999106,33.74999999999911,33.77499999999912,33.79999999999912,33.82499999999913,33.849999999999135,33.87499999999914,33.899999999999146,33.92499999999915,33.94999999999916,33.97499999999916,33.99999999999917,34.024999999999174,34.04999999999918,34.074999999999186,34.09999999999919,34.1249999999992,34.1499999999992,34.17499999999921,34.199999999999214,34.22499999999922,34.249999999999226,34.27499999999923,34.29999999999924,34.32499999999924,34.34999999999925,34.374999999999254,34.39999999999926,34.424999999999265,34.44999999999927,34.47499999999928,34.49999999999928,34.52499999999929,34.549999999999294,34.5749999999993,34.599999999999305,34.62499999999931,34.64999999999932,34.67499999999932,34.69999999999933,34.72499999999933,34.74999999999934,34.774999999999345,34.79999999999935,34.824999999999356,34.84999999999936,34.87499999999937,34.89999999999937,34.92499999999938,34.949999999999385,34.97499999999939,34.999999999999396,35.0249999999994,35.04999999999941,35.07499999999941,35.09999999999942,35.124999999999424,35.14999999999943,35.174999999999436,35.19999999999944,35.22499999999945,35.24999999999945,35.27499999999946,35.299999999999464,35.32499999999947,35.349999999999476,35.37499999999948,35.39999999999949,35.42499999999949,35.4499999999995,35.474999999999504,35.49999999999951,35.524999999999515,35.54999999999952,35.57499999999953,35.59999999999953,35.62499999999954,35.649999999999544,35.67499999999955,35.699999999999555,35.72499999999956,35.74999999999957,35.77499999999957,35.79999999999958,35.824999999999584,35.84999999999959,35.874999999999595,35.8999999999996,35.924999999999606,35.94999999999961,35.97499999999962,35.99999999999962,36.02499999999963,36.049999999999635,36.07499999999964,36.099999999999646,36.12499999999965,36.14999999999966,36.17499999999966,36.19999999999967,36.224999999999675,36.24999999999968,36.274999999999686,36.29999999999969,36.3249999999997,36.3499999999997,36.37499999999971,36.399999999999714,36.42499999999972,36.449999999999726,36.47499999999973,36.49999999999974,36.52499999999974,36.54999999999975,36.574999999999754,36.59999999999976,36.624999999999766,36.64999999999977,36.67499999999978,36.69999999999978,36.72499999999979,36.749999999999794,36.7749999999998,36.799999999999805,36.82499999999981,36.84999999999982,36.87499999999982,36.89999999999983,36.924999999999834,36.94999999999984,36.974999999999845,36.99999999999985,37.02499999999986,37.04999999999986,37.07499999999987,37.09999999999987,37.12499999999988,37.149999999999885,37.17499999999989,37.199999999999896,37.2249999999999,37.24999999999991,37.27499999999991,37.29999999999992,37.324999999999925,37.34999999999993,37.374999999999936,37.39999999999994,37.42499999999995,37.44999999999995,37.47499999999996,37.499999999999964,37.52499999999997,37.549999999999976,37.57499999999998,37.59999999999999,37.62499999999999,37.65,37.675000000000004,37.70000000000001,37.725000000000016,37.75000000000002,37.77500000000003,37.80000000000003,37.82500000000004,37.850000000000044,37.87500000000005,37.900000000000055,37.92500000000006,37.95000000000007,37.97500000000007,38.00000000000008,38.025000000000084,38.05000000000009,38.075000000000095,38.1000000000001,38.12500000000011,38.15000000000011,38.17500000000012,38.200000000000124,38.22500000000013,38.250000000000135,38.27500000000014,38.300000000000146,38.32500000000015,38.35000000000016,38.37500000000016,38.40000000000017,38.425000000000175,38.45000000000018,38.475000000000186,38.50000000000019,38.5250000000002,38.5500000000002,38.57500000000021,38.600000000000215,38.62500000000022,38.650000000000226,38.67500000000023,38.70000000000024,38.72500000000024,38.75000000000025,38.775000000000254,38.80000000000026,38.825000000000266,38.85000000000027,38.87500000000028,38.90000000000028,38.92500000000029,38.950000000000294,38.9750000000003,39.000000000000306,39.02500000000031,39.05000000000032,39.07500000000032,39.10000000000033,39.125000000000334,39.15000000000034,39.175000000000345,39.20000000000035,39.22500000000036,39.25000000000036,39.27500000000037,39.300000000000374,39.32500000000038,39.350000000000385,39.37500000000039,39.4000000000004,39.4250000000004,39.45000000000041,39.47500000000041,39.50000000000042,39.525000000000425,39.55000000000043,39.575000000000436,39.60000000000044,39.62500000000045,39.65000000000045,39.67500000000046,39.700000000000465,39.72500000000047,39.750000000000476,39.77500000000048,39.80000000000049,39.82500000000049,39.8500000000005,39.875000000000504,39.90000000000051,39.925000000000516,39.95000000000052,39.97500000000053,40.00000000000053],"y":[-65.0,-64.99925452909274,-64.9985207095132,-64.99779768226396,-64.99708468737194,-64.9963810528078,-64.99568618464123,-64.99499955829286,-64.99432071076043,-64.99364923370976,-64.99298476733401,-64.99232699489554,-64.99167563787408,-64.99103045165381,-64.99039122168917,-64.98975776009632,-64.9891299026229,-64.98850750595395,-64.98789044531675,-64.98727861235145,-64.98667191321786,-64.98607026691244,-64.98547360377184,-64.98488186414271,-64.98429499719907,-64.98371295989108,-64.98313571601047,-64.98256323535989,-64.98199549301468,-64.9814324686666,-64.98087414604076,-64.98032051237747,-64.9797715579718,-64.97922727576466,-64.97868766097943,-64.9781527107994,-64.97762242408126,-64.97709680110077,-64.9765758433271,-64.97605955322251,-64.97554793406478,-64.97504098978966,-64.97453872485134,-64.97404114409876,-64.97354825266615,-64.97306005587613,-64.9725765591541,-64.97209776795255,-64.97162368768419,-64.97115432366313,-64.97068968105297,-64.97022976482118,-64.96977457969902,-64.96932413014642,-64.96887842032129,-64.96843745405272,-64.96800123481766,-64.96756976572075,-64.96714304947682,-64.96672108839593,-64.96630388437062,-64.96589143886499,-64.96548375290563,-64.965080827074,-64.96468266150032,-64.96428925585846,-64.96390060936216,-64.96351672076206,-64.96313758834367,-64.96276320992605,-64.96239358286122,-64.9620287040342,-64.96166856986348,-64.96131317630213,-64.96096251883924,-64.96061659250175,-64.96027539185667,-64.95993891101354,-64.95960714362721,-64.95928008290086,-64.95895772158921,-63.19798736332058,-61.464694870907095,-59.75703419122009,-58.072839823716905,-58.16964490045525,-58.256841253276605,-58.33448369938544,-58.40276685030286,-58.461995448309736,-58.51255673329868,-58.554895785659305,-58.58949429402358,-58.6168528434295,-58.63747658275901,-58.651863984674115,-58.66049833391822,-58.663841551377466,-58.662329965945226,-58.65637167172371,-58.646345145266494,-58.6325988398746,-58.61545151697651,-58.59519311553911,-58.57208599765895,-58.54636644120206,-58.51824627839595,-58.48791460278973,-58.45553948635593,-58.42126966418342,-58.38523615670997,-58.34755380925979,-58.30832273624249,-58.267629663143644,-58.22554916374556,-58.18214479315957,-58.137470119478,-58.09156965836922,-58.04447971590917,-57.996229145500884,-57.9468381282237,-57.89629770551442,-57.844594382125436,-57.79171039266528,-57.73762392548039,-57.68230930762112,-57.6257371542461,-57.567874485451654,-57.5086848131674,-57.448128200438006,-57.38616129511288,-57.32273733969024,-57.257806158808805,-57.19131412564696,-57.12320410827557,-57.05341539681358,-56.98188361205518,-56.90852995441411,-56.83323971791679,-56.75589560130674,-56.67637707134254,-56.59455974168567,-56.51031476089089,-56.4235082035221,-56.33400045883448,-56.241645611805055,-56.14629081156851,-56.04777562253616,-55.94593135365083,-55.840544210746835,-55.731358061264366,-55.6181071136663,-55.50051422367577,-55.37828919013486,-55.25112702348323,-55.11870617095232,-54.98068668350593,-54.83669395590341,-54.6862380120864,-54.52880404426421,-54.363848522667176,-54.19079519843168,-54.009030963117496,-53.817901531957865,-53.6165566052332,-53.404084018948886,-53.179509612720864,-52.94178886552196,-52.68974665522115,-52.42194614486445,-52.13684143677896,-51.83276226640581,-51.507739091999525,-51.159493086398996,-50.78554649434564,-50.38298109346153,-49.948430415809796,-49.478151941088626,-48.967592929291406,-48.411702540818425,-47.80433276279685,-47.138457968590004,-46.405762976933595,-45.59632522780673,-44.69843533442472,-43.69813590810823,-42.57869325256925,-41.319994611579325,-39.89786474247446,-38.2832383416681,-36.441117400200156,-34.329762209218025,-31.899914597783116,-29.094597094361383,-25.850268197824974,-22.100497998728965,-17.783946791560687,-12.859555244273132,-7.330228042093876,-1.274379024980358,5.125813992509587,11.578465804782383,17.71926045063585,23.19225372324022,27.7397499683089,31.255374578797714,33.778022496850895,35.44261319736576,36.421344212124254,36.87998867231176,36.955888792538275,36.75275423999627,36.3444809935877,35.78201535680881,35.10004834305736,34.322344561756964,33.46555776808736,32.541783394147835,31.560208089972857,30.52814656340785,29.45168288970325,28.336063606645777,27.18593778520864,26.005503820380824,24.798599800528297,23.568767329118856,22.31927891046976,21.053162105631902,19.77321697908417,18.482032307221534,17.181993602378746,15.875292775111943,14.563935269904087,13.249747417964503,11.934392621395885,10.619374935551912,9.306034500280424,7.995581730365751,6.689101292271134,5.387518606690637,4.091664498495737,2.8022747118951497,1.519951488098684,0.24520676409339148,-1.0215109671920697,-2.2798258859227287,-3.529502193512476,-4.770332155699103,-6.002148036954923,-7.224828526056969,-8.43840301518397,-9.642903499198402,-10.838383258195297,-12.024927693745852,-13.20267685658381,-14.371910395178089,-15.532905752909878,-16.685961919809234,-17.831415461246113,-18.969652363838446,-20.101117804569533,-21.226417640074747,-22.346222067763293,-23.461251996338085,-24.5723032455902,-25.68026559306495,-26.786138846993634,-27.89104717402241,-28.996252318204768,-30.103165968200905,-31.213469731971664,-32.32897811820214,-33.45165882817509,-34.583650541150455,-35.727273483343154,-36.88503336506792,-38.05961834028547,-39.25392290914803,-40.47103586690234,-41.71410614446727,-42.98630567905948,-44.29076532470311,-45.63043135711528,-47.00792194326907,-48.42536093605243,-49.883859323339436,-51.38354130572999,-52.92276700047941,-54.49809635015044,-56.103325017021824,-57.72966433834327,-59.364922769937074,-60.993817638398916,-62.598417678688044,-64.15832199517473,-65.65262831832841,-67.06106512145502,-68.36606377024914,-69.55399338286647,-70.61655450755214,-71.55106012085174,-72.36008041492971,-73.05053196765671,-73.63243386929189,-74.11755204596177,-74.518320330378,-74.84690283574959,-75.11462964443167,-75.33164476004093,-75.50677805959572,-75.64755637549435,-75.76029108024632,-75.8502102439688,-75.92160595287035,-75.97797912687857,-76.02217235937576,-76.05648653941188,-76.08278057010453,-76.10255475782935,-76.11701952470165,-76.12715156872147,-76.13373943751407,-76.13742032949459,-76.13870971361321,-76.13802511993005,-76.1357052263362,-76.13202516455814,-76.12720879525833,-76.12143855709888,-76.11486337542485,-76.10760501929242,-76.09976321737317,-76.09141978052672,-76.08264192868216,-76.07348497967244,-76.06399452581545,-76.05420819869006,-76.0441571023898,-76.03386697948905,-76.02335916117966,-76.01265134285383,-76.0017582182886,-75.99069199910267,-75.97946283291091,-75.96807916286038,-75.9565480174786,-75.94487524790952,-75.93306572393841,-75.92112349623744,-75.9090519308783,-75.89685382103852,-75.88453147992233,-75.87208681818332,-75.85952140853976,-75.84683653978979,-75.83403326203907,-75.8211124246321,-75.80807470801604,-75.79492065055078,-75.78165067110346,-75.76826508812114,-75.75476413575649,-75.74114797752439,-75.72741671788614,-75.71357041209212,-75.69960907455858,-75.68553268600878,-75.67134119957139,-75.65703454599695,-75.64261263812833,-75.62807537473824,-75.61342264382982,-75.59865432548044,-75.58377029429687,-75.56877042153899,-75.55365457696044,-75.53842263040738,-75.52307445321,-75.50760991939632,-75.49202890675339,-75.47633129775718,-75.46051698038933,-75.44458584885616,-75.42853780422341,-75.41237275497767,-75.39609061752445,-75.37969131663105,-75.36317478582129,-75.34654096772822,-75.32978981441018,-75.31292128763445,-75.2959353591326,-75.27883201083074,-75.26161123505761,-75.24427303473297,-75.22681742353842,-75.2092444260726,-75.19155407799225,-75.17374642614058,-75.1558215286642,-75.13777945511956,-75.11962028656988,-75.10134411567343,-75.08295104676355,-75.06444119592149,-75.0458146910421,-75.02707167189315,-75.00821229016859,-74.98923670953599,-74.97014508098903,-74.9509375546967,-74.9316143028257,-74.91217551767392,-74.89262141013847,-74.87295220845911,-74.85316815718794,-74.83326951634525,-74.81325656072814,-74.79312957934431,-74.77288887494865,-74.75253476366353,-74.73206757466761,-74.71148764994012,-74.69079534405026,-74.66999102398283,-74.64907506899301,-74.62804787048427,-74.6069098319045,-74.58566136865653,-74.56430290801939,-74.5428348890779,-74.52125776265822,-74.49957199126762,-74.47777804903674,-74.45587642166358,-74.43386760635775,-74.41175211178462,-74.38953045800844,-74.36720317643399,-74.34477080974655,-74.32223391184964,-74.29959304780036,-74.27684879374229,-74.25400173683562,-74.23105247518451,-74.20800161776172,-74.18484978433023,-74.16159760536205,-74.13824572195425,-74.11479478574198,-74.09124545880873,-74.06759841359386,-74.0438543327973,-74.02001390928163,-73.99607784597151,-73.9720468391244,-73.947921512368,-73.92370251974172,-73.8993905420772,-73.87498628394833,-73.85049047109776,-73.82590384826193,-73.80122717733012,-73.77646123578323,-73.75160681536701,-73.72666472096189,-73.7016357696175,-73.67652078972523,-73.65132062030656,-73.62603611039806,-73.60066811851755,-73.57521751219802,-73.5496851675781,-73.52407196903984,-73.49837880888572,-73.47260658704855,-73.44675621082844,-73.42082859465236,-73.39482465985229,-73.36874533445867,-73.34259155300653,-73.31636425635187,-73.2900643914965,-73.26369291141955,-73.23725077491464,-73.21073894643125,-73.1841583959197,-73.15751009867878,-73.13079503520552,-73.10401419104652,-73.07716855665052,-73.05025912722186,-73.02328690257448,-72.99625288698644,-72.96915806295931,-72.94200325794415,-72.91478933659204,-72.88751719542203,-72.86018775828158,-72.83280197247647,-72.80536080546727,-72.77786524204564,-72.75031628191742,-72.72271493763091,-72.69506223279815,-72.66735920056524,-72.63960688229426,-72.61180632642505,-72.58395858749022,-72.55606472526017,-72.5281258039992,-72.50014289181573,-72.47211706009296,-72.44404938298797,-72.41594093698896,-72.38779280052216,-72.35960605360101,-72.33138177751134,-72.30312105452718,-72.27482496765285,-72.24649460038725,-72.21813103650727,-72.18973535986734,-72.16130865421296,-72.13285200300611,-72.10436648926074,-72.0758531953871,-72.04731320304346,-72.01874759299442,-71.99015744497468,-71.96154373169279,-71.93290723807073,-71.90424879437906,-71.87556926929162,-71.84686956392953,-71.81815060674852,-71.78941334914602,-71.76065876168339,-71.7318878308344,-71.70310155618436,-71.67430094801563,-71.64548702522417,-71.6166608135207,-71.58782334387587,-71.55897565117534,-71.53011877305516,-71.50125374889234,-71.47238161892882,-71.44350342351039,-71.4146202024245,-71.38573299432319,-71.35684283621957,-71.32795076304748,-71.29905780727576,-71.27016499856951,-71.24127336349213,-71.21238392524222,-71.18349770342095,-71.15461571382556,-71.12573896826545,-71.09686847439798,-71.06800523558118,-71.03915025074126,-71.0103045142528,-70.9814690158302,-70.95264444447851,-70.92383136181367,-70.89503038583418,-70.86624218243264,-70.83746745806738,-70.80870695343069,-70.77996143797479,-70.7512317051764,-70.72251856843826,-70.69382285754054,-70.66514541556704,-70.63648709624208,-70.60784876162242,-70.57923128009674,-70.55063552465116,-70.52206237136556,-70.49351269810975,-70.46498738341303,-70.43648730548415,-70.4080133413617,-70.37956636617781,-70.35114725252019,-70.3227568698795,-70.29439608417091,-70.26606575732018,-70.23776674690562,-70.2094999058488,-70.18126608214754,-70.15306611864574,-70.12490085283513,-70.09677111668492,-70.06867773649564,-70.04062153277405,-70.01260332012643,-69.98462390716777,-69.95668374277727,-69.92878302642522,-69.90092203277067,-69.87310110106151,-69.84532062592416,-69.81758104935552,-69.7898828537565,-69.76222655586876,-69.7346127014959,-69.70704186090582,-69.67951462482587,-69.65203160095366,-69.62459341091699,-69.59720068762499,-69.56985407296042,-69.54255421576943,-69.51530177011071,-69.48809739373135,-69.46094174674019,-69.433835490454,-69.40677928639434,-69.37977379541624,-69.35281967695192,-69.32591758835515,-69.29906818433345,-69.27227211645717,-69.24553003273567,-69.21884257725223,-69.19221038985022,-69.16563410586413,-69.13911435588976,-69.11265176558864,-69.08624695552233,-69.05990054101288,-69.03361313202612,-69.00738533307472,-68.9812177431388,-68.95511034512178,-68.92906295395399,-68.9030754786573,-68.87714791001372,-68.85128030978072,-68.82547280125412,-68.7997255610061,-68.77403881164926,-68.74841281549722,-68.72284786900921,-68.69734429792078,-68.67190245297519,-68.64652270618134,-68.62120544753296,-68.59595108213247,-68.57076002766988,-68.54563271221303,-68.52056957227155,-68.49557105110065,-68.47063759721603,-68.44576966309384,-68.42096770403354,-68.39623217716363,-68.37156354057305,-68.34696225255306,-68.322428770936,-68.29796355251952,-68.27356705256553,-68.24923972436508,-68.22498201886111,-68.20079438432191,-68.17667726605926,-68.15263110618572,-68.12865634340633,-68.10475341284041,-68.0809227458699,-68.0571647700108,-68.03347990880505,-68.00986858173005,-67.98633120412383,-67.96286757075356,-67.93947710236137,-67.91615933734721,-67.89291391734908,-67.86974057455767,-67.84663912055157,-67.82360943646614,-67.8006514643337,-67.77776519945294,-67.75495068366344,-67.73220799941645,-67.70953726454688,-67.68693862766283,-67.66441226407919,-67.64195837223103,-67.61957717050994,-67.59726889447347,-67.57503379438378,-67.55287213303681,-67.53078418384791,-67.50877022916374,-67.48683055877419,-67.46496546860064,-67.44317525954021,-67.4214602364476,-67.39982070723846,-67.37825698210018,-67.35676937279747,-67.33535819206165,-67.3140237530539,-67.29276636889384,-67.2715863522456,-67.25048401495492,-67.22945966773098,-67.20851361986794,-67.18764617900136,-67.1668576508954,-67.14614833925712,-67.12551854557478,-67.104968568977,-67.08449870611062,-67.06410925103465,-67.04380049512862,-67.02357272701343,-67.00342623248315,-66.98336129444651,-66.96337716499127,-66.94347300451983,-66.92364810465634,-66.90390187296038,-66.88423381940852,-66.86464354443437,-66.84513072834352,-66.82569512194237,-66.8063365382393,-66.78705484509334,-66.7678499587011,-66.74872183782479,-66.72967047867627,-66.71069591038193,-66.69179819096172,-66.67297740376371,-66.65423365430215,-66.63556706745311,-66.6169777849671,-66.59846596326254,-66.58003177146828,-66.56167538968703,-66.54339700745444,-66.525196822372,-66.50707503889372,-66.48903186724954,-66.47106752248976,-66.4531822236369,-66.4353761929328,-66.41764965517022,-66.40000283709938,-66.3824359669008,-66.36494927371716,-66.3475429872373,-66.3302173373265,-66.31297255369773,-66.29580886561926,-66.2787265016545,-66.2617256894302,-66.24480665543,-66.22796962481024,-66.21121482123557,-66.1945424667319,-66.17795278155494,-66.16144598407222,-66.14502229065722,-66.1286819155941,-66.11242507099172,-66.09625196670598,-66.0801628102693,-66.06415780682654,-66.04823715907648,-66.0324010672181,-66.0166497289013,-66.00098333918122,-65.98540209047584,-65.9699049545743,-65.95449096223622,-65.9391592787575,-65.92390918877717,-65.90874008278605,-65.89365144514281,-65.87864284342601,-65.86371391897075,-65.848864378456,-65.83409398642435,-65.81940255862943,-65.8047899561182,-65.79025607996596,-65.77580086659121,-65.76142428358575,-65.74712632600263,-65.73290701305116,-65.71876638515376,-65.70470450132449,-65.6907214368337,-65.67681728112709,-65.66299213597101,-65.64924611379905,-65.6355793362377,-65.62199193279112,-65.60848403966776,-65.5950557987329,-65.58170735657335,-65.56843886366188,-65.55525047361047,-65.54214234250242,-65.52911462829476,-65.51616749028315,-65.50330108862237,-65.4905155838962,-65.47781113673146,-65.46518790745098,-65.45264605576152,-65.44018574047256,-65.42780711924271,-65.41551034835054,-65.40329558248716,-65.39116297456825,-65.37911267556319,-65.36714483433961,-65.35525959752144,-65.34345710935908,-65.33173751161038,-65.32010094343109,-65.30854754127377,-65.2970774387944,-65.28569076676554,-65.2743876529955,-65.26316822225284,-65.25203259619553,-65.24098089330431,-65.23001322881979,-65.21912971468286,-65.20833045947808,-65.19761556837958,-65.18698514309946,-65.17643928183821,-65.165978079237,-65.15560162633159,-65.14531001050791,-65.13510331545882,-65.12498162114214,-65.11494500373983,-65.10499353561814,-65.09512728528861,-65.08534631737005,-65.07565069255112,-65.06604046755375,-65.05651569509715,-65.04707642386248,-65.03772269845807,-65.02845455938524,-65.01927204300459,-65.01017518150289,-65.00116400286036,-64.99223853081857,-64.98339792197886,-64.97464130450496,-64.96596791064427,-64.95737706491738,-64.94886817360249,-64.94044071537091,-64.93209423294628,-64.92382832567426,-64.91564264290226,-64.90753687808002,-64.89951076350177,-64.89156406561925,-64.88369658086337,-64.8759081319184,-64.86819856439926,-64.86056774388794,-64.85301555328954,-64.84554189047327,-64.8381466661672,-64.83082980207905,-64.82359122921847,-64.81643088639882,-64.809348718899,-64.80234467726777,-64.79541871625518,-64.78857079385743,-64.7818008704625,-64.77510890808607,-64.76849486968759,-64.76195871855806,-64.75550041777163,-64.74911992969426,-64.74281721554316,-64.73659223499166,-64.73044494581464,-64.72437530357,-64.71838326131254,-64.7124687693367,-64.70663177494507,-64.70087222223997,-64.69519005193568,-64.68958520118916,-64.68405760344723,-64.67860718830867,-64.67323388139961,-64.66793760426073,-64.66271827424536,-64.65757580442711,-64.6525101035162,-64.64752107578369,-64.64260862099265,-64.63777263433587,-64.63301300637934,-64.62832962301088,-64.62372236539369,-64.61919110992419,-64.61473572819392,-64.61035608695504,-64.6060520480892,-64.60182346857957,-64.59767020048568,-64.59359209092096,-64.58958898203274,-64.58566071098457,-64.58180710994078,-64.57802800605302,-64.57432322144874,-64.57069257322158,-64.56713587342342,-64.56365292905824,-64.56024354207739,-64.55690750937664,-64.55364462279455,-64.55045466911236,-64.54733743005531,-64.54429268229528,-64.54132019745482,-64.53841974211248,-64.5355910778094,-64.53283396105721,-64.53014814334718,-64.52753337116059,-64.52498938598029,-64.52251592430356,-64.52011271765606,-64.51777949260702,-64.5155159707856,-64.51332186889843,-64.51119689874828,-64.50914076725394,-64.50715317647116,-64.50523382361484,-64.50338240108228,-64.50159859647756,-64.49988209263715,-64.49823256765647,-64.49664969491774,-64.49513314311879,-64.49368257630314,-64.49229765389101,-64.49097803071156,-64.48972335703613,-64.4885332786126,-64.48740743670088,-64.48634546810933,-64.48534700523243,-64.48441167608931,-64.48353910436353,-64.48272890944372,-64.48198070646538,-64.48129410635363,-64.48066871586704,-64.4801041376424,-64.47959997024054,-64.4791558081931,-64.47877124205031,-64.47844585842972,-64.47817924006586,-64.47797096586088,-64.47782061093612,-64.47772774668458,-64.47769194082429,-64.47771275745257,-64.47778975710122,-64.47792249679252,-64.47811053009606,-64.4783534071865,-64.47865067490206,-64.47900187680382,-64.4794065532359,-64.47986424138631,-64.48037447534855,-64.48093678618409,-64.48155070198537,-64.4822157479397,-64.48293144639369,-64.48369731691842,-64.48451287637528,-64.48537763898237,-64.48629111638162,-64.48725281770638,-64.48826224964964,-64.48931891653281,-64.49042232037506,-64.49157196096309,-64.49276733592143,-64.49400794078328,-64.49529326906168,-64.49662281232118,-64.49799606024995,-64.49941250073216,-64.50087161992086,-64.50237290231108,-64.50391583081337,-64.50549988682751,-64.50712455031663,-64.50878929988147,-64.51049361283494,-64.51223696527684,-64.51401883216884,-64.51583868740956,-64.51769600390976,-64.5195902536678,-64.52152090784499,-64.52348743684117,-64.52548931037029,-64.52752599753602,-64.52959696690733,-64.53170168659412,-64.53383962432274,-64.53601024751151,-64.53821302334615,-64.540447418855,-64.54271290098428,-64.5450089366731,-64.54733499292826,-64.54969053689891,-64.55207503595105,-64.55448795774167,-64.55692877029271,-64.55939694206474,-64.56189194203026,-64.56441323974678,-64.56696030542956,-64.56953261002381,-64.57212962527676,-64.57475082380914,-64.57739567918631,-64.58006366598893,-64.58275425988322,-64.58546693769061,-64.58820117745707,-64.59095645852173,-64.59373226158516,-64.59652806877692,-64.59934336372265,-64.60217763161056,-64.60503035925723,-64.60790103517293,-64.61078914962616,-64.61369419470765,-64.6166156643936,-64.61955305460835,-64.62250586328618,-64.62547359043258,-64.6284557381847,-64.63145181087103,-64.63446131507041,-64.6374837596702,-64.64051865592374,-64.64356551750694,-64.64662386057414,-64.64969320381307,-64.65277306849912,-64.65586297854863,-64.6589624605714,-64.6620710439224,-64.66518826075246,-64.66831364605827,-64.67144673773137,-64.6745870766063,-64.67773420650784,-64.68088767429734,-64.68404702991816,-64.68721182644018,-64.69038162010334,-64.69355597036035,-64.69673443991839,-64.69991659477985,-64.70310200428221,-64.7062902411369,-64.7094808814672,-64.7126735048453,-64.71586769432822,-64.71906303649295,-64.72225912147047,-64.72545554297892,-64.72865189835576,-64.73184778858895,-64.73504281834718,-64.73823659600916,-64.74142873369188,-64.74461884727792,-64.74780655644187,-64.7509914846757,-64.75417325931313,-64.75735151155321,-64.76052587648276,-64.76369599309794,-64.76686150432486,-64.77002205703924,-64.7731773020851,-64.77632689429255,-64.7794704924946,-64.78260775954301,-64.78573836232336,-64.788861971769,-64.79197826287418,-64.7950869147063,-64.7981876104172,-64.80128003725353,-64.80436388656629,-64.80743885381943,-64.8105046385976,-64.81356094461302,-64.81660747971144,-64.81964395587734,-64.8226700892382,-64.8256856000679,-64.8286902127894,-64.83168365597648,-64.83466566235472,-64.8376359688017,-64.8405943163463,-64.8435404501673,-64.84647411959116,-64.84939507808907,-64.85230308327317,-64.85519789689207,-64.85807928482556,-64.86094701707876,-64.86380086777527,-64.86664061514989,-64.86946604154046,-64.87227693337907,-64.87507308118255,-64.87785427954236,-64.88062032711379,-64.88337102660444,-64.88610618476218,-64.88882561236242,-64.89152912419476,-64.89421653904904,-64.89688767970082,-64.89954237289628,-64.90218044933646,-64.90480174366108,-64.90740609443172,-64.90999334411448,-64.9125633390621,-64.91511592949563,-64.91765096948546,-64.92016831693208,-64.92266783354607,-64.92514938482789,-64.92761284004705,-64.93005807222086,-64.9324849580928,-64.9348933781104,-64.93728321640273,-64.93965436075752,-64.94200670259778,-64.9443401369582,-64.94665456246106,-64.9489498812918,-64.95122599917426,-64.95348282534557,-64.9557202725308,-64.95793825691707,-64.96013669812764,-64.96231551919546,-64.96447464653659,-64.96661400992329,-64.96873354245683,-64.97083318054007,-64.97291286384979,-64.9749725353088,-64.97701214105777,-64.97903163042695,-64.98103095590753,-64.98301007312298,-64.98496894080007,-64.98690752073978,-64.98882577778801,-64.99072367980615,-64.99260119764152,-64.99445830509761,-64.99629497890423,-64.99811119868755,-64.99990694694,-65.00168220899003,-65.00343678555087,-65.00517049426378,-65.00688317854359,-65.00857470499507,-65.01024496111023,-65.0118938532154,-65.01352130464055,-65.0151272540865,-65.01671165416796,-65.01827447011323,-65.01981567860311,-65.0213352667339,-65.02283323109057,-65.02430957691828,-65.02576431738112,-65.02719747289872,-65.02860907055205,-65.02999914355081,-65.03136773075569,-65.03271487624949,-65.03404062895163,-65.03534504227143,-65.03662817379583,-65.03789008500785,-65.03913084103226,-65.04035051040582,-65.04154916486894,-65.04272687917693,-65.04388373092829,-65.04501980040847,-65.04613517044726,-65.0472299262884,-65.04830415547009,-65.04935794771527,-65.05039139483041,-65.05140459061231,-65.05239763076155,-65.05337061280231,-65.0543236360077,-65.0552568013299,-65.056170211335,-65.05706397014151,-65.0579381833627,-65.05879295805194,-65.0596284026511,-65.06044462694139,-65.06124174199657,-65.06201986013835,-65.06277909489359,-65.06351956095324,-65.06424137413292,-65.06494465133481,-65.06562951051092,-65.06629607062746,-65.06694445163036,-65.06757477441174,-65.06818716077728,-65.06878173341447,-65.06935861586157,-65.06991793247738,-65.07045980841157,-65.0709843695757,-65.07149174261482,-65.07198205487965,-65.07245543439916,-65.07291200985375,-65.0733519105489,-65.07377526638915,-65.07418220785264,-65.07457286596598,-65.07494737227942,-65.07530585884264,-65.07564845818062,-65.07597530327008,-65.07628652751609,-65.07658226472914,-65.07686264910247,-65.07712781518968,-65.07737789788277,-65.07761303239027,-65.07783335421594,-65.07803899913748,-65.07823010318572,-65.07840680262404,-65.07856923392802,-65.07871753376538,-65.07885183897626,-65.07897228655365,-65.07907901362418,-65.07917215742911,-65.07925185530561,-65.0793182446683,-65.07937146299099,-65.07941164778875,-65.07943893660013,-65.07945346696974,-65.07945537643099,-65.07944480248906,-65.07942188260424,-65.0793867541753,-65.0793395545233,-65.07928042087549,-65.07920949034953,-65.07912689993789,-65.07903278649252,-65.0789272867097,-65.07881053711515,-65.07868267404933,-65.07854383365306,-65.07839415185319,-65.07823376434865,-65.07806280659666,-65.0778814137991,-65.07768972088918,-65.07748786251825,-65.07727597304293,-65.07705418651229,-65.07682263665535,-65.07658145686882,-65.07633078020488,-65.07607073935934,-65.07580146665988,-65.0755230940546,-65.07523575310063,-65.07493957495305,-65.07463469035396,-65.07432122962173,-65.07399932264049,-65.07366909884973,-65.0733306872342,-65.07298421631388,-65.07262981413422,-65.07226760825648,-65.07189772574837,-65.07152029317476,-65.07113543658859,-65.07074328152207,-65.07034395297785,-65.06993757542054,-65.06952427276833,-65.06910416838478,-65.0686773850708,-65.06824404505677,-65.06780426999487,-65.06735818095149,-65.06690589839992,-65.06644754221314,-65.06598323165669,-65.06551308538188,-65.06503722141899,-65.06455575717072,-65.06406880940575,-65.06357649425247,-65.06307892719286,-65.06257622305652,-65.06206849601483,-65.0615558595753,-65.06103842657598,-65.06051630918016,-65.05998961887101,-65.0594584664466,-65.05892296201479,-65.05838321498851,-65.05783933408101,-65.05729142730135,-65.0567396019499,-65.05618396461412,-65.05562462116437,-65.05506167674984,-65.05449523579472,-65.05392540199435,-65.05335227831162,-65.05277596697344,-65.05219656946728,-65.05161418653795,-65.0510289181844,-65.0504408636567,-65.0498501214531,-65.04925678931724,-65.04866096423541,-65.04806274243401,-65.0474622193771,-65.04685948976397,-65.04625464752701,-65.04564778582943,-65.04503899706336,-65.04442837284785,-65.0438160040271,-65.04320198066873,-65.04258639206216,-65.04196932671712,-65.04135087236226,-65.04073111594379,-65.04011014362432,-65.03948804078176,-65.03886489200829,-65.03824078110941,-65.03761579110316,-65.0369900042194,-65.03636350189913,-65.03573636479396,-65.03510867276566,-65.03448050488579,-65.03385193943544,-65.03322305390496,-65.03259392499399,-65.03196462861128,-65.03133523987486,-65.03070583311218,-65.03007648186026,-65.02944725886607,-65.02881823608688,-65.02818948469074,-65.02756107505704,-65.02693307677707,-65.0263055586548,-65.02567858870756,-65.02505223416698,-65.02442656147983,-65.02380163630905,-65.0231775235348,-65.02255428725562,-65.02193199078957,-65.02131069667557,-65.0206904666747,-65.0200713617716,-65.01945344217597,-65.01883676732409,-65.0182213958804,-65.01760738573921,-65.0169947940264,-65.0163836771012,-65.01577409055805,-65.01516608922852,-65.01455972718324,-65.01395505773401,-65.01335213343577,-65.01275100608885,-65.01215172674108,-65.01155434569012,-65.01095891248568,-65.01036547593196,-65.00977408409005,-65.00918478428035,-65.00859762308511,-65.00801264635102,-65.0074298991918,-65.00684942599091,-65.00627127040418,-65.00569547536267,-65.00512208307539,-65.00455113503223,-65.00398267200683,-65.0034167340595,-65.00285336054024,-65.00229259009178,-65.00173446065264,-65.00117900946023,-65.00062627305402,-65.00007628727876,-64.99952908728768,-64.99898465513829,-64.99844297014911,-64.9979040176783,-64.99736778838816,-64.99683427759146,-64.99630348467022,-64.99577541255904,-64.99525006728594,-64.99472745756415,-64.99420759442943,-64.9936904909176,-64.99317616177825,-64.99266462322014,-64.9921558926852,-64.99164998864777,-64.99114693043623,-64.99064673807483,-64.99014943214308,-64.9896550336512,-64.98916356392944,-64.98867504453007,-64.98818949714051,-64.98770694350627,-64.98722740536283,-64.98675090437531,-64.98627746208514,-64.98580709986292,-64.98533983886689,-64.98487570000621,-64.98441470390874,-64.9839568708926,-64.98350222094132,-64.98305077368201,-64.98260254836627,-64.98215756385363,-64.98171583859707,-64.98127739063057,-64.98084223755835,-64.98041039654565,-64.9799818843109,-64.97955671711914,-64.97913491077644,-64.97871648062542,-64.97830144154156,-64.97788980793028,-64.97748159372476,-64.97707681238433,-64.97667547689342,-64.97627759976109,-64.97588319302083,-64.97549226823094,-64.97510483647507,-64.97472090836325,-64.97434049403314,-64.97396360315146,-64.97359024491575,-64.9732204280563,-64.9728541608382,-64.97249145106368,-64.97213230607449,-64.97177673275445,-64.97142473753213,-64.97107632638362,-64.97073150483538,-64.97039027796727,-64.9700526504155,-64.96971862637582,-64.96938820960669,-64.96906140343246,-64.96873821074674,-64.96841863401568,-64.9681026752814,-64.96779033616538,-64.96748161787197,-64.96717652119183,-64.9668750465055,-64.96657719378696,-64.96628296260717,-64.96599235213772,-64.96570536115445,-64.96542198804109,-64.96514223079292,-64.9648660870205,-64.96459355395328,-64.96432462844342,-64.96405930696943,-64.96379758563995,-64.96353946019752,-64.96328492602228,-64.96303397813578,-64.96278661120478,-64.96254281954495,-64.96230259712476,-64.96206593756924,-64.96183283416373,-64.96160327985778,-64.9613772672689,-64.96115478868639,-64.96093583607514,-64.96072040107951,-64.9605084750271,-64.96030004893257,-64.9600951135015,-64.95989365913418,-64.9596956759295,-64.95950115368868,-64.95931008191917,-64.95912244983845,-64.95893824637784,-64.95875746018633,-64.9585800796344,-64.95840609281784,-64.95823548756152,-64.95806825142326,-64.95790437169757,-64.9577438354195,-64.95758662936842,-64.95743274007178,-64.95728215380893,-64.95713485661487,-64.95699083428403,-64.95685007237404,-64.9567125562095,-64.95657827088567,-64.9564472012723,-64.95631933201729,-64.95619464755046,-64.95607313208725,-64.95595476963243,-64.9558395439838,-64.95572743873588,-64.95561843728358,-64.95551252282588,-64.95540967836952,-64.95530988673258,-64.95521313054816,-64.95511939226802,-64.95502865416614,-64.95494089834239]},"selected":{"id":"1049"},"selection_policy":{"id":"1048"}},"id":"1034","type":"ColumnDataSource"},{"attributes":{},"id":"1048","type":"UnionRenderers"},{"attributes":{"axis":{"id":"1016"},"coordinates":null,"dimension":1,"group":null,"ticker":null},"id":"1019","type":"Grid"},{"attributes":{"line_alpha":0.2,"line_color":"#1f77b4","line_width":2,"x":{"field":"x"},"y":{"field":"y"}},"id":"1037","type":"Line"}],"root_ids":["1003"]},"title":"Bokeh Application","version":"2.4.3"}};
+  const render_items = [{"docid":"dac9d5cd-7799-4ef7-a411-8436cdc95c7f","root_ids":["1003"],"roots":{"1003":"a1e52267-2278-4c90-aa9d-13950ed13905"}}];
+  root.Bokeh.embed.embed_items_notebook(docs_json, render_items);
+  }
+  if (root.Bokeh !== undefined) {
+    embed_document(root);
+  } else {
+    let attempts = 0;
+    const timer = setInterval(function(root) {
+      if (root.Bokeh !== undefined) {
+        clearInterval(timer);
+        embed_document(root);
+      } else {
+        attempts++;
+        if (attempts > 100) {
+          clearInterval(timer);
+          console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
+        }
+      }
+    }, 10, root)
+  }
+})(window);
+</script></div>
+</div>
+</section>
+<section id="Using-matplotlib">
+<h3>Using matplotlib<a class="headerlink" href="#Using-matplotlib" title="Link to this heading"></a></h3>
+<p>matplotlib is a mature non-Javascript based graphics library. While it does offer an interactive Jupyter mode, this interactivity blocks subsequent Python execution until interactive-mode is cancelled.</p>
+<p>In Jupyter, to ensure matplotlib graphs appear inline, use:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
+</pre></div>
+</div>
+</div>
+<p>(When not using Jupyter, skip the above step – it would be a syntax error in pure Python. Your graphs will appear in separate windows instead.)</p>
+<p>As with bokeh, we must import the matplotlib module before using it. In particular, we will load the pyplot submodule and give it the shorter name plt:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+</pre></div>
+</div>
+</div>
+<p>The matplotlib equivalent to the above bokeh example is then:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;t (ms)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;v (mV)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_scripting-neuron-basics_107_0.png" src="../_images/tutorials_scripting-neuron-basics_107_0.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="Step-9:-Saving-and-loading-results">
+<h2>Step 9: Saving and loading results<a class="headerlink" href="#Step-9:-Saving-and-loading-results" title="Link to this heading"></a></h2>
+<section id="CSV">
+<h3>CSV<a class="headerlink" href="#CSV" title="Link to this heading"></a></h3>
+<p><p>The csv (comma separated variables) file format is widely used for data interchange, and can be used to transfer data to MATLAB, Excel, etc without writing any special conversion code.</p>
+</p><p><p>(Many Python distributions provide the pandas module which can do the same using a slightly simpler interface, but the code below works in all versions of Python… an example of reading CSV using pandas is shown below.)</p>
+<p>Python provides the csv module to simplify reading and writing csv files. We load it via:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">csv</span>
+</pre></div>
+</div>
+</div>
+<h4><p>Writing</p>
+</h4><div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;data.csv&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>You should now have a data.csv file. Try loading it in your favorite spreadsheet.</p>
+<p>To write additional variables (as columns) to the CSV file, just add them inside the zip; e.g. zip(t, v1, v2, ca1).</p>
+<h4><p>Reading</p>
+</h4><div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;data.csv&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="n">tnew</span><span class="p">,</span> <span class="n">vnew</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[[</span><span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">row</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">reader</span> <span class="k">if</span> <span class="n">row</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p>The argument to the zip is a nested list comprehension; the zip and the asterisk together effectively transpose the data turning it from a list of (t, v) pairs into a list of t values and a list of v values. For loading more variables, the right hand side of the last line is unchanged; all that changes is that the variables need to be listed on the left; e.g. tnew, vnew, canew = zip(…)</p>
+<p>We can plot our newly loaded data (here with matplotlib) to see that it is the same as before:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tnew</span><span class="p">,</span> <span class="n">vnew</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;t (ms)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;v (mV)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_scripting-neuron-basics_119_0.png" src="../_images/tutorials_scripting-neuron-basics_119_0.png" />
+</div>
+</div>
+<p>Reading and plotting using plotnine and pandas:</p>
+<p>The modules plotnine and pandas are key components of the Python data science ecosystem. We can use them to work with our NEURON data, but they may have to be installed separately.</p>
+<p>First, we’ll load the modules. It is common to use shortened names for the modules, but this is not necessary:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">plotnine</span> <span class="k">as</span> <span class="nn">p9</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+</pre></div>
+</div>
+</div>
+<p>We can load the data:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;data.csv&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="s2">&quot;v&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p>(If the CSV file had a header row identifying the columns, then pd.read_csv would have handled the names automatically and we would not have had to specify the last two arguments above.)</p>
+<p>And now plot with plotnine’s version of ggplot. This function provides an implementation of Wilkinson’s Grammar of Graphics; as such, the interface is essentially identical to the R function of the same name.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">g</span> <span class="o">=</span> <span class="p">(</span><span class="n">p9</span><span class="o">.</span><span class="n">ggplot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">p9</span><span class="o">.</span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;v&quot;</span><span class="p">))</span> <span class="o">+</span> <span class="n">p9</span><span class="o">.</span><span class="n">geom_path</span><span class="p">())</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="JSON">
+<h3>JSON<a class="headerlink" href="#JSON" title="Link to this heading"></a></h3>
+<p><p>JSON is used for structured data interchange. It is a newer but widely used format and libraries for reading and writing JSON exist for most programming languages.</p>
+</p><p><p>Python provides the json module to simplify reading and writing JSON files. We load it via:</p>
+</p><div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">json</span>
+</pre></div>
+</div>
+</div>
+<h4><p>Writing</p>
+</h4><div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;data.json&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="s2">&quot;v&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">v</span><span class="p">)},</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Here we built a dictionary with keys t and v, and stored their values as a list. Since JSON is a language-independent format, it does not have a concept of NEURON Vectors, which is why we had to create a list copy of them before saving. The indent=4 argument is optional, but indents the output to make it more human-readable (at the cost of a larger file size).</p>
+<h4><p>Reading</p>
+</h4><div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;data.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="n">tnew</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">]</span>
+<span class="n">vnew</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;v&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>As for csv, we plot the newly loaded data to show that it is the same as the original:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[43]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tnew</span><span class="p">,</span> <span class="n">vnew</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;t (ms)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;v (mV)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_scripting-neuron-basics_137_0.png" src="../_images/tutorials_scripting-neuron-basics_137_0.png" />
+</div>
+</div>
+</section>
+<section id="Pickles">
+<h3>Pickles<a class="headerlink" href="#Pickles" title="Link to this heading"></a></h3>
+<p><p>Pickles are a Python-specific data exchange format.</p>
+</p><p><p>Python provides the pickle module to read and write pickled files. We load it via:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+</pre></div>
+</div>
+</div>
+<h4><p>Writing</p>
+</h4><div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;data.p&quot;</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="s2">&quot;v&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">},</span> <span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>This is slightly cleaner than the JSON solution above because it is Python specific and therefore able to explicitly encode NEURON Vector objects.</p>
+<h4><p>Reading</p>
+</h4><div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;data.p&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="n">tnewp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">]</span>
+<span class="n">vnewp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;v&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>Pickles in Python 3 are by default binary files, so we have to specify write and read flags of wb and rb respectively. We use a different variable name here than before simply to indicate that what is loaded in has type</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[47]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">type</span><span class="p">(</span><span class="n">tnewp</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[47]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+hoc.Vector
+</pre></div></div>
+</div>
+<p>and in particular is a NEURON Vector:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tnewp</span><span class="o">.</span><span class="n">hname</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;Vector[2]&#39;
+</pre></div></div>
+</div>
+<p>Unlike the other solutions provided, which construct regular Python lists:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[49]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">type</span><span class="p">(</span><span class="n">tnew</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[49]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+list
+</pre></div></div>
+</div>
+<p>This is a minor distinction though, as we’ve already seen list(vec) copies a Vector vec into a new list. Using <code class="docutils literal notranslate"><span class="pre">h.Vector(old_list)</span></code> makes a NEURON Vector that is a copy of <code class="docutils literal notranslate"><span class="pre">old_list</span></code>.</p>
+<p>As before, plotting suggests that we have successfully loaded in the data:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[50]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tnewp</span><span class="p">,</span> <span class="n">vnewp</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;t (ms)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;v (mV)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorials_scripting-neuron-basics_153_0.png" src="../_images/tutorials_scripting-neuron-basics_153_0.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pythontutorial.html" class="btn btn-neutral float-left" title="Introduction to Python" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ball-and-stick-1.html" class="btn btn-neutral float-right" title="Ball and stick 1: Basic cell" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Duke, Yale and the Blue Brain Project.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
