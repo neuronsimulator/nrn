@@ -18,16 +18,14 @@
 
 #include <cmath>
 #include <cstring>
+
 extern void nrn_pt3dremove(Section* sec, int i0);
 extern void nrn_pt3dinsert(Section* sec, int i0, double x, double y, double z, double d);
-extern void nrn_pt3dclear(Section* sec, int req);
 extern void nrn_pt3dchange1(Section* sec, int i, double d);
 extern void nrn_pt3dchange2(Section* sec, int i, double x, double y, double z, double diam);
-extern void stor_pt3d(Section* sec, double x, double y, double z, double d);
 extern void nrn_pt3dstyle1(Section* sec, double x, double y, double z);
 extern void nrn_pt3dstyle0(Section* sec);
-extern void nrn_area_ri(Section* sec);
-extern void sec_free(hoc_Item*);
+
 extern Symlist* hoc_built_in_symlist;
 extern Section* nrn_noerr_access();
 extern PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op);
@@ -115,14 +113,8 @@ extern Section* nrnpy_newsection(NPySecObj*);
 extern void simpleconnectsection();
 extern void nrn_change_nseg(Section*, int);
 extern double section_length(Section*);
-extern double nrn_ra(Section*);
-extern int can_change_morph(Section*);
 extern short* nrn_is_artificial_;
 extern cTemplate** nrn_pnt_template_;
-extern void nrn_diam_change(Section*);
-extern void nrn_length_change(Section*, double);
-extern void mech_insert1(Section*, int);
-extern void mech_uninsert1(Section*, Symbol*);
 extern PyObject* nrnpy_forall_safe(PyObject* self, PyObject* args);
 static void nrnpy_reg_mech(int);
 extern void (*nrnpy_reg_mech_p_)(int);
@@ -158,7 +150,6 @@ static char* pysec_name(Section* sec) {
     if (sec->prop) {
         auto* ps = static_cast<NPySecObj*>(sec->prop->dparam[PROP_PY_INDEX].get<void*>());
         buf[0] = '\0';
-        char* cp = buf + strlen(buf);
         if (ps->name_) {
             Sprintf(buf, "%s", ps->name_);
         } else {
