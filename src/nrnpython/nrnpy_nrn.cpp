@@ -866,19 +866,29 @@ static PyObject* NPySecObj_pt3dstyle_safe(NPySecObj* self, PyObject* args) {
 }
 
 // returns x value at index of 3d list
-static PyObject* NPySecObj_x3d(NPySecObj* self, PyObject* args) {
+static Pt3d* get_pt3d(NPySecObj* self, PyObject* args)
+{
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
     int n, i;
     if (!PyArg_ParseTuple(args, "i", &i)) {
-        return NULL;
+        return nullptr;
     }
     n = sec->npt3d - 1;
     if (i < 0 || i > n) {
         PyErr_SetString(PyExc_Exception, "Arg out of range\n");
-        return NULL;
+        return nullptr;
     }
-    return PyFloat_FromDouble((double) sec->pt3d[i].x);
+    return &sec->pt3d[i];
+}
+
+static PyObject* NPySecObj_x3d(NPySecObj* self,
+                               PyObject* args) {  // returns x value at index of 3d list
+    Pt3d* pt3d = get_pt3d(self, args);
+    if(pt3d == nullptr){
+        return nullptr;
+    }
+    return PyFloat_FromDouble((double) pt3d->x);
 }
 
 static PyObject* NPySecObj_x3d_safe(NPySecObj* self, PyObject* args) {
