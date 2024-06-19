@@ -159,7 +159,7 @@ static PyObject* nrnexec(PyObject* self, PyObject* args) {
         return NULL;
     }
     bool b = hoc_valid_stmt(cmd, 0);
-    return Py_BuildValue("i", b ? 1 : 0);
+    return b ? Py_True : Py_False;
 }
 
 static PyObject* hoc_ac(PyObject* self, PyObject* args) {
@@ -168,7 +168,7 @@ static PyObject* hoc_ac(PyObject* self, PyObject* args) {
 }
 
 static PyMethodDef HocMethods[] = {
-    {"execute", nrnexec, METH_VARARGS, "Execute a hoc command, return 1 on success, 0 on failure."},
+    {"execute", nrnexec, METH_VARARGS, "Execute a hoc command, return True on success, False on failure."},
     {"hoc_ac", hoc_ac, METH_VARARGS, "Get (or set) the scalar hoc_ac_."},
     {NULL, NULL, 0, NULL}};
 
