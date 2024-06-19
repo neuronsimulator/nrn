@@ -160,7 +160,7 @@ stages:
 
     # Jobs to build NEURON installer natively
     - job: 'WindowsInstaller'
-      timeoutInMinutes: 45
+      timeoutInMinutes: 60
       pool:
         vmImage: windows-2019
       variables:
