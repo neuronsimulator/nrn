@@ -40,12 +40,25 @@ template <class F, class... Args>
 static typename convert_cxx_exceptions_trait<F, Args...>::return_type convert_cxx_exceptions(
     F f,
     Args&&... args) {
+    // Same mapping of C++ exceptions to Python errors that pybind11 uses.
     try {
         return f(std::forward<Args>(args)...);
-    } catch (const std::runtime_error& e) {
-        PyErr_SetString(PyExc_RuntimeError, e.what());
+    } catch (const std::bad_alloc& e) {
+        PyErr_SetString(PyExc_MemoryError, e.what());
+    } catch (const std::domain_error& e) {
+        PyErr_SetString(PyExc_ValueError, e.what());
+    } catch (const std::invalid_argument& e) {
+        PyErr_SetString(PyExc_ValueError, e.what());
+    } catch (const std::length_error& e) {
+        PyErr_SetString(PyExc_ValueError, e.what());
+    } catch (const std::out_of_range& e) {
+        PyErr_SetString(PyExc_IndexError, e.what());
+    } catch (const std::range_error& e) {
+        PyErr_SetString(PyExc_ValueError, e.what());
+    } catch (const std::overflow_error& e) {
+        PyErr_SetString(PyExc_OverflowError, e.what());
     } catch (std::exception& e) {
-        PyErr_SetString(PyExc_Exception, e.what());
+        PyErr_SetString(PyExc_RuntimeError, e.what());
     } catch (...) {
         PyErr_SetString(PyExc_Exception, "Unknown C++ exception.");
     }
