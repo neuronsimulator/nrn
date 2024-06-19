@@ -629,6 +629,9 @@ Description:
         For the performance reason and compatibility with GPU execution, either avoid
         the usage of this construct or check alternatives using ``PROTECT`` construct.
 
+.. _verbatim:
+
+.. include:: /nmodl/verbatim.rst
 
 .. _connectingmechanismstogether:
 
@@ -657,8 +660,8 @@ Connecting Mechanisms Together
 
      
 
-Pointer-Communication
-=====================
+Pointer Communication
+~~~~~~~~~~~~~~~~~~~~~
 
 
 Description:
@@ -779,7 +782,3 @@ Description:
     may cause numerical instability. When this happens, 
     merging models into one larger 
     model may eliminate the instability. 
-
-.. _verbatim:
-
-.. include:: /nmodl/verbatim.rst
