@@ -385,7 +385,8 @@ Description:
     with units and are used exactly like normal variables. The user is responsible 
     for setting these pointer variables to actual variables at the 
     hoc interpreter level. Actual variables are normal variables in other 
-    mechanisms, membrane potential, or any hoc variable. See below for how this 
+    mechanisms, membrane potential, or any hoc variable. 
+    See :ref:`below<pointer_communication>` for how this 
     connection is made. If a POINTER variable is ever used without being 
     set to the address of an actual variable, ``NEURON`` may crash with a memory
     reference error, or worse, produce wrong results. Unfortunately the errors 
@@ -715,6 +716,7 @@ Connecting Mechanisms Together
     at different points. 
 
      
+.. _pointer_communication:
 
 Pointer Communication
 ~~~~~~~~~~~~~~~~~~~~~
@@ -726,7 +728,7 @@ Description:
     .. code-block::
         python
 
-        section1(x).mech1.var1 =  section2(x2).mech2.var2 
+        section1(x1).mech1.var1 =  section2(x2).mech2.var2
 
     or the HOC statement
 
@@ -742,6 +744,7 @@ Description:
     are declared within the NEURON block via 
 
     .. code-block::
+        none
 
         NEURON { 
            POINTER var1, var2, ... 
@@ -755,43 +758,38 @@ Description:
     It is essential that the user set up the pointers to point to the correct 
     variables. This is done by first making sure that the proper mechanisms 
     are inserted into the sections and the proper point processes are actually 
-    "located" in a section.
-    
-    In HOC, each POINTER variable that exists should be set up via the command
-    
+    "located" in a section. Then, at the Python/HOC level each POINTER variable 
+    that exists should be set up via the command
+
+    .. code-block::
+        python
+
+        mechanism_object._ref_somepointer = source_obj._ref_varname
+
+    in Python or
+
     .. code-block::
         none
 
-        setpointer pointer, variable 
-   
-    In Python, the :func:`h.setpointer` function is called with a syntax for POINT_PROCESS and SUFFIX (density) mechanisms respectively of
+        	setpointer pointer, variable 
 
-    .. code-block::
-        python
-        
-        from neuron import h, nrn
+    in HOC.
 
-        h.setpointer(_ref_hocvar, 'POINTER_name', point_proces_object)
-        h.setpointer(_ref_hocvar, 'POINTER_name', nrn.Mechanism_object)
- 
-    Note: For a density mechanism, the 'POINTER_name' cannot have the SUFFIX appended. For example if a mechanism with suffix foo has a POINTER bar and you want it to point to h.t use
-
-    .. code-block::
-        python
-
-        h.setpointer(h._ref_t, 'bar', sec(x).foo)
-
-    where pointer and variable have enough implicit/explicit information to 
+    Here mechanism_object (a point process object or a density mechanism) and
+    the other arguments (in Python) or pointer and variable (in HOC)
+    have enough implicit/explicit information to 
     determine their exact segment and mechanism location. For a continuous 
     mechanism, this means the section and location information. For a point 
-    process it means the object. The variable may also be any NEURON variable 
-    or voltage, e.g. ``soma(0.5)._ref_v``. 
-     
+    process it means the object. The reference may also be to any NEURON variable 
+    or voltage, e.g. ``soma(0.5)._ref_v`` in Python. 
+    See ``nrn/share/examples/nrniv/nmodl/(tstpnt1.py and tstpnt2.py)`` for examples of usage. 
+ 
     For example, consider a synapse which requires a presynaptic potential 
     in order to calculate the amount of transmitter release. Assume the 
     declaration in the presynaptic model 
 
     .. code-block::
+        none
 
         NEURON { POINTPROCESS Syn   POINTER vpre } 
 
@@ -801,7 +799,7 @@ Description:
         python
 
         syn = h.Syn(section(0.8)) 
-        h.setpointer(axon(1)._ref_v, 'vpre', syn)
+        syn._ref_vpre = axon(1)._ref_v
 
     in Python or
 
@@ -816,14 +814,13 @@ Description:
     to know the voltage at the distal end of the axon section. 
     As a variation on that example, if one supposed that the synapse 
     needed the presynaptic transmitter concentration (call it :samp:`{tpre}`) calculated 
-    from a point process model called "release" (with object reference 
-    :samp:`{rel}`, say) then the 
-    statement would be 
+    from a point process model called "release" (with object reference :samp:`{rel}`, say)
+    then the statement would be 
 
     .. code-block::
         python
 
-        h.setpointer(rel._ref_ACH_release, 'trpe', syn)
+        syn._ref_tpre = rel._ref_ACH_release
 
     in Python or
 
@@ -836,5 +833,19 @@ Description:
      
     The caveat is that tight coupling between states in different models 
     may cause numerical instability. When this happens, 
-    merging models into one larger 
-    model may eliminate the instability. 
+    merging models into one larger model may eliminate the instability,
+    unless the model is so simple that time 
+    does not appear, such as a passive channel. In that case, ``v`` is normally 
+    chosen as the independent variable. MODL required this statement but NMODL 
+    will implicitly generate one for you.  
+    When currents and ionic potentials are calculated in a particular model they 
+    are declared either as STATE, or ASSIGNED depending on the nature 
+    of the calculation or whether they are important enough to save. If a variable 
+    value needs to persist only between entry and exit of an instance 
+    one may declare it as LOCAL, but in that case the model cannot be vectorized 
+    and different instances cannot be called in parallel. 
+
+    .. note::
+
+        For density mechanisms, one cannot pass in e.g. ``h.hh`` in Python as this raises a TypeError;
+        one can, however, pass in ``nrn.hh`` where ``nrn`` is defined via ``from neuron import nrn``.
