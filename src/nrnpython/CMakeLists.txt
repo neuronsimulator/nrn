@@ -28,6 +28,10 @@ set(NRNPYTHON_FILES_LIST
     rxd_marching_cubes.cpp
     rxd_llgramarea.cpp)
 
+if (MINGW)
+    list(APPEND NRNPYTHON_FILES_LIST nrnpython.def)
+endif()
+
 set(INCLUDE_DIRS
     ..
     ../oc
