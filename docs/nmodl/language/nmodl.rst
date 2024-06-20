@@ -722,23 +722,36 @@ Description:
     However if a procedure is called 
     by the user, and it makes use of any range variables, then the user is 
     responsible for telling the mechanism from what location it should get 
-    its range variable data. This is done in Python with
+    its range variable data. This is done at the Python/HOC level with
 
-    .. code-block::
-        python
+    .. tab:: Python
 
-        h.setdata_mechname(x) 
+        .. code-block::
+            python
 
-    or in HOC with
+            h.setdata_mechname(x) 
 
-    .. code-block::
-        none
+    .. tab:: HOC
 
-      	setdata_mechname(x) 
+        .. code-block::
+            none
 
-    where ``mechname`` is the mechanism name. For range variables one must
-    of course pass in a ``sec=section`` argument in Python (otherwise the so-called
-    currently accessed section, discoverable via h.cas(), is used).
+            setdata_mechname(x) 
+
+    where ``mechname`` is the mechanism name.
+
+    .. tab:: Python
+
+        .. note::
+            For range variables one must of course pass in a ``sec=section`` argument
+            (otherwise the so-called currently accessed section, 
+            discoverable via h.cas(), is used).
+
+    .. tab:: HOC
+
+        .. note::
+            For range variables there must of course be a currently accessed section.
+
     In the case of Point processes, one calls procedures using the object notation 
 
     .. code-block::

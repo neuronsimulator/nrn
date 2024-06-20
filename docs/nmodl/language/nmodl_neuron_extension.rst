@@ -723,19 +723,21 @@ Pointer Communication
 
 
 Description:
-    Basically what is needed is a way to implement the Python statement 
+    Basically what is needed is a way to implement the statement 
 
-    .. code-block::
-        python
+    .. tab:: Python
 
-        section1(x1).mech1.var1 =  section2(x2).mech2.var2
+        .. code-block::
+            python
 
-    or the HOC statement
+            section1(x1).mech1.var1 =  section2(x2).mech2.var2
 
-    .. code-block::
-        none
+    .. tab:: HOC
 
-        section1.var1_mech1(x1) =  section2.var2_mech2(x2) 
+        .. code-block::
+            none
+
+            section1.var1_mech1(x1) =  section2.var2_mech2(x2) 
 
     efficiently from within a mechanism without having to explicitly connect them 
     through assignment at the Python/HOC level everytime the :samp:`{var2}` might change. 
@@ -761,19 +763,19 @@ Description:
     "located" in a section. Then, at the Python/HOC level each POINTER variable 
     that exists should be set up via the command
 
-    .. code-block::
-        python
+    .. tab:: Python
 
-        mechanism_object._ref_somepointer = source_obj._ref_varname
+        .. code-block::
+            python
 
-    in Python or
+            mechanism_object._ref_somepointer = source_obj._ref_varname
 
-    .. code-block::
-        none
+    .. tab:: HOC
 
-        	setpointer pointer, variable 
+        .. code-block::
+            none
 
-    in HOC.
+            setpointer pointer, variable 
 
     Here mechanism_object (a point process object or a density mechanism) and
     the other arguments (in Python) or pointer and variable (in HOC)
@@ -782,8 +784,27 @@ Description:
     mechanism, this means the section and location information. For a point 
     process it means the object. The reference may also be to any NEURON variable 
     or voltage, e.g. ``soma(0.5)._ref_v`` in Python. 
-    See ``nrn/share/examples/nrniv/nmodl/(tstpnt1.py and tstpnt2.py)`` for examples of usage. 
+
+    .. TODO: Replace hard-coded GitHub hyperlinks with a robust way to link to source files.
+
+    .. tab:: Python
+
+        .. note::
+            In ``nrn/share/examples/nrniv/nmodl/``, see
+            `tstpnt1.py <https://github.com/neuronsimulator/nrn/blob/master/share/examples/nrniv/nmodl/tstpnt1.py>`_
+            and 
+            `tstpnt2.py <https://github.com/neuronsimulator/nrn/blob/master/share/examples/nrniv/nmodl/tstpnt2.py>`_
+            for examples of usage.
  
+    .. tab:: HOC
+
+        .. note::
+            In ``nrn/share/examples/nrniv/nmodl/``, see
+            `tstpnt1.hoc <https://github.com/neuronsimulator/nrn/blob/master/share/examples/nrniv/nmodl/tstpnt1.hoc>`_
+            and 
+            `tstpnt2.hoc <https://github.com/neuronsimulator/nrn/blob/master/share/examples/nrniv/nmodl/tstpnt2.hoc>`_
+            for examples of usage.
+
     For example, consider a synapse which requires a presynaptic potential 
     in order to calculate the amount of transmitter release. Assume the 
     declaration in the presynaptic model 
@@ -793,44 +814,46 @@ Description:
 
         NEURON { POINTPROCESS Syn   POINTER vpre } 
 
-    Then 
+    Then
 
-    .. code-block::
-        python
+    .. tab:: Python
 
-        syn = h.Syn(section(0.8)) 
-        syn._ref_vpre = axon(1)._ref_v
+        .. code-block::
+            python
 
-    in Python or
+            syn = h.Syn(section(0.8)) 
+            syn._ref_vpre = axon(1)._ref_v
 
-    .. code-block::
-        none
+    .. tab:: HOC
 
-        objref syn 
-        somedendrite {syn = new Syn(.8)} 
-        setpointer syn.vpre, axon.v(1) 
+        .. code-block::
+            none
 
-    in HOC will allow the ``syn`` object located at ``section(0.8)`` 
+            objref syn 
+            somedendrite {syn = new Syn(.8)} 
+            setpointer syn.vpre, axon.v(1) 
+
+    will allow the ``syn`` object located at ``section(0.8)`` 
     to know the voltage at the distal end of the axon section. 
     As a variation on that example, if one supposed that the synapse 
     needed the presynaptic transmitter concentration (call it :samp:`{tpre}`) calculated 
     from a point process model called "release" (with object reference :samp:`{rel}`, say)
     then the statement would be 
 
-    .. code-block::
-        python
+    .. tab:: Python
 
-        syn._ref_tpre = rel._ref_ACH_release
+        .. code-block::
+            python
 
-    in Python or
+            syn._ref_tpre = rel._ref_ACH_release
 
-    .. code-block::
-        none
+    .. tab:: HOC
 
-        setpointer syn.tpre, rel.AcH_release 
+        .. code-block::
+            none
 
-    in HOC.
-     
+            setpointer syn.tpre, rel.AcH_release 
+
     The caveat is that tight coupling between states in different models 
     may cause numerical instability. When this happens, 
     merging models into one larger model may eliminate the instability,
@@ -845,7 +868,10 @@ Description:
     one may declare it as LOCAL, but in that case the model cannot be vectorized 
     and different instances cannot be called in parallel. 
 
-    .. note::
+    .. tab:: Python
 
-        For density mechanisms, one cannot pass in e.g. ``h.hh`` in Python as this raises a TypeError;
-        one can, however, pass in ``nrn.hh`` where ``nrn`` is defined via ``from neuron import nrn``.
+        .. note::
+
+            For density mechanisms, one cannot pass in e.g. ``h.hh`` as this raises 
+            a TypeError; one can, however, pass in ``nrn.hh`` where ``nrn`` is defined
+            via ``from neuron import nrn``.
