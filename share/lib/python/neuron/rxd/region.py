@@ -10,6 +10,7 @@ import numpy
 from . import geometry as geo
 import weakref
 from . import initializer
+from .geometry import FractionalVolume
 import warnings
 import math
 import ctypes
@@ -887,8 +888,9 @@ class Region(object):
                     f"Error: Region 'secs' must be a list of NEURON sections, {sec} is not a valid NEURON section."
                 )
         self._secs = h.SectionList(self._secs)
-        self.nrn_region = nrn_region
         self.geometry = geometry
+        self._name = name
+        self.nrn_region = nrn_region
 
         if dimension is not None:
             warnings.warn(
@@ -897,7 +899,6 @@ class Region(object):
             import neuron
 
             neuron.rxd.set_solve_type(secs, dimension=dimension)
-        self._name = name
         if dx is not None:
             try:
                 dx = float(dx)
@@ -932,6 +933,14 @@ class Region(object):
                 raise RxDException('nrn_region must be one of: None, "i", "o"')
             else:
                 self._nrn_region = value
+            if (
+                value == "i"
+                and isinstance(self.geometry, FractionalVolume)
+                and self.geometry._surface_fraction == 0
+            ):
+                warnings.warn(
+                    f'{self.name} is in the "i" region with a surface_fraction of 0 and will not have currents added'
+                )
         else:
             raise RxDException("Cannot set nrn_region now; model already instantiated")
 

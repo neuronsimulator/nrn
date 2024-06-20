@@ -44,6 +44,7 @@ using nrn_thread_table_check_t = void (*)(Memb_list*,
                                           std::size_t,
                                           Datum*,
                                           Datum*,
+                                          double*,
                                           NrnThread*,
                                           int,
                                           neuron::model_sorted_token const&);
@@ -84,7 +85,7 @@ struct Memb_func {
     int is_point;
     void* hoc_mech;
     void (*setdata_)(struct Prop*);
-    int* dparam_semantics;                    // for nrncore writing.
+    std::unique_ptr<int[]> dparam_semantics;  // for nrncore writing.
     const std::vector<double>* parm_default;  // for NrnProperty
   private:
     nrn_init_t m_initialize{};

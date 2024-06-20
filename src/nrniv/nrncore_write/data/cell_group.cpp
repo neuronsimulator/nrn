@@ -252,13 +252,12 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
     if (dsize == 0) {
         return;
     }
-    int* dmap = memb_func[di.type].dparam_semantics;
+    int* dmap = memb_func[di.type].dparam_semantics.get();
     assert(dmap);
     // what is the size of the nt._vdata portion needed for a single ml->dparam[i]
     int vdata_size = 0;
     for (int i = 0; i < dsize; ++i) {
-        int* ds = memb_func[di.type].dparam_semantics;
-        if (ds[i] == -4 || ds[i] == -6 || ds[i] == -7 || ds[i] == -11 || ds[i] == 0) {
+        if (dmap[i] == -4 || dmap[i] == -6 || dmap[i] == -7 || dmap[i] == -11 || dmap[i] == 0) {
             ++vdata_size;
         }
     }

@@ -1,3 +1,7 @@
+#ifndef __INTEL_LLVM_COMPILER
+#pragma STDC FENV_ACCESS ON
+#endif
+
 #include <../../nrnconf.h>
 #include "hoc.h"
 #include "hocstr.h"
