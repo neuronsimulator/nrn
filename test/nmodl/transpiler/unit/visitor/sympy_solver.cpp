@@ -2059,6 +2059,28 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
             compare_blocks(reindent_text(result[0]), reindent_text(expected_text));
         }
     }
+    GIVEN("LINEAR solve block with an explicit SOLVEFOR statement") {
+        std::string nmodl_text = R"(
+            STATE {
+                x
+                y
+                z
+            }
+            LINEAR lin SOLVEFOR x, y {
+                ~ 3 * x = v - y
+                ~ x = z * y - 5
+            })";
+        std::string expected_text = R"(
+            LINEAR lin  SOLVEFOR x,y{
+                y = (v+15.0)/(3.0*z+1.0)
+                x = (v*z-5.0)/(3.0*z+1.0)
+            })";
+        THEN("solve analytically") {
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::LINEAR_BLOCK);
+            REQUIRE(reindent_text(result[0]) == reindent_text(expected_text));
+        }
+    }
 }
 
 //=============================================================================

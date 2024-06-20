@@ -61,7 +61,7 @@ class SympySolverVisitor: public AstVisitor {
     void init_block_data(ast::Node* node);
 
     /// construct vector from set of state vars in correct order
-    void init_state_vars_vector();
+    void init_state_vars_vector(const ast::Node* node);
 
     /// replace binary expression with new expression provided as string
     static void replace_diffeq_expression(ast::DiffEqExpression& expr, const std::string& new_expr);
@@ -79,10 +79,12 @@ class SympySolverVisitor: public AstVisitor {
                                       bool linear);
 
     /// solve linear system (for "LINEAR")
-    void solve_linear_system(const std::vector<std::string>& pre_solve_statements = {});
+    void solve_linear_system(const ast::Node& node,
+                             const std::vector<std::string>& pre_solve_statements = {});
 
     /// solve non-linear system (for "derivimplicit", "sparse" and "NONLINEAR")
-    void solve_non_linear_system(const std::vector<std::string>& pre_solve_statements = {});
+    void solve_non_linear_system(const ast::Node& node,
+                                 const std::vector<std::string>& pre_solve_statements = {});
 
     /// return NMODL string version of node, excluding any units
     static std::string to_nmodl_for_sympy(ast::Ast& node) {

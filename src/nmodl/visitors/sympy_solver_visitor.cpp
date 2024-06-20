@@ -52,11 +52,30 @@ void SympySolverVisitor::init_block_data(ast::Node* node) {
     }
 }
 
-void SympySolverVisitor::init_state_vars_vector() {
+void SympySolverVisitor::init_state_vars_vector(const ast::Node* node) {
     state_vars.clear();
     for (const auto& state_var: all_state_vars) {
         if (state_vars_in_block.find(state_var) != state_vars_in_block.cend()) {
             state_vars.push_back(state_var);
+        }
+    }
+
+    // in case we have a SOLVEFOR in the block, we need to set `state_vars` to those instead
+    if (node->is_linear_block()) {
+        const auto& solvefor_vars = dynamic_cast<const ast::LinearBlock*>(node)->get_solvefor();
+        if (!solvefor_vars.empty()) {
+            state_vars.clear();
+            for (const auto& solvefor_var: solvefor_vars) {
+                state_vars.push_back(solvefor_var->get_node_name());
+            }
+        }
+    } else if (node->is_non_linear_block()) {
+        const auto& solvefor_vars = dynamic_cast<const ast::NonLinearBlock*>(node)->get_solvefor();
+        if (!solvefor_vars.empty()) {
+            state_vars.clear();
+            for (const auto& solvefor_var: solvefor_vars) {
+                state_vars.push_back(solvefor_var->get_node_name());
+            }
         }
     }
 }
@@ -283,9 +302,12 @@ void SympySolverVisitor::construct_eigen_solver_block(
 }
 
 
-void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre_solve_statements) {
+void SympySolverVisitor::solve_linear_system(const ast::Node& node,
+                                             const std::vector<std::string>& pre_solve_statements
+
+) {
     // construct ordered vector of state vars used in linear system
-    init_state_vars_vector();
+    init_state_vars_vector(&node);
     // call sympy linear solver
     bool small_system = (eq_system.size() <= SMALL_LINEAR_SYSTEM_MAX_STATES);
     auto solver = pywrap::EmbeddedPythonLoader::get_instance().api().solve_linear_system;
@@ -332,9 +354,10 @@ void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre
 }
 
 void SympySolverVisitor::solve_non_linear_system(
+    const ast::Node& node,
     const std::vector<std::string>& pre_solve_statements) {
     // construct ordered vector of state vars used in non-linear system
-    init_state_vars_vector();
+    init_state_vars_vector(&node);
 
     auto solver = pywrap::EmbeddedPythonLoader::get_instance().api().solve_nonlinear_system;
     auto [solutions, exception_message] = solver(eq_system, state_vars, vars, function_calls);
@@ -535,7 +558,7 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock& node) {
 
         if (solve_method == codegen::naming::SPARSE_METHOD ||
             solve_method == codegen::naming::DERIVIMPLICIT_METHOD) {
-            solve_non_linear_system(pre_solve_statements);
+            solve_non_linear_system(node, pre_solve_statements);
         } else {
             logger->error("SympySolverVisitor :: Solve method {} not supported", solve_method);
         }
@@ -566,7 +589,7 @@ void SympySolverVisitor::visit_linear_block(ast::LinearBlock& node) {
     node.visit_children(*this);
 
     if (eq_system_is_valid && !eq_system.empty()) {
-        solve_linear_system();
+        solve_linear_system(node);
     }
 }
 
@@ -594,7 +617,7 @@ void SympySolverVisitor::visit_non_linear_block(ast::NonLinearBlock& node) {
     node.visit_children(*this);
 
     if (eq_system_is_valid && !eq_system.empty()) {
-        solve_non_linear_system();
+        solve_non_linear_system(node);
     }
 }
 
