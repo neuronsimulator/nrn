@@ -44,6 +44,7 @@ using nrn_thread_table_check_t = void (*)(Memb_list*,
                                           std::size_t,
                                           Datum*,
                                           Datum*,
+                                          double*,
                                           NrnThread*,
                                           int,
                                           neuron::model_sorted_token const&);
