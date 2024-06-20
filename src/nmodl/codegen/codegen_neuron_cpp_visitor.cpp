@@ -173,6 +173,7 @@ void CodegenNeuronCppVisitor::print_check_table_function_prototypes() {
                         {"", "size_t", "", "id"},
                         {"", "Datum*", "", "_ppvar"},
                         {"", "Datum*", "", "_thread"},
+                        {"", "double*", "", "_globals"},
                         {"", "NrnThread*", "", "_nt"},
                         {"", "int", "", "_type"},
                         {"", "const _nrn_model_sorted_token&", "", "_sorted_token"}};
