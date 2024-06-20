@@ -458,32 +458,6 @@ def setup_package():
             )
         )
 
-        logging.info("RX3D compile flags %s" % str(rxd_params))
-
-        extensions += [
-            CyExtension(
-                "neuron.rxd.geometry3d.graphicsPrimitives",
-                ["share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx"],
-                **rxd_params,
-            ),
-            CyExtension(
-                "neuron.rxd.geometry3d.ctng",
-                ["share/lib/python/neuron/rxd/geometry3d/ctng.pyx"],
-                include_dirs=include_dirs,
-                **rxd_params,
-            ),
-            CyExtension(
-                "neuron.rxd.geometry3d.surfaces",
-                [
-                    "share/lib/python/neuron/rxd/geometry3d/surfaces.pyx",
-                    "src/nrnpython/rxd_marching_cubes.cpp",
-                    "src/nrnpython/rxd_llgramarea.cpp",
-                ],
-                include_dirs=include_dirs,
-                **rxd_params,
-            ),
-        ]
-
     logging.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
 
     # package name
