@@ -133,10 +133,7 @@ bool at_time(NrnThread* nt, double te) {
     }
 #endif
     double x = te - 1e-11;
-    if (x <= nt->_t && x > (nt->_t - nt->_dt)) {
-        return true;
-    }
-    return false;
+    return (x <= nt->_t && x > (nt->_t - nt->_dt));
 }
 
 void nrncvode_set_t(double tt) {
