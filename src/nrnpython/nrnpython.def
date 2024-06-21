@@ -1,63 +1,61 @@
-LIBRARY NRNPYTHON
-EXPORTS
-make_time_ptr @1
-ECS_insert @2
-ICS_insert @3
-set_diffusion @4
-set_tortuosity @5
-set_volume_fraction @6
-ics_set_grid_concentrations @7
-ics_set_grid_currents @8
-set_grid_concentrations @9
-set_grid_currents @10
-delete_by_id @11
-ECS_insert @12
-ICS_insert @13
-ICS_insert_inhom @14
-set_diffusion @15
-PyInit_hoc @16
-modl_reg @17
-nrn_hocobj_ptr @18
-nrnpy_set_vec_as_numpy @19
-nrnpy_set_toplevel_callbacks @20
-nrnpy_set_gui_callback @21
-get_plotshape_data @22
-nrnpy_vec_math_register @23
-nrnpy_rvp_pyobj_callback_register @24
-nrnpython_reg_real @25
-nrn_hocobj_ptr @26
-rxd_set_no_diffusion @27
-free_curr_ptrs @28
-free_conc_ptrs @29
-rxd_setup_curr_ptrs @30
-rxd_setup_conc_ptrs @31
-rxd_include_node_flux3D @32
-rxd_include_node_flux1D @33
-rxd_set_euler_matrix @34
-set_setup @35
-set_initialize @36
-set_setup_matrices @37
-set_setup_units @38
-setup_currents @39
-rxd_nonvint_block @40
-register_rate @41
-clear_rates @42
-species_atolscale @43
-remove_species_atolscale @44
-setup_solver @45
-set_num_threads @46
-get_num_threads @47
-scatter_concentrations @48
-ics_register_reaction @49
-ecs_register_reaction @50
-scatter_concentrations @51
-set_hybrid_data @52
-llgramarea @53
-llpipedfromoriginvolume @54
-find_triangles @55
-factorial @56
-degrees @57
-radians @58
-log1p @59
-vtrap @60
-nrnpy_hoc @61
+make_time_ptr
+ECS_insert
+ICS_insert
+set_diffusion
+set_tortuosity
+set_volume_fraction
+ics_set_grid_concentrations
+ics_set_grid_currents
+set_grid_concentrations
+set_grid_currents
+delete_by_id
+ECS_insert
+ICS_insert
+ICS_insert_inhom
+set_diffusion
+PyInit_hoc
+modl_reg
+nrn_hocobj_ptr
+nrnpy_set_vec_as_numpy
+nrnpy_set_toplevel_callbacks
+nrnpy_set_gui_callback
+get_plotshape_data
+nrnpy_vec_math_register
+nrnpy_rvp_pyobj_callback_register
+nrnpython_reg_real
+nrn_hocobj_ptr
+rxd_set_no_diffusion
+free_curr_ptrs
+free_conc_ptrs
+rxd_setup_curr_ptrs
+rxd_setup_conc_ptrs
+rxd_include_node_flux3D
+rxd_include_node_flux1D
+rxd_set_euler_matrix
+set_setup
+set_initialize
+set_setup_matrices
+set_setup_units
+setup_currents
+rxd_nonvint_block
+register_rate
+clear_rates
+species_atolscale
+remove_species_atolscale
+setup_solver
+set_num_threads
+get_num_threads
+scatter_concentrations
+ics_register_reaction
+ecs_register_reaction
+scatter_concentrations
+set_hybrid_data
+llgramarea
+llpipedfromoriginvolume
+find_triangles
+factorial
+degrees
+radians
+log1p
+vtrap
+nrnpy_hoc
