@@ -707,9 +707,6 @@ void Cvode::cvode_constructor() {
     ctd_ = nullptr;
     tqitem_ = nullptr;
     mem_ = nullptr;
-#if NEOSIMorNCS
-    neosim_self_events_ = nullptr;
-#endif
     initialize_ = false;
     can_retreat_ = false;
     tstop_begin_ = 0.;
@@ -838,11 +835,6 @@ void Cvode::atolvec_alloc(int i) {
 }
 
 Cvode::~Cvode() {
-#if NEOSIMorNCS
-    if (neosim_self_events_) {
-        delete neosim_self_events_;
-    }
-#endif
     if (daspk_) {
         delete daspk_;
     }

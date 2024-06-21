@@ -1,11 +1,14 @@
 #include "nrn_ansi.h"
 #include "nrnpython.h"
+#include <exception>
+#include <stdexcept>
 #include <structmember.h>
 #include <InterViews/resource.h>
 #include "nrniv_mf.h"
 #include <nrnoc2iv.h>
 #include "nrnpy.h"
 #include "nrnpy_utils.h"
+#include "convert_cxx_exceptions.hpp"
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
 #endif
@@ -32,6 +35,7 @@ extern int has_membrane(char*, Section*);
 // used to be static in nrnpy_hoc.cpp
 extern int hocobj_pushargs(PyObject*, std::vector<char*>&);
 extern void hocobj_pushargs_free_strings(std::vector<char*>&);
+
 
 typedef struct {
     PyObject_HEAD
@@ -119,7 +123,7 @@ extern void nrn_diam_change(Section*);
 extern void nrn_length_change(Section*, double);
 extern void mech_insert1(Section*, int);
 extern void mech_uninsert1(Section*, Symbol*);
-extern PyObject* nrnpy_forall(PyObject* self, PyObject* args);
+extern PyObject* nrnpy_forall_safe(PyObject* self, PyObject* args);
 static void nrnpy_reg_mech(int);
 extern void (*nrnpy_reg_mech_p_)(int);
 static int ob_is_seg(Object*);
@@ -201,6 +205,10 @@ static int NPySecObj_contains(PyObject* sec, PyObject* obj) {
     return NpySObj_contains(sec, obj, "sec");
 }
 
+static int NPySecObj_contains_safe(PyObject* sec, PyObject* obj) {
+    return nrn::convert_cxx_exceptions(NPySecObj_contains, sec, obj);
+}
+
 static int pysec_cell_equals(Section* sec, Object* obj) {
     if (auto* pv = sec->prop->dparam[PROP_PY_INDEX].get<void*>(); sec->prop && pv) {
         PyObject* cell_weakref = static_cast<NPySecObj*>(pv)->cell_weakref_;
@@ -237,10 +245,21 @@ static void NPySecObj_dealloc(NPySecObj* self) {
     ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
 }
 
+static void NPySecObj_dealloc_safe(NPySecObj* self) {
+    // Don't wrap because it must not fail.
+    NPySecObj_dealloc(self);
+}
+
+
 static void NPyAllSegOfSecIter_dealloc(NPyAllSegOfSecIter* self) {
     // printf("NPyAllSegOfSecIter_dealloc %p %s\n", self, secname(self->pysec_->sec_));
     Py_XDECREF(self->pysec_);
     ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+}
+
+static void NPyAllSegOfSecIter_dealloc_safe(NPyAllSegOfSecIter* self) {
+    // No wrapping, because it must not throw.
+    NPyAllSegOfSecIter_dealloc(self);
 }
 
 static void NPySegOfSecIter_dealloc(NPySegOfSecIter* self) {
@@ -249,10 +268,20 @@ static void NPySegOfSecIter_dealloc(NPySegOfSecIter* self) {
     ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
 }
 
+static void NPySegOfSecIter_dealloc_safe(NPySegOfSecIter* self) {
+    // Not wrapped because it must not throw.
+    NPySegOfSecIter_dealloc(self);
+}
+
 static void NPySegObj_dealloc(NPySegObj* self) {
     // printf("NPySegObj_dealloc %p\n", self);
     Py_XDECREF(self->pysec_);
     ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+}
+
+static void NPySegObj_dealloc_safe(NPySegObj* self) {
+    // Not wrapped because it must not throw exceptions.
+    NPySegObj_dealloc(self);
 }
 
 static void NPyRangeVar_dealloc(NPyRangeVar* self) {
@@ -261,12 +290,20 @@ static void NPyRangeVar_dealloc(NPyRangeVar* self) {
     ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
 }
 
+static void NPyRangeVar_dealloc_safe(NPyRangeVar* self) {
+    NPyRangeVar_dealloc(self);
+}
+
 static void NPyMechObj_dealloc(NPyMechObj* self) {
     // printf("NPyMechObj_dealloc %p %s\n", self, self->ob_type->tp_name);
     Py_XDECREF(self->pyseg_);
     // Must manually call destructor since it was manually constructed in new_pymechobj wrapper
     self->prop_id_.~non_owning_identifier_without_container();
     ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+}
+
+static void NPyMechObj_dealloc_safe(NPyMechObj* self) {
+    NPyMechObj_dealloc(self);
 }
 
 static NPyMechObj* new_pymechobj() {
@@ -301,16 +338,28 @@ static void NPyMechFunc_dealloc(NPyMechFunc* self) {
     ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
 }
 
+static void NPyMechFunc_dealloc_safe(NPyMechFunc* self) {
+    NPyMechFunc_dealloc(self);
+}
+
 static void NPyMechOfSegIter_dealloc(NPyMechOfSegIter* self) {
     // printf("NPyMechOfSegIter_dealloc %p %s\n", self, self->ob_type->tp_name);
     Py_XDECREF(self->pymech_);
     ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
 }
 
+static void NPyMechOfSegIter_dealloc_safe(NPyMechOfSegIter* self) {
+    NPyMechOfSegIter_dealloc(self);
+}
+
 static void NPyVarOfMechIter_dealloc(NPyVarOfMechIter* self) {
     // printf("NPyVarOfMechIter_dealloc %p %s\n", self, self->ob_type->tp_name);
     Py_XDECREF(self->pymech_);
     ((PyObject*) self)->ob_type->tp_free((PyObject*) self);
+}
+
+static void NPyVarOfMechIter_dealloc_safe(NPyVarOfMechIter* self) {
+    NPyVarOfMechIter_dealloc(self);
 }
 
 // A new (or inited) python Section object with no arg creates a nrnoc section
@@ -379,6 +428,10 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
     return 0;
 }
 
+static int NPySecObj_init_safe(NPySecObj* self, PyObject* args, PyObject* kwds) {
+    return nrn::convert_cxx_exceptions(NPySecObj_init, self, args, kwds);
+}
+
 static int NPyAllSegOfSecIter_init(NPyAllSegOfSecIter* self, PyObject* args, PyObject* kwds) {
     NPySecObj* pysec;
     // printf("NPyAllSegOfSecIter_init %p %p\n", self, self->sec_);
@@ -391,6 +444,10 @@ static int NPyAllSegOfSecIter_init(NPyAllSegOfSecIter* self, PyObject* args, PyO
         Py_INCREF(pysec);
     }
     return 0;
+}
+
+static int NPyAllSegOfSecIter_init_safe(NPyAllSegOfSecIter* self, PyObject* args, PyObject* kwds) {
+    return nrn::convert_cxx_exceptions(NPyAllSegOfSecIter_init, self, args, kwds);
 }
 
 PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
@@ -406,6 +463,10 @@ PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
     return (PyObject*) self;
 }
 
+PyObject* NPySecObj_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+    return nrn::convert_cxx_exceptions(NPySecObj_new, type, args, kwds);
+}
+
 PyObject* NPyAllSegOfSecIter_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
     NPyAllSegOfSecIter* self;
     self = (NPyAllSegOfSecIter*) type->tp_alloc(type, 0);
@@ -419,8 +480,16 @@ PyObject* NPyAllSegOfSecIter_new(PyTypeObject* type, PyObject* args, PyObject* k
     return (PyObject*) self;
 }
 
+PyObject* NPyAllSegOfSecIter_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+    return nrn::convert_cxx_exceptions(NPyAllSegOfSecIter_new, type, args, kwds);
+}
+
 PyObject* nrnpy_newsecobj(PyObject* self, PyObject* args, PyObject* kwds) {
     return NPySecObj_new(psection_type, args, kwds);
+}
+
+PyObject* nrnpy_newsecobj_safe(PyObject* self, PyObject* args, PyObject* kwds) {
+    return nrn::convert_cxx_exceptions(nrnpy_newsecobj, self, args, kwds);
 }
 
 static PyObject* NPySegObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
@@ -447,6 +516,11 @@ static PyObject* NPySegObj_new(PyTypeObject* type, PyObject* args, PyObject* kwd
     return (PyObject*) self;
 }
 
+static PyObject* NPySegObj_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+    return nrn::convert_cxx_exceptions(NPySegObj_new, type, args, kwds);
+}
+
+
 static PyObject* NPyMechObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
     NPySegObj* pyseg;
     if (!PyArg_ParseTuple(args, "O!", psegment_type, &pyseg)) {
@@ -464,9 +538,17 @@ static PyObject* NPyMechObj_new(PyTypeObject* type, PyObject* args, PyObject* kw
     return (PyObject*) self;
 }
 
+static PyObject* NPyMechObj_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+    return nrn::convert_cxx_exceptions(NPyMechObj_new, type, args, kwds);
+}
+
 static int NPySegObj_contains(PyObject* segment, PyObject* obj) {
     /* report that we contain the object if it has a .segment that is equal to ourselves */
     return NpySObj_contains(segment, obj, "segment");
+}
+
+static int NPySegObj_contains_safe(PyObject* segment, PyObject* obj) {
+    return nrn::convert_cxx_exceptions(NPySegObj_contains, segment, obj);
 }
 
 static PyObject* NPyRangeVar_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
@@ -479,6 +561,10 @@ static PyObject* NPyRangeVar_new(PyTypeObject* type, PyObject* args, PyObject* k
         self->attr_from_sec_ = 0;
     }
     return (PyObject*) self;
+}
+
+static PyObject* NPyRangeVar_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+    return nrn::convert_cxx_exceptions(NPyRangeVar_new, type, args, kwds);
 }
 
 static int NPySegObj_init(NPySegObj* self, PyObject* args, PyObject* kwds) {
@@ -502,6 +588,10 @@ static int NPySegObj_init(NPySegObj* self, PyObject* args, PyObject* kwds) {
     self->pysec_ = pysec;
     self->x_ = x;
     return 0;
+}
+
+static int NPySegObj_init_safe(NPySegObj* self, PyObject* args, PyObject* kwds) {
+    return nrn::convert_cxx_exceptions(NPySegObj_init, self, args, kwds);
 }
 
 static int ob_is_seg(Object* o) {
@@ -603,8 +693,16 @@ static int NPyMechObj_init(NPyMechObj* self, PyObject* args, PyObject* kwds) {
     return 0;
 }
 
+static int NPyMechObj_init_safe(NPyMechObj* self, PyObject* args, PyObject* kwds) {
+    return nrn::convert_cxx_exceptions(NPyMechObj_init, self, args, kwds);
+}
+
 static int NPyRangeVar_init(NPyRangeVar* self, PyObject* args, PyObject* kwds) {
     return 0;
+}
+
+static int NPyRangeVar_init_safe(NPyRangeVar* self, PyObject* args, PyObject* kwds) {
+    return nrn::convert_cxx_exceptions(NPyRangeVar_init, self, args, kwds);
 }
 
 static PyObject* NPySecObj_name(NPySecObj* self) {
@@ -613,9 +711,17 @@ static PyObject* NPySecObj_name(NPySecObj* self) {
     return result;
 }
 
+static PyObject* NPySecObj_name_safe(NPySecObj* self) {
+    return nrn::convert_cxx_exceptions(NPySecObj_name, self);
+}
+
 static PyObject* NPySecObj_n3d(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
     return PyInt_FromLong(self->sec_->npt3d);
+}
+
+static PyObject* NPySecObj_n3d_safe(NPySecObj* self) {
+    return nrn::convert_cxx_exceptions(NPySecObj_n3d, self);
 }
 
 static PyObject* NPySecObj_pt3dremove(NPySecObj* self, PyObject* args) {
@@ -652,6 +758,10 @@ static PyObject* NPySecObj_pt3dclear(NPySecObj* self, PyObject* args) {
     return PyInt_FromLong(sec->pt3d_bsize);
 }
 
+static PyObject* NPySecObj_pt3dclear_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_pt3dclear, self, args);
+}
+
 static PyObject* NPySecObj_pt3dchange(NPySecObj* self, PyObject* args) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
@@ -683,6 +793,10 @@ static PyObject* NPySecObj_pt3dchange(NPySecObj* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
+static PyObject* NPySecObj_pt3dchange_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_pt3dchange, self, args);
+}
+
 static PyObject* NPySecObj_pt3dinsert(NPySecObj* self, PyObject* args) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
@@ -699,6 +813,10 @@ static PyObject* NPySecObj_pt3dinsert(NPySecObj* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
+static PyObject* NPySecObj_pt3dinsert_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_pt3dinsert, self, args);
+}
+
 static PyObject* NPySecObj_pt3dadd(NPySecObj* self, PyObject* args) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
@@ -709,6 +827,10 @@ static PyObject* NPySecObj_pt3dadd(NPySecObj* self, PyObject* args) {
     }
     stor_pt3d(sec, x, y, z, d);
     Py_RETURN_NONE;
+}
+
+static PyObject* NPySecObj_pt3dadd_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_pt3dadd, self, args);
 }
 
 static PyObject* NPySecObj_pt3dstyle(NPySecObj* self, PyObject* args) {
@@ -748,8 +870,12 @@ static PyObject* NPySecObj_pt3dstyle(NPySecObj* self, PyObject* args) {
     Py_RETURN_FALSE;
 }
 
-static PyObject* NPySecObj_x3d(NPySecObj* self,
-                               PyObject* args) {  // returns x value at index of 3d list
+static PyObject* NPySecObj_pt3dstyle_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_pt3dstyle, self, args);
+}
+
+// returns x value at index of 3d list
+static PyObject* NPySecObj_x3d(NPySecObj* self, PyObject* args) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
     int n, i;
@@ -762,6 +888,10 @@ static PyObject* NPySecObj_x3d(NPySecObj* self,
         return NULL;
     }
     return PyFloat_FromDouble((double) sec->pt3d[i].x);
+}
+
+static PyObject* NPySecObj_x3d_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_x3d, self, args);
 }
 
 static PyObject* NPySecObj_y3d(NPySecObj* self,
@@ -780,6 +910,10 @@ static PyObject* NPySecObj_y3d(NPySecObj* self,
     return PyFloat_FromDouble((double) sec->pt3d[i].y);
 }
 
+static PyObject* NPySecObj_y3d_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_y3d, self, args);
+}
+
 static PyObject* NPySecObj_z3d(NPySecObj* self,
                                PyObject* args) {  // returns z value at index of 3d list
     Section* sec = self->sec_;
@@ -796,9 +930,12 @@ static PyObject* NPySecObj_z3d(NPySecObj* self,
     return PyFloat_FromDouble((double) sec->pt3d[i].z);
 }
 
-static PyObject* NPySecObj_arc3d(NPySecObj* self,
-                                 PyObject* args) {  // returns arc position value at index of 3d
-                                                    // list
+static PyObject* NPySecObj_z3d_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_z3d, self, args);
+}
+
+// returns arc position value at index of 3d list
+static PyObject* NPySecObj_arc3d(NPySecObj* self, PyObject* args) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
     int n, i;
@@ -811,6 +948,10 @@ static PyObject* NPySecObj_arc3d(NPySecObj* self,
         return NULL;
     }
     return PyFloat_FromDouble((double) sec->pt3d[i].arc);
+}
+
+static PyObject* NPySecObj_arc3d_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_arc3d, self, args);
 }
 
 static PyObject* NPySecObj_diam3d(NPySecObj* self,
@@ -829,9 +970,12 @@ static PyObject* NPySecObj_diam3d(NPySecObj* self,
     return PyFloat_FromDouble((double) fabs(sec->pt3d[i].d));
 }
 
-static PyObject* NPySecObj_spine3d(NPySecObj* self,
-                                   PyObject* args) {  // returns True/False depending on if spine
-                                                      // present
+static PyObject* NPySecObj_diam3d_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_diam3d, self, args);
+}
+
+// returns True/False depending on if spine present
+static PyObject* NPySecObj_spine3d(NPySecObj* self, PyObject* args) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
     int n, i;
@@ -849,12 +993,20 @@ static PyObject* NPySecObj_spine3d(NPySecObj* self,
     Py_RETURN_FALSE;
 }
 
+static PyObject* NPySecObj_spine3d_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_spine3d, self, args);
+}
+
 static PyObject* pysec_repr(PyObject* p) {
     NPySecObj* psec = (NPySecObj*) p;
     if (psec->sec_ && psec->sec_->prop) {
         return NPySecObj_name(psec);
     }
     return PyString_FromString("<deleted section>");
+}
+
+static PyObject* pysec_repr_safe(PyObject* p) {
+    return nrn::convert_cxx_exceptions(pysec_repr, p);
 }
 
 static PyObject* pyseg_repr(PyObject* p) {
@@ -871,12 +1023,20 @@ static PyObject* pyseg_repr(PyObject* p) {
     return PyString_FromString("<segment of deleted section>");
 }
 
+static PyObject* pyseg_repr_safe(PyObject* p) {
+    return nrn::convert_cxx_exceptions(pyseg_repr, p);
+}
+
 static PyObject* hoc_internal_name(NPySecObj* self) {
     PyObject* result;
     char buf[256];
     Sprintf(buf, "__nrnsec_%p", self->sec_);
     result = PyString_FromString(buf);
     return result;
+}
+
+static PyObject* hoc_internal_name_safe(NPySecObj* self) {
+    return nrn::convert_cxx_exceptions(hoc_internal_name, self);
 }
 
 static PyObject* nrnpy_psection;
@@ -898,6 +1058,10 @@ static PyObject* nrnpy_set_psection(PyObject* self, PyObject* args) {
     return po;
 }
 
+static PyObject* nrnpy_set_psection_safe(PyObject* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(nrnpy_set_psection, self, args);
+}
+
 static PyObject* NPySecObj_psection(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
     if (nrnpy_psection) {
@@ -910,12 +1074,20 @@ static PyObject* NPySecObj_psection(NPySecObj* self) {
     return Py_None;
 }
 
+static PyObject* NPySecObj_psection_safe(NPySecObj* self) {
+    return nrn::convert_cxx_exceptions(NPySecObj_psection, self);
+}
+
 static PyObject* is_pysec(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
     if (self->sec_->prop && self->sec_->prop->dparam[PROP_PY_INDEX].get<void*>()) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
+}
+
+static PyObject* is_pysec_safe(NPySecObj* self) {
+    return nrn::convert_cxx_exceptions(is_pysec, self);
 }
 
 NPySecObj* newpysechelp(Section* sec) {
@@ -954,6 +1126,10 @@ static PyObject* pysec_disconnect(NPySecObj* self) {
     return Py_None;
 }
 
+static PyObject* pysec_disconnect_safe(NPySecObj* self) {
+    return nrn::convert_cxx_exceptions(pysec_disconnect, self);
+}
+
 static PyObject* pysec_parentseg(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
     Section* psec = self->sec_->parentsec;
@@ -963,6 +1139,10 @@ static PyObject* pysec_parentseg(NPySecObj* self) {
     }
     double x = nrn_connection_position(self->sec_);
     return newpyseghelp(psec, x);
+}
+
+static PyObject* pysec_parentseg_safe(NPySecObj* self) {
+    return nrn::convert_cxx_exceptions(pysec_parentseg, self);
 }
 
 static PyObject* pysec_trueparentseg(NPySecObj* self) {
@@ -989,10 +1169,17 @@ static PyObject* pysec_trueparentseg(NPySecObj* self) {
     return newpyseghelp(psec, x);
 }
 
+static PyObject* pysec_trueparentseg_safe(NPySecObj* self) {
+    return nrn::convert_cxx_exceptions(pysec_trueparentseg, self);
+}
+
 static PyObject* pysec_orientation(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
     double x = nrn_section_orientation(self->sec_);
     return Py_BuildValue("d", x);
+}
+static PyObject* pysec_orientation_safe(NPySecObj* self) {
+    return nrn::convert_cxx_exceptions(pysec_orientation, self);
 }
 
 static bool lappendsec(PyObject* const sl, Section* const s) {
@@ -1026,6 +1213,10 @@ static PyObject* pysec_children(NPySecObj* const self) {
     return pysec_children1(result, sec);
 }
 
+static PyObject* pysec_children_safe(NPySecObj* const self) {
+    return nrn::convert_cxx_exceptions(pysec_children, self);
+}
+
 static PyObject* pysec_subtree1(PyObject* const sl, Section* const sec) {
     if (!lappendsec(sl, sec)) {
         return NULL;
@@ -1048,6 +1239,10 @@ static PyObject* pysec_subtree(NPySecObj* const self) {
     return pysec_subtree1(result, sec);
 }
 
+static PyObject* pysec_subtree_safe(NPySecObj* const self) {
+    return nrn::convert_cxx_exceptions(pysec_subtree, self);
+}
+
 static PyObject* pysec_wholetree(NPySecObj* const self) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
@@ -1059,6 +1254,10 @@ static PyObject* pysec_wholetree(NPySecObj* const self) {
     for (s = sec; s->parentsec; s = s->parentsec) {
     }
     return pysec_subtree1(result, s);
+}
+
+static PyObject* pysec_wholetree_safe(NPySecObj* const self) {
+    return nrn::convert_cxx_exceptions(pysec_wholetree, self);
 }
 
 static PyObject* pysec2cell(NPySecObj* self) {
@@ -1075,13 +1274,25 @@ static PyObject* pysec2cell(NPySecObj* self) {
     return result;
 }
 
+static PyObject* pysec2cell_safe(NPySecObj* self) {
+    return nrn::convert_cxx_exceptions(pysec2cell, self);
+}
+
 static long pysec_hash(PyObject* self) {
     return castptr2long((NPySecObj*) self)->sec_;
+}
+
+static long pysec_hash_safe(PyObject* self) {
+    return nrn::convert_cxx_exceptions(pysec_hash, self);
 }
 
 static long pyseg_hash(PyObject* self) {
     NPySegObj* seg = (NPySegObj*) self;
     return castptr2long node_exact(seg->pysec_->sec_, seg->x_);
+}
+
+static long pyseg_hash_safe(PyObject* self) {
+    return nrn::convert_cxx_exceptions(pyseg_hash, self);
 }
 
 static PyObject* pyseg_richcmp(NPySegObj* self, PyObject* other, int op) {
@@ -1096,6 +1307,11 @@ static PyObject* pyseg_richcmp(NPySegObj* self, PyObject* other, int op) {
     }
     return nrn_ptr_richcmp(self_ptr, other_ptr, op);
 }
+
+static PyObject* pyseg_richcmp_safe(NPySegObj* self, PyObject* other, int op) {
+    return nrn::convert_cxx_exceptions(pyseg_richcmp, self, other, op);
+}
+
 
 static PyObject* pysec_richcmp(NPySecObj* self, PyObject* other, int op) {
     PyObject* pysec;
@@ -1115,6 +1331,10 @@ static PyObject* pysec_richcmp(NPySecObj* self, PyObject* other, int op) {
     return Py_NotImplemented;
 }
 
+static PyObject* pysec_richcmp_safe(NPySecObj* self, PyObject* other, int op) {
+    return nrn::convert_cxx_exceptions(pysec_richcmp, self, other, op);
+}
+
 static PyObject* pysec_same(NPySecObj* self, PyObject* args) {
     PyObject* pysec;
     if (PyArg_ParseTuple(args, "O", &pysec)) {
@@ -1125,6 +1345,10 @@ static PyObject* pysec_same(NPySecObj* self, PyObject* args) {
         }
     }
     Py_RETURN_FALSE;
+}
+
+static PyObject* pysec_same_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(pysec_same, self, args);
 }
 
 static PyObject* NPyMechObj_name(NPyMechObj* self) {
@@ -1141,6 +1365,10 @@ static PyObject* NPyMechObj_name(NPyMechObj* self) {
     return result;
 }
 
+static PyObject* NPyMechObj_name_safe(NPyMechObj* self) {
+    return nrn::convert_cxx_exceptions(NPyMechObj_name, self);
+}
+
 static PyObject* NPyMechFunc_name(NPyMechFunc* self) {
     PyObject* result = NULL;
     std::string s = memb_func[self->pymech_->type_].sym->name;
@@ -1148,6 +1376,10 @@ static PyObject* NPyMechFunc_name(NPyMechFunc* self) {
     s += self->f_->name;
     result = PyString_FromString(s.c_str());
     return result;
+}
+
+static PyObject* NPyMechFunc_name_safe(NPyMechFunc* self) {
+    return nrn::convert_cxx_exceptions(NPyMechFunc_name, self);
 }
 
 static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
@@ -1176,12 +1408,20 @@ static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
     return result;
 }
 
+static PyObject* NPyMechFunc_call_safe(NPyMechFunc* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPyMechFunc_call, self, args);
+}
+
 static PyObject* NPyMechObj_is_ion(NPyMechObj* self) {
     CHECK_PROP_INVALID(self->prop_id_);
     if (nrn_is_ion(self->type_)) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
+}
+
+static PyObject* NPyMechObj_is_ion_safe(NPyMechObj* self) {
+    return nrn::convert_cxx_exceptions(NPyMechObj_is_ion, self);
 }
 
 static PyObject* NPyMechObj_segment(NPyMechObj* self) {
@@ -1194,6 +1434,10 @@ static PyObject* NPyMechObj_segment(NPyMechObj* self) {
     return result;
 }
 
+static PyObject* NPyMechObj_segment_safe(NPyMechObj* self) {
+    return nrn::convert_cxx_exceptions(NPyMechObj_segment, self);
+}
+
 static PyObject* NPyMechFunc_mech(NPyMechFunc* self) {
     PyObject* result = NULL;
     if (self->pymech_) {
@@ -1204,14 +1448,26 @@ static PyObject* NPyMechFunc_mech(NPyMechFunc* self) {
     return result;
 }
 
+static PyObject* NPyMechFunc_mech_safe(NPyMechFunc* self) {
+    return nrn::convert_cxx_exceptions(NPyMechFunc_mech, self);
+}
+
 static PyObject* pymech_repr(PyObject* p) {
     NPyMechObj* pymech = (NPyMechObj*) p;
     return NPyMechObj_name(pymech);
 }
 
+static PyObject* pymech_repr_safe(PyObject* p) {
+    return nrn::convert_cxx_exceptions(pymech_repr, p);
+}
+
 static PyObject* pymechfunc_repr(PyObject* p) {
     NPyMechFunc* pyfunc = (NPyMechFunc*) p;
     return NPyMechFunc_name(pyfunc);
+}
+
+static PyObject* pymechfunc_repr_safe(PyObject* p) {
+    return nrn::convert_cxx_exceptions(pymechfunc_repr, p);
 }
 
 static PyObject* NPyRangeVar_name(NPyRangeVar* self) {
@@ -1231,6 +1487,10 @@ static PyObject* NPyRangeVar_name(NPyRangeVar* self) {
     return result;
 }
 
+static PyObject* NPyRangeVar_name_safe(NPyRangeVar* self) {
+    return nrn::convert_cxx_exceptions(NPyRangeVar_name, self);
+}
+
 static PyObject* NPyRangeVar_mech(NPyRangeVar* self) {
     CHECK_SEC_INVALID(self->pymech_->pyseg_->pysec_->sec_);
     PyObject* result = NULL;
@@ -1239,6 +1499,10 @@ static PyObject* NPyRangeVar_mech(NPyRangeVar* self) {
         Py_INCREF(result);
     }
     return result;
+}
+
+static PyObject* NPyRangeVar_mech_safe(NPyRangeVar* self) {
+    return nrn::convert_cxx_exceptions(NPyRangeVar_mech, self);
 }
 
 static PyObject* NPySecObj_connect(NPySecObj* self, PyObject* args) {
@@ -1286,6 +1550,10 @@ static PyObject* NPySecObj_connect(NPySecObj* self, PyObject* args) {
     return (PyObject*) self;
 }
 
+static PyObject* NPySecObj_connect_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_connect, self, args);
+}
+
 static PyObject* NPySecObj_insert(NPySecObj* self, PyObject* args) {
     CHECK_SEC_INVALID(self->sec_);
     char* tname;
@@ -1331,6 +1599,10 @@ static PyObject* NPySecObj_insert(NPySecObj* self, PyObject* args) {
     return (PyObject*) self;
 }
 
+static PyObject* NPySecObj_insert_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_insert, self, args);
+}
+
 static PyObject* NPySecObj_uninsert(NPySecObj* self, PyObject* args) {
     CHECK_SEC_INVALID(self->sec_);
     char* tname;
@@ -1355,6 +1627,10 @@ static PyObject* NPySecObj_uninsert(NPySecObj* self, PyObject* args) {
     return (PyObject*) self;
 }
 
+static PyObject* NPySecObj_uninsert_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_uninsert, self, args);
+}
+
 static PyObject* NPySecObj_has_membrane(NPySecObj* self, PyObject* args) {
     CHECK_SEC_INVALID(self->sec_);
     char* mechanism_name;
@@ -1365,6 +1641,10 @@ static PyObject* NPySecObj_has_membrane(NPySecObj* self, PyObject* args) {
     result = has_membrane(mechanism_name, self->sec_) ? Py_True : Py_False;
     Py_XINCREF(result);
     return result;
+}
+
+static PyObject* NPySecObj_has_membrane_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_has_membrane, self, args);
 }
 
 PyObject* nrnpy_pushsec(PyObject* sec) {
@@ -1382,6 +1662,10 @@ static PyObject* NPySecObj_push(NPySecObj* self, PyObject* args) {
     return (PyObject*) self;
 }
 
+static PyObject* NPySecObj_push_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_push, self, args);
+}
+
 static PyObject* seg_of_section_iter(NPySecObj* self) {  // iterates over segments
     CHECK_SEC_INVALID(self->sec_);
     // printf("section_iter\n");
@@ -1397,6 +1681,10 @@ static PyObject* seg_of_section_iter(NPySecObj* self) {  // iterates over segmen
     return (PyObject*) segiter;
 }
 
+static PyObject* seg_of_section_iter_safe(NPySecObj* self) {  // iterates over segments
+    return nrn::convert_cxx_exceptions(seg_of_section_iter, self);
+}
+
 static PyObject* allseg(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
     // printf("allseg\n");
@@ -1407,10 +1695,18 @@ static PyObject* allseg(NPySecObj* self) {
     return (PyObject*) ai;
 }
 
+static PyObject* allseg_safe(NPySecObj* self) {
+    return nrn::convert_cxx_exceptions(allseg, self);
+}
+
 static PyObject* allseg_of_sec_iter(NPyAllSegOfSecIter* self) {
     Py_INCREF(self);
     self->allseg_iter_ = -1;
     return (PyObject*) self;
+}
+
+static PyObject* allseg_of_sec_iter_safe(NPyAllSegOfSecIter* self) {
+    return nrn::convert_cxx_exceptions(allseg_of_sec_iter, self);
 }
 
 static PyObject* allseg_of_sec_next(NPyAllSegOfSecIter* self) {
@@ -1438,6 +1734,10 @@ static PyObject* allseg_of_sec_next(NPyAllSegOfSecIter* self) {
     return (PyObject*) seg;
 }
 
+static PyObject* allseg_of_sec_next_safe(NPyAllSegOfSecIter* self) {
+    return nrn::convert_cxx_exceptions(allseg_of_sec_next, self);
+}
+
 static PyObject* seg_of_sec_next(NPySegOfSecIter* self) {
     NPySegObj* seg;
     int n1 = self->pysec_->sec_->nnode - 1;
@@ -1457,6 +1757,10 @@ static PyObject* seg_of_sec_next(NPySegOfSecIter* self) {
     return (PyObject*) seg;
 }
 
+static PyObject* seg_of_sec_next_safe(NPySegOfSecIter* self) {
+    return nrn::convert_cxx_exceptions(seg_of_sec_next, self);
+}
+
 static PyObject* seg_point_processes(NPySegObj* self) {
     Section* sec = self->pysec_->sec_;
     CHECK_SEC_INVALID(sec);
@@ -1474,12 +1778,20 @@ static PyObject* seg_point_processes(NPySegObj* self) {
     return result;
 }
 
+static PyObject* seg_point_processes_safe(NPySegObj* self) {
+    return nrn::convert_cxx_exceptions(seg_point_processes, self);
+}
+
 static PyObject* node_index1(NPySegObj* self) {
     Section* sec = self->pysec_->sec_;
     CHECK_SEC_INVALID(sec);
     Node* nd = node_exact(sec, self->x_);
     PyObject* result = Py_BuildValue("i", nd->v_node_index);
     return result;
+}
+
+static PyObject* node_index1_safe(NPySegObj* self) {
+    return nrn::convert_cxx_exceptions(node_index1, self);
 }
 
 static PyObject* seg_area(NPySegObj* self) {
@@ -1496,6 +1808,10 @@ static PyObject* seg_area(NPySegObj* self) {
     }
     PyObject* result = Py_BuildValue("d", a);
     return result;
+}
+
+static PyObject* seg_area_safe(NPySegObj* self) {
+    return nrn::convert_cxx_exceptions(seg_area, self);
 }
 
 static inline double scaled_frustum_volume(double length, double d0, double d1) {
@@ -1585,6 +1901,9 @@ static PyObject* seg_volume(NPySegObj* self) {
     return result;
 }
 
+static PyObject* seg_volume_safe(NPySegObj* self) {
+    return nrn::convert_cxx_exceptions(seg_volume, self);
+}
 
 static PyObject* seg_ri(NPySegObj* self) {
     Section* sec = self->pysec_->sec_;
@@ -1599,6 +1918,10 @@ static PyObject* seg_ri(NPySegObj* self) {
     }
     PyObject* result = Py_BuildValue("d", ri);
     return result;
+}
+
+static PyObject* seg_ri_safe(NPySegObj* self) {
+    return nrn::convert_cxx_exceptions(seg_ri, self);
 }
 
 static Prop* mech_of_segment_prop(Prop* p) {
@@ -1639,6 +1962,10 @@ static PyObject* mech_of_segment_iter(NPySegObj* self) {
     }
     mi->pymech_ = m;
     return (PyObject*) mi;
+}
+
+static PyObject* mech_of_segment_iter_safe(NPySegObj* self) {
+    return nrn::convert_cxx_exceptions(mech_of_segment_iter, self);
 }
 
 static Object* seg_from_sec_x(Section* sec, double x) {
@@ -1764,6 +2091,10 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
     return result;
 }
 
+static PyObject* section_getattro_safe(NPySecObj* self, PyObject* pyname) {
+    return nrn::convert_cxx_exceptions(section_getattro, self, pyname);
+}
+
 static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) {
     Section* sec = self->sec_;
     if (!sec->prop) {
@@ -1850,6 +2181,10 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
     return err;
 }
 
+static int section_setattro_safe(NPySecObj* self, PyObject* pyname, PyObject* value) {
+    return nrn::convert_cxx_exceptions(section_setattro, self, pyname, value);
+}
+
 static PyObject* mech_of_seg_next(NPyMechOfSegIter* self) {
     // printf("mech_of_seg_next\n");
     // The return on this iteration is self->pymech_. NULL means it's over.
@@ -1871,6 +2206,10 @@ static PyObject* mech_of_seg_next(NPyMechOfSegIter* self) {
     return (PyObject*) m;
 }
 
+static PyObject* mech_of_seg_next_safe(NPyMechOfSegIter* self) {
+    return nrn::convert_cxx_exceptions(mech_of_seg_next, self);
+}
+
 static PyObject* var_of_mech_iter(NPyMechObj* self) {
     Section* sec = self->pyseg_->pysec_->sec_;
     if (!sec->prop) {
@@ -1890,6 +2229,10 @@ static PyObject* var_of_mech_iter(NPyMechObj* self) {
     return (PyObject*) vmi;
 }
 
+static PyObject* var_of_mech_iter_safe(NPyMechObj* self) {
+    return nrn::convert_cxx_exceptions(var_of_mech_iter, self);
+}
+
 static PyObject* var_of_mech_next(NPyVarOfMechIter* self) {
     if (self->i_ >= self->msym_->s_varn) {
         return NULL;
@@ -1904,6 +2247,10 @@ static PyObject* var_of_mech_next(NPyVarOfMechIter* self) {
     r->isptr_ = 0;
     r->attr_from_sec_ = 0;
     return (PyObject*) r;
+}
+
+static PyObject* var_of_mech_next_safe(NPyVarOfMechIter* self) {
+    return nrn::convert_cxx_exceptions(var_of_mech_next, self);
 }
 
 static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
@@ -2021,6 +2368,10 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
     return result;
 }
 
+static PyObject* segment_getattro_safe(NPySegObj* self, PyObject* pyname) {
+    return nrn::convert_cxx_exceptions(segment_getattro, self, pyname);
+}
+
 int nrn_pointer_assign(Prop* prop, Symbol* sym, PyObject* value) {
     int err = 0;
     if (sym->subtype == NRNPOINTER) {
@@ -2120,6 +2471,10 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
     }
     Py_DECREF(pyname);
     return err;
+}
+
+static int segment_setattro_safe(NPySegObj* self, PyObject* pyname, PyObject* value) {
+    return nrn::convert_cxx_exceptions(segment_setattro, self, pyname, value);
 }
 
 static bool striptrail(char* buf, int sz, const char* n, const char* m) {
@@ -2260,6 +2615,10 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     return result;
 }
 
+static PyObject* mech_getattro_safe(NPyMechObj* self, PyObject* pyname) {
+    return nrn::convert_cxx_exceptions(mech_getattro, self, pyname);
+}
+
 static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
     Section* sec = self->pyseg_->pysec_->sec_;
     if (!sec->prop) {
@@ -2315,6 +2674,10 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
     return err;
 }
 
+static int mech_setattro_safe(NPyMechObj* self, PyObject* pyname, PyObject* value) {
+    return nrn::convert_cxx_exceptions(mech_setattro, self, pyname, value);
+}
+
 neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject* pyname, PyObject* mech) {
     if (PyObject_TypeCheck(mech, pmech_generic_type) == 0) {
         return nullptr;
@@ -2345,6 +2708,10 @@ static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
     return seg;
 }
 
+static PyObject* NPySecObj_call_safe(NPySecObj* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(NPySecObj_call, self, args);
+}
+
 static Py_ssize_t rv_len(PyObject* self) {
     NPyRangeVar* r = (NPyRangeVar*) self;
     assert(r->sym_);
@@ -2354,6 +2721,11 @@ static Py_ssize_t rv_len(PyObject* self) {
     }
     return 1;
 }
+
+static Py_ssize_t rv_len_safe(PyObject* self) {
+    return nrn::convert_cxx_exceptions(rv_len, self);
+}
+
 static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
     NPyRangeVar* r = (NPyRangeVar*) self;
     Section* sec = r->pymech_->pyseg_->pysec_->sec_;
@@ -2391,6 +2763,11 @@ static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
     }
     return result;
 }
+
+static PyObject* rv_getitem_safe(PyObject* self, Py_ssize_t ix) {
+    return nrn::convert_cxx_exceptions(rv_getitem, self, ix);
+}
+
 static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
     NPyRangeVar* r = (NPyRangeVar*) self;
     Section* sec = r->pymech_->pyseg_->pysec_->sec_;
@@ -2435,163 +2812,173 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
     return 0;
 }
 
+static int rv_setitem_safe(PyObject* self, Py_ssize_t ix, PyObject* value) {
+    return nrn::convert_cxx_exceptions(rv_setitem, self, ix, value);
+}
+
 static PyMethodDef NPySecObj_methods[] = {
-    {"name", (PyCFunction) NPySecObj_name, METH_NOARGS, "Section name (same as hoc secname())"},
-    {"hname", (PyCFunction) NPySecObj_name, METH_NOARGS, "Section name (same as hoc secname())"},
+    {"name",
+     (PyCFunction) NPySecObj_name_safe,
+     METH_NOARGS,
+     "Section name (same as hoc secname())"},
+    {"hname",
+     (PyCFunction) NPySecObj_name_safe,
+     METH_NOARGS,
+     "Section name (same as hoc secname())"},
     {"has_membrane",
-     (PyCFunction) NPySecObj_has_membrane,
+     (PyCFunction) NPySecObj_has_membrane_safe,
      METH_VARARGS,
      "Returns True if the section's membrane has this density mechanism.\nThis "
      "is not for point processes."},
     {"connect",
-     (PyCFunction) NPySecObj_connect,
+     (PyCFunction) NPySecObj_connect_safe,
      METH_VARARGS,
      "childSection.connect(parentSection, [parentX], [childEnd]) "
      "or\nchildSection.connect(parentSegment, [childEnd])"},
     {"insert",
-     (PyCFunction) NPySecObj_insert,
+     (PyCFunction) NPySecObj_insert_safe,
      METH_VARARGS,
      "section.insert(densityMechanismName) e.g. soma.insert('hh')"},
     {"uninsert",
-     (PyCFunction) NPySecObj_uninsert,
+     (PyCFunction) NPySecObj_uninsert_safe,
      METH_VARARGS,
      "section.uninsert(densityMechanismName) e.g. soma.insert('hh')"},
     {"push",
-     (PyCFunction) NPySecObj_push,
+     (PyCFunction) NPySecObj_push_safe,
      METH_VARARGS,
      "section.push() makes it the currently accessed section. Should end with "
      "a corresponding hoc.pop_section()"},
     {"allseg",
-     (PyCFunction) allseg,
+     (PyCFunction) allseg_safe,
      METH_VARARGS,
      "iterate over segments. Includes x=0 and x=1 zero-area nodes in the "
      "iteration."},
     {"cell",
-     (PyCFunction) pysec2cell,
+     (PyCFunction) pysec2cell_safe,
      METH_NOARGS,
      "Return the object that owns the Section. Possibly None."},
     {"same",
-     (PyCFunction) pysec_same,
+     (PyCFunction) pysec_same_safe,
      METH_VARARGS,
      "sec1.same(sec2) returns True if sec1 and sec2 wrap the same NEURON "
      "Section"},
     {"hoc_internal_name",
-     (PyCFunction) hoc_internal_name,
+     (PyCFunction) hoc_internal_name_safe,
      METH_NOARGS,
      "Hoc accepts this name wherever a section is syntactically valid."},
     {"disconnect",
-     (PyCFunction) pysec_disconnect,
+     (PyCFunction) pysec_disconnect_safe,
      METH_NOARGS,
      "disconnect from the parent section."},
     {"parentseg",
-     (PyCFunction) pysec_parentseg,
+     (PyCFunction) pysec_parentseg_safe,
      METH_NOARGS,
      "Return the nrn.Segment specified by the connect method. Possibly None."},
     {"trueparentseg",
-     (PyCFunction) pysec_trueparentseg,
+     (PyCFunction) pysec_trueparentseg_safe,
      METH_NOARGS,
      "Return the nrn.Segment this section connects to which is closer to the "
      "root. Possibly None. (same as parentseg unless parentseg.x == "
      "parentseg.sec.orientation()"},
     {"orientation",
-     (PyCFunction) pysec_orientation,
+     (PyCFunction) pysec_orientation_safe,
      METH_NOARGS,
      "Returns 0.0 or 1.0  depending on the x value closest to parent."},
     {"children",
-     (PyCFunction) pysec_children,
+     (PyCFunction) pysec_children_safe,
      METH_NOARGS,
      "Return list of child sections. Possibly an empty list"},
     {"subtree",
-     (PyCFunction) pysec_subtree,
+     (PyCFunction) pysec_subtree_safe,
      METH_NOARGS,
      "Return list of sections in the subtree rooted at this section (including this section)."},
     {"wholetree",
-     (PyCFunction) pysec_wholetree,
+     (PyCFunction) pysec_wholetree_safe,
      METH_NOARGS,
      "Return list of all sections with a path to this section (including this section). The list "
      "has the important property that sections are in root to leaf order, depth-first traversal."},
-    {"n3d", (PyCFunction) NPySecObj_n3d, METH_NOARGS, "Returns the number of 3D points."},
+    {"n3d", (PyCFunction) NPySecObj_n3d_safe, METH_NOARGS, "Returns the number of 3D points."},
     {"x3d",
-     (PyCFunction) NPySecObj_x3d,
+     (PyCFunction) NPySecObj_x3d_safe,
      METH_VARARGS,
      "Returns the x coordinate of the ith 3D point."},
     {"y3d",
-     (PyCFunction) NPySecObj_y3d,
+     (PyCFunction) NPySecObj_y3d_safe,
      METH_VARARGS,
      "Returns the y coordinate of the ith 3D point."},
     {"z3d",
-     (PyCFunction) NPySecObj_z3d,
+     (PyCFunction) NPySecObj_z3d_safe,
      METH_VARARGS,
      "Returns the z coordinate of the ith 3D point."},
     {"arc3d",
-     (PyCFunction) NPySecObj_arc3d,
+     (PyCFunction) NPySecObj_arc3d_safe,
      METH_VARARGS,
      "Returns the arc position of the ith 3D point."},
     {"diam3d",
-     (PyCFunction) NPySecObj_diam3d,
+     (PyCFunction) NPySecObj_diam3d_safe,
      METH_VARARGS,
      "Returns the diam of the ith 3D point."},
     {"spine3d",
-     (PyCFunction) NPySecObj_spine3d,
+     (PyCFunction) NPySecObj_spine3d_safe,
      METH_VARARGS,
      "Returns True or False depending on whether a spine exists at the ith 3D point."},
     {"pt3dremove", (PyCFunction) NPySecObj_pt3dremove, METH_VARARGS, "Removes the ith 3D point."},
     {"pt3dclear",
-     (PyCFunction) NPySecObj_pt3dclear,
+     (PyCFunction) NPySecObj_pt3dclear_safe,
      METH_VARARGS,
      "Clears all 3D points. Optionally takes a buffer size."},
     {"pt3dinsert",
-     (PyCFunction) NPySecObj_pt3dinsert,
+     (PyCFunction) NPySecObj_pt3dinsert_safe,
      METH_VARARGS,
      "Insert the point (so it becomes the i'th point) to section. If i is equal to sec.n3d(), the "
      "point is appended (equivalent to sec.pt3dadd())"},
     {"pt3dchange",
-     (PyCFunction) NPySecObj_pt3dchange,
+     (PyCFunction) NPySecObj_pt3dchange_safe,
      METH_VARARGS,
      "Change the i'th 3-d point info. If only two args then the second arg is the diameter and the "
      "location is unchanged."},
     {"pt3dadd",
-     (PyCFunction) NPySecObj_pt3dadd,
+     (PyCFunction) NPySecObj_pt3dadd_safe,
      METH_VARARGS,
      "Add the 3d location and diameter point (or points in the second form) at the end of the "
      "current pt3d list. Assume that successive additions increase the arc length monotonically."},
     {"pt3dstyle",
-     (PyCFunction) NPySecObj_pt3dstyle,
+     (PyCFunction) NPySecObj_pt3dstyle_safe,
      METH_VARARGS,
      "Returns True if using a logical connection point, else False. With first arg 0 sets to no "
      "logical connection point. With first arg 1 and x, y, z arguments, sets the logical "
      "connection point. Return value includes the result of any setting."},
     {"is_pysec",
-     (PyCFunction) is_pysec,
+     (PyCFunction) is_pysec_safe,
      METH_NOARGS,
      "Returns True if Section created from Python, False if created from HOC."},
     {"psection",
-     (PyCFunction) NPySecObj_psection,
+     (PyCFunction) NPySecObj_psection_safe,
      METH_NOARGS,
      "Returns dict of info about Section contents."},
     {NULL}};
 
 static PyMethodDef NPySegObj_methods[] = {
     {"point_processes",
-     (PyCFunction) seg_point_processes,
+     (PyCFunction) seg_point_processes_safe,
      METH_NOARGS,
      "seg.point_processes() returns list of POINT_PROCESS instances in the "
      "segment."},
     {"node_index",
-     (PyCFunction) node_index1,
+     (PyCFunction) node_index1_safe,
      METH_NOARGS,
      "seg.node_index() returns index of v, rhs, etc. in the _actual arrays of "
      "the appropriate NrnThread."},
     {"area",
-     (PyCFunction) seg_area,
+     (PyCFunction) seg_area_safe,
      METH_NOARGS,
      "Segment area (um2) (same as h.area(sec(x), sec=sec))"},
     {"ri",
-     (PyCFunction) seg_ri,
+     (PyCFunction) seg_ri_safe,
      METH_NOARGS,
      "Segment resistance to parent segment (Megohms) (same as h.ri(sec(x), "
      "sec=sec))"},
-    {"volume", (PyCFunction) seg_volume, METH_NOARGS, "Segment volume (um3)"},
+    {"volume", (PyCFunction) seg_volume_safe, METH_NOARGS, "Segment volume (um3)"},
     {NULL}};
 
 // I'm guessing Python should change their typedef to get rid of the
@@ -2615,28 +3002,31 @@ static PyMemberDef NPySegObj_members[] = {
 
 static PyMethodDef NPyMechObj_methods[] = {
     {"name",
-     (PyCFunction) NPyMechObj_name,
+     (PyCFunction) NPyMechObj_name_safe,
      METH_NOARGS,
      "Mechanism name (same as hoc suffix for density mechanism)"},
-    {"is_ion", (PyCFunction) NPyMechObj_is_ion, METH_NOARGS, "Returns True if an ion mechanism"},
+    {"is_ion",
+     (PyCFunction) NPyMechObj_is_ion_safe,
+     METH_NOARGS,
+     "Returns True if an ion mechanism"},
     {"segment",
-     (PyCFunction) NPyMechObj_segment,
+     (PyCFunction) NPyMechObj_segment_safe,
      METH_NOARGS,
      "Returns the segment of the Mechanism instance"},
     {NULL}};
 
 static PyMethodDef NPyMechFunc_methods[] = {
-    {"name", (PyCFunction) NPyMechFunc_name, METH_NOARGS, "Mechanism function"},
+    {"name", (PyCFunction) NPyMechFunc_name_safe, METH_NOARGS, "Mechanism function"},
     {"mech",
-     (PyCFunction) NPyMechFunc_mech,
+     (PyCFunction) NPyMechFunc_mech_safe,
      METH_NOARGS,
      "Returns the Mechanism for this instance"},
     {NULL}};
 
 static PyMethodDef NPyRangeVar_methods[] = {
-    {"name", (PyCFunction) NPyRangeVar_name, METH_NOARGS, "Range variable name name"},
+    {"name", (PyCFunction) NPyRangeVar_name_safe, METH_NOARGS, "Range variable name name"},
     {"mech",
-     (PyCFunction) NPyRangeVar_mech,
+     (PyCFunction) NPyRangeVar_mech_safe,
      METH_NOARGS,
      "Returns nrn.Mechanism of the  RangeVariable instance"},
     {NULL}};
@@ -2653,11 +3043,15 @@ PyObject* nrnpy_cas(PyObject* self, PyObject* args) {
     return (PyObject*) newpysechelp(sec);
 }
 
+PyObject* nrnpy_cas_safe(PyObject* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(nrnpy_cas, self, args);
+}
+
 static PyMethodDef nrnpy_methods[] = {
-    {"cas", nrnpy_cas, METH_VARARGS, "Return the currently accessed section."},
-    {"allsec", nrnpy_forall, METH_VARARGS, "Return iterator over all sections."},
+    {"cas", nrnpy_cas_safe, METH_VARARGS, "Return the currently accessed section."},
+    {"allsec", nrnpy_forall_safe, METH_VARARGS, "Return iterator over all sections."},
     {"set_psection",
-     nrnpy_set_psection,
+     nrnpy_set_psection_safe,
      METH_VARARGS,
      "Specify the nrn.Section.psection callback."},
     {NULL}};

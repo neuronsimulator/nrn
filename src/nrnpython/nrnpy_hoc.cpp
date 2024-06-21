@@ -6,6 +6,7 @@
 #include "nrnpy.h"
 #include "nrnpy_utils.h"
 #include "nrnpython.h"
+#include "convert_cxx_exceptions.hpp"
 #include <unordered_map>
 
 #include "nrnwrap_dlfcn.h"
@@ -58,8 +59,9 @@ extern PyObject* nrnpy_pushsec(PyObject*);
 extern bool hoc_valid_stmt(const char*, Object*);
 PyObject* nrnpy_nrn();
 extern PyObject* nrnpy_cas(PyObject*, PyObject*);
-extern PyObject* nrnpy_forall(PyObject*, PyObject*);
-extern PyObject* nrnpy_newsecobj(PyObject*, PyObject*, PyObject*);
+extern PyObject* nrnpy_cas_safe(PyObject*, PyObject*);
+extern PyObject* nrnpy_forall_safe(PyObject*, PyObject*);
+extern PyObject* nrnpy_newsecobj_safe(PyObject*, PyObject*, PyObject*);
 extern int section_object_seen;
 extern Symbol* nrn_child_sym;
 extern int nrn_secref_nchild(Section*);
@@ -162,14 +164,25 @@ static PyObject* nrnexec(PyObject* self, PyObject* args) {
     return Py_BuildValue("i", b ? 1 : 0);
 }
 
+static PyObject* nrnexec_safe(PyObject* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(nrnexec, self, args);
+}
+
 static PyObject* hoc_ac(PyObject* self, PyObject* args) {
     PyArg_ParseTuple(args, "|d", &hoc_ac_);
     return Py_BuildValue("d", hoc_ac_);
 }
 
+static PyObject* hoc_ac_safe(PyObject* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(hoc_ac, self, args);
+}
+
 static PyMethodDef HocMethods[] = {
-    {"execute", nrnexec, METH_VARARGS, "Execute a hoc command, return 1 on success, 0 on failure."},
-    {"hoc_ac", hoc_ac, METH_VARARGS, "Get (or set) the scalar hoc_ac_."},
+    {"execute",
+     nrnexec_safe,
+     METH_VARARGS,
+     "Execute a hoc command, return 1 on success, 0 on failure."},
+    {"hoc_ac", hoc_ac_safe, METH_VARARGS, "Get (or set) the scalar hoc_ac_."},
     {NULL, NULL, 0, NULL}};
 
 static void hocobj_dealloc(PyHocObject* self) {
@@ -339,6 +352,10 @@ static PyObject* hocobj_name(PyObject* pself, PyObject* args) {
         cp.append("<TopLevelHocInterpreter>");
     }
     return Py_BuildValue("s", cp.c_str());
+}
+
+static PyObject* hocobj_name_safe(PyObject* pself, PyObject* args) {
+    return nrn::convert_cxx_exceptions(hocobj_name, pself, args);
 }
 
 static PyObject* hocobj_repr(PyObject* p) {
@@ -1347,6 +1364,10 @@ static PyObject* hocobj_baseattr(PyObject* subself, PyObject* args) {
     return hocobj_getattr(subself, name);
 }
 
+static PyObject* hocobj_baseattr_safe(PyObject* subself, PyObject* args) {
+    return nrn::convert_cxx_exceptions(hocobj_baseattr, subself, args);
+}
+
 static int refuse_to_look;
 static PyObject* hocobj_getattro(PyObject* subself, PyObject* name) {
     PyObject* result = 0;
@@ -1663,6 +1684,10 @@ PyObject* nrnpy_forall(PyObject* self, PyObject* args) {
     pho->u.its_ = PyHoc::Begin;
     pho->iteritem_ = section_list;
     return po;
+}
+
+PyObject* nrnpy_forall_safe(PyObject* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(nrnpy_forall, self, args);
 }
 
 static PyObject* hocobj_iter(PyObject* self) {
@@ -2212,6 +2237,10 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
     return NULL;
 }
 
+static PyObject* mkref_safe(PyObject* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(mkref, self, args);
+}
+
 static PyObject* cpp2refstr(char** cpp) {
     // If cpp is from a hoc_temp_charptr (see src/oc/code.cpp) then create a
     // HocRefStr and copy *cpp. Otherwise, assume it is from a hoc strdef
@@ -2282,6 +2311,11 @@ done:
     return result;
 }
 
+
+static PyObject* setpointer_safe(PyObject* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(setpointer, self, args);
+}
+
 static PyObject* hocobj_vptr(PyObject* pself, PyObject* args) {
     Object* ho = ((PyHocObject*) pself)->ho_;
     PyObject* po = NULL;
@@ -2292,6 +2326,10 @@ static PyObject* hocobj_vptr(PyObject* pself, PyObject* args) {
         PyErr_SetString(PyExc_TypeError, "HocObject does not wrap a Hoc Object");
     }
     return po;
+}
+
+static PyObject* hocobj_vptr_safe(PyObject* pself, PyObject* args) {
+    return nrn::convert_cxx_exceptions(hocobj_vptr, pself, args);
 }
 
 static long hocobj_hash(PyHocObject* self) {
@@ -2416,6 +2454,10 @@ static PyObject* hocobj_same(PyHocObject* pself, PyObject* args) {
         Py_RETURN_FALSE;
     }
     return NULL;
+}
+
+static PyObject* hocobj_same_safe(PyHocObject* pself, PyObject* args) {
+    return nrn::convert_cxx_exceptions(hocobj_same, pself, args);
 }
 
 static char* double_array_interface(PyObject* po, long& stride) {
@@ -2897,6 +2939,10 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
     return ret;
 }
 
+static PyObject* hocpickle_reduce_safe(PyObject* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(hocpickle_reduce, self, args);
+}
+
 // following copied (except for nrn_need_byteswap line) from NEURON ivocvect.cpp
 #define BYTEHEADER   \
     uint32_t _II__;  \
@@ -2974,6 +3020,10 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
     return Py_None;
 }
 
+static PyObject* hocpickle_setstate_safe(PyObject* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(hocpickle_setstate, self, args);
+}
+
 static PyObject* libpython_path(PyObject* self, PyObject* args) {
 #if defined(HAVE_DLFCN_H) && !defined(MINGW)
     Dl_info info;
@@ -2995,31 +3045,35 @@ static PyObject* libpython_path(PyObject* self, PyObject* args) {
 #endif
 }
 
+static PyObject* libpython_path_safe(PyObject* self, PyObject* args) {
+    return nrn::convert_cxx_exceptions(libpython_path, self, args);
+}
+
 // available for every HocObject
 static PyMethodDef hocobj_methods[] = {
-    {"baseattr", hocobj_baseattr, METH_VARARGS, "To allow use of an overrided base method"},
-    {"hocobjptr", hocobj_vptr, METH_NOARGS, "Hoc Object pointer as a long int"},
+    {"baseattr", hocobj_baseattr_safe, METH_VARARGS, "To allow use of an overrided base method"},
+    {"hocobjptr", hocobj_vptr_safe, METH_NOARGS, "Hoc Object pointer as a long int"},
     {"same",
-     (PyCFunction) hocobj_same,
+     (PyCFunction) hocobj_same_safe,
      METH_VARARGS,
      "o1.same(o2) return True if o1 and o2 wrap the same internal HOC Object"},
-    {"hname", hocobj_name, METH_NOARGS, "More specific than __str__() or __attr__()."},
-    {"__reduce__", hocpickle_reduce, METH_VARARGS, "pickle interface"},
-    {"__setstate__", hocpickle_setstate, METH_VARARGS, "pickle interface"},
+    {"hname", hocobj_name_safe, METH_NOARGS, "More specific than __str__() or __attr__()."},
+    {"__reduce__", hocpickle_reduce_safe, METH_VARARGS, "pickle interface"},
+    {"__setstate__", hocpickle_setstate_safe, METH_VARARGS, "pickle interface"},
     {NULL, NULL, 0, NULL}};
 
 // only for a HocTopLevelInterpreter type HocObject
 static PyMethodDef toplevel_methods[] = {
-    {"ref", mkref, METH_VARARGS, "Wrap to allow call by reference in a hoc function"},
-    {"cas", nrnpy_cas, METH_VARARGS, "Return the currently accessed section."},
-    {"allsec", nrnpy_forall, METH_VARARGS, "Return iterator over all sections."},
+    {"ref", mkref_safe, METH_VARARGS, "Wrap to allow call by reference in a hoc function"},
+    {"cas", nrnpy_cas_safe, METH_VARARGS, "Return the currently accessed section."},
+    {"allsec", nrnpy_forall_safe, METH_VARARGS, "Return iterator over all sections."},
     {"Section",
-     (PyCFunction) nrnpy_newsecobj,
+     (PyCFunction) nrnpy_newsecobj_safe,
      METH_VARARGS | METH_KEYWORDS,
      "Return a new Section"},
-    {"setpointer", setpointer, METH_VARARGS, "Assign hoc variable address to NMODL POINTER"},
+    {"setpointer", setpointer_safe, METH_VARARGS, "Assign hoc variable address to NMODL POINTER"},
     {"libpython_path",
-     libpython_path,
+     libpython_path_safe,
      METH_NOARGS,
      "Return full path to file that contains Py_Initialize()"},
     {NULL, NULL, 0, NULL}};
