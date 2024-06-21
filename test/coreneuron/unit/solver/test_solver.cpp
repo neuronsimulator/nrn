@@ -112,7 +112,7 @@ struct SetupThreads {
             num_cells_remaining -= nt.ncell;
             // How many segments are there in this thread?
             nt.end = nt.ncell * config.num_segments_per_cell;
-            auto const padded_size = nrn_soa_padded_size(nt.end, 0);
+            auto const padded_size = nrn_soa_padded_size(nt.end);
             // Allocate one big block because the GPU data transfer code assumes this.
             nt._ndata = padded_size * 4;
             nt._data = static_cast<double*>(emalloc_align(nt._ndata * sizeof(double)));

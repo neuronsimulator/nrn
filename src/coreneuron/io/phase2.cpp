@@ -87,14 +87,10 @@ int (*nrn2core_get_dat2_vecplay_inst_)(int tid,
 
 namespace coreneuron {
 template <typename T>
-void mech_data_layout_transform(T* data, int cnt, const std::vector<int>& array_dims, int layout) {
-    if (layout == Layout::AoS) {
-        throw std::runtime_error("AoS memory layout not implemented.");
-    }
-
+void mech_data_layout_transform(T* data, int cnt, const std::vector<int>& array_dims) {
     int n_vars = array_dims.size();
     int row_width = std::accumulate(array_dims.begin(), array_dims.end(), 0);
-    int padded_cnt = nrn_soa_padded_size(cnt, layout);
+    int padded_cnt = nrn_soa_padded_size(cnt);
 
     std::vector<T> tmp(padded_cnt * row_width);
     std::copy(data, data + cnt * row_width, tmp.begin());
@@ -116,9 +112,9 @@ void mech_data_layout_transform(T* data, int cnt, const std::vector<int>& array_
 }
 
 template <typename T>
-inline void mech_data_layout_transform(T* data, int cnt, int sz, int layout) {
+inline void mech_data_layout_transform(T* data, int cnt, int sz) {
     std::vector<int> array_dims(sz, 1);
-    mech_data_layout_transform(data, cnt, array_dims, layout);
+    mech_data_layout_transform(data, cnt, array_dims);
 }
 
 
@@ -145,7 +141,7 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
     v_parent_index = (int*) ecalloc_align(n_node, sizeof(int));
     F.read_array<int>(v_parent_index, n_node);
 
-    int n_data_padded = nrn_soa_padded_size(n_node, SOA_LAYOUT);
+    int n_data_padded = nrn_soa_padded_size(n_node);
     {
         {  // Compute size of _data and allocate
             int n_data = 6 * n_data_padded;
@@ -153,11 +149,10 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
                 n_data += n_data_padded;
             }
             for (int i = 0; i < n_mech; ++i) {
-                int layout = corenrn.get_mech_data_layout()[mech_types[i]];
                 int n = nodecounts[i];
                 int sz = corenrn.get_prop_param_size()[mech_types[i]];
                 n_data = nrn_soa_byte_align(n_data);
-                n_data += nrn_soa_padded_size(n, layout) * sz;
+                n_data += nrn_soa_padded_size(n) * sz;
             }
             _data = (double*) ecalloc_align(n_data, sizeof(double));
         }
@@ -175,7 +170,6 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
         offset += n_data_padded;
     }
     for (int i = 0; i < n_mech; ++i) {
-        int layout = corenrn.get_mech_data_layout()[mech_types[i]];
         int n = nodecounts[i];
         int sz = corenrn.get_prop_param_size()[mech_types[i]];
         int dsz = corenrn.get_prop_dparam_size()[mech_types[i]];
@@ -185,7 +179,7 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
             nodeindices = F.read_vector<int>(n);
         }
         F.read_array<double>(_data + offset, sz * n);
-        offset += nrn_soa_padded_size(n, layout) * sz;
+        offset += nrn_soa_padded_size(n) * sz;
         std::vector<int> pdata;
         if (dsz > 0) {
             pdata = F.read_vector<int>(dsz * n);
@@ -300,17 +294,16 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
     check_mechanism();
 
     // TODO: fix it in the future
-    int n_data_padded = nrn_soa_padded_size(n_node, SOA_LAYOUT);
+    int n_data_padded = nrn_soa_padded_size(n_node);
     int n_data = 6 * n_data_padded;
     if (n_diam > 0) {
         n_data += n_data_padded;
     }
     for (int i = 0; i < n_mech; ++i) {
-        int layout = corenrn.get_mech_data_layout()[mech_types[i]];
         int n = nodecounts[i];
         int sz = corenrn.get_prop_param_size()[mech_types[i]];
         n_data = nrn_soa_byte_align(n_data);
-        n_data += nrn_soa_padded_size(n, layout) * sz;
+        n_data += nrn_soa_padded_size(n) * sz;
     }
     _data = (double*) ecalloc_align(n_data, sizeof(double));
 
@@ -335,7 +328,6 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
     for (int i = 0; i < n_mech; ++i) {
         auto& tml = tmls[i];
         int type = mech_types[i];
-        int layout = corenrn.get_mech_data_layout()[type];
         offset = nrn_soa_byte_align(offset);
 
         tml.type = type;
@@ -369,7 +361,7 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
         if (dparam_sizes[type] > 0) {
             dsz_inst++;
         }
-        offset += nrn_soa_padded_size(nodecounts[i], layout) * param_sizes[type];
+        offset += nrn_soa_padded_size(nodecounts[i]) * param_sizes[type];
         if (nodeindices_) {
             std::copy(nodeindices_, nodeindices_ + nodecounts[i], tml.nodeindices.data());
             free(nodeindices_);  // not free_memory because this is allocated by NEURON?
@@ -497,10 +489,9 @@ void Phase2::transform_int_data(int elem0,
                                 int* pdata,
                                 int i,
                                 int dparam_size,
-                                int layout,
                                 int n_node_) {
     for (int iml = 0; iml < nodecount; ++iml) {
-        int* pd = pdata + nrn_i_layout(iml, nodecount, i, dparam_size, layout);
+        int* pd = pdata + nrn_i_layout(iml, nodecount, i, dparam_size);
         int ix = *pd;  // relative to beginning of _actual_*
         nrn_assert((ix >= 0) && (ix < n_node_));
         *pd = elem0 + ix;  // relative to nt._data
@@ -639,7 +630,7 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
     // Some pdata may index into data which has been reordered from AoS to
     // SoA. The four possibilities are if semantics is -1 (area), -5 (pointer),
     // -9 (diam), // or 0-999 (ion variables).
-    // Note that pdata has a layout and the // type block in nt.data into which
+    // Note that pdata has a layout and the type block in nt.data into which
     // it indexes, has a layout.
 
     // For faster search of tmls[i].type == type, use a map.
@@ -653,7 +644,6 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
 
     for (auto tml = nt.tml; tml; tml = tml->next) {
         int type = tml->index;
-        int layout = corenrn.get_mech_data_layout()[type];
         int* pdata = tml->ml->pdata;
         int cnt = tml->ml->nodecount;
         int szdp = corenrn.get_prop_dparam_size()[type];
@@ -672,12 +662,10 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
                 int s = semantics[i];
                 switch (s) {
                 case -1:  // area
-                    transform_int_data(
-                        nt._actual_area - nt._data, cnt, pdata, i, szdp, layout, nt.end);
+                    transform_int_data(nt._actual_area - nt._data, cnt, pdata, i, szdp, nt.end);
                     break;
                 case -9:  // diam
-                    transform_int_data(
-                        nt._actual_diam - nt._data, cnt, pdata, i, szdp, layout, nt.end);
+                    transform_int_data(nt._actual_diam - nt._data, cnt, pdata, i, szdp, nt.end);
                     break;
                 case -5:  // pointer assumes a pointer to membrane voltage
                     // or mechanism data in this thread. The value of the
@@ -695,7 +683,7 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
                     // after this loop instead of the former voltage only
                     /**
                     transform_int_data(
-                        nt._actual_v - nt._data, cnt, pdata, i, szdp, layout, nt.end);
+                        nt._actual_v - nt._data, cnt, pdata, i, szdp, nt.end);
                      **/
                     break;
                 default:
@@ -706,11 +694,11 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
                         Memb_list* eml = nt._ml_list[etype];
                         int edata0 = eml->data - nt._data;
                         int ecnt = eml->nodecount;
-                        int ecnt_padded = nrn_soa_padded_size(ecnt, Layout::SoA);
+                        int ecnt_padded = nrn_soa_padded_size(ecnt);
                         int esz = corenrn.get_prop_param_size()[etype];
                         const std::vector<int>& array_dims = corenrn.get_array_dims()[etype];
                         for (int iml = 0; iml < cnt; ++iml) {
-                            int* pd = pdata + nrn_i_layout(iml, cnt, i, szdp, layout);
+                            int* pd = pdata + nrn_i_layout(iml, cnt, i, szdp);
                             int legacy_index = *pd;  // relative to the ion data
                             nrn_assert((legacy_index >= 0) && (legacy_index < ecnt * esz));
 
@@ -730,7 +718,7 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
                 for (int iml = 0; iml < cnt; ++iml) {
                     for (int i = 0; i < szdp; ++i) {
                         if (semantics[i] == -5) {  // POINTER
-                            int* pd = pdata + nrn_i_layout(iml, cnt, i, szdp, layout);
+                            int* pd = pdata + nrn_i_layout(iml, cnt, i, szdp);
                             int ix = *pd;  // relative to elem0
                             int ptype = ptypes[iptype++];
                             if (ptype == voltage) {
@@ -740,7 +728,7 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
                             } else {
                                 Memb_list* pml = nt._ml_list[ptype];
                                 int pcnt = pml->nodecount;
-                                int pcnt_padded = nrn_soa_padded_size(pcnt, Layout::SoA);
+                                int pcnt_padded = nrn_soa_padded_size(pcnt);
                                 int psz = corenrn.get_prop_param_size()[ptype];
                                 const std::vector<int>& array_dims =
                                     corenrn.get_array_dims()[ptype];
@@ -892,7 +880,6 @@ void Phase2::get_info_from_bbcore(NrnThread& nt,
         int dsz = corenrn.get_prop_param_size()[type];
         int pdsz = corenrn.get_prop_dparam_size()[type];
         int cntml = ml->nodecount;
-        int layout = corenrn.get_mech_data_layout()[type];
         for (int j = 0; j < cntml; ++j) {
             int jp = j;
             if (ml->_permute) {
@@ -900,9 +887,9 @@ void Phase2::get_info_from_bbcore(NrnThread& nt,
             }
             double* d = ml->data;
             Datum* pd = ml->pdata;
-            d += nrn_i_layout(jp, cntml, 0, dsz, layout);
-            pd += nrn_i_layout(jp, cntml, 0, pdsz, layout);
-            int aln_cntml = nrn_soa_padded_size(cntml, layout);
+            d += nrn_i_layout(jp, cntml, 0, dsz);
+            pd += nrn_i_layout(jp, cntml, 0, pdsz);
+            int aln_cntml = nrn_soa_padded_size(cntml);
             (*corenrn.get_bbcore_read()[type])(tmls[i].dArray.data(),
                                                tmls[i].iArray.data(),
                                                &dk,
@@ -947,7 +934,7 @@ void Phase2::set_vec_play(NrnThread& nt, NrnThreadChkpnt& ntc) {
 
         const std::vector<int>& array_dims = corenrn.get_array_dims()[vecPlay.mtype];
 
-        auto padded_nodecount = nrn_soa_padded_size(ml->nodecount, Layout::SoA);
+        auto padded_nodecount = nrn_soa_padded_size(ml->nodecount);
         auto soaos_index = legacy2soaos_index(vecPlay.ix, array_dims);
         vecPlay.ix = soaos2cnrn_index(soaos_index, array_dims, padded_nodecount, ml->_permute);
 
@@ -1022,10 +1009,9 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
     }
 
     if (shadow_rhs_cnt) {
-        nt._shadow_rhs = (double*) ecalloc_align(nrn_soa_padded_size(shadow_rhs_cnt, 0),
+        nt._shadow_rhs = (double*) ecalloc_align(nrn_soa_padded_size(shadow_rhs_cnt),
                                                  sizeof(double));
-        nt._shadow_d = (double*) ecalloc_align(nrn_soa_padded_size(shadow_rhs_cnt, 0),
-                                               sizeof(double));
+        nt._shadow_d = (double*) ecalloc_align(nrn_soa_padded_size(shadow_rhs_cnt), sizeof(double));
         nt.shadow_rhs_cnt = shadow_rhs_cnt;
     }
 
@@ -1045,7 +1031,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
         nt._vdata = nullptr;
 
     // The data format begins with the matrix data
-    int n_data_padded = nrn_soa_padded_size(nt.end, SOA_LAYOUT);
+    int n_data_padded = nrn_soa_padded_size(nt.end);
     nt._data = _data;
     nt._actual_rhs = nt._data + 0 * n_data_padded;
     nt._actual_d = nt._data + 1 * n_data_padded;
@@ -1070,12 +1056,11 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
     for (auto tml = nt.tml; tml; tml = tml->next) {
         Memb_list* ml = tml->ml;
         int type = tml->index;
-        int layout = corenrn.get_mech_data_layout()[type];
         int n = ml->nodecount;
         int sz = nrn_prop_param_size_[type];
         offset = nrn_soa_byte_align(offset);
         ml->data = nt._data + offset;
-        offset += nrn_soa_padded_size(n, layout) * sz;
+        offset += nrn_soa_padded_size(n) * sz;
         if (corenrn.get_pnt_map()[type] > 0) {
             num_point_process += n;
         }
@@ -1110,33 +1095,24 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
         int szdp = nrn_prop_dparam_size_[type];
 
         const std::vector<int>& array_dims = corenrn.get_array_dims()[type];
-        int layout = corenrn.get_mech_data_layout()[type];
 
         ml->nodeindices = (int*) ecalloc_align(ml->nodecount, sizeof(int));
         std::copy(tmls[itml].nodeindices.begin(), tmls[itml].nodeindices.end(), ml->nodeindices);
 
-        mech_data_layout_transform<double>(ml->data, n, array_dims, layout);
+        mech_data_layout_transform<double>(ml->data, n, array_dims);
 
         if (szdp) {
-            ml->pdata = (int*) ecalloc_align(nrn_soa_padded_size(n, layout) * szdp, sizeof(int));
+            ml->pdata = (int*) ecalloc_align(nrn_soa_padded_size(n) * szdp, sizeof(int));
             std::copy(tmls[itml].pdata.begin(), tmls[itml].pdata.end(), ml->pdata);
-            mech_data_layout_transform<int>(ml->pdata, n, szdp, layout);
+            mech_data_layout_transform<int>(ml->pdata, n, szdp);
 
 #if CHKPNTDEBUG  // Not substantive. Only for debugging.
             Memb_list_chkpnt* mlc = ntc.mlmap[type];
             mlc->pdata_not_permuted = (int*) coreneuron::ecalloc_align(n * szdp, sizeof(int));
-            if (layout == Layout::AoS) {  // only copy
-                for (int i = 0; i < n; ++i) {
-                    for (int j = 0; j < szdp; ++j) {
-                        mlc->pdata_not_permuted[i * szdp + j] = ml->pdata[i * szdp + j];
-                    }
-                }
-            } else if (layout == Layout::SoA) {  // transpose and unpad
-                int align_cnt = nrn_soa_padded_size(n, layout);
-                for (int i = 0; i < n; ++i) {
-                    for (int j = 0; j < szdp; ++j) {
-                        mlc->pdata_not_permuted[i * szdp + j] = ml->pdata[i + j * align_cnt];
-                    }
+            int align_cnt = nrn_soa_padded_size(n);
+            for (int i = 0; i < n; ++i) {
+                for (int j = 0; j < szdp; ++j) {
+                    mlc->pdata_not_permuted[i * szdp + j] = ml->pdata[i + j * align_cnt];
                 }
             }
 #endif
@@ -1153,7 +1129,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
                 Point_process* pp = pnt + i;
                 pp->_type = type;
                 pp->_i_instance = i;
-                nt._vdata[ml->pdata[nrn_i_layout(i, cnt, 1, szdp, layout)]] = pp;
+                nt._vdata[ml->pdata[nrn_i_layout(i, cnt, 1, szdp)]] = pp;
                 pp->_tid = nt.id;
             }
         }
@@ -1176,7 +1152,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
                     nrnran123_State* state = nrnran123_newstream3(r[ix], r[ix + 1], r[ix + 2]);
                     nrnran123_setseq(state, r[ix + 3], char(r[ix + 4]));
                     ix += 5;
-                    int ipd = ml->pdata[nrn_i_layout(i, cnt, index, szdp, layout)];
+                    int ipd = ml->pdata[nrn_i_layout(i, cnt, index, szdp)];
                     assert(ipd >= 0 && ipd < n_vdata + extra_nv);
                     nt._vdata[ipd] = state;
                 }

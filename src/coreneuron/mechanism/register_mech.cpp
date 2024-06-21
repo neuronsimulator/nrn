@@ -95,7 +95,6 @@ void alloc_mech(int memb_func_size_) {
     corenrn.get_array_dims().resize(memb_func_size_);
     corenrn.get_prop_param_size().resize(memb_func_size_);
     corenrn.get_prop_dparam_size().resize(memb_func_size_);
-    corenrn.get_mech_data_layout().resize(memb_func_size_, 1);
     corenrn.get_bbcore_read().resize(memb_func_size_);
     corenrn.get_bbcore_write().resize(memb_func_size_);
 }
@@ -172,10 +171,6 @@ void nrn_writes_conc(int type, int /* unused */) {
     if (nrn_is_ion(type)) {
         ++lastion;
     }
-}
-
-void _nrn_layout_reg(int type, int layout) {
-    corenrn.get_mech_data_layout()[type] = layout;
 }
 
 void hoc_register_net_receive_buffering(NetBufReceive_t f, int type) {

@@ -225,16 +225,8 @@ namespace neuron {
     the chunk argument is the number of doubles the chunk is chunkded upon.
 */
 template <int chunk>
-inline int soa_padded_size(int cnt, int layout) {
-#if CORENRN_BUILD
-    if (layout == Layout::AoS) {
-        return cnt;
-    } else {
-        return ((cnt + chunk - 1) / chunk) * chunk;
-    }
-#else
+inline int soa_padded_size(int cnt) {
     return ((cnt + chunk - 1) / chunk) * chunk;
-#endif
 }
 
 /** Check for the pointer alignment.

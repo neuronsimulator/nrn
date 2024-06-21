@@ -40,7 +40,7 @@ extern void nrn_init_and_load_data(int argc,
 extern void allocate_data_in_mechanism_nrn_init();
 extern void nrn_setup_cleanup();
 
-extern int nrn_i_layout(int i, int cnt, int j, int size, int layout);
+extern int nrn_i_layout(int i, int cnt, int j, int size);
 
 size_t memb_list_size(NrnThreadMembList* tml, bool include_data);
 

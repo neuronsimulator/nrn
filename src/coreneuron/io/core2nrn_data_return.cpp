@@ -151,10 +151,9 @@ static void core2nrn_corepointer(int tid, NrnThreadMembList* tml) {
     Memb_list* ml = tml->ml;
     double* d = nullptr;
     Datum* pd = nullptr;
-    int layout = corenrn.get_mech_data_layout()[type];
     int dsz = corenrn.get_prop_param_size()[type];
     int pdsz = corenrn.get_prop_dparam_size()[type];
-    int aln_cntml = nrn_soa_padded_size(ml->nodecount, layout);
+    int aln_cntml = nrn_soa_padded_size(ml->nodecount);
 
     int icnt = 0;
     int dcnt = 0;
@@ -164,8 +163,8 @@ static void core2nrn_corepointer(int tid, NrnThreadMembList* tml) {
         if (ml->_permute) {
             jp = ml->_permute[j];
         }
-        d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz, layout);
-        pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz, layout);
+        d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz);
+        pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz);
         (*corenrn.get_bbcore_write()[type])(
             nullptr, nullptr, &dcnt, &icnt, 0, aln_cntml, d, pd, ml->_thread, &nt, ml, 0.0);
     }
@@ -186,8 +185,8 @@ static void core2nrn_corepointer(int tid, NrnThreadMembList* tml) {
             jp = ml->_permute[j];
         }
 
-        d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz, layout);
-        pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz, layout);
+        d = ml->data + nrn_i_layout(jp, ml->nodecount, 0, dsz);
+        pd = ml->pdata + nrn_i_layout(jp, ml->nodecount, 0, pdsz);
 
         (*corenrn.get_bbcore_write()[type])(dArray.get(),
                                             iArray.get(),
@@ -238,9 +237,8 @@ static void c2n_nmodlrandom(int tid, NrnThreadMembList* tml) {
     }
     NrnThread& nt = nrn_threads[tid];
     Memb_list* ml = tml->ml;
-    int layout = corenrn.get_mech_data_layout()[type];
     int pdsz = corenrn.get_prop_dparam_size()[type];
-    int aln_cntml = nrn_soa_padded_size(ml->nodecount, layout);
+    int aln_cntml = nrn_soa_padded_size(ml->nodecount);
     int n = ml->nodecount;
 
     // will send back vector of 34 bit uints (aka double)
@@ -252,7 +250,7 @@ static void c2n_nmodlrandom(int tid, NrnThreadMembList* tml) {
             if (ml->_permute) {
                 jp = ml->_permute[j];
             }
-            int pv = ml->pdata[nrn_i_layout(jp, n, ix, pdsz, layout)];
+            int pv = ml->pdata[nrn_i_layout(jp, n, ix, pdsz)];
             nrnran123_State* state = (nrnran123_State*) nt._vdata[pv];
             uint32_t seq;
             char which;
@@ -346,15 +344,10 @@ void core2nrn_data_return() {
             // a double* for each param_size mech instance.
             int* permute = ml->_permute;
             double* cndat = ml->data;
-            int layout = corenrn.get_mech_data_layout()[mtype];
             int sz = corenrn.get_prop_param_size()[mtype];
             const std::vector<int>& array_dims = corenrn.get_array_dims()[mtype];
-            if (layout == Layout::SoA) {
-                int stride = ml->_nodecount_padded;
-                soaos_copy_cnrn2nrn(n, stride, cndat, mdata, array_dims, permute);
-            } else { /* AoS */
-                aos2aos_copy(n, sz, cndat, mdata);
-            }
+            int stride = ml->_nodecount_padded;
+            soaos_copy_cnrn2nrn(n, stride, cndat, mdata, array_dims, permute);
 
             core2nrn_corepointer(tid, tml);
             c2n_nmodlrandom(tid, tml);
@@ -387,7 +380,6 @@ static void core2nrn_watch() {
                 int* permute = ml._permute;
                 int* pdata = (int*) ml.pdata;
                 int dparam_size = corenrn.get_prop_dparam_size()[type];
-                int layout = corenrn.get_mech_data_layout()[type];
                 int first, last;
                 watch_datum_indices(type, first, last);
                 int watch_begin = first;
@@ -395,8 +387,7 @@ static void core2nrn_watch() {
                     int iml_permute = permute ? permute[iml] : iml;
                     Core2NrnWatchInfoItem& wiv = watch_info[iml];
                     for (int ix = first; ix <= last; ++ix) {
-                        int datum =
-                            pdata[nrn_i_layout(iml_permute, nodecount, ix, dparam_size, layout)];
+                        int datum = pdata[nrn_i_layout(iml_permute, nodecount, ix, dparam_size)];
                         if (datum & 2) {  // activated
                             bool above_thresh = bool(datum & 1);
                             wiv.push_back(std::pair<int, bool>(ix, above_thresh));
