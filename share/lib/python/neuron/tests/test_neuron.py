@@ -5,7 +5,10 @@ Items declared in neuron/__init__.py
 $Id$
 """
 
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 import neuron
 from neuron import h
 
@@ -198,6 +201,31 @@ class NeuronTestCase(unittest.TestCase):
             error = True
         self.assertFalse(error)
         return 0
+
+    def test_load_mechanisms_from_non_existent_path(self):
+        """Assure mechanisms are not loaded from a non-existent directory."""
+        from neuron import load_mechanisms, nrn_dll_loaded
+
+        mech_path1 = "fake_mechanisms_dir"
+        assert not load_mechanisms(mech_path1)
+        assert Path(mech_path1).resolve().as_posix() not in nrn_dll_loaded
+
+    @patch("pathlib.Path.exists")
+    def test_load_mechanisms_reloading(self, mock_exists):
+        """Assure the same directory is not loaded multiple times."""
+        from neuron import load_mechanisms, nrn_dll_loaded
+
+        mock_exists.return_value = True  # bypass path.exists()
+
+        with TemporaryDirectory() as temp_dir:
+            mech_path1 = Path(temp_dir) / "mechanisms_dir"
+            mech_path1.mkdir()
+            assert load_mechanisms(mech_path1)
+            assert mech_path1.resolve().as_posix() in nrn_dll_loaded
+            assert len(nrn_dll_loaded) == 1
+            mech_path2 = mech_path1 / ".." / "mechanisms_dir"
+            assert load_mechanisms(mech_path2)
+            assert len(nrn_dll_loaded) == 1
 
     def testRxDexistence(self):
         from neuron import config
