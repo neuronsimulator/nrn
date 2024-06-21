@@ -41,7 +41,7 @@ To learn how to use NMODL to add new mechanisms to NEURON:
     NEURON comes with a bunch of mod files that can serve as starting points for "programming by example." Under MSWin the default mechanisms (hh, pas, expsyn etc.) are in ``c:\nrn\src\nrnoc`` (on my Linux box this is ``/usr/local/src/nrn-x.x/src/nrnoc``). A large collection of mod files is in ``c:\nrn\examples\nrniv\nmodl`` (Linux ``/usr/local/src/nrn-x.x/share/examples/nrniv/nmodl``).
 
 4.
-    You may also find useful examples in `ModelDB <https://smodeldb.science>`_.
+    You may also find useful examples in `ModelDB <https://modeldb.science>`_.
 
 For courses about NEURON, see the :ref:`Course Exercises <exercises2018>` page and the :ref:`Training Videos <training_videos>` page.
 
