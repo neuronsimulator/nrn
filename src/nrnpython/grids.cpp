@@ -415,7 +415,7 @@ extern "C" NRN_EXPORT int ICS_insert(int grid_list_index,
     return new_Grid->insert(grid_list_index);
 }
 
-int ICS_insert_inhom(int grid_list_index,
+extern "C" NRN_EXPORT int ICS_insert_inhom(int grid_list_index,
                      PyHocObject* my_states,
                      long num_nodes,
                      long* neighbors,
