@@ -161,7 +161,7 @@ static char* pysec_name(Section* sec) {
 }
 
 static Object* pysec_cell(Section* sec) {
-    if(!sec->prop){
+    if (!sec->prop) {
         return nullptr;
     }
     if (auto* pv = sec->prop->dparam[PROP_PY_INDEX].get<void*>(); pv) {
@@ -204,7 +204,7 @@ static int NPySecObj_contains_safe(PyObject* sec, PyObject* obj) {
 }
 
 static int pysec_cell_equals(Section* sec, Object* obj) {
-    if(!sec->prop){
+    if (!sec->prop) {
         return 0;
     }
     if (auto* pv = sec->prop->dparam[PROP_PY_INDEX].get<void*>(); pv) {
@@ -373,9 +373,7 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
     // printf("NPySecObj_init %p %p\n", self, self->sec_);
     static const char* kwlist[] = {"name", "cell", NULL};
     if (self != NULL && !self->sec_) {
-        if (self->name_) {
-            delete[] self->name_;
-        }
+        delete[] self->name_;
         self->name_ = 0;
         self->cell_weakref_ = 0;
         char* name = 0;
@@ -429,7 +427,7 @@ static int NPySecObj_init_safe(NPySecObj* self, PyObject* args, PyObject* kwds) 
     return nrn::convert_cxx_exceptions(NPySecObj_init, self, args, kwds);
 }
 
-static int NPyAllSegOfSecIter_init(NPyAllSegOfSecIter* self, PyObject* args, PyObject* kwds) {
+static int NPyAllSegOfSecIter_init(NPyAllSegOfSecIter* self, PyObject* args, PyObject* /* kwds */) {
     NPySecObj* pysec;
     // printf("NPyAllSegOfSecIter_init %p %p\n", self, self->sec_);
     if (self != NULL && !self->pysec_) {
@@ -481,7 +479,7 @@ PyObject* NPyAllSegOfSecIter_new_safe(PyTypeObject* type, PyObject* args, PyObje
     return nrn::convert_cxx_exceptions(NPyAllSegOfSecIter_new, type, args, kwds);
 }
 
-PyObject* nrnpy_newsecobj(PyObject* self, PyObject* args, PyObject* kwds) {
+PyObject* nrnpy_newsecobj(PyObject* /* self */, PyObject* args, PyObject* kwds) {
     return NPySecObj_new(psection_type, args, kwds);
 }
 
@@ -489,7 +487,7 @@ PyObject* nrnpy_newsecobj_safe(PyObject* self, PyObject* args, PyObject* kwds) {
     return nrn::convert_cxx_exceptions(nrnpy_newsecobj, self, args, kwds);
 }
 
-static PyObject* NPySegObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+static PyObject* NPySegObj_new(PyTypeObject* type, PyObject* args, PyObject* /* kwds */) {
     NPySecObj* pysec;
     double x;
     if (!PyArg_ParseTuple(args, "O!d", psection_type, &pysec, &x)) {
@@ -513,12 +511,16 @@ static PyObject* NPySegObj_new(PyTypeObject* type, PyObject* args, PyObject* kwd
     return (PyObject*) self;
 }
 
+<<<<<<< HEAD
 static PyObject* NPySegObj_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds) {
     return nrn::convert_cxx_exceptions(NPySegObj_new, type, args, kwds);
 }
 
 
 static PyObject* NPyMechObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+=======
+static PyObject* NPyMechObj_new(PyTypeObject* type, PyObject* args, PyObject* /* kwds */) {
+>>>>>>> 2dc0aa7f (fixup! try get_pt3d)
     NPySegObj* pyseg;
     if (!PyArg_ParseTuple(args, "O!", psegment_type, &pyseg)) {
         return NULL;
@@ -871,28 +873,26 @@ static PyObject* NPySecObj_pt3dstyle_safe(NPySecObj* self, PyObject* args) {
     return nrn::convert_cxx_exceptions(NPySecObj_pt3dstyle, self, args);
 }
 
-// returns x value at index of 3d list
-static Pt3d* get_pt3d(NPySecObj* self, PyObject* args)
-{
+static Pt3d* get_pt3d_from_python_args(NPySecObj* self, PyObject* args) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
     int n, i;
     if (!PyArg_ParseTuple(args, "i", &i)) {
-        return nullptr;
+        return NULL;
     }
     n = sec->npt3d - 1;
     if (i < 0 || i > n) {
         PyErr_SetString(PyExc_Exception, "Arg out of range\n");
-        return nullptr;
+        return NULL;
     }
     return &sec->pt3d[i];
 }
 
 static PyObject* NPySecObj_x3d(NPySecObj* self,
                                PyObject* args) {  // returns x value at index of 3d list
-    Pt3d* pt3d = get_pt3d(self, args);
-    if(pt3d == nullptr){
-        return nullptr;
+    Pt3d* pt3d = get_pt3d_from_python_args(self, args);
+    if (pt3d == NULL) {
+        return NULL;
     }
     return PyFloat_FromDouble((double) pt3d->x);
 }
@@ -903,18 +903,11 @@ static PyObject* NPySecObj_x3d_safe(NPySecObj* self, PyObject* args) {
 
 static PyObject* NPySecObj_y3d(NPySecObj* self,
                                PyObject* args) {  // returns y value at index of 3d list
-    Section* sec = self->sec_;
-    CHECK_SEC_INVALID(sec);
-    int n, i;
-    if (!PyArg_ParseTuple(args, "i", &i)) {
+    Pt3d* pt3d = get_pt3d_from_python_args(self, args);
+    if (pt3d == NULL) {
         return NULL;
     }
-    n = sec->npt3d - 1;
-    if (i < 0 || i > n) {
-        PyErr_SetString(PyExc_Exception, "Arg out of range\n");
-        return NULL;
-    }
-    return PyFloat_FromDouble((double) sec->pt3d[i].y);
+    return PyFloat_FromDouble((double) pt3d->y);
 }
 
 static PyObject* NPySecObj_y3d_safe(NPySecObj* self, PyObject* args) {
@@ -923,18 +916,11 @@ static PyObject* NPySecObj_y3d_safe(NPySecObj* self, PyObject* args) {
 
 static PyObject* NPySecObj_z3d(NPySecObj* self,
                                PyObject* args) {  // returns z value at index of 3d list
-    Section* sec = self->sec_;
-    CHECK_SEC_INVALID(sec);
-    int n, i;
-    if (!PyArg_ParseTuple(args, "i", &i)) {
+    Pt3d* pt3d = get_pt3d_from_python_args(self, args);
+    if (pt3d == NULL) {
         return NULL;
     }
-    n = sec->npt3d - 1;
-    if (i < 0 || i > n) {
-        PyErr_SetString(PyExc_Exception, "Arg out of range\n");
-        return NULL;
-    }
-    return PyFloat_FromDouble((double) sec->pt3d[i].z);
+    return PyFloat_FromDouble((double) pt3d->z);
 }
 
 static PyObject* NPySecObj_z3d_safe(NPySecObj* self, PyObject* args) {
@@ -942,19 +928,13 @@ static PyObject* NPySecObj_z3d_safe(NPySecObj* self, PyObject* args) {
 }
 
 // returns arc position value at index of 3d list
-static PyObject* NPySecObj_arc3d(NPySecObj* self, PyObject* args) {
-    Section* sec = self->sec_;
-    CHECK_SEC_INVALID(sec);
-    int n, i;
-    if (!PyArg_ParseTuple(args, "i", &i)) {
+static PyObject* NPySecObj_arc3d(NPySecObj* self,
+                                 PyObject* args) {
+    Pt3d* pt3d = get_pt3d_from_python_args(self, args);
+    if (pt3d == NULL) {
         return NULL;
     }
-    n = sec->npt3d - 1;
-    if (i < 0 || i > n) {
-        PyErr_SetString(PyExc_Exception, "Arg out of range\n");
-        return NULL;
-    }
-    return PyFloat_FromDouble((double) sec->pt3d[i].arc);
+    return PyFloat_FromDouble((double) pt3d->arc);
 }
 
 static PyObject* NPySecObj_arc3d_safe(NPySecObj* self, PyObject* args) {
@@ -963,18 +943,11 @@ static PyObject* NPySecObj_arc3d_safe(NPySecObj* self, PyObject* args) {
 
 static PyObject* NPySecObj_diam3d(NPySecObj* self,
                                   PyObject* args) {  // returns diam value at index of 3d list
-    Section* sec = self->sec_;
-    CHECK_SEC_INVALID(sec);
-    int n, i;
-    if (!PyArg_ParseTuple(args, "i", &i)) {
+    Pt3d* pt3d = get_pt3d_from_python_args(self, args);
+    if (pt3d == NULL) {
         return NULL;
     }
-    n = sec->npt3d - 1;
-    if (i < 0 || i > n) {
-        PyErr_SetString(PyExc_Exception, "Arg out of range\n");
-        return NULL;
-    }
-    return PyFloat_FromDouble((double) fabs(sec->pt3d[i].d));
+    return PyFloat_FromDouble((double) fabs(pt3d->d));
 }
 
 static PyObject* NPySecObj_diam3d_safe(NPySecObj* self, PyObject* args) {
@@ -983,18 +956,11 @@ static PyObject* NPySecObj_diam3d_safe(NPySecObj* self, PyObject* args) {
 
 // returns True/False depending on if spine present
 static PyObject* NPySecObj_spine3d(NPySecObj* self, PyObject* args) {
-    Section* sec = self->sec_;
-    CHECK_SEC_INVALID(sec);
-    int n, i;
-    if (!PyArg_ParseTuple(args, "i", &i)) {
+    Pt3d* pt3d = get_pt3d_from_python_args(self, args);
+    if (pt3d == NULL) {
         return NULL;
     }
-    n = sec->npt3d - 1;
-    if (i < 0 || i > n) {
-        PyErr_SetString(PyExc_Exception, "Arg out of range\n");
-        return NULL;
-    }
-    if (sec->pt3d[i].d < 0) {
+    if (pt3d->d < 0) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
