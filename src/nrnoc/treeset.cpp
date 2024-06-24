@@ -73,6 +73,17 @@ extern short* nrn_is_artificial_;
 extern cTemplate** nrn_pnt_template_;
 #endif
 
+namespace nrn {
+static size_t cacheline_bytesize{64}; // Would like to determine dynamically.
+size_t xtra_padding(size_t nbytes) {
+    auto x = nbytes % cacheline_bytesize;
+    return x ? cacheline_bytesize - x : 0;
+}
+// assert(xtra_padding(63) == 1);
+// assert(xtra_padding(64) == 0);
+// assert(xtra_padding(65) == 63);
+} // namespace nrn
+
 /*
 (2002-04-06)
 One reason for going into the following in depth is to allow
@@ -2093,6 +2104,11 @@ static void nrn_sort_mech_data(
             // the Memb_list for this mechanism in this thread, this might be
             // null if there are no entries, or if it's an artificial cell type(?)
             auto* const ml = nt->_ml_list[type];
+if (ml) {
+auto dsz = sizeof(double);
+auto n = ml->nodecount;
+printf("  ZZZ %s id=%d count=%d padding=%zd\n", memb_func[type].sym->name, nt->id, n, nrn::xtra_padding(n*dsz)/dsz);
+}
             if (ml) {
                 // Tell the Memb_list what global offset its values start at
                 ml->set_storage_offset(global_i);
@@ -2253,6 +2269,10 @@ static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_ty
     // Process threads one at a time -- this means that the data for each
     // NrnThread will be contiguous.
     NrnThread* nt{};
+FOR_THREADS(nt) {
+auto dsz = sizeof(double);
+printf("  ZZZ nodes id=%d end=%d padding=%zd\n", nt->id, nt->end, nrn::xtra_padding(nt->end*dsz)/dsz);
+}
     FOR_THREADS(nt) {
         // What offset in the global node data structure do the values for this thread
         // start at
@@ -2346,6 +2366,7 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         // caused something to not be sorted should also have invalidated the
         // cache.
         assert(!neuron::cache::model);
+printf("ZZZ nrn_ensure_model_data_are_sorted needs to sort. nrn_nthread=%d\n", nrn_nthread);
         // Build a new cache (*not* in situ, so it doesn't get invalidated
         // under our feet while we're in the middle of the job) and populate it
         // by calling the various methods that sort the model data.
