@@ -939,7 +939,7 @@ PyObject* nrn_hocobj_handle(neuron::container::data_handle<double> d) {
     return result;
 }
 
-extern "C" PyObject* nrn_hocobj_ptr(double* pd) {
+extern "C" NRN_EXPORT PyObject* nrn_hocobj_ptr(double* pd) {
     return nrn_hocobj_handle(neuron::container::data_handle<double>{pd});
 }
 
@@ -2567,7 +2567,7 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
 }
 
 static PyObject* (*vec_as_numpy)(int, double*);
-extern "C" int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*) ) {
+extern "C" NRN_EXPORT int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*) ) {
     vec_as_numpy = p;
     return 0;
 }
@@ -2621,7 +2621,7 @@ static void nrnpy_restore_savestate_(int64_t size, char* data) {
     }
 }
 
-extern "C" int nrnpy_set_toplevel_callbacks(PyObject* rvp_plot0,
+extern "C" NRN_EXPORT int nrnpy_set_toplevel_callbacks(PyObject* rvp_plot0,
                                             PyObject* plotshape_plot0,
                                             PyObject* get_mech_object_0,
                                             PyObject* store_savestate,
@@ -2637,7 +2637,7 @@ extern "C" int nrnpy_set_toplevel_callbacks(PyObject* rvp_plot0,
 }
 
 static PyObject* gui_callback = NULL;
-extern "C" int nrnpy_set_gui_callback(PyObject* new_gui_callback) {
+extern "C" NRN_EXPORT int nrnpy_set_gui_callback(PyObject* new_gui_callback) {
     gui_callback = new_gui_callback;
     return 0;
 }
@@ -2857,7 +2857,7 @@ static Object* rvp_rxd_to_callable_(Object* obj) {
 }
 
 
-extern "C" PyObject* get_plotshape_data(PyObject* sp) {
+extern "C" NRN_EXPORT PyObject* get_plotshape_data(PyObject* sp) {
     PyHocObject* pho = (PyHocObject*) sp;
     ShapePlotInterface* spi;
     if (!is_obj_type(pho->ho_, "PlotShape")) {
@@ -3102,12 +3102,12 @@ static void add2topdict(PyObject* dict) {
 
 static PyObject* nrnpy_vec_math = NULL;
 
-extern "C" int nrnpy_vec_math_register(PyObject* callback) {
+extern "C" NRN_EXPORT int nrnpy_vec_math_register(PyObject* callback) {
     nrnpy_vec_math = callback;
     return 0;
 }
 
-extern "C" int nrnpy_rvp_pyobj_callback_register(PyObject* callback) {
+extern "C" NRN_EXPORT int nrnpy_rvp_pyobj_callback_register(PyObject* callback) {
     nrnpy_rvp_pyobj_callback = callback;
     return 0;
 }

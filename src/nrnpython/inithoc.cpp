@@ -221,7 +221,7 @@ void nrnpython_finalize() {
 
 static char* env[] = {0};
 
-extern "C" PyObject* PyInit_hoc() {
+extern "C" NRN_EXPORT PyObject* PyInit_hoc() {
 #if NRN_ENABLE_THREADS
     main_thread_ = std::this_thread::get_id();
 #endif
@@ -368,5 +368,5 @@ extern "C" PyObject* PyInit_hoc() {
 }
 
 #if !defined(MINGW)
-extern "C" void modl_reg() {}
+extern "C" NRN_EXPORT void modl_reg() {}
 #endif  // !defined(MINGW)
