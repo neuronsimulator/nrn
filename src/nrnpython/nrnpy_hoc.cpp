@@ -55,7 +55,6 @@ extern Objectdata* hoc_top_level_data;
 extern void hoc_tobj_unref(Object**);
 extern void hoc_unref_defer();
 extern void sec_access_push();
-extern PyObject* nrnpy_pushsec(PyObject*);
 extern bool hoc_valid_stmt(const char*, Object*);
 PyObject* nrnpy_nrn();
 extern PyObject* nrnpy_cas(PyObject*, PyObject*);

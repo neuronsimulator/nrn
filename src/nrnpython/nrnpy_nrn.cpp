@@ -511,16 +511,11 @@ static PyObject* NPySegObj_new(PyTypeObject* type, PyObject* args, PyObject* /* 
     return (PyObject*) self;
 }
 
-<<<<<<< HEAD
 static PyObject* NPySegObj_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds) {
     return nrn::convert_cxx_exceptions(NPySegObj_new, type, args, kwds);
 }
 
-
-static PyObject* NPyMechObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
-=======
 static PyObject* NPyMechObj_new(PyTypeObject* type, PyObject* args, PyObject* /* kwds */) {
->>>>>>> 2dc0aa7f (fixup! try get_pt3d)
     NPySegObj* pyseg;
     if (!PyArg_ParseTuple(args, "O!", psegment_type, &pyseg)) {
         return NULL;
@@ -1620,15 +1615,7 @@ static PyObject* NPySecObj_has_membrane_safe(NPySecObj* self, PyObject* args) {
     return nrn::convert_cxx_exceptions(NPySecObj_has_membrane, self, args);
 }
 
-PyObject* nrnpy_pushsec(PyObject* sec) {
-    if (PyObject_TypeCheck(sec, psection_type)) {
-        nrn_pushsec(((NPySecObj*) sec)->sec_);
-        return sec;
-    }
-    return NULL;
-}
-
-static PyObject* NPySecObj_push(NPySecObj* self, PyObject* args) {
+static PyObject* NPySecObj_push(NPySecObj* self, PyObject* /* args */) {
     CHECK_SEC_INVALID(self->sec_);
     nrn_pushsec(self->sec_);
     Py_INCREF(self);
