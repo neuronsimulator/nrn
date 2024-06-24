@@ -24,7 +24,7 @@ extern int nrn_main_launch;
 // int nrn_global_argc;
 extern char** nrn_global_argv;
 extern void (*p_nrnpython_finalize)();
-extern PyObject* nrnpy_hoc();
+extern "C" PyObject* nrnpy_hoc();
 
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();

@@ -3340,7 +3340,7 @@ static PyType_Spec obj_spec_from_name(const char* name) {
     };
 }
 
-PyObject* nrnpy_hoc() {
+extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     PyObject* m;
     PyObject* bases;
     PyTypeObject* pto;

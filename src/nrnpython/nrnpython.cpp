@@ -175,7 +175,7 @@ static int nrnmingw_pyrun_interactiveloop() {
     return 0;
 }
 
-extern PyObject* nrnpy_hoc();
+extern "C" PyObject* nrnpy_hoc();
 extern PyObject* nrnpy_nrn();
 
 /** @brief Start the Python interpreter.
