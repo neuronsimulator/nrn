@@ -1118,7 +1118,7 @@ void nrnpython_reg_real_nrnpy_hoc_cpp(neuron::python::impl_ptrs* ptrs);
  * @brief Populate NEURON state with information from a specific Python.
  * @param ptrs Logically a return value; avoidi
  */
-extern "C" void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
+extern "C" NRN_EXPORT void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
     assert(ptrs);
     class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr, nullptr);
     nrnpy_pyobj_sym_ = hoc_lookup("PythonObject");

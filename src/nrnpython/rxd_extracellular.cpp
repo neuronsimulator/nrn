@@ -163,7 +163,7 @@ Reaction* ecs_create_reaction(int list_idx,
  * grid_id - the grid id within the linked list - this corresponds to species
  * ECSReactionRate - the reaction function
  */
-extern "C" void ics_register_reaction(int list_idx,
+extern "C" NRN_EXPORT void ics_register_reaction(int list_idx,
                                       int num_species,
                                       int num_params,
                                       int* species_id,
@@ -189,7 +189,7 @@ extern "C" void ics_register_reaction(int list_idx,
  * grid_id - the grid id within the linked list - this corresponds to species
  * ECSReactionRate - the reaction function
  */
-extern "C" void ecs_register_reaction(int list_idx,
+extern "C" NRN_EXPORT void ecs_register_reaction(int list_idx,
                                       int num_species,
                                       int num_params,
                                       int* species_id,
@@ -599,7 +599,7 @@ void _fadvance_fixed_step_3D(void) {
     scatter_concentrations();
 }
 
-extern "C" void scatter_concentrations(void) {
+extern "C" NRN_EXPORT void scatter_concentrations(void) {
     /* transfer concentrations to classic NEURON */
     Grid_node* grid;
 
