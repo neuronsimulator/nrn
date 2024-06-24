@@ -923,8 +923,7 @@ static PyObject* NPySecObj_z3d_safe(NPySecObj* self, PyObject* args) {
 }
 
 // returns arc position value at index of 3d list
-static PyObject* NPySecObj_arc3d(NPySecObj* self,
-                                 PyObject* args) {
+static PyObject* NPySecObj_arc3d(NPySecObj* self, PyObject* args) {
     Pt3d* pt3d = get_pt3d_from_python_args(self, args);
     if (pt3d == NULL) {
         return NULL;
