@@ -334,6 +334,7 @@ void nrn_threads_create(int n, bool parallel) {
                 nt->userpart = 0;
                 nt->ncell = 0;
                 nt->end = 0;
+                nt->padding = 0;
                 for (j = 0; j < BEFORE_AFTER_SIZE; ++j) {
                     nt->tbl[j] = (NrnThreadBAList*) 0;
                 }

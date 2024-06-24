@@ -75,7 +75,18 @@ struct Memb_list {
     Datum** pdata{};
     Prop** prop{};
     Datum* _thread{}; /* thread specific data (when static is no good) */
-    int nodecount{};
+    int nodecount{};  /* For ARTIFICIAL_CELL, I believe this refers to the
+                         instance count (in this thread (nodeindices
+                         and nodelist are NULL)).
+                         */
+    int padding{}; /* See the multicore.h NrnThread padding comment.
+                      To avoid false cacheline sharing, need to ensure the
+                      next thread data begins on cacheline boundary. Generally,
+                      (nodecount + padding)*sizeof(double)
+                      should be multiple of 64 bytes (8 doubles).
+                      ??? instead of sizeof(double), should it be the minimum
+                      sizeof of an item in the SoA storage row?
+                      */
     /**
      * @brief Get a vector of double* representing the model data.
      *
