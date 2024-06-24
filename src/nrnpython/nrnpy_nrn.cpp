@@ -1904,11 +1904,7 @@ static Prop* mech_of_segment_prop(Prop* p) {
 
 static PyObject* mech_of_segment_iter(NPySegObj* self) {
     Section* sec = self->pysec_->sec_;
-    if (!sec->prop) {
-        PyErr_SetString(PyExc_ReferenceError, "nrn.Segment can't access a deleted section");
-        return NULL;
-    }
-    // printf("mech_of_segment_iter\n");
+    CHECK_SEC_INVALID(sec)
     Node* nd = node_exact(sec, self->x_);
     Prop* p = mech_of_segment_prop(nd->prop);
     NPyMechOfSegIter* mi = PyObject_New(NPyMechOfSegIter, pmech_of_seg_iter_generic_type);
@@ -2172,10 +2168,7 @@ static PyObject* mech_of_seg_next_safe(NPyMechOfSegIter* self) {
 
 static PyObject* var_of_mech_iter(NPyMechObj* self) {
     Section* sec = self->pyseg_->pysec_->sec_;
-    if (!sec->prop) {
-        PyErr_SetString(PyExc_ReferenceError, "nrn.Mechanism can't access a deleted section");
-        return NULL;
-    }
+    CHECK_SEC_INVALID(sec)
 
     // printf("var_of_mech_iter\n");
     NPyVarOfMechIter* vmi = PyObject_New(NPyVarOfMechIter, pvar_of_mech_iter_generic_type);
@@ -2215,10 +2208,8 @@ static PyObject* var_of_mech_next_safe(NPyVarOfMechIter* self) {
 
 static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
     Section* sec = self->pysec_->sec_;
-    if (!sec->prop) {
-        PyErr_SetString(PyExc_ReferenceError, "nrn.Segment can't access a deleted section");
-        return NULL;
-    }
+    CHECK_SEC_INVALID(sec)
+
     Symbol* sym;
     Py_INCREF(pyname);
     Py2NRNString name(pyname);
@@ -2486,10 +2477,7 @@ static neuron::container::data_handle<double> var_pval(NPyMechObj* pymech,
 
 static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     Section* sec = self->pyseg_->pysec_->sec_;
-    if (!sec->prop) {
-        PyErr_SetString(PyExc_ReferenceError, "nrn.Mechanism can't access a deleted section");
-        return NULL;
-    }
+    CHECK_SEC_INVALID(sec)
     CHECK_PROP_INVALID(self->prop_id_);
     Py_INCREF(pyname);
     Py2NRNString name(pyname);
@@ -2689,10 +2677,7 @@ static Py_ssize_t rv_len_safe(PyObject* self) {
 static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
     NPyRangeVar* r = (NPyRangeVar*) self;
     Section* sec = r->pymech_->pyseg_->pysec_->sec_;
-    if (!sec->prop) {
-        PyErr_SetString(PyExc_ReferenceError, "nrn.RangeVar can't access a deleted section");
-        return NULL;
-    }
+    CHECK_SEC_INVALID(sec)
 
     PyObject* result = NULL;
     if (ix < 0 || ix >= rv_len(self)) {
