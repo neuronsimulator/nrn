@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "nrn_export.hpp"
+
 #include <iostream>
 #include <string>
 
