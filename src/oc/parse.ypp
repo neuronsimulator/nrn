@@ -767,7 +767,7 @@ wholearray:begin array	/* using execution stack to get Symbol from array */
 		int chk = ipop();
 		Symbol* sym = spop();
    if (chk) {
-	if (!ISARRAY(sym)) {
+	if (!is_array(*sym)) {
 		if (ndim) {
 			acterror(sym->name, "not an array variable");
 		}

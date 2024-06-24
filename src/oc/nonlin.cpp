@@ -36,7 +36,7 @@ void dep_make(void) /* tag the variable as dependent with a variable number */
         if (sym->subtype != NOTUSER) {
             execerror(sym->name, "can't be a dependent variable");
         }
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             numpt = &(sym->s_varn);
         } else {
             Arrayinfo* aray = OPARINFO(sym);
@@ -106,7 +106,7 @@ static void set_varble(void) { /* set up varble array by searching for tags */
     for (sp = symlist->first; sp != (Symbol*) 0; sp = sp->next) {
         if (sp->s_varn != 0) {
             if (sp->type == VAR) {
-                if (!ISARRAY(sp)) {
+                if (!is_array(*sp)) {
                     varble[sp->s_varn] = OPVAL(sp);
                 } else {
                     int i;
@@ -132,7 +132,7 @@ void eqinit(void) /* built in function to initialize equation solver */
         Delta = *getarg(1);
     for (sp = symlist->first; sp != (Symbol*) 0; sp = sp->next) {
         if (sp->s_varn != 0) {
-            if (ISARRAY(sp)) {
+            if (is_array(*sp)) {
                 if (OPARINFO(sp)->a_varn != (unsigned*) 0)
                     free((char*) (OPARINFO(sp)->a_varn));
             }

@@ -2056,7 +2056,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
         result = Py_BuildValue("i", sec->nnode - 1);
     } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
         Symbol* sym = ((NPyRangeVar*) rv)->sym_;
-        if (ISARRAY(sym)) {
+        if (is_array(*sym)) {
             NPyRangeVar* r = rvnew(sym, self, 0.5);
             result = (PyObject*) r;
         } else {
@@ -2147,7 +2147,7 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
         // sec->nnode);
     } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
         Symbol* sym = ((NPyRangeVar*) rv)->sym_;
-        if (ISARRAY(sym)) {
+        if (is_array(*sym)) {
             PyErr_SetString(PyExc_IndexError, "missing index");
             err = -1;
         } else {
@@ -2294,7 +2294,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             Prop* p = nrn_mechanism(mtype, nd);
             Object* ob = nrn_nmodlrandom_wrap(p, sym);
             result = nrnpy_ho2po(ob);
-        } else if (ISARRAY(sym)) {
+        } else if (is_array(*sym)) {
             NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
             r->pymech_ = new_pymechobj();
             r->pymech_->pyseg_ = self;
@@ -2322,7 +2322,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             result = nrn_hocobj_handle(nd->v_handle());
         } else if ((sym = hoc_table_lookup(n + 5, hoc_built_in_symlist)) != 0 &&
                    sym->type == RANGEVAR) {
-            if (ISARRAY(sym)) {
+            if (is_array(*sym)) {
                 NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
                 r->pymech_ = new_pymechobj();
                 r->pymech_->pyseg_ = self;
@@ -2429,7 +2429,7 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
         }
     } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
         sym = ((NPyRangeVar*) rv)->sym_;
-        if (ISARRAY(sym)) {
+        if (is_array(*sym)) {
             char s[200];
             Sprintf(s, "%s needs an index for assignment", sym->name);
             PyErr_SetString(PyExc_IndexError, s);
@@ -2555,7 +2555,7 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     Symbol* sym = var_find_in_mech(mechsym, buf);
     if (sym && sym->type == RANGEVAR) {
         // printf("mech_getattro sym %s\n", sym->name);
-        if (ISARRAY(sym)) {
+        if (is_array(*sym)) {
             NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
             r->pymech_ = self;
             Py_INCREF(self);
@@ -2739,7 +2739,7 @@ static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
         PyErr_SetString(PyExc_IndexError, r->sym_->name);
         return NULL;
     }
-    if (ISARRAY(r->sym_)) {
+    if (is_array(*r->sym_)) {
         assert(r->sym_->arayinfo->nsub == 1);
         auto const array_dim = r->sym_->arayinfo->sub[0];
         assert(ix < array_dim);
