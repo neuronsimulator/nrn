@@ -82,6 +82,32 @@ size_t xtra_padding(size_t nbytes) {
 // assert(xtra_padding(63) == 1);
 // assert(xtra_padding(64) == 0);
 // assert(xtra_padding(65) == 63);
+
+static void pr_thread_padding() {
+    NrnThread* nt{};
+    FOR_THREADS(nt) {
+        for(auto& node: (*nt->node_padding)) {
+            std::cout << "QQQ tid=" << nt->id << "  " << node << std::endl;
+        }
+    }
+}
+
+static void add_thread_padding() {
+    NrnThread* nt;
+    FOR_THREADS(nt) {
+        auto dsz = sizeof(double);
+        size_t npad = xtra_padding(nt->end*dsz)/dsz;
+        if (!nt->node_padding) {
+            nt->node_padding = new std::vector<Node>(0);
+        }
+        nt->node_padding->clear();
+        nt->node_padding->reserve(npad);
+        for (size_t i=0; i < npad; ++i) {
+            nt->node_padding->emplace_back(Node{});
+        }
+    }
+    pr_thread_padding();
+}
 } // namespace nrn
 
 /*
@@ -1752,6 +1778,9 @@ void v_setup_vectors(void) {
             }
         }
     }
+
+    nrn::add_thread_padding();
+
     neuron::model().node_data().mark_as_unsorted();
     // The assumption here is that one can arbitrarily permute the
     // NrnThread node order (within the constraint that
@@ -1773,6 +1802,7 @@ void v_setup_vectors(void) {
     long_difus_solve(nrn_ensure_model_data_are_sorted(), 3, *nrn_threads);  // !!!
     nrn_nonvint_block_setup();
     diam_changed = 1;
+    nrn::pr_thread_padding();
 
 #if 0
     for (int tid = 0; tid < nrn_nthread; ++tid) {
@@ -2268,11 +2298,16 @@ static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_ty
                                                    std::numeric_limits<std::size_t>::max());
     // Process threads one at a time -- this means that the data for each
     // NrnThread will be contiguous.
+    // and we will add the NrnThread.node_padding, on to the end.
     NrnThread* nt{};
-FOR_THREADS(nt) {
-auto dsz = sizeof(double);
-printf("  ZZZ nodes id=%d end=%d padding=%zd\n", nt->id, nt->end, nrn::xtra_padding(nt->end*dsz)/dsz);
-}
+    
+    // but first, where does the padding start
+    std::size_t ipad{};
+    FOR_THREADS(nt) {
+        ipad += (std::size_t)nt->end;
+    }
+    // so in the following thread look we also add the padding indices into the permutation.
+
     FOR_THREADS(nt) {
         // What offset in the global node data structure do the values for this thread
         // start at
@@ -2284,6 +2319,10 @@ printf("  ZZZ nodes id=%d end=%d padding=%zd\n", nt->id, nt->end, nrn::xtra_padd
             assert(current_node_row < node_data_size);
             assert(global_i < node_data_size);
             node_data_permutation.at(current_node_row) = global_i;
+        }
+        for (std::size_t i=0; i < (*nt->node_padding).size(); ++i) {
+            assert(ipad == (*nt->node_padding)[i]._node_handle.current_row());
+            node_data_permutation.at(ipad++) = global_i++;
         }
     }
     if (global_i != node_data_size) {

@@ -326,6 +326,7 @@ void nrn_threads_create(int n, bool parallel) {
                 nt = nrn_threads + i;
                 nt->_t = 0.;
                 nt->_dt = -1e9;
+                nt->node_padding = nullptr;
                 nt->id = i;
                 nt->_stop_stepping = 0;
                 nt->tml = (NrnThreadMembList*) 0;
@@ -334,7 +335,6 @@ void nrn_threads_create(int n, bool parallel) {
                 nt->userpart = 0;
                 nt->ncell = 0;
                 nt->end = 0;
-                nt->padding = 0;
                 for (j = 0; j < BEFORE_AFTER_SIZE; ++j) {
                     nt->tbl[j] = (NrnThreadBAList*) 0;
                 }
@@ -387,6 +387,9 @@ void nrn_threads_free() {
     for (it = 0; it < nrn_nthread; ++it) {
         NrnThread* nt = nrn_threads + it;
         NrnThreadMembList *tml, *tml2;
+        if (nt->node_padding) {
+            delete nt->node_padding;
+        }
         for (tml = nt->tml; tml; tml = tml2) {
             Memb_list* ml = tml->ml;
             tml2 = tml->next;
