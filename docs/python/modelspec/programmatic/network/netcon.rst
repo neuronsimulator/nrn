@@ -73,8 +73,7 @@ NetCon
         the overhead of threshold detection at every time step. 
          
         The source may be ``None``. In this case events can only occur by 
-        calling :func:`event` from Python. (It is also used by NEOSIM to implement 
-        its own delivery system.) 
+        calling :func:`event` from Python. 
          
         A source used by multiple NetCon instances is shared by those instances 
         to allow faster threshold detection (ie on a per source basis instead 
