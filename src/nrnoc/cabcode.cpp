@@ -1908,12 +1908,16 @@ double* nrn_vext_pd(Symbol* s, int indx, Node* nd) {
 }
 #endif
 
-class VoidPointerError : public std::runtime_error {
+class VoidPointerError: public std::runtime_error {
   public:
     using std::runtime_error::runtime_error;
 };
 
-neuron::container::data_handle<double> dprop_impl(Prop* m, Symbol* s, int indx, Section* sec, short inode) {
+neuron::container::data_handle<double> dprop_impl(Prop* m,
+                                                  Symbol* s,
+                                                  int indx,
+                                                  Section* sec,
+                                                  short inode) {
 #if EXTRACELLULAR
     // old comment: this does not handle vext(0) and vext(1) properly at this time
     if (m->_type == EXTRACELL && s->u.rng.index == neuron::extracellular::vext_pseudoindex()) {
@@ -1943,9 +1947,9 @@ neuron::container::data_handle<double> dprop_impl(Prop* m, Symbol* s, int indx, 
 neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, short inode) {
     auto* const m = nrn_mechanism_check(s->u.rng.type, sec, inode);
     try {
-      return dprop_impl(m, s, indx, sec, inode);
+        return dprop_impl(m, s, indx, sec, inode);
     } catch (VoidPointerError e) {
-      hoc_execerror(e.what(), nullptr);
+        hoc_execerror(e.what(), nullptr);
     }
 }
 
@@ -1962,9 +1966,9 @@ neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
         return {};
     }
     try {
-      return dprop_impl(m, s, indx, sec, inode);
+        return dprop_impl(m, s, indx, sec, inode);
     } catch (VoidPointerError e) {
-      *err = 2;
+        *err = 2;
     }
     return {};
 }
