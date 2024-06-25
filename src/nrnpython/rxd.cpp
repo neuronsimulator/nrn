@@ -1192,7 +1192,7 @@ void TaskQueue_sync(TaskQueue* q) {
     q->waiting_cond.wait(lock, [q] { return q->length == 0; });
 }
 
-int get_num_threads(void) {
+extern "C" NRN_EXPORT int get_num_threads(void) {
     return NUM_THREADS;
 }
 
