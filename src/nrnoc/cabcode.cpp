@@ -1,3 +1,4 @@
+#include "neuron/container/generic_data_handle.hpp"
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/cabcode.cpp,v 1.37 1999/07/08 14:24:59 hines Exp */
 
@@ -1316,7 +1317,7 @@ neuron::container::data_handle<double> nrn_rangepointer(Section* sec, Symbol* s,
 /* return nullptr if failure instead of hoc_execerror
    and return pointer to the 0 element if an array
 */
-neuron::container::data_handle<double> nrnpy_rangepointer(Section* sec,
+neuron::container::generic_data_handle nrnpy_rangepointer(Section* sec,
                                                           Symbol* s,
                                                           double d,
                                                           int* err,
@@ -1913,7 +1914,7 @@ class VoidPointerError: public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
-neuron::container::data_handle<double> dprop_impl(Prop* m,
+neuron::container::generic_data_handle dprop_impl(Prop* m,
                                                   Symbol* s,
                                                   int indx,
                                                   Section* sec,
@@ -1933,8 +1934,8 @@ neuron::container::data_handle<double> dprop_impl(Prop* m,
             return m->param_handle_legacy(s->u.rng.index + indx);
         }
     } else {
-        neuron::container::data_handle<double> const p{m->dparam[s->u.rng.index + indx]};
-        if (!p) {
+        neuron::container::generic_data_handle const p{m->dparam[s->u.rng.index + indx]};
+        if (p.invalid_handle()) {
             throw VoidPointerError(std::string(s->name) + " wasn't made to point to anything");
         }
         return p;
@@ -1947,7 +1948,7 @@ neuron::container::data_handle<double> dprop_impl(Prop* m,
 neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, short inode) {
     auto* const m = nrn_mechanism_check(s->u.rng.type, sec, inode);
     try {
-        return dprop_impl(m, s, indx, sec, inode);
+        return neuron::container::data_handle<double>{dprop_impl(m, s, indx, sec, inode)};
     } catch (VoidPointerError e) {
         hoc_execerror(e.what(), nullptr);
     }
@@ -1955,7 +1956,7 @@ neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, 
 
 /* return nullptr instead of hoc_execerror. */
 /* returns location of property symbol */
-neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
+neuron::container::generic_data_handle nrnpy_dprop(Symbol* s,
                                                    int indx,
                                                    Section* sec,
                                                    short inode,
