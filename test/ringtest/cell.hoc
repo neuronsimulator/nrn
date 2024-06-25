@@ -44,8 +44,12 @@ proc geom() {
   dend {  L = 200  diam = 1  }
 }
 external lambda_f
-proc geom_nseg() {
-  forsec all { nseg = int((L/(0.1*lambda_f(100))+.9)/2)*2 + 1  }
+proc geom_nseg() {local temp
+  temp = (L/(0.1*lambda_f(100)))/2
+  if (temp != int(temp)) {
+    temp = int(temp) + 1
+  }
+  forsec all { nseg = temp*2 + 1  }
 }
 proc biophys() {
   forsec all {
