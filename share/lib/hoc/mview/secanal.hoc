@@ -418,7 +418,7 @@ func chk0diam() {local i
 	return 1
 }
 
-proc mk_nseg() {local i, n_nseg, n_dx, dx, dlam, n0
+proc mk_nseg() {local i, n_nseg, n_dx, dx, dlam, n0, temp
 	nseg_strategy = 0
 	nsegvec = new Vector(all.count)
 	lvec = new Vector(all.count)
@@ -441,7 +441,11 @@ proc mk_nseg() {local i, n_nseg, n_dx, dx, dlam, n0
 		sprint(tstr, "Longest dx is %g at %s with nseg=%d", dx, secname(), nseg)
 		msub.append(tstr)
 	}
-	dx = int(dx/10+.999)*10
+	temp = dx / 10
+	if (temp != int(temp)) {
+		temp = int(temp) + 1
+	}
+	dx = temp*10
 	tobj = lvec.c.div(dx).floor.add(1).sub(nsegvec)
 	if (tobj.dot(tobj) == 0) {
 		sprint(tstr, "all nseg consistent under assumption of dx=%g and nseg=L/dx+1", dx)
@@ -484,6 +488,7 @@ proc mk_nseg() {local i, n_nseg, n_dx, dx, dlam, n0
 		msub.append(tstr)
 	}
 	if (dlam > .01) {
+		// TODO: replace the 0.45s by using the equivalent to a ceil
 		if (dlam > .1) {rscl = .1} else { rscl = .01 }
 		dlam = int(dlam/rscl+.45)*rscl
 		tobj = lamvec.c.div(2*dlam).add(.45).floor.mul(2).add(1).sub(nsegvec)
