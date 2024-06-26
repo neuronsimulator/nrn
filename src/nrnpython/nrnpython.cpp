@@ -1,15 +1,15 @@
-#include <nrnpython.h>
-#include <nrnpy_utils.h>
-#include <stdio.h>
 #include <InterViews/resource.h>
+#include <nrnpy_utils.h>
+#include <nrnpython.h>
+#include <stdio.h>
 #if HAVE_IV
 #include <InterViews/session.h>
 #endif
+#include <hoccontext.h>
 #include <nrnoc2iv.h>
 #include <nrnpy_reg.h>
-#include <hoccontext.h>
-#include <string>
 #include <ocfile.h>  // bool isDirExist(const std::string& path);
+#include <string>
 
 #include <hocstr.h>
 extern "C" void nrnpython_real();
@@ -111,7 +111,7 @@ static int nrnmingw_pyrun_interactiveloop() {
         }
     }
     return 0;
- }
+}
 
 static wchar_t** wcargv;
 
@@ -244,7 +244,7 @@ extern "C" int nrnpython_start(int b) {
         }
         return python_error_encountered;
     }
-#endif //USE_PYTHON
+#endif  // USE_PYTHON
     return 0;
 }
 
