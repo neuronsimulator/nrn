@@ -92,6 +92,27 @@ int nrnpy_pyrun(const char* fname) {
 #endif  // MINGW not defined
 }
 
+/**
+ * @brief Like a PyRun_InteractiveLoop that does not need a FILE*
+ * Use InteractiveConsole to work around the issue of mingw FILE*
+ * not being compatible with Python via the CAPI on windows11.
+ * @return 0 on success, nonzero on failure.
+ */
+static int nrnmingw_pyrun_interactiveloop() {
+    int code{};
+    std::string lines[3]{
+        "import code as nrnmingw_code\n",
+        "nrnmingw_interpreter = nrnmingw_code.InteractiveConsole(locals=globals())\n",
+        "nrnmingw_interpreter.interact(\"\")\n"};
+    for (const auto& line: lines) {
+        if (PyRun_SimpleString(line.c_str())) {
+            PyErr_Print();
+            return -1;
+        }
+    }
+    return 0;
+ }
+
 static wchar_t** wcargv;
 
 static void del_wcargv(int argc) {
@@ -182,8 +203,13 @@ extern "C" int nrnpython_start(int b) {
         copy_argv_wcargv(nrn_global_argc, nrn_global_argv);
         PySys_SetArgv(nrn_global_argc, wcargv);
         nrnpy_augment_path();
-#if !defined(MINGW)
-        // cannot get this to avoid crashing with MINGW
+
+        // Used to crash with MINGW when assocated with a python gui thread e.g
+        // from neuron import h, gui
+        // g = h.Graph()
+        // del g
+        // Also, NEURONMainMenu/File/Quit did not work. The solution to both
+        // seems to be to just avoid gui threads if MINGW and launched nrniv
         PyOS_ReadlineFunctionPointer = nrnpython_getline;
 #endif
         // Is there a -c "command" or file.py arg.
@@ -206,11 +232,18 @@ extern "C" int nrnpython_start(int b) {
         // code. In noninteractive/batch mode that happens immediately, in
         // interactive mode then we start a Python interpreter first.
         if (nrn_istty_) {
+#if !defined(MINGW)
             PyRun_InteractiveLoop(hoc_fin, "stdin");
+#else
+            // mingw FILE incompatible with windows11 Python FILE.
+            int ret = nrnmingw_pyrun_interactiveloop();
+            if (ret) {
+                python_error_encountered = ret;
+            }
+#endif
         }
         return python_error_encountered;
     }
-#endif
     return 0;
 }
 
