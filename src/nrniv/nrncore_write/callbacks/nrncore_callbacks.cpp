@@ -98,7 +98,7 @@ void* get_global_dbl_item(void* p, const char*& name, int& size, double*& val) {
     for (; sp; sp = sp->next) {
         if (sp->type == VAR && sp->subtype == USERDOUBLE) {
             name = sp->name;
-            if (ISARRAY(sp)) {
+            if (is_array(*sp)) {
                 Arrayinfo* a = sp->arayinfo;
                 if (a->nsub == 1) {
                     size = a->sub[0];

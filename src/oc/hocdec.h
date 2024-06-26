@@ -136,7 +136,10 @@ struct Symbol { /* symbol table entry */
                     with old nmodl dll's */
     Symbol* next;           /* to link to another */
 };
-#define ISARRAY(arg) (arg->arayinfo != (Arrayinfo*) 0)
+
+inline bool is_array(const Symbol& sym) {
+    return sym.arayinfo != nullptr;
+}
 
 using hoc_List = hoc_Item;
 

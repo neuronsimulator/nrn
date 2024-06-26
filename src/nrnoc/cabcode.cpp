@@ -1036,7 +1036,7 @@ void range_const() {
 static int range_vec_indx(Symbol* s) {
     int indx;
 
-    if (ISARRAY(s)) {
+    if (is_array(*s)) {
         indx = hoc_araypt(s, SYMBOL);
     } else {
         indx = 0;

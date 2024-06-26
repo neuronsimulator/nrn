@@ -1203,7 +1203,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         int t = sym->type;
         if (t == VAR || t == STRING || t == OBJECTVAR || t == RANGEVAR || t == SECTION ||
             t == SECTIONREF || t == VARALIAS || t == OBJECTALIAS || t == RANGEOBJ) {
-            if (sym != nrn_child_sym && !ISARRAY(sym)) {
+            if (sym != nrn_child_sym && !is_array(*sym)) {
                 hoc_push_object(po->ho_);
                 nrn_inpython_ = 1;
                 component(po);
@@ -1245,7 +1245,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
     HocTopContextSet
     switch (sym->type) {
     case VAR:  // double*
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             if (sym->subtype == USERINT) {
                 result = Py_BuildValue("i", *(sym->u.pvalint));
                 break;
@@ -1292,7 +1292,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         result = Py_BuildValue("s", *hoc_strpop());
     } break;
     case OBJECTVAR:  // Object*
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             Inst fc, *pcsav;
             fc.sym = sym;
             pcsav = save_pc(&fc);
@@ -1305,7 +1305,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         }
         break;
     case SECTION:
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             result = hocobj_getsec(sym);
         } else {
             result = (PyObject*) intermediate(self, sym, -1);
@@ -1455,7 +1455,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
         int t = sym->type;
         if (t == VAR || t == STRING || t == OBJECTVAR || t == RANGEVAR || t == VARALIAS ||
             t == OBJECTALIAS) {
-            if (!ISARRAY(sym)) {
+            if (!is_array(*sym)) {
                 hoc_push_object(po->ho_);
                 nrn_inpython_ = 1;
                 component(po);
@@ -1483,7 +1483,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
     HocTopContextSet
     switch (sym->type) {
     case VAR:  // double*
-        if (ISARRAY(sym)) {
+        if (is_array(*sym)) {
             PyErr_SetString(PyExc_TypeError, "Wrong number of subscripts");
             err = -1;
         } else {
