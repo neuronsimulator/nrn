@@ -433,7 +433,7 @@ if(NRN_ENABLE_PYTHON)
   # Make sure the USE_PYTHON macro is defined in the C++ code
   list(APPEND NRN_COMPILE_DEFS USE_PYTHON)
   # Ensure nanobind is there, but dont import, we don't want its CMake
-  nrn_add_external_project(nanobind False)
+  nrn_add_external_project(nanobind DISABLE_ADD RECURSIVE SHALLOW)
   include(NanoBindMinimal)
 endif()
 
