@@ -1,5 +1,6 @@
 import math
 import numpy
+import numbers
 from .rxdException import RxDException
 from . import initializer
 
@@ -145,10 +146,15 @@ def _ensure_arithmeticed(other):
 
     if isinstance(other, species._SpeciesMathable):
         other = _Arithmeticed(other)
+    elif isinstance(other, numbers.Real):
+        other = _Arithmeticed(other, valid_reaction_term=False)
     elif isinstance(other, _Reaction):
         raise RxDException("Cannot do arithmetic on a reaction")
     elif not isinstance(other, _Arithmeticed):
-        other = _Arithmeticed(other, valid_reaction_term=False)
+        raise RxDException(f"{type(other)=} : {isinstance(other, _Arithmeticed)=}")
+        # raise RxDException(
+        #     f"{other} of type {type(other)} is not a valid arithmetic object."
+        # )
     return other
 
 
