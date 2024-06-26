@@ -94,9 +94,12 @@ static void pr_thread_padding() {
         }
         for (auto tml = nt->tml; tml; tml = tml->next) {
             Memb_list* ml = tml->ml;
-            for (Prop* p: ml->mech_padding) {
-                const char* s = memb_func[tml->index].sym->name;
-                std::cout << "XXX " << nt->id << "  " << s << "  " << p->id() << std::endl;
+            if (ml->mech_padding) {
+                auto& mp = *ml->mech_padding;
+                for (Prop* p: mp) {
+                    const char* s = memb_func[tml->index].sym->name;
+                    std::cout << "XXX " << nt->id << "  " << s << "  " << p->id() << std::endl;
+                }
             }
         }
     }
@@ -123,14 +126,20 @@ static void add_thread_padding() {
         for (auto tml = nt->tml; tml; tml = tml->next) {
             Memb_list* ml = tml->ml;
             npad = xtra_padding(ml->nodecount*dsz)/dsz;
-            for(auto& ptr: ml->mech_padding) {
-                delete ptr;
+            if (!ml->mech_padding) {
+                ml->mech_padding = new std::vector<Prop*>();
             }
-            ml->mech_padding.clear();
-            ml->mech_padding.reserve(npad);
-            for (size_t i = 0; i < npad; ++i) {
-                Prop* p = new Prop(tml->index);
-                ml->mech_padding.push_back(p);
+            if (ml->mech_padding) {
+                auto& mp = *ml->mech_padding;
+                for(auto& ptr: mp) {
+                    delete ptr;
+                }
+                mp.clear();
+                mp.reserve(npad);
+                for (size_t i = 0; i < npad; ++i) {
+                    Prop* p = new Prop(tml->index);
+                    mp.push_back(p);
+                }
             }
         }
     }
@@ -2159,15 +2168,6 @@ static void nrn_sort_mech_data(
                                                        std::numeric_limits<std::size_t>::max());
         NrnThread* nt{};
 
-        // need to know where padding starts
-        std::size_t ipad{};
-        FOR_THREADS(nt) {
-            auto* const ml = nt->_ml_list[type];
-            if (ml) {
-                ipad += (std::size_t)ml->nodecount;
-            }
-        }
-
         FOR_THREADS(nt) {
             // the Memb_list for this mechanism in this thread, this might be
             // null if there are no entries, or if it's an artificial cell type(?)
@@ -2231,10 +2231,11 @@ static void nrn_sort_mech_data(
             }
 
             // permute the padding to global_id
-            if (ml) {
-                for (std::size_t i=0; i < ml->mech_padding.size(); ++i) {
-                    assert(ipad == ml->mech_padding[i]->current_row());
-                    mech_data_permutation.at(ipad++) = global_i++;
+            if (ml && ml->mech_padding) {
+                auto& mp = *ml->mech_padding;
+                for (std::size_t i=0; i < mp.size(); ++i) {
+                    auto ipad = mp[i]->current_row();
+                    mech_data_permutation.at(ipad) = global_i++;
                 }
             }
         }
@@ -2340,16 +2341,9 @@ static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_ty
                                                    std::numeric_limits<std::size_t>::max());
     // Process threads one at a time -- this means that the data for each
     // NrnThread will be contiguous.
-    // and we will add the NrnThread.node_padding, on to the end.
-    NrnThread* nt{};
-    
-    // but first, where does the padding start
-    std::size_t ipad{};
-    FOR_THREADS(nt) {
-        ipad += (std::size_t)nt->end;
-    }
-    // so in the following thread look we also add the padding indices into the permutation.
+    // and we will permute the NrnThread.node_padding after NrnThread.end;
 
+    NrnThread* nt{};
     FOR_THREADS(nt) {
         // What offset in the global node data structure do the values for this thread
         // start at
@@ -2365,8 +2359,8 @@ static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_ty
         if (nt->node_padding) {
             auto& np = *nt->node_padding;
             for (std::size_t i=0; i < np.size(); ++i) {
-                assert(ipad == (*np[i])._node_handle.current_row());
-                node_data_permutation.at(ipad++) = global_i++;
+                auto ipad = (*np[i])._node_handle.current_row();
+                node_data_permutation.at(ipad) = global_i++;
             }
         }
     }

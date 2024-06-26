@@ -4,6 +4,9 @@
 #include "nrnassrt.h"
 #include "nrnoc_ml.h"
 
+//warning: deleting pointer to incomplete type 'Prop' may cause undefined behavior
+#include "section.h"
+
 #include <cassert>
 #include <iterator>  // std::distance, std::next
 #include <numeric>   // std::accumulate
@@ -59,8 +62,12 @@ Memb_list::~Memb_list() noexcept {
     if (m_owns_nodes) {
         nodes_free();
     }
-    for (std::size_t i = 0; i < mech_padding.size(); ++i) {
-        delete mech_padding[i];
+    if (mech_padding) {
+        auto& mp = *mech_padding;
+        for (std::size_t i = 0; i < mp.size(); ++i) {
+            delete mp[i];
+        }
+        mech_padding = nullptr;
     }
 }
 
