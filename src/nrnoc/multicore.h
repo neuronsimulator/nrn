@@ -108,20 +108,25 @@ struct NrnThread {
 
 extern int nrn_nthread;
 extern NrnThread* nrn_threads;
+
+int nrn_allow_busywait(int b);
+int nrn_how_many_processors();
 void nrn_threads_create(int n, bool parallel);
-extern void nrn_thread_error(const char*);
+void nrn_thread_error(const char*);
 using worker_job_t = void* (*) (NrnThread*);
 using worker_job_with_token_t = void (*)(neuron::model_sorted_token const&, NrnThread&);
 void nrn_multithread_job(worker_job_t);
 void nrn_multithread_job(neuron::model_sorted_token const&, worker_job_with_token_t);
-extern void nrn_onethread_job(int, void* (*) (NrnThread*) );
-extern void nrn_wait_for_threads();
+void nrn_onethread_job(int, void* (*) (NrnThread*) );
+void nrn_wait_for_threads();
+Object** nrn_get_thread_partition(int it);
+void nrn_thread_partition(int it, Object* sl);
 void nrn_thread_table_check(neuron::model_sorted_token const&);
-extern void nrn_threads_free();
-extern int nrn_user_partition();
-extern void reorder_secorder();
-extern void nrn_thread_memblist_setup();
-extern std::size_t nof_worker_threads();
+void nrn_threads_free();
+int nrn_user_partition();
+void reorder_secorder();
+void nrn_thread_memblist_setup();
+std::size_t nof_worker_threads();
 
 #define FOR_THREADS(nt) for (nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt)
 

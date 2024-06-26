@@ -59,7 +59,6 @@ extern Objectdata* hoc_top_level_data;
 extern void hoc_tobj_unref(Object**);
 extern void hoc_unref_defer();
 extern void sec_access_push();
-extern PyObject* nrnpy_pushsec(PyObject*);
 extern bool hoc_valid_stmt(const char*, Object*);
 PyObject* nrnpy_nrn();
 extern PyObject* nrnpy_cas(PyObject*, PyObject*);
@@ -574,7 +573,7 @@ Object* nrnpy_po2ho(PyObject* po) {
     // po.
     Object* o;
     if (po == Py_None) {
-        o = 0;
+        o = NULL;
     } else if (PyObject_TypeCheck(po, hocobject_type)) {
         PyHocObject* pho = (PyHocObject*) po;
         if (pho->type_ == PyHoc::HocObject) {
@@ -1205,7 +1204,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         int t = sym->type;
         if (t == VAR || t == STRING || t == OBJECTVAR || t == RANGEVAR || t == SECTION ||
             t == SECTIONREF || t == VARALIAS || t == OBJECTALIAS || t == RANGEOBJ) {
-            if (sym != nrn_child_sym && !ISARRAY(sym)) {
+            if (sym != nrn_child_sym && !is_array(*sym)) {
                 hoc_push_object(po->ho_);
                 nrn_inpython_ = 1;
                 component(po);
@@ -1247,7 +1246,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
     HocTopContextSet
     switch (sym->type) {
     case VAR:  // double*
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             if (sym->subtype == USERINT) {
                 result = Py_BuildValue("i", *(sym->u.pvalint));
                 break;
@@ -1294,7 +1293,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         result = Py_BuildValue("s", *hoc_strpop());
     } break;
     case OBJECTVAR:  // Object*
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             Inst fc, *pcsav;
             fc.sym = sym;
             pcsav = save_pc(&fc);
@@ -1307,7 +1306,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         }
         break;
     case SECTION:
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             result = hocobj_getsec(sym);
         } else {
             result = (PyObject*) intermediate(self, sym, -1);
@@ -1457,7 +1456,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
         int t = sym->type;
         if (t == VAR || t == STRING || t == OBJECTVAR || t == RANGEVAR || t == VARALIAS ||
             t == OBJECTALIAS) {
-            if (!ISARRAY(sym)) {
+            if (!is_array(*sym)) {
                 hoc_push_object(po->ho_);
                 nrn_inpython_ = 1;
                 component(po);
@@ -1485,7 +1484,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
     HocTopContextSet
     switch (sym->type) {
     case VAR:  // double*
-        if (ISARRAY(sym)) {
+        if (is_array(*sym)) {
             PyErr_SetString(PyExc_TypeError, "Wrong number of subscripts");
             err = -1;
         } else {
@@ -2265,7 +2264,7 @@ static PyObject* cpp2refstr(char** cpp) {
 }
 
 static PyObject* setpointer(PyObject* self, PyObject* args) {
-    PyObject *ref, *name, *pp, *result = NULL;
+    PyObject *ref, *name, *pp;
     if (PyArg_ParseTuple(args, "O!OO", hocobject_type, &ref, &name, &pp) == 1) {
         PyHocObject* href = (PyHocObject*) ref;
         double** ppd = 0;
@@ -2301,16 +2300,13 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
             }
         }
         *gh = neuron::container::generic_data_handle{href->u.px_};
-        result = Py_None;
-        Py_INCREF(result);
+        Py_RETURN_NONE;
     }
 done:
-    if (!result) {
-        PyErr_SetString(PyExc_TypeError,
-                        "setpointer(_ref_hocvar, 'POINTER_name', point_process or "
-                        "nrn.Mechanism))");
-    }
-    return result;
+    PyErr_SetString(PyExc_TypeError,
+                    "setpointer(_ref_hocvar, 'POINTER_name', point_process or "
+                    "nrn.Mechanism))");
+    return NULL;
 }
 
 
@@ -3023,8 +3019,8 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
     }
     memcpy((char*) vector_vec(vec), datastr, len);
     Py_DECREF(rawdata);
-    Py_INCREF(Py_None);
-    return Py_None;
+
+    Py_RETURN_NONE;
 }
 
 static PyObject* hocpickle_setstate_safe(PyObject* self, PyObject* args) {
@@ -3047,8 +3043,7 @@ static PyObject* libpython_path(PyObject* self, PyObject* args) {
     }
     return Py_BuildValue("s", info.dli_fname);
 #else
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 #endif
 }
 

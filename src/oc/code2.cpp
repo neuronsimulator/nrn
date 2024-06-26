@@ -539,7 +539,7 @@ static void symdebug(const char* s, Symlist* list) /* for debugging display the 
             Printf("name:%s\ntype:", sp->name);
             switch (sp->type) {
             case VAR:
-                if (!ISARRAY(sp)) {
+                if (!is_array(*sp)) {
                     if (sp->subtype == USERINT)
                         Printf("VAR USERINT  %8d", *(sp->u.pvalint));
                     else if (sp->subtype == USERDOUBLE)
@@ -602,7 +602,7 @@ void symbols(void) /* display the types above */
                     Printf("\t%s", sp->name);
                     switch (sp->type) {
                     case VAR:
-                        if (ISARRAY(sp)) {
+                        if (is_array(*sp)) {
                             for (j = 0; j < sp->arayinfo->nsub; j++)
                                 Printf("[%d]", sp->arayinfo->sub[j]);
                         }
