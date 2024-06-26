@@ -4,7 +4,7 @@
 #include "nrnassrt.h"
 #include "nrnoc_ml.h"
 
-//warning: deleting pointer to incomplete type 'Prop' may cause undefined behavior
+// warning: deleting pointer to incomplete type 'Prop' may cause undefined behavior
 #include "section.h"
 
 #include <cassert>

@@ -74,7 +74,7 @@ extern cTemplate** nrn_pnt_template_;
 #endif
 
 namespace nrn {
-static size_t cacheline_bytesize{64}; // Would like to determine dynamically.
+static size_t cacheline_bytesize{64};  // Would like to determine dynamically.
 size_t xtra_padding(size_t nbytes) {
     auto x = nbytes % cacheline_bytesize;
     return x ? cacheline_bytesize - x : 0;
@@ -86,9 +86,9 @@ size_t xtra_padding(size_t nbytes) {
 static void pr_thread_padding() {
     NrnThread* nt{};
     FOR_THREADS(nt) {
-        if (nt->node_padding) {        
+        if (nt->node_padding) {
             auto& np = *nt->node_padding;
-            for(auto& node: np) {
+            for (auto& node: np) {
                 std::cout << "QQQ tid=" << nt->id << "  " << *node << std::endl;
             }
         }
@@ -109,7 +109,7 @@ static void add_thread_padding() {
     NrnThread* nt;
     FOR_THREADS(nt) {
         auto dsz = sizeof(double);
-        size_t npad = xtra_padding(nt->end*dsz)/dsz;
+        size_t npad = xtra_padding(nt->end * dsz) / dsz;
         if (!nt->node_padding) {
             nt->node_padding = new std::vector<Node*>();
         }
@@ -119,19 +119,19 @@ static void add_thread_padding() {
         }
         np.clear();
         np.reserve(npad);
-        for (size_t i=0; i < npad; ++i) {
+        for (size_t i = 0; i < npad; ++i) {
             np.push_back(new Node());
         }
 
         for (auto tml = nt->tml; tml; tml = tml->next) {
             Memb_list* ml = tml->ml;
-            npad = xtra_padding(ml->nodecount*dsz)/dsz;
+            npad = xtra_padding(ml->nodecount * dsz) / dsz;
             if (!ml->mech_padding) {
                 ml->mech_padding = new std::vector<Prop*>();
             }
             if (ml->mech_padding) {
                 auto& mp = *ml->mech_padding;
-                for(auto& ptr: mp) {
+                for (auto& ptr: mp) {
                     delete ptr;
                 }
                 mp.clear();
@@ -145,7 +145,7 @@ static void add_thread_padding() {
     }
     pr_thread_padding();
 }
-} // namespace nrn
+}  // namespace nrn
 
 /*
 (2002-04-06)
@@ -2233,7 +2233,7 @@ static void nrn_sort_mech_data(
             // permute the padding to global_id
             if (ml && ml->mech_padding) {
                 auto& mp = *ml->mech_padding;
-                for (std::size_t i=0; i < mp.size(); ++i) {
+                for (std::size_t i = 0; i < mp.size(); ++i) {
                     auto ipad = mp[i]->current_row();
                     mech_data_permutation.at(ipad) = global_i++;
                 }
@@ -2358,7 +2358,7 @@ static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_ty
         }
         if (nt->node_padding) {
             auto& np = *nt->node_padding;
-            for (std::size_t i=0; i < np.size(); ++i) {
+            for (std::size_t i = 0; i < np.size(); ++i) {
                 auto ipad = (*np[i])._node_handle.current_row();
                 node_data_permutation.at(ipad) = global_i++;
             }

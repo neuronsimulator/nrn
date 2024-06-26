@@ -80,14 +80,14 @@ struct Memb_list {
                          and nodelist are NULL)).
                          */
     std::vector<Prop*>* mech_padding{};
-                   /* See the multicore.h NrnThread node_padding comment.
-                      To avoid false cacheline sharing, need to ensure the
-                      next thread data begins on cacheline boundary. Generally,
-                      (nodecount + padding)*sizeof(double)
-                      should be multiple of 64 bytes (8 doubles).
-                      ??? instead of sizeof(double), should it be the minimum
-                      sizeof of an item in the SoA storage row?
-                      */
+    /* See the multicore.h NrnThread node_padding comment.
+       To avoid false cacheline sharing, need to ensure the
+       next thread data begins on cacheline boundary. Generally,
+       (nodecount + padding)*sizeof(double)
+       should be multiple of 64 bytes (8 doubles).
+       ??? instead of sizeof(double), should it be the minimum
+       sizeof of an item in the SoA storage row?
+       */
     /**
      * @brief Get a vector of double* representing the model data.
      *
