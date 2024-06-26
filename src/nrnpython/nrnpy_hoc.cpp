@@ -572,7 +572,7 @@ Object* nrnpy_po2ho(PyObject* po) {
     // po.
     Object* o;
     if (po == Py_None) {
-        o = 0;
+        o = NULL;
     } else if (PyObject_TypeCheck(po, hocobject_type)) {
         PyHocObject* pho = (PyHocObject*) po;
         if (pho->type_ == PyHoc::HocObject) {
@@ -2263,7 +2263,7 @@ static PyObject* cpp2refstr(char** cpp) {
 }
 
 static PyObject* setpointer(PyObject* self, PyObject* args) {
-    PyObject *ref, *name, *pp, *result = NULL;
+    PyObject *ref, *name, *pp;
     if (PyArg_ParseTuple(args, "O!OO", hocobject_type, &ref, &name, &pp) == 1) {
         PyHocObject* href = (PyHocObject*) ref;
         double** ppd = 0;
@@ -2299,16 +2299,13 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
             }
         }
         *gh = neuron::container::generic_data_handle{href->u.px_};
-        result = Py_None;
-        Py_INCREF(result);
+        Py_RETURN_NONE;
     }
 done:
-    if (!result) {
-        PyErr_SetString(PyExc_TypeError,
-                        "setpointer(_ref_hocvar, 'POINTER_name', point_process or "
-                        "nrn.Mechanism))");
-    }
-    return result;
+    PyErr_SetString(PyExc_TypeError,
+                    "setpointer(_ref_hocvar, 'POINTER_name', point_process or "
+                    "nrn.Mechanism))");
+    return NULL;
 }
 
 
@@ -3016,8 +3013,8 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
     }
     memcpy((char*) vector_vec(vec), datastr, len);
     Py_DECREF(rawdata);
-    Py_INCREF(Py_None);
-    return Py_None;
+
+    Py_RETURN_NONE;
 }
 
 static PyObject* hocpickle_setstate_safe(PyObject* self, PyObject* args) {
@@ -3040,8 +3037,7 @@ static PyObject* libpython_path(PyObject* self, PyObject* args) {
     }
     return Py_BuildValue("s", info.dli_fname);
 #else
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 #endif
 }
 

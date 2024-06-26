@@ -1070,8 +1070,7 @@ static PyObject* NPySecObj_psection(NPySecObj* self) {
         Py_DECREF(arglist);
         return result;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject* NPySecObj_psection_safe(NPySecObj* self) {
@@ -1122,8 +1121,7 @@ static PyObject* newpyseghelp(Section* sec, double x) {
 static PyObject* pysec_disconnect(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
     nrn_disconnect(self->sec_);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject* pysec_disconnect_safe(NPySecObj* self) {
@@ -1134,8 +1132,7 @@ static PyObject* pysec_parentseg(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
     Section* psec = self->sec_->parentsec;
     if (psec == NULL || psec->prop == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     double x = nrn_connection_position(self->sec_);
     return newpyseghelp(psec, x);
@@ -1151,8 +1148,7 @@ static PyObject* pysec_trueparentseg(NPySecObj* self) {
     Section* psec = NULL;
     for (psec = sec->parentsec; psec; psec = psec->parentsec) {
         if (psec == NULL || psec->prop == NULL) {
-            Py_INCREF(Py_None);
-            return Py_None;
+            Py_RETURN_NONE;
         }
         if (nrn_at_beginning(sec)) {
             sec = psec;
@@ -1161,8 +1157,7 @@ static PyObject* pysec_trueparentseg(NPySecObj* self) {
         }
     }
     if (psec == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 
     double x = nrn_connection_position(sec);
@@ -1268,8 +1263,7 @@ static PyObject* pysec2cell(NPySecObj* self) {
     } else if (auto* o = self->sec_->prop->dparam[6].get<Object*>(); self->sec_->prop && o) {
         result = nrnpy_ho2po(o);
     } else {
-        result = Py_None;
-        Py_INCREF(result);
+        Py_RETURN_NONE;
     }
     return result;
 }
