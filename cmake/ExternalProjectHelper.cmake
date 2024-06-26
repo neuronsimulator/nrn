@@ -35,7 +35,8 @@ function(nrn_initialize_submodule path)
     message(
       FATAL_ERROR "git not found and ${path} sub-module not cloned (use git clone --recursive)")
   endif()
-  message(STATUS "Sub-module : missing ${path} : running git submodule update ${UPDATE_OPTIONS} --init")
+  message(
+    STATUS "Sub-module : missing ${path} : running git submodule update ${UPDATE_OPTIONS} --init")
   execute_process(
     COMMAND ${GIT_EXECUTABLE} submodule update ${UPDATE_OPTIONS} --init -- ${path}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -59,8 +60,8 @@ function(nrn_add_external_project name)
     if(opt_RECURSIVE)
       list(APPEND OPTIONS "RECURSIVE")
     endif()
-    if (opt_SHALLOW)
-      list (APPEND OPTIONS "SHALLOW")
+    if(opt_SHALLOW)
+      list(APPEND OPTIONS "SHALLOW")
     endif()
     nrn_initialize_submodule("${THIRD_PARTY_DIRECTORY}/${name}" ${OPTIONS})
   else()
