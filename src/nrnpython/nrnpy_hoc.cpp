@@ -22,6 +22,10 @@
 #include <vector>
 #include <sstream>
 
+#include <nanobind/nanobind.h>
+
+namespace nb = nanobind;
+
 extern PyTypeObject* psection_type;
 extern std::vector<const char*> py_exposed_classes;
 
@@ -69,8 +73,6 @@ extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
 extern Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
 extern Object* (*nrnpy_rvp_rxd_to_callable)(Object*);
-extern "C" int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*) );  // called by ctypes.
-extern "C" int nrnpy_set_gui_callback(PyObject*);
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
 class NetCon;
 extern int nrn_netcon_weight(NetCon*, double**);
@@ -936,7 +938,7 @@ PyObject* nrn_hocobj_handle(neuron::container::data_handle<double> d) {
     return result;
 }
 
-extern "C" PyObject* nrn_hocobj_ptr(double* pd) {
+extern "C" NRN_EXPORT PyObject* nrn_hocobj_ptr(double* pd) {
     return nrn_hocobj_handle(neuron::container::data_handle<double>{pd});
 }
 
@@ -2498,6 +2500,16 @@ static char* double_array_interface(PyObject* po, long& stride) {
     return static_cast<char*>(data);
 }
 
+
+inline double pyobj_to_double_or_fail(PyObject* obj, long obj_id) {
+    if (!PyNumber_Check(obj)) {
+        char buf[50];
+        Sprintf(buf, "item %d is not a valid number", obj_id);
+        hoc_execerror(buf, 0);
+    }
+    return PyFloat_AsDouble(obj);
+}
+
 static IvocVect* nrnpy_vec_from_python(void* v) {
     Vect* hv = (Vect*) v;
     //	printf("%s.from_array\n", hoc_object_name(hv->obj_));
@@ -2505,58 +2517,53 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
     if (ho->ctemplate->sym != nrnpy_pyobj_sym_) {
         hoc_execerror(hoc_object_name(ho), " is not a PythonObject");
     }
-    PyObject* po = nrnpy_hoc2pyobject(ho);
-    Py_INCREF(po);
-    if (!PySequence_Check(po)) {
-        if (!PyIter_Check(po)) {
+    // We borrow the list, so there's an INCREF and all items are alive
+    nb::object po = nb::borrow(nrnpy_hoc2pyobject(ho));
+
+    // If it's not a sequence, try iterating over it
+    if (!PySequence_Check(po.ptr())) {
+        if (!PyIter_Check(po.ptr())) {
             hoc_execerror(hoc_object_name(ho),
                           " does not support the Python Sequence or Iterator protocol");
         }
-        PyObject* iterator = PyObject_GetIter(po);
-        assert(iterator != NULL);
-        int i = 0;
-        PyObject* p;
-        while ((p = PyIter_Next(iterator)) != NULL) {
-            if (!PyNumber_Check(p)) {
-                char buf[50];
-                Sprintf(buf, "item %d not a number", i);
-                hoc_execerror(buf, 0);
-            }
-            hv->push_back(PyFloat_AsDouble(p));
-            Py_DECREF(p);
-            ++i;
+        long i = 0;
+        for (nb::handle item: po) {
+            hv->push_back(pyobj_to_double_or_fail(item.ptr(), i));
+            i++;
         }
-        Py_DECREF(iterator);
+        return hv;
+    }
+
+    int size = nb::len(po);
+    hv->resize(size);
+    double* x = vector_vec(hv);
+
+    // If sequence provides __array_interface__ use it
+    long stride;
+    char* array_interface_ptr = double_array_interface(po.ptr(), stride);
+    if (array_interface_ptr) {
+        for (int i = 0, j = 0; i < size; ++i, j += stride) {
+            x[i] = *(double*) (array_interface_ptr + j);
+        }
+        return hv;
+    }
+
+    // If it's a normal list, convert to the good type so operator[] is more efficient
+    if (PyList_Check(po.ptr())) {
+        nb::list list_obj{std::move(po)};
+        for (long i = 0; i < size; ++i) {
+            x[i] = pyobj_to_double_or_fail(list_obj[i].ptr(), i);
+        }
     } else {
-        int size = PySequence_Size(po);
-        //		printf("size = %d\n", size);
-        hv->resize(size);
-        double* x = vector_vec(hv);
-        long stride;
-        char* y = double_array_interface(po, stride);
-        if (y) {
-            for (int i = 0, j = 0; i < size; ++i, j += stride) {
-                x[i] = *(double*) (y + j);
-            }
-        } else {
-            for (int i = 0; i < size; ++i) {
-                PyObject* p = PySequence_GetItem(po, i);
-                if (!PyNumber_Check(p)) {
-                    char buf[50];
-                    Sprintf(buf, "item %d not a number", i);
-                    hoc_execerror(buf, 0);
-                }
-                x[i] = PyFloat_AsDouble(p);
-                Py_DECREF(p);
-            }
+        for (long i = 0; i < size; ++i) {
+            x[i] = pyobj_to_double_or_fail(po[i].ptr(), i);
         }
     }
-    Py_DECREF(po);
     return hv;
 }
 
 static PyObject* (*vec_as_numpy)(int, double*);
-extern "C" int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*) ) {
+extern "C" NRN_EXPORT int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*) ) {
     vec_as_numpy = p;
     return 0;
 }
@@ -2610,11 +2617,11 @@ static void nrnpy_restore_savestate_(int64_t size, char* data) {
     }
 }
 
-extern "C" int nrnpy_set_toplevel_callbacks(PyObject* rvp_plot0,
-                                            PyObject* plotshape_plot0,
-                                            PyObject* get_mech_object_0,
-                                            PyObject* store_savestate,
-                                            PyObject* restore_savestate) {
+extern "C" NRN_EXPORT int nrnpy_set_toplevel_callbacks(PyObject* rvp_plot0,
+                                                       PyObject* plotshape_plot0,
+                                                       PyObject* get_mech_object_0,
+                                                       PyObject* store_savestate,
+                                                       PyObject* restore_savestate) {
     rvp_plot = rvp_plot0;
     plotshape_plot = plotshape_plot0;
     get_mech_object_ = get_mech_object_0;
@@ -2626,7 +2633,7 @@ extern "C" int nrnpy_set_toplevel_callbacks(PyObject* rvp_plot0,
 }
 
 static PyObject* gui_callback = NULL;
-extern "C" int nrnpy_set_gui_callback(PyObject* new_gui_callback) {
+extern "C" NRN_EXPORT int nrnpy_set_gui_callback(PyObject* new_gui_callback) {
     gui_callback = new_gui_callback;
     return 0;
 }
@@ -2846,7 +2853,7 @@ static Object* rvp_rxd_to_callable_(Object* obj) {
 }
 
 
-extern "C" PyObject* get_plotshape_data(PyObject* sp) {
+extern "C" NRN_EXPORT PyObject* get_plotshape_data(PyObject* sp) {
     PyHocObject* pho = (PyHocObject*) sp;
     ShapePlotInterface* spi;
     if (!is_obj_type(pho->ho_, "PlotShape")) {
@@ -3090,12 +3097,12 @@ static void add2topdict(PyObject* dict) {
 
 static PyObject* nrnpy_vec_math = NULL;
 
-extern "C" int nrnpy_vec_math_register(PyObject* callback) {
+extern "C" NRN_EXPORT int nrnpy_vec_math_register(PyObject* callback) {
     nrnpy_vec_math = callback;
     return 0;
 }
 
-extern "C" int nrnpy_rvp_pyobj_callback_register(PyObject* callback) {
+extern "C" NRN_EXPORT int nrnpy_rvp_pyobj_callback_register(PyObject* callback) {
     nrnpy_rvp_pyobj_callback = callback;
     return 0;
 }
@@ -3328,7 +3335,7 @@ static PyType_Spec obj_spec_from_name(const char* name) {
     };
 }
 
-PyObject* nrnpy_hoc() {
+extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     PyObject* m;
     PyObject* bases;
     PyTypeObject* pto;
