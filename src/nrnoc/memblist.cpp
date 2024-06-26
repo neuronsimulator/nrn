@@ -59,6 +59,9 @@ Memb_list::~Memb_list() noexcept {
     if (m_owns_nodes) {
         nodes_free();
     }
+    for (std::size_t i = 0; i < mech_padding.size(); ++i) {
+        delete mech_padding[i];
+    }
 }
 
 [[nodiscard]] std::vector<double*> Memb_list::data() {

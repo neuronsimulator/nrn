@@ -79,7 +79,8 @@ struct Memb_list {
                          instance count (in this thread (nodeindices
                          and nodelist are NULL)).
                          */
-    int padding{}; /* See the multicore.h NrnThread padding comment.
+    std::vector<Prop*> mech_padding;
+                   /* See the multicore.h NrnThread node_padding comment.
                       To avoid false cacheline sharing, need to ensure the
                       next thread data begins on cacheline boundary. Generally,
                       (nodecount + padding)*sizeof(double)

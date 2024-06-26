@@ -86,8 +86,18 @@ size_t xtra_padding(size_t nbytes) {
 static void pr_thread_padding() {
     NrnThread* nt{};
     FOR_THREADS(nt) {
-        for(auto& node: (*nt->node_padding)) {
-            std::cout << "QQQ tid=" << nt->id << "  " << node << std::endl;
+        if (nt->node_padding) {        
+            auto& np = *nt->node_padding;
+            for(auto& node: np) {
+                std::cout << "QQQ tid=" << nt->id << "  " << *node << std::endl;
+            }
+        }
+        for (auto tml = nt->tml; tml; tml = tml->next) {
+            Memb_list* ml = tml->ml;
+            for (Prop* p: ml->mech_padding) {
+                const char* s = memb_func[tml->index].sym->name;
+                std::cout << "XXX " << nt->id << "  " << s << "  " << p->id() << std::endl;
+            }
         }
     }
 }
@@ -98,12 +108,30 @@ static void add_thread_padding() {
         auto dsz = sizeof(double);
         size_t npad = xtra_padding(nt->end*dsz)/dsz;
         if (!nt->node_padding) {
-            nt->node_padding = new std::vector<Node>(0);
+            nt->node_padding = new std::vector<Node*>();
         }
-        nt->node_padding->clear();
-        nt->node_padding->reserve(npad);
+        auto& np = *nt->node_padding;
+        for (size_t i = 0; i < np.size(); ++i) {
+            delete np[i];
+        }
+        np.clear();
+        np.reserve(npad);
         for (size_t i=0; i < npad; ++i) {
-            nt->node_padding->emplace_back(Node{});
+            np.push_back(new Node());
+        }
+
+        for (auto tml = nt->tml; tml; tml = tml->next) {
+            Memb_list* ml = tml->ml;
+            npad = xtra_padding(ml->nodecount*dsz)/dsz;
+            for(auto& ptr: ml->mech_padding) {
+                delete ptr;
+            }
+            ml->mech_padding.clear();
+            ml->mech_padding.reserve(npad);
+            for (size_t i = 0; i < npad; ++i) {
+                Prop* p = new Prop(tml->index);
+                ml->mech_padding.push_back(p);
+            }
         }
     }
     pr_thread_padding();
@@ -2130,15 +2158,20 @@ static void nrn_sort_mech_data(
         std::vector<std::size_t> mech_data_permutation(mech_data_size,
                                                        std::numeric_limits<std::size_t>::max());
         NrnThread* nt{};
+
+        // need to know where padding starts
+        std::size_t ipad{};
+        FOR_THREADS(nt) {
+            auto* const ml = nt->_ml_list[type];
+            if (ml) {
+                ipad += (std::size_t)ml->nodecount;
+            }
+        }
+
         FOR_THREADS(nt) {
             // the Memb_list for this mechanism in this thread, this might be
             // null if there are no entries, or if it's an artificial cell type(?)
             auto* const ml = nt->_ml_list[type];
-if (ml) {
-auto dsz = sizeof(double);
-auto n = ml->nodecount;
-printf("  ZZZ %s id=%d count=%d padding=%zd\n", memb_func[type].sym->name, nt->id, n, nrn::xtra_padding(n*dsz)/dsz);
-}
             if (ml) {
                 // Tell the Memb_list what global offset its values start at
                 ml->set_storage_offset(global_i);
@@ -2176,6 +2209,7 @@ printf("  ZZZ %s id=%d count=%d padding=%zd\n", memb_func[type].sym->name, nt->i
                 }
             }
             assert(!ml || ml->nodecount == nt_mech_count);
+
             // Look for any artificial cells attached to this NrnThread
             if (nrn_is_artificial_[type]) {
                 cTemplate* tmp = nrn_pnt_template_[type];
@@ -2193,6 +2227,14 @@ printf("  ZZZ %s id=%d count=%d padding=%zd\n", memb_func[type].sym->name, nt->i
                                 pnt->prop->dparam + field);
                         }
                     }
+                }
+            }
+
+            // permute the padding to global_id
+            if (ml) {
+                for (std::size_t i=0; i < ml->mech_padding.size(); ++i) {
+                    assert(ipad == ml->mech_padding[i]->current_row());
+                    mech_data_permutation.at(ipad++) = global_i++;
                 }
             }
         }
@@ -2320,9 +2362,12 @@ static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_ty
             assert(global_i < node_data_size);
             node_data_permutation.at(current_node_row) = global_i;
         }
-        for (std::size_t i=0; i < (*nt->node_padding).size(); ++i) {
-            assert(ipad == (*nt->node_padding)[i]._node_handle.current_row());
-            node_data_permutation.at(ipad++) = global_i++;
+        if (nt->node_padding) {
+            auto& np = *nt->node_padding;
+            for (std::size_t i=0; i < np.size(); ++i) {
+                assert(ipad == (*np[i])._node_handle.current_row());
+                node_data_permutation.at(ipad++) = global_i++;
+            }
         }
     }
     if (global_i != node_data_size) {
@@ -2405,7 +2450,6 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         // caused something to not be sorted should also have invalidated the
         // cache.
         assert(!neuron::cache::model);
-printf("ZZZ nrn_ensure_model_data_are_sorted needs to sort. nrn_nthread=%d\n", nrn_nthread);
         // Build a new cache (*not* in situ, so it doesn't get invalidated
         // under our feet while we're in the middle of the job) and populate it
         // by calling the various methods that sort the model data.

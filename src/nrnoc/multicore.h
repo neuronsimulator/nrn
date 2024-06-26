@@ -63,7 +63,7 @@ struct NrnThread {
     Memb_list** _ml_list;
     int ncell;            /* analogous to old rootnodecount */
     int end;              /* 1 + position of last in v_node array. Now v_node_count. */
-    std::vector<Node>* node_padding{};
+    std::vector<Node*>* node_padding;
                           /* Node storage rows after end for padding
                              Data for all threads is in SoA storage
                              and threads merely define a permutation that

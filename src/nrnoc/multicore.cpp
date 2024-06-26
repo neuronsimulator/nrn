@@ -388,7 +388,12 @@ void nrn_threads_free() {
         NrnThread* nt = nrn_threads + it;
         NrnThreadMembList *tml, *tml2;
         if (nt->node_padding) {
+            auto& np = *nt->node_padding;
+            for (std::size_t i = 0; i < np.size(); ++i) {
+                delete np[i];
+            }
             delete nt->node_padding;
+            nt->node_padding = nullptr;
         }
         for (tml = nt->tml; tml; tml = tml2) {
             Memb_list* ml = tml->ml;
