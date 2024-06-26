@@ -2152,11 +2152,11 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
             err = -1;
         } else {
             int errp;
-            auto const d = nrnpy_rangepointer(sec, sym, 0.5, &errp, 0 /* idx */);
+            auto d = nrnpy_rangepointer(sec, sym, 0.5, &errp, 0 /* idx */);
             if (!d) {
                 rv_noexist(sec, n, 0.5, errp);
                 err = -1;
-            } else if (!PyArg_Parse(value, "d", static_cast<double const*>(d))) {
+            } else if (!PyArg_Parse(value, "d", static_cast<double*>(d))) {
                 PyErr_SetString(PyExc_ValueError, "bad value");
                 err = -1;
             } else {
@@ -2436,13 +2436,13 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
             err = -1;
         } else {
             int errp;
-            auto const d = nrnpy_rangepointer(sec, sym, self->x_, &errp, 0 /* idx */);
+            auto d = nrnpy_rangepointer(sec, sym, self->x_, &errp, 0 /* idx */);
             if (!d) {
                 rv_noexist(sec, n, self->x_, errp);
                 Py_DECREF(pyname);
                 return -1;
             }
-            if (!PyArg_Parse(value, "d", static_cast<double const*>(d))) {
+            if (!PyArg_Parse(value, "d", static_cast<double*>(d))) {
                 PyErr_SetString(PyExc_ValueError, "bad value");
                 Py_DECREF(pyname);
                 return -1;
@@ -2781,7 +2781,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
         return -1;
     }
     int err;
-    auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, ix);
+    auto d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, ix);
     if (!d) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
         return -1;
@@ -2801,7 +2801,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
                        neuron::container::data_handle<double>{neuron::container::do_not_search, &x},
                        0);
     } else {
-        if (!PyArg_Parse(value, "d", static_cast<double const*>(d))) {
+        if (!PyArg_Parse(value, "d", static_cast<double*>(d))) {
             PyErr_SetString(PyExc_ValueError, "bad value");
             return -1;
         }
