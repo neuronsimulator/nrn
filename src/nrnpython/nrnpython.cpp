@@ -211,7 +211,7 @@ extern "C" int nrnpython_start(int b) {
         // Also, NEURONMainMenu/File/Quit did not work. The solution to both
         // seems to be to just avoid gui threads if MINGW and launched nrniv
         PyOS_ReadlineFunctionPointer = nrnpython_getline;
-#endif
+
         // Is there a -c "command" or file.py arg.
         bool python_error_encountered{false};
         for (i = 1; i < nrn_global_argc; ++i) {
@@ -244,6 +244,7 @@ extern "C" int nrnpython_start(int b) {
         }
         return python_error_encountered;
     }
+#endif //USE_PYTHON
     return 0;
 }
 
