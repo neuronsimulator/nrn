@@ -2,13 +2,12 @@
 /* /local/src/master/nrn/src/nrnoc/cabcode.cpp,v 1.37 1999/07/08 14:24:59 hines Exp */
 
 #include <regex>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 
 #define HOC_L_LIST 1
 #include "section.h"
-#include "nrn_ansi.h"
 #include "nrniv_mf.h"
 #include "membfunc.h"
 #include "parse.hpp"
@@ -446,12 +445,6 @@ double nrn_diameter(Node* nd) {
     return p->param(0);
 }
 
-void nrn_chk_section(Symbol* s) {
-    if (s->type != SECTION) {
-        execerror("Not a SECTION name:", s->name);
-    }
-}
-
 Section* chk_access() {
     Section* sec = secstack[isecstack];
     if (!sec || !sec->prop) {
@@ -511,7 +504,7 @@ Section* nrn_noerr_access(void) /* return 0 if no accessed section */
 /*sibling and child pointers do not ref sections to avoid mutual references */
 /* the sibling list is ordered according to increasing distance from parent */
 
-void nrn_remove_sibling_list(Section* sec) {
+static void nrn_remove_sibling_list(Section* sec) {
     Section* s;
     if (sec->parentsec) {
         if (sec->parentsec->child == sec) {
@@ -537,7 +530,7 @@ static double ncp_abs(Section* sec) {
     return x;
 }
 
-void nrn_add_sibling_list(Section* sec) {
+static void nrn_add_sibling_list(Section* sec) {
     Section* s;
     double x;
     if (sec->parentsec) {
@@ -577,7 +570,7 @@ static void reverse_sibling_list(Section* sec) {
     *pch = 0;
 }
 
-void disconnect(void) {
+static void disconnect() {
     if (ifarg(1)) {
         hoc_execerror(
             "disconnect takes no positional arguments and disconnects the HOC currently accessed "
@@ -711,7 +704,9 @@ static Section* Sec_access(void) /* section symbol at pc */
         hoc_thisobject = 0;
         hoc_symlist = hoc_top_level_symlist;
     }
-    nrn_chk_section(s);
+    if (s->type != SECTION) {
+        execerror("Not a SECTION name:", s->name);
+    }
     itm = OPSECITM(s)[range_vec_indx(s)];
     if (obsav) {
         hoc_objectdata = hoc_objectdata_restore(odsav);
@@ -813,7 +808,7 @@ void* hoc_sec_internal_name2ptr(const char* s, int eflag) {
     return vp;
 }
 
-void* hoc_pysec_name2ptr(const char* s, int eflag) {
+void* hoc_pysec_name2ptr(const char* s, int /* eflag */) {
     /*
       syntax is _pysec.<name>  where <name> is the name of a python
       nrn.Section from (*nrnpy_pysec_name_p_)(sec)
@@ -834,14 +829,14 @@ below to keep the stack ok when it is popped at the end of the next
 statement.
 */
 
-void ob_sec_access_push(Item* qsec) {
+void ob_sec_access_push(hoc_Item* qsec) {
     if (!qsec) {
         hoc_execerror("section in the object was deleted", (char*) 0);
     }
     nrn_pushsec(qsec->element.sec);
 }
 
-void ob_sec_access(void) {
+void ob_sec_access() {
     if (!section_object_seen) {
         hoc_nopop();
         nrn_pushsec(secstack[isecstack]);
@@ -1313,9 +1308,6 @@ neuron::container::data_handle<double> nrn_rangepointer(Section* sec, Symbol* s,
     return dprop(s, indx, sec, i);
 }
 
-/* return nullptr if failure instead of hoc_execerror
-   and return pointer to the 0 element if an array
-*/
 neuron::container::data_handle<double> nrnpy_rangepointer(Section* sec,
                                                           Symbol* s,
                                                           double d,
@@ -1436,7 +1428,6 @@ int node_index(Section* sec, double x) /* returns nearest index to x */
     return i;
 }
 
-/* return -1 if x at connection end, nnode-1 if at other end */
 int node_index_exact(Section* sec, double x) {
     if (x == 0.) {
         if (arc0at0(sec)) {
@@ -1471,6 +1462,7 @@ double cable_prop_eval(Symbol* sym) {
     }
     return 0.;
 }
+
 double* cable_prop_eval_pointer(Symbol* sym) {
     Section* sec;
     sec = nrn_sec_pop();
@@ -1521,6 +1513,7 @@ void nrn_change_nseg(Section* sec, int n) {
             }
     }
 }
+
 void cable_prop_assign(Symbol* sym, double* pd, int op) {
     Section* sec;
     sec = nrn_sec_pop();
@@ -1561,12 +1554,10 @@ void cable_prop_assign(Symbol* sym, double* pd, int op) {
     }
 }
 
-/* x of parent for this section */
 double nrn_connection_position(Section* sec) {
     return sec->prop->dparam[1].get<double>();
 }
 
-/* x=0,1 end connected to parent */
 double nrn_section_orientation(Section* sec) {
     return sec->prop->dparam[3].get<double>();
 }
@@ -1869,13 +1860,6 @@ int nrn_get_mechtype(const char* mechname) {
     return s->subtype;
 }
 
-int nrn_instance_count(int mechtype) {
-    if (v_structure_change) {
-        v_setup_vectors();
-    }
-    return memb_list[mechtype].nodecount;
-}
-
 #if EXTRACELLULAR
 /* want to handle vext(0), vext(1) correctly. No associated i_membrane though.*/
 /*
@@ -1994,7 +1978,6 @@ void forall_section(void) {
 
     Inst* savepc = pc;
     Item *qsec, *first, *last;
-    extern int hoc_returning;
     char buf[200];
     char** s;
     int istk;
@@ -2105,7 +2088,7 @@ void ismembrane(void) { /* return true if string is an inserted membrane in the
     hoc_retpushx((double) has_membrane(str, chk_access()));
 }
 
-const char* secaccessname(void) {
+static const char* secaccessname() {
     return secname(chk_access());
 }
 
@@ -2213,8 +2196,7 @@ void pop_section(void) {
     hoc_retpushx(1.);
 }
 
-/* turn off section stack fixing (in case of return,continue,break in a section
-statement) between exlicit user level push_section,etc and pop_section
+/* turn off section stack fixing (in case of return,continue,break in a section statement) between exlicit user level push_section,etc and pop_section
 */
 
 void hoc_level_pushsec(Section* sec) {

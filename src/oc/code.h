@@ -27,7 +27,7 @@ extern void hoc_arayinstal(void);
 /* OOP */
 extern void hoc_objectvar(void), hoc_object_component(void), hoc_object_eval(void);
 extern void hoc_object_asgn(void), hoc_objvardecl(void), hoc_cmp_otype(void), hoc_newobj(void);
-extern void hoc_asgn_obj_to_str(void), hoc_known_type(void), hoc_push_string(void);
+extern void hoc_asgn_obj_to_str(void), hoc_known_type(void);
 extern void hoc_objectarg(void), hoc_ob_pointer(void), hoc_constobject(void);
 extern void hoc_push_current_object(void), hoc_newobj_arg(void);
 extern void hoc_autoobject(void), hocobjret(void), hoc_newobj_ret(void);

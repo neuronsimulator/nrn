@@ -1,3 +1,4 @@
+#include "cabcode.h"
 #include "ivocvect.h"
 #include "neuron/container/data_handle.hpp"
 #include "nrniv_mf.h"
@@ -7,7 +8,6 @@
 #include "nrnpy_utils.h"
 #include "nrnpython.h"
 #include "convert_cxx_exceptions.hpp"
-#include <unordered_map>
 
 #include "nrnwrap_dlfcn.h"
 #include "ocfile.h"
@@ -15,12 +15,10 @@
 #include "oclist.h"
 #include "shapeplt.h"
 
-#include <InterViews/resource.h>
-#include <structmember.h>  // for PyMemberDef
-
 #include <cstdint>
 #include <vector>
 #include <sstream>
+#include <unordered_map>
 
 #include <nanobind/nanobind.h>
 
@@ -36,11 +34,9 @@ extern void (*nrnpy_restore_savestate)(int64_t, char*);
 extern void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size);
 extern void (*nrnpy_decref)(void* pyobj);
 extern void lvappendsec_and_ref(void* sl, Section* sec);
-extern Section* nrn_noerr_access();
 extern void hoc_pushs(Symbol*);
 extern double* hoc_evalpointer();
 extern double cable_prop_eval(Symbol* sym);
-extern void nrn_change_nseg(Section*, int);
 extern Symlist* hoc_top_level_symlist;
 extern Symlist* hoc_built_in_symlist;
 extern Inst* hoc_pc;
