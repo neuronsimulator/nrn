@@ -1935,7 +1935,7 @@ neuron::container::generic_data_handle dprop_impl(Prop* m,
         }
     } else {
         neuron::container::generic_data_handle const p{m->dparam[s->u.rng.index + indx]};
-        if (p.invalid_handle()) {
+        if (p.is_invalid_handle()) {
             throw VoidPointerError(std::string(s->name) + " wasn't made to point to anything");
         }
         return p;

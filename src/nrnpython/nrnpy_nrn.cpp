@@ -2038,7 +2038,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
         } else {
             int err;
             auto const d = nrnpy_rangepointer(sec, sym, 0.5, &err, 0 /* idx */);
-            if (d.invalid_handle()) {
+            if (d.is_invalid_handle()) {
                 rv_noexist(sec, n, 0.5, err);
                 result = nullptr;
             } else {
@@ -2129,7 +2129,7 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
         } else {
             int errp;
             auto d = nrnpy_rangepointer(sec, sym, 0.5, &errp, 0 /* idx */);
-            if (d.invalid_handle()) {
+            if (d.is_invalid_handle()) {
                 rv_noexist(sec, n, 0.5, errp);
                 err = -1;
             } else if (!d.holds<double*>()) {
@@ -2280,7 +2280,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
         } else {
             int err;
             auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
-            if (d.invalid_handle()) {
+            if (d.is_invalid_handle()) {
                 rv_noexist(sec, n, self->x_, err);
                 result = NULL;
             } else {
@@ -2308,7 +2308,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             } else {
                 int err;
                 auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
-                if (d.invalid_handle()) {
+                if (d.is_invalid_handle()) {
                     rv_noexist(sec, n + 5, self->x_, err);
                     result = NULL;
                 } else {
@@ -2415,7 +2415,7 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
         } else {
             int errp;
             auto d = nrnpy_rangepointer(sec, sym, self->x_, &errp, 0 /* idx */);
-            if (d.invalid_handle()) {
+            if (d.is_invalid_handle()) {
                 rv_noexist(sec, n, self->x_, errp);
                 Py_DECREF(pyname);
                 return -1;
@@ -2570,7 +2570,7 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
             result = (PyObject*) r;
         } else {
             auto const px = get_rangevar(self, sym, 0);
-            if (px.invalid_handle()) {
+            if (px.is_invalid_handle()) {
                 rv_noexist(sec, sym->name, self->pyseg_->x_, 2);
                 result = nullptr;
             } else if (isptr) {
@@ -2660,7 +2660,7 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
             err = nrn_pointer_assign(self->prop_, sym, value);
         } else {
             auto pd = get_rangevar(self, sym, 0);
-            if (pd.invalid_handle()) {
+            if (pd.is_invalid_handle()) {
                 rv_noexist(sec, sym->name, self->pyseg_->x_, 2);
                 err = -1;
             } else if (!pd.holds<double*>()) {
@@ -2753,7 +2753,7 @@ static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
     }
     int err;
     auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, ix);
-    if (d.invalid_handle()) {
+    if (d.is_invalid_handle()) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
         return NULL;
     }
@@ -2783,7 +2783,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
     }
     int err;
     auto d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, ix);
-    if (d.invalid_handle()) {
+    if (d.is_invalid_handle()) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
         return -1;
     }

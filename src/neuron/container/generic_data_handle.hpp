@@ -289,7 +289,7 @@ struct generic_data_handle {
      *
      * If it doesn't contain a data handle, return false.
      */
-    bool invalid_handle() const {
+    bool is_invalid_handle() const {
         if (!m_type) {
             // Empty default initialized.
             return true;
