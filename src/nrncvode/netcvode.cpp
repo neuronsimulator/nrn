@@ -62,6 +62,7 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 //#define POINT_RECEIVE(type, tar, w, f) ns->point_receive(type, tar, w, f)
 
 #include "membfunc.h"
+extern void single_event_run();
 extern NetCvode* net_cvode_instance;
 extern cTemplate** nrn_pnt_template_;
 extern double t, dt;
