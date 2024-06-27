@@ -8,10 +8,7 @@
 #include <complex>
 #include "nrnoc2iv.h"
 #include "classreg.h"
-#include <stdio.h>
 #include "membfunc.h"
-extern void setup_topology();
-extern void recalc_diam();
 
 typedef void (*Pfrv4)(int, Node**, double**, Datum**);
 

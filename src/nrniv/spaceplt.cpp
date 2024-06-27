@@ -18,7 +18,6 @@
 
 extern int nrn_multisplit_active_;
 extern int hoc_execerror_messages;
-extern int node_index(Section*, double);
 extern int nrn_shape_changed_;
 extern int hoc_return_type_code;
 Object* (*nrnpy_rvp_rxd_to_callable)(Object*) = 0;

@@ -1,7 +1,8 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/eion.cpp,v 1.10 1998/02/26 16:42:50 hines Exp */
 
-#include <stdlib.h>
+#include <cstdlib>
+#include "cabcode.h"
 #include "section.h"
 #include "neuron.h"
 #include "neuron/cache/mechanism_range.hpp"
@@ -16,11 +17,6 @@
 
 #undef hoc_retpushx
 
-extern double chkarg(int, double low, double high);
-
-extern Section* nrn_noerr_access();
-
-extern void hoc_register_prop_size(int, int, int);
 
 static constexpr auto nparm = 5;
 static constexpr auto ndparam = 1;

@@ -2,6 +2,7 @@
 
 #include "../../nrnconf.h"
 #include "hocdec.h"
+#include "cabcode.h"
 #include "nrniv_mf.h"
 #include "nrnmpi.h"
 #include "nrnmpiuse.h"
@@ -42,8 +43,6 @@ extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()
 int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
 extern Object* hoc_newobj1(Symbol*, int);
-extern void nrn_change_nseg(Section*, int);
-extern Section* section_new(Symbol* sym);
 extern std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv);
 
 extern "C" {

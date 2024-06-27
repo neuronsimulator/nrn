@@ -1,36 +1,30 @@
 #include <../../nrnconf.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
 #include <InterViews/resource.h>
-#include <vector>
+#include "cabcode.h"
 #include "nrn_ansi.h"
 #include "nrndae_c.h"
 #include "nrniv_mf.h"
 #include <nrnoc2iv.h>
 #include <nrnmpi.h>
 #include <multisplit.h>
-#include <unordered_map>
+
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
 #include <memory>
+#include <unordered_map>
+#include <vector>
 
 void nrnmpi_multisplit(Section*, double x, int sid, int backbone_style);
 int nrn_multisplit_active_;
 
-extern void setup_topology();
 extern void (*nrn_multisplit_setup_)();
 extern void* nrn_multisplit_triang(NrnThread*);
 extern void* nrn_multisplit_reduce_solve(NrnThread*);
 extern void* nrn_multisplit_bksub(NrnThread*);
 extern double t;
 
-void nrn_multisplit_ptr_update();
-void nrnmpi_multisplit_clear();
-void nrn_multisplit_nocap_v();
-void nrn_multisplit_nocap_v_part1(NrnThread*);
-void nrn_multisplit_nocap_v_part2(NrnThread*);
-void nrn_multisplit_nocap_v_part3(NrnThread*);
-void nrn_multisplit_adjust_rhs(NrnThread*);
 extern void (*nrn_multisplit_solve_)();
 static void multisplit_v_setup();
 static void multisplit_solve();

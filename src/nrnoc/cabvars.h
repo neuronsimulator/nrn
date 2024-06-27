@@ -1,5 +1,7 @@
 /* /local/src/master/nrn/src/nrnoc/cabvars.h,v 1.5 1999/02/05 18:09:50 hines Exp */
 #pragma once
+#include "cabcode.h"  // to provide cab_alloc, morph_alloc for backward compatibility
+
 #define XMECH 0
 
 
@@ -61,9 +63,6 @@ static const char* morph_mech[] = {
     0,
     0,
 };
-
-extern void cab_alloc(Prop*);
-extern void morph_alloc(Prop*);
 
 #if 0
  first two memb_func

@@ -17,6 +17,7 @@ set(HEADER_FILES_TO_INSTALL
     nrniv/neuronapi.h
     nrnmpi/nrnmpidec.h
     nrnoc/cabvars.h
+    nrnoc/cabcode.h
     nrnoc/md1redef.h
     nrnoc/md2redef.h
     nrnoc/membdef.h

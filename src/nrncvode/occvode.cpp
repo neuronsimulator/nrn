@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
-#include <errno.h>
+#include "hocdec.h"
+#include "cabcode.h"
 #include "nrn_ansi.h"
 #include "nrndae_c.h"
 #include "nrniv_mf.h"
@@ -12,16 +13,9 @@
 #include "membfunc.h"
 #include "nonvintblock.h"
 
-#include <utility>
+#include <cerrno>
+#include <numeric>
 
-extern void setup_topology(), v_setup_vectors();
-extern void recalc_diam();
-extern int nrn_errno_check(int);
-// extern double t, dt;
-#define nt_dt nrn_threads->_dt
-#define nt_t  nrn_threads->_t
-
-extern Symlist* hoc_built_in_symlist;
 
 #include "spmatrix.h"
 extern double* sp13mat;
@@ -45,8 +39,6 @@ extern void (*nrn_multisplit_solve_)();
 #endif
 
 static Symbol* vsym;  // for absolute tolerance
-#define SETUP 1
-#define USED  2
 /*
 CVODE expects dy/dt = f(y) and solve (I - gamma*J)*x = b with approx to
 J=df/dy.
