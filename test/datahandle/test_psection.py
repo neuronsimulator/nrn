@@ -4,6 +4,7 @@
 from neuron import gui
 from neuron import h
 
+
 def test_psection():
     s = h.Section()
     s.insert("psection_regression")
@@ -13,4 +14,3 @@ def test_psection():
 
     h.psection(s)
     s.psection()
-
