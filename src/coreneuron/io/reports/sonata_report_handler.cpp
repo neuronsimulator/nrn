@@ -60,12 +60,12 @@ std::pair<std::string, int> SonataReportHandler::get_population_info(int gid) {
 void SonataReportHandler::register_report(const NrnThread& nt,
                                           const ReportConfiguration& config,
                                           const VarsToReport& vars_to_report) {
-    sonata_create_report(config.output_path.data(),
-                         config.start,
-                         config.stop,
-                         config.report_dt,
-                         config.unit.data(),
-                         config.type_str.data());
+    auto status = sonata_create_report(config.output_path.data(),
+                                       config.start,
+                                       config.stop,
+                                       config.report_dt,
+                                       config.unit.data(),
+                                       config.type_str.data());
     sonata_set_report_max_buffer_size_hint(config.output_path.data(), config.buffer_size);
 
     for (const auto& kv: vars_to_report) {
@@ -77,6 +77,24 @@ void SonataReportHandler::register_report(const NrnThread& nt,
         const auto& pop_info = get_population_info(gid);
         std::string population_name = pop_info.first;
         int population_offset = pop_info.second;
+
+        if (status == -2) {
+            std::vector<uint32_t> element_ids(vars.size());
+            std::vector<double*> element_values(vars.size());
+            std::transform(vars.begin(), vars.end(), element_ids.begin(), [](const auto& var) {
+                return var.id;
+            });
+            std::transform(vars.begin(), vars.end(), element_values.begin(), [](const auto& var) {
+                return var.var_value;
+            });
+            sonata_update_elements(config.output_path.data(),
+                                   population_name.data(),
+                                   gid,
+                                   element_ids.data(),
+                                   element_values.data());
+            continue;
+        }
+
         sonata_add_node(config.output_path.data(), population_name.data(), population_offset, gid);
         sonata_set_report_max_buffer_size_hint(config.output_path.data(), config.buffer_size);
         for (const auto& variable: vars) {
