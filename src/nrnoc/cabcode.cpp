@@ -570,7 +570,7 @@ static void reverse_sibling_list(Section* sec) {
     *pch = 0;
 }
 
-static void disconnect() {
+void disconnect() {
     if (ifarg(1)) {
         hoc_execerror(
             "disconnect takes no positional arguments and disconnects the HOC currently accessed "
