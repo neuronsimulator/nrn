@@ -55,7 +55,8 @@ Prop* hoc_getdata_range(int type);
 int nrn_exists(Symbol* s, Node* node);
 neuron::container::data_handle<double> nrn_rangepointer(Section* sec, Symbol* s, double d);
 
-/// return nullptr if failure instead of hoc_execerror and return pointer to the 0 element if an array
+/// return nullptr if failure instead of hoc_execerror and return pointer to the 0 element if an
+/// array
 neuron::container::data_handle<double> nrnpy_rangepointer(Section*, Symbol*, double, int*, int);
 
 /// returns nearest index to x
@@ -110,56 +111,56 @@ Section* nrn_section_exists(char* name, int indx, Object* cell);
 double* nrn_vext_pd(Symbol* s, int indx, Node* nd);
 #endif
 
-//TODO?:
-//void add_section(void) /* symbol at pc+1, number of indices at pc+2 */
+// TODO?:
+// void add_section(void) /* symbol at pc+1, number of indices at pc+2 */
 
 // src/nrnoc/neuron.h
-//extern void delete_section();
-//void section_owner(void) {
-//void issection(void) { /* returns true if string is the access section */
-//void ismembrane(void) { /* return true if string is an inserted membrane in the
-//void sectionname(void) {
-//void this_section(void) {
-//void this_node(void) {
-//void parent_section(void) {
-//void parent_connection(void) {
-//void section_orientation(void) {
-//void parent_node(void) {
-//void pop_section(void) {
-//void push_section(void) {
-//void section_exists(void) {
+// extern void delete_section();
+// void section_owner(void) {
+// void issection(void) { /* returns true if string is the access section */
+// void ismembrane(void) { /* return true if string is an inserted membrane in the
+// void sectionname(void) {
+// void this_section(void) {
+// void this_node(void) {
+// void parent_section(void) {
+// void parent_connection(void) {
+// void section_orientation(void) {
+// void parent_node(void) {
+// void pop_section(void) {
+// void push_section(void) {
+// void section_exists(void) {
 
-//src/oc/code.h
-//void simpleconnectsection(void) /* 2 expr on stack and two sections on section stack */
-//void connectsection(void) /* 2 expr on stack and section symbol on section stack */
-//void sec_access(void) { /* access section */
-//void sec_access_object(void) { /* access section */
-//void sec_access_push(void) {
-//void hoc_sec_internal_push(void) {
-//void ob_sec_access() {
-//void mech_access(void) { /* section symbol at pc */
-//void mech_uninsert(void) {
-//void range_const() {
-//void connectpointer() {
-//void range_interpolate_single(void) /*symbol at pc, 2 values on stack*/
-//void rangevarevalpointer() {
-//void rangevareval(void) /* symbol at pc, location on stack, return value on stack */
-//void rangepoint(void) /* symbol at pc, return value on stack */
-//void rangeobjeval(void) /* symbol at pc, section location on stack, return object on stack*/
-//void rangeobjevalmiddle(void) /* symbol at pc, return object on stack*/
-//void forall_section(void) {
-//void hoc_ifsec(void) {
+// src/oc/code.h
+// void simpleconnectsection(void) /* 2 expr on stack and two sections on section stack */
+// void connectsection(void) /* 2 expr on stack and section symbol on section stack */
+// void sec_access(void) { /* access section */
+// void sec_access_object(void) { /* access section */
+// void sec_access_push(void) {
+// void hoc_sec_internal_push(void) {
+// void ob_sec_access() {
+// void mech_access(void) { /* section symbol at pc */
+// void mech_uninsert(void) {
+// void range_const() {
+// void connectpointer() {
+// void range_interpolate_single(void) /*symbol at pc, 2 values on stack*/
+// void rangevarevalpointer() {
+// void rangevareval(void) /* symbol at pc, location on stack, return value on stack */
+// void rangepoint(void) /* symbol at pc, return value on stack */
+// void rangeobjeval(void) /* symbol at pc, section location on stack, return object on stack*/
+// void rangeobjevalmiddle(void) /* symbol at pc, return object on stack*/
+// void forall_section(void) {
+// void hoc_ifsec(void) {
 
-//src/oc/oc_ansi.h
-//void* hoc_sec_internal_name2ptr(const char* s, int eflag) {
-//void* hoc_pysec_name2ptr(const char* s, int eflag) {
-//void range_interpolate(void) /*symbol at pc, 4 values on stack*/
+// src/oc/oc_ansi.h
+// void* hoc_sec_internal_name2ptr(const char* s, int eflag) {
+// void* hoc_pysec_name2ptr(const char* s, int eflag) {
+// void range_interpolate(void) /*symbol at pc, 4 values on stack*/
 
 // src/nrnoc/nrniv_mf.h
 // extern int nrn_get_mechtype(const char*);
 
-//src/oc/ocfunc.h
-//void hoc_secname(void) {
+// src/oc/ocfunc.h
+// void hoc_secname(void) {
 
 // never used???
 // const char* nrn_sec2pysecname(Section* sec) {
