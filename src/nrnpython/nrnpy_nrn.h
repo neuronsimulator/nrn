@@ -166,6 +166,18 @@ static PyType_Spec nrnpy_RangeType_spec = {
     nrnpy_RangeType_slots,
 };
 
+static PyType_Slot nrnpy_OpaquePointerType_slots[] = {
+    {Py_tp_doc, (void*) "Opaque pointer."},
+    {0, 0},
+};
+static PyType_Spec nrnpy_OpaquePointerType_spec = {
+    "nrn.OpaquePointer",
+    sizeof(NPyOpaquePointer),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    nrnpy_OpaquePointerType_slots,
+};
+
 static struct PyModuleDef nrnmodule = {PyModuleDef_HEAD_INIT,
                                        "nrn",
                                        "NEURON interaction with Python",
