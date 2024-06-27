@@ -1994,9 +1994,17 @@ static NPyOpaquePointer* opaque_pointer_new() {
     return PyObject_New(NPyOpaquePointer, opaque_pointer_type);
 }
 
-static PyObject* build_python_object(const neuron::container::generic_data_handle& dh) {
+static PyObject* build_python_value(const neuron::container::generic_data_handle& dh) {
     if (dh.holds<double*>()) {
         return Py_BuildValue("d", *dh.get<double*>());
+    } else {
+        return (PyObject*) opaque_pointer_new();
+    }
+}
+
+static PyObject* build_python_reference(const neuron::container::generic_data_handle& dh) {
+    if (dh.holds<double*>()) {
+        return nrn_hocobj_handle(neuron::container::data_handle<double>{dh});
     } else {
         return (PyObject*) opaque_pointer_new();
     }
@@ -2037,7 +2045,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
                 if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
                     nrn_area_ri(sec);
                 }
-                result = build_python_object(d);
+                result = build_python_value(d);
             }
         }
     } else if (strcmp(n, "rallbranch") == 0) {
@@ -2125,7 +2133,7 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
                 rv_noexist(sec, n, 0.5, errp);
                 err = -1;
             } else if (!d.holds<double*>()) {
-                PyErr_SetString(PyExc_ValueError, "can't set value of opaque pointer.");
+                PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
                 err = -1;
             } else if (!PyArg_Parse(value, "d", d.get<double*>())) {
                 PyErr_SetString(PyExc_ValueError, "bad value");
@@ -2279,7 +2287,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
                 if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
                     nrn_area_ri(sec);
                 }
-                result = build_python_object(d);
+                result = build_python_value(d);
             }
         }
     } else if (strncmp(n, "_ref_", 5) == 0) {
@@ -2426,7 +2434,7 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
                     diam_changed = 1;
                 }
             } else {
-                PyErr_SetString(PyExc_ValueError, "can't set value of opaque pointer.");
+                PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
                 Py_DECREF(pyname);
                 return -1;
             }
@@ -2500,6 +2508,30 @@ static neuron::container::data_handle<double> var_pval(NPyMechObj* pymech,
     return dh;
 }
 
+static neuron::container::generic_data_handle var_dparam(NPyMechObj* pymech,
+                                                         Symbol* symvar,
+                                                         int index) {
+    if (pymech->prop_->ob) {
+        // HocMech created by make_mechanism. It isn't obvious where HOC mechs
+        // would store dparams.
+        throw std::runtime_error("Not implemented.");
+    }
+
+    int sym_index = symvar->u.rng.index;
+    return pymech->prop_->dparam[sym_index + index];
+}
+
+static neuron::container::generic_data_handle get_rangevar(NPyMechObj* pymech,
+                                                           Symbol* symvar,
+                                                           int index) {
+    if (symvar->subtype == NRNPOINTER) {
+        return var_dparam(pymech, symvar, index);
+    } else {
+        return var_pval(pymech, symvar, index);
+    }
+}
+
+
 static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     Section* sec = self->pyseg_->pysec_->sec_;
     CHECK_SEC_INVALID(sec)
@@ -2537,13 +2569,14 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
             r->attr_from_sec_ = 0;
             result = (PyObject*) r;
         } else {
-            auto const px = var_pval(self, sym, 0);
-            if (!px) {
+            auto const px = get_rangevar(self, sym, 0);
+            if (px.invalid_handle()) {
                 rv_noexist(sec, sym->name, self->pyseg_->x_, 2);
+                result = nullptr;
             } else if (isptr) {
-                result = nrn_hocobj_handle(px);
+                result = build_python_reference(px);
             } else {
-                result = Py_BuildValue("d", *px);
+                result = build_python_value(px);
             }
         }
     } else if (sym && sym->type == RANGEOBJ) {
@@ -2626,18 +2659,16 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
         if (isptr) {
             err = nrn_pointer_assign(self->prop_, sym, value);
         } else {
-            double x;
-            auto pd = var_pval(self, sym, 0);
-            if (pd) {
-                if (PyArg_Parse(value, "d", &x) == 1) {
-                    *pd = x;
-                } else {
-                    PyErr_SetString(PyExc_ValueError, "must be a double");
-                    err = -1;
-                }
-            } else {
+            auto pd = get_rangevar(self, sym, 0);
+            if (pd.invalid_handle()) {
                 rv_noexist(sec, sym->name, self->pyseg_->x_, 2);
-                err = 1;
+                err = -1;
+            } else if (!pd.holds<double*>()) {
+                PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
+                err = -1;
+            } else if (!PyArg_Parse(value, "d", pd.get<double*>())) {
+                PyErr_SetString(PyExc_ValueError, "must be a double");
+                err = -1;
             }
         }
     } else {
@@ -2729,7 +2760,7 @@ static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
     if (r->isptr_) {
         result = nrn_hocobj_handle(neuron::container::data_handle<double>(d));
     } else {
-        result = build_python_object(d);
+        result = build_python_value(d);
     }
     return result;
 }
@@ -2777,7 +2808,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
                 return -1;
             }
         } else {
-            PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer.");
+            PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
             return -1;
         }
     }
@@ -3091,7 +3122,7 @@ PyObject* nrnpy_nrn(void) {
 
     opaque_pointer_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_OpaquePointerType_spec);
     opaque_pointer_type->tp_new = PyType_GenericNew;
-    if (PyType_Ready(range_type) < 0)
+    if (PyType_Ready(opaque_pointer_type) < 0)
         goto fail;
     Py_INCREF(opaque_pointer_type);
 
@@ -3106,6 +3137,7 @@ PyObject* nrnpy_nrn(void) {
     nrnmodule_ = m;
     PyModule_AddObject(m, "Section", (PyObject*) psection_type);
     PyModule_AddObject(m, "Segment", (PyObject*) psegment_type);
+    PyModule_AddObject(m, "OpaquePointer", (PyObject*) opaque_pointer_type);
 
     pmech_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_MechanismType_spec);
     pmechfunc_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_MechFuncType_spec);
