@@ -1,6 +1,6 @@
 /* /local/src/master/nrn/src/nrnoc/cabvars.h,v 1.5 1999/02/05 18:09:50 hines Exp */
 #pragma once
-#include "cabcode.h" // to provide cab_alloc, morph_alloc for backward compatibility
+#include "cabcode.h"  // to provide cab_alloc, morph_alloc for backward compatibility
 
 #define XMECH 0
 

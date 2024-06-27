@@ -6,10 +6,10 @@
 #include "hoc_reg.h"  // hoc_reg*
 #include "cabcode.h"
 >>>>>>> 8e9c5540 (add cabcode.h; cleanup usage of functions within cabcode.cpp TU)
-#include "neuron/container/data_handle.hpp"
+    #include "neuron/container/data_handle.hpp"
 
 #include <memory>
-struct Extnode;
+    struct Extnode;
 struct hoc_Item;
 struct HocParmLimits;
 struct HocParmUnits;

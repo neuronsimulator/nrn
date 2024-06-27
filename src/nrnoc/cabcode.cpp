@@ -2196,8 +2196,9 @@ void pop_section(void) {
     hoc_retpushx(1.);
 }
 
-/* turn off section stack fixing (in case of return,continue,break in a section statement) between exlicit user level push_section,etc and pop_section
-*/
+/* turn off section stack fixing (in case of return,continue,break in a section statement) between
+ * exlicit user level push_section,etc and pop_section
+ */
 
 void hoc_level_pushsec(Section* sec) {
     ++skip_secstack_check;
