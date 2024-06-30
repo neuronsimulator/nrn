@@ -61,8 +61,23 @@ struct NrnThread {
     double cj;
     NrnThreadMembList* tml;
     Memb_list** _ml_list;
-    int ncell;            /* analogous to old rootnodecount */
-    int end;              /* 1 + position of last in v_node array. Now v_node_count. */
+    int ncell; /* analogous to old rootnodecount */
+    int end;   /* 1 + position of last in v_node array. Now v_node_count. */
+    std::vector<Node*>* node_padding;
+    /* Node storage rows after end for padding
+       Data for all threads is in SoA storage
+       and threads merely define a permutation that
+       leaves each thread segregated but adjacent.
+       To avoid cacheline sharing, we need to ensure
+       that each (next) thread begins on a cacheline
+       boundary. See
+       std::hardware_destructive_interference_size (normally 64 bytes)
+       I'm hoping that padding can be implemented in a
+       somewhat isolated way that involves creating SoA
+       storage rows, permuting them to
+       the proper index after end, and, at some point,
+       marking them as deleted.
+       */
     int id;               /* this is nrn_threads[id] */
     int _stop_stepping;   /* delivered an all thread HocEvent */
     int _ecell_child_cnt; /* see _ecell_children below */
