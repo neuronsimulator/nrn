@@ -223,6 +223,11 @@ struct Memb_list {
         m_storage_offset = offset;
     }
 
+    // Part of the storage padding experiment. If worthwhile then make private
+    // and use get_cache_offset() and set_cache_offset(std::size_t) in analogy
+    // with get_ and set_ storage_offset
+    std::size_t m_cache_offset{};
+
     /**
      * @brief Set the pointer to the underlying data container.
      *

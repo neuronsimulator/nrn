@@ -83,6 +83,19 @@ size_t xtra_padding(size_t nbytes) {
 // assert(xtra_padding(64) == 0);
 // assert(xtra_padding(65) == 63);
 
+static void pr_nodecount(const char* mesg) {
+    NrnThread* nt{};
+    printf("ZZZ %s\n", mesg);
+    FOR_THREADS(nt) {
+        printf("ZZZ %d node %d offset=%zd\n", nt->id, nt->end, nt->_node_data_offset);
+        for (auto tml = nt->tml; tml; tml = tml->next) {
+            Memb_list* ml = tml->ml;
+            const char* s = memb_func[tml->index].sym->name;
+            printf("ZZZ %d %s %d offset=%zd\n", nt->id, s, ml->nodecount, ml->get_storage_offset());
+        }
+    }
+}
+
 static void pr_thread_padding() {
     NrnThread* nt{};
     FOR_THREADS(nt) {
@@ -106,6 +119,7 @@ static void pr_thread_padding() {
 }
 
 static void add_thread_padding() {
+    //    pr_nodecount("before thread padding");
     NrnThread* nt;
     FOR_THREADS(nt) {
         auto dsz = sizeof(double);
@@ -143,7 +157,8 @@ static void add_thread_padding() {
             }
         }
     }
-    pr_thread_padding();
+    //    pr_thread_padding();
+    //    pr_nodecount("after thread padding");
 }
 }  // namespace nrn
 
@@ -1839,7 +1854,8 @@ void v_setup_vectors(void) {
     long_difus_solve(nrn_ensure_model_data_are_sorted(), 3, *nrn_threads);  // !!!
     nrn_nonvint_block_setup();
     diam_changed = 1;
-    nrn::pr_thread_padding();
+    //    nrn::pr_thread_padding();
+    //    nrn::pr_nodecount("after sorting");
 
 #if 0
     for (int tid = 0; tid < nrn_nthread; ++tid) {
@@ -2163,7 +2179,7 @@ static void nrn_sort_mech_data(
                                             pdata_hack.at(field).reserve(mech_data_size);
                                             pdata_fields_to_cache.push_back(field);
                                         });
-        std::size_t global_i{}, trivial_counter{};
+        std::size_t global_i{}, trivial_counter{}, cache_count{};
         std::vector<std::size_t> mech_data_permutation(mech_data_size,
                                                        std::numeric_limits<std::size_t>::max());
         NrnThread* nt{};
@@ -2175,6 +2191,8 @@ static void nrn_sort_mech_data(
             if (ml) {
                 // Tell the Memb_list what global offset its values start at
                 ml->set_storage_offset(global_i);
+                ml->m_cache_offset = cache_count;
+                cache_count += ml->nodecount;
             }
             // Record where in the global storage this NrnThread's instances of
             // the mechanism start
