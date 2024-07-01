@@ -36,7 +36,6 @@ find_program(
   HINTS "${CORENRN_NMODL_DIR}/bin" QUIET)
 
 find_path(nmodl_INCLUDE "nmodl.hpp" HINTS "${CORENRN_NMODL_DIR}/include")
-find_path(nmodl_PYTHONPATH "nmodl/__init__.py" HINTS "${CORENRN_NMODL_DIR}/lib")
 
 # Checks 'REQUIRED', 'QUIET' and versions.
 include(FindPackageHandleStandardArgs)
@@ -44,4 +43,4 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
   nmodl
   FOUND_VAR nmodl_FOUND
-  REQUIRED_VARS nmodl_BINARY nmodl_INCLUDE nmodl_PYTHONPATH)
+  REQUIRED_VARS nmodl_BINARY nmodl_INCLUDE)
