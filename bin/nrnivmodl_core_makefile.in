@@ -100,7 +100,6 @@ endif
 # Binary of NMODL depending on CMake option activated
 ifeq (@nmodl_FOUND@, TRUE)
     NMODL_BINARY_PATH = $(if $(NMODL_BINARY),$(NMODL_BINARY), @CORENRN_NMODL_BINARY@)
-    INCLUDES += -I@CORENRN_NMODL_INCLUDE@
 else
     NMODL_BINARY_PATH = $(if $(NMODL_BINARY),$(NMODL_BINARY), $(CORENRN_BIN_DIR)/@nmodl_binary_name@)
 endif
