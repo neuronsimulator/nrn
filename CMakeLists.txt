@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
+cmake_policy(SET CMP0077 NEW)
+
 # Note that this needs to happen **before** the call to project(...). This is because CMake reads
 # the CRAYPE_LINK_TYPE environment variable inside the call to project(...) and sets various flags
 # and properties based on its value. Because we are so early in the CMake processing, we have to
@@ -249,7 +251,7 @@ cpp_cc_git_submodule(Random123)
 # generic targets (and to speed up compilation)
 set(OLD_BUILD_TESTING "${BUILD_TESTING}")
 set(BUILD_TESTING OFF)
-cpp_cc_git_submodule(eigen BUILD PACKAGE Eigen3 REQUIRED)
+cpp_cc_git_submodule(eigen BUILD EXCLUDE_FROM_ALL PACKAGE Eigen3 REQUIRED)
 set(BUILD_TESTING "${OLD_BUILD_TESTING}")
 
 # FIXME remove once shell script/makefile nrnivmodl* are gone
