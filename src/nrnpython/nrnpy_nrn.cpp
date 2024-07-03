@@ -13,6 +13,9 @@
 #define M_PI (3.14159265358979323846)
 #endif
 
+#include <nanobind/nanobind.h>
+namespace nb = nanobind;
+
 #include <membfunc.h>
 #include <parse.hpp>
 
@@ -700,9 +703,7 @@ static int NPyRangeVar_init_safe(NPyRangeVar* self, PyObject* args, PyObject* kw
 }
 
 static PyObject* NPySecObj_name(NPySecObj* self) {
-    PyObject* result;
-    result = PyString_FromString(secname(self->sec_));
-    return result;
+    return PyString_FromString(secname(self->sec_));
 }
 
 static PyObject* NPySecObj_name_safe(NPySecObj* self) {
@@ -738,15 +739,13 @@ static PyObject* NPySecObj_pt3dclear(NPySecObj* self, PyObject* args) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
     int req = 0;
-    Py_ssize_t narg = PyTuple_GET_SIZE(args);
-    if (narg) {
-        if (!PyArg_ParseTuple(args, "i", &req)) {
-            return NULL;
-        }
+    nb::tuple args_(args);
+    if (args_.size()) {
+        req = nb::cast<int>(args_[0]);
     }
     if (req < 0) {
         PyErr_SetString(PyExc_Exception, "Arg out of range\n");
-        return NULL;
+        return nullptr;
     }
     nrn_pt3dclear(sec, req);
     return PyInt_FromLong(sec->pt3d_bsize);
@@ -759,22 +758,21 @@ static PyObject* NPySecObj_pt3dclear_safe(NPySecObj* self, PyObject* args) {
 static PyObject* NPySecObj_pt3dchange(NPySecObj* self, PyObject* args) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
-    int i;
-    double x, y, z, diam;
-    Py_ssize_t narg = PyTuple_GET_SIZE(args);
-    if (narg == 2) {
-        if (!PyArg_ParseTuple(args, "id", &i, &diam)) {
-            return NULL;
-        }
+    nb::tuple args_(args);
+    if (args_.size() == 2) {
+        int i = nb::cast<int>(args_[0]);
+        double diam = nb::cast<double>(args_[1]);
         if (i < 0 || i >= sec->npt3d) {
             PyErr_SetString(PyExc_Exception, "Arg out of range\n");
             return NULL;
         }
         nrn_pt3dchange1(sec, i, diam);
-    } else if (narg == 5) {
-        if (!PyArg_ParseTuple(args, "idddd", &i, &x, &y, &z, &diam)) {
-            return NULL;
-        }
+    } else if (args_.size() == 5) {
+        int i = nb::cast<int>(args_[0]);
+        double x = nb::cast<double>(args_[1]);
+        double y = nb::cast<double>(args_[2]);
+        double z = nb::cast<double>(args_[3]);
+        double diam = nb::cast<double>(args_[4]);
         if (i < 0 || i >= sec->npt3d) {
             PyErr_SetString(PyExc_Exception, "Arg out of range\n");
             return NULL;
@@ -794,16 +792,17 @@ static PyObject* NPySecObj_pt3dchange_safe(NPySecObj* self, PyObject* args) {
 static PyObject* NPySecObj_pt3dinsert(NPySecObj* self, PyObject* args) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
-    int i;
-    double x, y, z, d;
-    if (!PyArg_ParseTuple(args, "idddd", &i, &x, &y, &z, &d)) {
-        return NULL;
-    }
+    nb::tuple args_(args);
+    int i = nb::cast<int>(args_[0]);
+    double x = nb::cast<double>(args_[1]);
+    double y = nb::cast<double>(args_[2]);
+    double z = nb::cast<double>(args_[3]);
+    double diam = nb::cast<double>(args_[4]);
     if (i < 0 || i > sec->npt3d) {
         PyErr_SetString(PyExc_Exception, "Arg out of range\n");
         return NULL;
     }
-    nrn_pt3dinsert(sec, i, x, y, z, d);
+    nrn_pt3dinsert(sec, i, x, y, z, diam);
     Py_RETURN_NONE;
 }
 
@@ -814,12 +813,12 @@ static PyObject* NPySecObj_pt3dinsert_safe(NPySecObj* self, PyObject* args) {
 static PyObject* NPySecObj_pt3dadd(NPySecObj* self, PyObject* args) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
-    double x, y, z, d;
-    // TODO: add support for iterables
-    if (!PyArg_ParseTuple(args, "dddd", &x, &y, &z, &d)) {
-        return NULL;
-    }
-    stor_pt3d(sec, x, y, z, d);
+    nb::tuple args_(args);
+    double x = nb::cast<double>(args_[0]);
+    double y = nb::cast<double>(args_[1]);
+    double z = nb::cast<double>(args_[2]);
+    double diam = nb::cast<double>(args_[3]);
+    stor_pt3d(sec, x, y, z, diam);
     Py_RETURN_NONE;
 }
 
@@ -830,34 +829,26 @@ static PyObject* NPySecObj_pt3dadd_safe(NPySecObj* self, PyObject* args) {
 static PyObject* NPySecObj_pt3dstyle(NPySecObj* self, PyObject* args) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
-    int style;
-    double x, y, z;
-    Py_ssize_t narg = PyTuple_GET_SIZE(args);
-
-    if (narg) {
-        if (narg == 1) {
-            if (!PyArg_ParseTuple(args, "i", &style)) {
-                return NULL;
-            }
-            if (style) {
-                PyErr_SetString(PyExc_AttributeError, "If exactly one argument, it must be 0.");
-                return NULL;
-            }
-            nrn_pt3dstyle0(sec);
-        } else if (narg == 4) {
-            // TODO: figure out some way of reading the logical connection point
-            // don't use hoc refs
-            if (!PyArg_ParseTuple(args, "iddd", &style, &x, &y, &z)) {
-                return NULL;
-            }
-            nrn_pt3dstyle1(sec, x, y, z);
-
-        } else {
-            PyErr_SetString(PyExc_Exception, "Wrong number of arguments.");
-            return NULL;
-        }
+    nb::tuple args_(args);
+    if (args_.size() != 0 && args_.size() != 1 && args_.size() != 4) {
+        PyErr_SetString(PyExc_Exception, "Wrong number of arguments.");
+        return NULL;
     }
 
+    if (args_.size() == 1) {
+        int style = nb::cast<int>(args_[0]);
+        if (style) {
+            PyErr_SetString(PyExc_AttributeError, "If exactly one argument, it must be 0.");
+            return NULL;
+        }
+        nrn_pt3dstyle0(sec);
+    } else if (args_.size() == 4) {
+        double x = nb::cast<double>(args_[1]);
+        double y = nb::cast<double>(args_[2]);
+        double z = nb::cast<double>(args_[3]);
+        nrn_pt3dstyle1(sec, x, y, z);
+    }
+    
     if (sec->logical_connection) {
         Py_RETURN_TRUE;
     }
@@ -871,11 +862,9 @@ static PyObject* NPySecObj_pt3dstyle_safe(NPySecObj* self, PyObject* args) {
 static Pt3d* get_pt3d_from_python_args(NPySecObj* self, PyObject* args) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
-    int n, i;
-    if (!PyArg_ParseTuple(args, "i", &i)) {
-        return NULL;
-    }
-    n = sec->npt3d - 1;
+    nb::tuple args_(args);
+    int i = nb::cast<int>(args_[0]);
+    int n = sec->npt3d - 1;
     if (i < 0 || i > n) {
         PyErr_SetString(PyExc_Exception, "Arg out of range\n");
         return NULL;
