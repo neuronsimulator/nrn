@@ -123,6 +123,7 @@ class FileHandler {
             line_buf, "%s %d %d %zd %d", name, &nsec, &nseg, &total_lfp_factors, &num_electrodes);
 
         nrn_assert(n_scan == 5);
+        std::cout << "read_mapping_info: sclname = " << name << ", n_sec = " << nsec << ", n_seg = " << nseg << ", total_lfp_factors = " << total_lfp_factors << ", n_electrodes = " << num_electrodes << std::endl;
 
         mapinfo->name = std::string(name);
 
