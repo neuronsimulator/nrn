@@ -488,27 +488,17 @@ PyObject* nrnpy_newsecobj_safe(PyObject* self, PyObject* args, PyObject* kwds) {
 }
 
 static PyObject* NPySegObj_new(PyTypeObject* type, PyObject* args, PyObject* /* kwds */) {
+    // Just ensure the params are ok, since init is done in its own method
     NPySecObj* pysec;
     double x;
     if (!PyArg_ParseTuple(args, "O!d", psection_type, &pysec, &x)) {
         return NULL;
     }
-    if (x > 1.0 && x < 1.0001) {
-        x = 1.0;
-    }
-    if (x < 0. || x > 1.0) {
+    if (x < 0. || x > 1.0001) {
         PyErr_SetString(PyExc_ValueError, "segment position range is 0 <= x <= 1");
         return NULL;
     }
-    NPySegObj* self;
-    self = (NPySegObj*) type->tp_alloc(type, 0);
-    // printf("NPySegObj_new %p\n", self);
-    if (self != NULL) {
-        self->pysec_ = pysec;
-        self->x_ = x;
-        Py_INCREF(self->pysec_);
-    }
-    return (PyObject*) self;
+    return type->tp_alloc(type, 0);
 }
 
 static PyObject* NPySegObj_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds) {
@@ -576,9 +566,6 @@ static int NPySegObj_init(NPySegObj* self, PyObject* args, PyObject* kwds) {
         return -1;
     }
     Py_INCREF(pysec);
-    if (self->pysec_) {
-        Py_DECREF(self->pysec_);
-    }
     self->pysec_ = pysec;
     self->x_ = x;
     return 0;
