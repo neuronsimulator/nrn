@@ -502,7 +502,15 @@ static PyObject* NPySegObj_new(PyTypeObject* type, PyObject* args, PyObject* /* 
         PyErr_SetString(PyExc_ValueError, "segment position range is 0 <= x <= 1");
         return NULL;
     }
-    return type->tp_alloc(type, 0);
+    NPySegObj* self;
+    self = (NPySegObj*) type->tp_alloc(type, 0);
+    // printf("NPySegObj_new %p\n", self);
+    if (self != NULL) {
+        self->pysec_ = pysec;
+        self->x_ = x;
+        Py_INCREF(self->pysec_);
+    }
+    return (PyObject*) self;
 }
 
 static PyObject* NPySegObj_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds) {
@@ -556,27 +564,10 @@ static PyObject* NPyRangeVar_new_safe(PyTypeObject* type, PyObject* args, PyObje
 }
 
 static int NPySegObj_init(NPySegObj* self, PyObject* args, PyObject* kwds) {
-    // printf("NPySegObj_init %p %p\n", self, self->pysec_);
-    NPySecObj* pysec;
-    double x;
-    if (!PyArg_ParseTuple(args, "O!d", psection_type, &pysec, &x)) {
-        return -1;
-    }
-    if (x > 1.0 && x < 1.0001) {
-        x = 1.0;
-    }
-    if (x < 0. || x > 1.0) {
-        PyErr_SetString(PyExc_ValueError, "segment position range is 0 <= x <= 1");
-        return -1;
-    }
-    Py_INCREF(pysec);
-    self->pysec_ = pysec;
-    self->x_ = x;
+    // PySeg objects are fully initialized in _new_
+    // And strangely Python seems to never call this, as if the _new_ objs were not instances
+    // So don't implement anything here
     return 0;
-}
-
-static int NPySegObj_init_safe(NPySegObj* self, PyObject* args, PyObject* kwds) {
-    return nrn::convert_cxx_exceptions(NPySegObj_init, self, args, kwds);
 }
 
 static int ob_is_seg(Object* o) {
