@@ -352,15 +352,12 @@ if(NRN_ENABLE_MPI)
   list(APPEND CORENEURON_CODE_FILES "mpi/core/resolve.cpp")
 endif()
 
-file(COPY ${PROJECT_SOURCE_DIR}/external/Random123/include/Random123
-     DESTINATION ${CMAKE_BINARY_DIR}/include)
 list(APPEND CORENEURON_CODE_FILES ${PROJECT_BINARY_DIR}/coreneuron/config/config.cpp)
 
 set(ENGINEMECH_CODE_FILE "mechanism/mech/enginemech.cpp")
 
 # for external mod files we need to generate modl_ref function in mod_func.c
 set(MODFUNC_PERL_SCRIPT "mechanism/mech/mod_func.c.pl")
-
 set(NMODL_UNITS_FILE "${CMAKE_BINARY_DIR}/share/mod2c/nrnunits.lib")
 
 # =============================================================================
@@ -696,9 +693,6 @@ install(FILES apps/coreneuron.cpp DESTINATION share/coreneuron)
 if(CORENRN_ENABLE_SHARED)
   install(FILES ${corenrn_mech_library} DESTINATION lib)
 endif()
-
-# install random123 and nmodl headers
-install(DIRECTORY ${CMAKE_BINARY_DIR}/include/ DESTINATION include)
 
 # install mod files
 install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION share)
