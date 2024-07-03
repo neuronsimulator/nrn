@@ -245,7 +245,21 @@ if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
 endif()
 include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
-cpp_cc_git_submodule(eigen)
+# Eigen requires BUILD_TESTING to be disabled to avoid polluting the global CMake
+# namespace with generic targets (and to speed up compilation)
+set(OLD_BUILD_TESTING "${BUILD_TESTING}")
+set(BUILD_TESTING OFF)
+cpp_cc_git_submodule(eigen BUILD PACKAGE Eigen3 REQUIRED)
+set(BUILD_TESTING "${OLD_BUILD_TESTING}")
+
+# FIXME remove once shell script/makefile nrnivmodl* are gone
+if(Eigen3_FOUND)
+  set(EIGEN_BUILD_INCLUDE_DIR "${EIGEN_INCLUDE_DIR}")
+else()
+  install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/external/eigen/Eigen" DESTINATION "${CMAKE_INSTALL_PREFIX}/include/neuron/")
+  set(EIGEN_BUILD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/eigen/Eigen")
+  set(EIGEN_INCLUDE_DIR  "${CMAKE_INSTALL_PREFIX}/include/neuron/")
+endif()
 
 # =================================================================================================
 # Enable sanitizer support if the NRN_SANITIZERS variable is set. Comes befores PythonHelper.cmake.
@@ -608,6 +622,7 @@ endif()
 if(NRN_ENABLE_PYTHON)
   prepend_to_var(PYTHONPATH "${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd")
 endif()
+prepend_to_var(EIGEN_INCLUDE_DIR ${EIGEN_BUILD_INCLUDE_DIR})
 add_subdirectory(bin)
 
 if(NRN_MACOS_BUILD)
