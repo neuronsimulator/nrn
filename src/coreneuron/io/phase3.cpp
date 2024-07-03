@@ -29,11 +29,13 @@ namespace coreneuron {
 void Phase3::read_file(FileHandler& F, NrnThreadMappingInfo* ntmapping) {
     int count = 0;
     F.read_mapping_cell_count(&count);
+    std::cout << "read_file: cell count = " << count << std::endl;
     /** for every neuron */
     for (int i = 0; i < count; i++) {
         int gid, nsec, nseg, nseclist;
         // read counts
         F.read_mapping_count(&gid, &nsec, &nseg, &nseclist);
+        std::cout << "read_file: gid = " << gid << ", nsec = " << nsec << ", nseg = " << nseg << ", nseclist = " << nseclist << std::endl;
         CellMapping* cmap = new CellMapping(gid);
         // read section-segment mapping for every section list
         for (int j = 0; j < nseclist; j++) {
@@ -48,6 +50,7 @@ void Phase3::read_file(FileHandler& F, NrnThreadMappingInfo* ntmapping) {
 void Phase3::read_direct(NrnThreadMappingInfo* ntmapping) {
     int count;
     nrn2core_get_dat3_cell_count_(count);
+    std::cout << "read_direct: cell count = " << count << std::endl;
     /** for every neuron */
     for (int i = 0; i < count; i++) {
         int gid;
@@ -55,6 +58,7 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping) {
         int t_seg;
         int nseclist;
         nrn2core_get_dat3_cellmapping_(i, gid, t_sec, t_seg, nseclist);
+        std::cout << "read_direct: gid = " << gid << ", t_sec = " << t_sec << ", t_seg = " << t_seg << ", nseclist = " << nseclist << std::endl;
         auto cmap = new CellMapping(gid);
         for (int j = 0; j < nseclist; j++) {
             std::string sclname;
@@ -75,6 +79,7 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping) {
                                           data_sec,
                                           data_seg,
                                           data_lfp);
+            std::cout << "read_direct: sclname = " << sclname << ", n_sec = " << n_sec << ", n_seg = " << n_seg << ", total_lfp_factors = " << total_lfp_factors << ", n_electrodes = " << n_electrodes << std::endl;
             auto smap = new SecMapping();
             smap->name = sclname;
             for (int i_seg = 0; i_seg < n_seg; i_seg++) {
