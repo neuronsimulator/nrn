@@ -28,7 +28,8 @@ py_ver=""
 clone_install_nmodl_requirements() {
     git config --global --add safe.directory /root/nrn
     git submodule update --init --recursive --force --depth 1 -- external/nmodl
-    pip install -r external/nmodl/requirements.txt
+    # We only want the _build_ dependencies
+    sed -e '/^# runtime dependencies/,$ d' external/nmodl/requirements.txt >> my_requirements.txt
 }
 
 
@@ -52,12 +53,8 @@ setup_venv() {
 }
 
 
-pip_numpy_install() {
-    # numpy is special as we want the minimum wheel version
-    numpy_ver="numpy"
+python_version_check() {
     case "$py_ver" in
-      36) numpy_ver="numpy==1.12.1" ;;
-      37) numpy_ver="numpy==1.14.6" ;;
       38) numpy_ver="numpy==1.17.5" ;;
       39) numpy_ver="numpy==1.19.3" ;;
       310) numpy_ver="numpy==1.21.3" ;;
@@ -83,11 +80,7 @@ build_wheel_linux() {
 
     echo " - Installing build requirements"
     pip install auditwheel
-    pip install -r packaging/python/build_requirements.txt
-    pip_numpy_install
-
-    echo " - Building..."
-    rm -rf dist build
+    cp packaging/python/build_requirements.txt my_requirements.txt
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
@@ -99,6 +92,13 @@ build_wheel_linux() {
         clone_install_nmodl_requirements
         CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
     fi
+
+    cat my_requirements.txt
+    pip install -r my_requirements.txt
+    pip check
+
+    echo " - Building..."
+    rm -rf dist build
 
     # Workaround for https://github.com/pypa/manylinux/issues/1309
     git config --global --add safe.directory "*"
@@ -135,11 +135,7 @@ build_wheel_osx() {
     (( $skip )) && return 0
 
     echo " - Installing build requirements"
-    pip install -U delocate -r packaging/python/build_requirements.txt
-    pip_numpy_install
-
-    echo " - Building..."
-    rm -rf dist build
+    cp packaging/python/build_requirements.txt my_requirements.txt
 
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
@@ -151,6 +147,13 @@ build_wheel_osx() {
     if [ "$USE_STATIC_READLINE" == "1" ]; then
       CMAKE_DEFS="$CMAKE_DEFS,NRN_BINARY_DIST_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
     fi
+
+    cat my_requirements.txt
+    pip install -U delocate -r my_requirements.txt
+    pip check
+
+    echo " - Building..."
+    rm -rf dist build
 
     # We need to "fix" the platform tag if the Python installer is universal2
     # See:
