@@ -1,6 +1,6 @@
 # Unit Tests
 add_executable(api_unit_tests api_unit_tests.cpp)
-target_link_libraries(api_unit_tests PRIVATE Catch2::Catch2)
+target_link_libraries(api_unit_tests PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(api_unit_tests PUBLIC nrniv_lib)
 add_test(NAME "api::unit_tests" COMMAND api_unit_tests)
 
@@ -9,6 +9,7 @@ foreach(api_test_file hh_sim.cpp netcon.cpp sections.c vclamp.cpp)
   string(REPLACE "." "_" api_test_name "${api_test_file}")
   add_executable(${api_test_name} ${api_test_file})
   cpp_cc_configure_sanitizers(TARGET ${api_test_name})
+  target_link_libraries(${api_test_name} ${CMAKE_DL_LIBS})
   target_link_libraries(${api_test_name} nrniv_lib)
   target_link_options(${api_test_name} PRIVATE -rdynamic)
   if(NRN_ENABLE_CORENEURON)
@@ -17,5 +18,6 @@ foreach(api_test_file hh_sim.cpp netcon.cpp sections.c vclamp.cpp)
 
   set(test_name "api::${api_test_name}")
   add_test(NAME "${test_name}" COMMAND ${api_test_name})
-  set_property(TEST "${test_name}" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}")
+  set_property(TEST "${test_name}" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
+                                            "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 endforeach()

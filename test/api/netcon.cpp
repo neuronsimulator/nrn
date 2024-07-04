@@ -49,10 +49,7 @@ int main(void) {
     nrn_property_set(ns, "interval", 5.);
     nrn_property_set(ns, "number", 10.);
 
-    nrn_double_push(1);
-    nrn_double_push(2);
-    nrn_double_push(3);
-    nrn_method_call(ns, nrn_method_symbol(ns, "noiseFromRandom123"), 3);
+    nrn_method_call(ns, "noiseFromRandom123", "ddd", 1., 2., 3.);
 
     // syn = h.ExpSyn(soma(0.5))
     auto syn = nrn_object_new("ExpSyn", NRN_ARG_DOUBLE, 0.5);
