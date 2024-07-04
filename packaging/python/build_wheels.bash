@@ -53,25 +53,6 @@ setup_venv() {
 }
 
 
-python_version_check() {
-    case "$py_ver" in
-      38) numpy_ver="numpy==1.17.5" ;;
-      39) numpy_ver="numpy==1.19.3" ;;
-      310) numpy_ver="numpy==1.21.3" ;;
-      311) numpy_ver="numpy==1.23.5" ;;
-      312) numpy_ver="numpy==1.26.0" ;;
-      *) echo "Error: numpy version not specified for this python!" && exit 1;;
-    esac
-
-    # older version for apple m1 as building from source fails
-    if [[ `uname -m` == 'arm64' && "$py_ver" == "39" ]]; then
-      numpy_ver="numpy==1.21.3"
-    fi
-
-    echo " - pip install $numpy_ver"
-    pip install $numpy_ver
-}
-
 build_wheel_linux() {
     echo "[BUILD WHEEL] Building with interpreter $1"
     local skip=
