@@ -13,8 +13,8 @@
 #include "parse.hpp"
 #include "cvodeobj.h"
 #include "hoclist.h"
-#include "pool.h"
-#include "tqueue.h"
+#include "pool.hpp"
+#include "tqueue.hpp"
 #include "ocobserv.h"
 #include "nrnneosm.h"
 #include "datapath.h"
@@ -246,9 +246,7 @@ extern void nrn_multisend_advance();
 
 bool nrn_use_fifo_queue_;
 
-#if BBTQ == 5
 bool nrn_use_bin_queue_;
-#endif
 
 #if NRNMPI
 // for compressed info during spike exchange
@@ -2549,31 +2547,8 @@ void NetCvode::vec_event_store() {
     }
 }
 
-#if BBTQ == 4
-TQItem* NetCvode::fifo_event(double td, DiscreteEvent* db) {
-    if (nrn_use_fifo_queue_) {
-#if PRINT_EVENT
-        if (print_event_) {
-            db->pr("send", td, this);
-        }
-        if (vec_event_store_) {
-            Vect* x = vec_event_store_;
-            int n = x->size();
-            x->resize_chunk(n + 2);
-            x->elem(n) = t;
-            x->elem(n + 1) = td;
-        }
-#endif
-        return p[0].tqe_->insert_fifo(td, db);
-    } else {
-        return p[0].tqe_->insert(td, db);
-    }
-}
-#else
 #define fifo_event event
-#endif
 
-#if BBTQ == 5
 TQItem* NetCvode::bin_event(double td, DiscreteEvent* db, NrnThread* nt) {
     if (nrn_use_bin_queue_) {
 #if PRINT_EVENT
@@ -2597,9 +2572,6 @@ TQItem* NetCvode::bin_event(double td, DiscreteEvent* db, NrnThread* nt) {
         return p[nt->id].tqe_->insert(td, db);
     }
 }
-#else
-#define bin_event event
-#endif
 
 TQItem* NetCvode::event(double td, DiscreteEvent* db, NrnThread* nt) {
 #if PRINT_EVENT
@@ -2827,10 +2799,8 @@ void NetCvode::clear_events() {
                 d.selfqueue_->remove_all();
             }
         }
-#if BBTQ == 5
         d.tqe_->nshift_ = -1;
         d.tqe_->shift_bin(nt_t - 0.5 * nt_dt);
-#endif
     }
     // I don't believe this is needed anymore since cvode not needed
     // til delivery.
@@ -2858,7 +2828,6 @@ void NetCvode::free_event_pools() {
 void NetCvode::init_events() {
     hoc_Item* q;
     int i, j;
-#if BBTQ == 5
     for (i = 0; i < nrn_nthread; ++i) {
         p[i].tqe_->nshift_ = -1;
         // first bin starts 1/2 time step early because per time step
@@ -2867,7 +2836,6 @@ void NetCvode::init_events() {
         // nt->_t + 0.5*nt->_dt where nt->_t is a multiple of dt.
         p[i].tqe_->shift_bin(nt_t - 0.5 * nt_dt);
     }
-#endif
     if (psl_) {
         ITERATE(q, psl_) {
             PreSyn* ps = (PreSyn*) VOIDITM(q);
@@ -2879,19 +2847,6 @@ void NetCvode::init_events() {
             // also decide what to do about use_min_delay_
             // the rule for now is to use it if all delays are
             // the same and there are more than 2
-#if BBTQ == 4
-            // but
-            // if we desire nrn_use_fifo_queue_ then use it
-            // even if just one
-            double fifodelay;
-            if (nrn_use_fifo_queue_) {
-                if (!dil.empty()) {
-                    ps->use_min_delay_ = 1;
-                    ps->delay_ = dil[0]->delay_;
-                    fifodelay = ps->delay_;
-                }
-            } else
-#endif  // BBTQ
             {
                 if (dil.size() > 2) {
                     ps->use_min_delay_ = 1;
@@ -2904,15 +2859,6 @@ void NetCvode::init_events() {
                 if (ps->use_min_delay_ && ps->delay_ != d->delay_) {
                     ps->use_min_delay_ = false;
                 }
-#if BBTQ == 4
-                if (nrn_use_fifo_queue_ && d->delay_ != fifodelay) {
-                    hoc_warning(
-                        "Use of the event fifo queue is turned off due to more than one value for "
-                        "NetCon.delay",
-                        0);
-                    nrn_use_fifo_queue_ = false;
-                }
-#endif
             }
         }
     }
@@ -3076,11 +3022,7 @@ void NetCon::send(double tt, NetCvode* ns, NrnThread* nt) {
     if (active_ && target_) {
         assert(PP2NT(target_) == nt);
         STATISTICS(netcon_send_active_);
-#if BBTQ == 5
         ns->bin_event(tt, this, PP2NT(target_));
-#else
-        ns->event(tt, this, PP2NT(target_));
-#endif
     } else {
         STATISTICS(netcon_send_inactive_);
     }
@@ -3157,10 +3099,6 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 #ifndef USENCS
     if (use_min_delay_) {
         STATISTICS(presyn_send_mindelay_);
-#if BBTQ == 4
-        ns->fifo_event(tt + delay_, this);
-#else
-#if BBTQ == 5
         for (i = 0; i < nrn_nthread; ++i) {
             if (nt->id == i) {
                 ns->bin_event(tt + delay_, this, nt);
@@ -3168,24 +3106,16 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
                 ns->p[i].interthread_send(tt + delay_, this, nrn_threads + i);
             }
         }
-#else
-        ns->event(tt + delay_, this);
-#endif
-#endif
     } else {
         STATISTICS(presyn_send_direct_);
         for (const auto& d: dil_) {
             if (d->active_ && d->target_) {
                 NrnThread* n = PP2NT(d->target_);
-#if BBTQ == 5
                 if (nt == n) {
                     ns->bin_event(tt + d->delay_, d, n);
                 } else {
                     ns->p[n->id].interthread_send(tt + d->delay_, d, n);
                 }
-#else
-                ns->event(tt + d->delay_, d, PP2NT(d->target_));
-#endif
             }
         }
     }
@@ -3466,7 +3396,186 @@ void PlayRecordEvent::pr(const char* s, double tt, NetCvode* ns) {
     plr_->pr();
 }
 
-#include <hocevent.cpp>
+using HocEventPool = MutexPool<HocEvent>;
+HocEventPool* HocEvent::hepool_;
+
+HocEvent::HocEvent() {
+    stmt_ = nullptr;
+    ppobj_ = nullptr;
+    reinit_ = 0;
+}
+
+HocEvent::~HocEvent() {
+    if (stmt_) {
+        delete stmt_;
+    }
+}
+
+void HocEvent::pr(const char* s, double tt, NetCvode* ns) {
+    Printf("%s HocEvent %s %.15g\n", s, stmt_ ? stmt_->name() : "", tt);
+}
+
+HocEvent* HocEvent::alloc(const char* stmt, Object* ppobj, int reinit, Object* pyact) {
+    if (!hepool_) {
+        nrn_hoc_lock();
+        if (!hepool_) {
+            hepool_ = new HocEventPool(100, 1);
+        }
+        nrn_hoc_unlock();
+    }
+    HocEvent* he = hepool_->alloc();
+    he->stmt_ = nullptr;
+    he->ppobj_ = ppobj;
+    he->reinit_ = reinit;
+    if (pyact) {
+        he->stmt_ = new HocCommand(pyact);
+    } else if (stmt) {
+        he->stmt_ = new HocCommand(stmt);
+    }
+    return he;
+}
+
+void HocEvent::hefree() {
+    if (stmt_) {
+        delete stmt_;
+        stmt_ = nullptr;
+    }
+    hepool_->hpfree(this);
+}
+
+void HocEvent::clear() {
+    if (stmt_) {
+        delete stmt_;
+        stmt_ = nullptr;
+    }
+}
+
+void HocEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
+    extern double t;
+    if (!ppobj_) {
+        nc->allthread_handle(tt, this, nt);
+        return;
+    }
+    if (stmt_) {
+        if (nrn_nthread > 1 || nc->is_local()) {
+            if (!ppobj_) {
+                hoc_execerror(
+                    "multiple threads and/or local variable time step method require an "
+                    "appropriate POINT_PROCESS arg to CVode.event to safely execute:",
+                    stmt_->name());
+            }
+            Cvode* cv = (Cvode*) ob2pntproc(ppobj_)->nvi_;
+            if (cv && cvode_active_) {
+                nc->local_retreat(tt, cv);
+                if (reinit_) {
+                    cv->set_init_flag();
+                }
+                nt->_t = cv->t_;
+            }
+            nrn_hoc_lock();
+            t = tt;
+        } else if (cvode_active_ && reinit_) {
+            nc->retreat(tt, nc->gcv_);
+            assert(MyMath::eq(tt, nc->gcv_->t_, NetCvode::eps(tt)));
+            assert(tt == nt->_t);
+            nc->gcv_->set_init_flag();
+            t = tt;
+        } else {
+            t = nt_t = tt;
+        }
+        stmt_->execute(false);
+        if (nrn_nthread > 1 || nc->is_local()) {
+            nrn_hoc_unlock();
+        }
+    }
+    hefree();
+}
+
+void HocEvent::allthread_handle() {
+    if (stmt_) {
+        stmt_->execute(false);
+    } else {
+        tstopset;
+    }
+    hefree();
+}
+
+void HocEvent::pgvts_deliver(double tt, NetCvode* nc) {
+    deliver(tt, nc, nrn_threads);
+}
+
+void HocEvent::reclaim() {
+    if (hepool_) {
+        hepool_->free_all();
+    }
+}
+
+DiscreteEvent* HocEvent::savestate_save() {
+    //	pr("HocEvent::savestate_save", 0, net_cvode_instance);
+    HocEvent* he = new HocEvent();
+    if (stmt_) {
+        if (stmt_->pyobject()) {
+            he->stmt_ = new HocCommand(stmt_->pyobject());
+        } else {
+            he->stmt_ = new HocCommand(stmt_->name(), stmt_->object());
+        }
+        he->reinit_ = reinit_;
+        he->ppobj_ = ppobj_;
+    }
+    return he;
+}
+
+void HocEvent::savestate_restore(double tt, NetCvode* nc) {
+    //	pr("HocEvent::savestate_restore", tt, nc);
+    HocEvent* he = alloc(nullptr, nullptr, 0);
+    NrnThread* nt = nrn_threads;
+    if (stmt_) {
+        if (stmt_->pyobject()) {
+            he->stmt_ = new HocCommand(stmt_->pyobject());
+        } else {
+            he->stmt_ = new HocCommand(stmt_->name(), stmt_->object());
+        }
+        he->reinit_ = reinit_;
+        he->ppobj_ = ppobj_;
+        if (ppobj_) {
+            nt = (NrnThread*) ob2pntproc(ppobj_)->_vnt;
+        }
+    }
+    nc->event(tt, he, nt);
+}
+
+DiscreteEvent* HocEvent::savestate_read(FILE* f) {
+    HocEvent* he = new HocEvent();
+    int have_stmt, have_obj, index;
+    char stmt[256], objname[100], buf[200];
+    Object* obj = nullptr;
+    //	nrn_assert(fscanf(f, "%d %d\n", &have_stmt, &have_obj) == 2);
+    nrn_assert(fgets(buf, 200, f));
+    nrn_assert(sscanf(buf, "%d %d\n", &have_stmt, &have_obj) == 2);
+    if (have_stmt) {
+        nrn_assert(fgets(stmt, 256, f));
+        stmt[strlen(stmt) - 1] = '\0';
+        if (have_obj) {
+            //			nrn_assert(fscanf(f, "%s %d\n", objname, &index) == 1);
+            nrn_assert(fgets(buf, 200, f));
+            nrn_assert(sscanf(buf, "%s %d\n", objname, &index) == 1);
+            obj = hoc_name2obj(objname, index);
+        }
+        he->stmt_ = new HocCommand(stmt, obj);
+    }
+    return he;
+}
+
+void HocEvent::savestate_write(FILE* f) {
+    fprintf(f, "%d\n", HocEventType);
+    fprintf(f, "%d %d\n", stmt_ ? 1 : 0, (stmt_ && stmt_->object()) ? 1 : 0);
+    if (stmt_) {
+        fprintf(f, "%s\n", stmt_->name());
+        if (stmt_->object()) {
+            fprintf(f, "%s %d\n", stmt_->object()->ctemplate->sym->name, stmt_->object()->index);
+        }
+    }
+}
 
 void NetCvode::local_retreat(double t, Cvode* cv) {
     if (!cvode_active_) {
@@ -5637,7 +5746,7 @@ static int trajec_buffered(NrnThread& nt,
 // beyond their current size and CoreNEURON will start filling from the
 // current fill time, h.t, location of the arrays. I.e. starting at CoreNEURON's
 // start time. (Multiple calls to psolve append to these arrays.)
-// n_pr refers the the number of PlayRecord instances in the vpr array.
+// n_pr refers to the number of PlayRecord instances in the vpr array.
 // n_trajec refers to the number of trajectories to be recorded on the
 // CoreNEURON side and is the size of the types, indices, and varrays.
 // n_pr is different from n_trajec when one of the GLineRecord instances has
@@ -6006,7 +6115,6 @@ void NetCvode::deliver_net_events(NrnThread* nt) {  // for default method
     int tid = nt->id;
     tsav = nt->_t;
     tm = nt->_t + 0.5 * nt->_dt;
-#if BBTQ == 5
 tryagain:
     // one of the events on the main queue may be a NetParEvent
     // which due to dt round off error can result in an event
@@ -6044,18 +6152,15 @@ tryagain:
         }
         //		assert(int(tm/nt->_dt)%1000 == p[tid].tqe_->nshift_);
     }
-#endif
 
     deliver_events(tm, nt);
 
-#if BBTQ == 5
     if (nrn_use_bin_queue_) {
         if (p[tid].tqe_->top()) {
             goto tryagain;
         }
         p[tid].tqe_->shift_bin(tm);
     }
-#endif
     nt->_t = tsav;
 }
 

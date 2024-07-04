@@ -49,11 +49,6 @@ extern char** environ;
 
 #endif /*!__MINGW32__*/
 
-#if DOS
-#include <graphics.h>
-#include <dos.h>
-#endif
-
 static int console = 1; /* 1 plotting to console graphics */
 static int hardplot;    /* 1 hp style  2 fig style  3 coplot*/
 static int graphdev;
@@ -97,10 +92,6 @@ static void hoc_x11plot(int, double, double);
 static void hard_text_preamble();
 
 void plprint(const char* s) {
-#if DOS
-    extern int newstyle;
-    extern unsigned text_style, text_size, text_orient;
-#endif
     char buf[128];
 
     if (text && s[strlen(s) - 1] == '\n') {
@@ -110,17 +101,6 @@ void plprint(const char* s) {
     }
 
     if (console && text) {
-#if DOS
-        if (egagrph == 2) {
-            if (newstyle) {
-                settextstyle(text_style, text_orient, text_size);
-                newstyle = 0;
-            }
-            outtext(s);
-        } else {
-            IGNORE(fprintf(cdev, "%s", s));
-        }
-#else
 #if SUNCORE
         hoc_pl_sunplot(s);
 #else
@@ -129,7 +109,6 @@ void plprint(const char* s) {
 #else
         IGNORE(fprintf(cdev, "%s", s));
         IGNORE(fflush(cdev));
-#endif
 #endif
 #endif
 
@@ -193,17 +172,12 @@ void initplot(void) {
 }
 
 void hoc_close_plot(void) {
-#if DOS
-    if (egagrph)
-        plt(-3, 0., 0.);
-#else
 #if SUNCORE
     hoc_close_sunplot();
 #else
 #if NRNOC_X11
     x11_close_window();
 #else
-#endif
 #endif
 #endif
 }

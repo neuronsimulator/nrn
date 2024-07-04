@@ -181,19 +181,24 @@ static Object* pysec_cell(Section* sec) {
     return NULL;
 }
 
-static int NPySecObj_contains(PyObject* sec, PyObject* obj) {
-    /* report that we contain the object if it has a .sec that is equal to ourselves */
-    PyObject* obj_sec;
+static int NpySObj_contains(PyObject* s, PyObject* obj, const char* string) {
+    /* Checks is provided PyObject* s contains obj */
+    PyObject* obj_seg;
     int result;
-    if (!PyObject_HasAttrString(obj, "sec")) {
+    if (!PyObject_HasAttrString(obj, string)) {
         return 0;
     }
     Py_INCREF(obj);
-    obj_sec = PyObject_GetAttrString(obj, "sec");
+    obj_seg = PyObject_GetAttrString(obj, string);
     Py_DECREF(obj);
-    result = PyObject_RichCompareBool(sec, obj_sec, Py_EQ);
-    Py_XDECREF(obj_sec);
+    result = PyObject_RichCompareBool(s, obj_seg, Py_EQ);
+    Py_XDECREF(obj_seg);
     return (result);
+}
+
+static int NPySecObj_contains(PyObject* sec, PyObject* obj) {
+    /* report that we contain the object if it has a .sec that is equal to ourselves */
+    return NpySObj_contains(sec, obj, "sec");
 }
 
 static int pysec_cell_equals(Section* sec, Object* obj) {
@@ -457,6 +462,11 @@ static PyObject* NPyMechObj_new(PyTypeObject* type, PyObject* args, PyObject* kw
         Py_INCREF(self->pyseg_);
     }
     return (PyObject*) self;
+}
+
+static int NPySegObj_contains(PyObject* segment, PyObject* obj) {
+    /* report that we contain the object if it has a .segment that is equal to ourselves */
+    return NpySObj_contains(segment, obj, "segment");
 }
 
 static PyObject* NPyRangeVar_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
@@ -1931,7 +1941,13 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
         }
     } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
         sym = ((NPyRangeVar*) rv)->sym_;
-        if (ISARRAY(sym)) {
+        if (sym->type == RANGEOBJ) {
+            int mtype = sym->u.rng.type;
+            Node* nd = node_exact(sec, self->x_);
+            Prop* p = nrn_mechanism(mtype, nd);
+            Object* ob = nrn_nmodlrandom_wrap(p, sym);
+            result = nrnpy_ho2po(ob);
+        } else if (ISARRAY(sym)) {
             NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
             r->pymech_ = new_pymechobj();
             r->pymech_->pyseg_ = self;
@@ -2121,6 +2137,38 @@ static bool striptrail(char* buf, int sz, const char* n, const char* m) {
     return false;
 }
 
+static Symbol* var_find_in_mech(Symbol* mech, const char* varname) {
+    int cnt = mech->s_varn;
+    for (int i = 0; i < cnt; ++i) {
+        Symbol* sym = mech->u.ppsym[i];
+        if (strcmp(sym->name, varname) == 0) {
+            return sym;
+        }
+    }
+    return nullptr;
+}
+
+static neuron::container::data_handle<double> var_pval(NPyMechObj* pymech,
+                                                       Symbol* symvar,
+                                                       int index) {
+    if (pymech->prop_->ob) {  // HocMech created by make_mechanism
+        Object* ob = pymech->prop_->ob;
+        // strip suffix
+        std::string s = symvar->name;
+        std::string suffix{"_"};
+        suffix += memb_func[pymech->type_].sym->name;
+        s.resize(s.rfind(suffix));
+
+        Symbol* sym = hoc_table_lookup(s.c_str(), ob->ctemplate->symtable);
+        assert(sym);
+        double* pd = ob->u.dataspace[sym->u.rng.index].pval + index;
+        return neuron::container::data_handle<double>{pd};
+    }
+    int sym_index = symvar->u.rng.index;
+    auto dh = pymech->prop_->param_handle_legacy(sym_index + index);
+    return dh;
+}
+
 static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     Section* sec = self->pyseg_->pysec_->sec_;
     if (!sec->prop) {
@@ -2138,9 +2186,9 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     }
     // printf("mech_getattro %s\n", n);
     PyObject* result = NULL;
-    NrnProperty np(self->prop_);
     int isptr = (strncmp(n, "_ref_", 5) == 0);
-    char* mname = memb_func[self->prop_->_type].sym->name;
+    Symbol* mechsym = memb_func[self->type_].sym;
+    char* mname = mechsym->name;
     int mnamelen = strlen(mname);
     int bufsz = strlen(n) + mnamelen + 2;
     char* buf = new char[bufsz];
@@ -2149,8 +2197,8 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     } else {
         std::snprintf(buf, bufsz, "%s_%s", isptr ? n + 5 : n, mname);
     }
-    Symbol* sym = np.find(buf);
-    if (sym) {
+    Symbol* sym = var_find_in_mech(mechsym, buf);
+    if (sym && sym->type == RANGEVAR) {
         // printf("mech_getattro sym %s\n", sym->name);
         if (ISARRAY(sym)) {
             NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
@@ -2161,7 +2209,7 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
             r->attr_from_sec_ = 0;
             result = (PyObject*) r;
         } else {
-            auto const px = np.prop_pval(sym, 0);
+            auto const px = var_pval(self, sym, 0);
             if (!px) {
                 rv_noexist(sec, sym->name, self->pyseg_->x_, 2);
             } else if (isptr) {
@@ -2170,9 +2218,14 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
                 result = Py_BuildValue("d", *px);
             }
         }
+    } else if (sym && sym->type == RANGEOBJ) {
+        Object* ob = nrn_nmodlrandom_wrap(self->prop_, sym);
+        result = nrnpy_ho2po(ob);
     } else if (strcmp(n, "__dict__") == 0) {
         result = PyDict_New();
-        for (Symbol* s = np.first_var(); np.more_var(); s = np.next_var()) {
+        int cnt = mechsym->s_varn;
+        for (int i = 0; i < cnt; ++i) {
+            Symbol* s = mechsym->u.ppsym[i];
             if (!striptrail(buf, bufsz, s->name, mname)) {
                 strcpy(buf, s->name);
             }
@@ -2224,9 +2277,9 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
         return -1;
     }
     // printf("mech_setattro %s\n", n);
-    NrnProperty np(self->prop_);
     int isptr = (strncmp(n, "_ref_", 5) == 0);
-    char* mname = memb_func[self->prop_->_type].sym->name;
+    Symbol* mechsym = memb_func[self->type_].sym;
+    char* mname = mechsym->name;
     int mnamelen = strlen(mname);
     int bufsz = strlen(n) + mnamelen + 2;
     char* buf = new char[bufsz];
@@ -2235,14 +2288,14 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
     } else {
         std::snprintf(buf, bufsz, "%s_%s", isptr ? n + 5 : n, mname);
     }
-    Symbol* sym = np.find(buf);
+    Symbol* sym = var_find_in_mech(mechsym, buf);
     delete[] buf;
     if (sym) {
         if (isptr) {
             err = nrn_pointer_assign(self->prop_, sym, value);
         } else {
             double x;
-            auto pd = np.prop_pval(sym, 0);
+            auto pd = var_pval(self, sym, 0);
             if (pd) {
                 if (PyArg_Parse(value, "d", &x) == 1) {
                     *pd = x;
@@ -2267,19 +2320,19 @@ neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject* pyname
         return nullptr;
     }
     NPyMechObj* m = (NPyMechObj*) mech;
-    NrnProperty np(m->prop_);
+    Symbol* msym = memb_func[m->type_].sym;
     char buf[200];
     Py2NRNString name(pyname);
     char* n = name.c_str();
     if (!n) {
         return nullptr;
     }
-    Sprintf(buf, "%s_%s", n, memb_func[m->prop_->_type].sym->name);
-    Symbol* sym = np.find(buf);
+    Sprintf(buf, "%s_%s", n, msym->name);
+    Symbol* sym = var_find_in_mech(msym, buf);
     if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
         return nullptr;
     }
-    return &(m->prop_->dparam[np.prop_index(sym)]);
+    return &(m->prop_->dparam[sym->u.rng.index]);
 }
 
 static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
@@ -2614,7 +2667,7 @@ static PyMethodDef nrnpy_methods[] = {
 static PyObject* nrnmodule_;
 
 static void rangevars_add(Symbol* sym) {
-    assert(sym && sym->type == RANGEVAR);
+    assert(sym && (sym->type == RANGEVAR || sym->type == RANGEOBJ));
     NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
     // printf("%s\n", sym->name);
     r->sym_ = sym;

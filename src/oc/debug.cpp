@@ -6,11 +6,7 @@
 #include <stdio.h>
 int zzdebug;
 
-#if DOS
 #define prcod(c1, c2) else if (p->pf == c1) Printf("%p %p %s", p, p->pf, c2)
-#else
-#define prcod(c1, c2) else if (p->pf == c1) Printf("%p %p %s", p, p->pf, c2)
-#endif
 
 void debug(void) /* print the machine */
 {
@@ -61,9 +57,6 @@ void debugzz(Inst* p) {
         prcod(funcret, "FUNCRET\n");
         prcod(procret, "PROCRET\n");
         prcod(hocobjret, "HOCOBJRET\n");
-#if DOS
-/* no room for all this stuff */
-#else
         prcod(hoc_iterator_stmt, "hoc_iterator_stmt\n");
         prcod(hoc_iterator, "hoc_iterator\n");
         prcod(hoc_argrefasgn, "ARGREFASSIGN\n");
@@ -126,7 +119,6 @@ void debugzz(Inst* p) {
         prcod(rangevarevalpointer, "rangevarevalpointer\n");
         prcod(sec_access_object, "sec_access_object\n");
         prcod(mech_uninsert, "mech_uninsert\n");
-#endif
         else {
             size_t offset = (size_t) p->in;
             if (offset < 1000)

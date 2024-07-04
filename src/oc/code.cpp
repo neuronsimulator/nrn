@@ -2553,24 +2553,12 @@ void insertcode(Inst* begin, Inst* end, Pfrv f) {
     }
 }
 
-#if defined(DOS) || defined(WIN32)
-static int ntimes;
-#endif
-
 void execute(Inst* p) /* run the machine */
 {
     Inst* pcsav;
 
     BBSPOLL
     for (pc = p; pc->in != STOP && !hoc_returning;) {
-#if defined(DOS)
-        if (++ntimes > 10) {
-            ntimes = 0;
-#if 0
-            kbhit(); /* DOS can't capture interrupt when number crunching*/
-#endif
-        }
-#endif
         if (hoc_intset)
             execerror("interrupted", (char*) 0);
         /* (*((pc++)->pf))(); DEC 5000 increments pc after the return!*/

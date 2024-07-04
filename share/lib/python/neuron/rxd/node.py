@@ -141,6 +141,16 @@ class Node(object):
             return self.region == condition
         raise RxDException("selector %r not supported for this node type" % condition)
 
+    def _safe_satisfies(self, condition):
+        """Tests if a Node satisfies a given condition.
+
+        Works the same as node.satisfies but replaces RxDException with False
+        """
+        try:
+            return self.satisfies(condition)
+        except RxDException:
+            return False
+
     @property
     def _ref_concentration(self):
         """Returns a NEURON reference to the Node's concentration
@@ -467,6 +477,9 @@ class Node1D(Node):
     @property
     def segment(self):
         return self._sec._sec(self.x)
+
+    def _in_seg(self, segment):
+        return segment == self.segment
 
     @property
     def surface_area(self):

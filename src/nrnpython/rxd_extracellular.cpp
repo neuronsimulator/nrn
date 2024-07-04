@@ -4,7 +4,7 @@
 #include <string.h>
 #include "grids.h"
 #include "rxd.h"
-#include <nrnwrap_Python.h>
+#include "nrnwrap_Python.h"
 #include <cmath>
 #include <ocmatrix.h>
 #include <cfloat>

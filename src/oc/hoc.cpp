@@ -20,6 +20,7 @@
 #include "nrnfilewrap.h"
 #include "../nrniv/backtrace_utils.h"
 
+#include <cfenv>
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
@@ -48,21 +49,11 @@ int (*p_nrnpy_pyrun)(const char* fname);
 extern int stdin_event_ready();
 #endif
 
-#if HAVE_FEENABLEEXCEPT
-#define NRN_FLOAT_EXCEPTION 1
-#else
-#define NRN_FLOAT_EXCEPTION 0
-#endif
-
-#if NRN_FLOAT_EXCEPTION
-#if !defined(__USE_GNU)
-#define __USE_GNU
-#endif
-#include <fenv.h>
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)
 static void matherr1(void) {
+    const int e = std::fetestexcept(FEEXCEPT);
     /* above gives the signal but for some reason fegetexcept returns 0 */
-    switch (fegetexcept()) {
+    switch (e) {
     case FE_DIVBYZERO:
         fprintf(stderr, "Floating exception: Divide by zero\n");
         break;
@@ -74,7 +65,6 @@ static void matherr1(void) {
         break;
     }
 }
-#endif
 
 int nrn_mpiabort_on_error_{1};
 
@@ -95,35 +85,9 @@ void nrn_feenableexcept() {
     hoc_pushx((double) result);
 }
 
-#if 0
-/* performance debugging when gprof is inadequate */
-#include <sys/time.h>
-static unsigned long usec[30];
-static unsigned long oldusec[30];
-static struct timeval tp;
-void start_profile(int i){
-	gettimeofday(&tp, 0);
-	oldusec[i] = tp.tv_usec;
-}
-void add_profile(int i) {
-	gettimeofday(&tp, 0);
-	if (tp.tv_usec > oldusec[i]) {
-		usec[i] += tp.tv_usec - oldusec[i];
-	}
-}
-void pr_profile(void) {
-	int i;
-	for (i=0; i < 30; ++i) {
-		if (usec[i]) {
-			printf("sec[%d]=%g\n", i, ((double)usec[i])/1000000.);
-		}
-	}
-}
-#else
 void start_profile(int i) {}
 void add_profile(int i) {}
 void pr_profile(void) {}
-#endif
 
 #if OCSMALL
 #define READLINE 0
@@ -224,7 +188,7 @@ static int backslash(int c);
 #endif
 #if HAS_SIGPIPE
 /*ARGSUSED*/
-static RETSIGTYPE sigpipe_handler(int sig) {
+static void sigpipe_handler(int sig) {
     fprintf(stderr, "writing to a broken pipe\n");
     signal(SIGPIPE, sigpipe_handler);
 }
@@ -689,7 +653,7 @@ void hoc_execerror(const char* s, const char* t) /* recover from run-time error 
     hoc_execerror_mes(s, t, hoc_execerror_messages);
 }
 
-RETSIGTYPE onintr(int sig) /* catch interrupt */
+void onintr(int /* sig */) /* catch interrupt */
 {
     /*ARGSUSED*/
     stoprun = 1;
@@ -697,10 +661,6 @@ RETSIGTYPE onintr(int sig) /* catch interrupt */
         execerror("interrupted", (char*) 0);
     IGNORE(signal(SIGINT, onintr));
 }
-
-#if DOS
-#include <float.h>
-#endif
 
 static int coredump;
 
@@ -764,12 +724,9 @@ void print_bt() {
 #endif
 }
 
-RETSIGTYPE fpecatch(int sig) /* catch floating point exceptions */
+void fpecatch(int /* sig */) /* catch floating point exceptions */
 {
     /*ARGSUSED*/
-#if DOS
-    _fpreset();
-#endif
 #if NRN_FLOAT_EXCEPTION
     matherr1();
 #endif
@@ -782,7 +739,8 @@ RETSIGTYPE fpecatch(int sig) /* catch floating point exceptions */
     execerror("Floating point exception.", (char*) 0);
 }
 
-RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg type error */
+__attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation violation probably due to
+                                                              arg type error */
 {
     Fprintf(stderr, "Segmentation violation\n");
     print_bt();
@@ -794,7 +752,7 @@ RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg t
 }
 
 #if HAVE_SIGBUS
-RETSIGTYPE sigbuscatch(int sig) {
+__attribute__((noreturn)) void sigbuscatch(int /* sig */) {
     Fprintf(stderr, "Bus error\n");
     print_bt();
     /*ARGSUSED*/
@@ -1020,7 +978,9 @@ void hoc_final_exit(void) {
     std::string cmd{neuron_home};
     cmd += "/lib/cleanup ";
     cmd += std::to_string(hoc_pid());
-    system(cmd.c_str());
+    if (system(cmd.c_str())) {  // fix warning: ignoring return value
+        return;
+    }
 #endif
 }
 
@@ -1204,9 +1164,8 @@ int hoc_moreinput() {
     return 1;
 }
 
-typedef RETSIGTYPE (*SignalType)(int);
-
-static SignalType signals[4];
+using SignalType = void(int);
+static SignalType* signals[4];
 
 static void set_signals(void) {
     signals[0] = signal(SIGINT, onintr);

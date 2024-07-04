@@ -227,8 +227,8 @@ void CellGroup::datumtransform(CellGroup* cgs) {
                 DatumIndices& di = cg.datumindices[i++];
                 di.type = type;
                 int n = ml->nodecount * sz;
-                di.ion_type = new int[n];
-                di.ion_index = new int[n];
+                di.datum_type = new int[n];
+                di.datum_index = new int[n];
                 // fill the indices.
                 // had tointroduce a memb_func[i].dparam_semantics registered by each mod file.
                 datumindex_fill(ith, cg, di, ml);
@@ -257,7 +257,7 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
     // what is the size of the nt._vdata portion needed for a single ml->dparam[i]
     int vdata_size = 0;
     for (int i = 0; i < dsize; ++i) {
-        if (dmap[i] == -4 || dmap[i] == -6 || dmap[i] == -7 || dmap[i] == 0) {
+        if (dmap[i] == -4 || dmap[i] == -6 || dmap[i] == -7 || dmap[i] == -11 || dmap[i] == 0) {
             ++vdata_size;
         }
     }
@@ -310,6 +310,9 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
             } else if (dmap[j] == -10) {  // fornetcon
                 etype = -10;
                 eindex = 0;
+            } else if (dmap[j] == -11) {  // random
+                etype = -11;
+                eindex = vdata_offset++;
             } else if (dmap[j] == -9) {  // diam
                 cg.ndiam = nt.end;
                 etype = -9;
@@ -357,8 +360,8 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 Sprintf(errmes, "Unknown semantics type %d for dparam item %d of", dmap[j], j);
                 hoc_execerror(errmes, memb_func[di.type].sym->name);
             }
-            di.ion_type[offset + j] = etype;
-            di.ion_index[offset + j] = eindex;
+            di.datum_type[offset + j] = etype;
+            di.datum_index[offset + j] = eindex;
         }
     }
 }

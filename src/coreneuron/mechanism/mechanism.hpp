@@ -143,12 +143,12 @@ struct Memb_list {
     NetSendBuffer_t* _net_send_buffer = nullptr;
     int nodecount; /* actual node count */
     int _nodecount_padded;
-    void* instance{nullptr}; /* mechanism instance struct */
+    void* instance = nullptr; /* mechanism instance struct */
     // nrn_acc_manager.cpp handles data movement to/from the accelerator as the
     // "private constructor" in the translated MOD file code is called before
     // the main nrn_acc_manager methods that copy thread/mechanism data to the
     // device
-    void* global_variables{nullptr};
-    std::size_t global_variables_size{};
+    void* global_variables = nullptr;
+    std::size_t global_variables_size = 0;
 };
 }  // namespace coreneuron

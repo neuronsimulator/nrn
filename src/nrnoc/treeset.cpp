@@ -9,6 +9,7 @@
 #include "neuron/cache/mechanism_range.hpp"
 #include "neuron/cache/model_data.hpp"
 #include "neuron/container/soa_container.hpp"
+#include "node_order_optim/node_order_optim.h"
 #include "nonvintblock.h"
 #include "nrndae_c.h"
 #include "nrniv_mf.h"
@@ -436,8 +437,8 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     activsynapse_rhs();
 
     if (vec_sav_rhs) {
-        /* _nrn_save_rhs has only the contribution of electrode current
-           so here we transform so it only has membrane current contribution
+        /* vec_sav_rhs has only the contribution of electrode current
+           here we transform so it only has membrane current contribution
         */
         for (i = i1; i < i3; ++i) {
             vec_sav_rhs[i] -= vec_rhs[i];
@@ -541,11 +542,11 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     activsynapse_lhs();
 
     if (vec_sav_d) {
-        /* _nrn_save_d has only the contribution of electrode current
-           so here we transform so it only has membrane current contribution
+        /* vec_sav_d has only the contribution of electrode current
+           here we transform so it only has membrane current contribution
         */
         for (i = i1; i < i3; ++i) {
-            vec_sav_d[i] += vec_d[i];
+            vec_sav_d[i] = vec_d[i] - vec_sav_d[i];
         }
     }
 #if EXTRACELLULAR
@@ -720,6 +721,9 @@ void single_prop_free(Prop* p) {
     if (pnt_map[p->_type]) {
         clear_point_process_struct(p);
         return;
+    }
+    if (auto got = nrn_mech_inst_destruct.find(p->_type); got != nrn_mech_inst_destruct.end()) {
+        (got->second)(p);
     }
     if (p->dparam) {
         if (p->_type == CABLESECTION) {
@@ -1738,12 +1742,43 @@ void v_setup_vectors(void) {
         }
     }
     neuron::model().node_data().mark_as_unsorted();
+    // The assumption here is that one can arbitrarily permute the
+    // NrnThread node order (within the constraint that
+    // parent index < node index). A NrnThread node order permutation
+    // involves modifying NrnThread fields: _v_node, _v_parent, v_parent_index,
+    // and Node.v_node_index.
+    // Additionally, there appears to be a Memb_list node_indices ordering
+    // presumption embodied in nrn_sort_mech_data. I.e. Preexisting Memb_list node
+    // order is the order that results by iterating over Nrnthread nodes
+    // asserted by ml->nodelist[nt_mech_count] == nd.
+    // We <satisfy?> this by monotonically ordering the Memb_list with
+    // sort_ml(Memb_list*) but there is a question whether the sort preserves
+    // the order when there are many POINT_PROCESS instances in the same node.
+    neuron::nrn_permute_node_order();
+
     v_structure_change = 0;
     nrn_update_ps2nt();
     ++structure_change_cnt;
     long_difus_solve(nrn_ensure_model_data_are_sorted(), 3, *nrn_threads);  // !!!
     nrn_nonvint_block_setup();
     diam_changed = 1;
+
+#if 0
+    for (int tid = 0; tid < nrn_nthread; ++tid) {
+        printf("nrnthread %d node info\n", tid);
+        auto& nt = nrn_threads[tid];
+        for (int i = 0; i < nt.end; ++i) {
+            printf(
+                " _v_node[%2d]->v_node_index=%2d"
+                " _v_parent[%2d]->v_node_index=%2d v=%g\n",
+                i,
+                nt._v_node[i]->v_node_index,
+                i,
+                nt._v_parent[i] ? nt._v_parent[i]->v_node_index : -1,
+                (*nt._v_node[i]).v());
+        }
+    }
+#endif  // 0
 }
 
 

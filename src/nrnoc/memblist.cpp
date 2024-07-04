@@ -55,7 +55,7 @@ Memb_list& Memb_list::operator=(Memb_list&& rhs) noexcept {
     return *this;
 }
 
-Memb_list::~Memb_list() {
+Memb_list::~Memb_list() noexcept {
     if (m_owns_nodes) {
         nodes_free();
     }
@@ -99,6 +99,32 @@ neuron::container::data_handle<double> Memb_list::data_handle(
     assert(m_storage_offset != neuron::container::invalid_row);
     return m_storage->get_field_instance<neuron::container::Mechanism::field::FloatingPoint>(
         m_storage_offset + instance, variable, array_index);
+}
+
+
+[[nodiscard]] int Memb_list::get_num_variables() const {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_num_variables<Tag>();
+}
+
+[[nodiscard]] int Memb_list::get_array_dims(int variable) const {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_array_dims<Tag>()[variable];
+}
+
+[[nodiscard]] int const* Memb_list::get_array_dims() const {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_array_dims<Tag>();
+}
+
+[[nodiscard]] int Memb_list::get_array_prefix_sums(int variable) const {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_array_dim_prefix_sums<Tag>()[variable];
+}
+
+[[nodiscard]] int const* Memb_list::get_array_prefix_sums() const {
+    using Tag = neuron::container::Mechanism::field::FloatingPoint;
+    return m_storage->get_array_dim_prefix_sums<Tag>();
 }
 
 

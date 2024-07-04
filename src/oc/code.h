@@ -1,5 +1,4 @@
-#ifndef hoc_code_h
-#define hoc_code_h
+#pragma once
 
 #include "redef.h"
 
@@ -38,6 +37,7 @@ extern void hoc_autoobject(void), hocobjret(void), hoc_newobj_ret(void);
 extern void connectsection(void), add_section(void), range_const(void), range_interpolate(void);
 extern void clear_sectionlist(void), install_sectionlist(void);
 extern void rangevareval(void), sec_access(void), mech_access(void);
+extern void rangeobjeval(void), rangeobjevalmiddle(void);
 extern void for_segment(void), for_segment1(void);
 extern void sec_access_temp(void), sec_access_push(void), sec_access_pop(void);
 extern void rangepoint(void), forall_section(void), hoc_ifsec(void);
@@ -49,6 +49,3 @@ extern void hoc_ifseclist(void), mech_uninsert(void);
 extern void simpleconnectsection(void), range_interpolate_single(void);
 extern void hoc_sec_internal_push(void);
 /* END NEWCABLE*/
-
-
-#endif

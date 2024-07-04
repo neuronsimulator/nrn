@@ -1,5 +1,4 @@
-#ifndef hoc_list_h
-#define hoc_list_h
+#pragma once
 
 #if HOC_L_LIST
 #define stralloc    hoc_l_stralloc
@@ -107,6 +106,3 @@ extern void hoc_l_replacstr(hoc_Item*, const char*);
 #define Lappenditem lappenditem
 #define Lappendlst  lappendlst
 #define Lappendsec  lappendsec
-
-
-#endif

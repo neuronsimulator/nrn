@@ -444,6 +444,10 @@ if(NRN_ENABLE_THREADS)
   list(APPEND NRN_COMPILE_DEFS NRN_ENABLE_THREADS)
 endif()
 
+# Some files are shared by NEURON and CoreNEURON and use #if CORENRN_BUILD to distinguish between
+# which build is occurring.
+list(APPEND NRN_COMPILE_DEFS CORENRN_BUILD=0)
+
 # =============================================================================
 # Profiler/Instrumentation Options
 # =============================================================================
@@ -521,6 +525,7 @@ if(NRN_ENABLE_CORENEURON)
   get_property(CORENRN_LIB_LINK_FLAGS GLOBAL PROPERTY CORENRN_LIB_LINK_FLAGS)
   get_property(CORENRN_NEURON_LINK_FLAGS GLOBAL PROPERTY CORENRN_NEURON_LINK_FLAGS)
   get_property(CORENRN_ENABLE_SHARED GLOBAL PROPERTY CORENRN_ENABLE_SHARED)
+  get_property(CORENRN_NMODL_BINARY GLOBAL PROPERTY CORENRN_NMODL_BINARY)
   # NEURON tests that link against CoreNEURON need to depend on it.
   set(CORENEURON_TARGET_TO_DEPEND coreneuron-for-tests)
 
@@ -732,7 +737,7 @@ add_custom_target(
 # =============================================================================
 # ~~~
 # Update hh.mod for CoreNEURON compatibility
-# - Replace GLOBAL variable by RANHE
+# - Replace GLOBAL variable by RANGE
 # - Comment out TABLE
 # ~~~
 # =============================================================================
@@ -808,7 +813,7 @@ if(NRN_ENABLE_TESTS)
   if(NOT TARGET Catch2::Catch2)
     nrn_add_external_project(catch2)
     set(CATCH_DIR ${PROJECT_SOURCE_DIR}/external/catch2)
-    list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
+    list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/extras)
     include(Catch)
   endif()
   include(CTest)
@@ -829,12 +834,15 @@ if(NRN_ENABLE_TESTS)
   set(neurondemo_files
       "${neurondemo_prefix}/special"
       "${neurondemo_prefix}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}")
+
   add_custom_command(
     OUTPUT ${neurondemo_files}
-    COMMAND
-      ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_SANITIZER_ENABLE_ENVIRONMENT}
-      "${PROJECT_BINARY_DIR}/bin/neurondemo" "-nobanner" "-nogui" "-c" "quit()"
+    COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
+            ${NRN_SANITIZER_ENABLE_ENVIRONMENT} "${PROJECT_BINARY_DIR}/bin/nrnivmodl"
+    DEPENDS nrnivmodl_dependency
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/share/nrn/demo/release
     VERBATIM)
+
   add_custom_target(generate-neurondemo-mechanism-library ALL DEPENDS ${neurondemo_files} nrniv
                                                                       copy_share_lib_to_build)
   # Initialize the submodule *before* including the test/CMakeLists.txt that uses it. This ensures

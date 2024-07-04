@@ -1,4 +1,5 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
+
 /* /local/src/master/nrn/src/nmodl/nocpout.c,v 4.1 1997/08/30 20:45:28 hines Exp */
 
 /*
@@ -70,6 +71,8 @@ directly by hoc.
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#include <filesystem>
+namespace fs = std::filesystem;
 #define GETWD(buf) getcwd(buf, NRN_BUFSIZE)
 
 int vectorize = 1;
@@ -102,6 +105,7 @@ extern int check_tables_threads(List*);
 List* syminorder;
 List* plotlist;
 List* defs_list;
+Item* defs_list_parm_default;  // where we insert initializer defaults
 int electrode_current = 0;
 int thread_data_index = 0;
 List* thread_cleanup_list;
@@ -125,6 +129,9 @@ static List* rangeparm;
 static List* rangedep;
 static List* rangestate;
 static List* nrnpointers;
+static List* nmodlrandoms;
+static List* nrn_mech_inst_destruct_list;
+static int num_random_vars = 0;
 static char suffix[256];
 static const char* rsuffix; /* point process range and functions don't have suffix*/
 static char* mechname;
@@ -179,6 +186,7 @@ static Item* net_send_delivered_; /* location for if flag is 1 then clear the
    pvarcount indexes pointers to variables such as ena
 */
 static int varcount, parraycount;
+static int prop_size;
 static std::vector<std::pair<int, std::string>> ppvar_data_field_strings;
 static std::vector<std::string> data_field_strings;
 
@@ -193,6 +201,7 @@ void nrninit() {
     debugging_ = 1;
     thread_cleanup_list = newlist();
     thread_mem_init_list = newlist();
+    nmodlrandoms = newlist();
 }
 
 void parout() {
@@ -315,7 +324,7 @@ void parout() {
     Lappendstr(defs_list, "extern double *hoc_getarg(int);\n");
 
     nrndeclare();
-    varcount = parraycount = 0;
+    varcount = parraycount = prop_size = 0;
     declare_p();
     // iondef defined _nrn_mechanism_cache_range
     ioncount = iondef(&pointercount); /* first is _nd_area if point process */
@@ -759,7 +768,11 @@ extern void nrn_promote(Prop*, int, int);\n\
             "Memb_list*, int);\n");
     }
     /* count the number of pointers needed */
-    ppvar_cnt = ioncount + diamdec + pointercount + areadec;
+    num_random_vars = 0;
+    ITERATE(q, nmodlrandoms) {
+        num_random_vars++;
+    }
+    ppvar_cnt = ioncount + diamdec + pointercount + num_random_vars + areadec;
     if (net_send_seen_) {
         tqitem_index = ppvar_cnt;
         ppvar_semantics(
@@ -901,6 +914,9 @@ static const char *_mechanism[] = {\n\
         q = q->next->next->next;
     }
 
+    defs_list_parm_default = lappendstr(defs_list, "\n");
+    Item* before_nrn_alloc = lappendstr(defs_list, "\n");
+
     Lappendstr(defs_list,
                "\n"
                "extern Prop* need_memb(Symbol*);\n"
@@ -931,15 +947,29 @@ static const char *_mechanism[] = {\n\
             parraycount);
     Lappendstr(defs_list, buf);
     Lappendstr(defs_list, "	/*initialize range parameters*/\n");
+
+    // _parm_default allows implementation of a more robust NrnProperty
+    //  that does not require a call to prop_alloc.
+    /* arrays have only a single default value of 0.0 */
+    i = 0;
+    insertstr(defs_list_parm_default, "\n /* Used by NrnProperty */\n");
+    insertstr(defs_list_parm_default, "static _nrn_mechanism_std_vector<double> _parm_default{\n");
     ITERATE(q, rangeparm) {
         s = SYM(q);
         if (s->subtype & ARRAY) {
-            continue;
+            d1 = 0.0;
+        } else {
+            decode_ustr(s, &d1, &d2, buf);
+            Sprintf(buf, "	%s = _parm_default[%d]; /* %g */\n", s->name, i, d1);
+            Lappendstr(defs_list, buf);
         }
-        decode_ustr(s, &d1, &d2, buf);
-        Sprintf(buf, "	%s = %g;\n", s->name, d1);
-        Lappendstr(defs_list, buf);
+        /* fill in the std::vector<double> _parm_default initializer */
+        Sprintf(buf, "    %g, /* %s */\n", d1, s->name);
+        insertstr(defs_list_parm_default, buf);
+        ++i;
     }
+    insertstr(defs_list_parm_default, "};");
+
     if (point_process) {
         Lappendstr(defs_list, " }\n");
     }
@@ -1045,6 +1075,30 @@ static const char *_mechanism[] = {\n\
                 sion->name);
             Lappendstr(defs_list, buf);
         }
+    }
+
+
+    // I've put all the nrn_mech_inst_destruct here with nmodlrandoms allocation.
+    // Refactor if ever things other than nmodlrandoms need it.
+    nrn_mech_inst_destruct_list = newlist();
+    ITERATE(q, nmodlrandoms) {
+        Sprintf(buf, "_p_%s = (void*)nrnran123_newstream();\n", SYM(q)->name);
+        Lappendstr(defs_list, buf);
+        Sprintf(buf, "nrnran123_deletestream(%s);\n", SYM(q)->name);
+        Lappendstr(nrn_mech_inst_destruct_list, buf);
+    }
+    if (nrn_mech_inst_destruct_list != nrn_mech_inst_destruct_list->next) {
+        auto& list = nrn_mech_inst_destruct_list;
+        // registration just means adding to nrn_mech_inst_destruct
+        Lappendstr(defs_list, "nrn_mech_inst_destruct[_mechtype] = _mech_inst_destruct;\n");
+        // boilerplate for _mech_inst_destruct
+        Linsertstr(list,
+                   "\nstatic void _mech_inst_destruct(Prop* _prop) {\n"
+                   " Datum* _ppvar = _nrn_mechanism_access_dparam(_prop);\n");
+        Lappendstr(list, "}\n");
+        movelist(list->next, list->prev, procfunc);
+        // need a forward declaration before nrn_alloc.
+        insertstr(before_nrn_alloc, "\nstatic void _mech_inst_destruct(Prop* _prop);\n");
     }
 
     if (constructorfunc->next != constructorfunc) {
@@ -1192,6 +1246,7 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
             }
         }
         Lappendstr(defs_list, "_mechtype = nrn_get_mechtype(_mechanism[1]);\n");
+        Lappendstr(defs_list, "hoc_register_parm_default(_mechtype, &_parm_default);\n");
         if (!point_process) {
             Lappendstr(defs_list,
                        "        hoc_register_npy_direct(_mechtype, npy_direct_func_proc);\n");
@@ -1230,7 +1285,7 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
         }
         register_data_fields.append(");\n");
         lappendstr(defs_list, register_data_fields.c_str());
-        Sprintf(buf, " hoc_register_prop_size(_mechtype, %d, %d);\n", parraycount, ppvar_cnt);
+        Sprintf(buf, " hoc_register_prop_size(_mechtype, %d, %d);\n", prop_size, ppvar_cnt);
         Lappendstr(defs_list, buf);
         if (watch_seen_) {
             Lappendstr(defs_list, " hoc_reg_watch_allocate(_mechtype, _watch_alloc);\n");
@@ -1348,14 +1403,14 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
                "    hoc_register_var(hoc_scdoub, hoc_vdoub, hoc_intfunc);\n");
     {
         char buf1[NRN_BUFSIZE];
-        char* pf{};
-#if HAVE_REALPATH && !defined(NRN_AVOID_ABSOLUTE_PATHS)
-        pf = realpath(finname, NULL);
+#if !defined(NRN_AVOID_ABSOLUTE_PATHS)
+        Sprintf(buf1,
+                "\tivoc_help(\"help ?1 %s %s\\n\");\n",
+                mechname,
+                fs::absolute(finname).c_str());
+#else
+        Sprintf(buf1, "\tivoc_help(\"help ?1 %s %s\\n\");\n", mechname, finname);
 #endif
-        Sprintf(buf1, "\tivoc_help(\"help ?1 %s %s\\n\");\n", mechname, pf ? pf : finname);
-        if (pf) {
-            free(pf);
-        }
         Lappendstr(defs_list, buf1);
     }
     if (suffix[0]) {
@@ -1747,6 +1802,9 @@ static void var_count(Symbol* s) {
     if (s->subtype & ARRAY) {
         field.append(", ");
         field.append(std::to_string(s->araydim));
+        prop_size += s->araydim;
+    } else {
+        prop_size += 1;
     }
     // **ATTENTION** in AoS NEURON then parraycount was incremented by s->araydim if the variable
     // was an array. In SoA NEURON this is not done; the array dimension is communicated separately.
@@ -1839,6 +1897,17 @@ void nrn_list(Item* q1, Item* q2) {
             SYM(q)->nrntype |= NRNNOTP | NRNBBCOREPOINTER;
         }
         use_bbcorepointer = 1;
+        break;
+    case RANDOM:
+        for (q = q1->next; q != q2->next; q = q->next) {
+            Symbol* s = SYM(q);
+            if (s->type != NAME || s->subtype || s->nrntype) {
+                diag(s->name, " cannot be redeclared as RANDOM");
+            }
+            s->nrntype |= NRNNOTP | EXTDEF_RANDOM;
+            s->type = RANDOMVAR;
+        }
+        plist = &nmodlrandoms;
         break;
     }
     if (plist) {
@@ -2397,8 +2466,38 @@ int iondef(int* p_pointercount) {
         (*p_pointercount)++;
     }
 
+    // print all RANDOM variables
+    num_random_vars = 0;
+    ITERATE(q, nmodlrandoms) {
+        num_random_vars++;
+    }
+    if (num_random_vars) {
+        Sprintf(buf, "\n //RANDOM variables \n");
+        lappendstr(defs_list, buf);
+
+        int index = 0;
+        ITERATE(q, nmodlrandoms) {
+            Symbol* s = SYM(q);
+            Sprintf(buf,
+                    "#define %s	(nrnran123_State*)_ppvar[%d].get<void*>()\n",
+                    s->name,
+                    ioncount + *p_pointercount + index);
+            lappendstr(defs_list, buf);
+            Sprintf(buf,
+                    "#define _p_%s _ppvar[%d].literal_value<void*>()\n",
+                    s->name,
+                    ioncount + *p_pointercount + index);
+            lappendstr(defs_list, buf);
+            ppvar_semantics(ioncount + *p_pointercount + index, "random", s->name, "void*");
+            index++;
+        }
+        lappendstr(defs_list, "\n");
+    }
+
     if (diamdec) { /* must be last */
-        Sprintf(buf, "#define diam	*_ppvar[%d].get<double*>()\n", ioncount + *p_pointercount);
+        Sprintf(buf,
+                "#define diam	*_ppvar[%d].get<double*>()\n",
+                ioncount + *p_pointercount + num_random_vars);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
     }              /* notice that ioncount is not incremented */
@@ -2406,13 +2505,13 @@ int iondef(int* p_pointercount) {
             procedures must be redone */
         Sprintf(buf,
                 "#define area	*_ppvar[%d].get<double*>()\n",
-                ioncount + *p_pointercount + diamdec);
+                ioncount + *p_pointercount + num_random_vars + diamdec);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
     } /* notice that ioncount is not incremented */
     Sprintf(buf,
             "static constexpr auto number_of_datum_variables = %d;\n",
-            ioncount + *p_pointercount + diamdec + areadec);
+            ioncount + *p_pointercount + num_random_vars + diamdec + areadec);
     linsertstr(defs_list, buf)->itemtype = VERBATIM;
     return ioncount;
 }

@@ -110,7 +110,7 @@ static void add2topdict(PyObject*);
 static const char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object wrapper";
 
 #if 1
-#include <hoccontext.h>
+#include "hoccontext.h"
 #else
 extern Object* hoc_thisobject;
 #define HocTopContextSet  \
@@ -1185,7 +1185,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         // an array
         int t = sym->type;
         if (t == VAR || t == STRING || t == OBJECTVAR || t == RANGEVAR || t == SECTION ||
-            t == SECTIONREF || t == VARALIAS || t == OBJECTALIAS) {
+            t == SECTIONREF || t == VARALIAS || t == OBJECTALIAS || t == RANGEOBJ) {
             if (sym != nrn_child_sym && !ISARRAY(sym)) {
                 hoc_push_object(po->ho_);
                 nrn_inpython_ = 1;
