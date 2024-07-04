@@ -848,7 +848,7 @@ static PyObject* NPySecObj_pt3dstyle(NPySecObj* self, PyObject* args) {
         double z = nb::cast<double>(args_[3]);
         nrn_pt3dstyle1(sec, x, y, z);
     }
-    
+
     if (sec->logical_connection) {
         Py_RETURN_TRUE;
     }
