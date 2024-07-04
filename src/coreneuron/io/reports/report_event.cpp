@@ -91,9 +91,10 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
                     iclamp += current_value * scale;
                 }
                 lfp_values[electrode_id] += (fast_imem_rhs[segment_id] + iclamp) * factor;
+                std::cout << " **** Electrode ID: " << electrode_id << ", Factor: " << factor << ", IClamp: " << iclamp << ", LFP Value: " << lfp_values[electrode_id] << std::endl;
                 electrode_id++;
             }
-            std::cout << "Electrode ID: " << electrode_id << ", Segment ID: " << segment_id << ", LFP Value: " << lfp_values[electrode_id] << ", Fast Imem RHS: " << fast_imem_rhs[segment_id] << std::endl;
+            std::cout << "Segment ID: " << segment_id << ", Fast Imem RHS: " << fast_imem_rhs[segment_id] << std::endl;
         }
         for (int i = 0; i < to_report.size(); i++) {
             std::cout << "GID: " << gid << ", Electrode Index: " << i << ", Final LFP Value: " << lfp_values[i] << std::endl;
