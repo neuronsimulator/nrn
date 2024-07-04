@@ -15,6 +15,8 @@ using std::cout;
 using std::endl;
 using std::ofstream;
 
+extern "C" void modl_reg(){/* No modl_reg */};
+
 constexpr std::initializer_list<double> EXPECTED_V{
     -0x1.04p+6,
     -0x1.00d7f6756215p-182,

@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 
+extern "C" void modl_reg(){/* No modl_reg */};
 
 TEST_CASE("Test calling API", "[NEURON][public-api]") {
     static const char* argv[] = {"netcon", "-nogui", "-nopython", nullptr};

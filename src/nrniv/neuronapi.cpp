@@ -56,9 +56,6 @@ extern void nrn_change_nseg(Section*, int);
 extern Section* section_new(Symbol* sym);
 extern std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv);
 
-// Default implementation of modl_reg
-extern "C" __attribute__((weak)) void modl_reg(){};
-
 extern "C" {
 
 /****************************************
