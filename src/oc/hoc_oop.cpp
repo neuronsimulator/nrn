@@ -813,7 +813,7 @@ void hoc_objectvar(void) { /* object variable symbol at pc+1. */
         hoc_symlist = hoc_top_level_symlist;
     }
     obp = OPOBJ(obs);
-    if (ISARRAY(obs)) {
+    if (is_array(*obs)) {
         hoc_pushobj(obp + araypt(obs, OBJECTVAR));
     } else {
         hoc_pushobj(obp);
@@ -903,7 +903,7 @@ void hoc_object_id(void) {
 
 static void range_suffix(Symbol* sym, int nindex, int narg) {
     int bdim = 0;
-    if (ISARRAY(sym)) {
+    if (is_array(*sym)) {
         if (nindex != sym->arayinfo->nsub) {
             bdim = 1;
         }
@@ -925,7 +925,7 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
     }
 
     if (sym->type == RANGEVAR) {
-        if (ISARRAY(sym)) {  // fixup ndim here
+        if (is_array(*sym)) {  // fixup ndim here
             double x = -1.0;
             if (narg) {  // need to pop the arc length to push ndim
                 if (narg > 1) {
@@ -1074,7 +1074,7 @@ void hoc_object_component() {
     switch (sym->type) {
     case OBJECTVAR:
         if (nindex) {
-            if (!ISARRAY(sym) || OPARINFO(sym)->nsub != nindex) {
+            if (!is_array(*sym) || OPARINFO(sym)->nsub != nindex) {
                 hoc_execerror(sym->name, ":not right number of subscripts");
             }
             nindex = araypt(sym, OBJECTVAR);
@@ -1085,7 +1085,7 @@ void hoc_object_component() {
     case VAR:
         if (cplus) {
             if (nindex) {
-                if (!ISARRAY(sym) || sym->arayinfo->nsub != nindex) {
+                if (!is_array(*sym) || sym->arayinfo->nsub != nindex) {
                     hoc_execerror(sym->name, ":not right number of subscripts");
                 }
                 if (narg) {
@@ -1117,7 +1117,7 @@ void hoc_object_component() {
             hoc_pushpx(pd);
         } else {
             if (nindex) {
-                if (!ISARRAY(sym) || OPARINFO(sym)->nsub != nindex) {
+                if (!is_array(*sym) || OPARINFO(sym)->nsub != nindex) {
                     hoc_execerror(sym->name, ":not right number of subscripts");
                 }
                 if (narg) {
@@ -1251,7 +1251,7 @@ void hoc_object_component() {
             --nindex;
         }
         if (nindex) {
-            if (!ISARRAY(sym) || OPARINFO(sym)->nsub != nindex) {
+            if (!is_array(*sym) || OPARINFO(sym)->nsub != nindex) {
                 hoc_execerror(sym->name, ":not right number of subscripts");
             }
             if (!hoc_stack_type_is_ndim()) {
@@ -1293,7 +1293,7 @@ void hoc_object_component() {
     default:
         if (cplus) {
             if (nindex) {
-                if (!ISARRAY(sym) || sym->arayinfo->nsub != nindex) {
+                if (!is_array(*sym) || sym->arayinfo->nsub != nindex) {
                     hoc_execerror(sym->name, ":not right number of subscripts");
                 }
                 if (narg) {
