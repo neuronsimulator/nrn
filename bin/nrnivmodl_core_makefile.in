@@ -42,7 +42,7 @@ LDFLAGS = $(LINKFLAGS) @CORENRN_COMMON_LDFLAGS@
 # Includes paths gathered by CMake
 # coreneuron/utils/randoms goes first because it needs to override the NEURON
 # directory in INCFLAGS
-INCLUDES = -I$(CORENRN_INC_DIR)/coreneuron/utils/randoms $(INCFLAGS) -I$(CORENRN_INC_DIR) -I$(CORENRN_INC_DIR)/vendored
+INCLUDES = -I$(CORENRN_INC_DIR)/coreneuron/utils/randoms $(INCFLAGS) -I$(CORENRN_INC_DIR)
 ifeq (@NRN_ENABLE_MPI_DYNAMIC@, OFF)
   INCLUDES += $(if @MPI_CXX_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_CXX_INCLUDE_PATH@),)
 endif
