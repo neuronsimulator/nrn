@@ -25,7 +25,7 @@ fi
 
 py_ver=""
 
-clone_install_nmodl_requirements() {
+clone_nmodl_and_add_requirements() {
     git config --global --add safe.directory /root/nrn
     git submodule update --init --recursive --force --depth 1 -- external/nmodl
     # We only want the _build_ dependencies
@@ -70,7 +70,7 @@ build_wheel_linux() {
 
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
-        clone_install_nmodl_requirements
+        clone_nmodl_and_add_requirements
         CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
     fi
 
@@ -120,7 +120,7 @@ build_wheel_osx() {
 
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
-        clone_install_nmodl_requirements
+        clone_nmodl_and_add_requirements
         CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
     fi
 
