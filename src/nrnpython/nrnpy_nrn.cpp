@@ -624,7 +624,8 @@ inline nb::object obj_get_segment(nb::object py_obj) {
 
     auto seg_obj = py_obj.attr("segment");
     if (!seg_obj.is_valid()) {
-        hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property", nullptr);
+        hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property",
+                      nullptr);
     }
     return seg_obj;
 }
@@ -632,7 +633,8 @@ inline nb::object obj_get_segment(nb::object py_obj) {
 static void o2loc2(Object* o, Section** psec, double* px) {
     bool free_po = false;
     if (o->ctemplate->sym != nrnpy_pyobj_sym_) {
-        hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property", nullptr);
+        hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property",
+                      nullptr);
     }
 
     // track objects with borrow so that ref-count ends up neutral
