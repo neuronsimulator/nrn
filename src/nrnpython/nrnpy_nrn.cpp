@@ -492,7 +492,6 @@ PyObject* nrnpy_newsecobj_safe(PyObject* self, PyObject* args, PyObject* kwds) {
 }
 
 static PyObject* NPySegObj_new(PyTypeObject* type, PyObject* args, PyObject* /* kwds */) {
-    // Just ensure the params are ok, since init is done in its own method
     NPySecObj* pysec;
     double x;
     if (!PyArg_ParseTuple(args, "O!d", psection_type, &pysec, &x)) {
@@ -566,9 +565,9 @@ static PyObject* NPyRangeVar_new_safe(PyTypeObject* type, PyObject* args, PyObje
     return nrn::convert_cxx_exceptions(NPyRangeVar_new, type, args, kwds);
 }
 
-static int NPySegObj_init(NPySegObj* self, PyObject* args, PyObject* kwds) {
-    // PySeg objects are fully initialized in _new_
-    // And strangely Python seems to never call this, as if the _new_ objs were not instances
+static int NPySegObj_init(NPySegObj* self, PyObject* /* args */, PyObject* /* kwds */) {
+    // PySeg objects are fully initialized in __new__
+    // And strangely Python seems to never call this, as if the __new__ objs were not its instances
     // So don't implement anything here
     return 0;
 }
@@ -592,7 +591,7 @@ static Section* o2sec(Object* o) {
     if (!PyObject_TypeCheck(po, psection_type)) {
         hoc_execerror("not a Python nrn.Section", 0);
     }
-    NPySecObj* pysec = (NPySecObj*) po;
+    auto* pysec = (NPySecObj*) po;
     return pysec->sec_;
 }
 
@@ -604,7 +603,7 @@ static void o2loc(Object* o, Section** psec, double* px) {
     if (!PyObject_TypeCheck(po, psegment_type)) {
         hoc_execerror("not a Python nrn.Segment", 0);
     }
-    NPySegObj* pyseg = (NPySegObj*) po;
+    auto* pyseg = (NPySegObj*) po;
     *psec = pyseg->pysec_->sec_;
     if (!(*psec)->prop) {
         hoc_execerr_ext("nrn.Segment associated with deleted internal Section");
@@ -631,7 +630,6 @@ inline nb::object obj_get_segment(nb::object py_obj) {
 }
 
 static void o2loc2(Object* o, Section** psec, double* px) {
-    bool free_po = false;
     if (o->ctemplate->sym != nrnpy_pyobj_sym_) {
         hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property",
                       nullptr);
@@ -644,7 +642,7 @@ static void o2loc2(Object* o, Section** psec, double* px) {
         py_obj_seg = obj_get_segment(py_obj_seg);
     }
 
-    NPySegObj* pyseg = (NPySegObj*) py_obj_seg.ptr();
+    auto* pyseg = (NPySegObj*) py_obj_seg.ptr();
     *psec = pyseg->pysec_->sec_;
     *px = pyseg->x_;
     if (!(*psec)->prop) {
