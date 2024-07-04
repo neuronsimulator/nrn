@@ -71,6 +71,7 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
     auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt->mapping);
     double* fast_imem_rhs = nt->nrn_fast_imem->nrn_sav_rhs;
     auto& summation_report = nt->summation_report_handler_->summation_reports_[report_path];
+    std::cout << "summation_report size: " << summation_report.currents_.size() << std::endl;
     for (const auto& kv: vars_to_report) {
         int gid = kv.first;
         const auto& to_report = kv.second;
@@ -91,8 +92,10 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
                 lfp_values[electrode_id] += (fast_imem_rhs[segment_id] + iclamp) * factor;
                 electrode_id++;
             }
+            std::cout << "Electrode ID: " << electrode_id << ", Segment ID: " << segment_id << ", LFP Value: " << lfp_values[electrode_id] << ", Fast Imem RHS: " << fast_imem_rhs[segment_id] << std::endl;
         }
         for (int i = 0; i < to_report.size(); i++) {
+            std::cout << "GID: " << gid << ", Electrode Index: " << i << ", Final LFP Value: " << lfp_values[i] << std::endl;
             *(to_report[i].var_value) = lfp_values[i];
         }
     }
@@ -108,6 +111,7 @@ void ReportEvent::deliver(double t, NetCvode* nc, NrnThread* nt) {
             if (report_type == ReportType::SummationReport) {
                 summation_alu(nt);
             } else if (report_type == ReportType::LFPReport) {
+                std::cout << "timestep: " << t << std::endl;
                 lfp_calc(nt);
             }
         }
