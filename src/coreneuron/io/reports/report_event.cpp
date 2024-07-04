@@ -78,6 +78,7 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
         int num_electrodes = cell_mapping->num_electrodes();
         std::vector<double> lfp_values(num_electrodes, 0.0);
+        std::cout << "Number of LFP factors for GID " << gid << ": " << cell_mapping->lfp_factors.size() << std::endl;
         for (const auto& kv: cell_mapping->lfp_factors) {
             int segment_id = kv.first;
             const auto& factors = kv.second;
