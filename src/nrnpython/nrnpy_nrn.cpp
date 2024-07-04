@@ -498,7 +498,10 @@ static PyObject* NPySegObj_new(PyTypeObject* type, PyObject* args, PyObject* /* 
     if (!PyArg_ParseTuple(args, "O!d", psection_type, &pysec, &x)) {
         return NULL;
     }
-    if (x < 0. || x > 1.0001) {
+    if (x > 1.0 && x < 1.0001) {
+        x = 1.0;
+    }
+    if (x < 0. || x > 1.0) {
         PyErr_SetString(PyExc_ValueError, "segment position range is 0 <= x <= 1");
         return NULL;
     }
@@ -621,7 +624,7 @@ inline nb::object obj_get_segment(nb::object py_obj) {
 
     auto seg_obj = py_obj.attr("segment");
     if (!seg_obj.is_valid()) {
-        hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property", 0);
+        hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property", nullptr);
     }
     return seg_obj;
 }
@@ -629,7 +632,7 @@ inline nb::object obj_get_segment(nb::object py_obj) {
 static void o2loc2(Object* o, Section** psec, double* px) {
     bool free_po = false;
     if (o->ctemplate->sym != nrnpy_pyobj_sym_) {
-        hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property", 0);
+        hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property", nullptr);
     }
 
     // track objects with borrow so that ref-count ends up neutral
