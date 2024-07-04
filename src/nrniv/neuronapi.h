@@ -132,7 +132,6 @@ Object* nrn_object_new_NoArgs(const char* cls_name);
 // Methods may return void, double, string or objects
 // The user should pop from the stack accordingly
 int nrn_symbol_type(const Symbol* sym);
-double* (*nrn_get_symbol_ptr)(Symbol* sym);
 
 /// Increment the object reference count
 void nrn_object_incref(Object* obj);

@@ -10,7 +10,7 @@
 #include "../oc/nrnmpi.h"
 #include "../oc/oc_ansi.h"
 #include "../oc/ocfunc.h"
-#include "../ivoc/ocjump.h"
+#include "ocjump.h"
 #include "../nrnoc/section.h"
 
 #include "nrnmpiuse.h"
@@ -635,5 +635,4 @@ Symlist* nrn_symbol_table(Symbol* sym) {
 Symlist* nrn_global_symbol_table(void) {
     return hoc_built_in_symlist;
 }
-}
- // extern "C"
+}  // extern "C"

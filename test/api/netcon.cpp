@@ -1,4 +1,5 @@
 // NOTE: this assumes neuronapi.h is on your CPLUS_INCLUDE_PATH
+#include <array>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>

@@ -2,6 +2,7 @@
 #include "neuronapi.h"
 #include <dlfcn.h>
 
+#include <array>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -13,8 +14,6 @@
 using std::cout;
 using std::endl;
 using std::ofstream;
-
-static const char* argv[] = {"vclamp", "-nogui", "-nopython", nullptr};
 
 constexpr std::initializer_list<double> EXPECTED_V{
     -0x1.04p+6,

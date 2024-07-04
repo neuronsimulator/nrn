@@ -5,8 +5,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-static const char* argv[] = {"sections", "-nogui", "-nopython", NULL};
-
 int main(void) {
     static const char* argv[] = {"sections", "-nogui", "-nopython", NULL};
     nrn_init(3, argv);
