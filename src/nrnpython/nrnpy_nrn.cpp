@@ -2179,42 +2179,43 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
     Section* sec = self->pysec_->sec_;
     CHECK_SEC_INVALID(sec)
 
-    Symbol* sym;
-    Py_INCREF(pyname);
+    auto pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
     Py2NRNString name(pyname);
-    char* n = name.c_str();
     if (name.err()) {
         name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
-        Py_DECREF(pyname);
         return NULL;
     }
+
+    char* n = name.c_str();
     // printf("segment_getattr %s\n", n);
-    PyObject* result = NULL;
-    PyObject* otype = NULL;
-    PyObject* rv = NULL;
+
     if (strcmp(n, "v") == 0) {
         Node* nd = node_exact(sec, self->x_);
-        result = Py_BuildValue("d", NODEV(nd));
-    } else if ((otype = PyDict_GetItemString(pmech_types, n)) != NULL) {
+        return Py_BuildValue("d", NODEV(nd));
+    }
+
+    if (PyObject* otype = PyDict_GetItemString(pmech_types, n)) {
         int type = PyInt_AsLong(otype);
         // printf("segment_getattr type=%d\n", type);
         Node* nd = node_exact(sec, self->x_);
         Prop* p = nrn_mechanism(type, nd);
         if (!p) {
             rv_noexist(sec, n, self->x_, 1);
-            result = NULL;
-        } else {
-            result = (PyObject*) new_pymechobj(self, p);
+            return NULL;
         }
-    } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
-        sym = ((NPyRangeVar*) rv)->sym_;
+        return (PyObject*) new_pymechobj(self, p);
+    }
+
+    if (PyObject* rv = PyDict_GetItemString(rangevars_, n)) {
+        Symbol* sym = ((NPyRangeVar*) rv)->sym_;
         if (sym->type == RANGEOBJ) {
             int mtype = sym->u.rng.type;
             Node* nd = node_exact(sec, self->x_);
             Prop* p = nrn_mechanism(mtype, nd);
             Object* ob = nrn_nmodlrandom_wrap(p, sym);
-            result = nrnpy_ho2po(ob);
-        } else if (is_array(*sym)) {
+            return nrnpy_ho2po(ob);
+        }
+        if (is_array(*sym)) {
             NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
             r->pymech_ = new_pymechobj();
             r->pymech_->pyseg_ = self;
@@ -2222,26 +2223,28 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             r->sym_ = sym;
             r->isptr_ = 0;
             r->attr_from_sec_ = 0;
-            result = (PyObject*) r;
+            return (PyObject*) r;
         } else {
             int err;
             auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
             if (!d) {
                 rv_noexist(sec, n, self->x_, err);
-                result = NULL;
-            } else {
-                if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
-                    nrn_area_ri(sec);
-                }
-                result = Py_BuildValue("d", *d);
+                return NULL;
             }
+            if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
+                nrn_area_ri(sec);
+            }
+            return Py_BuildValue("d", *d);
         }
-    } else if (strncmp(n, "_ref_", 5) == 0) {
+    }
+
+    if (strncmp(n, "_ref_", 5) == 0) {
         if (strcmp(n + 5, "v") == 0) {
             Node* nd = node_exact(sec, self->x_);
-            result = nrn_hocobj_handle(nd->v_handle());
-        } else if ((sym = hoc_table_lookup(n + 5, hoc_built_in_symlist)) != 0 &&
-                   sym->type == RANGEVAR) {
+            return nrn_hocobj_handle(nd->v_handle());
+        }
+        if (Symbol* sym = hoc_table_lookup(n + 5, hoc_built_in_symlist);
+            sym && sym->type == RANGEVAR) {
             if (is_array(*sym)) {
                 NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
                 r->pymech_ = new_pymechobj();
@@ -2250,42 +2253,39 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
                 r->sym_ = sym;
                 r->isptr_ = 1;
                 r->attr_from_sec_ = 0;
-                result = (PyObject*) r;
+                return (PyObject*) r;
             } else {
                 int err;
                 auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
                 if (!d) {
                     rv_noexist(sec, n + 5, self->x_, err);
-                    result = NULL;
-                } else {
-                    result = nrn_hocobj_handle(d);
+                    return NULL;
                 }
+                return nrn_hocobj_handle(d);
             }
         } else {
             rv_noexist(sec, n, self->x_, 2);
-            result = NULL;
+            return NULL;
         }
-    } else if (strcmp(n, "__dict__") == 0) {
+    }
+
+    if (strcmp(n, "__dict__") == 0) {
         Node* nd = node_exact(sec, self->x_);
-        result = PyDict_New();
-        int err = PyDict_SetItemString(result, "v", Py_None);
-        assert(err == 0);
-        PyDict_SetItemString(result, "diam", Py_None);
-        assert(err == 0);
-        PyDict_SetItemString(result, "cm", Py_None);
-        assert(err == 0);
+        auto return_dict = nb::dict();
+        return_dict["v"] = nb::none();
+        return_dict["diam"] = nb::none();
+        return_dict["cm"] = nb::none();
         for (Prop* p = nd->prop; p; p = p->next) {
             if (p->_type > CAP && !memb_func[p->_type].is_point) {
                 char* pn = memb_func[p->_type].sym->name;
-                err = PyDict_SetItemString(result, pn, Py_None);
-                assert(err == 0);
+                return_dict[pn] = nb::none();
             }
         }
-    } else {
-        result = PyObject_GenericGetAttr((PyObject*) self, pyname);
+        return return_dict.release().ptr();  // release() so it keeps living
     }
-    Py_DECREF(pyname);
-    return result;
+
+    // default behavior
+    return PyObject_GenericGetAttr((PyObject*) self, pyname);
 }
 
 static PyObject* segment_getattro_safe(NPySegObj* self, PyObject* pyname) {
