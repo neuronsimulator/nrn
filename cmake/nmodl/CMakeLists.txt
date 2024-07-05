@@ -111,8 +111,6 @@ include(cmake/hpc-coding-conventions/cpp/cmake/3rdparty.cmake)
 if(NOT TARGET CLI11::CLI11)
   cpp_cc_git_submodule(cli11 BUILD PACKAGE CLI11 REQUIRED)
 endif()
-# For the moment do not try and use an external Eigen.
-cpp_cc_git_submodule(eigen)
 # We could have fmt incoming from NEURON
 if(NOT TARGET fmt)
   cpp_cc_git_submodule(fmt BUILD EXCLUDE_FROM_ALL PACKAGE fmt REQUIRED)
@@ -209,6 +207,7 @@ set(MEMORYCHECK_COMMAND_OPTIONS
                                  --show-possibly-lost=no")
 # do not enable tests if nmodl is used as submodule
 if(NOT NMODL_AS_SUBPROJECT AND NMODL_ENABLE_TESTS)
+  cpp_cc_git_submodule(eigen)
   cpp_cc_git_submodule(catch2 BUILD PACKAGE Catch2 REQUIRED)
   if(NMODL_3RDPARTY_USE_CATCH2)
     # If we're using the submodule then make sure the Catch.cmake helper can be found. In newer

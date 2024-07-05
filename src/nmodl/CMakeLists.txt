@@ -38,7 +38,7 @@ add_dependencies(nmodl nmodl_copy_python_files nmodl_copy_solver_files)
 cpp_cc_configure_sanitizers(TARGET nmodl)
 
 # =============================================================================
-# Add dependency with nmodl pytnon module (for consumer projects)
+# Add dependency with nmodl python module (for consumer projects)
 # =============================================================================
 add_dependencies(nmodl pywrapper)
 
@@ -50,4 +50,3 @@ endif()
 # Install executable
 # =============================================================================
 install(TARGETS nmodl DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin)
-install(FILES nmodl.hpp DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}include)
