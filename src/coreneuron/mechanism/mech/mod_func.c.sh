@@ -22,14 +22,18 @@ EOF
     exit 0
 fi
 
+# Assume that none of the arguments will contain spaces, as we inject them into C++ code
+# later, anyways.
+mods=$(for m in "$@"; do echo "${m%%.mod}"; done | env LC_ALL=C sort)
+
 decls=""
 prints=""
 regs=""
-while read mod; do
+for mod in $mods; do
     decls="${decls}${decls:+,$'\n'  }_${mod}_reg(void)"
     prints="${prints}${prints:+$'\n'        }fprintf(stderr, \" ${mod}.mod\");"
     regs="${regs}${regs:+$'\n'    }_${mod}_reg();"
-done <<< $(for m in "$@"; do echo "${m%%.mod}"; done | env LC_ALL=C sort)
+done
 
 cat <<EOF
 #include <cstdio>
