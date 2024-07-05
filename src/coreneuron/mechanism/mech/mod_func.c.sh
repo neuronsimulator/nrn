@@ -29,7 +29,7 @@ while read mod; do
     decls="${decls}${decls:+,$'\n'  }_${mod}_reg(void)"
     prints="${prints}${prints:+$'\n'        }fprintf(stderr, \" ${mod}.mod\");"
     regs="${regs}${regs:+$'\n'    }_${mod}_reg();"
-done <<< $(printf '%s\n' "${BASH_ARGV[@]%%.mod}" | env LC_ALL=C sort)
+done <<< $(for _ in $(seq 1 $*) do; echo "${1%%.mod}"; shift; done | env LC_ALL=C sort)
 
 cat <<EOF
 #include <cstdio>
