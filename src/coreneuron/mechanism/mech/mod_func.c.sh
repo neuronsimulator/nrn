@@ -22,35 +22,30 @@ EOF
     exit 0
 fi
 
-readarray -td '' mods < <(printf '%s\0' "${BASH_ARGV[@]%%.mod}" | env LC_ALL=C sort -z)
+decls=""
+prints=""
+regs=""
+while read mod; do
+    decls="${decls}${decls:+,$'\n'  }_${mod}_reg(void)"
+    prints="${prints}${prints:+$'\n'        }fprintf(stderr, \" ${mod}.mod\");"
+    regs="${regs}${regs:+$'\n'    }_${mod}_reg();"
+done <<< $(printf '%s\n' "${BASH_ARGV[@]%%.mod}" | env LC_ALL=C sort)
 
 cat <<EOF
 #include <cstdio>
 namespace coreneuron {
 extern int nrnmpi_myid;
 extern int nrn_nobanner_;
-$(
-  for mod in "${mods[@]}"; do
-    printf "extern int _%s_reg(void);\n" "$mod"
-  done
-)
+extern int
+  ${decls};
 
 void modl_reg() {
     if (!nrn_nobanner_ && nrnmpi_myid < 1) {
         fprintf(stderr, " Additional mechanisms from files\\n");
-$(
-  for mod in "${mods[@]}"; do
-    printf "        fprintf(stderr, \" %s.mod\");\n" "$mod"
-  done
-)
+        ${prints}
         fprintf(stderr, "\\n\\n");
     }
-
-$(
-  for mod in "${mods[@]}"; do
-    printf "    _%s_reg();\n" "$mod"
-  done
-)
+    ${regs}
 }
 } //namespace coreneuron
 EOF
