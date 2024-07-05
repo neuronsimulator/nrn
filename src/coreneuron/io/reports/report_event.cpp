@@ -71,14 +71,12 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
     auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt->mapping);
     double* fast_imem_rhs = nt->nrn_fast_imem->nrn_sav_rhs;
     auto& summation_report = nt->summation_report_handler_->summation_reports_[report_path];
-    std::cout << "summation_report size: " << summation_report.currents_.size() << std::endl;
     for (const auto& kv: vars_to_report) {
         int gid = kv.first;
         const auto& to_report = kv.second;
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
         int num_electrodes = cell_mapping->num_electrodes();
         std::vector<double> lfp_values(num_electrodes, 0.0);
-        std::cout << "Number of LFP factors for GID " << gid << ": " << cell_mapping->lfp_factors.size() << std::endl;
         for (const auto& kv: cell_mapping->lfp_factors) {
             int segment_id = kv.first;
             const auto& factors = kv.second;
@@ -91,13 +89,10 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
                     iclamp += current_value * scale;
                 }
                 lfp_values[electrode_id] += (fast_imem_rhs[segment_id] + iclamp) * factor;
-                std::cout << " **** Electrode ID: " << electrode_id << ", Factor: " << factor << ", IClamp: " << iclamp << ", LFP Value: " << lfp_values[electrode_id] << std::endl;
                 electrode_id++;
             }
-            std::cout << "Segment ID: " << segment_id << ", Fast Imem RHS: " << fast_imem_rhs[segment_id] << std::endl;
         }
         for (int i = 0; i < to_report.size(); i++) {
-            std::cout << "GID: " << gid << ", Electrode Index: " << i << ", Final LFP Value: " << lfp_values[i] << std::endl;
             *(to_report[i].var_value) = lfp_values[i];
         }
     }
@@ -113,7 +108,6 @@ void ReportEvent::deliver(double t, NetCvode* nc, NrnThread* nt) {
             if (report_type == ReportType::SummationReport) {
                 summation_alu(nt);
             } else if (report_type == ReportType::LFPReport) {
-                std::cout << "timestep: " << t << std::endl;
                 lfp_calc(nt);
             }
         }
