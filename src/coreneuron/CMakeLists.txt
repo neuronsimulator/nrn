@@ -260,9 +260,6 @@ endif()
 if(nmodl_FOUND)
   set(CORENRN_NMODL_BINARY ${nmodl_BINARY})
   set(CORENRN_NMODL_INCLUDE ${nmodl_INCLUDE})
-  # path to python interface
-  set(ENV{PYTHONPATH} "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
-  set(CORENRN_NMODL_PYTHONPATH $ENV{PYTHONPATH})
 else()
   set(NMODL_ENABLE_PYTHON_BINDINGS
       OFF
@@ -271,9 +268,6 @@ else()
   add_subdirectory(${PROJECT_SOURCE_DIR}/external/nmodl ${CMAKE_BINARY_DIR}/external/nmodl)
   set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
   set(CORENRN_NMODL_INCLUDE ${CMAKE_BINARY_DIR}/include)
-  set(ENV{PYTHONPATH} "$ENV{PYTHONPATH}")
-  set(nmodl_PYTHONPATH "${CMAKE_BINARY_DIR}/lib")
-  set(CORENRN_NMODL_PYTHONPATH "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
   set(NMODL_TARGET_TO_DEPEND nmodl)
   set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
   # install nrnunits.lib and libpywrapper.so from external/nmodl
