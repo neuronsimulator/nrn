@@ -254,7 +254,6 @@ if(NOT "${CORENRN_NMODL_DIR}" STREQUAL "" AND NOT nmodl_FOUND)
 endif()
 if(nmodl_FOUND)
   set(CORENRN_NMODL_BINARY ${nmodl_BINARY})
-  set(CORENRN_NMODL_INCLUDE ${nmodl_INCLUDE})
 else()
   set(NMODL_ENABLE_PYTHON_BINDINGS
       OFF
@@ -262,7 +261,6 @@ else()
   nrn_add_external_project(nmodl DISABLE_ADD)
   add_subdirectory(${PROJECT_SOURCE_DIR}/external/nmodl ${CMAKE_BINARY_DIR}/external/nmodl)
   set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
-  set(CORENRN_NMODL_INCLUDE ${CMAKE_BINARY_DIR}/include)
   set(NMODL_TARGET_TO_DEPEND nmodl)
   set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
   # install nrnunits.lib and libpywrapper.so from external/nmodl
@@ -349,15 +347,12 @@ if(NRN_ENABLE_MPI)
   list(APPEND CORENEURON_CODE_FILES "mpi/core/resolve.cpp")
 endif()
 
-file(COPY ${PROJECT_SOURCE_DIR}/external/Random123/include/Random123
-     DESTINATION ${CMAKE_BINARY_DIR}/include)
 list(APPEND CORENEURON_CODE_FILES ${PROJECT_BINARY_DIR}/coreneuron/config/config.cpp)
 
 set(ENGINEMECH_CODE_FILE "mechanism/mech/enginemech.cpp")
 
 # for external mod files we need to generate modl_ref function in mod_func.c
 set(MODFUNC_SHELL_SCRIPT "mechanism/mech/mod_func.c.sh")
-
 set(NMODL_UNITS_FILE "${CMAKE_BINARY_DIR}/share/mod2c/nrnunits.lib")
 
 # =============================================================================
@@ -409,25 +404,6 @@ if(CORENRN_ENABLE_GPU)
   # https://forums.developer.nvidia.com/t/cannot-dynamically-load-a-shared-library-containing-both-openacc-and-cuda-code/210972
   # this cannot be included in the same shared library as the rest of the OpenACC code.
   set(CORENEURON_CUDA_FILES ${CMAKE_CURRENT_SOURCE_DIR}/permute/cellorder.cu)
-
-  # Eigen functions cannot be called directly from OpenACC regions, but Eigen is sort-of compatible
-  # with being compiled as CUDA code. Because of
-  # https://forums.developer.nvidia.com/t/cannot-dynamically-load-a-shared-library-containing-both-openacc-and-cuda-code/210972
-  # this has to mean `nvc++ -cuda` rather than `nvcc`. We explicitly instantiate Eigen functions for
-  # different matrix sizes in partial_piv_lu.cpp (with CUDA attributes but without OpenACC or OpenMP
-  # annotations) and dispatch to these from a wrapper in partial_piv_lu.h that does have
-  # OpenACC/OpenMP annotations.
-  if(EXISTS ${CORENRN_NMODL_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp)
-    list(APPEND CORENEURON_CODE_FILES ${CORENRN_NMODL_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp)
-    if(CORENRN_ENABLE_GPU
-       AND CORENRN_HAVE_NVHPC_COMPILER
-       AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-      # In this case OpenAccHelper.cmake passes -gpu=debug, which makes these Eigen functions
-      # extremely slow. Downgrade that to -gpu=lineinfo for this file.
-      set_source_files_properties(${CORENRN_NMODL_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp
-                                  PROPERTIES COMPILE_FLAGS "-gpu=lineinfo,nodebug -O1")
-    endif()
-  endif()
 endif()
 
 # =============================================================================
@@ -712,9 +688,6 @@ install(FILES apps/coreneuron.cpp DESTINATION share/coreneuron)
 if(CORENRN_ENABLE_SHARED)
   install(FILES ${corenrn_mech_library} DESTINATION lib)
 endif()
-
-# install random123 and nmodl headers
-install(DIRECTORY ${CMAKE_BINARY_DIR}/include/ DESTINATION include)
 
 # install mod files
 install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION share)
