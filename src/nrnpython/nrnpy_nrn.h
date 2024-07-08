@@ -66,7 +66,7 @@ static PyType_Slot nrnpy_SegmentType_slots[] = {
     {Py_tp_iter, (void*) mech_of_segment_iter_safe},
     {Py_tp_methods, (void*) NPySegObj_methods},
     {Py_tp_members, (void*) NPySegObj_members},
-    {Py_tp_init, (void*) NPySegObj_init_safe},
+    {Py_tp_init, (void*) NPySegObj_init},
     {Py_tp_new, (void*) NPySegObj_new_safe},
     {Py_tp_doc, (void*) "Segment objects"},
     {Py_sq_contains, (void*) NPySegObj_contains_safe},
