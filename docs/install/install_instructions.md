@@ -472,7 +472,7 @@ export CFLAGS="-fno-strict-aliasing -fno-common -dynamic -g -Os -pipe -DMACOSX -
 
 If you see any other issues, please open [an issue here](https://github.com/neuronsimulator/nrn/issues/new/choose).
 
-* **I'm seeing compiler errors related to Python, Cython and RXD.***
+* **I'm seeing compiler errors related to Python and RXD.***
 The error can manifest as follows:
 ```
 share/lib/python/neuron/rxd/geometry3d/surfaces.cpp:14605:41: error: no member named 'subarray' in '_PyArray_Descr'
@@ -481,8 +481,8 @@ share/lib/python/neuron/rxd/geometry3d/surfaces.cpp:14605:41: error: no member n
 ```
 often there's something related to NumPy nearby, e.g. `npy`.
 
-The issue is that certain versions of NEURON 9.0 are not compatible with
-`numpy>=2`. Check the numpy version, e.g.,
+The issue is that certain versions of NEURON (9.0 and earlier) are not
+compatible with `numpy>=2`. Check the numpy version, e.g.,
 ```
 python -c "import numpy; print(numpy.__version__)"
 ```
