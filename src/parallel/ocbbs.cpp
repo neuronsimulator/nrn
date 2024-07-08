@@ -1299,9 +1299,10 @@ std::vector<char> BBSImpl::execute_helper(int id, bool exec) {
             }
             hoc_ac_ = 0.;
         } else {
-            hoc_ac_ = 0.;
             if (exec) {
                 hoc_ac_ = hoc_call_objfunc(fname, narg, ob);
+            } else {
+                hoc_ac_ = 0.;
             }
         }
         for (auto& arg: sarg) {
