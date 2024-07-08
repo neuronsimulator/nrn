@@ -57,12 +57,8 @@ endif
 # binary used during build. If they don't exist then simply use python and
 # perl as the name of binaries.
 CORENRN_PYTHONEXE ?= @NRN_DEFAULT_PYTHON_EXECUTABLE@
-CORENRN_PERLEXE ?= @PERL_EXECUTABLE@
 ifeq ($(wildcard $(CORENRN_PYTHONEXE)),)
   CORENRN_PYTHONEXE=python
-endif
-ifeq ($(wildcard $(CORENRN_PERLEXE)),)
-  CORENRN_PERLEXE=perl
 endif
 
 CXXFLAGS = @CORENRN_CXX_FLAGS@
@@ -189,7 +185,7 @@ $(mod_cpp_files): $(MOD_TO_CPP_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MOD_TO_CPP_DIR
 
 # generate mod registration function. Dont overwrite if it's not changed
 $(MOD_FUNC_CPP): build_always | $(MOD_TO_CPP_DIR)
-	$(CORENRN_PERLEXE) $(CORENRN_SHARE_CORENRN_DIR)/mod_func.c.pl $(mod_files_names) > $(MOD_FUNC_CPP).tmp
+	bash $(CORENRN_SHARE_CORENRN_DIR)/mod_func.c.sh $(mod_files_names) > $(MOD_FUNC_CPP).tmp
 	diff -q $(MOD_FUNC_CPP).tmp $(MOD_FUNC_CPP) || \
 	mv $(MOD_FUNC_CPP).tmp $(MOD_FUNC_CPP)
 
