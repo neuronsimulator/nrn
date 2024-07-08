@@ -1113,11 +1113,6 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
         printer->add_newline();
     }
 
-    if (info.diam_used) {
-        printer->add_line("_morphology_sym = hoc_lookup(\"morphology\");");
-        printer->add_newline();
-    }
-
     for (const auto& ion: info.ions) {
         printer->fmt_line("_{0}_sym = hoc_lookup(\"{0}_ion\");", ion.name);
     }
@@ -1616,15 +1611,24 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
         printer->add_line("_nrn_mechanism_access_dparam(_prop) = _ppvar;");
     }
 
-    if (info.diam_used) {
-        throw std::runtime_error("Diam allocation not implemented.");
-    }
-
-    if (info.area_used) {
-        throw std::runtime_error("Area allocation not implemented.");
-    }
-
     const auto codegen_int_variables_size = codegen_int_variables.size();
+
+    if (info.diam_used || info.area_used) {
+        for (size_t i = 0; i < codegen_int_variables.size(); ++i) {
+            auto var_info = codegen_int_variables[i];
+            if (var_info.symbol->get_name() == naming::DIAM_VARIABLE) {
+                printer->add_line("Symbol * morphology_sym = hoc_lookup(\"morphology\");");
+                printer->fmt_line("Prop * morphology_prop = need_memb(morphology_sym);");
+
+                printer->fmt_line(
+                    "_ppvar[{}] = _nrn_mechanism_get_param_handle(morphology_prop, 0);", i);
+            }
+            if (var_info.symbol->get_name() == naming::AREA_VARIABLE) {
+                printer->fmt_line("_ppvar[{}] = _nrn_mechanism_get_area_handle(nrn_alloc_node_);",
+                                  i);
+            }
+        }
+    }
 
     for (const auto& ion: info.ions) {
         printer->fmt_line("Symbol * {}_sym = hoc_lookup(\"{}_ion\");", ion.name, ion.name);
@@ -1937,6 +1941,8 @@ void CodegenNeuronCppVisitor::print_headers_include() {
 void CodegenNeuronCppVisitor::print_macro_definitions() {
     print_global_macros();
     print_mechanism_variables_macros();
+
+    printer->add_line("extern Node* nrn_alloc_node_;");
 }
 
 
