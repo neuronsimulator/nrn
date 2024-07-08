@@ -21,6 +21,10 @@
 #include <cmath>
 #include <cstring>
 
+#include <nanobind/nanobind.h>
+
+namespace nb = nanobind;
+
 extern void nrn_pt3dremove(Section* sec, int i0);
 extern void nrn_pt3dinsert(Section* sec, int i0, double x, double y, double z, double d);
 extern void nrn_pt3dchange1(Section* sec, int i, double d);
@@ -568,31 +572,11 @@ static PyObject* NPyRangeVar_new_safe(PyTypeObject* type, PyObject* args, PyObje
     return nrn::convert_cxx_exceptions(NPyRangeVar_new, type, args, kwds);
 }
 
-static int NPySegObj_init(NPySegObj* self, PyObject* args, PyObject* kwds) {
-    // printf("NPySegObj_init %p %p\n", self, self->pysec_);
-    NPySecObj* pysec;
-    double x;
-    if (!PyArg_ParseTuple(args, "O!d", psection_type, &pysec, &x)) {
-        return -1;
-    }
-    if (x > 1.0 && x < 1.0001) {
-        x = 1.0;
-    }
-    if (x < 0. || x > 1.0) {
-        PyErr_SetString(PyExc_ValueError, "segment position range is 0 <= x <= 1");
-        return -1;
-    }
-    Py_INCREF(pysec);
-    if (self->pysec_) {
-        Py_DECREF(self->pysec_);
-    }
-    self->pysec_ = pysec;
-    self->x_ = x;
+static int NPySegObj_init(NPySegObj* self, PyObject* /* args */, PyObject* /* kwds */) {
+    // PySeg objects are fully initialized in __new__
+    // And strangely Python seems to never call this, as if the __new__ objs were not its instances
+    // So don't implement anything here
     return 0;
-}
-
-static int NPySegObj_init_safe(NPySegObj* self, PyObject* args, PyObject* kwds) {
-    return nrn::convert_cxx_exceptions(NPySegObj_init, self, args, kwds);
 }
 
 static int ob_is_seg(Object* o) {
@@ -614,7 +598,7 @@ static Section* o2sec(Object* o) {
     if (!PyObject_TypeCheck(po, psection_type)) {
         hoc_execerror("not a Python nrn.Section", 0);
     }
-    NPySecObj* pysec = (NPySecObj*) po;
+    auto* pysec = (NPySecObj*) po;
     return pysec->sec_;
 }
 
@@ -626,7 +610,7 @@ static void o2loc(Object* o, Section** psec, double* px) {
     if (!PyObject_TypeCheck(po, psegment_type)) {
         hoc_execerror("not a Python nrn.Segment", 0);
     }
-    NPySegObj* pyseg = (NPySegObj*) po;
+    auto* pyseg = (NPySegObj*) po;
     *psec = pyseg->pysec_->sec_;
     if (!(*psec)->prop) {
         hoc_execerr_ext("nrn.Segment associated with deleted internal Section");
@@ -634,48 +618,40 @@ static void o2loc(Object* o, Section** psec, double* px) {
     *px = pyseg->x_;
 }
 
+inline nb::object obj_get_segment(nb::object py_obj) {
+    // If object is list of single elem, use it
+    if (PyList_Check(py_obj.ptr())) {
+        nb::list obj_list{std::move(py_obj)};
+        if (obj_list.size() != 1) {
+            hoc_execerror("If a list is supplied, it must be of length 1", 0);
+        }
+        py_obj = obj_list[0];
+    }
+
+    auto seg_obj = py_obj.attr("segment");
+    if (!seg_obj.is_valid()) {
+        hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property",
+                      nullptr);
+    }
+    return seg_obj;
+}
 
 static void o2loc2(Object* o, Section** psec, double* px) {
-    bool free_po = false;
     if (o->ctemplate->sym != nrnpy_pyobj_sym_) {
-        hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property", 0);
+        hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property",
+                      nullptr);
     }
-    PyObject* po = nrnpy_hoc2pyobject(o);
-    if (!PyObject_TypeCheck(po, psegment_type)) {
-        if (PyList_Check(po)) {
-            if (PyList_Size(po) != 1) {
-                hoc_execerror("If a list is supplied, it must be of length 1", 0);
-            } else {
-                PyObject* old_po = po;
-                Py_INCREF(old_po);
-                po = PyList_GetItem(po, 0);
-                Py_DECREF(old_po);
-                free_po = true;
-            }
-        }
-        if (!PyObject_HasAttrString(po, "segment")) {
-            if (free_po) {
-                Py_DECREF(po);
-            }
-            hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property",
-                          0);
-        }
-        PyObject* obj = po;
-        Py_INCREF(obj);
-        po = PyObject_GetAttrString(obj, "segment");
-        Py_DECREF(obj);
-        if (free_po) {
-            // don't need the element from the list anymore
-            Py_DECREF(obj);
-        }
-        free_po = true;
+
+    // track objects with borrow so that ref-count ends up neutral
+    auto py_obj_seg = nb::borrow(nrnpy_hoc2pyobject(o));
+    if (!PyObject_TypeCheck(py_obj_seg.ptr(), psegment_type)) {
+        // Attempt to get a segment from any object. May throw
+        py_obj_seg = obj_get_segment(py_obj_seg);
     }
-    NPySegObj* pyseg = (NPySegObj*) po;
+
+    auto* pyseg = (NPySegObj*) py_obj_seg.ptr();
     *psec = pyseg->pysec_->sec_;
     *px = pyseg->x_;
-    if (free_po) {
-        Py_DECREF(po);
-    }
     if (!(*psec)->prop) {
         hoc_execerr_ext("nrn.Segment associated with deleted internal Section");
     }

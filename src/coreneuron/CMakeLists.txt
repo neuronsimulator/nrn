@@ -148,11 +148,6 @@ configure_file(${PROJECT_SOURCE_DIR}/src/coreneuron/config/config.cpp.in
 include(OpenAccHelper)
 
 # =============================================================================
-# Common dependencies
-# =============================================================================
-find_package(Perl REQUIRED)
-
-# =============================================================================
 # Common build options
 # =============================================================================
 # build mod files for coreneuron
@@ -260,9 +255,6 @@ endif()
 if(nmodl_FOUND)
   set(CORENRN_NMODL_BINARY ${nmodl_BINARY})
   set(CORENRN_NMODL_INCLUDE ${nmodl_INCLUDE})
-  # path to python interface
-  set(ENV{PYTHONPATH} "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
-  set(CORENRN_NMODL_PYTHONPATH $ENV{PYTHONPATH})
 else()
   set(NMODL_ENABLE_PYTHON_BINDINGS
       OFF
@@ -271,9 +263,6 @@ else()
   add_subdirectory(${PROJECT_SOURCE_DIR}/external/nmodl ${CMAKE_BINARY_DIR}/external/nmodl)
   set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
   set(CORENRN_NMODL_INCLUDE ${CMAKE_BINARY_DIR}/include)
-  set(ENV{PYTHONPATH} "$ENV{PYTHONPATH}")
-  set(nmodl_PYTHONPATH "${CMAKE_BINARY_DIR}/lib")
-  set(CORENRN_NMODL_PYTHONPATH "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
   set(NMODL_TARGET_TO_DEPEND nmodl)
   set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
   # install nrnunits.lib and libpywrapper.so from external/nmodl
@@ -367,7 +356,7 @@ list(APPEND CORENEURON_CODE_FILES ${PROJECT_BINARY_DIR}/coreneuron/config/config
 set(ENGINEMECH_CODE_FILE "mechanism/mech/enginemech.cpp")
 
 # for external mod files we need to generate modl_ref function in mod_func.c
-set(MODFUNC_PERL_SCRIPT "mechanism/mech/mod_func.c.pl")
+set(MODFUNC_SHELL_SCRIPT "mechanism/mech/mod_func.c.sh")
 
 set(NMODL_UNITS_FILE "${CMAKE_BINARY_DIR}/share/mod2c/nrnunits.lib")
 
@@ -375,8 +364,8 @@ set(NMODL_UNITS_FILE "${CMAKE_BINARY_DIR}/share/mod2c/nrnunits.lib")
 # Copy files that are required by nrnivmodl-core to the build tree at build time.
 # =============================================================================
 cpp_cc_build_time_copy(
-  INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${MODFUNC_PERL_SCRIPT}"
-  OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl"
+  INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${MODFUNC_SHELL_SCRIPT}"
+  OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.sh"
   NO_TARGET)
 cpp_cc_build_time_copy(
   INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${ENGINEMECH_CODE_FILE}"
@@ -387,7 +376,7 @@ cpp_cc_build_time_copy(
   OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp"
   NO_TARGET)
 set(nrnivmodl_core_dependencies
-    "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl"
+    "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.sh"
     "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp"
     "${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp")
 # Set up build rules that copy builtin mod files from src/coreneuron/mechanism/mech/modfile/*.mod to
@@ -706,7 +695,7 @@ install(
   FILES_MATCHING
   PATTERN "*.h*"
   PATTERN "*.ipp")
-install(FILES ${MODFUNC_PERL_SCRIPT} ${ENGINEMECH_CODE_FILE} DESTINATION share/coreneuron)
+install(FILES ${MODFUNC_SHELL_SCRIPT} ${ENGINEMECH_CODE_FILE} DESTINATION share/coreneuron)
 
 # copy nmodl for nrnivmodl-core
 install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION bin)
