@@ -2234,7 +2234,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
                 nrn_area_ri(sec);
             }
-            return Py_BuildValue("d", *d);
+            return PyFloat_FromDouble(*d);
         }
     }
 
@@ -2330,7 +2330,7 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
     // printf("segment_setattr %s\n", n);
 
     if (strcmp(n, "x") == 0) {
-        double x = static_cast<double>(nb::float_(value));
+        double x = PyFloat_AsDouble(value);  // -1.0 upon failure
         if (x <= 0. || x > 1.) {
             PyErr_SetString(PyExc_ValueError, "x must be in range 0. to 1.");
             return -1;
