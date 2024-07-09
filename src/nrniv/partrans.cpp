@@ -22,6 +22,8 @@
 #include "have2want.hpp"
 #endif
 
+#include "utils/formatting.hpp"
+
 
 #if NRNLONGSGID
 #if NRNMPI
@@ -247,7 +249,7 @@ static neuron::container::data_handle<double> non_vsrc_update(Node* nd,
             return p->param_handle(ix);
         }
     }
-    hoc_execerr_fmt("partrans update: could not find parameter index (%d, %d) of %s",
+    hoc_execerror_fmt("partrans update: could not find parameter index ({}, {}) of {}",
                     ix.field,
                     ix.array_index,
                     memb_func[type].sym->name);
