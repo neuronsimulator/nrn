@@ -1,4 +1,7 @@
 #include <../../nrnconf.h>
+
+#include "utils/formatting.hpp"
+
 #include <stdlib.h>
 #include <classreg.h>
 #include <vector>
@@ -173,7 +176,7 @@ void hoc_obvar_declare(Symbol* sym, int type, int pmes) {
         OPSECITM(sym) = nullptr;  // TODO: whaa? (struct Item**)0;
         break;
     default:
-        hoc_execerror(sym->name, "can't declare this in obvar_declare");
+        hoc_execerror_fmt("'{}' can't declare this in obvar_declare", sym->name);
         break;
     }
 }
@@ -194,7 +197,7 @@ static Templatedatum* templatestackp = templatestack;
 
 static Templatedatum* poptemplate(void) {
     if (templatestackp == templatestack) {
-        hoc_execerror("templatestack underflow", (char*) 0);
+        hoc_execerror("templatestack underflow", nullptr);
     }
     return (--templatestackp);
 }
@@ -218,7 +221,7 @@ static Templatedatum* poptemplate(void) {
 static void chktemplate(void) {
     if (templatestackp == templatestack + NTEMPLATESTACK) {
         templatestackp = templatestack;
-        hoc_execerror("templatestack overflow", (char*) 0);
+        hoc_execerror("templatestack overflow", nullptr);
     }
 }
 /*------------------------------------------------*/
@@ -232,10 +235,10 @@ static int obj_stack_loc;
 void hoc_object_push(void) {
     Object* ob = *hoc_objgetarg(1);
     if (ob->ctemplate->constructor) {
-        hoc_execerror("Can't do object_push for built-in class", 0);
+        hoc_execerror("Can't do object_push for built-in class", nullptr);
     }
     if (obj_stack_loc >= OBJ_STACK_SIZE) {
-        hoc_execerror("too many object context stack depth", 0);
+        hoc_execerror("too many object context stack depth", nullptr);
     }
     obj_stack_[obj_stack_loc++] = hoc_thisobject;
     obj_stack_[obj_stack_loc] = ob;
@@ -262,7 +265,7 @@ void hoc_object_pushed(void) {
 void hoc_object_pop(void) {
     Object* ob;
     if (obj_stack_loc < 1) {
-        hoc_execerror("object context stack underflow", 0);
+        hoc_execerror("object context stack underflow", nullptr);
     }
     obj_stack_[obj_stack_loc] = nullptr;
     ob = obj_stack_[--obj_stack_loc];
@@ -321,7 +324,7 @@ int hoc_obj_run(const char* cmd, Object* ob) {
 
     if (ob) {
         if (ob->ctemplate->constructor) {
-            hoc_execerror("Can't execute in a built-in class context", 0);
+            hoc_execerror("Can't execute in a built-in class context", nullptr);
         }
         hoc_thisobject = ob;
         hoc_objectdata = ob->u.dataspace;
@@ -367,7 +370,7 @@ void hoc_exec_cmd(void) { /* execute string from top level or within an object c
     }
     err = hoc_obj_run(pbuf, ob);
     if (err) {
-        hoc_execerror("execute error:", cmd);
+        hoc_execerror_fmt("execute error:{}", cmd);
     }
     if (pbuf != buf) {
         hocstr_delete(hs);
@@ -602,7 +605,8 @@ void hoc_newobj(void) { /* template at pc+1 */
 #if USE_PYTHON
     } else { /* Assignment to OBJECTTMP not allowed */
         Object* o = hoc_obj_look_inside_stack(narg);
-        hoc_execerror("Assignment to $o only allowed if caller arg was declared as objref", NULL);
+        hoc_execerror("Assignment to $o only allowed if caller arg was declared as objref",
+                      nullptr);
     }
 #endif
 }
@@ -856,7 +860,7 @@ void hoc_constobject(void) { /* template at pc, index at pc+1, objpointer left o
         }
     }
     Sprintf(buf, "%s[%d]\n", t->sym->name, index);
-    hoc_execerror("Object ID doesn't exist:", buf);
+    hoc_execerror("Object ID doesn't exist '{}'", buf);
 }
 
 Object* hoc_name2obj(const char* name, int index) {
@@ -870,7 +874,7 @@ Object* hoc_name2obj(const char* name, int index) {
         sym = hoc_table_lookup(name, hoc_built_in_symlist);
     }
     if (!sym || sym->type != TEMPLATE) {
-        hoc_execerror(name, "is not a template");
+        hoc_execerror_fmt("'{}' is not a template", name);
     }
     t = sym->u.ctemplate;
     ITERATE(q, t->olist) {
@@ -921,7 +925,7 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
         }
     }
     if (bdim) {
-        hoc_execerror(sym->name, "wrong number of array dimensions");
+        hoc_execerror_fmt("'{}' wrong number of array dimensions", sym->name);
     }
 
     if (sym->type == RANGEVAR) {
@@ -929,8 +933,8 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
             double x = -1.0;
             if (narg) {  // need to pop the arc length to push ndim
                 if (narg > 1) {
-                    hoc_execerr_ext("%s range variable can have only one arc length parameter",
-                                    sym->name);
+                    hoc_execerror_fmt("'{}' range variable can have only one arc length parameter",
+                                      sym->name);
                 }
                 x = xpop();
             }
@@ -945,7 +949,7 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
         hoc_pushs(sym);
     } else if (sym->subtype == USERPROPERTY) {
         if (narg) {
-            hoc_execerror(sym->name, "section property can't have argument");
+            hoc_execerror_fmt("'{}' section property can't have argument", sym->name);
         }
         hoc_pushs(sym);
     } else if (sym->type == RANGEOBJ) {
@@ -954,8 +958,8 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
         double x{0.5};
         if (narg) {
             if (narg > 1) {
-                hoc_execerr_ext("%s range object can have only one arg length parameter",
-                                sym->name);
+                hoc_execerror_fmt("'{}' range object can have only one arg length parameter",
+                                  sym->name);
             }
             x = xpop();
         }
@@ -965,7 +969,7 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
         Object* ob = nrn_nmodlrandom_wrap(m, sym);
         hoc_push_object(ob);
     } else {
-        hoc_execerror(sym->name, "suffix not a range variable or section property");
+        hoc_execerror_fmt("'{}' suffix not a range variable or section property", sym->name);
     }
 }
 
@@ -1029,7 +1033,8 @@ void hoc_object_component() {
                 accomplished in the next hoc_object_asgn
                 */
                 if (isfunc & 1) {
-                    hoc_execerror("Cannot assign to a PythonObject function call:", sym0->name);
+                    hoc_execerror_fmt("Cannot assign to a PythonObject function call '{}'",
+                                      sym0->name);
                 }
                 pushi(nindex);
                 pushs(sym0);
@@ -1050,18 +1055,18 @@ void hoc_object_component() {
                 and the ptid of the object is still the same. */
                 sym = hoc_table_lookup(sym0->name, obp->ctemplate->symtable);
                 if (!sym || sym->cpublic != PUBLIC_TYPE) {
-                    fprintf(stderr,
-                            "%s not a public member of %s\n",
-                            sym0->name,
-                            obp->ctemplate->sym->name);
-                    hoc_execerror(obp->ctemplate->sym->name, sym0->name);
+                    auto err = fmt::format("'{}' not a public member of '{}'",
+                                           sym0->name,
+                                           obp->ctemplate->sym->name);
+                    std::cerr << err << std::endl;
+                    hoc_execerror(err.c_str(), nullptr);
                 }
                 *ptid = obp->ctemplate->id;
                 *psym = sym;
             }
         }
     } else {
-        hoc_execerror(sym0->name, ": object prefix is NULL");
+        hoc_execerror_fmt("'{}' object prefix is nullptr", sym0->name);
     }
 
     psav = hoc_objectdata_save();
@@ -1075,7 +1080,7 @@ void hoc_object_component() {
     case OBJECTVAR:
         if (nindex) {
             if (!is_array(*sym) || OPARINFO(sym)->nsub != nindex) {
-                hoc_execerror(sym->name, ":not right number of subscripts");
+                hoc_execerror_fmt("'{}' not right number of subscripts", sym->name);
             }
             nindex = araypt(sym, OBJECTVAR);
         }
@@ -1086,7 +1091,7 @@ void hoc_object_component() {
         if (cplus) {
             if (nindex) {
                 if (!is_array(*sym) || sym->arayinfo->nsub != nindex) {
-                    hoc_execerror(sym->name, ":not right number of subscripts");
+                    hoc_execerror_fmt("'{}' not right number of subscripts", sym->name);
                 }
                 if (narg) {
                     // there are 25 modeldb examples that use (index) instead
@@ -1100,10 +1105,10 @@ void hoc_object_component() {
                         // Allow legacy syntax Matrix.x(i, j)
                         hoc_push_ndim(2);
                     } else {
-                        hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
-                                        hoc_object_name(obp),
-                                        sym->name,
-                                        sym->name);
+                        hoc_execerror_fmt("'{}.{}' is array not function. Use '{}[...]' syntax",
+                                          hoc_object_name(obp),
+                                          sym->name,
+                                          sym->name);
                     }
                 }
             }
@@ -1118,7 +1123,7 @@ void hoc_object_component() {
         } else {
             if (nindex) {
                 if (!is_array(*sym) || OPARINFO(sym)->nsub != nindex) {
-                    hoc_execerror(sym->name, ":not right number of subscripts");
+                    hoc_execerror_fmt("'{}' not right number of subscripts", sym->name);
                 }
                 if (narg) {
                     // there are a few modeldb examples that use (index) instead
@@ -1128,10 +1133,10 @@ void hoc_object_component() {
                     if (narg == 1) {
                         hoc_push_ndim(1);
                     } else {
-                        hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
-                                        hoc_object_name(obp),
-                                        sym->name,
-                                        sym->name);
+                        hoc_execerror_fmt("'{}.{}' is array not function. Use '{}[...]' syntax",
+                                          hoc_object_name(obp),
+                                          sym->name,
+                                          sym->name);
                     }
                 }
                 nindex = araypt(sym, OBJECTVAR);
@@ -1142,7 +1147,8 @@ void hoc_object_component() {
         break;
     case STRING:
         if (nindex) {
-            hoc_execerror(sym->name, ": string can't have function arguments or array indices");
+            hoc_execerror_fmt("'{}' string can't have function arguments or array indices",
+                              sym->name);
         }
         hoc_pop_defer();
         hoc_pushstr(OPSTR(sym));
@@ -1151,7 +1157,7 @@ void hoc_object_component() {
     case FUNCTION: {
         if (expect_stack_nsub) {
             hoc_pop_ndim();
-            hoc_execerr_ext("%s is a function not a %ddim array", sym->name, nindex);
+            hoc_execerror_fmt("'{}' is a function not a {}-dim array", sym->name, nindex);
         }
         double d = 0.;
         call_ob_proc(obp, sym, nindex);
@@ -1173,7 +1179,7 @@ void hoc_object_component() {
             // for legacy reasons allow single arg [] format.
             // E.g. occasionally seen for List.object[index]
             if (nindex > 1) {
-                hoc_execerr_ext("%s is a function not a %ddim array", sym->name, nindex);
+                hoc_execerror_fmt("'{}' is a function not a {}-dim array", sym->name, nindex);
             }
         }
         call_ob_proc(obp, sym, nindex);
@@ -1223,19 +1229,19 @@ void hoc_object_component() {
             double x = 0.0;
             connect_obsec_ = 0;
             if (nindex != 1) {
-                hoc_execerror(sym->name, ": bad connect syntax");
+                hoc_execerror_fmt("'{}' bad connect syntax", sym->name);
             }
             x = hoc_xpop();
             hoc_pop_defer();
             hoc_pushx(x);
         } else {
             if (nindex) {
-                hoc_execerror(sym->name, ":no subscript allowed");
+                hoc_execerror_fmt("'{}' no subscript allowed", sym->name);
             }
             hoc_pop_defer();
         }
         if (!sec->prop) {
-            hoc_execerror("Section was deleted", (char*) 0);
+            hoc_execerror("Section was deleted", nullptr);
         }
         nrn_pushsec(sec);
         break;
@@ -1246,13 +1252,13 @@ void hoc_object_component() {
         if (connect_obsec_) {
             x = hoc_xpop();
             if (!nindex) {
-                hoc_execerror(sym->name, ": bad connect syntax");
+                hoc_execerror_fmt("'{}' bad connect syntax", sym->name);
             }
             --nindex;
         }
         if (nindex) {
             if (!is_array(*sym) || OPARINFO(sym)->nsub != nindex) {
-                hoc_execerror(sym->name, ":not right number of subscripts");
+                hoc_execerror_fmt("'{}' not right number of subscripts", sym->name);
             }
             if (!hoc_stack_type_is_ndim()) {
                 hoc_push_ndim(nindex);
@@ -1269,7 +1275,7 @@ void hoc_object_component() {
     }
     case ITERATOR: {
         if ((pc++)->i != ITERATOR) {
-            hoc_execerror(sym->name, ":ITERATOR can only be used in a for statement");
+            hoc_execerror_fmt("'{}' ITERATOR can only be used in a for statement", sym->name);
         }
         call_ob_iter(obp, sym, nindex);
         if (hoc_returning) {
@@ -1294,7 +1300,7 @@ void hoc_object_component() {
         if (cplus) {
             if (nindex) {
                 if (!is_array(*sym) || sym->arayinfo->nsub != nindex) {
-                    hoc_execerror(sym->name, ":not right number of subscripts");
+                    hoc_execerror_fmt("'{}' not right number of subscripts", sym->name);
                 }
                 if (narg) {
                     // there are a few modeldb examples that use (index) instead
@@ -1304,10 +1310,10 @@ void hoc_object_component() {
                     if (narg == 1) {
                         hoc_push_ndim(1);
                     } else {
-                        hoc_execerr_ext("%s.%s is array not function. Use %s[...] syntax",
-                                        hoc_object_name(obp),
-                                        sym->name,
-                                        sym->name);
+                        hoc_execerror_fmt("'{}.{}' is array not function. Use '{}[...]' syntax",
+                                          hoc_object_name(obp),
+                                          sym->name,
+                                          sym->name);
                     }
                 }
             }
@@ -1317,19 +1323,19 @@ void hoc_object_component() {
             hoc_pop_defer();
             hoc_push(std::move(dh));
         } else {
-            hoc_execerror(sym->name, ": can't push that type onto stack");
+            hoc_execerror_fmt("{}: can't push that type onto stack", sym->name);
         }
         break;
     case OBJECTALIAS:
         if (nindex) {
-            hoc_execerror(sym->name, ": is an alias and cannot have subscripts");
+            hoc_execerror_fmt("{}: is an alias and cannot have subscripts", sym->name);
         }
         hoc_pop_defer();
         hoc_push_object(sym->u.object_);
         break;
     case VARALIAS:
         if (nindex) {
-            hoc_execerror(sym->name, ": is an alias and cannot have subscripts");
+            hoc_execerror_fmt("{}: is an alias and cannot have subscripts", sym->name);
         }
         hoc_pop_defer();
         hoc_pushpx(sym->u.pval);
@@ -1391,10 +1397,10 @@ void hoc_ob_pointer(void) {
         } else if (d_sym->type == VAR && d_sym->subtype == USERPROPERTY) {
             hoc_pushpx(cable_prop_eval_pointer(hoc_spop()));
         } else {
-            hoc_execerror("Not a double pointer", 0);
+            hoc_execerror("Not a double pointer", nullptr);
         }
     } else {
-        hoc_execerror("Not a double pointer", 0);
+        hoc_execerror("Not a double pointer", nullptr);
     }
 }
 
