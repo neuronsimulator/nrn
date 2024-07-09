@@ -250,9 +250,9 @@ static neuron::container::data_handle<double> non_vsrc_update(Node* nd,
         }
     }
     hoc_execerror_fmt("partrans update: could not find parameter index ({}, {}) of {}",
-                    ix.field,
-                    ix.array_index,
-                    memb_func[type].sym->name);
+                      ix.field,
+                      ix.array_index,
+                      memb_func[type].sym->name);
 }
 
 // Find the Node associated with the voltage.
