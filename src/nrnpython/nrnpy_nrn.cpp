@@ -1962,58 +1962,57 @@ static NPyRangeVar* rvnew(Symbol* sym, NPySecObj* sec, double x) {
 static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
-    PyObject* rv;
-    Py_INCREF(pyname);
+
+    auto pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
     Py2NRNString name(pyname);
-    char* n = name.c_str();
     if (name.err()) {
         name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
-        Py_DECREF(pyname);
         return NULL;
     }
+    char* n = name.c_str();
     // printf("section_getattr %s\n", n);
-    PyObject* result = 0;
+
     if (strcmp(n, "L") == 0) {
-        result = Py_BuildValue("d", section_length(sec));
-    } else if (strcmp(n, "Ra") == 0) {
-        result = Py_BuildValue("d", nrn_ra(sec));
-    } else if (strcmp(n, "nseg") == 0) {
-        result = Py_BuildValue("i", sec->nnode - 1);
-    } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
+        return PyFloat_FromDouble(section_length(sec));
+    }
+    if (strcmp(n, "Ra") == 0) {
+        return PyFloat_FromDouble(nrn_ra(sec));
+    }
+    if (strcmp(n, "nseg") == 0) {
+        return PyLong_FromLong(sec->nnode - 1);
+    }
+    if (strcmp(n, "rallbranch") == 0) {
+        return PyFloat_FromDouble(sec->prop->dparam[4].get<double>());
+    }
+
+    if (PyObject* rv = PyDict_GetItemString(rangevars_, n)) {
         Symbol* sym = ((NPyRangeVar*) rv)->sym_;
         if (is_array(*sym)) {
             NPyRangeVar* r = rvnew(sym, self, 0.5);
-            result = (PyObject*) r;
-        } else {
-            int err;
-            auto const d = nrnpy_rangepointer(sec, sym, 0.5, &err, 0 /* idx */);
-            if (!d) {
-                rv_noexist(sec, n, 0.5, err);
-                result = nullptr;
-            } else {
-                if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
-                    nrn_area_ri(sec);
-                }
-                result = Py_BuildValue("d", *d);
-            }
+            return (PyObject*) r;
         }
-    } else if (strcmp(n, "rallbranch") == 0) {
-        result = Py_BuildValue("d", sec->prop->dparam[4].get<double>());
-    } else if (strcmp(n, "__dict__") == 0) {
-        result = PyDict_New();
-        int err = PyDict_SetItemString(result, "L", Py_None);
-        assert(err == 0);
-        err = PyDict_SetItemString(result, "Ra", Py_None);
-        assert(err == 0);
-        err = PyDict_SetItemString(result, "nseg", Py_None);
-        assert(err == 0);
-        err = PyDict_SetItemString(result, "rallbranch", Py_None);
-        assert(err == 0);
-    } else {
-        result = PyObject_GenericGetAttr((PyObject*) self, pyname);
+        int err;
+        auto const d = nrnpy_rangepointer(sec, sym, 0.5, &err, 0 /* idx */);
+        if (!d) {
+            rv_noexist(sec, n, 0.5, err);
+            return nullptr;
+        }
+        if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
+            nrn_area_ri(sec);
+        }
+        return PyFloat_FromDouble(*d);
     }
-    Py_DECREF(pyname);
-    return result;
+
+    if (strcmp(n, "__dict__") == 0) {
+        auto out_dict = nb::dict();
+        out_dict["L"] = nb::none();
+        out_dict["L"] = nb::none();
+        out_dict["nseg"] = nb::none();
+        out_dict["rallbranch"] = nb::none();
+        return out_dict.release().ptr();
+    }
+    // default generic handling
+    return PyObject_GenericGetAttr((PyObject*) self, pyname);
 }
 
 static PyObject* section_getattro_safe(NPySecObj* self, PyObject* pyname) {
@@ -2185,7 +2184,6 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
         name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
         return NULL;
     }
-
     char* n = name.c_str();
     // printf("segment_getattr %s\n", n);
 
@@ -2284,7 +2282,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
         return return_dict.release().ptr();  // release() so it keeps living
     }
 
-    // default behavior
+    // default generic handling
     return PyObject_GenericGetAttr((PyObject*) self, pyname);
 }
 
