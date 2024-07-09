@@ -1033,7 +1033,8 @@ void hoc_object_component() {
                 accomplished in the next hoc_object_asgn
                 */
                 if (isfunc & 1) {
-                    hoc_execerror_fmt("Cannot assign to a PythonObject function call '{}'", sym0->name);
+                    hoc_execerror_fmt("Cannot assign to a PythonObject function call '{}'",
+                                      sym0->name);
                 }
                 pushi(nindex);
                 pushs(sym0);
