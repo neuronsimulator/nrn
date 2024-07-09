@@ -370,7 +370,7 @@ void hoc_exec_cmd(void) { /* execute string from top level or within an object c
     }
     err = hoc_obj_run(pbuf, ob);
     if (err) {
-        hoc_execerror_fmt("execute error: {}", cmd);
+        hoc_execerror_fmt("execute error:{}", cmd);
     }
     if (pbuf != buf) {
         hocstr_delete(hs);
@@ -874,7 +874,7 @@ Object* hoc_name2obj(const char* name, int index) {
         sym = hoc_table_lookup(name, hoc_built_in_symlist);
     }
     if (!sym || sym->type != TEMPLATE) {
-        hoc_execerror("'{}' is not a template", name);
+        hoc_execerror_fmt("'{}' is not a template", name);
     }
     t = sym->u.ctemplate;
     ITERATE(q, t->olist) {
@@ -1033,7 +1033,7 @@ void hoc_object_component() {
                 accomplished in the next hoc_object_asgn
                 */
                 if (isfunc & 1) {
-                    hoc_execerror("Cannot assign to a PythonObject function call '{}'", sym0->name);
+                    hoc_execerror_fmt("Cannot assign to a PythonObject function call '{}'", sym0->name);
                 }
                 pushi(nindex);
                 pushs(sym0);
@@ -1322,19 +1322,19 @@ void hoc_object_component() {
             hoc_pop_defer();
             hoc_push(std::move(dh));
         } else {
-            hoc_execerror_fmt(sym->name, ": can't push that type onto stack");
+            hoc_execerror_fmt("{}: can't push that type onto stack", sym->name);
         }
         break;
     case OBJECTALIAS:
         if (nindex) {
-            hoc_execerror(sym->name, ": is an alias and cannot have subscripts");
+            hoc_execerror_fmt("{}: is an alias and cannot have subscripts", sym->name);
         }
         hoc_pop_defer();
         hoc_push_object(sym->u.object_);
         break;
     case VARALIAS:
         if (nindex) {
-            hoc_execerror(sym->name, ": is an alias and cannot have subscripts");
+            hoc_execerror_fmt("{}: is an alias and cannot have subscripts", sym->name);
         }
         hoc_pop_defer();
         hoc_pushpx(sym->u.pval);
