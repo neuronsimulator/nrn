@@ -817,11 +817,17 @@ void CodegenNeuronCppVisitor::print_sdlists_init([[maybe_unused]] bool print_ini
 }
 
 CodegenCppVisitor::ParamVector CodegenNeuronCppVisitor::functor_params() {
-    return ParamVector{{"", "NrnThread*", "", "nt"},
-                       {"", fmt::format("{}&", instance_struct()), "", "inst"},
-                       {"", "int", "", "id"},
-                       {"", "double", "", "v"},
-                       {"", "Datum*", "", "_thread"}};
+    auto params = ParamVector{};
+    params.push_back({"", "NrnThread*", "", "nt"});
+    params.push_back({"", fmt::format("{}&", instance_struct()), "", "inst"});
+    params.push_back({"", "int", "", "id"});
+    params.push_back({"", "double", "", "v"});
+    params.push_back({"", "Datum*", "", "_thread"});
+    if (!codegen_thread_variables.empty()) {
+        params.push_back({"", fmt::format("{}&", thread_variables_struct()), "", "_thread_vars"});
+    }
+
+    return params;
 }
 
 void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_initializers) {
