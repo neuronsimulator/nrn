@@ -915,7 +915,7 @@ static char* escape_bracket(const char* s) {
     return b;
 }
 
-std::regex get_regex(int id) {
+static std::regex get_regex(int id) {
     std::string s(gargstr(id));
     if (s.empty()) {
         return std::regex(".*");
