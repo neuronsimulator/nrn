@@ -1963,7 +1963,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
 
-    auto pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
+    auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
     Py2NRNString name(pyname);
     if (name.err()) {
         name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
@@ -2022,87 +2022,89 @@ static PyObject* section_getattro_safe(NPySecObj* self, PyObject* pyname) {
 static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) {
     Section* sec = self->sec_;
     if (!sec->prop) {
-        PyErr_SetString(PyExc_ReferenceError, "can't access a deleted section");
+        nrnpy_sec_referr();
         return -1;
     }
-    PyObject* rv;
-    int err = 0;
-    Py_INCREF(pyname);
+    auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
     Py2NRNString name(pyname);
-    char* n = name.c_str();
     if (name.err()) {
         name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
-        Py_DECREF(pyname);
         return -1;
     }
+    char* n = name.c_str();
     // printf("section_setattro %s\n", n);
+
     if (strcmp(n, "L") == 0) {
-        double x;
-        if (PyArg_Parse(value, "d", &x) == 1 && x > 0.) {
-            if (can_change_morph(sec)) {
-                sec->prop->dparam[2] = x;
-                nrn_length_change(sec, x);
-                diam_changed = 1;
-                sec->recalc_area_ = 1;
-            }
-        } else {
+        double x = PyFloat_AsDouble(value);  // -1.0 upon failure
+        if (x <= 0.) {
             PyErr_SetString(PyExc_ValueError, "L must be > 0.");
-            err = -1;
+            return -1;
         }
-    } else if (strcmp(n, "Ra") == 0) {
-        double x;
-        if (PyArg_Parse(value, "d", &x) == 1 && x > 0.) {
-            sec->prop->dparam[7] = x;
+        if (can_change_morph(sec)) {
+            sec->prop->dparam[2] = x;
+            nrn_length_change(sec, x);
             diam_changed = 1;
             sec->recalc_area_ = 1;
-        } else {
+        }  // else skips without warning?
+        return 0;
+    }
+
+    if (strcmp(n, "Ra") == 0) {
+        double x = PyFloat_AsDouble(value);  // -1.0 upon failure
+        if (x <= 0.) {
             PyErr_SetString(PyExc_ValueError, "Ra must be > 0.");
-            err = -1;
+            return -1;
         }
-    } else if (strcmp(n, "nseg") == 0) {
+        sec->prop->dparam[7] = x;
+        diam_changed = 1;
+        sec->recalc_area_ = 1;
+        return 0;
+    }
+
+    if (strcmp(n, "nseg") == 0) {
         int nseg;
+        // Note: In Python < 3.10 PyLong_AsLong accepts PyFloat. Keep PyArg_Parse for consistence
         if (PyArg_Parse(value, "i", &nseg) == 1 && nseg > 0 && nseg <= 32767) {
             nrn_change_nseg(sec, nseg);
+            return 0;
         } else {
             PyErr_SetString(PyExc_ValueError, "nseg must be an integer in range 1 to 32767");
-            err = -1;
+            return -1;
         }
-        // printf("section_setattro err=%d nseg=%d nnode\n", err, nseg,
-        // sec->nnode);
-    } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
+    }
+
+    if (PyObject* rv = PyDict_GetItemString(rangevars_, n)) {
         Symbol* sym = ((NPyRangeVar*) rv)->sym_;
         if (is_array(*sym)) {
             PyErr_SetString(PyExc_IndexError, "missing index");
-            err = -1;
-        } else {
-            int errp;
-            auto d = nrnpy_rangepointer(sec, sym, 0.5, &errp, 0 /* idx */);
-            if (!d) {
-                rv_noexist(sec, n, 0.5, errp);
-                err = -1;
-            } else if (!PyArg_Parse(value, "d", static_cast<double*>(d))) {
-                PyErr_SetString(PyExc_ValueError, "bad value");
-                err = -1;
-            } else {
-                // only need to do following if nseg > 1, VINDEX, or EXTRACELL
-                nrn_rangeconst(sec, sym, d, 0);
-            }
+            return -1;
         }
-    } else if (strcmp(n, "rallbranch") == 0) {
-        double x;
-        if (PyArg_Parse(value, "d", &x) == 1 && x > 0.) {
-            sec->prop->dparam[4] = x;
-            diam_changed = 1;
-            sec->recalc_area_ = 1;
-        } else {
-            PyErr_SetString(PyExc_ValueError, "rallbranch must be > 0");
-            err = -1;
+        double new_x = static_cast<double>(nb::float_(value));
+        int errp;
+        auto d = nrnpy_rangepointer(sec, sym, 0.5, &errp, 0 /* idx */);
+        if (!d) {
+            rv_noexist(sec, n, 0.5, errp);
+            return -1;
         }
-    } else {
-        err = PyObject_GenericSetAttr((PyObject*) self, pyname, value);
+        *d = new_x;
+        // only need to do following if nseg > 1, VINDEX, or EXTRACELL
+        nrn_rangeconst(sec, sym, d, 0);
+        return 0;
     }
-    Py_DECREF(pyname);
-    return err;
+
+    if (strcmp(n, "rallbranch") == 0) {
+        double x = PyFloat_AsDouble(value);  // -1 upon error
+        if (x <= 0.) {
+            PyErr_SetString(PyExc_ValueError, "rallbranch must be > 0");
+            return -1;
+        }
+        sec->prop->dparam[4] = x;
+        diam_changed = 1;
+        sec->recalc_area_ = 1;
+        return 0;
+    }
+
+    return PyObject_GenericSetAttr((PyObject*) self, pyname, value);
 }
 
 static int section_setattro_safe(NPySecObj* self, PyObject* pyname, PyObject* value) {
@@ -2178,7 +2180,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
     Section* sec = self->pysec_->sec_;
     CHECK_SEC_INVALID(sec);
 
-    auto pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
+    auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
     Py2NRNString name(pyname);
     if (name.err()) {
         name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
@@ -2318,7 +2320,7 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
         nrnpy_sec_referr();
         return -1;
     }
-    auto pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
+    auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
     Py2NRNString name(pyname);
     if (name.err()) {
         name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
