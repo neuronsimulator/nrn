@@ -1222,7 +1222,7 @@ void hoc_register_tolerance(int mechtype, HocStateTolerance* tol, Symbol*** stol
                         psym[i] = vsym;
                         /*printf("identified %s at index %d of %s\n", vsym->name, index,
                          * msym->name);*/
-                        if (ISARRAY(vsym)) {
+                        if (is_array(*vsym)) {
                             int const na = vsym->arayinfo->sub[0];
                             for (int k = 1; k < na; ++k) {
                                 psym[++i] = vsym;

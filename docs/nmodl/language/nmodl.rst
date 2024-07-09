@@ -7,12 +7,7 @@ NMODL
 This document describes how to use the NBSR model description language 
 to add membrane mechanisms to NEURON. 
 
-NEURON's extensions to the NBSR language are described in:
-
-.. toctree:: :maxdepth: 1
-
-    nmodl2.rst
-
+NEURON's extensions to the NBSR language are described in :ref:`nmodl_neuron_extension`.
 
 .. _modeldescriptionlanguage:
 
@@ -61,7 +56,7 @@ Also, FUNCTION's written in a model are global and may be used in other
 models if they do not involve range variables. 
 
 History
-"""""""
+~~~~~~~
 
 MODL (model description language) was originally developed at 
 the NBSR (National Biomedical Simulation 
@@ -87,7 +82,7 @@ available from NBSR. A brief description of MODL is in the document entitled,
 "SCoP Language Summary". 
 
 Usage
-"""""
+~~~~~
 
 The easiest way to write membrane mechanisms is by analogy with the 
 examples. The example files come in pairs with a .mod and .hoc extension. 
@@ -117,7 +112,7 @@ this use the command:
 leaving off the file extension. For more information about units `click here <units_within_nmodl>`_.
 
 Rationale
-"""""""""
+~~~~~~~~~
 
 Our first nerve simulation program, :program:`CABLE`, contained several built-in 
 membrane mechanisms, including radial calcium diffusion, calcium channel, 
@@ -222,21 +217,21 @@ Further discussion of the numerical methods used by NEURON are found
 here.
 
 Basic NMODL Statements
-~~~~~~~~~~~~~~~~~~~~~~
+======================
 
 Only a small part of the full model description language is relevant to 
 neuron mechanisms.  The important concepts held in common are 
 the declaration of all variables as 
 
 TITLE
-"""""
+~~~~~
 
 Description:
     Title of the mechanism. Doesn't play any role to the code generation.
 
 
 COMMENT
-"""""""
+~~~~~~~
 
 Description:
     Comments of the code. ``COMMENT`` blocks start with ``COMMENT`` and end with ``ENDCOMMENT``.
@@ -263,7 +258,7 @@ Description:
 
 
 DEFINE
-""""""
+~~~~~~
 
 Description:
     Defines an integer macro variable. The name of the variable can be used in the rest of the mod
@@ -276,7 +271,7 @@ Description:
 
 
 UNITS
-"""""
+~~~~~
 
 Description:
     The statements in the UNITS block define new names for units in terms of existing names in
@@ -333,7 +328,7 @@ Description:
 .. _nmodl_parameter:
 
 PARAMETER
-"""""""""
+~~~~~~~~~
 
 
 Description:
@@ -362,7 +357,7 @@ Description:
 
 
 STATE
-"""""
+~~~~~
 
 
 Description:
@@ -381,7 +376,7 @@ Description:
 
 
 ASSIGNED
-""""""""
+~~~~~~~~
 
 
 Description:
@@ -392,7 +387,7 @@ Description:
 
 
 CONSTANT
-""""""""
+~~~~~~~~
 
 
 Description:
@@ -416,7 +411,7 @@ purpose.
 
 
 LOCAL
-"""""
+~~~~~~~
 
 
 Description:
@@ -436,7 +431,7 @@ Description:
 
 
 INDEPENDENT
-"""""""""""
+~~~~~~~~~~~
 
 
 Description:
@@ -444,105 +439,9 @@ Description:
     For NMODL this statement is unnecessary since the independent variable 
     is always time, :data:`t`. 
 
-POINTER
-"""""""
-
-Basically what is needed is a way to implement the Python statement 
-
-.. code-block::
-    none
-    
-    section1(x1).mech1.var1 =  section2(x2).mech2.var2
-
-efficiently from within a mechanism without having to explicitly connect them 
-through assignment at the Python level everytime the :samp:`{var2}` might change. 
- 
-First of all, the variables which point to the values in some other mechanism 
-are declared within the NEURON block via 
-
-.. code-block::
-    none
-
-    NEURON { 
-       POINTER var1, var2, ... 
-    } 
-
-These variables are used exactly like normal variables in the sense that 
-they can be used on the left or right hand side of assignment statements 
-and used as arguments in function calls. They can also be accessed from HOC 
-just like normal variables. 
-It is essential that the user set up the pointers to point to the correct 
-variables. This is done by first making sure that the proper mechanisms 
-are inserted into the sections and the proper point processes are actually 
-"located" in a section. Then, at the Python level each POINTER variable 
-that exists should be set up via the command: 
-
-.. code-block::
-    python
-
-    mechanism_object._ref_somepointer = source_obj._ref_varname
-
-Here mechanism_object (a point process object or a density mechanism) and
-the other arguments
-have enough implicit/explicit information to 
-determine their exact segment and mechanism location. For a continuous 
-mechanism, this means the section and location information. For a point 
-process it means the object. The reference may also be to any NEURON variable 
-or voltage, e.g. ``soma(0.5)._ref_v``. 
-See ``nrn/share/examples/nrniv/nmodl/(tstpnt1.py and tstpnt2.py)`` for examples of usage. 
- 
-For example, consider a synapse which requires a presynaptic potential 
-in order to calculate the amount of transmitter release. Assume the 
-declaration in the presynaptic model 
-
-.. code-block::
-    none
-
-    NEURON { POINTPROCESS Syn   POINTER vpre } 
-
-Then 
-
-.. code-block::
-    python
-
-    syn = h.Syn(section(0.8)) 
-    syn._ref_vpre = axon(1)._ref_v
-
-will allow the ``syn`` object located at ``section(0.8)`` to know the voltage at the distal end of the axon 
-section. As a variation on that example, if one supposed that the synapse 
-needed the presynaptic transmitter concentration (call it tpre) calculated 
-from a point process model called "release" (with object reference 
-rel, say) then the 
-statement would be 
-
-.. code-block::
-    python
-
-    syn._ref_trpe = rel._ref_ACH_release
-
-
-The caveat is that tight coupling between states in different models 
-may cause numerical instability. When this happens, 
-merging models into one larger 
-model may eliminate the instability, unless the model is so simple that time 
-does not appear, such as a passive channel. In that case, ``v`` is normally 
-chosen as the independent variable. MODL required this statement but NMODL 
-will implicitly generate one for you.  
-When currents and ionic potentials are calculated in a particular model they 
-are declared either as STATE, or ASSIGNED depending on the nature 
-of the calculation or whether they are important enough to save. If a variable 
-value needs to persist only between entry and exit of an instance 
-one may declare it as LOCAL, but in that case the model cannot be vectorized 
-and different instances cannot be called in parallel. 
-
-.. note::
-
-    For density mechanisms, one cannot pass in e.g. ``h.hh`` as this raises a TypeError;
-    one can, however, pass in ``nrn.hh`` where ``nrn`` is defined via ``from neuron import nrn``.
-
 
 INCLUDE
-"""""""
+~~~~~~~
 
 
 Description:
@@ -571,7 +470,7 @@ Description:
     Other blocks which play similar roles in NMODL and MODL are 
 
 BREAKPOINT
-""""""""""
+~~~~~~~~~~
 
 
 Description:
@@ -593,7 +492,7 @@ Description:
 
 
 DERIVATIVE
-""""""""""
+~~~~~~~~~~
 
 
 Description:
@@ -626,7 +525,7 @@ Description:
 
 
 NET_RECEIVE
-"""""""""""
+~~~~~~~~~~~
 
 Description:
     The NET_RECEIVE block is called by the NetCon event delivery system when an event arrives at
@@ -656,7 +555,7 @@ Description:
 
 
 CONSTRUCTOR
-"""""""""""
+~~~~~~~~~~~
 
 Description:
     .. code-block::
@@ -672,7 +571,7 @@ Description:
 
 
 DESTRUCTOR
-""""""""""
+~~~~~~~~~~
 
 Description:
     .. code-block::
@@ -688,14 +587,14 @@ Description:
 
 
 LINEAR
-""""""
+~~~~~~
 
 Description:
     ``TODO``: Add description and existing example mod file
 
 
 NONLINEAR
-"""""""""
+~~~~~~~~~
 
 
 Description:
@@ -714,7 +613,7 @@ Description:
 
 
 KINETIC
-"""""""
+~~~~~~~
 
 
 Description:
@@ -726,7 +625,7 @@ Description:
 
 
 CONSERVE
-""""""""
+~~~~~~~~
 
 Description:
     This statement's fundamental idea is to systematically account for conservation of material.
@@ -752,7 +651,7 @@ Description:
 
 
 COMPARTMENT
-"""""""""""
+~~~~~~~~~~~
 
 Description:
     The compartment volumes needed by the KINETIC scheme are given using the ``COMPARTMENT``
@@ -771,13 +670,22 @@ Description:
     .. code-block::
         none
 
-        COMPARTMENT index, volume [ index ] { state1 state2 . . . }
+        COMPARTMENT index, volume { state1 state2 . . . }
 
-    where the STATEs that are diffusing are listed inside the braces.
+    where the STATEs that are diffusing are listed inside the braces. Note that
+    STATEs for the diffusing variables must be array variables, and volume
+    should be the expression to compute the volume for index ``index``.
 
+    The following example states that the volume of the compartment for
+    ``s[i]`` is ``a[i]*b``.
+
+    .. code-block::
+        none
+
+        COMPARTMENT i, a[i]*b { s }
 
 LONGITUDINAL_DIFFUSION
-""""""""""""""""""""""
+~~~~~~~~~~~~~~~~~~~~~~
 
 Description:
     This statement specifies that this mechanism includes nonlocal diffusion, i.e. longitudinal
@@ -803,7 +711,7 @@ Description:
 
 
 PROCEDURE
-"""""""""
+~~~~~~~~~
 
 
 Description:
@@ -814,16 +722,36 @@ Description:
     However if a procedure is called 
     by the user, and it makes use of any range variables, then the user is 
     responsible for telling the mechanism from what location it should get 
-    its range variable data. This is done with the Python function: 
+    its range variable data. This is done at the Python/HOC level with
 
-    .. code-block::
-        python
+    .. tab:: Python
 
-        h.setdata_mechname(x) 
+        .. code-block::
+            python
 
-    where ``mechname`` is the mechanism name. For range variables one must
-    of course pass in a ``sec=section`` argument (otherwise the so-called
-    currently accessed section, discoverable via h.cas(), is used).
+            h.setdata_mechname(x) 
+
+    .. tab:: HOC
+
+        .. code-block::
+            none
+
+            setdata_mechname(x) 
+
+    where ``mechname`` is the mechanism name.
+
+    .. tab:: Python
+
+        .. note::
+            For range variables one must of course pass in a ``sec=section`` argument
+            (otherwise the so-called currently accessed section, 
+            discoverable via h.cas(), is used).
+
+    .. tab:: HOC
+
+        .. note::
+            For range variables there must of course be a currently accessed section.
+
     In the case of Point processes, one calls procedures using the object notation 
 
     .. code-block::
@@ -853,7 +781,7 @@ Description:
 
 
 FUNCTION
-""""""""
+~~~~~~~~
 
 
 Description:
@@ -866,7 +794,7 @@ Description:
 
 
 TABLE
-"""""
+~~~~~
 
 
 Description:
@@ -877,7 +805,7 @@ Description:
     coefficients, it is not uncommon to improve simulation speed by a factor 
     of 5. 
      
-    In the context of a procedure taking one argument, TABLE has the syntax 
+    In the context of a PROCEDURE taking one argument, TABLE has the syntax 
      
 
     .. code-block::
@@ -887,27 +815,39 @@ Description:
 
      
     where: 
-    variables is a list of variable names each of which will have its 
-    own table, 
-    dependencies is a list of parameters that, when any of them changes their 
-    value, cause the tables to be recalculated, 
-    lowest is the least arg value for the first table entry, 
-    highest is the greatest arg value for the last table entry, and 
-    table size is the number of elements in each table. 
+
+    * ``variables`` is a list of variable names each of which will have its 
+        own table, 
+
+    * ``dependencies`` is a list of parameters that, when any of them changes their 
+        value, cause the tables to be recalculated, 
+
+    * ``lowest`` is the least arg value for the first table entry, 
+
+    * ``highest`` is the greatest arg value for the last table entry, and 
+
+    * ``tablesize`` is the number of elements in each table.
+
+    Note that, for a FUNCTION, ``variables`` should remain empty as the only
+    interpolated value is the value of the function at the argument itself,
+    i.e. if ``arg`` is an argument passed to a FUNCTION, then ``variables`` is
+    always implicitly set to ``arg``, and no further variables are allowed.
+    Also note that a FUNCTION or a PROCEDURE with a TABLE statement must take
+    exactly one input argument.
      
-    Each model that has a table also has a flag associated with it that 
-    can be changed by the user called 
-    usetable_suffix 
+    Each model (with a suffix name ``<suffix>``) that has a table also has a flag
+    associated with it that can be changed by the user called 
+    ``usetable_<suffix>`` 
     which specifies that the tables are to be used (1, default) or not used (0). 
      
-    With usetable_suffix = 0, when the procedure is called it ignores the tables 
+    With ``usetable_<suffix> = 0``, when the procedure is called it ignores the tables 
     and just computes the values using the assignment statements as any normal 
     procedure. 
      
-    With usetable_suffix = 1, when the procedure is called, the 
-    arg value is used to assign values to the "variables" by looking them up 
+    With ``usetable_<suffix> = 1``, when the procedure is called, the 
+    arg value is used to assign values to the ``variables`` by looking them up 
     in the tables; the time normally spent executing the assignment statements 
-    is saved. If the tables are out of date (a "dependency" has a different 
+    is saved. If the tables are out of date (any of the ``dependencies`` has a different 
     value from its value the last time the tables were constructed) or have never 
     been created, the tables are created. 
      
@@ -917,9 +857,21 @@ Description:
     200 subsequent calls to the procedure and if the calculation takes more 
     time than an interpolated table lookup. 
 
+    Also note that, if ``usetable_<suffix> = 1``, for any argument value
+    outside of the interpolation range, the returned value of a function with a
+    TABLE will always be the value at the boundary. In mathematical form,
+    assuming the table interpolates values in the range ``[a, b]``:
+
+    .. math::
+
+        f(x) = \begin{cases}
+        f(a),\, &x \lt a \\
+        f(b),\, &x \gt b
+        \end{cases}
+
 
 INITIAL
-"""""""
+~~~~~~~
 
 
 Description:
@@ -961,7 +913,7 @@ Description:
 
 
 DISCRETE
-""""""""
+~~~~~~~~
 
 Description:
     ``TODO``: Add description
@@ -985,7 +937,7 @@ Description:
 
         table_tau1_<MOD_SUFFIX>(tau1_vec, v_vec)
 
-    Here is a FUNCTION_TABLE defined with:
+    Here is a FUNCTION_TABLE defined in Python with:
 
     .. code-block:: python
 
@@ -997,10 +949,10 @@ Description:
         # Print "Temperature for voltage 0.32 is 37"
         print("Temperature for voltage ", 0.32, " is ", temp)
 
-    .. image:: ../../../images/function_table_vT.png
+    .. image:: /python/images/function_table_vT.png
         :align: center
 
-    Then whenever tau1(x) is called in the NMODL file, or tau1_k3st(x) is called from python, the
+    Then whenever tau1(x) is called in the NMODL file, or tau1_k3st(x) is called from Python, the
     interpolated value of the array is returned.
     A useful feature of FUNCTION_TABLEs is that prior to developing the Vector database, they can
     be attached to a scalar value as in
@@ -1046,7 +998,7 @@ Description:
 
         tau2_<MOD_SUFFIX>(2.5, 30) # This is 63,75
 
-    .. image:: ../../../images/function_table_vkT.png
+    .. image:: /python/images/function_table_vkT.png
         :align: center
 
 

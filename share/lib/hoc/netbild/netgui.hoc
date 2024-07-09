@@ -856,7 +856,7 @@ proc save_hoc_templates() {local i
 	}
 }
 
-proc save_hoc_data() { local i, j, hasneo
+proc save_hoc_data() { local i, j
 	$o1.printf("\n//Network specification interface\n\n")
 	$o1.printf("objref cells, nclist, netcon\n")
 	$o1.printf("{cells = new List()  nclist = new List()}\n\n")
@@ -871,33 +871,16 @@ $o1.printf("    netcon.weight = $4   netcon.delay = $5\n")
 $o1.printf("  }\n")
 	$o1.printf("  nclist.append(netcon)\n  return nclist.count - 1\n}\n\n")
 
-	if (name_declared("NeoSim")) {
-		hasneo = 1
-	}else{
-		hasneo = 0
-	}
-	if (hasneo) {
-		ncappend = "ns.new_connection"
-		$o1.printf("//Network instantiation through the NeoSim Interface\n")
-		$o1.printf("objref ns\n")
-		$o1.printf("{ns = new NeoSim()}\n\n")
-	}else{
-		ncappend = "nc_append"
-		$o1.printf("//Network instantiation\n\n")
-	}
+	ncappend = "nc_append"
+	$o1.printf("//Network instantiation\n\n")
 
 	for i=0, net.sources.count-1 {
 		tobj = net.sources.object(i).cell
 		tobj.name(tstr)
 		$o1.printf("  /* %s */", tstr)
 		tobj.type.classname(tstr)
-		if (hasneo) {
-			$o1.printf("  ns.new_cell(\"%s\",\t%g,\t %g, 0)\n",\
-				tstr, tobj.x, tobj.y)
-		}else{
-			$o1.printf("  cell_append(new %s(),\t%g,\t %g, 0)\n",\
-				tstr, tobj.x, tobj.y)
-		}
+		$o1.printf("  cell_append(new %s(),\t%g,\t %g, 0)\n",\
+					tstr, tobj.x, tobj.y)
 	}
 		
 	for i=0, net.targets.count-1 {

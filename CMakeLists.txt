@@ -248,6 +248,13 @@ cpp_cc_git_submodule(Random123)
 cpp_cc_git_submodule(eigen)
 cpp_cc_git_submodule(fmt)
 
+if(NRN_ENABLE_CORENEURON)
+  file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/Random123/include/Random123"
+       DESTINATION "${CMAKE_BINARY_DIR}/include/")
+  file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/eigen/Eigen"
+       DESTINATION "${CMAKE_BINARY_DIR}/include/")
+endif()
+
 # =================================================================================================
 # Enable sanitizer support if the NRN_SANITIZERS variable is set. Comes befores PythonHelper.cmake.
 # =================================================================================================
@@ -433,6 +440,9 @@ endif()
 if(NRN_ENABLE_PYTHON)
   # Make sure the USE_PYTHON macro is defined in the C++ code
   list(APPEND NRN_COMPILE_DEFS USE_PYTHON)
+  # Ensure nanobind is there, but dont import, we don't want its CMake
+  nrn_add_external_project(nanobind DISABLE_ADD RECURSIVE SHALLOW)
+  include(NanoBindMinimal)
 endif()
 
 # =============================================================================
@@ -573,6 +583,10 @@ endif()
 # =============================================================================
 add_subdirectory(src/sparse13)
 add_subdirectory(src/gnu)
+if(NRN_ENABLE_PYTHON)
+  add_subdirectory(src/nrnpython)
+endif()
+
 add_subdirectory(src/nrniv)
 
 # Collect the environment variables that are needed to execute NEURON from the build directory. This
@@ -603,10 +617,6 @@ if(NRN_ENABLE_PYTHON)
   prepend_to_var(PYTHONPATH "${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd")
 endif()
 add_subdirectory(bin)
-
-if(NRN_ENABLE_PYTHON)
-  add_subdirectory(src/nrnpython)
-endif()
 
 if(NRN_MACOS_BUILD)
   add_subdirectory(src/mac)

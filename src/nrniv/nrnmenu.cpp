@@ -129,7 +129,7 @@ void nrnglobalmechmenu() {
     for (sp = hoc_built_in_symlist->first; sp; sp = sp->next) {
         if (sp->type == VAR && sp->subtype == USERDOUBLE && (s = strstr(sp->name, suffix)) != 0 &&
             s[strlen(suffix)] == '\0') {
-            if (ISARRAY(sp)) {
+            if (is_array(*sp)) {
                 char n[50];
                 int i;
                 Arrayinfo* a = sp->arayinfo;
@@ -293,7 +293,7 @@ static void mech_menu(Prop* p1, double x, int type, const char* path, MechSelect
             vsym = sym->u.ppsym[j];
             if (nrn_vartype(vsym) == type) {
                 if (vsym->type == RANGEVAR) {
-                    if (ISARRAY(vsym)) {
+                    if (is_array(*vsym)) {
                         char n[50];
                         Arrayinfo* a = vsym->arayinfo;
                         for (i = 0; i < a->sub[0]; i++) {
@@ -484,7 +484,7 @@ static void point_menu(Object* ob, int make_label) {
             } else {
                 deflt = false;
             }
-            if (ISARRAY(vsym)) {
+            if (is_array(*vsym)) {
                 Arrayinfo* a = vsym->arayinfo;
                 for (m = 0; m < vsym->arayinfo->sub[0]; m++) {
                     if (m > 5)

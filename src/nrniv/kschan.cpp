@@ -53,6 +53,7 @@ static void check_table_thread_(Memb_list*,
                                 std::size_t,
                                 Datum*,
                                 Datum*,
+                                double*,
                                 NrnThread* vnt,
                                 int type,
                                 neuron::model_sorted_token const&) {
