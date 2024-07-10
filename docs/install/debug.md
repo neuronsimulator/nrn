@@ -563,12 +563,12 @@ to track and analyze memory objects larger than 1 byte. Additionally, we use `ta
 to assign threads to specific cores for consistent performance profiling results.
 
 Once we have profile data, we can examine access latencies for different memory objects. In the 
-example below, we view the `Bottom-up` perspective with `Grouping` set to `Memory Object / Function / Call Stack`:
+example below, we view the `Bottom-up` pane with `Grouping` set to `Memory Object / Function / Call Stack`:
 
-![](images/nrn_vtune_uarch_caliper_step11_grouping_expand.png)
+![](images/nrn_vtune_memacs_caliper_step12_acs_lat.png)
 
 Here, we observe significantly higher access latencies in the `bksub()` function from `sparse_thread.hpp`.
-Double-clicking  the function takes us to the corresponding code:
+In order to understand the exact code location, we can double click the function name and it will takes us to the corresponding code section:
 
 ![](images/nrn_vtune_memacs_caliper_step13_acs_lat_code.png)
 
