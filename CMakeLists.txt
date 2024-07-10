@@ -248,12 +248,11 @@ cpp_cc_git_submodule(Random123)
 cpp_cc_git_submodule(eigen)
 nrn_add_external_project(fmt)
 set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
-if(NRN_ENABLE_CORENEURON)
-  file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/Random123/include/Random123"
-       DESTINATION "${CMAKE_BINARY_DIR}/include/")
-  file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/eigen/Eigen"
-       DESTINATION "${CMAKE_BINARY_DIR}/include/")
-endif()
+
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/Random123/include/Random123"
+     DESTINATION "${CMAKE_BINARY_DIR}/include/")
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/eigen/Eigen"
+     DESTINATION "${CMAKE_BINARY_DIR}/include/")
 
 # =================================================================================================
 # Enable sanitizer support if the NRN_SANITIZERS variable is set. Comes befores PythonHelper.cmake.
