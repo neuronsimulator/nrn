@@ -499,6 +499,26 @@ cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 # Enable CoreNEURON support
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)
+  set(CORENRN_NMODL_DIR
+      ""
+      CACHE PATH "Path to nmodl source-to-source compiler installation")
+
+  find_package(nmodl)
+  if(NOT "${CORENRN_NMODL_DIR}" STREQUAL "" AND NOT nmodl_FOUND)
+    message(FATAL_ERROR "Cannot find NMODL in ${CORENRN_NMODL_DIR}")
+  endif()
+  if(nmodl_FOUND)
+    set(CORENRN_NMODL_BINARY ${nmodl_BINARY})
+  else()
+    set(NMODL_ENABLE_PYTHON_BINDINGS
+        OFF
+        CACHE BOOL "Enable NMODL python bindings")
+    nrn_add_external_project(nmodl)
+    set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
+    set(NMODL_TARGET_TO_DEPEND nmodl)
+    set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
+  endif()
+
   message(STATUS "Building CoreNEURON")
 
   # =============================================================================
@@ -529,7 +549,6 @@ if(NRN_ENABLE_CORENEURON)
   get_property(CORENRN_LIB_LINK_FLAGS GLOBAL PROPERTY CORENRN_LIB_LINK_FLAGS)
   get_property(CORENRN_NEURON_LINK_FLAGS GLOBAL PROPERTY CORENRN_NEURON_LINK_FLAGS)
   get_property(CORENRN_ENABLE_SHARED GLOBAL PROPERTY CORENRN_ENABLE_SHARED)
-  get_property(CORENRN_NMODL_BINARY GLOBAL PROPERTY CORENRN_NMODL_BINARY)
   # NEURON tests that link against CoreNEURON need to depend on it.
   set(CORENEURON_TARGET_TO_DEPEND coreneuron-for-tests)
 

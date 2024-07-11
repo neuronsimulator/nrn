@@ -43,10 +43,6 @@ option(CORENRN_ENABLE_UNIT_TESTS "Enable unit tests execution" ON)
 option(CORENRN_ENABLE_GPU "Enable GPU support using OpenACC or OpenMP" OFF)
 option(CORENRN_ENABLE_SHARED "Enable shared library build" ON)
 option(CORENRN_ENABLE_PRCELLSTATE "Enable NRN_PRCELLSTATE debug feature" OFF)
-
-set(CORENRN_NMODL_DIR
-    ""
-    CACHE PATH "Path to nmodl source-to-source compiler installation")
 set(LIKWID_DIR
     ""
     CACHE PATH "Path to likwid performance analysis suite")
@@ -248,34 +244,6 @@ endif()
 # =============================================================================
 # NMODL specific options
 # =============================================================================
-find_package(nmodl)
-if(NOT "${CORENRN_NMODL_DIR}" STREQUAL "" AND NOT nmodl_FOUND)
-  message(FATAL_ERROR "Cannot find NMODL in ${CORENRN_NMODL_DIR}")
-endif()
-if(nmodl_FOUND)
-  set(CORENRN_NMODL_BINARY ${nmodl_BINARY})
-else()
-  set(NMODL_ENABLE_PYTHON_BINDINGS
-      OFF
-      CACHE BOOL "Enable NMODL python bindings")
-  nrn_add_external_project(nmodl DISABLE_ADD)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/external/nmodl ${CMAKE_BINARY_DIR}/external/nmodl)
-  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
-  set(NMODL_TARGET_TO_DEPEND nmodl)
-  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
-  # install nrnunits.lib and libpywrapper.so from external/nmodl
-  install(
-    FILES ${NMODL_PROJECT_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
-    DESTINATION lib
-    COMPONENT pywrapper
-    OPTIONAL)
-  install(
-    FILES ${NMODL_PROJECT_BINARY_DIR}/share/nmodl/nrnunits.lib
-    DESTINATION share/nmodl
-    COMPONENT nrnunits)
-endif()
-set_property(GLOBAL PROPERTY CORENRN_NMODL_BINARY "${CORENRN_NMODL_BINARY}")
-
 # set correct arguments for nmodl for cpu/gpu target
 set(CORENRN_NMODL_FLAGS
     ""
@@ -672,9 +640,6 @@ install(
   PATTERN "*.h*"
   PATTERN "*.ipp")
 install(FILES ${MODFUNC_SHELL_SCRIPT} ${ENGINEMECH_CODE_FILE} DESTINATION share/coreneuron)
-
-# copy nmodl for nrnivmodl-core
-install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION bin)
 
 # install nrniv-core app
 install(
