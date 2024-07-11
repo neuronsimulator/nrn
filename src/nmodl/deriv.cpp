@@ -161,7 +161,7 @@ void solv_diffeq(Item* qsol,
         // derivimplicit_thread
         Sprintf(buf,
                 "%s %s%s_thread(%d, _slist%d, _dlist%d, neuron::scopmath::row_view{_ml, _iml}, %s, "
-                "_ml, _iml, _ppvar, _thread, _nt);\n%s",
+                "_ml, _iml, _ppvar, _thread, _globals, _nt);\n%s",
                 deriv1_advance,
                 ssprefix,
                 method->name,
