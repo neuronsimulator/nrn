@@ -147,6 +147,7 @@ void ReportEvent::deliver(double t, NetCvode* nc, NrnThread* nt) {
 /* libsonata is not thread safe */
 #pragma omp critical
     {
+        std::cout << "Deliver called at time: " << t << " on rank: " << nrnmpi_myid << std::endl;
         // Sum currents and calculate lfp only on reporting steps
         if (step > 0 && (static_cast<int>(step) % reporting_period) == 0) {
             if (report_type == ReportType::SummationReport) {
