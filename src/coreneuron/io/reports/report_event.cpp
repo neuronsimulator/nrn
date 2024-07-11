@@ -69,9 +69,6 @@ void ReportEvent::summation_alu(NrnThread* nt) {
 }
 
 void ReportEvent::lfp_calc(NrnThread* nt) {
-    if (gids_to_report.empty()) {
-        return; // Early return if there are no GIDs to process on this rank
-    }
     auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt->mapping);
     double* fast_imem_rhs = nt->nrn_fast_imem->nrn_sav_rhs;
     auto& summation_report = nt->summation_report_handler_->summation_reports_[report_path];
