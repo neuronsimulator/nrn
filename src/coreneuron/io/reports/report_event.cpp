@@ -107,7 +107,9 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
         if (corenrn_param.mpi_enable) {
             global_sum_lfp_values.resize(sum_lfp_values.size());
             int mpi_sum{1};
+            std::cout << "Before allreduce: size=" << sum_lfp_values.size() << ", rank=" << nrnmpi_myid << std::endl;
             nrnmpi_dbl_allreduce_vec(sum_lfp_values.data(), global_sum_lfp_values.data(), sum_lfp_values.size(), mpi_sum);
+            std::cout << "After allreduce: size=" << global_sum_lfp_values.size() << ", rank=" << nrnmpi_myid << std::endl;
         } else
 #endif
         {
