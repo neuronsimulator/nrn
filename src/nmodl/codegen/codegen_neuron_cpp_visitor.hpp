@@ -317,9 +317,10 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      */
     std::string register_mechanism_arguments() const override;
 
-    std::string conc_write_statement(const std::string& ion_name,
-                                     const std::string& concentration,
-                                     int index) override;
+
+    void append_conc_write_statements(std::vector<ShadowUseStatement>& statements,
+                                      const Ion& ion,
+                                      const std::string& concentration) override;
 
     /**
      * All functions and procedures need a \c _hoc_<func_or_proc_name> to be available to the HOC

@@ -565,11 +565,25 @@ void CodegenNeuronCppVisitor::print_namespace_stop() {
     printer->pop_block();
 }
 
+void CodegenNeuronCppVisitor::append_conc_write_statements(
+    std::vector<ShadowUseStatement>& statements,
+    const Ion& ion,
+    const std::string& /* concentration */) {
+    auto ion_name = ion.name;
+    int dparam_index = get_int_variable_index(fmt::format("style_{}", ion_name));
 
-std::string CodegenNeuronCppVisitor::conc_write_statement(const std::string& ion_name,
-                                                          const std::string& concentration,
-                                                          int index) {
-    return "";
+    auto style_name = fmt::format("_style_{}", ion_name);
+    auto style_stmt = fmt::format("int {} = *(_ppvar[{}].get<int*>())", style_name, dparam_index);
+    statements.push_back(ShadowUseStatement{style_stmt, "", ""});
+
+
+    auto wrote_conc_stmt = fmt::format("nrn_wrote_conc(_{}_sym, {}, {}, {}, {})",
+                                       ion_name,
+                                       get_variable_name(ion.rev_potential_pointer_name()),
+                                       get_variable_name(ion.intra_conc_pointer_name()),
+                                       get_variable_name(ion.extra_conc_pointer_name()),
+                                       style_name);
+    statements.push_back(ShadowUseStatement{wrote_conc_stmt, "", ""});
 }
 
 /****************************************************************************************/
@@ -1200,7 +1214,12 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
             type = "Point_process*";
         } else if (name == naming::TQITEM_VARIABLE) {
             type = "void*";
+        } else if (stringutils::starts_with(name, "style_") &&
+                   stringutils::starts_with(info.semantics[i].name, "#") &&
+                   stringutils::ends_with(info.semantics[i].name, "_ion")) {
+            type = "int*";
         }
+
         mech_register_args.push_back(
             fmt::format("_nrn_mechanism_field<{}>{{\"{}\", \"{}\"}} /* {} */",
                         type,
@@ -1232,6 +1251,10 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
         printer->fmt_line("hoc_register_dparam_semantics(mech_type, {}, \"{}\");",
                           i,
                           info.semantics[i].name);
+    }
+
+    if (info.write_concentration) {
+        printer->fmt_line("nrn_writes_conc(mech_type, 0);");
     }
 
     if (info.artificial_cell) {
@@ -1569,10 +1592,7 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
 
     auto method = method_name(naming::NRN_ALLOC_METHOD);
     printer->fmt_push_block("static void {}(Prop* _prop)", method);
-    printer->add_multi_line(R"CODE(
-        Prop *prop_ion{};
-        Datum *_ppvar{};
-    )CODE");
+    printer->add_line("Datum *_ppvar = nullptr;");
 
     if (info.point_process) {
         printer->push_block("if (nrn_point_prop_)");
@@ -1589,7 +1609,7 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
     }
     printer->add_multi_line(R"CODE(
         _nrn_mechanism_cache_instance _lmc{_prop};
-        size_t const _iml{};
+        size_t const _iml = 0;
     )CODE");
     printer->fmt_line("assert(_nrn_mechanism_get_num_vars(_prop) == {});",
                       codegen_float_variables.size());
@@ -1640,30 +1660,42 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
         printer->fmt_line("Symbol * {}_sym = hoc_lookup(\"{}_ion\");", ion.name, ion.name);
         printer->fmt_line("Prop * {}_prop = need_memb({}_sym);", ion.name, ion.name);
 
+        if (ion.is_exterior_conc_written()) {
+            printer->fmt_line("nrn_check_conc_write(_prop, {}_prop, 0);", ion.name);
+        }
+
+        if (ion.is_interior_conc_written()) {
+            printer->fmt_line("nrn_check_conc_write(_prop, {}_prop, 1);", ion.name);
+        }
+
+        int conc = ion.is_conc_written() ? 3 : int(ion.is_conc_read());
+        int rev = ion.is_rev_written() ? 3 : int(ion.is_rev_read());
+
+        printer->fmt_line("nrn_promote({}_prop, {}, {});", ion.name, conc, rev);
+
         for (size_t i = 0; i < codegen_int_variables_size; ++i) {
             const auto& var = codegen_int_variables[i];
 
-            // if(var.symbol->has_any_property(NmodlType::useion)) {
             const std::string& var_name = var.symbol->get_name();
-            if (var_name.rfind("ion_", 0) != 0) {
-                continue;
-            }
 
-            std::string ion_var_name = std::string(var_name.begin() + 4, var_name.end());
-            if (ion.is_ionic_variable(ion_var_name)) {
-                printer->fmt_line("_ppvar[{}] = _nrn_mechanism_get_param_handle({}_prop, {});",
-                                  i,
-                                  ion.name,
-                                  ion.variable_index(ion_var_name));
+            if (stringutils::starts_with(var_name, "ion_")) {
+                std::string ion_var_name = std::string(var_name.begin() + 4, var_name.end());
+                if (ion.is_ionic_variable(ion_var_name) ||
+                    ion.is_current_derivative(ion_var_name) || ion.is_rev_potential(ion_var_name)) {
+                    printer->fmt_line("_ppvar[{}] = _nrn_mechanism_get_param_handle({}_prop, {});",
+                                      i,
+                                      ion.name,
+                                      ion.variable_index(ion_var_name));
+                }
+            } else {
+                if (ion.is_style(var_name)) {
+                    printer->fmt_line(
+                        "_ppvar[{}] = {{neuron::container::do_not_search, "
+                        "&(_nrn_mechanism_access_dparam({}_prop)[0].literal_value<int>())}};",
+                        i,
+                        ion.name);
+                }
             }
-            // assign derivatives of the current as well
-            else if (ion.is_current_derivative(ion_var_name)) {
-                printer->fmt_line("_ppvar[{}] = _nrn_mechanism_get_param_handle({}_prop, {});",
-                                  i,
-                                  ion.name,
-                                  ion.variable_index(ion_var_name));
-            }
-            //}
         }
     }
 

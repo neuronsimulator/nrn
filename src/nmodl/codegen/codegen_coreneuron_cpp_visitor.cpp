@@ -14,6 +14,7 @@
 #include <regex>
 
 #include "ast/all.hpp"
+#include "codegen/codegen_cpp_visitor.hpp"
 #include "codegen/codegen_helper_visitor.hpp"
 #include "codegen/codegen_naming.hpp"
 #include "codegen/codegen_utils.hpp"
@@ -688,12 +689,29 @@ std::string CodegenCoreneuronCppVisitor::register_mechanism_arguments() const {
 }
 
 
-std::string CodegenCoreneuronCppVisitor::conc_write_statement(const std::string& ion_name,
-                                                              const std::string& concentration,
-                                                              int index) {
+void CodegenCoreneuronCppVisitor::append_conc_write_statements(
+    std::vector<ShadowUseStatement>& statements,
+    const Ion& ion,
+    const std::string& concentration) {
+    int index = 0;
+    if (ion.is_intra_cell_conc(concentration)) {
+        index = 1;
+    } else if (ion.is_extra_cell_conc(concentration)) {
+        index = 2;
+    } else {
+        /// \todo Unhandled case in neuron implementation
+        throw std::logic_error(fmt::format("codegen error for {} ion", ion.name));
+    }
+    auto ion_type_name = fmt::format("{}_type", ion.name);
+    auto lhs = fmt::format("int {}", ion_type_name);
+    auto op = "=";
+    auto rhs = get_variable_name(ion_type_name);
+    statements.push_back(ShadowUseStatement{lhs, op, rhs});
+
+    auto ion_name = ion.name;
     auto conc_var_name = get_variable_name(naming::ION_VARNAME_PREFIX + concentration);
     auto style_var_name = get_variable_name("style_" + ion_name);
-    return fmt::format(
+    auto statement = fmt::format(
         "nrn_wrote_conc({}_type,"
         " &({}),"
         " {},"
@@ -707,6 +725,8 @@ std::string CodegenCoreneuronCppVisitor::conc_write_statement(const std::string&
         style_var_name,
         get_variable_name(naming::CELSIUS_VARIABLE),
         ion_name);
+
+    statements.push_back(ShadowUseStatement{statement, "", ""});
 }
 
 

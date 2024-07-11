@@ -9,6 +9,7 @@
 
 #include "ast/program.hpp"
 #include "codegen/codegen_helper_visitor.hpp"
+#include "codegen/codegen_info.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "visitors/kinetic_block_visitor.hpp"
 #include "visitors/neuron_solve_visitor.hpp"
@@ -209,6 +210,86 @@ SCENARIO("Check global variable setup", "[codegen][global_variables]") {
         THEN("Checking that primes_size and prime_variables_by_order have the expected size") {
             REQUIRE(info.primes_size == 2);
             REQUIRE(info.prime_variables_by_order.size() == 2);
+        }
+    }
+}
+
+CodegenInfo make_codegen_info(const std::string& text) {
+    NmodlDriver driver;
+    const auto& ast = driver.parse_string(text);
+
+    SymtabVisitor().visit_program(*ast);
+    CodegenHelperVisitor v;
+
+    return v.analyze(*ast);
+}
+
+TEST_CASE("Check ion write/read checks") {
+    std::string input_nmodl = R"(
+        NEURON {
+            SUFFIX test
+            USEION ca READ cai WRITE cai, eca
+            USEION na WRITE nao, ena
+            USEION K READ Ki, eK
+            RANGE x
+        }
+        ASSIGNED {
+          x
+          cai
+          eca
+          nai
+          nao
+          ena
+          Ki
+        }
+        INITIAL {
+            x = cai
+            cai = 42.0
+            x = nao
+            Ki = 42.0
+        }
+        BREAKPOINT {
+            eca = 42.0
+            x = ena
+            eK = 42.0
+        }
+    )";
+
+    auto info = make_codegen_info(input_nmodl);
+
+    for (const auto& ion: info.ions) {
+        if (ion.name == "ca") {
+            REQUIRE(ion.is_conc_read());
+            REQUIRE(ion.is_interior_conc_read());
+            REQUIRE(!ion.is_exterior_conc_read());
+            REQUIRE(!ion.is_rev_read());
+
+            REQUIRE(ion.is_conc_written());
+            REQUIRE(ion.is_interior_conc_written());
+            REQUIRE(!ion.is_exterior_conc_written());
+            REQUIRE(ion.is_rev_written());
+        }
+        if (ion.name == "na") {
+            REQUIRE(!ion.is_conc_read());
+            REQUIRE(!ion.is_interior_conc_read());
+            REQUIRE(!ion.is_exterior_conc_read());
+            REQUIRE(!ion.is_rev_read());
+
+            REQUIRE(ion.is_conc_written());
+            REQUIRE(!ion.is_interior_conc_written());
+            REQUIRE(ion.is_exterior_conc_written());
+            REQUIRE(ion.is_rev_written());
+        }
+        if (ion.name == "K") {
+            REQUIRE(ion.is_conc_read());
+            REQUIRE(ion.is_interior_conc_read());
+            REQUIRE(!ion.is_exterior_conc_read());
+            REQUIRE(ion.is_rev_read());
+
+            REQUIRE(!ion.is_conc_written());
+            REQUIRE(!ion.is_interior_conc_written());
+            REQUIRE(!ion.is_exterior_conc_written());
+            REQUIRE(!ion.is_rev_written());
         }
     }
 }

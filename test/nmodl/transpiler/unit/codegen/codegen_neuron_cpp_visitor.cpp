@@ -90,3 +90,122 @@ SCENARIO("Check whether PROCEDURE and FUNCTION need setdata call", "[codegen][ne
         }
     }
 }
+
+std::string create_mod_file_write(const std::string& var) {
+    std::string pattern = R"(
+        NEURON {{
+            SUFFIX test
+            USEION ca WRITE {0}
+        }}
+        ASSIGNED {{
+          {0}
+        }}
+        INITIAL {{
+            {0} = 124.5
+        }}
+    )";
+
+    return fmt::format(pattern, var);
+}
+
+std::string create_mod_file_read(const std::string& var) {
+    std::string pattern = R"(
+        NEURON {{
+            SUFFIX test
+            USEION ca READ {0}
+            RANGE x
+        }}
+        ASSIGNED {{
+          x
+          {0}
+        }}
+        INITIAL {{
+            x = {0}
+        }}
+    )";
+
+    return fmt::format(pattern, var);
+}
+
+std::string transpile(const std::string& nmodl) {
+    const auto& ast = NmodlDriver().parse_string(nmodl);
+    std::stringstream ss;
+    auto cvisitor = create_neuron_cpp_visitor(ast, nmodl, ss);
+    cvisitor->visit_program(*ast);
+
+    return ss.str();
+}
+
+SCENARIO("Write `cao`.", "[codegen]") {
+    GIVEN("mod file that writes to `cao`") {
+        std::string cpp = transpile(create_mod_file_write("cao"));
+
+        THEN("it contains") {
+            REQUIRE_THAT(cpp, ContainsSubstring("nrn_check_conc_write(_prop, ca_prop, 0);"));
+            REQUIRE_THAT(cpp, !ContainsSubstring("nrn_check_conc_write(_prop, ca_prop, 1);"));
+            REQUIRE_THAT(cpp, ContainsSubstring("nrn_promote(ca_prop, 3, 0);"));
+            REQUIRE_THAT(cpp, ContainsSubstring("nrn_wrote_conc("));
+        }
+    }
+}
+
+SCENARIO("Write `cai`.", "[codegen]") {
+    GIVEN("mod file that writes to `cai`") {
+        std::string cpp = transpile(create_mod_file_write("cai"));
+
+        THEN("it contains") {
+            REQUIRE_THAT(cpp, !ContainsSubstring("nrn_check_conc_write(_prop, ca_prop, 0);"));
+            REQUIRE_THAT(cpp, ContainsSubstring("nrn_check_conc_write(_prop, ca_prop, 1);"));
+            REQUIRE_THAT(cpp, ContainsSubstring("nrn_promote(ca_prop, 3, 0);"));
+            REQUIRE_THAT(cpp, ContainsSubstring("nrn_wrote_conc("));
+        }
+    }
+}
+
+SCENARIO("Write `eca`.", "[codegen]") {
+    GIVEN("mod file that writes to `eca`") {
+        std::string cpp = transpile(create_mod_file_write("eca"));
+
+        THEN("it contains") {
+            REQUIRE_THAT(cpp, !ContainsSubstring("nrn_check_conc_write(_prop,"));
+            REQUIRE_THAT(cpp, ContainsSubstring("nrn_promote(ca_prop, 0, 3);"));
+            REQUIRE_THAT(cpp, !ContainsSubstring("nrn_wrote_conc("));
+        }
+    }
+}
+
+SCENARIO("Read `cao`.", "[codegen]") {
+    GIVEN("mod file that reads to `cao`") {
+        std::string cpp = transpile(create_mod_file_read("cao"));
+
+        THEN("it contains") {
+            REQUIRE_THAT(cpp, !ContainsSubstring("nrn_check_conc_write(_prop,"));
+            REQUIRE_THAT(cpp, ContainsSubstring("nrn_promote(ca_prop, 1, 0);"));
+            REQUIRE_THAT(cpp, !ContainsSubstring("nrn_wrote_conc("));
+        }
+    }
+}
+
+SCENARIO("Read `cai`.", "[codegen]") {
+    GIVEN("mod file that reads to `cai`") {
+        std::string cpp = transpile(create_mod_file_read("cai"));
+
+        THEN("it contains") {
+            REQUIRE_THAT(cpp, !ContainsSubstring("nrn_check_conc_write(_prop,"));
+            REQUIRE_THAT(cpp, ContainsSubstring("nrn_promote(ca_prop, 1, 0);"));
+            REQUIRE_THAT(cpp, !ContainsSubstring("nrn_wrote_conc("));
+        }
+    }
+}
+
+SCENARIO("Read `eca`.", "[codegen]") {
+    GIVEN("mod file that reads to `eca`") {
+        std::string cpp = transpile(create_mod_file_read("eca"));
+
+        THEN("it contains") {
+            REQUIRE_THAT(cpp, !ContainsSubstring("nrn_check_conc_write(_prop,"));
+            REQUIRE_THAT(cpp, ContainsSubstring("nrn_promote(ca_prop, 0, 1);"));
+            REQUIRE_THAT(cpp, !ContainsSubstring("nrn_wrote_conc("));
+        }
+    }
+}

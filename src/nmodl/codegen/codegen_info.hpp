@@ -19,6 +19,7 @@
 #include <utility>
 
 #include "ast/ast.hpp"
+#include "codegen/codegen_naming.hpp"
 #include "symtab/symbol_table.hpp"
 
 
@@ -68,6 +69,48 @@ struct Ion {
     explicit Ion(std::string name)
         : name(std::move(name)) {}
 
+    bool is_read(const std::string& name) const {
+        return std::find(reads.cbegin(), reads.cend(), name) != reads.cend() ||
+               std::find(implicit_reads.cbegin(), implicit_reads.cend(), name) !=
+                   implicit_reads.cend();
+    }
+
+    bool is_conc_read() const {
+        return is_interior_conc_read() || is_exterior_conc_read();
+    }
+
+    bool is_interior_conc_read() const {
+        return is_read(fmt::format("{}i", name));
+    }
+
+    bool is_exterior_conc_read() const {
+        return is_read(fmt::format("{}o", name));
+    }
+
+    bool is_written(const std::string& name) const {
+        return std::find(writes.cbegin(), writes.cend(), name) != writes.cend();
+    }
+
+    bool is_conc_written() const {
+        return is_interior_conc_written() || is_exterior_conc_written();
+    }
+
+    bool is_interior_conc_written() const {
+        return is_written(fmt::format("{}i", name));
+    }
+
+    bool is_exterior_conc_written() const {
+        return is_written(fmt::format("{}o", name));
+    }
+
+    bool is_rev_read() const {
+        return is_read(fmt::format("e{}", name));
+    }
+
+    bool is_rev_written() const {
+        return is_written(fmt::format("e{}", name));
+    }
+
     /**
      * Check if variable name is a ionic current
      *
@@ -76,7 +119,7 @@ struct Ion {
      * If it is write variables then also get NRNCUROUT flag.
      */
     bool is_ionic_current(const std::string& text) const {
-        return text == ("i" + name);
+        return text == ionic_current_name();
     }
 
     /**
@@ -85,7 +128,7 @@ struct Ion {
      * This is equivalent of IONIN flag in mod2c.
      */
     bool is_intra_cell_conc(const std::string& text) const {
-        return text == (name + "i");
+        return text == intra_conc_name();
     }
 
     /**
@@ -94,16 +137,17 @@ struct Ion {
      * This is equivalent of IONOUT flag in mod2c.
      */
     bool is_extra_cell_conc(const std::string& text) const {
-        return text == (name + "o");
+        return text == extra_conc_name();
     }
 
     /**
      * Check if variable name is reveral potential
      *
-     * This is equivalent of IONEREV flag in mod2c.
+     * Matches `ena` and `na_erev`.
      */
     bool is_rev_potential(const std::string& text) const {
-        return text == ("e" + name);
+        return text == rev_potential_name() ||
+               stringutils::ends_with(rev_potential_pointer_name(), text);
     }
 
     /// check if it is either internal or external concentration
@@ -119,15 +163,66 @@ struct Ion {
         return is_ionic_conc(text) || is_ionic_current(text) || is_rev_potential(text);
     }
 
+    /// Is the variable name `text` the style of this ion?
+    ///
+    /// Example: For sodium this is true for `"style_na"`.
+    bool is_style(const std::string& text) const {
+        return text == fmt::format("style_{}", name);
+    }
+
     bool is_current_derivative(const std::string& text) const {
         return text == ("di" + name + "dv");
     }
 
+    std::string intra_conc_name() const {
+        return name + "i";
+    }
+
+    std::string intra_conc_pointer_name() const {
+        return naming::ION_VARNAME_PREFIX + intra_conc_name();
+    }
+
+    std::string extra_conc_name() const {
+        return name + "o";
+    }
+
+    std::string extra_conc_pointer_name() const {
+        return naming::ION_VARNAME_PREFIX + extra_conc_name();
+    }
+
+    std::string rev_potential_name() const {
+        return "e" + name;
+    }
+
+    std::string rev_potential_pointer_name() const {
+        return naming::ION_VARNAME_PREFIX + name + "_erev";
+    }
+
+    std::string ionic_current_name() const {
+        return "i" + name;
+    }
+
+    std::string ionic_current_pointer_name() const {
+        return naming::ION_VARNAME_PREFIX + ionic_current_name();
+    }
+
+    std::string current_derivative_name() const {
+        return "di" + name + "dv";
+    }
+
+    std::string current_derivative_pointer_name() const {
+        return naming::ION_VARNAME_PREFIX + current_derivative_name();
+    }
+
     /// for a given ion, return different variable names/properties
-    /// like internal/external concentration, reversial potential,
+    /// like internal/external concentration, reversal potential,
     /// ionic current etc.
     static std::vector<std::string> get_possible_variables(const std::string& ion_name) {
-        return {"i" + ion_name, ion_name + "i", ion_name + "o", "e" + ion_name};
+        auto ion = Ion(ion_name);
+        return {ion.ionic_current_name(),
+                ion.intra_conc_name(),
+                ion.extra_conc_name(),
+                ion.rev_potential_name()};
     }
 
     /// Variable index in the ion mechanism.

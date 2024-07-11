@@ -1018,14 +1018,14 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
 
     /**
      * Generate Function call statement for nrn_wrote_conc
-     * \param ion_name      The name of the ion variable
+     * \param statements    Statements are appended to this vector.
+     * \param ion           The ion variable.
      * \param concentration The name of the concentration variable
-     * \param index
      * \return              The string representing the function call
      */
-    virtual std::string conc_write_statement(const std::string& ion_name,
-                                             const std::string& concentration,
-                                             int index) = 0;
+    virtual void append_conc_write_statements(std::vector<ShadowUseStatement>& statements,
+                                              const Ion& ion,
+                                              const std::string& concentration) = 0;
 
     /****************************************************************************************/
     /*                  Code-specific printing routines for code generations                */
@@ -1140,6 +1140,8 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      */
     static std::pair<std::string, std::string> write_ion_variable_name(const std::string& name);
 
+
+    int get_int_variable_index(const std::string& var_name);
 
     /****************************************************************************************/
     /*                      Main printing routines for code generation                      */

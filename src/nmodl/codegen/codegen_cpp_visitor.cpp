@@ -291,7 +291,6 @@ std::vector<ShadowUseStatement> CodegenCppVisitor::ion_write_statements(BlockTyp
     std::vector<ShadowUseStatement> statements;
     for (const auto& ion: info.ions) {
         std::string concentration;
-        auto name = ion.name;
         for (const auto& var: ion.writes) {
             auto variable_names = write_ion_variable_name(var);
             if (ion.is_ionic_current(var)) {
@@ -318,22 +317,7 @@ std::vector<ShadowUseStatement> CodegenCppVisitor::ion_write_statements(BlockTyp
         }
 
         if (type == BlockType::Initial && !concentration.empty()) {
-            int index = 0;
-            if (ion.is_intra_cell_conc(concentration)) {
-                index = 1;
-            } else if (ion.is_extra_cell_conc(concentration)) {
-                index = 2;
-            } else {
-                /// \todo Unhandled case in neuron implementation
-                throw std::logic_error(fmt::format("codegen error for {} ion", ion.name));
-            }
-            auto ion_type_name = fmt::format("{}_type", ion.name);
-            auto lhs = fmt::format("int {}", ion_type_name);
-            auto op = "=";
-            auto rhs = get_variable_name(ion_type_name);
-            statements.push_back(ShadowUseStatement{lhs, op, rhs});
-            auto statement = conc_write_statement(ion.name, concentration, index);
-            statements.push_back(ShadowUseStatement{statement, "", ""});
+            append_conc_write_statements(statements, ion, concentration);
         }
     }
     return statements;
@@ -386,7 +370,6 @@ std::string CodegenCppVisitor::breakpoint_current(std::string current) const {
     return current;
 }
 
-
 /****************************************************************************************/
 /*                         Routines for returning variable name                         */
 /****************************************************************************************/
@@ -417,6 +400,21 @@ std::pair<std::string, std::string> CodegenCppVisitor::read_ion_variable_name(
 std::pair<std::string, std::string> CodegenCppVisitor::write_ion_variable_name(
     const std::string& name) {
     return {naming::ION_VARNAME_PREFIX + name, name};
+}
+
+
+int CodegenCppVisitor::get_int_variable_index(const std::string& var_name) {
+    auto it = std::find_if(codegen_int_variables.cbegin(),
+                           codegen_int_variables.cend(),
+                           [&var_name](const auto& int_var) {
+                               return int_var.symbol->get_name() == var_name;
+                           });
+
+    if (it == codegen_int_variables.cend()) {
+        throw std::runtime_error(fmt::format("Unknown int variable: {}", var_name));
+    }
+
+    return static_cast<int>(it - codegen_int_variables.cbegin());
 }
 
 

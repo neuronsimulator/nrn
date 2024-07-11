@@ -466,16 +466,9 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
     std::string register_mechanism_arguments() const override;
 
 
-    /**
-     * Generate Function call statement for nrn_wrote_conc
-     * \param ion_name      The name of the ion variable
-     * \param concentration The name of the concentration variable
-     * \param index
-     * \return              The string representing the function call
-     */
-    std::string conc_write_statement(const std::string& ion_name,
-                                     const std::string& concentration,
-                                     int index) override;
+    void append_conc_write_statements(std::vector<ShadowUseStatement>& statements,
+                                      const Ion& ion,
+                                      const std::string& concentration) override;
 
     /****************************************************************************************/
     /*                  Code-specific printing routines for code generations                */
