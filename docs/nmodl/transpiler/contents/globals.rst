@@ -5,6 +5,7 @@ The following global variables exist:
 
   * ``GLOBAL`` visible from HOC/Python.
   * ``LOCAL`` at file scope, called top-locals.
+  * ``CONSTANT`` not visible from HOC/Python.
 
 GLOBAL variables
 ================
@@ -173,6 +174,21 @@ Collection of slightly surprising behaviour:
 
   * Thread variables effectively can't be use in NET_RECEIVE blocks, because
     the code ``nocmodl`` produces will cause a SEGFAULT.
+
+
+CONSTANT variables
+==================
+
+These are comparatively simple. In NOCMODL they're implemented as non-const
+static doubles. They're not accessible from HOC/Python (which makes them
+simple).
+
+Quirks
+~~~~~~
+
+In certain versions of NOCMODL around `9.0` and before (and NMODL) it's
+possible to change the value of CONSTANT variables. The MOD file will still be
+considered "thread-safe" (even if it might not be).
 
 
 What Does CoreNEURON support?

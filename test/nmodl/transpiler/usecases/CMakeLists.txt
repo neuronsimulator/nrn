@@ -1,5 +1,6 @@
 set(NMODL_USECASE_DIRS
     cnexp
+    constant
     function
     procedure
     global

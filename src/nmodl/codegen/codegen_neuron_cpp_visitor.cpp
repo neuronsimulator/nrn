@@ -980,6 +980,17 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
         codegen_global_variables.push_back(var);
     }
 
+    for (const auto& var: info.constant_variables) {
+        auto const name = var->get_name();
+        auto* const value_ptr = var->get_value().get();
+        double const value{value_ptr ? *value_ptr : 0};
+        printer->fmt_line("{} {}{};",
+                          float_type,
+                          name,
+                          print_initializers ? fmt::format("{{{:g}}}", value) : std::string{});
+        codegen_global_variables.push_back(var);
+    }
+
 
     // for (const auto& f: info.function_tables) {
     if (!info.function_tables.empty()) {
