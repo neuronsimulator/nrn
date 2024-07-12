@@ -2120,7 +2120,7 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
             PyErr_SetString(PyExc_ValueError, "bad value");
             return -1;
         }
-        *d = new_x;
+        d = new_x;
         // only need to do following if nseg > 1, VINDEX, or EXTRACELL
         nrn_rangeconst(sec, sym, neuron::container::data_handle<double>(d), 0);
         return 0;
@@ -2300,7 +2300,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
                 } else {
                     return (PyObject*) opaque_pointer_new();
                 }
-                return nrn_hocobj_handle(d);
+                return nrn_hocobj_handle(neuron::container::data_handle<double>(d));
             }
         } else {
             rv_noexist(sec, n, self->x_, 2);
@@ -2400,7 +2400,7 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
             return -1;
         }
         if (d.holds<double*>()) {
-            *d = new_x;
+            d = new_x;
             if (!PyArg_Parse(value, "d", d.get<double*>())) {
                 PyErr_SetString(PyExc_ValueError, "bad value");
                 return -1;
