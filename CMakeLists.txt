@@ -499,6 +499,12 @@ cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 # Enable CoreNEURON support
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)
+  # =============================================================================
+  # Include cmake modules path
+  # =============================================================================
+  list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/coreneuron
+       ${PROJECT_SOURCE_DIR}/cmake/coreneuron/packages)
+
   set(CORENRN_NMODL_DIR
       ""
       CACHE PATH "Path to nmodl source-to-source compiler installation")
@@ -520,12 +526,6 @@ if(NRN_ENABLE_CORENEURON)
   endif()
 
   message(STATUS "Building CoreNEURON")
-
-  # =============================================================================
-  # Include cmake modules path
-  # =============================================================================
-  list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/coreneuron
-       ${PROJECT_SOURCE_DIR}/cmake/coreneuron/packages)
 
   # If NEURON tests are enabled then enable CoreNEURON tests too
   set(CORENRN_ENABLE_UNIT_TESTS
