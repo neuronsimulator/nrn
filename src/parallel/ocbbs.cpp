@@ -1362,9 +1362,10 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
             hoc_ac_ = 0.;
         } else {
             // printf("%d exec hoc call %s narg=%d\n", nrnmpi_myid_world, fname->name, narg);
-            hoc_ac_ = 0.;
             if (exec) {
                 hoc_ac_ = hoc_call_objfunc(fname, narg, ob);
+            } else {
+                hoc_ac_ = 0.;
             }
             // printf("%d exec return from hoc call %s narg=%d\n", nrnmpi_myid_world, fname->name,
             // narg);
