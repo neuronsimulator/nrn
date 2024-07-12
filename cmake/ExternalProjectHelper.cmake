@@ -23,13 +23,10 @@ endfunction(nrn_submodule_file_not_found)
 
 # initialize submodule with given path
 function(nrn_initialize_submodule path)
-  cmake_parse_arguments(PARSE_ARGV 1 opt "RECURSIVE;SHALLOW" "" "")
+  cmake_parse_arguments(PARSE_ARGV 1 opt "RECURSIVE" "" "")
   set(UPDATE_OPTIONS "")
   if(opt_RECURSIVE)
-    list(APPEND UPDATE_OPTIONS --recursive)
-  endif()
-  if(opt_SHALLOW)
-    list(APPEND UPDATE_OPTIONS --depth 1)
+    string(APPEND UPDATE_OPTIONS "--recursive")
   endif()
   if(NOT ${GIT_FOUND})
     message(
@@ -48,7 +45,7 @@ endfunction()
 
 # check for external project and initialize submodule if it is missing
 function(nrn_add_external_project name)
-  cmake_parse_arguments(PARSE_ARGV 1 opt "RECURSIVE;SHALLOW;DISABLE_ADD" "" "")
+  cmake_parse_arguments(PARSE_ARGV 1 opt "RECURSIVE;DISABLE_ADD" "" "")
   find_path(
     ${name}_PATH
     NAMES CMakeLists.txt
@@ -59,9 +56,6 @@ function(nrn_add_external_project name)
     set(OPTIONS "")
     if(opt_RECURSIVE)
       list(APPEND OPTIONS "RECURSIVE")
-    endif()
-    if(opt_SHALLOW)
-      list(APPEND OPTIONS "SHALLOW")
     endif()
     nrn_initialize_submodule("${THIRD_PARTY_DIRECTORY}/${name}" ${OPTIONS})
   else()
