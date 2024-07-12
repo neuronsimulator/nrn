@@ -3,6 +3,7 @@
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/non_owning_soa_identifier.hpp"
 
+#include <cstddef>
 #include <cstring>
 #include <typeinfo>
 #include <type_traits>
@@ -278,6 +279,23 @@ struct generic_data_handle {
             }
             return *reinterpret_cast<T*>(&m_container);
         }
+    }
+
+    /**
+     * @brief Is the generic data handle a data_handle and invalid?
+     *
+     * If it contains a value (convertible to) a `data_handle<double>`, then
+     * it's valid if and only if it's a valid `data_handle<double>`.
+     *
+     * If it doesn't contain a data handle, return false.
+     */
+    bool is_invalid_handle() const {
+        if (!m_type) {
+            // Empty default initialized.
+            return true;
+        }
+
+        return holds<double*>() ? !bool(data_handle<double>(*this)) : false;
     }
 
   private:

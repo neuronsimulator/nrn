@@ -41,6 +41,7 @@
 #include "nrnste.h"
 #include "profile.h"
 #include "utils/profile/profiler_interface.h"
+#include "utils/formatting.hpp"
 
 #include <array>
 #include <unordered_set>
@@ -914,6 +915,19 @@ static char* escape_bracket(const char* s) {
     return b;
 }
 
+static std::regex get_regex(int id) {
+    std::string s(gargstr(id));
+    if (s.empty()) {
+        return std::regex(".*");
+    } else {
+        try {
+            return std::regex(escape_bracket(s.data()));
+        } catch (std::regex_error&) {
+            hoc_execerror_fmt("Argument {} is not a valid regular expression '{}'.", id, s);
+        }
+    }
+}
+
 Object** NetCvode::netconlist() {
     // interface to cvode.netconlist(precell, postcell, target, [list])
     OcList* o;
@@ -926,44 +940,17 @@ Object** NetCvode::netconlist() {
     if (hoc_is_object_arg(1)) {
         opre = *hoc_objgetarg(1);
     } else {
-        std::string s(gargstr(1));
-        if (s.empty()) {
-            spre = std::regex(".*");
-        } else {
-            try {
-                spre = std::regex(escape_bracket(s.data()));
-            } catch (std::regex_error&) {
-                hoc_execerror(gargstr(1), "not a valid regular expression");
-            }
-        }
+        spre = get_regex(1);
     }
     if (hoc_is_object_arg(2)) {
         opost = *hoc_objgetarg(2);
     } else {
-        std::string s(gargstr(2));
-        if (s.empty()) {
-            spost = std::regex(".*");
-        } else {
-            try {
-                spost = std::regex(escape_bracket(s.data()));
-            } catch (std::regex_error&) {
-                hoc_execerror(gargstr(2), "not a valid regular expression");
-            }
-        }
+        spost = get_regex(2);
     }
     if (hoc_is_object_arg(3)) {
         otar = *hoc_objgetarg(3);
     } else {
-        std::string s(gargstr(3));
-        if (s.empty()) {
-            star = std::regex(".*");
-        } else {
-            try {
-                star = std::regex(escape_bracket(s.data()));
-            } catch (std::regex_error&) {
-                hoc_execerror(gargstr(3), "not a valid regular expression");
-            }
-        }
+        star = get_regex(3);
     }
 
     hoc_Item* q;
