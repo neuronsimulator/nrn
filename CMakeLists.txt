@@ -470,8 +470,8 @@ endif()
 # =============================================================================
 include(NeuronFileLists)
 include(MPIDynamicHelper)
-include(ConfigFileSetting)
 include(PythonDynamicHelper)
+include(ConfigFileSetting)
 
 # Set variable to include mpi headers
 set(NRN_INCLUDE_MPI_HEADERS OFF)
