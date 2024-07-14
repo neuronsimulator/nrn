@@ -2864,9 +2864,10 @@ extern "C" NRN_EXPORT PyObject* get_plotshape_data(PyObject* sp) {
     void* that = pho->ho_->u.this_pointer;
 #if HAVE_IV
     IFGUI
-        spi = ((ShapePlot*) that);
-    } else {
-        spi = ((ShapePlotData*) that);
+    spi = ((ShapePlot*) that);
+}
+else {
+    spi = ((ShapePlotData*) that);
     ENDGUI
 #else
     spi = ((ShapePlotData*) that);
