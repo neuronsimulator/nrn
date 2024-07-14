@@ -146,23 +146,23 @@ static void* scons(Object*) {
 #if HAVE_IV
     SymChooser* sc = NULL;
     if (hoc_usegui) {
-    const char* caption = "Choose a Variable Name or";
-    if (ifarg(1)) {
-        caption = gargstr(1);
-    }
-    Style* style = new Style(Session::instance()->style());
-    style->attribute("caption", caption);
-    if (ifarg(2)) {
-        Symbol* sym = hoc_lookup(gargstr(2));
-        int type = RANGEVAR;
-        if (sym) {
-            type = sym->type;
+        const char* caption = "Choose a Variable Name or";
+        if (ifarg(1)) {
+            caption = gargstr(1);
         }
-        sc = new SymChooser(new SymDirectory(type), WidgetKit::instance(), style, NULL, 1);
-    } else {
-        sc = new SymChooser(NULL, WidgetKit::instance(), style);
-    }
-    Resource::ref(sc);
+        Style* style = new Style(Session::instance()->style());
+        style->attribute("caption", caption);
+        if (ifarg(2)) {
+            Symbol* sym = hoc_lookup(gargstr(2));
+            int type = RANGEVAR;
+            if (sym) {
+                type = sym->type;
+            }
+            sc = new SymChooser(new SymDirectory(type), WidgetKit::instance(), style, NULL, 1);
+        } else {
+            sc = new SymChooser(NULL, WidgetKit::instance(), style);
+        }
+        Resource::ref(sc);
     }
     return (void*) sc;
 #else
@@ -181,14 +181,14 @@ static double srun(void* v) {
 #if HAVE_IV
     bool b = false;
     if (hoc_usegui) {
-    SymChooser* sc = (SymChooser*) v;
-    Display* d = Session::instance()->default_display();
-    Coord x, y;
-    if (nrn_spec_dialog_pos(x, y)) {
-        b = sc->post_at_aligned(x, y, 0.0, 0.0);
-    } else {
-        b = sc->post_at_aligned(d->width() / 2, d->height() / 2, .5, .5);
-    }
+        SymChooser* sc = (SymChooser*) v;
+        Display* d = Session::instance()->default_display();
+        Coord x, y;
+        if (nrn_spec_dialog_pos(x, y)) {
+            b = sc->post_at_aligned(x, y, 0.0, 0.0);
+        } else {
+            b = sc->post_at_aligned(d->width() / 2, d->height() / 2, .5, .5);
+        }
     }
     return double(b);
 #else
@@ -199,8 +199,8 @@ static double text(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SymChooser.text", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    SymChooser* sc = (SymChooser*) v;
-    hoc_assign_str(hoc_pgargstr(1), sc->selected().c_str());
+        SymChooser* sc = (SymChooser*) v;
+        hoc_assign_str(hoc_pgargstr(1), sc->selected().c_str());
     }
     return 0.;
 #else

@@ -350,7 +350,7 @@ void RangeVarPlot::set_color(int new_color) {
     color_ = new_color;
 #if HAVE_IV
     if (hoc_usegui) {
-    color(colors->color(color_));
+        color(colors->color(color_));
     }
 #endif
 }

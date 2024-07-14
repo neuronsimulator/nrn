@@ -15,8 +15,8 @@ static double pp_append(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PPShape.append", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    Object* ob = *hoc_objgetarg(1);
-    ((PPShape*) v)->pp_append(ob);
+        Object* ob = *hoc_objgetarg(1);
+        ((PPShape*) v)->pp_append(ob);
     }
 #endif
     return 1.;
@@ -31,13 +31,13 @@ static void* pp_cons(Object* ho) {
     TRY_GUI_REDIRECT_OBJ("PPShape", NULL);
 #if HAVE_IV
     if (hoc_usegui) {
-    Object* ob = *hoc_objgetarg(1);
-    check_obj_type(ob, "List");
-    PPShape* p = new PPShape((OcList*) ob->u.this_pointer);
-    p->ref();
-    p->view(200);
-    p->hoc_obj_ptr(ho);
-    return (void*) p;
+        Object* ob = *hoc_objgetarg(1);
+        check_obj_type(ob, "List");
+        PPShape* p = new PPShape((OcList*) ob->u.this_pointer);
+        p->ref();
+        p->view(200);
+        p->hoc_obj_ptr(ho);
+        return (void*) p;
     }
 #endif
     return 0;
@@ -47,7 +47,7 @@ static void pp_destruct(void* v) {
     TRY_GUI_REDIRECT_NO_RETURN("~PPShape", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    Resource::unref((PPShape*) v);
+        Resource::unref((PPShape*) v);
     }
 #endif
 }

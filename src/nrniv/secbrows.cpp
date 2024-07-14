@@ -24,8 +24,8 @@ static double sb_select(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SectionBrowser.select", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    Section* sec = chk_access();
-    ((OcSectionBrowser*) v)->select_section(sec);
+        Section* sec = chk_access();
+        ((OcSectionBrowser*) v)->select_section(sec);
     }
 #endif
     return 1.;
@@ -34,15 +34,15 @@ static double sb_select_action(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SectionBrowser.select_action", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    char* str_action = NULL;
-    Object* obj_action = NULL;
-    if (hoc_is_object_arg(1)) {
-        obj_action = *hoc_objgetarg(1);
-    } else {
-        str_action = gargstr(1);
-    }
+        char* str_action = NULL;
+        Object* obj_action = NULL;
+        if (hoc_is_object_arg(1)) {
+            obj_action = *hoc_objgetarg(1);
+        } else {
+            str_action = gargstr(1);
+        }
 
-    ((OcSectionBrowser*) v)->set_select_action(str_action, obj_action);
+        ((OcSectionBrowser*) v)->set_select_action(str_action, obj_action);
     }
 #endif
     return 1.;
@@ -51,15 +51,15 @@ static double sb_accept_action(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SectionBrowser.accept_action", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    char* str_action = NULL;
-    Object* obj_action = NULL;
-    if (hoc_is_object_arg(1)) {
-        obj_action = *hoc_objgetarg(1);
-    } else {
-        str_action = gargstr(1);
-    }
+        char* str_action = NULL;
+        Object* obj_action = NULL;
+        if (hoc_is_object_arg(1)) {
+            obj_action = *hoc_objgetarg(1);
+        } else {
+            str_action = gargstr(1);
+        }
 
-    ((OcSectionBrowser*) v)->set_accept_action(str_action, obj_action);
+        ((OcSectionBrowser*) v)->set_accept_action(str_action, obj_action);
     }
 #endif
     return 1.;
@@ -74,15 +74,15 @@ static void* sb_cons(Object*) {
 #if HAVE_IV
     OcSectionBrowser* b = NULL;
     if (hoc_usegui) {
-    if (ifarg(1)) {
-        ob = *hoc_objgetarg(1);
-        b = new OcSectionBrowser(ob);
-    } else {
-        b = new OcSectionBrowser(NULL);
-    }
-    b->ref();
-    Window* w = new StandardWindow(b->standard_glyph());
-    w->map();
+        if (ifarg(1)) {
+            ob = *hoc_objgetarg(1);
+            b = new OcSectionBrowser(ob);
+        } else {
+            b = new OcSectionBrowser(NULL);
+        }
+        b->ref();
+        Window* w = new StandardWindow(b->standard_glyph());
+        w->map();
     }
     return (void*) b;
 #else

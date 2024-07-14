@@ -73,8 +73,8 @@ static void* cons(Object*) {
 #if HAVE_IV
     OcDeck* b = NULL;
     if (hoc_usegui) {
-    b = new OcDeck();
-    b->ref();
+        b = new OcDeck();
+        b->ref();
     }
     return (void*) b;
 #else
@@ -86,11 +86,11 @@ static void destruct(void* v) {
     TRY_GUI_REDIRECT_NO_RETURN("~Deck", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    OcDeck* b = (OcDeck*) v;
-    if (b->has_window()) {
-        b->window()->dismiss();
-    }
-    b->unref();
+        OcDeck* b = (OcDeck*) v;
+        if (b->has_window()) {
+            b->window()->dismiss();
+        }
+        b->unref();
     }
 #endif /* HAVE_IV  */
 }
@@ -99,7 +99,8 @@ static double intercept(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Deck.intercept", v);
 #if HAVE_IV
     bool b = int(chkarg(1, 0., 1.));
-    if (hoc_usegui) {((OcDeck*) v)->intercept(b);
+    if (hoc_usegui) {
+        ((OcDeck*) v)->intercept(b);
     }
     return double(b);
 #else
@@ -111,21 +112,21 @@ static double map(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Deck.map", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    OcDeck* b = (OcDeck*) v;
-    PrintableWindow* w;
-    if (ifarg(3)) {
-        w = b->make_window(float(*getarg(2)),
-                           float(*getarg(3)),
-                           float(*getarg(4)),
-                           float(*getarg(5)));
-    } else {
-        w = b->make_window();
-    }
-    if (ifarg(1)) {
-        char* name = gargstr(1);
-        w->name(name);
-    }
-    w->map();
+        OcDeck* b = (OcDeck*) v;
+        PrintableWindow* w;
+        if (ifarg(3)) {
+            w = b->make_window(float(*getarg(2)),
+                               float(*getarg(3)),
+                               float(*getarg(4)),
+                               float(*getarg(5)));
+        } else {
+            w = b->make_window();
+        }
+        if (ifarg(1)) {
+            char* name = gargstr(1);
+            w->name(name);
+        }
+        w->map();
     }
     return 1.;
 #else
@@ -137,10 +138,10 @@ static double unmap(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Deck.unmap", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    OcDeck* b = (OcDeck*) v;
-    if (b->has_window()) {
-        b->window()->dismiss();
-    }
+        OcDeck* b = (OcDeck*) v;
+        if (b->has_window()) {
+            b->window()->dismiss();
+        }
     }
     return 0.;
 #else
@@ -152,7 +153,7 @@ static double save(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Deck.save", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    OcDeck* b = (OcDeck*) v;
+        OcDeck* b = (OcDeck*) v;
 #if 0
 	int i;
 	Object* o[4];
@@ -165,7 +166,7 @@ static double save(void* v) {
 	}
 	b->save_action(gargstr(1), o[0]);
 #else
-    b->save_action(gargstr(1), 0);
+        b->save_action(gargstr(1), 0);
 #endif
     }
     return 1.;
@@ -179,9 +180,9 @@ static double flip_to(void* v) {
 #if HAVE_IV
     int i = -1;
     if (hoc_usegui) {
-    OcDeck* b = (OcDeck*) v;
-    i = int(chkarg(1, -1, b->count() - 1));
-    b->flip_to(i);
+        OcDeck* b = (OcDeck*) v;
+        i = int(chkarg(1, -1, b->count() - 1));
+        b->flip_to(i);
     }
     return double(i);
 #else
@@ -192,7 +193,8 @@ static double flip_to(void* v) {
 static double remove_last(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Deck.remove_last", v);
 #if HAVE_IV
-    if (hoc_usegui) {((OcDeck*) v)->remove_last();
+    if (hoc_usegui) {
+        ((OcDeck*) v)->remove_last();
     }
     return 0.;
 #else
@@ -204,8 +206,8 @@ static double remove(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Deck.remove", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    OcDeck* b = (OcDeck*) v;
-    b->remove((int) chkarg(1, 0, b->count() - 1));
+        OcDeck* b = (OcDeck*) v;
+        b->remove((int) chkarg(1, 0, b->count() - 1));
     }
     return 0.;
 #else
@@ -217,8 +219,8 @@ static double move_last(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Deck.move_last", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    OcDeck* b = (OcDeck*) v;
-    b->move_last((int) chkarg(1, 0, b->count() - 1));
+        OcDeck* b = (OcDeck*) v;
+        b->move_last((int) chkarg(1, 0, b->count() - 1));
     }
     return 0.;
 #else

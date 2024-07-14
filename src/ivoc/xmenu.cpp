@@ -167,26 +167,26 @@ void hoc_notify_value() {
 void hoc_xpanel() {
     TRY_GUI_REDIRECT_DOUBLE("xpanel", NULL);
     if (hoc_usegui) {
-    if (ifarg(1) && hoc_is_str_arg(1)) {  // begin spec
-        bool h = false;
-        if (ifarg(2)) {
-            h = (int) chkarg(2, 0, 1) ? true : false;
-        }
-        hoc_ivpanel(gargstr(1), h);
-    } else {              // map
-        int scroll = -1;  // leave up to panel_scroll attribute
-        if (ifarg(2)) {
-            if (ifarg(3)) {
-                scroll = (int) chkarg(3, -1, 1);
+        if (ifarg(1) && hoc_is_str_arg(1)) {  // begin spec
+            bool h = false;
+            if (ifarg(2)) {
+                h = (int) chkarg(2, 0, 1) ? true : false;
             }
-            hoc_ivpanelPlace((Coord) *getarg(1), (Coord) *getarg(2), scroll);
-        } else {
-            if (ifarg(1)) {
-                scroll = (int) chkarg(1, -1, 1);
+            hoc_ivpanel(gargstr(1), h);
+        } else {              // map
+            int scroll = -1;  // leave up to panel_scroll attribute
+            if (ifarg(2)) {
+                if (ifarg(3)) {
+                    scroll = (int) chkarg(3, -1, 1);
+                }
+                hoc_ivpanelPlace((Coord) *getarg(1), (Coord) *getarg(2), scroll);
+            } else {
+                if (ifarg(1)) {
+                    scroll = (int) chkarg(1, -1, 1);
+                }
+                hoc_ivpanelmap(scroll);
             }
-            hoc_ivpanelmap(scroll);
         }
-    }
     }
 
     hoc_ret();
@@ -196,31 +196,31 @@ void hoc_xpanel() {
 void hoc_xmenu() {
     TRY_GUI_REDIRECT_DOUBLE("xmenu", NULL);
     if (hoc_usegui) {
-    bool add2menubar = false;
-    char* mk = NULL;
-    Object* pyact = NULL;
-    int i = 2;
-    if (ifarg(i)) {
-        if (hoc_is_str_arg(i)) {
-            mk = gargstr(i);
-            ++i;
-        } else if (hoc_is_object_arg(i)) {
-            pyact = *hoc_objgetarg(i);
-            ++i;
-        }
+        bool add2menubar = false;
+        char* mk = NULL;
+        Object* pyact = NULL;
+        int i = 2;
         if (ifarg(i)) {
-            add2menubar = int(chkarg(i, 0, 1));
+            if (hoc_is_str_arg(i)) {
+                mk = gargstr(i);
+                ++i;
+            } else if (hoc_is_object_arg(i)) {
+                pyact = *hoc_objgetarg(i);
+                ++i;
+            }
+            if (ifarg(i)) {
+                add2menubar = int(chkarg(i, 0, 1));
+            }
         }
-    }
-    if (ifarg(1)) {
-        if (mk || pyact) {
-            hoc_ivvarmenu(gargstr(1), mk, add2menubar, pyact);
+        if (ifarg(1)) {
+            if (mk || pyact) {
+                hoc_ivvarmenu(gargstr(1), mk, add2menubar, pyact);
+            } else {
+                hoc_ivmenu(gargstr(1), add2menubar);
+            }
         } else {
-            hoc_ivmenu(gargstr(1), add2menubar);
+            hoc_ivmenu((char*) 0);
         }
-    } else {
-        hoc_ivmenu((char*) 0);
-    }
     }
     hoc_ret();
     hoc_pushx(0.);
@@ -230,17 +230,17 @@ void hoc_xbutton() {
     TRY_GUI_REDIRECT_DOUBLE("xbutton", NULL);
 
     if (hoc_usegui) {
-    char* s1;
-    s1 = gargstr(1);
-    if (ifarg(2)) {
-        if (hoc_is_object_arg(2)) {
-            hoc_ivbutton(s1, NULL, *hoc_objgetarg(2));
+        char* s1;
+        s1 = gargstr(1);
+        if (ifarg(2)) {
+            if (hoc_is_object_arg(2)) {
+                hoc_ivbutton(s1, NULL, *hoc_objgetarg(2));
+            } else {
+                hoc_ivbutton(s1, gargstr(2));
+            }
         } else {
-            hoc_ivbutton(s1, gargstr(2));
+            hoc_ivbutton(s1, s1);
         }
-    } else {
-        hoc_ivbutton(s1, s1);
-    }
     }
     hoc_ret();
     hoc_pushx(0.);
@@ -255,24 +255,24 @@ xstatebutton("prompt",&var [,"action"])
 void hoc_xstatebutton() {
     TRY_GUI_REDIRECT_DOUBLE("xstatebutton", NULL);
     if (hoc_usegui) {
-    char *s1, *s2 = (char*) 0;
+        char *s1, *s2 = (char*) 0;
 
-    s1 = gargstr(1);
+        s1 = gargstr(1);
 
-    if (hoc_is_object_arg(2)) {
-        neuron::container::data_handle<double> ptr1{};
-        hoc_ivstatebutton(ptr1,
-                          s1,
-                          NULL,
-                          HocStateButton::PALETTE,
-                          *hoc_objgetarg(2),
-                          ifarg(3) ? *hoc_objgetarg(3) : NULL);
-    } else {
-        if (ifarg(3)) {
-            s2 = gargstr(3);
+        if (hoc_is_object_arg(2)) {
+            neuron::container::data_handle<double> ptr1{};
+            hoc_ivstatebutton(ptr1,
+                              s1,
+                              NULL,
+                              HocStateButton::PALETTE,
+                              *hoc_objgetarg(2),
+                              ifarg(3) ? *hoc_objgetarg(3) : NULL);
+        } else {
+            if (ifarg(3)) {
+                s2 = gargstr(3);
+            }
+            hoc_ivstatebutton(hoc_hgetarg<double>(2), s1, s2, HocStateButton::PALETTE);
         }
-        hoc_ivstatebutton(hoc_hgetarg<double>(2), s1, s2, HocStateButton::PALETTE);
-    }
     }
     hoc_ret();
     hoc_pushx(0.);
@@ -288,25 +288,24 @@ xcheckbox("prompt",&var [,"action"])
 void hoc_xcheckbox() {
     TRY_GUI_REDIRECT_DOUBLE("xcheckbox", NULL);
     if (hoc_usegui) {
+        char *s1, *s2 = (char*) 0;
 
-    char *s1, *s2 = (char*) 0;
+        s1 = gargstr(1);
 
-    s1 = gargstr(1);
-
-    if (hoc_is_object_arg(2)) {
-        neuron::container::data_handle<double> ptr1{};
-        hoc_ivstatebutton(ptr1,
-                          s1,
-                          NULL,
-                          HocStateButton::CHECKBOX,
-                          *hoc_objgetarg(2),
-                          ifarg(3) ? *hoc_objgetarg(3) : 0);
-    } else {
-        if (ifarg(3)) {
-            s2 = gargstr(3);
+        if (hoc_is_object_arg(2)) {
+            neuron::container::data_handle<double> ptr1{};
+            hoc_ivstatebutton(ptr1,
+                              s1,
+                              NULL,
+                              HocStateButton::CHECKBOX,
+                              *hoc_objgetarg(2),
+                              ifarg(3) ? *hoc_objgetarg(3) : 0);
+        } else {
+            if (ifarg(3)) {
+                s2 = gargstr(3);
+            }
+            hoc_ivstatebutton(hoc_hgetarg<double>(2), s1, s2, HocStateButton::CHECKBOX);
         }
-        hoc_ivstatebutton(hoc_hgetarg<double>(2), s1, s2, HocStateButton::CHECKBOX);
-    }
     }
     hoc_ret();
     hoc_pushx(0.);
@@ -316,27 +315,27 @@ void hoc_xradiobutton() {
     TRY_GUI_REDIRECT_DOUBLE("xradiobutton", NULL);
 
     if (hoc_usegui) {
-    char *s1, *s2 = (char*) 0;
-    Object* po = NULL;
-    bool activate = false;
-    s1 = gargstr(1);
-    if (ifarg(2)) {
-        if (hoc_is_object_arg(2)) {
-            po = *hoc_objgetarg(2);
+        char *s1, *s2 = (char*) 0;
+        Object* po = NULL;
+        bool activate = false;
+        s1 = gargstr(1);
+        if (ifarg(2)) {
+            if (hoc_is_object_arg(2)) {
+                po = *hoc_objgetarg(2);
+            } else {
+                s2 = gargstr(2);
+            }
+            if (ifarg(3)) {
+                activate = (chkarg(3, 0, 1) != 0.);
+            }
         } else {
-            s2 = gargstr(2);
+            s2 = s1;
         }
-        if (ifarg(3)) {
-            activate = (chkarg(3, 0, 1) != 0.);
+        if (po) {
+            hoc_ivradiobutton(s1, NULL, activate, po);
+        } else {
+            hoc_ivradiobutton(s1, s2, activate);
         }
-    } else {
-        s2 = s1;
-    }
-    if (po) {
-        hoc_ivradiobutton(s1, NULL, activate, po);
-    } else {
-        hoc_ivradiobutton(s1, s2, activate);
-    }
     }
     hoc_ret();
     hoc_pushx(0.);
@@ -344,53 +343,51 @@ void hoc_xradiobutton() {
 
 static void hoc_xvalue_helper() {
     if (hoc_usegui) {  // prompt, variable, deflt,action,canrun,usepointer
-        char *s1,
-        *s2, *s3;
-    // allow variable arg2 to be data_handle
-    neuron::container::data_handle<double> ptr2{};
-    Object* pyvar = NULL;
-    Object* pyact = NULL;
-    s2 = s3 = NULL;
-    s1 = gargstr(1);
-    if (ifarg(2)) {
-        if (hoc_is_object_arg(2)) {
-            pyvar = *hoc_objgetarg(2);
-        } else if (hoc_is_pdouble_arg(2)) {
-            ptr2 = hoc_hgetarg<double>(2);
-        } else {
-            s2 = gargstr(2);
-        }
-    } else {
-        s2 = s1;
-    }
-    bool deflt = false;
-    if (ifarg(3) && *getarg(3)) {
-        if (*getarg(3) == 2.) {
-            if (pyvar) {
-                hoc_ivvalue_keep_updated(s1, NULL, pyvar);
+        char *s1, *s2, *s3;
+        // allow variable arg2 to be data_handle
+        neuron::container::data_handle<double> ptr2{};
+        Object* pyvar = NULL;
+        Object* pyact = NULL;
+        s2 = s3 = NULL;
+        s1 = gargstr(1);
+        if (ifarg(2)) {
+            if (hoc_is_object_arg(2)) {
+                pyvar = *hoc_objgetarg(2);
+            } else if (hoc_is_pdouble_arg(2)) {
+                ptr2 = hoc_hgetarg<double>(2);
             } else {
-                hoc_ivvalue_keep_updated(s1, s2);
+                s2 = gargstr(2);
             }
-            return;
-        }
-        deflt = true;
-    }
-    bool canRun = false, usepointer = false;
-    if (ifarg(4)) {
-        if (hoc_is_object_arg(4)) {
-            pyact = *hoc_objgetarg(4);
         } else {
-            s3 = gargstr(4);
+            s2 = s1;
         }
-        if (ifarg(5) && *getarg(5)) {
-            canRun = true;
+        bool deflt = false;
+        if (ifarg(3) && *getarg(3)) {
+            if (*getarg(3) == 2.) {
+                if (pyvar) {
+                    hoc_ivvalue_keep_updated(s1, NULL, pyvar);
+                } else {
+                    hoc_ivvalue_keep_updated(s1, s2);
+                }
+                return;
+            }
+            deflt = true;
         }
-        if (ifarg(6) && *getarg(6)) {
-            usepointer = true;
+        bool canRun = false, usepointer = false;
+        if (ifarg(4)) {
+            if (hoc_is_object_arg(4)) {
+                pyact = *hoc_objgetarg(4);
+            } else {
+                s3 = gargstr(4);
+            }
+            if (ifarg(5) && *getarg(5)) {
+                canRun = true;
+            }
+            if (ifarg(6) && *getarg(6)) {
+                usepointer = true;
+            }
         }
-    }
-    hoc_ivvaluerun_ex(s1, s2, ptr2, pyvar, s3, pyact, deflt, canRun, usepointer);
-
+        hoc_ivvaluerun_ex(s1, s2, ptr2, pyvar, s3, pyact, deflt, canRun, usepointer);
     }
 }
 
@@ -398,24 +395,22 @@ void hoc_xfixedvalue() {
     TRY_GUI_REDIRECT_DOUBLE("xfixedvalue", NULL);
 
     if (hoc_usegui) {  // prompt, variable, deflt,action,canrun,usepointer
-        char *s1,
-        *s2;
-    s1 = gargstr(1);
-    if (ifarg(2)) {
-        s2 = gargstr(2);
-    } else {
-        s2 = s1;
-    }
-    bool deflt = false;
-    if (ifarg(3) && *getarg(3)) {
-        deflt = true;
-    }
-    bool usepointer = false;
-    if (ifarg(4) && *getarg(4)) {
-        usepointer = true;
-    }
-    hoc_ivfixedvalue(s1, s2, deflt, usepointer);
-
+        char *s1, *s2;
+        s1 = gargstr(1);
+        if (ifarg(2)) {
+            s2 = gargstr(2);
+        } else {
+            s2 = s1;
+        }
+        bool deflt = false;
+        if (ifarg(3) && *getarg(3)) {
+            deflt = true;
+        }
+        bool usepointer = false;
+        if (ifarg(4) && *getarg(4)) {
+            usepointer = true;
+        }
+        hoc_ivfixedvalue(s1, s2, deflt, usepointer);
     }
     hoc_ret();
     hoc_pushx(0.);
@@ -423,36 +418,35 @@ void hoc_xfixedvalue() {
 
 static void hoc_xpvalue_helper() {
     if (hoc_usegui) {  // prompt,variable,deflt,action,canrun
-        char *s1,
-        *s3;
-    neuron::container::data_handle<double> pd{};
-    HocSymExtension* extra = NULL;
-    Symbol* sym;
-    s1 = gargstr(1);
-    if (ifarg(2)) {
-        pd = hoc_hgetarg<double>(2);
-        sym = hoc_get_last_pointer_symbol();
-    } else {
-        pd = hoc_val_handle(s1);
-        sym = hoc_get_symbol(s1);
-    }
-    if (sym) {
-        extra = sym->extra;
-    }
-    bool deflt = false;
-    if (ifarg(3) && *getarg(3)) {
-        deflt = true;
-    }
-    if (ifarg(4)) {
-        s3 = gargstr(4);
-        bool canRun = false;
-        if (ifarg(5) && *getarg(5)) {
-            canRun = true;
+        char *s1, *s3;
+        neuron::container::data_handle<double> pd{};
+        HocSymExtension* extra = NULL;
+        Symbol* sym;
+        s1 = gargstr(1);
+        if (ifarg(2)) {
+            pd = hoc_hgetarg<double>(2);
+            sym = hoc_get_last_pointer_symbol();
+        } else {
+            pd = hoc_val_handle(s1);
+            sym = hoc_get_symbol(s1);
         }
-        hoc_ivpvaluerun(s1, pd, s3, deflt, canRun, extra);
-    } else {
-        hoc_ivpvalue(s1, pd, deflt, extra);
-    }
+        if (sym) {
+            extra = sym->extra;
+        }
+        bool deflt = false;
+        if (ifarg(3) && *getarg(3)) {
+            deflt = true;
+        }
+        if (ifarg(4)) {
+            s3 = gargstr(4);
+            bool canRun = false;
+            if (ifarg(5) && *getarg(5)) {
+                canRun = true;
+            }
+            hoc_ivpvaluerun(s1, pd, s3, deflt, canRun, extra);
+        } else {
+            hoc_ivpvalue(s1, pd, deflt, extra);
+        }
     }
 }
 
@@ -474,9 +468,9 @@ void hoc_xpvalue() {
 void hoc_xlabel() {
     TRY_GUI_REDIRECT_DOUBLE("xlabel", NULL);
     if (hoc_usegui) {
-    char* s1;
-    s1 = gargstr(1);
-    hoc_ivlabel(s1);
+        char* s1;
+        s1 = gargstr(1);
+        hoc_ivlabel(s1);
     }
     hoc_ret();
     hoc_pushx(0.);
@@ -485,11 +479,11 @@ void hoc_xlabel() {
 void hoc_xvarlabel() {
     TRY_GUI_REDIRECT_DOUBLE_SEND_STRREF("xvarlabel", NULL);
     if (hoc_usegui) {
-    if (hoc_is_object_arg(1)) {
-        hoc_ivvarlabel(NULL, *hoc_objgetarg(1));
-    } else {
-        hoc_ivvarlabel(hoc_pgargstr(1));
-    }
+        if (hoc_is_object_arg(1)) {
+            hoc_ivvarlabel(NULL, *hoc_objgetarg(1));
+        } else {
+            hoc_ivvarlabel(hoc_pgargstr(1));
+        }
     }
     hoc_ret();
     hoc_pushx(0.);
@@ -499,42 +493,42 @@ void hoc_xvarlabel() {
 void hoc_xslider() {
     TRY_GUI_REDIRECT_DOUBLE("xslider", NULL);
     if (hoc_usegui) {
-    float low = 0, high = 100;
-    float resolution = 1;
-    int nsteps = 10;
-    char* send = NULL;
-    Object* pysend = NULL;
-    neuron::container::data_handle<double> pval{};
-    Object* pyvar = NULL;
-    bool vert = 0;
-    if (ifarg(3)) {
-        low = *getarg(2);
-        high = *getarg(3);
-        resolution = (high - low) / 100.;
-    }
-    int iarg = 4;
-    if (ifarg(iarg)) {
-        if (hoc_is_str_arg(iarg)) {
-            send = gargstr(4);
-            ++iarg;
-        } else if (hoc_is_object_arg(iarg)) {
-            pysend = *hoc_objgetarg(iarg);
-            ++iarg;
+        float low = 0, high = 100;
+        float resolution = 1;
+        int nsteps = 10;
+        char* send = NULL;
+        Object* pysend = NULL;
+        neuron::container::data_handle<double> pval{};
+        Object* pyvar = NULL;
+        bool vert = 0;
+        if (ifarg(3)) {
+            low = *getarg(2);
+            high = *getarg(3);
+            resolution = (high - low) / 100.;
         }
-    }
-    if (ifarg(iarg)) {
-        vert = int(chkarg(iarg, 0, 1));
-    }
-    bool slow = false;
-    if (ifarg(++iarg)) {
-        slow = int(chkarg(iarg, 0, 1));
-    }
-    if (hoc_is_object_arg(1)) {
-        pyvar = *hoc_objgetarg(1);
-    } else {
-        pval = hoc_hgetarg<double>(1);
-    }
-    hoc_ivslider(pval, low, high, resolution, nsteps, send, vert, slow, pyvar, pysend);
+        int iarg = 4;
+        if (ifarg(iarg)) {
+            if (hoc_is_str_arg(iarg)) {
+                send = gargstr(4);
+                ++iarg;
+            } else if (hoc_is_object_arg(iarg)) {
+                pysend = *hoc_objgetarg(iarg);
+                ++iarg;
+            }
+        }
+        if (ifarg(iarg)) {
+            vert = int(chkarg(iarg, 0, 1));
+        }
+        bool slow = false;
+        if (ifarg(++iarg)) {
+            slow = int(chkarg(iarg, 0, 1));
+        }
+        if (hoc_is_object_arg(1)) {
+            pyvar = *hoc_objgetarg(1);
+        } else {
+            pval = hoc_hgetarg<double>(1);
+        }
+        hoc_ivslider(pval, low, high, resolution, nsteps, send, vert, slow, pyvar, pysend);
     }
     hoc_ret();
     hoc_pushx(0.);
@@ -3097,14 +3091,14 @@ static void* vfe_cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("ValueFieldEditor", NULL);
 #if HAVE_IV
     if (hoc_usegui) {
-    if (!ifarg(2) || hoc_is_str_arg(2)) {
-        hoc_xvalue_helper();
-    } else {
-        hoc_xpvalue_helper();
-    }
-    HocValEditor* fe = last_fe_constructed_;
-    Resource::ref(fe);
-    return (void*) fe;
+        if (!ifarg(2) || hoc_is_str_arg(2)) {
+            hoc_xvalue_helper();
+        } else {
+            hoc_xpvalue_helper();
+        }
+        HocValEditor* fe = last_fe_constructed_;
+        Resource::ref(fe);
+        return (void*) fe;
     }
 #endif
     return 0;
@@ -3113,8 +3107,8 @@ static void vfe_destruct(void* v) {
     TRY_GUI_REDIRECT_NO_RETURN("~ValueFieldEditor", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    HocValEditor* fe = (HocValEditor*) v;
-    Resource::unref(fe);
+        HocValEditor* fe = (HocValEditor*) v;
+        Resource::unref(fe);
     }
 #endif
 }
@@ -3123,10 +3117,10 @@ static double vfe_default(void* v) {
     double x = 0.;
 #if HAVE_IV
     if (hoc_usegui) {
-    if (((HocValEditor*) v)->hoc_default_val_editor()) {
-        HocDefaultValEditor* dfe = (HocDefaultValEditor*) v;
-        dfe->deflt(x = dfe->get_val());
-    }
+        if (((HocValEditor*) v)->hoc_default_val_editor()) {
+            HocDefaultValEditor* dfe = (HocDefaultValEditor*) v;
+            dfe->deflt(x = dfe->get_val());
+        }
     }
 #endif
     return x;

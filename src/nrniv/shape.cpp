@@ -185,15 +185,15 @@ static double sh_view(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.view", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    OcShape* sh = (OcShape*) v;
-    if (ifarg(8)) {
-        Coord x[8];
-        int i;
-        for (i = 0; i < 8; ++i) {
-            x[i] = *getarg(i + 1);
+        OcShape* sh = (OcShape*) v;
+        if (ifarg(8)) {
+            Coord x[8];
+            int i;
+            for (i = 0; i < 8; ++i) {
+                x[i] = *getarg(i + 1);
+            }
+            sh->view(x);
         }
-        sh->view(x);
-    }
     }
 #endif
     return 1.;
@@ -202,7 +202,8 @@ static double sh_view(void* v) {
 static double sh_flush(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.flush", v);
 #if HAVE_IV
-    if (hoc_usegui) {((ShapeScene*) v)->flush();
+    if (hoc_usegui) {
+        ((ShapeScene*) v)->flush();
     }
 #endif
     return 1.;
@@ -216,7 +217,8 @@ static double sh_begin(void* v) {  // a noop. Exists only because graphs and
 static double sh_save_name(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.save_name", v);
 #if HAVE_IV
-    if (hoc_usegui) {((ShapeScene*) v)->name(gargstr(1));
+    if (hoc_usegui) {
+        ((ShapeScene*) v)->name(gargstr(1));
     }
 #endif
     return 1.;
@@ -226,8 +228,8 @@ static double sh_select(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.select", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    Section* sec = chk_access();
-    ((OcShape*) v)->select_section(sec);
+        Section* sec = chk_access();
+        ((OcShape*) v)->select_section(sec);
     }
 #endif
     return 1.;
@@ -236,11 +238,11 @@ static double sh_select_action(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.action", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    if (hoc_is_object_arg(1)) {
-        ((OcShape*) v)->set_select_action(*hoc_objgetarg(1));
-    } else {
-        ((OcShape*) v)->set_select_action(gargstr(1));
-    }
+        if (hoc_is_object_arg(1)) {
+            ((OcShape*) v)->set_select_action(*hoc_objgetarg(1));
+        } else {
+            ((OcShape*) v)->set_select_action(gargstr(1));
+        }
     }
 #endif
     return 1.;
@@ -251,7 +253,7 @@ static double sh_view_count(void* v) {
     int n = 0;
 #if HAVE_IV
     if (hoc_usegui) {
-    n = ((ShapeScene*) v)->view_count();
+        n = ((ShapeScene*) v)->view_count();
     }
 #endif
     return double(n);
@@ -262,7 +264,7 @@ double nrniv_sh_nearest(void* v) {
     double d = 0.;
 #if HAVE_IV
     if (hoc_usegui) {
-    d = ((ShapeScene*) v)->nearest(*getarg(1), *getarg(2));
+        d = ((ShapeScene*) v)->nearest(*getarg(1), *getarg(2));
     }
 #endif
     return d;
@@ -273,12 +275,12 @@ double nrniv_sh_push(void* v) {
     double d = -1.;
 #if HAVE_IV
     if (hoc_usegui) {
-    ShapeScene* ss = (ShapeScene*) v;
-    ShapeSection* s = ss->selected();
-    if (s && s->good()) {
-        nrn_pushsec(s->section());
-        d = ss->arc_selected();
-    }
+        ShapeScene* ss = (ShapeScene*) v;
+        ShapeSection* s = ss->selected();
+        if (s && s->good()) {
+            nrn_pushsec(s->section());
+            d = ss->arc_selected();
+        }
     }
 #endif
     return d;
@@ -289,15 +291,15 @@ Object** nrniv_sh_nearest_seg(void* v) {
     Object* obj = NULL;
 #if HAVE_IV
     if (hoc_usegui) {
-    ShapeScene* ss = (ShapeScene*) v;
-    ShapeSection* ssec = NULL;
-    double d = ss->nearest(*getarg(1), *getarg(2));
-    ssec = ss->selected();
-    if (d < 1e15 && nrnpy_seg_from_sec_x && ssec) {
-        d = ss->arc_selected();
-        obj = (*nrnpy_seg_from_sec_x)(ssec->section(), d);
-    }
-    --obj->refcount;
+        ShapeScene* ss = (ShapeScene*) v;
+        ShapeSection* ssec = NULL;
+        double d = ss->nearest(*getarg(1), *getarg(2));
+        ssec = ss->selected();
+        if (d < 1e15 && nrnpy_seg_from_sec_x && ssec) {
+            d = ss->arc_selected();
+            obj = (*nrnpy_seg_from_sec_x)(ssec->section(), d);
+        }
+        --obj->refcount;
     }
 #endif
     return hoc_temp_objptr(obj);
@@ -308,14 +310,14 @@ Object** nrniv_sh_selected_seg(void* v) {
     Object* obj = NULL;
 #if HAVE_IV
     if (hoc_usegui) {
-    ShapeScene* ss = (ShapeScene*) v;
-    ShapeSection* ssec = NULL;
-    ssec = ss->selected();
-    if (nrnpy_seg_from_sec_x && ssec) {
-        double d = ss->arc_selected();
-        obj = (*nrnpy_seg_from_sec_x)(ssec->section(), d);
-    }
-    --obj->refcount;
+        ShapeScene* ss = (ShapeScene*) v;
+        ShapeSection* ssec = NULL;
+        ssec = ss->selected();
+        if (nrnpy_seg_from_sec_x && ssec) {
+            double d = ss->arc_selected();
+            obj = (*nrnpy_seg_from_sec_x)(ssec->section(), d);
+        }
+        --obj->refcount;
     }
 #endif
     return hoc_temp_objptr(obj);
@@ -325,18 +327,18 @@ double nrniv_sh_observe(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.observe", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    ShapeScene* s = (ShapeScene*) v;
-    SectionList* sl = NULL;
-    if (ifarg(1)) {
-        Object* o = *hoc_objgetarg(1);
-        check_obj_type(o, "SectionList");
-        sl = new SectionList(o);
-        sl->ref();
-        s->observe(sl);
-        sl->unref();
-    } else {
-        s->observe(NULL);
-    }
+        ShapeScene* s = (ShapeScene*) v;
+        SectionList* sl = NULL;
+        if (ifarg(1)) {
+            Object* o = *hoc_objgetarg(1);
+            check_obj_type(o, "SectionList");
+            sl = new SectionList(o);
+            sl->ref();
+            s->observe(sl);
+            sl->unref();
+        } else {
+            s->observe(NULL);
+        }
     }
 #endif
     return 0.;
@@ -346,15 +348,15 @@ double nrniv_sh_rotate(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.rotate", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    ShapeScene* s = (ShapeScene*) v;
-    if (!ifarg(1)) {
-        // identity
-        s->rotate();
-    } else {
-        // defines origin (absolute) and rotation
-        // (relative to the current coord system)
-        s->rotate(*getarg(1), *getarg(2), *getarg(3), *getarg(4), *getarg(5), *getarg(6));
-    }
+        ShapeScene* s = (ShapeScene*) v;
+        if (!ifarg(1)) {
+            // identity
+            s->rotate();
+        } else {
+            // defines origin (absolute) and rotation
+            // (relative to the current coord system)
+            s->rotate(*getarg(1), *getarg(2), *getarg(3), *getarg(4), *getarg(5), *getarg(6));
+        }
     }
 #endif
     return 0.;
@@ -364,8 +366,8 @@ static double sh_unmap(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.unmap", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    ShapeScene* s = (ShapeScene*) v;
-    s->dismiss();
+        ShapeScene* s = (ShapeScene*) v;
+        s->dismiss();
     }
 #endif
     return 0.;
@@ -375,17 +377,17 @@ double nrniv_sh_color(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.color", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    ShapeScene* s = (ShapeScene*) v;
-    const Color* c = NULL;
-    c = colors->color(int(*getarg(1)));
-    if (ifarg(2)) {
-        Section* sec;
-        double x;
-        nrn_seg_or_x_arg(2, &sec, &x);
-        s->colorseg(sec, x, c);
-    } else {
-        s->color(chk_access(), c);
-    }
+        ShapeScene* s = (ShapeScene*) v;
+        const Color* c = NULL;
+        c = colors->color(int(*getarg(1)));
+        if (ifarg(2)) {
+            Section* sec;
+            double x;
+            nrn_seg_or_x_arg(2, &sec, &x);
+            s->colorseg(sec, x, c);
+        } else {
+            s->color(chk_access(), c);
+        }
     }
 #endif
     return 0.;
@@ -395,10 +397,10 @@ double nrniv_sh_color_all(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.color_all", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    ShapeScene* s = (ShapeScene*) v;
-    const Color* c = NULL;
-    c = colors->color(int(*getarg(1)));
-    s->color(c);
+        ShapeScene* s = (ShapeScene*) v;
+        const Color* c = NULL;
+        c = colors->color(int(*getarg(1)));
+        s->color(c);
     }
 #endif
     return 0.;
@@ -408,10 +410,10 @@ double nrniv_sh_color_list(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.color_list", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    ShapeScene* s = (ShapeScene*) v;
-    const Color* c = NULL;
-    c = colors->color(int(*getarg(2)));
-    s->color(new SectionList(*hoc_objgetarg(1)), c);
+        ShapeScene* s = (ShapeScene*) v;
+        const Color* c = NULL;
+        c = colors->color(int(*getarg(2)));
+        s->color(new SectionList(*hoc_objgetarg(1)), c);
     }
 #endif
     return 0.;
@@ -421,24 +423,24 @@ static double sh_point_mark(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.point_mark", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    OcShape* s = (OcShape*) v;
-    char style = 'O';
-    float size = 8.;
-    if (hoc_is_object_arg(1)) {
-        if (ifarg(3)) {
-            if (hoc_is_str_arg(3)) {
-                style = *gargstr(3);
-            } else {
-                style = char(chkarg(3, 0, 127));
+        OcShape* s = (OcShape*) v;
+        char style = 'O';
+        float size = 8.;
+        if (hoc_is_object_arg(1)) {
+            if (ifarg(3)) {
+                if (hoc_is_str_arg(3)) {
+                    style = *gargstr(3);
+                } else {
+                    style = char(chkarg(3, 0, 127));
+                }
             }
+            if (ifarg(4)) {
+                size = float(chkarg(4, 1e-9, 1e9));
+            }
+            s->point_mark(*hoc_objgetarg(1), colors->color(int(*getarg(2))), style, size);
+        } else {
+            s->point_mark(chk_access(), chkarg(1, 0., 1.), colors->color(int(*getarg(2))));
         }
-        if (ifarg(4)) {
-            size = float(chkarg(4, 1e-9, 1e9));
-        }
-        s->point_mark(*hoc_objgetarg(1), colors->color(int(*getarg(2))), style, size);
-    } else {
-        s->point_mark(chk_access(), chkarg(1, 0., 1.), colors->color(int(*getarg(2))));
-    }
     }
 #endif
     return 0.;
@@ -448,12 +450,12 @@ static double sh_point_mark_remove(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.point_mark_remove", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    Object* o = NULL;
-    OcShape* s = (OcShape*) v;
-    if (ifarg(1)) {
-        o = *hoc_objgetarg(1);
-    }
-    s->point_mark_remove(o);
+        Object* o = NULL;
+        OcShape* s = (OcShape*) v;
+        if (ifarg(1)) {
+            o = *hoc_objgetarg(1);
+        }
+        s->point_mark_remove(o);
     }
 #endif
     return 0.;
@@ -463,8 +465,8 @@ static double sh_printfile(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.printfile", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    ShapeScene* s = (ShapeScene*) v;
-    s->printfile(gargstr(1));
+        ShapeScene* s = (ShapeScene*) v;
+        s->printfile(gargstr(1));
     }
 #endif
     return 1.;
@@ -474,8 +476,8 @@ static double sh_show(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.show", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    ShapeScene* s = (ShapeScene*) v;
-    s->shape_type(int(chkarg(1, 0., 2.)));
+        ShapeScene* s = (ShapeScene*) v;
+        s->shape_type(int(chkarg(1, 0., 2.)));
     }
 #endif
     return 1.;
@@ -487,7 +489,8 @@ extern double ivoc_gr_menu_action(void* v);
 static double exec_menu(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.exec_menu", v);
 #if HAVE_IV
-    if (hoc_usegui) {((Scene*) v)->picker()->exec_item(gargstr(1));
+    if (hoc_usegui) {
+        ((Scene*) v)->picker()->exec_item(gargstr(1));
     }
 #endif
     return 0.;
@@ -497,15 +500,15 @@ double nrniv_len_scale(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Shape.len_scale", v);
 #if HAVE_IV
     if (hoc_usegui) {
-    ShapeScene* scene = (ShapeScene*) v;
-    ShapeSection* ss = scene->shape_section(chk_access());
-    if (ss) {
-        if (ifarg(1)) {
-            ss->scale(chkarg(1, 1e-9, 1e9));
-            scene->force();
+        ShapeScene* scene = (ShapeScene*) v;
+        ShapeSection* ss = scene->shape_section(chk_access());
+        if (ss) {
+            if (ifarg(1)) {
+                ss->scale(chkarg(1, 1e-9, 1e9));
+                scene->force();
+            }
+            return ss->scale();
         }
-        return ss->scale();
-    }
     }
 #endif
     return 0.;
@@ -565,27 +568,27 @@ static void* sh_cons(Object* ho) {
 #if HAVE_IV
     OcShape* sh = NULL;
     if (hoc_usegui) {
-    int i = 1;
-    int iarg = 1;
-    SectionList* sl = NULL;
-    // first arg may be an object.
-    if (ifarg(iarg)) {
-        if (hoc_is_object_arg(iarg)) {
-            sl = new SectionList(*hoc_objgetarg(iarg));
-            sl->ref();
-            ++iarg;
+        int i = 1;
+        int iarg = 1;
+        SectionList* sl = NULL;
+        // first arg may be an object.
+        if (ifarg(iarg)) {
+            if (hoc_is_object_arg(iarg)) {
+                sl = new SectionList(*hoc_objgetarg(iarg));
+                sl->ref();
+                ++iarg;
+            }
         }
-    }
-    if (ifarg(iarg)) {
-        i = int(chkarg(iarg, 0, 1));
-    }
-    sh = new OcShape(sl);
-    Resource::unref(sl);
-    sh->ref();
-    sh->hoc_obj_ptr(ho);
-    if (i) {
-        sh->view(200);
-    }
+        if (ifarg(iarg)) {
+            i = int(chkarg(iarg, 0, 1));
+        }
+        sh = new OcShape(sl);
+        Resource::unref(sl);
+        sh->ref();
+        sh->hoc_obj_ptr(ho);
+        if (i) {
+            sh->view(200);
+        }
     }
     return (void*) sh;
 #endif
@@ -594,8 +597,9 @@ static void* sh_cons(Object* ho) {
 static void sh_destruct(void* v) {
     TRY_GUI_REDIRECT_NO_RETURN("~Shape", v);
 #if HAVE_IV
-    if (hoc_usegui) {((ShapeScene*) v)->dismiss();
-    Resource::unref((OcShape*) v);
+    if (hoc_usegui) {
+        ((ShapeScene*) v)->dismiss();
+        Resource::unref((OcShape*) v);
     }
 #endif
 }

@@ -1651,12 +1651,12 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
 #if INTERVIEWS
 #ifdef MINGW
             if (hoc_usegui) {
-            if (hoc_interviews && !hoc_in_yyparse) {
-                rl_getc_function = getc_hook;
-                hoc_notify_value();
-            } else {
-                rl_getc_function = rl_getc;
-            }
+                if (hoc_interviews && !hoc_in_yyparse) {
+                    rl_getc_function = getc_hook;
+                    hoc_notify_value();
+                } else {
+                    rl_getc_function = rl_getc;
+                }
             }
 #else /* not MINGW */
 #if defined(use_rl_getc_function)
@@ -1743,7 +1743,7 @@ void hoc_help(void) {
 #endif
     {
         if (hoc_usegui) {
-        hoc_warning("Help only available from version with ivoc library", 0);
+            hoc_warning("Help only available from version with ivoc library", 0);
         }
     }
     ctp = cbuf + strlen(cbuf) - 1;

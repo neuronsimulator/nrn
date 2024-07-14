@@ -2020,14 +2020,14 @@ int NetCvode::solve(double tout) {
                 }
 #if HAVE_IV
                 if (hoc_usegui) {
-                if (rt < time(nullptr)) {
-                    //				if (++cnt > 10000) {
-                    //					cnt = 0;
-                    Oc oc;
-                    oc.notify();
-                    single_event_run();
-                    rt = time(nullptr);
-                }
+                    if (rt < time(nullptr)) {
+                        //				if (++cnt > 10000) {
+                        //					cnt = 0;
+                        Oc oc;
+                        oc.notify();
+                        single_event_run();
+                        rt = time(nullptr);
+                    }
                 }
 #endif
             }
