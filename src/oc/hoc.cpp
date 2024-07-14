@@ -24,6 +24,8 @@
 #include "nrnfilewrap.h"
 #include "../nrniv/backtrace_utils.h"
 
+#include "../utils/profile/profiler_interface.h"
+
 #include <cfenv>
 #include <condition_variable>
 #include <iostream>
@@ -1002,6 +1004,7 @@ void hoc_quit(void) {
     }
 #endif
     int exit_code = ifarg(1) ? int(*getarg(1)) : 0;
+    nrn::Instrumentor::finalize_profile();
     exit(exit_code);
 }
 
