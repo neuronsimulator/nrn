@@ -315,7 +315,6 @@ struct Likwid {
     };
 };
 
-
 #endif
 
 struct NullInstrumentor {
