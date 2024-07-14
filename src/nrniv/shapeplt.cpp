@@ -50,8 +50,8 @@ void (*nrnpy_decref)(void* pyobj) = 0;
 static double sh_flush(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.flush", v);
 #if HAVE_IV
-    IFGUI((ShapePlot*) v)->flush();
-    ENDGUI
+    if (hoc_usegui) {((ShapePlot*) v)->flush();
+    }
 #endif
     return 1.;
 }
@@ -59,8 +59,8 @@ static double sh_flush(void* v) {
 static double fast_flush(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.fast_flush", v);
 #if HAVE_IV
-    IFGUI((ShapePlot*) v)->fast_flush();
-    ENDGUI
+    if (hoc_usegui) {((ShapePlot*) v)->fast_flush();
+    }
 #endif
     return 1.;
 }
@@ -73,11 +73,11 @@ static double sh_begin(void* v) {  // a noop. Exists only because graphs and
 static double sh_scale(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.scale", v);
 #if HAVE_IV
-    IFGUI((ShapePlot*) v)->scale(float(*getarg(1)), float(*getarg(2)));
+    if (hoc_usegui) {((ShapePlot*) v)->scale(float(*getarg(1)), float(*getarg(2)));
 }
 else {
     ((ShapePlotData*) v)->scale(float(*getarg(1)), float(*getarg(2)));
-    ENDGUI
+    }
 #else
     ((ShapePlotData*) v)->scale(float(*getarg(1)), float(*getarg(2)));
 #endif
@@ -93,7 +93,7 @@ void ShapePlot::has_iv_view(bool value) {
 static double sh_view(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.view", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     ShapePlot* sh = (ShapePlot*) v;
     sh->has_iv_view(true);
     if (sh->varobj()) {
@@ -107,7 +107,7 @@ static double sh_view(void* v) {
         }
         sh->view(x);
     }
-    ENDGUI
+    }
 #endif
     return 1.;
 }
@@ -126,7 +126,7 @@ static double sh_variable(void* v) {
             hoc_execerror("variable must be either a string or Python object", NULL);
         }
 #if HAVE_IV
-        IFGUI
+        if (hoc_usegui) {
         if (sh->has_iv_view()) {
             nrnpy_decref(py_var_);
             hoc_execerror("InterViews only supports string variables.", NULL);
@@ -134,7 +134,7 @@ static double sh_variable(void* v) {
         nrnpy_decref(sh->varobj());
         sh->varobj(py_var_);
         return 1;
-        ENDGUI
+        }
 #endif
         nrnpy_decref(spd->varobj());
         spd->varobj(py_var_);
@@ -144,7 +144,7 @@ static double sh_variable(void* v) {
     s = hoc_table_lookup(gargstr(1), hoc_built_in_symlist);
     if (s) {
 #if HAVE_IV
-        IFGUI
+        if (hoc_usegui) {
         if (nrnpy_decref) {
             nrnpy_decref(sh->varobj());
         }
@@ -157,7 +157,7 @@ static double sh_variable(void* v) {
         }
         spd->varobj(NULL);
         spd->variable(s);
-        ENDGUI
+        }
 #else
         if (nrnpy_decref) {
             nrnpy_decref(spd->varobj());
@@ -173,9 +173,9 @@ static double sh_view_count(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.view_count", v);
     int n = 0;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     n = ((ShapeScene*) v)->view_count();
-    ENDGUI
+    }
 #endif
     return double(n);
 }
@@ -183,8 +183,8 @@ static double sh_view_count(void* v) {
 static double sh_save_name(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.save_name", v);
 #if HAVE_IV
-    IFGUI((ShapeScene*) v)->name(gargstr(1));
-    ENDGUI
+    if (hoc_usegui) {((ShapeScene*) v)->name(gargstr(1));
+    }
 #endif
     return 1.;
 }
@@ -192,10 +192,10 @@ static double sh_save_name(void* v) {
 static double sh_unmap(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.unmap", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     ShapeScene* s = (ShapeScene*) v;
     s->dismiss();
-    ENDGUI
+    }
 #endif
     return 0.;
 }
@@ -203,10 +203,10 @@ static double sh_unmap(void* v) {
 static double sh_printfile(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.printfile", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     ShapeScene* s = (ShapeScene*) v;
     s->printfile(gargstr(1));
-    ENDGUI
+    }
 #endif
     return 1.;
 }
@@ -215,7 +215,7 @@ static double sh_show(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.show", v);
     hoc_return_type_code = 1;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     ShapeScene* s = (ShapeScene*) v;
     if (ifarg(1)) {
         s->shape_type(int(chkarg(1, 0., 2.)));
@@ -229,7 +229,7 @@ else {
     } else {
         return ((ShapePlotData*) v)->get_mode();
     }
-    ENDGUI
+    }
 #else
     if (ifarg(1)) {
         ((ShapePlotData*) v)->set_mode(int(chkarg(1, 0., 2.)));
@@ -245,7 +245,7 @@ extern double ivoc_gr_menu_action(void* v);
 static double s_colormap(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.colormap", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     ShapePlot* s = (ShapePlot*) v;
     if (ifarg(4)) {
         s->color_value()->colormap(int(chkarg(1, 0, 255)),
@@ -259,7 +259,7 @@ static double s_colormap(void* v) {
         }
         s->color_value()->colormap(int(chkarg(1, 0, 1000)), b);
     }
-    ENDGUI
+    }
 #endif
     return 1.;
 }
@@ -267,7 +267,7 @@ static double s_colormap(void* v) {
 static double sh_hinton(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.hinton", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     ShapeScene* ss = (ShapeScene*) v;
     neuron::container::data_handle<double> pd = hoc_hgetarg<double>(1);
     double xsize = chkarg(4, 1e-9, 1e9);
@@ -278,7 +278,7 @@ static double sh_hinton(void* v) {
     Hinton* h = new Hinton(pd, xsize, ysize, ss);
     ss->append(new FastGraphItem(h));
     ss->move(ss->count() - 1, *getarg(2), *getarg(3));
-    ENDGUI
+    }
 #endif
     return 1.;
 }
@@ -286,8 +286,8 @@ static double sh_hinton(void* v) {
 static double exec_menu(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.exec_menu", v);
 #if HAVE_IV
-    IFGUI((Scene*) v)->picker()->exec_item(gargstr(1));
-    ENDGUI
+    if (hoc_usegui) {((Scene*) v)->picker()->exec_item(gargstr(1));
+    }
 #endif
     return 0.;
 }
@@ -362,10 +362,10 @@ static void* sh_cons(Object* ho) {
             ob = *hoc_objgetarg(iarg);
             check_obj_type(ob, "SectionList");
 #if HAVE_IV
-            IFGUI
+            if (hoc_usegui) {
             sl = new SectionList(ob);
             sl->ref();
-            ENDGUI
+            }
 #endif
             ++iarg;
         }
@@ -374,7 +374,7 @@ static void* sh_cons(Object* ho) {
         i = int(chkarg(iarg, 0, 1));
     }
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     ShapePlot* sh = NULL;
     sh = new ShapePlot(NULL, sl);
     sh->has_iv_view(i ? true : false);
@@ -390,7 +390,7 @@ static void* sh_cons(Object* ho) {
 else {
     ShapePlotData* spd = new ShapePlotData(NULL, ob);
     return (void*) spd;
-    ENDGUI
+    }
 #else
     ShapePlotData* sh = new ShapePlotData(NULL, ob);
     return (void*) sh;
@@ -400,7 +400,7 @@ else {
 static void sh_destruct(void* v) {
     TRY_GUI_REDIRECT_NO_RETURN("~PlotShape", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     if (nrnpy_decref) {
         ShapePlot* sp = (ShapePlot*) v;
         nrnpy_decref(sp->varobj());
@@ -413,7 +413,7 @@ else {
         ShapePlotData* sp = (ShapePlotData*) v;
         nrnpy_decref(sp->varobj());
     }
-    ENDGUI
+    }
     Resource::unref((ShapeScene*) v);
 #else
     if (nrnpy_decref) {

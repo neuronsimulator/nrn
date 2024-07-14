@@ -152,11 +152,11 @@ static void destruct(void* v) {
     TRY_GUI_REDIRECT_NO_RETURN("~Box", v);
 #if HAVE_IV
     OcBox* b = (OcBox*) v;
-    IFGUI
+    if (hoc_usegui) {
     if (b->has_window()) {
         b->window()->dismiss();
     }
-    ENDGUI
+    }
     b->unref();
 #endif /* HAVE_IV */
 }
@@ -165,8 +165,8 @@ static double intercept(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.intercept", v);
 #if HAVE_IV
     bool b = int(chkarg(1, 0., 1.));
-    IFGUI((OcBox*) v)->intercept(b);
-    ENDGUI
+    if (hoc_usegui) {((OcBox*) v)->intercept(b);
+    }
     return double(b);
 #else
     return 0.;
@@ -177,8 +177,8 @@ static double ses_pri(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.priority", v);
 #if HAVE_IV
     int p = int(chkarg(1, -1000, 10000));
-    IFGUI((OcBox*) v)->session_priority(p);
-    ENDGUI
+    if (hoc_usegui) {((OcBox*) v)->session_priority(p);
+    }
     return double(p);
 #else
     return 0.;
@@ -188,7 +188,7 @@ static double ses_pri(void* v) {
 static double map(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.map", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     OcBox* b = (OcBox*) v;
     PrintableWindow* w;
     b->premap();
@@ -210,7 +210,7 @@ static double map(void* v) {
         b->window()->request_on_resize(true);
     }
     b->dismiss_action(NULL);
-    ENDGUI
+    }
     return 1.;
 #else
     return 0.;
@@ -221,7 +221,7 @@ static double dialog(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.dialog", v);
 #if HAVE_IV
     bool r = false;
-    IFGUI
+    if (hoc_usegui) {
     OcBox* b = (OcBox*) v;
     const char* a = "Accept";
     const char* c = "Cancel";
@@ -234,7 +234,7 @@ static double dialog(void* v) {
     Oc oc;
     oc.notify();
     r = b->dialog(gargstr(1), a, c);
-    ENDGUI
+    }
     return double(r);
 #else
     return 0.;
@@ -244,7 +244,7 @@ static double dialog(void* v) {
 static double unmap(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.unmap", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     OcBox* b = (OcBox*) v;
     bool accept = true;
     if (ifarg(1)) {
@@ -261,7 +261,7 @@ static double unmap(void* v) {
                           // printable window destructor called
         b->unref();
     }
-    ENDGUI
+    }
     return 0.;
 #else
     return 0.;
@@ -273,9 +273,9 @@ static double ismapped(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.ismapped", v);
 #if HAVE_IV
     bool b = false;
-    IFGUI
+    if (hoc_usegui) {
     b = ((OcBox*) v)->has_window();
-    ENDGUI
+    }
     return double(b);
 #else
     return 0.;
@@ -285,8 +285,8 @@ static double ismapped(void* v) {
 static double adjuster(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.adjuster", v);
 #if HAVE_IV
-    IFGUI((OcBox*) v)->adjuster(chkarg(1, -1., 1e5));
-    ENDGUI
+    if (hoc_usegui) {((OcBox*) v)->adjuster(chkarg(1, -1., 1e5));
+    }
 #endif /* HAVE_IV  */
     return 0.;
 }
@@ -294,13 +294,13 @@ static double adjuster(void* v) {
 static double adjust(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.adjust", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     int index = 0;
     if (ifarg(2)) {
         index = (int) chkarg(2, 0, 1000);
     }
     ((OcBox*) v)->adjust(chkarg(1, -1., 1e5), index);
-    ENDGUI
+    }
 #endif /* HAVE_IV  */
     return 0.;
 }
@@ -308,14 +308,14 @@ static double adjust(void* v) {
 static double full_request(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.full_request", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     OcBox* b = (OcBox*) v;
     if (ifarg(1)) {
         bool x = ((int) chkarg(1, 0, 1) != 0) ? true : false;
         b->full_request(x);
     }
     return (b->full_request() ? 1. : 0.);
-    ENDGUI
+    }
 #endif /* HAVE_IV  */
     return 0.;
 }
@@ -323,7 +323,7 @@ static double full_request(void* v) {
 static double b_size(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.size", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     double* p = hoc_pgetarg(1);  // array for at least 4 numbers
     OcBox* b = (OcBox*) v;
     if (b->has_window()) {
@@ -332,7 +332,7 @@ static double b_size(void* v) {
         p[2] = b->window()->width();
         p[3] = b->window()->height();
     }
-    ENDGUI
+    }
 #endif
     return 0.;
 }
@@ -342,7 +342,7 @@ const char* pwm_session_filename();
 static double save(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.save", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     OcBox* b = (OcBox*) v;
     char buf[256];
     if (hoc_is_object_arg(1)) {
@@ -361,7 +361,7 @@ static double save(void* v) {
         return 1.0;
     }
     b->save_action(buf, 0);
-    ENDGUI
+    }
     return 1.;
 #else
     return 0.;
@@ -396,14 +396,14 @@ static double ref(void* v) {
 static double dismiss_action(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Box.dismiss_action", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     OcBox* b = (OcBox*) v;
     if (hoc_is_object_arg(1)) {
         b->dismiss_action(0, *hoc_objgetarg(1));
     } else {
         b->dismiss_action(gargstr(1));
     }
-    ENDGUI
+    }
     return 0.;
 #else
     return 0.;
@@ -469,7 +469,7 @@ OcBox::OcBox(int type, int frame, bool scroll)
     bi_->ba_list_ = NULL;
     Resource::ref(bi_->ocglyph_list_);
     bi_->box_ = NULL;
-    IFGUI
+    if (hoc_usegui) {
     WidgetKit& wk = *WidgetKit::instance();
     LayoutKit& lk = *LayoutKit::instance();
     if (type == H) {
@@ -498,7 +498,7 @@ OcBox::OcBox(int type, int frame, bool scroll)
         body(new Background(lk.variable_span(box), wk.background()));
         break;
     }
-    ENDGUI
+    }
     bi_->type_ = type;
     bi_->oc_ref_ = NULL;
     bi_->save_action_ = NULL;

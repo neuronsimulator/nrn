@@ -141,7 +141,7 @@ static double ptr_plot(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("PtrVector.plot", pv_class_sym_, v);
     OcPtrVector* opv = (OcPtrVector*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     int i;
     auto const& y = opv->pd_;
     auto n = opv->size();
@@ -192,7 +192,7 @@ static double ptr_plot(void* v) {
     g->append(new GPolyLineItem(gv));
 
     g->flush();
-    ENDGUI
+    }
 #endif
     return 0.0;
 }

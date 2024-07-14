@@ -349,9 +349,9 @@ int RangeVarPlot::get_color(void) {
 void RangeVarPlot::set_color(int new_color) {
     color_ = new_color;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     color(colors->color(color_));
-    ENDGUI
+    }
 #endif
 }
 

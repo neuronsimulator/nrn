@@ -287,35 +287,35 @@ void hoc_boolean_dialog() {
         hoc_pushx(neuron::python::methods.object_to_double(*result));
         return;
     }
-    IFGUI
+    if (hoc_usegui) {
     if (ifarg(3)) {
         b = boolean_dialog(gargstr(1), gargstr(2), gargstr(3));
     } else {
         b = boolean_dialog(gargstr(1), "Yes", "No");
     }
-    ENDGUI
+    }
     hoc_ret();
     hoc_pushx(double(b));
 }
 void hoc_continue_dialog() {
     TRY_GUI_REDIRECT_DOUBLE("continue_dialog", NULL);
-    IFGUI
+    if (hoc_usegui) {
     continue_dialog(gargstr(1));
-    ENDGUI
+    }
     hoc_ret();
     hoc_pushx(1.);
 }
 void hoc_string_dialog() {
     TRY_GUI_REDIRECT_DOUBLE_SEND_STRREF("string_dialog", NULL);
     bool b = false;
-    IFGUI
+    if (hoc_usegui) {
     char buf[256];
     Sprintf(buf, "%s", gargstr(2));
     b = str_chooser(gargstr(1), buf);
     if (b) {
         hoc_assign_str(hoc_pgargstr(2), buf);
     }
-    ENDGUI
+    }
     hoc_ret();
     hoc_pushx(double(b));
 }

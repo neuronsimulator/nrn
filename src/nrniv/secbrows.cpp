@@ -23,17 +23,17 @@
 static double sb_select(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SectionBrowser.select", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     Section* sec = chk_access();
     ((OcSectionBrowser*) v)->select_section(sec);
-    ENDGUI
+    }
 #endif
     return 1.;
 }
 static double sb_select_action(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SectionBrowser.select_action", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     char* str_action = NULL;
     Object* obj_action = NULL;
     if (hoc_is_object_arg(1)) {
@@ -43,14 +43,14 @@ static double sb_select_action(void* v) {
     }
 
     ((OcSectionBrowser*) v)->set_select_action(str_action, obj_action);
-    ENDGUI
+    }
 #endif
     return 1.;
 }
 static double sb_accept_action(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SectionBrowser.accept_action", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     char* str_action = NULL;
     Object* obj_action = NULL;
     if (hoc_is_object_arg(1)) {
@@ -60,7 +60,7 @@ static double sb_accept_action(void* v) {
     }
 
     ((OcSectionBrowser*) v)->set_accept_action(str_action, obj_action);
-    ENDGUI
+    }
 #endif
     return 1.;
 }
@@ -73,7 +73,7 @@ static void* sb_cons(Object*) {
     Object* ob;
 #if HAVE_IV
     OcSectionBrowser* b = NULL;
-    IFGUI
+    if (hoc_usegui) {
     if (ifarg(1)) {
         ob = *hoc_objgetarg(1);
         b = new OcSectionBrowser(ob);
@@ -83,7 +83,7 @@ static void* sb_cons(Object*) {
     b->ref();
     Window* w = new StandardWindow(b->standard_glyph());
     w->map();
-    ENDGUI
+    }
     return (void*) b;
 #else
     return 0;

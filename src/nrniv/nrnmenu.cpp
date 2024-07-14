@@ -50,9 +50,9 @@ void nrnallsectionmenu() {
     TRY_GUI_REDIRECT_DOUBLE("nrnallsectionmenu", NULL);
 
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     SectionBrowser::make_section_browser();
-    ENDGUI
+    }
 #endif
 
     hoc_retpushx(1.);
@@ -61,7 +61,7 @@ void nrnallsectionmenu() {
 void nrnsecmenu() {
     TRY_GUI_REDIRECT_DOUBLE("nrnsecmenu", NULL);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     double x;
     Section* sec = NULL;
     if (hoc_is_object_arg(1)) {  // x = -1 not allowed
@@ -74,7 +74,7 @@ void nrnsecmenu() {
     if (sec) {
         nrn_popsec();
     }
-    ENDGUI
+    }
 #endif
     hoc_retpushx(1.);
 }
@@ -94,7 +94,7 @@ static bool has_globals(const char* name) {
 void nrnglobalmechmenu() {
     TRY_GUI_REDIRECT_DOUBLE("nrnglobalmechmenu", NULL);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     Symbol* sp;
     char* s;
     char buf[200];
@@ -146,7 +146,7 @@ void nrnglobalmechmenu() {
         }
     }
     hoc_ivpanelmap();
-    ENDGUI
+    }
 #endif
     hoc_retpushx(1.);
 }
@@ -345,7 +345,7 @@ static void mech_menu(Prop* p1, double x, int type, const char* path, MechSelect
 void nrnallpointmenu() {
     TRY_GUI_REDIRECT_DOUBLE("nrnallpointmenu", NULL);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     int i;
     double x = n_memb_func - 1;
     Symbol *sp, *psym;
@@ -403,7 +403,7 @@ void nrnallpointmenu() {
         }
         hoc_ivpanelmap();
     }
-    ENDGUI
+    }
 #endif
     hoc_retpushx(1.);
 }
@@ -411,7 +411,7 @@ void nrnallpointmenu() {
 void nrnpointmenu() {
     TRY_GUI_REDIRECT_DOUBLE("nrnpointmenu", NULL);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     Object* ob;
     if (hoc_is_object_arg(1)) {
         ob = *hoc_objgetarg(1);
@@ -427,7 +427,7 @@ void nrnpointmenu() {
         make_label = int(chkarg(2, -1., 1.));
     }
     point_menu(ob, make_label);
-    ENDGUI
+    }
 #endif
     hoc_retpushx(1.);
 }
@@ -512,13 +512,13 @@ static Symbol* ms_class_sym_;
 static double ms_panel(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("MechanismStandard.panel", ms_class_sym_, v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     char* label = NULL;
     if (ifarg(1)) {
         label = gargstr(1);
     }
     ((MechanismStandard*) v)->panel(label);
-    ENDGUI
+    }
 #endif
     return 0.;
 }
@@ -1022,10 +1022,10 @@ static double mt_count(void* v) {
 static double mt_menu(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("MechanismType.menu", mt_class_sym_, v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     MechanismType* mt = (MechanismType*) v;
     mt->menu();
-    ENDGUI
+    }
 #endif
     return 0.;
 }

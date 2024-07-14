@@ -145,7 +145,7 @@ static void* scons(Object*) {
     TRY_GUI_REDIRECT_OBJ("SymChooser", NULL);
 #if HAVE_IV
     SymChooser* sc = NULL;
-    IFGUI
+    if (hoc_usegui) {
     const char* caption = "Choose a Variable Name or";
     if (ifarg(1)) {
         caption = gargstr(1);
@@ -163,7 +163,7 @@ static void* scons(Object*) {
         sc = new SymChooser(NULL, WidgetKit::instance(), style);
     }
     Resource::ref(sc);
-    ENDGUI
+    }
     return (void*) sc;
 #else
     return nullptr;
@@ -180,7 +180,7 @@ static double srun(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SymChooser.run", v);
 #if HAVE_IV
     bool b = false;
-    IFGUI
+    if (hoc_usegui) {
     SymChooser* sc = (SymChooser*) v;
     Display* d = Session::instance()->default_display();
     Coord x, y;
@@ -189,7 +189,7 @@ static double srun(void* v) {
     } else {
         b = sc->post_at_aligned(d->width() / 2, d->height() / 2, .5, .5);
     }
-    ENDGUI
+    }
     return double(b);
 #else
     return 0.;
@@ -198,10 +198,10 @@ static double srun(void* v) {
 static double text(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SymChooser.text", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     SymChooser* sc = (SymChooser*) v;
     hoc_assign_str(hoc_pgargstr(1), sc->selected().c_str());
-    ENDGUI
+    }
     return 0.;
 #else
     return 0.;

@@ -181,13 +181,13 @@ void nrniv_bind_thread() {
 
 void nrn_err_dialog(const char* mes) {
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     if (nrn_err_dialog_active_ && !Session::instance()->done()) {
         char m[1024];
         Sprintf(m, "%s (See terminal window)", mes);
         continue_dialog(m);
     }
-    ENDGUI
+    }
 #endif
 }
 
@@ -239,7 +239,7 @@ bool setAcceptInputCallback(bool b) {
 
 void ivoc_style() {
     TRY_GUI_REDIRECT_DOUBLE("ivoc_style", NULL);
-    IFGUI
+    if (hoc_usegui) {
     if (Session::instance()) {
         Style* s = Session::instance()->style();
         s->remove_attribute(gargstr(1));
@@ -253,7 +253,7 @@ if (WidgetKit::instance()->style()->find_attribute(gargstr(1)+1, s)) {
 	printf("couldn't find %s\n", gargstr(1));
 }
 #endif
-    ENDGUI
+    }
     hoc_ret();
     hoc_pushx(1.);
 }
@@ -487,7 +487,7 @@ extern void nrniv_bind_call(void);
 #endif
 
 void hoc_notify_iv() {
-    IFGUI
+    if (hoc_usegui) {
 #ifdef MINGW
     if (!nrn_is_gui_thread()) {
         // allow gui thread to run
@@ -502,7 +502,7 @@ void hoc_notify_iv() {
     Oc oc;
     oc.notify();
     single_event_run();
-    ENDGUI
+    }
     hoc_pushx(1.);
     hoc_ret();
 }

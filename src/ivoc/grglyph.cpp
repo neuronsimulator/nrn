@@ -29,7 +29,7 @@ class GrGlyph: public Resource {
 double gr_addglyph(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.addglyph", v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     Graph* g = (Graph*) v;
     Object* obj = *hoc_objgetarg(1);
     check_obj_type(obj, "Glyph");
@@ -53,7 +53,7 @@ double gr_addglyph(void* v) {
         break;
     }
     g->move(g->count() - 1, x, y);
-    ENDGUI
+    }
 #endif
     return 0.;
 }
@@ -62,9 +62,9 @@ static Object** g_new_path(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.path", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     g->new_path();
-    ENDGUI
+    }
 #endif
     return g->temp_objvar();
 }
@@ -73,9 +73,9 @@ static Object** g_move_to(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.m", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     g->move_to(*getarg(1), *getarg(2));
-    ENDGUI
+    }
 #endif
     return g->temp_objvar();
 }
@@ -84,9 +84,9 @@ static Object** g_line_to(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.l", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     g->line_to(*getarg(1), *getarg(2));
-    ENDGUI
+    }
 #endif
     return g->temp_objvar();
 }
@@ -95,9 +95,9 @@ static Object** g_control_point(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.cpt", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     g->control_point(*getarg(1), *getarg(2));
-    ENDGUI
+    }
 #endif
     return g->temp_objvar();
 }
@@ -106,9 +106,9 @@ static Object** g_curve_to(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.curve", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     g->curve_to(*getarg(1), *getarg(2), *getarg(3), *getarg(4), *getarg(5), *getarg(6));
-    ENDGUI
+    }
 #endif
     return g->temp_objvar();
 }
@@ -117,11 +117,11 @@ static Object** g_stroke(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.s", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     int ci = ifarg(1) ? int(chkarg(1, 0, 10000)) : 1;
     int bi = ifarg(2) ? int(chkarg(2, 0, 10000)) : 0;
     g->stroke(ci, bi);
-    ENDGUI
+    }
 #endif
     return g->temp_objvar();
 }
@@ -130,9 +130,9 @@ static Object** g_close_path(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.close", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     g->close_path();
-    ENDGUI
+    }
 #endif
     return g->temp_objvar();
 }
@@ -141,10 +141,10 @@ static Object** g_fill(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.fill", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     int ci = ifarg(1) ? int(chkarg(1, 0, 10000)) : 1;
     g->fill(ci);
-    ENDGUI
+    }
 #endif
     return g->temp_objvar();
 }
@@ -153,9 +153,9 @@ static Object** g_erase(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.erase", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     g->erase();
-    ENDGUI
+    }
 #endif
     return g->temp_objvar();
 }
@@ -164,9 +164,9 @@ static Object** g_circle(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.circle", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     g->circle(*getarg(1), *getarg(2), *getarg(3));
-    ENDGUI
+    }
 #endif
     return g->temp_objvar();
 }
@@ -175,9 +175,9 @@ static Object** g_gif(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.gif", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     g->gif(gargstr(1));
-    ENDGUI
+    }
 #endif
     return g->temp_objvar();
 }
@@ -220,7 +220,7 @@ void GrGlyph_reg() {
 GrGlyph::GrGlyph(Object* o) {
     obj_ = o;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     type_ = new DataVec(10);
     x_ = new DataVec(10);
     y_ = new DataVec(10);
@@ -228,18 +228,18 @@ GrGlyph::GrGlyph(Object* o) {
     x_->ref();
     y_->ref();
     gif_ = NULL;
-    ENDGUI
+    }
 #endif
 }
 
 GrGlyph::~GrGlyph() {
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     type_->unref();
     x_->unref();
     y_->unref();
     Resource::unref(gif_);
-    ENDGUI
+    }
 #endif
 }
 

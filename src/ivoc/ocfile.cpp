@@ -186,7 +186,7 @@ static const char** f_dir(void* v) {
 static double f_chooser(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("File.chooser", file_class_sym_, v);
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     OcFile* f = (OcFile*) v;
     f->close();
 
@@ -215,7 +215,7 @@ static double f_chooser(void* v) {
     }
 
     f->file_chooser_style(type, path, banner, filter, bopen, cancel);
-    ENDGUI
+    }
 #endif
     return 1.;
 }

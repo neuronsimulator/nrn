@@ -937,7 +937,7 @@ static Object** v_plot(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.plot", svec_, v);
     Vect* vp = (Vect*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     int i;
     double* y = vp->data();
     auto n = vp->size();
@@ -996,7 +996,7 @@ static Object** v_plot(void* v) {
     g->append(new GPolyLineItem(gv));
 
     g->flush();
-    ENDGUI
+    }
 #endif
     return vp->temp_objvar();
 }
@@ -1005,7 +1005,7 @@ static Object** v_ploterr(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.ploterr", svec_, v);
     Vect* vp = (Vect*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     int n = vp->size();
 
     Object* ob1 = *hoc_objgetarg(1);
@@ -1041,7 +1041,7 @@ static Object** v_ploterr(void* v) {
     }
 
     g->flush();
-    ENDGUI
+    }
 #endif
     return vp->temp_objvar();
 }
@@ -1050,7 +1050,7 @@ static Object** v_line(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.line", svec_, v);
     Vect* vp = (Vect*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     int i;
     auto n = vp->size();
 
@@ -1091,7 +1091,7 @@ static Object** v_line(void* v) {
     }
 
     g->flush();
-    ENDGUI
+    }
 #endif
     return vp->temp_objvar();
 }
@@ -1101,7 +1101,7 @@ static Object** v_mark(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.mark", svec_, v);
     Vect* vp = (Vect*) v;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
     int i;
     int n = vp->size();
 
@@ -1142,7 +1142,7 @@ static Object** v_mark(void* v) {
             g->mark(i * interval, vp->elem(i), style, size, color, brush);
         }
     }
-    ENDGUI
+    }
 #endif
     return vp->temp_objvar();
 }
