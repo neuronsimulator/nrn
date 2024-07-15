@@ -649,7 +649,7 @@ Currently, Caliper doesn't integrate LIKWID as a service, but NEURON's profiler 
 
 ###### Building NEURON With LIKWID Support
 
-Like Caliper, building LIKWID support in NEURON is easy:
+If LIKWID is already installed correctly with the necessary permissions, enabling LIKWID support into NEURON is not difficult:
 
 ```console
 cmake .. \
@@ -729,11 +729,12 @@ and a breakdown into channel-specific kernels like `state-cdp5StCmod` and `state
 
 ###### Avoiding Measurement Overhead with `NRN_PROFILE_REGIONS`
 
-For profiling like Caliper, merely measuring the execution time has negligible overhead.
+When profiling with Caliper, careful instrumentation can ensure that measuring execution does not incur significant overhead.
+It's important to avoid instrumenting very small code regions to minimize performance impact.
 However, with LIKWID, starting and stopping measurement using high-level API like `LIKWID_MARKER_START()` and
-`LIKWID_MARKER_STOP()` can introduce significant overhead, especially when instrumentation covers small code regions.
-This is the case in NEURON, where we instrument all simulation phases and individual mechanisms' state and current update kernels.
-In small examples, such overhead could slow down execution by 10x.
+`LIKWID_MARKER_STOP()` can introduce relatively high overhead, especially when instrumentation covers small code regions.
+This is the case in NEURON as we instrument all simulation phases and individual mechanisms' state and current update kernels.
+In small models, such overhead could slow down execution by 10x.
 
 To avoid this, NEURON provides an environment variable `NRN_PROFILE_REGIONS` to enable profiling for specific code regions.
 For example, let's assume we want to understand hardware performance counters for two phases:
@@ -785,120 +786,10 @@ Region state-hh, Group 1: FLOPS_DP
 > NOTE: Currently, NEURON uses marker APIs `LIKWID_MARKER_START()` and `LIKWID_MARKER_STOP()` from LIKWID.
 > We should consider using `LIKWID_MARKER_REGISTER()` API to reduce overhead and prevent incorrect report counts for tiny code regions.
 
-### An Example Of Cross-Checking VTune Results with LIKWID
+### Comparing LIKWID Profiles
 
-This section isn't about comparing Intel VTune with LIKWID, but rather about how one can use LIKWID to confirm
-performance results initially observed with Intel VTune.
-
-While investigating a performance regression in the upcoming NEURON v9.0 (see [#2787](https://github.com/neuronsimulator/nrn/issues/2787)),
-we compared the performance of the master branch with [an earlier commit](https://github.com/neuronsimulator/nrn/commit/b4ade55096d81c31d7e5db099cce949d56162490)
-(referred to as `presoa`). This commit precedes the merging of the [new SoA data structure PR](https://github.com/neuronsimulator/nrn/pull/2027).
-When applying a fix from [#2966](https://github.com/neuronsimulator/nrn/pull/2966) to the `presoa` version, we observed a 10-20% performance
-regression in the master branch compared to the `presoa` version.
-
-To investigate this, we generated profiles for both versions and compared them using VTune:
-
-![VTune Comparison](images/nrn_likwid_vtune_instruction_comparison.png)
-
-We noticed that the `psolve` region, which represents the entire simulation phase, was about 2.3 seconds slower.
-However, the `state-cdp5StCmod` and `state-Cav2_3` kernels showed a huge discrepancy in the total number
-of retired instructions (~142 billion vs. ~80 million) and execution time. This was puzzling, as such a huge
-difference is unexpected unless the new implementation added many extra instructions or introduced a bug.
-The `cdp5StCmod.mod` file, with its complex, large `KINETIC` block and `sparse` solver, made it challenging
-to determine if the solver implementation had caused a regression in the #2027 PR.
-
-Uncertain if VTune's sampling-based mechanism had accurately captured the executed instructions, we decided to
-cross-check the measurements with LIKWID. Using LIKWID, we observed the following measurements. Note that this
-measurement was done on a different machine (due to permissions issue) with different simulation duration and
-hence the absolute results of LIKWID can not be compared with Vtune.
-
-Using the master branch we get:
-
-```console
-Region state-cdp5StCmod, Group 1: FLOPS_DP
-+-------------------+------------+
-|    Region Info    | HWThread 0 |
-+-------------------+------------+
-| RDTSC Runtime [s] |   0.369202 |
-|     call count    |        400 |
-+-------------------+------------+
-
-+------------------------------------------+---------+------------+
-|                   Event                  | Counter | HWThread 0 |
-+------------------------------------------+---------+------------+
-|             INSTR_RETIRED_ANY            |  FIXC0  | 2875244000 |
-|           CPU_CLK_UNHALTED_CORE          |  FIXC1  | 1102965000 |
-|           CPU_CLK_UNHALTED_REF           |  FIXC2  |  845614900 |
-| FP_ARITH_INST_RETIRED_128B_PACKED_DOUBLE |   PMC0  |     380402 |
-|    FP_ARITH_INST_RETIRED_SCALAR_DOUBLE   |   PMC1  |  358722700 |
-| FP_ARITH_INST_RETIRED_256B_PACKED_DOUBLE |   PMC2  |          0 |
-| FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE |   PMC3  |      -     |
-+------------------------------------------+---------+------------+
-```
-
-whereas with the `presoa`:
-
-```console
-Region state-cdp5StCmod, Group 1: FLOPS_DP
-+-------------------+------------+
-|    Region Info    | HWThread 0 |
-+-------------------+------------+
-| RDTSC Runtime [s] |   0.000044 |
-|     call count    |        400 |
-+-------------------+------------+
-
-+------------------------------------------+---------+------------+
-|                   Event                  | Counter | HWThread 0 |
-+------------------------------------------+---------+------------+
-|             INSTR_RETIRED_ANY            |  FIXC0  |    1560877 |
-|           CPU_CLK_UNHALTED_CORE          |  FIXC1  |    6131154 |
-|           CPU_CLK_UNHALTED_REF           |  FIXC2  |    4697060 |
-| FP_ARITH_INST_RETIRED_128B_PACKED_DOUBLE |   PMC0  |          0 |
-|    FP_ARITH_INST_RETIRED_SCALAR_DOUBLE   |   PMC1  |       4400 |
-| FP_ARITH_INST_RETIRED_256B_PACKED_DOUBLE |   PMC2  |          0 |
-| FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE |   PMC3  |      -     |
-+------------------------------------------+---------+------------+
-```
-
-here, with LIKWID also we see a huge difference in execution. This prompted us to examine the implementation in the
-[presoa commit](https://github.com/neuronsimulator/nrn/blob/d2f3b8e79fa4bca98b25440e713018ba0e263629/src/nrnoc/fadvance.cpp#L777),
-where we realized the instrumentation was incorrect. Instead of measuring the state-update kernel launch, it is
-always measuring access to the function pointer, not the function execution itself!
-
-```cpp
-nrn::Instrumentor::phase_begin(mechname.c_str());
-Pvmi s = memb_func[tml->index].state;
-nrn::Instrumentor::phase_end(mechname.c_str());
-
-// !! begin should be here instead
-(*s)(_nt, tml->ml, tml->index);
-// !! end should be here instead
-```
-
-### Identifying Regression
-
-Fixing the instrumentation in the `presoa` version helped us to get similar performance measurements but that still didn't explain why
-that new SoA data structure change has caused the regression. To investigate further, we sed LIKWID to compare various performance metrics.
-The same analysis could be done in VTune if you are more familiar with it. However, if you prefer LIKWID, using it via CLI might be
-easier than using a more feature-heavy tool like Intel VTune.
-
-Here is an example comparing the master branch and `presoa` for the `state-cdp5StCmod` kernel:
-
-```console
-export NRN_PROFILE_REGIONS=state-cdp5StCmod
-likwid-perfctr -C 0 -m -g FLOPS_DP x86_64/special -python protocols/01_SS.py
-```
-
-And then comparing LIKWID's output side-by-side:
+Unlike VTune, LIKWID doesn't support direct comparison of profile data. However, the powerful CLI allows us to select specific metrics
+for code regions, and since the profile results are provided as text output, comparing results from two runs is straightforward.
+For instance, the screenshot below shows FLOPS instructions side by side between two runs:
 
 ![VTune Comparison](images/nrn_likwid_presoa_master_comparison.png)
-
-There are two important observations worth mentioning:
-
-1. The number of instructions increased from 2.27 billion in the `presoa` to 2.87 billion in the `master` branch (~26% more instructions).
-2. At the same time, the number of floating instructions changed from 358 million in the `presoa` to 361 million in the `master` branch (i.e. ~1% extra floating point instructions).
-
-This indicates that while the amount of "useful work" (floating point instructions) is almost the same, the newer data structure implementation adds extra instructions.
-Next, we need to examine the generated code/assembly code to determine which aspect of C++ implementation causing such increases if any.
-
-> NOTE: Some VTune analysis hints at additional instructions due to the introduction of `mechanism_range.hpp`, but this needs further investigation.
