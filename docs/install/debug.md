@@ -656,7 +656,7 @@ cmake .. \
     -DNRN_ENABLE_PROFILING=ON \
     -DNRN_PROFILER=likwid \
     -DCMAKE_PREFIX_PATH=<likwid-install-prefix>/share/likwid \
-    -DCMAKE_INSTALL_PREFIX=`pwd`/install \
+    -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
 make -j && make install
 ```
