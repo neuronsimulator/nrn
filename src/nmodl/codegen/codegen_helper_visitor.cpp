@@ -73,15 +73,21 @@ void CodegenHelperVisitor::find_ion_variables(const ast::Program& node) {
     std::vector<std::string> ion_vars;
     std::vector<std::string> read_ion_vars;
     std::vector<std::string> write_ion_vars;
+    std::map<std::string, double> valences;
 
     for (const auto& ion_node: ion_nodes) {
         const auto& ion = std::dynamic_pointer_cast<const ast::Useion>(ion_node);
-        ion_vars.push_back(ion->get_node_name());
+        auto ion_name = ion->get_node_name();
+        ion_vars.push_back(ion_name);
         for (const auto& var: ion->get_readlist()) {
             read_ion_vars.push_back(var->get_node_name());
         }
         for (const auto& var: ion->get_writelist()) {
             write_ion_vars.push_back(var->get_node_name());
+        }
+
+        if (ion->get_valence() != nullptr) {
+            valences[ion_name] = ion->get_valence()->get_value()->to_double();
         }
     }
 
@@ -112,6 +118,10 @@ void CodegenHelperVisitor::find_ion_variables(const ast::Program& node) {
                 }
             }
         }
+        if (auto it = valences.find(ion_name); it != valences.end()) {
+            ion.valence = it->second;
+        }
+
         info.ions.push_back(std::move(ion));
     }
 

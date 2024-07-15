@@ -13,6 +13,7 @@
  */
 
 #include <fmt/format.h>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -60,6 +61,9 @@ struct Ion {
 
     /// ion variables that are being written
     std::vector<std::string> writes;
+
+    /// ion valence
+    std::optional<double> valence;
 
     /// if style semantic needed
     bool need_style = false;

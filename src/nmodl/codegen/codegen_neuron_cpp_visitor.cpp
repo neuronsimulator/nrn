@@ -11,6 +11,7 @@
 #include <chrono>
 #include <cmath>
 #include <ctime>
+#include <optional>
 #include <regex>
 #include <stdexcept>
 
@@ -1138,7 +1139,8 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
     printer->add_newline();
 
     for (const auto& ion: info.ions) {
-        printer->fmt_line("ion_reg(\"{}\", {});", ion.name, "-10000.");
+        double valence = ion.valence.value_or(-10000.0);
+        printer->fmt_line("ion_reg(\"{}\", {});", ion.name, valence);
     }
     if (!info.ions.empty()) {
         printer->add_newline();
