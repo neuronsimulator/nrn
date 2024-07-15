@@ -1112,10 +1112,12 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
                                           bool use_instance = true) const = 0;
 
     /**
-     * Prefix used for the function that performs the lazy update
+     * The name of the function that updates the table value if the parameters
+     * changed.
+     *
+     * \param block_name  The name of the block that contains the TABLE.
      */
-    std::string table_function_prefix() const;
-
+    std::string table_update_function_name(const std::string& block_name) const;
 
     /**
      * Return ion variable name and corresponding ion read variable name.

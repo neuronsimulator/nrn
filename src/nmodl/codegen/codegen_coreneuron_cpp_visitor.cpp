@@ -418,7 +418,7 @@ void CodegenCoreneuronCppVisitor::print_check_table_thread_function() {
     printer->add_line("double v = 0;");
 
     for (const auto& function: info.functions_with_table) {
-        auto method_name_str = method_name(table_function_prefix() + function->get_node_name());
+        auto method_name_str = table_update_function_name(function->get_node_name());
         auto arguments = internal_method_arguments();
         printer->fmt_line("{}({});", method_name_str, arguments);
     }

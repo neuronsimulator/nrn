@@ -72,8 +72,8 @@ bool CodegenCppVisitor::has_parameter_of_name(const T& node, const std::string& 
 }
 
 
-std::string CodegenCppVisitor::table_function_prefix() const {
-    return "lazy_update_";
+std::string CodegenCppVisitor::table_update_function_name(const std::string& block_name) const {
+    return "update_table_" + method_name(block_name);
 }
 
 
@@ -1524,9 +1524,8 @@ void CodegenCppVisitor::print_table_check_function(const Block& node) {
     auto float_type = default_float_data_type();
 
     printer->add_newline(2);
-    printer->fmt_push_block("void {}{}({})",
-                            table_function_prefix(),
-                            method_name(name),
+    printer->fmt_push_block("void {}({})",
+                            table_update_function_name(name),
                             get_parameter_str(internal_params));
     {
         printer->fmt_push_block("if ({} == 0)", use_table_var);

@@ -165,9 +165,8 @@ void CodegenNeuronCppVisitor::print_check_table_function_prototypes() {
     for (const auto& function: info.functions_with_table) {
         auto name = function->get_node_name();
         auto internal_params = internal_method_parameters();
-        printer->fmt_line("void {}{}({});",
-                          table_function_prefix(),
-                          method_name(name),
+        printer->fmt_line("void {}({});",
+                          table_update_function_name(name),
                           get_parameter_str(internal_params));
     }
 
@@ -193,10 +192,9 @@ void CodegenNeuronCppVisitor::print_check_table_function_prototypes() {
     }
 
     for (const auto& function: info.functions_with_table) {
-        auto method_name_str = function->get_node_name();
-        auto method_args_str = get_arg_str(internal_method_parameters());
-        printer->fmt_line(
-            "{}{}{}({});", table_function_prefix(), method_name_str, info.rsuffix, method_args_str);
+        auto method_name = function->get_node_name();
+        auto method_args = get_arg_str(internal_method_parameters());
+        printer->fmt_line("{}({});", table_update_function_name(method_name), method_args);
     }
     printer->pop_block();
 }
@@ -404,9 +402,8 @@ void CodegenNeuronCppVisitor::print_hoc_py_wrapper_function_body(
                           info.thread_var_thread_id);
     }
     if (info.function_uses_table(block_name)) {
-        printer->fmt_line("{}{}({});",
-                          table_function_prefix(),
-                          method_name(block_name),
+        printer->fmt_line("{}({});",
+                          table_update_function_name(block_name),
                           internal_method_arguments());
     }
     const auto get_func_call_str = [&]() {
