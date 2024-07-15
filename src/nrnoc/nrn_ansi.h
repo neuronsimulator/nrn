@@ -2,6 +2,7 @@
 #include "hocdec.h"
 #include "membfunc.h"  // nrn_bamech_t
 #include "neuron/container/data_handle.hpp"
+#include "neuron/container/generic_data_handle.hpp"
 
 #include <memory>
 struct Extnode;
@@ -84,7 +85,7 @@ extern void section_order(void);
 extern Section* nrn_sec_pop(void);
 extern Node* node_ptr(Section* sec, double x, double* parea);
 extern double* nrn_vext_pd(Symbol* s, int indx, Node* nd);
-neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
+neuron::container::generic_data_handle nrnpy_dprop(Symbol* s,
                                                    int indx,
                                                    Section* sec,
                                                    short inode,
@@ -153,7 +154,7 @@ extern const char* nrn_sec2pysecname(Section*);
 void nrn_rangeconst(Section*, Symbol*, neuron::container::data_handle<double> value, int op);
 extern int nrn_exists(Symbol*, Node*);
 neuron::container::data_handle<double> nrn_rangepointer(Section*, Symbol*, double x);
-neuron::container::data_handle<double> nrnpy_rangepointer(Section*, Symbol*, double, int*, int);
+neuron::container::generic_data_handle nrnpy_rangepointer(Section*, Symbol*, double, int*, int);
 extern double* cable_prop_eval_pointer(Symbol*);  // section on stack will be popped
 extern char* hoc_section_pathname(Section*);
 extern double nrn_arc_position(Section*, Node*);
