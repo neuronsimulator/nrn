@@ -768,10 +768,10 @@ void CodegenNeuronCppVisitor::print_standard_includes() {
         #include <math.h>
         #include <stdio.h>
         #include <stdlib.h>
+        #include <vector>
     )CODE");
-    printer->add_multi_line(nmodl::solvers::newton_hpp);
-    if (!info.vectorize) {
-        printer->add_line("#include <vector>");
+    if (info.eigen_newton_solver_exist) {
+        printer->add_multi_line(nmodl::solvers::newton_hpp);
     }
 }
 
