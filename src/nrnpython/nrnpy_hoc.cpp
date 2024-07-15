@@ -2625,7 +2625,8 @@ extern "C" PyObject* get_plotshape_data(PyObject* sp) {
 #if HAVE_IV
     IFGUI
         spi = ((ShapePlot*) that);
-    } else {
+}
+else {
         spi = ((ShapePlotData*) that);
     ENDGUI
 #else
