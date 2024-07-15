@@ -2019,16 +2019,16 @@ int NetCvode::solve(double tout) {
                     return err;
                 }
 #if HAVE_IV
-                IFGUI
-                if (rt < time(nullptr)) {
-                    //				if (++cnt > 10000) {
-                    //					cnt = 0;
-                    Oc oc;
-                    oc.notify();
-                    single_event_run();
-                    rt = time(nullptr);
+                if (hoc_usegui) {
+                    if (rt < time(nullptr)) {
+                        //				if (++cnt > 10000) {
+                        //					cnt = 0;
+                        Oc oc;
+                        oc.notify();
+                        single_event_run();
+                        rt = time(nullptr);
+                    }
                 }
-                ENDGUI
 #endif
             }
             int n = p[0].nlcv_;

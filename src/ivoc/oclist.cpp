@@ -243,29 +243,29 @@ void OcList::remove_all() {
 static double l_browser(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("List.browser", list_class_sym_, v);
 #if HAVE_IV
-    IFGUI
-    char* s = 0;
-    char* i = 0;
-    char** p = 0;
-    OcList* o = (OcList*) v;
-    if (ifarg(1)) {
-        s = gargstr(1);
-    }
-    if (ifarg(3)) {
-        i = gargstr(3);
-        p = hoc_pgargstr(2);
-        o->create_browser(s, p, i);
-        return 1.;
-    }
-    if (ifarg(2)) {
-        if (hoc_is_object_arg(2)) {
-            o->create_browser(s, NULL, *hoc_objgetarg(2));
+    if (hoc_usegui) {
+        char* s = 0;
+        char* i = 0;
+        char** p = 0;
+        OcList* o = (OcList*) v;
+        if (ifarg(1)) {
+            s = gargstr(1);
+        }
+        if (ifarg(3)) {
+            i = gargstr(3);
+            p = hoc_pgargstr(2);
+            o->create_browser(s, p, i);
             return 1.;
         }
-        i = gargstr(2);
+        if (ifarg(2)) {
+            if (hoc_is_object_arg(2)) {
+                o->create_browser(s, NULL, *hoc_objgetarg(2));
+                return 1.;
+            }
+            i = gargstr(2);
+        }
+        o->create_browser(s, i);
     }
-    o->create_browser(s, i);
-    ENDGUI
 #endif
     return 1.;
 }
@@ -273,33 +273,33 @@ static double l_browser(void* v) {
 static double l_select(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("List.select", list_class_sym_, v);
 #if HAVE_IV
-    IFGUI
-    OcListBrowser* b = ((OcList*) v)->browser();
-    long i = (long) (*getarg(1));
-    if (b) {
-        b->select_and_adjust(i);
+    if (hoc_usegui) {
+        OcListBrowser* b = ((OcList*) v)->browser();
+        long i = (long) (*getarg(1));
+        if (b) {
+            b->select_and_adjust(i);
+        }
     }
-    ENDGUI
 #endif
     return 1.;
 }
 static double l_select_action(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("List.select_action", list_class_sym_, v);
 #if HAVE_IV
-    IFGUI
-    OcListBrowser* b = ((OcList*) v)->browser();
-    if (b) {
-        bool on_rel = false;
-        if (ifarg(2)) {
-            on_rel = (bool) chkarg(2, 0, 1);
-        }
-        if (hoc_is_object_arg(1)) {
-            b->set_select_action(NULL, on_rel, *hoc_objgetarg(1));
-        } else {
-            b->set_select_action(gargstr(1), on_rel);
+    if (hoc_usegui) {
+        OcListBrowser* b = ((OcList*) v)->browser();
+        if (b) {
+            bool on_rel = false;
+            if (ifarg(2)) {
+                on_rel = (bool) chkarg(2, 0, 1);
+            }
+            if (hoc_is_object_arg(1)) {
+                b->set_select_action(NULL, on_rel, *hoc_objgetarg(1));
+            } else {
+                b->set_select_action(gargstr(1), on_rel);
+            }
         }
     }
-    ENDGUI
 #endif
     return 1.;
 }
@@ -308,14 +308,14 @@ static double l_selected(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("List.selected", list_class_sym_, v);
 #if HAVE_IV
     long i = -1;
-    IFGUI
-    OcListBrowser* b = ((OcList*) v)->browser();
-    if (b) {
-        i = b->selected();
-    } else {
-        i = -1;
+    if (hoc_usegui) {
+        OcListBrowser* b = ((OcList*) v)->browser();
+        if (b) {
+            i = b->selected();
+        } else {
+            i = -1;
+        }
     }
-    ENDGUI
     return (double) i;
 #else
     return 0.;
@@ -324,16 +324,16 @@ static double l_selected(void* v) {
 static double l_accept_action(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("List.accept_action", list_class_sym_, v);
 #if HAVE_IV
-    IFGUI
-    OcListBrowser* b = ((OcList*) v)->browser();
-    if (b) {
-        if (hoc_is_object_arg(1)) {
-            b->set_accept_action(NULL, *hoc_objgetarg(1));
-        } else {
-            b->set_accept_action(gargstr(1));
+    if (hoc_usegui) {
+        OcListBrowser* b = ((OcList*) v)->browser();
+        if (b) {
+            if (hoc_is_object_arg(1)) {
+                b->set_accept_action(NULL, *hoc_objgetarg(1));
+            } else {
+                b->set_accept_action(gargstr(1));
+            }
         }
     }
-    ENDGUI
 #endif
     return 1.;
 }
@@ -341,21 +341,21 @@ static double l_accept_action(void* v) {
 static double l_scroll_pos(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("List.scroll_pos", list_class_sym_, v);
 #if HAVE_IV
-    IFGUI
-    OcList* o = (OcList*) v;
-    OcListBrowser* b = o->browser();
-    if (b) {
-        Adjustable* a = b->adjustable();
-        if (ifarg(1)) {
-            Coord c = (Coord) chkarg(1, 0, 1e9);
-            c = (double) o->count() - a->cur_length(Dimension_Y) - c;
-            a->scroll_to(Dimension_Y, c);
+    if (hoc_usegui) {
+        OcList* o = (OcList*) v;
+        OcListBrowser* b = o->browser();
+        if (b) {
+            Adjustable* a = b->adjustable();
+            if (ifarg(1)) {
+                Coord c = (Coord) chkarg(1, 0, 1e9);
+                c = (double) o->count() - a->cur_length(Dimension_Y) - c;
+                a->scroll_to(Dimension_Y, c);
+            }
+            // printf("%g %g %g %g\n", (double)o->count(), a->cur_lower(Dimension_Y),
+            // a->cur_upper(Dimension_Y), a->cur_length(Dimension_Y));
+            return (double) (o->count() - 1) - (double) a->cur_upper(Dimension_Y);
         }
-        // printf("%g %g %g %g\n", (double)o->count(), a->cur_lower(Dimension_Y),
-        // a->cur_upper(Dimension_Y), a->cur_length(Dimension_Y));
-        return (double) (o->count() - 1) - (double) a->cur_upper(Dimension_Y);
     }
-    ENDGUI
 #endif
     return -1.;
 }

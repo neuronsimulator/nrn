@@ -273,13 +273,13 @@ void nrniv_bind_call() {
 
 void nrniv_bind_thread() {
 #if HAVE_IV
-    IFGUI
-    bind_tid_ = int(*hoc_getarg(1));
-    // printf("nrniv_bind_thread %d\n", bind_tid_);
-    iv_bind_enqueue_ = iv_bind_enqueue;
-    cond_ = std::make_unique<std::condition_variable>();
-    w_ = NULL;
-    ENDGUI
+    if (hoc_usegui) {
+        bind_tid_ = int(*hoc_getarg(1));
+        // printf("nrniv_bind_thread %d\n", bind_tid_);
+        iv_bind_enqueue_ = iv_bind_enqueue;
+        cond_ = std::make_unique<std::condition_variable>();
+        w_ = NULL;
+    }
 #endif
     hoc_pushx(1.);
     hoc_ret();
@@ -287,14 +287,14 @@ void nrniv_bind_thread() {
 
 int stdin_event_ready() {
 #if HAVE_IV
-    IFGUI
-    static DWORD main_threadid = -1;
-    if (main_threadid == -1) {
-        main_threadid = GetCurrentThreadId();
-        return 1;
+    if (hoc_usegui) {
+        static DWORD main_threadid = -1;
+        if (main_threadid == -1) {
+            main_threadid = GetCurrentThreadId();
+            return 1;
+        }
+        PostThreadMessage(main_threadid, WM_QUIT, 0, 0);
     }
-    PostThreadMessage(main_threadid, WM_QUIT, 0, 0);
-    ENDGUI
 #endif
     return 1;
 }
