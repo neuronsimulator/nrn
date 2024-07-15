@@ -2863,13 +2863,11 @@ extern "C" NRN_EXPORT PyObject* get_plotshape_data(PyObject* sp) {
     }
     void* that = pho->ho_->u.this_pointer;
 #if HAVE_IV
-    // clang-format off
-    IFGUI
+    if (hoc_usegui) {
         spi = ((ShapePlot*) that);
     } else {
         spi = ((ShapePlotData*) that);
-    ENDGUI
-    // clang-format on
+    }
 #else
     spi = ((ShapePlotData*) that);
 #endif

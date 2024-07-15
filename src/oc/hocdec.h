@@ -282,8 +282,9 @@ using neuron::Sprintf;
 
 #define ERRCHK(c1) c1
 
-#define IFGUI  if (hoc_usegui) {
-#define ENDGUI }
+// No longer used because of clang format difficulty
+// #define IFGUI  if (hoc_usegui) {
+// #define ENDGUI }
 
 extern int hoc_usegui; /* when 0 does not make interviews calls */
 extern int nrn_istty_;
