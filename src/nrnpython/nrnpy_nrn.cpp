@@ -2107,7 +2107,6 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
             PyErr_SetString(PyExc_IndexError, "missing index");
             return -1;
         }
-        double new_x = static_cast<double>(nb::float_(value));
         int errp;
         auto d = nrnpy_rangepointer(sec, sym, 0.5, &errp, 0 /* idx */);
         if (d.is_invalid_handle()) {
@@ -2118,7 +2117,10 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
             PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
             return -1;
         }
-        *d.get<double*>() = new_x;
+        if (!PyArg_Parse(value, "d", d.get<double*>())) {
+            PyErr_SetString(PyExc_ValueError, "bad value");
+            return -1;
+        }
         // only need to do following if nseg > 1, VINDEX, or EXTRACELL
         nrn_rangeconst(sec, sym, neuron::container::data_handle<double>(d), 0);
         return 0;
