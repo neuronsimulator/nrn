@@ -8,8 +8,12 @@
 
 #pragma once
 
+#include <cstdlib>
 #include <initializer_list>
+#include <sstream>
+#include <string>
 #include <type_traits>
+#include <unordered_set>
 
 #if defined(NRN_CALIPER)
 #include <caliper/cali.h>
@@ -60,7 +64,9 @@ struct Instrumentor {
      *  @param name the (unique) identifier of the code region to be profiled
      */
     inline static void phase_begin(const char* name) {
-        std::initializer_list<int>{(TProfilerImpl::phase_begin(name), 0)...};
+        if (is_region_to_track(name)) {
+            std::initializer_list<int>{(TProfilerImpl::phase_begin(name), 0)...};
+        }
     }
 
     /*! \fn phase_end
@@ -77,7 +83,9 @@ struct Instrumentor {
      *  @param name the (unique) identifier of the code region to be profiled
      */
     inline static void phase_end(const char* name) {
-        std::initializer_list<int>{(TProfilerImpl::phase_end(name), 0)...};
+        if (is_region_to_track(name)) {
+            std::initializer_list<int>{(TProfilerImpl::phase_end(name), 0)...};
+        }
     }
 
     /*! \fn start_profile
@@ -122,6 +130,7 @@ struct Instrumentor {
      *  any memory allocation is done.
      */
     inline static void init_profile() {
+        initialize_regions_from_env();
         std::initializer_list<int>{(TProfilerImpl::init_profile(), 0)...};
     }
 
@@ -139,7 +148,58 @@ struct Instrumentor {
         std::initializer_list<int>{(TProfilerImpl::finalize_profile(), 0)...};
     }
 #pragma clang diagnostic pop
+
+  private:
+    /*!
+     * \brief Initialize regions to track from the NRN_PROFILE_REGIONS environment variable.
+     *
+     * Checks if the `NRN_PROFILE_REGIONS` environment variable is set. If it is set,
+     * splits the value by "," and inserts each split string into the regions that should
+     * be measured during profiling.
+     */
+    static void initialize_regions_from_env() {
+        const char* env_p = std::getenv("NRN_PROFILE_REGIONS");
+        if (env_p) {
+            std::string regions_str(env_p);
+            std::stringstream ss(regions_str);
+            std::string region;
+            regions_to_measure.clear();
+            while (std::getline(ss, region, ',')) {
+                regions_to_measure.insert(region);
+            }
+        }
+    }
+
+    /*!
+     * \brief Check if a given region name should be tracked.
+     *
+     * By default the regions_to_measure set is empty and we measure all functions
+     * instrumented via Caliper instrumentation. But one might want to profile only
+     * particular region or "phase" (e.g. due to profiling overhead) and in that case
+     * we check `NRN_PROFILE_REGIONS` environment variable.
+     *
+     * \param name The name of the region to check.
+     * \return true if the regions set is empty or if the name exists in the regions set, false
+     * otherwise.
+     */
+    inline static bool is_region_to_track(const char* name) {
+        if (regions_to_measure.empty()) {
+            return true;
+        }
+        return regions_to_measure.find(name) != regions_to_measure.end();
+    }
+
+    /*!
+     * \brief Caliper regions that we want to measure.
+     *
+     * Each string in the set represents the name of a region of interest that
+     * we have already defined via Instrumentor::phase API.
+     */
+    static std::unordered_set<std::string> regions_to_measure;
 };
+
+template <class... TProfilerImpl>
+inline std::unordered_set<std::string> Instrumentor<TProfilerImpl...>::regions_to_measure;
 
 #if defined(NRN_CALIPER)
 
