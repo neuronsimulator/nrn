@@ -26,6 +26,9 @@ set(NRN_PYTHON_INCLUDE_LIST
 set(NRN_PYTHON_LIB_LIST
     ""
     CACHE INTERNAL "" FORCE)
+set(NRN_PYTHON_VERSIONS
+    ""
+    CACHE INTERNAL "" FORCE)
 
 # ~~~
 # Inform setup.py and nrniv/nrnpy.cpp whether libnrnpython name is libnrnpython<major>
@@ -47,6 +50,7 @@ if(NRN_ENABLE_PYTHON)
       else()
         set(PYVER ${PYTHON_VERSION_MAJOR})
       endif()
+      set(NRN_PYTHON_VERSIONS "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
       # NB: we are constructing here a variable name NRNPYTHON_INCLUDE${PYVER}
       set(NRNPYTHON_INCLUDE${PYVER} ${PYTHON_INCLUDE_DIRS})
       list(APPEND NRN_PYTHON_VER_LIST "${PYVER}")
@@ -65,7 +69,7 @@ if(NRN_ENABLE_PYTHON)
         execute_process(
           COMMAND
             ${pyexe} -c
-            "import sysconfig; print(sysconfig.get_path('include')); import sys; ${pr_pyver}; quit()"
+            "import sysconfig; print(sysconfig.get_path('include')); import sys; ${pr_pyver};quit()"
           RESULT_VARIABLE result
           OUTPUT_VARIABLE std_output
           ERROR_VARIABLE err_output
@@ -99,8 +103,26 @@ if(NRN_ENABLE_PYTHON)
           message(
             FATAL_ERROR "Error while checking ${pyexe} : ${result}\n${std_output}\n${err_output}")
         endif()
+
+        # again to calculate PYVER (major.minor) for NRN_PYTHON_VERSIONS
+        set(pr_pyverxy "print('%d.%d' % (sys.version_info[0], sys.version_info[1]))")
+        execute_process(
+          COMMAND ${pyexe} -c "import sys; ${pr_pyverxy}; quit()"
+          RESULT_VARIABLE result
+          OUTPUT_VARIABLE std_output
+          ERROR_VARIABLE err_output
+          OUTPUT_STRIP_TRAILING_WHITESPACE)
+        if(result EQUAL 0)
+          # cmake-format: off
+          string(REGEX MATCH [0-9.]*$ PYVERXY ${std_output})
+          # cmake-format: on
+          list(APPEND NRN_PYTHON_VERSIONS "${PYVERXY}")
+        endif()
       endforeach()
     endif()
+  else()
+    # the default python version
+    set(NRN_PYTHON_VERSIONS "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
   endif()
 endif()
 

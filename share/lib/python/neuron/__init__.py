@@ -106,6 +106,19 @@ import weakref
 
 embedded = True if "hoc" in sys.modules else False
 
+# First, check that the compiled extension (neuron.hoc) was built for this version of
+# Python. If not, fail early and helpfully.
+from ._config_params import supported_python_versions
+
+current_version = "{}.{}".format(*sys.version_info[:2])
+if current_version not in supported_python_versions:
+    message = (
+        "Python {} is not supported by this NEURON installation (supported: {}). Either re-build "
+        "NEURON with support for this version, use a supported version of Python, or try using "
+        "nrniv -python so that NEURON can suggest a compatible version for you."
+    ).format(current_version, " ".join(supported_python_versions))
+    raise ImportError(message)
+
 try:  # needed since python 3.8 on windows if python launched
     # do this here as NEURONHOME may be changed below
     nrnbindir = os.path.abspath(os.environ["NEURONHOME"] + "/bin")
@@ -162,6 +175,8 @@ if not hasattr(hoc, "__file__"):
         setattr(hoc, "__file__", hoc_path)
 else:
     _original_hoc_file = hoc.__file__
+
+
 # As a workaround to importing doc at neuron import time
 # (which leads to chicken and egg issues on some platforms)
 # define a dummy help function which imports doc,
@@ -937,7 +952,8 @@ class _PlotShapePlot(_WrapperPlot):
     ps.plot(pyplot)
     pyplot.show()
 
-    Limitations: many. Currently only supports plotting a full cell colored based on a variable."""
+    Limitations: many. Currently only supports plotting a full cell colored based on a variable.
+    """
 
     # TODO: handle pointmark, specified sections, color
     def __call__(self, graph, *args, **kwargs):
