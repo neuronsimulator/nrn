@@ -132,7 +132,7 @@ bool InlineVisitor::inline_function_call(ast::Block& callee,
 
     /// do nothing if we can't inline given procedure/function
     if (!can_inline_block(*callee.get_statement_block())) {
-        logger->warn("Can not inline function call to {}", function_name);
+        logger->debug("Can not inline function call to {}", function_name);
         return false;
     }
 
