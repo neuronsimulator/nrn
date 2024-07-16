@@ -1,9 +1,9 @@
 #include <../../nrnconf.h>
 #include <cstdlib>
+#include <vector>
 
 #include "utils/formatting.hpp"
 
-#include <vector>
 
 #include "classreg.h"
 

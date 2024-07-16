@@ -1,5 +1,6 @@
 #pragma once
 
+#include "neuron/container/generic_data_handle.hpp"
 #include "options.h"  // for EXTRACELLULAR
 #include "neuron/container/data_handle.hpp"
 
@@ -57,7 +58,7 @@ neuron::container::data_handle<double> nrn_rangepointer(Section* sec, Symbol* s,
 
 /// return nullptr if failure instead of hoc_execerror and return pointer to the 0 element if an
 /// array
-neuron::container::data_handle<double> nrnpy_rangepointer(Section*, Symbol*, double, int*, int);
+neuron::container::generic_data_handle nrnpy_rangepointer(Section*, Symbol*, double, int*, int);
 
 /// returns nearest index to x
 int node_index(Section* sec, double x);
@@ -94,7 +95,7 @@ Node* node_ptr(Section* sec, double x, double* parea);
 neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, short inode);
 
 /// returns location of property symbol, return nullptr instead of hoc_execerror
-neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
+neuron::container::generic_data_handle nrnpy_dprop(Symbol* s,
                                                    int indx,
                                                    Section* sec,
                                                    short inode,
