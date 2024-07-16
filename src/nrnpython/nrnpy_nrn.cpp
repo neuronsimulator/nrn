@@ -1,3 +1,5 @@
+#include "neuron/container/data_handle.hpp"
+#include "neuron/container/generic_data_handle.hpp"
 #include "nrn_ansi.h"
 #include "cabcode.h"
 #include "nrnpython.h"
@@ -102,6 +104,10 @@ typedef struct {
     int attr_from_sec_;  // so section.xraxial[0] = e assigns to all segments.
 } NPyRangeVar;
 
+typedef struct {
+    PyObject_HEAD
+} NPyOpaquePointer;
+
 PyTypeObject* psection_type;
 static PyTypeObject* pallseg_of_sec_iter_type;
 static PyTypeObject* pseg_of_sec_iter_type;
@@ -111,6 +117,7 @@ static PyTypeObject* pmech_generic_type;
 static PyTypeObject* pmechfunc_generic_type;
 static PyTypeObject* pvar_of_mech_iter_generic_type;
 static PyTypeObject* range_type;
+static PyTypeObject* opaque_pointer_type;
 
 PyObject* pmech_types;  // Python map for name to Mechanism
 PyObject* rangevars_;   // Python map for name to Symbol
@@ -1959,6 +1966,26 @@ static NPyRangeVar* rvnew(Symbol* sym, NPySecObj* sec, double x) {
     return r;
 }
 
+static NPyOpaquePointer* opaque_pointer_new() {
+    return PyObject_New(NPyOpaquePointer, opaque_pointer_type);
+}
+
+static PyObject* build_python_value(const neuron::container::generic_data_handle& dh) {
+    if (dh.holds<double*>()) {
+        return Py_BuildValue("d", *dh.get<double*>());
+    } else {
+        return (PyObject*) opaque_pointer_new();
+    }
+}
+
+static PyObject* build_python_reference(const neuron::container::generic_data_handle& dh) {
+    if (dh.holds<double*>()) {
+        return nrn_hocobj_handle(neuron::container::data_handle<double>{dh});
+    } else {
+        return (PyObject*) opaque_pointer_new();
+    }
+}
+
 static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
@@ -1987,14 +2014,14 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
         } else {
             int err;
             auto const d = nrnpy_rangepointer(sec, sym, 0.5, &err, 0 /* idx */);
-            if (!d) {
+            if (d.is_invalid_handle()) {
                 rv_noexist(sec, n, 0.5, err);
                 result = nullptr;
             } else {
                 if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
                     nrn_area_ri(sec);
                 }
-                result = Py_BuildValue("d", *d);
+                result = build_python_value(d);
             }
         }
     } else if (strcmp(n, "rallbranch") == 0) {
@@ -2078,15 +2105,18 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
         } else {
             int errp;
             auto d = nrnpy_rangepointer(sec, sym, 0.5, &errp, 0 /* idx */);
-            if (!d) {
+            if (d.is_invalid_handle()) {
                 rv_noexist(sec, n, 0.5, errp);
                 err = -1;
-            } else if (!PyArg_Parse(value, "d", static_cast<double*>(d))) {
+            } else if (!d.holds<double*>()) {
+                PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
+                err = -1;
+            } else if (!PyArg_Parse(value, "d", d.get<double*>())) {
                 PyErr_SetString(PyExc_ValueError, "bad value");
                 err = -1;
             } else {
                 // only need to do following if nseg > 1, VINDEX, or EXTRACELL
-                nrn_rangeconst(sec, sym, d, 0);
+                nrn_rangeconst(sec, sym, neuron::container::data_handle<double>(d), 0);
             }
         }
     } else if (strcmp(n, "rallbranch") == 0) {
@@ -2226,14 +2256,14 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
         } else {
             int err;
             auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
-            if (!d) {
+            if (d.is_invalid_handle()) {
                 rv_noexist(sec, n, self->x_, err);
                 result = NULL;
             } else {
                 if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
                     nrn_area_ri(sec);
                 }
-                result = Py_BuildValue("d", *d);
+                result = build_python_value(d);
             }
         }
     } else if (strncmp(n, "_ref_", 5) == 0) {
@@ -2254,11 +2284,15 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             } else {
                 int err;
                 auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
-                if (!d) {
+                if (d.is_invalid_handle()) {
                     rv_noexist(sec, n + 5, self->x_, err);
                     result = NULL;
                 } else {
-                    result = nrn_hocobj_handle(d);
+                    if (d.holds<double*>()) {
+                        result = nrn_hocobj_handle(neuron::container::data_handle<double>(d));
+                    } else {
+                        result = (PyObject*) opaque_pointer_new();
+                    }
                 }
             }
         } else {
@@ -2357,22 +2391,28 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
         } else {
             int errp;
             auto d = nrnpy_rangepointer(sec, sym, self->x_, &errp, 0 /* idx */);
-            if (!d) {
+            if (d.is_invalid_handle()) {
                 rv_noexist(sec, n, self->x_, errp);
                 Py_DECREF(pyname);
                 return -1;
             }
-            if (!PyArg_Parse(value, "d", static_cast<double*>(d))) {
-                PyErr_SetString(PyExc_ValueError, "bad value");
+            if (d.holds<double*>()) {
+                if (!PyArg_Parse(value, "d", d.get<double*>())) {
+                    PyErr_SetString(PyExc_ValueError, "bad value");
+                    Py_DECREF(pyname);
+                    return -1;
+                } else if (sym->u.rng.type == MORPHOLOGY) {
+                    diam_changed = 1;
+                    sec->recalc_area_ = 1;
+                    nrn_diam_change(sec);
+                } else if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
+                    // cannot execute because xraxial is an array
+                    diam_changed = 1;
+                }
+            } else {
+                PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
                 Py_DECREF(pyname);
                 return -1;
-            } else if (sym->u.rng.type == MORPHOLOGY) {
-                diam_changed = 1;
-                sec->recalc_area_ = 1;
-                nrn_diam_change(sec);
-            } else if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
-                // cannot execute because xraxial is an array
-                diam_changed = 1;
             }
         }
     } else if (strncmp(n, "_ref_", 5) == 0) {
@@ -2444,6 +2484,30 @@ static neuron::container::data_handle<double> var_pval(NPyMechObj* pymech,
     return dh;
 }
 
+static neuron::container::generic_data_handle var_dparam(NPyMechObj* pymech,
+                                                         Symbol* symvar,
+                                                         int index) {
+    if (pymech->prop_->ob) {
+        // HocMech created by make_mechanism. It isn't obvious where HOC mechs
+        // would store dparams.
+        throw std::runtime_error("Not implemented.");
+    }
+
+    int sym_index = symvar->u.rng.index;
+    return pymech->prop_->dparam[sym_index + index];
+}
+
+static neuron::container::generic_data_handle get_rangevar(NPyMechObj* pymech,
+                                                           Symbol* symvar,
+                                                           int index) {
+    if (symvar->subtype == NRNPOINTER) {
+        return var_dparam(pymech, symvar, index);
+    } else {
+        return var_pval(pymech, symvar, index);
+    }
+}
+
+
 static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     Section* sec = self->pyseg_->pysec_->sec_;
     CHECK_SEC_INVALID(sec)
@@ -2481,13 +2545,14 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
             r->attr_from_sec_ = 0;
             result = (PyObject*) r;
         } else {
-            auto const px = var_pval(self, sym, 0);
-            if (!px) {
+            auto const px = get_rangevar(self, sym, 0);
+            if (px.is_invalid_handle()) {
                 rv_noexist(sec, sym->name, self->pyseg_->x_, 2);
+                result = nullptr;
             } else if (isptr) {
-                result = nrn_hocobj_handle(px);
+                result = build_python_reference(px);
             } else {
-                result = Py_BuildValue("d", *px);
+                result = build_python_value(px);
             }
         }
     } else if (sym && sym->type == RANGEOBJ) {
@@ -2570,18 +2635,16 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
         if (isptr) {
             err = nrn_pointer_assign(self->prop_, sym, value);
         } else {
-            double x;
-            auto pd = var_pval(self, sym, 0);
-            if (pd) {
-                if (PyArg_Parse(value, "d", &x) == 1) {
-                    *pd = x;
-                } else {
-                    PyErr_SetString(PyExc_ValueError, "must be a double");
-                    err = -1;
-                }
-            } else {
+            auto pd = get_rangevar(self, sym, 0);
+            if (pd.is_invalid_handle()) {
                 rv_noexist(sec, sym->name, self->pyseg_->x_, 2);
-                err = 1;
+                err = -1;
+            } else if (!pd.holds<double*>()) {
+                PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
+                err = -1;
+            } else if (!PyArg_Parse(value, "d", pd.get<double*>())) {
+                PyErr_SetString(PyExc_ValueError, "must be a double");
+                err = -1;
             }
         }
     } else {
@@ -2666,14 +2729,14 @@ static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
     }
     int err;
     auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, ix);
-    if (!d) {
+    if (d.is_invalid_handle()) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
         return NULL;
     }
     if (r->isptr_) {
-        result = nrn_hocobj_handle(d);
+        result = nrn_hocobj_handle(neuron::container::data_handle<double>(d));
     } else {
-        result = Py_BuildValue("d", *d);
+        result = build_python_value(d);
     }
     return result;
 }
@@ -2696,7 +2759,7 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
     }
     int err;
     auto d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, ix);
-    if (!d) {
+    if (d.is_invalid_handle()) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
         return -1;
     }
@@ -2715,8 +2778,13 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
                        neuron::container::data_handle<double>{neuron::container::do_not_search, &x},
                        0);
     } else {
-        if (!PyArg_Parse(value, "d", static_cast<double*>(d))) {
-            PyErr_SetString(PyExc_ValueError, "bad value");
+        if (d.holds<double*>()) {
+            if (!PyArg_Parse(value, "d", d.get<double*>())) {
+                PyErr_SetString(PyExc_ValueError, "bad value");
+                return -1;
+            }
+        } else {
+            PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
             return -1;
         }
     }
@@ -3028,6 +3096,12 @@ PyObject* nrnpy_nrn(void) {
         goto fail;
     Py_INCREF(range_type);
 
+    opaque_pointer_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_OpaquePointerType_spec);
+    opaque_pointer_type->tp_new = PyType_GenericNew;
+    if (PyType_Ready(opaque_pointer_type) < 0)
+        goto fail;
+    Py_INCREF(opaque_pointer_type);
+
     m = PyModule_Create(&nrnsectionmodule);  // like nrn but namespace will not include mechanims.
     PyModule_AddObject(m, "Section", (PyObject*) psection_type);
     PyModule_AddObject(m, "Segment", (PyObject*) psegment_type);
@@ -3039,6 +3113,7 @@ PyObject* nrnpy_nrn(void) {
     nrnmodule_ = m;
     PyModule_AddObject(m, "Section", (PyObject*) psection_type);
     PyModule_AddObject(m, "Segment", (PyObject*) psegment_type);
+    PyModule_AddObject(m, "OpaquePointer", (PyObject*) opaque_pointer_type);
 
     pmech_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_MechanismType_spec);
     pmechfunc_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_MechFuncType_spec);

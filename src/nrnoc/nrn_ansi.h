@@ -3,6 +3,7 @@
 #include "membfunc.h"  // nrn_bamech_t
 #include "cabcode.h"
 #include "neuron/container/data_handle.hpp"
+#include "neuron/container/generic_data_handle.hpp"
 #include <memory>
 
 struct Extnode;
@@ -67,11 +68,6 @@ extern void sec_free(hoc_Item*);
 extern void extcell_node_create(Node*);
 extern void extnode_free_elements(Extnode*);
 extern void section_order(void);
-neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
-                                                   int indx,
-                                                   Section* sec,
-                                                   short inode,
-                                                   int* err);
 neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, short inode);
 extern "C" void nrn_random_play();
 extern void fixed_play_continuous(NrnThread*);
