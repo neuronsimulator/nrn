@@ -113,9 +113,9 @@ if(NRN_ENABLE_PYTHON)
           ERROR_VARIABLE err_output
           OUTPUT_STRIP_TRAILING_WHITESPACE)
         if(result EQUAL 0)
-          # cmake-format: off  
+          # cmake-format: off
           string(REGEX MATCH [0-9.]*$ PYVERXY ${std_output})
-          # cmake-format: on 
+          # cmake-format: on
           list(APPEND NRN_PYTHON_VERSIONS "${PYVERXY}")
         endif()
       endforeach()

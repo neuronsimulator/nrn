@@ -237,4 +237,3 @@ else()
   install(FILES "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
           DESTINATION lib/python/neuron)
 endif()
-
