@@ -2113,14 +2113,12 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
         if (d.is_invalid_handle()) {
             rv_noexist(sec, n, 0.5, errp);
             return -1;
-        } else if (!d.holds<double*>()) {
+        }
+        if (!d.holds<double*>()) {
             PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
             return -1;
-        } else if (!PyArg_Parse(value, "d", d.get<double*>())) {
-            PyErr_SetString(PyExc_ValueError, "bad value");
-            return -1;
         }
-        d = new_x;
+        *d.get<double*>() = new_x;
         // only need to do following if nseg > 1, VINDEX, or EXTRACELL
         nrn_rangeconst(sec, sym, neuron::container::data_handle<double>(d), 0);
         return 0;
@@ -2290,17 +2288,12 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
                 return (PyObject*) r;
             } else {
                 int err;
-                auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
-                if (d.is_invalid_handle()) {
+                auto const dh = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
+                if (dh.is_invalid_handle()) {
                     rv_noexist(sec, n + 5, self->x_, err);
                     return NULL;
                 }
-                if (d.holds<double*>()) {
-                    return nrn_hocobj_handle(neuron::container::data_handle<double>(d));
-                } else {
-                    return (PyObject*) opaque_pointer_new();
-                }
-                return nrn_hocobj_handle(neuron::container::data_handle<double>(d));
+                return build_python_reference(dh);
             }
         } else {
             rv_noexist(sec, n, self->x_, 2);
@@ -2393,29 +2386,23 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
             return -1;
         }
         int errp;
-        double new_x = static_cast<double>(nb::float_(value));
         auto d = nrnpy_rangepointer(sec, sym, self->x_, &errp, 0 /* idx */);
         if (d.is_invalid_handle()) {
             rv_noexist(sec, n, self->x_, errp);
             return -1;
         }
-        if (d.holds<double*>()) {
-            d = new_x;
-            if (!PyArg_Parse(value, "d", d.get<double*>())) {
-                PyErr_SetString(PyExc_ValueError, "bad value");
-                return -1;
-            } else if (sym->u.rng.type == MORPHOLOGY) {
-                diam_changed = 1;
-                sec->recalc_area_ = 1;
-                nrn_diam_change(sec);
-            } else if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
-                // cannot execute because xraxial is an array
-                diam_changed = 1;
-            }
-        } else {
+        if (!d.holds<double*>()) {
             PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
-            Py_DECREF(pyname);
             return -1;
+        }
+        *d.get<double*>() = static_cast<double>(nb::float_(value));
+        if (sym->u.rng.type == MORPHOLOGY) {
+            diam_changed = 1;
+            sec->recalc_area_ = 1;
+            nrn_diam_change(sec);
+        } else if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
+            // cannot execute because xraxial is an array
+            diam_changed = 1;
         }
         return 0;
     }
