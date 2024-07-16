@@ -84,7 +84,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %token	<qp>	'~'
 %token	<qp>	OR AND GT LT LE EQ NE NOT
 %token	<qp>	NAME PRIME REAL INTEGER DEFINEDVAR ONTOLOGY_ID
-%type	<qp>	Name NUMBER real real_signed intexpr integer
+%type	<qp>	Name NUMBER real intexpr integer
 %token	<qp>	STRING VS LAG SWEEP
 %type	<str>	line model units unit limits abstol
 %type	<qp>	name number nonlineqn primary term linexpr
@@ -227,7 +227,7 @@ uniton: UNITSON {replacstr($1, "");}
 	;
 limits: /*nothing*/
 		{$$ = stralloc("", (char*)0);}
-	| LT real_signed ',' real_signed GT
+	| LT number ',' number GT
 		{
 		 Sprintf(buf, "%s %s", STR($2), STR($4));
 		 $$ = stralloc(buf, (char*)0);
@@ -258,14 +258,6 @@ real:	REAL {lastok = $1;}
 		lastok = $1;
 		}
 	;
-real_signed: real {lastok = $1; }
-    | '-' real
-		/* replace the string with -string and discard '-'*/
-                { Sprintf(buf, "-%s", STR($2));
-		 STR($2) = stralloc(buf, STR($2)); $$ = $2;
-		remove($1); lastok = $2;
-		}
-    ;
 indepblk: INDEPENDENT '{' indepbody '}' {deltokens($1, $4);}
 	;
 indepbody: /*nothing*/
@@ -1058,7 +1050,7 @@ nrnlist: NAME
 	;
 valence: /*nothing*/
 		{$$ = ITEM0;}
-	| VALENCE real_signed
+	| VALENCE number
 		{$$ = $2;}
 	;
 %%
