@@ -2395,7 +2395,10 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
             PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
             return -1;
         }
-        *d.get<double*>() = static_cast<double>(nb::float_(value));
+        if (!PyArg_Parse(value, "d", d.get<double*>())) {
+            PyErr_SetString(PyExc_ValueError, "bad value");
+            return -1;
+        }
         if (sym->u.rng.type == MORPHOLOGY) {
             diam_changed = 1;
             sec->recalc_area_ = 1;
