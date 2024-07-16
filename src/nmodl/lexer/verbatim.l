@@ -49,6 +49,9 @@
  */
 %option yymore
 
+%option nounistd
+%option never-interactive
+
 /** lexer header file */
 %option header-file="verbatim_lexer.hpp"
 
