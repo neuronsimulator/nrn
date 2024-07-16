@@ -11,6 +11,10 @@ from shutil import copytree, which
 from setuptools import Command, Extension
 from setuptools import setup
 
+ver_lt_38 = sys.version_info[0] == 3 and sys.version_info[1] < 8
+if ver_lt_38:
+    # dirs_exist_ok for copytree does not exist
+    from distutils.dir_util import copy_tree
 
 logging.info("setup.py called with:" + " ".join(sys.argv))
 
@@ -240,7 +244,10 @@ class CMakeAugmentedBuilder(build_ext):
                     ext.cmake_install_prefix, ext.cmake_install_python_files
                 )
                 if os.path.isdir(src_py_dir):
-                    copytree(src_py_dir, self.build_lib, dirs_exist_ok=True)
+                    if ver_lt_38:
+                        copy_tree(src_py_dir, self.build_lib)
+                    else:
+                        copytree(src_py_dir, self.build_lib, dirs_exist_ok=True)
                     shutil.rmtree(src_py_dir)  # avoid being collected to data dir
 
                 for d in ext.cmake_collect_dirs:
