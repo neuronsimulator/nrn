@@ -290,7 +290,8 @@ install dependencies. For example, on Ubuntu:
 sudo apt-get update
 sudo apt-get install -y bison cmake flex git \
      libncurses-dev libopenmpi-dev libx11-dev \
-     libxcomposite-dev openmpi-bin python3-dev
+     libxcomposite-dev openmpi-bin python3-dev \
+     libreadline-dev
 # for python dependencies
 pip install -r nrn_requirements.txt
 ```

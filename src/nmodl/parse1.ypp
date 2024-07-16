@@ -227,7 +227,7 @@ uniton: UNITSON {replacstr($1, "");}
 	;
 limits: /*nothing*/
 		{$$ = stralloc("", (char*)0);}
-	| LT real ',' real GT
+	| LT number ',' number GT
 		{
 		 Sprintf(buf, "%s %s", STR($2), STR($4));
 		 $$ = stralloc(buf, (char*)0);
