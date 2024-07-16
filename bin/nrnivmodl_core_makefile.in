@@ -187,7 +187,7 @@ $(mod_cpp_files): $(MOD_TO_CPP_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MOD_TO_CPP_DIR
 
 # generate common solver headers
 $(MOD_TO_CPP_DIR)/solver/%.hpp: $(MOD_TO_CPP_DIR)
-	$(NMODL_ENV_VAR) $(NMODL_BINARY_PATH) --dump-solvers % -o $(MOD_TO_CPP_DIR)/
+	$(NMODL_ENV_VAR) $(NMODL_BINARY_PATH) --dump-solvers $(*F) -o $(MOD_TO_CPP_DIR)/
 
 # generate mod registration function. Dont overwrite if it's not changed
 $(MOD_FUNC_CPP): build_always | $(MOD_TO_CPP_DIR)
