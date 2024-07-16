@@ -70,7 +70,7 @@ jobs:
               # TODO: address-leak is the dream, but there are many problems,
               # including external ones from the MPI implementations
               sanitizer: address
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             config:
               build_mode: cmake
               # Cannot use a non-instrumented OpenMP with TSan, and we don't
