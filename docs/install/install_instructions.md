@@ -1,14 +1,14 @@
 NEURON can be installed on a wide variety of hardware platforms. Based on your system and software
 environment you can choose one of the installation method described below.
 
-## Installing Binary Distribution
+# Installing Binary Distribution
 
 If you want to quickly get started with NEURON, we provide binary installers for Linux, Mac and
 Windows platforms.
 
-#### Mac OS
+## Mac OS
 
-Since version 7.8.1 we are providing Python wheels and NEURON can be installed using `pip` by opening a Terminal (Press `⌘` + `Space` and type "terminal") and typing:
+Since version 7.8.1 we are providing Python wheels and NEURON can be installed using `pip` as:
 
 ```
 pip3 install neuron
@@ -27,10 +27,10 @@ You can download legacy versions from:
 * [Legacy Versions](https://neuron.yale.edu/ftp/neuron/versions/)
 
 Earlier Mac OS pkg installers have name in the format of
-`nrn-<version-id>-osx-38-39-310-311.pkg`.
+`nrn-<version-id>-osx-37-38-39-310.pkg`.
 Like windows installers,
-the, `py-38-39-310-311` string in the installer name indicates that the given installer is
-compatible with Python versions  3.8, 3.9, 3.10 and 3.11. Note that if you double-click the installer
+the, `py-37-38-39-310` string in the installer name indicates that the given installer is
+compatible with Python versions  3.7, 3.8, 3.9 and 3.10. Note that if you double-click the installer
 then you might see warning like below. In this case you have to right-click on the installer and then
 click `Open`. You can then see an option to `Open` installer: 
 
@@ -105,9 +105,12 @@ architecture.
   contain the "macos11" string within the package name for the universal2
   installers for python 3.8, 3.9, and 3.10.
 
-#### Linux
 
-Like Mac OS, since 7.8.1 release python wheels are provided and you can use `pip` to install NEURON by opening a terminal and typing:
+---------------------- 
+
+## Linux
+
+Like Mac OS, since 7.8.1 release python wheels are provided and you can use `pip` to install NEURON as:
 
 ```
 pip3 install neuron
@@ -116,22 +119,207 @@ pip3 install neuron
 Note that Python2 wheels are provided for the 8.0.x release series exclusively. Also, we are not providing .rpm or .deb
 installers for recent releases.
 
-#### Windows
+---------------------- 
 
-On Windows, the only recommended way to install NEURON is using the binary installer. You can download alpha
-or recent releases from:
+## Windows
 
-* [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
-* [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
+Neuron Simulator detailed installation in Window.
+
+On Windows, the only recommended way to install NEURON is using the binary installer. You can download recent releases or any previous released version from:
+* [Recent Releases](https://github.com/neuronsimulator/nrn/releases/download/8.2.4/nrn-8.2.4.w64-mingw-py-37-38-39-310-311-setup.exe).
+* [List of Releases](https://github.com/neuronsimulator/nrn/releases/)
+
+---------------------- 
+
+#### Step 1: Download the NEURON for Windows Installer [here](https://github.com/neuronsimulator/nrn/releases/download/8.2.4/nrn-8.2.4.w64-mingw-py-37-38-39-310-311-setup.exe). 
+See the file name downloaded. 
 
 The naming convention for Windows installers is `nrn-<version-id>-mingw-py-38-39-310-311-setup.exe`.
 The `py-38-39-310-311` string in the installer name indicates that the given installer is compatible
-with Python versions 3.8, 3.9, 3.10 and 3.11. Once the installer is downloaded, you can install it
-by double clicking like any other Windows application. Note that you have to install python separately
-if python support is required. You can find detailed step-by-step instructions in
+with Python versions 3.8, 3.9, 3.10 and 3.11. 
+
+That means the last python version compatible is 3.11 
+
+---------------------- 
+
+#### Step 2: Install conda by [miniconda](https://docs.anaconda.com/free/miniconda/)  
+Follow the installation box steps. Select "Add Miniconda3 to my PATH environment variable" option, otherwise you will need do it manually after. 
+This picture: 
+ 
+![miniconda installation dialog box showing checked box](images/Install_conda_by_miniconda_1.png)
+ 
+Or this one: 
+
+![zoomed in view of the checked box in miniconda installation](images/Install_conda_by_miniconda_2.png)
+ 
+#### Step 3: Open a Windows PowerShell terminal (or CDM) 
+ 
+---------------------- 
+
+#### Step 4: Install Python via conda  
+
+`conda install python=3.#`
+where # (the last compatible version) 
+ 
+```bash
+conda install python=3.11 
+```
+We recommend installing Python via conda and not via Microsoft Store to avoid manually changing the PATH file. 
+ 
+---------------------- 
+
+#### Step 5: check python version 
+
+```bash
+python --version 
+```
+If the version is not compatible with neuron do: 
+
+`conda install python=X.XX`   ( See Step 4)
+
+(X.XX the last python version compatible with neuron. Yes, it may be a downgrade) 
+ 
+---------------------- 
+
+#### Step 6: install NEURON 
+
+Once the installer is downloaded, you can install it by double clicking like any other Windows application. 
+Follow the installation box steps.   
+
+PS: The `pip install neuron` will not work properly in Windows. 
+
+---------------------- 
+
+#### Step 7: install any other package as matplotlib 
+In order to install any other package open a CDM or Windows PowerShell and try: 
+ 
+`conda install <name_of_the_package>`
+ 
+Example: 
+```bash
+conda install matplotlib 
+conda install plotly
+conda install panda
+```
+ 
+PS: `pip install matplotlib` may also works
+ 
+More information at (https://matplotlib.org/stable/users/getting_started/) 
+
+---------------------- 
+
+#### Step 8: Enjoy Neuron!!  
+Some neurons (cool 3D) examples [here](https://nrn.readthedocs.io/en/8.2.4/python/visualization/plotshapeclass.html).  
+
+Download files [c91662.ses](https://github.com/dohalloran/NCX_Model/blob/master/c91662.ses) and save the follow code as "example_plotly_matplotlib.py"
+
+```python
+import matplotlib
+matplotlib.use("TkAgg")  #works
+import plotly
+#from matplotlib import pyplot, cm
+
+from neuron import h, gui
+from neuron.units import mV, ms
+h.load_file('c91662.ses')
+
+'''
+#ps = h.PlotShape(False)
+#ps.variable("v")
+#ps.plot(pyplot, cmap=cm.cool)
+#pyplot.show()
+'''
+ps = h.PlotShape(False)
+ps.variable("v")
+ps.plot(plotly).show()
+```
+
+Inside the folder that your downloaded "c91662.ses" and saved "example_plotly_matplotlib.py" are, open a terminal and do:
+ 
+Open a new terminal and try: 
+```bash
+python -i example_plotly_matplotlib.py
+```
+ 
+---------------------- 
+ 
+### Common problems: 
+ 
+#### Incompatibility neuron and python version. See steps 1, 4 and 5. 
+ 
+The python version incompatibility with neuron version.
+
+---------------------- 
+```
+C:\Users\User>python3 
+Python 3.12.4 (tags/v3.12.4:8e8a4ba, Jun  6 2024, 19:30:16) [MSC v.1940 64 bit (AMD64)] on win32 
+Type "help", "copyright", "credits" or "license" for more information. 
+>>> import neuron 
+Traceback (most recent call last): 
+  File "c:\nrn\lib\python\neuron\__init__.py", line 135, in <module> 
+    from . import hoc 
+ImportError: cannot import name 'hoc' from partially initialized module 'neuron' (most likely due to a circular import) (c:\nrn\lib\python\neuron\__init__.py) 
+  
+During handling of the above exception, another exception occurred: 
+  
+Traceback (most recent call last): 
+  File "<stdin>", line 1, in <module> 
+  File "c:\nrn\lib\python\neuron\__init__.py", line 137, in <module> 
+    import neuron.hoc 
+ModuleNotFoundError: No module named 'neuron.hoc' 
+>>> 
+```
+
+---------------------- 
+
+#### "PATH" problems. See step 2. 
+ 
+A PATH problem that I'm not sure how to reproduce all error possibilities.  But it seems to be correlated with the python installation process (from Windows Microsoft Store (as an app) or by Python Webpage and/or Conda) and/or neuron/python order (I've stalled neuron before python and didn’t get this problem) 
+ 
+--------- Example 1 ------------- 
+```
+<stdin>:149: SyntaxWarning: invalid escape sequence '\.' 
+<stdin>:197: SyntaxWarning: invalid escape sequence '\.' 
+cygcheck: could not find 'C:/Users/User/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0/python.exe' 
+ ```
+----------- End Example 1 ----------- 
+ 
+--------- Example 2 ------------- 
+```
+WARNING: The script f2py.exe is installed in 'C:\Users\User\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts' which is not on PATH. 
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location. 
+  WARNING: The scripts fonttools.exe, pyftmerge.exe, pyftsubset.exe and ttx.exe are installed in 'C:\Users\User\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts' which is not on PATH. 
+``` 
+----------- End Example 2 ----------- 
+ 
+ 
+If you face any of the issues above, it is due to a PATH missing line. You need to introduce the correct python path way at path compartment.
+ 
+PS: C:\Users\User> setx PATH  "C:\Users\User\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts; %PATH%" 
+may not be a good idea. Python may stop to work in terminal. 
+
+PS: There is a conflict in Windows caused by the way you install python. It can be installed as a app or as a pack ("pack" means as download and run the exe or by conda or wetget...) 
+
+---------------------- 
+
+#### "No module named" problems. See step 7.
+Once the python is installed, useful packages as matplotlib, plotly, pandas don’t come automatically.  
+
+```
+>>> import matplotlib.pyplot as plt 
+Traceback (most recent call last): 
+  File "<stdin>", line 1, in <module> 
+ModuleNotFoundError: No module named 'matplotlib' 
+>>> 
+```
+
+For old versions, you can find detailed step-by-step instructions in
 [this presentation](https://neuron.yale.edu/ftp/neuron/nrn_mswin_install.pdf).
 
-#### Windows Subsystem for Linux (WSL) Python Wheel
+
+---------------------- 
+
+### Windows Subsystem for Linux (WSL) Python Wheel
 
 Alternatively, if you are using Windows Subsystem for Linux, you can install the available Linux Python wheel.
 Note that the default Linux distro installed by WSL is Ubuntu, and the following instructions are tailored accordingly.
@@ -198,15 +386,13 @@ from source.
 In order to build NEURON from source, the following packages must be available:
 
 - Bison
-- Flex >= 2.6
-- C/C++ compiler suite supporting C++17 (e.g. GCC >=9.3.1, Clang >= 11.0.0)
-  - Note that some C++17 features require a newer compiler version.
-  - C++17 features must be available without linking extra libraries. This notably excludes some older versions of GCC where `std::filesystem` required `libstdc++fs.so`.
-- CMake >= 3.15 (>= 3.18 if ``-DNRN_ENABLE_PYTHON_DYNAMIC=ON``)
+- Flex
+- C/C++ compiler suite
+- CMake 3.15.0
 
 The following packages are optional (see build options):
 
-- Python >=3.8 (for Python interface)
+- Python >=3.7 (for Python interface)
 - Cython < 3 (for RXD)
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)
@@ -221,27 +407,20 @@ The easiest way to install dependencies on Mac OS is to use [brew](https://brew.
 once [brew is installed](https://docs.brew.sh/Installation) you can do:
 
 ```bash
-brew install coreutils openmpi cmake flex bison
+brew install coreutils openmpi cmake
 brew install --cask xquartz
 ```
 
 Once these packages are installed, setup PATH as:
 
 ```bash
-export PATH="/usr/local/bin:/usr/local/opt/bison/bin:/usr/local/opt/flex/bin:$PATH"
+export PATH=/usr/local/bin/:$PATH
 ```
 
 If the desired python version is not installed, you can install it using
-[official distribution](https://www.python.org/downloads/macos/) or via brew. Also, note that
+[official distribution](https://www.python.org/downloads/macos/). Also, note that
 [Xcode Command Line Tools](https://stackoverflow.com/questions/9329243/how-to-install-xcode-command-line-tools)
 needs to be installed for development.
-
-Finally, if you are building NEURON with the Python interface, you need to install all of the Python dependencies:
-
-```bash
-pip3 install --user --upgrade pip
-pip3 install --user -r nrn_requirements.txt
-```
 
 <a name="Apple-M1-Build-Dependencies"></a>
 #### Mac OS - Apple M1
@@ -269,17 +448,20 @@ pip3 install --user -r nrn_requirements.txt
   echo 'eval $(/opt/homebrew/bin/brew shellenv)' >> $HOME/.zprofile
   eval $(/opt/homebrew/bin/brew shellenv)
 
-  brew install open-mpi cmake flex bison
+  brew install cmake
+  brew install open-mpi
 
   pip3 install --user --upgrade pip
-  pip3 install --user -r nrn_requirements.txt
+  export PATH="$HOME/Library/Python/3.8/bin":$PATH
+  pip3 install --user cython
   ```
 
 Once these packages are installed, setup PATH as:
 
 ```bash
-export PATH="/opt/homebrew/opt/bison/bin/:/opt/homebrew/opt/flex/bin/:/opt/homebrew/bin/:$PATH"
+export PATH=/opt/homebrew/opt/bison/bin/:/opt/homebrew/opt/flex/bin/:/opt/homebrew/bin/:$PATH
 ```
+
 
 #### Linux
 
@@ -292,7 +474,7 @@ sudo apt-get install -y bison cmake flex git \
      libncurses-dev libopenmpi-dev libx11-dev \
      libxcomposite-dev openmpi-bin python3-dev
 # for python dependencies
-pip install -r nrn_requirements.txt
+pip install scipy numpy cython
 ```
 
 We recommend using platform specific instructions provided in [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci#scheduled-ci-builds-for-neuron) repository.
@@ -302,20 +484,80 @@ We recommend using platform specific instructions provided in [nrn-build-ci](htt
 
 Starting with the 7.8.1 release, NEURON can be installed using the [CMake build system](https://cmake.org/).
 One of the primary advantages of a CMake-based build system is cross-platform support and integration with
-other projects like [Interviews](https://github.com/neuronsimulator/iv), [CoreNEURON](https://github.com/neuronsimulator/nrn/tree/master/src/coreneuron),
+other projects like [Interviews](https://github.com/neuronsimulator/iv), [CoreNEURON](https://github.com/BlueBrain/CoreNeuron/),
 [NMODL](https://github.com/BlueBrain/nmodl/) etc. These projects are now integrated into single a CMake-based
-build system.
+build system, and they can be installed together as shown below:
 
-Please refer to [the CMake build system
-options](../cmake_doc/options.rst) for more information on how to
-install the project using ``CMake``.
+1. Clone the latest version or specific release:
+
+  ```
+  git clone https://github.com/neuronsimulator/nrn           # latest development branch
+  git clone https://github.com/neuronsimulator/nrn -b 8.0.0  # specific release version 8.0.0
+  cd nrn
+  ```
+
+  > :warning: To build NEURON from source you either need to clone the NEURON Git repository or download a
+  > source code archive that includes Git submodules, such as the `full-src-package-X.Y.Z.tar.gz` file in
+  > the [NEURON releases](https://github.com/neuronsimulator/nrn/releases) on GitHub. The tarballs like
+  > `Source code (tar.gz)` or `Source code (zip)` created by GitHub are incomplete.
+
+
+2. Create a build directory:
+
+  ```
+  mkdir build
+  cd build
+  ```
+
+3. Run `cmake` with the appropriate options (see below for a list of common options). A full list of options
+can be found in `nrn/CMakeLists.txt` and defaults are shown in `nrn/cmake/BuildOptionDefaults.cmake`. e.g. a bare-bones installation:
+
+
+  ```
+  cmake .. \
+   -DNRN_ENABLE_INTERVIEWS=OFF \
+   -DNRN_ENABLE_MPI=OFF \
+   -DNRN_ENABLE_RX3D=OFF \
+   -DPYTHON_EXECUTABLE=$(which python3) \
+   -DCMAKE_INSTALL_PREFIX=/path/to/install/directory
+  ```
+
+4. Build the code:
+
+  ```
+  cmake --build . --parallel 8 --target install
+  ```
+  Feel free to set the number of parallel jobs (i.e. 8) according to your system using the `--parallel` option.
+
+5. Set PATH and PYTHONPATH environmental variables to use the installation:
+
+  ```
+  export PATH=/path/to/install/directory/bin:$PATH
+  export PYTHONPATH=/path/to/install/directory/lib/python:$PYTHONPATH
+  ```
+
+Particularly useful CMake options are (use **ON** to enable and **OFF** to disable feature):
+
+* **-DNRN\_ENABLE\_INTERVIEWS=OFF** : Disable Interviews (native GUI support)
+* **-DNRN\_ENABLE\_PYTHON=OFF** : Disable Python support
+* **-DNRN\_ENABLE\_MPI=OFF** : Disable MPI support for parallelization
+* **-DNRN\_ENABLE\_RX3D=OFF** : Disable rx3d support
+* **-DNRN\_ENABLE\_CORENEURON=ON** : Enable CoreNEURON support
+* **-DNRN\_ENABLE\_TESTS=ON** : Enable unit tests
+* **-DPYTHON\_EXECUTABLE=/python/binary/path** : Use provided Python binary to build Python interface
+* **-DCMAKE_INSTALL_PREFIX=/install/dir/path** : Location for installing
+* **-DCORENRN\_ENABLE\_NMODL=ON** : Use [NMODL](https://github.com/BlueBrain/nmodl/) instead of [MOD2C](https://github.com/BlueBrain/mod2c/) for code generation with CoreNEURON
+
+Please refer to [docs/cmake_doc/options.rst](docs/cmake_doc/options.rst) for more information on
+the CMake options.
 
 #### Optimized CPU and GPU Support using CoreNEURON
 
-NEURON now integrates [CoreNEURON library](https://github.com/neuronsimulator/nrn/blob/master/src/coreneuron) for improved simulation
+NEURON now integrates [CoreNEURON library](https://github.com/BlueBrain/CoreNeuron/) for improved simulation
 performance on modern CPU and GPU architectures. CoreNEURON is designed as a library within the NEURON simulator
 and can transparently handle all spiking network simulations including gap junction coupling with the fixed time
-step method. You can find detailed instructions [here](../coreneuron/index.rst) and [here](../cmake_doc/options.rst).
+step method. You can find detailed instructions [here](../coreneuron/index.html) and
+[here](https://github.com/BlueBrain/CoreNeuron/#installation).
 
 #### Run integrated tests
 
@@ -413,9 +655,10 @@ being used by running following command:
 ```bash
 $ nrnpyenv.sh
 ...
+export NRN_PYTHONHOME="/python/install/path/python-3.8.3/"
 export NRN_PYLIB="/python/install/path/python-3.8.3/lib/libpython3.8.so.1.0"
 ```
-If `NRN_PYLIB` is inappropriate then you can set it explicitly or use `-pyexe` option mentioned above.
+If `NRN_PYTHONHOME` and `NRN_PYLIB` are inappropriate then you can set them explicitly or use `-pyexe` option mentioned above.
 
 * **How to build NEURON in cluster environment where build node architecture is different than compute node?**
 
@@ -471,24 +714,3 @@ export CFLAGS="-fno-strict-aliasing -fno-common -dynamic -g -Os -pipe -DMACOSX -
 ```
 
 If you see any other issues, please open [an issue here](https://github.com/neuronsimulator/nrn/issues/new/choose).
-
-* **I'm seeing compiler errors related to Python and RXD.***
-The error can manifest as follows:
-```
-share/lib/python/neuron/rxd/geometry3d/surfaces.cpp:14605:41: error: no member named 'subarray' in '_PyArray_Descr'
-    __Pyx_INCREF(((PyObject*)__pyx_v_d->subarray->shape));
-                             ~~~~~~~~~  ^
-```
-often there's something related to NumPy nearby, e.g. `npy`.
-
-The issue is that certain versions of NEURON (9.0 and earlier) are not
-compatible with `numpy>=2`. Check the numpy version, e.g.,
-```
-python -c "import numpy; print(numpy.__version__)"
-```
-
-If it prints `2.0` or higher, try installing an older version:
-```
-pip install "numpy<2"
-```
-(mind the quotes.) Then delete the build directory, reconfigure and compile. If the error persists, carefully check which version of Python NEURON picked up by checking the output of the CMake configure command and make sure that that exact version of Python doesn't pick up an incompatible version of Numpy.
