@@ -176,6 +176,31 @@ Collection of slightly surprising behaviour:
     the code ``nocmodl`` produces will cause a SEGFAULT.
 
 
+PARAMETER variables
+===================
+
+These can be either RANGE or not RANGE. They can be both read and write. If
+they're written to, they're converted to thread-variables. Therefore, the rest
+of this section will only describe read-only PARAMETERs.
+
+Additionally, parameters optionally have: a) a default value, b) units and c) a
+valid range.
+
+Default Values
+~~~~~~~~~~~~~~
+This section only applies to read-only PARAMETERs.
+
+The behaviour differs for RANGE variables and non-RANGE variables. For RANGE
+variables, default values need to be registered with NEURON for all PARAMETERs
+that are RANGE variables. The function is called ``hoc_register_parm_default``.
+
+Note, that NOCMODL uses it in the ``nrn_alloc`` in the generated `.cpp` files
+and also in ``ndatclas.cpp``. Therefore, it seems registering the values isn't
+optional.
+
+Non-RANGE variables are semantically equivalent to ``static double``. They're
+simply assigned their value in the definition of the global variable.
+
 CONSTANT variables
 ==================
 

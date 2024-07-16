@@ -997,6 +997,21 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
 
     print_global_var_struct_assertions();
     print_global_var_struct_decl();
+
+    print_global_param_default_values();
+}
+
+void CodegenNeuronCppVisitor::print_global_param_default_values() {
+    printer->push_block("static std::vector<double> _parameter_defaults =");
+
+    std::vector<std::string> defaults;
+    for (const auto& p: info.range_parameter_vars) {
+        double value = p->get_value() == nullptr ? 0.0 : *p->get_value();
+        defaults.push_back(fmt::format("{:g} /* {} */", value, p->get_name()));
+    }
+
+    printer->add_multi_line(fmt::format("{}", fmt::join(defaults, ",\n")));
+    printer->pop_block(";");
 }
 
 /// TODO: Same as CoreNEURON?
@@ -1169,6 +1184,8 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
     /// type related information
     printer->add_newline();
     printer->fmt_line("mech_type = nrn_get_mechtype({}[1]);", get_channel_info_var_name());
+
+    printer->add_line("hoc_register_parm_default(mech_type, &_parameter_defaults);");
 
     // register the table-checking function
     if (info.table_count > 0) {
@@ -1617,7 +1634,8 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
                       codegen_float_variables.size());
     if (float_variables_size()) {
         printer->add_line("/*initialize range parameters*/");
-        for (const auto& var: info.range_parameter_vars) {
+        for (size_t i_param = 0; i_param < info.range_parameter_vars.size(); ++i_param) {
+            const auto var = info.range_parameter_vars[i_param];
             if (var->is_array()) {
                 continue;
             }
@@ -1627,7 +1645,7 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
 
             printer->fmt_line("_lmc.template fpfield<{}>(_iml) = {}; /* {} */",
                               var_pos,
-                              var_value,
+                              fmt::format("_parameter_defaults[{}]", i_param),
                               var_name);
         }
     }
