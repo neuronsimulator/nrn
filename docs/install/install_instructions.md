@@ -199,7 +199,7 @@ Example:
 ```bash
 conda install matplotlib 
 conda install plotly
-conda install panda
+conda install pandas
 ```
  
 PS: `pip install matplotlib` may also works
