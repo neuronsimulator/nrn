@@ -580,3 +580,216 @@ instance, indirect-memory accesses with a strided pattern could lead to increase
 One should examine how the memory object is used within a function to determine if false sharing 
 is a potential issue. Additionally, comparing access latencies with scenarios like single-threaded 
 execution or versions without such issues can provide further insights.
+
+#### Using LIKWID With NEURON
+
+As described in the previous section, Intel VTune is a powerful tool for node-level performance analysis.
+However, we might need alternative options like LIKWID profiling tools in scenarios such as:
+1) VTune is not available due to non-Intel CPUs or lack of necessary permissions.
+2) We prefer to precisely mark the code regions of interest rather than using a sampling-based approach.
+3) The raw events/performance counters shown by VTune are overwhelming, and we want high-level metrics that typically used in HPC/Scientific Computing.
+4) Or simply we want to cross-check VTune's results with another tool like LIKWID to ensure there are no false positives.
+
+LIKWID offers a comprehensive set of tools for performance measurement on HPC platforms. It supports Intel, AMD, and ARM CPUs.
+However, as it is not vendor-specific, it may lack support for specific CPUs (e.g., Intel Alder Lake). Despite this, LIKWID is still a valuable tool.
+Let’s quickly see how we can use LIKWID with NEURON.
+
+We assume LIKWID is installed with the necessary permissions (via `accessDaemon` or Linux `perf` mode).
+Usage of LIKWID is covered in multiple other tutorials like [this](https://github.com/RRZE-HPC/likwid/wiki/TutorialStart) and [this](https://hpc.fau.de/research/tools/likwid/).
+Here, we focus on its usage with NEURON.
+
+LIKWID can measure performance counters on any binary like NEURON. For example, in the execution below,
+we measure metrics from `FLOPS_DP` LIKWID group, i.e., double precision floating point related metrics:
+
+```console
+$ likwid-perfctr -C 0 -g FLOPS_DP ./x86_64/special -python test.py
+--------------------------------------------------------------------------------
+CPU name:	Intel(R) Xeon(R) Gold 6140 CPU @ 2.30GHz
+...
+--------------------------------------------------------------------------------
+Group 1: FLOPS_DP
++------------------------------------------+---------+------------+
+|                   Event                  | Counter | HWThread 0 |
++------------------------------------------+---------+------------+
+|             INSTR_RETIRED_ANY            |  FIXC0  | 8229299612 |
+|           CPU_CLK_UNHALTED_CORE          |  FIXC1  | 3491693048 |
+|           CPU_CLK_UNHALTED_REF           |  FIXC2  | 2690601456 |
+| FP_ARITH_INST_RETIRED_128B_PACKED_DOUBLE |   PMC0  |    1663849 |
+|    FP_ARITH_INST_RETIRED_SCALAR_DOUBLE   |   PMC1  |  740794589 |
+| FP_ARITH_INST_RETIRED_256B_PACKED_DOUBLE |   PMC2  |          0 |
+| FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE |   PMC3  |      -     |
++------------------------------------------+---------+------------+
+
++----------------------+------------+
+|        Metric        | HWThread 0 |
++----------------------+------------+
+|  Runtime (RDTSC) [s] |     1.4446 |
+| Runtime unhalted [s] |     1.5181 |
+|      Clock [MHz]     |  2984.7862 |
+|          CPI         |     0.4243 |
+|     DP [MFLOP/s]     |   515.0941 |
+|   AVX DP [MFLOP/s]   |          0 |
+|  AVX512 DP [MFLOP/s] |          0 |
+|   Packed [MUOPS/s]   |     1.1517 |
+|   Scalar [MUOPS/s]   |   512.7906 |
+|  Vectorization ratio |     0.2241 |
++----------------------+------------+
+```
+
+In this execution, we see information like the total number of instructions executed and contributions from SSE, AVX2, and AVX-512 instructions.
+
+But, in the context of NEURON model execution, this is not sufficient because the above measurements summarize the full execution,
+including model building and simulation phases. For detailed performance analysis, we need granular information. For example:
+1) We want to compare hardware counters for phases like current update (`BREAKPOINT`) vs. state update (`DERIVATIVE`) due to their different properties (memory-bound vs. compute-bound).
+2) We might want to analyze the performance of a specific MOD file and it's kernels.
+
+This is where [LIKWID's Marker API](https://github.com/RRZE-HPC/likwid/wiki/TutorialMarkerC) comes into play.
+Currently, Caliper doesn't integrate LIKWID as a service, but NEURON's profiler interface supports enabling LIKWID markers via the same
+[Instrumentor API](https://github.com/neuronsimulator/nrn/blob/master/src/coreneuron/utils/profile/profiler_interface.h).
+
+###### Building NEURON With LIKWID Support
+
+If LIKWID is already installed correctly with the necessary permissions, enabling LIKWID support into NEURON is not difficult:
+
+```console
+cmake .. \
+    -DNRN_ENABLE_PROFILING=ON \
+    -DNRN_PROFILER=likwid \
+    -DCMAKE_PREFIX_PATH=<likwid-install-prefix>/share/likwid \
+    -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo
+make -j && make install
+```
+
+Once built this way, LIKWID markers are added for the various simulation phases similar to those shown in Caliper and Vtune section.
+
+###### Measurement with LIKWID
+
+Measuring different metrics with LIKWID is easy, as seen earlier. By building LIKWID support via CMake, we now have enabled LIKWID markers 
+that help us see the performance counters for different phases of simulations. In the example below, we added the `-m` CLI option to enable markers:
+
+```console
+$ likwid-perfctr -C 0 -m -g FLOPS_DP ./x86_64/special -python test.py
+...
+...
+Region psolve, Group 1: FLOPS_DP
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |  10.688310 |
+|     call count    |          1 |
++-------------------+------------+
+
++------------------------------------------+---------+------------+
+|                   Event                  | Counter | HWThread 0 |
++------------------------------------------+---------+------------+
+|             INSTR_RETIRED_ANY            |  FIXC0  | 5496569000 |
+|           CPU_CLK_UNHALTED_CORE          |  FIXC1  | 2753500000 |
+|           CPU_CLK_UNHALTED_REF           |  FIXC2  | 2111229000 |
+| FP_ARITH_INST_RETIRED_128B_PACKED_DOUBLE |   PMC0  |     489202 |
+|    FP_ARITH_INST_RETIRED_SCALAR_DOUBLE   |   PMC1  |  730000000 |
+| FP_ARITH_INST_RETIRED_256B_PACKED_DOUBLE |   PMC2  |          0 |
+| FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE |   PMC3  |      -     |
++------------------------------------------+---------+------------+
+...
+...
+Region state-cdp5StCmod, Group 1: FLOPS_DP
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   0.353965 |
+|     call count    |        400 |
++-------------------+------------+
+
++------------------------------------------+---------+------------+
+|                   Event                  | Counter | HWThread 0 |
++------------------------------------------+---------+------------+
+|             INSTR_RETIRED_ANY            |  FIXC0  | 2875111000 |
+|           CPU_CLK_UNHALTED_CORE          |  FIXC1  | 1057608000 |
+|           CPU_CLK_UNHALTED_REF           |  FIXC2  |  810826000 |
+| FP_ARITH_INST_RETIRED_128B_PACKED_DOUBLE |   PMC0  |     380402 |
+|    FP_ARITH_INST_RETIRED_SCALAR_DOUBLE   |   PMC1  |  358722700 |
+| FP_ARITH_INST_RETIRED_256B_PACKED_DOUBLE |   PMC2  |          0 |
+| FP_ARITH_INST_RETIRED_512B_PACKED_DOUBLE |   PMC3  |      -     |
++------------------------------------------+---------+------------+
+...
+Region state-Cav2_3, Group 1: FLOPS_DP
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   0.002266 |
+|     call count    |        400 |
++-------------------+------------+
+...
+...
+```
+
+Here, we see performance counters for the `psolve` region, which includes the full simulation loop,
+and a breakdown into channel-specific kernels like `state-cdp5StCmod` and `state-Cav2_3`.
+
+###### Avoiding Measurement Overhead with `NRN_PROFILE_REGIONS`
+
+When profiling with Caliper, careful instrumentation can ensure that measuring execution does not incur significant overhead.
+It's important to avoid instrumenting very small code regions to minimize performance impact.
+However, with LIKWID, starting and stopping measurement using high-level API like `LIKWID_MARKER_START()` and
+`LIKWID_MARKER_STOP()` can introduce relatively high overhead, especially when instrumentation covers small code regions.
+This is the case in NEURON as we instrument all simulation phases and individual mechanisms' state and current update kernels.
+In small models, such overhead could slow down execution by 10x.
+
+To avoid this, NEURON provides an environment variable `NRN_PROFILE_REGIONS` to enable profiling for specific code regions.
+For example, let's assume we want to understand hardware performance counters for two phases:
+- `psolve`: entire simulation phase
+- `state-hh`: one specific state update phase where we call `DERIVATIVE` block of the `hh.mod` file
+
+These names are the same as those instrumented in the code using `Instrumentor::phase` API (see previous step).
+We can specify these regions to profile as a *comma-separated list* via the `NRN_PROFILE_REGIONS` environment variable:
+
+```console
+$ export NRN_PROFILE_REGIONS=psolve,state-hh
+$ likwid-perfctr -C 0 -m -g FLOPS_DP ./x86_64/special -python test.py
+```
+
+Now, we should get the performance counter report only for these two regions with relatively small execution overhead:
+
+```console
+Region psolve, Group 1: FLOPS_DP
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |  10.688310 |
+|     call count    |          1 |
++-------------------+------------+
+
++------------------------------------------+---------+------------+
+|                   Event                  | Counter | HWThread 0 |
++------------------------------------------+---------+------------+
+|             INSTR_RETIRED_ANY            |  FIXC0  | 5496569000 |
+|           CPU_CLK_UNHALTED_CORE          |  FIXC1  | 2753500000 |
+...
+...
+Region state-hh, Group 1: FLOPS_DP
++-------------------+------------+
+|    Region Info    | HWThread 0 |
++-------------------+------------+
+| RDTSC Runtime [s] |   0.180081 |
+|     call count    |        400 |
++-------------------+------------+
+
++------------------------------------------+---------+------------+
+|                   Event                  | Counter | HWThread 0 |
++------------------------------------------+---------+------------+
+|             INSTR_RETIRED_ANY            |  FIXC0  | 1341553000 |
+|           CPU_CLK_UNHALTED_CORE          |  FIXC1  |  540962900 |
+...
+```
+
+> NOTE: Currently, NEURON uses marker APIs `LIKWID_MARKER_START()` and `LIKWID_MARKER_STOP()` from LIKWID.
+> We should consider using `LIKWID_MARKER_REGISTER()` API to reduce overhead and prevent incorrect report counts for tiny code regions.
+
+### Comparing LIKWID Profiles
+
+Unlike VTune, LIKWID doesn't support direct comparison of profile data. However, the powerful CLI allows us to select specific metrics
+for code regions, and since the profile results are provided as text output, comparing results from two runs is straightforward.
+For instance, the screenshot below shows FLOPS instructions side by side between two runs:
+
+![VTune Comparison](images/nrn_likwid_presoa_master_comparison.png)
