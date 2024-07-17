@@ -5,19 +5,19 @@
 # cmake-format: off
 set(CODE_GENERATOR_JINJA_FILES
 {% for template in templates | sort %}
-    ${PROJECT_SOURCE_DIR}/src/language/templates/{{ template }}
+    ${PROJECT_SOURCE_DIR}/src/language/templates/{{ template.as_posix() }}
 {% endfor %}
 )
 
 set(CODE_GENERATOR_PY_FILES
 {% for file in py_files | sort %}
-    ${PROJECT_SOURCE_DIR}/src/language/{{ file }}
+    ${PROJECT_SOURCE_DIR}/src/language/{{ file.as_posix() }}
 {% endfor %}
 )
 
 set(CODE_GENERATOR_YAML_FILES
 {% for file in yaml_files | sort %}
-    ${PROJECT_SOURCE_DIR}/src/language/{{ file }}
+    ${PROJECT_SOURCE_DIR}/src/language/{{ file.as_posix() }}
 {% endfor %}
 )
 

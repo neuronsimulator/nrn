@@ -151,7 +151,7 @@ std::string DiffEqContext::get_non_cnexp_solution() const {
     std::string result;
     if (!deriv_invalid) {
         result = get_cvode_linear_diffeq();
-    } else if (deriv_invalid and eqn_invalid) {
+    } else if (deriv_invalid && eqn_invalid) {
         result = get_cvode_nonlinear_diffeq();
     } else {
         throw std::runtime_error("Error in differential equation solver with non-cnexp");

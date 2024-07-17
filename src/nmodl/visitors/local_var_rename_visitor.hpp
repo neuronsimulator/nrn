@@ -14,6 +14,7 @@
 
 #include <map>
 #include <stack>
+#include <string>
 
 #include "symtab/decl.hpp"
 #include "visitors/ast_visitor.hpp"

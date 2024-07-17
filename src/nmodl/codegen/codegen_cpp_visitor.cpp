@@ -1353,7 +1353,7 @@ void CodegenCppVisitor::setup(const Program& node) {
     info.mod_file = mod_filename;
 
     if (info.mod_suffix == "") {
-        info.mod_suffix = std::filesystem::path(mod_filename).stem();
+        info.mod_suffix = std::filesystem::path(mod_filename).stem().string();
     }
     info.rsuffix = info.point_process ? "" : "_" + info.mod_suffix;
 

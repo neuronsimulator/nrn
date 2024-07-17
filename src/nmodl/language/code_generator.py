@@ -110,7 +110,7 @@ class CodeGenerator(
         Returns:
             A jinja template object
         """
-        name = str(path.relative_to(self.jinja_templates_dir))
+        name = str(path.relative_to(self.jinja_templates_dir).as_posix())
         return self.jinja_env.get_template(name)
 
     def _cmake_deps_task(self, tasks):
