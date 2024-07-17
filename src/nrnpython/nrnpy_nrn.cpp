@@ -2034,7 +2034,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
     if (strcmp(n, "__dict__") == 0) {
         auto out_dict = nb::dict();
         out_dict["L"] = nb::none();
-        out_dict["L"] = nb::none();
+        out_dict["Ra"] = nb::none();
         out_dict["nseg"] = nb::none();
         out_dict["rallbranch"] = nb::none();
         return out_dict.release().ptr();
