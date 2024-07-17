@@ -45,7 +45,7 @@ Use this: [https://visualstudio.microsoft.com/vs/features/cplusplus/](https://vi
 
 ### Step 5: Get PowerShell 7 or newer version
 
-We going to use “pwsh” command - correspond to PowerShell 7. The PowerShell 5 use “powershell” command.  
+We will use `pwsh` command - correspond to PowerShell 7. The PowerShell 5 use `powershell` command.  
  
 #### Step 5.A: See PowerShell Version Installed: 
  
@@ -62,7 +62,7 @@ or
 `winget install --id Microsoft.Powershell.Preview --source winget` 
  
 #### Step 5.D: Ensure you are working with PowerShell 7
-Note: Find path file to version 7 (C:\Program Files\PowerShell\7-preview) and create a shortcut for this powershell 7
+Note: Find path file to version 7 (`C:\Program Files\PowerShell\7` or `C:\Program Files\PowerShell\7-preview`) and create a shortcut for this powershell 7
 Windows will continue to use 5 version if we try open "PowerShell" 
  
 ------------------------------------------------------------ 
@@ -73,11 +73,15 @@ Windows will continue to use 5 version if we try open "PowerShell"
 At PowerShell 7, go to 
 `C:\Users\User>` and create folder named “Neuron”: 
 
-`mkdir Neuron`
+```
+mkdir Neuron
+```
 
 Inside the "Neuron” folder do: 
 
-`git clone https://github.com/neuronsimulator/nrn`  
+```
+git clone https://github.com/neuronsimulator/nrn
+```  
 
  
 Note: `PS C:\Users\User\Neuron> git clone git@github.com:neuronsimulator/nrn nrn` may be an option
@@ -87,7 +91,10 @@ Note: `PS C:\Users\User\Neuron> git clone git@github.com:neuronsimulator/nrn nrn
 
 ### Step 7: Downloading Dependencies
 
-As **administrator** from PowerShell 7 (right button and “Run as Administrator”), from `C:\Users\User\Neuron\nrn\ci` run: `.\win_download_deps.cmd`
+As **administrator** from PowerShell 7 (right button and “Run as Administrator”) at `C:\Users\User\Neuron\nrn\ci` run: 
+```
+.\win_download_deps.cmd
+```
  
 Note: You will get a number of messages of the form below; they do not indicate errors.
 
@@ -99,7 +106,10 @@ Note: You will get a number of messages of the form below; they do not indicate 
 
 ### Step 8: Installing Dependencies
 
-As **administrator** from PowerShell 7, from `C:\Users\User\Neuron\nrn\ci` run: `.\win_install_deps.cmd` 
+As **administrator** from PowerShell 7, at `C:\Users\User\Neuron\nrn\ci` run: 
+```
+.\win_install_deps.cmd
+``` 
 
 This command will take a while to complete.
   
@@ -116,7 +126,9 @@ This command will take a while to complete.
 
 Turn off your VM and at your computer as **administrator** put in PowerShell 7: 
 
-`Set-VMProcessor -VMName "NameOfYourVM" -ExposeVirtualizationExtensions $true` 
+`
+Set-VMProcessor -VMName "NameOfYourVM" -ExposeVirtualizationExtensions $true
+`
 
 For example:
 
@@ -135,7 +147,10 @@ Via folder: open folder `C:\msys64` (probably) and double click in the executabl
 
 Via terminal: go to the location of the execuable `./mingw64.exe` (`C:\msys64` probably or `\\wsl.localhost\Ubuntu-24.04\mnt\c\msys64`) and execute it 
 
-`./mingw64.exe` or `/mnt/c/msys64$ ./mingw64.exe `
+```
+./mingw64.exe
+```
+ or `/mnt/c/msys64$ ./mingw64.exe `
  
 It will open a terminal. It is not PowerShell, it is not CMD, it is a mingw64 teminal.
  
@@ -146,7 +161,9 @@ It will open a terminal. It is not PowerShell, it is not CMD, it is a mingw64 te
 
 Now, inside this terminal (it is a mingw64 terminal, see step above) go to C:\Users\User\Neuron\nrn\ci and run 
 
-```./win_build_cmake.sh ```
+```
+./win_build_cmake.sh 
+```
  
 It will create an exe file `nrn-nightly-AMD64` (at `C:\Users\User\Neuron\nrn\nrn-nightly-AMD64`).
  
@@ -155,7 +172,9 @@ It will create an exe file `nrn-nightly-AMD64` (at `C:\Users\User\Neuron\nrn\nrn
 ### Step 13: Running the exe
 
 Double click at `nrn-nightly-AMD64` and it will install neuron. 
-It is a standard installation. That means the files created at `C:\Users\User\Neuron\nrn\build\bin` will be coped to:  `C:\nrn\bin` and the "installation" will appear at `C:\nrn` and `C:\nrn-install` 
+It is a standard installation. 
+
+That means the files created at `C:\Users\User\Neuron\nrn\build\bin` will be coped to:  `C:\nrn\bin` and the "installation" will appear at `C:\nrn` and `C:\nrn-install` 
  
 ------------------------------------------------------------ 
 
@@ -214,7 +233,9 @@ Compile this new code. We can compile using Step 15. (Do it and come back here)
 
 #### Step 14.D: Replacing the `libnrniv.dll` file
 
-It will end up creating a new `libnrniv.dll` (and `libnrnmpi_msmpi.dll` and a new `libnrnpython3.XX.dll` and new `nrniv`, but just the first one matter for THIS example) at `nrn\build\bin` (at `C:\Users\User\Neuron\nrn\build\bin` or at `C:\msys64\home\User\Neuron\nrn\build\bin` if you did the installation process here). We can replace the old file `libnrniv.dll` at `C:\nrn\bin` for this new one and voila! We get our change implemented!! Let`s see
+It will end up creating a new `libnrniv.dll` (and `libnrnmpi_msmpi.dll` and a new `libnrnpython3.XX.dll` and new `nrniv`, but just the first one matter for THIS example) at `nrn\build\bin` (at `C:\Users\User\Neuron\nrn\build\bin` or at `C:\msys64\home\User\Neuron\nrn\build\bin` if you did the installation process here). 
+
+We can replace the old file `libnrniv.dll` at `C:\nrn\bin` for this new one and voila! We get our change implemented!! Let`s see
 
 #### Step 14.E: Checking the new `nrngui` 
 
