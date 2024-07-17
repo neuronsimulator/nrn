@@ -51,7 +51,7 @@ jobs:
 
   nrn-modeldb-ci:
     needs: get-last-azure-url
-    uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@master
+    uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@jelic/pin_pip
     with:
       neuron_v1: ${{needs.get-last-azure-url.outputs.azure_drop_url}}
       neuron_v2: neuron-nightly
