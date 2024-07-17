@@ -73,6 +73,15 @@ static double s_unname(void* v) {
 #endif
     pitm = sec2pitm(sec);
     *pitm = (hoc_Item*) 0;
+    auto* ob = sec->prop->dparam[6].get<Object*>();
+    if (ob) {
+        // Avoid use of freed memory in CellBuild when making a section
+        // after deleting a section when continuous create is on.
+        // CellBuild repeatedly creates a single CellBuildTopology[0].dummy
+        // section and then unnames and renamed it at the top level.
+        ob->secelm_ = nullptr;
+        sec->prop->dparam[6] = static_cast<Object*>(nullptr);
+    }
     sec->prop->dparam[0] = static_cast<Symbol*>(nullptr);
     return 1.;
 }
