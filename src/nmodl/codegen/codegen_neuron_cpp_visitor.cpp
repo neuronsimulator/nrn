@@ -1014,27 +1014,23 @@ void CodegenNeuronCppVisitor::print_global_param_default_values() {
     printer->pop_block(";");
 }
 
-/// TODO: Same as CoreNEURON?
 void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
-    /// TODO: Write HocParmLimits and other HOC global variables (delta_t)
-    // Probably needs more changes
-    auto variable_printer =
-        [&](const std::vector<SymbolType>& variables, bool if_array, bool if_vector) {
-            for (const auto& variable: variables) {
-                if (variable->is_array() == if_array) {
-                    // false => do not use the instance struct, which is not
-                    // defined in the global declaration that we are printing
-                    auto name = get_variable_name(variable->get_name(), false);
-                    auto ename = add_escape_quote(variable->get_name() + "_" + info.mod_suffix);
+    auto variable_printer = [&](const std::vector<SymbolType>& variables, bool if_array) {
+        for (const auto& variable: variables) {
+            if (variable->is_array() == if_array) {
+                // false => do not use the instance struct, which is not
+                // defined in the global declaration that we are printing
+                auto name = get_variable_name(variable->get_name(), false);
+                auto ename = add_escape_quote(variable->get_name() + "_" + info.mod_suffix);
+                if (if_array) {
                     auto length = variable->get_length();
-                    if (if_vector) {
-                        printer->fmt_line("{{{}, {}, {}}},", ename, name, length);
-                    } else {
-                        printer->fmt_line("{{{}, &{}}},", ename, name);
-                    }
+                    printer->fmt_line("{{{}, {}, {}}},", ename, name, length);
+                } else {
+                    printer->fmt_line("{{{}, &{}}},", ename, name);
                 }
             }
-        };
+        }
+    };
 
     auto globals = info.global_variables;
     auto thread_vars = info.thread_variables;
@@ -1047,8 +1043,8 @@ void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
     printer->add_line("/** connect global (scalar) variables to hoc -- */");
     printer->add_line("static DoubScal hoc_scalar_double[] = {");
     printer->increase_indent();
-    variable_printer(globals, false, false);
-    variable_printer(thread_vars, false, false);
+    variable_printer(globals, false);
+    variable_printer(thread_vars, false);
     printer->add_line("{nullptr, nullptr}");
     printer->decrease_indent();
     printer->add_line("};");
@@ -1057,8 +1053,8 @@ void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
     printer->add_line("/** connect global (array) variables to hoc -- */");
     printer->add_line("static DoubVec hoc_vector_double[] = {");
     printer->increase_indent();
-    variable_printer(globals, true, true);
-    variable_printer(thread_vars, true, true);
+    variable_printer(globals, true);
+    variable_printer(thread_vars, true);
     printer->add_line("{nullptr, nullptr, 0}");
     printer->decrease_indent();
     printer->add_line("};");
