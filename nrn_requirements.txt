@@ -1,6 +1,6 @@
 wheel
-setuptools
 setuptools_scm
+setuptools<=70.3.0
 scikit-build
 matplotlib
 # bokeh 3 seems to break docs notebooks
