@@ -2614,6 +2614,7 @@ static Object* rvp_rxd_to_callable_(Object* obj) {
 
 
 extern "C" PyObject* get_plotshape_data(PyObject* sp) {
+    PyLockGIL lock;
     PyHocObject* pho = (PyHocObject*) sp;
     ShapePlotInterface* spi;
     if (!is_obj_type(pho->ho_, "PlotShape")) {
@@ -2622,12 +2623,11 @@ extern "C" PyObject* get_plotshape_data(PyObject* sp) {
     }
     void* that = pho->ho_->u.this_pointer;
 #if HAVE_IV
-    IFGUI
-    spi = ((ShapePlot*) that);
-}
-else {
-    spi = ((ShapePlotData*) that);
-    ENDGUI
+    if (hoc_usegui) {
+        spi = ((ShapePlot*) that);
+    } else {
+        spi = ((ShapePlotData*) that);
+    }
 #else
     spi = ((ShapePlotData*) that);
 #endif
@@ -2637,9 +2637,10 @@ else {
     if (!py_obj) {
         py_obj = Py_None;
     }
-    // NOte: O increases the reference count; N does not
+    // Note: O increases the reference count; N does not
     return Py_BuildValue("sOffN", spi->varname(), py_obj, spi->low(), spi->high(), py_sl);
 }
+
 
 // poorly follows __reduce__ and __setstate__
 // from numpy/core/src/multiarray/methods.c

@@ -13,7 +13,7 @@ Purkinje Cell
 Model
 -----
 
-`Miyasho et al. 2001 <https://modeldb.yale.edu/17664>`_
+`Miyasho et al. 2001 <https://modeldb.science/17664>`_
 
 Simulation
 ----------
@@ -86,7 +86,7 @@ Cortex integrates sensory information. What is a moment in time?
 Model
 -----
 
-Transient synchrony. `Hopfield and Brody 2001 <https://modeldb.yale.edu/2798>`_ implemented by Michele Migliore.
+Transient synchrony. `Hopfield and Brody 2001 <https://modeldb.science/2798>`_ implemented by Michele Migliore.
 
 Simulation
 ----------
