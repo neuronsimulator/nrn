@@ -1,12 +1,12 @@
 # Windows build
 
-How to make Neuron compilable in Windows.  
+How to make NEURON compilable in Windows.  
  
 ## Pre-requisites
 
 You need to follow the steps:
 
-### Step 1: (If installing neuron on a Windows Virtual Machine) 
+### Step 1: (If installing NEURON on a Windows Virtual Machine) 
 
 Create a new VM 
   
@@ -25,9 +25,11 @@ Note: Do not use: `winget install --id Git.Git -e --source winget`
 
 ### Step 3: Install Chocolatey [https://chocolatey.org/](https://chocolatey.org/) by command line: 
 
-```bash
+
+```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1')) 
 ```
+This should be run in powershell or pwsh; in particular, it will not work in cmd.
 
 Ensuring Chocolatey commands are on the path 
 
@@ -47,8 +49,10 @@ Use this: [https://visualstudio.microsoft.com/vs/features/cplusplus/](https://vi
 
 We will use `pwsh` command - correspond to PowerShell 7. The PowerShell 5 use `powershell` command.  
  
-#### Step 5.A: See PowerShell Version Installed: 
- 
+#### Step 5.A: See PowerShell Version Currently Running: 
+
+This must be run inside whatever PowerShell you want to test.
+
 `$PSVersionTable` or `get-host|Select-Object`  
  
 #### Step 5.B: See available options: 
@@ -62,9 +66,12 @@ or
 `winget install --id Microsoft.Powershell.Preview --source winget` 
  
 #### Step 5.D: Ensure you are working with PowerShell 7
+
 Note: Find path file to version 7 (`C:\Program Files\PowerShell\7` or `C:\Program Files\PowerShell\7-preview`) and create a shortcut for this powershell 7
 Windows will continue to use 5 version if we try open "PowerShell" 
- 
+
+PS: A shortcut is one option. You could also add it to your path. 
+
 ------------------------------------------------------------ 
 
 ## Build Environment installation
@@ -117,12 +124,12 @@ This command will take a while to complete.
 
 ### Step 9: Install Windows Subsystem for Linux:  wsl.exe --update  
 
-`wsl.exe --list --online` and 
-`wsl.exe --install Ubuntu-24.04` (or any other) 
+`wsl.exe --list --online` shows you your options and 
+`wsl.exe --install Ubuntu-24.04` (or any other) selects an option.
   
 ------------------------------------------------------------ 
 
-### Step 10: (If you are installing neuron in a Virtual Machine) 
+### Step 10: (If you are installing NEURON in a Virtual Machine) 
 
 Turn off your VM and at your computer as **administrator** put in PowerShell 7: 
 
@@ -132,7 +139,7 @@ Set-VMProcessor -VMName "NameOfYourVM" -ExposeVirtualizationExtensions $true
 
 For example:
 
-```bash
+```powershell
 Set-VMProcessor -VMName "Windows 11 dev environment" -ExposeVirtualizationExtensions $true 
 ```
 
@@ -159,7 +166,7 @@ It will open a terminal. It is not PowerShell, it is not CMD, it is a mingw64 te
 
 ### Step 12: Creating the exe
 
-Now, inside this terminal (it is a mingw64 terminal, see step above) go to C:\Users\User\Neuron\nrn\ci and run 
+Now, inside this terminal (it is a mingw64 terminal, see step above) go to `C:\Users\User\Neuron\nrn\ci` and run 
 
 ```
 ./win_build_cmake.sh 
@@ -171,7 +178,7 @@ It will create an exe file `nrn-nightly-AMD64` (at `C:\Users\User\Neuron\nrn\nrn
 
 ### Step 13: Running the exe
 
-Double click at `nrn-nightly-AMD64` and it will install neuron. 
+Double click at `nrn-nightly-AMD64` and it will install NEURON. 
 It is a standard installation. 
 
 That means the files created at `C:\Users\User\Neuron\nrn\build\bin` will be coped to:  `C:\nrn\bin` and the "installation" will appear at `C:\nrn` and `C:\nrn-install` 
@@ -179,8 +186,8 @@ That means the files created at `C:\Users\User\Neuron\nrn\build\bin` will be cop
 ------------------------------------------------------------ 
 
 
-### Step 14: Using and modify NEURON file... 
-You can replace any new `.dll` file at `C:\nrn\bin` and the NEURON will prevent the new feature implemented. 
+### Step 14: Using and modifying NEURON file... 
+You can replace any new `.dll` file at `C:\nrn\bin` and the NEURON will present the new feature implemented. 
  
 Example: 
 
@@ -198,7 +205,7 @@ See http://neuron.yale.edu/neuron/credits
 oc>
 ```
 
-Close this neuron window.
+Close this NEURON window.
 
 #### Step 14.B: Making some changes at `init.cpp`
 
@@ -233,9 +240,9 @@ Compile this new code. We can compile using Step 15. (Do it and come back here)
 
 #### Step 14.D: Replacing the `libnrniv.dll` file
 
-It will end up creating a new `libnrniv.dll` (and `libnrnmpi_msmpi.dll` and a new `libnrnpython3.XX.dll` and new `nrniv`, but just the first one matter for THIS example) at `nrn\build\bin` (at `C:\Users\User\Neuron\nrn\build\bin` or at `C:\msys64\home\User\Neuron\nrn\build\bin` if you did the installation process here). 
+It will create a new `libnrniv.dll` (and `libnrnmpi_msmpi.dll` and a new `libnrnpython3.XX.dll` and new `nrniv`, but just the first one matters for THIS example) at `nrn\build\bin` (at `C:\Users\User\Neuron\nrn\build\bin` or at `C:\msys64\home\User\Neuron\nrn\build\bin` if you did the installation process here). 
 
-We can replace the old file `libnrniv.dll` at `C:\nrn\bin` for this new one and voila! We get our change implemented!! Let`s see
+We can replace the old file `libnrniv.dll` at `C:\nrn\bin` for this new one and voila! We get our change implemented!! Let's see
 
 #### Step 14.E: Checking the new `nrngui` 
 
@@ -254,22 +261,22 @@ oc>
 
 ------------------------------------------------------------ 
 
-### Step 15: Compile new Neuron code
+### Step 15: Compile new NEURON code
 
 
 PS: Useful commands:  
 
-```
+```powershell
 cd /c/Users/User/Neuron/nrn/build
 ``` 
 to reach files outside of `C:\msys64\`.
 
 ```
-Echo $PATH
-Which gcc 
-Which cmake 
+echo $PATH
+which gcc 
+which cmake 
 ```
-To compile new neuron code, you can (always from a `mingw64` terminal): 
+To compile new NEURON code, you can (always from a `mingw64` terminal): 
 
 #### Step 15.A: run win_build_cmake.sh 
 
@@ -281,24 +288,24 @@ or
  
 #### Step 15.B: Run "cmake .." 
 
-From nrn file where is the source code (example: C:\Users\User\Neuron\nrn or C:\msys64\home\User\Neuron\nrn if you copy a version here) run: 
+From nrn file where is the source code (example: `C:\Users\User\Neuron\nrn\build` or `C:\msys64\home\User\Neuron\nrn` if you copied a version here - see Step 18) run: 
 
 ```
-.\cmake
+cmake .. -GNinja
 ```
 
 or 
 
 #### Step 15.C: ninja
 
-Run `ninja` from build file (example: `C:\Users\User\Neuron\nrn\build` or `C:\msys64\home\User\Neuron\nrn\build` if you copy a version here) 
+Run `ninja` from the build file (example: `C:\Users\User\Neuron\nrn\build` or `C:\msys64\home\User\Neuron\nrn\build` if you copied a version here) 
 ```
-.\ninja
+ninja
 ``` 
 
-### Step 16: Dependences
+### Step 16: Dependencies
 
-Python will not have all dependences, so you can install them doing:  
+Python will not have all dependencies, so you can install them doing:  
 
 ```
 python -m pip install plotly 
@@ -307,19 +314,19 @@ python -m pip install pandas
 ``` 
 
 
-## Creating a new environment for neuron development 
-It my be useful maintain the original version of neuron installed (at  for example) and have a new version that you can do your changes in code. We will set up this new environment and version.
+## Creating a new environment for NEURON development 
+It my be useful maintain the original version of NEURON installed (at `C:\home\User\Neuron\nrn` for example) and have a new version that you can do your changes in code. We will set up this new environment and version.
 
-### Step 17: Clone neuron-git inside `msys64`
+### Step 17: Clone NEURON-git inside `msys64`
 We create a new folder inside the `msys64`:  `C:\msys64\home\User\Neuron\nrn`
-and clone neuron-git: 
+and clone NEURON git: 
 ```
 git clone https://github.com/neuronsimulator/nrn
 ```
  
 ### Step 18: Set the configuration options: 
 
-Get inside `Neuron\nrn\build` file (example: `C:\Users\User\Neuron\nrn\build` or `C:\msys64\home\User\Neuron\nrn` if you copy a version here) and do:  
+Get inside `Neuron\nrn\build` file (example: `C:\Users\User\Neuron\nrn\build` or `C:\msys64\home\User\Neuron\nrn\build` if you copy a version here) and do:  
 ```
 cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=install -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_ENABLE_MPI_DYNAMIC=ON 
 ```
@@ -330,7 +337,7 @@ cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=install -DNRN_ENABLE_RX3D=OFF -DNRN_ENAB
 ```
  
 ### Step 19: Compiling  
-A `Ninja install` and `ninja setup_exe` (instead `make setup_exe`) may be useful/ necessary for the first time. 
+A `ninja install` and `ninja setup_exe` (instead `make setup_exe`) may be useful/necessary for the first time. 
 
 The command 
 `ninja` may be enough for further changes from `C:\msys64\home\User\Neuron\nrn\build` folder. See Step 15.C. 
@@ -352,7 +359,7 @@ C:\msys64\home\User\Neuron\nrn\build\bin
 Do **Step 10** if you face something like:
 
 
-```bash
+```powershell
 PS C:\Users\User\Neuron\nrn>  bash ci/win_build_cmake.sh 
 : invalid optionke.sh: line 2: set: - 
 set: usage: set [-abefhkmnptuvxBCEHPT] [-o option-name] [--] [-] [arg ...] 
@@ -367,7 +374,7 @@ ci/win_build_cmake.sh: line 46: syntax error: unexpected end of file
  
 See **Steps 9 and 10** if you face something like:
 
-```bash
+```powershell
 PS C:\Users\User\Neuron\nrn> bash ci/win_build_cmake.sh 
 Windows Subsystem for Linux has no installed distributions. 
 Distributions can be installed by visiting the Microsoft Store: 
