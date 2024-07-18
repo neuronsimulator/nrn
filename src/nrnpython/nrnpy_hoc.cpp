@@ -2623,12 +2623,11 @@ extern "C" PyObject* get_plotshape_data(PyObject* sp) {
     }
     void* that = pho->ho_->u.this_pointer;
 #if HAVE_IV
-    IFGUI
+    if (hoc_usegui) {
         spi = ((ShapePlot*) that);
-}
-else {
+    } else {
         spi = ((ShapePlotData*) that);
-    ENDGUI
+    }
 #else
     spi = ((ShapePlotData*) that);
 #endif
@@ -2638,9 +2637,10 @@ else {
     if (!py_obj) {
         py_obj = Py_None;
     }
-    // NOte: O increases the reference count; N does not
+    // Note: O increases the reference count; N does not
     return Py_BuildValue("sOffN", spi->varname(), py_obj, spi->low(), spi->high(), py_sl);
 }
+
 
 // poorly follows __reduce__ and __setstate__
 // from numpy/core/src/multiarray/methods.c
