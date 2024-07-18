@@ -190,19 +190,14 @@ static Object* pysec_cell(Section* sec) {
     return NULL;
 }
 
-static int NpySObj_contains(PyObject* s, PyObject* obj, const char* string) {
+inline int NpySObj_contains(PyObject* s, PyObject* obj, const char* attr_name) {
     /* Checks is provided PyObject* s contains obj */
-    PyObject* obj_seg;
-    int result;
-    if (!PyObject_HasAttrString(obj, string)) {
+    auto py_obj = nb::borrow(obj);
+    if (!nb::hasattr(obj, attr_name)) {
         return 0;
     }
-    Py_INCREF(obj);
-    obj_seg = PyObject_GetAttrString(obj, string);
-    Py_DECREF(obj);
-    result = PyObject_RichCompareBool(s, obj_seg, Py_EQ);
-    Py_XDECREF(obj_seg);
-    return (result);
+    auto obj_seg = py_obj.attr(attr_name);
+    return nb::handle(s).equal(obj_seg);
 }
 
 static int NPySecObj_contains(PyObject* sec, PyObject* obj) {
