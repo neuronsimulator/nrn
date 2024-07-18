@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "nrn_export.hpp"
+
 #include <iostream>
 #include <string>
 
@@ -22,7 +24,7 @@ extern int nrn_main_launch;
 // int nrn_global_argc;
 extern char** nrn_global_argv;
 extern void (*p_nrnpython_finalize)();
-extern PyObject* nrnpy_hoc();
+extern "C" PyObject* nrnpy_hoc();
 
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
@@ -221,7 +223,7 @@ void nrnpython_finalize() {
 
 static char* env[] = {0};
 
-extern "C" PyObject* PyInit_hoc() {
+extern "C" NRN_EXPORT PyObject* PyInit_hoc() {
 #if NRN_ENABLE_THREADS
     main_thread_ = std::this_thread::get_id();
 #endif
@@ -368,5 +370,5 @@ extern "C" PyObject* PyInit_hoc() {
 }
 
 #if !defined(MINGW)
-extern "C" void modl_reg() {}
+extern "C" NRN_EXPORT void modl_reg() {}
 #endif  // !defined(MINGW)

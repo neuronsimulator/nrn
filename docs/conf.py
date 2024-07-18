@@ -40,6 +40,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "nbsphinx",
     "sphinx_design",
+    "sphinx_inline_tabs",
 ]
 
 source_suffix = {

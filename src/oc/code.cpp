@@ -1041,7 +1041,7 @@ void hoc_shortfor(void) {
     case UNDEF:
         hoc_execerror(sym->name, "undefined variable");
     case VAR:
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             if (sym->subtype == USERINT) {
                 execerror("integer iteration variable", sym->name);
             } else if (sym->subtype == USERDOUBLE) {
@@ -1201,7 +1201,7 @@ static void for_segment2(Symbol* sym, int mode) {
     case UNDEF:
         hoc_execerror(sym->name, "undefined variable");
     case VAR:
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             if (sym->subtype == USERINT) {
                 execerror("integer iteration variable", sym->name);
             } else if (sym->subtype == USERDOUBLE) {
@@ -1844,7 +1844,7 @@ void eval(void) /* evaluate variable on stack */
     case UNDEF:
         execerror("undefined variable", sym->name);
     case VAR:
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             if (do_equation && sym->s_varn > 0 && hoc_access[sym->s_varn] == 0) {
                 hoc_access[sym->s_varn] = var_access;
                 var_access = sym->s_varn;
@@ -1928,7 +1928,7 @@ void hoc_evalpointer() {
     case UNDEF:
         execerror("undefined variable", sym->name);
     case VAR:
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             switch (sym->subtype) {
             case USERDOUBLE:
                 d = sym->u.pval;
@@ -2190,7 +2190,7 @@ void hoc_assign() {
     case UNDEF:
         hoc_execerror(sym->name, "undefined variable");
     case VAR:
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             switch (sym->subtype) {
             case USERDOUBLE:
                 if (op) {
@@ -2304,7 +2304,7 @@ char* hoc_araystr(Symbol* sym, int index, Objectdata* obd) {
     int i, n, j, n1;
 
     *--cp = '\0';
-    if (ISARRAY(sym)) {
+    if (is_array(*sym)) {
         Arrayinfo* a;
         if (sym->subtype == 0) {
             a = obd[sym->u.oboff + 1].arayinfo;
@@ -2480,7 +2480,7 @@ void varread(void) /* read into variable */
     Symbol* var = (pc++)->sym;
 
     assert(var->cpublic != 2);
-    if (!((var->type == VAR || var->type == UNDEF) && !ISARRAY(var) && var->subtype == NOTUSER)) {
+    if (!((var->type == VAR || var->type == UNDEF) && !is_array(*var) && var->subtype == NOTUSER)) {
         execerror(var->name, "is not a scalar variable");
     }
 Again:
@@ -2553,24 +2553,12 @@ void insertcode(Inst* begin, Inst* end, Pfrv f) {
     }
 }
 
-#if defined(DOS) || defined(WIN32)
-static int ntimes;
-#endif
-
 void execute(Inst* p) /* run the machine */
 {
     Inst* pcsav;
 
     BBSPOLL
     for (pc = p; pc->in != STOP && !hoc_returning;) {
-#if defined(DOS)
-        if (++ntimes > 10) {
-            ntimes = 0;
-#if 0
-            kbhit(); /* DOS can't capture interrupt when number crunching*/
-#endif
-        }
-#endif
         if (hoc_intset)
             execerror("interrupted", (char*) 0);
         /* (*((pc++)->pf))(); DEC 5000 increments pc after the return!*/

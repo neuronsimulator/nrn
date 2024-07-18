@@ -26,7 +26,7 @@ Then
     The GUI tools can also help you learn how to use hoc, NEURON's programming language. The CellBuilder and Network Builder can export hoc code that you can examine and reuse to do new things. You can also save the smaller GUI tools to session files, which contain reusable hoc statements.
 
 6.
-    Examine `ModelDB <https://senselab.med.yale.edu/modeldb/>`_ and the list of `publications about NEURON <https://nrn.readthedocs.io/en/latest/publications.html>`_ to find models of interest. Many authors have deposited their model code in ModelDB, posted it somewhere else on the WWW, or will provide code upon request.
+    Examine `ModelDB <https://modeldb.science>`_ and the list of `publications about NEURON <https://nrn.readthedocs.io/en/latest/publications.html>`_ to find models of interest. Many authors have deposited their model code in ModelDB, posted it somewhere else on the WWW, or will provide code upon request.
 
 To learn how to use NMODL to add new mechanisms to NEURON:
 ------------------------
@@ -41,7 +41,7 @@ To learn how to use NMODL to add new mechanisms to NEURON:
     NEURON comes with a bunch of mod files that can serve as starting points for "programming by example." Under MSWin the default mechanisms (hh, pas, expsyn etc.) are in ``c:\nrn\src\nrnoc`` (on my Linux box this is ``/usr/local/src/nrn-x.x/src/nrnoc``). A large collection of mod files is in ``c:\nrn\examples\nrniv\nmodl`` (Linux ``/usr/local/src/nrn-x.x/share/examples/nrniv/nmodl``).
 
 4.
-    You may also find useful examples in `ModelDB <https://senselab.med.yale.edu/modeldb/>`_.
+    You may also find useful examples in `ModelDB <https://modeldb.science>`_.
 
 For courses about NEURON, see the :ref:`Course Exercises <exercises2018>` page and the :ref:`Training Videos <training_videos>` page.
 

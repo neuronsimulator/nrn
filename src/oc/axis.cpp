@@ -305,10 +305,6 @@ void hoc_ploty(void) {
 void hoc_axis(void) {
     TRY_GUI_REDIRECT_DOUBLE("axis", NULL);
 
-#if DOS
-    extern int newstyle;
-    extern unsigned text_style, text_orient, text_size;
-#endif
     int width, height;
     double x, y;
     double i, j, offset;
@@ -368,18 +364,8 @@ void hoc_axis(void) {
             plt(1, x0, j);
         }
 
-#if DOS
-        if (newstyle) {
-            settextstyle(text_style, text_orient, text_size);
-            newstyle = 0;
-        }
-        width = textwidth("O") * 1.5;
-        height = textheight("O");
-#else
         width = WIDTH;
         height = HEIGHT;
-#endif
-
 
         for (x = xstart; x <= xstop + 1e-10; x = x + (xstop - xstart) / xinc) {
             i = xorg + xscale * x;
@@ -390,13 +376,8 @@ void hoc_axis(void) {
             offset = width * (int) strlen(s) / 2;
             if (i == x0 && y0 != YORG)
                 offset = -width / 2;
-#if DOS
-            plt(1, i - offset, y0 - height);
-            plt(-2, 0., 0.);
-#else
             plt(1, i - offset, y0 - 1.5 * height);
             plt(-2, 0., 0.);
-#endif
             plprint(s);
         }
 
@@ -408,18 +389,9 @@ void hoc_axis(void) {
             offset = width * (int) strlen(s) + width;
             j = yorg + yscale * y;
             if (j == y0 && x0 != XORG)
-#if DOS
-                plt(1, x0 - offset, j + height);
-#else
                 plt(1, x0 - offset, j + 2.);
-#endif
             else
-#if DOS
-                plt(1, x0 - offset, j + height / 2);
-#else
                 plt(1, x0 - offset, j - 6.);
-#endif
-
             plt(-2, 0., 0.);
             plprint(s);
         }

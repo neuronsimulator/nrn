@@ -12,7 +12,9 @@
 #if defined(USE_PYTHON)
 #undef _POSIX_C_SOURCE
 #undef _XOPEN_SOURCE
-#include <nrnwrap_Python.h>
+#include "nrnwrap_Python.h"
+
+#include "nrn_export.hpp"
 
 #endif /*USE_PYTHON*/
 

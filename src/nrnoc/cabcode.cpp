@@ -1,3 +1,4 @@
+#include "neuron/container/generic_data_handle.hpp"
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/cabcode.cpp,v 1.37 1999/07/08 14:24:59 hines Exp */
 
@@ -319,17 +320,19 @@ void new_sections(Object* ob, Symbol* sym, Item** pitm, int size) {
     }
 }
 
+/// @brief Creates a new section and registers with the global section list
+Section* section_new(Symbol* sym) {
+    Section* sec = new_section(nullptr, sym, 0);
+    auto itm = lappendsec(section_list, sec);
+    sec->prop->dparam[8] = {neuron::container::do_not_search, itm};
+    return sec;
+}
+
 #if USE_PYTHON
 struct NPySecObj;
 Section* nrnpy_newsection(NPySecObj* v) {
-    Item* itm;
-    Section* sec;
-    sec = new_section((Object*) 0, (Symbol*) 0, 0);
-#if USE_PYTHON
+    auto sec = section_new(nullptr);
     sec->prop->dparam[PROP_PY_INDEX] = static_cast<void*>(v);
-#endif
-    itm = lappendsec(section_list, sec);
-    sec->prop->dparam[8] = itm;
     return sec;
 }
 #endif
@@ -1034,7 +1037,7 @@ void range_const() {
 static int range_vec_indx(Symbol* s) {
     int indx;
 
-    if (ISARRAY(s)) {
+    if (is_array(*s)) {
         indx = hoc_araypt(s, SYMBOL);
     } else {
         indx = 0;
@@ -1314,7 +1317,7 @@ neuron::container::data_handle<double> nrn_rangepointer(Section* sec, Symbol* s,
 /* return nullptr if failure instead of hoc_execerror
    and return pointer to the 0 element if an array
 */
-neuron::container::data_handle<double> nrnpy_rangepointer(Section* sec,
+neuron::container::generic_data_handle nrnpy_rangepointer(Section* sec,
                                                           Symbol* s,
                                                           double d,
                                                           int* err,
@@ -1906,10 +1909,16 @@ double* nrn_vext_pd(Symbol* s, int indx, Node* nd) {
 }
 #endif
 
-/* if you change this then change nrnpy_dprop as well */
-/* returns location of property symbol */
-neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, short inode) {
-    auto* const m = nrn_mechanism_check(s->u.rng.type, sec, inode);
+class VoidPointerError: public std::runtime_error {
+  public:
+    using std::runtime_error::runtime_error;
+};
+
+neuron::container::generic_data_handle dprop_impl(Prop* m,
+                                                  Symbol* s,
+                                                  int indx,
+                                                  Section* sec,
+                                                  short inode) {
 #if EXTRACELLULAR
     // old comment: this does not handle vext(0) and vext(1) properly at this time
     if (m->_type == EXTRACELL && s->u.rng.index == neuron::extracellular::vext_pseudoindex()) {
@@ -1925,17 +1934,29 @@ neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, 
             return m->param_handle_legacy(s->u.rng.index + indx);
         }
     } else {
-        neuron::container::data_handle<double> const p{m->dparam[s->u.rng.index + indx]};
-        if (!p) {
-            hoc_execerror(s->name, "wasn't made to point to anything");
+        neuron::container::generic_data_handle const p{m->dparam[s->u.rng.index + indx]};
+        if (p.is_invalid_handle()) {
+            throw VoidPointerError(std::string(s->name) + " wasn't made to point to anything");
         }
         return p;
     }
 }
 
+
+/* if you change this then change nrnpy_dprop as well */
+/* returns location of property symbol */
+neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, short inode) {
+    auto* const m = nrn_mechanism_check(s->u.rng.type, sec, inode);
+    try {
+        return neuron::container::data_handle<double>{dprop_impl(m, s, indx, sec, inode)};
+    } catch (VoidPointerError e) {
+        hoc_execerror(e.what(), nullptr);
+    }
+}
+
 /* return nullptr instead of hoc_execerror. */
 /* returns location of property symbol */
-neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
+neuron::container::generic_data_handle nrnpy_dprop(Symbol* s,
                                                    int indx,
                                                    Section* sec,
                                                    short inode,
@@ -1945,26 +1966,12 @@ neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
         *err = 1;
         return {};
     }
-#if EXTRACELLULAR
-    /* this does not handle vext(0) and vext(1) properly at this time */
-    if (m->_type == EXTRACELL && s->u.rng.index == neuron::extracellular::vext_pseudoindex()) {
-        return neuron::container::data_handle<double>{sec->pnode[inode]->extnode->v + indx};
+    try {
+        return dprop_impl(m, s, indx, sec, inode);
+    } catch (VoidPointerError e) {
+        *err = 2;
     }
-#endif
-    if (s->subtype != NRNPOINTER) {
-        if (m->ob) {
-            return neuron::container::data_handle<double>{m->ob->u.dataspace[s->u.rng.index].pval +
-                                                          indx};
-        } else {
-            return m->param_handle_legacy(s->u.rng.index + indx);
-        }
-    } else {
-        neuron::container::data_handle<double> const p{m->dparam[s->u.rng.index + indx]};
-        if (!p) {
-            *err = 2;
-        }
-        return p;
-    }
+    return {};
 }
 
 static char* objectname(void) {

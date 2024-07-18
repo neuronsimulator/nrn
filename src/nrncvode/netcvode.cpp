@@ -41,6 +41,7 @@
 #include "nrnste.h"
 #include "profile.h"
 #include "utils/profile/profiler_interface.h"
+#include "utils/formatting.hpp"
 
 #include <array>
 #include <unordered_set>
@@ -185,13 +186,6 @@ int nrn_presyn_count(PreSyn* ps) {
 void* nrn_presyn_netcon(PreSyn* ps, int i) {
     return ps->dil_[i];
 }
-
-#if USENEOSIM
-void neosim2nrn_advance(void*, void*, double);
-void neosim2nrn_deliver(void*, void*);
-void (*p_nrn2neosim_send)(void*, double);
-static void* neosim_entity_;
-#endif
 
 void ncs2nrn_integrate(double tstop);
 extern void (*nrn_allthread_handle)();
@@ -921,6 +915,19 @@ static char* escape_bracket(const char* s) {
     return b;
 }
 
+static std::regex get_regex(int id) {
+    std::string s(gargstr(id));
+    if (s.empty()) {
+        return std::regex(".*");
+    } else {
+        try {
+            return std::regex(escape_bracket(s.data()));
+        } catch (std::regex_error&) {
+            hoc_execerror_fmt("Argument {} is not a valid regular expression '{}'.", id, s);
+        }
+    }
+}
+
 Object** NetCvode::netconlist() {
     // interface to cvode.netconlist(precell, postcell, target, [list])
     OcList* o;
@@ -933,44 +940,17 @@ Object** NetCvode::netconlist() {
     if (hoc_is_object_arg(1)) {
         opre = *hoc_objgetarg(1);
     } else {
-        std::string s(gargstr(1));
-        if (s.empty()) {
-            spre = std::regex(".*");
-        } else {
-            try {
-                spre = std::regex(escape_bracket(s.data()));
-            } catch (std::regex_error&) {
-                hoc_execerror(gargstr(1), "not a valid regular expression");
-            }
-        }
+        spre = get_regex(1);
     }
     if (hoc_is_object_arg(2)) {
         opost = *hoc_objgetarg(2);
     } else {
-        std::string s(gargstr(2));
-        if (s.empty()) {
-            spost = std::regex(".*");
-        } else {
-            try {
-                spost = std::regex(escape_bracket(s.data()));
-            } catch (std::regex_error&) {
-                hoc_execerror(gargstr(2), "not a valid regular expression");
-            }
-        }
+        spost = get_regex(2);
     }
     if (hoc_is_object_arg(3)) {
         otar = *hoc_objgetarg(3);
     } else {
-        std::string s(gargstr(3));
-        if (s.empty()) {
-            star = std::regex(".*");
-        } else {
-            try {
-                star = std::regex(escape_bracket(s.data()));
-            } catch (std::regex_error&) {
-                hoc_execerror(gargstr(3), "not a valid regular expression");
-            }
-        }
+        star = get_regex(3);
     }
 
     hoc_Item* q;
@@ -1491,12 +1471,6 @@ void NetCvode::alloc_list() {
         }
     }
     empty_ = false;
-#if USENEOSIM
-    if (p_nrn2neosim_send)
-        for (i = 0; i < nlist_; ++i) {
-            p.lcv_[i].neosim_self_events_ = new TQueue();
-        }
-#endif
 }
 
 bool NetCvode::init_global() {
@@ -2045,16 +2019,16 @@ int NetCvode::solve(double tout) {
                     return err;
                 }
 #if HAVE_IV
-                IFGUI
-                if (rt < time(nullptr)) {
-                    //				if (++cnt > 10000) {
-                    //					cnt = 0;
-                    Oc oc;
-                    oc.notify();
-                    single_event_run();
-                    rt = time(nullptr);
+                if (hoc_usegui) {
+                    if (rt < time(nullptr)) {
+                        //				if (++cnt > 10000) {
+                        //					cnt = 0;
+                        Oc oc;
+                        oc.notify();
+                        single_event_run();
+                        rt = time(nullptr);
+                    }
                 }
-                ENDGUI
 #endif
             }
             int n = p[0].nlcv_;
@@ -2272,17 +2246,7 @@ void NetCvode::move_event(TQItem* q, double tnew, NrnThread* nt) {
                tnew);
     }
 #endif
-#if USENEOSIM
-    // only self events move
-    if (neosim_entity_) {
-        assert(0);
-        // cvode_instance->neosim_self_events_->move(q, tnew);
-    } else {
-        p[tid].tqe_->move(q, tnew);
-    }
-#else
     p[tid].tqe_->move(q, tnew);
-#endif
 }
 
 void NetCvode::remove_event(TQItem* q, int tid) {
@@ -2310,16 +2274,7 @@ void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, doubl
         hoc_execerror("net_send delay < 0", 0);
     }
     TQItem* q;
-#if USENEOSIM
-    if (neosim_entity_) {
-        assert(0);
-        // cvode_instance->neosim_self_events_->insert(td, se);
-    } else {
-        q = net_cvode_instance->event(td, se, nt);
-    }
-#else
     q = net_cvode_instance->event(td, se, nt);
-#endif
     if (flag == 1.0) {
         *v = q;
     }
@@ -2379,15 +2334,7 @@ void net_event(Point_process* pnt, double time) {
             ps->pr(buf, time, net_cvode_instance);
             hoc_execerror("net_event time < t", 0);
         }
-#if USENEOSIM
-        if (neosim_entity_) {
-            (*p_nrn2neosim_send)(neosim_entity_, nt_t);
-        } else {
-#endif
-            ps->send(time, net_cvode_instance, ps->nt_);
-#if USENEOSIM
-        }
-#endif
+        ps->send(time, net_cvode_instance, ps->nt_);
     }
 }
 
@@ -2593,28 +2540,13 @@ void NetCvode::null_event(double tt) {
     if (tt - nt->_t < 0) {
         return;
     }
-#if USENEOSIM
-    if (neosim_entity_) {
-        // ignore for neosim. There is no appropriate cvode_instance
-        // cvode_instance->neosim_self_events_->insert(nt_t + delay, null_event_);
-    } else {
-        event(tt, null_event_, nt);
-    }
-#else
     event(tt, null_event_, nt);
-#endif
 }
 
 void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit, Object* pyact) {
     if (!ppobj && tt - nt_t < 0) {
         return;
     }
-#if USENEOSIM
-    if (neosim_entity_) {
-        // ignore for neosim. There is no appropriate cvode_instance
-        // cvode_instance->neosim_self_events_->insert(nt_t + delay, null_event_);
-    } else
-#endif
     {
         NrnThread* nt = nrn_threads;
         if (nrn_nthread > 1 && (!cvode_active_ || localstep())) {
@@ -2769,16 +2701,6 @@ void NetCvode::clear_events() {
     HocEvent::reclaim();
     allthread_hocevents_->clear();
     nrn_allthread_handle = nullptr;
-#if USENEOSIM
-    if (p_nrn2neosim_send)
-        for (i = 0; i < nlist_; ++i) {
-            TQueue* tq = p.lcv_[i].neosim_self_events_;
-            while (tq->least()) {
-                tq->remove(tq->least());
-            }
-            // and have already been reclaimed by SelfEvent::reclaim()
-        }
-#endif
     if (!MUTCONSTRUCTED) {
         MUTCONSTRUCT(1);
     }
@@ -3628,58 +3550,6 @@ void NetCvode::retreat(double t, Cvode* cv) {
     }
 #endif
 }
-
-#if USENEOSIM
-
-bool neosim_deliver_self_events(TQueue* tqe, double til);
-bool neosim_deliver_self_events(TQueue* tqe, double til) {
-    bool b;
-    TQItem* q;
-    DiscreteEvent* d;
-    b = false;
-    while (tqe->least_t() <= til + .5e-8) {
-        b = true;
-        q = tqe->least();
-        t = q->t_;
-        d = (DiscreteEvent*) q->data_;
-        assert(d->type() == SelfEventType);
-        tqe->remove(q);
-        d->deliver(t, net_cvode_instance);
-    }
-}
-
-void neosim2nrn_advance(void* e, void* v, double tout) {
-    neosim_entity_ = e;
-    NetCon* d = (NetCon*) v;
-    TQueue* tqe;
-
-    // now can integrate to tout since it is guaranteed there will
-    // be no further real events to this cell before tout.
-    // but we must handle self events. The implementation is
-    // analogous to the NetCvode::solve with single and tout
-    Cvode* cv = (Cvode*) d->target_->nvi_;  // so self event from INITIAL block
-    tqe = cv->neosim_self_events_;
-    // not a bug even if there is no BREAKPOINT block. I.e.
-    // artificial cells will work.
-    t = cv->time();
-    while (tout > t) {
-        do {
-            cv->check_deliver();
-        } while (neosim_deliver_self_events(tqe, t));
-        cv->solve();
-    }
-    cv->interpolate(tout);
-    cv->check_deliver();
-}
-
-void neosim2nrn_deliver(void* e, void* v) {
-    neosim_entity_ = e;
-    NetCon* d = (NetCon*) v;
-    Cvode* cv = (Cvode*) d->target_->nvi_;
-    d->deliver(cv->t_, net_cvode_instance);
-}
-
-#endif
 
 // parallel global variable time-step
 int NetCvode::pgvts(double tstop) {
@@ -5314,15 +5184,7 @@ void ConditionEvent::check(NrnThread* nt, double tt, double teps) {
         if (flag_ == false) {
             flag_ = true;
             valthresh_ = 0.;
-#if USENEOSIM
-            if (neosim_entity_) {
-                (*p_nrn2neosim_send)(neosim_entity_, tt);
-            } else {
-#endif
-                send(tt + teps, net_cvode_instance, nt);
-#if USENEOSIM
-            }
-#endif
+            send(tt + teps, net_cvode_instance, nt);
         }
     } else {
         flag_ = false;

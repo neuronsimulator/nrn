@@ -10,6 +10,7 @@ import numpy
 from . import geometry as geo
 import weakref
 from . import initializer
+from .geometry import FractionalVolume
 import warnings
 import math
 import ctypes
@@ -344,8 +345,14 @@ class Extracellular:
     def _short_repr(self):
         return "Extracellular"
 
-    def volume(self, index):
+    def volume(self, index=None):
         """Returns the volume of the voxel at a given index"""
+        if index is None:
+            if numpy.isscalar(self.alpha):
+                vol = self._nx * self._ny * self._nz * numpy.prod(self._dx) * self.alpha
+            else:
+                vol = numpy.sum(self.alpha) * numpy.prod(self._dx)
+            return vol
         if numpy.isscalar(self.alpha):
             return numpy.prod(self._dx) * self.alpha
         return numpy.prod(self._dx) * self.alpha[index]
@@ -881,8 +888,9 @@ class Region(object):
                     f"Error: Region 'secs' must be a list of NEURON sections, {sec} is not a valid NEURON section."
                 )
         self._secs = h.SectionList(self._secs)
-        self.nrn_region = nrn_region
         self.geometry = geometry
+        self._name = name
+        self.nrn_region = nrn_region
 
         if dimension is not None:
             warnings.warn(
@@ -891,7 +899,6 @@ class Region(object):
             import neuron
 
             neuron.rxd.set_solve_type(secs, dimension=dimension)
-        self._name = name
         if dx is not None:
             try:
                 dx = float(dx)
@@ -926,6 +933,14 @@ class Region(object):
                 raise RxDException('nrn_region must be one of: None, "i", "o"')
             else:
                 self._nrn_region = value
+            if (
+                value == "i"
+                and isinstance(self.geometry, FractionalVolume)
+                and self.geometry._surface_fraction == 0
+            ):
+                warnings.warn(
+                    f'{self.name} is in the "i" region with a surface_fraction of 0 and will not have currents added'
+                )
         else:
             raise RxDException("Cannot set nrn_region now; model already instantiated")
 
@@ -1000,6 +1015,16 @@ class Region(object):
         else:
             raise RxDException("Cannot set secs now; model already instantiated")
 
-    def volume(self, index):
+    def volume(self, index=None):
         """Returns the volume of the voxel at a given index"""
+        initializer._do_init()
+        if index is None:
+            vol = 0
+            if hasattr(self, "_vol") and any(self._secs3d):
+                vol += numpy.sum(self._vol)
+            if hasattr(self, "_geometry") and any(self._secs1d):
+                vol += numpy.sum(
+                    [self._geometry.volumes1d(sec) for sec in self._secs1d]
+                )
+            return vol
         return self._vol[index]
