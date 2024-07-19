@@ -56,14 +56,14 @@ bool SemanticAnalysisVisitor::check_table_vars(const ast::Program& node) {
 bool SemanticAnalysisVisitor::check_name_conflict(const ast::Program& node) {
     // check that there are no RANGE variables which have the same name as a FUNCTION or PROCEDURE
     const auto& range_nodes = collect_nodes(node, {ast::AstNodeType::RANGE_VAR});
-    std::unordered_set<std::string> range_vars{};
+    std::set<std::string> range_vars{};
     for (const auto& range_node: range_nodes) {
         range_vars.insert(range_node->get_node_name());
     }
 
     const auto& function_nodes =
         collect_nodes(node, {ast::AstNodeType::FUNCTION_BLOCK, ast::AstNodeType::PROCEDURE_BLOCK});
-    std::unordered_set<std::string> func_vars{};
+    std::set<std::string> func_vars{};
     for (const auto& function_node: function_nodes) {
         func_vars.insert(function_node->get_node_name());
     }
