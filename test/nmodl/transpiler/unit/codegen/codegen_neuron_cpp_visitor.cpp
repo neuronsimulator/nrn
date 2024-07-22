@@ -209,3 +209,39 @@ SCENARIO("Read `eca`.", "[codegen]") {
         }
     }
 }
+
+SCENARIO("ARTIFICIAL_CELL with `net_send`") {
+    GIVEN("a mod file") {
+        std::string nmodl = R"(
+            NEURON {
+                ARTIFICIAL_CELL test
+            }
+            NET_RECEIVE(w) {
+                net_send(t+1, 1)
+            }
+        )";
+        std::string cpp = transpile(nmodl);
+
+        THEN("it contains") {
+            REQUIRE_THAT(cpp, ContainsSubstring("artcell_net_send"));
+        }
+    }
+}
+
+SCENARIO("ARTIFICIAL_CELL with `net_move`") {
+    GIVEN("a mod file") {
+        std::string nmodl = R"(
+            NEURON {
+                ARTIFICIAL_CELL test
+            }
+            NET_RECEIVE(w) {
+                net_move(t+1)
+            }
+        )";
+        std::string cpp = transpile(nmodl);
+
+        THEN("it contains") {
+            REQUIRE_THAT(cpp, ContainsSubstring("artcell_net_move"));
+        }
+    }
+}

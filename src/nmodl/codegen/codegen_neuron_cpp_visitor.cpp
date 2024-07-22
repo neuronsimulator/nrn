@@ -2139,7 +2139,8 @@ void CodegenNeuronCppVisitor::print_net_send_call(const ast::FunctionCall& node)
     }
     const auto& tqitem = get_variable_name("tqitem", /* use_instance */ false);
 
-    printer->fmt_text("net_send(/* tqitem */ &{}, {}, {}, {} + ",
+    printer->fmt_text("{}(/* tqitem */ &{}, {}, {}, {} + ",
+                      info.artificial_cell ? "artcell_net_send" : "net_send",
                       tqitem,
                       weight_pointer,
                       point_process,
@@ -2152,7 +2153,10 @@ void CodegenNeuronCppVisitor::print_net_move_call(const ast::FunctionCall& node)
     const auto& point_process = get_variable_name("point_process", /* use_instance */ false);
     const auto& tqitem = get_variable_name("tqitem", /* use_instance */ false);
 
-    printer->fmt_text("net_move(/* tqitem */ &{}, {}, ", tqitem, point_process);
+    printer->fmt_text("{}(/* tqitem */ &{}, {}, ",
+                      info.artificial_cell ? "artcell_net_move" : "net_move",
+                      tqitem,
+                      point_process);
 
     print_vector_elements(node.get_arguments(), ", ");
     printer->add_text(')');
