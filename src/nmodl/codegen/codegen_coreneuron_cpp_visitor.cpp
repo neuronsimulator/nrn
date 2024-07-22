@@ -66,26 +66,12 @@ std::string CodegenCoreneuronCppVisitor::simulator_name() {
 
 
 int CodegenCoreneuronCppVisitor::position_of_float_var(const std::string& name) const {
-    int index = 0;
-    for (const auto& var: codegen_float_variables) {
-        if (var->get_name() == name) {
-            return index;
-        }
-        index += var->get_length();
-    }
-    throw std::logic_error(name + " variable not found");
+    return get_prefixsum_from_name(codegen_float_variables, name);
 }
 
 
 int CodegenCoreneuronCppVisitor::position_of_int_var(const std::string& name) const {
-    int index = 0;
-    for (const auto& var: codegen_int_variables) {
-        if (var.symbol->get_name() == name) {
-            return index;
-        }
-        index += var.symbol->get_length();
-    }
-    throw std::logic_error(name + " variable not found");
+    return get_prefixsum_from_name(codegen_int_variables, name);
 }
 
 

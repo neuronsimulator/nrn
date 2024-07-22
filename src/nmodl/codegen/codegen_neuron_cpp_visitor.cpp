@@ -61,30 +61,13 @@ std::string CodegenNeuronCppVisitor::table_thread_function_name() const {
 /*                     Common helper routines accross codegen functions                 */
 /****************************************************************************************/
 
-
 int CodegenNeuronCppVisitor::position_of_float_var(const std::string& name) const {
-    const auto has_name = [&name](const SymbolType& symbol) { return symbol->get_name() == name; };
-    const auto var_iter =
-        std::find_if(codegen_float_variables.begin(), codegen_float_variables.end(), has_name);
-    if (var_iter != codegen_float_variables.end()) {
-        return var_iter - codegen_float_variables.begin();
-    } else {
-        throw std::logic_error(name + " variable not found");
-    }
+    return get_index_from_name(codegen_float_variables, name);
 }
 
 
 int CodegenNeuronCppVisitor::position_of_int_var(const std::string& name) const {
-    const auto has_name = [&name](const IndexVariableInfo& index_var_symbol) {
-        return index_var_symbol.symbol->get_name() == name;
-    };
-    const auto var_iter =
-        std::find_if(codegen_int_variables.begin(), codegen_int_variables.end(), has_name);
-    if (var_iter != codegen_int_variables.end()) {
-        return var_iter - codegen_int_variables.begin();
-    } else {
-        throw std::logic_error(name + " variable not found");
-    }
+    return get_index_from_name(codegen_int_variables, name);
 }
 
 

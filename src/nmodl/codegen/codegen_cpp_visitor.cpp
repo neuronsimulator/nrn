@@ -404,17 +404,7 @@ std::pair<std::string, std::string> CodegenCppVisitor::write_ion_variable_name(
 
 
 int CodegenCppVisitor::get_int_variable_index(const std::string& var_name) {
-    auto it = std::find_if(codegen_int_variables.cbegin(),
-                           codegen_int_variables.cend(),
-                           [&var_name](const auto& int_var) {
-                               return int_var.symbol->get_name() == var_name;
-                           });
-
-    if (it == codegen_int_variables.cend()) {
-        throw std::runtime_error(fmt::format("Unknown int variable: {}", var_name));
-    }
-
-    return static_cast<int>(it - codegen_int_variables.cbegin());
+    return get_index_from_name(codegen_int_variables, var_name);
 }
 
 
