@@ -132,7 +132,10 @@ void UnitTable::calc_nominator_dims(const std::shared_ptr<Unit>& unit, std::stri
         while (changed_nominator_name) {
             changed_nominator_name = 0;
             for (const auto& it: prefixes) {
-                auto res = std::mismatch(it.first.begin(), it.first.end(), nominator_name.begin());
+                auto res = std::mismatch(it.first.begin(),
+                                         it.first.end(),
+                                         nominator_name.begin(),
+                                         nominator_name.end());
                 if (res.first == it.first.end()) {
                     changed_nominator_name = 1;
                     nominator_prefix_factor *= it.second;
@@ -207,8 +210,10 @@ void UnitTable::calc_denominator_dims(const std::shared_ptr<Unit>& unit,
         while (changed_denominator_name) {
             changed_denominator_name = false;
             for (const auto& it: prefixes) {
-                auto res =
-                    std::mismatch(it.first.begin(), it.first.end(), denominator_name.begin());
+                auto res = std::mismatch(it.first.begin(),
+                                         it.first.end(),
+                                         denominator_name.begin(),
+                                         denominator_name.end());
                 if (res.first == it.first.end()) {
                     changed_denominator_name = true;
                     denominator_prefix_factor *= it.second;
