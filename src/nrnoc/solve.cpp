@@ -57,7 +57,8 @@ node.v + extnode.v[0]
 #include "nrnmpiuse.h"
 #include "ocnotify.h"
 #include "section.h"
-#include "spmatrix.h"
+#include <Eigen/Eigen>
+#include <Eigen/LU>
 #include "treeset.h"
 
 #include <stdio.h>
@@ -364,22 +365,13 @@ void nrn_solve(NrnThread* _nt) {
     }
 #else
     if (use_sparse13) {
-        int e;
         nrn_thread_error("solve use_sparse13");
         update_sp13_mat_based_on_actual_d(_nt);
-        e = spFactor(_nt->_sp13mat);
-        if (e != spOKAY) {
-            switch (e) {
-            case spZERO_DIAG:
-                hoc_execerror("spFactor error:", "Zero Diagonal");
-            case spNO_MEMORY:
-                hoc_execerror("spFactor error:", "No Memory");
-            case spSINGULAR:
-                hoc_execerror("spFactor error:", "Singular");
-            }
-        }
         update_sp13_rhs_based_on_actual_rhs(_nt);
-        spSolve(_nt->_sp13mat, _nt->_sp13_rhs, _nt->_sp13_rhs);
+        _nt->_sparseMat->makeCompressed();
+        Eigen::SparseLU<Eigen::SparseMatrix<double, Eigen::RowMajor>> lu(*_nt->_sparseMat);
+        Eigen::Map<Eigen::VectorXd> rhs(_nt->_sparse_rhs + 1, _nt->_sparseMat->cols());
+        rhs = lu.solve(rhs);
         update_actual_d_based_on_sp13_mat(_nt);
         update_actual_rhs_based_on_sp13_rhs(_nt);
     } else {

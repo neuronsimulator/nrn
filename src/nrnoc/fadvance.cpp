@@ -13,7 +13,7 @@
 #include "utils/profile/profiler_interface.h"
 #include "nonvintblock.h"
 #include "nrncvode.h"
-#include "spmatrix.h"
+#include <Eigen/Eigen>
 
 #include <vector>
 
@@ -672,11 +672,11 @@ void nrn_print_matrix(NrnThread* _nt) {
     Node* nd;
     if (use_sparse13) {
         if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
-            spPrint(_nt->_sp13mat, 1, 0, 1);
+            std::cout << &_nt->_sparseMat << std::endl;
         } else {
-            int i, n = spGetSize(_nt->_sp13mat, 0);
-            spPrint(_nt->_sp13mat, 1, 1, 1);
-            for (i = 1; i <= n; ++i) {
+            std::cout << &_nt->_sparseMat << std::endl;
+            int n = _nt->_sparseMat->cols();
+            for (int i = 1; i <= n; ++i) {
                 Printf("%d %g\n", i, _nt->actual_rhs(i));
             }
         }

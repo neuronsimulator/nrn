@@ -1,3 +1,5 @@
+#include <Eigen/Eigen>
+
 #include <../../nrnconf.h>
 #include <errno.h>
 #include "nrn_ansi.h"
@@ -14,6 +16,7 @@
 
 #include <utility>
 
+
 extern void setup_topology(), v_setup_vectors();
 extern void recalc_diam();
 extern int nrn_errno_check(int);
@@ -22,9 +25,6 @@ extern int nrn_errno_check(int);
 #define nt_t  nrn_threads->_t
 
 extern Symlist* hoc_built_in_symlist;
-
-#include "spmatrix.h"
-extern double* sp13mat;
 
 #if 1 || NRNMPI
 extern void (*nrnthread_v_transfer_)(NrnThread*);
@@ -356,7 +356,7 @@ void Cvode::daspk_init_eqn() {
     if (use_sparse13 == 0 || diam_changed != 0) {
         recalc_diam();
     }
-    zneq = spGetSize(_nt->_sp13mat, 0);
+    zneq = _nt->_sparseMat->cols();
     z.neq_v_ = z.nonvint_offset_ = zneq;
     // now add the membrane mechanism ode's to the count
     for (cml = z.cv_memb_list_; cml; cml = cml->next) {
