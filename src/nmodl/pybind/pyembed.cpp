@@ -92,7 +92,8 @@ void EmbeddedPythonLoader::load_libraries() {
                          CMakeInfo::SHARED_LIBRARY_SUFFIX);
         throw std::runtime_error("NMODLHOME doesn't have lib/libpywrapper library");
     }
-    pybind_wrapper_handle = dlopen(pybind_wraplib_env.c_str(), dlopen_opts);
+    std::string env_str = pybind_wraplib_env.string();
+    pybind_wrapper_handle = dlopen(env_str.c_str(), dlopen_opts);
     if (!pybind_wrapper_handle) {
         const auto errstr = dlerror();
         logger->critical("Tried but failed to load {}", pybind_wraplib_env.string());

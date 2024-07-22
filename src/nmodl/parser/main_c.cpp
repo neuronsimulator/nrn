@@ -8,8 +8,9 @@
 #include <CLI/CLI.hpp>
 
 #include "config/config.h"
-#include "parser/c11_driver.hpp"
 #include "utils/logger.hpp"
+
+#include "parser/c11_driver.hpp"
 
 /**
  * \file

@@ -29,7 +29,7 @@ SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numer
         Eigen::Matrix<double, 1, 1> X{22.2536};
         Eigen::Matrix<double, 1, 1> F;
         functor fn;
-        int iter_newton = newton::newton_numerical_diff_solver(X, fn);
+        int iter_newton = newton::newton_numerical_diff_solver<1, functor>(X, fn);
         fn(X, F);
         THEN("find the solution") {
             CAPTURE(iter_newton);
@@ -50,7 +50,7 @@ SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numer
         Eigen::Matrix<double, 1, 1> X{-0.21421};
         Eigen::Matrix<double, 1, 1> F;
         functor fn;
-        int iter_newton = newton::newton_numerical_diff_solver(X, fn);
+        int iter_newton = newton::newton_numerical_diff_solver<1, functor>(X, fn);
         fn(X, F);
         THEN("find the solution") {
             CAPTURE(iter_newton);
@@ -72,7 +72,7 @@ SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numer
         Eigen::Matrix<double, 2, 1> X{0.2, 0.4};
         Eigen::Matrix<double, 2, 1> F;
         functor fn;
-        int iter_newton = newton::newton_numerical_diff_solver(X, fn);
+        int iter_newton = newton::newton_numerical_diff_solver<2, functor>(X, fn);
         fn(X, F);
         THEN("find a solution") {
             CAPTURE(iter_newton);
@@ -103,7 +103,7 @@ SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numer
         Eigen::Matrix<double, 3, 1> X{0.21231, 0.4435, -0.11537};
         Eigen::Matrix<double, 3, 1> F;
         functor fn;
-        int iter_newton = newton::newton_numerical_diff_solver(X, fn);
+        int iter_newton = newton::newton_numerical_diff_solver<3, functor>(X, fn);
         fn(X, F);
         THEN("find a solution") {
             CAPTURE(iter_newton);
@@ -131,7 +131,7 @@ SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numer
         Eigen::Matrix<double, 4, 1> X{0.21231, 0.4435, -0.11537, -0.8124312};
         Eigen::Matrix<double, 4, 1> F;
         functor fn;
-        int iter_newton = newton::newton_numerical_diff_solver(X, fn);
+        int iter_newton = newton::newton_numerical_diff_solver<4, functor>(X, fn);
         fn(X, F);
         THEN("find a solution") {
             CAPTURE(iter_newton);
@@ -157,7 +157,7 @@ SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numer
         X << 8.234, -245.46, 123.123, 0.8343, 5.555;
         Eigen::Matrix<double, 5, 1> F;
         functor fn;
-        int iter_newton = newton::newton_numerical_diff_solver(X, fn);
+        int iter_newton = newton::newton_numerical_diff_solver<5, functor>(X, fn);
         fn(X, F);
         THEN("find a solution") {
             CAPTURE(iter_newton);
@@ -190,7 +190,7 @@ SCENARIO("Non-linear system to solve with Newton Numerical Diff Solver", "[numer
         X << 8.234, -5.46, 1.123, 0.8343, 5.555, 18.234, -2.46, 0.123, 10.8343, -4.685;
         Eigen::Matrix<double, 10, 1> F;
         functor fn;
-        int iter_newton = newton::newton_numerical_diff_solver(X, fn);
+        int iter_newton = newton::newton_numerical_diff_solver<10, functor>(X, fn);
         fn(X, F);
         THEN("find a solution") {
             CAPTURE(iter_newton);
@@ -411,7 +411,7 @@ SCENARIO("Non-linear system to solve with Newton Solver", "[analytic][solver]") 
         Eigen::Matrix<double, 5, 1> F;
         Eigen::Matrix<double, 5, 5> J;
         functor fn;
-        int iter_newton = newton::newton_solver(X, fn);
+        int iter_newton = newton::newton_solver<5, functor>(X, fn);
         fn(X, F, J);
         THEN("find a solution") {
             CAPTURE(iter_newton);
@@ -547,7 +547,7 @@ SCENARIO("Non-linear system to solve with Newton Solver", "[analytic][solver]") 
         Eigen::Matrix<double, 10, 1> F;
         Eigen::Matrix<double, 10, 10> J;
         functor fn;
-        int iter_newton = newton::newton_solver(X, fn);
+        int iter_newton = newton::newton_solver<10, functor>(X, fn);
         fn(X, F, J);
         THEN("find a solution") {
             CAPTURE(iter_newton);

@@ -130,6 +130,11 @@ if(NOT NMODL_3RDPARTY_USE_FMT
 endif()
 cpp_cc_git_submodule(json BUILD PACKAGE nlohmann_json REQUIRED)
 cpp_cc_git_submodule(pybind11 BUILD PACKAGE pybind11 REQUIRED)
+if(WIN32)
+  cpp_cc_git_submodule(dlfcn-win32 BUILD)
+  add_library(dlfcn-win32::dl ALIAS dl)
+  set(CMAKE_DL_LIBS dlfcn-win32::dl)
+endif()
 # Tell spdlog not to use its bundled fmt, it should either use the fmt submodule or a truly external
 # installation for consistency. This line should be harmless if we use an external spdlog.
 option(SPDLOG_FMT_EXTERNAL "Force to use an external {{fmt}}" ON)

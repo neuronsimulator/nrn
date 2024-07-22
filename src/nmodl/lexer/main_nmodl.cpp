@@ -26,7 +26,7 @@
  * it's value and location.
  */
 
-using namespace nmodl;
+namespace nmodl {
 
 using parser::NmodlDriver;
 using parser::NmodlLexer;
@@ -106,10 +106,12 @@ void tokenize(const std::string& mod_text) {
     }
 }
 
+}  // namespace nmodl
+
 
 int main(int argc, const char* argv[]) {
-    CLI::App app{
-        fmt::format("NMODL-Lexer : Standalone Lexer for NMODL Code({})", Version::to_string())};
+    CLI::App app{fmt::format("NMODL-Lexer : Standalone Lexer for NMODL Code({})",
+                             nmodl::Version::to_string())};
 
     std::vector<std::string> mod_files;
     std::vector<std::string> mod_texts;
@@ -120,15 +122,15 @@ int main(int argc, const char* argv[]) {
     CLI11_PARSE(app, argc, argv);
 
     for (const auto& file: mod_files) {
-        logger->info("Processing file : {}", file);
+        nmodl::logger->info("Processing file : {}", file);
         std::ifstream f(file);
         std::string mod{std::istreambuf_iterator<char>{f}, {}};
-        tokenize(mod);
+        nmodl::tokenize(mod);
     }
 
     for (const auto& text: mod_texts) {
-        logger->info("Processing text : {}", text);
-        tokenize(text);
+        nmodl::logger->info("Processing text : {}", text);
+        nmodl::tokenize(text);
     }
 
     return 0;

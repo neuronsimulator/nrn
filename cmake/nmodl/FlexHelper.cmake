@@ -6,8 +6,10 @@
 get_filename_component(FLEX_BIN_DIR ${FLEX_EXECUTABLE} DIRECTORY)
 
 if(NOT FLEX_BIN_DIR MATCHES "/usr/bin")
-  get_filename_component(FLEX_INCLUDE_PATH ${FLEX_BIN_DIR} PATH)
-  set(FLEX_INCLUDE_PATH ${FLEX_INCLUDE_PATH}/include/)
+  if(NOT FLEX_INCLUDE_PATH)
+    get_filename_component(FLEX_INCLUDE_PATH ${FLEX_BIN_DIR} PATH)
+    set(FLEX_INCLUDE_PATH ${FLEX_INCLUDE_PATH}/include/)
+  endif()
   if(EXISTS "${FLEX_INCLUDE_PATH}/FlexLexer.h")
     message(STATUS " Adding Flex include path as : ${FLEX_INCLUDE_PATH}")
     include_directories(${FLEX_INCLUDE_PATH})

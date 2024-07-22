@@ -53,8 +53,14 @@ struct pybind_wrap_api {
     decltype(&call_analytic_diff) analytic_diff;
 };
 
+#ifdef _WIN32
+#define NMODL_EXPORT
+#else
+#define NMODL_EXPORT __attribute__((visibility("default")))
+#endif
+
 extern "C" {
-__attribute__((visibility("default"))) pybind_wrap_api nmodl_init_pybind_wrapper_api() noexcept;
+pybind_wrap_api nmodl_init_pybind_wrapper_api() noexcept;
 }
 
 

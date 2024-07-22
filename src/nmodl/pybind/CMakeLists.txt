@@ -24,10 +24,15 @@ set_property(
   DIRECTORY
   APPEND
   PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../python/nmodl/ode.py)
+if(WIN32)
+  # MSVC can't handle long string literals, even if the documentation claims so See
+  # https://developercommunity.visualstudio.com/t/c-string-literal-max-length-much-shorter-than-docu/758957
+  string(REGEX REPLACE "\n\n" "\n)jiowi\" R\"jiowi(\n" NMODL_ODE_PY "${NMODL_ODE_PY}")
+endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ode_py.hpp.inc ${CMAKE_CURRENT_BINARY_DIR}/ode_py.hpp
                @ONLY)
 
-add_library(pyembed pyembed.cpp)
+add_library(pyembed STATIC pyembed.cpp)
 set_property(TARGET pyembed PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(pyembed PRIVATE util)
 target_link_libraries(pyembed PRIVATE fmt::fmt)
@@ -51,9 +56,11 @@ target_include_directories(pywrapper PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 # pybind11::embed adds PYTHON_LIBRARIES to target_link_libraries. To avoid link to
 # libpython, we can use `module` interface library from pybind11.
 # ~~~
+target_link_libraries(pyembed PRIVATE ${CMAKE_DL_LIBS})
 if(NOT LINK_AGAINST_PYTHON)
   target_link_libraries(pywrapper PRIVATE pybind11::module)
 else()
+  target_link_libraries(pyembed PRIVATE ${PYTHON_LIBRARIES} pywrapper)
   target_link_libraries(pywrapper PRIVATE pybind11::embed)
 endif()
 
@@ -69,6 +76,12 @@ if(NMODL_ENABLE_PYTHON_BINDINGS)
     ${NMODL_PROJECT_SOURCE_DIR}/src/pybind/pynmodl.cpp ${PYBIND_GENERATED_SOURCES})
   add_dependencies(_nmodl lexer pyastgen util)
   target_link_libraries(_nmodl PRIVATE printer symtab visitor pyembed)
+  set_target_properties(_nmodl PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG
+                                          ${CMAKE_BINARY_DIR}/lib/nmodl)
+
+  if(MSVC)
+    target_compile_options(_nmodl PRIVATE /bigobj)
+  endif()
 
   # in case of wheel, python module shouldn't link to wrapper library
   if(LINK_AGAINST_PYTHON)

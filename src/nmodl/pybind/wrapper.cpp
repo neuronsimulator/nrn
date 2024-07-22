@@ -193,7 +193,7 @@ void finalize_interpreter_func() {
 
 // Prevent mangling for easier `dlsym`.
 extern "C" {
-__attribute__((visibility("default"))) pybind_wrap_api nmodl_init_pybind_wrapper_api() noexcept {
+NMODL_EXPORT pybind_wrap_api nmodl_init_pybind_wrapper_api() noexcept {
     return {&nmodl::pybind_wrappers::initialize_interpreter_func,
             &nmodl::pybind_wrappers::finalize_interpreter_func,
             &call_solve_nonlinear_system,

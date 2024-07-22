@@ -172,17 +172,21 @@ endforeach()
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Unit.inc" "UNITSON \n UNITSOFF \n UNITSON \n UNITSOFF")
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/included.file" "TITLE")
 
+if(WIN32)
+  set(NMODL_TEST_PYTHONPATH "${PROJECT_BINARY_DIR}/lib;$ENV{PYTHONPATH}")
+else()
+  set(NMODL_TEST_PYTHONPATH "${PROJECT_BINARY_DIR}/lib:$ENV{PYTHONPATH}")
+endif()
+
 # =============================================================================
 # pybind11 tests
 # =============================================================================
 add_test(NAME Ode COMMAND ${PYTHON_EXECUTABLE} -m pytest ${NMODL_PROJECT_SOURCE_DIR}/test/unit/ode)
-set_tests_properties(Ode PROPERTIES ENVIRONMENT
-                                    PYTHONPATH=${PROJECT_BINARY_DIR}/lib:$ENV{PYTHONPATH})
+set_tests_properties(Ode PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
 
 if(NMODL_ENABLE_PYTHON_BINDINGS)
   add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest
                                ${NMODL_PROJECT_SOURCE_DIR}/test/unit/pybind)
-  set_tests_properties(Pybind PROPERTIES ENVIRONMENT
-                                         PYTHONPATH=${PROJECT_BINARY_DIR}/lib:$ENV{PYTHONPATH})
+  set_tests_properties(Pybind PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
   cpp_cc_configure_sanitizers(TEST Pybind PRELOAD)
 endif()
