@@ -463,9 +463,7 @@ void CodegenCppVisitor::print_function_call(const FunctionCall& node) {
         }
         return {name, false};
     };
-    std::string function_name;
-    bool is_random_function;
-    std::tie(function_name, is_random_function) = get_renamed_random_function(name);
+    auto [function_name, is_random_function] = get_renamed_random_function(name);
 
     if (defined_method(name)) {
         function_name = method_name(name);
