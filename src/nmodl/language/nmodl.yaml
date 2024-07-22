@@ -1027,12 +1027,12 @@
                       members:
                         - min:
                             brief: "TODO"
-                            type: Double
+                            type: Number
                             prefix: {value: "<"}
                             suffix: {value: ","}
                         - max:
                             brief: "TODO"
-                            type: Double
+                            type: Number
                             suffix: {value: ">"}
 
                   - NumberRange:

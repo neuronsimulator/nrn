@@ -588,7 +588,7 @@ unit_state      :   UNITSON
 limits          :   {
                         $$ = nullptr;
                     }
-                |   LT double "," double GT
+                |   LT number "," number GT
                     {
                         $$ = new ast::Limits($2, $4);
                     }
