@@ -552,9 +552,6 @@ def mac_osx_setenv():
     logging.info("Setting SDKROOT=%s", sdk_root)
     os.environ["SDKROOT"] = sdk_root
 
-    # Clear Python arch flags which can be incompat with the cur system
-    os.environ["ARCHFLAGS"] = ""
-
     # Extract the macOS version targeted by the Python framework
     py_osx_framework = extract_macosx_min_system_version(sys.executable)
 
