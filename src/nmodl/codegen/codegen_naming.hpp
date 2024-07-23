@@ -177,26 +177,26 @@ static constexpr char NRN_POINTERINDEX[] = "hoc_nrnpointerindex";
 /// commonly used variables in verbatim block and how they
 /// should be mapped to new code generation backends
 // clang-format off
-        static const std::unordered_map<std::string, std::string> VERBATIM_VARIABLES_MAPPING{
-                {"_nt", "nt"},
-                {"_p", "data"},
-                {"_ppvar", "indexes"},
-                {"_thread", "thread"},
-                {"_iml", "id"},
-                {"_cntml_padded", "pnodecount"},
-                {"_cntml", "nodecount"},
-                {"_tqitem", "tqitem"}};
+static const std::unordered_map<std::string, std::string> VERBATIM_VARIABLES_MAPPING{
+    {"_nt", "nt"},
+    {"_p", "data"},
+    {"_ppvar", "indexes"},
+    {"_thread", "thread"},
+    {"_iml", "id"},
+    {"_cntml_padded", "pnodecount"},
+    {"_cntml", "nodecount"},
+    {"_tqitem", "tqitem"}};
 
-        // Functions available in NMODL with RANDOM construct and their mapping to
-        // C++ functions for Random123 interface.
-        static std::unordered_map<std::string, std::string> RANDOM_FUNCTIONS_MAPPING{
-                {"random_setseq", "nrnran123_setseq"},
-                {"random_setids", "nrnran123_setids"},
-                {"random_uniform", "nrnran123_uniform"},
-                {"random_negexp", "nrnran123_negexp"},
-                {"random_normal", "nrnran123_normal"},
-                {"random_ipick", "nrnran123_ipick"},
-                {"random_dpick", "nrnran123_dblpick"}};
+// Functions available in NMODL with RANDOM construct and their mapping to
+// C++ functions for Random123 interface.
+static std::unordered_map<std::string, std::string> RANDOM_FUNCTIONS_MAPPING{
+    {"random_setseq", "nrnran123_setseq"},
+    {"random_setids", "nrnran123_setids"},
+    {"random_uniform", "nrnran123_uniform"},
+    {"random_negexp", "nrnran123_negexp"},
+    {"random_normal", "nrnran123_normal"},
+    {"random_ipick", "nrnran123_ipick"},
+    {"random_dpick", "nrnran123_dblpick"}};
 // clang-format on
 }  // namespace naming
 }  // namespace codegen
