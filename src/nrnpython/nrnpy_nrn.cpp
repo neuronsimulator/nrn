@@ -1009,13 +1009,12 @@ static PyObject* nrnpy_set_psection_safe(PyObject* self, PyObject* args) {
 
 static PyObject* NPySecObj_psection(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
-    if (nrnpy_psection) {
-        PyObject* arglist = Py_BuildValue("(O)", self);
-        PyObject* result = PyObject_CallObject(nrnpy_psection, arglist);
-        Py_DECREF(arglist);
-        return result;
+    if (!nrnpy_psection) {
+        Py_RETURN_NONE;
     }
-    Py_RETURN_NONE;
+    // Build temp tuple and track the new ref
+    auto arglist = nb::steal(Py_BuildValue("(O)", self));
+    return PyObject_CallObject(nrnpy_psection, arglist.ptr());
 }
 
 static PyObject* NPySecObj_psection_safe(NPySecObj* self) {
@@ -1123,15 +1122,15 @@ static PyObject* pysec_orientation_safe(NPySecObj* self) {
 }
 
 static bool lappendsec(PyObject* const sl, Section* const s) {
-    PyObject* item = (PyObject*) newpysechelp(s);
-    if (!item) {
+    if (!PyList_Check(sl)) {
         return false;
     }
-    if (PyList_Append(sl, item) != 0) {
+    auto item = nb::steal((PyObject*) newpysechelp(s));
+    if (!item.is_valid()) {
         return false;
     }
-    Py_XDECREF(item);
-    return true;
+    auto res = PyList_Append(sl, item.ptr());
+    return (res == 0) ? true : false;
 }
 
 static PyObject* pysec_children1(PyObject* const sl, Section* const sec) {
@@ -1365,26 +1364,25 @@ static PyObject* NPyMechObj_is_ion_safe(NPyMechObj* self) {
 
 static PyObject* NPyMechObj_segment(NPyMechObj* self) {
     CHECK_PROP_INVALID(self->prop_id_);
-    PyObject* result = NULL;
-    if (self->pyseg_) {
-        result = (PyObject*) (self->pyseg_);
-        Py_INCREF(result);
-    }
-    return result;
+    auto pyseg = nb::borrow((PyObject*) self->pyseg_);
+    return pyseg.release().ptr();
 }
 
 static PyObject* NPyMechObj_segment_safe(NPyMechObj* self) {
     return nrn::convert_cxx_exceptions(NPyMechObj_segment, self);
 }
 
-static PyObject* NPyMechFunc_mech(NPyMechFunc* self) {
-    PyObject* result = NULL;
-    if (self->pymech_) {
-        CHECK_PROP_INVALID(self->pymech_->prop_id_);
-        result = (PyObject*) (self->pymech_);
-        Py_INCREF(result);
+template <typename T, typename = decltype(T::pymech_)>
+inline static PyObject* _get_py_mech(T* self) {
+    if (!self->pymech_) {
+        return nullptr;
     }
-    return result;
+    auto pymech = nb::borrow((PyObject*) (self->pymech_));
+    return pymech.release().ptr();
+}
+
+static PyObject* NPyMechFunc_mech(NPyMechFunc* self) {
+    return _get_py_mech(self);
 }
 
 static PyObject* NPyMechFunc_mech_safe(NPyMechFunc* self) {
@@ -1432,12 +1430,7 @@ static PyObject* NPyRangeVar_name_safe(NPyRangeVar* self) {
 
 static PyObject* NPyRangeVar_mech(NPyRangeVar* self) {
     CHECK_SEC_INVALID(self->pymech_->pyseg_->pysec_->sec_);
-    PyObject* result = NULL;
-    if (self->pymech_) {
-        result = (PyObject*) self->pymech_;
-        Py_INCREF(result);
-    }
-    return result;
+    return _get_py_mech(self);
 }
 
 static PyObject* NPyRangeVar_mech_safe(NPyRangeVar* self) {
