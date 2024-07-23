@@ -513,7 +513,7 @@ def setup_package():
             "numpy>=1.9.3,<2",
             "packaging",
             "find_libpython",
-            "setuptools",
+            "setuptools<=70.3.0",
         ]
         + (
             [
