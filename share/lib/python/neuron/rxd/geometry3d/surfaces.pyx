@@ -1,7 +1,5 @@
 import os
-import numpy
 import graphicsPrimitives
-import neuron
 import numpy
 cimport numpy
 import itertools
