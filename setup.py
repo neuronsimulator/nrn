@@ -476,8 +476,6 @@ def setup_package():
                 "neuron.rxd.geometry3d.surfaces",
                 [
                     "share/lib/python/neuron/rxd/geometry3d/surfaces.pyx",
-                    "src/nrnpython/rxd_marching_cubes.cpp",
-                    "src/nrnpython/rxd_llgramarea.cpp",
                 ],
                 include_dirs=include_dirs,
                 **rxd_params,
