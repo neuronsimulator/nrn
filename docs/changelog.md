@@ -8,7 +8,7 @@ This release pins numpy to <2 and includes backports for several fixes.
 ### Bug Fixes
 - Informative error when cannot import hoc module
 - ParallelContext: hoc_ac_ encodes global id of submitted process.
-- Python3.12 compatible with release/8.2 windows installer
+- Python 3.12 compatibility with Windows installer (#2963)
 - Windows 11 fix for nrniv -python (#2946)
 - Fix for dynamic ECS diffusion characteristics.
 - python38 is back. For testing can use rx3doptlevel=0 bash bldnrnmacpkgcmake.sh
