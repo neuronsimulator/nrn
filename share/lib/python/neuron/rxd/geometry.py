@@ -3,6 +3,7 @@ import warnings
 import numpy
 from neuron import h, nrn
 from .rxdException import RxDException
+import traceback
 
 try:
     from neuron.rxd import geometry3d
@@ -10,7 +11,7 @@ try:
     has_geometry3d = True
 except ImportError:
     has_geometry3d = False
-
+    traceback.print_exc()
 
 class RxDGeometry:
     def volumes1d(self, sec):
