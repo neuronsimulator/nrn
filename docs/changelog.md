@@ -1,5 +1,21 @@
 # NEURON 8.2
 
+## 8.2.6
+_Release Date_ : 24-07-2024
+
+This release pins numpy to <2 and includes backports for several fixes.
+
+### Bug Fixes
+- Informative error when cannot import hoc module
+- ParallelContext: hoc_ac_ encodes global id of submitted process.
+- Python 3.12 compatibility with Windows installer (#2963)
+- Windows 11 fix for nrniv -python (#2946)
+- Fix for dynamic ECS diffusion characteristics.
+- python38 is back. For testing can use rx3doptlevel=0 bash bldnrnmacpkgcmake.sh
+- Fix cvode.use_fast_imem(1) error with electrode time varying conductance.
+- Apple M1 cmake failure in cloning subrepository. See #2326.
+- Update iv
+
 ## 8.2.4
 _Release Date_ : 08-02-2024
 
