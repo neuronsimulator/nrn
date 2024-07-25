@@ -19,6 +19,7 @@ jobs:
       NEURON_NIGHTLY_TAG: ""
       NRN_NIGHTLY_UPLOAD: false
       NRN_RELEASE_UPLOAD: false
+      NEURON_WHEEL_VERSION: 8.2.6
 
     resource_class: arm.medium
 
