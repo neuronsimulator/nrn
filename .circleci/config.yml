@@ -59,6 +59,7 @@ jobs:
               39) pyenv_py_ver="3.9.1" ;;
               310) pyenv_py_ver="3.10.1" ;;
               311) pyenv_py_ver="3.11.0" ;;
+              312) pyenv_py_ver="3.12.2" ;;
               *) echo "Error: pyenv python version not specified!" && exit 1;;
             esac
 
