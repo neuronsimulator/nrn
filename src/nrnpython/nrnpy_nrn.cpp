@@ -190,7 +190,7 @@ static Object* pysec_cell(Section* sec) {
     return NULL;
 }
 
-inline int NpySObj_contains(PyObject* s, PyObject* obj, const char* attr_name) {
+static inline int NpySObj_contains(PyObject* s, PyObject* obj, const char* attr_name) {
     /* Checks is provided PyObject* s contains obj */
     auto py_obj = nb::borrow(obj);
     if (!nb::hasattr(obj, attr_name)) {
@@ -1122,9 +1122,6 @@ static PyObject* pysec_orientation_safe(NPySecObj* self) {
 }
 
 static bool lappendsec(PyObject* const sl, Section* const s) {
-    if (!PyList_Check(sl)) {
-        return false;
-    }
     auto item = nb::steal((PyObject*) newpysechelp(s));
     if (!item.is_valid()) {
         return false;
@@ -1364,25 +1361,20 @@ static PyObject* NPyMechObj_is_ion_safe(NPyMechObj* self) {
 
 static PyObject* NPyMechObj_segment(NPyMechObj* self) {
     CHECK_PROP_INVALID(self->prop_id_);
-    auto pyseg = nb::borrow((PyObject*) self->pyseg_);
-    return pyseg.release().ptr();
+    return nb::handle((PyObject*) self->pyseg_).inc_ref().ptr();
 }
 
 static PyObject* NPyMechObj_segment_safe(NPyMechObj* self) {
     return nrn::convert_cxx_exceptions(NPyMechObj_segment, self);
 }
 
-template <typename T, typename = decltype(T::pymech_)>
-inline static PyObject* _get_py_mech(T* self) {
-    if (!self->pymech_) {
-        return nullptr;
-    }
-    auto pymech = nb::borrow((PyObject*) (self->pymech_));
-    return pymech.release().ptr();
-}
-
 static PyObject* NPyMechFunc_mech(NPyMechFunc* self) {
-    return _get_py_mech(self);
+    auto pymech = self->pymech_;
+    if (pymech) {
+        CHECK_PROP_INVALID(pymech->prop_id_);
+        Py_INCREF((PyObject*) pymech);
+    }
+    return (PyObject*) pymech;
 }
 
 static PyObject* NPyMechFunc_mech_safe(NPyMechFunc* self) {
@@ -1430,7 +1422,7 @@ static PyObject* NPyRangeVar_name_safe(NPyRangeVar* self) {
 
 static PyObject* NPyRangeVar_mech(NPyRangeVar* self) {
     CHECK_SEC_INVALID(self->pymech_->pyseg_->pysec_->sec_);
-    return _get_py_mech(self);
+    return nb::handle((PyObject*) self->pymech_).inc_ref().ptr();
 }
 
 static PyObject* NPyRangeVar_mech_safe(NPyRangeVar* self) {
@@ -1986,20 +1978,15 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
     }
     char* n = name.c_str();
     // printf("section_getattr %s\n", n);
-
     if (strcmp(n, "L") == 0) {
-        return PyFloat_FromDouble(section_length(sec));
+        return Py_BuildValue("d", section_length(sec));
     }
     if (strcmp(n, "Ra") == 0) {
-        return PyFloat_FromDouble(nrn_ra(sec));
+        return Py_BuildValue("d", nrn_ra(sec));
     }
     if (strcmp(n, "nseg") == 0) {
-        return PyLong_FromLong(sec->nnode - 1);
+        return Py_BuildValue("i", sec->nnode - 1);
     }
-    if (strcmp(n, "rallbranch") == 0) {
-        return PyFloat_FromDouble(sec->prop->dparam[4].get<double>());
-    }
-
     if (PyObject* rv = PyDict_GetItemString(rangevars_, n)) {
         Symbol* sym = ((NPyRangeVar*) rv)->sym_;
         if (is_array(*sym)) {
@@ -2018,7 +2005,9 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
             return build_python_value(d);
         }
     }
-
+    if (strcmp(n, "rallbranch") == 0) {
+        return Py_BuildValue("d", sec->prop->dparam[4].get<double>());
+    }
     if (strcmp(n, "__dict__") == 0) {
         auto out_dict = nb::dict();
         out_dict["L"] = nb::none();
@@ -2049,84 +2038,75 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
     }
     char* n = name.c_str();
     // printf("section_setattro %s\n", n);
-
     if (strcmp(n, "L") == 0) {
-        double x = PyFloat_AsDouble(value);  // -1.0 upon failure
-        if (x <= 0.) {
+        double x;
+        if (PyArg_Parse(value, "d", &x) == 1 && x > 0.) {
+            if (can_change_morph(sec)) {
+                sec->prop->dparam[2] = x;
+                nrn_length_change(sec, x);
+                diam_changed = 1;
+                sec->recalc_area_ = 1;
+            }
+        } else {
             PyErr_SetString(PyExc_ValueError, "L must be > 0.");
             return -1;
         }
-        if (can_change_morph(sec)) {
-            sec->prop->dparam[2] = x;
-            nrn_length_change(sec, x);
+    } else if (strcmp(n, "Ra") == 0) {
+        double x;
+        if (PyArg_Parse(value, "d", &x) == 1 && x > 0.) {
+            sec->prop->dparam[7] = x;
             diam_changed = 1;
             sec->recalc_area_ = 1;
-        }  // else skips without warning?
-        return 0;
-    }
-
-    if (strcmp(n, "Ra") == 0) {
-        double x = PyFloat_AsDouble(value);  // -1.0 upon failure
-        if (x <= 0.) {
+        } else {
             PyErr_SetString(PyExc_ValueError, "Ra must be > 0.");
             return -1;
         }
-        sec->prop->dparam[7] = x;
-        diam_changed = 1;
-        sec->recalc_area_ = 1;
-        return 0;
-    }
-
-    if (strcmp(n, "nseg") == 0) {
+    } else if (strcmp(n, "nseg") == 0) {
         int nseg;
-        // Note: In Python < 3.10 PyLong_AsLong accepts PyFloat. Keep PyArg_Parse for consistence
         if (PyArg_Parse(value, "i", &nseg) == 1 && nseg > 0 && nseg <= 32767) {
             nrn_change_nseg(sec, nseg);
-            return 0;
         } else {
             PyErr_SetString(PyExc_ValueError, "nseg must be an integer in range 1 to 32767");
             return -1;
         }
-    }
-
-    if (PyObject* rv = PyDict_GetItemString(rangevars_, n)) {
+        // printf("section_setattro err=%d nseg=%d nnode\n", err, nseg,
+        // sec->nnode);
+    } else if (PyObject* rv = PyDict_GetItemString(rangevars_, n)) {
         Symbol* sym = ((NPyRangeVar*) rv)->sym_;
         if (is_array(*sym)) {
             PyErr_SetString(PyExc_IndexError, "missing index");
             return -1;
+        } else {
+            int errp;
+            auto d = nrnpy_rangepointer(sec, sym, 0.5, &errp, 0 /* idx */);
+            if (d.is_invalid_handle()) {
+                rv_noexist(sec, n, 0.5, errp);
+                return -1;
+            } else if (!d.holds<double*>()) {
+                PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
+                return -1;
+            } else if (!PyArg_Parse(value, "d", d.get<double*>())) {
+                PyErr_SetString(PyExc_ValueError, "bad value");
+                return -1;
+            } else {
+                // only need to do following if nseg > 1, VINDEX, or EXTRACELL
+                nrn_rangeconst(sec, sym, neuron::container::data_handle<double>(d), 0);
+            }
         }
-        int errp;
-        auto d = nrnpy_rangepointer(sec, sym, 0.5, &errp, 0 /* idx */);
-        if (d.is_invalid_handle()) {
-            rv_noexist(sec, n, 0.5, errp);
-            return -1;
-        }
-        if (!d.holds<double*>()) {
-            PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
-            return -1;
-        }
-        if (!PyArg_Parse(value, "d", d.get<double*>())) {
-            PyErr_SetString(PyExc_ValueError, "bad value");
-            return -1;
-        }
-        // only need to do following if nseg > 1, VINDEX, or EXTRACELL
-        nrn_rangeconst(sec, sym, neuron::container::data_handle<double>(d), 0);
-        return 0;
-    }
-
-    if (strcmp(n, "rallbranch") == 0) {
-        double x = PyFloat_AsDouble(value);  // -1 upon error
-        if (x <= 0.) {
+    } else if (strcmp(n, "rallbranch") == 0) {
+        double x;
+        if (PyArg_Parse(value, "d", &x) == 1 && x > 0.) {
+            sec->prop->dparam[4] = x;
+            diam_changed = 1;
+            sec->recalc_area_ = 1;
+        } else {
             PyErr_SetString(PyExc_ValueError, "rallbranch must be > 0");
             return -1;
         }
-        sec->prop->dparam[4] = x;
-        diam_changed = 1;
-        sec->recalc_area_ = 1;
-        return 0;
+    } else {
+        return PyObject_GenericSetAttr((PyObject*) self, pyname, value);
     }
-
-    return PyObject_GenericSetAttr((PyObject*) self, pyname, value);
+    return 0;
 }
 
 static int section_setattro_safe(NPySecObj* self, PyObject* pyname, PyObject* value) {
@@ -2252,14 +2232,14 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             if (d.is_invalid_handle()) {
                 rv_noexist(sec, n, self->x_, err);
                 return nullptr;
+            } else {
+                if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
+                    nrn_area_ri(sec);
+                }
+                return build_python_value(d);
             }
-            if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
-                nrn_area_ri(sec);
-            }
-            return build_python_value(d);
         }
     }
-
     if (strncmp(n, "_ref_", 5) == 0) {
         if (strcmp(n + 5, "v") == 0) {
             Node* nd = node_exact(sec, self->x_);
@@ -2278,12 +2258,12 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
                 return (PyObject*) r;
             } else {
                 int err;
-                auto const dh = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
-                if (dh.is_invalid_handle()) {
+                auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
+                if (d.is_invalid_handle()) {
                     rv_noexist(sec, n + 5, self->x_, err);
                     return NULL;
                 }
-                return build_python_reference(dh);
+                return build_python_reference(d);
             }
         } else {
             rv_noexist(sec, n, self->x_, 2);
@@ -2350,57 +2330,53 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
     }
     char* n = name.c_str();
     // printf("segment_setattr %s\n", n);
-
     if (strcmp(n, "x") == 0) {
-        double x = PyFloat_AsDouble(value);  // -1.0 upon failure
-        if (x <= 0. || x > 1.) {
+        int nseg;
+        double x;
+        if (PyArg_Parse(value, "d", &x) == 1 && x > 0. && x <= 1.) {
+            if (x < 1e-9) {
+                self->x_ = 0.;
+            } else if (x > 1. - 1e-9) {
+                self->x_ = 1.;
+            } else {
+                self->x_ = x;
+            }
+        } else {
             PyErr_SetString(PyExc_ValueError, "x must be in range 0. to 1.");
             return -1;
         }
-        if (x < 1e-9) {
-            self->x_ = 0.;
-        } else if (x > 1. - 1e-9) {
-            self->x_ = 1.;
-        } else {
-            self->x_ = x;
-        }
-        return 0;
-    }
-
-    if (PyObject* rv = PyDict_GetItemString(rangevars_, n)) {
-        Symbol* const sym = ((NPyRangeVar*) rv)->sym_;
+    } else if (PyObject* rv = PyDict_GetItemString(rangevars_, n)) {
+        auto sym = ((NPyRangeVar*) rv)->sym_;
         if (is_array(*sym)) {
             char s[200];
             Sprintf(s, "%s needs an index for assignment", sym->name);
             PyErr_SetString(PyExc_IndexError, s);
             return -1;
+        } else {
+            int errp;
+            auto d = nrnpy_rangepointer(sec, sym, self->x_, &errp, 0 /* idx */);
+            if (d.is_invalid_handle()) {
+                rv_noexist(sec, n, self->x_, errp);
+                return -1;
+            }
+            if (d.holds<double*>()) {
+                if (!PyArg_Parse(value, "d", d.get<double*>())) {
+                    PyErr_SetString(PyExc_ValueError, "bad value");
+                    return -1;
+                } else if (sym->u.rng.type == MORPHOLOGY) {
+                    diam_changed = 1;
+                    sec->recalc_area_ = 1;
+                    nrn_diam_change(sec);
+                } else if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
+                    // cannot execute because xraxial is an array
+                    diam_changed = 1;
+                }
+            } else {
+                PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
+                return -1;
+            }
         }
-        int errp;
-        auto d = nrnpy_rangepointer(sec, sym, self->x_, &errp, 0 /* idx */);
-        if (d.is_invalid_handle()) {
-            rv_noexist(sec, n, self->x_, errp);
-            return -1;
-        }
-        if (!d.holds<double*>()) {
-            PyErr_SetString(PyExc_ValueError, "can't assign value to opaque pointer");
-            return -1;
-        }
-        if (!PyArg_Parse(value, "d", d.get<double*>())) {
-            PyErr_SetString(PyExc_ValueError, "bad value");
-            return -1;
-        }
-        if (sym->u.rng.type == MORPHOLOGY) {
-            diam_changed = 1;
-            sec->recalc_area_ = 1;
-            nrn_diam_change(sec);
-        } else if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
-            // cannot execute because xraxial is an array
-            diam_changed = 1;
-        }
-        return 0;
-    }
-
-    if (strncmp(n, "_ref_", 5) == 0) {
+    } else if (strncmp(n, "_ref_", 5) == 0) {
         Symbol* rvsym = hoc_table_lookup(n + 5, hoc_built_in_symlist);
         if (rvsym && rvsym->type == RANGEVAR) {
             Node* nd = node_exact(sec, self->x_);
@@ -2408,11 +2384,13 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
             Prop* prop = nrn_mechanism(rvsym->u.rng.type, nd);
             assert(prop);
             return nrn_pointer_assign(prop, rvsym, value);
+        } else {
+            return PyObject_GenericSetAttr((PyObject*) self, pyname, value);
         }
+    } else {
+        return PyObject_GenericSetAttr((PyObject*) self, pyname, value);
     }
-
-    // Generic py handling
-    return PyObject_GenericSetAttr((PyObject*) self, pyname, value);
+    return 0;
 }
 
 static int segment_setattro_safe(NPySegObj* self, PyObject* pyname, PyObject* value) {
