@@ -485,7 +485,10 @@ int main(int argc, const char* argv[]) {
             ast_to_nmodl(*ast, filepath("localize"));
         }
 
-        if (sympy_conductance || sympy_analytic || sparse_solver_exists(*ast)) {
+        const bool sympy_derivimplicit = neuron_code && solver_exists(*ast, "derivimplicit");
+
+        if (sympy_conductance || sympy_analytic || solver_exists(*ast, "sparse") ||
+            sympy_derivimplicit) {
             nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance()
                 .api()
                 .initialize_interpreter();
@@ -496,7 +499,7 @@ int main(int argc, const char* argv[]) {
                 ast_to_nmodl(*ast, filepath("sympy_conductance"));
             }
 
-            if (sympy_analytic || sparse_solver_exists(*ast)) {
+            if (sympy_analytic || solver_exists(*ast, "sparse") || sympy_derivimplicit) {
                 if (!sympy_analytic) {
                     logger->info(
                         "Automatically enable sympy_analytic because it exists solver of type "

@@ -215,14 +215,15 @@ std::vector<std::shared_ptr<ast::Ast>> collect_nodes(ast::Ast& node,
     return visitor.lookup(node, types);
 }
 
-bool sparse_solver_exists(const ast::Ast& node) {
+bool solver_exists(const ast::Ast& node, const std::string& name) {
     const auto solve_blocks = collect_nodes(node, {ast::AstNodeType::SOLVE_BLOCK});
-    return std::any_of(solve_blocks.begin(), solve_blocks.end(), [](auto const& solve_block) {
+    return std::any_of(solve_blocks.begin(), solve_blocks.end(), [&name](auto const& solve_block) {
         assert(solve_block);
         const auto& method = dynamic_cast<ast::SolveBlock const&>(*solve_block).get_method();
-        return method && method->get_node_name() == "sparse";
+        return method && method->get_node_name() == name;
     });
 }
+
 
 std::string to_nmodl(const ast::Ast& node, const std::set<ast::AstNodeType>& exclude_types) {
     std::stringstream stream;

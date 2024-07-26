@@ -1,5 +1,5 @@
 set(NMODL_USECASE_DIRS
-    cnexp
+    solve
     constant
     function
     procedure
