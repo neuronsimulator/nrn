@@ -197,8 +197,7 @@ static int NpySObj_contains(PyObject* s, PyObject* obj, const char* string) {
     }
     auto _pyobj = nb::borrow(obj);  // keep refcount+1 during use
     auto obj_seg = nb::steal(PyObject_GetAttrString(obj, string));
-    int result = PyObject_RichCompareBool(s, obj_seg.ptr(), Py_EQ);
-    return (result);
+    return PyObject_RichCompareBool(s, obj_seg.ptr(), Py_EQ);
 }
 
 static int NPySecObj_contains(PyObject* sec, PyObject* obj) {
@@ -1012,8 +1011,7 @@ static PyObject* NPySecObj_psection(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
     if (nrnpy_psection) {
         auto arglist = nb::steal((PyObject*) Py_BuildValue("(O)", self));
-        PyObject* result = PyObject_CallObject(nrnpy_psection, arglist.ptr());
-        return result;
+        return PyObject_CallObject(nrnpy_psection, arglist.ptr());
     }
     Py_RETURN_NONE;
 }
@@ -1909,8 +1907,7 @@ static Object* seg_from_sec_x(Section* sec, double x) {
         pseg->pysec_ = pysec;
     }
     pseg->x_ = x;
-    Object* ho = nrnpy_pyobject_in_obj(pyseg.ptr());
-    return ho;
+    return nrnpy_pyobject_in_obj(pyseg.ptr());
 }
 
 static Object** pp_get_segment(void* vptr) {
@@ -2660,8 +2657,7 @@ static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
     double x = 0.5;
     PyArg_ParseTuple(args, "|d", &x);
     auto segargs = nb::steal(Py_BuildValue("(O,d)", self, x));
-    PyObject* seg = NPySegObj_new(psegment_type, segargs.ptr(), 0);
-    return seg;
+    return NPySegObj_new(psegment_type, segargs.ptr(), 0);
 }
 
 static PyObject* NPySecObj_call_safe(NPySecObj* self, PyObject* args) {
