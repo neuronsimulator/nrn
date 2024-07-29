@@ -2015,15 +2015,12 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
     } else if (strcmp(n, "rallbranch") == 0) {
         result = Py_BuildValue("d", sec->prop->dparam[4].get<double>());
     } else if (strcmp(n, "__dict__") == 0) {
-        result = PyDict_New();
-        int err = PyDict_SetItemString(result, "L", Py_None);
-        assert(err == 0);
-        err = PyDict_SetItemString(result, "Ra", Py_None);
-        assert(err == 0);
-        err = PyDict_SetItemString(result, "nseg", Py_None);
-        assert(err == 0);
-        err = PyDict_SetItemString(result, "rallbranch", Py_None);
-        assert(err == 0);
+        nb::dict out_dict{};
+        out_dict["L"] = nb::none();
+        out_dict["Ra"] = nb::none();
+        out_dict["nseg"] = nb::none();
+        out_dict["rallbranch"] = nb::none();
+        result = out_dict.release().ptr();
     } else {
         result = PyObject_GenericGetAttr((PyObject*) self, pyname);
     }
@@ -2285,20 +2282,17 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
         }
     } else if (strcmp(n, "__dict__") == 0) {
         Node* nd = node_exact(sec, self->x_);
-        result = PyDict_New();
-        int err = PyDict_SetItemString(result, "v", Py_None);
-        assert(err == 0);
-        PyDict_SetItemString(result, "diam", Py_None);
-        assert(err == 0);
-        PyDict_SetItemString(result, "cm", Py_None);
-        assert(err == 0);
+        nb::dict out_dict{};
+        out_dict["v"] = nb::none();
+        out_dict["diam"] = nb::none();
+        out_dict["cm"] = nb::none();
         for (Prop* p = nd->prop; p; p = p->next) {
             if (p->_type > CAP && !memb_func[p->_type].is_point) {
                 char* pn = memb_func[p->_type].sym->name;
-                err = PyDict_SetItemString(result, pn, Py_None);
-                assert(err == 0);
+                out_dict[pn] = nb::none();
             }
         }
+        result = out_dict.release().ptr();
     } else {
         result = PyObject_GenericGetAttr((PyObject*) self, pyname);
     }
@@ -2536,21 +2530,20 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
         Object* ob = nrn_nmodlrandom_wrap(self->prop_, sym);
         result = nrnpy_ho2po(ob);
     } else if (strcmp(n, "__dict__") == 0) {
-        result = PyDict_New();
+        nb::dict out_dict{};
         int cnt = mechsym->s_varn;
         for (int i = 0; i < cnt; ++i) {
             Symbol* s = mechsym->u.ppsym[i];
             if (!striptrail(buf, bufsz, s->name, mname)) {
                 strcpy(buf, s->name);
             }
-            int err = PyDict_SetItemString(result, buf, Py_None);
-            assert(err == 0);
+            out_dict[buf] = nb::none();
         }
         // FUNCTION and PROCEDURE
         for (auto& it: nrn_mech2funcs_map[self->prop_->_type]) {
-            int err = PyDict_SetItemString(result, it.first.c_str(), Py_None);
-            assert(err == 0);
+            out_dict[it.first.c_str()] = nb::none();
         }
+        result = out_dict.release().ptr();
     } else {
         bool found_func{false};
         if (self->prop_) {
