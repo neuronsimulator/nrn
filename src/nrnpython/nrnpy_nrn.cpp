@@ -1010,7 +1010,7 @@ static PyObject* nrnpy_set_psection_safe(PyObject* self, PyObject* args) {
 static PyObject* NPySecObj_psection(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
     if (nrnpy_psection) {
-        auto arglist = nb::steal((PyObject*) Py_BuildValue("(O)", self));
+        auto arglist = nb::steal(Py_BuildValue("(O)", self));
         return PyObject_CallObject(nrnpy_psection, arglist.ptr());
     }
     Py_RETURN_NONE;
@@ -1893,7 +1893,7 @@ static PyObject* mech_of_segment_iter_safe(NPySegObj* self) {
 
 static Object* seg_from_sec_x(Section* sec, double x) {
     auto pyseg = nb::steal((PyObject*) PyObject_New(NPySegObj, psegment_type));
-    NPySegObj* pseg = (NPySegObj*) pyseg.ptr();
+    auto* pseg = (NPySegObj*) pyseg.ptr();
     auto* pysec = static_cast<NPySecObj*>(sec->prop->dparam[PROP_PY_INDEX].get<void*>());
     if (pysec) {
         pseg->pysec_ = pysec;
@@ -2657,7 +2657,7 @@ static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
     double x = 0.5;
     PyArg_ParseTuple(args, "|d", &x);
     auto segargs = nb::steal(Py_BuildValue("(O,d)", self, x));
-    return NPySegObj_new(psegment_type, segargs.ptr(), 0);
+    return NPySegObj_new(psegment_type, segargs.ptr(), nullptr);
 }
 
 static PyObject* NPySecObj_call_safe(NPySecObj* self, PyObject* args) {
