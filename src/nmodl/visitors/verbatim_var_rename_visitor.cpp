@@ -69,7 +69,7 @@ std::string VerbatimVarRenameVisitor::rename_variable(const std::string& name) {
         if (symbol != nullptr) {
             return new_name;
         }
-        logger->warn("could not find {} definition in nmodl", name);
+        logger->info("could not find {} definition in nmodl", name);
     }
     return name;
 }
