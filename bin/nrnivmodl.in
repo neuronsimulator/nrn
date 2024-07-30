@@ -81,8 +81,19 @@ while [ "$1" ] ; do
         UserNMODLFLAGS="$UserNMODLFLAGS $2"
         shift
         shift;;
+    -h|--help)
+        echo "Usage: nrnivmodl [options] [mod files or directories with mod files]"
+        echo "Options:"
+        echo "  -coreneuron                      Compile MOD files for CoreNEURON using nrnivmodl-core."
+        echo "  -incflags    \"include flags\"     Extra include flags and paths when MOD (C++) files are compiled."
+        echo "  -loadflags   \"link flags\"        Extra link flags, paths, and libraries when MOD (C++) files are linked."
+        echo "  -nmodl /path/to/nmodl            Path to the new NMODL transpiler for MOD files (pre-alpha, development use only)."
+        echo "  -nmodlflags  \"CLI flags\"         Additional CLI flags for new NMODL transpiler"
+        echo "  -h, --help                       Show this help message and exit."
+        echo "If no MOD files or directories provided then MOD files from current directory are used."
+        exit 0;;
     -*)
-        echo "$1 unrecognized"
+        echo "$1 unrecognized, check available CLI options with --help"
         exit 1;;
     *)
         break;;

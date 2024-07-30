@@ -264,24 +264,39 @@ $ git checkout 8.1a -b release/8.1a-aarch64
 # manually updated `.circleci/config.yml`
 $ git diff
 
-@@ -15,6 +15,10 @@ jobs:
+@@ -14,6 +14,11 @@ jobs:
+
      machine:
        image: ubuntu-2004:202101-01
 +    environment:
-+      SETUPTOOLS_SCM_PRETEND_VERSION: 8.1a
++      SETUPTOOLS_SCM_PRETEND_VERSION: 8.2.6
 +      NEURON_NIGHTLY_TAG: ""
 +      NRN_NIGHTLY_UPLOAD: false
 +      NRN_RELEASE_UPLOAD: false
 
-@@ -89,7 +95,7 @@ workflows:
-       - manylinux2014-aarch64:
+     resource_class: arm.medium
+
+@@ -54,6 +59,7 @@ jobs:
+               39) pyenv_py_ver="3.9.1" ;;
+               310) pyenv_py_ver="3.10.1" ;;
+               311) pyenv_py_ver="3.11.0" ;;
++              312) pyenv_py_ver="3.12.2" ;;
+               *) echo "Error: pyenv python version not specified!" && exit 1;;
+             esac
+
+@@ -95,7 +101,7 @@ workflows:
+                 - /circleci\/.*/
            matrix:
              parameters:
 -              NRN_PYTHON_VERSION: ["311"]
-+              NRN_PYTHON_VERSION: ["38", "39", "310", "311"]
++              NRN_PYTHON_VERSION: ["38", "39", "310", "311", "312"]
+               NRN_NIGHTLY_UPLOAD: ["false"]
+
+   nightly:
 ```
 
 The reason we are setting `SETUPTOOLS_SCM_PRETEND_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
+`NEURON_WHEEL_VERSION` will also stop your wheels from getting extra numbers on the version
 
 
 ## Nightly wheels
