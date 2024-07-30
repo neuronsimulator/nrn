@@ -775,11 +775,14 @@ SCENARIO("Check that top verbatim blocks are well generated", "[codegen][top ver
             ENDVERBATIM
         )";
 
-        THEN("Correct code is generated") {
+        THEN("A using namespace is generated") {
             auto const generated = get_coreneuron_cpp_code(nmodl_text);
-            std::string expected_code = R"(using namespace coreneuron;
-
-
+            std::string expected_code = "using namespace coreneuron;";
+            REQUIRE_THAT(generated, ContainsSubstring(expected_code));
+        }
+        THEN("Selected identifiers are expanded") {
+            auto const generated = get_coreneuron_cpp_code(nmodl_text);
+            std::string expected_code = R"(
             double a = 2.;
             foo_temp(nt);
             &tqitem;

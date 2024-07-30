@@ -974,6 +974,7 @@ void CodegenCppVisitor::visit_function_call(const FunctionCall& node) {
 
 void CodegenCppVisitor::visit_verbatim(const Verbatim& node) {
     const auto& text = node.get_statement()->eval();
+    printer->add_line("// VERBATIM");
     const auto& result = process_verbatim_text(text);
 
     const auto& statements = stringutils::split_string(result, '\n');
@@ -983,6 +984,7 @@ void CodegenCppVisitor::visit_verbatim(const Verbatim& node) {
             printer->add_line(trimed_stmt);
         }
     }
+    printer->add_line("// ENDVERBATIM");
 }
 
 
