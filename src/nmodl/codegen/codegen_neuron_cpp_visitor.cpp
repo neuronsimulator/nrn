@@ -656,17 +656,7 @@ std::string CodegenNeuronCppVisitor::get_variable_name(const std::string& name,
                                                        bool use_instance) const {
     const std::string& varname = update_if_ion_variable_name(name);
 
-    auto symbol_comparator = [&varname](const SymbolType& sym) {
-        return varname == sym->get_name();
-    };
-
-    auto index_comparator = [&varname](const IndexVariableInfo& var) {
-        return varname == var.symbol->get_name();
-    };
-
-    auto thread_comparator = [&varname](const ThreadVariableInfo& var) {
-        return varname == var.symbol->get_name();
-    };
+    auto name_comparator = [&varname](const auto& sym) { return varname == get_name(sym); };
 
     if (name == naming::POINT_PROCESS_VARIABLE) {
         if (printing_net_receive) {
@@ -681,14 +671,14 @@ std::string CodegenNeuronCppVisitor::get_variable_name(const std::string& name,
     // float variable
     auto f = std::find_if(codegen_float_variables.begin(),
                           codegen_float_variables.end(),
-                          symbol_comparator);
+                          name_comparator);
     if (f != codegen_float_variables.end()) {
         return float_variable_name(*f, use_instance);
     }
 
     // integer variable
     auto i =
-        std::find_if(codegen_int_variables.begin(), codegen_int_variables.end(), index_comparator);
+        std::find_if(codegen_int_variables.begin(), codegen_int_variables.end(), name_comparator);
     if (i != codegen_int_variables.end()) {
         return int_variable_name(*i, varname, use_instance);
     }
@@ -696,7 +686,7 @@ std::string CodegenNeuronCppVisitor::get_variable_name(const std::string& name,
     // thread variable
     auto t = std::find_if(codegen_thread_variables.begin(),
                           codegen_thread_variables.end(),
-                          thread_comparator);
+                          name_comparator);
     if (t != codegen_thread_variables.end()) {
         return thread_variable_name(*t, use_instance);
     }
@@ -704,7 +694,7 @@ std::string CodegenNeuronCppVisitor::get_variable_name(const std::string& name,
     // global variable
     auto g = std::find_if(codegen_global_variables.begin(),
                           codegen_global_variables.end(),
-                          symbol_comparator);
+                          name_comparator);
     if (g != codegen_global_variables.end()) {
         return global_variable_name(*g, use_instance);
     }

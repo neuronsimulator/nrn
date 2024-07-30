@@ -71,6 +71,11 @@ struct ThreadVariableInfo {
     size_t offset;
 };
 
+inline std::string get_name(const ThreadVariableInfo& var) {
+    return var.symbol->get_name();
+}
+
+
 /**
  * \class CodegenNeuronCppVisitor
  * \brief %Visitor for printing C++ code compatible with legacy api of NEURON
