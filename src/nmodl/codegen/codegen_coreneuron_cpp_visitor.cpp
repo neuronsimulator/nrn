@@ -357,11 +357,9 @@ void CodegenCoreneuronCppVisitor::print_top_verbatim_blocks() {
 
     printing_top_verbatim_blocks = true;
 
-    for (const auto& block: info.top_blocks) {
-        if (block->is_verbatim()) {
-            printer->add_newline(2);
-            block->accept(*this);
-        }
+    for (const auto& block: info.top_verbatim_blocks) {
+        printer->add_newline(2);
+        block->accept(*this);
     }
 
     printing_top_verbatim_blocks = false;
