@@ -97,7 +97,13 @@ std::string CodegenCoreneuronCppVisitor::process_verbatim_token(const std::strin
      */
     auto new_name = replace_if_verbatim_variable(name);
     if (new_name != name) {
-        return get_variable_name(new_name, false);
+        new_name = get_variable_name(new_name, false);
+
+        if (name == (std::string("_") + naming::TQITEM_VARIABLE)) {
+            new_name.insert(0, 1, '&');
+        }
+
+        return new_name;
     }
 
     /*
@@ -640,15 +646,7 @@ std::string CodegenCoreneuronCppVisitor::process_verbatim_text(std::string const
         if (program_symtab->is_method_defined(token) && tokens[i + 1] == "(") {
             internal_method_call_encountered = true;
         }
-        auto name = process_verbatim_token(token);
-
-        if (token == (std::string("_") + naming::TQITEM_VARIABLE)) {
-            name.insert(0, 1, '&');
-        }
-        if (token == "_STRIDE") {
-            name = "pnodecount+id";
-        }
-        result += name;
+        result += process_verbatim_token(token);
     }
     return result;
 }

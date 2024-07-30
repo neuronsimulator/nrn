@@ -185,7 +185,9 @@ static const std::unordered_map<std::string, std::string> VERBATIM_VARIABLES_MAP
     {"_iml", "id"},
     {"_cntml_padded", "pnodecount"},
     {"_cntml", "nodecount"},
-    {"_tqitem", "tqitem"}};
+    {"_tqitem", "tqitem"},
+    {"_STRIDE", "pnodecount+id"},
+};
 
 // Functions available in NMODL with RANDOM construct and their mapping to
 // C++ functions for Random123 interface.
