@@ -1260,6 +1260,10 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
         printer->fmt_line("add_nrn_artcell(mech_type, {});", info.tqitem_index);
     }
 
+    if (info.net_event_used) {
+        printer->fmt_line("add_nrn_has_net_event(mech_type);");
+    }
+
     printer->add_line("hoc_register_var(hoc_scalar_double, hoc_vector_double, hoc_intfunc);");
     if (!info.point_process) {
         printer->add_line("hoc_register_npy_direct(mech_type, npy_direct_func_proc);");

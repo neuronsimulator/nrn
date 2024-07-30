@@ -334,7 +334,7 @@ struct CodegenInfo {
     /// if net_send function is used
     bool net_send_used = false;
 
-    /// if net_even function is used
+    /// if net_event function is used
     bool net_event_used = false;
 
     /// if diam is used
