@@ -575,21 +575,17 @@ void CodegenNeuronCppVisitor::append_conc_write_statements(
 /// TODO: Edit for NEURON
 std::string CodegenNeuronCppVisitor::float_variable_name(const SymbolType& symbol,
                                                          bool use_instance) const {
+    if (!use_instance) {
+        throw std::runtime_error("Printing non-instance variables is not implemented.");
+    }
+
     auto name = symbol->get_name();
     auto dimension = symbol->get_length();
-    // auto position = position_of_float_var(name);
     if (symbol->is_array()) {
-        if (use_instance) {
-            return fmt::format("(inst.{}+id*{})", name, dimension);
-        }
-        throw std::runtime_error("Printing non-instance variables is not implemented.");
-        // return fmt::format("(data + {}*pnodecount + id*{})", position, dimension);
-    }
-    if (use_instance) {
+        return fmt::format("(inst.{}+id*{})", name, dimension);
+    } else {
         return fmt::format("inst.{}[id]", name);
     }
-    throw std::runtime_error("Not implemented.");
-    // return fmt::format("data[{}*pnodecount + id]", position);
 }
 
 
