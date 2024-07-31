@@ -1499,18 +1499,17 @@ static PyObject* NPySecObj_insert(NPySecObj* self, PyObject* args) {
         PyObject* tpyobj;
         if (PyArg_ParseTuple(args, "O", &tpyobj)) {
             auto _tpyobj_tracker = nb::borrow(tpyobj);
-            // tpyobj.insert reqs incref self. Borrow it so if it fails the ref count rolls-back
-            auto self_obj = nb::borrow((PyObject*) self);
-            auto tpyobj2 = nb::steal(PyObject_CallMethod(tpyobj, "insert", "O", self_obj.ptr()));
-            if (!tpyobj2.is_valid()) {
+            // Returned object to be discarded
+            auto out_o = nb::steal(PyObject_CallMethod(tpyobj, "insert", "O", (PyObject*) self));
+            if (!out_o.is_valid()) {
                 PyErr_Clear();
                 PyErr_SetString(
                     PyExc_TypeError,
                     "insert argument must be either a string or an object with an insert method");
                 return nullptr;
             }
-            self_obj.inc_ref();  // We return the object, need INCREF again
-            return self_obj.release().ptr();
+            Py_INCREF(self);
+            return (PyObject*) self;
         }
         PyErr_Clear();
         PyErr_SetString(PyExc_TypeError, "insert takes a single positional argument");
