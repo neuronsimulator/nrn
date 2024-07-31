@@ -259,22 +259,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Prints the start of namespace for the backend-specific code
-     *
-     * For the C++ backend no additional namespace is required
-     */
-    virtual void print_backend_namespace_start();
-
-
-    /**
-     * Prints the end of namespace for the backend-specific code
-     *
-     * For the C++ backend no additional namespace is required
-     */
-    virtual void print_backend_namespace_stop();
-
-
-    /**
      * Print backend specific includes (none needed for C++ backend)
      */
     virtual void print_backend_includes();

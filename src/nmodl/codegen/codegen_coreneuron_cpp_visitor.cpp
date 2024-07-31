@@ -302,16 +302,6 @@ void CodegenCoreneuronCppVisitor::print_global_method_annotation() {
 }
 
 
-void CodegenCoreneuronCppVisitor::print_backend_namespace_start() {
-    // no separate namespace for C++ (cpu) backend
-}
-
-
-void CodegenCoreneuronCppVisitor::print_backend_namespace_stop() {
-    // no separate namespace for C++ (cpu) backend
-}
-
-
 void CodegenCoreneuronCppVisitor::print_backend_includes() {
     // backend specific, nothing for cpu
 }
@@ -2993,12 +2983,10 @@ void CodegenCoreneuronCppVisitor::print_headers_include() {
 
 void CodegenCoreneuronCppVisitor::print_namespace_begin() {
     print_namespace_start();
-    print_backend_namespace_start();
 }
 
 
 void CodegenCoreneuronCppVisitor::print_namespace_end() {
-    print_backend_namespace_stop();
     print_namespace_stop();
 }
 
