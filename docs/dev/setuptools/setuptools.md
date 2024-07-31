@@ -71,7 +71,7 @@ Once built, the package may be imported and used normally. You might, however, n
 PYTHONPATH accordingly for the import to work:
 
 ```
-export PYTHONPATH=<NRNDIR>/build/lib.macosx-10.9-x86_64-3.9/:$PYTHONPATH
+export PYTHONPATH="<NRNDIR>/build/lib.macosx-10.9-x86_64-3.9/:$PYTHONPATH"
 
 # Run Neuron base tests
 python -c "import neuron; neuron.test()"
