@@ -1496,7 +1496,7 @@ static PyObject* NPySecObj_insert(NPySecObj* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "s", &tname)) {
         PyErr_Clear();
         // if called with an object that has an insert method, use that
-        PyObject *tpyobj;
+        PyObject* tpyobj;
         if (PyArg_ParseTuple(args, "O", &tpyobj)) {
             auto _tpyobj_tracker = nb::borrow(tpyobj);
             // tpyobj.insert reqs incref self. Borrow it so if it fails the ref count rolls-back
