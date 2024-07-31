@@ -191,8 +191,8 @@ static Object* pysec_cell(Section* sec) {
 }
 
 static int NpySObj_contains(PyObject* s, PyObject* obj, const char* string) {
-    /* Checks is provided PyObject* s matches obj.<string> */
-    auto pyobj = nb::borrow(obj);  // keep refcount+1 during use
+    /* Checks if provided PyObject* s matches obj.<string> */
+    nb::handle pyobj{obj};
     if (!nb::hasattr(pyobj, string)) {
         return 0;
     }
@@ -1498,7 +1498,6 @@ static PyObject* NPySecObj_insert(NPySecObj* self, PyObject* args) {
         // if called with an object that has an insert method, use that
         PyObject* tpyobj;
         if (PyArg_ParseTuple(args, "O", &tpyobj)) {
-            auto _tpyobj_tracker = nb::borrow(tpyobj);
             // Returned object to be discarded
             auto out_o = nb::steal(PyObject_CallMethod(tpyobj, "insert", "O", (PyObject*) self));
             if (!out_o.is_valid()) {
@@ -1975,7 +1974,6 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
     PyObject* rv;
-    auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
     Py2NRNString name(pyname);
     char* n = name.c_str();
     if (name.err()) {
@@ -2035,7 +2033,6 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
     }
     PyObject* rv;
     int err = 0;
-    auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
     Py2NRNString name(pyname);
     char* n = name.c_str();
     if (name.err()) {
@@ -2188,7 +2185,6 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
     CHECK_SEC_INVALID(sec)
 
     Symbol* sym;
-    auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
     Py2NRNString name(pyname);
     char* n = name.c_str();
     if (name.err()) {
@@ -2330,7 +2326,6 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
     PyObject* rv;
     Symbol* sym;
     int err = 0;
-    auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
     Py2NRNString name(pyname);
     char* n = name.c_str();
     if (name.err()) {
@@ -2480,7 +2475,6 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     Section* sec = self->pyseg_->pysec_->sec_;
     CHECK_SEC_INVALID(sec)
     CHECK_PROP_INVALID(self->prop_id_);
-    auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
     Py2NRNString name(pyname);
     char* n = name.c_str();
     if (!n) {
@@ -2574,7 +2568,6 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
     }
 
     int err = 0;
-    auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
     Py2NRNString name(pyname);
     char* n = name.c_str();
     if (name.err()) {
