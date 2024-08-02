@@ -7,6 +7,7 @@
 #include "nrnpy_utils.h"
 #include "nrnpython.h"
 #include "convert_cxx_exceptions.hpp"
+#include "utils.hpp"
 #include <unordered_map>
 
 #include "nrnwrap_dlfcn.h"
@@ -23,6 +24,7 @@
 #include <sstream>
 
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/string.h>
 
 namespace nb = nanobind;
 
@@ -157,11 +159,8 @@ static int hoc_evalpointer_err() {
 }
 
 static PyObject* nrnexec(PyObject* self, PyObject* args) {
-    const char* cmd;
-    if (!PyArg_ParseTuple(args, "s", &cmd)) {
-        return NULL;
-    }
-    bool b = hoc_valid_stmt(cmd, 0);
+    auto [cmd] = nrn::cast_tuple<const std::string>(nb::tuple(args));
+    bool b = hoc_valid_stmt(cmd.c_str(), 0);
     return b ? Py_True : Py_False;
 }
 
