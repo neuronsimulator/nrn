@@ -772,11 +772,9 @@ void CodegenHelperVisitor::visit_verbatim(const Verbatim& node) {
 
     // check if the token exist in the symbol table
     for (auto& token: tokens) {
-        if (info.variables_in_verbatim.find(token) == info.variables_in_verbatim.end()) {
-            auto symbol = psymtab->lookup(token);
-            if (symbol != nullptr) {
-                info.variables_in_verbatim.insert(token);
-            }
+        auto symbol = psymtab->lookup(token);
+        if (symbol != nullptr) {
+            info.variables_in_verbatim.insert(token);
         }
     }
 }
