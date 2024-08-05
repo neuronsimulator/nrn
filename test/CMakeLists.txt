@@ -23,6 +23,7 @@ add_executable(
   unit_tests/container/mechanism.cpp
   unit_tests/container/node.cpp
   unit_tests/node_order_optim/permutations.cpp
+  unit_tests/utils/cast_tuple.cpp
   unit_tests/utils/enumerate.cpp
   unit_tests/oc/hoc_interpreter.cpp
   cover/unit_tests/cover.cpp)
