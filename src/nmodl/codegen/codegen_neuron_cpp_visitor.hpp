@@ -644,20 +644,6 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Print start of namespaces
-     *
-     */
-    void print_namespace_begin() override;
-
-
-    /**
-     * Print end of namespaces
-     *
-     */
-    void print_namespace_end() override;
-
-
-    /**
      * Print all classes
      * \param print_initializers Whether to include default values.
      */

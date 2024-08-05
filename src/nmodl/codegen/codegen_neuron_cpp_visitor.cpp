@@ -2029,16 +2029,6 @@ void CodegenNeuronCppVisitor::print_mechanism_variables_macros() {
 }
 
 
-void CodegenNeuronCppVisitor::print_namespace_begin() {
-    print_namespace_start();
-}
-
-
-void CodegenNeuronCppVisitor::print_namespace_end() {
-    print_namespace_stop();
-}
-
-
 void CodegenNeuronCppVisitor::print_data_structures(bool print_initializers) {
     print_mechanism_global_var_structure(print_initializers);
     print_mechanism_range_var_structure(print_initializers);
@@ -2093,7 +2083,7 @@ void CodegenNeuronCppVisitor::print_codegen_routines() {
     print_headers_include();
     print_macro_definitions();
     print_neuron_global_variable_declarations();
-    print_namespace_begin();
+    print_namespace_start();
     print_nmodl_constants();
     print_prcellstate_macros();
     print_mechanism_info();
@@ -2106,7 +2096,7 @@ void CodegenNeuronCppVisitor::print_codegen_routines() {
     print_compute_functions();  // only nrn_cur and nrn_state
     print_sdlists_init(true);
     print_mechanism_register();
-    print_namespace_end();
+    print_namespace_stop();
 }
 
 void CodegenNeuronCppVisitor::print_ion_variable() {

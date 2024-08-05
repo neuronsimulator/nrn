@@ -2981,16 +2981,6 @@ void CodegenCoreneuronCppVisitor::print_headers_include() {
 }
 
 
-void CodegenCoreneuronCppVisitor::print_namespace_begin() {
-    print_namespace_start();
-}
-
-
-void CodegenCoreneuronCppVisitor::print_namespace_end() {
-    print_namespace_stop();
-}
-
-
 void CodegenCoreneuronCppVisitor::print_common_getters() {
     print_first_pointer_var_index_getter();
     print_first_random_var_index_getter();
@@ -3064,7 +3054,7 @@ void CodegenCoreneuronCppVisitor::print_compute_functions() {
 void CodegenCoreneuronCppVisitor::print_codegen_routines() {
     print_backend_info();
     print_headers_include();
-    print_namespace_begin();
+    print_namespace_start();
     print_nmodl_constants();
     print_prcellstate_macros();
     print_mechanism_info();
@@ -3083,7 +3073,7 @@ void CodegenCoreneuronCppVisitor::print_codegen_routines() {
     print_compute_functions();
     print_check_table_thread_function();
     print_mechanism_register();
-    print_namespace_end();
+    print_namespace_stop();
 }
 
 

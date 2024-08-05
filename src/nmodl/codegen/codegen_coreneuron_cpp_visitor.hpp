@@ -941,20 +941,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Print start of namespaces
-     *
-     */
-    void print_namespace_begin() override;
-
-
-    /**
-     * Print end of namespaces
-     *
-     */
-    void print_namespace_end() override;
-
-
-    /**
      * Print common getters
      *
      */

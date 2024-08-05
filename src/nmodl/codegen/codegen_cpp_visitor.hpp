@@ -1354,20 +1354,6 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
 
 
     /**
-     * Print start of namespaces
-     *
-     */
-    virtual void print_namespace_begin() = 0;
-
-
-    /**
-     * Print end of namespaces
-     *
-     */
-    virtual void print_namespace_end() = 0;
-
-
-    /**
      * Print all classes
      * \param print_initializers Whether to include default values.
      */
