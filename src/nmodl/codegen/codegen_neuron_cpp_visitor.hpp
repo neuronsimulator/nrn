@@ -236,20 +236,6 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     void print_function_procedure_helper(const ast::Block& node) override;
 
 
-    /**
-     * Print NMODL procedure in target backend code
-     * \param node
-     */
-    void print_procedure(const ast::ProcedureBlock& node) override;
-
-
-    /**
-     * Print NMODL function in target backend code
-     * \param node
-     */
-    void print_function(const ast::FunctionBlock& node) override;
-
-
     void print_hoc_py_wrapper_function_body(const ast::Block* function_or_procedure_block,
                                             InterpreterWrapper wrapper_type);
 

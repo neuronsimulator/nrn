@@ -505,6 +505,31 @@ void CodegenCppVisitor::print_function_call(const FunctionCall& node) {
 }
 
 
+void CodegenCppVisitor::print_procedure(const ast::ProcedureBlock& node) {
+    print_function_procedure_helper(node);
+}
+
+
+void CodegenCppVisitor::print_function(const ast::FunctionBlock& node) {
+    auto name = node.get_node_name();
+
+    // name of return variable
+    std::string return_var;
+    if (info.function_uses_table(name)) {
+        return_var = "ret_f_" + name;
+    } else {
+        return_var = "ret_" + name;
+    }
+
+    // first rename return variable name
+    auto block = node.get_statement_block().get();
+    RenameVisitor v(name, return_var);
+    block->accept(v);
+
+    print_function_procedure_helper(node);
+}
+
+
 void CodegenCppVisitor::print_prcellstate_macros() const {
     printer->add_line("#ifndef NRN_PRCELLSTATE");
     printer->add_line("#define NRN_PRCELLSTATE 0");

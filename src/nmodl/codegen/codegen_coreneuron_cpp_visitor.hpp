@@ -356,20 +356,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Print NMODL procedure in target backend code
-     * \param node
-     */
-    void print_procedure(const ast::ProcedureBlock& node) override;
-
-
-    /**
-     * Print NMODL function in target backend code
-     * \param node
-     */
-    void print_function(const ast::FunctionBlock& node) override;
-
-
-    /**
      * Print NMODL function_table in target backend code
      * \param node
      */

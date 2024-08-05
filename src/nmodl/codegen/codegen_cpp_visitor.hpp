@@ -881,14 +881,14 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * Print NMODL procedure in target backend code
      * \param node
      */
-    virtual void print_procedure(const ast::ProcedureBlock& node) = 0;
+    void print_procedure(const ast::ProcedureBlock& node);
 
 
     /**
      * Print NMODL function in target backend code
      * \param node
      */
-    virtual void print_function(const ast::FunctionBlock& node) = 0;
+    void print_function(const ast::FunctionBlock& node);
 
 
     /**
