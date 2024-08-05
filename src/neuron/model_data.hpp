@@ -124,7 +124,7 @@ struct Model {
 
   private:
     container::Mechanism::storage& mechanism_data_impl(int type) const {
-        if (0 <= type && type >= m_mech_data.size()) {
+        if (type < 0 || type >= m_mech_data.size()) {
             throw std::runtime_error("mechanism_data(" + std::to_string(type) +
                                      "): type out of range");
         }
