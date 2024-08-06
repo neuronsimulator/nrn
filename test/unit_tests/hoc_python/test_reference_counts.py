@@ -5,38 +5,40 @@ from neuron import h
 
 def test_section():
     section = h.Section(name='section')
-    assert sys.getrefcount(section) == 2
+
+    # this is 1 + the extra ref from getting called by sys.getrefcount
+    base_refcount = 2
+
+    assert sys.getrefcount(section) == base_refcount
 
     # {Py_tp_repr, (void*) pysec_repr_safe},
     repr(section)
-    assert sys.getrefcount(section) == 2
+    assert sys.getrefcount(section) == base_refcount
 
     # {Py_tp_hash, (void*) pysec_hash_safe},
     hash(section)
-    assert sys.getrefcount(section) == 2
+    assert sys.getrefcount(section) == base_refcount
 
     #{Py_tp_call, (void*) NPySecObj_call_safe},
     section()
-    assert sys.getrefcount(section) == 2
+    assert sys.getrefcount(section) == base_refcount
 
     # {Py_tp_getattro, (void*) section_getattro_safe},
     section.L
-    assert sys.getrefcount(section) == 2
+    assert sys.getrefcount(section) == base_refcount
 
     section.Ra
-    assert sys.getrefcount(section) == 2
+    assert sys.getrefcount(section) == base_refcount
 
     section.nseg
-    assert sys.getrefcount(section) == 2
+    assert sys.getrefcount(section) == base_refcount
 
     section.rallbranch
-    assert sys.getrefcount(section) == 2
+    assert sys.getrefcount(section) == base_refcount
 
-    # not sure what the purpose of this is; return a dict of
-    # {'L': None, 'Ra': None, 'nseg': None, 'rallbranch': None}
     d = section.__dict__
     assert sys.getrefcount(d) == 2
-    assert sys.getrefcount(section) == 2
+    assert sys.getrefcount(section) == base_refcount
 
     # {Py_tp_richcompare, (void*) pysec_richcmp_safe},
     section == section
@@ -45,40 +47,40 @@ def test_section():
     section <= section
     section > section
     section >= section
-    assert sys.getrefcount(section) == 2
+    assert sys.getrefcount(section) == base_refcount
 
     # {Py_tp_iter, (void*) seg_of_section_iter_safe},
 
     # {Py_tp_methods, (void*) NPySecObj_methods},
     dir(section)
-    assert sys.getrefcount(section) == 2
+    assert sys.getrefcount(section) == base_refcount
 
     # {Py_tp_doc, (void*) "Section objects"},
     help(section)
-    assert sys.getrefcount(section) == 2
+    assert sys.getrefcount(section) == base_refcount
 
     # {Py_sq_contains, (void*) NPySecObj_contains_safe},
     "foo" in section
-    assert sys.getrefcount(section) == 2
+    assert sys.getrefcount(section) == base_refcount
 
     #static PyType_Slot nrnpy_AllSegOfSecIterType_slots[] = {
     it = section.allseg()
     assert sys.getrefcount(it) == 2
-    assert sys.getrefcount(section) == 3
+    assert sys.getrefcount(section) == base_refcount + 1
     del it
 
     # static PyType_Spec nrnpy_SegOfSecIterType_spec = {
     it = iter(section)
     assert sys.getrefcount(it) == 2
-    assert sys.getrefcount(section) == 3
+    assert sys.getrefcount(section) == base_refcount + 1
 
     n = next(it)
     assert sys.getrefcount(it) == 2
-    assert sys.getrefcount(section) == 4
+    assert sys.getrefcount(section) == base_refcount + 2
     del n
-    assert sys.getrefcount(section) == 3
+    assert sys.getrefcount(section) == base_refcount + 1
     del it
-    assert sys.getrefcount(section) == 2
+    assert sys.getrefcount(section) == base_refcount
 
 
 def test_segment():
@@ -86,19 +88,21 @@ def test_segment():
     segment = section(0.5)
     assert sys.getrefcount(section) == 3
 
-    assert sys.getrefcount(segment) == 2
+    # this is 1 + the extra ref from getting called by sys.getrefcount
+    base_refcount = 2
+    assert sys.getrefcount(segment) == base_refcount
 
     # {Py_tp_repr, (void*) pyseg_repr_safe},
     repr(segment)
-    assert sys.getrefcount(segment) == 2
+    assert sys.getrefcount(segment) == base_refcount
 
     # {Py_tp_hash, (void*) pyseg_hash_safe},
     hash(segment)
-    assert sys.getrefcount(segment) == 2
+    assert sys.getrefcount(segment) == base_refcount
 
     # {Py_tp_getattro, (void*) segment_getattro_safe},
     segment.v
-    assert sys.getrefcount(segment) == 2
+    assert sys.getrefcount(segment) == base_refcount
 
     #} else if ((otype = PyDict_GetItemString(pmech_types, n)) != NULL) {
     #    int type = PyInt_AsLong(otype);
@@ -114,15 +118,13 @@ def test_segment():
 
     #} else if (strncmp(n, "_ref_", 5) == 0) {
     segment._ref_v
-    assert sys.getrefcount(segment) == 2
+    assert sys.getrefcount(segment) == base_refcount
 
     #todo: need to find hoc_built_in_symlist values
 
-    # not sure what the purpose of this is; return a dict of
-    # {'v': None, 'diam': None, 'cm': None}
     d = segment.__dict__
     assert sys.getrefcount(d) == 2
-    assert sys.getrefcount(section) == 3
+    assert sys.getrefcount(segment) == base_refcount
 
     # {Py_tp_richcompare, (void*) pyseg_richcmp_safe},
     segment == segment
@@ -131,22 +133,22 @@ def test_segment():
     segment <= segment
     segment > segment
     segment >= segment
-    assert sys.getrefcount(segment) == 2
+    assert sys.getrefcount(segment) == base_refcount
 
     # {Py_tp_iter, (void*) mech_of_segment_iter_safe},
 
     # {Py_tp_methods, (void*) NPySegObj_methods},
     # {Py_tp_members, (void*) NPySegObj_members},
     dir(segment)
-    assert sys.getrefcount(segment) == 2
+    assert sys.getrefcount(segment) == base_refcount
 
     # {Py_tp_doc, (void*) "Segment objects"},
     help(segment)
-    assert sys.getrefcount(segment) == 2
+    assert sys.getrefcount(segment) == base_refcount
 
     # {Py_sq_contains, (void*) NPySegObj_contains_safe},
     "foo" in segment
-    assert sys.getrefcount(segment) == 2
+    assert sys.getrefcount(segment) == base_refcount
 
     #static PyType_Spec nrnpy_SegmentType_spec = {
     #    "nrn.Segment",
