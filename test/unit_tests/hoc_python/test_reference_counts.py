@@ -4,7 +4,7 @@ from neuron import h
 
 
 def test_section():
-    section = h.Section(name='section')
+    section = h.Section(name="section")
 
     # this is 1 + the extra ref from getting called by sys.getrefcount
     base_refcount = 2
@@ -19,7 +19,7 @@ def test_section():
     hash(section)
     assert sys.getrefcount(section) == base_refcount
 
-    #{Py_tp_call, (void*) NPySecObj_call_safe},
+    # {Py_tp_call, (void*) NPySecObj_call_safe},
     section()
     assert sys.getrefcount(section) == base_refcount
 
@@ -63,7 +63,7 @@ def test_section():
     "foo" in section
     assert sys.getrefcount(section) == base_refcount
 
-    #static PyType_Slot nrnpy_AllSegOfSecIterType_slots[] = {
+    # static PyType_Slot nrnpy_AllSegOfSecIterType_slots[] = {
     it = section.allseg()
     assert sys.getrefcount(it) == 2
     assert sys.getrefcount(section) == base_refcount + 1
@@ -84,7 +84,7 @@ def test_section():
 
 
 def test_segment():
-    section = h.Section(name='section_segment')
+    section = h.Section(name="section_segment")
     segment = section(0.5)
     assert sys.getrefcount(section) == 3
 
@@ -104,7 +104,7 @@ def test_segment():
     segment.v
     assert sys.getrefcount(segment) == base_refcount
 
-    #} else if ((otype = PyDict_GetItemString(pmech_types, n)) != NULL) {
+    # } else if ((otype = PyDict_GetItemString(pmech_types, n)) != NULL) {
     #    int type = PyInt_AsLong(otype);
     #    // printf("segment_getattr type=%d\n", type);
     #    Node* nd = node_exact(sec, self->x_);
@@ -116,11 +116,11 @@ def test_segment():
     #        result = (PyObject*) new_pymechobj(self, p);
     #    }
 
-    #} else if (strncmp(n, "_ref_", 5) == 0) {
+    # } else if (strncmp(n, "_ref_", 5) == 0) {
     segment._ref_v
     assert sys.getrefcount(segment) == base_refcount
 
-    #todo: need to find hoc_built_in_symlist values
+    # todo: need to find hoc_built_in_symlist values
 
     d = segment.__dict__
     assert sys.getrefcount(d) == 2
@@ -150,26 +150,26 @@ def test_segment():
     "foo" in segment
     assert sys.getrefcount(segment) == base_refcount
 
-    #static PyType_Spec nrnpy_SegmentType_spec = {
+    # static PyType_Spec nrnpy_SegmentType_spec = {
     #    "nrn.Segment",
     #    sizeof(NPySegObj),
     #    0,
     #    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     #    nrnpy_SegmentType_slots,
-    #};
+    # };
 
 
 def test_mechanisms():
     assert "XXX"
-    #static PyType_Slot nrnpy_MechOfSegIterType_slots[] = {
+    # static PyType_Slot nrnpy_MechOfSegIterType_slots[] = {
     #    {Py_tp_dealloc, (void*) NPyMechOfSegIter_dealloc_safe},
     #    {Py_tp_iter, (void*) PyObject_SelfIter},
     #    {Py_tp_iternext, (void*) mech_of_seg_next_safe},
     #    {Py_tp_doc, (void*) "Iterate over Mechanisms in a Segment of a Section"},
     #    {0, 0},
-    #};
+    # };
 
-    #} else if (strcmp(n, "__dict__") == 0) {
+    # } else if (strcmp(n, "__dict__") == 0) {
     #    nb::dict out_dict{};
     #    int cnt = mechsym->s_varn;
     #    for (int i = 0; i < cnt; ++i) {
@@ -185,15 +185,15 @@ def test_mechanisms():
     #    }
     #    result = out_dict.release().ptr();
 
-    #static PyType_Spec nrnpy_MechOfSegIterType_spec = {
+    # static PyType_Spec nrnpy_MechOfSegIterType_spec = {
     #    "nrn.MechOfSegIter",
     #    sizeof(NPyMechOfSegIter),
     #    0,
     #    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     #    nrnpy_MechOfSegIterType_slots,
-    #};
+    # };
 
-    #static PyType_Slot nrnpy_MechanismType_slots[] = {
+    # static PyType_Slot nrnpy_MechanismType_slots[] = {
     #    {Py_tp_dealloc, (void*) NPyMechObj_dealloc_safe},
     #    {Py_tp_repr, (void*) pymech_repr_safe},
     #    {Py_tp_getattro, (void*) mech_getattro_safe},
@@ -205,49 +205,55 @@ def test_mechanisms():
     #    {Py_tp_new, (void*) NPyMechObj_new_safe},
     #    {Py_tp_doc, (void*) "Mechanism objects"},
     #    {0, 0},
-    #};
-    #static PyType_Spec nrnpy_MechanismType_spec = {
+    # };
+    # static PyType_Spec nrnpy_MechanismType_spec = {
     #    "nrn.Mechanism",
     #    sizeof(NPyMechObj),
     #    0,
     #    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     #    nrnpy_MechanismType_slots,
-    #};
+    # };
 
-    #static PyType_Slot nrnpy_MechFuncType_slots[] = {
+    # static PyType_Slot nrnpy_MechFuncType_slots[] = {
     #    {Py_tp_dealloc, (void*) NPyMechFunc_dealloc_safe},
     #    {Py_tp_repr, (void*) pymechfunc_repr_safe},
     #    {Py_tp_methods, (void*) NPyMechFunc_methods},
     #    {Py_tp_call, (void*) NPyMechFunc_call_safe},
     #    {Py_tp_doc, (void*) "Mechanism Function"},
     #    {0, 0},
-    #};
-    #static PyType_Spec nrnpy_MechFuncType_spec = {
+    # };
+    # static PyType_Spec nrnpy_MechFuncType_spec = {
     #    "nrn.MechFunc",
     #    sizeof(NPyMechFunc),
     #    0,
     #    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     #    nrnpy_MechFuncType_slots,
-    #};
+    # };
 
-    #static PyType_Slot nrnpy_VarOfMechIterType_slots[] = {
+    # static PyType_Slot nrnpy_VarOfMechIterType_slots[] = {
     #    {Py_tp_dealloc, (void*) NPyVarOfMechIter_dealloc_safe},
     #    {Py_tp_iter, (void*) PyObject_SelfIter},
     #    {Py_tp_iternext, (void*) var_of_mech_next_safe},
     #    {Py_tp_doc, (void*) "Iterate over variables  in a Mechanism"},
     #    {0, 0},
-    #};
-    #static PyType_Spec nrnpy_VarOfMechIterType_spec = {
+    # };
+    # static PyType_Spec nrnpy_VarOfMechIterType_spec = {
     #    "nrn.VarOfMechIter",
     #    sizeof(NPyVarOfMechIter),
     #    0,
     #    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     #    nrnpy_VarOfMechIterType_slots,
-    #};
+    # };
+
 
 def test_range():
-    section = h.Section(name='section')
-    for name in ('vext', 'xraxial', 'xg', 'xc', ):
+    section = h.Section(name="section")
+    for name in (
+        "vext",
+        "xraxial",
+        "xg",
+        "xc",
+    ):
         range_var = getattr(section, name)
         assert sys.getrefcount(range_var) == 2
 
@@ -264,12 +270,13 @@ def test_range():
         assert sys.getrefcount(range_var) == 2
 
         # {Py_sq_item, (void*) rv_getitem_safe},
-        #range_var[1] = 1
-        #assert sys.getrefcount(range_var) == 2
+        # range_var[1] = 1
+        # assert sys.getrefcount(range_var) == 2
 
         assert sys.getrefcount(section) == 3
 
-#def test_opaque_pointer():
+
+# def test_opaque_pointer():
 #    #static PyType_Slot nrnpy_OpaquePointerType_slots[] = {
 #    #    {Py_tp_doc, (void*) "Opaque pointer."},
 #    #    {0, 0},
