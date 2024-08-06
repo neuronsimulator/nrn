@@ -1,5 +1,4 @@
 import sys
-import neuron
 from neuron import h
 
 
@@ -123,18 +122,6 @@ def test_segment():
     segment.v
     assert sys.getrefcount(segment) == base_refcount
 
-    # } else if ((otype = PyDict_GetItemString(pmech_types, n)) != NULL) {
-    #    int type = PyInt_AsLong(otype);
-    #    // printf("segment_getattr type=%d\n", type);
-    #    Node* nd = node_exact(sec, self->x_);
-    #    Prop* p = nrn_mechanism(type, nd);
-    #    if (!p) {
-    #        rv_noexist(sec, n, self->x_, 1);
-    #        return nullptr;
-    #    } else {
-    #        result = (PyObject*) new_pymechobj(self, p);
-    #    }
-
     # } else if (strncmp(n, "_ref_", 5) == 0) {
     segment._ref_v
     assert sys.getrefcount(segment) == base_refcount
@@ -177,100 +164,100 @@ def test_segment():
     "foo" in segment
     assert sys.getrefcount(segment) == base_refcount
 
-    # static PyType_Spec nrnpy_SegmentType_spec = {
-    #    "nrn.Segment",
-    #    sizeof(NPySegObj),
-    #    0,
-    #    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    #    nrnpy_SegmentType_slots,
-    # };
+    assert sys.getrefcount(section) == 3
 
 
 def test_mechanisms():
-    assert "XXX"
-    # static PyType_Slot nrnpy_MechOfSegIterType_slots[] = {
-    #    {Py_tp_dealloc, (void*) NPyMechOfSegIter_dealloc_safe},
-    #    {Py_tp_iter, (void*) PyObject_SelfIter},
-    #    {Py_tp_iternext, (void*) mech_of_seg_next_safe},
-    #    {Py_tp_doc, (void*) "Iterate over Mechanisms in a Segment of a Section"},
-    #    {0, 0},
-    # };
+    section = h.Section(name="section")
+    section.insert("hh")
+
+    # this is 1 + the extra ref from getting called by sys.getrefcount
+    base_refcount = 2
+
+    mech = section(0.5).hh
+    assert sys.getrefcount(mech) == base_refcount
+
+    # note: a mechanism at the same place is not the same one, ie: mech != mech0
+    mech0 = section(0.5).hh
+    assert sys.getrefcount(mech) == base_refcount
+    del mech0
+
+    #    {Py_tp_repr, (void*) pymech_repr_safe},
+    repr(mech)
+    assert sys.getrefcount(mech) == base_refcount
+
+    #    {Py_tp_getattro, (void*) mech_getattro_safe},
+
+    #    {Py_tp_iter, (void*) var_of_mech_iter_safe},
+    it = iter(mech)
+    assert sys.getrefcount(it) == 2
+    assert sys.getrefcount(mech) == base_refcount + 1
+
+    help(it)
+    assert sys.getrefcount(it) == 2
+
+    n = next(it)
+    assert sys.getrefcount(it) == 2
+    assert sys.getrefcount(mech) == base_refcount + 2
+    del n
+    assert sys.getrefcount(mech) == base_refcount + 1
+    del it
+    assert sys.getrefcount(mech) == base_refcount
+
+    #    {Py_tp_methods, (void*) NPyMechObj_methods},
+    for method in (
+        "name",
+        "is_ion",
+        "segment",
+    ):
+        getattr(mech, method)()
+        assert sys.getrefcount(mech) == base_refcount
+
+    #    {Py_tp_members, (void*) NPyMechObj_members},
+    # there are none
+
+    #    {Py_tp_doc, (void*) "Mechanism objects"},
+    help(mech)
+    assert sys.getrefcount(mech) == base_refcount
 
     # } else if (strcmp(n, "__dict__") == 0) {
-    #    nb::dict out_dict{};
-    #    int cnt = mechsym->s_varn;
-    #    for (int i = 0; i < cnt; ++i) {
-    #        Symbol* s = mechsym->u.ppsym[i];
-    #        if (!striptrail(buf, bufsz, s->name, mname)) {
-    #            strcpy(buf, s->name);
-    #        }
-    #        out_dict[buf] = nb::none();
-    #    }
-    #    // FUNCTION and PROCEDURE
-    #    for (auto& it: nrn_mech2funcs_map[self->prop_->_type]) {
-    #        out_dict[it.first.c_str()] = nb::none();
-    #    }
-    #    result = out_dict.release().ptr();
+    mech.__dict__
+    assert sys.getrefcount(mech) == base_refcount
 
     # static PyType_Spec nrnpy_MechOfSegIterType_spec = {
-    #    "nrn.MechOfSegIter",
-    #    sizeof(NPyMechOfSegIter),
-    #    0,
-    #    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    #    nrnpy_MechOfSegIterType_slots,
-    # };
+    segment = section(0.5)
+    assert sys.getrefcount(segment) == base_refcount
 
-    # static PyType_Slot nrnpy_MechanismType_slots[] = {
-    #    {Py_tp_dealloc, (void*) NPyMechObj_dealloc_safe},
-    #    {Py_tp_repr, (void*) pymech_repr_safe},
-    #    {Py_tp_getattro, (void*) mech_getattro_safe},
-    #    {Py_tp_setattro, (void*) mech_setattro_safe},
-    #    {Py_tp_iter, (void*) var_of_mech_iter_safe},
-    #    {Py_tp_methods, (void*) NPyMechObj_methods},
-    #    {Py_tp_members, (void*) NPyMechObj_members},
-    #    {Py_tp_init, (void*) NPyMechObj_init_safe},
-    #    {Py_tp_new, (void*) NPyMechObj_new_safe},
-    #    {Py_tp_doc, (void*) "Mechanism objects"},
-    #    {0, 0},
-    # };
-    # static PyType_Spec nrnpy_MechanismType_spec = {
-    #    "nrn.Mechanism",
-    #    sizeof(NPyMechObj),
-    #    0,
-    #    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    #    nrnpy_MechanismType_slots,
-    # };
+    it = iter(segment)
+    assert sys.getrefcount(it) == base_refcount
 
     # static PyType_Slot nrnpy_MechFuncType_slots[] = {
-    #    {Py_tp_dealloc, (void*) NPyMechFunc_dealloc_safe},
-    #    {Py_tp_repr, (void*) pymechfunc_repr_safe},
-    #    {Py_tp_methods, (void*) NPyMechFunc_methods},
-    #    {Py_tp_call, (void*) NPyMechFunc_call_safe},
-    #    {Py_tp_doc, (void*) "Mechanism Function"},
-    #    {0, 0},
-    # };
-    # static PyType_Spec nrnpy_MechFuncType_spec = {
-    #    "nrn.MechFunc",
-    #    sizeof(NPyMechFunc),
-    #    0,
-    #    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    #    nrnpy_MechFuncType_slots,
-    # };
+    mech_func = mech.rates
+    assert sys.getrefcount(mech_func) == base_refcount
 
-    # static PyType_Slot nrnpy_VarOfMechIterType_slots[] = {
-    #    {Py_tp_dealloc, (void*) NPyVarOfMechIter_dealloc_safe},
-    #    {Py_tp_iter, (void*) PyObject_SelfIter},
-    #    {Py_tp_iternext, (void*) var_of_mech_next_safe},
-    #    {Py_tp_doc, (void*) "Iterate over variables  in a Mechanism"},
-    #    {0, 0},
-    # };
-    # static PyType_Spec nrnpy_VarOfMechIterType_spec = {
-    #    "nrn.VarOfMechIter",
-    #    sizeof(NPyVarOfMechIter),
-    #    0,
-    #    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    #    nrnpy_VarOfMechIterType_slots,
-    # };
+    # {Py_tp_repr, (void*) pymechfunc_repr_safe},
+    repr(mech_func)
+    assert sys.getrefcount(mech_func) == base_refcount
+
+    # {Py_tp_methods, (void*) NPyMechFunc_methods},
+    for method in (
+        "name",
+        "mech",
+    ):
+        getattr(mech_func, method)()
+        assert sys.getrefcount(mech_func) == base_refcount
+
+    # {Py_tp_call, (void*) NPyMechFunc_call_safe},
+    mech_func(0)
+    assert sys.getrefcount(mech_func) == base_refcount
+
+    # {Py_tp_doc, (void*) "Mechanism Function"},
+    help(mech_func)
+    assert sys.getrefcount(mech_func) == base_refcount
+
+    assert sys.getrefcount(section) == 5
+    assert sys.getrefcount(segment) == 3
+    assert sys.getrefcount(mech) == 3
 
 
 def test_range():
@@ -295,10 +282,6 @@ def test_range():
         # {Py_sq_length, (void*) rv_len_safe},
         len(range_var)
         assert sys.getrefcount(range_var) == 2
-
-        # {Py_sq_item, (void*) rv_getitem_safe},
-        # range_var[1] = 1
-        # assert sys.getrefcount(range_var) == 2
 
         assert sys.getrefcount(section) == 3
 
