@@ -52,6 +52,25 @@ def test_section():
     # {Py_tp_iter, (void*) seg_of_section_iter_safe},
 
     # {Py_tp_methods, (void*) NPySecObj_methods},
+    for method in (
+        "name",
+        "hname",
+        "cell",
+        "hoc_internal_name",
+        "disconnect",
+        "parentseg",
+        "trueparentseg",
+        "orientation",
+        "children",
+        "subtree",
+        "wholetree",
+        "n3d",
+        "is_pysec",
+        "psection",
+    ):
+        getattr(section, method)()
+        assert sys.getrefcount(section) == base_refcount
+
     dir(section)
     assert sys.getrefcount(section) == base_refcount
 
@@ -138,9 +157,17 @@ def test_segment():
     # {Py_tp_iter, (void*) mech_of_segment_iter_safe},
 
     # {Py_tp_methods, (void*) NPySegObj_methods},
+    for method in ("point_processes", "node_index", "area", "ri", "volume"):
+        getattr(segment, method)()
+        assert sys.getrefcount(segment) == base_refcount
+
     # {Py_tp_members, (void*) NPySegObj_members},
-    dir(segment)
-    assert sys.getrefcount(segment) == base_refcount
+    for method in (
+        "x",
+        "sec",
+    ):
+        getattr(segment, method)
+        assert sys.getrefcount(segment) == base_refcount
 
     # {Py_tp_doc, (void*) "Segment objects"},
     help(segment)
