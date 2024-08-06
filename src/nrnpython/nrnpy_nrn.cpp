@@ -1490,7 +1490,7 @@ static PyObject* NPySecObj_connect_safe(NPySecObj* self, PyObject* args) {
     return nrn::convert_cxx_exceptions(NPySecObj_connect, self, args);
 }
 
-static PyObject* NPySecObj_insert(NPySecObj* self, PyObject* args) {
+static PyObject* NPySecObj_insert(NPySecObj* raw_self, PyObject* args) {
     CHECK_SEC_INVALID(self->sec_);
     char* tname;
     if (!PyArg_ParseTuple(args, "s", &tname)) {
@@ -1499,8 +1499,9 @@ static PyObject* NPySecObj_insert(NPySecObj* self, PyObject* args) {
         PyObject* tpyobj;
         if (PyArg_ParseTuple(args, "O", &tpyobj)) {
             auto _tpyobj_tracker = nb::borrow(tpyobj);
+            auto self = nb::borrow((PyObject*) raw_self);
             // Returned object to be discarded
-            auto out_o = nb::steal(PyObject_CallMethod(tpyobj, "insert", "O", (PyObject*) self));
+            auto out_o = nb::steal(PyObject_CallMethod(tpyobj, "insert", "O", self.ptr()));
             if (!out_o.is_valid()) {
                 PyErr_Clear();
                 PyErr_SetString(
@@ -1508,8 +1509,7 @@ static PyObject* NPySecObj_insert(NPySecObj* self, PyObject* args) {
                     "insert argument must be either a string or an object with an insert method");
                 return nullptr;
             }
-            Py_INCREF(self);
-            return (PyObject*) self;
+            return self.release().ptr();
         }
         PyErr_Clear();
         PyErr_SetString(PyExc_TypeError, "insert takes a single positional argument");
