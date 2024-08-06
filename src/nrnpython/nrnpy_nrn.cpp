@@ -2928,23 +2928,9 @@ static PyMethodDef NPySegObj_methods[] = {
     {"volume", (PyCFunction) seg_volume_safe, METH_NOARGS, "Segment volume (um3)"},
     {NULL}};
 
-// I'm guessing Python should change their typedef to get rid of the
-// four "deprecated conversion from string constant to 'char*'" warnings.
-// Could avoid by casting each to (char*) but probably better to keep the
-// warnings. For now we get rid of the warnings by copying the string to
-// char array.
-static char* cpstr(const char* s) {
-    char* s2 = new char[strlen(s) + 1];
-    strcpy(s2, s);
-    return s2;
-}
 static PyMemberDef NPySegObj_members[] = {
-    {cpstr("x"),
-     T_DOUBLE,
-     offsetof(NPySegObj, x_),
-     0,
-     cpstr("location in the section (segment containing x)")},
-    {cpstr("sec"), T_OBJECT_EX, offsetof(NPySegObj, pysec_), 0, cpstr("Section")},
+    {"x", T_DOUBLE, offsetof(NPySegObj, x_), 0, "location in the section (segment containing x)"},
+    {"sec", T_OBJECT_EX, offsetof(NPySegObj, pysec_), 0, "Section"},
     {NULL}};
 
 static PyMethodDef NPyMechObj_methods[] = {
