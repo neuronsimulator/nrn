@@ -255,7 +255,7 @@ def test_mechanisms():
     help(mech_func)
     assert sys.getrefcount(mech_func) == base_refcount
 
-    assert sys.getrefcount(section) == 5
+    assert sys.getrefcount(section) == 4
     assert sys.getrefcount(segment) == 3
     assert sys.getrefcount(mech) == 3
 
