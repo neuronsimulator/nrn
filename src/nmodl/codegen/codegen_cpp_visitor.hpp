@@ -1072,18 +1072,25 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /*                  Code-specific printing routines for code generations                */
     /****************************************************************************************/
 
+    /** Name of "our" namespace.
+     */
+    virtual std::string namespace_name() = 0;
 
     /**
      * Prints the start of the simulator namespace
      */
-    virtual void print_namespace_start() = 0;
+    void print_namespace_start();
 
 
     /**
      * Prints the end of the simulator namespace
      */
-    virtual void print_namespace_stop() = 0;
+    void print_namespace_stop();
 
+    /**
+     * Prints f"using namespace {namespace_name()}".
+     */
+    void print_using_namespace();
 
     /****************************************************************************************/
     /*                         Routines for returning variable name                         */

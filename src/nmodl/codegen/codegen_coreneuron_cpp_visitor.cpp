@@ -349,7 +349,7 @@ void CodegenCoreneuronCppVisitor::print_top_verbatim_blocks() {
     print_namespace_stop();
 
     printer->add_newline(2);
-    printer->add_line("using namespace coreneuron;");
+    print_using_namespace();
 
     printing_top_verbatim_blocks = true;
 
@@ -742,16 +742,9 @@ void CodegenCoreneuronCppVisitor::print_memb_list_getter() {
 }
 
 
-void CodegenCoreneuronCppVisitor::print_namespace_start() {
-    printer->add_newline(2);
-    printer->push_block("namespace coreneuron");
+std::string CodegenCoreneuronCppVisitor::namespace_name() {
+    return "coreneuron";
 }
-
-
-void CodegenCoreneuronCppVisitor::print_namespace_stop() {
-    printer->pop_block();
-}
-
 
 /**
  * \details There are three types of thread variables currently considered:

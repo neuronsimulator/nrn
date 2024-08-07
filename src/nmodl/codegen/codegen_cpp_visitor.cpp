@@ -569,6 +569,20 @@ void CodegenCppVisitor::print_mechanism_info() {
     printer->add_line("};");
 }
 
+void CodegenCppVisitor::print_using_namespace() {
+    printer->fmt_line("using namespace {};", namespace_name());
+}
+
+void CodegenCppVisitor::print_namespace_start() {
+    printer->add_newline(2);
+    printer->fmt_push_block("namespace {}", namespace_name());
+}
+
+
+void CodegenCppVisitor::print_namespace_stop() {
+    printer->pop_block();
+}
+
 
 /****************************************************************************************/
 /*                         Printing routines for code generation                        */

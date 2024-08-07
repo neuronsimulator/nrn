@@ -343,16 +343,7 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     /****************************************************************************************/
 
 
-    /**
-     * Prints the start of the \c neuron namespace
-     */
-    void print_namespace_start() override;
-
-
-    /**
-     * Prints the end of the \c neuron namespace
-     */
-    void print_namespace_stop() override;
+    std::string namespace_name() override;
 
 
     /****************************************************************************************/

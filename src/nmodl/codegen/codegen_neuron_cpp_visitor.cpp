@@ -511,16 +511,10 @@ std::string CodegenNeuronCppVisitor::py_function_signature(
 /*               Code-specific printing routines for code generation                    */
 /****************************************************************************************/
 
-
-void CodegenNeuronCppVisitor::print_namespace_start() {
-    printer->add_newline(2);
-    printer->push_block("namespace neuron");
+std::string CodegenNeuronCppVisitor::namespace_name() {
+    return "neuron";
 }
 
-
-void CodegenNeuronCppVisitor::print_namespace_stop() {
-    printer->pop_block();
-}
 
 void CodegenNeuronCppVisitor::append_conc_write_statements(
     std::vector<ShadowUseStatement>& statements,
