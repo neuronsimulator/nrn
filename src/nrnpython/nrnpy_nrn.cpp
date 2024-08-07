@@ -191,13 +191,13 @@ static Object* pysec_cell(Section* sec) {
 }
 
 static int NpySObj_contains(PyObject* s, PyObject* obj, const char* string) {
-    /* Checks is provided PyObject* s contains obj */
-    if (!PyObject_HasAttrString(obj, string)) {
+    /* Checks is provided PyObject* s matches obj.<string> */
+    auto pyobj = nb::borrow(obj);  // keep refcount+1 during use
+    if (!nb::hasattr(pyobj, string)) {
         return 0;
     }
-    auto _pyobj = nb::borrow(obj);  // keep refcount+1 during use
-    auto obj_seg = nb::steal(PyObject_GetAttrString(obj, string));
-    return PyObject_RichCompareBool(s, obj_seg.ptr(), Py_EQ);
+    auto obj_seg = pyobj.attr(string);
+    return nb::handle{s}.equal(obj_seg);
 }
 
 static int NPySecObj_contains(PyObject* sec, PyObject* obj) {
@@ -1488,29 +1488,27 @@ static PyObject* NPySecObj_connect_safe(NPySecObj* self, PyObject* args) {
 static PyObject* NPySecObj_insert(NPySecObj* self, PyObject* args) {
     CHECK_SEC_INVALID(self->sec_);
     char* tname;
-    PyObject *tpyobj, *tpyobj2;
     if (!PyArg_ParseTuple(args, "s", &tname)) {
         PyErr_Clear();
         // if called with an object that has an insert method, use that
+        PyObject* tpyobj;
         if (PyArg_ParseTuple(args, "O", &tpyobj)) {
-            Py_INCREF(tpyobj);
-            Py_INCREF((PyObject*) self);
-            tpyobj2 = PyObject_CallMethod(tpyobj, "insert", "O", (PyObject*) self);
-            Py_DECREF(tpyobj);
-            if (tpyobj2 == NULL) {
-                Py_DECREF((PyObject*) self);
+            auto _tpyobj_tracker = nb::borrow(tpyobj);
+            // Returned object to be discarded
+            auto out_o = nb::steal(PyObject_CallMethod(tpyobj, "insert", "O", (PyObject*) self));
+            if (!out_o.is_valid()) {
                 PyErr_Clear();
                 PyErr_SetString(
                     PyExc_TypeError,
                     "insert argument must be either a string or an object with an insert method");
-                return NULL;
+                return nullptr;
             }
-            Py_DECREF(tpyobj2);
+            Py_INCREF(self);
             return (PyObject*) self;
         }
         PyErr_Clear();
         PyErr_SetString(PyExc_TypeError, "insert takes a single positional argument");
-        return NULL;
+        return nullptr;
     }
     PyObject* otype = PyDict_GetItemString(pmech_types, tname);
     if (!otype) {
@@ -1688,16 +1686,14 @@ static PyObject* seg_point_processes(NPySegObj* self) {
     Section* sec = self->pysec_->sec_;
     CHECK_SEC_INVALID(sec);
     Node* nd = node_exact(sec, self->x_);
-    PyObject* result = PyList_New(0);
+    nb::list result{};
     for (Prop* p = nd->prop; p; p = p->next) {
         if (memb_func[p->_type].is_point) {
             auto* pp = p->dparam[1].get<Point_process*>();
-            auto item = nb::steal(nrnpy_ho2po(pp->ob));
-            int err = PyList_Append(result, item.ptr());
-            assert(err == 0);
+            result.append(nb::steal(nrnpy_ho2po(pp->ob)));
         }
     }
-    return result;
+    return result.release().ptr();
 }
 
 static PyObject* seg_point_processes_safe(NPySegObj* self) {
