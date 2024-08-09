@@ -16,6 +16,7 @@ set(NMODL_USECASE_DIRS
     point_process
     parameter
     suffix
+    state
     table
     useion
     at_time)
