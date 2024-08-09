@@ -49,11 +49,11 @@ text = remove_multiline_comments(text)
 
 # the pgcc 18.4 compiler prepends with a multiline typedef and several
 # extern void lines that need to be skipped. Our first relevant line
-# contains spatial_method or neuron2nemo or node_data
+# contains spatial_method or node_data
 
 skip = 1
 for line in text.splitlines():
-    if "spatial_method" in line or "neuron2nemo" in line or "node_data" in line:
+    if "spatial_method" in line or "node_data" in line:
         skip = 0
     names = line.replace(",", " ").replace(";", " ").split()
     if not skip and len(names) > 2:
