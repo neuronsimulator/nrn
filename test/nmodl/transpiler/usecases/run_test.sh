@@ -9,7 +9,7 @@ function run_tests() {
     if [[ -f "$f" ]]
     then
       echo "${usecase_dir}/$f: started."
-      python "$f"
+      python "$f" $1
       echo "${usecase_dir}/$f: success."
     fi
   done
@@ -32,11 +32,11 @@ pushd "${usecase_dir}" > /dev/null
 echo "-- Running NRN+nocmodl ------"
 rm -r "${output_dir}" tmp || true
 nrnivmodl
-run_tests
+run_tests nocmodl
 
 
 # NRN + NMODL
 echo "-- Running NRN+NMODL --------"
 rm -r "${output_dir}" tmp || true
 nrnivmodl -nmodl "${nmodl}"
-run_tests
+run_tests nmodl
