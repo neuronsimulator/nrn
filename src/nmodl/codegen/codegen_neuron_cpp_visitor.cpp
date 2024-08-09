@@ -1127,15 +1127,6 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
         printer->fmt_line("_nrn_thread_table_reg(mech_type, {});", table_thread_function_name());
     }
 
-    /// Call _nrn_mechanism_register_data_fields() with the correct arguments
-    /// Geenerated code follows the style underneath
-    ///
-    ///     _nrn_mechanism_register_data_fields(mech_type,
-    ///         _nrn_mechanism_field<double>{"var_name"}, /* float var index 0 */
-    ///         ...
-    ///     );
-    ///
-    /// TODO: More things to add here
     printer->add_line("_nrn_mechanism_register_data_fields(mech_type,");
     printer->increase_indent();
 
