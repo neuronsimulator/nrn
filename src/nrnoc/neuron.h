@@ -1,9 +1,5 @@
 #include "options.h"
 
-#if NEMO
-extern int neuron2nemo(), nemo2neuron();
-#endif
-
 extern void node_data(), disconnect();
 extern void batch_run(), batch_save();
 extern void pt3dadd(), n3d(), x3d(), y3d(), z3d(), arc3d(), diam3d();

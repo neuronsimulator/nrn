@@ -45,11 +45,3 @@ and obscure to benefit most users.
     	each simulation. 
     #endif 
      
-    #if NEMO 
-    neuron2nemo("filename") Beginning of translator between John Millers 
-    		nemosys program	and NEURON. Probably out of date. 
-    nemo2neuron("filename") 
-    #endif 
-
-
-

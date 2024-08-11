@@ -1877,14 +1877,6 @@ void eval(void) /* evaluate variable on stack */
             case USERFLOAT:
                 d = (sym->u.pvalfloat)[araypt(sym, SYMBOL)];
                 break;
-#if NEMO
-            case NEMONODE:
-                hoc_eval_nemonode(sym, hoc_xpop(), &d);
-                break;
-            case NEMOAREA:
-                hoc_eval_nemoarea(sym, hoc_xpop(), &d);
-                break;
-#endif /*NEMO*/
             default:
                 d = (OPVAL(sym))[araypt(sym, OBJECTVAR)];
                 break;
@@ -1951,10 +1943,6 @@ void hoc_evalpointer() {
                 break;
             case USERINT:
             case USERFLOAT:
-#if NEMO
-            case NEMONODE:
-            case NEMOAREA:
-#endif /*NEMO*/
                 execerror("can use pointer only to doubles", sym->name);
                 break;
             default:
@@ -2244,14 +2232,6 @@ void hoc_assign() {
                 }
                 (sym->u.pvalfloat)[ind] = (float) d2;
                 break;
-#if NEMO
-            case NEMONODE:
-                hoc_asgn_nemonode(sym, hoc_xpop(), &d2, op);
-                break;
-            case NEMOAREA:
-                hoc_asgn_nemoarea(sym, hoc_xpop(), &d2, op);
-                break;
-#endif /*NEMO*/
             default:
                 ind = araypt(sym, OBJECTVAR);
                 if (op) {
