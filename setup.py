@@ -379,8 +379,6 @@ def setup_package():
         list,
         library_dirs=[os.path.join(cmake_build_dir, "lib")],
         libraries=ext_common_libraries,
-        define_macros=[("CYTHON_EXTERN_C", 'extern "C"')],
-        language="c++",
     )
 
     logging.info("Extension common compile flags %s" % str(extension_common_params))
