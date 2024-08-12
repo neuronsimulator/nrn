@@ -123,3 +123,24 @@ TEST_CASE("Solve ODEs using legacy NeuronSolveVisitor", "[visitor][solver]") {
         }
     }
 }
+
+TEST_CASE("Throw errors on invalid methods", "[visitor][solver]") {
+    SECTION("PROCEDURE cannot be SOLVEd with derivimplicit METHOD") {
+        GIVEN("Breakpoint block with a PROCEDURE being solved using the derivimplcit METHOD") {
+            std::string nmodl_text = R"(
+            NEURON	{
+                SUFFIX example
+            }
+
+            BREAKPOINT	{
+                SOLVE myfunc METHOD derivimplicit
+            }
+
+            PROCEDURE myfunc() {}
+)";
+            THEN("A runtime error should be thrown") {
+                REQUIRE_THROWS_AS(run_solve_block_visitor(nmodl_text), std::runtime_error);
+            }
+        }
+    }
+}

@@ -56,7 +56,12 @@ ast::SolutionExpression* SolveBlockVisitor::create_solution_expression(
     if (solve_method == codegen::naming::DERIVIMPLICIT_METHOD &&
         !has_sympy_solution(*node_to_solve)) {
         /// typically derivimplicit is used for derivative block only
-        assert(node_to_solve->get_node_type() == ast::AstNodeType::DERIVATIVE_BLOCK);
+        if (node_to_solve->get_node_type() != ast::AstNodeType::DERIVATIVE_BLOCK) {
+            const std::string node_name = node_to_solve->get_node_name();
+            const std::string node_type = node_to_solve->get_node_type_name();
+            throw std::runtime_error(fmt::format(
+                "Method {} cannot be used for {} {}", solve_method, node_type, node_name));
+        }
         auto derivative_block = dynamic_cast<ast::DerivativeBlock*>(node_to_solve);
         auto callback_expr = new ast::DerivimplicitCallback(derivative_block->clone());
         return new ast::SolutionExpression(solve_block.clone(), callback_expr);
