@@ -624,6 +624,8 @@ static void setpickle() {
     if (!dumps || !loads) {
         hoc_execerror("Neither Python cPickle nor pickle are available", 0);
     }
+    dumps.inc_ref();
+    loads.inc_ref();
 }
 
 // note that *size includes the null terminating character if it exists
