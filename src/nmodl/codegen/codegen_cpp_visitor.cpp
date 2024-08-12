@@ -1087,6 +1087,7 @@ void CodegenCppVisitor::visit_eigen_newton_solver_block(const ast::EigenNewtonSo
 
     // assign newton solver results in matrix X to state vars
     print_statement_block(*node.get_update_states_block(), false, false);
+    printer->add_line("newton_functor.initialize(); // TODO mimic calling F again.");
     printer->add_line("newton_functor.finalize();");
 }
 
