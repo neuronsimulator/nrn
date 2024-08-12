@@ -27,7 +27,7 @@ else
 	export MACOSX_DEPLOYMENT_TARGET=10.9  # for x86_64
 fi
 
-(wget http://ftpmirror.gnu.org/ncurses/ncurses-6.4.tar.gz \
+(curl -L -o ncurses-6.4.tar.gz http://ftpmirror.gnu.org/ncurses/ncurses-6.4.tar.gz \
     && tar -xvzf ncurses-6.4.tar.gz \
     && cd ncurses-6.4  \
     && ./configure --prefix="${NRNWHEEL_DIR}/ncurses" --without-shared CFLAGS="-fPIC" \
@@ -45,7 +45,7 @@ fi
     && ar cq libreadline.a *.o \
     && rm *.o)
 
-RDL_MINOS=`otool -l /opt/nrnwheel/readline/lib/libreadline.a | grep -e "minos \|version " | uniq | awk '{print $2}'`
+RDL_MINOS="$(otool -l /opt/nrnwheel/readline/lib/libreadline.a | grep -e "minos \|version " | uniq | awk '{print $2}')"
 
 if [ "$RDL_MINOS" != "$MACOSX_DEPLOYMENT_TARGET" ]; then 
 	echo "Error: ${NRNWHEEL_DIR}/readline/lib/libreadline.a doesn't match MACOSX_DEPLOYMENT_TARGET ($MACOSX_DEPLOYMENT_TARGET)"
