@@ -4,7 +4,6 @@ set -xe
 #
 # PREREQUESITES:
 #  - curl
-#  - wget
 #  - C/C++ compiler
 #  - /opt/nrnwheel folder created with access rights (this specific path is kept for consistency wrt `build_wheels.bash`)
 
@@ -45,7 +44,7 @@ fi
     && ar cq libreadline.a *.o \
     && rm *.o)
 
-RDL_MINOS="$(otool -l /opt/nrnwheel/readline/lib/libreadline.a | grep -e "minos \|version " | uniq | awk '{print $2}')"
+RDL_MINOS="$(otool -l "${NRNWHEEL_DIR}/readline/lib/libreadline.a" | grep -e "minos \|version " | uniq | awk '{print $2}')"
 
 if [ "$RDL_MINOS" != "$MACOSX_DEPLOYMENT_TARGET" ]; then 
 	echo "Error: ${NRNWHEEL_DIR}/readline/lib/libreadline.a doesn't match MACOSX_DEPLOYMENT_TARGET ($MACOSX_DEPLOYMENT_TARGET)"
