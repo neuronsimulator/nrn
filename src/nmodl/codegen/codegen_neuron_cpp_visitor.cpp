@@ -932,6 +932,10 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
         // throw std::runtime_error("Not implemented, global vectorize something else.");
     }
 
+    if (info.diam_used) {
+        printer->fmt_line("Symbol* _morphology_sym;");
+    }
+
     printer->pop_block(";");
 
     print_global_var_struct_assertions();
@@ -1223,6 +1227,11 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
     if (info.thread_callback_register) {
         printer->add_line("_nrn_thread_reg(mech_type, 1, thread_mem_init);");
         printer->add_line("_nrn_thread_reg(mech_type, 0, thread_mem_cleanup);");
+    }
+
+    if (info.diam_used) {
+        printer->fmt_line("{}._morphology_sym = hoc_lookup(\"morphology\");",
+                          global_struct_instance());
     }
 
     printer->pop_block();
@@ -1609,9 +1618,8 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
         for (size_t i = 0; i < codegen_int_variables.size(); ++i) {
             auto var_info = codegen_int_variables[i];
             if (var_info.symbol->get_name() == naming::DIAM_VARIABLE) {
-                printer->add_line("Symbol * morphology_sym = hoc_lookup(\"morphology\");");
-                printer->fmt_line("Prop * morphology_prop = need_memb(morphology_sym);");
-
+                printer->fmt_line("Prop * morphology_prop = need_memb({}._morphology_sym);",
+                                  global_struct_instance());
                 printer->fmt_line(
                     "_ppvar[{}] = _nrn_mechanism_get_param_handle(morphology_prop, 0);", i);
             }
