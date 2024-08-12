@@ -1,6 +1,10 @@
 #include <../../nrnconf.h>
 
 #include <cstdio>
+
+#include <nanobind/nanobind.h>
+namespace nb = nanobind;
+
 #include <InterViews/resource.h>
 #include <nrnoc2iv.h>
 #include <classreg.h>
@@ -607,23 +611,16 @@ static int guigetstr(Object* ho, char** cpp) {
     return 1;
 }
 
-static PyObject* loads;
-static PyObject* dumps;
+static nb::callable loads;
+static nb::callable dumps;
 
 static void setpickle() {
     if (dumps) {
         return;
     }
-    PyObject* pickle = PyImport_ImportModule("pickle");
-    if (pickle) {
-        Py_INCREF(pickle);
-        dumps = PyObject_GetAttrString(pickle, "dumps");
-        loads = PyObject_GetAttrString(pickle, "loads");
-        if (dumps) {
-            Py_INCREF(dumps);
-            Py_INCREF(loads);
-        }
-    }
+    nb::module_ pickle = nb::module_::import_("pickle");
+    dumps = pickle.attr("dumps");
+    loads = pickle.attr("loads");
     if (!dumps || !loads) {
         hoc_execerror("Neither Python cPickle nor pickle are available", 0);
     }
@@ -632,7 +629,7 @@ static void setpickle() {
 // note that *size includes the null terminating character if it exists
 static std::vector<char> pickle(PyObject* p) {
     PyObject* arg = PyTuple_Pack(1, p);
-    PyObject* r = nrnpy_pyCallObject(dumps, arg);
+    PyObject* r = nrnpy_pyCallObject(dumps.ptr(), arg);
     Py_XDECREF(arg);
     if (!r && PyErr_Occurred()) {
         PyErr_Print();
@@ -656,25 +653,21 @@ static std::vector<char> po2pickle(Object* ho) {
     }
 }
 
-static PyObject* unpickle(const char* s, std::size_t len) {
-    PyObject* ps = PyBytes_FromStringAndSize(s, len);
-    PyObject* arg = PyTuple_Pack(1, ps);
-    PyObject* po = nrnpy_pyCallObject(loads, arg);
-    assert(po);
-    Py_XDECREF(arg);
-    Py_XDECREF(ps);
-    return po;
+static nb::object unpickle(const char* s, std::size_t len) {
+    nb::bytes string(s, len);
+    nb::list args;
+    args.append(string);
+    return loads(*args);
 }
 
-static PyObject* unpickle(const std::vector<char>& s) {
+static nb::object unpickle(const std::vector<char>& s) {
     return unpickle(s.data(), s.size());
 }
 
 static Object* pickle2po(const std::vector<char>& s) {
     setpickle();
-    PyObject* po = unpickle(s);
-    Object* ho = nrnpy_pyobject_in_obj(po);
-    Py_XDECREF(po);
+    nb::object po = unpickle(s);
+    Object* ho = nrnpy_pyobject_in_obj(po.ptr());
     return ho;
 }
 
@@ -750,7 +743,7 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
     setpickle();
     PyObject* ps = PyBytes_FromStringAndSize(fname.data(), fname.size());
     args = PyTuple_Pack(1, ps);
-    callable = nrnpy_pyCallObject(loads, args);
+    callable = nrnpy_pyCallObject(loads.ptr(), args);
     assert(callable);
     Py_XDECREF(args);
     Py_XDECREF(ps);
@@ -801,7 +794,9 @@ static PyObject* char2pylist(char* buf, int np, int* cnt, int* displ) {
             Py_INCREF(Py_None);  // 'Fatal Python error: deallocating None' eventually
             PyList_SetItem(plist, i, Py_None);
         } else {
-            PyObject* p = unpickle(buf + displ[i], cnt[i]);
+            nb::object po = unpickle(buf + displ[i], cnt[i]);
+            po.inc_ref();
+            PyObject* p = po.ptr();
             PyList_SetItem(plist, i, p);
         }
     }
@@ -874,7 +869,9 @@ static PyObject* py_broadcast(PyObject* psrc, int root) {
     nrnmpi_char_broadcast(buf.data(), cnt, root);
     PyObject* pdest = psrc;
     if (root != nrnmpi_myid) {
-        pdest = unpickle(buf);
+        nb::object po = unpickle(buf);
+        po.inc_ref();
+        pdest = po.ptr();
     } else {
         Py_INCREF(pdest);
     }
@@ -1082,7 +1079,9 @@ static Object* py_alltoall_type(int size, int type) {
                 delete[] sdispl;
 
             if (rcnt[0]) {
-                pdest = unpickle(r);
+                nb::object po = unpickle(r);
+                po.inc_ref();
+                pdest = po.ptr();
             } else {
                 pdest = Py_None;
                 Py_INCREF(pdest);
