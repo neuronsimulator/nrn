@@ -563,6 +563,11 @@ std::string CodegenNeuronCppVisitor::int_variable_name(const IndexVariableInfo& 
                                                        const std::string& name,
                                                        bool use_instance) const {
     auto position = position_of_int_var(name);
+
+    if (info.semantics[position].name == naming::RANDOM_SEMANTIC) {
+        return fmt::format("_ppvar[{}].literal_value<void*>()", position);
+    }
+
     if (symbol.is_index) {
         if (use_instance) {
             throw std::runtime_error("Not implemented. [wiejo]");
@@ -581,9 +586,8 @@ std::string CodegenNeuronCppVisitor::int_variable_name(const IndexVariableInfo& 
         return fmt::format("(*inst.{}[id])", name);
     }
 
+
     throw std::runtime_error("Not implemented. [nvueir]");
-    // auto data = symbol.is_vdata ? "_vdata" : "_data";
-    // return fmt::format("nt->{}[indexes[{}*pnodecount + id]]", data, position);
 }
 
 
@@ -1554,13 +1558,19 @@ void CodegenNeuronCppVisitor::print_nrn_constructor() {
 }
 
 
-/// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_nrn_destructor() {
-    return;
+    printer->fmt_push_block("void {}(Prop* _prop)", method_name(naming::NRN_DESTRUCTOR_METHOD));
+    printer->add_line("Datum* _ppvar = _nrn_mechanism_access_dparam(_prop);");
+
+    for (const auto& rv: info.random_variables) {
+        printer->fmt_line("nrnran123_deletestream((nrnran123_State*) {});",
+                          get_variable_name(get_name(rv), false));
+    }
+
+    printer->pop_block();
 }
 
 
-/// TODO: Print the equivalent of `nrn_alloc_<mech_name>`
 void CodegenNeuronCppVisitor::print_nrn_alloc() {
     printer->add_newline(2);
 
@@ -1673,7 +1683,14 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
         }
     }
 
-    /// TODO: CONSTRUCTOR call
+    if (!info.random_variables.empty()) {
+        for (const auto& rv: info.random_variables) {
+            printer->fmt_line("{} = nrnran123_newstream();",
+                              get_variable_name(get_name(rv), false));
+        }
+        printer->fmt_line("nrn_mech_inst_destruct[mech_type] = {};",
+                          method_name(naming::NRN_DESTRUCTOR_METHOD));
+    }
 
     printer->pop_block();
 }
@@ -2073,6 +2090,7 @@ void CodegenNeuronCppVisitor::print_codegen_routines() {
     print_prcellstate_macros();
     print_mechanism_info();
     print_data_structures(true);
+    print_nrn_destructor();
     print_nrn_alloc();
     print_function_prototypes();
     print_functors_definitions();

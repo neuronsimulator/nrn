@@ -15,6 +15,7 @@ set(NMODL_USECASE_DIRS
     net_send
     point_process
     parameter
+    random
     suffix
     state
     table
