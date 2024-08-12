@@ -435,6 +435,7 @@ def setup_package():
                 "neuronmusic",
                 ["src/neuronmusic/neuronmusic.pyx"],
                 include_dirs=["src/nrnpython", "src/nrnmusic"],
+                language="c++",
                 **extension_common_params,
             )
         ]
