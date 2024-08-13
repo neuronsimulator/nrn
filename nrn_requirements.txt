@@ -6,7 +6,7 @@ matplotlib
 # bokeh 3 seems to break docs notebooks
 bokeh<3
 ipython
-cython<3
+cython
 packaging
 pytest<=8.1.1 # potential bug from 8.2.0 due to parallelism?
 pytest-cov
