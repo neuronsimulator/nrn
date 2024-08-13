@@ -1,3 +1,5 @@
+#include <fmt/format.h>
+
 #include "ivocvect.h"
 #include "neuron/container/data_handle.hpp"
 #include "nrniv_mf.h"
@@ -471,9 +473,8 @@ static Symbol* getsym(char* name, Object* ho, int fail) {
         sym = 0;
     }
     if (!sym && fail) {
-        char e[200];
-        Sprintf(e, "'%s' is not a defined hoc variable name.", name);
-        PyErr_SetString(PyExc_LookupError, e);
+        PyErr_SetString(PyExc_LookupError,
+                        fmt::format("'{}' is not a defined hoc variable name.", name).c_str());
     }
     return sym;
 }
@@ -622,7 +623,7 @@ PyObject* nrnpy_hoc_pop(const char* mes) {
         hoc_tobj_unref(d);
         break;
     default:
-        printf("nrnpy_hoc_pop error: stack type = %d\n", hoc_stack_type());
+        fmt::print("nrnpy_hoc_pop error: stack type = {}\n", hoc_stack_type());
     }
     return result;
 }
@@ -670,7 +671,7 @@ static int set_final_from_stk(PyObject* po) {
         }
         break;
     default:
-        printf("set_final_from_stk() error: stack type = %d\n", hoc_stack_type());
+        fmt::print("set_final_from_stk() error: stack type = {}\n", hoc_stack_type());
         err = 1;
         break;
     }
@@ -1094,11 +1095,10 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                 result = cpp2refstr(cpp);
                 return result;
             } else if (sym->type != VAR && sym->type != RANGEVAR && sym->type != VARALIAS) {
-                char buf[200];
-                Sprintf(buf,
-                        "Hoc pointer error, %s is not a hoc variable or range variable or strdef",
-                        sym->name);
-                PyErr_SetString(PyExc_TypeError, buf);
+                auto buf = fmt::format(
+                    "Hoc pointer error, {} is not a hoc variable or range variable or strdef",
+                    sym->name);
+                PyErr_SetString(PyExc_TypeError, buf.c_str());
                 return NULL;
             } else {
                 isptr = 1;
@@ -1469,9 +1469,8 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
                 Py_DECREF(po);
                 return set_final_from_stk(value);
             } else {
-                char e[200];
-                Sprintf(e, "'%s' requires subscript for assignment", n);
-                PyErr_SetString(PyExc_TypeError, e);
+                auto e = fmt::format("'{}' requires subscript for assignment", n);
+                PyErr_SetString(PyExc_TypeError, e.c_str());
                 Py_DECREF(po);
                 return -1;
             }
@@ -1616,13 +1615,11 @@ static int araychk(Arrayinfo* a, PyHocObject* po, int ix) {
     if (ix < 0 || n <= ix) {
         // printf("ix=%d nsub=%d nindex=%d sub[nindex]=%d\n", ix, a->nsub,
         // po->nindex_, a->sub[po->nindex_]);
-        char e[200];
-        Sprintf(e,
-                "%s%s%s",
-                po->ho_ ? hoc_object_name(po->ho_) : "",
-                (po->ho_ && po->sym_) ? "." : "",
-                po->sym_ ? po->sym_->name : "");
-        PyErr_SetString(PyExc_IndexError, e);
+        auto e = fmt::format("{}{}{}",
+                             po->ho_ ? hoc_object_name(po->ho_) : "",
+                             (po->ho_ && po->sym_) ? "." : "",
+                             po->sym_ ? po->sym_->name : "");
+        PyErr_SetString(PyExc_IndexError, e.c_str());
         return -1;
     }
     return 0;
@@ -1897,9 +1894,8 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 ix += vector_capacity(hv);
             }
             if (ix < 0 || ix >= vector_capacity(hv)) {
-                char e[200];
-                Sprintf(e, "%s", hoc_object_name(po->ho_));
-                PyErr_SetString(PyExc_IndexError, e);
+                std::string e = hoc_object_name(po->ho_);
+                PyErr_SetString(PyExc_IndexError, e.c_str());
                 return NULL;
             } else {
                 return PyFloat_FromDouble(vector_vec(hv)[ix]);
@@ -1910,9 +1906,8 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 ix += hl->count();
             }
             if (ix < 0 || ix >= hl->count()) {
-                char e[200];
-                Sprintf(e, "%s", hoc_object_name(po->ho_));
-                PyErr_SetString(PyExc_IndexError, e);
+                std::string e = hoc_object_name(po->ho_);
+                PyErr_SetString(PyExc_IndexError, e.c_str());
                 return NULL;
             } else {
                 return nrnpy_ho2po(hl->object(ix));
@@ -1936,15 +1931,14 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 return nrnpy_ho2po(ob);
             }
         }
-        char e[200];
-        Sprintf(e, "%s[%ld] instance does not exist", po->sym_->name, ix);
-        PyErr_SetString(PyExc_IndexError, e);
+        auto e = fmt::format("{}[{}] instance does not exist", po->sym_->name, ix);
+        PyErr_SetString(PyExc_IndexError, e.c_str());
         return NULL;
     }
     if (po->type_ != PyHoc::HocArray && po->type_ != PyHoc::HocArrayIncomplete) {
-        char e[200];
-        Sprintf(e, "unsubscriptable object, type %d\n", po->type_);
-        PyErr_SetString(PyExc_TypeError, e);
+        auto e = fmt::format("unsubscriptable object, type {:d}\n",
+                             static_cast<std::underlying_type_t<decltype(po->type_)>>(po->type_));
+        PyErr_SetString(PyExc_TypeError, e.c_str());
         return NULL;
     }
     Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
@@ -2503,9 +2497,8 @@ static char* double_array_interface(PyObject* po, long& stride) {
 
 inline double pyobj_to_double_or_fail(PyObject* obj, long obj_id) {
     if (!PyNumber_Check(obj)) {
-        char buf[50];
-        Sprintf(buf, "item %d is not a valid number", obj_id);
-        hoc_execerror(buf, 0);
+        auto buf = fmt::format("item {} is not a valid number", obj_id);
+        hoc_execerror(buf.c_str(), nullptr);
     }
     return PyFloat_AsDouble(obj);
 }
@@ -2820,18 +2813,16 @@ static Object** nrnpy_vec_to_python(void* v) {
         for (int i = 0; i < size; ++i) {
             PyObject* pn = PyFloat_FromDouble(x[i]);
             if (!pn || PyList_SetItem(po, i, pn) == -1) {
-                char buf[50];
-                Sprintf(buf, "%d of %d", i, size);
-                hoc_execerror("Could not set a Python Sequence item", buf);
+                auto buf = fmt::format("{} of {}", i, size);
+                hoc_execerror("Could not set a Python Sequence item", buf.c_str());
             }
         }
     } else {  // assume PySequence_SetItem works
         for (int i = 0; i < size; ++i) {
             PyObject* pn = PyFloat_FromDouble(x[i]);
             if (!pn || PySequence_SetItem(po, i, pn) == -1) {
-                char buf[50];
-                Sprintf(buf, "%d of %d", i, size);
-                hoc_execerror("Could not set a Python Sequence item", buf);
+                auto buf = fmt::format("{} of {}", i, size);
+                hoc_execerror("Could not set a Python Sequence item", buf.c_str());
             }
             Py_DECREF(pn);
         }

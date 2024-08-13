@@ -1,3 +1,5 @@
+#include <fmt/format.h>
+
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 #include "nrn_ansi.h"
@@ -974,9 +976,8 @@ static PyObject* pyseg_repr_safe(PyObject* p) {
 
 static PyObject* hoc_internal_name(NPySecObj* self) {
     PyObject* result;
-    char buf[256];
-    Sprintf(buf, "__nrnsec_%p", self->sec_);
-    result = PyString_FromString(buf);
+    auto buf = fmt::format("__nrnsec_{}", fmt::ptr(self->sec_));
+    result = PyString_FromString(buf.c_str());
     return result;
 }
 
@@ -1410,9 +1411,8 @@ static PyObject* NPyRangeVar_name(NPyRangeVar* self) {
     PyObject* result = NULL;
     if (self->sym_) {
         if (self->isptr_) {
-            char buf[256];
-            Sprintf(buf, "_ref_%s", self->sym_->name);
-            result = PyString_FromString(buf);
+            auto buf = fmt::format("_ref_{}", self->sym_->name);
+            result = PyString_FromString(buf.c_str());
         } else {
             result = PyString_FromString(self->sym_->name);
         }
@@ -1924,15 +1924,15 @@ static Object** pp_get_segment(void* vptr) {
 }
 
 static void rv_noexist(Section* sec, const char* n, double x, int err) {
-    char buf[200];
+    std::string buf{};
     if (err == 2) {
-        Sprintf(buf, "%s was not made to point to anything at %s(%g)", n, secname(sec), x);
+        buf = fmt::format("{} was not made to point to anything at {}({})", n, secname(sec), x);
     } else if (err == 1) {
-        Sprintf(buf, "%s, the mechanism does not exist at %s(%g)", n, secname(sec), x);
+        buf = fmt::format("{}, the mechanism does not exist at {}({})", n, secname(sec), x);
     } else {
-        Sprintf(buf, "%s does not exist at %s(%g)", n, secname(sec), x);
+        buf = fmt::format("{} does not exist at {}({})", n, secname(sec), x);
     }
-    PyErr_SetString(PyExc_AttributeError, buf);
+    PyErr_SetString(PyExc_AttributeError, buf.c_str());
 }
 
 static NPyRangeVar* rvnew(Symbol* sym, NPySecObj* sec, double x) {
@@ -2356,9 +2356,8 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
     } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
         sym = ((NPyRangeVar*) rv)->sym_;
         if (is_array(*sym)) {
-            char s[200];
-            Sprintf(s, "%s needs an index for assignment", sym->name);
-            PyErr_SetString(PyExc_IndexError, s);
+            auto s = fmt::format("{} needs an index for assignment", sym->name);
+            PyErr_SetString(PyExc_IndexError, s.c_str());
             return -1;
         } else {
             int errp;
@@ -2627,14 +2626,13 @@ neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject* pyname
     }
     NPyMechObj* m = (NPyMechObj*) mech;
     Symbol* msym = memb_func[m->type_].sym;
-    char buf[200];
     Py2NRNString name(pyname);
     char* n = name.c_str();
     if (!n) {
         return nullptr;
     }
-    Sprintf(buf, "%s_%s", n, msym->name);
-    Symbol* sym = var_find_in_mech(msym, buf);
+    auto buf = fmt::format("{}_{}", n, msym->name);
+    Symbol* sym = var_find_in_mech(msym, buf.c_str());
     if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
         return nullptr;
     }

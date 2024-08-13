@@ -49,7 +49,7 @@ static void call_python_with_section(Object* pyact, Section* sec) {
     if (!r) {
         char* mes = nrnpyerr_str();
         if (mes) {
-            Fprintf(stderr, "%s\n", mes);
+            std::cerr << mes << std::endl;
             free(mes);
             hoc_execerror("Call of Python Callable failed", NULL);
         }
@@ -128,7 +128,7 @@ printf("\nreturn %p\n", p);
     if (!p) {
       char* mes = nrnpyerr_str();
       if (mes) {
-        Fprintf(stderr, "%s\n", mes);
+        std::cerr << mes << std::endl;
         free(mes);
         hoc_execerror("Call of Python Callable failed", NULL);
       }
@@ -204,7 +204,7 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             Py_XDECREF(tail);
             Py_XDECREF(head);
             if (mes) {
-                Fprintf(stderr, "%s\n", mes);
+                std::cerr << mes << std::endl;
                 free(mes);
                 hoc_execerror("PyObject method call failed:", sym->name);
             }
@@ -385,7 +385,7 @@ static double praxis_efun(Object* ho, Object* v) {
     if (!r) {
         char* mes = nrnpyerr_str();
         if (mes) {
-            Fprintf(stderr, "%s\n", mes);
+            std::cerr << mes << std::endl;
             free(mes);
             hoc_execerror("Call of Python Callable failed in praxis_efun", NULL);
         }
@@ -435,7 +435,7 @@ static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
     } else {
         char* mes = nrnpyerr_str();
         if (mes) {
-            Fprintf(stderr, "%s\n", mes);
+            std::cerr << mes << std::endl;
             free(mes);
             hoc_execerror("Python Callback failed", 0);
         }
@@ -459,7 +459,7 @@ static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
     if (!r) {
         char* mes = nrnpyerr_str();
         if (mes) {
-            Fprintf(stderr, "%s\n", mes);
+            std::cerr << mes << std::endl;
             free(mes);
             hoc_execerror("Python Callback failed", 0);
         }
@@ -529,7 +529,7 @@ static double func_call(Object* ho, int narg, int* err) {
         if (!err || *err) {
             char* mes = nrnpyerr_str();
             if (mes) {
-                Fprintf(stderr, "%s\n", mes);
+                std::cerr << mes << std::endl;
                 free(mes);
             }
             if (PyErr_Occurred()) {
@@ -712,18 +712,18 @@ static char* nrnpyerr_str() {
         if (py_str) {
             Py2NRNString mes(py_str);
             if (mes.err()) {
-                Fprintf(stderr, "nrnperr_str: Py2NRNString failed\n");
+                std::cerr << "nrnperr_str: Py2NRNString failed" << std::endl;
             } else {
                 cmes = strdup(mes.c_str());
                 if (!cmes) {
-                    Fprintf(stderr, "nrnpyerr_str: strdup failed\n");
+                    std::cerr << "nrnpyerr_str: strdup failed" << std::endl;
                 }
             }
         }
 
         if (!py_str) {
             PyErr_Print();
-            Fprintf(stderr, "nrnpyerr_str failed\n");
+            std::cerr << "nrnpyerr_str failed" << std::endl;
         }
 
         Py_XDECREF(module_name);
@@ -769,7 +769,7 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
     if (!result) {
         char* mes = nrnpyerr_str();
         if (mes) {
-            Fprintf(stderr, "%s\n", mes);
+            std::cerr << mes << std::endl;
             free(mes);
             hoc_execerror("PyObject method call failed:", NULL);
         }
