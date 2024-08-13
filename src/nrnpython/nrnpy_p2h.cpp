@@ -2,9 +2,6 @@
 
 #include <cstdio>
 
-#include <nanobind/nanobind.h>
-namespace nb = nanobind;
-
 #include <InterViews/resource.h>
 #include <nrnoc2iv.h>
 #include <classreg.h>
@@ -15,6 +12,10 @@ namespace nb = nanobind;
 #include "oc_ansi.h"
 
 #include "parse.hpp"
+
+#include <nanobind/nanobind.h>
+namespace nb = nanobind;
+
 static void nrnpy_decref_defer(PyObject*);
 static char* nrnpyerr_str();
 static PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
