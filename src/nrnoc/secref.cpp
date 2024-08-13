@@ -178,6 +178,10 @@ static double s_rename(void* v) {
                 hoc_objectdata = obdsav;
                 return 0;
             }
+            if (sec->prop->dparam[0].get<Symbol*>()) {
+                Printf("Item %d of second list arg, %s, must first be unnamed\n", i, secname(sec));
+                return 0;
+            }
             qsec = sec->prop->dparam[8].get<hoc_Item*>();
             sec->prop->dparam[0] = sym;
             sec->prop->dparam[5] = i;
