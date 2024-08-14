@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -xe
+set -eux
 # A script to build a static readline library for osx
 #
 # PREREQUESITES:
