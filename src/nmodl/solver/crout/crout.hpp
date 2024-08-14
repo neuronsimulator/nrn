@@ -50,9 +50,11 @@ EIGEN_DEVICE_FUNC inline int Crout(int n, T* const a, int* const perm, double* c
     for (i = 0; i < n; i++) {
         perm[i] = i;
         k = 0;
-        for (j = 1; j < n; j++)
-            if (std::fabs(a[i * n + j]) > std::fabs(a[i * n + k]))
+        for (j = 1; j < n; j++) {
+            if (std::fabs(a[i * n + j]) > std::fabs(a[i * n + k])) {
                 k = j;
+            }
+        }
         rowmax[i] = a[i * n + k];
     }
 
@@ -99,8 +101,9 @@ EIGEN_DEVICE_FUNC inline int Crout(int n, T* const a, int* const perm, double* c
 
         /* Check that pivot element is not too small */
 
-        if (std::fabs(a[pivot * n + r]) < roundoff)
+        if (std::fabs(a[pivot * n + r]) < roundoff) {
             return -1;
+        }
 
         /*
          * Operate on row in rth position.  This produces the upper
@@ -151,8 +154,9 @@ EIGEN_DEVICE_FUNC inline int solveCrout(int n,
         for (i = 0; i < n; i++) {
             pivot = perm[i];
             sum = 0.0;
-            for (j = 0; j < i; j++)
+            for (j = 0; j < i; j++) {
                 sum += a[pivot * n + j] * (y_(j));
+            }
             y_(i) = (b_(pivot) - sum) / a[pivot * n + i];
         }
 
@@ -166,16 +170,18 @@ EIGEN_DEVICE_FUNC inline int solveCrout(int n,
         for (i = n - 1; i >= 0; i--) {
             pivot = perm[i];
             sum = 0.0;
-            for (j = i + 1; j < n; j++)
+            for (j = i + 1; j < n; j++) {
                 sum += a[pivot * n + j] * (y_(j));
+            }
             y_(i) -= sum;
         }
     } else {
         for (i = 0; i < n; i++) {
             pivot = perm[i];
             sum = 0.0;
-            for (j = 0; j < i; j++)
+            for (j = 0; j < i; j++) {
                 sum += a[pivot * n + j] * (p[j]);
+            }
             p[i] = (b_(pivot) - sum) / a[pivot * n + i];
         }
 
@@ -189,8 +195,9 @@ EIGEN_DEVICE_FUNC inline int solveCrout(int n,
         for (i = n - 1; i >= 0; i--) {
             pivot = perm[i];
             sum = 0.0;
-            for (j = i + 1; j < n; j++)
+            for (j = i + 1; j < n; j++) {
                 sum += a[pivot * n + j] * (p[j]);
+            }
             p[i] -= sum;
         }
     }

@@ -76,13 +76,15 @@ EIGEN_DEVICE_FUNC int newton_solver(Eigen::Matrix<double, N, 1>& X,
         // Crout's implementation requires matrices stored in RowMajor order (C-style arrays).
         // Therefore, the transposeInPlace is critical such that the data() method to give the rows
         // instead of the columns.
-        if (!J.IsRowMajor)
+        if (!J.IsRowMajor) {
             J.transposeInPlace();
+        }
         Eigen::Matrix<int, N, 1> pivot;
         Eigen::Matrix<double, N, 1> rowmax;
         // Check if J is singular
-        if (nmodl::crout::Crout<double>(N, J.data(), pivot.data(), rowmax.data()) < 0)
+        if (nmodl::crout::Crout<double>(N, J.data(), pivot.data(), rowmax.data()) < 0) {
             return -1;
+        }
         Eigen::Matrix<double, N, 1> X_solve;
         nmodl::crout::solveCrout<double>(N, J.data(), F.data(), X_solve.data(), pivot.data());
         X -= X_solve;
@@ -156,13 +158,15 @@ EIGEN_DEVICE_FUNC int newton_numerical_diff_solver(Eigen::Matrix<double, N, 1>& 
             // restore X
             X[i] += dX;
         }
-        if (!J.IsRowMajor)
+        if (!J.IsRowMajor) {
             J.transposeInPlace();
+        }
         Eigen::Matrix<int, N, 1> pivot;
         Eigen::Matrix<double, N, 1> rowmax;
         // Check if J is singular
-        if (nmodl::crout::Crout<double>(N, J.data(), pivot.data(), rowmax.data()) < 0)
+        if (nmodl::crout::Crout<double>(N, J.data(), pivot.data(), rowmax.data()) < 0) {
             return -1;
+        }
         Eigen::Matrix<double, N, 1> X_solve;
         nmodl::crout::solveCrout<double>(N, J.data(), F.data(), X_solve.data(), pivot.data());
         X -= X_solve;
@@ -195,10 +199,11 @@ EIGEN_DEVICE_FUNC int newton_solver_small_N(Eigen::Matrix<double, N, 1>& X,
         // The inverse can be called from within OpenACC regions without any issue, as opposed to
         // Eigen::PartialPivLU.
         J.computeInverseWithCheck(J_inv, invertible);
-        if (invertible)
+        if (invertible) {
             X -= J_inv * F;
-        else
+        } else {
             return -1;
+        }
     }
     return -1;
 }
