@@ -37,10 +37,10 @@ lst = h.List()
 for i in [0, 2, 3]:
     lst.append(sr[i])
 sr[0].unname()
-assert sr[0].rename("x", lst) == False  # have not unnamed c and d
+assert sr[0].rename("x", lst) == 0  # have not unnamed c and d
 for i in lst:
     i.unname()
-assert sr[0].rename("x", lst) == True
+assert sr[0].rename("x", lst) == 1
 h.topology()
 print("cover a deleted section message")
 h.delete_section(sec=h.x[1])
@@ -117,9 +117,9 @@ expect_err("sr[1].child[5]")
 
 h("create soma")
 sr = h.SectionRef(sec=h.soma)
-assert sr.exists() == True
+assert sr.exists() is True
 h.delete_section(sec=h.soma)
-assert sr.exists() == False
+assert sr.exists() is False
 
 h(
     """
