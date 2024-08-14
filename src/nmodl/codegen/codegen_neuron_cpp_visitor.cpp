@@ -231,15 +231,12 @@ void CodegenNeuronCppVisitor::print_setdata_functions() {
 }
 
 
-/// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_function_prototypes() {
     printer->add_newline(2);
 
     print_point_process_function_definitions();
     print_setdata_functions();
     print_check_table_function_prototypes();
-
-    /// TODO: Add mechanism function and procedures declarations
 }
 
 
@@ -542,7 +539,6 @@ void CodegenNeuronCppVisitor::append_conc_write_statements(
 /****************************************************************************************/
 
 
-/// TODO: Edit for NEURON
 std::string CodegenNeuronCppVisitor::float_variable_name(const SymbolType& symbol,
                                                          bool use_instance) const {
     if (!use_instance) {
@@ -1079,7 +1075,6 @@ void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
 }
 
 void CodegenNeuronCppVisitor::print_mechanism_register() {
-    /// TODO: Write this according to NEURON
     printer->add_newline(2);
     printer->add_line("/** register channel with the simulator */");
     printer->fmt_push_block("extern \"C\" void _{}_reg()", info.mod_file);
@@ -1700,7 +1695,6 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
 /*                                 Print nrn_state routine                              */
 /****************************************************************************************/
 
-/// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_nrn_state() {
     if (!nrn_state_required()) {
         return;
@@ -1778,7 +1772,6 @@ CodegenNeuronCppVisitor::ParamVector CodegenNeuronCppVisitor::nrn_current_parame
 }
 
 
-/// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_nrn_current(const BreakpointBlock& node) {
     const auto& args = nrn_current_parameters();
     const auto& block = node.get_statement_block();
@@ -1797,7 +1790,6 @@ void CodegenNeuronCppVisitor::print_nrn_current(const BreakpointBlock& node) {
 }
 
 
-/// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_nrn_cur_conductance_kernel(const BreakpointBlock& node) {
     const auto& block = node.get_statement_block();
     print_statement_block(*block, false, false);
@@ -1836,7 +1828,6 @@ void CodegenNeuronCppVisitor::print_nrn_cur_conductance_kernel(const BreakpointB
 }
 
 
-/// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_nrn_cur_non_conductance_kernel() {
     printer->fmt_line("double I1 = nrn_current_{}({}+0.001);",
                       info.mod_suffix,
@@ -1871,7 +1862,6 @@ void CodegenNeuronCppVisitor::print_nrn_cur_non_conductance_kernel() {
 }
 
 
-/// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_nrn_cur_kernel(const BreakpointBlock& node) {
     printer->add_line("int node_id = node_data.nodeindices[id];");
     printer->add_line("double v = node_data.node_voltages[node_id];");
@@ -2023,7 +2013,6 @@ void CodegenNeuronCppVisitor::print_mechanism_variables_macros() {
     } else {
         printer->add_line("Prop* hoc_getdata_range(int type);");
     }
-    /// TODO: More prints here?
     // for registration of tables
     if (info.table_count > 0) {
         printer->add_line("void _nrn_thread_table_reg(int, nrn_thread_table_check_t);");
@@ -2062,7 +2051,6 @@ void CodegenNeuronCppVisitor::print_g_unused() const {
 }
 
 
-/// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_compute_functions() {
     print_hoc_py_wrapper_function_definitions();
     for (const auto& procedure: info.procedures) {
@@ -2079,7 +2067,6 @@ void CodegenNeuronCppVisitor::print_compute_functions() {
 }
 
 
-/// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::print_codegen_routines() {
     print_backend_info();
     print_headers_include();
