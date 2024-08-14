@@ -11,6 +11,8 @@ class Blame {
     Blame(size_t blame_line)
         : blame_line(blame_line) {}
 
+    virtual ~Blame() = default;
+
     template <class OStream>
     void operator()(OStream& os, size_t current_line) const {
         if (blame_line == current_line) {
