@@ -625,6 +625,10 @@ static void setpickle() {
     if (!dumps || !loads) {
         hoc_execerror("Neither Python cPickle nor pickle are available", 0);
     }
+    // We intentionally leak these, because if we don't
+    // we observe SEGFAULTS during application shutdown.
+    // Likely because "~nb::callable" runs after the Python
+    // library cleaned up.
     dumps.inc_ref();
     loads.inc_ref();
 }
@@ -798,8 +802,7 @@ static PyObject* char2pylist(char* buf, int np, int* cnt, int* displ) {
             PyList_SetItem(plist, i, Py_None);
         } else {
             nb::object po = unpickle(buf + displ[i], cnt[i]);
-            po.inc_ref();
-            PyObject* p = po.ptr();
+            PyObject* p = po.release.ptr();
             PyList_SetItem(plist, i, p);
         }
     }
@@ -873,8 +876,7 @@ static PyObject* py_broadcast(PyObject* psrc, int root) {
     PyObject* pdest = psrc;
     if (root != nrnmpi_myid) {
         nb::object po = unpickle(buf);
-        po.inc_ref();
-        pdest = po.ptr();
+        pdest = po.release().ptr();
     } else {
         Py_INCREF(pdest);
     }
@@ -1083,8 +1085,7 @@ static Object* py_alltoall_type(int size, int type) {
 
             if (rcnt[0]) {
                 nb::object po = unpickle(r);
-                po.inc_ref();
-                pdest = po.ptr();
+                pdest = po.release().ptr();
             } else {
                 pdest = Py_None;
                 Py_INCREF(pdest);
