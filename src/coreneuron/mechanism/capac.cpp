@@ -9,10 +9,6 @@
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/permute/data_layout.hpp"
 
-#define _PRAGMA_FOR_INIT_ACC_LOOP_                                                               \
-    nrn_pragma_acc(parallel loop present(vdata [0:_cntml_padded * nparm]) if (_nt->compute_gpu)) \
-    nrn_pragma_omp(target teams distribute parallel for simd if(_nt->compute_gpu))
-#define CNRN_FLAT_INDEX_IML_ROW(i) ((i) * (_cntml_padded) + (_iml))
 
 namespace coreneuron {
 
@@ -23,7 +19,7 @@ void nrn_jacob_capacitance(NrnThread*, Memb_list*, int);
 void nrn_div_capacity(NrnThread*, Memb_list*, int);
 void nrn_mul_capacity(NrnThread*, Memb_list*, int);
 
-#define nparm 2
+static constexpr int nparm = 2;
 
 void capacitance_reg(void) {
     /* all methods deal with capacitance in special ways */
@@ -42,8 +38,6 @@ void capacitance_reg(void) {
     hoc_register_prop_size(mechtype, nparm, 0);
 }
 
-#define cm    vdata[CNRN_FLAT_INDEX_IML_ROW(0)]
-#define i_cap vdata[CNRN_FLAT_INDEX_IML_ROW(1)]
 
 /*
 cj is analogous to 1/dt for cvode and daspk
@@ -55,7 +49,6 @@ It used to be static but is now a thread data variable
 void nrn_jacob_capacitance(NrnThread* _nt, Memb_list* ml, int /* type */) {
     int _cntml_actual = ml->nodecount;
     int _cntml_padded = ml->_nodecount_padded;
-    int _iml;
     double* vdata;
     double cfac = .001 * _nt->cj;
     (void) _cntml_padded; /* unused when layout=1*/
@@ -66,12 +59,14 @@ void nrn_jacob_capacitance(NrnThread* _nt, Memb_list* ml, int /* type */) {
         int* ni = ml->nodeindices;
 
         vdata = ml->data;
+
         nrn_pragma_acc(parallel loop present(vdata [0:_cntml_padded * nparm],
                                              ni [0:_cntml_actual],
                                              _vec_d [0:_nt->end]) if (_nt->compute_gpu)
                            async(_nt->stream_id))
         nrn_pragma_omp(target teams distribute parallel for simd if(_nt->compute_gpu))
-        for (_iml = 0; _iml < _cntml_actual; _iml++) {
+        for (int _iml = 0; _iml < _cntml_actual; _iml++) {
+            auto& cm = vdata[_iml];
             _vec_d[ni[_iml]] += cfac * cm;
         }
     }
@@ -89,8 +84,11 @@ void nrn_init_capacitance(NrnThread* _nt, Memb_list* ml, int /* type */) {
     }
 
     vdata = ml->data;
-    _PRAGMA_FOR_INIT_ACC_LOOP_
+
+    nrn_pragma_acc(parallel loop present(vdata [0:_cntml_padded * nparm]) if (_nt->compute_gpu))
+    nrn_pragma_omp(target teams distribute parallel for simd if(_nt->compute_gpu))
     for (int _iml = 0; _iml < _cntml_actual; _iml++) {
+        auto& i_cap = vdata[_cntml_padded + _iml];
         i_cap = 0;
     }
 }
@@ -112,12 +110,15 @@ void nrn_cur_capacitance(NrnThread* _nt, Memb_list* ml, int /* type */) {
     double* _vec_rhs = _nt->_actual_rhs;
 
     vdata = ml->data;
+
     nrn_pragma_acc(parallel loop present(vdata [0:_cntml_padded * nparm],
                                          ni [0:_cntml_actual],
                                          _vec_rhs [0:_nt->end]) if (_nt->compute_gpu)
                        async(_nt->stream_id))
     nrn_pragma_omp(target teams distribute parallel for simd if(_nt->compute_gpu))
     for (int _iml = 0; _iml < _cntml_actual; _iml++) {
+        auto& cm = vdata[_iml];
+        auto& i_cap = vdata[_cntml_padded + _iml];
         i_cap = cfac * cm * _vec_rhs[ni[_iml]];
     }
 }
@@ -134,7 +135,6 @@ void nrn_div_capacity(NrnThread* _nt, Memb_list* ml, int type) {
     (void) type;
     int _cntml_actual = ml->nodecount;
     int _cntml_padded = ml->_nodecount_padded;
-    int _iml;
     double* vdata;
     (void) _nt;
     (void) type;
@@ -143,8 +143,11 @@ void nrn_div_capacity(NrnThread* _nt, Memb_list* ml, int type) {
     int* ni = ml->nodeindices;
 
     vdata = ml->data;
-    _PRAGMA_FOR_INIT_ACC_LOOP_
-    for (_iml = 0; _iml < _cntml_actual; _iml++) {
+    nrn_pragma_acc(parallel loop present(vdata [0:_cntml_padded * nparm]) if (_nt->compute_gpu))
+    nrn_pragma_omp(target teams distribute parallel for simd if(_nt->compute_gpu))
+    for (int _iml = 0; _iml < _cntml_actual; _iml++) {
+        auto& cm = vdata[_iml];
+        auto& i_cap = vdata[_cntml_padded + _iml];
         i_cap = VEC_RHS(ni[_iml]);
         VEC_RHS(ni[_iml]) /= 1.e-3 * cm;
         // fprintf(stderr, "== nrn_div_cap: RHS[%d]=%.12f\n", ni[_iml], VEC_RHS(ni[_iml])) ;
@@ -155,7 +158,6 @@ void nrn_mul_capacity(NrnThread* _nt, Memb_list* ml, int type) {
     (void) type;
     int _cntml_actual = ml->nodecount;
     int _cntml_padded = ml->_nodecount_padded;
-    int _iml;
     double* vdata;
     (void) _nt;
     (void) type;
@@ -166,8 +168,11 @@ void nrn_mul_capacity(NrnThread* _nt, Memb_list* ml, int type) {
     const double cfac = .001 * _nt->cj;
 
     vdata = ml->data;
-    _PRAGMA_FOR_INIT_ACC_LOOP_
-    for (_iml = 0; _iml < _cntml_actual; _iml++) {
+
+    nrn_pragma_acc(parallel loop present(vdata [0:_cntml_padded * nparm]) if (_nt->compute_gpu))
+    nrn_pragma_omp(target teams distribute parallel for simd if(_nt->compute_gpu))
+    for (int _iml = 0; _iml < _cntml_actual; _iml++) {
+        auto& cm = vdata[_iml];
         VEC_RHS(ni[_iml]) *= cfac * cm;
     }
 }
