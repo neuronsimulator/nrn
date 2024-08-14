@@ -16,13 +16,19 @@ echo %NEURONHOME%
 :: If so, try again to generate it. No wait required like previous strategies, we rely on testing entropy from this point on.
 if not exist association.hoc.out (start /wait /REALTIME %cd%\ci\association.hoc)
 
+:: install oldest supported numpy
+C:\Python38\python.exe -m pip install numpy==1.19.5 || goto :error
+C:\Python39\python.exe -m pip install numpy==1.19.5 || goto :error
+C:\Python310\python.exe -m pip install numpy==1.21.6 || goto :error
+C:\Python311\python.exe -m pip install numpy==1.23.5 || goto :error
+C:\Python312\python.exe -m pip install numpy==1.26.4 || goto :error
+
 :: test all pythons
 C:\Python38\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python39\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python310\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python311\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
-:: install numpy dependency
-python -m pip install "numpy"
+C:\Python312\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 :: run also using whatever is system python
 python --version
 python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
