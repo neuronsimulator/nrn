@@ -5,14 +5,16 @@ set -eux
 # PREREQUESITES:
 #  - curl
 #  - C/C++ compiler
-#  - /opt/nrnwheel folder created with access rights (this specific path is kept for consistency wrt `build_wheels.bash`)
+#  - /opt/nrnwheel/[ARCH] folder created with access rights (this specific path is kept for consistency wrt `build_wheels.bash`)
 
 if [[ "$(uname -s)" != 'Darwin' ]]; then
     echo "Error: this script is for macOS only. readline is already built statically in the linux Docker images"
     exit 1
 fi
 
-NRNWHEEL_DIR="${1:-/opt/nrnwheel/$(uname -m)}"
+ARCH="$(uname -m)"
+
+NRNWHEEL_DIR="${1:-/opt/nrnwheel/${ARCH}}"
 if [[ ! -d "$NRNWHEEL_DIR" || ! -x "$NRNWHEEL_DIR" ]]; then
     echo "Error: ${NRNWHEEL_DIR} must exist and be accessible, i.e: sudo mkdir -p ${NRNWHEEL_DIR} && sudo chown -R ${USER} ${NRNWHEEL_DIR}"
     exit 1
@@ -20,7 +22,7 @@ fi
 
 # Set MACOSX_DEPLOYMENT_TARGET based on wheel arch.
 # For upcoming `universal2` wheels we will consider leveling everything to 11.0.
-if [[ "$(uname -m)" == 'arm64' ]]; then
+if [[ "${ARCH}" == 'arm64' ]]; then
 	export MACOSX_DEPLOYMENT_TARGET=11.0  # for arm64 we need 11.0
 else
 	export MACOSX_DEPLOYMENT_TARGET=10.9  # for x86_64
