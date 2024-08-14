@@ -1492,21 +1492,7 @@ void CodegenNeuronCppVisitor::print_nrn_init(bool skip_init_check) {
         printer->fmt_line("inst.{}[id] = v;", naming::VOLTAGE_UNUSED_VARIABLE);
     }
 
-    for (auto state: info.state_vars) {
-        auto state_name = state->get_name();
-        auto lhs_name = get_variable_name(state_name);
-        auto rhs_name = get_variable_name(state_name + "0");
-
-        if (!state->is_array()) {
-            auto state_name = state->get_name();
-            printer->fmt_line("{} = {};", lhs_name, rhs_name);
-        } else {
-            auto n_elements = state->get_length();
-            printer->fmt_push_block("for(size_t _i = 0; _i < {}; ++_i)", n_elements);
-            printer->fmt_line("{}[_i] = {};", lhs_name, rhs_name);
-            printer->pop_block();
-        }
-    }
+    print_rename_state_vars();
 
     print_initial_block(info.initial_node);
     printer->pop_block();

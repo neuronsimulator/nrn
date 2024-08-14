@@ -1793,21 +1793,7 @@ void CodegenCoreneuronCppVisitor::print_initial_block(const InitialBlock* node) 
         printer->add_line(statement);
     }
 
-    // initialize state variables (excluding ion state)
-    for (auto& var: info.state_vars) {
-        auto name = var->get_name();
-        if (!info.is_ionic_conc(name)) {
-            auto lhs = get_variable_name(name);
-            auto rhs = get_variable_name(name + "0");
-            if (var->is_array()) {
-                for (int i = 0; i < var->get_length(); ++i) {
-                    printer->fmt_line("{}[{}] = {};", lhs, i, rhs);
-                }
-            } else {
-                printer->fmt_line("{} = {};", lhs, rhs);
-            }
-        }
-    }
+    print_rename_state_vars();
 
     // initial block
     if (node != nullptr) {

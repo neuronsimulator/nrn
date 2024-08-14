@@ -1516,6 +1516,8 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
                                     const std::string& name,
                                     const std::unordered_set<CppObjectSpecifier>& = {
                                         CppObjectSpecifier::Inline});
+
+    void print_rename_state_vars() const;
 };
 
 /* Templated functions need to be defined in header file */
