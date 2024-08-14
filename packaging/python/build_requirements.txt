@@ -1,4 +1,4 @@
-cython<3
+cython
 packaging
 numpy==1.17.5;python_version=='3.8'
 numpy==1.19.3;python_version=='3.9' and platform_machine!='arm64'
