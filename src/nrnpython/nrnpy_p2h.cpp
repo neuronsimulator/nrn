@@ -802,7 +802,7 @@ static PyObject* char2pylist(char* buf, int np, int* cnt, int* displ) {
             PyList_SetItem(plist, i, Py_None);
         } else {
             nb::object po = unpickle(buf + displ[i], cnt[i]);
-            PyObject* p = po.release.ptr();
+            PyObject* p = po.release().ptr();
             PyList_SetItem(plist, i, p);
         }
     }
