@@ -6,6 +6,8 @@
 #include "symbol.h"
 
 #include <cstdlib>
+#include <string>
+#include <unordered_map>
 
 /* make it an error if 2 solve statements are called on a single call to
 model() */
@@ -126,20 +128,13 @@ void solvhandler() {
         lq = lq->next;
         method = SYM(lq);
         cvodemethod_ = 0;
-        if (method && strcmp(method->name, "after_cvode") == 0) {
-            method = (Symbol*) 0;
-            lq->element.sym = (Symbol*) 0;
-            cvodemethod_ = 1;
-        }
-        if (method && strcmp(method->name, "cvode_t") == 0) {
-            method = (Symbol*) 0;
-            lq->element.sym = (Symbol*) 0;
-            cvodemethod_ = 2;
-        }
-        if (method && strcmp(method->name, "cvode_v") == 0) {
-            method = (Symbol*) 0;
-            lq->element.sym = (Symbol*) 0;
-            cvodemethod_ = 3;
+        const std::unordered_map<std::string, int> methods = {{"after_cvode", 1},
+                                                              {"cvode_t", 2},
+                                                              {"cvode_v", 3}};
+        if (method && methods.count(method->name)) {
+            cvodemethod_ = methods.at(method->name);
+            method = nullptr;
+            lq->element.sym = nullptr;
         }
         lq = lq->next;
         errstmt = LST(lq);
