@@ -316,6 +316,8 @@ static NPyMechObj* new_pymechobj() {
         // it as "null". So later `a = b` might segfault because copy constructor decrements the
         // refcount of `a`s nonsense memory.
         new (&m->prop_id_) neuron::container::non_owning_identifier_without_container;
+        m->pyseg_ = nullptr;
+        m->prop_ = nullptr;
     }
 
     return m;
@@ -327,8 +329,8 @@ static NPyMechObj* new_pymechobj(NPySegObj* pyseg, Prop* p) {
     if (!m) {
         return NULL;
     }
+    Py_INCREF(pyseg);
     m->pyseg_ = pyseg;
-    Py_INCREF(m->pyseg_);
     m->prop_ = p;
     m->prop_id_ = p->id();
     m->type_ = p->_type;
@@ -441,8 +443,8 @@ static int NPyAllSegOfSecIter_init(NPyAllSegOfSecIter* self, PyObject* args, PyO
             return -1;
         }
         self->allseg_iter_ = 0;
-        self->pysec_ = pysec;
         Py_INCREF(pysec);
+        self->pysec_ = pysec;
     }
     return 0;
 }
@@ -510,9 +512,9 @@ static PyObject* NPySegObj_new(PyTypeObject* type, PyObject* args, PyObject* /* 
     self = (NPySegObj*) type->tp_alloc(type, 0);
     // printf("NPySegObj_new %p\n", self);
     if (self != NULL) {
+        Py_INCREF(pysec);
         self->pysec_ = pysec;
         self->x_ = x;
-        Py_INCREF(self->pysec_);
     }
     return (PyObject*) self;
 }
@@ -532,8 +534,8 @@ static PyObject* NPyMechObj_new(PyTypeObject* type, PyObject* args, PyObject* /*
     // ((PyObject*)self)->ob_type->tp_name);
     if (self != NULL) {
         new (self) NPyMechObj;
+        Py_INCREF(pyseg);
         self->pyseg_ = pyseg;
-        Py_INCREF(self->pyseg_);
     }
     return (PyObject*) self;
 }
@@ -1200,7 +1202,7 @@ static PyObject* pysec_wholetree_safe(NPySecObj* const self) {
 static PyObject* pysec2cell(NPySecObj* self) {
     PyObject* result;
     if (self->cell_weakref_) {
-        result = PyWeakref_GET_OBJECT(self->cell_weakref_);
+        result = PyWeakref_GetObject(self->cell_weakref_);
         Py_INCREF(result);
     } else if (auto* o = self->sec_->prop->dparam[6].get<Object*>(); self->sec_->prop && o) {
         result = nrnpy_ho2po(o);
@@ -1362,12 +1364,8 @@ static PyObject* NPyMechObj_is_ion_safe(NPyMechObj* self) {
 
 static PyObject* NPyMechObj_segment(NPyMechObj* self) {
     CHECK_PROP_INVALID(self->prop_id_);
-    PyObject* result = NULL;
-    if (self->pyseg_) {
-        result = (PyObject*) (self->pyseg_);
-        Py_INCREF(result);
-    }
-    return result;
+    Py_XINCREF(self->pyseg_);
+    return (PyObject*) self->pyseg_;
 }
 
 static PyObject* NPyMechObj_segment_safe(NPyMechObj* self) {
@@ -1375,13 +1373,12 @@ static PyObject* NPyMechObj_segment_safe(NPyMechObj* self) {
 }
 
 static PyObject* NPyMechFunc_mech(NPyMechFunc* self) {
-    PyObject* result = NULL;
-    if (self->pymech_) {
-        CHECK_PROP_INVALID(self->pymech_->prop_id_);
-        result = (PyObject*) (self->pymech_);
-        Py_INCREF(result);
+    auto* pymech = self->pymech_;
+    if (pymech) {
+        CHECK_PROP_INVALID(pymech->prop_id_);
+        Py_INCREF(pymech);
     }
-    return result;
+    return (PyObject*) pymech;
 }
 
 static PyObject* NPyMechFunc_mech_safe(NPyMechFunc* self) {
@@ -1428,13 +1425,12 @@ static PyObject* NPyRangeVar_name_safe(NPyRangeVar* self) {
 }
 
 static PyObject* NPyRangeVar_mech(NPyRangeVar* self) {
-    CHECK_SEC_INVALID(self->pymech_->pyseg_->pysec_->sec_);
-    PyObject* result = NULL;
-    if (self->pymech_) {
-        result = (PyObject*) self->pymech_;
-        Py_INCREF(result);
+    auto* pymech = self->pymech_;
+    if (pymech) {
+        CHECK_SEC_INVALID(pymech->pyseg_->pysec_->sec_);
+        Py_INCREF(pymech);
     }
-    return result;
+    return (PyObject*) pymech;
 }
 
 static PyObject* NPyRangeVar_mech_safe(NPyRangeVar* self) {
@@ -1477,12 +1473,12 @@ static PyObject* NPySecObj_connect(NPySecObj* self, PyObject* args) {
         PyErr_SetString(PyExc_ValueError, "child connection end must be  0 or 1");
         return NULL;
     }
-    Py_INCREF(self);
     hoc_pushx(childend);
     hoc_pushx(parentx);
     nrn_pushsec(self->sec_);
     nrn_pushsec(parent->sec_);
     simpleconnectsection();
+    Py_INCREF(self);
     return (PyObject*) self;
 }
 
@@ -1615,8 +1611,8 @@ static PyObject* allseg(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
     // printf("allseg\n");
     NPyAllSegOfSecIter* ai = PyObject_New(NPyAllSegOfSecIter, pallseg_of_sec_iter_type);
-    ai->pysec_ = self;
     Py_INCREF(self);
+    ai->pysec_ = self;
     ai->allseg_iter_ = -1;
     return (PyObject*) ai;
 }
@@ -1626,8 +1622,8 @@ static PyObject* allseg_safe(NPySecObj* self) {
 }
 
 static PyObject* allseg_of_sec_iter(NPyAllSegOfSecIter* self) {
-    Py_INCREF(self);
     self->allseg_iter_ = -1;
+    Py_INCREF(self);
     return (PyObject*) self;
 }
 
@@ -1647,8 +1643,8 @@ static PyObject* allseg_of_sec_next(NPyAllSegOfSecIter* self) {
         // error
         return NULL;
     }
-    seg->pysec_ = self->pysec_;
     Py_INCREF(self->pysec_);
+    seg->pysec_ = self->pysec_;
     if (self->allseg_iter_ == -1) {
         seg->x_ = 0.;
     } else if (self->allseg_iter_ == n1) {
@@ -1676,8 +1672,8 @@ static PyObject* seg_of_sec_next(NPySegOfSecIter* self) {
         // error
         return NULL;
     }
-    seg->pysec_ = self->pysec_;
     Py_INCREF(self->pysec_);
+    seg->pysec_ = self->pysec_;
     seg->x_ = (double(self->seg_iter_) + 0.5) / ((double) n1);
     ++self->seg_iter_;
     return (PyObject*) seg;
@@ -1899,7 +1895,6 @@ static Object* seg_from_sec_x(Section* sec, double x) {
         pysec->sec_ = sec;
         pysec->name_ = 0;
         pysec->cell_weakref_ = 0;
-        Py_INCREF(pysec);
         pseg->pysec_ = pysec;
     }
     pseg->x_ = x;
@@ -1942,8 +1937,8 @@ static NPyRangeVar* rvnew(Symbol* sym, NPySecObj* sec, double x) {
     }
     r->pymech_ = new_pymechobj();
     r->pymech_->pyseg_ = PyObject_New(NPySegObj, psegment_type);
-    r->pymech_->pyseg_->pysec_ = sec;
     Py_INCREF(sec);
+    r->pymech_->pyseg_->pysec_ = sec;
     r->pymech_->pyseg_->x_ = 0.5;
     r->sym_ = sym;
     r->isptr_ = 0;
@@ -2152,8 +2147,8 @@ static PyObject* var_of_mech_iter(NPyMechObj* self) {
     if (!self->prop_) {
         return NULL;
     }
+    Py_INCREF(self);
     vmi->pymech_ = self;
-    Py_INCREF(vmi->pymech_);
     vmi->msym_ = memb_func[self->prop_->_type].sym;
     vmi->i_ = 0;
     return (PyObject*) vmi;
@@ -2171,8 +2166,8 @@ static PyObject* var_of_mech_next(NPyVarOfMechIter* self) {
     Symbol* sym = self->msym_->u.ppsym[self->i_];
     self->i_++;
     NPyRangeVar* r = (NPyRangeVar*) PyObject_New(NPyRangeVar, range_type);
+    Py_INCREF(self->pymech_);
     r->pymech_ = self->pymech_;
-    Py_INCREF(r->pymech_);
     r->sym_ = sym;
     r->isptr_ = 0;
     r->attr_from_sec_ = 0;
@@ -2224,8 +2219,8 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
         } else if (is_array(*sym)) {
             NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
             r->pymech_ = new_pymechobj();
+            Py_INCREF(self);
             r->pymech_->pyseg_ = self;
-            Py_INCREF(r->pymech_->pyseg_);
             r->sym_ = sym;
             r->isptr_ = 0;
             r->attr_from_sec_ = 0;
@@ -2252,8 +2247,8 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             if (is_array(*sym)) {
                 NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
                 r->pymech_ = new_pymechobj();
-                r->pymech_->pyseg_ = self;
                 Py_INCREF(self);
+                r->pymech_->pyseg_ = self;
                 r->sym_ = sym;
                 r->isptr_ = 1;
                 r->attr_from_sec_ = 0;
@@ -2505,8 +2500,8 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
         // printf("mech_getattro sym %s\n", sym->name);
         if (is_array(*sym)) {
             NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
-            r->pymech_ = self;
             Py_INCREF(self);
+            r->pymech_ = self;
             r->sym_ = sym;
             r->isptr_ = isptr;
             r->attr_from_sec_ = 0;
@@ -2548,8 +2543,8 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
                 found_func = true;
                 auto& f = funcs[n];
                 NPyMechFunc* pymf = PyObject_New(NPyMechFunc, pmechfunc_generic_type);
-                pymf->pymech_ = self;
                 Py_INCREF(self);
+                pymf->pymech_ = self;
                 pymf->f_ = f;
                 result = (PyObject*) pymf;
             }
