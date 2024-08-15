@@ -635,9 +635,7 @@ static void setpickle() {
 
 // note that *size includes the null terminating character if it exists
 static std::vector<char> pickle(PyObject* p) {
-    nb::list args{};
-    args.append(nb::borrow(p));
-    auto r = nb::borrow<nb::bytes>(dumps(*args));
+    auto r = nb::borrow<nb::bytes>(dumps(nb::borrow(p)));
     if (!r && PyErr_Occurred()) {
         PyErr_Print();
     }
@@ -656,10 +654,7 @@ static std::vector<char> po2pickle(Object* ho) {
 }
 
 static nb::object unpickle(const char* s, std::size_t len) {
-    nb::bytes string(s, len);
-    nb::list args;
-    args.append(string);
-    return loads(*args);
+    return loads(nb::bytes(s, len));
 }
 
 static nb::object unpickle(const std::vector<char>& s) {
@@ -740,13 +735,11 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
     // callable return must be pickleable.
     setpickle();
     nb::bytes ps(fname.data(), fname.size());
-    nb::list args{};
-    args.append(ps);
 
-    auto callable = nb::borrow<nb::callable>(loads(*args));
+    auto callable = nb::borrow<nb::callable>(loads(ps));
     assert(callable);
 
-    args.clear();
+    nb::list args{};
     for (int i = 0; i < narg; ++i) {
         nb::object arg = nb::steal(nrnpy_hoc_pop("call_picklef"));
         args.append(arg);
