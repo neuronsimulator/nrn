@@ -255,13 +255,13 @@ endif()
 if(nmodl_FOUND)
   set(CORENRN_NMODL_BINARY ${nmodl_BINARY})
 else()
+  message(FATAL_ERROR "BLARGH")
   set(NMODL_ENABLE_PYTHON_BINDINGS
       OFF
       CACHE BOOL "Enable NMODL python bindings")
   nrn_add_external_project(nmodl DISABLE_ADD)
   add_subdirectory(${PROJECT_SOURCE_DIR}/external/nmodl ${CMAKE_BINARY_DIR}/external/nmodl)
   set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
-  set(NMODL_TARGET_TO_DEPEND nmodl)
   set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
   # install nrnunits.lib and libpywrapper.so from external/nmodl
   install(
@@ -576,7 +576,7 @@ set(output_binaries "${nrniv_core_prefix}/special-core" "${corenrn_mech_library}
 
 add_custom_command(
   OUTPUT ${output_binaries}
-  DEPENDS coreneuron-core ${NMODL_TARGET_TO_DEPEND} ${CORENEURON_BUILTIN_MODFILES}
+  DEPENDS coreneuron-core nmodl::nmodl ${CORENEURON_BUILTIN_MODFILES}
   COMMAND
     ${CMAKE_COMMAND} -E env NMODLHOME=${NMODL_PROJECT_BINARY_DIR}
     ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b ${COMPILE_LIBRARY_TYPE} -m ${CORENRN_NMODL_BINARY} -n
@@ -600,7 +600,7 @@ endif()
 # tests will depend on this, so it must in turn depend on everything that is needed to run nrnivmodl
 # -coreneuron.
 add_custom_target(coreneuron-for-tests)
-add_dependencies(coreneuron-for-tests coreneuron-core ${NMODL_TARGET_TO_DEPEND})
+add_dependencies(coreneuron-for-tests coreneuron-core nmodl::nmodl)
 # Create an extra target for internal use that unit tests and so on can depend on.
 # ${corenrn_mech_library} is libcorenrnmech_internal.{a,so}, which contains both the compiled
 # default mechanisms and the content of libcoreneuron-core.a.
@@ -653,13 +653,13 @@ configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl_core_makefile.in
                ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile @ONLY)
 configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl-core.in ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
                @ONLY)
-# nrnivmodl-core depends on the building of NMODL_TARGET_TO_DEPEND and the configuration of the
-# nrnivmodl-core and nrnivmodl_core_makefile this doesn't imply that whenever there is a change in
-# one of those files then the prebuilt mod files are going to be rebuilt
+# nrnivmodl-core depends on the building of nmodl::nmodl and the configuration of the
+# nrnivmodl-core and nrnivmodl_core_makefile this doesn't imply that whenever there is a
+# change in one of those files then the prebuilt mod files are going to be rebuilt
 add_custom_target(
   nrnivmodl-core ALL
   DEPENDS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
-          ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile ${NMODL_TARGET_TO_DEPEND})
+          ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile nmodl::nmodl)
 
 if(CORENRN_ENABLE_UNIT_TESTS)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/coreneuron/unit
