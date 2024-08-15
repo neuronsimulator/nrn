@@ -71,7 +71,7 @@ function(coreneuron_process_target target)
       endif()
       get_target_property(target_imported ${target} IMPORTED)
       get_target_property(target_type ${target} TYPE)
-      if(target_imported AND NOT ${type} STREQUAL "INTERFACE_LIBRARY")
+      if(target_imported AND NOT (${type} STREQUAL "INTERFACE_LIBRARY"))
         # In this case we can extract the full path to the library
         get_target_property(target_location ${target} LOCATION)
         if(target_location)
