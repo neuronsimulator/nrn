@@ -699,7 +699,7 @@ static PyObject* NPySecObj_n3d_safe(NPySecObj* self) {
 static PyObject* NPySecObj_pt3dremove(NPySecObj* self, PyObject* args) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
-    int i0, n;
+    int i0;
     if (!PyArg_ParseTuple(args, "i", &i0)) {
         return NULL;
     }
@@ -1232,8 +1232,6 @@ static long pyseg_hash_safe(PyObject* self) {
 }
 
 static PyObject* pyseg_richcmp(NPySegObj* self, PyObject* other, int op) {
-    PyObject* pysec;
-    bool result = false;
     NPySegObj* seg = (NPySegObj*) self;
     void* self_ptr = (void*) node_exact(seg->pysec_->sec_, seg->x_);
     void* other_ptr = (void*) other;
@@ -1250,8 +1248,6 @@ static PyObject* pyseg_richcmp_safe(NPySegObj* self, PyObject* other, int op) {
 
 
 static PyObject* pysec_richcmp(NPySecObj* self, PyObject* other, int op) {
-    PyObject* pysec;
-    bool result = false;
     void* self_ptr = (void*) (self->sec_);
     void* other_ptr = (void*) other;
     if (PyObject_TypeCheck(other, psection_type)) {
@@ -1321,7 +1317,6 @@ static PyObject* NPyMechFunc_name_safe(NPyMechFunc* self) {
 static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
     CHECK_PROP_INVALID(self->pymech_->prop_id_);
     PyObject* result = NULL;
-    auto pyseg = self->pymech_->pyseg_;
     auto& f = self->f_->func;
 
     // patterning after fcall
@@ -2339,7 +2334,6 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
     }
     // printf("segment_setattro %s\n", n);
     if (strcmp(n, "x") == 0) {
-        int nseg;
         double x;
         if (PyArg_Parse(value, "d", &x) == 1 && x > 0. && x <= 1.) {
             if (x < 1e-9) {
@@ -2924,23 +2918,9 @@ static PyMethodDef NPySegObj_methods[] = {
     {"volume", (PyCFunction) seg_volume_safe, METH_NOARGS, "Segment volume (um3)"},
     {NULL}};
 
-// I'm guessing Python should change their typedef to get rid of the
-// four "deprecated conversion from string constant to 'char*'" warnings.
-// Could avoid by casting each to (char*) but probably better to keep the
-// warnings. For now we get rid of the warnings by copying the string to
-// char array.
-static char* cpstr(const char* s) {
-    char* s2 = new char[strlen(s) + 1];
-    strcpy(s2, s);
-    return s2;
-}
 static PyMemberDef NPySegObj_members[] = {
-    {cpstr("x"),
-     T_DOUBLE,
-     offsetof(NPySegObj, x_),
-     0,
-     cpstr("location in the section (segment containing x)")},
-    {cpstr("sec"), T_OBJECT_EX, offsetof(NPySegObj, pysec_), 0, cpstr("Section")},
+    {"x", T_DOUBLE, offsetof(NPySegObj, x_), 0, "location in the section (segment containing x)"},
+    {"sec", T_OBJECT_EX, offsetof(NPySegObj, pysec_), 0, "Section"},
     {NULL}};
 
 static PyMethodDef NPyMechObj_methods[] = {
@@ -3014,7 +2994,6 @@ static void rangevars_add(Symbol* sym) {
 }
 
 PyObject* nrnpy_nrn(void) {
-    int i;
     PyObject* m;
 
     int err = 0;
