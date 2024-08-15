@@ -197,11 +197,7 @@ if(NRN_ENABLE_MPI_DYNAMIC)
 endif()
 
 if(CORENRN_ENABLE_OPENMP)
-  find_package(OpenMP QUIET)
-  if(OPENMP_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} ${ADDITIONAL_THREADSAFE_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} ${ADDITIONAL_THREADSAFE_FLAGS}")
-  endif()
+  find_package(OpenMP REQUIRED)
 endif()
 
 list(APPEND CORENRN_COMPILE_DEFS LAYOUT=0)
@@ -444,6 +440,13 @@ endif()
 # https://forums.developer.nvidia.com/t/cannot-dynamically-load-a-shared-library-containing-both-openacc-and-cuda-code/210972
 add_library(coreneuron-core STATIC ${CORENEURON_CODE_FILES} ${CORENRN_MPI_OBJ})
 add_dependencies(coreneuron-core coreneuron-copy-nrnivmodl-core-dependencies)
+if(CORENRN_ENABLE_OPENMP)
+  target_link_libraries(coreneuron-core PUBLIC OpenMP::OpenMP_CXX)
+  # The above uses a generator expression to arrive at -fopenmp (or equivalent) - this
+  # will not work with our Makefile generation. Thus specify the flag manually. Remove
+  # once we get rid of the mechanism building Makefile.
+  target_compile_options(coreneuron-core PUBLIC ${OpenMP_CXX_FLAGS})
+endif()
 if(CORENRN_ENABLE_GPU)
   set(coreneuron_cuda_target coreneuron-cuda)
   add_library(coreneuron-cuda ${COMPILE_LIBRARY_TYPE} ${CORENEURON_CUDA_FILES})
