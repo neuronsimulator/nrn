@@ -5,6 +5,7 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <string>
 #include <vector>
