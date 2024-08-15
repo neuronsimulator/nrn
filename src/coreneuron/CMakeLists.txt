@@ -653,9 +653,9 @@ configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl_core_makefile.in
                ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile @ONLY)
 configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl-core.in ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
                @ONLY)
-# nrnivmodl-core depends on the building of nmodl::nmodl and the configuration of the
-# nrnivmodl-core and nrnivmodl_core_makefile this doesn't imply that whenever there is a
-# change in one of those files then the prebuilt mod files are going to be rebuilt
+# nrnivmodl-core depends on the building of nmodl::nmodl and the configuration of the nrnivmodl-core
+# and nrnivmodl_core_makefile this doesn't imply that whenever there is a change in one of those
+# files then the prebuilt mod files are going to be rebuilt
 add_custom_target(
   nrnivmodl-core ALL
   DEPENDS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
