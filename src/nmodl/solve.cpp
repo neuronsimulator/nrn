@@ -5,10 +5,9 @@
 #include "parse1.hpp"
 #include "symbol.h"
 
-#include <algorithm>
 #include <cstdlib>
 #include <string>
-#include <vector>
+#include <unordered_map>
 
 /* make it an error if 2 solve statements are called on a single call to
 model() */
@@ -31,6 +30,11 @@ void check_ss_consist(Item*);
 namespace {
 enum class CVodeMethod { nomethod = 0, after_cvode = 1, cvode_t = 2, cvode_t_v = 3 };
 }
+static const std::unordered_map<std::string, CVodeMethod> cvode_method_map = {
+    {"after_cvode", CVodeMethod::after_cvode},
+    {"cvode_t", CVodeMethod::cvode_t},
+    {"cvode_t_v", CVodeMethod::cvode_t_v}};
+
 
 /* Need list of solve statements. We impress the
 general list structure to handle it.  The element is a pointer to an
@@ -133,17 +137,8 @@ void solvhandler() {
         lq = lq->next;
         method = SYM(lq);
         cvodemethod_ = CVodeMethod::nomethod;
-        const std::vector<std::pair<std::string, CVodeMethod>> cvode_methods = {
-            {"after_cvode", CVodeMethod::after_cvode},
-            {"cvode_t", CVodeMethod::cvode_t},
-            {"cvode_t_v", CVodeMethod::cvode_t_v}};
-
-        const auto& method_match =
-            std::find_if(cvode_methods.begin(), cvode_methods.end(), [&method](const auto& item) {
-                return method && method->name == item.first;
-            });
-        if (method && method_match != cvode_methods.end()) {
-            cvodemethod_ = method_match->second;
+        if (method && cvode_method_map.count(method->name)) {
+            cvodemethod_ = cvode_method_map.at(method->name);
             method = nullptr;
             lq->element.sym = nullptr;
         }
