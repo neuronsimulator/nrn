@@ -406,7 +406,6 @@ def setup_package():
             ]
             + (
                 [
-                    "-DCORENRN_ENABLE_OPENMP=ON",  # TODO: manylinux portability questions
                     "-DNMODL_ENABLE_PYTHON_BINDINGS=ON",
                 ]
                 if Components.CORENRN
