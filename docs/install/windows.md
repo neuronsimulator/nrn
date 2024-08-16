@@ -1,37 +1,399 @@
 # Windows build
 
+How to make NEURON compilable in Windows.  
+ 
 ## Pre-requisites
 
-You need to install the following:
+You need to follow the steps:
 
-*  Git: [https://git-scm.com/](https://git-scm.com/)
-*  Chocolatey: [https://chocolatey.org/](https://chocolatey.org/)
-*  Visual Studio with C++: [https://visualstudio.microsoft.com/vs/features/cplusplus/](https://visualstudio.microsoft.com/vs/features/cplusplus/)
-*  `pwsh` (grab the latest PowerShell release on GitHub: [https://github.com/PowerShell/PowerShell/releases/latest](https://github.com/PowerShell/PowerShell/releases/latest))
+### Step 1: (If installing NEURON on a Windows Virtual Machine) 
+
+Create a new VM 
+  
+------------------------------------------------------------ 
+
+### Step 2: Install Git 
+
+Git: [https://git-scm.com/](https://git-scm.com/)
+
+Use this: [https://git-scm.com/download/win](https://git-scm.com/download/win)
+
+Note: Do not use: `winget install --id Git.Git -e --source winget` 
+ 
+  
+------------------------------------------------------------ 
+
+### Step 3: Install Chocolatey [https://chocolatey.org/](https://chocolatey.org/) by command line: 
+
+
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1')) 
+```
+This should be run in powershell or pwsh; in particular, it will not work in cmd.
+
+Ensuring Chocolatey commands are on the path 
+
+Ensuring chocolatey.nupkg is in the lib folder 
+ 
+ 
+------------------------------------------------------------ 
+
+### Step 4: Install Visual Studio with C++ 
+
+Use this: [https://visualstudio.microsoft.com/vs/features/cplusplus/](https://visualstudio.microsoft.com/vs/features/cplusplus/) 
+
+ 
+------------------------------------------------------------ 
+
+### Step 5: Get PowerShell 7 or newer version
+
+We will use `pwsh` command - correspond to PowerShell 7. The PowerShell 5 use `powershell` command.  
+ 
+#### Step 5.A: See PowerShell Version Currently Running: 
+
+This must be run inside whatever PowerShell you want to test.
+
+`$PSVersionTable` or `get-host|Select-Object`  
+ 
+#### Step 5.B: See available options: 
+
+`winget search Microsoft.PowerShell` 
+ 
+#### Step 5.C: Install New PowerShell 
+
+`winget install --id Microsoft.Powershell --source winget`  
+or
+`winget install --id Microsoft.Powershell.Preview --source winget` 
+ 
+#### Step 5.D: Ensure you are working with PowerShell 7
+
+Note: Find path file to version 7 (`C:\Program Files\PowerShell\7` or `C:\Program Files\PowerShell\7-preview`) and create a shortcut for this powershell 7
+Windows will continue to use 5 version if we try open "PowerShell" 
+
+PS: A shortcut is one option. You could also add it to your path. 
+
+------------------------------------------------------------ 
 
 ## Build Environment installation
 
-You can follow the lines of the scripts from the `ci` folder. The scripts can also be launched as-is for local installation. Perform a git clone of the `nrn` repository.
+### Step 6: Git clone
+At PowerShell 7, go to 
+`C:\Users\User>` and create folder named “Neuron”: 
 
-From a powershell with **administrator** priviledges, run:
-```powershell
-PS C:\workspace\nrn> .\ci\win_download_deps.cmd
 ```
-This will download all required installers and corresponding versions(`Python`, `MPI`, `nsis`)
-
-Then launch the installation script:
-```powershell
-PS C:\workspace\nrn> .\ci\win_install_deps.cmd
+mkdir Neuron
 ```
-in order to:
 
-* install all downloaded Python versions and for each:
-  * fix MSVCC version
-  * fix MSVC runtime library
-  * install numpy 
-* install `nsis` and required plugin
-* install MPI
-* install MSYS2 (via `Chocolatey`) and then MinGW toolchain and required build pacakages
+Inside the "Neuron” folder do: 
+
+```
+git clone https://github.com/neuronsimulator/nrn
+```  
+
+ 
+Note: `PS C:\Users\User\Neuron> git clone git@github.com:neuronsimulator/nrn nrn` may be an option
+ (or may end up in a no permission issue).  
+  
+------------------------------------------------------------ 
+
+### Step 7: Downloading Dependencies
+
+As **administrator** from PowerShell 7 (right button and “Run as Administrator”) at `C:\Users\User\Neuron\nrn\ci` run: 
+```
+.\win_download_deps.cmd
+```
+ 
+Note: You will get a number of messages of the form below; they do not indicate errors.
+
+```
+"C:\Users\User\Neuron\nrn>pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.8.exe https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe   || goto :error" 
+```
+ 
+------------------------------------------------------------ 
+
+### Step 8: Installing Dependencies
+
+As **administrator** from PowerShell 7, at `C:\Users\User\Neuron\nrn\ci` run: 
+```
+.\win_install_deps.cmd
+``` 
+
+This command will take a while to complete.
+  
+------------------------------------------------------------ 
+
+### Step 9: Install Windows Subsystem for Linux:  wsl.exe --update  
+
+`wsl.exe --list --online` shows you your options and 
+`wsl.exe --install Ubuntu-24.04` (or any other) selects an option.
+  
+------------------------------------------------------------ 
+
+### Step 10: (If you are installing NEURON in a Virtual Machine) 
+
+Turn off your VM and at your computer as **administrator** put in PowerShell 7: 
+
+`
+Set-VMProcessor -VMName "NameOfYourVM" -ExposeVirtualizationExtensions $true
+`
+
+For example:
+
+```powershell
+Set-VMProcessor -VMName "Windows 11 dev environment" -ExposeVirtualizationExtensions $true 
+```
+
+ 
+------------------------------------------------------------ 
+
+ 
+### Step 11: We need execute the “mingw64.exe” 
+So, look for "msys64", go to folder “msys64” and execute `mingw64.exe`.
+
+Via folder: open folder `C:\msys64` (probably) and double click in the executable `mingw64` 
+
+Via terminal: go to the location of the execuable `./mingw64.exe` (`C:\msys64` probably or `\\wsl.localhost\Ubuntu-24.04\mnt\c\msys64`) and execute it 
+
+```
+./mingw64.exe
+```
+ or `/mnt/c/msys64$ ./mingw64.exe `
+ 
+It will open a terminal. It is not PowerShell, it is not CMD, it is a mingw64 teminal.
+ 
+------------------------------------------------------------ 
+## How to build NEURON
+
+### Step 12: Creating the exe
+
+Now, inside this terminal (it is a mingw64 terminal, see step above) go to `C:\Users\User\Neuron\nrn\ci` and run 
+
+```
+./win_build_cmake.sh 
+```
+ 
+It will create an exe file `nrn-nightly-AMD64` (at `C:\Users\User\Neuron\nrn\nrn-nightly-AMD64`).
+ 
+------------------------------------------------------------ 
+
+### Step 13: Running the exe
+
+Double click at `nrn-nightly-AMD64` and it will install NEURON. 
+It is a standard installation. 
+
+That means the files created at `C:\Users\User\Neuron\nrn\build\bin` will be coped to:  `C:\nrn\bin` and the "installation" will appear at `C:\nrn` and `C:\nrn-install` 
+ 
+------------------------------------------------------------ 
+
+
+### Step 14: Using and modifying NEURON file... 
+You can replace any new `.dll` file at `C:\nrn\bin` and the NEURON will present the new feature implemented. 
+ 
+Example: 
+
+#### Step 14.A: Checking the `nrngui` 
+Run `nrngui` (inside the folder `C:\Users\User\Desktop\NEURON 9.0.0 AMD64` double click on `nrngui`)
+
+It will show something like:
+
+```
+NEURON -- VERSION X.X.X 2024-07-09
+
+Duke, Yale, and the BlueBrain Project -- Copyright 1984-2022
+See http://neuron.yale.edu/neuron/credits
+
+oc>
+```
+
+Close this NEURON window.
+
+#### Step 14.B: Making some changes at `init.cpp`
+
+Open the `init.cpp` file (at `C:\Users\User\Neuron\nrn\src\nrnoc\init.cpp`  or at `C:\msys64\home\User\Neuron\nrn\src\nrnoc\init.cpp`) look for `hoc_last_init(void)` and the follow code inside it:
+
+```C
+    if (nrnmpi_myid < 1)
+        if (nrn_nobanner_ == 0) {
+            Fprintf(stderr, "%s\n", nrn_version(1));
+            Fprintf(stderr, "%s\n", banner);
+            IGNORE(fflush(stderr));
+        }
+```
+
+
+modifying this introduction the print line `printf("\n Now It is my NEURON version!!!! \n\n");` for example: 
+
+```C
+     if (nrnmpi_myid < 1)
+        if (nrn_nobanner_ == 0) {
+            Fprintf(stderr, "%s\n", nrn_version(1));
+            printf("\nNow It is my NEURON version!!!! \n\n");
+            Fprintf(stderr, "%s\n", banner);
+            IGNORE(fflush(stderr));
+        }
+```
+and save.
+
+#### Step 14.C: Compiling the new code.
+
+Compile this new code. We can compile using Step 15. (Do it and come back here) 
+
+#### Step 14.D: Replacing the `libnrniv.dll` file
+
+It will create a new `libnrniv.dll` (and `libnrnmpi_msmpi.dll` and a new `libnrnpython3.XX.dll` and new `nrniv`, but just the first one matters for THIS example) at `nrn\build\bin` (at `C:\Users\User\Neuron\nrn\build\bin` or at `C:\msys64\home\User\Neuron\nrn\build\bin` if you did the installation process here). 
+
+We can replace the old file `libnrniv.dll` at `C:\nrn\bin` for this new one and voila! We get our change implemented!! Let's see
+
+#### Step 14.E: Checking the new `nrngui` 
+
+Run `nrngui` (inside the folder `C:\Users\User\Desktop\NEURON 9.0.0 AMD64` double click in `nrngui`)
+
+```
+NEURON -- VERSION X.X.X 2024-07-11
+
+Now it is my NEURON version!!!!
+
+Duke, Yale, and the BlueBrain Project -- Copyright 1984-2022
+See http://neuron.yale.edu/neuron/credits
+
+oc>
+```
+
+------------------------------------------------------------ 
+
+### Step 15: Compile new NEURON code
+
+
+PS: Useful commands:  
+
+```powershell
+cd /c/Users/User/Neuron/nrn/build
+``` 
+to reach files outside of `C:\msys64\`.
+
+```
+echo $PATH
+which gcc 
+which cmake 
+```
+To compile new NEURON code, you can (always from a `mingw64` terminal): 
+
+#### Step 15.A: run win_build_cmake.sh 
+
+From nrn file where the source code is (example: `C:\Users\User\Neuron\nrn\ci` or `C:\msys64\home\User\Neuron\nrn\ci` if you copy a version here) run: 
+```
+.\win_build_cmake.sh
+```
+or 
+ 
+#### Step 15.B: Run "cmake .." 
+
+From nrn file where is the source code (example: `C:\Users\User\Neuron\nrn\build` or `C:\msys64\home\User\Neuron\nrn` if you copied a version here - see Step 18) run: 
+
+```
+cmake .. -GNinja
+```
+
+or 
+
+#### Step 15.C: ninja
+
+Run `ninja` from the build file (example: `C:\Users\User\Neuron\nrn\build` or `C:\msys64\home\User\Neuron\nrn\build` if you copied a version here) 
+```
+ninja
+``` 
+
+### Step 16: Dependencies
+
+Python will not have all dependencies, so you can install them doing:  
+
+```
+python -m pip install plotly 
+python -m pip install matplotlib 
+python -m pip install pandas 
+``` 
+
+
+## Creating a new environment for NEURON development 
+It my be useful maintain the original version of NEURON installed (at `C:\home\User\Neuron\nrn` for example) and have a new version that you can do your changes in code. We will set up this new environment and version.
+
+### Step 17: Clone NEURON-git inside `msys64`
+We create a new folder inside the `msys64`:  `C:\msys64\home\User\Neuron\nrn`
+and clone NEURON git: 
+```
+git clone https://github.com/neuronsimulator/nrn
+```
+ 
+### Step 18: Set the configuration options: 
+
+Get inside `Neuron\nrn\build` file (example: `C:\Users\User\Neuron\nrn\build` or `C:\msys64\home\User\Neuron\nrn\build` if you copy a version here) and do:  
+```
+cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=install -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_ENABLE_MPI_DYNAMIC=ON 
+```
+
+Another configuration that can be useful is:
+```
+cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=install -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_ENABLE_MPI_DYNAMIC=ON -DPYTHON_EXECUTABLE=/c/Python312/python.exe -DCMAKE_BUILD_TYPE=FastDebug 
+```
+ 
+### Step 19: Compiling  
+A `ninja install` and `ninja setup_exe` (instead `make setup_exe`) may be useful/necessary for the first time. 
+
+The command 
+`ninja` may be enough for further changes from `C:\msys64\home\User\Neuron\nrn\build` folder. See Step 15.C. 
+ 
+Remembering useful files path: 
+```
+C:\Users\User\Neuron\nrn\build\src\mswin 
+C:\nrn\bin 
+C:\Users\User\Desktop\NEURON 9.0.0 AMD64 
+C:\Users\User\Neuron\nrn\build\bin 
+C:\msys64\home\User\Neuron\nrn\build\bin 
+ ```
+
+
+## Common problems:
+
+ 
+
+Do **Step 10** if you face something like:
+
+
+```powershell
+PS C:\Users\User\Neuron\nrn>  bash ci/win_build_cmake.sh 
+: invalid optionke.sh: line 2: set: - 
+set: usage: set [-abefhkmnptuvxBCEHPT] [-o option-name] [--] [-] [arg ...] 
+ci/win_build_cmake.sh: line 3: $'\r': command not found 
+ci/win_build_cmake.sh: line 11: $'\r': command not found 
+/usr/bin/python3: No module named pip 
+ci/win_build_cmake.sh: line 14: $'\r': command not found 
+ci/win_build_cmake.sh: line 46: syntax error: unexpected end of file 
+ ```
+
+----------------------------------------------------- 
+ 
+See **Steps 9 and 10** if you face something like:
+
+```powershell
+PS C:\Users\User\Neuron\nrn> bash ci/win_build_cmake.sh 
+Windows Subsystem for Linux has no installed distributions. 
+Distributions can be installed by visiting the Microsoft Store: 
+https://aka.ms/wslstore 
+PS C:\Users\User\Neuron\nrn> wsl.exe --update 
+Installing: Windows Subsystem for Linux 
+Windows Subsystem for Linux has been installed. 
+PS C:\Users\User\Neuron\nrn> bash ci/win_build_cmake.sh 
+Windows Subsystem for Linux has no installed distributions. 
+  
+Use 'wsl.exe --list --online' to list available distributions 
+and 'wsl.exe --install <Distro>' to install. 
+  
+Distributions can also be installed by visiting the Microsoft Store: 
+https://aka.ms/wslstore 
+Error code: Bash/Service/CreateInstance/GetDefaultDistro/WSL_E_DEFAULT_DISTRO_NOT_FOUND 
+ ```
+-------------------------------------------------------- 
+
 
 ## Setting up Visual Studio Code
 
@@ -70,38 +432,7 @@ During the development process, you will be using PowerShell, cmd and moreover M
 }
 ```
 
-## How to build NEURON
 
-For a complete `build/install/create setup.exe`, in a `MinGW64` shell you can run:
-```bash
-$ bash ci/win_build_cmake.sh
-```
-As you can see in the script, a typical configuration would be:
-```bash
-/mingw64/bin/cmake .. \
-	-G 'Unix Makefiles'  \
-	-DNRN_ENABLE_MPI_DYNAMIC=ON  \
-	-DNRN_ENABLE_MPI=ON  \
-	-DCMAKE_PREFIX_PATH='/c/msmpi'  \
-	-DNRN_ENABLE_INTERVIEWS=ON  \
-	-DNRN_ENABLE_PYTHON=ON  \
-	-DNRN_ENABLE_RX3D=ON  \
-	-DNRN_RX3D_OPT_LEVEL=2 \
-	-DPYTHON_EXECUTABLE=/c/Python38/python.exe \
-	-DNRN_ENABLE_PYTHON_DYNAMIC=ON  \
-	-DNRN_PYTHON_DYNAMIC='c:/Python38/python.exe;c:/Python39/python.exe;c:/Python310/python.exe;c:/Python311/python.exe'  \
-	-DCMAKE_INSTALL_PREFIX='/c/nrn-install' \
-	-DMPI_CXX_LIB_NAMES:STRING=msmpi \
-	-DMPI_C_LIB_NAMES:STRING=msmpi \
-	-DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib
-```
-To create the Windows installer, you need to run:
-```bash
-make install
-make setup_exe
-```
-
-Note that by default, the install path is `C:\nrn-install`. When building the installer via `setup_exe`, that is the path that will be used.
 
 ## Troubleshooting
 
