@@ -17,8 +17,7 @@ echo %NEURONHOME%
 if not exist association.hoc.out (start /wait /REALTIME %cd%\ci\association.hoc)
 
 :: install oldest supported numpy
-C:\Python38\python.exe -m pip install numpy==1.19.5 || goto :error
-C:\Python39\python.exe -m pip install numpy==1.19.5 || goto :error
+C:\Python39\python.exe -m pip install numpy==1.20.3 || goto :error
 C:\Python310\python.exe -m pip install numpy==1.21.6 || goto :error
 C:\Python311\python.exe -m pip install numpy==1.23.5 || goto :error
 C:\Python312\python.exe -m pip install numpy==1.26.4 || goto :error
@@ -30,6 +29,7 @@ C:\Python310\python -c "import neuron; neuron.test(); quit()" || set "errorfound
 C:\Python311\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python312\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 :: run also using whatever is system python
+python -m pip install numpy
 python --version
 python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 
