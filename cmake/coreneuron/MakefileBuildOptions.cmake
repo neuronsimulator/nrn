@@ -71,11 +71,13 @@ function(coreneuron_process_target target)
         endforeach()
       endif()
       get_target_property(target_imported ${target} IMPORTED)
-      if(target_imported AND NOT (${target_type} STREQUAL "INTERFACE_LIBRARY"))
-        # In this case we can extract the full path to the library
-        get_target_property(target_location ${target} LOCATION)
-        if(target_location)
-          coreneuron_process_library_path(${target_location})
+      if(target_imported)
+        if(NOT (${target_type} STREQUAL "INTERFACE_LIBRARY"))
+          # In this case we can extract the full path to the library
+          get_target_property(target_location ${target} LOCATION)
+          if(target_location)
+            coreneuron_process_library_path(${target_location})
+          endif()
         endif()
       else()
         # This is probably another of our libraries, like -lcoreneuron-cuda. We might need to add -L
