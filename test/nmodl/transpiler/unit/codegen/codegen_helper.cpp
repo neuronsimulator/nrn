@@ -57,6 +57,24 @@ std::string run_codegen_helper_visitor(const std::string& text) {
     return variables;
 }
 
+CodegenInfo run_codegen_helper_get_info(const std::string& text) {
+    const auto& ast = NmodlDriver().parse_string(text);
+    /// construct symbol table and run codegen helper visitor
+    SymtabVisitor{}.visit_program(*ast);
+    KineticBlockVisitor{}.visit_program(*ast);
+    SymtabVisitor{}.visit_program(*ast);
+    SteadystateVisitor{}.visit_program(*ast);
+    SymtabVisitor{}.visit_program(*ast);
+    NeuronSolveVisitor{}.visit_program(*ast);
+    SolveBlockVisitor{}.visit_program(*ast);
+    SymtabVisitor{true}.visit_program(*ast);
+
+    CodegenHelperVisitor v;
+    const auto info = v.analyze(*ast);
+
+    return info;
+}
+
 SCENARIO("unusual / failing mod files", "[codegen][var_order]") {
     GIVEN("cal_mig.mod : USEION variables declared as RANGE") {
         std::string nmodl_text = R"(
@@ -290,6 +308,118 @@ TEST_CASE("Check ion write/read checks") {
             REQUIRE(!ion.is_interior_conc_written());
             REQUIRE(!ion.is_exterior_conc_written());
             REQUIRE(!ion.is_rev_written());
+        }
+    }
+}
+
+SCENARIO("CVODE codegen") {
+    GIVEN("a mod file with a single KINETIC block") {
+        std::string input_nmodl = R"(
+            STATE {
+                x
+            }
+            KINETIC states {
+                ~ x << (a*c/3.2)
+            }
+            BREAKPOINT {
+                SOLVE states METHOD cnexp
+            })";
+
+        const auto& info = run_codegen_helper_get_info(input_nmodl);
+        THEN("Emit CVODE") {
+            REQUIRE(info.emit_cvode);
+        }
+    }
+    GIVEN("a mod file with a single DERIVATIVE block") {
+        std::string input_nmodl = R"(
+            STATE {
+                m
+            }
+            BREAKPOINT {
+                SOLVE state METHOD derivimplicit
+            }
+            DERIVATIVE state {
+               m' = 2 * m
+            }
+        )";
+        const auto& info = run_codegen_helper_get_info(input_nmodl);
+
+        THEN("Emit CVODE") {
+            REQUIRE(info.emit_cvode);
+        }
+    }
+    GIVEN("a mod file with a single PROCEDURE block solved with method `after_cvode`") {
+        std::string input_nmodl = R"(
+        BREAKPOINT {
+            SOLVE state METHOD after_cvode
+        }
+        PROCEDURE state() {}
+        )";
+
+        const auto& info = run_codegen_helper_get_info(input_nmodl);
+
+        THEN("Emit CVODE") {
+            REQUIRE(info.emit_cvode);
+        }
+    }
+    GIVEN("a mod file with a single PROCEDURE block NOT solved with method `after_cvode`") {
+        std::string input_nmodl = R"(
+        BREAKPOINT {
+            SOLVE state METHOD cnexp
+        }
+        PROCEDURE state() {}
+        )";
+
+        const auto& info = run_codegen_helper_get_info(input_nmodl);
+
+        THEN("Do not emit CVODE") {
+            REQUIRE(!info.emit_cvode);
+        }
+    }
+    GIVEN("a mod file with a DERIVATIVE and a KINETIC block") {
+        std::string input_nmodl = R"(
+            STATE {
+                m
+                x
+            }
+            BREAKPOINT {
+                SOLVE der METHOD derivimplicit
+                SOLVE kin METHOD cnexp
+            }
+            DERIVATIVE der {
+               m' = 2 * m
+            }
+            KINETIC kin {
+                ~ x << (a*c/3.2)
+            }
+        )";
+
+        const auto& info = run_codegen_helper_get_info(input_nmodl);
+
+        THEN("Do not emit CVODE") {
+            REQUIRE(!info.emit_cvode);
+        }
+    }
+    GIVEN("a mod file with a PROCEDURE and a DERIVATIVE block") {
+        std::string input_nmodl = R"(
+            STATE {
+                m
+            }
+            BREAKPOINT {
+                SOLVE der METHOD derivimplicit
+                SOLVE func METHOD cnexp
+            }
+            DERIVATIVE der {
+               m' = 2 * m
+            }
+            PROCEDURE func() {
+            }
+        )";
+
+        const auto& info = run_codegen_helper_get_info(input_nmodl);
+
+        THEN("Do not emit CVODE") {
+            REQUIRE(!info.emit_cvode);
         }
     }
 }

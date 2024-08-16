@@ -1176,10 +1176,6 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
                         info.semantics[i].name,
                         i));
     }
-    if (info.emit_cvode) {
-        mech_register_args.push_back(
-            "_nrn_mechanism_field<int>{\"_cvode_ieq\", \"cvodeieq\"} /* 0 */");
-    }
 
     printer->add_multi_line(fmt::format("{}", fmt::join(mech_register_args, ",\n")));
 

@@ -32,6 +32,12 @@ static constexpr char CNEXP_METHOD[] = "cnexp";
 /// cvode method in nmodl
 static constexpr char AFTER_CVODE_METHOD[] = "after_cvode";
 
+/// cvode_t method in nmodl
+static constexpr char CVODE_T_METHOD[] = "cvode_t";
+
+/// cvode_t_v method in nmodl
+static constexpr char CVODE_T_V_METHOD[] = "cvode_t_v";
+
 /// sparse method in nmodl
 static constexpr char SPARSE_METHOD[] = "sparse";
 
