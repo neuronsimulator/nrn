@@ -141,7 +141,7 @@ jobs:
         run: |
           sudo apt-get install build-essential ccache libopenmpi-dev \
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
-            openmpi-bin flex libfl-dev bison libreadline-dev libgomp1 libomp-dev
+            openmpi-bin flex libfl-dev bison libreadline-dev
           # The sanitizer builds use ubuntu 22.04
           if [[ "${{matrix.os}}" == "ubuntu-20.04" ]]; then
             sudo apt-get install g++-7 g++-8
@@ -292,10 +292,6 @@ jobs:
           # different builds with CMake
           if [[ "$BUILD_MODE" == "cmake" ]]; then
               cmake_args=(-G Ninja)
-              if [ "$RUNNER_OS" == "macOS" ]; then
-                # Apple does not support OpenMP by default
-                cmake_args+=(-DCORENRN_ENABLE_OPENMP=OFF)
-              fi
               # Sanitizer-specific setup
               if [[ -n "${{matrix.config.sanitizer}}" ]]; then
                 if [ "$RUNNER_OS" == "Linux" ]; then

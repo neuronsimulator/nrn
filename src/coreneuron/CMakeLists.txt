@@ -29,7 +29,7 @@ include(${CODING_CONV_CMAKE}/build-time-copy.cmake)
 # =============================================================================
 # Build options
 # =============================================================================
-option(CORENRN_ENABLE_OPENMP "Build the CORE NEURON with OpenMP implementation" ON)
+option(CORENRN_ENABLE_OPENMP "Build the CORE NEURON with OpenMP implementation" OFF)
 option(CORENRN_ENABLE_OPENMP_OFFLOAD "Prefer OpenMP target offload to OpenACC" ON)
 option(CORENRN_ENABLE_TIMEOUT "Enable nrn_timeout implementation" ON)
 option(CORENRN_ENABLE_REPORTING "Enable use of libsonata for soma reports" OFF)
