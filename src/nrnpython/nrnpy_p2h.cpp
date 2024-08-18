@@ -635,19 +635,12 @@ static void setpickle() {
 
 // note that *size includes the null terminating character if it exists
 static std::vector<char> pickle(PyObject* p) {
-    PyObject* arg = PyTuple_Pack(1, p);
-    PyObject* r = nrnpy_pyCallObject(dumps.ptr(), arg);
-    Py_XDECREF(arg);
+    auto r = nb::borrow<nb::bytes>(dumps(nb::borrow(p)));
     if (!r && PyErr_Occurred()) {
         PyErr_Print();
     }
     assert(r);
-    assert(PyBytes_Check(r));
-    std::size_t size = PyBytes_Size(r);
-    char* buf = PyBytes_AsString(r);
-    std::vector<char> ret(buf, buf + size);
-    Py_XDECREF(r);
-    return ret;
+    return std::vector<char>(r.c_str(), r.c_str() + r.size());
 }
 
 static std::vector<char> po2pickle(Object* ho) {
@@ -661,10 +654,7 @@ static std::vector<char> po2pickle(Object* ho) {
 }
 
 static nb::object unpickle(const char* s, std::size_t len) {
-    nb::bytes string(s, len);
-    nb::list args;
-    args.append(string);
-    return loads(*args);
+    return loads(nb::bytes(s, len));
 }
 
 static nb::object unpickle(const std::vector<char>& s) {
@@ -743,33 +733,22 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
     // fname is a pickled callable, narg is the number of args on the
     // hoc stack with types double, char*, hoc Vector, and PythonObject
     // callable return must be pickleable.
-    PyObject* args = 0;
-    PyObject* result = 0;
-    PyObject* callable;
-
     setpickle();
-    PyObject* ps = PyBytes_FromStringAndSize(fname.data(), fname.size());
-    args = PyTuple_Pack(1, ps);
-    callable = nrnpy_pyCallObject(loads.ptr(), args);
-    assert(callable);
-    Py_XDECREF(args);
-    Py_XDECREF(ps);
+    nb::bytes ps(fname.data(), fname.size());
 
-    args = PyTuple_New(narg);
+    auto callable = nb::borrow<nb::callable>(loads(ps));
+    assert(callable);
+
+    nb::list args{};
     for (int i = 0; i < narg; ++i) {
-        PyObject* arg = nrnpy_hoc_pop("call_picklef");
-        if (PyTuple_SetItem(args, narg - 1 - i, arg)) {
-            assert(0);
-        }
-        // Py_XDECREF(arg);
+        nb::object arg = nb::steal(nrnpy_hoc_pop("call_picklef"));
+        args.append(arg);
     }
-    result = nrnpy_pyCallObject(callable, args);
-    Py_DECREF(callable);
-    Py_DECREF(args);
+    nb::object result = callable(*args);
     if (!result) {
         char* mes = nrnpyerr_str();
         if (mes) {
-            Fprintf(stderr, "%s\n", mes);
+            std::cerr << mes << std::endl;
             free(mes);
             hoc_execerror("PyObject method call failed:", NULL);
         }
@@ -777,9 +756,7 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
             PyErr_Print();
         }
     }
-    auto rs = pickle(result);
-    Py_XDECREF(result);
-    return rs;
+    return pickle(result.ptr());
 }
 
 #include "nrnmpi.h"
