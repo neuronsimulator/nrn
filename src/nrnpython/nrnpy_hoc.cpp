@@ -7,7 +7,8 @@
 #include "nrnpy_utils.h"
 #include "nrnpython.h"
 #include "convert_cxx_exceptions.hpp"
-#include "utils.hpp"
+#include "cast_tuple.hpp"
+
 #include <unordered_map>
 
 #include "nrnwrap_dlfcn.h"
