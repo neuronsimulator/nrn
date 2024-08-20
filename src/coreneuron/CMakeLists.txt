@@ -441,11 +441,12 @@ endif()
 add_library(coreneuron-core STATIC ${CORENEURON_CODE_FILES} ${CORENRN_MPI_OBJ})
 add_dependencies(coreneuron-core coreneuron-copy-nrnivmodl-core-dependencies)
 if(CORENRN_ENABLE_OPENMP)
-  target_link_libraries(coreneuron-core PUBLIC OpenMP::OpenMP_CXX)
+  # target_link_libraries(coreneuron-core PUBLIC OpenMP::OpenMP_CXX)
   # The above uses a generator expression to arrive at -fopenmp (or equivalent) - this will not work
-  # with our Makefile generation. Thus specify the flag manually. Remove once we get rid of the
-  # mechanism building Makefile.
+  # with our Makefile generation. Thus specify the flag manually. Enable and remove the
+  # lines below once we get rid of the mechanism building Makefile.
   target_compile_options(coreneuron-core PUBLIC ${OpenMP_CXX_FLAGS})
+  target_link_libraries(coreneuron-core PUBLIC ${OpenMP_CXX_LIB_NAMES})
 endif()
 if(CORENRN_ENABLE_GPU)
   set(coreneuron_cuda_target coreneuron-cuda)
