@@ -444,11 +444,9 @@ if(CORENRN_ENABLE_OPENMP)
   # target_link_libraries(coreneuron-core PUBLIC OpenMP::OpenMP_CXX)
   target_compile_options(coreneuron-core PUBLIC ${OpenMP_CXX_FLAGS})
   target_link_libraries(coreneuron-core PUBLIC ${OpenMP_CXX_LIB_NAMES})
-  # The first line uses a generator
-  # expression to arrive at -fopenmp (or equivalent) - this will not work with our Makefile
-  # generation. Thus specify the flag manually. Enable the first line and remove the last
-  # two lines below once we get rid of
-  # the mechanism building Makefile.
+  # The first line uses a generator expression to arrive at -fopenmp (or equivalent) - this will not
+  # work with our Makefile generation. Thus specify the flag manually. Enable the first line and
+  # remove the last two lines below once we get rid of the mechanism building Makefile.
 endif()
 if(CORENRN_ENABLE_GPU)
   set(coreneuron_cuda_target coreneuron-cuda)
