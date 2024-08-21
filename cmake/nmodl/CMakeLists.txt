@@ -243,6 +243,26 @@ configure_file(share/nrnunits.lib ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnuni
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib
         DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}share/nmodl)
 
+set(nmodl_BINARY bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
+add_executable(nmodl::nmodl ALIAS nmodl)
+
+install(
+  EXPORT nmodlTargets
+  FILE nmodlTargets.cmake
+  NAMESPACE nmodl::
+  DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}lib/cmake/nmodl)
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfig.cmake"
+  INSTALL_DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}lib/cmake/nmodl)
+write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/nmodlConfigVersion.cmake"
+                                 COMPATIBILITY AnyNewerVersion)
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfig.cmake"
+              "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfigVersion.cmake"
+        DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}lib/cmake/nmodl)
+
 # to print compiler flags in the build status
 if(CMAKE_BUILD_TYPE)
   string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE_UPPER)
