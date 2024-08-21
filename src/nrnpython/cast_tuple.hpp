@@ -13,14 +13,14 @@ T get(const nanobind::tuple& t) {
     return nanobind::cast<T>(t[I]);
 }
 
-template <typename... Ts, typename Tuple, std::size_t... Is>
-auto cast_tuple_impl(Tuple&& tuple, std::index_sequence<Is...>) {
+template <typename... Ts, std::size_t... Is>
+auto cast_tuple_impl(const nanobind::tuple& tuple, std::index_sequence<Is...>) {
     auto count = sizeof...(Is);
     if (count > tuple.size()) {
         throw std::runtime_error(fmt::format(
             "Not enough arguments, expected {}, but only received {}", count, tuple.size()));
     }
-    return std::make_tuple(get<Ts, Is>(std::forward<Tuple>(tuple))...);
+    return std::make_tuple(get<Ts, Is>(tuple)...);
 }
 }  // namespace detail
 
@@ -33,9 +33,9 @@ auto cast_tuple_impl(Tuple&& tuple, std::index_sequence<Is...>) {
  *
  * @param tuple can either be a nanobind::args or a nanobind::tuple
  */
-template <typename... Ts, typename Tuple>
-auto cast_tuple(Tuple&& tuple) {
-    return detail::cast_tuple_impl<Ts...>(std::forward<Tuple>(tuple),
+template <typename... Ts>
+auto cast_tuple(const nanobind::tuple& tuple) {
+    return detail::cast_tuple_impl<Ts...>(tuple,
                                           std::make_index_sequence<sizeof...(Ts)>{});
 }
 
