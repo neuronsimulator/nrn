@@ -14,25 +14,23 @@ include(NeuronTestHelper)
 # Test executables
 # =============================================================================
 set(TESTNEURON_SRC
-  common/catch2_main.cpp
-  unit_tests/basic.cpp
-  unit_tests/iovec.cpp
-  unit_tests/container/container.cpp
-  unit_tests/container/generic_data_handle.cpp
-  unit_tests/container/mechanism.cpp
-  unit_tests/container/node.cpp
-  unit_tests/node_order_optim/permutations.cpp
-  unit_tests/utils/enumerate.cpp
-  unit_tests/oc/hoc_interpreter.cpp
-  cover/unit_tests/cover.cpp)
+    common/catch2_main.cpp
+    unit_tests/basic.cpp
+    unit_tests/iovec.cpp
+    unit_tests/container/container.cpp
+    unit_tests/container/generic_data_handle.cpp
+    unit_tests/container/mechanism.cpp
+    unit_tests/container/node.cpp
+    unit_tests/node_order_optim/permutations.cpp
+    unit_tests/utils/enumerate.cpp
+    unit_tests/oc/hoc_interpreter.cpp
+    cover/unit_tests/cover.cpp)
 
 if(NRN_ENABLE_PYTHON)
   list(APPEND TESTNEURON_SRC "unit_tests/utils/cast_tuple.cpp")
 endif()
 
-add_executable(
-  testneuron
-  ${TESTNEURON_SRC})
+add_executable(testneuron ${TESTNEURON_SRC})
 set(catch2_targets testneuron)
 if(NRN_ENABLE_THREADS)
   add_executable(nrn-benchmarks common/catch2_main.cpp benchmarks/threads/test_multicore.cpp)
