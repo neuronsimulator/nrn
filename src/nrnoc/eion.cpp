@@ -14,6 +14,10 @@
 #include <array>
 #include <string>
 
+#include <memory>
+#include <bitset>
+#include <vector>
+
 #undef hoc_retpushx
 
 extern double chkarg(int, double low, double high);
@@ -64,7 +68,7 @@ double nrn_ion_charge(Symbol* sym) {
 
 void ion_register(void) {
     /* hoc level registration of ion name. Return -1 if name already
-    in use and not an ion;	and the mechanism subtype otherwise.
+    in use and not an ion;  and the mechanism subtype otherwise.
     */
     char* name;
     Symbol* s;
@@ -401,7 +405,11 @@ The argument `i` specifies which concentration is being written to. It's 0 for
 exterior; and 1 for interior.
 */
 void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
-    static long *chk_conc_, *ion_bit_, size_;
+    const int max_length = 10000; // parametrize?
+    static std::unique_ptr<std::vector<std::bitset<max_length>>> chk_conc_;
+    static std::unique_ptr<std::vector<std::bitset<max_length>>> ion_bit_;
+    static long size_;
+
     Prop* p;
     int flag, j, k;
     if (i == 1) {
@@ -409,41 +417,46 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
     } else {
         flag = 0400;
     }
-    /* an embarassing hack */
-    /* up to 32 possible ions */
-    /* continuously compute a bitmap that allows determination
-        of which models WRITE which ion concentrations */
-    if (n_memb_func > size_) {
+
+    // create a vctor of std::bitsets to track ions being written
+    if (n_memb_func > size_) { // No need to reallocate now?
         if (!chk_conc_) {
-            chk_conc_ = (long*) ecalloc(2 * n_memb_func, sizeof(long));
-            ion_bit_ = (long*) ecalloc(n_memb_func, sizeof(long));
+            chk_conc_ = std::make_unique<std::vector<std::bitset<max_length>>>();
+            chk_conc_->reserve(2 * n_memb_func);
+
+            ion_bit_ = std::make_unique<std::vector<std::bitset<max_length>>>();
+            ion_bit_->reserve(n_memb_func);
         } else {
-            chk_conc_ = (long*) erealloc(chk_conc_, 2 * n_memb_func * sizeof(long));
-            ion_bit_ = (long*) erealloc(ion_bit_, n_memb_func * sizeof(long));
+            chk_conc_ = std::make_unique<std::vector<std::bitset<max_length>>>();
+            chk_conc_->reserve(2 * n_memb_func);
+
+            ion_bit_ = std::make_unique<std::vector<std::bitset<max_length>>>();
+            ion_bit_->reserve(n_memb_func);
             for (j = size_; j < n_memb_func; ++j) {
-                chk_conc_[2 * j] = 0;
-                chk_conc_[2 * j + 1] = 0;
-                ion_bit_[j] = 0;
+                (*chk_conc_)[2 * j] &= 0;
+                (*chk_conc_)[2 * j + 1] &= 0;
+                (*ion_bit_)[j] &= 0;
             }
         }
         size_ = n_memb_func;
     }
     for (k = 0, j = 0; j < n_memb_func; ++j) {
         if (nrn_is_ion(j)) {
-            ion_bit_[j] = (1 << k);
+            (*ion_bit_)[j] = (1 << k);
             ++k;
-            assert(k < sizeof(long) * 8);
+            assert(k < max_length);
         }
     }
 
-    chk_conc_[2 * p_ok->_type + i] |= ion_bit_[pion->_type];
+    (*chk_conc_)[2 * p_ok->_type + i] |= (*ion_bit_)[pion->_type];
     if (pion->dparam[iontype_index_dparam].get<int>() & flag) {
         /* now comes the hard part. Is the possibility in fact actual.*/
         for (p = pion->next; p; p = p->next) {
             if (p == p_ok) {
                 continue;
             }
-            if (chk_conc_[2 * p->_type + i] & ion_bit_[pion->_type]) {
+            auto rst = (*chk_conc_)[2 * p->_type + i] & (*ion_bit_)[pion->_type];
+            if (rst.count() > 0) {
                 char buf[300];
                 Sprintf(buf,
                         "%.*s%c is being written at the same location by %s and %s",
