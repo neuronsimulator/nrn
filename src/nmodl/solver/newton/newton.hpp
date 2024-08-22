@@ -29,8 +29,7 @@ namespace newton {
  * @brief Solver implementation details
  *
  * Implementation of Newton method for solving system of non-linear equations using Eigen
- *   - newton::newton_solver is the preferred option: requires user to provide Jacobian
- *   - newton::newton_numerical_diff_solver is the fallback option: Jacobian not required
+ *   - newton::newton_solver with user, e.g. SymPy, provided Jacobian
  *
  * @{
  */
@@ -76,88 +75,6 @@ EIGEN_DEVICE_FUNC int newton_solver(Eigen::Matrix<double, N, 1>& X,
         // Crout's implementation requires matrices stored in RowMajor order (C-style arrays).
         // Therefore, the transposeInPlace is critical such that the data() method to give the rows
         // instead of the columns.
-        if (!J.IsRowMajor) {
-            J.transposeInPlace();
-        }
-        Eigen::Matrix<int, N, 1> pivot;
-        Eigen::Matrix<double, N, 1> rowmax;
-        // Check if J is singular
-        if (nmodl::crout::Crout<double>(N, J.data(), pivot.data(), rowmax.data()) < 0) {
-            return -1;
-        }
-        Eigen::Matrix<double, N, 1> X_solve;
-        nmodl::crout::solveCrout<double>(N, J.data(), F.data(), X_solve.data(), pivot.data());
-        X -= X_solve;
-    }
-    // If we fail to converge after max_iter iterations, return -1
-    return -1;
-}
-
-static constexpr double SQUARE_ROOT_ULP = 1e-7;
-static constexpr double CUBIC_ROOT_ULP = 1e-5;
-
-/**
- * \brief Newton method without user-provided Jacobian
- *
- * Newton method without user-provided Jacobian: given initial vector X and a
- * functor that calculates `F(X)`, solves for \f$F(X) = 0\f$, starting with
- * initial value of `X` by iterating:
- *
- * \f[
- *     X_{n+1} = X_n - J(X_n)^{-1} F(X_n)
- * \f]
- *
- * where `J(X)` is the Jacobian of `F(X)`, which is approximated numerically
- * using a symmetric finite difference approximation to the derivative
- * when \f$|F|^2 < eps^2\f$, solution has converged/
- *
- * @return number of iterations (-1 if failed to converge)
- */
-template <int N, typename FUNC>
-EIGEN_DEVICE_FUNC int newton_numerical_diff_solver(Eigen::Matrix<double, N, 1>& X,
-                                                   FUNC functor,
-                                                   double eps = EPS,
-                                                   int max_iter = MAX_ITER) {
-    // Vector to store result of function F(X):
-    Eigen::Matrix<double, N, 1> F;
-    // Temporary storage for F(X+dx)
-    Eigen::Matrix<double, N, 1> F_p;
-    // Temporary storage for F(X-dx)
-    Eigen::Matrix<double, N, 1> F_m;
-    // Matrix to store jacobian of F(X):
-    Eigen::Matrix<double, N, N> J;
-    // Solver iteration count:
-    int iter = 0;
-    while (iter < max_iter) {
-        // calculate F from X using user-supplied functor
-        functor(X, F);
-        // get error norm: here we use sqrt(|F|^2)
-        double error = F.norm();
-        if (error < eps) {
-            // we have converged: return iteration count
-            return iter;
-        }
-        ++iter;
-        // calculate approximate Jacobian
-        for (int i = 0; i < N; ++i) {
-            // symmetric finite difference approximation to derivative
-            // df/dx ~= ( f(x+dx) - f(x-dx) ) / (2*dx)
-            // choose dx to be ~(ULP)^{1/3}*X[i]
-            // https://aip.scitation.org/doi/pdf/10.1063/1.4822971
-            // also enforce a lower bound ~sqrt(ULP) to avoid dx being too small
-            double dX = std::max(CUBIC_ROOT_ULP * X[i], SQUARE_ROOT_ULP);
-            // F(X + dX)
-            X[i] += dX;
-            functor(X, F_p);
-            // F(X - dX)
-            X[i] -= 2.0 * dX;
-            functor(X, F_m);
-            F_p -= F_m;
-            // J = (F(X + dX) - F(X - dX)) / (2*dX)
-            J.col(i) = F_p / (2.0 * dX);
-            // restore X
-            X[i] += dX;
-        }
         if (!J.IsRowMajor) {
             J.transposeInPlace();
         }
