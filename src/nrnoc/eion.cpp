@@ -422,16 +422,16 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
     if (n_memb_func > size_) { // No need to reallocate now?
         if (!chk_conc_) {
             chk_conc_ = std::make_unique<std::vector<std::bitset<max_length>>>();
-            chk_conc_->reserve(2 * n_memb_func);
+            chk_conc_->resize(2 * n_memb_func); // std::bitset defaults to 0
 
             ion_bit_ = std::make_unique<std::vector<std::bitset<max_length>>>();
-            ion_bit_->reserve(n_memb_func);
+            ion_bit_->resize(n_memb_func);
         } else {
             chk_conc_ = std::make_unique<std::vector<std::bitset<max_length>>>();
-            chk_conc_->reserve(2 * n_memb_func);
+            chk_conc_->resize(2 * n_memb_func);
 
             ion_bit_ = std::make_unique<std::vector<std::bitset<max_length>>>();
-            ion_bit_->reserve(n_memb_func);
+            ion_bit_->resize(n_memb_func);
             for (j = size_; j < n_memb_func; ++j) {
                 (*chk_conc_)[2 * j] &= 0;
                 (*chk_conc_)[2 * j + 1] &= 0;
