@@ -1119,6 +1119,13 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
         printer->fmt_line("register_mech({});", register_mech_args);
     }
 
+    if (info.thread_callback_register) {
+        printer->fmt_line("_extcall_thread.resize({});", info.thread_data_index + 1);
+        printer->fmt_line("thread_mem_init(_extcall_thread.data());");
+        printer->fmt_line("{} = 0;", get_variable_name("thread_data_in_use", false));
+    }
+
+
     /// type related information
     printer->add_newline();
     printer->fmt_line("mech_type = nrn_get_mechtype({}[1]);", get_channel_info_var_name());
