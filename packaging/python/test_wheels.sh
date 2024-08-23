@@ -269,8 +269,14 @@ if echo $compile_options | grep "NRN_ENABLE_CORENEURON=ON" > /dev/null ; then
   has_coreneuron=true
 fi
 
-# run tests
-test_wheel "${python_exe}"
+# run tests with latest NumPy
+echo " == Running tests with latest NumPy == "
+time test_wheel "${python_exe}"
+
+# run tests with oldest supported NumPy
+echo " == Running tests with oldest supported NumPy == "
+$python_exe -m pip install -r packaging/python/oldest_numpy_requirements.txt
+time test_wheel "${python_exe}"
 
 # cleanup
 if [[ "$use_venv" != "false" ]]; then
