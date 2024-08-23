@@ -621,32 +621,6 @@ void CodegenCppVisitor::print_statement_block(const ast::StatementBlock& node,
 }
 
 
-/**
- * \todo Issue with verbatim renaming. e.g. pattern.mod has info struct with
- * index variable. If we use "index" instead of "indexes" as default argument
- * then during verbatim replacement we don't know the index is which one. This
- * is because verbatim renaming pass has already stripped out prefixes from
- * the text.
- */
-void CodegenCppVisitor::rename_function_arguments() {
-    const auto& default_arguments = stringutils::split_string(nrn_thread_arguments(), ',');
-    for (const auto& dirty_arg: default_arguments) {
-        const auto& arg = stringutils::trim(dirty_arg);
-        RenameVisitor v(arg, "arg_" + arg);
-        for (const auto& function: info.functions) {
-            if (has_parameter_of_name(function, arg)) {
-                function->accept(v);
-            }
-        }
-        for (const auto& function: info.procedures) {
-            if (has_parameter_of_name(function, arg)) {
-                function->accept(v);
-            }
-        }
-    }
-}
-
-
 bool CodegenCppVisitor::is_functor_const(const ast::StatementBlock& variable_block,
                                          const ast::StatementBlock& functor_block) {
     // Create complete_block with both variable declarations (done in variable_block) and solver
@@ -1396,7 +1370,6 @@ void CodegenCppVisitor::setup(const Program& node) {
     codegen_int_variables = get_int_variables();
 
     update_index_semantics();
-    rename_function_arguments();
 
     info.semantic_variable_count = int_variables_size();
 }

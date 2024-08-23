@@ -257,15 +257,7 @@ void CodegenNeuronCppVisitor::print_function_or_procedure(
         printer->fmt_line("int ret_{} = 0;", name);
     }
 
-    if (node.is_procedure_block() || node.is_function_block()) {
-        const auto& parameters = node.get_parameters();
-        auto result = std::find_if(parameters.begin(), parameters.end(), [](auto var) {
-            return var.get()->get_node_name() == "v";
-        });
-        if (result == parameters.end()) {
-            printer->fmt_line("auto v = inst.{}[id];", naming::VOLTAGE_UNUSED_VARIABLE);
-        }
-    }
+    printer->fmt_line("auto v = inst.{}[id];", naming::VOLTAGE_UNUSED_VARIABLE);
 
     print_statement_block(*node.get_statement_block(), false, false);
     printer->fmt_line("return ret_{};", name);

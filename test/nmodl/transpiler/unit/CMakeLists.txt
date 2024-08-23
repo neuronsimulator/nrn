@@ -52,6 +52,7 @@ add_executable(
   visitor/nmodl.cpp
   visitor/perf.cpp
   visitor/rename.cpp
+  visitor/rename_function_arguments.cpp
   visitor/semantic_analysis.cpp
   visitor/solve_block.cpp
   visitor/steadystate.cpp
