@@ -40,7 +40,6 @@ extern int has_membrane(char*, Section*);
 extern int hocobj_pushargs(PyObject*, std::vector<char*>&);
 extern void hocobj_pushargs_free_strings(std::vector<char*>&);
 
-
 typedef struct {
     PyObject_HEAD
     NPySecObj* pysec_;
@@ -52,12 +51,6 @@ typedef struct {
     NPySecObj* pysec_;
     int seg_iter_;
 } NPySegOfSecIter;
-
-typedef struct {
-    PyObject_HEAD
-    NPySecObj* pysec_;
-    double x_;
-} NPySegObj;
 
 typedef struct {
     PyObject_HEAD
