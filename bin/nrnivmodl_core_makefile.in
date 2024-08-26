@@ -39,6 +39,9 @@ MOD_OBJS_DIR = $(OUTPUT_DIR)/corenrn/build
 # Linked libraries gathered by CMake
 LDFLAGS = $(LINKFLAGS) @CORENRN_COMMON_LDFLAGS@
 
+# Headers for common solvers
+SOLVER_HEADERS = $(MOD_TO_CPP_DIR)/solver/crout.hpp $(MOD_TO_CPP_DIR)/solver/newton.hpp
+
 # Includes paths gathered by CMake
 # coreneuron/utils/randoms goes first because it needs to override the NEURON
 # directory in INCFLAGS
@@ -66,8 +69,8 @@ CXX_COMPILE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ $(INCLUDES)
 CXX_LINK_EXE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@
 CXX_SHARED_LIB_CMD = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@
 
-# env variables required for mod2c or nmodl
-NMODL_ENV_VAR = @CORENRN_SANITIZER_ENABLE_ENVIRONMENT_STRING@ PYTHONPATH=${PYTHONPATH}:${CORENRN_LIB_DIR}/python MODLUNIT=$(CORENRN_SHARE_NMODL_DIR)/nrnunits.lib
+# env variables required for nmodl
+NMODL_ENV_VAR = @CORENRN_SANITIZER_ENABLE_ENVIRONMENT_STRING@ PYTHONPATH=${PYTHONPATH}:${CORENRN_LIB_DIR}/python
 
 ifeq (@CORENRN_ENABLE_GPU@, ON)
     nmodl_arguments_c=@NMODL_ACC_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
@@ -106,7 +109,7 @@ mod_files_names = $(sort $(notdir $(wildcard $(MODS_PATH)/*.mod)))
 mod_files_no_ext = $(mod_files_names:.mod=)
 mod_files_for_cpp_backend = $(foreach mod_file, $(mod_files_paths), $(addprefix $(MOD_TO_CPP_DIR)/, $(notdir $(mod_file))))
 
-# CPP files and their obkects
+# CPP files and their objects
 mod_cpp_files = $(patsubst %.mod,%.cpp,$(mod_files_for_cpp_backend))
 mod_cpp_objs = $(addprefix $(MOD_OBJS_DIR)/,$(addsuffix .o,$(basename $(mod_files_no_ext))))
 
@@ -175,12 +178,16 @@ coremech_lib_static: $(ALL_OBJS) $(ENGINEMECH_OBJ) build_always
 	ar r ${COREMECH_LIB_PATH} $(ENGINEMECH_OBJ) $(ALL_OBJS)
 
 # compile cpp files to .o
-$(MOD_OBJS_DIR)/%.o: $(MOD_TO_CPP_DIR)/%.cpp | $(MOD_OBJS_DIR)
+$(MOD_OBJS_DIR)/%.o: $(MOD_TO_CPP_DIR)/%.cpp | $(MOD_OBJS_DIR) $(SOLVER_HEADERS)
 	$(CXX_COMPILE_CMD) -c $< -o $@ -DNRN_PRCELLSTATE=$(NRN_PRCELLSTATE) @CORENEURON_TRANSLATED_CODE_COMPILE_FLAGS@
 
-# translate MOD files to CPP using mod2c/NMODL
+# translate MOD files to CPP using NMODL
 $(mod_cpp_files): $(MOD_TO_CPP_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MOD_TO_CPP_DIR)
 	$(NMODL_ENV_VAR) $(NMODL_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ $(NMODL_FLAGS_C)
+
+# generate common solver headers
+$(MOD_TO_CPP_DIR)/solver/%.hpp: $(MOD_TO_CPP_DIR)
+	$(NMODL_ENV_VAR) $(NMODL_BINARY_PATH) --write-shared-headers $(*F) -o $(MOD_TO_CPP_DIR)/
 
 # generate mod registration function. Dont overwrite if it's not changed
 $(MOD_FUNC_CPP): build_always | $(MOD_TO_CPP_DIR)
@@ -209,5 +216,5 @@ install: $(SPECIAL_EXE)
 
 $(VERBOSE).SILENT:
 
-# delete cpp files if mod2c error, otherwise they are not generated again
+# delete cpp files if NMODL error, otherwise they are not generated again
 .DELETE_ON_ERROR:
