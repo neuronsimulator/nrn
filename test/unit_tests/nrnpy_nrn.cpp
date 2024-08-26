@@ -40,7 +40,7 @@ TEST_CASE("Test seg_from_sec_x", "[nrn_python::section_segment]") {
         auto pyseg = nrnpy_hoc2pyobject(x);
         REQUIRE(Py_REFCNT(pyseg) == 1);
 
-        auto pysec = ((NPySegObj*)pyseg)->pysec_;
+        auto pysec = ((NPySegObj*) pyseg)->pysec_;
         REQUIRE(Py_REFCNT(pysec) == 1);
     }
 }
