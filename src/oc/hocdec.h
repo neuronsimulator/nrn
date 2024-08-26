@@ -54,7 +54,7 @@ union Inst { /* machine instruction list type */
     int i;
 };
 
-#define STOP (Inst*) 0
+constexpr auto STOP = nullptr;
 
 struct Arrayinfo {    /* subscript info for arrays */
     unsigned* a_varn; /* dependent variable number for array elms */
@@ -79,20 +79,22 @@ struct Symlist {
 
 using Upoint = char*;
 
-#define NOTUSER      0
-#define USERINT      1 /* For subtype */
-#define USERDOUBLE   2
-#define USERPROPERTY 3 /* for newcable non-range variables */
-#define USERFLOAT    4
-#define SYMBOL       7  /* for stack type */
-#define OBJECTTMP    8  /* temporary object on stack */
-#define STKOBJ_UNREF 9  /* already unreffed temporary object on stack */
-#define DYNAMICUNITS 10 /* {modern, legacy} units pair */
-#define CPLUSOBJECT  16 /* c++ registered class */
-#define JAVAOBJECT   32 /* c++ registered class */
+// clang-format off
+constexpr auto NOTUSER =       0;
+constexpr auto USERINT =       1; /* For subtype */
+constexpr auto USERDOUBLE =    2;
+constexpr auto USERPROPERTY =  3; /* for newcable non-range variables */
+constexpr auto USERFLOAT =     4;
+constexpr auto SYMBOL =        7; /* for stack type */
+constexpr auto OBJECTTMP =     8; /* temporary object on stack */
+constexpr auto STKOBJ_UNREF =  9; /* already unreffed temporary object on stack */
+constexpr auto DYNAMICUNITS = 10; /* {modern, legacy} units pair */
+constexpr auto CPLUSOBJECT =  16; /* c++ registered class */
+constexpr auto JAVAOBJECT =   32; /* c++ registered class */
 /* above two are bits, next must start at 64 */
-#define OBJECTALIAS 1
-#define VARALIAS    2
+constexpr auto OBJECTALIAS =   1;
+constexpr auto VARALIAS =      2;
+// clang-format on
 
 struct HocSymExtension {
     float* parmlimits; /* some variables have suggested bounds */
