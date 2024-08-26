@@ -27,17 +27,17 @@ union Objectdata;
 struct Object;
 struct hoc_Item;
 
-typedef int (*Pfri)(void);
-typedef void (*Pfrv)(void);
-typedef double (*Pfrd)(void);
-typedef struct Object** (*Pfro)(void);
-typedef const char** (*Pfrs)(void);
+using Pfri = int (*)(void);
+using Pfrv = void (*)(void);
+using Pfrd = double (*)(void);
+using Pfro = struct Object** (*) (void);
+using Pfrs = const char** (*) (void);
 
-typedef int (*Pfri_vp)(void*);
-typedef void (*Pfrv_vp)(void*);
-typedef double (*Pfrd_vp)(void*);
-typedef struct Object** (*Pfro_vp)(void*);
-typedef const char** (*Pfrs_vp)(void*);
+using Pfri_vp = int (*)(void*);
+using Pfrv_vp = void (*)(void*);
+using Pfrd_vp = double (*)(void*);
+using Pfro_vp = struct Object** (*) (void*);
+using Pfrs_vp = const char** (*) (void*);
 
 union Inst { /* machine instruction list type */
     Pfrv pf;
@@ -77,7 +77,7 @@ struct Symlist {
     Symbol* last;
 };
 
-typedef char* Upoint;
+using Upoint = char*;
 
 #define NOTUSER      0
 #define USERINT      1 /* For subtype */
