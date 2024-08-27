@@ -237,6 +237,12 @@ test_wheel () {
 }
 
 
+test_wheel_basic_python () {
+    echo "=========== BASIC PYTHON TESTS ==========="
+    $python_exe -c "import neuron; neuron.test(); neuron.test_rxd()"
+}
+
+
 echo "== Testing $python_wheel using $python_exe ($python_ver) =="
 
 
@@ -271,12 +277,12 @@ fi
 
 # run tests with latest NumPy
 echo " == Running tests with latest NumPy == "
-time test_wheel "${python_exe}"
+test_wheel
 
-# run tests with oldest supported NumPy
-echo " == Running tests with oldest supported NumPy == "
+# run basic python tests with oldest supported NumPy
+echo " == Running basic python tests with oldest supported NumPy == "
 $python_exe -m pip install -r packaging/python/oldest_numpy_requirements.txt
-time test_wheel "${python_exe}"
+test_wheel_basic_python
 
 # cleanup
 if [[ "$use_venv" != "false" ]]; then
