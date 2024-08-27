@@ -91,14 +91,16 @@ void wopen(void) /* open file for writing */
     else
         fname = "";
     d = 1.;
-    if (fout != stdout)
-        ERRCHK(IGNORE(fclose(fout));)
+    if (fout != stdout) {
+        IGNORE(fclose(fout));
+    }
     fout = stdout;
-    if (fname[0] != 0)
-        ERRCHK(if ((fout = fopen(expand_env_var(fname), "w")) == (FILE*) 0) {
+    if (fname[0] != 0) {
+        if ((fout = fopen(expand_env_var(fname), "w")) == nullptr) {
             d = 0.;
             fout = stdout;
-        })
+        }
+    }
     errno = 0;
     ret();
     pushx(d);
