@@ -24,10 +24,11 @@ C:\Python311\python -c "import neuron; neuron.test(); quit()" || set "errorfound
 C:\Python312\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 
 :: install oldest supported numpy
-C:\Python39\python.exe -m pip install numpy==1.20.3 || goto :error
-C:\Python310\python.exe -m pip install numpy==1.21.6 || goto :error
-C:\Python311\python.exe -m pip install numpy==1.23.5 || goto :error
-C:\Python312\python.exe -m pip install numpy==1.26.4 || goto :error
+C:\Python38\python.exe -m pip install -r packaging/python/oldest_numpy_requirements.txt || goto :error
+C:\Python39\python.exe -m pip install -r packaging/python/oldest_numpy_requirements.txt || goto :error
+C:\Python310\python.exe -m pip install -r packaging/python/oldest_numpy_requirements.txt || goto :error
+C:\Python311\python.exe -m pip install -r packaging/python/oldest_numpy_requirements.txt || goto :error
+C:\Python312\python.exe -m pip install -r packaging/python/oldest_numpy_requirements.txt || goto :error
 
 :: test all pythons again
 C:\Python38\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
