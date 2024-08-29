@@ -16,12 +16,10 @@
 #include <nanobind/nanobind.h>
 namespace nb = nanobind;
 
-static void nrnpy_decref_defer(PyObject*);
 static char* nrnpyerr_str();
 static PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
 static PyObject* main_module;
 static PyObject* main_namespace;
-static hoc_List* dlist;
 
 struct Py2Nrn final {
     ~Py2Nrn() {
@@ -254,15 +252,12 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         PyObject* pn = PyNumber_Float(result);
         hoc_pushx(PyFloat_AsDouble(pn));
         Py_XDECREF(pn);
-        Py_XDECREF(result);
     } else if (is_python_string(result)) {
         char** ts = hoc_temp_charptr();
         Py2NRNString str(result, true);
         *ts = str.c_str();
         hoc_pop_defer();
         hoc_pushstr(ts);
-        // how can we defer the result unref til the string is popped
-        nrnpy_decref_defer(result);
     } else {
         // PyObject_Print(result, stdout, 0);
         on = nrnpy_po2ho(result);
@@ -271,8 +266,8 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         if (on) {
             on->refcount--;
         }
-        Py_XDECREF(result);
     }
+    Py_XDECREF(result);
     Py_XDECREF(head);
     Py_DECREF(tail);
 }
@@ -331,17 +326,6 @@ static void hpoasgn(Object* o, int type) {
     if (err) {
         PyErr_Print();
         hoc_execerror("Assignment to PythonObject failed", NULL);
-    }
-}
-
-static void nrnpy_decref_defer(PyObject* po) {
-    if (po) {
-#if 0
-		PyObject* ps = PyObject_Str(po);
-		printf("defer %s\n", PyString_AsString(ps));
-		Py_DECREF(ps);
-#endif
-        hoc_l_lappendvoid(dlist, (void*) po);
     }
 }
 
@@ -1129,5 +1113,4 @@ extern "C" NRN_EXPORT void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
     nrnpython_reg_real_nrnpython_cpp(ptrs);
     // call a function in nrnpy_hoc.cpp to register the functions defined there
     nrnpython_reg_real_nrnpy_hoc_cpp(ptrs);
-    dlist = hoc_l_newlist();
 }
