@@ -172,14 +172,26 @@ model: MODEL line
 line:	{$$ = inputline();}
 	;
 define1: DEFINE1 NAME INTEGER
-		/* all subsequent occurences of NAME will be replaced
-			by integer during parseing.  See 'integer:' */
-	{ Symbol *sp = SYM($2);
-	 if (sp->subtype)
-		diag(sp->name, " used before DEFINEed");
-	 sp->u.str = STR($3);
-	 sp->type = DEFINEDVAR;
-	 deltokens($1, $3);}
+	/* all subsequent occurences of NAME will be replaced
+	   by integer during parseing.  See 'integer:' */
+	{
+	    Symbol *sp = SYM($2);
+	    if (sp->subtype)
+	        diag(sp->name, " used before DEFINEed");
+	    sp->u.str = STR($3);
+	    sp->type = DEFINEDVAR;
+	    deltokens($1, $3);
+	}
+	| DEFINE1 NAME '-' INTEGER
+	{
+	   Symbol *sp = SYM($2);
+	   if (sp->subtype)
+	       diag(sp->name, " used before DEFINEed");
+	   Sprintf(buf, "-%s", STR($4));
+	   sp->u.str = stralloc(buf, nullptr);
+	   sp->type = DEFINEDVAR;
+	   deltokens($1, $4);
+    }
 	| DEFINE1 error {myerr("syntax: DEFINE name integer");}
 	;
 Name:	NAME
@@ -227,7 +239,7 @@ uniton: UNITSON {replacstr($1, "");}
 	;
 limits: /*nothing*/
 		{$$ = stralloc("", (char*)0);}
-	| LT real ',' real GT
+	| LT number ',' number GT
 		{
 		 Sprintf(buf, "%s %s", STR($2), STR($4));
 		 $$ = stralloc(buf, (char*)0);

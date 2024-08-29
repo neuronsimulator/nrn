@@ -71,7 +71,7 @@ build_wheel_linux() {
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
         clone_nmodl_and_add_requirements
-        CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
+        CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF,CORENRN_ENABLE_OPENMP=ON"
     fi
 
     cat my_requirements.txt
@@ -118,15 +118,15 @@ build_wheel_osx() {
     echo " - Installing build requirements"
     cp packaging/python/build_requirements.txt my_requirements.txt
 
+    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
+    if [ "$USE_STATIC_READLINE" == "1" ]; then
+      CMAKE_DEFS="$CMAKE_DEFS,NRN_BINARY_DIST_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
+    fi
+
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
         clone_nmodl_and_add_requirements
         CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
-    fi
-
-    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
-    if [ "$USE_STATIC_READLINE" == "1" ]; then
-      CMAKE_DEFS="$CMAKE_DEFS,NRN_BINARY_DIST_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
     fi
 
     cat my_requirements.txt
@@ -160,7 +160,7 @@ build_wheel_osx() {
       fi
     fi
 
-    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
+    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
 
     echo " - Calling delocate-listdeps"
     delocate-listdeps dist/*.whl

@@ -207,7 +207,7 @@ In order to build NEURON from source, the following packages must be available:
 The following packages are optional (see build options):
 
 - Python >=3.8 (for Python interface)
-- Cython < 3 (for RXD)
+- Cython (for RXD)
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)
 
@@ -290,7 +290,8 @@ install dependencies. For example, on Ubuntu:
 sudo apt-get update
 sudo apt-get install -y bison cmake flex git \
      libncurses-dev libopenmpi-dev libx11-dev \
-     libxcomposite-dev openmpi-bin python3-dev
+     libxcomposite-dev openmpi-bin python3-dev \
+     libreadline-dev
 # for python dependencies
 pip install -r nrn_requirements.txt
 ```
@@ -481,7 +482,7 @@ share/lib/python/neuron/rxd/geometry3d/surfaces.cpp:14605:41: error: no member n
 ```
 often there's something related to NumPy nearby, e.g. `npy`.
 
-The issue is that certain versions of NEURON (9.0 and earlier) are not
+The issue is that certain versions of NEURON (below 9.0) are not
 compatible with `numpy>=2`. Check the numpy version, e.g.,
 ```
 python -c "import numpy; print(numpy.__version__)"

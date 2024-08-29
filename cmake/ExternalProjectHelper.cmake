@@ -29,7 +29,11 @@ function(nrn_initialize_submodule path)
     list(APPEND UPDATE_OPTIONS --recursive)
   endif()
   if(opt_SHALLOW)
-    list(APPEND UPDATE_OPTIONS --depth 1)
+    # RHEL7-family distributions ship with an old git that does not support the --depth argument to
+    # git submodule update
+    if(GIT_VERSION_STRING VERSION_GREATER_EQUAL "1.8.4")
+      list(APPEND UPDATE_OPTIONS --depth 1)
+    endif()
   endif()
   if(NOT ${GIT_FOUND})
     message(

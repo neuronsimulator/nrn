@@ -388,7 +388,13 @@ double nrn_nernst_coef(int type) {
 }
 
 /*
-It is generally an error for two models to WRITE the same concentration
+It is generally an error for two models to WRITE the same concentration.
+
+This functions checks that there's no write conflict; and warns if it detects
+one. It also sets respective write flag in the style of the ion.
+
+The argument `i` specifies which concentration is being written to. It's 0 for
+exterior; and 1 for interior.
 */
 void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
     static long *chk_conc_, *ion_bit_, size_;
@@ -542,13 +548,13 @@ void nrn_promote(Prop* p, int conc, int rev) {
 }
 
 /*the bitmap is
-03	concentration unused, nrnocCONST, DEP, STATE
-04	initialize concentrations
-030	reversal potential unused, nrnocCONST, DEP, STATE
-040	initialize reversal potential
-0100	calc reversal during fadvance
-0200	ci being written by a model
-0400	co being written by a model
+  03  concentration unused, nrnocCONST, DEP, STATE
+  04  initialize concentrations
+ 030  reversal potential unused, nrnocCONST, DEP, STATE
+ 040  initialize reversal potential
+0100  calc reversal during fadvance
+0200  ci being written by a model
+0400  co being written by a model
 */
 
 /* Must be called prior to any channels which update the currents */
