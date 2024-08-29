@@ -543,15 +543,15 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock& node) {
                     pre_solve_statements.push_back(std::move(expression));
                 }
                 // replace ODE with Euler equation
-                eq = x;
+                eq = "(";
+                eq.append(x);
                 eq.append(x_array_index);
-                eq.append(" = ");
+                eq.append(" - ");
                 eq.append(old_x);
-                eq.append(" + ");
+                eq.append(") / ");
                 eq.append(codegen::naming::NTHREAD_DT_VARIABLE);
-                eq.append(" * (");
+                eq.append(" = ");
                 eq.append(dxdt);
-                eq.append(")");
                 logger->debug("SympySolverVisitor :: -> constructed Euler eq: {}", eq);
             }
         }

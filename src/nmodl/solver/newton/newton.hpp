@@ -34,8 +34,22 @@ namespace newton {
  * @{
  */
 
-static constexpr int MAX_ITER = 1e3;
-static constexpr double EPS = 1e-12;
+static constexpr int MAX_ITER = 50;
+static constexpr double EPS = 1e-13;
+
+template <int N>
+bool is_converged(const Eigen::Matrix<double, N, 1>& X,
+                  const Eigen::Matrix<double, N, N>& J,
+                  const Eigen::Matrix<double, N, 1>& F,
+                  double eps) {
+    for (Eigen::Index i = 0; i < N; ++i) {
+        double square_error = J(i, Eigen::all).cwiseAbs2() * (eps * X).cwiseAbs2();
+        if (F(i) * F(i) > square_error) {
+            return false;
+        }
+    }
+    return true;
+}
 
 /**
  * \brief Newton method with user-provided Jacobian
@@ -58,17 +72,14 @@ EIGEN_DEVICE_FUNC int newton_solver(Eigen::Matrix<double, N, 1>& X,
                                     int max_iter = MAX_ITER) {
     // Vector to store result of function F(X):
     Eigen::Matrix<double, N, 1> F;
-    // Matrix to store jacobian of F(X):
+    // Matrix to store Jacobian of F(X):
     Eigen::Matrix<double, N, N> J;
     // Solver iteration count:
     int iter = -1;
     while (++iter < max_iter) {
         // calculate F, J from X using user-supplied functor
         functor(X, F, J);
-        // get error norm: here we use sqrt(|F|^2)
-        double error = F.norm();
-        if (error < eps) {
-            // we have converged: return iteration count
+        if (is_converged(X, J, F, eps)) {
             return iter;
         }
         // In Eigen the default storage order is ColMajor.
@@ -109,8 +120,7 @@ EIGEN_DEVICE_FUNC int newton_solver_small_N(Eigen::Matrix<double, N, 1>& X,
     int iter = -1;
     while (++iter < max_iter) {
         functor(X, F, J);
-        double error = F.norm();
-        if (error < eps) {
+        if (is_converged(X, J, F, eps)) {
             return iter;
         }
         // The inverse can be called from within OpenACC regions without any issue, as opposed to

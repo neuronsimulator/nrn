@@ -18,6 +18,7 @@ set(NMODL_USECASE_DIRS
     random
     suffix
     state
+    steady_state
     table
     useion
     at_time)
