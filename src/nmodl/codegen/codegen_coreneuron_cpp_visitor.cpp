@@ -314,11 +314,12 @@ bool CodegenCoreneuronCppVisitor::optimize_ion_variable_copies() const {
 
 void CodegenCoreneuronCppVisitor::print_memory_allocation_routine() const {
     printer->add_newline(2);
-    auto args = "size_t num, size_t size, size_t alignment = 16";
+    auto args = "size_t num, size_t size, size_t alignment = 64";
     printer->fmt_push_block("static inline void* mem_alloc({})", args);
-    printer->add_line("void* ptr;");
-    printer->add_line("posix_memalign(&ptr, alignment, num*size);");
-    printer->add_line("memset(ptr, 0, size);");
+    printer->add_line(
+        "size_t aligned_size = ((num*size + alignment - 1) / alignment) * alignment;");
+    printer->add_line("void* ptr = aligned_alloc(alignment, aligned_size);");
+    printer->add_line("memset(ptr, 0, aligned_size);");
     printer->add_line("return ptr;");
     printer->pop_block();
 
