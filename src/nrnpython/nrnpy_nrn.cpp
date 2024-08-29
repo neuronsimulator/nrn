@@ -1890,6 +1890,7 @@ static Object* seg_from_sec_x(Section* sec, double x) {
         pysec->sec_ = sec;
         pysec->name_ = 0;
         pysec->cell_weakref_ = 0;
+        Py_INCREF(pysec);
         pseg->pysec_ = pysec;
     }
     pseg->x_ = x;
