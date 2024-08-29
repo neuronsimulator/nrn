@@ -80,13 +80,6 @@ struct NPySecObj {
     char* name_;
     PyObject* cell_weakref_;
 };
-
-typedef struct {
-    PyObject_HEAD
-    NPySecObj* pysec_;
-    double x_;
-} NPySegObj;
-
 NPySecObj* newpysechelp(Section* sec);
 PyObject* nrnpy_hoc2pyobject(Object* ho);
 int nrnpy_ho_eq_po(Object*, PyObject*);

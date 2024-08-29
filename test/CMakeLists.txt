@@ -40,30 +40,6 @@ foreach(target ${catch2_targets})
   endif()
 endforeach()
 
-if(NRN_ENABLE_PYTHON)
-  add_executable(testnrn_py common/catch2_main.cpp unit_tests/nrnpy_nrn.cpp)
-
-  cpp_cc_configure_sanitizers(TARGET testnrn_py)
-  target_link_libraries(testnrn_py Catch2::Catch2 nrniv_lib)
-
-  list(GET NRN_PYTHON_EXECUTABLES 0 pyexe)
-  list(GET NRN_PYTHON_VERSIONS 0 pyver)
-
-  if(NRN_ENABLE_PYTHON_DYNAMIC)
-    execute_process(
-      COMMAND "${pyexe}" -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))"
-      RESULT_VARIABLE code
-      OUTPUT_VARIABLE libdir
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-    set(pylib
-        "${libdir}/${CMAKE_SHARED_LIBRARY_PREFIX}python${pyver}${CMAKE_SHARED_LIBRARY_SUFFIX}")
-
-    target_link_libraries(testnrn_py nrnpython${pyver} ${pylib})
-  else()
-    target_link_libraries(testnrn_py nrnpython)
-  endif()
-endif()
-
 # =============================================================================
 # API test executables
 # =============================================================================
