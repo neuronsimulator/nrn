@@ -1,6 +1,5 @@
 // NOTE: this assumes neuronapi.h is on your CPLUS_INCLUDE_PATH
 #include "neuronapi.h"
-#include <dlfcn.h>
 
 #include <array>
 #include <cassert>
@@ -15,7 +14,7 @@ using std::cout;
 using std::endl;
 using std::ofstream;
 
-constexpr std::array<double, 3> EXPECTED_V{
+constexpr std::initializer_list<double> EXPECTED_V{
 #ifndef CORENEURON_ENABLED
     -0x1.04p+6,
     -0x1.b254ad82e20edp+5,
@@ -34,11 +33,7 @@ int main(void) {
     nrn_init(3, argv.data());
 
     // load the stdrun library
-    char* temp_str = strdup("stdrun.hoc");
-    nrn_str_push(&temp_str);
-    nrn_function_call(nrn_symbol("load_file"), 1);
-    nrn_double_pop();
-    free(temp_str);
+    nrn_function_call_s("load_file", "stdrun.hoc");
 
     // topology
     Section* soma = nrn_section_new("soma");
@@ -46,43 +41,29 @@ int main(void) {
 
     // define soma morphology with two 3d points
     nrn_section_push(soma);
-    for (double x: {0, 0, 0, 10}) {
-        nrn_double_push(x);
-    }
-    nrn_function_call(nrn_symbol("pt3dadd"), 4);
-    nrn_double_pop();  // pt3dadd returns a number
-    for (double x: {10, 0, 0, 10}) {
-        nrn_double_push(x);
-    }
-    nrn_function_call(nrn_symbol("pt3dadd"), 4);
-    nrn_double_pop();  // pt3dadd returns a number
+    nrn_function_call("pt3dadd", "dddd", 0., 0., 0., 10.);
+    nrn_function_call("pt3dadd", "dddd", 10., 0., 0., 10.);
 
     // ion channels
     nrn_mechanism_insert(soma, nrn_symbol("hh"));
 
     // current clamp at soma(0.5)
-    nrn_double_push(0.5);
-    Object* iclamp = nrn_object_new(nrn_symbol("IClamp"), 1);
+    Object* iclamp = nrn_object_new("IClamp", "d", 0.5);
     nrn_property_set(iclamp, "amp", 0.3);
-    nrn_property_set(iclamp, "del", 1);
+    nrn_property_set(iclamp, "del", 1.);
     nrn_property_set(iclamp, "dur", 0.1);
 
     // setup recording
-    Object* v = nrn_object_new(nrn_symbol("Vector"), 0);
-    nrn_rangevar_push(nrn_symbol("v"), soma, 0.5);
-    nrn_double_push(5.);
-    nrn_method_call(v, nrn_method_symbol(v, "record"), 2);
-    nrn_object_unref(nrn_object_pop());  // record returns the vector
+    RangeVar ref_v = nrn_rangevar_new(soma, 0.5, "v");
+    Object* v = nrn_object_new_NoArgs("Vector");
+    auto r = nrn_method_call(v, "record", "rd", &ref_v, 5.0);
+    // Note: we could potentially even forget to drop the result
+    // because it is popped from the Stack anyway. The only problem
+    // would be the inner object (if any) would never be decref and destroyed
+    nrn_result_drop(&r);
 
-    // finitialize(-65)
-    nrn_double_push(-65);
-    nrn_function_call(nrn_symbol("finitialize"), 1);
-    nrn_double_pop();
-
-    // continuerun(10)
-    nrn_double_push(10.5);
-    nrn_function_call(nrn_symbol("continuerun"), 1);
-    nrn_double_pop();
+    nrn_function_call("finitialize", "d", -65.0);
+    nrn_function_call("continuerun", "d", 10.5);
 
     if (!approximate(EXPECTED_V, v)) {
         return 1;

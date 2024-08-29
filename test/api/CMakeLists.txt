@@ -1,3 +1,10 @@
+# Unit Tests
+add_executable(api_unit_tests api_unit_tests.cpp)
+target_link_libraries(api_unit_tests PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(api_unit_tests PUBLIC nrniv_lib)
+add_test(NAME "api::unit_tests" COMMAND api_unit_tests)
+
+# Examples
 foreach(api_test_file hh_sim.cpp netcon.cpp sections.c vclamp.cpp)
   string(REPLACE "." "_" api_test_name "${api_test_file}")
   add_executable(${api_test_name} ${api_test_file})

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-void modl_reg(){};
+void modl_reg(){/* No modl_reg */};
 
 int main(void) {
     static const char* argv[] = {"sections", "-nogui", "-nopython", NULL};
@@ -24,12 +24,12 @@ int main(void) {
     nrn_nseg_set(axon, 5);
 
     // print out the morphology
-    nrn_function_call(nrn_symbol("topology"), 0);
+    nrn_function_call("topology", NRN_NO_ARGS);
 
     /* create a SectionList that is dend1 and its children */
-    Object* seclist = nrn_object_new(nrn_symbol("SectionList"), 0);
+    Object* seclist = nrn_object_new_NoArgs("SectionList");
     nrn_section_push(dend1);
-    nrn_method_call(seclist, nrn_method_symbol(seclist, "subtree"), 0);
+    nrn_method_call(seclist, "subtree", NRN_NO_ARGS);
     nrn_section_pop();
 
     /* loop over allsec, print out */

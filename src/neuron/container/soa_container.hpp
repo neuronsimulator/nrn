@@ -463,7 +463,7 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
      */
     template <may_cause_reallocation might_reallocate, typename Callable>
     Callable for_each_vector(Callable callable) {
-        for (auto i = 0; i < m_storage.size(); ++i) {
+        for (size_t i = 0; i < m_storage.size(); ++i) {
             callable(m_tag, m_storage[i], i, m_array_dims[i]);
         }
         if constexpr (might_reallocate == may_cause_reallocation::Yes) {
@@ -480,7 +480,7 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
      */
     template <typename Callable>
     Callable for_each_vector(Callable callable) const {
-        for (auto i = 0; i < m_storage.size(); ++i) {
+        for (size_t i = 0; i < m_storage.size(); ++i) {
             callable(m_tag, m_storage[i], i, m_array_dims[i]);
         }
 
@@ -492,11 +492,11 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
     [[nodiscard]] field_index translate_legacy_index(int legacy_index) const {
         int total{};
         auto const num_fields = m_tag.num_variables();
-        for (auto field = 0; field < num_fields; ++field) {
+        for (size_t field = 0; field < num_fields; ++field) {
             auto const array_dim = m_array_dims[field];
             if (legacy_index < total + array_dim) {
                 auto const array_index = legacy_index - total;
-                return {field, array_index};
+                return {static_cast<int>(field), array_index};
             }
             total += array_dim;
         }
