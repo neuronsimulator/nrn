@@ -482,7 +482,7 @@ share/lib/python/neuron/rxd/geometry3d/surfaces.cpp:14605:41: error: no member n
 ```
 often there's something related to NumPy nearby, e.g. `npy`.
 
-The issue is that certain versions of NEURON (9.0 and earlier) are not
+The issue is that certain versions of NEURON (below 9.0) are not
 compatible with `numpy>=2`. Check the numpy version, e.g.,
 ```
 python -c "import numpy; print(numpy.__version__)"
