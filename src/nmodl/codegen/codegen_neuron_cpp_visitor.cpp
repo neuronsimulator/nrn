@@ -818,7 +818,12 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
         }
     }
 
-    if (!info.top_local_variables.empty()) {
+
+    for (const auto& var: info.global_variables) {
+        codegen_global_variables.push_back(var);
+    }
+
+    if (info.vectorize && !info.top_local_variables.empty()) {
         size_t prefix_sum = info.thread_var_data_size;
         size_t n_thread_vars = codegen_thread_variables.size();
         for (size_t i = 0; i < info.top_local_variables.size(); ++i) {
@@ -830,17 +835,42 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
     }
 
     if (!codegen_thread_variables.empty()) {
-        auto thread_data_size = info.thread_var_data_size + info.top_local_thread_size;
-        printer->fmt_line("int thread_data_in_use{};", value_initialize);
-        printer->fmt_line("{} thread_data[{}];", float_type, thread_data_size);
-
         codegen_global_variables.push_back(make_symbol("thread_data_in_use"));
 
         auto symbol = make_symbol("thread_data");
+        auto thread_data_size = info.thread_var_data_size + info.top_local_thread_size;
         symbol->set_as_array(thread_data_size);
         codegen_global_variables.push_back(symbol);
     }
 
+    for (const auto& var: info.state_vars) {
+        auto name = var->get_name() + "0";
+        auto symbol = program_symtab->lookup(name);
+        if (symbol == nullptr) {
+            codegen_global_variables.push_back(make_symbol(name));
+        }
+    }
+
+    for (const auto& var: info.constant_variables) {
+        codegen_global_variables.push_back(var);
+    }
+
+    for (const auto& var: codegen_global_variables) {
+        auto name = var->get_name();
+        auto length = var->get_length();
+        if (var->is_array()) {
+            printer->fmt_line("{} {}[{}] /* TODO init const-array */;", float_type, name, length);
+        } else {
+            double value{};
+            if (auto const& value_ptr = var->get_value()) {
+                value = *value_ptr;
+            }
+            printer->fmt_line("{} {}{};",
+                              float_type,
+                              name,
+                              print_initializers ? fmt::format("{{{:g}}}", value) : std::string{});
+        }
+    }
 
     if (info.table_count > 0) {
         // basically the same code as coreNEURON uses
@@ -867,44 +897,6 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
             }
             codegen_global_variables.push_back(make_symbol(name));
         }
-    }
-
-    for (const auto& var: info.state_vars) {
-        auto name = var->get_name() + "0";
-        auto symbol = program_symtab->lookup(name);
-        if (symbol == nullptr) {
-            printer->fmt_line("{} {}{};", float_type, name, value_initialize);
-            codegen_global_variables.push_back(make_symbol(name));
-        }
-    }
-
-    for (const auto& var: info.global_variables) {
-        auto name = var->get_name();
-        auto length = var->get_length();
-        if (var->is_array()) {
-            printer->fmt_line("{} {}[{}] /* TODO init const-array */;", float_type, name, length);
-        } else {
-            double value{};
-            if (auto const& value_ptr = var->get_value()) {
-                value = *value_ptr;
-            }
-            printer->fmt_line("{} {}{};",
-                              float_type,
-                              name,
-                              print_initializers ? fmt::format("{{{:g}}}", value) : std::string{});
-        }
-        codegen_global_variables.push_back(var);
-    }
-
-    for (const auto& var: info.constant_variables) {
-        auto const name = var->get_name();
-        auto* const value_ptr = var->get_value().get();
-        double const value{value_ptr ? *value_ptr : 0};
-        printer->fmt_line("{} {}{};",
-                          float_type,
-                          name,
-                          print_initializers ? fmt::format("{{{:g}}}", value) : std::string{});
-        codegen_global_variables.push_back(var);
     }
 
 
