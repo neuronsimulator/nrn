@@ -192,12 +192,6 @@ void CodegenNeuronCppVisitor::print_setdata_functions() {
             _prop_id = _nrn_get_prop_id(_prop);
         )CODE");
     }
-    if (!info.vectorize) {
-        printer->add_multi_line(R"CODE(
-            neuron::legacy::set_globals_from_prop(_prop, _lmc, _ml, _iml);
-            _ppvar = _nrn_mechanism_access_dparam(_prop);
-        )CODE");
-    }
     printer->pop_block();
 
     if (info.point_process) {
