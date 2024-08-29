@@ -1878,19 +1878,9 @@ static PyObject* mech_of_segment_iter_safe(NPySegObj* self) {
 static Object* seg_from_sec_x(Section* sec, double x) {
     auto pyseg = nb::steal((PyObject*) PyObject_New(NPySegObj, psegment_type));
     auto* pseg = (NPySegObj*) pyseg.ptr();
-    auto* pysec = static_cast<NPySecObj*>(sec->prop->dparam[PROP_PY_INDEX].get<void*>());
-    if (pysec) {
-        pseg->pysec_ = pysec;
-        Py_INCREF(pysec);
-    } else {
-        pysec = (NPySecObj*) psection_type->tp_alloc(psection_type, 0);
-        pysec->sec_ = sec;
-        pysec->name_ = 0;
-        pysec->cell_weakref_ = 0;
-        pseg->pysec_ = pysec;
-    }
+    pseg->pysec_ = newpysechelp(sec);  // newpysechelp() already increfs
     pseg->x_ = x;
-    return nrnpy_pyobject_in_obj(pyseg.ptr());
+    return nrnpy_pyobject_in_obj((PyObject*) pseg);
 }
 
 static Object** pp_get_segment(void* vptr) {
