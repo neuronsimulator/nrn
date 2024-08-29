@@ -2,8 +2,9 @@
 /* /local/src/master/nrn/src/oc/code.cpp,v 1.37 1999/07/03 14:20:21 hines Exp */
 
 #include "backtrace_utils.h"
-#include <errno.h>
+#include "bbslsrv2.h"
 #include "hoc.h"
+#include "cabcode.h"
 #include "code.h"
 #include "hocstr.h"
 #include "parse.hpp"
@@ -12,9 +13,6 @@
 #include "oc_ansi.h"
 #include "hocparse.h"
 #include "equation.h"
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <nrnmpi.h>
 #include "nrnfilewrap.h"
 #include "utils/enumerate.h"
@@ -23,6 +21,10 @@
 #include "options.h"
 #include "section.h"
 
+#include <cerrno>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <vector>
 #include <variant>
 #include <sstream>
@@ -1828,7 +1830,6 @@ void eval(void) /* evaluate variable on stack */
     Object* obsav = 0;
     Symlist* slsav;
     double d = 0.0;
-    extern double cable_prop_eval(Symbol*);
     Symbol* sym;
     sym = hoc_spop();
     if (sym->cpublic == 2) {
