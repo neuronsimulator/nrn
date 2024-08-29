@@ -1,15 +1,17 @@
 #include <../../nrnconf.h>
+#include <cstdlib>
+#include <vector>
 
 #include "utils/formatting.hpp"
 
-#include <stdlib.h>
-#include <classreg.h>
-#include <vector>
+
+#include "classreg.h"
 
 #include "hocstr.h"
 #include "parse.hpp"
 #include "hocparse.h"
 #include "code.h"
+#include "cabcode.h"
 #include "hocassrt.h"
 #include "hoclist.h"
 #include "nrn_ansi.h"
@@ -1367,7 +1369,6 @@ void hoc_object_eval(void) {
             }
             hoc_pushx(*(nrn_rangepointer(sec, sym, x)));
         } else if (d_sym->type == VAR && d_sym->subtype == USERPROPERTY) {
-            extern double cable_prop_eval(Symbol*);
             hoc_pushx(cable_prop_eval(hoc_spop()));
         }
     }

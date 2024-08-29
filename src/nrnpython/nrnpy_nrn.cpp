@@ -1,9 +1,9 @@
 #include "neuron/container/data_handle.hpp"
 #include "neuron/container/generic_data_handle.hpp"
 #include "nrn_ansi.h"
+#include "cabcode.h"
 #include "nrnpython.h"
 #include <exception>
-#include <stdexcept>
 #include <structmember.h>
 #include <InterViews/resource.h>
 #include "nrniv_mf.h"
@@ -11,6 +11,7 @@
 #include "nrnpy.h"
 #include "nrnpy_utils.h"
 #include "convert_cxx_exceptions.hpp"
+
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
 #endif
@@ -19,7 +20,12 @@
 #include <parse.hpp>
 
 #include <cmath>
+#include <cstdio>
 #include <cstring>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include <nanobind/nanobind.h>
 
@@ -32,10 +38,7 @@ extern void nrn_pt3dchange2(Section* sec, int i, double x, double y, double z, d
 extern void nrn_pt3dstyle1(Section* sec, double x, double y, double z);
 extern void nrn_pt3dstyle0(Section* sec);
 
-extern Symlist* hoc_built_in_symlist;
-extern Section* nrn_noerr_access();
 extern PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op);
-extern int has_membrane(char*, Section*);
 // used to be static in nrnpy_hoc.cpp
 extern int hocobj_pushargs(PyObject*, std::vector<char*>&);
 extern void hocobj_pushargs_free_strings(std::vector<char*>&);
@@ -120,10 +123,7 @@ PyObject* pmech_types;  // Python map for name to Mechanism
 PyObject* rangevars_;   // Python map for name to Symbol
 
 extern PyTypeObject* hocobject_type;
-extern Section* nrnpy_newsection(NPySecObj*);
 extern void simpleconnectsection();
-extern void nrn_change_nseg(Section*, int);
-extern double section_length(Section*);
 extern short* nrn_is_artificial_;
 extern cTemplate** nrn_pnt_template_;
 extern PyObject* nrnpy_forall_safe(PyObject* self, PyObject* args);

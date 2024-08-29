@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/treeset.cpp,v 1.39 1999/07/08 14:25:07 hines Exp */
 
+#include "cabcode.h"
 #include "cvodeobj.h"
 #include "membfunc.h"
 #include "multisplit.h"
@@ -21,10 +22,10 @@
 #include "utils/profile/profiler_interface.h"
 #include "multicore.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cerrno>
+#include <cmath>
 
 #include <algorithm>
 #include <string>
@@ -35,7 +36,6 @@ int nrn_shape_changed_; /* for notifying Shape class in nrniv */
 double* nrn_mech_wtime_;
 
 extern double chkarg(int, double low, double high);
-extern double nrn_ra(Section*);
 #if !defined(NRNMPI) || NRNMPI == 0
 extern double nrnmpi_wtime();
 #endif
@@ -45,9 +45,7 @@ extern int* nrn_dparam_ptr_start_;
 extern int* nrn_dparam_ptr_end_;
 extern void nrn_define_shape();
 
-#if 1 || NRNMPI
 void (*nrn_multisplit_setup_)();
-#endif
 
 /*
 Do not use unless necessary (loops in tree structure) since overhead
