@@ -276,8 +276,6 @@ int ilint;
 #endif
 using neuron::Sprintf;
 
-#define ERRCHK(c1) c1
-
 // No longer used because of clang format difficulty
 // #define IFGUI  if (hoc_usegui) {
 // #define ENDGUI }
