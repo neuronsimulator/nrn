@@ -49,7 +49,7 @@ void dep_make(void) /* tag the variable as dependent with a variable number */
                 aray->a_varn = (unsigned*) ecalloc((unsigned) total, sizeof(unsigned));
                 sym->s_varn = (unsigned) total; /* set_varble() uses this */
             }
-            numpt = &((aray->a_varn)[araypt(sym, OBJECTVAR)]);
+            numpt = &((aray->a_varn)[hoc_araypt(sym, OBJECTVAR)]);
         }
         break;
 

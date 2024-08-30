@@ -227,7 +227,7 @@ void hoc_free_symspace(Symbol* s1) { /* frees symbol space. Marks it UNDEF */
                     s1->type);
         }
         if (s1->arayinfo != nullptr) {
-            free_arrayinfo(s1->arayinfo);
+            hoc_free_arrayinfo(s1->arayinfo);
             s1->arayinfo = nullptr;
         }
     }

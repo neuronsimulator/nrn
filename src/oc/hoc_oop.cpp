@@ -557,7 +557,7 @@ Object* hoc_newobj1(Symbol* sym, int narg) {
             hoc_construct_point(ob, narg);
         }
         if (ob->ctemplate->init) {
-            call_ob_proc(ob, ob->ctemplate->init, narg);
+            hoc_call_ob_proc(ob, ob->ctemplate->init, narg);
         } else {
             for (i = 0; i < narg; ++i) {
                 hoc_nopop();
@@ -652,7 +652,7 @@ Object* nrn_get_gui_redirect_obj() {
     return gui_redirect_obj_;
 }
 
-void call_ob_proc(Object* ob, Symbol* sym, int narg) {
+void hoc_call_ob_proc(Object* ob, Symbol* sym, int narg) {
     Inst *pcsav, callcode[4];
     Symlist* slsav;
     Objectdata* obdsav;
@@ -820,7 +820,7 @@ void hoc_objectvar(void) { /* object variable symbol at pc+1. */
     }
     obp = OPOBJ(obs);
     if (is_array(*obs)) {
-        hoc_pushobj(obp + araypt(obs, OBJECTVAR));
+        hoc_pushobj(obp + hoc_araypt(obs, OBJECTVAR));
     } else {
         hoc_pushobj(obp);
     }
@@ -1084,7 +1084,7 @@ void hoc_object_component() {
             if (!is_array(*sym) || OPARINFO(sym)->nsub != nindex) {
                 hoc_execerror_fmt("'{}' not right number of subscripts", sym->name);
             }
-            nindex = araypt(sym, OBJECTVAR);
+            nindex = hoc_araypt(sym, OBJECTVAR);
         }
         hoc_pop_defer();
         hoc_pushobj(OPOBJ(sym) + nindex);
@@ -1141,7 +1141,7 @@ void hoc_object_component() {
                                           sym->name);
                     }
                 }
-                nindex = araypt(sym, OBJECTVAR);
+                nindex = hoc_araypt(sym, OBJECTVAR);
             }
             hoc_pop_defer(); /*finally get rid of symbol */
             hoc_pushpx(OPVAL(sym) + nindex);
@@ -1162,7 +1162,7 @@ void hoc_object_component() {
             hoc_execerror_fmt("'{}' is a function not a {}-dim array", sym->name, nindex);
         }
         double d = 0.;
-        call_ob_proc(obp, sym, nindex);
+        hoc_call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
             break;
         }
@@ -1184,7 +1184,7 @@ void hoc_object_component() {
                 hoc_execerror_fmt("'{}' is a function not a {}-dim array", sym->name, nindex);
             }
         }
-        call_ob_proc(obp, sym, nindex);
+        hoc_call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
             break;
         }
@@ -1202,7 +1202,7 @@ void hoc_object_component() {
     }
     case STRFUNCTION: {
         char** d;
-        call_ob_proc(obp, sym, nindex);
+        hoc_call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
             break;
         }
@@ -1265,7 +1265,7 @@ void hoc_object_component() {
             if (!hoc_stack_type_is_ndim()) {
                 hoc_push_ndim(nindex);
             }
-            nindex = araypt(sym, OBJECTVAR);
+            nindex = hoc_araypt(sym, OBJECTVAR);
         }
         hoc_pop_defer();
         if (connect_obsec_) {
@@ -1912,7 +1912,7 @@ printf("unreffing %s with refcount %d\n", hoc_object_name(obj), obj->refcount);
         int i = obj->refcount;
         pushx((double) i);
         ++obj->unref_recurse_cnt;
-        call_ob_proc(obj, obj->ctemplate->unref, 1);
+        hoc_call_ob_proc(obj, obj->ctemplate->unref, 1);
         --obj->unref_recurse_cnt;
     }
     if (obj->refcount <= 0 && obj->unref_recurse_cnt == 0) {
@@ -1964,11 +1964,11 @@ static void free_objectdata(Objectdata* od, cTemplate* ctemplate) {
                 case VAR:
                     /*printf("free_objectdata %s\n", s->name);*/
                     hoc_free_val_array(OPVAL(s), hoc_total_array(s));
-                    free_arrayinfo(OPARINFO(s));
+                    hoc_free_arrayinfo(OPARINFO(s));
                     break;
                 case STRING:
                     hoc_free_pstring(OPSTR(s));
-                    free_arrayinfo(OPARINFO(s));
+                    hoc_free_arrayinfo(OPARINFO(s));
                     break;
                 case OBJECTVAR:
                     objp = OPOBJ(s);
@@ -1978,7 +1978,7 @@ static void free_objectdata(Objectdata* od, cTemplate* ctemplate) {
                             hoc_dec_refcount(objp + i);
                         }
                     }
-                    free_arrayinfo(OPARINFO(s));
+                    hoc_free_arrayinfo(OPARINFO(s));
                     free(objp);
                     break;
                 case SECTION:
@@ -1987,7 +1987,7 @@ static void free_objectdata(Objectdata* od, cTemplate* ctemplate) {
                         sec_free(*(OPSECITM(s) + i));
                     }
                     free(OPSECITM(s));
-                    free_arrayinfo(OPARINFO(s));
+                    hoc_free_arrayinfo(OPARINFO(s));
                     break;
                 }
             }

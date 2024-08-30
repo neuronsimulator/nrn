@@ -717,10 +717,10 @@ function: FUNCTION
 	;
 doublelist: parseDOUBLE begin newarray
 		{Symbol *s; code(varpush); codesym(s=spop()); $$ = $2;
-		code(arayinstal); codei($3); hoc_obvar_declare(s, VAR, 0);}
+		code(hoc_arayinstal); codei($3); hoc_obvar_declare(s, VAR, 0);}
 	| doublelist ',' newarray
 		{Symbol *s; code(varpush); codesym(s = spop());
-		code(arayinstal); codei($3); hoc_obvar_declare(s, VAR, 0);}
+		code(hoc_arayinstal); codei($3); hoc_obvar_declare(s, VAR, 0);}
 	;
 
 newarray: newname numdimen

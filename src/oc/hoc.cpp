@@ -527,7 +527,7 @@ void arayinstal(void) /* allocate storage for arrays */
 int hoc_arayinfo_install(Symbol* sp, int nsub) {
     double total, subscpt;
     int i;
-    free_arrayinfo(sp->arayinfo);
+    hoc_free_arrayinfo(sp->arayinfo);
     sp->arayinfo = (Arrayinfo*) emalloc((unsigned) (sizeof(Arrayinfo) + nsub * sizeof(int)));
     /*printf("emalloc arrayinfo at %lx\n", sp->arayinfo);*/
     sp->arayinfo->a_varn = (unsigned*) 0;
@@ -555,7 +555,7 @@ int hoc_arayinfo_install(Symbol* sp, int nsub) {
     }
     if (OPARINFO(sp)) {
         /* probably never get here */
-        free_arrayinfo(OPARINFO(sp));
+        hoc_free_arrayinfo(OPARINFO(sp));
     }
     OPARINFO(sp) = sp->arayinfo;
     ++sp->arayinfo->refcount;
@@ -569,13 +569,13 @@ void hoc_freearay(Symbol* sp) {
         hoc_free_val_array(OPVAL(sp), hoc_total_array(sp));
         sp->type = UNDEF;
     }
-    free_arrayinfo(*pa);
-    free_arrayinfo(sp->arayinfo);
+    hoc_free_arrayinfo(*pa);
+    hoc_free_arrayinfo(sp->arayinfo);
     sp->arayinfo = (Arrayinfo*) 0;
     *pa = (Arrayinfo*) 0;
 }
 
-void free_arrayinfo(Arrayinfo* a) {
+void hoc_free_arrayinfo(Arrayinfo* a) {
     if (a != (Arrayinfo*) 0) {
         if ((--a->refcount) <= 0) {
             if (a->a_varn != (unsigned*) 0)

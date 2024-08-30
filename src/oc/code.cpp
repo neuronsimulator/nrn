@@ -1056,9 +1056,9 @@ void hoc_shortfor(void) {
             if (sym->subtype == USERINT)
                 execerror("integer iteration variable", sym->name);
             else if (sym->subtype == USERDOUBLE)
-                pval = sym->u.pval + araypt(sym, SYMBOL);
+                pval = sym->u.pval + hoc_araypt(sym, SYMBOL);
             else
-                pval = OPVAL(sym) + araypt(sym, OBJECTVAR);
+                pval = OPVAL(sym) + hoc_araypt(sym, OBJECTVAR);
         }
         break;
     case AUTO: {
@@ -1216,9 +1216,9 @@ static void for_segment2(Symbol* sym, int mode) {
             if (sym->subtype == USERINT)
                 execerror("integer iteration variable", sym->name);
             else if (sym->subtype == USERDOUBLE)
-                pval = sym->u.pval + araypt(sym, SYMBOL);
+                pval = sym->u.pval + hoc_araypt(sym, SYMBOL);
             else
-                pval = OPVAL(sym) + araypt(sym, OBJECTVAR);
+                pval = OPVAL(sym) + hoc_araypt(sym, OBJECTVAR);
         }
         break;
     case AUTO: {
@@ -1870,16 +1870,16 @@ void eval(void) /* evaluate variable on stack */
         } else {
             switch (sym->subtype) {
             case USERDOUBLE:
-                d = (sym->u.pval)[araypt(sym, SYMBOL)];
+                d = (sym->u.pval)[hoc_araypt(sym, SYMBOL)];
                 break;
             case USERINT:
-                d = (sym->u.pvalint)[araypt(sym, SYMBOL)];
+                d = (sym->u.pvalint)[hoc_araypt(sym, SYMBOL)];
                 break;
             case USERFLOAT:
-                d = (sym->u.pvalfloat)[araypt(sym, SYMBOL)];
+                d = (sym->u.pvalfloat)[hoc_araypt(sym, SYMBOL)];
                 break;
             default:
-                d = (OPVAL(sym))[araypt(sym, OBJECTVAR)];
+                d = (OPVAL(sym))[hoc_araypt(sym, OBJECTVAR)];
                 break;
             }
         }
@@ -1940,14 +1940,14 @@ void hoc_evalpointer() {
         } else {
             switch (sym->subtype) {
             case USERDOUBLE:
-                d = sym->u.pval + araypt(sym, SYMBOL);
+                d = sym->u.pval + hoc_araypt(sym, SYMBOL);
                 break;
             case USERINT:
             case USERFLOAT:
                 execerror("can use pointer only to doubles", sym->name);
                 break;
             default:
-                d = OPVAL(sym) + araypt(sym, OBJECTVAR);
+                d = OPVAL(sym) + hoc_araypt(sym, OBJECTVAR);
                 break;
             }
         }
@@ -2213,28 +2213,28 @@ void hoc_assign() {
             int ind;
             switch (sym->subtype) {
             case USERDOUBLE:
-                ind = araypt(sym, SYMBOL);
+                ind = hoc_araypt(sym, SYMBOL);
                 if (op) {
                     d2 = hoc_opasgn(op, (sym->u.pval)[ind], d2);
                 }
                 (sym->u.pval)[ind] = d2;
                 break;
             case USERINT:
-                ind = araypt(sym, SYMBOL);
+                ind = hoc_araypt(sym, SYMBOL);
                 if (op) {
                     d2 = hoc_opasgn(op, (double) ((sym->u.pvalint)[ind]), d2);
                 }
                 (sym->u.pvalint)[ind] = (int) (d2 + hoc_epsilon);
                 break;
             case USERFLOAT:
-                ind = araypt(sym, SYMBOL);
+                ind = hoc_araypt(sym, SYMBOL);
                 if (op) {
                     d2 = hoc_opasgn(op, (double) ((sym->u.pvalfloat)[ind]), d2);
                 }
                 (sym->u.pvalfloat)[ind] = (float) d2;
                 break;
             default:
-                ind = araypt(sym, OBJECTVAR);
+                ind = hoc_araypt(sym, OBJECTVAR);
                 if (op) {
                     d2 = hoc_opasgn(op, (OPVAL(sym))[ind], d2);
                 }
