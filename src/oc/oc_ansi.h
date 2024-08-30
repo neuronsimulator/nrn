@@ -345,7 +345,7 @@ void hoc_last_init();
 void hoc_obj_notify(Object*);
 int ivoc_list_count(Object*);
 Object* ivoc_list_item(Object*, int);
-double hoc_func_table(void* functable, int n, double* args);
+double hoc_func_table(void* vpft, int n, double* args);
 void hoc_spec_table(void** pfunctable, int n);
 void* hoc_sec_internal_name2ptr(const char* s, int eflag);
 void* hoc_pysec_name2ptr(const char* s, int eflag);

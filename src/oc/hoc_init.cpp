@@ -1,9 +1,7 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/hoc_init.cpp,v 1.25 1999/11/08 17:48:58 hines Exp */
 
-#include "hoc.h"
 #include "parse.hpp"
-#include <cmath>
 #include "equation.h"
 #include "nrnunits.h"
 
@@ -11,6 +9,8 @@
 #include "ocfunc.h"
 
 #include "oc_mcran4.hpp"
+
+#include <cmath>
 
 extern void hoc_nrnmpi_init();
 

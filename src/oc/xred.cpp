@@ -1,4 +1,6 @@
 #include <../../nrnconf.h>
+
+#include "hocdec.h"
 /* /local/src/master/nrn/src/oc/xred.cpp,v 1.3 1996/02/16 16:19:33 hines Exp */
 /*
 xred.cpp,v
@@ -47,8 +49,6 @@ xred.cpp,v
  * Initial revision
  *
 */
-
-#include "hoc.h"
 
 #include <cstdio>
 

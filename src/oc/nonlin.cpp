@@ -1,7 +1,6 @@
 #include <../../nrnconf.h>
 #include <stdlib.h>
 #include <math.h>
-#include "hoc.h"
 #include "parse.hpp"
 #include "hocparse.h"
 #include "equation.h"

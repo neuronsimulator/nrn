@@ -1,11 +1,15 @@
 /* /local/src/master/nrn/src/oc/parse.y,v 1.29 1998/11/27 13:11:48 hines Exp */
+%code requires{
+union Inst;
+struct Symbol;
+}
+
 %{
 
 #include <../../nrnconf.h>
 /* changes as of 2-jan-89 */
 /*  version 7.2.1 2-jan-89 short form of the for statement */
 
-#include "hoc.h"
 #include "hocdec.h"
 #include "ocmisc.h"
 #include "hocparse.h"

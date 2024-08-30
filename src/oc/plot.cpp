@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
-#include "hoc.h"
 
+#include "hocdec.h"
+#include "oc_ansi.h"
 
 /*LINTLIBRARY*/
 #undef IGNORE

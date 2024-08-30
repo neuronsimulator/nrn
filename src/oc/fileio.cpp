@@ -7,7 +7,6 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include "hoc.h"
 #include "ocmisc.h"
 #include "hocstr.h"
 #include "hoclist.h"

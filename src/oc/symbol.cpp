@@ -2,7 +2,6 @@
 /* /local/src/master/nrn/src/oc/symbol.cpp,v 1.9 1999/02/25 18:01:58 hines Exp */
 /* version 7.2.1 2-jan-89 */
 
-#include "hoc.h"
 #include "hocdec.h"
 #include "hoclist.h"
 #include "nrncore_write/utils/nrncore_utils.h"
@@ -10,9 +9,9 @@
 #include "ocnotify.h"
 #include "parse.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #if HAVE_MALLOC_H
 #include <malloc.h>

@@ -3,7 +3,6 @@
 #endif
 
 #include <../../nrnconf.h>
-#include "hoc.h"
 #include "hocstr.h"
 #include "equation.h"
 #include <stdio.h>
