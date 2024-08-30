@@ -24,7 +24,7 @@ void debugzz(Inst* p) {
             Printf("STOP\n");
         prcod(nopop, "POP\n");
         prcod(eval, "EVAL\n");
-        prcod(add, "ADD\n");
+        prcod(hoc_add, "ADD\n");
         prcod(hoc_sub, "SUB\n");
         prcod(mul, "MUL\n");
         prcod(hoc_div, "DIV\n");

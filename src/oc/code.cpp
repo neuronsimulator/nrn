@@ -1966,7 +1966,7 @@ void hoc_evalpointer() {
     hoc_pushpx(d);
 }
 
-void add(void) /* add top two elems on stack */
+void hoc_add(void) /* add top two elems on stack */
 {
     double d1, d2;
     d2 = hoc_xpop();

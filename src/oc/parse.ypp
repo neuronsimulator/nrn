@@ -678,7 +678,7 @@ expr:	NUMBER
 	| '(' error
 		{myerr("syntax error in expression");}
 	| expr '+' expr
-		{ TPD; TPD; code(add); PN; }
+		{ TPD; TPD; code(hoc_add); PN; }
 	| expr '-' expr
 		{ TPD; TPD;code(hoc_sub); PN;}
 	| expr '*' expr

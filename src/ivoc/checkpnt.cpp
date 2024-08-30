@@ -111,7 +111,7 @@ static struct HocInst {
 } hoc_inst_[] = {{0, 0},  // 0
                  {nopop, 0},
                  {eval, 0},
-                 {add, 0},
+                 {hoc_add, 0},
                  {hoc_sub, 0},
                  {mul, 0},
                  {hoc_div, 0},

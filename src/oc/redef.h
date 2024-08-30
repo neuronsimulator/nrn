@@ -20,7 +20,7 @@
 //#define System             hoc_System
 //#define Xred               hoc_Xred
 //#define acterror           hoc_acterror
-#define add                hoc_add
+//#define add                hoc_add
 #define arayinstal         hoc_arayinstal
 #define free_arrayinfo     hoc_free_arrayinfo
 #define araypt             hoc_araypt
