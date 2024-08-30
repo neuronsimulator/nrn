@@ -364,11 +364,11 @@ hoc_acterror("iterator_statement used outside an iterator declaration", 0);
 			code(hoc_iterator_stmt);
 		}
 	| BREAK begin
-		{ code(Break); $$ = $2; }
+		{ code(hoc_Break); $$ = $2; }
 	| STOPSTMT begin
-		{ code(Stop); $$ = $2; }
+		{ code(hoc_Stop); $$ = $2; }
 	| CONTINUE begin
-		{ code(Continue); $$ = $2; }
+		{ code(hoc_Continue); $$ = $2; }
 	| PROCEDURE begin '(' arglist ')'
 		{ $$ = $2; code(call); codesym($1); codei($4); code(nopop); }
 	| PRINT prlist

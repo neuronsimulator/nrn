@@ -97,7 +97,6 @@ data depending on type. eg for VAR && NOTUSER it is
 #endif
 #include "checkpnt.h"
 
-#include "redef.h"
 #include "hoclist.h"
 #include "parse.hpp"
 #include "code.h"
@@ -109,46 +108,46 @@ static struct HocInst {
     Pfrv pi;
     const char* signature;
 } hoc_inst_[] = {{0, 0},  // 0
-                 {nopop, 0},
-                 {eval, 0},
+                 {hoc_nopop, 0},
+                 {hoc_eval, 0},
                  {hoc_add, 0},
                  {hoc_sub, 0},
-                 {mul, 0},
+                 {hoc_mul, 0},
                  {hoc_div, 0},
                  {hoc_negate, nullptr},
-                 {power, 0},
+                 {hoc_power, 0},
                  {hoc_assign, nullptr},
-                 {bltin, "s"},    // requires change
-                 {varpush, "s"},  // 10
-                 {constpush, "s"},
-                 {pushzero, 0},
-                 {print, 0},
-                 {varread, "s"},
-                 {prexpr, 0},
-                 {prstr, 0},
-                 {gt, 0},
+                 {hoc_bltin, "s"},    // requires change
+                 {hoc_varpush, "s"},  // 10
+                 {hoc_constpush, "s"},
+                 {hoc_pushzero, 0},
+                 {hoc_print, 0},
+                 {hoc_varread, "s"},
+                 {hoc_prexpr, 0},
+                 {hoc_prstr, 0},
+                 {hoc_gt, 0},
                  {hoc_lt, nullptr},
                  {hoc_eq, nullptr},  // 20
-                 {ge, 0},
-                 {le, 0},
-                 {ne, 0},
+                 {hoc_ge, 0},
+                 {hoc_le, 0},
+                 {hoc_ne, 0},
                  {hoc_and, 0},
                  {hoc_or, 0},
                  {hoc_not, 0},
-                 {ifcode, "iii"},
-                 {forcode, "iii"},
-                 {shortfor, "ii"},
-                 {call, "si"},  // 30
+                 {hoc_ifcode, "iii"},
+                 {hoc_forcode, "iii"},
+                 {hoc_shortfor, "ii"},
+                 {hoc_call, "si"},  // 30
                  {hoc_arg, "i"},
-                 {argassign, "i"},
-                 {funcret, 0},
-                 {procret, 0},
+                 {hoc_argassign, "i"},
+                 {hoc_funcret, 0},
+                 {hoc_procret, 0},
                  {hoc_stringarg, "i"},
                  {hoc_push_string, "s"},
-                 {Break, 0},
-                 {Continue, 0},
-                 {Stop, 0},
-                 {assstr, 0},  // 40
+                 {hoc_Break, 0},
+                 {hoc_Continue, 0},
+                 {hoc_Stop, 0},
+                 {hoc_assstr, 0},  // 40
                  {hoc_evalpointer, 0},
                  {hoc_newline, 0},
                  {hoc_delete_symbol, "s"},
