@@ -701,7 +701,7 @@ void hoc_call_ob_proc(Object* ob, Symbol* sym, int narg) {
     } else if (ob->ctemplate->is_point_ && special_pnt_call(ob, sym, narg)) {
         ; /*empty since special_pnt_call did the work for get_loc, has_loc, and loc*/
     } else {
-        callcode[0].pf = call;
+        callcode[0].pf = hoc_call;
         callcode[1].sym = sym;
         callcode[2].i = narg;
         callcode[3].in = STOP;
@@ -1728,23 +1728,23 @@ void hoc_ob_check(int type) {
     t = ipop();
     if (type == -1) {
         if (t == OBJECTVAR) { /* don't bother to check */
-            Code(hoc_cmp_otype);
-            codei(0);
+            hoc_Code(hoc_cmp_otype);
+            hoc_codei(0);
         }
     } else if (type) {
         if (t == OBJECTVAR) { /* must check dynamically */
 #if PDEBUG
             printf("dymnamic checking of type=%d\n", type);
 #endif
-            Code(hoc_cmp_otype);
-            codei(type);
+            hoc_Code(hoc_cmp_otype);
+            hoc_codei(type);
         } else if (type != t) { /* static check */
             hoc_execerror("Type mismatch", (char*) 0);
         }
     } else {
         if (t != OBJECTVAR) {
-            Code(hoc_known_type);
-            codei(t);
+            hoc_Code(hoc_known_type);
+            hoc_codei(t);
         }
     }
 }

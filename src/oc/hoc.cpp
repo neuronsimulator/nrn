@@ -132,8 +132,8 @@ int hoc_usegui;
 HocStr* hoc_tmpbuf;
 HocStr* hoc_cbufstr;
 const char* hoc_promptstr;
-static CHAR* cbuf;
-CHAR* ctp;
+static CHAR* hoc_cbuf;
+CHAR* hoc_ctp;
 int hoc_ictp;
 
 extern const char* RCS_hoc_version;
@@ -211,7 +211,7 @@ int getnb(void) /* get next non-white character */
     return c;
 }
 
-/* yylex modified to return -3 when at end of cbuf. The parser can
+/* yylex modified to return -3 when at end of hoc_cbuf. The parser can
    return and take up where it left off later. Supported by modification
    of bison.simple to allow event driven programming.
 */
@@ -271,7 +271,7 @@ restart: /* when no token in between comments */
                 return (0);
             /*			if (c == YYNEEDMORE) {*/
             if (eos) {
-                hoc_acterror("comment not complete", " in cbuf");
+                hoc_acterror("comment not complete", " in hoc_cbuf");
             }
         }
         goto restart;
@@ -281,7 +281,7 @@ restart: /* when no token in between comments */
         char* npt;
         double d;
         IGNORE(unGetc(c, fin));
-        npt = (char*) ctp;
+        npt = (char*) hoc_ctp;
         /*EMPTY*/
         while (isdigit(c = Getc(fin))) {
             ;
@@ -469,8 +469,8 @@ restart: /* when no token in between comments */
         return '\n';
     case '/':
         if (follow('/', 1, 0)) {
-            while (*ctp) {
-                ++ctp;
+            while (*hoc_ctp) {
+                ++hoc_ctp;
             }
             return '\n';
         } else if (follow('=', 1, 0)) {
@@ -810,8 +810,8 @@ void hoc_main1_init(const char* pname, const char** envp) {
     }
     hoc_tmpbuf = hocstr_create(TMPBUFSIZE);
     hoc_cbufstr = hocstr_create(CBUFSIZE);
-    cbuf = hoc_cbufstr->buf;
-    ctp = cbuf;
+    hoc_cbuf = hoc_cbufstr->buf;
+    hoc_ctp = hoc_cbuf;
     frin = nrn_fw_set_stdin();
     fout = stdout;
     if (!nrn_is_cable()) {
@@ -1300,14 +1300,14 @@ static int hoc_run1() {
 static const char* nrn_inputbufptr;
 static void nrn_inputbuf_getline(void) {
     CHAR* cp;
-    cp = ctp = cbuf = hoc_cbufstr->buf;
+    cp = hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
     while (*nrn_inputbufptr) {
         *cp++ = *nrn_inputbufptr++;
         if (cp[-1] == '\n') {
             break;
         }
     }
-    if (cp != ctp) {
+    if (cp != hoc_ctp) {
         if (cp[-1] != '\n') {
             *cp++ = '\n';
         }
@@ -1390,34 +1390,34 @@ void warning(const char* s, const char* t) /* print warning message */
     } else {
         Fprintf(stderr, "%s near line %d\n", id, lineno);
     }
-    n = strlen(cbuf);
-    for (cp = cbuf; cp < (cbuf + n); ++cp) {
+    n = strlen(hoc_cbuf);
+    for (cp = hoc_cbuf; cp < (hoc_cbuf + n); ++cp) {
         if (!isprint((int) (*cp)) && !isspace((int) (*cp))) {
             Fprintf(stderr,
                     "%scharacter \\%03o at position %ld is not printable\n",
                     id,
                     ((int) (*cp) & 0xff),
-                    cp - cbuf);
+                    cp - hoc_cbuf);
             break;
         }
     }
-    Fprintf(stderr, "%s %s", id, cbuf);
+    Fprintf(stderr, "%s %s", id, hoc_cbuf);
     if (nrnmpi_numprocs_world > 0) {
-        for (cp = cbuf; cp != ctp; cp++) {
+        for (cp = hoc_cbuf; cp != hoc_ctp; cp++) {
             Fprintf(stderr, " ");
         }
         Fprintf(stderr, "^\n");
     }
-    ctp = cbuf;
-    *ctp = '\0';
+    hoc_ctp = hoc_cbuf;
+    *hoc_ctp = '\0';
 }
 
 
 static int Getc(NrnFILEWrap* fp) {
     /*ARGSUSED*/
-    if (*ctp) {
+    if (*hoc_ctp) {
         ++hoc_ictp;
-        return *ctp++;
+        return *hoc_ctp++;
     }
 
 #if 0
@@ -1432,13 +1432,13 @@ allowed anyway */
     if (hoc_get_line() == EOF) {
         return EOF;
     }
-    return *ctp++;
+    return *hoc_ctp++;
 }
 
 static void unGetc(int c, NrnFILEWrap* fp) {
     /*ARGSUSED*/
-    if (c != EOF && c && ctp != cbuf) {
-        *(--ctp) = c;
+    if (c != EOF && c && hoc_ctp != hoc_cbuf) {
+        *(--hoc_ctp) = c;
     }
 }
 
@@ -1458,8 +1458,8 @@ int hoc_yyparse(void) {
     instead of blocking in yylex. If so another call to yyparse will
     take up exactly where it left off.  This makes it easier to
     support event driven processing.
-    Maybe it's time to redo the get_line process which fills cbuf with
-    the next line to read. A real event driven program would fill cbuf
+    Maybe it's time to redo the get_line process which fills hoc_cbuf with
+    the next line to read. A real event driven program would fill hoc_cbuf
     and then call yyparse() directly. yyparse() returns
     0 : end of file
     '\n' : ready to execute a command
@@ -1628,22 +1628,22 @@ static CHAR* fgets_unlimited_nltrans(HocStr* bufstr, NrnFILEWrap* f, int nltrans
     return (CHAR*) 0;
 }
 
-int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
-    if (*ctp) {
+int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
+    if (*hoc_ctp) {
         hoc_execerror("Internal error:", "Not finished with previous input line");
     }
-    ctp = cbuf = hoc_cbufstr->buf;
-    *ctp = '\0';
+    hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
+    *hoc_ctp = '\0';
     if (pipeflag == 3) {
         nrn_inputbuf_getline();
-        if (*ctp == '\0') {
+        if (*hoc_ctp == '\0') {
             return EOF;
         }
     } else if (pipeflag) {
         if (hoc_strgets_need() > hoc_cbufstr->size) {
             hocstr_resize(hoc_cbufstr, hoc_strgets_need() + 100);
         }
-        if (hoc_strgets(cbuf, CBUFSIZE - 1) == (char*) 0) {
+        if (hoc_strgets(hoc_cbuf, CBUFSIZE - 1) == (char*) 0) {
             return EOF;
         }
     } else {
@@ -1693,16 +1693,16 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
             }
             if (n >= hoc_cbufstr->size - 3) {
                 hocstr_resize(hoc_cbufstr, n + 100);
-                ctp = cbuf = hoc_cbufstr->buf;
+                hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
             }
-            strcpy(cbuf, line);
-            cbuf[n] = '\n';
-            cbuf[n + 1] = '\0';
+            strcpy(hoc_cbuf, line);
+            hoc_cbuf[n] = '\n';
+            hoc_cbuf[n + 1] = '\0';
             if (line && *line) {
                 add_history(line);
             }
             free(line);
-            hoc_audit_command(cbuf);
+            hoc_audit_command(hoc_cbuf);
         } else {
             fflush(stdout);
             if (hoc_fgets_unlimited(hoc_cbufstr, fin) == (CHAR*) 0) {
@@ -1717,11 +1717,11 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
 #endif  // INTERVIEWS
 #if defined(WIN32)
         if (nrn_fw_eq(fin, stdin)) {
-            if (gets(cbuf) == (char*) 0) {
+            if (gets(hoc_cbuf) == (char*) 0) {
                 /*DebugMessage("gets returned NULL\n");*/
                 return EOF;
             }
-            strcat(cbuf, "\n");
+            strcat(hoc_cbuf, "\n");
         } else
 #endif  // WIN32
         {
@@ -1733,7 +1733,7 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
     }
     errno = 0;
     lineno++;
-    ctp = cbuf = hoc_cbufstr->buf;
+    hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
     hoc_ictp = 0;
     return 1;
 }
@@ -1741,7 +1741,7 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
 void hoc_help(void) {
 #if INTERVIEWS
     if (hoc_interviews) {
-        ivoc_help(cbuf);
+        ivoc_help(hoc_cbuf);
     } else
 #endif
     {
@@ -1749,5 +1749,5 @@ void hoc_help(void) {
             hoc_warning("Help only available from version with ivoc library", 0);
         }
     }
-    ctp = cbuf + strlen(cbuf) - 1;
+    hoc_ctp = hoc_cbuf + strlen(hoc_cbuf) - 1;
 }
