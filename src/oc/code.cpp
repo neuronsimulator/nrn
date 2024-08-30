@@ -1020,7 +1020,7 @@ void forcode(void) {
             break;
         } else /* continue */
             hoc_returning = 0;
-        if ((savepc + 2)->i)               /* diff between while and for */
+        if ((savepc + 2)->i)                   /* diff between while and for */
             hoc_execute(relative(savepc + 2)); /* increment */
         hoc_execute(savepc + 3);
         d = hoc_xpop();
