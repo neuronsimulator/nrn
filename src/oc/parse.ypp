@@ -649,7 +649,7 @@ expr:	NUMBER
 	|	NUMZERO
 		{ $$ = code(hoc_pushzero); PN;}
 	| varname
-		{ code3(varpush, spop(), eval); PN;}
+		{ code3(varpush, spop(), hoc_eval); PN;}
 	| ARG
 		{ hoc_defnonly("$"); $$ = argcode(hoc_arg, $1); PN;}
 	| ARGREF argrefdim
@@ -987,12 +987,12 @@ anyname: STRING|VAR|UNDEF|FUNCTION|PROCEDURE|FUN_BLTIN|SECTION|RANGEVAR
 
 static void yyerror(const char* s)	/* called for yacc syntax error */
 {
-	execerror(s, (char *)0);
+	hoc_execerror(s, (char *)0);
 }
 
 void hoc_acterror(const char* s, const char*t)	/* recover from action error while parsing */
 {
-	execerror(s,t);
+	hoc_execerror(s,t);
 }
 
 static Inst* argrefcode(Pfrv pfrv, int i, int j){
@@ -1009,7 +1009,7 @@ static Inst* argcode(Pfrv pfrv, int i) {
 		if (si->type != AUTO) {
 			hoc_acterror("arg index used and i is not a LOCAL variable", 0);
 		}
-		in = code3(varpush, si, eval);		
+		in = code3(varpush, si, hoc_eval);		
 		hoc_Code(pfrv);
 		hoc_codei(0);
 	}else{

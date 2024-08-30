@@ -462,7 +462,7 @@ void hoc_prstack() {
 }
 
 void hoc_on_init_register(Pfrv pf) {
-    /* modules that may have to be cleaned up after an execerror */
+    /* modules that may have to be cleaned up after an hoc_execerror */
     if (maxinitfcns < MAXINITFCNS) {
         initfcns[maxinitfcns++] = pf;
     } else {
@@ -682,7 +682,7 @@ int hoc_xopen_run(Symbol* sp, const char* str) { /*recursively parse and execute
 
     if (sp == (Symbol*) 0) {
         for (rinitcode(); hoc_yyparse(); rinitcode())
-            execute(progbase);
+            hoc_execute(progbase);
     } else {
         int savpipeflag;
         rinitcode();
@@ -690,7 +690,7 @@ int hoc_xopen_run(Symbol* sp, const char* str) { /*recursively parse and execute
         hoc_pipeflag = 2;
         parsestr = str;
         if (!hoc_yyparse()) {
-            execerror("Nothing to parse", (char*) 0);
+            hoc_execerror("Nothing to parse", (char*) 0);
         }
         n = (int) (progp - progbase);
         hoc_pipeflag = savpipeflag;
@@ -1005,10 +1005,10 @@ void forcode(void) {
     int isec;
 
     isec = nrn_isecstack();
-    execute(savepc + 3); /* condition */
+    hoc_execute(savepc + 3); /* condition */
     d = hoc_xpop();
     while (d) {
-        execute(relative(savepc)); /* body */
+        hoc_execute(relative(savepc)); /* body */
         if (hoc_returning) {
             nrn_secstack(isec);
         }
@@ -1021,8 +1021,8 @@ void forcode(void) {
         } else /* continue */
             hoc_returning = 0;
         if ((savepc + 2)->i)               /* diff between while and for */
-            execute(relative(savepc + 2)); /* increment */
-        execute(savepc + 3);
+            hoc_execute(relative(savepc + 2)); /* increment */
+        hoc_execute(savepc + 3);
         d = hoc_xpop();
     }
     if (!hoc_returning)
@@ -1045,7 +1045,7 @@ void hoc_shortfor(void) {
     case VAR:
         if (!is_array(*sym)) {
             if (sym->subtype == USERINT) {
-                execerror("integer iteration variable", sym->name);
+                hoc_execerror("integer iteration variable", sym->name);
             } else if (sym->subtype == USERDOUBLE) {
                 pval = sym->u.pval;
             } else {
@@ -1054,7 +1054,7 @@ void hoc_shortfor(void) {
             break;
         } else {
             if (sym->subtype == USERINT)
-                execerror("integer iteration variable", sym->name);
+                hoc_execerror("integer iteration variable", sym->name);
             else if (sym->subtype == USERDOUBLE)
                 pval = sym->u.pval + hoc_araypt(sym, SYMBOL);
             else
@@ -1065,11 +1065,11 @@ void hoc_shortfor(void) {
         pval = &(cast<double>(fp->argn[sym->u.u_auto]));
     } break;
     default:
-        execerror("for loop non-variable", sym->name);
+        hoc_execerror("for loop non-variable", sym->name);
     }
     isec = nrn_isecstack();
     for (*pval = begin; *pval <= end; *pval += 1.) {
-        execute(relative(savepc));
+        hoc_execute(relative(savepc));
         if (hoc_returning) {
             nrn_secstack(isec);
         }
@@ -1088,7 +1088,7 @@ void hoc_shortfor(void) {
 
 void hoc_iterator(void) {
     /* pc is ITERATOR symbol, argcount, stmtbegin, stmtend */
-    /* for testing execute stmt once */
+    /* for testing hoc_execute stmt once */
     Symbol* sym;
     int argcount;
     Inst *stmtbegin, *stmtend;
@@ -1105,7 +1105,7 @@ void hoc_iterator_object(Symbol* sym, int argcount, Inst* beginpc, Inst* endpc, 
     fp++;
     if (fp >= framelast) {
         fp--;
-        execerror(sym->name, "call nested too deeply, increase with -NFRAME framesize option");
+        hoc_execerror(sym->name, "call nested too deeply, increase with -NFRAME framesize option");
     }
     fp->sp = sym;
     fp->nargs = argcount;
@@ -1166,7 +1166,7 @@ void hoc_iterator_stmt() {
 
     pcsav = pc;
     isec = nrn_isecstack();
-    execute(iter_f->iter_stmt_begin);
+    hoc_execute(iter_f->iter_stmt_begin);
     pc = pcsav;
     hoc_objectdata = hoc_objectdata_restore(obdsav);
     hoc_thisobject = obsav;
@@ -1205,7 +1205,7 @@ static void for_segment2(Symbol* sym, int mode) {
     case VAR:
         if (!is_array(*sym)) {
             if (sym->subtype == USERINT) {
-                execerror("integer iteration variable", sym->name);
+                hoc_execerror("integer iteration variable", sym->name);
             } else if (sym->subtype == USERDOUBLE) {
                 pval = sym->u.pval;
             } else {
@@ -1214,7 +1214,7 @@ static void for_segment2(Symbol* sym, int mode) {
             break;
         } else {
             if (sym->subtype == USERINT)
-                execerror("integer iteration variable", sym->name);
+                hoc_execerror("integer iteration variable", sym->name);
             else if (sym->subtype == USERDOUBLE)
                 pval = sym->u.pval + hoc_araypt(sym, SYMBOL);
             else
@@ -1227,7 +1227,7 @@ static void for_segment2(Symbol* sym, int mode) {
         pval = &(cast<double>(entry));
     } break;
     default:
-        execerror("for loop non-variable", sym->name);
+        hoc_execerror("for loop non-variable", sym->name);
     }
     imax = segment_limits(&dx);
     {
@@ -1246,7 +1246,7 @@ static void for_segment2(Symbol* sym, int mode) {
                 }
                 *pval = 1.;
             }
-            execute(relative(savepc));
+            hoc_execute(relative(savepc));
             if (hoc_returning) {
                 nrn_secstack(isec);
             }
@@ -1287,12 +1287,12 @@ void ifcode(void) {
     double d;
     Inst* savepc = pc; /* then part */
 
-    execute(savepc + 3); /* condition */
+    hoc_execute(savepc + 3); /* condition */
     d = hoc_xpop();
     if (d)
-        execute(relative(savepc));
+        hoc_execute(relative(savepc));
     else if ((savepc + 1)->i) /* else part? */
-        execute(relative(savepc + 1));
+        hoc_execute(relative(savepc + 1));
     if (!hoc_returning)
         pc = relative(savepc + 2); /* next stmt */
 }
@@ -1328,7 +1328,7 @@ void hoc_define(Symbol* sp) { /* put func/proc in symbol table */
     progp = progbase; /* next code starts here */
 }
 
-// print the call sequence on an execerror
+// print the call sequence on an hoc_execerror
 void frame_debug() {
     Frame* f;
     int i, j;
@@ -1378,7 +1378,7 @@ void frame_debug() {
 void hoc_push_frame(Symbol* sp, int narg) { /* helpful for explicit function calls */
     if (++fp >= framelast) {
         --fp;
-        execerror(sp->name, "call nested too deeply, increase with -NFRAME framesize option");
+        hoc_execerror(sp->name, "call nested too deeply, increase with -NFRAME framesize option");
     }
     fp->sp = sp;
     fp->nargs = narg;
@@ -1403,7 +1403,7 @@ void hoc_call() {
     /* for function */
     if (++fp >= framelast) {
         --fp;
-        execerror(sp->name, "call nested too deeply, increase with -NFRAME framesize option");
+        hoc_execerror(sp->name, "call nested too deeply, increase with -NFRAME framesize option");
     }
     fp->sp = sp;
     fp->nargs = pc[1].i;
@@ -1441,18 +1441,18 @@ void hoc_call() {
             hoc_thisobject = 0;
             hoc_symlist = hoc_top_level_symlist;
 
-            execute(sp->u.u_proc->defn.in);
+            hoc_execute(sp->u.u_proc->defn.in);
 
             hoc_objectdata = hoc_objectdata_restore(odsav);
             hoc_thisobject = obsav;
             hoc_symlist = slsav;
         } else {
-            execute(sp->u.u_proc->defn.in);
+            hoc_execute(sp->u.u_proc->defn.in);
         }
         /* the autoobject pointers were unreffed at the ret() */
 
     } else {
-        execerror(sp->name, "undefined function");
+        hoc_execerror(sp->name, "undefined function");
     }
     if (hoc_returning) {
         nrn_secstack(isec);
@@ -1522,7 +1522,7 @@ void funcret(void) /* return from a function */
 {
     double d;
     if (fp->sp->type != FUNCTION)
-        execerror(fp->sp->name, "(proc or iterator) returns value");
+        hoc_execerror(fp->sp->name, "(proc or iterator) returns value");
     d = hoc_xpop(); /* preserve function return value */
     ret();
     hoc_pushx(d);
@@ -1531,9 +1531,9 @@ void funcret(void) /* return from a function */
 void procret(void) /* return from a procedure */
 {
     if (fp->sp->type == FUNCTION)
-        execerror(fp->sp->name, "(func) returns no value");
+        hoc_execerror(fp->sp->name, "(func) returns no value");
     if (fp->sp->type == HOCOBJFUNCTION)
-        execerror(fp->sp->name, "(obfunc) returns no value");
+        hoc_execerror(fp->sp->name, "(obfunc) returns no value");
     ret();
     hoc_pushx(0.); /*will be popped immediately; necessary because caller
                  may have compiled it as a function*/
@@ -1543,7 +1543,7 @@ void hocobjret(void) /* return from a hoc level obfunc */
 {
     Object** d;
     if (fp->sp->type != HOCOBJFUNCTION)
-        execerror(fp->sp->name, "objfunc returns objref");
+        hoc_execerror(fp->sp->name, "objfunc returns objref");
     d = hoc_objpop(); /* preserve function return value */
     Object* o = *d;   // safe to deref here even if d points to localobj on stack.
     if (o) {
@@ -1579,7 +1579,7 @@ void hoc_Argtype() {
     int narg, iarg, type, itype = 0;
     Frame* f = fp - 1;
     if (f == frame) {
-        execerror("argtype can only be called in a func or proc", 0);
+        hoc_execerror("argtype can only be called in a func or proc", 0);
     }
     iarg = (int) chkarg(1, -1000., 100000.);
     if (iarg > f->nargs || iarg < 1) {
@@ -1771,7 +1771,7 @@ Symbol* hoc_get_symbol(const char* var) {
     hoc_run_stmt(prc);
 
     last = (Inst*) prc->u.u_proc->defn.in + prc->u.u_proc->size - 1;
-    if (last[-2].pf == eval) {
+    if (last[-2].pf == hoc_eval) {
         sym = last[-3].sym;
     } else if (last[-3].pf == rangepoint || last[-3].pf == rangevareval) {
         sym = last[-2].sym;
@@ -1843,7 +1843,7 @@ void eval(void) /* evaluate variable on stack */
     }
     switch (sym->type) {
     case UNDEF:
-        execerror("undefined variable", sym->name);
+        hoc_execerror("undefined variable", sym->name);
     case VAR:
         if (!is_array(*sym)) {
             if (hoc_do_equation && sym->s_varn > 0 && hoc_access[sym->s_varn] == 0) {
@@ -1888,7 +1888,7 @@ void eval(void) /* evaluate variable on stack */
         d = cast<double>(fp->argn[sym->u.u_auto]);
         break;
     default:
-        execerror("attempt to evaluate a non-variable", sym->name);
+        hoc_execerror("attempt to evaluate a non-variable", sym->name);
     }
 
     if (obsav) {
@@ -1919,7 +1919,7 @@ void hoc_evalpointer() {
     }
     switch (sym->type) {
     case UNDEF:
-        execerror("undefined variable", sym->name);
+        hoc_execerror("undefined variable", sym->name);
     case VAR:
         if (!is_array(*sym)) {
             switch (sym->subtype) {
@@ -1928,7 +1928,7 @@ void hoc_evalpointer() {
                 break;
             case USERINT:
             case USERFLOAT:
-                execerror("can use pointer only to doubles", sym->name);
+                hoc_execerror("can use pointer only to doubles", sym->name);
                 break;
             case USERPROPERTY:
                 d = cable_prop_eval_pointer(sym);
@@ -1944,7 +1944,7 @@ void hoc_evalpointer() {
                 break;
             case USERINT:
             case USERFLOAT:
-                execerror("can use pointer only to doubles", sym->name);
+                hoc_execerror("can use pointer only to doubles", sym->name);
                 break;
             default:
                 d = OPVAL(sym) + hoc_araypt(sym, OBJECTVAR);
@@ -1956,7 +1956,7 @@ void hoc_evalpointer() {
         d = &(cast<double>(fp->argn[sym->u.u_auto]));
     } break;
     default:
-        execerror("attempt to evaluate pointer to a non-variable", sym->name);
+        hoc_execerror("attempt to evaluate pointer to a non-variable", sym->name);
     }
     if (obsav) {
         hoc_objectdata = hoc_objectdata_restore(odsav);
@@ -1998,7 +1998,7 @@ void hoc_div(void) /* divide top two elems on stack */
     double d1, d2;
     d2 = hoc_xpop();
     if (d2 == 0.0)
-        execerror("division by zero", (char*) 0);
+        hoc_execerror("division by zero", (char*) 0);
     d1 = hoc_xpop();
     d1 /= d2;
     hoc_pushx(d1);
@@ -2010,7 +2010,7 @@ void hoc_cyclic(void) /* the modulus function */
     double r, q;
     d2 = hoc_xpop();
     if (d2 <= 0.)
-        execerror("a%b, b<=0", (char*) 0);
+        hoc_execerror("a%b, b<=0", (char*) 0);
     d1 = hoc_xpop();
     r = d1;
     if (r >= d2) {
@@ -2250,7 +2250,7 @@ void hoc_assign() {
         fp->argn[sym->u.u_auto] = d2;
         break;
     default:
-        execerror("assignment to non-variable", sym->name);
+        hoc_execerror("assignment to non-variable", sym->name);
     }
     if (obsav) {
         hoc_objectdata = hoc_objectdata_restore(odsav);
@@ -2462,7 +2462,7 @@ void varread(void) /* read into variable */
 
     assert(var->cpublic != 2);
     if (!((var->type == VAR || var->type == UNDEF) && !is_array(*var) && var->subtype == NOTUSER)) {
-        execerror(var->name, "is not a scalar variable");
+        hoc_execerror(var->name, "is not a scalar variable");
     }
 Again:
     switch (nrn_fw_fscanf(fin, "%lf", OPVAL(var))) {
@@ -2472,7 +2472,7 @@ Again:
         d = *(OPVAL(var)) = 0.0;
         break;
     case 0:
-        execerror("non-number read into", var->name);
+        hoc_execerror("non-number read into", var->name);
         break;
     default:
         d = 1.0;
@@ -2485,7 +2485,7 @@ Again:
 
 static Inst* codechk(void) {
     if (progp >= prog + NPROG - 1)
-        execerror("procedure too big", (char*) 0);
+        hoc_execerror("procedure too big", (char*) 0);
     if (zzdebug)
         debugzz(progp);
     return progp++;
@@ -2534,14 +2534,14 @@ void insertcode(Inst* begin, Inst* end, Pfrv f) {
     }
 }
 
-void execute(Inst* p) /* run the machine */
+void hoc_execute(Inst* p) /* run the machine */
 {
     Inst* pcsav;
 
     BBSPOLL
     for (pc = p; pc->in != STOP && !hoc_returning;) {
         if (hoc_intset)
-            execerror("interrupted", (char*) 0);
+            hoc_execerror("interrupted", (char*) 0);
         /* (*((pc++)->pf))(); DEC 5000 increments pc after the return!*/
         pcsav = pc++;
         (*((pcsav)->pf))();

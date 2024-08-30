@@ -48,10 +48,10 @@
 //#define eqn_name           hoc_eqn_name
 //#define eqn_rhs            hoc_eqn_rhs
 //#define eqn_side           hoc_eqn_side
-#define errcheck           hoc_errcheck
-#define eval               hoc_eval
-#define execerror          hoc_execerror
-#define execute            hoc_execute
+//#define errcheck           hoc_errcheck
+//#define eval               hoc_eval
+//#define execerror          hoc_execerror
+//#define execute            hoc_execute
 #define fin                hoc_fin
 #define follow             hoc_follow
 #define forcode            hoc_forcode

@@ -279,7 +279,7 @@ double hoc_scan(FILE* fi) {
 
     for (;;) {
         if (fscanf(fi, "%255s", fs) == EOF) {
-            execerror("EOF in fscan", (char*) 0);
+            hoc_execerror("EOF in fscan", (char*) 0);
         }
         if (fs[0] == 'i' || fs[0] == 'n' || fs[0] == 'I' || fs[0] == 'N') {
             continue;
@@ -301,7 +301,7 @@ double hoc_fw_scan(NrnFILEWrap* fi) {
 
     for (;;) {
         if (nrn_fw_fscanf(fi, "%255s", fs) == EOF) {
-            execerror("EOF in fscan", (char*) 0);
+            hoc_execerror("EOF in fscan", (char*) 0);
         }
         if (fs[0] == 'i' || fs[0] == 'n' || fs[0] == 'I' || fs[0] == 'N') {
             continue;
@@ -348,11 +348,11 @@ void hoc_Getstr(void) /* read a line (or word) from input file */
     if (word) {
         buf = hoc_tmpbuf->buf;
         if (nrn_fw_fscanf(fi, "%s", buf) != 1) {
-            execerror("EOF in getstr", (char*) 0);
+            hoc_execerror("EOF in getstr", (char*) 0);
         }
     } else {
         if ((buf = fgets_unlimited(hoc_tmpbuf, fi)) == (char*) 0) {
-            execerror("EOF in getstr", (char*) 0);
+            hoc_execerror("EOF in getstr", (char*) 0);
         }
     }
     hoc_assign_str(cpp, buf);

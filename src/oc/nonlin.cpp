@@ -34,7 +34,7 @@ void hoc_dep_make(void) /* tag the variable as dependent with a variable number 
         *(OPVAL(sym)) = 0.;
     case VAR:
         if (sym->subtype != NOTUSER) {
-            execerror(sym->name, "can't be a dependent variable");
+            hoc_execerror(sym->name, "can't be a dependent variable");
         }
         if (!is_array(*sym)) {
             numpt = &(sym->s_varn);
@@ -54,10 +54,10 @@ void hoc_dep_make(void) /* tag the variable as dependent with a variable number 
         break;
 
     default:
-        execerror(sym->name, "can't be a dependent variable");
+        hoc_execerror(sym->name, "can't be a dependent variable");
     }
     if (*numpt > 0)
-        execerror(sym->name, "made dependent twice");
+        hoc_execerror(sym->name, "made dependent twice");
     *numpt = ++neqn;
 #endif
 }
@@ -90,10 +90,10 @@ void hoc_eqn_name(void) /* save row number for lhs and/or rhs */
     }
     init_access();
     do_equation = 1;
-    eval();
+    hoc_eval();
     do_equation = 0;
     if (var_access < 1)
-        execerror("illegal equation name", (pc - 2)->sym->name);
+        hoc_execerror("illegal equation name", (pc - 2)->sym->name);
     row = var_access;
     nopop();
 #endif

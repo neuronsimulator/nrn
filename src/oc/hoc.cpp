@@ -537,7 +537,7 @@ int hoc_arayinfo_install(Symbol* sp, int nsub) {
     while (nsub) {
         subscpt = floor(xpop() + EPS);
         if (subscpt <= 0.)
-            execerror("subscript < 1", sp->name);
+            hoc_execerror("subscript < 1", sp->name);
         total = total * subscpt;
         sp->arayinfo->sub[--nsub] = (int) subscpt;
     }
@@ -551,7 +551,7 @@ int hoc_arayinfo_install(Symbol* sp, int nsub) {
         */
         free((char*) sp->arayinfo);
         sp->arayinfo = (Arrayinfo*) 0;
-        execerror(sp->name, ":total subscript too large");
+        hoc_execerror(sp->name, ":total subscript too large");
     }
     if (OPARINFO(sp)) {
         /* probably never get here */
@@ -664,7 +664,7 @@ void onintr(int /* sig */) /* catch interrupt */
     /*ARGSUSED*/
     stoprun = 1;
     if (hoc_intset++)
-        execerror("interrupted", (char*) 0);
+        hoc_execerror("interrupted", (char*) 0);
     IGNORE(signal(SIGINT, onintr));
 }
 
@@ -742,7 +742,7 @@ void fpecatch(int /* sig */) /* catch floating point exceptions */
         abort();
     }
     signal(SIGFPE, fpecatch);
-    execerror("Floating point exception.", (char*) 0);
+    hoc_execerror("Floating point exception.", (char*) 0);
 }
 
 __attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation violation probably due to
@@ -754,7 +754,7 @@ __attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation viola
     if (coredump) {
         abort();
     }
-    execerror("Aborting.", (char*) 0);
+    hoc_execerror("Aborting.", (char*) 0);
 }
 
 #if HAVE_SIGBUS
@@ -765,7 +765,7 @@ __attribute__((noreturn)) void sigbuscatch(int /* sig */) {
     if (coredump) {
         abort();
     }
-    execerror("Aborting. ", "See $NEURONHOME/lib/help/oc.help");
+    hoc_execerror("Aborting. ", "See $NEURONHOME/lib/help/oc.help");
 }
 #endif
 
