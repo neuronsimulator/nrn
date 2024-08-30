@@ -1475,21 +1475,9 @@ void CodegenNeuronCppVisitor::print_nrn_init(bool skip_init_check) {
 
     print_rename_state_vars();
 
-    if (!info.changed_dt.empty()) {
-        printer->fmt_line("double _save_prev_dt = {};",
-                          get_variable_name(naming::NTHREAD_DT_VARIABLE));
-        printer->fmt_line("{} = {};",
-                          get_variable_name(naming::NTHREAD_DT_VARIABLE),
-                          info.changed_dt);
-    }
-
     print_initial_block(info.initial_node);
-
-    if (!info.changed_dt.empty()) {
-        printer->fmt_line("{} = _save_prev_dt;", get_variable_name(naming::NTHREAD_DT_VARIABLE));
-    }
-
     printer->pop_block();
+
     printer->pop_block();
 }
 
