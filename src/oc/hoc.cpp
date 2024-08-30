@@ -112,7 +112,7 @@ extern void add_history(const char*);
 #endif
 
 int nrn_nobanner_;
-int pipeflag;
+int hoc_pipeflag;
 int hoc_usegui;
 #if 1
 /* no longer necessary to distinguish signed from unsigned since EOF
@@ -146,18 +146,18 @@ extern int hoc_print_first_instance;
 used to be a FILE* but had fopen problems when 128K cores on BG/P
 tried to fopen the same file for reading at once.
 */
-NrnFILEWrap* fin; /* input file pointer */
+NrnFILEWrap* hoc_fin; /* input file pointer */
 
 #include <ctype.h>
 const char* progname; /* for error messages */
-int lineno;
+int hoc_lineno;
 
 #if HAVE_EXECINFO_H
 #include <execinfo.h>
 #endif
 #include <signal.h>
 int hoc_intset; /* safer interrupt handling */
-int indef;
+int hoc_indef;
 const char* infile; /* input file name */
 extern size_t hoc_xopen_file_size_;
 extern char* hoc_xopen_file_;
@@ -205,7 +205,7 @@ int getnb(void) /* get next non-white character */
     int c;
 
     /*EMPTY*/
-    while ((c = Getc(fin)) == ' ' || c == '\t') {
+    while ((c = Getc(hoc_fin)) == ' ' || c == '\t') {
         ;
     }
     return c;
@@ -228,10 +228,10 @@ static int eos;
 
 static char* optarray(char* buf) {
     int c;
-    if ((c = Getc(fin)) == '[') {
+    if ((c = Getc(hoc_fin)) == '[') {
         char* s = buf + strlen(buf);
         *s++ = c;
-        while (isdigit(c = Getc(fin)) && (s - buf) < 200) {
+        while (isdigit(c = Getc(hoc_fin)) && (s - buf) < 200) {
             *s++ = c;
         }
         if (c == ']') {
@@ -242,7 +242,7 @@ static char* optarray(char* buf) {
             hoc_acterror(buf, " not literal name[int]");
         }
     } else {
-        unGetc(c, fin);
+        unGetc(c, hoc_fin);
     }
     return buf;
 }
@@ -266,7 +266,7 @@ restart: /* when no token in between comments */
     }
     if (c == '/' && follow('*', 1, 0)) /* comment */
     {
-        while ((c = Getc(fin)) != '*' || follow('/', 0, 1)) {
+        while ((c = Getc(hoc_fin)) != '*' || follow('/', 0, 1)) {
             if (c == EOF)
                 return (0);
             /*			if (c == YYNEEDMORE) {*/
@@ -280,31 +280,31 @@ restart: /* when no token in between comments */
     {
         char* npt;
         double d;
-        IGNORE(unGetc(c, fin));
+        IGNORE(unGetc(c, hoc_fin));
         npt = (char*) hoc_ctp;
         /*EMPTY*/
-        while (isdigit(c = Getc(fin))) {
+        while (isdigit(c = Getc(hoc_fin))) {
             ;
         }
         if (c == '.') {
             /*EMPTY*/
-            while (isdigit(c = Getc(fin))) {
+            while (isdigit(c = Getc(hoc_fin))) {
                 ;
             }
         }
         if (*npt == '.' && !isdigit(npt[1])) {
-            IGNORE(unGetc(c, fin));
+            IGNORE(unGetc(c, hoc_fin));
             return (int) (*npt);
         }
         if (c == 'E' || c == 'e') {
-            if (isdigit(c = Getc(fin)) || c == '+' || c == '-') {
+            if (isdigit(c = Getc(hoc_fin)) || c == '+' || c == '-') {
                 /*EMPTY*/
-                while (isdigit(c = Getc(fin))) {
+                while (isdigit(c = Getc(hoc_fin))) {
                     ;
                 }
             }
         }
-        IGNORE(unGetc(c, fin));
+        IGNORE(unGetc(c, hoc_fin));
         IGNORE(sscanf(npt, "%lf", &d));
         if (d == 0.)
             return NUMZERO;
@@ -320,8 +320,8 @@ restart: /* when no token in between comments */
                 hoc_execerror("Name too long:", sbuf);
             }
             *p++ = c;
-        } while ((c = Getc(fin)) != EOF && (isalnum(c) || c == '_'));
-        IGNORE(unGetc(c, fin));
+        } while ((c = Getc(hoc_fin)) != EOF && (isalnum(c) || c == '_'));
+        IGNORE(unGetc(c, hoc_fin));
         *p = '\0';
         if (strncmp(sbuf, "__nrnsec_0x", 11) == 0) {
             yylval.ptr = hoc_sec_internal_name2ptr(sbuf, 1);
@@ -349,8 +349,8 @@ restart: /* when no token in between comments */
         if (nrn_parsing_pysec_) {
             yylval.ptr = hoc_pysec_name2ptr(optarray(sbuf), 1);
             if (nrn_parsing_pysec_ > (void*) 1) { /* there will be a second part */
-                c = Getc(fin);
-                unGetc(c, fin);
+                c = Getc(hoc_fin);
+                unGetc(c, hoc_fin);
                 if (c != '.') { /* so there must be a . */
                     nrn_parsing_pysec_ = NULL;
                     hoc_acterror(
@@ -384,9 +384,9 @@ restart: /* when no token in between comments */
             yylval.narg = 0;
             return retval;
         }
-        while (isdigit(c = Getc(fin)))
+        while (isdigit(c = Getc(hoc_fin)))
             n = 10 * n + c - '0';
-        IGNORE(unGetc(c, fin));
+        IGNORE(unGetc(c, hoc_fin));
         if (n == 0)
             hoc_acterror("strange $...", (char*) 0);
         yylval.narg = n;
@@ -400,7 +400,7 @@ restart: /* when no token in between comments */
         if (!sbuf) {
             sbuf = hocstr_create(256);
         }
-        for (p = sbuf->buf; (c = Getc(fin)) != '"'; p++) {
+        for (p = sbuf->buf; (c = Getc(hoc_fin)) != '"'; p++) {
             if (c == '\n' || c == EOF || c == YYNEEDMORE)
                 hoc_acterror("missing quote", "");
             n = p - sbuf->buf;
@@ -488,7 +488,7 @@ static int backslash(int c) { /* get next char with \'s interpreted */
     static char transtab[] = "b\bf\fn\nr\rt\t";
     if (c != '\\')
         return c;
-    c = Getc(fin);
+    c = Getc(hoc_fin);
     if (islower(c) && strchr(transtab, c))
         return strchr(transtab, c)[1];
     return c;
@@ -496,15 +496,15 @@ static int backslash(int c) { /* get next char with \'s interpreted */
 
 static int follow(int expect, int ifyes, int ifno) /* look ahead for >=, etc. */
 {
-    int c = Getc(fin);
+    int c = Getc(hoc_fin);
 
     if (c == expect)
         return ifyes;
-    IGNORE(unGetc(c, fin));
+    IGNORE(unGetc(c, hoc_fin));
     return ifno;
 }
 
-void arayinstal(void) /* allocate storage for arrays */
+void hoc_arayinstal(void) /* allocate storage for arrays */
 {
     int i, nsub;
     Symbol* sp;
@@ -586,8 +586,8 @@ void hoc_free_arrayinfo(Arrayinfo* a) {
     }
 }
 
-void defnonly(const char* s) { /* warn if illegal definition */
-    if (!indef)
+void hoc_defnonly(const char* s) { /* warn if illegal definition */
+    if (!hoc_indef)
         hoc_acterror(s, "used outside definition");
 }
 
@@ -780,8 +780,8 @@ int hoc_main1_inited_;
 
 /* has got to be called first. oc can only be event driven after this returns */
 void hoc_main1_init(const char* pname, const char** envp) {
-    extern NrnFILEWrap* frin;
-    extern FILE* fout;
+    extern NrnFILEWrap* hoc_frin;
+    extern FILE* hoc_fout;
 
     if (!hoc_xopen_file_) {
         hoc_xopen_file_size_ = 200;
@@ -791,7 +791,7 @@ void hoc_main1_init(const char* pname, const char** envp) {
 
     hoc_promptstr = "oc>";
     yystart = 1;
-    lineno = 0;
+    hoc_lineno = 0;
     if (hoc_main1_inited_) {
         return;
     }
@@ -812,8 +812,8 @@ void hoc_main1_init(const char* pname, const char** envp) {
     hoc_cbufstr = hocstr_create(CBUFSIZE);
     hoc_cbuf = hoc_cbufstr->buf;
     hoc_ctp = hoc_cbuf;
-    frin = nrn_fw_set_stdin();
-    fout = stdout;
+    hoc_frin = nrn_fw_set_stdin();
+    hoc_fout = stdout;
     if (!nrn_is_cable()) {
         Fprintf(stderr, "OC INTERPRETER   %s   %s\n", RCS_hoc_version, RCS_hoc_date);
         Fprintf(stderr,
@@ -1038,15 +1038,15 @@ static const char* double_at2space(const char* infile) {
 #endif /*MINGW*/
 
 int hoc_moreinput() {
-    if (pipeflag) {
-        pipeflag = 0;
+    if (hoc_pipeflag) {
+        hoc_pipeflag = 0;
         return 1;
     }
 #if defined(WIN32)
     /* like mswin, do not need a '-' after hoc files, but ^D works */
     if (gargc == 0 && cygonce == 0) {
         cygonce = 1;
-        fin = nrn_fw_set_stdin();
+        hoc_fin = nrn_fw_set_stdin();
         infile = 0;
         hoc_xopen_file_[0] = 0;
 #if defined(USE_PYTHON)
@@ -1056,10 +1056,10 @@ int hoc_moreinput() {
 #endif
     }
 #endif  // WIN32
-    if (fin && !nrn_fw_eq(fin, stdin)) {
-        IGNORE(nrn_fw_fclose(fin));
+    if (hoc_fin && !nrn_fw_eq(hoc_fin, stdin)) {
+        IGNORE(nrn_fw_fclose(hoc_fin));
     }
-    fin = nrn_fw_set_stdin();
+    hoc_fin = nrn_fw_set_stdin();
     infile = 0;
     hoc_xopen_file_[0] = 0;
     if (gargc-- <= 0) {
@@ -1085,7 +1085,7 @@ int hoc_moreinput() {
     it back */
     infile = double_at2space(infile);
 #endif
-    lineno = 0;
+    hoc_lineno = 0;
 #if defined(USE_PYTHON)
     if (use_python_interpreter) {
         /* deal only with .hoc files. The hoc files are intended
@@ -1098,7 +1098,7 @@ int hoc_moreinput() {
     }
 #endif
     if (strcmp(infile, "-") == 0) {
-        fin = nrn_fw_set_stdin();
+        hoc_fin = nrn_fw_set_stdin();
         infile = 0;
         hoc_xopen_file_[0] = 0;
     } else if (strcmp(infile, "-parallel") == 0) {
@@ -1118,7 +1118,7 @@ int hoc_moreinput() {
         std::snprintf(hs->buf, hs->size + 1, "%s\n", infile);
         /* now infile is a hoc statement */
         hpfi = hoc_print_first_instance;
-        fin = (NrnFILEWrap*) 0;
+        hoc_fin = (NrnFILEWrap*) 0;
         hoc_print_first_instance = 0;
         // This is processing HOC code via -c on the commandline. That HOC code could include
         // nrnpython(...), so the Python interpreter needs to be configured appropriately for
@@ -1141,7 +1141,7 @@ int hoc_moreinput() {
             hoc_execerror("Python error", infile);
         }
         return hoc_moreinput();
-    } else if ((fin = nrn_fw_fopen(infile, "r")) == (NrnFILEWrap*) 0) {
+    } else if ((hoc_fin = nrn_fw_fopen(infile, "r")) == (NrnFILEWrap*) 0) {
         Fprintf(stderr, "%d %s: can't open %s\n", nrnmpi_myid_world, progname, infile);
 #if NRNMPI
         if (nrnmpi_numprocs_world > 1) {
@@ -1318,15 +1318,15 @@ static void nrn_inputbuf_getline(void) {
 // used by ocjump.cpp
 void oc_save_input_info(const char** i1, int* i2, int* i3, NrnFILEWrap** i4) {
     *i1 = nrn_inputbufptr;
-    *i2 = pipeflag;
-    *i3 = lineno;
-    *i4 = fin;
+    *i2 = hoc_pipeflag;
+    *i3 = hoc_lineno;
+    *i4 = hoc_fin;
 }
 void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
     nrn_inputbufptr = i1;
-    pipeflag = i2;
-    lineno = i3;
-    fin = i4;
+    hoc_pipeflag = i2;
+    hoc_lineno = i3;
+    hoc_fin = i4;
 }
 
 int hoc_oc(const char* buf) {
@@ -1370,7 +1370,7 @@ int hoc_oc(const char* buf, std::ostream& os) {
     return 0;
 }
 
-void warning(const char* s, const char* t) /* print warning message */
+void hoc_warning(const char* s, const char* t) /* print warning message */
 {
     CHAR* cp;
     char id[10];
@@ -1386,9 +1386,9 @@ void warning(const char* s, const char* t) /* print warning message */
         Fprintf(stderr, "%s%s: %s\n", id, progname, s);
     }
     if (hoc_xopen_file_ && hoc_xopen_file_[0]) {
-        Fprintf(stderr, "%s in %s near line %d\n", id, hoc_xopen_file_, lineno);
+        Fprintf(stderr, "%s in %s near line %d\n", id, hoc_xopen_file_, hoc_lineno);
     } else {
-        Fprintf(stderr, "%s near line %d\n", id, lineno);
+        Fprintf(stderr, "%s near line %d\n", id, hoc_lineno);
     }
     n = strlen(hoc_cbuf);
     for (cp = hoc_cbuf; cp < (hoc_cbuf + n); ++cp) {
@@ -1423,7 +1423,7 @@ static int Getc(NrnFILEWrap* fp) {
 #if 0
 /* don't allow parser to block. Actually partial statements were never
 allowed anyway */
-	if (!pipeflag && nrn_fw_eq(fp,stdin)) {
+	if (!hoc_pipeflag && nrn_fw_eq(fp,stdin)) {
 		eos = 1;
 		return 0;
 	}
@@ -1634,12 +1634,12 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
     }
     hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
     *hoc_ctp = '\0';
-    if (pipeflag == 3) {
+    if (hoc_pipeflag == 3) {
         nrn_inputbuf_getline();
         if (*hoc_ctp == '\0') {
             return EOF;
         }
-    } else if (pipeflag) {
+    } else if (hoc_pipeflag) {
         if (hoc_strgets_need() > hoc_cbufstr->size) {
             hocstr_resize(hoc_cbufstr, hoc_strgets_need() + 100);
         }
@@ -1648,7 +1648,7 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
         }
     } else {
 #if READLINE
-        if (nrn_fw_eq(fin, stdin) && nrn_istty_) {
+        if (nrn_fw_eq(hoc_fin, stdin) && nrn_istty_) {
             char* line;
             int n;
 #if INTERVIEWS
@@ -1705,18 +1705,18 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
             hoc_audit_command(hoc_cbuf);
         } else {
             fflush(stdout);
-            if (hoc_fgets_unlimited(hoc_cbufstr, fin) == (CHAR*) 0) {
+            if (hoc_fgets_unlimited(hoc_cbufstr, hoc_fin) == (CHAR*) 0) {
                 return EOF;
             }
         }
 #else  // READLINE
 #if INTERVIEWS
-        if (nrn_fw_eq(fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
+        if (nrn_fw_eq(hoc_fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
             run_til_stdin());
         }
 #endif  // INTERVIEWS
 #if defined(WIN32)
-        if (nrn_fw_eq(fin, stdin)) {
+        if (nrn_fw_eq(hoc_fin, stdin)) {
             if (gets(hoc_cbuf) == (char*) 0) {
                 /*DebugMessage("gets returned NULL\n");*/
                 return EOF;
@@ -1725,14 +1725,14 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
         } else
 #endif  // WIN32
         {
-            if (hoc_fgets_unlimited(hoc_cbufstr, fin) == (char*) 0) {
+            if (hoc_fgets_unlimited(hoc_cbufstr, hoc_fin) == (char*) 0) {
                 return EOF;
             }
         }
 #endif  // READLINE
     }
     errno = 0;
-    lineno++;
+    hoc_lineno++;
     hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
     hoc_ictp = 0;
     return 1;

@@ -50,12 +50,12 @@ void hoc_atan2(void) {
     hoc_pushx(d);
 }
 
-double Log(double x) {
+double hoc_Log(double x) {
     clear_fe_except();
     return errcheck(log(x), "log");
 }
 
-double Log10(double x) {
+double hoc_Log10(double x) {
     clear_fe_except();
     return errcheck(log10(x), "log10");
 }
@@ -95,17 +95,17 @@ double hoc1_Exp(double x) {
     return errcheck(exp(x), "exp");
 }
 
-double Sqrt(double x) {
+double hoc_Sqrt(double x) {
     clear_fe_except();
     return errcheck(sqrt(x), "sqrt");
 }
 
-double Pow(double x, double y) {
+double hoc_Pow(double x, double y) {
     clear_fe_except();
     return errcheck(pow(x, y), "exponentiation");
 }
 
-double integer(double x) {
+double hoc_integer(double x) {
     if (x < 0) {
         return (double) (long) (x - EPS);
     } else {

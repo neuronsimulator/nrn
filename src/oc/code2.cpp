@@ -454,7 +454,7 @@ normal:
     return n;
 }
 
-void System(void) {
+void hoc_System(void) {
     extern int hoc_plttext;
     static char stdoutfile[] = "/systmp.tmp";
     double d;
@@ -509,7 +509,7 @@ void System(void) {
     hoc_pushx(d);
 }
 
-void Xred(void) /* read with prompt string and default and limits */
+void hoc_Xred(void) /* read with prompt string and default and limits */
 {
     double d;
 
@@ -589,7 +589,7 @@ static void symdebug(const char* s, Symlist* list) /* for debugging display the 
         }
 }
 
-void symbols(void) /* display the types above */
+void hoc_symbols(void) /* display the types above */
 {
     int i, j;
     Symbol* sp;

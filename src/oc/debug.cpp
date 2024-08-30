@@ -4,16 +4,17 @@
 #include "code.h"
 #include "equation.h"
 #include <stdio.h>
-int zzdebug;
+
+int hoc_zzdebug;
 
 #define prcod(c1, c2) else if (p->pf == c1) Printf("%p %p %s", p, p->pf, c2)
 
-void debug(void) /* print the machine */
+void hoc_debug(void) /* print the machine */
 {
-    if (zzdebug == 0)
-        zzdebug = 1;
+    if (hoc_zzdebug == 0)
+        hoc_zzdebug = 1;
     else
-        zzdebug = 0;
+        hoc_zzdebug = 0;
 }
 
 /* running copy of calls to execute */

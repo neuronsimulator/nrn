@@ -30,11 +30,11 @@ Symlist* hoc_top_level_symlist = nullptr; /* all user names seen at top-level
         (non-public names inside templates do not appear here) */
 extern Objectdata* hoc_top_level_data;
 
-Symlist* symlist = nullptr;   /* the current user symbol table: linked list */
-Symlist* p_symlist = nullptr; /* current proc, func, or temp table */
-                              /* containing constants, strings, and auto */
-                              /* variables. Discarding these lists at */
-                              /* appropriate times prevents storage leakage. */
+Symlist* hoc_symlist = nullptr;   /* the current user symbol table: linked list */
+Symlist* hoc_p_symlist = nullptr; /* current proc, func, or temp table */
+                                  /* containing constants, strings, and auto */
+                                  /* variables. Discarding these lists at */
+                                  /* appropriate times prevents storage leakage. */
 
 void print_symlist(const char* s, Symlist* tab) {
     Printf("%s\n", s);
@@ -60,10 +60,10 @@ Symbol* hoc_lookup(const char* s) /* find s in symbol table */
 {
     Symbol* sp;
 
-    if ((sp = hoc_table_lookup(s, p_symlist)) != nullptr) {
+    if ((sp = hoc_table_lookup(s, hoc_p_symlist)) != nullptr) {
         return sp;
     }
-    if ((sp = hoc_table_lookup(s, symlist)) != nullptr) {
+    if ((sp = hoc_table_lookup(s, hoc_symlist)) != nullptr) {
         return sp;
     }
     if ((sp = hoc_table_lookup(s, hoc_built_in_symlist)) != nullptr) {
@@ -73,11 +73,11 @@ Symbol* hoc_lookup(const char* s) /* find s in symbol table */
     return nullptr; /* nullptr ==> not found */
 }
 
-Symbol* install(/* install s in the list symbol table */
-                const char* s,
-                int t,
-                double d,
-                Symlist** list) {
+Symbol* hoc_install(/* install s in the list symbol table */
+                    const char* s,
+                    int t,
+                    double d,
+                    Symlist** list) {
     Symbol* sp = (Symbol*) emalloc(sizeof(Symbol));
     sp->name = (char*) emalloc((unsigned) (strlen(s) + 1)); /* +1 for '\0' */
     Strcpy(sp->name, s);
@@ -120,7 +120,7 @@ Symbol* install(/* install s in the list symbol table */
 }
 
 Symbol* hoc_install_var(const char* name, double* pval) {
-    Symbol* s = hoc_install(name, UNDEF, 0., &symlist);
+    Symbol* s = hoc_install(name, UNDEF, 0., &hoc_symlist);
     s->type = VAR;
     s->u.pval = pval;
     s->subtype = USERDOUBLE;

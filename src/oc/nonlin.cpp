@@ -9,9 +9,9 @@
 #include "code.h"
 
 
-int do_equation;    /* switch for determining access to dep vars */
-int* hoc_access;    /* links to next accessed variables */
-int hoc_var_access; /* variable number as pointer into access array */
+int hoc_do_equation; /* switch for determining access to dep vars */
+int* hoc_access;     /* links to next accessed variables */
+int hoc_var_access;  /* variable number as pointer into access array */
 
 
 static double** varble; /* pointer to symbol values */
@@ -89,9 +89,9 @@ void hoc_eqn_name(void) /* save row number for lhs and/or rhs */
         set_varble();
     }
     init_access();
-    do_equation = 1;
+    hoc_do_equation = 1;
     hoc_eval();
-    do_equation = 0;
+    hoc_do_equation = 0;
     if (hoc_var_access < 1)
         hoc_execerror("illegal equation name", (hoc_pc - 2)->sym->name);
     row = hoc_var_access;
@@ -123,7 +123,7 @@ static void set_varble(void) { /* set up varble array by searching for tags */
 
 static double Delta = .001; /* variable variation */
 
-void eqinit(void) /* built in function to initialize equation solver */
+void hoc_eqinit(void) /* built in function to initialize equation solver */
 {
 #if !OCSMALL
     Symbol* sp;
@@ -176,9 +176,9 @@ static void eqn_side(int lhs) {
     Inst* savepc = hoc_pc;
 
     init_access();
-    do_equation = 1;
+    hoc_do_equation = 1;
     hoc_execute(savepc);
-    do_equation = 0;
+    hoc_do_equation = 0;
 
     if (lhs) {
         f0 = hoc_xpop();
@@ -251,7 +251,7 @@ void hoc_Prmat(void) {
     hoc_pushx(1.);
 }
 
-void solve(void) {
+void hoc_solve(void) {
 #if !OCSMALL
     /* Sum is a measure of the dependent variable accuracy
        and how well the equations are solved */

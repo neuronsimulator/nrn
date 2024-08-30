@@ -20,7 +20,7 @@
 extern char* neuron_home;
 
 NrnFILEWrap* hoc_frin;
-FILE* fout;
+FILE* hoc_fout;
 
 void hoc_stdout(void) {
     static int prev = -1;
@@ -53,7 +53,7 @@ void hoc_stdout(void) {
     hoc_pushx((double) fileno(stdout));
 }
 
-void ropen(void) /* open file for reading */
+void hoc_ropen(void) /* open file for reading */
 {
     double d;
     const char* fname;
@@ -81,7 +81,7 @@ void ropen(void) /* open file for reading */
     hoc_pushx(d);
 }
 
-void wopen(void) /* open file for writing */
+void hoc_wopen(void) /* open file for writing */
 {
     const char* fname;
     double d;
@@ -91,14 +91,14 @@ void wopen(void) /* open file for writing */
     else
         fname = "";
     d = 1.;
-    if (fout != stdout) {
-        IGNORE(fclose(fout));
+    if (hoc_fout != stdout) {
+        IGNORE(fclose(hoc_fout));
     }
-    fout = stdout;
+    hoc_fout = stdout;
     if (fname[0] != 0) {
-        if ((fout = fopen(expand_env_var(fname), "w")) == nullptr) {
+        if ((hoc_fout = fopen(expand_env_var(fname), "w")) == nullptr) {
             d = 0.;
-            fout = stdout;
+            hoc_fout = stdout;
         }
     }
     errno = 0;
@@ -225,7 +225,7 @@ int hoc_xopen1(const char* name, const char* rcs) {
     return 0;
 }
 
-void xopen(void) /* read and execute a hoc program */
+void hoc_xopen(void) /* read and execute a hoc program */
 {
     if (ifarg(2)) {
         hoc_xopen1(gargstr(1), gargstr(2));
@@ -236,18 +236,18 @@ void xopen(void) /* read and execute a hoc program */
     hoc_pushx(1.);
 }
 
-void Fprint(void) /* fprintf function */
+void hoc_Fprint(void) /* fprintf function */
 {
     char* buf;
     double d;
 
     hoc_sprint1(&buf, 1);
-    d = (double) fprintf(fout, "%s", buf);
+    d = (double) fprintf(hoc_fout, "%s", buf);
     hoc_ret();
     hoc_pushx(d);
 }
 
-void PRintf(void) /* printf function */
+void hoc_PRintf(void) /* printf function */
 {
     char* buf;
     double d;
@@ -315,7 +315,7 @@ double hoc_fw_scan(NrnFILEWrap* fi) {
     return d;
 }
 
-void Fscan(void) /* read a number from input file */
+void hoc_Fscan(void) /* read a number from input file */
 {
     double d;
     NrnFILEWrap* fi;

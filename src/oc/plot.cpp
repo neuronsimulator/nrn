@@ -91,7 +91,7 @@ static void hoc_x11plot(int, double, double);
 
 static void hard_text_preamble();
 
-void plprint(const char* s) {
+void hoc_plprint(const char* s) {
     char buf[128];
 
     if (text && s[strlen(s) - 1] == '\n') {
@@ -182,7 +182,7 @@ void hoc_close_plot(void) {
 #endif
 }
 
-void plt(int mode, double x, double y) {
+void hoc_plt(int mode, double x, double y) {
     if (x < 0.)
         x = 0.;
     if (x > 1000.)
@@ -341,7 +341,7 @@ static void hardplot_file(const char* s) {
 }
 
 void Fig_file(const char* s, int dev) {
-    plt(-1, 0., 0.);
+    hoc_plt(-1, 0., 0.);
     hardplot_file(s);
     if (!hpdev)
         return;
@@ -543,7 +543,7 @@ void vtplot(int mode, double x, double y) {
 }
 #endif /*VT*/
 
-int set_color(int c) {
+int hoc_set_color(int c) {
     hoc_color = c;
 #if SUNCORE
     set_line_index(c);

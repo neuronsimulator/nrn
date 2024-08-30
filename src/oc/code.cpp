@@ -999,7 +999,7 @@ void hoc_varpush() {
 
 #define relative(pc) (pc + (pc)->i)
 
-void forcode(void) {
+void hoc_forcode(void) {
     double d;
     Inst* savepc = pc; /* loop body */
     int isec;
@@ -1283,7 +1283,7 @@ void for_segment1(void) {
     for_segment2(sym, mode);
 }
 
-void ifcode(void) {
+void hoc_ifcode(void) {
     double d;
     Inst* savepc = pc; /* then part */
 
@@ -1297,17 +1297,17 @@ void ifcode(void) {
         pc = relative(savepc + 2); /* next stmt */
 }
 
-void Break(void) /* break statement */
+void hoc_Break(void) /* break statement */
 {
     hoc_returning = 2;
 }
 
-void Continue(void) /* continue statement */
+void hoc_Continue(void) /* continue statement */
 {
     hoc_returning = 3;
 }
 
-void Stop(void) /* stop statement */
+void hoc_Stop(void) /* stop statement */
 {
     hoc_returning = 4;
 }
@@ -1386,7 +1386,7 @@ void hoc_push_frame(Symbol* sp, int narg) { /* helpful for explicit function cal
     fp->ob = hoc_thisobject;
 }
 
-void pop_frame(void) {
+void hoc_pop_frame(void) {
     int i;
     frameobj_clean(fp);
     for (i = 0; i < fp->nargs; i++) {
@@ -1518,7 +1518,7 @@ void hoc_ret() {
     hoc_returning = 1;
 }
 
-void funcret(void) /* return from a function */
+void hoc_funcret(void) /* return from a function */
 {
     double d;
     if (fp->sp->type != FUNCTION)
@@ -1528,7 +1528,7 @@ void funcret(void) /* return from a function */
     hoc_pushx(d);
 }
 
-void procret(void) /* return from a procedure */
+void hoc_procret(void) /* return from a procedure */
 {
     if (fp->sp->type == FUNCTION)
         hoc_execerror(fp->sp->name, "(func) returns no value");
@@ -1687,7 +1687,7 @@ double hoc_opasgn(int op, double dest, double src) {
     }
 }
 
-void argassign(void) /* store top of stack in argument */
+void hoc_argassign(void) /* store top of stack in argument */
 {
     double d;
     int i, op;
@@ -1755,7 +1755,7 @@ void hoc_argrefarg(void) {
     hoc_pushpx(pd);
 }
 
-void bltin(void) /* evaluate built-in on top of stack */
+void hoc_bltin(void) /* evaluate built-in on top of stack */
 {
     double d;
     d = hoc_xpop();
@@ -1824,7 +1824,7 @@ void hoc_autoobject(void) { /* AUTOOBJ symbol at pc+1. */
     hoc_pushobj(&(cast<Object*>(fp->argn[obs->u.u_auto])));
 }
 
-void eval(void) /* evaluate variable on stack */
+void hoc_eval(void) /* evaluate variable on stack */
 {
     Objectdata* odsav;
     Object* obsav = 0;
@@ -1984,7 +1984,7 @@ void hoc_sub(void) /* subtract top two elems on stack */
     hoc_pushx(d1);
 }
 
-void mul(void) /* multiply top two elems on stack */
+void hoc_mul(void) /* multiply top two elems on stack */
 {
     double d1, d2;
     d2 = hoc_xpop();
@@ -2036,7 +2036,7 @@ void hoc_negate() {
     hoc_pushx(-d);
 }
 
-void gt(void) {
+void hoc_gt(void) {
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();
@@ -2052,7 +2052,7 @@ void hoc_lt() {
     hoc_pushx(d1);
 }
 
-void ge(void) {
+void hoc_ge(void) {
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();
@@ -2060,7 +2060,7 @@ void ge(void) {
     hoc_pushx(d1);
 }
 
-void le(void) {
+void hoc_le(void) {
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();
@@ -2269,7 +2269,7 @@ void hoc_assign_str(char** cpp, const char* buf) {
     }
 }
 
-void assstr(void) { /* assign string on top to stack - 1 */
+void hoc_assstr(void) { /* assign string on top to stack - 1 */
     char **ps1, **ps2;
 
     ps1 = hoc_strpop();
@@ -2406,7 +2406,7 @@ void hoc_prexpr() {
     hoc_plprint(s->buf);
 }
 
-void prstr(void) /* print string value */
+void hoc_prstr(void) /* print string value */
 {
     static HocStr* s;
     char** cpp;
@@ -2454,7 +2454,7 @@ void hoc_newline(void) /* print newline */
     hoc_plprint("\n");
 }
 
-void varread(void) /* read into variable */
+void hoc_varread(void) /* read into variable */
 {
     double d = 0.0;
     extern NrnFILEWrap* hoc_fin;
@@ -2491,12 +2491,12 @@ static Inst* codechk(void) {
     return hoc_progp++;
 }
 
-Inst* Code(Pfrv f) { /* install one instruction or operand */
+Inst* hoc_Code(Pfrv f) { /* install one instruction or operand */
     hoc_progp->pf = f;
     return codechk();
 }
 
-Inst* codei(int f) {
+Inst* hoc_codei(int f) {
     hoc_progp->pf = NULL; /* zero high order bits to avoid debugzz problem */
     hoc_progp->i = f;
     return codechk();
@@ -2507,17 +2507,17 @@ Inst* hoc_codeptr(void* vp) {
     return codechk();
 }
 
-void codesym(Symbol* f) {
+void hoc_codesym(Symbol* f) {
     hoc_progp->sym = f;
     IGNORE(codechk());
 }
 
-void codein(Inst* f) {
+void hoc_codein(Inst* f) {
     hoc_progp->in = f;
     IGNORE(codechk());
 }
 
-void insertcode(Inst* begin, Inst* end, Pfrv f) {
+void hoc_insertcode(Inst* begin, Inst* end, Pfrv f) {
     Inst* i;
     for (i = end - 1; i != begin; i--) {
         *i = *(i - 1);

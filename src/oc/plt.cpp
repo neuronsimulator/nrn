@@ -11,7 +11,7 @@ extern void Fig_file(const char*, int);
 
 #ifndef MINGW
 
-void Plt(void) {
+void hoc_Plt(void) {
     TRY_GUI_REDIRECT_DOUBLE("plt", NULL);
     int mode;
     double x, y;
@@ -33,7 +33,7 @@ void Plt(void) {
     hoc_pushx(1.);
 }
 
-void Setcolor(void) {
+void hoc_Setcolor(void) {
     TRY_GUI_REDIRECT_DOUBLE("setcolor", NULL);
     double i;
     i = hoc_set_color((int) *getarg(1));
