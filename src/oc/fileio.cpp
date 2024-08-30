@@ -19,7 +19,7 @@
 
 extern char* neuron_home;
 
-NrnFILEWrap* frin;
+NrnFILEWrap* hoc_frin;
 FILE* fout;
 
 void hoc_stdout(void) {
@@ -63,16 +63,16 @@ void ropen(void) /* open file for reading */
     else
         fname = "";
     d = 1.;
-    if (!nrn_fw_eq(frin, stdin))
-        IGNORE(nrn_fw_fclose(frin));
-    frin = nrn_fw_set_stdin();
+    if (!nrn_fw_eq(hoc_frin, stdin))
+        IGNORE(nrn_fw_fclose(hoc_frin));
+    hoc_frin = nrn_fw_set_stdin();
     if (fname[0] != 0) {
-        if ((frin = nrn_fw_fopen(fname, "r")) == (NrnFILEWrap*) 0) {
+        if ((hoc_frin = nrn_fw_fopen(fname, "r")) == (NrnFILEWrap*) 0) {
             const char* retry;
             retry = expand_env_var(fname);
-            if ((frin = nrn_fw_fopen(retry, "r")) == (NrnFILEWrap*) 0) {
+            if ((hoc_frin = nrn_fw_fopen(retry, "r")) == (NrnFILEWrap*) 0) {
                 d = 0.;
-                frin = nrn_fw_set_stdin();
+                hoc_frin = nrn_fw_set_stdin();
             }
         }
     }
@@ -320,10 +320,10 @@ void Fscan(void) /* read a number from input file */
     double d;
     NrnFILEWrap* fi;
 
-    if (nrn_fw_eq(frin, stdin)) {
-        fi = fin;
+    if (nrn_fw_eq(hoc_frin, stdin)) {
+        fi = hoc_fin;
     } else {
-        fi = frin;
+        fi = hoc_frin;
     }
     d = hoc_fw_scan(fi);
     ret();
@@ -336,10 +336,10 @@ void hoc_Getstr(void) /* read a line (or word) from input file */
     char** cpp;
     NrnFILEWrap* fi;
     int word = 0;
-    if (nrn_fw_eq(frin, stdin)) {
-        fi = fin;
+    if (nrn_fw_eq(hoc_frin, stdin)) {
+        fi = hoc_fin;
     } else {
-        fi = frin;
+        fi = hoc_frin;
     }
     cpp = hoc_pgargstr(1);
     if (ifarg(2)) {

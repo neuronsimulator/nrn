@@ -308,7 +308,7 @@ restart: /* when no token in between comments */
         IGNORE(sscanf(npt, "%lf", &d));
         if (d == 0.)
             return NUMZERO;
-        yylval.sym = install("", NUMBER, d, &p_symlist);
+        yylval.sym = hoc_install("", NUMBER, d, &p_symlist);
         return NUMBER;
     }
     if (isalpha(c) || c == '_') {
@@ -366,8 +366,8 @@ restart: /* when no token in between comments */
                 return PYSECNAME;
             }
         }
-        if ((s = lookup(sbuf)) == 0)
-            s = install(sbuf, UNDEF, 0.0, &symlist);
+        if ((s = hoc_lookup(sbuf)) == 0)
+            s = hoc_install(sbuf, UNDEF, 0.0, &symlist);
         yylval.sym = s;
         return s->type == UNDEF ? VAR : s->type;
     }
@@ -411,7 +411,7 @@ restart: /* when no token in between comments */
             *p = backslash(c);
         }
         *p = 0;
-        yylval.sym = install("", CSTRING, 0.0, &p_symlist);
+        yylval.sym = hoc_install("", CSTRING, 0.0, &p_symlist);
 
         (yylval.sym)->u.cstr = (char*) emalloc((unsigned) (strlen(sbuf->buf) + 1));
         Strcpy((yylval.sym)->u.cstr, sbuf->buf);

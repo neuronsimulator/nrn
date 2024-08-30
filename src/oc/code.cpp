@@ -494,7 +494,7 @@ void hoc_initcode() {
         tobj_count = 0;
     }
     fp = frame;
-    free_list(&p_symlist);
+    hoc_free_list(&p_symlist);
     hoc_returning = 0;
     hoc_do_equation = 0;
     for (i = 0; i < maxinitfcns; ++i) {
@@ -1317,7 +1317,7 @@ void hoc_define(Symbol* sp) { /* put func/proc in symbol table */
 
     if (sp->u.u_proc->defn.in != STOP)
         free((char*) sp->u.u_proc->defn.in);
-    free_list(&(sp->u.u_proc->list));
+    hoc_free_list(&(sp->u.u_proc->list));
     sp->u.u_proc->list = p_symlist;
     p_symlist = (Symlist*) 0;
     sp->u.u_proc->size = (unsigned) (progp - progbase);
@@ -1780,7 +1780,7 @@ Symbol* hoc_get_symbol(const char* var) {
     } else {
         sym = (Symbol*) 0;
     }
-    free_list(&sl);
+    hoc_free_list(&sl);
     return sym;
 }
 
@@ -2457,7 +2457,7 @@ void hoc_newline(void) /* print newline */
 void varread(void) /* read into variable */
 {
     double d = 0.0;
-    extern NrnFILEWrap* fin;
+    extern NrnFILEWrap* hoc_fin;
     Symbol* var = (pc++)->sym;
 
     assert(var->cpublic != 2);
@@ -2465,7 +2465,7 @@ void varread(void) /* read into variable */
         hoc_execerror(var->name, "is not a scalar variable");
     }
 Again:
-    switch (nrn_fw_fscanf(fin, "%lf", OPVAL(var))) {
+    switch (nrn_fw_fscanf(hoc_fin, "%lf", OPVAL(var))) {
     case EOF:
         if (hoc_moreinput())
             goto Again;

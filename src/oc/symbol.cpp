@@ -55,8 +55,8 @@ Symbol* hoc_table_lookup(const char* s, Symlist* tab) /* find s in specific tabl
     return nullptr;
 }
 
-Symbol* lookup(const char* s) /* find s in symbol table */
-                              /* look in p_symlist then built_in_symlist then symlist */
+Symbol* hoc_lookup(const char* s) /* find s in symbol table */
+                                  /* look in p_symlist then built_in_symlist then symlist */
 {
     Symbol* sp;
 
@@ -180,7 +180,7 @@ void hoc_free_symspace(Symbol* s1) { /* frees symbol space. Marks it UNDEF */
             if (s1->u.u_proc != nullptr) {
                 if (s1->u.u_proc->defn.in != STOP)
                     free((char*) s1->u.u_proc->defn.in);
-                free_list(&(s1->u.u_proc->list));
+                hoc_free_list(&(s1->u.u_proc->list));
                 free((char*) s1->u.u_proc);
             }
             break;
@@ -189,7 +189,7 @@ void hoc_free_symspace(Symbol* s1) { /* frees symbol space. Marks it UNDEF */
             break;
         case TEMPLATE:
             hoc_free_allobjects(s1->u.ctemplate, hoc_top_level_symlist, hoc_top_level_data);
-            free_list(&(s1->u.ctemplate->symtable));
+            hoc_free_list(&(s1->u.ctemplate->symtable));
             {
                 hoc_List* l = s1->u.ctemplate->olist;
                 if (l->next == l) {
@@ -250,7 +250,7 @@ void sym_extra_alloc(Symbol* sym) {
     }
 }
 
-void free_list(Symlist** list) { /* free the space in a symbol table */
+void hoc_free_list(Symlist** list) { /* free the space in a symbol table */
     if (!*list) {
         return;
     }

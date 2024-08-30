@@ -513,7 +513,7 @@ void Xred(void) /* read with prompt string and default and limits */
 {
     double d;
 
-    d = xred(gargstr(1), *getarg(2), *getarg(3), *getarg(4));
+    d = hoc_xred(gargstr(1), *getarg(2), *getarg(3), *getarg(4));
     ret();
     pushx(d);
 }

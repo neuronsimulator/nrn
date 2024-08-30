@@ -345,12 +345,12 @@ stmt:	expr
 	| RETURN begin
 		{ hoc_defnonly("return"); $$=$2; code(procret); }
 	| RETURN expr
-		{  if (indef == 3) {
+		{  if (hoc_indef == 3) {
 			TPDYNAM; $$ = $2;
 			code(hocobjret);
 		   }else{
 			TPD; hoc_defnonly("return"); $$=$2;
-			code(funcret);
+			code(hoc_funcret);
 		   }
 		}
 	| RETURN NEW anyname '(' arglist ')'
@@ -358,7 +358,7 @@ stmt:	expr
 		 code(hocobjret);
 		}
 	| ITERSTMT begin
-		{ if (indef != 2) {
+		{ if (hoc_indef != 2) {
 hoc_acterror("iterator_statement used outside an iterator declaration", 0);
 		  }
 			code(hoc_iterator_stmt);
@@ -394,7 +394,7 @@ if (0){YYERROR;}
 		  }
 		ROP expr ',' expr
 		  {TPD; TPD; hoc_opasgn_invalid($4); 
-		    $<inst>$ = code(shortfor); hoc_codei(0); hoc_codei(0);}
+		    $<inst>$ = code(hoc_shortfor); hoc_codei(0); hoc_codei(0);}
 		stmt end
 		  { $$ = $2; ($<inst>8)[1].i = relative($9, $<inst>8, 1); /* body */
 			   ($<inst>8)[2].i = relative($10, $<inst>8, 2); /* exit */
@@ -451,7 +451,7 @@ if (0){YYERROR;}
 		{ code(sec_access_pop);}
 	| ob stmt end
 		{ code(sec_access_pop); hoc_ob_check(-1);
-			insertcode($2, $3, ob_sec_access);}
+			hoc_insertcode($2, $3, ob_sec_access);}
 	| rangevar '(' expr ':' expr ')' ROP expr ':' expr
 		{ TPD; TPD; TPD; TPD; code(range_interpolate); hoc_codesym(spop());
 		  hoc_codei($7);
@@ -600,7 +600,7 @@ for_init: FOR '(' stmt ';'
 		{ $$ = progp; }
 	;
 for_st:	/* nothing */
-		{ $$ = code(forcode); hoc_codei(0); hoc_codei(0); hoc_codei(0); }
+		{ $$ = code(hoc_forcode); hoc_codei(0); hoc_codei(0); hoc_codei(0); }
 	;
 for_cond: expr
 		{ TPD; $$ = $1; hoc_codein(STOP);}
@@ -617,7 +617,7 @@ while:	WHILE for_st
 		{ $$ = $2; }
 	;
 if:	IF
-		{ $$=code(ifcode); hoc_codei(0); hoc_codei(0); hoc_codei(0); }
+		{ $$=code(hoc_ifcode); hoc_codei(0); hoc_codei(0); hoc_codei(0); }
 	;
 begin:	/* nothing */
 		{ $$ = progp; }
@@ -631,7 +631,7 @@ stmtlist: /* nothing */
 		{
 			prog_parse_recover = progp;
 			prog_error = $$;
-			if (fin && nrn_fw_eq(fin, stdin) && !pipeflag)
+			if (hoc_fin && nrn_fw_eq(hoc_fin, stdin) && !pipeflag)
 			{	int i;
 				Printf(">");
 				for (i = 0; i < ntab; i++)
@@ -682,7 +682,7 @@ expr:	NUMBER
 	| expr '-' expr
 		{ TPD; TPD;code(hoc_sub); PN;}
 	| expr '*' expr
-		{ TPD; TPD; code(mul); PN;}
+		{ TPD; TPD; code(hoc_mul); PN;}
 	| expr '/' expr
 		{ TPD; TPD; code(hoc_div); PN;}
 	| expr '%' expr
@@ -692,17 +692,17 @@ expr:	NUMBER
 	| '-' expr %prec UNARYMINUS
 		{ TPD; $$ = $2; code(hoc_negate); PN;}
 	| expr GT expr
-		{ TPD; TPD; code(gt); PN;}
+		{ TPD; TPD; code(hoc_gt); PN;}
 	| expr GE expr
-		{ TPD; TPD; code(ge); PN;}
+		{ TPD; TPD; code(hoc_ge); PN;}
 	| expr LT expr
 		{ TPD; TPD; code(hoc_lt); PN;}
 	| expr LE expr
-		{ TPD; TPD; code(le); PN;}
+		{ TPD; TPD; code(hoc_le); PN;}
 	| expr EQ expr
 		{ hoc_ob_check(-1); hoc_ob_check(-1); code(hoc_eq); PN;}
 	| expr NE expr
-		{ hoc_ob_check(-1); hoc_ob_check(-1); code(ne); PN;}
+		{ hoc_ob_check(-1); hoc_ob_check(-1); code(hoc_ne); PN;}
 	| expr AND expr
 		{ TPD; TPD; code(hoc_and); PN;}
 	| expr OR expr
@@ -832,29 +832,29 @@ delsym: VAR
 	;
 			
 defn:	FUNC procname
-		{$2->type=FUNCTION; indef=1; }
+		{$2->type=FUNCTION; hoc_indef=1; }
 	'(' ')' procstmt
 		{ code(procret); hoc_define($2);
 		 $2->u.u_proc->nobjauto = $6 - localcnt;
-		 $2->u.u_proc->nauto=$6; indef=0; }
+		 $2->u.u_proc->nauto=$6; hoc_indef=0; }
 	| parsePROC procname
-		{ $2->type=PROCEDURE; indef=1; }
+		{ $2->type=PROCEDURE; hoc_indef=1; }
 	'(' ')' procstmt
 		{ code(procret); hoc_define($2);
 		 $2->u.u_proc->nobjauto = $6 - localcnt;
-		 $2->u.u_proc->nauto=$6; indef=0; }
+		 $2->u.u_proc->nauto=$6; hoc_indef=0; }
 	| ITERKEYWORD procname
-		{ $2->type = ITERATOR; indef=2; }
+		{ $2->type = ITERATOR; hoc_indef=2; }
 	'(' ')' procstmt
 		{code(procret); hoc_define($2);
 		 $2->u.u_proc->nobjauto = $6 - localcnt;
-		 $2->u.u_proc->nauto = $6; indef = 0; }
+		 $2->u.u_proc->nauto = $6; hoc_indef = 0; }
 	| HOCOBJFUNC procname
-		{ $2->type=HOCOBJFUNCTION; indef=3; }
+		{ $2->type=HOCOBJFUNCTION; hoc_indef=3; }
 	'(' ')' procstmt
 		{ code(procret); hoc_define($2);
 		 $2->u.u_proc->nobjauto = $6 - localcnt;
-		 $2->u.u_proc->nauto=$6; indef=0; }
+		 $2->u.u_proc->nauto=$6; hoc_indef=0; }
 	;
 procname: ckvar
 		{ Symbol *s; s=yylval.sym;
@@ -930,7 +930,7 @@ local1:	LOCAL anyname
 		{
 		Symbol *sp;
 		$$ = 1; localcnt = $$;
-		sp = install($2->name, AUTO, 0.0, &p_symlist);
+		sp = hoc_install($2->name, AUTO, 0.0, &p_symlist);
 		sp->u.u_auto = $$;
 		}
 	| local1 ',' anyname
@@ -940,7 +940,7 @@ local1:	LOCAL anyname
 		if (hoc_table_lookup($3->name, p_symlist)) {
 			hoc_acterror($3->name, "already declared local");
 		}
-		sp = install($3->name, AUTO, 0.0, &p_symlist);
+		sp = hoc_install($3->name, AUTO, 0.0, &p_symlist);
 		sp->u.u_auto = $$;
 		}
 	;
@@ -955,7 +955,7 @@ local2:	LOCALOBJ anyname
 		if (hoc_table_lookup($2->name, p_symlist)) {
 			hoc_acterror($2->name, "already declared local");
 		}
-		sp = install($2->name, AUTOOBJ, 0.0, &p_symlist);
+		sp = hoc_install($2->name, AUTOOBJ, 0.0, &p_symlist);
 		sp->u.u_auto = $$ + localcnt;
 		}
 	| local2 ',' anyname
@@ -965,7 +965,7 @@ local2:	LOCALOBJ anyname
 		if (hoc_table_lookup($3->name, p_symlist)) {
 			hoc_acterror($3->name, "already declared local");
 		}
-		sp = install($3->name, AUTOOBJ, 0.0, &p_symlist);
+		sp = hoc_install($3->name, AUTOOBJ, 0.0, &p_symlist);
 		sp->u.u_auto = $$ + localcnt;
 		}
 	;

@@ -252,32 +252,32 @@ void hoc_init(void) /* install constants and built-ins table */
     extern void hoc_init_space(void);
     hoc_init_space();
     for (i = 0; keywords[i].name; i++)
-        IGNORE(install(keywords[i].name, keywords[i].kval, 0.0, &symlist));
+        IGNORE(hoc_install(keywords[i].name, keywords[i].kval, 0.0, &symlist));
     for (i = 0; consts[i].name; i++) {
-        s = install(consts[i].name, UNDEF, consts[i].cval, &symlist);
+        s = hoc_install(consts[i].name, UNDEF, consts[i].cval, &symlist);
         s->type = VAR;
         s->u.pval = &consts[i].cval;
         s->subtype = USERDOUBLE;
     }
     for (i = 0; builtins[i].name; i++) {
-        s = install(builtins[i].name, BLTIN, 0.0, &symlist);
+        s = hoc_install(builtins[i].name, BLTIN, 0.0, &symlist);
         s->u.ptr = builtins[i].func;
     }
     for (i = 0; fun_bltin[i].name; i++) {
-        s = install(fun_bltin[i].name, FUN_BLTIN, 0.0, &symlist);
+        s = hoc_install(fun_bltin[i].name, FUN_BLTIN, 0.0, &symlist);
         s->u.u_proc->defn.pf = fun_bltin[i].fun_blt;
         s->u.u_proc->nauto = 0;
         s->u.u_proc->nobjauto = 0;
     }
     for (i = 0; strfun_bltin[i].name; i++) {
-        s = install(strfun_bltin[i].name, FUN_BLTIN, 0.0, &symlist);
+        s = hoc_install(strfun_bltin[i].name, FUN_BLTIN, 0.0, &symlist);
         s->type = STRINGFUNC;
         s->u.u_proc->defn.pf = strfun_bltin[i].strfun_blt;
         s->u.u_proc->nauto = 0;
         s->u.u_proc->nobjauto = 0;
     }
     for (i = 0; objfun_bltin[i].name; i++) {
-        s = install(objfun_bltin[i].name, FUN_BLTIN, 0.0, &symlist);
+        s = hoc_install(objfun_bltin[i].name, FUN_BLTIN, 0.0, &symlist);
         s->type = OBJECTFUNC;
         s->u.u_proc->defn.pf = objfun_bltin[i].objfun_blt;
         s->u.u_proc->nauto = 0;
@@ -289,7 +289,7 @@ void hoc_init(void) /* install constants and built-ins table */
     hoc_install_var("hoc_cross_y_", &hoc_cross_y_);
     hoc_install_var("default_dll_loaded_", &hoc_default_dll_loaded_);
 
-    s = install("xopen_broadcast_", UNDEF, 0.0, &hoc_symlist);
+    s = hoc_install("xopen_broadcast_", UNDEF, 0.0, &hoc_symlist);
     s->type = VAR;
     s->subtype = USERINT;
     s->u.pvalint = &nrn_xopen_broadcast_;
