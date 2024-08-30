@@ -741,6 +741,11 @@ extern void nrn_promote(Prop*, int, int);\n\
         Lappendstr(defs_list,
                    "neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
                    "_ppvar = _nrn_mechanism_access_dparam(_prop);\n");
+        if (!artificial_cell) {
+            Lappendstr(defs_list,
+                       "Node * _node = _nrn_mechanism_access_node(_prop);\n"
+                       "v = _nrn_mechanism_access_voltage(_node);\n");
+        }
     }
     Lappendstr(defs_list, "}\n");
 
