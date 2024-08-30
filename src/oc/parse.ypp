@@ -145,7 +145,7 @@ list:	/* nothing */
 	| list expr '\n'
 		{ TPDYNAM; code2(print, STOP); return 1; }
 	| list DEBUG '\n'
-		{ debug(); return '\n';}
+		{ hoc_debug(); return '\n';}
 	| list EDIT '\n'
 		{ return 'e';}
 	| list string1 '\n'
@@ -174,9 +174,9 @@ asgn:	varname ROP expr
 		hoc_obvar_declare(s, VAR, 1);
 		code3(varpush, s, hoc_assign); hoc_codei($2); PN;}
 	| ARG ROP expr
-		{  TPD; defnonly("$"); argcode(hoc_argassign, $1); hoc_codei($2); $$=$3; PN;}
+		{  TPD; hoc_defnonly("$"); argcode(hoc_argassign, $1); hoc_codei($2); $$=$3; PN;}
 	| ARGREF argrefdim ROP expr
-		{ TPD; defnonly("$&"); argrefcode(hoc_argrefasgn, $1, $2); hoc_codei($3); $$=$4; PN;}
+		{ TPD; hoc_defnonly("$&"); argrefcode(hoc_argrefasgn, $1, $2); hoc_codei($3); $$=$4; PN;}
 /* NEWCABLE */
 	| rangevar ROP expr
 		{ TPD; code(range_const); hoc_codesym(spop()); hoc_codei($2); PN;}
@@ -210,7 +210,7 @@ rangeobj1: RANGEOBJ {pushs($1); pushi(CHECK);} wholearray
 object:	OBJECTVAR {pushi(OBJECTVAR);pushs($1); pushi(CHECK);} wholearray
 		{$$ = $3; code(hoc_objectvar); spop(); hoc_codesym($1);}
 	| OBJECTARG
-		{defnonly("$o"); $$ = argcode(hoc_objectarg, $1); pushi(OBJECTVAR);}
+		{hoc_defnonly("$o"); $$ = argcode(hoc_objectarg, $1); pushi(OBJECTVAR);}
 	| AUTOOBJ
 		{$$ = code(hoc_autoobject); hoc_codesym($1); pushi(OBJECTVAR);}
 	| TEMPLATE '[' expr ']'
@@ -310,7 +310,7 @@ string1: string2
 string2: STRING
 		{$$ = code(hoc_push_string); hoc_codesym($1);}
 	| STRINGARG
-		{defnonly("$s"); $$ = argcode(hoc_stringarg, $1);}
+		{hoc_defnonly("$s"); $$ = argcode(hoc_stringarg, $1);}
 	;
 
 strlist: STRDEF begin string
@@ -343,13 +343,13 @@ stmt:	expr
 	| parseDELETE delsym
 		{ $$ = $2;}
 	| RETURN begin
-		{ defnonly("return"); $$=$2; code(procret); }
+		{ hoc_defnonly("return"); $$=$2; code(procret); }
 	| RETURN expr
 		{  if (indef == 3) {
 			TPDYNAM; $$ = $2;
 			code(hocobjret);
 		   }else{
-			TPD; defnonly("return"); $$=$2;
+			TPD; hoc_defnonly("return"); $$=$2;
 			code(funcret);
 		   }
 		}
@@ -651,9 +651,9 @@ expr:	NUMBER
 	| varname
 		{ code3(varpush, spop(), eval); PN;}
 	| ARG
-		{ defnonly("$"); $$ = argcode(hoc_arg, $1); PN;}
+		{ hoc_defnonly("$"); $$ = argcode(hoc_arg, $1); PN;}
 	| ARGREF argrefdim
-		{ defnonly("$&"); $$ = argrefcode(hoc_argref, $1, $2); PN;}
+		{ hoc_defnonly("$&"); $$ = argrefcode(hoc_argref, $1, $2); PN;}
 /* NEWCABLE */
 	| rangevar
 		{code(rangepoint); hoc_codesym(spop()); PN;}
@@ -896,29 +896,29 @@ arglist2: string1
 eqn_list: DEPENDENT dep_list
 		{ $$ = $2; }
 	| EQUATION varname ':'
-		{code3(varpush, spop(), eqn_name);
-		do_equation = 1; }
+		{code3(varpush, spop(), hoc_eqn_name);
+		hoc_do_equation = 1; }
 	equation
-		{ $$ = $2; do_equation = 0; }
+		{ $$ = $2; hoc_do_equation = 0; }
 	;
 dep_list: varname
-		{Symbol *s; code3(varpush,s= spop(), dep_make); hoc_obvar_declare(s, VAR, 0);}
+		{Symbol *s; code3(varpush,s= spop(), hoc_dep_make); hoc_obvar_declare(s, VAR, 0);}
 	| dep_list ',' varname
-		{Symbol *s; code3(varpush, s=spop(), dep_make); hoc_obvar_declare(s, VAR, 0);}
+		{Symbol *s; code3(varpush, s=spop(), hoc_dep_make); hoc_obvar_declare(s, VAR, 0);}
 	;
 equation: lhs EQNEQ
 	| EQNEQ rhs
 	| ':'
-		{ code(eqn_init); }
+		{ code(hoc_eqn_init); }
 	lhs EQNEQ rhs
 	;
 lhs:
-		{ code(eqn_lhs); }
+		{ code(hoc_eqn_lhs); }
 	expr
 		{ hoc_codein(STOP); TPD; }
 	;
 rhs:
-		{ code(eqn_rhs); }
+		{ code(hoc_eqn_rhs); }
 	expr
 		{ hoc_codein(STOP); TPD; }
 	;

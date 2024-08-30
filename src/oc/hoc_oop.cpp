@@ -709,7 +709,7 @@ void hoc_call_ob_proc(Object* ob, Symbol* sym, int narg) {
         hoc_objectdata = ob->u.dataspace;
         hoc_thisobject = ob;
         hoc_symlist = ob->ctemplate->symtable;
-        execute(callcode);
+        hoc_execute(callcode);
         if (sym->type == PROCEDURE) {
             hoc_nopop();
         }

@@ -152,11 +152,11 @@ static struct HocInst {
                  {hoc_newline, 0},
                  {hoc_delete_symbol, "s"},
                  {hoc_cyclic, 0},
-                 {dep_make, 0},
-                 {eqn_name, 0},
-                 {eqn_init, 0},
-                 {eqn_lhs, 0},  // 50
-                 {eqn_rhs, 0},
+                 {hoc_dep_make, 0},
+                 {hoc_eqn_name, 0},
+                 {hoc_eqn_init, 0},
+                 {hoc_eqn_lhs, 0},  // 50
+                 {hoc_eqn_rhs, 0},
                  {hoc_objectvar, "s"},
                  {hoc_object_component, "siis"},
                  {hoc_object_eval, 0},

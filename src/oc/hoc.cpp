@@ -445,7 +445,7 @@ restart: /* when no token in between comments */
         if (follow('=', EQ, '=') == EQ) {
             return EQ;
         }
-        if (do_equation) {
+        if (hoc_do_equation) {
             return EQNEQ;
         }
         yylval.narg = 0;

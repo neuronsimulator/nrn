@@ -496,7 +496,7 @@ void hoc_initcode() {
     fp = frame;
     free_list(&p_symlist);
     hoc_returning = 0;
-    do_equation = 0;
+    hoc_do_equation = 0;
     for (i = 0; i < maxinitfcns; ++i) {
         (*initfcns[i])();
     }
@@ -525,7 +525,7 @@ void oc_save_code(Inst** a1,
     a3 = stack.size();
     *a4 = fp;
     *a5 = hoc_returning;
-    *a6 = do_equation;
+    *a6 = hoc_do_equation;
     *a7 = pc;
     *a8 = rframe;
     a9 = rstack;
@@ -563,7 +563,7 @@ void oc_restore_code(Inst** a1,
     stack.resize(a3);
     fp = *a4;
     hoc_returning = *a5;
-    do_equation = *a6;
+    hoc_do_equation = *a6;
     pc = *a7;
     rframe = *a8;
     rstack = a9;
@@ -1846,7 +1846,7 @@ void eval(void) /* evaluate variable on stack */
         execerror("undefined variable", sym->name);
     case VAR:
         if (!is_array(*sym)) {
-            if (do_equation && sym->s_varn > 0 && hoc_access[sym->s_varn] == 0) {
+            if (hoc_do_equation && sym->s_varn > 0 && hoc_access[sym->s_varn] == 0) {
                 hoc_access[sym->s_varn] = var_access;
                 var_access = sym->s_varn;
             }

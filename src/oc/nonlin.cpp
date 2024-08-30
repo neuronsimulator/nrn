@@ -19,7 +19,7 @@ typedef struct elm* Elm;
 
 #define diag(s) hoc_execerror(s, (char*) 0);
 
-void dep_make(void) /* tag the variable as dependent with a variable number */
+void hoc_dep_make(void) /* tag the variable as dependent with a variable number */
 {
 #if !OCSMALL
     Symbol* sym;
@@ -79,7 +79,7 @@ static void eqn_side(int lhs);
 static unsigned row;
 static unsigned maxeqn;
 
-void eqn_name(void) /* save row number for lhs and/or rhs */
+void hoc_eqn_name(void) /* save row number for lhs and/or rhs */
 {
 #if !OCSMALL
 
@@ -146,7 +146,7 @@ void eqinit(void) /* built in function to initialize equation solver */
     pushx(0.);
 }
 
-void eqn_init(void) /* initialize equation row */
+void hoc_eqn_init(void) /* initialize equation row */
 {
 #if !OCSMALL
     struct elm* el;
@@ -157,12 +157,12 @@ void eqn_init(void) /* initialize equation row */
 #endif
 }
 
-void eqn_lhs(void) /* add terms to left hand side */
+void hoc_eqn_lhs(void) /* add terms to left hand side */
 {
     eqn_side(1);
 }
 
-void eqn_rhs(void) /* add terms to right hand side */
+void hoc_eqn_rhs(void) /* add terms to right hand side */
 {
     eqn_side(0);
 }
@@ -177,7 +177,7 @@ static void eqn_side(int lhs) {
 
     init_access();
     do_equation = 1;
-    execute(savepc);
+    hoc_execute(savepc);
     do_equation = 0;
 
     if (lhs) {
@@ -189,7 +189,7 @@ static void eqn_side(int lhs) {
     rhs[row] -= f0;
     for (i = var_access; i > 0; i = hoc_access[i]) {
         *varble[i] += Delta;
-        execute(savepc);
+        hoc_execute(savepc);
         *varble[i] -= Delta;
         if (lhs) {
             f1 = xpop();
