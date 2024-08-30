@@ -271,7 +271,7 @@ obvarname: anyname
 		  Symbol* s;
 		  s = hoc_decl($1);
 		  if (s->type != UNDEF && s->type != OBJECTVAR) {
-			acterror(s->name, " already declared");
+			hoc_acterror(s->name, " already declared");
 		  }
 		  $$ = s;
 		}
@@ -325,7 +325,7 @@ string:	anyname
 				OPSTR(s) = (char**)emalloc(sizeof(char*));
 				*OPSTR(s) = 0;
 			}else if (s->type != STRING) {
-				acterror(s->name, " already declared");
+				hoc_acterror(s->name, " already declared");
 			}
 			hoc_assign_str(OPSTR(s), "");
 		}
@@ -359,7 +359,7 @@ stmt:	expr
 		}
 	| ITERSTMT begin
 		{ if (indef != 2) {
-acterror("iterator_statement used outside an iterator declaration", 0);
+hoc_acterror("iterator_statement used outside an iterator declaration", 0);
 		  }
 			code(hoc_iterator_stmt);
 		}
@@ -441,7 +441,7 @@ if (0){YYERROR;}
 			if (s->type != MECHANISM) {
 				s = hoc_table_lookup(s->name, hoc_built_in_symlist);
 				if (!s || s->type != MECHANISM) {
-					acterror($2->name, "is not a MECHANISM");
+					hoc_acterror($2->name, "is not a MECHANISM");
 				}
 			}
 			codesym(s);}
@@ -553,10 +553,6 @@ pysec1: PYSECNAME
 section_or_ob: section '(' expr ')' {TPD;}
 	| {$<inst>$ = progp; code(connect_obsec_syntax);} ob
 		{
-#if 0
-		 acterror("Sorry. The \"connect ob.sec...\" syntax ",
-			"is not implemented");
-#endif
 		 hoc_ob_check(SECTION); code(ob_sec_access);
 		}
 	;
@@ -575,7 +571,7 @@ sectionname:anyname
 			Symbol* s;
 			s = hoc_decl($1);
 			if (s->type != UNDEF && s->type != SECTION)
-				acterror(s->name, " already declared");
+				hoc_acterror(s->name, " already declared");
 		}
 	;
 rangevar: rangevar1
@@ -749,7 +745,7 @@ varname: AUTO begin
 	wholearray {$$ = $2;}
 	| section '.' VAR
 		{ if ($3->subtype != USERPROPERTY) {
-			acterror($3->name, "not a section variable");
+			hoc_acterror($3->name, "not a section variable");
 		  }
 		$$ = $1; pushs($3);
 		}
@@ -769,7 +765,7 @@ wholearray:begin array	/* using execution stack to get Symbol from array */
    if (chk) {
 	if (!is_array(*sym)) {
 		if (ndim) {
-			acterror(sym->name, "not an array variable");
+			hoc_acterror(sym->name, "not an array variable");
 		}
 	}else{
 		if ( ndim == 0 ) { /*fake index list with all 0's*/
@@ -778,7 +774,7 @@ wholearray:begin array	/* using execution stack to get Symbol from array */
 				code(pushzero);
 			}
 		} else if ( ndim != sym->arayinfo->nsub) {
-			acterror("wrong # of subscripts",sym->name);
+			hoc_acterror("wrong # of subscripts",sym->name);
 		}
 		// Need to dynamically catch error when ndim (now at compile
 		// time) differs from symbol ndim at execution time.
@@ -862,7 +858,7 @@ defn:	FUNC procname
 	;
 procname: ckvar
 		{ Symbol *s; s=yylval.sym;
-		if(s->type != UNDEF) acterror(s->name, "already defined");
+		if(s->type != UNDEF) hoc_acterror(s->name, "already defined");
 		/* avoid valgrind uninitialized variable error for nautoobj */
 		s->u.u_proc = (Proc *)ecalloc(1, sizeof(Proc));
 		s->u.u_proc->defn.in = STOP;
@@ -942,7 +938,7 @@ local1:	LOCAL anyname
 		Symbol *sp;
 		$$ = $1 + 1; localcnt = $$;
 		if (hoc_table_lookup($3->name, p_symlist)) {
-			acterror($3->name, "already declared local");
+			hoc_acterror($3->name, "already declared local");
 		}
 		sp = install($3->name, AUTO, 0.0, &p_symlist);
 		sp->u.u_auto = $$;
@@ -957,7 +953,7 @@ local2:	LOCALOBJ anyname
 		Symbol *sp;
 		$$ = 1;
 		if (hoc_table_lookup($2->name, p_symlist)) {
-			acterror($2->name, "already declared local");
+			hoc_acterror($2->name, "already declared local");
 		}
 		sp = install($2->name, AUTOOBJ, 0.0, &p_symlist);
 		sp->u.u_auto = $$ + localcnt;
@@ -967,7 +963,7 @@ local2:	LOCALOBJ anyname
 		Symbol *sp;
 		$$ = $1 + 1;
 		if (hoc_table_lookup($3->name, p_symlist)) {
-			acterror($3->name, "already declared local");
+			hoc_acterror($3->name, "already declared local");
 		}
 		sp = install($3->name, AUTOOBJ, 0.0, &p_symlist);
 		sp->u.u_auto = $$ + localcnt;
@@ -977,7 +973,7 @@ ckvar: VAR
 	{  Symbol* s;
 	   s = hoc_decl($1);
 	   if (s->subtype != NOTUSER)
-		acterror("can't redeclare user variable", s->name);
+		hoc_acterror("can't redeclare user variable", s->name);
 	   $$ = s;
 	}
 	;
@@ -994,7 +990,7 @@ static void yyerror(const char* s)	/* called for yacc syntax error */
 	execerror(s, (char *)0);
 }
 
-void acterror(const char* s, const char*t)	/* recover from action error while parsing */
+void hoc_acterror(const char* s, const char*t)	/* recover from action error while parsing */
 {
 	execerror(s,t);
 }
@@ -1011,7 +1007,7 @@ static Inst* argcode(Pfrv pfrv, int i) {
 	if (i == 0) {
 		Symbol* si = hoc_lookup("i");
 		if (si->type != AUTO) {
-			acterror("arg index used and i is not a LOCAL variable", 0);
+			hoc_acterror("arg index used and i is not a LOCAL variable", 0);
 		}
 		in = code3(varpush, si, eval);		
 		Code(pfrv);
@@ -1025,7 +1021,7 @@ static Inst* argcode(Pfrv pfrv, int i) {
 
 static void hoc_opasgn_invalid(int op) {
         if (op) {
-                acterror("Invalid assignment operator.", "Only '=' allowed. ");
+                hoc_acterror("Invalid assignment operator.", "Only '=' allowed. ");
         }
 } 
 

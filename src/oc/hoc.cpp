@@ -239,7 +239,7 @@ static char* optarray(char* buf) {
             *s = '\0';
         } else {
             *s = '\0';
-            acterror(buf, " not literal name[int]");
+            hoc_acterror(buf, " not literal name[int]");
         }
     } else {
         unGetc(c, fin);
@@ -271,7 +271,7 @@ restart: /* when no token in between comments */
                 return (0);
             /*			if (c == YYNEEDMORE) {*/
             if (eos) {
-                acterror("comment not complete", " in cbuf");
+                hoc_acterror("comment not complete", " in cbuf");
             }
         }
         goto restart;
@@ -388,7 +388,7 @@ restart: /* when no token in between comments */
             n = 10 * n + c - '0';
         IGNORE(unGetc(c, fin));
         if (n == 0)
-            acterror("strange $...", (char*) 0);
+            hoc_acterror("strange $...", (char*) 0);
         yylval.narg = n;
         return retval;
     }
@@ -402,7 +402,7 @@ restart: /* when no token in between comments */
         }
         for (p = sbuf->buf; (c = Getc(fin)) != '"'; p++) {
             if (c == '\n' || c == EOF || c == YYNEEDMORE)
-                acterror("missing quote", "");
+                hoc_acterror("missing quote", "");
             n = p - sbuf->buf;
             if (n >= sbuf->size - 1) {
                 hocstr_resize(sbuf, n + 200);
@@ -588,7 +588,7 @@ void free_arrayinfo(Arrayinfo* a) {
 
 void defnonly(const char* s) { /* warn if illegal definition */
     if (!indef)
-        acterror(s, "used outside definition");
+        hoc_acterror(s, "used outside definition");
 }
 
 /* messages can turned off but the user had better check the return

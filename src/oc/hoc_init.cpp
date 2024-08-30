@@ -87,11 +87,11 @@ static struct { /* Built-ins */
                 {"cos", cos},
                 {"atan", atan},
                 {"tanh", tanh},
-                {"log", Log},      /* checks argument */
-                {"log10", Log10},  /* checks argument */
+                {"log", hoc_Log},      /* checks argument */
+                {"log10", hoc_Log10},  /* checks argument */
                 {"exp", hoc1_Exp}, /* checks argument */
-                {"sqrt", Sqrt},    /* checks argument */
-                {"int", integer},
+                {"sqrt", hoc_Sqrt},    /* checks argument */
+                {"int", hoc_integer},
                 {"abs", fabs},
                 {"erf", erf},
                 {"erfc", erfc},

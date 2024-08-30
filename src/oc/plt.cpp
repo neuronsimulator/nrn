@@ -28,7 +28,7 @@ void Plt(void) {
     } else {
         x = y = 0.;
     }
-    plt(mode, x, y);
+    hoc_plt(mode, x, y);
     ret();
     pushx(1.);
 }
@@ -36,7 +36,7 @@ void Plt(void) {
 void Setcolor(void) {
     TRY_GUI_REDIRECT_DOUBLE("setcolor", NULL);
     double i;
-    i = set_color((int) *getarg(1));
+    i = hoc_set_color((int) *getarg(1));
     ret();
     pushx(i);
 }

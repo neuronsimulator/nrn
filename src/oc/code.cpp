@@ -2151,7 +2151,7 @@ void hoc_power() {
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();
-    d1 = Pow(d1, d2);
+    d1 = hoc_Pow(d1, d2);
     hoc_pushx(d1);
 }
 

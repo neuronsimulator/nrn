@@ -121,8 +121,8 @@ void plprint(const char* s) {
         IGNORE(fflush(hpdev));
     }
     if (text && s == buf) {
-        plt(1, xlast, ylast - 20);
-        plt(-2, 0., 0.);
+        hoc_plt(1, xlast, ylast - 20);
+        hoc_plt(-2, 0., 0.);
     }
 }
 
