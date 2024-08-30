@@ -9,9 +9,9 @@
 #include "code.h"
 
 
-int do_equation; /* switch for determining access to dep vars */
-int* hoc_access; /* links to next accessed variables */
-int var_access;  /* variable number as pointer into access array */
+int do_equation;    /* switch for determining access to dep vars */
+int* hoc_access;    /* links to next accessed variables */
+int hoc_var_access; /* variable number as pointer into access array */
 
 
 static double** varble; /* pointer to symbol values */
@@ -25,7 +25,7 @@ void hoc_dep_make(void) /* tag the variable as dependent with a variable number 
     Symbol* sym;
     unsigned* numpt = 0;
 
-    sym = spop();
+    sym = hoc_spop();
     switch (sym->type) {
     case UNDEF:
         hoc_execerror(sym->name, "undefined in dep_make");
@@ -69,7 +69,7 @@ void init_access(void) /* zero the access array */
     if (hoc_access != (int*) 0)
         free((char*) hoc_access);
     hoc_access = (int*) ecalloc((neqn + 1), sizeof(int));
-    var_access = -1;
+    hoc_var_access = -1;
 #endif
 }
 
@@ -92,10 +92,10 @@ void hoc_eqn_name(void) /* save row number for lhs and/or rhs */
     do_equation = 1;
     hoc_eval();
     do_equation = 0;
-    if (var_access < 1)
-        hoc_execerror("illegal equation name", (pc - 2)->sym->name);
-    row = var_access;
-    nopop();
+    if (hoc_var_access < 1)
+        hoc_execerror("illegal equation name", (hoc_pc - 2)->sym->name);
+    row = hoc_var_access;
+    hoc_nopop();
 #endif
 }
 
@@ -103,7 +103,7 @@ static void set_varble(void) { /* set up varble array by searching for tags */
 #if !OCSMALL
     Symbol* sp;
 
-    for (sp = symlist->first; sp != (Symbol*) 0; sp = sp->next) {
+    for (sp = hoc_symlist->first; sp != (Symbol*) 0; sp = sp->next) {
         if (sp->s_varn != 0) {
             if (sp->type == VAR) {
                 if (!is_array(*sp)) {
@@ -130,7 +130,7 @@ void eqinit(void) /* built in function to initialize equation solver */
 
     if (ifarg(1))
         Delta = *getarg(1);
-    for (sp = symlist->first; sp != (Symbol*) 0; sp = sp->next) {
+    for (sp = hoc_symlist->first; sp != (Symbol*) 0; sp = sp->next) {
         if (sp->s_varn != 0) {
             if (is_array(*sp)) {
                 if (OPARINFO(sp)->a_varn != (unsigned*) 0)
@@ -142,8 +142,8 @@ void eqinit(void) /* built in function to initialize equation solver */
     neqn = 0;
     eqn_space();
 #endif
-    ret();
-    pushx(0.);
+    hoc_ret();
+    hoc_pushx(0.);
 }
 
 void hoc_eqn_init(void) /* initialize equation row */
@@ -173,7 +173,7 @@ static void eqn_side(int lhs) {
     int i;
     struct elm* el;
     double f0, f1;
-    Inst* savepc = pc;
+    Inst* savepc = hoc_pc;
 
     init_access();
     do_equation = 1;
@@ -181,25 +181,25 @@ static void eqn_side(int lhs) {
     do_equation = 0;
 
     if (lhs) {
-        f0 = xpop();
+        f0 = hoc_xpop();
     } else {
-        f0 = -xpop();
+        f0 = -hoc_xpop();
     }
 
     rhs[row] -= f0;
-    for (i = var_access; i > 0; i = hoc_access[i]) {
+    for (i = hoc_var_access; i > 0; i = hoc_access[i]) {
         *varble[i] += Delta;
         hoc_execute(savepc);
         *varble[i] -= Delta;
         if (lhs) {
-            f1 = xpop();
+            f1 = hoc_xpop();
         } else {
-            f1 = -xpop();
+            f1 = -hoc_xpop();
         }
         el = getelm((struct elm*) 0, row, (unsigned) i);
         el->value += (f1 - f0) / Delta;
     }
-    pc++;
+    hoc_pc++;
 #endif
 }
 
@@ -247,8 +247,8 @@ void hoc_Prmat(void) {
 #if !OCSMALL
     prmat();
 #endif
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
 void solve(void) {
@@ -281,6 +281,6 @@ void solve(void) {
 #else
     double sum = 0;
 #endif
-    ret();
-    pushx(sum);
+    hoc_ret();
+    hoc_pushx(sum);
 }

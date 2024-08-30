@@ -124,8 +124,8 @@ void debugzz(Inst* p) {
                 Printf("relative %d\n", p->i);
             else {
                 offset = (size_t) (p->in) - (size_t) p;
-                if (offset > (size_t) prog - (size_t) p &&
-                    offset < (size_t) (&prog[2000]) - (size_t) p)
+                if (offset > (size_t) hoc_prog - (size_t) p &&
+                    offset < (size_t) (&hoc_prog[2000]) - (size_t) p)
                     Printf("relative %ld\n", p->in - p);
                 else if (p->sym->name != (char*) 0) {
                     if (p->sym->name[0] == '\0') {

@@ -29,16 +29,16 @@ void Plt(void) {
         x = y = 0.;
     }
     hoc_plt(mode, x, y);
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
 void Setcolor(void) {
     TRY_GUI_REDIRECT_DOUBLE("setcolor", NULL);
     double i;
     i = hoc_set_color((int) *getarg(1));
-    ret();
-    pushx(i);
+    hoc_ret();
+    hoc_pushx(i);
 }
 
 void hoc_Lw(void) {
@@ -57,8 +57,8 @@ void hoc_Lw(void) {
     } else {
         Fig_file((char*) 0, dev);
     }
-    ret();
-    pushx(0.);
+    hoc_ret();
+    hoc_pushx(0.);
 }
 
 #endif /*!defined(MINGW)*/

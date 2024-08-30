@@ -308,7 +308,7 @@ restart: /* when no token in between comments */
         IGNORE(sscanf(npt, "%lf", &d));
         if (d == 0.)
             return NUMZERO;
-        yylval.sym = hoc_install("", NUMBER, d, &p_symlist);
+        yylval.sym = hoc_install("", NUMBER, d, &hoc_p_symlist);
         return NUMBER;
     }
     if (isalpha(c) || c == '_') {
@@ -367,7 +367,7 @@ restart: /* when no token in between comments */
             }
         }
         if ((s = hoc_lookup(sbuf)) == 0)
-            s = hoc_install(sbuf, UNDEF, 0.0, &symlist);
+            s = hoc_install(sbuf, UNDEF, 0.0, &hoc_symlist);
         yylval.sym = s;
         return s->type == UNDEF ? VAR : s->type;
     }
@@ -411,7 +411,7 @@ restart: /* when no token in between comments */
             *p = backslash(c);
         }
         *p = 0;
-        yylval.sym = hoc_install("", CSTRING, 0.0, &p_symlist);
+        yylval.sym = hoc_install("", CSTRING, 0.0, &hoc_p_symlist);
 
         (yylval.sym)->u.cstr = (char*) emalloc((unsigned) (strlen(sbuf->buf) + 1));
         Strcpy((yylval.sym)->u.cstr, sbuf->buf);
@@ -509,8 +509,8 @@ void arayinstal(void) /* allocate storage for arrays */
     int i, nsub;
     Symbol* sp;
 
-    nsub = (pc++)->i;
-    sp = spop();
+    nsub = (hoc_pc++)->i;
+    sp = hoc_spop();
 
     hoc_freearay(sp);
     sp->type = VAR;
@@ -535,7 +535,7 @@ int hoc_arayinfo_install(Symbol* sp, int nsub) {
     sp->arayinfo->refcount = 1;
     total = 1.;
     while (nsub) {
-        subscpt = floor(xpop() + EPS);
+        subscpt = floor(hoc_xpop() + EPS);
         if (subscpt <= 0.)
             hoc_execerror("subscript < 1", sp->name);
         total = total * subscpt;
@@ -599,8 +599,8 @@ void hoc_show_errmess_always(void) {
     double x;
     x = chkarg(1, 0., 1.);
     debug_message_ = (int) x;
-    ret();
-    pushx(x);
+    hoc_ret();
+    hoc_pushx(x);
 }
 
 int hoc_execerror_messages;
@@ -672,8 +672,8 @@ static int coredump;
 
 void hoc_coredump_on_error(void) {
     coredump = 1;
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
 void print_bt() {

@@ -75,12 +75,12 @@ using StackDatum = std::variant<double,
 static std::vector<StackDatum> stack{};
 
 #define NPROG 50000
-Inst* prog;               /* the machine */
-Inst* progp;              /* next free spot for code generation */
-Inst* pc;                 /* program counter during execution */
-Inst* progbase;           /* start of current subprogram */
-Inst* prog_parse_recover; /* start after parse error */
-int hoc_returning;        /* 1 if return stmt seen, 2 if break, 3 if continue */
+Inst* hoc_prog;               /* the machine */
+Inst* hoc_progp;              /* next free spot for code generation */
+Inst* hoc_pc;                 /* program counter during execution */
+Inst* hoc_progbase;           /* start of current subprogram */
+Inst* hoc_prog_parse_recover; /* start after parse error */
+int hoc_returning;            /* 1 if return stmt seen, 2 if break, 3 if continue */
 /* 4 if stop */
 namespace nrn::oc {
 struct frame {             /* proc/func call stack frame */
@@ -424,7 +424,7 @@ void hoc_init_space() {
         hoc_nstack = 1000;
     }
     stack.reserve(hoc_nstack);
-    progp = progbase = prog = (Inst*) emalloc(sizeof(Inst) * NPROG);
+    hoc_progp = hoc_progbase = hoc_prog = (Inst*) emalloc(sizeof(Inst) * NPROG);
     fp = frame = (Frame*) emalloc(sizeof(Frame) * hoc_nframe);
     framelast = frame + hoc_nframe;
     hoc_temp_obj_pool_ = (Object**) emalloc(sizeof(Object*) * TOBJ_POOL_SIZE);
@@ -479,8 +479,8 @@ void hoc_initcode() {
         fprintf(stderr, "errno set %d times on last execution\n", hoc_errno_count);
     }
     hoc_errno_count = 0;
-    prog_parse_recover = progbase = prog;
-    progp = progbase;
+    hoc_prog_parse_recover = hoc_progbase = hoc_prog;
+    hoc_progp = hoc_progbase;
     hoc_unref_defer();
 
     frame_objauto_recover_on_err(frame);
@@ -494,7 +494,7 @@ void hoc_initcode() {
         tobj_count = 0;
     }
     fp = frame;
-    hoc_free_list(&p_symlist);
+    hoc_free_list(&hoc_p_symlist);
     hoc_returning = 0;
     hoc_do_equation = 0;
     for (i = 0; i < maxinitfcns; ++i) {
@@ -520,8 +520,8 @@ void oc_save_code(Inst** a1,
                   Symlist** a10,
                   Inst** a11,
                   int* a12) {
-    *a1 = progbase;
-    *a2 = progp;
+    *a1 = hoc_progbase;
+    *a2 = hoc_progp;
     a3 = stack.size();
     *a4 = fp;
     *a5 = hoc_returning;
@@ -529,8 +529,8 @@ void oc_save_code(Inst** a1,
     *a7 = pc;
     *a8 = rframe;
     a9 = rstack;
-    *a10 = p_symlist;
-    *a11 = prog_parse_recover;
+    *a10 = hoc_p_symlist;
+    *a11 = hoc_prog_parse_recover;
     *a12 = tobj_count;
 }
 
@@ -546,8 +546,8 @@ void oc_restore_code(Inst** a1,
                      Symlist** a10,
                      Inst** a11,
                      int* a12) {
-    progbase = *a1;
-    progp = *a2;
+    hoc_progbase = *a1;
+    hoc_progp = *a2;
     frame_objauto_recover_on_err(*a4);
     if (tobj_count > *a12) {
         stack_obtmp_recover_on_err(*a12);
@@ -567,8 +567,8 @@ void oc_restore_code(Inst** a1,
     pc = *a7;
     rframe = *a8;
     rstack = a9;
-    p_symlist = *a10;
-    prog_parse_recover = *a11;
+    hoc_p_symlist = *a10;
+    hoc_prog_parse_recover = *a11;
 }
 
 int hoc_strgets_need(void) {
@@ -621,16 +621,16 @@ int hoc_ParseExec(int yystart) {
     if (yystart) {
         sframe = rframe;
         sfp = fp;
-        sprogbase = progbase;
-        sprogp = progp;
-        spc = pc, sprog_parse_recover = prog_parse_recover;
+        sprogbase = hoc_progbase;
+        sprogp = hoc_progp;
+        spc = pc, sprog_parse_recover = hoc_prog_parse_recover;
         sstackp = stack.size();
         sstack = rstack;
-        sp_symlist = p_symlist;
+        sp_symlist = hoc_p_symlist;
         rframe = fp;
         rstack = stack.size();
-        progbase = progp;
-        p_symlist = (Symlist*) 0;
+        hoc_progbase = hoc_progp;
+        hoc_p_symlist = (Symlist*) 0;
         rinitcode();
     }
     if (hoc_in_yyparse) {
@@ -651,16 +651,16 @@ int hoc_ParseExec(int yystart) {
     if (yystart) {
         rframe = sframe;  // restore the old value
         fp = sfp;
-        progbase = sprogbase;
-        progp = sprogp;
+        hoc_progbase = sprogbase;
+        hoc_progp = sprogp;
         pc = spc;
-        prog_parse_recover = sprog_parse_recover;
+        hoc_prog_parse_recover = sprog_parse_recover;
         if (sstackp > stack.size()) {
             hoc_execerror("hoc_ParseExec cannot summon entries from nowhere", nullptr);
         }
         stack.resize(sstackp);
         rstack = sstack;
-        p_symlist = sp_symlist;
+        hoc_p_symlist = sp_symlist;
     }
 
     return yret;
@@ -671,18 +671,18 @@ int hoc_xopen_run(Symbol* sp, const char* str) { /*recursively parse and execute
                                                  /* without executing. Note str must be a 'list'*/
     int n = 0;
     Frame *sframe = rframe, *sfp = fp;
-    Inst *sprogbase = progbase, *sprogp = progp, *spc = pc,
-         *sprog_parse_recover = prog_parse_recover;
-    Symlist* sp_symlist = p_symlist;
+    Inst *sprogbase = hoc_progbase, *sprogp = hoc_progp, *spc = pc,
+         *sprog_parse_recover = hoc_prog_parse_recover;
+    Symlist* sp_symlist = hoc_p_symlist;
     std::size_t sstack{rstack}, sstackp{stack.size()};
     rframe = fp;
     rstack = stack.size();
-    progbase = progp;
-    p_symlist = (Symlist*) 0;
+    hoc_progbase = hoc_progp;
+    hoc_p_symlist = (Symlist*) 0;
 
     if (sp == (Symbol*) 0) {
         for (rinitcode(); hoc_yyparse(); rinitcode())
-            hoc_execute(progbase);
+            hoc_execute(hoc_progbase);
     } else {
         int savpipeflag;
         rinitcode();
@@ -692,23 +692,23 @@ int hoc_xopen_run(Symbol* sp, const char* str) { /*recursively parse and execute
         if (!hoc_yyparse()) {
             hoc_execerror("Nothing to parse", (char*) 0);
         }
-        n = (int) (progp - progbase);
+        n = (int) (hoc_progp - hoc_progbase);
         hoc_pipeflag = savpipeflag;
         hoc_define(sp);
         rinitcode();
     }
     rframe = sframe;
     fp = sfp;
-    progbase = sprogbase;
-    progp = sprogp;
+    hoc_progbase = sprogbase;
+    hoc_progp = sprogp;
     pc = spc;
-    prog_parse_recover = sprog_parse_recover;
+    hoc_prog_parse_recover = sprog_parse_recover;
     if (sstackp > stack.size()) {
         hoc_execerror("hoc_xopen_run cannot summon entries from nowhere", nullptr);
     }
     stack.resize(sstackp);
     rstack = sstack;
-    p_symlist = sp_symlist;
+    hoc_p_symlist = sp_symlist;
     return n;
 }
 
@@ -1181,7 +1181,7 @@ void hoc_iterator_stmt() {
         hoc_execerror("return from within an iterator statement not allowed.",
                       "Set a flag and use break.");
     case 2: /* break means return from iter */
-        procret();
+        hoc_procret();
         break;
     case 3: /* continue means go on from iter as though nothing happened*/
         hoc_returning = 0;
@@ -1318,14 +1318,14 @@ void hoc_define(Symbol* sp) { /* put func/proc in symbol table */
     if (sp->u.u_proc->defn.in != STOP)
         free((char*) sp->u.u_proc->defn.in);
     hoc_free_list(&(sp->u.u_proc->list));
-    sp->u.u_proc->list = p_symlist;
-    p_symlist = (Symlist*) 0;
-    sp->u.u_proc->size = (unsigned) (progp - progbase);
-    sp->u.u_proc->defn.in = (Inst*) emalloc((unsigned) (progp - progbase) * sizeof(Inst));
+    sp->u.u_proc->list = hoc_p_symlist;
+    hoc_p_symlist = (Symlist*) 0;
+    sp->u.u_proc->size = (unsigned) (hoc_progp - hoc_progbase);
+    sp->u.u_proc->defn.in = (Inst*) emalloc((unsigned) (hoc_progp - hoc_progbase) * sizeof(Inst));
     newinst = sp->u.u_proc->defn.in;
-    for (inst = progbase; inst != progp;)
+    for (inst = hoc_progbase; inst != hoc_progp;)
         *newinst++ = *inst++;
-    progp = progbase; /* next code starts here */
+    hoc_progp = hoc_progbase; /* next code starts here */
 }
 
 // print the call sequence on an hoc_execerror
@@ -1524,7 +1524,7 @@ void funcret(void) /* return from a function */
     if (fp->sp->type != FUNCTION)
         hoc_execerror(fp->sp->name, "(proc or iterator) returns value");
     d = hoc_xpop(); /* preserve function return value */
-    ret();
+    hoc_ret();
     hoc_pushx(d);
 }
 
@@ -1534,7 +1534,7 @@ void procret(void) /* return from a procedure */
         hoc_execerror(fp->sp->name, "(func) returns no value");
     if (fp->sp->type == HOCOBJFUNCTION)
         hoc_execerror(fp->sp->name, "(obfunc) returns no value");
-    ret();
+    hoc_ret();
     hoc_pushx(0.); /*will be popped immediately; necessary because caller
                  may have compiled it as a function*/
 }
@@ -1552,7 +1552,7 @@ void hocobjret(void) /* return from a hoc level obfunc */
     // d may point to an Object* on the stack, ie. localobj name.
     // if so, d after ret() would point outside the stack,
     // so it cannot be dereferenced without a sanitizer error on the mac.
-    ret();
+    hoc_ret();
     /*make a temp and ref it in case autoobj returned since ret would
     have unreffed it*/
     hoc_push_object(o);
@@ -1571,7 +1571,7 @@ void hoc_Numarg(void) {
     } else {
         narg = f->nargs;
     }
-    ret();
+    hoc_ret();
     hoc_pushx((double) narg);
 }
 
@@ -1847,8 +1847,8 @@ void eval(void) /* evaluate variable on stack */
     case VAR:
         if (!is_array(*sym)) {
             if (hoc_do_equation && sym->s_varn > 0 && hoc_access[sym->s_varn] == 0) {
-                hoc_access[sym->s_varn] = var_access;
-                var_access = sym->s_varn;
+                hoc_access[sym->s_varn] = hoc_var_access;
+                hoc_var_access = sym->s_varn;
             }
             switch (sym->subtype) {
             case USERDOUBLE:
@@ -2371,14 +2371,14 @@ int hoc_araypt(Symbol* sp, int type) {
 }
 
 // pop top value from stack, print it
-void print() {
+void hoc_print() {
     nrnpy_pr("\t");
-    prexpr();
+    hoc_prexpr();
     nrnpy_pr("\n");
 }
 
 // print numeric value
-void prexpr() {
+void hoc_prexpr() {
     static HocStr* s;
     char* ss;
     Object** pob;
@@ -2403,7 +2403,7 @@ void prexpr() {
     default:
         hoc_execerror("Don't know how to print this type\n", nullptr);
     }
-    plprint(s->buf);
+    hoc_plprint(s->buf);
 }
 
 void prstr(void) /* print string value */
@@ -2415,7 +2415,7 @@ void prstr(void) /* print string value */
     cpp = hoc_strpop();
     hocstr_resize(s, strlen(*cpp) + 10);
     std::snprintf(s->buf, s->size + 1, "%s", *cpp);
-    plprint(s->buf);
+    hoc_plprint(s->buf);
 }
 
 /*-----------------------------------------------------------------*/
@@ -2451,7 +2451,7 @@ list. */
 
 void hoc_newline(void) /* print newline */
 {
-    plprint("\n");
+    hoc_plprint("\n");
 }
 
 void varread(void) /* read into variable */
@@ -2484,36 +2484,36 @@ Again:
 
 
 static Inst* codechk(void) {
-    if (progp >= prog + NPROG - 1)
+    if (hoc_progp >= hoc_prog + NPROG - 1)
         hoc_execerror("procedure too big", (char*) 0);
-    if (zzdebug)
-        debugzz(progp);
-    return progp++;
+    if (hoc_zzdebug)
+        debugzz(hoc_progp);
+    return hoc_progp++;
 }
 
 Inst* Code(Pfrv f) { /* install one instruction or operand */
-    progp->pf = f;
+    hoc_progp->pf = f;
     return codechk();
 }
 
 Inst* codei(int f) {
-    progp->pf = NULL; /* zero high order bits to avoid debugzz problem */
-    progp->i = f;
+    hoc_progp->pf = NULL; /* zero high order bits to avoid debugzz problem */
+    hoc_progp->i = f;
     return codechk();
 }
 
 Inst* hoc_codeptr(void* vp) {
-    progp->ptr = vp;
+    hoc_progp->ptr = vp;
     return codechk();
 }
 
 void codesym(Symbol* f) {
-    progp->sym = f;
+    hoc_progp->sym = f;
     IGNORE(codechk());
 }
 
 void codein(Inst* f) {
-    progp->in = f;
+    hoc_progp->in = f;
     IGNORE(codechk());
 }
 
@@ -2524,10 +2524,10 @@ void insertcode(Inst* begin, Inst* end, Pfrv f) {
     }
     begin->pf = f;
 
-    if (zzdebug) {
+    if (hoc_zzdebug) {
         Inst* p;
         printf("insert code: what follows is the entire code so far\n");
-        for (p = prog; p < progp; ++p) {
+        for (p = hoc_prog; p < hoc_progp; ++p) {
             debugzz(p);
         }
         printf("end of insert code debugging\n");

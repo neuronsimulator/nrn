@@ -112,7 +112,7 @@ void hoc_Sred(void) {
 #else
     double x = 0.;
 #endif
-    ret();
+    hoc_ret();
     hoc_pushx(x);
 }
 #if !OCSMALL

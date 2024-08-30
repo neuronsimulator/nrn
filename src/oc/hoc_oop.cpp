@@ -253,7 +253,7 @@ void hoc_object_push(void) {
         hoc_objectdata = hoc_top_level_data;
     }
     hoc_ret();
-    pushx(0.);
+    hoc_pushx(0.);
 }
 
 void hoc_object_pushed(void) {
@@ -280,7 +280,7 @@ void hoc_object_pop(void) {
         hoc_objectdata = hoc_top_level_data;
     }
     hoc_ret();
-    pushx(0.);
+    hoc_pushx(0.);
 }
 /*-----------------------------------------------*/
 int hoc_resize_toplevel(int more) {
@@ -378,7 +378,7 @@ void hoc_exec_cmd(void) { /* execute string from top level or within an object c
         hocstr_delete(hs);
     }
     hoc_ret();
-    pushx((double) (err));
+    hoc_pushx((double) (err));
 }
 
 /* call a function within the context of an object. Args must be on stack */
@@ -624,7 +624,7 @@ static void call_constructor(Object* ob, Symbol* sym, int narg) {
     obsav = hoc_thisobject;
     pcsav = pc;
 
-    push_frame(sym, narg);
+    hoc_push_frame(sym, narg);
     ob->u.this_pointer = neuron::oc::invoke_method_that_may_throw(
         [ob]() -> std::string {
             std::string rval{hoc_object_name(ob)};
@@ -633,7 +633,7 @@ static void call_constructor(Object* ob, Symbol* sym, int narg) {
         },
         ob->ctemplate->constructor,
         ob);
-    pop_frame();
+    hoc_pop_frame();
 
     pc = pcsav;
     hoc_symlist = slsav;
@@ -666,7 +666,7 @@ void hoc_call_ob_proc(Object* ob, Symbol* sym, int narg) {
     if (ob->ctemplate->sym->subtype & CPLUSOBJECT) {
         hoc_thisobject = ob;
         gui_redirect_obj_ = ob;
-        push_frame(sym, narg);
+        hoc_push_frame(sym, narg);
         hoc_thisobject = obsav;
         auto const error_prefix_generator = [ob, sym]() {
             std::string rval{hoc_object_name(ob)};
@@ -897,13 +897,13 @@ void hoc_object_id(void) {
     if (ifarg(2) && chkarg(2, 0., 1.) == 1.) {
         hoc_ret();
         if (ob) {
-            pushx((double) ob->index);
+            hoc_pushx((double) ob->index);
         } else {
-            pushx(-1.);
+            hoc_pushx(-1.);
         }
     } else {
         hoc_ret();
-        pushx((double) ((size_t) ob));
+        hoc_pushx((double) ((size_t) ob));
     }
 }
 
@@ -944,7 +944,7 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
                 hoc_push_ndim(nindex);
             }
             if (narg) {  // push back the arc length
-                pushx(x);
+                hoc_pushx(x);
             }
         }
         hoc_pushi(narg);
@@ -1038,8 +1038,8 @@ void hoc_object_component() {
                     hoc_execerror_fmt("Cannot assign to a PythonObject function call '{}'",
                                       sym0->name);
                 }
-                pushi(nindex);
-                pushs(sym0);
+                hoc_pushi(nindex);
+                hoc_pushs(sym0);
                 hoc_push_object(obp);
                 /* note obp is now on stack twice */
                 /* hpoasgn will pop both */
@@ -1725,7 +1725,7 @@ void hoc_external_var(Symbol* s) {
 
 void hoc_ob_check(int type) {
     int t;
-    t = ipop();
+    t = hoc_ipop();
     if (type == -1) {
         if (t == OBJECTVAR) { /* don't bother to check */
             hoc_Code(hoc_cmp_otype);
@@ -1910,7 +1910,7 @@ printf("unreffing %s with refcount %d\n", hoc_object_name(obj), obj->refcount);
     --obj->refcount;
     if (obj->ctemplate->unref) {
         int i = obj->refcount;
-        pushx((double) i);
+        hoc_pushx((double) i);
         ++obj->unref_recurse_cnt;
         hoc_call_ob_proc(obj, obj->ctemplate->unref, 1);
         --obj->unref_recurse_cnt;
@@ -2025,7 +2025,7 @@ void hoc_allobjects(void) {
         hoc_allobjects1(hoc_top_level_symlist, 0);
     }
     hoc_ret();
-    pushx((double) n);
+    hoc_pushx((double) n);
 }
 
 void hoc_allobjects1(Symlist* sl, int nspace) {
@@ -2072,7 +2072,7 @@ static void hoc_list_allobjref(Symlist*, Objectdata*, int);
 void hoc_allobjectvars(void) {
     hoc_list_allobjref(hoc_top_level_symlist, hoc_top_level_data, 0);
     hoc_ret();
-    pushx(0.);
+    hoc_pushx(0.);
 }
 
 static void hoc_list_allobjref(Symlist* sl, Objectdata* data, int depth) {

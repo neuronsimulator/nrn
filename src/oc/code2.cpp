@@ -94,8 +94,8 @@ void hoc_Symbol_limits(void) {
     }
     assert(sym);
     hoc_symbol_limits(sym, *getarg(2), *getarg(3));
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
 void hoc_symbol_limits(Symbol* sym, float low, float high) {
@@ -232,8 +232,8 @@ void hoc_Strcmp(void) {
     char *s1, *s2;
     s1 = gargstr(1);
     s2 = gargstr(2);
-    ret();
-    pushx((double) strcmp(s1, s2));
+    hoc_ret();
+    hoc_pushx((double) strcmp(s1, s2));
 }
 
 static int hoc_vsscanf(const char* buf);
@@ -241,8 +241,8 @@ static int hoc_vsscanf(const char* buf);
 void hoc_sscanf(void) {
     int n;
     n = hoc_vsscanf(gargstr(1));
-    ret();
-    pushx((double) n);
+    hoc_ret();
+    hoc_pushx((double) n);
 }
 
 static int hoc_vsscanf(const char* buf) {
@@ -472,7 +472,7 @@ void System(void) {
             hoc_execerror("Internal error in System(): can't open", stdoutfile);
         }
         while (fgets(st->buf, 255, fp) == st->buf) {
-            plprint(st->buf);
+            hoc_plprint(st->buf);
         }
 #endif
         hocstr_delete(st);
@@ -505,8 +505,8 @@ void System(void) {
         d = (double) system(gargstr(1));
     }
     errno = 0;
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 void Xred(void) /* read with prompt string and default and limits */
@@ -514,8 +514,8 @@ void Xred(void) /* read with prompt string and default and limits */
     double d;
 
     d = hoc_xred(gargstr(1), *getarg(2), *getarg(3), *getarg(4));
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 static struct { /* symbol types */
@@ -594,10 +594,10 @@ void symbols(void) /* display the types above */
     int i, j;
     Symbol* sp;
 
-    if (zzdebug == 0)
+    if (hoc_zzdebug == 0)
         for (i = 0; type_sym[i].t_type != 0; i++) {
             Printf("\n%s\n", type_sym[i].name);
-            for (sp = symlist->first; sp != (Symbol*) 0; sp = sp->next)
+            for (sp = hoc_symlist->first; sp != (Symbol*) 0; sp = sp->next)
                 if (sp->type == type_sym[i].t_type) {
                     Printf("\t%s", sp->name);
                     switch (sp->type) {
@@ -615,11 +615,11 @@ void symbols(void) /* display the types above */
             Printf("\n");
         }
     else {
-        symdebug("p_symlist", p_symlist);
-        symdebug("symlist", symlist);
+        symdebug("p_symlist", hoc_p_symlist);
+        symdebug("symlist", hoc_symlist);
     }
-    ret();
-    pushx(0.);
+    hoc_ret();
+    hoc_pushx(0.);
 }
 
 double chkarg(int arg, double low, double high) /* argument checking for user functions */
@@ -757,6 +757,6 @@ void hoc_name_declared(void) {
             x = (s->subtype == USERPROPERTY) ? 8 : x;
         }
     }
-    ret();
-    pushx((double) x);
+    hoc_ret();
+    hoc_pushx((double) x);
 }

@@ -49,8 +49,8 @@ void hoc_stdout(void) {
         close(prev);
         prev = -1;
     }
-    ret();
-    pushx((double) fileno(stdout));
+    hoc_ret();
+    hoc_pushx((double) fileno(stdout));
 }
 
 void ropen(void) /* open file for reading */
@@ -77,8 +77,8 @@ void ropen(void) /* open file for reading */
         }
     }
     errno = 0;
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 void wopen(void) /* open file for writing */
@@ -102,8 +102,8 @@ void wopen(void) /* open file for writing */
         }
     }
     errno = 0;
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 const char* expand_env_var(const char* s) {
@@ -232,8 +232,8 @@ void xopen(void) /* read and execute a hoc program */
     } else {
         hoc_xopen1(gargstr(1), 0);
     }
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
 void Fprint(void) /* fprintf function */
@@ -243,8 +243,8 @@ void Fprint(void) /* fprintf function */
 
     hoc_sprint1(&buf, 1);
     d = (double) fprintf(fout, "%s", buf);
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 void PRintf(void) /* printf function */
@@ -254,10 +254,10 @@ void PRintf(void) /* printf function */
 
     hoc_sprint1(&buf, 1);
     d = (int) strlen(buf);
-    plprint(buf);
+    hoc_plprint(buf);
     fflush(stdout);
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 
@@ -269,8 +269,8 @@ void hoc_Sprint(void) /* sprintf_function */
     cpp = hoc_pgargstr(1);
     hoc_sprint1(&buf, 2);
     hoc_assign_str(cpp, buf);
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
 double hoc_scan(FILE* fi) {
@@ -326,8 +326,8 @@ void Fscan(void) /* read a number from input file */
         fi = hoc_frin;
     }
     d = hoc_fw_scan(fi);
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 void hoc_Getstr(void) /* read a line (or word) from input file */
@@ -356,8 +356,8 @@ void hoc_Getstr(void) /* read a line (or word) from input file */
         }
     }
     hoc_assign_str(cpp, buf);
-    ret();
-    pushx((double) strlen(buf));
+    hoc_ret();
+    hoc_pushx((double) strlen(buf));
 }
 
 void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for conversion */
@@ -538,18 +538,18 @@ static void hoc_load(const char* stype) {
 
 void hoc_load_proc(void) {
     hoc_load("proc");
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 void hoc_load_func(void) {
     hoc_load("func");
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 void hoc_load_template(void) {
     hoc_load("begintemplate");
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
 void hoc_load_file(void) {
@@ -562,8 +562,8 @@ void hoc_load_file(void) {
     if (!ifarg(iarg + 1) || !hoc_lookup(gargstr(iarg + 1))) {
         i = hoc_Load_file(i, gargstr(iarg));
     }
-    ret();
-    pushx((double) i);
+    hoc_ret();
+    hoc_pushx((double) i);
 }
 
 static constexpr auto hoc_load_file_size_ = 1024;
@@ -737,8 +737,8 @@ void hoc_machine_name(void) {
     gethostname(buf, 20);
     hoc_assign_str(hoc_pgargstr(1), buf);
 #endif
-    ret();
-    pushx(0.);
+    hoc_ret();
+    hoc_pushx(0.);
 }
 
 int hoc_chdir(const char* path) {
@@ -747,8 +747,8 @@ int hoc_chdir(const char* path) {
 
 void hoc_Chdir(void) {
     int i = hoc_chdir(gargstr(1));
-    ret();
-    pushx((double) i);
+    hoc_ret();
+    hoc_pushx((double) i);
 }
 
 int nrn_is_python_extension;
