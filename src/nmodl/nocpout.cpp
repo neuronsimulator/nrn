@@ -428,35 +428,10 @@ extern void nrn_promote(Prop*, int, int);\n\
             defs_list,
             "double get_loc_point_process(void*); return (get_loc_point_process(_vptr));\n}\n");
     }
-    /* function to set up _p and _ppvar */
-    Lappendstr(defs_list, "extern void _nrn_setdata_reg(int, void(*)(Prop*));\n");
-    Lappendstr(defs_list, "static void _setdata(Prop* _prop) {\n");
-    if (!point_process) {
-        Lappendstr(defs_list, "_extcall_prop = _prop;\n");
-        Lappendstr(defs_list, "_prop_id = _nrn_get_prop_id(_prop);\n");
-    }
-    if (!vectorize) {
-        Lappendstr(defs_list,
-                   "neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
-                   "_ppvar = _nrn_mechanism_access_dparam(_prop);\n");
-    }
-    Lappendstr(defs_list, "}\n");
 
-    if (point_process) {
-        Lappendstr(defs_list, "static void _hoc_setdata(void* _vptr) { Prop* _prop;\n");
-        Lappendstr(defs_list, "_prop = ((Point_process*)_vptr)->_prop;\n");
-    } else {
-        Lappendstr(defs_list,
-                   "static void _hoc_setdata() {\n Prop *_prop, *hoc_getdata_range(int);\n");
-        Sprintf(buf, "_prop = hoc_getdata_range(_mechtype);\n");
-        Lappendstr(defs_list, buf);
-    }
-    Lappendstr(defs_list, "  _setdata(_prop);\n");
-    if (point_process) {
-        Lappendstr(defs_list, "}\n");
-    } else {
-        Lappendstr(defs_list, "hoc_retpushx(1.);\n}\n");
-    }
+    std::string hoc_setdata_arg = point_process ? "void*" : "";
+    Sprintf(buf, "static void _hoc_setdata(%s);\n", hoc_setdata_arg.c_str());
+    Lappendstr(defs_list, buf);
 
     /* functions */
     Lappendstr(defs_list, "/* connect user functions to hoc names */\n");
@@ -754,6 +729,37 @@ extern void nrn_promote(Prop*, int, int);\n\
             Lappendstr(defs_list, buf);
         }
     }
+
+    /* function to set up _p and _ppvar */
+    Lappendstr(defs_list, "extern void _nrn_setdata_reg(int, void(*)(Prop*));\n");
+    Lappendstr(defs_list, "static void _setdata(Prop* _prop) {\n");
+    if (!point_process) {
+        Lappendstr(defs_list, "_extcall_prop = _prop;\n");
+        Lappendstr(defs_list, "_prop_id = _nrn_get_prop_id(_prop);\n");
+    }
+    if (!vectorize) {
+        Lappendstr(defs_list,
+                   "neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
+                   "_ppvar = _nrn_mechanism_access_dparam(_prop);\n");
+    }
+    Lappendstr(defs_list, "}\n");
+
+    if (point_process) {
+        Lappendstr(defs_list, "static void _hoc_setdata(void* _vptr) { Prop* _prop;\n");
+        Lappendstr(defs_list, "_prop = ((Point_process*)_vptr)->_prop;\n");
+    } else {
+        Lappendstr(defs_list,
+                   "static void _hoc_setdata() {\n Prop *_prop, *hoc_getdata_range(int);\n");
+        Sprintf(buf, "_prop = hoc_getdata_range(_mechtype);\n");
+        Lappendstr(defs_list, buf);
+    }
+    Lappendstr(defs_list, "  _setdata(_prop);\n");
+    if (point_process) {
+        Lappendstr(defs_list, "}\n");
+    } else {
+        Lappendstr(defs_list, "hoc_retpushx(1.);\n}\n");
+    }
+
 
     /******** what normally goes into cabvars.h structures */
 
