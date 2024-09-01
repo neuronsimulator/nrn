@@ -83,11 +83,7 @@ typedef char* Upoint;
 #define USERINT      1 /* For subtype */
 #define USERDOUBLE   2
 #define USERPROPERTY 3 /* for newcable non-range variables */
-#define USERFLOAT    4 /* John Miller's NEMO uses floats */
-#if NEMO
-#define NEMONODE 5 /* looks syntactically like vector */
-#define NEMOAREA 6 /* looks like vector */
-#endif
+#define USERFLOAT    4
 #define SYMBOL       7  /* for stack type */
 #define OBJECTTMP    8  /* temporary object on stack */
 #define STKOBJ_UNREF 9  /* already unreffed temporary object on stack */
@@ -279,8 +275,6 @@ int ilint;
 #define Printf  nrnpy_pr
 #endif
 using neuron::Sprintf;
-
-#define ERRCHK(c1) c1
 
 // No longer used because of clang format difficulty
 // #define IFGUI  if (hoc_usegui) {

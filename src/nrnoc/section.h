@@ -23,6 +23,7 @@
    d and rhs is calculated from the property list.
 */
 #include "hoclist.h"
+#include "cabcode.h"
 #include "membfunc.h"
 #include "neuron/container/mechanism_data.hpp"
 #include "neuron/container/node_data.hpp"
@@ -446,7 +447,6 @@ extern hoc_List* section_list; /* Where the Sections live */
 
 extern Section* sec_alloc();             /* Allocates a single section */
 extern void node_alloc(Section*, short); /* Allocates node vectors in a section*/
-extern double section_length(Section*), nrn_diameter(Node*);
 extern Node* nrn_parent_node(Node*);
 extern Section* nrn_section_alloc();
 extern void nrn_section_free(Section*);

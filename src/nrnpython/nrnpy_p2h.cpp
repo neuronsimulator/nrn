@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 
 #include <cstdio>
+
 #include <InterViews/resource.h>
 #include <nrnoc2iv.h>
 #include <classreg.h>
@@ -11,12 +12,14 @@
 #include "oc_ansi.h"
 
 #include "parse.hpp"
-static void nrnpy_decref_defer(PyObject*);
+
+#include <nanobind/nanobind.h>
+namespace nb = nanobind;
+
 static char* nrnpyerr_str();
 static PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
 static PyObject* main_module;
 static PyObject* main_namespace;
-static hoc_List* dlist;
 
 struct Py2Nrn final {
     ~Py2Nrn() {
@@ -249,15 +252,12 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         PyObject* pn = PyNumber_Float(result);
         hoc_pushx(PyFloat_AsDouble(pn));
         Py_XDECREF(pn);
-        Py_XDECREF(result);
     } else if (is_python_string(result)) {
         char** ts = hoc_temp_charptr();
         Py2NRNString str(result, true);
         *ts = str.c_str();
         hoc_pop_defer();
         hoc_pushstr(ts);
-        // how can we defer the result unref til the string is popped
-        nrnpy_decref_defer(result);
     } else {
         // PyObject_Print(result, stdout, 0);
         on = nrnpy_po2ho(result);
@@ -266,8 +266,8 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         if (on) {
             on->refcount--;
         }
-        Py_XDECREF(result);
     }
+    Py_XDECREF(result);
     Py_XDECREF(head);
     Py_DECREF(tail);
 }
@@ -326,17 +326,6 @@ static void hpoasgn(Object* o, int type) {
     if (err) {
         PyErr_Print();
         hoc_execerror("Assignment to PythonObject failed", NULL);
-    }
-}
-
-static void nrnpy_decref_defer(PyObject* po) {
-    if (po) {
-#if 0
-		PyObject* ps = PyObject_Str(po);
-		printf("defer %s\n", PyString_AsString(ps));
-		Py_DECREF(ps);
-#endif
-        hoc_l_lappendvoid(dlist, (void*) po);
     }
 }
 
@@ -607,43 +596,35 @@ static int guigetstr(Object* ho, char** cpp) {
     return 1;
 }
 
-static PyObject* loads;
-static PyObject* dumps;
+static nb::callable loads;
+static nb::callable dumps;
 
 static void setpickle() {
     if (dumps) {
         return;
     }
-    PyObject* pickle = PyImport_ImportModule("pickle");
-    if (pickle) {
-        Py_INCREF(pickle);
-        dumps = PyObject_GetAttrString(pickle, "dumps");
-        loads = PyObject_GetAttrString(pickle, "loads");
-        if (dumps) {
-            Py_INCREF(dumps);
-            Py_INCREF(loads);
-        }
-    }
+    nb::module_ pickle = nb::module_::import_("pickle");
+    dumps = pickle.attr("dumps");
+    loads = pickle.attr("loads");
     if (!dumps || !loads) {
         hoc_execerror("Neither Python cPickle nor pickle are available", 0);
     }
+    // We intentionally leak these, because if we don't
+    // we observe SEGFAULTS during application shutdown.
+    // Likely because "~nb::callable" runs after the Python
+    // library cleaned up.
+    dumps.inc_ref();
+    loads.inc_ref();
 }
 
 // note that *size includes the null terminating character if it exists
 static std::vector<char> pickle(PyObject* p) {
-    PyObject* arg = PyTuple_Pack(1, p);
-    PyObject* r = nrnpy_pyCallObject(dumps, arg);
-    Py_XDECREF(arg);
+    auto r = nb::borrow<nb::bytes>(dumps(nb::borrow(p)));
     if (!r && PyErr_Occurred()) {
         PyErr_Print();
     }
     assert(r);
-    assert(PyBytes_Check(r));
-    std::size_t size = PyBytes_Size(r);
-    char* buf = PyBytes_AsString(r);
-    std::vector<char> ret(buf, buf + size);
-    Py_XDECREF(r);
-    return ret;
+    return std::vector<char>(r.c_str(), r.c_str() + r.size());
 }
 
 static std::vector<char> po2pickle(Object* ho) {
@@ -656,25 +637,18 @@ static std::vector<char> po2pickle(Object* ho) {
     }
 }
 
-static PyObject* unpickle(const char* s, std::size_t len) {
-    PyObject* ps = PyBytes_FromStringAndSize(s, len);
-    PyObject* arg = PyTuple_Pack(1, ps);
-    PyObject* po = nrnpy_pyCallObject(loads, arg);
-    assert(po);
-    Py_XDECREF(arg);
-    Py_XDECREF(ps);
-    return po;
+static nb::object unpickle(const char* s, std::size_t len) {
+    return loads(nb::bytes(s, len));
 }
 
-static PyObject* unpickle(const std::vector<char>& s) {
+static nb::object unpickle(const std::vector<char>& s) {
     return unpickle(s.data(), s.size());
 }
 
 static Object* pickle2po(const std::vector<char>& s) {
     setpickle();
-    PyObject* po = unpickle(s);
-    Object* ho = nrnpy_pyobject_in_obj(po);
-    Py_XDECREF(po);
+    nb::object po = unpickle(s);
+    Object* ho = nrnpy_pyobject_in_obj(po.ptr());
     return ho;
 }
 
@@ -743,33 +717,22 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
     // fname is a pickled callable, narg is the number of args on the
     // hoc stack with types double, char*, hoc Vector, and PythonObject
     // callable return must be pickleable.
-    PyObject* args = 0;
-    PyObject* result = 0;
-    PyObject* callable;
-
     setpickle();
-    PyObject* ps = PyBytes_FromStringAndSize(fname.data(), fname.size());
-    args = PyTuple_Pack(1, ps);
-    callable = nrnpy_pyCallObject(loads, args);
-    assert(callable);
-    Py_XDECREF(args);
-    Py_XDECREF(ps);
+    nb::bytes ps(fname.data(), fname.size());
 
-    args = PyTuple_New(narg);
+    auto callable = nb::borrow<nb::callable>(loads(ps));
+    assert(callable);
+
+    nb::list args{};
     for (int i = 0; i < narg; ++i) {
-        PyObject* arg = nrnpy_hoc_pop("call_picklef");
-        if (PyTuple_SetItem(args, narg - 1 - i, arg)) {
-            assert(0);
-        }
-        // Py_XDECREF(arg);
+        nb::object arg = nb::steal(nrnpy_hoc_pop("call_picklef"));
+        args.append(arg);
     }
-    result = nrnpy_pyCallObject(callable, args);
-    Py_DECREF(callable);
-    Py_DECREF(args);
+    nb::object result = callable(*args);
     if (!result) {
         char* mes = nrnpyerr_str();
         if (mes) {
-            Fprintf(stderr, "%s\n", mes);
+            std::cerr << mes << std::endl;
             free(mes);
             hoc_execerror("PyObject method call failed:", NULL);
         }
@@ -777,9 +740,7 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
             PyErr_Print();
         }
     }
-    auto rs = pickle(result);
-    Py_XDECREF(result);
-    return rs;
+    return pickle(result.ptr());
 }
 
 #include "nrnmpi.h"
@@ -801,7 +762,8 @@ static PyObject* char2pylist(char* buf, int np, int* cnt, int* displ) {
             Py_INCREF(Py_None);  // 'Fatal Python error: deallocating None' eventually
             PyList_SetItem(plist, i, Py_None);
         } else {
-            PyObject* p = unpickle(buf + displ[i], cnt[i]);
+            nb::object po = unpickle(buf + displ[i], cnt[i]);
+            PyObject* p = po.release().ptr();
             PyList_SetItem(plist, i, p);
         }
     }
@@ -874,7 +836,8 @@ static PyObject* py_broadcast(PyObject* psrc, int root) {
     nrnmpi_char_broadcast(buf.data(), cnt, root);
     PyObject* pdest = psrc;
     if (root != nrnmpi_myid) {
-        pdest = unpickle(buf);
+        nb::object po = unpickle(buf);
+        pdest = po.release().ptr();
     } else {
         Py_INCREF(pdest);
     }
@@ -1082,7 +1045,8 @@ static Object* py_alltoall_type(int size, int type) {
                 delete[] sdispl;
 
             if (rcnt[0]) {
-                pdest = unpickle(r);
+                nb::object po = unpickle(r);
+                pdest = po.release().ptr();
             } else {
                 pdest = Py_None;
                 Py_INCREF(pdest);
@@ -1149,5 +1113,4 @@ extern "C" NRN_EXPORT void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
     nrnpython_reg_real_nrnpython_cpp(ptrs);
     // call a function in nrnpy_hoc.cpp to register the functions defined there
     nrnpython_reg_real_nrnpy_hoc_cpp(ptrs);
-    dlist = hoc_l_newlist();
 }
