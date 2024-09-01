@@ -130,6 +130,57 @@ PyTypeObject* hocobject_type;
 
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds);
 
+struct hocclass {
+    PyTypeObject head;
+};
+
+static int hocclass_init(hocclass* cls, PyObject* args, PyObject* kwds) {
+    if (PyType_Type.tp_init((PyObject*) cls, args, kwds) < 0) {
+        return -1;
+    }
+    printf("hocclass_init\n");
+    return 0;
+}
+
+static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
+    assert(PyType_Check(self));
+    auto uname = PyType_GetName((PyTypeObject*) self);
+    assert(uname);
+    const char* name = PyUnicode_AsUTF8AndSize(uname, 0);
+    assert(name);
+    Symbol* sym = hoc_table_lookup(name, hoc_built_in_symlist);
+    assert(sym);
+
+    assert(sym->type == TEMPLATE);
+    hoc_Item *q, *ql = sym->u.ctemplate->olist;
+    Object* ob;
+    ITERATE(q, ql) {
+        ob = OBJ(q);
+        if (ob->index == ix) {
+            return nrnpy_ho2po(ob);
+        }
+    }
+    char e[200];
+    Sprintf(e, "%s[%ld] instance does not exist", sym->name, ix);
+    PyErr_SetString(PyExc_IndexError, e);
+    return NULL;
+}
+
+// Note use of slots was informed by nanobind (search for nb_meta)
+
+static PyType_Slot hocclass_slots[] = {{Py_tp_base, nullptr},  // &PyType_Type : not obvious why it
+                                                               // must be set at runtime
+                                       {Py_tp_init, (void*) hocclass_init},
+                                       {Py_sq_item, (void*) hocclass_getitem},
+                                       {0, NULL}};
+
+static PyType_Spec hocclass_spec = {.name = "hoc.HocClass",
+                                    .basicsize = 0,
+                                    .itemsize = 0,
+                                    .flags = Py_TPFLAGS_DEFAULT,  //  | Py_TPFLAGS_HEAPTYPE,
+                                    .slots = hocclass_slots};
+
+
 bool nrn_chk_data_handle(const neuron::container::data_handle<double>& pd) {
     if (pd) {
         return true;
@@ -3321,6 +3372,22 @@ static char* nrncore_arg(double tstop) {
 }
 
 
+#if PY_VERSION_HEX < 0x030C0000
+#define TYPE_FROM_METACLASS_IMPL 1
+#else
+#define TYPE_FROM_METACLASS_IMPL 0
+#endif
+
+static PyObject* type_from_metaclass(PyTypeObject* meta, PyObject* mod, PyType_Spec* spec) {
+#if TYPE_FROM_METACLASS_IMPL == 0
+    return PyType_FromMetaclass(meta, mod, spec, nullptr);
+#else
+    // add the nanobind implementation from nb_type.cpp
+    return nullptr;
+#endif
+}
+
+
 static PyType_Spec obj_spec_from_name(const char* name) {
     return {
         name,
@@ -3357,12 +3424,26 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     }
     m = PyModule_Create(&hocmodule);
     assert(m);
+
+    hocclass_slots[0].pfunc = (PyObject*) &PyType_Type;
+    PyObject* custom_hocclass = PyType_FromSpec(&hocclass_spec);
+    if (custom_hocclass == NULL) {
+        return NULL;
+    }
+    if (PyModule_AddObject(m, "HocClass", custom_hocclass) < 0) {
+        return NULL;
+    }
+
+
     Symbol* s = NULL;
     spec = obj_spec_from_name("hoc.HocObject");
-    hocobject_type = (PyTypeObject*) PyType_FromSpec(&spec);
-    if (PyType_Ready(hocobject_type) < 0)
-        goto fail;
-    PyModule_AddObject(m, "HocObject", (PyObject*) hocobject_type);
+    hocobject_type = (PyTypeObject*) type_from_metaclass((PyTypeObject*) custom_hocclass, m, &spec);
+    if (hocobject_type == NULL) {
+        return NULL;
+    }
+    if (PyModule_AddObject(m, "HocObject", (PyObject*) hocobject_type) < 0) {
+        return NULL;
+    }
 
     bases = PyTuple_Pack(1, hocobject_type);
     Py_INCREF(bases);
@@ -3373,9 +3454,12 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
         pto = (PyTypeObject*) PyType_FromSpecWithBases(&spec, bases);
         sym_to_type_map[hoc_lookup(name)] = pto;
         type_to_sym_map[pto] = hoc_lookup(name);
-        if (PyType_Ready(pto) < 0)
+        if (PyType_Ready(pto) < 0) {
             goto fail;
-        PyModule_AddObject(m, name, (PyObject*) pto);
+        }
+        if (PyModule_AddObject(m, name, (PyObject*) pto) < 0) {
+            return NULL;
+        }
     }
     Py_DECREF(bases);
 
