@@ -138,13 +138,20 @@ static int hocclass_init(hocclass* cls, PyObject* args, PyObject* kwds) {
     if (PyType_Type.tp_init((PyObject*) cls, args, kwds) < 0) {
         return -1;
     }
-    printf("hocclass_init\n");
     return 0;
+}
+
+static PyObject* pytype_getname(PyTypeObject* pto) {
+#if PY_VERSION_HEX >= 0x030B0000  // since python-3.11
+    return PyType_GetName(pto);
+#else
+    return PyObject_GetAttrString((PyObject*)pto, "__name__");
+#endif
 }
 
 static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
     assert(PyType_Check(self));
-    auto uname = PyType_GetName((PyTypeObject*) self);
+    auto uname = pytype_getname((PyTypeObject*) self);
     assert(uname);
     const char* name = PyUnicode_AsUTF8AndSize(uname, 0);
     assert(name);
