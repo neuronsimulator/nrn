@@ -88,7 +88,7 @@
 //#define onintr             hoc_onintr
 //#define p_symlist          hoc_p_symlist
 //#define parserror          hoc_parserror
-#define pc hoc_pc
+//#define pc hoc_pc
 //#define pipeflag           hoc_pipeflag
 //#define pipegetc           hoc_pipegetc
 //#define pipeungetc         hoc_pipeungetc
