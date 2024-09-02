@@ -122,9 +122,9 @@ variables:
   LIBSONATA_REPORT_BRANCH:
     description: Branch of libsonata-report to build BlueBrain models against in the simulation stack pipeline (LIBSONATA_REPORT_COMMIT and LIBSONATA_REPORT_TAG also possible)
     value: master
-  NMODL_COMMIT:
+  NMODL_BRANCH:
     description: Branch of NMODL to build CoreNEURON against (NMODL_COMMIT and NMODL_TAG also possible)
-    value: 791014679
+    value: 1uc/aug23
   SPACK_BRANCH:
     description: Branch of BlueBrain Spack to use for the CI pipeline
     value: develop
