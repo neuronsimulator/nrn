@@ -145,7 +145,7 @@ static PyObject* pytype_getname(PyTypeObject* pto) {
 #if PY_VERSION_HEX >= 0x030B0000  // since python-3.11
     return PyType_GetName(pto);
 #else
-    return PyObject_GetAttrString((PyObject*)pto, "__name__");
+    return PyObject_GetAttrString((PyObject*) pto, "__name__");
 #endif
 }
 
@@ -3379,22 +3379,6 @@ static char* nrncore_arg(double tstop) {
 }
 
 
-#if PY_VERSION_HEX < 0x030C0000
-#define TYPE_FROM_METACLASS_IMPL 1
-#else
-#define TYPE_FROM_METACLASS_IMPL 0
-#endif
-
-static PyObject* type_from_metaclass(PyTypeObject* meta, PyObject* mod, PyType_Spec* spec) {
-#if TYPE_FROM_METACLASS_IMPL == 0
-    return PyType_FromMetaclass(meta, mod, spec, nullptr);
-#else
-    // add the nanobind implementation from nb_type.cpp
-    return nullptr;
-#endif
-}
-
-
 static PyType_Spec obj_spec_from_name(const char* name) {
     return {
         name,
@@ -3404,6 +3388,11 @@ static PyType_Spec obj_spec_from_name(const char* name) {
         nrnpy_HocObjectType_slots,
     };
 }
+
+extern PyObject* nrn_type_from_metaclass(PyTypeObject* meta,
+                                         PyObject* mod,
+                                         PyType_Spec* spec,
+                                         PyObject* bases);
 
 extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     PyObject* m;
@@ -3444,7 +3433,8 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
 
     Symbol* s = NULL;
     spec = obj_spec_from_name("hoc.HocObject");
-    hocobject_type = (PyTypeObject*) type_from_metaclass((PyTypeObject*) custom_hocclass, m, &spec);
+    hocobject_type =
+        (PyTypeObject*) nrn_type_from_metaclass((PyTypeObject*) custom_hocclass, m, &spec, nullptr);
     if (hocobject_type == NULL) {
         return NULL;
     }
@@ -3458,7 +3448,8 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
         // TODO: obj_spec_from_name needs a hoc. prepended
         exposed_py_type_names.push_back(std::string("hoc.") + name);
         spec = obj_spec_from_name(exposed_py_type_names.back().c_str());
-        pto = (PyTypeObject*) PyType_FromSpecWithBases(&spec, bases);
+        pto = (PyTypeObject*)
+            nrn_type_from_metaclass((PyTypeObject*) custom_hocclass, m, &spec, bases);
         sym_to_type_map[hoc_lookup(name)] = pto;
         type_to_sym_map[pto] = hoc_lookup(name);
         if (PyType_Ready(pto) < 0) {
