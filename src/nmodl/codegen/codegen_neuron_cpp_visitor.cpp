@@ -835,6 +835,11 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
     }
 
     if (!codegen_thread_variables.empty()) {
+        if (!info.vectorize) {
+            // MOD files that aren't "VECTORIZED" don't have thread data.
+            throw std::runtime_error("Found thread variables with `vectorize == false`.");
+        }
+
         codegen_global_variables.push_back(make_symbol("thread_data_in_use"));
 
         auto symbol = make_symbol("thread_data");
