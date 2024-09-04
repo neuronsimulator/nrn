@@ -1,19 +1,20 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/debug.cpp,v 1.7 1996/04/09 16:39:14 hines Exp */
-#include "hoc.h"
+#include "hocdec.h"
 #include "code.h"
 #include "equation.h"
 #include <stdio.h>
-int zzdebug;
+
+int hoc_zzdebug;
 
 #define prcod(c1, c2) else if (p->pf == c1) Printf("%p %p %s", p, p->pf, c2)
 
-void debug(void) /* print the machine */
+void hoc_debug(void) /* print the machine */
 {
-    if (zzdebug == 0)
-        zzdebug = 1;
+    if (hoc_zzdebug == 0)
+        hoc_zzdebug = 1;
     else
-        zzdebug = 0;
+        hoc_zzdebug = 0;
 }
 
 /* running copy of calls to execute */
@@ -22,61 +23,60 @@ void debugzz(Inst* p) {
     {
         if (p->in == STOP)
             Printf("STOP\n");
-        prcod(nopop, "POP\n");
-        prcod(eval, "EVAL\n");
-        prcod(add, "ADD\n");
+        prcod(hoc_nopop, "POP\n");
+        prcod(hoc_eval, "EVAL\n");
+        prcod(hoc_add, "ADD\n");
         prcod(hoc_sub, "SUB\n");
-        prcod(mul, "MUL\n");
+        prcod(hoc_mul, "MUL\n");
         prcod(hoc_div, "DIV\n");
         prcod(hoc_negate, "NEGATE\n");
-        prcod(power, "POWER\n");
+        prcod(hoc_power, "POWER\n");
         prcod(hoc_assign, "ASSIGN\n");
-        prcod(bltin, "BLTIN\n");
-        prcod(varpush, "VARPUSH\n");
-        prcod(constpush, "CONSTPUSH\n");
-        prcod(pushzero, "PUSHZERO\n");
-        prcod(print, "PRINT\n");
-        prcod(varread, "VARREAD\n");
-        prcod(prexpr, "PREXPR\n");
-        prcod(prstr, "PRSTR\n");
-        prcod(gt, "GT\n");
+        prcod(hoc_bltin, "BLTIN\n");
+        prcod(hoc_varpush, "VARPUSH\n");
+        prcod(hoc_constpush, "CONSTPUSH\n");
+        prcod(hoc_pushzero, "PUSHZERO\n");
+        prcod(hoc_print, "PRINT\n");
+        prcod(hoc_varread, "VARREAD\n");
+        prcod(hoc_prexpr, "PREXPR\n");
+        prcod(hoc_prstr, "PRSTR\n");
+        prcod(hoc_gt, "GT\n");
         prcod(hoc_lt, "LT\n");
         prcod(hoc_eq, "EQ\n");
-        prcod(ge, "GE\n");
-        prcod(le, "LE\n");
-        prcod(ne, "NE\n");
+        prcod(hoc_ge, "GE\n");
+        prcod(hoc_le, "LE\n");
+        prcod(hoc_ne, "NE\n");
         prcod(hoc_and, "AND\n");
         prcod(hoc_or, "OR\n");
         prcod(hoc_not, "NOT\n");
-        prcod(ifcode, "IFCODE\n");
-        prcod(forcode, "FORCODE\n");
-        prcod(shortfor, "SHORTFOR\n");
-        prcod(call, "CALL\n");
+        prcod(hoc_ifcode, "IFCODE\n");
+        prcod(hoc_forcode, "FORCODE\n");
+        prcod(hoc_shortfor, "SHORTFOR\n");
+        prcod(hoc_call, "CALL\n");
         prcod(hoc_arg, "ARG\n");
-        prcod(argassign, "ARGASSIGN\n");
-        prcod(funcret, "FUNCRET\n");
-        prcod(procret, "PROCRET\n");
+        prcod(hoc_argassign, "ARGASSIGN\n");
+        prcod(hoc_funcret, "FUNCRET\n");
+        prcod(hoc_procret, "PROCRET\n");
         prcod(hocobjret, "HOCOBJRET\n");
         prcod(hoc_iterator_stmt, "hoc_iterator_stmt\n");
         prcod(hoc_iterator, "hoc_iterator\n");
         prcod(hoc_argrefasgn, "ARGREFASSIGN\n");
         prcod(hoc_argref, "ARGREF\n");
         prcod(hoc_stringarg, "STRINGARG\n");
-        prcod(hoc_push_string, "push_string\n");
-        prcod(Break, "Break\n");
-        prcod(Continue, "Continue\n");
-        prcod(Stop, "Stop()\n");
-        prcod(assstr, "assstr\n");
+        prcod(hoc_Break, "Break\n");
+        prcod(hoc_Continue, "Continue\n");
+        prcod(hoc_Stop, "Stop()\n");
+        prcod(hoc_assstr, "assstr\n");
         prcod(hoc_evalpointer, "evalpointer\n");
         prcod(hoc_newline, "newline\n");
         prcod(hoc_delete_symbol, "delete_symbol\n");
         prcod(hoc_cyclic, "cyclic\n");
 
-        prcod(dep_make, "DEPENDENT\n");
-        prcod(eqn_name, "EQUATION\n");
-        prcod(eqn_init, "eqn_init()\n");
-        prcod(eqn_lhs, "eqn_lhs()\n");
-        prcod(eqn_rhs, "eqn_rhs()\n");
+        prcod(hoc_dep_make, "DEPENDENT\n");
+        prcod(hoc_eqn_name, "EQUATION\n");
+        prcod(hoc_eqn_init, "eqn_init()\n");
+        prcod(hoc_eqn_lhs, "eqn_lhs()\n");
+        prcod(hoc_eqn_rhs, "eqn_rhs()\n");
         /*OOP*/
         prcod(hoc_push_current_object, "hoc_push_current_object\n");
         prcod(hoc_objectvar, "objectvar\n");
@@ -125,8 +125,8 @@ void debugzz(Inst* p) {
                 Printf("relative %d\n", p->i);
             else {
                 offset = (size_t) (p->in) - (size_t) p;
-                if (offset > (size_t) prog - (size_t) p &&
-                    offset < (size_t) (&prog[2000]) - (size_t) p)
+                if (offset > (size_t) hoc_prog - (size_t) p &&
+                    offset < (size_t) (&hoc_prog[2000]) - (size_t) p)
                     Printf("relative %ld\n", p->in - p);
                 else if (p->sym->name != (char*) 0) {
                     if (p->sym->name[0] == '\0') {
