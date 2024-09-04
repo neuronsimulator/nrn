@@ -13,16 +13,31 @@ def substitute_line(lines, starts_with, replacement):
             break
 
 
+def ensure_directory_exists(filename=None, dirname=None):
+    if dirname is None:
+        dirname = os.path.dirname(filename)
+
+    if dirname and not os.path.exists(dirname):
+        os.makedirs(dirname)
+
+
 def generate_references(nmodl, usecase_dir, output_dir, nmodl_flags):
     mod_files = glob.glob(os.path.join(usecase_dir, "*.mod"))
     for mod_file in mod_files:
         try:
             subprocess.run(
-                ["nmodl", mod_file, *nmodl_flags, "-o", output_dir], check=True
+                [nmodl, mod_file, *nmodl_flags, "-o", output_dir],
+                capture_output=True,
+                check=True,
             )
         except subprocess.CalledProcessError as e:
-            print(e.output)
-            raise e
+            if e.output:
+                cxx_file = os.path.join(
+                    output_dir, os.path.basename(mod_file[:-4] + ".cpp")
+                )
+                ensure_directory_exists(filename=cxx_file)
+                with open(cxx_file, "w") as cxx:
+                    cxx.write(e.output.decode("utf-8"))
 
     cxx_files = glob.glob(os.path.join(output_dir, "*.cpp"))
 
