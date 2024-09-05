@@ -23,7 +23,7 @@ PyObject* nrn_type_from_metaclass(PyTypeObject* metaclass,
 
     (void) mod;
 
-    PyObject* temp = PyType_FromSpec(spec);
+    PyObject* temp = PyType_FromSpecWithBases(spec, base);  // since 3.3
     Py_XINCREF(temp);
     PyHeapTypeObject* temp_ht = (PyHeapTypeObject*) temp;
     PyTypeObject* temp_tp = &temp_ht->ht_type;
