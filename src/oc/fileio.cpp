@@ -7,7 +7,6 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include "hoc.h"
 #include "ocmisc.h"
 #include "hocstr.h"
 #include "hoclist.h"
@@ -19,8 +18,8 @@
 
 extern char* neuron_home;
 
-NrnFILEWrap* frin;
-FILE* fout;
+NrnFILEWrap* hoc_frin;
+FILE* hoc_fout;
 
 void hoc_stdout(void) {
     static int prev = -1;
@@ -49,11 +48,11 @@ void hoc_stdout(void) {
         close(prev);
         prev = -1;
     }
-    ret();
-    pushx((double) fileno(stdout));
+    hoc_ret();
+    hoc_pushx((double) fileno(stdout));
 }
 
-void ropen(void) /* open file for reading */
+void hoc_ropen(void) /* open file for reading */
 {
     double d;
     const char* fname;
@@ -63,25 +62,25 @@ void ropen(void) /* open file for reading */
     else
         fname = "";
     d = 1.;
-    if (!nrn_fw_eq(frin, stdin))
-        IGNORE(nrn_fw_fclose(frin));
-    frin = nrn_fw_set_stdin();
+    if (!nrn_fw_eq(hoc_frin, stdin))
+        IGNORE(nrn_fw_fclose(hoc_frin));
+    hoc_frin = nrn_fw_set_stdin();
     if (fname[0] != 0) {
-        if ((frin = nrn_fw_fopen(fname, "r")) == (NrnFILEWrap*) 0) {
+        if ((hoc_frin = nrn_fw_fopen(fname, "r")) == (NrnFILEWrap*) 0) {
             const char* retry;
             retry = expand_env_var(fname);
-            if ((frin = nrn_fw_fopen(retry, "r")) == (NrnFILEWrap*) 0) {
+            if ((hoc_frin = nrn_fw_fopen(retry, "r")) == (NrnFILEWrap*) 0) {
                 d = 0.;
-                frin = nrn_fw_set_stdin();
+                hoc_frin = nrn_fw_set_stdin();
             }
         }
     }
     errno = 0;
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
-void wopen(void) /* open file for writing */
+void hoc_wopen(void) /* open file for writing */
 {
     const char* fname;
     double d;
@@ -91,19 +90,19 @@ void wopen(void) /* open file for writing */
     else
         fname = "";
     d = 1.;
-    if (fout != stdout) {
-        IGNORE(fclose(fout));
+    if (hoc_fout != stdout) {
+        IGNORE(fclose(hoc_fout));
     }
-    fout = stdout;
+    hoc_fout = stdout;
     if (fname[0] != 0) {
-        if ((fout = fopen(expand_env_var(fname), "w")) == nullptr) {
+        if ((hoc_fout = fopen(expand_env_var(fname), "w")) == nullptr) {
             d = 0.;
-            fout = stdout;
+            hoc_fout = stdout;
         }
     }
     errno = 0;
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 const char* expand_env_var(const char* s) {
@@ -225,39 +224,39 @@ int hoc_xopen1(const char* name, const char* rcs) {
     return 0;
 }
 
-void xopen(void) /* read and execute a hoc program */
+void hoc_xopen(void) /* read and execute a hoc program */
 {
     if (ifarg(2)) {
         hoc_xopen1(gargstr(1), gargstr(2));
     } else {
         hoc_xopen1(gargstr(1), 0);
     }
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
-void Fprint(void) /* fprintf function */
+void hoc_Fprint(void) /* fprintf function */
 {
     char* buf;
     double d;
 
     hoc_sprint1(&buf, 1);
-    d = (double) fprintf(fout, "%s", buf);
-    ret();
-    pushx(d);
+    d = (double) fprintf(hoc_fout, "%s", buf);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
-void PRintf(void) /* printf function */
+void hoc_PRintf(void) /* printf function */
 {
     char* buf;
     double d;
 
     hoc_sprint1(&buf, 1);
     d = (int) strlen(buf);
-    plprint(buf);
+    hoc_plprint(buf);
     fflush(stdout);
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 
@@ -269,8 +268,8 @@ void hoc_Sprint(void) /* sprintf_function */
     cpp = hoc_pgargstr(1);
     hoc_sprint1(&buf, 2);
     hoc_assign_str(cpp, buf);
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
 double hoc_scan(FILE* fi) {
@@ -279,7 +278,7 @@ double hoc_scan(FILE* fi) {
 
     for (;;) {
         if (fscanf(fi, "%255s", fs) == EOF) {
-            execerror("EOF in fscan", (char*) 0);
+            hoc_execerror("EOF in fscan", (char*) 0);
         }
         if (fs[0] == 'i' || fs[0] == 'n' || fs[0] == 'I' || fs[0] == 'N') {
             continue;
@@ -301,7 +300,7 @@ double hoc_fw_scan(NrnFILEWrap* fi) {
 
     for (;;) {
         if (nrn_fw_fscanf(fi, "%255s", fs) == EOF) {
-            execerror("EOF in fscan", (char*) 0);
+            hoc_execerror("EOF in fscan", (char*) 0);
         }
         if (fs[0] == 'i' || fs[0] == 'n' || fs[0] == 'I' || fs[0] == 'N') {
             continue;
@@ -315,19 +314,19 @@ double hoc_fw_scan(NrnFILEWrap* fi) {
     return d;
 }
 
-void Fscan(void) /* read a number from input file */
+void hoc_Fscan(void) /* read a number from input file */
 {
     double d;
     NrnFILEWrap* fi;
 
-    if (nrn_fw_eq(frin, stdin)) {
-        fi = fin;
+    if (nrn_fw_eq(hoc_frin, stdin)) {
+        fi = hoc_fin;
     } else {
-        fi = frin;
+        fi = hoc_frin;
     }
     d = hoc_fw_scan(fi);
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 void hoc_Getstr(void) /* read a line (or word) from input file */
@@ -336,10 +335,10 @@ void hoc_Getstr(void) /* read a line (or word) from input file */
     char** cpp;
     NrnFILEWrap* fi;
     int word = 0;
-    if (nrn_fw_eq(frin, stdin)) {
-        fi = fin;
+    if (nrn_fw_eq(hoc_frin, stdin)) {
+        fi = hoc_fin;
     } else {
-        fi = frin;
+        fi = hoc_frin;
     }
     cpp = hoc_pgargstr(1);
     if (ifarg(2)) {
@@ -348,16 +347,16 @@ void hoc_Getstr(void) /* read a line (or word) from input file */
     if (word) {
         buf = hoc_tmpbuf->buf;
         if (nrn_fw_fscanf(fi, "%s", buf) != 1) {
-            execerror("EOF in getstr", (char*) 0);
+            hoc_execerror("EOF in getstr", (char*) 0);
         }
     } else {
         if ((buf = fgets_unlimited(hoc_tmpbuf, fi)) == (char*) 0) {
-            execerror("EOF in getstr", (char*) 0);
+            hoc_execerror("EOF in getstr", (char*) 0);
         }
     }
     hoc_assign_str(cpp, buf);
-    ret();
-    pushx((double) strlen(buf));
+    hoc_ret();
+    hoc_pushx((double) strlen(buf));
 }
 
 void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for conversion */
@@ -538,18 +537,18 @@ static void hoc_load(const char* stype) {
 
 void hoc_load_proc(void) {
     hoc_load("proc");
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 void hoc_load_func(void) {
     hoc_load("func");
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 void hoc_load_template(void) {
     hoc_load("begintemplate");
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
 void hoc_load_file(void) {
@@ -562,8 +561,8 @@ void hoc_load_file(void) {
     if (!ifarg(iarg + 1) || !hoc_lookup(gargstr(iarg + 1))) {
         i = hoc_Load_file(i, gargstr(iarg));
     }
-    ret();
-    pushx((double) i);
+    hoc_ret();
+    hoc_pushx((double) i);
 }
 
 static constexpr auto hoc_load_file_size_ = 1024;
@@ -737,8 +736,8 @@ void hoc_machine_name(void) {
     gethostname(buf, 20);
     hoc_assign_str(hoc_pgargstr(1), buf);
 #endif
-    ret();
-    pushx(0.);
+    hoc_ret();
+    hoc_pushx(0.);
 }
 
 int hoc_chdir(const char* path) {
@@ -747,8 +746,8 @@ int hoc_chdir(const char* path) {
 
 void hoc_Chdir(void) {
     int i = hoc_chdir(gargstr(1));
-    ret();
-    pushx((double) i);
+    hoc_ret();
+    hoc_pushx((double) i);
 }
 
 int nrn_is_python_extension;
