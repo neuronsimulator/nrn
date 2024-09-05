@@ -977,7 +977,6 @@ static PyObject* hocobj_getsec(Symbol* sym) {
 
 // leave pointer on stack ready for get/set final
 static void eval_component(PyHocObject* po, int ix) {
-    int j;
     hoc_push_object(po->ho_);
     hocobj_pushtop(po, 0, ix);
     component(po);
@@ -2321,7 +2320,6 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
     PyObject *ref, *name, *pp;
     if (PyArg_ParseTuple(args, "O!OO", hocobject_type, &ref, &name, &pp) == 1) {
         PyHocObject* href = (PyHocObject*) ref;
-        double** ppd = 0;
         if (href->type_ != PyHoc::HocScalarPtr) {
             goto done;
         }
@@ -3060,7 +3058,7 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
         Py_DECREF(rawdata);
         return NULL;
     }
-    if (len != size * sizeof(double)) {
+    if (len != size * int(sizeof(double))) {
         PyErr_SetString(PyExc_ValueError, "buffer size does not match array size");
         Py_DECREF(rawdata);
         return NULL;
