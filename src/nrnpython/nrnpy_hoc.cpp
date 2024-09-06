@@ -130,9 +130,10 @@ PyTypeObject* hocobject_type;
 
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds);
 
-struct hocclass {
+typedef struct {
     PyTypeObject head;
-};
+    Symbol* sym;
+} hocclass;
 
 static int hocclass_init(hocclass* cls, PyObject* args, PyObject* kwds) {
     if (PyType_Type.tp_init((PyObject*) cls, args, kwds) < 0) {
@@ -150,12 +151,8 @@ static PyObject* pytype_getname(PyTypeObject* pto) {
 }
 
 static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
-    assert(PyType_Check(self));
-    auto uname = pytype_getname((PyTypeObject*) self);
-    assert(uname);
-    const char* name = PyUnicode_AsUTF8AndSize(uname, 0);
-    assert(name);
-    Symbol* sym = hoc_table_lookup(name, hoc_built_in_symlist);
+    hocclass* hclass = (hocclass*) self;
+    Symbol* sym = hclass->sym;
     assert(sym);
 
     assert(sym->type == TEMPLATE);
@@ -182,7 +179,7 @@ static PyType_Slot hocclass_slots[] = {{Py_tp_base, nullptr},  // &PyType_Type :
                                        {0, NULL}};
 
 static PyType_Spec hocclass_spec = {.name = "hoc.HocClass",
-                                    .basicsize = 0,
+                                    .basicsize = 0,  // sizeof(hocclass) fill later
                                     .itemsize = 0,
                                     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE,
                                     .slots = hocclass_slots};
@@ -3419,16 +3416,6 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     m = PyModule_Create(&hocmodule);
     assert(m);
 
-    hocclass_slots[0].pfunc = (PyObject*) &PyType_Type;
-    PyObject* custom_hocclass = PyType_FromSpec(&hocclass_spec);
-    if (custom_hocclass == NULL) {
-        return NULL;
-    }
-    if (PyModule_AddObject(m, "HocClass", custom_hocclass) < 0) {
-        return NULL;
-    }
-
-
     Symbol* s = NULL;
     spec = obj_spec_from_name("hoc.HocObject");
     hocobject_type = (PyTypeObject*) nrn_type_from_metaclass(&PyType_Type, m, &spec, nullptr);
@@ -3439,6 +3426,35 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
         return NULL;
     }
 
+    hocclass_slots[0].pfunc = (PyObject*) &PyType_Type;
+    // I have no idea what is going on here. If use
+    // hocclass_spec.basicsize = sizeof(hocclass);
+    // then get error
+    // TypeError: tp_basicsize for type 'hoc.HocClass' (424) is
+    // too small for base 'type' (920)
+    hocclass_spec.basicsize = PyType_Type.tp_basicsize + sizeof(Symbol*);
+    // printf("hocclass_spec.basicsize = %d\n", hocclass_spec.basicsize);
+
+    // and what about alignment?
+    size_t alignment = alignof(Symbol*);
+    size_t remainder = hocclass_spec.basicsize % alignment;
+    if (remainder != 0) {
+        hocclass_spec.basicsize += alignment - remainder;
+        // printf("aligned hocclass_spec.basicsize = %d\n", hocclass_spec.basicsize);
+    }
+
+    // printf("sizeof(hocclass) = %zd\n", sizeof(hocclass));
+    // printf("sizeof(PyType_Type) = %zd\n", sizeof(PyType_Type));
+    // printf("PyType_Type.tp_basicsize = %zd\n", PyType_Type.tp_basicsize);
+    PyObject* custom_hocclass = PyType_FromSpec(&hocclass_spec);
+    if (custom_hocclass == NULL) {
+        return NULL;
+    }
+    if (PyModule_AddObject(m, "HocClass", custom_hocclass) < 0) {
+        return NULL;
+    }
+
+
     bases = PyTuple_Pack(1, hocobject_type);
     Py_INCREF(bases);
     for (auto name: py_exposed_classes) {
@@ -3447,8 +3463,12 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
         spec = obj_spec_from_name(exposed_py_type_names.back().c_str());
         pto = (PyTypeObject*)
             nrn_type_from_metaclass((PyTypeObject*) custom_hocclass, m, &spec, bases);
-        sym_to_type_map[hoc_lookup(name)] = pto;
-        type_to_sym_map[pto] = hoc_lookup(name);
+        hocclass* hclass = (hocclass*) pto;
+        hclass->sym = hoc_lookup(name);
+        // printf("%s hocclass pto->tp_basicsize = %zd sizeof(*pto)=%zd\n",
+        // hclass->sym->name, pto->tp_basicsize, sizeof(*pto));
+        sym_to_type_map[hclass->sym] = pto;
+        type_to_sym_map[pto] = hclass->sym;
         if (PyType_Ready(pto) < 0) {
             goto fail;
         }
