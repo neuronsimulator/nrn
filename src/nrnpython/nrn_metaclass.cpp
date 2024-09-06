@@ -21,8 +21,6 @@ PyObject* nrn_type_from_metaclass(PyTypeObject* metaclass,
        a tentative type, copies its contents into a larger type with a
        different metaclass, then lets the original type expire. */
 
-    (void) mod;
-
     PyObject* temp = PyType_FromSpecWithBases(spec, base);  // since 3.3
     Py_XINCREF(temp);
     PyHeapTypeObject* temp_ht = (PyHeapTypeObject*) temp;
@@ -62,6 +60,15 @@ PyObject* nrn_type_from_metaclass(PyTypeObject* metaclass,
     PyType_Ready(tp);
     Py_DECREF(temp);
 
+    // PyType_FromMetaclass consistently sets the __module__ to 'hoc' (never 'neuron.hoc')
+    // So rather than use PyModule_GetName or PyObject_GetAttrString(mod, "__name__") just
+    // explicitly set to 'hoc'
+    PyObject* module_name = PyUnicode_FromString("hoc");
+    if (PyObject_SetAttrString(result, "__module__", module_name) < 0) {
+        Py_DECREF(module_name);
+        return NULL;
+    }
+    Py_DECREF(module_name);
 #endif
 
     return result;
