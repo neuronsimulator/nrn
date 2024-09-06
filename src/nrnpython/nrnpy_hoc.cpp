@@ -3431,8 +3431,7 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
 
     Symbol* s = NULL;
     spec = obj_spec_from_name("hoc.HocObject");
-    hocobject_type =
-        (PyTypeObject*) nrn_type_from_metaclass((PyTypeObject*) custom_hocclass, m, &spec, nullptr);
+    hocobject_type = (PyTypeObject*) nrn_type_from_metaclass(&PyType_Type, m, &spec, nullptr);
     if (hocobject_type == NULL) {
         return NULL;
     }

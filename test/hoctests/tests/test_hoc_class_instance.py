@@ -1,4 +1,5 @@
 from neuron import h
+import neuron
 import re
 
 h(
@@ -22,6 +23,12 @@ def extract_index(s):
 
 def test1():
     v = h.Vector()
+    assert type(v) is h.Vector
+    assert type(type(v)) is neuron.hoc.HocClass
+    assert type(type(type(v))) is type
+    assert type(neuron.hoc.HocObject) is type
+    assert type(h.sin) is neuron.hoc.HocObject
+    assert type(h) is neuron.hoc.HocObject
     assert bool(v) is False
     vstr = "h." + str(v)
     print(vstr)
