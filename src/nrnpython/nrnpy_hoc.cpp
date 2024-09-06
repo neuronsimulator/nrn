@@ -184,7 +184,7 @@ static PyType_Slot hocclass_slots[] = {{Py_tp_base, nullptr},  // &PyType_Type :
 static PyType_Spec hocclass_spec = {.name = "hoc.HocClass",
                                     .basicsize = 0,
                                     .itemsize = 0,
-                                    .flags = Py_TPFLAGS_DEFAULT,  //  | Py_TPFLAGS_HEAPTYPE,
+                                    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE,
                                     .slots = hocclass_slots};
 
 
