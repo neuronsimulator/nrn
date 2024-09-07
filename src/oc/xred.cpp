@@ -1,4 +1,6 @@
 #include <../../nrnconf.h>
+
+#include "hocdec.h"
 /* /local/src/master/nrn/src/oc/xred.cpp,v 1.3 1996/02/16 16:19:33 hines Exp */
 /*
 xred.cpp,v
@@ -48,12 +50,11 @@ xred.cpp,v
  *
 */
 
-#include "hoc.h"
-
+#include <cstdio>
 
 /* input a n integer in range > min and < max */
-int ired(const char* prompt, int defalt, int min, int max) {
-    return ((int) xred(prompt, (double) defalt, (double) min, (double) max));
+int hoc_ired(const char* prompt, int defalt, int min, int max) {
+    return ((int) hoc_xred(prompt, (double) defalt, (double) min, (double) max));
 }
 /* input a double number in range > min  and < max
     program loops til proper number is typed in by user
@@ -61,8 +62,7 @@ int ired(const char* prompt, int defalt, int min, int max) {
     default is used if user types RETURN key
     input is freeform as scanf can make it.
 */
-#include <stdio.h>
-double xred(const char* prompt, double defalt, double min, double max) {
+double hoc_xred(const char* prompt, double defalt, double min, double max) {
 #if !OCSMALL
     char istr[80], c[2];
     double input;
@@ -112,7 +112,7 @@ void hoc_Sred(void) {
 #else
     double x = 0.;
 #endif
-    ret();
+    hoc_ret();
     hoc_pushx(x);
 }
 #if !OCSMALL
