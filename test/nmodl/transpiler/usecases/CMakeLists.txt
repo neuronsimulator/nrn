@@ -6,6 +6,7 @@ set(NMODL_USECASE_DIRS
     global
     hodgkin_huxley
     kinetic
+    linear
     morphology
     nonspecific_current
     neuron_variables

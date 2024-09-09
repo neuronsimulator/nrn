@@ -109,6 +109,9 @@ std::vector<std::shared_ptr<ast::Ast>> collect_nodes(
 /// Whether or not a solver of type name exists in the AST
 bool solver_exists(const ast::Ast& node, const std::string& name);
 
+/// Whether a node of type `ast_type` exists as a subnode of `node`.
+bool node_exists(const ast::Ast& node, ast::AstNodeType ast_type);
+
 /// Given AST node, return the NMODL string representation
 std::string to_nmodl(const ast::Ast& node, const std::set<ast::AstNodeType>& exclude_types = {});
 

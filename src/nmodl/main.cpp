@@ -49,6 +49,7 @@
 #include "visitors/units_visitor.hpp"
 #include "visitors/verbatim_var_rename_visitor.hpp"
 #include "visitors/verbatim_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
 
 /**
  * \dir
@@ -492,9 +493,11 @@ int main(int argc, const char* argv[]) {
         }
 
         const bool sympy_derivimplicit = neuron_code && solver_exists(*ast, "derivimplicit");
+        const bool sympy_linear = node_exists(*ast, ast::AstNodeType::LINEAR_BLOCK);
+        const bool sympy_sparse = solver_exists(*ast, "sparse");
 
-        if (sympy_conductance || sympy_analytic || solver_exists(*ast, "sparse") ||
-            sympy_derivimplicit) {
+        if (sympy_conductance || sympy_analytic || sympy_sparse || sympy_derivimplicit ||
+            sympy_linear) {
             nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance()
                 .api()
                 .initialize_interpreter();
@@ -505,11 +508,20 @@ int main(int argc, const char* argv[]) {
                 ast_to_nmodl(*ast, filepath("sympy_conductance"));
             }
 
-            if (sympy_analytic || solver_exists(*ast, "sparse") || sympy_derivimplicit) {
+            if (sympy_analytic || sympy_sparse || sympy_derivimplicit || sympy_linear) {
                 if (!sympy_analytic) {
-                    logger->info(
-                        "Automatically enable sympy_analytic because it exists solver of type "
-                        "sparse");
+                    logger->info("Automatically enabling sympy_analytic.");
+                    if (sympy_sparse) {
+                        logger->info("Required by 'SOLVE ... METHOD sparse'.");
+                    }
+
+                    if (sympy_derivimplicit) {
+                        logger->info("Required by 'SOLVE ... METHOD derivimplicit'.");
+                    }
+
+                    if (sympy_linear) {
+                        logger->info("Required by 'LINEAR' block.");
+                    }
                 }
                 logger->info("Running sympy solve visitor");
                 SympySolverVisitor(sympy_pade, sympy_cse).visit_program(*ast);

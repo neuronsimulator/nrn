@@ -215,6 +215,11 @@ std::vector<std::shared_ptr<ast::Ast>> collect_nodes(ast::Ast& node,
     return visitor.lookup(node, types);
 }
 
+bool node_exists(const ast::Ast& node, ast::AstNodeType ast_type) {
+    const auto blocks = collect_nodes(node, {ast_type});
+    return !blocks.empty();
+}
+
 bool solver_exists(const ast::Ast& node, const std::string& name) {
     const auto solve_blocks = collect_nodes(node, {ast::AstNodeType::SOLVE_BLOCK});
     return std::any_of(solve_blocks.begin(), solve_blocks.end(), [&name](auto const& solve_block) {
