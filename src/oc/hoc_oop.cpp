@@ -20,7 +20,6 @@
 #include "nrnfilewrap.h"
 #include "ocfunc.h"
 
-
 #define PDEBUG 0
 
 Symbol* nrnpy_pyobj_sym_{};
@@ -1060,7 +1059,7 @@ void hoc_object_component() {
                     auto err = fmt::format("'{}' not a public member of '{}'",
                                            sym0->name,
                                            obp->ctemplate->sym->name);
-                    std::cerr << err << std::endl;
+                    Fprintf(stderr, err.c_str());
                     hoc_execerror(err.c_str(), nullptr);
                 }
                 *ptid = obp->ctemplate->id;

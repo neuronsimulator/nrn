@@ -312,7 +312,7 @@ void hoc_nrnmpi_init() {
         nrnmpi_stubs();
         auto const pmes = nrnmpi_load();
         if (!pmes.empty()) {
-            std::cout << pmes << std::endl;
+            Printf(fmt::format("{}\n", pmes).c_str());
         }
 #endif
 

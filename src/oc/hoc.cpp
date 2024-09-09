@@ -32,6 +32,8 @@
 #include <thread>
 #include <utility>
 
+#include <fmt/format.h>
+
 /* for eliminating "ignoreing return value" warnings. */
 int nrnignore;
 
@@ -928,7 +930,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
         }
         return exit_status;
     } catch (std::exception const& e) {
-        std::cerr << "hoc_main1 caught exception: " << e.what() << std::endl;
+        Fprintf(stderr, fmt::format("hoc_main1 caught exception: {}", e.what()).c_str());
         nrn_exit(1);
     }
 }
@@ -1250,12 +1252,12 @@ static int hoc_run1() {
                 }
             } catch (std::exception const& e) {
                 hoc_fin = sav_fin;
-                std::cerr << "hoc_run1: caught exception";
+                Fprintf(stderr, "hoc_run1: caught exception");
                 std::string_view what{e.what()};
                 if (!what.empty()) {
-                    std::cerr << ": " << what;
+                    Fprintf(stderr, fmt::format(": {}", what).c_str());
                 }
-                std::cerr << std::endl;
+                Fprintf(stderr, "\n");
                 // Exit if we're not in interactive mode
                 if (!nrn_fw_eq(hoc_fin, stdin)) {
                     return EXIT_FAILURE;
