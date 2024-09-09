@@ -265,7 +265,9 @@ extern "C" NRN_EXPORT PyObject* PyInit_hoc() {
         }
         if (!pmes.empty() && libnrnmpi_is_loaded) {
             Printf(fmt::format("NEURON_INIT_MPI nonzero in env (or -mpi arg) but NEURON cannot "
-                         "initialize MPI because:\n{}\n", pmes).c_str());
+                               "initialize MPI because:\n{}\n",
+                               pmes)
+                       .c_str());
             exit(1);
         }
     }

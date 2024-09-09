@@ -163,7 +163,9 @@ static void set_nrnpylib() {
                 line.remove_prefix(prefix.size());
                 line.remove_suffix(suffix.size());
                 if (!glob_var.empty() && glob_var != line) {
-                    Printf(fmt::format("WARNING: overriding {} = {} with {}\n", env_var, glob_var, line).c_str());
+                    Printf(fmt::format(
+                               "WARNING: overriding {} = {} with {}\n", env_var, glob_var, line)
+                               .c_str());
                 }
                 glob_var = line;
             }
@@ -215,7 +217,9 @@ void nrnpython_reg() {
             try {
                 set_nrnpylib();
             } catch (std::exception const& e) {
-                Fprintf(stderr, fmt::format("Could not determine Python library details: {}", e.what()).c_str());
+                Fprintf(stderr,
+                        fmt::format("Could not determine Python library details: {}", e.what())
+                            .c_str());
                 exit(1);
             }
             handle = dlopen(nrnpy_pylib.c_str(), RTLD_NOW | RTLD_GLOBAL);
@@ -258,7 +262,12 @@ static nrnpython_reg_real_t load_nrnpython() {
         pyversion = std::to_string(pv10 / factor) + "." + std::to_string(pv10 % factor);
     } else {
         if (nrnpy_pylib.empty() || nrnpy_pyversion.empty()) {
-            Fprintf(stderr, fmt::format("Do not know what Python to load [nrnpy_pylib={} nrnpy_pyversion={}]", nrnpy_pylib, nrnpy_pyversion).c_str());
+            Fprintf(
+                stderr,
+                fmt::format("Do not know what Python to load [nrnpy_pylib={} nrnpy_pyversion={}]",
+                            nrnpy_pylib,
+                            nrnpy_pyversion)
+                    .c_str());
             return nullptr;
         }
         pyversion = nrnpy_pyversion;
@@ -269,14 +278,18 @@ static nrnpython_reg_real_t load_nrnpython() {
         auto const iter =
             std::find(supported_versions.begin(), supported_versions.end(), pyversion);
         if (iter == supported_versions.end()) {
-            Fprintf(stderr, fmt::format("Python {} is not supported by this NEURON installation (supported:", pyversion).c_str());
+            Fprintf(
+                stderr,
+                fmt::format("Python {} is not supported by this NEURON installation (supported:",
+                            pyversion)
+                    .c_str());
             for (auto const& good_ver: supported_versions) {
                 Fprintf(stderr, fmt::format(" {}", good_ver).c_str());
             }
-            Fprintf(stderr, "). If you are seeing this message, your environment probably contains "
-                         "NRN_PYLIB, NRN_PYTHONEXE and NRN_PYTHONVERSION settings that are "
-                         "incompatible with this NEURON. Try unsetting them."
-                   );
+            Fprintf(stderr,
+                    "). If you are seeing this message, your environment probably contains "
+                    "NRN_PYLIB, NRN_PYTHONEXE and NRN_PYTHONVERSION settings that are "
+                    "incompatible with this NEURON. Try unsetting them.");
             return nullptr;
         }
     }

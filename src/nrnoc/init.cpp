@@ -239,7 +239,11 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
     } catch (const std::filesystem::filesystem_error& e) {
         handle = dlopen(relpath, flags);
         if (!handle) {
-            Fprintf(stderr, fmt::format("std::filesystem::absolute failed ({}) and dlopen failed with '{}'", e.what(), relpath).c_str());
+            Fprintf(stderr,
+                    fmt::format("std::filesystem::absolute failed ({}) and dlopen failed with '{}'",
+                                e.what(),
+                                relpath)
+                        .c_str());
 #if DARWIN
             nrn_possible_mismatched_arch(relpath);
 #endif
