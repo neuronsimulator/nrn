@@ -1,7 +1,7 @@
 from neuron import h
 
 
-def check_functions(get_instance):
+def check_callable(get_instance, has_voltage=True):
     for x, value in zip(coords, values):
         get_instance(x).x = value
 
@@ -19,10 +19,11 @@ def check_functions(get_instance):
     actual = get_instance(x).identity(expected)
     assert actual == expected, f"{actual} == {expected}"
 
-    # Check `f` using `v`.
-    expected = -2.0
-    actual = get_instance(x).v_plus_a(40.0)
-    assert actual == expected, f"{actual} == {expected}"
+    if has_voltage:
+        # Check `f` using `v`.
+        expected = -2.0
+        actual = get_instance(x).v_plus_a(40.0)
+        assert actual == expected, f"{actual} == {expected}"
 
 
 nseg = 5
@@ -30,11 +31,18 @@ s = h.Section()
 s.nseg = nseg
 
 s.insert("functions")
+s.insert("non_threadsafe")
 
 coords = [(0.5 + k) * 1.0 / nseg for k in range(nseg)]
 values = [0.1 + k for k in range(nseg)]
 
 point_processes = {x: h.point_functions(s(x)) for x in coords}
+point_non_threadsafe = {x: h.point_non_threadsafe(s(x)) for x in coords}
 
-check_functions(lambda x: s(x).functions)
-check_functions(lambda x: point_processes[x])
+art_cells = {x: h.art_functions() for x in coords}
+
+check_callable(lambda x: s(x).functions)
+check_callable(lambda x: s(x).non_threadsafe)
+check_callable(lambda x: point_processes[x])
+check_callable(lambda x: point_non_threadsafe[x])
+check_callable(lambda x: art_cells[x], has_voltage=False)
