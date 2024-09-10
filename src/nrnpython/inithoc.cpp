@@ -15,6 +15,9 @@
 #include <iostream>
 #include <string>
 
+#include "hocdec.h"
+#include <fmt/format.h>
+
 extern int nrn_is_python_extension;
 extern int nrn_nobanner_;
 extern int ivocmain(int, const char**, const char**);
