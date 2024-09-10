@@ -14,6 +14,9 @@
 #if HAVE_IV
 #include <ocbox.h>
 #endif
+
+#include <fmt/format.h>
+
 extern Objectdata* hoc_top_level_data;
 extern Symlist* hoc_built_in_symlist;
 extern int nrn_is_artificial(int);
