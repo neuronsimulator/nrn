@@ -1059,7 +1059,7 @@ void hoc_object_component() {
                     auto err = fmt::format("'{}' not a public member of '{}'",
                                            sym0->name,
                                            obp->ctemplate->sym->name);
-                    Fprintf(stderr, err.c_str());
+                    Fprintf(stderr, fmt::format("{}\n", err).c_str());
                     hoc_execerror(err.c_str(), nullptr);
                 }
                 *ptid = obp->ctemplate->id;

@@ -930,7 +930,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
         }
         return exit_status;
     } catch (std::exception const& e) {
-        Fprintf(stderr, fmt::format("hoc_main1 caught exception: {}", e.what()).c_str());
+        Fprintf(stderr, fmt::format("hoc_main1 caught exception: {}\n", e.what()).c_str());
         nrn_exit(1);
     }
 }

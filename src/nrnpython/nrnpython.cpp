@@ -124,7 +124,7 @@ int nrnpy_pyrun(const char* fname) {
     if (fp) {
         nrnpython_set_path(fname);
     } else {
-        Fprintf(stderr, fmt::format("Could not open {}", fname).c_str());
+        Fprintf(stderr, fmt::format("Could not open {}\n", fname).c_str());
         return 0;
     }
     fclose(fp);

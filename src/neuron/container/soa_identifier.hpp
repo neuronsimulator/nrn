@@ -171,7 +171,7 @@ struct owning_identifier {
             Fprintf(stderr,
                     fmt::format(
                         "neuron::container::owning_identifier<{}> destructor could not delete from "
-                        "the underlying storage: {} [{}]. This is not recoverable, aborting.",
+                        "the underlying storage: {} [{}]. This is not recoverable, aborting.\n",
                         cxx_demangle(typeid(Storage).name()),
                         e.what(),
                         cxx_demangle(typeid(e).name()))

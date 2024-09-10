@@ -55,7 +55,7 @@ static double l_head(void*) {
             result = sm.prefix().str();
         }
     } catch (const std::regex_error& e) {
-        Fprintf(stderr, e.what());
+        Fprintf(stderr, fmt::format("{}\n", e.what()).c_str());
     }
     char** head = hoc_pgargstr(3);
     hoc_assign_str(head, result.c_str());
@@ -81,7 +81,7 @@ static double l_tail(void*) {
             result = sm.suffix().str();
         }
     } catch (const std::regex_error& e) {
-        Fprintf(stderr, e.what());
+        Fprintf(stderr, fmt::format("{}\n", e.what()).c_str());
     }
     char** tail = hoc_pgargstr(3);
     hoc_assign_str(tail, result.c_str());

@@ -240,7 +240,7 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
         handle = dlopen(relpath, flags);
         if (!handle) {
             Fprintf(stderr,
-                    fmt::format("std::filesystem::absolute failed ({}) and dlopen failed with '{}'",
+                    fmt::format("std::filesystem::absolute failed ({}) and dlopen failed with '{}'\n",
                                 e.what(),
                                 relpath)
                         .c_str());
