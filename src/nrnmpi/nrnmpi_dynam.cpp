@@ -17,6 +17,8 @@
 
 #include "nrnmpi.h"
 
+#include "utils/logger.hpp"
+
 extern char* cxx_char_alloc(size_t);
 extern std::string corenrn_mpi_library;
 
