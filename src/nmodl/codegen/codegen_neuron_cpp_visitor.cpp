@@ -1288,7 +1288,6 @@ void CodegenNeuronCppVisitor::print_neuron_global_variable_declarations() {
 
 void CodegenNeuronCppVisitor::print_mechanism_range_var_structure(bool print_initializers) {
     auto const value_initialize = print_initializers ? "{}" : "";
-    auto int_type = default_int_data_type();
     printer->add_newline(2);
     printer->add_line("/** all mechanism instance variables and global variables */");
     printer->fmt_push_block("struct {} ", instance_struct());
@@ -1614,7 +1613,6 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
             }
             const auto& var_name = var->get_name();
             auto var_pos = position_of_float_var(var_name);
-            double var_value = var->get_value() == nullptr ? 0.0 : *var->get_value();
 
             printer->fmt_line("_lmc.template fpfield<{}>(_iml) = {}; /* {} */",
                               var_pos,

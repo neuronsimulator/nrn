@@ -7,8 +7,8 @@
 
 #include "visitors/solve_block_visitor.hpp"
 
+#include "utils/fmt.h"
 #include <cassert>
-#include <fmt/format.h>
 
 #include "ast/all.hpp"
 #include "codegen/codegen_naming.hpp"

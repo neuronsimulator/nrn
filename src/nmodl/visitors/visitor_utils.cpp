@@ -19,7 +19,7 @@
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 
-#include <fmt/format.h>
+#include "utils/fmt.h"
 
 namespace nmodl {
 namespace visitor {

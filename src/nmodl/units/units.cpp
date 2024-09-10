@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "units.hpp"
-#include <fmt/format.h>
+#include "utils/fmt.h"
 
 /**
  * \file
