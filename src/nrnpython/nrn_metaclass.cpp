@@ -34,7 +34,7 @@ PyObject* nrn_type_from_metaclass(PyTypeObject* metaclass,
     PyObject* result = PyType_GenericAlloc(metaclass, 0);
     if (!temp || !result) {
         // fail("nanobind::detail::nb_type_new(\"%s\"): type construction failed!", t->name);
-        return NULL;
+        return nullptr;
     }
     PyHeapTypeObject* ht = (PyHeapTypeObject*) result;
     PyTypeObject* tp = &ht->ht_type;
@@ -66,7 +66,7 @@ PyObject* nrn_type_from_metaclass(PyTypeObject* metaclass,
     PyObject* module_name = PyUnicode_FromString("hoc");
     if (PyObject_SetAttrString(result, "__module__", module_name) < 0) {
         Py_DECREF(module_name);
-        return NULL;
+        return nullptr;
     }
     Py_DECREF(module_name);
 #endif

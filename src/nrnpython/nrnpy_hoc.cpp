@@ -178,11 +178,11 @@ static PyType_Slot hocclass_slots[] = {{Py_tp_base, nullptr},  // &PyType_Type :
                                        {Py_sq_item, (void*) hocclass_getitem},
                                        {0, NULL}};
 
-static PyType_Spec hocclass_spec = {.name = "hoc.HocClass",
-                                    .basicsize = 0,  // sizeof(hocclass) fill later
-                                    .itemsize = 0,
-                                    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE,
-                                    .slots = hocclass_slots};
+static PyType_Spec hocclass_spec = {"hoc.HocClass",
+                                    0,  // .basicsize fill later
+                                    0,  // .itemsize
+                                    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE,
+                                    hocclass_slots};
 
 
 bool nrn_chk_data_handle(const neuron::container::data_handle<double>& pd) {
@@ -3013,7 +3013,7 @@ static PyObject* hocpickle_reduce_safe(PyObject* self, PyObject* args) {
 static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
     BYTEHEADER
     int version = -1;
-    int size = -1;
+    int size = 0;
     PyObject* rawdata = NULL;
     PyObject* endian_data;
     PyHocObject* pho = (PyHocObject*) self;
@@ -3055,7 +3055,7 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
         Py_DECREF(rawdata);
         return NULL;
     }
-    if (len != size * int(sizeof(double))) {
+    if (len != Py_ssize_t(size * sizeof(double))) {
         PyErr_SetString(PyExc_ValueError, "buffer size does not match array size");
         Py_DECREF(rawdata);
         return NULL;
