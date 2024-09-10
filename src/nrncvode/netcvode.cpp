@@ -3502,7 +3502,10 @@ void NetCvode::local_retreat(double t, Cvode* cv) {
         tq->move(cv->tqitem_, t);
 #if PRINT_EVENT
         if (print_event_ > 1) {
-            Printf("after target solve time for %p is %g , dt=%g\n", fmt::ptr(cv), cv->time(), nt_dt);
+            Printf("after target solve time for %p is %g , dt=%g\n",
+                   fmt::ptr(cv),
+                   cv->time(),
+                   nt_dt);
         }
 #endif
     } else {

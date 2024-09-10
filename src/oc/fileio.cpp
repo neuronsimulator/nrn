@@ -33,8 +33,8 @@ void nrnpy_pass() {
 }
 
 extern "C" void nrnpy_set_pr_etal(LoggerCallback* cb, PassCallback* cbpass) {
-     nrnpy_pr_stdoe_callback = cb;
-     nrnpy_pass_callback = cbpass;
+    nrnpy_pr_stdoe_callback = cb;
+    nrnpy_pass_callback = cbpass;
 }
 
 void hoc_stdout(void) {

@@ -1885,7 +1885,10 @@ void MultiSplitControl::prstruct() {
                     Printf("  %d %d %d\n", i, nodeindex_buffer_[i], nodeindex_rthost_[i]);
                 }
             }
-            Printf(" tbsize=%d trecvbuf_=%p tsendbuf_=%p\n", tbsize, fmt::ptr(trecvbuf_), fmt::ptr(tsendbuf_));
+            Printf(" tbsize=%d trecvbuf_=%p tsendbuf_=%p\n",
+                   tbsize,
+                   fmt::ptr(trecvbuf_),
+                   fmt::ptr(tsendbuf_));
             Printf("\n");
         }
     }

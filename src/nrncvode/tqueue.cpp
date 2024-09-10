@@ -48,7 +48,12 @@ static void prnt(const TQItem* b, int level) {
     for (i = 0; i < level; ++i) {
         Printf("    ");
     }
-    Printf("%g %c %d Q=%p D=%p\n", b->t_, b->data_ ? 'x' : 'o', b->cnt_, fmt::ptr(b), fmt::ptr(b->data_));
+    Printf("%g %c %d Q=%p D=%p\n",
+           b->t_,
+           b->data_ ? 'x' : 'o',
+           b->cnt_,
+           fmt::ptr(b),
+           fmt::ptr(b->data_));
 }
 
 TQueue::TQueue(TQItemPool* tp, int mkmut) {
