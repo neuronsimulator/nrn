@@ -224,7 +224,8 @@ void nrnpython_reg() {
             }
             handle = dlopen(nrnpy_pylib.c_str(), RTLD_NOW | RTLD_GLOBAL);
             if (!handle) {
-                Fprintf(stderr, fmt::format("Could not dlopen NRN_PYLIB: {}\n", nrnpy_pylib).c_str());
+                Fprintf(stderr,
+                        fmt::format("Could not dlopen NRN_PYLIB: {}\n", nrnpy_pylib).c_str());
 #if DARWIN
                 nrn_possible_mismatched_arch(nrnpy_pylib.c_str());
 #endif
@@ -306,12 +307,14 @@ static nrnpython_reg_real_t load_nrnpython() {
     auto* const handle = dlopen(name.c_str(), RTLD_NOW);
     if (!handle) {
         Fprintf(stderr, fmt::format("Could not load {}\n", name).c_str());
-        Fprintf(stderr, fmt::format("nrn_is_python_extension={}\n", nrn_is_python_extension).c_str());
+        Fprintf(stderr,
+                fmt::format("nrn_is_python_extension={}\n", nrn_is_python_extension).c_str());
         return nullptr;
     }
     auto* const reg = reinterpret_cast<nrnpython_reg_real_t>(dlsym(handle, "nrnpython_reg_real"));
     if (!reg) {
-        Fprintf(stderr, fmt::format("Could not load registration function from {}\n", name).c_str());
+        Fprintf(stderr,
+                fmt::format("Could not load registration function from {}\n", name).c_str());
     }
     return reg;
 }
