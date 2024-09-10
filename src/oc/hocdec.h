@@ -263,7 +263,6 @@ int ilint;
 #define Strncat cplint = strncat
 #define Strcpy  cplint = strcpy
 #define Strncpy cplint = strncpy
-#define Printf  ilint = printf
 #else
 #undef IGNORE
 #define IGNORE(arg) arg
@@ -272,7 +271,6 @@ int ilint;
 #define Strncat strncat
 #define Strcpy  strcpy
 #define Strncpy strncpy
-#define Printf  nrnpy_pr
 #endif
 using neuron::Sprintf;
 

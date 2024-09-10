@@ -17,6 +17,8 @@ struct Symbol;
 #include "equation.h"
 #include "nrnfilewrap.h"
 
+#include "utils/logger.hpp"
+
 void* nrn_parsing_pysec_;
 
 #if LINT

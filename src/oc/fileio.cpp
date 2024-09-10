@@ -15,11 +15,27 @@
 #include <errno.h>
 #include "nrnfilewrap.h"
 
+#include "utils/logger.hpp"
+LoggerCallback* nrnpy_pr_stdoe_callback;
+PassCallback* nrnpy_pass_callback;
 
 extern char* neuron_home;
 
 NrnFILEWrap* hoc_frin;
 FILE* hoc_fout;
+
+void nrnpy_pass() {
+    if (nrnpy_pass_callback) {
+        if ((*nrnpy_pass_callback)() != 1) {
+            hoc_execerror("nrnpy_pass", nullptr);
+        }
+    }
+}
+
+extern "C" void nrnpy_set_pr_etal(LoggerCallback* cb, PassCallback* cbpass) {
+     nrnpy_pr_stdoe_callback = cb;
+     nrnpy_pass_callback = cbpass;
+}
 
 void hoc_stdout(void) {
     static int prev = -1;
@@ -751,90 +767,6 @@ void hoc_Chdir(void) {
 }
 
 int nrn_is_python_extension;
-static int (*nrnpy_pr_stdoe_callback)(int, char*);
-static int (*nrnpy_pass_callback)();
-
-extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {
-    nrnpy_pr_stdoe_callback = cbpr_stdoe;
-    nrnpy_pass_callback = cbpass;
-}
-
-void nrnpy_pass() {
-    if (nrnpy_pass_callback) {
-        if ((*nrnpy_pass_callback)() != 1) {
-            hoc_execerror("nrnpy_pass", 0);
-        }
-    }
-}
-
-static int vnrnpy_pr_stdoe(FILE* stream, const char* fmt, va_list ap) {
-    int size = 0;
-    char* p = NULL;
-
-    if (!nrnpy_pr_stdoe_callback || (stream != stderr && stream != stdout)) {
-        size = vfprintf(stream, fmt, ap);
-        return size;
-    }
-
-    /* Determine required size */
-    va_list apc;
-#ifndef va_copy
-#if defined(__GNUC__) || defined(__clang__)
-#define va_copy(dest, src) __builtin_va_copy(dest, src)
-#else
-#define va_copy(dest, src) (dest = src)
-#endif
-#endif
-    va_copy(apc, ap);
-    size = vsnprintf(p, size, fmt, apc);
-    va_end(apc);
-
-    if (size < 0)
-        return 0;
-
-    size++; /* For '\0' */
-    p = static_cast<char*>(malloc(size));
-    if (p == NULL)
-        return 0;
-
-    size = vsnprintf(p, size, fmt, ap);
-    if (size < 0) {
-        free(p);
-        return 0;
-    }
-
-    // if any non-ascii translate to '?' or nrnpy_pr will raise an exception.
-    if (stream == stderr) {
-        for (int i = 0; p[i] != '\0'; ++i) {
-            if (!isascii((unsigned char) p[i])) {
-                p[i] = '?';
-            }
-        }
-    }
-
-    (*nrnpy_pr_stdoe_callback)((stream == stderr) ? 2 : 1, p);
-
-    free(p);
-    return size;
-}
-
-int nrnpy_pr(const char* fmt, ...) {
-    int n;
-    va_list ap;
-    va_start(ap, fmt);
-    n = vnrnpy_pr_stdoe(stdout, fmt, ap);
-    va_end(ap);
-    return n;
-}
-
-int Fprintf(FILE* stream, const char* fmt, ...) {
-    int n;
-    va_list ap;
-    va_start(ap, fmt);
-    n = vnrnpy_pr_stdoe(stream, fmt, ap);
-    va_end(ap);
-    return n;
-}
 
 /** printf style specification of hoc_execerror message. (512 char limit) **/
 [[noreturn]] void hoc_execerr_ext(const char* fmt, ...) {

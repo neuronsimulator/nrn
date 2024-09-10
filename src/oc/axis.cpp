@@ -136,6 +136,8 @@ axis.cpp,v
 #include <math.h>
 #include "gui-redirect.h"
 
+#include "utils/logger.hpp"
+
 #define CLIP 1e9
 #define XS   500.
 #define YS   400.
