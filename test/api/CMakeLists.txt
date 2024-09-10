@@ -1,4 +1,4 @@
-foreach(api_test_file hh_sim.cpp netcon.cpp sections.cpp vclamp.cpp)
+foreach(api_test_file hh_sim.cpp netcon.cpp sections.c vclamp.cpp)
   string(REPLACE "." "_" api_test_name "${api_test_file}")
   add_executable(${api_test_name} ${api_test_file})
   cpp_cc_configure_sanitizers(TARGET ${api_test_name})

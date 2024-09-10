@@ -42,7 +42,7 @@ void iv_display_scale(float);
 #include <IV-X11/ivx11_dynam.h>
 #endif
 
-#include <fmt/format.h>
+#include "utils/logger.hpp"
 
 #if 1
 void pr_profile();
