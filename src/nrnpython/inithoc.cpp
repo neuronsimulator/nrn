@@ -11,7 +11,6 @@
 #include <ctype.h>
 
 #include "nrn_export.hpp"
-#include "hocdec.h"
 
 #include <iostream>
 #include <string>
@@ -265,10 +264,9 @@ extern "C" NRN_EXPORT PyObject* PyInit_hoc() {
             libnrnmpi_is_loaded = 0;
         }
         if (!pmes.empty() && libnrnmpi_is_loaded) {
-            Printf(
-                "NEURON_INIT_MPI nonzero in env (or -mpi arg) but NEURON cannot "
-                "initialize MPI because:\n%s\n",
-                pmes.c_str());
+            std::cout << "NEURON_INIT_MPI nonzero in env (or -mpi arg) but NEURON cannot "
+                         "initialize MPI because:\n"
+                      << pmes << std::endl;
             exit(1);
         }
     }
