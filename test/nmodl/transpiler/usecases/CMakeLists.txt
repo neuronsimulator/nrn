@@ -1,6 +1,7 @@
 set(NMODL_USECASE_DIRS
     solve
     constant
+    electrode_current
     function
     procedure
     global

@@ -1549,7 +1549,8 @@ void CodegenNeuronCppVisitor::print_nrn_jacob() {
 
     if (breakpoint_exist()) {
         printer->add_line("int node_id = node_data.nodeindices[id];");
-        printer->fmt_line("node_data.node_diagonal[node_id] += inst.{}[id];",
+        printer->fmt_line("node_data.node_diagonal[node_id] {} inst.{}[id];",
+                          operator_for_d(),
                           info.vectorize ? naming::CONDUCTANCE_UNUSED_VARIABLE
                                          : naming::CONDUCTANCE_VARIABLE);
     }
@@ -1933,7 +1934,7 @@ void CodegenNeuronCppVisitor::print_nrn_cur() {
     // }
 
 
-    printer->add_line("node_data.node_rhs[node_id] -= rhs;");
+    printer->fmt_line("node_data.node_rhs[node_id] {} rhs;", operator_for_rhs());
 
     if (breakpoint_exist()) {
         printer->fmt_line("inst.{}[id] = g;",
