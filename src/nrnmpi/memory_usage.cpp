@@ -14,7 +14,6 @@
 
 #include <iostream>
 
-#include "hocdec.h"
 #include "utils/logger.hpp"
 
 #include "neuron/container/memory_usage.hpp"
