@@ -11,6 +11,7 @@
 #include <ctype.h>
 
 #include "nrn_export.hpp"
+#include "hocdec.h"
 
 #include <iostream>
 #include <string>
