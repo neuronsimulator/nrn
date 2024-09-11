@@ -16,26 +16,11 @@
 #include "nrnfilewrap.h"
 
 #include "utils/logger.hpp"
-LoggerCallback* nrnpy_pr_stdoe_callback;
-PassCallback* nrnpy_pass_callback;
 
 extern char* neuron_home;
 
 NrnFILEWrap* hoc_frin;
 FILE* hoc_fout;
-
-void nrnpy_pass() {
-    if (nrnpy_pass_callback) {
-        if ((*nrnpy_pass_callback)() != 1) {
-            hoc_execerror("nrnpy_pass", nullptr);
-        }
-    }
-}
-
-extern "C" void nrnpy_set_pr_etal(LoggerCallback* cb, PassCallback* cbpass) {
-    nrnpy_pr_stdoe_callback = cb;
-    nrnpy_pass_callback = cbpass;
-}
 
 void hoc_stdout(void) {
     static int prev = -1;
@@ -767,6 +752,21 @@ void hoc_Chdir(void) {
 }
 
 int nrn_is_python_extension;
+static int (*nrnpy_pr_stdoe_callback)(int, char*);
+static int (*nrnpy_pass_callback()();
+
+extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {
+    nrnpy_pr_stdoe_callback = cbpr_stdoe;
+    nrnpy_pass_callback = cbpass;
+}
+
+void nrnpy_pass() {
+    if (nrnpy_pass_callback) {
+        if ((*nrnpy_pass_callback)() != 1) {
+            hoc_execerror("nrnpy_pass", nullptr);
+        }
+    }
+}
 
 /** printf style specification of hoc_execerror message. (512 char limit) **/
 [[noreturn]] void hoc_execerr_ext(const char* fmt, ...) {

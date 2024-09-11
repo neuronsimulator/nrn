@@ -1,7 +1,5 @@
 #pragma once
 
-#include "utils/logger.hpp"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,7 +28,7 @@ typedef enum {
  * Initialization
  ****************************************/
 int nrn_init(int argc, const char** argv);
-void nrn_stdout_redirect(LoggerCallback* myprint);
+void nrn_stdout_redirect(int (*myprint)(int, char*));
 
 /****************************************
  * Sections
