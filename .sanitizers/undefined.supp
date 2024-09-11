@@ -31,6 +31,7 @@ unsigned-integer-overflow:_philox4x32bumpkey(r123array2x32)
 unsigned-integer-overflow:coreneuron::nrnran123_deletestream(coreneuron::nrnran123_State*, bool)
 unsigned-integer-overflow:coreneuron::nrnran123_newstream3(unsigned int, unsigned int, unsigned int, bool)
 unsigned-integer-overflow:Py_INCREF(_object*)
+unsigned-integer-overflow:fmt::*
 vptr:NetCon::disconnect(ivObservable*)
 vptr:ObjObservable::object()
 vptr:PreSyn::disconnect(ivObservable*)
