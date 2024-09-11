@@ -32,7 +32,9 @@ def test_multi_gridding_mix(neuron_instance):
     random.seed(1)
 
     def my_initial1(node):
-        return random.random()
+        x = random.random()
+        print(f"test_multi_gridding_mix: {x=}")
+        return x
 
     cyt = rxd.Region([axon], nrn_region="i", name="cyt", dx=0.125)
     ca = rxd.Species(cyt, name="ca", charge=2, initial=my_initial1, d=1)
