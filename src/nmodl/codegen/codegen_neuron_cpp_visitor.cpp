@@ -1120,9 +1120,15 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
             "_pointtype = point_register_mech({}, _hoc_create_pnt, _hoc_destroy_pnt, "
             "_member_func);",
             register_mech_args);
+
+        if (info.destructor_node) {
+            printer->fmt_line("register_destructor({});",
+                              method_name(naming::NRN_DESTRUCTOR_METHOD));
+        }
     } else {
         printer->fmt_line("register_mech({});", register_mech_args);
     }
+
 
     if (info.thread_callback_register) {
         printer->fmt_line("_extcall_thread.resize({});", info.thread_data_index + 1);
@@ -1560,19 +1566,53 @@ void CodegenNeuronCppVisitor::print_nrn_jacob() {
 }
 
 
-/// TODO: Edit for NEURON
+void CodegenNeuronCppVisitor::print_callable_preamble_from_prop() {
+    printer->add_line("Datum* _ppvar = _nrn_mechanism_access_dparam(prop);");
+    printer->add_line("_nrn_mechanism_cache_instance _lmc{prop};");
+    printer->add_line("const size_t id = 0;");
+
+    printer->fmt_line("auto inst = make_instance_{}(_lmc);", info.mod_suffix);
+    if (!info.artificial_cell) {
+        printer->fmt_line("auto node_data = make_node_data_{}(prop);", info.mod_suffix);
+    }
+
+    if (!codegen_thread_variables.empty()) {
+        printer->fmt_line("auto _thread_vars = {}({}_global.thread_data);",
+                          thread_variables_struct(),
+                          info.mod_suffix);
+    }
+
+    printer->add_newline();
+}
+
+
 void CodegenNeuronCppVisitor::print_nrn_constructor() {
-    return;
+    if (info.constructor_node) {
+        printer->fmt_push_block("void {}(Prop* prop)", method_name(naming::NRN_CONSTRUCTOR_METHOD));
+
+        print_callable_preamble_from_prop();
+
+        auto block = info.constructor_node->get_statement_block();
+        print_statement_block(*block, false, false);
+
+        printer->pop_block();
+    }
 }
 
 
 void CodegenNeuronCppVisitor::print_nrn_destructor() {
-    printer->fmt_push_block("void {}(Prop* _prop)", method_name(naming::NRN_DESTRUCTOR_METHOD));
-    printer->add_line("Datum* _ppvar = _nrn_mechanism_access_dparam(_prop);");
+    printer->fmt_push_block("void {}(Prop* prop)", method_name(naming::NRN_DESTRUCTOR_METHOD));
+    print_callable_preamble_from_prop();
 
     for (const auto& rv: info.random_variables) {
         printer->fmt_line("nrnran123_deletestream((nrnran123_State*) {});",
                           get_variable_name(get_name(rv), false));
+    }
+
+
+    if (info.destructor_node) {
+        auto block = info.destructor_node->get_statement_block();
+        print_statement_block(*block, false, false);
     }
 
     printer->pop_block();
@@ -1697,6 +1737,15 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
         }
         printer->fmt_line("nrn_mech_inst_destruct[mech_type] = {};",
                           method_name(naming::NRN_DESTRUCTOR_METHOD));
+    }
+
+    if (info.point_process || info.artificial_cell) {
+        printer->fmt_push_block("if(!nrn_point_prop_)");
+
+        if (info.constructor_node) {
+            printer->fmt_line("{}(_prop);", method_name(naming::NRN_CONSTRUCTOR_METHOD));
+        }
+        printer->pop_block();
     }
 
     printer->pop_block();
@@ -2089,6 +2138,7 @@ void CodegenNeuronCppVisitor::print_codegen_routines() {
     print_prcellstate_macros();
     print_mechanism_info();
     print_data_structures(true);
+    print_nrn_constructor();
     print_nrn_destructor();
     print_nrn_alloc();
     print_function_prototypes();

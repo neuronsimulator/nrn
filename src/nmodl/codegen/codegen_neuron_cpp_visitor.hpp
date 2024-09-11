@@ -491,6 +491,10 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      */
     void print_nrn_constructor() override;
 
+    /**
+     * Print the set of common variables from a `Prop` only.
+     */
+    void print_callable_preamble_from_prop();
 
     /**
      * Print nrn_destructor function definition
