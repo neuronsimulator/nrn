@@ -373,12 +373,12 @@ int Oc::run(const char* buf, bool show_err_mes) {
         err = hoc_oc(buf);
     } catch (std::exception const& e) {
         if (show_err_mes) {
-            Fprintf(stderr, "Oc::run: caught exception");
+            logger.error("Oc::run: caught exception");
             std::string_view what{e.what()};
             if (!what.empty()) {
-                Fprintf(stderr, fmt::format(": {}", what).c_str());
+                logger.error(": {}", what);
             }
-            Fprintf(stderr, "\n");
+            logger.error("\n");
         }
         err = 1;
     }

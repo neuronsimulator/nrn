@@ -260,7 +260,9 @@ static nrnpython_reg_real_t load_nrnpython() {
         pyversion = std::to_string(pv10 / factor) + "." + std::to_string(pv10 % factor);
     } else {
         if (nrnpy_pylib.empty() || nrnpy_pyversion.empty()) {
-            logger.error("Do not know what Python to load [nrnpy_pylib={} nrnpy_pyversion={}]\n", nrnpy_pylib, nrnpy_pyversion);
+            logger.error("Do not know what Python to load [nrnpy_pylib={} nrnpy_pyversion={}]\n",
+                         nrnpy_pylib,
+                         nrnpy_pyversion);
             return nullptr;
         }
         pyversion = nrnpy_pyversion;
@@ -271,10 +273,13 @@ static nrnpython_reg_real_t load_nrnpython() {
         auto const iter =
             std::find(supported_versions.begin(), supported_versions.end(), pyversion);
         if (iter == supported_versions.end()) {
-            logger.error("Python {} is not supported by this NEURON installation (supported: {}). If you are seeing this message, your environment probably contains "
-                    "NRN_PYLIB, NRN_PYTHONEXE and NRN_PYTHONVERSION settings that are "
-                    "incompatible with this NEURON. Try unsetting them.\n",
-            pyversion, supported_versions);
+            logger.error(
+                "Python {} is not supported by this NEURON installation (supported: {}). If you "
+                "are seeing this message, your environment probably contains "
+                "NRN_PYLIB, NRN_PYTHONEXE and NRN_PYTHONVERSION settings that are "
+                "incompatible with this NEURON. Try unsetting them.\n",
+                pyversion,
+                supported_versions);
             return nullptr;
         }
     }

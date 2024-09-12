@@ -5,35 +5,35 @@
 using LoggerCallback = int(int, char*);
 
 class Logger {
-    public:
-        void setCallback(LoggerCallback* cb) {
-            callback = cb;
-        }
+  public:
+    void setCallback(LoggerCallback* cb) {
+        callback = cb;
+    }
 
-        LoggerCallback* getCb() const {
-            return callback;
-        }
+    LoggerCallback* getCb() const {
+        return callback;
+    }
 
-        template <typename ...Args>
-        void info(const char* fmt, Args... args) {
-            if (callback) {
-                std::string message = fmt::format(fmt, std::forward<Args>(args)...);
-                callback(1, message.data());
-            }
-            fmt::print(fmt, std::forward<Args>(args)...);
+    template <typename... Args>
+    void info(const char* fmt, Args... args) {
+        if (callback) {
+            std::string message = fmt::format(fmt, std::forward<Args>(args)...);
+            callback(1, message.data());
         }
+        fmt::print(fmt, std::forward<Args>(args)...);
+    }
 
-        template <typename ...Args>
-        void error(const char* fmt, Args... args) {
-            if (callback) {
-                std::string message = fmt::format(fmt, std::forward<Args>(args)...);
-                callback(2, message.data());
-            }
-            fmt::print(stderr, fmt, std::forward<Args>(args)...);
+    template <typename... Args>
+    void error(const char* fmt, Args... args) {
+        if (callback) {
+            std::string message = fmt::format(fmt, std::forward<Args>(args)...);
+            callback(2, message.data());
         }
+        fmt::print(stderr, fmt, std::forward<Args>(args)...);
+    }
 
-    private:
-        LoggerCallback* callback;
+  private:
+    LoggerCallback* callback;
 };
 
 extern Logger logger;

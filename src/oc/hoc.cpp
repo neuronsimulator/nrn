@@ -817,7 +817,8 @@ void hoc_main1_init(const char* pname, const char** envp) {
     hoc_fout = stdout;
     if (!nrn_is_cable()) {
         logger.error("OC INTERPRETER   {}   {}\n", RCS_hoc_version, RCS_hoc_date);
-        logger.error("Copyright 1992 -  Michael Hines, Neurobiology Dept., DUMC, Durham, NC.  27710\n");
+        logger.error(
+            "Copyright 1992 -  Michael Hines, Neurobiology Dept., DUMC, Durham, NC.  27710\n");
     }
     progname = pname;
     hoc_init();
@@ -1393,10 +1394,10 @@ void hoc_warning(const char* s, const char* t) /* print warning message */
     n = strlen(hoc_cbuf);
     for (cp = hoc_cbuf; cp < (hoc_cbuf + n); ++cp) {
         if (!isprint((int) (*cp)) && !isspace((int) (*cp))) {
-            logger.error(                    "{}character \\{:03o} at position {} is not printable\n",
-                    id,
-                    ((int) (*cp) & 0xff),
-                    cp - hoc_cbuf);
+            logger.error("{}character \\{:03o} at position {} is not printable\n",
+                         id,
+                         ((int) (*cp) & 0xff),
+                         cp - hoc_cbuf);
             break;
         }
     }

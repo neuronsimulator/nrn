@@ -1358,9 +1358,7 @@ void frame_debug() {
                                           logger.error("\"{}\"", s);
                                       }
                                   },
-                                  [](Object** pobj) {
-                                      logger.error("{}", hoc_object_name(*pobj));
-                                  },
+                                  [](Object** pobj) { logger.error("{}", hoc_object_name(*pobj)); },
                                   [](auto const&) { logger.error("..."); }},
                        entry);
             if (++j <= f->nargs) {
