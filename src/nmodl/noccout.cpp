@@ -85,12 +85,12 @@ void c_out() {
     P("#undef PI\n");
     P("#define nil 0\n");
     P("#define _pval pval\n");  // due to some old models using _pval
-    P("// clang-format on\n");
+    P("// clang-format off\n");
     P("#include \"md1redef.h\"\n");
     P("#include \"section_fwd.hpp\"\n");
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
-    P("// clang-format off\n");
+    P("// clang-format on\n");
     P("#include \"neuron/cache/mechanism_range.hpp\"\n");
     P("#include <vector>\n");
 

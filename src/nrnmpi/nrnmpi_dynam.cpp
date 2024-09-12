@@ -17,6 +17,9 @@
 
 #include "nrnmpi.h"
 
+#include "hocdec.h"
+#include <fmt/format.h>
+
 extern char* cxx_char_alloc(size_t);
 extern std::string corenrn_mpi_library;
 
@@ -173,7 +176,7 @@ std::string nrnmpi_load() {
             return true;
         };
         if (!promote_to_global("libnrniv.so") && !promote_to_global("libnrniv-without-nvidia.so")) {
-            std::cerr << error << " to RTLD_GLOBAL" << std::endl;
+            Fprintf(stderr, fmt::format("{} to RTLD_GLOBAL\n", error).c_str());
         }
     }
 #endif
@@ -258,7 +261,7 @@ std::string nrnmpi_load() {
 void nrnmpi_load_or_exit() {
     auto const err = nrnmpi_load();
     if (!err.empty()) {
-        std::cout << err << std::endl;
+        Printf(fmt::format("{}\n", err).c_str());
         std::exit(1);
     }
 }

@@ -732,7 +732,7 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
     if (!result) {
         char* mes = nrnpyerr_str();
         if (mes) {
-            std::cerr << mes << std::endl;
+            Fprintf(stderr, fmt::format("{}\n", mes).c_str());
             free(mes);
             hoc_execerror("PyObject method call failed:", NULL);
         }

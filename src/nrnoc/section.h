@@ -226,17 +226,20 @@ struct Node {
 #include "hocdec.h" /* Prop needs Datum and Datum needs Symbol */
 #endif
 
+
 #define PROP_PY_INDEX 10
 struct Prop {
     // Working assumption is that we can safely equate "Prop" with "instance
     // of a mechanism" apart from a few special cases like CABLESECTION
-    Prop(short type)
-        : _type{type} {
+    Prop(Node* node, short type)
+        : node(node)
+        , _type{type} {
         if (type != CABLESECTION) {
             m_mech_handle = neuron::container::Mechanism::owning_handle{
                 neuron::model().mechanism_data(type)};
         }
     }
+    Node* node;      /* The node this property belongs to. */
     Prop* next;      /* linked list of properties */
     short _type;     /* type of membrane, e.g. passive, HH, etc. */
     int dparam_size; /* for notifying hoc_free_val_array */

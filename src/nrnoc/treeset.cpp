@@ -30,6 +30,8 @@
 #include <algorithm>
 #include <string>
 
+#include <fmt/format.h>
+
 extern spREAL* spGetElement(char*, int, int);
 
 int nrn_shape_changed_; /* for notifying Shape class in nrniv */
@@ -674,7 +676,7 @@ Prop* prop_alloc(Prop** pp, int type, Node* nd) {
     nrn_alloc_node_ = nd;  // this might be null
     v_structure_change = 1;
     current_prop_list = pp;
-    auto* p = new Prop{static_cast<short>(type)};
+    auto* p = new Prop{nd, static_cast<short>(type)};
     p->next = *pp;
     p->ob = nullptr;
     p->_alloc_seq = -1;
@@ -2168,7 +2170,7 @@ static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_ty
         // objects. In this case we can figure out which the missing entries are and permute them to
         // the end of the global vectors.
         auto missing_elements = node_data_size - global_i;
-        std::cout << "permuting " << missing_elements << " 'lost' Nodes to the end\n";
+        Printf(fmt::format("permuting {} 'lost' Nodes to the end\n", missing_elements).c_str());
         // There are `missing_elements` integers from the range [0 .. node_data_size-1] whose values
         // in `node_data_permutation` are still std::numeric_limits<std::size_t>::max().
         for (auto global_row = 0ul; global_row < node_data_size; ++global_row) {
