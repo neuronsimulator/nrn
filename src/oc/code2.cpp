@@ -14,6 +14,8 @@
 #include "nrnfilewrap.h"
 #include <cstring>
 
+#include "utils/logger.hpp"
+
 
 int units_on_flag_;
 

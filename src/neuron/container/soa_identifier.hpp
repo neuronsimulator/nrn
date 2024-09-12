@@ -11,7 +11,7 @@
 #include <ostream>
 #include <vector>
 
-#include <fmt/format.h>
+#include "utils/logger.hpp"
 
 #include "hocdec.h"
 

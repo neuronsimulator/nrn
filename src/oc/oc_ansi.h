@@ -419,8 +419,6 @@ int hoc_pid();
 int hoc_ired(const char*, int, int, int);
 double hoc_xred(const char*, double, double, double);
 int hoc_sred(const char*, char*, char*);
-int nrnpy_pr(const char* fmt, ...);
-int Fprintf(std::FILE*, const char* fmt, ...);
 void nrnpy_pass();
 void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
 int nrn_is_cable();

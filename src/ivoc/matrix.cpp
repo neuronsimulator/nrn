@@ -8,6 +8,8 @@
 #include "parse.hpp"
 #include "ivocvect.h"
 
+#include "utils/logger.hpp"
+
 #define EPS hoc_epsilon
 Symbol* nrn_matrix_sym;  // also used in oc/hoc_oop.cpp
 

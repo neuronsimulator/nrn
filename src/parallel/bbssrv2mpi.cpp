@@ -9,6 +9,8 @@
 #include "bbsimpl.h"
 #include "hocdec.h"  //Printf
 
+#include "utils/logger.hpp"
+
 void nrnbbs_context_wait();
 
 BBSDirectServer* BBSDirectServer::server_;

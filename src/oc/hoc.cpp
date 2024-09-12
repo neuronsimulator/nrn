@@ -32,7 +32,7 @@
 #include <thread>
 #include <utility>
 
-#include <fmt/format.h>
+#include "utils/logger.hpp"
 
 /* for eliminating "ignoreing return value" warnings. */
 int nrnignore;
