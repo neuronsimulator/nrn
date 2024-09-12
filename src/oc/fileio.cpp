@@ -15,6 +15,8 @@
 #include <errno.h>
 #include "nrnfilewrap.h"
 
+#include "utils/logger.hpp"
+
 extern char* neuron_home;
 
 NrnFILEWrap* hoc_frin;
@@ -750,11 +752,11 @@ void hoc_Chdir(void) {
 }
 
 int nrn_is_python_extension;
-int (*nrnpy_pr_stdoe_callback)(int, char*);
+Logger logger;
 static int (*nrnpy_pass_callback)();
 
 extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {
-    nrnpy_pr_stdoe_callback = cbpr_stdoe;
+    logger.setCallback(cbpr_stdoe);
     nrnpy_pass_callback = cbpass;
 }
 
