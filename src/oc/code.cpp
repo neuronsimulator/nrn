@@ -1340,37 +1340,37 @@ void frame_debug() {
     }
     for (i = 5, f = fp; f != frame && --i; f = f - 1) { /* print only to depth of 5 */
         for (j = i; j; j--) {
-            Fprintf(stderr, "  ");
+            logger.error("  ");
         }
         if (f->ob) {
-            Fprintf(stderr, "%s%s.%s(", id, hoc_object_name(f->ob), f->sp->name);  // error
+            logger.error("{}{}.{}(", id, hoc_object_name(f->ob), f->sp->name);  // error
         } else {
-            Fprintf(stderr, "%s%s(", id, f->sp->name);
+            logger.error("{}{}(", id, f->sp->name);
         }
         for (j = 1; j <= f->nargs;) {
             auto const& entry = f->argn[j - f->nargs];
-            std::visit(overloaded{[](double val) { Fprintf(stderr, "%g", val); },
+            std::visit(overloaded{[](double val) { logger.error("{}", val); },
                                   [](char** pstr) {
                                       const char* s = *pstr;
                                       if (strlen(s) > 15) {
-                                          Fprintf(stderr, "\"%.10s...\"", s);
+                                          logger.error("\"{:.10s}...\"", s);
                                       } else {
-                                          Fprintf(stderr, "\"%s\"", s);
+                                          logger.error("\"{}\"", s);
                                       }
                                   },
                                   [](Object** pobj) {
-                                      Fprintf(stderr, "%s", hoc_object_name(*pobj));
+                                      logger.error("{}", hoc_object_name(*pobj));
                                   },
-                                  [](auto const&) { Fprintf(stderr, "..."); }},
+                                  [](auto const&) { logger.error("..."); }},
                        entry);
             if (++j <= f->nargs) {
-                Fprintf(stderr, ", ");
+                logger.error(", ");
             }
         }
-        Fprintf(stderr, ")\n");
+        logger.error(")\n");
     }
     if (i <= 0) {
-        Fprintf(stderr, "and others\n");
+        logger.error("and others\n");
     }
 }
 

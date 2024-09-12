@@ -29,7 +29,7 @@ class Logger {
                 std::string message = fmt::format(fmt, std::forward<Args>(args)...);
                 callback(2, message.data());
             }
-            fmt::printf(stderr, fmt, std::forward<Args>(args)...);
+            fmt::print(stderr, fmt, std::forward<Args>(args)...);
         }
 
     private:

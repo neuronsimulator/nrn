@@ -217,15 +217,12 @@ void nrnpython_reg() {
             try {
                 set_nrnpylib();
             } catch (std::exception const& e) {
-                Fprintf(stderr,
-                        fmt::format("Could not determine Python library details: {}\n", e.what())
-                            .c_str());
+                logger.error("Could not determine Python library details: {}\n", e.what());
                 exit(1);
             }
             handle = dlopen(nrnpy_pylib.c_str(), RTLD_NOW | RTLD_GLOBAL);
             if (!handle) {
-                Fprintf(stderr,
-                        fmt::format("Could not dlopen NRN_PYLIB: {}\n", nrnpy_pylib).c_str());
+                logger.error("Could not dlopen NRN_PYLIB: {}\n", nrnpy_pylib);
 #if DARWIN
                 nrn_possible_mismatched_arch(nrnpy_pylib.c_str());
 #endif
@@ -263,12 +260,7 @@ static nrnpython_reg_real_t load_nrnpython() {
         pyversion = std::to_string(pv10 / factor) + "." + std::to_string(pv10 % factor);
     } else {
         if (nrnpy_pylib.empty() || nrnpy_pyversion.empty()) {
-            Fprintf(
-                stderr,
-                fmt::format("Do not know what Python to load [nrnpy_pylib={} nrnpy_pyversion={}]\n",
-                            nrnpy_pylib,
-                            nrnpy_pyversion)
-                    .c_str());
+            logger.error("Do not know what Python to load [nrnpy_pylib={} nrnpy_pyversion={}]\n", nrnpy_pylib, nrnpy_pyversion);
             return nullptr;
         }
         pyversion = nrnpy_pyversion;
@@ -279,18 +271,10 @@ static nrnpython_reg_real_t load_nrnpython() {
         auto const iter =
             std::find(supported_versions.begin(), supported_versions.end(), pyversion);
         if (iter == supported_versions.end()) {
-            Fprintf(
-                stderr,
-                fmt::format("Python {} is not supported by this NEURON installation (supported:",
-                            pyversion)
-                    .c_str());
-            for (auto const& good_ver: supported_versions) {
-                Fprintf(stderr, fmt::format(" {}", good_ver).c_str());
-            }
-            Fprintf(stderr,
-                    "). If you are seeing this message, your environment probably contains "
+            logger.error("Python {} is not supported by this NEURON installation (supported: {}). If you are seeing this message, your environment probably contains "
                     "NRN_PYLIB, NRN_PYTHONEXE and NRN_PYTHONVERSION settings that are "
-                    "incompatible with this NEURON. Try unsetting them.\n");
+                    "incompatible with this NEURON. Try unsetting them.\n",
+            pyversion, supported_versions);
             return nullptr;
         }
     }
@@ -306,15 +290,13 @@ static nrnpython_reg_real_t load_nrnpython() {
 #endif
     auto* const handle = dlopen(name.c_str(), RTLD_NOW);
     if (!handle) {
-        Fprintf(stderr, fmt::format("Could not load {}\n", name).c_str());
-        Fprintf(stderr,
-                fmt::format("nrn_is_python_extension={}\n", nrn_is_python_extension).c_str());
+        logger.error("Could not load {}\n", name);
+        logger.error("nrn_is_python_extension={}\n", nrn_is_python_extension);
         return nullptr;
     }
     auto* const reg = reinterpret_cast<nrnpython_reg_real_t>(dlsym(handle, "nrnpython_reg_real"));
     if (!reg) {
-        Fprintf(stderr,
-                fmt::format("Could not load registration function from {}\n", name).c_str());
+        logger.error("Could not load registration function from {}\n", name);
     }
     return reg;
 }

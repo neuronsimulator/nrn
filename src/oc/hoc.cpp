@@ -519,7 +519,7 @@ void hoc_arayinstal(void) /* allocate storage for arrays */
     i = hoc_arayinfo_install(sp, nsub);
     if ((OPVAL(sp) = (double*) hoc_Ecalloc((unsigned) i, sizeof(double))) == (double*) 0) {
         hoc_freearay(sp);
-        Fprintf(stderr, "Not enough space for array %s\n", sp->name);
+        logger.error("Not enough space for array {}\n", sp->name);
         hoc_malchk();
         hoc_execerror("", (char*) 0);
     }
@@ -700,7 +700,7 @@ void print_bt() {
     size = backtrace(frames, nframes);
 
     // print out all the frames to stderr
-    Fprintf(stderr, "Backtrace:\n");
+    logger.error("Backtrace:\n");
     // get the stacktrace as an array of strings
     bt_strings = backtrace_symbols(frames, size);
     if (bt_strings) {
@@ -712,12 +712,12 @@ void print_bt() {
             if (status) {
                 status = cxx_demangle(symbol, &funcname, &funcname_size);
                 if (status == 0) {  // demangling worked
-                    Fprintf(stderr, "\t%s : %s+%s\n", bt_strings[i], funcname, offset);
+                    logger.error("\t{} : {}+{}\n", bt_strings[i], funcname, offset);
                 } else {  // demangling failed, fallback
-                    Fprintf(stderr, "\t%s : %s()+%s\n", bt_strings[i], symbol, offset);
+                    logger.error("\t{} : {}()+{}\n", bt_strings[i], symbol, offset);
                 }
             } else {  // could not parse, simply print the stackframe as is
-                Fprintf(stderr, "\t%s\n", bt_strings[i]);
+                logger.error("\t{}\n", bt_strings[i]);
             }
         }
         free(bt_strings);
@@ -726,7 +726,7 @@ void print_bt() {
     free(offset);
     free(symbol);
 #else
-    Fprintf(stderr, "No backtrace info available.\n");
+    logger.error("No backtrace info available.\n");
 #endif
 #endif
 }
@@ -737,7 +737,7 @@ void fpecatch(int /* sig */) /* catch floating point exceptions */
 #if NRN_FLOAT_EXCEPTION
     matherr1();
 #endif
-    Fprintf(stderr, "Floating point exception\n");
+    logger.error("Floating point exception\n");
     print_bt();
     if (coredump) {
         abort();
@@ -749,7 +749,7 @@ void fpecatch(int /* sig */) /* catch floating point exceptions */
 __attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation violation probably due to
                                                               arg type error */
 {
-    Fprintf(stderr, "Segmentation violation\n");
+    logger.error("Segmentation violation\n");
     print_bt();
     /*ARGSUSED*/
     if (coredump) {
@@ -760,7 +760,7 @@ __attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation viola
 
 #if HAVE_SIGBUS
 __attribute__((noreturn)) void sigbuscatch(int /* sig */) {
-    Fprintf(stderr, "Bus error\n");
+    logger.error("Bus error\n");
     print_bt();
     /*ARGSUSED*/
     if (coredump) {
@@ -816,9 +816,8 @@ void hoc_main1_init(const char* pname, const char** envp) {
     hoc_frin = nrn_fw_set_stdin();
     hoc_fout = stdout;
     if (!nrn_is_cable()) {
-        Fprintf(stderr, "OC INTERPRETER   %s   %s\n", RCS_hoc_version, RCS_hoc_date);
-        Fprintf(stderr,
-                "Copyright 1992 -  Michael Hines, Neurobiology Dept., DUMC, Durham, NC.  27710\n");
+        logger.error("OC INTERPRETER   {}   {}\n", RCS_hoc_version, RCS_hoc_date);
+        logger.error("Copyright 1992 -  Michael Hines, Neurobiology Dept., DUMC, Durham, NC.  27710\n");
     }
     progname = pname;
     hoc_init();
@@ -930,7 +929,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
         }
         return exit_status;
     } catch (std::exception const& e) {
-        Fprintf(stderr, fmt::format("hoc_main1 caught exception: {}\n", e.what()).c_str());
+        logger.error("hoc_main1 caught exception: {}\n", e.what());
         nrn_exit(1);
     }
 }
@@ -1143,7 +1142,7 @@ int hoc_moreinput() {
         }
         return hoc_moreinput();
     } else if ((hoc_fin = nrn_fw_fopen(infile, "r")) == (NrnFILEWrap*) 0) {
-        Fprintf(stderr, "%d %s: can't open %s\n", nrnmpi_myid_world, progname, infile);
+        logger.error("{} {}: can't open {}\n", nrnmpi_myid_world, progname, infile);
 #if NRNMPI
         if (nrnmpi_numprocs_world > 1) {
             nrnmpi_abort(-1);
@@ -1252,12 +1251,12 @@ static int hoc_run1() {
                 }
             } catch (std::exception const& e) {
                 hoc_fin = sav_fin;
-                Fprintf(stderr, "hoc_run1: caught exception");
+                logger.error("hoc_run1: caught exception");
                 std::string_view what{e.what()};
                 if (!what.empty()) {
-                    Fprintf(stderr, fmt::format(": {}", what).c_str());
+                    logger.error(": {}", what);
                 }
-                Fprintf(stderr, "\n");
+                logger.error("\n");
                 // Exit if we're not in interactive mode
                 if (!nrn_fw_eq(hoc_fin, stdin)) {
                     return EXIT_FAILURE;
@@ -1382,32 +1381,31 @@ void hoc_warning(const char* s, const char* t) /* print warning message */
         id[0] = '\0';
     }
     if (t) {
-        Fprintf(stderr, "%s%s: %s %s\n", id, progname, s, t);
+        logger.error("{}{}: {} {}\n", id, progname, s, t);
     } else {
-        Fprintf(stderr, "%s%s: %s\n", id, progname, s);
+        logger.error("{}{}: {}\n", id, progname, s);
     }
     if (hoc_xopen_file_ && hoc_xopen_file_[0]) {
-        Fprintf(stderr, "%s in %s near line %d\n", id, hoc_xopen_file_, hoc_lineno);
+        logger.error("{} in {} near line {}\n", id, hoc_xopen_file_, hoc_lineno);
     } else {
-        Fprintf(stderr, "%s near line %d\n", id, hoc_lineno);
+        logger.error("{} near line {}\n", id, hoc_lineno);
     }
     n = strlen(hoc_cbuf);
     for (cp = hoc_cbuf; cp < (hoc_cbuf + n); ++cp) {
         if (!isprint((int) (*cp)) && !isspace((int) (*cp))) {
-            Fprintf(stderr,
-                    "%scharacter \\%03o at position %ld is not printable\n",
+            logger.error(                    "{}character \\{:03o} at position {} is not printable\n",
                     id,
                     ((int) (*cp) & 0xff),
                     cp - hoc_cbuf);
             break;
         }
     }
-    Fprintf(stderr, "%s %s", id, hoc_cbuf);
+    logger.error("{} {}", id, hoc_cbuf);
     if (nrnmpi_numprocs_world > 0) {
         for (cp = hoc_cbuf; cp != hoc_ctp; cp++) {
-            Fprintf(stderr, " ");
+            logger.error(" ");
         }
-        Fprintf(stderr, "^\n");
+        logger.error("^\n");
     }
     hoc_ctp = hoc_cbuf;
     *hoc_ctp = '\0';
