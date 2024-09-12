@@ -14,6 +14,9 @@
 
 #include <iostream>
 
+#include "hocdec.h"
+#include <fmt/format.h>
+
 #include "neuron/container/memory_usage.hpp"
 
 static void sum_reduce_memory_usage(void* invec, void* inoutvec, int* len_, MPI_Datatype*) {
@@ -44,7 +47,7 @@ void nrnmpi_memory_stats(neuron::container::MemoryStats& stats,
 
 void nrnmpi_print_memory_stats(neuron::container::MemoryStats const& memory_stats) {
     if (nrnmpi_myid_world == 0) {
-        std::cout << format_memory_usage(memory_stats.total) << "\n";
+        Printf(fmt::format("{}\n", format_memory_usage(memory_stats.total)).c_str());
     }
 }
 #endif

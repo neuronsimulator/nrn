@@ -42,6 +42,8 @@ void iv_display_scale(float);
 #include <IV-X11/ivx11_dynam.h>
 #endif
 
+#include <fmt/format.h>
+
 #if 1
 void pr_profile();
 #define PR_PROFILE pr_profile();
@@ -312,7 +314,7 @@ void hoc_nrnmpi_init() {
         nrnmpi_stubs();
         auto const pmes = nrnmpi_load();
         if (!pmes.empty()) {
-            std::cout << pmes << std::endl;
+            Printf(fmt::format("{}\n", pmes).c_str());
         }
 #endif
 
