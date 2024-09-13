@@ -647,8 +647,8 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                 }{
                     nmodl_eigen_x[0] = m
                 }{
-                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]*dt+dt*mInf+mTau*(-nmodl_eigen_x[0]+old_m))/mTau
-                    nmodl_eigen_j[0] = -(dt+mTau)/mTau
+                    nmodl_eigen_f[0] = (dt*(-nmodl_eigen_x[0]+mInf)+mTau*(-nmodl_eigen_x[0]+old_m))/(dt*mTau)
+                    nmodl_eigen_j[0] = (-dt-mTau)/(dt*mTau)
                 }{
                     m = nmodl_eigen_x[0]
                 }{
@@ -686,11 +686,11 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_x[0] = x
                     nmodl_eigen_x[1] = y
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[1]+a*dt+old_y
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[1]+a*dt+old_y)/dt
                     nmodl_eigen_j[0] = 0
-                    nmodl_eigen_j[2] = -1.0
-                    nmodl_eigen_f[1] = -nmodl_eigen_x[0]+b*dt+old_x
-                    nmodl_eigen_j[1] = -1.0
+                    nmodl_eigen_j[2] = -1/dt
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[0]+b*dt+old_x)/dt
+                    nmodl_eigen_j[1] = -1/dt
                     nmodl_eigen_j[3] = 0
                 }{
                     x = nmodl_eigen_x[0]
@@ -730,11 +730,11 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_x[0] = M[0]
                     nmodl_eigen_x[1] = M[1]
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[1]+a*dt+old_M_1
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[1]+a*dt+old_M_1)/dt
                     nmodl_eigen_j[0] = 0
-                    nmodl_eigen_j[2] = -1.0
-                    nmodl_eigen_f[1] = -nmodl_eigen_x[0]+b*dt+old_M_0
-                    nmodl_eigen_j[1] = -1.0
+                    nmodl_eigen_j[2] = -1/dt
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[0]+b*dt+old_M_0)/dt
+                    nmodl_eigen_j[1] = -1/dt
                     nmodl_eigen_j[3] = 0
                 }{
                     M[0] = nmodl_eigen_x[0]
@@ -775,13 +775,13 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_x[0] = x
                     nmodl_eigen_x[1] = y
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]+a*dt+old_x
-                    nmodl_eigen_j[0] = -1.0
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]+a*dt+old_x)/dt
+                    nmodl_eigen_j[0] = -1/dt
                     nmodl_eigen_j[2] = 0
                     b = b+1
-                    nmodl_eigen_f[1] = -nmodl_eigen_x[1]+b*dt+old_y
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[1]+b*dt+old_y)/dt
                     nmodl_eigen_j[1] = 0
-                    nmodl_eigen_j[3] = -1.0
+                    nmodl_eigen_j[3] = -1/dt
                 }{
                     x = nmodl_eigen_x[0]
                     y = nmodl_eigen_x[1]
@@ -853,12 +853,12 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                         nmodl_eigen_x[0] = x
                         nmodl_eigen_x[1] = y
                     }{
-                        nmodl_eigen_f[0] = -nmodl_eigen_x[0]+a*dt+old_x
-                        nmodl_eigen_j[0] = -1.0
+                        nmodl_eigen_f[0] = (-nmodl_eigen_x[0]+a*dt+old_x)/dt
+                        nmodl_eigen_j[0] = -1/dt
                         nmodl_eigen_j[2] = 0
-                        nmodl_eigen_f[1] = -nmodl_eigen_x[1]+b*dt+old_y
+                        nmodl_eigen_f[1] = (-nmodl_eigen_x[1]+b*dt+old_y)/dt
                         nmodl_eigen_j[1] = 0
-                        nmodl_eigen_j[3] = -1.0
+                        nmodl_eigen_j[3] = -1/dt
                     }{
                         x = nmodl_eigen_x[0]
                         y = nmodl_eigen_x[1]
@@ -903,15 +903,15 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_x[0] = x
                     nmodl_eigen_x[1] = y
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]+nmodl_eigen_x[1]*a*dt+b*dt+old_x
-                    nmodl_eigen_j[0] = -1.0
-                    nmodl_eigen_j[2] = a*dt
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]+dt*(nmodl_eigen_x[1]*a+b)+old_x)/dt
+                    nmodl_eigen_j[0] = -1/dt
+                    nmodl_eigen_j[2] = a
                     IF (b == 1) {
                         a = a+1
                     }
-                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*dt+nmodl_eigen_x[1]*a*dt-nmodl_eigen_x[1]+old_y
-                    nmodl_eigen_j[1] = dt
-                    nmodl_eigen_j[3] = a*dt-1.0
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[1]+dt*(nmodl_eigen_x[0]+nmodl_eigen_x[1]*a)+old_y)/dt
+                    nmodl_eigen_j[1] = 1.0
+                    nmodl_eigen_j[3] = a-1/dt
                 }{
                     x = nmodl_eigen_x[0]
                     y = nmodl_eigen_x[1]
@@ -929,15 +929,15 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_x[0] = x
                     nmodl_eigen_x[1] = y
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]+nmodl_eigen_x[1]*a*dt+b*dt+old_x
-                    nmodl_eigen_j[0] = -1.0
-                    nmodl_eigen_j[2] = a*dt
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]+dt*(nmodl_eigen_x[1]*a+b)+old_x)/dt
+                    nmodl_eigen_j[0] = -1/dt
+                    nmodl_eigen_j[2] = a
                     IF (b == 1) {
                         a = a+1
                     }
-                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*dt+nmodl_eigen_x[1]*a*dt-nmodl_eigen_x[1]+old_y
-                    nmodl_eigen_j[1] = dt
-                    nmodl_eigen_j[3] = a*dt-1.0
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[1]+dt*(nmodl_eigen_x[0]+nmodl_eigen_x[1]*a)+old_y)/dt
+                    nmodl_eigen_j[1] = 1.0
+                    nmodl_eigen_j[3] = a-1/dt
                 }{
                     x = nmodl_eigen_x[0]
                     y = nmodl_eigen_x[1]
@@ -984,18 +984,18 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_x[1] = y
                     nmodl_eigen_x[2] = z
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]+nmodl_eigen_x[2]*a*dt+b*dt*h+old_x
-                    nmodl_eigen_j[0] = -1.0
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]+dt*(nmodl_eigen_x[2]*a+b*h)+old_x)/dt
+                    nmodl_eigen_j[0] = -1/dt
                     nmodl_eigen_j[3] = 0
-                    nmodl_eigen_j[6] = a*dt
-                    nmodl_eigen_f[1] = 2.0*nmodl_eigen_x[0]*dt-nmodl_eigen_x[1]+c*dt+old_y
-                    nmodl_eigen_j[1] = 2.0*dt
-                    nmodl_eigen_j[4] = -1.0
+                    nmodl_eigen_j[6] = a
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[1]+dt*(2.0*nmodl_eigen_x[0]+c)+old_y)/dt
+                    nmodl_eigen_j[1] = 2.0
+                    nmodl_eigen_j[4] = -1/dt
                     nmodl_eigen_j[7] = 0
-                    nmodl_eigen_f[2] = -nmodl_eigen_x[1]*dt+nmodl_eigen_x[2]*d*dt-nmodl_eigen_x[2]+old_z
+                    nmodl_eigen_f[2] = (-nmodl_eigen_x[2]+dt*(-nmodl_eigen_x[1]+nmodl_eigen_x[2]*d)+old_z)/dt
                     nmodl_eigen_j[2] = 0
-                    nmodl_eigen_j[5] = -dt
-                    nmodl_eigen_j[8] = d*dt-1.0
+                    nmodl_eigen_j[5] = -1.0
+                    nmodl_eigen_j[8] = d-1/dt
                 }{
                     x = nmodl_eigen_x[0]
                     y = nmodl_eigen_x[1]
@@ -1016,18 +1016,18 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_x[1] = y
                     nmodl_eigen_x[2] = z
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]+nmodl_eigen_x[2]*a*dt+b*dt*h+old_x
-                    nmodl_eigen_j[0] = -1.0
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]+dt*(nmodl_eigen_x[2]*a+b*h)+old_x)/dt
+                    nmodl_eigen_j[0] = -1/dt
                     nmodl_eigen_j[3] = 0
-                    nmodl_eigen_j[6] = a*dt
-                    nmodl_eigen_f[1] = 2.0*nmodl_eigen_x[0]*dt-nmodl_eigen_x[1]+c*dt+old_y
-                    nmodl_eigen_j[1] = 2.0*dt
-                    nmodl_eigen_j[4] = -1.0
+                    nmodl_eigen_j[6] = a
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[1]+dt*(2.0*nmodl_eigen_x[0]+c)+old_y)/dt
+                    nmodl_eigen_j[1] = 2.0
+                    nmodl_eigen_j[4] = -1/dt
                     nmodl_eigen_j[7] = 0
-                    nmodl_eigen_f[2] = -nmodl_eigen_x[1]*dt+nmodl_eigen_x[2]*d*dt-nmodl_eigen_x[2]+old_z
+                    nmodl_eigen_f[2] = (-nmodl_eigen_x[2]+dt*(-nmodl_eigen_x[1]+nmodl_eigen_x[2]*d)+old_z)/dt
                     nmodl_eigen_j[2] = 0
-                    nmodl_eigen_j[5] = -dt
-                    nmodl_eigen_j[8] = d*dt-1.0
+                    nmodl_eigen_j[5] = -1.0
+                    nmodl_eigen_j[8] = d-1/dt
                 }{
                     x = nmodl_eigen_x[0]
                     y = nmodl_eigen_x[1]
@@ -1070,12 +1070,12 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_x[0] = mc
                     nmodl_eigen_x[1] = m
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*a*dt-nmodl_eigen_x[0]+nmodl_eigen_x[1]*b*dt+old_mc
-                    nmodl_eigen_j[0] = -a*dt-1.0
-                    nmodl_eigen_j[2] = b*dt
-                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*a*dt-nmodl_eigen_x[1]*b*dt-nmodl_eigen_x[1]+old_m
-                    nmodl_eigen_j[1] = a*dt
-                    nmodl_eigen_j[3] = -b*dt-1.0
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]+dt*(-nmodl_eigen_x[0]*a+nmodl_eigen_x[1]*b)+old_mc)/dt
+                    nmodl_eigen_j[0] = -a-1/dt
+                    nmodl_eigen_j[2] = b
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[1]+dt*(nmodl_eigen_x[0]*a-nmodl_eigen_x[1]*b)+old_m)/dt
+                    nmodl_eigen_j[1] = a
+                    nmodl_eigen_j[3] = -b-1/dt
                 }{
                     mc = nmodl_eigen_x[0]
                     m = nmodl_eigen_x[1]
@@ -1113,9 +1113,9 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_x[0] = mc
                     nmodl_eigen_x[1] = m
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*a*dt-nmodl_eigen_x[0]+nmodl_eigen_x[1]*b*dt+old_mc
-                    nmodl_eigen_j[0] = -a*dt-1.0
-                    nmodl_eigen_j[2] = b*dt
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]+dt*(-nmodl_eigen_x[0]*a+nmodl_eigen_x[1]*b)+old_mc)/dt
+                    nmodl_eigen_j[0] = -a-1/dt
+                    nmodl_eigen_j[2] = b
                     nmodl_eigen_f[1] = -nmodl_eigen_x[0]-nmodl_eigen_x[1]+1.0
                     nmodl_eigen_j[1] = -1.0
                     nmodl_eigen_j[3] = -1.0
@@ -1159,12 +1159,12 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_x[0] = mc
                     nmodl_eigen_x[1] = m
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*a*dt-nmodl_eigen_x[0]+nmodl_eigen_x[1]*b*dt+old_mc
-                    nmodl_eigen_j[0] = -a*dt-1.0
-                    nmodl_eigen_j[2] = b*dt
-                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*a*dt-nmodl_eigen_x[1]*b*dt-nmodl_eigen_x[1]+old_m
-                    nmodl_eigen_j[1] = a*dt
-                    nmodl_eigen_j[3] = -b*dt-1.0
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]+dt*(-nmodl_eigen_x[0]*a+nmodl_eigen_x[1]*b)+old_mc)/dt
+                    nmodl_eigen_j[0] = -a-1/dt
+                    nmodl_eigen_j[2] = b
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[1]+dt*(nmodl_eigen_x[0]*a-nmodl_eigen_x[1]*b)+old_m)/dt
+                    nmodl_eigen_j[1] = a
+                    nmodl_eigen_j[3] = -b-1/dt
                 }{
                     mc = nmodl_eigen_x[0]
                     m = nmodl_eigen_x[1]
@@ -1213,16 +1213,16 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_x[3] = p0
                     nmodl_eigen_x[4] = p1
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*alpha*dt-nmodl_eigen_x[0]+nmodl_eigen_x[1]*beta*dt+old_c1
-                    nmodl_eigen_j[0] = -alpha*dt-1.0
-                    nmodl_eigen_j[5] = beta*dt
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]+dt*(-nmodl_eigen_x[0]*alpha+nmodl_eigen_x[1]*beta)+old_c1)/dt
+                    nmodl_eigen_j[0] = -alpha-1/dt
+                    nmodl_eigen_j[5] = beta
                     nmodl_eigen_j[10] = 0
                     nmodl_eigen_j[15] = 0
                     nmodl_eigen_j[20] = 0
-                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*alpha*dt-nmodl_eigen_x[1]*beta*dt-nmodl_eigen_x[1]*dt*k3p-nmodl_eigen_x[1]+nmodl_eigen_x[2]*dt*k4+old_o1
-                    nmodl_eigen_j[1] = alpha*dt
-                    nmodl_eigen_j[6] = -beta*dt-dt*k3p-1.0
-                    nmodl_eigen_j[11] = dt*k4
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[1]+dt*(nmodl_eigen_x[0]*alpha-nmodl_eigen_x[1]*beta-nmodl_eigen_x[1]*k3p+nmodl_eigen_x[2]*k4)+old_o1)/dt
+                    nmodl_eigen_j[1] = alpha
+                    nmodl_eigen_j[6] = -beta-k3p-1/dt
+                    nmodl_eigen_j[11] = k4
                     nmodl_eigen_j[16] = 0
                     nmodl_eigen_j[21] = 0
                     nmodl_eigen_f[2] = -nmodl_eigen_x[0]-nmodl_eigen_x[1]-nmodl_eigen_x[2]+1.0
@@ -1231,12 +1231,12 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_j[12] = -1.0
                     nmodl_eigen_j[17] = 0
                     nmodl_eigen_j[22] = 0
-                    nmodl_eigen_f[3] = -nmodl_eigen_x[3]*dt*k1ca-nmodl_eigen_x[3]+nmodl_eigen_x[4]*dt*k2+old_p0
+                    nmodl_eigen_f[3] = (-nmodl_eigen_x[3]+dt*(-nmodl_eigen_x[3]*k1ca+nmodl_eigen_x[4]*k2)+old_p0)/dt
                     nmodl_eigen_j[3] = 0
                     nmodl_eigen_j[8] = 0
                     nmodl_eigen_j[13] = 0
-                    nmodl_eigen_j[18] = -dt*k1ca-1.0
-                    nmodl_eigen_j[23] = dt*k2
+                    nmodl_eigen_j[18] = -k1ca-1/dt
+                    nmodl_eigen_j[23] = k2
                     nmodl_eigen_f[4] = -nmodl_eigen_x[3]-nmodl_eigen_x[4]+1.0
                     nmodl_eigen_j[4] = 0
                     nmodl_eigen_j[9] = 0
@@ -1286,8 +1286,8 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                 }{
                     nmodl_eigen_x[0] = W[0]
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*dt*A[0]+nmodl_eigen_x[0]*dt*B[0]-nmodl_eigen_x[0]+3.0*dt*A[1]+old_W_0
-                    nmodl_eigen_j[0] = -dt*A[0]+dt*B[0]-1.0
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]+dt*(-nmodl_eigen_x[0]*A[0]+nmodl_eigen_x[0]*B[0]+3.0*A[1])+old_W_0)/dt
+                    nmodl_eigen_j[0] = -A[0]+B[0]-1/dt
                 }{
                     W[0] = nmodl_eigen_x[0]
                 }{
@@ -1328,12 +1328,12 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_x[0] = M[0]
                     nmodl_eigen_x[1] = M[1]
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*dt*A[0]-nmodl_eigen_x[0]+nmodl_eigen_x[1]*dt*B[0]+old_M_0
-                    nmodl_eigen_j[0] = -dt*A[0]-1.0
-                    nmodl_eigen_j[2] = dt*B[0]
-                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*dt*A[1]-nmodl_eigen_x[1]*dt*B[1]-nmodl_eigen_x[1]+old_M_1
-                    nmodl_eigen_j[1] = dt*A[1]
-                    nmodl_eigen_j[3] = -dt*B[1]-1.0
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]+dt*(-nmodl_eigen_x[0]*A[0]+nmodl_eigen_x[1]*B[0])+old_M_0)/dt
+                    nmodl_eigen_j[0] = -A[0]-1/dt
+                    nmodl_eigen_j[2] = B[0]
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[1]+dt*(nmodl_eigen_x[0]*A[1]-nmodl_eigen_x[1]*B[1])+old_M_1)/dt
+                    nmodl_eigen_j[1] = A[1]
+                    nmodl_eigen_j[3] = -B[1]-1/dt
                 }{
                     M[0] = nmodl_eigen_x[0]
                     M[1] = nmodl_eigen_x[1]
@@ -1372,8 +1372,8 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                 }{
                     nmodl_eigen_x[0] = W[0]
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*dt*A[0]+nmodl_eigen_x[0]*dt*B[0]-nmodl_eigen_x[0]+3.0*dt*A[1]+old_W_0
-                    nmodl_eigen_j[0] = -dt*A[0]+dt*B[0]-1.0
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]+dt*(-nmodl_eigen_x[0]*A[0]+nmodl_eigen_x[0]*B[0]+3.0*A[1])+old_W_0)/dt
+                    nmodl_eigen_j[0] = -A[0]+B[0]-1/dt
                 }{
                     W[0] = nmodl_eigen_x[0]
                 }{
@@ -1416,18 +1416,18 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_x[1] = h
                     nmodl_eigen_x[2] = n
                 }{
-                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]*dt+dt*minf+mtau*(-nmodl_eigen_x[0]-3.0*nmodl_eigen_x[1]*dt+old_m))/mtau
-                    nmodl_eigen_f[1] = (-nmodl_eigen_x[1]*dt+dt*hinf+htau*(pow(nmodl_eigen_x[0], 2)*dt-nmodl_eigen_x[1]+old_h))/htau
-                    nmodl_eigen_f[2] = (-nmodl_eigen_x[2]*dt+dt*ninf+ntau*(-nmodl_eigen_x[2]+old_n))/ntau
-                    nmodl_eigen_j[0] = -(dt+mtau)/mtau
-                    nmodl_eigen_j[3] = -3.0*dt
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]/mtau-nmodl_eigen_x[0]/dt-3.0*nmodl_eigen_x[1]+minf/mtau+old_m/dt
+                    nmodl_eigen_j[0] = (-dt-mtau)/(dt*mtau)
+                    nmodl_eigen_j[3] = -3.0
                     nmodl_eigen_j[6] = 0
-                    nmodl_eigen_j[1] = 2.0*nmodl_eigen_x[0]*dt
-                    nmodl_eigen_j[4] = -(dt+htau)/htau
+                    nmodl_eigen_f[1] = pow(nmodl_eigen_x[0], 2)-nmodl_eigen_x[1]/htau-nmodl_eigen_x[1]/dt+hinf/htau+old_h/dt
+                    nmodl_eigen_j[1] = 2.0*nmodl_eigen_x[0]
+                    nmodl_eigen_j[4] = (-dt-htau)/(dt*htau)
                     nmodl_eigen_j[7] = 0
+                    nmodl_eigen_f[2] = (dt*(-nmodl_eigen_x[2]+ninf)+ntau*(-nmodl_eigen_x[2]+old_n))/(dt*ntau)
                     nmodl_eigen_j[2] = 0
                     nmodl_eigen_j[5] = 0
-                    nmodl_eigen_j[8] = -(dt+ntau)/ntau
+                    nmodl_eigen_j[8] = (-dt-ntau)/(dt*ntau)
                 }{
                     m = nmodl_eigen_x[0]
                     h = nmodl_eigen_x[1]
@@ -1474,12 +1474,12 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_x[0] = m
                     nmodl_eigen_x[1] = h
                 }{
-                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]*dt+dt*minf+mtau*(-nmodl_eigen_x[0]+old_m))/mtau
-                    nmodl_eigen_f[1] = (-nmodl_eigen_x[1]*dt+dt*hinf+htau*(pow(nmodl_eigen_x[0], 2)*dt-nmodl_eigen_x[1]+old_h))/htau
-                    nmodl_eigen_j[0] = -(dt+mtau)/mtau
+                    nmodl_eigen_f[0] = (dt*(-nmodl_eigen_x[0]+minf)+mtau*(-nmodl_eigen_x[0]+old_m))/(dt*mtau)
+                    nmodl_eigen_j[0] = (-dt-mtau)/(dt*mtau)
                     nmodl_eigen_j[2] = 0
-                    nmodl_eigen_j[1] = 2.0*nmodl_eigen_x[0]*dt
-                    nmodl_eigen_j[3] = -(dt+htau)/htau
+                    nmodl_eigen_f[1] = pow(nmodl_eigen_x[0], 2)-nmodl_eigen_x[1]/htau- nmodl_eigen_x[1]/dt+hinf/htau+old_h/dt
+                    nmodl_eigen_j[1] = 2.0*nmodl_eigen_x[0]
+                    nmodl_eigen_j[3] = (-dt-htau)/(dt*htau)
                 }{
                     m = nmodl_eigen_x[0]
                     h = nmodl_eigen_x[1]
@@ -1497,12 +1497,12 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     nmodl_eigen_x[0] = m
                     nmodl_eigen_x[1] = h
                 }{
-                    nmodl_eigen_f[0] = (-nmodl_eigen_x[1]*dt+dt*hinf+htau*(pow(nmodl_eigen_x[0], 2)*dt-nmodl_eigen_x[1]+old_h))/htau
-                    nmodl_eigen_f[1] = (-nmodl_eigen_x[0]*dt+dt*minf+mtau*(-nmodl_eigen_x[0]+nmodl_eigen_x[1]*dt+old_m))/mtau
-                    nmodl_eigen_j[0] = 2.0*nmodl_eigen_x[0]*dt
-                    nmodl_eigen_j[2] = -(dt+htau)/htau
-                    nmodl_eigen_j[1] = -(dt+mtau)/mtau
-                    nmodl_eigen_j[3] = dt
+                    nmodl_eigen_f[0] = pow(nmodl_eigen_x[0], 2)-nmodl_eigen_x[1]/htau-nmodl_eigen_x[1]/dt+hinf/htau+old_h/dt
+                    nmodl_eigen_j[0] = 2.0*nmodl_eigen_x[0]
+                    nmodl_eigen_j[2] = (-dt-htau)/(dt*htau)
+                    nmodl_eigen_f[1] = -nmodl_eigen_x[0]/mtau-nmodl_eigen_x[0]/dt+nmodl_eigen_x[1]+minf/mtau+old_m/dt
+                    nmodl_eigen_j[1] = (-dt-mtau)/(dt*mtau)
+                    nmodl_eigen_j[3] = 1.0
                 }{
                     m = nmodl_eigen_x[0]
                     h = nmodl_eigen_x[1]
@@ -1862,12 +1862,12 @@ SCENARIO("Solve KINETIC block using SympySolver Visitor", "[visitor][solver][sym
                     nmodl_eigen_x[0] = C1
                     nmodl_eigen_x[1] = C2
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*dt*kf0_-nmodl_eigen_x[0]+nmodl_eigen_x[1]*dt*kb0_+old_C1
-                    nmodl_eigen_j[0] = -dt*kf0_-1.0
-                    nmodl_eigen_j[2] = dt*kb0_
-                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*dt*kf0_-nmodl_eigen_x[1]*dt*kb0_-nmodl_eigen_x[1]+old_C2
-                    nmodl_eigen_j[1] = dt*kf0_
-                    nmodl_eigen_j[3] = -dt*kb0_-1.0
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]+dt*(-nmodl_eigen_x[0]*kf0_+nmodl_eigen_x[1]*kb0_)+old_C1)/dt
+                    nmodl_eigen_j[0] = -kf0_-1/dt
+                    nmodl_eigen_j[2] = kb0_
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[1]+dt*(nmodl_eigen_x[0]*kf0_-nmodl_eigen_x[1]*kb0_)+old_C2)/dt
+                    nmodl_eigen_j[1] = kf0_
+                    nmodl_eigen_j[3] = -kb0_-1/dt
                 }{
                     C1 = nmodl_eigen_x[0]
                     C2 = nmodl_eigen_x[1]
@@ -1904,20 +1904,20 @@ SCENARIO("Solve KINETIC block using SympySolver Visitor", "[visitor][solver][sym
                 EIGEN_NEWTON_SOLVE[2]{
                     LOCAL kf0_, kb0_, old_C1, old_C2
                 }{
-                    kb0_ = lowergamma(v)
                     kf0_ = beta(v)
+                    kb0_ = lowergamma(v)
                     old_C1 = C1
                     old_C2 = C2
                 }{
                     nmodl_eigen_x[0] = C1
                     nmodl_eigen_x[1] = C2
                 }{
-                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*dt*kf0_-nmodl_eigen_x[0]+nmodl_eigen_x[1]*dt*kb0_+old_C1
-                    nmodl_eigen_j[0] = -dt*kf0_-1.0
-                    nmodl_eigen_j[2] = dt*kb0_
-                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*dt*kf0_-nmodl_eigen_x[1]*dt*kb0_-nmodl_eigen_x[1]+old_C2
-                    nmodl_eigen_j[1] = dt*kf0_
-                    nmodl_eigen_j[3] = -dt*kb0_-1.0
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]+dt*(-nmodl_eigen_x[0]*kf0_+nmodl_eigen_x[1]*kb0_)+old_C1)/dt
+                    nmodl_eigen_j[0] = -kf0_-1/dt
+                    nmodl_eigen_j[2] = kb0_
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[1]+dt*(nmodl_eigen_x[0]*kf0_-nmodl_eigen_x[1]*kb0_)+old_C2)/dt
+                    nmodl_eigen_j[1] = kf0_
+                    nmodl_eigen_j[3] = -kb0_-1/dt
                 }{
                     C1 = nmodl_eigen_x[0]
                     C2 = nmodl_eigen_x[1]
