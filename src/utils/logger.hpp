@@ -10,7 +10,7 @@ class Logger {
         callback = cb;
     }
 
-    LoggerCallback* getCb() const {
+    LoggerCallback* getCallback() const {
         return callback;
     }
 
@@ -41,9 +41,9 @@ extern Logger logger;
 // Deprecated but there is ~700 to change so let it go a bit more
 template <typename... Args>
 int Fprintf(FILE* stream, const char* fmt, Args... args) {
-    if (logger.getCb() && (stream == stdout || stream == stderr)) {
+    if (logger.getCallback() && (stream == stdout || stream == stderr)) {
         std::string message = fmt::sprintf(fmt, std::forward<Args>(args)...);
-        logger.getCb()(stream == stdout ? 1 : 2, message.data());
+        logger.getCallback()(stream == stdout ? 1 : 2, message.data());
         return message.size();
     }
     return fmt::fprintf(stream, fmt, args...);
@@ -51,9 +51,9 @@ int Fprintf(FILE* stream, const char* fmt, Args... args) {
 
 template <typename... Args>
 int Printf(const char* fmt, Args... args) {
-    if (logger.getCb()) {
+    if (logger.getCallback()) {
         std::string message = fmt::sprintf(fmt, std::forward<Args>(args)...);
-        logger.getCb()(1, message.data());
+        logger.getCallback()(1, message.data());
         return message.size();
     }
     return fmt::printf(fmt, args...);
