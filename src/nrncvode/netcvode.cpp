@@ -3493,7 +3493,7 @@ void NetCvode::local_retreat(double t, Cvode* cv) {
         if (print_event_) {
             Printf("microstep local retreat from %g (cvode_%p is at %g) for event onset=%g\n",
                    cv->tqitem_->t_,
-                   cv,
+                   fmt::ptr(cv),
                    cv->t_,
                    t);
         }
@@ -3502,7 +3502,10 @@ void NetCvode::local_retreat(double t, Cvode* cv) {
         tq->move(cv->tqitem_, t);
 #if PRINT_EVENT
         if (print_event_ > 1) {
-            Printf("after target solve time for %p is %g , dt=%g\n", cv, cv->time(), nt_dt);
+            Printf("after target solve time for %p is %g , dt=%g\n",
+                   fmt::ptr(cv),
+                   cv->time(),
+                   nt_dt);
         }
 #endif
     } else {
@@ -3519,7 +3522,7 @@ void NetCvode::retreat(double t, Cvode* cv) {
     if (print_event_) {
         Printf("microstep retreat from %g (cvode_%p is at %g) for event onset=%g\n",
                tq ? cv->tqitem_->t_ : cv->t_,
-               cv,
+               fmt::ptr(cv),
                cv->t_,
                t);
     }
@@ -3530,7 +3533,7 @@ void NetCvode::retreat(double t, Cvode* cv) {
     }
 #if PRINT_EVENT
     if (print_event_ > 1) {
-        Printf("after target solve time for %p is %g , dt=%g\n", cv, cv->time(), dt);
+        Printf("after target solve time for %p is %g , dt=%g\n", fmt::ptr(cv), cv->time(), dt);
     }
 #endif
 }
@@ -5577,7 +5580,7 @@ static int trajec_buffered(NrnThread& nt,
         if (err) {
             Fprintf(stderr,
                     "Pointer %p of PlayRecord type %d ignored because not a Range Variable",
-                    static_cast<double*>(pd),
+                    fmt::ptr(static_cast<double*>(pd)),
                     pr->type());
         }
     }

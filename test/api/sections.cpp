@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-void modl_reg(){};
+extern "C" void modl_reg(){};
 
 int main(void) {
     static const char* argv[] = {"sections", "-nogui", "-nopython", NULL};

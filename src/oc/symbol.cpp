@@ -23,6 +23,8 @@
 #include <mach/mach.h>
 #endif
 
+#include "utils/logger.hpp"
+
 Symlist* hoc_built_in_symlist = nullptr;  /* keywords, built-in functions,
      all name linked into hoc. Look in this list last */
 Symlist* hoc_top_level_symlist = nullptr; /* all user names seen at top-level
@@ -39,7 +41,7 @@ void print_symlist(const char* s, Symlist* tab) {
     Printf("%s\n", s);
     if (tab)
         for (Symbol* sp = tab->first; sp != nullptr; sp = sp->next) {
-            Printf("%s %p\n", sp->name, sp);
+            Printf("%s %p\n", sp->name, fmt::ptr(sp));
         }
 }
 
