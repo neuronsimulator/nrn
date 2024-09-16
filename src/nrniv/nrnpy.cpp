@@ -16,7 +16,7 @@
 #include <cctype>
 #include <sstream>
 
-#include <fmt/ranges.h> // for the formatter of std::array
+#include <fmt/ranges.h>  // for the formatter of std::array
 
 namespace neuron::python {
 // Declared extern in nrnpy.h, defined here.
