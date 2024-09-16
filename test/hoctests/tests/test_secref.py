@@ -30,8 +30,8 @@ h.delete_section(sec=h.b)
 h("create a, b, c, d")
 sr = None  # let's start over at 0
 sr = [h.SectionRef(sec=i) for i in h.allsec()]
-h.topology()
-print(sr)
+assert len(sr) == 4
+
 # the ones to rename into a new array
 lst = h.List()
 for i in [0, 2, 3]:
