@@ -3432,20 +3432,25 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     // then get error
     // TypeError: tp_basicsize for type 'hoc.HocClass' (424) is
     // too small for base 'type' (920)
-    hocclass_spec.basicsize = PyType_Type.tp_basicsize + sizeof(Symbol*);
-    // printf("hocclass_spec.basicsize = %d\n", hocclass_spec.basicsize);
 
+#if 1
+    hocclass_spec.basicsize = PyType_Type.tp_basicsize + sizeof(Symbol*);
     // and what about alignment?
+    // recommended by chatgpt
     size_t alignment = alignof(Symbol*);
     size_t remainder = hocclass_spec.basicsize % alignment;
     if (remainder != 0) {
         hocclass_spec.basicsize += alignment - remainder;
         // printf("aligned hocclass_spec.basicsize = %d\n", hocclass_spec.basicsize);
     }
+#else
+    // chatgpt agrees that the following suggestion
+    // https://github.com/neuronsimulator/nrn/pull/2862/files#r1749797713
+    // is equivalent to the '#if 1' fragment above. However the above
+    // may "ensures portability and correctness across different architectures."
+    hocclass_spec.basicsize = PyType_Type.tp_basicsize + sizeof(hocclass) - sizeof(PyTypeObject);
+#endif
 
-    // printf("sizeof(hocclass) = %zd\n", sizeof(hocclass));
-    // printf("sizeof(PyType_Type) = %zd\n", sizeof(PyType_Type));
-    // printf("PyType_Type.tp_basicsize = %zd\n", PyType_Type.tp_basicsize);
     PyObject* custom_hocclass = PyType_FromSpec(&hocclass_spec);
     if (custom_hocclass == NULL) {
         return NULL;
