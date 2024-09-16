@@ -185,9 +185,9 @@ for i in "${files[@]}" ; do
   f=${f// /\\ }
   f=${f//:/\\:}
   echo "\
-${base_name// /\\ }.cpp: ${f}.mod \$(NOCMODL)
+${base_name// /\\ }.cpp: ${f}.mod
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
-	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\" $UserNMODLFLAGS)
+	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) nmodl \"$base_name.mod\" --neuron -o \"$mdir\" $UserNMODLFLAGS)
 
 ./${base_name// /\\ }.o: ${base_name// /\\ }.cpp
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) ${PWD}/\$<\\\n\"
