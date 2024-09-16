@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <iostream>
 
 #include <fmt/printf.h>
 
@@ -16,24 +17,29 @@ class Logger {
 
     template <typename... Args>
     void info(const char* fmt, Args... args) {
-        if (callback) {
-            std::string message = fmt::format(fmt, std::forward<Args>(args)...);
-            callback(1, message.data());
-        }
-        fmt::print(fmt, std::forward<Args>(args)...);
+        output(1, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
     void error(const char* fmt, Args... args) {
-        if (callback) {
-            std::string message = fmt::format(fmt, std::forward<Args>(args)...);
-            callback(2, message.data());
-        }
-        fmt::print(stderr, fmt, std::forward<Args>(args)...);
+        output(1, fmt, std::forward<Args>(args)...);
     }
 
+    template <typename... Args>
+    void output(int out, const char* fmt, Args... args) {
+        std::string message = fmt::format(fmt, std::forward<Args>(args)...);
+        callback(out, message.data());
+    }
+
+
   private:
-    std::function<int(int, char*)> callback;
+    std::function<int(int, char*)> callback = [](int out, char* mess) {
+        if (out == 1)
+            std::cout << mess;
+        else
+            std::cerr << mess;
+        return 0;
+    };
 };
 
 extern Logger logger;
