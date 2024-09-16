@@ -4,8 +4,6 @@
 
 #include <fmt/printf.h>
 
-using LoggerCallback = int(int, char*);
-
 class Logger {
   public:
     void setCallback(std::function<int(int, char*)> cb) {
