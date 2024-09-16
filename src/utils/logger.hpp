@@ -7,12 +7,17 @@
 
 class Logger {
   public:
-    void setCallback(std::function<int(int, char*)> cb) {
+    void setCallback(std::function<int(int, const char*)> cb) {
         callback = std::move(cb);
     }
 
-    const std::function<int(int, char*)>& getCallback() const {
+    const std::function<int(int, const char*)>& getCallback() const {
         return callback;
+    }
+
+    template <typename... Args>
+    void debug(const char* fmt, Args... args) {
+        output(1, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
@@ -21,19 +26,24 @@ class Logger {
     }
 
     template <typename... Args>
-    void error(const char* fmt, Args... args) {
+    void warning(const char* fmt, Args... args) {
         output(1, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void error(const char* fmt, Args... args) {
+        output(2, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
     void output(int out, const char* fmt, Args... args) {
         std::string message = fmt::format(fmt, std::forward<Args>(args)...);
-        callback(out, message.data());
+        callback(out, message.c_str());
     }
 
 
   private:
-    std::function<int(int, char*)> callback = [](int out, char* mess) {
+    std::function<int(int, const char*)> callback = [](int out, const char* mess) {
         if (out == 1)
             std::cout << mess;
         else
@@ -49,7 +59,7 @@ template <typename... Args>
 int Fprintf(FILE* stream, const char* fmt, Args... args) {
     if (logger.getCallback() && (stream == stdout || stream == stderr)) {
         std::string message = fmt::sprintf(fmt, std::forward<Args>(args)...);
-        logger.getCallback()(stream == stdout ? 1 : 2, message.data());
+        logger.getCallback()(stream == stdout ? 1 : 2, message.c_str());
         return message.size();
     }
     return fmt::fprintf(stream, fmt, args...);
@@ -59,7 +69,7 @@ template <typename... Args>
 int Printf(const char* fmt, Args... args) {
     if (logger.getCallback()) {
         std::string message = fmt::sprintf(fmt, std::forward<Args>(args)...);
-        logger.getCallback()(1, message.data());
+        logger.getCallback()(1, message.c_str());
         return message.size();
     }
     return fmt::printf(fmt, args...);

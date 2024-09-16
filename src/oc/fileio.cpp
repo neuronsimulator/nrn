@@ -755,7 +755,7 @@ int nrn_is_python_extension;
 Logger logger;
 static int (*nrnpy_pass_callback)();
 
-extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {
+extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, const char*), int (*cbpass)()) {
     logger.setCallback(cbpr_stdoe);
     nrnpy_pass_callback = cbpass;
 }
