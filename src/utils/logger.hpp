@@ -1,16 +1,18 @@
 #pragma once
 
+#include <functional>
+
 #include <fmt/printf.h>
 
 using LoggerCallback = int(int, char*);
 
 class Logger {
   public:
-    void setCallback(LoggerCallback* cb) {
-        callback = cb;
+    void setCallback(std::function<int(int, char*)> cb) {
+        callback = std::move(cb);
     }
 
-    LoggerCallback* getCallback() const {
+    const std::function<int(int, char*)>& getCallback() const {
         return callback;
     }
 
@@ -33,7 +35,7 @@ class Logger {
     }
 
   private:
-    LoggerCallback* callback;
+    std::function<int(int, char*)> callback;
 };
 
 extern Logger logger;
