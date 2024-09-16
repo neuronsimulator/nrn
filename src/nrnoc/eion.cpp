@@ -263,10 +263,10 @@ void nrn_verify_ion_charge_defined() {
         if (nrn_is_ion(i)) {
             if (global_charge(i) == VAL_SENTINAL) {
                 Symbol* s = memb_func[i].sym;
-                Fprintf(stderr,
-                        "%s USEION CHARGE (or VALENCE) must be defined in\n\
+                logger.error(
+                    "{} USEION CHARGE (or VALENCE) must be defined in\n\
 at least one model using this ion\n",
-                        s->name);
+                    s->name);
                 nrn_exit(1);
             }
         }

@@ -175,7 +175,7 @@ std::string nrnmpi_load() {
             return true;
         };
         if (!promote_to_global("libnrniv.so") && !promote_to_global("libnrniv-without-nvidia.so")) {
-            Fprintf(stderr, fmt::format("{} to RTLD_GLOBAL\n", error).c_str());
+            logger.error("{} to RTLD_GLOBAL\n", error);
         }
     }
 #endif

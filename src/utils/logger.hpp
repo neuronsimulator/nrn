@@ -41,7 +41,6 @@ class Logger {
         callback(out, message.c_str());
     }
 
-
   private:
     std::function<int(int, const char*)> callback = [](int out, const char* mess) {
         if (out == 1)
@@ -55,16 +54,6 @@ class Logger {
 extern Logger logger;
 
 // Deprecated but there is ~700 to change so let it go a bit more
-template <typename... Args>
-int Fprintf(FILE* stream, const char* fmt, Args... args) {
-    if (logger.getCallback() && (stream == stdout || stream == stderr)) {
-        std::string message = fmt::sprintf(fmt, std::forward<Args>(args)...);
-        logger.getCallback()(stream == stdout ? 1 : 2, message.c_str());
-        return message.size();
-    }
-    return fmt::fprintf(stream, fmt, args...);
-}
-
 template <typename... Args>
 int Printf(const char* fmt, Args... args) {
     if (logger.getCallback()) {

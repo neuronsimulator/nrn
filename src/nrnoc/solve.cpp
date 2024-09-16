@@ -359,7 +359,7 @@ void nrn_solve(NrnThread* _nt) {
         nrn_thread_error("debugsolve");
         err = debugsolve();
         if (err > 1.e-10) {
-            Fprintf(stderr, "solve error = %g\n", err);
+            logger.error("solve error = {}\n", err);
         }
     }
 #else

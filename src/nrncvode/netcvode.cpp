@@ -5578,10 +5578,9 @@ static int trajec_buffered(NrnThread& nt,
     } else {
         err = nrn_dblpntr2nrncore(pd, nt, types[i_trajec], indices[i_trajec]);
         if (err) {
-            Fprintf(stderr,
-                    "Pointer %p of PlayRecord type %d ignored because not a Range Variable",
-                    fmt::ptr(static_cast<double*>(pd)),
-                    pr->type());
+            logger.error("Pointer {} of PlayRecord type {} ignored because not a Range Variable",
+                         fmt::ptr(static_cast<double*>(pd)),
+                         pr->type());
         }
     }
     return err;

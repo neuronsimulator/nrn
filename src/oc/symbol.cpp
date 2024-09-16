@@ -222,10 +222,9 @@ void hoc_free_symspace(Symbol* s1) { /* frees symbol space. Marks it UNDEF */
         case VARALIAS:
             break;
         default:
-            Fprintf(stderr,
-                    "In free_symspace may not free all of %s of type=%d\n",
-                    s1->name,
-                    s1->type);
+            logger.error("In free_symspace may not free all of {} of type={}\n",
+                         s1->name,
+                         s1->type);
         }
         if (s1->arayinfo != nullptr) {
             hoc_free_arrayinfo(s1->arayinfo);
