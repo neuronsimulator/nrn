@@ -1872,20 +1872,23 @@ void MultiSplitControl::prstruct() {
                        m.tag_);
                 if (m.nnode_) {
                     Printf("    nodeindex=%p  nodeindex_buffer = %p\n",
-                           m.nodeindex_,
-                           nodeindex_buffer_);
+                           fmt::ptr(m.nodeindex_),
+                           fmt::ptr(nodeindex_buffer_));
                 }
             }
             Printf(" ndbsize=%d  i  nodeindex_buffer_=%p  nodeindex_rthost_=%p\n",
                    ndbsize,
-                   nodeindex_buffer_,
-                   nodeindex_rthost_);
+                   fmt::ptr(nodeindex_buffer_),
+                   fmt::ptr(nodeindex_rthost_));
             if (ndbsize) {
                 for (int i = 0; i < ndbsize; ++i) {
                     Printf("  %d %d %d\n", i, nodeindex_buffer_[i], nodeindex_rthost_[i]);
                 }
             }
-            Printf(" tbsize=%d trecvbuf_=%p tsendbuf_=%p\n", tbsize, trecvbuf_, tsendbuf_);
+            Printf(" tbsize=%d trecvbuf_=%p tsendbuf_=%p\n",
+                   tbsize,
+                   fmt::ptr(trecvbuf_),
+                   fmt::ptr(tsendbuf_));
             Printf("\n");
         }
     }

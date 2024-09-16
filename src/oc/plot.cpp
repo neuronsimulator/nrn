@@ -3,6 +3,8 @@
 #include "hocdec.h"
 #include "oc_ansi.h"
 
+#include "utils/logger.hpp"
+
 /*LINTLIBRARY*/
 #undef IGNORE
 #if LINT
@@ -114,7 +116,7 @@ void hoc_plprint(const char* s) {
 #endif
 
     } else if (!text) {
-        nrnpy_pr("%s", s);
+        Printf("%s", s);
     }
     if (hardplot && hpdev && text && strlen(s)) {
         hard_text_preamble();
