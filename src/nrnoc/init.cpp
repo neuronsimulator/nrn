@@ -699,8 +699,8 @@ void check_mech_version(const char** m) {
     if (strcmp(m[0], "0") == 0) { /* valid by nature */
     } else if (m[0][0] > '9') {   /* must be 5.1 or before */
         logger.error(
-            "Mechanism {} needs to be re-translated.\n\
-It's pre version 6.0 \"c\" code is incompatible with this neuron version.\n",
+            "Mechanism {} needs to be re-translated.\n"
+            "It's pre version 6.0 \"c\" code is incompatible with this neuron version.\n",
             m[0]);
         if (nrn_load_dll_recover_error()) {
             hoc_execerror("Mechanism needs to be retranslated:", m[0]);
@@ -709,8 +709,8 @@ It's pre version 6.0 \"c\" code is incompatible with this neuron version.\n",
         }
     } else if (strcmp(m[0], nmodl_version_) != 0) {
         logger.error(
-            "Mechanism {} needs to be re-translated.\n\
-It's version {} \"c\" code is incompatible with this neuron version.\n",
+            "Mechanism {} needs to be re-translated.\n"
+            "It's version {} \"c\" code is incompatible with this neuron version.\n",
             m[1],
             m[0]);
         if (nrn_load_dll_recover_error()) {

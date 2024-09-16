@@ -16,27 +16,27 @@ class Logger {
     }
 
     template <typename... Args>
-    void debug(const char* fmt, Args... args) {
+    void debug(const char* fmt, Args&&... args) const {
         output(1, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    void info(const char* fmt, Args... args) {
+    void info(const char* fmt, Args&&... args) const {
         output(1, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    void warning(const char* fmt, Args... args) {
+    void warning(const char* fmt, Args&&... args) const {
         output(1, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    void error(const char* fmt, Args... args) {
+    void error(const char* fmt, Args&&... args) const {
         output(2, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    void output(int out, const char* fmt, Args... args) {
+    void output(int out, const char* fmt, Args&&... args) const {
         std::string message = fmt::format(fmt, std::forward<Args>(args)...);
         callback(out, message.c_str());
     }
