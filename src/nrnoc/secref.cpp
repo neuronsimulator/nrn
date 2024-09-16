@@ -73,6 +73,15 @@ static double s_unname(void* v) {
 #endif
     pitm = sec2pitm(sec);
     *pitm = (hoc_Item*) 0;
+    auto* ob = sec->prop->dparam[6].get<Object*>();
+    if (ob) {
+        // Avoid use of freed memory in CellBuild when making a section
+        // after deleting a section when continuous create is on.
+        // CellBuild repeatedly creates a single CellBuildTopology[0].dummy
+        // section and then unnames and renamed it at the top level.
+        ob->secelm_ = nullptr;
+        sec->prop->dparam[6] = static_cast<Object*>(nullptr);
+    }
     sec->prop->dparam[0] = static_cast<Symbol*>(nullptr);
     return 1.;
 }
@@ -169,6 +178,10 @@ static double s_rename(void* v) {
                 hoc_objectdata = obdsav;
                 return 0;
             }
+            if (sec->prop->dparam[0].get<Symbol*>()) {
+                Printf("Item %d of second list arg, %s, must first be unnamed\n", i, secname(sec));
+                return 0;
+            }
             qsec = sec->prop->dparam[8].get<hoc_Item*>();
             sec->prop->dparam[0] = sym;
             sec->prop->dparam[5] = i;
@@ -231,13 +244,11 @@ int nrn_secref_nchild(Section* sec) {
 }
 
 static double s_nchild(void* v) {
-    int n;
     hoc_return_type_code = 1; /* integer */
     return (double) nrn_secref_nchild((Section*) v);
 }
 
 static double s_has_parent(void* v) {
-    int n;
     Section* sec = (Section*) v;
     hoc_return_type_code = 2; /* boolean */
     if (!sec->prop) {
@@ -247,7 +258,6 @@ static double s_has_parent(void* v) {
 }
 
 static double s_has_trueparent(void* v) {
-    int n;
     Section* sec = (Section*) v;
     hoc_return_type_code = 2; /* boolean */
     if (!sec->prop) {
@@ -257,7 +267,6 @@ static double s_has_trueparent(void* v) {
 }
 
 static double s_exists(void* v) {
-    int n;
     hoc_return_type_code = 2; /* boolean */
     Section* sec = (Section*) v;
     return (double) (sec->prop != (Prop*) 0);
