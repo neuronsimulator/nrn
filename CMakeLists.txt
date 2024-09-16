@@ -534,6 +534,19 @@ if(NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON)
 endif()
 
 # =============================================================================
+# Flags for using NOCMODL/NMODL
+# =============================================================================
+if(NRN_ENABLE_NMODL)
+  set(NRN_NMODL_--neuron "--neuron")
+  set(NRN_CODEGENERATOR_NAME "nmodl")
+  set(NRN_CODEGENERATOR_TARGET nmodl)
+else()
+  set(NRN_NMODL_--neuron "")
+  set(NRN_CODEGENERATOR_NAME "nocmodl")
+  set(NRN_CODEGENERATOR_TARGET nocmodl)
+endif()
+
+# =============================================================================
 # Enable CoreNEURON support
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)
@@ -1078,6 +1091,7 @@ if(NRN_ENABLE_CORENEURON)
   message(STATUS "  PATH        | ${CORENEURON_DIR}")
   message(STATUS "  LINK FLAGS  | ${CORENRN_LIB_LINK_FLAGS}")
 endif()
+message(STATUS "NMODL codegen   | ${NRN_ENABLE_NMODL}")
 if(NRN_UNIVERSAL2_BUILD)
   message(STATUS "CMAKE_OSX_ARCH| ${CMAKE_OSX_ARCHITECTURES}")
 endif()
