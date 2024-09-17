@@ -21,6 +21,12 @@ class Logger {
         output(1, fmt, std::forward<Args>(args)...);
     }
 
+    // Use the old printer because sometimes the format string come from user
+    template <typename... Args>
+    void printf(const char* fmt, Args&&... args) const {
+        fmt::printf(fmt, std::forward<Args>(args)...);
+    }
+
     template <typename... Args>
     void debug(const char* fmt, Args&&... args) const {
         output(1, fmt, std::forward<Args>(args)...);
