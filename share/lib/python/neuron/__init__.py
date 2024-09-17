@@ -749,8 +749,6 @@ def _modelview_mechanism_docstrings(dmech, tree):
                     tree.append(line, dmech.location, 0)
 
 
-# TODO: put this someplace else
-#       can't be in rxd because that would break things if no scipy
 _sec_db = {}
 
 

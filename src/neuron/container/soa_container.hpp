@@ -463,7 +463,7 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
      */
     template <may_cause_reallocation might_reallocate, typename Callable>
     Callable for_each_vector(Callable callable) {
-        for (auto i = 0; i < m_storage.size(); ++i) {
+        for (std::size_t i = 0; i < m_storage.size(); ++i) {
             callable(m_tag, m_storage[i], i, m_array_dims[i]);
         }
         if constexpr (might_reallocate == may_cause_reallocation::Yes) {
@@ -480,7 +480,7 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
      */
     template <typename Callable>
     Callable for_each_vector(Callable callable) const {
-        for (auto i = 0; i < m_storage.size(); ++i) {
+        for (std::size_t i = 0; i < m_storage.size(); ++i) {
             callable(m_tag, m_storage[i], i, m_array_dims[i]);
         }
 
