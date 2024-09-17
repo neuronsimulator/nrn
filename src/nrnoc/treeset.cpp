@@ -1438,7 +1438,8 @@ void nrn_define_shape(void) {
             continue;
         }
         if (fabs(y1) < 1e-6 && fabs(x1) < 1e-6) {
-            logger.print("nrn_define_shape: {} first and last 3-d point at same (x,y)\n", secname(psec));
+            logger.print("nrn_define_shape: {} first and last 3-d point at same (x,y)\n",
+                         secname(psec));
             angle = 0.;
         } else {
             angle = atan2(y1, x1);

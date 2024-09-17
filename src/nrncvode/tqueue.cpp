@@ -49,11 +49,11 @@ static void prnt(const TQItem* b, int level) {
         logger.print("    ");
     }
     logger.print("{} {} {} Q={} D={}\n",
-           b->t_,
-           b->data_ ? 'x' : 'o',
-           b->cnt_,
-           fmt::ptr(b),
-           fmt::ptr(b->data_));
+                 b->t_,
+                 b->data_ ? 'x' : 'o',
+                 b->cnt_,
+                 fmt::ptr(b),
+                 fmt::ptr(b->data_));
 }
 
 TQueue::TQueue(TQItemPool* tp, int mkmut) {
@@ -165,11 +165,8 @@ void TQueue::move(TQItem* i, double tnew) {
 
 void TQueue::statistics() {
 #if COLLECT_TQueue_STATISTICS
-    logger.print("insertions={}  moves={} removals={} calls to least={}\n",
-           ninsert,
-           nmove,
-           nrem,
-           nleast);
+    logger.print(
+        "insertions={}  moves={} removals={} calls to least={}\n", ninsert, nmove, nrem, nleast);
     logger.print("calls to find={}\n", nfind);
     logger.print("comparisons={}\n", sptree_->get_enqcmps());
 #else

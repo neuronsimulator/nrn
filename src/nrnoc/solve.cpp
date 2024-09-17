@@ -321,9 +321,9 @@ static void dashes(Section* sec, int offset, int first) {
         logger.print("|       {}{}\n", secname(sec), direc);
     } else {
         logger.print("|       {}{} with {} rall branches\n",
-               secname(sec),
-               direc,
-               sec->prop->dparam[4].get<double>());
+                     secname(sec),
+                     direc,
+                     sec->prop->dparam[4].get<double>());
     }
     /* navigate the sibling list backwards */
     /* note that the sibling list is organized monotonically by

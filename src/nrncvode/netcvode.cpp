@@ -1041,11 +1041,11 @@ void NetCvodeThreadData::interthread_send(double td, DiscreteEvent* db, NrnThrea
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_) {
         logger.print("interthread send td={:.15g} DE type={} thread={} target={} {}\n",
-               td,
-               db->type(),
-               nt->id,
-               (db->type() == 2) ? PP2NT(((NetCon*) db)->target_)->id : -1,
-               (db->type() == 2) ? hoc_object_name(((NetCon*) (db))->target_->ob) : "?");
+                     td,
+                     db->type(),
+                     nt->id,
+                     (db->type() == 2) ? PP2NT(((NetCon*) db)->target_)->id : -1,
+                     (db->type() == 2) ? hoc_object_name(((NetCon*) (db))->target_->ob) : "?");
     }
 #endif
     if (ite_cnt_ >= ite_size_) {
@@ -1079,12 +1079,13 @@ void NetCvodeThreadData::enqueue(NetCvode* nc, NrnThread* nt) {
 #if PRINT_EVENT
         if (net_cvode_instance->print_event_) {
             logger.print("interthread enqueue td={:.15g} DE type={} thread={} target={} {}\n",
-                   ite.t_,
-                   ite.de_->type(),
-                   nt->id,
-                   (ite.de_->type() == 2) ? PP2NT(((NetCon*) (ite.de_))->target_)->id : -1,
-                   (ite.de_->type() == 2) ? hoc_object_name(((NetCon*) (ite.de_))->target_->ob)
-                                          : "?");
+                         ite.t_,
+                         ite.de_->type(),
+                         nt->id,
+                         (ite.de_->type() == 2) ? PP2NT(((NetCon*) (ite.de_))->target_)->id : -1,
+                         (ite.de_->type() == 2)
+                             ? hoc_object_name(((NetCon*) (ite.de_))->target_->ob)
+                             : "?");
         }
 #endif
         nc->bin_event(ite.t_, ite.de_, nt);
@@ -2224,10 +2225,10 @@ void NetCvode::move_event(TQItem* q, double tnew, NrnThread* nt) {
     if (print_event_) {
         SelfEvent* se = (SelfEvent*) q->data_;
         logger.print("NetCvode::move_event self event target {} t={}, old={} new={}\n",
-               hoc_object_name(se->target_->ob),
-               nt->_t,
-               q->t_,
-               tnew);
+                     hoc_object_name(se->target_->ob),
+                     nt->_t,
+                     q->t_,
+                     tnew);
     }
 #endif
     p[tid].tqe_->move(q, tnew);
@@ -3492,10 +3493,10 @@ void NetCvode::local_retreat(double t, Cvode* cv) {
 #if PRINT_EVENT
         if (print_event_) {
             logger.print("microstep local retreat from {} (cvode_{} is at {}) for event onset={}\n",
-                   cv->tqitem_->t_,
-                   fmt::ptr(cv),
-                   cv->t_,
-                   t);
+                         cv->tqitem_->t_,
+                         fmt::ptr(cv),
+                         cv->t_,
+                         t);
         }
 #endif
         cv->interpolate(t);
@@ -3503,9 +3504,9 @@ void NetCvode::local_retreat(double t, Cvode* cv) {
 #if PRINT_EVENT
         if (print_event_ > 1) {
             logger.print("after target solve time for {} is {} , dt={}\n",
-                   fmt::ptr(cv),
-                   cv->time(),
-                   nt_dt);
+                         fmt::ptr(cv),
+                         cv->time(),
+                         nt_dt);
         }
 #endif
     } else {
@@ -3521,10 +3522,10 @@ void NetCvode::retreat(double t, Cvode* cv) {
 #if PRINT_EVENT
     if (print_event_) {
         logger.print("microstep retreat from {} (cvode_{} is at {}) for event onset={}\n",
-               tq ? cv->tqitem_->t_ : cv->t_,
-               fmt::ptr(cv),
-               cv->t_,
-               t);
+                     tq ? cv->tqitem_->t_ : cv->t_,
+                     fmt::ptr(cv),
+                     cv->t_,
+                     t);
     }
 #endif
     cv->interpolate(t);
@@ -3533,7 +3534,10 @@ void NetCvode::retreat(double t, Cvode* cv) {
     }
 #if PRINT_EVENT
     if (print_event_ > 1) {
-        logger.print("after target solve time for {} is {} , dt={}\n", fmt::ptr(cv), cv->time(), dt);
+        logger.print("after target solve time for {} is {} , dt={}\n",
+                     fmt::ptr(cv),
+                     cv->time(),
+                     dt);
     }
 #endif
 }
@@ -3830,9 +3834,9 @@ void NetCvode::statistics(int i) {
         }
     }
     logger.print("NetCon active={} (not sent)={} delivered={}\n",
-           NetCon::netcon_send_active_,
-           NetCon::netcon_send_inactive_,
-           NetCon::netcon_deliver_);
+                 NetCon::netcon_send_active_,
+                 NetCon::netcon_send_inactive_,
+                 NetCon::netcon_deliver_);
     logger.print(
         "Condition O2 thresh detect={} via init={} effective={} abandoned={} (unnecesarily={} "
         "init+={} init-={} above={} below={})\n",
@@ -3846,32 +3850,32 @@ void NetCvode::statistics(int i) {
         ConditionEvent::abandon_above_,
         ConditionEvent::abandon_below_);
     logger.print("PreSyn send: mindelay={} direct={}\n",
-           PreSyn::presyn_send_mindelay_,
-           PreSyn::presyn_send_direct_);
+                 PreSyn::presyn_send_mindelay_,
+                 PreSyn::presyn_send_direct_);
     logger.print("PreSyn deliver: O2 thresh={}  NetCon={} (send={}  deliver={})\n",
-           ConditionEvent::deliver_qthresh_,
-           PreSyn::presyn_deliver_netcon_,
-           PreSyn::presyn_deliver_ncsend_,
-           PreSyn::presyn_deliver_direct_);
+                 ConditionEvent::deliver_qthresh_,
+                 PreSyn::presyn_deliver_netcon_,
+                 PreSyn::presyn_deliver_ncsend_,
+                 PreSyn::presyn_deliver_direct_);
     logger.print("SelfEvent send={} move={} deliver={}\n",
-           SelfEvent::selfevent_send_,
-           SelfEvent::selfevent_move_,
-           SelfEvent::selfevent_deliver_);
+                 SelfEvent::selfevent_send_,
+                 SelfEvent::selfevent_move_,
+                 SelfEvent::selfevent_deliver_);
     logger.print("Watch send={} deliver={}\n",
-           WatchCondition::watch_send_,
-           WatchCondition::watch_deliver_);
+                 WatchCondition::watch_send_,
+                 WatchCondition::watch_deliver_);
     logger.print("PlayRecord send={} deliver={}\n",
-           PlayRecordEvent::playrecord_send_,
-           PlayRecordEvent::playrecord_deliver_);
+                 PlayRecordEvent::playrecord_send_,
+                 PlayRecordEvent::playrecord_deliver_);
     logger.print("HocEvent send={} deliver={}\n",
-           HocEvent::hocevent_send_,
-           HocEvent::hocevent_deliver_);
+                 HocEvent::hocevent_send_,
+                 HocEvent::hocevent_deliver_);
     logger.print("SingleEvent deliver={} move={}\n",
-           KSSingle::singleevent_deliver_,
-           KSSingle::singleevent_move_);
+                 KSSingle::singleevent_deliver_,
+                 KSSingle::singleevent_move_);
     logger.print("DiscreteEvent send={} deliver={}\n",
-           DiscreteEvent::discretevent_send_,
-           DiscreteEvent::discretevent_deliver_);
+                 DiscreteEvent::discretevent_send_,
+                 DiscreteEvent::discretevent_deliver_);
     logger.print("{} total events delivered  net_event={}\n", deliver_cnt_, net_event_cnt_);
     logger.print("Discrete event TQueue\n");
     p[0].tqe_->statistics();

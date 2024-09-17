@@ -279,7 +279,8 @@ void NetParEvent::pgvts_deliver(double tt, NetCvode* nc) {
 }
 
 void NetParEvent::pr(const char* m, double tt, NetCvode* nc) {
-    logger.print("{} NetParEvent {} t={:.15g} tt-t={}\n", m, ithread_, tt, tt - nrn_threads[ithread_]._t);
+    logger.print(
+        "{} NetParEvent {} t={:.15g} tt-t={}\n", m, ithread_, tt, tt - nrn_threads[ithread_]._t);
 }
 
 DiscreteEvent* NetParEvent::savestate_save() {
@@ -1397,8 +1398,9 @@ static double set_mindelay(double maxdelay) {
                 "Notice: The global minimum NetCon delay is {}, so turned off the "
                 "cvode.queue_mode\n",
                 od);
-            logger.print("   use_self_queue option. The interprocessor minimum NetCon delay is {}\n",
-                   mindelay);
+            logger.print(
+                "   use_self_queue option. The interprocessor minimum NetCon delay is {}\n",
+                mindelay);
         }
     }
     errno = 0;

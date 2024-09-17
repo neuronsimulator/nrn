@@ -24,15 +24,15 @@ void psection(void) {
     if (sec->parentsec) {
         logger.print("	{} ", secname(sec->parentsec));
         logger.print("connect {} ({}), {}\n",
-               secname(sec),
-               p->dparam[3].get<double>(),
-               p->dparam[1].get<double>());
+                     secname(sec),
+                     p->dparam[3].get<double>(),
+                     p->dparam[1].get<double>());
     } else {
         v_setup_vectors();
         /*SUPPRESS 440*/
         logger.print("	/*location {} attached to cell {}*/\n",
-               p->dparam[3].get<double>(),
-               sec->parentnode->v_node_index);
+                     p->dparam[3].get<double>(),
+                     sec->parentnode->v_node_index);
     }
     if (sec->nnode) {
         /*SUPPRESS 440*/

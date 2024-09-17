@@ -96,11 +96,11 @@ void nrn_chk_ndt() {
     if (dt != nrn_dt_ || t != nrn_tbase_ + nrn_ndt_ * nrn_dt_) {
         if (nrnmpi_myid == 0)
             logger.print("nrn_chk_ndt t={} dt={} old nrn_tbase_={} nrn_ndt_={} nrn_dt_={}\n",
-                   t,
-                   dt,
-                   nrn_tbase_,
-                   nrn_ndt_,
-                   nrn_dt_);
+                         t,
+                         dt,
+                         nrn_tbase_,
+                         nrn_ndt_,
+                         nrn_dt_);
         nrn_dt_ = dt;
         nrn_tbase_ = t;
         nrn_ndt_ = 0.;
@@ -684,11 +684,11 @@ void nrn_print_matrix(NrnThread* _nt) {
         for (inode = 0; inode < _nt->end; ++inode) {
             nd = _nt->_v_node[inode];
             logger.print("{} {} {} {} {}\n",
-                   inode,
-                   *nrn_classicalNodeB(nd),
-                   *nrn_classicalNodeA(nd),
-                   NODED(nd),
-                   NODERHS(nd));
+                         inode,
+                         *nrn_classicalNodeB(nd),
+                         *nrn_classicalNodeA(nd),
+                         NODED(nd),
+                         NODERHS(nd));
         }
     } else {
         for (isec = 0; isec < section_count; ++isec) {
@@ -696,12 +696,12 @@ void nrn_print_matrix(NrnThread* _nt) {
             for (inode = 0; inode < sec->nnode; ++inode) {
                 nd = sec->pnode[inode];
                 logger.print("{} {} {} {} {} {}\n",
-                       isec,
-                       inode,
-                       *nrn_classicalNodeB(nd),
-                       *nrn_classicalNodeA(nd),
-                       NODED(nd),
-                       NODERHS(nd));
+                             isec,
+                             inode,
+                             *nrn_classicalNodeB(nd),
+                             *nrn_classicalNodeA(nd),
+                             NODED(nd),
+                             NODERHS(nd));
             }
         }
     }

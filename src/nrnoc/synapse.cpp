@@ -68,17 +68,18 @@ void print_syn(void) {
     if (maxstim == 0)
         return;
     /*SUPPRESS 440*/
-    logger.print("fsyn({})\n/* section	fsyn( #, loc, delay(ms), tau(ms), conduct(uS), erev(mV)) */\n",
-           maxstim);
+    logger.print(
+        "fsyn({})\n/* section	fsyn( #, loc, delay(ms), tau(ms), conduct(uS), erev(mV)) */\n",
+        maxstim);
     for (i = 0; i < maxstim; i++) {
         logger.print("{:-15s} fsyn({:2d},{:4g},{:10g},{:8g},{:14g},{:9g})\n",
-               secname(pstim[i].sec),
-               i,
-               pstim[i].loc,
-               pstim[i].delay,
-               pstim[i].duration,
-               pstim[i].mag,
-               pstim[i].erev);
+                     secname(pstim[i].sec),
+                     i,
+                     pstim[i].loc,
+                     pstim[i].delay,
+                     pstim[i].duration,
+                     pstim[i].mag,
+                     pstim[i].erev);
     }
 }
 

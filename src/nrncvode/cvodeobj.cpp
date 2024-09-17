@@ -1066,9 +1066,9 @@ int Cvode::cvode_init(double) {
         // printf("CVodeReInit\n");
         if (err != SUCCESS) {
             logger.print("Cvode {} {} CVReInit error {}\n",
-                   fmt::ptr(this),
-                   secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
-                   err);
+                         fmt::ptr(this),
+                         secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+                         err);
             return err;
         }
     } else {
@@ -1082,9 +1082,9 @@ int Cvode::cvode_init(double) {
         CVodeMalloc(mem_, pf_, t0_, y_, CV_SV, &ncv_->rtol_, atolnvec_);
         if (err != SUCCESS) {
             logger.print("Cvode {} {} CVodeMalloc error {}\n",
-                   fmt::ptr(this),
-                   secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
-                   err);
+                         fmt::ptr(this),
+                         secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+                         err);
             return err;
         }
         //		CVodeSetInitStep(mem_, .01);
@@ -1268,17 +1268,17 @@ int Cvode::interpolate(double tout) {
         // Cvode::handle_step when a first order condition check
         // puts an event on the queue equal to t_
         logger.print("Cvode::interpolate assert error t0={} tout-t0={} eps*t_={}\n",
-               t0_,
-               tout - t0_,
-               NetCvode::eps(t_));
+                     t0_,
+                     tout - t0_,
+                     NetCvode::eps(t_));
         //	}
         tout = t0_;
     }
     if (tout > tn_) {
         logger.print("Cvode::interpolate assert error tn={} tn-tout={}  eps*t_={}\n",
-               tn_,
-               tn_ - tout,
-               NetCvode::eps(t_));
+                     tn_,
+                     tn_ - tout,
+                     NetCvode::eps(t_));
         tout = tn_;
     }
 #endif
@@ -1302,11 +1302,11 @@ int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         logger.print("Cvode::cvode_advance_tn {} {} initialize_={} tstop={:.20g} t_={:.20g} to ",
-               fmt::ptr(this),
-               nth_ ? nth_->id : 0,
-               initialize_,
-               tstop_,
-               t_);
+                     fmt::ptr(this),
+                     nth_ ? nth_->id : 0,
+                     initialize_,
+                     tstop_,
+                     t_);
     }
 #endif
     std::pair<Cvode*, neuron::model_sorted_token const&> opaque{this, sorted_token};
@@ -1322,9 +1322,9 @@ int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
 #endif
     if (err < 0) {
         logger.print("CVode {} {} advance_tn failed, err={}.\n",
-               fmt::ptr(this),
-               secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
-               err);
+                     fmt::ptr(this),
+                     secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+                     err);
         pf_(t_, y_, nullptr, &opaque);
         return err;
     }
@@ -1344,10 +1344,10 @@ int Cvode::cvode_interpolate(double tout) {
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         logger.print("Cvode::cvode_interpolate {} {} initialize_{} t={:.20g} to ",
-               fmt::ptr(this),
-               nth_ ? nth_->id : 0,
-               initialize_,
-               t_);
+                     fmt::ptr(this),
+                     nth_ ? nth_->id : 0,
+                     initialize_,
+                     t_);
     }
 #endif
     // avoid CVode-- tstop = 0.5 is behind  current t = 0.5
@@ -1365,9 +1365,9 @@ int Cvode::cvode_interpolate(double tout) {
 #endif
     if (err < 0) {
         logger.print("CVode {} {} interpolate failed, err={}.\n",
-               fmt::ptr(this),
-               secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
-               err);
+                     fmt::ptr(this),
+                     secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+                     err);
         return err;
     }
     pf_(t_, y_, nullptr, &opaque);
@@ -1409,19 +1409,19 @@ N_Vector Cvode::acorvec() {
 void Cvode::statistics() {
 #if 1
     logger.print("\nCvode instance {} {} statistics : {} {} states\n",
-           fmt::ptr(this),
-           secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
-           neq_,
-           (use_daspk_ ? "IDA" : "CVode"));
+                 fmt::ptr(this),
+                 secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+                 neq_,
+                 (use_daspk_ ? "IDA" : "CVode"));
     logger.print("   {} advance_tn, {} interpolate, {} init ({} due to at_time)\n",
-           advance_calls_,
-           interpolate_calls_,
-           init_calls_,
-           ts_inits_);
+                 advance_calls_,
+                 interpolate_calls_,
+                 init_calls_,
+                 ts_inits_);
     logger.print("   {} function evaluations, {} mx=b solves, {} jacobian setups\n",
-           f_calls_,
-           mxb_calls_,
-           jac_calls_);
+                 f_calls_,
+                 mxb_calls_,
+                 jac_calls_);
     if (use_daspk_) {
         daspk_->statistics();
         return;
