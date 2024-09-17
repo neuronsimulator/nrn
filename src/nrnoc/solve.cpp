@@ -314,7 +314,7 @@ static void dashes(Section* sec, int offset, int first) {
     Sprintf(direc, "(%d-%d)", i, 1 - i);
     for (i = 0; i < offset; i++)
         logger.print(" ");
-    logger.print("{}", first);
+    logger.print("{:c}", first);
     for (i = 2; i < sec->nnode; i++)
         logger.print("-");
     if (sec->prop->dparam[4].get<double>() == 1) {

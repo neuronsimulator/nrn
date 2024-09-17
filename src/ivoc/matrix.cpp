@@ -106,7 +106,7 @@ static double m_spgetrowval(void* v) {
 static double m_printf(void* v) {
     Matrix* m = (Matrix*) v;
     int i, j, nrow = m->nrow(), ncol = m->ncol();
-    const char* f1 = " %-8.3g";
+    const char* f1 = " {:<-8.3g}";
     const char* f2 = "\n";
     if (ifarg(1)) {
         f1 = gargstr(1);
