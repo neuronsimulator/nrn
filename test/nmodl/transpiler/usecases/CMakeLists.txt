@@ -1,5 +1,6 @@
 set(NMODL_USECASE_DIRS
     solve
+    builtin_functions
     constant
     electrode_current
     constructor

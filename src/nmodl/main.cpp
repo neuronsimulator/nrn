@@ -291,6 +291,8 @@ int main(int argc, const char* argv[]) {
 
     CLI11_PARSE(app, argc, argv);
 
+    std::string simulator_name = neuron_code ? "neuron" : "coreneuron";
+
     fs::create_directories(output_dir);
     fs::create_directories(scratch_dir);
 
@@ -383,8 +385,7 @@ int main(int argc, const char* argv[]) {
             // run perfvisitor to update read/write counts
             PerfVisitor().visit_program(*ast);
 
-            auto compatibility_visitor = CodegenCompatibilityVisitor(neuron_code ? "neuron"
-                                                                                 : "coreneuron");
+            auto compatibility_visitor = CodegenCompatibilityVisitor(simulator_name);
             // If we want to just check compatibility we return the result
             if (only_check_compatibility) {
                 return compatibility_visitor.find_unhandled_ast_nodes(*ast);
@@ -556,7 +557,7 @@ int main(int argc, const char* argv[]) {
 
         // Add implicit arguments (like celsius, nt) to NEURON functions (like
         // nrn_ghk, at_time) whose signatures we have to massage.
-        ImplicitArgumentVisitor{}.visit_program(*ast);
+        ImplicitArgumentVisitor{simulator_name}.visit_program(*ast);
         SymtabVisitor(update_symtab).visit_program(*ast);
 
         {

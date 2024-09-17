@@ -19,6 +19,9 @@ void ImplicitArgumentVisitor::visit_function_call(ast::FunctionCall& node) {
     auto function_name = node.get_node_name();
     auto const& arguments = node.get_arguments();
     if (function_name == "nrn_ghk") {
+        if (simulator == "neuron") {
+            return;
+        }
         // This function is traditionally used in MOD files with four arguments, but
         // its value also depends on the global celsius variable so the real
         // function in CoreNEURON has a 5th argument for that.

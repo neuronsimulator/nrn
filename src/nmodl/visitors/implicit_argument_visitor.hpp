@@ -14,6 +14,8 @@
 
 #include "visitors/ast_visitor.hpp"
 
+#include <string>
+
 
 namespace nmodl {
 namespace visitor {
@@ -33,7 +35,13 @@ namespace visitor {
  * that they can be pure functions.
  */
 struct ImplicitArgumentVisitor: public AstVisitor {
+    ImplicitArgumentVisitor(const std::string& simulator = "coreneuron")
+        : simulator(simulator) {}
+
     void visit_function_call(ast::FunctionCall& node) override;
+
+  private:
+    std::string simulator;
 };
 
 /** \} */  // end of visitor_classes
