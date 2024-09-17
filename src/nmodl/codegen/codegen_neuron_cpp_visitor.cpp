@@ -1595,6 +1595,11 @@ void CodegenNeuronCppVisitor::print_callable_preamble_from_prop() {
     printer->add_newline();
 }
 
+void CodegenNeuronCppVisitor::print_nrn_constructor_declaration() {
+    if (info.constructor_node) {
+        printer->fmt_line("void {}(Prop* prop);", method_name(naming::NRN_CONSTRUCTOR_METHOD));
+    }
+}
 
 void CodegenNeuronCppVisitor::print_nrn_constructor() {
     if (info.constructor_node) {
@@ -1609,6 +1614,10 @@ void CodegenNeuronCppVisitor::print_nrn_constructor() {
     }
 }
 
+
+void CodegenNeuronCppVisitor::print_nrn_destructor_declaration() {
+    printer->fmt_line("void {}(Prop* prop);", method_name(naming::NRN_DESTRUCTOR_METHOD));
+}
 
 void CodegenNeuronCppVisitor::print_nrn_destructor() {
     printer->fmt_push_block("void {}(Prop* prop)", method_name(naming::NRN_DESTRUCTOR_METHOD));
@@ -1745,7 +1754,7 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
             printer->fmt_line("{} = nrnran123_newstream();",
                               get_variable_name(get_name(rv), false));
         }
-        printer->fmt_line("nrn_mech_inst_destruct[mech_type] = {};",
+        printer->fmt_line("nrn_mech_inst_destruct[mech_type] = neuron::{};",
                           method_name(naming::NRN_DESTRUCTOR_METHOD));
     }
 
@@ -2148,14 +2157,16 @@ void CodegenNeuronCppVisitor::print_codegen_routines() {
     print_prcellstate_macros();
     print_mechanism_info();
     print_data_structures(true);
-    print_nrn_constructor();
-    print_nrn_destructor();
+    print_nrn_constructor_declaration();
+    print_nrn_destructor_declaration();
     print_nrn_alloc();
     print_function_prototypes();
     print_functors_definitions();
     print_global_variables_for_hoc();
     print_thread_memory_callbacks();
     print_compute_functions();  // only nrn_cur and nrn_state
+    print_nrn_constructor();
+    print_nrn_destructor();
     print_sdlists_init(true);
     print_mechanism_register();
     print_namespace_stop();
