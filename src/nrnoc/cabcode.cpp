@@ -1569,7 +1569,6 @@ int nrn_at_beginning(Section* sec) {
 }
 
 static void nrn_rootnode_alloc(Section* sec) {
-    Extnode* nde;
     sec->parentnode = new Node{};
     sec->parentnode->sec_node_index_ = 0;
     sec->parentnode->sec = sec;
@@ -1873,7 +1872,7 @@ double* nrn_vext_pd(Symbol* s, int indx, Node* nd) {
     if (s->u.rng.type != EXTRACELL) {
         return (double*) 0;
     }
-    if (s->u.rng.index != neuron::extracellular::vext_pseudoindex()) {
+    if (std::size_t(s->u.rng.index) != neuron::extracellular::vext_pseudoindex()) {
         return nullptr;
     }
     zero = 0.;
@@ -1905,7 +1904,8 @@ neuron::container::generic_data_handle dprop_impl(Prop* m,
                                                   short inode) {
 #if EXTRACELLULAR
     // old comment: this does not handle vext(0) and vext(1) properly at this time
-    if (m->_type == EXTRACELL && s->u.rng.index == neuron::extracellular::vext_pseudoindex()) {
+    if (m->_type == EXTRACELL &&
+        std::size_t(s->u.rng.index) == neuron::extracellular::vext_pseudoindex()) {
         return neuron::container::data_handle<double>{neuron::container::do_not_search,
                                                       sec->pnode[inode]->extnode->v + indx};
     }
@@ -1933,7 +1933,7 @@ neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, 
     auto* const m = nrn_mechanism_check(s->u.rng.type, sec, inode);
     try {
         return neuron::container::data_handle<double>{dprop_impl(m, s, indx, sec, inode)};
-    } catch (VoidPointerError e) {
+    } catch (const VoidPointerError& e) {
         hoc_execerror(e.what(), nullptr);
     }
 }
@@ -1952,7 +1952,7 @@ neuron::container::generic_data_handle nrnpy_dprop(Symbol* s,
     }
     try {
         return dprop_impl(m, s, indx, sec, inode);
-    } catch (VoidPointerError e) {
+    } catch (const VoidPointerError& e) {
         *err = 2;
     }
     return {};
@@ -2082,15 +2082,8 @@ int has_membrane(char* mechanism_name, Section* sec) {
 
 void ismembrane(void) { /* return true if string is an inserted membrane in the
         access section */
-    char* str;
-    Prop* p;
-
-    str = gargstr(1);
+    char* str = gargstr(1);
     hoc_retpushx((double) has_membrane(str, chk_access()));
-}
-
-static const char* secaccessname() {
-    return secname(chk_access());
 }
 
 void sectionname(void) {
@@ -2259,7 +2252,7 @@ Section* nrn_section_exists(char* name, int indx, Object* cell) {
             } else {
                 obd = hoc_top_level_data;
             }
-            if (indx < hoc_total_array_data(sym, obd)) {
+            if (indx >= 0 && std::size_t(indx) < hoc_total_array_data(sym, obd)) {
                 itm = *(obd[sym->u.oboff].psecitm + indx);
                 if (itm) {
                     sec = itm->element.sec;
@@ -2274,7 +2267,7 @@ void section_exists(void) {
     int iarg, indx;
     Section* sec;
     Object* obj;
-    char *str, *cp, buf[100];
+    char *str, buf[100];
 
     obj = nullptr;
     sec = (Section*) 0;
