@@ -9,7 +9,8 @@
 
 int hoc_zzdebug;
 
-#define prcod(c1, c2) else if (p->pf == c1) logger.print("{} {} {}", fmt::ptr(p), fmt::ptr(p->pf), c2)
+#define prcod(c1, c2) \
+    else if (p->pf == c1) logger.print("{} {} {}", fmt::ptr(p), fmt::ptr(p->pf), c2)
 
 void hoc_debug(void) /* print the machine */
 {

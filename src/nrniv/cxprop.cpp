@@ -119,10 +119,10 @@ void nrn_poolshrink(int shrink) {
             auto const& pdatum = datumpools()[i];
             if (pdatum) {
                 logger.print("{} {} ({}, {})\n",
-                       i,
-                       (memb_func[i].sym ? memb_func[i].sym->name : "noname"),
-                       (pdatum ? pdatum->nget() : 0),
-                       (pdatum ? pdatum->size() : 0));
+                             i,
+                             (memb_func[i].sym ? memb_func[i].sym->name : "noname"),
+                             (pdatum ? pdatum->nget() : 0),
+                             (pdatum ? pdatum->size() : 0));
             }
         }
     }

@@ -297,7 +297,9 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
             logger.print("IDA initialization warning, weighted norm of residual={}\n", norm);
             use_parasite_ = true;
             t_parasite_ = nt_t;
-            logger.print("  subtracting (for next 1e-6 ms): f(y', y, {})*exp(-1e7*(t-{}))\n", nt_t, nt_t);
+            logger.print("  subtracting (for next 1e-6 ms): f(y', y, {})*exp(-1e7*(t-{}))\n",
+                         nt_t,
+                         nt_t);
             break;
         }
 #if 0

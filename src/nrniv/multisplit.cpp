@@ -1679,12 +1679,12 @@ void MultiSplitControl::pexch() {
         for (j = 0; j < ms.nnode_; ++j) {
             k = ms.nodeindex_[j];
             logger.print("{} {} {} {} {} {}\n",
-                   id,
-                   i,
-                   j,
-                   k,
-                   secname(nt->_v_node[k]->sec),
-                   nt->_v_node[k]->sec_node_index_);
+                         id,
+                         i,
+                         j,
+                         k,
+                         secname(nt->_v_node[k]->sec),
+                         nt->_v_node[k]->sec_node_index_);
         }
     }
 }
@@ -1810,41 +1810,43 @@ void MultiSplitControl::prstruct() {
             for (i = 0; i < multisplit_list_->size(); ++i) {
                 MultiSplit* ms = (*multisplit_list_)[i];
                 logger.print("  {:2d} bbs={} bi={:-2d} rthost={:-4d} {:-4d} {}{{}}",
-                       i,
-                       ms->backbone_style,
-                       ms->back_index,
-                       ms->rthost,
-                       ms->sid[0],
-                       secname(ms->nd[0]->sec),
-                       ms->nd[0]->sec_node_index_);
+                             i,
+                             ms->backbone_style,
+                             ms->back_index,
+                             ms->rthost,
+                             ms->sid[0],
+                             secname(ms->nd[0]->sec),
+                             ms->nd[0]->sec_node_index_);
                 if (ms->nd[1]) {
                     logger.print("   {:-4d} {}{{}}",
-                           ms->sid[1],
-                           secname(ms->nd[1]->sec),
-                           ms->nd[1]->sec_node_index_);
+                                 ms->sid[1],
+                                 secname(ms->nd[1]->sec),
+                                 ms->nd[1]->sec_node_index_);
                 }
                 logger.print("\n");
             }
             for (it = 0; it < nrn_nthread; ++it) {
                 NrnThread* _nt = nrn_threads + it;
                 MultiSplitThread& t = mth_[it];
-                logger.print(" backbone_begin={} backbone_long_begin={} backbone_interior_begin={}\n",
-                       t.backbone_begin,
-                       t.backbone_long_begin,
-                       t.backbone_interior_begin);
-                logger.print(" backbone_sid1_begin={} backbone_long_sid1_begin={} backbone_end={}\n",
-                       t.backbone_sid1_begin,
-                       t.backbone_long_sid1_begin,
-                       t.backbone_end);
+                logger.print(
+                    " backbone_begin={} backbone_long_begin={} backbone_interior_begin={}\n",
+                    t.backbone_begin,
+                    t.backbone_long_begin,
+                    t.backbone_interior_begin);
+                logger.print(
+                    " backbone_sid1_begin={} backbone_long_sid1_begin={} backbone_end={}\n",
+                    t.backbone_sid1_begin,
+                    t.backbone_long_sid1_begin,
+                    t.backbone_end);
                 logger.print(" nbackrt_={}  i, backsid_[i], backAindex_[i], backBindex_[i]\n",
-                       t.nbackrt_);
+                             t.nbackrt_);
                 if (t.nbackrt_) {
                     for (int i = 0; i < t.nbackrt_; ++i) {
                         logger.print("  {:2d} {:2d} {:5d} {:5d}",
-                               i,
-                               t.backsid_[i],
-                               t.backAindex_[i],
-                               t.backBindex_[i]);
+                                     i,
+                                     t.backsid_[i],
+                                     t.backAindex_[i],
+                                     t.backBindex_[i]);
                         Node* nd = _nt->_v_node[t.backbone_begin + t.backAindex_[i]];
                         logger.print(" {}{{}}", secname(nd->sec), nd->sec_node_index_);
                         nd = _nt->_v_node[t.backbone_begin + t.backBindex_[i]];
@@ -1863,32 +1865,32 @@ void MultiSplitControl::prstruct() {
             for (i = 0; i < nthost_; ++i) {
                 MultiSplitTransferInfo& m = msti_[i];
                 logger.print("  {} host={} rthost={} nnode={} nnode_rt={} size={} tag={}\n",
-                       i,
-                       m.host_,
-                       m.rthost_,
-                       m.nnode_,
-                       m.nnode_rt_,
-                       m.size_,
-                       m.tag_);
+                             i,
+                             m.host_,
+                             m.rthost_,
+                             m.nnode_,
+                             m.nnode_rt_,
+                             m.size_,
+                             m.tag_);
                 if (m.nnode_) {
                     logger.print("    nodeindex={}  nodeindex_buffer = {}\n",
-                           fmt::ptr(m.nodeindex_),
-                           fmt::ptr(nodeindex_buffer_));
+                                 fmt::ptr(m.nodeindex_),
+                                 fmt::ptr(nodeindex_buffer_));
                 }
             }
             logger.print(" ndbsize={}  i  nodeindex_buffer_={}  nodeindex_rthost_={}\n",
-                   ndbsize,
-                   fmt::ptr(nodeindex_buffer_),
-                   fmt::ptr(nodeindex_rthost_));
+                         ndbsize,
+                         fmt::ptr(nodeindex_buffer_),
+                         fmt::ptr(nodeindex_rthost_));
             if (ndbsize) {
                 for (int i = 0; i < ndbsize; ++i) {
                     logger.print("  {} {} {}\n", i, nodeindex_buffer_[i], nodeindex_rthost_[i]);
                 }
             }
             logger.print(" tbsize={} trecvbuf_={} tsendbuf_={}\n",
-                   tbsize,
-                   fmt::ptr(trecvbuf_),
-                   fmt::ptr(tsendbuf_));
+                         tbsize,
+                         fmt::ptr(trecvbuf_),
+                         fmt::ptr(tsendbuf_));
             logger.print("\n");
         }
     }
@@ -2678,26 +2680,26 @@ void ReducedTree::pr_map(int tsize, double* trbuf) {
             if (rmap[i] >= nt->node_rhs_storage() && rmap[i] < (nt->node_rhs_storage() + nt->end)) {
                 Node* nd = nt->_v_node[rmap[i] - nt->node_rhs_storage()];
                 logger.print(" {:2d} rhs[{:2d}] rhs[{}] += rhs[{}] \t{}{{}}\n",
-                       i,
-                       irmap[i],
-                       irmap[i],
-                       rmap[i] - nt->node_rhs_storage(),
-                       secname(nd->sec),
-                       nd->sec_node_index_);
+                             i,
+                             irmap[i],
+                             irmap[i],
+                             rmap[i] - nt->node_rhs_storage(),
+                             secname(nd->sec),
+                             nd->sec_node_index_);
             }
             if (rmap[i] >= nt->node_d_storage() && rmap[i] < (nt->node_d_storage() + nt->end)) {
                 logger.print(" {:2d} rhs[{:2d}]   d[{}] += d[{}]\n",
-                       i,
-                       irmap[i],
-                       irmap[i] - n,
-                       rmap[i] - nt->node_d_storage());
+                             i,
+                             irmap[i],
+                             irmap[i] - n,
+                             rmap[i] - nt->node_d_storage());
             }
             if (rmap[i] >= t.sid1A && rmap[i] < (t.sid1A + nb)) {
                 logger.print(" {:2d} rhs[{:2d}]   a[{}] += sid1A[{}]",
-                       i,
-                       irmap[i],
-                       irmap[i] - 2 * n,
-                       rmap[i] - t.sid1A);
+                             i,
+                             irmap[i],
+                             irmap[i] - 2 * n,
+                             rmap[i] - t.sid1A);
                 int j = (rmap[i] - t.sid1A) + t.backbone_begin;
                 Node* nd = nt->_v_node[j];
                 logger.print(" \tA({}) {}{{{}}}", j, secname(nd->sec), nd->sec_node_index_);
@@ -2705,10 +2707,10 @@ void ReducedTree::pr_map(int tsize, double* trbuf) {
             }
             if (rmap[i] >= t.sid1B && rmap[i] < (t.sid1B + nb)) {
                 logger.print(" {:2d} rhs[{:2d}]   b[{}] += sid1B[{}]",
-                       i,
-                       irmap[i],
-                       irmap[i] - 3 * n,
-                       rmap[i] - t.sid1B);
+                             i,
+                             irmap[i],
+                             irmap[i] - 3 * n,
+                             rmap[i] - t.sid1B);
                 int j = (rmap[i] - t.sid1B) + t.backbone_begin;
                 Node* nd = nt->_v_node[j];
                 logger.print("\tB({}) {}{{{}}}", j, secname(nd->sec), nd->sec_node_index_);
@@ -3456,24 +3458,28 @@ void MultiSplitControl::pmat(bool full) {
         for (i = 0; i < _nt->end; ++i) {
             is = _nt->_v_node[i]->_classical_parent ? _nt->_v_node[i]->sec_node_index_ : -1;
             logger.print("{} {} {} {}",
-                   _nt->_v_node[i]->v_node_index,
-                   _nt->_v_parent[i] ? _nt->_v_parent[i]->v_node_index : -1,
-                   secname(_nt->_v_node[i]->sec),
-                   is);
+                         _nt->_v_node[i]->v_node_index,
+                         _nt->_v_parent[i] ? _nt->_v_parent[i]->v_node_index : -1,
+                         secname(_nt->_v_node[i]->sec),
+                         is);
             if (_nt->_v_parent[i]) {
                 is = _nt->_v_parent[i]->_classical_parent ? _nt->_v_parent[i]->sec_node_index_ : -1;
                 logger.print("  ->  {} {}", secname(_nt->_v_parent[i]->sec), is);
-                logger.print("\t {:10.5g}  {:10.5g}", NODEB(_nt->_v_node[i]), NODEA(_nt->_v_node[i]));
+                logger.print("\t {:10.5g}  {:10.5g}",
+                             NODEB(_nt->_v_node[i]),
+                             NODEA(_nt->_v_node[i]));
             } else {
                 logger.print(" root\t\t {:10.5g}  {:10.5g}", 0., 0.);
             }
 
             if (full) {
-                logger.print("  {:10.5g}  {:10.5g}", NODED(_nt->_v_node[i]), NODERHS(_nt->_v_node[i]));
+                logger.print("  {:10.5g}  {:10.5g}",
+                             NODED(_nt->_v_node[i]),
+                             NODERHS(_nt->_v_node[i]));
                 if (t.sid0i && i >= t.backbone_begin && i < t.backbone_end) {
                     logger.print("  {:10.5g}  {:10.5g}",
-                           t.S1B(i - t.backbone_begin),
-                           t.S1A(i - t.backbone_begin));
+                                 t.S1B(i - t.backbone_begin),
+                                 t.S1A(i - t.backbone_begin));
                 }
             }
             logger.print("\n");
@@ -3545,26 +3551,26 @@ void MultiSplitControl::pmat1(const char* s) {
                 a = mth_[it].S1A(0);
             }
             logger.print("{:2d} {} sid={} {:12.5g} {:12.5g} {:12.5g} {:12.5g}\n",
-                   nrnmpi_myid,
-                   s,
-                   ms->sid[0],
-                   b,
-                   d,
-                   a,
-                   rhs);
+                         nrnmpi_myid,
+                         s,
+                         ms->sid[0],
+                         b,
+                         d,
+                         a,
+                         rhs);
             if (ms->nd[1]) {
                 d = D(ms->nd[1]->v_node_index);
                 rhs = RHS(ms->nd[1]->v_node_index);
                 a = 0.;
                 b = t.S1B(t.backbone_sid1_begin - t.backbone_begin);
                 logger.print("{:2d} {} sid={} {:12.5g} {:12.5g} {:12.5g} {:12.5g}\n",
-                       nrnmpi_myid,
-                       s,
-                       ms->sid[1],
-                       b,
-                       d,
-                       a,
-                       rhs);
+                             nrnmpi_myid,
+                             s,
+                             ms->sid[1],
+                             b,
+                             d,
+                             a,
+                             rhs);
             }
         }
     }

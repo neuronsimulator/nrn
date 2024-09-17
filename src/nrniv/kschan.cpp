@@ -637,47 +637,49 @@ static double ks_pr(void* v) {
 
     logger.print("{} type properties\n", hoc_object_name(ks->obj_));
     logger.print("name={} is_point_={} ion_={} cond_model_={}\n",
-           ks->name_.c_str(),
-           (ks->is_point() ? "true" : "false"),
-           ks->ion_.c_str(),
-           ks->cond_model_);
-    logger.print("  ngate={} nstate={} nhhstate={} nligand={} ntrans={} ivkstrans={} iligtrans={}\n",
-           ks->ngate_,
-           ks->nstate_,
-           ks->nhhstate_,
-           ks->nligand_,
-           ks->ntrans_,
-           ks->ivkstrans_,
-           ks->iligtrans_);
+                 ks->name_.c_str(),
+                 (ks->is_point() ? "true" : "false"),
+                 ks->ion_.c_str(),
+                 ks->cond_model_);
+    logger.print(
+        "  ngate={} nstate={} nhhstate={} nligand={} ntrans={} ivkstrans={} iligtrans={}\n",
+        ks->ngate_,
+        ks->nstate_,
+        ks->nhhstate_,
+        ks->nligand_,
+        ks->ntrans_,
+        ks->ivkstrans_,
+        ks->iligtrans_);
     logger.print("  default gmax={} erev={}\n", ks->gmax_deflt_, ks->erev_deflt_);
     for (int i = 0; i < ks->ngate_; ++i) {
         logger.print("    gate {} index={} nstate={} power={}\n",
-               i,
-               ks->gc_[i].sindex_,
-               ks->gc_[i].nstate_,
-               ks->gc_[i].power_);
+                     i,
+                     ks->gc_[i].sindex_,
+                     ks->gc_[i].nstate_,
+                     ks->gc_[i].power_);
     }
     for (int i = 0; i < ks->nligand_; ++i) {
         logger.print("    ligand {} {}\n", i, ks->ligands_[i]->name);
     }
     for (int i = 0; i < ks->iligtrans_; ++i) {
         kt = ks->trans_ + i;
-        logger.print("    trans {} src={} target={} type={}\n", i, kt->src_, kt->target_, kt->type_);
+        logger.print(
+            "    trans {} src={} target={} type={}\n", i, kt->src_, kt->target_, kt->type_);
         logger.print("        f0 type={}   f1 type={}\n",
-               kt->f0 ? kt->f0->type() : -1,
-               kt->f1 ? kt->f1->type() : -1);
+                     kt->f0 ? kt->f0->type() : -1,
+                     kt->f1 ? kt->f1->type() : -1);
     }
     for (int i = ks->iligtrans_; i < ks->ntrans_; ++i) {
         kt = ks->trans_ + i;
         logger.print("    trans {} src={} target={} type={} ligindex={}\n",
-               i,
-               kt->src_,
-               kt->target_,
-               kt->type_,
-               kt->ligand_index_);
+                     i,
+                     kt->src_,
+                     kt->target_,
+                     kt->type_,
+                     kt->ligand_index_);
         logger.print("        f0 type={}   f1 type={}\n",
-               kt->f0 ? kt->f0->type() : -1,
-               kt->f1 ? kt->f1->type() : -1);
+                     kt->f0 ? kt->f0->type() : -1,
+                     kt->f1 ? kt->f1->type() : -1);
     }
     logger.print("    state names and fractional conductance\n");
     for (int i = 0; i < ks->nstate_; ++i) {

@@ -45,7 +45,9 @@ static double allprint(void* v) {
                 if (f->stmt_->pyobject()) {
                     logger.print("\t{}\n", hoc_object_name(f->stmt_->pyobject()));
                 } else if (f->stmt_->object()) {
-                    logger.print("\t{}.{}\n", hoc_object_name(f->stmt_->object()), f->stmt_->name());
+                    logger.print("\t{}.{}\n",
+                                 hoc_object_name(f->stmt_->object()),
+                                 f->stmt_->name());
                 } else {
                     logger.print("\t{}\n", f->stmt_->name());
                 }

@@ -2092,10 +2092,10 @@ static void hoc_list_allobjref(Symlist* sl, Objectdata* data, int depth) {
                     }
                     if (*obp) {
                         logger.print("obp {}[{}] -> {} with {} refs.\n",
-                               s->name,
-                               i,
-                               hoc_object_name(*obp),
-                               (*obp)->refcount);
+                                     s->name,
+                                     i,
+                                     hoc_object_name(*obp),
+                                     (*obp)->refcount);
                     } else {
                         logger.print("obp {}[{}] -> NULL\n", s->name, i);
                     }

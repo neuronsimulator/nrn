@@ -52,16 +52,17 @@ void print_stim() {
     if (maxstim == 0)
         return;
     /*SUPPRESS 440*/
-    logger.print("fstim({})\n/* section	fstim( #, loc, delay(ms), duration(ms), magnitude(namp)) */\n",
-           maxstim);
+    logger.print(
+        "fstim({})\n/* section	fstim( #, loc, delay(ms), duration(ms), magnitude(namp)) */\n",
+        maxstim);
     for (i = 0; i < maxstim; i++) {
         logger.print("{:-15s} fstim({:2d},{:4g},{:10g},{:13g},{:16g})\n",
-               secname(pstim[i].sec),
-               i,
-               pstim[i].loc,
-               pstim[i].delay,
-               pstim[i].duration,
-               pstim[i].mag);
+                     secname(pstim[i].sec),
+                     i,
+                     pstim[i].loc,
+                     pstim[i].delay,
+                     pstim[i].duration,
+                     pstim[i].mag);
     }
 }
 
