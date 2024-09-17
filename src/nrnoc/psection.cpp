@@ -15,7 +15,7 @@ void psection(void) {
     verify_structure();
     sec = chk_access();
     p = sec->prop;
-    logger.print("{} {", secname(sec));
+    logger.print("{} {{", secname(sec));
     logger.print(" nseg={}  L={}  Ra={}", sec->nnode - 1, section_length(sec), nrn_ra(sec));
     if (p->dparam[4].get<double>() != 1) {
         logger.print(" rallbranch={}", p->dparam[4].get<double>());
@@ -40,7 +40,7 @@ void psection(void) {
         p1 = sec->pnode[0]->prop;
         pnode(p1);
     }
-    logger.print("}\n");
+    logger.print("}}\n");
     hoc_retpushx(1.);
 }
 
@@ -53,7 +53,7 @@ static void pnode(Prop* p1) {
     }
     pnode(p1->next); /*print in insert order*/
     sym = memb_func[p1->_type].sym;
-    logger.print("	insert {} {", sym->name);
+    logger.print("	insert {} {{", sym->name);
     if (sym->s_varn) {
         for (j = 0; j < sym->s_varn; j++) {
             Symbol* s = sym->u.ppsym[j];
@@ -66,7 +66,7 @@ static void pnode(Prop* p1) {
             }
         }
     }
-    logger.print("}\n");
+    logger.print("}}\n");
 }
 
 extern void print_stim(void);
