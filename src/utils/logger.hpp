@@ -15,6 +15,12 @@ class Logger {
         return callback;
     }
 
+    // Unconditionnaly print non depending of the level
+    template <typename... Args>
+    void print(const char* fmt, Args&&... args) const {
+        output(1, fmt, std::forward<Args>(args)...);
+    }
+
     template <typename... Args>
     void debug(const char* fmt, Args&&... args) const {
         output(1, fmt, std::forward<Args>(args)...);
@@ -43,10 +49,11 @@ class Logger {
 
   private:
     std::function<int(int, const char*)> callback = [](int out, const char* mess) {
-        if (out == 1)
+        if (out == 1) {
             std::cout << mess;
-        else
+        } else {
             std::cerr << mess;
+        }
         return 0;
     };
 };

@@ -374,7 +374,7 @@ int Oc::run(const char* buf, bool show_err_mes) {
     } catch (std::exception const& e) {
         if (show_err_mes) {
             std::string_view what{e.what()};
-            std::string message = what.empty() ? "" : fmt::format(": {}", what);
+            std::string message = what.empty() ? ""s : fmt::format(": {}", what);
             logger.error("Oc::run: caught exception{}\n", message);
         }
         err = 1;
