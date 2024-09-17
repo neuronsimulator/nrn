@@ -95,7 +95,7 @@ double nrn_ndt_, nrn_tbase_, nrn_dt_;
 void nrn_chk_ndt() {
     if (dt != nrn_dt_ || t != nrn_tbase_ + nrn_ndt_ * nrn_dt_) {
         if (nrnmpi_myid == 0)
-            Printf("nrn_chk_ndt t=%g dt=%g old nrn_tbase_=%g nrn_ndt_=%g nrn_dt_=%g\n",
+            logger.print("nrn_chk_ndt t={} dt={} old nrn_tbase_={} nrn_ndt_={} nrn_dt_={}\n",
                    t,
                    dt,
                    nrn_tbase_,
@@ -677,13 +677,13 @@ void nrn_print_matrix(NrnThread* _nt) {
             int i, n = spGetSize(_nt->_sp13mat, 0);
             spPrint(_nt->_sp13mat, 1, 1, 1);
             for (i = 1; i <= n; ++i) {
-                Printf("%d %g\n", i, _nt->actual_rhs(i));
+                logger.print("{} {}\n", i, _nt->actual_rhs(i));
             }
         }
     } else if (_nt) {
         for (inode = 0; inode < _nt->end; ++inode) {
             nd = _nt->_v_node[inode];
-            Printf("%d %g %g %g %g\n",
+            logger.print("{} {} {} {} {}\n",
                    inode,
                    *nrn_classicalNodeB(nd),
                    *nrn_classicalNodeA(nd),
@@ -695,7 +695,7 @@ void nrn_print_matrix(NrnThread* _nt) {
             sec = secorder[isec];
             for (inode = 0; inode < sec->nnode; ++inode) {
                 nd = sec->pnode[inode];
-                Printf("%d %d %g %g %g %g\n",
+                logger.print("{} {} {} {} {} {}\n",
                        isec,
                        inode,
                        *nrn_classicalNodeB(nd),

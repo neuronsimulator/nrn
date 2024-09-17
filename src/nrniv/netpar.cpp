@@ -279,7 +279,7 @@ void NetParEvent::pgvts_deliver(double tt, NetCvode* nc) {
 }
 
 void NetParEvent::pr(const char* m, double tt, NetCvode* nc) {
-    Printf("%s NetParEvent %d t=%.15g tt-t=%g\n", m, ithread_, tt, tt - nrn_threads[ithread_]._t);
+    logger.print("{} NetParEvent {} t={:.15g} tt-t={}\n", m, ithread_, tt, tt - nrn_threads[ithread_]._t);
 }
 
 DiscreteEvent* NetParEvent::savestate_save() {
@@ -1393,11 +1393,11 @@ static double set_mindelay(double maxdelay) {
         double od = mindelay_;
         mindelay = set_mindelay(maxdelay);
         if (nrnmpi_myid == 0) {
-            Printf(
-                "Notice: The global minimum NetCon delay is %g, so turned off the "
+            logger.print(
+                "Notice: The global minimum NetCon delay is {}, so turned off the "
                 "cvode.queue_mode\n",
                 od);
-            Printf("   use_self_queue option. The interprocessor minimum NetCon delay is %g\n",
+            logger.print("   use_self_queue option. The interprocessor minimum NetCon delay is {}\n",
                    mindelay);
         }
     }
@@ -1531,7 +1531,7 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
             // we can only do this after everything is set up
             mk_localgid_rep();
             if (!nrn_use_localgid_ && nrnmpi_myid == 0) {
-                Printf(
+                logger.print(
                     "Notice: gid compression did not succeed. Probably more than 255 cells on one "
                     "cpu.\n");
             }

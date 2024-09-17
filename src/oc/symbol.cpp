@@ -38,10 +38,10 @@ Symlist* hoc_p_symlist = nullptr; /* current proc, func, or temp table */
                                   /* appropriate times prevents storage leakage. */
 
 void print_symlist(const char* s, Symlist* tab) {
-    Printf("%s\n", s);
+    logger.print("{}\n", s);
     if (tab)
         for (Symbol* sp = tab->first; sp != nullptr; sp = sp->next) {
-            Printf("%s %p\n", sp->name, fmt::ptr(sp));
+            logger.print("{} {}\n", sp->name, fmt::ptr(sp));
         }
 }
 

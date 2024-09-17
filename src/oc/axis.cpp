@@ -252,9 +252,9 @@ void hoc_Plot(void) {
             return;
         }
     } else {
-        Printf("plot(mode)\nplot(x, y)\nplot(mode, x, y\n");
-        Printf("axis()\naxis(clip)\naxis(xorg, xsize, yorg, ysize)\n");
-        Printf("axis(xstart, xstop, ntic, ystart, ystop, ntic)\n");
+        logger.print("plot(mode)\nplot(x, y)\nplot(mode, x, y\n");
+        logger.print("axis()\naxis(clip)\naxis(xorg, xsize, yorg, ysize)\n");
+        logger.print("axis(xstart, xstop, ntic, ystart, ystop, ntic)\n");
         Ret(1.);
         return;
     }

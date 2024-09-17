@@ -116,9 +116,9 @@ static double m_printf(void* v) {
     }
     for (i = 0; i < nrow; ++i) {
         for (j = 0; j < ncol; ++j) {
-            Printf(f1, m->getval(i, j));
+            logger.print(f1, m->getval(i, j));
         }
-        Printf("%s", f2);
+        logger.print("{}", f2);
     }
     return 0.;
 }

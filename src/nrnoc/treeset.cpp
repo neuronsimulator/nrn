@@ -1438,7 +1438,7 @@ void nrn_define_shape(void) {
             continue;
         }
         if (fabs(y1) < 1e-6 && fabs(x1) < 1e-6) {
-            Printf("nrn_define_shape: %s first and last 3-d point at same (x,y)\n", secname(psec));
+            logger.print("nrn_define_shape: {} first and last 3-d point at same (x,y)\n", secname(psec));
             angle = 0.;
         } else {
             angle = atan2(y1, x1);
@@ -2170,7 +2170,7 @@ static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_ty
         // objects. In this case we can figure out which the missing entries are and permute them to
         // the end of the global vectors.
         auto missing_elements = node_data_size - global_i;
-        Printf(fmt::format("permuting {} 'lost' Nodes to the end\n", missing_elements).c_str());
+        logger.print("permuting {} 'lost' Nodes to the end\n", missing_elements);
         // There are `missing_elements` integers from the range [0 .. node_data_size-1] whose values
         // in `node_data_permutation` are still std::numeric_limits<std::size_t>::max().
         for (auto global_row = 0ul; global_row < node_data_size; ++global_row) {

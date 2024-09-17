@@ -238,9 +238,9 @@ static int l_ref2(Object* o, Object* ob, int nr) {
                     Object** obp = o->u.dataspace[s->u.oboff].pobj + i;
                     if (*obp == ob) {
                         if (total == 1) {
-                            Printf("   %s.%s\n", hoc_object_name(o), s->name);
+                            logger.print("   {}.{}\n", hoc_object_name(o), s->name);
                         } else {
-                            Printf("   %s.%s[%d]\n", hoc_object_name(o), s->name, i);
+                            logger.print("   {}.{}[{}]\n", hoc_object_name(o), s->name, i);
                         }
                         ++nr;
                     }
@@ -262,9 +262,9 @@ static int l_ref1(Symlist* sl, Objectdata* data, Object* ob, int nr) {
                     Object** obp = data[s->u.oboff].pobj + i;
                     if (*obp == ob) {
                         if (total == 1) {
-                            Printf("   %s\n", s->name);
+                            logger.print("   {}\n", s->name);
                         } else {
-                            Printf("   %s[%d]\n", s->name, i);
+                            logger.print("   {}[{}]\n", s->name, i);
                         }
                         ++nr;
                     }
@@ -295,7 +295,7 @@ static int l_ref3(Symbol* s, Object* ob, int nr) {
     ITERATE(q, s->u.ctemplate->olist) {
         OcBox* b = (OcBox*) (OBJ(q)->u.this_pointer);
         if (b->keep_ref() == ob) {
-            Printf("   %s.ref\n", hoc_object_name(OBJ(q)));
+            logger.print("   {}.ref\n", hoc_object_name(OBJ(q)));
             ++nr;
         }
     }
@@ -313,7 +313,7 @@ static int l_ref4(Symbol* s, Object* ob, int nr) {
         if (list->refs_items())
             for (i = 0; i < list->count(); ++i) {
                 if (list->object(i) == ob) {
-                    Printf("   %s.object(%ld)\n", hoc_object_name(OBJ(q)), i);
+                    logger.print("   {}.object({})\n", hoc_object_name(OBJ(q)), i);
                     ++nr;
                 }
             }
@@ -324,7 +324,7 @@ static int l_ref4(Symbol* s, Object* ob, int nr) {
 static double l_ref(void*) {
     Object* ob = *hoc_objgetarg(1);
     int nr = ob ? ob->refcount : 0;
-    Printf("%s has %d references\n", hoc_object_name(ob), nr);
+    logger.print("{} has {} references\n", hoc_object_name(ob), nr);
     hoc_return_type_code = 1;  // integer
     if (nr == 0) {
         return 0.;
@@ -337,7 +337,7 @@ static double l_ref(void*) {
     nr = l_ref3(hoc_table_lookup("VBox", hoc_built_in_symlist), ob, nr);
     nr = l_ref4(hoc_table_lookup("List", hoc_built_in_symlist), ob, nr);
 
-    Printf("  found %d of them\n", nr);
+    logger.print("  found {} of them\n", nr);
     return (double) nr;
 }
 

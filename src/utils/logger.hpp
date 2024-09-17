@@ -59,14 +59,3 @@ class Logger {
 };
 
 extern Logger logger;
-
-// Deprecated but there is ~700 to change so let it go a bit more
-template <typename... Args>
-int Printf(const char* fmt, Args... args) {
-    if (logger.getCallback()) {
-        std::string message = fmt::sprintf(fmt, std::forward<Args>(args)...);
-        logger.getCallback()(1, message.c_str());
-        return message.size();
-    }
-    return fmt::printf(fmt, args...);
-}

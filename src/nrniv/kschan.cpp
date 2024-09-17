@@ -635,13 +635,13 @@ static double ks_pr(void* v) {
     KSChan* ks = (KSChan*) v;
     KSTransition* kt;
 
-    Printf("%s type properties\n", hoc_object_name(ks->obj_));
-    Printf("name=%s is_point_=%s ion_=%s cond_model_=%d\n",
+    logger.print("{} type properties\n", hoc_object_name(ks->obj_));
+    logger.print("name={} is_point_={} ion_={} cond_model_={}\n",
            ks->name_.c_str(),
            (ks->is_point() ? "true" : "false"),
            ks->ion_.c_str(),
            ks->cond_model_);
-    Printf("  ngate=%d nstate=%d nhhstate=%d nligand=%d ntrans=%d ivkstrans=%d iligtrans=%d\n",
+    logger.print("  ngate={} nstate={} nhhstate={} nligand={} ntrans={} ivkstrans={} iligtrans={}\n",
            ks->ngate_,
            ks->nstate_,
            ks->nhhstate_,
@@ -649,39 +649,39 @@ static double ks_pr(void* v) {
            ks->ntrans_,
            ks->ivkstrans_,
            ks->iligtrans_);
-    Printf("  default gmax=%g erev=%g\n", ks->gmax_deflt_, ks->erev_deflt_);
+    logger.print("  default gmax={} erev={}\n", ks->gmax_deflt_, ks->erev_deflt_);
     for (int i = 0; i < ks->ngate_; ++i) {
-        Printf("    gate %d index=%d nstate=%d power=%d\n",
+        logger.print("    gate {} index={} nstate={} power={}\n",
                i,
                ks->gc_[i].sindex_,
                ks->gc_[i].nstate_,
                ks->gc_[i].power_);
     }
     for (int i = 0; i < ks->nligand_; ++i) {
-        Printf("    ligand %d %s\n", i, ks->ligands_[i]->name);
+        logger.print("    ligand {} {}\n", i, ks->ligands_[i]->name);
     }
     for (int i = 0; i < ks->iligtrans_; ++i) {
         kt = ks->trans_ + i;
-        Printf("    trans %d src=%d target=%d type=%d\n", i, kt->src_, kt->target_, kt->type_);
-        Printf("        f0 type=%d   f1 type=%d\n",
+        logger.print("    trans {} src={} target={} type={}\n", i, kt->src_, kt->target_, kt->type_);
+        logger.print("        f0 type={}   f1 type={}\n",
                kt->f0 ? kt->f0->type() : -1,
                kt->f1 ? kt->f1->type() : -1);
     }
     for (int i = ks->iligtrans_; i < ks->ntrans_; ++i) {
         kt = ks->trans_ + i;
-        Printf("    trans %d src=%d target=%d type=%d ligindex=%d\n",
+        logger.print("    trans {} src={} target={} type={} ligindex={}\n",
                i,
                kt->src_,
                kt->target_,
                kt->type_,
                kt->ligand_index_);
-        Printf("        f0 type=%d   f1 type=%d\n",
+        logger.print("        f0 type={}   f1 type={}\n",
                kt->f0 ? kt->f0->type() : -1,
                kt->f1 ? kt->f1->type() : -1);
     }
-    Printf("    state names and fractional conductance\n");
+    logger.print("    state names and fractional conductance\n");
     for (int i = 0; i < ks->nstate_; ++i) {
-        Printf("    %d %s %g\n", i, ks->state_[i].string(), ks->state_[i].f_);
+        logger.print("    {} {} {}\n", i, ks->state_[i].string(), ks->state_[i].f_);
     }
     return 1;
 }
@@ -952,7 +952,7 @@ void KSChan::setname(const char* s) {
         char old_suffix[100];
         int i = 0;
         while (strcmp(mechsym_->name, name_.c_str()) != 0 && looksym(name_.c_str())) {
-            Printf("KSChan::setname %s already in use\n", name_.c_str());
+            logger.print("KSChan::setname {} already in use\n", name_.c_str());
             Sprintf(old_suffix, "%s%d", s, i);
             name_ = old_suffix;
             ++i;
@@ -1211,7 +1211,7 @@ void KSChan::setion(const char* s) {
         Symbol* sym = looksym(buf);
         if (!sym || sym->type != MECHANISM ||
             memb_func[sym->subtype].alloc != memb_func[looksym("na_ion")->subtype].alloc) {
-            Printf("%s is not an ion mechanism", sym->name);
+            logger.print("{} is not an ion mechanism", sym->name);
         }
         if (ion_sym_) {                              // there already is an ion
             if (strcmp(ion_sym_->name, buf) != 0) {  // is it different

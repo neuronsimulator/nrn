@@ -165,9 +165,7 @@ static void set_nrnpylib() {
                 line.remove_prefix(prefix.size());
                 line.remove_suffix(suffix.size());
                 if (!glob_var.empty() && glob_var != line) {
-                    Printf(fmt::format(
-                               "WARNING: overriding {} = {} with {}\n", env_var, glob_var, line)
-                               .c_str());
+                    logger.print("WARNING: overriding {} = {} with {}\n", env_var, glob_var, line);
                 }
                 glob_var = line;
             }

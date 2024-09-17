@@ -771,8 +771,8 @@ bool Cvode::at_time(double te, NrnThread* nt) {
     // beyond the current step.
     if (nt->_vcv) {
         if (te <= tstop_ && te > t0_) {
-            Printf("te=%g t0_=%g tn_=%g t_=%g t=%g\n", te, t0_, tn_, t_, nt_t);
-            Printf("te-t0_=%g  tstop_-te=%g\n", te - t0_, tstop_ - te);
+            logger.print("te={} t0_={} tn_={} t_={} t={}\n", te, t0_, tn_, t_, nt_t);
+            logger.print("te-t0_={}  tstop_-te={}\n", te - t0_, tstop_ - te);
         }
         assert(te > tstop_ || te <= t0_);
     }
@@ -1065,7 +1065,7 @@ int Cvode::cvode_init(double) {
         err = CVodeReInit(mem_, pf_, t0_, y_, CV_SV, &ncv_->rtol_, atolnvec_);
         // printf("CVodeReInit\n");
         if (err != SUCCESS) {
-            Printf("Cvode %p %s CVReInit error %d\n",
+            logger.print("Cvode {} {} CVReInit error {}\n",
                    fmt::ptr(this),
                    secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
                    err);
@@ -1081,7 +1081,7 @@ int Cvode::cvode_init(double) {
         maxstep(ncv_->maxstep());
         CVodeMalloc(mem_, pf_, t0_, y_, CV_SV, &ncv_->rtol_, atolnvec_);
         if (err != SUCCESS) {
-            Printf("Cvode %p %s CVodeMalloc error %d\n",
+            logger.print("Cvode {} {} CVodeMalloc error {}\n",
                    fmt::ptr(this),
                    secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
                    err);
@@ -1267,7 +1267,7 @@ int Cvode::interpolate(double tout) {
         // The fudge case was avoided by returning from the
         // Cvode::handle_step when a first order condition check
         // puts an event on the queue equal to t_
-        Printf("Cvode::interpolate assert error t0=%g tout-t0=%g eps*t_=%g\n",
+        logger.print("Cvode::interpolate assert error t0={} tout-t0={} eps*t_={}\n",
                t0_,
                tout - t0_,
                NetCvode::eps(t_));
@@ -1275,7 +1275,7 @@ int Cvode::interpolate(double tout) {
         tout = t0_;
     }
     if (tout > tn_) {
-        Printf("Cvode::interpolate assert error tn=%g tn-tout=%g  eps*t_=%g\n",
+        logger.print("Cvode::interpolate assert error tn={} tn-tout={}  eps*t_={}\n",
                tn_,
                tn_ - tout,
                NetCvode::eps(t_));
@@ -1301,7 +1301,7 @@ int Cvode::interpolate(double tout) {
 int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
-        Printf("Cvode::cvode_advance_tn %p %d initialize_=%d tstop=%.20g t_=%.20g to ",
+        logger.print("Cvode::cvode_advance_tn {} {} initialize_={} tstop={:.20g} t_={:.20g} to ",
                fmt::ptr(this),
                nth_ ? nth_->id : 0,
                initialize_,
@@ -1317,11 +1317,11 @@ int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
     CVodeSetFdata(mem_, nullptr);
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
-        Printf("t_=%.20g\n", t_);
+        logger.print("t_={:.20g}\n", t_);
     }
 #endif
     if (err < 0) {
-        Printf("CVode %p %s advance_tn failed, err=%d.\n",
+        logger.print("CVode {} {} advance_tn failed, err={}.\n",
                fmt::ptr(this),
                secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
                err);
@@ -1343,7 +1343,7 @@ int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
 int Cvode::cvode_interpolate(double tout) {
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
-        Printf("Cvode::cvode_interpolate %p %d initialize_%d t=%.20g to ",
+        logger.print("Cvode::cvode_interpolate {} {} initialize_{} t={:.20g} to ",
                fmt::ptr(this),
                nth_ ? nth_->id : 0,
                initialize_,
@@ -1360,11 +1360,11 @@ int Cvode::cvode_interpolate(double tout) {
     CVodeSetFdata(mem_, nullptr);
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
-        Printf("%.20g\n", t_);
+        logger.print("{:.20g}\n", t_);
     }
 #endif
     if (err < 0) {
-        Printf("CVode %p %s interpolate failed, err=%d.\n",
+        logger.print("CVode {} {} interpolate failed, err={}.\n",
                fmt::ptr(this),
                secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
                err);
@@ -1408,17 +1408,17 @@ N_Vector Cvode::acorvec() {
 
 void Cvode::statistics() {
 #if 1
-    Printf("\nCvode instance %p %s statistics : %d %s states\n",
+    logger.print("\nCvode instance {} {} statistics : {} {} states\n",
            fmt::ptr(this),
            secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
            neq_,
            (use_daspk_ ? "IDA" : "CVode"));
-    Printf("   %d advance_tn, %d interpolate, %d init (%d due to at_time)\n",
+    logger.print("   {} advance_tn, {} interpolate, {} init ({} due to at_time)\n",
            advance_calls_,
            interpolate_calls_,
            init_calls_,
            ts_inits_);
-    Printf("   %d function evaluations, %d mx=b solves, %d jacobian setups\n",
+    logger.print("   {} function evaluations, {} mx=b solves, {} jacobian setups\n",
            f_calls_,
            mxb_calls_,
            jac_calls_);
@@ -1427,16 +1427,16 @@ void Cvode::statistics() {
         return;
     }
 #else
-    Printf("\nCVode Statistics.. \n\n");
-    Printf("internal steps = %d\nfunction evaluations = %d\n", iopt_[NST], iopt_[NFE]);
-    Printf(
-        "newton iterations = %d  setups = %d\n nonlinear convergence failures = %d\n\
- local error test failures = %ld\n",
+    logger.print("\nCVode Statistics.. \n\n");
+    logger.print("internal steps = {}\nfunction evaluations = {}\n", iopt_[NST], iopt_[NFE]);
+    logger.print(
+        "newton iterations = {}  setups = {}\n nonlinear convergence failures = {}\n\
+ local error test failures = {}\n",
         iopt_[NNI],
         iopt_[NSETUPS],
         iopt_[NCFN],
         iopt_[NETF]);
-    Printf("order=%d stepsize=%g\n", iopt_[QU], h());
+    logger.print("order={} stepsize={}\n", iopt_[QU], h());
 #endif
 }
 

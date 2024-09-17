@@ -457,7 +457,7 @@ void hoc_prstack() {
             stkp);
         ++i;
     }
-    Printf(oss.str().c_str());
+    logger.print("{}", oss.str());
 }
 
 void hoc_on_init_register(Pfrv pf) {
@@ -2369,9 +2369,9 @@ int hoc_araypt(Symbol* sp, int type) {
 
 // pop top value from stack, print it
 void hoc_print() {
-    Printf("\t");
+    logger.print("\t");
     hoc_prexpr();
-    Printf("\n");
+    logger.print("\n");
 }
 
 // print numeric value

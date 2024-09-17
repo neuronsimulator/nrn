@@ -68,10 +68,10 @@ void print_syn(void) {
     if (maxstim == 0)
         return;
     /*SUPPRESS 440*/
-    Printf("fsyn(%d)\n/* section	fsyn( #, loc, delay(ms), tau(ms), conduct(uS), erev(mV)) */\n",
+    logger.print("fsyn({})\n/* section	fsyn( #, loc, delay(ms), tau(ms), conduct(uS), erev(mV)) */\n",
            maxstim);
     for (i = 0; i < maxstim; i++) {
-        Printf("%-15s fsyn(%2d,%4g,%10g,%8g,%14g,%9g)\n",
+        logger.print("{:-15s} fsyn({:2d},{:4g},{:10g},{:8g},{:14g},{:9g})\n",
                secname(pstim[i].sec),
                i,
                pstim[i].loc,

@@ -787,13 +787,13 @@ static double v_printf(void* v) {
         fprintf(f->file(), "\n");
     } else {
         for (int i = start; i <= end; i++) {
-            Printf(format, x->elem(i));
+            logger.print(format, x->elem(i));
             if (extra_newline && !((i - start + 1) % 5)) {
-                Printf("\n");
+                logger.print("\n");
             }
         }
         if (extra_newline) {
-            Printf("\n");
+            logger.print("\n");
         }
     }
     hoc_return_type_code = 1;  // integer
@@ -2582,7 +2582,7 @@ static double simplex(double* p, int n, Vect* x, Vect* y, char* fcn) {
     nvortex = (double*) calloc(n * 4, (unsigned) sizeof(double));
 
     if (0 == evortex || 0 == gvortex || 0 == vortex || 0 == nvortex) {
-        Printf("allocation error in simplex()\n");
+        logger.print("allocation error in simplex()\n");
         nrn_exit(1);
     }
 

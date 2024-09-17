@@ -314,7 +314,7 @@ void hoc_nrnmpi_init() {
         nrnmpi_stubs();
         auto const pmes = nrnmpi_load();
         if (!pmes.empty()) {
-            Printf(fmt::format("{}\n", pmes).c_str());
+            logger.print("{}\n", pmes);
         }
 #endif
 

@@ -9,7 +9,7 @@
 
 int hoc_zzdebug;
 
-#define prcod(c1, c2) else if (p->pf == c1) Printf("%p %p %s", fmt::ptr(p), fmt::ptr(p->pf), c2)
+#define prcod(c1, c2) else if (p->pf == c1) logger.print("{} {} {}", fmt::ptr(p), fmt::ptr(p->pf), c2)
 
 void hoc_debug(void) /* print the machine */
 {
@@ -24,7 +24,7 @@ void debugzz(Inst* p) {
 #if !OCSMALL
     {
         if (p->in == STOP)
-            Printf("STOP\n");
+            logger.print("STOP\n");
         prcod(hoc_nopop, "POP\n");
         prcod(hoc_eval, "EVAL\n");
         prcod(hoc_add, "ADD\n");
@@ -124,20 +124,20 @@ void debugzz(Inst* p) {
         else {
             size_t offset = (size_t) p->in;
             if (offset < 1000)
-                Printf("relative %d\n", p->i);
+                logger.print("relative {}\n", p->i);
             else {
                 offset = (size_t) (p->in) - (size_t) p;
                 if (offset > (size_t) hoc_prog - (size_t) p &&
                     offset < (size_t) (&hoc_prog[2000]) - (size_t) p)
-                    Printf("relative %ld\n", p->in - p);
+                    logger.print("relative {}\n", p->in - p);
                 else if (p->sym->name != (char*) 0) {
                     if (p->sym->name[0] == '\0') {
-                        Printf("constant or string pointer\n");
-                        /*Printf("value=%g\n", p->sym->u.val);*/
+                        logger.print("constant or string pointer\n");
+                        /*logger.print("value={}\n", p->sym->u.val);*/
                     } else
-                        Printf("%s\n", p->sym->name);
+                        logger.print("{}\n", p->sym->name);
                 } else
-                    Printf("symbol without name\n");
+                    logger.print("symbol without name\n");
             }
         }
         p++;

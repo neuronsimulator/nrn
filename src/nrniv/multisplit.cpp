@@ -1672,13 +1672,13 @@ void MultiSplitControl::pexch() {
     id = nrnmpi_myid;
     // assume only one thread when there is transfer info
     NrnThread* nt = nrn_threads;
-    Printf("%d nthost_=%d\n", id, nthost_);
+    logger.print("{} nthost_={}\n", id, nthost_);
     for (i = 0; i < nthost_; ++i) {
         MultiSplitTransferInfo& ms = msti_[i];
-        Printf("%d %d host=%d nnode=%d displ=%d\n", id, i, ms.host_, ms.nnode_, ms.displ_);
+        logger.print("{} {} host={} nnode={} displ={}\n", id, i, ms.host_, ms.nnode_, ms.displ_);
         for (j = 0; j < ms.nnode_; ++j) {
             k = ms.nodeindex_[j];
-            Printf("%d %d %d %d %s %d\n",
+            logger.print("{} {} {} {} {} {}\n",
                    id,
                    i,
                    j,
@@ -1805,11 +1805,11 @@ void MultiSplitControl::prstruct() {
     for (id = 0; id < nrnmpi_numprocs; ++id) {
         nrnmpi_barrier();
         if (id == nrnmpi_myid) {
-            Printf("myid=%d\n", id);
-            Printf(" MultiSplit %ld\n", multisplit_list_->size());
+            logger.print("myid={}\n", id);
+            logger.print(" MultiSplit {}\n", multisplit_list_->size());
             for (i = 0; i < multisplit_list_->size(); ++i) {
                 MultiSplit* ms = (*multisplit_list_)[i];
-                Printf("  %2d bbs=%d bi=%-2d rthost=%-4d %-4d %s{%d}",
+                logger.print("  {:2d} bbs={} bi={:-2d} rthost={:-4d} {:-4d} {}{{}}",
                        i,
                        ms->backbone_style,
                        ms->back_index,
@@ -1818,51 +1818,51 @@ void MultiSplitControl::prstruct() {
                        secname(ms->nd[0]->sec),
                        ms->nd[0]->sec_node_index_);
                 if (ms->nd[1]) {
-                    Printf("   %-4d %s{%d}",
+                    logger.print("   {:-4d} {}{{}}",
                            ms->sid[1],
                            secname(ms->nd[1]->sec),
                            ms->nd[1]->sec_node_index_);
                 }
-                Printf("\n");
+                logger.print("\n");
             }
             for (it = 0; it < nrn_nthread; ++it) {
                 NrnThread* _nt = nrn_threads + it;
                 MultiSplitThread& t = mth_[it];
-                Printf(" backbone_begin=%d backbone_long_begin=%d backbone_interior_begin=%d\n",
+                logger.print(" backbone_begin={} backbone_long_begin={} backbone_interior_begin={}\n",
                        t.backbone_begin,
                        t.backbone_long_begin,
                        t.backbone_interior_begin);
-                Printf(" backbone_sid1_begin=%d backbone_long_sid1_begin=%d backbone_end=%d\n",
+                logger.print(" backbone_sid1_begin={} backbone_long_sid1_begin={} backbone_end={}\n",
                        t.backbone_sid1_begin,
                        t.backbone_long_sid1_begin,
                        t.backbone_end);
-                Printf(" nbackrt_=%d  i, backsid_[i], backAindex_[i], backBindex_[i]\n",
+                logger.print(" nbackrt_={}  i, backsid_[i], backAindex_[i], backBindex_[i]\n",
                        t.nbackrt_);
                 if (t.nbackrt_) {
                     for (int i = 0; i < t.nbackrt_; ++i) {
-                        Printf("  %2d %2d %5d %5d",
+                        logger.print("  {:2d} {:2d} {:5d} {:5d}",
                                i,
                                t.backsid_[i],
                                t.backAindex_[i],
                                t.backBindex_[i]);
                         Node* nd = _nt->_v_node[t.backbone_begin + t.backAindex_[i]];
-                        Printf(" %s{%d}", secname(nd->sec), nd->sec_node_index_);
+                        logger.print(" {}{{}}", secname(nd->sec), nd->sec_node_index_);
                         nd = _nt->_v_node[t.backbone_begin + t.backBindex_[i]];
-                        Printf(" %s{%d}", secname(nd->sec), nd->sec_node_index_);
-                        Printf("\n");
+                        logger.print(" {}{{}}", secname(nd->sec), nd->sec_node_index_);
+                        logger.print("\n");
                     }
                 }
             }
-            Printf(" ReducedTree %d\n", nrtree_);
+            logger.print(" ReducedTree {}\n", nrtree_);
             for (i = 0; i < nrtree_; ++i) {
                 ReducedTree* rt = rtree_[i];
-                Printf("  %d n=%d nmap=%d\n", i, rt->n, rt->nmap);
+                logger.print("  {} n={} nmap={}\n", i, rt->n, rt->nmap);
                 rt->pr_map(tbsize, trecvbuf_);
             }
-            Printf(" MultiSplitTransferInfo %d\n", nthost_);
+            logger.print(" MultiSplitTransferInfo {}\n", nthost_);
             for (i = 0; i < nthost_; ++i) {
                 MultiSplitTransferInfo& m = msti_[i];
-                Printf("  %d host=%d rthost=%d nnode=%d nnode_rt=%d size=%d tag=%d\n",
+                logger.print("  {} host={} rthost={} nnode={} nnode_rt={} size={} tag={}\n",
                        i,
                        m.host_,
                        m.rthost_,
@@ -1871,25 +1871,25 @@ void MultiSplitControl::prstruct() {
                        m.size_,
                        m.tag_);
                 if (m.nnode_) {
-                    Printf("    nodeindex=%p  nodeindex_buffer = %p\n",
+                    logger.print("    nodeindex={}  nodeindex_buffer = {}\n",
                            fmt::ptr(m.nodeindex_),
                            fmt::ptr(nodeindex_buffer_));
                 }
             }
-            Printf(" ndbsize=%d  i  nodeindex_buffer_=%p  nodeindex_rthost_=%p\n",
+            logger.print(" ndbsize={}  i  nodeindex_buffer_={}  nodeindex_rthost_={}\n",
                    ndbsize,
                    fmt::ptr(nodeindex_buffer_),
                    fmt::ptr(nodeindex_rthost_));
             if (ndbsize) {
                 for (int i = 0; i < ndbsize; ++i) {
-                    Printf("  %d %d %d\n", i, nodeindex_buffer_[i], nodeindex_rthost_[i]);
+                    logger.print("  {} {} {}\n", i, nodeindex_buffer_[i], nodeindex_rthost_[i]);
                 }
             }
-            Printf(" tbsize=%d trecvbuf_=%p tsendbuf_=%p\n",
+            logger.print(" tbsize={} trecvbuf_={} tsendbuf_={}\n",
                    tbsize,
                    fmt::ptr(trecvbuf_),
                    fmt::ptr(tsendbuf_));
-            Printf("\n");
+            logger.print("\n");
         }
     }
     nrnmpi_barrier();
@@ -2666,18 +2666,18 @@ smap[i], *smap[i], smap[i+1], *smap[i+1]);
 
 void ReducedTree::pr_map(int tsize, double* trbuf) {
     int i;
-    Printf("  rmap\n");
+    logger.print("  rmap\n");
     for (i = 0; i < nmap; ++i) {
         for (int it = 0; it < nrn_nthread; ++it) {
             NrnThread* nt = nrn_threads + it;
             MultiSplitThread& t = msc_->mth_[it];
             int nb = t.backbone_end - t.backbone_begin;
             if (rmap[i] >= trbuf && rmap[i] < (trbuf + tsize)) {
-                Printf(" %2d rhs[%2d] += tbuf[%ld]\n", i, irmap[i], rmap[i] - trbuf);
+                logger.print(" {:2d} rhs[{:2d}] += tbuf[{}]\n", i, irmap[i], rmap[i] - trbuf);
             }
             if (rmap[i] >= nt->node_rhs_storage() && rmap[i] < (nt->node_rhs_storage() + nt->end)) {
                 Node* nd = nt->_v_node[rmap[i] - nt->node_rhs_storage()];
-                Printf(" %2d rhs[%2d] rhs[%d] += rhs[%ld] \t%s{%d}\n",
+                logger.print(" {:2d} rhs[{:2d}] rhs[{}] += rhs[{}] \t{}{{}}\n",
                        i,
                        irmap[i],
                        irmap[i],
@@ -2686,33 +2686,33 @@ void ReducedTree::pr_map(int tsize, double* trbuf) {
                        nd->sec_node_index_);
             }
             if (rmap[i] >= nt->node_d_storage() && rmap[i] < (nt->node_d_storage() + nt->end)) {
-                Printf(" %2d rhs[%2d]   d[%d] += d[%ld]\n",
+                logger.print(" {:2d} rhs[{:2d}]   d[{}] += d[{}]\n",
                        i,
                        irmap[i],
                        irmap[i] - n,
                        rmap[i] - nt->node_d_storage());
             }
             if (rmap[i] >= t.sid1A && rmap[i] < (t.sid1A + nb)) {
-                Printf(" %2d rhs[%2d]   a[%d] += sid1A[%ld]",
+                logger.print(" {:2d} rhs[{:2d}]   a[{}] += sid1A[{}]",
                        i,
                        irmap[i],
                        irmap[i] - 2 * n,
                        rmap[i] - t.sid1A);
                 int j = (rmap[i] - t.sid1A) + t.backbone_begin;
                 Node* nd = nt->_v_node[j];
-                Printf(" \tA(%d) %s{%d}", j, secname(nd->sec), nd->sec_node_index_);
-                Printf("\n");
+                logger.print(" \tA({}) {}{{{}}}", j, secname(nd->sec), nd->sec_node_index_);
+                logger.print("\n");
             }
             if (rmap[i] >= t.sid1B && rmap[i] < (t.sid1B + nb)) {
-                Printf(" %2d rhs[%2d]   b[%d] += sid1B[%ld]",
+                logger.print(" {:2d} rhs[{:2d}]   b[{}] += sid1B[{}]",
                        i,
                        irmap[i],
                        irmap[i] - 3 * n,
                        rmap[i] - t.sid1B);
                 int j = (rmap[i] - t.sid1B) + t.backbone_begin;
                 Node* nd = nt->_v_node[j];
-                Printf("\tB(%d) %s{%d}", j, secname(nd->sec), nd->sec_node_index_);
-                Printf("\n");
+                logger.print("\tB({}) {}{{{}}}", j, secname(nd->sec), nd->sec_node_index_);
+                logger.print("\n");
             }
         }
     }
@@ -3449,34 +3449,34 @@ for (i=i1; i < i3; ++i) {
 
 void MultiSplitControl::pmat(bool full) {
     int it, i, is;
-    Printf("\n");
+    logger.print("\n");
     for (it = 0; it < nrn_nthread; ++it) {
         NrnThread* _nt = nrn_threads + it;
         MultiSplitThread& t = mth_[it];
         for (i = 0; i < _nt->end; ++i) {
             is = _nt->_v_node[i]->_classical_parent ? _nt->_v_node[i]->sec_node_index_ : -1;
-            Printf("%d %d %s %d",
+            logger.print("{} {} {} {}",
                    _nt->_v_node[i]->v_node_index,
                    _nt->_v_parent[i] ? _nt->_v_parent[i]->v_node_index : -1,
                    secname(_nt->_v_node[i]->sec),
                    is);
             if (_nt->_v_parent[i]) {
                 is = _nt->_v_parent[i]->_classical_parent ? _nt->_v_parent[i]->sec_node_index_ : -1;
-                Printf("  ->  %s %d", secname(_nt->_v_parent[i]->sec), is);
-                Printf("\t %10.5g  %10.5g", NODEB(_nt->_v_node[i]), NODEA(_nt->_v_node[i]));
+                logger.print("  ->  {} {}", secname(_nt->_v_parent[i]->sec), is);
+                logger.print("\t {:10.5g}  {:10.5g}", NODEB(_nt->_v_node[i]), NODEA(_nt->_v_node[i]));
             } else {
-                Printf(" root\t\t %10.5g  %10.5g", 0., 0.);
+                logger.print(" root\t\t {:10.5g}  {:10.5g}", 0., 0.);
             }
 
             if (full) {
-                Printf("  %10.5g  %10.5g", NODED(_nt->_v_node[i]), NODERHS(_nt->_v_node[i]));
+                logger.print("  {:10.5g}  {:10.5g}", NODED(_nt->_v_node[i]), NODERHS(_nt->_v_node[i]));
                 if (t.sid0i && i >= t.backbone_begin && i < t.backbone_end) {
-                    Printf("  %10.5g  %10.5g",
+                    logger.print("  {:10.5g}  {:10.5g}",
                            t.S1B(i - t.backbone_begin),
                            t.S1A(i - t.backbone_begin));
                 }
             }
-            Printf("\n");
+            logger.print("\n");
         }
     }
 }
@@ -3544,7 +3544,7 @@ void MultiSplitControl::pmat1(const char* s) {
             if (ms->nd[1]) {
                 a = mth_[it].S1A(0);
             }
-            Printf("%2d %s sid=%d %12.5g %12.5g %12.5g %12.5g\n",
+            logger.print("{:2d} {} sid={} {:12.5g} {:12.5g} {:12.5g} {:12.5g}\n",
                    nrnmpi_myid,
                    s,
                    ms->sid[0],
@@ -3557,7 +3557,7 @@ void MultiSplitControl::pmat1(const char* s) {
                 rhs = RHS(ms->nd[1]->v_node_index);
                 a = 0.;
                 b = t.S1B(t.backbone_sid1_begin - t.backbone_begin);
-                Printf("%2d %s sid=%d %12.5g %12.5g %12.5g %12.5g\n",
+                logger.print("{:2d} {} sid={} {:12.5g} {:12.5g} {:12.5g} {:12.5g}\n",
                        nrnmpi_myid,
                        s,
                        ms->sid[1],
