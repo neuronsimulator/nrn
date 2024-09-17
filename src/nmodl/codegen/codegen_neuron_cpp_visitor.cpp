@@ -926,8 +926,6 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
         }
     }
 
-
-    // for (const auto& f: info.function_tables) {
     if (!info.function_tables.empty()) {
         throw std::runtime_error("Not implemented, global function tables.");
     }
