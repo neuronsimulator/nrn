@@ -3521,7 +3521,7 @@ void NetCvode::retreat(double t, Cvode* cv) {
     TQueue* tq = p[cv->nth_ ? cv->nth_->id : 0].tq_;
 #if PRINT_EVENT
     if (print_event_) {
-        logger.print("microstep retreat from {} (cvode_{} is at {}) for event onset={}\n",
+        logger.print("microstep retreat from {:g} (cvode_{} is at {:g}) for event onset={}\n",
                      tq ? cv->tqitem_->t_ : cv->t_,
                      fmt::ptr(cv),
                      cv->t_,

@@ -1809,7 +1809,7 @@ void MultiSplitControl::prstruct() {
             logger.print(" MultiSplit {}\n", multisplit_list_->size());
             for (i = 0; i < multisplit_list_->size(); ++i) {
                 MultiSplit* ms = (*multisplit_list_)[i];
-                logger.print("  {:2d} bbs={} bi={:-2d} rthost={:-4d} {:-4d} {}{{}}",
+                logger.print("  {:2d} bbs={} bi={:-2d} rthost={:-4d} {:-4d} {}{{{}}}",
                              i,
                              ms->backbone_style,
                              ms->back_index,
@@ -1818,7 +1818,7 @@ void MultiSplitControl::prstruct() {
                              secname(ms->nd[0]->sec),
                              ms->nd[0]->sec_node_index_);
                 if (ms->nd[1]) {
-                    logger.print("   {:-4d} {}{{}}",
+                    logger.print("   {:-4d} {}{{{}}}",
                                  ms->sid[1],
                                  secname(ms->nd[1]->sec),
                                  ms->nd[1]->sec_node_index_);
@@ -1848,9 +1848,9 @@ void MultiSplitControl::prstruct() {
                                      t.backAindex_[i],
                                      t.backBindex_[i]);
                         Node* nd = _nt->_v_node[t.backbone_begin + t.backAindex_[i]];
-                        logger.print(" {}{{}}", secname(nd->sec), nd->sec_node_index_);
+                        logger.print(" {}{{{}}}", secname(nd->sec), nd->sec_node_index_);
                         nd = _nt->_v_node[t.backbone_begin + t.backBindex_[i]];
-                        logger.print(" {}{{}}", secname(nd->sec), nd->sec_node_index_);
+                        logger.print(" {}{{{}}}", secname(nd->sec), nd->sec_node_index_);
                         logger.print("\n");
                     }
                 }
@@ -2679,7 +2679,7 @@ void ReducedTree::pr_map(int tsize, double* trbuf) {
             }
             if (rmap[i] >= nt->node_rhs_storage() && rmap[i] < (nt->node_rhs_storage() + nt->end)) {
                 Node* nd = nt->_v_node[rmap[i] - nt->node_rhs_storage()];
-                logger.print(" {:2d} rhs[{:2d}] rhs[{}] += rhs[{}] \t{}{{}}\n",
+                logger.print(" {:2d} rhs[{:2d}] rhs[{}] += rhs[{}] \t{}{{{}}}\n",
                              i,
                              irmap[i],
                              irmap[i],

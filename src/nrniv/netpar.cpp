@@ -280,7 +280,7 @@ void NetParEvent::pgvts_deliver(double tt, NetCvode* nc) {
 
 void NetParEvent::pr(const char* m, double tt, NetCvode* nc) {
     logger.print(
-        "{} NetParEvent {} t={:.15g} tt-t={}\n", m, ithread_, tt, tt - nrn_threads[ithread_]._t);
+        "{} NetParEvent {} t={:.15g} tt-t={:g}\n", m, ithread_, tt, tt - nrn_threads[ithread_]._t);
 }
 
 DiscreteEvent* NetParEvent::savestate_save() {
