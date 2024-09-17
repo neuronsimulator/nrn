@@ -637,9 +637,9 @@ static double ks_pr(void* v) {
 
     logger.print("{} type properties\n", hoc_object_name(ks->obj_));
     logger.print("name={} is_point_={} ion_={} cond_model_={}\n",
-           ks->name_.c_str(),
+           ks->name_,
            (ks->is_point() ? "true" : "false"),
-           ks->ion_.c_str(),
+           ks->ion_,
            ks->cond_model_);
     logger.print("  ngate={} nstate={} nhhstate={} nligand={} ntrans={} ivkstrans={} iligtrans={}\n",
            ks->ngate_,
@@ -952,7 +952,7 @@ void KSChan::setname(const char* s) {
         char old_suffix[100];
         int i = 0;
         while (strcmp(mechsym_->name, name_.c_str()) != 0 && looksym(name_.c_str())) {
-            logger.print("KSChan::setname {} already in use\n", name_.c_str());
+            logger.print("KSChan::setname {} already in use\n", name_);
             Sprintf(old_suffix, "%s%d", s, i);
             name_ = old_suffix;
             ++i;
