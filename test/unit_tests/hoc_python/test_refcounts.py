@@ -21,8 +21,8 @@ def test_seg_from_sec_x_ref_python():
     del seg1  # NOTE: section fully destroyed together with segment
     gc.collect()
 
-    h('n_sections=0')
-    h('forall { n_sections+=1 }')
+    h("n_sections=0")
+    h("forall { n_sections+=1 }")
     h('soma_is_valid=section_exists("soma1")')
     assert h.n_sections == 0
     assert not h.soma_is_valid
@@ -48,8 +48,8 @@ def test_seg_from_sec_x_ref_hocpy():
     del seg  # NOTE: section py wrapper destroyed with segment, hoc-level section kept
     gc.collect()
 
-    h('n_sections=0')
-    h('forall { n_sections+=1 }')
+    h("n_sections=0")
+    h("forall { n_sections+=1 }")
     h('soma_is_valid=section_exists("soma")')
     assert h.n_sections == 1
     assert h.soma_is_valid
