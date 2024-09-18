@@ -3,7 +3,7 @@
 #include <functional>
 #include <iostream>
 
-#include <fmt/printf.h>
+#include <fmt/format.h>
 
 class Logger {
   public:
@@ -17,38 +17,32 @@ class Logger {
 
     // Unconditionnaly print non depending of the level
     template <typename... Args>
-    void print(const char* fmt, Args&&... args) const {
-        output(1, fmt, std::forward<Args>(args)...);
-    }
-
-    // Use the old printer because sometimes the format string come from user
-    template <typename... Args>
-    void printf(const char* fmt, Args&&... args) const {
-        fmt::printf(fmt, std::forward<Args>(args)...);
-    }
-
-    template <typename... Args>
-    void debug(const char* fmt, Args&&... args) const {
+    void print(std::string_view fmt, Args&&... args) const {
         output(1, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    void info(const char* fmt, Args&&... args) const {
+    void debug(std::string_view fmt, Args&&... args) const {
         output(1, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    void warning(const char* fmt, Args&&... args) const {
+    void info(std::string_view fmt, Args&&... args) const {
         output(1, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    void error(const char* fmt, Args&&... args) const {
+    void warning(std::string_view fmt, Args&&... args) const {
+        output(1, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void error(std::string_view fmt, Args&&... args) const {
         output(2, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    void output(int out, const char* fmt, Args&&... args) const {
+    void output(int out, std::string_view fmt, Args&&... args) const {
         std::string message = fmt::format(fmt, std::forward<Args>(args)...);
         callback(out, message.c_str());
     }

@@ -9,6 +9,7 @@
 #include "ivocvect.h"
 
 #include "utils/logger.hpp"
+#include <fmt/printf.h>
 
 #define EPS hoc_epsilon
 Symbol* nrn_matrix_sym;  // also used in oc/hoc_oop.cpp
@@ -116,7 +117,7 @@ static double m_printf(void* v) {
     }
     for (i = 0; i < nrow; ++i) {
         for (j = 0; j < ncol; ++j) {
-            logger.printf(f1, m->getval(i, j));
+            logger.print(fmt::sprintf(f1, m->getval(i, j)));
         }
         logger.print("{}", f2);
     }

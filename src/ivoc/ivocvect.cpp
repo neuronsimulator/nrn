@@ -37,6 +37,7 @@
 #include "gui-redirect.h"
 
 #include "utils/logger.hpp"
+#include <fmt/printf.h>
 
 #ifndef PI
 #ifndef M_PI
@@ -787,7 +788,7 @@ static double v_printf(void* v) {
         fprintf(f->file(), "\n");
     } else {
         for (int i = start; i <= end; i++) {
-            logger.printf(format, x->elem(i));
+            logger.print(fmt::sprintf(format, x->elem(i)));
             if (extra_newline && !((i - start + 1) % 5)) {
                 logger.print("\n");
             }
