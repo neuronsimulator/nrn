@@ -1,13 +1,14 @@
 
 #include <../../nrnconf.h>
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #if HAVE_IV
 #include "secbrows.h"
 #include "ivoc.h"
 #endif
+#include "cabcode.h"
 #include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "nrnpy.h"
@@ -15,20 +16,16 @@
 #include "classreg.h"
 #include "gui-redirect.h"
 
-typedef void (*ReceiveFunc)(Point_process*, double*, double);
 extern int hoc_return_type_code;
 // from nrnoc
 #include "membfunc.h"
 #include "parse.hpp"
 extern Symlist* hoc_built_in_symlist;
 extern Symbol** pointsym;
-extern ReceiveFunc* pnt_receive;
 extern int nrn_has_net_event_cnt_;
 extern int* nrn_has_net_event_;
 extern short* nrn_is_artificial_;
-extern int node_index(Section*, double);
 extern char* pnt_map;
-extern void nrn_parent_info(Section*);
 
 // to nrnoc
 void nrnallsectionmenu();
@@ -1272,8 +1269,7 @@ const char* MechanismType::selected() {
 int MechanismType::internal_type() {
     return mti_->type_[selected_item()];
 }
-extern void mech_insert1(Section*, int);
-extern void mech_uninsert1(Section*, Symbol*);
+
 void MechanismType::insert(Section* sec) {
     if (!mti_->is_point_) {
         mech_insert1(sec, memb_func[mti_->type_[selected_item()]].sym->subtype);

@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/treeset.cpp,v 1.39 1999/07/08 14:25:07 hines Exp */
 
+#include "cabcode.h"
 #include "cvodeobj.h"
 #include "membfunc.h"
 #include "multisplit.h"
@@ -21,13 +22,15 @@
 #include "utils/profile/profiler_interface.h"
 #include "multicore.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cerrno>
+#include <cmath>
 
 #include <algorithm>
 #include <string>
+
+#include <fmt/format.h>
 
 extern spREAL* spGetElement(char*, int, int);
 
@@ -35,7 +38,6 @@ int nrn_shape_changed_; /* for notifying Shape class in nrniv */
 double* nrn_mech_wtime_;
 
 extern double chkarg(int, double low, double high);
-extern double nrn_ra(Section*);
 #if !defined(NRNMPI) || NRNMPI == 0
 extern double nrnmpi_wtime();
 #endif
@@ -45,9 +47,7 @@ extern int* nrn_dparam_ptr_start_;
 extern int* nrn_dparam_ptr_end_;
 extern void nrn_define_shape();
 
-#if 1 || NRNMPI
 void (*nrn_multisplit_setup_)();
-#endif
 
 /*
 Do not use unless necessary (loops in tree structure) since overhead
@@ -676,7 +676,7 @@ Prop* prop_alloc(Prop** pp, int type, Node* nd) {
     nrn_alloc_node_ = nd;  // this might be null
     v_structure_change = 1;
     current_prop_list = pp;
-    auto* p = new Prop{static_cast<short>(type)};
+    auto* p = new Prop{nd, static_cast<short>(type)};
     p->next = *pp;
     p->ob = nullptr;
     p->_alloc_seq = -1;
@@ -2170,7 +2170,7 @@ static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_ty
         // objects. In this case we can figure out which the missing entries are and permute them to
         // the end of the global vectors.
         auto missing_elements = node_data_size - global_i;
-        std::cout << "permuting " << missing_elements << " 'lost' Nodes to the end\n";
+        Printf(fmt::format("permuting {} 'lost' Nodes to the end\n", missing_elements).c_str());
         // There are `missing_elements` integers from the range [0 .. node_data_size-1] whose values
         // in `node_data_permutation` are still std::numeric_limits<std::size_t>::max().
         for (auto global_row = 0ul; global_row < node_data_size; ++global_row) {

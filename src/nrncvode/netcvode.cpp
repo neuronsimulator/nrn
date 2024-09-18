@@ -3,13 +3,9 @@
 // define to 0 if do not wish use_min_delay_ to ever be 1
 #define USE_MIN_DELAY 1
 
-#include <stdlib.h>
 #include <nrnmpi.h>
-#include <errno.h>
-#include <time.h>
-#include <regex>
+#include "cabcode.h"
 #include "classreg.h"
-#include "nrnoc2iv.h"
 #include "parse.hpp"
 #include "cvodeobj.h"
 #include "hoclist.h"
@@ -19,7 +15,6 @@
 #include "nrnneosm.h"
 #include "datapath.h"
 #include "objcmd.h"
-#include "shared/sundialsmath.h"
 #include "kssingle.h"
 #include "ocnotify.h"
 #include "utils/enumerate.h"
@@ -44,6 +39,10 @@
 #include "utils/formatting.hpp"
 
 #include <array>
+#include <cerrno>
+#include <cstdlib>
+#include <ctime>
+#include <regex>
 #include <unordered_set>
 #include <utility>
 
@@ -56,8 +55,6 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 #define NVI_SUCCESS 0
 #define PP2NT(pp)   ((NrnThread*) ((pp)->_vnt))
 #define PP2t(pp)    (PP2NT(pp)->_t)
-#define LOCK(m)     /**/
-#define UNLOCK(m)   /**/
 // classical and when DiscreteEvent::deliver is already in the right thread
 // via a future thread instance of NrnNetItem with its own tqe.
 #define POINT_RECEIVE(type, tar, w, f) (*pnt_receive[type])(tar, w, f)
@@ -67,8 +64,6 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
 #include "membfunc.h"
 extern void single_event_run();
-extern void setup_topology(), v_setup_vectors();
-extern int nrn_errno_check(int);
 extern NetCvode* net_cvode_instance;
 extern cTemplate** nrn_pnt_template_;
 extern double t, dt;
@@ -76,29 +71,18 @@ extern void nrn_cvfun(double t, double* y, double* ydot);
 extern void nrn_cleanup_presyn(PreSyn*);
 #define nt_dt nrn_threads->_dt
 #define nt_t  nrn_threads->_t
-extern void nrn_parent_info(Section*);
-extern Object* nrn_sec2cell(Section*);
-extern int nrn_sec2cell_equals(Section*, Object*);
-extern ReceiveFunc* pnt_receive;
-extern ReceiveFunc* pnt_receive_init;
 extern short* nrn_is_artificial_;  // should be bool but not using that type in c
 extern short* nrn_artcell_qindex_;
 int nrn_use_selfqueue_;
 void nrn_pending_selfqueue(double tt, NrnThread*);
 static void all_pending_selfqueue(double tt);
 static void* pending_selfqueue(NrnThread*);
-extern int hoc_araypt(Symbol*, int);
-extern int hoc_stacktype();
-void nrn_use_daspk(int);
 extern int nrn_use_daspk_;
 int linmod_extra_eqn_count();
 extern int nrn_modeltype();
-extern Symlist* hoc_built_in_symlist;
-extern Symlist* hoc_top_level_symlist;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 extern hoc_Item* net_cvode_instance_psl();
 extern std::vector<PlayRecord*>* net_cvode_instance_prl();
-extern void nrn_update_ps2nt();
 extern void nrn_use_busywait(int);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
@@ -3509,7 +3493,7 @@ void NetCvode::local_retreat(double t, Cvode* cv) {
         if (print_event_) {
             Printf("microstep local retreat from %g (cvode_%p is at %g) for event onset=%g\n",
                    cv->tqitem_->t_,
-                   cv,
+                   fmt::ptr(cv),
                    cv->t_,
                    t);
         }
@@ -3518,7 +3502,10 @@ void NetCvode::local_retreat(double t, Cvode* cv) {
         tq->move(cv->tqitem_, t);
 #if PRINT_EVENT
         if (print_event_ > 1) {
-            Printf("after target solve time for %p is %g , dt=%g\n", cv, cv->time(), nt_dt);
+            Printf("after target solve time for %p is %g , dt=%g\n",
+                   fmt::ptr(cv),
+                   cv->time(),
+                   nt_dt);
         }
 #endif
     } else {
@@ -3535,7 +3522,7 @@ void NetCvode::retreat(double t, Cvode* cv) {
     if (print_event_) {
         Printf("microstep retreat from %g (cvode_%p is at %g) for event onset=%g\n",
                tq ? cv->tqitem_->t_ : cv->t_,
-               cv,
+               fmt::ptr(cv),
                cv->t_,
                t);
     }
@@ -3546,7 +3533,7 @@ void NetCvode::retreat(double t, Cvode* cv) {
     }
 #if PRINT_EVENT
     if (print_event_ > 1) {
-        Printf("after target solve time for %p is %g , dt=%g\n", cv, cv->time(), dt);
+        Printf("after target solve time for %p is %g , dt=%g\n", fmt::ptr(cv), cv->time(), dt);
     }
 #endif
 }
@@ -5593,7 +5580,7 @@ static int trajec_buffered(NrnThread& nt,
         if (err) {
             Fprintf(stderr,
                     "Pointer %p of PlayRecord type %d ignored because not a Range Variable",
-                    static_cast<double*>(pd),
+                    fmt::ptr(static_cast<double*>(pd)),
                     pr->type());
         }
     }
