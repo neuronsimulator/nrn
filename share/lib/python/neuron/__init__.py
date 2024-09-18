@@ -742,14 +742,13 @@ def nrn_dll(printpath=False):
 
 def _modelview_mechanism_docstrings(dmech, tree):
     if dmech.name not in ("Ra", "capacitance"):
-        docs = getattr(h, dmech.name).__doc__
-        if docs.strip():
-            for line in docs.split("\n"):
-                tree.append(line, dmech.location, 0)
+        if hasattr(nrn, dmech.name):  # KSChan not listed (and has no __doc__)
+            docs = getattr(h, dmech.name).__doc__
+            if docs.strip():
+                for line in docs.split("\n"):
+                    tree.append(line, dmech.location, 0)
 
 
-# TODO: put this someplace else
-#       can't be in rxd because that would break things if no scipy
 _sec_db = {}
 
 

@@ -15,7 +15,7 @@
 #include <ocbox.h>
 #endif
 
-#include <fmt/format.h>
+#include "utils/logger.hpp"
 
 extern Objectdata* hoc_top_level_data;
 extern Symlist* hoc_built_in_symlist;

@@ -18,6 +18,7 @@ set(nrnpython_lib_list)
 set(NRNPYTHON_FILES_LIST
     nrnpython.cpp
     nrnpy_hoc.cpp
+    nrn_metaclass.cpp
     nrnpy_nrn.cpp
     nrnpy_p2h.cpp
     grids.cpp

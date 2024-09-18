@@ -5,9 +5,11 @@
 #include "equation.h"
 #include <stdio.h>
 
+#include "utils/logger.hpp"
+
 int hoc_zzdebug;
 
-#define prcod(c1, c2) else if (p->pf == c1) Printf("%p %p %s", p, p->pf, c2)
+#define prcod(c1, c2) else if (p->pf == c1) Printf("%p %p %s", fmt::ptr(p), fmt::ptr(p->pf), c2)
 
 void hoc_debug(void) /* print the machine */
 {

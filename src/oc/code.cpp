@@ -2371,9 +2371,9 @@ int hoc_araypt(Symbol* sp, int type) {
 
 // pop top value from stack, print it
 void hoc_print() {
-    nrnpy_pr("\t");
+    Printf("\t");
     hoc_prexpr();
-    nrnpy_pr("\n");
+    Printf("\n");
 }
 
 // print numeric value
