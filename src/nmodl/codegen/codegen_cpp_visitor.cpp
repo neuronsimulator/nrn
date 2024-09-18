@@ -1198,7 +1198,16 @@ std::vector<CodegenCppVisitor::SymbolType> CodegenCppVisitor::get_float_variable
                      info.range_assigned_vars.begin(),
                      info.range_assigned_vars.end());
     variables.insert(variables.end(), info.range_state_vars.begin(), info.range_state_vars.end());
-    variables.insert(variables.end(), assigned.begin(), assigned.end());
+
+    for (const auto& v: assigned) {
+        auto it = std::find_if(info.external_variables.begin(),
+                               info.external_variables.end(),
+                               [&v](auto it) { return it->get_name() == get_name(v); });
+
+        if (it == info.external_variables.end()) {
+            variables.push_back(v);
+        }
+    }
 
     if (info.vectorize) {
         variables.push_back(make_symbol(naming::VOLTAGE_UNUSED_VARIABLE));

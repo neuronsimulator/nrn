@@ -26,7 +26,7 @@ const std::map<ast::AstNodeType, CodegenCompatibilityVisitor::FunctionPointer>
          {AstNodeType::PARAM_ASSIGN, &CodegenCompatibilityVisitor::return_error_param_var},
          {AstNodeType::BBCORE_POINTER_VAR,
           &CodegenCompatibilityVisitor::return_error_if_no_bbcore_read_write},
-         {AstNodeType::EXTERNAL, &CodegenCompatibilityVisitor::return_error_with_name<External>}});
+         {AstNodeType::EXTERNAL, &CodegenCompatibilityVisitor::return_error_extern}});
 
 
 std::string CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandled(
@@ -48,6 +48,22 @@ std::string CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandl
             method->get_token()->position());
     }
     return unhandled_method_error_message.str();
+}
+
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+std::string CodegenCompatibilityVisitor::return_error_extern(
+    ast::Ast& node,
+    const std::shared_ptr<ast::Ast>& ast_node) const {
+    if (simulator == "neuron") {
+        // When generating code for NEURON, NMODL supports EXTERNAL variables,
+        // same as nocmodl.
+        return "";
+    }
+
+    // When generating code for CoreNEURON EXTERNAL variables aren't permitted.
+    auto external = std::dynamic_pointer_cast<ast::External>(ast_node);
+    return fmt::format("Found EXTERNAL at [{}] while generating code for CoreNEURON.\n",
+                       external->get_token()->position());
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)

@@ -677,6 +677,14 @@ std::string CodegenNeuronCppVisitor::get_variable_name(const std::string& name,
         return std::string("nt->_") + naming::NTHREAD_T_VARIABLE;
     }
 
+    // external variable
+    auto e = std::find_if(info.external_variables.begin(),
+                          info.external_variables.end(),
+                          name_comparator);
+    if (e != info.external_variables.end()) {
+        return fmt::format("{}()", varname);
+    }
+
     auto const iter =
         std::find_if(info.neuron_global_variables.begin(),
                      info.neuron_global_variables.end(),
@@ -943,8 +951,33 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
 
     print_global_var_struct_assertions();
     print_global_var_struct_decl();
+    print_global_var_external_access();
 
     print_global_param_default_values();
+}
+
+void CodegenNeuronCppVisitor::print_global_var_external_access() {
+    for (const auto& var: codegen_global_variables) {
+        auto var_name = get_name(var);
+        auto var_expr = get_variable_name(var_name, false);
+
+        printer->fmt_push_block("auto {}() -> std::decay<decltype({})>::type ",
+                                method_name(var_name),
+                                var_expr);
+        printer->fmt_line("return {};", var_expr);
+        printer->pop_block();
+    }
+    if (!codegen_global_variables.empty()) {
+        printer->add_newline();
+    }
+
+    for (const auto& var: info.external_variables) {
+        auto var_name = get_name(var);
+        printer->fmt_line("double {}();", var_name);
+    }
+    if (!info.external_variables.empty()) {
+        printer->add_newline();
+    }
 }
 
 void CodegenNeuronCppVisitor::print_global_param_default_values() {

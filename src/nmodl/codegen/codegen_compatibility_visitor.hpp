@@ -134,6 +134,10 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
                            real_type_block->get_token()->position());
     }
 
+    /// Callback when detecting EXTERNAL.
+    std::string return_error_extern(ast::Ast& node,
+                                    const std::shared_ptr<ast::Ast>& ast_node) const;
+
     /// Takes as parameter the ast::Ast to read the symbol table
     /// and an std::shared_ptr<ast::Ast> node and returns relative
     /// error if a variable that is writen in the mod file is

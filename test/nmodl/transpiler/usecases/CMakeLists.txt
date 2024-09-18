@@ -3,6 +3,7 @@ set(NMODL_USECASE_DIRS
     builtin_functions
     constant
     electrode_current
+    external
     constructor
     function
     procedure

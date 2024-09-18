@@ -239,6 +239,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
      */
     info.constant_variables = psymtab->get_variables_with_properties(NmodlType::constant_var);
     info.top_local_variables = psymtab->get_variables_with_properties(NmodlType::local_var);
+    info.external_variables = psymtab->get_variables_with_properties(NmodlType::extern_var);
 
     /**
      * All global variables remain global if mod file is not marked thread safe.

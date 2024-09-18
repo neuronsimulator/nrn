@@ -1996,7 +1996,9 @@ neuron_statement :
                     }
                 |   neuron_statement EXTERNAL external_var_list
                     {
-                        $1.emplace_back(new ast::External($3));
+                        auto external = new ast::External($3);
+                        external->set_token($2);
+                        $1.emplace_back(external);
                         $$ = $1;
                     }
                 |   neuron_statement THREADSAFE
@@ -2222,11 +2224,13 @@ random_var_list : NAME_PTR
 external_var_list : NAME_PTR
                     {
                         $$ = ast::ExternVarVector();
-                        $$.emplace_back(new ast::ExternVar($1));
+                        auto var = new ast::ExternVar($1);
+                        $$.emplace_back(var);
                     }
                 |   external_var_list "," NAME_PTR
                     {
-                        $1.emplace_back(new ast::ExternVar($3));
+                        auto var = new ast::ExternVar($3);
+                        $1.emplace_back(var);
                         $$ = $1;
                     }
                 |   error

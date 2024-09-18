@@ -24,11 +24,12 @@ using namespace codegen;
 using nmodl::parser::NmodlDriver;
 
 /// Return true if it failed and false otherwise
-bool runCompatibilityVisitor(const std::string& nmodl_text) {
+bool runCompatibilityVisitor(const std::string& nmodl_text,
+                             const std::string& simulator = "coreneuron") {
     const auto& ast = NmodlDriver().parse_string(nmodl_text);
     SymtabVisitor().visit_program(*ast);
     PerfVisitor().visit_program(*ast);
-    return CodegenCompatibilityVisitor().find_unhandled_ast_nodes(*ast);
+    return CodegenCompatibilityVisitor(simulator).find_unhandled_ast_nodes(*ast);
 }
 
 SCENARIO("Uncompatible constructs should failed", "[codegen][compatibility_visitor]") {
@@ -39,9 +40,14 @@ SCENARIO("Uncompatible constructs should failed", "[codegen][compatibility_visit
             }
         )";
 
-        THEN("should failed") {
-            bool failed = runCompatibilityVisitor(nmodl_text);
+        THEN("should fail for CoreNEURON") {
+            bool failed = runCompatibilityVisitor(nmodl_text, "coreneuron");
             REQUIRE(failed);
+        }
+
+        THEN("but succeed for NEURON") {
+            bool failed = runCompatibilityVisitor(nmodl_text, "neuron");
+            REQUIRE(!failed);
         }
     }
     GIVEN("A mod file containing a written GLOBAL var") {

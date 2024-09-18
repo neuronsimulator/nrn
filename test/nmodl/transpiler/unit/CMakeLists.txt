@@ -36,6 +36,7 @@ add_executable(
   visitor/main.cpp
   visitor/after_cvode_to_cnexp.cpp
   visitor/constant_folder.cpp
+  visitor/external.cpp
   visitor/defuse_analyze.cpp
   visitor/global_to_range.cpp
   visitor/implicit_argument.cpp

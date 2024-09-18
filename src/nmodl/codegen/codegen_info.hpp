@@ -501,6 +501,9 @@ struct CodegenInfo {
     /// thread variables (e.g. global variables promoted to thread)
     std::vector<SymbolType> thread_variables;
 
+    /// external variables
+    std::vector<SymbolType> external_variables;
+
     /// new one used in print_ion_types
     std::vector<SymbolType> use_ion_variables;
 
