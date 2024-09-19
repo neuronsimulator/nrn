@@ -1206,6 +1206,7 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
         if (i != info.semantics[i].index) {
             throw std::runtime_error("Broken logic.");
         }
+        const auto& semantic = info.semantics[i].name;
 
         auto type = "double*";
         if (name == naming::POINT_PROCESS_VARIABLE) {
@@ -1213,8 +1214,8 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
         } else if (name == naming::TQITEM_VARIABLE) {
             type = "void*";
         } else if (stringutils::starts_with(name, "style_") &&
-                   stringutils::starts_with(info.semantics[i].name, "#") &&
-                   stringutils::ends_with(info.semantics[i].name, "_ion")) {
+                   stringutils::starts_with(semantic, "#") &&
+                   stringutils::ends_with(semantic, "_ion")) {
             type = "int*";
         }
 
