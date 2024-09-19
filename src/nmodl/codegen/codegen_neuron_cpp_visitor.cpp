@@ -2286,23 +2286,14 @@ static void rename_net_receive_arguments(const ast::NetReceiveBlock& net_receive
     }
 }
 
-void CodegenNeuronCppVisitor::print_net_receive() {
-    printing_net_receive = true;
-    auto node = info.net_receive_node;
-    if (!node) {
-        return;
-    }
+CodegenNeuronCppVisitor::ParamVector CodegenNeuronCppVisitor::net_receive_args() {
+    return {{"", "Point_process*", "", "_pnt"},
+            {"", "double*", "", "_args"},
+            {"", "double", "", "flag"}};
+}
 
-    ParamVector args = {{"", "Point_process*", "", "_pnt"},
-                        {"", "double*", "", "_args"},
-                        {"", "double", "", "flag"}};
 
-    printer->fmt_push_block("static void nrn_net_receive_{}({})",
-                            info.mod_suffix,
-                            get_parameter_str(args));
-
-    rename_net_receive_arguments(*node, *node);
-
+void CodegenNeuronCppVisitor::print_net_receive_common_code() {
     printer->add_line("_nrn_mechanism_cache_instance _lmc{_pnt->prop};");
     printer->add_line("auto * nt = static_cast<NrnThread*>(_pnt->_vnt);");
     printer->add_line("auto * _ppvar = _nrn_mechanism_access_dparam(_pnt->prop);");
@@ -2318,6 +2309,22 @@ void CodegenNeuronCppVisitor::print_net_receive() {
 
     printer->add_line("size_t id = 0;");
     printer->add_line("double t = nt->_t;");
+}
+
+void CodegenNeuronCppVisitor::print_net_receive() {
+    printing_net_receive = true;
+    auto node = info.net_receive_node;
+    if (!node) {
+        return;
+    }
+
+    printer->fmt_push_block("static void nrn_net_receive_{}({})",
+                            info.mod_suffix,
+                            get_parameter_str(net_receive_args()));
+
+    rename_net_receive_arguments(*node, *node);
+    print_net_receive_common_code();
+
 
     print_statement_block(*node->get_statement_block(), false, false);
 

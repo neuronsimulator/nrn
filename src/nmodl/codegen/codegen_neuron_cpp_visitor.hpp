@@ -191,6 +191,8 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      * Print `net_receive` call-back.
      */
     void print_net_receive();
+    void print_net_receive_common_code();
+    ParamVector net_receive_args();
 
     /**
      * Print code to register the call-back for the NET_RECEIVE block.
