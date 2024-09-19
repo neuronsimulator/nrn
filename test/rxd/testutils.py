@@ -133,14 +133,12 @@ def compare_data(data):
 def skip_platform():
     """Check whether there is an issue with the test on the current platform"""
     try:
-        test_platform = platform.freedesktop_os_release().get("VERSION_ID")
-
-        # not a Ubuntu variant
-        if not test_platform:
-            return False
+        test_platform = platform.freedesktop_os_release()
 
         # skip Ubuntu 22 and above
-        return Version(test_platform) > Version("22")
+        return test_platform.get("ID") == "ubuntu" and Version(
+            test_platform["VERSION_ID"]
+        ) > Version("22")
 
     # not a Linux variant (or a supported one anyway)
     except (AttributeError, OSError):
