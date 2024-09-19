@@ -197,9 +197,7 @@ static struct HocInst {
                  {0, 0}};
 
 #define VPfri void*
-declareTable(InstTable, VPfri, short)
-implementTable(InstTable, VPfri, short)
-static InstTable* inst_table_;
+static std::map<VPfri, short>* inst_table_;
 
 declareTable(Symbols, Symbol*, int)
 implementTable(Symbols, Symbol*, int)
@@ -412,13 +410,9 @@ OcCheckpoint::OcCheckpoint() {
     stable_ = NULL;
     otable_ = NULL;
     if (!inst_table_) {
-        short i;
-        for (i = 1; hoc_inst_[i].pi; ++i) {
-            ;
-        }
-        inst_table_ = new InstTable(2 * i);
-        for (i = 1; hoc_inst_[i].pi; ++i) {
-            inst_table_->insert((VPfri) hoc_inst_[i].pi, i);
+        inst_table_ = new std::map<VPfri, short>{};
+        for (int i = 1; hoc_inst_[i].pi; ++i) {
+            inst_table_->emplace((VPfri) hoc_inst_[i].pi, i);
         }
     }
 }
@@ -651,18 +645,17 @@ bool OcCheckpoint::sym_instructions(Symbol* s) {
 }
 bool OcCheckpoint::instlist(unsigned long size, Inst* in) {
     for (unsigned long i = 0; i < size; ++i) {
-        short val;
         int sval;
         if (in[i].in == STOP) {
             DEBUG(f_, "  STOP\n");
-            val = 0;
-            if (!xdr(val)) {
+            if (!xdr(0)) {
                 printf("instlist failed 1\n");
                 return false;
             }
             continue;
         }
-        if (inst_table_->find(val, (VPfri) in[i].pf)) {
+        if (auto it = inst_table_.find((VPfri) in[i].pf); it != inst_table_.end()) {
+            auto val = *it;
             DEBUG(f_, "  %d\n", val);
             if (!xdr(val)) {
                 printf("instlist failed 2\n");
