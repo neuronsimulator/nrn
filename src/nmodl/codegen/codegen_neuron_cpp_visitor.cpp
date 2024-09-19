@@ -1269,6 +1269,10 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
         printer->fmt_line("pnt_receive_size[mech_type] = {};", info.num_net_receive_parameters);
     }
 
+    if (info.net_receive_initial_node) {
+        printer->fmt_line("pnt_receive_init[mech_type] = net_init;");
+    }
+
     if (info.thread_callback_register) {
         printer->add_line("_nrn_thread_reg(mech_type, 1, thread_mem_init);");
         printer->add_line("_nrn_thread_reg(mech_type, 0, thread_mem_cleanup);");
@@ -2178,6 +2182,7 @@ void CodegenNeuronCppVisitor::print_compute_functions() {
     print_nrn_state();
     print_nrn_jacob();
     print_net_receive();
+    print_net_init();
 }
 
 
@@ -2332,6 +2337,28 @@ void CodegenNeuronCppVisitor::print_net_receive() {
     printer->add_newline();
     printer->pop_block();
     printing_net_receive = false;
+}
+
+void CodegenNeuronCppVisitor::print_net_init() {
+    const auto node = info.net_receive_initial_node;
+    if (node == nullptr) {
+        return;
+    }
+
+    // rename net_receive arguments used in the initial block of net_receive
+    rename_net_receive_arguments(*info.net_receive_node, *node);
+
+    printing_net_init = true;
+    printer->add_newline(2);
+    printer->fmt_push_block("static void net_init({})", get_parameter_str(net_receive_args()));
+
+    auto block = node->get_statement_block().get();
+    if (!block->get_statements().empty()) {
+        print_net_receive_common_code();
+        print_statement_block(*block, false, false);
+    }
+    printer->pop_block();
+    printing_net_init = false;
 }
 
 

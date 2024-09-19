@@ -166,6 +166,10 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     /*                         Printing routines for code generation                        */
     /****************************************************************************************/
 
+    /**
+     * Print NET_RECEIVE{ INITIAL{ ... }} block.
+     */
+    void print_net_init();
 
     /**
      * Print call to \c net\_send
