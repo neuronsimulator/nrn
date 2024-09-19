@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 from neuron.units import µm, mM, ms, mV
