@@ -321,8 +321,10 @@ void SympySolverVisitor::solve_linear_system(const ast::Node& node,
         eq_system, state_vars, vars, small_system, elimination, tmp_unique_prefix, function_calls);
 
     if (!exception_message.empty()) {
-        logger->warn("SympySolverVisitor :: solve_lin_system python exception: " +
-                     exception_message);
+        logger->warn(
+            "SympySolverVisitor :: solve_lin_system python exception occured. (--verbose=info)");
+        logger->info(exception_message +
+                     "\n (Note: line numbers are of by a few compared to `ode.py`.)");
         return;
     }
     // find out where to insert solutions in statement block
@@ -363,8 +365,10 @@ void SympySolverVisitor::solve_non_linear_system(
     auto [solutions, exception_message] = solver(eq_system, state_vars, vars, function_calls);
 
     if (!exception_message.empty()) {
-        logger->warn("SympySolverVisitor :: solve_non_lin_system python exception: " +
-                     exception_message);
+        logger->warn(
+            "SympySolverVisitor :: solve_non_lin_system python exception. (--verbose=info)");
+        logger->info(exception_message +
+                     "\n (Note: line numbers are of by a few compared to `ode.py`.)");
         return;
     }
     logger->debug("SympySolverVisitor :: Constructing eigen newton solve block");
@@ -449,7 +453,9 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression& node) {
     logger->debug("SympySolverVisitor :: -> solution: {}", solution);
 
     if (!exception_message.empty()) {
-        logger->warn("SympySolverVisitor :: python exception: " + exception_message);
+        logger->warn("SympySolverVisitor :: python exception. (--verbose=info)");
+        logger->info(exception_message +
+                     "\n (Note: line numbers are of by a few compared to `ode.py`.)");
         return;
     }
 
