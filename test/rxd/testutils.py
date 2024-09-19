@@ -1,6 +1,8 @@
 import inspect
 import itertools
 import os
+import platform
+from packaging.version import Version
 
 import numpy
 
@@ -126,3 +128,22 @@ def compare_data(data):
     )
     max_err = numpy.amax(abs(corr_vals.T - tst_dat[t2_0:t2_n, 1:]))
     return max_err
+
+
+def skip_platform():
+    """Check whether there is an issue with the test on the current platform"""
+    try:
+        test_platform = platform.freedesktop_os_release().get("VERSION_ID")
+
+        # not a Ubuntu variant
+        if not test_platform:
+            return False
+
+        # skip Ubuntu 22 and above
+        return Version(test_platform) > Version("22")
+
+    # not a Linux variant (or a supported one anyway)
+    except (AttributeError, OSError):
+        return False
+
+    return False

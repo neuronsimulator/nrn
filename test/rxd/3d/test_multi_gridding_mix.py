@@ -1,10 +1,15 @@
+import pytest
+
 from neuron.units import µm, mM, ms, mV
-import sys
 
 sys.path.append("..")
-from testutils import compare_data, tol
+from testutils import compare_data, tol, skip_platform
 
 
+@pytest.mark.skipif(
+    skip_platform(),
+    reason="See https://github.com/neuronsimulator/nrn-build-ci/issues/66",
+)
 def test_multi_gridding_mix(neuron_instance):
     h, rxd, data, save_path = neuron_instance
     axon = h.Section(name="axon")
