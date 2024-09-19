@@ -401,7 +401,7 @@ The argument `i` specifies which concentration is being written to. It's 0 for
 exterior; and 1 for interior.
 */
 void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
-    const int max_length = 10000; // parametrize?
+    const int max_length = 10000;  // parametrize?
     static long size_;
 
     static std::vector<std::bitset<max_length>> chk_conc_, ion_bit_;
@@ -414,13 +414,12 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
         flag = 0400;
     }
 
-    /* Create a vector holding std::bitset to track which ions 
+    /* Create a vector holding std::bitset to track which ions
        are being written to the membrane */
     if (n_memb_func > size_) {
-
         chk_conc_.resize(2 * n_memb_func);
         ion_bit_.resize(n_memb_func);
-        
+
         for (j = size_; j < n_memb_func; ++j) {
             chk_conc_[2 * j].reset();
             chk_conc_[2 * j + 1].reset();

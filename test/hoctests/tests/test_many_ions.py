@@ -20,9 +20,9 @@ def exists(name):
 
 # use up a large number of mechanism indices for ions
 nion = 1000
-ion_indices = [int(h.ion_register("ca%d" % i, 2)) for i in range(1, nion+1)]
+ion_indices = [int(h.ion_register("ca%d" % i, 2)) for i in range(1, nion + 1)]
 # gain some confidence they exist
-assert exists("ca%d_ion"%nion)
+assert exists("ca%d_ion" % nion)
 assert (ion_indices[-1] - ion_indices[0]) == (nion - 1)
 mt = h.MechanismType(0)
 assert mt.count() > nion
