@@ -63,7 +63,7 @@ using namespace visitor;
 using nmodl::parser::NmodlDriver;
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-int main(int argc, const char* argv[]) {
+int run_nmodl(int argc, const char* argv[]) {
     CLI::App app{fmt::format("NMODL : Source-to-Source Code Generation Framework [{}]",
                              Version::to_string())};
 
@@ -619,4 +619,23 @@ int main(int argc, const char* argv[]) {
             }
         }
     }
+    return EXIT_SUCCESS;
+}
+
+int main(int argc, const char* argv[]) {
+    try {
+        return run_nmodl(argc, argv);
+    } catch (const std::runtime_error& e) {
+        std::cerr << "[FATAL] NMODL encountered an unhandled exception.\n";
+        std::cerr << "    cwd = " << std::filesystem::current_path() << "\n";
+        std::cerr << "    ";
+        for (int i = 0; i < argc; ++i) {
+            std::cerr << argv[i] << " ";
+        }
+        std::cerr << std::endl;
+
+        throw e;
+    }
+
+    return EXIT_SUCCESS;
 }
