@@ -8,7 +8,7 @@ sys.path.append("..")
 from testutils import compare_data, tol, skip_platform
 
 
-@pytest.mark.skipif(
+@pytest.mark.xfail(
     skip_platform(),
     reason="See https://github.com/neuronsimulator/nrn-build-ci/issues/66",
 )
