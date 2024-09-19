@@ -141,7 +141,5 @@ def skip_platform():
         ) > Version("22")
 
     # not a Linux variant (or a supported one anyway)
-    except (AttributeError, OSError):
+    except Exception:
         return False
-
-    return False
