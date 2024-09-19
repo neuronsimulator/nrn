@@ -130,7 +130,7 @@ def compare_data(data):
     return max_err
 
 
-def skip_platform():
+def check_platform():
     """Check whether there is an issue with the test on the current platform"""
     try:
         test_platform = platform.freedesktop_os_release()

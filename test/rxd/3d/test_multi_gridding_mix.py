@@ -5,11 +5,11 @@ import pytest
 from neuron.units import µm, mM, ms, mV
 
 sys.path.append("..")
-from testutils import compare_data, tol, skip_platform
+from testutils import check_platform, compare_data, tol
 
 
 @pytest.mark.xfail(
-    skip_platform(),
+    check_platform(),
     reason="See https://github.com/neuronsimulator/nrn-build-ci/issues/66",
 )
 def test_multi_gridding_mix(neuron_instance):
