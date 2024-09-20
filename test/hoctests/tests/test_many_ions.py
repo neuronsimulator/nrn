@@ -18,8 +18,9 @@ def exists(name):
     return True
 
 
-# use up a large number of mechanism indices for ions
-nion = 1000
+# use up a large number of mechanism indices for ions. And want to test beyond
+# 1000 which requires change to max_ions in nrn/src/nrnoc/eion.cpp
+nion = 250
 ion_indices = [int(h.ion_register("ca%d" % i, 2)) for i in range(1, nion + 1)]
 # gain some confidence they exist
 assert exists("ca%d_ion" % nion)
