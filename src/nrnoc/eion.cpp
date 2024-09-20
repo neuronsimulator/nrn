@@ -404,7 +404,7 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
     const int max_ions = 64;
     static long size_;
 
-    static std::vector<std::bitset<max_length>> chk_conc_, ion_bit_;
+    static std::vector<std::bitset<max_ions>> chk_conc_, ion_bit_;
 
     Prop* p;
     int flag, j, k;
