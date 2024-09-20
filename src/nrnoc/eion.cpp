@@ -401,10 +401,10 @@ The argument `i` specifies which concentration is being written to. It's 0 for
 exterior; and 1 for interior.
 */
 void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
-    const int max_length = 10000;  // parametrize?
+    const int max_ions = 256;
     static long size_;
 
-    static std::vector<std::bitset<max_length>> chk_conc_, ion_bit_;
+    static std::vector<std::bitset<max_ions>> chk_conc_, ion_bit_;
 
     Prop* p;
     int flag, j, k;
@@ -432,7 +432,7 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
         if (nrn_is_ion(j)) {
             ion_bit_[j] = (1 << k);
             ++k;
-            assert(k < max_length);
+            assert(k < max_ions);
         }
     }
 
@@ -444,7 +444,7 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
                 continue;
             }
             auto rst = chk_conc_[2 * p->_type + i] & ion_bit_[pion->_type];
-            if (rst.count() > 0) {
+            if (rst.any()) {
                 char buf[300];
                 Sprintf(buf,
                         "%.*s%c is being written at the same location by %s and %s",
