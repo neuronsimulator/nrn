@@ -2,6 +2,9 @@
 #include <neuron/cache/model_data.hpp>
 #include <stdexcept>
 #include "oc_ansi.h"
+#include "hocdec.h"
+
+#include <fmt/format.h>
 
 namespace neuron::container {
 ModelMemoryUsage memory_usage(const Model& model) {
@@ -134,7 +137,7 @@ std::string format_memory_usage(const MemoryUsage& usage) {
 
 
 void print_memory_usage(MemoryUsage const& memory_usage) {
-    std::cout << format_memory_usage(memory_usage) << "\n";
+    Printf(fmt::format("{}\n", format_memory_usage(memory_usage)).c_str());
 }
 
 }  // namespace neuron::container
