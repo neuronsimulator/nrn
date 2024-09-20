@@ -129,5 +129,43 @@ def test_ba():
     cmp(r, std)
 
 
+# Doing this test here to save the effort of adding entry to ../CMakeLists.txt
+def test_external():
+    print("test_external")
+    coreneuron.enable = False
+    s = h.Section(name="soma")
+    g = h.Glob(s(0.5))
+    e = h.Exter(s(0.5))
+    h.s_Glob = 0.1
+    assert e.get_s() == h.s_Glob and h.s_Glob == 0.1
+    e.set_s(0.2)
+    assert e.get_s() == h.s_Glob and h.s_Glob == 0.2
+    for i in range(3):
+        h.a_Glob[i] = i + 0.1
+    for i in range(3):
+        assert e.get_a(i) == h.a_Glob[i] and h.a_Glob[i] == (i + 0.1)
+    for i in range(3):
+        e.set_a(i, i + 0.2)
+    for i in range(3):
+        assert e.get_a(i) == h.a_Glob[i] and h.a_Glob[i] == (i + 0.2)
+
+    def run(tstop):
+        pc.set_maxstep(10)
+        h.finitialize(-65)
+        pc.psolve(tstop)
+        if h.s_Glob != e.std:
+            print("(h.s_Glob = {}) != (e.std = {})".format(h.s_Glob, e.std))
+        assert h.s_Glob == e.std
+        for i in range(3):
+            assert h.a_Glob[i] == e.std * 0.1 ** (i + 1)
+
+    run(0.1)
+    # Does not work even with mod2c fix because GLOBAL not transferred
+    # back from CoreNEURON
+    # coreneuron.enable = True
+    # run(0.1)
+
+
 if __name__ == "__main__":
     test_ba()
+    test_external()
