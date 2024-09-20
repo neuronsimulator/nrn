@@ -137,6 +137,9 @@ static constexpr char WATCH_SEMANTIC[] = "watch";
 /// semantic type for for_netcon statement
 static constexpr char FOR_NETCON_SEMANTIC[] = "fornetcon";
 
+/// name of the integer variabe to store FOR_NETCON info.
+static constexpr char FOR_NETCON_VARIABLE[] = "fornetcon_data";
+
 /// nrn_init method in generated code
 static constexpr char NRN_INIT_METHOD[] = "nrn_init";
 

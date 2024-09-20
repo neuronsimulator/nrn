@@ -1426,11 +1426,7 @@ void CodegenCoreneuronCppVisitor::print_mechanism_register() {
                           net_recv_init_arg);
     }
     if (info.for_netcon_used) {
-        // index where information about FOR_NETCON is stored in the integer array
-        const auto index =
-            std::find_if(info.semantics.begin(), info.semantics.end(), [](const IndexSemantics& a) {
-                return a.name == naming::FOR_NETCON_SEMANTIC;
-            })->index;
+        const auto index = position_of_int_var(naming::FOR_NETCON_VARIABLE);
         printer->fmt_line("add_nrn_fornetcons(mech_type, {});", index);
     }
 
@@ -3062,10 +3058,7 @@ void CodegenCoreneuronCppVisitor::visit_for_netcon(const ast::ForNetcon& node) {
         statement_block->accept(v);
     }
 
-    const auto index =
-        std::find_if(info.semantics.begin(), info.semantics.end(), [](const IndexSemantics& a) {
-            return a.name == naming::FOR_NETCON_SEMANTIC;
-        })->index;
+    const auto index = position_of_int_var(naming::FOR_NETCON_VARIABLE);
 
     printer->fmt_text("const size_t offset = {}*pnodecount + id;", index);
     printer->add_newline();

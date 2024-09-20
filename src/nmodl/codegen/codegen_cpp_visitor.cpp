@@ -1354,6 +1354,10 @@ std::vector<IndexVariableInfo> CodegenCppVisitor::get_int_variables() {
             variables.emplace_back(make_symbol(fmt::format("watch{}", i)), false, false, true);
         }
     }
+
+    if (info.for_netcon_used) {
+        variables.emplace_back(make_symbol(naming::FOR_NETCON_VARIABLE), false, false, true);
+    }
     return variables;
 }
 
