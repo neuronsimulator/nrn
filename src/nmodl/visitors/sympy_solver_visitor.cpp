@@ -233,20 +233,21 @@ void SympySolverVisitor::construct_eigen_solver_block(
     }
 
     if (sr_begin != statements.size()) {
-        initialize_statements.insert(initialize_statements.end(),
-                                     statements.begin() + sr_begin,
-                                     statements.begin() + sr_begin +
-                                         static_cast<std::ptrdiff_t>(pre_solve_statements.size()));
-        setup_x_statements = ast::StatementVector(
-            statements.begin() + sr_begin +
-                static_cast<std::ptrdiff_t>(pre_solve_statements.size()),
-            statements.begin() + sr_begin +
-                static_cast<std::ptrdiff_t>(pre_solve_statements.size() + state_vars.size()));
-        functor_statements = ast::StatementVector(
-            statements.begin() + sr_begin +
-                static_cast<std::ptrdiff_t>(pre_solve_statements.size() + state_vars.size()),
-            statements.begin() + sr_end);
-        finalize_statements = ast::StatementVector(statements.begin() + sr_end, statements.end());
+        auto init_begin = statements.begin() + sr_begin;
+        auto init_end = init_begin + static_cast<std::ptrdiff_t>(pre_solve_statements.size());
+        initialize_statements.insert(initialize_statements.end(), init_begin, init_end);
+
+        auto setup_x_begin = init_end;
+        auto setup_x_end = setup_x_begin + static_cast<std::ptrdiff_t>(state_vars.size());
+        setup_x_statements = ast::StatementVector(setup_x_begin, setup_x_end);
+
+        auto functor_begin = setup_x_end;
+        auto functor_end = statements.begin() + sr_end;
+        functor_statements = ast::StatementVector(functor_begin, functor_end);
+
+        auto finalize_begin = functor_end;
+        auto finalize_end = statements.end();
+        finalize_statements = ast::StatementVector(finalize_begin, finalize_end);
     }
 
     const size_t total_statements_size = variable_statements.size() + initialize_statements.size() +
