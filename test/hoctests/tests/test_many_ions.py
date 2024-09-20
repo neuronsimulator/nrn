@@ -4,7 +4,7 @@
 # the neurondemo mod file shared library which will create the ca ion
 # along with several mechanisms that write to cai.
 
-from neuron import h
+from neuron import h, load_mechanisms
 from platform import machine
 import sys
 
@@ -33,14 +33,11 @@ assert exists("ca_ion") is False
 
 # load neurondemo mod files. That will create ca_ion and provide two
 # mod files that write cai
-nrnmechlib = (
-    "nrnmech.dll" if sys.platform == "win32" else "%s/libnrnmech.so" % machine()
-)
 # Following Aborts prior to PR#3055 with
 # eion.cpp:431: void nrn_check_conc_write(Prop*, Prop*, int): Assertion `k < sizeof(long) * 8' failed.
-nrnmechlibname = "%s/demo/release/%s" % (h.neuronhome(), nrnmechlib)
-print(nrnmechlibname)
-assert h.nrn_load_dll(nrnmechlibname)
+nrnmechlibpath = "%s/demo/release" % h.neuronhome()
+print(nrnmechlibpath)
+assert load_mechanisms(nrnmechlibpath)
 
 # ca_ion now exists and has a mechanism index > nion
 assert exists("ca_ion")
