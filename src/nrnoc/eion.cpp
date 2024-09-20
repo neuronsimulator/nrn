@@ -430,9 +430,9 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
     }
     for (k = 0, j = 0; j < n_memb_func; ++j) {
         if (nrn_is_ion(j)) {
-            ion_bit_[j] = (1 << k);
-            ++k;
             assert(k < max_ions);
+            ion_bit_[j].set(k);
+            ++k;
         }
     }
 
