@@ -105,19 +105,17 @@ void CodegenNeuronCppVisitor::print_point_process_function_definitions() {
         printer->push_block("static void _hoc_destroy_pnt(void* _vptr)");
         if (info.is_watch_used() || info.for_netcon_used) {
             printer->add_line("Prop* _prop = ((Point_process*)_vptr)->prop;");
-        }
-        if (info.is_watch_used()) {
             printer->push_block("if (_prop)");
-            printer->fmt_line("_nrn_free_watch(_nrn_mechanism_access_dparam(_prop), {}, {});",
-                              info.watch_count,
-                              info.is_watch_used());
-            printer->pop_block();
-        }
-        if (info.for_netcon_used) {
-            printer->push_block("if (_prop)");
-            printer->fmt_line(
-                "_nrn_free_fornetcon(&(_nrn_mechanism_access_dparam(_prop)[_fnc_index].literal_"
-                "value<void*>()));");
+            printer->add_line("Datum* _ppvar = _nrn_mechanism_access_dparam(_prop);");
+            if (info.is_watch_used()) {
+                printer->fmt_line("_nrn_free_watch(_ppvar, {}, {});",
+                                  info.watch_count,
+                                  info.is_watch_used());
+            }
+            if (info.for_netcon_used) {
+                auto fornetcon_data = get_variable_name("fornetcon_data", false);
+                printer->fmt_line("_nrn_free_fornetcon(&{});", fornetcon_data);
+            }
             printer->pop_block();
         }
         printer->add_line("destroy_point_process(_vptr);");
@@ -565,6 +563,10 @@ std::string CodegenNeuronCppVisitor::int_variable_name(const IndexVariableInfo& 
     auto position = position_of_int_var(name);
 
     if (info.semantics[position].name == naming::RANDOM_SEMANTIC) {
+        return fmt::format("_ppvar[{}].literal_value<void*>()", position);
+    }
+
+    if (info.semantics[position].name == naming::FOR_NETCON_SEMANTIC) {
         return fmt::format("_ppvar[{}].literal_value<void*>()", position);
     }
 
@@ -1217,6 +1219,8 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
                    stringutils::starts_with(semantic, "#") &&
                    stringutils::ends_with(semantic, "_ion")) {
             type = "int*";
+        } else if (semantic == naming::FOR_NETCON_SEMANTIC) {
+            type = "void*";
         }
 
         mech_register_args.push_back(
@@ -1257,7 +1261,20 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
     }
 
     if (info.net_event_used) {
-        printer->fmt_line("add_nrn_has_net_event(mech_type);");
+        printer->add_line("add_nrn_has_net_event(mech_type);");
+    }
+
+    if (info.for_netcon_used) {
+        auto dparam_it =
+            std::find_if(info.semantics.begin(), info.semantics.end(), [](const IndexSemantics& a) {
+                return a.name == naming::FOR_NETCON_SEMANTIC;
+            });
+        if (dparam_it == info.semantics.end()) {
+            throw std::runtime_error("Couldn't find `fornetcon` variable.");
+        }
+
+        int dparam_index = dparam_it->index;
+        printer->fmt_line("add_nrn_fornetcons(mech_type, {});", dparam_index);
     }
 
     printer->add_line("hoc_register_var(hoc_scalar_double, hoc_vector_double, hoc_intfunc);");
@@ -2135,6 +2152,9 @@ void CodegenNeuronCppVisitor::print_mechanism_variables_macros() {
     if (info.table_count > 0) {
         printer->add_line("void _nrn_thread_table_reg(int, nrn_thread_table_check_t);");
     }
+    if (info.for_netcon_used) {
+        printer->add_line("int _nrn_netcon_args(void*, double***);");
+    }
 }
 
 
@@ -2369,6 +2389,57 @@ void CodegenNeuronCppVisitor::print_net_init() {
 /// TODO: Edit for NEURON
 void CodegenNeuronCppVisitor::visit_watch_statement(const ast::WatchStatement& /* node */) {
     return;
+}
+
+void CodegenNeuronCppVisitor::visit_for_netcon(const ast::ForNetcon& node) {
+    // The setup for enabling this loop is:
+    //   double ** _fornetcon_data = ...;
+    //   for(size_t i = 0; i < n_netcons; ++i) {
+    //      double * _netcon_data = _fornetcon_data[i];
+    //
+    //      // loop body.
+    //   }
+    //
+    // Where `_fornetcon_data` is an array of pointers to the arguments, one
+    // for each netcon; and `_netcon_data` points to the arguments for the
+    // current netcon.
+    //
+    // Similar to the CoreNEURON solution, we replace all arguments with the
+    // C++ string that implements them, i.e. `_netcon_data[{}]`. The arguments
+    // are positional and thus simply numbered through.
+    const auto& args = node.get_parameters();
+    RenameVisitor v;
+    const auto& statement_block = node.get_statement_block();
+    for (size_t i_arg = 0; i_arg < args.size(); ++i_arg) {
+        auto old_name = args[i_arg]->get_node_name();
+        auto new_name = fmt::format("_netcon_data[{}]", i_arg);
+        v.set(old_name, new_name);
+        statement_block->accept(v);
+    }
+
+    auto dparam_it =
+        std::find_if(info.semantics.begin(), info.semantics.end(), [](const IndexSemantics& a) {
+            return a.name == naming::FOR_NETCON_SEMANTIC;
+        });
+    if (dparam_it == info.semantics.end()) {
+        throw std::runtime_error("Couldn't find `fornetcon` variable.");
+    }
+
+    int dparam_index = dparam_it->index;
+    auto netcon_var = get_name(codegen_int_variables[dparam_index]);
+
+    // This is called from `print_statement_block` which pre-indents the
+    // current line. Hence `add_text` only.
+    printer->add_text("double ** _fornetcon_data;");
+    printer->add_newline();
+
+    printer->fmt_line("int _n_netcons = _nrn_netcon_args({}, &_fornetcon_data);",
+                      get_variable_name(netcon_var, false));
+
+    printer->push_block("for (size_t _i = 0; _i < _n_netcons; ++_i)");
+    printer->add_line("double * _netcon_data = _fornetcon_data[_i];");
+    print_statement_block(*statement_block, false, false);
+    printer->pop_block();
 }
 
 
