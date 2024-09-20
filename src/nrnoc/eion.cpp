@@ -433,7 +433,7 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
         if (nrn_is_ion(j)) {
             ion_bit_[j] = (1 << k);
             ++k;
-            assert(k < max_length);
+            assert(k < max_ions);
         }
     }
 
