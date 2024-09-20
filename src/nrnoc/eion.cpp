@@ -414,13 +414,12 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
         flag = 0400;
     }
 
-    /* Create a vector holding std::bitset to track which ions 
+    /* Create a vector holding std::bitset to track which ions
        are being written to the membrane */
     if (n_memb_func > size_) {
-
         chk_conc_.resize(2 * n_memb_func);
         ion_bit_.resize(n_memb_func);
-        
+
         for (j = size_; j < n_memb_func; ++j) {
             chk_conc_[2 * j].reset();
             chk_conc_[2 * j + 1].reset();
