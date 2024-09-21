@@ -641,7 +641,7 @@ void second_order_cur(NrnThread* nt) {
     extern int secondorder;
     NrnThreadMembList* tml;
     Memb_list* ml;
-    int j, i, i2;
+    int i, i2;
     constexpr auto c = 3;
     constexpr auto dc = 4;
     if (secondorder == 2) {
