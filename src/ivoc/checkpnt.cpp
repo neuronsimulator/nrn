@@ -199,14 +199,11 @@ static struct HocInst {
 #define VPfri void*
 static std::map<VPfri, short>* inst_table_;
 
-declareTable(Objects, Object*, int)
-implementTable(Objects, Object*, int)
-
 class PortablePointer {
   public:
-    PortablePointer();
+    PortablePointer() = default;
     PortablePointer(void* address, int type, unsigned long size = 1);
-    virtual ~PortablePointer();
+    virtual ~PortablePointer() = default;
     void set(void* address, int type, unsigned long size = 1);
     void size(unsigned long s) {
         size_ = s;
@@ -222,30 +219,26 @@ class PortablePointer {
     }
 
   private:
-    void* address_;
-    int type_;
-    unsigned long size_;
+    void* address_ = nullptr;
+    int type_ = 0;
+    unsigned long size_ = 0UL;
 };
 
-PortablePointer::PortablePointer() {
-    address_ = NULL;
-    type_ = 0;
-    size_ = 0;
+PortablePointer::PortablePointer(void* address, int type, unsigned long s)
+    : address_(address), type_(type), size_(s)
+{
 }
-PortablePointer::PortablePointer(void* address, int type, unsigned long s) {
-    set(address, type, s);
-}
+
 void PortablePointer::set(void* address, int type, unsigned long s) {
     address_ = address;
     type_ = type;
     size_ = s;
 }
-PortablePointer::~PortablePointer() {}
 
 class OcCheckpoint {
   public:
     OcCheckpoint();
-    virtual ~OcCheckpoint();
+    virtual ~OcCheckpoint() = default;
 
     bool write(const char*);
 
@@ -287,9 +280,9 @@ class OcCheckpoint {
   private:
     int cnt_;
     int nobj_;
-    Objects* otable_;
-    bool (OcCheckpoint::*func_)(Symbol*);
-    std::map<Symbol*, int>* stable_;
+    std::unique<std::map<Object*, int>> otable_{};
+    bool (OcCheckpoint::*func_)(Symbol*) = nullptr;
+    std::unique<std::map<Symbol*, int>> stable_{};
 #if HAVE_XDR
     XDR xdrs_;
 #endif
@@ -403,23 +396,11 @@ int hoc_readcheckpoint(char* fname) {
 }
 
 OcCheckpoint::OcCheckpoint() {
-    func_ = NULL;
-    stable_ = NULL;
-    otable_ = NULL;
     if (!inst_table_) {
         inst_table_ = new std::map<VPfri, short>{};
         for (int i = 1; hoc_inst_[i].pi; ++i) {
             inst_table_->emplace((VPfri) hoc_inst_[i].pi, i);
         }
-    }
-}
-
-OcCheckpoint::~OcCheckpoint() {
-    if (stable_) {
-        delete stable_;
-    }
-    if (otable_) {
-        delete otable_;
     }
 }
 
@@ -489,10 +470,7 @@ bool OcCheckpoint::make_sym_table() {
     }
     DEBUG(f_, "#symbols=%d\n", cnt_);
     b = (b && xdr(cnt_));
-    if (stable_) {
-        delete stable_;
-    }
-    stable_ = new std::map<Symbol*, int>{};
+    stable_ = std::make_unique<std::map<Symbol*, int>>();
     cnt_ = 1;
     func_ = &OcCheckpoint::sym_table_install;
     if (!b) {
@@ -717,8 +695,10 @@ bool OcCheckpoint::ctemplate(Symbol* s) {
         hoc_Item* q;
         ITERATE(q, t->olist) {
             Object* ob = OBJ(q);
-            int oid;
-            b = b && otable_->find(oid, ob);
+            auto it = otable_->find(ob);
+            bool found = it != otable_->end();
+            b = b && found;
+            int oid = found ? *it : 0;
             b = b && xdr(oid);
             if (t->constructor) {
                 if (t->checkpoint) {
@@ -742,17 +722,12 @@ bool OcCheckpoint::ctemplate(Symbol* s) {
     }
 }
 bool OcCheckpoint::object() {
-    bool b;
-    int i;
-    if (otable_) {
-        delete otable_;
-    }
-    b = xdr(nobj_);
-    otable_ = new Objects(2 * nobj_ + 1);
+    bool b = xdr(nobj_);
+    otable_ = std::make_unique<std::map<Object*, int>>();
     nobj_ = 0;
     func_ = &OcCheckpoint::objects;
     b = pass1();
-    i = -1;
+    int i = -1;
     b = b && xdr(i);
     return b;
 }
@@ -781,7 +756,7 @@ bool OcCheckpoint::objects(Symbol* s) {
     ITERATE(q, t->olist) {
         Object* ob = OBJ(q);
         ++nobj_;
-        otable_->insert(ob, nobj_);  // 0 is null object
+        otable_->emplace(ob, nobj_);  // 0 is null object
         b = b && xdr(nobj_) && xdr(ob->refcount) && xdr(ob->index);
     }
     return b;
@@ -868,8 +843,10 @@ bool OcCheckpoint::sym_values(Symbol* s) {
 					b = b && xdr(t);
 					b = b && xdr(ob->index);
 #else
-                    int oid;
-                    b = b && otable_->find(oid, ob);
+                    auto it = otable_->find(ob);
+                    bool found = it != otable_->end();
+                    int oid = found ? *it : 0;
+                    b = b && found;
                     b = b && xdr(oid);
 #endif
                 }
@@ -934,11 +911,10 @@ bool OcCheckpoint::xdr(double& i) {
 }
 #endif
 bool OcCheckpoint::xdr(Object*& o) {
-    int i;
-    bool b;
-    b = otable_->find(i, o);
-    b = b && xdr(i);
-    return b;
+    auto it = otable_->find(o);
+    bool b = it != otable_->end();
+    int i = b ? *it : 0;
+    return b && xdr(i);
 }
 
 #undef Chk
