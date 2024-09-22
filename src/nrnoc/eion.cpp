@@ -15,6 +15,10 @@
 #include <array>
 #include <string>
 
+#include <memory>
+#include <bitset>
+#include <vector>
+
 #undef hoc_retpushx
 
 
@@ -60,7 +64,7 @@ double nrn_ion_charge(Symbol* sym) {
 
 void ion_register(void) {
     /* hoc level registration of ion name. Return -1 if name already
-    in use and not an ion;	and the mechanism subtype otherwise.
+    in use and not an ion;  and the mechanism subtype otherwise.
     */
     char* name;
     Symbol* s;
@@ -397,7 +401,11 @@ The argument `i` specifies which concentration is being written to. It's 0 for
 exterior; and 1 for interior.
 */
 void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
-    static long *chk_conc_, *ion_bit_, size_;
+    const int max_ions = 256;
+    static long size_;
+
+    static std::vector<std::bitset<max_ions>> chk_conc_, ion_bit_;
+
     Prop* p;
     int flag, j, k;
     if (i == 1) {
@@ -405,30 +413,26 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
     } else {
         flag = 0400;
     }
-    /* an embarassing hack */
-    /* up to 32 possible ions */
-    /* continuously compute a bitmap that allows determination
-        of which models WRITE which ion concentrations */
+
+    /* Create a vector holding std::bitset to track which ions
+       are being written to the membrane */
     if (n_memb_func > size_) {
-        if (!chk_conc_) {
-            chk_conc_ = (long*) ecalloc(2 * n_memb_func, sizeof(long));
-            ion_bit_ = (long*) ecalloc(n_memb_func, sizeof(long));
-        } else {
-            chk_conc_ = (long*) erealloc(chk_conc_, 2 * n_memb_func * sizeof(long));
-            ion_bit_ = (long*) erealloc(ion_bit_, n_memb_func * sizeof(long));
-            for (j = size_; j < n_memb_func; ++j) {
-                chk_conc_[2 * j] = 0;
-                chk_conc_[2 * j + 1] = 0;
-                ion_bit_[j] = 0;
-            }
+        chk_conc_.resize(2 * n_memb_func);
+        ion_bit_.resize(n_memb_func);
+
+        for (j = size_; j < n_memb_func; ++j) {
+            chk_conc_[2 * j].reset();
+            chk_conc_[2 * j + 1].reset();
+            ion_bit_[j].reset();
         }
+
         size_ = n_memb_func;
     }
     for (k = 0, j = 0; j < n_memb_func; ++j) {
         if (nrn_is_ion(j)) {
             ion_bit_[j] = (1 << k);
             ++k;
-            assert(k < sizeof(long) * 8);
+            assert(k < max_ions);
         }
     }
 
@@ -439,7 +443,8 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
             if (p == p_ok) {
                 continue;
             }
-            if (chk_conc_[2 * p->_type + i] & ion_bit_[pion->_type]) {
+            auto rst = chk_conc_[2 * p->_type + i] & ion_bit_[pion->_type];
+            if (rst.any()) {
                 char buf[300];
                 Sprintf(buf,
                         "%.*s%c is being written at the same location by %s and %s",
