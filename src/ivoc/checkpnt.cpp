@@ -202,46 +202,6 @@ implementTable(Symbols, Symbol*, int)
 declareTable(Objects, Object*, int)
 implementTable(Objects, Object*, int)
 
-class PortablePointer {
-  public:
-    PortablePointer();
-    PortablePointer(void* address, int type, unsigned long size = 1);
-    virtual ~PortablePointer();
-    void set(void* address, int type, unsigned long size = 1);
-    void size(unsigned long s) {
-        size_ = s;
-    }
-    unsigned long size() {
-        return size_;
-    }
-    void* address() {
-        return address_;
-    }
-    int type() {
-        return type_;
-    }
-
-  private:
-    void* address_;
-    int type_;
-    unsigned long size_;
-};
-
-PortablePointer::PortablePointer() {
-    address_ = NULL;
-    type_ = 0;
-    size_ = 0;
-}
-PortablePointer::PortablePointer(void* address, int type, unsigned long s) {
-    set(address, type, s);
-}
-void PortablePointer::set(void* address, int type, unsigned long s) {
-    address_ = address;
-    type_ = type;
-    size_ = s;
-}
-PortablePointer::~PortablePointer() {}
-
 class OcCheckpoint {
   public:
     OcCheckpoint();
@@ -255,7 +215,6 @@ class OcCheckpoint {
     bool pass2();
     bool make_sym_table();
     bool build_map();
-    PortablePointer* find(void*);
 
     bool func(Symbol*);
 
@@ -545,9 +504,6 @@ bool OcCheckpoint::pass2() {
 }
 bool OcCheckpoint::build_map() {
     return false;
-}
-PortablePointer* find(void*) {
-    return NULL;
 }
 bool OcCheckpoint::func(Symbol* s) {
     if (func_) {
