@@ -225,9 +225,9 @@ class PortablePointer {
 };
 
 PortablePointer::PortablePointer(void* address, int type, unsigned long s)
-    : address_(address), type_(type), size_(s)
-{
-}
+    : address_(address)
+    , type_(type)
+    , size_(s) {}
 
 void PortablePointer::set(void* address, int type, unsigned long s) {
     address_ = address;
