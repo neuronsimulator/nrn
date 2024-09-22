@@ -199,9 +199,6 @@ static struct HocInst {
 #define VPfri void*
 static std::map<VPfri, short>* inst_table_;
 
-declareTable(Symbols, Symbol*, int)
-implementTable(Symbols, Symbol*, int)
-
 declareTable(Objects, Object*, int)
 implementTable(Objects, Object*, int)
 
@@ -292,7 +289,7 @@ class OcCheckpoint {
     int nobj_;
     Objects* otable_;
     bool (OcCheckpoint::*func_)(Symbol*);
-    Symbols* stable_;
+    std::map<Symbol*, int>* stable_;
 #if HAVE_XDR
     XDR xdrs_;
 #endif
@@ -495,7 +492,7 @@ bool OcCheckpoint::make_sym_table() {
     if (stable_) {
         delete stable_;
     }
-    stable_ = new Symbols(2 * cnt_);
+    stable_ = new std::map<Symbol*, int>{};
     cnt_ = 1;
     func_ = &OcCheckpoint::sym_table_install;
     if (!b) {
@@ -518,13 +515,13 @@ bool OcCheckpoint::sym_count(Symbol* s) {
 }
 
 bool OcCheckpoint::sym_table_install(Symbol* s) {
-    stable_->insert(s, cnt_);
+    stable_->emplace(s, cnt_);
     ++cnt_;
     return true;
 }
 bool OcCheckpoint::sym_out(Symbol* s) {
-    int val;
-    stable_->find(val, s);
+    auto it = stable_->find(s);
+    int val = it != stable_.end() ? *it : 0;
     DEBUG(f_, "%d %s %d %d\n", val, s->name, s->type, s->subtype);
     int l1 = strlen(s->name);
     bool b = xdr(val) && xdr(s->name, l1) && xdr(s->type) && xdr(s->subtype) && xdr(s->cpublic) &&
@@ -621,11 +618,12 @@ bool OcCheckpoint::symbol(Symbol* s) {
 bool OcCheckpoint::sym_instructions(Symbol* s) {
     Proc* p = s->u.u_proc;
     if (s->type == FUNCTION || s->type == PROCEDURE) {
-        int val;
-        if (!stable_->find(val, s)) {
+        auto it = stable_->find(s);
+        if (it == stable_->end()) {
             printf("couldn't find %s in table\n", s->name);
             return false;
         }
+        auto val = *it;
         if (p->size) {
             DEBUG(f_, "instructions for %d |%s|\n", val, s->name);
             DEBUG(f_, "size %lu\n", p->size);
@@ -645,7 +643,6 @@ bool OcCheckpoint::sym_instructions(Symbol* s) {
 }
 bool OcCheckpoint::instlist(unsigned long size, Inst* in) {
     for (unsigned long i = 0; i < size; ++i) {
-        int sval;
         if (in[i].in == STOP) {
             DEBUG(f_, "  STOP\n");
             if (!xdr(0)) {
@@ -667,12 +664,14 @@ bool OcCheckpoint::instlist(unsigned long size, Inst* in) {
                 switch (s[j]) {
                 case 's':
                     if (in[i].sym) {
-                        if (!stable_->find(sval, in[i].sym)) {
+                        auto it = stable_->find(in[i].sym);
+                        if (it == stable_->end()) {
                             printf("couldn't find |%s| in table at instruction index %ld\n",
                                    in[i].sym->name,
                                    i);
                             return false;
                         }
+                        auto sval = *it;
                         // DEBUG(f_, "    %d |%s|\n", sval, in[i].sym->name);
                         if (!xdr(sval)) {
                             printf("instlist failed 3\n");
@@ -680,8 +679,7 @@ bool OcCheckpoint::instlist(unsigned long size, Inst* in) {
                         }
                     } else {
                         DEBUG(f_, "    0 SYMBOL0\n");
-                        sval = 0;
-                        if (!xdr(sval)) {
+                        if (!xdr(0)) {
                             printf("instlist failed 4\n");
                             return false;
                         }
@@ -710,9 +708,9 @@ bool OcCheckpoint::ctemplate(Symbol* s) {
     cTemplate* t = s->u.ctemplate;
     if (func_ == &OcCheckpoint::sym_values) {
         Objectdata* saveod = objectdata_;
-        int ti;
-        bool b;
-        b = stable_->find(ti, s);
+        auto it = stable_->find(s);
+        bool b = it != stable_->end();
+        auto ti = b ? *it : 0;
         DEBUG(f_, "%d %d %s\n", ti, t->count, s->name);
         b = b && xdr(ti);
         //		b = b && xdr(t->count);
@@ -759,27 +757,32 @@ bool OcCheckpoint::object() {
     return b;
 }
 bool OcCheckpoint::objects(Symbol* s) {
-    bool b = true;
-    if (s->type == TEMPLATE) {
-        int sid;
-        b = b && stable_->find(sid, s);
-        b = b && xdr(sid);
-        cTemplate* t = s->u.ctemplate;
+    if (s->type != TEMPLATE) {
+        return true;
+    }
+
+    auto it = stable_->find(s);
+    bool b = it != stable_->end();
+    int sid = b ? *it : 0;
+    b = b && xdr(sid);
+    cTemplate* t = s->u.ctemplate;
 #undef init
-        if (t->init) {
-            b = b && stable_->find(sid, t->init);
-        } else {
-            sid = 0;
-        }
-        b = b && xdr(sid);
-        b = b && xdr(t->index) && xdr(t->count) && xdr(t->id);
-        hoc_Item* q;
-        ITERATE(q, t->olist) {
-            Object* ob = OBJ(q);
-            ++nobj_;
-            otable_->insert(ob, nobj_);  // 0 is null object
-            b = b && xdr(nobj_) && xdr(ob->refcount) && xdr(ob->index);
-        }
+    if (t->init) {
+        auto it2 = stable_->find(t->init);
+        bool b2 = it2 != stable_->end();
+        b = b && b2;
+        sid = b2 ? *it2 : sid;
+    } else {
+        sid = 0;
+    }
+    b = b && xdr(sid);
+    b = b && xdr(t->index) && xdr(t->count) && xdr(t->id);
+    hoc_Item* q;
+    ITERATE(q, t->olist) {
+        Object* ob = OBJ(q);
+        ++nobj_;
+        otable_->insert(ob, nobj_);  // 0 is null object
+        b = b && xdr(nobj_) && xdr(ob->refcount) && xdr(ob->index);
     }
     return b;
 }
