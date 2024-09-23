@@ -2,15 +2,19 @@ NEURON {
     SUFFIX derivimplicit_scalar
 }
 
-STATE { x }
+STATE {
+    x
+}
 
 INITIAL {
-  x = 42
+    x = 42
 }
 
 BREAKPOINT {
-  SOLVE dX METHOD derivimplicit
+    SOLVE dX METHOD derivimplicit
 }
 
-DERIVATIVE dX { x' = -x }
+DERIVATIVE dX {
+    x' = -x
+}
 

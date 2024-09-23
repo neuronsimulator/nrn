@@ -4,17 +4,17 @@ NEURON {
 }
 
 PARAMETER {
-  c = 2.0
+    c = 2.0
 }
 
 STATE {
-  x
+    x
 }
 
 INITIAL {
-  x = 42
+    x = 42
 }
 
 BREAKPOINT {
-  x = c
+    x = c
 }

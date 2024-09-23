@@ -11,14 +11,9 @@ PARAMETER {
     c = 1
 }
 
-PROCEDURE func() {
-}
-
-PROCEDURE func_with_v(v) {
-}
-
-PROCEDURE func_with_other(q) {
-}
+PROCEDURE func() { }
+PROCEDURE func_with_v(v) { }
+PROCEDURE func_with_other(q) { }
 
 BREAKPOINT {
     func()

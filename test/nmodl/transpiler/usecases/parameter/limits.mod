@@ -1,7 +1,7 @@
 : Only test if all of these result in compilable code.
 
 NEURON {
-   SUFFIX limits_mod
+    SUFFIX limits_mod
 }
 
 PARAMETER {

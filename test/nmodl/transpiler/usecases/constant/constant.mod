@@ -1,11 +1,11 @@
 NEURON {
-  SUFFIX constant_mod
+    SUFFIX constant_mod
 }
 
 CONSTANT {
-  a = 2.3
+    a = 2.3
 }
 
 FUNCTION foo() {
-  foo = a
+    foo = a
 }

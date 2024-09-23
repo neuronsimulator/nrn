@@ -1,13 +1,13 @@
 NEURON {
-        SUFFIX ionic
-        USEION na READ ina WRITE ena
+    SUFFIX ionic
+    USEION na READ ina WRITE ena
 }
 
 ASSIGNED {
-        ina (mA/cm2)
-        ena (mV)
+    ina (mA/cm2)
+    ena (mV)
 }
 
 BREAKPOINT {
-        ena = 42.0
+    ena = 42.0
 }

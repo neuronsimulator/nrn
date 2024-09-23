@@ -3,8 +3,8 @@ NEURON {
 }
 
 STATE {
-  xx
-  yy
+    xx
+    yy
 }
 
 PARAMETER {

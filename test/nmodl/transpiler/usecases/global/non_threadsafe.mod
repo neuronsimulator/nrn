@@ -34,10 +34,10 @@ INITIAL {
 : vectorized. We don't otherwise care about anything below
 : this comment.
 STATE {
-  z
+    z
 }
 
 LINEAR lin {
-  ~ z = 2
+    ~ z = 2
 }
 

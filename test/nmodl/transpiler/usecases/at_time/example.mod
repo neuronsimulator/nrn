@@ -1,5 +1,5 @@
 NEURON {
-	SUFFIX example
+     SUFFIX example
 }
 
 FUNCTION f(x) {

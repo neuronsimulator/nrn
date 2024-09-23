@@ -4,12 +4,12 @@ NEURON {
 }
 
 ASSIGNED {
-  z[3]
+    z[3]
 }
 
 STATE {
-  x
-  s[2]
+    x
+    s[2]
 }
 
 INITIAL {

@@ -4,14 +4,14 @@ NEURON {
 }
 
 ASSIGNED {
-  ctor_calls
-  dtor_calls
+    ctor_calls
+    dtor_calls
 }
 
 CONSTRUCTOR {
-  ctor_calls = ctor_calls + 1
+    ctor_calls = ctor_calls + 1
 }
 
 DESTRUCTOR {
-  dtor_calls = dtor_calls + 1
+    dtor_calls = dtor_calls + 1
 }

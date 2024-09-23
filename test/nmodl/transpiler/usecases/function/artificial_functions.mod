@@ -25,10 +25,10 @@ INITIAL {
 
 : A LINEAR block makes a MOD file not VECTORIZED.
 STATE {
-  z
+   z
 }
 
 LINEAR lin {
-  ~ z = 2
+   ~ z = 2
 }
 

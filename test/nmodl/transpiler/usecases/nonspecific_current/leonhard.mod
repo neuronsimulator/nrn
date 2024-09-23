@@ -1,15 +1,15 @@
 UNITS {
-        (mA) = (milliamp)
+    (mA) = (milliamp)
 }
 
 NEURON {
-        SUFFIX leonhard
-        NONSPECIFIC_CURRENT il
-        RANGE c
+    SUFFIX leonhard
+    NONSPECIFIC_CURRENT il
+    RANGE c
 }
 
 ASSIGNED {
-        il (mA/cm2)
+    il (mA/cm2)
 }
 
 PARAMETER {
@@ -17,5 +17,5 @@ PARAMETER {
 }
 
 BREAKPOINT {
-        il = c * (v - 1.5)
+    il = c * (v - 1.5)
 }

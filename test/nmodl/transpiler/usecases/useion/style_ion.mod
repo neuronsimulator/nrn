@@ -8,9 +8,9 @@ NEURON {
 }
 
 ASSIGNED {
-  cai
-  eca
-  nai
+    cai
+    eca
+    nai
 }
 
 INITIAL {

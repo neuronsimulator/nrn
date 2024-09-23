@@ -2,15 +2,19 @@ NEURON {
     SUFFIX cnexp_scalar
 }
 
-STATE { x }
+STATE {
+    x
+}
 
 INITIAL {
-  x = 42
+    x = 42
 }
 
 BREAKPOINT {
-  SOLVE dX METHOD cnexp
+    SOLVE dX METHOD cnexp
 }
 
-DERIVATIVE dX { x' = -x }
+DERIVATIVE dX {
+    x' = -x
+}
 

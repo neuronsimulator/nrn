@@ -1,12 +1,12 @@
 NEURON {
-  SUFFIX src
-  GLOBAL gbl
+   SUFFIX src
+   GLOBAL gbl
 }
 
 PARAMETER {
-  param = 123.0
+   param = 123.0
 }
 
 ASSIGNED {
-  gbl
+   gbl
 }

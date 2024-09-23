@@ -5,8 +5,8 @@ NEURON {
 }
 
 ASSIGNED {
-  x
-  cao
+    x
+    cao
 }
 
 INITIAL {

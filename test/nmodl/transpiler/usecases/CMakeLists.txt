@@ -1,32 +1,32 @@
 set(NMODL_USECASE_DIRS
-    solve
+    at_time
     builtin_functions
     constant
+    constructor
     electrode_current
     external
-    constructor
     function
-    procedure
     global
     hodgkin_huxley
     kinetic
     linear
     morphology
-    nonspecific_current
-    neuron_variables
     net_event
     net_move
     net_receive
     net_send
-    point_process
+    neuron_variables
+    nonspecific_current
     parameter
+    point_process
+    procedure
     random
-    suffix
+    solve
     state
     steady_state
+    suffix
     table
-    useion
-    at_time)
+    useion)
 
 foreach(usecase ${NMODL_USECASE_DIRS})
   add_test(NAME usecase_${usecase}
