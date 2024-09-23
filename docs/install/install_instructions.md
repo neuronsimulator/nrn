@@ -493,3 +493,13 @@ If it prints `2.0` or higher, try installing an older version:
 pip install "numpy<2"
 ```
 (mind the quotes.) Then delete the build directory, reconfigure and compile. If the error persists, carefully check which version of Python NEURON picked up by checking the output of the CMake configure command and make sure that that exact version of Python doesn't pick up an incompatible version of Numpy.
+
+
+* **NEURON segfaults when using the Anaconda Python distribution. What can I do?**
+
+Some Anaconda distributions (e.g., macOS) ship Python binaries with `libpython` statically linked,
+which has caused issues in NEURON and other packages (see discussion [here](https://github.com/neuronsimulator/nrn/issues/2358)).
+
+On the macOS platform, NEURON attempts to detect the use of Anaconda Python by checking for the `/anaconda`
+prefix in the Python binary path. An alternative solution is to build NEURON with the dynamic Python
+option enabled, using the CMake flag `-DNRN_ENABLE_PYTHON_DYNAMIC=ON`.
