@@ -304,7 +304,7 @@ void CodegenNeuronCppVisitor::print_hoc_py_wrapper_function_body(
             auto* const _pnt = static_cast<Point_process*>(_vptr);
             auto* const _p = _pnt->prop;
             if (!_p) {
-                hoc_execerror("POINT_PROCESS data instance not valid", NULL);
+                hoc_execerror("POINT_PROCESS data instance not valid", nullptr);
             }
             _nrn_mechanism_cache_instance _lmc{_p};
             size_t const id{};
@@ -319,7 +319,7 @@ void CodegenNeuronCppVisitor::print_hoc_py_wrapper_function_body(
             printer->push_block("if (!_prop_id)");
             printer->fmt_line(
                 "hoc_execerror(\"No data for {}_{}. Requires prior call to setdata_{} and that the "
-                "specified mechanism instance still be in existence.\", NULL);",
+                "specified mechanism instance still be in existence.\", nullptr);",
                 function_or_procedure_block->get_node_name(),
                 info.mod_suffix,
                 info.mod_suffix);
@@ -362,7 +362,7 @@ void CodegenNeuronCppVisitor::print_hoc_py_wrapper_function_body(
                           internal_method_arguments());
     }
     const auto get_func_call_str = [&]() {
-        const auto params = function_or_procedure_block->get_parameters();
+        const auto& params = function_or_procedure_block->get_parameters();
         const auto func_proc_name = block_name + "_" + info.mod_suffix;
         auto func_call = fmt::format("{}({}", func_proc_name, internal_method_arguments());
         for (int i = 0; i < params.size(); ++i) {
@@ -2274,7 +2274,7 @@ void CodegenNeuronCppVisitor::print_net_move_call(const ast::FunctionCall& node)
     printer->add_text(')');
 }
 
-void CodegenNeuronCppVisitor::print_net_event_call(const ast::FunctionCall& node) {
+void CodegenNeuronCppVisitor::print_net_event_call(const ast::FunctionCall& /* node */) {
     const auto& point_process = get_variable_name(naming::POINT_PROCESS_VARIABLE,
                                                   /* use_instance */ false);
     printer->fmt_text("net_event({}, t)", point_process);

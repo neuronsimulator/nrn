@@ -452,8 +452,7 @@ void CodegenCoreneuronCppVisitor::print_function_tables(const ast::FunctionTable
     for (const auto& i: p) {
         params.emplace_back("", "double", "", i->get_node_name());
     }
-    printer->fmt_line("double {}({})", method_name(name), get_parameter_str(params));
-    printer->push_block();
+    printer->fmt_push_block("double {}({})", method_name(name), get_parameter_str(params));
     printer->fmt_line("double _arg[{}];", p.size());
     for (size_t i = 0; i < p.size(); ++i) {
         printer->fmt_line("_arg[{}] = {};", i, p[i]->get_node_name());
