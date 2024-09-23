@@ -333,7 +333,7 @@ SymbolItem::SymbolItem(Symbol* sym, Objectdata* od, int index, int whole_array) 
     symbol_ = sym;
     ob_ = NULL;
     whole_array_ = whole_array;
-    if (ISARRAY(sym)) {
+    if (is_array(*sym)) {
         if (whole_array_) {
             name_ = concat(sym->name, "[all]");
         } else {
@@ -513,7 +513,7 @@ void SymDirectoryImpl::load_mechanism(const Prop* p, int vartype, const char* xa
     for (int i = 0; i < cnt; ++i) {
         const Symbol* sym = msym->u.ppsym[i];
         if (nrn_vartype(sym) == vartype || vartype == 0) {
-            if (ISARRAY(sym)) {
+            if (is_array(*sym)) {
                 int n = hoc_total_array_data(sym, 0);
                 if (n > 5) {
                     Sprintf(buf, "%s[all]%s", sym->name, xarg);
@@ -532,7 +532,7 @@ void SymDirectoryImpl::load_mechanism(const Prop* p, int vartype, const char* xa
 }
 
 void SymDirectoryImpl::append(Symbol* sym, Objectdata* od, Object* o) {
-    if (ISARRAY(sym)) {
+    if (is_array(*sym)) {
         int i, n = 1;
         if (od) {
             n = hoc_total_array_data(sym, od);

@@ -70,7 +70,7 @@ jobs:
               # TODO: address-leak is the dream, but there are many problems,
               # including external ones from the MPI implementations
               sanitizer: address
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             config:
               build_mode: cmake
               # Cannot use a non-instrumented OpenMP with TSan, and we don't
@@ -141,7 +141,7 @@ jobs:
         run: |
           sudo apt-get install build-essential ccache libopenmpi-dev \
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
-            openmpi-bin flex libfl-dev bison
+            openmpi-bin flex libfl-dev bison libreadline-dev
           # The sanitizer builds use ubuntu 22.04
           if [[ "${{matrix.os}}" == "ubuntu-20.04" ]]; then
             sudo apt-get install g++-7 g++-8
@@ -207,7 +207,7 @@ jobs:
         run: |
           python3 -m venv music-venv
           source music-venv/bin/activate
-          python3 -m pip install mpi4py "cython<3" 'numpy<2' setuptools
+          python3 -m pip install 'mpi4py<4' cython numpy setuptools
           sudo mkdir -p $MUSIC_INSTALL_DIR
           sudo chown -R $USER $MUSIC_INSTALL_DIR
           curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip

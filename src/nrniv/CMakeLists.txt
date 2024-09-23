@@ -401,6 +401,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 target_link_libraries(nrniv_lib nrngnu)
 target_link_libraries(nrniv_lib sparse13)
+target_link_libraries(nrniv_lib fmt::fmt)
 target_include_directories(nrniv_lib SYSTEM PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
@@ -456,6 +457,7 @@ if(NRN_ENABLE_MPI)
       list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
 
       add_library(${libname}_lib SHARED ${NRN_NRNMPI_SRC_FILES})
+      target_link_libraries(${libname}_lib fmt::fmt)
       target_include_directories(${libname}_lib BEFORE PUBLIC ${include})
       # Note that we do not link here to libmpi. That is dlopen first.
       if(MINGW) # type msmpi only

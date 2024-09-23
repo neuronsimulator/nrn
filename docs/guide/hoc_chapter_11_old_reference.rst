@@ -338,7 +338,7 @@ Names introduced by nrnoc
 .. code::
     c++
 
-    node_data	disconnect	batch_run	batch_save
+    disconnect	batch_run	batch_save
 	pt3dclear	pt3dadd	n3d	x3d	y3d	z3d	diam3d	arc3d
 	define_shape	p3dconst	spine3d	setSpineArea	getSpineArea
 	area	ri	initnrn	topology	fadvance	distance

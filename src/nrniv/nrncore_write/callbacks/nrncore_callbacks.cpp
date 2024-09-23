@@ -98,7 +98,7 @@ void* get_global_dbl_item(void* p, const char*& name, int& size, double*& val) {
     for (; sp; sp = sp->next) {
         if (sp->type == VAR && sp->subtype == USERDOUBLE) {
             name = sp->name;
-            if (ISARRAY(sp)) {
+            if (is_array(*sp)) {
                 Arrayinfo* a = sp->arayinfo;
                 if (a->nsub == 1) {
                     size = a->sub[0];
@@ -176,7 +176,7 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<doub
         data = &nt._t;
         n = 1;
     } else if (type > 0 && type < n_memb_func) {
-        auto set_mdata = [type, tid, &mdata](Memb_list* ml) -> size_t {
+        auto set_mdata = [&mdata](Memb_list* ml) -> size_t {
             mdata = ml->data();
             return ml->nodecount;
         };
@@ -1018,7 +1018,6 @@ static void set_info(TQItem* tqi,
         Fprintf(stderr,
                 "WARNING: CVode.event(...) for delivery at time step nearest %g discarded. "
                 "CoreNEURON cannot presently handle interpreter events (rank %d, thread %d).\n",
-                nrnmpi_myid,
                 tdeliver,
                 nrnmpi_myid,
                 tid);

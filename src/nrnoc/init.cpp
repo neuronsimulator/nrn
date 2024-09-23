@@ -239,8 +239,12 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
     } catch (const std::filesystem::filesystem_error& e) {
         handle = dlopen(relpath, flags);
         if (!handle) {
-            std::cerr << "std::filesystem::absolute failed (" << e.what()
-                      << ") and dlopen failed with '" << relpath << "'" << std::endl;
+            Fprintf(
+                stderr,
+                fmt::format("std::filesystem::absolute failed ({}) and dlopen failed with '{}'\n",
+                            e.what(),
+                            relpath)
+                    .c_str());
 #if DARWIN
             nrn_possible_mismatched_arch(relpath);
 #endif
@@ -1222,7 +1226,7 @@ void hoc_register_tolerance(int mechtype, HocStateTolerance* tol, Symbol*** stol
                         psym[i] = vsym;
                         /*printf("identified %s at index %d of %s\n", vsym->name, index,
                          * msym->name);*/
-                        if (ISARRAY(vsym)) {
+                        if (is_array(*vsym)) {
                             int const na = vsym->arayinfo->sub[0];
                             for (int k = 1; k < na; ++k) {
                                 psym[++i] = vsym;

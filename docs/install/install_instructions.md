@@ -207,7 +207,7 @@ In order to build NEURON from source, the following packages must be available:
 The following packages are optional (see build options):
 
 - Python >=3.8 (for Python interface)
-- Cython < 3 (for RXD)
+- Cython (for RXD)
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)
 
@@ -290,7 +290,8 @@ install dependencies. For example, on Ubuntu:
 sudo apt-get update
 sudo apt-get install -y bison cmake flex git \
      libncurses-dev libopenmpi-dev libx11-dev \
-     libxcomposite-dev openmpi-bin python3-dev
+     libxcomposite-dev openmpi-bin python3-dev \
+     libreadline-dev
 # for python dependencies
 pip install -r nrn_requirements.txt
 ```
@@ -471,3 +472,24 @@ export CFLAGS="-fno-strict-aliasing -fno-common -dynamic -g -Os -pipe -DMACOSX -
 ```
 
 If you see any other issues, please open [an issue here](https://github.com/neuronsimulator/nrn/issues/new/choose).
+
+* **I'm seeing compiler errors related to Python and RXD.***
+The error can manifest as follows:
+```
+share/lib/python/neuron/rxd/geometry3d/surfaces.cpp:14605:41: error: no member named 'subarray' in '_PyArray_Descr'
+    __Pyx_INCREF(((PyObject*)__pyx_v_d->subarray->shape));
+                             ~~~~~~~~~  ^
+```
+often there's something related to NumPy nearby, e.g. `npy`.
+
+The issue is that certain versions of NEURON (below 9.0) are not
+compatible with `numpy>=2`. Check the numpy version, e.g.,
+```
+python -c "import numpy; print(numpy.__version__)"
+```
+
+If it prints `2.0` or higher, try installing an older version:
+```
+pip install "numpy<2"
+```
+(mind the quotes.) Then delete the build directory, reconfigure and compile. If the error persists, carefully check which version of Python NEURON picked up by checking the output of the CMake configure command and make sure that that exact version of Python doesn't pick up an incompatible version of Numpy.

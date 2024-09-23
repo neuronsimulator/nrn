@@ -1066,7 +1066,7 @@ int Cvode::cvode_init(double) {
         // printf("CVodeReInit\n");
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVReInit error %d\n",
-                   this,
+                   fmt::ptr(this),
                    secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
                    err);
             return err;
@@ -1082,7 +1082,7 @@ int Cvode::cvode_init(double) {
         CVodeMalloc(mem_, pf_, t0_, y_, CV_SV, &ncv_->rtol_, atolnvec_);
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVodeMalloc error %d\n",
-                   this,
+                   fmt::ptr(this),
                    secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
                    err);
             return err;
@@ -1302,7 +1302,7 @@ int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         Printf("Cvode::cvode_advance_tn %p %d initialize_=%d tstop=%.20g t_=%.20g to ",
-               this,
+               fmt::ptr(this),
                nth_ ? nth_->id : 0,
                initialize_,
                tstop_,
@@ -1322,7 +1322,7 @@ int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
 #endif
     if (err < 0) {
         Printf("CVode %p %s advance_tn failed, err=%d.\n",
-               this,
+               fmt::ptr(this),
                secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
                err);
         pf_(t_, y_, nullptr, &opaque);
@@ -1344,7 +1344,7 @@ int Cvode::cvode_interpolate(double tout) {
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         Printf("Cvode::cvode_interpolate %p %d initialize_%d t=%.20g to ",
-               this,
+               fmt::ptr(this),
                nth_ ? nth_->id : 0,
                initialize_,
                t_);
@@ -1365,7 +1365,7 @@ int Cvode::cvode_interpolate(double tout) {
 #endif
     if (err < 0) {
         Printf("CVode %p %s interpolate failed, err=%d.\n",
-               this,
+               fmt::ptr(this),
                secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
                err);
         return err;
@@ -1409,7 +1409,7 @@ N_Vector Cvode::acorvec() {
 void Cvode::statistics() {
 #if 1
     Printf("\nCvode instance %p %s statistics : %d %s states\n",
-           this,
+           fmt::ptr(this),
            secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
            neq_,
            (use_daspk_ ? "IDA" : "CVode"));

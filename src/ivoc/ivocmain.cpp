@@ -42,6 +42,8 @@ void iv_display_scale(float);
 #include <IV-X11/ivx11_dynam.h>
 #endif
 
+#include "utils/logger.hpp"
+
 #if 1
 void pr_profile();
 #define PR_PROFILE pr_profile();
@@ -312,7 +314,7 @@ void hoc_nrnmpi_init() {
         nrnmpi_stubs();
         auto const pmes = nrnmpi_load();
         if (!pmes.empty()) {
-            std::cout << pmes << std::endl;
+            Printf(fmt::format("{}\n", pmes).c_str());
         }
 #endif
 
@@ -544,20 +546,20 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     session = new Session("NEURON", our_argc, our_argv, options, properties);
 #else
 #if defined(WIN32)
-    IFGUI
-    session = new Session("NEURON", our_argc, (char**) our_argv, options, properties);
-    ENDGUI
-#else
-    IFGUI
-    if (getenv("DISPLAY")) {
+    if (hoc_usegui) {
         session = new Session("NEURON", our_argc, (char**) our_argv, options, properties);
-    } else {
-        fprintf(stderr,
-                "Warning: no DISPLAY environment variable.\
-\n--No graphics will be displayed.\n");
-        hoc_usegui = 0;
     }
-    ENDGUI
+#else
+    if (hoc_usegui) {
+        if (getenv("DISPLAY")) {
+            session = new Session("NEURON", our_argc, (char**) our_argv, options, properties);
+        } else {
+            fprintf(stderr,
+                    "Warning: no DISPLAY environment variable.\
+\n--No graphics will be displayed.\n");
+            hoc_usegui = 0;
+        }
+    }
 #endif
     auto const nrn_props_size = strlen(neuron_home) + 20;
     char* nrn_props = new char[nrn_props_size];
@@ -599,11 +601,11 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     if (session) {
         session->style()->find_attribute("NSTACK", hoc_nstack);
         session->style()->find_attribute("NFRAME", hoc_nframe);
-        IFGUI
-        if (session->style()->value_is_on("err_dialog")) {
-            nrn_err_dialog_active_ = 1;
+        if (hoc_usegui) {
+            if (session->style()->value_is_on("err_dialog")) {
+                nrn_err_dialog_active_ = 1;
+            }
         }
-        ENDGUI
     } else
 #endif  // HAVE_IV
     {
@@ -637,15 +639,15 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 #endif  // USE_PYTHON
 
 #if defined(WIN32) && HAVE_IV
-    IFGUI
-    double scale = 1.;
-    int pw = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-    if (pw < 1100) {
-        scale = 1200. / double(pw);
+    if (hoc_usegui) {
+        double scale = 1.;
+        int pw = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+        if (pw < 1100) {
+            scale = 1200. / double(pw);
+        }
+        session->style()->find_attribute("mswin_scale", scale);
+        iv_display_scale(float(scale));
     }
-    session->style()->find_attribute("mswin_scale", scale);
-    iv_display_scale(float(scale));
-    ENDGUI
 #endif
 
     // just eliminate from arg list
@@ -777,11 +779,11 @@ extern void hoc_ret(), hoc_pushx(double);
 
 void hoc_single_event_run() {
 #if HAVE_IV
-    IFGUI
-    void single_event_run();
+    if (hoc_usegui) {
+        void single_event_run();
 
-    single_event_run();
-    ENDGUI
+        single_event_run();
+    }
 #endif
     hoc_ret();
     hoc_pushx(1.);

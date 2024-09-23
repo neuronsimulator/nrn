@@ -66,7 +66,7 @@ static PyType_Slot nrnpy_SegmentType_slots[] = {
     {Py_tp_iter, (void*) mech_of_segment_iter_safe},
     {Py_tp_methods, (void*) NPySegObj_methods},
     {Py_tp_members, (void*) NPySegObj_members},
-    {Py_tp_init, (void*) NPySegObj_init_safe},
+    {Py_tp_init, (void*) NPySegObj_init},
     {Py_tp_new, (void*) NPySegObj_new_safe},
     {Py_tp_doc, (void*) "Segment objects"},
     {Py_sq_contains, (void*) NPySegObj_contains_safe},
@@ -164,6 +164,18 @@ static PyType_Spec nrnpy_RangeType_spec = {
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     nrnpy_RangeType_slots,
+};
+
+static PyType_Slot nrnpy_OpaquePointerType_slots[] = {
+    {Py_tp_doc, (void*) "Opaque pointer."},
+    {0, 0},
+};
+static PyType_Spec nrnpy_OpaquePointerType_spec = {
+    "nrn.OpaquePointer",
+    sizeof(NPyOpaquePointer),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    nrnpy_OpaquePointerType_slots,
 };
 
 static struct PyModuleDef nrnmodule = {PyModuleDef_HEAD_INIT,

@@ -18,7 +18,6 @@
 
 extern int nrn_multisplit_active_;
 extern int hoc_execerror_messages;
-extern int node_index(Section*, double);
 extern int nrn_shape_changed_;
 extern int hoc_return_type_code;
 Object* (*nrnpy_rvp_rxd_to_callable)(Object*) = 0;
@@ -349,9 +348,9 @@ int RangeVarPlot::get_color(void) {
 void RangeVarPlot::set_color(int new_color) {
     color_ = new_color;
 #if HAVE_IV
-    IFGUI
-    color(colors->color(color_));
-    ENDGUI
+    if (hoc_usegui) {
+        color(colors->color(color_));
+    }
 #endif
 }
 

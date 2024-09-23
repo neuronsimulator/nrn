@@ -186,36 +186,36 @@ static const char** f_dir(void* v) {
 static double f_chooser(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("File.chooser", file_class_sym_, v);
 #if HAVE_IV
-    IFGUI
-    OcFile* f = (OcFile*) v;
-    f->close();
+    if (hoc_usegui) {
+        OcFile* f = (OcFile*) v;
+        f->close();
 
-    if (!ifarg(1)) {
-        return double(f->file_chooser_popup());
-    }
+        if (!ifarg(1)) {
+            return double(f->file_chooser_popup());
+        }
 
-    char *type, *banner, *filter, *bopen, *cancel;
-    banner = filter = bopen = cancel = NULL;
-    const char* path = ".";
-    type = gargstr(1);
-    if (ifarg(2)) {
-        banner = gargstr(2);
-    }
-    if (ifarg(3)) {
-        filter = gargstr(3);
-    }
-    if (ifarg(4)) {
-        bopen = gargstr(4);
-    }
-    if (ifarg(5)) {
-        cancel = gargstr(5);
-    }
-    if (ifarg(6)) {
-        path = gargstr(6);
-    }
+        char *type, *banner, *filter, *bopen, *cancel;
+        banner = filter = bopen = cancel = NULL;
+        const char* path = ".";
+        type = gargstr(1);
+        if (ifarg(2)) {
+            banner = gargstr(2);
+        }
+        if (ifarg(3)) {
+            filter = gargstr(3);
+        }
+        if (ifarg(4)) {
+            bopen = gargstr(4);
+        }
+        if (ifarg(5)) {
+            cancel = gargstr(5);
+        }
+        if (ifarg(6)) {
+            path = gargstr(6);
+        }
 
-    f->file_chooser_style(type, path, banner, filter, bopen, cancel);
-    ENDGUI
+        f->file_chooser_style(type, path, banner, filter, bopen, cancel);
+    }
 #endif
     return 1.;
 }

@@ -105,7 +105,7 @@ void nrnbbcore_register_mapping() {
     int nlfp = vector_capacity(lfp);
 
     if (nsec != nseg) {
-        std::cout << "Error: Section and Segment mapping vectors should have same size!\n";
+        Printf("Error: Section and Segment mapping vectors should have same size!\n");
         abort();
     }
 
