@@ -226,7 +226,7 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     /**
      * Print all `check_*` function declarations
      */
-    void print_check_table_function_prototypes();
+    void print_check_table_entrypoint();
 
 
     void print_function_or_procedure(const ast::Block& node,

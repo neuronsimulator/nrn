@@ -137,7 +137,7 @@ void CodegenNeuronCppVisitor::print_point_process_function_definitions() {
 }
 
 
-void CodegenNeuronCppVisitor::print_check_table_function_prototypes() {
+void CodegenNeuronCppVisitor::print_check_table_entrypoint() {
     if (info.table_count == 0) {
         return;
     }
@@ -232,7 +232,7 @@ void CodegenNeuronCppVisitor::print_function_prototypes() {
 
     print_point_process_function_definitions();
     print_setdata_functions();
-    print_check_table_function_prototypes();
+    print_check_table_entrypoint();
 }
 
 
