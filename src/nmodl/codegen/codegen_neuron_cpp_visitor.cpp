@@ -183,6 +183,7 @@ void CodegenNeuronCppVisitor::print_check_table_function_prototypes() {
     printer->pop_block();
 }
 
+
 void CodegenNeuronCppVisitor::print_setdata_functions() {
     printer->add_line("/* Neuron setdata functions */");
     printer->add_line("extern void _nrn_setdata_reg(int, void(*)(Prop*));");
@@ -211,6 +212,11 @@ void CodegenNeuronCppVisitor::print_setdata_functions() {
         )CODE");
     }
     printer->pop_block();
+}
+
+
+void CodegenNeuronCppVisitor::print_function_prototypes() {
+    printer->add_newline(2);
 
     printer->add_line("/* Mechanism procedures and functions */");
     for (const auto& node: info.functions) {
@@ -223,11 +229,6 @@ void CodegenNeuronCppVisitor::print_setdata_functions() {
         printer->add_text(';');
         printer->add_newline();
     }
-}
-
-
-void CodegenNeuronCppVisitor::print_function_prototypes() {
-    printer->add_newline(2);
 
     print_point_process_function_definitions();
     print_setdata_functions();
