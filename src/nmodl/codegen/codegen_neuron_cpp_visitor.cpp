@@ -390,14 +390,15 @@ void CodegenNeuronCppVisitor::print_hoc_py_wrapper_function_body(
 
 
 void CodegenNeuronCppVisitor::print_hoc_py_wrapper_function_definitions() {
-    for (const auto& procedure: info.procedures) {
-        print_hoc_py_wrapper_function_body(procedure, InterpreterWrapper::HOC);
-        print_hoc_py_wrapper_function_body(procedure, InterpreterWrapper::Python);
-    }
-    for (const auto& function: info.functions) {
-        print_hoc_py_wrapper_function_body(function, InterpreterWrapper::HOC);
-        print_hoc_py_wrapper_function_body(function, InterpreterWrapper::Python);
-    }
+    auto print_wrappers = [this](const auto& callables) {
+        for (const auto& callable: callables) {
+            print_hoc_py_wrapper_function_body(callable, InterpreterWrapper::HOC);
+            print_hoc_py_wrapper_function_body(callable, InterpreterWrapper::Python);
+        }
+    };
+
+    print_wrappers(info.procedures);
+    print_wrappers(info.functions);
 }
 
 
