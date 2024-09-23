@@ -1044,24 +1044,20 @@ void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
 
     printer->add_newline(2);
     printer->add_line("/* declaration of user functions */");
-    for (const auto& procedure: info.procedures) {
-        const auto proc_name = procedure->get_node_name();
-        printer->fmt_line("{};", hoc_function_signature(proc_name));
-    }
-    for (const auto& function: info.functions) {
-        const auto func_name = function->get_node_name();
-        printer->fmt_line("{};", hoc_function_signature(func_name));
-    }
-    if (!info.point_process) {
-        for (const auto& procedure: info.procedures) {
-            const auto proc_name = procedure->get_node_name();
-            printer->fmt_line("{};", py_function_signature(proc_name));
+
+    auto print_entrypoint_decl = [this](const auto& callables) {
+        for (const auto& node: callables) {
+            const auto name = node->get_node_name();
+            printer->fmt_line("{};", hoc_function_signature(name));
+
+            if (!info.point_process) {
+                printer->fmt_line("{};", py_function_signature(name));
+            }
         }
-        for (const auto& function: info.functions) {
-            const auto func_name = function->get_node_name();
-            printer->fmt_line("{};", py_function_signature(func_name));
-        }
-    }
+    };
+
+    print_entrypoint_decl(info.functions);
+    print_entrypoint_decl(info.procedures);
 
     printer->add_newline(2);
     printer->add_line("/* connect user functions to hoc names */");
