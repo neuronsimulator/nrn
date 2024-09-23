@@ -344,6 +344,40 @@ def solve_lin_system(
     return code, new_local_vars
 
 
+def finite_difference_step_variable(sym):
+    return f"{sym}_delta_"
+
+
+def discretize_derivative(expr):
+    if isinstance(expr, sp.Derivative):
+        x = expr.args[1][0]
+        dx = sp.symbols(finite_difference_step_variable(x))
+        return expr.as_finite_difference(dx)
+    else:
+        return expr
+
+
+def transform_expression(expr, transform):
+    if not expr.args:
+        return expr
+
+    args = (transform_expression(transform(arg), transform) for arg in expr.args)
+    return expr.func(*args)
+
+
+def transform_matrix_elements(mat, transform):
+    return sp.Matrix(
+        [
+            [transform_expression(mat[i, j], transform) for j in range(mat.rows)]
+            for i in range(mat.cols)
+        ]
+    )
+
+
+def needs_finite_differences(mat):
+    return any(isinstance(expr, sp.Derivative) for expr in sp.preorder_traversal(mat))
+
+
 def solve_non_lin_system(eq_strings, vars, constants, function_calls):
     """Solve non-linear system of equations, return solution as C code.
 
@@ -369,28 +403,31 @@ def solve_non_lin_system(eq_strings, vars, constants, function_calls):
     custom_fcts = _get_custom_functions(function_calls)
 
     jacobian = sp.Matrix(eqs).jacobian(state_vars)
+    if needs_finite_differences(jacobian):
+        jacobian = transform_matrix_elements(jacobian, discretize_derivative)
 
     X_vec_map = {x: sp.symbols(f"X[{i}]") for i, x in enumerate(state_vars)}
+    dX_vec_map = {
+        finite_difference_step_variable(x): sp.symbols(f"dX_[{i}]")
+        for i, x in enumerate(state_vars)
+    }
 
     vecFcode = []
     for i, eq in enumerate(eqs):
-        vecFcode.append(
-            f"F[{i}] = {sp.ccode(eq.simplify().subs(X_vec_map).evalf(), user_functions=custom_fcts)}"
-        )
+        expr = eq.simplify().subs(X_vec_map).evalf()
+        rhs = sp.ccode(expr, user_functions=custom_fcts)
+        vecFcode.append(f"F[{i}] = {rhs}")
 
     vecJcode = []
     for i, j in itertools.product(range(jacobian.rows), range(jacobian.cols)):
         flat_index = i + jacobian.rows * j
 
-        rhs = sp.ccode(
-            jacobian[i, j].simplify().subs(X_vec_map).evalf(),
-            user_functions=custom_fcts,
-        )
+        Jij = jacobian[i, j].simplify().subs({**X_vec_map, **dX_vec_map}).evalf()
+        rhs = sp.ccode(Jij, user_functions=custom_fcts)
         vecJcode.append(f"J[{flat_index}] = {rhs}")
 
     # interweave
     code = _interweave_eqs(vecFcode, vecJcode)
-
     code = search_and_replace_protected_identifiers_from_sympy(code, function_calls)
 
     return code

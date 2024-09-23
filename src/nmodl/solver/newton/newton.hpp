@@ -81,6 +81,8 @@ EIGEN_DEVICE_FUNC int newton_solver(Eigen::Matrix<double, N, 1>& X,
                                     FUNC functor,
                                     double eps = EPS,
                                     int max_iter = MAX_ITER) {
+    // If finite differences are needed, this is stores the stepwidth.
+    Eigen::Matrix<double, N, 1> dX;
     // Vector to store result of function F(X):
     Eigen::Matrix<double, N, 1> F;
     // Matrix to store Jacobian of F(X):
@@ -89,7 +91,7 @@ EIGEN_DEVICE_FUNC int newton_solver(Eigen::Matrix<double, N, 1>& X,
     int iter = -1;
     while (++iter < max_iter) {
         // calculate F, J from X using user-supplied functor
-        functor(X, F, J);
+        functor(X, dX, F, J);
         if (is_converged(X, J, F, eps)) {
             return iter;
         }
@@ -127,10 +129,11 @@ EIGEN_DEVICE_FUNC int newton_solver_small_N(Eigen::Matrix<double, N, 1>& X,
                                             int max_iter) {
     bool invertible;
     Eigen::Matrix<double, N, 1> F;
+    Eigen::Matrix<double, N, 1> dX;
     Eigen::Matrix<double, N, N> J, J_inv;
     int iter = -1;
     while (++iter < max_iter) {
-        functor(X, F, J);
+        functor(X, dX, F, J);
         if (is_converged(X, J, F, eps)) {
             return iter;
         }

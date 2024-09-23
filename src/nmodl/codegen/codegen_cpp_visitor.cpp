@@ -708,6 +708,7 @@ void CodegenCppVisitor::print_functor_definition(const ast::EigenNewtonSolverBlo
 
     printer->fmt_text(
         "void operator()(const Eigen::Matrix<{0}, {1}, 1>& nmodl_eigen_xm, Eigen::Matrix<{0}, {1}, "
+        "1>& nmodl_eigen_dxm, Eigen::Matrix<{0}, {1}, "
         "1>& nmodl_eigen_fm, "
         "Eigen::Matrix<{0}, {1}, {1}>& nmodl_eigen_jm) {2}",
         float_type,
@@ -715,8 +716,15 @@ void CodegenCppVisitor::print_functor_definition(const ast::EigenNewtonSolverBlo
         is_functor_const(variable_block, functor_block) ? "const " : "");
     printer->push_block();
     printer->fmt_line("const {}* nmodl_eigen_x = nmodl_eigen_xm.data();", float_type);
+    printer->fmt_line("{}* nmodl_eigen_dx = nmodl_eigen_dxm.data();", float_type);
     printer->fmt_line("{}* nmodl_eigen_j = nmodl_eigen_jm.data();", float_type);
     printer->fmt_line("{}* nmodl_eigen_f = nmodl_eigen_fm.data();", float_type);
+
+    for (size_t i = 0; i < N; ++i) {
+        printer->fmt_line(
+            "nmodl_eigen_dx[{0}] = std::max(1e-6, 0.02*std::fabs(nmodl_eigen_x[{0}]));", i);
+    }
+
     print_statement_block(functor_block, false, false);
     printer->pop_block();
     printer->add_newline();

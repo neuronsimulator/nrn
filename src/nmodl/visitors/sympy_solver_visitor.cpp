@@ -179,6 +179,7 @@ void SympySolverVisitor::construct_eigen_solver_block(
     const std::vector<std::string>& solutions,
     bool linear) {
     auto solutions_filtered = filter_string_vector(solutions, "X[", "nmodl_eigen_x[");
+    solutions_filtered = filter_string_vector(solutions_filtered, "dX_[", "nmodl_eigen_dx[");
     solutions_filtered = filter_string_vector(solutions_filtered, "J[", "nmodl_eigen_j[");
     solutions_filtered = filter_string_vector(solutions_filtered, "Jm[", "nmodl_eigen_jm[");
     solutions_filtered = filter_string_vector(solutions_filtered, "F[", "nmodl_eigen_f[");
@@ -187,16 +188,19 @@ void SympySolverVisitor::construct_eigen_solver_block(
         logger->debug("SympySolverVisitor :: -> adding statement: {}", sol);
     }
 
-    std::vector<std::string> pre_solve_statements_and_setup_x_eqs(pre_solve_statements);
+    std::vector<std::string> pre_solve_statements_and_setup_x_eqs = pre_solve_statements;
     std::vector<std::string> update_statements;
-    for (int i = 0; i < state_vars.size(); i++) {
-        auto update_state = state_vars[i] + " = nmodl_eigen_x[" + std::to_string(i) + "]";
-        auto setup_x = "nmodl_eigen_x[" + std::to_string(i) + "] = " + state_vars[i];
 
-        pre_solve_statements_and_setup_x_eqs.push_back(setup_x);
+    for (int i = 0; i < state_vars.size(); i++) {
+        auto eigen_name = fmt::format("nmodl_eigen_x[{}]", i);
+
+        auto update_state = fmt::format("{} = {}", state_vars[i], eigen_name);
         update_statements.push_back(update_state);
-        logger->debug("SympySolverVisitor :: setup_x_eigen: {}", setup_x);
         logger->debug("SympySolverVisitor :: update_state: {}", update_state);
+
+        auto setup_x = fmt::format("{} = {}", eigen_name, state_vars[i]);
+        pre_solve_statements_and_setup_x_eqs.push_back(setup_x);
+        logger->debug("SympySolverVisitor :: setup_x_eigen: {}", setup_x);
     }
 
     visitor::SympyReplaceSolutionsVisitor solution_replacer(
@@ -304,9 +308,7 @@ void SympySolverVisitor::construct_eigen_solver_block(
 
 
 void SympySolverVisitor::solve_linear_system(const ast::Node& node,
-                                             const std::vector<std::string>& pre_solve_statements
-
-) {
+                                             const std::vector<std::string>& pre_solve_statements) {
     // construct ordered vector of state vars used in linear system
     init_state_vars_vector(&node);
     // call sympy linear solver
@@ -373,6 +375,7 @@ void SympySolverVisitor::solve_non_linear_system(
         return;
     }
     logger->debug("SympySolverVisitor :: Constructing eigen newton solve block");
+
     construct_eigen_solver_block(pre_solve_statements, solutions, false);
 }
 

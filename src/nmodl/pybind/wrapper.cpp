@@ -82,14 +82,13 @@ std::tuple<std::vector<std::string>, std::string> call_solve_nonlinear_system(
 exception_message = ""
 try:
     solutions = solve_non_lin_system(equation_strings,
-                                     state_vars,
-                                     vars,
-                                     function_calls)
+                                               state_vars,
+                                               vars,
+                                               function_calls)
 except Exception as e:
     # if we fail, fail silently and return empty string
     import traceback
     solutions = [""]
-    new_local_vars = [""]
     exception_message = traceback.format_exc()
 )";
 
