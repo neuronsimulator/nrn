@@ -1477,7 +1477,7 @@ void PrintableWindow::reconfigured() {
         xmove(x, y);
     }
 }
-// LCOV_EXCL_STOP
+// LCOV_EXCL_END
 
 void ViewWindow::reconfigured() {
     if (!pixres) {

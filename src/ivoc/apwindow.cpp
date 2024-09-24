@@ -415,7 +415,7 @@ bool PrintableWindow::receive(const Event& e) {
             reconfigured();
             notify();
             break;
-        // LCOV_EXCL_STOP
+        // LCOV_EXCL_END
         case MapNotify:
             if (xplace_) {
                 if (xtop() != xtop_ || xleft() != xleft_) {
