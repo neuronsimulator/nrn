@@ -229,10 +229,6 @@ void CodegenNeuronCppVisitor::print_function_prototypes() {
         printer->add_text(';');
         printer->add_newline();
     }
-
-    print_point_process_function_definitions();
-    print_setdata_functions();
-    print_check_table_entrypoint();
 }
 
 
@@ -2217,6 +2213,9 @@ void CodegenNeuronCppVisitor::print_codegen_routines() {
     print_nrn_destructor_declaration();
     print_nrn_alloc();
     print_function_prototypes();
+    print_point_process_function_definitions();
+    print_setdata_functions();
+    print_check_table_entrypoint();
     print_functors_definitions();
     print_global_variables_for_hoc();
     print_thread_memory_callbacks();
