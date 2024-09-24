@@ -32,14 +32,6 @@ assert mt.count() > nion
 # this test depends on the ca ion not existing at this point
 assert exists("ca_ion") is False
 
-# load neurondemo mod files. That will create ca_ion and provide two
-# mod files that write cai
-# Following Aborts prior to PR#3055 with
-# eion.cpp:431: void nrn_check_conc_write(Prop*, Prop*, int): Assertion `k < sizeof(long) * 8' failed.
-nrnmechlibpath = "%s/demo/release" % h.neuronhome()
-print(nrnmechlibpath)
-assert load_mechanisms(nrnmechlibpath)
-
 # ca_ion now exists and has a mechanism index > nion
 assert exists("ca_ion")
 mt = h.MechanismType(0)  # new mechanisms do not appear in old MechanismType
