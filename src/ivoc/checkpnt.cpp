@@ -86,15 +86,10 @@ data depending on type. eg for VAR && NOTUSER it is
 
 */
 
-#define HAVE_XDR 0
-
 #include <OS/list.h>
 #include <OS/table.h>
 #include "oc2iv.h"
 #include "ocfunc.h"
-#if HAVE_XDR
-#include <rpc/xdr.h>
-#endif
 #include "checkpnt.h"
 
 #include "hoclist.h"
@@ -207,46 +202,6 @@ implementTable(Symbols, Symbol*, int)
 declareTable(Objects, Object*, int)
 implementTable(Objects, Object*, int)
 
-class PortablePointer {
-  public:
-    PortablePointer();
-    PortablePointer(void* address, int type, unsigned long size = 1);
-    virtual ~PortablePointer();
-    void set(void* address, int type, unsigned long size = 1);
-    void size(unsigned long s) {
-        size_ = s;
-    }
-    unsigned long size() {
-        return size_;
-    }
-    void* address() {
-        return address_;
-    }
-    int type() {
-        return type_;
-    }
-
-  private:
-    void* address_;
-    int type_;
-    unsigned long size_;
-};
-
-PortablePointer::PortablePointer() {
-    address_ = NULL;
-    type_ = 0;
-    size_ = 0;
-}
-PortablePointer::PortablePointer(void* address, int type, unsigned long s) {
-    set(address, type, s);
-}
-void PortablePointer::set(void* address, int type, unsigned long s) {
-    address_ = address;
-    type_ = type;
-    size_ = s;
-}
-PortablePointer::~PortablePointer() {}
-
 class OcCheckpoint {
   public:
     OcCheckpoint();
@@ -260,7 +215,6 @@ class OcCheckpoint {
     bool pass2();
     bool make_sym_table();
     bool build_map();
-    PortablePointer* find(void*);
 
     bool func(Symbol*);
 
@@ -295,9 +249,6 @@ class OcCheckpoint {
     Objects* otable_;
     bool (OcCheckpoint::*func_)(Symbol*);
     Symbols* stable_;
-#if HAVE_XDR
-    XDR xdrs_;
-#endif
     Objectdata* objectdata_;
 };
 
@@ -432,22 +383,6 @@ OcCheckpoint::~OcCheckpoint() {
     }
 }
 
-#if HAVE_XDR
-#define USEXDR 1
-#else
-#define USEXDR 0
-#endif
-
-#undef DEBUG
-
-#if USEXDR
-#define DEBUG \
-    if (0)    \
-    fprintf
-#else
-#define DEBUG fprintf
-#endif
-
 bool OcCheckpoint::write(const char* fname) {
     bool b;
     int i;
@@ -457,9 +392,6 @@ bool OcCheckpoint::write(const char* fname) {
         return false;
     }
     fprintf(f_, "NEURON Checkpoint\n");
-#if USEXDR
-    xdrstdio_create(&xdrs_, f_, XDR_ENCODE);
-#endif
     b = make_sym_table();
     func_ = &OcCheckpoint::sym_out;
     b = (b && pass1());
@@ -480,9 +412,6 @@ bool OcCheckpoint::write(const char* fname) {
     b = b && pass1();
     i = -1;
     b = (b && xdr(i));
-#if USEXDR
-    xdr_destroy(&xdrs_);
-#endif
     fclose(f_);
     return b;
 }
@@ -496,7 +425,7 @@ bool OcCheckpoint::make_sym_table() {
     if (!b) {
         printf("make_sym_table failed on first pass1\n");
     }
-    DEBUG(f_, "#symbols=%d\n", cnt_);
+    fprintf(f_, "#symbols=%d\n", cnt_);
     b = (b && xdr(cnt_));
     if (stable_) {
         delete stable_;
@@ -531,7 +460,7 @@ bool OcCheckpoint::sym_table_install(Symbol* s) {
 bool OcCheckpoint::sym_out(Symbol* s) {
     int val;
     stable_->find(val, s);
-    DEBUG(f_, "%d %s %d %d\n", val, s->name, s->type, s->subtype);
+    fprintf(f_, "%d %s %d %d\n", val, s->name, s->type, s->subtype);
     int l1 = strlen(s->name);
     bool b = xdr(val) && xdr(s->name, l1) && xdr(s->type) && xdr(s->subtype) && xdr(s->cpublic) &&
              xdr(s->s_varn) && xdr(s->defined_on_the_fly);
@@ -576,9 +505,6 @@ bool OcCheckpoint::pass2() {
 bool OcCheckpoint::build_map() {
     return false;
 }
-PortablePointer* find(void*) {
-    return NULL;
-}
 bool OcCheckpoint::func(Symbol* s) {
     if (func_) {
         return (this->*func_)(s);
@@ -592,7 +518,7 @@ bool OcCheckpoint::symlist(Symlist* sl) {
             for (Symbol* s = sl->first; s; s = s->next) {
                 ++i;
             }
-        DEBUG(f_, "symboltable size %d\n", i);
+        fprintf(f_, "symboltable size %d\n", i);
         if (!xdr(i)) {
             return false;
         }
@@ -633,8 +559,8 @@ bool OcCheckpoint::sym_instructions(Symbol* s) {
             return false;
         }
         if (p->size) {
-            DEBUG(f_, "instructions for %d |%s|\n", val, s->name);
-            DEBUG(f_, "size %lu\n", p->size);
+            fprintf(f_, "instructions for %d |%s|\n", val, s->name);
+            fprintf(f_, "size %lu\n", p->size);
             bool b = xdr(val) && xdr(p->size);
             if (!b) {
                 printf("failed in sym_intructions\n");
@@ -654,7 +580,7 @@ bool OcCheckpoint::instlist(unsigned long size, Inst* in) {
         short val;
         int sval;
         if (in[i].in == STOP) {
-            DEBUG(f_, "  STOP\n");
+            fprintf(f_, "  STOP\n");
             val = 0;
             if (!xdr(val)) {
                 printf("instlist failed 1\n");
@@ -663,7 +589,7 @@ bool OcCheckpoint::instlist(unsigned long size, Inst* in) {
             continue;
         }
         if (inst_table_->find(val, (VPfri) in[i].pf)) {
-            DEBUG(f_, "  %d\n", val);
+            fprintf(f_, "  %d\n", val);
             if (!xdr(val)) {
                 printf("instlist failed 2\n");
                 return false;
@@ -680,13 +606,13 @@ bool OcCheckpoint::instlist(unsigned long size, Inst* in) {
                                    i);
                             return false;
                         }
-                        // DEBUG(f_, "    %d |%s|\n", sval, in[i].sym->name);
+                        // fprintf(f_, "    %d |%s|\n", sval, in[i].sym->name);
                         if (!xdr(sval)) {
                             printf("instlist failed 3\n");
                             return false;
                         }
                     } else {
-                        DEBUG(f_, "    0 SYMBOL0\n");
+                        fprintf(f_, "    0 SYMBOL0\n");
                         sval = 0;
                         if (!xdr(sval)) {
                             printf("instlist failed 4\n");
@@ -695,7 +621,7 @@ bool OcCheckpoint::instlist(unsigned long size, Inst* in) {
                     }
                     break;
                 case 'i':
-                    DEBUG(f_, "    %i\n", in[i].i);
+                    fprintf(f_, "    %i\n", in[i].i);
                     if (!xdr(in[i].i)) {
                         printf("instlist failed 5\n");
                         return false;
@@ -720,7 +646,7 @@ bool OcCheckpoint::ctemplate(Symbol* s) {
         int ti;
         bool b;
         b = stable_->find(ti, s);
-        DEBUG(f_, "%d %d %s\n", ti, t->count, s->name);
+        fprintf(f_, "%d %d %s\n", ti, t->count, s->name);
         b = b && xdr(ti);
         //		b = b && xdr(t->count);
         hoc_Item* q;
@@ -807,16 +733,16 @@ long OcCheckpoint::arrayinfo(Symbol* s, Objectdata* od) {
     }
     long n = long(hoc_total_array_data(s, od));
     if (!as) {  // not an array
-        DEBUG(f_, "0\n");
+        fprintf(f_, "0\n");
         int i = 0;
         xdr(i);
     } else if (od && as == ao) {  // same as original
-        DEBUG(f_, "-1\n");
+        fprintf(f_, "-1\n");
         int i = -1;
         xdr(i);
     } else {
         int v = ao->a_varn ? 1 : 0;
-        DEBUG(f_, "%d %d %d", ao->nsub, ao->refcount, v);
+        fprintf(f_, "%d %d %d", ao->nsub, ao->refcount, v);
         if (v) {
             printf("checkpoint of equation array vars not implemented: %s\n", s->name);
             return -1;
@@ -825,10 +751,10 @@ long OcCheckpoint::arrayinfo(Symbol* s, Objectdata* od) {
         //		xdr(ao->refcount);
         //		xdr(v);
         for (int i = 0; i < ao->nsub; ++i) {
-            DEBUG(f_, " %d", ao->sub[i]);
+            fprintf(f_, " %d", ao->sub[i]);
             xdr(ao->sub[i]);
         }
-        DEBUG(f_, "\n");
+        fprintf(f_, "\n");
     }
     return n;
 }
@@ -843,43 +769,34 @@ bool OcCheckpoint::sym_values(Symbol* s) {
     stable_->find(sp, s);
     if ((s->type == VAR && s->subtype == NOTUSER) || s->type == OBJECTVAR || s->type == STRING ||
         s->type == SECTION) {
-        DEBUG(f_, "%d %s\n", sp, s->name);
+        fprintf(f_, "%d %s\n", sp, s->name);
         b = xdr(sp);
         long n = arrayinfo(s, objectdata_);
         if (n == -1) {
             return false;
         }
-        //		DEBUG(f_, " %ld\n", n);
+        //		fprintf(f_, " %ld\n", n);
         //		b = b && xdr(n);
         for (long i = 0; i < n; ++i) {
             Objectdata od = objectdata_[s->u.oboff];
             if (s->type == VAR) {
                 double d = od.pval[i];
-                DEBUG(f_, "  %g\n", d);
+                fprintf(f_, "  %g\n", d);
                 b = b && xdr(d);
             } else if (s->type == OBJECTVAR) {
                 Object* ob = od.pobj[i];
                 if (ob == NULL) {
-                    DEBUG(f_, "  0\n");
+                    fprintf(f_, "  0\n");
                     int i = 0;
                     b = b && xdr(i);
                 } else {
-#if 0
-					int t;
-					stable_->find(t, ob->ctemplate->sym);
-					DEBUG(f_, "  %d %d %s\n", t, ob->index,
-					  ob->ctemplate->sym->name);
-					b = b && xdr(t);
-					b = b && xdr(ob->index);
-#else
                     int oid;
                     b = b && otable_->find(oid, ob);
                     b = b && xdr(oid);
-#endif
                 }
             } else if (s->type == STRING) {
                 char* cp = od.ppstr[i];
-                DEBUG(f_, " |%s|\n", cp);
+                fprintf(f_, " |%s|\n", cp);
                 b = b && xdr(cp, strlen(cp));
                 //			}else if (s->type == SECTION) {
             }
@@ -888,23 +805,6 @@ bool OcCheckpoint::sym_values(Symbol* s) {
     return true;
 }
 
-#if USEXDR && 0
-bool OcCheckpoint::xdr(int& i) {
-    return xdr_int(&xdrs_, &i);
-}
-bool OcCheckpoint::xdr(char*& i, int size) {
-    return xdr_string(&xdrs_, &i, size);
-}
-bool OcCheckpoint::xdr(short& i) {
-    return xdr_short(&xdrs_, &i);
-}
-bool OcCheckpoint::xdr(unsigned int& i) {
-    return xdr_u_int(&xdrs_, &i);
-}
-bool OcCheckpoint::xdr(unsigned long& i) {
-    return xdr_u_long(&xdrs_, &i);
-}
-#else
 bool OcCheckpoint::xdr(int& i) {
     fprintf(f_, "%d\n", i);
     return true;
@@ -936,7 +836,7 @@ bool OcCheckpoint::xdr(double& i) {
     fprintf(f_, "%g\n", i);
     return true;
 }
-#endif
+
 bool OcCheckpoint::xdr(Object*& o) {
     int i;
     bool b;
@@ -1230,13 +1130,6 @@ bool OcReadChkPnt::objectdata() {
         switch (sym->type) {
         case VAR:
             n = arrayinfo(sym, od);
-#if 0
-			Get(i);	//not necessary but if present don't forget others
-			if (i != n) {
-				printf("inconsistent array size %d %d\n", i, n);
-				returnf false;
-			}
-#endif
             odp = od + sym->u.oboff;
             if (od != hoc_top_level_data || builtin_size_ <= sym->u.oboff) {
                 odp->pval = new double[n];
