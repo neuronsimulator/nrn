@@ -182,7 +182,7 @@ REPRESENTS	{
 <ontology>[ \t]	{/*ignore spacing characters*/;}
 
 <ontology>. {
-    diag("Unknown char in ontology", nullptr);
+    diag("Invalid ONTOLOGY syntax: expected 'name' or '[name]'", nullptr);
 }
 
 {D}+	{ /*INTEGER*/
