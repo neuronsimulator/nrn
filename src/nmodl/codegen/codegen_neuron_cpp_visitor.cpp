@@ -218,17 +218,17 @@ void CodegenNeuronCppVisitor::print_setdata_functions() {
 void CodegenNeuronCppVisitor::print_function_prototypes() {
     printer->add_newline(2);
 
+    auto print_decl = [this](const auto& callables) {
+        for (const auto& node: callables) {
+            print_function_declaration(*node, node->get_node_name());
+            printer->add_text(';');
+            printer->add_newline();
+        }
+    };
+
     printer->add_line("/* Mechanism procedures and functions */");
-    for (const auto& node: info.functions) {
-        print_function_declaration(*node, node->get_node_name());
-        printer->add_text(';');
-        printer->add_newline();
-    }
-    for (const auto& node: info.procedures) {
-        print_function_declaration(*node, node->get_node_name());
-        printer->add_text(';');
-        printer->add_newline();
-    }
+    print_decl(info.functions);
+    print_decl(info.procedures);
 }
 
 
