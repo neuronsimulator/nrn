@@ -355,13 +355,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
     void print_function_procedure_helper(const ast::Block& node) override;
 
 
-    /**
-     * Print NMODL function_table in target backend code
-     * \param node
-     */
-    void print_function_tables(const ast::FunctionTableBlock& node);
-
-
     /****************************************************************************************/
     /*                             Code-specific helper routines                            */
     /****************************************************************************************/
