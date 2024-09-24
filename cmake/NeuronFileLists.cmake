@@ -149,7 +149,6 @@ set(IVOC_FILE_LIST
     axis.cpp
     bndedval.cpp
     cbwidget.cpp
-    checkpnt.cpp
     epsprint.cpp
     fourier.cpp
     gifimage.cpp

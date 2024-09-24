@@ -11,7 +11,6 @@
 #include <InterViews/adjust.h>
 #include <InterViews/hit.h>
 #include "ocglyph.h"
-#include "checkpnt.h"
 #include "apwindow.h"
 #include "ocbrowsr.h"
 #include "objcmd.h"
