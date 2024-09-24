@@ -366,7 +366,6 @@ extern void class2oc(const char*,
                      void* (*cons)(Object*),
                      void (*destruct)(void*),
                      Member_func*,
-                     int (* /* unused */)(void**),
                      Member_ret_obj_func*,
                      Member_ret_str_func*);
 
@@ -374,7 +373,7 @@ extern void class2oc(const char*,
 void SectionRef_reg(void) {
     Symbol *s, *sr;
 
-    class2oc("SectionRef", cons, destruct, members, nullptr, nullptr, nullptr);
+    class2oc("SectionRef", cons, destruct, members, nullptr, nullptr);
     /* now make the sec variable an actual SECTIONREF */
     sr = hoc_lookup("SectionRef");
     s = hoc_table_lookup("sec", sr->u.ctemplate->symtable);

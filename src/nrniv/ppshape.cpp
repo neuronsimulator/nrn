@@ -54,7 +54,7 @@ static void pp_destruct(void* v) {
 
 void PPShape_reg() {
     //	printf("PPShape_reg\n");
-    class2oc("PPShape", pp_cons, pp_destruct, pp_members, NULL, NULL, NULL);
+    class2oc("PPShape", pp_cons, pp_destruct, pp_members, NULL, NULL);
 }
 
 #if HAVE_IV  // to end of file

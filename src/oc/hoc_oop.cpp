@@ -1647,7 +1647,6 @@ void class2oc(const char* name,
               void* (*cons)(Object*),
               void (*destruct)(void*),
               Member_func* m,
-              int (* /* unused */)(void**),
               Member_ret_obj_func* mobjret,
               Member_ret_str_func* strret) {
     class2oc_base(name, cons, destruct, m, mobjret, strret);

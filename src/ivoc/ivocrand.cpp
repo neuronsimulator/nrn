@@ -511,7 +511,7 @@ static Member_func r_members[] = {{"ACG", r_ACG},
                                   {nullptr, nullptr}};
 
 void Random_reg() {
-    class2oc("Random", r_cons, r_destruct, r_members, NULL, NULL, NULL);
+    class2oc("Random", r_cons, r_destruct, r_members, NULL, NULL);
     random_play_list_ = new RandomPlayList;
 }
 
