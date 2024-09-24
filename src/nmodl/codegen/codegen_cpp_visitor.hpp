@@ -668,6 +668,9 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     }
 
 
+    bool is_function_table_call(const std::string& name) const;
+
+
     /**
      * Determine the position in the data array for a given float variable
      * \param name The name of a float variable
@@ -851,6 +854,10 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * \param node The AST node representing the function call
      */
     virtual void print_net_event_call(const ast::FunctionCall& node) = 0;
+
+    /** Print special code when calling FUNCTION_TABLEs.
+     */
+    virtual void print_function_table_call(const ast::FunctionCall& node) = 0;
 
     /**
      * Print function and procedures prototype declaration

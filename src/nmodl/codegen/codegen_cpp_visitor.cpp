@@ -166,6 +166,13 @@ bool CodegenCppVisitor::defined_method(const std::string& name) const {
     return function && function->has_any_property(properties);
 }
 
+bool CodegenCppVisitor::is_function_table_call(const std::string& name) const {
+    auto it = std::find_if(info.function_tables.begin(),
+                           info.function_tables.end(),
+                           [name](const auto& node) { return node->get_node_name() == name; });
+    return it != info.function_tables.end();
+}
+
 int CodegenCppVisitor::float_variables_size() const {
     int n_floats = 0;
     for (const auto& var: codegen_float_variables) {
@@ -489,6 +496,11 @@ void CodegenCppVisitor::print_function_call(const FunctionCall& node) {
 
     if (is_net_event(name)) {
         print_net_event_call(node);
+        return;
+    }
+
+    if (is_function_table_call(name)) {
+        print_function_table_call(node);
         return;
     }
 

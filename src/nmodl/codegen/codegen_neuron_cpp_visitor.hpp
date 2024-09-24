@@ -191,6 +191,8 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      */
     void print_net_event_call(const ast::FunctionCall& node) override;
 
+    void print_function_table_call(const ast::FunctionCall& node) override;
+
     /**
      * Print `net_receive` call-back.
      */

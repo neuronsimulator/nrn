@@ -2249,6 +2249,20 @@ void CodegenCoreneuronCppVisitor::print_net_event_call(const FunctionCall& node)
     printer->add_text(")");
 }
 
+void CodegenCoreneuronCppVisitor::print_function_table_call(const FunctionCall& node) {
+     auto name = node.get_node_name();
+    const auto& arguments = node.get_arguments();
+    printer->add_text(method_name(name), '(');
+
+    printer->add_text(internal_method_arguments());
+    if (!arguments.empty()) {
+        printer->add_text(", ");
+    }
+
+    print_vector_elements(arguments, ", ");
+    printer->add_text(')');
+}
+
 /**
  * Rename arguments to NET_RECEIVE block with corresponding pointer variable
  *

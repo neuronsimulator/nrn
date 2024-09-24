@@ -2278,6 +2278,10 @@ void CodegenNeuronCppVisitor::print_net_event_call(const ast::FunctionCall& /* n
     printer->fmt_text("net_event({}, t)", point_process);
 }
 
+void CodegenNeuronCppVisitor::print_function_table_call(const FunctionCall& node) {
+    throw std::runtime_error("Not implemented.");
+}
+
 /**
  * Rename arguments to NET_RECEIVE block with corresponding pointer variable
  *
