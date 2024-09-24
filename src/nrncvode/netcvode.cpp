@@ -848,7 +848,7 @@ static void destruct(void* v) {
 }
 
 void NetCon_reg() {
-    class2oc("NetCon", cons, destruct, members, NULL, omembers, NULL);
+    class2oc("NetCon", cons, destruct, members, omembers, NULL);
     Symbol* nc = hoc_lookup("NetCon");
     nc->u.ctemplate->steer = steer_val;
     Symbol* s;

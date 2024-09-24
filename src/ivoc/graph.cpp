@@ -1226,7 +1226,7 @@ static void gr_destruct(void* v) {
 }
 void Graph_reg() {
     // printf("Graph_reg\n");
-    class2oc("Graph", gr_cons, gr_destruct, gr_members, NULL, NULL, NULL);
+    class2oc("Graph", gr_cons, gr_destruct, gr_members, NULL, NULL);
 #if HAVE_IV
     if (hoc_usegui) {
         colors = new ColorPalette();

@@ -158,7 +158,6 @@ struct cTemplate {
     void* (*constructor)(struct Object*);
     void (*destructor)(void*);
     void (*steer)(void*); /* normally nullptr */
-    int (*checkpoint)(void**);
 };
 
 union Objectdata {
