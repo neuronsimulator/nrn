@@ -468,6 +468,10 @@ std::string CodegenNeuronCppVisitor::nrn_thread_internal_arguments() {
     return {};
 }
 
+std::pair<CodegenNeuronCppVisitor::ParamVector, CodegenNeuronCppVisitor::ParamVector>
+CodegenNeuronCppVisitor::function_table_parameters(const ast::FunctionTableBlock& node) {
+    throw std::runtime_error("Not implemented.");
+}
 
 /// TODO: Write for NEURON
 std::string CodegenNeuronCppVisitor::process_verbatim_text(std::string const& text) {

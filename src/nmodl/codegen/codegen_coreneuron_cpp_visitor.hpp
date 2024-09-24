@@ -407,6 +407,10 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
     std::string nrn_thread_internal_arguments() override;
 
 
+    std::pair<ParamVector, ParamVector> function_table_parameters(
+        const ast::FunctionTableBlock& node) override;
+
+
     /**
      * Replace commonly used verbatim variables
      * \param name A variable name to be checked and possibly updated

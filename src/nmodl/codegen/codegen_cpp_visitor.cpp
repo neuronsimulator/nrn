@@ -553,10 +553,7 @@ void CodegenCppVisitor::print_function(const ast::FunctionBlock& node) {
 void CodegenCppVisitor::print_function_tables(const ast::FunctionTableBlock& node) {
     auto name = node.get_node_name();
     const auto& p = node.get_parameters();
-    auto params = internal_method_parameters();
-    for (const auto& i: p) {
-        params.emplace_back("", "double", "", i->get_node_name());
-    }
+    auto [params, table_params] = function_table_parameters(node);
     printer->fmt_push_block("double {}({})", method_name(name), get_parameter_str(params));
     printer->fmt_line("double _arg[{}];", p.size());
     for (size_t i = 0; i < p.size(); ++i) {
@@ -567,7 +564,9 @@ void CodegenCppVisitor::print_function_tables(const ast::FunctionTableBlock& nod
                       p.size());
     printer->pop_block();
 
-    printer->fmt_push_block("double table_{}()", method_name(name));
+    printer->fmt_push_block("double table_{}({})",
+                            method_name(name),
+                            get_parameter_str(table_params));
     printer->fmt_line("hoc_spec_table(&{}, {});",
                       get_variable_name(std::string("_ptable_" + name)),
                       p.size());

@@ -538,6 +538,15 @@ std::string CodegenCoreneuronCppVisitor::nrn_thread_internal_arguments() {
     return get_arg_str(internal_method_parameters());
 }
 
+std::pair<CodegenCoreneuronCppVisitor::ParamVector, CodegenCoreneuronCppVisitor::ParamVector>
+CodegenCoreneuronCppVisitor::function_table_parameters(const ast::FunctionTableBlock& node) {
+    auto params = internal_method_parameters();
+    for (const auto& i: node.get_parameters()) {
+        params.emplace_back("", "double", "", i->get_node_name());
+    }
+    return {params, internal_method_parameters()};
+}
+
 
 /**
  * Replace commonly used variables in the verbatim blocks into their corresponding
