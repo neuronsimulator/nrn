@@ -104,70 +104,70 @@ extern int hoc_resize_toplevel(int);
 static struct HocInst {
     Pfrv pi;
     const char* signature;
-} hoc_inst_[] = {{0, 0},  // 0
-                 {hoc_nopop, 0},
-                 {hoc_eval, 0},
-                 {hoc_add, 0},
-                 {hoc_sub, 0},
-                 {hoc_mul, 0},
-                 {hoc_div, 0},
+} hoc_inst_[] = {{nullptr, nullptr},  // 0
+                 {hoc_nopop, nullptr},
+                 {hoc_eval, nullptr},
+                 {hoc_add, nullptr},
+                 {hoc_sub, nullptr},
+                 {hoc_mul, nullptr},
+                 {hoc_div, nullptr},
                  {hoc_negate, nullptr},
-                 {hoc_power, 0},
+                 {hoc_power, nullptr},
                  {hoc_assign, nullptr},
                  {hoc_bltin, "s"},    // requires change
                  {hoc_varpush, "s"},  // 10
                  {hoc_constpush, "s"},
-                 {hoc_pushzero, 0},
-                 {hoc_print, 0},
+                 {hoc_pushzero, nullptr},
+                 {hoc_print, nullptr},
                  {hoc_varread, "s"},
-                 {hoc_prexpr, 0},
-                 {hoc_prstr, 0},
-                 {hoc_gt, 0},
+                 {hoc_prexpr, nullptr},
+                 {hoc_prstr, nullptr},
+                 {hoc_gt, nullptr},
                  {hoc_lt, nullptr},
                  {hoc_eq, nullptr},  // 20
-                 {hoc_ge, 0},
-                 {hoc_le, 0},
-                 {hoc_ne, 0},
-                 {hoc_and, 0},
-                 {hoc_or, 0},
-                 {hoc_not, 0},
+                 {hoc_ge, nullptr},
+                 {hoc_le, nullptr},
+                 {hoc_ne, nullptr},
+                 {hoc_and, nullptr},
+                 {hoc_or, nullptr},
+                 {hoc_not, nullptr},
                  {hoc_ifcode, "iii"},
                  {hoc_forcode, "iii"},
                  {hoc_shortfor, "ii"},
                  {hoc_call, "si"},  // 30
                  {hoc_arg, "i"},
                  {hoc_argassign, "i"},
-                 {hoc_funcret, 0},
-                 {hoc_procret, 0},
+                 {hoc_funcret, nullptr},
+                 {hoc_procret, nullptr},
                  {hoc_stringarg, "i"},
                  {hoc_push_string, "s"},
-                 {hoc_Break, 0},
-                 {hoc_Continue, 0},
-                 {hoc_Stop, 0},
-                 {hoc_assstr, 0},  // 40
-                 {hoc_evalpointer, 0},
-                 {hoc_newline, 0},
+                 {hoc_Break, nullptr},
+                 {hoc_Continue, nullptr},
+                 {hoc_Stop, nullptr},
+                 {hoc_assstr, nullptr},  // 40
+                 {hoc_evalpointer, nullptr},
+                 {hoc_newline, nullptr},
                  {hoc_delete_symbol, "s"},
-                 {hoc_cyclic, 0},
-                 {hoc_dep_make, 0},
-                 {hoc_eqn_name, 0},
-                 {hoc_eqn_init, 0},
-                 {hoc_eqn_lhs, 0},  // 50
-                 {hoc_eqn_rhs, 0},
+                 {hoc_cyclic, nullptr},
+                 {hoc_dep_make, nullptr},
+                 {hoc_eqn_name, nullptr},
+                 {hoc_eqn_init, nullptr},
+                 {hoc_eqn_lhs, nullptr},  // 50
+                 {hoc_eqn_rhs, nullptr},
                  {hoc_objectvar, "s"},
                  {hoc_object_component, "siis"},
-                 {hoc_object_eval, 0},
-                 {hoc_object_asgn, 0},
+                 {hoc_object_eval, nullptr},
+                 {hoc_object_asgn, nullptr},
                  {hoc_objvardecl, "si"},
                  {hoc_cmp_otype, "i"},
                  {hoc_newobj, "si"},
-                 {hoc_asgn_obj_to_str, 0},
+                 {hoc_asgn_obj_to_str, nullptr},
                  {hoc_known_type, "i"},  // 60
                  {hoc_push_string, "s"},
                  {hoc_objectarg, "i"},
-                 {hoc_ob_pointer, 0},
-                 {connectsection, 0},
-                 {simpleconnectsection, 0},
+                 {hoc_ob_pointer, nullptr},
+                 {connectsection, nullptr},
+                 {simpleconnectsection, nullptr},
                  {connectpointer, "s"},
                  {add_section, "si"},
                  {range_const, "s"},
@@ -176,22 +176,22 @@ static struct HocInst {
                  {rangevareval, "s"},
                  {rangepoint, "s"},
                  {sec_access, "s"},
-                 {ob_sec_access, 0},
+                 {ob_sec_access, nullptr},
                  {mech_access, "s"},
                  {for_segment, "ii"},
                  {sec_access_push, "s"},
-                 {sec_access_pop, 0},
+                 {sec_access_pop, nullptr},
                  {forall_section, "ii"},
                  {hoc_ifsec, "ii"},  // 80
                  {hoc_ifseclist, "ii"},
                  {forall_sectionlist, "ii"},
-                 {connect_point_process_pointer, 0},
-                 {nrn_cppp, 0},
+                 {connect_point_process_pointer, nullptr},
+                 {nrn_cppp, nullptr},
                  {rangevarevalpointer, "s"},
-                 {sec_access_object, 0},
+                 {sec_access_object, nullptr},
                  {mech_uninsert, "s"},
                  {hoc_arayinstal, "i"},
-                 {0, 0}};
+                 {nullptr, 0}};
 
 #define VPfri void*
 static std::map<VPfri, short>* inst_table_;
@@ -348,7 +348,7 @@ int hoc_readcheckpoint(char* fname) {
         rval = 2;
     }
     delete rdckpt_;
-    rdckpt_ = NULL;
+    rdckpt_ = nullptr;
     return rval;
 }
 
@@ -415,7 +415,7 @@ bool OcCheckpoint::make_sym_table() {
     if (!b) {
         printf("make_sym_table failed on second pass1\n");
     }
-    func_ = NULL;
+    func_ = nullptr;
     return b;
 }
 
@@ -444,12 +444,12 @@ bool OcCheckpoint::sym_out(Symbol* s) {
         if (s->subtype == NOTUSER) {
             b = b && xdr(s->u.oboff);
         }
-        arrayinfo(s, NULL);
+        arrayinfo(s, nullptr);
         break;
     case STRING:
     case OBJECTVAR:
         b = b && xdr(s->u.oboff);
-        arrayinfo(s, NULL);
+        arrayinfo(s, nullptr);
         break;
     case TEMPLATE: {
         cTemplate* t = s->u.ctemplate;
@@ -765,7 +765,7 @@ bool OcCheckpoint::sym_values(Symbol* s) {
                 b = b && xdr(d);
             } else if (s->type == OBJECTVAR) {
                 Object* ob = od.pobj[i];
-                if (ob == NULL) {
+                if (ob == nullptr) {
                     fprintf(f_, "  0\n");
                     int i = 0;
                     b = b && xdr(i);
@@ -879,7 +879,7 @@ bool OcReadChkPnt::symbols() {
     Chk(symtable(), "built_in_symlist failure");
     lookup_ = false;
     symtable_ = hoc_top_level_symlist;
-    if (symtable_->first != NULL) {
+    if (symtable_->first != nullptr) {
         printf("Some user symbols are already defined at the top level\n");
         return false;
     }
@@ -939,16 +939,16 @@ bool OcReadChkPnt::symbol() {
                 sym->u.oboff = i;
             }
         }
-        arrayinfo(sym, NULL);
+        arrayinfo(sym, nullptr);
     } break;
     case OBJECTVAR:
     case STRING:
         Get(i);
         sym->u.oboff = i;
-        arrayinfo(sym, NULL);
+        arrayinfo(sym, nullptr);
         break;
     case CSTRING:
-        sym->u.cstr = NULL;
+        sym->u.cstr = nullptr;
         Get(sym->u.cstr);
         break;
     case NUMBER:
@@ -970,7 +970,7 @@ bool OcReadChkPnt::symbol() {
             t->destructor = 0;
             t->steer = 0;
             t->id = id;
-            symtable_ = NULL;
+            symtable_ = nullptr;
             Chk(symtable(), "");
             t->symtable = symtable_;
         } else {
@@ -1037,7 +1037,7 @@ bool OcReadChkPnt::objects() {
     Symbol* sym;
     Get(nobj_);
     pobj_ = new Object*[nobj_ + 1];
-    pobj_[0] = NULL;
+    pobj_[0] = nullptr;
     for (;;) {
         Get(sid);
         if (sid == -1) {
@@ -1075,7 +1075,7 @@ bool OcReadChkPnt::objects() {
             Get(pob->index);
             if (t->constructor) {
                 // have to set this up later
-                pob->u.this_pointer = NULL;
+                pob->u.this_pointer = nullptr;
             } else {
                 pob->u.dataspace = new Objectdata[t->dataspace_size];
             }
@@ -1134,7 +1134,7 @@ bool OcReadChkPnt::objectdata() {
             n = arrayinfo(sym, od);
             od[sym->u.oboff].ppstr = new char*[n];
             for (i = 0; i < n; ++i) {
-                od[sym->u.oboff].ppstr[i] = NULL;
+                od[sym->u.oboff].ppstr[i] = nullptr;
                 Get(od[sym->u.oboff].ppstr[i]);
             }
             break;
@@ -1173,13 +1173,13 @@ long OcReadChkPnt::arrayinfo(Symbol* s, Objectdata* od) {
         }
     }
     Arrayinfo** ap;
-    if (od == NULL) {
+    if (od == nullptr) {
         ap = &s->arayinfo;
     } else {
         ap = &od[s->u.oboff + 1].arayinfo;
     }
     if (nsub == 0) {
-        *ap = NULL;
+        *ap = nullptr;
         return 1;
     }
     if (nsub == -1) {
@@ -1187,7 +1187,7 @@ long OcReadChkPnt::arrayinfo(Symbol* s, Objectdata* od) {
         if (*ap) {
             (*ap)->refcount++;
         }
-        return long(hoc_total_array_data(s, NULL));
+        return long(hoc_total_array_data(s, nullptr));
     }
     Arrayinfo* a = (Arrayinfo*) hoc_Emalloc(sizeof(Arrayinfo) + nsub * sizeof(int));
     if (!a) {
@@ -1195,7 +1195,7 @@ long OcReadChkPnt::arrayinfo(Symbol* s, Objectdata* od) {
     }
     *ap = a;
     a->refcount = 1;
-    a->a_varn = NULL;
+    a->a_varn = nullptr;
     a->nsub = nsub;
 
     long n = 1;
