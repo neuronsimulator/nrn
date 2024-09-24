@@ -1081,20 +1081,15 @@ void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
         printer->fmt_line("{{\"setdata_{}\", _hoc_setdata}},", info.mod_suffix);
     }
 
-    for (const auto& procedure: info.procedures) {
-        const auto proc_name = procedure->get_node_name();
-        printer->fmt_line("{{\"{}{}\", {}}},",
-                          proc_name,
-                          info.rsuffix,
-                          hoc_function_name(proc_name));
-    }
-    for (const auto& function: info.functions) {
-        const auto func_name = function->get_node_name();
-        printer->fmt_line("{{\"{}{}\", {}}},",
-                          func_name,
-                          info.rsuffix,
-                          hoc_function_name(func_name));
-    }
+    auto print_callable_reg = [this](const auto& callables) {
+        for (const auto& node: callables) {
+            const auto name = node->get_node_name();
+            printer->fmt_line("{{\"{}{}\", {}}},", name, info.rsuffix, hoc_function_name(name));
+        }
+    };
+
+    print_callable_reg(info.procedures);
+    print_callable_reg(info.functions);
 
     printer->add_line("{nullptr, nullptr}");
     printer->decrease_indent();
