@@ -1180,10 +1180,7 @@ void CodegenCoreneuronCppVisitor::print_mechanism_global_var_structure(bool prin
         }
     }
 
-    for (const auto& f: info.function_tables) {
-        printer->fmt_line("void* _ptable_{}{{}};", f->get_node_name());
-        codegen_global_variables.push_back(make_symbol("_ptable_" + f->get_node_name()));
-    }
+    print_global_struct_function_table_ptrs();
 
     if (info.vectorize && info.thread_data_index) {
         printer->fmt_line("ThreadDatum ext_call_thread[{}]{};",

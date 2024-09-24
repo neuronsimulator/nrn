@@ -433,6 +433,14 @@ void CodegenCppVisitor::print_backend_info() {
 }
 
 
+void CodegenCppVisitor::print_global_struct_function_table_ptrs() {
+    for (const auto& f: info.function_tables) {
+        printer->fmt_line("void* _ptable_{}{{}};", f->get_node_name());
+        codegen_global_variables.push_back(make_symbol("_ptable_" + f->get_node_name()));
+    }
+}
+
+
 void CodegenCppVisitor::print_global_var_struct_assertions() const {
     // Assert some things that we assume when copying instances of this struct
     // to the GPU and so on.

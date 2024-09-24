@@ -1224,6 +1224,14 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
 
 
     /**
+     * Print the entries of for FUNCTION_TABLEs in the global struct.
+     *
+     * And creates the required GLOBAL variables.
+     */
+    virtual void print_global_struct_function_table_ptrs();
+
+
+    /**
      * Print declaration of macro NRN_PRCELLSTATE for debugging
      */
     void print_prcellstate_macros() const;
