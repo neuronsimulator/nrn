@@ -1547,7 +1547,6 @@ void hoc_begintemplate(Symbol* t1) {
     t->u.ctemplate->destructor = 0;
     t->u.ctemplate->is_point_ = 0;
     t->u.ctemplate->steer = 0;
-    t->u.ctemplate->checkpoint = 0;
     t->u.ctemplate->id = ++template_id;
     pushtemplatei(icntobjectdata);
     pushtemplateodata(hoc_objectdata);
@@ -1600,7 +1599,6 @@ void class2oc_base(const char* name,
                    void* (*cons)(Object*),
                    void (*destruct)(void*),
                    Member_func* m,
-                   int (*checkpoint)(void**),
                    Member_ret_obj_func* mobjret,
                    Member_ret_str_func* strret) {
     extern int hoc_main1_inited_;
@@ -1622,7 +1620,6 @@ void class2oc_base(const char* name,
     t->constructor = cons;
     t->destructor = destruct;
     t->steer = 0;
-    t->checkpoint = checkpoint;
 
     if (m)
         for (i = 0; m[i].name; ++i) {
@@ -1650,10 +1647,9 @@ void class2oc(const char* name,
               void* (*cons)(Object*),
               void (*destruct)(void*),
               Member_func* m,
-              int (*checkpoint)(void**),
               Member_ret_obj_func* mobjret,
               Member_ret_str_func* strret) {
-    class2oc_base(name, cons, destruct, m, checkpoint, mobjret, strret);
+    class2oc_base(name, cons, destruct, m, mobjret, strret);
     py_exposed_classes.push_back(name);
 }
 

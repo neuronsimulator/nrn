@@ -3127,5 +3127,5 @@ static double vfe_default(void* v) {
 }
 static Member_func vfe_members[] = {{"default", vfe_default}, {0, 0}};
 void ValueFieldEditor_reg() {
-    class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members, NULL, NULL, NULL);
+    class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members, NULL, NULL);
 }

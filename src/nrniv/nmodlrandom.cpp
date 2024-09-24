@@ -104,7 +104,6 @@ void NMODLRandom_reg() {
              nmodlrandom_cons,
              nmodlrandom_destruct,
              members,
-             nullptr,
              retobj_members,
              nullptr);
     if (!nmodlrandom_sym) {
