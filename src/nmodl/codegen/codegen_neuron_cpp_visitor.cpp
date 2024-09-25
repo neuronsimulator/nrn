@@ -867,12 +867,6 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
         static _nrn_non_owning_id_without_container _prop_id{};)CODE");
     }
 
-    printer->fmt_line("static int {} = {};",
-                      naming::NRN_POINTERINDEX,
-                      info.pointer_variables.size() > 0
-                          ? static_cast<int>(info.pointer_variables.size())
-                          : -1);
-
     printer->add_line("static _nrn_mechanism_std_vector<Datum> _extcall_thread;");
 
     // Start printing the CNRN-style global variables.

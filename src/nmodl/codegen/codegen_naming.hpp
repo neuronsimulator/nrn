@@ -179,10 +179,6 @@ static constexpr char THREAD_ARGS_PROTO[] = "_threadargsproto_";
 /// prefix for ion variable
 static constexpr char ION_VARNAME_PREFIX[] = "ion_";
 
-/// hoc_nrnpointerindex name
-static constexpr char NRN_POINTERINDEX[] = "hoc_nrnpointerindex";
-
-
 /// commonly used variables in verbatim block and how they
 /// should be mapped to new code generation backends
 // clang-format off
