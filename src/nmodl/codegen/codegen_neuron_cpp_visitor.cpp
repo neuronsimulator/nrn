@@ -615,6 +615,10 @@ std::string CodegenNeuronCppVisitor::int_variable_name(const IndexVariableInfo& 
         return fmt::format("_ppvar[{}].literal_value<void*>()", position);
     }
 
+    if (info.semantics[position].name == naming::POINTER_SEMANTIC) {
+        return fmt::format("(*_ppvar[{}].get<double*>())", position);
+    }
+
     if (symbol.is_index) {
         if (use_instance) {
             throw std::runtime_error("Not implemented. [wiejo]");
@@ -1190,12 +1194,14 @@ void CodegenNeuronCppVisitor::print_mechanism_register() {
                           method_name(naming::NRN_JACOB_METHOD),
                           nrn_state_required() ? method_name(naming::NRN_STATE_METHOD) : "nullptr")
             : "nullptr, nullptr, nullptr";
+
+
     const auto register_mech_args = fmt::format("{}, {}, {}, {}, {}, {}",
                                                 get_channel_info_var_name(),
                                                 method_name(naming::NRN_ALLOC_METHOD),
                                                 compute_functions_parameters,
                                                 method_name(naming::NRN_INIT_METHOD),
-                                                naming::NRN_POINTERINDEX,
+                                                info.first_pointer_var_index,
                                                 1 + info.thread_data_index);
     if (info.point_process) {
         printer->fmt_line(
