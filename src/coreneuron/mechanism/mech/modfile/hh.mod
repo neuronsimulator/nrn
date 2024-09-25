@@ -8,8 +8,7 @@ COMMENT
  Membrane voltage is in absolute mV and has been reversed in polarity
   from the original HH convention and shifted to reflect a resting potential
   of -65 mV.
- Remember to set a squid-appropriate temperature
- (e.g. in HOC: "celsius=6.3" or in Python: "h.celsius=6.3").
+ Remember to set celsius=6.3 (or whatever) in your HOC file.
  See squid.hoc for an example of a simulation using this model.
  SW Jaslove  6 March, 1992
 ENDCOMMENT
@@ -19,17 +18,15 @@ UNITS {
         (mV) = (millivolt)
 	(S) = (siemens)
 }
-
+ 
 ? interface
 NEURON {
         SUFFIX hh
-        REPRESENTS NCIT:C17145   : sodium channel
-        REPRESENTS NCIT:C17008   : potassium channel
-        USEION na READ ena WRITE ina REPRESENTS CHEBI:29101
-        USEION k READ ek WRITE ik REPRESENTS CHEBI:29103
+        USEION na READ ena WRITE ina
+        USEION k READ ek WRITE ik
         NONSPECIFIC_CURRENT il
         RANGE gnabar, gkbar, gl, el, gna, gk
-        : `GLOBAL minf` will be replaced with `RANGE minf` if CoreNEURON enabled
+        :GLOBAL minf, hinf, ninf, mtau, htau, ntau
         RANGE minf, hinf, ninf, mtau, htau, ntau
 	THREADSAFE : assigned GLOBALs will be per thread
 }
@@ -93,7 +90,6 @@ DERIVATIVE states {
 PROCEDURE rates(v(mV)) {  :Computes rate and other constants at current v.
                       :Call once from HOC to initialize inf at resting v.
         LOCAL  alpha, beta, sum, q10
-        : `TABLE minf` will be replaced with `:TABLE minf` if CoreNEURON enabled)
         TABLE minf, mtau, hinf, htau, ninf, ntau DEPEND celsius FROM -100 TO 100 WITH 200
 
 UNITSOFF
