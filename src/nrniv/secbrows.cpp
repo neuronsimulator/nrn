@@ -96,7 +96,7 @@ static void sb_destruct(void* v) {
 #endif
 }
 void SectionBrowser_reg() {
-    class2oc("SectionBrowser", sb_cons, sb_destruct, sb_members, NULL, NULL, NULL);
+    class2oc("SectionBrowser", sb_cons, sb_destruct, sb_members, NULL, NULL);
 }
 
 #if HAVE_IV

@@ -1011,7 +1011,7 @@ static Member_func members[] = {{"save", save},
                                 {0, 0}};
 
 void BBSaveState_reg() {
-    class2oc("BBSaveState", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("BBSaveState", cons, destruct, members, NULL, NULL);
 }
 
 // from savstate.cpp

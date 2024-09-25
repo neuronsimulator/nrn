@@ -213,7 +213,7 @@ static void destruct(void* v) {
 }
 
 void GrGlyph_reg() {
-    class2oc("Glyph", cons, destruct, members, NULL, objmembers, NULL);
+    class2oc("Glyph", cons, destruct, members, objmembers, NULL);
     sggl_ = hoc_lookup("Glyph");
 }
 

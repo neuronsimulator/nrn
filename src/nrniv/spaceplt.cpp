@@ -291,7 +291,7 @@ static void s_destruct(void* v) {
 
 void RangeVarPlot_reg() {
     // printf("RangeVarPlot_reg\n");
-    class2oc("RangeVarPlot", s_cons, s_destruct, s_members, NULL, rvp_retobj_members, NULL);
+    class2oc("RangeVarPlot", s_cons, s_destruct, s_members, rvp_retobj_members, NULL);
 }
 
 #if HAVE_IV
