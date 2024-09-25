@@ -1553,7 +1553,6 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     void print_rename_state_vars() const;
 };
 
-/* Templated functions need to be defined in header file */
 template <typename T>
 void CodegenCppVisitor::print_vector_elements(const std::vector<T>& elements,
                                               const std::string& separator,
