@@ -35,7 +35,7 @@ namespace visitor {
  * that they can be pure functions.
  */
 struct ImplicitArgumentVisitor: public AstVisitor {
-    ImplicitArgumentVisitor(const std::string& simulator = "coreneuron")
+    explicit ImplicitArgumentVisitor(const std::string& simulator = "coreneuron")
         : simulator(simulator) {}
 
     void visit_function_call(ast::FunctionCall& node) override;
