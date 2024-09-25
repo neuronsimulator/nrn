@@ -207,6 +207,8 @@ void SemanticAnalysisVisitor::visit_function_call(const ast::FunctionCall& node)
     //  The first arg of a RANDOM function must be a random_var
     // Otherwise it's an error
     auto fname = node.get_node_name();
+    auto position = node.get_name()->get_token()->position();
+
     if (is_random_construct_function(fname)) {
         const auto& arguments = node.get_arguments();
         if (!arguments.empty()) {
@@ -220,7 +222,6 @@ void SemanticAnalysisVisitor::visit_function_call(const ast::FunctionCall& node)
                 }
             }
         }
-        auto position = node.get_name()->get_token()->position();
         logger->critical(
             fmt::format("SemanticAnalysisVisitor :: random function {} at {} :: The first arg must "
                         "be a random variable",
@@ -228,6 +229,15 @@ void SemanticAnalysisVisitor::visit_function_call(const ast::FunctionCall& node)
                         position));
         check_fail = true;
     }
+
+    if (is_nrn_pointing(fname)) {
+        if (size_t args_size = node.get_arguments().size(); args_size != 1) {
+            logger->critical(
+                fmt::format("nrn_pointing excepts exactly one argument, got: {}", args_size));
+            check_fail = true;
+        }
+    }
+
     node.visit_children(*this);
     /// -->
 }

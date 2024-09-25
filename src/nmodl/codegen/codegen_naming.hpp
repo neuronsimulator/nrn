@@ -50,6 +50,9 @@ static constexpr char NET_MOVE_METHOD[] = "net_move";
 /// net_send function call in nmodl
 static constexpr char NET_SEND_METHOD[] = "net_send";
 
+/// nrn_pointing function in nmodl
+static constexpr char NRN_POINTING_METHOD[] = "nrn_pointing";
+
 /// artificial cell keyword in nmodl
 static constexpr char ARTIFICIAL_CELL[] = "ARTIFICIAL_CELL";
 

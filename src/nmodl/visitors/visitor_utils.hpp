@@ -146,4 +146,7 @@ std::string get_full_var_name(const ast::VarName& node);
 /// Is given name a one of the function for RANDOM construct
 bool is_random_construct_function(const std::string& name);
 
+/// Is given name `nrn_pointing`.
+bool is_nrn_pointing(const std::string& name);
+
 }  // namespace nmodl

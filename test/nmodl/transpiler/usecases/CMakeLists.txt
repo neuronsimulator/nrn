@@ -20,6 +20,7 @@ set(NMODL_USECASE_DIRS
     nonspecific_current
     parameter
     point_process
+    pointer
     procedure
     random
     solve

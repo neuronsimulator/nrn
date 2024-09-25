@@ -484,6 +484,11 @@ void CodegenCppVisitor::print_function_call(const FunctionCall& node) {
         function_name = method_name(name);
     }
 
+    if (is_nrn_pointing(name)) {
+        print_nrn_pointing(node);
+        return;
+    }
+
     if (is_net_send(name)) {
         print_net_send_call(node);
         return;
@@ -524,6 +529,11 @@ void CodegenCppVisitor::print_function_call(const FunctionCall& node) {
     printer->add_text(')');
 }
 
+void CodegenCppVisitor::print_nrn_pointing(const ast::FunctionCall& node) {
+    printer->add_text("nrn_pointing(&");
+    print_vector_elements(node.get_arguments(), ", ");
+    printer->add_text(")");
+}
 
 void CodegenCppVisitor::print_procedure(const ast::ProcedureBlock& node) {
     print_function_procedure_helper(node);
