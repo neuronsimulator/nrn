@@ -229,6 +229,16 @@ void CodegenNeuronCppVisitor::print_function_prototypes() {
     printer->add_line("/* Mechanism procedures and functions */");
     print_decl(info.functions);
     print_decl(info.procedures);
+
+    for (const auto& node: info.function_tables) {
+        auto [params, table_params] = function_table_parameters(*node);
+        printer->fmt_line("double {}({});",
+                          method_name(node->get_node_name()),
+                          get_parameter_str(params));
+        printer->fmt_line("double {}({});",
+                          method_name("table_" + node->get_node_name()),
+                          get_parameter_str(table_params));
+    }
 }
 
 
@@ -395,8 +405,36 @@ void CodegenNeuronCppVisitor::print_hoc_py_wrapper_function_definitions() {
 
     print_wrappers(info.procedures);
     print_wrappers(info.functions);
-}
 
+    for (const auto& node: info.function_tables) {
+        auto name = node->get_node_name();
+        auto table_name = "table_" + node->get_node_name();
+
+
+        auto args = std::vector<std::string>{};
+        for (size_t i = 0; i < node->get_parameters().size(); ++i) {
+            args.push_back(fmt::format("*getarg({})", i + 1));
+        }
+
+        // HOC
+        printer->fmt_push_block("static void {}()", hoc_function_name(name));
+        printer->fmt_line("hoc_retpushx({}({}));", method_name(name), fmt::join(args, ", "));
+        printer->pop_block();
+
+        printer->fmt_push_block("static void {}()", hoc_function_name(table_name));
+        printer->fmt_line("hoc_retpushx({}());", method_name(table_name));
+        printer->pop_block();
+
+        // Python
+        printer->fmt_push_block("static double {}(Prop* _prop)", py_function_name(name));
+        printer->fmt_line("return {}({});", method_name(name), fmt::join(args, ", "));
+        printer->pop_block();
+
+        printer->fmt_push_block("static double {}(Prop* _prop)", py_function_name(table_name));
+        printer->fmt_line("return {}();", method_name(table_name));
+        printer->pop_block();
+    }
+}
 
 /****************************************************************************************/
 /*                           Code-specific helper routines                              */
@@ -466,7 +504,12 @@ std::string CodegenNeuronCppVisitor::nrn_thread_internal_arguments() {
 
 std::pair<CodegenNeuronCppVisitor::ParamVector, CodegenNeuronCppVisitor::ParamVector>
 CodegenNeuronCppVisitor::function_table_parameters(const ast::FunctionTableBlock& node) {
-    throw std::runtime_error("Not implemented.");
+    auto params = ParamVector{};
+
+    for (const auto& i: node.get_parameters()) {
+        params.emplace_back("", "double", "", i->get_node_name());
+    }
+    return {params, {}};
 }
 
 /// TODO: Write for NEURON
@@ -640,6 +683,10 @@ std::string CodegenNeuronCppVisitor::get_variable_name(const std::string& name,
         }
         // The "integer variable" branch will pick up the correct `_ppvar` when
         // not printing a NET_RECEIVE block.
+    }
+
+    if (stringutils::starts_with(name, "_ptable_")) {
+        return fmt::format("{}.{}", global_struct_instance(), name);
     }
 
     // float variable
@@ -938,9 +985,7 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
         }
     }
 
-    if (!info.function_tables.empty()) {
-        throw std::runtime_error("Not implemented, global function tables.");
-    }
+    print_global_struct_function_table_ptrs();
 
     if (info.vectorize && info.thread_data_index) {
         // TODO compare CoreNEURON something extcall stuff.
@@ -1045,9 +1090,9 @@ void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
     printer->add_newline(2);
     printer->add_line("/* declaration of user functions */");
 
-    auto print_entrypoint_decl = [this](const auto& callables) {
+    auto print_entrypoint_decl = [this](const auto& callables, auto get_name) {
         for (const auto& node: callables) {
-            const auto name = node->get_node_name();
+            const auto name = get_name(node);
             printer->fmt_line("{};", hoc_function_signature(name));
 
             if (!info.point_process) {
@@ -1056,8 +1101,14 @@ void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
         }
     };
 
-    print_entrypoint_decl(info.functions);
-    print_entrypoint_decl(info.procedures);
+    auto get_name = [](const auto& node) { return node->get_node_name(); };
+    print_entrypoint_decl(info.functions, get_name);
+    print_entrypoint_decl(info.procedures, get_name);
+    print_entrypoint_decl(info.function_tables, get_name);
+    print_entrypoint_decl(info.function_tables, [](const auto& node) {
+        auto node_name = node->get_node_name();
+        return "table_" + node_name;
+    });
 
     printer->add_newline(2);
     printer->add_line("/* connect user functions to hoc names */");
@@ -1077,15 +1128,20 @@ void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
         printer->fmt_line("{{\"setdata_{}\", _hoc_setdata}},", info.mod_suffix);
     }
 
-    auto print_callable_reg = [this](const auto& callables) {
+    auto print_callable_reg = [this](const auto& callables, auto get_name) {
         for (const auto& node: callables) {
-            const auto name = node->get_node_name();
+            const auto name = get_name(node);
             printer->fmt_line("{{\"{}{}\", {}}},", name, info.rsuffix, hoc_function_name(name));
         }
     };
 
-    print_callable_reg(info.procedures);
-    print_callable_reg(info.functions);
+    print_callable_reg(info.procedures, get_name);
+    print_callable_reg(info.functions, get_name);
+    print_callable_reg(info.function_tables, get_name);
+    print_callable_reg(info.function_tables, [](const auto& node) {
+        auto node_name = node->get_node_name();
+        return "table_" + node_name;
+    });
 
     printer->add_line("{nullptr, nullptr}");
     printer->decrease_indent();
@@ -2190,6 +2246,10 @@ void CodegenNeuronCppVisitor::print_compute_functions() {
     for (const auto& function: info.functions) {
         print_function(*function);
     }
+    for (const auto& function_table: info.function_tables) {
+        print_function_tables(*function_table);
+    }
+
     print_nrn_init();
     print_nrn_cur();
     print_nrn_state();
@@ -2277,7 +2337,11 @@ void CodegenNeuronCppVisitor::print_net_event_call(const ast::FunctionCall& /* n
 }
 
 void CodegenNeuronCppVisitor::print_function_table_call(const FunctionCall& node) {
-    throw std::runtime_error("Not implemented.");
+    auto name = node.get_node_name();
+    const auto& arguments = node.get_arguments();
+    printer->add_text(method_name(name), "(");
+    print_vector_elements(arguments, ", ");
+    printer->add_text(')');
 }
 
 /**

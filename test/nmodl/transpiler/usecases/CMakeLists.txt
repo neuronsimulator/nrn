@@ -6,6 +6,7 @@ set(NMODL_USECASE_DIRS
     electrode_current
     external
     function
+    function_table
     global
     hodgkin_huxley
     kinetic
