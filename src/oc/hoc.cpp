@@ -891,21 +891,6 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
             gargv += 2;
             gargc -= 2;
         }
-        if (argc > 1 && argv[1][0] != '-') {
-            /* first file may be a checkpoint file */
-            extern int hoc_readcheckpoint(char*);
-            switch (hoc_readcheckpoint(const_cast<char*>(argv[1]))) {
-            case 1:
-                ++gargv;
-                --gargc;
-                break;
-            case 2:
-                nrn_exit(1);
-                break;
-            default:
-                break;
-            }
-        }
 
         if (gargc == 1) /* fake an argument list */
         {

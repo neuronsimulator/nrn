@@ -16,15 +16,9 @@ using std::endl;
 using std::ofstream;
 
 constexpr std::array<double, 3> EXPECTED_V{
-#ifndef CORENEURON_ENABLED
     -0x1.04p+6,
     -0x1.b254ad82e20edp+5,
     -0x1.24a52af1ab463p+6,
-#else
-    -0x1.04p+6,
-    -0x1.b0c75635b5bdbp+5,
-    -0x1.24a84bedb7246p+6,
-#endif
 };
 
 extern "C" void modl_reg(){/* No modl_reg */};

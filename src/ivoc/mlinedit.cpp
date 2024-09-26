@@ -141,7 +141,7 @@ static void destruct(void* v) {
 }
 
 void TextEditor_reg() {
-    class2oc("TextEditor", cons, destruct, members, NULL, NULL, retstr_members);
+    class2oc("TextEditor", cons, destruct, members, NULL, retstr_members);
 }
 
 #if HAVE_IV

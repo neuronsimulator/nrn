@@ -170,7 +170,6 @@ static struct { /* Builtin functions with multiple or variable args */
                  {"saveaudit", hoc_Saveaudit},
                  {"retrieveaudit", hoc_Retrieveaudit},
                  {"coredump_on_error", hoc_coredump_on_error},
-                 {"checkpoint", hoc_checkpoint},
                  {"quit", hoc_quit},
                  {"object_push", hoc_object_push},
                  {"object_pop", hoc_object_pop},
