@@ -239,7 +239,7 @@ static Member_func members[] = {{"flip_to", flip_to},
                                 {0, 0}};
 
 void OcDeck_reg() {
-    class2oc("Deck", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("Deck", cons, destruct, members, NULL, NULL);
 }
 #if HAVE_IV
 OcDeck::OcDeck()

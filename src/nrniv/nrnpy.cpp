@@ -248,7 +248,7 @@ void nrnpython_reg() {
 #endif
     // Stub implementation of PythonObject if Python support was not enabled, or a nrnpython library
     // could not be loaded.
-    class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr, nullptr);
+    class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr);
 }
 
 #ifdef NRNPYTHON_DYNAMICLOAD  // to end of file

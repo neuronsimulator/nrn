@@ -48,8 +48,10 @@ namespace detail {
  */
 template <class... TProfilerImpl>
 struct Instrumentor {
+#ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-value"
+#endif  // __clang__
     /*! \fn phase_begin
      *  \brief Activate the collection of profiling data within a code region.
      *
@@ -147,7 +149,9 @@ struct Instrumentor {
     inline static void finalize_profile() {
         std::initializer_list<int>{(TProfilerImpl::finalize_profile(), 0)...};
     }
+#ifdef __clang__
 #pragma clang diagnostic pop
+#endif  // __clang__
 
   private:
     /*!

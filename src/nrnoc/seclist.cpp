@@ -259,14 +259,13 @@ extern void class2oc(const char*,
                      void* (*cons)(Object*),
                      void (*destruct)(void*),
                      Member_func*,
-                     int (*checkpoint)(void**),
                      Member_ret_obj_func*,
                      Member_ret_str_func*);
 
 
 void SectionList_reg(void) {
     /*	printf("SectionList_reg\n");*/
-    class2oc("SectionList", constructor, destructor, members, nullptr, nullptr, nullptr);
+    class2oc("SectionList", constructor, destructor, members, nullptr, nullptr);
 }
 
 #define relative(pc) (pc + (pc)->i)

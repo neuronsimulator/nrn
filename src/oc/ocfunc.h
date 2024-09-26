@@ -25,7 +25,7 @@ extern void hoc_single_event_run(void), hoc_notify_iv(void), nrniv_bind_thread(v
 extern void hoc_pointer(void), hoc_Numarg(void), hoc_Argtype(void), hoc_exec_cmd(void);
 extern void hoc_load_proc(void), hoc_load_func(void), hoc_load_template(void), hoc_load_file(void);
 extern void hoc_xcheckbox(void), hoc_xstatebutton(void), hoc_Symbol_limits(void);
-extern void hoc_coredump_on_error(void), hoc_checkpoint(void), hoc_quit(void);
+extern void hoc_coredump_on_error(void), hoc_quit(void);
 extern void hoc_object_push(void), hoc_object_pop(void), hoc_pwman_place(void);
 extern void hoc_show_errmess_always(void), hoc_execute1(void), hoc_secname(void);
 extern void hoc_neuronhome(void), hoc_Execerror(void);

@@ -90,7 +90,7 @@ DERIVATIVE states {
 PROCEDURE rates(v(mV)) {  :Computes rate and other constants at current v.
                       :Call once from HOC to initialize inf at resting v.
         LOCAL  alpha, beta, sum, q10
-:        TABLE minf, mtau, hinf, htau, ninf, ntau DEPEND celsius FROM -100 TO 100 WITH 200
+        TABLE minf, mtau, hinf, htau, ninf, ntau DEPEND celsius FROM -100 TO 100 WITH 200
 
 UNITSOFF
         q10 = 3^((celsius - 6.3)/10)

@@ -1084,7 +1084,7 @@ void nrnpython_reg_real_nrnpy_hoc_cpp(neuron::python::impl_ptrs* ptrs);
  */
 extern "C" NRN_EXPORT void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
     assert(ptrs);
-    class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr, nullptr);
+    class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr);
     nrnpy_pyobj_sym_ = hoc_lookup("PythonObject");
     assert(nrnpy_pyobj_sym_);
     ptrs->callable_with_args = callable_with_args;

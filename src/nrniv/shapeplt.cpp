@@ -426,7 +426,7 @@ static void sh_destruct(void* v) {
 }
 void PlotShape_reg() {
     //	printf("PlotShape_reg\n");
-    class2oc("PlotShape", sh_cons, sh_destruct, sh_members, NULL, retobj_members, NULL);
+    class2oc("PlotShape", sh_cons, sh_destruct, sh_members, retobj_members, NULL);
 }
 
 void* ShapePlotData::varobj() const {

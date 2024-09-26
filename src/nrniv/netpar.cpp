@@ -315,7 +315,7 @@ void NetParEvent::savestate_restore(double tt, NetCvode* nc) {
     if (ithread_ == 0) {
         // npe_->pr("savestate_restore", tt, nc);
         for (int i = 0; i < nrn_nthread; ++i)
-            if (npe_ + i) {
+            if (i < n_npe_) {
                 nc->event(tt, npe_ + i, nrn_threads + i);
             }
     }
