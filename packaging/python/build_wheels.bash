@@ -147,7 +147,7 @@ build_wheel_osx() {
       if [[ `uname -m` == 'arm64' ]]; then
         export _PYTHON_HOST_PLATFORM="${py_platform/universal2/arm64}"
         echo " - Python installation is universal2 and we are on arm64, setting _PYTHON_HOST_PLATFORM to: ${_PYTHON_HOST_PLATFORM}"
-        export ARCHFLAGS="-arch arm64"
+        export ARCHFLAGS="-arch arm64 -arch x86_64"
         echo " - Setting ARCHFLAGS to: ${ARCHFLAGS}"
         # This is a shortcut to have a successful delocate-wheel. See:
         # https://github.com/matthew-brett/delocate/issues/153
@@ -155,9 +155,10 @@ build_wheel_osx() {
       else
         export _PYTHON_HOST_PLATFORM="${py_platform/universal2/x86_64}"
         echo " - Python installation is universal2 and we are on x84_64, setting _PYTHON_HOST_PLATFORM to: ${_PYTHON_HOST_PLATFORM}"
-        export ARCHFLAGS="-arch x86_64"
+        export ARCHFLAGS="-arch arm64 -arch x86_64"
         echo " - Setting ARCHFLAGS to: ${ARCHFLAGS}"
       fi
+      CMAKE_DEFS="${CMAKE_DEFS},CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
     fi
 
     python setup.py build_ext --cmake-prefix="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
