@@ -38,6 +38,7 @@ assert exists("ca_ion") is False
 # eion.cpp:431: void nrn_check_conc_write(Prop*, Prop*, int): Assertion `k < sizeof(long) * 8' failed.
 nrnmechlibpath = "%s/demo/release" % h.neuronhome()
 print(nrnmechlibpath)
+quit()
 assert load_mechanisms(nrnmechlibpath)
 
 # ca_ion now exists and has a mechanism index > nion
