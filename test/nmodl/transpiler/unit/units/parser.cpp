@@ -27,6 +27,7 @@ using Catch::Matchers::ContainsSubstring;
 // able to define complex units based on base units
 nmodl::parser::UnitDriver driver;  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
+namespace {
 bool is_valid_construct(const std::string& construct) {
     return driver.parse_string(construct);
 }
@@ -40,6 +41,7 @@ std::string parse_string(const std::string& unit_definition) {
     correctness_driver.table->print_base_units(ss);
     return ss.str();
 }
+}  // namespace
 
 SCENARIO("Unit parser accepting valid units definition", "[unit][parser]") {
     GIVEN("A base unit") {
