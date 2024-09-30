@@ -430,9 +430,10 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
     }
     for (k = 0, j = 0; j < n_memb_func; ++j) {
         if (nrn_is_ion(j)) {
-            ion_bit_[j] = (1 << k);
-            ++k;
             assert(k < max_ions);
+            ion_bit_[j].reset();
+            ion_bit_[j].set(k);
+            ++k;
         }
     }
 
@@ -640,7 +641,7 @@ void second_order_cur(NrnThread* nt) {
     extern int secondorder;
     NrnThreadMembList* tml;
     Memb_list* ml;
-    int j, i, i2;
+    int i, i2;
     constexpr auto c = 3;
     constexpr auto dc = 4;
     if (secondorder == 2) {
