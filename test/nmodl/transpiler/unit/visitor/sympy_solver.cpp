@@ -8,6 +8,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <pybind11/embed.h>
+#include <pybind11/stl.h>
+
 #include "ast/program.hpp"
 #include "codegen/codegen_coreneuron_cpp_visitor.hpp"
 #include "parser/nmodl_driver.hpp"
