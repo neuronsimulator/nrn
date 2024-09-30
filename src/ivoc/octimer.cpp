@@ -99,7 +99,7 @@ static void t_destruct(void* v) {
 Member_func t_members[] = {{"seconds", t_seconds}, {"start", t_start}, {"end", t_stop}, {0, 0}};
 
 void OcTimer_reg() {
-    class2oc("Timer", t_cons, t_destruct, t_members, NULL, NULL, NULL);
+    class2oc("Timer", t_cons, t_destruct, t_members, NULL, NULL);
 }
 #if HAVE_IV
 OcTimer::OcTimer(const char* cmd) {

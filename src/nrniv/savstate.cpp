@@ -1277,5 +1277,5 @@ static Member_func members[] = {{"save", save},
                                 {0, 0}};
 
 void SaveState_reg() {
-    class2oc("SaveState", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("SaveState", cons, destruct, members, NULL, NULL);
 }

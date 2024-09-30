@@ -73,7 +73,7 @@ static void* cons(Object*) {
 static void destruct(void*) {}
 
 void GUIMath_reg() {
-    class2oc("GUIMath", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("GUIMath", cons, destruct, members, NULL, NULL);
 }
 
 double MyMath::anint(double x) {
