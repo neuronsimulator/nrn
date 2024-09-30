@@ -4,8 +4,10 @@ Date: 10/28/16
 Description: Defines the functions for implementing and manipulating
 a linked list of Grid_nodes
 ******************************************************************/
-#include <stdio.h>
-#include <assert.h>
+#include <algorithm>
+
+#include <cstdio>
+#include <cassert>
 #include "nrnpython.h"
 #include "grids.h"
 #include "rxd.h"
