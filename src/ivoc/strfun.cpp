@@ -379,7 +379,7 @@ static void* l_cons(Object*) {
 }
 
 void StringFunctions_reg() {
-    class2oc("StringFunctions", l_cons, nullptr, l_members, nullptr, l_obj_members, nullptr);
+    class2oc("StringFunctions", l_cons, nullptr, l_members, l_obj_members, nullptr);
 }
 
 
