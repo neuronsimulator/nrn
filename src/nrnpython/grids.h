@@ -28,9 +28,6 @@ and Flux_pair structs and their respective functions
 #define NEUMANN   0
 #define DIRICHLET 1
 
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-
 typedef struct Hybrid_data {
     long num_1d_indices;
     long* indices1d;
@@ -40,11 +37,6 @@ typedef struct Hybrid_data {
     double* volumes1d;
     double* volumes3d;
 } Hybrid_data;
-
-typedef struct Flux_pair {
-    double* flux;    // Value of flux
-    int grid_index;  // Location in grid
-} Flux;
 
 struct Concentration_Pair {
     neuron::container::data_handle<double> destination; /* memory loc to transfer concentration to
@@ -384,11 +376,6 @@ extern double* t_ptr;   // Universal t
 extern Grid_node* Parallel_grids[100];  // Array of Grid_node * lists
 /*********************************************************************************/
 
-
-// Set the global ∆t
-void make_dt_ptr(PyHocObject* my_dt_ptr);
-
-
 // Create a single Grid_node
 /* Parameters:  Python object that includes array of double pointers,
                 size of x, y, and z dimensions
@@ -397,39 +384,6 @@ void make_dt_ptr(PyHocObject* my_dt_ptr);
 
 // Free a single Grid_node "grid"
 // void free_Grid(Grid_node *grid);
-
-// Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
-extern "C" int ECS_insert(int grid_list_index,
-                          PyHocObject* my_states,
-                          int my_num_states_x,
-                          int my_num_states_y,
-                          int my_num_states_z,
-                          double my_dc_x,
-                          double my_dc_y,
-                          double my_dc_z,
-                          double my_dx,
-                          double my_dy,
-                          double my_dz,
-                          PyHocObject* my_alpha,
-                          PyHocObject* my_permeability,
-                          int,
-                          double,
-                          double);
-
-Grid_node* ICS_make_Grid(PyHocObject* my_states,
-                         long num_nodes,
-                         long* neighbors,
-                         long* x_line_defs,
-                         long x_lines_length,
-                         long* y_line_defs,
-                         long y_lines_length,
-                         long* z_line_defs,
-                         long z_lines_length,
-                         double* dcs,
-                         double dx,
-                         bool is_diffusable,
-                         double atolscale,
-                         double* ics_alphas);
 
 // Insert an  ICS_Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 extern "C" int ICS_insert(int grid_list_index,
@@ -465,13 +419,7 @@ extern "C" int ICS_insert_inhom(int grid_list_index,
                                 double* ics_alphas);
 
 
-// Set the diffusion coefficients for a given grid_id
-extern "C" int set_diffusion(int, int, double*, int);
-
 // Delete a specific Grid_node "find" from the list "head"
 int remove(Grid_node** head, Grid_node* find);
-
-// Destroy the list located at list_index and free all memory
-void empty_list(int list_index);
 
 void apply_node_flux(int, long*, double*, PyObject**, double, double*);

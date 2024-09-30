@@ -158,7 +158,7 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states,
     ecs_tasks = (ECSAdiGridData*) malloc(NUM_THREADS * sizeof(ECSAdiGridData));
     for (k = 0; k < NUM_THREADS; k++) {
         ecs_tasks[k].scratchpad = (double*) malloc(
-            sizeof(double) * MAX(my_num_states_x, MAX(my_num_states_y, my_num_states_z)));
+            sizeof(double) * std::max({my_num_states_x, my_num_states_y, my_num_states_z}));
         ecs_tasks[k].g = this;
     }
 
@@ -190,44 +190,6 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states,
     volume_setup();
 }
 
-
-// Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
-/* returns the grid number
-   TODO: change this to returning the pointer */
-extern "C" NRN_EXPORT int ECS_insert(int grid_list_index,
-                                     PyHocObject* my_states,
-                                     int my_num_states_x,
-                                     int my_num_states_y,
-                                     int my_num_states_z,
-                                     double my_dc_x,
-                                     double my_dc_y,
-                                     double my_dc_z,
-                                     double my_dx,
-                                     double my_dy,
-                                     double my_dz,
-                                     PyHocObject* my_alpha,
-                                     PyHocObject* my_permeability,
-                                     int bc,
-                                     double bc_value,
-                                     double atolscale) {
-    ECS_Grid_node* new_Grid = new ECS_Grid_node(my_states,
-                                                my_num_states_x,
-                                                my_num_states_y,
-                                                my_num_states_z,
-                                                my_dc_x,
-                                                my_dc_y,
-                                                my_dc_z,
-                                                my_dx,
-                                                my_dy,
-                                                my_dz,
-                                                my_alpha,
-                                                my_permeability,
-                                                bc,
-                                                bc_value,
-                                                atolscale);
-
-    return new_Grid->insert(grid_list_index);
-}
 
 ICS_Grid_node::ICS_Grid_node(){};
 ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states,
@@ -377,90 +339,6 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states,
     node_flux_src = NULL;
 }
 
-
-// Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
-/* returns the grid number
-   TODO: change this to returning the pointer */
-extern "C" NRN_EXPORT int ICS_insert(int grid_list_index,
-                                     PyHocObject* my_states,
-                                     long num_nodes,
-                                     long* neighbors,
-                                     long* x_line_defs,
-                                     long x_lines_length,
-                                     long* y_line_defs,
-                                     long y_lines_length,
-                                     long* z_line_defs,
-                                     long z_lines_length,
-                                     double* dcs,
-                                     double dx,
-                                     bool is_diffusable,
-                                     double atolscale,
-                                     double* ics_alphas) {
-    ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states,
-                                                num_nodes,
-                                                neighbors,
-                                                x_line_defs,
-                                                x_lines_length,
-                                                y_line_defs,
-                                                y_lines_length,
-                                                z_line_defs,
-                                                z_lines_length,
-                                                dcs,
-                                                NULL,
-                                                dx,
-                                                is_diffusable,
-                                                atolscale,
-                                                ics_alphas);
-
-    return new_Grid->insert(grid_list_index);
-}
-
-extern "C" NRN_EXPORT int ICS_insert_inhom(int grid_list_index,
-                                           PyHocObject* my_states,
-                                           long num_nodes,
-                                           long* neighbors,
-                                           long* x_line_defs,
-                                           long x_lines_length,
-                                           long* y_line_defs,
-                                           long y_lines_length,
-                                           long* z_line_defs,
-                                           long z_lines_length,
-                                           double* dcs,
-                                           double dx,
-                                           bool is_diffusable,
-                                           double atolscale,
-                                           double* ics_alphas) {
-    ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states,
-                                                num_nodes,
-                                                neighbors,
-                                                x_line_defs,
-                                                x_lines_length,
-                                                y_line_defs,
-                                                y_lines_length,
-                                                z_line_defs,
-                                                z_lines_length,
-                                                NULL,
-                                                dcs,
-                                                dx,
-                                                is_diffusable,
-                                                atolscale,
-                                                ics_alphas);
-    return new_Grid->insert(grid_list_index);
-}
-
-
-extern "C" NRN_EXPORT int set_diffusion(int grid_list_index, int grid_id, double* dc, int length) {
-    int id = 0;
-    Grid_node* node = Parallel_grids[grid_list_index];
-    while (id < grid_id) {
-        node = node->next;
-        id++;
-        if (node == NULL)
-            return -1;
-    }
-    node->set_diffusion(dc, length);
-    return 0;
-}
 
 extern "C" NRN_EXPORT int set_tortuosity(int grid_list_index,
                                          int grid_id,
@@ -796,16 +674,6 @@ extern "C" NRN_EXPORT void delete_by_id(int id) {
 }
 
 
-// Destroy the list located at list_index and free all memory
-void empty_list(int list_index) {
-    Grid_node** head = &(Parallel_grids[list_index]);
-    while (*head != NULL) {
-        Grid_node* old_head = *head;
-        *head = (*head)->next;
-        delete old_head;
-    }
-}
-
 int Grid_node::insert(int grid_list_index) {
     int i = 0;
     Grid_node** head = &(Parallel_grids[grid_list_index]);
@@ -840,8 +708,7 @@ void ECS_Grid_node::set_num_threads(const int n) {
     free(ecs_tasks);
     ecs_tasks = (ECSAdiGridData*) malloc(n * sizeof(ECSAdiGridData));
     for (i = 0; i < n; i++) {
-        ecs_tasks[i].scratchpad = (double*) malloc(sizeof(double) *
-                                                   MAX(size_x, MAX(size_y, size_z)));
+        ecs_tasks[i].scratchpad = (double*) malloc(sizeof(double) * std::max({size_x, size_y, size_z}));
         ecs_tasks[i].g = this;
     }
 }
@@ -894,7 +761,7 @@ void ECS_Grid_node::do_grid_currents(double* output, double dt, int grid_id) {
     for (i = 0; i < NUM_THREADS; i++) {
         tasks[i].g = this;
         tasks[i].onset = i * tasks_per_thread;
-        tasks[i].offset = MIN((i + 1) * tasks_per_thread, m);
+        tasks[i].offset = std::min({(i + 1) * tasks_per_thread, m});
         tasks[i].val = val;
     }
     for (i = 0; i < NUM_THREADS - 1; i++) {
