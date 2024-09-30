@@ -8,6 +8,7 @@
 #include "printer/json_printer.hpp"
 #include "utils/logger.hpp"
 
+#include <nlohmann/json.hpp>
 
 namespace nmodl {
 namespace printer {

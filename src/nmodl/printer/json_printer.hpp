@@ -12,7 +12,7 @@
  * \brief \copybrief nmodl::printer::JSONPrinter
  */
 
-#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 
 #include <fstream>
 #include <iostream>

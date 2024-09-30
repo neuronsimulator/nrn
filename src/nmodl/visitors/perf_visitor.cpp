@@ -7,6 +7,7 @@
 
 #include "visitors/perf_visitor.hpp"
 
+#include <cassert>
 #include <utility>
 
 #include "ast/all.hpp"

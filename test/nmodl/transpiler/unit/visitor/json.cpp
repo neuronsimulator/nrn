@@ -12,6 +12,8 @@
 #include "visitors/json_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
+#include <nlohmann/json.hpp>
+
 using json = nlohmann::json;
 
 using namespace nmodl;
