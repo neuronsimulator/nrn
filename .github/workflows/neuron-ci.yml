@@ -39,7 +39,7 @@ jobs:
       DESIRED_CMAKE_VERSION: 3.17
       DYNAMIC_PYTHON_CMAKE_VERSION: 3.18
       PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
-      PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.13' }}
+      PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.13.0-rc.2' }}
 
     strategy:
       matrix:
