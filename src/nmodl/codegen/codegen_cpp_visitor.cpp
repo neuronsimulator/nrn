@@ -198,12 +198,12 @@ int CodegenCppVisitor::int_variables_size() const {
  * representation (1e+20, 1E-15) then keep it as it is.
  */
 std::string CodegenCppVisitor::format_double_string(const std::string& s_value) {
-    return utils::format_double_string<CodegenCppVisitor>(s_value);
+    return utils::format_double_string(s_value);
 }
 
 
 std::string CodegenCppVisitor::format_float_string(const std::string& s_value) {
-    return utils::format_float_string<CodegenCppVisitor>(s_value);
+    return utils::format_float_string(s_value);
 }
 
 

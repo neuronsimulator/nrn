@@ -29,7 +29,6 @@ namespace utils {
  * \param s_value The double constant as string
  * \return        The proper string to be printed in the generated file.
  */
-template <typename T>
 std::string format_double_string(const std::string& s_value);
 
 
@@ -43,7 +42,6 @@ std::string format_double_string(const std::string& s_value);
  * \param s_value The double constant as string
  * \return        The proper string to be printed in the generated file.
  */
-template <typename T>
 std::string format_float_string(const std::string& s_value);
 
 }  // namespace utils

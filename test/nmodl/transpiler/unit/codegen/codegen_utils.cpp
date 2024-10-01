@@ -21,8 +21,7 @@ SCENARIO("C codegen utility functions", "[codegen][util][c]") {
         std::string double_constant = "0.012345678901234567";
 
         THEN("Codegen C Visitor prints double with same precision") {
-            auto nmodl_constant_result = codegen::utils::format_double_string<CodegenCppVisitor>(
-                double_constant);
+            auto nmodl_constant_result = codegen::utils::format_double_string(double_constant);
             REQUIRE(nmodl_constant_result == double_constant);
         }
     }
@@ -33,8 +32,7 @@ SCENARIO("C codegen utility functions", "[codegen][util][c]") {
         std::string codegen_output = "1.0";
 
         THEN("Codegen C Visitor prints integer as double number") {
-            auto nmodl_constant_result = codegen::utils::format_double_string<CodegenCppVisitor>(
-                double_constant);
+            auto nmodl_constant_result = codegen::utils::format_double_string(double_constant);
             REQUIRE(nmodl_constant_result == codegen_output);
         }
     }
@@ -44,8 +42,7 @@ SCENARIO("C codegen utility functions", "[codegen][util][c]") {
 
         THEN("Codegen C Visitor prints doubles with scientific notation") {
             for (const auto& test: tests) {
-                REQUIRE(codegen::utils::format_double_string<CodegenCppVisitor>(test.first) ==
-                        test.second);
+                REQUIRE(codegen::utils::format_double_string(test.first) == test.second);
             }
         }
     }
@@ -54,8 +51,7 @@ SCENARIO("C codegen utility functions", "[codegen][util][c]") {
         std::string float_constant = "0.01234567";
 
         THEN("Codegen C Visitor prints float with same precision") {
-            auto nmodl_constant_result = codegen::utils::format_float_string<CodegenCppVisitor>(
-                float_constant);
+            auto nmodl_constant_result = codegen::utils::format_float_string(float_constant);
             REQUIRE(nmodl_constant_result == float_constant);
         }
     }
@@ -66,8 +62,7 @@ SCENARIO("C codegen utility functions", "[codegen][util][c]") {
         std::string codegen_output = "1.0";
 
         THEN("Codegen C Visitor prints integer as double number") {
-            auto nmodl_constant_result = codegen::utils::format_float_string<CodegenCppVisitor>(
-                float_constant);
+            auto nmodl_constant_result = codegen::utils::format_float_string(float_constant);
             REQUIRE(nmodl_constant_result == codegen_output);
         }
     }
@@ -77,8 +72,7 @@ SCENARIO("C codegen utility functions", "[codegen][util][c]") {
 
         THEN("Codegen C Visitor prints doubles with scientific notation") {
             for (const auto& test: tests) {
-                REQUIRE(codegen::utils::format_float_string<CodegenCppVisitor>(test.first) ==
-                        test.second);
+                REQUIRE(codegen::utils::format_float_string(test.first) == test.second);
             }
         }
     }
