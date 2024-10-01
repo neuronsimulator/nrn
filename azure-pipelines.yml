@@ -111,8 +111,7 @@ stages:
             python.version: '3.12'
             python.org.version: '3.12.0'
             python.installer.name: '3.12.0-macos11.pkg'
-
-          Python312:
+          Python313:
             python.version: '3.13'
             python.org.version: '3.13.0'
             python.installer.name: '3.13.0rc2-macos11.pkg'
