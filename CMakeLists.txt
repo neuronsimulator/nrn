@@ -246,7 +246,10 @@ endif()
 include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
 cpp_cc_git_submodule(eigen)
-nrn_add_external_project(fmt)
+find_package(fmt)
+if(NOT fmt_FOUND)
+    nrn_add_external_project(fmt)
+endif()
 set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/Random123/include/Random123"
