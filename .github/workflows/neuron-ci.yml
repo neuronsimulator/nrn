@@ -397,7 +397,7 @@ jobs:
           CCACHE_DIR: ${{runner.workspace}}/ccache
           NRN_ENABLE_PYTHON_DYNAMIC : ${{ matrix.config.python_dynamic }}
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
-          PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
+          PYTHON_MAX_NAME: "python3.13"
           INSTALL_DIR : ${{ runner.workspace }}/install
           MATRIX_EVAL: ${{ matrix.config.matrix_eval }}
 
