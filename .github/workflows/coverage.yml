@@ -24,7 +24,7 @@ on:
 env:
   PY_MIN_VERSION: '3.8'
   PY_MID_VERSION: '3.10'
-  PY_MAX_VERSION: '3.13'
+  PY_MAX_VERSION: '3.13.0-rc.2'
 
 jobs:
   coverage:
