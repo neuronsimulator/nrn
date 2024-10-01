@@ -193,7 +193,7 @@ jobs:
         # Once ubuntu got a newer version of automake we can remove this part.
         if: matrix.config.music == 'ON' && startsWith(matrix.os, 'ubuntu')
         run: |
-          curl -L -o automake.tar.xz https://ftp.gnu.org/gnu/automake/automake-1.16.5.tar.xz
+          curl -L -o automake.tar.xz https://mirror.netcologne.de/gnu/automake/automake-1.16.5.tar.xz
           tar -xf automake.tar.xz
           cd automake-1.16.5/
           ./configure --prefix=/usr/
