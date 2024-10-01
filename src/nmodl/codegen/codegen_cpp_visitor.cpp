@@ -1728,7 +1728,6 @@ void CodegenCppVisitor::print_rename_state_vars() const {
         auto rhs = get_variable_name(state_name + "0");
 
         if (state->is_array()) {
-            auto size = state->get_length();
             for (int i = 0; i < state->get_length(); ++i) {
                 printer->fmt_line("{}[{}] = {};", lhs, i, rhs);
             }
