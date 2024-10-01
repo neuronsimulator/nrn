@@ -250,10 +250,10 @@ find_package(fmt)
 if(NOT fmt_FOUND)
     message(STATUS "importing fmt from submodule")
     nrn_add_external_project(fmt)
+    set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
 else()
     message(STATUS "fmt has been found on the system")
 endif()
-set_property(TARGET fmt::fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/Random123/include/Random123"
      DESTINATION "${CMAKE_BINARY_DIR}/include/")
