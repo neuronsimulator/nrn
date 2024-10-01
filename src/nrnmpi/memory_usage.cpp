@@ -46,7 +46,7 @@ void nrnmpi_memory_stats(neuron::container::MemoryStats& stats,
 
 void nrnmpi_print_memory_stats(neuron::container::MemoryStats const& memory_stats) {
     if (nrnmpi_myid_world == 0) {
-        Printf(fmt::format("{}\n", format_memory_usage(memory_stats.total)).c_str());
+        logger.print("{}\n", format_memory_usage(memory_stats.total));
     }
 }
 #endif

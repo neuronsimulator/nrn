@@ -233,7 +233,7 @@ void KSSingleNodeData::deliver(double tt, NetCvode* nc, NrnThread* nt) {
 }
 
 void KSSingleNodeData::pr(const char* s, double tt, NetCvode* nc) {
-    Printf("%s %s %.15g\n", s, hoc_object_name((*ppnt_)->ob), tt);
+    logger.print("{} {} {:.15g}\n", s, hoc_object_name((*ppnt_)->ob), tt);
 }
 
 void KSSingle::state(Node* nd, Datum* pd, NrnThread* nt) {

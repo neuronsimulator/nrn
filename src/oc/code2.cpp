@@ -534,59 +534,59 @@ static void symdebug(const char* s, Symlist* list) /* for debugging display the 
 {
     Symbol* sp;
 
-    Printf("\n\nSymbol list %s\n\n", s);
+    logger.print("\n\nSymbol list {}\n\n", s);
     if (list)
         for (sp = list->first; sp != (Symbol*) 0; sp = sp->next) {
-            Printf("name:%s\ntype:", sp->name);
+            logger.print("name:{}\ntype:", sp->name);
             switch (sp->type) {
             case VAR:
                 if (!is_array(*sp)) {
                     if (sp->subtype == USERINT)
-                        Printf("VAR USERINT  %8d", *(sp->u.pvalint));
+                        logger.print("VAR USERINT  {:8d}", *(sp->u.pvalint));
                     else if (sp->subtype == USERDOUBLE)
-                        Printf("VAR USERDOUBLE  %.8g", *(OPVAL(sp)));
+                        logger.print("VAR USERDOUBLE  {:.8g}", *(OPVAL(sp)));
                     else
-                        Printf("VAR   %.8g", *(OPVAL(sp)));
+                        logger.print("VAR   {:.8g}", *(OPVAL(sp)));
                 } else {
                     if (sp->subtype == USERINT)
-                        Printf("ARRAY USERINT");
+                        logger.print("ARRAY USERINT");
                     else if (sp->subtype == USERDOUBLE)
-                        Printf("ARRAY USERDOUBLE");
+                        logger.print("ARRAY USERDOUBLE");
                     else
-                        Printf("ARRAY");
+                        logger.print("ARRAY");
                 }
                 break;
             case NUMBER:
-                Printf("NUMBER   %.8g", *(OPVAL(sp)));
+                logger.print("NUMBER   {:.8g}", *(OPVAL(sp)));
                 break;
             case STRING:
-                Printf("STRING   %s", *(OPSTR(sp)));
+                logger.print("STRING   {}", *(OPSTR(sp)));
                 break;
             case UNDEF:
-                Printf("UNDEF");
+                logger.print("UNDEF");
                 break;
             case BLTIN:
-                Printf("BLTIN");
+                logger.print("BLTIN");
                 break;
             case AUTO:
-                Printf("AUTO");
+                logger.print("AUTO");
                 break;
             case FUNCTION:
-                Printf("FUNCTION");
+                logger.print("FUNCTION");
                 symdebug(sp->name, sp->u.u_proc->list);
                 break;
             case PROCEDURE:
-                Printf("PROCEDURE");
+                logger.print("PROCEDURE");
                 symdebug(sp->name, sp->u.u_proc->list);
                 break;
             case FUN_BLTIN:
-                Printf("FUN_BLTIN");
+                logger.print("FUN_BLTIN");
                 break;
             default:
-                Printf("%d", sp->type);
+                logger.print("{}", sp->type);
                 break;
             }
-            Printf("\n");
+            logger.print("\n");
         }
 }
 
@@ -597,15 +597,15 @@ void hoc_symbols(void) /* display the types above */
 
     if (hoc_zzdebug == 0)
         for (i = 0; type_sym[i].t_type != 0; i++) {
-            Printf("\n%s\n", type_sym[i].name);
+            logger.print("\n{}\n", type_sym[i].name);
             for (sp = hoc_symlist->first; sp != (Symbol*) 0; sp = sp->next)
                 if (sp->type == type_sym[i].t_type) {
-                    Printf("\t%s", sp->name);
+                    logger.print("\t{}", sp->name);
                     switch (sp->type) {
                     case VAR:
                         if (is_array(*sp)) {
                             for (j = 0; j < sp->arayinfo->nsub; j++)
-                                Printf("[%d]", sp->arayinfo->sub[j]);
+                                logger.print("[{}]", sp->arayinfo->sub[j]);
                         }
                         break;
 
@@ -613,7 +613,7 @@ void hoc_symbols(void) /* display the types above */
                         break;
                     }
                 }
-            Printf("\n");
+            logger.print("\n");
         }
     else {
         symdebug("p_symlist", hoc_p_symlist);

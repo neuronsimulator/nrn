@@ -40,14 +40,16 @@ static double allprint(void* v) {
     for (int type = 0; type < 4; ++type) {
         std::vector<FInitialHandler*> fl = FInitialHandler::fihlist_[type];
         if (!fl.empty()) {
-            Printf("Type %d FInitializeHandler statements\n", type);
+            logger.print("Type {} FInitializeHandler statements\n", type);
             for (auto& f: fl) {
                 if (f->stmt_->pyobject()) {
-                    Printf("\t%s\n", hoc_object_name(f->stmt_->pyobject()));
+                    logger.print("\t{}\n", hoc_object_name(f->stmt_->pyobject()));
                 } else if (f->stmt_->object()) {
-                    Printf("\t%s.%s\n", hoc_object_name(f->stmt_->object()), f->stmt_->name());
+                    logger.print("\t{}.{}\n",
+                                 hoc_object_name(f->stmt_->object()),
+                                 f->stmt_->name());
                 } else {
-                    Printf("\t%s\n", f->stmt_->name());
+                    logger.print("\t{}\n", f->stmt_->name());
                 }
             }
         }

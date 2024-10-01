@@ -101,7 +101,7 @@ static double s_rename(void* v) {
 
     sec = (Section*) v;
     if (!sec->prop) {
-        Printf("SectionRef[???].sec is a deleted section\n");
+        logger.print("SectionRef[???].sec is a deleted section\n");
         return 0.;
     }
 #if USE_PYTHON
@@ -112,7 +112,7 @@ static double s_rename(void* v) {
 #endif
     qsec = sec->prop->dparam[8].get<hoc_Item*>();
     if (sec->prop->dparam[0].get<Symbol*>()) {
-        Printf("%s must first be unnamed\n", secname(sec));
+        logger.print("{} must first be unnamed\n", secname(sec));
         return 0.;
     }
 
@@ -129,7 +129,8 @@ static double s_rename(void* v) {
     hoc_objectdata = hoc_top_level_data;
     if (sym) {
         if (sym->type != SECTION || (sym->arayinfo && sym->arayinfo->nsub > 1)) {
-            Printf("The new name already exists and is not a SECTION or has a dimension > 1\n");
+            logger.print(
+                "The new name already exists and is not a SECTION or has a dimension > 1\n");
             hoc_objectdata = obdsav;
             return 0;
         }
@@ -138,9 +139,10 @@ static double s_rename(void* v) {
         pitm = hoc_top_level_data[sym->u.oboff].psecitm;
         for (i = 0; i < n; ++i) {
             if (pitm[i]) {
-                Printf("Previously existing %s[%d] points to a section which is being deleted\n",
-                       sym->name,
-                       i);
+                logger.print(
+                    "Previously existing {}[{}] points to a section which is being deleted\n",
+                    sym->name,
+                    i);
                 sec_free(pitm[i]);
             }
         }
@@ -174,12 +176,14 @@ static double s_rename(void* v) {
             /*assert(is_obj_type(ob, "SectionRef")*/
             sec = (Section*) ob->u.this_pointer;
             if (!sec->prop) {
-                Printf("%s references a deleted section\n", hoc_object_name(ob));
+                logger.print("{} references a deleted section\n", hoc_object_name(ob));
                 hoc_objectdata = obdsav;
                 return 0;
             }
             if (sec->prop->dparam[0].get<Symbol*>()) {
-                Printf("Item %d of second list arg, %s, must first be unnamed\n", i, secname(sec));
+                logger.print("Item {} of second list arg, {}, must first be unnamed\n",
+                             i,
+                             secname(sec));
                 return 0;
             }
             qsec = sec->prop->dparam[8].get<hoc_Item*>();

@@ -1,25 +1,61 @@
 #pragma once
 
-#include <fmt/printf.h>
+#include <functional>
+#include <iostream>
 
-extern int (*nrnpy_pr_stdoe_callback)(int, char*);
+#include <fmt/format.h>
 
-template <typename... Args>
-int Fprintf(FILE* stream, const char* fmt, Args... args) {
-    if (nrnpy_pr_stdoe_callback && (stream == stdout || stream == stderr)) {
-        std::string message = fmt::sprintf(fmt, std::forward<Args>(args)...);
-        nrnpy_pr_stdoe_callback(stream == stdout ? 1 : 2, message.data());
-        return message.size();
+class Logger {
+  public:
+    void setCallback(std::function<int(int, const char*)> cb) {
+        callback = std::move(cb);
     }
-    return fmt::fprintf(stream, fmt, args...);
-}
 
-template <typename... Args>
-int Printf(const char* fmt, Args... args) {
-    if (nrnpy_pr_stdoe_callback) {
-        std::string message = fmt::sprintf(fmt, std::forward<Args>(args)...);
-        nrnpy_pr_stdoe_callback(1, message.data());
-        return message.size();
+    const std::function<int(int, const char*)>& getCallback() const {
+        return callback;
     }
-    return fmt::printf(fmt, args...);
-}
+
+    // Unconditionnaly print non depending of the level
+    template <typename... Args>
+    void print(std::string_view fmt, Args&&... args) const {
+        output(1, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void debug(std::string_view fmt, Args&&... args) const {
+        output(1, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void info(std::string_view fmt, Args&&... args) const {
+        output(1, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void warning(std::string_view fmt, Args&&... args) const {
+        output(1, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void error(std::string_view fmt, Args&&... args) const {
+        output(2, fmt, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void output(int out, std::string_view fmt, Args&&... args) const {
+        std::string message = fmt::format(fmt, std::forward<Args>(args)...);
+        callback(out, message.c_str());
+    }
+
+  private:
+    std::function<int(int, const char*)> callback = [](int out, const char* mess) {
+        if (out == 1) {
+            std::cout << mess;
+        } else {
+            std::cerr << mess;
+        }
+        return 0;
+    };
+};
+
+extern Logger logger;

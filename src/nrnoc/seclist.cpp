@@ -237,7 +237,7 @@ static double printnames(void* v) {
     List* sl = (List*) v;
     ITERATE_REMOVE(q, q1, sl) /*{*/
     if (q->element.sec->prop) {
-        Printf("%s\n", secname(q->element.sec));
+        logger.print("{}\n", secname(q->element.sec));
     }
 }
 return 1.;
