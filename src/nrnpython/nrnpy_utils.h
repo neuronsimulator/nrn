@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nrnwrap_Python.h>
+#include "nrnwrap_Python.h"
 #include <cassert>
 
 inline bool is_python_string(PyObject* python_string) {

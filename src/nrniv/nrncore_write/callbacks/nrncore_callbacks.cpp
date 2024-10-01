@@ -98,7 +98,7 @@ void* get_global_dbl_item(void* p, const char*& name, int& size, double*& val) {
     for (; sp; sp = sp->next) {
         if (sp->type == VAR && sp->subtype == USERDOUBLE) {
             name = sp->name;
-            if (ISARRAY(sp)) {
+            if (is_array(*sp)) {
                 Arrayinfo* a = sp->arayinfo;
                 if (a->nsub == 1) {
                     size = a->sub[0];
@@ -176,7 +176,7 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<doub
         data = &nt._t;
         n = 1;
     } else if (type > 0 && type < n_memb_func) {
-        auto set_mdata = [type, tid, &mdata](Memb_list* ml) -> size_t {
+        auto set_mdata = [&mdata](Memb_list* ml) -> size_t {
             mdata = ml->data();
             return ml->nodecount;
         };
@@ -302,7 +302,7 @@ int nrnthread_dat2_1(int tid,
         tml_index[j] = type;
         ml_nodecount[j] = ml->nodecount;
         cg.ml_vdata_offset[j] = vdata_offset;
-        int* ds = memb_func[type].dparam_semantics;
+        int* ds = memb_func[type].dparam_semantics.get();
         for (int psz = 0; psz < bbcore_dparam_size[type]; ++psz) {
             if (ds[psz] == -4 || ds[psz] == -6 || ds[psz] == -7 || ds[psz] == -11 || ds[psz] == 0) {
                 // printf("%s ds[%d]=%d vdata_offset=%d\n", memb_func[type].sym->name, psz, ds[psz],
@@ -553,10 +553,11 @@ int nrnthread_dat2_corepointer_mech(int tid,
     icnt = 0;
     // data size and allocate
     for (int i = 0; i < ml->nodecount; ++i) {
-        (*nrn_bbcore_write_[type])(NULL, NULL, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, &nt);
+        (*nrn_bbcore_write_[type])(
+            nullptr, nullptr, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, nullptr, &nt);
     }
-    dArray = NULL;
-    iArray = NULL;
+    dArray = nullptr;
+    iArray = nullptr;
     if (icnt) {
         iArray = new int[icnt];
     }
@@ -567,7 +568,7 @@ int nrnthread_dat2_corepointer_mech(int tid,
     // data values
     for (int i = 0; i < ml->nodecount; ++i) {
         (*nrn_bbcore_write_[type])(
-            dArray, iArray, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, &nt);
+            dArray, iArray, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, nullptr, &nt);
     }
 
     return 1;
@@ -593,7 +594,8 @@ int core2nrn_corepointer_mech(int tid, int type, int icnt, int dcnt, int* iArray
     int dk = 0;
     // data values
     for (int i = 0; i < ml->nodecount; ++i) {
-        (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, ml, i, ml->pdata[i], ml->_thread, &nt);
+        (*nrn_bbcore_read_[type])(
+            dArray, iArray, &dk, &ik, ml, i, ml->pdata[i], ml->_thread, nullptr, &nt);
     }
     assert(dk == dcnt);
     assert(ik == icnt);
@@ -641,7 +643,7 @@ int* datum2int(int type,
     int isart = nrn_is_artificial_[di.type];
     int sz = bbcore_dparam_size[type];
     int* pdata = new int[ml->nodecount * sz];
-    int* semantics = memb_func[type].dparam_semantics;
+    int* semantics = memb_func[type].dparam_semantics.get();
     for (int i = 0; i < ml->nodecount; ++i) {
         int ioff = i * sz;
         for (int j = 0; j < sz; ++j) {
@@ -880,7 +882,7 @@ static std::map<int, int> type2movable;
 static void setup_type2semantics() {
     if (type2movable.empty()) {
         for (int type = 0; type < n_memb_func; ++type) {
-            int* ds = memb_func[type].dparam_semantics;
+            int* ds = memb_func[type].dparam_semantics.get();
             if (ds) {
                 for (int psz = 0; psz < bbcore_dparam_size[type]; ++psz) {
                     if (ds[psz] == -4) {  // netsend semantics
@@ -1016,7 +1018,6 @@ static void set_info(TQItem* tqi,
         Fprintf(stderr,
                 "WARNING: CVode.event(...) for delivery at time step nearest %g discarded. "
                 "CoreNEURON cannot presently handle interpreter events (rank %d, thread %d).\n",
-                nrnmpi_myid,
                 tdeliver,
                 nrnmpi_myid,
                 tid);

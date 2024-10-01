@@ -296,12 +296,12 @@ void parout() {
     if (vectorize) {
         Lappendstr(defs_list,
                    "\n\
-#define _threadargscomma_ _ml, _iml, _ppvar, _thread, _nt,\n\
-#define _threadargsprotocomma_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
-#define _internalthreadargsprotocomma_ _nrn_mechanism_cache_range* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt,\n\
-#define _threadargs_ _ml, _iml, _ppvar, _thread, _nt\n\
-#define _threadargsproto_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt\n\
-#define _internalthreadargsproto_ _nrn_mechanism_cache_range* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, NrnThread* _nt\n\
+#define _threadargscomma_ _ml, _iml, _ppvar, _thread, _globals, _nt,\n\
+#define _threadargsprotocomma_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, double* _globals, NrnThread* _nt,\n\
+#define _internalthreadargsprotocomma_ _nrn_mechanism_cache_range* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, double* _globals, NrnThread* _nt,\n\
+#define _threadargs_ _ml, _iml, _ppvar, _thread, _globals, _nt\n\
+#define _threadargsproto_ Memb_list* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, double* _globals, NrnThread* _nt\n\
+#define _internalthreadargsproto_ _nrn_mechanism_cache_range* _ml, size_t _iml, Datum* _ppvar, Datum* _thread, double* _globals, NrnThread* _nt\n\
 ");
     } else {
         Lappendstr(defs_list,
@@ -428,35 +428,10 @@ extern void nrn_promote(Prop*, int, int);\n\
             defs_list,
             "double get_loc_point_process(void*); return (get_loc_point_process(_vptr));\n}\n");
     }
-    /* function to set up _p and _ppvar */
-    Lappendstr(defs_list, "extern void _nrn_setdata_reg(int, void(*)(Prop*));\n");
-    Lappendstr(defs_list, "static void _setdata(Prop* _prop) {\n");
-    if (!point_process) {
-        Lappendstr(defs_list, "_extcall_prop = _prop;\n");
-        Lappendstr(defs_list, "_prop_id = _nrn_get_prop_id(_prop);\n");
-    }
-    if (!vectorize) {
-        Lappendstr(defs_list,
-                   "neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
-                   "_ppvar = _nrn_mechanism_access_dparam(_prop);\n");
-    }
-    Lappendstr(defs_list, "}\n");
 
-    if (point_process) {
-        Lappendstr(defs_list, "static void _hoc_setdata(void* _vptr) { Prop* _prop;\n");
-        Lappendstr(defs_list, "_prop = ((Point_process*)_vptr)->_prop;\n");
-    } else {
-        Lappendstr(defs_list,
-                   "static void _hoc_setdata() {\n Prop *_prop, *hoc_getdata_range(int);\n");
-        Sprintf(buf, "_prop = hoc_getdata_range(_mechtype);\n");
-        Lappendstr(defs_list, buf);
-    }
-    Lappendstr(defs_list, "  _setdata(_prop);\n");
-    if (point_process) {
-        Lappendstr(defs_list, "}\n");
-    } else {
-        Lappendstr(defs_list, "hoc_retpushx(1.);\n}\n");
-    }
+    std::string hoc_setdata_arg = point_process ? "void*" : "";
+    Sprintf(buf, "static void _hoc_setdata(%s);\n", hoc_setdata_arg.c_str());
+    Lappendstr(defs_list, buf);
 
     /* functions */
     Lappendstr(defs_list, "/* connect user functions to hoc names */\n");
@@ -544,11 +519,6 @@ extern void nrn_promote(Prop*, int, int);\n\
         }
     }
 
-    emit_check_table_thread = 0;
-    if (vectorize && check_tables_threads(defs_list)) {
-        emit_check_table_thread = 1;
-    }
-
     /* per thread top LOCAL */
     /* except those that are marked assigned_to_ == 2 stay static double */
     if (vectorize && toplocal_) {
@@ -601,7 +571,7 @@ extern void nrn_promote(Prop*, int, int);\n\
     }
     /* per thread global data */
     gind = 0;
-    if (vectorize)
+    if (vectorize) {
         SYMLISTITER {
             s = SYM(q);
             if (s->nrntype & (NRNGLOBAL) && s->assigned_to_ == 1) {
@@ -612,8 +582,15 @@ extern void nrn_promote(Prop*, int, int);\n\
                 }
             }
         }
+    }
     /* double scalars declared internally */
     Lappendstr(defs_list, "/* declare global and static user variables */\n");
+    Sprintf(buf, "#define gind %d\n", gind);
+    Lappendstr(defs_list, buf);
+    if (!gind) {
+        Sprintf(buf, "#define _gth 0\n");
+        Lappendstr(defs_list, buf);
+    }
     if (gind) {
         Sprintf(buf,
                 "static int _thread1data_inuse = 0;\nstatic double _thread1data[%d];\n#define _gth "
@@ -644,7 +621,7 @@ extern void nrn_promote(Prop*, int, int);\n\
                 if (s->subtype & ARRAY) {
                     Sprintf(buf,
                             "#define %s%s (_thread1data + %d)\n\
-#define %s (_thread[_gth].get<double*>() + %d)\n",
+#define %s (_globals + %d)\n",
                             s->name,
                             suffix,
                             gind,
@@ -653,7 +630,7 @@ extern void nrn_promote(Prop*, int, int);\n\
                 } else {
                     Sprintf(buf,
                             "#define %s%s _thread1data[%d]\n\
-#define %s _thread[_gth].get<double*>()[%d]\n",
+#define %s _globals[%d]\n",
                             s->name,
                             suffix,
                             gind,
@@ -682,6 +659,11 @@ extern void nrn_promote(Prop*, int, int);\n\
             }
             Lappendstr(defs_list, buf);
         }
+    }
+
+    emit_check_table_thread = 0;
+    if (vectorize && check_tables_threads(defs_list)) {
+        emit_check_table_thread = 1;
     }
 
     Lappendstr(defs_list, "/* some parameters have upper and lower limits */\n");
@@ -739,18 +721,50 @@ extern void nrn_promote(Prop*, int, int);\n\
     Lappendstr(defs_list, "{0, 0, 0}\n};\n");
     Lappendstr(defs_list, "static double _sav_indep;\n");
     if (ba_index_ > 0) {
-        Lappendstr(defs_list,
-                   "static void _ba1(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, "
-                   "Memb_list* _ml, size_t _iml, _nrn_model_sorted_token const&)");
-        for (i = 2; i <= ba_index_; ++i) {
+        for (int i = 1; i <= ba_index_; ++i) {
             Sprintf(buf,
-                    ", _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, Memb_list* "
-                    "_ml, size_t _iml, _nrn_model_sorted_token const&)",
+                    "static void _ba%d(Node*_nd, Datum* _ppd, Datum* _thread, NrnThread* _nt, "
+                    "Memb_list* _ml, size_t _iml, _nrn_model_sorted_token const&);\n",
                     i);
             Lappendstr(defs_list, buf);
         }
-        Lappendstr(defs_list, ";\n");
     }
+
+    /* function to set up _p and _ppvar */
+    Lappendstr(defs_list, "extern void _nrn_setdata_reg(int, void(*)(Prop*));\n");
+    Lappendstr(defs_list, "static void _setdata(Prop* _prop) {\n");
+    if (!point_process) {
+        Lappendstr(defs_list, "_extcall_prop = _prop;\n");
+        Lappendstr(defs_list, "_prop_id = _nrn_get_prop_id(_prop);\n");
+    }
+    if (!vectorize) {
+        Lappendstr(defs_list,
+                   "neuron::legacy::set_globals_from_prop(_prop, _ml_real, _ml, _iml);\n"
+                   "_ppvar = _nrn_mechanism_access_dparam(_prop);\n");
+        if (!artificial_cell) {
+            Lappendstr(defs_list,
+                       "Node * _node = _nrn_mechanism_access_node(_prop);\n"
+                       "v = _nrn_mechanism_access_voltage(_node);\n");
+        }
+    }
+    Lappendstr(defs_list, "}\n");
+
+    if (point_process) {
+        Lappendstr(defs_list, "static void _hoc_setdata(void* _vptr) { Prop* _prop;\n");
+        Lappendstr(defs_list, "_prop = ((Point_process*)_vptr)->_prop;\n");
+    } else {
+        Lappendstr(defs_list,
+                   "static void _hoc_setdata() {\n Prop *_prop, *hoc_getdata_range(int);\n");
+        Sprintf(buf, "_prop = hoc_getdata_range(_mechtype);\n");
+        Lappendstr(defs_list, buf);
+    }
+    Lappendstr(defs_list, "  _setdata(_prop);\n");
+    if (point_process) {
+        Lappendstr(defs_list, "}\n");
+    } else {
+        Lappendstr(defs_list, "hoc_retpushx(1.);\n}\n");
+    }
+
 
     /******** what normally goes into cabvars.h structures */
 
@@ -1579,6 +1593,8 @@ void ldifusreg() {
             "_nrn_model_sorted_token const& _sorted_token) {\n"
             "  _nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _ml_arg->_type()};\n"
             "  auto* const _ml = &_lmr;\n"
+            "  double* _globals = nullptr;\n"
+            "  if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n"
             "  *_pdvol = ",
             n,
             n);
@@ -1933,10 +1949,13 @@ void bablk(int ba, int type, Item* q1, Item* q2) {
     insertstr(q1, buf);
     q = q1->next;
     vectorize_substitute(insertstr(q, ""), "Datum* _ppvar;");
-    qv = insertstr(q,
-                   "_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, "
-                   "_ml_arg->_type()}; auto* const "
-                   "_ml = &_lmr;\n");
+    qv = insertstr(
+        q,
+        "_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, "
+        "_ml_arg->_type()}; auto* const "
+        "_ml = &_lmr;\n"
+        "double* _globals = nullptr;\n"
+        "if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n");
     qv = insertstr(q, "_ppvar = _ppd;\n");
     movelist(qb, q2, procfunc);
 
@@ -2496,7 +2515,7 @@ int iondef(int* p_pointercount) {
 
     if (diamdec) { /* must be last */
         Sprintf(buf,
-                "#define diam	*_ppvar[%d].get<double*>()\n",
+                "#define diam	(*(_ml->dptr_field<%d>(_iml)))\n",
                 ioncount + *p_pointercount + num_random_vars);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
@@ -2504,7 +2523,7 @@ int iondef(int* p_pointercount) {
     if (areadec) { /* must be last, if we add any more the administrative
             procedures must be redone */
         Sprintf(buf,
-                "#define area	*_ppvar[%d].get<double*>()\n",
+                "#define area	(*(_ml->dptr_field<%d>(_iml)))\n",
                 ioncount + *p_pointercount + num_random_vars + diamdec);
         q2 = lappendstr(defs_list, buf);
         q2->itemtype = VERBATIM;
@@ -2773,18 +2792,21 @@ void out_nt_ml_frag(List* p) {
     vectorize_substitute(lappendstr(p, ""), "  Datum* _ppvar;\n");
     vectorize_substitute(lappendstr(p, ""), "  size_t _iml;");
     vectorize_substitute(lappendstr(p, ""), "  _nrn_mechanism_cache_range* _ml;");
-    Lappendstr(p,
-               "  Node* _nd{};\n"
-               "  double _v{};\n"
-               "  int _cntml;\n"
-               "  _nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n"
-               "  _ml = &_lmr;\n"
-               "  _cntml = _ml_arg->_nodecount;\n"
-               "  Datum *_thread{_ml_arg->_thread};\n"
-               "  for (_iml = 0; _iml < _cntml; ++_iml) {\n"
-               "    _ppvar = _ml_arg->_pdata[_iml];\n"
-               "    _nd = _ml_arg->_nodelist[_iml];\n"
-               "    v = NODEV(_nd);\n");
+    Lappendstr(
+        p,
+        "  Node* _nd{};\n"
+        "  double _v{};\n"
+        "  int _cntml;\n"
+        "  _nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n"
+        "  _ml = &_lmr;\n"
+        "  _cntml = _ml_arg->_nodecount;\n"
+        "  Datum *_thread{_ml_arg->_thread};\n"
+        "  double* _globals = nullptr;\n"
+        "  if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n"
+        "  for (_iml = 0; _iml < _cntml; ++_iml) {\n"
+        "    _ppvar = _ml_arg->_pdata[_iml];\n"
+        "    _nd = _ml_arg->_nodelist[_iml];\n"
+        "    v = NODEV(_nd);\n");
 }
 
 void cvode_emit_interface() {
@@ -3046,7 +3068,9 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
         "  auto* const _ml = &_ml_real;\n"
         "  size_t const _iml{};\n");
     q = insertstr(qstmt, "  _ppvar = _nrn_mechanism_access_dparam(_pnt->_prop);\n");
-    vectorize_substitute(insertstr(q, ""), "  _thread = nullptr; _nt = (NrnThread*)_pnt->_vnt;");
+    vectorize_substitute(
+        insertstr(q, ""),
+        "  _thread = nullptr; double* _globals = nullptr; _nt = (NrnThread*)_pnt->_vnt;");
     if (debugging_) {
         if (0) {
             insertstr(qstmt, " assert(_tsav <= t); _tsav = t;");
@@ -3137,7 +3161,8 @@ void net_init(Item* qinit, Item* qp2) {
                          "  auto* const _ml = &_ml_real;\n"
                          "  size_t const _iml{};\n"
                          "  Datum* _ppvar = _nrn_mechanism_access_dparam(_pnt->_prop);\n"
-                         "  Datum* _thread = (Datum*)0;\n"
+                         "  Datum* _thread = nullptr;\n"
+                         "  double* _globals = nullptr;\n"
                          "  NrnThread* _nt = (NrnThread*)_pnt->_vnt;\n");
     if (net_init_q1_) {
         diag("NET_RECEIVE block can contain only one INITIAL block", (char*) 0);

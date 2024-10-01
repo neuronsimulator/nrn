@@ -9,7 +9,7 @@ dependencies:
   - cmake
   - xorg-libxcomposite
   - ffmpeg
-  - cython<3
+  - cython
   - pandoc
   - mpich
   - pip

@@ -354,7 +354,7 @@ def setup_package():
     NRN_COLLECT_DIRS = ["bin", "lib", "include", "share"]
 
     docs_require = []  # sphinx, themes, etc
-    maybe_rxd_reqs = ["numpy", "Cython<3"] if Components.RX3D else []
+    maybe_rxd_reqs = ["numpy", "Cython"] if Components.RX3D else []
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ["pytest-runner"] if "test" in sys.argv else []
 
@@ -379,7 +379,6 @@ def setup_package():
         list,
         library_dirs=[os.path.join(cmake_build_dir, "lib")],
         libraries=ext_common_libraries,
-        language="c++",
     )
 
     logging.info("Extension common compile flags %s" % str(extension_common_params))
@@ -407,7 +406,6 @@ def setup_package():
             ]
             + (
                 [
-                    "-DCORENRN_ENABLE_OPENMP=ON",  # TODO: manylinux portability questions
                     "-DNMODL_ENABLE_PYTHON_BINDINGS=ON",
                 ]
                 if Components.CORENRN
@@ -436,6 +434,7 @@ def setup_package():
                 "neuronmusic",
                 ["src/neuronmusic/neuronmusic.pyx"],
                 include_dirs=["src/nrnpython", "src/nrnmusic"],
+                language="c++",
                 **extension_common_params,
             )
         ]
@@ -513,7 +512,7 @@ def setup_package():
             "numpy>=1.9.3",
             "packaging",
             "find_libpython",
-            "setuptools",
+            "setuptools<=70.3.0",
         ]
         + (
             [

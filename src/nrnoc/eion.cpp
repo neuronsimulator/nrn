@@ -1,7 +1,8 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/eion.cpp,v 1.10 1998/02/26 16:42:50 hines Exp */
 
-#include <stdlib.h>
+#include <cstdlib>
+#include "cabcode.h"
 #include "section.h"
 #include "neuron.h"
 #include "neuron/cache/mechanism_range.hpp"
@@ -14,13 +15,12 @@
 #include <array>
 #include <string>
 
+#include <memory>
+#include <bitset>
+#include <vector>
+
 #undef hoc_retpushx
 
-extern double chkarg(int, double low, double high);
-
-extern Section* nrn_noerr_access();
-
-extern void hoc_register_prop_size(int, int, int);
 
 static constexpr auto nparm = 5;
 static constexpr auto ndparam = 1;
@@ -64,7 +64,7 @@ double nrn_ion_charge(Symbol* sym) {
 
 void ion_register(void) {
     /* hoc level registration of ion name. Return -1 if name already
-    in use and not an ion;	and the mechanism subtype otherwise.
+    in use and not an ion;  and the mechanism subtype otherwise.
     */
     char* name;
     Symbol* s;
@@ -392,10 +392,20 @@ double nrn_nernst_coef(int type) {
 }
 
 /*
-It is generally an error for two models to WRITE the same concentration
+It is generally an error for two models to WRITE the same concentration.
+
+This functions checks that there's no write conflict; and warns if it detects
+one. It also sets respective write flag in the style of the ion.
+
+The argument `i` specifies which concentration is being written to. It's 0 for
+exterior; and 1 for interior.
 */
 void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
-    static long *chk_conc_, *ion_bit_, size_;
+    const int max_ions = 256;
+    static long size_;
+
+    static std::vector<std::bitset<max_ions>> chk_conc_, ion_bit_;
+
     Prop* p;
     int flag, j, k;
     if (i == 1) {
@@ -403,30 +413,27 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
     } else {
         flag = 0400;
     }
-    /* an embarassing hack */
-    /* up to 32 possible ions */
-    /* continuously compute a bitmap that allows determination
-        of which models WRITE which ion concentrations */
+
+    /* Create a vector holding std::bitset to track which ions
+       are being written to the membrane */
     if (n_memb_func > size_) {
-        if (!chk_conc_) {
-            chk_conc_ = (long*) ecalloc(2 * n_memb_func, sizeof(long));
-            ion_bit_ = (long*) ecalloc(n_memb_func, sizeof(long));
-        } else {
-            chk_conc_ = (long*) erealloc(chk_conc_, 2 * n_memb_func * sizeof(long));
-            ion_bit_ = (long*) erealloc(ion_bit_, n_memb_func * sizeof(long));
-            for (j = size_; j < n_memb_func; ++j) {
-                chk_conc_[2 * j] = 0;
-                chk_conc_[2 * j + 1] = 0;
-                ion_bit_[j] = 0;
-            }
+        chk_conc_.resize(2 * n_memb_func);
+        ion_bit_.resize(n_memb_func);
+
+        for (j = size_; j < n_memb_func; ++j) {
+            chk_conc_[2 * j].reset();
+            chk_conc_[2 * j + 1].reset();
+            ion_bit_[j].reset();
         }
+
         size_ = n_memb_func;
     }
     for (k = 0, j = 0; j < n_memb_func; ++j) {
         if (nrn_is_ion(j)) {
-            ion_bit_[j] = (1 << k);
+            assert(k < max_ions);
+            ion_bit_[j].reset();
+            ion_bit_[j].set(k);
             ++k;
-            assert(k < sizeof(long) * 8);
         }
     }
 
@@ -437,7 +444,8 @@ void nrn_check_conc_write(Prop* p_ok, Prop* pion, int i) {
             if (p == p_ok) {
                 continue;
             }
-            if (chk_conc_[2 * p->_type + i] & ion_bit_[pion->_type]) {
+            auto rst = chk_conc_[2 * p->_type + i] & ion_bit_[pion->_type];
+            if (rst.any()) {
                 char buf[300];
                 Sprintf(buf,
                         "%.*s%c is being written at the same location by %s and %s",
@@ -546,13 +554,13 @@ void nrn_promote(Prop* p, int conc, int rev) {
 }
 
 /*the bitmap is
-03	concentration unused, nrnocCONST, DEP, STATE
-04	initialize concentrations
-030	reversal potential unused, nrnocCONST, DEP, STATE
-040	initialize reversal potential
-0100	calc reversal during fadvance
-0200	ci being written by a model
-0400	co being written by a model
+  03  concentration unused, nrnocCONST, DEP, STATE
+  04  initialize concentrations
+ 030  reversal potential unused, nrnocCONST, DEP, STATE
+ 040  initialize reversal potential
+0100  calc reversal during fadvance
+0200  ci being written by a model
+0400  co being written by a model
 */
 
 /* Must be called prior to any channels which update the currents */
@@ -633,7 +641,7 @@ void second_order_cur(NrnThread* nt) {
     extern int secondorder;
     NrnThreadMembList* tml;
     Memb_list* ml;
-    int j, i, i2;
+    int i, i2;
     constexpr auto c = 3;
     constexpr auto dc = 4;
     if (secondorder == 2) {

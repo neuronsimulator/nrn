@@ -225,9 +225,7 @@ class Cvode {
 
   public:
     bool structure_change_;
-#if USENEOSIM
-    TQueue* neosim_self_events_;
-#endif
+
   public:
     CvodeThreadData* ctd_;
     NrnThread* nth_;  // for lvardt

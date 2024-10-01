@@ -89,7 +89,7 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping) {
                     std::vector<double> segment_factors(data_lfp.begin() + factor_offset,
                                                         data_lfp.begin() + factor_offset +
                                                             n_electrodes);
-                    cmap->add_segment_lfp_factor(data_seg[i], segment_factors);
+                    cmap->add_segment_lfp_factor(data_seg[i_seg], segment_factors);
                 }
             }
             cmap->add_sec_map(smap);

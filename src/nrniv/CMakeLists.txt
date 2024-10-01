@@ -170,12 +170,6 @@ if(MINGW)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/dlfcn.c)
 endif()
 
-# NRN_ENABLE_MODULE_INSTALL will create a separate nrnpython lib
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  # Include nrnpython in nrniv - useful for single lib neuron and wheels
-  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNPYTHON_SRC_FILES})
-endif()
-
 if(NOT NRN_ENABLE_INTERVIEWS)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_IVOS_SRC_FILES})
 endif()
@@ -399,12 +393,13 @@ include_directories(${NRN_INCLUDE_DIRS})
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 target_link_libraries(nrniv_lib nrngnu)
 target_link_libraries(nrniv_lib sparse13)
+target_link_libraries(nrniv_lib fmt::fmt)
 target_include_directories(nrniv_lib SYSTEM PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  target_include_directories(nrniv_lib PUBLIC "${NRN_DEFAULT_PYTHON_INCLUDES}")
+  target_link_libraries(nrniv_lib nrnpython)
 endif()
 if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv_lib Threads::Threads)
@@ -454,10 +449,6 @@ endif()
 # =============================================================================
 # Link with all libraries
 # =============================================================================
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  target_link_libraries(nrniv_lib ${NRN_DEFAULT_PYTHON_LIBRARIES})
-endif()
-
 if(NRN_ENABLE_MPI)
   if(NRN_ENABLE_MPI_DYNAMIC)
     list(LENGTH NRN_MPI_LIBNAME_LIST _num_mpi)
@@ -467,6 +458,7 @@ if(NRN_ENABLE_MPI)
       list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
 
       add_library(${libname}_lib SHARED ${NRN_NRNMPI_SRC_FILES})
+      target_link_libraries(${libname}_lib fmt::fmt)
       target_include_directories(${libname}_lib BEFORE PUBLIC ${include})
       # Note that we do not link here to libmpi. That is dlopen first.
       if(MINGW) # type msmpi only
@@ -500,7 +492,7 @@ if(NRN_ENABLE_INTERVIEWS)
   include_directories(${IV_INCLUDE_DIR})
   target_link_libraries(nrniv_lib interviews)
 else()
-  target_include_directories(nrniv_lib PUBLIC ${NRN_IVOS_SRC_DIR} ${PROJECT_BINARY_DIR}/src/ivos)
+  target_include_directories(nrniv_lib PUBLIC ${NRN_IVOS_SRC_DIR})
 endif()
 
 if(IV_ENABLE_X11_DYNAMIC)

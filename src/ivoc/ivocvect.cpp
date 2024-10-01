@@ -36,6 +36,8 @@
 
 #include "gui-redirect.h"
 
+#include "utils/logger.hpp"
+
 #ifndef PI
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -937,66 +939,66 @@ static Object** v_plot(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.plot", svec_, v);
     Vect* vp = (Vect*) v;
 #if HAVE_IV
-    IFGUI
-    int i;
-    double* y = vp->data();
-    auto n = vp->size();
+    if (hoc_usegui) {
+        int i;
+        double* y = vp->data();
+        auto n = vp->size();
 
-    Object* ob1 = *hoc_objgetarg(1);
-    check_obj_type(ob1, "Graph");
-    Graph* g = (Graph*) (ob1->u.this_pointer);
+        Object* ob1 = *hoc_objgetarg(1);
+        check_obj_type(ob1, "Graph");
+        Graph* g = (Graph*) (ob1->u.this_pointer);
 
-    GraphVector* gv = new GraphVector("");
+        GraphVector* gv = new GraphVector("");
 
-    if (ifarg(5)) {
-        hoc_execerror("Vector.line:", "too many arguments");
-    }
-    if (narg() == 3) {
-        gv->color((colors->color(int(*getarg(2)))));
-        gv->brush((brushes->brush(int(*getarg(3)))));
-    } else if (narg() == 4) {
-        gv->color((colors->color(int(*getarg(3)))));
-        gv->brush((brushes->brush(int(*getarg(4)))));
-    }
+        if (ifarg(5)) {
+            hoc_execerror("Vector.line:", "too many arguments");
+        }
+        if (narg() == 3) {
+            gv->color((colors->color(int(*getarg(2)))));
+            gv->brush((brushes->brush(int(*getarg(3)))));
+        } else if (narg() == 4) {
+            gv->color((colors->color(int(*getarg(3)))));
+            gv->brush((brushes->brush(int(*getarg(4)))));
+        }
 
-    if (narg() == 2 || narg() == 4) {
-        // passed a vector or xinterval and possibly line attributes
-        if (hoc_is_object_arg(2)) {
-            // passed a vector
-            Vect* vp2 = vector_arg(2);
-            n = std::min(n, vp2->size());
-            for (i = 0; i < n; ++i) {
-                gv->add(vp2->elem(i),
-                        neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                               y + i});
+        if (narg() == 2 || narg() == 4) {
+            // passed a vector or xinterval and possibly line attributes
+            if (hoc_is_object_arg(2)) {
+                // passed a vector
+                Vect* vp2 = vector_arg(2);
+                n = std::min(n, vp2->size());
+                for (i = 0; i < n; ++i) {
+                    gv->add(vp2->elem(i),
+                            neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                                   y + i});
+                }
+            } else {
+                // passed xinterval
+                double interval = *getarg(2);
+                for (i = 0; i < n; ++i) {
+                    gv->add(i * interval,
+                            neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                                   y + i});
+                }
             }
         } else {
-            // passed xinterval
-            double interval = *getarg(2);
+            // passed line attributes or nothing
             for (i = 0; i < n; ++i) {
-                gv->add(i * interval,
+                gv->add(i,
                         neuron::container::data_handle<double>{neuron::container::do_not_search,
                                                                y + i});
             }
         }
-    } else {
-        // passed line attributes or nothing
-        for (i = 0; i < n; ++i) {
-            gv->add(i,
-                    neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                           y + i});
+
+        if (vp->label_) {
+            GLabel* glab = g->label(vp->label_);
+            gv->label(glab);
+            ((GraphItem*) g->component(g->glyph_index(glab)))->save(false);
         }
-    }
+        g->append(new GPolyLineItem(gv));
 
-    if (vp->label_) {
-        GLabel* glab = g->label(vp->label_);
-        gv->label(glab);
-        ((GraphItem*) g->component(g->glyph_index(glab)))->save(false);
+        g->flush();
     }
-    g->append(new GPolyLineItem(gv));
-
-    g->flush();
-    ENDGUI
 #endif
     return vp->temp_objvar();
 }
@@ -1005,43 +1007,43 @@ static Object** v_ploterr(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.ploterr", svec_, v);
     Vect* vp = (Vect*) v;
 #if HAVE_IV
-    IFGUI
-    int n = vp->size();
+    if (hoc_usegui) {
+        int n = vp->size();
 
-    Object* ob1 = *hoc_objgetarg(1);
-    check_obj_type(ob1, "Graph");
-    Graph* g = (Graph*) (ob1->u.this_pointer);
+        Object* ob1 = *hoc_objgetarg(1);
+        check_obj_type(ob1, "Graph");
+        Graph* g = (Graph*) (ob1->u.this_pointer);
 
-    char style = '-';
-    double size = 4;
-    if (ifarg(4))
-        size = chkarg(4, 0.1, 100.);
-    const ivColor* color = g->color();
-    const ivBrush* brush = g->brush();
-    if (ifarg(5)) {
-        color = colors->color(int(*getarg(5)));
-        brush = brushes->brush(int(*getarg(6)));
+        char style = '-';
+        double size = 4;
+        if (ifarg(4))
+            size = chkarg(4, 0.1, 100.);
+        const ivColor* color = g->color();
+        const ivBrush* brush = g->brush();
+        if (ifarg(5)) {
+            color = colors->color(int(*getarg(5)));
+            brush = brushes->brush(int(*getarg(6)));
+        }
+
+        Vect* vp2 = vector_arg(2);
+        if (vp2->size() < n)
+            n = vp2->size();
+
+        Vect* vp3 = vector_arg(3);
+        if (vp3->size() < n)
+            n = vp3->size();
+
+        for (int i = 0; i < n; ++i) {
+            g->begin_line();
+
+            g->line(vp2->elem(i), vp->elem(i) - vp3->elem(i));
+            g->line(vp2->elem(i), vp->elem(i) + vp3->elem(i));
+            g->mark(vp2->elem(i), vp->elem(i) - vp3->elem(i), style, size, color, brush);
+            g->mark(vp2->elem(i), vp->elem(i) + vp3->elem(i), style, size, color, brush);
+        }
+
+        g->flush();
     }
-
-    Vect* vp2 = vector_arg(2);
-    if (vp2->size() < n)
-        n = vp2->size();
-
-    Vect* vp3 = vector_arg(3);
-    if (vp3->size() < n)
-        n = vp3->size();
-
-    for (int i = 0; i < n; ++i) {
-        g->begin_line();
-
-        g->line(vp2->elem(i), vp->elem(i) - vp3->elem(i));
-        g->line(vp2->elem(i), vp->elem(i) + vp3->elem(i));
-        g->mark(vp2->elem(i), vp->elem(i) - vp3->elem(i), style, size, color, brush);
-        g->mark(vp2->elem(i), vp->elem(i) + vp3->elem(i), style, size, color, brush);
-    }
-
-    g->flush();
-    ENDGUI
 #endif
     return vp->temp_objvar();
 }
@@ -1050,48 +1052,48 @@ static Object** v_line(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.line", svec_, v);
     Vect* vp = (Vect*) v;
 #if HAVE_IV
-    IFGUI
-    int i;
-    auto n = vp->size();
+    if (hoc_usegui) {
+        int i;
+        auto n = vp->size();
 
-    Object* ob1 = *hoc_objgetarg(1);
-    check_obj_type(ob1, "Graph");
-    Graph* g = (Graph*) (ob1->u.this_pointer);
-    char* s = vp->label_;
+        Object* ob1 = *hoc_objgetarg(1);
+        check_obj_type(ob1, "Graph");
+        Graph* g = (Graph*) (ob1->u.this_pointer);
+        char* s = vp->label_;
 
-    if (ifarg(5)) {
-        hoc_execerror("Vector.line:", "too many arguments");
-    }
-    if (narg() == 3) {
-        g->begin_line(colors->color(int(*getarg(2))), brushes->brush(int(*getarg(3))), s);
-    } else if (narg() == 4) {
-        g->begin_line(colors->color(int(*getarg(3))), brushes->brush(int(*getarg(4))), s);
-    } else {
-        g->begin_line(s);
-    }
-
-    if (narg() == 2 || narg() == 4) {
-        // passed a vector or xinterval and possibly line attributes
-        if (hoc_is_object_arg(2)) {
-            // passed a vector
-            Vect* vp2 = vector_arg(2);
-            n = std::min(n, vp2->size());
-            for (i = 0; i < n; ++i)
-                g->line(vp2->elem(i), vp->elem(i));
-        } else {
-            // passed xinterval
-            double interval = *getarg(2);
-            for (i = 0; i < n; ++i)
-                g->line(i * interval, vp->elem(i));
+        if (ifarg(5)) {
+            hoc_execerror("Vector.line:", "too many arguments");
         }
-    } else {
-        // passed line attributes or nothing
-        for (i = 0; i < n; ++i)
-            g->line(i, vp->elem(i));
-    }
+        if (narg() == 3) {
+            g->begin_line(colors->color(int(*getarg(2))), brushes->brush(int(*getarg(3))), s);
+        } else if (narg() == 4) {
+            g->begin_line(colors->color(int(*getarg(3))), brushes->brush(int(*getarg(4))), s);
+        } else {
+            g->begin_line(s);
+        }
 
-    g->flush();
-    ENDGUI
+        if (narg() == 2 || narg() == 4) {
+            // passed a vector or xinterval and possibly line attributes
+            if (hoc_is_object_arg(2)) {
+                // passed a vector
+                Vect* vp2 = vector_arg(2);
+                n = std::min(n, vp2->size());
+                for (i = 0; i < n; ++i)
+                    g->line(vp2->elem(i), vp->elem(i));
+            } else {
+                // passed xinterval
+                double interval = *getarg(2);
+                for (i = 0; i < n; ++i)
+                    g->line(i * interval, vp->elem(i));
+            }
+        } else {
+            // passed line attributes or nothing
+            for (i = 0; i < n; ++i)
+                g->line(i, vp->elem(i));
+        }
+
+        g->flush();
+    }
 #endif
     return vp->temp_objvar();
 }
@@ -1101,48 +1103,48 @@ static Object** v_mark(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.mark", svec_, v);
     Vect* vp = (Vect*) v;
 #if HAVE_IV
-    IFGUI
-    int i;
-    int n = vp->size();
+    if (hoc_usegui) {
+        int i;
+        int n = vp->size();
 
-    Object* ob1 = *hoc_objgetarg(1);
-    check_obj_type(ob1, "Graph");
-    Graph* g = (Graph*) (ob1->u.this_pointer);
+        Object* ob1 = *hoc_objgetarg(1);
+        check_obj_type(ob1, "Graph");
+        Graph* g = (Graph*) (ob1->u.this_pointer);
 
-    char style = '+';
-    if (ifarg(3)) {
-        if (hoc_is_str_arg(3)) {
-            style = *gargstr(3);
+        char style = '+';
+        if (ifarg(3)) {
+            if (hoc_is_str_arg(3)) {
+                style = *gargstr(3);
+            } else {
+                style = char(chkarg(3, 0, 10));
+            }
+        }
+        double size = 12;
+        if (ifarg(4))
+            size = chkarg(4, 0.1, 100.);
+        const ivColor* color = g->color();
+        if (ifarg(5))
+            color = colors->color(int(*getarg(5)));
+        const ivBrush* brush = g->brush();
+        if (ifarg(6))
+            brush = brushes->brush(int(*getarg(6)));
+
+        if (hoc_is_object_arg(2)) {
+            // passed a vector
+            Vect* vp2 = vector_arg(2);
+
+            for (i = 0; i < n; ++i) {
+                g->mark(vp2->elem(i), vp->elem(i), style, size, color, brush);
+            }
+
         } else {
-            style = char(chkarg(3, 0, 10));
+            // passed xinterval
+            double interval = *getarg(2);
+            for (i = 0; i < n; ++i) {
+                g->mark(i * interval, vp->elem(i), style, size, color, brush);
+            }
         }
     }
-    double size = 12;
-    if (ifarg(4))
-        size = chkarg(4, 0.1, 100.);
-    const ivColor* color = g->color();
-    if (ifarg(5))
-        color = colors->color(int(*getarg(5)));
-    const ivBrush* brush = g->brush();
-    if (ifarg(6))
-        brush = brushes->brush(int(*getarg(6)));
-
-    if (hoc_is_object_arg(2)) {
-        // passed a vector
-        Vect* vp2 = vector_arg(2);
-
-        for (i = 0; i < n; ++i) {
-            g->mark(vp2->elem(i), vp->elem(i), style, size, color, brush);
-        }
-
-    } else {
-        // passed xinterval
-        double interval = *getarg(2);
-        for (i = 0; i < n; ++i) {
-            g->mark(i * interval, vp->elem(i), style, size, color, brush);
-        }
-    }
-    ENDGUI
 #endif
     return vp->temp_objvar();
 }
@@ -3841,7 +3843,7 @@ static void steer_x(void* v) {
 }
 
 void Vector_reg() {
-    class2oc("Vector", v_cons, v_destruct, v_members, NULL, v_retobj_members, v_retstr_members);
+    class2oc("Vector", v_cons, v_destruct, v_members, v_retobj_members, v_retstr_members);
     svec_ = hoc_lookup("Vector");
     // now make the x variable an actual double
     Symbol* sv = hoc_lookup("Vector");

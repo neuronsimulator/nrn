@@ -85,12 +85,12 @@ void c_out() {
     P("#undef PI\n");
     P("#define nil 0\n");
     P("#define _pval pval\n");  // due to some old models using _pval
-    P("// clang-format on\n");
+    P("// clang-format off\n");
     P("#include \"md1redef.h\"\n");
     P("#include \"section_fwd.hpp\"\n");
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
-    P("// clang-format off\n");
+    P("// clang-format on\n");
     P("#include \"neuron/cache/mechanism_range.hpp\"\n");
     P("#include <vector>\n");
 
@@ -536,6 +536,8 @@ void c_out_vectorize() {
     P("_ni = _ml_arg->_nodeindices;\n");
     P("_cntml = _ml_arg->_nodecount;\n");
     P("_thread = _ml_arg->_thread;\n");
+    P("double* _globals = nullptr;\n");
+    P("if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n");
     /*check_tables();*/
     P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
     P(" _ppvar = _ml_arg->_pdata[_iml];\n");
@@ -598,6 +600,8 @@ void c_out_vectorize() {
         P("_ni = _ml_arg->_nodeindices;\n");
         P("_cntml = _ml_arg->_nodecount;\n");
         P("_thread = _ml_arg->_thread;\n");
+        P("double* _globals = nullptr;\n");
+        P("if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
         P(" _ppvar = _ml_arg->_pdata[_iml];\n");
         ext_vdef();
@@ -664,6 +668,8 @@ void c_out_vectorize() {
         P("_ni = _ml_arg->_nodeindices;\n");
         P("_cntml = _ml_arg->_nodecount;\n");
         P("_thread = _ml_arg->_thread;\n");
+        P("double* _globals = nullptr;\n");
+        P("if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n");
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
         if (electrode_current) {
             P(" _nd = _ml_arg->_nodelist[_iml];\n");
@@ -700,6 +706,8 @@ void c_out_vectorize() {
         P("_ni = _ml_arg->_nodeindices;\n");
         P("size_t _cntml = _ml_arg->_nodecount;\n");
         P("_thread = _ml_arg->_thread;\n");
+        P("double* _globals = nullptr;\n");
+        P("if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n");
         P("for (size_t _iml = 0; _iml < _cntml; ++_iml) {\n");
         P(" _ppvar = _ml_arg->_pdata[_iml];\n");
         P(" _nd = _ml_arg->_nodelist[_iml];\n");

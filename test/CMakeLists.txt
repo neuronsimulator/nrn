@@ -41,6 +41,11 @@ foreach(target ${catch2_targets})
 endforeach()
 
 # =============================================================================
+# API test executables
+# =============================================================================
+add_subdirectory(api)
+
+# =============================================================================
 # Copy necessary hoc files to build directory if they have not been copied yet
 # =============================================================================
 add_dependencies(testneuron copy_share_lib_to_build)
@@ -95,11 +100,7 @@ list(APPEND TESTS ringtest)
 # Add small hoc test
 # =============================================================================
 set(HOCTEST_DIR ${PROJECT_SOURCE_DIR}/test/hoc_tests/connect_dend)
-if(NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY)
-  set(REF_FILE cell3soma.core.dat.ref)
-else()
-  set(REF_FILE cell3soma.dat.ref)
-endif()
+set(REF_FILE cell3soma.dat.ref)
 add_test(
   connect_dend
   ${CMAKE_COMMAND}

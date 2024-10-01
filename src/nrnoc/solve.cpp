@@ -501,7 +501,7 @@ void sec_free(hoc_Item* secitem) {
     prop_free(&(sec->prop));
     node_free(sec);
     if (!sec->parentsec && sec->parentnode) {
-        delete sec->parentnode;
+        delete std::exchange(sec->parentnode, nullptr);
     }
 #if DIAMLIST
     if (sec->pt3d) {
@@ -582,9 +582,9 @@ Node::~Node() {
 // this is delete[]...apart from the order?
 void node_destruct(Node** pnode, int n) {
     for (int i = n - 1; i >= 0; --i) {
-        delete pnode[i];
+        delete std::exchange(pnode[i], nullptr);
     }
-    delete[] pnode;
+    delete[] std::exchange(pnode, nullptr);
 }
 
 #if KEEP_NSEG_PARM

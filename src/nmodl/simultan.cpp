@@ -201,7 +201,7 @@ Item* mixed_eqns(Item* q2, Item* q3, Item* q4) /* name, '{', '}' */
     Sprintf(buf,
             "error = nrn_newton_thread(_newtonspace%d, %d, _slist%d, "
             "neuron::scopmath::row_view{_ml, _iml}, %s, _dlist%d, _ml,"
-            " _iml, _ppvar, _thread, _nt);\n",
+            " _iml, _ppvar, _thread, _globals, _nt);\n",
             numlist - 1,
             counts,
             numlist,

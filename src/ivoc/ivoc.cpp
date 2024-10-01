@@ -181,13 +181,13 @@ void nrniv_bind_thread() {
 
 void nrn_err_dialog(const char* mes) {
 #if HAVE_IV
-    IFGUI
-    if (nrn_err_dialog_active_ && !Session::instance()->done()) {
-        char m[1024];
-        Sprintf(m, "%s (See terminal window)", mes);
-        continue_dialog(m);
+    if (hoc_usegui) {
+        if (nrn_err_dialog_active_ && !Session::instance()->done()) {
+            char m[1024];
+            Sprintf(m, "%s (See terminal window)", mes);
+            continue_dialog(m);
+        }
     }
-    ENDGUI
 #endif
 }
 
@@ -239,12 +239,12 @@ bool setAcceptInputCallback(bool b) {
 
 void ivoc_style() {
     TRY_GUI_REDIRECT_DOUBLE("ivoc_style", NULL);
-    IFGUI
-    if (Session::instance()) {
-        Style* s = Session::instance()->style();
-        s->remove_attribute(gargstr(1));
-        s->attribute(gargstr(1), gargstr(2), -5);
-    }
+    if (hoc_usegui) {
+        if (Session::instance()) {
+            Style* s = Session::instance()->style();
+            s->remove_attribute(gargstr(1));
+            s->attribute(gargstr(1), gargstr(2), -5);
+        }
 #if 0
 String s;
 if (WidgetKit::instance()->style()->find_attribute(gargstr(1)+1, s)) {
@@ -253,7 +253,7 @@ if (WidgetKit::instance()->style()->find_attribute(gargstr(1)+1, s)) {
 	printf("couldn't find %s\n", gargstr(1));
 }
 #endif
-    ENDGUI
+    }
     hoc_ret();
     hoc_pushx(1.);
 }
@@ -373,12 +373,12 @@ int Oc::run(const char* buf, bool show_err_mes) {
         err = hoc_oc(buf);
     } catch (std::exception const& e) {
         if (show_err_mes) {
-            std::cerr << "Oc::run: caught exception";
+            Fprintf(stderr, "Oc::run: caught exception");
             std::string_view what{e.what()};
             if (!what.empty()) {
-                std::cerr << ": " << what;
+                Fprintf(stderr, fmt::format(": {}", what).c_str());
             }
-            std::cerr << std::endl;
+            Fprintf(stderr, "\n");
         }
         err = 1;
     }
@@ -487,22 +487,22 @@ extern void nrniv_bind_call(void);
 #endif
 
 void hoc_notify_iv() {
-    IFGUI
+    if (hoc_usegui) {
 #ifdef MINGW
-    if (!nrn_is_gui_thread()) {
-        // allow gui thread to run
-        nrnpy_pass();
-        hoc_pushx(0.);
-        hoc_ret();
-        return;
-    }
-    nrniv_bind_call();
+        if (!nrn_is_gui_thread()) {
+            // allow gui thread to run
+            nrnpy_pass();
+            hoc_pushx(0.);
+            hoc_ret();
+            return;
+        }
+        nrniv_bind_call();
 #endif
-    Resource::flush();
-    Oc oc;
-    oc.notify();
-    single_event_run();
-    ENDGUI
+        Resource::flush();
+        Oc oc;
+        oc.notify();
+        single_event_run();
+    }
     hoc_pushx(1.);
     hoc_ret();
 }

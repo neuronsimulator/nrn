@@ -4,7 +4,7 @@
 #include <string.h>
 #include "grids.h"
 #include "rxd.h"
-#include <nrnwrap_Python.h>
+#include "nrnwrap_Python.h"
 #include <cmath>
 #include <ocmatrix.h>
 #include <cfloat>
@@ -35,10 +35,10 @@ static void ecs_refresh_reactions(const int n) {
     int k;
     if (threaded_reactions_tasks != NULL) {
         for (k = 0; k < NUM_THREADS; k++) {
-            SAFE_FREE(threaded_reactions_tasks[k].onset);
-            SAFE_FREE(threaded_reactions_tasks[k].offset);
+            free(threaded_reactions_tasks[k].onset);
+            free(threaded_reactions_tasks[k].offset);
         }
-        SAFE_FREE(threaded_reactions_tasks);
+        free(threaded_reactions_tasks);
     }
     threaded_reactions_tasks = create_threaded_reactions(n);
 }
@@ -61,13 +61,13 @@ void clear_rates_ecs(void) {
     ECS_Grid_node* g;
 
     for (r = ecs_reactions; r != NULL; r = tmp) {
-        SAFE_FREE(r->species_states);
+        free(r->species_states);
         if (r->subregion) {
-            SAFE_FREE(r->subregion);
+            free(r->subregion);
         }
 
         tmp = r->next;
-        SAFE_FREE(r);
+        free(r);
     }
     ecs_reactions = NULL;
 
@@ -163,14 +163,14 @@ Reaction* ecs_create_reaction(int list_idx,
  * grid_id - the grid id within the linked list - this corresponds to species
  * ECSReactionRate - the reaction function
  */
-extern "C" void ics_register_reaction(int list_idx,
-                                      int num_species,
-                                      int num_params,
-                                      int* species_id,
-                                      uint64_t* mc3d_start_indices,
-                                      int mc3d_region_size,
-                                      double* mc3d_mults,
-                                      ECSReactionRate f) {
+extern "C" NRN_EXPORT void ics_register_reaction(int list_idx,
+                                                 int num_species,
+                                                 int num_params,
+                                                 int* species_id,
+                                                 uint64_t* mc3d_start_indices,
+                                                 int mc3d_region_size,
+                                                 double* mc3d_mults,
+                                                 ECSReactionRate f) {
     ecs_create_reaction(list_idx,
                         num_species,
                         num_params,
@@ -189,11 +189,11 @@ extern "C" void ics_register_reaction(int list_idx,
  * grid_id - the grid id within the linked list - this corresponds to species
  * ECSReactionRate - the reaction function
  */
-extern "C" void ecs_register_reaction(int list_idx,
-                                      int num_species,
-                                      int num_params,
-                                      int* species_id,
-                                      ECSReactionRate f) {
+extern "C" NRN_EXPORT void ecs_register_reaction(int list_idx,
+                                                 int num_species,
+                                                 int num_params,
+                                                 int* species_id,
+                                                 ECSReactionRate f) {
     ecs_create_reaction(list_idx, num_species, num_params, species_id, f, NULL, NULL, 0, NULL);
     ecs_refresh_reactions(NUM_THREADS);
 }
@@ -416,12 +416,12 @@ void* ecs_do_reactions(void* dataptr) {
                     }
                 }
 
-                SAFE_FREE(states_cache);
-                SAFE_FREE(states_cache_dx);
-                SAFE_FREE(params_cache);
-                SAFE_FREE(results_array);
-                SAFE_FREE(results_array_dx);
-                SAFE_FREE(mc_mults_array);
+                free(states_cache);
+                free(states_cache_dx);
+                free(params_cache);
+                free(results_array);
+                free(results_array_dx);
+                free(mc_mults_array);
 
                 if (stop)
                     return NULL;
@@ -537,11 +537,11 @@ void* ecs_do_reactions(void* dataptr) {
                     }
                 }
 
-                SAFE_FREE(states_cache);
-                SAFE_FREE(states_cache_dx);
-                SAFE_FREE(params_cache);
-                SAFE_FREE(results_array);
-                SAFE_FREE(results_array_dx);
+                free(states_cache);
+                free(states_cache_dx);
+                free(params_cache);
+                free(results_array);
+                free(results_array_dx);
 
                 if (stop)
                     return NULL;
@@ -599,7 +599,7 @@ void _fadvance_fixed_step_3D(void) {
     scatter_concentrations();
 }
 
-extern "C" void scatter_concentrations(void) {
+extern "C" NRN_EXPORT void scatter_concentrations(void) {
     /* transfer concentrations to classic NEURON */
     Grid_node* grid;
 

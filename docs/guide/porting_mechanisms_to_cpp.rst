@@ -26,7 +26,7 @@ internal numerical methods haven't changed with migration to C++, it is likely
 to be sufficient to adapt MOD files to C++ only and use
 |neuron_with_cpp_mechanisms|.
 If you do decide to preserve compatibility across versions, the preprocessor
-macros described in :ref:`python_verbatim` may prove useful.
+macros described in :ref:`verbatim` may prove useful.
 
 .. note::
   If you have a model that stopped compiling when you upgraded to or beyond

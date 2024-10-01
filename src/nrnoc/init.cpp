@@ -239,8 +239,12 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
     } catch (const std::filesystem::filesystem_error& e) {
         handle = dlopen(relpath, flags);
         if (!handle) {
-            std::cerr << "std::filesystem::absolute failed (" << e.what()
-                      << ") and dlopen failed with '" << relpath << "'" << std::endl;
+            Fprintf(
+                stderr,
+                fmt::format("std::filesystem::absolute failed ({}) and dlopen failed with '{}'\n",
+                            e.what(),
+                            relpath)
+                    .c_str());
 #if DARWIN
             nrn_possible_mismatched_arch(relpath);
 #endif
@@ -841,6 +845,7 @@ void update_mech_ppsym_for_modlrandom(
 
 namespace neuron::mechanism::detail {
 
+
 // Use this if string.c_str() causes possibility of
 // AddressSanitizer: stack-use-after-scope on address
 void register_data_fields(int mechtype,
@@ -877,15 +882,17 @@ void register_data_fields(int mechtype,
                           std::vector<std::pair<const char*, const char*>> const& dparam_info) {
     nrn_prop_param_size_[mechtype] = count_prop_param_size(param_info);
     nrn_prop_dparam_size_[mechtype] = dparam_info.size();
-    delete[] std::exchange(memb_func[mechtype].dparam_semantics, nullptr);
-    if (!dparam_info.empty()) {
-        memb_func[mechtype].dparam_semantics = new int[dparam_info.size()];
+    if (dparam_info.empty()) {
+        memb_func[mechtype].dparam_semantics = nullptr;
+    } else {
+        memb_func[mechtype].dparam_semantics.reset(new int[dparam_info.size()]);
         for (auto i = 0; i < dparam_info.size(); ++i) {
             // dparam_info[i].first is the name of the variable, currently unused...
             memb_func[mechtype].dparam_semantics[i] = dparam_semantics_to_int(
                 dparam_info[i].second);
         }
     }
+
     // Translate param_info into the type we want to use internally now we're fully inside NEURON
     // library code (wheels...)
     std::vector<container::Mechanism::Variable> param_info_new{};
@@ -1018,7 +1025,6 @@ extern void class2oc_base(const char*,
                           void* (*cons)(Object*),
                           void (*destruct)(void*),
                           Member_func*,
-                          int (*checkpoint)(void**),
                           Member_ret_obj_func*,
                           Member_ret_str_func*);
 
@@ -1038,7 +1044,7 @@ int point_register_mech(const char** m,
     Symlist* sl;
     Symbol *s, *s2;
     nrn_load_name_check(m[1]);
-    class2oc_base(m[1], constructor, destructor, fmember, nullptr, nullptr, nullptr);
+    class2oc_base(m[1], constructor, destructor, fmember, nullptr, nullptr);
     s = hoc_lookup(m[1]);
     sl = hoc_symlist;
     hoc_symlist = s->u.ctemplate->symtable;
@@ -1219,7 +1225,7 @@ void hoc_register_tolerance(int mechtype, HocStateTolerance* tol, Symbol*** stol
                         psym[i] = vsym;
                         /*printf("identified %s at index %d of %s\n", vsym->name, index,
                          * msym->name);*/
-                        if (ISARRAY(vsym)) {
+                        if (is_array(*vsym)) {
                             int const na = vsym->arayinfo->sub[0];
                             for (int k = 1; k < na; ++k) {
                                 psym[++i] = vsym;

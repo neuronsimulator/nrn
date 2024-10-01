@@ -53,9 +53,9 @@ mac_m1_cmake_build:
     - echo "python3=$(command -v python3) is really ${real_python}"
     - PYTHONEXECUTABLE=${real_python} ${real_python} -mvenv venv
     - venv/bin/python3 -m ensurepip --upgrade --default-pip
-    - venv/bin/pip install --upgrade pip -r nrn_requirements.txt
     - git submodule update --init --recursive --force --depth 1 -- external/nmodl
     - venv/bin/pip install --upgrade -r external/nmodl/requirements.txt
+    - venv/bin/pip install --upgrade pip -r nrn_requirements.txt
     - source ./venv/bin/activate
     - export PYTHON=${PWD}/venv/bin/python
     - ${PYTHON} --version

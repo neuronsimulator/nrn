@@ -7,7 +7,6 @@ class MatrixMap {
   public:
     MatrixMap(Matrix*);
     MatrixMap(Matrix&);
-    ~MatrixMap();
 
     void alloc(int, int, Node**, int*);
     void mmfree();
@@ -116,7 +115,7 @@ class MatrixMap {
     Matrix& m_;
 
     // the map
-    int plen_;
-    double** pm_;
-    double** ptree_;
+    int plen_ = 0;
+    std::vector<double*> pm_{};
+    std::vector<double*> ptree_{};
 };

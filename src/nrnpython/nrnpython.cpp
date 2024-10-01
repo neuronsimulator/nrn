@@ -1,5 +1,5 @@
-#include <nrnpython.h>
-#include <nrnpy_utils.h>
+#include "nrnpython.h"
+#include "nrnpy_utils.h"
 #include "oc_ansi.h"
 #include <stdio.h>
 #include <InterViews/resource.h>
@@ -7,7 +7,7 @@
 #include <InterViews/session.h>
 #endif
 #include <nrnoc2iv.h>
-#include <hoccontext.h>
+#include "hoccontext.h"
 #include <ocfile.h>  // bool isDirExist(const std::string& path);
 
 #include <hocstr.h>
@@ -124,7 +124,7 @@ int nrnpy_pyrun(const char* fname) {
     if (fp) {
         nrnpython_set_path(fname);
     } else {
-        std::cerr << "Could not open " << fname << std::endl;
+        Fprintf(stderr, fmt::format("Could not open {}\n", fname).c_str());
         return 0;
     }
     fclose(fp);
@@ -175,7 +175,7 @@ static int nrnmingw_pyrun_interactiveloop() {
     return 0;
 }
 
-extern PyObject* nrnpy_hoc();
+extern "C" PyObject* nrnpy_hoc();
 extern PyObject* nrnpy_nrn();
 
 /** @brief Start the Python interpreter.

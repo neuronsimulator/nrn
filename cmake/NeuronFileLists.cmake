@@ -14,8 +14,10 @@ set(HEADER_FILES_TO_INSTALL
     gnu/nrnran123.h
     nrniv/backtrace_utils.h
     nrniv/bbsavestate.h
+    nrniv/neuronapi.h
     nrnmpi/nrnmpidec.h
     nrnoc/cabvars.h
+    nrnoc/cabcode.h
     nrnoc/md1redef.h
     nrnoc/md2redef.h
     nrnoc/membdef.h
@@ -100,11 +102,9 @@ set(OC_FILE_LIST
     memory.cpp
     mswinprt.cpp
     nonlin.cpp
-    ocerf.cpp
     plot.cpp
     plt.cpp
     scoprand.cpp
-    settext.cpp
     symbol.cpp
     version.cpp
     x.cpp
@@ -127,7 +127,6 @@ set(NRNOC_FILE_LIST
     ldifus.cpp
     membfunc.cpp
     memblist.cpp
-    nrnnemo.cpp
     nrntimeout.cpp
     nrnversion.cpp
     passive0.cpp
@@ -150,7 +149,6 @@ set(IVOC_FILE_LIST
     axis.cpp
     bndedval.cpp
     cbwidget.cpp
-    checkpnt.cpp
     epsprint.cpp
     fourier.cpp
     gifimage.cpp
@@ -223,6 +221,7 @@ set(NRNIV_FILE_LIST
     netpar.cpp
     nmodlrandom.cpp
     nonlinz.cpp
+    neuronapi.cpp
     nrncore_write.cpp
     nrncore_write/callbacks/nrncore_callbacks.cpp
     nrncore_write/data/cell_group.cpp
@@ -311,20 +310,6 @@ set(SCOPMATH_FILES_LIST
     tridiag.cpp)
 
 set(NRNMPI_FILES_LIST nrnmpi.cpp memory_usage.cpp bbsmpipack.cpp mpispike.cpp)
-
-# nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
-set(NRNPYTHON_FILES_LIST
-    nrnpython.cpp
-    nrnpy_hoc.cpp
-    nrnpy_nrn.cpp
-    nrnpy_p2h.cpp
-    grids.cpp
-    rxd.cpp
-    rxd_extracellular.cpp
-    rxd_intracellular.cpp
-    rxd_vol.cpp
-    rxd_marching_cubes.cpp
-    rxd_llgramarea.cpp)
 
 # built-in mod files
 set(MODFILE_BASE_NAMES
@@ -428,8 +413,6 @@ nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPA
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRNMPI_FILES_LIST})
-nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
-                     ${NRNPYTHON_FILES_LIST})
 nrn_create_file_list(NRN_MODFILE_BASE_NAMES src/nrnoc ${MODFILE_BASE_NAMES})
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.cpp)
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)
