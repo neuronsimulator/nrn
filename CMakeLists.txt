@@ -253,7 +253,7 @@ if(NOT fmt_FOUND)
 else()
     message(STATUS "fmt has been found on the system")
 endif()
-set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_property(TARGET fmt::fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/Random123/include/Random123"
      DESTINATION "${CMAKE_BINARY_DIR}/include/")
