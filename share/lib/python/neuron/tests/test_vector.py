@@ -156,8 +156,7 @@ class VectorTestCase(unittest.TestCase):
 
 
 def suite():
-    suite = unittest.makeSuite(VectorTestCase, "test")
-    return suite
+    return unittest.defaultTestLoader.loadTestsFromTestCase(VectorTestCase)
 
 
 if __name__ == "__main__":
