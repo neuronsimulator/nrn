@@ -96,7 +96,7 @@ if "--enable-music" in sys.argv:
     Components.MUSIC = True
     sys.argv.remove("--enable-music")
 
-if Components.RX3D:
+if Components.RX3D or Components.MUSIC:
     try:
         from Cython.Distutils import Extension as CyExtension
         from Cython.Distutils import build_ext

@@ -36,6 +36,8 @@ jobs:
 
     env:
       DISPLAY: ${{ ':0' }}
+      MUSIC_INSTALL_DIR: /opt/MUSIC
+      MUSIC_VERSION: 1.2.0
 
     steps:
 
@@ -51,6 +53,21 @@ jobs:
           mkdir build && cd build
           cmake ..
           make && sudo make install
+
+      - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
+        run: |
+          python3 -m venv music-venv
+          source music-venv/bin/activate
+          python3 -m pip install mpi4py cython numpy setuptools
+          sudo mkdir -p $MUSIC_INSTALL_DIR
+          sudo chown -R $USER $MUSIC_INSTALL_DIR
+          curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip
+          unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
+          ./autogen.sh
+          ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
+          make -j install
+          deactivate
+        working-directory: ${{runner.temp}}
 
       - name: Setup Xvfb
         run: |
@@ -131,7 +148,9 @@ jobs:
                       -DNRN_PYTHON_DYNAMIC="${PYTHON_MIN};${PYTHON_MAX}" \
                       -DNRN_PYTHON_EXTRA_FOR_TESTS=${PYTHON_MID} \
                       -DNRN_ENABLE_TESTS=ON \
-                      -DNRN_ENABLE_MUSIC=OFF)
+                      -DNRN_ENABLE_MUSIC=ON \
+                      -DCMAKE_PREFIX_PATH="${MUSIC_INSTALL_DIR}" \
+                      -DMUSIC_ROOT="${MUSIC_INSTALL_DIR}")
           cmake .. "${cmake_args[@]}"
           # Coverage
           # The Linux runners apparently have 2 cores, but jobs were being killed when we did not specify this explicitly.
