@@ -34,8 +34,6 @@ stages:
         vmImage: 'ubuntu-20.04'
       strategy:
         matrix:
-          Python38:
-            python.version: '3.8'
           Python39:
             python.version: '3.9'
           Python310:
@@ -88,10 +86,6 @@ stages:
         vmImage: 'macOS-12'
       strategy:
         matrix:
-          Python38:
-            python.version: '3.8'
-            python.org.version: '3.8.9'
-            python.installer.name: 'macosx10.9.pkg'
           Python39:
             python.version: '3.9'
             python.org.version: '3.9.13'
