@@ -14,10 +14,15 @@ Linux and Mac you can install the official Python 3 wheel with:
 pip3 install neuron
 ```
 
-If you want to build the latest version from source, we support **CMake** as build system. **Autotools** build system has been removed after 8.0 release.
+If you want to build the latest version from source, we support **CMake** as build system.
 See detailed installation instructions: [docs/install/install_instructions.md](docs/install/install_instructions.md).
 
 It is possible to install the Linux Python wheels on Windows via the Windows Subsystem for Linux (WSL) - check the installation instructions above.
+
+> [!NOTE]
+> **About NEURON >= 9.0**: If you are experiencing compilation errors while using
+> `nrnivmodl` with NEURON >=9.0, but not with previous 8.x releases, see
+> [Adapting MOD files for C++ with NEURON >= 9.0](docs/guide/porting_mechanisms_to_cpp.rst).
 
 ## Documentation
 
