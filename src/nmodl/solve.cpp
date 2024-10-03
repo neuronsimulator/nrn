@@ -6,6 +6,8 @@
 #include "symbol.h"
 
 #include <cstdlib>
+#include <string>
+#include <unordered_map>
 
 /* make it an error if 2 solve statements are called on a single call to
 model() */
@@ -24,6 +26,15 @@ Symbol* cvode_nrn_current_solve_;
 
 void whileloop(Item*, long, int);
 void check_ss_consist(Item*);
+
+namespace {
+enum class CVodeMethod { nomethod = 0, after_cvode = 1, cvode_t = 2, cvode_t_v = 3 };
+}
+static const std::unordered_map<std::string, CVodeMethod> cvode_method_map = {
+    {"after_cvode", CVodeMethod::after_cvode},
+    {"cvode_t", CVodeMethod::cvode_t},
+    {"cvode_t_v", CVodeMethod::cvode_t_v}};
+
 
 /* Need list of solve statements. We impress the
 general list structure to handle it.  The element is a pointer to an
@@ -109,7 +120,7 @@ void solvhandler() {
     List* errstmt;
     Symbol *fun, *method;
     int numeqn, listnum, btype, steadystate;
-    int cvodemethod_;
+    CVodeMethod cvodemethod_;
 
     if (!solvq)
         solvq = newlist();
@@ -125,21 +136,11 @@ void solvhandler() {
         qsol = ITM(lq);
         lq = lq->next;
         method = SYM(lq);
-        cvodemethod_ = 0;
-        if (method && strcmp(method->name, "after_cvode") == 0) {
-            method = (Symbol*) 0;
-            lq->element.sym = (Symbol*) 0;
-            cvodemethod_ = 1;
-        }
-        if (method && strcmp(method->name, "cvode_t") == 0) {
-            method = (Symbol*) 0;
-            lq->element.sym = (Symbol*) 0;
-            cvodemethod_ = 2;
-        }
-        if (method && strcmp(method->name, "cvode_v") == 0) {
-            method = (Symbol*) 0;
-            lq->element.sym = (Symbol*) 0;
-            cvodemethod_ = 3;
+        cvodemethod_ = CVodeMethod::nomethod;
+        if (method && cvode_method_map.count(method->name)) {
+            cvodemethod_ = cvode_method_map.at(method->name);
+            method = nullptr;
+            lq->element.sym = nullptr;
         }
         lq = lq->next;
         errstmt = LST(lq);
@@ -231,16 +232,16 @@ void solvhandler() {
         case PROCED:
             if (btype == BREAKPOINT) {
                 whileloop(qsol, (long) DERF, 0);
-                if (cvodemethod_ == 1) { /*after_cvode*/
+                if (cvodemethod_ == CVodeMethod::after_cvode) {
                     cvode_interface(fun, listnum, 0);
                 }
-                if (cvodemethod_ == 2) { /*cvode_t*/
+                if (cvodemethod_ == CVodeMethod::cvode_t) {
                     cvode_interface(fun, listnum, 0);
                     insertstr(qsol, "if (!cvode_active_)");
                     cvode_nrn_cur_solve_ = fun;
                     linsertstr(procfunc, "extern int cvode_active_;\n");
                 }
-                if (cvodemethod_ == 3) { /*cvode_t_v*/
+                if (cvodemethod_ == CVodeMethod::cvode_t_v) {
                     cvode_interface(fun, listnum, 0);
                     insertstr(qsol, "if (!cvode_active_)");
                     cvode_nrn_current_solve_ = fun;
