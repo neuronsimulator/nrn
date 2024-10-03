@@ -291,6 +291,10 @@ def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=No
     domain -- a section or Python iterable of sections"""
 
     global _dimensions_default, _dimensions
+
+    if initializer.is_initialized():
+        raise RxDException("set_solve_type must be called before any access to nodes.")
+
     setting_default = False
     if domain is None:
         domain = h.allsec()
