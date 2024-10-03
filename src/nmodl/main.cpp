@@ -314,8 +314,10 @@ int run_nmodl(int argc, const char* argv[]) {
         /// create file path for nmodl file
         auto filepath = [scratch_dir, modfile](const std::string& suffix) {
             static int count = 0;
-            return fmt::format(
-                "{}/{}.{}.{}.mod", scratch_dir, modfile, std::to_string(count++), suffix);
+
+            auto filename = fmt::format("{}.{}.{}.mod", modfile, std::to_string(count++), suffix);
+
+            return (std::filesystem::path(scratch_dir) / filename).string();
         };
 
         /// driver object creates lexer and parser, just call parser method
@@ -406,12 +408,10 @@ int run_nmodl(int argc, const char* argv[]) {
         ast_to_nmodl(*ast, filepath("ast"));
 
         if (json_ast) {
-            std::string file{scratch_dir};
-            file += "/";
-            file += modfile;
-            file += ".ast.json";
-            logger->info("Writing AST into {}", file);
-            JSONVisitor(file).write(*ast);
+            std::filesystem::path file{scratch_dir};
+            file /= modfile + ".ast.json";
+            logger->info("Writing AST into {}", file.string());
+            JSONVisitor(file.string()).write(*ast);
         }
 
         if (verbatim_rename) {
