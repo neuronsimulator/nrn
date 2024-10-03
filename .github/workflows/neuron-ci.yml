@@ -188,12 +188,12 @@ jobs:
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
       - name: Install a new automake
-        # A new automake is needed for python 3.12 because it generate a python script
+        # A automake >= 1.16.5 is needed for python 3.12 because it generates a python script
         # called py-compile and the original one is not supporting this version of python
         # Once ubuntu got a newer version of automake we can remove this part.
         if: matrix.config.music == 'ON' && startsWith(matrix.os, 'ubuntu')
         run: |
-          curl -L -o automake.tar.xz https://ftp.gnu.org/gnu/automake/automake-1.16.5.tar.xz
+          curl -L -o automake.tar.xz https://ftpmirror.gnu.org/gnu/automake/automake-1.16.5.tar.xz
           tar -xf automake.tar.xz
           cd automake-1.16.5/
           ./configure --prefix=/usr/
