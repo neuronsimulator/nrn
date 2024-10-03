@@ -315,8 +315,7 @@ int run_nmodl(int argc, const char* argv[]) {
         auto filepath = [scratch_dir, modfile](const std::string& suffix) {
             static int count = 0;
 
-            auto filename = fmt::format("{}.{}.{}.mod", modfile, std::to_string(count++), suffix);
-
+            auto filename = fmt::format("{}.{:02d}.{}.mod", modfile, count++, suffix);
             return (std::filesystem::path(scratch_dir) / filename).string();
         };
 
