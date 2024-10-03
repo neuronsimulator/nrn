@@ -1546,21 +1546,21 @@
                             separator: " "
                       brief: "Represent COMPARTMENT statement in NMODL"
 
-                  - LonDifuse:
+                  - LonDiffuse:
                       nmodl: LONGITUDINAL_DIFFUSION
                       members:
-                        - name:
-                            brief: "TODO"
+                        - index_name:
+                            brief: "Index variable name"
                             type: Name
                             optional: true
                             prefix: {value: " "}
                             suffix: {value: ","}
-                        - expression:
-                            brief: "TODO"
+                        - rate:
+                            brief: "Diffusion coefficient/rate"
                             type: Expression
                             prefix: {value: " "}
-                        - names:
-                            brief: "TODO"
+                        - species:
+                            brief: "Names of the diffusing species"
                             type: Name
                             vector: true
                             prefix: {value: " {"}

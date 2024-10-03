@@ -268,7 +268,7 @@
 %type   <ast::Conserve*>                    conserve
 %type   <ast::Expression*>                  react
 %type   <ast::Compartment*>                 compartment
-%type   <ast::LonDifuse*>                   longitudinal_diffusion
+%type   <ast::LonDiffuse*>                  longitudinal_diffusion
 %type   <ast::NameVector>                   name_list
 %type   <ast::ExpressionVector>             unit_block_body
 %type   <ast::UnitDef*>                     unit_definition
@@ -1723,11 +1723,11 @@ compartment     :   COMPARTMENT NAME_PTR "," expression "{" name_list "}"
 
 longitudinal_diffusion : LONGDIFUS NAME_PTR "," expression "{" name_list "}"
                     {
-                        $$ = new ast::LonDifuse($2, $4, $6);
+                        $$ = new ast::LonDiffuse($2, $4, $6);
                     }
                 |   LONGDIFUS expression "{" name_list "}"
                     {
-                        $$ = new ast::LonDifuse(NULL, $2, $4);
+                        $$ = new ast::LonDiffuse(NULL, $2, $4);
                     }
                 ;
 
