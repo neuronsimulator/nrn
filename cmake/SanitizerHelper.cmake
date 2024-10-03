@@ -12,8 +12,8 @@ include(${CODING_CONV_CMAKE}/build-time-copy.cmake)
 
 # If there is an issue with the automatically determined LD_PRELOAD then force with an environment
 # variable when running cmake.
-if(DEFINED ENV{OVERRIDE_LD_PRELOAD})
-  set(NRN_SANITIZER_LIBRARY_PATH "$ENV{OVERRIDE_LD_PRELOAD}")
+if(DEFINED ENV{NRN_OVERRIDE_LD_PRELOAD})
+  set(NRN_SANITIZER_LIBRARY_PATH "$ENV{NRN_OVERRIDE_LD_PRELOAD}")
 endif()
 
 # Propagate the sanitizer flags to the NEURON sources
