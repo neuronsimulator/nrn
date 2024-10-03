@@ -177,6 +177,15 @@ use `nrn-enable-sanitizer special -python path/to/script.py` or
 because the `python` binary is (presumably) not linked against the sanitizer
 runtime library.
 
+If ctest or nrn-enable-sanitizer runs generate a sanitizer error like
+`AddressSanitizer: CHECK failed: asan_interceptors.cpp`
+it might be that the automatically determined `LD_PRELOAD` is insufficient.
+(It happened to me with ubuntu 24.04 + gcc 13.2.0). In this case you
+can temporarily set the `OVERRIDE_LD_PRELOAD` environment variable before
+running cmake. In my case,
+`OVERRIDE_LD_PRELOAD="$(realpath "$(gcc -print-file-name=libasan.so)"):$realpath
+"$(gcc -print-file-name=libstdc++.so)")" cmake ...` sufficed.
+
 LSan, TSan and UBSan support suppression files, which can be used to prevent
 tests failing due to known issues.
 NEURON includes a suppression file for TSan under `.sanitizers/thread.supp` and
@@ -792,4 +801,3 @@ Unlike VTune, LIKWID doesn't support direct comparison of profile data. However,
 for code regions, and since the profile results are provided as text output, comparing results from two runs is straightforward.
 For instance, the screenshot below shows FLOPS instructions side by side between two runs:
 
-![VTune Comparison](images/nrn_likwid_presoa_master_comparison.png)
