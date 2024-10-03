@@ -1527,18 +1527,18 @@
                   - Compartment:
                       nmodl: COMPARTMENT
                       members:
-                        - name:
-                            brief: "TODO"
+                        - index_name:
+                            brief: "Name of the index variable in volume expression"
                             type: Name
                             optional: true
                             prefix: {value: " "}
                             suffix: {value: ","}
-                        - expression:
-                            brief: "TODO"
+                        - volume:
+                            brief: "The volume of the compartment"
                             type: Expression
                             prefix: {value: " "}
-                        - names:
-                            brief: "TODO"
+                        - species:
+                            brief: "The names of the species that reside in this compartment"
                             type: Name
                             vector: true
                             prefix: {value: " {"}

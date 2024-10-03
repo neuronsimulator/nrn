@@ -164,7 +164,7 @@ void KineticBlockVisitor::compute_compartment_factor(ast::Compartment& node,
     const auto it = state_var_index.find(var_name);
     if (it != state_var_index.cend()) {
         int var_index = it->second;
-        auto expr = node.get_expression();
+        auto expr = node.get_volume();
         std::string expression = to_nmodl(expr);
 
         set_compartment_factor(var_index, expression);
@@ -178,7 +178,7 @@ void KineticBlockVisitor::compute_compartment_factor(ast::Compartment& node,
 void KineticBlockVisitor::compute_indexed_compartment_factor(ast::Compartment& node,
                                                              const ast::Name& name) {
     auto array_var_name = name.get_node_name();
-    auto index_name = node.get_name()->get_node_name();
+    auto index_name = node.get_index_name()->get_node_name();
 
     auto pattern = fmt::format("^{}\\[([0-9]*)\\]$", array_var_name);
     std::regex re(pattern);
@@ -189,8 +189,8 @@ void KineticBlockVisitor::compute_indexed_compartment_factor(ast::Compartment& n
 
         if (matches) {
             int index_value = std::stoi(m[1]);
-            auto volume_expr = node.get_expression();
-            auto expr = std::shared_ptr<ast::Expression>(node.get_expression()->clone());
+            auto volume_expr = node.get_volume();
+            auto expr = std::shared_ptr<ast::Expression>(volume_expr->clone());
             IndexRemover(index_name, index_value).visit_expression(*expr);
 
             std::string expression = to_nmodl(*expr);
@@ -203,9 +203,9 @@ void KineticBlockVisitor::visit_compartment(ast::Compartment& node) {
     // COMPARTMENT block has an expression, and a list of state vars it applies to.
     // For each state var, the rhs of the differential eq should be divided by the expression.
     // Here we store the expressions in the compartment_factors vector
-    logger->debug("KineticBlockVisitor :: COMPARTMENT expr: {}", to_nmodl(node.get_expression()));
-    for (const auto& name_ptr: node.get_names()) {
-        if (node.get_name() == nullptr) {
+    logger->debug("KineticBlockVisitor :: COMPARTMENT expr: {}", to_nmodl(node.get_volume()));
+    for (const auto& name_ptr: node.get_species()) {
+        if (node.get_index_name() == nullptr) {
             compute_compartment_factor(node, *name_ptr);
         } else {
             compute_indexed_compartment_factor(node, *name_ptr);
