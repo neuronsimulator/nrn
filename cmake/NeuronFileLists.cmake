@@ -346,7 +346,7 @@ set(MODLUNIT_FILES_LIST
     units1.cpp
     version.cpp)
 
-set(NMODL_FILES_LIST
+set(NOCMODL_FILES_LIST
     consist.cpp
     deriv.cpp
     discrete.cpp
@@ -391,7 +391,7 @@ set(NRN_NODEORDEROPTIM_SRC_DIR ${PROJECT_SOURCE_DIR}/src/coreneuron/permute)
 set(NRN_NRNCVODE_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrncvode)
 set(NRN_NRNIV_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrniv)
 set(NRN_MODLUNIT_SRC_DIR ${PROJECT_SOURCE_DIR}/src/modlunit)
-set(NRN_NMODL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nmodl)
+set(NRN_NOCMODL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nocmodl)
 set(NRN_IVOS_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivos)
 set(NRN_MUSIC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/neuronmusic)
 set(NRN_PARALLEL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/parallel)
@@ -421,13 +421,13 @@ nrn_create_file_list(NRN_MODFILE_BASE_NAMES src/nrnoc ${MODFILE_BASE_NAMES})
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.cpp)
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)
 nrn_create_file_list(NRN_MODLUNIT_SRC_FILES ${NRN_MODLUNIT_SRC_DIR} ${MODLUNIT_FILES_LIST})
-nrn_create_file_list(NRN_NMODL_SRC_FILES ${NRN_NMODL_SRC_DIR} ${NMODL_FILES_LIST})
+nrn_create_file_list(NRN_NOCMODL_SRC_FILES ${NRN_NOCMODL_SRC_DIR} ${NOCMODL_FILES_LIST})
 nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmpi
                      ${MPI_DYNAMIC_INCLUDE})
 nrn_create_file_list(NRN_IVOS_SRC_FILES ${NRN_IVOS_SRC_DIR} ${IVOS_FILES_LIST})
 nrn_create_file_list(NRN_MUSIC_SRC_FILES ${NRN_MUSIC_SRC_DIR} ${NRN_MUSIC_FILES_LIST})
 list(APPEND NRN_OC_SRC_FILES ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
-list(APPEND NRN_NMODL_SRC_FILES ${NRN_MODLUNIT_SRC_DIR}/units.cpp)
+list(APPEND NRN_NOCMODL_SRC_FILES ${NRN_MODLUNIT_SRC_DIR}/units.cpp)
 
 # =============================================================================
 # Create mswin install lists needed for setup_exe target
@@ -439,7 +439,7 @@ if(MINGW)
   list(APPEND MSWIN_FILES ${MSWIN_SRC_DIR}/notes.txt)
 
   list(APPEND NRN_MODLUNIT_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/extra/d2upath.cpp)
-  list(APPEND NRN_NMODL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/extra/d2upath.cpp)
+  list(APPEND NRN_NOCMODL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/extra/d2upath.cpp)
   list(APPEND NRN_OC_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/extra/d2upath.cpp)
 
   nrn_create_file_list(MSWIN_BIN_FILES ${MSWIN_SRC_DIR} nrniv.ico nrniv10.ico nmodl2a.ico)

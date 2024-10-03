@@ -36,7 +36,7 @@ class Model:
         return res
 
 
-def nlayer_return():
+def _test_nlayer():
     res = []
     for nlayer in [1, 2, 3]:
         h.nlayer_extracellular(nlayer)
@@ -53,13 +53,13 @@ def nlayer_return():
 
 
 def test_nlayer():
-    nlayer_return()
-
-
-if __name__ == "__main__":
-    res = nlayer_return()
+    res = _test_nlayer()
     for i in range(len(res[0][0])):
         for j in range(2):
             for k in range(3):
                 print("%g" % res[k][j].x[i], end=" ")
         print()
+
+
+if __name__ == "__main__":
+    test_nlayer()

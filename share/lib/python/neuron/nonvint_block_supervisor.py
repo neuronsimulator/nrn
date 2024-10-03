@@ -1,15 +1,10 @@
-import sys
 import ctypes
-import neuron
-import numpy
-from neuron import h
 import traceback
+import numpy
+import neuron
+from neuron import h
 
 # reducing the indirection improves performance
-try:
-    _numpy_core_multiarray_int_asbuffer = numpy.core.multiarray.int_asbuffer
-except:
-    pass
 _ctypes_addressof = ctypes.addressof
 _numpy_array = numpy.array
 _numpy_frombuffer = numpy.frombuffer
