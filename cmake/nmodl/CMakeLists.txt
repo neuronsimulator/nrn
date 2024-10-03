@@ -112,7 +112,7 @@ if(NOT TARGET CLI11::CLI11)
   cpp_cc_git_submodule(cli11 BUILD PACKAGE CLI11 REQUIRED)
 endif()
 # We could have fmt incoming from NEURON
-if(NOT TARGET fmt)
+if(NOT TARGET fmt::fmt)
   cpp_cc_git_submodule(fmt BUILD EXCLUDE_FROM_ALL PACKAGE fmt REQUIRED)
 endif()
 # If we're building from the submodule, make sure we pass -fPIC so that we can link the code into a
