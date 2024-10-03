@@ -23,7 +23,7 @@ static PyObject* main_namespace;
 
 struct Py2Nrn final {
     ~Py2Nrn() {
-        PyLockGIL lock{};
+        nanobind::gil_scoped_acquire lock{};
         Py_XDECREF(po_);
     }
     int type_{};  // 0 toplevel
@@ -43,7 +43,7 @@ Member_func p_members[] = {{nullptr, nullptr}};
 static void call_python_with_section(Object* pyact, Section* sec) {
     PyObject* po = ((Py2Nrn*) pyact->u.this_pointer)->po_;
     PyObject* r;
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
 
     PyObject* args = PyTuple_Pack(1, (PyObject*) newpysechelp(sec));
     r = nrnpy_pyCallObject(po, args);
@@ -156,7 +156,7 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
     Py2Nrn* pn = (Py2Nrn*) ob->u.this_pointer;
     PyObject* head = pn->po_;
     PyObject* tail;
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
     if (pn->type_ == 0) {  // top level
         if (!main_module) {
             main_module = PyImport_AddModule("__main__");
@@ -362,7 +362,7 @@ static PyObject* hoccommand_exec_help(Object* ho) {
 }
 
 static double praxis_efun(Object* ho, Object* v) {
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
 
     PyObject* pc = nrnpy_ho2po(ho);
     PyObject* pv = nrnpy_ho2po(v);
@@ -391,7 +391,7 @@ static double praxis_efun(Object* ho, Object* v) {
 }
 
 static int hoccommand_exec(Object* ho) {
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
 
     PyObject* r = hoccommand_exec_help(ho);
     if (r == NULL) {
@@ -411,7 +411,7 @@ static int hoccommand_exec(Object* ho) {
 }
 
 static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
 
     PyObject* r = hoccommand_exec_help(ho);
     if (r) {
@@ -438,7 +438,7 @@ static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
 static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
     PyObject* r;
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
 
     PyObject* args = PyTuple_Pack(
         4, PyInt_FromLong(type), PyFloat_FromDouble(x), PyFloat_FromDouble(y), PyInt_FromLong(key));
@@ -460,7 +460,7 @@ static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
 
 static Object* callable_with_args(Object* ho, int narg) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
 
     PyObject* args = PyTuple_New((Py_ssize_t) narg);
     if (args == NULL) {
@@ -493,7 +493,7 @@ static Object* callable_with_args(Object* ho, int narg) {
 static double func_call(Object* ho, int narg, int* err) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
     PyObject* r;
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
 
     PyObject* args = PyTuple_New((Py_ssize_t) narg);
     if (args == NULL) {
@@ -549,7 +549,7 @@ static double func_call(Object* ho, int narg, int* err) {
 
 static double guigetval(Object* ho) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
     PyObject* r = NULL;
     PyObject* p = PyTuple_GetItem(po, 0);
     if (PySequence_Check(p) || PyMapping_Check(p)) {
@@ -565,7 +565,7 @@ static double guigetval(Object* ho) {
 
 static void guisetval(Object* ho, double x) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
     PyObject* pn = PyFloat_FromDouble(x);
     PyObject* p = PyTuple_GetItem(po, 0);
     if (PySequence_Check(p) || PyMapping_Check(p)) {
@@ -578,7 +578,7 @@ static void guisetval(Object* ho, double x) {
 
 static int guigetstr(Object* ho, char** cpp) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
 
     PyObject* r = PyObject_GetAttr(PyTuple_GetItem(po, 0), PyTuple_GetItem(po, 1));
     PyObject* pn = PyObject_Str(r);
