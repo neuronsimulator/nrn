@@ -39,7 +39,7 @@ jobs:
       DESIRED_CMAKE_VERSION: 3.17
       DYNAMIC_PYTHON_CMAKE_VERSION: 3.18
       PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
-      PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.13.0-rc.2' }}
+ 3    PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.13.0-rc.3' }}
       MUSIC_INSTALL_DIR: /opt/MUSIC
       MUSIC_VERSION: 1.2.1
 
@@ -207,7 +207,7 @@ jobs:
         run: |
           python3 -m venv music-venv
           source music-venv/bin/activate
-          python3 -m pip install 'mpi4py<4' cython numpy setuptools
+          python3 -m pip install mpi4py cython numpy setuptools
           sudo mkdir -p $MUSIC_INSTALL_DIR
           sudo chown -R $USER $MUSIC_INSTALL_DIR
           curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip

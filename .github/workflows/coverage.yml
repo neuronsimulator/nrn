@@ -24,7 +24,7 @@ on:
 env:
   PY_MIN_VERSION: '3.8'
   PY_MID_VERSION: '3.10'
-  PY_MAX_VERSION: '3.13.0-rc.2'
+  PY_MAX_VERSION: '3.13.0-rc.3'
 
 jobs:
   coverage:
@@ -58,7 +58,7 @@ jobs:
         run: |
           python3 -m venv music-venv
           source music-venv/bin/activate
-          python3 -m pip install 'mpi4py<4' cython numpy setuptools
+          python3 -m pip install mpi4py cython numpy setuptools
           sudo mkdir -p $MUSIC_INSTALL_DIR
           sudo chown -R $USER $MUSIC_INSTALL_DIR
           curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip
