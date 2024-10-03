@@ -568,7 +568,13 @@ def forwards_euler2c(diff_string, dt_var, vars, function_calls):
     return f"{sp.ccode(x)} = {sp.ccode(solution, user_functions=custom_fcts)}"
 
 
-def differentiate2c(expression, dependent_var, vars, prev_expressions=None):
+def differentiate2c(
+    expression,
+    dependent_var,
+    vars,
+    prev_expressions=None,
+    stepsize=1e-3,
+):
     """Analytically differentiate supplied expression, return solution as C code.
 
     Expression should be of the form "f(x)", where "x" is
@@ -595,11 +601,15 @@ def differentiate2c(expression, dependent_var, vars, prev_expressions=None):
         vars: set of all other variables used in expression, e.g. {"a", "b", "c"}
         prev_expressions: time-ordered list of preceeding expressions
                           to evaluate & substitute, e.g. ["b = x + c", "a = 12*b"]
+        stepsize: in case an analytic expression is not possible, finite differences are used;
+                  this argument sets the step size
 
     Returns:
         string containing analytic derivative of expression (including any substitutions
         of variables from supplied prev_expressions) w.r.t. dependent_var as C code.
     """
+    if stepsize <= 0:
+        raise ValueError("arg `stepsize` must be > 0")
     prev_expressions = prev_expressions or []
     # every symbol (a.k.a variable) that SymPy
     # is going to manipulate needs to be declared
@@ -643,15 +653,27 @@ def differentiate2c(expression, dependent_var, vars, prev_expressions=None):
     # differentiate w.r.t. x
     diff = expr.diff(x).simplify()
 
+    # could be something generic like f'(x), in which case we use finite differences
+    if needs_finite_differences(diff):
+        diff = (
+            transform_expression(diff, discretize_derivative)
+            .subs({finite_difference_step_variable(x): stepsize})
+            .evalf()
+        )
+
+    # the codegen method does not like undefined function calls, so we extract
+    # them here
+    custom_fcts = {str(f.func): str(f.func) for f in diff.atoms(sp.Function)}
+
     # try to simplify expression in terms of existing variables
     # ignore any exceptions here, since we already have a valid solution
     # so if this further simplification step fails the error is not fatal
     try:
         # if expression is equal to one of the supplied vars, replace with this var
         # can do a simple string comparison here since a var cannot be further simplified
-        diff_as_string = sp.ccode(diff)
+        diff_as_string = sp.ccode(diff, user_functions=custom_fcts)
         for v in sympy_vars:
-            if diff_as_string == sp.ccode(sympy_vars[v]):
+            if diff_as_string == sp.ccode(sympy_vars[v], user_functions=custom_fcts):
                 diff = sympy_vars[v]
 
         # or if equal to rhs of one of the supplied equations, replace with lhs
@@ -672,4 +694,4 @@ def differentiate2c(expression, dependent_var, vars, prev_expressions=None):
         pass
 
     # return result as C code in NEURON format
-    return sp.ccode(diff.evalf())
+    return sp.ccode(diff.evalf(), user_functions=custom_fcts)

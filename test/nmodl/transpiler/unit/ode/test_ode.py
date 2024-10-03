@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from nmodl.ode import differentiate2c, integrate2c
+import pytest
 
 import sympy as sp
 
@@ -99,6 +100,38 @@ def test_differentiate2c():
         ),
         "g",
     )
+
+    result = differentiate2c(
+        "-f(x)",
+        "x",
+        {},
+    )
+    # instead of comparing the expression as a string, we convert the string
+    # back to an expression and compare with an explicit function
+    size = 100
+    for index in range(size):
+        a, b = -5, 5
+        value = (b - a) * index / size + a
+        pytest.approx(
+            float(
+                sp.sympify(result)
+                .subs(sp.Function("f"), sp.sin)
+                .subs({"x": value})
+                .evalf()
+            )
+        ) == float(
+            -sp.Derivative(sp.sin("x"))
+            .as_finite_difference(1e-3)
+            .subs({"x": value})
+            .evalf()
+        )
+    with pytest.raises(ValueError):
+        differentiate2c(
+            "-f(x)",
+            "x",
+            {},
+            stepsize=-1,
+        )
 
 
 def test_integrate2c():
