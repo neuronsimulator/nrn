@@ -396,8 +396,8 @@ Other CoreNEURON options:
 -------------------------
   There are 20 or so cmake arguments specific to a CoreNEURON
   build that are listed in https://github.com/neuronsimulator/nrn/blob/master/src/coreneuron/CMakeLists.txt.
-  The ones of particular interest that can be used on the NEURON
-  CMake configure line are `CORENRN_ENABLE_NMODL` and `CORENRN_ENABLE_GPU`.
+  The one of particular interest that can be used on the NEURON
+  CMake configure line is `CORENRN_ENABLE_GPU`.
 
 NMODL options
 =============
