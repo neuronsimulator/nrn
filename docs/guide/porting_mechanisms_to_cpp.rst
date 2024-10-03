@@ -5,6 +5,11 @@
 Adapting MOD files for C++ with |neuron_with_cpp_mechanisms|
 ============================================================
 
+.. attention::
+  This guide only applies if you have MOD files with VERBATIM blocks that fail
+  to compile with |neuron_with_cpp_mechanisms| but work with older versions of
+  NEURON. If this is not your case, you can skip this guide.
+
 In older versions of NEURON, MOD files containing NMODL code were translated
 into C code before being compiled and executed by NEURON.
 Starting with |neuron_with_cpp_mechanisms|, NMODL code is translated into C++
