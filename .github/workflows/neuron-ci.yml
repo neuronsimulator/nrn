@@ -139,14 +139,9 @@ jobs:
       - name: Install apt packages
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          # A new automake (>= 1.16) is needed for python 3.12 because it generates a python
-          # script called py-compile and the original one is not supporting this version of
-          # python
-          # Once the minimum version of ubuntu got a newer version of automake we can remove
-          # to specify it (default installed)
           sudo apt-get install build-essential ccache libopenmpi-dev \
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
-            openmpi-bin flex libfl-dev bison libreadline-dev automake-1.16
+            openmpi-bin flex libfl-dev bison libreadline-dev
           # The sanitizer builds use ubuntu 22.04
           if [[ "${{matrix.os}}" == "ubuntu-20.04" ]]; then
             sudo apt-get install g++-7 g++-8
@@ -191,6 +186,21 @@ jobs:
           python -m pip install --upgrade -r external/nmodl/requirements.txt
           python -m pip install --upgrade -r ci_requirements.txt
           python -m pip install --upgrade pip -r nrn_requirements.txt
+
+      - name: Install a new automake
+        # A automake >= 1.16.5 is needed for python 3.12 because it generates a python script
+        # called py-compile and the original one is not supporting this version of python
+        # Once ubuntu got a newer version of automake we can remove this part.
+        if: matrix.config.music == 'ON' && startsWith(matrix.os, 'ubuntu')
+        run: |
+          curl -L -o automake.tar.xz https://ftpmirror.gnu.org/gnu/automake/automake-1.16.5.tar.xz
+          tar -xf automake.tar.xz
+          cd automake-1.16.5/
+          ./configure --prefix=/usr/
+          make -j
+          sudo make -j install
+          automake --version
+        working-directory: ${{runner.temp}}
 
       - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
         if: matrix.config.music == 'ON'
