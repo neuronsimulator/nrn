@@ -205,6 +205,8 @@ jobs:
       - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
         if: matrix.config.music == 'ON'
         run: |
+          # the version of OpenMPI on Ubuntu does not support MPI 4, so we remove it
+          apt-get purge -y libopenmpi-dev openmpi-bin
           python3 -m venv music-venv
           source music-venv/bin/activate
           python3 -m pip install mpi4py cython numpy setuptools
@@ -217,6 +219,8 @@ jobs:
           ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource MPI_CXXFLAGS="-g -O3" MPI_CFLAGS="-g -O3" MPI_LDFLAGS=" " CC=mpicc CXX=mpicxx
           make -j install
           deactivate
+          # install back OpenMPI so NEURON can use it
+          apt-get install -y libopenmpi-dev openmpi-bin
         working-directory: ${{runner.temp}}
 
       - name: Register gcc problem matcher
