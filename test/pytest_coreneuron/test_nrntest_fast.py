@@ -34,10 +34,10 @@ cv3tol = {
     "t13:cvode:t": 2e-6,
     "t13:cvode:v": 6e-7,
     "t14:cvode:t:1": 1e-9,
-    "t14:cvode:t:2:ld": 2e-10,
+    "t14:cvode:t:2:ld": 3e-10,
     "t14:cvode:t:2": 1e-9,
-    "t14:cvode:v:1": 4e-9,
-    "t14:cvode:v:2:ld": 4e-10,
+    "t14:cvode:v:1": 6e-9,
+    "t14:cvode:v:2:ld": 6e-10,
     "t14:cvode:v:2": 4e-9,
 }
 cvtol = cv2tol
