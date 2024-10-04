@@ -392,7 +392,7 @@ if(NRN_ENABLE_PYTHON)
     ENVIRONMENT "NRN_PYTEST_ARGS=${pytest_arg_string}"
     SCRIPT_PATTERNS
       test/pytest_coreneuron/run_pytest.py test/pytest_coreneuron/test_nrntest_fast.json
-      test/pynrn/test_nrntest_fast_cv3.json test/pytest_coreneuron/test_nrntest_fast.py
+      test/pytest_coreneuron/test_nrntest_fast_cv3.json test/pytest_coreneuron/test_nrntest_fast.py
     COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
             special ${MPIEXEC_POSTFLAGS} -mpi -python test/pytest_coreneuron/run_pytest.py)
   # CoreNEURON's reports require MPI and segfault if it is not initialised. This is a crude
