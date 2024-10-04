@@ -44,6 +44,7 @@ jobs:
       - name: Install apt packages
         run: |
           sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libmpich-dev libx11-dev libxcomposite-dev mpich gpg ninja-build flex bison libfl-dev
+          sudo apt-get purge -y libopenmpi-dev openmpi-bin
         shell: bash
 
       - name: Setup Caliper profiler
