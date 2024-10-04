@@ -36,7 +36,7 @@ endtemplate Cell
 )
 
 
-def test_natrans():
+def _test_natrans():
     gids = [gid for gid in range(rank, ncell, nhost)]
     cells = []
     for gid in range(rank, ncell, nhost):
@@ -115,7 +115,11 @@ def test_natrans():
     return cells, gids, sgids, targets
 
 
-if __name__ == "__main__":
-    model = test_natrans()
+def test_natrans():
+    model = _test_natrans()
     pc.barrier()
     h.quit()
+
+
+if __name__ == "__main__":
+    test_natrans()

@@ -52,7 +52,7 @@ def _test_nlayer():
     return res
 
 
-def test_main():
+def test_nlayer():
     res = _test_nlayer()
     for i in range(len(res[0][0])):
         for j in range(2):
@@ -62,4 +62,4 @@ def test_main():
 
 
 if __name__ == "__main__":
-    test_main()
+    test_nlayer()

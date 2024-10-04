@@ -160,22 +160,6 @@ class PyErr2NRNString {
     char* str_;
 };
 
-
-struct PyLockGIL {
-    PyLockGIL()
-        : state_{PyGILState_Ensure()} {}
-    PyLockGIL(PyLockGIL&&) = delete;
-    PyLockGIL(PyLockGIL const&) = delete;
-    PyLockGIL& operator=(PyLockGIL&&) = delete;
-    PyLockGIL& operator=(PyLockGIL const&) = delete;
-    ~PyLockGIL() {
-        PyGILState_Release(state_);
-    }
-
-  private:
-    PyGILState_STATE state_;
-};
-
 extern void nrnpy_sec_referr();
 #define CHECK_SEC_INVALID(sec)  \
     {                           \
