@@ -1490,7 +1490,7 @@ void Cvode::matmeth() {
 
         /* attach the matrix and linear solver to CVode */
         int flag = CVDlsSetLinearSolver(mem_, LS, A);
-        assert(flag);
+        assert(flag == CVDLS_SUCCESS);
 
         /* Set jacobian and allocate memory */
         /* (TODO Michael Hines: is there a jacobian for dense matrix

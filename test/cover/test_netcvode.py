@@ -2,15 +2,21 @@ from neuron import h
 from neuron.expect_hocerr import expect_err
 from neuron.tests.utils.checkresult import Chk
 
+cv = h.CVode()
+pc = h.ParallelContext()
+
 import io, math, os, re, sys
 
+try:
+    jsonfile = "test_netcvode_cv%s.json" % (cv.version().split(".")[0],)
+except:
+    jsonfile = "test_netcvode.json"
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
-chk = Chk(os.path.join(dir_path, "test_netcvode.json"))
+chk = Chk(os.path.join(dir_path, jsonfile))
 if hasattr(h, "usetable_hh"):
     h.usetable_hh = 0  # So same whether compiled with CoreNEURON or not.
 
-cv = h.CVode()
-pc = h.ParallelContext()
 
 # remove address info from cv.debug_event output
 def debug_event_filter(s):
