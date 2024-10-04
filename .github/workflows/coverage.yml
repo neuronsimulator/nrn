@@ -43,7 +43,7 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin gpg ninja-build flex bison libfl-dev
+          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libmpich-dev libx11-dev libxcomposite-dev mpich gpg ninja-build flex bison libfl-dev
         shell: bash
 
       - name: Setup Caliper profiler
@@ -58,10 +58,7 @@ jobs:
         run: |
           python3 -m venv music-venv
           source music-venv/bin/activate
-          python3 -m pip install cython numpy setuptools
-          # workaround for Python 3.13 incompat
-          git clone --branch maint-3.1 https://github.com/mpi4py/mpi4py
-          cd mpi4py && bash conf/cythonize.sh && python3 -m pip install . && cd - && rm -fr mpi4py
+          python3 -m pip install mpi4py cython numpy setuptools
           sudo mkdir -p $MUSIC_INSTALL_DIR
           sudo chown -R $USER $MUSIC_INSTALL_DIR
           curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip
