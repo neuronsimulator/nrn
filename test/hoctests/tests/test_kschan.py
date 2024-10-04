@@ -5,6 +5,17 @@ from neuron import expect_hocerr
 import numpy as np
 import os, sys, hashlib
 
+
+# 0 if cvode is off, if cvode is on then 2 if classic version , or 3.2.1, ...
+def cvver():
+    if h.cvode_active():
+        try:
+            return h.cvode.version()
+        except:
+            return "2"
+    return "0"
+
+
 expect_hocerr.quiet = False
 
 from neuron.tests.utils.capture_stdout import capture_stdout
@@ -178,7 +189,7 @@ def test_1():
     for cvode in [1, 0]:
         h.cvode_active(cvode)
         hrun(
-            "nahh cvode={}".format(bool(cvode)),
+            "nahh cvode={}".format(cvver()),
             t_tol=8e-9 if cvode else 0.0,
             v_tol=2e-9 if cvode else 3e-11,
         )
@@ -337,7 +348,10 @@ def test_2():
     h.cvode_active(1)
     # At least executes KSChan::mulmat
     hrun(
-        "kchan without single cvode=True", t_tol=2e-7, v_tol=1e-11, v_tol_per_time=5e-7
+        "kchan without single cvode=%s" % cvver(),
+        t_tol=2e-7,
+        v_tol=1e-11,
+        v_tol_per_time=5e-7,
     )
     h.cvode_active(0)
 
@@ -413,9 +427,7 @@ def test_3():
                     tols["v_tol_per_time"] = 6e-8
             else:
                 tols["v_tol"] = 8e-11
-            hrun(
-                "KSTrans cvode={} single={}".format(bool(cvon), bool(singleon)), **tols
-            )
+            hrun("KSTrans cvode={} single={}".format(cvver(), bool(singleon)), **tols)
             del kchan
             locals()
 
