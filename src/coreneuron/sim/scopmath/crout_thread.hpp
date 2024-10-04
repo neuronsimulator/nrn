@@ -132,56 +132,29 @@ inline void nrn_scopmath_solve_thread(int n,
                                       int* y,
                                       _threadargsproto_) {
     /* Perform forward substitution with pivoting */
-    // if (y) { // pgacc bug. nullptr on cpu but not on GPU
-    if (0) {
-        for (int i = 0; i < n; i++) {
-            int pivot = perm[scopmath_crout_ix(i)];
-            double sum = 0.0;
-            for (int j = 0; j < i; j++)
-                sum += a[pivot][scopmath_crout_ix(j)] * (scopmath_crout_y(j));
-            scopmath_crout_y(i) = (scopmath_crout_b(pivot) - sum) / a[pivot][scopmath_crout_ix(i)];
-        }
-
-        /*
-         * Note that the y vector is already in the correct order for back
-         * substitution.  Perform back substitution, pivoting the matrix but not
-         * the y vector.  There is no need to divide by the diagonal element as
-         * this is assumed to be unity.
-         */
-
-        for (int i = n - 1; i >= 0; i--) {
-            int pivot = perm[scopmath_crout_ix(i)];
-            double sum = 0.0;
-            for (int j = i + 1; j < n; j++)
-                sum += a[pivot][scopmath_crout_ix(j)] * (scopmath_crout_y(j));
-            scopmath_crout_y(i) -= sum;
-        }
-    } else {
-        for (int i = 0; i < n; i++) {
-            int pivot = perm[scopmath_crout_ix(i)];
-            double sum = 0.0;
-            if (i > 0) {  // pgacc bug. with i==0 the following loop executes once
-                for (int j = 0; j < i; j++) {
-                    sum += a[pivot][scopmath_crout_ix(j)] * (p[scopmath_crout_ix(j)]);
-                }
-            }
-            p[scopmath_crout_ix(i)] = (scopmath_crout_b(pivot) - sum) /
-                                      a[pivot][scopmath_crout_ix(i)];
-        }
-
-        /*
-         * Note that the y vector is already in the correct order for back
-         * substitution.  Perform back substitution, pivoting the matrix but not
-         * the y vector.  There is no need to divide by the diagonal element as
-         * this is assumed to be unity.
-         */
-        for (int i = n - 1; i >= 0; i--) {
-            int pivot = perm[scopmath_crout_ix(i)];
-            double sum = 0.0;
-            for (int j = i + 1; j < n; j++)
+    for (int i = 0; i < n; i++) {
+        int pivot = perm[scopmath_crout_ix(i)];
+        double sum = 0.0;
+        if (i > 0) {  // pgacc bug. with i==0 the following loop executes once
+            for (int j = 0; j < i; j++) {
                 sum += a[pivot][scopmath_crout_ix(j)] * (p[scopmath_crout_ix(j)]);
-            p[scopmath_crout_ix(i)] -= sum;
+            }
         }
+        p[scopmath_crout_ix(i)] = (scopmath_crout_b(pivot) - sum) / a[pivot][scopmath_crout_ix(i)];
+    }
+
+    /*
+     * Note that the y vector is already in the correct order for back
+     * substitution.  Perform back substitution, pivoting the matrix but not
+     * the y vector.  There is no need to divide by the diagonal element as
+     * this is assumed to be unity.
+     */
+    for (int i = n - 1; i >= 0; i--) {
+        int pivot = perm[scopmath_crout_ix(i)];
+        double sum = 0.0;
+        for (int j = i + 1; j < n; j++)
+            sum += a[pivot][scopmath_crout_ix(j)] * (p[scopmath_crout_ix(j)]);
+        p[scopmath_crout_ix(i)] -= sum;
     }
 }
 #undef scopmath_crout_b
