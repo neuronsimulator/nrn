@@ -200,13 +200,19 @@ jobs:
           make -j
           sudo make -j install
           automake --version
+          cd -
+          sudo apt-get purge -y libopenmpi-dev openmpi-bin
+          curl -L -o openmpi.tar.gz https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-5.0.5.tar.gz
+          tar -xf openmpi.tar.gz
+          cd openmpi-5.0.5/
+          ./configure --prefix=/usr/
+          make -j
+          sudo make -j install
         working-directory: ${{runner.temp}}
 
       - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
         if: matrix.config.music == 'ON'
         run: |
-          # the version of OpenMPI on Ubuntu does not support MPI 4, so we remove it
-          apt-get purge -y libopenmpi-dev openmpi-bin
           python3 -m venv music-venv
           source music-venv/bin/activate
           python3 -m pip install mpi4py cython numpy setuptools
@@ -219,8 +225,6 @@ jobs:
           ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource MPI_CXXFLAGS="-g -O3" MPI_CFLAGS="-g -O3" MPI_LDFLAGS=" " CC=mpicc CXX=mpicxx
           make -j install
           deactivate
-          # install back OpenMPI so NEURON can use it
-          apt-get install -y libopenmpi-dev openmpi-bin
         working-directory: ${{runner.temp}}
 
       - name: Register gcc problem matcher
