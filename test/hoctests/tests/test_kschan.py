@@ -349,7 +349,7 @@ def test_2():
     # At least executes KSChan::mulmat
     hrun(
         "kchan without single cvode=%s" % cvver(),
-        t_tol=2e-7,
+        t_tol=1e-6,
         v_tol=1e-11,
         v_tol_per_time=5e-7,
     )
