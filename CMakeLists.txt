@@ -496,6 +496,24 @@ endif()
 cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 
 # =============================================================================
+# Enable NRN_DIGEST
+# =============================================================================
+if(NRN_ENABLE_DIGEST)
+  set(NRN_DIGEST 1)
+else()
+  set(NRN_DIGEST 0)
+endif()
+
+# =============================================================================
+# Enable NRN_ARCH_INDEP_EXP_POW
+# =============================================================================
+if(NRN_ENABLE_ARCH_INDEP_EXP_POW)
+  set(NRN_ARCH_INDEP_EXP_POW 1)
+else()
+  set(NRN_ARCH_INDEP_EXP_POW 0)
+endif()
+
+# =============================================================================
 # Enable CoreNEURON support
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)

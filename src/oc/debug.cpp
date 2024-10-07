@@ -1,5 +1,12 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/debug.cpp,v 1.7 1996/04/09 16:39:14 hines Exp */
+
+#if NRN_DIGEST
+#include <openssl/sha.h>
+#include <vector>
+#include <string>
+#endif
+
 #include "hocdec.h"
 #include "code.h"
 #include "equation.h"
@@ -144,3 +151,50 @@ void debugzz(Inst* p) {
     }
 #endif /*OCSMALL*/
 }
+
+#if NRN_DIGEST
+
+int nrn_digest_;
+static std::vector<std::string> digest;
+
+void nrn_digest() {
+    if (ifarg(1)) {  // print the digest to the file and turn off accumulation
+        const char* fname = gargstr(1);
+        FILE* f = fopen(fname, "w");
+        if (!f) {
+            hoc_execerr_ext("Could not open %s for writing", fname);
+        }
+        for (auto& s: digest) {
+            fprintf(f, "%s\n", s.c_str());
+        }
+        fclose(f);
+        nrn_digest_ = 0;
+    } else {  // start accumulating digest info
+        nrn_digest_ = 1;
+    }
+    size_t size = digest.size();
+    digest.clear();  // in any case, start over.
+    hoc_ret();
+    hoc_pushx(double(size));
+}
+
+void nrn_digest_dbl_array(const char* msg, int tid, int ix, double t, double* array, size_t sz) {
+    unsigned char md[SHA_DIGEST_LENGTH];
+    size_t n = sz * sizeof(double);
+    unsigned char* d = (unsigned char*) array;
+    SHA1(d, n, md);
+
+    std::string s(msg);
+    char buf[100];
+    sprintf(buf, " %d %d %.17g ", tid, ix, t);
+    s += buf;
+
+    for (int i = 0; i < 8; ++i) {
+        sprintf(buf, "%02x", (int) md[i]);
+        s += buf;
+    }
+
+    digest.push_back(s);
+}
+
+#endif  // NRN_DIGEST
