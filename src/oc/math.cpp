@@ -42,6 +42,10 @@ static inline void clear_fe_except() {
     }
 }
 
+void nrn_clear_fe_except() {
+    clear_fe_except();
+}
+
 static double errcheck(double, const char*);
 
 void hoc_atan2(void) {

@@ -48,6 +48,12 @@
 /* Define to 1 if you have the `sigprocmask' function. */
 #cmakedefine HAVE_SIGPROCMASK @HAVE_SIGPROCMASK@
 
+/* Define to 1 if you have the `feenableexcept' function. */
+#cmakedefine HAVE_FEENABLEEXCEPT @HAVE_FEENABLEEXCEPT@
+
+/* Define to 1 if you have the `fegetenv' function. */
+#cmakedefine HAVE_FEGETENV @HAVE_FEGETENV@
+
 /* (Define if this signal exists) */
 #cmakedefine HAVE_SIGBUS @HAVE_SIGBUS@
 

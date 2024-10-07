@@ -56,22 +56,44 @@ int (*p_nrnpy_pyrun)(const char* fname);
 extern int stdin_event_ready();
 #endif
 
+#if HAVE_FEENABLEEXCEPT || HAVE_FEGETENV
+#define NRN_FLOAT_EXCEPTION 1
+#else
+#define NRN_FLOAT_EXCEPTION 0
+#endif
+
+#if NRN_FLOAT_EXCEPTION
+#if !defined(__USE_GNU)
+#define __USE_GNU
+#endif
+#include <fenv.h>
+#if DARWIN && !defined(__arm64__)
+#pragma STDC FENV_ACCESS ON
+#endif  // DARWIN
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)
 static void matherr1(void) {
-    const int e = std::fetestexcept(FEEXCEPT);
     /* above gives the signal but for some reason fegetexcept returns 0 */
-    switch (e) {
-    case FE_DIVBYZERO:
+#if HAVE_FEENABLEEXCEPT
+    int i = fegetexcept();
+#elif HAVE_FEGETENV
+    int i = fetestexcept(FEEXCEPT);
+#endif
+    // fprintf(stderr,"matherr FEEXCEPT=%x i=%x\n", FEEXCEPT, i);
+    // fprintf(stderr,"matherr errno=%d\n", errno);
+    fenv_t env;
+    fegetenv(&env);
+#if __arm64__
+// fprintf(stderr,"matherr fpsr=%llx fpcr=%llx\n", env.__fpsr, env.__fpcr);
+#endif
+    if (i & FE_DIVBYZERO) {
         fprintf(stderr, "Floating exception: Divide by zero\n");
-        break;
-    case FE_INVALID:
+    } else if (i & FE_INVALID) {
         fprintf(stderr, "Floating exception: Invalid (no well defined result\n");
-        break;
-    case FE_OVERFLOW:
+    } else if (i & FE_OVERFLOW) {
         fprintf(stderr, "Floating exception: Overflow\n");
-        break;
     }
 }
+#endif  // NRN_FLOAT_EXCEPTION
 
 int nrn_mpiabort_on_error_{1};
 
@@ -80,14 +102,66 @@ int nrn_feenableexcept_ = 0;  // 1 if feenableexcept(FEEXCEPT) is successful
 void nrn_feenableexcept() {
     int result = -2;  // feenableexcept does not exist.
     nrn_feenableexcept_ = 0;
-#if NRN_FLOAT_EXCEPTION
-    if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
+    bool enable = (ifarg(1) && chkarg(1, 0., 1.) == 0.) ? false : true;
+#if HAVE_FEENABLEEXCEPT
+    if (!enable) {
         result = fedisableexcept(FEEXCEPT);
     } else {
         result = feenableexcept(FEEXCEPT);
         nrn_feenableexcept_ = (result == -1) ? 0 : 1;
     }
-#endif
+#elif HAVE_FEGETENV
+    fenv_t env;
+    if (fegetenv(&env) != 0) {
+        result = -1;
+    } else {
+#if defined __arm64__
+        const unsigned long long x = __fpcr_trap_divbyzero | __fpcr_trap_invalid |
+                                     __fpcr_trap_overflow;
+        if (!enable) {
+            env.__fpcr = env.__fpcr & (~x);
+            if (fesetenv(&env) != 0) {
+                result = -1;
+            } else {
+                result = env.__fpcr;
+                // fprintf(stderr, "arg=0 env.__fpcr=%llx\n", env.__fpcr);
+            }
+        } else {
+            env.__fpcr = env.__fpcr | x;
+            if (fesetenv(&env) != 0) {
+                result = -1;
+            } else {
+                result = env.__fpcr;
+                // fprintf(stderr, "arg=1 env.__fpcr=%llx\n", env.__fpcr);
+            }
+            nrn_feenableexcept_ = 1;
+        }
+    }
+#else   // not __arm64__
+        const unsigned int x = FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW;
+        if (!enable) {
+            env.__control |= x;
+            env.__mxcsr |= (x << 7);
+            if (fesetenv(&env) != 0) {
+                result = -1;
+            } else {
+                result = env.__control;
+                // fprintf(stderr, "arg=0 env.__control=%hx\n", env.__control);
+            }
+        } else {
+            env.__control &= ~x;
+            env.__mxcsr &= ~(x << 7);
+            if (fesetenv(&env) != 0) {
+                result = -1;
+            } else {
+                result = env.__control;
+                // fprintf(stderr, "arg=1 env.__control=%hx\n", env.__control);
+            }
+            nrn_feenableexcept_ = 1;
+        }
+    }
+#endif  // not __arm64
+#endif  // HAVE...
     hoc_ret();
     hoc_pushx((double) result);
 }
@@ -731,9 +805,19 @@ void print_bt() {
 #endif
 }
 
-void fpecatch(int /* sig */) /* catch floating point exceptions */
+/*
+For debugging signal handlers with gdb or lldb in some circumstances,
+it is helpful to avoid the debugger from stopping on the signal. This
+can be done for the fpecatch handler on mac arm64 by,
+lldb nrniv
+b main
+run ...
+process handle -p true -s false -n false SIGILL
+c
+*/
+
+void fpecatch(int sig) /* catch floating point exceptions */
 {
-    /*ARGSUSED*/
 #if NRN_FLOAT_EXCEPTION
     matherr1();
 #endif
@@ -742,7 +826,26 @@ void fpecatch(int /* sig */) /* catch floating point exceptions */
     if (coredump) {
         abort();
     }
-    signal(SIGFPE, fpecatch);
+
+    // clear the exception and unblock the signal.
+    extern void nrn_clear_fe_except();
+    nrn_clear_fe_except();
+#if HAVE_SIGPROCMASK
+    sigset_t set;
+    sigemptyset(&set);
+#if DARWIN && defined(__arm64__)
+    sigaddset(&set, SIGILL);
+#else   // linux?
+    sigaddset(&set, SIGFPE);
+#endif  // linux?
+    sigprocmask(SIG_UNBLOCK, &set, NULL);
+#endif  // HAVE_SIGPROCMASK
+
+#if DARWIN && defined(__arm64__)
+    signal(sig, fpecatch);
+#else
+    signal(sig, fpecatch);
+#endif
     hoc_execerror("Floating point exception.", (char*) 0);
 }
 
@@ -1158,7 +1261,7 @@ int hoc_moreinput() {
 }
 
 using SignalType = void(int);
-static SignalType* signals[4];
+static SignalType* signals[5];
 
 static void set_signals(void) {
     signals[0] = signal(SIGINT, onintr);
@@ -1166,6 +1269,9 @@ static void set_signals(void) {
     signals[2] = signal(SIGSEGV, sigsegvcatch);
 #if HAVE_SIGBUS
     signals[3] = signal(SIGBUS, sigbuscatch);
+#endif
+#if DARWIN && defined(__arm64__)
+    signals[4] = signal(SIGILL, fpecatch);
 #endif
 }
 
@@ -1175,6 +1281,9 @@ static void restore_signals(void) {
     signals[2] = signal(SIGSEGV, signals[2]);
 #if HAVE_SIGBUS
     signals[3] = signal(SIGBUS, signals[3]);
+#endif
+#if DARWIN && defined(__arm64__)
+    signals[4] = signal(SIGILL, fpecatch);
 #endif
 }
 

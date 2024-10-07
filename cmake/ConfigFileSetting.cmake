@@ -132,6 +132,8 @@ nrn_check_symbol_exists("setenv" "stdlib.h" HAVE_SETENV)
 nrn_check_symbol_exists("setitimer" "sys/time.h" HAVE_SETITIMER)
 nrn_check_symbol_exists("sigaction" "signal.h" HAVE_SIGACTION)
 nrn_check_symbol_exists("sigprocmask" "signal.h" HAVE_SIGPROCMASK)
+nrn_check_cxx_symbol_exists("feenableexcept" "fenv.h" HAVE_FEENABLEEXCEPT)
+nrn_check_cxx_symbol_exists("fegetenv" "fenv.h" HAVE_FEGETENV)
 nrn_check_symbol_exists("SIGBUS" "signal.h" HAVE_SIGBUS)
 nrn_check_symbol_exists("stty" "" HAVE_STTY)
 
