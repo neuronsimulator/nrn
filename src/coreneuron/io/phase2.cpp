@@ -6,6 +6,7 @@
 # =============================================================================
 */
 
+#include "nrnoc/ion_semantics.h"
 #include "coreneuron/io/phase2.hpp"
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/sim/multicore.hpp"
@@ -699,8 +700,8 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
                      **/
                     break;
                 default:
-                    if (s >= 0 && s < 1000) {  // ion
-                        int etype = s;
+                    if (nrn_semantics_is_ion(s)) {  // ion
+                        int etype = nrn_semantics_ion_type(s);
                         /* if ion is SoA, must recalculate pdata values */
                         /* if ion is AoS, have to deal with offset */
                         Memb_list* eml = nt._ml_list[etype];

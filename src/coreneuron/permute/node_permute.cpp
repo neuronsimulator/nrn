@@ -94,6 +94,7 @@ so pdata_m(k, isz) = inew + data_t
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/utils/nrn_assert.h"
 #include "coreneuron/coreneuron.hpp"
+#include "nrnoc/ion_semantics.h"
 #else
 #include "nrnoc/multicore.h"
 #include "oc/nrnassrt.h"
@@ -333,8 +334,8 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
                     nrn_assert(0);
                 }
             }
-        } else if (s >= 0 && s < 1000) {  // ion
-            int etype = s;
+        } else if (nrn_semantics_is_ion(s)) {  // ion
+            int etype = nrn_semantics_ion_type(s);
             int elayout = corenrn.get_mech_data_layout()[etype];
             Memb_list* eml = nt._ml_list[etype];
             int edata0 = eml->data - nt._data;

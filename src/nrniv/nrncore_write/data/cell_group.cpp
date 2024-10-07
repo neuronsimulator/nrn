@@ -343,15 +343,15 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 }
                 assert(etype != 0);
                 // pointer into one of the tml types?
-            } else if (dmap[j] > 0 && dmap[j] < 1000) {  // double* into eion type data
-                etype = dmap[j];
+            } else if (nrn_semantics_is_ion(dmap[j])) {  // double* into eion type data
+                etype = nrn_semantics_ion_type(dmap[j]);
                 Memb_list* eml = cg.type2ml[etype];
                 assert(eml);
                 auto* const pval = dparam[j].get<double*>();
                 auto const legacy_index = eml->legacy_index(pval);
                 assert(legacy_index >= 0);
                 eindex = legacy_index;
-            } else if (dmap[j] > 1000) {  // int* into ion dparam[xxx][0]
+            } else if (nrn_semantics_is_ionstyle(dmap[j])) {  // int* into ion dparam[xxx][0]
                 // store the actual ionstyle
                 etype = dmap[j];
                 eindex = *dparam[j].get<int*>();

@@ -5,6 +5,7 @@ extern void hoc_register_prop_size(int type, int psize, int dpsize);
 #include "nrnoc_ml.h"
 #include "oc_ansi.h"  // neuron::model_sorted_token
 #include "options.h"  // EXTRACELLULAR
+#include "ion_semantics.h"
 
 #include <string>
 #include <type_traits>

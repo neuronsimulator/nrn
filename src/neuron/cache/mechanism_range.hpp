@@ -22,7 +22,7 @@ void indices_to_cache(short type, Callable callable) {
         auto const sem = dparam_semantics[field];
         // See https://github.com/neuronsimulator/nrn/issues/2312 for discussion of possible
         // extensions to caching.
-        if ((sem > 0 && sem < 1000) || sem == -1 /* area */ || sem == -9 /* diam */) {
+        if (nrn_semantics_is_ion(sem) || sem == -1 /* area */ || sem == -9 /* diam */) {
             std::invoke(callable, field);
         }
     }
