@@ -14,6 +14,8 @@
 #include "parse.hpp"
 
 #include <nanobind/nanobind.h>
+
+#include "utils/enumerate.h"
 namespace nb = nanobind;
 
 static char* nrnpyerr_str();
@@ -937,14 +939,12 @@ static Object* py_alltoall_type(int size, int type) {
         // for alltoall, each rank handled identically
         // for scatter, root handled as list all, other ranks handled as None
         if (type == 1 || nrnmpi_myid == root) {  // psrc is list of nhost items
+            nb::list psrc_list(psrc);
 
             scnt = new int[np];
             for (int i = 0; i < np; ++i) {
                 scnt[i] = 0;
             }
-
-            PyObject* iterator = PyObject_GetIter(psrc);
-            PyObject* p;
 
             size_t bufsz = 100000;  // 100k buffer to start with
             if (size > 0) {         // or else the positive number specified
@@ -954,13 +954,13 @@ static Object* py_alltoall_type(int size, int type) {
                 s = new char[bufsz];
             }
             size_t curpos = 0;
-            for (size_t i = 0; (p = PyIter_Next(iterator)) != NULL; ++i) {
-                if (p == Py_None) {
+            for (auto&& [i, p]: enumerate(psrc_list)) {
+                if (p.is_none()) {
                     scnt[i] = 0;
-                    Py_DECREF(p);
+                    p.dec_ref();
                     continue;
                 }
-                auto b = pickle(p);
+                auto b = pickle(p.ptr());
                 if (size >= 0) {
                     if (curpos + b.size() >= bufsz) {
                         bufsz = bufsz * 2 + b.size();
@@ -977,9 +977,7 @@ static Object* py_alltoall_type(int size, int type) {
                 }
                 curpos += b.size();
                 scnt[i] = static_cast<int>(b.size());
-                Py_DECREF(p);
             }
-            Py_DECREF(iterator);
 
             // scatter equivalent to alltoall NONE list for not root ranks.
         } else if (type == 5 && nrnmpi_myid != root) {
