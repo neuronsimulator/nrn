@@ -44,8 +44,19 @@ jobs:
       - name: Install apt packages
         run: |
           sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libmpich-dev libx11-dev libxcomposite-dev mpich gpg ninja-build flex bison libfl-dev
-          sudo apt-get purge -y libopenmpi-dev openmpi-bin
         shell: bash
+
+      - name: Install a new version of OpenMPI
+        # The version of OpenMPI on Ubuntu 22.04 does not support MPI 4 features, so we install it manually
+        run: |
+          sudo apt-get purge -y libopenmpi-dev openmpi-bin
+          curl -L -o openmpi.tar.gz https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-5.0.5.tar.gz
+          tar -xf openmpi.tar.gz
+          cd openmpi-5.0.5/
+          ./configure --prefix=/usr/
+          make -j
+          sudo make -j install
+        working-directory: ${{runner.temp}}
 
       - name: Setup Caliper profiler
         run: |

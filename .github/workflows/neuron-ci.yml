@@ -187,6 +187,18 @@ jobs:
           python -m pip install --upgrade -r ci_requirements.txt
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
+      - name: Install a new version of OpenMPI
+        # The version of OpenMPI on Ubuntu 22.04 does not support MPI 4 features, so we install it manually
+        run: |
+          sudo apt-get purge -y libopenmpi-dev openmpi-bin
+          curl -L -o openmpi.tar.gz https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-5.0.5.tar.gz
+          tar -xf openmpi.tar.gz
+          cd openmpi-5.0.5/
+          ./configure --prefix=/usr/
+          make -j
+          sudo make -j install
+        working-directory: ${{runner.temp}}
+
       - name: Install a new automake
         # A automake >= 1.16.5 is needed for python 3.12 because it generates a python script
         # called py-compile and the original one is not supporting this version of python
@@ -200,14 +212,6 @@ jobs:
           make -j
           sudo make -j install
           automake --version
-          cd -
-          sudo apt-get purge -y libopenmpi-dev openmpi-bin
-          curl -L -o openmpi.tar.gz https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-5.0.5.tar.gz
-          tar -xf openmpi.tar.gz
-          cd openmpi-5.0.5/
-          ./configure --prefix=/usr/
-          make -j
-          sudo make -j install
         working-directory: ${{runner.temp}}
 
       - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
