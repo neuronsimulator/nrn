@@ -24,7 +24,7 @@ on:
 env:
   PY_MIN_VERSION: '3.8'
   PY_MID_VERSION: '3.10'
-  PY_MAX_VERSION: '3.13.0-rc.3'
+  PY_MAX_VERSION: '3.12'
 
 jobs:
   coverage:
@@ -187,7 +187,7 @@ jobs:
           MATRIX_EVAL: "CC=gcc CXX=g++"
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
           PYTHON_MID_NAME: "python${{ env.PY_MID_VERSION }}"
-          PYTHON_MAX_NAME: "python3.13"
+          PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
 
       # This step will set up an SSH connection on tmate.io for live debugging.
       # To enable it, you have to:
