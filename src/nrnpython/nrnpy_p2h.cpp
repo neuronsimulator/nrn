@@ -957,7 +957,6 @@ static Object* py_alltoall_type(int size, int type) {
             for (auto&& [i, p]: enumerate(psrc_list)) {
                 if (p.is_none()) {
                     scnt[i] = 0;
-                    p.dec_ref();
                     continue;
                 }
                 auto b = pickle(p.ptr());
