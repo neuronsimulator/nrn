@@ -43,22 +43,26 @@ struct MechanismRange {
     /**
      * @brief Construct a MechanismRange from sorted model data.
      * @param cache_token Token showing the model data are sorted.
-     * @param nt          Thread that this MechanismRange corresponds to.
      * @param ml          Range of mechanisms this MechanismRange refers to.
-     * @param type        The type of this mechanism.
      *
      * This mirrors the signature of the functions (nrn_state, nrn_cur, nrn_init...) that are
      * generated in C++ from MOD files. Typically those generated functions immediately create an
      * instance of MechanismRange using this constructor.
      */
+    MechanismRange(neuron::model_sorted_token const& cache_token, Memb_list& ml)
+        : MechanismRange{ml.type(), ml.get_storage_offset()} {
+        auto const& ptr_cache = mechanism::_get::_pdata_ptr_cache_data(cache_token, ml.type());
+        m_pdata_ptrs = ptr_cache.data();
+        assert(ptr_cache.size() <= NumDatumFields);
+    }
+
+    /** Deprecated. */
     MechanismRange(neuron::model_sorted_token const& cache_token,
                    NrnThread&,
                    Memb_list& ml,
                    int type)
-        : MechanismRange{type, ml.get_storage_offset()} {
-        auto const& ptr_cache = mechanism::_get::_pdata_ptr_cache_data(cache_token, type);
-        m_pdata_ptrs = ptr_cache.data();
-        assert(ptr_cache.size() <= NumDatumFields);
+        : MechanismRange(cache_token, ml) {
+        assert(type == ml.type());
     }
 
   protected:
