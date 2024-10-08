@@ -156,9 +156,11 @@ void debugzz(Inst* p) {
 
 int nrn_digest_;
 static std::vector<std::string> digest;
+static int nrn_digest_print_item_ = -1;
 
 void nrn_digest() {
-    if (ifarg(1)) {  // print the digest to the file and turn off accumulation
+    if (ifarg(1) && hoc_is_str_arg(1)) {
+        // print the digest to the file and turn off accumulation
         const char* fname = gargstr(1);
         FILE* f = fopen(fname, "w");
         if (!f) {
@@ -171,6 +173,10 @@ void nrn_digest() {
         nrn_digest_ = 0;
     } else {  // start accumulating digest info
         nrn_digest_ = 1;
+        nrn_digest_print_item_ = -1;
+        if (ifarg(1)) {
+            nrn_digest_print_item_ = int(chkarg(1, 0., 1e9));
+        }
     }
     size_t size = digest.size();
     digest.clear();  // in any case, start over.
@@ -195,6 +201,13 @@ void nrn_digest_dbl_array(const char* msg, int tid, int ix, double t, double* ar
     }
 
     digest.push_back(s);
+
+    if (nrn_digest_print_item_ == ix) {
+        printf("ZZ %s\n", s.c_str());
+        for (size_t i = 0; i < sz; ++i) {
+            printf("Z %zd %.20g\n", i, array[i]);
+        }
+    }
 }
 
 #endif  // NRN_DIGEST

@@ -683,6 +683,10 @@ void Cvode::fun_thread(neuron::model_sorted_token const& sorted_token,
                        NrnThread* nt) {
     CvodeThreadData& z = CTD(nt->id);
 #if NRN_DIGEST
+    if (nrn_digest_ == 1) {
+        nrn_digest_ = 2;
+        zz = 0;
+    }
     if (nrn_digest_) {
         nrn_digest_dbl_array("y", nt->id, zz, tt, y, z.nvsize_);
     }
