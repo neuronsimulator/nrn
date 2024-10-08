@@ -162,9 +162,6 @@ std::ostream* OcIdraw::idraw_stream = 0;
 #endif
 /*****************************************************************************/
 extern void ivoc_cleanup();
-#if OCSMALL
-static char* ocsmall_argv[] = {0, "difus.hoc"};
-#endif
 #if defined(WIN32) && HAVE_IV
 extern HWND hCurrWnd;
 #endif
@@ -538,13 +535,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 #endif  // !unix.
 
 #if HAVE_IV
-#if OCSMALL
-    our_argc = 2;
-    our_argv = new char*[2];
-    our_argv[0] = "Neuron";
-    our_argv[1] = ":lib:hoc:macload.hoc";
-    session = new Session("NEURON", our_argc, our_argv, options, properties);
-#else
 #if defined(WIN32)
     if (hoc_usegui) {
         session = new Session("NEURON", our_argc, (char**) our_argv, options, properties);
@@ -595,8 +585,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
         }
     }
     delete[] nrn_props;
-
-#endif /*OCSMALL*/
 
     if (session) {
         session->style()->find_attribute("NSTACK", hoc_nstack);
@@ -710,12 +698,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 
 #if USENRNJAVA
     nrn_InitializeJavaVM();
-#endif
-#if OCSMALL
-    if (argc == 1) {
-        ocsmall_argv[0] = our_argv[0];
-        exit_status = oc.run(2, ocsmall_argv);
-    } else
 #endif
 #if defined(USE_PYTHON)
 #if HAVE_IV
