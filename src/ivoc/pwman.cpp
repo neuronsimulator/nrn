@@ -1272,11 +1272,7 @@ PrintableWindowManager::PrintableWindowManager() {
         if (PrintableWindow::leader() != pwmi_->w_) {
             pwmi_->w_->replace_dismiss_action(NULL);
         }
-#if OCSMALL
-        pwmi_->w_->xplace(-800, 0);
-#else
         pwmi_->w_->xplace(0, 0);
-#endif
         //		pwmi_->w_->map();
         PrintableWindow::intercept(ocg);
     }

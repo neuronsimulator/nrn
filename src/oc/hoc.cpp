@@ -96,10 +96,6 @@ void start_profile(int i) {}
 void add_profile(int i) {}
 void pr_profile(void) {}
 
-#if OCSMALL
-#define READLINE 0
-#endif
-
 #ifndef READLINE
 #define READLINE 1
 #endif
