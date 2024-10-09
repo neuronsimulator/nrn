@@ -247,7 +247,12 @@ class CMakeAugmentedBuilder(build_ext):
         if self.cmake_defs:
             cmake_args += ["-D" + opt for opt in self.cmake_defs.split(",")]
 
-        build_args = ["--config", cfg, "--", "-j4"]  # , 'VERBOSE=1']
+        build_args = [
+            "--config",
+            cfg,
+            "--",
+            f"-j{os.environ.get('NRN_PARALLEL_BUILDS', 4)}",
+        ]
 
         env = os.environ.copy()
         env["CXXFLAGS"] = "{} -DVERSION_INFO='{}'".format(
