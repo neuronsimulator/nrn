@@ -399,3 +399,33 @@ class MultiCompartmentReaction(GeneralizedReaction):
                 self._cur_ptrs.append(tuple(local_ptrs))
                 self._cur_mapped.append(tuple(local_mapped))
                 self._cur_mapped_ecs.append(local_mapped_ecs)
+
+    def _evaluate(self, location, instruction, units=None):
+        rate = rxdmath._ensure_arithmeticed(self._original_rate_f)
+        if self._original_rate_b:
+            rate -= rxdmath._ensure_arithmeticed(self._original_rate_b)
+        mols = rate._evaluate(
+            location, instruction
+        )  # molecules per square micron per ms
+        if units:
+            reg, sec, x = location
+            area = (
+                self._regions[0]._geometry.volumes1d(sec)[int(x * sec.nseg)]
+                if self._scale_by_area
+                else 1
+            )
+            vol = reg.geometry.volumes1d(sec)[int(x * sec.nseg)]
+            molar = mols * area / molecules_per_mM_um3() / vol  # mM/ms
+            if units == "mM/ms":
+                return molar
+            if units == "mA/cm^2":
+                ratio = area / sec(x).area()
+                return (
+                    self._sources[0]()._species().charge
+                    * ratio
+                    * mols
+                    * h.FARADAY
+                    / (10000 * molecules_per_mM_um3())
+                )
+        else:
+            return mols

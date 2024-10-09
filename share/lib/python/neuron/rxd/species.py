@@ -302,6 +302,37 @@ class _SpeciesMathable(object):
                 )
         raise RxDException("_semi_compile received inconsistent state")
 
+    def _evaluate(self, location, instruction):
+        from . import region
+
+        # region is Extracellular
+        if len(location) == 3:
+            reg, sec, x = location
+        else:
+            raise RxDException(
+                "_evaluate needs a (region, section, normalized position) triple"
+            )
+        # if the species is only define on one extracellular region then use that
+        if len(self._regions) == 0 and len(self._extracellular_regions) == 1:
+            reg = self._extracellular_regions[0]
+
+        # region is Extracellular
+        if isinstance(reg, region.Extracellular) or len(self._regions) == 0:
+            ecs_instance = self._extracellular_instances[reg]
+            return ecs_instance._evaluate((reg, sec, x), instruction)
+        # region is 3d intracellular
+        if isinstance(reg, region.Region) and instruction == "do_3d":
+            ics_instance = self._intracellular_instances[reg]
+            return ics_instance._evaluate((reg, sec, x), instruction)
+        if isinstance(reg, region.Region) and instruction == "do_1d":
+            if reg in self._regions:
+                return self[reg].nodes(sec(x)).value[0]
+            else:
+                raise RxDException(
+                    "Species %r is not defined on region %r." % (self, reg)
+                )
+        raise RxDException("_evaluate received inconsistent state")
+
     def _involved_species(self, the_dict):
         the_dict[self._semi_compile] = weakref.ref(self)
 
@@ -466,6 +497,15 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         # return ecs_instance._semi_compile(reg)
         return self._extracellular()._semi_compile(reg, instruction)
 
+    def _evaluate(self, location, instruction):
+        if len(location) == 3:
+            reg, sec, x = location
+        else:
+            raise RxDException(
+                "_evaluate needs a (region, section, normalized position) triple"
+            )
+        return self.nodes(_xyz(sec(0.5))).value[0]
+
     @property
     def d(self):
         return self._extracellular()._d
@@ -603,6 +643,22 @@ class SpeciesOnRegion(_SpeciesMathable):
             return ics_instance._semi_compile(reg, instruction)
         elif any(reg._secs1d):
             return "species[%d][%d]" % (self._id, self._region()._id)
+        else:
+            raise RxDException("There are no 1D sections defined on {}".format(reg))
+
+    def _evaluate(self, location, instruction):
+        if len(location) == 3:
+            reg, sec, x = location
+        else:
+            raise RxDException(
+                "_evaluate needs a (region, section, normalized position) triple"
+            )
+        reg = self._region()
+        if instruction == "do_3d":
+            ics_instance = self._species()._intracellular_instances[reg]
+            return ics_instance._evaluate((reg, sec, x), instruction)
+        elif any(reg._secs1d):
+            return self[reg].nodes(sec(0.5)).value[0]
         else:
             raise RxDException("There are no 1D sections defined on {}".format(reg))
 
@@ -996,6 +1052,19 @@ class _IntracellularSpecies(_SpeciesMathable):
                 return f"params_3d[{self._grid_id}]"
             else:
                 return f"species_3d[{self._grid_id}]"
+        raise RxDException("_semi_compile received inconsistent state")
+
+    def _evaluate(self, location, instruction):
+        self._isalive()
+        if len(location) == 3:
+            reg, sec, x = location
+        else:
+            raise RxDException(
+                "_evaluate needs a (region, section, normalized position) triple"
+            )
+
+        if instruction == "do_3d":
+            return np.mean(self[reg].nodes(sec(x)))
         raise RxDException("_semi_compile received inconsistent state")
 
     def _register_cptrs(self):
@@ -1510,7 +1579,6 @@ class _ExtracellularSpecies(_SpeciesMathable):
                     self._states[i] = getattr(seg, stateo)
 
     def _semi_compile(self, reg, instruction):
-
         self._isalive()
         if self._species:
             sp = _defined_species[self._species][self._region]()
@@ -1523,6 +1591,16 @@ class _ExtracellularSpecies(_SpeciesMathable):
             return f"params_3d[{self._grid_id}]"
         else:
             return f"species_3d[{self._grid_id}]"
+
+    def _evaluate(self, location, instruction):
+        self._isalive()
+        if len(location) == 3:
+            reg, sec, x = location
+        else:
+            raise RxDException(
+                "_evaluate needs a (region, section, normalized position) triple"
+            )
+        return self[reg].nodes(sec(x)).value[0]
 
     @property
     def d(self):
@@ -2284,7 +2362,8 @@ class Species(_SpeciesMathable):
     def nodes(self):
         """A NodeList of all the nodes corresponding to the species.
 
-        This can then be further restricted using the callable property of NodeList objects."""
+        This can then be further restricted using the callable property of NodeList objects.
+        """
 
         from . import rxd
 

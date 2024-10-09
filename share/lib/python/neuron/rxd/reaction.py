@@ -278,3 +278,6 @@ class Reaction(GeneralizedReaction):
     def _do_memb_scales(self):
         # nothing to do since NEVER a membrane flux
         pass
+
+    def _evaluate(self, location, instruction):
+        return self._rate_arithmeticed._evaluate(location, instruction)

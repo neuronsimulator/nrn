@@ -406,23 +406,5 @@ class GeneralizedReaction(object):
         self._mult = _numpy_array(self._mult)
         self._update_jac_cache()
 
-    def _evaluate(self, states):
-        """returns: (list of lists (lol) of increase indices, lol of decr indices, list of changes)"""
-        args = self._get_args(states)
-        if args is None:
-            return ([], [], [])
-        return self._evaluate_args(args)
-
-    def _evaluate_args(self, args):
-        return (self._indices, self._mult, self._rate(*args))
-
-    def _get_memb_flux(self, states):
-        if self._membrane_flux:
-            # TODO: refactor the inside of _evaluate so can construct args in a separate function and just get self._rate() result
-            rates = self._evaluate(states)[2]
-            return self._memb_scales * rates
-        else:
-            return []
-
     def _update_jac_cache(self):
         self._mult_extended = self._mult
