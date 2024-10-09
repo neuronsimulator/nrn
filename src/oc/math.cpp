@@ -9,6 +9,7 @@
 
 #include "nrnmpiuse.h"
 #include "ocfunc.h"
+#include "nrnassrt.h"
 
 #include <cfenv>
 #include <cmath>
