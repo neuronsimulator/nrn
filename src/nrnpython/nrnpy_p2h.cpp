@@ -939,7 +939,7 @@ static Object* py_alltoall_type(int size, int type) {
         // for alltoall, each rank handled identically
         // for scatter, root handled as list all, other ranks handled as None
         if (type == 1 || nrnmpi_myid == root) {  // psrc is list of nhost items
-            nb::list psrc_list(psrc);
+            nb::list psrc_list = nb::borrow<nb::list>(psrc);
 
             scnt = new int[np];
             for (int i = 0; i < np; ++i) {
