@@ -37,14 +37,26 @@ jobs:
     env:
       DISPLAY: ${{ ':0' }}
       MUSIC_INSTALL_DIR: /opt/MUSIC
-      MUSIC_VERSION: 1.2.0
+      MUSIC_VERSION: 1.2.1
 
     steps:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin gpg ninja-build flex bison libfl-dev
+          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libmpich-dev libx11-dev libxcomposite-dev mpich gpg ninja-build flex bison libfl-dev
         shell: bash
+
+      - name: Install a new version of OpenMPI
+        # The version of OpenMPI on Ubuntu 22.04 does not support MPI 4 features, so we install it manually
+        run: |
+          sudo apt-get purge -y libopenmpi-dev openmpi-bin
+          curl -L -o openmpi.tar.gz https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-5.0.5.tar.gz
+          tar -xf openmpi.tar.gz
+          cd openmpi-5.0.5/
+          ./configure --prefix=/usr/
+          make -j
+          sudo make -j install
+        working-directory: ${{runner.temp}}
 
       - name: Setup Caliper profiler
         run: |
@@ -58,7 +70,7 @@ jobs:
         run: |
           python3 -m venv music-venv
           source music-venv/bin/activate
-          python3 -m pip install 'mpi4py<4' cython numpy setuptools
+          python3 -m pip install mpi4py cython numpy setuptools
           sudo mkdir -p $MUSIC_INSTALL_DIR
           sudo chown -R $USER $MUSIC_INSTALL_DIR
           curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip
