@@ -939,11 +939,7 @@ static Object* py_alltoall_type(int size, int type) {
         // for alltoall, each rank handled identically
         // for scatter, root handled as list all, other ranks handled as None
         if (type == 1 || nrnmpi_myid == root) {  // psrc is list of nhost items
-            nb::list psrc_list = nb::borrow<nb::list>(psrc);
-
-            scnt.resize(np, 0);
-
-            for (auto&& [i, p]: enumerate(psrc_list)) {
+            for (nb::handle p: nb::borrow<nb::list>(psrc)) {
                 if (p.is_none()) {
                     continue;
                 }
@@ -951,7 +947,7 @@ static Object* py_alltoall_type(int size, int type) {
                 if (size >= 0) {
                     s.insert(std::end(s), std::begin(b), std::end(b));
                 }
-                scnt[i] = static_cast<int>(b.size());
+                scnt.push_back(static_cast<int>(b.size()));
             }
 
             // scatter equivalent to alltoall NONE list for not root ranks.
