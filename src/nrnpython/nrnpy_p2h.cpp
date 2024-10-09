@@ -928,8 +928,8 @@ static Object* py_alltoall_type(int size, int type) {
             size = 0;  // calculate dest size (cannot be -1 so cannot return it)
         }
 
-        char* s = NULL;
-        int* scnt = NULL;
+        std::vector<char> s{};
+        std::vector<int> scnt{};
         int* sdispl = NULL;
         char* r = NULL;
         int* rcnt = NULL;
@@ -941,40 +941,16 @@ static Object* py_alltoall_type(int size, int type) {
         if (type == 1 || nrnmpi_myid == root) {  // psrc is list of nhost items
             nb::list psrc_list = nb::borrow<nb::list>(psrc);
 
-            scnt = new int[np];
-            for (int i = 0; i < np; ++i) {
-                scnt[i] = 0;
-            }
+            scnt.resize(np, 0);
 
-            size_t bufsz = 100000;  // 100k buffer to start with
-            if (size > 0) {         // or else the positive number specified
-                bufsz = size;
-            }
-            if (size >= 0) {  // otherwise count only
-                s = new char[bufsz];
-            }
-            size_t curpos = 0;
             for (auto&& [i, p]: enumerate(psrc_list)) {
                 if (p.is_none()) {
-                    scnt[i] = 0;
                     continue;
                 }
-                auto b = pickle(p.ptr());
+                const std::vector<char> b = pickle(p.ptr());
                 if (size >= 0) {
-                    if (curpos + b.size() >= bufsz) {
-                        bufsz = bufsz * 2 + b.size();
-                        char* s2 = new char[bufsz];
-                        for (size_t i = 0; i < curpos; ++i) {
-                            s2[i] = s[i];
-                        }
-                        delete[] s;
-                        s = s2;
-                    }
-                    for (size_t j = 0; j < b.size(); ++j) {
-                        s[curpos + j] = b[j];
-                    }
+                    s.insert(std::end(s), std::begin(b), std::end(b));
                 }
-                curpos += b.size();
                 scnt[i] = static_cast<int>(b.size());
             }
 
@@ -993,26 +969,23 @@ static Object* py_alltoall_type(int size, int type) {
             }
             sdispl = mk_displ(ones);
             rcnt = new int[np];
-            nrnmpi_int_alltoallv(scnt, ones, sdispl, rcnt, ones, sdispl);
+            nrnmpi_int_alltoallv(scnt.data(), ones, sdispl, rcnt, ones, sdispl);
             delete[] ones;
             delete[] sdispl;
 
             // exchange
-            sdispl = mk_displ(scnt);
+            sdispl = mk_displ(scnt.data());
             rdispl = mk_displ(rcnt);
             if (size < 0) {
                 pdest = PyTuple_New(2);
                 PyTuple_SetItem(pdest, 0, Py_BuildValue("l", (long) sdispl[np]));
                 PyTuple_SetItem(pdest, 1, Py_BuildValue("l", (long) rdispl[np]));
-                delete[] scnt;
                 delete[] sdispl;
                 delete[] rcnt;
                 delete[] rdispl;
             } else {
                 char* r = new char[rdispl[np] + 1];  // force > 0 for all None case
-                nrnmpi_char_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
-                delete[] s;
-                delete[] scnt;
+                nrnmpi_char_alltoallv(s.data(), scnt.data(), sdispl, r, rcnt, rdispl);
                 delete[] sdispl;
 
                 pdest = char2pylist(r, np, rcnt, rdispl);
@@ -1026,18 +999,14 @@ static Object* py_alltoall_type(int size, int type) {
 
             // destination counts
             rcnt = new int[1];
-            nrnmpi_int_scatter(scnt, rcnt, 1, root);
+            nrnmpi_int_scatter(scnt.data(), rcnt, 1, root);
             std::vector<char> r(rcnt[0] + 1);  // rcnt[0] can be 0
 
             // exchange
             if (nrnmpi_myid == root) {
-                sdispl = mk_displ(scnt);
+                sdispl = mk_displ(scnt.data());
             }
-            nrnmpi_char_scatterv(s, scnt, sdispl, r.data(), rcnt[0], root);
-            if (s)
-                delete[] s;
-            if (scnt)
-                delete[] scnt;
+            nrnmpi_char_scatterv(s.data(), scnt.data(), sdispl, r.data(), rcnt[0], root);
             if (sdispl)
                 delete[] sdispl;
 
