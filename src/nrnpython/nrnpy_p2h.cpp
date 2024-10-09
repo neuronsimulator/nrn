@@ -15,7 +15,6 @@
 
 #include <nanobind/nanobind.h>
 
-#include "utils/enumerate.h"
 namespace nb = nanobind;
 
 static char* nrnpyerr_str();
@@ -939,8 +938,10 @@ static Object* py_alltoall_type(int size, int type) {
         // for alltoall, each rank handled identically
         // for scatter, root handled as list all, other ranks handled as None
         if (type == 1 || nrnmpi_myid == root) {  // psrc is list of nhost items
-            for (nb::handle p: nb::borrow<nb::list>(psrc)) {
+            scnt.reserve(np);
+            for (const nb::handle& p: nb::list(psrc)) {
                 if (p.is_none()) {
+                    scnt.push_back(0);
                     continue;
                 }
                 const std::vector<char> b = pickle(p.ptr());
