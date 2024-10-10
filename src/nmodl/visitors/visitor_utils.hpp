@@ -124,6 +124,9 @@ std::string to_json(const ast::Ast& node,
                     bool expand = false,
                     bool add_nmodl = false);
 
+/// The `result.first` of `statement_dependencies`.
+std::string statement_dependencies_key(const std::shared_ptr<ast::Expression>& lhs);
+
 /// If \p lhs and \p rhs combined represent an assignment (we assume to have an "=" in between them)
 /// we extract the variables on which the assigned variable depends on. We provide the input with
 /// lhs and rhs because there are a few nodes that have this similar structure but slightly

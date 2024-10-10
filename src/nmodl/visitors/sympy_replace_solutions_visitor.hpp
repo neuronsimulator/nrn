@@ -249,12 +249,10 @@ class SympyReplaceSolutionsVisitor: public AstVisitor {
      *
      * \param node it can be Diff_Eq_Expression/LinEquation/NonLinEquation
      * \param get_lhs method with witch we may get the lhs (in case we need it)
-     * \param get_rhs method with witch we may get the rhs (in case we need it)
      */
     void try_replace_tagged_statement(
         const ast::Node& node,
-        std::shared_ptr<ast::Expression> get_lhs(const ast::Node& node),
-        std::shared_ptr<ast::Expression> get_rhs(const ast::Node& node));
+        std::shared_ptr<ast::Expression> get_lhs(const ast::Node& node));
 
     /**
      * \struct InterleavesCounter

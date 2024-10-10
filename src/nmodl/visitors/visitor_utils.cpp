@@ -250,18 +250,23 @@ std::string to_json(const ast::Ast& node, bool compact, bool expand, bool add_nm
     return stream.str();
 }
 
-std::pair<std::string, std::unordered_set<std::string>> statement_dependencies(
-    const std::shared_ptr<ast::Expression>& lhs,
-    const std::shared_ptr<ast::Expression>& rhs) {
-    std::string key;
-    std::unordered_set<std::string> out;
-
+std::string statement_dependencies_key(const std::shared_ptr<ast::Expression>& lhs) {
     if (!lhs->is_var_name()) {
-        return {key, out};
+        return "";
     }
 
     const auto& lhs_var_name = std::dynamic_pointer_cast<ast::VarName>(lhs);
-    key = get_full_var_name(*lhs_var_name);
+    return get_full_var_name(*lhs_var_name);
+}
+
+std::pair<std::string, std::unordered_set<std::string>> statement_dependencies(
+    const std::shared_ptr<ast::Expression>& lhs,
+    const std::shared_ptr<ast::Expression>& rhs) {
+    std::string key = statement_dependencies_key(lhs);
+    std::unordered_set<std::string> out;
+    if (!lhs->is_var_name()) {
+        return {key, out};
+    }
 
     visitor::AstLookupVisitor lookup_visitor;
     lookup_visitor.lookup(*rhs, ast::AstNodeType::VAR_NAME);

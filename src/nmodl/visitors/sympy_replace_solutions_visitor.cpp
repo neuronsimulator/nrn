@@ -161,8 +161,7 @@ void SympyReplaceSolutionsVisitor::visit_statement_block(ast::StatementBlock& no
 
 void SympyReplaceSolutionsVisitor::try_replace_tagged_statement(
     const ast::Node& node,
-    std::shared_ptr<ast::Expression> get_lhs(const ast::Node& node),
-    std::shared_ptr<ast::Expression> get_rhs(const ast::Node& node)) {
+    std::shared_ptr<ast::Expression> get_lhs(const ast::Node& node)) {
     interleaves_counter.new_equation(true);
 
     const auto& statement = std::static_pointer_cast<ast::Statement>(
@@ -176,8 +175,7 @@ void SympyReplaceSolutionsVisitor::try_replace_tagged_statement(
 
     switch (policy) {
     case ReplacePolicy::VALUE: {
-        const auto dependencies = statement_dependencies(get_lhs(node), get_rhs(node));
-        const auto& key = dependencies.first;
+        const auto key = statement_dependencies_key(get_lhs(node));
 
         if (solution_statements.is_var_assigned_here(key)) {
             logger->debug("SympyReplaceSolutionsVisitor :: marking for replacement {}",
@@ -216,11 +214,7 @@ void SympyReplaceSolutionsVisitor::visit_diff_eq_expression(ast::DiffEqExpressio
         return dynamic_cast<const ast::DiffEqExpression&>(node).get_expression()->get_lhs();
     };
 
-    auto get_rhs = [](const ast::Node& node) -> std::shared_ptr<ast::Expression> {
-        return dynamic_cast<const ast::DiffEqExpression&>(node).get_expression()->get_rhs();
-    };
-
-    try_replace_tagged_statement(node, get_lhs, get_rhs);
+    try_replace_tagged_statement(node, get_lhs);
 }
 
 void SympyReplaceSolutionsVisitor::visit_lin_equation(ast::LinEquation& node) {
@@ -229,11 +223,7 @@ void SympyReplaceSolutionsVisitor::visit_lin_equation(ast::LinEquation& node) {
         return dynamic_cast<const ast::LinEquation&>(node).get_lhs();
     };
 
-    auto get_rhs = [](const ast::Node& node) -> std::shared_ptr<ast::Expression> {
-        return dynamic_cast<const ast::LinEquation&>(node).get_rhs();
-    };
-
-    try_replace_tagged_statement(node, get_lhs, get_rhs);
+    try_replace_tagged_statement(node, get_lhs);
 }
 
 
@@ -243,11 +233,7 @@ void SympyReplaceSolutionsVisitor::visit_non_lin_equation(ast::NonLinEquation& n
         return dynamic_cast<const ast::NonLinEquation&>(node).get_lhs();
     };
 
-    auto get_rhs = [](const ast::Node& node) -> std::shared_ptr<ast::Expression> {
-        return dynamic_cast<const ast::NonLinEquation&>(node).get_rhs();
-    };
-
-    try_replace_tagged_statement(node, get_lhs, get_rhs);
+    try_replace_tagged_statement(node, get_lhs);
 }
 
 
