@@ -134,10 +134,10 @@ class SymbolTable {
     /**
      * get variables
      *
-     * \param with variables with properties. 0 matches everything
-     * \param without variables without properties. 0 matches nothing
+     * \param with variables with properties. `syminfo::NmodlType::empty` matches everything
+     * \param without variables without properties. `syminfo::NmodlType::empty` matches nothing
      *
-     * The two different behaviors for 0 depend on the fact that we get
+     * The two different behaviors for `syminfo::NmodlType::empty` depend on the fact that we get
      * get variables with ALL the with properties and without ANY of the
      * without properties
      */
