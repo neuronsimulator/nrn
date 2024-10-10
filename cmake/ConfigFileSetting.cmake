@@ -158,8 +158,6 @@ configure_file("${PROJECT_SOURCE_DIR}/src/nrnoc/nrnconfigargs.h.in"
                "${PROJECT_BINARY_DIR}/src/nrnoc/nrnconfigargs.h" @ONLY)
 configure_file("${PROJECT_SOURCE_DIR}/src/nrncvode/nrnneosm.h.in"
                "${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h" @ONLY)
-configure_file("${PROJECT_SOURCE_DIR}/src/sundials/sundials_config.h.in"
-               "${PROJECT_BINARY_DIR}/src/sundials/sundials_config.h" @ONLY)
 configure_file("${PROJECT_SOURCE_DIR}/share/lib/nrn.defaults.in"
                "${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults" @ONLY)
 file(COPY ${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib

@@ -100,12 +100,8 @@ static void nmodlrandom_destruct(void* v) {
 }
 
 void NMODLRandom_reg() {
-    class2oc("NMODLRandom",
-             nmodlrandom_cons,
-             nmodlrandom_destruct,
-             members,
-             retobj_members,
-             nullptr);
+    class2oc(
+        "NMODLRandom", nmodlrandom_cons, nmodlrandom_destruct, members, retobj_members, nullptr);
     if (!nmodlrandom_sym) {
         nmodlrandom_sym = hoc_lookup("NMODLRandom");
         assert(nmodlrandom_sym);
