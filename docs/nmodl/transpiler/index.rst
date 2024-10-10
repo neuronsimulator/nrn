@@ -24,6 +24,7 @@ About NMODL
    contents/pointers
    contents/cable_equations
    contents/globals
+   contents/longitudinal_diffusion
 
 .. toctree::
    :maxdepth: 3

@@ -87,7 +87,24 @@
                                   type: StatementBlock
                               - finalize_block:
                                   brief: "Statement block to be executed after calling linear solver"
-                                  type: StatementBlock                                  
+                                  type: StatementBlock
+                        - LongitudinalDiffusionBlock:
+                            brief: "Extracts information required for LONGITUDINAL_DIFFUSION for each KINETIC block."
+                            nmodl: "LONGITUDINAL_DIFFUSION_BLOCK"
+                            members:
+                              - name:
+                                  brief: "Name of the longitudinal diffusion block"
+                                  type: Name
+                                  node_name: true
+                                  prefix: { value: " "}
+                                  suffix: { value: " "}
+                              - longitudinal_diffusion_statements:
+                                  brief: "All LONGITUDINAL_DIFFUSION statements in the KINETIC block."
+                                  type: StatementBlock
+                              - compartment_statements:
+                                  brief: "All (required) COMPARTMENT statements in the KINETIC block."
+                                  type: StatementBlock
+
                   - WrappedExpression:
                       brief: "Wrap any other expression type"
                       members:

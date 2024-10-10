@@ -1568,6 +1568,7 @@
                             separator: " "
                       brief: "Represent LONGITUDINAL_DIFFUSION statement in NMODL"
 
+
                   - ReactionStatement:
                       brief: "TODO"
                       nmodl: "~ "
@@ -1750,14 +1751,14 @@
                             separator: ", "
                       description: |
                                 Here is an example of RANDOM statement
-                                
-                                \code{.mod}   
+
+                                \code{.mod}
                                       NEURON {
                                           THREADSAFE
                                           POINT_PROCESS NetStim
                                           RANDOM ranvar
                                 \endcode
- 
+
                   - Pointer:
                       nmodl: "POINTER "
                       members:

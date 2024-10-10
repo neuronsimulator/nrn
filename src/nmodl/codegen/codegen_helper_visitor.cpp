@@ -9,8 +9,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 
 #include "ast/all.hpp"
+#include "ast/constant_var.hpp"
 #include "codegen/codegen_naming.hpp"
 #include "parser/c11_driver.hpp"
 #include "visitors/visitor_utils.hpp"
@@ -851,6 +853,64 @@ void CodegenHelperVisitor::visit_before_block(const ast::BeforeBlock& node) {
 
 void CodegenHelperVisitor::visit_after_block(const ast::AfterBlock& node) {
     info.before_after_blocks.push_back(&node);
+}
+
+static std::shared_ptr<ast::Compartment> find_compartment(
+    const ast::LongitudinalDiffusionBlock& node,
+    const std::string& var_name) {
+    const auto& compartment_block = node.get_compartment_statements();
+    for (const auto& stmt: compartment_block->get_statements()) {
+        auto comp = std::dynamic_pointer_cast<ast::Compartment>(stmt);
+
+        auto species = comp->get_species();
+        auto it = std::find_if(species.begin(), species.end(), [&var_name](auto var) {
+            return var->get_node_name() == var_name;
+        });
+
+        if (it != species.end()) {
+            return comp;
+        }
+    }
+
+    return nullptr;
+}
+
+void CodegenHelperVisitor::visit_longitudinal_diffusion_block(
+    const ast::LongitudinalDiffusionBlock& node) {
+    auto longitudinal_diffusion_block = node.get_longitudinal_diffusion_statements();
+    for (auto stmt: longitudinal_diffusion_block->get_statements()) {
+        auto diffusion = std::dynamic_pointer_cast<ast::LonDiffuse>(stmt);
+        auto rate_index_name = diffusion->get_index_name();
+        auto rate_expr = diffusion->get_rate();
+        auto species = diffusion->get_species();
+
+        auto process_compartment = [](const std::shared_ptr<ast::Compartment>& compartment)
+            -> std::pair<std::shared_ptr<ast::Name>, std::shared_ptr<ast::Expression>> {
+            std::shared_ptr<ast::Expression> volume_expr;
+            std::shared_ptr<ast::Name> volume_index_name;
+            if (!compartment) {
+                volume_index_name = nullptr;
+                volume_expr = std::make_shared<ast::Double>("1.0");
+            } else {
+                volume_index_name = compartment->get_index_name();
+                volume_expr = std::shared_ptr<ast::Expression>(compartment->get_volume()->clone());
+            }
+            return {std::move(volume_index_name), std::move(volume_expr)};
+        };
+
+        for (auto var: species) {
+            std::string state_name = var->get_value()->get_value();
+            auto compartment = find_compartment(node, state_name);
+            auto [volume_index_name, volume_expr] = process_compartment(compartment);
+
+            info.longitudinal_diffusion_info.insert(
+                {state_name,
+                 LongitudinalDiffusionInfo(volume_index_name,
+                                           std::shared_ptr<ast::Expression>(volume_expr),
+                                           rate_index_name,
+                                           std::shared_ptr<ast::Expression>(rate_expr->clone()))});
+        }
+    }
 }
 
 }  // namespace codegen

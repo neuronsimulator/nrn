@@ -8,6 +8,8 @@
 #include "codegen/codegen_info.hpp"
 
 #include "ast/all.hpp"
+#include "ast/longitudinal_diffusion_block.hpp"
+#include "visitors/rename_visitor.hpp"
 #include "visitors/var_usage_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
@@ -16,6 +18,48 @@ namespace nmodl {
 namespace codegen {
 
 using visitor::VarUsageVisitor;
+
+LongitudinalDiffusionInfo::LongitudinalDiffusionInfo(
+    const std::shared_ptr<ast::Name>& volume_index_name,
+    std::shared_ptr<ast::Expression> volume_expr,
+    const std::shared_ptr<ast::Name>& rate_index_name,
+    std::shared_ptr<ast::Expression> rate_expr)
+    : volume_index_name(volume_index_name ? volume_index_name->get_node_name() : std::string{})
+    , volume_expr(std::move(volume_expr))
+    , rate_index_name(rate_index_name ? rate_index_name->get_node_name() : std::string{})
+    , rate_expr(std::move(rate_expr)) {}
+
+std::shared_ptr<ast::Expression> LongitudinalDiffusionInfo::volume(
+    const std::string& index_name) const {
+    return substitute_index(index_name, volume_index_name, volume_expr);
+}
+std::shared_ptr<ast::Expression> LongitudinalDiffusionInfo::diffusion_rate(
+    const std::string& index_name) const {
+    return substitute_index(index_name, rate_index_name, rate_expr);
+}
+
+double LongitudinalDiffusionInfo::dfcdc(const std::string& /* index_name */) const {
+    // Needed as part of the Jacobian to stabalize
+    // the implicit time-integration. However,
+    // currently, it's set to `0.0` for simplicity.
+    return 0.0;
+}
+
+std::shared_ptr<ast::Expression> LongitudinalDiffusionInfo::substitute_index(
+    const std::string& index_name,
+    const std::string& old_index_name,
+    const std::shared_ptr<ast::Expression>& old_expr) const {
+    if (old_index_name == "") {
+        // The expression doesn't contain an index that needs substituting.
+        return old_expr;
+    }
+    auto new_expr = old_expr->clone();
+
+    auto v = visitor::RenameVisitor(old_index_name, index_name);
+    new_expr->accept(v);
+
+    return std::shared_ptr<ast::Expression>(dynamic_cast<ast::Expression*>(new_expr));
+}
 
 /// if any ion has write variable
 bool CodegenInfo::ion_has_write_variable() const noexcept {

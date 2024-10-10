@@ -22,6 +22,7 @@ add_library(
   local_to_assigned_visitor.cpp
   local_var_rename_visitor.cpp
   localize_visitor.cpp
+  longitudinal_diffusion_visitor.cpp
   loop_unroll_visitor.cpp
   neuron_solve_visitor.cpp
   perf_visitor.cpp

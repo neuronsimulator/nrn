@@ -115,6 +115,7 @@ set(AST_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/ast/local_list_statement.hpp
     ${PROJECT_BINARY_DIR}/src/ast/local_var.hpp
     ${PROJECT_BINARY_DIR}/src/ast/lon_diffuse.hpp
+    ${PROJECT_BINARY_DIR}/src/ast/longitudinal_diffusion_block.hpp
     ${PROJECT_BINARY_DIR}/src/ast/model.hpp
     ${PROJECT_BINARY_DIR}/src/ast/mutex_lock.hpp
     ${PROJECT_BINARY_DIR}/src/ast/mutex_unlock.hpp

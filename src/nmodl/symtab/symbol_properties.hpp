@@ -223,7 +223,10 @@ enum class NmodlType : enum_type {
     random_var = 1LL << 34,
 
     /// FUNCTION or PROCEDURE needs setdata check
-    use_range_ptr_var = 1LL << 35
+    use_range_ptr_var = 1LL << 35,
+
+    /// Internal LONGITUDINAL_DIFFUSION block
+    longitudinal_diffusion_block = 1LL << 36
 };
 
 template <typename T>

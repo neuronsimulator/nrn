@@ -284,6 +284,44 @@ struct IndexSemantics {
         , size(size) {}
 };
 
+/**
+ * \brief Information required to print LONGITUDINAL_DIFFUSION callbacks.
+ */
+class LongitudinalDiffusionInfo {
+  public:
+    LongitudinalDiffusionInfo(const std::shared_ptr<ast::Name>& index_name,
+                              std::shared_ptr<ast::Expression> volume_expr,
+                              const std::shared_ptr<ast::Name>& rate_index_name,
+                              std::shared_ptr<ast::Expression> rate_expr);
+    /// Volume of this species.
+    ///
+    /// If the volume expression is an indexed expression, the index in the
+    /// expression is substituted with `index_name`.
+    std::shared_ptr<ast::Expression> volume(const std::string& index_name) const;
+
+    /// Difusion rate of this species.
+    ///
+    /// If the diffusion expression is an indexed expression, the index in the
+    /// expression is substituted with `index_name`.
+    std::shared_ptr<ast::Expression> diffusion_rate(const std::string& index_name) const;
+
+    /// The value of what NEURON calls `dfcdc`.
+    double dfcdc(const std::string& /* index_name */) const;
+
+  protected:
+    std::shared_ptr<ast::Expression> substitute_index(
+        const std::string& index_name,
+        const std::string& old_index_name,
+        const std::shared_ptr<ast::Expression>& old_expr) const;
+
+  private:
+    std::string volume_index_name;
+    std::shared_ptr<ast::Expression> volume_expr;
+
+    std::string rate_index_name;
+    std::shared_ptr<ast::Expression> rate_expr;
+};
+
 
 /**
  * \class CodegenInfo
@@ -446,6 +484,9 @@ struct CodegenInfo {
 
     /// all factors defined in the mod file
     std::vector<const ast::FactorDef*> factor_definitions;
+
+    /// for each state, the information needed to print the callbacks.
+    std::map<std::string, LongitudinalDiffusionInfo> longitudinal_diffusion_info;
 
     /// ions used in the mod file
     std::vector<Ion> ions;
