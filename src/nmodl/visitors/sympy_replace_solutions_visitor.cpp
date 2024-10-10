@@ -226,11 +226,11 @@ void SympyReplaceSolutionsVisitor::visit_diff_eq_expression(ast::DiffEqExpressio
 void SympyReplaceSolutionsVisitor::visit_lin_equation(ast::LinEquation& node) {
     logger->debug("SympyReplaceSolutionsVisitor :: visit {}", to_nmodl(node));
     auto get_lhs = [](const ast::Node& node) -> std::shared_ptr<ast::Expression> {
-        return dynamic_cast<const ast::LinEquation&>(node).get_left_linxpression();
+        return dynamic_cast<const ast::LinEquation&>(node).get_lhs();
     };
 
     auto get_rhs = [](const ast::Node& node) -> std::shared_ptr<ast::Expression> {
-        return dynamic_cast<const ast::LinEquation&>(node).get_left_linxpression();
+        return dynamic_cast<const ast::LinEquation&>(node).get_rhs();
     };
 
     try_replace_tagged_statement(node, get_lhs, get_rhs);

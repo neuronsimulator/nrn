@@ -1152,15 +1152,15 @@
                             type: Expression
 
                   - LinEquation:
-                      brief: "TODO"
+                      brief: "One equation in a system of equations tha collectively form a LINEAR block."
                       nmodl: "~ "
                       members:
-                        - left_linxpression:
-                            brief: "TODO"
+                        - lhs:
+                            brief: "Left-hand-side of the equation."
                             type: Expression
                             suffix: {value: " = "}
-                        - linxpression:
-                            brief: "TODO"
+                        - rhs:
+                            brief: "Right-hand-side of the equation."
                             type: Expression
 
                   - FunctionCall:

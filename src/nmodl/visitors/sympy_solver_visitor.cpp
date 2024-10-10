@@ -577,9 +577,9 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock& node) {
 
 void SympySolverVisitor::visit_lin_equation(ast::LinEquation& node) {
     check_expr_statements_in_same_block();
-    std::string lin_eq = to_nmodl_for_sympy(*node.get_left_linxpression());
+    std::string lin_eq = to_nmodl_for_sympy(*node.get_lhs());
     lin_eq += " = ";
-    lin_eq += to_nmodl_for_sympy(*node.get_linxpression());
+    lin_eq += to_nmodl_for_sympy(*node.get_rhs());
     eq_system.push_back(lin_eq);
     expression_statements.insert(current_expression_statement);
     last_expression_statement = current_expression_statement;
