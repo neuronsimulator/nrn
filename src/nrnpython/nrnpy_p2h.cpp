@@ -452,8 +452,13 @@ static Object* callable_with_args(Object* ho, int narg) {
         }
     }
 
-    nb::tuple r = nb::make_tuple(po, args);
-    Object* hr = nrnpy_po2ho(r.ptr());
+    PyObject* r = PyTuple_New(2);
+    PyTuple_SetItem(r, 1, args);
+    Py_INCREF(po);  // when r is destroyed, do not want po refcnt to go to 0
+    PyTuple_SetItem(r, 0, po);
+
+    Object* hr = nrnpy_po2ho(r);
+    Py_XDECREF(r);
 
     return hr;
 }
