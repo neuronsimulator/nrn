@@ -21,7 +21,6 @@
 #include <unordered_map>
 
 #include <nanobind/nanobind.h>
-
 namespace nb = nanobind;
 
 extern PyTypeObject* psection_type;
@@ -643,33 +642,30 @@ Object* nrnpy_po2ho(PyObject* po) {
     return o;
 }
 
-PyObject* nrnpy_hoc_pop(const char* mes) {
-    PyObject* result = 0;
+nb::object nrnpy_hoc_pop() {
+    nb::object result{};
     Object* ho;
     Object** d;
     switch (hoc_stack_type()) {
     case STRING:
-        result = Py_BuildValue("s", *hoc_strpop());
+        result = nb::str(*hoc_strpop());
         break;
     case VAR: {
-        // remove mes arg when test coverage development completed
-        // printf("VAR nrnpy_hoc_pop %s\n", mes);
         auto const px = hoc_pop_handle<double>();
         if (nrn_chk_data_handle(px)) {
             // unfortunately, this is nonsense if NMODL POINTER is pointing
             // to something other than a double.
-            result = Py_BuildValue("d", *px);
+            result = nb::float_(*px);
         }
     } break;
     case NUMBER:
-        result = Py_BuildValue("d", hoc_xpop());
+        result = nb::float_(hoc_xpop());
         break;
     case OBJECTVAR:
     case OBJECTTMP:
         d = hoc_objpop();
         ho = *d;
-        // printf("Py2Nrn %p %p\n", ho->ctemplate->sym, nrnpy_pyobj_sym_);
-        result = nrnpy_ho2po(ho);
+        result = nb::steal(nrnpy_ho2po(ho));
         hoc_tobj_unref(d);
         break;
     default:
@@ -760,7 +756,7 @@ static void* fcall(void* vself, void* vargs) {
             return nrnpy_hoc_int_pop();
         default:
             // No callable hoc function returns a data handle.
-            return nrnpy_hoc_pop("self->ho_ fcall");
+            return nrnpy_hoc_pop().release().ptr();
         }
     }
     if (self->sym_->type == BLTIN) {
@@ -800,7 +796,7 @@ static void* fcall(void* vself, void* vargs) {
     }
     hocobj_pushargs_free_strings(strings_to_free);
 
-    return nrnpy_hoc_pop("laststatement fcall");
+    return nrnpy_hoc_pop().release().ptr();
 }
 
 static PyObject* curargs_;
@@ -1276,7 +1272,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                         auto handle = hoc_pop_handle<double>();
                         return nrn_hocobj_handle(std::move(handle));
                     } else {
-                        return nrnpy_hoc_pop("use-the-component-fork hocobj_getattr");
+                        return nrnpy_hoc_pop().release().ptr();
                     }
                 }
             } else {
@@ -2016,7 +2012,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 if (po->type_ == PyHoc::HocArrayIncomplete) {
                     result = nrn_hocobj_ptr(hoc_pxpop());
                 } else {
-                    result = nrnpy_hoc_pop("po->ho_ hocobj_getitem");
+                    result = nrnpy_hoc_pop().release().ptr();
                 }
             }
         } else {  // must be a top level intermediate

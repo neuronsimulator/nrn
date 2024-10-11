@@ -20,6 +20,9 @@
 
 #include <string_view>
 
+#include <nanobind/nanobind.h>
+namespace nb = nanobind;
+
 #define PyString_FromString PyUnicode_FromString
 #define PyInt_Check         PyLong_Check
 #define PyInt_CheckExact    PyLong_CheckExact
@@ -30,7 +33,7 @@
 static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 8),
               "Python >= 3.8 required");
 
-extern PyObject* nrnpy_hoc_pop(const char* mes);
+extern nb::object nrnpy_hoc_pop();
 extern int nrnpy_numbercheck(PyObject*);
 
 #if defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ > __SIZEOF_LONG__
