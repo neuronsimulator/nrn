@@ -497,12 +497,30 @@ int run_nmodl(int argc, const char* argv[]) {
             ast_to_nmodl(*ast, filepath("localize"));
         }
 
-        const bool sympy_derivimplicit = neuron_code && solver_exists(*ast, "derivimplicit");
-        const bool sympy_linear = node_exists(*ast, ast::AstNodeType::LINEAR_BLOCK);
-        const bool sympy_sparse = solver_exists(*ast, "sparse");
+        // Even if `sympy --analytic` wasn't requested by the user, some constructs can't be
+        // implemented without. If they're present we assume that SymPy is present; and force
+        // `sympy --analytic`.
+        if (!sympy_analytic) {
+            auto enable_sympy = [&sympy_analytic](bool enable, const std::string& reason) {
+                if (!enable) {
+                    return;
+                }
 
-        if (sympy_conductance || sympy_analytic || sympy_sparse || sympy_derivimplicit ||
-            sympy_linear) {
+                if (!sympy_analytic) {
+                    logger->info("Automatically enabling sympy_analytic.");
+                    logger->info("Required by: {}.", reason);
+                }
+
+                sympy_analytic = true;
+            };
+
+            enable_sympy(solver_exists(*ast, "derivimplicit"), "'SOLVE ... METHOD derivimplicit'");
+            enable_sympy(node_exists(*ast, ast::AstNodeType::LINEAR_BLOCK), "'LINEAR' block");
+            enable_sympy(solver_exists(*ast, "sparse"), "'SOLVE ... METHOD sparse'");
+        }
+
+
+        if (sympy_conductance || sympy_analytic) {
             nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance()
                 .api()
                 .initialize_interpreter();
@@ -513,21 +531,7 @@ int run_nmodl(int argc, const char* argv[]) {
                 ast_to_nmodl(*ast, filepath("sympy_conductance"));
             }
 
-            if (sympy_analytic || sympy_sparse || sympy_derivimplicit || sympy_linear) {
-                if (!sympy_analytic) {
-                    logger->info("Automatically enabling sympy_analytic.");
-                    if (sympy_sparse) {
-                        logger->info("Required by 'SOLVE ... METHOD sparse'.");
-                    }
-
-                    if (sympy_derivimplicit) {
-                        logger->info("Required by 'SOLVE ... METHOD derivimplicit'.");
-                    }
-
-                    if (sympy_linear) {
-                        logger->info("Required by 'LINEAR' block.");
-                    }
-                }
+            if (sympy_analytic) {
                 logger->info("Running sympy solve visitor");
                 SympySolverVisitor(sympy_pade, sympy_cse).visit_program(*ast);
                 SymtabVisitor(update_symtab).visit_program(*ast);
