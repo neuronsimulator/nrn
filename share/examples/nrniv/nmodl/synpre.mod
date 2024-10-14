@@ -63,7 +63,7 @@ INITIAL {
 }
 
 BREAKPOINT {
-	SOLVE getonset
+	getonset()
 	g = gmax * alpha( (t - onset)/tau )
 	i = g*(v - e)
 }
@@ -82,8 +82,4 @@ PROCEDURE getonset() {
 	if (vpre > vprethresh && t > onset + deadtime) {
 		onset = t
 	}
-
-	VERBATIM
-	return 0;
-	ENDVERBATIM
 }
