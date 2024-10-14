@@ -11,6 +11,7 @@ set(NMODL_USECASE_DIRS
     hodgkin_huxley
     kinetic
     linear
+    longitudinal_diffusion
     morphology
     net_event
     net_move
