@@ -680,7 +680,7 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
 
     nb::list args{};
     for (int i = 0; i < narg; ++i) {
-        nb::object arg = nb::steal(nrnpy_hoc_pop());
+        nb::object arg = nrnpy_hoc_pop();
         args.append(arg);
     }
     nb::object result = callable(*args);
