@@ -1140,15 +1140,15 @@
                             type: Expression
 
                   - NonLinEquation:
-                      brief: "TODO"
+                      brief: "One equation in a system of equations that collectively make a NONLINEAR block."
                       nmodl: "~ "
                       members:
                         - lhs:
-                            brief: "TODO"
+                            brief: "Left-hand-side of the equation."
                             type: Expression
                             suffix: {value: " = "}
                         - rhs:
-                            brief: "TODO"
+                            brief: "Right-hand-side of the equation."
                             type: Expression
 
                   - LinEquation:

@@ -18,6 +18,7 @@ set(NMODL_USECASE_DIRS
     net_receive
     net_send
     neuron_variables
+    nonlinear
     nonspecific_current
     parameter
     point_process
