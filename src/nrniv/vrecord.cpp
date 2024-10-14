@@ -228,8 +228,7 @@ void VecPlayStep::deliver(double tt, NetCvode* ns) {
 
 
 void VecPlayStep::pr() {
-    Printf("VecPlayStep ");
-    Printf("%s.x[%d]\n", hoc_object_name(y_->obj_), current_index_);
+    logger.print("VecPlayStep {}.x[{}]\n", hoc_object_name(y_->obj_), current_index_);
 }
 
 VecPlayContinuous::VecPlayContinuous(neuron::container::data_handle<double> pd,
