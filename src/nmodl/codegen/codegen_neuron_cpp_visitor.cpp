@@ -908,7 +908,9 @@ void CodegenNeuronCppVisitor::print_sdlists_init([[maybe_unused]] bool print_ini
 
 CodegenCppVisitor::ParamVector CodegenNeuronCppVisitor::functor_params() {
     auto params = internal_method_parameters();
-    params.push_back({"", "double", "", "v"});
+    if (!info.artificial_cell) {
+        params.push_back({"", "double", "", "v"});
+    }
 
     return params;
 }
