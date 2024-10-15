@@ -560,16 +560,17 @@ int Cvode::solvex_thread(neuron::model_sorted_token const& sorted_token,
     // for (int i=0; i < neq_; ++i) { printf("\t\t%d %g\n", i, b[i]);}
     int i;
     CvodeThreadData& z = CTD(nt->id);
-#if NRN_DIGEST
-    if (nrn_digest_) {
-        nrn_digest_dbl_array("solvex enter b", nt->id, t_, b, z.nvsize_);
-    }
-#endif
     nt->cj = 1. / gam();
     nt->_dt = gam();
     if (z.nvsize_ == 0) {
         return 0;
     }
+#if NRN_DIGEST
+    if (nrn_digest_) {
+        nrn_digest_dbl_array("solvex enter b", nt->id, t_, b, z.nvsize_);
+        nrn_digest_dbl_array("solvex enter y", nt->id, t_, y, z.nvsize_);
+    }
+#endif
     lhs(sorted_token, nt);  // special version for cvode.
     scatter_ydot(b, nt->id);
     if (z.cmlcap_) {
