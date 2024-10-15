@@ -111,6 +111,19 @@ def test_differentiate2c():
         {sp.IndexedBase("s", shape=[1]), sp.IndexedBase("z", shape=[1])},
     )
 
+    # make sure we can diff against indexed vars as well
+    var = sp.IndexedBase("x", shape=[1])
+
+    assert _equivalent(
+        differentiate2c(
+            "a * x[0]",
+            var[0],
+            {"a", var},
+        ),
+        "a",
+        {"a"},
+    )
+
     result = differentiate2c(
         "-f(x)",
         "x",
