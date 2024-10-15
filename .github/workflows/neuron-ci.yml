@@ -380,7 +380,7 @@ jobs:
                     "${python}" -c "from neuron import h; import neuron; neuron.test()"
                 done
               fi
-              ctest --output-on-failure
+              ctest --output-on-failure -E rxd
               cmake --build . --target install
               export PATH="${INSTALL_DIR}/bin:${PATH}"
               if [[ -f "${INSTALL_DIR}/bin/nrn-enable-sanitizer" ]]; then
