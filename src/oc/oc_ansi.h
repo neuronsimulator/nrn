@@ -47,12 +47,7 @@ struct model_sorted_token;
 
 #if NRN_DIGEST
 extern int nrn_digest_;  // debugging differences on different machines.
-extern void nrn_digest_dbl_array(const char* msg,
-                                 int tid,
-                                 int ix,
-                                 double t,
-                                 double* array,
-                                 size_t sz);
+extern void nrn_digest_dbl_array(const char* msg, int tid, double t, double* array, size_t sz);
 #endif
 
 // nocpout.cpp

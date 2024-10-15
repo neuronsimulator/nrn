@@ -562,7 +562,7 @@ int Cvode::solvex_thread(neuron::model_sorted_token const& sorted_token,
     CvodeThreadData& z = CTD(nt->id);
 #if NRN_DIGEST
     if (nrn_digest_) {
-        nrn_digest_dbl_array("solvex enter b", nt->id, 0, t_, b, z.nvsize_);
+        nrn_digest_dbl_array("solvex enter b", nt->id, t_, b, z.nvsize_);
     }
 #endif
     nt->cj = 1. / gam();
@@ -604,7 +604,7 @@ int Cvode::solvex_thread(neuron::model_sorted_token const& sorted_token,
     nrn_nonvint_block_ode_solve(z.nvsize_, b, y, nt->id);
 #if NRN_DIGEST
     if (nrn_digest_) {
-        nrn_digest_dbl_array("solvex leave b", nt->id, 0, t_, b, z.nvsize_);
+        nrn_digest_dbl_array("solvex leave b", nt->id, t_, b, z.nvsize_);
     }
 #endif
     return 0;
@@ -674,8 +674,6 @@ void Cvode::solvemem(neuron::model_sorted_token const& sorted_token, NrnThread* 
     long_difus_solve(sorted_token, 2, *nt);
 }
 
-static int zz;
-
 void Cvode::fun_thread(neuron::model_sorted_token const& sorted_token,
                        double tt,
                        double* y,
@@ -683,12 +681,8 @@ void Cvode::fun_thread(neuron::model_sorted_token const& sorted_token,
                        NrnThread* nt) {
     CvodeThreadData& z = CTD(nt->id);
 #if NRN_DIGEST
-    if (nrn_digest_ == 1) {
-        nrn_digest_ = 2;
-        zz = 0;
-    }
     if (nrn_digest_) {
-        nrn_digest_dbl_array("y", nt->id, zz, tt, y, z.nvsize_);
+        nrn_digest_dbl_array("y", nt->id, tt, y, z.nvsize_);
     }
 #endif
     fun_thread_transfer_part1(sorted_token, tt, y, nt);
@@ -697,9 +691,8 @@ void Cvode::fun_thread(neuron::model_sorted_token const& sorted_token,
 
 #if NRN_DIGEST
     if (nrn_digest_ && ydot) {
-        nrn_digest_dbl_array("ydot", nt->id, zz, tt, ydot, z.nvsize_);
+        nrn_digest_dbl_array("ydot", nt->id, tt, ydot, z.nvsize_);
     }
-    zz += 1;
 #endif
 }
 

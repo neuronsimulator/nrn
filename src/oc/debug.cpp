@@ -10,6 +10,7 @@
 #include "hocdec.h"
 #include "code.h"
 #include "equation.h"
+#include "multicore.h"
 #include <stdio.h>
 
 #include "utils/logger.hpp"
@@ -155,7 +156,8 @@ void debugzz(Inst* p) {
 #if NRN_DIGEST
 
 int nrn_digest_;
-static std::vector<std::string> digest;
+static std::vector<std::vector<std::string>> digest;  // nthread string vectors
+static std::vector<size_t> digest_cnt;                // nthread counts.
 static int nrn_digest_print_item_ = -1;
 
 void nrn_digest() {
@@ -166,8 +168,14 @@ void nrn_digest() {
         if (!f) {
             hoc_execerr_ext("Could not open %s for writing", fname);
         }
-        for (auto& s: digest) {
-            fprintf(f, "%s\n", s.c_str());
+
+        int tid = 0;
+        for (auto& d: digest) {
+            fprintf(f, "tid=%d size=%zd\n", tid, digest[tid].size());
+            for (auto& s: d) {
+                fprintf(f, "%s\n", s.c_str());
+            }
+            tid++;
         }
         fclose(f);
         nrn_digest_ = 0;
@@ -178,13 +186,16 @@ void nrn_digest() {
             nrn_digest_print_item_ = int(chkarg(1, 0., 1e9));
         }
     }
-    size_t size = digest.size();
+    size_t size = digest.size() ? digest[0].size() : 0;
     digest.clear();  // in any case, start over.
+    digest.resize(nrn_nthread);
+    digest_cnt.clear();
+    digest_cnt.resize(nrn_nthread);
     hoc_ret();
     hoc_pushx(double(size));
 }
 
-void nrn_digest_dbl_array(const char* msg, int tid, int ix, double t, double* array, size_t sz) {
+void nrn_digest_dbl_array(const char* msg, int tid, double t, double* array, size_t sz) {
     unsigned char md[SHA_DIGEST_LENGTH];
     size_t n = sz * sizeof(double);
     unsigned char* d = (unsigned char*) array;
@@ -192,6 +203,8 @@ void nrn_digest_dbl_array(const char* msg, int tid, int ix, double t, double* ar
 
     std::string s(msg);
     char buf[100];
+    int ix = int(digest_cnt[tid]);
+    digest_cnt[tid]++;
     sprintf(buf, " %d %d %.17g ", tid, ix, t);
     s += buf;
 
@@ -200,7 +213,7 @@ void nrn_digest_dbl_array(const char* msg, int tid, int ix, double t, double* ar
         s += buf;
     }
 
-    digest.push_back(s);
+    digest[tid].push_back(s);
 
     if (nrn_digest_print_item_ == ix) {
         printf("ZZ %s\n", s.c_str());
