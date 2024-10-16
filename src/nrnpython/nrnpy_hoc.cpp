@@ -21,7 +21,6 @@
 #include <unordered_map>
 
 #include <nanobind/nanobind.h>
-
 namespace nb = nanobind;
 
 extern PyTypeObject* psection_type;
