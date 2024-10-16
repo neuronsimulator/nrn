@@ -429,11 +429,11 @@ static Member_func members[] = {{"intercept", intercept},            // #if HAVE
                                 {0, 0}};
 
 void HBox_reg() {
-    class2oc("HBox", hcons, destruct, members, NULL, NULL, NULL);
+    class2oc("HBox", hcons, destruct, members, NULL, NULL);
 }
 
 void VBox_reg() {
-    class2oc("VBox", vcons, destruct, members, NULL, NULL, NULL);
+    class2oc("VBox", vcons, destruct, members, NULL, NULL);
 }
 #if HAVE_IV
 OcGlyphContainer::OcGlyphContainer()

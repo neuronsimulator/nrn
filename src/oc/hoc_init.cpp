@@ -1,9 +1,7 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/hoc_init.cpp,v 1.25 1999/11/08 17:48:58 hines Exp */
 
-#include "hoc.h"
 #include "parse.hpp"
-#include <cmath>
 #include "equation.h"
 #include "nrnunits.h"
 
@@ -11,6 +9,8 @@
 #include "ocfunc.h"
 
 #include "oc_mcran4.hpp"
+
+#include <cmath>
 
 extern void hoc_nrnmpi_init();
 
@@ -87,11 +87,11 @@ static struct { /* Built-ins */
                 {"cos", cos},
                 {"atan", atan},
                 {"tanh", tanh},
-                {"log", Log},      /* checks argument */
-                {"log10", Log10},  /* checks argument */
-                {"exp", hoc1_Exp}, /* checks argument */
-                {"sqrt", Sqrt},    /* checks argument */
-                {"int", integer},
+                {"log", hoc_Log},     /* checks argument */
+                {"log10", hoc_Log10}, /* checks argument */
+                {"exp", hoc1_Exp},    /* checks argument */
+                {"sqrt", hoc_Sqrt},   /* checks argument */
+                {"int", hoc_integer},
                 {"abs", fabs},
                 {"erf", erf},
                 {"erfc", erfc},
@@ -170,7 +170,6 @@ static struct { /* Builtin functions with multiple or variable args */
                  {"saveaudit", hoc_Saveaudit},
                  {"retrieveaudit", hoc_Retrieveaudit},
                  {"coredump_on_error", hoc_coredump_on_error},
-                 {"checkpoint", hoc_checkpoint},
                  {"quit", hoc_quit},
                  {"object_push", hoc_object_push},
                  {"object_pop", hoc_object_pop},
@@ -252,32 +251,32 @@ void hoc_init(void) /* install constants and built-ins table */
     extern void hoc_init_space(void);
     hoc_init_space();
     for (i = 0; keywords[i].name; i++)
-        IGNORE(install(keywords[i].name, keywords[i].kval, 0.0, &symlist));
+        IGNORE(hoc_install(keywords[i].name, keywords[i].kval, 0.0, &hoc_symlist));
     for (i = 0; consts[i].name; i++) {
-        s = install(consts[i].name, UNDEF, consts[i].cval, &symlist);
+        s = hoc_install(consts[i].name, UNDEF, consts[i].cval, &hoc_symlist);
         s->type = VAR;
         s->u.pval = &consts[i].cval;
         s->subtype = USERDOUBLE;
     }
     for (i = 0; builtins[i].name; i++) {
-        s = install(builtins[i].name, BLTIN, 0.0, &symlist);
+        s = hoc_install(builtins[i].name, BLTIN, 0.0, &hoc_symlist);
         s->u.ptr = builtins[i].func;
     }
     for (i = 0; fun_bltin[i].name; i++) {
-        s = install(fun_bltin[i].name, FUN_BLTIN, 0.0, &symlist);
+        s = hoc_install(fun_bltin[i].name, FUN_BLTIN, 0.0, &hoc_symlist);
         s->u.u_proc->defn.pf = fun_bltin[i].fun_blt;
         s->u.u_proc->nauto = 0;
         s->u.u_proc->nobjauto = 0;
     }
     for (i = 0; strfun_bltin[i].name; i++) {
-        s = install(strfun_bltin[i].name, FUN_BLTIN, 0.0, &symlist);
+        s = hoc_install(strfun_bltin[i].name, FUN_BLTIN, 0.0, &hoc_symlist);
         s->type = STRINGFUNC;
         s->u.u_proc->defn.pf = strfun_bltin[i].strfun_blt;
         s->u.u_proc->nauto = 0;
         s->u.u_proc->nobjauto = 0;
     }
     for (i = 0; objfun_bltin[i].name; i++) {
-        s = install(objfun_bltin[i].name, FUN_BLTIN, 0.0, &symlist);
+        s = hoc_install(objfun_bltin[i].name, FUN_BLTIN, 0.0, &hoc_symlist);
         s->type = OBJECTFUNC;
         s->u.u_proc->defn.pf = objfun_bltin[i].objfun_blt;
         s->u.u_proc->nauto = 0;
@@ -289,20 +288,20 @@ void hoc_init(void) /* install constants and built-ins table */
     hoc_install_var("hoc_cross_y_", &hoc_cross_y_);
     hoc_install_var("default_dll_loaded_", &hoc_default_dll_loaded_);
 
-    s = install("xopen_broadcast_", UNDEF, 0.0, &hoc_symlist);
+    s = hoc_install("xopen_broadcast_", UNDEF, 0.0, &hoc_symlist);
     s->type = VAR;
     s->subtype = USERINT;
     s->u.pvalint = &nrn_xopen_broadcast_;
 
     /* initialize pointers ( why doesn't Vax do this?) */
     hoc_access = (int*) 0;
-    spinit();
+    hoc_spinit();
     hoc_class_registration();
-    hoc_built_in_symlist = symlist;
-    symlist = (Symlist*) 0;
+    hoc_built_in_symlist = hoc_symlist;
+    hoc_symlist = (Symlist*) 0;
     /* start symlist and top level the same list */
-    hoc_top_level_symlist = symlist = (Symlist*) emalloc(sizeof(Symlist));
-    symlist->first = symlist->last = (Symbol*) 0;
+    hoc_top_level_symlist = hoc_symlist = (Symlist*) emalloc(sizeof(Symlist));
+    hoc_symlist->first = hoc_symlist->last = (Symbol*) 0;
     hoc_install_hoc_obj();
 }
 

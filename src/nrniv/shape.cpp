@@ -605,7 +605,7 @@ static void sh_destruct(void* v) {
 }
 void Shape_reg() {
     //	printf("Shape_reg\n");
-    class2oc("Shape", sh_cons, sh_destruct, sh_members, NULL, retobj_members, NULL);
+    class2oc("Shape", sh_cons, sh_destruct, sh_members, retobj_members, NULL);
 }
 
 #if HAVE_IV

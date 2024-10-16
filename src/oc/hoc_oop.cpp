@@ -1,15 +1,17 @@
 #include <../../nrnconf.h>
+#include <cstdlib>
+#include <vector>
 
 #include "utils/formatting.hpp"
 
-#include <stdlib.h>
-#include <classreg.h>
-#include <vector>
+
+#include "classreg.h"
 
 #include "hocstr.h"
 #include "parse.hpp"
 #include "hocparse.h"
 #include "code.h"
+#include "cabcode.h"
 #include "hocassrt.h"
 #include "hoclist.h"
 #include "nrn_ansi.h"
@@ -17,7 +19,6 @@
 #include "nrnpy.h"
 #include "nrnfilewrap.h"
 #include "ocfunc.h"
-
 
 #define PDEBUG 0
 
@@ -251,7 +252,7 @@ void hoc_object_push(void) {
         hoc_objectdata = hoc_top_level_data;
     }
     hoc_ret();
-    pushx(0.);
+    hoc_pushx(0.);
 }
 
 void hoc_object_pushed(void) {
@@ -278,7 +279,7 @@ void hoc_object_pop(void) {
         hoc_objectdata = hoc_top_level_data;
     }
     hoc_ret();
-    pushx(0.);
+    hoc_pushx(0.);
 }
 /*-----------------------------------------------*/
 int hoc_resize_toplevel(int more) {
@@ -376,7 +377,7 @@ void hoc_exec_cmd(void) { /* execute string from top level or within an object c
         hocstr_delete(hs);
     }
     hoc_ret();
-    pushx((double) (err));
+    hoc_pushx((double) (err));
 }
 
 /* call a function within the context of an object. Args must be on stack */
@@ -555,7 +556,7 @@ Object* hoc_newobj1(Symbol* sym, int narg) {
             hoc_construct_point(ob, narg);
         }
         if (ob->ctemplate->init) {
-            call_ob_proc(ob, ob->ctemplate->init, narg);
+            hoc_call_ob_proc(ob, ob->ctemplate->init, narg);
         } else {
             for (i = 0; i < narg; ++i) {
                 hoc_nopop();
@@ -622,7 +623,7 @@ static void call_constructor(Object* ob, Symbol* sym, int narg) {
     obsav = hoc_thisobject;
     pcsav = pc;
 
-    push_frame(sym, narg);
+    hoc_push_frame(sym, narg);
     ob->u.this_pointer = neuron::oc::invoke_method_that_may_throw(
         [ob]() -> std::string {
             std::string rval{hoc_object_name(ob)};
@@ -631,7 +632,7 @@ static void call_constructor(Object* ob, Symbol* sym, int narg) {
         },
         ob->ctemplate->constructor,
         ob);
-    pop_frame();
+    hoc_pop_frame();
 
     pc = pcsav;
     hoc_symlist = slsav;
@@ -650,7 +651,7 @@ Object* nrn_get_gui_redirect_obj() {
     return gui_redirect_obj_;
 }
 
-void call_ob_proc(Object* ob, Symbol* sym, int narg) {
+void hoc_call_ob_proc(Object* ob, Symbol* sym, int narg) {
     Inst *pcsav, callcode[4];
     Symlist* slsav;
     Objectdata* obdsav;
@@ -664,7 +665,7 @@ void call_ob_proc(Object* ob, Symbol* sym, int narg) {
     if (ob->ctemplate->sym->subtype & CPLUSOBJECT) {
         hoc_thisobject = ob;
         gui_redirect_obj_ = ob;
-        push_frame(sym, narg);
+        hoc_push_frame(sym, narg);
         hoc_thisobject = obsav;
         auto const error_prefix_generator = [ob, sym]() {
             std::string rval{hoc_object_name(ob)};
@@ -699,7 +700,7 @@ void call_ob_proc(Object* ob, Symbol* sym, int narg) {
     } else if (ob->ctemplate->is_point_ && special_pnt_call(ob, sym, narg)) {
         ; /*empty since special_pnt_call did the work for get_loc, has_loc, and loc*/
     } else {
-        callcode[0].pf = call;
+        callcode[0].pf = hoc_call;
         callcode[1].sym = sym;
         callcode[2].i = narg;
         callcode[3].in = STOP;
@@ -707,7 +708,7 @@ void call_ob_proc(Object* ob, Symbol* sym, int narg) {
         hoc_objectdata = ob->u.dataspace;
         hoc_thisobject = ob;
         hoc_symlist = ob->ctemplate->symtable;
-        execute(callcode);
+        hoc_execute(callcode);
         if (sym->type == PROCEDURE) {
             hoc_nopop();
         }
@@ -818,7 +819,7 @@ void hoc_objectvar(void) { /* object variable symbol at pc+1. */
     }
     obp = OPOBJ(obs);
     if (is_array(*obs)) {
-        hoc_pushobj(obp + araypt(obs, OBJECTVAR));
+        hoc_pushobj(obp + hoc_araypt(obs, OBJECTVAR));
     } else {
         hoc_pushobj(obp);
     }
@@ -895,13 +896,13 @@ void hoc_object_id(void) {
     if (ifarg(2) && chkarg(2, 0., 1.) == 1.) {
         hoc_ret();
         if (ob) {
-            pushx((double) ob->index);
+            hoc_pushx((double) ob->index);
         } else {
-            pushx(-1.);
+            hoc_pushx(-1.);
         }
     } else {
         hoc_ret();
-        pushx((double) ((size_t) ob));
+        hoc_pushx((double) ((size_t) ob));
     }
 }
 
@@ -942,7 +943,7 @@ static void range_suffix(Symbol* sym, int nindex, int narg) {
                 hoc_push_ndim(nindex);
             }
             if (narg) {  // push back the arc length
-                pushx(x);
+                hoc_pushx(x);
             }
         }
         hoc_pushi(narg);
@@ -1036,8 +1037,8 @@ void hoc_object_component() {
                     hoc_execerror_fmt("Cannot assign to a PythonObject function call '{}'",
                                       sym0->name);
                 }
-                pushi(nindex);
-                pushs(sym0);
+                hoc_pushi(nindex);
+                hoc_pushs(sym0);
                 hoc_push_object(obp);
                 /* note obp is now on stack twice */
                 /* hpoasgn will pop both */
@@ -1058,7 +1059,7 @@ void hoc_object_component() {
                     auto err = fmt::format("'{}' not a public member of '{}'",
                                            sym0->name,
                                            obp->ctemplate->sym->name);
-                    std::cerr << err << std::endl;
+                    Fprintf(stderr, fmt::format("{}\n", err).c_str());
                     hoc_execerror(err.c_str(), nullptr);
                 }
                 *ptid = obp->ctemplate->id;
@@ -1082,7 +1083,7 @@ void hoc_object_component() {
             if (!is_array(*sym) || OPARINFO(sym)->nsub != nindex) {
                 hoc_execerror_fmt("'{}' not right number of subscripts", sym->name);
             }
-            nindex = araypt(sym, OBJECTVAR);
+            nindex = hoc_araypt(sym, OBJECTVAR);
         }
         hoc_pop_defer();
         hoc_pushobj(OPOBJ(sym) + nindex);
@@ -1139,7 +1140,7 @@ void hoc_object_component() {
                                           sym->name);
                     }
                 }
-                nindex = araypt(sym, OBJECTVAR);
+                nindex = hoc_araypt(sym, OBJECTVAR);
             }
             hoc_pop_defer(); /*finally get rid of symbol */
             hoc_pushpx(OPVAL(sym) + nindex);
@@ -1160,7 +1161,7 @@ void hoc_object_component() {
             hoc_execerror_fmt("'{}' is a function not a {}-dim array", sym->name, nindex);
         }
         double d = 0.;
-        call_ob_proc(obp, sym, nindex);
+        hoc_call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
             break;
         }
@@ -1182,7 +1183,7 @@ void hoc_object_component() {
                 hoc_execerror_fmt("'{}' is a function not a {}-dim array", sym->name, nindex);
             }
         }
-        call_ob_proc(obp, sym, nindex);
+        hoc_call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
             break;
         }
@@ -1200,7 +1201,7 @@ void hoc_object_component() {
     }
     case STRFUNCTION: {
         char** d;
-        call_ob_proc(obp, sym, nindex);
+        hoc_call_ob_proc(obp, sym, nindex);
         if (hoc_returning) {
             break;
         }
@@ -1263,7 +1264,7 @@ void hoc_object_component() {
             if (!hoc_stack_type_is_ndim()) {
                 hoc_push_ndim(nindex);
             }
-            nindex = araypt(sym, OBJECTVAR);
+            nindex = hoc_araypt(sym, OBJECTVAR);
         }
         hoc_pop_defer();
         if (connect_obsec_) {
@@ -1367,7 +1368,6 @@ void hoc_object_eval(void) {
             }
             hoc_pushx(*(nrn_rangepointer(sec, sym, x)));
         } else if (d_sym->type == VAR && d_sym->subtype == USERPROPERTY) {
-            extern double cable_prop_eval(Symbol*);
             hoc_pushx(cable_prop_eval(hoc_spop()));
         }
     }
@@ -1547,7 +1547,6 @@ void hoc_begintemplate(Symbol* t1) {
     t->u.ctemplate->destructor = 0;
     t->u.ctemplate->is_point_ = 0;
     t->u.ctemplate->steer = 0;
-    t->u.ctemplate->checkpoint = 0;
     t->u.ctemplate->id = ++template_id;
     pushtemplatei(icntobjectdata);
     pushtemplateodata(hoc_objectdata);
@@ -1600,7 +1599,6 @@ void class2oc_base(const char* name,
                    void* (*cons)(Object*),
                    void (*destruct)(void*),
                    Member_func* m,
-                   int (*checkpoint)(void**),
                    Member_ret_obj_func* mobjret,
                    Member_ret_str_func* strret) {
     extern int hoc_main1_inited_;
@@ -1622,7 +1620,6 @@ void class2oc_base(const char* name,
     t->constructor = cons;
     t->destructor = destruct;
     t->steer = 0;
-    t->checkpoint = checkpoint;
 
     if (m)
         for (i = 0; m[i].name; ++i) {
@@ -1650,10 +1647,9 @@ void class2oc(const char* name,
               void* (*cons)(Object*),
               void (*destruct)(void*),
               Member_func* m,
-              int (*checkpoint)(void**),
               Member_ret_obj_func* mobjret,
               Member_ret_str_func* strret) {
-    class2oc_base(name, cons, destruct, m, checkpoint, mobjret, strret);
+    class2oc_base(name, cons, destruct, m, mobjret, strret);
     py_exposed_classes.push_back(name);
 }
 
@@ -1724,26 +1720,26 @@ void hoc_external_var(Symbol* s) {
 
 void hoc_ob_check(int type) {
     int t;
-    t = ipop();
+    t = hoc_ipop();
     if (type == -1) {
         if (t == OBJECTVAR) { /* don't bother to check */
-            Code(hoc_cmp_otype);
-            codei(0);
+            hoc_Code(hoc_cmp_otype);
+            hoc_codei(0);
         }
     } else if (type) {
         if (t == OBJECTVAR) { /* must check dynamically */
 #if PDEBUG
             printf("dymnamic checking of type=%d\n", type);
 #endif
-            Code(hoc_cmp_otype);
-            codei(type);
+            hoc_Code(hoc_cmp_otype);
+            hoc_codei(type);
         } else if (type != t) { /* static check */
             hoc_execerror("Type mismatch", (char*) 0);
         }
     } else {
         if (t != OBJECTVAR) {
-            Code(hoc_known_type);
-            codei(t);
+            hoc_Code(hoc_known_type);
+            hoc_codei(t);
         }
     }
 }
@@ -1909,9 +1905,9 @@ printf("unreffing %s with refcount %d\n", hoc_object_name(obj), obj->refcount);
     --obj->refcount;
     if (obj->ctemplate->unref) {
         int i = obj->refcount;
-        pushx((double) i);
+        hoc_pushx((double) i);
         ++obj->unref_recurse_cnt;
-        call_ob_proc(obj, obj->ctemplate->unref, 1);
+        hoc_call_ob_proc(obj, obj->ctemplate->unref, 1);
         --obj->unref_recurse_cnt;
     }
     if (obj->refcount <= 0 && obj->unref_recurse_cnt == 0) {
@@ -1963,11 +1959,11 @@ static void free_objectdata(Objectdata* od, cTemplate* ctemplate) {
                 case VAR:
                     /*printf("free_objectdata %s\n", s->name);*/
                     hoc_free_val_array(OPVAL(s), hoc_total_array(s));
-                    free_arrayinfo(OPARINFO(s));
+                    hoc_free_arrayinfo(OPARINFO(s));
                     break;
                 case STRING:
                     hoc_free_pstring(OPSTR(s));
-                    free_arrayinfo(OPARINFO(s));
+                    hoc_free_arrayinfo(OPARINFO(s));
                     break;
                 case OBJECTVAR:
                     objp = OPOBJ(s);
@@ -1977,7 +1973,7 @@ static void free_objectdata(Objectdata* od, cTemplate* ctemplate) {
                             hoc_dec_refcount(objp + i);
                         }
                     }
-                    free_arrayinfo(OPARINFO(s));
+                    hoc_free_arrayinfo(OPARINFO(s));
                     free(objp);
                     break;
                 case SECTION:
@@ -1986,7 +1982,7 @@ static void free_objectdata(Objectdata* od, cTemplate* ctemplate) {
                         sec_free(*(OPSECITM(s) + i));
                     }
                     free(OPSECITM(s));
-                    free_arrayinfo(OPARINFO(s));
+                    hoc_free_arrayinfo(OPARINFO(s));
                     break;
                 }
             }
@@ -2024,7 +2020,7 @@ void hoc_allobjects(void) {
         hoc_allobjects1(hoc_top_level_symlist, 0);
     }
     hoc_ret();
-    pushx((double) n);
+    hoc_pushx((double) n);
 }
 
 void hoc_allobjects1(Symlist* sl, int nspace) {
@@ -2071,7 +2067,7 @@ static void hoc_list_allobjref(Symlist*, Objectdata*, int);
 void hoc_allobjectvars(void) {
     hoc_list_allobjref(hoc_top_level_symlist, hoc_top_level_data, 0);
     hoc_ret();
-    pushx(0.);
+    hoc_pushx(0.);
 }
 
 static void hoc_list_allobjref(Symlist* sl, Objectdata* data, int depth) {

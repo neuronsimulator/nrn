@@ -1136,7 +1136,7 @@ static void destruct(void* v) {
 }
 
 void ParallelContext_reg() {
-    class2oc("ParallelContext", cons, destruct, members, nullptr, retobj_members, retstr_members);
+    class2oc("ParallelContext", cons, destruct, members, retobj_members, retstr_members);
 }
 
 // A BBS message is something to execute.

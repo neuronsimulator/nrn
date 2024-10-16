@@ -239,8 +239,12 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
     } catch (const std::filesystem::filesystem_error& e) {
         handle = dlopen(relpath, flags);
         if (!handle) {
-            std::cerr << "std::filesystem::absolute failed (" << e.what()
-                      << ") and dlopen failed with '" << relpath << "'" << std::endl;
+            Fprintf(
+                stderr,
+                fmt::format("std::filesystem::absolute failed ({}) and dlopen failed with '{}'\n",
+                            e.what(),
+                            relpath)
+                    .c_str());
 #if DARWIN
             nrn_possible_mismatched_arch(relpath);
 #endif
@@ -1021,7 +1025,6 @@ extern void class2oc_base(const char*,
                           void* (*cons)(Object*),
                           void (*destruct)(void*),
                           Member_func*,
-                          int (*checkpoint)(void**),
                           Member_ret_obj_func*,
                           Member_ret_str_func*);
 
@@ -1041,7 +1044,7 @@ int point_register_mech(const char** m,
     Symlist* sl;
     Symbol *s, *s2;
     nrn_load_name_check(m[1]);
-    class2oc_base(m[1], constructor, destructor, fmember, nullptr, nullptr, nullptr);
+    class2oc_base(m[1], constructor, destructor, fmember, nullptr, nullptr);
     s = hoc_lookup(m[1]);
     sl = hoc_symlist;
     hoc_symlist = s->u.ctemplate->symtable;

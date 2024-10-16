@@ -1,3 +1,4 @@
+#include "cabcode.h"
 #include "ivocvect.h"
 #include "neuron/container/data_handle.hpp"
 #include "nrniv_mf.h"
@@ -7,7 +8,6 @@
 #include "nrnpy_utils.h"
 #include "nrnpython.h"
 #include "convert_cxx_exceptions.hpp"
-#include <unordered_map>
 
 #include "nrnwrap_dlfcn.h"
 #include "ocfile.h"
@@ -15,12 +15,10 @@
 #include "oclist.h"
 #include "shapeplt.h"
 
-#include <InterViews/resource.h>
-#include <structmember.h>  // for PyMemberDef
-
 #include <cstdint>
 #include <vector>
 #include <sstream>
+#include <unordered_map>
 
 #include <nanobind/nanobind.h>
 
@@ -36,11 +34,9 @@ extern void (*nrnpy_restore_savestate)(int64_t, char*);
 extern void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size);
 extern void (*nrnpy_decref)(void* pyobj);
 extern void lvappendsec_and_ref(void* sl, Section* sec);
-extern Section* nrn_noerr_access();
 extern void hoc_pushs(Symbol*);
 extern double* hoc_evalpointer();
 extern double cable_prop_eval(Symbol* sym);
-extern void nrn_change_nseg(Section*, int);
 extern Symlist* hoc_top_level_symlist;
 extern Symlist* hoc_built_in_symlist;
 extern Inst* hoc_pc;
@@ -133,6 +129,61 @@ static PyObject* nrnpy_rvp_pyobj_callback = NULL;
 PyTypeObject* hocobject_type;
 
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds);
+
+typedef struct {
+    PyTypeObject head;
+    Symbol* sym;
+} hocclass;
+
+static int hocclass_init(hocclass* cls, PyObject* args, PyObject* kwds) {
+    if (PyType_Type.tp_init((PyObject*) cls, args, kwds) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyObject* pytype_getname(PyTypeObject* pto) {
+#if PY_VERSION_HEX >= 0x030B0000  // since python-3.11
+    return PyType_GetName(pto);
+#else
+    return PyObject_GetAttrString((PyObject*) pto, "__name__");
+#endif
+}
+
+static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
+    hocclass* hclass = (hocclass*) self;
+    Symbol* sym = hclass->sym;
+    assert(sym);
+
+    assert(sym->type == TEMPLATE);
+    hoc_Item *q, *ql = sym->u.ctemplate->olist;
+    Object* ob;
+    ITERATE(q, ql) {
+        ob = OBJ(q);
+        if (ob->index == ix) {
+            return nrnpy_ho2po(ob);
+        }
+    }
+    char e[200];
+    Sprintf(e, "%s[%ld] instance does not exist", sym->name, ix);
+    PyErr_SetString(PyExc_IndexError, e);
+    return NULL;
+}
+
+// Note use of slots was informed by nanobind (search for nb_meta)
+
+static PyType_Slot hocclass_slots[] = {{Py_tp_base, nullptr},  // &PyType_Type : not obvious why it
+                                                               // must be set at runtime
+                                       {Py_tp_init, (void*) hocclass_init},
+                                       {Py_sq_item, (void*) hocclass_getitem},
+                                       {0, NULL}};
+
+static PyType_Spec hocclass_spec = {"hoc.HocClass",
+                                    0,  // .basicsize fill later
+                                    0,  // .itemsize
+                                    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE,
+                                    hocclass_slots};
+
 
 bool nrn_chk_data_handle(const neuron::container::data_handle<double>& pd) {
     if (pd) {
@@ -385,7 +436,7 @@ int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
             Py2NRNString str(po, /* disable_release */ true);
             if (str.err()) {
                 // Since Python error has been set, need to clear, or hoc_execerror
-                // printing with nrnpy_pr will generate a
+                // printing with Printf will generate a
                 // Exception ignored on calling ctypes callback function.
                 // So get the message, clear, and make the message
                 // part of the execerror.
@@ -403,7 +454,7 @@ int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
             // the object which can raise an error for nrn.Section, nrn.Segment,
             // etc. if the internal Section is invalid (Section.prop == NULL).
             // That, in consequence, will generate an
-            // Exception ignored on calling ctypes callback function: <function nrnpy_pr
+            // Exception ignored on calling ctypes callback function: <function Printf
             // thus obscuring the actual error, such as
             // nrn.Segment associated with deleted internal Section.
             PyHocObject* pho = (PyHocObject*) po;
@@ -923,7 +974,6 @@ static PyObject* hocobj_getsec(Symbol* sym) {
 
 // leave pointer on stack ready for get/set final
 static void eval_component(PyHocObject* po, int ix) {
-    int j;
     hoc_push_object(po->ho_);
     hocobj_pushtop(po, 0, ix);
     component(po);
@@ -2267,7 +2317,6 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
     PyObject *ref, *name, *pp;
     if (PyArg_ParseTuple(args, "O!OO", hocobject_type, &ref, &name, &pp) == 1) {
         PyHocObject* href = (PyHocObject*) ref;
-        double** ppd = 0;
         if (href->type_ != PyHoc::HocScalarPtr) {
             goto done;
         }
@@ -2854,7 +2903,7 @@ static Object* rvp_rxd_to_callable_(Object* obj) {
 
 
 extern "C" NRN_EXPORT PyObject* get_plotshape_data(PyObject* sp) {
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
     PyHocObject* pho = (PyHocObject*) sp;
     ShapePlotInterface* spi;
     if (!is_obj_type(pho->ho_, "PlotShape")) {
@@ -2964,7 +3013,7 @@ static PyObject* hocpickle_reduce_safe(PyObject* self, PyObject* args) {
 static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
     BYTEHEADER
     int version = -1;
-    int size = -1;
+    int size = 0;
     PyObject* rawdata = NULL;
     PyObject* endian_data;
     PyHocObject* pho = (PyHocObject*) self;
@@ -3006,7 +3055,7 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
         Py_DECREF(rawdata);
         return NULL;
     }
-    if (len != size * sizeof(double)) {
+    if (len != Py_ssize_t(size * sizeof(double))) {
         PyErr_SetString(PyExc_ValueError, "buffer size does not match array size");
         Py_DECREF(rawdata);
         return NULL;
@@ -3335,6 +3384,11 @@ static PyType_Spec obj_spec_from_name(const char* name) {
     };
 }
 
+extern PyObject* nrn_type_from_metaclass(PyTypeObject* meta,
+                                         PyObject* mod,
+                                         PyType_Spec* spec,
+                                         PyObject* bases);
+
 extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     PyObject* m;
     PyObject* bases;
@@ -3350,7 +3404,7 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     nrnpy_nrncore_enable_value_p_ = nrncore_enable_value;
     nrnpy_nrncore_file_mode_value_p_ = nrncore_file_mode_value;
     nrnpy_rvp_rxd_to_callable = rvp_rxd_to_callable_;
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
 
     char endian_character = 0;
 
@@ -3361,12 +3415,50 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     }
     m = PyModule_Create(&hocmodule);
     assert(m);
+
     Symbol* s = NULL;
     spec = obj_spec_from_name("hoc.HocObject");
-    hocobject_type = (PyTypeObject*) PyType_FromSpec(&spec);
-    if (PyType_Ready(hocobject_type) < 0)
-        goto fail;
-    PyModule_AddObject(m, "HocObject", (PyObject*) hocobject_type);
+    hocobject_type = (PyTypeObject*) nrn_type_from_metaclass(&PyType_Type, m, &spec, nullptr);
+    if (hocobject_type == NULL) {
+        return NULL;
+    }
+    if (PyModule_AddObject(m, "HocObject", (PyObject*) hocobject_type) < 0) {
+        return NULL;
+    }
+
+    hocclass_slots[0].pfunc = (PyObject*) &PyType_Type;
+    // I have no idea what is going on here. If use
+    // hocclass_spec.basicsize = sizeof(hocclass);
+    // then get error
+    // TypeError: tp_basicsize for type 'hoc.HocClass' (424) is
+    // too small for base 'type' (920)
+
+#if 1
+    hocclass_spec.basicsize = PyType_Type.tp_basicsize + sizeof(Symbol*);
+    // and what about alignment?
+    // recommended by chatgpt
+    size_t alignment = alignof(Symbol*);
+    size_t remainder = hocclass_spec.basicsize % alignment;
+    if (remainder != 0) {
+        hocclass_spec.basicsize += alignment - remainder;
+        // printf("aligned hocclass_spec.basicsize = %d\n", hocclass_spec.basicsize);
+    }
+#else
+    // chatgpt agrees that the following suggestion
+    // https://github.com/neuronsimulator/nrn/pull/2862/files#r1749797713
+    // is equivalent to the '#if 1' fragment above. However the above
+    // may "ensures portability and correctness across different architectures."
+    hocclass_spec.basicsize = PyType_Type.tp_basicsize + sizeof(hocclass) - sizeof(PyTypeObject);
+#endif
+
+    PyObject* custom_hocclass = PyType_FromSpec(&hocclass_spec);
+    if (custom_hocclass == NULL) {
+        return NULL;
+    }
+    if (PyModule_AddObject(m, "HocClass", custom_hocclass) < 0) {
+        return NULL;
+    }
+
 
     bases = PyTuple_Pack(1, hocobject_type);
     Py_INCREF(bases);
@@ -3374,12 +3466,20 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
         // TODO: obj_spec_from_name needs a hoc. prepended
         exposed_py_type_names.push_back(std::string("hoc.") + name);
         spec = obj_spec_from_name(exposed_py_type_names.back().c_str());
-        pto = (PyTypeObject*) PyType_FromSpecWithBases(&spec, bases);
-        sym_to_type_map[hoc_lookup(name)] = pto;
-        type_to_sym_map[pto] = hoc_lookup(name);
-        if (PyType_Ready(pto) < 0)
+        pto = (PyTypeObject*)
+            nrn_type_from_metaclass((PyTypeObject*) custom_hocclass, m, &spec, bases);
+        hocclass* hclass = (hocclass*) pto;
+        hclass->sym = hoc_lookup(name);
+        // printf("%s hocclass pto->tp_basicsize = %zd sizeof(*pto)=%zd\n",
+        // hclass->sym->name, pto->tp_basicsize, sizeof(*pto));
+        sym_to_type_map[hclass->sym] = pto;
+        type_to_sym_map[pto] = hclass->sym;
+        if (PyType_Ready(pto) < 0) {
             goto fail;
-        PyModule_AddObject(m, name, (PyObject*) pto);
+        }
+        if (PyModule_AddObject(m, name, (PyObject*) pto) < 0) {
+            return NULL;
+        }
     }
     Py_DECREF(bases);
 
