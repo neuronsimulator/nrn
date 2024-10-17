@@ -11,6 +11,8 @@
 #include <map>
 #include <cstring>
 #include <mutex>
+#include <unistd.h>
+#include <sstream>
 
 #include "coreneuron/apps/corenrn_parameters.hpp"
 #include "coreneuron/nrnconf.h"
@@ -919,6 +921,23 @@ void read_phase1(NrnThread& nt, UserParams& userParams) {
 
     // Protect gid2in, gid2out and neg_gid2out
     p1.populate(nt, mut);
+
+    char hostname[1024];
+    gethostname(hostname, sizeof(hostname));
+    std::string filename = userParams.file_reader[nt.id].get_filename();
+
+    std::ostringstream oss;
+    oss << "Rank " << nrnmpi_myid
+        << " running on " <<  hostname
+        << " reading " << filename
+        << " with gids: ";
+
+    auto gids = p1.get_gids();
+    for (const auto& gid : gids) {
+        oss << gid << " ";
+    }
+
+    std::cout << oss.str() << std::endl;
 }
 
 void read_phase2(NrnThread& nt, UserParams& userParams) {

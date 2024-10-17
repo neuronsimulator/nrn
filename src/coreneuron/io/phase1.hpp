@@ -23,6 +23,10 @@ class Phase1 {
     Phase1(int thread_id);
     void populate(NrnThread& nt, OMP_Mutex& mut);
 
+    std::vector<int>& get_gids() {
+        return output_gids;
+    }
+
   private:
     std::vector<int> output_gids;
     std::vector<int> netcon_srcgids;

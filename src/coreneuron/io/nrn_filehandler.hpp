@@ -36,6 +36,7 @@ class FileHandler {
     std::ios_base::openmode current_mode;  //!< File open mode (not stored in fstream)
     int chkpnt;                            //!< Current checkpoint number state.
     int stored_chkpnt;                     //!< last "remembered" checkpoint number state.
+    std::string file_name;
     /** Read a checkpoint line, bump our chkpnt counter, and assert equality.
      *
      * Checkpoint information is represented by a sequence "checkpt %d\n"
@@ -61,6 +62,10 @@ class FileHandler {
     /** Is the file not open */
     bool fail() const {
         return F.fail();
+    }
+
+    std::string get_filename() const {
+        return file_name;
     }
 
     static bool file_exist(const std::string& filename);
