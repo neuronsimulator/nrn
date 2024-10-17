@@ -227,11 +227,6 @@ struct spTemplate {
  */
 
 /* Begin function declarations. */
-
-#if defined(__STDC__) || defined(__cplusplus)
-
-/* For compilers that understand function prototypes. */
-
 extern void spClear(char*);
 extern spREAL spCondition(char*, spREAL, int*);
 extern char* spCreate(int, int, int*);
@@ -260,7 +255,6 @@ extern void spPrint(char*, int, int, int);
 extern spREAL spPseudoCondition(char*);
 extern spREAL spRoundoff(char*, spREAL);
 extern void spScale(char*, spREAL[], spREAL[]);
-extern void spSetComplex(char*);
 extern void spSetReal(char*);
 extern void spStripFills(char*);
 extern void spWhereSingular(char*, int*, int*);
@@ -272,49 +266,5 @@ extern void spMultiply(char*, spREAL*, spREAL*, std::optional<spREAL*> = std::nu
 extern void spMultTransposed(char* eMatrix, spREAL* RHS, spREAL* Solution, std::optional<spREAL*> iRHS = std::nullopt, std::optional<spREAL*> iSolution = std::nullopt);
 extern void spSolve(char* eMatrix, spREAL* RHS, spREAL* Solution, std::optional<spREAL*> iRHS = std::nullopt, std::optional<spREAL*> iSolution = std::nullopt);
 extern void spSolveTransposed(char*, spREAL*, spREAL*, std::optional<spREAL*> = std::nullopt, std::optional<spREAL*> = std::nullopt);
-
-#else /* NOT defined(__STDC__) */
-
-/* For compilers that do not understand function prototypes. */
-
-extern void spClear();
-extern spREAL spCondition();
-extern char* spCreate();
-extern void spDeleteRowAndCol();
-extern void spDestroy();
-extern void spDeterminant();
-extern int spElementCount();
-extern int spError();
-extern int spFactor();
-extern int spFileMatrix();
-extern int spFileStats();
-extern int spFileVector();
-extern int spFillinCount();
-extern int spGetAdmittance();
-extern spREAL* spGetElement(char*, int, int);
-extern char* spGetInitInfo();
-extern int spGetOnes();
-extern int spGetQuad();
-extern int spGetSize();
-extern int spInitialize();
-extern void spInstallInitInfo();
-extern spREAL spLargestElement();
-extern void spMNA_Preorder();
-extern void spMultiply();
-extern void spMultTransposed();
-extern spREAL spNorm();
-extern int spOrderAndFactor();
-extern void spPartition();
-extern void spPrint();
-extern spREAL spPseudoCondition();
-extern spREAL spRoundoff();
-extern void spScale();
-extern void spSetComplex();
-extern void spSetReal();
-extern void spSolve();
-extern void spSolveTransposed();
-extern void spStripFills();
-extern void spWhereSingular();
-#endif /* defined(__STDC__) */
 
 #endif /* spOKAY */

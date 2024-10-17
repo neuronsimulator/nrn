@@ -33,11 +33,6 @@
  *  or implied warranty.
  */
 
-#ifndef lint
-static char copyright[] = "Sparse1.3: Copyright (c) 1985,86,87,88 by Kenneth S. Kundert";
-static char RCSid[] = "$Header$";
-#endif
-
 /*
  *  IMPORTS
  *
@@ -143,11 +138,7 @@ void spPrint(char* eMatrix, int PrintReordered, int Data, int Header)
     Size = Matrix->Size;
 
 /* Create a packed external to internal row and column translation array. */
-#if TRANSLATE
-    Top = Matrix->AllocatedExtSize;
-#else
     Top = Matrix->AllocatedSize;
-#endif
     CALLOC(PrintOrdToIntRowMap, int, Top + 1);
     CALLOC(PrintOrdToIntColMap, int, Top + 1);
     if (PrintOrdToIntRowMap == NULL OR PrintOrdToIntColMap == NULL) {
@@ -286,19 +277,6 @@ void spPrint(char* eMatrix, int PrintReordered, int Data, int Header)
             }
             printf("\n");
 
-#if spCOMPLEX
-            if (Matrix->Complex AND Data) {
-                printf("    ");
-                for (J = StartCol; J <= StopCol; J++) {
-                    if (pImagElements[J - StartCol] != NULL) {
-                        printf(" %8.2lgj",
-                            (double)pImagElements[J - StartCol]->Imag);
-                    } else
-                        printf("          ");
-                }
-                printf("\n");
-            }
-#endif /* spCOMPLEX */
         }
 
         /* Calculate index of first column in next group. */
@@ -440,31 +418,6 @@ int spFileMatrix(char* eMatrix, char* File, char* Label, int Reordered, int Data
                 return 0;
     }
 
-#if spCOMPLEX
-    if (Data AND Matrix->Complex) {
-        for (I = 1; I <= Size; I++) {
-            pElement = Matrix->FirstInCol[I];
-            while (pElement != NULL) {
-                if (Reordered) {
-                    Row = pElement->Row;
-                    Col = I;
-                } else {
-                    Row = Matrix->IntToExtRowMap[pElement->Row];
-                    Col = Matrix->IntToExtColMap[I];
-                }
-                Err = fprintf(pMatrixFile, "%d\t%d\t%-.15lg\t%-.15lg\n",
-                    Row, Col, (double)pElement->Real, (double)pElement->Imag);
-                if (Err < 0)
-                    return 0;
-                pElement = pElement->NextInCol;
-            }
-        }
-        /* Output terminator, a line of zeros. */
-        if (Header)
-            if (fprintf(pMatrixFile, "0\t0\t0.0\t0.0\n") < 0)
-                return 0;
-    }
-#endif /* spCOMPLEX */
 
 #if REAL
     if (Data AND NOT Matrix->Complex) {
@@ -511,11 +464,9 @@ int spFileMatrix(char* eMatrix, char* File, char* Label, int Reordered, int Data
  *  File  <input>  (char *)
  *      Name of file into which matrix is to be written.
  *  RHS  <input>  (RealNumber [])
- *      Right-hand side vector. This is only the real portion if
- *      spSEPARATED_COMPLEX_VECTORS is true.
+ *      Right-hand side vector.
  *  iRHS  <input>  (RealNumber [])
- *      Right-hand side vector, imaginary portion.  Not necessary if matrix
- *      is real or if spSEPARATED_COMPLEX_VECTORS is set false.
+ *      Right-hand side vector, imaginary portion.
  *
  *  >>> Local variables:
  *  pMatrixFile  (FILE *)
@@ -523,17 +474,12 @@ int spFileMatrix(char* eMatrix, char* File, char* Label, int Reordered, int Data
  *  Size  (int)
  *      The size of the matrix.
  *
- *  >>> Obscure Macros
- *  IMAG_RHS
- *      Replaces itself with `, iRHS' if the options spCOMPLEX and
- *      spSEPARATED_COMPLEX_VECTORS are set, otherwise it disappears
- *      without a trace.
  */
 
 int spFileVector(char* eMatrix, char* File, RealVector RHS, RealVector iRHS)
 {
     MatrixPtr Matrix = (MatrixPtr)eMatrix;
-    int I, Size, Err;
+    int I, Size;
     FILE* pMatrixFile;
 
     /* Begin `spFileVector'. */
@@ -545,44 +491,11 @@ int spFileVector(char* eMatrix, char* File, RealVector RHS, RealVector iRHS)
 
 /* Correct array pointers for ARRAY_OFFSET. */
 #if NOT ARRAY_OFFSET
-#if spCOMPLEX
-    if (Matrix->Complex) {
-#if spSEPARATED_COMPLEX_VECTORS
-        ASSERT(iRHS != NULL)
-        --RHS;
-        --iRHS;
-#else
-        RHS -= 2;
-#endif
-    } else
-#endif /* spCOMPLEX */
         --RHS;
 #endif /* NOT ARRAY_OFFSET */
 
     /* Output vector. */
     Size = Matrix->Size;
-#if spCOMPLEX
-    if (Matrix->Complex) {
-#if spSEPARATED_COMPLEX_VECTORS
-        for (I = 1; I <= Size; I++) {
-            Err = fprintf(pMatrixFile, "%-.15lg\t%-.15lg\n",
-                (double)RHS[I], (double)iRHS[I]);
-            if (Err < 0)
-                return 0;
-        }
-#else
-        for (I = 1; I <= Size; I++) {
-            Err = fprintf(pMatrixFile, "%-.15lg\t%-.15lg\n",
-                (double)RHS[2 * I], (double)RHS[2 * I + 1]);
-            if (Err < 0)
-                return 0;
-        }
-#endif
-    }
-#endif /* spCOMPLEX */
-#if REAL AND spCOMPLEX
-    else
-#endif
 #if REAL
     {
         for (I = 1; I <= Size; I++) {
@@ -656,10 +569,7 @@ int spFileStats(char* eMatrix, char* File, char* Label)
         fprintf(pStatsFile, "Matrix has not been factored.\n");
     fprintf(pStatsFile, "|||  Starting new matrix  |||\n");
     fprintf(pStatsFile, "%s\n", Label);
-    if (Matrix->Complex)
-        fprintf(pStatsFile, "Matrix is complex.\n");
-    else
-        fprintf(pStatsFile, "Matrix is real.\n");
+    fprintf(pStatsFile, "Matrix is real.\n");
     fprintf(pStatsFile, "     Size = %d\n", Size);
 
     /* Search matrix. */
