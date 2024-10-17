@@ -1,12 +1,6 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/debug.cpp,v 1.7 1996/04/09 16:39:14 hines Exp */
 
-#if NRN_DIGEST
-#include <openssl/sha.h>
-#include <vector>
-#include <string>
-#endif
-
 #include "hocdec.h"
 #include "code.h"
 #include "equation.h"
@@ -14,6 +8,13 @@
 #include <stdio.h>
 
 #include "utils/logger.hpp"
+
+#include "nrndigest.h"
+#if NRN_DIGEST
+#include <openssl/sha.h>
+#include <vector>
+#include <string>
+#endif
 
 int hoc_zzdebug;
 
@@ -159,6 +160,7 @@ int nrn_digest_;
 static std::vector<std::vector<std::string>> digest;  // nthread string vectors
 static std::vector<size_t> digest_cnt;                // nthread counts.
 static int nrn_digest_print_item_ = -1;
+static bool nrn_digest_abort_ = false;
 
 void nrn_digest() {
     if (ifarg(1) && hoc_is_str_arg(1)) {
@@ -185,6 +187,7 @@ void nrn_digest() {
         if (ifarg(1)) {
             nrn_digest_print_item_ = int(chkarg(1, 0., 1e9));
         }
+        nrn_digest_abort_ = (ifarg(2) && strcmp(gargstr(2), "abort") == 0);
     }
     size_t size = digest.size() ? digest[0].size() : 0;
     digest.clear();  // in any case, start over.
@@ -217,6 +220,9 @@ void nrn_digest_dbl_array(const char* msg, int tid, double t, double* array, siz
 
     if (nrn_digest_print_item_ == ix) {
         printf("ZZ %s\n", s.c_str());
+        if (nrn_digest_abort_) {
+            abort();
+        }
         for (size_t i = 0; i < sz; ++i) {
             printf("Z %zd %.20g\n", i, array[i]);
         }

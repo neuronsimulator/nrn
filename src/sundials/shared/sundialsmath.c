@@ -39,9 +39,10 @@ realtype RPowerI(realtype base, int exponent)
   return(prod);
 }
 
+extern double hoc_pow(double, double);
 extern double hoc_c_pow(double, double);
 double hoc_c_pow(double x, double y) {
-  return pow(x, y);
+  return hoc_pow(x, y);
 }
 
 realtype RPowerR(realtype base, realtype exponent)

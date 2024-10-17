@@ -12,6 +12,7 @@
 #include "vrecitem.h"
 #include "membfunc.h"
 #include "nonvintblock.h"
+#include "nrndigest.h"
 
 #include <cerrno>
 #include <numeric>

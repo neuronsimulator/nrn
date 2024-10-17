@@ -45,11 +45,6 @@ namespace neuron {
 struct model_sorted_token;
 }
 
-#if NRN_DIGEST
-extern int nrn_digest_;  // debugging differences on different machines.
-extern void nrn_digest_dbl_array(const char* msg, int tid, double t, double* array, size_t sz);
-#endif
-
 // nocpout.cpp
 Symbol* hoc_get_symbol(const char* var);
 void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
@@ -105,7 +100,7 @@ void install_vector_method(const char*, double (*)(void*));
 int vector_arg_px(int i, double** p);
 
 double hoc_Exp(double);
-double hoc_pow(double, double);
+extern "C" double hoc_pow(double, double);
 int hoc_is_tempobj_arg(int narg);
 std::FILE* hoc_obj_file_arg(int i);
 void hoc_reg_nmodl_text(int type, const char* txt);
