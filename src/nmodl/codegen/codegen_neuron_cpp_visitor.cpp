@@ -1711,7 +1711,7 @@ void CodegenNeuronCppVisitor::print_global_function_common_code(BlockType type,
                         {"", "NrnThread*", "", "nt"},
                         {"", "Memb_list*", "", "_ml_arg"},
                         {"", "int", "", "_type"}};
-    printer->fmt_push_block("void {}({})", method, get_parameter_str(args));
+    printer->fmt_push_block("static void {}({})", method, get_parameter_str(args));
     print_entrypoint_setup_code_from_memb_list();
     printer->add_line("auto nodecount = _ml_arg->nodecount;");
 }
@@ -1782,13 +1782,15 @@ void CodegenNeuronCppVisitor::print_nrn_jacob() {
 
 void CodegenNeuronCppVisitor::print_nrn_constructor_declaration() {
     if (info.constructor_node) {
-        printer->fmt_line("void {}(Prop* prop);", method_name(naming::NRN_CONSTRUCTOR_METHOD));
+        printer->fmt_line("static void {}(Prop* prop);",
+                          method_name(naming::NRN_CONSTRUCTOR_METHOD));
     }
 }
 
 void CodegenNeuronCppVisitor::print_nrn_constructor() {
     if (info.constructor_node) {
-        printer->fmt_push_block("void {}(Prop* prop)", method_name(naming::NRN_CONSTRUCTOR_METHOD));
+        printer->fmt_push_block("static void {}(Prop* prop)",
+                                method_name(naming::NRN_CONSTRUCTOR_METHOD));
 
         print_entrypoint_setup_code_from_prop();
 
@@ -1801,11 +1803,12 @@ void CodegenNeuronCppVisitor::print_nrn_constructor() {
 
 
 void CodegenNeuronCppVisitor::print_nrn_destructor_declaration() {
-    printer->fmt_line("void {}(Prop* prop);", method_name(naming::NRN_DESTRUCTOR_METHOD));
+    printer->fmt_line("static void {}(Prop* prop);", method_name(naming::NRN_DESTRUCTOR_METHOD));
 }
 
 void CodegenNeuronCppVisitor::print_nrn_destructor() {
-    printer->fmt_push_block("void {}(Prop* prop)", method_name(naming::NRN_DESTRUCTOR_METHOD));
+    printer->fmt_push_block("static void {}(Prop* prop)",
+                            method_name(naming::NRN_DESTRUCTOR_METHOD));
     print_entrypoint_setup_code_from_prop();
 
     for (const auto& rv: info.random_variables) {
@@ -2041,7 +2044,7 @@ void CodegenNeuronCppVisitor::print_nrn_current(const BreakpointBlock& node) {
     const auto& args = nrn_current_parameters();
     const auto& block = node.get_statement_block();
     printer->add_newline(2);
-    printer->fmt_push_block("inline double nrn_current_{}({})",
+    printer->fmt_push_block("static inline double nrn_current_{}({})",
                             info.mod_suffix,
                             get_parameter_str(args));
     printer->add_line("double current = 0.0;");

@@ -1547,8 +1547,8 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     template <typename T>
     void print_function_declaration(const T& node,
                                     const std::string& name,
-                                    const std::unordered_set<CppObjectSpecifier>& = {
-                                        CppObjectSpecifier::Inline});
+                                    const std::unordered_set<CppObjectSpecifier>& =
+                                        {CppObjectSpecifier::Static, CppObjectSpecifier::Inline});
 
     void print_rename_state_vars() const;
 };

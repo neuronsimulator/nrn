@@ -462,7 +462,7 @@ void CodegenCppVisitor::print_global_var_struct_assertions() const {
 
 
 void CodegenCppVisitor::print_global_var_struct_decl() {
-    printer->add_line(global_struct(), ' ', global_struct_instance(), ';');
+    printer->fmt_line("static {} {};", global_struct(), global_struct_instance());
 }
 
 
