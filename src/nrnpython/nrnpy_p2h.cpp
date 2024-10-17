@@ -18,7 +18,7 @@
 namespace nb = nanobind;
 
 static char* nrnpyerr_str();
-static nb::object nrnpy_pyCallObject(nb::callable, PyObject*);
+static PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
 static PyObject* main_module;
 static PyObject* main_namespace;
 
@@ -42,12 +42,15 @@ static void p_destruct(void* v) {
 Member_func p_members[] = {{nullptr, nullptr}};
 
 static void call_python_with_section(Object* pyact, Section* sec) {
-    nb::callable po = nb::borrow<nb::callable>(((Py2Nrn*) pyact->u.this_pointer)->po_);
+    PyObject* po = ((Py2Nrn*) pyact->u.this_pointer)->po_;
+    PyObject* r;
     nanobind::gil_scoped_acquire lock{};
 
-    nb::tuple args = nb::make_tuple(reinterpret_cast<PyObject*>(newpysechelp(sec)));
-    nb::object r = nrnpy_pyCallObject(po, args.ptr());
-    if (!r.is_valid()) {
+    PyObject* args = PyTuple_Pack(1, (PyObject*) newpysechelp(sec));
+    r = nrnpy_pyCallObject(po, args);
+    Py_XDECREF(args);
+    Py_XDECREF(r);
+    if (!r) {
         char* mes = nrnpyerr_str();
         if (mes) {
             Fprintf(stderr, "%s\n", mes);
@@ -106,12 +109,12 @@ Object* nrnpy_pyobject_in_obj(PyObject* po) {
     return on;
 }
 
-static nb::object nrnpy_pyCallObject(nb::callable callable, PyObject* args) {
+static PyObject* nrnpy_pyCallObject(PyObject* callable, PyObject* args) {
     // When hoc calls a PythonObject method, then in case python
     // calls something back in hoc, the hoc interpreter must be
     // at the top level
     HocTopContextSet
-    PyObject* p = PyObject_CallObject(callable.ptr(), args);
+    PyObject* p = PyObject_CallObject(callable, args);
 #if 0
 printf("PyObject_CallObject callable\n");
 PyObject_Print(callable, stdout, 0);
@@ -139,7 +142,7 @@ printf("\nreturn %p\n", p);
       }
     }
     **/
-    return nb::steal(p);
+    return p;
 }
 
 static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
@@ -196,7 +199,7 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             }
         }
         // printf("PyObject_CallObject %s %p\n", sym->name, tail);
-        result = nrnpy_pyCallObject(nb::borrow<nb::callable>(tail), args).release().ptr();
+        result = nrnpy_pyCallObject(tail, args);
         Py_DECREF(args);
         // PyObject_Print(result, stdout, 0);
         // printf("  result of call\n");
@@ -327,22 +330,36 @@ static void hpoasgn(Object* o, int type) {
     }
 }
 
-static nb::object hoccommand_exec_help1(nb::object po) {
-    if (nb::tuple::check_(po)) {
-        nb::object args = po[1];
-        if (!nb::tuple::check_(args)) {
-            args = nb::make_tuple(args);
+static PyObject* hoccommand_exec_help1(PyObject* po) {
+    PyObject* r;
+    // PyObject_Print(po, stdout, 0);
+    // printf("\n");
+    if (PyTuple_Check(po)) {
+        PyObject* args = PyTuple_GetItem(po, 1);
+        if (!PyTuple_Check(args)) {
+            args = PyTuple_Pack(1, args);
+        } else {
+            Py_INCREF(args);
         }
-        return nrnpy_pyCallObject(po[0], args.ptr());
+        // PyObject_Print(PyTuple_GetItem(po, 0), stdout, 0);
+        // printf("\n");
+        // PyObject_Print(args, stdout, 0);
+        // printf("\n");
+        // printf("threadstate %p\n", PyThreadState_GET());
+        r = nrnpy_pyCallObject(PyTuple_GetItem(po, 0), args);
+        Py_DECREF(args);
     } else {
-        return nrnpy_pyCallObject(nb::borrow<nb::callable>(po), nb::tuple().ptr());
+        PyObject* args = PyTuple_New(0);
+        r = nrnpy_pyCallObject(po, args);
+        Py_DECREF(args);
     }
+    return r;
 }
 
-static nb::object hoccommand_exec_help(Object* ho) {
+static PyObject* hoccommand_exec_help(Object* ho) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
     // printf("%s\n", hoc_object_name(ho));
-    return hoccommand_exec_help1(nb::borrow(po));
+    return hoccommand_exec_help1(po);
 }
 
 static double praxis_efun(Object* ho, Object* v) {
@@ -353,9 +370,9 @@ static double praxis_efun(Object* ho, Object* v) {
     PyObject* po = Py_BuildValue("(OO)", pc, pv);
     Py_XDECREF(pc);
     Py_XDECREF(pv);
-    nb::object r = hoccommand_exec_help1(nb::borrow(po));
+    PyObject* r = hoccommand_exec_help1(po);
     Py_XDECREF(po);
-    if (!r.is_valid()) {
+    if (!r) {
         char* mes = nrnpyerr_str();
         if (mes) {
             Fprintf(stderr, "%s\n", mes);
@@ -367,14 +384,18 @@ static double praxis_efun(Object* ho, Object* v) {
         }
         return 1e9;  // SystemExit?
     }
-    return static_cast<double>(nb::float_(r));
+    PyObject* pn = PyNumber_Float(r);
+    double x = PyFloat_AsDouble(pn);
+    Py_XDECREF(pn);
+    Py_XDECREF(r);
+    return x;
 }
 
 static int hoccommand_exec(Object* ho) {
     nanobind::gil_scoped_acquire lock{};
 
-    nb::object r = hoccommand_exec_help(ho);
-    if (!r.is_valid()) {
+    PyObject* r = hoccommand_exec_help(ho);
+    if (r == NULL) {
         char* mes = nrnpyerr_str();
         if (mes) {
             std::string tmp{"Python Callback failed [hoccommand_exec]:\n"};
@@ -386,18 +407,21 @@ static int hoccommand_exec(Object* ho) {
             PyErr_Print();
         }
     }
-    return r.is_valid();
+    Py_XDECREF(r);
+    return (r != NULL);
 }
 
 static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
     nanobind::gil_scoped_acquire lock{};
 
-    nb::object r = hoccommand_exec_help(ho);
-    if (r.is_valid()) {
-        nb::str pn(r);
-        Py2NRNString str(pn.ptr());
+    PyObject* r = hoccommand_exec_help(ho);
+    if (r) {
+        PyObject* pn = PyObject_Str(r);
+        Py2NRNString str(pn);
+        Py_XDECREF(pn);
         strncpy(buf, str.c_str(), size);
         buf[size - 1] = '\0';
+        Py_XDECREF(r);
     } else {
         char* mes = nrnpyerr_str();
         if (mes) {
@@ -409,16 +433,20 @@ static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
             PyErr_Print();
         }
     }
-    return r.is_valid();
+    return (r != NULL);
 }
 
 static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
-    nb::callable po = nb::borrow<nb::callable>(((Py2Nrn*) ho->u.this_pointer)->po_);
+    PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
+    PyObject* r;
     nanobind::gil_scoped_acquire lock{};
 
-    nb::tuple args = nb::make_tuple(type, x, y, key);
-    nb::object r = nrnpy_pyCallObject(po, args.ptr());
-    if (!r.is_valid()) {
+    PyObject* args = PyTuple_Pack(
+        4, PyInt_FromLong(type), PyFloat_FromDouble(x), PyFloat_FromDouble(y), PyInt_FromLong(key));
+    r = nrnpy_pyCallObject(po, args);
+    Py_XDECREF(args);
+    Py_XDECREF(r);
+    if (!r) {
         char* mes = nrnpyerr_str();
         if (mes) {
             Fprintf(stderr, "%s\n", mes);
@@ -464,7 +492,8 @@ static Object* callable_with_args(Object* ho, int narg) {
 }
 
 static double func_call(Object* ho, int narg, int* err) {
-    nb::callable po = nb::borrow<nb::callable>(((Py2Nrn*) ho->u.this_pointer)->po_);
+    PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
+    PyObject* r;
     nanobind::gil_scoped_acquire lock{};
 
     PyObject* args = PyTuple_New((Py_ssize_t) narg);
@@ -483,10 +512,10 @@ static double func_call(Object* ho, int narg, int* err) {
         }
     }
 
-    nb::object r = nrnpy_pyCallObject(po, args);
+    r = nrnpy_pyCallObject(po, args);
     Py_XDECREF(args);
     double rval = 0.0;
-    if (!r.is_valid()) {
+    if (r == NULL) {
         if (!err || *err) {
             char* mes = nrnpyerr_str();
             if (mes) {
@@ -506,9 +535,12 @@ static double func_call(Object* ho, int narg, int* err) {
             *err = 1;
         }
     } else {
-        if (nrnpy_numbercheck(r.ptr())) {
-            rval = static_cast<double>(nb::float_(r));
+        if (nrnpy_numbercheck(r)) {
+            PyObject* pn = PyNumber_Float(r);
+            rval = PyFloat_AsDouble(pn);
+            Py_XDECREF(pn);
         }
+        Py_XDECREF(r);
         if (err) {
             *err = 0;
         }  // success
