@@ -14,6 +14,9 @@
 #if HAVE_IV
 #include <ocbox.h>
 #endif
+
+#include "utils/logger.hpp"
+
 extern Objectdata* hoc_top_level_data;
 extern Symlist* hoc_built_in_symlist;
 extern int nrn_is_artificial(int);
@@ -55,7 +58,7 @@ static double l_head(void*) {
             result = sm.prefix().str();
         }
     } catch (const std::regex_error& e) {
-        std::cerr << e.what() << std::endl;
+        Fprintf(stderr, fmt::format("{}\n", e.what()).c_str());
     }
     char** head = hoc_pgargstr(3);
     hoc_assign_str(head, result.c_str());
@@ -81,7 +84,7 @@ static double l_tail(void*) {
             result = sm.suffix().str();
         }
     } catch (const std::regex_error& e) {
-        std::cerr << e.what() << std::endl;
+        Fprintf(stderr, fmt::format("{}\n", e.what()).c_str());
     }
     char** tail = hoc_pgargstr(3);
     hoc_assign_str(tail, result.c_str());
@@ -376,7 +379,7 @@ static void* l_cons(Object*) {
 }
 
 void StringFunctions_reg() {
-    class2oc("StringFunctions", l_cons, nullptr, l_members, nullptr, l_obj_members, nullptr);
+    class2oc("StringFunctions", l_cons, nullptr, l_members, l_obj_members, nullptr);
 }
 
 

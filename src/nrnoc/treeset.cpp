@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/treeset.cpp,v 1.39 1999/07/08 14:25:07 hines Exp */
 
+#include "cabcode.h"
 #include "cvodeobj.h"
 #include "membfunc.h"
 #include "multisplit.h"
@@ -9,6 +10,7 @@
 #include "neuron/cache/mechanism_range.hpp"
 #include "neuron/cache/model_data.hpp"
 #include "neuron/container/soa_container.hpp"
+#include "node_order_optim/node_order_optim.h"
 #include "nonvintblock.h"
 #include "nrndae_c.h"
 #include "nrniv_mf.h"
@@ -20,13 +22,15 @@
 #include "utils/profile/profiler_interface.h"
 #include "multicore.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cerrno>
+#include <cmath>
 
 #include <algorithm>
 #include <string>
+
+#include <fmt/format.h>
 
 extern spREAL* spGetElement(char*, int, int);
 
@@ -34,7 +38,6 @@ int nrn_shape_changed_; /* for notifying Shape class in nrniv */
 double* nrn_mech_wtime_;
 
 extern double chkarg(int, double low, double high);
-extern double nrn_ra(Section*);
 #if !defined(NRNMPI) || NRNMPI == 0
 extern double nrnmpi_wtime();
 #endif
@@ -44,9 +47,7 @@ extern int* nrn_dparam_ptr_start_;
 extern int* nrn_dparam_ptr_end_;
 extern void nrn_define_shape();
 
-#if 1 || NRNMPI
 void (*nrn_multisplit_setup_)();
-#endif
 
 /*
 Do not use unless necessary (loops in tree structure) since overhead
@@ -675,7 +676,7 @@ Prop* prop_alloc(Prop** pp, int type, Node* nd) {
     nrn_alloc_node_ = nd;  // this might be null
     v_structure_change = 1;
     current_prop_list = pp;
-    auto* p = new Prop{static_cast<short>(type)};
+    auto* p = new Prop{nd, static_cast<short>(type)};
     p->next = *pp;
     p->ob = nullptr;
     p->_alloc_seq = -1;
@@ -1620,44 +1621,28 @@ void v_setup_vectors(void) {
 
     nrn_threads_free();
 
-    for (i = 0; i < n_memb_func; ++i)
+    for (i = 0; i < n_memb_func; ++i) {
         if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
             if (memb_list[i].nodecount) {
-                memb_list[i].nodecount = 0;
-                free(memb_list[i].nodelist);
-                free(memb_list[i].nodeindices);
-                delete[] memb_list[i].prop;
+                memb_list[i].nodes_free();
                 if (!memb_func[i].hoc_mech) {
-                    // free(memb_list[i]._data);
                     free(memb_list[i].pdata);
                 }
             }
         }
+    }
 
 #if 1 /* see finitialize */
-    /* and count the artificial cells */
-    for (i = 0; i < n_memb_func; ++i)
+    /* and allocate for the artificial cells */
+    for (i = 0; i < n_memb_func; ++i) {
         if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
-            cTemplate* tmp = nrn_pnt_template_[i];
-            memb_list[i].nodecount = tmp->count;
+            int node_count = nrn_pnt_template_[i]->count;
+            bool alloc_pdata = !memb_func[i].hoc_mech;
+            memb_list[i].nodes_alloc(node_count, alloc_pdata);
+            memb_list[i].nodecount = 0; /* counted again below. TODO: Why? */
         }
+    }
 #endif
-
-    /* allocate it*/
-
-    for (i = 0; i < n_memb_func; ++i)
-        if (nrn_is_artificial_[i] && memb_func[i].has_initialize()) {
-            if (memb_list[i].nodecount) {
-                memb_list[i].nodelist = (Node**) emalloc(memb_list[i].nodecount * sizeof(Node*));
-                memb_list[i].nodeindices = (int*) emalloc(memb_list[i].nodecount * sizeof(int));
-                // Prop used by ode_map even when hoc_mech is false
-                memb_list[i].prop = new Prop*[memb_list[i].nodecount];
-                if (!memb_func[i].hoc_mech) {
-                    memb_list[i].pdata = (Datum**) emalloc(memb_list[i].nodecount * sizeof(Datum*));
-                }
-                memb_list[i].nodecount = 0; /* counted again below */
-            }
-        }
 
 #if MULTICORE
     if (!nrn_user_partition()) {
@@ -1757,115 +1742,45 @@ void v_setup_vectors(void) {
         }
     }
     neuron::model().node_data().mark_as_unsorted();
+    // The assumption here is that one can arbitrarily permute the
+    // NrnThread node order (within the constraint that
+    // parent index < node index). A NrnThread node order permutation
+    // involves modifying NrnThread fields: _v_node, _v_parent, v_parent_index,
+    // and Node.v_node_index.
+    // Additionally, there appears to be a Memb_list node_indices ordering
+    // presumption embodied in nrn_sort_mech_data. I.e. Preexisting Memb_list node
+    // order is the order that results by iterating over Nrnthread nodes
+    // asserted by ml->nodelist[nt_mech_count] == nd.
+    // We <satisfy?> this by monotonically ordering the Memb_list with
+    // sort_ml(Memb_list*) but there is a question whether the sort preserves
+    // the order when there are many POINT_PROCESS instances in the same node.
+    neuron::nrn_permute_node_order();
+
     v_structure_change = 0;
     nrn_update_ps2nt();
     ++structure_change_cnt;
     long_difus_solve(nrn_ensure_model_data_are_sorted(), 3, *nrn_threads);  // !!!
     nrn_nonvint_block_setup();
     diam_changed = 1;
-}
 
-
-#define NODE_DATA 0
-#if NODE_DATA
-static FILE* fnd;
-
-#undef P
-#undef Pn
-#undef Pd
-#undef Pg
-
-#define P fprintf(fnd,
-#define Pn P "\n")
-#define Pd(arg) P "%d\n", arg)
-#define Pg(arg) P "%g\n", arg)
-
-void node_data_scaffolding(void) {
-    int i;
-    Pd(n_memb_func);
-    /*	P "Mechanism names (first two are nullptr) beginning with memb_func[2]\n");*/
-    for (i = 2; i < n_memb_func; ++i) {
-        P "%s", memb_func[i].sym->name);
-        Pn;
-    }
-}
-
-void node_data_structure(void) {
-    int i, j;
-    nrn_thread_error("node_data_structure");
-    Pd(v_node_count);
-
-    Pd(nrn_global_ncell);
-    /*	P "Indices of node parents\n");*/
-    for (i = 0; i < v_node_count; ++i) {
-        Pd(v_parent[i]->v_node_index);
-    }
-    /*	P "node lists for the membrane mechanisms\n");*/
-    for (i = 2; i < n_memb_func; ++i) {
-        /*		P "count, node list for mechanism %s\n", memb_func[i].sym->name);*/
-        Pd(memb_list[i].nodecount);
-        for (j = 0; j < memb_list[i].nodecount; ++j) {
-            Pd(memb_list[i].nodelist[j]->v_node_index);
+#if 0
+    for (int tid = 0; tid < nrn_nthread; ++tid) {
+        printf("nrnthread %d node info\n", tid);
+        auto& nt = nrn_threads[tid];
+        for (int i = 0; i < nt.end; ++i) {
+            printf(
+                " _v_node[%2d]->v_node_index=%2d"
+                " _v_parent[%2d]->v_node_index=%2d v=%g\n",
+                i,
+                nt._v_node[i]->v_node_index,
+                i,
+                nt._v_parent[i] ? nt._v_parent[i]->v_node_index : -1,
+                (*nt._v_node[i]).v());
         }
     }
+#endif  // 0
 }
 
-void node_data_values(void) {
-    int i, j, k;
-    /*	P "data for nodes then for all mechanisms in order of the above structure\n");	*/
-    for (i = 0; i < v_node_count; ++i) {
-        Pg(NODEV(v_node[i]));
-        Pg(NODEA(v_node[i]));
-        Pg(NODEB(v_node[i]));
-        Pg(NODEAREA(v_node[i]));
-    }
-    for (i = 2; i < n_memb_func; ++i) {
-        Prop* prop;
-        int cnt;
-        double* pd;
-        if (memb_list[i].nodecount) {
-            assert(!memb_func[i].hoc_mech);
-            prop = nrn_mechanism(i, memb_list[i].nodelist[0]);
-            cnt = prop->param_size;
-            Pd(cnt);
-        }
-        for (j = 0; j < memb_list[i].nodecount; ++j) {
-            pd = memb_list[i]._data[j];
-            for (k = 0; k < cnt; ++k) {
-                Pg(pd[k]);
-            }
-        }
-    }
-}
-
-void node_data(void) {
-    fnd = fopen(gargstr(1), "w");
-    if (!fnd) {
-        hoc_execerror("node_data: can't open", gargstr(1));
-    }
-    if (tree_changed) {
-        setup_topology();
-    }
-    if (v_structure_change) {
-        v_setup_vectors();
-    }
-    if (diam_changed) {
-        recalc_diam();
-    }
-    node_data_scaffolding();
-    node_data_structure();
-    node_data_values();
-    fclose(fnd);
-    hoc_retpushx(1.);
-}
-
-#else
-void node_data(void) {
-    Printf("recalc_diam=%d nrn_area_ri=%d\n", recalc_diam_count_, nrn_area_ri_count_);
-    hoc_retpushx(0.);
-}
-
-#endif
 
 void nrn_matrix_node_free() {
     NrnThread* nt;
@@ -2255,7 +2170,7 @@ static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_ty
         // objects. In this case we can figure out which the missing entries are and permute them to
         // the end of the global vectors.
         auto missing_elements = node_data_size - global_i;
-        std::cout << "permuting " << missing_elements << " 'lost' Nodes to the end\n";
+        Printf(fmt::format("permuting {} 'lost' Nodes to the end\n", missing_elements).c_str());
         // There are `missing_elements` integers from the range [0 .. node_data_size-1] whose values
         // in `node_data_permutation` are still std::numeric_limits<std::size_t>::max().
         for (auto global_row = 0ul; global_row < node_data_size; ++global_row) {
@@ -2351,7 +2266,7 @@ neuron::model_sorted_token nrn_ensure_model_data_are_sorted() {
         nrn_sort_node_data(node_token, cache);
         assert(node_data.is_sorted());
         // TODO: maybe we should separate out cache population from sorting.
-        std::size_t n{};  // eww
+        std::size_t n{};
         model.apply_to_mechanisms([&cache, &n, &mech_tokens](auto& mech_data) {
             // TODO do we need to pass `node_token` to `nrn_sort_mech_data`?
             nrn_sort_mech_data(mech_tokens[n], cache, mech_data);

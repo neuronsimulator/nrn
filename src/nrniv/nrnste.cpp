@@ -65,7 +65,7 @@ static void ste_destruct(void* v) {
 }
 
 void StateTransitionEvent_reg() {
-    class2oc("StateTransitionEvent", ste_cons, ste_destruct, members, NULL, NULL, NULL);
+    class2oc("StateTransitionEvent", ste_cons, ste_destruct, members, NULL, NULL);
 }
 
 StateTransitionEvent::StateTransitionEvent(int nstate, Point_process* pnt)

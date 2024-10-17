@@ -1,5 +1,4 @@
-#ifndef ivoc_vector_h
-#define ivoc_vector_h
+#pragma once
 
 #include "nrnmutdec.h"
 #include "ocnotify.h"
@@ -32,6 +31,10 @@ class IvocVect {
         return vec_;
     }
 
+    inline double const* data() const {
+        return vec_.data();
+    }
+
     inline double* data() {
         return vec_.data();
     }
@@ -56,6 +59,14 @@ class IvocVect {
 
     inline double& operator[](size_t index) {
         return vec_.at(index);
+    }
+
+    inline auto begin() const -> std::vector<double>::const_iterator {
+        return vec_.begin();
+    }
+
+    inline auto end() const -> std::vector<double>::const_iterator {
+        return vec_.end();
     }
 
     inline auto begin() -> std::vector<double>::iterator {
@@ -121,5 +132,3 @@ extern void vector_set_label(IvocVect*, char*);
 
 // olupton 2022-01-21: backwards compatibility
 using Vect = IvocVect;
-
-#endif

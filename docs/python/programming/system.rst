@@ -251,8 +251,7 @@ Timing
         ``h.startsw()``
 
 
-        Initializes a stopwatch with a resolution of 1 second or 0.01 second if 
-        gettimeofday system call is available. See :func:`stopsw` . 
+        Initializes a stopwatch with a resolution of 0.01 second. See :func:`stopsw`.
 
 
 ----

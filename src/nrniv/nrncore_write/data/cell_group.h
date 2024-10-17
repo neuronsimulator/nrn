@@ -1,5 +1,4 @@
-#ifndef NRN_CELL_GROUP_H
-#define NRN_CELL_GROUP_H
+#pragma once
 
 #include "datum_indices.h"
 #include <vector>
@@ -90,5 +89,3 @@ class CellGroup {
         return p->id().current_row() - sorted_token.thread_cache(tid).mechanism_offset.at(type);
     }
 };
-
-#endif  // NRN_CELL_GROUP_H

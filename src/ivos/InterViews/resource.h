@@ -26,8 +26,7 @@
  * Resources are shared objects.
  */
 
-#ifndef iv_resource_h
-#define iv_resource_h
+#pragma once
 
 #include <InterViews/enter-scope.h>
 
@@ -65,5 +64,3 @@ private:
  */
 
 static inline void Unref(const Resource* r) { Resource::unref(r); }
-
-#endif

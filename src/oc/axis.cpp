@@ -134,8 +134,9 @@ axis.cpp,v
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "hoc.h"
 #include "gui-redirect.h"
+
+#include "utils/logger.hpp"
 
 #define CLIP 1e9
 #define XS   500.
@@ -201,8 +202,8 @@ static void close_regraph(void) {
 static void do_regraph(void) {
     int i;
     for (i = 0; i < regraph_index; i++) {
-        if (regraph_color[i] != color) {
-            set_color(regraph_color[i]);
+        if (regraph_color[i] != hoc_color) {
+            hoc_set_color(regraph_color[i]);
         }
         PLOT(regraph_narg[i], regraph_mode[i], regraph_x[i], *regraph_y[i]);
     }
@@ -211,7 +212,7 @@ static void save_regraph_item(int narg, int mode, double x) {
     regraph_narg[regraph_index] = narg;
     regraph_mode[regraph_index] = mode;
     regraph_x[regraph_index] = x;
-    regraph_color[regraph_index] = color;
+    regraph_color[regraph_index] = hoc_color;
     if (narg == 1 && regraph_index < max_regraph_index) {
         regraph_y[regraph_index] = &ystart;
         regraph_index++;
@@ -282,7 +283,7 @@ static int PLOT(int narg, int mode, double x, double y) {
     x = xorg + xscale * x;
     y = yorg + yscale * y;
     if (x <= xhigh && x >= xlow && y <= yhigh && y >= ylow) {
-        plt(mode, x, y);
+        hoc_plt(mode, x, y);
     } else if (mode > 0) {
         lastmode = 1;
         ok = 0;
@@ -305,10 +306,6 @@ void hoc_ploty(void) {
 void hoc_axis(void) {
     TRY_GUI_REDIRECT_DOUBLE("axis", NULL);
 
-#if DOS
-    extern int newstyle;
-    extern unsigned text_style, text_orient, text_size;
-#endif
     int width, height;
     double x, y;
     double i, j, offset;
@@ -353,33 +350,23 @@ void hoc_axis(void) {
         y0 = yorg;
 
     if (!ifarg(1)) {
-        plt(1, XORG, y0);
+        hoc_plt(1, XORG, y0);
         for (x = xstart; x <= xstop + 1e-10; x = x + (xstop - xstart) / xinc) {
             i = xorg + xscale * x;
-            plt(2, i, y0);
-            plt(2, i, y0 + 10.);
-            plt(1, i, y0);
+            hoc_plt(2, i, y0);
+            hoc_plt(2, i, y0 + 10.);
+            hoc_plt(1, i, y0);
         }
-        plt(1, x0, YORG);
+        hoc_plt(1, x0, YORG);
         for (y = ystart; y <= ystop + 1e-10; y = y + (ystop - ystart) / yinc) {
             j = yorg + yscale * y;
-            plt(2, x0, j);
-            plt(2, x0 + 10., j);
-            plt(1, x0, j);
+            hoc_plt(2, x0, j);
+            hoc_plt(2, x0 + 10., j);
+            hoc_plt(1, x0, j);
         }
 
-#if DOS
-        if (newstyle) {
-            settextstyle(text_style, text_orient, text_size);
-            newstyle = 0;
-        }
-        width = textwidth("O") * 1.5;
-        height = textheight("O");
-#else
         width = WIDTH;
         height = HEIGHT;
-#endif
-
 
         for (x = xstart; x <= xstop + 1e-10; x = x + (xstop - xstart) / xinc) {
             i = xorg + xscale * x;
@@ -390,14 +377,9 @@ void hoc_axis(void) {
             offset = width * (int) strlen(s) / 2;
             if (i == x0 && y0 != YORG)
                 offset = -width / 2;
-#if DOS
-            plt(1, i - offset, y0 - height);
-            plt(-2, 0., 0.);
-#else
-            plt(1, i - offset, y0 - 1.5 * height);
-            plt(-2, 0., 0.);
-#endif
-            plprint(s);
+            hoc_plt(1, i - offset, y0 - 1.5 * height);
+            hoc_plt(-2, 0., 0.);
+            hoc_plprint(s);
         }
 
         for (y = ystart; y <= ystop + 1e-10; y = y + (ystop - ystart) / yinc) {
@@ -408,22 +390,13 @@ void hoc_axis(void) {
             offset = width * (int) strlen(s) + width;
             j = yorg + yscale * y;
             if (j == y0 && x0 != XORG)
-#if DOS
-                plt(1, x0 - offset, j + height);
-#else
-                plt(1, x0 - offset, j + 2.);
-#endif
+                hoc_plt(1, x0 - offset, j + 2.);
             else
-#if DOS
-                plt(1, x0 - offset, j + height / 2);
-#else
-                plt(1, x0 - offset, j - 6.);
-#endif
-
-            plt(-2, 0., 0.);
-            plprint(s);
+                hoc_plt(1, x0 - offset, j - 6.);
+            hoc_plt(-2, 0., 0.);
+            hoc_plprint(s);
         }
-        plt(-1, 0., 0.);
+        hoc_plt(-1, 0., 0.);
     }
     Ret(1.);
 }
@@ -571,13 +544,13 @@ static void plotflush(int contin) {
     for (i = 0; i < NPARAM; i++) {
         parsav[i] = param[i];
     }
-    savcolor = color;
+    savcolor = hoc_color;
     for (g = glist_head; g != (Grph*) 0; g = g->g_next) {
         for (i = 0; i < NPARAM; i++) {
             param[i] = g->g_param[i];
         }
-        if (color != g->g_color) {
-            IGNORE(set_color(g->g_color));
+        if (hoc_color != g->g_color) {
+            IGNORE(hoc_set_color(g->g_color));
         }
         IGNORE(PLOT(1, 1, 0., 0.));
         for (i = 0; i < pcnt; i++) {
@@ -590,8 +563,8 @@ static void plotflush(int contin) {
     for (i = 0; i < NPARAM; i++) {
         param[i] = parsav[i];
     }
-    if (savcolor != color) {
-        IGNORE(set_color(savcolor));
+    if (savcolor != hoc_color) {
+        IGNORE(hoc_set_color(savcolor));
     }
     if (contin == 2 && pcnt > 0) {
         lx[0] = lx[pcnt - 1];
@@ -613,19 +586,19 @@ static void do_setup(void) {
     for (i = 0; i < NPARAM; i++) {
         parsav[i] = param[i];
     }
-    savcolor = color;
+    savcolor = hoc_color;
     for (g = glist_head; g != (Grph*) 0; g = g->g_next) {
         hoc_run_stmt(g->g_setup);
         for (i = 0; i < NPARAM; i++) {
             g->g_param[i] = param[i];
         }
-        g->g_color = color;
+        g->g_color = hoc_color;
     }
     for (i = 0; i < NPARAM; i++) {
         param[i] = parsav[i];
     }
-    if (savcolor != color) {
-        IGNORE(set_color(savcolor));
+    if (savcolor != hoc_color) {
+        IGNORE(hoc_set_color(savcolor));
     }
     initialized = 1;
 }

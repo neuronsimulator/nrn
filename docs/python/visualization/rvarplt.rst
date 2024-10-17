@@ -128,7 +128,37 @@ RangeVarPlot
             rvp... #specify range begin and end 
             imp... #specify impedance computation 
             g = h.Graph() 
-            g.addobject(rvp) 
+            g.addobject(rvp)
+
+    Example (plotting a rxd species):
+        .. code-block::
+            python
+
+            from neuron import h
+            from neuron import rxd
+            import matplotlib.pyplot as plt
+
+            dend1 = h.Section("dend1")
+            dend1.nseg =4
+
+            cyt1 = rxd.Region(dend1.wholetree(), nrn_region="i")
+            ca1 = rxd.Species(cyt1, name="ca1", charge=2, initial=1e-12)
+
+            ca1.nodes(dend1(0.1))[0].include_flux(40)
+            ca1.nodes(dend1(0.4))[0].include_flux(-25)
+            ca1.nodes(dend1(0.7))[0].include_flux(70)
+
+            h.finitialize(-65)
+            h.dt /= 512
+            h.load_file("stdrun.hoc")
+            h.continuerun(0.025)
+
+            a_1 = h.RangeVarPlot(ca1, dend1(0), dend1(1))
+            a_1.plot(plt)
+            plt.show()
+
+        .. image:: ../images/rangevarplotrxd.png
+            :align: center
 
 ----
 

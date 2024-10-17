@@ -29,7 +29,7 @@ include(${CODING_CONV_CMAKE}/build-time-copy.cmake)
 # =============================================================================
 # Build options
 # =============================================================================
-option(CORENRN_ENABLE_OPENMP "Build the CORE NEURON with OpenMP implementation" ON)
+option(CORENRN_ENABLE_OPENMP "Build the CORE NEURON with OpenMP implementation" OFF)
 option(CORENRN_ENABLE_OPENMP_OFFLOAD "Prefer OpenMP target offload to OpenACC" ON)
 option(CORENRN_ENABLE_TIMEOUT "Enable nrn_timeout implementation" ON)
 option(CORENRN_ENABLE_REPORTING "Enable use of libsonata for soma reports" OFF)
@@ -148,11 +148,6 @@ configure_file(${PROJECT_SOURCE_DIR}/src/coreneuron/config/config.cpp.in
 include(OpenAccHelper)
 
 # =============================================================================
-# Common dependencies
-# =============================================================================
-find_package(Perl REQUIRED)
-
-# =============================================================================
 # Common build options
 # =============================================================================
 # build mod files for coreneuron
@@ -162,6 +157,9 @@ check_include_files(malloc.h have_malloc_h)
 if(have_malloc_h)
   list(APPEND CORENRN_COMPILE_DEFS HAVE_MALLOC_H)
 endif()
+# Code incompletely shared with NEURON via #if CORENRN_BUILD fragments. NRN and CORENEURON builds
+# sometimes compile the same few files but, for example, with different name spaces.
+list(APPEND CORENRN_COMPILE_DEFS CORENRN_BUILD=1)
 
 # =============================================================================
 # Build option specific compiler flags
@@ -199,11 +197,7 @@ if(NRN_ENABLE_MPI_DYNAMIC)
 endif()
 
 if(CORENRN_ENABLE_OPENMP)
-  find_package(OpenMP QUIET)
-  if(OPENMP_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} ${ADDITIONAL_THREADSAFE_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} ${ADDITIONAL_THREADSAFE_FLAGS}")
-  endif()
+  find_package(OpenMP REQUIRED)
 endif()
 
 list(APPEND CORENRN_COMPILE_DEFS LAYOUT=0)
@@ -256,21 +250,13 @@ if(NOT "${CORENRN_NMODL_DIR}" STREQUAL "" AND NOT nmodl_FOUND)
 endif()
 if(nmodl_FOUND)
   set(CORENRN_NMODL_BINARY ${nmodl_BINARY})
-  set(CORENRN_NMODL_INCLUDE ${nmodl_INCLUDE})
-  # path to python interface
-  set(ENV{PYTHONPATH} "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
-  set(CORENRN_NMODL_PYTHONPATH $ENV{PYTHONPATH})
 else()
   set(NMODL_ENABLE_PYTHON_BINDINGS
-      ON
-      CACHE BOOL "Disable NMODL python bindings")
-  nrn_add_external_project(nmodl OFF)
+      OFF
+      CACHE BOOL "Enable NMODL python bindings")
+  nrn_add_external_project(nmodl DISABLE_ADD)
   add_subdirectory(${PROJECT_SOURCE_DIR}/external/nmodl ${CMAKE_BINARY_DIR}/external/nmodl)
   set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
-  set(CORENRN_NMODL_INCLUDE ${CMAKE_BINARY_DIR}/include)
-  set(ENV{PYTHONPATH} "$ENV{PYTHONPATH}")
-  set(nmodl_PYTHONPATH "${CMAKE_BINARY_DIR}/lib")
-  set(CORENRN_NMODL_PYTHONPATH "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
   set(NMODL_TARGET_TO_DEPEND nmodl)
   set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
   # install nrnunits.lib and libpywrapper.so from external/nmodl
@@ -334,6 +320,7 @@ add_link_options(${CORENRN_EXTRA_LINK_FLAGS})
 file(
   GLOB
   CORENEURON_CODE_FILES
+  CONFIGURE_DEPENDS
   "apps/main1.cpp"
   "apps/corenrn_parameters.cpp"
   "gpu/nrn_acc_manager.cpp"
@@ -356,30 +343,33 @@ if(NRN_ENABLE_MPI)
   list(APPEND CORENEURON_CODE_FILES "mpi/core/resolve.cpp")
 endif()
 
-file(COPY ${PROJECT_SOURCE_DIR}/external/Random123/include/Random123
-     DESTINATION ${CMAKE_BINARY_DIR}/include)
 list(APPEND CORENEURON_CODE_FILES ${PROJECT_BINARY_DIR}/coreneuron/config/config.cpp)
 
 set(ENGINEMECH_CODE_FILE "mechanism/mech/enginemech.cpp")
 
 # for external mod files we need to generate modl_ref function in mod_func.c
-set(MODFUNC_PERL_SCRIPT "mechanism/mech/mod_func.c.pl")
-
+set(MODFUNC_SHELL_SCRIPT "mechanism/mech/mod_func.c.sh")
 set(NMODL_UNITS_FILE "${CMAKE_BINARY_DIR}/share/mod2c/nrnunits.lib")
 
 # =============================================================================
 # Copy files that are required by nrnivmodl-core to the build tree at build time.
 # =============================================================================
 cpp_cc_build_time_copy(
-  INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${MODFUNC_PERL_SCRIPT}"
-  OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl"
+  INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${MODFUNC_SHELL_SCRIPT}"
+  OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.sh"
   NO_TARGET)
 cpp_cc_build_time_copy(
   INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${ENGINEMECH_CODE_FILE}"
   OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp"
   NO_TARGET)
-set(nrnivmodl_core_dependencies "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl"
-                                "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp")
+cpp_cc_build_time_copy(
+  INPUT "${CMAKE_CURRENT_SOURCE_DIR}/apps/coreneuron.cpp"
+  OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp"
+  NO_TARGET)
+set(nrnivmodl_core_dependencies
+    "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.sh"
+    "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp"
+    "${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp")
 # Set up build rules that copy builtin mod files from src/coreneuron/mechanism/mech/modfile/*.mod to
 # {build_dir}/share/modfile/
 file(GLOB builtin_modfiles "${PROJECT_SOURCE_DIR}/src/coreneuron/mechanism/mech/modfile/*.mod")
@@ -410,25 +400,6 @@ if(CORENRN_ENABLE_GPU)
   # https://forums.developer.nvidia.com/t/cannot-dynamically-load-a-shared-library-containing-both-openacc-and-cuda-code/210972
   # this cannot be included in the same shared library as the rest of the OpenACC code.
   set(CORENEURON_CUDA_FILES ${CMAKE_CURRENT_SOURCE_DIR}/permute/cellorder.cu)
-
-  # Eigen functions cannot be called directly from OpenACC regions, but Eigen is sort-of compatible
-  # with being compiled as CUDA code. Because of
-  # https://forums.developer.nvidia.com/t/cannot-dynamically-load-a-shared-library-containing-both-openacc-and-cuda-code/210972
-  # this has to mean `nvc++ -cuda` rather than `nvcc`. We explicitly instantiate Eigen functions for
-  # different matrix sizes in partial_piv_lu.cpp (with CUDA attributes but without OpenACC or OpenMP
-  # annotations) and dispatch to these from a wrapper in partial_piv_lu.h that does have
-  # OpenACC/OpenMP annotations.
-  if(EXISTS ${CORENRN_NMODL_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp)
-    list(APPEND CORENEURON_CODE_FILES ${CORENRN_NMODL_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp)
-    if(CORENRN_ENABLE_GPU
-       AND CORENRN_HAVE_NVHPC_COMPILER
-       AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-      # In this case OpenAccHelper.cmake passes -gpu=debug, which makes these Eigen functions
-      # extremely slow. Downgrade that to -gpu=lineinfo for this file.
-      set_source_files_properties(${CORENRN_NMODL_INCLUDE}/partial_piv_lu/partial_piv_lu.cpp
-                                  PROPERTIES COMPILE_FLAGS "-gpu=lineinfo,nodebug -O1")
-    endif()
-  endif()
 endif()
 
 # =============================================================================
@@ -468,6 +439,15 @@ endif()
 # Hines solver. This cannot be included in coreneuron-core because of this issue:
 # https://forums.developer.nvidia.com/t/cannot-dynamically-load-a-shared-library-containing-both-openacc-and-cuda-code/210972
 add_library(coreneuron-core STATIC ${CORENEURON_CODE_FILES} ${CORENRN_MPI_OBJ})
+add_dependencies(coreneuron-core coreneuron-copy-nrnivmodl-core-dependencies)
+if(CORENRN_ENABLE_OPENMP)
+  # target_link_libraries(coreneuron-core PUBLIC OpenMP::OpenMP_CXX)
+  target_compile_options(coreneuron-core PUBLIC ${OpenMP_CXX_FLAGS})
+  target_link_libraries(coreneuron-core PUBLIC ${OpenMP_CXX_LIB_NAMES})
+  # The first line uses a generator expression to arrive at -fopenmp (or equivalent) - this will not
+  # work with our Makefile generation. Thus specify the flag manually. Enable the first line and
+  # remove the last two lines below once we get rid of the mechanism building Makefile.
+endif()
 if(CORENRN_ENABLE_GPU)
   set(coreneuron_cuda_target coreneuron-cuda)
   add_library(coreneuron-cuda ${COMPILE_LIBRARY_TYPE} ${CORENEURON_CUDA_FILES})
@@ -646,10 +626,6 @@ endforeach()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
                ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h COPYONLY)
 
-# main program required for building special-core
-cpp_cc_build_time_copy(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/apps/coreneuron.cpp
-                       OUTPUT ${CMAKE_BINARY_DIR}/share/coreneuron/coreneuron.cpp)
-
 # Extract the various compiler option strings to use inside nrnivmodl-core. Sets the global property
 # CORENRN_LIB_LINK_FLAGS, which contains the arguments that must be added to the link line for
 # `special` to link against `libcorenrnmech_internal.{a,so}`
@@ -699,7 +675,7 @@ install(
   FILES_MATCHING
   PATTERN "*.h*"
   PATTERN "*.ipp")
-install(FILES ${MODFUNC_PERL_SCRIPT} ${ENGINEMECH_CODE_FILE} DESTINATION share/coreneuron)
+install(FILES ${MODFUNC_SHELL_SCRIPT} ${ENGINEMECH_CODE_FILE} DESTINATION share/coreneuron)
 
 # copy nmodl for nrnivmodl-core
 install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION bin)
@@ -716,9 +692,6 @@ install(FILES apps/coreneuron.cpp DESTINATION share/coreneuron)
 if(CORENRN_ENABLE_SHARED)
   install(FILES ${corenrn_mech_library} DESTINATION lib)
 endif()
-
-# install random123 and nmodl headers
-install(DIRECTORY ${CMAKE_BINARY_DIR}/include/ DESTINATION include)
 
 # install mod files
 install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION share)

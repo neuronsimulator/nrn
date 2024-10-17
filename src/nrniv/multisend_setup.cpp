@@ -9,8 +9,6 @@ the source host owning the gid.
 */
 #include "oc_ansi.h"
 
-#include "oc_ansi.h"
-
 static void del(int* a) {
     if (a) {
         delete[] a;

@@ -3331,6 +3331,31 @@ Parallel Transfer
 
 ----
 
+.. method:: ParallelContext.optimize_node_order
+
+    Syntax:
+        ``i= pc.optimize_node_order(i)``
+
+    Description:
+        Choose a node order (permutation) of data that
+        may improve memory latency and bandwidth utilization for gaussian
+        elmination.
+        Returns the node order (0-2) chosen (or currently in effect if no argument).
+
+        0.  Nodes of a cell are adjacent. (Though all root nodes are adjacent
+            at the beginning of each thread's node list.) Default.
+        1.  Cells are interleaved, corresponding nodes of identical cells
+            are adjacent. Order of a given cell same as permutation 0.
+        2.  Depth first ordering. First, cell roots, then nodes
+            connecting to roots, etc. An attempt is made to order so that if
+            nodes are adjacent, then their parent nodes are also adjacent.
+            Note that 1 and 2 are identical ordering if all cells are indentical.
+
+        Adopts the permutation and gaussian elimination methods of
+        CoreNEURON that were specified by the cell_permute=.. argument.
+
+----
+
 .. method:: ParallelContext.prcellstate
 
     Syntax:

@@ -410,6 +410,23 @@ MechanismStandard (Parameter Control)
 ----
 
 
+.. method:: MechanismStandard.is_array
+
+
+    Syntax:
+        .. code-block::
+            python
+            
+            bool = ms.is_array(index)
+
+
+    Description:
+        Returns True if the variable associated with the index is an array.
+         
+
+----
+
+
 
 .. method:: MechanismStandard.name
 

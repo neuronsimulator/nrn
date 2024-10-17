@@ -1,5 +1,4 @@
-#ifndef nrniv_mf_h
-#define nrniv_mf_h
+#pragma once
 #include "hoc_membf.h"
 #include "hocdec.h"
 #include "membfunc.h"
@@ -106,5 +105,3 @@ void* nrn_pool_alloc(void* pool);
 void* nrn_pool_create(long count, int itemsize);
 void nrn_pool_delete(void* pool);
 void nrn_pool_freeall(void* pool);
-
-#endif /* nrniv_mf_h */

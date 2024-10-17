@@ -61,7 +61,7 @@ static void destruct(void* v) {
 }
 
 void LinearMechanism_reg() {
-    class2oc("LinearMechanism", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("LinearMechanism", cons, destruct, members, NULL, NULL);
 }
 
 LinearMechanism::LinearMechanism() {

@@ -22,7 +22,7 @@ extern NetCvode* net_cvode_instance;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 
 int chkpnt;
-const char* bbcore_write_version = "1.7";  // NMODLRandom
+const char* bbcore_write_version = "1.8";  // Include ArrayDims
 
 /// create directory with given path
 void create_dir_path(const std::string& path) {
@@ -529,6 +529,10 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append) {
 
 /** @brief dump mapping information to gid_3.dat file */
 void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
+    if (minfo.size() <= 0) {
+        return;
+    }
+
     /** full path of mapping file */
     std::stringstream ss;
     ss << path << "/" << gid << "_3.dat";
@@ -543,33 +547,54 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
     fprintf(f, "%s\n", bbcore_write_version);
 
     /** number of gids in NrnThread */
-    fprintf(f, "%zd\n", minfo.size());
+    int count;
+    nrnthread_dat3_cell_count(count);
+    fprintf(f, "%d\n", count);
 
     /** all cells mapping information in NrnThread */
-    for (size_t i = 0; i < minfo.size(); i++) {
-        CellMapping* c = minfo.mapping[i];
-
+    for (size_t i = 0; i < count; i++) {
+        int cgid;
+        int t_sec;
+        int t_seg;
+        int n_seclist;
+        nrnthread_dat3_cellmapping(i, cgid, t_sec, t_seg, n_seclist);
         /** gid, #section, #compartments,  #sectionlists */
-        fprintf(f, "%d %d %d %zd\n", c->gid, c->num_sections(), c->num_segments(), c->size());
+        fprintf(f, "%d %d %d %d\n", cgid, t_sec, t_seg, n_seclist);
 
-        for (size_t j = 0; j < c->size(); j++) {
-            SecMapping* s = c->secmapping[j];
-            size_t total_lfp_factors = s->seglfp_factors.size();
+        for (size_t j = 0; j < n_seclist; j++) {
+            std::string sclname;
+            int nsec;
+            int nseg;
+            int n_electrodes;
+            size_t total_lfp_factors;
+            std::vector<int> data_sec;
+            std::vector<int> data_seg;
+            std::vector<double> data_lfp;
+            nrnthread_dat3_secmapping(i,
+                                      j,
+                                      sclname,
+                                      nsec,
+                                      nseg,
+                                      total_lfp_factors,
+                                      n_electrodes,
+                                      data_sec,
+                                      data_seg,
+                                      data_lfp);
             /** section list name, number of sections, number of segments */
             fprintf(f,
-                    "%s %d %zd %zd %d\n",
-                    s->name.c_str(),
-                    s->nsec,
-                    s->size(),
+                    "%s %d %d %zd %d\n",
+                    sclname.c_str(),
+                    nsec,
+                    nseg,
                     total_lfp_factors,
-                    s->num_electrodes);
+                    n_electrodes);
 
             /** section - segment mapping */
-            if (s->size()) {
-                writeint(&(s->sections.front()), s->size());
-                writeint(&(s->segments.front()), s->size());
+            if (nseg) {
+                writeint(&(data_sec.front()), nseg);
+                writeint(&(data_seg.front()), nseg);
                 if (total_lfp_factors) {
-                    writedbl(&(s->seglfp_factors.front()), total_lfp_factors);
+                    writedbl(&(data_lfp.front()), total_lfp_factors);
                 }
             }
         }

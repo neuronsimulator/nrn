@@ -1,5 +1,4 @@
-#ifndef pool_h
-#define pool_h
+#pragma once
 
 // create and manage a vector of objects as a memory pool of those objects
 // the object must have a void clear() method which takes care of any
@@ -130,6 +129,3 @@ void MutexPool<T>::free_all() {
     put_ = 0;
     MUTUNLOCK
 }
-
-
-#endif

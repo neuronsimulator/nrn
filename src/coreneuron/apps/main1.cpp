@@ -139,7 +139,7 @@ void get_nrn_trajectory_requests(int bsize) {
                 tr->varrays = varrays;
                 tr->scatter = pvars;
                 for (int i = 0; i < n_trajec; ++i) {
-                    tr->gather[i] = stdindex2ptr(types[i], indices[i], nt);
+                    tr->gather[i] = legacy_index2pointer(types[i], indices[i], nt);
                 }
                 delete[] types;
                 delete[] indices;

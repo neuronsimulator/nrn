@@ -1,5 +1,4 @@
-#ifndef ocbrowser_h
-#define ocbrowser_h
+#pragma once
 
 #include <IV-look/fbrowser.h>
 
@@ -14,5 +13,3 @@ class OcBrowser: public FileBrowser {
     virtual void accept();
     virtual void select_and_adjust(GlyphIndex);
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef ppshape_h
-#define ppshape_h
+#pragma once
 
 // shape class for viewing point processes
 
@@ -36,5 +35,3 @@ class PPShape: public ShapeScene {
   private:
     PPShapeImpl* si_;
 };
-
-#endif

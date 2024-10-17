@@ -1,5 +1,4 @@
-#ifndef rubberband_h
-#define rubberband_h
+#pragma once
 
 #include <InterViews/handler.h>
 #include <InterViews/event.h>
@@ -161,5 +160,3 @@ inline Coord Rubberband::y_begin() const {
     void RubberCallback(T)::execute(Rubberband* rb) {                             \
         (obj_->*func_)(rb);                                                       \
     }
-
-#endif

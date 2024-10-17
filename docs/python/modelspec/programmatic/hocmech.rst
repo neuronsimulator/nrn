@@ -22,11 +22,11 @@ HOC-based Mechanisms
     Syntax:
         ``h.make_mechanism("suffix", "Template", "parm1 parm2 parm3 ...")``
 
-        ``h.make_pointprocess("Name", "Template", "parm1 parm2 parm3 ...")``
+        ``h.make_pointprocess("Template", "parm1 parm2 parm3 ...")``
 
     Description:
         Installs the HOC (in particular, *not* Python) class called "Template" as a density membrane mechanism 
-        called "suffix" or a POINT_PROCESS called Name. If the third argument exists it must be a space 
+        called "suffix" or a POINT_PROCESS called "Template". If the last argument exists it must be a space 
         separated list of public variables in the Template which are to be 
         treated as PARAMETERs. Public variables not in this list are treated as 
         ASSIGNED variables. The new mechanism is used in exactly the same 

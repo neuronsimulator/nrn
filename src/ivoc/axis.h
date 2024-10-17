@@ -1,5 +1,4 @@
-#ifndef axis_h
-#define axis_h
+#pragma once
 
 #include <InterViews/observe.h>
 #include <InterViews/glyph.h>
@@ -72,5 +71,3 @@ class AxisBackground: public Background {
     void draw_help(Canvas*, const Allocation&) const;
     void tic_label(Coord x, Coord y, Coord val, float x_align, float y_align, Canvas*) const;
 };
-
-#endif

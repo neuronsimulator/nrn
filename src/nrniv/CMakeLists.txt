@@ -51,45 +51,47 @@ cpp_cc_configure_sanitizers(TARGET modlunit)
 # Generated .cpp needs to find source-directory .hpp and vice versa.
 target_include_directories(modlunit PRIVATE "${NRN_MODLUNIT_SRC_DIR}" "${NRN_MODLUNIT_GEN}")
 
-if(NRN_NMODL_CXX_FLAGS)
-  target_compile_options(modlunit PRIVATE ${NRN_NMODL_CXX_FLAGS})
+if(NRN_NOCMODL_CXX_FLAGS)
+  target_compile_options(modlunit PRIVATE ${NRN_NOCMODL_CXX_FLAGS})
 endif()
 
 # =============================================================================
-# Build nocmodl : source-to-source compiler for NMODL
+# Build nocmodl : source-to-source compiler for NOCMODL
 # =============================================================================
-set(NRN_NMODL_GEN "${CMAKE_CURRENT_BINARY_DIR}/nocmodl_generated")
-file(MAKE_DIRECTORY "${NRN_NMODL_GEN}")
-file(RELATIVE_PATH NRN_NMODL_GEN_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_NMODL_GEN}")
-file(RELATIVE_PATH NRN_NMODL_SRC_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_NMODL_SRC_DIR}")
+set(NRN_NOCMODL_GEN "${CMAKE_CURRENT_BINARY_DIR}/nocmodl_generated")
+file(MAKE_DIRECTORY "${NRN_NOCMODL_GEN}")
+file(RELATIVE_PATH NRN_NOCMODL_GEN_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_NOCMODL_GEN}")
+file(RELATIVE_PATH NRN_NOCMODL_SRC_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_NOCMODL_SRC_DIR}")
 add_custom_command(
-  OUTPUT "${NRN_NMODL_GEN}/lex.cpp"
+  OUTPUT "${NRN_NOCMODL_GEN}/lex.cpp"
   WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
-  COMMAND "${FLEX_EXECUTABLE}" ARGS -o "${NRN_NMODL_GEN_REL}/lex.cpp" "${NRN_NMODL_SRC_REL}/lex.lpp"
-  DEPENDS "${NRN_NMODL_SRC_DIR}/lex.lpp"
+  COMMAND "${FLEX_EXECUTABLE}" ARGS -o "${NRN_NOCMODL_GEN_REL}/lex.cpp"
+          "${NRN_NOCMODL_SRC_REL}/lex.lpp"
+  DEPENDS "${NRN_NOCMODL_SRC_DIR}/lex.lpp"
   COMMENT "[FLEX][nocmodllexer] Building scanner with flex ${FLEX_VERSION}")
 add_custom_command(
-  OUTPUT "${NRN_NMODL_GEN}/parse1.hpp" "${NRN_NMODL_GEN}/parse1.cpp"
+  OUTPUT "${NRN_NOCMODL_GEN}/parse1.hpp" "${NRN_NOCMODL_GEN}/parse1.cpp"
   WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
-  COMMAND "${BISON_EXECUTABLE}" ARGS "--defines=${NRN_NMODL_GEN_REL}/parse1.hpp" -o
-          "${NRN_NMODL_GEN_REL}/parse1.cpp" "${NRN_NMODL_SRC_REL}/parse1.ypp"
-  DEPENDS "${NRN_NMODL_SRC_DIR}/parse1.ypp"
+  COMMAND "${BISON_EXECUTABLE}" ARGS "--defines=${NRN_NOCMODL_GEN_REL}/parse1.hpp" -o
+          "${NRN_NOCMODL_GEN_REL}/parse1.cpp" "${NRN_NOCMODL_SRC_REL}/parse1.ypp"
+  DEPENDS "${NRN_NOCMODL_SRC_DIR}/parse1.ypp"
   COMMENT "[BISON][nocmodlparser] Building parser with bison ${BISON_VERSION}")
 add_custom_command(
-  OUTPUT "${NRN_NMODL_GEN}/diffeq.hpp" "${NRN_NMODL_GEN}/diffeq.cpp"
+  OUTPUT "${NRN_NOCMODL_GEN}/diffeq.hpp" "${NRN_NOCMODL_GEN}/diffeq.cpp"
   WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
-  COMMAND "${BISON_EXECUTABLE}" ARGS "--defines=${NRN_NMODL_GEN_REL}/diffeq.hpp" -o
-          "${NRN_NMODL_GEN_REL}/diffeq.cpp" "${NRN_NMODL_SRC_REL}/diffeq.ypp"
-  DEPENDS "${NRN_NMODL_SRC_DIR}/diffeq.ypp"
+  COMMAND "${BISON_EXECUTABLE}" ARGS "--defines=${NRN_NOCMODL_GEN_REL}/diffeq.hpp" -o
+          "${NRN_NOCMODL_GEN_REL}/diffeq.cpp" "${NRN_NOCMODL_SRC_REL}/diffeq.ypp"
+  DEPENDS "${NRN_NOCMODL_SRC_DIR}/diffeq.ypp"
   COMMENT "[BISON][nocmodlparser] Building parser with bison ${BISON_VERSION}")
 
 add_custom_target(
   nocmodl_generated_files
-  DEPENDS "${NRN_NMODL_GEN}/lex.cpp" "${NRN_NMODL_GEN}/parse1.hpp" "${NRN_NMODL_GEN}/parse1.cpp"
-          "${NRN_NMODL_GEN}/diffeq.hpp" "${NRN_NMODL_GEN}/diffeq.cpp")
+  DEPENDS "${NRN_NOCMODL_GEN}/lex.cpp" "${NRN_NOCMODL_GEN}/parse1.hpp"
+          "${NRN_NOCMODL_GEN}/parse1.cpp" "${NRN_NOCMODL_GEN}/diffeq.hpp"
+          "${NRN_NOCMODL_GEN}/diffeq.cpp")
 add_dependencies(generated_source_files nocmodl_generated_files)
-add_executable(nocmodl ${NRN_NMODL_SRC_FILES} "${NRN_NMODL_GEN}/lex.cpp"
-                       "${NRN_NMODL_GEN}/parse1.cpp" "${NRN_NMODL_GEN}/diffeq.cpp")
+add_executable(nocmodl ${NRN_NOCMODL_SRC_FILES} "${NRN_NOCMODL_GEN}/lex.cpp"
+                       "${NRN_NOCMODL_GEN}/parse1.cpp" "${NRN_NOCMODL_GEN}/diffeq.cpp")
 cpp_cc_configure_sanitizers(TARGET nocmodl)
 target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 CVODE=1)
 # Otherwise the generated code in the binary directory does not find headers in the modlunit source
@@ -98,10 +100,10 @@ target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 CVODE=1)
 # submodule. Right now this doesn't work because the CLI11 targets are not exported/installed but
 # coreneuron-core is.
 get_target_property(CLI11_HEADER_DIRECTORY CLI11::CLI11 INTERFACE_INCLUDE_DIRECTORIES)
-target_include_directories(nocmodl PRIVATE "${NRN_NMODL_GEN}" "${NRN_NMODL_SRC_DIR}"
+target_include_directories(nocmodl PRIVATE "${NRN_NOCMODL_GEN}" "${NRN_NOCMODL_SRC_DIR}"
                                            "${CLI11_HEADER_DIRECTORY}")
-if(NRN_NMODL_CXX_FLAGS)
-  target_compile_options(nocmodl PRIVATE ${NRN_NMODL_CXX_FLAGS})
+if(NRN_NOCMODL_CXX_FLAGS)
+  target_compile_options(nocmodl PRIVATE ${NRN_NOCMODL_CXX_FLAGS})
 endif()
 
 # =============================================================================
@@ -149,6 +151,7 @@ set(NRN_OC_GENERATED_SOURCES
 # =============================================================================
 set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_IVOC_SRC_FILES}
+    ${NRN_NODEORDEROPTIM_SRC_FILES}
     ${NRN_NRNCVODE_SRC_FILES}
     ${NRN_NRNIV_SRC_FILES}
     ${NRN_NRNOC_SRC_FILES}
@@ -156,11 +159,8 @@ set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_MODFILE_CPP}
     ${NRN_SCOPMATH_SRC_FILES}
     ${NRN_SPARSE_SRC_FILES}
-    ${NRN_SUNDIALS_SRC_FILES})
-
-if(NRN_ENABLE_MPI)
-  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_PARALLEL_SRC_FILES})
-endif()
+    ${NRN_SUNDIALS_SRC_FILES}
+    ${NRN_PARALLEL_SRC_FILES})
 
 if(NRN_ENABLE_MPI_DYNAMIC)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp)
@@ -170,12 +170,6 @@ endif()
 
 if(MINGW)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/dlfcn.c)
-endif()
-
-# NRN_ENABLE_MODULE_INSTALL will create a separate nrnpython lib
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  # Include nrnpython in nrniv - useful for single lib neuron and wheels
-  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNPYTHON_SRC_FILES})
 endif()
 
 if(NOT NRN_ENABLE_INTERVIEWS)
@@ -409,12 +403,13 @@ include_directories(${NRN_INCLUDE_DIRS})
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 target_link_libraries(nrniv_lib nrngnu)
 target_link_libraries(nrniv_lib sparse13)
+target_link_libraries(nrniv_lib fmt::fmt)
 target_include_directories(nrniv_lib SYSTEM PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  target_include_directories(nrniv_lib PUBLIC "${NRN_DEFAULT_PYTHON_INCLUDES}")
+  target_link_libraries(nrniv_lib nrnpython)
 endif()
 if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv_lib Threads::Threads)
@@ -455,10 +450,6 @@ endif()
 # =============================================================================
 # Link with all libraries
 # =============================================================================
-if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  target_link_libraries(nrniv_lib ${NRN_DEFAULT_PYTHON_LIBRARIES})
-endif()
-
 if(NRN_ENABLE_MPI)
   if(NRN_ENABLE_MPI_DYNAMIC)
     list(LENGTH NRN_MPI_LIBNAME_LIST _num_mpi)
@@ -468,6 +459,7 @@ if(NRN_ENABLE_MPI)
       list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
 
       add_library(${libname}_lib SHARED ${NRN_NRNMPI_SRC_FILES})
+      target_link_libraries(${libname}_lib fmt::fmt)
       target_include_directories(${libname}_lib BEFORE PUBLIC ${include})
       # Note that we do not link here to libmpi. That is dlopen first.
       if(MINGW) # type msmpi only
@@ -501,7 +493,7 @@ if(NRN_ENABLE_INTERVIEWS)
   include_directories(${IV_INCLUDE_DIR})
   target_link_libraries(nrniv_lib interviews)
 else()
-  target_include_directories(nrniv_lib PUBLIC ${NRN_IVOS_SRC_DIR} ${PROJECT_BINARY_DIR}/src/ivos)
+  target_include_directories(nrniv_lib PUBLIC ${NRN_IVOS_SRC_DIR})
 endif()
 
 if(IV_ENABLE_X11_DYNAMIC)
@@ -581,14 +573,24 @@ endif()
 # =============================================================================
 
 # For testneuron CTest
-cpp_cc_build_time_copy(INPUT ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
-                       OUTPUT ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp)
+cpp_cc_build_time_copy(
+  INPUT ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp OUTPUT ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp
+                                                          TARGET nrnivmodl_nrnmain_cpp)
+
 cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h
-                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h)
-cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
-                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h)
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h TARGET nrnivmodl_nrnmpiuse_h)
+
+cpp_cc_build_time_copy(
+  INPUT ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
+  OUTPUT ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h TARGET nrnivmodl_nrnneosm_h)
+
 cpp_cc_build_time_copy(INPUT ${PROJECT_BINARY_DIR}/nrnconf.h
-                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnconf.h)
+                       OUTPUT ${CMAKE_BINARY_DIR}/include/nrnconf.h TARGET nrnivmodl_nrnconf_h)
+
+add_custom_target(
+  nrnivmodl_dependency ALL
+  DEPENDS ${CMAKE_BINARY_DIR}/share/nrn/nrnmain.cpp ${CMAKE_BINARY_DIR}/include/nrnmpiuse.h
+          ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h ${CMAKE_BINARY_DIR}/include/nrnconf.h)
 
 # For the installation
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)

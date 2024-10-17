@@ -9,8 +9,7 @@
  * form \f[$C \frac{dy}{dt} = A y + b$\f].
  */
 
-#ifndef nrndae_h
-#define nrndae_h
+#pragma once
 #include "ivocvect.h"
 #include "matrixmap.h"
 
@@ -222,5 +221,3 @@ void nrndae_deregister(NrnDAE* n);
 
 typedef std::list<NrnDAE*> NrnDAEPtrList;
 typedef NrnDAEPtrList::const_iterator NrnDAEPtrListIterator;
-
-#endif

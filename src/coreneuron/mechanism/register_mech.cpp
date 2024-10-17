@@ -92,6 +92,7 @@ void alloc_mech(int memb_func_size_) {
     corenrn.get_watch_check().resize(memb_func_size_);
     corenrn.get_is_artificial().resize(memb_func_size_, false);
     corenrn.get_artcell_qindex().resize(memb_func_size_);
+    corenrn.get_array_dims().resize(memb_func_size_);
     corenrn.get_prop_param_size().resize(memb_func_size_);
     corenrn.get_prop_dparam_size().resize(memb_func_size_);
     corenrn.get_mech_data_layout().resize(memb_func_size_, 1);

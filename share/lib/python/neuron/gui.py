@@ -3,6 +3,8 @@ Import this module if you would like to use the NEURON GUI.
 
 It loads nrngui.hoc, and starts a thread to periodically process
 the NEURON GUI event loop.
+
+Note that python threads are not used if nrniv is launched instead of Python
 """
 
 
@@ -105,11 +107,7 @@ class LoopTimer(threading.Thread):
             time.sleep(self.interval)
 
 
-if (
-    h.nrnversion(9) == "2"
-    or h.nrnversion(8).find("mingw") > 0
-    or h.nrnversion(8).find("Windows")
-):
+if h.nrnversion(9) == "2":  #  launched with python (instead of nrniv)
     timer = LoopTimer(0.1, process_events)
     timer.start()
     while not timer.started:

@@ -1,6 +1,4 @@
-#ifndef hoccontext_h
-#define hoccontext_h
-
+#pragma once
 
 extern Object* hoc_thisobject;
 extern Objectdata* hoc_top_level_data;
@@ -39,4 +37,3 @@ static void hc_restore_(HocContext* hc) {
     hoc_objectdata = hc->obd;
     hoc_symlist = hc->sl;
 }
-#endif

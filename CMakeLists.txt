@@ -246,6 +246,13 @@ endif()
 include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
 cpp_cc_git_submodule(eigen)
+nrn_add_external_project(fmt)
+set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/Random123/include/Random123"
+     DESTINATION "${CMAKE_BINARY_DIR}/include/")
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/eigen/Eigen"
+     DESTINATION "${CMAKE_BINARY_DIR}/include/")
 
 # =================================================================================================
 # Enable sanitizer support if the NRN_SANITIZERS variable is set. Comes befores PythonHelper.cmake.
@@ -318,9 +325,6 @@ if(NRN_ENABLE_RX3D)
     message(SEND_ERROR "NRN_ENABLE_RX3D requires NRN_ENABLE_PYTHON feature.")
   else()
     find_package(Cython REQUIRED)
-    if(CYTHON_VERSION VERSION_GREATER_EQUAL 3)
-      message(FATAL_ERROR "Cython 3+ is not supported")
-    endif()
   endif()
 endif()
 if(MINGW)
@@ -375,9 +379,6 @@ if(NRN_ENABLE_MUSIC)
     message(FATAL "MUSIC requires -DNRN_ENABLE_PYTHON=ON")
   endif()
   find_package(Cython REQUIRED)
-  if(CYTHON_VERSION VERSION_GREATER_EQUAL 3)
-    message(FATAL_ERROR "Cython 3+ is not supported")
-  endif()
   find_package(MUSIC REQUIRED)
   set(NRN_MUSIC 1)
 endif()
@@ -432,6 +433,9 @@ endif()
 if(NRN_ENABLE_PYTHON)
   # Make sure the USE_PYTHON macro is defined in the C++ code
   list(APPEND NRN_COMPILE_DEFS USE_PYTHON)
+  # Ensure nanobind is there, but dont import, we don't want its CMake
+  nrn_add_external_project(nanobind DISABLE_ADD RECURSIVE SHALLOW)
+  include(NanoBindMinimal)
 endif()
 
 # =============================================================================
@@ -443,6 +447,10 @@ if(NRN_ENABLE_THREADS)
   find_package(Threads REQUIRED)
   list(APPEND NRN_COMPILE_DEFS NRN_ENABLE_THREADS)
 endif()
+
+# Some files are shared by NEURON and CoreNEURON and use #if CORENRN_BUILD to distinguish between
+# which build is occurring.
+list(APPEND NRN_COMPILE_DEFS CORENRN_BUILD=0)
 
 # =============================================================================
 # Profiler/Instrumentation Options
@@ -568,6 +576,10 @@ endif()
 # =============================================================================
 add_subdirectory(src/sparse13)
 add_subdirectory(src/gnu)
+if(NRN_ENABLE_PYTHON)
+  add_subdirectory(src/nrnpython)
+endif()
+
 add_subdirectory(src/nrniv)
 
 # Collect the environment variables that are needed to execute NEURON from the build directory. This
@@ -586,7 +598,11 @@ endfunction()
 set(NRN_RUN_FROM_BUILD_DIR_ENV "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
                                "NRNHOME=${PROJECT_BINARY_DIR}")
 prepend_to_var(PATH "${PROJECT_BINARY_DIR}/bin")
-prepend_to_var(LD_LIBRARY_PATH "${PROJECT_BINARY_DIR}/lib")
+if(APPLE)
+  prepend_to_var(DYLD_LIBRARY_PATH "${PROJECT_BINARY_DIR}/lib")
+else()
+  prepend_to_var(LD_LIBRARY_PATH "${PROJECT_BINARY_DIR}/lib")
+endif()
 if(NRN_ENABLE_CORENEURON)
   list(APPEND NRN_RUN_FROM_BUILD_DIR_ENV "CORENRNHOME=${PROJECT_BINARY_DIR}")
 endif()
@@ -594,10 +610,6 @@ if(NRN_ENABLE_PYTHON)
   prepend_to_var(PYTHONPATH "${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd")
 endif()
 add_subdirectory(bin)
-
-if(NRN_ENABLE_PYTHON)
-  add_subdirectory(src/nrnpython)
-endif()
 
 if(NRN_MACOS_BUILD)
   add_subdirectory(src/mac)
@@ -729,28 +741,23 @@ add_custom_target(
 # =============================================================================
 # ~~~
 # Update hh.mod for CoreNEURON compatibility
-# - Replace GLOBAL variable by RANHE
+# - Replace GLOBAL variable by RANGE
 # - Comment out TABLE
 # ~~~
 # =============================================================================
 if(NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY)
   set(GLOBAL_VAR_TOGGLE_COMMAND "'s/ GLOBAL minf/ RANGE minf/'")
-  set(TABLE_VAR_TOGGLE_COMMAND "'s/ TABLE minf/ :TABLE minf/'")
 else()
   set(GLOBAL_VAR_TOGGLE_COMMAND "'s/ RANGE minf/ GLOBAL minf/'")
-  set(TABLE_VAR_TOGGLE_COMMAND "'s/ :TABLE minf/ TABLE minf/'")
 endif()
 separate_arguments(GLOBAL_VAR_TOGGLE_COMMAND UNIX_COMMAND "${GLOBAL_VAR_TOGGLE_COMMAND}")
-separate_arguments(TABLE_VAR_TOGGLE_COMMAND UNIX_COMMAND "${TABLE_VAR_TOGGLE_COMMAND}")
 add_custom_target(
   hh_update
   COMMAND sed ${GLOBAL_VAR_TOGGLE_COMMAND} ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod >
           ${CMAKE_BINARY_DIR}/hh.mod.1
-  COMMAND sed ${TABLE_VAR_TOGGLE_COMMAND} ${CMAKE_BINARY_DIR}/hh.mod.1 >
-          ${CMAKE_BINARY_DIR}/hh.mod.2
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.2
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.1
           ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
-  COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1 ${CMAKE_BINARY_DIR}/hh.mod.2
+  COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1
   COMMENT "Update hh.mod for CoreNEURON compatibility"
   VERBATIM)
 add_dependencies(nrniv_lib hh_update)
@@ -805,7 +812,7 @@ if(NRN_ENABLE_TESTS)
   if(NOT TARGET Catch2::Catch2)
     nrn_add_external_project(catch2)
     set(CATCH_DIR ${PROJECT_SOURCE_DIR}/external/catch2)
-    list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
+    list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/extras)
     include(Catch)
   endif()
   include(CTest)
@@ -826,10 +833,12 @@ if(NRN_ENABLE_TESTS)
   set(neurondemo_files
       "${neurondemo_prefix}/special"
       "${neurondemo_prefix}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}")
+
   add_custom_command(
     OUTPUT ${neurondemo_files}
     COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
             ${NRN_SANITIZER_ENABLE_ENVIRONMENT} "${PROJECT_BINARY_DIR}/bin/nrnivmodl"
+    DEPENDS nrnivmodl_dependency
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/share/nrn/demo/release
     VERBATIM)
 

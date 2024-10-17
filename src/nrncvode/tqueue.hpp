@@ -7,7 +7,8 @@
 #include <nrnmutdec.h>
 #include <pool.hpp>
 
-class TQItem;
+#include "tqitem.hpp"
+
 using TQItemPool = MutexPool<TQItem>;
 
 // bin queue for the fixed step method for NetCons and PreSyns. Splay tree
@@ -22,23 +23,7 @@ using TQItemPool = MutexPool<TQItem>;
 
 #define COLLECT_TQueue_STATISTICS 1
 template <typename T>
-struct SPTREE;
-
-class TQItem {
-  public:
-    TQItem();
-    virtual ~TQItem();
-    bool check();
-    void clear(){};
-
-  public:
-    void* data_;
-    double t_;
-    TQItem* left_;
-    TQItem* right_;
-    TQItem* parent_;
-    int cnt_;  // reused: -1 means it is in the splay tree, >=0 gives bin
-};
+class SPTree;
 
 // helper class for the TQueue (SplayTBinQueue).
 class BinQ {
@@ -148,7 +133,7 @@ class TQueue {
         }
     }
     void move_least_nolock(double tnew);
-    SPTREE<TQItem>* sptree_;
+    SPTree<TQItem>* sptree_;
     BinQ* binq_;
     TQItem* least_;
     TQItemPool* tpool_;

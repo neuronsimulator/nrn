@@ -235,27 +235,27 @@ class coreneuron(object):
         """Data path of the model."""
         return self._model_path
 
-    @sim_config.setter
+    @model_path.setter
     def model_path(self, value):
-        self._model_path = str(value)
+        self._model_path = str(value) if value else value
 
     @property
     def save_path(self):
         """Data path for save."""
         return self._save_path
 
-    @sim_config.setter
+    @save_path.setter
     def save_path(self, value):
-        self._save_path = str(value)
+        self._save_path = str(value) if value else value
 
     @property
     def restore_path(self):
         """Data path for restore."""
         return self._restore_path
 
-    @sim_config.setter
+    @restore_path.setter
     def restore_path(self, value):
-        self._restore_path = str(value)
+        self._restore_path = str(value) if value else value
 
     @property
     def skip_write_model_to_disk(self):
@@ -268,7 +268,7 @@ class coreneuron(object):
         """
         return self._skip_write_model_to_disk
 
-    @sim_config.setter
+    @skip_write_model_to_disk.setter
     def skip_write_model_to_disk(self, value):
         self._skip_write_model_to_disk = value
 

@@ -1,9 +1,11 @@
 #pragma once
 #include "hocdec.h"
 #include "membfunc.h"  // nrn_bamech_t
+#include "cabcode.h"
 #include "neuron/container/data_handle.hpp"
-
+#include "neuron/container/generic_data_handle.hpp"
 #include <memory>
+
 struct Extnode;
 struct hoc_Item;
 struct HocParmLimits;
@@ -23,15 +25,11 @@ extern void hoc_register_dparam_semantics(int, int, const char*);
 extern void add_nrn_fornetcons(int, int);
 extern void hoc_register_tolerance(int, HocStateTolerance*, Symbol***);
 
-extern void oc_save_cabcode(int* a1, int* a2);
-extern void oc_restore_cabcode(int* a1, int* a2);
-
 extern "C" void modl_reg(void);
 
 // nrnmech stuff
 extern void _nrn_free_fornetcon(void**);
 extern double nrn_call_mech_func(Symbol*, int narg, Prop*, int type);
-extern Prop* nrn_mechanism(int type, Node*);
 
 // mod stuff
 extern void _nrn_free_watch(Datum*, int, int);
@@ -51,23 +49,14 @@ extern void hoc_reg_ba(int, nrn_bamech_t, int);
     return static_cast<bool>(p);
 }
 
-extern void nrn_pushsec(Section*);
 extern void nrn_popsec(void);
-extern Section* chk_access(void);
-
-extern Node* node_exact(Section*, double);
 
 extern int state_discon_allowed_;
 extern int section_object_seen;
 
 extern int nrn_isecstack(void);
 extern void nrn_secstack(int);
-extern void new_sections(Object* ob, Symbol* sym, hoc_Item** pitm, int size);
-extern void cable_prop_assign(Symbol* sym, double* pd, int op);
-extern void nrn_parent_info(Section* s);
 extern void nrn_relocate_old_points(Section* oldsec, Node* oldnode, Section* sec, Node* node);
-extern int nrn_at_beginning(Section* sec);
-extern void mech_insert1(Section*, int);
 extern void extcell_2d_alloc(Section* sec);
 extern int nrn_is_ion(int);
 extern void single_prop_free(Prop*);
@@ -76,26 +65,10 @@ extern int can_change_morph(Section*);
 extern void nrn_area_ri(Section* sec);
 extern void nrn_diam_change(Section*);
 extern void sec_free(hoc_Item*);
-extern int node_index(Section* sec, double x);
 extern void extcell_node_create(Node*);
 extern void extnode_free_elements(Extnode*);
-extern const char* sec_and_position(Section* sec, Node* nd);
 extern void section_order(void);
-extern Section* nrn_sec_pop(void);
-extern Node* node_ptr(Section* sec, double x, double* parea);
-extern double* nrn_vext_pd(Symbol* s, int indx, Node* nd);
-neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
-                                                   int indx,
-                                                   Section* sec,
-                                                   short inode,
-                                                   int* err);
-extern void nrn_disconnect(Section*);
-extern void mech_uninsert1(Section* sec, Symbol* s);
-extern Object* nrn_sec2cell(Section*);
-extern int nrn_sec2cell_equals(Section*, Object*);
 neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, short inode);
-extern void nrn_initcode();
-extern int segment_limits(double*);
 extern "C" void nrn_random_play();
 extern void fixed_play_continuous(NrnThread*);
 extern void setup_tree_matrix(neuron::model_sorted_token const& sorted_token, NrnThread& nt);
@@ -104,12 +77,10 @@ extern void second_order_cur(NrnThread*);
 void nrn_update_voltage(neuron::model_sorted_token const& sorted_token, NrnThread& nt);
 extern void nrn_fixed_step_lastpart(neuron::model_sorted_token const& sorted_token, NrnThread& nt);
 extern void hoc_register_dparam_size(int, int);
-extern void setup_topology(void);
 extern int nrn_errno_check(int);
 void long_difus_solve(neuron::model_sorted_token const&, int method, NrnThread& nt);
 extern void nrn_fihexec(int);
 extern int special_pnt_call(Object*, Symbol*, int);
-extern void ob_sec_access_push(hoc_Item*);
 extern void nrn_mk_prop_pools(int);
 extern void SectionList_reg(void);
 extern void SectionRef_reg(void);
@@ -118,8 +89,6 @@ extern void hoc_symbol_tolerance(Symbol*, double);
 extern void node_destruct(Node**, int);
 extern void nrn_sec_ref(Section**, Section*);
 extern void hoc_level_pushsec(Section*);
-extern double nrn_ra(Section*);
-extern int node_index_exact(Section*, double);
 void nrn_ba(neuron::model_sorted_token const&, NrnThread&, int);
 extern void nrn_rhs_ext(NrnThread*);
 extern void nrn_setup_ext(NrnThread*);
@@ -148,28 +117,15 @@ void nrn_rhs(neuron::model_sorted_token const&, NrnThread&);
 extern void v_setup_vectors(void);
 extern void section_ref(Section*);
 extern void section_unref(Section*);
-extern const char* secname(Section*);
 extern const char* nrn_sec2pysecname(Section*);
-void nrn_rangeconst(Section*, Symbol*, neuron::container::data_handle<double> value, int op);
-extern int nrn_exists(Symbol*, Node*);
-neuron::container::data_handle<double> nrn_rangepointer(Section*, Symbol*, double x);
-neuron::container::data_handle<double> nrnpy_rangepointer(Section*, Symbol*, double, int*, int);
-extern double* cable_prop_eval_pointer(Symbol*);  // section on stack will be popped
-extern char* hoc_section_pathname(Section*);
-extern double nrn_arc_position(Section*, Node*);
 extern double node_dist(Section*, Node*);  // distance of node to parent position
-extern double nrn_section_orientation(Section*);
-extern double nrn_connection_position(Section*);
-extern Section* nrn_trueparent(Section*);
 extern double topol_distance(Section*, Node*, Section*, Node*, Section**, Node**);
-extern int arc0at0(Section*);
 extern void nrn_clear_mark(void);
 extern short nrn_increment_mark(Section*);
 extern short nrn_value_mark(Section*);
 extern int is_point_process(Object*);
-extern int nrn_vartype(Symbol*);  // nrnocCONST, DEP, STATE
+extern int nrn_vartype(const Symbol*);  // nrnocCONST, DEP, STATE
 extern void recalc_diam(void);
-extern Prop* nrn_mechanism_check(int type, Section* sec, int inode);
 extern bool nrn_use_fast_imem;
 void nrn_fast_imem_alloc();
 extern void nrn_calc_fast_imem(NrnThread*);

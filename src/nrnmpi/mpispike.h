@@ -1,5 +1,4 @@
-#ifndef nrnmpispike_h
-#define nrnmpispike_h
+#pragma once
 
 #ifndef nrn_spikebuf_size
 #define nrn_spikebuf_size 0
@@ -18,7 +17,4 @@ typedef struct {
 #define spbufin_  nrnmpi_spbufin_
 extern NRNMPI_Spikebuf* spbufout_;
 extern NRNMPI_Spikebuf* spbufin_;
-#endif
-
-
 #endif

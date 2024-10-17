@@ -1,5 +1,4 @@
-#ifndef nrnmenu_h
-#define nrnmenu_h
+#pragma once
 
 #include "ndatclas.h"
 class MechTypeImpl;
@@ -13,8 +12,9 @@ class MechanismStandard: public Resource {
     void action(const char*, Object* pyact);
 
     int count();
-    const char* name();
-    const char* name(int, int&);  // returns array dimension and name
+    const char* name() const;
+    const char* name(int, int&) const;  // returns array dimension and name
+    bool is_array(int) const;
 
     // from arg (section.node(x) (0 if x < 0) to this
     void in(Section*, double x = -1.);
@@ -73,5 +73,3 @@ class MechanismType: public Resource {
   private:
     MechTypeImpl* mti_;
 };
-
-#endif

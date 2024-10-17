@@ -52,6 +52,12 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
 ```
 [^1]
 [^1]: NRN_RX3D_OPT_LEVEL=2 can build VERY slowly (cython translated cpp file can take a half hour or more). So for testing, we generally copy the script to temp.sh and modify to NRN_RX3D_OPT_LEVEL=0
+In order to build CoreNEURON support, one must add following options:
+```
+-DLINK_AGAINST_PYTHON=OFF \
+-DNMODL_ENABLE_PYTHON_BINDINGS=ON \
+-DNRN_ENABLE_CORENEURON=ON
+```
 
 The default variables above will be
 ```

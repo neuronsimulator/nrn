@@ -44,6 +44,7 @@ using nrn_thread_table_check_t = void (*)(Memb_list*,
                                           std::size_t,
                                           Datum*,
                                           Datum*,
+                                          double*,
                                           NrnThread*,
                                           int,
                                           neuron::model_sorted_token const&);
@@ -84,7 +85,8 @@ struct Memb_func {
     int is_point;
     void* hoc_mech;
     void (*setdata_)(struct Prop*);
-    int* dparam_semantics;  // for nrncore writing.
+    std::unique_ptr<int[]> dparam_semantics;  // for nrncore writing.
+    const std::vector<double>* parm_default;  // for NrnProperty
   private:
     nrn_init_t m_initialize{};
 };
@@ -105,6 +107,8 @@ struct NPyDirectMechFunc {
 using NPyDirectMechFuncs = std::unordered_map<std::string, NPyDirectMechFunc*>;
 extern void hoc_register_npy_direct(int type, NPyDirectMechFunc*);
 extern std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
+
+extern void hoc_register_parm_default(int type, const std::vector<double>*);
 
 #define IMEMFAST     -2
 #define VINDEX       -1
@@ -207,6 +211,9 @@ namespace detail {
 void register_data_fields(int mech_type,
                           std::vector<std::pair<const char*, int>> const& param_info,
                           std::vector<std::pair<const char*, const char*>> const& dparam_size);
+void register_data_fields(int mech_type,
+                          std::vector<std::pair<std::string, int>> const& param_info,
+                          std::vector<std::pair<std::string, std::string>> const& dparam_size);
 }  // namespace detail
 /**
  * @brief Type- and array-aware version of hoc_register_prop_size.
@@ -289,6 +296,7 @@ namespace _get {
 // See https://github.com/neuronsimulator/nrn/issues/2234 for context of how this might be done
 // better in future...
 [[nodiscard]] long& _nrn_mechanism_access_alloc_seq(Prop*);
+[[nodiscard]] Node* _nrn_mechanism_access_node(Prop* prop);
 [[nodiscard]] double& _nrn_mechanism_access_a(Node*);
 [[nodiscard]] double& _nrn_mechanism_access_b(Node*);
 [[nodiscard]] double& _nrn_mechanism_access_d(Node*);

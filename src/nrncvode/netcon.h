@@ -1,5 +1,4 @@
-#ifndef netcon_h
-#define netcon_h
+#pragma once
 
 #undef check
 
@@ -8,6 +7,7 @@
 #include "nrnmpi.h"
 #include "nrnneosm.h"
 #include "pool.hpp"
+#include "tqitem.hpp"
 
 #include <InterViews/observe.h>
 
@@ -25,7 +25,6 @@ class PreSyn;
 class PlayRecord;
 class Cvode;
 class TQueue;
-class TQItem;
 struct NrnThread;
 class NetCvode;
 class HocEvent;
@@ -417,5 +416,3 @@ class NetParEvent: public DiscreteEvent {
 };
 
 extern PreSyn* nrn_gid2outputpresyn(int gid);
-
-#endif

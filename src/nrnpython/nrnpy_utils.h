@@ -1,7 +1,6 @@
-#ifndef nrnpy_utils_h
-#define nrnpy_utils_h
+#pragma once
 
-#include <nrnwrap_Python.h>
+#include "nrnwrap_Python.h"
 #include <cassert>
 
 inline bool is_python_string(PyObject* python_string) {
@@ -161,22 +160,6 @@ class PyErr2NRNString {
     char* str_;
 };
 
-
-struct PyLockGIL {
-    PyLockGIL()
-        : state_{PyGILState_Ensure()} {}
-    PyLockGIL(PyLockGIL&&) = delete;
-    PyLockGIL(PyLockGIL const&) = delete;
-    PyLockGIL& operator=(PyLockGIL&&) = delete;
-    PyLockGIL& operator=(PyLockGIL const&) = delete;
-    ~PyLockGIL() {
-        PyGILState_Release(state_);
-    }
-
-  private:
-    PyGILState_STATE state_;
-};
-
 extern void nrnpy_sec_referr();
 #define CHECK_SEC_INVALID(sec)  \
     {                           \
@@ -194,5 +177,3 @@ extern void nrnpy_prop_referr();
             return NULL;           \
         }                          \
     }
-
-#endif /* end of include guard: nrnpy_utils_h */

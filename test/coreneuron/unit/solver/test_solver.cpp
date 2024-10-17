@@ -11,8 +11,8 @@
 #include "coreneuron/permute/node_permute.h"
 #include "coreneuron/sim/multicore.hpp"
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_vector.hpp>
 
 #include <iostream>
 #include <functional>
@@ -295,9 +295,9 @@ void compare_solver_data(
             REQUIRE(impl_data[n_thread].parent_index.size() ==
                     ref_data[n_thread].parent_index.size());
             REQUIRE(impl_data[n_thread].rhs.size() == ref_data[n_thread].rhs.size());
-            CHECK_THAT(impl_data[n_thread].d, Catch::Approx(ref_data[n_thread].d));
+            CHECK_THAT(impl_data[n_thread].d, Catch::Matchers::Approx(ref_data[n_thread].d));
             REQUIRE(impl_data[n_thread].parent_index == ref_data[n_thread].parent_index);
-            CHECK_THAT(impl_data[n_thread].rhs, Catch::Approx(ref_data[n_thread].rhs));
+            CHECK_THAT(impl_data[n_thread].rhs, Catch::Matchers::Approx(ref_data[n_thread].rhs));
         }
     }
 }

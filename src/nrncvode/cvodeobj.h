@@ -1,5 +1,4 @@
-#ifndef cvodeobj_h
-#define cvodeobj_h
+#pragma once
 
 #include "nrnmpi.h"
 #include "nrnneosm.h"
@@ -7,10 +6,10 @@
 #include "shared/nvector.h"
 #include "membfunc.h"
 #include "netcon.h"
+#include "tqitem.hpp"
 
 class NetCvode;
 class Daspk;
-class TQItem;
 class TQueue;
 typedef std::vector<PreSyn*> PreSynList;
 struct BAMech;
@@ -225,9 +224,7 @@ class Cvode {
 
   public:
     bool structure_change_;
-#if USENEOSIM
-    TQueue* neosim_self_events_;
-#endif
+
   public:
     CvodeThreadData* ctd_;
     NrnThread* nth_;  // for lvardt
@@ -267,5 +264,3 @@ class Cvode {
     int opmode_;  // 1 advance, 2 interpolate, 3 init; for testing
 #endif            // NRNMPI
 };
-
-#endif

@@ -15,11 +15,7 @@ You should have received a copy of the GNU Library General Public
 License along with this library; if not, write to the Free Software
 Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
-#ifndef _NegativeExpntl_h
-#ifdef __GNUG__
-//#pragma interface
-#endif
-#define _NegativeExpntl_h 1
+#pragma once
 
 
 //
@@ -51,5 +47,3 @@ inline double NegativeExpntl::mean(double x) {
   double t = pMean; pMean = x;
   return t;
 }
-
-#endif

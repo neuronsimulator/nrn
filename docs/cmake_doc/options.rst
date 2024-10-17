@@ -396,16 +396,16 @@ Other CoreNEURON options:
 -------------------------
   There are 20 or so cmake arguments specific to a CoreNEURON
   build that are listed in https://github.com/neuronsimulator/nrn/blob/master/src/coreneuron/CMakeLists.txt.
-  The ones of particular interest that can be used on the NEURON
-  CMake configure line are `CORENRN_ENABLE_NMODL` and `CORENRN_ENABLE_GPU`.
+  The one of particular interest that can be used on the NEURON
+  CMake configure line is `CORENRN_ENABLE_GPU`.
 
 NMODL options
 =============
 
 To see all the NMODL CMake options you can look in https://github.com/BlueBrain/nmodl/blob/master/CMakeLists.txt.
 
-NMODL_ENABLE_PYTHON_BINDINGS:BOOL=ON
-------------------------------------
+NMODL_ENABLE_PYTHON_BINDINGS:BOOL=OFF
+-------------------------------------
   Enable pybind11 based python bindings
 
   Using this option the user can use the NMODL python package to use NMODL via python. For more information look at

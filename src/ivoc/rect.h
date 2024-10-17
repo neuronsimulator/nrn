@@ -1,5 +1,4 @@
-#ifndef rect_h
-#define rect_h
+#pragma once
 
 #undef Rect
 #define Rect nrn_Rect
@@ -157,5 +156,3 @@ inline void Rect::width(Coord x) {
 inline void Rect::height(Coord x) {
     h_ = (x > 0) ? x : 1.;
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef nrnassrt_h
-#define nrnassrt_h
+#pragma once
 
 /* nrn_assert is not deactivated by -DNDEBUG. Use when the assert expression
 has side effects which need to be executed regardles of NDEBUG.
@@ -27,7 +26,4 @@ has side effects which need to be executed regardles of NDEBUG.
             abort();                                                                     \
         }                                                                                \
     } while (0)
-#endif
-
-
 #endif

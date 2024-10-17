@@ -1,5 +1,4 @@
-#ifndef rot3band_h
-#define rot3band_h
+#pragma once
 
 /*
   3-D rubberband
@@ -35,5 +34,3 @@ class Rotate3Band: public Rubberband {
     Rotation3d* rot_;
     float x_old_, y_old_;
 };
-
-#endif

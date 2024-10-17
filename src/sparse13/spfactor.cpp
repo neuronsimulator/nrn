@@ -639,36 +639,11 @@ void spPartition(char* eMatrix, int Mode)
          *   No is the number of operations in the inner loop.
          */
 
-#define generic
-#ifdef hp9000s300
-#if REAL
-        DoRealDirect[Step] = (Nm[Step] + No[Step] > 3 * Nc[Step] - 2 * Nm[Step]);
-#endif
-#if spCOMPLEX
-        /* On the hp350, it is never profitable to use direct for complex. */
-        DoCmplxDirect[Step] = NO;
-#endif
-#undef generic
-#endif
-
-#ifdef vax
 #if REAL
         DoRealDirect[Step] = (Nm[Step] + No[Step] > 3 * Nc[Step] - 2 * Nm[Step]);
 #endif
 #if spCOMPLEX
         DoCmplxDirect[Step] = (Nm[Step] + No[Step] > 7 * Nc[Step] - 4 * Nm[Step]);
-#endif
-#undef generic
-#endif
-
-#ifdef generic
-#if REAL
-        DoRealDirect[Step] = (Nm[Step] + No[Step] > 3 * Nc[Step] - 2 * Nm[Step]);
-#endif
-#if spCOMPLEX
-        DoCmplxDirect[Step] = (Nm[Step] + No[Step] > 7 * Nc[Step] - 4 * Nm[Step]);
-#endif
-#undef generic
 #endif
     }
 

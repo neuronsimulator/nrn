@@ -13,8 +13,12 @@
 #include <cstdlib>
 #include <memory>
 
+#if CORENRN_BUILD
 #include "coreneuron/utils/nrn_assert.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
+#else
+#include "oc/nrnassrt.h"
+#endif
 
 #if !defined(NRN_SOA_BYTE_ALIGN)
 // for layout 0, every range variable array must be aligned by at least 16 bytes (the size of the
@@ -22,7 +26,11 @@
 #define NRN_SOA_BYTE_ALIGN (8 * sizeof(double))
 #endif
 
+#if CORENRN_BUILD
 namespace coreneuron {
+#else
+namespace neuron {
+#endif
 /**
  * @brief Check if GPU support is enabled.
  *
@@ -183,7 +191,15 @@ inline void alloc_memory(void*& pointer, size_t num_bytes, size_t alignment) {
             size_t multiple = num_bytes / alignment;
             fill = alignment * (multiple + 1) - num_bytes;
         }
-        nrn_assert((pointer = std::aligned_alloc(alignment, num_bytes + fill)) != nullptr);
+#ifndef _WIN32
+        pointer = aligned_alloc(alignment, num_bytes + fill);
+        nrn_assert(pointer != nullptr);
+#else   // is _WIN32
+        // Windows has _aligned_alloc, but that must be paired with
+        // _aligned_free
+        fprintf(stderr, "Windows has no std::aligned_alloc\n");
+        nrn_assert((pointer = std::malloc(num_bytes)) != nullptr);
+#endif  // is _WIN32
     } else {
         nrn_assert((pointer = std::malloc(num_bytes)) != nullptr);
     }
@@ -200,21 +216,26 @@ inline void free_memory(void* pointer) {
 
 #endif
 
+#if CORENRN_BUILD
 namespace coreneuron {
+#else
+namespace neuron {
+#endif
 
 /** Independent function to compute the needed chunkding,
     the chunk argument is the number of doubles the chunk is chunkded upon.
 */
 template <int chunk>
 inline int soa_padded_size(int cnt, int layout) {
-    int imod = cnt % chunk;
-    if (layout == Layout::AoS)
+#if CORENRN_BUILD
+    if (layout == Layout::AoS) {
         return cnt;
-    if (imod) {
-        int idiv = cnt / chunk;
-        return (idiv + 1) * chunk;
+    } else {
+        return ((cnt + chunk - 1) / chunk) * chunk;
     }
-    return cnt;
+#else
+    return ((cnt + chunk - 1) / chunk) * chunk;
+#endif
 }
 
 /** Check for the pointer alignment.
