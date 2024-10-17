@@ -290,12 +290,10 @@ void CodegenNeuronCppVisitor::print_hoc_py_wrapper_function_body(
         return;
     }
     const auto block_name = function_or_procedure_block->get_node_name();
-    if (info.point_process) {
-        printer->fmt_push_block("static double _hoc_{}(void* _vptr)", block_name);
-    } else if (wrapper_type == InterpreterWrapper::HOC) {
-        printer->fmt_push_block("static void _hoc_{}(void)", block_name);
+    if (wrapper_type == InterpreterWrapper::HOC) {
+        printer->fmt_push_block("{}", hoc_function_signature(block_name));
     } else {
-        printer->fmt_push_block("static double _npy_{}(Prop* _prop)", block_name);
+        printer->fmt_push_block("{}", py_function_signature(block_name));
     }
     printer->add_multi_line(R"CODE(
         double _r{};
@@ -416,20 +414,24 @@ void CodegenNeuronCppVisitor::print_hoc_py_wrapper_function_definitions() {
         }
 
         // HOC
-        printer->fmt_push_block("static void {}()", hoc_function_name(name));
-        printer->fmt_line("hoc_retpushx({}({}));", method_name(name), fmt::join(args, ", "));
+        std::string return_statement = info.point_process ? "return _ret;" : "hoc_retpushx(_ret);";
+
+        printer->fmt_push_block("{}", hoc_function_signature(name));
+        printer->fmt_line("double _ret = {}({});", method_name(name), fmt::join(args, ", "));
+        printer->add_line(return_statement);
         printer->pop_block();
 
-        printer->fmt_push_block("static void {}()", hoc_function_name(table_name));
-        printer->fmt_line("hoc_retpushx({}());", method_name(table_name));
+        printer->fmt_push_block("{}", hoc_function_signature(table_name));
+        printer->fmt_line("double _ret = {}();", method_name(table_name));
+        printer->add_line(return_statement);
         printer->pop_block();
 
         // Python
-        printer->fmt_push_block("static double {}(Prop* _prop)", py_function_name(name));
+        printer->fmt_push_block("{}", py_function_signature(name));
         printer->fmt_line("return {}({});", method_name(name), fmt::join(args, ", "));
         printer->pop_block();
 
-        printer->fmt_push_block("static double {}(Prop* _prop)", py_function_name(table_name));
+        printer->fmt_push_block("{}", py_function_signature(table_name));
         printer->fmt_line("return {}();", method_name(table_name));
         printer->pop_block();
     }
@@ -604,10 +606,10 @@ std::string CodegenNeuronCppVisitor::hoc_function_name(
 
 std::string CodegenNeuronCppVisitor::hoc_function_signature(
     const std::string& function_or_procedure_name) const {
-    return fmt::format("static {} {}(void{})",
+    return fmt::format("static {} {}({})",
                        info.point_process ? "double" : "void",
                        hoc_function_name(function_or_procedure_name),
-                       info.point_process ? "*" : "");
+                       info.point_process ? "void * _vptr" : "");
 }
 
 
@@ -619,7 +621,8 @@ std::string CodegenNeuronCppVisitor::py_function_name(
 
 std::string CodegenNeuronCppVisitor::py_function_signature(
     const std::string& function_or_procedure_name) const {
-    return fmt::format("static double {}(Prop*)", py_function_name(function_or_procedure_name));
+    return fmt::format("static double {}(Prop* _prop)",
+                       py_function_name(function_or_procedure_name));
 }
 
 
@@ -1218,16 +1221,26 @@ void CodegenNeuronCppVisitor::print_global_variables_for_hoc() {
     printer->add_line("{nullptr, nullptr}");
     printer->decrease_indent();
     printer->add_line("};");
+
+
+    auto print_py_callable_reg = [this](const auto& callables, auto get_name) {
+        for (const auto& callable: callables) {
+            const auto name = get_name(callable);
+            printer->fmt_line("{{\"{}\", {}}},", name, py_function_name(name));
+        }
+    };
+
     if (!info.point_process) {
         printer->push_block("static NPyDirectMechFunc npy_direct_func_proc[] =");
-        for (const auto& procedure: info.procedures) {
-            const auto proc_name = procedure->get_node_name();
-            printer->fmt_line("{{\"{}\", {}}},", proc_name, py_function_name(proc_name));
-        }
-        for (const auto& function: info.functions) {
-            const auto func_name = function->get_node_name();
-            printer->fmt_line("{{\"{}\", {}}},", func_name, py_function_name(func_name));
-        }
+        print_py_callable_reg(info.procedures,
+                              [](const auto& callable) { return callable->get_node_name(); });
+        print_py_callable_reg(info.functions,
+                              [](const auto& callable) { return callable->get_node_name(); });
+        print_py_callable_reg(info.function_tables,
+                              [](const auto& callable) { return callable->get_node_name(); });
+        print_py_callable_reg(info.function_tables, [](const auto& callable) {
+            return "table_" + callable->get_node_name();
+        });
         printer->add_line("{nullptr, nullptr}");
         printer->pop_block(";");
     }

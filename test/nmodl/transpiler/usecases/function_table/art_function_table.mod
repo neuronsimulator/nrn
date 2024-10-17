@@ -1,5 +1,5 @@
 NEURON {
-    SUFFIX function_table
+    ARTIFICIAL_CELL art_function_table
 }
 
 INCLUDE "function_table.inc"
