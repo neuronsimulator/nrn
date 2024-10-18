@@ -148,19 +148,6 @@ spack_setup:
     # BLUECONFIGS_BRANCH does not correspond to a Spack package called blueconfigs
     SPACK_SETUP_IGNORE_PACKAGE_VARIABLES: BLUECONFIGS
 
-simulation_stack:
-  stage: .pre
-  # Take advantage of GitHub PR description parsing in the spack_setup job.
-  needs: [spack_setup]
-  trigger:
-    branch: $BLUECONFIGS_BRANCH
-    project: hpc/sim/blueconfigs
-    # NEURON CI status depends on the BlueConfigs CI status.
-    strategy: depend
-  variables:
-    GITLAB_PIPELINES_BRANCH: $GITLAB_PIPELINES_BRANCH
-    SPACK_ENV_FILE_URL: $SPACK_SETUP_COMMIT_MAPPING_URL
-
 # Performance seems to be terrible when we get too many jobs on a single node.
 .build:
   extends: [.spack_build]
