@@ -324,7 +324,7 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
                 }
             }
         }
-        assert(ncm->ml.size() == n);
+        assert(ncm->ml.size() == std::size_t(n));
     }
 }
 
@@ -457,7 +457,7 @@ extern void nrn_extra_scatter_gather(int, int);
 
 void Cvode::scatter_y(neuron::model_sorted_token const& sorted_token, double* y, int tid) {
     CvodeThreadData& z = CTD(tid);
-    assert(z.nonvint_extra_offset_ == z.pv_.size());
+    assert(std::size_t(z.nonvint_extra_offset_) == z.pv_.size());
     for (int i = 0; i < z.nonvint_extra_offset_; ++i) {
         // TODO: understand why this wasn't needed before
         if (z.pv_[i]) {
@@ -495,7 +495,7 @@ void Cvode::gather_y(N_Vector y) {
 void Cvode::gather_y(double* y, int tid) {
     CvodeThreadData& z = CTD(tid);
     nrn_extra_scatter_gather(1, tid);
-    assert(z.nonvint_extra_offset_ == z.pv_.size());
+    assert(std::size_t(z.nonvint_extra_offset_) == z.pv_.size());
     for (int i = 0; i < z.nonvint_extra_offset_; ++i) {
         // TODO: understand why this wasn't needed before
         if (z.pv_[i]) {
@@ -763,7 +763,6 @@ void Cvode::fun_thread_transfer_part2(neuron::model_sorted_token const& sorted_t
 }
 
 void Cvode::fun_thread_ms_part1(double tt, double* y, NrnThread* nt) {
-    CvodeThreadData& z = ctd_[nt->id];
     nt->_t = tt;
 
     // fix this!!!
@@ -1024,7 +1023,6 @@ void Cvode::error_weights(double* pd) {
 
 void Cvode::acor(double* pd) {
     int i, id;
-    NrnThread* nt;
     for (id = 0; id < nctd_; ++id) {
         CvodeThreadData& z = ctd_[id];
         double* s = n_vector_data(acorvec(), id);
