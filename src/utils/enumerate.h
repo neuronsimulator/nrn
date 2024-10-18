@@ -99,7 +99,7 @@ constexpr auto enumerate(T&& iterable) {
             ++iter;
         }
         auto operator*() const {
-            return std::tie(i, *iter);
+            return std::forward_as_tuple(i, *iter);
         }
     };
     struct iterable_wrapper {
@@ -129,7 +129,7 @@ constexpr auto renumerate(T&& iterable) {
             ++iter;
         }
         auto operator*() const {
-            return std::tie(i, *iter);
+            return std::forward_as_tuple(i, *iter);
         }
     };
     struct iterable_wrapper {
