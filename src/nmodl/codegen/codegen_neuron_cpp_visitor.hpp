@@ -226,6 +226,14 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
+     * Print function and procedures prototype definitions.
+     *
+     * This includes the HOC/Python wrappers.
+     */
+    void print_function_definitions();
+
+
+    /**
      * Print all `check_*` function declarations
      */
     void print_check_table_entrypoint();

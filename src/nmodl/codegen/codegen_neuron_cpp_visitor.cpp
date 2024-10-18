@@ -2334,8 +2334,7 @@ void CodegenNeuronCppVisitor::print_g_unused() const {
     )CODE");
 }
 
-
-void CodegenNeuronCppVisitor::print_compute_functions() {
+void CodegenNeuronCppVisitor::print_function_definitions() {
     print_hoc_py_wrapper_function_definitions();
     for (const auto& procedure: info.procedures) {
         print_procedure(*procedure);
@@ -2346,7 +2345,9 @@ void CodegenNeuronCppVisitor::print_compute_functions() {
     for (const auto& function_table: info.function_tables) {
         print_function_tables(*function_table);
     }
+}
 
+void CodegenNeuronCppVisitor::print_compute_functions() {
     print_nrn_init();
     print_nrn_cur();
     print_nrn_state();
@@ -2377,6 +2378,7 @@ void CodegenNeuronCppVisitor::print_codegen_routines() {
     print_functors_definitions();
     print_global_variables_for_hoc();
     print_thread_memory_callbacks();
+    print_function_definitions();
     print_compute_functions();  // only nrn_cur and nrn_state
     print_nrn_constructor();
     print_nrn_destructor();
