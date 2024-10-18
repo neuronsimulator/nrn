@@ -1,5 +1,12 @@
 #pragma once
 
+/* Define to one if want to debug using sha1 hashes of data */
+#cmakedefine NRN_DIGEST @NRN_DIGEST@
+
+/* Define to one if want to allow selection of architecture independent */
+/* 53 bit double precision of exp and pow from mpfr */
+#cmakedefine NRN_ARCH_INDEP_EXP_POW @NRN_ARCH_INDEP_EXP_POW@
+
 /* Define if building universal (internal helper macro) */
 #cmakedefine AC_APPLE_UNIVERSAL_BUILD @AC_APPLE_UNIVERSAL_BUILD@
 
