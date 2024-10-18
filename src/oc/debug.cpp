@@ -160,6 +160,7 @@ int nrn_digest_;
 static std::vector<std::vector<std::string>> digest;  // nthread string vectors
 static std::vector<size_t> digest_cnt;                // nthread counts.
 static int nrn_digest_print_item_ = -1;
+static int nrn_digest_print_tid_ = 0;
 static bool nrn_digest_abort_ = false;
 
 void nrn_digest() {
@@ -184,10 +185,12 @@ void nrn_digest() {
     } else {  // start accumulating digest info
         nrn_digest_ = 1;
         nrn_digest_print_item_ = -1;
-        if (ifarg(1)) {
-            nrn_digest_print_item_ = int(chkarg(1, 0., 1e9));
+        nrn_digest_print_tid_ = 0;
+        if (ifarg(2)) {
+            nrn_digest_print_tid_ = int(chkarg(1, 0., nrn_nthread - 1));
+            nrn_digest_print_item_ = int(chkarg(2, 0., 1e9));
         }
-        nrn_digest_abort_ = (ifarg(2) && strcmp(gargstr(2), "abort") == 0);
+        nrn_digest_abort_ = (ifarg(3) && strcmp(gargstr(3), "abort") == 0);
     }
     size_t size = digest.size() ? digest[0].size() : 0;
     digest.clear();  // in any case, start over.
@@ -199,6 +202,9 @@ void nrn_digest() {
 }
 
 void nrn_digest_dbl_array(const char* msg, int tid, double t, double* array, size_t sz) {
+    if (!nrn_digest_) {
+        return;
+    }
     unsigned char md[SHA_DIGEST_LENGTH];
     size_t n = sz * sizeof(double);
     unsigned char* d = (unsigned char*) array;
@@ -218,7 +224,7 @@ void nrn_digest_dbl_array(const char* msg, int tid, double t, double* array, siz
 
     digest[tid].push_back(s);
 
-    if (nrn_digest_print_item_ == ix) {
+    if (nrn_digest_print_item_ == ix && nrn_digest_print_tid_ == tid) {
         printf("ZZ %s\n", s.c_str());
         if (nrn_digest_abort_) {
             abort();
