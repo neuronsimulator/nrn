@@ -89,9 +89,9 @@ option(NRN_ENABLE_DIGEST
        "Provides nrn_digest function for debugging cross platform floating result differences."
        ${NRN_ENABLE_DIGEST_DEFAULT})
 option(
-  NRN_ARCH_INDEP_EXP_POW
+  NRN_ENABLE_ARCH_INDEP_EXP_POW
   "Provides use_exp_pow_precision(style) function so that exp and pow produce same results on all platforms"
-  ${NRN_ARCH_INDEP_EXP_POW_DEFAULT})
+  ${NRN_ENABLE_ARCH_INDEP_EXP_POW_DEFAULT})
 # This can be helpful in very specific CI build configurations, where ccache is used *and* different
 # CI builds are built under different directories.
 option(NRN_AVOID_ABSOLUTE_PATHS
@@ -1083,7 +1083,7 @@ if(NRN_ENABLE_PROFILING)
 endif()
 if(NRN_ENABLE_DIGEST OR NRN_ARCH_INDEP_EXP_POW)
   message(STATUS "NRN_ENABLE_DIGEST | ${NRN_ENABLE_DIGEST}")
-  message(STATUS "NRN_ARCH_INDEP_EXP_POW | ${NRN_ARCH_INDEP_EXP_POW}")
+  message(STATUS "NRN_ENABLE_ARCH_INDEP_EXP_POW | ${NRN_ENABLE_ARCH_INDEP_EXP_POW}")
 endif()
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS " See documentation : https://www.neuron.yale.edu/neuron/")

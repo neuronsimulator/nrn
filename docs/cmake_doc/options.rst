@@ -682,7 +682,7 @@ NRN_ENABLE_DIGEST:BOOL=OFF
 
   Requires libcrypto
 
-NRN_ARCH_INDEP_EXP_POW:BOOL=OFF
+NRN_ENABLE_ARCH_INDEP_EXP_POW:BOOL=OFF
 ---------------------------------
   Provides \ :func:`use_exp_pow_precision` function so that exp and pow produce
   same results on all platforms.

@@ -352,8 +352,8 @@ Debugging
         ``h.use_exp_pow_precision(istyle)``
 
     Description:
-        Available when configured with the cmake option
-        ``-DNRN_ARCH_INDEP_EXP_POW=ON``
+        Works when configured with the cmake option
+        ``-DNRN_ENABLE_ARCH_INDEP_EXP_POW=ON`` and otherwise does nothing.
 
         * istyle = 1
             All calls to :func:`exp` and :func:`pow` as well as their use

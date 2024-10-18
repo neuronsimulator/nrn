@@ -7,7 +7,7 @@
 #include "neuron.h"
 #include "utils/enumerate.h"
 
-#define precision 18
+#define precision 15
 
 void nrn_prcellstate(int gid, const char* filesuffix);
 
