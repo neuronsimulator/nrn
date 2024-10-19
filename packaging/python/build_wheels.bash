@@ -166,6 +166,18 @@ build_wheel_osx() {
     echo " - Calling delocate-listdeps"
     delocate-listdeps dist/*.whl
 
+    if [[ "${py_platform}" == *"-universal2" ]]; then
+        # delocate-wheel, at the moment, fails for lib*.a files.
+        # see https://github.com/matthew-brett/delocate/issues/229
+        # As libinterviews.a, etc, are not needed in the wheel, for now
+        # just remove them here.
+        libafiles=`unzip -t dist/*.whl | sed -n 's,.*\(neuron/\.data/lib/lib.*\.a\)  .*,\1,p'`
+        echo "removing from wheel: $libafiles"
+        if test "$libafiles" != "" ; then
+            zip -d dist/*.whl $libafiles
+        fi
+    fi
+
     echo " - Repairing..."
     delocate-wheel -w wheelhouse -v dist/*.whl  # we started clean, there's a single wheel
 
