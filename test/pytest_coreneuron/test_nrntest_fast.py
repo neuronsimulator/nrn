@@ -7,6 +7,8 @@ import numpy as np
 import os
 import pytest
 from neuron import h
+
+h.use_exp_pow_precision(1)  # help with mac identity to linux. see issue 3123
 from neuron.tests.utils import (
     cvode_enabled,
     cvode_use_global_timestep,
