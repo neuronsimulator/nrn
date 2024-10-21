@@ -151,7 +151,6 @@ void HocMark::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
     }
     if (h.event() && h.event()->type() == Event::down &&
         h.event()->pointer_button() == Event::left) {
-        Coord x = h.left(), y = h.bottom();
         switch (XYView::current_pick_view()->scene()->tool()) {
         case Graph::CROSSHAIR:
             h.target(depth, this, 0, new LineRubberMarker(a.x(), a.y(), NULL, c));

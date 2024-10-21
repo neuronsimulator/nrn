@@ -506,9 +506,6 @@ void XYView::transform(Transformer& t, const Allocation& a, const Allocation& n)
     const Allotment& ax = a.x_allotment();
     const Allotment& ay = a.y_allotment();
 #endif
-    const Allotment& nx = n.x_allotment();
-    const Allotment& ny = n.y_allotment();
-    XYView* v = (XYView*) this;
     csize(ax.begin(), ax.span(), ay.begin(), ay.span());
     float sx = xsize_ / width();
     float sy = ysize_ / height();
@@ -588,7 +585,6 @@ void View::transform(Transformer& t, const Allocation& a, const Allocation&) con
     const Allotment& ay = a.y_allotment();
     csize(ax.begin(), ax.span(), ay.begin(), ay.span());
     float sx = ax.span() / XYView::width();
-    float sy = ay.span() / XYView::height();
     //	if (sx > sy) sx = sy;
     t.translate(-x(), -y());
     t.scale(sx, sx);

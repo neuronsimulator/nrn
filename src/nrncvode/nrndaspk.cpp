@@ -204,24 +204,25 @@ static void do_ode_thread(neuron::model_sorted_token const& sorted_token, NrnThr
     }
 }
 
+#if 0
 static double check(double t, Daspk* ida) {
     res_gvardt(t, ida->cv_->y_, ida->yp_, ida->delta_, ida->cv_);
     double norm = N_VWrmsNorm(ida->delta_, ((IDAMem) (ida->mem_))->ida_ewt);
     Printf("ida check t=%.15g norm=%g\n", t, norm);
 #if 0
-	for (int i=0; i < ida->cv_->neq_; ++i) {
-		printf(" %3d %22.15g %22.15g %22.15g\n", i,
+    for (int i=0; i < ida->cv_->neq_; ++i) {
+        printf(" %3d %22.15g %22.15g %22.15g\n", i,
 N_VGetArrayPointer(ida->cv_->y_)[i],
 N_VGetArrayPointer(ida->yp_)[i],
 N_VGetArrayPointer(ida->delta_)[i]);
-	}
+    }
 #endif
     return norm;
 }
+#endif
 
 int Daspk::init() {
     extern double t;
-    int i;
 #if 0
 printf("Daspk_init t_=%20.12g t-t_=%g t0_-t_=%g\n",
 cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
@@ -301,7 +302,7 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
             break;
         }
 #if 0
-for (i=0; i < cv_->neq_; ++i) {
+for (int i=0; i < cv_->neq_; ++i) {
 	printf("   %d %g %g %g %g\n", i, nt_t, N_VGetArrayPointer(cv_->y_)[i], N_VGetArrayPointer(yp_)[i], N_VGetArrayPointer(delta_)[i]);
 }
 #endif
@@ -449,10 +450,8 @@ void Cvode::daspk_gather_y(double* y, int tid) {
 int Cvode::res(double tt, double* y, double* yprime, double* delta, NrnThread* nt) {
     CvodeThreadData& z = ctd_[nt->id];
     ++f_calls_;
-    static int res_;
     int i;
     nt->_t = tt;
-    res_++;
 
 #if 0
 printf("Cvode::res enter tt=%g\n", tt);
@@ -482,10 +481,12 @@ for (i=0; i < z.nvsize_; ++i) {
     // subtract yp from mechanism state delta's
 
 #if 0
-printf("Cvode::res after ode and gather_ydot into delta\n");
-for (i=0; i < z.nvsize_; ++i) {
-	printf("   %d %g %g %g\n", i, y[i], yprime[i], delta[i]);
-}
+    static int res_ = 0;
+    ++res_;
+    printf("Cvode::res after ode and gather_ydot into delta\n");
+    for (i=0; i < z.nvsize_; ++i) {
+        printf("   %d %g %g %g\n", i, y[i], yprime[i], delta[i]);
+    }
 #endif
     // the cap nodes : see nrnoc/capac.cpp for location of cm, etc.
     // these are not in same order as for cvode but are in

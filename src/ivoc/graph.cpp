@@ -452,7 +452,6 @@ double ivoc_view_size(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.view_size", v);
 #if HAVE_IV
     if (hoc_usegui) {
-        int i;
         Scene* s = (Scene*) v;
         XYView* view;
         view = s->sceneview(int(chkarg(1, 0, s->view_count() - 1)));
@@ -1608,7 +1607,7 @@ void Graph::draw(Canvas* c, const Allocation& a) const {
 }
 
 void Graph::ascii_save(std::ostream& o) const {
-    long line, lcnt = line_list_.size();
+    long lcnt = line_list_.size();
     int i, dcnt;
     if (lcnt == 0 || !x_ || family_label_) {
         // tries to print in matrix form is labels and each line the same
@@ -1688,7 +1687,7 @@ void Graph::ascii_save(std::ostream& o) const {
                 GraphItem* gi = (GraphItem*) component(i);
                 if (gi->is_polyline()) {
                     GPolyLine* gpl = (GPolyLine*) gi->body();
-                    int j, jcnt;
+                    int jcnt;
                     jcnt = gpl->y_data()->count();
                     if (jcnt && family_label_ && gpl->label()) {
                         o << jcnt << "  " << family_label_->text() << "=" << gpl->label()->text()
@@ -1803,7 +1802,6 @@ void Graph::new_size(Coord x1, Coord y1, Coord x2, Coord y2) {
 
 void Graph::wholeplot(Coord& l, Coord& b, Coord& r, Coord& t) const {
     GlyphIndex i, cnt;
-    GraphLine* gl;
     l = b = 1e9;
     r = t = -1e9;
     cnt = count();
@@ -2039,7 +2037,6 @@ void Graph::set_cross_action(const char* cp, Object* pyact, bool vector_copy) {
 
 void Graph::cross_action(char c, GPolyLine* gpl, int i) {
     if (cross_action_) {
-        char buf[256];
         if (vector_copy_) {
             Object* op1 = *(gpl->x_data()->new_vect());
             Object* op2 = *(gpl->y_data()->new_vect(gpl->label()));
@@ -3369,7 +3366,6 @@ void LineExtension::extend() {
 void LineExtension::request(Requisition& req) const {
     Coord x, span;
     Coord x1, x2;
-    const float eps = 1e-4;
     x1 = xd()->running_min();
     x2 = xd()->running_max();
     span = (x2 - x1);

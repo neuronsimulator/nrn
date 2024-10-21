@@ -186,7 +186,6 @@ bool var_pair_chooser(const char* caption, float& x, float& y, Window* w, Coord 
 
 bool str_chooser(const char* caption, char* buf, Window* w, Coord x, Coord y) {
     WidgetKit& k = *WidgetKit::instance();
-    LayoutKit& l = *LayoutKit::instance();
     Style* style = new Style(k.style());
     style->attribute("caption", caption);
     bool ok;
@@ -335,7 +334,6 @@ void hoc_string_dialog() {
 
 bool Graph::label_chooser(const char* caption, char* buf, GLabel* gl, Coord x, Coord y) {
     WidgetKit& k = *WidgetKit::instance();
-    LayoutKit& l = *LayoutKit::instance();
     Style* style = new Style(k.style());
     style->attribute("caption", caption);
     bool ok;

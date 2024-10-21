@@ -407,11 +407,7 @@ void N_VDestroy_NrnParallelLD(N_Vector v) {
 }
 
 void N_VSpace_NrnParallelLD(N_Vector v, long int* lrw, long int* liw) {
-    MPI_Comm comm;
-    int npes;
-
-    comm = NV_COMM_P_LD(v);
-    npes = nrnmpi_numprocs;
+    int npes = nrnmpi_numprocs;
 
     *lrw = NV_GLOBLENGTH_P_LD(v);
     *liw = 2 * npes;

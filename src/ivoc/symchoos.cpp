@@ -260,8 +260,8 @@ int SymChooser::selected_vector_count() {
 }
 
 void SymChooser::reread() {
-    SymChooserImpl& fc = *impl_;
 #if 0
+    SymChooserImpl& fc = *impl_;
     if (!fc.chdir(fc.dir_->path())) {
 	/* should generate an error message */
     }
@@ -575,7 +575,6 @@ void SymChooserImpl::accept_browser_index(int bindex) {
     SymDirectory* dir = dir_[bindex];
     const String& path = dir->path().c_str();
     const String& name = dir->name(i).c_str();
-    Symbol* sym = dir->symbol(i);
     int length = path.length() + name.length();
     auto const tmp_len = length + 2;
     char* tmp = new char[tmp_len];

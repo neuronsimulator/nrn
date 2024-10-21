@@ -205,7 +205,6 @@ static Object** l_alias_list(void*) {
     }
     Object** po = hoc_temp_objvar(sl, list);
     (*po)->refcount++;
-    int id = (*po)->index;
     if (a) {
         for (auto& kv: a->symtab_) {
             Symbol* sym = kv.second;

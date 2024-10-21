@@ -124,12 +124,10 @@ void nrn_update_2d(NrnThread* nt) {
     extern int secondorder;
     Node *nd, **ndlist;
     Extnode* nde;
-    double cfac;
     Memb_list* ml = nt->_ecell_memb_list;
     if (!ml) {
         return;
     }
-    cfac = .001 * nt->cj;
     cnt = ml->nodecount;
     ndlist = ml->nodelist;
 
@@ -304,7 +302,6 @@ static void extnode_alloc_elements(Extnode* nde) {
 }
 
 void extcell_node_create(Node* nd) {
-    int i, j;
     Extnode* nde;
     Prop* p;
     /* may be a nnode increase so some may already be allocated */
@@ -312,7 +309,7 @@ void extcell_node_create(Node* nd) {
         nde = new Extnode{};
         extnode_alloc_elements(nde);
         nd->extnode = nde;
-        for (j = 0; j < nlayer; ++j) {
+        for (int j = 0; j < nlayer; ++j) {
             nde->v[j] = 0.;
         }
         for (p = nd->prop; p; p = p->next) {
@@ -331,12 +328,8 @@ void extcell_node_create(Node* nd) {
 }
 
 void extcell_2d_alloc(Section* sec) {
-    int i, j;
-    Node* nd;
-    Extnode* nde;
-    Prop* p;
     /* may be a nnode increase so some may already be allocated */
-    for (i = sec->nnode - 1; i >= 0; i--) {
+    for (int i = sec->nnode - 1; i >= 0; i--) {
         extcell_node_create(sec->pnode[i]);
     }
     /* if the rootnode is owned by this section then it gets extnode also*/
@@ -426,7 +419,6 @@ void nrn_rhs_ext(NrnThread* _nt) {
 void nrn_setup_ext(NrnThread* _nt) {
     int i, j, cnt;
     Node *nd, *pnd, **ndlist;
-    double* pd;
     double d, cfac, mfac;
     Extnode *nde, *pnde;
     Memb_list* ml = _nt->_ecell_memb_list;
@@ -497,7 +489,6 @@ void ext_con_coef(void) /* setup a and b */
     hoc_Item* qsec;
     Node *nd, **pnd;
     Extnode* nde;
-    double* pd;
 
     /* temporarily store half segment resistances in rhs */
     // ForAllSections(sec)

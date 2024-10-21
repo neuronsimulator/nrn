@@ -259,7 +259,6 @@ static char* nrn_optarg(const char* opt, int* argc, char** argv);
 static int nrn_optargint(const char* opt, int* argc, char** argv, int dflt);
 
 static bool nrn_optarg_on(const char* opt, int* pargc, const char** argv) {
-    char* a;
     int i;
     for (i = 0; i < *pargc; ++i) {
         if (strcmp(opt, argv[i]) == 0) {

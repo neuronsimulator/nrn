@@ -740,7 +740,6 @@ void Cvode::fun_thread_transfer_part2(neuron::model_sorted_token const& sorted_t
 }
 
 void Cvode::fun_thread_ms_part1(double tt, double* y, NrnThread* nt) {
-    CvodeThreadData& z = ctd_[nt->id];
     nt->_t = tt;
 
     // fix this!!!
@@ -1001,7 +1000,6 @@ void Cvode::error_weights(double* pd) {
 
 void Cvode::acor(double* pd) {
     int i, id;
-    NrnThread* nt;
     for (id = 0; id < nctd_; ++id) {
         CvodeThreadData& z = ctd_[id];
         double* s = n_vector_data(acorvec(), id);

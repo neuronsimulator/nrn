@@ -1110,7 +1110,6 @@ void ECS_Grid_node::clear_multicompartment_reaction() {
 void ECS_Grid_node::initialize_multicompartment_reaction() {
 #if NRNMPI
     int i, j;
-    int total_react = 0;
     int start_state;
     int* proc_num_init;
     int* all_indices;
@@ -1140,7 +1139,6 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
                 if (i == nrnmpi_myid)
                     start_state = total_reaction_states;
                 proc_num_reactions[i] = total_reaction_states;
-                total_react += proc_num_reactions[i];
                 total_reaction_states += proc_num_reaction_states[i];
             }
 

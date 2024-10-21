@@ -935,13 +935,9 @@ static char* hideQuote(const char* s) {
     return buf;
 }
 
-static void saveMenuFile() {}
-
 void HocPanel::save_all(std::ostream&) {
     if (!hoc_panel_list)
         return;
-
-    long i, cnt;
 
     HocDataPaths* data_paths = new HocDataPaths();
     if (hoc_panel_list) {
@@ -1794,7 +1790,6 @@ HocEditorForItem::~HocEditorForItem() {
 
 
 static void set_format() {
-    static Coord len;
     if (!xvalue_format) {
         xvalue_format = new String("%.5g");
         WidgetKit::instance()->style()->find_attribute("xvalue_format", *xvalue_format);
@@ -2372,7 +2367,6 @@ void StepperMenuAction::execute() {
     HocValStepper::menu()->stepper()->default_inc(geometric_, x_);
 }
 StepperMenu::StepperMenu() {
-    WidgetKit& k = *WidgetKit::instance();
     char buf[50];
     active_ = false;
     vs_ = NULL;
@@ -2850,12 +2844,10 @@ void HocStateButton::button_action() {
         return;
     }
     if (pyvar_) {
-        TelltaleState* t = b_->state();
         if (chosen() != bool(neuron::python::methods.guigetval(pyvar_))) {
             neuron::python::methods.guisetval(pyvar_, double(chosen()));
         }
     } else if (pval_) {
-        TelltaleState* t = b_->state();
         if (chosen() != bool(*pval_)) {
             *pval_ = double(chosen());
         }
@@ -3007,13 +2999,11 @@ void HocStateMenuItem::button_action() {
         return;
     }
     if (pval_) {
-        TelltaleState* t = b_->state();
         if (chosen() != bool(*pval_)) {
             *pval_ = double(chosen());
         }
     }
     if (pyvar_) {
-        TelltaleState* t = b_->state();
         if (chosen() != bool(neuron::python::methods.guigetval(pyvar_))) {
             neuron::python::methods.guisetval(pyvar_, double(chosen()));
         }
