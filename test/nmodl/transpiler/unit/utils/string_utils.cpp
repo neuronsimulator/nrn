@@ -54,3 +54,21 @@ TEST_CASE("starts_with") {
         REQUIRE(!stringutils::starts_with("abcde", "abcde++"));
     }
 }
+
+TEST_CASE("join_arguments") {
+    SECTION("both empty") {
+        REQUIRE(stringutils::join_arguments("", "") == "");
+    }
+
+    SECTION("lhs emtpy") {
+        REQUIRE(stringutils::join_arguments("", "foo, bar") == "foo, bar");
+    }
+
+    SECTION("rhs empty") {
+        REQUIRE(stringutils::join_arguments("foo", "") == "foo");
+    }
+
+    SECTION("neither empty") {
+        REQUIRE(stringutils::join_arguments("foo", "bar") == "foo, bar");
+    }
+}

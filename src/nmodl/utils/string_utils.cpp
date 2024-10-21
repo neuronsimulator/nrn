@@ -27,5 +27,16 @@ std::string to_string(double value, const std::string& format_spec) {
     return fmt::format(format_spec, value);
 }
 
+std::string join_arguments(const std::string& lhs, const std::string& rhs) {
+    if (lhs.empty()) {
+        return rhs;
+    } else if (rhs.empty()) {
+        return lhs;
+    } else {
+        return fmt::format("{}", fmt::join({lhs, rhs}, ", "));
+    }
+}
+
+
 }  // namespace stringutils
 }  // namespace nmodl

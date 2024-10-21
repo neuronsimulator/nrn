@@ -210,6 +210,12 @@ static inline bool starts_with(const std::string& haystack, const std::string& n
  */
 std::string to_string(double value, const std::string& format_spec = "{:.16g}");
 
+/** Joint two (list of) arguments.
+ *
+ * The tricks is to not add a ',' when either side is empty.
+ */
+std::string join_arguments(const std::string& lhs, const std::string& rhs);
+
 /** \} */  // end of utils
 
 }  // namespace stringutils
