@@ -44,6 +44,8 @@
 #include <ctime>
 #include <regex>
 #include <unordered_set>
+#include <sundials/sundials_math.h>
+#include "netcon.h"
 #include <utility>
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
@@ -1322,6 +1324,7 @@ void NetCvode::del_cv_memb_list() {
         }
     }
 }
+
 void NetCvode::del_cv_memb_list(Cvode* cvode) {
     if (!cvode) {
         return;
