@@ -19,8 +19,7 @@
 
 int FUNCTION(gsl_fft_halfcomplex,
              radix2_backward)(BASE data[], const size_t stride, const size_t n) {
-    int status = FUNCTION(gsl_fft_halfcomplex, radix2_transform)(data, stride, n);
-    return status;
+    return FUNCTION(gsl_fft_halfcomplex, radix2_transform)(data, stride, n);
 }
 
 int FUNCTION(gsl_fft_halfcomplex,
@@ -149,7 +148,5 @@ int FUNCTION(gsl_fft_halfcomplex,
     /* bit reverse the ordering of output data for decimation in
        frequency algorithm */
 
-    FUNCTION(fft_real, bitreverse_order)(data, stride, n, logn);
-
-    return 0;
+    return FUNCTION(fft_real, bitreverse_order)(data, stride, n, logn);
 }
