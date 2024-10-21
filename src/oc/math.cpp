@@ -127,7 +127,6 @@ static double (*pow_ieee_ptr)(double x,
 static double (*exp_ptr)(double x) = exp;
 
 int nrn_use_exp_pow_precision(int style) {
-    int s = 0;
     if (style == 0) {  // default IEEE
         pow_ptr = pow;
         exp_ptr = exp;
@@ -138,17 +137,7 @@ int nrn_use_exp_pow_precision(int style) {
         pow_ptr = pow_precision32;
         exp_ptr = exp_precision32;
     }
-    if (pow_ptr == pow_ieee_ptr) {
-        s = 0;
-    }
-    if (pow_ptr == pow_arch_indep) {
-        s = 1;
-    }
-    if (pow_ptr == pow_precision32) {
-        s = 2;
-    }
-    nrn_assert(s >= 0 && s <= 2);
-    return s;
+    return style;
 }
 
 #endif  // NRN_ARCH_INDEP_EXP_POW
