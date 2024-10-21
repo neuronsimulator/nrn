@@ -9,6 +9,7 @@
 
 #include "utils/fmt.h"
 #include <cassert>
+#include <memory>
 
 #include "ast/all.hpp"
 #include "codegen/codegen_naming.hpp"
@@ -65,6 +66,14 @@ ast::SolutionExpression* SolveBlockVisitor::create_solution_expression(
         auto derivative_block = dynamic_cast<ast::DerivativeBlock*>(node_to_solve);
         auto callback_expr = new ast::DerivimplicitCallback(derivative_block->clone());
         return new ast::SolutionExpression(solve_block.clone(), callback_expr);
+    }
+
+    if (node_to_solve->get_node_type() == ast::AstNodeType::PROCEDURE_BLOCK) {
+        auto procedure_call = new ast::FunctionCall(solve_block.get_block_name()->clone(), {});
+        auto statement = std::make_shared<ast::ExpressionStatement>(procedure_call);
+        auto statement_block = new ast::StatementBlock({statement});
+
+        return new ast::SolutionExpression(solve_block.clone(), statement_block);
     }
 
     auto block_to_solve = node_to_solve->get_statement_block();
