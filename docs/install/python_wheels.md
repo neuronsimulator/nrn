@@ -210,7 +210,7 @@ On BB5, we can test CPU wheels with:
 ```
 salloc -A proj16  -N 1 --ntasks-per-node=4 -C "cpu" --time=1:00:00 -p interactive
 module load unstable python
-bash packaging/python/test_wheels.sh python3.9 wheelhouse/NEURON-7.8.0.236-cp39-cp39m-manylinux1_x86_64.whl
+bash packaging/python/test_wheels.sh python3.9 wheelhouse/NEURON-7.8.0.236-cp39-cp39-manylinux1_x86_64.whl
 ```
 
 ## Publishing the wheels on Pypi via Azure
