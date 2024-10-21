@@ -27,12 +27,12 @@ static void load_music() {
     // every rank if nhost is large. So demand ...
     const_char_ptr music_path = const_char_ptr{std::getenv("NRN_LIBMUSIC_PATH")};
     if (!music_path) {
-        Fprintf(stderr, "No NRN_LIBMUSIC_PATH environment variable for full path to libmusic\n");
+        logger.error("No NRN_LIBMUSIC_PATH environment variable for full path to libmusic\n");
         exit(1);
     }
     handle = dlopen(music_path, RTLD_NOW | RTLD_GLOBAL);
     if (!handle) {
-        Fprintf(stderr, "%s", dlerror());
+        logger.error(dlerror());
         exit(1);
     }
 }
@@ -67,7 +67,7 @@ void nrnmusic_load() {
 
     void* handle = dlopen(nrnmusic_library.c_str(), RTLD_NOW | RTLD_GLOBAL);
     if (!handle) {
-        Fprintf(stderr, "%s\n", dlerror());
+        logger.error("{}\n", dlerror());
         exit(1);
     }
     assert(handle);
