@@ -237,10 +237,10 @@ jobs:
           echo -----
 
       - name: Restore compiler cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
+        id: restore-compiler-cache
         with:
           path: ${{runner.workspace}}/ccache
-          save-always: true
           key: ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-${{github.sha}}
           restore-keys: |
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
@@ -440,6 +440,15 @@ jobs:
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
           INSTALL_DIR : ${{ runner.workspace }}/install
           MATRIX_EVAL: ${{ matrix.config.matrix_eval }}
+
+      - name: Save compiler cache
+        uses: actions/cache/save@v4
+        if: always() && steps.restore-compiler-cache.outputs.cache-hit != 'true'
+        with:
+          path: ${{runner.workspace}}/ccache
+          key: |
+            ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
+            ${{matrix.os}}-${{hashfiles('matrix.json')}}-
 
       # This step will set up an SSH connection on tmate.io for live debugging.
       # To enable it, you have to:

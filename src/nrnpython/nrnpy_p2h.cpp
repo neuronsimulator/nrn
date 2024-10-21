@@ -18,7 +18,7 @@
 namespace nb = nanobind;
 
 static char* nrnpyerr_str();
-static nb::object nrnpy_pyCallObject(nb::callable, PyObject*);
+static nb::object nrnpy_pyCallObject(nb::callable, nb::object);
 static PyObject* main_module;
 static PyObject* main_namespace;
 
@@ -46,7 +46,7 @@ static void call_python_with_section(Object* pyact, Section* sec) {
     nanobind::gil_scoped_acquire lock{};
 
     nb::tuple args = nb::make_tuple(reinterpret_cast<PyObject*>(newpysechelp(sec)));
-    nb::object r = nrnpy_pyCallObject(po, args.ptr());
+    nb::object r = nrnpy_pyCallObject(po, args);
     if (!r.is_valid()) {
         char* mes = nrnpyerr_str();
         if (mes) {
@@ -106,12 +106,13 @@ Object* nrnpy_pyobject_in_obj(PyObject* po) {
     return on;
 }
 
-static nb::object nrnpy_pyCallObject(nb::callable callable, PyObject* args) {
+static nb::object nrnpy_pyCallObject(nb::callable callable, nb::object args) {
     // When hoc calls a PythonObject method, then in case python
     // calls something back in hoc, the hoc interpreter must be
     // at the top level
     HocTopContextSet
-    PyObject* p = PyObject_CallObject(callable.ptr(), args);
+    nb::tuple tup(args);
+    nb::object p = nb::steal(PyObject_CallObject(callable.ptr(), tup.ptr()));
 #if 0
 printf("PyObject_CallObject callable\n");
 PyObject_Print(callable, stdout, 0);
@@ -139,7 +140,7 @@ printf("\nreturn %p\n", p);
       }
     }
     **/
-    return nb::steal(p);
+    return p;
 }
 
 static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
@@ -196,7 +197,7 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             }
         }
         // printf("PyObject_CallObject %s %p\n", sym->name, tail);
-        result = nrnpy_pyCallObject(nb::borrow<nb::callable>(tail), args).release().ptr();
+        result = nrnpy_pyCallObject(nb::borrow<nb::callable>(tail), nb::borrow(args)).release().ptr();
         Py_DECREF(args);
         // PyObject_Print(result, stdout, 0);
         // printf("  result of call\n");
@@ -333,9 +334,9 @@ static nb::object hoccommand_exec_help1(nb::object po) {
         if (!nb::tuple::check_(args)) {
             args = nb::make_tuple(args);
         }
-        return nrnpy_pyCallObject(po[0], args.ptr());
+        return nrnpy_pyCallObject(po[0], args);
     } else {
-        return nrnpy_pyCallObject(nb::borrow<nb::callable>(po), nb::tuple().ptr());
+        return nrnpy_pyCallObject(nb::borrow<nb::callable>(po), nb::tuple());
     }
 }
 
@@ -417,7 +418,7 @@ static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
     nanobind::gil_scoped_acquire lock{};
 
     nb::tuple args = nb::make_tuple(type, x, y, key);
-    nb::object r = nrnpy_pyCallObject(po, args.ptr());
+    nb::object r = nrnpy_pyCallObject(po, args);
     if (!r.is_valid()) {
         char* mes = nrnpyerr_str();
         if (mes) {
@@ -483,7 +484,7 @@ static double func_call(Object* ho, int narg, int* err) {
         }
     }
 
-    nb::object r = nrnpy_pyCallObject(po, args);
+    nb::object r = nrnpy_pyCallObject(po, nb::borrow(args));
     Py_XDECREF(args);
     double rval = 0.0;
     if (!r.is_valid()) {
