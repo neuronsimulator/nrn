@@ -171,6 +171,8 @@ bash packaging/python/build_wheels.bash linux 3* coreneuron
 ```
 Where we are passing `3*` to build the wheels with `CoreNEURON` support for all python 3 versions.
 
+You can also control the level of parallelization used for the build using the `NRN_PARALLEL_BUILDS` env variable (default: 4).
+
 ### macOS
 As mentioned above, for macOS all dependencies have to be available on a system. You have to then clone NEURON repository and execute:
 
