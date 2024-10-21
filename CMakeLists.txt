@@ -85,6 +85,13 @@ option(
   NRN_ENABLE_PERFORMANCE_TESTS
   "Enable tests that measure performance. These are known to be unreliable when run on busy/oversubscribed machines such as CI runners."
   ${NRN_ENABLE_PERFORMANCE_TESTS_DEFAULT})
+option(NRN_ENABLE_DIGEST
+       "Provides nrn_digest function for debugging cross platform floating result differences."
+       ${NRN_ENABLE_DIGEST_DEFAULT})
+option(
+  NRN_ENABLE_ARCH_INDEP_EXP_POW
+  "Provides use_exp_pow_precision(style) function so that exp and pow produce same results on all platforms"
+  ${NRN_ENABLE_ARCH_INDEP_EXP_POW_DEFAULT})
 # This can be helpful in very specific CI build configurations, where ccache is used *and* different
 # CI builds are built under different directories.
 option(NRN_AVOID_ABSOLUTE_PATHS
@@ -494,6 +501,24 @@ endif()
 
 # initialize CLI11 submodule
 cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
+
+# =============================================================================
+# Enable NRN_DIGEST
+# =============================================================================
+if(NRN_ENABLE_DIGEST)
+  set(NRN_DIGEST 1)
+else()
+  set(NRN_DIGEST 0)
+endif()
+
+# =============================================================================
+# Enable NRN_ARCH_INDEP_EXP_POW
+# =============================================================================
+if(NRN_ENABLE_ARCH_INDEP_EXP_POW)
+  set(NRN_ARCH_INDEP_EXP_POW 1)
+else()
+  set(NRN_ARCH_INDEP_EXP_POW 0)
+endif()
 
 # =============================================================================
 # Enable CoreNEURON support
@@ -1055,6 +1080,10 @@ if(NRN_ENABLE_PROFILING)
   if(NRN_PROFILER STREQUAL "caliper")
     message(STATUS "  Caliper     | ${caliper_DIR}")
   endif()
+endif()
+if(NRN_ENABLE_DIGEST OR NRN_ARCH_INDEP_EXP_POW)
+  message(STATUS "NRN_ENABLE_DIGEST | ${NRN_ENABLE_DIGEST}")
+  message(STATUS "NRN_ENABLE_ARCH_INDEP_EXP_POW | ${NRN_ENABLE_ARCH_INDEP_EXP_POW}")
 endif()
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS " See documentation : https://www.neuron.yale.edu/neuron/")
