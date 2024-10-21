@@ -714,7 +714,7 @@ static void m_destruct(void* v) {
 static void steer_x(void* v) {
     Matrix* m = (Matrix*) v;
     int i1, i2;
-    Symbol* s = hoc_spop();
+    hoc_spop();
     if (!hoc_stack_type_is_ndim()) {
         hoc_execerr_ext("Array dimension of Matrix.x is 2");
     }

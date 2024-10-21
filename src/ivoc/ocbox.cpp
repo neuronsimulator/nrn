@@ -561,7 +561,6 @@ void OcGlyphContainer::intercept(bool b) {
 }
 
 void OcBox::box_append(OcGlyph* g) {
-    WidgetKit& wk = *WidgetKit::instance();
     LayoutKit& lk = *LayoutKit::instance();
     bi_->ocglyph_list_->append(g);
     g->parents(true);

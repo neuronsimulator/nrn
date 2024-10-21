@@ -659,7 +659,7 @@ void reorder_secorder() {
     Node* nd;
     hoc_Item* qsec;
     hoc_List* sl;
-    int order, isec, i, j, inode;
+    int order, isec, j, inode;
     /* count and allocate */
     // ForAllSections(sec)
     ITERATE(qsec, section_list) {

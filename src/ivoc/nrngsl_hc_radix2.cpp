@@ -49,7 +49,6 @@ int FUNCTION(gsl_fft_halfcomplex,
     size_t p, p_1, q;
     size_t i;
     size_t logn = 0;
-    int status;
 
     if (n == 1) /* identity operation */
     {
@@ -150,7 +149,7 @@ int FUNCTION(gsl_fft_halfcomplex,
     /* bit reverse the ordering of output data for decimation in
        frequency algorithm */
 
-    status = FUNCTION(fft_real, bitreverse_order)(data, stride, n, logn);
+    FUNCTION(fft_real, bitreverse_order)(data, stride, n, logn);
 
     return 0;
 }

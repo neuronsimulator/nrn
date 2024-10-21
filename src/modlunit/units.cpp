@@ -507,7 +507,6 @@ void unit_stk_clean() {
 
 // allow the outside world to call either modl_units() or unit_init().
 static void units_alloc() {
-    int i;
     static int units_alloc_called = 0;
     if (!units_alloc_called) {
         units_alloc_called = 1;
@@ -521,7 +520,6 @@ static void units_alloc() {
 extern void unit_init();
 
 void modl_units() {
-    int i;
     static int first = 1;
     unitonflag = 1;
     if (first) {

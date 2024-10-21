@@ -126,7 +126,6 @@ int MessageValue::upkint(int* i) {
 }
 
 int MessageValue::upkdouble(double* d) {
-    const auto& mi = args_.front();
     if (const auto* val = std::get_if<double>(args_.data() + index_)) {
         *d = *val;
         ++index_;
@@ -136,7 +135,6 @@ int MessageValue::upkdouble(double* d) {
 }
 
 int MessageValue::upkvec(int n, double* d) {
-    const auto& mi = args_.front();
     if (const auto* val = std::get_if<std::vector<double>>(args_.data() + index_)) {
         for (std::size_t i = 0; i < n; ++i) {
             d[i] = val->at(i);
@@ -148,7 +146,6 @@ int MessageValue::upkvec(int n, double* d) {
 }
 
 int MessageValue::upkstr(char* s) {
-    const auto& mi = args_.front();
     if (const auto* val = std::get_if<std::string>(args_.data() + index_)) {
         for (std::size_t i = 0; i < val->size(); ++i) {
             s[i] = val->at(i);
@@ -161,7 +158,6 @@ int MessageValue::upkstr(char* s) {
 }
 
 int MessageValue::upkpickle(std::vector<char>& s) {
-    const auto& mi = args_.front();
     if (const auto* val = std::get_if<std::vector<char>>(args_.data() + index_)) {
         s = *val;
         ++index_;
@@ -225,7 +221,7 @@ bool BBSLocalServer::look(const char* key, MessageValue** val) {
 }
 
 void BBSLocalServer::post(const char* key, MessageValue* val) {
-    MessageList::iterator m = messages_->emplace(newstr(key), val);
+    messages_->emplace(newstr(key), val);
     Resource::ref(val);
 #if debug
     printf("srvr_post |%s|\n", key);

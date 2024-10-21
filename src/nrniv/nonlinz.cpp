@@ -497,7 +497,6 @@ void NonLinImpRep::dsds() {
                 // store element and restore s
                 // fill the ds/dv elements
                 for (in = 0; in < ml->nodecount; ++in) {
-                    Node* nd = ml->nodelist[in];
                     ks = ieq + in * cnt + kks;
                     for (is = ieq + in * cnt, iis = 0; iis < cnt; ++iis, ++is) {
                         double ds = (*pvdot_[is] - v_[is].imag()) / deltavec_[is];

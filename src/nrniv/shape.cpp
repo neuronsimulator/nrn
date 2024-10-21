@@ -743,8 +743,6 @@ void OcShape::sel_color(ShapeSection* sold, ShapeSection* snew) {
 void OcShape::select_section(Section* sec) {
     ShapeSection* s1 = ShapeScene::selected();
     ShapeSection* ss;
-    Section* s;
-    const Color* c;
     ss = shape_section(sec);
     sel_color(s1, ss);
     if (ss) {
@@ -829,7 +827,7 @@ declareActionCallback(ShapeScene)
 implementActionCallback(ShapeScene)
 
 void ShapeScene::observe(SectionList* sl) {
-    GlyphIndex i, cnt;
+    GlyphIndex i;
     hoc_Item* qsec;
     Section* sec;
     ShapeSection* gl;
@@ -991,7 +989,6 @@ void ShapeScene::rotate(Coord xorg, Coord yorg, Coord zorg, float xrad, float yr
 
 void ShapeScene::transform3d(Rubberband*) {
     Rotation3d* rot = r3b_->rotation();
-    Coord x, y;
     //	rb->transformer().inverse_transform(rb->x_begin(), rb->y_begin(), x, y);
     //	printf("ShapeScene::transform3d %g %g\n", x, y);
     long i, n;
@@ -1016,7 +1013,7 @@ void ShapeScene::flush() {
 }
 
 void ShapeScene::wholeplot(Coord& x1, Coord& y1, Coord& x2, Coord& y2) const {
-    long i, j, n = sg_->count();
+    long i, n = sg_->count();
     Coord l, b, r, t;
     x1 = y1 = 1e9;
     x2 = y2 = -1e9;
@@ -1280,7 +1277,6 @@ ShapeSection::ShapeSection(Section* sec) {
 
 ShapeSection::~ShapeSection() {
     color_->unref();
-    int n = sec_->npt3d - 1;
     delete[] x_;
     delete[] y_;
     clear_variable();
@@ -1520,8 +1516,8 @@ void ShapeSection::draw(Canvas* c, const Allocation& a) const {
     if (!good()) {
         return;
     }
-    float e = 1e-2;
 #if 0
+    float e = 1e-2;
 // fails when length very long > 100000. If checking important
 // then should use relative comparison
 	if (!(
@@ -1578,7 +1574,6 @@ void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
             double xbegin;  // end location already drawn
             double xend;    // location we'd like to draw to
             double dseg;    // accurate desired length of segment
-            double a3dold;  // the arc length at i3d-1
             double a3dnew;  // the arc length at i3d
             double frac;    // fraction of a segment length of the a3dnew point from
                             // xend when a3dnew > xend
@@ -1590,7 +1585,6 @@ void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
             // a complete a3d interval. We might draw something up to 1.1*dseg in length.
             dseg = section_length(sec_) / double(sec_->nnode - 1);
             xbegin = 0.;
-            a3dold = 0.;
             i3d = 1;
             for (iseg = 0; iseg < sec->nnode - 1; ++iseg) {
                 if (colorseg_) {
@@ -1608,7 +1602,6 @@ void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
                 }
                 xend = double(iseg + 1) * dseg;
                 for (; i3d < sec->npt3d; ++i3d) {
-                    a3dold = sec_->pt3d[i3d - 1].arc;
                     a3dnew = sec_->pt3d[i3d].arc;
                     if (a3dnew > xend) {
                         frac = (a3dnew - xend) / dseg;
@@ -1668,7 +1661,7 @@ void ShapeSection::fastidious_draw(Canvas* c,
                                    float a1,
                                    float a2) const {
     int i;
-    float len, f1, f2, d, x1, x2, y1, y2, a, aa;
+    float f1, f2, d, x1, x2, y1, y2, a, aa;
     if (!color) {
         return;
     }
