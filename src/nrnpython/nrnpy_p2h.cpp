@@ -182,13 +182,13 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
     if (isfunc) {
         nb::list args{};
         for (i = 0; i < nindex; ++i) {
-            PyObject* arg = nrnpy_hoc_pop("isfunc py2n_component");
+            nb::object arg = nb::steal(nrnpy_hoc_pop("isfunc py2n_component"));
             if (!arg) {
                 PyErr2NRNString e;
                 e.get_pyerr();
                 hoc_execerr_ext("arg %d error: %s", i, e.c_str());
             }
-            args.append(nb::borrow(arg));
+            args.append(arg);
         }
         args.reverse();
         // printf("PyObject_CallObject %s %p\n", sym->name, tail);
