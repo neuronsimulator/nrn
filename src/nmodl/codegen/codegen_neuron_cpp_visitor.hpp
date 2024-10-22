@@ -530,11 +530,16 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      */
     void print_mechanism_register() override;
 
+    /** Function body for anything not SUFFIX nothing. */
+    void print_mechanism_register_regular();
+
+    /** Function body for SUFFIX nothing. */
+    void print_mechanism_register_nothing();
+
     /**
      * Print thread variable (de-)initialization functions.
      */
     void print_thread_memory_callbacks();
-
 
     /**
      * Print common code for global functions like nrn_init, nrn_cur and nrn_state
@@ -747,6 +752,12 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      *
      */
     void print_codegen_routines() override;
+
+    /** Anything not SUFFIX nothing. */
+    void print_codegen_routines_regular();
+
+    /** SUFFIX nothing is special. */
+    void print_codegen_routines_nothing();
 
 
     void print_ion_variable() override;

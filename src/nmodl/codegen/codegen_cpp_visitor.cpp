@@ -513,8 +513,9 @@ void CodegenCppVisitor::print_function_call(const FunctionCall& node) {
     printer->add_text(function_name, '(');
 
     if (defined_method(name)) {
-        printer->add_text(internal_method_arguments());
-        if (!arguments.empty()) {
+        auto internal_args = internal_method_arguments();
+        printer->add_text(internal_args);
+        if (!arguments.empty() && !internal_args.empty()) {
             printer->add_text(", ");
         }
     }
@@ -1436,6 +1437,9 @@ void CodegenCppVisitor::setup(const Program& node) {
         info.mod_suffix = std::filesystem::path(mod_filename).stem().string();
     }
     info.rsuffix = info.point_process ? "" : "_" + info.mod_suffix;
+    if (info.mod_suffix == "nothing") {
+        info.rsuffix = "";
+    }
 
     if (!info.vectorize) {
         logger->warn(
