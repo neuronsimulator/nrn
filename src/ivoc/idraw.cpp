@@ -152,7 +152,7 @@ void OcIdraw::text(Canvas*,
         out << font->name() << font->size() << "SetF\n";
     } else {
         out << "\
-%I f -*-fixed-medium-r-normal-*-12-*-*-*-*-*-*-*\n\
+%I f -*-helvetica-medium-r-normal-*-12-*-*-*-*-*-*-*\n\
 Helvetica 12 SetF\n\
 ";
     };

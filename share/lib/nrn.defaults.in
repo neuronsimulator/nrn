@@ -78,13 +78,13 @@
 *xvalue_field_size_increase: 10.
 
 // following is historical standard for unix.
-@nrndef_unix@*font: *fixed-medium-r-normal*--14*
-@nrndef_unix@*MenuBar*font: *-fixed-bold-o-normal--14*
-@nrndef_unix@*MenuItem*font: *-fixed-bold-o-normal--14*
+@nrndef_unix@*font: *helvetica-medium-r-normal*--14*
+@nrndef_unix@*MenuBar*font: *-helvetica-bold-o-normal--14*
+@nrndef_unix@*MenuItem*font: *-helvetica-bold-o-normal--14*
 // Mac and mswin internal default is
-@nrndef_mac@*font: *fixed-medium-r-normal*--14*
-@nrndef_mac@*MenuBar*font: *-fixed-bold-o-normal--14*
-@nrndef_mac@*MenuItem*font: *-fixed-bold-o-normal--14*
+@nrndef_mac@*font: *helvetica-medium-r-normal*--14*
+@nrndef_mac@*MenuBar*font: *-helvetica-bold-o-normal--14*
+@nrndef_mac@*MenuItem*font: *-helvetica-bold-o-normal--14*
 @nrndef_mswin@*font: *Arial*bold*--12*
 //*MenuBar*font: *Arial*bold*--12*
 //*MenuItem*font: *Arial*bold*--12*

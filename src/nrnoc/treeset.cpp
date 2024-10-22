@@ -32,8 +32,6 @@
 
 #include <fmt/format.h>
 
-extern spREAL* spGetElement(char*, int, int);
-
 int nrn_shape_changed_; /* for notifying Shape class in nrniv */
 double* nrn_mech_wtime_;
 
