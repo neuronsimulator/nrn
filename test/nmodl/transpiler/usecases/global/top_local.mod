@@ -23,3 +23,11 @@ BREAKPOINT {
     y = gbl
     il = 0.0000001 * (v - 10.0)
 }
+
+FUNCTION get_gbl() {
+    get_gbl = gbl
+}
+
+PROCEDURE set_gbl(value) {
+    gbl = value
+}
