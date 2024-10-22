@@ -16,11 +16,11 @@ from neuron.units import ms
 nseg = 1
 
 s0 = h.Section()
-s0.insert("shared_global")
+s0.insert("threading_effects")
 s0.nseg = nseg
 
 s1 = h.Section()
-s1.insert("shared_global")
+s1.insert("threading_effects")
 s1.nseg = nseg
 
 pc = h.ParallelContext()
@@ -29,8 +29,8 @@ pc.partition(0, h.SectionList([s0]))
 pc.partition(1, h.SectionList([s1]))
 
 t = h.Vector().record(h._ref_t)
-y0 = h.Vector().record(s0(0.5).shared_global._ref_y)
-y1 = h.Vector().record(s1(0.5).shared_global._ref_y)
+y0 = h.Vector().record(s0(0.5).threading_effects._ref_y)
+y1 = h.Vector().record(s1(0.5).threading_effects._ref_y)
 
 # Bunch of arbitrary values:
 z0, z1 = 3.0, 4.0
@@ -38,25 +38,25 @@ g_w0, g_w1 = 7.0, 2.0
 g_w_init = 48.0
 
 # Ensure that the two threads will set different value to `g_w`.
-s0(0.5).shared_global.z = z0
-s1(0.5).shared_global.z = z1
+s0(0.5).threading_effects.z = z0
+s1(0.5).threading_effects.z = z1
 
-h.g_w_shared_global = g_w0
-assert h.g_w_shared_global == g_w0
+h.g_w_threading_effects = g_w0
+assert h.g_w_threading_effects == g_w0
 h.stdinit()
-assert h.g_w_shared_global == g_w_init
-h.g_w_shared_global = g_w1
-assert h.g_w_shared_global == g_w1
+assert h.g_w_threading_effects == g_w_init
+h.g_w_threading_effects = g_w1
+assert h.g_w_threading_effects == g_w1
 h.continuerun(1.0 * ms)
 
 # Arguably the value is unspecified, but currently it's the value of
 # on thread 0.
-assert h.g_w_shared_global == z0
+assert h.g_w_threading_effects == z0
 
 t = np.array(t.as_numpy())
 y0 = np.array(y0.as_numpy())
 y1 = np.array(y1.as_numpy())
-w = h.g_w_shared_global
+w = h.g_w_threading_effects
 
 # The solution is piecewise constant. These are the pieces:
 i0 = [0]

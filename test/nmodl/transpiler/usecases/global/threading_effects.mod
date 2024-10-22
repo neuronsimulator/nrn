@@ -1,5 +1,5 @@
 NEURON {
-    SUFFIX shared_global
+    SUFFIX threading_effects
     NONSPECIFIC_CURRENT il
     RANGE y, z
     GLOBAL g_v1, g_w, g_arr
