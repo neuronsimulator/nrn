@@ -252,9 +252,37 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     void print_function_procedure_helper(const ast::Block& node) override;
 
 
-    void print_hoc_py_wrapper_function_body(const ast::Block* function_or_procedure_block,
-                                            InterpreterWrapper wrapper_type);
+    /** Print the wrapper for calling FUNCION/PROCEDURES from HOC/Py.
+     *
+     *  Usually the function is made up of the following parts:
+     *    * Print setup code `inst`, etc.
+     *    * Print code to call the function and return.
+     */
+    void print_hoc_py_wrapper(const ast::Block* function_or_procedure_block,
+                              InterpreterWrapper wrapper_type);
 
+    /** Print the setup code for HOC/Py wrapper.
+     */
+    void print_hoc_py_wrapper_setup(const ast::Block* function_or_procedure_block,
+                                    InterpreterWrapper wrapper_type);
+
+
+    /** Print the code that calls the impl from the HOC/Py wrapper.
+     */
+    void print_hoc_py_wrapper_call_impl(const ast::Block* function_or_procedure_block,
+                                        InterpreterWrapper wrapper_type);
+
+    /** Return the wrapper signature.
+     *
+     * Everything without the `{` or `;`. Roughly, as an example:
+     *      <return_type> <function_name>(<internal_args>, <args>)
+     *
+     * were `<internal_args> is the list of arguments required by the
+     * codegen to be passed along, while <args> are the arguments of
+     * of the function as they appear in the MOD file.
+     */
+    std::string hoc_py_wrapper_signature(const ast::Block* function_or_procedure_block,
+                                         InterpreterWrapper wrapper_type);
 
     void print_hoc_py_wrapper_function_definitions();
 
