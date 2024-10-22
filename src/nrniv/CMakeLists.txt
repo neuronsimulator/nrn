@@ -407,7 +407,7 @@ if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv_lib Threads::Threads)
 endif()
 
-if(${NRN_DIGEST} EQUAL 1)
+if(${NRN_ENABLE_DIGEST})
   if(NRN_MACOS_BUILD)
     # where to get openssl/sha.h after brew install openssl
     set_property(
@@ -421,7 +421,7 @@ if(${NRN_DIGEST} EQUAL 1)
   endif()
 endif()
 
-if(${NRN_ARCH_INDEP_EXP_POW} EQUAL 1)
+if(${NRN_ENABLE_ARCH_INDEP_EXP_POW})
   find_library(LIB_MPFR mpfr REQUIRED)
   target_link_libraries(nrniv_lib ${LIB_MPFR})
 endif()
