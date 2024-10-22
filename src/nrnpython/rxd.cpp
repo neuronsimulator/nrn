@@ -138,7 +138,7 @@ static inline void* allocopy(void* src, size_t size) {
     return dst;
 }
 
-extern "C" void rxd_set_no_diffusion() {
+extern "C" NRN_EXPORT void rxd_set_no_diffusion() {
     int i;
     diffusion = FALSE;
     if (_rxd_a != NULL) {
@@ -154,7 +154,7 @@ extern "C" void rxd_set_no_diffusion() {
     }
 }
 
-extern "C" void free_curr_ptrs() {
+extern "C" NRN_EXPORT void free_curr_ptrs() {
     _curr_count = 0;
     if (_curr_indices != NULL)
         free(_curr_indices);
@@ -165,7 +165,7 @@ extern "C" void free_curr_ptrs() {
     _curr_ptrs.clear();
 }
 
-extern "C" void free_conc_ptrs() {
+extern "C" NRN_EXPORT void free_conc_ptrs() {
     _conc_count = 0;
     if (_conc_indices != NULL)
         free(_conc_indices);
@@ -174,10 +174,10 @@ extern "C" void free_conc_ptrs() {
 }
 
 
-extern "C" void rxd_setup_curr_ptrs(int num_currents,
-                                    int* curr_index,
-                                    double* curr_scale,
-                                    PyHocObject** curr_ptrs) {
+extern "C" NRN_EXPORT void rxd_setup_curr_ptrs(int num_currents,
+                                               int* curr_index,
+                                               double* curr_scale,
+                                               PyHocObject** curr_ptrs) {
     free_curr_ptrs();
     /* info for NEURON currents - to update states */
     _curr_count = num_currents;
@@ -192,7 +192,9 @@ extern "C" void rxd_setup_curr_ptrs(int num_currents,
         _curr_ptrs[i] = curr_ptrs[i]->u.px_;
 }
 
-extern "C" void rxd_setup_conc_ptrs(int conc_count, int* conc_index, PyHocObject** conc_ptrs) {
+extern "C" NRN_EXPORT void rxd_setup_conc_ptrs(int conc_count,
+                                               int* conc_index,
+                                               PyHocObject** conc_ptrs) {
     /* info for NEURON concentration - to transfer to legacy */
     int i;
     free_conc_ptrs();
@@ -204,12 +206,12 @@ extern "C" void rxd_setup_conc_ptrs(int conc_count, int* conc_index, PyHocObject
         _conc_ptrs[i] = conc_ptrs[i]->u.px_;
 }
 
-extern "C" void rxd_include_node_flux3D(int grid_count,
-                                        int* grid_counts,
-                                        int* grids,
-                                        long* index,
-                                        double* scales,
-                                        PyObject** sources) {
+extern "C" NRN_EXPORT void rxd_include_node_flux3D(int grid_count,
+                                                   int* grid_counts,
+                                                   int* grids,
+                                                   long* index,
+                                                   double* scales,
+                                                   PyObject** sources) {
     Grid_node* g;
     int i = 0, j, k, n, grid_id;
     int offset = 0;
@@ -288,7 +290,10 @@ extern "C" void rxd_include_node_flux3D(int grid_count,
     }
 }
 
-extern "C" void rxd_include_node_flux1D(int n, long* index, double* scales, PyObject** sources) {
+extern "C" NRN_EXPORT void rxd_include_node_flux1D(int n,
+                                                   long* index,
+                                                   double* scales,
+                                                   PyObject** sources) {
     if (_node_flux_count != 0) {
         free(_node_flux_idx);
         free(_node_flux_scale);
@@ -348,12 +353,12 @@ static void apply_node_flux1D(double dt, double* states) {
     apply_node_flux(_node_flux_count, _node_flux_idx, _node_flux_scale, _node_flux_src, dt, states);
 }
 
-extern "C" void rxd_set_euler_matrix(int nrow,
-                                     int nnonzero,
-                                     long* nonzero_i,
-                                     long* nonzero_j,
-                                     double* nonzero_values,
-                                     double* c_diagonal) {
+extern "C" NRN_EXPORT void rxd_set_euler_matrix(int nrow,
+                                                int nnonzero,
+                                                long* nonzero_i,
+                                                long* nonzero_j,
+                                                double* nonzero_values,
+                                                double* c_diagonal) {
     long i, j, idx;
     double val;
     unsigned int k, ps;
@@ -470,20 +475,20 @@ static void mul(int nnonzero,
     }
 }
 
-extern "C" void set_setup(const fptr setup_fn) {
+extern "C" NRN_EXPORT void set_setup(const fptr setup_fn) {
     _setup = setup_fn;
 }
 
-extern "C" void set_initialize(const fptr initialize_fn) {
+extern "C" NRN_EXPORT void set_initialize(const fptr initialize_fn) {
     _initialize = initialize_fn;
     set_num_threads(NUM_THREADS);
 }
 
-extern "C" void set_setup_matrices(fptr setup_matrices) {
+extern "C" NRN_EXPORT void set_setup_matrices(fptr setup_matrices) {
     _setup_matrices = setup_matrices;
 }
 
-extern "C" void set_setup_units(fptr setup_units) {
+extern "C" NRN_EXPORT void set_setup_units(fptr setup_units) {
     _setup_units = setup_units;
 }
 
@@ -623,14 +628,14 @@ static void free_currents() {
     _membrane_flux = FALSE;
 }
 
-extern "C" void setup_currents(int num_currents,
-                               int num_fluxes,
-                               int* num_species,
-                               int* node_idxs,
-                               double* scales,
-                               PyHocObject** ptrs,
-                               int* mapped,
-                               int* mapped_ecs) {
+extern "C" NRN_EXPORT void setup_currents(int num_currents,
+                                          int num_fluxes,
+                                          int* num_species,
+                                          int* node_idxs,
+                                          double* scales,
+                                          PyHocObject** ptrs,
+                                          int* mapped,
+                                          int* mapped_ecs) {
     int i, j, k, id, side, count;
     int* induced_currents_ecs_idx;
     int* induced_currents_grid_id;
@@ -766,7 +771,7 @@ static void _currents(double* rhs) {
     }
 }
 
-extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, int) {
+extern "C" NRN_EXPORT int rxd_nonvint_block(int method, int size, double* p1, double* p2, int) {
     if (initialized) {
         if (structure_change_cnt != prev_structure_change_cnt) {
             /*TODO: Exclude irrelevant (non-rxd) structural changes*/
@@ -846,19 +851,19 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
  *****************************************************************************/
 
 
-extern "C" void register_rate(int nspecies,
-                              int nparam,
-                              int nregions,
-                              int nseg,
-                              int* sidx,
-                              int necs,
-                              int necsparam,
-                              int* ecs_ids,
-                              int* ecsidx,
-                              int nmult,
-                              double* mult,
-                              PyHocObject** vptrs,
-                              ReactionRate f) {
+extern "C" NRN_EXPORT void register_rate(int nspecies,
+                                         int nparam,
+                                         int nregions,
+                                         int nseg,
+                                         int* sidx,
+                                         int necs,
+                                         int necsparam,
+                                         int* ecs_ids,
+                                         int* ecsidx,
+                                         int nmult,
+                                         double* mult,
+                                         PyHocObject** vptrs,
+                                         ReactionRate f) {
     int i, j, k, idx, ecs_id, ecs_index, ecs_offset;
     unsigned char counted;
     Grid_node* g;
@@ -965,7 +970,7 @@ extern "C" void register_rate(int nspecies,
     }
 }
 
-extern "C" void clear_rates() {
+extern "C" NRN_EXPORT void clear_rates() {
     ICSReactions *react, *prev;
     int i, j;
     for (react = _reactions; react != NULL;) {
@@ -1003,7 +1008,7 @@ extern "C" void clear_rates() {
 }
 
 
-extern "C" void species_atolscale(int id, double scale, int len, int* idx) {
+extern "C" NRN_EXPORT void species_atolscale(int id, double scale, int len, int* idx) {
     SpeciesIndexList* list;
     SpeciesIndexList* prev;
     if (species_indices != NULL) {
@@ -1028,7 +1033,7 @@ extern "C" void species_atolscale(int id, double scale, int len, int* idx) {
     list->next = NULL;
 }
 
-extern "C" void remove_species_atolscale(int id) {
+extern "C" NRN_EXPORT void remove_species_atolscale(int id) {
     SpeciesIndexList* list;
     SpeciesIndexList* prev;
     for (list = species_indices, prev = NULL; list != NULL; prev = list, list = list->next) {
@@ -1044,7 +1049,10 @@ extern "C" void remove_species_atolscale(int id) {
     }
 }
 
-extern "C" void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi) {
+extern "C" NRN_EXPORT void setup_solver(double* my_states,
+                                        int my_num_states,
+                                        long* zvi,
+                                        int num_zvi) {
     free_currents();
     states = my_states;
     num_states = my_num_states;
@@ -1130,7 +1138,7 @@ void TaskQueue_exe_tasks(std::size_t thread_index, TaskQueue* q) {
 }
 
 
-void set_num_threads(const int n) {
+extern "C" NRN_EXPORT void set_num_threads(const int n) {
     assert(n > 0);
     assert(NUM_THREADS > 0);
     // n and NUM_THREADS include the main thread, old_num and new_num refer to
@@ -1184,7 +1192,7 @@ void TaskQueue_sync(TaskQueue* q) {
     q->waiting_cond.wait(lock, [q] { return q->length == 0; });
 }
 
-int get_num_threads(void) {
+extern "C" NRN_EXPORT int get_num_threads(void) {
     return NUM_THREADS;
 }
 

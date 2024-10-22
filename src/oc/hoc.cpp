@@ -3,7 +3,6 @@
 #endif
 
 #include <../../nrnconf.h>
-#include "hoc.h"
 #include "hocstr.h"
 #include "equation.h"
 #include <stdio.h>
@@ -24,12 +23,16 @@
 #include "nrnfilewrap.h"
 #include "../nrniv/backtrace_utils.h"
 
+#include "../utils/profile/profiler_interface.h"
+
 #include <cfenv>
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
 #include <thread>
 #include <utility>
+
+#include "utils/logger.hpp"
 
 /* for eliminating "ignoreing return value" warnings. */
 int nrnignore;
@@ -110,7 +113,7 @@ extern void add_history(const char*);
 #endif
 
 int nrn_nobanner_;
-int pipeflag;
+int hoc_pipeflag;
 int hoc_usegui;
 #if 1
 /* no longer necessary to distinguish signed from unsigned since EOF
@@ -130,8 +133,8 @@ int hoc_usegui;
 HocStr* hoc_tmpbuf;
 HocStr* hoc_cbufstr;
 const char* hoc_promptstr;
-static CHAR* cbuf;
-CHAR* ctp;
+static CHAR* hoc_cbuf;
+CHAR* hoc_ctp;
 int hoc_ictp;
 
 extern const char* RCS_hoc_version;
@@ -144,18 +147,18 @@ extern int hoc_print_first_instance;
 used to be a FILE* but had fopen problems when 128K cores on BG/P
 tried to fopen the same file for reading at once.
 */
-NrnFILEWrap* fin; /* input file pointer */
+NrnFILEWrap* hoc_fin; /* input file pointer */
 
 #include <ctype.h>
 const char* progname; /* for error messages */
-int lineno;
+int hoc_lineno;
 
 #if HAVE_EXECINFO_H
 #include <execinfo.h>
 #endif
 #include <signal.h>
 int hoc_intset; /* safer interrupt handling */
-int indef;
+int hoc_indef;
 const char* infile; /* input file name */
 extern size_t hoc_xopen_file_size_;
 extern char* hoc_xopen_file_;
@@ -203,13 +206,13 @@ int getnb(void) /* get next non-white character */
     int c;
 
     /*EMPTY*/
-    while ((c = Getc(fin)) == ' ' || c == '\t') {
+    while ((c = Getc(hoc_fin)) == ' ' || c == '\t') {
         ;
     }
     return c;
 }
 
-/* yylex modified to return -3 when at end of cbuf. The parser can
+/* yylex modified to return -3 when at end of hoc_cbuf. The parser can
    return and take up where it left off later. Supported by modification
    of bison.simple to allow event driven programming.
 */
@@ -226,10 +229,10 @@ static int eos;
 
 static char* optarray(char* buf) {
     int c;
-    if ((c = Getc(fin)) == '[') {
+    if ((c = Getc(hoc_fin)) == '[') {
         char* s = buf + strlen(buf);
         *s++ = c;
-        while (isdigit(c = Getc(fin)) && (s - buf) < 200) {
+        while (isdigit(c = Getc(hoc_fin)) && (s - buf) < 200) {
             *s++ = c;
         }
         if (c == ']') {
@@ -237,10 +240,10 @@ static char* optarray(char* buf) {
             *s = '\0';
         } else {
             *s = '\0';
-            acterror(buf, " not literal name[int]");
+            hoc_acterror(buf, " not literal name[int]");
         }
     } else {
-        unGetc(c, fin);
+        unGetc(c, hoc_fin);
     }
     return buf;
 }
@@ -264,12 +267,12 @@ restart: /* when no token in between comments */
     }
     if (c == '/' && follow('*', 1, 0)) /* comment */
     {
-        while ((c = Getc(fin)) != '*' || follow('/', 0, 1)) {
+        while ((c = Getc(hoc_fin)) != '*' || follow('/', 0, 1)) {
             if (c == EOF)
                 return (0);
             /*			if (c == YYNEEDMORE) {*/
             if (eos) {
-                acterror("comment not complete", " in cbuf");
+                hoc_acterror("comment not complete", " in hoc_cbuf");
             }
         }
         goto restart;
@@ -278,35 +281,35 @@ restart: /* when no token in between comments */
     {
         char* npt;
         double d;
-        IGNORE(unGetc(c, fin));
-        npt = (char*) ctp;
+        IGNORE(unGetc(c, hoc_fin));
+        npt = (char*) hoc_ctp;
         /*EMPTY*/
-        while (isdigit(c = Getc(fin))) {
+        while (isdigit(c = Getc(hoc_fin))) {
             ;
         }
         if (c == '.') {
             /*EMPTY*/
-            while (isdigit(c = Getc(fin))) {
+            while (isdigit(c = Getc(hoc_fin))) {
                 ;
             }
         }
         if (*npt == '.' && !isdigit(npt[1])) {
-            IGNORE(unGetc(c, fin));
+            IGNORE(unGetc(c, hoc_fin));
             return (int) (*npt);
         }
         if (c == 'E' || c == 'e') {
-            if (isdigit(c = Getc(fin)) || c == '+' || c == '-') {
+            if (isdigit(c = Getc(hoc_fin)) || c == '+' || c == '-') {
                 /*EMPTY*/
-                while (isdigit(c = Getc(fin))) {
+                while (isdigit(c = Getc(hoc_fin))) {
                     ;
                 }
             }
         }
-        IGNORE(unGetc(c, fin));
+        IGNORE(unGetc(c, hoc_fin));
         IGNORE(sscanf(npt, "%lf", &d));
         if (d == 0.)
             return NUMZERO;
-        yylval.sym = install("", NUMBER, d, &p_symlist);
+        yylval.sym = hoc_install("", NUMBER, d, &hoc_p_symlist);
         return NUMBER;
     }
     if (isalpha(c) || c == '_') {
@@ -318,8 +321,8 @@ restart: /* when no token in between comments */
                 hoc_execerror("Name too long:", sbuf);
             }
             *p++ = c;
-        } while ((c = Getc(fin)) != EOF && (isalnum(c) || c == '_'));
-        IGNORE(unGetc(c, fin));
+        } while ((c = Getc(hoc_fin)) != EOF && (isalnum(c) || c == '_'));
+        IGNORE(unGetc(c, hoc_fin));
         *p = '\0';
         if (strncmp(sbuf, "__nrnsec_0x", 11) == 0) {
             yylval.ptr = hoc_sec_internal_name2ptr(sbuf, 1);
@@ -347,8 +350,8 @@ restart: /* when no token in between comments */
         if (nrn_parsing_pysec_) {
             yylval.ptr = hoc_pysec_name2ptr(optarray(sbuf), 1);
             if (nrn_parsing_pysec_ > (void*) 1) { /* there will be a second part */
-                c = Getc(fin);
-                unGetc(c, fin);
+                c = Getc(hoc_fin);
+                unGetc(c, hoc_fin);
                 if (c != '.') { /* so there must be a . */
                     nrn_parsing_pysec_ = NULL;
                     hoc_acterror(
@@ -364,8 +367,8 @@ restart: /* when no token in between comments */
                 return PYSECNAME;
             }
         }
-        if ((s = lookup(sbuf)) == 0)
-            s = install(sbuf, UNDEF, 0.0, &symlist);
+        if ((s = hoc_lookup(sbuf)) == 0)
+            s = hoc_install(sbuf, UNDEF, 0.0, &hoc_symlist);
         yylval.sym = s;
         return s->type == UNDEF ? VAR : s->type;
     }
@@ -382,11 +385,11 @@ restart: /* when no token in between comments */
             yylval.narg = 0;
             return retval;
         }
-        while (isdigit(c = Getc(fin)))
+        while (isdigit(c = Getc(hoc_fin)))
             n = 10 * n + c - '0';
-        IGNORE(unGetc(c, fin));
+        IGNORE(unGetc(c, hoc_fin));
         if (n == 0)
-            acterror("strange $...", (char*) 0);
+            hoc_acterror("strange $...", (char*) 0);
         yylval.narg = n;
         return retval;
     }
@@ -398,9 +401,9 @@ restart: /* when no token in between comments */
         if (!sbuf) {
             sbuf = hocstr_create(256);
         }
-        for (p = sbuf->buf; (c = Getc(fin)) != '"'; p++) {
+        for (p = sbuf->buf; (c = Getc(hoc_fin)) != '"'; p++) {
             if (c == '\n' || c == EOF || c == YYNEEDMORE)
-                acterror("missing quote", "");
+                hoc_acterror("missing quote", "");
             n = p - sbuf->buf;
             if (n >= sbuf->size - 1) {
                 hocstr_resize(sbuf, n + 200);
@@ -409,7 +412,7 @@ restart: /* when no token in between comments */
             *p = backslash(c);
         }
         *p = 0;
-        yylval.sym = install("", CSTRING, 0.0, &p_symlist);
+        yylval.sym = hoc_install("", CSTRING, 0.0, &hoc_p_symlist);
 
         (yylval.sym)->u.cstr = (char*) emalloc((unsigned) (strlen(sbuf->buf) + 1));
         Strcpy((yylval.sym)->u.cstr, sbuf->buf);
@@ -443,7 +446,7 @@ restart: /* when no token in between comments */
         if (follow('=', EQ, '=') == EQ) {
             return EQ;
         }
-        if (do_equation) {
+        if (hoc_do_equation) {
             return EQNEQ;
         }
         yylval.narg = 0;
@@ -467,8 +470,8 @@ restart: /* when no token in between comments */
         return '\n';
     case '/':
         if (follow('/', 1, 0)) {
-            while (*ctp) {
-                ++ctp;
+            while (*hoc_ctp) {
+                ++hoc_ctp;
             }
             return '\n';
         } else if (follow('=', 1, 0)) {
@@ -486,7 +489,7 @@ static int backslash(int c) { /* get next char with \'s interpreted */
     static char transtab[] = "b\bf\fn\nr\rt\t";
     if (c != '\\')
         return c;
-    c = Getc(fin);
+    c = Getc(hoc_fin);
     if (islower(c) && strchr(transtab, c))
         return strchr(transtab, c)[1];
     return c;
@@ -494,21 +497,21 @@ static int backslash(int c) { /* get next char with \'s interpreted */
 
 static int follow(int expect, int ifyes, int ifno) /* look ahead for >=, etc. */
 {
-    int c = Getc(fin);
+    int c = Getc(hoc_fin);
 
     if (c == expect)
         return ifyes;
-    IGNORE(unGetc(c, fin));
+    IGNORE(unGetc(c, hoc_fin));
     return ifno;
 }
 
-void arayinstal(void) /* allocate storage for arrays */
+void hoc_arayinstal(void) /* allocate storage for arrays */
 {
     int i, nsub;
     Symbol* sp;
 
-    nsub = (pc++)->i;
-    sp = spop();
+    nsub = (hoc_pc++)->i;
+    sp = hoc_spop();
 
     hoc_freearay(sp);
     sp->type = VAR;
@@ -525,7 +528,7 @@ void arayinstal(void) /* allocate storage for arrays */
 int hoc_arayinfo_install(Symbol* sp, int nsub) {
     double total, subscpt;
     int i;
-    free_arrayinfo(sp->arayinfo);
+    hoc_free_arrayinfo(sp->arayinfo);
     sp->arayinfo = (Arrayinfo*) emalloc((unsigned) (sizeof(Arrayinfo) + nsub * sizeof(int)));
     /*printf("emalloc arrayinfo at %lx\n", sp->arayinfo);*/
     sp->arayinfo->a_varn = (unsigned*) 0;
@@ -533,9 +536,9 @@ int hoc_arayinfo_install(Symbol* sp, int nsub) {
     sp->arayinfo->refcount = 1;
     total = 1.;
     while (nsub) {
-        subscpt = floor(xpop() + EPS);
+        subscpt = floor(hoc_xpop() + EPS);
         if (subscpt <= 0.)
-            execerror("subscript < 1", sp->name);
+            hoc_execerror("subscript < 1", sp->name);
         total = total * subscpt;
         sp->arayinfo->sub[--nsub] = (int) subscpt;
     }
@@ -549,11 +552,11 @@ int hoc_arayinfo_install(Symbol* sp, int nsub) {
         */
         free((char*) sp->arayinfo);
         sp->arayinfo = (Arrayinfo*) 0;
-        execerror(sp->name, ":total subscript too large");
+        hoc_execerror(sp->name, ":total subscript too large");
     }
     if (OPARINFO(sp)) {
         /* probably never get here */
-        free_arrayinfo(OPARINFO(sp));
+        hoc_free_arrayinfo(OPARINFO(sp));
     }
     OPARINFO(sp) = sp->arayinfo;
     ++sp->arayinfo->refcount;
@@ -567,13 +570,13 @@ void hoc_freearay(Symbol* sp) {
         hoc_free_val_array(OPVAL(sp), hoc_total_array(sp));
         sp->type = UNDEF;
     }
-    free_arrayinfo(*pa);
-    free_arrayinfo(sp->arayinfo);
+    hoc_free_arrayinfo(*pa);
+    hoc_free_arrayinfo(sp->arayinfo);
     sp->arayinfo = (Arrayinfo*) 0;
     *pa = (Arrayinfo*) 0;
 }
 
-void free_arrayinfo(Arrayinfo* a) {
+void hoc_free_arrayinfo(Arrayinfo* a) {
     if (a != (Arrayinfo*) 0) {
         if ((--a->refcount) <= 0) {
             if (a->a_varn != (unsigned*) 0)
@@ -584,9 +587,9 @@ void free_arrayinfo(Arrayinfo* a) {
     }
 }
 
-void defnonly(const char* s) { /* warn if illegal definition */
-    if (!indef)
-        acterror(s, "used outside definition");
+void hoc_defnonly(const char* s) { /* warn if illegal definition */
+    if (!hoc_indef)
+        hoc_acterror(s, "used outside definition");
 }
 
 /* messages can turned off but the user had better check the return
@@ -597,8 +600,8 @@ void hoc_show_errmess_always(void) {
     double x;
     x = chkarg(1, 0., 1.);
     debug_message_ = (int) x;
-    ret();
-    pushx(x);
+    hoc_ret();
+    hoc_pushx(x);
 }
 
 int hoc_execerror_messages;
@@ -662,7 +665,7 @@ void onintr(int /* sig */) /* catch interrupt */
     /*ARGSUSED*/
     stoprun = 1;
     if (hoc_intset++)
-        execerror("interrupted", (char*) 0);
+        hoc_execerror("interrupted", (char*) 0);
     IGNORE(signal(SIGINT, onintr));
 }
 
@@ -670,8 +673,8 @@ static int coredump;
 
 void hoc_coredump_on_error(void) {
     coredump = 1;
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
 void print_bt() {
@@ -740,7 +743,7 @@ void fpecatch(int /* sig */) /* catch floating point exceptions */
         abort();
     }
     signal(SIGFPE, fpecatch);
-    execerror("Floating point exception.", (char*) 0);
+    hoc_execerror("Floating point exception.", (char*) 0);
 }
 
 __attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation violation probably due to
@@ -752,7 +755,7 @@ __attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation viola
     if (coredump) {
         abort();
     }
-    execerror("Aborting.", (char*) 0);
+    hoc_execerror("Aborting.", (char*) 0);
 }
 
 #if HAVE_SIGBUS
@@ -763,7 +766,7 @@ __attribute__((noreturn)) void sigbuscatch(int /* sig */) {
     if (coredump) {
         abort();
     }
-    execerror("Aborting. ", "See $NEURONHOME/lib/help/oc.help");
+    hoc_execerror("Aborting. ", "See $NEURONHOME/lib/help/oc.help");
 }
 #endif
 
@@ -778,8 +781,8 @@ int hoc_main1_inited_;
 
 /* has got to be called first. oc can only be event driven after this returns */
 void hoc_main1_init(const char* pname, const char** envp) {
-    extern NrnFILEWrap* frin;
-    extern FILE* fout;
+    extern NrnFILEWrap* hoc_frin;
+    extern FILE* hoc_fout;
 
     if (!hoc_xopen_file_) {
         hoc_xopen_file_size_ = 200;
@@ -789,7 +792,7 @@ void hoc_main1_init(const char* pname, const char** envp) {
 
     hoc_promptstr = "oc>";
     yystart = 1;
-    lineno = 0;
+    hoc_lineno = 0;
     if (hoc_main1_inited_) {
         return;
     }
@@ -808,10 +811,10 @@ void hoc_main1_init(const char* pname, const char** envp) {
     }
     hoc_tmpbuf = hocstr_create(TMPBUFSIZE);
     hoc_cbufstr = hocstr_create(CBUFSIZE);
-    cbuf = hoc_cbufstr->buf;
-    ctp = cbuf;
-    frin = nrn_fw_set_stdin();
-    fout = stdout;
+    hoc_cbuf = hoc_cbufstr->buf;
+    hoc_ctp = hoc_cbuf;
+    hoc_frin = nrn_fw_set_stdin();
+    hoc_fout = stdout;
     if (!nrn_is_cable()) {
         Fprintf(stderr, "OC INTERPRETER   %s   %s\n", RCS_hoc_version, RCS_hoc_date);
         Fprintf(stderr,
@@ -888,21 +891,6 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
             gargv += 2;
             gargc -= 2;
         }
-        if (argc > 1 && argv[1][0] != '-') {
-            /* first file may be a checkpoint file */
-            extern int hoc_readcheckpoint(char*);
-            switch (hoc_readcheckpoint(const_cast<char*>(argv[1]))) {
-            case 1:
-                ++gargv;
-                --gargc;
-                break;
-            case 2:
-                nrn_exit(1);
-                break;
-            default:
-                break;
-            }
-        }
 
         if (gargc == 1) /* fake an argument list */
         {
@@ -927,7 +915,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
         }
         return exit_status;
     } catch (std::exception const& e) {
-        std::cerr << "hoc_main1 caught exception: " << e.what() << std::endl;
+        Fprintf(stderr, fmt::format("hoc_main1 caught exception: {}\n", e.what()).c_str());
         nrn_exit(1);
     }
 }
@@ -1002,6 +990,7 @@ void hoc_quit(void) {
     }
 #endif
     int exit_code = ifarg(1) ? int(*getarg(1)) : 0;
+    nrn::Instrumentor::finalize_profile();
     exit(exit_code);
 }
 
@@ -1035,15 +1024,15 @@ static const char* double_at2space(const char* infile) {
 #endif /*MINGW*/
 
 int hoc_moreinput() {
-    if (pipeflag) {
-        pipeflag = 0;
+    if (hoc_pipeflag) {
+        hoc_pipeflag = 0;
         return 1;
     }
 #if defined(WIN32)
     /* like mswin, do not need a '-' after hoc files, but ^D works */
     if (gargc == 0 && cygonce == 0) {
         cygonce = 1;
-        fin = nrn_fw_set_stdin();
+        hoc_fin = nrn_fw_set_stdin();
         infile = 0;
         hoc_xopen_file_[0] = 0;
 #if defined(USE_PYTHON)
@@ -1053,10 +1042,10 @@ int hoc_moreinput() {
 #endif
     }
 #endif  // WIN32
-    if (fin && !nrn_fw_eq(fin, stdin)) {
-        IGNORE(nrn_fw_fclose(fin));
+    if (hoc_fin && !nrn_fw_eq(hoc_fin, stdin)) {
+        IGNORE(nrn_fw_fclose(hoc_fin));
     }
-    fin = nrn_fw_set_stdin();
+    hoc_fin = nrn_fw_set_stdin();
     infile = 0;
     hoc_xopen_file_[0] = 0;
     if (gargc-- <= 0) {
@@ -1082,7 +1071,7 @@ int hoc_moreinput() {
     it back */
     infile = double_at2space(infile);
 #endif
-    lineno = 0;
+    hoc_lineno = 0;
 #if defined(USE_PYTHON)
     if (use_python_interpreter) {
         /* deal only with .hoc files. The hoc files are intended
@@ -1095,7 +1084,7 @@ int hoc_moreinput() {
     }
 #endif
     if (strcmp(infile, "-") == 0) {
-        fin = nrn_fw_set_stdin();
+        hoc_fin = nrn_fw_set_stdin();
         infile = 0;
         hoc_xopen_file_[0] = 0;
     } else if (strcmp(infile, "-parallel") == 0) {
@@ -1115,7 +1104,7 @@ int hoc_moreinput() {
         std::snprintf(hs->buf, hs->size + 1, "%s\n", infile);
         /* now infile is a hoc statement */
         hpfi = hoc_print_first_instance;
-        fin = (NrnFILEWrap*) 0;
+        hoc_fin = (NrnFILEWrap*) 0;
         hoc_print_first_instance = 0;
         // This is processing HOC code via -c on the commandline. That HOC code could include
         // nrnpython(...), so the Python interpreter needs to be configured appropriately for
@@ -1138,7 +1127,7 @@ int hoc_moreinput() {
             hoc_execerror("Python error", infile);
         }
         return hoc_moreinput();
-    } else if ((fin = nrn_fw_fopen(infile, "r")) == (NrnFILEWrap*) 0) {
+    } else if ((hoc_fin = nrn_fw_fopen(infile, "r")) == (NrnFILEWrap*) 0) {
         Fprintf(stderr, "%d %s: can't open %s\n", nrnmpi_myid_world, progname, infile);
 #if NRNMPI
         if (nrnmpi_numprocs_world > 1) {
@@ -1248,12 +1237,12 @@ static int hoc_run1() {
                 }
             } catch (std::exception const& e) {
                 hoc_fin = sav_fin;
-                std::cerr << "hoc_run1: caught exception";
+                Fprintf(stderr, "hoc_run1: caught exception");
                 std::string_view what{e.what()};
                 if (!what.empty()) {
-                    std::cerr << ": " << what;
+                    Fprintf(stderr, fmt::format(": {}", what).c_str());
                 }
-                std::cerr << std::endl;
+                Fprintf(stderr, "\n");
                 // Exit if we're not in interactive mode
                 if (!nrn_fw_eq(hoc_fin, stdin)) {
                     return EXIT_FAILURE;
@@ -1297,14 +1286,14 @@ static int hoc_run1() {
 static const char* nrn_inputbufptr;
 static void nrn_inputbuf_getline(void) {
     CHAR* cp;
-    cp = ctp = cbuf = hoc_cbufstr->buf;
+    cp = hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
     while (*nrn_inputbufptr) {
         *cp++ = *nrn_inputbufptr++;
         if (cp[-1] == '\n') {
             break;
         }
     }
-    if (cp != ctp) {
+    if (cp != hoc_ctp) {
         if (cp[-1] != '\n') {
             *cp++ = '\n';
         }
@@ -1315,15 +1304,15 @@ static void nrn_inputbuf_getline(void) {
 // used by ocjump.cpp
 void oc_save_input_info(const char** i1, int* i2, int* i3, NrnFILEWrap** i4) {
     *i1 = nrn_inputbufptr;
-    *i2 = pipeflag;
-    *i3 = lineno;
-    *i4 = fin;
+    *i2 = hoc_pipeflag;
+    *i3 = hoc_lineno;
+    *i4 = hoc_fin;
 }
 void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
     nrn_inputbufptr = i1;
-    pipeflag = i2;
-    lineno = i3;
-    fin = i4;
+    hoc_pipeflag = i2;
+    hoc_lineno = i3;
+    hoc_fin = i4;
 }
 
 int hoc_oc(const char* buf) {
@@ -1367,7 +1356,7 @@ int hoc_oc(const char* buf, std::ostream& os) {
     return 0;
 }
 
-void warning(const char* s, const char* t) /* print warning message */
+void hoc_warning(const char* s, const char* t) /* print warning message */
 {
     CHAR* cp;
     char id[10];
@@ -1383,44 +1372,44 @@ void warning(const char* s, const char* t) /* print warning message */
         Fprintf(stderr, "%s%s: %s\n", id, progname, s);
     }
     if (hoc_xopen_file_ && hoc_xopen_file_[0]) {
-        Fprintf(stderr, "%s in %s near line %d\n", id, hoc_xopen_file_, lineno);
+        Fprintf(stderr, "%s in %s near line %d\n", id, hoc_xopen_file_, hoc_lineno);
     } else {
-        Fprintf(stderr, "%s near line %d\n", id, lineno);
+        Fprintf(stderr, "%s near line %d\n", id, hoc_lineno);
     }
-    n = strlen(cbuf);
-    for (cp = cbuf; cp < (cbuf + n); ++cp) {
+    n = strlen(hoc_cbuf);
+    for (cp = hoc_cbuf; cp < (hoc_cbuf + n); ++cp) {
         if (!isprint((int) (*cp)) && !isspace((int) (*cp))) {
             Fprintf(stderr,
                     "%scharacter \\%03o at position %ld is not printable\n",
                     id,
                     ((int) (*cp) & 0xff),
-                    cp - cbuf);
+                    cp - hoc_cbuf);
             break;
         }
     }
-    Fprintf(stderr, "%s %s", id, cbuf);
+    Fprintf(stderr, "%s %s", id, hoc_cbuf);
     if (nrnmpi_numprocs_world > 0) {
-        for (cp = cbuf; cp != ctp; cp++) {
+        for (cp = hoc_cbuf; cp != hoc_ctp; cp++) {
             Fprintf(stderr, " ");
         }
         Fprintf(stderr, "^\n");
     }
-    ctp = cbuf;
-    *ctp = '\0';
+    hoc_ctp = hoc_cbuf;
+    *hoc_ctp = '\0';
 }
 
 
 static int Getc(NrnFILEWrap* fp) {
     /*ARGSUSED*/
-    if (*ctp) {
+    if (*hoc_ctp) {
         ++hoc_ictp;
-        return *ctp++;
+        return *hoc_ctp++;
     }
 
 #if 0
 /* don't allow parser to block. Actually partial statements were never
 allowed anyway */
-	if (!pipeflag && nrn_fw_eq(fp,stdin)) {
+	if (!hoc_pipeflag && nrn_fw_eq(fp,stdin)) {
 		eos = 1;
 		return 0;
 	}
@@ -1429,13 +1418,13 @@ allowed anyway */
     if (hoc_get_line() == EOF) {
         return EOF;
     }
-    return *ctp++;
+    return *hoc_ctp++;
 }
 
 static void unGetc(int c, NrnFILEWrap* fp) {
     /*ARGSUSED*/
-    if (c != EOF && c && ctp != cbuf) {
-        *(--ctp) = c;
+    if (c != EOF && c && hoc_ctp != hoc_cbuf) {
+        *(--hoc_ctp) = c;
     }
 }
 
@@ -1455,8 +1444,8 @@ int hoc_yyparse(void) {
     instead of blocking in yylex. If so another call to yyparse will
     take up exactly where it left off.  This makes it easier to
     support event driven processing.
-    Maybe it's time to redo the get_line process which fills cbuf with
-    the next line to read. A real event driven program would fill cbuf
+    Maybe it's time to redo the get_line process which fills hoc_cbuf with
+    the next line to read. A real event driven program would fill hoc_cbuf
     and then call yyparse() directly. yyparse() returns
     0 : end of file
     '\n' : ready to execute a command
@@ -1625,39 +1614,39 @@ static CHAR* fgets_unlimited_nltrans(HocStr* bufstr, NrnFILEWrap* f, int nltrans
     return (CHAR*) 0;
 }
 
-int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
-    if (*ctp) {
+int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
+    if (*hoc_ctp) {
         hoc_execerror("Internal error:", "Not finished with previous input line");
     }
-    ctp = cbuf = hoc_cbufstr->buf;
-    *ctp = '\0';
-    if (pipeflag == 3) {
+    hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
+    *hoc_ctp = '\0';
+    if (hoc_pipeflag == 3) {
         nrn_inputbuf_getline();
-        if (*ctp == '\0') {
+        if (*hoc_ctp == '\0') {
             return EOF;
         }
-    } else if (pipeflag) {
+    } else if (hoc_pipeflag) {
         if (hoc_strgets_need() > hoc_cbufstr->size) {
             hocstr_resize(hoc_cbufstr, hoc_strgets_need() + 100);
         }
-        if (hoc_strgets(cbuf, CBUFSIZE - 1) == (char*) 0) {
+        if (hoc_strgets(hoc_cbuf, CBUFSIZE - 1) == (char*) 0) {
             return EOF;
         }
     } else {
 #if READLINE
-        if (nrn_fw_eq(fin, stdin) && nrn_istty_) {
+        if (nrn_fw_eq(hoc_fin, stdin) && nrn_istty_) {
             char* line;
             int n;
 #if INTERVIEWS
 #ifdef MINGW
-            IFGUI
-            if (hoc_interviews && !hoc_in_yyparse) {
-                rl_getc_function = getc_hook;
-                hoc_notify_value();
-            } else {
-                rl_getc_function = rl_getc;
+            if (hoc_usegui) {
+                if (hoc_interviews && !hoc_in_yyparse) {
+                    rl_getc_function = getc_hook;
+                    hoc_notify_value();
+                } else {
+                    rl_getc_function = rl_getc;
+                }
             }
-            ENDGUI
 #else /* not MINGW */
 #if defined(use_rl_getc_function)
             if (hoc_interviews && !hoc_in_yyparse) {
@@ -1690,47 +1679,47 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
             }
             if (n >= hoc_cbufstr->size - 3) {
                 hocstr_resize(hoc_cbufstr, n + 100);
-                ctp = cbuf = hoc_cbufstr->buf;
+                hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
             }
-            strcpy(cbuf, line);
-            cbuf[n] = '\n';
-            cbuf[n + 1] = '\0';
+            strcpy(hoc_cbuf, line);
+            hoc_cbuf[n] = '\n';
+            hoc_cbuf[n + 1] = '\0';
             if (line && *line) {
                 add_history(line);
             }
             free(line);
-            hoc_audit_command(cbuf);
+            hoc_audit_command(hoc_cbuf);
         } else {
             fflush(stdout);
-            if (hoc_fgets_unlimited(hoc_cbufstr, fin) == (CHAR*) 0) {
+            if (hoc_fgets_unlimited(hoc_cbufstr, hoc_fin) == (CHAR*) 0) {
                 return EOF;
             }
         }
 #else  // READLINE
 #if INTERVIEWS
-        if (nrn_fw_eq(fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
+        if (nrn_fw_eq(hoc_fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
             run_til_stdin());
         }
 #endif  // INTERVIEWS
 #if defined(WIN32)
-        if (nrn_fw_eq(fin, stdin)) {
-            if (gets(cbuf) == (char*) 0) {
+        if (nrn_fw_eq(hoc_fin, stdin)) {
+            if (gets(hoc_cbuf) == (char*) 0) {
                 /*DebugMessage("gets returned NULL\n");*/
                 return EOF;
             }
-            strcat(cbuf, "\n");
+            strcat(hoc_cbuf, "\n");
         } else
 #endif  // WIN32
         {
-            if (hoc_fgets_unlimited(hoc_cbufstr, fin) == (char*) 0) {
+            if (hoc_fgets_unlimited(hoc_cbufstr, hoc_fin) == (char*) 0) {
                 return EOF;
             }
         }
 #endif  // READLINE
     }
     errno = 0;
-    lineno++;
-    ctp = cbuf = hoc_cbufstr->buf;
+    hoc_lineno++;
+    hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
     hoc_ictp = 0;
     return 1;
 }
@@ -1738,13 +1727,13 @@ int hoc_get_line(void) { /* supports re-entry. fill cbuf with next line */
 void hoc_help(void) {
 #if INTERVIEWS
     if (hoc_interviews) {
-        ivoc_help(cbuf);
+        ivoc_help(hoc_cbuf);
     } else
 #endif
     {
-        IFGUI
-        hoc_warning("Help only available from version with ivoc library", 0);
-        ENDGUI
+        if (hoc_usegui) {
+            hoc_warning("Help only available from version with ivoc library", 0);
+        }
     }
-    ctp = cbuf + strlen(cbuf) - 1;
+    hoc_ctp = hoc_cbuf + strlen(hoc_cbuf) - 1;
 }

@@ -1,2 +1,3 @@
-cython<3
+cython
 packaging
+numpy

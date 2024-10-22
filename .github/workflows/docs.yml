@@ -78,11 +78,3 @@ jobs:
       - name: live debug session on failure (manual steps required, check `.github/docs.yml`)
         if: failure() && contains(github.event.pull_request.title, 'live-debug-docs')
         uses: mxschmitt/action-tmate@v3
-
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@v4
-        if: env.OK_TO_DEPLOY_DOCS == 'true' && github.ref == 'refs/heads/master'
-        with:
-          branch: gh-pages # The branch the action should deploy to.
-          folder: ${{runner.workspace}}/nrn/docs/_build # The folder the action should deploy.
-          single-commit: true #have a single commit on the deployment branch instead of maintaining the full history

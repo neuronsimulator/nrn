@@ -8,6 +8,8 @@
 #include "parse.hpp"
 #include "ivocvect.h"
 
+#include "utils/logger.hpp"
+
 #define EPS hoc_epsilon
 Symbol* nrn_matrix_sym;  // also used in oc/hoc_oop.cpp
 
@@ -730,7 +732,7 @@ void Matrix_reg();
 #endif
 
 void Matrix_reg() {
-    class2oc("Matrix", m_cons, m_destruct, m_members, NULL, m_retobj_members, NULL);
+    class2oc("Matrix", m_cons, m_destruct, m_members, m_retobj_members, NULL);
     nrn_matrix_sym = hoc_lookup("Matrix");
     // now make the x variable an actual double
     Symbol* sx = hoc_table_lookup("x", nrn_matrix_sym->u.ctemplate->symtable);
