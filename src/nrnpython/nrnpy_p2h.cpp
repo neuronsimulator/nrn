@@ -14,16 +14,17 @@
 #include "parse.hpp"
 
 #include <nanobind/nanobind.h>
+
 namespace nb = nanobind;
 
 static char* nrnpyerr_str();
-static PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
+static nb::object nrnpy_pyCallObject(nb::callable, nb::object);
 static PyObject* main_module;
 static PyObject* main_namespace;
 
 struct Py2Nrn final {
     ~Py2Nrn() {
-        PyLockGIL lock{};
+        nanobind::gil_scoped_acquire lock{};
         Py_XDECREF(po_);
     }
     int type_{};  // 0 toplevel
@@ -41,15 +42,12 @@ static void p_destruct(void* v) {
 Member_func p_members[] = {{nullptr, nullptr}};
 
 static void call_python_with_section(Object* pyact, Section* sec) {
-    PyObject* po = ((Py2Nrn*) pyact->u.this_pointer)->po_;
-    PyObject* r;
-    PyLockGIL lock;
+    nb::callable po = nb::borrow<nb::callable>(((Py2Nrn*) pyact->u.this_pointer)->po_);
+    nanobind::gil_scoped_acquire lock{};
 
-    PyObject* args = PyTuple_Pack(1, (PyObject*) newpysechelp(sec));
-    r = nrnpy_pyCallObject(po, args);
-    Py_XDECREF(args);
-    Py_XDECREF(r);
-    if (!r) {
+    nb::tuple args = nb::make_tuple(reinterpret_cast<PyObject*>(newpysechelp(sec)));
+    nb::object r = nrnpy_pyCallObject(po, args);
+    if (!r.is_valid()) {
         char* mes = nrnpyerr_str();
         if (mes) {
             Fprintf(stderr, "%s\n", mes);
@@ -108,12 +106,13 @@ Object* nrnpy_pyobject_in_obj(PyObject* po) {
     return on;
 }
 
-static PyObject* nrnpy_pyCallObject(PyObject* callable, PyObject* args) {
+static nb::object nrnpy_pyCallObject(nb::callable callable, nb::object args) {
     // When hoc calls a PythonObject method, then in case python
     // calls something back in hoc, the hoc interpreter must be
     // at the top level
     HocTopContextSet
-    PyObject* p = PyObject_CallObject(callable, args);
+    nb::tuple tup(args);
+    nb::object p = nb::steal(PyObject_CallObject(callable.ptr(), tup.ptr()));
 #if 0
 printf("PyObject_CallObject callable\n");
 PyObject_Print(callable, stdout, 0);
@@ -156,7 +155,7 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
     Py2Nrn* pn = (Py2Nrn*) ob->u.this_pointer;
     PyObject* head = pn->po_;
     PyObject* tail;
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
     if (pn->type_ == 0) {  // top level
         if (!main_module) {
             main_module = PyImport_AddModule("__main__");
@@ -198,7 +197,7 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             }
         }
         // printf("PyObject_CallObject %s %p\n", sym->name, tail);
-        result = nrnpy_pyCallObject(tail, args);
+        result = nrnpy_pyCallObject(nb::borrow<nb::callable>(tail), nb::borrow(args)).release().ptr();
         Py_DECREF(args);
         // PyObject_Print(result, stdout, 0);
         // printf("  result of call\n");
@@ -329,49 +328,35 @@ static void hpoasgn(Object* o, int type) {
     }
 }
 
-static PyObject* hoccommand_exec_help1(PyObject* po) {
-    PyObject* r;
-    // PyObject_Print(po, stdout, 0);
-    // printf("\n");
-    if (PyTuple_Check(po)) {
-        PyObject* args = PyTuple_GetItem(po, 1);
-        if (!PyTuple_Check(args)) {
-            args = PyTuple_Pack(1, args);
-        } else {
-            Py_INCREF(args);
+static nb::object hoccommand_exec_help1(nb::object po) {
+    if (nb::tuple::check_(po)) {
+        nb::object args = po[1];
+        if (!nb::tuple::check_(args)) {
+            args = nb::make_tuple(args);
         }
-        // PyObject_Print(PyTuple_GetItem(po, 0), stdout, 0);
-        // printf("\n");
-        // PyObject_Print(args, stdout, 0);
-        // printf("\n");
-        // printf("threadstate %p\n", PyThreadState_GET());
-        r = nrnpy_pyCallObject(PyTuple_GetItem(po, 0), args);
-        Py_DECREF(args);
+        return nrnpy_pyCallObject(po[0], args);
     } else {
-        PyObject* args = PyTuple_New(0);
-        r = nrnpy_pyCallObject(po, args);
-        Py_DECREF(args);
+        return nrnpy_pyCallObject(nb::borrow<nb::callable>(po), nb::tuple());
     }
-    return r;
 }
 
-static PyObject* hoccommand_exec_help(Object* ho) {
+static nb::object hoccommand_exec_help(Object* ho) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
     // printf("%s\n", hoc_object_name(ho));
-    return hoccommand_exec_help1(po);
+    return hoccommand_exec_help1(nb::borrow(po));
 }
 
 static double praxis_efun(Object* ho, Object* v) {
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
 
     PyObject* pc = nrnpy_ho2po(ho);
     PyObject* pv = nrnpy_ho2po(v);
     PyObject* po = Py_BuildValue("(OO)", pc, pv);
     Py_XDECREF(pc);
     Py_XDECREF(pv);
-    PyObject* r = hoccommand_exec_help1(po);
+    nb::object r = hoccommand_exec_help1(nb::borrow(po));
     Py_XDECREF(po);
-    if (!r) {
+    if (!r.is_valid()) {
         char* mes = nrnpyerr_str();
         if (mes) {
             Fprintf(stderr, "%s\n", mes);
@@ -383,18 +368,14 @@ static double praxis_efun(Object* ho, Object* v) {
         }
         return 1e9;  // SystemExit?
     }
-    PyObject* pn = PyNumber_Float(r);
-    double x = PyFloat_AsDouble(pn);
-    Py_XDECREF(pn);
-    Py_XDECREF(r);
-    return x;
+    return static_cast<double>(nb::float_(r));
 }
 
 static int hoccommand_exec(Object* ho) {
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
 
-    PyObject* r = hoccommand_exec_help(ho);
-    if (r == NULL) {
+    nb::object r = hoccommand_exec_help(ho);
+    if (!r.is_valid()) {
         char* mes = nrnpyerr_str();
         if (mes) {
             std::string tmp{"Python Callback failed [hoccommand_exec]:\n"};
@@ -406,21 +387,18 @@ static int hoccommand_exec(Object* ho) {
             PyErr_Print();
         }
     }
-    Py_XDECREF(r);
-    return (r != NULL);
+    return r.is_valid();
 }
 
 static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
 
-    PyObject* r = hoccommand_exec_help(ho);
-    if (r) {
-        PyObject* pn = PyObject_Str(r);
-        Py2NRNString str(pn);
-        Py_XDECREF(pn);
+    nb::object r = hoccommand_exec_help(ho);
+    if (r.is_valid()) {
+        nb::str pn(r);
+        Py2NRNString str(pn.ptr());
         strncpy(buf, str.c_str(), size);
         buf[size - 1] = '\0';
-        Py_XDECREF(r);
     } else {
         char* mes = nrnpyerr_str();
         if (mes) {
@@ -432,20 +410,16 @@ static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
             PyErr_Print();
         }
     }
-    return (r != NULL);
+    return r.is_valid();
 }
 
 static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
-    PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    PyObject* r;
-    PyLockGIL lock;
+    nb::callable po = nb::borrow<nb::callable>(((Py2Nrn*) ho->u.this_pointer)->po_);
+    nanobind::gil_scoped_acquire lock{};
 
-    PyObject* args = PyTuple_Pack(
-        4, PyInt_FromLong(type), PyFloat_FromDouble(x), PyFloat_FromDouble(y), PyInt_FromLong(key));
-    r = nrnpy_pyCallObject(po, args);
-    Py_XDECREF(args);
-    Py_XDECREF(r);
-    if (!r) {
+    nb::tuple args = nb::make_tuple(type, x, y, key);
+    nb::object r = nrnpy_pyCallObject(po, args);
+    if (!r.is_valid()) {
         char* mes = nrnpyerr_str();
         if (mes) {
             Fprintf(stderr, "%s\n", mes);
@@ -460,7 +434,7 @@ static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
 
 static Object* callable_with_args(Object* ho, int narg) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
 
     PyObject* args = PyTuple_New((Py_ssize_t) narg);
     if (args == NULL) {
@@ -491,9 +465,8 @@ static Object* callable_with_args(Object* ho, int narg) {
 }
 
 static double func_call(Object* ho, int narg, int* err) {
-    PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    PyObject* r;
-    PyLockGIL lock;
+    nb::callable po = nb::borrow<nb::callable>(((Py2Nrn*) ho->u.this_pointer)->po_);
+    nanobind::gil_scoped_acquire lock{};
 
     PyObject* args = PyTuple_New((Py_ssize_t) narg);
     if (args == NULL) {
@@ -511,10 +484,10 @@ static double func_call(Object* ho, int narg, int* err) {
         }
     }
 
-    r = nrnpy_pyCallObject(po, args);
+    nb::object r = nrnpy_pyCallObject(po, nb::borrow(args));
     Py_XDECREF(args);
     double rval = 0.0;
-    if (r == NULL) {
+    if (!r.is_valid()) {
         if (!err || *err) {
             char* mes = nrnpyerr_str();
             if (mes) {
@@ -534,12 +507,9 @@ static double func_call(Object* ho, int narg, int* err) {
             *err = 1;
         }
     } else {
-        if (nrnpy_numbercheck(r)) {
-            PyObject* pn = PyNumber_Float(r);
-            rval = PyFloat_AsDouble(pn);
-            Py_XDECREF(pn);
+        if (nrnpy_numbercheck(r.ptr())) {
+            rval = static_cast<double>(nb::float_(r));
         }
-        Py_XDECREF(r);
         if (err) {
             *err = 0;
         }  // success
@@ -549,7 +519,7 @@ static double func_call(Object* ho, int narg, int* err) {
 
 static double guigetval(Object* ho) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
     PyObject* r = NULL;
     PyObject* p = PyTuple_GetItem(po, 0);
     if (PySequence_Check(p) || PyMapping_Check(p)) {
@@ -565,7 +535,7 @@ static double guigetval(Object* ho) {
 
 static void guisetval(Object* ho, double x) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
     PyObject* pn = PyFloat_FromDouble(x);
     PyObject* p = PyTuple_GetItem(po, 0);
     if (PySequence_Check(p) || PyMapping_Check(p)) {
@@ -578,7 +548,7 @@ static void guisetval(Object* ho, double x) {
 
 static int guigetstr(Object* ho, char** cpp) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
 
     PyObject* r = PyObject_GetAttr(PyTuple_GetItem(po, 0), PyTuple_GetItem(po, 1));
     PyObject* pn = PyObject_Str(r);
@@ -926,8 +896,8 @@ static Object* py_alltoall_type(int size, int type) {
             size = 0;  // calculate dest size (cannot be -1 so cannot return it)
         }
 
-        char* s = NULL;
-        int* scnt = NULL;
+        std::vector<char> s{};
+        std::vector<int> scnt{};
         int* sdispl = NULL;
         char* r = NULL;
         int* rcnt = NULL;
@@ -937,49 +907,18 @@ static Object* py_alltoall_type(int size, int type) {
         // for alltoall, each rank handled identically
         // for scatter, root handled as list all, other ranks handled as None
         if (type == 1 || nrnmpi_myid == root) {  // psrc is list of nhost items
-
-            scnt = new int[np];
-            for (int i = 0; i < np; ++i) {
-                scnt[i] = 0;
-            }
-
-            PyObject* iterator = PyObject_GetIter(psrc);
-            PyObject* p;
-
-            size_t bufsz = 100000;  // 100k buffer to start with
-            if (size > 0) {         // or else the positive number specified
-                bufsz = size;
-            }
-            if (size >= 0) {  // otherwise count only
-                s = new char[bufsz];
-            }
-            size_t curpos = 0;
-            for (size_t i = 0; (p = PyIter_Next(iterator)) != NULL; ++i) {
-                if (p == Py_None) {
-                    scnt[i] = 0;
-                    Py_DECREF(p);
+            scnt.reserve(np);
+            for (const nb::handle& p: nb::list(psrc)) {
+                if (p.is_none()) {
+                    scnt.push_back(0);
                     continue;
                 }
-                auto b = pickle(p);
+                const std::vector<char> b = pickle(p.ptr());
                 if (size >= 0) {
-                    if (curpos + b.size() >= bufsz) {
-                        bufsz = bufsz * 2 + b.size();
-                        char* s2 = new char[bufsz];
-                        for (size_t i = 0; i < curpos; ++i) {
-                            s2[i] = s[i];
-                        }
-                        delete[] s;
-                        s = s2;
-                    }
-                    for (size_t j = 0; j < b.size(); ++j) {
-                        s[curpos + j] = b[j];
-                    }
+                    s.insert(std::end(s), std::begin(b), std::end(b));
                 }
-                curpos += b.size();
-                scnt[i] = static_cast<int>(b.size());
-                Py_DECREF(p);
+                scnt.push_back(static_cast<int>(b.size()));
             }
-            Py_DECREF(iterator);
 
             // scatter equivalent to alltoall NONE list for not root ranks.
         } else if (type == 5 && nrnmpi_myid != root) {
@@ -996,26 +935,23 @@ static Object* py_alltoall_type(int size, int type) {
             }
             sdispl = mk_displ(ones);
             rcnt = new int[np];
-            nrnmpi_int_alltoallv(scnt, ones, sdispl, rcnt, ones, sdispl);
+            nrnmpi_int_alltoallv(scnt.data(), ones, sdispl, rcnt, ones, sdispl);
             delete[] ones;
             delete[] sdispl;
 
             // exchange
-            sdispl = mk_displ(scnt);
+            sdispl = mk_displ(scnt.data());
             rdispl = mk_displ(rcnt);
             if (size < 0) {
                 pdest = PyTuple_New(2);
                 PyTuple_SetItem(pdest, 0, Py_BuildValue("l", (long) sdispl[np]));
                 PyTuple_SetItem(pdest, 1, Py_BuildValue("l", (long) rdispl[np]));
-                delete[] scnt;
                 delete[] sdispl;
                 delete[] rcnt;
                 delete[] rdispl;
             } else {
                 char* r = new char[rdispl[np] + 1];  // force > 0 for all None case
-                nrnmpi_char_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
-                delete[] s;
-                delete[] scnt;
+                nrnmpi_char_alltoallv(s.data(), scnt.data(), sdispl, r, rcnt, rdispl);
                 delete[] sdispl;
 
                 pdest = char2pylist(r, np, rcnt, rdispl);
@@ -1029,18 +965,14 @@ static Object* py_alltoall_type(int size, int type) {
 
             // destination counts
             rcnt = new int[1];
-            nrnmpi_int_scatter(scnt, rcnt, 1, root);
+            nrnmpi_int_scatter(scnt.data(), rcnt, 1, root);
             std::vector<char> r(rcnt[0] + 1);  // rcnt[0] can be 0
 
             // exchange
             if (nrnmpi_myid == root) {
-                sdispl = mk_displ(scnt);
+                sdispl = mk_displ(scnt.data());
             }
-            nrnmpi_char_scatterv(s, scnt, sdispl, r.data(), rcnt[0], root);
-            if (s)
-                delete[] s;
-            if (scnt)
-                delete[] scnt;
+            nrnmpi_char_scatterv(s.data(), scnt.data(), sdispl, r.data(), rcnt[0], root);
             if (sdispl)
                 delete[] sdispl;
 

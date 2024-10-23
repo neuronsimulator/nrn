@@ -15,7 +15,6 @@
  *  spWhereSingular
  *  spGetSize
  *  spSetReal
- *  spSetComplex
  *  spFillinCount
  *  spElementCount
  *
@@ -44,11 +43,6 @@
  *  software for any purpose.  It is provided `as is', without express
  *  or implied warranty.
  */
-
-#ifndef lint
-static char copyright[] = "Sparse1.3: Copyright (c) 1985,86,87,88 by Kenneth S. Kundert";
-static char RCSid[] = "@(#)$Header$";
-#endif
 
 /*
  *  IMPORTS
@@ -126,12 +120,10 @@ char* spCreate(int Size, BOOLEAN Complex, int* pError)
     }
 
 /* Test for valid type. */
-#if NOT spCOMPLEX
     if (Complex) {
         *pError = spPANIC;
         return NULL;
     }
-#endif
 #if NOT REAL
     if (NOT Complex) {
         *pError = spPANIC;
@@ -193,9 +185,6 @@ char* spCreate(int Size, BOOLEAN Complex, int* pError)
 
     /* Take out the trash. */
     Matrix->TrashCan.Real = 0.0;
-#if spCOMPLEX
-    Matrix->TrashCan.Imag = 0.0;
-#endif
     Matrix->TrashCan.Row = 0;
     Matrix->TrashCan.Col = 0;
     Matrix->TrashCan.NextInRow = NULL;
@@ -232,24 +221,6 @@ char* spCreate(int Size, BOOLEAN Complex, int* pError)
         Matrix->IntToExtRowMap[I] = I;
         Matrix->IntToExtColMap[I] = I;
     }
-
-#if TRANSLATE
-    /* Allocate space in memory for ExtToIntColMap vector. */
-    if ((Matrix->ExtToIntColMap = ALLOC(int, SizePlusOne)) == NULL)
-        goto MemoryError;
-
-    /* Allocate space in memory for ExtToIntRowMap vector. */
-    if ((Matrix->ExtToIntRowMap = ALLOC(int, SizePlusOne)) == NULL)
-        goto MemoryError;
-
-    /* Initialize MapExtToInt vectors. */
-    for (I = 1; I <= AllocatedSize; I++) {
-        Matrix->ExtToIntColMap[I] = -1;
-        Matrix->ExtToIntRowMap[I] = -1;
-    }
-    Matrix->ExtToIntColMap[0] = 0;
-    Matrix->ExtToIntRowMap[0] = 0;
-#endif
 
     /* Allocate space for fill-ins and initial set of elements. */
     InitializeElementBlocks(Matrix, SPACE_FOR_ELEMENTS * AllocatedSize,
@@ -671,14 +642,7 @@ int spGetSize(char* eMatrix, BOOLEAN External)
     /* Begin `spGetSize'. */
     ASSERT(IS_SPARSE(Matrix));
 
-#if TRANSLATE
-    if (External)
-        return Matrix->ExtSize;
-    else
-        return Matrix->Size;
-#else
     return Matrix->Size;
-#endif
 }
 
 /*
@@ -697,15 +661,6 @@ void spSetReal(char* eMatrix)
 
     ASSERT(IS_SPARSE((MatrixPtr)eMatrix) AND REAL);
     ((MatrixPtr)eMatrix)->Complex = NO;
-    return;
-}
-
-void spSetComplex(char* eMatrix)
-{
-    /* Begin `spSetComplex'. */
-
-    ASSERT(IS_SPARSE((MatrixPtr)eMatrix) AND spCOMPLEX);
-    ((MatrixPtr)eMatrix)->Complex = YES;
     return;
 }
 

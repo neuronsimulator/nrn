@@ -21,7 +21,6 @@
 #include <unordered_map>
 
 #include <nanobind/nanobind.h>
-
 namespace nb = nanobind;
 
 extern PyTypeObject* psection_type;
@@ -2903,7 +2902,7 @@ static Object* rvp_rxd_to_callable_(Object* obj) {
 
 
 extern "C" NRN_EXPORT PyObject* get_plotshape_data(PyObject* sp) {
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
     PyHocObject* pho = (PyHocObject*) sp;
     ShapePlotInterface* spi;
     if (!is_obj_type(pho->ho_, "PlotShape")) {
@@ -3404,7 +3403,7 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     nrnpy_nrncore_enable_value_p_ = nrncore_enable_value;
     nrnpy_nrncore_file_mode_value_p_ = nrncore_file_mode_value;
     nrnpy_rvp_rxd_to_callable = rvp_rxd_to_callable_;
-    PyLockGIL lock;
+    nanobind::gil_scoped_acquire lock{};
 
     char endian_character = 0;
 
