@@ -218,7 +218,7 @@ but presumably as accurate, results. These differences can cause CI failures.
 A method to update rxd test data is, from the top level nrn folder:
 ```
 nrnivmodl test/rxd/*.mod
-PYTHONPATH=./test/rxd:$PYTHONPATH pytest -s ./test/rxd/ --save ./test/rxd/testdata/test
+PYTHONPATH=./test/rxd:$PYTHONPATH pytest -s ./test/rxd/ --save ./test/rxd/testdata/tests
 python share/lib/python/neuron/rxdtests/run_all.py
 cp -r ./share/lib/python/neuron/rxdtests/test_data/* ./test/rxd/testdata/rxdtests/
 cp -r ./test/rxd/testdata/tests/* ./test/rxd/testdata/test
