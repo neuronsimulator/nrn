@@ -1934,6 +1934,7 @@ static void nrn_matrix_node_alloc(void) {
                 nd->_b_matelm = nullptr;
             }
         }
+        nt->_sp13mat->compress();
         // Collecting
         for (int in = 0; in < nt->end; ++in) {
             Node *nd = nt->_v_node[in];
