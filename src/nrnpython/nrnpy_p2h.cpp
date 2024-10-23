@@ -226,7 +226,7 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             // for this to be a VAR. It is possible for it to
             // be an Object but the GetItem below will raise
             // TypeError: list indices must be integers or slices, not hoc.HocObject
-            arg = nb::borrow(nrnpy_hoc_pop("nindex py2n_component"));
+            arg = nb::steal(nrnpy_hoc_pop("nindex py2n_component"));
         }
         result = PyObject_GetItem(tail, arg.ptr());
         if (!result) {
@@ -464,11 +464,11 @@ static double func_call(Object* ho, int narg, int* err) {
 
     nb::list args{};
     for (int i = 0; i < narg; ++i) {
-        PyObject* item = nrnpy_hoc_pop("func_call");
-        if (item == NULL) {
+        nb::object item = nb::steal(nrnpy_hoc_pop("func_call"));
+        if (!item) {
             hoc_execerror("nrnpy_hoc_pop failed", 0);
         }
-        args.append(nb::borrow(item));
+        args.append(item);
     }
     args.reverse();
 
