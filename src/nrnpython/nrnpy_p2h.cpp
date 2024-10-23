@@ -197,7 +197,8 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             }
         }
         // printf("PyObject_CallObject %s %p\n", sym->name, tail);
-        result = nrnpy_pyCallObject(nb::borrow<nb::callable>(tail), nb::borrow(args)).release().ptr();
+        result =
+            nrnpy_pyCallObject(nb::borrow<nb::callable>(tail), nb::borrow(args)).release().ptr();
         Py_DECREF(args);
         // PyObject_Print(result, stdout, 0);
         // printf("  result of call\n");
