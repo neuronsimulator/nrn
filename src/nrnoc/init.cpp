@@ -785,7 +785,7 @@ int dparam_semantics_to_int(std::string_view name) {
         bool const i{name[0] == '#'};
         Symbol* s = hoc_lookup(std::string{name.substr(i)}.c_str());
         if (s && s->type == MECHANISM) {
-            return s->subtype * 2 + i;
+            return nrn_semantics_from_ion(s->subtype, i);
         }
         throw std::runtime_error("unknown dparam semantics: " + std::string{name});
     }
