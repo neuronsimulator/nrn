@@ -29,7 +29,7 @@ actual_v, etc.
 #include "membfunc.h"
 
 #include <cstddef>
-#include <ivoc/ocmatrix.h>
+class OcSparseMatrix;
 
 typedef struct NrnThreadMembList { /* patterned after CvMembList in cvodeobj.h */
     struct NrnThreadMembList* next;
