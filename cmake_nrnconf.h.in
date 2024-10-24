@@ -88,12 +88,6 @@
 /* Define to the version of this package. */
 #cmakedefine PACKAGE_VERSION @PACKAGE_VERSION@
 
-/* Define SUNDIALS data type 'realtype' as 'long double' */
-#cmakedefine SUNDIALS_DOUBLE_PRECISION @SUNDIALS_DOUBLE_PRECISION@
-
-/* Use generic math functions */
-#cmakedefine SUNDIALS_USE_GENERIC_MATH @SUNDIALS_USE_GENERIC_MATH@
-
 /* Version number of package */
 #cmakedefine VERSION @VERSION@
 
