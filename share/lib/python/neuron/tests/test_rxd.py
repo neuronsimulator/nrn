@@ -133,7 +133,7 @@ class RxDTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Check for a custom flag in command-line arguments
+        # Check for --save in command-line arguments
         cls.path = None
         cls.lock = Lock()
         if len(sys.argv) > 1:
@@ -175,7 +175,7 @@ def suite():
     return unittest.defaultTestLoader.loadTestsFromTestCase(RxDTestCase)
 
 
-def test(save=False):
+def test():
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite())
 
