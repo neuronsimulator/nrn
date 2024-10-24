@@ -500,7 +500,7 @@ def setup_package():
         name=package_name,
         package_dir={"": NRN_PY_ROOT},
         packages=py_packages,
-        package_data={"neuron": ["*.dat"]},
+        package_data={"neuron": ["*.dat", "tests/*.json"]},
         ext_modules=extensions,
         scripts=[
             os.path.join(NRN_PY_SCRIPTS, f)
