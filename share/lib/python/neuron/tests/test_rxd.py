@@ -15,7 +15,7 @@ except:
 
 # load the reference data from rxd_data.json
 fdir = os.path.dirname(os.path.abspath(__file__))
-test_data = json.load(open(os.path.join(fdir, "rxd_data.json"), "r"))
+test_data = json.load(open(os.path.join(fdir, "test_rxd.json"), "r"))
 
 
 def scalar_bistable(lock, path=None):
