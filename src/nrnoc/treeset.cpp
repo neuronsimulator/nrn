@@ -18,7 +18,7 @@
 #include "ocnotify.h"
 #include "partrans.h"
 #include "section.h"
-#include "spmatrix.h"
+#include "ocmatrix.h"
 #include "utils/profile/profiler_interface.h"
 #include "multicore.h"
 
@@ -31,8 +31,6 @@
 #include <string>
 
 #include <fmt/format.h>
-
-extern spREAL* spGetElement(char*, int, int);
 
 int nrn_shape_changed_; /* for notifying Shape class in nrniv */
 double* nrn_mech_wtime_;

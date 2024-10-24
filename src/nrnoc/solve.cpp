@@ -57,7 +57,7 @@ node.v + extnode.v[0]
 #include "nrnmpiuse.h"
 #include "ocnotify.h"
 #include "section.h"
-#include "spmatrix.h"
+#include "ocmatrix.h"
 #include "treeset.h"
 #include "ivocvect.h"
 

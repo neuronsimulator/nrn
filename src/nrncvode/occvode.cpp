@@ -18,7 +18,7 @@
 #include <numeric>
 
 
-#include "spmatrix.h"
+#include "ocmatrix.h"
 extern double* sp13mat;
 
 #if 1 || NRNMPI
