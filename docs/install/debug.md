@@ -223,6 +223,7 @@ python share/lib/python/neuron/rxdtests/run_all.py
 cp -r ./share/lib/python/neuron/rxdtests/test_data/* ./test/rxd/testdata/rxdtests/
 cp -r ./test/rxd/testdata/tests/* ./test/rxd/testdata/test
 rm -r -f ./test/rxd/testdata/tests
+(cd share/lib/python/neuron/tests; python test_rxd.py --save test_rxd.json)
 ```
 When everything is working again, cd to test/rxd/testdata, start a new branch,
 commit, and push to ``https://github.com/neuronsimulator/rxdtestdata``.
