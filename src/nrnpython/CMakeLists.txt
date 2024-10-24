@@ -91,8 +91,7 @@ install(
   PATTERN *.py
   PATTERN *.so
   PATTERN *.dylib
-  PATTERN *.dat
-  PATTERN *.json)
+  PATTERN *.dat)
 
 # =============================================================================
 # If NEURON python module installation is enabled (CMake install)
