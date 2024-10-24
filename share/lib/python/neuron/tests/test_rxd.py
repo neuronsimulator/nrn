@@ -47,9 +47,9 @@ def scalar_bistable(lock, path=None):
         cmpV = h.Vector(test_data["scalar_bistable_data"])
         cmpV.sub(result)
         cmpV.abs()
-        if cmpV.sum() < 1e-6:
-            sys.exit(0)
-        sys.exit(-1)
+        if cmpV.sum() >= 1e-6:
+            sys.exit(-1)
+    sys.exit(0)
 
 
 def trivial_ecs(scale, lock, path=None):
@@ -124,8 +124,8 @@ def trivial_ecs(scale, lock, path=None):
         ecs_vec.sub(h.Vector(test_data["trivial_ecs_data"][str(scale)]))
         ecs_vec.abs()
         if ecs_vec.sum() > 1e-9:
-            return -1
-        return 0
+            sys.exit(-1)
+    sys.exit(0)
 
 
 class RxDTestCase(unittest.TestCase):
