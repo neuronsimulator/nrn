@@ -322,8 +322,7 @@ void hoc_unix_mac_pc(void) {
 #endif
 }
 void hoc_show_winio(void) {
-    int b;
-    b = (int) chkarg(1, 0., 1.);
+    int b = (int) chkarg(1, 0., 1.);
 #if defined(WIN32)
     hoc_winio_show(b);
 #endif

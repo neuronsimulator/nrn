@@ -459,7 +459,7 @@ void deriv_used(Symbol* s, Item* q1, Item* q2) /* q1, q2 are begin and end token
 
 /* args are --- derivblk: DERIVATIVE NAME stmtlist '}' */
 void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4) {
-    int count = 0, deriv_implicit, solve_seen;
+    int count = 0, deriv_implicit;
     char units[SB];
     Item *qs, *q, *mixed_eqns(Item * q2, Item * q3, Item * q4);
     Symbol *s, *derfun, *state;

@@ -474,7 +474,6 @@ void nrn_register_mech_common(const char** m,
                               int vectorized) {
     // initialize at first entry, it will be incremented at exit of the function
     static int mechtype = 2; /* 0 unused, 1 for cable section */
-    int modltype;
     int modltypemax;
     Symbol* mech_symbol;
     const char** m2;

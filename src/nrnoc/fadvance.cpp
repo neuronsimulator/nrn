@@ -305,7 +305,6 @@ static void daspk_init_step_thread(neuron::model_sorted_token const& cache_token
 }
 
 void nrn_daspk_init_step(double tt, double dteps, int upd) {
-    int i;
     double dtsav = nrn_threads->_dt;
     int so = secondorder;
     dt = dteps;
@@ -324,7 +323,6 @@ void nrn_daspk_init_step(double tt, double dteps, int upd) {
 
 void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     nrn::Instrumentor::phase p_timestep("timestep");
-    int i;
 #if ELIMINATE_T_ROUNDOFF
     nrn_chk_ndt();
 #endif
@@ -644,7 +642,6 @@ void nrn_calc_fast_imem_fixedstep_init(NrnThread* _nt) {
 }
 
 void fcurrent(void) {
-    int i;
     if (tree_changed) {
         setup_topology();
     }
@@ -713,11 +710,9 @@ void fmatrix(void) {
         Section* sec;
         int id;
         Node* nd;
-        NrnThread* _nt;
         nrn_seg_or_x_arg(1, &sec, &x);
         id = (int) chkarg(2, 1., 4.);
         nd = node_exact(sec, x);
-        _nt = nd->_nt;
         switch (id) {
         case 1:
             hoc_retpushx(NODEA(nd));

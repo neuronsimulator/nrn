@@ -483,7 +483,6 @@ static void point_menu(Object* ob, int make_label) {
                 deflt = false;
             }
             if (is_array(*vsym)) {
-                Arrayinfo* a = vsym->arayinfo;
                 for (m = 0; m < vsym->arayinfo->sub[0]; m++) {
                     if (m > 5)
                         break;

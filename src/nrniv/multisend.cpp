@@ -471,10 +471,12 @@ void nrn_multisend_receive(NrnThread* nt) {
     assert(nt == nrn_threads);
     TBUF
     double w2;
-    int ncons = 0;
     int& s = multisend_receive_buffer[current_rbuf]->nsend_;
     int& r = multisend_receive_buffer[current_rbuf]->nrecv_;
     double w1 = nrnmpi_wtime();
+#if TBUFSIZE
+    int ncons = 0;
+#endif
     if (use_multisend_) {
         nrn_multisend_advance();
         TBUF
@@ -489,7 +491,9 @@ void nrn_multisend_receive(NrnThread* nt) {
         TBUF
         while (nrnmpi_multisend_conserve(s, r) != 0) {
             nrn_multisend_advance();
+#if TBUFSIZE
             ++ncons;
+#endif
         }
         TBUF
     }

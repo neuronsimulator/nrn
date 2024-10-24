@@ -103,7 +103,7 @@ int nrnmpi_spike_exchange(int* ovfl,
                           NRNMPI_Spike* spikeout_,
                           NRNMPI_Spike** spikein_,
                           int* icapacity_) {
-    int i, n, novfl, n1;
+    int i, n;
     if (!displs) {
         np = nrnmpi_numprocs;
         displs = (int*) hoc_Emalloc(np * sizeof(int));
@@ -692,7 +692,6 @@ void nrnmpi_multisend_comm() {
 void nrnmpi_multisend_multisend(NRNMPI_Spike* spk, int n, int* hosts) {
     int i;
     MPI_Request r;
-    MPI_Status status;
     for (i = 0; i < n; ++i) {
         MPI_Isend(spk, 1, spike_type, hosts[i], 1, bgp_comm, &r);
         MPI_Request_free(&r);
@@ -709,7 +708,6 @@ int nrnmpi_multisend_single_advance(NRNMPI_Spike* spk) {
     return flag;
 }
 
-static int iii;
 int nrnmpi_multisend_conserve(int nsend, int nrecv) {
     int tcnts[2];
     tcnts[0] = nsend - nrecv;
