@@ -435,7 +435,7 @@ int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
             Py2NRNString str(po, /* disable_release */ true);
             if (str.err()) {
                 // Since Python error has been set, need to clear, or hoc_execerror
-                // printing with Printf will generate a
+                // printing with logger.print will generate a
                 // Exception ignored on calling ctypes callback function.
                 // So get the message, clear, and make the message
                 // part of the execerror.
@@ -453,7 +453,7 @@ int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
             // the object which can raise an error for nrn.Section, nrn.Segment,
             // etc. if the internal Section is invalid (Section.prop == NULL).
             // That, in consequence, will generate an
-            // Exception ignored on calling ctypes callback function: <function Printf
+            // Exception ignored on calling ctypes callback function: <function logger.print
             // thus obscuring the actual error, such as
             // nrn.Segment associated with deleted internal Section.
             PyHocObject* pho = (PyHocObject*) po;

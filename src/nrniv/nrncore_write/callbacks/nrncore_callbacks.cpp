@@ -1015,12 +1015,12 @@ static void set_info(TQItem* tqi,
         core_te->type.pop_back();
         // Delivery time was often reduced by a quarter step to avoid
         // fixed step roundoff problems.
-        Fprintf(stderr,
-                "WARNING: CVode.event(...) for delivery at time step nearest %g discarded. "
-                "CoreNEURON cannot presently handle interpreter events (rank %d, thread %d).\n",
-                tdeliver,
-                nrnmpi_myid,
-                tid);
+        logger.error(
+            "WARNING: CVode.event(...) for delivery at time step nearest {} discarded. "
+            "CoreNEURON cannot presently handle interpreter events (rank {}, thread {}).\n",
+            tdeliver,
+            nrnmpi_myid,
+            tid);
     } break;
     case PlayRecordEventType: {  // 6
     } break;
