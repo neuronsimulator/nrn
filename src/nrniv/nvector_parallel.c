@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <nvector/nvector_parallel.h>
+#include "nvector_parallel.h"
 #include <sundials/sundials_math.h>
 #include <sundials/sundials_mpi.h>
 

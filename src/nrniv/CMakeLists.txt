@@ -456,9 +456,6 @@ target_link_libraries(
   ${SUNDIALS_LIB_DIR}/libsundials_nvecpthreads.a ${SUNDIALS_LIB_DIR}/libsundials_nvecserial.a)
 target_include_directories(nrniv_lib PUBLIC ${SUNDIALS_INCLUDE_DIR})
 
-if(NRN_ENABLE_MPI)
-  target_link_libraries(nrniv_lib ${SUNDIALS_LIB_DIR}/libsundials_nvecparallel.a MPI::MPI_C)
-endif()
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
 # =============================================================================
