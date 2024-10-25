@@ -30,6 +30,8 @@ ExternalProject_Add(
   GIT_PROGRESS ON
   # UPDATE_COMMAND ""
   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+             -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
              -DCMAKE_C_FLAGS=${SUNDIALS_C_FLAGS}
              -DCMAKE_CXX_FLAGS=${SUNDIALS_CXX_FLAGS}
              -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -39,7 +41,7 @@ ExternalProject_Add(
              -DBUILD_IDAS=OFF
              -DBUILD_KINSOL=OFF
              -DEXAMPLES_ENABLE_C=OFF
-             -DMPI_ENABLE=ON
+             -DMPI_ENABLE=OFF
              -DPTHREAD_ENABLE=ON
              -DSUNDIALS_PRECISION=double
              -DUSE_GENERIC_MATH=ON
