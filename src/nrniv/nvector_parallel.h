@@ -1,3 +1,4 @@
+// clang-format off
 /* ----------------------------------------------------------------- 
  * Programmer(s): Scott D. Cohen, Alan C. Hindmarsh, Radu Serban,
  *                and Aaron Collier @ LLNL
@@ -50,7 +51,16 @@
 #define _NVECTOR_PARALLEL_H
 
 #include <stdio.h>
-#include <mpi.h>
+
+#if 0 // avoid mpi.h. So no MPI_Comm. We want to support NRNMPI_DYNAMICLOAD
+#include <mpi.h> 
+#else
+// locally to this .h file, MPI_Comm is an int
+// Maybe later we will just remove all of them.
+#undef MPI_Comm
+#define MPI_Comm int
+#endif
+
 #include <sundials/sundials_nvector.h>
 #include <sundials/sundials_mpi_types.h>
 
@@ -331,5 +341,9 @@ SUNDIALS_EXPORT realtype N_VMinQuotient_Parallel(N_Vector num, N_Vector denom);
 #ifdef __cplusplus
 }
 #endif
+
+// we would like an error raised if anyone includes this file and
+// substantively uses MPI_Comm
+#undef MPI_Comm
 
 #endif

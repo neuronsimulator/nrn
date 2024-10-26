@@ -26,6 +26,8 @@
 #include <stdlib.h>
 
 #include "nvector_parallel.h"
+#define MPI_Comm int // or perhaps get rid of them all
+#include "nrnmpi.h"
 #include <sundials/sundials_math.h>
 #include <sundials/sundials_mpi.h>
 

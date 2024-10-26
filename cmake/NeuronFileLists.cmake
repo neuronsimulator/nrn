@@ -412,7 +412,7 @@ nrn_create_file_list(NRN_NRNIV_SRC_FILES ${NRN_NRNIV_SRC_DIR} ${NRNIV_FILE_LIST}
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${NRN_PARALLEL_SRC_DIR} ${NRN_PARALLEL_FILES_LIST})
 if(NRN_ENABLE_MPI)
   nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
-                       nvector_nrnparallel_ld.cpp nvector_parallel.c)
+                       nvector_nrnparallel_ld.cpp nvector_parallel.cpp)
 endif()
 nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPARSE_FILES_LIST})
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
