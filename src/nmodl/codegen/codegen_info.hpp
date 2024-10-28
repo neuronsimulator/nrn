@@ -352,6 +352,12 @@ struct CodegenInfo {
     /// if mod file is thread safe (always true for coreneuron)
     bool thread_safe = true;
 
+    /// A mod file can be declared to be thread safe using the keyword THREADSAFE.
+    /// This boolean is true if and only if the mod file was declared thread safe
+    /// by the user. For example thread variables require the mod file to be declared
+    /// thread safe.
+    bool declared_thread_safe = false;
+
     /// if mod file is point process
     bool point_process = false;
 

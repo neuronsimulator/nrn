@@ -101,6 +101,7 @@ class CodegenHelperVisitor: public visitor::ConstAstVisitor {
     void visit_derivimplicit_callback(const ast::DerivimplicitCallback& node) override;
     void visit_net_receive_block(const ast::NetReceiveBlock& node) override;
     void visit_bbcore_pointer(const ast::BbcorePointer& node) override;
+    void visit_thread_safe(const ast::ThreadSafe&) override;
     void visit_watch(const ast::Watch& node) override;
     void visit_watch_statement(const ast::WatchStatement& node) override;
     void visit_for_netcon(const ast::ForNetcon& node) override;

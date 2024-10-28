@@ -252,7 +252,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
 
     auto vars = psymtab->get_variables_with_properties(NmodlType::global_var);
     for (auto& var: vars) {
-        if (info.vectorize && info.thread_safe && var->get_write_count() > 0) {
+        if (info.vectorize && info.declared_thread_safe && var->get_write_count() > 0) {
             var->mark_thread_safe();
             info.thread_variables.push_back(var);
             info.thread_var_data_size += var->get_length();
@@ -765,6 +765,10 @@ void CodegenHelperVisitor::visit_binary_expression(const BinaryExpression& node)
 
 void CodegenHelperVisitor::visit_bbcore_pointer(const BbcorePointer& /* node */) {
     info.bbcore_pointer_used = true;
+}
+
+void CodegenHelperVisitor::visit_thread_safe(const ast::ThreadSafe&) {
+    info.declared_thread_safe = true;
 }
 
 
