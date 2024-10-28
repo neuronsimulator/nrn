@@ -59,6 +59,9 @@ std::string CodegenCoreneuronCppVisitor::simulator_name() {
     return "CoreNEURON";
 }
 
+bool CodegenCoreneuronCppVisitor::needs_v_unused() const {
+    return info.vectorize;
+}
 
 /****************************************************************************************/
 /*                     Common helper routines accross codegen functions                 */

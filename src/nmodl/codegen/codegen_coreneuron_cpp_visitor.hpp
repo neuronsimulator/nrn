@@ -93,6 +93,7 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
         return info.vectorize ? (info.thread_data_index + 1) : 0;
     }
 
+    bool needs_v_unused() const override;
 
     /****************************************************************************************/
     /*                     Common helper routines accross codegen functions                 */

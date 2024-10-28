@@ -124,6 +124,7 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
      */
     std::string table_thread_function_name() const;
 
+    bool needs_v_unused() const override;
 
     /****************************************************************************************/
     /*                     Common helper routines accross codegen functions                 */

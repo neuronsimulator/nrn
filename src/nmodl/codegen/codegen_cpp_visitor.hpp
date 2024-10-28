@@ -731,6 +731,8 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      */
     std::vector<SymbolType> get_float_variables() const;
 
+    virtual bool needs_v_unused() const = 0;
+
 
     /**
      * Determine all \c int variables required during code generation

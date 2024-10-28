@@ -55,6 +55,10 @@ std::string CodegenNeuronCppVisitor::table_thread_function_name() const {
     return "_check_table_thread";
 }
 
+bool CodegenNeuronCppVisitor::needs_v_unused() const {
+    return true;
+}
+
 
 /****************************************************************************************/
 /*                     Common helper routines accross codegen functions                 */
