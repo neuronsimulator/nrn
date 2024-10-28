@@ -2,6 +2,7 @@
 Tests that used to live in the fast/ subdirectory of the
 https://github.com/neuronsimulator/nrntest repository
 """
+
 import math
 import numpy as np
 import os

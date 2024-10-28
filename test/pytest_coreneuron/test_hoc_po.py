@@ -166,6 +166,7 @@ def test_2():
 
 # BBSaveState for mixed (hoc and python cells) Ring.
 
+
 # some helpers copied from ../parallel_tests/test_bas.py
 def rmfiles():
     if pc.id() == 0:
