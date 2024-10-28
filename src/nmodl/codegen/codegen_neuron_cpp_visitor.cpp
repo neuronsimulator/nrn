@@ -1562,10 +1562,14 @@ void CodegenNeuronCppVisitor::print_mechanism_range_var_structure(bool print_ini
     }
     for (auto& var: codegen_int_variables) {
         const auto& name = var.symbol->get_name();
+        auto position = position_of_int_var(name);
+
         if (name == naming::POINT_PROCESS_VARIABLE) {
             continue;
         } else if (var.is_index || var.is_integer) {
             // In NEURON we don't create caches for `int*`. Hence, do nothing.
+        } else if (info.semantics[position].name == naming::POINTER_SEMANTIC) {
+            // we don't need these either.
         } else {
             auto qualifier = var.is_constant ? "const " : "";
             auto type = var.is_vdata ? "void*" : default_float_data_type();
@@ -1617,10 +1621,13 @@ void CodegenNeuronCppVisitor::print_make_instance() const {
     for (size_t i = 0; i < codegen_int_variables_size; ++i) {
         const auto& var = codegen_int_variables[i];
         auto name = var.symbol->get_name();
-        auto const variable = [&var, i]() -> std::string {
+        auto sem = info.semantics[i].name;
+        auto const variable = [&var, &sem, i]() -> std::string {
             if (var.is_index || var.is_integer) {
                 return "";
             } else if (var.is_vdata) {
+                return "";
+            } else if (sem == naming::POINTER_SEMANTIC) {
                 return "";
             } else {
                 return fmt::format("_lmc->template dptr_field_ptr<{}>()", i);
