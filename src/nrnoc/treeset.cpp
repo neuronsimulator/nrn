@@ -1912,40 +1912,9 @@ static void nrn_matrix_node_alloc(void) {
                 i += nlayer;
             }
         }
-        // Creating
         for (int in = 0; in < nt->end; ++in) {
             Node *nd = nt->_v_node[in];
             Extnode* nde = nd->extnode;
-            Node *pnd = nt->_v_parent[in];
-            int i = nd->eqn_index_;
-            nt->_sp13mat->mep(i - 1, i - 1);
-            if (nde) {
-                for (int ie = 0; ie < nlayer; ++ie) {
-                    int k = i + ie;
-                    nt->_sp13mat->mep(k, k);
-                    nt->_sp13mat->mep(k, k - 1);
-                    nt->_sp13mat->mep(k - 1, k);
-                }
-            }
-            if (pnd) {
-                int j = pnd->eqn_index_;
-                nt->_sp13mat->mep(j - 1, i - 1);
-                nt->_sp13mat->mep(i - 1, j - 1);
-                if (nde && pnd->extnode)
-                    for (int ie = 0; ie < nlayer; ++ie) {
-                        int kp = j + ie;
-                        int k = i + ie;
-                        nt->_sp13mat->mep(kp, k);
-                        nt->_sp13mat->mep(k, kp);
-                    }
-            }
-        }
-        nt->_sp13mat->compress();
-        // Collecting
-        for (int in = 0; in < nt->end; ++in) {
-            Node *nd = nt->_v_node[in];
-            Extnode* nde = nd->extnode;
-            Node *pnd = nt->_v_parent[in];
             int i = nd->eqn_index_;
             nt->_sp13_rhs[i] = nt->actual_rhs(in);
             if (nde) {
