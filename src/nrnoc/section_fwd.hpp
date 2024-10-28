@@ -40,7 +40,6 @@ struct Extnode {
     double* v; /* v external. */
     double* _a;
     double* _b;
-    double** _d;
     double** _rhs; /* d, rhs, a, and b are analogous to those in node */
 };
 #endif

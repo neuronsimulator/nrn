@@ -553,7 +553,6 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
         }
     }
 #if EXTRACELLULAR
-    /* nde->_d[0] contains the -ELECTRODE_CURRENT contribution to nd->_d */
     nrn_setup_ext(_nt);
 #endif
     if (use_sparse13) {
@@ -1952,7 +1951,6 @@ static void nrn_matrix_node_alloc(void) {
             if (nde) {
                 for (int ie = 0; ie < nlayer; ++ie) {
                     int k = i + ie;
-                    nde->_d[ie] = nt->_sp13mat->mep(k, k);
                     nde->_rhs[ie] = nt->_sp13_rhs + k + 1;
                 }
             }

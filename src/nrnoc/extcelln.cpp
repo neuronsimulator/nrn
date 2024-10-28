@@ -213,11 +213,9 @@ static void extcell_init(neuron::model_sorted_token const&,
 void extnode_free_elements(Extnode* nde) {
     if (nde->v) {
         free(nde->v);  /* along with _a and _b */
-        free(nde->_d); /* along with _rhs */
         nde->v = NULL;
         nde->_a = NULL;
         nde->_b = NULL;
-        nde->_d = NULL;
         nde->_rhs = NULL;
     }
 }
@@ -290,8 +288,7 @@ static void extnode_alloc_elements(Extnode* nde) {
         nde->_a = nde->v + nlayer;
         nde->_b = nde->_a + nlayer;
 
-        nde->_d = (double**) ecalloc(nlayer * 2, sizeof(double*));
-        nde->_rhs = nde->_d + nlayer;
+        nde->_rhs = (double**) ecalloc(nlayer * 1, sizeof(double*));
     }
 }
 
@@ -436,7 +433,8 @@ void nrn_setup_ext(NrnThread* _nt) {
         ExtNode* nde = nd->extnode;
         double d = NODED(nd);
         /* nde->_d only has -ELECTRODE_CURRENT contribution */
-        d = (*nde->_d[0] += NODED(nd));
+        *m.mep(index, index) += NODED(nd);
+        d = m.getval(index, index);
         /* now d is only the membrane current contribution */
         /* i.e. d =  cm/dt + di/dvm */
         *m.mep(index - 1, index) -= d;
@@ -457,12 +455,12 @@ void nrn_setup_ext(NrnThread* _nt) {
             int j = 0;
             for (;;) { /* between j and j+1 layer */
                 mfac = (*nde->param[xg_index_ext(j)] + *nde->param[xc_index_ext(j)] * cfac);
-                *nde->_d[j] += mfac;
+                *m.mep(index + j, index + j) += mfac;
                 ++j;
                 if (j == nrn_nlayer_extracellular) {
                     break;
                 }
-                *nde->_d[j] += mfac;
+                *m.mep(index + j, index + j) += mfac;
                 *m.mep(index - 1 + j, index + j) -= mfac;
                 *m.mep(index + j, index - 1 + j) -= mfac;
             }
@@ -473,8 +471,8 @@ void nrn_setup_ext(NrnThread* _nt) {
                 int index = nd->eqn_index_;
                 int parent_index = pnd->eqn_index_;
                 for (j = 0; j < nrn_nlayer_extracellular; ++j) {
-                    *nde->_d[j] -= nde->_b[j];
-                    *pnde->_d[j] -= nde->_a[j];
+                    *m.mep(index + j, index + j) -= nde->_b[j];
+                    *m.mep(parent_index + j, parent_index + j) -= nde->_a[j];
                     *m.mep(parent_index + j, index + j) += nde->_a[j];
                     *m.mep(index + j, parent_index + j) += nde->_b[j];
                 }
