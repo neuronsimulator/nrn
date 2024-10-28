@@ -31,11 +31,6 @@
 #include <sundials/sundials_math.h>
 #include <sundials/sundials_mpi.h>
 
-#include <nrnmpiuse.h>
-extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
-extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
-extern int nrnmpi_numprocs;
-
 #define ZERO   RCONST(0.0)
 #define HALF   RCONST(0.5)
 #define ONE    RCONST(1.0)
@@ -98,10 +93,12 @@ N_Vector N_VNewEmpty_Parallel(MPI_Comm comm,
   N_Vector_Ops ops;
   N_VectorContent_Parallel content;
   sunindextype n, Nsum;
-
+  long n1, Nsum1;
   /* Compute global length as sum of local lengths */
   n = local_length;
-  nrnmpi_long_allreduce_vec(&n, &Nsum, 1, 1);
+  n1 = long(n);
+  nrnmpi_long_allreduce_vec(&n1, &Nsum1, 1, 1);
+  Nsum = sunindextype(Nsum1);
   if (Nsum != global_length) {
     fprintf(stderr, BAD_N);
     return(NULL);
