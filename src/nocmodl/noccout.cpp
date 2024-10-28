@@ -260,9 +260,8 @@ void c_out() {
             P("  }\n");
             P("#if EXTRACELLULAR\n");
             P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
-            P("   int index = _nd->eqn_index_;\n");
-            P("   OcSparseMatrix& m = *_nt->_sp13mat;\n");
-            P("   *m.mep(index, index) += _g;\n");
+            P("   int ind = _nrn_mechanism_access_index(_nd);\n");
+            P("   *_nrn_mechanism_get_matrix_elem(_nt, ind, ind) += _g;\n");
             P(" }\n");
             P("#endif\n");
         } else {
@@ -681,9 +680,8 @@ void c_out_vectorize() {
             P("  }\n");
             P("#if EXTRACELLULAR\n");
             P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
-            P("   int index = _nd->eqn_index_;\n");
-            P("   OcSparseMatrix& m = *_nt->_sp13mat;\n");
-            P("   *m.mep(index, index) += _g;\n");
+            P("   int ind = _nrn_mechanism_access_index(_nd);\n");
+            P("   *_nrn_mechanism_get_matrix_elem(_nt, ind, ind) += _g;\n");
             P(" }\n");
             P("#endif\n");
         } else {

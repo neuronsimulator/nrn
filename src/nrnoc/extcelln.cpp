@@ -7,6 +7,7 @@
 #include "nrniv_mf.h"
 #include "hocassrt.h"
 #include "parse.hpp"
+#include "ocmatrix.h"
 
 
 extern int nrn_use_daspk_;
@@ -430,7 +431,7 @@ void nrn_setup_ext(NrnThread* _nt) {
         OcSparseMatrix& m = *_nt->_sp13mat;
         Node* nd = ndlist[i];
         int index = nd->eqn_index_;
-        ExtNode* nde = nd->extnode;
+        Extnode* nde = nd->extnode;
         double d = NODED(nd);
         /* nde->_d only has -ELECTRODE_CURRENT contribution */
         *m.mep(index, index) += NODED(nd);
@@ -448,7 +449,7 @@ void nrn_setup_ext(NrnThread* _nt) {
         OcSparseMatrix& m = *_nt->_sp13mat;
         Node* nd = ndlist[i];
         int index = nd->eqn_index_;
-        ExtNode* nde = nd->extnode;
+        Extnode* nde = nd->extnode;
         Node* pnd = _nt->_v_parent[nd->v_node_index];
         if (pnd) {
             /* series resistance and capacitance to ground */
@@ -464,7 +465,7 @@ void nrn_setup_ext(NrnThread* _nt) {
                 *m.mep(index - 1 + j, index + j) -= mfac;
                 *m.mep(index + j, index - 1 + j) -= mfac;
             }
-            ExtNode* pnde = pnd->extnode;
+            Extnode* pnde = pnd->extnode;
             /* axial connections */
             if (pnde) { /* parent sec may not be extracellular */
                 OcSparseMatrix& m = *_nt->_sp13mat;

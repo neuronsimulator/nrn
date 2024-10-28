@@ -38,6 +38,7 @@ the handling of v_structure_change as long as possible.
 */
 
 #include "nmodlmutex.h"
+#include "ocmatrix.h"
 
 #include <cstdint>
 #include <condition_variable>
