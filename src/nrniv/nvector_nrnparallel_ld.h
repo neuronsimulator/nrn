@@ -62,7 +62,8 @@ mv temp nvector_nrnparallel_ld.cpp
 
 #pragma once
 
-#include <nrnmpiuse.h>
+// may want to just get rid of MPI_Comm altogether
+#undef MPI_Comm
 #define MPI_Comm int
 
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/

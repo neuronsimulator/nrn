@@ -25,20 +25,10 @@
 #include <stdlib.h>
 
 #include "nvector_nrnparallel_ld.h"
+#define MPI_Comm int  // or perhaps get rid of them all
+#include "nrnmpi.h"
 #include <sundials/sundials_math.h>
 #include <sundials/sundials_types.h> /* definition of type realtype*/
-
-#include <nrnmpi.h>
-
-extern "C" {
-#if NRNMPI_DYNAMICLOAD
-extern int nrnmpi_numprocs;
-extern void* nrnmpi_p_comm;
-#define nrnmpi_comm *((MPI_Comm*) (nrnmpi_p_comm))
-#else   // not dynamicload
-extern MPI_Comm nrnmpi_comm;
-#endif  // not dynamicload
-}  // end of extern "C"
 
 #define ZERO   RCONST(0.0)
 #define HALF   RCONST(0.5)
@@ -171,7 +161,7 @@ extern "C" N_Vector N_VNew_NrnParallelLD(MPI_Comm comm,
     N_Vector v;
     realtype* data;
 
-    v = N_VNewEmpty_NrnParallelLD(nrnmpi_comm, local_length, global_length);
+    v = N_VNewEmpty_NrnParallelLD(comm, local_length, global_length);
     if (v == NULL)
         return (NULL);
 

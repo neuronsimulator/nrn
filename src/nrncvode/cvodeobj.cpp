@@ -90,10 +90,8 @@ extern short* nrn_is_artificial_;
 extern void nrn2ncs_netcons();
 #endif  // USENCS
 #if NRNMPI
-extern "C" {
-extern N_Vector N_VNew_Parallel(int comm, long int local_length, long int global_length);
-extern N_Vector N_VNew_NrnParallelLD(int comm, long int local_length, long int global_length);
-}  // extern "C"
+#include "nvector_parallel.h"
+#include "nvector_nrnparallel_ld.h"
 #endif
 
 extern bool nrn_use_fifo_queue_;
