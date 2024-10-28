@@ -72,6 +72,7 @@ set(AST_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/ast/constant_statement.hpp
     ${PROJECT_BINARY_DIR}/src/ast/constant_var.hpp
     ${PROJECT_BINARY_DIR}/src/ast/constructor_block.hpp
+    ${PROJECT_BINARY_DIR}/src/ast/cvode_block.hpp
     ${PROJECT_BINARY_DIR}/src/ast/define.hpp
     ${PROJECT_BINARY_DIR}/src/ast/derivative_block.hpp
     ${PROJECT_BINARY_DIR}/src/ast/derivimplicit_callback.hpp

@@ -9,7 +9,8 @@
 
 #include "codegen/codegen_naming.hpp"
 #include "pybind/pyembed.hpp"
-
+#include <fmt/format.h>
+#include <optional>
 #include <pybind11/embed.h>
 #include <pybind11/stl.h>
 
@@ -186,6 +187,49 @@ except Exception as e:
     return {std::move(solution), std::move(exception_message)};
 }
 
+std::tuple<std::string, std::string> call_diff2c(
+    const std::string& expression,
+    const std::pair<std::string, std::optional<int>>& variable,
+    const std::unordered_set<std::string>& indexed_vars) {
+    std::string statements;
+    // only indexed variables require special treatment
+    for (const auto& var: indexed_vars) {
+        statements += fmt::format("_allvars.append(sp.IndexedBase('{}', shape=[1]))\n", var);
+    }
+    auto [name, property] = variable;
+    if (property.has_value()) {
+        name = fmt::format("sp.IndexedBase('{}', shape=[1])", name);
+        statements += fmt::format("_allvars.append({})", name);
+    } else {
+        name = fmt::format("'{}'", name);
+    }
+    auto locals = py::dict("expression"_a = expression);
+    std::string script =
+        fmt::format(R"(
+_allvars = []
+{}
+variable = {}
+exception_message = ""
+try:
+    solution = differentiate2c(expression,
+                               variable,
+                               _allvars,
+               )
+except Exception as e:
+    # if we fail, fail silently and return empty string
+    solution = ""
+    exception_message = str(e)
+)",
+                    statements,
+                    property.has_value() ? fmt::format("{}[{}]", name, property.value()) : name);
+
+    py::exec(nmodl::pybind_wrappers::ode_py + script, locals);
+
+    auto solution = locals["solution"].cast<std::string>();
+    auto exception_message = locals["exception_message"].cast<std::string>();
+
+    return {std::move(solution), std::move(exception_message)};
+}
 
 void initialize_interpreter_func() {
     pybind11::initialize_interpreter(true);
@@ -203,7 +247,8 @@ NMODL_EXPORT pybind_wrap_api nmodl_init_pybind_wrapper_api() noexcept {
             &call_solve_nonlinear_system,
             &call_solve_linear_system,
             &call_diffeq_solver,
-            &call_analytic_diff};
+            &call_analytic_diff,
+            &call_diff2c};
 }
 }
 

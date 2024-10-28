@@ -88,6 +88,26 @@
                               - finalize_block:
                                   brief: "Statement block to be executed after calling linear solver"
                                   type: StatementBlock
+                        - CvodeBlock:
+                            nmodl: "CVODE_BLOCK "
+                            members:
+                              - name:
+                                  brief: "Name of the block"
+                                  type: Name
+                                  node_name: true
+                                  suffix: {value: " "}
+                              - n_odes:
+                                  brief: "number of ODEs to solve"
+                                  type: Integer
+                                  prefix: {value: "["}
+                                  suffix: {value: "]"}
+                              - non_stiff_block:
+                                  brief: "Block with statements of the form Dvar = f(var), used for updating non-stiff systems"
+                                  type: StatementBlock
+                              - stiff_block:
+                                  brief: "Block with statements of the form Dvar = Dvar / (1 - dt * J(f)), used for updating stiff systems"
+                                  type: StatementBlock
+                            brief: "Represents a block used for variable timestep integration (CVODE) of DERIVATIVE blocks"
                         - LongitudinalDiffusionBlock:
                             brief: "Extracts information required for LONGITUDINAL_DIFFUSION for each KINETIC block."
                             nmodl: "LONGITUDINAL_DIFFUSION_BLOCK"

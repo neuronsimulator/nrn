@@ -25,6 +25,7 @@
 #include "visitors/after_cvode_to_cnexp_visitor.hpp"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
+#include "visitors/cvode_visitor.hpp"
 #include "visitors/function_callpath_visitor.hpp"
 #include "visitors/global_var_visitor.hpp"
 #include "visitors/implicit_argument_visitor.hpp"
@@ -516,6 +517,8 @@ int run_nmodl(int argc, const char* argv[]) {
 
             enable_sympy(solver_exists(*ast, "derivimplicit"), "'SOLVE ... METHOD derivimplicit'");
             enable_sympy(node_exists(*ast, ast::AstNodeType::LINEAR_BLOCK), "'LINEAR' block");
+            enable_sympy(node_exists(*ast, ast::AstNodeType::DERIVATIVE_BLOCK),
+                         "'DERIVATIVE' block");
             enable_sympy(node_exists(*ast, ast::AstNodeType::NON_LINEAR_BLOCK),
                          "'NONLINEAR' block");
             enable_sympy(solver_exists(*ast, "sparse"), "'SOLVE ... METHOD sparse'");
@@ -526,6 +529,14 @@ int run_nmodl(int argc, const char* argv[]) {
             nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance()
                 .api()
                 .initialize_interpreter();
+
+            if (neuron_code) {
+                logger->info("Running CVODE visitor");
+                CvodeVisitor().visit_program(*ast);
+                SymtabVisitor(update_symtab).visit_program(*ast);
+                ast_to_nmodl(*ast, filepath("cvode"));
+            }
+
             if (sympy_conductance) {
                 logger->info("Running sympy conductance visitor");
                 SympyConductanceVisitor().visit_program(*ast);
