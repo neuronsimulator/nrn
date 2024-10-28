@@ -213,14 +213,12 @@ static void extcell_init(neuron::model_sorted_token const&,
 void extnode_free_elements(Extnode* nde) {
     if (nde->v) {
         free(nde->v);  /* along with _a and _b */
-        free(nde->_d); /* along with _rhs, _x12, and _x21 */
+        free(nde->_d); /* along with _rhs */
         nde->v = NULL;
         nde->_a = NULL;
         nde->_b = NULL;
         nde->_d = NULL;
         nde->_rhs = NULL;
-        nde->_x12 = NULL;
-        nde->_x21 = NULL;
     }
 }
 
@@ -292,10 +290,8 @@ static void extnode_alloc_elements(Extnode* nde) {
         nde->_a = nde->v + nlayer;
         nde->_b = nde->_a + nlayer;
 
-        nde->_d = (double**) ecalloc(nlayer * 4, sizeof(double*));
+        nde->_d = (double**) ecalloc(nlayer * 2, sizeof(double*));
         nde->_rhs = nde->_d + nlayer;
-        nde->_x12 = nde->_rhs + nlayer;
-        nde->_x21 = nde->_x12 + nlayer;
     }
 }
 
@@ -420,45 +416,45 @@ void nrn_rhs_ext(NrnThread* _nt) {
 }
 
 void nrn_setup_ext(NrnThread* _nt) {
-    int i, j, cnt;
-    Node *nd, *pnd, **ndlist;
-    double* pd;
-    double d, cfac, mfac;
-    Extnode *nde, *pnde;
+    double cfac, mfac;
     Memb_list* ml = _nt->_ecell_memb_list;
     if (!ml) {
         return;
     }
     /*printnode("begin setup");*/
-    cnt = ml->nodecount;
-    ndlist = ml->nodelist;
+    int cnt = ml->nodecount;
+    Node** ndlist = ml->nodelist;
     cfac = .001 * _nt->cj;
 
     /* d contains all the membrane conductances (and capacitance) */
     /* i.e. (cm/dt + di/dvm - dis/dvi)*[dvi] and
         (dis/dvi)*[dvx] */
-    for (i = 0; i < cnt; ++i) {
-        nd = ndlist[i];
-        nde = nd->extnode;
-        d = NODED(nd);
+    for (int i = 0; i < cnt; ++i) {
+        OcSparseMatrix& m = *_nt->_sp13mat;
+        Node* nd = ndlist[i];
+        int index = nd->eqn_index_;
+        ExtNode* nde = nd->extnode;
+        double d = NODED(nd);
         /* nde->_d only has -ELECTRODE_CURRENT contribution */
         d = (*nde->_d[0] += NODED(nd));
         /* now d is only the membrane current contribution */
         /* i.e. d =  cm/dt + di/dvm */
-        *nde->_x12[0] -= d;
-        *nde->_x21[0] -= d;
+        *m.mep(index - 1, index) -= d;
+        *m.mep(index, index - 1) -= d;
 #if I_MEMBRANE
         ml->data(i, sav_g_index) = d;
 #endif
     }
     /* series resistance, capacitance, and axial terms. */
-    for (i = 0; i < cnt; ++i) {
-        nd = ndlist[i];
-        nde = nd->extnode;
-        pnd = _nt->_v_parent[nd->v_node_index];
+    for (int i = 0; i < cnt; ++i) {
+        OcSparseMatrix& m = *_nt->_sp13mat;
+        Node* nd = ndlist[i];
+        int index = nd->eqn_index_;
+        ExtNode* nde = nd->extnode;
+        Node* pnd = _nt->_v_parent[nd->v_node_index];
         if (pnd) {
             /* series resistance and capacitance to ground */
-            j = 0;
+            int j = 0;
             for (;;) { /* between j and j+1 layer */
                 mfac = (*nde->param[xg_index_ext(j)] + *nde->param[xc_index_ext(j)] * cfac);
                 *nde->_d[j] += mfac;
@@ -467,10 +463,10 @@ void nrn_setup_ext(NrnThread* _nt) {
                     break;
                 }
                 *nde->_d[j] += mfac;
-                *nde->_x12[j] -= mfac;
-                *nde->_x21[j] -= mfac;
+                *m.mep(index - 1 + j, index + j) -= mfac;
+                *m.mep(index + j, index - 1 + j) -= mfac;
             }
-            pnde = pnd->extnode;
+            ExtNode* pnde = pnd->extnode;
             /* axial connections */
             if (pnde) { /* parent sec may not be extracellular */
                 OcSparseMatrix& m = *_nt->_sp13mat;

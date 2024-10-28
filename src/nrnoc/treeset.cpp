@@ -1954,17 +1954,7 @@ static void nrn_matrix_node_alloc(void) {
                     int k = i + ie;
                     nde->_d[ie] = nt->_sp13mat->mep(k, k);
                     nde->_rhs[ie] = nt->_sp13_rhs + k + 1;
-                    nde->_x21[ie] = nt->_sp13mat->mep(k, k - 1);
-                    nde->_x12[ie] = nt->_sp13mat->mep(k - 1, k);
                 }
-            }
-            if (pnd) {
-                int j = pnd->eqn_index_;
-                if (nde && pnd->extnode)
-                    for (int ie = 0; ie < nlayer; ++ie) {
-                        int kp = j + ie;
-                        int k = i + ie;
-                    }
             }
         }
         nrndae_alloc();
