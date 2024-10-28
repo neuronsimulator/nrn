@@ -213,14 +213,12 @@ static void extcell_init(neuron::model_sorted_token const&,
 void extnode_free_elements(Extnode* nde) {
     if (nde->v) {
         free(nde->v);  /* along with _a and _b */
-        free(nde->_d); /* along with _rhs, _a_matelm, _b_matelm, _x12, and _x21 */
+        free(nde->_d); /* along with _rhs, _x12, and _x21 */
         nde->v = NULL;
         nde->_a = NULL;
         nde->_b = NULL;
         nde->_d = NULL;
         nde->_rhs = NULL;
-        nde->_a_matelm = NULL;
-        nde->_b_matelm = NULL;
         nde->_x12 = NULL;
         nde->_x21 = NULL;
     }
@@ -294,11 +292,9 @@ static void extnode_alloc_elements(Extnode* nde) {
         nde->_a = nde->v + nlayer;
         nde->_b = nde->_a + nlayer;
 
-        nde->_d = (double**) ecalloc(nlayer * 6, sizeof(double*));
+        nde->_d = (double**) ecalloc(nlayer * 4, sizeof(double*));
         nde->_rhs = nde->_d + nlayer;
-        nde->_a_matelm = nde->_rhs + nlayer;
-        nde->_b_matelm = nde->_a_matelm + nlayer;
-        nde->_x12 = nde->_b_matelm + nlayer;
+        nde->_x12 = nde->_rhs + nlayer;
         nde->_x21 = nde->_x12 + nlayer;
     }
 }
@@ -477,11 +473,14 @@ void nrn_setup_ext(NrnThread* _nt) {
             pnde = pnd->extnode;
             /* axial connections */
             if (pnde) { /* parent sec may not be extracellular */
+                OcSparseMatrix& m = *_nt->_sp13mat;
+                int index = nd->eqn_index_;
+                int parent_index = pnd->eqn_index_;
                 for (j = 0; j < nrn_nlayer_extracellular; ++j) {
                     *nde->_d[j] -= nde->_b[j];
                     *pnde->_d[j] -= nde->_a[j];
-                    *nde->_a_matelm[j] += nde->_a[j];
-                    *nde->_b_matelm[j] += nde->_b[j];
+                    *m.mep(parent_index + j, index + j) += nde->_a[j];
+                    *m.mep(index + j, parent_index + j) += nde->_b[j];
                 }
             }
         }

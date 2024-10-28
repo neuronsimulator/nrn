@@ -579,17 +579,17 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
             auto const nd_a = NODEA(nd);
             auto const nd_b = NODEB(nd);
             // Update entries in sp13_mat
-            *nd->_a_matelm += nd_a;
-            *nd->_b_matelm += nd_b; /* b may have value from lincir */
             {
                 const int index = nd->eqn_index_;
                 *m.mep(index - 1, index - 1) -= nd_b;
-            }
-            // used to update NODED (sparse13 matrix) using NODEA and NODEB ("SoA")
-            {
+
+                // used to update NODED (sparse13 matrix) using NODEA and NODEB ("SoA")
                 Node* const parent_nd = _nt->_v_node[parent_i];
                 const int parent_index = parent_nd->eqn_index_;
                 *m.mep(parent_index - 1, parent_index - 1) -= nd_a;
+
+                *m.mep(parent_index - 1, index - 1) += nd_a;
+                *m.mep(index - 1, parent_index - 1) += nd_b; /* b may have value from lincir */
             }
             // Also update the Node's d value in the SoA storage (is this needed?)
             vec_d[i] -= nd_b;
@@ -1939,9 +1939,6 @@ static void nrn_matrix_node_alloc(void) {
                         nt->_sp13mat->mep(kp, k);
                         nt->_sp13mat->mep(k, kp);
                     }
-            } else { /* not needed if index starts at 1 */
-                nd->_a_matelm = nullptr;
-                nd->_b_matelm = nullptr;
             }
         }
         nt->_sp13mat->compress();
@@ -1963,18 +1960,11 @@ static void nrn_matrix_node_alloc(void) {
             }
             if (pnd) {
                 int j = pnd->eqn_index_;
-                nd->_a_matelm = nt->_sp13mat->mep(j - 1, i - 1);
-                nd->_b_matelm = nt->_sp13mat->mep(i - 1, j - 1);
                 if (nde && pnd->extnode)
                     for (int ie = 0; ie < nlayer; ++ie) {
                         int kp = j + ie;
                         int k = i + ie;
-                        nde->_a_matelm[ie] = nt->_sp13mat->mep(kp, k);
-                        nde->_b_matelm[ie] = nt->_sp13mat->mep(k, kp);
                     }
-            } else { /* not needed if index starts at 1 */
-                nd->_a_matelm = nullptr;
-                nd->_b_matelm = nullptr;
             }
         }
         nrndae_alloc();
