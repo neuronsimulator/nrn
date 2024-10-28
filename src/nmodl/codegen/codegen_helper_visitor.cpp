@@ -823,7 +823,7 @@ void CodegenHelperVisitor::visit_linear_block(const ast::LinearBlock& /* node */
 }
 
 void CodegenHelperVisitor::visit_non_linear_block(const ast::NonLinearBlock& /* node */) {
-    info.vectorize = false;
+    info.vectorize = true;
 }
 
 void CodegenHelperVisitor::visit_discrete_block(const ast::DiscreteBlock& /* node */) {
