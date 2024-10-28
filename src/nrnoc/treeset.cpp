@@ -21,6 +21,7 @@
 #include "ocmatrix.h"
 #include "utils/profile/profiler_interface.h"
 #include "multicore.h"
+#include "ocmatrix.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -351,7 +352,9 @@ void update_sp13_rhs_based_on_actual_rhs(NrnThread* nt) {
  */
 void update_actual_d_based_on_sp13_mat(NrnThread* nt) {
     for (int i = 0; i < nt->end; ++i) {
-        nt->actual_d(i) = *nt->_v_node[i]->_d_matelm;
+        const int index = nt->_v_node[i]->eqn_index_;
+        OcSparseMatrix& m = *nt->_sp13mat;
+        nt->actual_d(i) = m.getval(index - 1, index - 1);
     }
 }
 
@@ -360,7 +363,9 @@ void update_actual_d_based_on_sp13_mat(NrnThread* nt) {
  */
 void update_sp13_mat_based_on_actual_d(NrnThread* nt) {
     for (int i = 0; i < nt->end; ++i) {
-        *nt->_v_node[i]->_d_matelm = nt->actual_d(i);
+        const int index = nt->_v_node[i]->eqn_index_;
+        OcSparseMatrix& m = *nt->_sp13mat;
+        *m.mep(index - 1, index - 1) = nt->actual_d(i);
     }
 }
 
@@ -569,16 +574,23 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
         update_sp13_mat_based_on_actual_d(_nt);  // just because of activclamp_lhs
         for (i = i2; i < i3; ++i) {              // note i2
             Node* nd = _nt->_v_node[i];
+            OcSparseMatrix& m = *_nt->_sp13mat;
             auto const parent_i = _nt->_v_parent_index[i];
-            auto* const parent_nd = _nt->_v_node[parent_i];
             auto const nd_a = NODEA(nd);
             auto const nd_b = NODEB(nd);
             // Update entries in sp13_mat
             *nd->_a_matelm += nd_a;
             *nd->_b_matelm += nd_b; /* b may have value from lincir */
-            *nd->_d_matelm -= nd_b;
+            {
+                const int index = nd->eqn_index_;
+                *m.mep(index - 1, index - 1) -= nd_b;
+            }
             // used to update NODED (sparse13 matrix) using NODEA and NODEB ("SoA")
-            *parent_nd->_d_matelm -= nd_a;
+            {
+                Node* const parent_nd = _nt->_v_node[parent_i];
+                const int parent_index = parent_nd->eqn_index_;
+                *m.mep(parent_index - 1, parent_index - 1) -= nd_a;
+            }
             // Also update the Node's d value in the SoA storage (is this needed?)
             vec_d[i] -= nd_b;
             vec_d[parent_i] -= nd_a;
@@ -1940,7 +1952,6 @@ static void nrn_matrix_node_alloc(void) {
             Node *pnd = nt->_v_parent[in];
             int i = nd->eqn_index_;
             nt->_sp13_rhs[i] = nt->actual_rhs(in);
-            nd->_d_matelm = nt->_sp13mat->mep(i - 1, i - 1);
             if (nde) {
                 for (int ie = 0; ie < nlayer; ++ie) {
                     int k = i + ie;
