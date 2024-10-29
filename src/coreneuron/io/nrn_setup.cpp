@@ -216,6 +216,10 @@ void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
 
         nrn_assert(fscanf(fp, "%d\n", &iFile) == 1);
         if ((iNum % nrnmpi_numprocs) == nrnmpi_myid) {
+            if (iFile == -1) {
+                // Sentinel value, we are done for this rank
+                break;
+            }
             grp[ngrp] = iFile;
             ngrp++;
         }
