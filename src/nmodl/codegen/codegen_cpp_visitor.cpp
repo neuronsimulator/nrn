@@ -1454,6 +1454,7 @@ void CodegenCppVisitor::setup(const Program& node) {
     info.semantic_variable_count = int_variables_size();
 }
 
+
 std::string CodegenCppVisitor::compute_method_name(BlockType type) const {
     if (type == BlockType::Initial) {
         return method_name(naming::NRN_INIT_METHOD);
@@ -1687,6 +1688,7 @@ void CodegenCppVisitor::print_table_check_function(const Block& node) {
     printer->pop_block();
 }
 
+
 std::string CodegenCppVisitor::get_object_specifiers(
     const std::unordered_set<CppObjectSpecifier>& specifiers) {
     std::string result;
@@ -1698,6 +1700,7 @@ std::string CodegenCppVisitor::get_object_specifiers(
     }
     return result;
 }
+
 
 const ast::TableStatement* CodegenCppVisitor::get_table_statement(const ast::Block& node) {
     const auto& table_statements = collect_nodes(node, {AstNodeType::TABLE_STATEMENT});
@@ -1724,6 +1727,7 @@ std::tuple<bool, int> CodegenCppVisitor::check_if_var_is_array(const std::string
         return {false, 0};
     }
 }
+
 
 void CodegenCppVisitor::print_rename_state_vars() const {
     for (const auto& state: info.state_vars) {
