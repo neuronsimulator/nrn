@@ -75,7 +75,7 @@ def test_mcna(chk, simulator, threads):
         assert h.cnt1_MCna == 2 * ncell
 
         # Related to the number Newton iterations.
-        # assert h.cnt2_MCna == 3 
+        # assert h.cnt2_MCna == 3
         pc.psolve(tstop)
     time_steps = round(tstop / h.dt)
     assert h.cnt1_MCna == 2 * ncell * (time_steps + 1)  # +1 b/c of finitialize
