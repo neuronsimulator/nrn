@@ -170,12 +170,13 @@ std::vector<int*> nrnthreads_netcon_srcgid;
 std::vector<std::vector<int>> nrnthreads_netcon_negsrcgid_tid;
 
 /* read files.dat file and distribute cellgroups to all mpi ranks */
-void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
+void nrn_read_filesdat(std::vector<int>& grps, const char* filesdat) {
     patstimtype = nrn_get_mechtype("PatternStim");
     if (corenrn_embedded && !corenrn_file_mode) {
-        ngrp = corenrn_embedded_nthread;
-        grp = new int[ngrp + 1];
-        (*nrn2core_group_ids_)(grp);
+        int ngrp = corenrn_embedded_nthread;
+        grps.reserve(ngrp+1); // unsure why, but we used to allocate an extra position
+        grps.resize(ngrp);
+        (*nrn2core_group_ids_)(grps.data());
         return;
     }
 
@@ -187,6 +188,15 @@ void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
 
     char version[256];
     nrn_assert(fscanf(fp, "%s\n", version) == 1);
+
+    // Do we have an id of the files.dat format?
+    int filedat_format = 0; // base format, suitable for RR
+    char* slash_location = strchr(version, '/');
+    if (slash_location) {
+        filedat_format = atoi(slash_location+1);
+        *slash_location = 0; // remove the /... part now
+    }
+
     check_bbcore_write_version(version);
 
     int iNumFiles = 0;
@@ -207,17 +217,51 @@ void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
             "Info : The number of input datasets are less than ranks, some ranks will be idle!\n");
     }
 
-    ngrp = 0;
-    grp = new int[iNumFiles / nrnmpi_numprocs + 1];
+    if (filedat_format == 0) {
+        // The base mode. Will read all entries and do
+        // round robin. Only those falling in our rank are kept.
+        // ngrp is the number of files loaded by this rank.
+        long ngrp = 0;
+        grps.reserve(iNumFiles / nrnmpi_numprocs + 1);
 
-    // irerate over gids in files.dat
-    for (int iNum = 0; iNum < iNumFiles; ++iNum) {
+        // iterate over gids in files.dat
+        for (int iNum = 0; iNum < iNumFiles; ++iNum) {
+            int iFile;
+
+            nrn_assert(fscanf(fp, "%d\n", &iFile) == 1);
+            if ((iNum % nrnmpi_numprocs) == nrnmpi_myid) {
+                grps.push_back(iFile);
+            }
+        }
+    } else if (filedat_format == 1) {
+        // Tha balanced mode is explicit on which files are loaded
+        // in each rank. Each section of data (for each rank) starts
+        // with the mark ':RANK N'
+        printf("Reading balanced dat files...\n");
+
+        // We don't know a-priory how many entries there will be. No .reserve :(
+        // iterate over all entries in files.dat until we'r in the right rank
+        int cur_rank = -1;
+        char buf[64];
         int iFile;
 
-        nrn_assert(fscanf(fp, "%d\n", &iFile) == 1);
-        if ((iNum % nrnmpi_numprocs) == nrnmpi_myid) {
-            grp[ngrp] = iFile;
-            ngrp++;
+        while (fgets(buf, 64, fp)) {
+            if (strncmp(buf, ":RANK", 5) == 0) {
+                // We can actually ignore the rank nr. Always switch to the next one
+                cur_rank++;
+                // Stop loading if went over our rank
+                if (cur_rank > nrnmpi_myid) {
+                    break;
+                }
+                // Done. Move on
+                continue;
+            }
+            // Keep loading if not our rank yet
+            if (cur_rank < nrnmpi_myid) {
+                continue;
+            }
+            nrn_assert(sscanf(buf, "%d\n", &iFile) == 1);
+            grps.push_back(iFile);
         }
     }
 
@@ -409,11 +453,10 @@ void nrn_setup(const char* filesdat,
                double* mindelay) {
     double time = nrn_wtime();
 
-    int ngroup;
-    int* gidgroups;
-    nrn_read_filesdat(ngroup, gidgroups, filesdat);
-    UserParams userParams(ngroup,
-                          gidgroups,
+    std::vector<int> gidgroups;
+    nrn_read_filesdat(gidgroups, filesdat);
+    UserParams userParams(gidgroups.size(),
+                          gidgroups.data(),
                           datpath,
                           strlen(restore_path) == 0 ? datpath : restore_path,
                           checkPoints);
