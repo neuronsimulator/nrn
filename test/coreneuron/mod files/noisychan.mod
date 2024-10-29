@@ -50,7 +50,7 @@ BREAKPOINT {
 }
 
 DERIVATIVE conduct {
-  e' = (-65(mV) - e)/tau
+  e' = (-65 - e)/tau
 }
 
 FUNCTION negexp()(ms) {

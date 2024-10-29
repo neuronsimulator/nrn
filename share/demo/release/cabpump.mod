@@ -115,17 +115,17 @@ PROCEDURE coord() {
 
 KINETIC state {
 :	printf("Solve begin t=%g v=%g cai=%g ica_pmp=%g\n", t, v, cai, ica_pmp)
-	COMPARTMENT i, (1+beta)*diam*diam*vol[i]*1(um) {ca}
+	COMPARTMENT i, (1+beta)*diam*diam*vol[i]*1 {ca}
 	COMPARTMENT (1e10)*area1 {pump pumpca}
 	COMPARTMENT volo*(1e15) {cao}
 ? kinetics
 	~ pumpca <-> pump + cao		(c3, c4)
 	ica_pmp = (1e-4)*2*FARADAY*(f_flux - b_flux)/area1
 	: all currents except pump
-	~ ca[0] << (-(ica-ica_pmp_last)*PI*diam*1(um)*(1e4)*frat[0]/(2*FARADAY))
+	~ ca[0] << (-(ica-ica_pmp_last)*PI*diam*1*(1e4)*frat[0]/(2*FARADAY))
 	:diffusion
 	FROM i=0 TO NANN-2 {
-		~ ca[i] <-> ca[i+1] (DFree*frat[i+1]*1(um), DFree*frat[i+1]*1(um))
+		~ ca[i] <-> ca[i+1] (DFree*frat[i+1]*1, DFree*frat[i+1]*1)
 	}
 	:pump
 	~ ca[0] + pump <-> pumpca	(c1, c2)
@@ -136,7 +136,7 @@ KINETIC state {
 	
 PROCEDURE parms() {
 	coord()
-	area1 = 2*PI*(diam/2) * 1(um)
+	area1 = 2*PI*(diam/2)
         c1 = (1e7)*area1 * k1
         c2 = (1e7)*area1 * k2
         c3 = (1e7)*area1 * k3
