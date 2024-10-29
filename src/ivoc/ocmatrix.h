@@ -25,6 +25,11 @@ class OcMatrix {
         unimp();
         return nullptr;
     }  // matrix element pointer
+
+    inline double operator()(int i, int j) const {
+        return getval(i, j);
+    };
+
     inline double& operator()(int i, int j) {
         return *mep(i, j);
     };

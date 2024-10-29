@@ -28,13 +28,10 @@ void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
     mmfree();
 
     plen_ = 0;
-    std::vector<int> nonzero_i, nonzero_j;
-    m_.nonzeros(nonzero_i, nonzero_j);
-    pm_.resize(nonzero_i.size());
-    ptree_.resize(nonzero_i.size());
-    for (int k = 0; k < nonzero_i.size(); k++) {
-        const int i = nonzero_i[k];
-        const int j = nonzero_j[k];
+    std::vector<std::pair<int, int>> nzs = m_.nonzeros();
+    pm_.resize(nzs.size());
+    ptree_.resize(nzs.size());
+    for (const auto [i, j]: nzs) {
         int it;
         if (i < nnode) {
             it = nodes[i]->eqn_index_ + layer[i];
