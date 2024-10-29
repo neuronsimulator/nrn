@@ -309,12 +309,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Print top level (global scope) verbatim blocks
-     */
-    void print_top_verbatim_blocks();
-
-
-    /**
      * Print function and procedures prototype declaration
      */
     void print_function_prototypes() override;

@@ -326,28 +326,6 @@ void CodegenCoreneuronCppVisitor::print_abort_routine() const {
 /****************************************************************************************/
 
 
-void CodegenCoreneuronCppVisitor::print_top_verbatim_blocks() {
-    if (info.top_verbatim_blocks.empty()) {
-        return;
-    }
-    print_namespace_stop();
-
-    printer->add_newline(2);
-    print_using_namespace();
-
-    printing_top_verbatim_blocks = true;
-
-    for (const auto& block: info.top_verbatim_blocks) {
-        printer->add_newline(2);
-        block->accept(*this);
-    }
-
-    printing_top_verbatim_blocks = false;
-
-    print_namespace_start();
-}
-
-
 void CodegenCoreneuronCppVisitor::print_function_prototypes() {
     if (info.functions.empty() && info.procedures.empty()) {
         return;
