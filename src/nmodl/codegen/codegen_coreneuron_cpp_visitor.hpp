@@ -408,7 +408,7 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
      * \param text The verbatim code to be processed
      * \return     The code with all variables renamed as needed
      */
-    std::string process_verbatim_text(std::string const& text) override;
+    std::string process_verbatim_text(std::string const& text);
 
 
     /**
@@ -947,6 +947,7 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
     void visit_derivimplicit_callback(const ast::DerivimplicitCallback& node) override;
     void visit_for_netcon(const ast::ForNetcon& node) override;
+    void visit_verbatim(const ast::Verbatim& node) override;
     void visit_watch_statement(const ast::WatchStatement& node) override;
 
     ParamVector functor_params() override;

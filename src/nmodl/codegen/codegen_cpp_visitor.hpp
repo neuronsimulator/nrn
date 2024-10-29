@@ -1051,14 +1051,6 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     virtual std::string nrn_thread_internal_arguments() = 0;
 
     /**
-     * Process a verbatim block for possible variable renaming
-     * \param text The verbatim code to be processed
-     * \return     The code with all variables renamed as needed
-     */
-    virtual std::string process_verbatim_text(std::string const& text) = 0;
-
-
-    /**
      * Arguments for register_mech or point_register_mech function
      */
     virtual std::string register_mechanism_arguments() const = 0;
@@ -1497,7 +1489,6 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     void visit_unary_operator(const ast::UnaryOperator& node) override;
     void visit_unit(const ast::Unit& node) override;
     void visit_var_name(const ast::VarName& node) override;
-    void visit_verbatim(const ast::Verbatim& node) override;
     void visit_while_statement(const ast::WhileStatement& node) override;
     void visit_update_dt(const ast::UpdateDt& node) override;
     void visit_protect_statement(const ast::ProtectStatement& node) override;

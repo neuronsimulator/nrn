@@ -118,6 +118,21 @@ std::string CodegenCoreneuronCppVisitor::process_verbatim_token(const std::strin
     return get_variable_name(token, use_instance);
 }
 
+void CodegenCoreneuronCppVisitor::visit_verbatim(const Verbatim& node) {
+    const auto& text = node.get_statement()->eval();
+    printer->add_line("// VERBATIM");
+    const auto& result = process_verbatim_text(text);
+
+    const auto& statements = stringutils::split_string(result, '\n');
+    for (const auto& statement: statements) {
+        const auto& trimed_stmt = stringutils::trim_newline(statement);
+        if (trimed_stmt.find_first_not_of(' ') != std::string::npos) {
+            printer->add_line(trimed_stmt);
+        }
+    }
+    printer->add_line("// ENDVERBATIM");
+}
+
 
 /**
  * \details This can be override in the backend. For example, parameters can be constant

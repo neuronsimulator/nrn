@@ -631,9 +631,9 @@ CodegenNeuronCppVisitor::function_table_parameters(const ast::FunctionTableBlock
     return {params, {}};
 }
 
-/// TODO: Write for NEURON
-std::string CodegenNeuronCppVisitor::process_verbatim_text(std::string const& text) {
-    return {};
+
+void CodegenNeuronCppVisitor::visit_verbatim(const Verbatim& node) {
+    // Not implemented yet.
 }
 
 

@@ -359,14 +359,6 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Process a verbatim block for possible variable renaming
-     * \param text The verbatim code to be processed
-     * \return     The code with all variables renamed as needed
-     */
-    std::string process_verbatim_text(std::string const& text) override;
-
-
-    /**
      * Arguments for register_mech or point_register_mech function
      */
     std::string register_mechanism_arguments() const override;
@@ -768,12 +760,11 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     /*                            Overloaded visitor routines                               */
     /****************************************************************************************/
 
-
+    void visit_verbatim(const ast::Verbatim& node) override;
     void visit_watch_statement(const ast::WatchStatement& node) override;
     void visit_for_netcon(const ast::ForNetcon& node) override;
     void visit_longitudinal_diffusion_block(const ast::LongitudinalDiffusionBlock& node) override;
     void visit_lon_diffuse(const ast::LonDiffuse& node) override;
-
 
   public:
     /****************************************************************************************/

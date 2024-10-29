@@ -1084,22 +1084,6 @@ void CodegenCppVisitor::visit_function_call(const FunctionCall& node) {
 }
 
 
-void CodegenCppVisitor::visit_verbatim(const Verbatim& node) {
-    const auto& text = node.get_statement()->eval();
-    printer->add_line("// VERBATIM");
-    const auto& result = process_verbatim_text(text);
-
-    const auto& statements = stringutils::split_string(result, '\n');
-    for (const auto& statement: statements) {
-        const auto& trimed_stmt = stringutils::trim_newline(statement);
-        if (trimed_stmt.find_first_not_of(' ') != std::string::npos) {
-            printer->add_line(trimed_stmt);
-        }
-    }
-    printer->add_line("// ENDVERBATIM");
-}
-
-
 void CodegenCppVisitor::visit_update_dt(const ast::UpdateDt& node) {
     // dt change statement should be pulled outside already
 }
