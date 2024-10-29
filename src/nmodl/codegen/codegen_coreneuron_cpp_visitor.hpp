@@ -202,23 +202,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Print pragma annotations for channel iterations
-     *
-     * This can be overriden by backends to provide additonal annotations or pragmas to enable
-     * for example SIMD code generation (e.g. through \c ivdep)
-     * The default implementation prints
-     *
-     * \code
-     * #pragma ivdep
-     * \endcode
-     *
-     * \param type The block type
-     */
-    virtual void print_channel_iteration_block_parallel_hint(BlockType type,
-                                                             const ast::Block* block);
-
-
-    /**
      * Check if reduction block in \c nrn\_cur required
      */
     virtual bool nrn_cur_reduction_loop_required();

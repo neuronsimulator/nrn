@@ -791,6 +791,23 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     std::string breakpoint_current(std::string current) const;
 
 
+    /**
+     * Print pragma annotations for channel iterations
+     *
+     * This can be overriden by backends to provide additonal annotations or pragmas to enable
+     * for example SIMD code generation (e.g. through \c ivdep)
+     * The default implementation prints
+     *
+     * \code
+     * #pragma ivdep
+     * \endcode
+     *
+     * \param type The block type
+     */
+    virtual void print_channel_iteration_block_parallel_hint(BlockType type,
+                                                             const ast::Block* block);
+
+
     /****************************************************************************************/
     /*                                Backend specific routines                             */
     /****************************************************************************************/

@@ -218,41 +218,6 @@ void CodegenCoreneuronCppVisitor::print_net_init_acc_serial_annotation_block_end
 }
 
 
-/**
- * \details Depending programming model and compiler, we print compiler hint
- * for parallelization. For example:
- *
- * \code
- *      #pragma omp simd
- *      for(int id = 0; id < nodecount; id++) {
- *
- *      #pragma acc parallel loop
- *      for(int id = 0; id < nodecount; id++) {
- * \endcode
- */
-void CodegenCoreneuronCppVisitor::print_channel_iteration_block_parallel_hint(
-    BlockType /* type */,
-    const ast::Block* block) {
-    // ivdep allows SIMD parallelisation of a block/loop but doesn't provide
-    // a standard mechanism for atomics. Also, even with openmp 5.0, openmp
-    // atomics do not enable vectorisation under "omp simd" (gives compiler
-    // error with gcc < 9 if atomic and simd pragmas are nested). So, emit
-    // ivdep/simd pragma when no MUTEXLOCK/MUTEXUNLOCK/PROTECT statements
-    // are used in the given block.
-    std::vector<std::shared_ptr<const ast::Ast>> nodes;
-    if (block) {
-        nodes = collect_nodes(*block,
-                              {ast::AstNodeType::PROTECT_STATEMENT,
-                               ast::AstNodeType::MUTEX_LOCK,
-                               ast::AstNodeType::MUTEX_UNLOCK});
-    }
-    if (nodes.empty()) {
-        printer->add_line("#pragma omp simd");
-        printer->add_line("#pragma ivdep");
-    }
-}
-
-
 bool CodegenCoreneuronCppVisitor::nrn_cur_reduction_loop_required() {
     return info.point_process;
 }
