@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include <Eigen/Eigen>
@@ -28,15 +29,15 @@ class OcMatrix {
         return *mep(i, j);
     };
 
-    virtual double getval(int i, int j) {
+    virtual double getval(int i, int j) const {
         unimp();
         return 0.;
     }
-    virtual int nrow() {
+    virtual int nrow() const {
         unimp();
         return 0;
     }
-    virtual int ncol() {
+    virtual int ncol() const {
         unimp();
         return 0;
     }
@@ -44,7 +45,9 @@ class OcMatrix {
         unimp();
     }
 
-    virtual void nonzeros(std::vector<int>& m, std::vector<int>& n);
+    virtual void nonzeros(std::vector<int>& m, std::vector<int>& n) const;
+
+    virtual std::vector<std::pair<int, int>> nonzeros() const;
 
     OcFullMatrix* full();
 
@@ -63,13 +66,13 @@ class OcMatrix {
     virtual void add(Matrix*, Matrix* out) {
         unimp();
     }
-    virtual void getrow(int, Vect* out) {
+    virtual void getrow(int, Vect* out) const {
         unimp();
     }
-    virtual void getcol(int, Vect* out) {
+    virtual void getcol(int, Vect* out) const {
         unimp();
     }
-    virtual void getdiag(int, Vect* out) {
+    virtual void getdiag(int, Vect* out) const {
         unimp();
     }
     virtual void setrow(int, Vect* in) {
@@ -123,20 +126,20 @@ class OcMatrix {
     virtual void svd1(Matrix* u, Matrix* v, Vect* d) {
         unimp();
     }
-    virtual double det(int* e) {
+    virtual double det(int* e) const {
         unimp();
         return 0.0;
     }
-    virtual int sprowlen(int) {
+    virtual int sprowlen(int) const {
         unimp();
         return 0;
     }
-    virtual double spgetrowval(int i, int jindx, int* j) {
+    virtual double spgetrowval(int i, int jindx, int* j) const {
         unimp();
         return 0.;
     }
 
-    void unimp();
+    void unimp() const;
 
   protected:
     OcMatrix(int type);
@@ -156,18 +159,18 @@ class OcFullMatrix final: public OcMatrix {  // type 1
     ~OcFullMatrix() override = default;
 
     double* mep(int, int) override;
-    double getval(int i, int j) override;
-    int nrow() override;
-    int ncol() override;
+    double getval(int i, int j) const override;
+    int nrow() const override;
+    int ncol() const override;
     void resize(int, int) override;
 
     void mulv(Vect* in, Vect* out) override;
     void mulm(Matrix* in, Matrix* out) override;
     void muls(double, Matrix* out) override;
     void add(Matrix*, Matrix* out) override;
-    void getrow(int, Vect* out) override;
-    void getcol(int, Vect* out) override;
-    void getdiag(int, Vect* out) override;
+    void getrow(int, Vect* out) const override;
+    void getcol(int, Vect* out) const override;
+    void getdiag(int, Vect* out) const override;
     void setrow(int, Vect* in) override;
     void setcol(int, Vect* in) override;
     void setdiag(int, Vect* in) override;
@@ -185,7 +188,7 @@ class OcFullMatrix final: public OcMatrix {  // type 1
     void transpose(Matrix* out) override;
     void symmeigen(Matrix* mout, Vect* vout) override;
     void svd1(Matrix* u, Matrix* v, Vect* d) override;
-    double det(int* exponent) override;
+    double det(int* exponent) const override;
 
   private:
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> m_{};
@@ -198,10 +201,10 @@ class OcSparseMatrix final: public OcMatrix {  // type 2
     ~OcSparseMatrix() override = default;
 
     double* mep(int, int) override;
-    int nrow() override;
-    int ncol() override;
-    double getval(int, int) override;
-    void ident(void) override;
+    int nrow() const override;
+    int ncol() const override;
+    double getval(int, int) const override;
+    void ident() override;
     void mulv(Vect* in, Vect* out) override;
     void solv(Vect* vin, Vect* vout, bool use_lu) override;
 
@@ -212,10 +215,12 @@ class OcSparseMatrix final: public OcMatrix {  // type 2
     void setcol(int, double in) override;
     void setdiag(int, double in) override;
 
-    void nonzeros(std::vector<int>& m, std::vector<int>& n) override;
+    void nonzeros(std::vector<int>& m, std::vector<int>& n) const override;
 
-    int sprowlen(int) override;  // how many elements in row
-    double spgetrowval(int i, int jindx, int* j) override;
+    std::vector<std::pair<int, int>> nonzeros() const override;
+
+    int sprowlen(int) const override;  // how many elements in row
+    double spgetrowval(int i, int jindx, int* j) const override;
 
     void zero() override;
 

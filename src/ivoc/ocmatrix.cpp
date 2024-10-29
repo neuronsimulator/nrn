@@ -34,21 +34,33 @@ OcMatrix* OcMatrix::instance(int nrow, int ncol, int type) {
     }
 }
 
-void OcMatrix::unimp() {
-    hoc_execerror("Matrix method not implemented for this type matrix", 0);
+void OcMatrix::unimp() const {
+    hoc_execerror("Matrix method not implemented for this type matrix", nullptr);
 }
 
-void OcMatrix::nonzeros(std::vector<int>& m, std::vector<int>& n) {
+void OcMatrix::nonzeros(std::vector<int>& m, std::vector<int>& n) const {
     m.clear();
     n.clear();
     for (int i = 0; i < nrow(); i++) {
         for (int j = 0; j < ncol(); j++) {
-            if (getval(i, j) != 0) {
+            if (getval(i, j) != 0.) {
                 m.push_back(i);
                 n.push_back(j);
             }
         }
     }
+}
+
+std::vector<std::pair<int, int>> OcMatrix::nonzeros() const {
+    std::vector<std::pair<int, int>> nzs;
+    for (int i = 0; i < nrow(); i++) {
+        for (int j = 0; j < ncol(); j++) {
+            if (getval(i, j) != 0.) {
+                nzs.emplace_back(i, j);
+            }
+        }
+    }
+    return nzs;
 }
 
 OcFullMatrix* OcMatrix::full() {
@@ -68,13 +80,13 @@ OcFullMatrix::OcFullMatrix(int nrow, int ncol)
 double* OcFullMatrix::mep(int i, int j) {
     return &m_(i, j);
 }
-double OcFullMatrix::getval(int i, int j) {
+double OcFullMatrix::getval(int i, int j) const {
     return m_(i, j);
 }
-int OcFullMatrix::nrow() {
+int OcFullMatrix::nrow() const {
     return m_.rows();
 }
-int OcFullMatrix::ncol() {
+int OcFullMatrix::ncol() const {
     return m_.cols();
 }
 
@@ -138,17 +150,17 @@ void OcFullMatrix::svd1(Matrix* u, Matrix* v, Vect* d) {
     }
 }
 
-void OcFullMatrix::getrow(int k, Vect* out) {
+void OcFullMatrix::getrow(int k, Vect* out) const {
     auto v1 = Vect2VEC(out);
     v1 = m_.row(k);
 }
 
-void OcFullMatrix::getcol(int k, Vect* out) {
+void OcFullMatrix::getcol(int k, Vect* out) const {
     auto v1 = Vect2VEC(out);
     v1 = m_.col(k);
 }
 
-void OcFullMatrix::getdiag(int k, Vect* out) {
+void OcFullMatrix::getdiag(int k, Vect* out) const {
     auto vout = m_.diagonal(k);
     if (k >= 0) {
         for (int i = 0, j = k; i < nrow() && j < ncol(); ++i, ++j) {
@@ -226,7 +238,7 @@ void OcFullMatrix::solv(Vect* in, Vect* out, bool use_lu) {
     v2 = lu_->solve(v1);
 }
 
-double OcFullMatrix::det(int* e) {
+double OcFullMatrix::det(int* e) const {
     *e = 0;
     double m = m_.determinant();
     if (m) {
@@ -260,15 +272,15 @@ void OcSparseMatrix::zero() {
     }
 }
 
-double OcSparseMatrix::getval(int i, int j) {
+double OcSparseMatrix::getval(int i, int j) const {
     return m_.coeff(i, j);
 }
 
-int OcSparseMatrix::nrow() {
+int OcSparseMatrix::nrow() const {
     return m_.rows();
 }
 
-int OcSparseMatrix::ncol() {
+int OcSparseMatrix::ncol() const {
     return m_.cols();
 }
 
@@ -330,7 +342,7 @@ void OcSparseMatrix::setcol(int k, double in) {
     }
 }
 
-void OcSparseMatrix::ident(void) {
+void OcSparseMatrix::ident() {
     m_.setIdentity();
 }
 
@@ -348,7 +360,7 @@ void OcSparseMatrix::setdiag(int k, double in) {
     }
 }
 
-int OcSparseMatrix::sprowlen(int i) {
+int OcSparseMatrix::sprowlen(int i) const {
     int acc = 0;
     for (decltype(m_)::InnerIterator it(m_, i); it; ++it) {
         acc += 1;
@@ -356,7 +368,7 @@ int OcSparseMatrix::sprowlen(int i) {
     return acc;
 }
 
-double OcSparseMatrix::spgetrowval(int i, int jindx, int* j) {
+double OcSparseMatrix::spgetrowval(int i, int jindx, int* j) const {
     int acc = 0;
     for (decltype(m_)::InnerIterator it(m_, i); it; ++it) {
         if (acc == jindx) {
@@ -368,13 +380,26 @@ double OcSparseMatrix::spgetrowval(int i, int jindx, int* j) {
     return 0;
 }
 
-void OcSparseMatrix::nonzeros(std::vector<int>& m, std::vector<int>& n) {
+void OcSparseMatrix::nonzeros(std::vector<int>& m, std::vector<int>& n) const {
     m.clear();
     n.clear();
+    m.reserve(m_.nonZeros());
+    n.reserve(m_.nonZeros());
     for (int k = 0; k < m_.outerSize(); ++k) {
         for (decltype(m_)::InnerIterator it(m_, k); it; ++it) {
             m.push_back(it.row());
             n.push_back(it.col());
         }
     }
+}
+
+std::vector<std::pair<int, int>> OcSparseMatrix::nonzeros() const {
+    std::vector<std::pair<int, int>> nzs;
+    nzs.reserve(m_.nonZeros());
+    for (int k = 0; k < m_.outerSize(); ++k) {
+        for (decltype(m_)::InnerIterator it(m_, k); it; ++it) {
+            nzs.emplace_back(it.row(), it.col());
+        }
+    }
+    return nzs;
 }
