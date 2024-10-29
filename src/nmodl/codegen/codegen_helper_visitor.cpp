@@ -819,7 +819,7 @@ CodegenInfo CodegenHelperVisitor::analyze(const ast::Program& node) {
 }
 
 void CodegenHelperVisitor::visit_linear_block(const ast::LinearBlock& /* node */) {
-    info.vectorize = false;
+    info.vectorize = true;
 }
 
 void CodegenHelperVisitor::visit_non_linear_block(const ast::NonLinearBlock& /* node */) {
