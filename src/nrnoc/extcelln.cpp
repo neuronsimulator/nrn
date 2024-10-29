@@ -468,8 +468,6 @@ void nrn_setup_ext(NrnThread* _nt) {
             Extnode* pnde = pnd->extnode;
             /* axial connections */
             if (pnde) { /* parent sec may not be extracellular */
-                OcSparseMatrix& m = *_nt->_sp13mat;
-                int index = nd->eqn_index_;
                 int parent_index = pnd->eqn_index_;
                 for (j = 0; j < nrn_nlayer_extracellular; ++j) {
                     *m.mep(index + j, index + j) -= nde->_b[j];
