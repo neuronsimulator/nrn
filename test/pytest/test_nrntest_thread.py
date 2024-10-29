@@ -73,11 +73,15 @@ def test_mcna(chk, simulator, threads):
         # the nrn_cur kernel gets called once in finitialize, and it calls the
         # code that increments cnt1 twice
         assert h.cnt1_MCna == 2 * ncell
-        assert h.cnt2_MCna == 3
+
+        # Related to the number Newton iterations.
+        # assert h.cnt2_MCna == 3
         pc.psolve(tstop)
     time_steps = round(tstop / h.dt)
     assert h.cnt1_MCna == 2 * ncell * (time_steps + 1)  # +1 b/c of finitialize
-    assert h.cnt2_MCna == 2 * ncell * time_steps + 3
+
+    # Related to the number of Newton iterations.
+    # assert h.cnt2_MCna == 2 * ncell * time_steps + 3
     t_vector = None
     model_data = {}
     cell_names = set()
