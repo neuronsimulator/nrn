@@ -830,7 +830,13 @@ std::string CodegenCoreneuronCppVisitor::get_variable_name(const std::string& na
     auto i =
         std::find_if(codegen_int_variables.begin(), codegen_int_variables.end(), index_comparator);
     if (i != codegen_int_variables.end()) {
-        return int_variable_name(*i, varname, use_instance);
+        auto full_name = int_variable_name(*i, varname, use_instance);
+        auto pos = position_of_int_var(varname);
+
+        if (info.semantics[pos].name == naming::RANDOM_SEMANTIC) {
+            return "(nrnran123_State*) " + full_name;
+        }
+        return full_name;
     }
 
     // global variable
@@ -1638,7 +1644,7 @@ void CodegenCoreneuronCppVisitor::print_instance_variable_setup() {
         printer->push_block("for (int id = 0; id < nodecount; id++)");
         for (const auto& var: info.random_variables) {
             const auto& name = get_variable_name(var->get_name());
-            printer->fmt_line("nrnran123_deletestream((nrnran123_State*){});", name);
+            printer->fmt_line("nrnran123_deletestream({});", name);
         }
         printer->pop_block();
     }

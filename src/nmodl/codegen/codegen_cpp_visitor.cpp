@@ -555,12 +555,6 @@ void CodegenCppVisitor::print_function_call(const FunctionCall& node) {
         }
     }
 
-    // first argument to random functions need to be type casted
-    // from void* to nrnran123_State*.
-    if (is_random_function && !arguments.empty()) {
-        printer->add_text("(nrnran123_State*)");
-    }
-
     print_vector_elements(arguments, ", ");
     printer->add_text(')');
 }

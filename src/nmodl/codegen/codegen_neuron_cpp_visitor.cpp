@@ -728,7 +728,7 @@ std::string CodegenNeuronCppVisitor::int_variable_name(const IndexVariableInfo& 
     auto position = position_of_int_var(name);
 
     if (info.semantics[position].name == naming::RANDOM_SEMANTIC) {
-        return fmt::format("_ppvar[{}].literal_value<void*>()", position);
+        return fmt::format("(nrnran123_State*) _ppvar[{}].literal_value<void*>()", position);
     }
 
     if (info.semantics[position].name == naming::FOR_NETCON_SEMANTIC) {
@@ -2034,8 +2034,9 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
 
     if (!info.random_variables.empty()) {
         for (const auto& rv: info.random_variables) {
-            printer->fmt_line("{} = nrnran123_newstream();",
-                              get_variable_name(get_name(rv), false));
+            auto position = position_of_int_var(get_name(rv));
+            printer->fmt_line("_ppvar[{}].literal_value<void*>() = nrnran123_newstream();",
+                              position);
         }
         printer->fmt_line("nrn_mech_inst_destruct[mech_type] = neuron::{};",
                           method_name(naming::NRN_DESTRUCTOR_METHOD));
