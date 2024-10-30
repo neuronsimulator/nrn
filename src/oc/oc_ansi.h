@@ -100,7 +100,6 @@ void install_vector_method(const char*, double (*)(void*));
 int vector_arg_px(int i, double** p);
 
 double hoc_Exp(double);
-extern "C" double hoc_pow(double, double);
 int hoc_is_tempobj_arg(int narg);
 std::FILE* hoc_obj_file_arg(int i);
 void hoc_reg_nmodl_text(int type, const char* txt);

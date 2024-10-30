@@ -585,9 +585,7 @@ void hoc_newobj_ret(void) {
 
 void hoc_newobj(void) { /* template at pc+1 */
     Object *ob, **obp;
-    Objectdata* obd;
-    Symbol *sym, *s;
-    int i, total;
+    Symbol *sym;
     int narg;
 
     sym = (pc++)->sym;
@@ -605,7 +603,6 @@ void hoc_newobj(void) { /* template at pc+1 */
         hoc_pushobj(obp);
 #if USE_PYTHON
     } else { /* Assignment to OBJECTTMP not allowed */
-        Object* o = hoc_obj_look_inside_stack(narg);
         hoc_execerror("Assignment to $o only allowed if caller arg was declared as objref",
                       nullptr);
     }
@@ -788,13 +785,11 @@ void hoc_objvardecl(void) { /* symbol at pc+1, number of indices at pc+2 */
 }
 
 void hoc_cmp_otype(void) { /* NUMBER, OBJECTVAR, or STRING must be the type */
-    int type;
-    type = (pc++)->i;
+    ++pc;
 }
 
 void hoc_known_type(void) {
-    int type;
-    type = ((pc++)->i);
+    ++pc;
 }
 
 void hoc_objectvar(void) { /* object variable symbol at pc+1. */
@@ -1375,7 +1370,6 @@ void hoc_object_eval(void) {
 
 void hoc_ob_pointer(void) {
     int type;
-    Symbol* sym;
 #if PDEBUG
     printf("code for hoc_ob_pointer\n");
 #endif
