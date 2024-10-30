@@ -256,6 +256,8 @@ void parout() {
 \n#if !NRNGPU\
 \n#undef exp\
 \n#define exp hoc_Exp\
+\n#undex pow\
+\n#define pow hoc_pow\
 \n#endif\n\
 ");
     if (protect_include_) {
