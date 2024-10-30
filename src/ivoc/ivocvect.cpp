@@ -638,7 +638,6 @@ static double v_vwrite(void* v) {
 
 static double v_vread(void* v) {
     Vect* vp = (Vect*) v;
-    void* s = (void*) (vp->data());
 
     Object* ob = *hoc_objgetarg(1);
     check_obj_type(ob, "File");
@@ -1184,7 +1183,6 @@ static Object** v_hist(void* v) {
     double start = *getarg(2);
     int size = int(*getarg(3));
     double step = chkarg(4, 1.e-99, 1.e99);
-    double high = start + step * size;
 
     //	SampleHistogram h(start,high,step);
     //	for (int i=0; i< data->size(); i++) h += data->elem(i);
@@ -1396,7 +1394,7 @@ static Object** v_set(void* v) {
 
 static Object** v_append(void* v) {
     Vect* x = (Vect*) v;
-    int j, i = 1;
+    int i = 1;
     while (ifarg(i)) {
         if (hoc_argtype(i) == NUMBER) {
             x->push_back(*getarg(i));
@@ -1691,7 +1689,6 @@ static Object** v_where(void* v) {
     iarg = possible_srcvec(x, y, flag);
 
     int n = x->size();
-    int m = 0;
     int i;
 
     char* op = gargstr(iarg++);
@@ -1777,7 +1774,7 @@ static Object** v_where(void* v) {
 
 static double v_indwhere(void* v) {
     Vect* x = (Vect*) v;
-    int i, iarg, m = 0;
+    int i, iarg;
     char* op;
     double value, value2;
     hoc_return_type_code = 1;
@@ -1862,7 +1859,7 @@ static double v_indwhere(void* v) {
 static Object** v_indvwhere(void* v) {
     Vect* y = (Vect*) v;
     Vect* x;
-    int i, iarg, m = 0, flag;
+    int i, iarg, flag;
     char* op;
     double value, value2;
 

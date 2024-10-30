@@ -1109,17 +1109,10 @@ PrintableWindowManager::PrintableWindowManager() {
     if (!q->find_attribute("pwm_paper_width", pagewidth)) {
         pagewidth = 8.5;
     }
-    Coord wp1;
     if (pageheight > pagewidth)
         pr_scl = pageheight / canvasheight;
     else
         pr_scl = pagewidth / canvasheight;
-
-    // width = max(d->width/Scl,pagewidth/prl_scl,pageheight/prl_scl)
-    if (d->width() > d->height())
-        wp1 = d->width() / Scl;
-    else
-        wp1 = canvasheight;
 
     Coord wp = pagewidth / pr_scl;
     Coord hp = pageheight / pr_scl;
@@ -1152,7 +1145,7 @@ PrintableWindowManager::PrintableWindowManager() {
     pwmi_->left_ = hb;
     pwmi_->left_->ref();
 
-    Menu *mbar, *mprint, *mses, *mother;
+    Menu *mbar, *mprint, *mses;
 #if 0
 	if (q->value_is_on("pwm_help")) {
 		vb->append(kit.push_button("Help",
@@ -1506,9 +1499,7 @@ void PrintableWindowManager::reconfigured(PrintableWindow* w) {
     if (i < 0)
         return;  // mswin after a ShowWindow(hwnd, SW_HIDE);
     Coord l = w->left_pw();
-    Coord r = l + w->width_pw();
     Coord b = w->bottom_pw();
-    Coord t = b + w->height_pw();
     impl->screen_->move(i, l / Scl, b / Scl);
     impl->screen_->change(i);
     impl->screen_->show(i, w->is_mapped());
@@ -1824,7 +1815,6 @@ void PWMImpl::common_print(Printer* pr, bool land_style, bool ses_style) {
             continue;
         }
         PrintableWindow* pw;
-        float sfac;
         Transformer t;
         Coord x, y, x1, y1;
         if (ses_style) {
@@ -2088,7 +2078,7 @@ void ScreenItem::reconfigured(Scene* s) {
 #endif
 
 void ScreenItem::request(Requisition& req) const {
-    Coord w, h;
+    Coord w = 0.0, h = 0.0;
     if (w_) {
         w = w_->width_pw() / Scl;
         h = w_->height_pw() / Scl;

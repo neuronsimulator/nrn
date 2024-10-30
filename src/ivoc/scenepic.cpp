@@ -693,8 +693,6 @@ void SpecView::execute() {
         return;
     Coord x1, x2, y1, y2;
     v->zin(x1, y1, x2, y2);
-    bool bx = var_pair_chooser("X size", x1, x2, v->canvas()->window());
-    bool by = var_pair_chooser("Y size", y1, y2, v->canvas()->window());
     v->size(x1, y1, x2, y2);
     v->zout(x1, y1, x2, y2);
     v->size(x1, y1, x2, y2);
@@ -762,7 +760,6 @@ void OcViewGlyph::viewmenu(Glyph* m) {
         g_ = body();
         Resource::ref(g_);
         LayoutKit& lk = *LayoutKit::instance();
-        WidgetKit& wk = *WidgetKit::instance();
         PolyGlyph* hbox = lk.hbox(2);
         hbox->append(lk.center(m, 0, 1));
         hbox->append(lk.center(view(), 0, 1));

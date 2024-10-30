@@ -81,7 +81,7 @@ void nrn_convlv(double* data,
                 double* ans) {
     // data and respns are modified.
     unsigned long i;
-    double scl, x_;
+    double scl;
 
     int n2 = n / 2;
     for (i = 1; i <= (m - 1) / 2; i++) {
@@ -142,7 +142,7 @@ void nrn_correl(double* x, double* y, unsigned long n, double* z) {
 // void nrn_spctrm(double* data, double* p, int m, int k)
 void nrn_spctrm(double* data, double* psd, int setsize, int numsegpairs) {
     int j, k, cx, n;
-    double a, ainv, wfac, x_;
+    double a, wfac;
     double* fftv;
 
     // 0 is index of first meaningful element of power spectral density
@@ -151,7 +151,6 @@ void nrn_spctrm(double* data, double* psd, int setsize, int numsegpairs) {
 
     // calc factor used to correct for window's effect on psd
     a = setsize;
-    ainv = 1.0 / a;
 
     n = 2 * setsize;
     wfac = 0.0;

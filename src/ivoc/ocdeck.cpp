@@ -280,8 +280,6 @@ void OcDeck::flip_to(int i) {
 }
 
 void OcDeck::box_append(OcGlyph* g) {
-    WidgetKit& wk = *WidgetKit::instance();
-    LayoutKit& lk = *LayoutKit::instance();
     bi_->ocglyph_list_->append(g);
     bi_->deck_->append(g);
 }

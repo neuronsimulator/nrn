@@ -64,10 +64,13 @@ static double m_ncol(void* v) {
 
 static double m_setval(void* v) {
     Matrix* m = (Matrix*) v;
-    int i = (int) chkarg(1, 0, m->nrow() - 1);
-    int j = (int) chkarg(2, 0, m->ncol() - 1);
-    double val = *getarg(3);
-    m->coeff(i, j) = val;
+    int i, j;
+    double val, *pval;
+    i = (int) chkarg(1, 0, m->nrow() - 1);
+    j = (int) chkarg(2, 0, m->ncol() - 1);
+    val = *getarg(3);
+    pval = m->mep(i, j);
+    *pval = val;
     return val;
 }
 
@@ -168,7 +171,7 @@ static double m_scanf(void* v) {
     m->resize(nrow, ncol);
     for (i = 0; i < nrow; ++i)
         for (j = 0; j < ncol; ++j) {
-            m->coeff(i, j) = hoc_scan(f);
+            *(m->mep(i, j)) = hoc_scan(f);
         }
     return 0.;
 }
@@ -599,7 +602,7 @@ static Object** m_set(void* v) {
     int k;
     for (k = 0, i = 0; i < nrow; ++i) {
         for (j = 0; j < ncol; ++j) {
-            m->coeff(i, j) = *getarg(++k);
+            *(m->mep(i, j)) = *getarg(++k);
         }
     }
     return temp_objvar(m);
@@ -638,7 +641,7 @@ static Object** m_from_vector(void* v) {
     double* ve = vector_vec(vout);
     for (j = 0; j < ncol; ++j)
         for (i = 0; i < nrow; ++i) {
-            m->coeff(i, j) = ve[k++];
+            *(m->mep(i, j)) = ve[k++];
         }
     return temp_objvar(m);
 }
@@ -711,7 +714,7 @@ static void m_destruct(void* v) {
 static void steer_x(void* v) {
     Matrix* m = (Matrix*) v;
     int i1, i2;
-    Symbol* s = hoc_spop();
+    hoc_spop();
     if (!hoc_stack_type_is_ndim()) {
         hoc_execerr_ext("Array dimension of Matrix.x is 2");
     }

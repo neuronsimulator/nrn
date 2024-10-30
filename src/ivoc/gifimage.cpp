@@ -91,7 +91,6 @@ static int BitOffset = 0,     /* Bit Offset of next code */
     Width, Height,            /* image dimensions */
     LeftOfs, TopOfs,          /* image offset */
     BitsPerPixel,             /* Bits per pixel, read from GIF header */
-    BytesPerScanline,         /* bytes per scanline in output raster */
     ColorMapSize,             /* number of colors */
     Background,               /* background color */
     CodeSize,                 /* Code size, read from GIF header */
@@ -162,7 +161,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 {
     /* returns '1' if successful */
 
-    byte ch, ch1, *origptr;
+    byte ch, *origptr;
     int i, block;
     int aspect, gotimage;
     float normaspect;
@@ -311,7 +310,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 
 
             else if (fn == 0xFE) { /* Comment Extension */
-                int ch, j, sbsize, cmtlen;
+                int j, sbsize, cmtlen;
                 byte *ptr1, *cmt, *cmt1, *sp;
 
                 cmtlen = 0;
@@ -571,7 +570,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 
 /********************************************/
 static int readImage(PICINFO* pinfo) {
-    byte ch, ch1, *ptr1, *picptr;
+    byte ch, ch1, *ptr1;
     int i, npixels, maxpixels;
 
     npixels = maxpixels = 0;

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <utility>
 #include <vector>
 
 #include <Eigen/Eigen>
@@ -21,35 +20,23 @@ class OcMatrix {
     static OcMatrix* instance(int nrow, int ncol, int type = MFULL);
     virtual ~OcMatrix() = default;
 
-    // This function is deprecated and should not be used!
-    // mep stands for 'matrix element pointer'
-    inline double* mep(int i, int j) {
-        return &coeff(i, j);
-    }
-
-    inline double operator()(int i, int j) const {
-        return getval(i, j);
-    };
-
-    virtual double& coeff(int i, int j) {
-        static double zero = 0.0;
+    virtual double* mep(int i, int j) {
         unimp();
-        return zero;
-    }
-
+        return nullptr;
+    }  // matrix element pointer
     inline double& operator()(int i, int j) {
-        return coeff(i, j);
+        return *mep(i, j);
     };
 
-    virtual double getval(int i, int j) const {
+    virtual double getval(int i, int j) {
         unimp();
         return 0.;
     }
-    virtual int nrow() const {
+    virtual int nrow() {
         unimp();
         return 0;
     }
-    virtual int ncol() const {
+    virtual int ncol() {
         unimp();
         return 0;
     }
@@ -57,32 +44,32 @@ class OcMatrix {
         unimp();
     }
 
-    virtual std::vector<std::pair<int, int>> nonzeros() const;
+    virtual void nonzeros(std::vector<int>& m, std::vector<int>& n);
 
     OcFullMatrix* full();
 
-    inline void mulv(Vect& in, Vect& out) const {
+    inline void mulv(Vect& in, Vect& out) {
         mulv(&in, &out);
     };
-    virtual void mulv(Vect* in, Vect* out) const {
+    virtual void mulv(Vect* in, Vect* out) {
         unimp();
     }
-    virtual void mulm(Matrix* in, Matrix* out) const {
+    virtual void mulm(Matrix* in, Matrix* out) {
         unimp();
     }
-    virtual void muls(double, Matrix* out) const {
+    virtual void muls(double, Matrix* out) {
         unimp();
     }
-    virtual void add(Matrix*, Matrix* out) const {
+    virtual void add(Matrix*, Matrix* out) {
         unimp();
     }
-    virtual void getrow(int, Vect* out) const {
+    virtual void getrow(int, Vect* out) {
         unimp();
     }
-    virtual void getcol(int, Vect* out) const {
+    virtual void getcol(int, Vect* out) {
         unimp();
     }
-    virtual void getdiag(int, Vect* out) const {
+    virtual void getdiag(int, Vect* out) {
         unimp();
     }
     virtual void setrow(int, Vect* in) {
@@ -109,47 +96,47 @@ class OcMatrix {
     virtual void ident() {
         unimp();
     }
-    virtual void exp(Matrix* out) const {
+    virtual void exp(Matrix* out) {
         unimp();
     }
-    virtual void pow(int, Matrix* out) const {
+    virtual void pow(int, Matrix* out) {
         unimp();
     }
-    virtual void inverse(Matrix* out) const {
+    virtual void inverse(Matrix* out) {
         unimp();
     }
     virtual void solv(Vect* vin, Vect* vout, bool use_lu) {
         unimp();
     }
-    virtual void copy(Matrix* out) const {
+    virtual void copy(Matrix* out) {
         unimp();
     }
-    virtual void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1) const {
+    virtual void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1) {
         unimp();
     }
     virtual void transpose(Matrix* out) {
         unimp();
     }
-    virtual void symmeigen(Matrix* mout, Vect* vout) const {
+    virtual void symmeigen(Matrix* mout, Vect* vout) {
         unimp();
     }
-    virtual void svd1(Matrix* u, Matrix* v, Vect* d) const {
+    virtual void svd1(Matrix* u, Matrix* v, Vect* d) {
         unimp();
     }
-    virtual double det(int* e) const {
+    virtual double det(int* e) {
         unimp();
         return 0.0;
     }
-    virtual int sprowlen(int) const {
+    virtual int sprowlen(int) {
         unimp();
         return 0;
     }
-    virtual double spgetrowval(int i, int jindx, int* j) const {
+    virtual double spgetrowval(int i, int jindx, int* j) {
         unimp();
         return 0.;
     }
 
-    void unimp() const;
+    void unimp();
 
   protected:
     OcMatrix(int type);
@@ -168,19 +155,19 @@ class OcFullMatrix final: public OcMatrix {  // type 1
     OcFullMatrix(int, int);
     ~OcFullMatrix() override = default;
 
-    double& coeff(int, int) override;
-    double getval(int i, int j) const override;
-    int nrow() const override;
-    int ncol() const override;
+    double* mep(int, int) override;
+    double getval(int i, int j) override;
+    int nrow() override;
+    int ncol() override;
     void resize(int, int) override;
 
-    void mulv(Vect* in, Vect* out) const override;
-    void mulm(Matrix* in, Matrix* out) const override;
-    void muls(double, Matrix* out) const override;
-    void add(Matrix*, Matrix* out) const override;
-    void getrow(int, Vect* out) const override;
-    void getcol(int, Vect* out) const override;
-    void getdiag(int, Vect* out) const override;
+    void mulv(Vect* in, Vect* out) override;
+    void mulm(Matrix* in, Matrix* out) override;
+    void muls(double, Matrix* out) override;
+    void add(Matrix*, Matrix* out) override;
+    void getrow(int, Vect* out) override;
+    void getcol(int, Vect* out) override;
+    void getdiag(int, Vect* out) override;
     void setrow(int, Vect* in) override;
     void setcol(int, Vect* in) override;
     void setdiag(int, Vect* in) override;
@@ -189,16 +176,16 @@ class OcFullMatrix final: public OcMatrix {  // type 1
     void setdiag(int, double in) override;
     void zero() override;
     void ident() override;
-    void exp(Matrix* out) const override;
-    void pow(int, Matrix* out) const override;
-    void inverse(Matrix* out) const override;
+    void exp(Matrix* out) override;
+    void pow(int, Matrix* out) override;
+    void inverse(Matrix* out) override;
     void solv(Vect* vin, Vect* vout, bool use_lu) override;
-    void copy(Matrix* out) const override;
-    void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1) const override;
+    void copy(Matrix* out) override;
+    void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1) override;
     void transpose(Matrix* out) override;
-    void symmeigen(Matrix* mout, Vect* vout) const override;
-    void svd1(Matrix* u, Matrix* v, Vect* d) const override;
-    double det(int* exponent) const override;
+    void symmeigen(Matrix* mout, Vect* vout) override;
+    void svd1(Matrix* u, Matrix* v, Vect* d) override;
+    double det(int* exponent) override;
 
   private:
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> m_{};
@@ -210,12 +197,12 @@ class OcSparseMatrix final: public OcMatrix {  // type 2
     OcSparseMatrix(int, int);
     ~OcSparseMatrix() override = default;
 
-    double& coeff(int, int) override;
-    int nrow() const override;
-    int ncol() const override;
-    double getval(int, int) const override;
-    void ident() override;
-    void mulv(Vect* in, Vect* out) const override;
+    double* mep(int, int) override;
+    int nrow() override;
+    int ncol() override;
+    double getval(int, int) override;
+    void ident(void) override;
+    void mulv(Vect* in, Vect* out) override;
     void solv(Vect* vin, Vect* vout, bool use_lu) override;
 
     void setrow(int, Vect* in) override;
@@ -225,10 +212,10 @@ class OcSparseMatrix final: public OcMatrix {  // type 2
     void setcol(int, double in) override;
     void setdiag(int, double in) override;
 
-    std::vector<std::pair<int, int>> nonzeros() const override;
+    void nonzeros(std::vector<int>& m, std::vector<int>& n) override;
 
-    int sprowlen(int) const override;  // how many elements in row
-    double spgetrowval(int i, int jindx, int* j) const override;
+    int sprowlen(int) override;  // how many elements in row
+    double spgetrowval(int i, int jindx, int* j) override;
 
     void zero() override;
 

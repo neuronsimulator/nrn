@@ -13,8 +13,6 @@
 
 #include "ivoc.h"
 
-static FILE* help_pipe;
-
 #if defined(WIN32) && !defined(MINGW)
 #include "nrnbbs.h"
 #endif
@@ -29,21 +27,6 @@ extern const char* hoc_current_xopen();
 void ivoc_help(const char* s) {
     //	printf("online help not currently working\n");
     return;
-}
-
-static void readmore() {
-#if !defined(WIN32)
-    char buf[1024];
-    char* cmd = "ls $NEURONHOME/doc/help/*.help";
-    FILE* p = popen(cmd, "r");
-    if (!p) {
-        printf("couldn't do: %s\n", cmd);
-        return;
-    }
-    while (fgets(buf, 1024, p)) {
-        fprintf(help_pipe, "?0 %s", buf);
-    }
-#endif
 }
 
 #if !defined(WIN32)
