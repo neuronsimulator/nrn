@@ -19,7 +19,8 @@ void MatrixMap::mmfree() {
 
 void MatrixMap::add(double fac) {
     for (int i = 0; i < plen_; ++i) {
-        *ptree_[i] += fac * (*pm_[i]);
+        auto [it, jt] = pm_[i];
+        *ptree_[i] += fac * m_.getval(it, jt);
     }
 }
 
@@ -42,7 +43,7 @@ void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
             it = start + i - nnode;
         }
         int jt;
-        pm_[plen_] = m_.mep(i, j);
+        pm_[plen_] = std::make_pair(i, j);
         if (j < nnode) {
             jt = nodes[j]->eqn_index_ + layer[j];
             if (layer[j] > 0 && !nodes[j]->extnode) {
