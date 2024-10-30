@@ -262,8 +262,6 @@ void BBSImpl::execute(int id) {  // assumes a "_todo" message in receive buffer
     ++etaskcnt;
     double st, et;
     int userid;
-    char* s;
-    int i;
     int save_id = working_id_;
     int save_n = n_;
     working_id_ = id;
@@ -359,7 +357,7 @@ bool BBSImpl::working(int& id, double& x, int& userid) {
         }
         if (id != 0) {
             userid = upkint();
-            int wid = upkint();
+            /* int wid = */ upkint();
             rtype = upkint();
             if (rtype == 0) {
                 x = upkdouble();
