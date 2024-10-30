@@ -64,8 +64,8 @@ OcFullMatrix::OcFullMatrix(int nrow, int ncol)
     m_.setZero();
 }
 
-double* OcFullMatrix::mep(int i, int j) {
-    return &m_(i, j);
+double& OcFullMatrix::coeff(int i, int j) {
+    return m_(i, j);
 }
 double OcFullMatrix::getval(int i, int j) const {
     return m_(i, j);
@@ -247,8 +247,8 @@ OcSparseMatrix::OcSparseMatrix(int nrow, int ncol)
     : OcMatrix(MSPARSE)
     , m_(nrow, ncol) {}
 
-double* OcSparseMatrix::mep(int i, int j) {
-    return &m_.coeffRef(i, j);
+double& OcSparseMatrix::coeff(int i, int j) {
+    return m_.coeffRef(i, j);
 }
 
 void OcSparseMatrix::zero() {

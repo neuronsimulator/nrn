@@ -21,22 +21,25 @@ class OcMatrix {
     static OcMatrix* instance(int nrow, int ncol, int type = MFULL);
     virtual ~OcMatrix() = default;
 
-    virtual double* mep(int i, int j) {
-        unimp();
-        return nullptr;
-    }  // matrix element pointer
+    // This function is deprecated and should not be used!
+    // mep stands for 'matrix element pointer'
+    inline double* mep(int i, int j) {
+        return &coeff(i, j);
+    }
 
     inline double operator()(int i, int j) const {
         return getval(i, j);
     };
 
-    inline double& operator()(int i, int j) {
-        return *mep(i, j);
-    };
-
-    inline double& coeff(int i, int j) {
-        return *mep(i, j);
+    virtual double& coeff(int i, int j) {
+        static double zero = 0.0;
+        unimp();
+        return zero;
     }
+
+    inline double& operator()(int i, int j) {
+        return coeff(i, j);
+    };
 
     virtual double getval(int i, int j) const {
         unimp();
@@ -165,7 +168,7 @@ class OcFullMatrix final: public OcMatrix {  // type 1
     OcFullMatrix(int, int);
     ~OcFullMatrix() override = default;
 
-    double* mep(int, int) override;
+    double& coeff(int, int) override;
     double getval(int i, int j) const override;
     int nrow() const override;
     int ncol() const override;
@@ -207,7 +210,7 @@ class OcSparseMatrix final: public OcMatrix {  // type 2
     OcSparseMatrix(int, int);
     ~OcSparseMatrix() override = default;
 
-    double* mep(int, int) override;
+    double& coeff(int, int) override;
     int nrow() const override;
     int ncol() const override;
     double getval(int, int) const override;
