@@ -205,7 +205,6 @@ void CellGroup::mk_cellgroups(neuron::model_sorted_token const& cache_token, Cel
 void CellGroup::datumtransform(CellGroup* cgs) {
     // ions, area, and POINTER to v or mechanism data.
     for (int ith = 0; ith < nrn_nthread; ++ith) {
-        NrnThread& nt = nrn_threads[ith];
         CellGroup& cg = cgs[ith];
         // how many mechanisms in use and how many DatumIndices do we need.
         MlWithArt& mla = cgs[ith].mlwithart;
@@ -246,7 +245,6 @@ void CellGroup::datumtransform(CellGroup* cgs) {
 
 void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_list* ml) {
     NrnThread& nt = nrn_threads[ith];
-    int nnode = nt.end;
     int mcnt = ml->nodecount;
     int dsize = bbcore_dparam_size[di.type];
     if (dsize == 0) {
@@ -343,15 +341,15 @@ void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_l
                 }
                 assert(etype != 0);
                 // pointer into one of the tml types?
-            } else if (nrn_semantics_is_ion(dmap[j])) {  // double* into eion type data
-                etype = nrn_semantics_ion_type(dmap[j]);
+            } else if (dmap[j] > 0 && dmap[j] < 1000) {  // double* into eion type data
+                etype = dmap[j];
                 Memb_list* eml = cg.type2ml[etype];
                 assert(eml);
                 auto* const pval = dparam[j].get<double*>();
                 auto const legacy_index = eml->legacy_index(pval);
                 assert(legacy_index >= 0);
                 eindex = legacy_index;
-            } else if (nrn_semantics_is_ionstyle(dmap[j])) {  // int* into ion dparam[xxx][0]
+            } else if (dmap[j] > 1000) {  // int* into ion dparam[xxx][0]
                 // store the actual ionstyle
                 etype = dmap[j];
                 eindex = *dparam[j].get<int*>();
@@ -553,23 +551,17 @@ size_t CellGroup::get_mla_rankbytes(CellGroup* cellgroups_) {
     size_t mla_rankbytes = 0;
     size_t nbytes;
     NrnThread* nt;
-    NrnThreadMembList* tml;
     FOR_THREADS(nt) {
         size_t threadbytes = 0;
         size_t npnt = 0;
-        size_t nart = 0;
         int ith = nt->id;
         nbytes = nt->end * (1 * sizeof(int) + 3 * sizeof(double));
         threadbytes += nbytes;
 
-        int mechcnt = 0;
-        size_t mechcnt_instances = 0;
         MlWithArt& mla = cellgroups_[ith].mlwithart;
         for (size_t i = 0; i < mla.size(); ++i) {
             int type = mla[i].first;
             Memb_list* ml = mla[i].second;
-            ++mechcnt;
-            mechcnt_instances += ml->nodecount;
             npnt += (memb_func[type].is_point ? ml->nodecount : 0);
             int psize = nrn_prop_param_size_[type];
             int dpsize = nrn_prop_dparam_size_[type];  // includes cvodeieq if present
@@ -577,9 +569,6 @@ size_t CellGroup::get_mla_rankbytes(CellGroup* cellgroups_) {
             // memb_func[type].sym->name, memb_func[type].is_point, ml->nodecount, psize, dpsize);
             // nodeindices, data, pdata + pnt with prop
             int notart = nrn_is_artificial_[type] ? 0 : 1;
-            if (nrn_is_artificial_[type]) {
-                nart += ml->nodecount;
-            }
             nbytes = ml->nodecount *
                      (notart * sizeof(int) + 1 * sizeof(double*) + 1 * sizeof(Datum*) +
                       psize * sizeof(double) + dpsize * sizeof(Datum));

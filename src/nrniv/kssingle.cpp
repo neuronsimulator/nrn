@@ -238,7 +238,6 @@ void KSSingleNodeData::pr(const char* s, double tt, NetCvode* nc) {
 
 void KSSingle::state(Node* nd, Datum* pd, NrnThread* nt) {
     // integrate from t-dt to t
-    int i;
     double v = NODEV(nd);
     auto* snd = pd[sndindex_].get<KSSingleNodeData*>();
     // if truly single channel, as opposed to N single channels
@@ -254,7 +253,6 @@ void KSSingle::state(Node* nd, Datum* pd, NrnThread* nt) {
 void KSSingle::cv_update(Node* nd, Datum* pd, NrnThread* nt) {
     // if v changed then need to move the outstanding
     // single channel event time to a recalculated time
-    int i;
     double v = NODEV(nd);
     auto* snd = pd[sndindex_].get<KSSingleNodeData*>();
     if (uses_ligands_ || !vsame(v, snd->vlast_)) {

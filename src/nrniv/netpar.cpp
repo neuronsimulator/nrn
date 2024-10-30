@@ -1595,7 +1595,6 @@ static int weightcnt(NetCon* nc) {
 size_t nrncore_netpar_bytes() {
     size_t ntot, nin, nout, nnet, nweight;
     ntot = nin = nout = nnet = nweight = 0;
-    size_t npnt = 0;
     if (0 && nrnmpi_myid == 0) {
         printf("size Presyn=%ld NetCon=%ld Point_process=%ld Prop=%ld\n",
                sizeof(PreSyn),
@@ -1611,9 +1610,6 @@ size_t nrncore_netpar_bytes() {
             nnet += n;
             for (auto nc: ps->dil_) {
                 nweight += weightcnt(nc);
-                if (nc->target_) {
-                    npnt += 1;
-                }
             }
         }
     }
@@ -1626,9 +1622,6 @@ size_t nrncore_netpar_bytes() {
             nnet += n;
             for (auto nc: ps->dil_) {
                 nweight += weightcnt(nc);
-                if (nc->target_) {
-                    npnt += 1;
-                }
             }
         }
     }

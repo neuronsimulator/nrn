@@ -134,7 +134,6 @@ int nrn_dblpntr2nrncore(neuron::container::data_handle<double> dh,
                         NrnThread& nt,
                         int& type,
                         int& index) {
-    int nnode = nt.end;
     type = 0;
     if (dh.refers_to<neuron::container::Node::field::Voltage>(neuron::model().node_data())) {
         auto const cache_token = nrn_ensure_model_data_are_sorted();

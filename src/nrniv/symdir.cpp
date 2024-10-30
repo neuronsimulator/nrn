@@ -134,7 +134,6 @@ SymDirectory::SymDirectory(Object* ob) {
     impl_->sec_ = NULL;
     impl_->obj_ = ob;
     impl_->t_ = NULL;
-    int suffix = '.';
     impl_->make_pathname("", hoc_object_name(ob), "", '.');
     ObjObservable::Attach(impl_->obj_, impl_);
     impl_->load_object();
@@ -487,7 +486,6 @@ void SymDirectoryImpl::load_section() {
     char xarg[20];
     char buf[100];
     Section* sec = sec_;
-    int n = sec->nnode;
 
     int i = 0;
     double x = nrn_arc_position(sec, sec->pnode[0]);

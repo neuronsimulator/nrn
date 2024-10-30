@@ -1092,7 +1092,6 @@ void ColorValueGlyphItem::draw(Canvas* c, const Allocation& a) const {
 
 Glyph* ColorValue::make_glyph() {
     LayoutKit& lk = *LayoutKit::instance();
-    WidgetKit& wk = *WidgetKit::instance();
     PolyGlyph* box = lk.vbox(csize + 2);
     int c = csize_ ? csize_ : csize;
     for (int i = c - 1; i >= 0; --i) {

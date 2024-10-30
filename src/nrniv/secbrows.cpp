@@ -363,7 +363,6 @@ SectionBrowserImpl::SectionBrowserImpl() {
     scnt_ = 0;
     // ForAllSections(sec)  //{
     ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
         ++scnt_;
     }
     psec_ = new Section*[scnt_];
@@ -390,8 +389,6 @@ SectionBrowserImpl::~SectionBrowserImpl() {
 
 SectionBrowser::SectionBrowser()
     : OcBrowser(new BrowserAccept(this), NULL) {
-    LayoutKit& lk = *LayoutKit::instance();
-    WidgetKit& wk = *WidgetKit::instance();
     sbi_ = new SectionBrowserImpl;
     for (int i = 0; i < sbi_->scnt_; ++i) {
         append_item(secname(sbi_->psec_[i]));
@@ -436,7 +433,6 @@ void SectionBrowser::select(GlyphIndex i) {
 
 void SectionBrowser::make_section_browser() {
     LayoutKit& lk = *LayoutKit::instance();
-    WidgetKit& wk = *WidgetKit::instance();
     SectionBrowser* sb = new SectionBrowser();
     Window* w = new StandardWindow(lk.hbox(sb->standard_glyph(),
                                            lk.hspace(5),
@@ -492,7 +488,6 @@ PointProcessBrowser::~PointProcessBrowser() {
 
 void PointProcessBrowser::make_point_process_browser(OcList* ocl) {
     LayoutKit& lk = *LayoutKit::instance();
-    WidgetKit& wk = *WidgetKit::instance();
     PointProcessBrowser* ppb = new PointProcessBrowser(ocl);
     SectionBrowser* sb = new SectionBrowser();
     Window* w = new StandardWindow(

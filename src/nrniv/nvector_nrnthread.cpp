@@ -186,7 +186,6 @@ N_Vector N_VNew_NrnThread(long int length, int nthread, long int* sizes) {
     int i;
     N_Vector v;
     N_Vector data;
-    N_VectorContent_NrnThread* content;
 
     v = N_VNewEmpty_NrnThread(length, nthread, sizes);
     if (v == NULL)
@@ -396,9 +395,6 @@ void N_VPrint_NrnThread(N_Vector x) {
     printf("\n");
 }
 
-static void pr(N_Vector x) {
-    N_VPrint_NrnThread(x);
-}
 /*
  * -----------------------------------------------------------------
  * implementation of vector operations
@@ -696,10 +692,8 @@ static void* vwl2norm(NrnThread* nt) {
     return nullptr;
 }
 realtype N_VWL2Norm_NrnThread(N_Vector x, N_Vector w) {
-    long int N;
     retval = ZERO;
     xpass wpass nrn_multithread_job(vwl2norm);
-    N = NV_LENGTH_NT(x);
     mydebug2("vwl2norm %.20g\n", RSqrt(retval));
     return (RSqrt(retval));
 }
@@ -769,13 +763,6 @@ booleantype N_VConstrMask_NrnThread(N_Vector y, N_Vector x, N_Vector z) {
     return (bretval);
 }
 
-static void* vminquotient(NrnThread* nt) {
-    realtype min;
-    int i = nt->id;
-    min = N_VMinQuotient_Serial(xarg(i), yarg(i));
-    lockmin(min);
-    return nullptr;
-}
 realtype N_VMinQuotient_NrnThread(N_Vector x, N_Vector y) /* num, denom */
 {
     retval = BIG_REAL;
