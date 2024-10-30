@@ -34,6 +34,10 @@ class OcMatrix {
         return *mep(i, j);
     };
 
+    inline double& coeff(int i, int j) {
+        return *mep(i, j);
+    }
+
     virtual double getval(int i, int j) const {
         unimp();
         return 0.;
