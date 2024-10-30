@@ -474,7 +474,6 @@ void nrn_register_mech_common(const char** m,
                               int vectorized) {
     // initialize at first entry, it will be incremented at exit of the function
     static int mechtype = 2; /* 0 unused, 1 for cable section */
-    int modltype;
     int modltypemax;
     Symbol* mech_symbol;
     const char** m2;
@@ -765,7 +764,7 @@ namespace {
  */
 
 // name to int map for the negative types
-// xx_ion and #xx_ion will get values of type*2 and type*2+1 respectively
+// xx_ion and #xx_ion will get values of type and type+1000 respectively
 static std::unordered_map<std::string, int> name_to_negint = {{"area", -1},
                                                               {"iontype", -2},
                                                               {"cvodeieq", -3},
@@ -785,7 +784,7 @@ int dparam_semantics_to_int(std::string_view name) {
         bool const i{name[0] == '#'};
         Symbol* s = hoc_lookup(std::string{name.substr(i)}.c_str());
         if (s && s->type == MECHANISM) {
-            return nrn_semantics_from_ion(s->subtype, i);
+            return s->subtype + i * 1000;
         }
         throw std::runtime_error("unknown dparam semantics: " + std::string{name});
     }
