@@ -434,12 +434,12 @@ void nrn_setup_ext(NrnThread* _nt) {
         Extnode* nde = nd->extnode;
         double d = NODED(nd);
         /* nde->_d only has -ELECTRODE_CURRENT contribution */
-        *m.mep(index, index) += NODED(nd);
+        m(index, index) += NODED(nd);
         d = m.getval(index, index);
         /* now d is only the membrane current contribution */
         /* i.e. d =  cm/dt + di/dvm */
-        *m.mep(index - 1, index) -= d;
-        *m.mep(index, index - 1) -= d;
+        m(index - 1, index) -= d;
+        m(index, index - 1) -= d;
 #if I_MEMBRANE
         ml->data(i, sav_g_index) = d;
 #endif
@@ -456,24 +456,24 @@ void nrn_setup_ext(NrnThread* _nt) {
             int j = 0;
             for (;;) { /* between j and j+1 layer */
                 mfac = (*nde->param[xg_index_ext(j)] + *nde->param[xc_index_ext(j)] * cfac);
-                *m.mep(index + j, index + j) += mfac;
+                m(index + j, index + j) += mfac;
                 ++j;
                 if (j == nrn_nlayer_extracellular) {
                     break;
                 }
-                *m.mep(index + j, index + j) += mfac;
-                *m.mep(index - 1 + j, index + j) -= mfac;
-                *m.mep(index + j, index - 1 + j) -= mfac;
+                m(index + j, index + j) += mfac;
+                m(index - 1 + j, index + j) -= mfac;
+                m(index + j, index - 1 + j) -= mfac;
             }
             Extnode* pnde = pnd->extnode;
             /* axial connections */
             if (pnde) { /* parent sec may not be extracellular */
                 int parent_index = pnd->eqn_index_;
                 for (j = 0; j < nrn_nlayer_extracellular; ++j) {
-                    *m.mep(index + j, index + j) -= nde->_b[j];
-                    *m.mep(parent_index + j, parent_index + j) -= nde->_a[j];
-                    *m.mep(parent_index + j, index + j) += nde->_a[j];
-                    *m.mep(index + j, parent_index + j) += nde->_b[j];
+                    m(index + j, index + j) -= nde->_b[j];
+                    m(parent_index + j, parent_index + j) -= nde->_a[j];
+                    m(parent_index + j, index + j) += nde->_a[j];
+                    m(index + j, parent_index + j) += nde->_b[j];
                 }
             }
         }
