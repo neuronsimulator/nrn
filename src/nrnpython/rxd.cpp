@@ -139,7 +139,6 @@ static inline void* allocopy(void* src, size_t size) {
 }
 
 extern "C" NRN_EXPORT void rxd_set_no_diffusion() {
-    int i;
     diffusion = FALSE;
     if (_rxd_a != NULL) {
         free(_rxd_a);
@@ -643,7 +642,6 @@ extern "C" NRN_EXPORT void setup_currents(int num_currents,
     double* current_scales;
     PyHocObject** ecs_ptrs;
 
-    Current_Triple* c;
     Grid_node* g;
     ECS_Grid_node* grid;
 
@@ -1516,7 +1514,7 @@ void solve_reaction(ICSReactions* react,
     double pd;
     double dt = *dt_ptr;
     double dx = FLT_EPSILON;
-    OcFullMatrix jacobian(N, N);
+    auto jacobian = std::make_unique<OcFullMatrix>(N, N);
     auto b = std::make_unique<IvocVect>(N);
     auto x = std::make_unique<IvocVect>(N);
 
@@ -1655,7 +1653,7 @@ void solve_reaction(ICSReactions* react,
                             if (react->state_idx[segment][jac_i][jac_j] != SPECIES_ABSENT) {
                                 pd = (result_array_dx[jac_i][jac_j] - result_array[jac_i][jac_j]) /
                                      dx;
-                                jacobian(jac_idx, idx) = (idx == jac_idx) - dt * pd;
+                                *jacobian->mep(jac_idx, idx) = (idx == jac_idx) - dt * pd;
                                 jac_idx += 1;
                             }
                             result_array_dx[jac_i][jac_j] = 0;
@@ -1665,7 +1663,7 @@ void solve_reaction(ICSReactions* react,
                         // pd is our Jacobian approximated
                         if (react->ecs_state[segment][jac_i] != NULL) {
                             pd = (ecs_result_dx[jac_i] - ecs_result[jac_i]) / dx;
-                            jacobian(jac_idx, idx) = -dt * pd;
+                            *jacobian->mep(jac_idx, idx) = -dt * pd;
                             jac_idx += 1;
                         }
                         ecs_result_dx[jac_i] = 0;
@@ -1707,7 +1705,7 @@ void solve_reaction(ICSReactions* react,
                         // pd is our Jacobian approximated
                         if (react->state_idx[segment][jac_i][jac_j] != SPECIES_ABSENT) {
                             pd = (result_array_dx[jac_i][jac_j] - result_array[jac_i][jac_j]) / dx;
-                            jacobian(jac_idx, idx) = -dt * pd;
+                            *jacobian->mep(jac_idx, idx) = -dt * pd;
                             jac_idx += 1;
                         }
                     }
@@ -1716,10 +1714,10 @@ void solve_reaction(ICSReactions* react,
                     // pd is our Jacobian approximated
                     if (react->ecs_state[segment][jac_i] != NULL) {
                         pd = (ecs_result_dx[jac_i] - ecs_result[jac_i]) / dx;
-                        jacobian(jac_idx, idx) = (idx == jac_idx) - dt * pd;
+                        *jacobian->mep(jac_idx, idx) = (idx == jac_idx) - dt * pd;
                         jac_idx += 1;
                     } else {
-                        jacobian(idx, idx) = 1.0;
+                        *jacobian->mep(idx, idx) = 1.0;
                     }
                     // reset dx array
                     ecs_states_for_reaction_dx[i] -= dx;
@@ -1728,7 +1726,7 @@ void solve_reaction(ICSReactions* react,
             }
         }
         // solve for x, destructively
-        jacobian.solv(b.get(), x.get(), false);
+        jacobian->solv(b.get(), x.get(), false);
 
         if (bval != NULL)  // variable-step
         {
