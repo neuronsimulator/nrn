@@ -56,19 +56,19 @@ class OcMatrix {
 
     OcFullMatrix* full();
 
-    inline void mulv(Vect& in, Vect& out) {
+    inline void mulv(Vect& in, Vect& out) const {
         mulv(&in, &out);
     };
-    virtual void mulv(Vect* in, Vect* out) {
+    virtual void mulv(Vect* in, Vect* out) const {
         unimp();
     }
-    virtual void mulm(Matrix* in, Matrix* out) {
+    virtual void mulm(Matrix* in, Matrix* out) const {
         unimp();
     }
-    virtual void muls(double, Matrix* out) {
+    virtual void muls(double, Matrix* out) const {
         unimp();
     }
-    virtual void add(Matrix*, Matrix* out) {
+    virtual void add(Matrix*, Matrix* out) const {
         unimp();
     }
     virtual void getrow(int, Vect* out) const {
@@ -104,31 +104,31 @@ class OcMatrix {
     virtual void ident() {
         unimp();
     }
-    virtual void exp(Matrix* out) {
+    virtual void exp(Matrix* out) const {
         unimp();
     }
-    virtual void pow(int, Matrix* out) {
+    virtual void pow(int, Matrix* out) const {
         unimp();
     }
-    virtual void inverse(Matrix* out) {
+    virtual void inverse(Matrix* out) const {
         unimp();
     }
     virtual void solv(Vect* vin, Vect* vout, bool use_lu) {
         unimp();
     }
-    virtual void copy(Matrix* out) {
+    virtual void copy(Matrix* out) const {
         unimp();
     }
-    virtual void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1) {
+    virtual void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1) const {
         unimp();
     }
     virtual void transpose(Matrix* out) {
         unimp();
     }
-    virtual void symmeigen(Matrix* mout, Vect* vout) {
+    virtual void symmeigen(Matrix* mout, Vect* vout) const {
         unimp();
     }
-    virtual void svd1(Matrix* u, Matrix* v, Vect* d) {
+    virtual void svd1(Matrix* u, Matrix* v, Vect* d) const {
         unimp();
     }
     virtual double det(int* e) const {
@@ -169,10 +169,10 @@ class OcFullMatrix final: public OcMatrix {  // type 1
     int ncol() const override;
     void resize(int, int) override;
 
-    void mulv(Vect* in, Vect* out) override;
-    void mulm(Matrix* in, Matrix* out) override;
-    void muls(double, Matrix* out) override;
-    void add(Matrix*, Matrix* out) override;
+    void mulv(Vect* in, Vect* out) const override;
+    void mulm(Matrix* in, Matrix* out) const override;
+    void muls(double, Matrix* out) const override;
+    void add(Matrix*, Matrix* out) const override;
     void getrow(int, Vect* out) const override;
     void getcol(int, Vect* out) const override;
     void getdiag(int, Vect* out) const override;
@@ -184,15 +184,15 @@ class OcFullMatrix final: public OcMatrix {  // type 1
     void setdiag(int, double in) override;
     void zero() override;
     void ident() override;
-    void exp(Matrix* out) override;
-    void pow(int, Matrix* out) override;
-    void inverse(Matrix* out) override;
+    void exp(Matrix* out) const override;
+    void pow(int, Matrix* out) const override;
+    void inverse(Matrix* out) const override;
     void solv(Vect* vin, Vect* vout, bool use_lu) override;
-    void copy(Matrix* out) override;
-    void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1) override;
+    void copy(Matrix* out) const override;
+    void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1) const override;
     void transpose(Matrix* out) override;
-    void symmeigen(Matrix* mout, Vect* vout) override;
-    void svd1(Matrix* u, Matrix* v, Vect* d) override;
+    void symmeigen(Matrix* mout, Vect* vout) const override;
+    void svd1(Matrix* u, Matrix* v, Vect* d) const override;
     double det(int* exponent) const override;
 
   private:
@@ -210,7 +210,7 @@ class OcSparseMatrix final: public OcMatrix {  // type 2
     int ncol() const override;
     double getval(int, int) const override;
     void ident() override;
-    void mulv(Vect* in, Vect* out) override;
+    void mulv(Vect* in, Vect* out) const override;
     void solv(Vect* vin, Vect* vout, bool use_lu) override;
 
     void setrow(int, Vect* in) override;

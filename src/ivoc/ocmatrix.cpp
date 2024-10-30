@@ -96,29 +96,29 @@ void OcFullMatrix::resize(int i, int j) {
     m_.conservativeResizeLike(v);
 }
 
-void OcFullMatrix::mulv(Vect* vin, Vect* vout) {
+void OcFullMatrix::mulv(Vect* vin, Vect* vout) const {
     auto v1 = Vect2VEC(vin);
     auto v2 = Vect2VEC(vout);
     v2 = m_ * v1;
 }
 
-void OcFullMatrix::mulm(Matrix* in, Matrix* out) {
+void OcFullMatrix::mulm(Matrix* in, Matrix* out) const {
     out->full()->m_ = m_ * in->full()->m_;
 }
 
-void OcFullMatrix::muls(double s, Matrix* out) {
+void OcFullMatrix::muls(double s, Matrix* out) const {
     out->full()->m_ = s * m_;
 }
 
-void OcFullMatrix::add(Matrix* in, Matrix* out) {
+void OcFullMatrix::add(Matrix* in, Matrix* out) const {
     out->full()->m_ = m_ + in->full()->m_;
 }
 
-void OcFullMatrix::copy(Matrix* out) {
+void OcFullMatrix::copy(Matrix* out) const {
     out->full()->m_ = m_;
 }
 
-void OcFullMatrix::bcopy(Matrix* out, int i0, int j0, int n0, int m0, int i1, int j1) {
+void OcFullMatrix::bcopy(Matrix* out, int i0, int j0, int n0, int m0, int i1, int j1) const {
     out->full()->m_.block(i1, j1, n0, m0) = m_.block(i0, j0, n0, m0);
 }
 
@@ -131,14 +131,14 @@ void OcFullMatrix::transpose(Matrix* out) {
 }
 
 // As only symmetric matrix are accepted, eigenvalues are not complex
-void OcFullMatrix::symmeigen(Matrix* mout, Vect* vout) {
+void OcFullMatrix::symmeigen(Matrix* mout, Vect* vout) const {
     auto v1 = Vect2VEC(vout);
     Eigen::EigenSolver<Eigen::MatrixXd> es(m_);
     v1 = es.eigenvalues().real();
     mout->full()->m_ = es.eigenvectors().real();
 }
 
-void OcFullMatrix::svd1(Matrix* u, Matrix* v, Vect* d) {
+void OcFullMatrix::svd1(Matrix* u, Matrix* v, Vect* d) const {
     auto v1 = Vect2VEC(d);
     Eigen::JacobiSVD<Eigen::MatrixXd> svd(m_, Eigen::ComputeFullU | Eigen::ComputeFullV);
     v1 = svd.singularValues();
@@ -217,15 +217,15 @@ void OcFullMatrix::ident() {
     m_.setIdentity();
 }
 
-void OcFullMatrix::exp(Matrix* out) {
+void OcFullMatrix::exp(Matrix* out) const {
     out->full()->m_ = m_.exp();
 }
 
-void OcFullMatrix::pow(int i, Matrix* out) {
+void OcFullMatrix::pow(int i, Matrix* out) const {
     out->full()->m_ = m_.pow(i).eval();
 }
 
-void OcFullMatrix::inverse(Matrix* out) {
+void OcFullMatrix::inverse(Matrix* out) const {
     out->full()->m_ = m_.inverse();
 }
 
@@ -284,7 +284,7 @@ int OcSparseMatrix::ncol() const {
     return m_.cols();
 }
 
-void OcSparseMatrix::mulv(Vect* vin, Vect* vout) {
+void OcSparseMatrix::mulv(Vect* vin, Vect* vout) const {
     auto v1 = Vect2VEC(vin);
     auto v2 = Vect2VEC(vout);
     v2 = m_ * v1;
