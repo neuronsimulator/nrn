@@ -54,8 +54,6 @@ class OcMatrix {
         unimp();
     }
 
-    virtual void nonzeros(std::vector<int>& m, std::vector<int>& n) const;
-
     virtual std::vector<std::pair<int, int>> nonzeros() const;
 
     OcFullMatrix* full();
@@ -223,8 +221,6 @@ class OcSparseMatrix final: public OcMatrix {  // type 2
     void setrow(int, double in) override;
     void setcol(int, double in) override;
     void setdiag(int, double in) override;
-
-    void nonzeros(std::vector<int>& m, std::vector<int>& n) const override;
 
     std::vector<std::pair<int, int>> nonzeros() const override;
 

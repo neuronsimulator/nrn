@@ -38,19 +38,6 @@ void OcMatrix::unimp() const {
     hoc_execerror("Matrix method not implemented for this type matrix", nullptr);
 }
 
-void OcMatrix::nonzeros(std::vector<int>& m, std::vector<int>& n) const {
-    m.clear();
-    n.clear();
-    for (int i = 0; i < nrow(); i++) {
-        for (int j = 0; j < ncol(); j++) {
-            if (getval(i, j) != 0.) {
-                m.push_back(i);
-                n.push_back(j);
-            }
-        }
-    }
-}
-
 std::vector<std::pair<int, int>> OcMatrix::nonzeros() const {
     std::vector<std::pair<int, int>> nzs;
     for (int i = 0; i < nrow(); i++) {
@@ -378,19 +365,6 @@ double OcSparseMatrix::spgetrowval(int i, int jindx, int* j) const {
         acc += 1;
     }
     return 0;
-}
-
-void OcSparseMatrix::nonzeros(std::vector<int>& m, std::vector<int>& n) const {
-    m.clear();
-    n.clear();
-    m.reserve(m_.nonZeros());
-    n.reserve(m_.nonZeros());
-    for (int k = 0; k < m_.outerSize(); ++k) {
-        for (decltype(m_)::InnerIterator it(m_, k); it; ++it) {
-            m.push_back(it.row());
-            n.push_back(it.col());
-        }
-    }
 }
 
 std::vector<std::pair<int, int>> OcSparseMatrix::nonzeros() const {
