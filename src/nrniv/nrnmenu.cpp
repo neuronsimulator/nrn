@@ -1128,8 +1128,7 @@ static Member_ret_obj_func mt_retobj_members[] = {{"pp_begin", mt_pp_begin},
                                                   {0, 0}};
 static Member_ret_str_func mt_retstr_func[] = {{"code", mt_code}, {"file", mt_file}, {0, 0}};
 void MechanismType_reg() {
-    class2oc(
-        "MechanismType", mt_cons, mt_destruct, mt_members, mt_retobj_members, mt_retstr_func);
+    class2oc("MechanismType", mt_cons, mt_destruct, mt_members, mt_retobj_members, mt_retstr_func);
     mt_class_sym_ = hoc_lookup("MechanismType");
 }
 

@@ -395,6 +395,9 @@ void N_VPrint_NrnThreadLD(N_Vector x) {
     printf("\n");
 }
 
+static void pr(N_Vector x) {
+    N_VPrint_NrnThreadLD(x);
+}
 /*
  * -----------------------------------------------------------------
  * implementation of vector operations
@@ -774,6 +777,13 @@ booleantype N_VConstrMask_NrnThreadLD(N_Vector y, N_Vector x, N_Vector z) {
     return (bretval);
 }
 
+static void* vminquotient(NrnThread* nt) {
+    realtype min;
+    int i = nt->id;
+    min = N_VMinQuotient_Serial(xarg(i), yarg(i));
+    lockmin(min);
+    return nullptr;
+}
 realtype N_VMinQuotient_NrnThreadLD(N_Vector x, N_Vector y) /* num, denom */
 {
     retval = BIG_REAL;
