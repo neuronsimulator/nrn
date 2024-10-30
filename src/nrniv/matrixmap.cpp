@@ -22,7 +22,7 @@ void MatrixMap::add(double fac) {
     for (int i = 0; i < pm_.size(); ++i) {
         auto [im, jm] = pm_[i];
         auto [it, jt] = ptree_[i];
-        *_nt->_sp13mat->mep(it, jt) += fac * m_.getval(im, jm);
+        _nt->_sp13mat(it, jt) += fac * m_(im, jm);
     }
 }
 
