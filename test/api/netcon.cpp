@@ -12,12 +12,21 @@ using std::endl;
 using std::ofstream;
 
 constexpr std::array<double, 6> EXPECTED_V{
+#ifndef CORENEURON_ENABLED
     -0x1.04p+6,
     -0x1.085a63d029bc3p+6,
     -0x1.112a5e95eb67cp+6,
     -0x1.1795abaec26c1p+6,
     -0x1.0422351f3f9dcp+6,
     -0x1.03e5317ac368cp+6,
+#else
+    -0x1.04p+6,
+    -0x1.085a703d657a7p+6,
+    -0x1.112d0039e9c38p+6,
+    -0x1.17974aa201b7bp+6,
+    -0x1.041fdf57a182bp+6,
+    -0x1.03e58fad20b92p+6,
+#endif
 };
 
 extern "C" void modl_reg(){/* No modl_reg */};
