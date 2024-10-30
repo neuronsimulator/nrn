@@ -66,7 +66,6 @@ extern const char* nmodl_version_;
 extern int usederivstatearray;
 
 /*SUPPRESS 763*/
-static const char* pgm_name = "nmodl";
 extern const char* RCS_version;
 extern const char* RCS_date;
 
@@ -212,8 +211,6 @@ int main(int argc, char** argv) {
 }
 
 static void openfiles(const char* given_filename, const char* output_dir) {
-    char s[NRN_BUFSIZE];
-
     char output_filename[NRN_BUFSIZE];
     char input_filename[NRN_BUFSIZE];
     modprefix = strdup(given_filename);  // we want to keep original string to open input file
