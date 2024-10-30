@@ -20,7 +20,7 @@ void MatrixMap::mmfree() {
 void MatrixMap::add(double fac) {
     for (int i = 0; i < plen_; ++i) {
         auto [it, jt] = pm_[i];
-        *ptree_[i] += fac * m_.getval(it, jt);
+        *ptree_[i] += fac * m_(it, jt);
     }
 }
 
