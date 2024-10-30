@@ -229,6 +229,7 @@ void nrnmpi_enddata(bbsmpibuf* r) {
     type = 0;
 #if debug
     printf("%d nrnmpi_enddata %p size=%d pkposition=%d\n", nrnmpi_myid_bbs, r, r->size, p);
+    int oldsize = r->size;
 #endif
     nrn_mpi_assert(MPI_Pack_size(1, MPI_INT, nrn_bbs_comm, &isize));
     resize(r, r->pkposition + isize);
@@ -258,6 +259,7 @@ static void pack(void* inbuf, int incount, int my_datatype, bbsmpibuf* r, const 
     int type[2];
     int dsize, isize;
 #if debug
+    int oldsize = r->size;
     printf("%d pack %p count=%d type=%d outbuf-%p pkposition=%d %s\n",
            nrnmpi_myid_bbs,
            r,
