@@ -507,16 +507,6 @@ cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)
 
-# =============================================================================
-# NMODL specific options
-# =============================================================================
-find_package(nmodl)
-if(NOT "${CORENRN_NMODL_DIR}" STREQUAL "" AND NOT nmodl_FOUND)
-  message(FATAL_ERROR "Cannot find NMODL in ${CORENRN_NMODL_DIR}")
-endif()
-if(nmodl_FOUND)
-  set(CORENRN_NMODL_BINARY ${nmodl_BINARY})
-else()
   set(NMODL_ENABLE_PYTHON_BINDINGS
       OFF
       CACHE BOOL "Enable NMODL python bindings")
@@ -535,12 +525,11 @@ else()
     FILES ${NMODL_PROJECT_BINARY_DIR}/share/nmodl/nrnunits.lib
     DESTINATION share/nmodl
     COMPONENT nrnunits)
-endif()
 
-# set correct arguments for nmodl for cpu/gpu target
-set(CORENRN_NMODL_FLAGS
-    ""
-    CACHE STRING "Extra NMODL options such as passes")
+  # set correct arguments for nmodl for cpu/gpu target
+  set(CORENRN_NMODL_FLAGS
+      ""
+      CACHE STRING "Extra NMODL options such as passes")
 
 endif()
 
