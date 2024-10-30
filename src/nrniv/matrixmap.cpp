@@ -22,7 +22,7 @@ void MatrixMap::add(double fac) {
     for (int i = 0; i < pm_.size(); ++i) {
         auto [im, jm] = pm_[i];
         auto [it, jt] = ptree_[i];
-        _nt->_sp13mat(it, jt) += fac * m_(im, jm);
+        _nt->_sp13mat->coeff(it, jt) += fac * m_(im, jm);
     }
 }
 
@@ -42,13 +42,10 @@ int MatrixMap::compute_id(int i, int start, int nnode, Node** nodes, int* layer)
 void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
     mmfree();
 
-    std::vector<int> nonzero_i, nonzero_j;
-    m_.nonzeros(nonzero_i, nonzero_j);
-    pm_.reserve(nonzero_i.size());
-    ptree_.reserve(nonzero_i.size());
-    for (int k = 0; k < nonzero_i.size(); k++) {
-        const int i = nonzero_i[k];
-        const int j = nonzero_j[k];
+    std::vector<std::pair<int, int>> nzs = m_.nonzeros();
+    pm_.reserve(nzs.size());
+    ptree_.reserve(nzs.size());
+    for (const auto& [i, j]: nzs) {
         int it = compute_id(i, start, nnode, nodes, layer);
         int jt = compute_id(j, start, nnode, nodes, layer);
         if (it == 0 || jt == 0) {
