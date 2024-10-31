@@ -182,6 +182,27 @@ static constexpr char THREAD_ARGS_PROTO[] = "_threadargsproto_";
 /// prefix for ion variable
 static constexpr char ION_VARNAME_PREFIX[] = "ion_";
 
+/// name of CVODE method for counting # of ODEs
+static constexpr char CVODE_COUNT_NAME[] = "ode_count";
+
+/// name of CVODE method for updating non-stiff systems
+static constexpr char CVODE_UPDATE_NON_STIFF_NAME[] = "ode_update_nonstiff";
+
+/// name of CVODE method for updating stiff systems
+static constexpr char CVODE_UPDATE_STIFF_NAME[] = "ode_update_stiff";
+
+/// name of CVODE method for setting up non-stiff systems
+static constexpr char CVODE_SETUP_NON_STIFF_NAME[] = "ode_setup_nonstiff";
+
+/// name of CVODE method for setting up stiff systems
+static constexpr char CVODE_SETUP_STIFF_NAME[] = "ode_setup_stiff";
+
+/// name of CVODE method for setting up tolerances
+static constexpr char CVODE_SETUP_TOLERANCES_NAME[] = "ode_setup_tolerances";
+
+/// name of the CVODE variable (can be arbitrary)
+static constexpr char CVODE_VARIABLE_NAME[] = "cvode_ieq";
+
 /// commonly used variables in verbatim block and how they
 /// should be mapped to new code generation backends
 // clang-format off

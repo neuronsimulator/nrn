@@ -978,6 +978,13 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
         printer->fmt_line("static Symbol* _{}_sym;", ion.name);
     }
 
+    if (info.emit_cvode) {
+        printer->add_line("static Symbol** _atollist;");
+        printer->push_block("static HocStateTolerance _hoc_state_tol[] =");
+        printer->add_line("{0, 0}");
+        printer->pop_block(";");
+    }
+
     printer->add_line("static int mech_type;");
 
     if (info.point_process) {
@@ -1422,16 +1429,22 @@ void CodegenNeuronCppVisitor::print_mechanism_register_regular() {
                         i));
     }
 
+    if (info.emit_cvode) {
+        mech_register_args.push_back(
+            fmt::format("_nrn_mechanism_field<int>{{\"{}\", \"cvodeieq\"}} /* {} */",
+                        naming::CVODE_VARIABLE_NAME,
+                        codegen_int_variables_size));
+    }
+
     printer->add_multi_line(fmt::format("{}", fmt::join(mech_register_args, ",\n")));
 
     printer->decrease_indent();
     printer->add_line(");");
     printer->add_newline();
 
-
     printer->fmt_line("hoc_register_prop_size(mech_type, {}, {});",
                       float_variables_size(),
-                      int_variables_size());
+                      int_variables_size() + static_cast<int>(info.emit_cvode));
 
     for (int i = 0; i < codegen_int_variables_size; ++i) {
         if (i != info.semantics[i].index) {
@@ -1495,7 +1508,19 @@ void CodegenNeuronCppVisitor::print_mechanism_register_regular() {
         printer->fmt_line("{}._morphology_sym = hoc_lookup(\"morphology\");",
                           global_struct_instance());
     }
+
+    if (info.emit_cvode) {
+        printer->fmt_line("hoc_register_dparam_semantics(mech_type, {}, \"cvodeieq\");",
+                          codegen_int_variables_size);
+        printer->fmt_line("hoc_register_cvode(mech_type, {}, {}, {}, {});",
+                          method_name(naming::CVODE_COUNT_NAME),
+                          method_name(naming::CVODE_SETUP_TOLERANCES_NAME),
+                          method_name(naming::CVODE_SETUP_NON_STIFF_NAME),
+                          method_name(naming::CVODE_SETUP_STIFF_NAME));
+        printer->fmt_line("hoc_register_tolerance(mech_type, _hoc_state_tol, &_atollist);");
+    }
 }
+
 
 void CodegenNeuronCppVisitor::print_mechanism_register_nothing() {
     printer->add_line("hoc_register_var(hoc_scalar_double, hoc_vector_double, hoc_intfunc);");
@@ -1936,9 +1961,9 @@ void CodegenNeuronCppVisitor::print_nrn_alloc() {
         )CODE");
         printer->chain_block("else");
     }
-    if (info.semantic_variable_count) {
+    if (info.semantic_variable_count || info.emit_cvode) {
         printer->fmt_line("_ppvar = nrn_prop_datum_alloc(mech_type, {}, _prop);",
-                          info.semantic_variable_count);
+                          info.semantic_variable_count + static_cast<int>(info.emit_cvode));
         printer->add_line("_nrn_mechanism_access_dparam(_prop) = _ppvar;");
     }
     printer->add_multi_line(R"CODE(
@@ -2384,6 +2409,8 @@ void CodegenNeuronCppVisitor::print_mechanism_variables_macros() {
     if (info.table_count > 0) {
         printer->add_line("void _nrn_thread_table_reg(int, nrn_thread_table_check_t);");
     }
+    // for CVODE
+    printer->add_line("extern void _cvode_abstol(Symbol**, double*, int);");
     if (info.for_netcon_used) {
         printer->add_line("int _nrn_netcon_args(void*, double***);");
     }
@@ -2457,6 +2484,7 @@ void CodegenNeuronCppVisitor::print_codegen_routines_regular() {
     print_nrn_alloc();
     print_function_prototypes();
     print_longitudinal_diffusion_callbacks();
+    print_cvode_definitions();
     print_point_process_function_definitions();
     print_setdata_functions();
     print_check_table_entrypoint();
@@ -2603,6 +2631,126 @@ void CodegenNeuronCppVisitor::print_net_receive_common_code() {
 
     printer->add_line("size_t id = 0;");
     printer->add_line("double t = nt->_t;");
+}
+
+CodegenCppVisitor::ParamVector CodegenNeuronCppVisitor::cvode_setup_parameters() {
+    return {{"", "const _nrn_model_sorted_token&", "", "_sorted_token"},
+            {"", "NrnThread*", "", "nt"},
+            {"", "Memb_list*", "", "_ml_arg"},
+            {"", "int", "", "_type"}};
+}
+
+CodegenCppVisitor::ParamVector CodegenNeuronCppVisitor::cvode_update_parameters() {
+    ParamVector args = {{"", "_nrn_mechanism_cache_range&", "", "_lmc"},
+                        {"", fmt::format("{}_Instance&", info.mod_suffix), "", "inst"},
+                        {"", fmt::format("{}_NodeData&", info.mod_suffix), "", "node_data"},
+                        {"", "size_t", "", "id"},
+                        {"", "Datum*", "", "_ppvar"},
+                        {"", "Datum*", "", "_thread"},
+                        {"", "NrnThread*", "", "nt"}};
+
+    if (info.thread_callback_register) {
+        auto type_name = fmt::format("{}&", thread_variables_struct());
+        args.emplace_back("", type_name, "", "_thread_vars");
+    }
+    return args;
+}
+
+
+void CodegenNeuronCppVisitor::print_cvode_count() {
+    printer->fmt_push_block("static constexpr int {}(int _type)",
+                            method_name(naming::CVODE_COUNT_NAME));
+    printer->fmt_line("return {};", info.cvode_block->get_n_odes()->get_value());
+    printer->pop_block();
+    printer->add_newline(2);
+}
+
+void CodegenNeuronCppVisitor::print_cvode_tolerances() {
+    const CodegenNeuronCppVisitor::ParamVector tolerances_parameters = {
+        {"", "Prop*", "", "_prop"},
+        {"", "int", "", "equation_index"},
+        {"", "neuron::container::data_handle<double>*", "", "_pv"},
+        {"", "neuron::container::data_handle<double>*", "", "_pvdot"},
+        {"", "double*", "", "_atol"},
+        {"", "int", "", "_type"}};
+
+    auto get_param_name = [](const auto& item) { return std::get<3>(item); };
+
+    auto prop_name = get_param_name(tolerances_parameters[0]);
+    auto eqindex_name = get_param_name(tolerances_parameters[1]);
+    auto pv_name = get_param_name(tolerances_parameters[2]);
+    auto pvdot_name = get_param_name(tolerances_parameters[3]);
+    auto atol_name = get_param_name(tolerances_parameters[4]);
+
+    printer->fmt_push_block("static void {}({})",
+                            method_name(naming::CVODE_SETUP_TOLERANCES_NAME),
+                            get_parameter_str(tolerances_parameters));
+    printer->fmt_line("auto* _ppvar = _nrn_mechanism_access_dparam({});", prop_name);
+    printer->fmt_line("_ppvar[{}].literal_value<int>() = {};", int_variables_size(), eqindex_name);
+    printer->fmt_push_block("for (int i = 0; i < {}(0); i++)",
+                            method_name(naming::CVODE_COUNT_NAME));
+    printer->fmt_line("{}[i] = _nrn_mechanism_get_param_handle({}, _slist1[i]);",
+                      pv_name,
+                      prop_name);
+    printer->fmt_line("{}[i] = _nrn_mechanism_get_param_handle({}, _dlist1[i]);",
+                      pvdot_name,
+                      prop_name);
+    printer->fmt_line("_cvode_abstol(_atollist, {}, i);", atol_name);
+    printer->pop_block();
+    printer->pop_block();
+    printer->add_newline(2);
+}
+
+void CodegenNeuronCppVisitor::print_cvode_update(const std::string& name,
+                                                 const ast::StatementBlock& block) {
+    printer->fmt_push_block("static int {}({})",
+                            method_name(name),
+                            get_parameter_str(cvode_update_parameters()));
+    printer->add_line(
+        "auto v = node_data.node_voltages ? "
+        "node_data.node_voltages[node_data.nodeindices[id]] : 0.0;");
+
+    print_statement_block(block, false, false);
+
+    printer->add_line("return 0;");
+    printer->pop_block();
+    printer->add_newline(2);
+}
+
+void CodegenNeuronCppVisitor::print_cvode_setup(const std::string& setup_name,
+                                                const std::string& update_name) {
+    printer->fmt_push_block("static void {}({})",
+                            method_name(setup_name),
+                            get_parameter_str(cvode_setup_parameters()));
+    print_entrypoint_setup_code_from_memb_list();
+    printer->fmt_line("auto nodecount = _ml_arg->nodecount;");
+    printer->push_block("for (int id = 0; id < nodecount; id++)");
+    printer->add_line("auto* _ppvar = _ml_arg->pdata[id];");
+    printer->add_line(
+        "auto v = node_data.node_voltages ? "
+        "node_data.node_voltages[node_data.nodeindices[id]] : 0.0;");
+    printer->fmt_line("{}({});", method_name(update_name), get_arg_str(cvode_update_parameters()));
+
+    printer->pop_block();
+    printer->pop_block();
+
+    printer->add_newline(2);
+}
+
+void CodegenNeuronCppVisitor::print_cvode_definitions() {
+    if (!info.emit_cvode) {
+        return;
+    }
+
+    printer->add_newline(2);
+    printer->add_line("/* Functions related to CVODE codegen */");
+    print_cvode_count();
+    print_cvode_tolerances();
+    print_cvode_update(naming::CVODE_UPDATE_NON_STIFF_NAME,
+                       *info.cvode_block->get_non_stiff_block());
+    print_cvode_update(naming::CVODE_UPDATE_STIFF_NAME, *info.cvode_block->get_stiff_block());
+    print_cvode_setup(naming::CVODE_SETUP_NON_STIFF_NAME, naming::CVODE_UPDATE_NON_STIFF_NAME);
+    print_cvode_setup(naming::CVODE_SETUP_STIFF_NAME, naming::CVODE_UPDATE_STIFF_NAME);
 }
 
 void CodegenNeuronCppVisitor::print_net_receive() {

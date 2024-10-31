@@ -756,6 +756,48 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     void print_ion_variable() override;
 
 
+    /**
+     * Get the parameters for functions that setup (initialize) CVODE
+     *
+     */
+    ParamVector cvode_setup_parameters();
+
+
+    /**
+     * Get the parameters for functions that update state at given timestep in CVODE
+     *
+     */
+    ParamVector cvode_update_parameters();
+
+
+    /**
+     * Print all callbacks for CVODE
+     *
+     */
+    void print_cvode_definitions();
+
+    /**
+     * Print the CVODE function returning the number of ODEs to solve
+     */
+    void print_cvode_count();
+
+    /**
+     * Print the CVODE function for setup of tolerances
+     */
+    void print_cvode_tolerances();
+
+    /**
+     * Print the CVODE update function \c name contained in \c block
+     */
+    void print_cvode_update(const std::string& name, const ast::StatementBlock& block);
+
+    /**
+     * Print the CVODE setup function \c setup_name that calls the CVODE update function
+     * \c update_name
+     */
+    void print_cvode_setup(const std::string& setup_name, const std::string& update_name);
+
+
     /****************************************************************************************/
     /*                            Overloaded visitor routines                               */
     /****************************************************************************************/

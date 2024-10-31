@@ -458,6 +458,9 @@ struct CodegenInfo {
     /// nrn_state block
     const ast::NrnStateBlock* nrn_state_block = nullptr;
 
+    /// the CVODE block
+    const ast::CvodeBlock* cvode_block = nullptr;
+
     /// net receive block for point process
     const ast::NetReceiveBlock* net_receive_node = nullptr;
 

@@ -630,6 +630,11 @@ void CodegenHelperVisitor::visit_nrn_state_block(const ast::NrnStateBlock& node)
     node.visit_children(*this);
 }
 
+void CodegenHelperVisitor::visit_cvode_block(const ast::CvodeBlock& node) {
+    info.cvode_block = &node;
+    node.visit_children(*this);
+}
+
 
 void CodegenHelperVisitor::visit_procedure_block(const ast::ProcedureBlock& node) {
     info.procedures.push_back(&node);

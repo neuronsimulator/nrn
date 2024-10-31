@@ -109,6 +109,7 @@ class CodegenHelperVisitor: public visitor::ConstAstVisitor {
     void visit_program(const ast::Program& node) override;
     void visit_factor_def(const ast::FactorDef& node) override;
     void visit_nrn_state_block(const ast::NrnStateBlock& node) override;
+    void visit_cvode_block(const ast::CvodeBlock& node) override;
     void visit_linear_block(const ast::LinearBlock& node) override;
     void visit_non_linear_block(const ast::NonLinearBlock& node) override;
     void visit_discrete_block(const ast::DiscreteBlock& node) override;
