@@ -13,7 +13,6 @@
 #include "utils/profile/profiler_interface.h"
 #include "nonvintblock.h"
 #include "nrncvode.h"
-#include "spmatrix.h"
 
 #include <vector>
 

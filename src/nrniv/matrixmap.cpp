@@ -2,8 +2,6 @@
 #include "matrixmap.h"
 #include <vector>
 
-#include "spmatrix.h"
-
 MatrixMap::MatrixMap(Matrix& mat)
     : m_(mat) {}
 
