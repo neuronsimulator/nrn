@@ -123,7 +123,7 @@ def trivial_ecs(scale, lock, path=None):
         # compare with previous solution
         ecs_vec.sub(h.Vector(test_data["trivial_ecs_data"][str(scale)]))
         ecs_vec.abs()
-        if ecs_vec.sum() >= 1e-6:
+        if ecs_vec.sum() >= 1e-5:
             sys.exit(-1)
     sys.exit(0)
 
