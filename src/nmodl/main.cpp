@@ -517,7 +517,7 @@ int run_nmodl(int argc, const char* argv[]) {
 
             enable_sympy(solver_exists(*ast, "derivimplicit"), "'SOLVE ... METHOD derivimplicit'");
             enable_sympy(node_exists(*ast, ast::AstNodeType::LINEAR_BLOCK), "'LINEAR' block");
-            enable_sympy(node_exists(*ast, ast::AstNodeType::DERIVATIVE_BLOCK),
+            enable_sympy(neuron_code && node_exists(*ast, ast::AstNodeType::DERIVATIVE_BLOCK),
                          "'DERIVATIVE' block");
             enable_sympy(node_exists(*ast, ast::AstNodeType::NON_LINEAR_BLOCK),
                          "'NONLINEAR' block");
