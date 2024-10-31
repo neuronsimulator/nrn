@@ -8,7 +8,8 @@ to the type, e.g. `T*` is valid, but `T *` isn't.
 #include <nrnmpiuse.h>
 #include <cstdint>
 using longdbl = long double;
-using nrnlonglong = long long; /* see Sundials sunindextype */
+// unused
+// using nrnlonglong = long long; /* see Sundials sunindextype */
 #if NRNMPI
 #include <stdlib.h>
 #include <string>
@@ -121,7 +122,7 @@ extern double nrnmpi_dbl_allreduce(double x, int type);
 extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
 extern void nrnmpi_longdbl_allreduce_vec(longdbl* src, longdbl* dest, int cnt, int type);
 extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
-extern void nrnmpi_longlong_allreduce_vec(nrnlonglong* src, nrnlonglong* dest, int cnt, int type);
+// Extern void nrnmpi_longlong_allreduce_vec(nrnlonglong* src, nrnlonglong* dest, int cnt, int type);
 
 extern void nrnmpi_dbl_allgather(double* s, double* r, int n);
 extern void nrnmpi_multisend_comm();

@@ -677,6 +677,7 @@ void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type) {
     return;
 }
 
+#if 0   // unused
 void nrnmpi_longlong_allreduce_vec(long long* src, long long* dest, int cnt, int type) {
     int i;
     MPI_Op t;
@@ -697,6 +698,7 @@ void nrnmpi_longlong_allreduce_vec(long long* src, long long* dest, int cnt, int
     MPI_Allreduce(src, dest, cnt, MPI_LONG_LONG, t, nrnmpi_comm);
     return;
 }
+#endif  // unused
 
 void nrnmpi_dbl_allgather(double* s, double* r, int n) {
     MPI_Allgather(s, n, MPI_DOUBLE, r, n, MPI_DOUBLE, nrnmpi_comm);

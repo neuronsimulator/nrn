@@ -686,6 +686,7 @@ void Cvode_reg() {
 /* Functions Called by the CVODE Solver */
 
 static int minit(CVodeMem cv_mem);
+#if 0   // unused
 static int msetup(CVodeMem cv_mem,
                   int convfail,
                   N_Vector ypred,
@@ -694,6 +695,7 @@ static int msetup(CVodeMem cv_mem,
                   N_Vector vtemp,
                   N_Vector vtemp2,
                   N_Vector vtemp3);
+#endif  // unused
 static int msolve(CVodeMem cv_mem, N_Vector b, N_Vector weight, N_Vector ycur, N_Vector fcur);
 static int msolve_lvardt(CVodeMem cv_mem,
                          N_Vector b,
@@ -1491,8 +1493,8 @@ void Cvode::matmeth() {
         assert(flag == CVDLS_SUCCESS);
 
         /* Set jacobian and allocate memory */
-        /* (TODO Michael Hines: is there a jacobian for dense matrix
-         * in neuron? If yes, add it here instead of NULL */
+        /* Null means we wish to use the default internal difference
+         *  quotient function for dense matrices. */
         flag = CVDlsSetJacFn(mem_, NULL);
         if (flag != CVDLS_SUCCESS)
             throw std::runtime_error("ERROR: can't allocate memory for dense jacobian");
@@ -1521,6 +1523,7 @@ void Cvode::matmeth() {
 }
 
 
+#if 0   // unused
 static int msetup(CVodeMem m,
                   int convfail,
                   N_Vector yp,
@@ -1535,6 +1538,7 @@ static int msetup(CVodeMem m,
         static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(m->cv_user_data)->first;
     return cv->setup(yp, fp);
 }
+#endif  // unused
 
 static N_Vector msolve_b_;
 static N_Vector msolve_ycur_;
