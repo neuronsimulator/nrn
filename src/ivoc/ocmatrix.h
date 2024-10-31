@@ -232,10 +232,6 @@ class OcSparseMatrix final: public OcMatrix {  // type 2
 
     void zero() override;
 
-    void compress() {
-        m_.makeCompressed();
-    }
-
   private:
     Eigen::SparseMatrix<double, Eigen::RowMajor> m_{};
     std::unique_ptr<Eigen::SparseLU<decltype(m_)>> lu_{};
