@@ -713,22 +713,17 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY)
   set(GLOBAL_VAR_TOGGLE_COMMAND "'s/ GLOBAL minf/ RANGE minf/'")
-  set(TABLE_VAR_TOGGLE_COMMAND "'s/ TABLE minf/ :TABLE minf/'")
 else()
   set(GLOBAL_VAR_TOGGLE_COMMAND "'s/ RANGE minf/ GLOBAL minf/'")
-  set(TABLE_VAR_TOGGLE_COMMAND "'s/ :TABLE minf/ TABLE minf/'")
 endif()
 separate_arguments(GLOBAL_VAR_TOGGLE_COMMAND UNIX_COMMAND "${GLOBAL_VAR_TOGGLE_COMMAND}")
-separate_arguments(TABLE_VAR_TOGGLE_COMMAND UNIX_COMMAND "${TABLE_VAR_TOGGLE_COMMAND}")
 add_custom_target(
   hh_update
   COMMAND sed ${GLOBAL_VAR_TOGGLE_COMMAND} ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod >
           ${CMAKE_BINARY_DIR}/hh.mod.1
-  COMMAND sed ${TABLE_VAR_TOGGLE_COMMAND} ${CMAKE_BINARY_DIR}/hh.mod.1 >
-          ${CMAKE_BINARY_DIR}/hh.mod.2
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.2
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.1
           ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
-  COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1 ${CMAKE_BINARY_DIR}/hh.mod.2
+  COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1
   COMMENT "Update hh.mod for CoreNEURON compatibility"
   VERBATIM)
 add_dependencies(nrniv_lib hh_update)
