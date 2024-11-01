@@ -145,7 +145,6 @@ Installation
 
 .. raw:: html
 
-
    <script>
 
       // script for OS detection from http://stackoverflow.com/questions/7044944/jquery-javascript-to-detect-os-without-a-plugin
@@ -179,5 +178,12 @@ Installation
    </script>
 
 |
+.. admonition:: About NEURON >= 9.0
+   :class: tip
+
+   If you are experiencing compilation errors while using `nrnivmodl` with NEURON >=9.0,
+   but not with previous 8.x releases, please see :ref:`porting-mechanisms-to-cpp`.
+   We have provide comprehensive instructions for adapting legacy MOD files that include `VERBATIM` blocks,
+   or you might find already updated MOD files in the ModelDB GitHub repositories.
 
 See also the NEURON documentation `index <genindex.html>`_ and the `NEURON forum <https://www.neuron.yale.edu/phpbb/>`_.

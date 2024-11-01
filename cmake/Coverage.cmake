@@ -34,7 +34,7 @@ if(NRN_ENABLE_COVERAGE)
   if(NOT BUILD_TYPE_UPPER STREQUAL "DEBUG")
     message(WARNING "Using CMAKE_BUILD_TYPE=Debug is recommended with NRN_ENABLE_COVERAGE")
   endif()
-  set(NRN_COVERAGE_FLAGS_UNQUOTED --coverage -fno-inline)
+  set(NRN_COVERAGE_FLAGS_UNQUOTED --coverage -fno-inline -fprofile-update=atomic)
   string(JOIN " " NRN_COVERAGE_FLAGS ${NRN_COVERAGE_FLAGS_UNQUOTED})
   set(NRN_COVERAGE_LINK_FLAGS --coverage)
 
