@@ -31,8 +31,7 @@ namespace codegen {
  *      for(int id=0; id<nodecount; id++) {
  *
  */
-void CodegenAccVisitor::print_channel_iteration_block_parallel_hint(BlockType type,
-                                                                    const ast::Block* block) {
+void CodegenAccVisitor::print_parallel_iteration_hint(BlockType type, const ast::Block* block) {
     if (info.artificial_cell) {
         return;
     }

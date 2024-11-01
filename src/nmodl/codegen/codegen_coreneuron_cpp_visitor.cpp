@@ -1847,7 +1847,7 @@ void CodegenCoreneuronCppVisitor::print_nrn_init(bool skip_init_check) {
         print_dt_update_to_device();
     }
 
-    print_channel_iteration_block_parallel_hint(BlockType::Initial, info.initial_node);
+    print_parallel_iteration_hint(BlockType::Initial, info.initial_node);
     printer->push_block("for (int id = 0; id < nodecount; id++)");
 
     if (info.net_receive_node != nullptr) {
@@ -1902,7 +1902,7 @@ void CodegenCoreneuronCppVisitor::print_before_after_block(const ast::Block* nod
     printer->fmt_line("/** {} of block type {} # {} */", ba_type, ba_block_type, block_id);
     print_global_function_common_code(BlockType::BeforeAfter, function_name);
 
-    print_channel_iteration_block_parallel_hint(BlockType::BeforeAfter, node);
+    print_parallel_iteration_hint(BlockType::BeforeAfter, node);
     printer->push_block("for (int id = 0; id < nodecount; id++)");
 
     printer->add_line("int node_id = node_index[id];");
@@ -2031,7 +2031,7 @@ void CodegenCoreneuronCppVisitor::print_watch_check() {
     // net_receive function we already check if it contains any MUTEX/PROTECT
     // constructs. As WATCH is not a top level block but list of statements,
     // we don't need to have ivdep pragma related check
-    print_channel_iteration_block_parallel_hint(BlockType::Watch, nullptr);
+    print_parallel_iteration_hint(BlockType::Watch, nullptr);
 
     printer->push_block("for (int id = 0; id < nodecount; id++)");
 
@@ -2345,7 +2345,7 @@ void CodegenCoreneuronCppVisitor::print_get_memb_list() {
 
 void CodegenCoreneuronCppVisitor::print_net_receive_loop_begin() {
     printer->add_line("int count = nrb->_displ_cnt;");
-    print_channel_iteration_block_parallel_hint(BlockType::NetReceive, info.net_receive_node);
+    print_parallel_iteration_hint(BlockType::NetReceive, info.net_receive_node);
     printer->push_block("for (int i = 0; i < count; i++)");
 }
 
@@ -2647,7 +2647,7 @@ void CodegenCoreneuronCppVisitor::print_nrn_state() {
     printer->add_newline(2);
     printer->add_line("/** update state */");
     print_global_function_common_code(BlockType::State);
-    print_channel_iteration_block_parallel_hint(BlockType::State, info.nrn_state_block);
+    print_parallel_iteration_hint(BlockType::State, info.nrn_state_block);
     printer->push_block("for (int id = 0; id < nodecount; id++)");
 
     printer->add_line("int node_id = node_index[id];");
@@ -2860,7 +2860,7 @@ void CodegenCoreneuronCppVisitor::print_nrn_cur() {
     printer->add_newline(2);
     printer->add_line("/** update current */");
     print_global_function_common_code(BlockType::Equation);
-    print_channel_iteration_block_parallel_hint(BlockType::Equation, info.breakpoint_node);
+    print_parallel_iteration_hint(BlockType::Equation, info.breakpoint_node);
     printer->push_block("for (int id = 0; id < nodecount; id++)");
     print_nrn_cur_kernel(*info.breakpoint_node);
     print_nrn_cur_matrix_shadow_update();

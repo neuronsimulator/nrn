@@ -390,8 +390,8 @@ std::string CodegenCppVisitor::breakpoint_current(std::string current) const {
  *      for(int id = 0; id < nodecount; id++) {
  * \endcode
  */
-void CodegenCppVisitor::print_channel_iteration_block_parallel_hint(BlockType /* type */,
-                                                                    const ast::Block* block) {
+void CodegenCppVisitor::print_parallel_iteration_hint(BlockType /* type */,
+                                                      const ast::Block* block) {
     // ivdep allows SIMD parallelisation of a block/loop but doesn't provide
     // a standard mechanism for atomics. Also, even with openmp 5.0, openmp
     // atomics do not enable vectorisation under "omp simd" (gives compiler

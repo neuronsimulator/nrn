@@ -804,8 +804,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      *
      * \param type The block type
      */
-    virtual void print_channel_iteration_block_parallel_hint(BlockType type,
-                                                             const ast::Block* block);
+    virtual void print_parallel_iteration_hint(BlockType type, const ast::Block* block);
 
 
     /****************************************************************************************/
