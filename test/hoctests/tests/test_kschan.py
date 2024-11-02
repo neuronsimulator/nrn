@@ -6,15 +6,7 @@ import numpy as np
 import os, sys, hashlib
 
 
-# 0 if cvode is off, if cvode is on then 2 if classic version , or 3.2.1, ...
-def cvver():
-    if h.cvode_active():
-        try:
-            return h.cvode.version()
-        except:
-            return "2"
-    return "0"
-
+print("cvode version ", h.cvode.version())  # for coverage
 
 expect_hocerr.quiet = False
 
@@ -74,9 +66,10 @@ def hrun(name, t_tol=0.0, v_tol=0.0, v_tol_per_time=0.0):
     ref_data = chk.get(name)
     new_tv, new_vv = trec.to_python(), vrec.to_python()
     if ref_data is None:
-        chk("ZZZ" + name, [new_tv, new_vv])
-        chk.save()
+        # comment out Exception if want new reference data
         raise Exception("No reference data for key: " + name)
+        chk(name, [new_tv, new_vv])
+        return
     ref_tv, ref_vv = ref_data
     assert len(ref_tv) == len(ref_vv)
     assert len(ref_tv) == len(new_tv)
@@ -189,7 +182,7 @@ def test_1():
     for cvode in [1, 0]:
         h.cvode_active(cvode)
         hrun(
-            "nahh cvode={}".format(cvver()),
+            "nahh cvode={}".format(bool(cvode)),
             t_tol=8e-9 if cvode else 0.0,
             v_tol=2e-9 if cvode else 3e-11,
         )
@@ -348,7 +341,7 @@ def test_2():
     h.cvode_active(1)
     # At least executes KSChan::mulmat
     hrun(
-        "kchan without single cvode=%s" % cvver(),
+        "kchan without single cvode=True",
         t_tol=5e-6,
         v_tol=1e-11,
         v_tol_per_time=5e-7,
@@ -427,7 +420,9 @@ def test_3():
                     tols["v_tol_per_time"] = 6e-8
             else:
                 tols["v_tol"] = 8e-11
-            hrun("KSTrans cvode={} single={}".format(cvver(), bool(singleon)), **tols)
+            hrun(
+                "KSTrans cvode={} single={}".format(bool(cvon), bool(singleon)), **tols
+            )
             del kchan
             locals()
 

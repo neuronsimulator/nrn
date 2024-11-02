@@ -53,11 +53,9 @@ def chk():
     fname = "test_nrntest_fast.json"
     if True:
         if h.CVode().version().split(".")[0] == "3":
-            fname = "test_nrntest_fast_cv3.json"
             global cvtol
             cvtol = cv3tol
 
-    print(fname)
     checker = Chk(os.path.join(dir_path, fname))
     yield checker
     # Save results to disk if they've changed; this is called after all tests

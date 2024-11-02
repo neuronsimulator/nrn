@@ -7,10 +7,7 @@ pc = h.ParallelContext()
 
 import io, math, os, re, sys
 
-try:
-    jsonfile = "test_netcvode_cv%s.json" % (cv.version().split(".")[0],)
-except:
-    jsonfile = "test_netcvode.json"
+jsonfile = "test_netcvode.json"
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 chk = Chk(os.path.join(dir_path, jsonfile))
