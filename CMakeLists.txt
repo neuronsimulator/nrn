@@ -85,6 +85,13 @@ option(
   NRN_ENABLE_PERFORMANCE_TESTS
   "Enable tests that measure performance. These are known to be unreliable when run on busy/oversubscribed machines such as CI runners."
   ${NRN_ENABLE_PERFORMANCE_TESTS_DEFAULT})
+option(NRN_ENABLE_DIGEST
+       "Provides nrn_digest function for debugging cross platform floating result differences."
+       ${NRN_ENABLE_DIGEST_DEFAULT})
+option(
+  NRN_ENABLE_ARCH_INDEP_EXP_POW
+  "Provides use_exp_pow_precision(style) function so that exp and pow produce same results on all platforms"
+  ${NRN_ENABLE_ARCH_INDEP_EXP_POW_DEFAULT})
 # This can be helpful in very specific CI build configurations, where ccache is used *and* different
 # CI builds are built under different directories.
 option(NRN_AVOID_ABSOLUTE_PATHS
@@ -325,9 +332,6 @@ if(NRN_ENABLE_RX3D)
     message(SEND_ERROR "NRN_ENABLE_RX3D requires NRN_ENABLE_PYTHON feature.")
   else()
     find_package(Cython REQUIRED)
-    if(CYTHON_VERSION VERSION_GREATER_EQUAL 3)
-      message(FATAL_ERROR "Cython 3+ is not supported")
-    endif()
   endif()
 endif()
 if(MINGW)
@@ -382,9 +386,6 @@ if(NRN_ENABLE_MUSIC)
     message(FATAL "MUSIC requires -DNRN_ENABLE_PYTHON=ON")
   endif()
   find_package(Cython REQUIRED)
-  if(CYTHON_VERSION VERSION_GREATER_EQUAL 3)
-    message(FATAL_ERROR "Cython 3+ is not supported")
-  endif()
   find_package(MUSIC REQUIRED)
   set(NRN_MUSIC 1)
 endif()
@@ -753,22 +754,17 @@ add_custom_target(
 # =============================================================================
 if(NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY)
   set(GLOBAL_VAR_TOGGLE_COMMAND "'s/ GLOBAL minf/ RANGE minf/'")
-  set(TABLE_VAR_TOGGLE_COMMAND "'s/ TABLE minf/ :TABLE minf/'")
 else()
   set(GLOBAL_VAR_TOGGLE_COMMAND "'s/ RANGE minf/ GLOBAL minf/'")
-  set(TABLE_VAR_TOGGLE_COMMAND "'s/ :TABLE minf/ TABLE minf/'")
 endif()
 separate_arguments(GLOBAL_VAR_TOGGLE_COMMAND UNIX_COMMAND "${GLOBAL_VAR_TOGGLE_COMMAND}")
-separate_arguments(TABLE_VAR_TOGGLE_COMMAND UNIX_COMMAND "${TABLE_VAR_TOGGLE_COMMAND}")
 add_custom_target(
   hh_update
   COMMAND sed ${GLOBAL_VAR_TOGGLE_COMMAND} ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod >
           ${CMAKE_BINARY_DIR}/hh.mod.1
-  COMMAND sed ${TABLE_VAR_TOGGLE_COMMAND} ${CMAKE_BINARY_DIR}/hh.mod.1 >
-          ${CMAKE_BINARY_DIR}/hh.mod.2
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.2
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.1
           ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
-  COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1 ${CMAKE_BINARY_DIR}/hh.mod.2
+  COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1
   COMMENT "Update hh.mod for CoreNEURON compatibility"
   VERBATIM)
 add_dependencies(nrniv_lib hh_update)
@@ -1066,6 +1062,10 @@ if(NRN_ENABLE_PROFILING)
   if(NRN_PROFILER STREQUAL "caliper")
     message(STATUS "  Caliper     | ${caliper_DIR}")
   endif()
+endif()
+if(NRN_ENABLE_DIGEST OR NRN_ARCH_INDEP_EXP_POW)
+  message(STATUS "NRN_ENABLE_DIGEST | ${NRN_ENABLE_DIGEST}")
+  message(STATUS "NRN_ENABLE_ARCH_INDEP_EXP_POW | ${NRN_ENABLE_ARCH_INDEP_EXP_POW}")
 endif()
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS " See documentation : https://www.neuron.yale.edu/neuron/")

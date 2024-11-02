@@ -11,6 +11,7 @@
 #include <cassert>
 #include <memory>
 
+#include "nrnoc/ion_semantics.h"
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/io/nrn_filehandler.hpp"
@@ -296,8 +297,9 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
                                 // out into the following function.
                                 d[ix] = nrn_original_aos_index(ptype, d[ix], nt, ml_pinv);
                             }
-                        } else if (s >= 0 && s < 1000) {  // ion
-                            d[ix] = nrn_original_aos_index(s, d[ix], nt, ml_pinv);
+                        } else if (nrn_semantics_is_ion(s)) {  // ion
+                            auto type = nrn_semantics_ion_type(s);
+                            d[ix] = nrn_original_aos_index(type, d[ix], nt, ml_pinv);
                         }
 #if CHKPNTDEBUG
                         if (s != -8) {  // WATCH values change

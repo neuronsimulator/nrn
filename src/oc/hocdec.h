@@ -158,7 +158,6 @@ struct cTemplate {
     void* (*constructor)(struct Object*);
     void (*destructor)(void*);
     void (*steer)(void*); /* normally nullptr */
-    int (*checkpoint)(void**);
 };
 
 union Objectdata {
@@ -263,7 +262,6 @@ int ilint;
 #define Strncat cplint = strncat
 #define Strcpy  cplint = strcpy
 #define Strncpy cplint = strncpy
-#define Printf  ilint = printf
 #else
 #undef IGNORE
 #define IGNORE(arg) arg
@@ -272,11 +270,8 @@ int ilint;
 #define Strncat strncat
 #define Strcpy  strcpy
 #define Strncpy strncpy
-#define Printf  nrnpy_pr
 #endif
 using neuron::Sprintf;
-
-#define ERRCHK(c1) c1
 
 // No longer used because of clang format difficulty
 // #define IFGUI  if (hoc_usegui) {

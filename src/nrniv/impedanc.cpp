@@ -8,10 +8,7 @@
 #include <complex>
 #include "nrnoc2iv.h"
 #include "classreg.h"
-#include <stdio.h>
 #include "membfunc.h"
-extern void setup_topology();
-extern void recalc_diam();
 
 typedef void (*Pfrv4)(int, Node**, double**, Datum**);
 
@@ -150,7 +147,7 @@ static Member_func members[] = {{"compute", compute},
                                 {0, 0}};
 
 void Impedance_reg() {
-    class2oc("Impedance", cons, destruct, members, nullptr, nullptr, nullptr);
+    class2oc("Impedance", cons, destruct, members, nullptr, nullptr);
 }
 
 Imp::~Imp() {

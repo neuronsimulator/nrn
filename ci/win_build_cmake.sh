@@ -10,7 +10,7 @@ export MSYSTEM_PREFIX=/mingw64
 export PATH=/mingw64/bin:$PATH
 
 # have compatible cython3
-python3 -m pip install "cython<3"
+python3 -m pip install "cython"
 
 # if BUILD_SOURCESDIRECTORY not available, use te root of the repo
 if [ -z "$BUILD_SOURCESDIRECTORY" ]; then
@@ -30,7 +30,7 @@ cd $BUILD_SOURCESDIRECTORY/build
 	-DNRN_ENABLE_RX3D=ON  \
 	-DNRN_RX3D_OPT_LEVEL=2 \
 	-DNRN_BINARY_DIST_BUILD=ON \
-	-DPYTHON_EXECUTABLE=/c/Python38/python.exe \
+	-DPYTHON_EXECUTABLE=/c/Python39/python.exe \
 	-DNRN_ENABLE_PYTHON_DYNAMIC=ON  \
 	-DNRN_PYTHON_DYNAMIC='c:/Python38/python.exe;c:/Python39/python.exe;c:/Python310/python.exe;c:/Python311/python.exe;c:/Python312/python.exe'  \
 	-DCMAKE_INSTALL_PREFIX='/c/nrn-install' \
