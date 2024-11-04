@@ -214,10 +214,11 @@ static void extcell_init(neuron::model_sorted_token const&,
 void extnode_free_elements(Extnode* nde) {
     if (nde->v) {
         free(nde->v);  /* along with _a and _b */
-        nde->v = NULL;
-        nde->_a = NULL;
-        nde->_b = NULL;
-        nde->_rhs = NULL;
+        free(nde->_rhs);
+        nde->v = nullptr;
+        nde->_a = nullptr;
+        nde->_b = nullptr;
+        nde->_rhs = nullptr;
     }
 }
 
