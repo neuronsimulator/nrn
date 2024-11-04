@@ -2423,16 +2423,10 @@ list. */
 /* modified greatly by Hines. Very unsafe in general. */
 {
 #if 1
-    /*---- local variables -----*/
-    Symbol *doomed;
-    /*---- start function ------*/
-
     /* copy address of the symbol that will be deleted */
-    doomed = (pc++)->sym;
+    Symbol *doomed = (pc++)->sym;
 
-#endif
-/*	hoc_execerror("delete_symbol doesn't work right now.", (char *)0);*/
-#if 1
+    /*	hoc_execerror("delete_symbol doesn't work right now.", (char *)0);*/
     if (doomed->type == UNDEF)
         fprintf(stderr, "%s: no such variable\n", doomed->name);
     else if (doomed->defined_on_the_fly == 0)

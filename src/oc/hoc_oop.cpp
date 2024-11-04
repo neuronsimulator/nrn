@@ -584,25 +584,22 @@ void hoc_newobj_ret(void) {
 }
 
 void hoc_newobj(void) { /* template at pc+1 */
-    Object *ob, **obp;
-    Symbol *sym;
-    int narg;
-
-    sym = (pc++)->sym;
-    narg = (pc++)->i;
+    Symbol *sym = (pc++)->sym;
+    int narg = (pc++)->i;
 #if USE_PYTHON
     /* look inside stack because of limited number of temporary objects? */
     /* whatever. we will keep the strategy */
     if (hoc_inside_stacktype(narg) == OBJECTVAR) {
 #endif
-        obp = hoc_look_inside_stack<Object**>(narg);
-        ob = hoc_newobj1(sym, narg);
+        Object** obp = hoc_look_inside_stack<Object**>(narg);
+        Object* ob = hoc_newobj1(sym, narg);
         hoc_nopop(); /* the object pointer */
         hoc_dec_refcount(obp);
         *(obp) = ob;
         hoc_pushobj(obp);
 #if USE_PYTHON
     } else { /* Assignment to OBJECTTMP not allowed */
+        hoc_obj_look_inside_stack(narg);
         hoc_execerror("Assignment to $o only allowed if caller arg was declared as objref",
                       nullptr);
     }
@@ -1369,11 +1366,10 @@ void hoc_object_eval(void) {
 }
 
 void hoc_ob_pointer(void) {
-    int type;
 #if PDEBUG
     printf("code for hoc_ob_pointer\n");
 #endif
-    type = hoc_stacktype();
+    int type = hoc_stacktype();
     if (type == VAR) {
     } else if (type == SYMBOL) {
         auto* d_sym = hoc_look_inside_stack<Symbol*>(0);
@@ -1381,12 +1377,7 @@ void hoc_ob_pointer(void) {
             Symbol* sym = hoc_spop();
             int nindex = hoc_ipop();
             Section* sec = nrn_sec_pop();
-            double x;
-            if (nindex) {
-                x = hoc_xpop();
-            } else {
-                x = .5;
-            }
+            double x = nindex ? hoc_xpop() : .5;
             hoc_push(nrn_rangepointer(sec, sym, x));
         } else if (d_sym->type == VAR && d_sym->subtype == USERPROPERTY) {
             hoc_pushpx(cable_prop_eval_pointer(hoc_spop()));
