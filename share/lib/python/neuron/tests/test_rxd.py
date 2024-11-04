@@ -2,9 +2,11 @@ from neuron import h
 import neuron
 import unittest
 import sys
+import hashlib
 import os
 import json
 from multiprocessing import Process, Lock
+from pathlib import Path
 
 try:
     import multiprocessing as mp
@@ -16,6 +18,19 @@ except:
 # load the reference data from rxd_data.json
 fdir = os.path.dirname(os.path.abspath(__file__))
 test_data = json.load(open(os.path.join(fdir, "test_rxd.json"), "r"))
+
+
+def get_file_checksum(file_path, hash_type="sha256"):
+    hash_func = hashlib.new(hash_type)
+    with open(file_path, "rb") as f:
+        hash_func.update(f.read())
+    return hash_func.hexdigest()
+
+
+assert (
+    get_file_checksum(Path(fdir) / "test_rxd.json")
+    == "c68b98b308e8b6bbfee1f9dd43d354bfd455de76c3efc570a370734a555f6e69"
+)
 
 
 def scalar_bistable(lock, path=None):
