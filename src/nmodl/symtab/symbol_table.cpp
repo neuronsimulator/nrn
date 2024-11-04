@@ -116,7 +116,6 @@ std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables(NmodlType with,
     return result;
 }
 
-
 std::vector<std::shared_ptr<Symbol>> SymbolTable::get_variables_with_status(Status status,
                                                                             bool all) const {
     std::vector<std::shared_ptr<Symbol>> variables;

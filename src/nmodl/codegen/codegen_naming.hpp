@@ -176,8 +176,26 @@ static constexpr char NRN_WATCH_CHECK_METHOD[] = "nrn_watch_check";
 /// verbatim name of the variable for nrn thread arguments
 static constexpr char THREAD_ARGS[] = "_threadargs_";
 
+/// verbatim name of the variable for nrn thread arguments, sometimes with trailing comma
+static constexpr char THREAD_ARGS_COMMA[] = "_threadargscomma_";
+
 /// verbatim name of the variable for nrn thread arguments in prototype
 static constexpr char THREAD_ARGS_PROTO[] = "_threadargsproto_";
+
+/// verbatim name of the variable for nrn thread arguments in prototype and a comma
+static constexpr char THREAD_ARGS_PROTO_COMMA[] = "_threadargsprotocomma_";
+
+/// variation of `_threadargs_` for "internal" functions.
+static constexpr char INTERNAL_THREAD_ARGS[] = "_internalthreadargs_";
+
+/// variation of `_threadargs_` for "internal" functions, with comma (maybe).
+static constexpr char INTERNAL_THREAD_ARGS_COMMA[] = "_internalthreadargscomma_";
+
+/// variation of `_threadargsproto_` for "internal" functions.
+static constexpr char INTERNAL_THREAD_ARGS_PROTO[] = "_internalthreadargsproto_";
+
+/// variation of `_threadargsproto_` for "internal" functions, possibly with comma.
+static constexpr char INTERNAL_THREAD_ARGS_PROTO_COMMA[] = "_internalthreadargsprotocomma_";
 
 /// prefix for ion variable
 static constexpr char ION_VARNAME_PREFIX[] = "ion_";

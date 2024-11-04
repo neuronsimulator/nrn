@@ -169,6 +169,10 @@ struct ShadowUseStatement {
     std::string rhs;
 };
 
+inline std::string get_name(ast::Ast const* sym) {
+    return sym->get_node_name();
+}
+
 inline std::string get_name(const std::shared_ptr<symtab::Symbol>& sym) {
     return sym->get_name();
 }

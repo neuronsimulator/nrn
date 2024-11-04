@@ -13,6 +13,7 @@
 #include "ast/all.hpp"
 #include "codegen/codegen_helper_visitor.hpp"
 #include "codegen/codegen_utils.hpp"
+#include "utils/string_utils.hpp"
 #include "visitors/defuse_analyze_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"

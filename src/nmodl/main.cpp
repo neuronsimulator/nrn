@@ -294,6 +294,7 @@ int run_nmodl(int argc, const char* argv[]) {
     CLI11_PARSE(app, argc, argv);
 
     std::string simulator_name = neuron_code ? "neuron" : "coreneuron";
+    verbatim_rename = neuron_code ? false : verbatim_rename;
 
     fs::create_directories(output_dir);
     fs::create_directories(scratch_dir);

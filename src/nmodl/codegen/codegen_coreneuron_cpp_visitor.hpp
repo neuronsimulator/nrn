@@ -123,7 +123,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
      */
     std::string process_verbatim_token(const std::string& token);
 
-
     /**
      * Check if variable is qualified as constant
      * \param name The name of variable
