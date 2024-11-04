@@ -123,9 +123,7 @@ def trivial_ecs(scale, lock, path=None):
         # compare with previous solution
         ecs_vec.sub(h.Vector(test_data["trivial_ecs_data"][str(scale)]))
         ecs_vec.abs()
-        if ecs_vec.sum() > 1e-9:
-            sys.exit(-1)
-    sys.exit(0)
+        assert ecs_vec.sum() <= 1e-9, f"{ecs_vec.sum()=}"
 
 
 class RxDTestCase(unittest.TestCase):
