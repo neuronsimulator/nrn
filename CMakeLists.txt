@@ -71,6 +71,7 @@ option(NRN_ENABLE_THREADS "Allow use of multithreading" ${NRN_ENABLE_THREADS_DEF
 option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
 option(NRN_ENABLE_MUSIC "Enable MUSIC support" ${NRN_ENABLE_MUSIC_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
+option(NRN_ENABLE_NMODL "Enable NMODL code-generator support" ${NRN_ENABLE_NMODL_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
@@ -503,6 +504,36 @@ endif()
 cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 
 # =============================================================================
+# Enable NMODL code-generator support
+# =============================================================================
+if(NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON)
+
+  set(NMODL_ENABLE_PYTHON_BINDINGS
+      OFF
+      CACHE BOOL "Enable NMODL python bindings")
+  nrn_add_external_project(nmodl)
+  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
+  set(NMODL_TARGET_TO_DEPEND nmodl)
+  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
+  # install nrnunits.lib and libpywrapper.so from external/nmodl
+  install(
+    FILES ${NMODL_PROJECT_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
+    DESTINATION lib
+    COMPONENT pywrapper
+    OPTIONAL)
+  install(
+    FILES ${NMODL_PROJECT_BINARY_DIR}/share/nmodl/nrnunits.lib
+    DESTINATION share/nmodl
+    COMPONENT nrnunits)
+
+  # set correct arguments for nmodl for cpu/gpu target
+  set(CORENRN_NMODL_FLAGS
+      ""
+      CACHE STRING "Extra NMODL options such as passes")
+
+endif()
+
+# =============================================================================
 # Enable CoreNEURON support
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)
@@ -536,7 +567,7 @@ if(NRN_ENABLE_CORENEURON)
   get_property(CORENRN_LIB_LINK_FLAGS GLOBAL PROPERTY CORENRN_LIB_LINK_FLAGS)
   get_property(CORENRN_NEURON_LINK_FLAGS GLOBAL PROPERTY CORENRN_NEURON_LINK_FLAGS)
   get_property(CORENRN_ENABLE_SHARED GLOBAL PROPERTY CORENRN_ENABLE_SHARED)
-  get_property(CORENRN_NMODL_BINARY GLOBAL PROPERTY CORENRN_NMODL_BINARY)
+
   # NEURON tests that link against CoreNEURON need to depend on it.
   set(CORENEURON_TARGET_TO_DEPEND coreneuron-for-tests)
 
