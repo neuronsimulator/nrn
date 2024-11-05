@@ -164,8 +164,8 @@ macro(nocmodl_mod_to_cpp modfile_basename)
             ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
     COMMAND ${CMAKE_COMMAND} -E ${REMOVE_CMAKE_COMMAND}
             ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp
-    DEPENDS nocmodl ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
-            ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib ${CORENRN_NMODL_BINARY}
+    DEPENDS ${NRN_CODEGENERATOR_TARGET} ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
+            ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
 endmacro()
 
