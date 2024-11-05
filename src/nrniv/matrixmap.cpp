@@ -26,7 +26,7 @@ void MatrixMap::add(double fac) {
     }
 }
 
-int MatrixMap::compute_index(int i, int start, int nnode, Node** nodes, int* layer) {
+int MatrixMap::compute_index(int i, int start, int nnode, Node** nodes, int* layer) const {
         int it;
         if (i < nnode) {
             it = nodes[i]->eqn_index_ + layer[i];
