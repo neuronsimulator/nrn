@@ -12,7 +12,9 @@
 #include "vrecitem.h"
 #include "membfunc.h"
 #include "nonvintblock.h"
+#ifdef NRN_DIGEST
 #include "nrndigest.h"
+#endif
 
 #include <cerrno>
 #include <numeric>

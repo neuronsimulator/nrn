@@ -198,7 +198,9 @@ static struct { /* Builtin functions with multiple or variable args */
 #if NRN_DIGEST
                  {"nrn_digest", nrn_digest},
 #endif
+#if NRN_ARCH_INDEP_EXP_POW
                  {"use_exp_pow_precision", hoc_use_exp_pow_precision},
+#endif
                  {0, 0}};
 
 static struct { /* functions that return a string */
