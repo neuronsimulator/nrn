@@ -176,6 +176,7 @@ set(AST_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/ast/write_ion_var.hpp
 )
 
+if(NMODL_ENABLE_PYTHON_BINDINGS)
 set(PYBIND_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/pybind/pyast.cpp
     ${PROJECT_BINARY_DIR}/src/pybind/pyast.hpp
@@ -185,6 +186,7 @@ set(PYBIND_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/pybind/pyvisitor.cpp
     ${PROJECT_BINARY_DIR}/src/pybind/pyvisitor.hpp
 )
+endif()
 
 set(VISITORS_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/visitors/ast_visitor.cpp
