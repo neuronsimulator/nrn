@@ -44,7 +44,7 @@ void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
     std::vector<std::pair<int, int>> nzs = m_.nonzeros();
     pm_.reserve(nzs.size());
     ptree_.reserve(nzs.size());
-    for (const auto [i, j]: nzs) {
+    for (const auto& [i, j]: nzs) {
         int it = compute_index(i, start, nnode, nodes, layer);
         int jt = compute_index(j, start, nnode, nodes, layer);
         if (it != 0 && jt != 0) {
