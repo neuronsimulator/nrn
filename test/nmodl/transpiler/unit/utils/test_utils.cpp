@@ -50,12 +50,13 @@ NEURON {
  * nmodl, the nmodl output is without "extra" whitespaces in the provided input.
  */
 
-std::string reindent_text(const std::string& text) {
+std::string reindent_text(const std::string& text, int indent_level) {
     std::string indented_text;
     int num_whitespaces = 0;
     bool flag = false;
     std::string line;
     std::stringstream stream(text);
+    std::string indent(4 * indent_level, ' ');
 
     while (std::getline(stream, line)) {
         if (!line.empty()) {
@@ -71,7 +72,7 @@ std::string reindent_text(const std::string& text) {
             }
 
             line.erase(0, num_whitespaces);
-            indented_text += line;
+            indented_text += indent + line;
         }
         /// discard empty lines at very beginning
         if (!stream.eof() && flag) {

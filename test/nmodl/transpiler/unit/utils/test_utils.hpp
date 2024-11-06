@@ -12,7 +12,7 @@
 namespace nmodl {
 namespace test_utils {
 
-std::string reindent_text(const std::string& text);
+std::string reindent_text(const std::string& text, int indent_level = 0);
 
 }  // namespace test_utils
 }  // namespace nmodl
