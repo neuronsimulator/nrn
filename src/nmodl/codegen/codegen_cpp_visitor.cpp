@@ -1478,8 +1478,7 @@ void CodegenCppVisitor::setup(const Program& node) {
     }
 
     if (!info.vectorize) {
-        logger->warn(
-            "CodegenCoreneuronCppVisitor : MOD file uses non-thread safe constructs of NMODL");
+        logger->warn("CodegenCppVisitor : MOD file uses non-thread safe constructs of NMODL");
     }
 
     codegen_float_variables = get_float_variables();
