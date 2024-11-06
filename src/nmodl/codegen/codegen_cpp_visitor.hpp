@@ -1480,13 +1480,10 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
 
     std::string compute_method_name(BlockType type) const;
 
-  public:
-    /** Setup the target backend code generator
-     *
-     * Typically called from within \c visit\_program but may be called from
-     * specialized targets to setup this Code generator as fallback.
-     */
+    // Automatically called as part of `visit_program`.
     void setup(const ast::Program& node);
+
+  public:
 
 
     /**
@@ -1496,10 +1493,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     void visit_program(const ast::Program& program) override;
 
 
-    /****************************************************************************************/
-    /*          Public printing routines for code generation for use in unit tests          */
-    /****************************************************************************************/
-
+  protected:
 
     /**
      * Print the structure that wraps all range and int variables required for the NMODL

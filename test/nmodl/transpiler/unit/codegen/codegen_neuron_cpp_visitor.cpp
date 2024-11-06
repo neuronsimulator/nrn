@@ -44,7 +44,6 @@ std::shared_ptr<CodegenNeuronCppVisitor> create_neuron_cpp_visitor(
 
     /// create C code generation visitor
     auto cv = std::make_shared<CodegenNeuronCppVisitor>("_test", ss, "double", false);
-    cv->setup(*ast);
     return cv;
 }
 

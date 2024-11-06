@@ -36,17 +36,18 @@ std::shared_ptr<CodegenCoreneuronCppVisitor> create_coreneuron_cpp_visitor(
     const std::shared_ptr<ast::Program>& ast,
     const std::string& /* text */,
     std::stringstream& ss) {
+    ImplicitArgumentVisitor().visit_program(*ast);
     /// construct symbol table
     SymtabVisitor().visit_program(*ast);
 
     /// run all necessary pass
+    PerfVisitor().visit_program(*ast);
     InlineVisitor().visit_program(*ast);
     NeuronSolveVisitor().visit_program(*ast);
     SolveBlockVisitor().visit_program(*ast);
 
     /// create C code generation visitor
     auto cv = std::make_shared<CodegenCoreneuronCppVisitor>("temp.mod", ss, "double", false);
-    cv->setup(*ast);
     return cv;
 }
 
@@ -64,17 +65,7 @@ std::shared_ptr<CodegenAccVisitor> create_acc_visitor(const std::shared_ptr<ast:
 
     /// create C code generation visitor
     auto cv = std::make_shared<CodegenAccVisitor>("temp.mod", ss, "double", false);
-    cv->setup(*ast);
     return cv;
-}
-
-/// print instance structure for testing purpose
-std::string get_instance_var_setup_function(std::string& nmodl_text) {
-    const auto& ast = NmodlDriver().parse_string(nmodl_text);
-    std::stringstream ss;
-    auto cvisitor = create_coreneuron_cpp_visitor(ast, nmodl_text, ss);
-    cvisitor->print_instance_variable_setup();
-    return reindent_text(ss.str());
 }
 
 /// print entire code
@@ -147,10 +138,9 @@ SCENARIO("Check instance variable definition order", "[codegen][var_order]") {
                     inst->ion_cao = nt->_data;
                     inst->ion_ica = nt->_data;
                     inst->ion_dicadv = nt->_data;
-                }
-            )";
-            auto const expected = reindent_text(generated_code);
-            auto const result = get_instance_var_setup_function(nmodl_text);
+                })";
+            auto const expected = reindent_text(generated_code, 1);
+            auto const result = get_coreneuron_cpp_code(nmodl_text);
             REQUIRE_THAT(result, ContainsSubstring(expected));
         }
     }
@@ -195,11 +185,10 @@ SCENARIO("Check instance variable definition order", "[codegen][var_order]") {
                     inst->v_unused = ml->data+4*pnodecount;
                     inst->ion_cai = nt->_data;
                     inst->ion_cao = nt->_data;
-                }
-            )";
+                })";
 
-            auto const expected = reindent_text(generated_code);
-            auto const result = get_instance_var_setup_function(nmodl_text);
+            auto const expected = reindent_text(generated_code, 1);
+            auto const result = get_coreneuron_cpp_code(nmodl_text);
             REQUIRE_THAT(result, ContainsSubstring(expected));
         }
     }
@@ -291,33 +280,15 @@ SCENARIO("Check instance variable definition order", "[codegen][var_order]") {
                     inst->ion_ko = nt->_data;
                     inst->ion_k_erev = nt->_data;
                     inst->style_k = ml->pdata;
-                }
-            )";
+                })";
 
-            auto const expected = reindent_text(generated_code);
-            auto const result = get_instance_var_setup_function(nmodl_text);
+            auto const expected = reindent_text(generated_code, 1);
+            auto const result = get_coreneuron_cpp_code(nmodl_text);
             REQUIRE_THAT(result, ContainsSubstring(expected));
         }
     }
 }
 
-std::string get_instance_structure(std::string nmodl_text) {
-    // parse mod file & print mechanism structure
-    auto const ast = NmodlDriver{}.parse_string(nmodl_text);
-    // add implicit arguments
-    ImplicitArgumentVisitor{}.visit_program(*ast);
-    // update the symbol table for PerfVisitor
-    SymtabVisitor{}.visit_program(*ast);
-    // we need the read/write counts so the codegen knows whether or not
-    // global variables are used
-    PerfVisitor{}.visit_program(*ast);
-    // setup codegen
-    std::stringstream ss{};
-    CodegenCoreneuronCppVisitor cv{"temp.mod", ss, "double", false};
-    cv.setup(*ast);
-    cv.print_mechanism_range_var_structure(true);
-    return ss.str();
-}
 
 SCENARIO("Check parameter constness with VERBATIM block",
          "[codegen][verbatim_variable_constness]") {
@@ -343,7 +314,7 @@ SCENARIO("Check parameter constness with VERBATIM block",
         )";
 
         THEN("Variable used in VERBATIM shouldn't be marked as const") {
-            auto const generated = get_instance_structure(nmodl_text);
+            auto const generated = get_coreneuron_cpp_code(nmodl_text);
             std::string expected_code = R"(
                 /** all mechanism instance variables and global variables */
                 struct IntervalFire_Instance  {
@@ -351,9 +322,9 @@ SCENARIO("Check parameter constness with VERBATIM block",
                     const double* burst_start{};
                     double* v_unused{};
                     IntervalFire_Store* global{&IntervalFire_global};
-                };
-            )";
-            REQUIRE(reindent_text(generated) == reindent_text(expected_code));
+                };)";
+            expected_code = reindent_text(expected_code, 1);
+            REQUIRE_THAT(generated, ContainsSubstring(expected_code));
         }
     }
 }
@@ -371,7 +342,7 @@ SCENARIO("Check NEURON globals are added to the instance struct on demand",
             }
         )";
         THEN("The instance struct should contain these variables") {
-            auto const generated = get_instance_structure(nmodl_text);
+            auto const generated = get_coreneuron_cpp_code(nmodl_text);
             REQUIRE_THAT(generated, ContainsSubstring("double* celsius{&coreneuron::celsius}"));
             REQUIRE_THAT(generated, ContainsSubstring("double* pi{&coreneuron::pi}"));
             REQUIRE_THAT(generated,
@@ -389,7 +360,7 @@ SCENARIO("Check NEURON globals are added to the instance struct on demand",
             }
         )";
         THEN("The instance struct should contain celsius for the implicit 5th argument") {
-            auto const generated = get_instance_structure(nmodl_text);
+            auto const generated = get_coreneuron_cpp_code(nmodl_text);
             REQUIRE_THAT(generated, ContainsSubstring("celsius"));
         }
     }
@@ -400,10 +371,10 @@ SCENARIO("Check NEURON globals are added to the instance struct on demand",
             }
         )";
         THEN("The instance struct should not contain those variables") {
-            auto const generated = get_instance_structure(nmodl_text);
-            REQUIRE_THAT(generated, !ContainsSubstring("celsius"));
-            REQUIRE_THAT(generated, !ContainsSubstring("pi"));
-            REQUIRE_THAT(generated, !ContainsSubstring("secondorder"));
+            auto const generated = get_coreneuron_cpp_code(nmodl_text);
+            REQUIRE_THAT(generated, !ContainsSubstring("double* celsius"));
+            REQUIRE_THAT(generated, !ContainsSubstring("double* pi"));
+            REQUIRE_THAT(generated, !ContainsSubstring("int* secondorder"));
         }
     }
 }
