@@ -139,7 +139,6 @@ static inline void* allocopy(void* src, size_t size) {
 }
 
 extern "C" NRN_EXPORT void rxd_set_no_diffusion() {
-    int i;
     diffusion = FALSE;
     if (_rxd_a != NULL) {
         free(_rxd_a);
@@ -643,7 +642,6 @@ extern "C" NRN_EXPORT void setup_currents(int num_currents,
     double* current_scales;
     PyHocObject** ecs_ptrs;
 
-    Current_Triple* c;
     Grid_node* g;
     ECS_Grid_node* grid;
 
