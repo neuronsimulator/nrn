@@ -42,9 +42,7 @@ extern void nrn_feenableexcept(void);
 #if NRN_DIGEST
 extern void nrn_digest();
 #endif
-#if NRN_ARCH_INDEP_EXP_POW
 extern void hoc_use_exp_pow_precision();
-#endif
 
 void hoc_coreneuron_handle();
 void hoc_get_config_key();

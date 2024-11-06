@@ -4,15 +4,13 @@
 #include "hocdec.h"
 #include "code.h"
 #include "equation.h"
-#ifdef NRN_DIGEST
 #include "multicore.h"
-#endif
 #include <stdio.h>
 
 #include "utils/logger.hpp"
 
-#if NRN_DIGEST
 #include "nrndigest.h"
+#if NRN_DIGEST
 #include <openssl/sha.h>
 #include <vector>
 #include <string>

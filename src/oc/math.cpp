@@ -9,9 +9,7 @@
 
 #include "nrnmpiuse.h"
 #include "ocfunc.h"
-#ifdef NRN_ARCH_INDEP_EXP_POW
 #include "nrnassrt.h"
-#endif
 
 #include <cfenv>
 #include <cmath>
@@ -144,17 +142,19 @@ int nrn_use_exp_pow_precision(int style) {
 
 #endif  // NRN_ARCH_INDEP_EXP_POW
 
-#if NRN_ARCH_INDEP_EXP_POW
 void hoc_use_exp_pow_precision() {
     int style = 0;
     if (ifarg(1)) {
         style = chkarg(1, 0.0, 2.0);
     }
+#if NRN_ARCH_INDEP_EXP_POW
     style = nrn_use_exp_pow_precision(style);
+#else
+    style = 0;
+#endif  // NRN_ARCH_INDEP_EXP_POW
     hoc_ret();
     hoc_pushx(double(style));
 }
-#endif  // NRN_ARCH_INDEP_EXP_POW
 
 // Try to overcome difference between linux and windows.
 // by rounding mantissa to 32 bit accuracy or using
