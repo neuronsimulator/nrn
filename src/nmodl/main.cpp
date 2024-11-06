@@ -601,12 +601,14 @@ int run_nmodl(int argc, const char* argv[]) {
         }
 
         {
+            auto output_stream = std::ofstream(std::filesystem::path(output_dir) /
+                                               (modfile + ".cpp"));
             auto blame_level = detailed_blame ? utils::BlameLevel::Detailed
                                               : utils::BlameLevel::Short;
             if (coreneuron_code && oacc_backend) {
                 logger->info("Running OpenACC backend code generator for CoreNEURON");
                 CodegenAccVisitor visitor(modfile,
-                                          output_dir,
+                                          output_stream,
                                           data_type,
                                           optimize_ionvar_copies_codegen,
                                           utils::make_blame(blame_line, blame_level));
@@ -616,7 +618,7 @@ int run_nmodl(int argc, const char* argv[]) {
             else if (coreneuron_code && !neuron_code && cpp_backend) {
                 logger->info("Running C++ backend code generator for CoreNEURON");
                 CodegenCoreneuronCppVisitor visitor(modfile,
-                                                    output_dir,
+                                                    output_stream,
                                                     data_type,
                                                     optimize_ionvar_copies_codegen,
                                                     utils::make_blame(blame_line, blame_level));
@@ -626,7 +628,7 @@ int run_nmodl(int argc, const char* argv[]) {
             else if (neuron_code && cpp_backend) {
                 logger->info("Running C++ backend code generator for NEURON");
                 CodegenNeuronCppVisitor visitor(modfile,
-                                                output_dir,
+                                                output_stream,
                                                 data_type,
                                                 optimize_ionvar_copies_codegen,
                                                 utils::make_blame(blame_line, blame_level));
