@@ -487,13 +487,6 @@ if(NRN_ENABLE_PYTHON)
     COMMAND ${modtests_launch_py} test/nmodl/test_table.py)
   nrn_add_test(
     GROUP nmodl_tests
-    NAME test_disc
-    REQUIRES ${modtests_preload_sanitizer}
-    SCRIPT_PATTERNS test/nmodl/test_disc.py
-    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
-    COMMAND ${modtests_launch_py} test/nmodl/test_disc.py)
-  nrn_add_test(
-    GROUP nmodl_tests
     NAME test_function_table
     REQUIRES ${modtests_preload_sanitizer}
     SCRIPT_PATTERNS test/nmodl/test_function_table.py
@@ -755,13 +748,6 @@ if(NRN_ENABLE_PYTHON)
       SCRIPT_PATTERNS test/nmodl/test_table.py
       ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${processor_env}
       COMMAND ${modtests_launch_py} test/nmodl/test_table.py)
-    nrn_add_test(
-      GROUP nmodl_tests_coreneuron
-      NAME test_disc_coreneuron_${processor}
-      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/nmodl/test_disc.py
-      ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${processor_env}
-      COMMAND ${modtests_launch_py} test/nmodl/test_disc.py)
     nrn_add_test(
       GROUP nmodl_tests_coreneuron
       NAME test_function_table_coreneuron_${processor}

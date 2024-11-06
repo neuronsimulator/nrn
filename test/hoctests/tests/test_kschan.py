@@ -71,9 +71,9 @@ def hrun(name, t_tol=0.0, v_tol=0.0, v_tol_per_time=0.0):
         chk(name, [new_tv, new_vv])
         return
     ref_tv, ref_vv = ref_data
-    assert len(ref_tv) == len(ref_vv)
-    assert len(ref_tv) == len(new_tv)
-    assert len(ref_tv) == len(new_vv)
+    np.testing.assert_equal(len(ref_tv), len(ref_vv))
+    np.testing.assert_equal(len(ref_tv), len(new_tv))
+    np.testing.assert_equal(len(ref_tv), len(new_vv))
     match = True
     max_diff_t, max_diff_v = 0.0, 0.0
 

@@ -8,6 +8,10 @@ def ecs_diffusion(neuron_instance):
     h, rxd, data, save_path = neuron_instance
 
     def make_model(nx, ny, nz, alpha, lambd, d=1.0, perm=None):
+        if len(list(h.allsec())) == 0:
+            # Only needed to gather data.
+            # Persists until cleaned up by neuron_nosave_instance
+            h("create dummy")
         dx = 10
         # the extracellular space
         ecs = rxd.Extracellular(
