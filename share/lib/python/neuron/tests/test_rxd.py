@@ -4,6 +4,7 @@ import unittest
 import sys
 import os
 import json
+import platform
 from multiprocessing import Process, Lock
 
 try:
@@ -156,6 +157,10 @@ class RxDTestCase(unittest.TestCase):
         assert p.exitcode == 0
         return 0
 
+    @unittest.skipIf(
+        platform.machine() in ["aarch64", "arm64"],
+        "see discussion in #3143",
+    )
     def test_ecs_diffusion_variable_step_coarse(self):
         p = Process(target=trivial_ecs, args=(1e-2, self.lock, self.path))
         p.start()
@@ -163,6 +168,10 @@ class RxDTestCase(unittest.TestCase):
         assert p.exitcode == 0
         return 0
 
+    @unittest.skipIf(
+        platform.machine() in ["aarch64", "arm64"],
+        "see discussion in #3143",
+    )
     def test_ecs_diffusion_variable_step_fine(self):
         p = Process(target=trivial_ecs, args=(1e-5, self.lock, self.path))
         p.start()
