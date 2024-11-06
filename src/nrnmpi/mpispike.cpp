@@ -133,7 +133,7 @@ int nrnmpi_spike_exchange(int* ovfl,
     }
 #else
     MPI_Allgather(spbufout_, 1, spikebuf_type, spbufin_, 1, spikebuf_type, nrnmpi_comm);
-    novfl = 0;
+    int novfl = 0;
     n = spbufin_[0].nspike;
     if (n > nrn_spikebuf_size) {
         nin_[0] = n - nrn_spikebuf_size;
@@ -143,7 +143,7 @@ int nrnmpi_spike_exchange(int* ovfl,
     }
     for (i = 1; i < np; ++i) {
         displs[i] = novfl;
-        n1 = spbufin_[i].nspike;
+        int n1 = spbufin_[i].nspike;
         n += n1;
         if (n1 > nrn_spikebuf_size) {
             nin_[i] = n1 - nrn_spikebuf_size;
@@ -159,7 +159,7 @@ int nrnmpi_spike_exchange(int* ovfl,
             *spikein_ = (NRNMPI_Spike*) hoc_Emalloc(*icapacity_ * sizeof(NRNMPI_Spike));
             hoc_malchk();
         }
-        n1 = (*nout_ > nrn_spikebuf_size) ? *nout_ - nrn_spikebuf_size : 0;
+        int n1 = (*nout_ > nrn_spikebuf_size) ? *nout_ - nrn_spikebuf_size : 0;
         MPI_Allgatherv(spikeout_, n1, spike_type, *spikein_, nin_, displs, spike_type, nrnmpi_comm);
     }
     *ovfl = novfl;
