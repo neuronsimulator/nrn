@@ -18,23 +18,13 @@ void MatrixMap::mmfree() {
 }
 
 void MatrixMap::add(double fac) {
-    for (int i = 0; i < plen_; ++i) {
-        *ptree_[i] += fac * (*pm_[i]);
+    for (int i = 0; i < pm_.size(); ++i) {
+        auto [it, jt] = pm_[i];
+        *ptree_[i] += fac * m_(it, jt);
     }
 }
 
-void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
-    NrnThread* _nt = nrn_threads;
-    mmfree();
-
-    plen_ = 0;
-    std::vector<int> nonzero_i, nonzero_j;
-    m_.nonzeros(nonzero_i, nonzero_j);
-    pm_.resize(nonzero_i.size());
-    ptree_.resize(nonzero_i.size());
-    for (int k = 0; k < nonzero_i.size(); k++) {
-        const int i = nonzero_i[k];
-        const int j = nonzero_j[k];
+int MatrixMap::compute_index(int i, int start, int nnode, Node** nodes, int* layer) const {
         int it;
         if (i < nnode) {
             it = nodes[i]->eqn_index_ + layer[i];
@@ -44,17 +34,22 @@ void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
         } else {
             it = start + i - nnode;
         }
-        int jt;
-        pm_[plen_] = m_.mep(i, j);
-        if (j < nnode) {
-            jt = nodes[j]->eqn_index_ + layer[j];
-            if (layer[j] > 0 && !nodes[j]->extnode) {
-                jt = 0;
-            }
-        } else {
-            jt = start + j - nnode;
+        return it;
+}
+
+void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
+    NrnThread* _nt = nrn_threads;
+    mmfree();
+
+    std::vector<std::pair<int, int>> nzs = m_.nonzeros();
+    pm_.reserve(nzs.size());
+    ptree_.reserve(nzs.size());
+    for (const auto& [i, j]: nzs) {
+        int it = compute_index(i, start, nnode, nodes, layer);
+        int jt = compute_index(j, start, nnode, nodes, layer);
+        if (it != 0 && jt != 0) {
+            pm_.emplace_back(i, j);
+            ptree_.emplace_back(spGetElement(_nt->_sp13mat, it, jt));
         }
-        ptree_[plen_] = spGetElement(_nt->_sp13mat, it, jt);
-        ++plen_;
     }
 }
