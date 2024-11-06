@@ -171,6 +171,8 @@ std::vector<std::vector<int>> nrnthreads_netcon_negsrcgid_tid;
 
 /* read files.dat file and distribute cellgroups to all mpi ranks */
 void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
+    constexpr int FILES_DAT_END = -1;
+
     patstimtype = nrn_get_mechtype("PatternStim");
     if (corenrn_embedded && !corenrn_file_mode) {
         ngrp = corenrn_embedded_nthread;
@@ -207,25 +209,33 @@ void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
             "Info : The number of input datasets are less than ranks, some ranks will be idle!\n");
     }
 
-    ngrp = 0;
-    grp = new int[iNumFiles / nrnmpi_numprocs + 1];
+    std::vector<int> rank_dat_files;
 
     // irerate over gids in files.dat
-    for (int iNum = 0; iNum < iNumFiles; ++iNum) {
+    for (int iNum = 0, nFiles=0; nFiles < iNumFiles; ++iNum) {
         int iFile;
 
         nrn_assert(fscanf(fp, "%d\n", &iFile) == 1);
         if ((iNum % nrnmpi_numprocs) == nrnmpi_myid) {
-            if (iFile == -1) {
+            if (iFile == FILES_DAT_END) {
                 // Sentinel value, we are done for this rank
                 break;
             }
-            grp[ngrp] = iFile;
-            ngrp++;
+            rank_dat_files.push_back(iFile);
+        }
+
+        // Count only valid file ids
+        if (iFile != FILES_DAT_END) {
+            nFiles++;
         }
     }
 
     fclose(fp);
+
+    // Assign to output vars
+    ngrp = rank_dat_files.size();
+    grp = new int[ngrp + 1];
+    std::copy(rank_dat_files.begin(), rank_dat_files.end(), grp);
 }
 
 void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi) {
