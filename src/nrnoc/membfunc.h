@@ -307,7 +307,7 @@ namespace _get {
 [[nodiscard]] double& _nrn_mechanism_access_rhs(Node*);
 [[nodiscard]] double& _nrn_mechanism_access_voltage(Node*);
 [[nodiscard]] int _nrn_mechanism_access_index(const Node*);
-[[nodiscard]] double* _nrn_mechanism_get_matrix_elem(NrnThread* nt, int, int );
+[[nodiscard]] double& _nrn_mechanism_get_matrix_elem(NrnThread* nt, int, int );
 [[nodiscard]] neuron::container::data_handle<double> _nrn_mechanism_get_area_handle(Node*);
 [[nodiscard]] Section* _nrn_mechanism_get_child(Section*);
 [[nodiscard]] int _nrn_mechanism_get_nnode(Section*);
