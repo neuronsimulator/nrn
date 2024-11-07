@@ -65,10 +65,6 @@ extern int numlist;
 extern const char* nmodl_version_;
 extern int usederivstatearray;
 
-/*SUPPRESS 763*/
-extern const char* RCS_version;
-extern const char* RCS_date;
-
 static void openfiles(const char* given_filename, const char* output_dir);
 
 int main(int argc, char** argv) {
