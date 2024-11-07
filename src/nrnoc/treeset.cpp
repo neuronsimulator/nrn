@@ -575,20 +575,18 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
             Node* nd = _nt->_v_node[i];
             OcSparseMatrix& m = *_nt->_sp13mat;
             auto const parent_i = _nt->_v_parent_index[i];
+            auto* const parent_nd = _nt->_v_node[parent_i];
             auto const nd_a = NODEA(nd);
             auto const nd_b = NODEB(nd);
             // Update entries in sp13_mat
             {
                 const int index = nd->eqn_index_;
-                m(index - 1, index - 1) -= nd_b;
-
-                // used to update NODED (sparse13 matrix) using NODEA and NODEB ("SoA")
-                Node* const parent_nd = _nt->_v_node[parent_i];
                 const int parent_index = parent_nd->eqn_index_;
-                m(parent_index - 1, parent_index - 1) -= nd_a;
-
                 m(parent_index - 1, index - 1) += nd_a;
                 m(index - 1, parent_index - 1) += nd_b; /* b may have value from lincir */
+                m(index - 1, index - 1) -= nd_b;
+                // used to update NODED (sparse13 matrix) using NODEA and NODEB ("SoA")
+                m(parent_index - 1, parent_index - 1) -= nd_a;
             }
             // Also update the Node's d value in the SoA storage (is this needed?)
             vec_d[i] -= nd_b;
