@@ -46,14 +46,14 @@ void (*nrn_binq_enqueue_error_handler)(double, TQItem*);
 static void prnt(const TQItem* b, int level) {
     int i;
     for (i = 0; i < level; ++i) {
-        Printf("    ");
+        logger.print("    ");
     }
-    Printf("%g %c %d Q=%p D=%p\n",
-           b->t_,
-           b->data_ ? 'x' : 'o',
-           b->cnt_,
-           fmt::ptr(b),
-           fmt::ptr(b->data_));
+    logger.print("{} {} {} Q={} D={}\n",
+                 b->t_,
+                 b->data_ ? 'x' : 'o',
+                 b->cnt_,
+                 fmt::ptr(b),
+                 fmt::ptr(b->data_));
 }
 
 TQueue::TQueue(TQItemPool* tp, int mkmut) {
@@ -165,15 +165,12 @@ void TQueue::move(TQItem* i, double tnew) {
 
 void TQueue::statistics() {
 #if COLLECT_TQueue_STATISTICS
-    Printf("insertions=%lu  moves=%lu removals=%lu calls to least=%lu\n",
-           ninsert,
-           nmove,
-           nrem,
-           nleast);
-    Printf("calls to find=%lu\n", nfind);
-    Printf("comparisons=%d\n", sptree_->get_enqcmps());
+    logger.print(
+        "insertions={}  moves={} removals={} calls to least={}\n", ninsert, nmove, nrem, nleast);
+    logger.print("calls to find={}\n", nfind);
+    logger.print("comparisons={}\n", sptree_->get_enqcmps());
 #else
-    Printf("Turn on COLLECT_TQueue_STATISTICS_ in tqueue.hpp\n");
+    logger.print("Turn on COLLECT_TQueue_STATISTICS_ in tqueue.hpp\n");
 #endif
 }
 

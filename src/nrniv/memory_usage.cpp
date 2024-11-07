@@ -137,7 +137,7 @@ std::string format_memory_usage(const MemoryUsage& usage) {
 
 
 void print_memory_usage(MemoryUsage const& memory_usage) {
-    Printf(fmt::format("{}\n", format_memory_usage(memory_usage)).c_str());
+    logger.print("{}\n", format_memory_usage(memory_usage));
 }
 
 }  // namespace neuron::container

@@ -39,7 +39,7 @@ struct SymbolTableIterator {
 extern int nrn_nobanner_;
 extern int diam_changed;
 extern int nrn_try_catch_nest_depth;
-extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)());
+extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, const char*), int (*cbpass)());
 int ivocmain_session(int, const char**, const char**, int start_session);
 void simpleconnectsection();
 extern Object* hoc_newobj1(Symbol*, int);
@@ -58,7 +58,7 @@ int nrn_init(int argc, const char** argv) {
     return ivocmain_session(final_argc, final_argv, nullptr, 0);
 }
 
-void nrn_stdout_redirect(int (*myprint)(int, char*)) {
+void nrn_stdout_redirect(int (*myprint)(int, const char*)) {
     // the first argument of myprint is an integer indicating the output stream
     // if the int is 1, then stdout, else stderr
     // the char* is the message to display

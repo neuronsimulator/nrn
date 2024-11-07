@@ -114,15 +114,15 @@ void nrn_poolshrink(int shrink) {
         }
         neuron::model().shrink_to_fit();
     } else {
-        Printf("poolshrink --- type name (dbluse, size) (datumuse, size)\n");
+        logger.print("poolshrink --- type name (dbluse, size) (datumuse, size)\n");
         for (auto i = 0; i < datumpools().size(); ++i) {
             auto const& pdatum = datumpools()[i];
             if (pdatum) {
-                Printf("%d %s (%ld, %d)\n",
-                       i,
-                       (memb_func[i].sym ? memb_func[i].sym->name : "noname"),
-                       (pdatum ? pdatum->nget() : 0),
-                       (pdatum ? pdatum->size() : 0));
+                logger.print("{} {} ({}, {})\n",
+                             i,
+                             (memb_func[i].sym ? memb_func[i].sym->name : "noname"),
+                             (pdatum ? pdatum->nget() : 0),
+                             (pdatum ? pdatum->size() : 0));
             }
         }
     }

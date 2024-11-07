@@ -15,32 +15,32 @@ void psection(void) {
     verify_structure();
     sec = chk_access();
     p = sec->prop;
-    Printf("%s {", secname(sec));
-    Printf(" nseg=%d  L=%g  Ra=%g", sec->nnode - 1, section_length(sec), nrn_ra(sec));
+    logger.print("{} {{", secname(sec));
+    logger.print(" nseg={}  L={}  Ra={}", sec->nnode - 1, section_length(sec), nrn_ra(sec));
     if (p->dparam[4].get<double>() != 1) {
-        Printf(" rallbranch=%g", p->dparam[4].get<double>());
+        logger.print(" rallbranch={}", p->dparam[4].get<double>());
     }
-    Printf("\n");
+    logger.print("\n");
     if (sec->parentsec) {
-        Printf("	%s ", secname(sec->parentsec));
-        Printf("connect %s (%g), %g\n",
-               secname(sec),
-               p->dparam[3].get<double>(),
-               p->dparam[1].get<double>());
+        logger.print("	{} ", secname(sec->parentsec));
+        logger.print("connect {} ({}), {}\n",
+                     secname(sec),
+                     p->dparam[3].get<double>(),
+                     p->dparam[1].get<double>());
     } else {
         v_setup_vectors();
         /*SUPPRESS 440*/
-        Printf("	/*location %g attached to cell %d*/\n",
-               p->dparam[3].get<double>(),
-               sec->parentnode->v_node_index);
+        logger.print("	/*location {} attached to cell {}*/\n",
+                     p->dparam[3].get<double>(),
+                     sec->parentnode->v_node_index);
     }
     if (sec->nnode) {
         /*SUPPRESS 440*/
-        Printf("	/* First segment only */\n");
+        logger.print("	/* First segment only */\n");
         p1 = sec->pnode[0]->prop;
         pnode(p1);
     }
-    Printf("}\n");
+    logger.print("}}\n");
     hoc_retpushx(1.);
 }
 
@@ -53,7 +53,7 @@ static void pnode(Prop* p1) {
     }
     pnode(p1->next); /*print in insert order*/
     sym = memb_func[p1->_type].sym;
-    Printf("	insert %s {", sym->name);
+    logger.print("	insert {} {{", sym->name);
     if (sym->s_varn) {
         for (j = 0; j < sym->s_varn; j++) {
             Symbol* s = sym->u.ppsym[j];
@@ -61,12 +61,12 @@ static void pnode(Prop* p1) {
                 if (p1->ob) {
                     printf(" %s=%g", s->name, p1->ob->u.dataspace[s->u.rng.index].pval[0]);
                 } else {
-                    Printf(" %s=%g", s->name, p1->param_legacy(s->u.rng.index));
+                    logger.print(" {}={}", s->name, p1->param_legacy(s->u.rng.index));
                 }
             }
         }
     }
-    Printf("}\n");
+    logger.print("}}\n");
 }
 
 extern void print_stim(void);

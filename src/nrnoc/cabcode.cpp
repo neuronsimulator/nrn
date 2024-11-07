@@ -92,7 +92,7 @@ void nrn_secstack(int i) {
     }
 #if 1
     if (isecstack > i) {
-        Printf("The sectionstack index should be %d but it is %d\n", i, isecstack);
+        logger.print("The sectionstack index should be {} but it is {}\n", i, isecstack);
         hoc_warning(
             "prior to version 5.3 the section stack would not have been properly popped\n\
 and the currently accessed section would have been ",
@@ -1058,10 +1058,9 @@ Prop* nrn_mechanism_check(int type, Section* sec, int inode) {
     m = nrn_mechanism(type, sec->pnode[inode]);
     if (!m) {
         if (hoc_execerror_messages) {
-            Fprintf(stderr,
-                    "%s mechanism not inserted in section %s\n",
-                    memb_func[type].sym->name,
-                    secname(sec));
+            logger.error("{} mechanism not inserted in section {}\n",
+                         memb_func[type].sym->name,
+                         secname(sec));
         }
         hoc_execerror("", (char*) 0);
     }

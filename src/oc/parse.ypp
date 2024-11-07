@@ -639,9 +639,9 @@ stmtlist: /* nothing */
 			prog_error = $$;
 			if (hoc_fin && nrn_fw_eq(hoc_fin, stdin) && !hoc_pipeflag)
 			{	int i;
-				Printf(">");
+				logger.print(">");
 				for (i = 0; i < ntab; i++)
-					Printf("	");
+					logger.print("	");
 			}
 		}
 	| stmtlist stmt

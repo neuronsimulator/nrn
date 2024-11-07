@@ -7,7 +7,7 @@
 #include "bbssrv2mpi.h"
 #include "bbssrv.h"
 #include "bbsimpl.h"
-#include "hocdec.h"  //Printf
+#include "hocdec.h"  //logger.print
 
 #include "utils/logger.hpp"
 
@@ -246,7 +246,7 @@ void BBSDirectServer::context(bbsmpibuf* send) {
         handle();
     }
     if (remaining_context_cnt_ > 0) {
-        Printf("some workers did not receive previous context\n");
+        logger.print("some workers did not receive previous context\n");
         send_context_->erase(send_context_->begin(), send_context_->end());
         nrnmpi_unref(context_buf_);
         context_buf_ = nullptr;

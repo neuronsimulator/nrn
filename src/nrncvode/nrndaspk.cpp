@@ -207,7 +207,7 @@ static void do_ode_thread(neuron::model_sorted_token const& sorted_token, NrnThr
 static double check(double t, Daspk* ida) {
     res_gvardt(t, ida->cv_->y_, ida->yp_, ida->delta_, ida->cv_);
     double norm = N_VWrmsNorm(ida->delta_, ((IDAMem) (ida->mem_))->ida_ewt);
-    Printf("ida check t=%.15g norm=%g\n", t, norm);
+    logger.print("ida check t={:.15g} norm={}\n", t, norm);
 #if 0
 	for (int i=0; i < ida->cv_->neq_; ++i) {
 		printf(" %3d %22.15g %22.15g %22.15g\n", i,
@@ -287,17 +287,19 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
     if (norm > 1.) {
         switch (init_failure_style_ & 03) {
         case 0:
-            Printf("IDA initialization failure, weighted norm of residual=%g\n", norm);
+            logger.print("IDA initialization failure, weighted norm of residual={}\n", norm);
             return IDA_ERR_FAIL;
             break;
         case 1:
-            Printf("IDA initialization warning, weighted norm of residual=%g\n", norm);
+            logger.print("IDA initialization warning, weighted norm of residual={}\n", norm);
             break;
         case 2:
-            Printf("IDA initialization warning, weighted norm of residual=%g\n", norm);
+            logger.print("IDA initialization warning, weighted norm of residual={}\n", norm);
             use_parasite_ = true;
             t_parasite_ = nt_t;
-            Printf("  subtracting (for next 1e-6 ms): f(y', y, %g)*exp(-1e7*(t-%g))\n", nt_t, nt_t);
+            logger.print("  subtracting (for next 1e-6 ms): f(y', y, {})*exp(-1e7*(t-{}))\n",
+                         nt_t,
+                         nt_t);
             break;
         }
 #if 0
@@ -350,7 +352,7 @@ int Daspk::interpolate(double tt) {
     assert(tt >= cv_->t0_ && tt <= cv_->tn_);
     int ier = IDAGetSolution(mem_, tt, cv_->y_, yp_);
     if (ier < 0) {
-        Printf("DASPK interpolate error\n");
+        logger.print("DASPK interpolate error\n");
         return ier;
     }
     cv_->t_ = tt;
@@ -379,7 +381,7 @@ void Daspk::statistics() {
 	printf("linear conv. failures = %d\n", iwork_[16-1]);
 #endif
     if (first_try_init_failures_) {
-        Printf("   %d First try Initialization failures\n", first_try_init_failures_);
+        logger.print("   {} First try Initialization failures\n", first_try_init_failures_);
     }
 }
 

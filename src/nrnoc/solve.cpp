@@ -294,15 +294,15 @@ void nrnhoc_topology(void) /* print the topology of the branched cable */
     hoc_Item* q;
 
     v_setup_vectors();
-    Printf("\n");
+    logger.print("\n");
     ITERATE(q, section_list) {
         Section* sec = (Section*) VOIDITM(q);
         if (sec->parentsec == (Section*) 0) {
-            Printf("|");
+            logger.print("|");
             dashes(sec, 0, '-');
         }
     }
-    Printf("\n");
+    logger.print("\n");
     hoc_retpushx(1.);
 }
 
@@ -313,17 +313,17 @@ static void dashes(Section* sec, int offset, int first) {
     i = (int) nrn_section_orientation(sec);
     Sprintf(direc, "(%d-%d)", i, 1 - i);
     for (i = 0; i < offset; i++)
-        Printf(" ");
-    Printf("%c", first);
+        logger.print(" ");
+    logger.print("{:c}", first);
     for (i = 2; i < sec->nnode; i++)
-        Printf("-");
+        logger.print("-");
     if (sec->prop->dparam[4].get<double>() == 1) {
-        Printf("|       %s%s\n", secname(sec), direc);
+        logger.print("|       {}{}\n", secname(sec), direc);
     } else {
-        Printf("|       %s%s with %g rall branches\n",
-               secname(sec),
-               direc,
-               sec->prop->dparam[4].get<double>());
+        logger.print("|       {}{} with {} rall branches\n",
+                     secname(sec),
+                     direc,
+                     sec->prop->dparam[4].get<double>());
     }
     /* navigate the sibling list backwards */
     /* note that the sibling list is organized monotonically by
@@ -334,7 +334,7 @@ static void dashes(Section* sec, int offset, int first) {
     while (scnt--) {
         ch = (Section*) hoc_objpop();
         i = node_index_exact(sec, nrn_connection_position(ch));
-        Printf(" ");
+        logger.print(" ");
         dashes(ch, i + offset + 1, 0140); /* the ` char*/
     }
 }
@@ -359,7 +359,7 @@ void nrn_solve(NrnThread* _nt) {
         nrn_thread_error("debugsolve");
         err = debugsolve();
         if (err > 1.e-10) {
-            Fprintf(stderr, "solve error = %g\n", err);
+            logger.error("solve error = {}\n", err);
         }
     }
 #else

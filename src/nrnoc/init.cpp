@@ -239,12 +239,9 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
     } catch (const std::filesystem::filesystem_error& e) {
         handle = dlopen(relpath, flags);
         if (!handle) {
-            Fprintf(
-                stderr,
-                fmt::format("std::filesystem::absolute failed ({}) and dlopen failed with '{}'\n",
-                            e.what(),
-                            relpath)
-                    .c_str());
+            logger.error("std::filesystem::absolute failed ({}) and dlopen failed with '{}'\n",
+                         e.what(),
+                         relpath);
 #if DARWIN
             nrn_possible_mismatched_arch(relpath);
 #endif
@@ -312,12 +309,13 @@ void hoc_last_init(void) {
     hoc_register_var(scdoub, (DoubVec*) 0, (VoidFunc*) 0);
     nrn_threads_create(1, false);  // single thread
 
-    if (nrnmpi_myid < 1)
+    if (nrnmpi_myid < 1) {
         if (nrn_nobanner_ == 0) {
-            Fprintf(stderr, "%s\n", nrn_version(1));
-            Fprintf(stderr, "%s\n", banner);
+            logger.error("{}\n", nrn_version(1));
+            logger.error("{}\n", banner);
             IGNORE(fflush(stderr));
         }
+    }
     memb_func_size_ = 30;  // initial allocation size
     memb_list.reserve(memb_func_size_);
     memb_func.resize(memb_func_size_);  // we directly resize because it is used below
@@ -700,21 +698,21 @@ void check_mech_version(const char** m) {
     /*printf("%s %s\n", m[0], m[1]);*/
     if (strcmp(m[0], "0") == 0) { /* valid by nature */
     } else if (m[0][0] > '9') {   /* must be 5.1 or before */
-        Fprintf(stderr,
-                "Mechanism %s needs to be re-translated.\n\
-It's pre version 6.0 \"c\" code is incompatible with this neuron version.\n",
-                m[0]);
+        logger.error(
+            "Mechanism {} needs to be re-translated.\n"
+            "It's pre version 6.0 \"c\" code is incompatible with this neuron version.\n",
+            m[0]);
         if (nrn_load_dll_recover_error()) {
             hoc_execerror("Mechanism needs to be retranslated:", m[0]);
         } else {
             nrn_exit(1);
         }
     } else if (strcmp(m[0], nmodl_version_) != 0) {
-        Fprintf(stderr,
-                "Mechanism %s needs to be re-translated.\n\
-It's version %s \"c\" code is incompatible with this neuron version.\n",
-                m[1],
-                m[0]);
+        logger.error(
+            "Mechanism {} needs to be re-translated.\n"
+            "It's version {} \"c\" code is incompatible with this neuron version.\n",
+            m[1],
+            m[0]);
         if (nrn_load_dll_recover_error()) {
             hoc_execerror("Mechanism needs to be retranslated:", m[1]);
         } else {

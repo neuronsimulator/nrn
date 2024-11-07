@@ -38,10 +38,10 @@ Symlist* hoc_p_symlist = nullptr; /* current proc, func, or temp table */
                                   /* appropriate times prevents storage leakage. */
 
 void print_symlist(const char* s, Symlist* tab) {
-    Printf("%s\n", s);
+    logger.print("{}\n", s);
     if (tab)
         for (Symbol* sp = tab->first; sp != nullptr; sp = sp->next) {
-            Printf("%s %p\n", sp->name, fmt::ptr(sp));
+            logger.print("{} {}\n", sp->name, fmt::ptr(sp));
         }
 }
 
@@ -222,10 +222,9 @@ void hoc_free_symspace(Symbol* s1) { /* frees symbol space. Marks it UNDEF */
         case VARALIAS:
             break;
         default:
-            Fprintf(stderr,
-                    "In free_symspace may not free all of %s of type=%d\n",
-                    s1->name,
-                    s1->type);
+            logger.error("In free_symspace may not free all of {} of type={}\n",
+                         s1->name,
+                         s1->type);
         }
         if (s1->arayinfo != nullptr) {
             hoc_free_arrayinfo(s1->arayinfo);
