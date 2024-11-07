@@ -140,6 +140,21 @@ CVode
 
 
 
+.. method:: CVode.version
+
+
+    Syntax:
+        ``"major.minor.patch" = cvode.version()``
+
+
+    Description:
+        Returns the version string. Eg. "3.2.1"
+ 
+
+----
+
+
+
 .. method:: CVode.spike_stat
 
 
