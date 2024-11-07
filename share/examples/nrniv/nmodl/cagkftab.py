@@ -121,6 +121,10 @@ def test_1d():
 test_1d_vecs = test_1d()  # keep in existence in case of later use
 
 
+def assert_isclose(a, b, abs_tol):
+    assert isclose(a, b, abs_tol=abs_tol), f"{a = } {b = } delta = {a - b} {abs_tol = }"
+
+
 def setup_tables():
     ln_ca_range = (-18, 4, 0.1)  # about 1e-9 to 1e2 in steps of 0.1 log unit
     v_range = (-80, 50, 1)  # -80mV to 50mV in 1mV steps
@@ -132,8 +136,8 @@ def setup_tables():
         for j, lnca in enumerate(casteps):
             malp.x[i][j] = alp(v, lnca)
             mbet.x[i][j] = bet(v, lnca)
-            assert isclose(malp.x[i][j], h.alp_cagk(v, exp(lnca)), abs_tol=1e-9)
-            assert isclose(mbet.x[i][j], h.bet_cagk(v, exp(lnca)), abs_tol=1e-9)
+            assert_isclose(malp.x[i][j], h.alp_cagk(v, exp(lnca)), abs_tol=1e-9)
+            assert_isclose(mbet.x[i][j], h.bet_cagk(v, exp(lnca)), abs_tol=1e-9)
 
     # dimensions specified in size, min, max format
     h.table_alp_cagkftab(
