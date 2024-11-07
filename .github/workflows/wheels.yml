@@ -37,16 +37,17 @@ jobs:
         os: [macos-14]
         python-version: ['3.10', '3.11', '3.12'] # change later
 
-    environment:
-      name: pypi
-      url: https://pypi.org/p/NEURON-nightly
-
-    permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
-
     steps:
       - name: Check out code
+        if: github.event_name != 'workflow_dispatch'
         uses: actions/checkout@v4
+
+      - name: Check out code for release
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+          with:
+            ref: ${{ github.inputs.rel_release }}
+
 
       - uses: actions/setup-python@v5
         with:
@@ -76,12 +77,13 @@ jobs:
           echo "NRN_RELEASE_UPLOAD='false'" >> $GITHUB_ENV
           echo "NEURON_NIGHTLY_TAG='-nightly'" >> $GITHUB_ENV
 
-      - name: Set env based in release input
+      - name: Set env based in input for release
         if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/release')
         run:
           echo "NRN_NIGHTLY_UPLOAD='false'" >> $GITHUB_ENV
-          echo "NRN_RELEASE_UPLOAD='false'" >> $GITHUB_ENV
+          echo "NRN_RELEASE_UPLOAD='${{ github.inputs.upload }}'" >> $GITHUB_ENV
           echo "NEURON_NIGHTLY_TAG=''" >> $GITHUB_ENV
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{ github.inputs.rel_version }}" >> $GITHUB_ENV
 
       - name: Build MacOS Wheel
         run: |
@@ -104,9 +106,10 @@ jobs:
 #    needs:
 #    - build-test
 #
+#    runs-on: ubuntu-latest
+#
 #    strategy:
 #      matrix:
-#        os: [ubuntu-latest]
 #        # why do we need a matrix? because github uploads separate artifacts for each job above
 #        # maybe when we start using cibuildwheel we can build all of them in one job...
 #        python-version: ['3.10', '3.11', '3.12'] # make sure to keep in sync with the one from job above
