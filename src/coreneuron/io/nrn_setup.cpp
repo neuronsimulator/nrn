@@ -170,13 +170,13 @@ std::vector<int*> nrnthreads_netcon_srcgid;
 std::vector<std::vector<int>> nrnthreads_netcon_negsrcgid_tid;
 
 /* read files.dat file and distribute cellgroups to all mpi ranks */
-void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
+std::vector<int> nrn_read_filesdat(const char* filesdat) {
+    std::vector<int> rank_dat_files;
     patstimtype = nrn_get_mechtype("PatternStim");
     if (corenrn_embedded && !corenrn_file_mode) {
-        ngrp = corenrn_embedded_nthread;
-        grp = new int[ngrp + 1];
-        (*nrn2core_group_ids_)(grp);
-        return;
+        rank_dat_files.resize(corenrn_embedded_nthread);
+        (*nrn2core_group_ids_)(rank_dat_files.data());
+        return rank_dat_files;
     }
 
     FILE* fp = fopen(filesdat, "r");
@@ -207,21 +207,18 @@ void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
             "Info : The number of input datasets are less than ranks, some ranks will be idle!\n");
     }
 
-    ngrp = 0;
-    grp = new int[iNumFiles / nrnmpi_numprocs + 1];
-
     // irerate over gids in files.dat
     for (int iNum = 0; iNum < iNumFiles; ++iNum) {
         int iFile;
 
         nrn_assert(fscanf(fp, "%d\n", &iFile) == 1);
         if ((iNum % nrnmpi_numprocs) == nrnmpi_myid) {
-            grp[ngrp] = iFile;
-            ngrp++;
+            rank_dat_files.push_back(iFile);
         }
     }
 
     fclose(fp);
+    return rank_dat_files;
 }
 
 void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi) {
@@ -409,22 +406,22 @@ void nrn_setup(const char* filesdat,
                double* mindelay) {
     double time = nrn_wtime();
 
-    int ngroup;
-    int* gidgroups;
-    nrn_read_filesdat(ngroup, gidgroups, filesdat);
-    UserParams userParams(ngroup,
-                          gidgroups,
-                          datpath,
-                          strlen(restore_path) == 0 ? datpath : restore_path,
-                          checkPoints);
-
+    UserParams userParams(
+        nrn_read_filesdat(filesdat),
+        datpath,
+        strlen(restore_path) == 0 ? datpath : restore_path,
+        checkPoints
+    );
 
     // temporary bug work around. If any process has multiple threads, no
     // process can have a single thread. So, for now, if one thread, make two.
     // Fortunately, empty threads work fine.
     // Allocate NrnThread* nrn_threads of size ngroup (minimum 2)
     // Note that rank with 0 dataset/cellgroup works fine
-    nrn_threads_create(userParams.ngroup <= 1 ? 2 : userParams.ngroup);
+    int n_cell_groups = userParams.cell_groups.size();
+    int n_threads = n_cell_groups <= 1 ? 2 : n_cell_groups;
+    userParams.cell_groups.reserve(n_threads);
+    nrn_threads_create(n_threads);
 
     // from nrn_has_net_event create pnttype2presyn for use in phase2.
     auto& memb_func = corenrn.get_memb_funcs();
@@ -451,7 +448,7 @@ void nrn_setup(const char* filesdat,
 
     /// Reserve vector of maps of size ngroup for negative gid-s
     /// std::vector< std::map<int, PreSyn*> > neg_gid2out;
-    neg_gid2out.resize(userParams.ngroup);
+    neg_gid2out.resize(n_cell_groups);
 
     // bug fix. gid2out is cumulative over all threads and so do not
     // know how many there are til after phase1
@@ -503,13 +500,13 @@ void nrn_setup(const char* filesdat,
             nrn_partrans::setup_info_ = new SetupTransferInfo[nrn_nthread];
             coreneuron::phase_wrapper<coreneuron::gap>(userParams);
         } else {
-            nrn_partrans::setup_info_ = (*nrn2core_get_partrans_setup_info_)(userParams.ngroup,
+            nrn_partrans::setup_info_ = (*nrn2core_get_partrans_setup_info_)(n_cell_groups,
                                                                              nrn_nthread,
                                                                              sizeof(sgid_t));
         }
 
         nrn_multithread_job(nrn_partrans::gap_data_indices_setup);
-        nrn_partrans::gap_mpi_setup(userParams.ngroup);
+        nrn_partrans::gap_mpi_setup(n_cell_groups);
 
         // Whether allocated in NEURON or here, delete here.
         delete[] nrn_partrans::setup_info_;
@@ -564,8 +561,6 @@ void nrn_setup(const char* filesdat,
             printf(" Model size   : %.2lf GB\n", model_size_bytes / (1024. * 1024. * 1024.));
         }
     }
-
-    delete[] userParams.gidgroups;
 }
 
 void setup_ThreadData(NrnThread& nt) {

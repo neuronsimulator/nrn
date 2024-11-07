@@ -104,7 +104,7 @@ inline void read_phase_aux<gap>(NrnThread& nt, UserParams& userParams) {
 template <phase P>
 inline void* phase_wrapper_w(NrnThread* nt, UserParams& userParams, bool in_memory_transfer) {
     int i = nt->id;
-    if (i < userParams.ngroup) {
+    if (i < userParams.cell_groups.size()) {
         if (!in_memory_transfer) {
             const char* data_dir = userParams.path;
             // directory to read could be different for phase 2 if we are restoring
@@ -115,7 +115,7 @@ inline void* phase_wrapper_w(NrnThread* nt, UserParams& userParams, bool in_memo
             }
 
             std::string fname = std::string(data_dir) + "/" +
-                                std::to_string(userParams.gidgroups[i]) + "_" + getPhaseName<P>() +
+                                std::to_string(userParams.cell_groups[i]) + "_" + getPhaseName<P>() +
                                 ".dat";
 
             // Avoid trying to open the gid_gap.dat file if it doesn't exist when there are no
