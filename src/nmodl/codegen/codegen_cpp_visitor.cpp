@@ -1465,7 +1465,7 @@ std::vector<IndexVariableInfo> CodegenCppVisitor::get_int_variables() {
 void CodegenCppVisitor::setup(const Program& node) {
     program_symtab = node.get_symbol_table();
 
-    CodegenHelperVisitor v;
+    CodegenHelperVisitor v(enable_cvode);
     info = v.analyze(node);
     info.mod_file = mod_filename;
 

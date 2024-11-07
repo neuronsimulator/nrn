@@ -51,6 +51,9 @@ class CodegenHelperVisitor: public visitor::ConstAstVisitor {
     /// holds all codegen related information
     codegen::CodegenInfo info;
 
+    /// Config variable for enabling/disabling CVODE, see `emit_cvode`.
+    bool enable_cvode;
+
     /// if visiting net receive block
     bool under_net_receive_block = false;
 
@@ -76,8 +79,10 @@ class CodegenHelperVisitor: public visitor::ConstAstVisitor {
     void find_neuron_global_variables();
     static void sort_with_mod2c_symbol_order(std::vector<SymbolType>& symbols);
     void check_cvode_codegen(const ast::Program& node);
+
   public:
-    CodegenHelperVisitor() = default;
+    CodegenHelperVisitor(bool enable_cvode = false)
+        : enable_cvode(enable_cvode) {}
 
     /// run visitor and return information for code generation
     codegen::CodegenInfo analyze(const ast::Program& node);

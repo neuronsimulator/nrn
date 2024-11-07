@@ -38,5 +38,5 @@ run_tests nocmodl
 # NRN + NMODL
 echo "-- Running NRN+NMODL --------"
 rm -r "${output_dir}" tmp || true
-nrnivmodl -nmodl "${nmodl}"
+nrnivmodl -nmodl "${nmodl}" -nmodlflags "codegen --cvode"
 run_tests nmodl

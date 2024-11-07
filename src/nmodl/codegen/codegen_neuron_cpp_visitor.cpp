@@ -2809,6 +2809,7 @@ static void rename_net_receive_arguments(const ast::NetReceiveBlock& net_receive
     }
 }
 
+
 CodegenNeuronCppVisitor::ParamVector CodegenNeuronCppVisitor::net_receive_args() {
     return {{"", "Point_process*", "", "_pnt"},
             {"", "double*", "", "_args"},

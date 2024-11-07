@@ -42,8 +42,12 @@ std::shared_ptr<CodegenNeuronCppVisitor> create_neuron_cpp_visitor(
     SolveBlockVisitor().visit_program(*ast);
     FunctionCallpathVisitor().visit_program(*ast);
 
+    bool optimize_ion_vars = false;
+    bool enable_cvode = true;
+
     /// create C code generation visitor
-    auto cv = std::make_shared<CodegenNeuronCppVisitor>("_test", ss, "double", false);
+    auto cv = std::make_shared<CodegenNeuronCppVisitor>(
+        "_test", ss, "double", optimize_ion_vars, enable_cvode);
     return cv;
 }
 

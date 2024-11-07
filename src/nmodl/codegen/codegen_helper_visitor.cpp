@@ -223,7 +223,7 @@ void CodegenHelperVisitor::check_cvode_codegen(const ast::Program& node) {
     // PROCEDURE with `after_cvode` method
     if (solve_nodes.size() == 1 && (kinetic_or_derivative_nodes.size() || using_cvode)) {
         logger->debug("Will emit code for CVODE");
-        info.emit_cvode = true;
+        info.emit_cvode = enable_cvode;
     }
 }
 

@@ -69,7 +69,8 @@ CodegenInfo run_codegen_helper_get_info(const std::string& text) {
     SolveBlockVisitor{}.visit_program(*ast);
     SymtabVisitor{true}.visit_program(*ast);
 
-    CodegenHelperVisitor v;
+    bool enable_cvode = true;
+    CodegenHelperVisitor v(enable_cvode);
     const auto info = v.analyze(*ast);
 
     return info;

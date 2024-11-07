@@ -117,6 +117,9 @@ int run_nmodl(int argc, const char* argv[]) {
     /// true if top level local variables to be converted to range
     bool nmodl_local_to_range(false);
 
+    /// true if CVODE should be emitted
+    bool codegen_cvode(false);
+
     /// true if localize variables even if verbatim block is used
     bool localize_verbatim(false);
 
@@ -282,6 +285,9 @@ int run_nmodl(int argc, const char* argv[]) {
     codegen_opt->add_flag("--opt-ionvar-copy",
         optimize_ionvar_copies_codegen,
         fmt::format("Optimize copies of ion variables ({})", optimize_ionvar_copies_codegen))->ignore_case();
+    codegen_opt->add_flag("--cvode",
+        codegen_cvode,
+        fmt::format("Print code for CVODE ({})", codegen_cvode))->ignore_case();
 
 #if NMODL_ENABLE_BACKWARD
     auto blame_opt = app.add_subcommand("blame", "Blame NMODL code that generated some code.");
@@ -352,7 +358,7 @@ int run_nmodl(int argc, const char* argv[]) {
         }
 
         /// use cnexp instead of after_cvode solve method
-        {
+        if (codegen_cvode) {
             logger->info("Running CVode to cnexp visitor");
             AfterCVodeToCnexpVisitor().visit_program(*ast);
             ast_to_nmodl(*ast, filepath("after_cvode_to_cnexp"));
@@ -531,7 +537,7 @@ int run_nmodl(int argc, const char* argv[]) {
                 .api()
                 .initialize_interpreter();
 
-            if (neuron_code) {
+            if (neuron_code && codegen_cvode) {
                 logger->info("Running CVODE visitor");
                 CvodeVisitor().visit_program(*ast);
                 SymtabVisitor(update_symtab).visit_program(*ast);
@@ -631,6 +637,7 @@ int run_nmodl(int argc, const char* argv[]) {
                                                 output_stream,
                                                 data_type,
                                                 optimize_ionvar_copies_codegen,
+                                                codegen_cvode,
                                                 utils::make_blame(blame_line, blame_level));
                 visitor.visit_program(*ast);
             }

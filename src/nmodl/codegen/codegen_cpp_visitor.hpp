@@ -266,6 +266,20 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
         , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
+    CodegenCppVisitor(std::string mod_filename,
+                      std::ostream& stream,
+                      std::string float_type,
+                      const bool optimize_ionvar_copies,
+                      const bool enable_cvode,
+                      std::unique_ptr<nmodl::utils::Blame> blame = nullptr)
+        : printer(std::make_unique<CodePrinter>(stream, std::move(blame)))
+        , mod_filename(std::move(mod_filename))
+        , float_type(std::move(float_type))
+        , optimize_ionvar_copies(optimize_ionvar_copies)
+        , enable_cvode(enable_cvode) {}
+
+  private:
+    bool enable_cvode = false;
 
   protected:
     using SymbolType = std::shared_ptr<symtab::Symbol>;
@@ -1481,10 +1495,9 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     std::string compute_method_name(BlockType type) const;
 
     // Automatically called as part of `visit_program`.
-    void setup(const ast::Program& node);
+    virtual void setup(const ast::Program& node);
 
   public:
-
 
     /**
      * Main and only member function to call after creating an instance of this class.
