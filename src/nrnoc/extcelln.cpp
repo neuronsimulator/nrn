@@ -415,25 +415,28 @@ void nrn_rhs_ext(NrnThread* _nt) {
 }
 
 void nrn_setup_ext(NrnThread* _nt) {
-    double cfac, mfac;
+    int i, j, cnt;
+    Node *nd, *pnd, **ndlist;
+    double d, cfac, mfac;
+    Extnode *nde, *pnde;
     Memb_list* ml = _nt->_ecell_memb_list;
     if (!ml) {
         return;
     }
     /*printnode("begin setup");*/
-    int cnt = ml->nodecount;
-    Node** ndlist = ml->nodelist;
+    cnt = ml->nodecount;
+    ndlist = ml->nodelist;
     cfac = .001 * _nt->cj;
 
     /* d contains all the membrane conductances (and capacitance) */
     /* i.e. (cm/dt + di/dvm - dis/dvi)*[dvi] and
         (dis/dvi)*[dvx] */
-    for (int i = 0; i < cnt; ++i) {
+    for (i = 0; i < cnt; ++i) {
         OcSparseMatrix& m = *_nt->_sp13mat;
-        Node* nd = ndlist[i];
+        nd = ndlist[i];
         int index = nd->eqn_index_;
-        Extnode* nde = nd->extnode;
-        double d = NODED(nd);
+        nde = nd->extnode;
+        d = NODED(nd);
         /* nde->_d only has -ELECTRODE_CURRENT contribution */
         m(index, index) += NODED(nd);
         d = m.getval(index, index);
@@ -446,15 +449,15 @@ void nrn_setup_ext(NrnThread* _nt) {
 #endif
     }
     /* series resistance, capacitance, and axial terms. */
-    for (int i = 0; i < cnt; ++i) {
+    for (i = 0; i < cnt; ++i) {
         OcSparseMatrix& m = *_nt->_sp13mat;
-        Node* nd = ndlist[i];
+        nd = ndlist[i];
         int index = nd->eqn_index_;
-        Extnode* nde = nd->extnode;
-        Node* pnd = _nt->_v_parent[nd->v_node_index];
+        nde = nd->extnode;
+        pnd = _nt->_v_parent[nd->v_node_index];
         if (pnd) {
             /* series resistance and capacitance to ground */
-            int j = 0;
+            j = 0;
             for (;;) { /* between j and j+1 layer */
                 mfac = (*nde->param[xg_index_ext(j)] + *nde->param[xc_index_ext(j)] * cfac);
                 m(index + j, index + j) += mfac;
@@ -466,7 +469,7 @@ void nrn_setup_ext(NrnThread* _nt) {
                 m(index - 1 + j, index + j) -= mfac;
                 m(index + j, index - 1 + j) -= mfac;
             }
-            Extnode* pnde = pnd->extnode;
+            pnde = pnd->extnode;
             /* axial connections */
             if (pnde) { /* parent sec may not be extracellular */
                 int parent_index = pnd->eqn_index_;
