@@ -82,6 +82,7 @@ jobs:
         run: |
           echo "NRN_NIGHTLY_UPLOAD=false" >> $GITHUB_ENV
           echo NRN_RELEASE_UPLOAD=${{ github.event.inputs.upload }} >> $GITHUB_ENV
+          echo "NEURON_NIGHTLY_TAG=" >> $GITHUB_ENV
           echo SETUPTOOLS_SCM_PRETEND_VERSION=${{ github.event.inputs.rel_version }} >> $GITHUB_ENV
 
       - name: Build MacOS Wheel
