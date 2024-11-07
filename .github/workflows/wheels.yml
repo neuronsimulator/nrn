@@ -45,8 +45,8 @@ jobs:
       - name: Check out code for release
         if: github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v4
-          with:
-            ref: ${{ github.inputs.rel_release }}
+        with:
+          ref: ${{ github.inputs.rel_release }}
 
 
       - uses: actions/setup-python@v5
