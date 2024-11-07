@@ -1871,7 +1871,7 @@ and therefore is passed to spSolve as actual_rhs intead of actual_rhs-1.
 */
 
 static void nrn_matrix_node_alloc(void) {
-    int b;
+    int i, b;
     Node* nd;
     NrnThread* nt;
 
@@ -1896,9 +1896,10 @@ static void nrn_matrix_node_alloc(void) {
     }
     ++nrn_matrix_cnt_;
     if (use_sparse13) {
+        int in, extn, neqn;
         nt = nrn_threads;
-        int neqn = nt->end + nrndae_extra_eqn_count();
-        int extn = 0;
+        neqn = nt->end + nrndae_extra_eqn_count();
+        extn = 0;
         if (nt->_ecell_memb_list) {
             extn = nt->_ecell_memb_list->nodecount * nlayer;
         }
@@ -1906,21 +1907,24 @@ static void nrn_matrix_node_alloc(void) {
         neqn += extn;
         nt->_sp13_rhs = (double*) ecalloc(neqn + 1, sizeof(double));
         nt->_sp13mat = new OcSparseMatrix(neqn, neqn);
-        for (int in = 0, i = 1; in < nt->end; ++in, ++i) {
+        for (in = 0, i = 1; in < nt->end; ++in, ++i) {
             nt->_v_node[in]->eqn_index_ = i;
             if (nt->_v_node[in]->extnode) {
                 i += nlayer;
             }
         }
-        for (int in = 0; in < nt->end; ++in) {
-            Node *nd = nt->_v_node[in];
-            Extnode* nde = nd->extnode;
-            int i = nd->eqn_index_;
+        for (in = 0; in < nt->end; ++in) {
+            int ie, k;
+            Node *nd;
+            Extnode* nde;
+            nd = nt->_v_node[in];
+            nde = nd->extnode;
+            i = nd->eqn_index_;
             nt->_sp13_rhs[i] = nt->actual_rhs(in);
             if (nde) {
-                for (int ie = 0; ie < nlayer; ++ie) {
-                    int k = i + ie;
-                    nde->_rhs[ie] = nt->_sp13_rhs + k + 1;
+                for (ie = 0; ie < nlayer; ++ie) {
+                    k = i + ie + 1;
+                    nde->_rhs[ie] = nt->_sp13_rhs + k;
                 }
             }
         }

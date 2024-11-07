@@ -25,16 +25,16 @@ void MatrixMap::add(double fac) {
 }
 
 int MatrixMap::compute_index(int i, int start, int nnode, Node** nodes, int* layer) const {
-    int it;
-    if (i < nnode) {
-        it = nodes[i]->eqn_index_ + layer[i];
-        if (layer[i] > 0 && !nodes[i]->extnode) {
-            it = 0;
+        int it;
+        if (i < nnode) {
+            it = nodes[i]->eqn_index_ + layer[i];
+            if (layer[i] > 0 && !nodes[i]->extnode) {
+                it = 0;
+            }
+        } else {
+            it = start + i - nnode;
         }
-    } else {
-        it = start + i - nnode;
-    }
-    return it;
+        return it;
 }
 
 void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
