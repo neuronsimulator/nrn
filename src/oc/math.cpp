@@ -160,7 +160,7 @@ void hoc_use_exp_pow_precision() {
 // by rounding mantissa to 32 bit accuracy or using
 // hopefully arch independent mpfr for exp and pow.
 
-double hoc_pow(double x, double y) {
+inline [[gnu::always_inline]] double hoc_pow(double x, double y) {
 #if NRN_ARCH_INDEP_EXP_POW
     return (*pow_ptr)(x, y);
 #else
