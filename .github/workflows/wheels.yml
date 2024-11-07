@@ -78,7 +78,7 @@ jobs:
           echo "NEURON_NIGHTLY_TAG='-nightly'" >> $GITHUB_ENV
 
       - name: Set env based in input for release
-        if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/release')
+        if: github.event_name == 'workflow_dispatch'
         run:
           echo "NRN_NIGHTLY_UPLOAD='false'" >> $GITHUB_ENV
           echo "NRN_RELEASE_UPLOAD='${{ github.inputs.upload }}'" >> $GITHUB_ENV
