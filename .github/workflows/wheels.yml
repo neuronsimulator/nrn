@@ -1,6 +1,8 @@
 name: Build MacOS Wheels
 
 on:
+  schedule:
+    - cron: "0 0 * * *"
   push:
     branches:
       - master
@@ -8,13 +10,25 @@ on:
     branches:
       - master
 
-# do not cancel so we can see results
-concurrency:
-  cancel-in-progress: false
-  group: ${{ github.workflow }}-${{ github.ref }}
+  workflow_dispatch:
+    inputs:
+      rel_release:
+        description: Release branch/commit
+        default: 'release/x.y'
+        required: true
+      rel_version:
+        description: Release version (tag name)
+        default: 'x.y.z'
+        required: true
+      upload:
+        description: Whether to upload to PyPI or not
+        default: 'false'
+        required: false
+        type: 'boolean'
+
 
 jobs:
-  build-test-deploy:
+  build-test:
     name: Build MacOS Wheels
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -22,6 +36,13 @@ jobs:
       matrix:
         os: [macos-14]
         python-version: ['3.10', '3.11', '3.12'] # change later
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/NEURON-nightly
+
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
 
     steps:
       - name: Check out code
@@ -48,6 +69,20 @@ jobs:
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo bash packaging/python/build_static_readline_osx.bash
 
+      - name: Set env based in input
+        if: github.event_name == 'schedule' && startsWith(github.ref, 'refs/master')
+        run:
+          echo "NRN_NIGHTLY_UPLOAD='true'" >> $GITHUB_ENV
+          echo "NRN_RELEASE_UPLOAD='false'" >> $GITHUB_ENV
+          echo "NEURON_NIGHTLY_TAG='-nightly'" >> $GITHUB_ENV
+
+      - name: Set env based in release input
+        if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/release')
+        run:
+          echo "NRN_NIGHTLY_UPLOAD='false'" >> $GITHUB_ENV
+          echo "NRN_RELEASE_UPLOAD='false'" >> $GITHUB_ENV
+          echo "NEURON_NIGHTLY_TAG=''" >> $GITHUB_ENV
+
       - name: Build MacOS Wheel
         run: |
           packaging/python/build_wheels.bash osx ${{ matrix.python-version }} coreneuron
@@ -62,3 +97,35 @@ jobs:
         with:
           name: macos-wheels-${{ matrix.python-version }}
           path: wheelhouse/*.whl
+
+
+#  publish-to-pypi:
+#    name: Publish MacOS ARM Python wheels to PyPI
+#    needs:
+#    - build-test
+#
+#    strategy:
+#      matrix:
+#        os: [ubuntu-latest]
+#        # why do we need a matrix? because github uploads separate artifacts for each job above
+#        # maybe when we start using cibuildwheel we can build all of them in one job...
+#        python-version: ['3.10', '3.11', '3.12'] # make sure to keep in sync with the one from job above
+#
+#    environment:
+#      name: pypi
+#      url: https://pypi.org/p/NEURON-nightly
+#
+#    permissions:
+#      id-token: write  # IMPORTANT: mandatory for trusted publishing
+#
+#    steps:
+#      - name: Download all the dists
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: macos-wheels-${{ matrix.python-version }}
+#          path: wheelhouse/
+#  
+#      - name: Publish wheels to PyPI
+#        uses: pypa/gh-action-pypi-publish@release/v1
+#        with:
+#          packages-dir: wheelhouse/
