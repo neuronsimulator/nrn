@@ -3064,7 +3064,10 @@ void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
             TQItem* q = ns->p[i].tq_->least();
             Cvode* cv = (Cvode*) q->data_;
             if (tt < cv->t_) {
-                cv->handle_step(nrn_ensure_model_data_are_sorted(), ns, tt);
+                if (int err = cv->handle_step(nrn_ensure_model_data_are_sorted(), ns, tt);
+                        err != NVI_SUCCESS) {
+                    Printf("warning: cv->handle_step failed with error %d", err);
+                }
                 ns->p[i].tq_->move_least(cv->t_);
             }
         }
