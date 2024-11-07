@@ -112,10 +112,11 @@ class MatrixMap {
 
 
   private:
-    int compute_id(int i, int start, int nnode, Node** nodes, int* layer) const;
     Matrix& m_;
 
     // the map
     std::vector<std::pair<int, int>> pm_{};
     std::vector<std::pair<int, int>> ptree_{};
+
+    int compute_index(int, int, int, Node**, int*) const;
 };

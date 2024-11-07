@@ -51,5 +51,4 @@ void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
         }
         pm_.emplace_back(i, j);
         ptree_.emplace_back(it - 1, jt - 1);
-    }
 }
