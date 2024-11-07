@@ -34,6 +34,7 @@ class CodeGenerator(
             "base_dir",
             "clang_format",
             "disable_pybind",
+            "generate_cmake",
             "jinja_env",
             "jinja_templates_dir",
             "modification_date",
@@ -51,6 +52,7 @@ class CodeGenerator(
         base_dir: output root directory where Jinja templates are rendered
         clang_format: clang-format command line if C++ files have to be formatted, `None` otherwise
         disable_pybind: disable python bindings related code generation
+        generate_cmake: generate the CMake include and none of the rest
         py_files: list of Path objects to the Python files used by this program
         yaml_files: list of Path object to YAML files describing the NMODL language
         modification_date: most recent modification date of the Python and YAML files in this directory
@@ -60,7 +62,13 @@ class CodeGenerator(
         temp_dir: path to the directory where to create temporary files
     """
 
-    def __new__(cls, base_dir, clang_format=None, disable_pybind=False):
+    def __new__(
+        cls,
+        base_dir,
+        clang_format=None,
+        disable_pybind=False,
+        generate_cmake=False,
+    ):
         this_dir = Path(__file__).parent.resolve()
         jinja_templates_dir = this_dir / "templates"
         py_files = [Path(p).relative_to(this_dir) for p in this_dir.glob("*.py")]
@@ -70,6 +78,7 @@ class CodeGenerator(
             base_dir=base_dir,
             clang_format=clang_format,
             disable_pybind=disable_pybind,
+            generate_cmake=generate_cmake,
             this_dir=this_dir,
             jinja_templates_dir=jinja_templates_dir,
             jinja_env=jinja2.Environment(
@@ -123,7 +132,7 @@ class CodeGenerator(
             An instance of JinjaTask
         """
         input = self.jinja_templates_dir / "code_generator.cmake"
-        output = self.this_dir / input.name
+        output = self.base_dir / input.name
         inputs = set()
         outputs = dict()
         for task in tasks:
@@ -176,6 +185,9 @@ class CodeGenerator(
 
         tasks = []
         for path in self.jinja_templates_dir.iterdir():
+            if not path.is_dir():
+                continue
+
             sub_dir = PurePath(path).name
 
             # skip pybind directory as it's needed for python bindings only
@@ -197,7 +209,6 @@ class CodeGenerator(
                             extradeps=extradeps[filepath],
                         )
                         tasks.append(task)
-                        yield task
                 elif filepath == pynode_cpp_tpl:
                     chunk_length = math.ceil(len(self.nodes) / num_pybind_files)
                     for chunk_k in range(num_pybind_files):
@@ -220,7 +231,6 @@ class CodeGenerator(
                             extradeps=extradeps[filepath],
                         )
                         tasks.append(task)
-                        yield task
                 else:
                     task = JinjaTask(
                         app=self,
@@ -234,8 +244,11 @@ class CodeGenerator(
                         extradeps=extradeps[filepath],
                     )
                     tasks.append(task)
-                    yield task
-        yield self._cmake_deps_task(tasks)
+
+        if self.generate_cmake:
+            return [self._cmake_deps_task(tasks)]
+        else:
+            return tasks
 
 
 class JinjaTask(
@@ -371,6 +384,11 @@ def parse_args(args=None):
         action="store_true",
         help="Do not generate code related to python bindigs",
     )
+    parser.add_argument(
+        "--generate-cmake",
+        action="store_true",
+        help="Generate the CMake includes instead of the rest.",
+    )
 
     args = parser.parse_args(args=args)
 
@@ -411,6 +429,7 @@ def main(args=None):
         clang_format=args.clang_format,
         base_dir=args.base_dir,
         disable_pybind=args.disable_pybind,
+        generate_cmake=args.generate_cmake,
     )
     num_tasks = 0
     tasks_performed = []
