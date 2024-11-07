@@ -432,7 +432,7 @@ void nrn_setup_ext(NrnThread* _nt) {
     /* i.e. (cm/dt + di/dvm - dis/dvi)*[dvi] and
         (dis/dvi)*[dvx] */
     for (i = 0; i < cnt; ++i) {
-        OcSparseMatrix& m = *_nt->_sp13mat;
+        OcMatrix& m = *_nt->_sp13mat;
         nd = ndlist[i];
         int index = nd->eqn_index_;
         nde = nd->extnode;
@@ -450,7 +450,7 @@ void nrn_setup_ext(NrnThread* _nt) {
     }
     /* series resistance, capacitance, and axial terms. */
     for (i = 0; i < cnt; ++i) {
-        OcSparseMatrix& m = *_nt->_sp13mat;
+        OcMatrix& m = *_nt->_sp13mat;
         nd = ndlist[i];
         int index = nd->eqn_index_;
         nde = nd->extnode;

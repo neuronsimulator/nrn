@@ -353,7 +353,7 @@ void update_sp13_rhs_based_on_actual_rhs(NrnThread* nt) {
 void update_actual_d_based_on_sp13_mat(NrnThread* nt) {
     for (int i = 0; i < nt->end; ++i) {
         const int index = nt->_v_node[i]->eqn_index_;
-        OcSparseMatrix& m = *nt->_sp13mat;
+        OcMatrix& m = *nt->_sp13mat;
         nt->actual_d(i) = m.getval(index - 1, index - 1);
     }
 }
@@ -364,7 +364,7 @@ void update_actual_d_based_on_sp13_mat(NrnThread* nt) {
 void update_sp13_mat_based_on_actual_d(NrnThread* nt) {
     for (int i = 0; i < nt->end; ++i) {
         const int index = nt->_v_node[i]->eqn_index_;
-        OcSparseMatrix& m = *nt->_sp13mat;
+        OcMatrix& m = *nt->_sp13mat;
         m(index - 1, index - 1) = nt->actual_d(i);
     }
 }
@@ -573,7 +573,7 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
         update_sp13_mat_based_on_actual_d(_nt);  // just because of activclamp_lhs
         for (i = i2; i < i3; ++i) {              // note i2
             Node* nd = _nt->_v_node[i];
-            OcSparseMatrix& m = *_nt->_sp13mat;
+            OcMatrix& m = *_nt->_sp13mat;
             auto const parent_i = _nt->_v_parent_index[i];
             auto* const parent_nd = _nt->_v_node[parent_i];
             auto const nd_a = NODEA(nd);
@@ -1904,7 +1904,7 @@ static void nrn_matrix_node_alloc(void) {
         /*printf(" %d extracellular nodes\n", extn);*/
         neqn += extn;
         nt->_sp13_rhs = (double*) ecalloc(neqn + 1, sizeof(double));
-        nt->_sp13mat = new OcSparseMatrix(neqn, neqn);
+        nt->_sp13mat = OcMatrix::instance(neqn, neqn, OcMatrix::MSPARSE);
         for (in = 0, i = 1; in < nt->end; ++in, ++i) {
             nt->_v_node[in]->eqn_index_ = i;
             if (nt->_v_node[in]->extnode) {
