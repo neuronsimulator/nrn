@@ -99,7 +99,7 @@ file(
 
 foreach(file IN LISTS NMODL_PYTHON_FILES)
   cpp_cc_build_time_copy(INPUT ${NMODL_PROJECT_SOURCE_DIR}/python/nmodl/${file} OUTPUT
-                         ${CMAKE_BINARY_DIR}/lib/nmodl/${file})
+                         ${CMAKE_BINARY_DIR}/lib/nmodl/${file} NO_TARGET)
   list(APPEND nmodl_python_binary_dir_files "${CMAKE_BINARY_DIR}/lib/nmodl/${file}")
 endforeach()
 add_custom_target(nmodl_copy_python_files ALL DEPENDS ${nmodl_python_binary_dir_files})
