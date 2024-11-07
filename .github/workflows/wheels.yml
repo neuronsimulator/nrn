@@ -53,22 +53,22 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install OSX System Dependencies
-        run: |
-          brew install --cask xquartz
-          brew install flex bison mpich
-          brew unlink mpich && brew install openmpi
-          cmake --version
-          # Uninstall libomp for compatibility with issue #817
-          brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
-          brew install cmake
-          echo "$(brew --prefix)/opt/cmake/bin" >> $GITHUB_PATH
-          echo "$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
+      #- name: Install OSX System Dependencies
+      #  run: |
+      #    brew install --cask xquartz
+      #    brew install flex bison mpich
+      #    brew unlink mpich && brew install openmpi
+      #    cmake --version
+      #    # Uninstall libomp for compatibility with issue #817
+      #    brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
+      #    brew install cmake
+      #    echo "$(brew --prefix)/opt/cmake/bin" >> $GITHUB_PATH
+      #    echo "$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
 
-      - name: Install readline
-        run: |
-          sudo mkdir -p /opt/nrnwheel/$(uname -m)
-          sudo bash packaging/python/build_static_readline_osx.bash
+      #- name: Install readline
+      #  run: |
+      #    sudo mkdir -p /opt/nrnwheel/$(uname -m)
+      #    sudo bash packaging/python/build_static_readline_osx.bash
 
       - name: Set env based in input
         if: github.event_name == 'schedule' && startsWith(github.ref, 'refs/master')
@@ -81,24 +81,24 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run:
           echo "NRN_NIGHTLY_UPLOAD='false'" >> $GITHUB_ENV
-          echo "NRN_RELEASE_UPLOAD='${{ github.inputs.upload }}'" >> $GITHUB_ENV
+          echo NRN_RELEASE_UPLOAD=${{ github.inputs.upload }} >> $GITHUB_ENV
           echo "NEURON_NIGHTLY_TAG=''" >> $GITHUB_ENV
-          echo "SETUPTOOLS_SCM_PRETEND_VERSION=${{ github.inputs.rel_version }}" >> $GITHUB_ENV
+          echo SETUPTOOLS_SCM_PRETEND_VERSION=${{ github.inputs.rel_version }} >> $GITHUB_ENV
 
-      - name: Build MacOS Wheel
-        run: |
-          packaging/python/build_wheels.bash osx ${{ matrix.python-version }} coreneuron
+      #- name: Build MacOS Wheel
+      #  run: |
+      #    packaging/python/build_wheels.bash osx ${{ matrix.python-version }} coreneuron
 
-      - name: Test wheel
-        run: |
-          minor_version="$(python -c 'import sys;print(sys.version_info.minor)')"
-          packaging/python/test_wheels.sh $(which python) wheelhouse/*cp3${minor_version}*.whl
+      #- name: Test wheel
+      #  run: |
+      #    minor_version="$(python -c 'import sys;print(sys.version_info.minor)')"
+      #    packaging/python/test_wheels.sh $(which python) wheelhouse/*cp3${minor_version}*.whl
 
-      - name: Upload wheel files
-        uses: actions/upload-artifact@v3
-        with:
-          name: macos-wheels-${{ matrix.python-version }}
-          path: wheelhouse/*.whl
+      #- name: Upload wheel files
+      #  uses: actions/upload-artifact@v3
+      #  with:
+      #    name: macos-wheels-${{ matrix.python-version }}
+      #    path: wheelhouse/*.whl
 
 
 #  publish-to-pypi:
