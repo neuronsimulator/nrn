@@ -65,7 +65,17 @@ jobs:
           echo "$(brew --prefix)/opt/cmake/bin" >> $GITHUB_PATH
           echo "$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
 
+      - name: Cache readline
+        id: cache-readline
+        uses: actions/cache@v3
+        with:
+          path: /opt/nrnwheel/$(uname -m)
+          key: readline-${{ runner.os }}-${{ hashFiles('packaging/python/build_static_readline_osx.bash') }}
+          restore-keys: |
+            readline-${{ runner.os }}-
+
       - name: Install readline
+        if: steps.cache-readline.outputs.cache-hit != 'true'
         run: |
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo bash packaging/python/build_static_readline_osx.bash
