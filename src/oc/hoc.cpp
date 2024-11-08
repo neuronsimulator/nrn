@@ -945,7 +945,6 @@ void inputReadyThread() {
 #endif
 
 void hoc_final_exit(void) {
-    char* buf;
 #if defined(USE_PYTHON)
     if (neuron::python::methods.interpreter_start) {
         neuron::python::methods.interpreter_start(0);

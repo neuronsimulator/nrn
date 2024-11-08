@@ -886,7 +886,6 @@ static Object* py_alltoall_type(int size, int type) {
         std::vector<char> s{};
         std::vector<int> scnt{};
         int* sdispl = NULL;
-        char* r = NULL;
         int* rcnt = NULL;
         int* rdispl = NULL;
 
