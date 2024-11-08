@@ -41,6 +41,8 @@ struct Extnode {
     double* _a;
     double* _b;
     double** _rhs; /* rhs, a, and b are analogous to those in node */
+
+    int eqn_index_;
 };
 #endif
 

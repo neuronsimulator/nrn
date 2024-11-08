@@ -431,53 +431,56 @@ void nrn_setup_ext(NrnThread* _nt) {
     /* d contains all the membrane conductances (and capacitance) */
     /* i.e. (cm/dt + di/dvm - dis/dvi)*[dvi] and
         (dis/dvi)*[dvx] */
+    // This loop handle conductances between the node and the first layer
     for (i = 0; i < cnt; ++i) {
         OcMatrix& m = *_nt->_sp13mat;
         nd = ndlist[i];
         int index = nd->eqn_index_;
         nde = nd->extnode;
+        int ext_index = nde->eqn_index_;
         d = NODED(nd);
         /* nde->_d only has -ELECTRODE_CURRENT contribution */
-        m(index, index) += NODED(nd);
-        d = m.getval(index, index);
+        m(ext_index + 0, ext_index + 0) += NODED(nd);
+        d = m.getval(ext_index + 0, ext_index + 0);
         /* now d is only the membrane current contribution */
         /* i.e. d =  cm/dt + di/dvm */
-        m(index - 1, index) -= d;
-        m(index, index - 1) -= d;
+        m(index - 1, ext_index + 0) -= d;
+        m(ext_index + 0, index - 1) -= d;
 #if I_MEMBRANE
         ml->data(i, sav_g_index) = d;
 #endif
     }
     /* series resistance, capacitance, and axial terms. */
+    // This look takes care of the conductances between layers
     for (i = 0; i < cnt; ++i) {
         OcMatrix& m = *_nt->_sp13mat;
         nd = ndlist[i];
-        int index = nd->eqn_index_;
         nde = nd->extnode;
+        int ext_index = nde->eqn_index_;
         pnd = _nt->_v_parent[nd->v_node_index];
         if (pnd) {
             /* series resistance and capacitance to ground */
             j = 0;
             for (;;) { /* between j and j+1 layer */
                 mfac = (*nde->param[xg_index_ext(j)] + *nde->param[xc_index_ext(j)] * cfac);
-                m(index + j, index + j) += mfac;
+                m(ext_index + j, ext_index + j) += mfac;
                 ++j;
                 if (j == nrn_nlayer_extracellular) {
                     break;
                 }
-                m(index + j, index + j) += mfac;
-                m(index - 1 + j, index + j) -= mfac;
-                m(index + j, index - 1 + j) -= mfac;
+                m(ext_index + j, ext_index + j) += mfac;
+                m(ext_index + j - 1, ext_index + j) -= mfac;
+                m(ext_index + j, ext_index + j - 1) -= mfac;
             }
             pnde = pnd->extnode;
             /* axial connections */
             if (pnde) { /* parent sec may not be extracellular */
-                int parent_index = pnd->eqn_index_;
+                int parent_ext_index = pnde->eqn_index_;
                 for (j = 0; j < nrn_nlayer_extracellular; ++j) {
-                    m(index + j, index + j) -= nde->_b[j];
-                    m(parent_index + j, parent_index + j) -= nde->_a[j];
-                    m(parent_index + j, index + j) += nde->_a[j];
-                    m(index + j, parent_index + j) += nde->_b[j];
+                    m(ext_index + j, ext_index + j) -= nde->_b[j];
+                    m(parent_ext_index + j, parent_ext_index + j) -= nde->_a[j];
+                    m(parent_ext_index + j, ext_index + j) += nde->_a[j];
+                    m(ext_index + j, parent_ext_index + j) += nde->_b[j];
                 }
             }
         }

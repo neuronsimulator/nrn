@@ -1906,7 +1906,7 @@ static void nrn_matrix_node_alloc(void) {
         nt->_sp13_rhs = (double*) ecalloc(neqn + 1, sizeof(double));
         nt->_sp13mat = OcMatrix::instance(neqn, neqn, OcMatrix::MSPARSE);
         for (in = 0, i = 1; in < nt->end; ++in, ++i) {
-            nt->_v_node[in]->eqn_index_ = i;
+            nt->_v_node[in]->eqn_index_ = i; // 1-indexed
             if (nt->_v_node[in]->extnode) {
                 i += nlayer;
             }
@@ -1920,6 +1920,7 @@ static void nrn_matrix_node_alloc(void) {
             i = nd->eqn_index_;
             nt->_sp13_rhs[i] = nt->actual_rhs(in);
             if (nde) {
+                nde->eqn_index_ = i; // 0-indexed
                 for (ie = 0; ie < nlayer; ++ie) {
                     k = i + ie + 1;
                     nde->_rhs[ie] = nt->_sp13_rhs + k;
