@@ -41,6 +41,8 @@ jobs:
       - name: Check out code
         if: github.event_name != 'workflow_dispatch'
         uses: actions/checkout@v4
+        with:
+          ref: master
 
       - name: Check out code for release
         if: github.event_name == 'workflow_dispatch'
@@ -71,7 +73,7 @@ jobs:
           sudo bash packaging/python/build_static_readline_osx.bash
 
       - name: Set env based in input
-        if: github.event_name == 'schedule' && startsWith(github.ref, 'refs/master')
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/master')
         run: |
           echo "NRN_NIGHTLY_UPLOAD=true" >> $GITHUB_ENV
           echo "NRN_RELEASE_UPLOAD=false" >> $GITHUB_ENV
