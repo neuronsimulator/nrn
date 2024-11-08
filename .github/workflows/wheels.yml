@@ -65,18 +65,8 @@ jobs:
           echo "$(brew --prefix)/opt/cmake/bin" >> $GITHUB_PATH
           echo "$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
 
-      - name: Cache readline
-        if: startsWith(runner.os, 'macOS')
-        id: cache-readline
-        uses: actions/cache@v3
-        with:
-          path: /opt/nrnwheel/$(uname -m)
-          key: readline-${{ runner.os }}-${{ hashFiles('packaging/python/build_static_readline_osx.bash') }}
-          restore-keys: |
-            readline-${{ runner.os }}-
-
       - name: Install readline
-        if: startsWith(runner.os, 'macOS') && steps.cache-readline.outputs.cache-hit != 'true'
+        if: startsWith(runner.os, 'macOS')
         run: |
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo bash packaging/python/build_static_readline_osx.bash
@@ -107,7 +97,7 @@ jobs:
           packaging/python/test_wheels.sh $(which python) wheelhouse/*cp3${minor_version}*.whl
 
       - name: Upload wheel files
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.python-version }}
           path: wheelhouse/*.whl
@@ -116,7 +106,7 @@ jobs:
   publish-to-pypi:
     name: Publish Python wheels to PyPI
     # we only run this if it's a nightly upload, or if we are doing a release
-    if: (github.event_name == 'schedule' && startsWith(github.ref, 'refs/heads/master')) || (github.event_name == 'workflow_dispatch' && github.inputs.upload == 'true')
+    if: (github.event_name == 'schedule' && startsWith(github.ref, 'refs/heads/master')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.upload == 'true')
     needs:
     - build-test
 
