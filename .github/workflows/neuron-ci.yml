@@ -45,7 +45,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ macOS-12, ubuntu-20.04]
+        os: [macOS-13, ubuntu-20.04]
         config:
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
           - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", music: ON}

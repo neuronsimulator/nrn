@@ -107,7 +107,6 @@ set(OC_FILE_LIST
     plt.cpp
     scoprand.cpp
     symbol.cpp
-    version.cpp
     x.cpp
     xred.cpp)
 
