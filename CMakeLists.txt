@@ -71,6 +71,7 @@ option(NRN_ENABLE_THREADS "Allow use of multithreading" ${NRN_ENABLE_THREADS_DEF
 option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
 option(NRN_ENABLE_MUSIC "Enable MUSIC support" ${NRN_ENABLE_MUSIC_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
+option(NRN_ENABLE_NMODL "Enable NMODL code-generator support" ${NRN_ENABLE_NMODL_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
@@ -85,6 +86,13 @@ option(
   NRN_ENABLE_PERFORMANCE_TESTS
   "Enable tests that measure performance. These are known to be unreliable when run on busy/oversubscribed machines such as CI runners."
   ${NRN_ENABLE_PERFORMANCE_TESTS_DEFAULT})
+option(NRN_ENABLE_DIGEST
+       "Provides nrn_digest function for debugging cross platform floating result differences."
+       ${NRN_ENABLE_DIGEST_DEFAULT})
+option(
+  NRN_ENABLE_ARCH_INDEP_EXP_POW
+  "Provides use_exp_pow_precision(style) function so that exp and pow produce same results on all platforms"
+  ${NRN_ENABLE_ARCH_INDEP_EXP_POW_DEFAULT})
 # This can be helpful in very specific CI build configurations, where ccache is used *and* different
 # CI builds are built under different directories.
 option(NRN_AVOID_ABSOLUTE_PATHS
@@ -496,6 +504,49 @@ endif()
 cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 
 # =============================================================================
+# Enable NMODL code-generator support
+# =============================================================================
+if(NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON)
+
+  set(NMODL_ENABLE_PYTHON_BINDINGS
+      OFF
+      CACHE BOOL "Enable NMODL python bindings")
+  nrn_add_external_project(nmodl)
+  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
+  set(NMODL_TARGET_TO_DEPEND nmodl)
+  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
+  # install nrnunits.lib and libpywrapper.so from external/nmodl
+  install(
+    FILES ${NMODL_PROJECT_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
+    DESTINATION lib
+    COMPONENT pywrapper
+    OPTIONAL)
+  install(
+    FILES ${NMODL_PROJECT_BINARY_DIR}/share/nmodl/nrnunits.lib
+    DESTINATION share/nmodl
+    COMPONENT nrnunits)
+
+  # set correct arguments for nmodl for cpu/gpu target
+  set(CORENRN_NMODL_FLAGS
+      ""
+      CACHE STRING "Extra NMODL options such as passes")
+
+endif()
+
+# =============================================================================
+# Flags for using NOCMODL/NMODL
+# =============================================================================
+if(NRN_ENABLE_NMODL)
+  set(NRN_NMODL_--neuron "--neuron")
+  set(NRN_CODEGENERATOR_NAME "nmodl")
+  set(NRN_CODEGENERATOR_TARGET nmodl)
+else()
+  set(NRN_NMODL_--neuron "")
+  set(NRN_CODEGENERATOR_NAME "nocmodl")
+  set(NRN_CODEGENERATOR_TARGET nocmodl)
+endif()
+
+# =============================================================================
 # Enable CoreNEURON support
 # =============================================================================
 if(NRN_ENABLE_CORENEURON)
@@ -529,7 +580,7 @@ if(NRN_ENABLE_CORENEURON)
   get_property(CORENRN_LIB_LINK_FLAGS GLOBAL PROPERTY CORENRN_LIB_LINK_FLAGS)
   get_property(CORENRN_NEURON_LINK_FLAGS GLOBAL PROPERTY CORENRN_NEURON_LINK_FLAGS)
   get_property(CORENRN_ENABLE_SHARED GLOBAL PROPERTY CORENRN_ENABLE_SHARED)
-  get_property(CORENRN_NMODL_BINARY GLOBAL PROPERTY CORENRN_NMODL_BINARY)
+
   # NEURON tests that link against CoreNEURON need to depend on it.
   set(CORENEURON_TARGET_TO_DEPEND coreneuron-for-tests)
 
@@ -1040,6 +1091,7 @@ if(NRN_ENABLE_CORENEURON)
   message(STATUS "  PATH        | ${CORENEURON_DIR}")
   message(STATUS "  LINK FLAGS  | ${CORENRN_LIB_LINK_FLAGS}")
 endif()
+message(STATUS "NMODL codegen   | ${NRN_ENABLE_NMODL}")
 if(NRN_UNIVERSAL2_BUILD)
   message(STATUS "CMAKE_OSX_ARCH| ${CMAKE_OSX_ARCHITECTURES}")
 endif()
@@ -1055,6 +1107,10 @@ if(NRN_ENABLE_PROFILING)
   if(NRN_PROFILER STREQUAL "caliper")
     message(STATUS "  Caliper     | ${caliper_DIR}")
   endif()
+endif()
+if(NRN_ENABLE_DIGEST OR NRN_ARCH_INDEP_EXP_POW)
+  message(STATUS "NRN_ENABLE_DIGEST | ${NRN_ENABLE_DIGEST}")
+  message(STATUS "NRN_ENABLE_ARCH_INDEP_EXP_POW | ${NRN_ENABLE_ARCH_INDEP_EXP_POW}")
 endif()
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS " See documentation : https://www.neuron.yale.edu/neuron/")

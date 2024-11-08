@@ -21,6 +21,7 @@ set(HEADER_FILES_TO_INSTALL
     nrnoc/md1redef.h
     nrnoc/md2redef.h
     nrnoc/membdef.h
+    nrnoc/ion_semantics.h
     nrnoc/membfunc.h
     nrnoc/multicore.h
     nrnoc/multisplit.h
@@ -106,7 +107,6 @@ set(OC_FILE_LIST
     plt.cpp
     scoprand.cpp
     symbol.cpp
-    version.cpp
     x.cpp
     xred.cpp)
 

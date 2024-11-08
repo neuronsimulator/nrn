@@ -153,17 +153,18 @@ macro(nocmodl_mod_to_cpp modfile_basename)
   if(CMAKE_VERSION VERSION_LESS "3.17")
     set(REMOVE_CMAKE_COMMAND "remove")
   endif()
+  get_filename_component(modfile_output_dir ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod DIRECTORY)
   add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
     COMMAND
       ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
-      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:nocmodl>
-      ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
+      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:${NRN_CODEGENERATOR_TARGET}>
+      ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod ${NRN_NMODL_--neuron} -o ${modfile_output_dir}
     COMMAND sed ${NOCMODL_SED_EXPR} ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp >
             ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
     COMMAND ${CMAKE_COMMAND} -E ${REMOVE_CMAKE_COMMAND}
             ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp
-    DEPENDS nocmodl ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
+    DEPENDS ${NRN_CODEGENERATOR_TARGET} ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
             ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
 endmacro()
