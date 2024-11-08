@@ -29,7 +29,7 @@ on:
 
 jobs:
   build-test:
-    name: Build MacOS Wheels
+    name: Build Python wheels
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
@@ -48,12 +48,12 @@ jobs:
         with:
           ref: ${{ github.inputs.rel_release }}
 
-
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install OSX System Dependencies
+      - name: Install MacOS System Dependencies
+        if: startsWith(runner.os, 'macOS')
         run: |
           brew install --cask xquartz
           brew install flex bison mpich
@@ -66,6 +66,7 @@ jobs:
           echo "$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
 
       - name: Cache readline
+        if: startsWith(runner.os, 'macOS')
         id: cache-readline
         uses: actions/cache@v3
         with:
@@ -75,7 +76,7 @@ jobs:
             readline-${{ runner.os }}-
 
       - name: Install readline
-        if: steps.cache-readline.outputs.cache-hit != 'true'
+        if: startsWith(runner.os, 'macOS') && steps.cache-readline.outputs.cache-hit != 'true'
         run: |
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo bash packaging/python/build_static_readline_osx.bash
@@ -95,7 +96,8 @@ jobs:
           echo "NEURON_NIGHTLY_TAG=" >> $GITHUB_ENV
           echo SETUPTOOLS_SCM_PRETEND_VERSION=${{ github.event.inputs.rel_version }} >> $GITHUB_ENV
 
-      - name: Build MacOS Wheel
+      - name: Build wheels on MacOS
+        if: startsWith(runner.os, 'macOS')
         run: |
           packaging/python/build_wheels.bash osx ${{ matrix.python-version }} coreneuron
 
@@ -107,38 +109,39 @@ jobs:
       - name: Upload wheel files
         uses: actions/upload-artifact@v3
         with:
-          name: macos-wheels-${{ matrix.python-version }}
+          name: wheels-${{ matrix.python-version }}
           path: wheelhouse/*.whl
 
 
-#  publish-to-pypi:
-#    name: Publish MacOS ARM Python wheels to PyPI
-#    needs:
-#    - build-test
-#
-#    runs-on: ubuntu-latest
-#
-#    strategy:
-#      matrix:
-#        # why do we need a matrix? because github uploads separate artifacts for each job above
-#        # maybe when we start using cibuildwheel we can build all of them in one job...
-#        python-version: ['3.10', '3.11', '3.12'] # make sure to keep in sync with the one from job above
-#
-#    environment:
-#      name: pypi
-#      url: https://pypi.org/p/NEURON-nightly
-#
-#    permissions:
-#      id-token: write  # IMPORTANT: mandatory for trusted publishing
-#
-#    steps:
-#      - name: Download all the dists
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: macos-wheels-${{ matrix.python-version }}
-#          path: wheelhouse/
-#  
-#      - name: Publish wheels to PyPI
-#        uses: pypa/gh-action-pypi-publish@release/v1
-#        with:
-#          packages-dir: wheelhouse/
+  publish-to-pypi:
+    name: Publish Python wheels to PyPI
+    if: (github.event_name == 'schedule' && startsWith(github.ref, 'refs/heads/master')) || github.event_name == 'workflow_dispatch'
+    needs:
+    - build-test
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        # why do we need a matrix? because github uploads separate artifacts for each job above
+        # maybe when we start using cibuildwheel we can build all of them in one job...
+        python-version: ['3.10'] # make sure to keep in sync with the one from job above
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/NEURON-nightly
+
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-${{ matrix.python-version }}
+          path: wheelhouse/
+
+      #- name: Publish wheels to PyPI
+      #  uses: pypa/gh-action-pypi-publish@release/v1
+      #  with:
+      #    packages-dir: wheelhouse/
