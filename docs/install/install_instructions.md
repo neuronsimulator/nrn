@@ -1,12 +1,12 @@
 NEURON can be installed on a wide variety of hardware platforms. Based on your system and software
 environment you can choose one of the installation method described below.
 
-## Installing Binary Distribution
+# Installing Binary Distribution
 
 If you want to quickly get started with NEURON, we provide binary installers for Linux, Mac and
 Windows platforms.
 
-#### Mac OS
+## Mac OS
 
 Since version 7.8.1 we are providing Python wheels and NEURON can be installed using `pip` by opening a Terminal (Press `⌘` + `Space` and type "terminal") and typing:
 
@@ -105,7 +105,9 @@ architecture.
   contain the "macos11" string within the package name for the universal2
   installers for python 3.8, 3.9, and 3.10.
 
-#### Linux
+---------------------- 
+
+## Linux
 
 Like Mac OS, since 7.8.1 release python wheels are provided and you can use `pip` to install NEURON by opening a terminal and typing:
 
@@ -116,22 +118,207 @@ pip3 install neuron
 Note that Python2 wheels are provided for the 8.0.x release series exclusively. Also, we are not providing .rpm or .deb
 installers for recent releases.
 
-#### Windows
 
-On Windows, the only recommended way to install NEURON is using the binary installer. You can download alpha
-or recent releases from:
+---------------------- 
 
-* [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
-* [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
+## Windows
+
+Neuron Simulator detailed installation in Window.
+
+On Windows, the only recommended way to install NEURON is using the binary installer. You can download recent releases or any previous released version from:
+* [Recent Releases](https://github.com/neuronsimulator/nrn/releases/download/8.2.4/nrn-8.2.4.w64-mingw-py-37-38-39-310-311-setup.exe).
+* [List of Releases](https://github.com/neuronsimulator/nrn/releases/)
+
+---------------------- 
+
+#### Step 1: Download the NEURON for Windows Installer [here](https://github.com/neuronsimulator/nrn/releases/download/8.2.4/nrn-8.2.4.w64-mingw-py-37-38-39-310-311-setup.exe). 
+See the file name downloaded. 
 
 The naming convention for Windows installers is `nrn-<version-id>-mingw-py-38-39-310-311-setup.exe`.
 The `py-38-39-310-311` string in the installer name indicates that the given installer is compatible
-with Python versions 3.8, 3.9, 3.10 and 3.11. Once the installer is downloaded, you can install it
-by double clicking like any other Windows application. Note that you have to install python separately
-if python support is required. You can find detailed step-by-step instructions in
+with Python versions 3.8, 3.9, 3.10 and 3.11. 
+
+That means the last python version compatible is 3.11 
+
+---------------------- 
+
+#### Step 2: Install conda by [miniconda](https://docs.anaconda.com/free/miniconda/)  
+Follow the installation box steps. Select "Add Miniconda3 to my PATH environment variable" option, otherwise you will need do it manually after. 
+This picture: 
+ 
+![miniconda installation dialog box showing checked box](images/Install_conda_by_miniconda_1.png)
+ 
+Or this one: 
+
+![zoomed in view of the checked box in miniconda installation](images/Install_conda_by_miniconda_2.png)
+ 
+#### Step 3: Open a Windows PowerShell terminal (or CDM) 
+ 
+---------------------- 
+
+#### Step 4: Install Python via conda  
+
+`conda install python=3.#`
+where # (the last compatible version) 
+ 
+```bash
+conda install python=3.11 
+```
+We recommend installing Python via conda and not via Microsoft Store to avoid manually changing the PATH file. 
+ 
+---------------------- 
+
+#### Step 5: check python version 
+
+```bash
+python --version 
+```
+If the version is not compatible with neuron do: 
+
+`conda install python=X.XX`   ( See Step 4)
+
+(X.XX the last python version compatible with neuron. Yes, it may be a downgrade) 
+ 
+---------------------- 
+
+#### Step 6: install NEURON 
+
+Once the installer is downloaded, you can install it by double clicking like any other Windows application. 
+Follow the installation box steps.   
+
+PS: The `pip install neuron` will not work properly in Windows. 
+
+---------------------- 
+
+#### Step 7: install any other package as matplotlib 
+In order to install any other package open a CDM or Windows PowerShell and try: 
+ 
+`conda install <name_of_the_package>`
+ 
+Example: 
+```bash
+conda install matplotlib 
+conda install plotly
+conda install pandas
+```
+ 
+PS: `pip install matplotlib` may also works
+ 
+More information at (https://matplotlib.org/stable/users/getting_started/) 
+
+---------------------- 
+
+#### Step 8: Enjoy Neuron!!  
+Some neurons (cool 3D) examples [here](https://nrn.readthedocs.io/en/8.2.4/python/visualization/plotshapeclass.html).  
+
+Download files [c91662.ses](https://github.com/dohalloran/NCX_Model/blob/master/c91662.ses) and save the follow code as "example_plotly_matplotlib.py"
+
+```python
+import matplotlib
+matplotlib.use("TkAgg")  #works
+import plotly
+#from matplotlib import pyplot, cm
+
+from neuron import h, gui
+from neuron.units import mV, ms
+h.load_file('c91662.ses')
+
+'''
+#ps = h.PlotShape(False)
+#ps.variable("v")
+#ps.plot(pyplot, cmap=cm.cool)
+#pyplot.show()
+'''
+ps = h.PlotShape(False)
+ps.variable("v")
+ps.plot(plotly).show()
+```
+
+Inside the folder that your downloaded "c91662.ses" and saved "example_plotly_matplotlib.py" are, open a terminal and do:
+ 
+Open a new terminal and try: 
+```bash
+python -i example_plotly_matplotlib.py
+```
+ 
+---------------------- 
+ 
+### Common problems: 
+ 
+#### Incompatibility neuron and python version. See steps 1, 4 and 5. 
+ 
+The python version incompatibility with neuron version.
+
+---------------------- 
+```
+C:\Users\User>python3 
+Python 3.12.4 (tags/v3.12.4:8e8a4ba, Jun  6 2024, 19:30:16) [MSC v.1940 64 bit (AMD64)] on win32 
+Type "help", "copyright", "credits" or "license" for more information. 
+>>> import neuron 
+Traceback (most recent call last): 
+  File "c:\nrn\lib\python\neuron\__init__.py", line 135, in <module> 
+    from . import hoc 
+ImportError: cannot import name 'hoc' from partially initialized module 'neuron' (most likely due to a circular import) (c:\nrn\lib\python\neuron\__init__.py) 
+  
+During handling of the above exception, another exception occurred: 
+  
+Traceback (most recent call last): 
+  File "<stdin>", line 1, in <module> 
+  File "c:\nrn\lib\python\neuron\__init__.py", line 137, in <module> 
+    import neuron.hoc 
+ModuleNotFoundError: No module named 'neuron.hoc' 
+>>> 
+```
+
+---------------------- 
+
+#### "PATH" problems. See step 2. 
+ 
+A PATH problem that I'm not sure how to reproduce all error possibilities.  But it seems to be correlated with the python installation process (from Windows Microsoft Store (as an app) or by Python Webpage and/or Conda) and/or neuron/python order (I've stalled neuron before python and didn’t get this problem) 
+ 
+--------- Example 1 ------------- 
+```
+<stdin>:149: SyntaxWarning: invalid escape sequence '\.' 
+<stdin>:197: SyntaxWarning: invalid escape sequence '\.' 
+cygcheck: could not find 'C:/Users/User/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0/python.exe' 
+ ```
+----------- End Example 1 ----------- 
+ 
+--------- Example 2 ------------- 
+```
+WARNING: The script f2py.exe is installed in 'C:\Users\User\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts' which is not on PATH. 
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location. 
+  WARNING: The scripts fonttools.exe, pyftmerge.exe, pyftsubset.exe and ttx.exe are installed in 'C:\Users\User\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts' which is not on PATH. 
+``` 
+----------- End Example 2 ----------- 
+ 
+ 
+If you face any of the issues above, it is due to a PATH missing line. You need to introduce the correct python path way at path compartment.
+ 
+PS: C:\Users\User> setx PATH  "C:\Users\User\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts; %PATH%" 
+may not be a good idea. Python may stop to work in terminal. 
+
+PS: There is a conflict in Windows caused by the way you install python. It can be installed as a app or as a pack ("pack" means as download and run the exe or by conda or wetget...) 
+
+---------------------- 
+
+#### "No module named" problems. See step 7.
+Once the python is installed, useful packages as matplotlib, plotly, pandas don’t come automatically.  
+
+```
+>>> import matplotlib.pyplot as plt 
+Traceback (most recent call last): 
+  File "<stdin>", line 1, in <module> 
+ModuleNotFoundError: No module named 'matplotlib' 
+>>> 
+```
+
+For old versions, you can find detailed step-by-step instructions in
 [this presentation](https://neuron.yale.edu/ftp/neuron/nrn_mswin_install.pdf).
 
-#### Windows Subsystem for Linux (WSL) Python Wheel
+---------------------- 
+
+### Windows Subsystem for Linux (WSL) Python Wheel
 
 Alternatively, if you are using Windows Subsystem for Linux, you can install the available Linux Python wheel.
 Note that the default Linux distro installed by WSL is Ubuntu, and the following instructions are tailored accordingly.
