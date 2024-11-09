@@ -17,7 +17,6 @@
 #include <nrnran123.h>
 
 #include <ACG.h>
-#include <MLCG.h>
 #include <Random.h>
 #include <Poisson.h>
 #include <Normal.h>
@@ -128,29 +127,6 @@ static double r_ACG(void* r) {
     x->type_ = 0;
     delete x->gen;
     x->gen = x->rand->generator();
-    return 1.;
-}
-
-// Use a Multiplicative Linear Congruential Generator.  Not as high
-// quality as the ACG, but uses only 8 bytes
-// syntax:
-// r.MLCG([seed1],[seed2])
-
-static double r_MLCG(void* r) {
-    Rand* x = (Rand*) r;
-
-    unsigned long seed1 = 0;
-    unsigned long seed2 = 0;
-
-    if (ifarg(1))
-        seed1 = long(*getarg(1));
-    if (ifarg(2))
-        seed2 = long(*getarg(2));
-
-    x->rand->generator(new MLCG(seed1, seed2));
-    delete x->gen;
-    x->gen = x->rand->generator();
-    x->type_ = 1;
     return 1.;
 }
 
@@ -464,7 +440,6 @@ extern "C" void nrn_random_play() {
 
 
 static Member_func r_members[] = {{"ACG", r_ACG},
-                                  {"MLCG", r_MLCG},
                                   {"MCellRan4", r_MCellRan4},
                                   {"Random123", r_nrnran123},
                                   {"Random123_globalindex", r_ran123_globalindex},

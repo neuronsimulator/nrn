@@ -7,7 +7,7 @@ struct Object;
 
 /* type_:
  * 0: ACG
- * 1: MLCG
+ * 1: unused
  * 2: MCellRan4
  * 3: unused
  * 4: Random123
