@@ -16,9 +16,7 @@ License along with this library; if not, write to the Free Software
 Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 #pragma once
-
 #include <random>
-
 #include "Random.h"
 
 class Binomial: public Random {
@@ -34,5 +32,4 @@ public:
 
 private:
     std::binomial_distribution<> d;
-
 };
