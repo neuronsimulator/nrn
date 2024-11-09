@@ -17,33 +17,22 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 #pragma once
 
+#include <random>
+
 #include "Random.h"
 
 class Binomial: public Random {
-protected:
-    int pN;
-    double pU;
 public:
-    Binomial(int n, double u, RNG *gen);
+    Binomial(int n, double u, RNG *gen)
+        :Random(gen)
+        , d(n ,u)
+    {}
 
-    int n();
-    int n(int xn);
+    double operator()() {
+        return d(*generator());
+    }
 
-    double u();
-    double u(int xu);
-
-    virtual double operator()();
+private:
+    std::binomial_distribution<> d;
 
 };
-
-
-inline Binomial::Binomial(int n, double u, RNG *gen)
-: Random(gen){
-  pN = n; pU = u;
-}
-
-inline int Binomial::n() { return pN; }
-inline int Binomial::n(int xn) { int tmp = pN; pN = xn; return tmp; }
-
-inline double Binomial::u() { return pU; }
-inline double Binomial::u(int xu) { double tmp = pU; pU = xu; return tmp; }
