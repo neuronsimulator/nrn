@@ -10,7 +10,6 @@ set(STRUCTURED_HEADER_FILES_TO_INSTALL
     neuron/model_data_fwd.hpp)
 set(HEADER_FILES_TO_INSTALL
     gnu/mcran4.h
-    gnu/nrnisaac.h
     gnu/nrnran123.h
     nrniv/backtrace_utils.h
     nrniv/bbsavestate.h
