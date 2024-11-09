@@ -23,6 +23,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <cstdint>
 #include <cassert>
 #include <cmath>
+#include <limits>
 
 union PrivateRNGSingleType {		   	// used to access floats as unsigneds
     float s;
@@ -38,6 +39,8 @@ union PrivateRNGDoubleType {		   	// used to access doubles as unsigneds
 // Base class for Random Number Generators.
 //
 class RNG {
+    using result_type = std::uint32_t;
+
     static PrivateRNGSingleType singleMantissa;	// mantissa bit vector
     static PrivateRNGDoubleType doubleMantissa;	// mantissa bit vector
 public:
@@ -46,11 +49,21 @@ public:
     //
     // Return a long-words word of random bits
     //
-    virtual uint32_t asLong() = 0;
+    virtual result_type asLong() = 0;
     virtual void reset() = 0;
     //
     // Return random bits converted to either a float or a double
     //
     virtual float asFloat();
     virtual double asDouble();
+
+    result_type min() {
+        return std::numeric_limits<result_type>::min();
+    }
+    result_type max() {
+        return std::numeric_limits<result_type>::max();
+    }
+    result_type operator()() {
+        return asLong();
+    }
 };
