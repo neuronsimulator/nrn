@@ -496,7 +496,6 @@ min Vector classes general neuron.exe Reference 160 neuron/general/classes/vecto
 min_ind Vector classes general neuron.exe Reference 160 neuron/general/classes/vector/vect2.html#min_ind
 Miscellaneous Tools NEURONMainMenu GUI Reference 418 neuron/stdrun/0stdrun.html#Miscellaneous
 mktemp File classes general neuron.exe Reference 29 neuron/general/classes/file.html#mktemp
-MLCG Random classes general neuron.exe Reference 97 neuron/general/classes/random.html#MLCG
 ModelDescriptionIssues CVode classes neuron neuron.exe Reference 257 neuron/neuron/classes/cvode.html#ModelDescriptionIssues
 ModelDescriptionLanguage NMODL Reference 388 neuron/nmodl/nmodl.html#ModelDescriptionLanguage
 MoveText Graph LookAndFeel GUI Reference 18 neuron/agui/gui.html#MoveText
