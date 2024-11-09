@@ -11,7 +11,6 @@ add_library(
   LogNorm.cpp
   MCellRan4RNG.cpp
   mcran4.cpp
-  MLCG.cpp
   NegExp.cpp
   Normal.cpp
   nrnisaac.cpp

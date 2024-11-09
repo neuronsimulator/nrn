@@ -99,27 +99,6 @@ Random Class
 
 
 
-.. method:: Random.MLCG
-
-
-    Syntax:
-        ``r.MLCG()``
-
-        ``r.MLCG(seed1)``
-
-        ``r.MLCG(seed1, seed2)``
-
-
-    Description:
-        Use a Multiplicative Linear Congruential Generator.  Not as high 
-        quality as the ACG.  It uses only 8 bytes. 
-
-         
-
-----
-
-
-
 .. method:: Random.MCellRan4
 
 
