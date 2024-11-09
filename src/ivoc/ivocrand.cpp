@@ -174,11 +174,6 @@ static double r_ran123_globalindex(void* r) {
 
 static double r_sequence(void* r) {
     Rand* x = (Rand*) r;
-    if (x->type_ != 2 && x->type_ != 4) {
-        hoc_execerror(
-            "Random.seq() can only be used if the random generator was MCellRan4 or Random123", 0);
-    }
-
     if (x->type_ == 4) {
         uint32_t seq;
         char which;
