@@ -9,7 +9,6 @@
 #include <InterViews/resource.h>
 #include "classreg.h"
 #include "oc2iv.h"
-#include "nrnisaac.h"
 #include "utils/enumerate.h"
 
 #include <vector>
@@ -32,7 +31,6 @@
 #include <RndInt.h>
 #include <HypGeom.h>
 #include <Weibull.h>
-#include <Isaac64RNG.hpp>
 #include <NrnRandom123RNG.hpp>
 #include <MCellRan4RNG.hpp>
 
@@ -270,29 +268,6 @@ int nrn_random123_getseq(Rand* r, uint32_t* seq, char* which) {
     return 1;
 }
 
-static double r_Isaac64(void* r) {
-    Rand* x = (Rand*) r;
-
-    uint32_t seed1 = 0;
-
-    if (ifarg(1)) {
-        seed1 = static_cast<uint32_t>(*getarg(1));
-    }
-
-    double seed{};
-    try {
-        Isaac64* mcr = new Isaac64(seed1);
-        x->rand->generator(mcr);
-        delete x->gen;
-        x->gen = x->rand->generator();
-        x->type_ = 3;
-        seed = mcr->seed();
-    } catch (const std::bad_alloc& e) {
-        hoc_execerror("Bad allocation for Isaac64 generator", e.what());
-    }
-    return seed;
-}
-
 // Pick again from the distribution last used
 // syntax:
 // r.repick()
@@ -490,7 +465,6 @@ extern "C" void nrn_random_play() {
 
 static Member_func r_members[] = {{"ACG", r_ACG},
                                   {"MLCG", r_MLCG},
-                                  {"Isaac64", r_Isaac64},
                                   {"MCellRan4", r_MCellRan4},
                                   {"Random123", r_nrnran123},
                                   {"Random123_globalindex", r_ran123_globalindex},

@@ -6,15 +6,12 @@ add_library(
   Erlang.cpp
   Geom.cpp
   HypGeom.cpp
-  isaac64.cpp
-  Isaac64RNG.cpp
   LogNorm.cpp
   MCellRan4RNG.cpp
   mcran4.cpp
   MLCG.cpp
   NegExp.cpp
   Normal.cpp
-  nrnisaac.cpp
   nrnran123.cpp
   Poisson.cpp
   Rand.cpp
