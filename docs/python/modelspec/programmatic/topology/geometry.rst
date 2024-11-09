@@ -861,7 +861,7 @@ Reading 3D Data from NEURON
          
         pt3d information is stored as 32 bit floating point numbers. These
         numbers have about 7 decimal digits of resolution. In contrast, most
-        other values in NEURON are double precision and have about 17 decimal
+        other values in NEURON are double precision and have about 16 decimal
         digits of resolution. Thus values of diam which do not happen to have
         exact single precision representation, can change slightly in the
         process of translating from diam to 3-d points and then back to diam.
