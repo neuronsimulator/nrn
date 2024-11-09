@@ -1,6 +1,5 @@
 add_library(
   nrngnu STATIC
-  ACG.cpp
   Binomial.cpp
   DiscUnif.cpp
   Erlang.cpp
@@ -11,6 +10,7 @@ add_library(
   mcran4.cpp
   NegExp.cpp
   Normal.cpp
+  NrnRandom123RNG.cpp
   nrnran123.cpp
   Poisson.cpp
   Rand.cpp

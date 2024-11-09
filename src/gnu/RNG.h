@@ -35,7 +35,7 @@ union PrivateRNGDoubleType {		   	// used to access doubles as unsigneds
 };
 
 //
-// Base class for Random Number Generators. See ACG for instances.
+// Base class for Random Number Generators.
 //
 class RNG {
     static PrivateRNGSingleType singleMantissa;	// mantissa bit vector
