@@ -50,7 +50,7 @@ class Geometric: public Random {
 public:
     Geometric(double mean, RNG *gen)
         : Random(gen)
-        , d(mean)
+        , d(1 / (mean + 1))
     {}
 
     double operator()() {
