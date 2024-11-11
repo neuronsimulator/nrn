@@ -18,7 +18,7 @@
 namespace nb = nanobind;
 
 static char* nrnpyerr_str();
-static nb::object nrnpy_pyCallObject(nb::callable, PyObject*);
+static nb::object nrnpy_pyCallObject(nb::callable, nb::object);
 static PyObject* main_module;
 static PyObject* main_namespace;
 
@@ -46,7 +46,7 @@ static void call_python_with_section(Object* pyact, Section* sec) {
     nanobind::gil_scoped_acquire lock{};
 
     nb::tuple args = nb::make_tuple(reinterpret_cast<PyObject*>(newpysechelp(sec)));
-    nb::object r = nrnpy_pyCallObject(po, args.ptr());
+    nb::object r = nrnpy_pyCallObject(po, args);
     if (!r.is_valid()) {
         char* mes = nrnpyerr_str();
         if (mes) {
@@ -106,12 +106,13 @@ Object* nrnpy_pyobject_in_obj(PyObject* po) {
     return on;
 }
 
-static nb::object nrnpy_pyCallObject(nb::callable callable, PyObject* args) {
+static nb::object nrnpy_pyCallObject(nb::callable callable, nb::object args) {
     // When hoc calls a PythonObject method, then in case python
     // calls something back in hoc, the hoc interpreter must be
     // at the top level
     HocTopContextSet
-    PyObject* p = PyObject_CallObject(callable.ptr(), args);
+    nb::tuple tup(args);
+    nb::object p = nb::steal(PyObject_CallObject(callable.ptr(), tup.ptr()));
 #if 0
 printf("PyObject_CallObject callable\n");
 PyObject_Print(callable, stdout, 0);
@@ -139,7 +140,7 @@ printf("\nreturn %p\n", p);
       }
     }
     **/
-    return nb::steal(p);
+    return p;
 }
 
 static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
@@ -176,28 +177,22 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         PyErr_Print();
         hoc_execerror("No attribute:", sym->name);
     }
-    PyObject* args = 0;
     Object* on;
     PyObject* result = 0;
     if (isfunc) {
-        args = PyTuple_New(nindex);
+        nb::list args{};
         for (i = 0; i < nindex; ++i) {
-            PyObject* arg = nrnpy_hoc_pop("isfunc py2n_component");
+            nb::object arg = nb::steal(nrnpy_hoc_pop("isfunc py2n_component"));
             if (!arg) {
                 PyErr2NRNString e;
                 e.get_pyerr();
-                Py_DECREF(args);
                 hoc_execerr_ext("arg %d error: %s", i, e.c_str());
             }
-            // PyObject_Print(arg, stdout, 0);
-            // printf(" %d   arg %d\n", arg->ob_refcnt,  i);
-            if (PyTuple_SetItem(args, nindex - 1 - i, arg)) {
-                assert(0);
-            }
+            args.append(arg);
         }
+        args.reverse();
         // printf("PyObject_CallObject %s %p\n", sym->name, tail);
         result = nrnpy_pyCallObject(nb::borrow<nb::callable>(tail), args).release().ptr();
-        Py_DECREF(args);
         // PyObject_Print(result, stdout, 0);
         // printf("  result of call\n");
         if (!result) {
@@ -215,7 +210,7 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             return;
         }
     } else if (nindex) {
-        PyObject* arg;
+        nb::object arg;
         int n = hoc_pop_ndim();
         if (n > 1) {
             hoc_execerr_ext(
@@ -225,15 +220,15 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
                 n);
         }
         if (hoc_stack_type() == NUMBER) {
-            arg = Py_BuildValue("l", (long) hoc_xpop());
+            arg = nb::int_((long) hoc_xpop());
         } else {
             // I don't think it is syntactically possible
             // for this to be a VAR. It is possible for it to
             // be an Object but the GetItem below will raise
             // TypeError: list indices must be integers or slices, not hoc.HocObject
-            arg = nrnpy_hoc_pop("nindex py2n_component");
+            arg = nb::steal(nrnpy_hoc_pop("nindex py2n_component"));
         }
-        result = PyObject_GetItem(tail, arg);
+        result = PyObject_GetItem(tail, arg.ptr());
         if (!result) {
             PyErr_Print();
             hoc_execerror("Python get item failed:", hoc_object_name(ob));
@@ -333,9 +328,9 @@ static nb::object hoccommand_exec_help1(nb::object po) {
         if (!nb::tuple::check_(args)) {
             args = nb::make_tuple(args);
         }
-        return nrnpy_pyCallObject(po[0], args.ptr());
+        return nrnpy_pyCallObject(po[0], args);
     } else {
-        return nrnpy_pyCallObject(nb::borrow<nb::callable>(po), nb::tuple().ptr());
+        return nrnpy_pyCallObject(nb::borrow<nb::callable>(po), nb::tuple());
     }
 }
 
@@ -417,7 +412,7 @@ static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
     nanobind::gil_scoped_acquire lock{};
 
     nb::tuple args = nb::make_tuple(type, x, y, key);
-    nb::object r = nrnpy_pyCallObject(po, args.ptr());
+    nb::object r = nrnpy_pyCallObject(po, args);
     if (!r.is_valid()) {
         char* mes = nrnpyerr_str();
         if (mes) {
@@ -467,24 +462,17 @@ static double func_call(Object* ho, int narg, int* err) {
     nb::callable po = nb::borrow<nb::callable>(((Py2Nrn*) ho->u.this_pointer)->po_);
     nanobind::gil_scoped_acquire lock{};
 
-    PyObject* args = PyTuple_New((Py_ssize_t) narg);
-    if (args == NULL) {
-        hoc_execerror("PyTuple_New failed", 0);
-    }
+    nb::list args{};
     for (int i = 0; i < narg; ++i) {
-        PyObject* item = nrnpy_hoc_pop("func_call");
-        if (item == NULL) {
-            Py_XDECREF(args);
+        nb::object item = nb::steal(nrnpy_hoc_pop("func_call"));
+        if (!item) {
             hoc_execerror("nrnpy_hoc_pop failed", 0);
         }
-        if (PyTuple_SetItem(args, (Py_ssize_t) (narg - i - 1), item) != 0) {
-            Py_XDECREF(args);
-            hoc_execerror("PyTuple_SetItem failed", 0);
-        }
+        args.append(item);
     }
+    args.reverse();
 
     nb::object r = nrnpy_pyCallObject(po, args);
-    Py_XDECREF(args);
     double rval = 0.0;
     if (!r.is_valid()) {
         if (!err || *err) {
@@ -898,7 +886,6 @@ static Object* py_alltoall_type(int size, int type) {
         std::vector<char> s{};
         std::vector<int> scnt{};
         int* sdispl = NULL;
-        char* r = NULL;
         int* rcnt = NULL;
         int* rdispl = NULL;
 

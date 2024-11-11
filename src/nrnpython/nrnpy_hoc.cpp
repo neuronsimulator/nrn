@@ -21,7 +21,6 @@
 #include <unordered_map>
 
 #include <nanobind/nanobind.h>
-
 namespace nb = nanobind;
 
 extern PyTypeObject* psection_type;
@@ -140,14 +139,6 @@ static int hocclass_init(hocclass* cls, PyObject* args, PyObject* kwds) {
         return -1;
     }
     return 0;
-}
-
-static PyObject* pytype_getname(PyTypeObject* pto) {
-#if PY_VERSION_HEX >= 0x030B0000  // since python-3.11
-    return PyType_GetName(pto);
-#else
-    return PyObject_GetAttrString((PyObject*) pto, "__name__");
-#endif
 }
 
 static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {

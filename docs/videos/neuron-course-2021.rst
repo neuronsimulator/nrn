@@ -149,7 +149,7 @@ Topics:
 
 - synapses, spike-triggered transmission, :class:`NetCon`
 - artificial spiking cells (:class:`IntFire1`, :class:`IntFire2`, :class:`IntFire4`)
-- Forward Euler vs Backward Euler vs Crank-Nicholson; fixed step vs variable step
+- Forward Euler vs Backward Euler vs Crank-Nicolson; fixed step vs variable step
 
 .. raw:: html
 
