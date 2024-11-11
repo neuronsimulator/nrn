@@ -92,7 +92,7 @@ workflows:
                 - /circleci\/.*/
           matrix:
             parameters:
-              NRN_PYTHON_VERSION: ["312"]
+              NRN_PYTHON_VERSION: ["38"]
               NRN_NIGHTLY_UPLOAD: ["false"]
 
   nightly:
