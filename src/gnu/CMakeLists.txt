@@ -1,6 +1,5 @@
 add_library(
   nrngnu STATIC
-  Erlang.cpp
   HypGeom.cpp
   MCellRan4RNG.cpp
   mcran4.cpp
@@ -9,8 +8,7 @@ add_library(
   Rand.cpp
   Random.cpp
   RndInt.cpp
-  RNG.cpp
-  Weibull.cpp)
+  RNG.cpp)
 set_property(TARGET nrngnu PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(nrngnu SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/external/Random123/include")
 target_compile_definitions(nrngnu PRIVATE ${NRN_R123_COMPILE_DEFS})

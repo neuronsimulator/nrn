@@ -31,6 +31,25 @@ private:
     std::uniform_int_distribution<> d;
 };
 
+class Erlang: public Random {
+public:
+    Erlang(double mean, double variance, RNG *gen)
+        : Random(gen)
+    {
+        int a = int((mean * mean) / variance + 0.5);
+        a = a > 0 ? a : 1;
+        int b = mean / a;
+        d = std::gamma_distribution<>(a, b);
+    }
+
+    double operator()() {
+        return d(*generator());
+    }
+
+private:
+    std::gamma_distribution<> d;
+};
+
 class Geometric: public Random {
 public:
     Geometric(double mean, RNG *gen)
@@ -63,7 +82,7 @@ class NegativeExpntl: public Random {
 public:
     NegativeExpntl(double mean, RNG *gen)
         : Random(gen)
-        , d(mean)
+        , d(1 / mean)
     {}
 
     double operator()() {
@@ -117,5 +136,20 @@ public:
 
 private:
     std::uniform_int_distribution<> d;
+};
+
+class Weibull: public Random {
+public:
+    Weibull(double alpha, double beta, RNG *gen)
+        : Random(gen)
+        , d(alpha, beta)
+    {}
+
+    double operator()() {
+        return d(*generator());
+    }
+
+private:
+    std::weibull_distribution<> d;
 };
 

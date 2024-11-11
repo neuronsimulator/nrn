@@ -18,10 +18,8 @@
 
 #include <Random.h>
 #include <distributions.hpp>
-#include <Erlang.h>
 #include <RndInt.h>
 #include <HypGeom.h>
-#include <Weibull.h>
 #include <NrnRandom123RNG.hpp>
 #include <MCellRan4RNG.hpp>
 
