@@ -16,7 +16,6 @@
 #include "ocobserv.h"
 #include <nrnran123.h>
 
-#include <ACG.h>
 #include <Random.h>
 #include <Poisson.h>
 #include <Normal.h>
@@ -103,33 +102,6 @@ static void r_destruct(void* r) {
     delete (Rand*) r;
 }
 
-// Use a variant of the Linear Congruential Generator (algorithm M)
-// described in Knuth, Art of Computer Programming, Vol. III in
-// combination with a Fibonacci Additive Congruential Generator.
-// This is a "very high quality" random number generator,
-// Default size is 55, giving a size of 1244 bytes to the structure
-// minimum size is 7 (total 100 bytes), maximum size is 98 (total 2440 bytes)
-// syntax:
-// r.ACG([seed],[size])
-
-static double r_ACG(void* r) {
-    Rand* x = (Rand*) r;
-
-    unsigned long seed = 0;
-    int size = 55;
-
-    if (ifarg(1))
-        seed = long(*getarg(1));
-    if (ifarg(2))
-        size = int(chkarg(2, 7, 98));
-
-    x->rand->generator(new ACG(seed, size));
-    x->type_ = 0;
-    delete x->gen;
-    x->gen = x->rand->generator();
-    return 1.;
-}
-
 static double r_MCellRan4(void* r) {
     Rand* x = (Rand*) r;
 
@@ -202,11 +174,6 @@ static double r_ran123_globalindex(void* r) {
 
 static double r_sequence(void* r) {
     Rand* x = (Rand*) r;
-    if (x->type_ != 2 && x->type_ != 4) {
-        hoc_execerror(
-            "Random.seq() can only be used if the random generator was MCellRan4 or Random123", 0);
-    }
-
     if (x->type_ == 4) {
         uint32_t seq;
         char which;
@@ -439,8 +406,7 @@ extern "C" void nrn_random_play() {
 }
 
 
-static Member_func r_members[] = {{"ACG", r_ACG},
-                                  {"MCellRan4", r_MCellRan4},
+static Member_func r_members[] = {{"MCellRan4", r_MCellRan4},
                                   {"Random123", r_nrnran123},
                                   {"Random123_globalindex", r_ran123_globalindex},
                                   {"seq", r_sequence},
