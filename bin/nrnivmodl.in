@@ -191,7 +191,7 @@ ${base_name// /\\ }.cpp: ${f}.mod \$(NOCMODL)
 
 ./${base_name// /\\ }.o: ${base_name// /\\ }.cpp
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) ${PWD}/\$<\\\n\"
-	\$(CXXCOMPILE) -I\"$dir_name\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -DNRN_ENABLE_ARCH_INDEP_EXP_POW=@NRN_ENABLE_ARCH_INDEP_EXP_POW@ -c \"${PWD}/\$<\" -o \$@
+	\$(CXXCOMPILE) -I\"$dir_name\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \"${PWD}/\$<\" -o \$@
 " >> "$MODMAKE"
 done
 

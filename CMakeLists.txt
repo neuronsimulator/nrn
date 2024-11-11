@@ -93,11 +93,6 @@ option(
   NRN_ENABLE_ARCH_INDEP_EXP_POW
   "Provides use_exp_pow_precision(style) function so that exp and pow produce same results on all platforms"
   ${NRN_ENABLE_ARCH_INDEP_EXP_POW_DEFAULT})
-if (NRN_ENABLE_ARCH_INDEP_EXP_POW)
-    set(NRN_ENABLE_ARCH_INDEP_EXP_POW 1)
-else()
-    set(NRN_ENABLE_ARCH_INDEP_EXP_POW 0)
-endif()
 # This can be helpful in very specific CI build configurations, where ccache is used *and* different
 # CI builds are built under different directories.
 option(NRN_AVOID_ABSOLUTE_PATHS
