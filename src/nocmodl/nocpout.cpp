@@ -256,8 +256,10 @@ void parout() {
 \n#if !NRNGPU\
 \n#undef exp\
 \n#define exp hoc_Exp\
+\n#if NRN_ENABLE_ARCH_INDEP_EXP_POW\
 \n#undef pow\
 \n#define pow hoc_pow\
+\n#endif\
 \n#endif\n\
 ");
     if (protect_include_) {
