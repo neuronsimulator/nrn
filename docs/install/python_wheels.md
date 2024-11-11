@@ -298,7 +298,7 @@ $ git diff
 ```
 
 The reason we are setting `SETUPTOOLS_SCM_PRETEND_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
-`NEURON_WHEEL_VERSION` will also stop your wheels from getting extra numbers on the version
+`SETUPTOOLS_SCM_PRETEND_VERSION` will also stop your wheels from getting extra numbers on the version.
 
 
 ## Nightly wheels
