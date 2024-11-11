@@ -38,9 +38,9 @@ jobs:
           path: ./wheelhouse
           destination: artifacts
 
-	  - run:
-		  name: Setup Environment Variables
-		  command: |
+      - run:
+          name: Setup Environment Variables
+          command: |
             echo 'RDMAV_FORK_SAFE=1' >> "$BASH_ENV"
 
       - run:
