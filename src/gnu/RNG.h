@@ -39,11 +39,11 @@ union PrivateRNGDoubleType {		   	// used to access doubles as unsigneds
 // Base class for Random Number Generators.
 //
 class RNG {
-    using result_type = std::uint32_t;
-
     static PrivateRNGSingleType singleMantissa;	// mantissa bit vector
     static PrivateRNGDoubleType doubleMantissa;	// mantissa bit vector
 public:
+    using result_type = std::uint32_t;
+
     RNG();
     virtual ~RNG();
     //
@@ -57,10 +57,10 @@ public:
     virtual float asFloat();
     virtual double asDouble();
 
-    result_type min() {
+    static constexpr result_type min() {
         return std::numeric_limits<result_type>::min();
     }
-    result_type max() {
+    static constexpr result_type max() {
         return std::numeric_limits<result_type>::max();
     }
     result_type operator()() {

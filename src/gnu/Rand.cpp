@@ -1,7 +1,7 @@
 #include "Rand.hpp"
 
 #include "NrnRandom123RNG.hpp"
-#include "Normal.h"
+#include "distributions.hpp"
 
 Rand::Rand(unsigned long seed, int size, Object* obj) {
     // printf("Rand\n");

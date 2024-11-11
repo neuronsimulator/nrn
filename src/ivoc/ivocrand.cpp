@@ -17,15 +17,8 @@
 #include <nrnran123.h>
 
 #include <Random.h>
-#include <Poisson.h>
-#include <Normal.h>
-#include <Uniform.h>
-#include <Binomial.h>
-#include <DiscUnif.h>
+#include <distributions.hpp>
 #include <Erlang.h>
-#include <Geom.h>
-#include <LogNorm.h>
-#include <NegExp.h>
 #include <RndInt.h>
 #include <HypGeom.h>
 #include <Weibull.h>
