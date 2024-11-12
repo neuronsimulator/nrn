@@ -138,7 +138,7 @@ class Weibull: public Random {
 public:
     Weibull(double alpha, double beta, RNG *gen)
         : Random(gen)
-        , d(alpha, beta)
+        , d(alpha, std::pow(beta, 1 / alpha))
     {}
 
     double operator()() override {
