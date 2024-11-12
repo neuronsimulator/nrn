@@ -64,7 +64,7 @@ class LogNormal: public Random {
 public:
     LogNormal(double mean, double variance, RNG *gen)
         : Random(gen)
-        , d(std::log(mean * mean / std::sqrt(variance + (mean * mean))), std::sqrt(std::log(variance + (mean * mean)) / (mean * mean)))
+        , d(std::log(mean * mean / std::sqrt(variance + (mean * mean))), std::sqrt(std::log(variance/(mean * mean) + 1)))
     {}
 
     double operator()() {
