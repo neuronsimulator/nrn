@@ -51,8 +51,7 @@ endif()
 # * nrnpy_EXECUTABLE
 # * nrnpy_INCLUDES
 # * nrnpy_LIBRARIES
-# * nrnpy_VERSION_MAJOR
-# * nrnpy_VERSION_MINOR
+# * nrnpy_VERSION
 #
 # If NRN_ENABLE_PYTHON is *not* set then only nrnpy_EXECUTABLE will be set. There is some special
 # handling on macOS when sanitizers are enabled:
@@ -73,7 +72,7 @@ function(nrn_find_python)
     message(FATAL_ERROR "${opt_KEYWORDS_MISSING_VALUES} values are required")
   endif()
   if(NOT IS_ABSOLUTE "${opt_NAME}")
-    # Find the full path to ${opt_NAME} as Python3_EXECUTABLE does not accept relative paths.
+    # Find the full path to ${opt_NAME} as Python_EXECUTABLE does not accept relative paths.
     find_program(
       "${opt_NAME}_full" "${opt_NAME}"
       PATHS ENV PATH
@@ -88,14 +87,14 @@ function(nrn_find_python)
   endif()
   # Only bother finding version/include/library information if NRN_ENABLE_PYTHON is set.
   if(NRN_ENABLE_PYTHON)
-    # Run find_package(Python3 ...) in a subprocess, so there is no pollution of CMakeCache.txt and
+    # Run find_package(Python ...) in a subprocess, so there is no pollution of CMakeCache.txt and
     # so on. Our desire to include multiple Python versions in one build means we have to handle
     # lists of versions/libraries/... manually. Unfortunately one cannot safely use find_package in
     # CMake script mode, so we configure an extra project.
     string(SHA1 pyexe_hash "${opt_NAME}")
     string(SUBSTRING "${pyexe_hash}" 0 6 pyexe_hash)
     # Which attributes we're trying to learn about this Python
-    set(python_vars Python3_INCLUDE_DIRS Python3_VERSION_MAJOR Python3_VERSION_MINOR)
+    set(python_vars Python_INCLUDE_DIRS Python_VERSION)
     if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_LINK_AGAINST_PYTHON)
       # Do not link against Python, so we don't need the library -- just as well, it's not available
       # in manylinux
@@ -106,15 +105,15 @@ function(nrn_find_python)
         )
       endif()
       set(dev_component "Development.Module")
-      set(Python3_LIBRARIES "do-not-link-against-libpython-in-dynamic-python-builds")
+      set(Python_LIBRARIES "do-not-link-against-libpython-in-dynamic-python-builds")
     else()
       set(dev_component "Development")
-      list(APPEND python_vars Python3_LIBRARIES)
+      list(APPEND python_vars Python_LIBRARIES)
     endif()
     execute_process(
       COMMAND
-        ${CMAKE_COMMAND} "-DPython3_EXECUTABLE:STRING=${opt_NAME}"
-        "-DPython3_COMPONENTS=${dev_component};Interpreter" -S
+        ${CMAKE_COMMAND} "-DPython_EXECUTABLE:STRING=${opt_NAME}"
+        "-DPython_COMPONENTS=${dev_component};Interpreter" -S
         ${CMAKE_SOURCE_DIR}/cmake/ExecuteFindPython -B
         ${CMAKE_BINARY_DIR}/ExecuteFindPython_${pyexe_hash}
       RESULT_VARIABLE result
@@ -133,16 +132,13 @@ function(nrn_find_python)
       set(${var} "${CMAKE_MATCH_1}")
     endforeach()
     set("${opt_PREFIX}_INCLUDES"
-        "${Python3_INCLUDE_DIRS}"
+        "${Python_INCLUDE_DIRS}"
         PARENT_SCOPE)
     set("${opt_PREFIX}_LIBRARIES"
-        "${Python3_LIBRARIES}"
+        "${Python_LIBRARIES}"
         PARENT_SCOPE)
-    set("${opt_PREFIX}_VERSION_MAJOR"
-        "${Python3_VERSION_MAJOR}"
-        PARENT_SCOPE)
-    set("${opt_PREFIX}_VERSION_MINOR"
-        "${Python3_VERSION_MINOR}"
+    set("${opt_PREFIX}_VERSION"
+        "${Python_VERSION}"
         PARENT_SCOPE)
   endif()
   # Finally do our special treatment for macOS + sanitizers
@@ -182,6 +178,15 @@ function(nrn_find_python)
       PARENT_SCOPE)
 endfunction()
 
+# Check if Python from Conda is being used on MacOS
+if(NRN_MACOS_BUILD)
+  string(FIND "${PYTHON_EXECUTABLE}" "/anaconda" anaconda_found)
+  string(FIND "${PYTHON_EXECUTABLE}" "/miniconda" miniconda_found)
+  if(anaconda_found GREATER -1 OR miniconda_found GREATER -1)
+    set(NRN_WITH_MACOS_CONDA_PYTHON TRUE)
+  endif()
+endif()
+
 # For each Python in NRN_PYTHON_EXECUTABLES, find its version number, its include directory, and its
 # library path. Store those in the new lists NRN_PYTHON_VERSIONS, NRN_PYTHON_INCLUDES and
 # NRN_PYTHON_LIBRARIES. Set NRN_PYTHON_COUNT to be the length of those lists, and
@@ -195,7 +200,6 @@ foreach(pyexe ${python_executables})
   nrn_find_python(NAME "${pyexe}" PREFIX nrnpy)
   if(NRN_ENABLE_PYTHON)
     # If NRN_ENABLE_PYTHON=OFF then we're only using Python to run build scripts etc.
-    set(nrnpy_VERSION "${nrnpy_VERSION_MAJOR}.${nrnpy_VERSION_MINOR}")
     if(${nrnpy_VERSION} VERSION_LESS NRN_MINIMUM_PYTHON_VERSION)
       message(FATAL_ERROR "${pyexe} too old (${nrnpy_VERSION} < ${NRN_MINIMUM_PYTHON_VERSION})")
     endif()
@@ -207,7 +211,7 @@ foreach(pyexe ${python_executables})
       message(FATAL_ERROR "Cannot handle multiple Python include dirs: ${nrnpy_INCLUDES}")
     endif()
     if(NOT num_lib_dirs EQUAL 1)
-      message(FATAL_ERROR "Cannot handle multiple Python libraries: ${Python3_LIBRARIES}")
+      message(FATAL_ERROR "Cannot handle multiple Python libraries: ${Python_LIBRARIES}")
     endif()
     if(nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
       # We cannot build against multiple copies of the same pythonX.Y version.
@@ -236,7 +240,6 @@ if(NRN_ENABLE_TESTS AND NRN_ENABLE_PYTHON)
   set(NRN_PYTHON_EXTRA_FOR_TESTS_VERSIONS)
   foreach(pyexe ${NRN_PYTHON_EXTRA_FOR_TESTS})
     nrn_find_python(NAME "${pyexe}" PREFIX nrnpy)
-    set(nrnpy_VERSION "${nrnpy_VERSION_MAJOR}.${nrnpy_VERSION_MINOR}")
     if(nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
       string(JOIN ", " versions ${NRN_PYTHON_VERSIONS})
       message(FATAL_ERROR "NRN_PYTHON_EXTRA_FOR_TESTS=${NRN_PYTHON_EXTRA_FOR_TESTS} cannot contain"

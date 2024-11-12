@@ -28,6 +28,11 @@ pip3 install -r docs/docs_requirements.txt --upgrade
 
 Also, make sure to have `Doxygen` and `pandoc` installed, and the dependencies listed in [conda_environment.yml](conda_environment.yml)
 Note that this conda environment file is tailored to the online ReadTheDocs setup (but it lists out all desired requirements, so make sure to check it out).
+On Mac, you can install these packages using `brew`:
+
+```bash
+brew install doxygen pandoc
+```
 
 #### Anaconda environment
 

@@ -25,11 +25,12 @@ pointer-overflow:coreneuron::net_receive_NetStim(coreneuron::Point_process*, int
 pointer-overflow:coreneuron::_net_receive__VecStim(coreneuron::Point_process*, int, double)
 pointer-overflow:NonLinImpRep::current(int, Memb_list*, int)
 pointer-overflow:pr_realcell(PreSyn&, NrnThread&, _IO_FILE*)
-shift-base:ACG::asLong()
 shift-base:nrnRan4int
 unsigned-integer-overflow:_philox4x32bumpkey(r123array2x32)
 unsigned-integer-overflow:coreneuron::nrnran123_deletestream(coreneuron::nrnran123_State*, bool)
 unsigned-integer-overflow:coreneuron::nrnran123_newstream3(unsigned int, unsigned int, unsigned int, bool)
+unsigned-integer-overflow:Py_INCREF(_object*)
+unsigned-integer-overflow:fmt::*
 vptr:NetCon::disconnect(ivObservable*)
 vptr:ObjObservable::object()
 vptr:PreSyn::disconnect(ivObservable*)

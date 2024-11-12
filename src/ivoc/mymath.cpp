@@ -1,3 +1,7 @@
+#ifndef __INTEL_LLVM_COMPILER
+#pragma STDC FENV_ACCESS ON
+#endif
+
 #include <../../nrnconf.h>
 #include <InterViews/geometry.h>
 #include "mymath.h"
@@ -69,7 +73,7 @@ static void* cons(Object*) {
 static void destruct(void*) {}
 
 void GUIMath_reg() {
-    class2oc("GUIMath", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("GUIMath", cons, destruct, members, NULL, NULL);
 }
 
 double MyMath::anint(double x) {

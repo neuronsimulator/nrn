@@ -4,7 +4,7 @@
 #include <string.h>
 #include "grids.h"
 #include "rxd.h"
-#include <nrnwrap_Python.h>
+#include "nrnwrap_Python.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -14,21 +14,20 @@
 extern int NUM_THREADS;
 extern TaskQueue* AllTasks;
 extern double* states;
-const int ICS_PREFETCH = 3;
 
 /*
  * Sets the data to be used by the grids for 1D/3D hybrid models
  */
-extern "C" void set_hybrid_data(int64_t* num_1d_indices_per_grid,
-                                int64_t* num_3d_indices_per_grid,
-                                int64_t* hybrid_indices1d,
-                                int64_t* hybrid_indices3d,
-                                int64_t* num_3d_indices_per_1d_seg,
-                                int64_t* hybrid_grid_ids,
-                                double* rates,
-                                double* volumes1d,
-                                double* volumes3d,
-                                double* dxs) {
+extern "C" NRN_EXPORT void set_hybrid_data(int64_t* num_1d_indices_per_grid,
+                                           int64_t* num_3d_indices_per_grid,
+                                           int64_t* hybrid_indices1d,
+                                           int64_t* hybrid_indices3d,
+                                           int64_t* num_3d_indices_per_1d_seg,
+                                           int64_t* hybrid_grid_ids,
+                                           double* rates,
+                                           double* volumes1d,
+                                           double* volumes3d,
+                                           double* dxs) {
     Grid_node* grid;
     int i, j, k, id;
     int grid_id_check = 0;

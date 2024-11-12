@@ -42,6 +42,8 @@ void iv_display_scale(float);
 #include <IV-X11/ivx11_dynam.h>
 #endif
 
+#include "utils/logger.hpp"
+
 #if 1
 void pr_profile();
 #define PR_PROFILE pr_profile();
@@ -121,7 +123,6 @@ static OptionDesc options[] = {{"-dismissbutton", "*dismiss_button", OptionValue
                                {"-hidewinio", "*showwinio", OptionValueImplicit, "off"},
                                {"-isatty", "*isatty", OptionValueImplicit, "1"},
                                {"-notatty", "*isatty", OptionValueImplicit, "-1"},
-                               {"-neosim", "*neosim", OptionValueImplicit, "on"},
                                {"-bbs_nhost", "*bbs_nhost", OptionValueNext},
                                {"-NSTACK", "*NSTACK", OptionValueNext},
                                {"-NFRAME", "*NFRAME", OptionValueNext},
@@ -222,7 +223,6 @@ const char* path_prefix_to_libnrniv() {
 
 int ivocmain(int, const char**, const char**);
 int ivocmain_session(int, const char**, const char**, int start_session);
-int (*p_neosim_main)(int, const char**, const char**);
 extern int nrn_global_argc;
 extern const char** nrn_global_argv;
 int always_false;
@@ -231,15 +231,8 @@ extern void hoc_nrnmpi_init();
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
 extern std::string nrnmpi_load();
+void nrnmpi_load_or_exit();
 #endif
-
-// some things are defined in libraries earlier than they are used so...
-#include <nrnisaac.h>
-static void force_load() {
-    if (always_false) {
-        nrnisaac_new();
-    }
-}
 
 #ifdef MINGW
 // see iv/src/OS/directory.cpp
@@ -313,7 +306,7 @@ void hoc_nrnmpi_init() {
         nrnmpi_stubs();
         auto const pmes = nrnmpi_load();
         if (!pmes.empty()) {
-            std::cout << pmes << std::endl;
+            Printf(fmt::format("{}\n", pmes).c_str());
         }
 #endif
 
@@ -381,7 +374,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     // extern char** environ;
     int i;
     //	prargs("at beginning", argc, argv);
-    force_load();
     nrn_global_argc = argc;
     // https://en.cppreference.com/w/cpp/language/main_function, note that argv is
     // of length argc + 1 and argv[argc] is null.
@@ -545,20 +537,20 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     session = new Session("NEURON", our_argc, our_argv, options, properties);
 #else
 #if defined(WIN32)
-    IFGUI
-    session = new Session("NEURON", our_argc, (char**) our_argv, options, properties);
-    ENDGUI
-#else
-    IFGUI
-    if (getenv("DISPLAY")) {
+    if (hoc_usegui) {
         session = new Session("NEURON", our_argc, (char**) our_argv, options, properties);
-    } else {
-        fprintf(stderr,
-                "Warning: no DISPLAY environment variable.\
-\n--No graphics will be displayed.\n");
-        hoc_usegui = 0;
     }
-    ENDGUI
+#else
+    if (hoc_usegui) {
+        if (getenv("DISPLAY")) {
+            session = new Session("NEURON", our_argc, (char**) our_argv, options, properties);
+        } else {
+            fprintf(stderr,
+                    "Warning: no DISPLAY environment variable.\
+\n--No graphics will be displayed.\n");
+            hoc_usegui = 0;
+        }
+    }
 #endif
     auto const nrn_props_size = strlen(neuron_home) + 20;
     char* nrn_props = new char[nrn_props_size];
@@ -600,11 +592,11 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     if (session) {
         session->style()->find_attribute("NSTACK", hoc_nstack);
         session->style()->find_attribute("NFRAME", hoc_nframe);
-        IFGUI
-        if (session->style()->value_is_on("err_dialog")) {
-            nrn_err_dialog_active_ = 1;
+        if (hoc_usegui) {
+            if (session->style()->value_is_on("err_dialog")) {
+                nrn_err_dialog_active_ = 1;
+            }
         }
-        ENDGUI
     } else
 #endif  // HAVE_IV
     {
@@ -638,15 +630,15 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 #endif  // USE_PYTHON
 
 #if defined(WIN32) && HAVE_IV
-    IFGUI
-    double scale = 1.;
-    int pw = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-    if (pw < 1100) {
-        scale = 1200. / double(pw);
+    if (hoc_usegui) {
+        double scale = 1.;
+        int pw = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+        if (pw < 1100) {
+            scale = 1200. / double(pw);
+        }
+        session->style()->find_attribute("mswin_scale", scale);
+        iv_display_scale(float(scale));
     }
-    session->style()->find_attribute("mswin_scale", scale);
-    iv_display_scale(float(scale));
-    ENDGUI
 #endif
 
     // just eliminate from arg list
@@ -746,17 +738,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     } else {
         return 0;
     }
-#if HAVE_IV
-    if (session && session->style()->value_is_on("neosim")) {
-        if (p_neosim_main) {
-            (*p_neosim_main)(argc, argv, env);
-        } else {
-            printf(
-                "neosim not available.\nModify nrn/src/nrniv/Imakefile and remove "
-                "nrniv/$CPU/netcvode.o\n");
-        }
-    }
-#endif
     PR_PROFILE
 #if defined(USE_PYTHON)
     if (use_python_interpreter) {
@@ -789,11 +770,11 @@ extern void hoc_ret(), hoc_pushx(double);
 
 void hoc_single_event_run() {
 #if HAVE_IV
-    IFGUI
-    void single_event_run();
+    if (hoc_usegui) {
+        void single_event_run();
 
-    single_event_run();
-    ENDGUI
+        single_event_run();
+    }
 #endif
     hoc_ret();
     hoc_pushx(1.);
@@ -805,3 +786,28 @@ int run_til_stdin() {
 }
 void hoc_notify_value() {}
 #endif
+
+
+/// A top-level initialization of MPI given argc and argv.
+/// Sets stubs, load dyn lib, and initializes
+std::tuple<int, const char**> nrn_mpi_setup(int argc, const char** argv) {
+#if defined(AUTO_DLOPEN_NRNMECH) && AUTO_DLOPEN_NRNMECH == 0
+    extern int nrn_noauto_dlopen_nrnmech;
+    nrn_noauto_dlopen_nrnmech = 1;
+#endif
+
+#if NRNMPI
+#if NRNMPI_DYNAMICLOAD
+    nrnmpi_stubs();
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp("-mpi", argv[i]) == 0) {
+            nrnmpi_load_or_exit();
+            break;
+        }
+    }
+#endif                                           // NRNMPI_DYNAMICLOAD
+    auto argv_ptr = const_cast<char***>(&argv);  // safe if individual strings not modified
+    nrnmpi_init(1, &argc, argv_ptr);             // may change argc and argv
+#endif                                           // NRNMPI
+    return {argc, argv};
+}

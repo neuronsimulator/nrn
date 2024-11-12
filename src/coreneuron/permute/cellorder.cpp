@@ -388,17 +388,14 @@ std::vector<int> interleave_order(int ith, int ncell, int nnode, int* parent) {
         }
         if (ith == 0) {
             // needed for print_quality[12] and done once here to save time
-#if CORENRN_BUILD
-            int* p = new int[nnode];
-#else
             std::vector<int> p(nnode);
-#endif
+
             for (int i = 0; i < nnode; ++i) {
                 p[i] = parent[i];
             }
 #if CORENRN_BUILD
-            permute_ptr(p, nnode, order);
-            node_permute(p, nnode, order);
+            permute_ptr(p.data(), p.size(), order);
+            node_permute(p.data(), p.size(), order);
 #else
             forward_permute(p, order);
             update_parent_index(p.data(), p.size(), order);
@@ -411,23 +408,12 @@ std::vector<int> interleave_order(int ith, int ncell, int nnode, int* parent) {
             ii.child_race = new size_t[nwarp];
             for (int i = 0; i < nwarp; ++i) {
                 if (interleave_permute_type == 1) {
-#if CORENRN_BUILD
-                    print_quality1(i, interleave_info[ith], ncell, p);
-#else
                     print_quality1(i, interleave_info[ith], ncell, p.data());
-#endif
                 }
                 if (interleave_permute_type == 2) {
-#if CORENRN_BUILD
-                    print_quality2(i, interleave_info[ith], p);
-#else
                     print_quality2(i, interleave_info[ith], p.data());
-#endif
                 }
             }
-#if CORENRN_BUILD
-            delete[] p;
-#endif
             warp_balance(ith, interleave_info[ith]);
         }
     }

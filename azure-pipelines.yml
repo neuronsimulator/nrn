@@ -85,7 +85,7 @@ stages:
     - job: 'MacOSWheels'
       timeoutInMinutes: 60
       pool:
-        vmImage: 'macOS-12'
+        vmImage: 'macOS-13'
       strategy:
         matrix:
           Python38:
@@ -148,8 +148,8 @@ stages:
           export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
           export NRN_BUILD_FOR_UPLOAD=1
-          sudo mkdir /opt/nrnwheel
-          sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/
+          sudo mkdir -p /opt/nrnwheel/$(uname -m)
+          sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/$(uname -m)
           packaging/python/build_wheels.bash osx $(python.version) coreneuron
         displayName: 'Build MacOS Wheel'
 

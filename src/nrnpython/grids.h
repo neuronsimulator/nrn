@@ -11,11 +11,6 @@ and Flux_pair structs and their respective functions
 #include "nrn_pyhocobject.h"
 #include "nrnwrap_Python.h"
 
-#define SAFE_FREE(ptr)     \
-    {                      \
-        if ((ptr) != NULL) \
-            free(ptr);     \
-    }
 #define IDX(x, y, z)    ((z) + (y) *g->size_z + (x) *g->size_z * g->size_y)
 #define INDEX(x, y, z)  ((z) + (y) *grid->size_z + (x) *grid->size_z * grid->size_y)
 #define ALPHA(x, y, z)  (g->get_alpha(g->alpha, IDX(x, y, z)))

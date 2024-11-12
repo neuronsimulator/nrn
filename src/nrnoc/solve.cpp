@@ -401,7 +401,6 @@ void nrn_solve(NrnThread* _nt) {
 
 /* triangularization of the matrix equations */
 static void triang(NrnThread* _nt) {
-    Node *nd, *pnd;
     int i, i2, i3;
     i2 = _nt->ncell;
     i3 = _nt->end;
@@ -501,7 +500,7 @@ void sec_free(hoc_Item* secitem) {
     prop_free(&(sec->prop));
     node_free(sec);
     if (!sec->parentsec && sec->parentnode) {
-        delete sec->parentnode;
+        delete std::exchange(sec->parentnode, nullptr);
     }
 #if DIAMLIST
     if (sec->pt3d) {
@@ -582,9 +581,9 @@ Node::~Node() {
 // this is delete[]...apart from the order?
 void node_destruct(Node** pnode, int n) {
     for (int i = n - 1; i >= 0; --i) {
-        delete pnode[i];
+        delete std::exchange(pnode[i], nullptr);
     }
-    delete[] pnode;
+    delete[] std::exchange(pnode, nullptr);
 }
 
 #if KEEP_NSEG_PARM
@@ -639,19 +638,9 @@ static Node* node_clone(Node* nd1) {
     return nd2;
 }
 
-static Node* node_interp(Node* nd1, Node* nd2, double frac) {
-    Node* nd;
-    if (frac > .5) {
-        nd = node_clone(nd2);
-    } else {
-        nd = node_clone(nd1);
-    }
-    return nd;
-}
-
 static void node_realloc(Section* sec, short nseg) {
     Node **pn1, **pn2;
-    int n1, n2, i1, i2, i;
+    int n1, n2, i1, i2;
     double x;
     pn1 = sec->pnode;
     n1 = sec->nnode;

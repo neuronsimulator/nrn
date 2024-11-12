@@ -70,17 +70,16 @@ char* BBSLocal::upkstr() {
     return s;
 }
 
-char* BBSLocal::upkpickle(size_t* n) {
+std::vector<char> BBSLocal::upkpickle() {
     int len{};
-    char* s;
     if (!taking_ || taking_->upkint(&len)) {
         perror("upkpickle length");
     }
-    s = new char[len];
-    if (taking_->upkpickle(s, n)) {
+    std::vector<char> s{};
+    if (taking_->upkpickle(s)) {
         perror("upkpickle data");
     }
-    assert(*n == len);
+    assert(s.size() == len);
     return s;
 }
 
@@ -117,11 +116,11 @@ void BBSLocal::pkstr(const char* s) {
     }
 }
 
-void BBSLocal::pkpickle(const char* s, size_t n) {
-    if (!posting_ || posting_->pkint(n)) {
+void BBSLocal::pkpickle(const std::vector<char>& s) {
+    if (!posting_ || posting_->pkint(s.size())) {
         perror("pkpickle size");
     }
-    if (!posting_ || posting_->pkpickle(s, n)) {
+    if (!posting_ || posting_->pkpickle(s)) {
         perror("pkpickle data");
     }
 }

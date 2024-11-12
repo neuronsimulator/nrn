@@ -1,4 +1,4 @@
-/* Comparison of implicit and crank-nicholson */
+/* Comparison of implicit and crank-nicolson */
 /* showing that C-N can have error oscillations */
 
 /* lambda = sqrt(1e4/4 * diam / (Ra * gl)) microns */

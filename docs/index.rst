@@ -52,7 +52,7 @@ and more (use the links on the side or search).
    :caption: NMODLanguage:
    :hidden:
 
-   nmodl/index
+   nmodl/language
 
 .. toctree::
    :maxdepth: 2
@@ -98,7 +98,7 @@ Installation
 
          pip3 install neuron
 
-      Alternatively, you can use the `PKG installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.4/nrn-8.2.4-macosx-10.9-universal2-py-38-39-310-311.pkg>`_.
+      Alternatively, you can use the `PKG installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.6/nrn-8.2.6-macosx-10.9-universal2-py-38-39-310-311-312.pkg>`_.
 
       For troubleshooting, see the `detailed installation instructions <install/install_instructions.md>`_.
 
@@ -115,7 +115,7 @@ Installation
 
    .. tab-item:: Windows
 
-      `Download the Windows Installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.4/nrn-8.2.4.w64-mingw-py-37-38-39-310-311-setup.exe>`_.
+      `Download the Windows Installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.6/nrn-8.2.6.w64-mingw-py-38-39-310-311-312-setup.exe>`_.
 
       You can also install the Linux wheel via the Windows Subsystem for Linux (WSL). See `instructions <install/install_instructions.html#windows-subsystem-for-linux-wsl-python-wheel>`_.
 
@@ -144,7 +144,6 @@ Installation
 
 
 .. raw:: html
-
 
    <script>
 
@@ -179,5 +178,12 @@ Installation
    </script>
 
 |
+.. admonition:: About NEURON >= 9.0
+   :class: tip
+
+   If you are experiencing compilation errors while using `nrnivmodl` with NEURON >=9.0,
+   but not with previous 8.x releases, please see :ref:`porting-mechanisms-to-cpp`.
+   We have provide comprehensive instructions for adapting legacy MOD files that include `VERBATIM` blocks,
+   or you might find already updated MOD files in the ModelDB GitHub repositories.
 
 See also the NEURON documentation `index <genindex.html>`_ and the `NEURON forum <https://www.neuron.yale.edu/phpbb/>`_.

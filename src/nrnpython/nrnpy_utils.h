@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nrnwrap_Python.h>
+#include "nrnwrap_Python.h"
 #include <cassert>
 
 inline bool is_python_string(PyObject* python_string) {
@@ -158,22 +158,6 @@ class PyErr2NRNString {
     PyErr2NRNString& operator=(const PyErr2NRNString&);
 
     char* str_;
-};
-
-
-struct PyLockGIL {
-    PyLockGIL()
-        : state_{PyGILState_Ensure()} {}
-    PyLockGIL(PyLockGIL&&) = delete;
-    PyLockGIL(PyLockGIL const&) = delete;
-    PyLockGIL& operator=(PyLockGIL&&) = delete;
-    PyLockGIL& operator=(PyLockGIL const&) = delete;
-    ~PyLockGIL() {
-        PyGILState_Release(state_);
-    }
-
-  private:
-    PyGILState_STATE state_;
 };
 
 extern void nrnpy_sec_referr();

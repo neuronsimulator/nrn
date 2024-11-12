@@ -1,5 +1,3 @@
-/* define to 1 if allowing NEOSIM */
-#cmakedefine USENEOSIM @USENEOSIM@
 /* define to 1 if allowing NCS */
 #cmakedefine USENCS @USENCS@
 /* define to 1 (default) if Observer is a base class of DiscreteEvent */

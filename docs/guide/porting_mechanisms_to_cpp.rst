@@ -5,6 +5,11 @@
 Adapting MOD files for C++ with |neuron_with_cpp_mechanisms|
 ============================================================
 
+.. attention::
+  This guide only applies if you have MOD files with VERBATIM blocks that fail
+  to compile with |neuron_with_cpp_mechanisms| but work with older versions of
+  NEURON. If this is not your case, you can skip this guide.
+
 In older versions of NEURON, MOD files containing NMODL code were translated
 into C code before being compiled and executed by NEURON.
 Starting with |neuron_with_cpp_mechanisms|, NMODL code is translated into C++
@@ -26,7 +31,7 @@ internal numerical methods haven't changed with migration to C++, it is likely
 to be sufficient to adapt MOD files to C++ only and use
 |neuron_with_cpp_mechanisms|.
 If you do decide to preserve compatibility across versions, the preprocessor
-macros described in :ref:`python_verbatim` may prove useful.
+macros described in :ref:`verbatim` may prove useful.
 
 .. note::
   If you have a model that stopped compiling when you upgraded to or beyond
@@ -37,87 +42,418 @@ macros described in :ref:`python_verbatim` may prove useful.
   An updated version may already be available!
 
   The following models were updated in ModelDB in preparation for
-  |neuron_with_cpp_mechanisms| and may serve as useful references:
-  `2487 <https://github.com/ModelDBRepository/2487/pull/1>`_,
-  `2730 <https://github.com/ModelDBRepository/2730/pull/1>`_,
-  `2733 <https://github.com/ModelDBRepository/2733/pull/1>`_,
-  `3658 <https://github.com/ModelDBRepository/3658/pull/1>`_,
-  `7399 <https://github.com/ModelDBRepository/7399/pull/1>`_,
-  `7400 <https://github.com/ModelDBRepository/7400/pull/1>`_,
-  `8284 <https://github.com/ModelDBRepository/8284/pull/1>`_,
-  `9889 <https://github.com/ModelDBRepository/9889/pull/1>`_,
-  `12631 <https://github.com/ModelDBRepository/12631/pull/2>`_,
-  `26997 <https://github.com/ModelDBRepository/26997/pull/1>`_,
-  `35358 <https://github.com/ModelDBRepository/35358/pull/2>`_,
-  `37819 <https://github.com/ModelDBRepository/37819/pull/1>`_,
-  `51781 <https://github.com/ModelDBRepository/51781/pull/1>`_,
-  `52034 <https://github.com/ModelDBRepository/52034/pull/1>`_,
-  `64229 <https://github.com/ModelDBRepository/64229/pull/1>`_,
-  `64296 <https://github.com/ModelDBRepository/64296/pull/1>`_,
-  `87585 <https://github.com/ModelDBRepository/87585/pull/1>`_,
-  `93321 <https://github.com/ModelDBRepository/93321/pull/1>`_,
-  `97868 <https://github.com/ModelDBRepository/97868/pull/2>`_,
-  `97874 <https://github.com/ModelDBRepository/97874/pull/2>`_,
-  `97917 <https://github.com/ModelDBRepository/97917/pull/2>`_,
-  `105507 <https://github.com/ModelDBRepository/105507/pull/2>`_,
-  `106891 <https://github.com/ModelDBRepository/106891/pull/3>`_,
-  `113732 <https://github.com/ModelDBRepository/113732/pull/1>`_,
-  `116094 <https://github.com/ModelDBRepository/116094/pull/1>`_,
-  `116830 <https://github.com/ModelDBRepository/116830/pull/1>`_,
-  `116838 <https://github.com/ModelDBRepository/116838/pull/1>`_,
-  `116862 <https://github.com/ModelDBRepository/116862/pull/1>`_,
-  `123815 <https://github.com/ModelDBRepository/123815/pull/1>`_,
-  `136095 <https://github.com/ModelDBRepository/136095/pull/1>`_,
-  `136310 <https://github.com/ModelDBRepository/136310/pull/1>`_,
-  `137845 <https://github.com/ModelDBRepository/137845/pull/1>`_,
-  `138379 <https://github.com/ModelDBRepository/138379/pull/1>`_,
-  `139421 <https://github.com/ModelDBRepository/139421/pull/1>`_,
-  `140881 <https://github.com/ModelDBRepository/140881/pull/1>`_,
-  `141505 <https://github.com/ModelDBRepository/141505/pull/1>`_,
-  `144538 <https://github.com/ModelDBRepository/144538/pull/1>`_,
-  `144549 <https://github.com/ModelDBRepository/144549/pull/1>`_,
-  `144586 <https://github.com/ModelDBRepository/144586/pull/1>`_,
-  `146949 <https://github.com/ModelDBRepository/146949/pull/1>`_,
-  `149000 <https://github.com/ModelDBRepository/149000/pull/1>`_,
-  `149739 <https://github.com/ModelDBRepository/149739/pull/1>`_,
-  `150240 <https://github.com/ModelDBRepository/150240/pull/1>`_,
-  `150245 <https://github.com/ModelDBRepository/150245/pull/1>`_,
-  `150551 <https://github.com/ModelDBRepository/150551/pull/1>`_,
-  `150556 <https://github.com/ModelDBRepository/150556/pull/1>`_,
-  `150691 <https://github.com/ModelDBRepository/150691/pull/1>`_,
-  `151126 <https://github.com/ModelDBRepository/151126/pull/1>`_,
-  `151282 <https://github.com/ModelDBRepository/151282/pull/1>`_,
-  `153280 <https://github.com/ModelDBRepository/153280/pull/1>`_,
-  `154732 <https://github.com/ModelDBRepository/154732/pull/1>`_,
-  `155568 <https://github.com/ModelDBRepository/155568/pull/1>`_,
-  `155601 <https://github.com/ModelDBRepository/155601/pull/1>`_,
-  `155602 <https://github.com/ModelDBRepository/155602/pull/1>`_,
-  `156780 <https://github.com/ModelDBRepository/156780/pull/1>`_,
-  `157157 <https://github.com/ModelDBRepository/157157/pull/1>`_,
-  `168874 <https://github.com/ModelDBRepository/168874/pull/4>`_,
-  `181967 <https://github.com/ModelDBRepository/181967/pull/1>`_,
-  `182129 <https://github.com/ModelDBRepository/182129/pull/1>`_,
-  `183300 <https://github.com/ModelDBRepository/183300/pull/1>`_,
-  `185355 <https://github.com/ModelDBRepository/185355/pull/2>`_,
-  `185858 <https://github.com/ModelDBRepository/185858/pull/1>`_,
-  `186768 <https://github.com/ModelDBRepository/186768/pull/1>`_,
-  `187604 <https://github.com/ModelDBRepository/187604/pull/2>`_,
-  `189154 <https://github.com/ModelDBRepository/189154/pull/1>`_,
-  `194897 <https://github.com/ModelDBRepository/194897/pull/2>`_,
-  `195615 <https://github.com/ModelDBRepository/195615/pull/1>`_,
-  `223031 <https://github.com/ModelDBRepository/223031/pull/1>`_,
-  `225080 <https://github.com/ModelDBRepository/225080/pull/1>`_,
-  `231427 <https://github.com/ModelDBRepository/231427/pull/2>`_,
-  `232097 <https://github.com/ModelDBRepository/232097/pull/1>`_,
-  `239177 <https://github.com/ModelDBRepository/239177/pull/1>`_,
-  `241165 <https://github.com/ModelDBRepository/241165/pull/1>`_,
-  `241240 <https://github.com/ModelDBRepository/241240/pull/1>`_,
-  `244262 <https://github.com/ModelDBRepository/244262/pull/1>`_,
-  `244848 <https://github.com/ModelDBRepository/244848/pull/2>`_,
-  `247968 <https://github.com/ModelDBRepository/247968/pull/1>`_,
-  `249463 <https://github.com/ModelDBRepository/249463/pull/1>`_,
-  `256388 <https://github.com/ModelDBRepository/256388/pull/1>`_ and
-  `259366 <https://github.com/ModelDBRepository/259366/pull/1>`_.
+  |neuron_with_cpp_mechanisms| and may serve as useful references. You can see
+  updated MOD files in the `Changed Mod Files` column. You can just apply the changes
+  to your MOD files, or you can use the updated MOD files directly from the GitHub repository.
+
+.. list-table::
+   :header-rows: 1
+
+   * - ModelDB Id
+     - Model Name
+     - GitHub Repository
+     - Pull Request
+     - Changed Mod Files
+   * - `2487 <https://modeldb.science/2487>`_
+     - Olfactory Mitral Cell (Davison et al 2000)
+     - `ModelDBRepository/2487 <https://github.com/ModelDBRepository/2487>`_
+     - `pull/1 <https://github.com/ModelDBRepository/2487/pull/1/files>`_
+     - cadecay.mod
+   * - `2730 <https://modeldb.science/2730>`_
+     - Olfactory Bulb Network (Davison et al 2003)
+     - `ModelDBRepository/2730 <https://github.com/ModelDBRepository/2730>`_
+     - `pull/1 <https://github.com/ModelDBRepository/2730/pull/1/files>`_
+     - cadecay.mod
+   * - `2733 <https://modeldb.science/2733>`_
+     - Olfactory Mitral Cell (Bhalla, Bower 1993)
+     - `ModelDBRepository/2733 <https://github.com/ModelDBRepository/2733>`_
+     - `pull/1 <https://github.com/ModelDBRepository/2733/pull/1/files>`_
+     - cadecay.mod
+   * - `3658 <https://modeldb.science/3658>`_
+     - Glutamate diffusion ...lar glomerulus (Saftenku 2005)
+     - `ModelDBRepository/3658 <https://github.com/ModelDBRepository/3658>`_
+     - `pull/1 <https://github.com/ModelDBRepository/3658/pull/1/files>`_
+     - glubbfbm.mod glubes2.mod glubes23.mod glubes3.mod glubes4.mod glubes5.mod glubes6.mod glures23.mod
+   * - `7399 <https://modeldb.science/7399>`_
+     - Feedforward heteroas...with HH dynamics (Lytton 1998)
+     - `ModelDBRepository/7399 <https://github.com/ModelDBRepository/7399>`_
+     - `pull/1 <https://github.com/ModelDBRepository/7399/pull/1/files>`_
+     - matrix.mod snsarr.inc vecst.mod
+   * - `7400 <https://modeldb.science/7400>`_
+     - Hippocampus temporo-...gram shift model (Lytton 1999)
+     - `ModelDBRepository/7400 <https://github.com/ModelDBRepository/7400>`_
+     - `pull/1 <https://github.com/ModelDBRepository/7400/pull/1/files>`_
+     - matrix.mod vecst.mod
+   * - `8284 <https://modeldb.science/8284>`_
+     - Febrile seizure-indu...ations to Ih (Chen et al 2001)
+     - `ModelDBRepository/8284 <https://github.com/ModelDBRepository/8284>`_
+     - `pull/1 <https://github.com/ModelDBRepository/8284/pull/1/files>`_
+     - hyperde1.mod hyperde2.mod hyperde3.mod hyperso.mod ichan.mod
+   * - `9889 <https://modeldb.science/9889>`_
+     - Thalamic quiescence ...e seizures (Lytton et al 1997)
+     - `ModelDBRepository/9889 <https://github.com/ModelDBRepository/9889>`_
+     - `pull/1 <https://github.com/ModelDBRepository/9889/pull/1/files>`_
+     - rand.mod
+   * - `12631 <https://modeldb.science/12631>`_
+     - Computer model of cl...n thalamic slice (Lytton 1997)
+     - `ModelDBRepository/12631 <https://github.com/ModelDBRepository/12631>`_
+     - `pull/2 <https://github.com/ModelDBRepository/12631/pull/2/files>`_
+     - rand.mod
+   * - `26997 <https://modeldb.science/26997>`_
+     - Gamma oscillations i... networks (Wang, Buzsaki 1996)
+     - `ModelDBRepository/26997 <https://github.com/ModelDBRepository/26997>`_
+     - `pull/1 <https://github.com/ModelDBRepository/26997/pull/1/files>`_
+     - vecst.mod
+   * - `35358 <https://modeldb.science/35358>`_
+     - CA3 pyramidal cell: ...ub model (Pinsky, Rinzel 1994)
+     - `ModelDBRepository/35358 <https://github.com/ModelDBRepository/35358>`_
+     - `pull/2 <https://github.com/ModelDBRepository/35358/pull/2/files>`_
+     - matrix.mod vecst.mod
+   * - `37819 <https://modeldb.science/37819>`_
+     - Thalamocortical augm...response (Bazhenov et al 1998)
+     - `ModelDBRepository/37819 <https://github.com/ModelDBRepository/37819>`_
+     - `pull/1 <https://github.com/ModelDBRepository/37819/pull/1/files>`_
+     - matrix.mod pointer.inc ppsav.inc vecst.mod
+   * - `51781 <https://modeldb.science/51781>`_
+     - Dentate gyrus networ...model (Santhakumar et al 2005)
+     - `ModelDBRepository/51781 <https://github.com/ModelDBRepository/51781>`_
+     - `pull/1 <https://github.com/ModelDBRepository/51781/pull/1/files>`_
+     - hyperde3.mod ichan2.mod
+   * - `52034 <https://modeldb.science/52034>`_
+     - Cortical network mod...leptogenesis (Bush et al 1999)
+     - `ModelDBRepository/52034 <https://github.com/ModelDBRepository/52034>`_
+     - `pull/1 <https://github.com/ModelDBRepository/52034/pull/1/files>`_
+     - holt_rnd.mod precall.mod snsarr.inc
+   * - `64229 <https://modeldb.science/64229>`_
+     - Parallel network sim...h NEURON (Migliore et al 2006)
+     - `ModelDBRepository/64229 <https://github.com/ModelDBRepository/64229>`_
+     - `pull/1 <https://github.com/ModelDBRepository/64229/pull/1/files>`_
+     - parbulbNet/cadecay.mod
+   * - `64296 <https://modeldb.science/64296>`_
+     - Dynamical model of o...al cell  (Rubin, Cleland 2006)
+     - `ModelDBRepository/64296 <https://github.com/ModelDBRepository/64296>`_
+     - `pull/1 <https://github.com/ModelDBRepository/64296/pull/1/files>`_
+     - cadecay.mod
+   * - `87585 <https://modeldb.science/87585>`_
+     - Sodium channel mutat...eizures + (Barela et al. 2006)
+     - `ModelDBRepository/87585 <https://github.com/ModelDBRepository/87585>`_
+     - `pull/1 <https://github.com/ModelDBRepository/87585/pull/1/files>`_
+     - ichanR859C1.mod ichanWT2005.mod
+   * - `93321 <https://modeldb.science/93321>`_
+     - Activity dependent c...euron model  (Liu et al. 1998)
+     - `ModelDBRepository/93321 <https://github.com/ModelDBRepository/93321>`_
+     - `pull/1 <https://github.com/ModelDBRepository/93321/pull/1/files>`_
+     - cadecay.mod
+   * - `97868 <https://modeldb.science/97868>`_
+     - NEURON interfaces to...gorithm (Neymotin et al. 2008)
+     - `ModelDBRepository/97868 <https://github.com/ModelDBRepository/97868>`_
+     - `pull/2 <https://github.com/ModelDBRepository/97868/pull/2/files>`_
+     - MySQL.mod spud.mod vecst.mod
+   * - `97874 <https://modeldb.science/97874>`_
+     - Neural Query System ...NEURON Simulator (Lytton 2006)
+     - `ModelDBRepository/97874 <https://github.com/ModelDBRepository/97874>`_
+     - `pull/2 <https://github.com/ModelDBRepository/97874/pull/2/files>`_
+     - NQS/vecst.mod modeldb/vecst.mod
+   * - `97917 <https://modeldb.science/97917>`_
+     - Cell splitting in ne...ng scaling (Hines et al. 2008)
+     - `ModelDBRepository/97917 <https://github.com/ModelDBRepository/97917>`_
+     - `pull/2 <https://github.com/ModelDBRepository/97917/pull/2/files>`_
+     - nrntraub/mod/rand.mod nrntraub/mod/ri.mod pardentategyrus/hyperde3.mod pardentategyrus/ichan2.mod
+   * - `105507 <https://modeldb.science/105507>`_
+     - Tonic-clonic transit...tion (Lytton and Omurtag 2007)
+     - `ModelDBRepository/105507 <https://github.com/ModelDBRepository/105507>`_
+     - `pull/2 <https://github.com/ModelDBRepository/105507/pull/2/files>`_
+     - intf\_.mod misc.mod stats.mod vecst.mod
+   * - `106891 <https://modeldb.science/106891>`_
+     - JitCon: Just in time... networks (Lytton et al. 2008)
+     - `ModelDBRepository/106891 <https://github.com/ModelDBRepository/106891>`_
+     - `pull/3 <https://github.com/ModelDBRepository/106891/pull/3/files>`_
+     - jitcon.mod misc.h misc.mod stats.mod vecst.mod
+   * - `113732 <https://modeldb.science/113732>`_
+     - MEG of Somatosensory Neocortex (Jones et al. 2007)
+     - `ModelDBRepository/113732 <https://github.com/ModelDBRepository/113732>`_
+     - `pull/1 <https://github.com/ModelDBRepository/113732/pull/1/files>`_
+     - precall.mod presyn.inc
+   * - `116094 <https://modeldb.science/116094>`_
+     - Lateral dendrodendit...ctory Bulb (David et al. 2008)
+     - `ModelDBRepository/116094 <https://github.com/ModelDBRepository/116094>`_
+     - `pull/1 <https://github.com/ModelDBRepository/116094/pull/1/files>`_
+     - LongDendrite/cadecay.mod ShortDendrite/cadecay.mod
+   * - `116830 <https://modeldb.science/116830>`_
+     - Broadening of activi...tructures (Lytton et al. 2008)
+     - `ModelDBRepository/116830 <https://github.com/ModelDBRepository/116830>`_
+     - `pull/1 <https://github.com/ModelDBRepository/116830/pull/1/files>`_
+     - intf.mod misc.mod stats.mod vecst.mod
+   * - `116838 <https://modeldb.science/116838>`_
+     - The virtual slice setup (Lytton et al. 2008)
+     - `ModelDBRepository/116838 <https://github.com/ModelDBRepository/116838>`_
+     - `pull/1 <https://github.com/ModelDBRepository/116838/pull/1/files>`_
+     - intf\_.mod misc.h misc.mod stats.mod vecst.mod
+   * - `116862 <https://modeldb.science/116862>`_
+     - Thalamic interneuron...rtment model (Zhu et al. 1999)
+     - `ModelDBRepository/116862 <https://github.com/ModelDBRepository/116862>`_
+     - `pull/1 <https://github.com/ModelDBRepository/116862/pull/1/files>`_
+     - clampex.mod misc.h vecst.mod
+   * - `123815 <https://modeldb.science/123815>`_
+     - Encoding and retriev...rcuit (Cutsuridis et al. 2009)
+     - `ModelDBRepository/123815 <https://github.com/ModelDBRepository/123815>`_
+     - `pull/1 <https://github.com/ModelDBRepository/123815/pull/1/files>`_
+     - burststim2.mod ichan2.mod regn_stim.mod
+   * - `136095 <https://modeldb.science/136095>`_
+     - Synaptic information...columns (Neymotin et al. 2010)
+     - `ModelDBRepository/136095 <https://github.com/ModelDBRepository/136095>`_
+     - `pull/1 <https://github.com/ModelDBRepository/136095/pull/1/files>`_
+     - clampex.mod field.mod infot.mod intf\_.mod intfsw.mod misc.h misc.mod netrand.inc pregencv.mod stats.mod updown.mod vecst.mod
+   * - `136310 <https://modeldb.science/136310>`_
+     - Modeling local field...otentials (Bedard et al. 2004)
+     - `ModelDBRepository/136310 <https://github.com/ModelDBRepository/136310>`_
+     - `pull/1 <https://github.com/ModelDBRepository/136310/pull/1/files>`_
+     - ImpedanceFM.mod
+   * - `137845 <https://modeldb.science/137845>`_
+     - Spike exchange metho...rcomputer (Hines et al., 2011)
+     - `ModelDBRepository/137845 <https://github.com/ModelDBRepository/137845>`_
+     - `pull/1 <https://github.com/ModelDBRepository/137845/pull/1/files>`_
+     - invlfire.mod
+   * - `138379 <https://modeldb.science/138379>`_
+     - Emergence of physiol...lations (Neymotin et al. 2011)
+     - `ModelDBRepository/138379 <https://github.com/ModelDBRepository/138379>`_
+     - `pull/1 <https://github.com/ModelDBRepository/138379/pull/1/files>`_
+     - intf6\_.mod misc.h misc.mod stats.mod vecst.mod
+   * - `139421 <https://modeldb.science/139421>`_
+     - Ketamine disrupts th...pocampus (Neymotin et al 2011)
+     - `ModelDBRepository/139421 <https://github.com/ModelDBRepository/139421>`_
+     - `pull/1 <https://github.com/ModelDBRepository/139421/pull/1/files>`_
+     - misc.h misc.mod stats.mod vecst.mod wrap.mod
+   * - `140881 <https://modeldb.science/140881>`_
+     - Computational Surgery (Lytton et al. 2011)
+     - `ModelDBRepository/140881 <https://github.com/ModelDBRepository/140881>`_
+     - `pull/1 <https://github.com/ModelDBRepository/140881/pull/1/files>`_
+     - intf6\_.mod misc.h misc.mod stats.mod vecst.mod
+   * - `141505 <https://modeldb.science/141505>`_
+     - Prosthetic electrost...ortical simulation (Kerr 2012)
+     - `ModelDBRepository/141505 <https://github.com/ModelDBRepository/141505>`_
+     - `pull/1 <https://github.com/ModelDBRepository/141505/pull/1/files>`_
+     - infot.mod intf6\_.mod intfsw.mod misc.h misc.mod staley.mod stats.mod vecst.mod
+   * - `144538 <https://modeldb.science/144538>`_
+     - Reinforcement learni...ement (Chadderdon et al. 2012)
+     - `ModelDBRepository/144538 <https://github.com/ModelDBRepository/144538>`_
+     - `pull/1 <https://github.com/ModelDBRepository/144538/pull/1/files>`_
+     - infot.mod intf6\_.mod intfsw.mod misc.h misc.mod stats.mod updown.mod vecst.mod
+   * - `144549 <https://modeldb.science/144549>`_
+     - Hopfield and Brody m...d, Brody 2000) (NEURON+python)
+     - `ModelDBRepository/144549 <https://github.com/ModelDBRepository/144549>`_
+     - `pull/1 <https://github.com/ModelDBRepository/144549/pull/1/files>`_
+     - misc.h misc.mod stats.mod vecst.mod
+   * - `144586 <https://modeldb.science/144586>`_
+     - Boolean network-base...sis network (Mai and Liu 2009)
+     - `ModelDBRepository/144586 <https://github.com/ModelDBRepository/144586>`_
+     - `pull/1 <https://github.com/ModelDBRepository/144586/pull/1/files>`_
+     - bnet.mod misc.h misc.mod stats.mod vecst.mod
+   * - `146949 <https://modeldb.science/146949>`_
+     - Motor cortex microci...pping (Chadderdon et al. 2014)
+     - `ModelDBRepository/146949 <https://github.com/ModelDBRepository/146949>`_
+     - `pull/1 <https://github.com/ModelDBRepository/146949/pull/1/files>`_
+     - infot.mod intf6.mod intfsw.mod matrix.mod misc.h misc.mod staley.mod stats.mod vecst.mod
+   * - `149000 <https://modeldb.science/149000>`_
+     - Using Strahler`s ana...c models (Marasco et al, 2013)
+     - `ModelDBRepository/149000 <https://github.com/ModelDBRepository/149000>`_
+     - `pull/1 <https://github.com/ModelDBRepository/149000/pull/1/files>`_
+     - pj.mod
+   * - `149739 <https://modeldb.science/149739>`_
+     - A two-layer biophysi...dulation (Li and Cleland 2013)
+     - `ModelDBRepository/149739 <https://github.com/ModelDBRepository/149739>`_
+     - `pull/1 <https://github.com/ModelDBRepository/149739/pull/1/files>`_
+     - cadecay.mod cadecay2.mod
+   * - `150240 <https://modeldb.science/150240>`_
+     - A Model Circuit of T...vergence (Behuret et al. 2013)
+     - `ModelDBRepository/150240 <https://github.com/ModelDBRepository/150240>`_
+     - `pull/1 <https://github.com/ModelDBRepository/150240/pull/1/files>`_
+     - RandomGenerator.mod
+   * - `150245 <https://modeldb.science/150245>`_
+     - Sensorimotor cortex ...eaching (Neymotin et al. 2013)
+     - `ModelDBRepository/150245 <https://github.com/ModelDBRepository/150245>`_
+     - `pull/1 <https://github.com/ModelDBRepository/150245/pull/1/files>`_
+     - infot.mod intf6\_.mod misc.h misc.mod stats.mod vecst.mod
+   * - `150551 <https://modeldb.science/150551>`_
+     - Calcium waves and mG...rons (Ashhad & Narayanan 2013)
+     - `ModelDBRepository/150551 <https://github.com/ModelDBRepository/150551>`_
+     - `pull/1 <https://github.com/ModelDBRepository/150551/pull/1/files>`_
+     - Calamp.mod
+   * - `150556 <https://modeldb.science/150556>`_
+     - Single compartment D...MPA (Biddell and Johnson 2013)
+     - `ModelDBRepository/150556 <https://github.com/ModelDBRepository/150556>`_
+     - `pull/1 <https://github.com/ModelDBRepository/150556/pull/1/files>`_
+     - KBNetStim.mod
+   * - `150691 <https://modeldb.science/150691>`_
+     - Model of arrhythmias...twork (Casaleggio et al. 2014)
+     - `ModelDBRepository/150691 <https://github.com/ModelDBRepository/150691>`_
+     - `pull/1 <https://github.com/ModelDBRepository/150691/pull/1/files>`_
+     - Readme halfgapm1.mod halfgapspk.mod
+   * - `151126 <https://modeldb.science/151126>`_
+     - Effects of increasin... network (Bianchi et al. 2014)
+     - `ModelDBRepository/151126 <https://github.com/ModelDBRepository/151126>`_
+     - `pull/1 <https://github.com/ModelDBRepository/151126/pull/1/files>`_
+     - burststim2.mod ichan2.mod regn_stim.mod
+   * - `151282 <https://modeldb.science/151282>`_
+     - Ih tunes oscillation...3 model (Neymotin et al. 2013)
+     - `ModelDBRepository/151282 <https://github.com/ModelDBRepository/151282>`_
+     - `pull/1 <https://github.com/ModelDBRepository/151282/pull/1/files>`_
+     - misc.h misc.mod stats.mod vecst.mod
+   * - `153280 <https://modeldb.science/153280>`_
+     - Parvalbumin-positive...amidal cells (Lee et al. 2014)
+     - `ModelDBRepository/153280 <https://github.com/ModelDBRepository/153280>`_
+     - `pull/1 <https://github.com/ModelDBRepository/153280/pull/1/files>`_
+     - ch_Kdrfast.mod mynetstim.mod repeatconn.mod
+   * - `154732 <https://modeldb.science/154732>`_
+     - Spine head calcium i...ell model (Graham et al. 2014)
+     - `ModelDBRepository/154732 <https://github.com/ModelDBRepository/154732>`_
+     - `pull/1 <https://github.com/ModelDBRepository/154732/pull/1/files>`_
+     - burststim2.mod
+   * - `155568 <https://modeldb.science/155568>`_
+     - Dentate gyrus network model (Tejada et al 2014)
+     - `ModelDBRepository/155568 <https://github.com/ModelDBRepository/155568>`_
+     - `pull/1 <https://github.com/ModelDBRepository/155568/pull/1/files>`_
+     - hyperde3.mod ichan2.mod
+   * - `155601 <https://modeldb.science/155601>`_
+     - Basket cell extrasyn...tions (Proddutur et al., 2013)
+     - `ModelDBRepository/155601 <https://github.com/ModelDBRepository/155601>`_
+     - `pull/1 <https://github.com/ModelDBRepository/155601/pull/1/files>`_
+     - hyperde3.mod ichan2.mod
+   * - `155602 <https://modeldb.science/155602>`_
+     - Status epilepticus a...c inhibition (Yu J et al 2013)
+     - `ModelDBRepository/155602 <https://github.com/ModelDBRepository/155602>`_
+     - `pull/1 <https://github.com/ModelDBRepository/155602/pull/1/files>`_
+     - hyperde3.mod ichan2.mod
+   * - `156780 <https://modeldb.science/156780>`_
+     - Microcircuits of L5 ...midal cells (Hay & Segev 2015)
+     - `ModelDBRepository/156780 <https://github.com/ModelDBRepository/156780>`_
+     - `pull/1 <https://github.com/ModelDBRepository/156780/pull/1/files>`_
+     - ProbAMPANMDA2.mod ProbUDFsyn2.mod
+   * - `157157 <https://modeldb.science/157157>`_
+     - CA1 pyramidal neuron...cles (Saudargiene et al. 2015)
+     - `ModelDBRepository/157157 <https://github.com/ModelDBRepository/157157>`_
+     - `pull/1 <https://github.com/ModelDBRepository/157157/pull/1/files>`_
+     - burststim2.mod regn_stim.mod
+   * - `168874 <https://modeldb.science/168874>`_
+     - Neuronal dendrite ca...e model (Neymotin et al, 2015)
+     - `ModelDBRepository/168874 <https://github.com/ModelDBRepository/168874>`_
+     - `pull/4 <https://github.com/ModelDBRepository/168874/pull/4/files>`_
+     - misc.h misc.mod stats.mod vecst.mod
+   * - `181967 <https://modeldb.science/181967>`_
+     - Long time windows fr...op (Cutsuridis & Poirazi 2015)
+     - `ModelDBRepository/181967 <https://github.com/ModelDBRepository/181967>`_
+     - `pull/1 <https://github.com/ModelDBRepository/181967/pull/1/files>`_
+     - burststim.mod hyperde3.mod ichan2.mod regn_stim.mod
+   * - `182129 <https://modeldb.science/182129>`_
+     - Computational modeli...signaling (Lupascu et al 2020)
+     - `ModelDBRepository/182129 <https://github.com/ModelDBRepository/182129>`_
+     - `pull/1 <https://github.com/ModelDBRepository/182129/pull/1/files>`_
+     - ProbGABAAB_EMS_GEPH_g.mod
+   * - `183300 <https://modeldb.science/183300>`_
+     - Mitral cell activity...ory bulb NN (Short et al 2016)
+     - `ModelDBRepository/183300 <https://github.com/ModelDBRepository/183300>`_
+     - `pull/1 <https://github.com/ModelDBRepository/183300/pull/1/files>`_
+     - cadecay.mod cadecay2.mod thetastim.mod vecstim.mod
+   * - `185355 <https://modeldb.science/185355>`_
+     - Dentate gyrus networ...g in epilepsy (Yim et al 2015)
+     - `ModelDBRepository/185355 <https://github.com/ModelDBRepository/185355>`_
+     - `pull/2 <https://github.com/ModelDBRepository/185355/pull/2/files>`_
+     - HCN.mod ichan2.mod netstim125.mod netstimbox.mod
+   * - `185858 <https://modeldb.science/185858>`_
+     - Ca+/HCN channel-depe...eocortex (Neymotin et al 2016)
+     - `ModelDBRepository/185858 <https://github.com/ModelDBRepository/185858>`_
+     - `pull/1 <https://github.com/ModelDBRepository/185858/pull/1/files>`_
+     - misc.h misc.mod vecst.mod
+   * - `186768 <https://modeldb.science/186768>`_
+     - CA3 Network Model of...Activity (Sanjay et. al, 2015)
+     - `ModelDBRepository/186768 <https://github.com/ModelDBRepository/186768>`_
+     - `pull/1 <https://github.com/ModelDBRepository/186768/pull/1/files>`_
+     - misc.h misc.mod stats.mod vecst.mod wrap.mod
+   * - `187604 <https://modeldb.science/187604>`_
+     - Hippocampal CA1 NN w...ork clamp (Bezaire et al 2016)
+     - `ModelDBRepository/187604 <https://github.com/ModelDBRepository/187604>`_
+     - `pull/2 <https://github.com/ModelDBRepository/187604/pull/2/files>`_
+     - fastconn.mod mynetstim.mod repeatconn.mod sgate.mod
+   * - `189154 <https://modeldb.science/189154>`_
+     - Multitarget pharmaco...ia in M1 (Neymotin et al 2016)
+     - `ModelDBRepository/189154 <https://github.com/ModelDBRepository/189154>`_
+     - `pull/1 <https://github.com/ModelDBRepository/189154/pull/1/files>`_
+     - misc.h misc.mod stats.mod vecst.mod
+   * - `194897 <https://modeldb.science/194897>`_
+     - Motor system model w...l arm (Dura-Bernal et al 2017)
+     - `ModelDBRepository/194897 <https://github.com/ModelDBRepository/194897>`_
+     - `pull/2 <https://github.com/ModelDBRepository/194897/pull/2/files>`_
+     - izhi2007.mod nsloc.mod vecevent.mod
+   * - `195615 <https://modeldb.science/195615>`_
+     - Computer models of c...ynamics (Neymotin et al. 2017)
+     - `ModelDBRepository/195615 <https://github.com/ModelDBRepository/195615>`_
+     - `pull/1 <https://github.com/ModelDBRepository/195615/pull/1/files>`_
+     - misc.h misc.mod vecst.mod
+   * - `223031 <https://modeldb.science/223031>`_
+     - Interneuron Specific...l (Guet-McCreight et al, 2016)
+     - `ModelDBRepository/223031 <https://github.com/ModelDBRepository/223031>`_
+     - `pull/1 <https://github.com/ModelDBRepository/223031/pull/1/files>`_
+     - S1/ingauss.mod S2/ingauss.mod SD/ingauss.mod SDprox1/ingauss.mod SDprox2/ingauss.mod
+   * - `225080 <https://modeldb.science/225080>`_
+     - CA1 pyr cell: Inhibi...ssion (Grienberger et al 2017)
+     - `ModelDBRepository/225080 <https://github.com/ModelDBRepository/225080>`_
+     - `pull/1 <https://github.com/ModelDBRepository/225080/pull/1/files>`_
+     - pr.mod vecevent.mod
+   * - `231427 <https://modeldb.science/231427>`_
+     - Shaping NMDA spikes ...on on L5PC (Doron et al. 2017)
+     - `ModelDBRepository/231427 <https://github.com/ModelDBRepository/231427>`_
+     - `pull/2 <https://github.com/ModelDBRepository/231427/pull/2/files>`_
+     - ProbAMPA.mod ProbUDFsyn2_lark.mod
+   * - `232097 <https://modeldb.science/232097>`_
+     - 2D model of olfactor...llations (Li and Cleland 2017)
+     - `ModelDBRepository/232097 <https://github.com/ModelDBRepository/232097>`_
+     - `pull/1 <https://github.com/ModelDBRepository/232097/pull/1/files>`_
+     - cadecay.mod cadecay2.mod
+   * - `239177 <https://modeldb.science/239177>`_
+     - Phase response theor...(Tikidji-Hamburyan et al 2019)
+     - `ModelDBRepository/239177 <https://github.com/ModelDBRepository/239177>`_
+     - `pull/1 <https://github.com/ModelDBRepository/239177/pull/1/files>`_
+     - PIR-Inetwork/innp.mod PIR-Inetwork/vecevent.mod
+   * - `241165 <https://modeldb.science/241165>`_
+     - Biophysically realis...imulation (Aberra et al. 2018)
+     - `ModelDBRepository/241165 <https://github.com/ModelDBRepository/241165>`_
+     - `pull/1 <https://github.com/ModelDBRepository/241165/pull/1/files>`_
+     - mechanisms/ProbAMPANMDA_EMS.mod mechanisms/ProbGABAAB_EMS.mod
+   * - `241240 <https://modeldb.science/241240>`_
+     - Role of afferent-hai...regularity (Holmes et al 2017)
+     - `ModelDBRepository/241240 <https://github.com/ModelDBRepository/241240>`_
+     - `pull/1 <https://github.com/ModelDBRepository/241240/pull/1/files>`_
+     - afhcsyn_i0.mod hc1.mod random.mod ribbon1.mod
+   * - `244262 <https://modeldb.science/244262>`_
+     - Deconstruction of co...ic DBS (Kumaravelu et al 2018)
+     - `ModelDBRepository/244262 <https://github.com/ModelDBRepository/244262>`_
+     - `pull/1 <https://github.com/ModelDBRepository/244262/pull/1/files>`_
+     - rand.mod ri.mod
+   * - `244848 <https://modeldb.science/244848>`_
+     - Active dendrites sha...urons (Basak & Narayanan 2018)
+     - `ModelDBRepository/244848 <https://github.com/ModelDBRepository/244848>`_
+     - `pull/2 <https://github.com/ModelDBRepository/244848/pull/2/files>`_
+     - apamp.mod
+   * - `247968 <https://modeldb.science/247968>`_
+     - Gamma genesis in the...ral amygdala (Feng et al 2019)
+     - `ModelDBRepository/247968 <https://github.com/ModelDBRepository/247968>`_
+     - `pull/1 <https://github.com/ModelDBRepository/247968/pull/1/files>`_
+     - Gfluct_new_exc.mod Gfluct_new_inh.mod vecevent.mod
+   * - `249463 <https://modeldb.science/249463>`_
+     - Layer V pyramidal ce...cs (Mäki-Marttunen et al 2019)
+     - `ModelDBRepository/249463 <https://github.com/ModelDBRepository/249463>`_
+     - `pull/1 <https://github.com/ModelDBRepository/249463/pull/1/files>`_
+     - almog/ProbAMPANMDA2.mod almog/ProbUDFsyn2.mod hay/ProbAMPANMDA2.mod hay/ProbUDFsyn2.mod
+   * - `256388 <https://modeldb.science/256388>`_
+     - The APP in C-termina...n firing (Pousinha et al 2019)
+     - `ModelDBRepository/256388 <https://github.com/ModelDBRepository/256388>`_
+     - `pull/1 <https://github.com/ModelDBRepository/256388/pull/1/files>`_
+     - burststim2.mod ichan2.mod regn_stim.mod
+   * - `259366 <https://modeldb.science/259366>`_
+     - Cycle skipping in IN...dji-Hamburyan & Canavier 2020)
+     - `ModelDBRepository/259366 <https://github.com/ModelDBRepository/259366>`_
+     - `pull/1 <https://github.com/ModelDBRepository/259366/pull/1/files>`_
+     - innp.mod
 
 ..
   Does this need some more qualification? Are there non-VERBATIM
