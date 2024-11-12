@@ -131,7 +131,7 @@ public:
     }
 
 private:
-    std::uniform_int_distribution<> d;
+    std::uniform_real_distribution<> d;
 };
 
 class Weibull: public Random {
