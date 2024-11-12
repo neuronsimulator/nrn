@@ -9,7 +9,7 @@ public:
         , d(n ,u)
     {}
 
-    double operator()() {
+    double operator()() override {
         return d(*generator());
     }
 
@@ -24,7 +24,7 @@ public:
         , d(low, high)
     {}
 
-    double operator()() {
+    double operator()() override {
         return d(*generator());
     }
 private:
@@ -38,7 +38,7 @@ public:
         , d(mean * mean / variance, variance / mean)
     {}
 
-    double operator()() {
+    double operator()() override {
         return d(*generator());
     }
 
@@ -53,7 +53,7 @@ public:
         , d(1 / (mean + 1))
     {}
 
-    double operator()() {
+    double operator()() override {
         return 1. + d(*generator());
     }
 private:
@@ -67,7 +67,7 @@ public:
         , d(std::log(mean * mean / std::sqrt(variance + (mean * mean))), std::sqrt(std::log(variance/(mean * mean) + 1)))
     {}
 
-    double operator()() {
+    double operator()() override {
         return d(*generator());
     }
 private:
@@ -81,7 +81,7 @@ public:
         , d(1 / mean)
     {}
 
-    double operator()() {
+    double operator()() override {
         return d(*generator());
     }
 private:
@@ -95,7 +95,7 @@ public:
         , d(mean, std::sqrt(variance))
     {}
 
-    double operator()() {
+    double operator()() override {
         return d(*generator());
     }
 
@@ -110,7 +110,7 @@ public:
         , d(mean)
     {}
 
-    double operator()() {
+    double operator()() override {
         return d(*generator());
     }
 
@@ -126,7 +126,7 @@ public:
         , d(low, high)
     {}
 
-    double operator()() {
+    double operator()() override {
         return d(*generator());
     }
 
@@ -141,7 +141,7 @@ public:
         , d(alpha, beta)
     {}
 
-    double operator()() {
+    double operator()() override {
         return d(*generator());
     }
 
