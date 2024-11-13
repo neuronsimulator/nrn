@@ -404,13 +404,12 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
             if (cell) {
                 // include cellname in name so nrnpy_pysecname2sec_remove can determine
 
-                cell = PyObject_Str(cell);
-                if (cell == NULL) {
+                auto cell_str = nb::steal(PyObject_Str(cell));
+                if (!cell_str) {
                     Py_XDECREF(self->cell_weakref_);
                     return -1;
                 }
-                Py2NRNString str(cell);
-                Py_DECREF(cell);
+                Py2NRNString str(cell_str.ptr());
                 if (str.err()) {
                     str.set_pyerr(PyExc_TypeError, "cell name contains non ascii character");
                     return -1;
