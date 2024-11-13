@@ -11,6 +11,7 @@ def test_finite_difference():
     s.nseg = nseg
 
     x_hoc = h.Vector().record(s(0.5)._ref_x_finite_difference)
+    z_hoc = h.Vector().record(s(0.5)._ref_z_finite_difference)
     t_hoc = h.Vector().record(h._ref_t)
 
     h.stdinit()
@@ -19,11 +20,15 @@ def test_finite_difference():
     h.run()
 
     x = np.array(x_hoc.as_numpy())
+    z = np.array(z_hoc.as_numpy())
     t = np.array(t_hoc.as_numpy())
 
     a = h.a_finite_difference
     x_exact = 42.0 * np.exp(-a * t)
     np.testing.assert_allclose(x, x_exact, rtol=1e-4)
+
+    z_exact = 21.0 * np.exp(-2.0 * a * t)
+    np.testing.assert_allclose(z, z_exact, rtol=1e-4)
 
 
 if __name__ == "__main__":

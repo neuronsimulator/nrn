@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from nmodl.ode import differentiate2c, integrate2c, make_symbol
+from nmodl.ode import transform_expression, discretize_derivative
 import pytest
 
 import sympy as sp
@@ -186,3 +187,23 @@ def test_integrate2c():
         assert _equivalent(
             integrate2c(f"x'={eq}", "dt", var_list, use_pade_approx=True), f"x = {sol}"
         )
+
+
+def test_finite_difference():
+    df_dx = "(f(x + x_delta_/2) - f(x - x_delta_/2))/x_delta_"
+    dg_dx = "(g(x + x_delta_/2) - g(x - x_delta_/2))/x_delta_"
+
+    test_cases = [
+        ("f(x)", df_dx),
+        ("a*f(x)", f"a*{df_dx}"),
+        ("a*f(x)*g(x)", f"a*({df_dx}*g(x) + f(x)*{dg_dx})"),
+        ("a*f(x) + b*g(x)", f"a*{df_dx} + b*{dg_dx}"),
+    ]
+    vars = ["a", "x", "x_delta_"]
+
+    for expr, expected in test_cases:
+        expr = sp.diff(sp.sympify(expr), "x")
+        actual = transform_expression(expr, discretize_derivative)
+        msg = f"'{actual}'  =!=  '{expected}'"
+
+        assert _equivalent(str(actual), expected, vars=vars), msg

@@ -366,7 +366,11 @@ def transform_expression(expr, transform):
     if not expr.args:
         return expr
 
-    args = (transform_expression(transform(arg), transform) for arg in expr.args)
+    transformed_expr = transform(expr)
+    if transformed_expr is not expr:
+        return transformed_expr
+
+    args = (transform_expression(arg, transform) for arg in expr.args)
     return expr.func(*args)
 
 
