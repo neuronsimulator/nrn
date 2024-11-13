@@ -452,16 +452,14 @@ static int NPyAllSegOfSecIter_init_safe(NPyAllSegOfSecIter* self, PyObject* args
 }
 
 PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
-    NPySecObj* self;
-    self = (NPySecObj*) type->tp_alloc(type, 0);
-    // printf("NPySecObj_new %p\n", self);
-    if (self != NULL) {
-        if (NPySecObj_init(self, args, kwds) != 0) {
-            Py_DECREF(self);
-            return NULL;
+    auto self = nb::steal(type->tp_alloc(type, 0));
+    // printf("NPySecObj_new %p\n", self.ptr());
+    if (self) {
+        if (NPySecObj_init((NPySecObj*) self.ptr(), args, kwds) != 0) {
+            return nullptr;
         }
     }
-    return (PyObject*) self;
+    return self.release().ptr();
 }
 
 PyObject* NPySecObj_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds) {
