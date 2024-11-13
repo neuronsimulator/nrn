@@ -169,14 +169,19 @@ std::vector<int*> nrnthreads_netcon_srcgid;
 /// in order to use the correct neg_gid2out[tid] map
 std::vector<std::vector<int>> nrnthreads_netcon_negsrcgid_tid;
 
-/* read files.dat file and distribute cellgroups to all mpi ranks */
+/// read files.dat file and distribute cellgroups among all mpi ranks
+///
+/// Each entry in the files.dat file is the id of a cell group (also its first gid)
+/// We do round-robin to associate cell groups to mpi ranks
 std::vector<int> nrn_read_filesdat(const char* filesdat) {
-    std::vector<int> rank_dat_files;
+    std::vector<int> rank_cell_groups;
+
+    // Direct transfer mode
     patstimtype = nrn_get_mechtype("PatternStim");
     if (corenrn_embedded && !corenrn_file_mode) {
-        rank_dat_files.resize(corenrn_embedded_nthread);
-        (*nrn2core_group_ids_)(rank_dat_files.data());
-        return rank_dat_files;
+        rank_cell_groups.resize(corenrn_embedded_nthread);
+        (*nrn2core_group_ids_)(rank_cell_groups.data());
+        return rank_cell_groups;
     }
 
     FILE* fp = fopen(filesdat, "r");
@@ -207,18 +212,21 @@ std::vector<int> nrn_read_filesdat(const char* filesdat) {
             "Info : The number of input datasets are less than ranks, some ranks will be idle!\n");
     }
 
+    // preallocate for the general case
+    rank_cell_groups.reserve(iNumFiles / nrnmpi_numprocs + 1);
+
     // irerate over gids in files.dat
     for (int iNum = 0; iNum < iNumFiles; ++iNum) {
         int iFile;
 
         nrn_assert(fscanf(fp, "%d\n", &iFile) == 1);
         if ((iNum % nrnmpi_numprocs) == nrnmpi_myid) {
-            rank_dat_files.push_back(iFile);
+            rank_cell_groups.push_back(iFile);
         }
     }
 
     fclose(fp);
-    return rank_dat_files;
+    return rank_cell_groups;
 }
 
 void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi) {
