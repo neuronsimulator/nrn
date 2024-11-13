@@ -803,12 +803,6 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
 
 
     /**
-     * Print atomic update pragma for reduction statements
-     */
-    virtual void print_atomic_reduction_pragma() = 0;
-
-
-    /**
      * Instantiate global var instance
      *
      * For C++ code generation this is empty
@@ -1485,7 +1479,6 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     void visit_var_name(const ast::VarName& node) override;
     void visit_while_statement(const ast::WhileStatement& node) override;
     void visit_update_dt(const ast::UpdateDt& node) override;
-    void visit_protect_statement(const ast::ProtectStatement& node) override;
     void visit_mutex_lock(const ast::MutexLock& node) override;
     void visit_mutex_unlock(const ast::MutexUnlock& node) override;
     void visit_solution_expression(const ast::SolutionExpression& node) override;

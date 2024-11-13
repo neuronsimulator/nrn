@@ -230,7 +230,7 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
     /**
      * Print atomic update pragma for reduction statements
      */
-    void print_atomic_reduction_pragma() override;
+    virtual void print_atomic_reduction_pragma();
 
 
     /**
@@ -942,6 +942,7 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
     void visit_for_netcon(const ast::ForNetcon& node) override;
     void visit_verbatim(const ast::Verbatim& node) override;
     void visit_watch_statement(const ast::WatchStatement& node) override;
+    void visit_protect_statement(const ast::ProtectStatement& node) override;
 
     ParamVector functor_params() override;
 

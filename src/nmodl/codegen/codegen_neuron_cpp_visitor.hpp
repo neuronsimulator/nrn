@@ -153,13 +153,6 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     /*                                Backend specific routines                             */
     /****************************************************************************************/
 
-
-    /**
-     * Print atomic update pragma for reduction statements
-     */
-    void print_atomic_reduction_pragma() override;
-
-
     /**
      * Check if ion variable copies should be avoided
      */

@@ -3038,5 +3038,15 @@ void CodegenCoreneuronCppVisitor::visit_watch_statement(const ast::WatchStatemen
                                   current_watch_statement++));
 }
 
+
+void CodegenCoreneuronCppVisitor::visit_protect_statement(const ast::ProtectStatement& node) {
+    print_atomic_reduction_pragma();
+    printer->add_indent();
+    node.get_expression()->accept(*this);
+    printer->add_text(";");
+}
+
+
+
 }  // namespace codegen
 }  // namespace nmodl

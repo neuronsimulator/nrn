@@ -1106,14 +1106,6 @@ void CodegenCppVisitor::visit_update_dt(const ast::UpdateDt& node) {
 }
 
 
-void CodegenCppVisitor::visit_protect_statement(const ast::ProtectStatement& node) {
-    print_atomic_reduction_pragma();
-    printer->add_indent();
-    node.get_expression()->accept(*this);
-    printer->add_text(";");
-}
-
-
 void CodegenCppVisitor::visit_mutex_lock(const ast::MutexLock& node) {
     printer->fmt_line("#pragma omp critical ({})", info.mod_suffix);
     printer->add_indent();

@@ -80,12 +80,6 @@ int CodegenNeuronCppVisitor::position_of_int_var(const std::string& name) const 
 /*                                Backend specific routines                             */
 /****************************************************************************************/
 
-
-/// TODO: Edit for NEURON
-void CodegenNeuronCppVisitor::print_atomic_reduction_pragma() {
-    return;
-}
-
 bool CodegenNeuronCppVisitor::optimize_ion_variable_copies() const {
     if (optimize_ionvar_copies) {
         throw std::runtime_error("Not implemented.");
