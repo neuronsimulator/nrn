@@ -1855,17 +1855,16 @@ static PyObject* mech_of_segment_iter(NPySegObj* self) {
     CHECK_SEC_INVALID(sec)
     Node* nd = node_exact(sec, self->x_);
     Prop* p = mech_of_segment_prop(nd->prop);
-    NPyMechOfSegIter* mi = PyObject_New(NPyMechOfSegIter, pmech_of_seg_iter_generic_type);
+    auto mi = nb::steal((PyObject*) PyObject_New(NPyMechOfSegIter, pmech_of_seg_iter_generic_type));
     if (!mi) {
-        return NULL;
+        return nullptr;
     }
-    NPyMechObj* m = new_pymechobj(self, p);
+    auto m = nb::steal((PyObject*) new_pymechobj(self, p));
     if (!m) {
-        Py_XDECREF(mi);
-        return NULL;
+        return nullptr;
     }
-    mi->pymech_ = m;
-    return (PyObject*) mi;
+    ((NPyMechOfSegIter*) mi.ptr())->pymech_ = (NPyMechObj*) m.release().ptr();
+    return mi.release().ptr();
 }
 
 static PyObject* mech_of_segment_iter_safe(NPySegObj* self) {
