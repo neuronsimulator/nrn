@@ -467,16 +467,14 @@ PyObject* NPySecObj_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds)
 }
 
 PyObject* NPyAllSegOfSecIter_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
-    NPyAllSegOfSecIter* self;
-    self = (NPyAllSegOfSecIter*) type->tp_alloc(type, 0);
-    // printf("NPyAllSegOfSecIter_new %p\n", self);
-    if (self != NULL) {
-        if (NPyAllSegOfSecIter_init(self, args, kwds) != 0) {
-            Py_DECREF(self);
-            return NULL;
+    auto self = nb::steal(type->tp_alloc(type, 0));
+    // printf("NPyAllSegOfSecIter_new %p\n", self.ptr());
+    if (self) {
+        if (NPyAllSegOfSecIter_init((NPyAllSegOfSecIter*) self.ptr(), args, kwds) != 0) {
+            return nullptr;
         }
     }
-    return (PyObject*) self;
+    return self.release().ptr();
 }
 
 PyObject* NPyAllSegOfSecIter_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds) {
