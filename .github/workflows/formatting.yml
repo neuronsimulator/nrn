@@ -27,4 +27,17 @@ jobs:
         run: git submodule update --init external/coding-conventions
       - name: Check formatting
         working-directory: ${{runner.workspace}}/nrn
-        run: external/coding-conventions/bin/format -v --dry-run
+        run: |
+          external/coding-conventions/bin/format
+
+          modified_files=$(git diff --name-only)
+          if [ -n "$modified_files" ]; then
+              echo "Some files are not well formatted:"
+              echo "$modified_files"
+              echo ""
+              echo "The diff is:"
+              git --no-pager diff
+              exit 1
+          fi
+
+
