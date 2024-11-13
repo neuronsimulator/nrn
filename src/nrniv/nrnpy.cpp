@@ -258,7 +258,7 @@ void nrnpython_reg() {
 static nrnpython_reg_real_t load_nrnpython() {
     std::string pyversion{};
     if (auto const pv10 = nrn_is_python_extension; pv10 > 0) {
-        // pv10 is one of the packed integers like 310 (3.10) or 38 (3.8)
+        // pv10 is one of the packed integers like 310 (3.10) or 39 (3.9)
         auto const factor = (pv10 >= 100) ? 100 : 10;
         pyversion = std::to_string(pv10 / factor) + "." + std::to_string(pv10 % factor);
     } else {
