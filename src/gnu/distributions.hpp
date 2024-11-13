@@ -46,20 +46,6 @@ private:
     std::gamma_distribution<> d;
 };
 
-class Geometric: public Random {
-public:
-    Geometric(double mean, RNG *gen)
-        : Random(gen)
-        , d(1 / (mean + 1))
-    {}
-
-    double operator()() override {
-        return 1. + d(*generator());
-    }
-private:
-    std::geometric_distribution<> d;
-};
-
 class LogNormal: public Random {
 public:
     LogNormal(double mean, double variance, RNG *gen)

@@ -1,5 +1,6 @@
 add_library(
   nrngnu STATIC
+  Geom.cpp
   HypGeom.cpp
   MCellRan4RNG.cpp
   mcran4.cpp
