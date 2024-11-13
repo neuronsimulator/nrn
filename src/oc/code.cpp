@@ -2424,7 +2424,7 @@ list. */
 {
 #if 1
     /* copy address of the symbol that will be deleted */
-    Symbol *doomed = (pc++)->sym;
+    Symbol* doomed = (pc++)->sym;
 
     /*	hoc_execerror("delete_symbol doesn't work right now.", (char *)0);*/
     if (doomed->type == UNDEF)
