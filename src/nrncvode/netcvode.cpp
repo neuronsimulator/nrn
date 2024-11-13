@@ -3065,7 +3065,7 @@ void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
             Cvode* cv = (Cvode*) q->data_;
             if (tt < cv->t_) {
                 if (int err = cv->handle_step(nrn_ensure_model_data_are_sorted(), ns, tt);
-                        err != NVI_SUCCESS) {
+                    err != NVI_SUCCESS) {
                     Printf("warning: cv->handle_step failed with error %d", err);
                 }
                 ns->p[i].tq_->move_least(cv->t_);
@@ -6099,10 +6099,11 @@ void PlayRecord::pr() {
     Printf("PlayRecord\n");
 }
 
-TvecRecord::TvecRecord(Section* sec, IvocVect* t, Object* ppobj)
-    : PlayRecord(sec->pnode[0]->v_handle(), ppobj) {
+TvecRecord::TvecRecord(Section* sec, IvocVect* tvec, Object* ppobj)
+    : PlayRecord(sec ? sec->pnode[0]->v_handle() : neuron::container::data_handle<double>{&t},
+                 ppobj) {
     // printf("TvecRecord\n");
-    t_ = t;
+    t_ = tvec;
     ObjObservable::Attach(t_->obj_, this);
 }
 

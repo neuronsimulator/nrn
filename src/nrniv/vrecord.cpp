@@ -40,7 +40,7 @@ void nrn_vecsim_add(void* v, bool record) {
         ppobj = *hoc_objgetarg(1);
         if (!ppobj || (ppobj->ctemplate->is_point_ <= 0 &&
                        !nrn_is_artificial_[ob2pntproc(ppobj)->prop->_type])) {
-            hoc_execerror("Optional first arg is not a POINT_PROCESS", 0);
+            hoc_execerror("Optional first arg is not a POINT_PROCESS or ARTIFICIAL_CELL", 0);
         }
     }
     neuron::container::data_handle<double> dh{};
@@ -97,7 +97,8 @@ void nrn_vecsim_add(void* v, bool record) {
         } else if (ddt > 0.) {
             new VecRecordDt(std::move(dh), yvec, ddt, ppobj);
         } else if (static_cast<double const*>(dh) == &t) {
-            new TvecRecord(chk_access(), yvec, ppobj);
+            // ppobj takes priority
+            new TvecRecord((!ppobj) ? chk_access() : nullptr, yvec, ppobj);
         } else {
             new YvecRecord(std::move(dh), yvec, ppobj);
         }
