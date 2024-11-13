@@ -28,24 +28,3 @@ jobs:
       - name: Check formatting
         working-directory: ${{runner.workspace}}/nrn
         run: external/coding-conventions/bin/format -v --dry-run
-
-      # If formatting fails, apply formatting and push changes.
-      # This will trigger another workflow run, which will cancel the current one.
-      - name: Apply formatting
-        working-directory: ${{runner.workspace}}/nrn
-        if: failure() && github.event_name == 'pull_request'
-        run: |
-          # Checkout PR
-          gh pr checkout ${{ github.event.pull_request.number }}
-
-          # Apply formatting
-          external/coding-conventions/bin/format -v
-
-          # Commit & push changes
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -u :/
-          git commit -a -m "Fix formatting"
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
