@@ -18,7 +18,6 @@
 
 #include <Random.h>
 #include <distributions.hpp>
-#include <RndInt.h>
 #include <HypGeom.h>
 #include <NrnRandom123RNG.hpp>
 #include <MCellRan4RNG.hpp>
