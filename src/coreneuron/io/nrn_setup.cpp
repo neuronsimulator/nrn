@@ -428,7 +428,6 @@ void nrn_setup(const char* filesdat,
     // Note that rank with 0 dataset/cellgroup works fine
     int n_cell_groups = userParams.cell_groups.size();
     int n_threads = n_cell_groups <= 1 ? 2 : n_cell_groups;
-    userParams.cell_groups.reserve(n_threads);
     nrn_threads_create(n_threads);
 
     // from nrn_has_net_event create pnttype2presyn for use in phase2.
