@@ -2226,14 +2226,13 @@ static int hocobj_slice_setitem(PyObject* self, PyObject* slice, PyObject* arg) 
         return -1;
     }
     for (Py_ssize_t i = 0; i < slicelen; ++i) {
-        PyObject* val = PyIter_Next(iter);
+        auto val = nb::steal(PyIter_Next(iter));
         if (!val) {
             Py_DECREF(iter);
             PyErr_SetString(PyExc_IndexError, "iterable object must have the same length as slice");
             return -1;
         }
-        PyArg_Parse(val, "d", vector_vec(v) + (i * step + start));
-        Py_DECREF(val);
+        PyArg_Parse(val.ptr(), "d", vector_vec(v) + (i * step + start));
     }
     PyObject* val = PyIter_Next(iter);
     Py_DECREF(iter);
