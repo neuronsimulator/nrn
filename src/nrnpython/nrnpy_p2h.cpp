@@ -604,6 +604,7 @@ static char* nrnpyerr_str() {
         PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
 
         auto type = nb::steal(ptype);
+        auto value = nb::steal(pvalue);
 
         // try for full backtrace
         nb::object py_str;
@@ -621,7 +622,7 @@ static char* nrnpyerr_str() {
                 PyObject_GetAttrString(pyth_module.ptr(), "format_exception"));
             if (pyth_func) {
                 py_str = nb::steal(PyObject_CallFunctionObjArgs(
-                    pyth_func.ptr(), type.ptr(), pvalue, ptraceback, NULL));
+                    pyth_func.ptr(), type.ptr(), value.ptr(), ptraceback, NULL));
             }
         }
         if (py_str) {
@@ -641,7 +642,6 @@ static char* nrnpyerr_str() {
             Fprintf(stderr, "nrnpyerr_str failed\n");
         }
 
-        Py_XDECREF(pvalue);
         Py_XDECREF(ptraceback);
 
         return cmes;
