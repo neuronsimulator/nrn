@@ -269,7 +269,6 @@ static void hpoasgn(Object* o, int type) {
     int err = 0;
     int nindex;
     Symbol* sym;
-    PyObject* poleft;
     PyObject* poright;
     if (type == NUMBER) {
         poright = PyFloat_FromDouble(hoc_xpop());
@@ -284,12 +283,12 @@ static void hpoasgn(Object* o, int type) {
     }
     auto stack_value = hoc_pop_object();
     assert(o == stack_value.get());
-    poleft = nrnpy_hoc2pyobject(o);
+    auto poleft = nb::borrow(nrnpy_hoc2pyobject(o));
     sym = hoc_spop();
     nindex = hoc_ipop();
     // printf("hpoasgn %s %s %d\n", hoc_object_name(o), sym->name, nindex);
     if (nindex == 0) {
-        err = PyObject_SetAttrString(poleft, sym->name, poright);
+        err = PyObject_SetAttrString(poleft.ptr(), sym->name, poright);
     } else if (nindex == 1) {
         int ndim = hoc_pop_ndim();
         assert(ndim == 1);
@@ -298,7 +297,7 @@ static void hpoasgn(Object* o, int type) {
         if (strcmp(sym->name, "_") == 0) {
             a = nb::borrow(poleft);
         } else {
-            a = nb::steal(PyObject_GetAttrString(poleft, sym->name));
+            a = nb::steal(PyObject_GetAttrString(poleft.ptr(), sym->name));
         }
         if (a) {
             err = PyObject_SetItem(a.ptr(), key.ptr(), poright);
