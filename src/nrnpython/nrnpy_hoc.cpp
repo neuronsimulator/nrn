@@ -299,15 +299,14 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
         // printf("hocobj_new base %s\n", hbase->sym_->name);
         // remove the hocbase keyword since hocobj_call only allows
         // the "sec" keyword argument
-        PyObject* r = hocobj_call(hbase, args, kwds);
+        auto r = nb::steal(hocobj_call(hbase, args, kwds));
         if (!r) {
             return nullptr;
         }
-        PyHocObject* rh = (PyHocObject*) r;
+        PyHocObject* rh = (PyHocObject*) r.ptr();
         self->type_ = rh->type_;
         self->ho_ = rh->ho_;
         hoc_obj_ref(self->ho_);
-        Py_DECREF(r);
     }
 
     return subself.release().ptr();
