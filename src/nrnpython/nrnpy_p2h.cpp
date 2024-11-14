@@ -840,17 +840,17 @@ static Object* py_alltoall_type(int size, int type) {
         Py_INCREF(psrc);
 
         if (np == 1) {
+            nb::object pdest;
             if (type == 4) {  // broadcast is just the PyObject
-                pdest = psrc;
+                pdest = nb::steal(psrc);
             } else {  // allgather and gather must wrap psrc in list
-                pdest = PyList_New(1);
-                PyList_SetItem(pdest, 0, psrc);
+                pdest = nb::steal(PyList_New(1));
+                PyList_SetItem(pdest.ptr(), 0, psrc);
             }
-            Object* ho = nrnpy_po2ho(pdest);
+            Object* ho = nrnpy_po2ho(pdest.ptr());
             if (ho) {
                 --ho->refcount;
             }
-            Py_XDECREF(pdest);
             return ho;
         }
     }
