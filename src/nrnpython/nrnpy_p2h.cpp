@@ -269,14 +269,14 @@ static void hpoasgn(Object* o, int type) {
     int err = 0;
     int nindex;
     Symbol* sym;
-    PyObject* poright;
+    nb::object poright;
     if (type == NUMBER) {
-        poright = PyFloat_FromDouble(hoc_xpop());
+        poright = nb::steal(PyFloat_FromDouble(hoc_xpop()));
     } else if (type == STRING) {
-        poright = Py_BuildValue("s", *hoc_strpop());
+        poright = nb::steal(Py_BuildValue("s", *hoc_strpop()));
     } else if (type == OBJECTVAR || type == OBJECTTMP) {
         Object** po2 = hoc_objpop();
-        poright = nrnpy_ho2po(*po2);
+        poright = nb::steal(nrnpy_ho2po(*po2));
         hoc_tobj_unref(po2);
     } else {
         hoc_execerror("Cannot assign that type to PythonObject", (char*) 0);
@@ -288,7 +288,7 @@ static void hpoasgn(Object* o, int type) {
     nindex = hoc_ipop();
     // printf("hpoasgn %s %s %d\n", hoc_object_name(o), sym->name, nindex);
     if (nindex == 0) {
-        err = PyObject_SetAttrString(poleft.ptr(), sym->name, poright);
+        err = PyObject_SetAttrString(poleft.ptr(), sym->name, poright.ptr());
     } else if (nindex == 1) {
         int ndim = hoc_pop_ndim();
         assert(ndim == 1);
@@ -300,7 +300,7 @@ static void hpoasgn(Object* o, int type) {
             a = nb::steal(PyObject_GetAttrString(poleft.ptr(), sym->name));
         }
         if (a) {
-            err = PyObject_SetItem(a.ptr(), key.ptr(), poright);
+            err = PyObject_SetItem(a.ptr(), key.ptr(), poright.ptr());
         } else {
             err = -1;
         }
@@ -311,7 +311,6 @@ static void hpoasgn(Object* o, int type) {
             "Must use var._[i1]._[i2]... hoc syntax.",
             nindex);
     }
-    Py_DECREF(poright);
     if (err) {
         PyErr_Print();
         hoc_execerror("Assignment to PythonObject failed", NULL);
