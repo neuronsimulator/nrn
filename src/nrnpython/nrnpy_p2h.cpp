@@ -293,21 +293,18 @@ static void hpoasgn(Object* o, int type) {
     } else if (nindex == 1) {
         int ndim = hoc_pop_ndim();
         assert(ndim == 1);
-        PyObject* key = PyLong_FromDouble(hoc_xpop());
-        PyObject* a;
+        auto key = nb::steal(PyLong_FromDouble(hoc_xpop()));
+        nb::object a;
         if (strcmp(sym->name, "_") == 0) {
-            a = poleft;
-            Py_INCREF(a);
+            a = nb::borrow(poleft);
         } else {
-            a = PyObject_GetAttrString(poleft, sym->name);
+            a = nb::steal(PyObject_GetAttrString(poleft, sym->name));
         }
         if (a) {
-            err = PyObject_SetItem(a, key, poright);
-            Py_DECREF(a);
+            err = PyObject_SetItem(a.ptr(), key.ptr(), poright);
         } else {
             err = -1;
         }
-        Py_DECREF(key);
     } else {
         hoc_execerr_ext(
             "%d dimensional python objects "
