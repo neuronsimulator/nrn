@@ -255,16 +255,15 @@ static void hocobj_dealloc(PyHocObject* self) {
 }
 
 static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwds) {
-    PyObject* subself;
     PyObject* base;
     PyHocObject* hbase = nullptr;
 
-    subself = subtype->tp_alloc(subtype, 0);
-    // printf("hocobj_new %s %p %p\n", subtype->tp_name, subtype, subself);
-    if (subself == NULL) {
-        return NULL;
+    auto subself = nb::steal(subtype->tp_alloc(subtype, 0));
+    // printf("hocobj_new %s %p %p\n", subtype->tp_name, subtype, subself.ptr());
+    if (!subself) {
+        return nullptr;
     }
-    PyHocObject* self = (PyHocObject*) subself;
+    PyHocObject* self = (PyHocObject*) subself.ptr();
     self->ho_ = NULL;
     self->u.x_ = 0.;
     self->sym_ = NULL;
@@ -291,8 +290,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
             hbase = (PyHocObject*) base;
         } else {
             PyErr_SetString(PyExc_TypeError, "HOC base class not valid");
-            Py_DECREF(subself);
-            return NULL;
+            return nullptr;
         }
         PyDict_DelItemString(kwds, "hocbase");
     }
@@ -303,8 +301,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
         // the "sec" keyword argument
         PyObject* r = hocobj_call(hbase, args, kwds);
         if (!r) {
-            Py_DECREF(subself);
-            return NULL;
+            return nullptr;
         }
         PyHocObject* rh = (PyHocObject*) r;
         self->type_ = rh->type_;
@@ -313,7 +310,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
         Py_DECREF(r);
     }
 
-    return subself;
+    return subself.release().ptr();
 }
 
 static int hocobj_init(PyObject* subself, PyObject* args, PyObject* kwds) {
