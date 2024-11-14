@@ -422,25 +422,23 @@ static Object* callable_with_args(Object* ho, int narg) {
     auto po = nb::borrow(((Py2Nrn*) ho->u.this_pointer)->po_);
     nanobind::gil_scoped_acquire lock{};
 
-    PyObject* args = PyTuple_New((Py_ssize_t) narg);
-    if (args == NULL) {
+    auto args = nb::steal(PyTuple_New((Py_ssize_t) narg));
+    if (!args) {
         hoc_execerror("PyTuple_New failed", 0);
     }
     for (int i = 0; i < narg; ++i) {
         // not used with datahandle args.
         PyObject* item = nrnpy_hoc_pop("callable_with_args");
         if (item == NULL) {
-            Py_XDECREF(args);
             hoc_execerror("nrnpy_hoc_pop failed", 0);
         }
-        if (PyTuple_SetItem(args, (Py_ssize_t) (narg - i - 1), item) != 0) {
-            Py_XDECREF(args);
+        if (PyTuple_SetItem(args.ptr(), (Py_ssize_t) (narg - i - 1), item) != 0) {
             hoc_execerror("PyTuple_SetItem failed", 0);
         }
     }
 
     PyObject* r = PyTuple_New(2);
-    PyTuple_SetItem(r, 1, args);
+    PyTuple_SetItem(r, 1, args.release().ptr());
     PyTuple_SetItem(r, 0, po.release().ptr());
 
     Object* hr = nrnpy_po2ho(r);
