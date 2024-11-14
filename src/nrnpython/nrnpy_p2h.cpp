@@ -538,9 +538,8 @@ static int guigetstr(Object* ho, char** cpp) {
     nanobind::gil_scoped_acquire lock{};
 
     PyObject* r = PyObject_GetAttr(PyTuple_GetItem(po, 0), PyTuple_GetItem(po, 1));
-    PyObject* pn = PyObject_Str(r);
-    Py2NRNString name(pn);
-    Py_DECREF(pn);
+    auto pn = nb::steal(PyObject_Str(r));
+    Py2NRNString name(pn.ptr());
     char* cp = name.c_str();
     if (*cpp && strcmp(*cpp, cp) == 0) {
         return 0;
