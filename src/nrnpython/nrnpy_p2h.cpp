@@ -154,7 +154,7 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
     int i;
     Py2Nrn* pn = (Py2Nrn*) ob->u.this_pointer;
     auto head = nb::borrow(pn->po_);
-    PyObject* tail;
+    nb::object tail;
     nanobind::gil_scoped_acquire lock{};
     if (pn->type_ == 0) {  // top level
         if (!main_module) {
@@ -163,14 +163,13 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             Py_INCREF(main_module);
             Py_INCREF(main_namespace);
         }
-        tail = PyRun_String(sym->name, Py_eval_input, main_namespace, main_namespace);
+        tail = nb::steal(PyRun_String(sym->name, Py_eval_input, main_namespace, main_namespace));
     } else {
         head.inc_ref();
         if (strcmp(sym->name, "_") == 0) {
-            tail = head.ptr();
-            Py_INCREF(tail);
+            tail = head;
         } else {
-            tail = PyObject_GetAttrString(head.ptr(), sym->name);
+            tail = nb::steal(PyObject_GetAttrString(head.ptr(), sym->name));
         }
     }
     if (!tail) {
@@ -197,7 +196,6 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         // printf("  result of call\n");
         if (!result) {
             char* mes = nrnpyerr_str();
-            Py_XDECREF(tail);
             if (mes) {
                 Fprintf(stderr, "%s\n", mes);
                 free(mes);
@@ -227,13 +225,13 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             // TypeError: list indices must be integers or slices, not hoc.HocObject
             arg = nb::steal(nrnpy_hoc_pop("nindex py2n_component"));
         }
-        result = PyObject_GetItem(tail, arg.ptr());
+        result = PyObject_GetItem(tail.ptr(), arg.ptr());
         if (!result) {
             PyErr_Print();
             hoc_execerror("Python get item failed:", hoc_object_name(ob));
         }
     } else {
-        result = tail;
+        result = tail.ptr();
         Py_INCREF(result);
     }
     // printf("py2n_component %s %d %s result refcount=%d\n", hoc_object_name(ob),
@@ -259,7 +257,6 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         }
     }
     Py_XDECREF(result);
-    Py_DECREF(tail);
 }
 
 static void hpoasgn(Object* o, int type) {
