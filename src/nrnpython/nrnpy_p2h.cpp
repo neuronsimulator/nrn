@@ -340,9 +340,8 @@ static double praxis_efun(Object* ho, Object* v) {
 
     auto pc = nb::steal(nrnpy_ho2po(ho));
     auto pv = nb::steal(nrnpy_ho2po(v));
-    PyObject* po = Py_BuildValue("(OO)", pc.ptr(), pv.ptr());
-    nb::object r = hoccommand_exec_help1(nb::borrow(po));
-    Py_XDECREF(po);
+    auto po = nb::steal(Py_BuildValue("(OO)", pc.ptr(), pv.ptr()));
+    nb::object r = hoccommand_exec_help1(po);
     if (!r.is_valid()) {
         char* mes = nrnpyerr_str();
         if (mes) {
