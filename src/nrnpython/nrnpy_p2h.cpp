@@ -339,9 +339,8 @@ static double praxis_efun(Object* ho, Object* v) {
     nanobind::gil_scoped_acquire lock{};
 
     auto pc = nb::steal(nrnpy_ho2po(ho));
-    PyObject* pv = nrnpy_ho2po(v);
-    PyObject* po = Py_BuildValue("(OO)", pc.ptr(), pv);
-    Py_XDECREF(pv);
+    auto pv = nb::steal(nrnpy_ho2po(v));
+    PyObject* po = Py_BuildValue("(OO)", pc.ptr(), pv.ptr());
     nb::object r = hoccommand_exec_help1(nb::borrow(po));
     Py_XDECREF(po);
     if (!r.is_valid()) {
