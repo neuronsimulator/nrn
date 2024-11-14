@@ -1488,7 +1488,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
     }
     if (self->ho_) {  // use the component fork.
         PyObject* result = hocobj_new(hocobject_type, 0, 0);
-        po = (PyHocObject*) result;
+        auto* po = (PyHocObject*) result;
         po->ho_ = self->ho_;
         hoc_obj_ref(po->ho_);
         po->sym_ = sym;
