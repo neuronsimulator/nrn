@@ -502,9 +502,8 @@ static double guigetval(Object* ho) {
     } else {
         r = PyObject_GetAttr(p, PyTuple_GetItem(po, 1));
     }
-    PyObject* pn = PyNumber_Float(r);
-    double x = PyFloat_AsDouble(pn);
-    Py_XDECREF(pn);
+    auto pn = nb::steal(PyNumber_Float(r));
+    double x = PyFloat_AsDouble(pn.ptr());
     return x;
 }
 
