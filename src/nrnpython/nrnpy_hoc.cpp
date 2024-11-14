@@ -1487,8 +1487,10 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
         return -1;
     }
     if (self->ho_) {  // use the component fork.
-        PyObject* result = hocobj_new(hocobject_type, 0, 0);
-        auto* po = (PyHocObject*) result;
+        // Convention: `result` owns the Python object, and `po` is
+        // just a (casted) pointer/view.
+        auto result = nb::steal(hocobj_new(hocobject_type, 0, 0));
+        auto* po = (PyHocObject*) result.ptr();
         po->ho_ = self->ho_;
         hoc_obj_ref(po->ho_);
         po->sym_ = sym;
@@ -1504,21 +1506,17 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
                 if (nrn_inpython_ == 2) {  // error in component
                     nrn_inpython_ = 0;
                     PyErr_SetString(PyExc_TypeError, "No value");
-                    Py_DECREF(po);
                     return -1;
                 }
-                Py_DECREF(po);
                 return set_final_from_stk(value);
             } else {
                 char e[200];
                 Sprintf(e, "'%s' requires subscript for assignment", n);
                 PyErr_SetString(PyExc_TypeError, e);
-                Py_DECREF(po);
                 return -1;
             }
         } else {
             PyErr_SetString(PyExc_TypeError, "not assignable");
-            Py_DECREF(po);
             return -1;
         }
     }
