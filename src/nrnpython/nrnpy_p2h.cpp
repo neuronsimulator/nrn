@@ -523,14 +523,13 @@ static double guigetval(Object* ho) {
 static void guisetval(Object* ho, double x) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
     nanobind::gil_scoped_acquire lock{};
-    PyObject* pn = PyFloat_FromDouble(x);
+    auto pn = nb::steal(PyFloat_FromDouble(x));
     PyObject* p = PyTuple_GetItem(po, 0);
     if (PySequence_Check(p) || PyMapping_Check(p)) {
-        PyObject_SetItem(p, PyTuple_GetItem(po, 1), pn);
+        PyObject_SetItem(p, PyTuple_GetItem(po, 1), pn.ptr());
     } else {
-        PyObject_SetAttr(p, PyTuple_GetItem(po, 1), pn);
+        PyObject_SetAttr(p, PyTuple_GetItem(po, 1), pn.ptr());
     }
-    Py_XDECREF(pn);
 }
 
 static int guigetstr(Object* ho, char** cpp) {
