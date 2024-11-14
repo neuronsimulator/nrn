@@ -338,10 +338,9 @@ static nb::object hoccommand_exec_help(Object* ho) {
 static double praxis_efun(Object* ho, Object* v) {
     nanobind::gil_scoped_acquire lock{};
 
-    PyObject* pc = nrnpy_ho2po(ho);
+    auto pc = nb::steal(nrnpy_ho2po(ho));
     PyObject* pv = nrnpy_ho2po(v);
-    PyObject* po = Py_BuildValue("(OO)", pc, pv);
-    Py_XDECREF(pc);
+    PyObject* po = Py_BuildValue("(OO)", pc.ptr(), pv);
     Py_XDECREF(pv);
     nb::object r = hoccommand_exec_help1(nb::borrow(po));
     Py_XDECREF(po);
