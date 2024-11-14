@@ -419,7 +419,7 @@ static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
 }
 
 static Object* callable_with_args(Object* ho, int narg) {
-    PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
+    auto po = nb::borrow(((Py2Nrn*) ho->u.this_pointer)->po_);
     nanobind::gil_scoped_acquire lock{};
 
     PyObject* args = PyTuple_New((Py_ssize_t) narg);
@@ -441,8 +441,7 @@ static Object* callable_with_args(Object* ho, int narg) {
 
     PyObject* r = PyTuple_New(2);
     PyTuple_SetItem(r, 1, args);
-    Py_INCREF(po);  // when r is destroyed, do not want po refcnt to go to 0
-    PyTuple_SetItem(r, 0, po);
+    PyTuple_SetItem(r, 0, po.release().ptr());
 
     Object* hr = nrnpy_po2ho(r);
     Py_XDECREF(r);
