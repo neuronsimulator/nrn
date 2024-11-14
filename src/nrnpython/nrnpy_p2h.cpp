@@ -805,7 +805,6 @@ static PyObject* py_broadcast(PyObject* psrc, int root) {
 static Object* py_alltoall_type(int size, int type) {
     int np = nrnmpi_numprocs;  // of subworld communicator
     PyObject* psrc = NULL;
-    PyObject* pdest = NULL;
 
     if (type == 1 || type == 5) {  // alltoall, scatter
         Object* o = *hoc_objgetarg(1);
@@ -858,6 +857,7 @@ static Object* py_alltoall_type(int size, int type) {
 #if NRNMPI
     setpickle();
     int root;
+    PyObject* pdest = NULL;
 
     if (type == 2) {
         pdest = py_allgather(psrc);
