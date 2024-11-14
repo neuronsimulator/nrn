@@ -1028,13 +1028,11 @@ PyObject* toplevel_get(PyObject* subself, const char* n) {
     PyHocObject* self = (PyHocObject*) subself;
     PyObject* result = NULL;
     if (self->type_ == PyHoc::HocTopLevelInterpreter) {
-        PyObject* descr = PyDict_GetItemString(topmethdict, n);
+        auto descr = nb::borrow(PyDict_GetItemString(topmethdict, n));
         if (descr) {
-            Py_INCREF(descr);
-            descrgetfunc f = descr->ob_type->tp_descr_get;
+            descrgetfunc f = descr.ptr()->ob_type->tp_descr_get;
             assert(f);
-            result = f(descr, subself, (PyObject*) Py_TYPE(subself));
-            Py_DECREF(descr);
+            result = f(descr.ptr(), subself, (PyObject*) Py_TYPE(subself));
         }
     }
     return result;
