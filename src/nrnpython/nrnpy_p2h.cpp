@@ -242,9 +242,8 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
     // if numeric, string, or python HocObject return those
     if (nrnpy_numbercheck(result)) {
         hoc_pop_defer();
-        PyObject* pn = PyNumber_Float(result);
-        hoc_pushx(PyFloat_AsDouble(pn));
-        Py_XDECREF(pn);
+        auto pn = nb::steal(PyNumber_Float(result));
+        hoc_pushx(PyFloat_AsDouble(pn.ptr()));
     } else if (is_python_string(result)) {
         char** ts = hoc_temp_charptr();
         Py2NRNString str(result, true);
