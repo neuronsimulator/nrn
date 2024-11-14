@@ -817,19 +817,19 @@ static Object* py_alltoall_type(int size, int type) {
 #if NRNMPI
     setpickle();
     int root;
-    PyObject* pdest = NULL;
+    nb::object pdest;
 
     if (type == 2) {
-        pdest = py_allgather(psrc.ptr());
+        pdest = nb::steal(py_allgather(psrc.ptr()));
     } else if (type != 1 && type != 5) {
         root = size;
         if (root < 0 || root >= np) {
             hoc_execerror("root rank must be >= 0 and < nhost", 0);
         }
         if (type == 3) {
-            pdest = py_gather(psrc.ptr(), root);
+            pdest = nb::steal(py_gather(psrc.ptr(), root));
         } else if (type == 4) {
-            pdest = py_broadcast(psrc.ptr(), root);
+            pdest = nb::steal(py_broadcast(psrc.ptr(), root));
         }
     } else {
         if (type == 5) {  // scatter
@@ -883,7 +883,7 @@ static Object* py_alltoall_type(int size, int type) {
             sdispl = mk_displ(scnt.data());
             rdispl = mk_displ(rcnt);
             if (size < 0) {
-                pdest = nb::make_tuple(sdispl[np], rdispl[np]).release().ptr();
+                pdest = nb::make_tuple(sdispl[np], rdispl[np]);
                 delete[] sdispl;
                 delete[] rcnt;
                 delete[] rdispl;
@@ -892,7 +892,7 @@ static Object* py_alltoall_type(int size, int type) {
                 nrnmpi_char_alltoallv(s.data(), scnt.data(), sdispl, r, rcnt, rdispl);
                 delete[] sdispl;
 
-                pdest = char2pylist(r, np, rcnt, rdispl);
+                pdest = nb::steal(char2pylist(r, np, rcnt, rdispl));
 
                 delete[] r;
                 delete[] rcnt;
@@ -915,19 +915,16 @@ static Object* py_alltoall_type(int size, int type) {
                 delete[] sdispl;
 
             if (rcnt[0]) {
-                nb::object po = unpickle(r);
-                pdest = po.release().ptr();
+                pdest = unpickle(r);
             } else {
-                pdest = Py_None;
-                Py_INCREF(pdest);
+                pdest = nb::none();
             }
 
             delete[] rcnt;
             assert(rdispl == NULL);
         }
     }
-    Object* ho = nrnpy_po2ho(pdest);
-    Py_XDECREF(pdest);
+    Object* ho = nrnpy_po2ho(pdest.ptr());
     if (ho) {
         --ho->refcount;
     }
