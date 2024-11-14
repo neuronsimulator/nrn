@@ -2234,10 +2234,9 @@ static int hocobj_slice_setitem(PyObject* self, PyObject* slice, PyObject* arg) 
         }
         PyArg_Parse(val.ptr(), "d", vector_vec(v) + (i * step + start));
     }
-    PyObject* val = PyIter_Next(iter);
+    auto val = nb::steal(PyIter_Next(iter));
     Py_DECREF(iter);
     if (val) {
-        Py_DECREF(val);
         PyErr_SetString(PyExc_IndexError, "iterable object must have the same length as slice");
         return -1;
     }
