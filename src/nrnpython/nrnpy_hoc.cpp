@@ -564,10 +564,8 @@ int nrnpy_numbercheck(PyObject* po) {
     // or things that fail when float(po) fails. ARGGH! This
     // is a lot more expensive than I would like.
     if (rval == 1) {
-        PyObject* tmp = PyNumber_Float(po);
-        if (tmp) {
-            Py_DECREF(tmp);
-        } else {
+        auto tmp = nb::steal(PyNumber_Float(po));
+        if (!tmp) {
             PyErr_Clear();
             rval = 0;
         }
