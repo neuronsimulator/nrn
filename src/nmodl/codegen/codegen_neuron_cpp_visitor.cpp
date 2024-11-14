@@ -1103,6 +1103,7 @@ void CodegenNeuronCppVisitor::print_neuron_includes() {
     printer->add_multi_line(R"CODE(
         #include "mech_api.h"
         #include "neuron/cache/mechanism_range.hpp"
+        #include "nmodlmutex.h"
         #include "nrniv_mf.h"
         #include "section_fwd.hpp"
     )CODE");
@@ -3061,6 +3062,14 @@ void CodegenNeuronCppVisitor::visit_for_netcon(const ast::ForNetcon& node) {
     printer->add_line("double * _netcon_data = _fornetcon_data[_i];");
     print_statement_block(*statement_block, false, false);
     printer->pop_block();
+}
+
+void CodegenNeuronCppVisitor::visit_protect_statement(const ast::ProtectStatement& node) {
+    printer->add_line("_NMODLMUTEXLOCK");
+    printer->add_indent();
+    node.get_expression()->accept(*this);
+    printer->add_text(";");
+    printer->add_line("_NMODLMUTEXUNLOCK");
 }
 
 

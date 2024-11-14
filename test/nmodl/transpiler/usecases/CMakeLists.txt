@@ -25,6 +25,7 @@ set(NMODL_USECASE_DIRS
     point_process
     pointer
     procedure
+    protect
     random
     solve
     state
