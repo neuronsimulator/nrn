@@ -428,11 +428,11 @@ static Object* callable_with_args(Object* ho, int narg) {
     }
     for (int i = 0; i < narg; ++i) {
         // not used with datahandle args.
-        PyObject* item = nrnpy_hoc_pop("callable_with_args");
-        if (item == NULL) {
+        auto item = nb::steal(nrnpy_hoc_pop("callable_with_args"));
+        if (!item) {
             hoc_execerror("nrnpy_hoc_pop failed", 0);
         }
-        if (PyTuple_SetItem(args.ptr(), (Py_ssize_t) (narg - i - 1), item) != 0) {
+        if (PyTuple_SetItem(args.ptr(), (Py_ssize_t) (narg - i - 1), item.release().ptr()) != 0) {
             hoc_execerror("PyTuple_SetItem failed", 0);
         }
     }
