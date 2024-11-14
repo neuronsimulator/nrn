@@ -605,7 +605,6 @@ static char* nrnpyerr_str() {
         // try for full backtrace
         PyObject* module_name = NULL;
         PyObject* pyth_module = NULL;
-        PyObject* pyth_func = NULL;
         PyObject* py_str = NULL;
         char* cmes = NULL;
 
@@ -620,9 +619,10 @@ static char* nrnpyerr_str() {
             pyth_module = PyImport_Import(module_name);
         }
         if (pyth_module) {
-            pyth_func = PyObject_GetAttrString(pyth_module, "format_exception");
+            auto pyth_func = nb::steal(PyObject_GetAttrString(pyth_module, "format_exception"));
             if (pyth_func) {
-                py_str = PyObject_CallFunctionObjArgs(pyth_func, ptype, pvalue, ptraceback, NULL);
+                py_str =
+                    PyObject_CallFunctionObjArgs(pyth_func.ptr(), ptype, pvalue, ptraceback, NULL);
             }
         }
         if (py_str) {
@@ -643,7 +643,6 @@ static char* nrnpyerr_str() {
         }
 
         Py_XDECREF(module_name);
-        Py_XDECREF(pyth_func);
         Py_XDECREF(pyth_module);
         Py_XDECREF(ptype);
         Py_XDECREF(pvalue);
