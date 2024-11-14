@@ -1158,22 +1158,21 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             return PyObject_CallFunctionObjArgs(plotshape_plot, (PyObject*) self, NULL);
         } else if (strcmp(n, "__doc__") == 0) {
             if (setup_doc_system()) {
-                PyObject* docobj = NULL;
+                nb::object docobj;
                 if (self->ho_) {
-                    docobj = Py_BuildValue("s s",
-                                           self->ho_->ctemplate->sym->name,
-                                           self->sym_ ? self->sym_->name : "");
+                    docobj = nb::steal(Py_BuildValue("s s",
+                                                     self->ho_->ctemplate->sym->name,
+                                                     self->sym_ ? self->sym_->name : ""));
                 } else if (self->sym_) {
                     // Symbol
-                    docobj = Py_BuildValue("s s", "", self->sym_->name);
+                    docobj = nb::steal(Py_BuildValue("s s", "", self->sym_->name));
                 } else {
                     // Base HocObject
 
-                    docobj = Py_BuildValue("s s", "", "");
+                    docobj = nb::steal(Py_BuildValue("s s", "", ""));
                 }
 
-                result = PyObject_CallObject(pfunc_get_docstring, docobj);
-                Py_DECREF(docobj);
+                result = PyObject_CallObject(pfunc_get_docstring, docobj.ptr());
                 return result;
             } else {
                 return NULL;
