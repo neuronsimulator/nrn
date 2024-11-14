@@ -995,10 +995,8 @@ static PyObject* nrnpy_set_psection(PyObject* self, PyObject* args) {
         PyErr_SetString(PyExc_TypeError, "argument must be a callable");
         return NULL;
     }
-    if (nrnpy_psection) {
-        Py_DECREF(nrnpy_psection);
-        nrnpy_psection = NULL;
-    }
+
+    Py_XDECREF(nrnpy_psection);
     nrnpy_psection = po;
     Py_INCREF(po);
     return po;
