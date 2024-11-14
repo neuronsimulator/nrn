@@ -826,13 +826,11 @@ static Object* py_alltoall_type(int size, int type) {
             if (type == 1) {
                 return o;
             } else {  // return psrc[0]
-                pdest = PyList_GetItem(psrc, 0);
-                Py_INCREF(pdest);
-                Object* ho = nrnpy_po2ho(pdest);
+                auto pdest = nb::borrow(PyList_GetItem(psrc, 0));
+                Object* ho = nrnpy_po2ho(pdest.ptr());
                 if (ho) {
                     --ho->refcount;
                 }
-                Py_XDECREF(pdest);
                 return ho;
             }
         }
