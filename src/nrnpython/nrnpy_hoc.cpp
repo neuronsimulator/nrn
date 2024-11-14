@@ -1224,8 +1224,10 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         return NULL;
     }
     if (self->ho_) {  // use the component fork.
-        PyObject* ret_ho_ = hocobj_new(hocobject_type, 0, 0);
-        PyHocObject* po = (PyHocObject*) ret_ho_;
+        // We use the convention that `ret_ho_` own the Python object,
+        // and `po` is just a (casted) pointer/view.
+        auto ret_ho_ = nb::steal(hocobj_new(hocobject_type, 0, 0));
+        PyHocObject* po = (PyHocObject*) ret_ho_.ptr();
         po->ho_ = self->ho_;
         hoc_obj_ref(po->ho_);
         po->sym_ = sym;
@@ -1241,11 +1243,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                 if (nrn_inpython_ == 2) {  // error in component
                     nrn_inpython_ = 0;
                     PyErr_SetString(PyExc_TypeError, "No value");
-                    Py_DECREF(po);
-                    return NULL;
+                    return nullptr;
                 }
                 nrn_inpython_ = 0;
-                Py_DECREF(po);
                 if (t == SECTION || t == SECTIONREF) {
                     section_object_seen = 0;
                     PyObject* ret = nrnpy_cas(0, 0);
@@ -1265,11 +1265,11 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                 } else {
                     po->type_ = PyHoc::HocArray;
                 }
-                return ret_ho_;
+                return ret_ho_.release().ptr();
             }
         } else {
             po->type_ = PyHoc::HocFunction;
-            return ret_ho_;
+            return ret_ho_.release().ptr();
         }
     }
     // top level interpreter fork
