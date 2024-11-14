@@ -415,9 +415,8 @@ int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
         // PyObject_Print(po, stdout, 0);
         // printf("  pushargs %d\n", i);
         if (nrnpy_numbercheck(po)) {
-            PyObject* pn = PyNumber_Float(po);
-            hoc_pushx(PyFloat_AsDouble(pn));
-            Py_XDECREF(pn);
+            auto pn = nb::steal(PyNumber_Float(po));
+            hoc_pushx(PyFloat_AsDouble(pn.ptr()));
         } else if (is_python_string(po)) {
             char** ts = hoc_temp_charptr();
             Py2NRNString str(po, /* disable_release */ true);
