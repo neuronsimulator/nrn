@@ -153,7 +153,7 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
 #endif
     int i;
     Py2Nrn* pn = (Py2Nrn*) ob->u.this_pointer;
-    PyObject* head = pn->po_;
+    auto head = nb::borrow(pn->po_);
     PyObject* tail;
     nanobind::gil_scoped_acquire lock{};
     if (pn->type_ == 0) {  // top level
@@ -165,12 +165,12 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         }
         tail = PyRun_String(sym->name, Py_eval_input, main_namespace, main_namespace);
     } else {
-        Py_INCREF(head);
+        head.inc_ref();
         if (strcmp(sym->name, "_") == 0) {
-            tail = head;
+            tail = head.ptr();
             Py_INCREF(tail);
         } else {
-            tail = PyObject_GetAttrString(head, sym->name);
+            tail = PyObject_GetAttrString(head.ptr(), sym->name);
         }
     }
     if (!tail) {
@@ -198,7 +198,6 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         if (!result) {
             char* mes = nrnpyerr_str();
             Py_XDECREF(tail);
-            Py_XDECREF(head);
             if (mes) {
                 Fprintf(stderr, "%s\n", mes);
                 free(mes);
@@ -260,7 +259,6 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         }
     }
     Py_XDECREF(result);
-    Py_XDECREF(head);
     Py_DECREF(tail);
 }
 
