@@ -603,7 +603,6 @@ static char* nrnpyerr_str() {
         PyErr_Fetch(&ptype, &pvalue, &ptraceback);
         PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
         // try for full backtrace
-        PyObject* pyth_module = NULL;
         PyObject* py_str = NULL;
         char* cmes = NULL;
 
@@ -613,9 +612,10 @@ static char* nrnpyerr_str() {
             ptraceback = Py_None;
             Py_INCREF(ptraceback);
         }
-        pyth_module = PyImport_ImportModule("neuron");
+        auto pyth_module = nb::steal(PyImport_ImportModule("neuron"));
         if (pyth_module) {
-            auto pyth_func = nb::steal(PyObject_GetAttrString(pyth_module, "format_exception"));
+            auto pyth_func = nb::steal(
+                PyObject_GetAttrString(pyth_module.ptr(), "format_exception"));
             if (pyth_func) {
                 py_str =
                     PyObject_CallFunctionObjArgs(pyth_func.ptr(), ptype, pvalue, ptraceback, NULL);
@@ -638,7 +638,6 @@ static char* nrnpyerr_str() {
             Fprintf(stderr, "nrnpyerr_str failed\n");
         }
 
-        Py_XDECREF(pyth_module);
         Py_XDECREF(ptype);
         Py_XDECREF(pvalue);
         Py_XDECREF(ptraceback);
