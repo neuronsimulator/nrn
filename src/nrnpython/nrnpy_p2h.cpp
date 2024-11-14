@@ -603,7 +603,7 @@ static char* nrnpyerr_str() {
         PyErr_Fetch(&ptype, &pvalue, &ptraceback);
         PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
         // try for full backtrace
-        PyObject* py_str = NULL;
+        nb::object py_str;
         char* cmes = NULL;
 
         // Since traceback.format_exception returns list of strings, wrap
@@ -617,12 +617,12 @@ static char* nrnpyerr_str() {
             auto pyth_func = nb::steal(
                 PyObject_GetAttrString(pyth_module.ptr(), "format_exception"));
             if (pyth_func) {
-                py_str =
-                    PyObject_CallFunctionObjArgs(pyth_func.ptr(), ptype, pvalue, ptraceback, NULL);
+                py_str = nb::steal(
+                    PyObject_CallFunctionObjArgs(pyth_func.ptr(), ptype, pvalue, ptraceback, NULL));
             }
         }
         if (py_str) {
-            Py2NRNString mes(py_str);
+            Py2NRNString mes(py_str.ptr());
             if (mes.err()) {
                 Fprintf(stderr, "nrnperr_str: Py2NRNString failed\n");
             } else {
@@ -641,7 +641,6 @@ static char* nrnpyerr_str() {
         Py_XDECREF(ptype);
         Py_XDECREF(pvalue);
         Py_XDECREF(ptraceback);
-        Py_XDECREF(py_str);
 
         return cmes;
     }
