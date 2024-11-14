@@ -605,6 +605,7 @@ static char* nrnpyerr_str() {
 
         auto type = nb::steal(ptype);
         auto value = nb::steal(pvalue);
+        auto traceback = nb::steal(ptraceback);
 
         // try for full backtrace
         nb::object py_str;
@@ -612,9 +613,8 @@ static char* nrnpyerr_str() {
 
         // Since traceback.format_exception returns list of strings, wrap
         // in neuron.format_exception that returns a string.
-        if (!ptraceback) {
-            ptraceback = Py_None;
-            Py_INCREF(ptraceback);
+        if (!traceback) {
+            traceback = nb::none();
         }
         auto pyth_module = nb::steal(PyImport_ImportModule("neuron"));
         if (pyth_module) {
@@ -622,7 +622,7 @@ static char* nrnpyerr_str() {
                 PyObject_GetAttrString(pyth_module.ptr(), "format_exception"));
             if (pyth_func) {
                 py_str = nb::steal(PyObject_CallFunctionObjArgs(
-                    pyth_func.ptr(), type.ptr(), value.ptr(), ptraceback, NULL));
+                    pyth_func.ptr(), type.ptr(), value.ptr(), traceback.ptr(), NULL));
             }
         }
         if (py_str) {
@@ -641,8 +641,6 @@ static char* nrnpyerr_str() {
             PyErr_Print();
             Fprintf(stderr, "nrnpyerr_str failed\n");
         }
-
-        Py_XDECREF(ptraceback);
 
         return cmes;
     }
