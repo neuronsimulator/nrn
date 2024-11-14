@@ -437,12 +437,11 @@ static Object* callable_with_args(Object* ho, int narg) {
         }
     }
 
-    PyObject* r = PyTuple_New(2);
-    PyTuple_SetItem(r, 1, args.release().ptr());
-    PyTuple_SetItem(r, 0, po.release().ptr());
+    auto r = nb::steal(PyTuple_New(2));
+    PyTuple_SetItem(r.ptr(), 1, args.release().ptr());
+    PyTuple_SetItem(r.ptr(), 0, po.release().ptr());
 
-    Object* hr = nrnpy_po2ho(r);
-    Py_XDECREF(r);
+    Object* hr = nrnpy_po2ho(r.release().ptr());
 
     return hr;
 }
