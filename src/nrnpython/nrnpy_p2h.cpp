@@ -177,7 +177,7 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         hoc_execerror("No attribute:", sym->name);
     }
     Object* on;
-    PyObject* result = 0;
+    nb::object result;
     if (isfunc) {
         nb::list args{};
         for (i = 0; i < nindex; ++i) {
@@ -191,7 +191,7 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         }
         args.reverse();
         // printf("PyObject_CallObject %s %p\n", sym->name, tail);
-        result = nrnpy_pyCallObject(nb::borrow<nb::callable>(tail), args).release().ptr();
+        result = nrnpy_pyCallObject(nb::borrow<nb::callable>(tail), args);
         // PyObject_Print(result, stdout, 0);
         // printf("  result of call\n");
         if (!result) {
@@ -225,38 +225,36 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             // TypeError: list indices must be integers or slices, not hoc.HocObject
             arg = nb::steal(nrnpy_hoc_pop("nindex py2n_component"));
         }
-        result = PyObject_GetItem(tail.ptr(), arg.ptr());
+        result = nb::steal(PyObject_GetItem(tail.ptr(), arg.ptr()));
         if (!result) {
             PyErr_Print();
             hoc_execerror("Python get item failed:", hoc_object_name(ob));
         }
     } else {
-        result = tail.ptr();
-        Py_INCREF(result);
+        result = tail;
     }
     // printf("py2n_component %s %d %s result refcount=%d\n", hoc_object_name(ob),
     // ob->refcount, sym->name, result->ob_refcnt);
     // if numeric, string, or python HocObject return those
-    if (nrnpy_numbercheck(result)) {
+    if (nrnpy_numbercheck(result.ptr())) {
         hoc_pop_defer();
-        auto pn = nb::steal(PyNumber_Float(result));
+        auto pn = nb::steal(PyNumber_Float(result.ptr()));
         hoc_pushx(PyFloat_AsDouble(pn.ptr()));
-    } else if (is_python_string(result)) {
+    } else if (is_python_string(result.ptr())) {
         char** ts = hoc_temp_charptr();
-        Py2NRNString str(result, true);
+        Py2NRNString str(result.ptr(), true);
         *ts = str.c_str();
         hoc_pop_defer();
         hoc_pushstr(ts);
     } else {
         // PyObject_Print(result, stdout, 0);
-        on = nrnpy_po2ho(result);
+        on = nrnpy_po2ho(result.ptr());
         hoc_pop_defer();
         hoc_push_object(on);
         if (on) {
             on->refcount--;
         }
     }
-    Py_XDECREF(result);
 }
 
 static void hpoasgn(Object* o, int type) {
