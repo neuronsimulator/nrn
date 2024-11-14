@@ -2220,23 +2220,21 @@ static int hocobj_slice_setitem(PyObject* self, PyObject* slice, PyObject* arg) 
     Py_ssize_t cap = vector_capacity(v);
     PySlice_GetIndicesEx(slice, cap, &start, &end, &step, &slicelen);
     // Slice index assignment requires a list of the same size as the slice
-    PyObject* iter = PyObject_GetIter(arg);
+    auto iter = nb::steal(PyObject_GetIter(arg));
     if (!iter) {
         PyErr_SetString(PyExc_TypeError, "can only assign an iterable");
         return -1;
     }
     for (Py_ssize_t i = 0; i < slicelen; ++i) {
-        auto val = nb::steal(PyIter_Next(iter));
+        auto val = nb::steal(PyIter_Next(iter.ptr()));
         if (!val) {
-            Py_DECREF(iter);
             PyErr_SetString(PyExc_IndexError,
                             "iterable object must have the same length as slice (it's too short)");
             return -1;
         }
         PyArg_Parse(val.ptr(), "d", vector_vec(v) + (i * step + start));
     }
-    auto val = nb::steal(PyIter_Next(iter));
-    Py_DECREF(iter);
+    auto val = nb::steal(PyIter_Next(iter.ptr()));
     if (val) {
         PyErr_SetString(PyExc_IndexError,
                         "iterable object must have the same length as slice (it's too long)");
