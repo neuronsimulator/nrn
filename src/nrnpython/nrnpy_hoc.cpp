@@ -1224,8 +1224,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         return NULL;
     }
     if (self->ho_) {  // use the component fork.
-        result = hocobj_new(hocobject_type, 0, 0);
-        PyHocObject* po = (PyHocObject*) result;
+        PyObject* ret_ho_ = hocobj_new(hocobject_type, 0, 0);
+        PyHocObject* po = (PyHocObject*) ret_ho_;
         po->ho_ = self->ho_;
         hoc_obj_ref(po->ho_);
         po->sym_ = sym;
@@ -1265,11 +1265,11 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                 } else {
                     po->type_ = PyHoc::HocArray;
                 }
-                return result;
+                return ret_ho_;
             }
         } else {
             po->type_ = PyHoc::HocFunction;
-            return result;
+            return ret_ho_;
         }
     }
     // top level interpreter fork
