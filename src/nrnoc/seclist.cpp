@@ -118,7 +118,7 @@ static double wholetree(void* v) {
     Section* sec = nrn_secarg(1);
     List* sl = (List*) v;
     /*find root*/
-    Section *s = nullptr;
+    Section* s = nullptr;
     for (s = sec; s->parentsec; s = s->parentsec) {
     }
 
