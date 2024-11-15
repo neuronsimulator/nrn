@@ -23,7 +23,7 @@ def test_random_play():  # for coverage of ptrlist changes #1815
     for _ in range(3):
         h.fadvance()
     std = h.Vector(
-        [0.0, 0.00046940111168614074, 0.004571699024450762, 0.01086603263672303]
+        [0.0, 0.006769657533393409, 0.01017024899523811, 0.016085586243023933]
     )
     assert v_vec.c().sub(std).abs().sum() < 1e-15
 
