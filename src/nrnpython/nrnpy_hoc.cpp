@@ -3417,12 +3417,10 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
 
     topmethdict = PyDict_New();
     for (PyMethodDef* meth = toplevel_methods; meth->ml_name != NULL; meth++) {
-        PyObject* descr;
         int err;
-        descr = PyDescr_NewMethod(hocobject_type, meth);
+        auto descr = nb::steal(PyDescr_NewMethod(hocobject_type, meth));
         assert(descr);
-        err = PyDict_SetItemString(topmethdict, meth->ml_name, descr);
-        Py_DECREF(descr);
+        err = PyDict_SetItemString(topmethdict, meth->ml_name, descr.ptr());
         if (err < 0) {
             goto fail;
         }
