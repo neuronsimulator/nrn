@@ -3245,10 +3245,9 @@ static int get_nrncore_opt_value(const char* option) {
     if (modules) {
         PyObject* module = PyDict_GetItemString(modules, "neuron.coreneuron");
         if (module) {
-            PyObject* val = PyObject_GetAttrString(module, option);
+            auto val = nb::steal(PyObject_GetAttrString(module, option));
             if (val) {
-                long enable = PyLong_AsLong(val);
-                Py_DECREF(val);
+                long enable = PyLong_AsLong(val.ptr());
                 if (enable != -1) {
                     return enable;
                 }
