@@ -2680,8 +2680,8 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
     for (int iarg = 0; iarg < narg; iarg++) {
         const int iiarg = iarg + 1;
         if (hoc_is_object_arg(iiarg)) {
-            PyObject* active_obj = nrnpy_ho2po(*hoc_objgetarg(iiarg));
-            PyTuple_SetItem(args.ptr(), iarg + 3, active_obj);
+            auto active_obj = nb::steal(nrnpy_ho2po(*hoc_objgetarg(iiarg)));
+            PyTuple_SetItem(args.ptr(), iarg + 3, active_obj.release().ptr());
         } else if (hoc_is_pdouble_arg(iiarg)) {
             PyHocObject* ptr_nrn = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
             ptr_nrn->type_ = PyHoc::HocScalarPtr;
