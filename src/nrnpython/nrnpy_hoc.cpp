@@ -2960,35 +2960,36 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
     BYTEHEADER
     int version = -1;
     int size = 0;
-    PyObject* rawdata = NULL;
     PyObject* endian_data;
+    nb::object rawdata;
     PyHocObject* pho = (PyHocObject*) self;
     // printf("hocpickle_setstate %s\n", hoc_object_name(pho->ho_));
     Vect* vec = (Vect*) pho->ho_->u.this_pointer;
-    if (!PyArg_ParseTuple(args, "(iOiO)", &version, &endian_data, &size, &rawdata)) {
-        return NULL;
+    {
+        PyObject* prawdata = NULL;
+        if (!PyArg_ParseTuple(args, "(iOiO)", &version, &endian_data, &size, &prawdata)) {
+            return NULL;
+        }
+
+        rawdata = nb::borrow(prawdata);
     }
     Py_INCREF(endian_data);
-    Py_INCREF(rawdata);
     // printf("hocpickle version=%d size=%d\n", version, size);
     vector_resize(vec, size);
-    if (!PyBytes_Check(rawdata) || !PyBytes_Check(endian_data)) {
+    if (!PyBytes_Check(rawdata.ptr()) || !PyBytes_Check(endian_data)) {
         PyErr_SetString(PyExc_TypeError, "pickle not returning string");
         Py_DECREF(endian_data);
-        Py_DECREF(rawdata);
         return NULL;
     }
     char* datastr;
     Py_ssize_t len;
     if (PyBytes_AsStringAndSize(endian_data, &datastr, &len) < 0) {
         Py_DECREF(endian_data);
-        Py_DECREF(rawdata);
         return NULL;
     }
     if (len != sizeof(double)) {
         PyErr_SetString(PyExc_ValueError, "endian_data size is not sizeof(double)");
         Py_DECREF(endian_data);
-        Py_DECREF(rawdata);
         return NULL;
     }
     BYTESWAP_FLAG = 0;
@@ -2997,14 +2998,12 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
     }
     Py_DECREF(endian_data);
     // printf("byteswap = %d\n", BYTESWAP_FLAG);
-    if (PyBytes_AsStringAndSize(rawdata, &datastr, &len) < 0) {
-        Py_DECREF(rawdata);
+    if (PyBytes_AsStringAndSize(rawdata.ptr(), &datastr, &len) < 0) {
         return NULL;
     }
     if (len != Py_ssize_t(size * sizeof(double))) {
         PyErr_SetString(PyExc_ValueError, "buffer size does not match array size");
-        Py_DECREF(rawdata);
-        return NULL;
+        return nullptr;
     }
     if (BYTESWAP_FLAG) {
         double* x = (double*) datastr;
@@ -3013,7 +3012,6 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
         }
     }
     memcpy((char*) vector_vec(vec), datastr, len);
-    Py_DECREF(rawdata);
 
     Py_RETURN_NONE;
 }
