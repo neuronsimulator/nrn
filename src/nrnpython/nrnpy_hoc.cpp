@@ -3074,12 +3074,11 @@ static PyMethodDef toplevel_methods[] = {
 static void add2topdict(PyObject* dict) {
     for (PyMethodDef* meth = toplevel_methods; meth->ml_name != NULL; meth++) {
         int err;
-        PyObject* nn = Py_BuildValue("s", meth->ml_doc);
+        auto nn = nb::steal(Py_BuildValue("s", meth->ml_doc));
         if (!nn) {
             return;
         }
-        err = PyDict_SetItemString(dict, meth->ml_name, nn);
-        Py_DECREF(nn);
+        err = PyDict_SetItemString(dict, meth->ml_name, nn.ptr());
         if (err) {
             return;
         }
