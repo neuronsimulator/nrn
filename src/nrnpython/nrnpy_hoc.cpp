@@ -2893,12 +2893,11 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
     Vect* vec = (Vect*) pho->ho_->u.this_pointer;
 
     // neuron module has a _pkl method that returns h.Vector(0)
-    PyObject* mod = PyImport_ImportModule("neuron");
-    if (mod == NULL) {
-        return NULL;
+    auto mod = nb::steal(PyImport_ImportModule("neuron"));
+    if (!mod) {
+        return nullptr;
     }
-    PyObject* obj = PyObject_GetAttrString(mod, "_pkl");
-    Py_DECREF(mod);
+    PyObject* obj = PyObject_GetAttrString(mod.ptr(), "_pkl");
     if (obj == NULL) {
         PyErr_SetString(PyExc_Exception, "neuron module has no _pkl method.");
         return NULL;
