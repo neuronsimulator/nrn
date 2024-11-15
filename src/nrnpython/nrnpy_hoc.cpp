@@ -2714,16 +2714,16 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
         Py_INCREF(Py_None);
     }
     PyTuple_SetItem(args, 1, my_obj);  // steals a reference
-    PyObject* my_obj2;
+    nb::object my_obj2;
     if (hoc_thisobject && name[0] != '~') {
-        my_obj2 = nrnpy_ho2po(hoc_thisobject);  // in the case of a HOC object, such as happens with
-                                                // List.browser, the ref count will be 1
+        my_obj2 = nb::steal(nrnpy_ho2po(hoc_thisobject));  // in the case of a HOC object, such as
+                                                           // happens with List.browser, the ref
+                                                           // count will be 1
     } else {
-        my_obj2 = Py_None;
-        Py_INCREF(Py_None);
+        my_obj2 = nb::none();
     }
 
-    PyTuple_SetItem(args, 2, my_obj2);  // steals a reference to my_obj2
+    PyTuple_SetItem(args, 2, my_obj2.release().ptr());  // steals a reference to my_obj2
     PyObject* po = PyObject_CallObject(gui_callback, args);
     if (PyErr_Occurred()) {
         // if there was an error, display it and return 0.
