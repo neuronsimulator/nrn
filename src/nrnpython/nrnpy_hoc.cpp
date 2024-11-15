@@ -2232,9 +2232,9 @@ static int hocobj_slice_setitem(PyObject* self, PyObject* slice, PyObject* arg) 
 
 static PyObject* mkref(PyObject* self, PyObject* args) {
     PyObject* pa;
-    PyHocObject* result;
     if (PyArg_ParseTuple(args, "O", &pa) == 1) {
-        result = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
+        auto result_guard = nb::steal(hocobj_new(hocobject_type, 0, 0));
+        PyHocObject* result = (PyHocObject*) result_guard.ptr();
         if (nrnpy_numbercheck(pa)) {
             result->type_ = PyHoc::HocRefNum;
             auto pn = nb::steal(PyNumber_Float(pa));
@@ -2245,7 +2245,6 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
             Py2NRNString str(pa);
             if (str.err()) {
                 str.set_pyerr(PyExc_TypeError, "string arg must have only ascii characters");
-                Py_XDECREF(result);
                 return NULL;
             }
             char* cpa = str.c_str();
@@ -2254,7 +2253,7 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
             result->type_ = PyHoc::HocRefObj;
             result->u.ho_ = nrnpy_po2ho(pa);
         }
-        return (PyObject*) result;
+        return result_guard.release().ptr();
     }
     PyErr_SetString(PyExc_TypeError, "single arg must be number, string, or Object");
     return NULL;
