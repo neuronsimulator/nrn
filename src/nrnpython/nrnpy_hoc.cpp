@@ -2897,17 +2897,17 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
     if (!mod) {
         return nullptr;
     }
-    PyObject* obj = PyObject_GetAttrString(mod.ptr(), "_pkl");
-    if (obj == NULL) {
+    auto obj = nb::steal(PyObject_GetAttrString(mod.ptr(), "_pkl"));
+    if (!obj) {
         PyErr_SetString(PyExc_Exception, "neuron module has no _pkl method.");
-        return NULL;
+        return nullptr;
     }
 
     PyObject* ret = PyTuple_New(3);
     if (ret == NULL) {
         return NULL;
     }
-    PyTuple_SET_ITEM(ret, 0, obj);
+    PyTuple_SET_ITEM(ret, 0, obj.release().ptr());
     PyTuple_SET_ITEM(ret, 1, Py_BuildValue("(N)", PyInt_FromLong(0)));
     // see numpy implementation if more ret[1] stuff needed in case we
     // pickle anything but a hoc Vector. I don't think ret[1] can be None.
