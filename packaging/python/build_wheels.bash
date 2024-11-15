@@ -25,11 +25,15 @@ fi
 
 py_ver=""
 
+# path to the (temp) requirements file containing all of the build dependencies
+# for NEURON and its submodules
+python_requirements_path="$(mktemp -d)/requirements.txt"
+
 clone_nmodl_and_add_requirements() {
     git config --global --add safe.directory /root/nrn
     git submodule update --init --recursive --force --depth 1 -- external/nmodl
     # We only want the _build_ dependencies
-    sed -e '/^# runtime dependencies/,$ d' external/nmodl/requirements.txt >> my_requirements.txt
+    sed -e '/^# runtime dependencies/,$ d' external/nmodl/requirements.txt >> "${python_requirements_path}"
 }
 
 
@@ -61,7 +65,7 @@ build_wheel_linux() {
 
     echo " - Installing build requirements"
     pip install auditwheel
-    cp packaging/python/build_requirements.txt my_requirements.txt
+    cp packaging/python/build_requirements.txt "${python_requirements_path}"
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
@@ -74,8 +78,8 @@ build_wheel_linux() {
         CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF,CORENRN_ENABLE_OPENMP=ON"
     fi
 
-    cat my_requirements.txt
-    pip install -r my_requirements.txt
+    cat "${python_requirements_path}"
+    pip install -r "${python_requirements_path}"
     pip check
 
     echo " - Building..."
@@ -116,7 +120,7 @@ build_wheel_osx() {
     (( $skip )) && return 0
 
     echo " - Installing build requirements"
-    cp packaging/python/build_requirements.txt my_requirements.txt
+    cp packaging/python/build_requirements.txt "${python_requirements_path}"
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
@@ -129,8 +133,8 @@ build_wheel_osx() {
         CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
     fi
 
-    cat my_requirements.txt
-    pip install -U delocate -r my_requirements.txt
+    cat "${python_requirements_path}"
+    pip install -U delocate -r "${python_requirements_path}"
     pip check
 
     echo " - Building..."

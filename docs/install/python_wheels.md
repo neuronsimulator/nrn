@@ -162,7 +162,7 @@ ls -la wheelhouse
 
 You can build the wheel for a specific python version:
 ```
-bash packaging/python/build_wheels.bash linux 38    # 38 for Python v3.8
+bash packaging/python/build_wheels.bash linux 39    # 39 for Python v3.9
 ```
 
 To build wheels with CoreNEURON support you have to pass an additional argument: `coreneuron`.
@@ -195,10 +195,10 @@ To test the generated wheels, you can do:
 
 ```
 # first arg is a python exe and second arg is the corresponding wheel
-bash packaging/python/test_wheels.sh python3.8 wheelhouse/NEURON-7.8.0.236-cp38-cp38-macosx_10_9_x86_64.whl
+bash packaging/python/test_wheels.sh python3.9 wheelhouse/NEURON-7.8.0.236-cp39-cp39-macosx_10_9_x86_64.whl
 
 # Or, you can provide the pypi url
-bash packaging/python/test_wheels.sh python3.8 "-i https://test.pypi.org/simple/NEURON==7.8.11.2"
+bash packaging/python/test_wheels.sh python3.9 "-i https://test.pypi.org/simple/NEURON==7.8.11.2"
 ```
 
 ### MacOS considerations
@@ -212,7 +212,7 @@ On BB5, we can test CPU wheels with:
 ```
 salloc -A proj16  -N 1 --ntasks-per-node=4 -C "cpu" --time=1:00:00 -p interactive
 module load unstable python
-bash packaging/python/test_wheels.sh python3.8 wheelhouse/NEURON-7.8.0.236-cp38-cp38m-manylinux1_x86_64.whl
+bash packaging/python/test_wheels.sh python3.9 wheelhouse/NEURON-7.8.0.236-cp39-cp39-manylinux1_x86_64.whl
 ```
 
 ## Publishing the wheels on Pypi via Azure
@@ -291,14 +291,14 @@ $ git diff
            matrix:
              parameters:
 -              NRN_PYTHON_VERSION: ["311"]
-+              NRN_PYTHON_VERSION: ["38", "39", "310", "311", "312"]
++              NRN_PYTHON_VERSION: ["39", "310", "311", "312"]
                NRN_NIGHTLY_UPLOAD: ["false"]
 
    nightly:
 ```
 
 The reason we are setting `SETUPTOOLS_SCM_PRETEND_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
-`NEURON_WHEEL_VERSION` will also stop your wheels from getting extra numbers on the version
+`SETUPTOOLS_SCM_PRETEND_VERSION` will also stop your wheels from getting extra numbers on the version.
 
 
 ## Nightly wheels

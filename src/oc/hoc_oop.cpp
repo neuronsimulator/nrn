@@ -584,7 +584,7 @@ void hoc_newobj_ret(void) {
 }
 
 void hoc_newobj(void) { /* template at pc+1 */
-    Symbol *sym = (pc++)->sym;
+    Symbol* sym = (pc++)->sym;
     int narg = (pc++)->i;
 #if USE_PYTHON
     /* look inside stack because of limited number of temporary objects? */
