@@ -2821,8 +2821,8 @@ static Object** nrnpy_vec_to_python(void* v) {
         }
     } else if (PyList_Check(po)) {  // PySequence_SetItem does DECREF of old items
         for (int i = 0; i < size; ++i) {
-            PyObject* pn = PyFloat_FromDouble(x[i]);
-            if (!pn || PyList_SetItem(po, i, pn) == -1) {
+            auto pn = nb::steal(PyFloat_FromDouble(x[i]));
+            if (!pn || PyList_SetItem(po, i, pn.release().ptr()) == -1) {
                 char buf[50];
                 Sprintf(buf, "%d of %d", i, size);
                 hoc_execerror("Could not set a Python Sequence item", buf);
