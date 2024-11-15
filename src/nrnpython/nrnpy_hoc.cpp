@@ -2483,15 +2483,15 @@ static char* double_array_interface(PyObject* po, long& stride) {
     PyObject* pstride;
     PyObject* psize;
     if (PyObject_HasAttrString(po, "__array_interface__")) {
-        PyObject* ai = PyObject_GetAttrString(po, "__array_interface__");
-        Py2NRNString typestr(PyDict_GetItemString(ai, "typestr"));
+        auto ai = nb::steal(PyObject_GetAttrString(po, "__array_interface__"));
+        Py2NRNString typestr(PyDict_GetItemString(ai.ptr(), "typestr"));
         if (strcmp(typestr.c_str(), array_interface_typestr) == 0) {
-            data = PyLong_AsVoidPtr(PyTuple_GetItem(PyDict_GetItemString(ai, "data"), 0));
+            data = PyLong_AsVoidPtr(PyTuple_GetItem(PyDict_GetItemString(ai.ptr(), "data"), 0));
             // printf("double_array_interface idata = %ld\n", idata);
             if (PyErr_Occurred()) {
                 data = 0;
             }
-            pstride = PyDict_GetItemString(ai, "strides");
+            pstride = PyDict_GetItemString(ai.ptr(), "strides");
             if (pstride == Py_None) {
                 stride = 8;
             } else if (PyTuple_Check(pstride)) {
@@ -2515,7 +2515,6 @@ static char* double_array_interface(PyObject* po, long& stride) {
                 data = 0;
             }
         }
-        Py_DECREF(ai);
     }
     return static_cast<char*>(data);
 }
