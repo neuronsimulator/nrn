@@ -2,35 +2,6 @@
 #include <random>
 #include "Random.h"
 
-class Binomial: public Random {
-public:
-    Binomial(int n, double u, RNG *gen)
-        : Random(gen)
-        , d(n ,u)
-    {}
-
-    double operator()() override {
-        return d(*generator());
-    }
-
-private:
-    std::binomial_distribution<> d;
-};
-
-class DiscreteUniform: public Random {
-public:
-    DiscreteUniform(long low, long high, RNG *gen)
-        : Random(gen)
-        , d(low, high)
-    {}
-
-    double operator()() override {
-        return d(*generator());
-    }
-private:
-    std::uniform_int_distribution<> d;
-};
-
 class Erlang: public Random {
 public:
     Erlang(double mean, double variance, RNG *gen)
@@ -87,22 +58,6 @@ public:
 
 private:
     std::normal_distribution<> d;
-};
-
-class Poisson: public Random {
-public:
-    Poisson(double mean, RNG *gen)
-        : Random(gen)
-        , d(mean)
-    {}
-
-    double operator()() override {
-        return d(*generator());
-    }
-
-private:
-    std::poisson_distribution<> d;
-
 };
 
 class Uniform: public Random {

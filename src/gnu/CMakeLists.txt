@@ -1,11 +1,14 @@
 add_library(
   nrngnu STATIC
+  Binomial.cpp
+  DiscUnif.cpp
   Geom.cpp
   HypGeom.cpp
   MCellRan4RNG.cpp
   mcran4.cpp
   NrnRandom123RNG.cpp
   nrnran123.cpp
+  Poisson.cpp
   Rand.cpp
   Random.cpp
   RNG.cpp)

@@ -17,9 +17,12 @@
 #include <nrnran123.h>
 
 #include <Random.h>
-#include <distributions.hpp>
+#include <Poisson.h>
+#include <Binomial.h>
+#include <DiscUnif.h>
 #include <Geom.h>
 #include <HypGeom.h>
+#include <distributions.hpp>
 #include <NrnRandom123RNG.hpp>
 #include <MCellRan4RNG.hpp>
 
