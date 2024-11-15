@@ -3286,15 +3286,14 @@ static char* nrncore_arg(double tstop) {
             if (callable) {
                 auto ts = nb::steal(Py_BuildValue("(d)", tstop));
                 if (ts) {
-                    PyObject* arg = PyObject_CallObject(callable.ptr(), ts.ptr());
+                    auto arg = nb::steal(PyObject_CallObject(callable.ptr(), ts.ptr()));
                     if (arg) {
-                        Py2NRNString str(arg);
-                        Py_DECREF(arg);
+                        Py2NRNString str(arg.ptr());
                         if (str.err()) {
                             str.set_pyerr(
                                 PyExc_TypeError,
                                 "neuron.coreneuron.nrncore_arg() must return an ascii string");
-                            return NULL;
+                            return nullptr;
                         }
                         if (strlen(str.c_str()) > 0) {
                             return strdup(str.c_str());
@@ -3307,7 +3306,7 @@ static char* nrncore_arg(double tstop) {
     if (PyErr_Occurred()) {
         PyErr_Print();
     }
-    return NULL;
+    return nullptr;
 }
 
 
