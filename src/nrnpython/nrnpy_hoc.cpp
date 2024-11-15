@@ -2748,12 +2748,11 @@ static Object** gui_helper_3_(const char* name, Object* obj, int handle_strptr) 
 
 static char** gui_helper_3_str_(const char* name, Object* obj, int handle_strptr) {
     if (gui_callback) {
-        PyObject* po = gui_helper_3_helper_(name, obj, handle_strptr);
+        auto po = nb::steal(gui_helper_3_helper_(name, obj, handle_strptr));
         char** ts = hoc_temp_charptr();
-        Py2NRNString str(po, true);
+        Py2NRNString str(po.ptr(), true);
         *ts = str.c_str();
         // TODO: is there a memory leak here? do I need to: s2free.push_back(*ts);
-        Py_DECREF(po);
         return ts;
     }
     return NULL;
