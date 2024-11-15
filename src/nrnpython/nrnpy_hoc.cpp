@@ -2704,16 +2704,15 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
             PyTuple_SetItem(args, iarg + 3, py_double);
         }
     }
-    PyObject* my_obj;
+    nb::object my_obj;
     if (obj) {
         // there's a problem with this: if obj is intrinisically a PyObject, then this is increasing
         // it's refcount and that's
-        my_obj = nrnpy_ho2po(obj);
+        my_obj = nb::steal(nrnpy_ho2po(obj));
     } else {
-        my_obj = Py_None;
-        Py_INCREF(Py_None);
+        my_obj = nb::none();
     }
-    PyTuple_SetItem(args, 1, my_obj);  // steals a reference
+    PyTuple_SetItem(args, 1, my_obj.release().ptr());  // steals a reference
     nb::object my_obj2;
     if (hoc_thisobject && name[0] != '~') {
         my_obj2 = nb::steal(nrnpy_ho2po(hoc_thisobject));  // in the case of a HOC object, such as
