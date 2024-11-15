@@ -2921,18 +2921,18 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
     }
     PyTuple_SET_ITEM(state.ptr(), 0, PyInt_FromLong(1));
     double x = 2.0;
-    PyObject* two = PyBytes_FromStringAndSize((const char*) (&x), sizeof(double));
-    if (two == NULL) {
+    auto two = nb::steal(PyBytes_FromStringAndSize((const char*) (&x), sizeof(double)));
+    if (!two) {
         return nullptr;
     }
-    PyTuple_SET_ITEM(state.ptr(), 1, two);
+    PyTuple_SET_ITEM(state.ptr(), 1, two.release().ptr());
     PyTuple_SET_ITEM(state.ptr(), 2, PyInt_FromLong(vec->size()));
-    PyObject* str = PyBytes_FromStringAndSize((const char*) vector_vec(vec),
-                                              vec->size() * sizeof(double));
-    if (str == NULL) {
+    auto str = nb::steal(
+        PyBytes_FromStringAndSize((const char*) vector_vec(vec), vec->size() * sizeof(double)));
+    if (!str) {
         return nullptr;
     }
-    PyTuple_SET_ITEM(state.ptr(), 3, str);
+    PyTuple_SET_ITEM(state.ptr(), 3, str.release().ptr());
     PyTuple_SET_ITEM(ret.ptr(), 2, state.release().ptr());
     return ret.release().ptr();
 }
