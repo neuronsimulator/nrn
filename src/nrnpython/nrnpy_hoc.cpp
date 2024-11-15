@@ -2723,14 +2723,14 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
     }
 
     PyTuple_SetItem(args.ptr(), 2, my_obj2.release().ptr());  // steals a reference to my_obj2
-    PyObject* po = PyObject_CallObject(gui_callback, args.ptr());
+    auto po = nb::steal(PyObject_CallObject(gui_callback, args.ptr()));
     if (PyErr_Occurred()) {
         // if there was an error, display it and return 0.
         // It's not a great solution, but it beats segfaulting
         PyErr_Print();
-        po = PyLong_FromLong(0);
+        po = nb::steal(PyLong_FromLong(0));
     }
-    return po;
+    return po.release().ptr();
 }
 
 static Object** gui_helper_3_(const char* name, Object* obj, int handle_strptr) {
