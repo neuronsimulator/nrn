@@ -3205,16 +3205,15 @@ static void sectionlist_helper_(void* sl, Object* args) {
     }
     PyObject* pargs = nrnpy_hoc2pyobject(args);
 
-    PyObject* iterator = PyObject_GetIter(pargs);
+    auto iterator = nb::steal(PyObject_GetIter(pargs));
 
-    if (iterator == NULL) {
+    if (!iterator) {
         PyErr_Clear();
         hoc_execerror("argument must be an iterable", "");
     }
 
-
     nb::object item;
-    while ((item = nb::steal(PyIter_Next(iterator)))) {
+    while ((item = nb::steal(PyIter_Next(iterator.ptr())))) {
         if (!PyObject_TypeCheck(item.ptr(), psection_type)) {
             hoc_execerror("iterable must contain only Section objects", 0);
         }
@@ -3222,7 +3221,6 @@ static void sectionlist_helper_(void* sl, Object* args) {
         lvappendsec_and_ref(sl, pysec->sec_);
     }
 
-    Py_DECREF(iterator);
     if (PyErr_Occurred()) {
         PyErr_Clear();
         hoc_execerror("argument must be a Python iterable", "");
