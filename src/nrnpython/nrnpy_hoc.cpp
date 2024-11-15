@@ -3382,7 +3382,6 @@ extern PyObject* nrn_type_from_metaclass(PyTypeObject* meta,
 
 extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     PyObject* m;
-    PyObject* bases;
     PyTypeObject* pto;
     PyType_Spec spec;
     nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
@@ -3451,7 +3450,7 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     }
 
 
-    bases = PyTuple_Pack(1, hocobject_type);
+    PyObject* bases = PyTuple_Pack(1, hocobject_type);
     Py_INCREF(bases);
     for (auto name: py_exposed_classes) {
         // TODO: obj_spec_from_name needs a hoc. prepended
