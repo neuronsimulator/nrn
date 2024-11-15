@@ -2903,12 +2903,12 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
         return nullptr;
     }
 
-    PyObject* ret = PyTuple_New(3);
-    if (ret == NULL) {
-        return NULL;
+    auto ret = nb::steal(PyTuple_New(3));
+    if (!ret) {
+        return nullptr;
     }
-    PyTuple_SET_ITEM(ret, 0, obj.release().ptr());
-    PyTuple_SET_ITEM(ret, 1, Py_BuildValue("(N)", PyInt_FromLong(0)));
+    PyTuple_SET_ITEM(ret.ptr(), 0, obj.release().ptr());
+    PyTuple_SET_ITEM(ret.ptr(), 1, Py_BuildValue("(N)", PyInt_FromLong(0)));
     // see numpy implementation if more ret[1] stuff needed in case we
     // pickle anything but a hoc Vector. I don't think ret[1] can be None.
 
@@ -2917,28 +2917,25 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
     // vector size, string data
     PyObject* state = PyTuple_New(4);
     if (state == NULL) {
-        Py_DECREF(ret);
-        return NULL;
+        return nullptr;
     }
     PyTuple_SET_ITEM(state, 0, PyInt_FromLong(1));
     double x = 2.0;
     PyObject* str = PyBytes_FromStringAndSize((const char*) (&x), sizeof(double));
     if (str == NULL) {
-        Py_DECREF(ret);
         Py_DECREF(state);
-        return NULL;
+        return nullptr;
     }
     PyTuple_SET_ITEM(state, 1, str);
     PyTuple_SET_ITEM(state, 2, PyInt_FromLong(vec->size()));
     str = PyBytes_FromStringAndSize((const char*) vector_vec(vec), vec->size() * sizeof(double));
     if (str == NULL) {
-        Py_DECREF(ret);
         Py_DECREF(state);
-        return NULL;
+        return nullptr;
     }
     PyTuple_SET_ITEM(state, 3, str);
-    PyTuple_SET_ITEM(ret, 2, state);
-    return ret;
+    PyTuple_SET_ITEM(ret.ptr(), 2, state);
+    return ret.release().ptr();
 }
 
 static PyObject* hocpickle_reduce_safe(PyObject* self, PyObject* args) {
