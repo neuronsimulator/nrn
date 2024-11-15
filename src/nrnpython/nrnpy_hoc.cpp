@@ -2960,43 +2960,40 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
     BYTEHEADER
     int version = -1;
     int size = 0;
-    PyObject* endian_data;
+    nb::object endian_data;
     nb::object rawdata;
     PyHocObject* pho = (PyHocObject*) self;
     // printf("hocpickle_setstate %s\n", hoc_object_name(pho->ho_));
     Vect* vec = (Vect*) pho->ho_->u.this_pointer;
     {
-        PyObject* prawdata = NULL;
-        if (!PyArg_ParseTuple(args, "(iOiO)", &version, &endian_data, &size, &prawdata)) {
-            return NULL;
+        PyObject* pendian_data;
+        PyObject* prawdata;
+        if (!PyArg_ParseTuple(args, "(iOiO)", &version, &pendian_data, &size, &prawdata)) {
+            return nullptr;
         }
 
         rawdata = nb::borrow(prawdata);
+        endian_data = nb::borrow(pendian_data);
     }
-    Py_INCREF(endian_data);
     // printf("hocpickle version=%d size=%d\n", version, size);
     vector_resize(vec, size);
-    if (!PyBytes_Check(rawdata.ptr()) || !PyBytes_Check(endian_data)) {
+    if (!PyBytes_Check(rawdata.ptr()) || !PyBytes_Check(endian_data.ptr())) {
         PyErr_SetString(PyExc_TypeError, "pickle not returning string");
-        Py_DECREF(endian_data);
-        return NULL;
+        return nullptr;
     }
     char* datastr;
     Py_ssize_t len;
-    if (PyBytes_AsStringAndSize(endian_data, &datastr, &len) < 0) {
-        Py_DECREF(endian_data);
-        return NULL;
+    if (PyBytes_AsStringAndSize(endian_data.ptr(), &datastr, &len) < 0) {
+        return nullptr;
     }
     if (len != sizeof(double)) {
         PyErr_SetString(PyExc_ValueError, "endian_data size is not sizeof(double)");
-        Py_DECREF(endian_data);
-        return NULL;
+        return nullptr;
     }
     BYTESWAP_FLAG = 0;
     if (*((double*) datastr) != 2.0) {
         BYTESWAP_FLAG = 1;
     }
-    Py_DECREF(endian_data);
     // printf("byteswap = %d\n", BYTESWAP_FLAG);
     if (PyBytes_AsStringAndSize(rawdata.ptr(), &datastr, &len) < 0) {
         return NULL;
