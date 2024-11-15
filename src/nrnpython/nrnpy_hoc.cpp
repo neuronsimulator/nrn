@@ -2700,8 +2700,8 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
                 PyTuple_SetItem(args.ptr(), iarg + 3, py_str.release().ptr());
             }
         } else if (hoc_is_double_arg(iiarg)) {
-            PyObject* py_double = PyFloat_FromDouble(*getarg(iiarg));
-            PyTuple_SetItem(args.ptr(), iarg + 3, py_double);
+            auto py_double = nb::steal(PyFloat_FromDouble(*getarg(iiarg)));
+            PyTuple_SetItem(args.ptr(), iarg + 3, py_double.release().ptr());
         }
     }
     nb::object my_obj;
