@@ -2915,26 +2915,24 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
     // Fill object's state. Tuple with 4 args:
     // pickle version, 2.0 bytes to determine if swapbytes needed,
     // vector size, string data
-    PyObject* state = PyTuple_New(4);
-    if (state == NULL) {
+    auto state = nb::steal(PyTuple_New(4));
+    if (!state) {
         return nullptr;
     }
-    PyTuple_SET_ITEM(state, 0, PyInt_FromLong(1));
+    PyTuple_SET_ITEM(state.ptr(), 0, PyInt_FromLong(1));
     double x = 2.0;
     PyObject* str = PyBytes_FromStringAndSize((const char*) (&x), sizeof(double));
     if (str == NULL) {
-        Py_DECREF(state);
         return nullptr;
     }
-    PyTuple_SET_ITEM(state, 1, str);
-    PyTuple_SET_ITEM(state, 2, PyInt_FromLong(vec->size()));
+    PyTuple_SET_ITEM(state.ptr(), 1, str);
+    PyTuple_SET_ITEM(state.ptr(), 2, PyInt_FromLong(vec->size()));
     str = PyBytes_FromStringAndSize((const char*) vector_vec(vec), vec->size() * sizeof(double));
     if (str == NULL) {
-        Py_DECREF(state);
         return nullptr;
     }
-    PyTuple_SET_ITEM(state, 3, str);
-    PyTuple_SET_ITEM(ret.ptr(), 2, state);
+    PyTuple_SET_ITEM(state.ptr(), 3, str);
+    PyTuple_SET_ITEM(ret.ptr(), 2, state.release().ptr());
     return ret.release().ptr();
 }
 
