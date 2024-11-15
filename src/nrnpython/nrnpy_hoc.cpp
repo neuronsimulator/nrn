@@ -2981,9 +2981,9 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
         PyErr_SetString(PyExc_TypeError, "pickle not returning string");
         return nullptr;
     }
-    char* datastr;
+    char* two;
     Py_ssize_t len;
-    if (PyBytes_AsStringAndSize(endian_data.ptr(), &datastr, &len) < 0) {
+    if (PyBytes_AsStringAndSize(endian_data.ptr(), &two, &len) < 0) {
         return nullptr;
     }
     if (len != sizeof(double)) {
@@ -2991,11 +2991,12 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
         return nullptr;
     }
     BYTESWAP_FLAG = 0;
-    if (*((double*) datastr) != 2.0) {
+    if (*((double*) two) != 2.0) {
         BYTESWAP_FLAG = 1;
     }
     // printf("byteswap = %d\n", BYTESWAP_FLAG);
-    if (PyBytes_AsStringAndSize(rawdata.ptr(), &datastr, &len) < 0) {
+    char* str;
+    if (PyBytes_AsStringAndSize(rawdata.ptr(), &str, &len) < 0) {
         return NULL;
     }
     if (len != Py_ssize_t(size * sizeof(double))) {
@@ -3003,12 +3004,12 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
         return nullptr;
     }
     if (BYTESWAP_FLAG) {
-        double* x = (double*) datastr;
+        double* x = (double*) str;
         for (int i = 0; i < size; ++i) {
             BYTESWAP(x[i], double)
         }
     }
-    memcpy((char*) vector_vec(vec), datastr, len);
+    memcpy((char*) vector_vec(vec), str, len);
 
     Py_RETURN_NONE;
 }
