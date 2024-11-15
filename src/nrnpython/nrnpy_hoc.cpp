@@ -2675,8 +2675,8 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
     }
     narg--;
     auto args = nb::steal(PyTuple_New(narg + 3));
-    PyObject* pyname = PyString_FromString(name);
-    PyTuple_SetItem(args.ptr(), 0, pyname);
+    auto pyname = nb::steal(PyString_FromString(name));
+    PyTuple_SetItem(args.ptr(), 0, pyname.release().ptr());
     for (int iarg = 0; iarg < narg; iarg++) {
         const int iiarg = iarg + 1;
         if (hoc_is_object_arg(iiarg)) {
