@@ -3394,7 +3394,6 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
         return NULL;
     }
 
-
     auto bases = nb::steal(PyTuple_Pack(1, hocobject_type));
     for (auto name: py_exposed_classes) {
         // TODO: obj_spec_from_name needs a hoc. prepended
