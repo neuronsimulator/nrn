@@ -3408,10 +3408,10 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
         sym_to_type_map[hclass->sym] = pto;
         type_to_sym_map[pto] = hclass->sym;
         if (PyType_Ready(pto) < 0) {
-            goto fail;
+            return nullptr;
         }
         if (PyModule_AddObject(m, name, (PyObject*) pto) < 0) {
-            return NULL;
+            return nullptr;
         }
     }
 
@@ -3422,7 +3422,7 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
         assert(descr);
         err = PyDict_SetItemString(topmethdict, meth->ml_name, descr.ptr());
         if (err < 0) {
-            goto fail;
+            return nullptr;
         }
     }
 
@@ -3448,8 +3448,9 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
 
     nrnpy_nrn();
     endian_character = get_endian_character();
-    if (endian_character == 0)
-        goto fail;
+    if (endian_character == 0) {
+        return nullptr;
+    }
     array_interface_typestr[0] = endian_character;
 
     // Setup bytesize in typestr
@@ -3458,8 +3459,6 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     assert(err == 0);
     //  Py_DECREF(m);
     return m;
-fail:
-    return NULL;
 }
 
 void nrnpython_reg_real_nrnpy_hoc_cpp(neuron::python::impl_ptrs* ptrs) {
