@@ -3335,11 +3335,11 @@ static char* nrncore_arg(double tstop) {
     if (modules) {
         PyObject* module = PyDict_GetItemString(modules, "neuron.coreneuron");
         if (module) {
-            PyObject* callable = PyObject_GetAttrString(module, "nrncore_arg");
+            auto callable = nb::steal(PyObject_GetAttrString(module, "nrncore_arg"));
             if (callable) {
                 PyObject* ts = Py_BuildValue("(d)", tstop);
                 if (ts) {
-                    PyObject* arg = PyObject_CallObject(callable, ts);
+                    PyObject* arg = PyObject_CallObject(callable.ptr(), ts);
                     Py_DECREF(ts);
                     if (arg) {
                         Py2NRNString str(arg);
