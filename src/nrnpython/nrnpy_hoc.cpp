@@ -2735,10 +2735,9 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
 
 static Object** gui_helper_3_(const char* name, Object* obj, int handle_strptr) {
     if (gui_callback) {
-        PyObject* po = gui_helper_3_helper_(name, obj, handle_strptr);
+        auto po = nb::steal(gui_helper_3_helper_(name, obj, handle_strptr));
         // TODO: something that allows None (currently nrnpy_po2ho returns NULL if po == Py_None)
-        Object* ho = nrnpy_po2ho(po);
-        Py_DECREF(po);
+        Object* ho = nrnpy_po2ho(po.release().ptr());
         if (ho) {
             --ho->refcount;
         }
