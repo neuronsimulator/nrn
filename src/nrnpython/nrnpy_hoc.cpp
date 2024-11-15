@@ -3284,10 +3284,9 @@ static char* nrncore_arg(double tstop) {
         if (module) {
             auto callable = nb::steal(PyObject_GetAttrString(module, "nrncore_arg"));
             if (callable) {
-                PyObject* ts = Py_BuildValue("(d)", tstop);
+                auto ts = nb::steal(Py_BuildValue("(d)", tstop));
                 if (ts) {
-                    PyObject* arg = PyObject_CallObject(callable.ptr(), ts);
-                    Py_DECREF(ts);
+                    PyObject* arg = PyObject_CallObject(callable.ptr(), ts.ptr());
                     if (arg) {
                         Py2NRNString str(arg);
                         Py_DECREF(arg);
