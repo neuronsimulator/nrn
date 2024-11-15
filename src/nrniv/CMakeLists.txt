@@ -44,8 +44,11 @@ add_custom_target(generated_source_files true)
 add_custom_target(modlunit_generated_files DEPENDS "${NRN_MODLUNIT_GEN}/lex.cpp"
                                                    "${NRN_MODLUNIT_GEN}/parse1.cpp")
 add_dependencies(generated_source_files modlunit_generated_files)
+
 add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES} "${NRN_MODLUNIT_GEN}/lex.cpp"
                         "${NRN_MODLUNIT_GEN}/parse1.cpp")
+add_dependencies(modlunit modlunit_generated_files)
+
 target_compile_definitions(modlunit PRIVATE NRNUNIT=1)
 cpp_cc_configure_sanitizers(TARGET modlunit)
 # Generated .cpp needs to find source-directory .hpp and vice versa.
@@ -82,7 +85,7 @@ add_custom_command(
   COMMAND "${BISON_EXECUTABLE}" ARGS "--defines=${NRN_NOCMODL_GEN_REL}/diffeq.hpp" -o
           "${NRN_NOCMODL_GEN_REL}/diffeq.cpp" "${NRN_NOCMODL_SRC_REL}/diffeq.ypp"
   DEPENDS "${NRN_NOCMODL_SRC_DIR}/diffeq.ypp"
-  COMMENT "[BISON][nocmodlparser] Building parser with bison ${BISON_VERSION}")
+  COMMENT "[BISON][nocmodlparser] Building diffeq with bison ${BISON_VERSION}")
 
 add_custom_target(
   nocmodl_generated_files
@@ -90,9 +93,11 @@ add_custom_target(
           "${NRN_NOCMODL_GEN}/parse1.cpp" "${NRN_NOCMODL_GEN}/diffeq.hpp"
           "${NRN_NOCMODL_GEN}/diffeq.cpp")
 add_dependencies(generated_source_files nocmodl_generated_files)
+
 add_executable(nocmodl ${NRN_NOCMODL_SRC_FILES} "${NRN_NOCMODL_GEN}/lex.cpp"
                        "${NRN_NOCMODL_GEN}/parse1.cpp" "${NRN_NOCMODL_GEN}/diffeq.cpp")
 cpp_cc_configure_sanitizers(TARGET nocmodl)
+add_dependencies(nocmodl nocmodl_generated_files)
 target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 CVODE=1)
 # Otherwise the generated code in the binary directory does not find headers in the modlunit source
 # directory and the source files in the source directory do not find generated headers in the binary
@@ -401,6 +406,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+add_dependencies(nrniv_lib generated_source_files)
 target_link_libraries(nrniv_lib nrngnu)
 target_link_libraries(nrniv_lib sparse13)
 target_link_libraries(nrniv_lib fmt::fmt)

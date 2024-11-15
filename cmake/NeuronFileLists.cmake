@@ -10,7 +10,6 @@ set(STRUCTURED_HEADER_FILES_TO_INSTALL
     neuron/model_data_fwd.hpp)
 set(HEADER_FILES_TO_INSTALL
     gnu/mcran4.h
-    gnu/nrnisaac.h
     gnu/nrnran123.h
     nrniv/backtrace_utils.h
     nrniv/bbsavestate.h
@@ -382,8 +381,7 @@ set(MODLUNIT_FILES_LIST
     passn.cpp
     symbol.cpp
     units.cpp
-    units1.cpp
-    version.cpp)
+    units1.cpp)
 
 set(NOCMODL_FILES_LIST
     consist.cpp
@@ -400,8 +398,7 @@ set(NOCMODL_FILES_LIST
     netrec_discon.cpp
     simultan.cpp
     solve.cpp
-    symbol.cpp
-    version.cpp)
+    symbol.cpp)
 
 set(IVOS_FILES_LIST observe.cpp resource.cpp)
 

@@ -280,9 +280,13 @@ make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS
 
  MAKE_STATUS=$?
 
+ set -e
+
  if [ $MAKE_STATUS -eq 0 ]; then
      echo "Successfully created $MODSUBDIR/special"
  else
      printf "\nNOTE: If you are encountering MOD file compilation errors only with NEURON version 9.0 or later\n"
      printf "refer to the C++ migration guide at https://nrn.readthedocs.io/en/9.0.0/guide/porting_mechanisms_to_cpp.html\n\n"
  fi
+
+exit $MAKE_STATUS

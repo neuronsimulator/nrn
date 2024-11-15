@@ -164,7 +164,6 @@ int nrnpy_pyrun(const char* fname) {
  * @return 0 on success, nonzero on failure.
  */
 static int nrnmingw_pyrun_interactiveloop() {
-    int code{};
     std::string lines[3]{
         "import code as nrnmingw_code\n",
         "nrnmingw_interpreter = nrnmingw_code.InteractiveConsole(locals=globals())\n",

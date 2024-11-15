@@ -138,7 +138,6 @@ extern Section* (*nrnpy_o2sec_p_)(Object*);
 static void o2loc(Object*, Section**, double*);
 extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 extern void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
-static void nrnpy_unreg_mech(int);
 extern char* (*nrnpy_pysec_name_p_)(Section*);
 static char* pysec_name(Section*);
 extern Object* (*nrnpy_pysec_cell_p_)(Section*);
@@ -3130,8 +3129,4 @@ void nrnpy_reg_mech(int type) {
         Symbol* sym = mf.sym->u.ppsym[i];
         rangevars_add(sym);
     }
-}
-
-void nrnpy_unreg_mech(int type) {
-    // not implemented but needed when KSChan name changed.
 }

@@ -115,12 +115,10 @@ static double subtree(void* v) {
 }
 
 static double wholetree(void* v) {
-    List* sl;
-    Section *s, *sec, *ch;
-    Item *i, *j, *first, *last;
-    sec = nrn_secarg(1);
-    sl = (List*) v;
+    Section* sec = nrn_secarg(1);
+    List* sl = (List*) v;
     /*find root*/
+    Section* s = nullptr;
     for (s = sec; s->parentsec; s = s->parentsec) {
     }
 
