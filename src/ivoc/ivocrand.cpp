@@ -17,9 +17,6 @@
 #include <nrnran123.h>
 
 #include <Random.h>
-#include <Poisson.h>
-#include <Binomial.h>
-#include <DiscUnif.h>
 #include <Geom.h>
 #include <HypGeom.h>
 #include <distributions.hpp>
