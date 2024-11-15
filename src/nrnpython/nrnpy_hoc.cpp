@@ -2237,9 +2237,8 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
         result = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
         if (nrnpy_numbercheck(pa)) {
             result->type_ = PyHoc::HocRefNum;
-            PyObject* pn = PyNumber_Float(pa);
-            result->u.x_ = PyFloat_AsDouble(pn);
-            Py_XDECREF(pn);
+            auto pn = nb::steal(PyNumber_Float(pa));
+            result->u.x_ = PyFloat_AsDouble(pn.ptr());
         } else if (is_python_string(pa)) {
             result->type_ = PyHoc::HocRefStr;
             result->u.s_ = 0;
