@@ -269,45 +269,41 @@ static void hpoasgn(Object* o, int type) {
     int err = 0;
     int nindex;
     Symbol* sym;
-    PyObject* poleft;
-    PyObject* poright;
+    nb::object poright;
     if (type == NUMBER) {
-        poright = PyFloat_FromDouble(hoc_xpop());
+        poright = nb::steal(PyFloat_FromDouble(hoc_xpop()));
     } else if (type == STRING) {
-        poright = Py_BuildValue("s", *hoc_strpop());
+        poright = nb::steal(Py_BuildValue("s", *hoc_strpop()));
     } else if (type == OBJECTVAR || type == OBJECTTMP) {
         Object** po2 = hoc_objpop();
-        poright = nrnpy_ho2po(*po2);
+        poright = nb::steal(nrnpy_ho2po(*po2));
         hoc_tobj_unref(po2);
     } else {
         hoc_execerror("Cannot assign that type to PythonObject", (char*) 0);
     }
     auto stack_value = hoc_pop_object();
     assert(o == stack_value.get());
-    poleft = nrnpy_hoc2pyobject(o);
+    auto poleft = nb::borrow(nrnpy_hoc2pyobject(o));
     sym = hoc_spop();
     nindex = hoc_ipop();
     // printf("hpoasgn %s %s %d\n", hoc_object_name(o), sym->name, nindex);
     if (nindex == 0) {
-        err = PyObject_SetAttrString(poleft, sym->name, poright);
+        err = PyObject_SetAttrString(poleft.ptr(), sym->name, poright.ptr());
     } else if (nindex == 1) {
         int ndim = hoc_pop_ndim();
         assert(ndim == 1);
-        PyObject* key = PyLong_FromDouble(hoc_xpop());
-        PyObject* a;
+        auto key = nb::steal(PyLong_FromDouble(hoc_xpop()));
+        nb::object a;
         if (strcmp(sym->name, "_") == 0) {
-            a = poleft;
-            Py_INCREF(a);
+            a = nb::borrow(poleft);
         } else {
-            a = PyObject_GetAttrString(poleft, sym->name);
+            a = nb::steal(PyObject_GetAttrString(poleft.ptr(), sym->name));
         }
         if (a) {
-            err = PyObject_SetItem(a, key, poright);
-            Py_DECREF(a);
+            err = PyObject_SetItem(a.ptr(), key.ptr(), poright.ptr());
         } else {
             err = -1;
         }
-        Py_DECREF(key);
     } else {
         hoc_execerr_ext(
             "%d dimensional python objects "
@@ -315,7 +311,6 @@ static void hpoasgn(Object* o, int type) {
             "Must use var._[i1]._[i2]... hoc syntax.",
             nindex);
     }
-    Py_DECREF(poright);
     if (err) {
         PyErr_Print();
         hoc_execerror("Assignment to PythonObject failed", NULL);
@@ -343,13 +338,10 @@ static nb::object hoccommand_exec_help(Object* ho) {
 static double praxis_efun(Object* ho, Object* v) {
     nanobind::gil_scoped_acquire lock{};
 
-    PyObject* pc = nrnpy_ho2po(ho);
-    PyObject* pv = nrnpy_ho2po(v);
-    PyObject* po = Py_BuildValue("(OO)", pc, pv);
-    Py_XDECREF(pc);
-    Py_XDECREF(pv);
-    nb::object r = hoccommand_exec_help1(nb::borrow(po));
-    Py_XDECREF(po);
+    auto pc = nb::steal(nrnpy_ho2po(ho));
+    auto pv = nb::steal(nrnpy_ho2po(v));
+    auto po = nb::steal(Py_BuildValue("(OO)", pc.ptr(), pv.ptr()));
+    nb::object r = hoccommand_exec_help1(po);
     if (!r.is_valid()) {
         char* mes = nrnpyerr_str();
         if (mes) {
@@ -427,33 +419,29 @@ static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
 }
 
 static Object* callable_with_args(Object* ho, int narg) {
-    PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
+    auto po = nb::borrow(((Py2Nrn*) ho->u.this_pointer)->po_);
     nanobind::gil_scoped_acquire lock{};
 
-    PyObject* args = PyTuple_New((Py_ssize_t) narg);
-    if (args == NULL) {
+    auto args = nb::steal(PyTuple_New((Py_ssize_t) narg));
+    if (!args) {
         hoc_execerror("PyTuple_New failed", 0);
     }
     for (int i = 0; i < narg; ++i) {
         // not used with datahandle args.
-        PyObject* item = nrnpy_hoc_pop("callable_with_args");
-        if (item == NULL) {
-            Py_XDECREF(args);
+        auto item = nb::steal(nrnpy_hoc_pop("callable_with_args"));
+        if (!item) {
             hoc_execerror("nrnpy_hoc_pop failed", 0);
         }
-        if (PyTuple_SetItem(args, (Py_ssize_t) (narg - i - 1), item) != 0) {
-            Py_XDECREF(args);
+        if (PyTuple_SetItem(args.ptr(), (Py_ssize_t) (narg - i - 1), item.release().ptr()) != 0) {
             hoc_execerror("PyTuple_SetItem failed", 0);
         }
     }
 
-    PyObject* r = PyTuple_New(2);
-    PyTuple_SetItem(r, 1, args);
-    Py_INCREF(po);  // when r is destroyed, do not want po refcnt to go to 0
-    PyTuple_SetItem(r, 0, po);
+    auto r = nb::steal(PyTuple_New(2));
+    PyTuple_SetItem(r.ptr(), 1, args.release().ptr());
+    PyTuple_SetItem(r.ptr(), 0, po.release().ptr());
 
-    Object* hr = nrnpy_po2ho(r);
-    Py_XDECREF(r);
+    Object* hr = nrnpy_po2ho(r.release().ptr());
 
     return hr;
 }
@@ -514,9 +502,8 @@ static double guigetval(Object* ho) {
     } else {
         r = PyObject_GetAttr(p, PyTuple_GetItem(po, 1));
     }
-    PyObject* pn = PyNumber_Float(r);
-    double x = PyFloat_AsDouble(pn);
-    Py_XDECREF(pn);
+    auto pn = nb::steal(PyNumber_Float(r));
+    double x = PyFloat_AsDouble(pn.ptr());
     return x;
 }
 
