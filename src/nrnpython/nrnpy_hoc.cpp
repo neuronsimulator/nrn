@@ -2843,12 +2843,10 @@ static Object** nrnpy_vec_to_python(void* v) {
 
 static Object* rvp_rxd_to_callable_(Object* obj) {
     if (obj) {
-        PyObject* py_obj = nrnpy_ho2po(obj);
-        PyObject* result = PyObject_CallFunctionObjArgs(nrnpy_rvp_pyobj_callback, py_obj, NULL);
-        Py_DECREF(py_obj);
-        Object* obj_result = nrnpy_po2ho(result);
-        Py_DECREF(result);  // the previous line incremented the reference count
-        return obj_result;
+        auto py_obj = nb::steal(nrnpy_ho2po(obj));
+        auto result = nb::steal(
+            PyObject_CallFunctionObjArgs(nrnpy_rvp_pyobj_callback, py_obj.ptr(), NULL));
+        return nrnpy_po2ho(result.ptr());
     } else {
         return 0;
     }
