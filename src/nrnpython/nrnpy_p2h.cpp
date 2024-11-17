@@ -505,41 +505,23 @@ static double func_call(Object* ho, int narg, int* err) {
 }
 
 static double guigetval(Object* ho) {
-    PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    nanobind::gil_scoped_acquire lock{};
-    PyObject* r = NULL;
-    PyObject* p = PyTuple_GetItem(po, 0);
-    if (PySequence_Check(p) || PyMapping_Check(p)) {
-        r = PyObject_GetItem(p, PyTuple_GetItem(po, 1));
-    } else {
-        r = PyObject_GetAttr(p, PyTuple_GetItem(po, 1));
-    }
-    PyObject* pn = PyNumber_Float(r);
-    double x = PyFloat_AsDouble(pn);
-    Py_XDECREF(pn);
-    return x;
+    nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
+    nb::gil_scoped_acquire lock{};
+    return static_cast<double>(nb::float_(po[0][po[1]]));
 }
 
 static void guisetval(Object* ho, double x) {
-    PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    nanobind::gil_scoped_acquire lock{};
-    auto pn = nb::steal(PyFloat_FromDouble(x));
-    PyObject* p = PyTuple_GetItem(po, 0);
-    if (PySequence_Check(p) || PyMapping_Check(p)) {
-        PyObject_SetItem(p, PyTuple_GetItem(po, 1), pn.ptr());
-    } else {
-        PyObject_SetAttr(p, PyTuple_GetItem(po, 1), pn.ptr());
-    }
+    nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
+    nb::gil_scoped_acquire lock{};
+    po[0][po[1]] = x;
 }
 
 static int guigetstr(Object* ho, char** cpp) {
-    PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    nanobind::gil_scoped_acquire lock{};
+    nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
+    nb::gil_scoped_acquire lock{};
+    nb::str name = po[0][po[1]];
 
-    PyObject* r = PyObject_GetAttr(PyTuple_GetItem(po, 0), PyTuple_GetItem(po, 1));
-    auto pn = nb::steal(PyObject_Str(r));
-    Py2NRNString name(pn.ptr());
-    char* cp = name.c_str();
+    const char* cp = name.c_str();
     if (*cpp && strcmp(*cpp, cp) == 0) {
         return 0;
     }
