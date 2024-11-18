@@ -15,7 +15,6 @@ add_library(
   Poisson.cpp
   Rand.cpp
   Random.cpp
-  RndInt.cpp
   RNG.cpp
   Uniform.cpp
   Weibull.cpp)
