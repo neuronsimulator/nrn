@@ -412,6 +412,7 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
                 Py2NRNString str(cell_str.ptr());
                 if (str.err()) {
                     str.set_pyerr(PyExc_TypeError, "cell name contains non ascii character");
+                    Py_XDECREF(self->cell_weakref_);
                     return -1;
                 }
                 char* cp = str.c_str();
