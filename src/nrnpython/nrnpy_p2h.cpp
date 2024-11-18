@@ -493,8 +493,8 @@ static double func_call(Object* ho, int narg, int* err) {
 }
 
 static double guigetval(Object* ho) {
-    nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
     nb::gil_scoped_acquire lock{};
+    nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
     nb::float_ x{};
     if (nb::sequence::check_(po[0]) || nb::mapping::check_(po[0])) {
         x = po[0][po[1]];
@@ -505,8 +505,8 @@ static double guigetval(Object* ho) {
 }
 
 static void guisetval(Object* ho, double x) {
-    nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
     nb::gil_scoped_acquire lock{};
+    nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
     if (nb::sequence::check_(po[0]) || nb::mapping::check_(po[0])) {
         po[0][po[1]] = x;
     } else {
@@ -515,14 +515,9 @@ static void guisetval(Object* ho, double x) {
 }
 
 static int guigetstr(Object* ho, char** cpp) {
-    nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
     nb::gil_scoped_acquire lock{};
-    nb::str name{};
-    if (nb::sequence::check_(po[0]) || nb::mapping::check_(po[0])) {
-        name = po[0][po[1]];
-    } else {
-        name = po[0].attr(po[1]);
-    }
+    nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
+    nb::str name = po[0].attr(po[1]);
     const char* cp = name.c_str();
     if (*cpp && strcmp(*cpp, cp) == 0) {
         return 0;
