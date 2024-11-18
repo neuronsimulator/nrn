@@ -510,14 +510,13 @@ static double guigetval(Object* ho) {
 static void guisetval(Object* ho, double x) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
     nanobind::gil_scoped_acquire lock{};
-    PyObject* pn = PyFloat_FromDouble(x);
+    auto pn = nb::steal(PyFloat_FromDouble(x));
     PyObject* p = PyTuple_GetItem(po, 0);
     if (PySequence_Check(p) || PyMapping_Check(p)) {
-        PyObject_SetItem(p, PyTuple_GetItem(po, 1), pn);
+        PyObject_SetItem(p, PyTuple_GetItem(po, 1), pn.ptr());
     } else {
-        PyObject_SetAttr(p, PyTuple_GetItem(po, 1), pn);
+        PyObject_SetAttr(p, PyTuple_GetItem(po, 1), pn.ptr());
     }
-    Py_XDECREF(pn);
 }
 
 static int guigetstr(Object* ho, char** cpp) {
@@ -525,9 +524,8 @@ static int guigetstr(Object* ho, char** cpp) {
     nanobind::gil_scoped_acquire lock{};
 
     PyObject* r = PyObject_GetAttr(PyTuple_GetItem(po, 0), PyTuple_GetItem(po, 1));
-    PyObject* pn = PyObject_Str(r);
-    Py2NRNString name(pn);
-    Py_DECREF(pn);
+    auto pn = nb::steal(PyObject_Str(r));
+    Py2NRNString name(pn.ptr());
     char* cp = name.c_str();
     if (*cpp && strcmp(*cpp, cp) == 0) {
         return 0;
@@ -793,17 +791,16 @@ static PyObject* py_broadcast(PyObject* psrc, int root) {
 // size for 3, 4, 5 refer to rootrank.
 static Object* py_alltoall_type(int size, int type) {
     int np = nrnmpi_numprocs;  // of subworld communicator
-    PyObject* psrc = NULL;
-    PyObject* pdest = NULL;
+    nb::object psrc;
 
     if (type == 1 || type == 5) {  // alltoall, scatter
         Object* o = *hoc_objgetarg(1);
         if (type == 1 || nrnmpi_myid == size) {  // if scatter only root must be a list
-            psrc = nrnpy_hoc2pyobject(o);
-            if (!PyList_Check(psrc)) {
+            psrc = nb::borrow(nrnpy_hoc2pyobject(o));
+            if (!PyList_Check(psrc.ptr())) {
                 hoc_execerror("Argument must be a Python list", 0);
             }
-            if (PyList_Size(psrc) != np) {
+            if (PyList_Size(psrc.ptr()) != np) {
                 if (type == 1) {
                     hoc_execerror("py_alltoall list size must be nhost", 0);
                 } else {
@@ -815,33 +812,30 @@ static Object* py_alltoall_type(int size, int type) {
             if (type == 1) {
                 return o;
             } else {  // return psrc[0]
-                pdest = PyList_GetItem(psrc, 0);
-                Py_INCREF(pdest);
-                Object* ho = nrnpy_po2ho(pdest);
+                auto pdest = nb::borrow(PyList_GetItem(psrc.ptr(), 0));
+                Object* ho = nrnpy_po2ho(pdest.ptr());
                 if (ho) {
                     --ho->refcount;
                 }
-                Py_XDECREF(pdest);
                 return ho;
             }
         }
     } else {
         // Get the raw PyObject* arg. So things like None, int, bool are preserved.
-        psrc = hocobj_call_arg(0);
-        Py_INCREF(psrc);
+        psrc = nb::borrow(hocobj_call_arg(0));
 
         if (np == 1) {
+            nb::object pdest;
             if (type == 4) {  // broadcast is just the PyObject
                 pdest = psrc;
             } else {  // allgather and gather must wrap psrc in list
-                pdest = PyList_New(1);
-                PyList_SetItem(pdest, 0, psrc);
+                pdest = nb::steal(PyList_New(1));
+                PyList_SetItem(pdest.ptr(), 0, psrc.release().ptr());
             }
-            Object* ho = nrnpy_po2ho(pdest);
+            Object* ho = nrnpy_po2ho(pdest.ptr());
             if (ho) {
                 --ho->refcount;
             }
-            Py_XDECREF(pdest);
             return ho;
         }
     }
@@ -849,21 +843,20 @@ static Object* py_alltoall_type(int size, int type) {
 #if NRNMPI
     setpickle();
     int root;
+    PyObject* pdest = NULL;
 
     if (type == 2) {
-        pdest = py_allgather(psrc);
-        Py_DECREF(psrc);
+        pdest = py_allgather(psrc.ptr());
     } else if (type != 1 && type != 5) {
         root = size;
         if (root < 0 || root >= np) {
             hoc_execerror("root rank must be >= 0 and < nhost", 0);
         }
         if (type == 3) {
-            pdest = py_gather(psrc, root);
+            pdest = py_gather(psrc.ptr(), root);
         } else if (type == 4) {
-            pdest = py_broadcast(psrc, root);
+            pdest = py_broadcast(psrc.ptr(), root);
         }
-        Py_DECREF(psrc);
     } else {
         if (type == 5) {  // scatter
             root = size;
