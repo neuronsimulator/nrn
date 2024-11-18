@@ -10,7 +10,7 @@ PlotShape
         Class for making a Shape window useful for coloring a shape 
         according to a variable value and creating time and space graphs 
         of a variable. The default variable is *v*. The first arg may be 
-        a SectionList. 
+        a SectionList.  This automatically calls :func:`define_shape`.
 
 ----
 
