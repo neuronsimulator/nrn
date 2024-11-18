@@ -2638,16 +2638,15 @@ static void nrnpy_store_savestate_(char** save_data, uint64_t* save_data_size) {
 static void nrnpy_restore_savestate_(int64_t size, char* data) {
     if (restore_savestate_) {
         PyObject* args = PyTuple_New(1);
-        PyObject* py_data = PyByteArray_FromStringAndSize(data, size);
-        Py_INCREF(py_data);
-        if (py_data == NULL) {
+        auto py_data = nb::steal(PyByteArray_FromStringAndSize(data, size));
+        if (!py_data) {
             hoc_execerror("SaveState:", "Data restore failure.");
         }
         // note: PyTuple_SetItem steals a ref to py_data
-        PyTuple_SetItem(args, 0, py_data);
-        PyObject* result = PyObject_CallObject(restore_savestate_, args);
+        PyTuple_SetItem(args, 0, py_data.release().ptr());
+        auto result = nb::steal(PyObject_CallObject(restore_savestate_, args));
         Py_DECREF(args);
-        if (result == NULL) {
+        if (!result) {
             hoc_execerror("SaveState:", "Data restore failure.");
         }
     } else {
