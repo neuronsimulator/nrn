@@ -17,10 +17,10 @@
 #include <nrnran123.h>
 
 #include <Random.h>
+#include <distributions.hpp>
 #include <Poisson.h>
 #include <Normal.h>
 #include <Uniform.h>
-#include <Binomial.h>
 #include <DiscUnif.h>
 #include <Erlang.h>
 #include <Geom.h>

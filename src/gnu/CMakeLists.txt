@@ -1,6 +1,5 @@
 add_library(
   nrngnu STATIC
-  Binomial.cpp
   DiscUnif.cpp
   Erlang.cpp
   Geom.cpp
