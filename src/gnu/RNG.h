@@ -16,13 +16,10 @@ License along with this library; if not, write to the Free Software
 Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 #pragma once
-/*
- * int32_t and uint32_t have been defined by the configure procedure.  Just
- * use these in place of the ones that libg++ used to provide. 
- */
 #include <cstdint>
 #include <cassert>
 #include <cmath>
+#include <limits>
 
 union PrivateRNGSingleType {		   	// used to access floats as unsigneds
     float s;
@@ -41,16 +38,25 @@ class RNG {
     static PrivateRNGSingleType singleMantissa;	// mantissa bit vector
     static PrivateRNGDoubleType doubleMantissa;	// mantissa bit vector
 public:
+    using result_type = std::uint32_t;
+
     RNG();
-    virtual ~RNG();
-    //
+    virtual ~RNG() = default;
+
     // Return a long-words word of random bits
-    //
-    virtual uint32_t asLong() = 0;
+    virtual result_type asLong() = 0;
     virtual void reset() = 0;
-    //
-    // Return random bits converted to either a float or a double
-    //
-    virtual float asFloat();
+
+    // Return random bits converted to a double
     virtual double asDouble();
+
+    static constexpr result_type min() {
+        return std::numeric_limits<result_type>::min();
+    }
+    static constexpr result_type max() {
+        return std::numeric_limits<result_type>::max();
+    }
+    result_type operator()() {
+        return asLong();
+    }
 };

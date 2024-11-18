@@ -34,8 +34,6 @@ PrivateRNGDoubleType RNG::doubleMantissa;
 
 static char initialized = 0;
 
-RNG::~RNG(){}
-
 RNG::RNG()
 {
   if (!initialized)
@@ -109,16 +107,6 @@ RNG::RNG()
     }
 }
 
-float RNG::asFloat()
-{
-    PrivateRNGSingleType result;
-    result.s = 1.0;
-    result.u |= (asLong() & singleMantissa.u);
-    result.s -= 1.0;
-    assert( result.s < 1.0 && result.s >= 0);
-    return( result.s );
-}
-	
 double RNG::asDouble()
 {
     PrivateRNGDoubleType result;
