@@ -165,7 +165,6 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         }
         tail = nb::steal(PyRun_String(sym->name, Py_eval_input, main_namespace, main_namespace));
     } else {
-        head.inc_ref();
         if (strcmp(sym->name, "_") == 0) {
             tail = head;
         } else {
