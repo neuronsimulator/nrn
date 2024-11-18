@@ -87,3 +87,13 @@ jobs:
         with:
           name: wheels-${{ matrix.python-version }}
           path: wheelhouse/*.whl
+
+  merge:
+    runs-on: ubuntu-latest
+    needs: build-test
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          delete-merged: true
+          name: wheels
