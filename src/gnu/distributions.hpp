@@ -15,3 +15,17 @@ public:
 private:
     std::binomial_distribution<> d;
 };
+
+class DiscreteUniform: public Random {
+public:
+    DiscreteUniform(long low, long high, RNG *gen)
+        : Random(gen)
+        , d(low, high)
+    {}
+    double operator()() override {
+        return d(*generator());
+    }
+
+private:
+    std::uniform_int_distribution<> d;
+};
