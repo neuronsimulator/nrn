@@ -21,12 +21,10 @@
 #include <Normal.h>
 #include <Uniform.h>
 #include <DiscUnif.h>
-#include <Erlang.h>
 #include <Geom.h>
 #include <LogNorm.h>
 #include <NegExp.h>
 #include <HypGeom.h>
-#include <Weibull.h>
 #include <NrnRandom123RNG.hpp>
 #include <MCellRan4RNG.hpp>
 
