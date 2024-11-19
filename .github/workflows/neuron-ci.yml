@@ -455,7 +455,7 @@ jobs:
       #   * add 'live-debug-ci' to your PR title
       #   * push something to your PR branch (note that just re-running the pipeline disregards the title update)
       - name: live debug session on failure (manual steps required, check `.github/neuron-ci.yml`)
-        if: failure()
+        if: failure() && contains(github.event.pull_request.title, 'live-debug-ci')
         uses: mxschmitt/action-tmate@v3
 
   # see https://github.com/orgs/community/discussions/26822
