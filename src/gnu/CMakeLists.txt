@@ -1,5 +1,6 @@
 add_library(
   nrngnu STATIC
+  DiscUnif.cpp
   Erlang.cpp
   Geom.cpp
   HypGeom.cpp

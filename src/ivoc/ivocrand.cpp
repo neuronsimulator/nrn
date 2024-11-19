@@ -21,6 +21,7 @@
 #include <Poisson.h>
 #include <Normal.h>
 #include <Uniform.h>
+#include <DiscUnif.h>
 #include <Erlang.h>
 #include <Geom.h>
 #include <LogNorm.h>
