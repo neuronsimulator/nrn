@@ -21,11 +21,6 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <cmath>
 #include <limits>
 
-union PrivateRNGSingleType {		   	// used to access floats as unsigneds
-    float s;
-    uint32_t u;
-};
-
 union PrivateRNGDoubleType {		   	// used to access doubles as unsigneds
     double d;
     uint32_t u[2];
@@ -35,7 +30,6 @@ union PrivateRNGDoubleType {		   	// used to access doubles as unsigneds
 // Base class for Random Number Generators.
 //
 class RNG {
-    static PrivateRNGSingleType singleMantissa;	// mantissa bit vector
     static PrivateRNGDoubleType doubleMantissa;	// mantissa bit vector
 public:
     using result_type = std::uint32_t;

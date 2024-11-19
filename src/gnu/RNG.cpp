@@ -20,8 +20,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <assert.h>
 #include "RNG.h"
 
-// These two static fields get initialized by RNG::RNG().
-PrivateRNGSingleType RNG::singleMantissa;
+// These static field get initialized by RNG::RNG().
 PrivateRNGDoubleType RNG::doubleMantissa;
 
 //
@@ -60,10 +59,7 @@ RNG::RNG()
 	//
 
 	PrivateRNGDoubleType t;
-	PrivateRNGSingleType s;
 
-#if _IEEE == 1 || defined(linux)
-	
 	t.d = 1.5;
 	if ( t.u[1] == 0 ) {		// sun word order?
 	    t.u[0] = 0x3fffffff;
@@ -74,34 +70,10 @@ RNG::RNG()
 	    t.u[1] = 0x3fffffff;
 	}
 
-	s.u = 0x3fffffff;
-#else
-	volatile double x = 1.0; // volatile needed when fp hardware used,
-                             // and has greater precision than memory doubles
-	double y = 0.5;
-	do {			    // find largest fp-number < 2.0
-	    t.d = x;
-	    x += y;
-	    y *= 0.5;
-	} while (x != t.d && x < 2.0);
-
-	volatile float xx = 1.0; // volatile needed when fp hardware used,
-                             // and has greater precision than memory floats
-	float yy = 0.5;
-	do {			    // find largest fp-number < 2.0
-	    s.s = xx;
-	    xx += yy;
-	    yy *= 0.5;
-	} while (xx != s.s && xx < 2.0);
-#endif
 	// set doubleMantissa to 1 for each doubleMantissa bit
 	doubleMantissa.d = 1.0;
 	doubleMantissa.u[0] ^= t.u[0];
 	doubleMantissa.u[1] ^= t.u[1];
-
-	// set singleMantissa to 1 for each singleMantissa bit
-	singleMantissa.s = 1.0;
-	singleMantissa.u ^= s.u;
 
 	initialized = 1;
     }
