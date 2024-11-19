@@ -13,7 +13,6 @@ add_library(
   Poisson.cpp
   Rand.cpp
   Random.cpp
-  RNG.cpp
   Uniform.cpp
   Weibull.cpp)
 set_property(TARGET nrngnu PROPERTY POSITION_INDEPENDENT_CODE ON)
