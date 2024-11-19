@@ -30,20 +30,12 @@ protected:
     double pMean;
 public:
     NegativeExpntl(double xmean, RNG *gen);
-    double mean();
-    double mean(double x);
 
-    virtual double operator()();
+    double operator()() override;
 };
 
 
 inline NegativeExpntl::NegativeExpntl(double xmean, RNG *gen)
 : Random(gen) {
   pMean = xmean;
-}
-
-inline double NegativeExpntl::mean() { return pMean; }
-inline double NegativeExpntl::mean(double x) {
-  double t = pMean; pMean = x;
-  return t;
 }

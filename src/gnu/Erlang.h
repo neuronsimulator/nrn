@@ -29,12 +29,7 @@ protected:
 public:
     Erlang(double mean, double variance, RNG *gen);
 
-    double mean();
-    double mean(double x);
-    double variance();
-    double variance(double x);
-
-    virtual double operator()();
+    double operator()() override;
 
 };
 
@@ -49,14 +44,4 @@ inline Erlang::Erlang(double mean, double variance, RNG *gen) : Random(gen)
 {
   pMean = mean; pVariance = variance;
   setState();
-}
-
-inline double Erlang::mean() { return pMean; }
-inline double Erlang::mean(double x) {
-  double tmp = pMean; pMean = x; setState(); return tmp;
-};
-
-inline double Erlang::variance() { return pVariance; }
-inline double Erlang::variance(double x) {
-  double tmp = pVariance; pVariance = x; setState(); return tmp;
 }
