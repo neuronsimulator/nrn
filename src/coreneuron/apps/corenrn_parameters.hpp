@@ -45,7 +45,7 @@ struct corenrn_parameters_data {
     };
 
     static constexpr int report_buff_size_default = 4;
-    static constexpr char* default_dat_filename = "files.dat";
+    static constexpr char const* default_dat_filename = "files.dat";
 
     unsigned spikebuf = 100'000;           /// Internal buffer used on every rank for spikes
     int prcellgid = -1;                    /// Gid of cell for prcellstate

@@ -26,7 +26,6 @@
 #include <Geom.h>
 #include <LogNorm.h>
 #include <NegExp.h>
-#include <RndInt.h>
 #include <HypGeom.h>
 #include <Weibull.h>
 #include <NrnRandom123RNG.hpp>
