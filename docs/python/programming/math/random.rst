@@ -33,7 +33,7 @@ Random Class
         from the gnu c++ class library. As of version 5.2, a cryptographic quality 
         RNG class wrapper for :func:`mcell_ran4` was added and is available 
         with the :meth:`Random.MCellRan4` method. The current default random generator 
-        is :meth:`Random.ACG`. 
+        is :meth:`Random.Random123`.
          
         As of version 7.3, a more versatile cryptographic quality generator, 
         Random123, is available with the :meth:`Random.Random123` method. This generator 
@@ -67,52 +67,6 @@ Random Class
 
         prints 20 random numbers ranging in value between 30 and 50. 
          
-
-         
-
-----
-
-
-
-.. method:: Random.ACG
-
-
-    Syntax:
-        ``r.ACG()``
-
-        ``r.ACG(seed)``
-
-        ``r.ACG(seed, size)``
-
-
-    Description:
-        Use a variant of the Linear Congruential Generator (algorithm M) 
-        described in Knuth, Art of Computer Programming, Vol. III in 
-        combination with a Fibonacci Additive Congruential Generator.  This is 
-        a "very high quality" random number generator, Default size is 55, 
-        giving a size of 1244 bytes to the structure. Minimum size is 7 (total 
-        100 bytes), maximum size is 98 (total 2440 bytes). 
-
-         
-
-----
-
-
-
-.. method:: Random.MLCG
-
-
-    Syntax:
-        ``r.MLCG()``
-
-        ``r.MLCG(seed1)``
-
-        ``r.MLCG(seed1, seed2)``
-
-
-    Description:
-        Use a Multiplicative Linear Congruential Generator.  Not as high 
-        quality as the ACG.  It uses only 8 bytes. 
 
          
 

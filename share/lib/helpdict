@@ -4,7 +4,6 @@ AbsoluteTolerance VariableStepControl Tools NEURONMainMenu GUI Reference 418 neu
 accept_action List classes general neuron.exe Reference 69 neuron/general/classes/list.html#accept_action
 accept_action SectionBrowser classes neuron neuron.exe Reference 316 neuron/neuron/classes/secbrows.html#accept_action
 access CurrentlyAccessedSection Section neuron neuron.exe Reference 380 neuron/neuron/secspec.html#access
-ACG Random classes general neuron.exe Reference 97 neuron/general/classes/random.html#ACG
 action MechanismStandard classes neuron neuron.exe Reference 268 neuron/neuron/classes/mechstan.html#action
 action MechanismType classes neuron neuron.exe Reference 274 neuron/neuron/classes/mechtype.html#action
 action Shape classes neuron neuron.exe Reference 325 neuron/neuron/classes/shape.html#action
@@ -496,7 +495,6 @@ min Vector classes general neuron.exe Reference 160 neuron/general/classes/vecto
 min_ind Vector classes general neuron.exe Reference 160 neuron/general/classes/vector/vect2.html#min_ind
 Miscellaneous Tools NEURONMainMenu GUI Reference 418 neuron/stdrun/0stdrun.html#Miscellaneous
 mktemp File classes general neuron.exe Reference 29 neuron/general/classes/file.html#mktemp
-MLCG Random classes general neuron.exe Reference 97 neuron/general/classes/random.html#MLCG
 ModelDescriptionIssues CVode classes neuron neuron.exe Reference 257 neuron/neuron/classes/cvode.html#ModelDescriptionIssues
 ModelDescriptionLanguage NMODL Reference 388 neuron/nmodl/nmodl.html#ModelDescriptionLanguage
 MoveText Graph LookAndFeel GUI Reference 18 neuron/agui/gui.html#MoveText

@@ -21,7 +21,6 @@
 #include <unordered_map>
 
 #include <nanobind/nanobind.h>
-
 namespace nb = nanobind;
 
 extern PyTypeObject* psection_type;
@@ -140,14 +139,6 @@ static int hocclass_init(hocclass* cls, PyObject* args, PyObject* kwds) {
         return -1;
     }
     return 0;
-}
-
-static PyObject* pytype_getname(PyTypeObject* pto) {
-#if PY_VERSION_HEX >= 0x030B0000  // since python-3.11
-    return PyType_GetName(pto);
-#else
-    return PyObject_GetAttrString((PyObject*) pto, "__name__");
-#endif
 }
 
 static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
@@ -2647,16 +2638,15 @@ static void nrnpy_store_savestate_(char** save_data, uint64_t* save_data_size) {
 static void nrnpy_restore_savestate_(int64_t size, char* data) {
     if (restore_savestate_) {
         PyObject* args = PyTuple_New(1);
-        PyObject* py_data = PyByteArray_FromStringAndSize(data, size);
-        Py_INCREF(py_data);
-        if (py_data == NULL) {
+        auto py_data = nb::steal(PyByteArray_FromStringAndSize(data, size));
+        if (!py_data) {
             hoc_execerror("SaveState:", "Data restore failure.");
         }
         // note: PyTuple_SetItem steals a ref to py_data
-        PyTuple_SetItem(args, 0, py_data);
-        PyObject* result = PyObject_CallObject(restore_savestate_, args);
+        PyTuple_SetItem(args, 0, py_data.release().ptr());
+        auto result = nb::steal(PyObject_CallObject(restore_savestate_, args));
         Py_DECREF(args);
-        if (result == NULL) {
+        if (!result) {
             hoc_execerror("SaveState:", "Data restore failure.");
         }
     } else {
@@ -3344,11 +3334,11 @@ static char* nrncore_arg(double tstop) {
     if (modules) {
         PyObject* module = PyDict_GetItemString(modules, "neuron.coreneuron");
         if (module) {
-            PyObject* callable = PyObject_GetAttrString(module, "nrncore_arg");
+            auto callable = nb::steal(PyObject_GetAttrString(module, "nrncore_arg"));
             if (callable) {
                 PyObject* ts = Py_BuildValue("(d)", tstop);
                 if (ts) {
-                    PyObject* arg = PyObject_CallObject(callable, ts);
+                    PyObject* arg = PyObject_CallObject(callable.ptr(), ts);
                     Py_DECREF(ts);
                     if (arg) {
                         Py2NRNString str(arg);

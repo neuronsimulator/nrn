@@ -11,7 +11,7 @@ any tree-shaped structure but loops are not permitted. (You may, however,
 develop membrane mechanisms, such as electrical gap junctions 
 which do not have the loop restriction. But be aware that the electrical 
 current flows through such connections are calculated by a modified euler 
-method instead of the more numerically robust fully implicit/crank-nicholson 
+method instead of the more numerically robust fully implicit/crank-nicolson 
 methods) 
  
 Do not confuse sections with segments. Sections are divided into segments 
@@ -54,8 +54,13 @@ There are two ways to specify section geometry:
  
 Choose the stylized method if the notions of cable length and diameter 
 are authoritative and where 3-d shape is irrelevant. For plotting purposes, 
+e.g. using :class:`Shape` or :class:`PlotShape`,
 length and diameter will be used to generate 3-d info automatically for 
-a stylized straight cylinder. (see :func:`define_shape`) 
+a stylized straight cylinder. (see :func:`define_shape`) . This
+translation of length-diameter information into 3-d points, and then
+back again can make small changes to length and diameter since 3-d
+points are stored as 32bit floating point numbers which have about 7
+decimal digits of precision.
  
 Choose the 3-D method if the shape comes from 3-d reconstruction data 
 or if your 3-d visualization is paramount. This method makes the 3-d info 
@@ -854,11 +859,24 @@ Reading 3D Data from NEURON
         a logical connection point if the translation ruins the 
         visualization. 
          
+        pt3d information is stored as 32 bit floating point numbers. These
+        numbers have about 7 decimal digits of resolution. In contrast, most
+        other values in NEURON are double precision and have about 16 decimal
+        digits of resolution. Thus values of diam which do not happen to have
+        exact single precision representation, can change slightly in the
+        process of translating from diam to 3-d points and then back to diam.
+        Note that the latter transformation happens when an internal function
+        checks the :data:`diam_changed` variable and if non-zero, calls the internal
+        function, recalc_diam. This latter function can be called by several
+        functions such as :func:`finitialize`, segment.area(), and segment.ri()
+        See :func:`pt3dconst` for more about interpolation issues.
+
         Note: This may not work right when a branch is connected to 
         the interior of a parent section \ ``0 < x < 1``, 
         rather only when it is connected to the parent at 0 or 1. 
 
-         
+        When :class:`Shape` or :class:`PlotShape` instances are created
+        this function is called automatically.
 
 ----
 
