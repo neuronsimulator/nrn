@@ -115,8 +115,8 @@ inline void* phase_wrapper_w(NrnThread* nt, UserParams& userParams, bool in_memo
             }
 
             std::string fname = std::string(data_dir) + "/" +
-                                std::to_string(userParams.cell_groups[i]) + "_" + getPhaseName<P>() +
-                                ".dat";
+                                std::to_string(userParams.cell_groups[i]) + "_" +
+                                getPhaseName<P>() + ".dat";
 
             // Avoid trying to open the gid_gap.dat file if it doesn't exist when there are no
             // gap junctions in this gid.

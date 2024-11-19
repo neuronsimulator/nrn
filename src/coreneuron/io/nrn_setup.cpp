@@ -218,7 +218,6 @@ std::vector<int> nrn_read_filesdat(const char* filesdat) {
     // irerate over gids in files.dat
     for (int iNum = 0; iNum < iNumFiles; ++iNum) {
         int iFile;
-
         nrn_assert(fscanf(fp, "%d\n", &iFile) == 1);
         if ((iNum % nrnmpi_numprocs) == nrnmpi_myid) {
             rank_cell_groups.push_back(iFile);
@@ -414,12 +413,10 @@ void nrn_setup(const char* filesdat,
                double* mindelay) {
     double time = nrn_wtime();
 
-    UserParams userParams(
-        nrn_read_filesdat(filesdat),
-        datpath,
-        strlen(restore_path) == 0 ? datpath : restore_path,
-        checkPoints
-    );
+    UserParams userParams(nrn_read_filesdat(filesdat),
+                          datpath,
+                          strlen(restore_path) == 0 ? datpath : restore_path,
+                          checkPoints);
 
     // temporary bug work around. If any process has multiple threads, no
     // process can have a single thread. So, for now, if one thread, make two.
@@ -507,9 +504,8 @@ void nrn_setup(const char* filesdat,
             nrn_partrans::setup_info_ = new SetupTransferInfo[nrn_nthread];
             coreneuron::phase_wrapper<coreneuron::gap>(userParams);
         } else {
-            nrn_partrans::setup_info_ = (*nrn2core_get_partrans_setup_info_)(n_cell_groups,
-                                                                             nrn_nthread,
-                                                                             sizeof(sgid_t));
+            nrn_partrans::setup_info_ =
+                (*nrn2core_get_partrans_setup_info_)(n_cell_groups, nrn_nthread, sizeof(sgid_t));
         }
 
         nrn_multithread_job(nrn_partrans::gap_data_indices_setup);
