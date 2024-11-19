@@ -216,8 +216,10 @@ void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
 
         nrn_assert(fscanf(fp, "%d\n", &iFile) == 1);
         if ((iNum % nrnmpi_numprocs) == nrnmpi_myid) {
+            // A "-1" entry means that this rank should not be assigned further gid groups.
+            // It is a way to create files.dat files which deterministically assign gid groups to
+            // ranks, particularly useful for very large simulations which required load balancing.
             if (iFile == -1) {
-                // Sentinel value, we are done for this rank
                 break;
             }
             grp[ngrp] = iFile;
