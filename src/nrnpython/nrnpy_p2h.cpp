@@ -168,7 +168,7 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         if (strcmp(sym->name, "_") == 0) {
             tail = head;
         } else {
-            tail = nb::steal(PyObject_GetAttrString(head.ptr(), sym->name));
+            tail = head.attr(sym->name);
         }
     }
     if (!tail) {
@@ -224,7 +224,7 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
             // TypeError: list indices must be integers or slices, not hoc.HocObject
             arg = nb::steal(nrnpy_hoc_pop("nindex py2n_component"));
         }
-        result = nb::steal(PyObject_GetItem(tail.ptr(), arg.ptr()));
+        result = tail[arg];
         if (!result) {
             PyErr_Print();
             hoc_execerror("Python get item failed:", hoc_object_name(ob));
@@ -237,8 +237,8 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
     // if numeric, string, or python HocObject return those
     if (nrnpy_numbercheck(result.ptr())) {
         hoc_pop_defer();
-        auto pn = nb::steal(PyNumber_Float(result.ptr()));
-        hoc_pushx(PyFloat_AsDouble(pn.ptr()));
+        double d = static_cast<double>(nb::float_(result));
+        hoc_pushx(d);
     } else if (is_python_string(result.ptr())) {
         char** ts = hoc_temp_charptr();
         Py2NRNString str(result.ptr(), true);
@@ -599,32 +599,25 @@ static char* nrnpyerr_str() {
         auto traceback = nb::steal(ptraceback);
 
         // try for full backtrace
-        nb::object py_str;
-        char* cmes = NULL;
+        nb::str py_str;
+        char* cmes = nullptr;
 
         // Since traceback.format_exception returns list of strings, wrap
         // in neuron.format_exception that returns a string.
         if (!traceback) {
             traceback = nb::none();
         }
-        auto pyth_module = nb::steal(PyImport_ImportModule("neuron"));
+        nb::module_ pyth_module = nb::module_::import_("neuron");
         if (pyth_module) {
-            auto pyth_func = nb::steal(
-                PyObject_GetAttrString(pyth_module.ptr(), "format_exception"));
+            nb::callable pyth_func = pyth_module.attr("format_exception");
             if (pyth_func) {
-                py_str = nb::steal(PyObject_CallFunctionObjArgs(
-                    pyth_func.ptr(), type.ptr(), value.ptr(), traceback.ptr(), NULL));
+                py_str = nb::str(pyth_func(type, value, traceback));
             }
         }
         if (py_str) {
-            Py2NRNString mes(py_str.ptr());
-            if (mes.err()) {
-                Fprintf(stderr, "nrnperr_str: Py2NRNString failed\n");
-            } else {
-                cmes = strdup(mes.c_str());
-                if (!cmes) {
-                    Fprintf(stderr, "nrnpyerr_str: strdup failed\n");
-                }
+            cmes = strdup(py_str.c_str());
+            if (!cmes) {
+                Fprintf(stderr, "nrnpyerr_str: strdup failed\n");
             }
         }
 
@@ -635,7 +628,7 @@ static char* nrnpyerr_str() {
 
         return cmes;
     }
-    return NULL;
+    return nullptr;
 }
 
 std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
