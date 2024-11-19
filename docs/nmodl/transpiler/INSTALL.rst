@@ -30,7 +30,7 @@ support is necessary. Make sure you have following packages available:
 -  flex (>=2.6)
 -  bison (>=3.0)
 -  CMake (>=3.15)
--  Python (>=3.8)
+-  Python (>=3.9)
 -  Python packages : jinja2 (>=2.10), pyyaml (>=3.13), pytest (>=4.0.0),
    sympy (>=1.3), textwrap
 

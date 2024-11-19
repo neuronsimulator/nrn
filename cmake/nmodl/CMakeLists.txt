@@ -177,7 +177,7 @@ endif()
 # Find required python packages
 # =============================================================================
 message(STATUS "CHECKING FOR PYTHON")
-find_package(Python 3.8 REQUIRED COMPONENTS Interpreter)
+find_package(Python 3.9 REQUIRED COMPONENTS Interpreter)
 cpp_cc_strip_python_shims(EXECUTABLE "${PYTHON_EXECUTABLE}" OUTPUT PYTHON_EXECUTABLE)
 
 # =============================================================================
