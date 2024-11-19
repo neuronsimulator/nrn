@@ -11,7 +11,6 @@ add_library(
   Normal.cpp
   NrnRandom123RNG.cpp
   nrnran123.cpp
-  Poisson.cpp
   Rand.cpp
   Random.cpp
   Uniform.cpp

@@ -18,7 +18,6 @@
 
 #include <Random.h>
 #include <distributions.hpp>
-#include <Poisson.h>
 #include <Normal.h>
 #include <Uniform.h>
 #include <DiscUnif.h>
