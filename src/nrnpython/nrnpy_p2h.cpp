@@ -262,9 +262,9 @@ static void hpoasgn(Object* o, int type) {
     Symbol* sym;
     nb::object poright;
     if (type == NUMBER) {
-        poright = nb::steal(PyFloat_FromDouble(hoc_xpop()));
+        poright = nb::float_(hoc_xpop());
     } else if (type == STRING) {
-        poright = nb::steal(Py_BuildValue("s", *hoc_strpop()));
+        poright = nb::str(*hoc_strpop());
     } else if (type == OBJECTVAR || type == OBJECTTMP) {
         Object** po2 = hoc_objpop();
         poright = nb::steal(nrnpy_ho2po(*po2));
@@ -279,7 +279,7 @@ static void hpoasgn(Object* o, int type) {
     nindex = hoc_ipop();
     // printf("hpoasgn %s %s %d\n", hoc_object_name(o), sym->name, nindex);
     if (nindex == 0) {
-        err = PyObject_SetAttrString(poleft.ptr(), sym->name, poright.ptr());
+        poleft.attr(sym->name) = poright;
     } else if (nindex == 1) {
         int ndim = hoc_pop_ndim();
         assert(ndim == 1);
@@ -288,10 +288,10 @@ static void hpoasgn(Object* o, int type) {
         if (strcmp(sym->name, "_") == 0) {
             a = nb::borrow(poleft);
         } else {
-            a = nb::steal(PyObject_GetAttrString(poleft.ptr(), sym->name));
+            a = poleft.attr(sym->name);
         }
         if (a) {
-            err = PyObject_SetItem(a.ptr(), key.ptr(), poright.ptr());
+            a[key] = poright;
         } else {
             err = -1;
         }
@@ -331,7 +331,7 @@ static double praxis_efun(Object* ho, Object* v) {
 
     auto pc = nb::steal(nrnpy_ho2po(ho));
     auto pv = nb::steal(nrnpy_ho2po(v));
-    auto po = nb::steal(Py_BuildValue("(OO)", pc.ptr(), pv.ptr()));
+    auto po = nb::make_tuple(pc, pv);
     nb::object r = hoccommand_exec_help1(po);
     if (!r.is_valid()) {
         char* mes = nrnpyerr_str();
@@ -428,9 +428,7 @@ static Object* callable_with_args(Object* ho, int narg) {
         }
     }
 
-    auto r = nb::steal(PyTuple_New(2));
-    PyTuple_SetItem(r.ptr(), 1, args.release().ptr());
-    PyTuple_SetItem(r.ptr(), 0, po.release().ptr());
+    nb::tuple r = nb::make_tuple(po, args);
 
     Object* hr = nrnpy_po2ho(r.release().ptr());
 
@@ -672,17 +670,13 @@ int* mk_displ(int* cnts) {
     return displ;
 }
 
-static PyObject* char2pylist(char* buf, int np, int* cnt, int* displ) {
-    PyObject* plist = PyList_New(np);
-    assert(plist != NULL);
+static nb::list char2pylist(char* buf, int np, int* cnt, int* displ) {
+    nb::list plist{};
     for (int i = 0; i < np; ++i) {
         if (cnt[i] == 0) {
-            Py_INCREF(Py_None);  // 'Fatal Python error: deallocating None' eventually
-            PyList_SetItem(plist, i, Py_None);
+            plist.append(nb::none());
         } else {
-            nb::object po = unpickle(buf + displ[i], cnt[i]);
-            PyObject* p = po.release().ptr();
-            PyList_SetItem(plist, i, p);
+            plist.append(unpickle(buf + displ[i], cnt[i]));
         }
     }
     return plist;
@@ -701,11 +695,11 @@ static PyObject* py_allgather(PyObject* psrc) {
 
     nrnmpi_char_allgatherv(sbuf.data(), rbuf, rcnt, rdispl);
 
-    PyObject* pdest = char2pylist(rbuf, np, rcnt, rdispl);
+    nb::list pdest = char2pylist(rbuf, np, rcnt, rdispl);
     delete[] rbuf;
     delete[] rcnt;
     delete[] rdispl;
-    return pdest;
+    return pdest.release().ptr();
 }
 
 static PyObject* py_gather(PyObject* psrc, int root) {
@@ -727,16 +721,14 @@ static PyObject* py_gather(PyObject* psrc, int root) {
 
     nrnmpi_char_gatherv(sbuf.data(), scnt, rbuf, rcnt, rdispl, root);
 
-    PyObject* pdest = Py_None;
+    nb::list pdest = nb::none();
     if (root == nrnmpi_myid) {
         pdest = char2pylist(rbuf, np, rcnt, rdispl);
         delete[] rbuf;
         delete[] rcnt;
         delete[] rdispl;
-    } else {
-        Py_INCREF(pdest);
     }
-    return pdest;
+    return pdest.release().ptr();
 }
 
 static PyObject* py_broadcast(PyObject* psrc, int root) {
@@ -896,7 +888,7 @@ static Object* py_alltoall_type(int size, int type) {
                 nrnmpi_char_alltoallv(s.data(), scnt.data(), sdispl, r, rcnt, rdispl);
                 delete[] sdispl;
 
-                pdest = char2pylist(r, np, rcnt, rdispl);
+                pdest = char2pylist(r, np, rcnt, rdispl).release().ptr();
 
                 delete[] r;
                 delete[] rcnt;
