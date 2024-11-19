@@ -2,7 +2,7 @@
 # 5 cells with distinct trajectories and distinct lags
 # Show trajectories in Graph and compare shifted trajectories
 
-from neuron import h, gui
+from neuron import h
 
 pc = h.ParallelContext()
 

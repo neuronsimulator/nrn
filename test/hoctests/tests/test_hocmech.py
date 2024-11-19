@@ -1,4 +1,4 @@
-from neuron import h, gui
+from neuron import h
 from neuron.expect_hocerr import expect_err, set_quiet
 
 set_quiet(False)
