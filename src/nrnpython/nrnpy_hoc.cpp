@@ -255,16 +255,15 @@ static void hocobj_dealloc(PyHocObject* self) {
 }
 
 static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwds) {
-    PyObject* subself;
     PyObject* base;
     PyHocObject* hbase = nullptr;
 
-    subself = subtype->tp_alloc(subtype, 0);
-    // printf("hocobj_new %s %p %p\n", subtype->tp_name, subtype, subself);
-    if (subself == NULL) {
-        return NULL;
+    auto subself = nb::steal(subtype->tp_alloc(subtype, 0));
+    // printf("hocobj_new %s %p %p\n", subtype->tp_name, subtype, subself.ptr());
+    if (!subself) {
+        return nullptr;
     }
-    PyHocObject* self = (PyHocObject*) subself;
+    PyHocObject* self = (PyHocObject*) subself.ptr();
     self->ho_ = NULL;
     self->u.x_ = 0.;
     self->sym_ = NULL;
@@ -291,8 +290,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
             hbase = (PyHocObject*) base;
         } else {
             PyErr_SetString(PyExc_TypeError, "HOC base class not valid");
-            Py_DECREF(subself);
-            return NULL;
+            return nullptr;
         }
         PyDict_DelItemString(kwds, "hocbase");
     }
@@ -301,19 +299,17 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
         // printf("hocobj_new base %s\n", hbase->sym_->name);
         // remove the hocbase keyword since hocobj_call only allows
         // the "sec" keyword argument
-        PyObject* r = hocobj_call(hbase, args, kwds);
+        auto r = nb::steal(hocobj_call(hbase, args, kwds));
         if (!r) {
-            Py_DECREF(subself);
-            return NULL;
+            return nullptr;
         }
-        PyHocObject* rh = (PyHocObject*) r;
+        PyHocObject* rh = (PyHocObject*) r.ptr();
         self->type_ = rh->type_;
         self->ho_ = rh->ho_;
         hoc_obj_ref(self->ho_);
-        Py_DECREF(r);
     }
 
-    return subself;
+    return subself.release().ptr();
 }
 
 static int hocobj_init(PyObject* subself, PyObject* args, PyObject* kwds) {
@@ -419,9 +415,8 @@ int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
         // PyObject_Print(po, stdout, 0);
         // printf("  pushargs %d\n", i);
         if (nrnpy_numbercheck(po)) {
-            PyObject* pn = PyNumber_Float(po);
-            hoc_pushx(PyFloat_AsDouble(pn));
-            Py_XDECREF(pn);
+            auto pn = nb::steal(PyNumber_Float(po));
+            hoc_pushx(PyFloat_AsDouble(pn.ptr()));
         } else if (is_python_string(po)) {
             char** ts = hoc_temp_charptr();
             Py2NRNString str(po, /* disable_release */ true);
@@ -569,10 +564,8 @@ int nrnpy_numbercheck(PyObject* po) {
     // or things that fail when float(po) fails. ARGGH! This
     // is a lot more expensive than I would like.
     if (rval == 1) {
-        PyObject* tmp = PyNumber_Float(po);
-        if (tmp) {
-            Py_DECREF(tmp);
-        } else {
+        auto tmp = nb::steal(PyNumber_Float(po));
+        if (!tmp) {
             PyErr_Clear();
             rval = 0;
         }
@@ -996,20 +989,19 @@ int nrn_is_hocobj_ptr(PyObject* po, neuron::container::data_handle<double>& pd) 
 }
 
 static void symlist2dict(Symlist* sl, PyObject* dict) {
-    PyObject* nn = Py_BuildValue("");
+    auto nn = nb::steal(Py_BuildValue(""));
     for (Symbol* s = sl->first; s; s = s->next) {
         if (s->type == UNDEF) {
             continue;
         }
         if (s->cpublic == 1 || sl == hoc_built_in_symlist || sl == hoc_top_level_symlist) {
             if (strcmp(s->name, "del") == 0) {
-                PyDict_SetItemString(dict, "delay", nn);
+                PyDict_SetItemString(dict, "delay", nn.ptr());
             } else {
-                PyDict_SetItemString(dict, s->name, nn);
+                PyDict_SetItemString(dict, s->name, nn.ptr());
             }
         }
     }
-    Py_DECREF(nn);
 }
 
 static int setup_doc_system() {
@@ -1036,13 +1028,11 @@ PyObject* toplevel_get(PyObject* subself, const char* n) {
     PyHocObject* self = (PyHocObject*) subself;
     PyObject* result = NULL;
     if (self->type_ == PyHoc::HocTopLevelInterpreter) {
-        PyObject* descr = PyDict_GetItemString(topmethdict, n);
+        auto descr = nb::borrow(PyDict_GetItemString(topmethdict, n));
         if (descr) {
-            Py_INCREF(descr);
-            descrgetfunc f = descr->ob_type->tp_descr_get;
+            descrgetfunc f = descr.ptr()->ob_type->tp_descr_get;
             assert(f);
-            result = f(descr, subself, (PyObject*) Py_TYPE(subself));
-            Py_DECREF(descr);
+            result = f(descr.ptr(), subself, (PyObject*) Py_TYPE(subself));
         }
     }
     return result;
@@ -1168,22 +1158,21 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             return PyObject_CallFunctionObjArgs(plotshape_plot, (PyObject*) self, NULL);
         } else if (strcmp(n, "__doc__") == 0) {
             if (setup_doc_system()) {
-                PyObject* docobj = NULL;
+                nb::object docobj;
                 if (self->ho_) {
-                    docobj = Py_BuildValue("s s",
-                                           self->ho_->ctemplate->sym->name,
-                                           self->sym_ ? self->sym_->name : "");
+                    docobj = nb::steal(Py_BuildValue("s s",
+                                                     self->ho_->ctemplate->sym->name,
+                                                     self->sym_ ? self->sym_->name : ""));
                 } else if (self->sym_) {
                     // Symbol
-                    docobj = Py_BuildValue("s s", "", self->sym_->name);
+                    docobj = nb::steal(Py_BuildValue("s s", "", self->sym_->name));
                 } else {
                     // Base HocObject
 
-                    docobj = Py_BuildValue("s s", "", "");
+                    docobj = nb::steal(Py_BuildValue("s s", "", ""));
                 }
 
-                result = PyObject_CallObject(pfunc_get_docstring, docobj);
-                Py_DECREF(docobj);
+                result = PyObject_CallObject(pfunc_get_docstring, docobj.ptr());
                 return result;
             } else {
                 return NULL;
@@ -1235,8 +1224,10 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         return NULL;
     }
     if (self->ho_) {  // use the component fork.
-        result = hocobj_new(hocobject_type, 0, 0);
-        PyHocObject* po = (PyHocObject*) result;
+        // We use the convention that `ret_ho_` own the Python object,
+        // and `po` is just a (casted) pointer/view.
+        auto ret_ho_ = nb::steal(hocobj_new(hocobject_type, 0, 0));
+        PyHocObject* po = (PyHocObject*) ret_ho_.ptr();
         po->ho_ = self->ho_;
         hoc_obj_ref(po->ho_);
         po->sym_ = sym;
@@ -1252,16 +1243,14 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                 if (nrn_inpython_ == 2) {  // error in component
                     nrn_inpython_ = 0;
                     PyErr_SetString(PyExc_TypeError, "No value");
-                    Py_DECREF(po);
-                    return NULL;
+                    return nullptr;
                 }
                 nrn_inpython_ = 0;
-                Py_DECREF(po);
                 if (t == SECTION || t == SECTIONREF) {
                     section_object_seen = 0;
-                    result = nrnpy_cas(0, 0);
+                    PyObject* ret = nrnpy_cas(0, 0);
                     nrn_popsec();
-                    return result;
+                    return ret;
                 } else {
                     if (isptr) {
                         auto handle = hoc_pop_handle<double>();
@@ -1276,11 +1265,11 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                 } else {
                     po->type_ = PyHoc::HocArray;
                 }
-                return result;
+                return ret_ho_.release().ptr();
             }
         } else {
             po->type_ = PyHoc::HocFunction;
-            return result;
+            return ret_ho_.release().ptr();
         }
     }
     // top level interpreter fork
