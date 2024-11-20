@@ -39,7 +39,8 @@ TEST_CASE("not_enough_arguments", "[Neuron][nrnpython]") {
 
 TEST_CASE("can_cast_objects", "[Neuron][nrnpython]") {
     nanobind::object ob = nanobind::none();
-    nanobind::list li{}; li.append(1);
+    nanobind::list li{};
+    li.append(1);
     auto tup = nanobind::make_tuple("test", ob, li, 42);
     auto [s, o, l, i] = nrn::cast_tuple<std::string, nanobind::handle, nanobind::list, int>(tup);
     REQUIRE(s == "test");
