@@ -76,15 +76,14 @@ class Py2NRNString {
             PyObject* ptraceback = NULL;
             PyErr_Fetch(&ptype, &pvalue, &ptraceback);
             if (pvalue) {
-                PyObject* pstr = PyObject_Str(pvalue);
+                auto pstr = nb::steal(PyObject_Str(pvalue));
                 if (pstr) {
-                    const char* err_msg = PyUnicode_AsUTF8(pstr);
+                    const char* err_msg = PyUnicode_AsUTF8(pstr.ptr());
                     if (err_msg) {
                         str_ = strdup(err_msg);
                     } else {
                         str_ = strdup("get_pyerr failed at PyUnicode_AsUTF8");
                     }
-                    Py_XDECREF(pstr);
                 } else {
                     str_ = strdup("get_pyerr failed at PyObject_Str");
                 }
