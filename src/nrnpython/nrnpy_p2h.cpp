@@ -428,9 +428,7 @@ static Object* callable_with_args(Object* ho, int narg) {
         }
     }
 
-    auto r = nb::steal(PyTuple_New(2));
-    PyTuple_SetItem(r.ptr(), 1, args.release().ptr());
-    PyTuple_SetItem(r.ptr(), 0, po.release().ptr());
+    nb::tuple r = nb::make_tuple(po, args);
 
     Object* hr = nrnpy_po2ho(r.release().ptr());
 
@@ -885,9 +883,7 @@ static Object* py_alltoall_type(int size, int type) {
             sdispl = mk_displ(scnt.data());
             rdispl = mk_displ(rcnt);
             if (size < 0) {
-                pdest = PyTuple_New(2);
-                PyTuple_SetItem(pdest, 0, Py_BuildValue("l", (long) sdispl[np]));
-                PyTuple_SetItem(pdest, 1, Py_BuildValue("l", (long) rdispl[np]));
+                pdest = nb::make_tuple(sdispl[np], rdispl[np]).release().ptr();
                 delete[] sdispl;
                 delete[] rcnt;
                 delete[] rdispl;
