@@ -48,23 +48,27 @@ class Py2NRNString {
         return str_ == NULL;
     }
     inline void set_pyerr(PyObject* type, const char* message) {
-        PyObject* ptype = NULL;
-        PyObject* pvalue = NULL;
+        nb::object err_type;
+        nb::object err_value;
+
         if (err()) {
+            PyObject* ptype = NULL;
+            PyObject* pvalue = NULL;
             PyObject* ptraceback = nullptr;
             PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+            err_type = nb::steal(ptype);
+            err_value = nb::steal(pvalue);
             Py_XDECREF(ptraceback);
         }
-        if (pvalue && ptype) {
-            auto umes = nb::steal(
-                PyUnicode_FromFormat("%s (Note: %S: %S)", message, ptype, pvalue));
+        if (err_value && err_type) {
+            auto umes = nb::steal(PyUnicode_FromFormat(
+                "%s (Note: %S: %S)", message, err_type.ptr(), err_value.ptr()));
             PyErr_SetObject(type, umes.ptr());
         } else {
             PyErr_SetString(type, message);
         }
-        Py_XDECREF(ptype);
-        Py_XDECREF(pvalue);
     }
+
     inline char* get_pyerr() {
         PyObject* ptype = NULL;
         PyObject* pvalue = NULL;
