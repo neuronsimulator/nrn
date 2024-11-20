@@ -650,8 +650,8 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
 
 #include "nrnmpi.h"
 
-int* mk_displ(int* cnts) {
-    int* displ = new int[nrnmpi_numprocs + 1];
+std::vector<int> mk_displ(int* cnts) {
+    std::vector<int> displ(nrnmpi_numprocs + 1);
     displ[0] = 0;
     for (int i = 0; i < nrnmpi_numprocs; ++i) {
         displ[i + 1] = displ[i] + cnts[i];
@@ -683,15 +683,14 @@ static PyObject* py_allgather(PyObject* psrc) {
     int* rcnt = new int[np];
     rcnt[nrnmpi_myid] = static_cast<int>(sbuf.size());
     nrnmpi_int_allgather_inplace(rcnt, 1);
-    int* rdispl = mk_displ(rcnt);
+    auto rdispl = mk_displ(rcnt);
     char* rbuf = new char[rdispl[np]];
 
-    nrnmpi_char_allgatherv(sbuf.data(), rbuf, rcnt, rdispl);
+    nrnmpi_char_allgatherv(sbuf.data(), rbuf, rcnt, rdispl.data());
 
-    PyObject* pdest = char2pylist(rbuf, np, rcnt, rdispl);
+    PyObject* pdest = char2pylist(rbuf, np, rcnt, rdispl.data());
     delete[] rbuf;
     delete[] rcnt;
-    delete[] rdispl;
     return pdest;
 }
 
@@ -705,21 +704,20 @@ static PyObject* py_gather(PyObject* psrc, int root) {
         rcnt = new int[np];
     }
     nrnmpi_int_gather(&scnt, rcnt, 1, root);
-    int* rdispl = NULL;
+    std::vector<int> rdispl;
     char* rbuf = NULL;
     if (root == nrnmpi_myid) {
         rdispl = mk_displ(rcnt);
         rbuf = new char[rdispl[np]];
     }
 
-    nrnmpi_char_gatherv(sbuf.data(), scnt, rbuf, rcnt, rdispl, root);
+    nrnmpi_char_gatherv(sbuf.data(), scnt, rbuf, rcnt, rdispl.data(), root);
 
     PyObject* pdest = Py_None;
     if (root == nrnmpi_myid) {
-        pdest = char2pylist(rbuf, np, rcnt, rdispl);
+        pdest = char2pylist(rbuf, np, rcnt, rdispl.data());
         delete[] rbuf;
         delete[] rcnt;
-        delete[] rdispl;
     } else {
         Py_INCREF(pdest);
     }
@@ -828,8 +826,6 @@ static Object* py_alltoall_type(int size, int type) {
 
         std::vector<char> s{};
         std::vector<int> scnt{};
-        int* sdispl = NULL;
-        int* rdispl = NULL;
 
         // setup source buffer for transfer s, scnt, sdispl
         // for alltoall, each rank handled identically
@@ -857,32 +853,23 @@ static Object* py_alltoall_type(int size, int type) {
         if (type == 1) {  // alltoall
 
             // what are destination counts
-            int* ones = new int[np];
-            for (int i = 0; i < np; ++i) {
-                ones[i] = 1;
-            }
-            sdispl = mk_displ(ones);
+            std::vector<int> ones(np, 1);
+            auto sdispl = mk_displ(ones.data());
             std::vector<int> rcnt(np);
-            nrnmpi_int_alltoallv(scnt.data(), ones, sdispl, rcnt.data(), ones, sdispl);
-            delete[] ones;
-            delete[] sdispl;
+            nrnmpi_int_alltoallv(
+                scnt.data(), ones.data(), sdispl.data(), rcnt.data(), ones.data(), sdispl.data());
 
             // exchange
             sdispl = mk_displ(scnt.data());
-            rdispl = mk_displ(rcnt.data());
+            auto rdispl = mk_displ(rcnt.data());
             if (size < 0) {
                 pdest = nb::make_tuple(sdispl[np], rdispl[np]);
-                delete[] sdispl;
-                delete[] rdispl;
             } else {
-                char* r = new char[rdispl[np] + 1];  // force > 0 for all None case
-                nrnmpi_char_alltoallv(s.data(), scnt.data(), sdispl, r, rcnt.data(), rdispl);
-                delete[] sdispl;
+                std::vector<char> r(rdispl[np] + 1);  // force > 0 for all None case
+                nrnmpi_char_alltoallv(
+                    s.data(), scnt.data(), sdispl.data(), r.data(), rcnt.data(), rdispl.data());
 
-                pdest = nb::steal(char2pylist(r, np, rcnt.data(), rdispl));
-
-                delete[] r;
-                delete[] rdispl;
+                pdest = nb::steal(char2pylist(r.data(), np, rcnt.data(), rdispl.data()));
             }
 
         } else {  // scatter
@@ -891,22 +878,19 @@ static Object* py_alltoall_type(int size, int type) {
             int rcnt = -1;
             nrnmpi_int_scatter(scnt.data(), &rcnt, 1, root);
             std::vector<char> r(rcnt + 1);  // rcnt can be 0
+            std::vector<int> sdispl;
 
             // exchange
             if (nrnmpi_myid == root) {
                 sdispl = mk_displ(scnt.data());
             }
-            nrnmpi_char_scatterv(s.data(), scnt.data(), sdispl, r.data(), rcnt, root);
-            if (sdispl)
-                delete[] sdispl;
+            nrnmpi_char_scatterv(s.data(), scnt.data(), sdispl.data(), r.data(), rcnt, root);
 
             if (rcnt) {
                 pdest = unpickle(r);
             } else {
                 pdest = nb::none();
             }
-
-            assert(rdispl == NULL);
         }
     }
 
