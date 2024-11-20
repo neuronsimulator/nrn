@@ -103,6 +103,15 @@ class Py2NRNString {
     Py2NRNString(const Py2NRNString&);
     Py2NRNString& operator=(const Py2NRNString&);
 
+    std::tuple<nb::object, nb::object, nb::object> fetch_pyerr() {
+        PyObject* ptype = NULL;
+        PyObject* pvalue = NULL;
+        PyObject* ptraceback = NULL;
+        PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+
+        return std::make_tuple(nb::steal(ptype), nb::steal(pvalue), nb::steal(ptraceback));
+    }
+
     char* str_;
     bool disable_release_;
 };
