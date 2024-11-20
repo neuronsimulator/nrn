@@ -2604,21 +2604,17 @@ static PyObject* restore_savestate_ = NULL;
 static void nrnpy_store_savestate_(char** save_data, uint64_t* save_data_size) {
     if (store_savestate_) {
         // call store_savestate_ with no arguments to get a byte array that we can write out
-        PyObject* args = PyTuple_New(0);
-        PyObject* result = PyObject_CallObject(store_savestate_, args);
-        Py_INCREF(result);
-        Py_DECREF(args);
-        if (result == NULL) {
+        nb::bytearray result(PyObject_CallNoArgs(store_savestate_));
+        if (!result) {
             hoc_execerror("SaveState:", "Data store failure.");
         }
         // free any old data and make a copy
         if (*save_data) {
             delete[](*save_data);
         }
-        *save_data_size = PyByteArray_Size(result);
+        *save_data_size = result.size();
         *save_data = new char[*save_data_size];
-        memcpy(*save_data, PyByteArray_AsString(result), *save_data_size);
-        Py_DECREF(result);
+        memcpy(*save_data, result.c_str(), *save_data_size);
     } else {
         *save_data_size = 0;
     }
