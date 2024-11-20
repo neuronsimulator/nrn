@@ -680,16 +680,15 @@ static PyObject* py_allgather(PyObject* psrc) {
     int np = nrnmpi_numprocs;
     auto sbuf = pickle(psrc);
     // what are the counts from each rank
-    int* rcnt = new int[np];
+    std::vector<int> rcnt(np);
     rcnt[nrnmpi_myid] = static_cast<int>(sbuf.size());
-    nrnmpi_int_allgather_inplace(rcnt, 1);
-    auto rdispl = mk_displ(rcnt);
+    nrnmpi_int_allgather_inplace(rcnt.data(), 1);
+    auto rdispl = mk_displ(rcnt.data());
     std::vector<char> rbuf(rdispl[np]);
 
-    nrnmpi_char_allgatherv(sbuf.data(), rbuf.data(), rcnt, rdispl.data());
+    nrnmpi_char_allgatherv(sbuf.data(), rbuf.data(), rcnt.data(), rdispl.data());
 
-    PyObject* pdest = char2pylist(rbuf.data(), np, rcnt, rdispl.data());
-    delete[] rcnt;
+    PyObject* pdest = char2pylist(rbuf.data(), np, rcnt.data(), rdispl.data());
     return pdest;
 }
 
