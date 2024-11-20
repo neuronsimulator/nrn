@@ -650,7 +650,7 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
 
 #include "nrnmpi.h"
 
-std::vector<int> mk_displ(int* cnts) {
+static std::vector<int> mk_displ(int* cnts) {
     std::vector<int> displ(nrnmpi_numprocs + 1);
     displ[0] = 0;
     for (int i = 0; i < nrnmpi_numprocs; ++i) {
