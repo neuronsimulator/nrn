@@ -55,9 +55,9 @@ class Py2NRNString {
             PyErr_Fetch(&ptype, &pvalue, &ptraceback);
         }
         if (pvalue && ptype) {
-            PyObject* umes = PyUnicode_FromFormat("%s (Note: %S: %S)", message, ptype, pvalue);
-            PyErr_SetObject(type, umes);  // umes is borrowed reference
-            Py_XDECREF(umes);
+            auto umes = nb::steal(
+                PyUnicode_FromFormat("%s (Note: %S: %S)", message, ptype, pvalue));
+            PyErr_SetObject(type, umes.ptr());
         } else {
             PyErr_SetString(type, message);
         }
