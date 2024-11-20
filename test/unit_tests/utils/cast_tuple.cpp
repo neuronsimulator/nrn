@@ -36,3 +36,16 @@ TEST_CASE("not_enough_arguments", "[Neuron][nrnpython]") {
     auto empty_tuple = nanobind::tuple();
     REQUIRE_THROWS(nrn::cast_tuple<int>(empty_tuple));
 }
+
+TEST_CASE("can_cast_objects", "[Neuron][nrnpython]") {
+    nanobind::object ob = nanobind::none();
+    nanobind::list li{}; li.append(1);
+    auto tup = nanobind::make_tuple("test", ob, li, 42);
+    auto [s, o, l, i] = nrn::cast_tuple<std::string, nanobind::handle, nanobind::list, int>(tup);
+    REQUIRE(s == "test");
+    REQUIRE(o.is_none());
+    REQUIRE(l.is_valid());
+    REQUIRE(nanobind::list::check_(l));
+    REQUIRE(static_cast<int>(static_cast<nanobind::int_>(l[0])) == 1);
+    REQUIRE(i == 42);
+}
