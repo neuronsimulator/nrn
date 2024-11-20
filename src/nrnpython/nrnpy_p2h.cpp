@@ -697,24 +697,23 @@ static PyObject* py_gather(PyObject* psrc, int root) {
     auto sbuf = pickle(psrc);
     // what are the counts from each rank
     int scnt = static_cast<int>(sbuf.size());
-    int* rcnt = NULL;
+    std::vector<int> rcnt;
     if (root == nrnmpi_myid) {
-        rcnt = new int[np];
+        rcnt.resize(np);
     }
-    nrnmpi_int_gather(&scnt, rcnt, 1, root);
+    nrnmpi_int_gather(&scnt, rcnt.data(), 1, root);
     std::vector<int> rdispl;
     std::vector<char> rbuf;
     if (root == nrnmpi_myid) {
-        rdispl = mk_displ(rcnt);
+        rdispl = mk_displ(rcnt.data());
         rbuf.resize(rdispl[np]);
     }
 
-    nrnmpi_char_gatherv(sbuf.data(), scnt, rbuf.data(), rcnt, rdispl.data(), root);
+    nrnmpi_char_gatherv(sbuf.data(), scnt, rbuf.data(), rcnt.data(), rdispl.data(), root);
 
     PyObject* pdest = Py_None;
     if (root == nrnmpi_myid) {
-        pdest = char2pylist(rbuf.data(), np, rcnt, rdispl.data());
-        delete[] rcnt;
+        pdest = char2pylist(rbuf.data(), np, rcnt.data(), rdispl.data());
     } else {
         Py_INCREF(pdest);
     }
