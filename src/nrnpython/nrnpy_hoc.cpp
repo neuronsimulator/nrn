@@ -2765,10 +2765,9 @@ static Object** gui_helper_(const char* name, Object* obj) {
 
 static Object** vec_as_numpy_helper(int size, double* data) {
     if (vec_as_numpy) {
-        PyObject* po = (*vec_as_numpy)(size, data);
-        if (po != Py_None) {
-            Object* ho = nrnpy_po2ho(po);
-            Py_DECREF(po);
+        auto po = nb::steal((*vec_as_numpy)(size, data));
+        if (!po.is_none()) {
+            Object* ho = nrnpy_po2ho(po.release().ptr());
             --ho->refcount;
             return hoc_temp_objptr(ho);
         }
