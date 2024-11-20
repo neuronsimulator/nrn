@@ -2920,7 +2920,7 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
     // pickle version, 2.0 bytes to determine if swapbytes needed,
     // vector size, string data
     double x = 2.0;
-    nb::bytes str((const void*)(&x), sizeof(double));
+    nb::bytes str((const void*) (&x), sizeof(double));
     nb::bytes str1(vec->data(), vec->size() * sizeof(double));
     nb::tuple state = nb::make_tuple(1, str, vec->size(), str1);
 
