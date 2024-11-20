@@ -2782,8 +2782,8 @@ static Object** nrnpy_vec_to_python(void* v) {
     int size = hv->size();
     double* x = vector_vec(hv);
     //	printf("%s.to_array\n", hoc_object_name(hv->obj_));
-    PyObject* po;
-    Object* ho = 0;
+    nb::object po;
+    Object* ho = nullptr;
 
     // as_numpy_array=True is the case where this function is being called by the
     // ivocvect __array__ member
@@ -2796,33 +2796,32 @@ static Object** nrnpy_vec_to_python(void* v) {
         if (ho->ctemplate->sym != nrnpy_pyobj_sym_) {
             hoc_execerror(hoc_object_name(ho), " is not a PythonObject");
         }
-        po = nrnpy_hoc2pyobject(ho);
-        if (!PySequence_Check(po)) {
+        po = nb::borrow(nrnpy_hoc2pyobject(ho));
+        if (!PySequence_Check(po.ptr())) {
             hoc_execerror(hoc_object_name(ho), " is not a Python Sequence");
         }
-        if (size != PySequence_Size(po)) {
+        if (size != PySequence_Size(po.ptr())) {
             hoc_execerror(hoc_object_name(ho), "Python Sequence not same size as Vector");
         }
     } else {
-        if ((po = PyList_New(size)) == NULL) {
+        if (!(po = nb::steal(PyList_New(size)))) {
             hoc_execerror("Could not create new Python List with correct size.", 0);
         }
 
-        ho = nrnpy_po2ho(po);
-        Py_DECREF(po);
+        ho = nrnpy_po2ho(po.ptr());
         --ho->refcount;
     }
     //	printf("size = %d\n", size);
     long stride;
-    char* y = double_array_interface(po, stride);
+    char* y = double_array_interface(po.ptr(), stride);
     if (y) {
         for (int i = 0, j = 0; i < size; ++i, j += stride) {
             *(double*) (y + j) = x[i];
         }
-    } else if (PyList_Check(po)) {  // PySequence_SetItem does DECREF of old items
+    } else if (PyList_Check(po.ptr())) {  // PySequence_SetItem does DECREF of old items
         for (int i = 0; i < size; ++i) {
             auto pn = nb::steal(PyFloat_FromDouble(x[i]));
-            if (!pn || PyList_SetItem(po, i, pn.release().ptr()) == -1) {
+            if (!pn || PyList_SetItem(po.ptr(), i, pn.release().ptr()) == -1) {
                 char buf[50];
                 Sprintf(buf, "%d of %d", i, size);
                 hoc_execerror("Could not set a Python Sequence item", buf);
@@ -2831,13 +2830,26 @@ static Object** nrnpy_vec_to_python(void* v) {
     } else {  // assume PySequence_SetItem works
         for (int i = 0; i < size; ++i) {
             auto pn = nb::steal(PyFloat_FromDouble(x[i]));
-            if (!pn || PySequence_SetItem(po, i, pn.ptr()) == -1) {
+            if (!pn || PySequence_SetItem(po.ptr(), i, pn.ptr()) == -1) {
                 char buf[50];
                 Sprintf(buf, "%d of %d", i, size);
                 hoc_execerror("Could not set a Python Sequence item", buf);
             }
         }
     }
+
+    // The HOC reference throughout most of this function is 0 (preventing the need to decrement on
+    // error paths).
+    //
+    // Because the dtor of `po` will decrease the reference count of the `ho` (if it contains one),
+    // the order in which the decrements happen matter, or else `ho` can be deallocated.
+    //
+    // To avoid the situation described, we must briefly acquire a reference to the HOC object (by
+    // bumping its reference count) and then decrement the reference count again.
+    ++ho->refcount;
+    po.dec_ref();
+    po.release();
+    --ho->refcount;
     return hoc_temp_objptr(ho);
 }
 
