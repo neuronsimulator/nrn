@@ -415,8 +415,8 @@ int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
         // PyObject_Print(po, stdout, 0);
         // printf("  pushargs %d\n", i);
         if (nrnpy_numbercheck(po)) {
-            auto pn = nb::steal(PyNumber_Float(po));
-            hoc_pushx(PyFloat_AsDouble(pn.ptr()));
+            nb::float_ pn(po);
+            hoc_pushx(static_cast<double>(pn));
         } else if (is_python_string(po)) {
             char** ts = hoc_temp_charptr();
             Py2NRNString str(po, /* disable_release */ true);
@@ -564,7 +564,7 @@ int nrnpy_numbercheck(PyObject* po) {
     // or things that fail when float(po) fails. ARGGH! This
     // is a lot more expensive than I would like.
     if (rval == 1) {
-        auto tmp = nb::steal(PyNumber_Float(po));
+        nb::float_ tmp(po);
         if (!tmp) {
             PyErr_Clear();
             rval = 0;
@@ -1160,16 +1160,14 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             if (setup_doc_system()) {
                 nb::object docobj;
                 if (self->ho_) {
-                    docobj = nb::steal(Py_BuildValue("s s",
-                                                     self->ho_->ctemplate->sym->name,
-                                                     self->sym_ ? self->sym_->name : ""));
+                    docobj = nb::make_tuple(self->ho_->ctemplate->sym->name,
+                                            self->sym_ ? self->sym_->name : "");
                 } else if (self->sym_) {
                     // Symbol
-                    docobj = nb::steal(Py_BuildValue("s s", "", self->sym_->name));
+                    docobj = nb::make_tuple("", self->sym_->name);
                 } else {
                     // Base HocObject
-
-                    docobj = nb::steal(Py_BuildValue("s s", "", ""));
+                    docobj = nb::make_tuple("", "");
                 }
 
                 result = PyObject_CallObject(pfunc_get_docstring, docobj.ptr());
@@ -1476,8 +1474,10 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
         return -1;
     }
     if (self->ho_) {  // use the component fork.
-        PyObject* result = hocobj_new(hocobject_type, 0, 0);
-        po = (PyHocObject*) result;
+        // Convention: `result` owns the Python object, and `po` is
+        // just a (casted) pointer/view.
+        auto result = nb::steal(hocobj_new(hocobject_type, 0, 0));
+        auto* po = (PyHocObject*) result.ptr();
         po->ho_ = self->ho_;
         hoc_obj_ref(po->ho_);
         po->sym_ = sym;
@@ -1493,21 +1493,17 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
                 if (nrn_inpython_ == 2) {  // error in component
                     nrn_inpython_ = 0;
                     PyErr_SetString(PyExc_TypeError, "No value");
-                    Py_DECREF(po);
                     return -1;
                 }
-                Py_DECREF(po);
                 return set_final_from_stk(value);
             } else {
                 char e[200];
                 Sprintf(e, "'%s' requires subscript for assignment", n);
                 PyErr_SetString(PyExc_TypeError, e);
-                Py_DECREF(po);
                 return -1;
             }
         } else {
             PyErr_SetString(PyExc_TypeError, "not assignable");
-            Py_DECREF(po);
             return -1;
         }
     }
@@ -2211,27 +2207,24 @@ static int hocobj_slice_setitem(PyObject* self, PyObject* slice, PyObject* arg) 
     Py_ssize_t cap = vector_capacity(v);
     PySlice_GetIndicesEx(slice, cap, &start, &end, &step, &slicelen);
     // Slice index assignment requires a list of the same size as the slice
-    PyObject* iter = PyObject_GetIter(arg);
+    auto iter = nb::steal(PyObject_GetIter(arg));
     if (!iter) {
         PyErr_SetString(PyExc_TypeError, "can only assign an iterable");
         return -1;
     }
-    PyObject* val = nullptr;
     for (Py_ssize_t i = 0; i < slicelen; ++i) {
-        val = PyIter_Next(iter);
+        auto val = nb::steal(PyIter_Next(iter.ptr()));
         if (!val) {
-            Py_DECREF(iter);
-            PyErr_SetString(PyExc_IndexError, "iterable object must have the same length as slice");
+            PyErr_SetString(PyExc_IndexError,
+                            "iterable object must have the same length as slice (it's too short)");
             return -1;
         }
-        PyArg_Parse(val, "d", vector_vec(v) + (i * step + start));
-        Py_DECREF(val);
+        PyArg_Parse(val.ptr(), "d", vector_vec(v) + (i * step + start));
     }
-    val = PyIter_Next(iter);
-    Py_DECREF(iter);
+    auto val = nb::steal(PyIter_Next(iter.ptr()));
     if (val) {
-        Py_DECREF(val);
-        PyErr_SetString(PyExc_IndexError, "iterable object must have the same length as slice");
+        PyErr_SetString(PyExc_IndexError,
+                        "iterable object must have the same length as slice (it's too long)");
         return -1;
     }
     return 0;
