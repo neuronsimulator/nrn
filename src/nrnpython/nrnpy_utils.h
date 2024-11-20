@@ -17,14 +17,13 @@ class Py2NRNString {
         disable_release_ = disable_release;
         str_ = NULL;
         if (PyUnicode_Check(python_string)) {
-            PyObject* py_bytes = PyUnicode_AsASCIIString(python_string);
+            auto py_bytes = nb::steal(PyUnicode_AsASCIIString(python_string));
             if (py_bytes) {
-                str_ = strdup(PyBytes_AsString(py_bytes));
+                str_ = strdup(PyBytes_AsString(py_bytes.ptr()));
                 if (!str_) {  // errno is ENOMEM
                     PyErr_SetString(PyExc_MemoryError, "strdup in Py2NRNString");
                 }
             }
-            Py_XDECREF(py_bytes);
         } else if (PyBytes_Check(python_string)) {
             str_ = strdup(PyBytes_AsString(python_string));
             // assert(strlen(str_) == PyBytes_Size(python_string))
