@@ -50,9 +50,10 @@ class Py2NRNString {
     inline void set_pyerr(PyObject* type, const char* message) {
         PyObject* ptype = NULL;
         PyObject* pvalue = NULL;
-        PyObject* ptraceback = NULL;
         if (err()) {
+            PyObject* ptraceback = nullptr;
             PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+            Py_XDECREF(ptraceback);
         }
         if (pvalue && ptype) {
             auto umes = nb::steal(
@@ -63,7 +64,6 @@ class Py2NRNString {
         }
         Py_XDECREF(ptype);
         Py_XDECREF(pvalue);
-        Py_XDECREF(ptraceback);
     }
     inline char* get_pyerr() {
         PyObject* ptype = NULL;
