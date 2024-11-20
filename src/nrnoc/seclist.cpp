@@ -115,12 +115,10 @@ static double subtree(void* v) {
 }
 
 static double wholetree(void* v) {
-    List* sl;
-    Section *s, *sec, *ch;
-    Item *i, *j, *first, *last;
-    sec = nrn_secarg(1);
-    sl = (List*) v;
+    Section* sec = nrn_secarg(1);
+    List* sl = (List*) v;
     /*find root*/
+    Section* s = nullptr;
     for (s = sec; s->parentsec; s = s->parentsec) {
     }
 
@@ -259,14 +257,13 @@ extern void class2oc(const char*,
                      void* (*cons)(Object*),
                      void (*destruct)(void*),
                      Member_func*,
-                     int (*checkpoint)(void**),
                      Member_ret_obj_func*,
                      Member_ret_str_func*);
 
 
 void SectionList_reg(void) {
     /*	printf("SectionList_reg\n");*/
-    class2oc("SectionList", constructor, destructor, members, nullptr, nullptr, nullptr);
+    class2oc("SectionList", constructor, destructor, members, nullptr, nullptr);
 }
 
 #define relative(pc) (pc + (pc)->i)

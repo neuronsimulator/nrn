@@ -222,6 +222,6 @@ static void destruct(void* v) {
 }
 
 void OcPtrVector_reg() {
-    class2oc("PtrVector", cons, destruct, members, 0, 0, retstr_members);
+    class2oc("PtrVector", cons, destruct, members, 0, retstr_members);
     pv_class_sym_ = hoc_lookup("PtrVector");
 }

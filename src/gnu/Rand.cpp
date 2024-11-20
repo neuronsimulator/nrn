@@ -1,13 +1,13 @@
 #include "Rand.hpp"
 
-#include "ACG.h"
+#include "NrnRandom123RNG.hpp"
 #include "Normal.h"
 
 Rand::Rand(unsigned long seed, int size, Object* obj) {
     // printf("Rand\n");
-    gen = new ACG(seed, size);
+    gen = new NrnRandom123(seed, size);
     rand = new Normal(0., 1., gen);
-    type_ = 0;
+    type_ = 4;
     obj_ = obj;
 }
 

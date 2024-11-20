@@ -95,6 +95,11 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
             REQUIRE(compareMatrix(m, {{3., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}, {2., 2., 2.}}));
         }
         {
+            std::vector<std::pair<int, int>> nzs = m.nonzeros();
+            std::vector<std::pair<int, int>> res = {{0, 0}, {1, 1}, {2, 2}, {3, 0}, {3, 1}, {3, 2}};
+            REQUIRE(nzs == res);
+        }
+        {
             std::vector<int> x, y;
             m.nonzeros(x, y);
             std::vector<int> res_x = {0, 1, 2, 3, 3, 3};

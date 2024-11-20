@@ -9,7 +9,6 @@
 #include <InterViews/resource.h>
 #include "classreg.h"
 #include "oc2iv.h"
-#include "nrnisaac.h"
 #include "utils/enumerate.h"
 
 #include <vector>
@@ -17,8 +16,6 @@
 #include "ocobserv.h"
 #include <nrnran123.h>
 
-#include <ACG.h>
-#include <MLCG.h>
 #include <Random.h>
 #include <Poisson.h>
 #include <Normal.h>
@@ -29,10 +26,8 @@
 #include <Geom.h>
 #include <LogNorm.h>
 #include <NegExp.h>
-#include <RndInt.h>
 #include <HypGeom.h>
 #include <Weibull.h>
-#include <Isaac64RNG.hpp>
 #include <NrnRandom123RNG.hpp>
 #include <MCellRan4RNG.hpp>
 
@@ -104,56 +99,6 @@ static void* r_cons(Object* obj) {
 
 static void r_destruct(void* r) {
     delete (Rand*) r;
-}
-
-// Use a variant of the Linear Congruential Generator (algorithm M)
-// described in Knuth, Art of Computer Programming, Vol. III in
-// combination with a Fibonacci Additive Congruential Generator.
-// This is a "very high quality" random number generator,
-// Default size is 55, giving a size of 1244 bytes to the structure
-// minimum size is 7 (total 100 bytes), maximum size is 98 (total 2440 bytes)
-// syntax:
-// r.ACG([seed],[size])
-
-static double r_ACG(void* r) {
-    Rand* x = (Rand*) r;
-
-    unsigned long seed = 0;
-    int size = 55;
-
-    if (ifarg(1))
-        seed = long(*getarg(1));
-    if (ifarg(2))
-        size = int(chkarg(2, 7, 98));
-
-    x->rand->generator(new ACG(seed, size));
-    x->type_ = 0;
-    delete x->gen;
-    x->gen = x->rand->generator();
-    return 1.;
-}
-
-// Use a Multiplicative Linear Congruential Generator.  Not as high
-// quality as the ACG, but uses only 8 bytes
-// syntax:
-// r.MLCG([seed1],[seed2])
-
-static double r_MLCG(void* r) {
-    Rand* x = (Rand*) r;
-
-    unsigned long seed1 = 0;
-    unsigned long seed2 = 0;
-
-    if (ifarg(1))
-        seed1 = long(*getarg(1));
-    if (ifarg(2))
-        seed2 = long(*getarg(2));
-
-    x->rand->generator(new MLCG(seed1, seed2));
-    delete x->gen;
-    x->gen = x->rand->generator();
-    x->type_ = 1;
-    return 1.;
 }
 
 static double r_MCellRan4(void* r) {
@@ -228,11 +173,6 @@ static double r_ran123_globalindex(void* r) {
 
 static double r_sequence(void* r) {
     Rand* x = (Rand*) r;
-    if (x->type_ != 2 && x->type_ != 4) {
-        hoc_execerror(
-            "Random.seq() can only be used if the random generator was MCellRan4 or Random123", 0);
-    }
-
     if (x->type_ == 4) {
         uint32_t seq;
         char which;
@@ -268,29 +208,6 @@ int nrn_random123_getseq(Rand* r, uint32_t* seq, char* which) {
     }
     nrnran123_getseq(((NrnRandom123*) r->gen)->s_, seq, which);
     return 1;
-}
-
-static double r_Isaac64(void* r) {
-    Rand* x = (Rand*) r;
-
-    uint32_t seed1 = 0;
-
-    if (ifarg(1)) {
-        seed1 = static_cast<uint32_t>(*getarg(1));
-    }
-
-    double seed{};
-    try {
-        Isaac64* mcr = new Isaac64(seed1);
-        x->rand->generator(mcr);
-        delete x->gen;
-        x->gen = x->rand->generator();
-        x->type_ = 3;
-        seed = mcr->seed();
-    } catch (const std::bad_alloc& e) {
-        hoc_execerror("Bad allocation for Isaac64 generator", e.what());
-    }
-    return seed;
 }
 
 // Pick again from the distribution last used
@@ -488,10 +405,7 @@ extern "C" void nrn_random_play() {
 }
 
 
-static Member_func r_members[] = {{"ACG", r_ACG},
-                                  {"MLCG", r_MLCG},
-                                  {"Isaac64", r_Isaac64},
-                                  {"MCellRan4", r_MCellRan4},
+static Member_func r_members[] = {{"MCellRan4", r_MCellRan4},
                                   {"Random123", r_nrnran123},
                                   {"Random123_globalindex", r_ran123_globalindex},
                                   {"seq", r_sequence},
@@ -511,7 +425,7 @@ static Member_func r_members[] = {{"ACG", r_ACG},
                                   {nullptr, nullptr}};
 
 void Random_reg() {
-    class2oc("Random", r_cons, r_destruct, r_members, NULL, NULL, NULL);
+    class2oc("Random", r_cons, r_destruct, r_members, NULL, NULL);
     random_play_list_ = new RandomPlayList;
 }
 
