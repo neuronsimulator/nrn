@@ -891,25 +891,24 @@ static Object* py_alltoall_type(int size, int type) {
         } else {  // scatter
 
             // destination counts
-            rcnt = new int[1];
-            nrnmpi_int_scatter(scnt.data(), rcnt, 1, root);
-            std::vector<char> r(rcnt[0] + 1);  // rcnt[0] can be 0
+            int rcnt = -1;
+            nrnmpi_int_scatter(scnt.data(), &rcnt, 1, root);
+            std::vector<char> r(rcnt + 1);  // rcnt can be 0
 
             // exchange
             if (nrnmpi_myid == root) {
                 sdispl = mk_displ(scnt.data());
             }
-            nrnmpi_char_scatterv(s.data(), scnt.data(), sdispl, r.data(), rcnt[0], root);
+            nrnmpi_char_scatterv(s.data(), scnt.data(), sdispl, r.data(), rcnt, root);
             if (sdispl)
                 delete[] sdispl;
 
-            if (rcnt[0]) {
+            if (rcnt) {
                 pdest = unpickle(r);
             } else {
                 pdest = nb::none();
             }
 
-            delete[] rcnt;
             assert(rdispl == NULL);
         }
     }
