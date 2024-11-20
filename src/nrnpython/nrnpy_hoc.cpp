@@ -2909,58 +2909,30 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
     PyHocObject* pho = (PyHocObject*) self;
     if (!is_obj_type(pho->ho_, "Vector")) {
         PyErr_SetString(PyExc_TypeError, "HocObject: Only Vector instance can be pickled");
-        return NULL;
+        return nullptr;
     }
     Vect* vec = (Vect*) pho->ho_->u.this_pointer;
 
     // neuron module has a _pkl method that returns h.Vector(0)
-    PyObject* mod = PyImport_ImportModule("neuron");
-    if (mod == NULL) {
-        return NULL;
-    }
-    PyObject* obj = PyObject_GetAttrString(mod, "_pkl");
-    Py_DECREF(mod);
-    if (obj == NULL) {
+    nb::module_ mod = nb::module_::import_("neuron");
+    nb::object obj = mod.attr("_pkl");
+    if (!obj) {
         PyErr_SetString(PyExc_Exception, "neuron module has no _pkl method.");
-        return NULL;
+        return nullptr;
     }
 
-    PyObject* ret = PyTuple_New(3);
-    if (ret == NULL) {
-        return NULL;
-    }
-    PyTuple_SET_ITEM(ret, 0, obj);
-    PyTuple_SET_ITEM(ret, 1, Py_BuildValue("(N)", PyInt_FromLong(0)));
     // see numpy implementation if more ret[1] stuff needed in case we
     // pickle anything but a hoc Vector. I don't think ret[1] can be None.
 
     // Fill object's state. Tuple with 4 args:
     // pickle version, 2.0 bytes to determine if swapbytes needed,
     // vector size, string data
-    PyObject* state = PyTuple_New(4);
-    if (state == NULL) {
-        Py_DECREF(ret);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(state, 0, PyInt_FromLong(1));
     double x = 2.0;
-    PyObject* str = PyBytes_FromStringAndSize((const char*) (&x), sizeof(double));
-    if (str == NULL) {
-        Py_DECREF(ret);
-        Py_DECREF(state);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(state, 1, str);
-    PyTuple_SET_ITEM(state, 2, PyInt_FromLong(vec->size()));
-    str = PyBytes_FromStringAndSize((const char*) vector_vec(vec), vec->size() * sizeof(double));
-    if (str == NULL) {
-        Py_DECREF(ret);
-        Py_DECREF(state);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(state, 3, str);
-    PyTuple_SET_ITEM(ret, 2, state);
-    return ret;
+    nb::bytes str((const void*)(&x), sizeof(double));
+    nb::bytes str1(vec->data(), vec->size() * sizeof(double));
+    nb::tuple state = nb::make_tuple(1, str, vec->size(), str1);
+
+    return nb::make_tuple(obj, nb::make_tuple(0), state).release().ptr();
 }
 
 static PyObject* hocpickle_reduce_safe(PyObject* self, PyObject* args) {
