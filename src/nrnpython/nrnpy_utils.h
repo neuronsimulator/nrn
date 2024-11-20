@@ -67,12 +67,9 @@ class Py2NRNString {
 
     inline char* get_pyerr() {
         if (err()) {
-            PyObject* ptype = NULL;
-            PyObject* pvalue = NULL;
-            PyObject* ptraceback = NULL;
-            PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+            auto [ptype, pvalue, ptraceback] = fetch_pyerr();
             if (pvalue) {
-                auto pstr = nb::steal(PyObject_Str(pvalue));
+                auto pstr = nb::steal(PyObject_Str(pvalue.ptr()));
                 if (pstr) {
                     const char* err_msg = PyUnicode_AsUTF8(pstr.ptr());
                     if (err_msg) {
@@ -86,9 +83,6 @@ class Py2NRNString {
             } else {
                 str_ = strdup("get_pyerr failed at PyErr_Fetch");
             }
-            Py_XDECREF(ptype);
-            Py_XDECREF(pvalue);
-            Py_XDECREF(ptraceback);
         }
         PyErr_Clear();  // in case could not turn pvalue into c_str.
         return str_;
