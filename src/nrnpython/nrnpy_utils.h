@@ -3,6 +3,10 @@
 #include "nrnwrap_Python.h"
 #include <cassert>
 
+#include <nanobind/nanobind.h>
+
+namespace nb = nanobind;
+
 inline bool is_python_string(PyObject* python_string) {
     return PyUnicode_Check(python_string) || PyBytes_Check(python_string);
 }
