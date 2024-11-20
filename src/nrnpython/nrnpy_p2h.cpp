@@ -829,7 +829,6 @@ static Object* py_alltoall_type(int size, int type) {
         std::vector<char> s{};
         std::vector<int> scnt{};
         int* sdispl = NULL;
-        int* rcnt = NULL;
         int* rdispl = NULL;
 
         // setup source buffer for transfer s, scnt, sdispl
@@ -863,28 +862,26 @@ static Object* py_alltoall_type(int size, int type) {
                 ones[i] = 1;
             }
             sdispl = mk_displ(ones);
-            rcnt = new int[np];
-            nrnmpi_int_alltoallv(scnt.data(), ones, sdispl, rcnt, ones, sdispl);
+            std::vector<int> rcnt(np);
+            nrnmpi_int_alltoallv(scnt.data(), ones, sdispl, rcnt.data(), ones, sdispl);
             delete[] ones;
             delete[] sdispl;
 
             // exchange
             sdispl = mk_displ(scnt.data());
-            rdispl = mk_displ(rcnt);
+            rdispl = mk_displ(rcnt.data());
             if (size < 0) {
                 pdest = nb::make_tuple(sdispl[np], rdispl[np]);
                 delete[] sdispl;
-                delete[] rcnt;
                 delete[] rdispl;
             } else {
                 char* r = new char[rdispl[np] + 1];  // force > 0 for all None case
-                nrnmpi_char_alltoallv(s.data(), scnt.data(), sdispl, r, rcnt, rdispl);
+                nrnmpi_char_alltoallv(s.data(), scnt.data(), sdispl, r, rcnt.data(), rdispl);
                 delete[] sdispl;
 
-                pdest = nb::steal(char2pylist(r, np, rcnt, rdispl));
+                pdest = nb::steal(char2pylist(r, np, rcnt.data(), rdispl));
 
                 delete[] r;
-                delete[] rcnt;
                 delete[] rdispl;
             }
 
