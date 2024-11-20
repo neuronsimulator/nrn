@@ -96,18 +96,7 @@ if "--enable-music" in sys.argv:
     Components.MUSIC = True
     sys.argv.remove("--enable-music")
 
-if Components.RX3D:
-    try:
-        from Cython.Distutils import Extension as CyExtension
-        from Cython.Distutils import build_ext
-        import numpy
-    except ImportError:
-        logging.error(
-            "ERROR: RX3D wheel requires Cython and numpy. Please install beforehand"
-        )
-        sys.exit(1)
-else:
-    from setuptools.command.build_ext import build_ext
+from setuptools.command.build_ext import build_ext
 
 
 class CMakeAugmentedExtension(Extension):
@@ -442,50 +431,6 @@ def setup_package():
                 language="c++",
                 **extension_common_params,
             )
-        ]
-
-    if Components.RX3D:
-        include_dirs = ["share/lib/python/neuron/rxd/geometry3d", numpy.get_include()]
-
-        # Cython files take a long time to compile with O2 so default O0
-        # But pay the price if uploading distribution
-        rxd_params = extension_common_params.copy()
-        rxd_params["libraries"].append("rxdmath")
-        rxd_params.update(
-            dict(
-                # Cython files take a long time to compile with O2 but this
-                # is a distribution...
-                extra_compile_args=extra_compile_args
-                + ["-O2" if "NRN_BUILD_FOR_UPLOAD" in os.environ else rx3d_opt_level],
-                extra_link_args=extra_link_args
-                + ["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")],
-            )
-        )
-
-        logging.info("RX3D compile flags %s" % str(rxd_params))
-
-        extensions += [
-            CyExtension(
-                "neuron.rxd.geometry3d.graphicsPrimitives",
-                ["share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx"],
-                **rxd_params,
-            ),
-            CyExtension(
-                "neuron.rxd.geometry3d.ctng",
-                ["share/lib/python/neuron/rxd/geometry3d/ctng.pyx"],
-                include_dirs=include_dirs,
-                **rxd_params,
-            ),
-            CyExtension(
-                "neuron.rxd.geometry3d.surfaces",
-                [
-                    "share/lib/python/neuron/rxd/geometry3d/surfaces.pyx",
-                    "src/nrnpython/rxd_marching_cubes.cpp",
-                    "src/nrnpython/rxd_llgramarea.cpp",
-                ],
-                include_dirs=include_dirs,
-                **rxd_params,
-            ),
         ]
 
     logging.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")

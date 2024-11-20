@@ -3,7 +3,7 @@
 # Compare to cagk.mod
 # Also test FUNCTION_TABLE with one dimension
 
-from neuron import h
+from neuron import h, gui
 from neuron import expect_hocerr
 from neuron.expect_hocerr import expect_err
 

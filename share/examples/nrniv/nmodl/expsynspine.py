@@ -1,4 +1,4 @@
-from neuron import h
+from neuron import h, gui
 
 somas = [h.Section(name="soma" + str(i)) for i in range(2)]
 for sec in somas:

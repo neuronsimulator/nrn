@@ -1,7 +1,7 @@
 # test nmodl NONLINEAR statement.
 # 100 Artificial cells with different initial state values
 
-from neuron import h
+from neuron import h, gui
 
 pc = h.ParallelContext()
 
