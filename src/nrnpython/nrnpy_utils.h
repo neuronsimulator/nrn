@@ -130,13 +130,10 @@ class PyErr2NRNString {
     }
 
     inline char* get_pyerr() {
-        PyObject* ptype = NULL;
-        PyObject* pvalue = NULL;
-        PyObject* ptraceback = NULL;
         if (PyErr_Occurred()) {
-            PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+            auto [ptype, pvalue, ptraceback] = fetch_pyerr();
             if (pvalue) {
-                auto pstr = nb::steal(PyObject_Str(pvalue));
+                auto pstr = nb::steal(PyObject_Str(pvalue.ptr()));
                 if (pstr) {
                     const char* err_msg = PyUnicode_AsUTF8(pstr.ptr());
                     if (err_msg) {
@@ -152,9 +149,6 @@ class PyErr2NRNString {
             }
         }
         PyErr_Clear();  // in case could not turn pvalue into c_str.
-        Py_XDECREF(ptype);
-        Py_XDECREF(pvalue);
-        Py_XDECREF(ptraceback);
         return str_;
     }
 
