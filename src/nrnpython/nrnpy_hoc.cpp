@@ -415,8 +415,8 @@ int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
         // PyObject_Print(po, stdout, 0);
         // printf("  pushargs %d\n", i);
         if (nrnpy_numbercheck(po)) {
-            auto pn = nb::steal(PyNumber_Float(po));
-            hoc_pushx(PyFloat_AsDouble(pn.ptr()));
+            nb::float_ pn(po);
+            hoc_pushx(static_cast<double>(pn));
         } else if (is_python_string(po)) {
             char** ts = hoc_temp_charptr();
             Py2NRNString str(po, /* disable_release */ true);
@@ -564,7 +564,7 @@ int nrnpy_numbercheck(PyObject* po) {
     // or things that fail when float(po) fails. ARGGH! This
     // is a lot more expensive than I would like.
     if (rval == 1) {
-        auto tmp = nb::steal(PyNumber_Float(po));
+        nb::float_ tmp(po);
         if (!tmp) {
             PyErr_Clear();
             rval = 0;
@@ -1160,16 +1160,14 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             if (setup_doc_system()) {
                 nb::object docobj;
                 if (self->ho_) {
-                    docobj = nb::steal(Py_BuildValue("s s",
-                                                     self->ho_->ctemplate->sym->name,
-                                                     self->sym_ ? self->sym_->name : ""));
+                    docobj = nb::make_tuple(self->ho_->ctemplate->sym->name,
+                                            self->sym_ ? self->sym_->name : "");
                 } else if (self->sym_) {
                     // Symbol
-                    docobj = nb::steal(Py_BuildValue("s s", "", self->sym_->name));
+                    docobj = nb::make_tuple("", self->sym_->name);
                 } else {
                     // Base HocObject
-
-                    docobj = nb::steal(Py_BuildValue("s s", "", ""));
+                    docobj = nb::make_tuple("", "");
                 }
 
                 result = PyObject_CallObject(pfunc_get_docstring, docobj.ptr());
