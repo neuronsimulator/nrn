@@ -924,7 +924,19 @@ static Object* py_alltoall_type(int size, int type) {
             assert(rdispl == NULL);
         }
     }
+
     Object* ho = nrnpy_po2ho(pdest.ptr());
+
+    // The problem here is when `pdest` is a HOC object. In that case `ho` has `refcount == 2` but
+    // must be returned with refcount 0. The `ho` is contained in the `pdest` (which is why the HOC
+    // refcount is 2) and will be destroyed along with the `pdest` if its reference count is 0.
+    //
+    // Therefore, we must first DECREF `pdest` which also dereferences the HOC object and then
+    // decrement `ho->refcount`, because if we do it the otherway around the `Py_DECREF` encounters
+    // a HOC object with reference count 0 and deallocates it.
+    pdest.dec_ref();
+    pdest.release();
+
     if (ho) {
         --ho->refcount;
     }
