@@ -883,7 +883,7 @@ static Object* py_alltoall_type(int size, int type) {
             sdispl = mk_displ(scnt.data());
             rdispl = mk_displ(rcnt);
             if (size < 0) {
-                pdest = nb::make_tuple(sdispl[np], rdispl[np]).release().ptr()
+                pdest = nb::make_tuple(sdispl[np], rdispl[np]).release().ptr();
                 delete[] sdispl;
                 delete[] rcnt;
                 delete[] rdispl;
