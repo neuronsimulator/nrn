@@ -684,12 +684,11 @@ static PyObject* py_allgather(PyObject* psrc) {
     rcnt[nrnmpi_myid] = static_cast<int>(sbuf.size());
     nrnmpi_int_allgather_inplace(rcnt, 1);
     auto rdispl = mk_displ(rcnt);
-    char* rbuf = new char[rdispl[np]];
+    std::vector<char> rbuf(rdispl[np]);
 
-    nrnmpi_char_allgatherv(sbuf.data(), rbuf, rcnt, rdispl.data());
+    nrnmpi_char_allgatherv(sbuf.data(), rbuf.data(), rcnt, rdispl.data());
 
-    PyObject* pdest = char2pylist(rbuf, np, rcnt, rdispl.data());
-    delete[] rbuf;
+    PyObject* pdest = char2pylist(rbuf.data(), np, rcnt, rdispl.data());
     delete[] rcnt;
     return pdest;
 }
