@@ -3370,7 +3370,6 @@ extern PyObject* nrn_type_from_metaclass(PyTypeObject* meta,
 
 extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     PyObject* m;
-    PyObject* bases;
     PyTypeObject* pto;
     PyType_Spec spec;
     nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
@@ -3439,14 +3438,13 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     }
 
 
-    bases = PyTuple_Pack(1, hocobject_type);
-    Py_INCREF(bases);
+    auto bases = nb::steal(PyTuple_Pack(1, hocobject_type));
     for (auto name: py_exposed_classes) {
         // TODO: obj_spec_from_name needs a hoc. prepended
         exposed_py_type_names.push_back(std::string("hoc.") + name);
         spec = obj_spec_from_name(exposed_py_type_names.back().c_str());
         pto = (PyTypeObject*)
-            nrn_type_from_metaclass((PyTypeObject*) custom_hocclass, m, &spec, bases);
+            nrn_type_from_metaclass((PyTypeObject*) custom_hocclass, m, &spec, bases.ptr());
         hocclass* hclass = (hocclass*) pto;
         hclass->sym = hoc_lookup(name);
         // printf("%s hocclass pto->tp_basicsize = %zd sizeof(*pto)=%zd\n",
@@ -3460,7 +3458,6 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
             return NULL;
         }
     }
-    Py_DECREF(bases);
 
     topmethdict = PyDict_New();
     for (PyMethodDef* meth = toplevel_methods; meth->ml_name != NULL; meth++) {
