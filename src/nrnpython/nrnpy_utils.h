@@ -47,18 +47,14 @@ class Py2NRNString {
     inline bool err() const {
         return str_ == NULL;
     }
+
     inline void set_pyerr(PyObject* type, const char* message) {
         nb::object err_type;
         nb::object err_value;
+        nb::object err_traceback;
 
         if (err()) {
-            PyObject* ptype = NULL;
-            PyObject* pvalue = NULL;
-            PyObject* ptraceback = nullptr;
-            PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-            err_type = nb::steal(ptype);
-            err_value = nb::steal(pvalue);
-            Py_XDECREF(ptraceback);
+            std::tie(err_type, err_value, err_traceback) = fetch_pyerr();
         }
         if (err_value && err_type) {
             auto umes = nb::steal(PyUnicode_FromFormat(
