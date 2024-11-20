@@ -36,6 +36,8 @@
 
 #include "gui-redirect.h"
 
+#include "utils/logger.hpp"
+
 #ifndef PI
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -3841,7 +3843,7 @@ static void steer_x(void* v) {
 }
 
 void Vector_reg() {
-    class2oc("Vector", v_cons, v_destruct, v_members, NULL, v_retobj_members, v_retstr_members);
+    class2oc("Vector", v_cons, v_destruct, v_members, v_retobj_members, v_retstr_members);
     svec_ = hoc_lookup("Vector");
     // now make the x variable an actual double
     Symbol* sv = hoc_lookup("Vector");

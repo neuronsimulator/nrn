@@ -179,6 +179,12 @@ REPRESENTS	{
 	return s->type;
 }
 
+<ontology>[ \t]	{/*ignore spacing characters*/;}
+
+<ontology>. {
+    diag("Invalid ONTOLOGY syntax: expected 'name' or '[name]'", nullptr);
+}
+
 {D}+	{ /*INTEGER*/
 	yylval.qp = putintoken(yytext, INTEGER); /* Numbers are not looked for */
 	return INTEGER;

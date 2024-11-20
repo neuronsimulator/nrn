@@ -8,6 +8,8 @@
 #include "parse.hpp"
 #include "ivocvect.h"
 
+#include "utils/logger.hpp"
+
 #define EPS hoc_epsilon
 Symbol* nrn_matrix_sym;  // also used in oc/hoc_oop.cpp
 
@@ -62,13 +64,10 @@ static double m_ncol(void* v) {
 
 static double m_setval(void* v) {
     Matrix* m = (Matrix*) v;
-    int i, j;
-    double val, *pval;
-    i = (int) chkarg(1, 0, m->nrow() - 1);
-    j = (int) chkarg(2, 0, m->ncol() - 1);
-    val = *getarg(3);
-    pval = m->mep(i, j);
-    *pval = val;
+    int i = (int) chkarg(1, 0, m->nrow() - 1);
+    int j = (int) chkarg(2, 0, m->ncol() - 1);
+    double val = *getarg(3);
+    m->coeff(i, j) = val;
     return val;
 }
 
@@ -169,7 +168,7 @@ static double m_scanf(void* v) {
     m->resize(nrow, ncol);
     for (i = 0; i < nrow; ++i)
         for (j = 0; j < ncol; ++j) {
-            *(m->mep(i, j)) = hoc_scan(f);
+            m->coeff(i, j) = hoc_scan(f);
         }
     return 0.;
 }
@@ -600,7 +599,7 @@ static Object** m_set(void* v) {
     int k;
     for (k = 0, i = 0; i < nrow; ++i) {
         for (j = 0; j < ncol; ++j) {
-            *(m->mep(i, j)) = *getarg(++k);
+            m->coeff(i, j) = *getarg(++k);
         }
     }
     return temp_objvar(m);
@@ -639,7 +638,7 @@ static Object** m_from_vector(void* v) {
     double* ve = vector_vec(vout);
     for (j = 0; j < ncol; ++j)
         for (i = 0; i < nrow; ++i) {
-            *(m->mep(i, j)) = ve[k++];
+            m->coeff(i, j) = ve[k++];
         }
     return temp_objvar(m);
 }
@@ -730,7 +729,7 @@ void Matrix_reg();
 #endif
 
 void Matrix_reg() {
-    class2oc("Matrix", m_cons, m_destruct, m_members, NULL, m_retobj_members, NULL);
+    class2oc("Matrix", m_cons, m_destruct, m_members, m_retobj_members, NULL);
     nrn_matrix_sym = hoc_lookup("Matrix");
     // now make the x variable an actual double
     Symbol* sx = hoc_table_lookup("x", nrn_matrix_sym->u.ctemplate->symtable);

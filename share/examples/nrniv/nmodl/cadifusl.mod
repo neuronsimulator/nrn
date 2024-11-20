@@ -66,7 +66,7 @@ INITIAL {
 	}
 }
 
-LOCAL frat[NANN] 	: gets extra cm when multiplied by diam
+LOCAL frat[NANN]	: gets extra cm when multiplied by diam
 
 PROCEDURE coord() {
 	LOCAL r, dr2

@@ -168,6 +168,7 @@ callback to bbss_early when needed.
 */
 
 #include "bbsavestate.h"
+#include "cabcode.h"
 #include "classreg.h"
 #include "nrncvode.h"
 #include "nrnoc2iv.h"
@@ -201,7 +202,6 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 #include "membfunc.h"
 extern int section_count;
 extern "C" void nrn_shape_update();
-extern Section* nrn_section_exists(char* name, int index, Object* cell);
 extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
@@ -1011,7 +1011,7 @@ static Member_func members[] = {{"save", save},
                                 {0, 0}};
 
 void BBSaveState_reg() {
-    class2oc("BBSaveState", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("BBSaveState", cons, destruct, members, NULL, NULL);
 }
 
 // from savstate.cpp

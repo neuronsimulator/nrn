@@ -17,6 +17,9 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+
+#include <nanobind/nanobind.h>
+
 extern HocStr* hoc_cbufstr;
 extern int nrnpy_nositeflag;
 extern std::string nrnpy_pyexe;
@@ -79,7 +82,7 @@ PyObject* basic_sys_path{};
  * @param new_first Path to decode and prepend to sys.path.
  */
 void reset_sys_path(std::string_view new_first) {
-    PyLockGIL _{};
+    nanobind::gil_scoped_acquire _{};
     auto* const path = PySys_GetObject("path");
     nrn_assert(path);
     // Clear sys.path
@@ -124,7 +127,7 @@ int nrnpy_pyrun(const char* fname) {
     if (fp) {
         nrnpython_set_path(fname);
     } else {
-        std::cerr << "Could not open " << fname << std::endl;
+        Fprintf(stderr, fmt::format("Could not open {}\n", fname).c_str());
         return 0;
     }
     fclose(fp);
@@ -161,7 +164,6 @@ int nrnpy_pyrun(const char* fname) {
  * @return 0 on success, nonzero on failure.
  */
 static int nrnmingw_pyrun_interactiveloop() {
-    int code{};
     std::string lines[3]{
         "import code as nrnmingw_code\n",
         "nrnmingw_interpreter = nrnmingw_code.InteractiveConsole(locals=globals())\n",
@@ -261,7 +263,7 @@ static int nrnpython_start(int b) {
         check("Could not initialise Python", Py_InitializeFromConfig(config));
         // Manipulate sys.path, starting from the default values
         {
-            PyLockGIL _{};
+            nanobind::gil_scoped_acquire _{};
             auto* const sys_path = PySys_GetObject("path");
             if (!sys_path) {
                 throw std::runtime_error("Could not get sys.path from C++");
@@ -376,7 +378,7 @@ static void nrnpython_real() {
 #if USE_PYTHON
     HocTopContextSet
     {
-        PyLockGIL lock;
+        nanobind::gil_scoped_acquire lock{};
         retval = (PyRun_SimpleString(hoc_gargstr(1)) == 0);
     }
     HocContextRestore
