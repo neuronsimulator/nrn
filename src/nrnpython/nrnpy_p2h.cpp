@@ -931,9 +931,10 @@ static Object* py_alltoall_type(int size, int type) {
     // must be returned with refcount 0. The `ho` is contained in the `pdest` (which is why the HOC
     // refcount is 2) and will be destroyed along with the `pdest` if its reference count is 0.
     //
-    // Therefore, we must first DECREF `pdest` which also dereferences the HOC object and then
-    // decrement `ho->refcount`, because if we do it the otherway around the `Py_DECREF` encounters
-    // a HOC object with reference count 0 and deallocates it.
+    // Therefore, we must first DECREF `pdest` and then decrement `ho->refcount`. If we do
+    // it the other way around the `Py_DECREF` causes the Python object to be deallocated,
+    // as part of that deallocation method, the contained HOC object is dereferenced, and because
+    // it'll have a reference count of 0 it's also be deallocated.
     pdest.dec_ref();
     pdest.release();
 
