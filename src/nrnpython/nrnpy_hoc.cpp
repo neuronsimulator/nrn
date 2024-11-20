@@ -2597,9 +2597,7 @@ static PyObject* restore_savestate_ = NULL;
 static void nrnpy_store_savestate_(char** save_data, uint64_t* save_data_size) {
     if (store_savestate_) {
         // call store_savestate_ with no arguments to get a byte array that we can write out
-        PyObject* args = PyTuple_New(0);
-        auto result = nb::steal(PyObject_CallObject(store_savestate_, args));
-        Py_DECREF(args);
+        nb::bytearray result(PyObject_CallNoArgs(store_savestate_));
         if (!result) {
             hoc_execerror("SaveState:", "Data store failure.");
         }
@@ -2607,9 +2605,9 @@ static void nrnpy_store_savestate_(char** save_data, uint64_t* save_data_size) {
         if (*save_data) {
             delete[](*save_data);
         }
-        *save_data_size = PyByteArray_Size(result.ptr());
+        *save_data_size = result.size();
         *save_data = new char[*save_data_size];
-        memcpy(*save_data, PyByteArray_AsString(result.ptr()), *save_data_size);
+        memcpy(*save_data, result.c_str(), *save_data_size);
     } else {
         *save_data_size = 0;
     }
@@ -2617,15 +2615,11 @@ static void nrnpy_store_savestate_(char** save_data, uint64_t* save_data_size) {
 
 static void nrnpy_restore_savestate_(int64_t size, char* data) {
     if (restore_savestate_) {
-        PyObject* args = PyTuple_New(1);
-        auto py_data = nb::steal(PyByteArray_FromStringAndSize(data, size));
+        nb::bytearray py_data(data, size);
         if (!py_data) {
             hoc_execerror("SaveState:", "Data restore failure.");
         }
-        // note: PyTuple_SetItem steals a ref to py_data
-        PyTuple_SetItem(args, 0, py_data.release().ptr());
-        auto result = nb::steal(PyObject_CallObject(restore_savestate_, args));
-        Py_DECREF(args);
+        auto result = nb::steal(PyObject_CallOneArg(restore_savestate_, py_data.ptr()));
         if (!result) {
             hoc_execerror("SaveState:", "Data restore failure.");
         }
