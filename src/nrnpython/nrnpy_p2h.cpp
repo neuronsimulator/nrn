@@ -703,18 +703,17 @@ static PyObject* py_gather(PyObject* psrc, int root) {
     }
     nrnmpi_int_gather(&scnt, rcnt, 1, root);
     std::vector<int> rdispl;
-    char* rbuf = NULL;
+    std::vector<char> rbuf;
     if (root == nrnmpi_myid) {
         rdispl = mk_displ(rcnt);
-        rbuf = new char[rdispl[np]];
+        rbuf.resize(rdispl[np]);
     }
 
-    nrnmpi_char_gatherv(sbuf.data(), scnt, rbuf, rcnt, rdispl.data(), root);
+    nrnmpi_char_gatherv(sbuf.data(), scnt, rbuf.data(), rcnt, rdispl.data(), root);
 
     PyObject* pdest = Py_None;
     if (root == nrnmpi_myid) {
-        pdest = char2pylist(rbuf, np, rcnt, rdispl.data());
-        delete[] rbuf;
+        pdest = char2pylist(rbuf.data(), np, rcnt, rdispl.data());
         delete[] rcnt;
     } else {
         Py_INCREF(pdest);
