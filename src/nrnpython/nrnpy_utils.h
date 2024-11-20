@@ -70,10 +70,10 @@ class Py2NRNString {
     }
 
     inline char* get_pyerr() {
-        PyObject* ptype = NULL;
-        PyObject* pvalue = NULL;
-        PyObject* ptraceback = NULL;
         if (err()) {
+            PyObject* ptype = NULL;
+            PyObject* pvalue = NULL;
+            PyObject* ptraceback = NULL;
             PyErr_Fetch(&ptype, &pvalue, &ptraceback);
             if (pvalue) {
                 PyObject* pstr = PyObject_Str(pvalue);
@@ -91,11 +91,11 @@ class Py2NRNString {
             } else {
                 str_ = strdup("get_pyerr failed at PyErr_Fetch");
             }
+            Py_XDECREF(ptype);
+            Py_XDECREF(pvalue);
+            Py_XDECREF(ptraceback);
         }
         PyErr_Clear();  // in case could not turn pvalue into c_str.
-        Py_XDECREF(ptype);
-        Py_XDECREF(pvalue);
-        Py_XDECREF(ptraceback);
         return str_;
     }
 
