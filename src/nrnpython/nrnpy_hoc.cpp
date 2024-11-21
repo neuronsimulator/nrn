@@ -1728,14 +1728,17 @@ PyObject* nrnpy_forall_safe(PyObject* self, PyObject* args) {
     return nrn::convert_cxx_exceptions(nrnpy_forall, self, args);
 }
 
-static PyObject* hocobj_iter(PyObject* self) {
+// Returns a new reference.
+static PyObject* hocobj_iter(PyObject* raw_self) {
     //	printf("hocobj_iter %p\n", self);
-    PyHocObject* po = (PyHocObject*) self;
+
+    nb::object self = nb::borrow(raw_self);
+    PyHocObject* po = (PyHocObject*) self.ptr();
     if (po->type_ == PyHoc::HocObject) {
         if (po->ho_->ctemplate == hoc_vec_template_) {
-            return PySeqIter_New(self);
+            return PySeqIter_New(self.ptr());
         } else if (po->ho_->ctemplate == hoc_list_template_) {
-            return PySeqIter_New(self);
+            return PySeqIter_New(self.ptr());
         } else if (po->ho_->ctemplate == hoc_sectionlist_template_) {
             // need a clone of self so nested loops do not share iteritem_
             auto po2 = nb::steal(nrnpy_ho2po(po->ho_));
@@ -1748,17 +1751,15 @@ static PyObject* hocobj_iter(PyObject* self) {
     } else if (po->type_ == PyHoc::HocForallSectionIterator) {
         po->iteritem_ = section_list;
         po->u.its_ = PyHoc::Begin;
-        Py_INCREF(self);
-        return self;
+        return self.release().ptr();
     } else if (po->type_ == PyHoc::HocArray) {
-        return PySeqIter_New(self);
+        return PySeqIter_New(self.ptr());
     } else if (po->sym_ && po->sym_->type == TEMPLATE) {
         po->iteritem_ = po->sym_->u.ctemplate->olist->next;
-        Py_INCREF(self);
-        return self;
+        return self.release().ptr();
     }
     PyErr_SetString(PyExc_TypeError, "Not an iterable HocObject");
-    return NULL;
+    return nullptr;
 }
 
 static hoc_Item* next_valid_secitem(hoc_Item* q, hoc_Item* ql) {
