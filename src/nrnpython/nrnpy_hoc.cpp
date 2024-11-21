@@ -2782,8 +2782,8 @@ static Object** nrnpy_vec_to_python(void* v) {
     int size = hv->size();
     double* x = vector_vec(hv);
     //	printf("%s.to_array\n", hoc_object_name(hv->obj_));
-    PyObject* po;
-    Object* ho = 0;
+    nb::object po;
+    Object* ho = nullptr;
 
     // as_numpy_array=True is the case where this function is being called by the
     // ivocvect __array__ member
@@ -2796,33 +2796,32 @@ static Object** nrnpy_vec_to_python(void* v) {
         if (ho->ctemplate->sym != nrnpy_pyobj_sym_) {
             hoc_execerror(hoc_object_name(ho), " is not a PythonObject");
         }
-        po = nrnpy_hoc2pyobject(ho);
-        if (!PySequence_Check(po)) {
+        po = nb::borrow(nrnpy_hoc2pyobject(ho));
+        if (!PySequence_Check(po.ptr())) {
             hoc_execerror(hoc_object_name(ho), " is not a Python Sequence");
         }
-        if (size != PySequence_Size(po)) {
+        if (size != PySequence_Size(po.ptr())) {
             hoc_execerror(hoc_object_name(ho), "Python Sequence not same size as Vector");
         }
     } else {
-        if ((po = PyList_New(size)) == NULL) {
+        if (!(po = nb::steal(PyList_New(size)))) {
             hoc_execerror("Could not create new Python List with correct size.", 0);
         }
 
-        ho = nrnpy_po2ho(po);
-        Py_DECREF(po);
+        ho = nrnpy_po2ho(po.ptr());
         --ho->refcount;
     }
     //	printf("size = %d\n", size);
     long stride;
-    char* y = double_array_interface(po, stride);
+    char* y = double_array_interface(po.ptr(), stride);
     if (y) {
         for (int i = 0, j = 0; i < size; ++i, j += stride) {
             *(double*) (y + j) = x[i];
         }
-    } else if (PyList_Check(po)) {  // PySequence_SetItem does DECREF of old items
+    } else if (PyList_Check(po.ptr())) {  // PySequence_SetItem does DECREF of old items
         for (int i = 0; i < size; ++i) {
             auto pn = nb::steal(PyFloat_FromDouble(x[i]));
-            if (!pn || PyList_SetItem(po, i, pn.release().ptr()) == -1) {
+            if (!pn || PyList_SetItem(po.ptr(), i, pn.release().ptr()) == -1) {
                 char buf[50];
                 Sprintf(buf, "%d of %d", i, size);
                 hoc_execerror("Could not set a Python Sequence item", buf);
@@ -2831,13 +2830,26 @@ static Object** nrnpy_vec_to_python(void* v) {
     } else {  // assume PySequence_SetItem works
         for (int i = 0; i < size; ++i) {
             auto pn = nb::steal(PyFloat_FromDouble(x[i]));
-            if (!pn || PySequence_SetItem(po, i, pn.ptr()) == -1) {
+            if (!pn || PySequence_SetItem(po.ptr(), i, pn.ptr()) == -1) {
                 char buf[50];
                 Sprintf(buf, "%d of %d", i, size);
                 hoc_execerror("Could not set a Python Sequence item", buf);
             }
         }
     }
+
+    // The HOC reference throughout most of this function is 0 (preventing the need to decrement on
+    // error paths).
+    //
+    // Because the dtor of `po` will decrease the reference count of the `ho` (if it contains one),
+    // the order in which the decrements happen matter, or else `ho` can be deallocated.
+    //
+    // To avoid the situation described, we must briefly acquire a reference to the HOC object (by
+    // bumping its reference count) and then decrement the reference count again.
+    ++ho->refcount;
+    po.dec_ref();
+    po.release();
+    --ho->refcount;
     return hoc_temp_objptr(ho);
 }
 
@@ -2893,53 +2905,48 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
     Vect* vec = (Vect*) pho->ho_->u.this_pointer;
 
     // neuron module has a _pkl method that returns h.Vector(0)
-    PyObject* mod = PyImport_ImportModule("neuron");
-    if (mod == NULL) {
-        return NULL;
+    auto mod = nb::steal(PyImport_ImportModule("neuron"));
+    if (!mod) {
+        return nullptr;
     }
-    PyObject* obj = PyObject_GetAttrString(mod, "_pkl");
-    Py_DECREF(mod);
-    if (obj == NULL) {
+    auto obj = nb::steal(PyObject_GetAttrString(mod.ptr(), "_pkl"));
+    if (!obj) {
         PyErr_SetString(PyExc_Exception, "neuron module has no _pkl method.");
-        return NULL;
+        return nullptr;
     }
 
-    PyObject* ret = PyTuple_New(3);
-    if (ret == NULL) {
-        return NULL;
+    auto ret = nb::steal(PyTuple_New(3));
+    if (!ret) {
+        return nullptr;
     }
-    PyTuple_SET_ITEM(ret, 0, obj);
-    PyTuple_SET_ITEM(ret, 1, Py_BuildValue("(N)", PyInt_FromLong(0)));
+    PyTuple_SET_ITEM(ret.ptr(), 0, obj.release().ptr());
+    PyTuple_SET_ITEM(ret.ptr(), 1, Py_BuildValue("(N)", PyInt_FromLong(0)));
     // see numpy implementation if more ret[1] stuff needed in case we
     // pickle anything but a hoc Vector. I don't think ret[1] can be None.
 
     // Fill object's state. Tuple with 4 args:
     // pickle version, 2.0 bytes to determine if swapbytes needed,
     // vector size, string data
-    PyObject* state = PyTuple_New(4);
-    if (state == NULL) {
-        Py_DECREF(ret);
-        return NULL;
+    auto state = nb::steal(PyTuple_New(4));
+    if (!state) {
+        return nullptr;
     }
-    PyTuple_SET_ITEM(state, 0, PyInt_FromLong(1));
+    PyTuple_SET_ITEM(state.ptr(), 0, PyInt_FromLong(1));
     double x = 2.0;
-    PyObject* str = PyBytes_FromStringAndSize((const char*) (&x), sizeof(double));
-    if (str == NULL) {
-        Py_DECREF(ret);
-        Py_DECREF(state);
-        return NULL;
+    auto two = nb::steal(PyBytes_FromStringAndSize((const char*) (&x), sizeof(double)));
+    if (!two) {
+        return nullptr;
     }
-    PyTuple_SET_ITEM(state, 1, str);
-    PyTuple_SET_ITEM(state, 2, PyInt_FromLong(vec->size()));
-    str = PyBytes_FromStringAndSize((const char*) vector_vec(vec), vec->size() * sizeof(double));
-    if (str == NULL) {
-        Py_DECREF(ret);
-        Py_DECREF(state);
-        return NULL;
+    PyTuple_SET_ITEM(state.ptr(), 1, two.release().ptr());
+    PyTuple_SET_ITEM(state.ptr(), 2, PyInt_FromLong(vec->size()));
+    auto str = nb::steal(
+        PyBytes_FromStringAndSize((const char*) vector_vec(vec), vec->size() * sizeof(double)));
+    if (!str) {
+        return nullptr;
     }
-    PyTuple_SET_ITEM(state, 3, str);
-    PyTuple_SET_ITEM(ret, 2, state);
-    return ret;
+    PyTuple_SET_ITEM(state.ptr(), 3, str.release().ptr());
+    PyTuple_SET_ITEM(ret.ptr(), 2, state.release().ptr());
+    return ret.release().ptr();
 }
 
 static PyObject* hocpickle_reduce_safe(PyObject* self, PyObject* args) {
@@ -2965,60 +2972,56 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
     BYTEHEADER
     int version = -1;
     int size = 0;
-    PyObject* rawdata = NULL;
-    PyObject* endian_data;
+    nb::object endian_data;
+    nb::object rawdata;
     PyHocObject* pho = (PyHocObject*) self;
     // printf("hocpickle_setstate %s\n", hoc_object_name(pho->ho_));
     Vect* vec = (Vect*) pho->ho_->u.this_pointer;
-    if (!PyArg_ParseTuple(args, "(iOiO)", &version, &endian_data, &size, &rawdata)) {
-        return NULL;
+    {
+        PyObject* pendian_data;
+        PyObject* prawdata;
+        if (!PyArg_ParseTuple(args, "(iOiO)", &version, &pendian_data, &size, &prawdata)) {
+            return nullptr;
+        }
+
+        rawdata = nb::borrow(prawdata);
+        endian_data = nb::borrow(pendian_data);
     }
-    Py_INCREF(endian_data);
-    Py_INCREF(rawdata);
     // printf("hocpickle version=%d size=%d\n", version, size);
     vector_resize(vec, size);
-    if (!PyBytes_Check(rawdata) || !PyBytes_Check(endian_data)) {
+    if (!PyBytes_Check(rawdata.ptr()) || !PyBytes_Check(endian_data.ptr())) {
         PyErr_SetString(PyExc_TypeError, "pickle not returning string");
-        Py_DECREF(endian_data);
-        Py_DECREF(rawdata);
-        return NULL;
+        return nullptr;
     }
-    char* datastr;
+    char* two;
     Py_ssize_t len;
-    if (PyBytes_AsStringAndSize(endian_data, &datastr, &len) < 0) {
-        Py_DECREF(endian_data);
-        Py_DECREF(rawdata);
-        return NULL;
+    if (PyBytes_AsStringAndSize(endian_data.ptr(), &two, &len) < 0) {
+        return nullptr;
     }
     if (len != sizeof(double)) {
         PyErr_SetString(PyExc_ValueError, "endian_data size is not sizeof(double)");
-        Py_DECREF(endian_data);
-        Py_DECREF(rawdata);
-        return NULL;
+        return nullptr;
     }
     BYTESWAP_FLAG = 0;
-    if (*((double*) datastr) != 2.0) {
+    if (*((double*) two) != 2.0) {
         BYTESWAP_FLAG = 1;
     }
-    Py_DECREF(endian_data);
     // printf("byteswap = %d\n", BYTESWAP_FLAG);
-    if (PyBytes_AsStringAndSize(rawdata, &datastr, &len) < 0) {
-        Py_DECREF(rawdata);
+    char* str;
+    if (PyBytes_AsStringAndSize(rawdata.ptr(), &str, &len) < 0) {
         return NULL;
     }
     if (len != Py_ssize_t(size * sizeof(double))) {
         PyErr_SetString(PyExc_ValueError, "buffer size does not match array size");
-        Py_DECREF(rawdata);
-        return NULL;
+        return nullptr;
     }
     if (BYTESWAP_FLAG) {
-        double* x = (double*) datastr;
+        double* x = (double*) str;
         for (int i = 0; i < size; ++i) {
             BYTESWAP(x[i], double)
         }
     }
-    memcpy((char*) vector_vec(vec), datastr, len);
-    Py_DECREF(rawdata);
+    memcpy((char*) vector_vec(vec), str, len);
 
     Py_RETURN_NONE;
 }
@@ -3083,12 +3086,11 @@ static PyMethodDef toplevel_methods[] = {
 static void add2topdict(PyObject* dict) {
     for (PyMethodDef* meth = toplevel_methods; meth->ml_name != NULL; meth++) {
         int err;
-        PyObject* nn = Py_BuildValue("s", meth->ml_doc);
+        auto nn = nb::steal(Py_BuildValue("s", meth->ml_doc));
         if (!nn) {
             return;
         }
-        err = PyDict_SetItemString(dict, meth->ml_name, nn);
-        Py_DECREF(nn);
+        err = PyDict_SetItemString(dict, meth->ml_name, nn.ptr());
         if (err) {
             return;
         }
@@ -3215,24 +3217,22 @@ static void sectionlist_helper_(void* sl, Object* args) {
     }
     PyObject* pargs = nrnpy_hoc2pyobject(args);
 
-    PyObject* iterator = PyObject_GetIter(pargs);
-    PyObject* item;
+    auto iterator = nb::steal(PyObject_GetIter(pargs));
 
-    if (iterator == NULL) {
+    if (!iterator) {
         PyErr_Clear();
         hoc_execerror("argument must be an iterable", "");
     }
 
-    while ((item = PyIter_Next(iterator))) {
-        if (!PyObject_TypeCheck(item, psection_type)) {
+    nb::object item;
+    while ((item = nb::steal(PyIter_Next(iterator.ptr())))) {
+        if (!PyObject_TypeCheck(item.ptr(), psection_type)) {
             hoc_execerror("iterable must contain only Section objects", 0);
         }
-        NPySecObj* pysec = (NPySecObj*) item;
+        NPySecObj* pysec = (NPySecObj*) item.ptr();
         lvappendsec_and_ref(sl, pysec->sec_);
-        Py_DECREF(item);
     }
 
-    Py_DECREF(iterator);
     if (PyErr_Occurred()) {
         PyErr_Clear();
         hoc_execerror("argument must be a Python iterable", "");
@@ -3257,10 +3257,9 @@ static int get_nrncore_opt_value(const char* option) {
     if (modules) {
         PyObject* module = PyDict_GetItemString(modules, "neuron.coreneuron");
         if (module) {
-            PyObject* val = PyObject_GetAttrString(module, option);
+            auto val = nb::steal(PyObject_GetAttrString(module, option));
             if (val) {
-                long enable = PyLong_AsLong(val);
-                Py_DECREF(val);
+                long enable = PyLong_AsLong(val.ptr());
                 if (enable != -1) {
                     return enable;
                 }
@@ -3297,18 +3296,16 @@ static char* nrncore_arg(double tstop) {
         if (module) {
             auto callable = nb::steal(PyObject_GetAttrString(module, "nrncore_arg"));
             if (callable) {
-                PyObject* ts = Py_BuildValue("(d)", tstop);
+                auto ts = nb::steal(Py_BuildValue("(d)", tstop));
                 if (ts) {
-                    PyObject* arg = PyObject_CallObject(callable.ptr(), ts);
-                    Py_DECREF(ts);
+                    auto arg = nb::steal(PyObject_CallObject(callable.ptr(), ts.ptr()));
                     if (arg) {
-                        Py2NRNString str(arg);
-                        Py_DECREF(arg);
+                        Py2NRNString str(arg.ptr());
                         if (str.err()) {
                             str.set_pyerr(
                                 PyExc_TypeError,
                                 "neuron.coreneuron.nrncore_arg() must return an ascii string");
-                            return NULL;
+                            return nullptr;
                         }
                         if (strlen(str.c_str()) > 0) {
                             return strdup(str.c_str());
@@ -3321,7 +3318,7 @@ static char* nrncore_arg(double tstop) {
     if (PyErr_Occurred()) {
         PyErr_Print();
     }
-    return NULL;
+    return nullptr;
 }
 
 
@@ -3409,7 +3406,6 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
         return NULL;
     }
 
-
     auto bases = nb::steal(PyTuple_Pack(1, hocobject_type));
     for (auto name: py_exposed_classes) {
         // TODO: obj_spec_from_name needs a hoc. prepended
@@ -3424,23 +3420,21 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
         sym_to_type_map[hclass->sym] = pto;
         type_to_sym_map[pto] = hclass->sym;
         if (PyType_Ready(pto) < 0) {
-            goto fail;
+            return nullptr;
         }
         if (PyModule_AddObject(m, name, (PyObject*) pto) < 0) {
-            return NULL;
+            return nullptr;
         }
     }
 
     topmethdict = PyDict_New();
     for (PyMethodDef* meth = toplevel_methods; meth->ml_name != NULL; meth++) {
-        PyObject* descr;
         int err;
-        descr = PyDescr_NewMethod(hocobject_type, meth);
+        auto descr = nb::steal(PyDescr_NewMethod(hocobject_type, meth));
         assert(descr);
-        err = PyDict_SetItemString(topmethdict, meth->ml_name, descr);
-        Py_DECREF(descr);
+        err = PyDict_SetItemString(topmethdict, meth->ml_name, descr.ptr());
         if (err < 0) {
-            goto fail;
+            return nullptr;
         }
     }
 
@@ -3466,8 +3460,9 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
 
     nrnpy_nrn();
     endian_character = get_endian_character();
-    if (endian_character == 0)
-        goto fail;
+    if (endian_character == 0) {
+        return nullptr;
+    }
     array_interface_typestr[0] = endian_character;
 
     // Setup bytesize in typestr
@@ -3476,8 +3471,6 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     assert(err == 0);
     //  Py_DECREF(m);
     return m;
-fail:
-    return NULL;
 }
 
 void nrnpython_reg_real_nrnpy_hoc_cpp(neuron::python::impl_ptrs* ptrs) {
