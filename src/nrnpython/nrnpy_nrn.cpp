@@ -1027,6 +1027,7 @@ static PyObject* is_pysec_safe(NPySecObj* self) {
     return nrn::convert_cxx_exceptions(is_pysec, self);
 }
 
+// Is expected to return a new reference.
 NPySecObj* newpysechelp(Section* sec) {
     if (!sec || !sec->prop) {
         return NULL;
@@ -2939,6 +2940,7 @@ static PyMethodDef NPyRangeVar_methods[] = {
 
 static PyMemberDef NPyMechObj_members[] = {{NULL}};
 
+// Returns a new reference.
 PyObject* nrnpy_cas(PyObject* self, PyObject* args) {
     Section* sec = nrn_noerr_access();
     if (!sec) {
