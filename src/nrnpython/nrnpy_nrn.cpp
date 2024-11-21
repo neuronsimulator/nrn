@@ -1192,17 +1192,17 @@ static PyObject* pysec_wholetree_safe(NPySecObj* const self) {
     return nrn::convert_cxx_exceptions(pysec_wholetree, self);
 }
 
+// Returns a new reference.
 static PyObject* pysec2cell(NPySecObj* self) {
-    PyObject* result;
+    nb::object result;
     if (self->cell_weakref_) {
-        result = PyWeakref_GetObject(self->cell_weakref_);
-        Py_INCREF(result);
+        result = nb::borrow(PyWeakref_GetObject(self->cell_weakref_));
     } else if (auto* o = self->sec_->prop->dparam[6].get<Object*>(); self->sec_->prop && o) {
-        result = nrnpy_ho2po(o);
+        result = nb::steal(nrnpy_ho2po(o));
     } else {
-        Py_RETURN_NONE;
+        result = nb::none();
     }
-    return result;
+    return result.release().ptr();
 }
 
 static PyObject* pysec2cell_safe(NPySecObj* self) {
