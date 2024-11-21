@@ -2268,6 +2268,7 @@ static PyObject* mkref_safe(PyObject* self, PyObject* args) {
     return nrn::convert_cxx_exceptions(mkref, self, args);
 }
 
+// Returns a new reference.
 static PyObject* cpp2refstr(char** cpp) {
     // If cpp is from a hoc_temp_charptr (see src/oc/code.cpp) then create a
     // HocRefStr and copy *cpp. Otherwise, assume it is from a hoc strdef
@@ -2277,7 +2278,8 @@ static PyObject* cpp2refstr(char** cpp) {
     // for the HocRefPStr destructor to delete either u.pstr_ or *u.pstr_.
 
     assert(cpp && *cpp);  // not really sure about the *cpp
-    PyHocObject* result = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
+    auto result_guard = nb::steal(hocobj_new(hocobject_type, 0, 0));
+    auto* result = (PyHocObject*) result_guard.ptr();
     if (hoc_is_temp_charptr(cpp)) {  // return HocRefStr HocObject.
         result->type_ = PyHoc::HocRefStr;
         result->u.s_ = 0;
@@ -2286,7 +2288,7 @@ static PyObject* cpp2refstr(char** cpp) {
         result->type_ = PyHoc::HocRefPStr;
         result->u.pstr_ = cpp;
     }
-    return (PyObject*) result;
+    return result_guard.release().ptr();
 }
 
 static PyObject* setpointer(PyObject* self, PyObject* args) {
