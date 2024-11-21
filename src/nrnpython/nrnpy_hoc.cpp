@@ -141,6 +141,7 @@ static int hocclass_init(hocclass* cls, PyObject* args, PyObject* kwds) {
     return 0;
 }
 
+// Returns a new reference.
 static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
     hocclass* hclass = (hocclass*) self;
     Symbol* sym = hclass->sym;
@@ -158,7 +159,7 @@ static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
     char e[200];
     Sprintf(e, "%s[%ld] instance does not exist", sym->name, ix);
     PyErr_SetString(PyExc_IndexError, e);
-    return NULL;
+    return nullptr;
 }
 
 // Note use of slots was informed by nanobind (search for nb_meta)
@@ -574,6 +575,7 @@ int nrnpy_numbercheck(PyObject* po) {
     return rval;
 }
 
+// Returns a new reference.
 PyObject* nrnpy_ho2po(Object* o) {
     // o may be NULLobject, or encapsulate a Python object (via
     // the PythonObject class in hoc (see Py2Nrn in nrnpy_p2h.cpp),
