@@ -890,8 +890,10 @@ static Arrayinfo* hocobj_aray(Symbol* sym, Object* ho) {
     }
 }
 
+// Returns a new reference.
 static PyHocObject* intermediate(PyHocObject* po, Symbol* sym, int ix) {
-    PyHocObject* ponew = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
+    auto ponew_guard = nb::steal(hocobj_new(hocobject_type, 0, 0));
+    PyHocObject* ponew = (PyHocObject*) ponew_guard.ptr();
     if (po->ho_) {
         ponew->ho_ = po->ho_;
         hoc_obj_ref(po->ho_);
@@ -912,7 +914,7 @@ static PyHocObject* intermediate(PyHocObject* po, Symbol* sym, int ix) {
         ponew->sym_ = sym;
         ponew->type_ = PyHoc::HocArray;
     }
-    return ponew;
+    return (PyHocObject*) ponew_guard.release().ptr();
 }
 
 // when called, nindex is 1 less than reality
