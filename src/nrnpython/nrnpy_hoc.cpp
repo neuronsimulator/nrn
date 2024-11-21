@@ -2232,21 +2232,19 @@ static int hocobj_slice_setitem(PyObject* self, PyObject* slice, PyObject* arg) 
 
 static PyObject* mkref(PyObject* self, PyObject* args) {
     PyObject* pa;
-    PyHocObject* result;
     if (PyArg_ParseTuple(args, "O", &pa) == 1) {
-        result = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
+        auto result_guard = nb::steal(hocobj_new(hocobject_type, 0, 0));
+        PyHocObject* result = (PyHocObject*) result_guard.ptr();
         if (nrnpy_numbercheck(pa)) {
             result->type_ = PyHoc::HocRefNum;
-            PyObject* pn = PyNumber_Float(pa);
-            result->u.x_ = PyFloat_AsDouble(pn);
-            Py_XDECREF(pn);
+            auto pn = nb::steal(PyNumber_Float(pa));
+            result->u.x_ = PyFloat_AsDouble(pn.ptr());
         } else if (is_python_string(pa)) {
             result->type_ = PyHoc::HocRefStr;
             result->u.s_ = 0;
             Py2NRNString str(pa);
             if (str.err()) {
                 str.set_pyerr(PyExc_TypeError, "string arg must have only ascii characters");
-                Py_XDECREF(result);
                 return NULL;
             }
             char* cpa = str.c_str();
@@ -2255,7 +2253,7 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
             result->type_ = PyHoc::HocRefObj;
             result->u.ho_ = nrnpy_po2ho(pa);
         }
-        return (PyObject*) result;
+        return result_guard.release().ptr();
     }
     PyErr_SetString(PyExc_TypeError, "single arg must be number, string, or Object");
     return NULL;
@@ -2485,15 +2483,15 @@ static char* double_array_interface(PyObject* po, long& stride) {
     PyObject* pstride;
     PyObject* psize;
     if (PyObject_HasAttrString(po, "__array_interface__")) {
-        PyObject* ai = PyObject_GetAttrString(po, "__array_interface__");
-        Py2NRNString typestr(PyDict_GetItemString(ai, "typestr"));
+        auto ai = nb::steal(PyObject_GetAttrString(po, "__array_interface__"));
+        Py2NRNString typestr(PyDict_GetItemString(ai.ptr(), "typestr"));
         if (strcmp(typestr.c_str(), array_interface_typestr) == 0) {
-            data = PyLong_AsVoidPtr(PyTuple_GetItem(PyDict_GetItemString(ai, "data"), 0));
+            data = PyLong_AsVoidPtr(PyTuple_GetItem(PyDict_GetItemString(ai.ptr(), "data"), 0));
             // printf("double_array_interface idata = %ld\n", idata);
             if (PyErr_Occurred()) {
                 data = 0;
             }
-            pstride = PyDict_GetItemString(ai, "strides");
+            pstride = PyDict_GetItemString(ai.ptr(), "strides");
             if (pstride == Py_None) {
                 stride = 8;
             } else if (PyTuple_Check(pstride)) {
@@ -2517,7 +2515,6 @@ static char* double_array_interface(PyObject* po, long& stride) {
                 data = 0;
             }
         }
-        Py_DECREF(ai);
     }
     return static_cast<char*>(data);
 }
@@ -2653,8 +2650,7 @@ extern "C" NRN_EXPORT int nrnpy_set_gui_callback(PyObject* new_gui_callback) {
 
 static double object_to_double_(Object* obj) {
     auto pyobj = nb::steal(nrnpy_ho2po(obj));
-    const double result = PyFloat_AsDouble(pyobj.ptr());
-    return result;
+    return PyFloat_AsDouble(pyobj.ptr());
 }
 
 static void* nrnpy_get_pyobj_(Object* obj) {
@@ -2678,73 +2674,70 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
         narg++;
     }
     narg--;
-    PyObject* args = PyTuple_New(narg + 3);
-    PyObject* pyname = PyString_FromString(name);
-    PyTuple_SetItem(args, 0, pyname);
+    auto args = nb::steal(PyTuple_New(narg + 3));
+    auto pyname = nb::steal(PyString_FromString(name));
+    PyTuple_SetItem(args.ptr(), 0, pyname.release().ptr());
     for (int iarg = 0; iarg < narg; iarg++) {
         const int iiarg = iarg + 1;
         if (hoc_is_object_arg(iiarg)) {
-            PyObject* active_obj = nrnpy_ho2po(*hoc_objgetarg(iiarg));
-            PyTuple_SetItem(args, iarg + 3, active_obj);
+            auto active_obj = nb::steal(nrnpy_ho2po(*hoc_objgetarg(iiarg)));
+            PyTuple_SetItem(args.ptr(), iarg + 3, active_obj.release().ptr());
         } else if (hoc_is_pdouble_arg(iiarg)) {
             PyHocObject* ptr_nrn = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
             ptr_nrn->type_ = PyHoc::HocScalarPtr;
             ptr_nrn->u.px_ = hoc_hgetarg<double>(iiarg);
             PyObject* py_ptr = (PyObject*) ptr_nrn;
             Py_INCREF(py_ptr);
-            PyTuple_SetItem(args, iarg + 3, py_ptr);
+            PyTuple_SetItem(args.ptr(), iarg + 3, py_ptr);
         } else if (hoc_is_str_arg(iiarg)) {
             if (handle_strptr > 0) {
                 char** str_arg = hoc_pgargstr(iiarg);
                 PyObject* py_ptr = cpp2refstr(str_arg);
                 Py_INCREF(py_ptr);
-                PyTuple_SetItem(args, iarg + 3, py_ptr);
+                PyTuple_SetItem(args.ptr(), iarg + 3, py_ptr);
             } else {
-                PyObject* py_str = PyString_FromString(gargstr(iiarg));
-                PyTuple_SetItem(args, iarg + 3, py_str);
+                auto py_str = nb::steal(PyString_FromString(gargstr(iiarg)));
+                PyTuple_SetItem(args.ptr(), iarg + 3, py_str.release().ptr());
             }
         } else if (hoc_is_double_arg(iiarg)) {
-            PyObject* py_double = PyFloat_FromDouble(*getarg(iiarg));
-            PyTuple_SetItem(args, iarg + 3, py_double);
+            auto py_double = nb::steal(PyFloat_FromDouble(*getarg(iiarg)));
+            PyTuple_SetItem(args.ptr(), iarg + 3, py_double.release().ptr());
         }
     }
-    PyObject* my_obj;
+    nb::object my_obj;
     if (obj) {
         // there's a problem with this: if obj is intrinisically a PyObject, then this is increasing
         // it's refcount and that's
-        my_obj = nrnpy_ho2po(obj);
+        my_obj = nb::steal(nrnpy_ho2po(obj));
     } else {
-        my_obj = Py_None;
-        Py_INCREF(Py_None);
+        my_obj = nb::none();
     }
-    PyTuple_SetItem(args, 1, my_obj);  // steals a reference
-    PyObject* my_obj2;
+    PyTuple_SetItem(args.ptr(), 1, my_obj.release().ptr());  // steals a reference
+    nb::object my_obj2;
     if (hoc_thisobject && name[0] != '~') {
-        my_obj2 = nrnpy_ho2po(hoc_thisobject);  // in the case of a HOC object, such as happens with
-                                                // List.browser, the ref count will be 1
+        my_obj2 = nb::steal(nrnpy_ho2po(hoc_thisobject));  // in the case of a HOC object, such as
+                                                           // happens with List.browser, the ref
+                                                           // count will be 1
     } else {
-        my_obj2 = Py_None;
-        Py_INCREF(Py_None);
+        my_obj2 = nb::none();
     }
 
-    PyTuple_SetItem(args, 2, my_obj2);  // steals a reference to my_obj2
-    PyObject* po = PyObject_CallObject(gui_callback, args);
+    PyTuple_SetItem(args.ptr(), 2, my_obj2.release().ptr());  // steals a reference to my_obj2
+    auto po = nb::steal(PyObject_CallObject(gui_callback, args.ptr()));
     if (PyErr_Occurred()) {
         // if there was an error, display it and return 0.
         // It's not a great solution, but it beats segfaulting
         PyErr_Print();
-        po = PyLong_FromLong(0);
+        po = nb::steal(PyLong_FromLong(0));
     }
-    Py_DECREF(args);  // Note: this decreases the ref count of my_obj and my_obj2
-    return po;
+    return po.release().ptr();
 }
 
 static Object** gui_helper_3_(const char* name, Object* obj, int handle_strptr) {
     if (gui_callback) {
-        PyObject* po = gui_helper_3_helper_(name, obj, handle_strptr);
+        auto po = nb::steal(gui_helper_3_helper_(name, obj, handle_strptr));
         // TODO: something that allows None (currently nrnpy_po2ho returns NULL if po == Py_None)
-        Object* ho = nrnpy_po2ho(po);
-        Py_DECREF(po);
+        Object* ho = nrnpy_po2ho(po.release().ptr());
         if (ho) {
             --ho->refcount;
         }
@@ -2755,12 +2748,11 @@ static Object** gui_helper_3_(const char* name, Object* obj, int handle_strptr) 
 
 static char** gui_helper_3_str_(const char* name, Object* obj, int handle_strptr) {
     if (gui_callback) {
-        PyObject* po = gui_helper_3_helper_(name, obj, handle_strptr);
+        auto po = nb::steal(gui_helper_3_helper_(name, obj, handle_strptr));
         char** ts = hoc_temp_charptr();
-        Py2NRNString str(po, true);
+        Py2NRNString str(po.ptr(), true);
         *ts = str.c_str();
         // TODO: is there a memory leak here? do I need to: s2free.push_back(*ts);
-        Py_DECREF(po);
         return ts;
     }
     return NULL;
@@ -2829,8 +2821,8 @@ static Object** nrnpy_vec_to_python(void* v) {
         }
     } else if (PyList_Check(po)) {  // PySequence_SetItem does DECREF of old items
         for (int i = 0; i < size; ++i) {
-            PyObject* pn = PyFloat_FromDouble(x[i]);
-            if (!pn || PyList_SetItem(po, i, pn) == -1) {
+            auto pn = nb::steal(PyFloat_FromDouble(x[i]));
+            if (!pn || PyList_SetItem(po, i, pn.release().ptr()) == -1) {
                 char buf[50];
                 Sprintf(buf, "%d of %d", i, size);
                 hoc_execerror("Could not set a Python Sequence item", buf);
@@ -2838,13 +2830,12 @@ static Object** nrnpy_vec_to_python(void* v) {
         }
     } else {  // assume PySequence_SetItem works
         for (int i = 0; i < size; ++i) {
-            PyObject* pn = PyFloat_FromDouble(x[i]);
-            if (!pn || PySequence_SetItem(po, i, pn) == -1) {
+            auto pn = nb::steal(PyFloat_FromDouble(x[i]));
+            if (!pn || PySequence_SetItem(po, i, pn.ptr()) == -1) {
                 char buf[50];
                 Sprintf(buf, "%d of %d", i, size);
                 hoc_execerror("Could not set a Python Sequence item", buf);
             }
-            Py_DECREF(pn);
         }
     }
     return hoc_temp_objptr(ho);
@@ -2852,12 +2843,10 @@ static Object** nrnpy_vec_to_python(void* v) {
 
 static Object* rvp_rxd_to_callable_(Object* obj) {
     if (obj) {
-        PyObject* py_obj = nrnpy_ho2po(obj);
-        PyObject* result = PyObject_CallFunctionObjArgs(nrnpy_rvp_pyobj_callback, py_obj, NULL);
-        Py_DECREF(py_obj);
-        Object* obj_result = nrnpy_po2ho(result);
-        Py_DECREF(result);  // the previous line incremented the reference count
-        return obj_result;
+        auto py_obj = nb::steal(nrnpy_ho2po(obj));
+        auto result = nb::steal(
+            PyObject_CallFunctionObjArgs(nrnpy_rvp_pyobj_callback, py_obj.ptr(), NULL));
+        return nrnpy_po2ho(result.ptr());
     } else {
         return 0;
     }
