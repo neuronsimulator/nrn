@@ -2906,13 +2906,18 @@ extern "C" NRN_EXPORT PyObject* get_plotshape_data(PyObject* sp) {
     spi = ((ShapePlotData*) that);
 #endif
     Object* sl = spi->neuron_section_list();
-    PyObject* py_sl = nrnpy_ho2po(sl);
-    PyObject* py_obj = (PyObject*) spi->varobj();
+    auto py_sl = nb::steal(nrnpy_ho2po(sl));
+    auto py_obj = nb::borrow((PyObject*) spi->varobj());
     if (!py_obj) {
-        py_obj = Py_None;
+        py_obj = nb::none();
     }
     // NOte: O increases the reference count; N does not
-    return Py_BuildValue("sOffN", spi->varname(), py_obj, spi->low(), spi->high(), py_sl);
+    return Py_BuildValue("sNffN",
+                         spi->varname(),
+                         py_obj.release().ptr(),
+                         spi->low(),
+                         spi->high(),
+                         py_sl.release().ptr());
 }
 
 // poorly follows __reduce__ and __setstate__
