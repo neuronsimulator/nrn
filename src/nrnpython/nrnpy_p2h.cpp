@@ -690,6 +690,7 @@ static PyObject* py_allgather(PyObject* psrc) {
     return char2pylist(rbuf, rcnt, rdispl).release().ptr();
 }
 
+// Returns a new reference.
 static PyObject* py_gather(PyObject* psrc, int root) {
     int np = nrnmpi_numprocs;
     auto sbuf = pickle(psrc);
@@ -709,13 +710,11 @@ static PyObject* py_gather(PyObject* psrc, int root) {
 
     nrnmpi_char_gatherv(sbuf.data(), scnt, rbuf.data(), rcnt.data(), rdispl.data(), root);
 
-    PyObject* pdest = Py_None;
+    nb::object pdest = nb::none();
     if (root == nrnmpi_myid) {
-        pdest = char2pylist(rbuf, rcnt, rdispl).release().ptr();
-    } else {
-        Py_INCREF(pdest);
+        pdest = char2pylist(rbuf, rcnt, rdispl);
     }
-    return pdest;
+    return pdest.release().ptr();
 }
 
 static PyObject* py_broadcast(PyObject* psrc, int root) {
