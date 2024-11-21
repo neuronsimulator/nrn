@@ -2907,6 +2907,9 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
 
     // neuron module has a _pkl method that returns h.Vector(0)
     nb::module_ mod = nb::module_::import_("neuron");
+    if (!mod) {
+        return nullptr;
+    }
     nb::object obj = mod.attr("_pkl");
     if (!obj) {
         PyErr_SetString(PyExc_Exception, "neuron module has no _pkl method.");
@@ -2917,12 +2920,12 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
     // pickle anything but a hoc Vector. I don't think ret[1] can be None.
 
     // Fill object's state. Tuple with 4 args:
-    // pickle version, 2.0 bytes to determine if swapbytes needed,
+    // pickle version, endianness sentinel,
     // vector size, string data
     double x = 2.0;
-    nb::bytes str((const void*) (&x), sizeof(double));
-    nb::bytes str1(vec->data(), vec->size() * sizeof(double));
-    nb::tuple state = nb::make_tuple(1, str, vec->size(), str1);
+    nb::bytes byte_order((const void*) (&x), sizeof(double));
+    nb::bytes vec_data(vec->data(), vec->size() * sizeof(double));
+    nb::tuple state = nb::make_tuple(1, byte_order, vec->size(), vec_data);
 
     return nb::make_tuple(obj, nb::make_tuple(0), state).release().ptr();
 }
