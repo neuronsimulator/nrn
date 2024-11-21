@@ -2943,7 +2943,7 @@ PyObject* nrnpy_cas(PyObject* self, PyObject* args) {
     Section* sec = nrn_noerr_access();
     if (!sec) {
         PyErr_SetString(PyExc_TypeError, "Section access unspecified");
-        return NULL;
+        return nullptr;
     }
     // printf("nrnpy_cas %s\n", secname(sec));
     return (PyObject*) newpysechelp(sec);
