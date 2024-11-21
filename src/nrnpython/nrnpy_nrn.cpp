@@ -1923,10 +1923,12 @@ static NPyRangeVar* rvnew(Symbol* sym, NPySecObj* sec, double x) {
     return r;
 }
 
+// Returns a new reference.
 static NPyOpaquePointer* opaque_pointer_new() {
     return PyObject_New(NPyOpaquePointer, opaque_pointer_type);
 }
 
+// Returns a new reference.
 static PyObject* build_python_value(const neuron::container::generic_data_handle& dh) {
     if (dh.holds<double*>()) {
         return Py_BuildValue("d", *dh.get<double*>());
@@ -1935,6 +1937,7 @@ static PyObject* build_python_value(const neuron::container::generic_data_handle
     }
 }
 
+// Returns a new reference.
 static PyObject* build_python_reference(const neuron::container::generic_data_handle& dh) {
     if (dh.holds<double*>()) {
         return nrn_hocobj_handle(neuron::container::data_handle<double>{dh});
@@ -2449,6 +2452,7 @@ static neuron::container::generic_data_handle get_rangevar(NPyMechObj* pymech,
 }
 
 
+// Returns a new reference.
 static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     Section* sec = self->pyseg_->pysec_->sec_;
     CHECK_SEC_INVALID(sec)
