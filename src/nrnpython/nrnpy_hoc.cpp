@@ -2923,7 +2923,10 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
     // pickle version, endianness sentinel,
     // vector size, string data
     //
-    // To be able to read data on a system with different endianness, a sentinel is added, the convention is that the value of the sentinel is `2.0` (when cast to a double). Therefore, if the machine reads the sentinel and it's not `2.0` it know that it needs to swap the bytes of all doubles in the payload.
+    // To be able to read data on a system with different endianness, a sentinel is added, the
+    // convention is that the value of the sentinel is `2.0` (when cast to a double). Therefore, if
+    // the machine reads the sentinel and it's not `2.0` it know that it needs to swap the bytes of
+    // all doubles in the payload.
     double x = 2.0;
     nb::bytes byte_order((const void*) (&x), sizeof(double));
     nb::bytes vec_data(vec->data(), vec->size() * sizeof(double));
