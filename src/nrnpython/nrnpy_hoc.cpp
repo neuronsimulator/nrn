@@ -1943,7 +1943,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 char e[200];
                 Sprintf(e, "%s", hoc_object_name(po->ho_));
                 PyErr_SetString(PyExc_IndexError, e);
-                return NULL;
+                return nullptr;
             } else {
                 return PyFloat_FromDouble(vector_vec(hv)[ix]);
             }
@@ -1956,20 +1956,20 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 char e[200];
                 Sprintf(e, "%s", hoc_object_name(po->ho_));
                 PyErr_SetString(PyExc_IndexError, e);
-                return NULL;
+                return nullptr;
             } else {
                 return nrnpy_ho2po(hl->object(ix));
             }
         } else {
             PyErr_SetString(PyExc_TypeError, "unsubscriptable object");
-            return NULL;
+            return nullptr;
         }
     }
     if (!po->sym_) {
         // printf("unsubscriptable %s %d type=%d\n", hoc_object_name(po->ho_), ix,
         // po->type_);
         PyErr_SetString(PyExc_TypeError, "unsubscriptable object");
-        return NULL;
+        return nullptr;
     } else if (po->sym_->type == TEMPLATE) {
         hoc_Item *q, *ql = po->sym_->u.ctemplate->olist;
         Object* ob;
@@ -1982,17 +1982,17 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
         char e[200];
         Sprintf(e, "%s[%ld] instance does not exist", po->sym_->name, ix);
         PyErr_SetString(PyExc_IndexError, e);
-        return NULL;
+        return nullptr;
     }
     if (po->type_ != PyHoc::HocArray && po->type_ != PyHoc::HocArrayIncomplete) {
         char e[200];
         Sprintf(e, "unsubscriptable object, type %d\n", po->type_);
         PyErr_SetString(PyExc_TypeError, e);
-        return NULL;
+        return nullptr;
     }
     Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
     if (araychk(a, po, ix)) {
-        return NULL;
+        return nullptr;
     }
 
     nb::object result;
@@ -2051,6 +2051,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
     return result.release().ptr();
 }
 
+// Returns a new reference.
 static PyObject* hocobj_slice_getitem(PyObject* self, PyObject* slice) {
     // Non slice indexing still uses original function
     if (!PySlice_Check(slice)) {
@@ -2673,12 +2674,13 @@ static double object_to_double_(Object* obj) {
     return PyFloat_AsDouble(pyobj.ptr());
 }
 
+// Returns a new reference.
 static void* nrnpy_get_pyobj_(Object* obj) {
     // returns something wrapping a PyObject if it is a PyObject else NULL
     if (obj->ctemplate->sym == nrnpy_pyobj_sym_) {
         return (void*) nrnpy_ho2po(obj);
     }
-    return NULL;
+    return nullptr;
 }
 
 static void nrnpy_decref_(void* pyobj) {
