@@ -1899,20 +1899,23 @@ in that we may return the final value or an intermediate (in the
 case where there is more than one dimension.) At least for now we
 only have to handle the OBJECTVAR and VAR case as a component and
 at the top level.
+
+Returns a new reference.
 */
 static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
-    PyObject* result = NULL;
     PyHocObject* po = (PyHocObject*) self;
     if (po->type_ > PyHoc::HocArray && po->type_ != PyHoc::HocArrayIncomplete) {
         if (ix != 0 && po->type_ != PyHoc::HocScalarPtr) {
             PyErr_SetString(PyExc_IndexError, "index for hoc ref must be 0");
-            return NULL;
+            return nullptr;
         }
+
+        nb::object result;
         if (po->type_ == PyHoc::HocScalarPtr) {
             try {
                 auto const h = po->u.px_.next_array_element(ix);
                 if (nrn_chk_data_handle(h)) {
-                    result = Py_BuildValue("d", *h);
+                    result = nb::steal(Py_BuildValue("d", *h));
                 }
             } catch (std::exception const& e) {
                 // next_array_element throws if ix is invalid
@@ -1920,15 +1923,15 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 return nullptr;
             }
         } else if (po->type_ == PyHoc::HocRefNum) {
-            result = Py_BuildValue("d", po->u.x_);
+            result = nb::steal(Py_BuildValue("d", po->u.x_));
         } else if (po->type_ == PyHoc::HocRefStr) {
-            result = Py_BuildValue("s", po->u.s_);
+            result = nb::steal(Py_BuildValue("s", po->u.s_));
         } else if (po->type_ == PyHoc::HocRefPStr) {
-            result = Py_BuildValue("s", *po->u.pstr_);
+            result = nb::steal(Py_BuildValue("s", *po->u.pstr_));
         } else {
-            result = nrnpy_ho2po(po->u.ho_);
+            result = nb::steal(nrnpy_ho2po(po->u.ho_));
         }
-        return result;
+        return result.release().ptr();
     }
     if (po->type_ == PyHoc::HocObject) {  // might be in an iterator context
         if (po->ho_->ctemplate == hoc_vec_template_) {
@@ -1991,22 +1994,23 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
     if (araychk(a, po, ix)) {
         return NULL;
     }
+
+    nb::object result;
     if (a->nsub - 1 > po->nindex_) {  // another intermediate
-        PyHocObject* ponew = intermediate(po, po->sym_, ix);
-        result = (PyObject*) ponew;
+        result = nb::steal((PyObject*) intermediate(po, po->sym_, ix));
     } else {  // ready to evaluate
         if (po->ho_) {
             eval_component(po, ix);
             if (po->sym_->type == SECTION || po->sym_->type == SECTIONREF) {
                 section_object_seen = 0;
-                result = nrnpy_cas(0, 0);
+                result = nb::steal(nrnpy_cas(0, 0));
                 nrn_popsec();
-                return result;
+                return result.release().ptr();
             } else {
                 if (po->type_ == PyHoc::HocArrayIncomplete) {
-                    result = nrn_hocobj_ptr(hoc_pxpop());
+                    result = nb::steal(nrn_hocobj_ptr(hoc_pxpop()));
                 } else {
-                    result = nrnpy_hoc_pop("po->ho_ hocobj_getitem");
+                    result = nb::steal(nrnpy_hoc_pop("po->ho_ hocobj_getitem"));
                 }
             }
         } else {  // must be a top level intermediate
@@ -2022,9 +2026,9 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 --po->nindex_;
                 if (po->type_ == PyHoc::HocArrayIncomplete) {
                     assert(!po->u.px_);
-                    result = nrn_hocobj_ptr(hoc_pxpop());
+                    result = nb::steal(nrn_hocobj_ptr(hoc_pxpop()));
                 } else {
-                    result = Py_BuildValue("d", *hoc_pxpop());
+                    result = nb::steal(Py_BuildValue("d", *hoc_pxpop()));
                 }
                 break;
             case OBJECTVAR:
@@ -2033,18 +2037,18 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                     break;
                 }
                 --po->nindex_;
-                result = nrnpy_ho2po(*hoc_objpop());
+                result = nb::steal(nrnpy_ho2po(*hoc_objpop()));
                 break;
             case SECTION:
                 hocobj_pushtop(po, 0, ix);
-                result = hocobj_getsec(po->sym_);
+                result = nb::steal(hocobj_getsec(po->sym_));
                 --po->nindex_;
                 break;
             }
             HocContextRestore;
         }
     }
-    return result;
+    return result.release().ptr();
 }
 
 static PyObject* hocobj_slice_getitem(PyObject* self, PyObject* slice) {
