@@ -115,8 +115,8 @@ endif()
 # Translate all MOD files to C and mark them generated
 # =============================================================================
 foreach(modfile ${NRN_MODFILE_BASE_NAMES})
-  nocmodl_mod_to_cpp(${modfile})
-  list(APPEND NRN_MODFILE_CPP ${PROJECT_BINARY_DIR}/${modfile}.cpp)
+  nocmodl_mod_to_cpp(${modfile} "${PROJECT_SOURCE_DIR}/src/nrnoc" "${PROJECT_BINARY_DIR}/src/nrnoc")
+  list(APPEND NRN_MODFILE_CPP ${PROJECT_BINARY_DIR}/src/nrnoc/${modfile}.cpp)
 endforeach()
 set_property(
   SOURCE ${NRN_MODFILE_CPP}

@@ -350,7 +350,7 @@ set(SCOPMATH_FILES_LIST
 set(NRNMPI_FILES_LIST nrnmpi.cpp memory_usage.cpp bbsmpipack.cpp mpispike.cpp)
 
 # built-in mod files
-set(MODFILE_BASE_NAMES
+set(NRN_MODFILE_BASE_NAMES
     apcount
     exp2syn
     expsyn
@@ -455,7 +455,6 @@ nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPA
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRNMPI_FILES_LIST})
-nrn_create_file_list(NRN_MODFILE_BASE_NAMES src/nrnoc ${MODFILE_BASE_NAMES})
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.cpp)
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)
 nrn_create_file_list(NRN_MODLUNIT_SRC_FILES ${NRN_MODLUNIT_SRC_DIR} ${MODLUNIT_FILES_LIST})
