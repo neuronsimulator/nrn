@@ -630,13 +630,14 @@ Object* nrnpy_po2ho(PyObject* po) {
     return o;
 }
 
+// Returns a new reference.
 PyObject* nrnpy_hoc_pop(const char* mes) {
-    PyObject* result = 0;
+    nb::object result;
     Object* ho;
     Object** d;
     switch (hoc_stack_type()) {
     case STRING:
-        result = Py_BuildValue("s", *hoc_strpop());
+        result = nb::steal(Py_BuildValue("s", *hoc_strpop()));
         break;
     case VAR: {
         // remove mes arg when test coverage development completed
@@ -645,24 +646,24 @@ PyObject* nrnpy_hoc_pop(const char* mes) {
         if (nrn_chk_data_handle(px)) {
             // unfortunately, this is nonsense if NMODL POINTER is pointing
             // to something other than a double.
-            result = Py_BuildValue("d", *px);
+            result = nb::steal(Py_BuildValue("d", *px));
         }
     } break;
     case NUMBER:
-        result = Py_BuildValue("d", hoc_xpop());
+        result = nb::steal(Py_BuildValue("d", hoc_xpop()));
         break;
     case OBJECTVAR:
     case OBJECTTMP:
         d = hoc_objpop();
         ho = *d;
         // printf("Py2Nrn %p %p\n", ho->ctemplate->sym, nrnpy_pyobj_sym_);
-        result = nrnpy_ho2po(ho);
+        result = nb::steal(nrnpy_ho2po(ho));
         hoc_tobj_unref(d);
         break;
     default:
         printf("nrnpy_hoc_pop error: stack type = %d\n", hoc_stack_type());
     }
-    return result;
+    return result.release().ptr();
 }
 
 static int set_final_from_stk(PyObject* po) {
