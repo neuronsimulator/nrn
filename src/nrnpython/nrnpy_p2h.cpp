@@ -482,48 +482,37 @@ static double func_call(Object* ho, int narg, int* err) {
 }
 
 static double guigetval(Object* ho) {
-    PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    nanobind::gil_scoped_acquire lock{};
-    PyObject* r = NULL;
-    PyObject* p = PyTuple_GetItem(po, 0);
-    if (PySequence_Check(p) || PyMapping_Check(p)) {
-        r = PyObject_GetItem(p, PyTuple_GetItem(po, 1));
+    nb::gil_scoped_acquire lock{};
+    nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
+    if (nb::sequence::check_(po[0]) || nb::mapping::check_(po[0])) {
+        return nb::cast<double>(po[0][po[1]]);
     } else {
-        r = PyObject_GetAttr(p, PyTuple_GetItem(po, 1));
+        return nb::cast<double>(po[0].attr(po[1]));
     }
-    auto pn = nb::steal(PyNumber_Float(r));
-    double x = PyFloat_AsDouble(pn.ptr());
-    return x;
 }
 
 static void guisetval(Object* ho, double x) {
-    PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    nanobind::gil_scoped_acquire lock{};
-    auto pn = nb::steal(PyFloat_FromDouble(x));
-    PyObject* p = PyTuple_GetItem(po, 0);
-    if (PySequence_Check(p) || PyMapping_Check(p)) {
-        PyObject_SetItem(p, PyTuple_GetItem(po, 1), pn.ptr());
+    nb::gil_scoped_acquire lock{};
+    nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
+    if (nb::sequence::check_(po[0]) || nb::mapping::check_(po[0])) {
+        po[0][po[1]] = x;
     } else {
-        PyObject_SetAttr(p, PyTuple_GetItem(po, 1), pn.ptr());
+        po[0].attr(po[1]) = x;
     }
 }
 
 static int guigetstr(Object* ho, char** cpp) {
-    PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    nanobind::gil_scoped_acquire lock{};
-
-    PyObject* r = PyObject_GetAttr(PyTuple_GetItem(po, 0), PyTuple_GetItem(po, 1));
-    auto pn = nb::steal(PyObject_Str(r));
-    Py2NRNString name(pn.ptr());
-    char* cp = name.c_str();
-    if (*cpp && strcmp(*cpp, cp) == 0) {
+    nb::gil_scoped_acquire lock{};
+    nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
+    auto name = nb::cast<std::string>(po[0].attr(po[1]));
+    if (*cpp && name == *cpp) {
         return 0;
     }
     if (*cpp) {
         delete[] * cpp;
     }
-    *cpp = new char[strlen(cp) + 1];
-    strcpy(*cpp, cp);
+    *cpp = new char[name.size() + 1];
+    strcpy(*cpp, name.c_str());
     return 1;
 }
 
