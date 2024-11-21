@@ -2652,10 +2652,8 @@ extern "C" NRN_EXPORT int nrnpy_set_gui_callback(PyObject* new_gui_callback) {
 }
 
 static double object_to_double_(Object* obj) {
-    PyObject* const pyobj = nrnpy_ho2po(obj);
-    Py_INCREF(pyobj);
-    const double result = PyFloat_AsDouble(pyobj);
-    Py_DECREF(pyobj);
+    auto pyobj = nb::steal(nrnpy_ho2po(obj));
+    const double result = PyFloat_AsDouble(pyobj.ptr());
     return result;
 }
 
