@@ -1738,12 +1738,12 @@ static PyObject* hocobj_iter(PyObject* self) {
             return PySeqIter_New(self);
         } else if (po->ho_->ctemplate == hoc_sectionlist_template_) {
             // need a clone of self so nested loops do not share iteritem_
-            PyObject* po2 = nrnpy_ho2po(po->ho_);
-            PyHocObject* pho2 = (PyHocObject*) po2;
+            auto po2 = nb::steal(nrnpy_ho2po(po->ho_));
+            PyHocObject* pho2 = (PyHocObject*) po2.ptr();
             pho2->type_ = PyHoc::HocSectionListIterator;
             pho2->u.its_ = PyHoc::Begin;
             pho2->iteritem_ = ((hoc_Item*) po->ho_->u.this_pointer);
-            return po2;
+            return po2.release().ptr();
         }
     } else if (po->type_ == PyHoc::HocForallSectionIterator) {
         po->iteritem_ = section_list;
