@@ -2169,12 +2169,12 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
         return nullptr;
     }
     // printf("segment_getattr %s\n", n);
-    PyObject* result = nullptr;
+    nb::object result;
     PyObject* otype = NULL;
     PyObject* rv = NULL;
     if (strcmp(n, "v") == 0) {
         Node* nd = node_exact(sec, self->x_);
-        result = Py_BuildValue("d", NODEV(nd));
+        result = nb::steal(Py_BuildValue("d", NODEV(nd)));
     } else if ((otype = PyDict_GetItemString(pmech_types, n)) != NULL) {
         int type = PyInt_AsLong(otype);
         // printf("segment_getattr type=%d\n", type);
@@ -2184,7 +2184,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             rv_noexist(sec, n, self->x_, 1);
             return nullptr;
         } else {
-            result = (PyObject*) new_pymechobj(self, p);
+            result = nb::steal((PyObject*) new_pymechobj(self, p));
         }
     } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
         sym = ((NPyRangeVar*) rv)->sym_;
@@ -2193,16 +2193,16 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
             Node* nd = node_exact(sec, self->x_);
             Prop* p = nrn_mechanism(mtype, nd);
             Object* ob = nrn_nmodlrandom_wrap(p, sym);
-            result = nrnpy_ho2po(ob);
+            result = nb::steal(nrnpy_ho2po(ob));
         } else if (is_array(*sym)) {
-            NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
+            result = nb::steal((PyObject*) PyObject_New(NPyRangeVar, range_type));
+            auto r = (NPyRangeVar*) result.ptr();
             r->pymech_ = new_pymechobj();
             Py_INCREF(self);
             r->pymech_->pyseg_ = self;
             r->sym_ = sym;
             r->isptr_ = 0;
             r->attr_from_sec_ = 0;
-            result = (PyObject*) r;
         } else {
             int err;
             auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
@@ -2213,13 +2213,13 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
                 if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
                     nrn_area_ri(sec);
                 }
-                result = build_python_value(d);
+                result = nb::steal(build_python_value(d));
             }
         }
     } else if (strncmp(n, "_ref_", 5) == 0) {
         if (strcmp(n + 5, "v") == 0) {
             Node* nd = node_exact(sec, self->x_);
-            result = nrn_hocobj_handle(nd->v_handle());
+            result = nb::steal(nrn_hocobj_handle(nd->v_handle()));
         } else if ((sym = hoc_table_lookup(n + 5, hoc_built_in_symlist)) != 0 &&
                    sym->type == RANGEVAR) {
             if (is_array(*sym)) {
@@ -2230,7 +2230,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
                 r->sym_ = sym;
                 r->isptr_ = 1;
                 r->attr_from_sec_ = 0;
-                result = (PyObject*) r;
+                result = nb::steal((PyObject*) r);
             } else {
                 int err;
                 auto const d = nrnpy_rangepointer(sec, sym, self->x_, &err, 0 /* idx */);
@@ -2239,9 +2239,10 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
                     return nullptr;
                 } else {
                     if (d.holds<double*>()) {
-                        result = nrn_hocobj_handle(neuron::container::data_handle<double>(d));
+                        result = nb::steal(
+                            nrn_hocobj_handle(neuron::container::data_handle<double>(d)));
                     } else {
-                        result = (PyObject*) opaque_pointer_new();
+                        result = nb::steal((PyObject*) opaque_pointer_new());
                     }
                 }
             }
@@ -2261,11 +2262,11 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
                 out_dict[pn] = nb::none();
             }
         }
-        result = out_dict.release().ptr();
+        result = out_dict;
     } else {
-        result = PyObject_GenericGetAttr((PyObject*) self, pyname);
+        result = nb::steal(PyObject_GenericGetAttr((PyObject*) self, pyname));
     }
-    return result;
+    return result.release().ptr();
 }
 
 static PyObject* segment_getattro_safe(NPySegObj* self, PyObject* pyname) {
