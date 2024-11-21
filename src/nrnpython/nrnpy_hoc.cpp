@@ -254,6 +254,7 @@ static void hocobj_dealloc(PyHocObject* self) {
     hoc_unref_defer();
 }
 
+// Returns a new reference.
 static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwds) {
     PyObject* base;
     PyHocObject* hbase = nullptr;
@@ -964,6 +965,7 @@ static void eval_component(PyHocObject* po, int ix) {
     --po->nindex_;
 }
 
+// Returns a new reference.
 PyObject* nrn_hocobj_handle(neuron::container::data_handle<double> d) {
     PyObject* result = hocobj_new(hocobject_type, 0, 0);
     auto* const po = reinterpret_cast<PyHocObject*>(result);

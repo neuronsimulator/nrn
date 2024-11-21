@@ -2155,6 +2155,7 @@ static PyObject* var_of_mech_next_safe(NPyVarOfMechIter* self) {
     return nrn::convert_cxx_exceptions(var_of_mech_next, self);
 }
 
+// Returns new reference.
 static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
     Section* sec = self->pysec_->sec_;
     CHECK_SEC_INVALID(sec)
