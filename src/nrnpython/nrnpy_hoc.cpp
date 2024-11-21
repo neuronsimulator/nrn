@@ -1777,6 +1777,7 @@ static hoc_Item* next_valid_secitem(hoc_Item* q, hoc_Item* ql) {
     return next;
 }
 
+// Returns a new reference.
 static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
     // Note that the longstanding behavior of changing the currently
     // accessed section during iteration no longer takes place because
@@ -1873,6 +1874,7 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
     return NULL;  // never get here as po->u.its_ is always a defined state.
 }
 
+// Returns a new reference.
 static PyObject* hocobj_iternext(PyObject* self) {
     // printf("hocobj_iternext %p\n", self);
     PyHocObject* po = (PyHocObject*) self;
@@ -1888,7 +1890,7 @@ static PyObject* hocobj_iternext(PyObject* self) {
             return nrnpy_ho2po(OBJ(q));
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 /*
