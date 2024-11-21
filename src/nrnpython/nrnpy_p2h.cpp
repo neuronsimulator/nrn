@@ -730,14 +730,13 @@ static PyObject* py_broadcast(PyObject* psrc, int root) {
         buf.resize(cnt);
     }
     nrnmpi_char_broadcast(buf.data(), cnt, root);
-    PyObject* pdest = psrc;
+    nb::object pdest;
     if (root != nrnmpi_myid) {
-        nb::object po = unpickle(buf);
-        pdest = po.release().ptr();
+        pdest = unpickle(buf);
     } else {
-        Py_INCREF(pdest);
+        pdest = nb::borrow(psrc);
     }
-    return pdest;
+    return pdest.release().ptr();
 }
 #endif
 
