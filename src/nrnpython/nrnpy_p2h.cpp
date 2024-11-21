@@ -748,7 +748,7 @@ static nb::object py_broadcast(nb::handle psrc, int root) {
         buf.resize(cnt);
     }
     nrnmpi_char_broadcast(buf.data(), cnt, root);
-    nb::object pdest = psrc;
+    nb::object pdest(psrc);
     if (root != nrnmpi_myid) {
         pdest = unpickle(buf);
     }
