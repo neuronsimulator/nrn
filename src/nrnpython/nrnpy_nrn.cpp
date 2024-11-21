@@ -2465,7 +2465,7 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
         return nullptr;
     }
     // printf("mech_getattro %s\n", n);
-    PyObject* result = NULL;
+    nb::object result;
     int isptr = (strncmp(n, "_ref_", 5) == 0);
     Symbol* mechsym = memb_func[self->type_].sym;
     char* mname = mechsym->name;
@@ -2481,27 +2481,27 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     if (sym && sym->type == RANGEVAR) {
         // printf("mech_getattro sym %s\n", sym->name);
         if (is_array(*sym)) {
-            NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
+            result = nb::steal((PyObject*) PyObject_New(NPyRangeVar, range_type));
+            NPyRangeVar* r = (NPyRangeVar*) result.ptr();
             Py_INCREF(self);
             r->pymech_ = self;
             r->sym_ = sym;
             r->isptr_ = isptr;
             r->attr_from_sec_ = 0;
-            result = (PyObject*) r;
         } else {
             auto const px = get_rangevar(self, sym, 0);
             if (px.is_invalid_handle()) {
                 rv_noexist(sec, sym->name, self->pyseg_->x_, 2);
-                result = nullptr;
+                result = nb::object();
             } else if (isptr) {
-                result = build_python_reference(px);
+                result = nb::steal(build_python_reference(px));
             } else {
-                result = build_python_value(px);
+                result = nb::steal(build_python_value(px));
             }
         }
     } else if (sym && sym->type == RANGEOBJ) {
         Object* ob = nrn_nmodlrandom_wrap(self->prop_, sym);
-        result = nrnpy_ho2po(ob);
+        result = nb::steal(nrnpy_ho2po(ob));
     } else if (strcmp(n, "__dict__") == 0) {
         nb::dict out_dict{};
         int cnt = mechsym->s_varn;
@@ -2516,7 +2516,7 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
         for (auto& it: nrn_mech2funcs_map[self->prop_->_type]) {
             out_dict[it.first.c_str()] = nb::none();
         }
-        result = out_dict.release().ptr();
+        result = out_dict;
     } else {
         bool found_func{false};
         if (self->prop_) {
@@ -2524,19 +2524,19 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
             if (funcs.count(n)) {
                 found_func = true;
                 auto& f = funcs[n];
-                NPyMechFunc* pymf = PyObject_New(NPyMechFunc, pmechfunc_generic_type);
+                result = nb::steal((PyObject*) PyObject_New(NPyMechFunc, pmechfunc_generic_type));
+                auto pymf = (NPyMechFunc*) result.ptr();
                 Py_INCREF(self);
                 pymf->pymech_ = self;
                 pymf->f_ = f;
-                result = (PyObject*) pymf;
             }
         }
         if (!found_func) {
-            result = PyObject_GenericGetAttr((PyObject*) self, pyname);
+            result = nb::steal(PyObject_GenericGetAttr((PyObject*) self, pyname));
         }
     }
     delete[] buf;
-    return result;
+    return result.release().ptr();
 }
 
 static PyObject* mech_getattro_safe(NPyMechObj* self, PyObject* pyname) {
