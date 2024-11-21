@@ -674,6 +674,7 @@ static nb::list char2pylist(const std::vector<char>& buf,
 }
 
 #if NRNMPI
+// Returns a new reference.
 static PyObject* py_allgather(PyObject* psrc) {
     int np = nrnmpi_numprocs;
     auto sbuf = pickle(psrc);
