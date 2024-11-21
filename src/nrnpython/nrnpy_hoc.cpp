@@ -2900,53 +2900,39 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
     PyHocObject* pho = (PyHocObject*) self;
     if (!is_obj_type(pho->ho_, "Vector")) {
         PyErr_SetString(PyExc_TypeError, "HocObject: Only Vector instance can be pickled");
-        return NULL;
+        return nullptr;
     }
     Vect* vec = (Vect*) pho->ho_->u.this_pointer;
 
     // neuron module has a _pkl method that returns h.Vector(0)
-    auto mod = nb::steal(PyImport_ImportModule("neuron"));
+
+    nb::module_ mod = nb::module_::import_("neuron");
     if (!mod) {
         return nullptr;
     }
-    auto obj = nb::steal(PyObject_GetAttrString(mod.ptr(), "_pkl"));
+    nb::object obj = mod.attr("_pkl");
     if (!obj) {
         PyErr_SetString(PyExc_Exception, "neuron module has no _pkl method.");
         return nullptr;
     }
 
-    auto ret = nb::steal(PyTuple_New(3));
-    if (!ret) {
-        return nullptr;
-    }
-    PyTuple_SET_ITEM(ret.ptr(), 0, obj.release().ptr());
-    PyTuple_SET_ITEM(ret.ptr(), 1, Py_BuildValue("(N)", PyInt_FromLong(0)));
     // see numpy implementation if more ret[1] stuff needed in case we
     // pickle anything but a hoc Vector. I don't think ret[1] can be None.
 
     // Fill object's state. Tuple with 4 args:
-    // pickle version, 2.0 bytes to determine if swapbytes needed,
+    // pickle version, endianness sentinel,
     // vector size, string data
-    auto state = nb::steal(PyTuple_New(4));
-    if (!state) {
-        return nullptr;
-    }
-    PyTuple_SET_ITEM(state.ptr(), 0, PyInt_FromLong(1));
+    //
+    // To be able to read data on a system with different endianness, a sentinel is added, the
+    // convention is that the value of the sentinel is `2.0` (when cast to a double). Therefore, if
+    // the machine reads the sentinel and it's not `2.0` it know that it needs to swap the bytes of
+    // all doubles in the payload.
     double x = 2.0;
-    auto two = nb::steal(PyBytes_FromStringAndSize((const char*) (&x), sizeof(double)));
-    if (!two) {
-        return nullptr;
-    }
-    PyTuple_SET_ITEM(state.ptr(), 1, two.release().ptr());
-    PyTuple_SET_ITEM(state.ptr(), 2, PyInt_FromLong(vec->size()));
-    auto str = nb::steal(
-        PyBytes_FromStringAndSize((const char*) vector_vec(vec), vec->size() * sizeof(double)));
-    if (!str) {
-        return nullptr;
-    }
-    PyTuple_SET_ITEM(state.ptr(), 3, str.release().ptr());
-    PyTuple_SET_ITEM(ret.ptr(), 2, state.release().ptr());
-    return ret.release().ptr();
+    nb::bytes byte_order((const void*) (&x), sizeof(double));
+    nb::bytes vec_data(vec->data(), vec->size() * sizeof(double));
+    nb::tuple state = nb::make_tuple(1, byte_order, vec->size(), vec_data);
+
+    return nb::make_tuple(obj, nb::make_tuple(0), state).release().ptr();
 }
 
 static PyObject* hocpickle_reduce_safe(PyObject* self, PyObject* args) {
