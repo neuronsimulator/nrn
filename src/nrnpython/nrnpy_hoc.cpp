@@ -957,9 +957,9 @@ static PyObject* hocobj_getsec(Symbol* sym) {
     Inst* pcsav = save_pc(&fc);
     sec_access_push();
     hoc_pc = pcsav;
-    PyObject* result = nrnpy_cas(0, 0);
+    nb::object result = nb::steal(nrnpy_cas(0, 0));
     nrn_popsec();
-    return result;
+    return result.release().ptr();
 }
 
 // leave pointer on stack ready for get/set final
