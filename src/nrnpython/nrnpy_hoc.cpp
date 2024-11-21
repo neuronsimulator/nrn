@@ -951,6 +951,7 @@ static int hocobj_objectvar(Symbol* sym) {
     return err;
 }
 
+// Return a new reference.
 static PyObject* hocobj_getsec(Symbol* sym) {
     Inst fc;
     fc.sym = sym;
@@ -1031,6 +1032,7 @@ static int setup_doc_system() {
     return 1;
 }
 
+// Most likely returns a new reference.
 PyObject* toplevel_get(PyObject* subself, const char* n) {
     PyHocObject* self = (PyHocObject*) subself;
     PyObject* result = NULL;
