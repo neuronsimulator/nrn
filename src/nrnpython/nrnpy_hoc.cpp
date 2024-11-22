@@ -411,7 +411,7 @@ static Inst* save_pc(Inst* newpc) {
 int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
     const nb::tuple tup(args);
     for (int i = 0; i < tup.size(); ++i) {
-        auto po = nb::borrow(args[i].ptr());
+        nb::object po(tup[i]);
         if (nrnpy_numbercheck(po.ptr())) {
             hoc_pushx(nb::cast<double>(po));
         } else if (is_python_string(po.ptr())) {
