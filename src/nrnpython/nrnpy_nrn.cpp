@@ -2574,14 +2574,13 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
     char* mname = mechsym->name;
     int mnamelen = strlen(mname);
     int bufsz = strlen(n) + mnamelen + 2;
-    char* buf = new char[bufsz];
+    std::vector<char> buf(bufsz);
     if (nrn_is_ion(self->prop_->_type)) {
-        strcpy(buf, isptr ? n + 5 : n);
+        strcpy(buf.data(), isptr ? n + 5 : n);
     } else {
-        std::snprintf(buf, bufsz, "%s_%s", isptr ? n + 5 : n, mname);
+        std::snprintf(buf.data(), bufsz, "%s_%s", isptr ? n + 5 : n, mname);
     }
-    Symbol* sym = var_find_in_mech(mechsym, buf);
-    delete[] buf;
+    Symbol* sym = var_find_in_mech(mechsym, buf.data());
     if (sym) {
         if (isptr) {
             err = nrn_pointer_assign(self->prop_, sym, value);
