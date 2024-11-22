@@ -675,10 +675,9 @@ static int NPyRangeVar_init_safe(NPyRangeVar* self, PyObject* args, PyObject* kw
     return nrn::convert_cxx_exceptions(NPyRangeVar_init, self, args, kwds);
 }
 
+// Returns a new reference.
 static PyObject* NPySecObj_name(NPySecObj* self) {
-    PyObject* result;
-    result = PyString_FromString(secname(self->sec_));
-    return result;
+    return PyString_FromString(secname(self->sec_));
 }
 
 static PyObject* NPySecObj_name_safe(NPySecObj* self) {
