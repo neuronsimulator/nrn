@@ -717,6 +717,7 @@ static PyObject* py_gather(PyObject* psrc, int root) {
     return pdest.release().ptr();
 }
 
+// Returns a new reference.
 static PyObject* py_broadcast(PyObject* psrc, int root) {
     // Note: root returns reffed psrc.
     std::vector<char> buf{};
