@@ -659,7 +659,9 @@ static std::vector<int> mk_displ(int* cnts) {
     return displ;
 }
 
-static nb::list char2pylist(const std::vector<char>& buf, const std::vector<int>& cnt, const std::vector<int>& displ) {
+static nb::list char2pylist(const std::vector<char>& buf,
+                            const std::vector<int>& cnt,
+                            const std::vector<int>& displ) {
     nb::list plist{};
     for (int i = 0; i < cnt.size(); ++i) {
         if (cnt[i] == 0) {
