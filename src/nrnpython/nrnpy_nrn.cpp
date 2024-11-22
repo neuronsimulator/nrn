@@ -951,16 +951,13 @@ static PyObject* pysec_repr_safe(PyObject* p) {
     return nrn::convert_cxx_exceptions(pysec_repr, p);
 }
 
+// Returns a new reference.
 static PyObject* pyseg_repr(PyObject* p) {
     NPySegObj* pyseg = (NPySegObj*) p;
     if (pyseg->pysec_->sec_ && pyseg->pysec_->sec_->prop) {
         const char* sname = secname(pyseg->pysec_->sec_);
-        auto const name_size = strlen(sname) + 100;
-        char* name = new char[name_size];
-        std::snprintf(name, name_size, "%s(%g)", sname, pyseg->x_);
-        PyObject* result = PyString_FromString(name);
-        delete[] name;
-        return result;
+        std::string name = fmt::format("{}({:g})", sname, pyseg->x_);
+        return PyString_FromString(name.c_str());
     }
     return PyString_FromString("<segment of deleted section>");
 }
