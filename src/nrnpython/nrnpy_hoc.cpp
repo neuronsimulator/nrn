@@ -129,10 +129,10 @@ PyTypeObject* hocobject_type;
 
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds);
 
-typedef struct {
+struct hocclass {
     PyTypeObject head;
     Symbol* sym;
-} hocclass;
+};
 
 static int hocclass_init(hocclass* cls, PyObject* args, PyObject* kwds) {
     if (PyType_Type.tp_init((PyObject*) cls, args, kwds) < 0) {
