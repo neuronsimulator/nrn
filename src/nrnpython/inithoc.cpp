@@ -208,11 +208,20 @@ static int have_opt(const char* arg) {
 }
 
 void nrnpython_finalize() {
+    printf("nrnpython_finalize()\n");
 #if NRN_ENABLE_THREADS
     if (main_thread_ == std::this_thread::get_id()) {
 #else
     {
 #endif
+        // Call python_gui_cleanup() if defined in Python
+        PyRun_SimpleString(
+            "try:\n"
+            "    gui.cleanup()\n"
+            "except NameError:\n"
+            "    pass\n");
+
+        // Finalize Python
         Py_Finalize();
     }
 #if linux
