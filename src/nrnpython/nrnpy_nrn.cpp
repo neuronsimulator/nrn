@@ -926,8 +926,8 @@ static PyObject* NPySecObj_diam3d_safe(NPySecObj* self, PyObject* args) {
 // returns True/False depending on if spine present
 static PyObject* NPySecObj_spine3d(NPySecObj* self, PyObject* args) {
     Pt3d* pt3d = get_pt3d_from_python_args(self, args);
-    if (pt3d == NULL) {
-        return NULL;
+    if (pt3d == nullptr) {
+        return nullptr;
     }
     if (pt3d->d < 0) {
         Py_RETURN_TRUE;
