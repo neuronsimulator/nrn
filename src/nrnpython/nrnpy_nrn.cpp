@@ -2482,13 +2482,13 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     char* mname = mechsym->name;
     int mnamelen = strlen(mname);
     int bufsz = strlen(n) + mnamelen + 2;
-    char* buf = new char[bufsz];
+    std::vector<char> buf(bufsz);
     if (nrn_is_ion(self->prop_->_type)) {
-        strcpy(buf, isptr ? n + 5 : n);
+        strcpy(buf.data(), isptr ? n + 5 : n);
     } else {
-        std::snprintf(buf, bufsz, "%s_%s", isptr ? n + 5 : n, mname);
+        std::snprintf(buf.data(), bufsz, "%s_%s", isptr ? n + 5 : n, mname);
     }
-    Symbol* sym = var_find_in_mech(mechsym, buf);
+    Symbol* sym = var_find_in_mech(mechsym, buf.data());
     if (sym && sym->type == RANGEVAR) {
         // printf("mech_getattro sym %s\n", sym->name);
         if (is_array(*sym)) {
@@ -2518,10 +2518,10 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
         int cnt = mechsym->s_varn;
         for (int i = 0; i < cnt; ++i) {
             Symbol* s = mechsym->u.ppsym[i];
-            if (!striptrail(buf, bufsz, s->name, mname)) {
-                strcpy(buf, s->name);
+            if (!striptrail(buf.data(), bufsz, s->name, mname)) {
+                strcpy(buf.data(), s->name);
             }
-            out_dict[buf] = nb::none();
+            out_dict[buf.data()] = nb::none();
         }
         // FUNCTION and PROCEDURE
         for (auto& it: nrn_mech2funcs_map[self->prop_->_type]) {
@@ -2546,7 +2546,6 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
             result = nb::steal(PyObject_GenericGetAttr((PyObject*) self, pyname));
         }
     }
-    delete[] buf;
     return result.release().ptr();
 }
 
