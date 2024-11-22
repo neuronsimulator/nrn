@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 
 #include <cstdio>
+#include <optional>
 
 #include <InterViews/resource.h>
 #include <nrnoc2iv.h>
@@ -17,7 +18,7 @@
 
 namespace nb = nanobind;
 
-static char* nrnpyerr_str();
+static std::optional<std::string> nrnpyerr_str();
 static nb::object nrnpy_pyCallObject(nb::callable, nb::object);
 static PyObject* main_module;
 static PyObject* main_namespace;
@@ -38,11 +39,10 @@ static void call_python_with_section(Object* pyact, Section* sec) {
     nb::tuple args = nb::make_tuple(reinterpret_cast<PyObject*>(newpysechelp(sec)));
     nb::object r = nrnpy_pyCallObject(po, args);
     if (!r.is_valid()) {
-        char* mes = nrnpyerr_str();
-        if (mes) {
-            Fprintf(stderr, "%s\n", mes);
-            free(mes);
-            hoc_execerror("Call of Python Callable failed", NULL);
+        auto mes = nrnpyerr_str();
+        if (mes != std::nullopt) {
+            Fprintf(stderr, "%s\n", mes->c_str());
+            hoc_execerror("Call of Python Callable failed", nullptr);
         }
         if (PyErr_Occurred()) {
             PyErr_Print();
@@ -118,9 +118,9 @@ printf("\nreturn %p\n", p);
     // The almost generic idiom is:
     /**
     if (!p) {
-      char* mes = nrnpyerr_str();
-      if (mes) {
-        Fprintf(stderr, "%s\n", mes);
+      auto mes = nrnpyerr_str();
+      if (mes != std::nullopt) {
+        Fprintf(stderr, "%s\n", mes->c_str());
         free(mes);
         hoc_execerror("Call of Python Callable failed", NULL);
       }
@@ -183,10 +183,9 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         // PyObject_Print(result, stdout, 0);
         // printf("  result of call\n");
         if (!result) {
-            char* mes = nrnpyerr_str();
+            auto mes = nrnpyerr_str();
             if (mes) {
-                Fprintf(stderr, "%s\n", mes);
-                free(mes);
+                Fprintf(stderr, "%s\n", mes->c_str());
                 hoc_execerror("PyObject method call failed:", sym->name);
             }
             if (PyErr_Occurred()) {
@@ -323,10 +322,9 @@ static double praxis_efun(Object* ho, Object* v) {
     auto po = nb::steal(Py_BuildValue("(OO)", pc.ptr(), pv.ptr()));
     nb::object r = hoccommand_exec_help1(po);
     if (!r.is_valid()) {
-        char* mes = nrnpyerr_str();
-        if (mes) {
-            Fprintf(stderr, "%s\n", mes);
-            free(mes);
+        auto mes = nrnpyerr_str();
+        if (mes != std::nullopt) {
+            Fprintf(stderr, "%s\n", mes->c_str());
             hoc_execerror("Call of Python Callable failed in praxis_efun", NULL);
         }
         if (PyErr_Occurred()) {
@@ -342,11 +340,10 @@ static int hoccommand_exec(Object* ho) {
 
     nb::object r = hoccommand_exec_help(ho);
     if (!r.is_valid()) {
-        char* mes = nrnpyerr_str();
-        if (mes) {
-            std::string tmp{"Python Callback failed [hoccommand_exec]:\n"};
-            tmp.append(mes);
-            free(mes);
+        auto mes = nrnpyerr_str();
+        if (mes != std::nullopt) {
+            std::string tmp = "Python Callback failed [hoccommand_exec]:\n";
+            tmp.append(*mes);
             hoc_execerror(tmp.c_str(), nullptr);
         }
         if (PyErr_Occurred()) {
@@ -366,10 +363,9 @@ static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
         strncpy(buf, str.c_str(), size);
         buf[size - 1] = '\0';
     } else {
-        char* mes = nrnpyerr_str();
-        if (mes) {
-            Fprintf(stderr, "%s\n", mes);
-            free(mes);
+        auto mes = nrnpyerr_str();
+        if (mes != std::nullopt) {
+            Fprintf(stderr, "%s\n", mes->c_str());
             hoc_execerror("Python Callback failed", 0);
         }
         if (PyErr_Occurred()) {
@@ -386,10 +382,9 @@ static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
     nb::tuple args = nb::make_tuple(type, x, y, key);
     nb::object r = nrnpy_pyCallObject(po, args);
     if (!r.is_valid()) {
-        char* mes = nrnpyerr_str();
-        if (mes) {
-            Fprintf(stderr, "%s\n", mes);
-            free(mes);
+        auto mes = nrnpyerr_str();
+        if (mes != std::nullopt) {
+            Fprintf(stderr, "%s\n", mes->c_str());
             hoc_execerror("Python Callback failed", 0);
         }
         if (PyErr_Occurred()) {
@@ -442,10 +437,9 @@ static double func_call(Object* ho, int narg, int* err) {
     double rval = 0.0;
     if (!r.is_valid()) {
         if (!err || *err) {
-            char* mes = nrnpyerr_str();
-            if (mes) {
-                Fprintf(stderr, "%s\n", mes);
-                free(mes);
+            auto mes = nrnpyerr_str();
+            if (mes != std::nullopt) {
+                Fprintf(stderr, "%s\n", mes->c_str());
             }
             if (PyErr_Occurred()) {
                 PyErr_Print();
@@ -564,7 +558,7 @@ static Object* pickle2po(const std::vector<char>& s) {
 /** Full python traceback error message returned as string.
  *  Caller should free the return value if not NULL
  **/
-static char* nrnpyerr_str() {
+static std::optional<std::string> nrnpyerr_str() {
     if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_Exception)) {
         PyObject *ptype, *pvalue, *ptraceback;
         PyErr_Fetch(&ptype, &pvalue, &ptraceback);
@@ -576,7 +570,7 @@ static char* nrnpyerr_str() {
 
         // try for full backtrace
         nb::str py_str;
-        char* cmes = nullptr;
+        std::optional<std::string> cmes = std::nullopt;
 
         // Since traceback.format_exception returns list of strings, wrap
         // in neuron.format_exception that returns a string.
@@ -591,10 +585,7 @@ static char* nrnpyerr_str() {
             }
         }
         if (py_str) {
-            cmes = strdup(py_str.c_str());
-            if (!cmes) {
-                Fprintf(stderr, "nrnpyerr_str: strdup failed\n");
-            }
+            cmes = py_str.c_str();
         }
 
         if (!py_str) {
@@ -604,7 +595,7 @@ static char* nrnpyerr_str() {
 
         return cmes;
     }
-    return nullptr;
+    return std::nullopt;
 }
 
 std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
@@ -624,10 +615,9 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
     }
     nb::object result = callable(*args);
     if (!result) {
-        char* mes = nrnpyerr_str();
-        if (mes) {
-            Fprintf(stderr, fmt::format("{}\n", mes).c_str());
-            free(mes);
+        auto mes = nrnpyerr_str();
+        if (mes != std::nullopt) {
+            Fprintf(stderr, fmt::format("{}\n", *mes).c_str());
             hoc_execerror("PyObject method call failed:", NULL);
         }
         if (PyErr_Occurred()) {
