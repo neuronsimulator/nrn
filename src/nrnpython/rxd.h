@@ -7,7 +7,7 @@
 #define SPECIES_ABSENT -1
 #define PREFETCH       4
 
-using fptr = void (void);
+using fptr = void(void);
 
 // @olupton 2022-09-16: deleted a declaration of OcPtrVector that did not match
 // the one in ocptrvector.h

@@ -53,8 +53,9 @@ struct Current_Triple {
     double scale_factor;
 };
 
-using ReactionRate = void (double**, double**, double**, double*, double*, double*, double*, double**, double);
-using ECSReactionRate = void (double*, double*, double*, double*);
+using ReactionRate =
+    void(double**, double**, double**, double*, double*, double*, double*, double**, double);
+using ECSReactionRate = void(double*, double*, double*, double*);
 struct Reaction {
     Reaction* next;
     ECSReactionRate* reaction;
