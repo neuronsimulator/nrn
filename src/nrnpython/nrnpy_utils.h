@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nrnwrap_Python.h"
+#include "nrn_export.hpp"
 #include <cassert>
 
 
@@ -8,7 +9,7 @@ inline bool is_python_string(PyObject* python_string) {
     return PyUnicode_Check(python_string) || PyBytes_Check(python_string);
 }
 
-class Py2NRNString {
+class NRN_EXPORT Py2NRNString {
   public:
     Py2NRNString(PyObject* python_string, bool disable_release = false);
 
@@ -42,7 +43,7 @@ class Py2NRNString {
  *         hoc_execerr_ext("hoc message : %s", e.c_str());
  *  e will be automatically deleted even though execerror does not return.
  */
-class PyErr2NRNString {
+class NRN_EXPORT PyErr2NRNString {
   public:
     PyErr2NRNString() {
         str_ = NULL;
