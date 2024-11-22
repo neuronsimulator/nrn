@@ -1,5 +1,6 @@
 #include "nrnpy_utils.h"
 
+#include <tuple>
 #include <nanobind/nanobind.h>
 
 namespace nb = nanobind;
