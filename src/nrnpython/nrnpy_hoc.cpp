@@ -409,9 +409,9 @@ static Inst* save_pc(Inst* newpc) {
 
 // also called from nrnpy_nrn.cpp
 int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
-    const auto tup = nb::cast<nb::tuple>(args);
+    const nb::tuple tup(args);
     for (int i = 0; i < tup.size(); ++i) {
-        nb::object po = args[i];
+        auto po = nb::borrow(args[i].ptr());
         if (nrnpy_numbercheck(po.ptr())) {
             hoc_pushx(nb::cast<double>(po));
         } else if (is_python_string(po.ptr())) {
@@ -473,7 +473,7 @@ int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
             hoc_obj_unref(ob);
         }
     }
-    return narg;
+    return tup.size();
 }
 
 void hocobj_pushargs_free_strings(std::vector<char*>& s2free) {
