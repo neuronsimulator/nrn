@@ -44,25 +44,25 @@ extern int hocobj_pushargs(PyObject*, std::vector<char*>&);
 extern void hocobj_pushargs_free_strings(std::vector<char*>&);
 
 
-typedef struct {
+struct NPyAllSegOfSecIter {
     PyObject_HEAD
     NPySecObj* pysec_;
     int allseg_iter_;
-} NPyAllSegOfSecIter;
+};
 
-typedef struct {
+struct NPySegOfSecIter {
     PyObject_HEAD
     NPySecObj* pysec_;
     int seg_iter_;
-} NPySegOfSecIter;
+};
 
-typedef struct {
+struct NPySegObj {
     PyObject_HEAD
     NPySecObj* pysec_;
     double x_;
-} NPySegObj;
+};
 
-typedef struct {
+struct NPyMechObj {
     PyObject_HEAD
     NPySegObj* pyseg_;
     Prop* prop_;
@@ -70,43 +70,43 @@ typedef struct {
     // wrapper.
     neuron::container::non_owning_identifier_without_container prop_id_;
     int type_;
-} NPyMechObj;
+};
 
-typedef struct {
+struct NPyMechOfSegIter {
     PyObject_HEAD
     NPyMechObj* pymech_;
-} NPyMechOfSegIter;
+};
 
-typedef struct {
+struct NPyMechFunc {
     PyObject_HEAD
     NPyMechObj* pymech_;
     NPyDirectMechFunc* f_;
-} NPyMechFunc;
+};
 
-typedef struct {
+struct NPyVarOfMechIter {
     PyObject_HEAD
     NPyMechObj* pymech_;
     Symbol* msym_;
     int i_;
-} NPyVarOfMechIter;
+};
 
-typedef struct {
+struct NPyRVItr {
     PyObject_HEAD
     NPyMechObj* pymech_;
     int index_;
-} NPyRVItr;
+};
 
-typedef struct {
+struct NPyRangeVar {
     PyObject_HEAD
     NPyMechObj* pymech_;
     Symbol* sym_;
     int isptr_;
     int attr_from_sec_;  // so section.xraxial[0] = e assigns to all segments.
-} NPyRangeVar;
+};
 
-typedef struct {
+struct NPyOpaquePointer {
     PyObject_HEAD
-} NPyOpaquePointer;
+};
 
 PyTypeObject* psection_type;
 static PyTypeObject* pallseg_of_sec_iter_type;
