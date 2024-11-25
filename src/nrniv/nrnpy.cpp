@@ -52,7 +52,6 @@ static void* p_cons(Object*) {
     return nullptr;
 }
 static void p_destruct(void*) {}
-static Member_func p_members[] = {{nullptr, nullptr}};
 
 #ifdef NRNPYTHON_DYNAMICLOAD
 static std::string nrnpy_pylib{}, nrnpy_pyversion{};
@@ -251,7 +250,7 @@ void nrnpython_reg() {
 #endif
     // Stub implementation of PythonObject if Python support was not enabled, or a nrnpython library
     // could not be loaded.
-    class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr);
+    class2oc("PythonObject", p_cons, p_destruct, nullptr, nullptr, nullptr);
 }
 
 #ifdef NRNPYTHON_DYNAMICLOAD  // to end of file

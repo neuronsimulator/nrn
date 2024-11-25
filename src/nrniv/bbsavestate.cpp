@@ -1008,10 +1008,10 @@ static Member_func members[] = {{"save", save},
                                 {"ignore", ppignore},
                                 // allow Vector.play to work
                                 {"vector_play_init", vector_play_init},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 void BBSaveState_reg() {
-    class2oc("BBSaveState", cons, destruct, members, NULL, NULL);
+    class2oc("BBSaveState", cons, destruct, members, nullptr, nullptr);
 }
 
 // from savstate.cpp

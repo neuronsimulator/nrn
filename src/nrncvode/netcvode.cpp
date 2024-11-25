@@ -763,7 +763,7 @@ static Member_func members[] = {{"active", nc_active},
                                 {"weight", 0},
                                 {"threshold", 0},
                                 {"x", 0},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 static Member_ret_obj_func omembers[] = {{"syn", nc_syn},
                                          {"pre", nc_pre},
@@ -776,7 +776,7 @@ static Member_ret_obj_func omembers[] = {{"syn", nc_syn},
                                          {"precelllist", nc_precelllist},
                                          {"postcelllist", nc_postcelllist},
                                          {"get_recordvec", nc_get_recordvec},
-                                         {0, 0}};
+                                         {nullptr, nullptr}};
 
 static void steer_val(void* v) {
     NetCon* d = (NetCon*) v;
@@ -848,7 +848,7 @@ static void destruct(void* v) {
 }
 
 void NetCon_reg() {
-    class2oc("NetCon", cons, destruct, members, omembers, NULL);
+    class2oc("NetCon", cons, destruct, members, omembers, nullptr);
     Symbol* nc = hoc_lookup("NetCon");
     nc->u.ctemplate->steer = steer_val;
     Symbol* s;

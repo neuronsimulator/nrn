@@ -297,7 +297,7 @@ static Member_func members[] = {{"sec", s_rename}, /* will actually become a SEC
                                 {"rename", s_rename},
                                 {"unname", s_unname},
                                 {"is_cas", s_cas},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex) {
     Section* s = 0;
