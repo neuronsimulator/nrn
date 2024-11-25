@@ -46,7 +46,7 @@ extern Image* gif_image(const char*);
 #include "ivocvect.h"
 #endif /* HAVE_IV */
 
-#include "classreg.h"
+#include "classreg.hpp"
 #include "gui-redirect.h"
 
 #if HAVE_IV

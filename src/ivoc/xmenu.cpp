@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 
 #include "oc2iv.h"
-#include "classreg.h"
+#include "classreg.hpp"
 #include "gui-redirect.h"
 #include "utils/enumerate.h"
 

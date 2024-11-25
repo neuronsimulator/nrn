@@ -6,7 +6,7 @@
 #include "ocfile.h"
 #include "nrncvode.h"
 #include "nrnoc2iv.h"
-#include "classreg.h"
+#include "classreg.hpp"
 #include "nrniv_mf.h"
 
 #include "tqueue.hpp"

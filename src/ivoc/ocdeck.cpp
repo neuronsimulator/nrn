@@ -12,7 +12,7 @@
 #include "apwindow.h"
 #include "oc2iv.h"
 #endif /* HAVE_IV */
-#include "classreg.h"
+#include "classreg.hpp"
 #include "gui-redirect.h"
 
 #if HAVE_IV

@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 
 #include <stdio.h>
-#include "classreg.h"
+#include "classreg.hpp"
 #include "oclist.h"
 #include "oc2iv.h"
 #include "hoclist.h"

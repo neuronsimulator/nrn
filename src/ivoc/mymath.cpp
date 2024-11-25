@@ -5,7 +5,7 @@
 #include <../../nrnconf.h>
 #include <InterViews/geometry.h>
 #include "mymath.h"
-#include "classreg.h"
+#include "classreg.hpp"
 #include "oc2iv.h"
 #include <cmath>
 #include <cstdio>

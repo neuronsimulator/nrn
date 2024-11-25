@@ -24,7 +24,7 @@ extern int hoc_return_type_code;
 #endif  // HAVE_IV
 #include <stdio.h>
 #include <stdlib.h>
-#include "classreg.h"
+#include "classreg.hpp"
 #include "oc2iv.h"
 #include <cmath>
 

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <InterViews/resource.h>
 #include "nrnoc2iv.h"
-#include "classreg.h"
+#include "classreg.hpp"
 
 #include "membfunc.h"
 #include "parse.hpp"

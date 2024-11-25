@@ -9,7 +9,7 @@
     p.scatter(Vector)
     p.gather(Vector)
 */
-#include "classreg.h"
+#include "classreg.hpp"
 #include "oc2iv.h"
 #include "ocptrvector.h"
 #include "objcmd.h"

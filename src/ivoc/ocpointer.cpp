@@ -11,7 +11,7 @@
 */
 #include <InterViews/observe.h>
 #include <string.h>
-#include "classreg.h"
+#include "classreg.hpp"
 #include "oc_ansi.h"
 #include "oc2iv.h"
 #include "ocpointer.h"

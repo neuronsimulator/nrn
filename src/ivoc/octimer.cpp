@@ -8,7 +8,7 @@
 #include "oc2iv.h"
 #include "objcmd.h"
 #endif /* HAVE_IV */
-#include "classreg.h"
+#include "classreg.hpp"
 
 #ifdef MINGW
 #include <windows.h>

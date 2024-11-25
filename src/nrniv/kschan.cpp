@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "nrnoc2iv.h"
-#include "classreg.h"
+#include "classreg.hpp"
 #include "kschan.h"
 #include "kssingle.h"
 #include "ocnotify.h"

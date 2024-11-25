@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "oclist.h"
 #include "nrnoc2iv.h"
-#include "classreg.h"
+#include "classreg.hpp"
 
 #if HAVE_IV
 #include "ppshape.h"

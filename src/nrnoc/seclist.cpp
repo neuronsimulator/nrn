@@ -6,7 +6,7 @@
 #include "parse.hpp"
 #include "hocparse.h"
 #include "code.h"
-#include "classreg.h"
+#include "classreg.hpp"
 
 /* needs trailing '}' */
 #define ITERATE_REMOVE(q1, q2, lst)                \

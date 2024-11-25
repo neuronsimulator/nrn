@@ -19,7 +19,7 @@
 #endif /* HAVE_IV */
 
 #include "oc2iv.h"
-#include "classreg.h"
+#include "classreg.hpp"
 
 #include "gui-redirect.h"
 

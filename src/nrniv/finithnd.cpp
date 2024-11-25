@@ -16,7 +16,7 @@ Type 3 are at the very beginning of finitialize. ie structure changes
 #include <vector>
 #include <cstdio>
 #include <nrnoc2iv.h>
-#include <classreg.h>
+#include <classreg.hpp>
 #include <objcmd.h>
 #include "utils/enumerate.h"
 

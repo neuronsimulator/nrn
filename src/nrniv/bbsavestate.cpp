@@ -169,7 +169,7 @@ callback to bbss_early when needed.
 
 #include "bbsavestate.h"
 #include "cabcode.h"
-#include "classreg.h"
+#include "classreg.hpp"
 #include "nrncvode.h"
 #include "nrnoc2iv.h"
 #include "nrnran123.h"

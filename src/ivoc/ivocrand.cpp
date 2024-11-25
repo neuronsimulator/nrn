@@ -7,7 +7,7 @@
 #include "Rand.hpp"
 
 #include <InterViews/resource.h>
-#include "classreg.h"
+#include "classreg.hpp"
 #include "oc2iv.h"
 #include "utils/enumerate.h"
 

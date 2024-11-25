@@ -13,7 +13,7 @@
 #include "nrnoc2iv.h"
 #include "nrnpy.h"
 #include "nrnmenu.h"
-#include "classreg.h"
+#include "classreg.hpp"
 #include "gui-redirect.h"
 
 extern int hoc_return_type_code;

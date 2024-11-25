@@ -5,7 +5,7 @@
 #if HAVE_IV
 #include "ivoc.h"
 #endif
-#include "classreg.h"
+#include "classreg.hpp"
 #include "linmod.h"
 #include "nrnoc2iv.h"
 

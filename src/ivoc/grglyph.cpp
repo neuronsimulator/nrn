@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 // hoc level Glyph implementation for graphing
 #include <stdio.h>
-#include "classreg.h"
+#include "classreg.hpp"
 #include "oc2iv.h"
 #if HAVE_IV
 #include "ivoc.h"

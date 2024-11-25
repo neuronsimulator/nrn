@@ -7,7 +7,7 @@
 #include <InterViews/resource.h>
 #include <complex>
 #include "nrnoc2iv.h"
-#include "classreg.h"
+#include "classreg.hpp"
 #include "membfunc.h"
 
 typedef void (*Pfrv4)(int, Node**, double**, Datum**);

@@ -5,7 +5,7 @@
 
 #include <nrnmpi.h>
 #include "cabcode.h"
-#include "classreg.h"
+#include "classreg.hpp"
 #include "parse.hpp"
 #include "cvodeobj.h"
 #include "hoclist.h"
