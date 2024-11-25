@@ -67,7 +67,7 @@ static double sb_accept_action(void* v) {
 static Member_func sb_members[] = {{"select", sb_select},
                                    {"select_action", sb_select_action},
                                    {"accept_action", sb_accept_action},
-                                   {0, 0}};
+                                   {nullptr, nullptr}};
 static void* sb_cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("SectionBrowser", NULL);
     Object* ob;
@@ -96,7 +96,7 @@ static void sb_destruct(void* v) {
 #endif
 }
 void SectionBrowser_reg() {
-    class2oc("SectionBrowser", sb_cons, sb_destruct, sb_members, NULL, NULL);
+    class2oc("SectionBrowser", sb_cons, sb_destruct, sb_members, nullptr, nullptr);
 }
 
 #if HAVE_IV

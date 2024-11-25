@@ -31,16 +31,6 @@ struct Py2Nrn final {
     PyObject* po_{};
 };
 
-static void* p_cons(Object*) {
-    return new Py2Nrn{};
-}
-
-static void p_destruct(void* v) {
-    delete static_cast<Py2Nrn*>(v);
-}
-
-Member_func p_members[] = {{nullptr, nullptr}};
-
 static void call_python_with_section(Object* pyact, Section* sec) {
     nb::callable po = nb::borrow<nb::callable>(((Py2Nrn*) pyact->u.this_pointer)->po_);
     nanobind::gil_scoped_acquire lock{};
@@ -920,13 +910,21 @@ static void restore_thread(PyThreadState* g) {
 void nrnpython_reg_real_nrnpython_cpp(neuron::python::impl_ptrs* ptrs);
 void nrnpython_reg_real_nrnpy_hoc_cpp(neuron::python::impl_ptrs* ptrs);
 
+static void* p_cons(Object*) {
+    return new Py2Nrn{};
+}
+
+static void p_destruct(void* v) {
+    delete static_cast<Py2Nrn*>(v);
+}
+
 /**
  * @brief Populate NEURON state with information from a specific Python.
  * @param ptrs Logically a return value; avoidi
  */
 extern "C" NRN_EXPORT void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
     assert(ptrs);
-    class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr);
+    class2oc("PythonObject", p_cons, p_destruct, nullptr, nullptr, nullptr);
     nrnpy_pyobj_sym_ = hoc_lookup("PythonObject");
     assert(nrnpy_pyobj_sym_);
     ptrs->callable_with_args = callable_with_args;

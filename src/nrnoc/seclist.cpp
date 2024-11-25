@@ -250,7 +250,7 @@ static Member_func members[] = {{"append", append},
                                 {"printnames", printnames},
                                 {"contains", contains},
                                 {"allroots", allroots},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 
 extern void class2oc(const char*,
