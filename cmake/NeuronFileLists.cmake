@@ -36,7 +36,6 @@ set(HEADER_FILES_TO_INSTALL
     nrnoc/section_fwd.hpp
     nrnoc/treeset.h
     oc/hoc.h
-    oc/hoc_membf.h
     oc/hocassrt.h
     oc/hocdec.h
     oc/hocgetsym.h
