@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "classreg.hpp"
+#include "classreg.h"
 #include "oc2iv.h"
 #include <string.h>
 #include <regex>

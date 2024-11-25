@@ -1,7 +1,7 @@
 #include <list>
 #include <InterViews/resource.h>
 
-#include "classreg.hpp"
+#include "classreg.h"
 #include "ivocvect.h"
 #include "hoclist.h"
 #include "bbs.h"

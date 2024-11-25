@@ -58,7 +58,7 @@
 #include "ivoc.h"
 #endif /* HAVE_IV */
 
-#include "classreg.hpp"
+#include "classreg.h"
 #include "gui-redirect.h"
 
 #if HAVE_IV

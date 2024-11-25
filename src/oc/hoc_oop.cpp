@@ -5,7 +5,7 @@
 #include "utils/formatting.hpp"
 
 
-#include "classreg.hpp"
+#include "classreg.h"
 
 #include "hocstr.h"
 #include "parse.hpp"

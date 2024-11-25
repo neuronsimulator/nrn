@@ -1,5 +1,5 @@
 #include <../../nrnconf.h>
-#include "classreg.hpp"
+#include "classreg.h"
 #include "gui-redirect.h"
 
 #if HAVE_IV  // to end of file

@@ -1,6 +1,6 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
-#include "classreg.hpp"
+#include "classreg.h"
 
 
 #include <vector>

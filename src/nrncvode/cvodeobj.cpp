@@ -10,7 +10,7 @@ extern int hoc_return_type_code;
 
 #include <cmath>
 #include <cstdlib>
-#include "classreg.hpp"
+#include "classreg.h"
 #include "nrnoc2iv.h"
 #include "datapath.h"
 #include "cvodeobj.h"

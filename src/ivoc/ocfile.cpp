@@ -23,7 +23,7 @@ extern int hoc_return_type_code;
 #endif
 #include "nrnmpi.h"
 #include "oc2iv.h"
-#include "classreg.hpp"
+#include "classreg.h"
 #include "ocfile.h"
 #include "nrnfilewrap.h"
 

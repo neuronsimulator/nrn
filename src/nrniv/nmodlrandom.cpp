@@ -13,7 +13,7 @@ syntax
 #include <section.h>
 #include <parse.hpp>
 #include <nrnran123.h>
-#include <classreg.hpp>
+#include <classreg.h>
 #include <gui-redirect.h>
 
 struct NMODLRandom {

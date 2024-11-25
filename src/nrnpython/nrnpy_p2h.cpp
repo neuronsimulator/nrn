@@ -4,7 +4,7 @@
 
 #include <InterViews/resource.h>
 #include <nrnoc2iv.h>
-#include <classreg.hpp>
+#include <classreg.h>
 #include "nrnpython.h"
 #include "hoccontext.h"
 #include "nrnpy.h"

@@ -18,7 +18,7 @@ access s1.sec	// soma becomes the default section
 #include <stdlib.h>
 #include "section.h"
 #include "parse.hpp"
-#include "classreg.hpp"
+#include "classreg.h"
 #include "oc_ansi.h"
 
 extern int hoc_return_type_code;

@@ -27,7 +27,7 @@
 #include <IV-look/kit.h>
 #endif
 
-#include "classreg.hpp"
+#include "classreg.h"
 #if HAVE_IV
 #include "apwindow.h"
 #include "ivoc.h"

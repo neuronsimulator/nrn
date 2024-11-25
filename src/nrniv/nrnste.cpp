@@ -4,7 +4,7 @@
 #include <string.h>
 #include <nrnoc2iv.h>
 #include <nrniv_mf.h>
-#include <classreg.hpp>
+#include <classreg.h>
 #include <objcmd.h>
 #include <nrnste.h>
 #include <netcon.h>

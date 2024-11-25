@@ -1,5 +1,5 @@
 #pragma once
-#include "classreg.hpp"
+#include "classreg.h"
 #include "hocdec.h"
 #include "membfunc.h"
 

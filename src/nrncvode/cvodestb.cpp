@@ -2,7 +2,7 @@
 // solver CVode stub to allow cvode as dll for mswindows version.
 
 #include <cmath>
-#include "classreg.hpp"
+#include "classreg.h"
 #include "cvodeobj.h"
 #include "nrncvode.h"
 #include "nrniv_mf.h"

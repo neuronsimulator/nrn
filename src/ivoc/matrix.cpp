@@ -1,5 +1,5 @@
 #include <../../nrnconf.h>
-#include "classreg.hpp"
+#include "classreg.h"
 
 #include <stdio.h>
 #include <math.h>

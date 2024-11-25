@@ -13,7 +13,7 @@ extern int hoc_return_type_code;
 #include "ocglyph.h"
 #endif
 
-#include "classreg.hpp"
+#include "classreg.h"
 #if HAVE_IV
 #include "oc2iv.h"
 #include "apwindow.h"
