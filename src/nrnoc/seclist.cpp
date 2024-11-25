@@ -6,7 +6,7 @@
 #include "parse.hpp"
 #include "hocparse.h"
 #include "code.h"
-#include "hoc_membf.h"
+#include "classreg.h"
 
 /* needs trailing '}' */
 #define ITERATE_REMOVE(q1, q2, lst)                \
@@ -251,15 +251,6 @@ static Member_func members[] = {{"append", append},
                                 {"contains", contains},
                                 {"allroots", allroots},
                                 {nullptr, nullptr}};
-
-
-extern void class2oc(const char*,
-                     void* (*cons)(Object*),
-                     void (*destruct)(void*),
-                     Member_func*,
-                     Member_ret_obj_func*,
-                     Member_ret_str_func*);
-
 
 void SectionList_reg(void) {
     /*	printf("SectionList_reg\n");*/
