@@ -35,6 +35,7 @@ set(HEADER_FILES_TO_INSTALL
     nrnoc/options.h
     nrnoc/section_fwd.hpp
     nrnoc/treeset.h
+    oc/classreg.hpp
     oc/hoc.h
     oc/hocassrt.h
     oc/hocdec.h
