@@ -46,7 +46,9 @@ static double ste_state(void* v) {
     return (double) state;
 }
 
-static Member_func members[] = {{"transition", ste_transition}, {"state", ste_state}, {nullptr, nullptr}};
+static Member_func members[] = {{"transition", ste_transition},
+                                {"state", ste_state},
+                                {nullptr, nullptr}};
 
 static void* ste_cons(Object*) {
     int nstate = (int) chkarg(1, 1, 1e6);

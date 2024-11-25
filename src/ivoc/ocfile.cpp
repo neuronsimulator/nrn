@@ -296,7 +296,9 @@ Member_func f_members[] = {{"ropen", f_ropen},
                            {"flush", f_flush},
                            {nullptr, nullptr}};
 
-static Member_ret_str_func f_retstr_members[] = {{"getname", f_get_name}, {"dir", f_dir}, {nullptr, nullptr}};
+static Member_ret_str_func f_retstr_members[] = {{"getname", f_get_name},
+                                                 {"dir", f_dir},
+                                                 {nullptr, nullptr}};
 
 void OcFile_reg() {
     class2oc("File", f_cons, f_destruct, f_members, nullptr, f_retstr_members);
