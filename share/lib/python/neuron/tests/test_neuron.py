@@ -294,8 +294,7 @@ def suite():
         ]
     except:
         pass
-    suite = unittest.makeSuite(NeuronTestCase, "test")
-    return suite
+    return unittest.defaultTestLoader.loadTestsFromTestCase(NeuronTestCase)
 
 
 if __name__ == "__main__":

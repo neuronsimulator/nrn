@@ -44,25 +44,25 @@ extern int hocobj_pushargs(PyObject*, std::vector<char*>&);
 extern void hocobj_pushargs_free_strings(std::vector<char*>&);
 
 
-typedef struct {
+struct NPyAllSegOfSecIter {
     PyObject_HEAD
     NPySecObj* pysec_;
     int allseg_iter_;
-} NPyAllSegOfSecIter;
+};
 
-typedef struct {
+struct NPySegOfSecIter {
     PyObject_HEAD
     NPySecObj* pysec_;
     int seg_iter_;
-} NPySegOfSecIter;
+};
 
-typedef struct {
+struct NPySegObj {
     PyObject_HEAD
     NPySecObj* pysec_;
     double x_;
-} NPySegObj;
+};
 
-typedef struct {
+struct NPyMechObj {
     PyObject_HEAD
     NPySegObj* pyseg_;
     Prop* prop_;
@@ -70,43 +70,43 @@ typedef struct {
     // wrapper.
     neuron::container::non_owning_identifier_without_container prop_id_;
     int type_;
-} NPyMechObj;
+};
 
-typedef struct {
+struct NPyMechOfSegIter {
     PyObject_HEAD
     NPyMechObj* pymech_;
-} NPyMechOfSegIter;
+};
 
-typedef struct {
+struct NPyMechFunc {
     PyObject_HEAD
     NPyMechObj* pymech_;
     NPyDirectMechFunc* f_;
-} NPyMechFunc;
+};
 
-typedef struct {
+struct NPyVarOfMechIter {
     PyObject_HEAD
     NPyMechObj* pymech_;
     Symbol* msym_;
     int i_;
-} NPyVarOfMechIter;
+};
 
-typedef struct {
+struct NPyRVItr {
     PyObject_HEAD
     NPyMechObj* pymech_;
     int index_;
-} NPyRVItr;
+};
 
-typedef struct {
+struct NPyRangeVar {
     PyObject_HEAD
     NPyMechObj* pymech_;
     Symbol* sym_;
     int isptr_;
     int attr_from_sec_;  // so section.xraxial[0] = e assigns to all segments.
-} NPyRangeVar;
+};
 
-typedef struct {
+struct NPyOpaquePointer {
     PyObject_HEAD
-} NPyOpaquePointer;
+};
 
 PyTypeObject* psection_type;
 static PyTypeObject* pallseg_of_sec_iter_type;
@@ -138,7 +138,6 @@ extern Section* (*nrnpy_o2sec_p_)(Object*);
 static void o2loc(Object*, Section**, double*);
 extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 extern void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
-static void nrnpy_unreg_mech(int);
 extern char* (*nrnpy_pysec_name_p_)(Section*);
 static char* pysec_name(Section*);
 extern Object* (*nrnpy_pysec_cell_p_)(Section*);
@@ -405,15 +404,15 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
             if (cell) {
                 // include cellname in name so nrnpy_pysecname2sec_remove can determine
 
-                cell = PyObject_Str(cell);
-                if (cell == NULL) {
+                auto cell_str = nb::steal(PyObject_Str(cell));
+                if (!cell_str) {
                     Py_XDECREF(self->cell_weakref_);
                     return -1;
                 }
-                Py2NRNString str(cell);
-                Py_DECREF(cell);
+                Py2NRNString str(cell_str.ptr());
                 if (str.err()) {
                     str.set_pyerr(PyExc_TypeError, "cell name contains non ascii character");
+                    Py_XDECREF(self->cell_weakref_);
                     return -1;
                 }
                 char* cp = str.c_str();
@@ -454,16 +453,14 @@ static int NPyAllSegOfSecIter_init_safe(NPyAllSegOfSecIter* self, PyObject* args
 }
 
 PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
-    NPySecObj* self;
-    self = (NPySecObj*) type->tp_alloc(type, 0);
-    // printf("NPySecObj_new %p\n", self);
-    if (self != NULL) {
-        if (NPySecObj_init(self, args, kwds) != 0) {
-            Py_DECREF(self);
-            return NULL;
+    auto self = nb::steal(type->tp_alloc(type, 0));
+    // printf("NPySecObj_new %p\n", self.ptr());
+    if (self) {
+        if (NPySecObj_init((NPySecObj*) self.ptr(), args, kwds) != 0) {
+            return nullptr;
         }
     }
-    return (PyObject*) self;
+    return self.release().ptr();
 }
 
 PyObject* NPySecObj_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds) {
@@ -471,16 +468,14 @@ PyObject* NPySecObj_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds)
 }
 
 PyObject* NPyAllSegOfSecIter_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
-    NPyAllSegOfSecIter* self;
-    self = (NPyAllSegOfSecIter*) type->tp_alloc(type, 0);
-    // printf("NPyAllSegOfSecIter_new %p\n", self);
-    if (self != NULL) {
-        if (NPyAllSegOfSecIter_init(self, args, kwds) != 0) {
-            Py_DECREF(self);
-            return NULL;
+    auto self = nb::steal(type->tp_alloc(type, 0));
+    // printf("NPyAllSegOfSecIter_new %p\n", self.ptr());
+    if (self) {
+        if (NPyAllSegOfSecIter_init((NPyAllSegOfSecIter*) self.ptr(), args, kwds) != 0) {
+            return nullptr;
         }
     }
-    return (PyObject*) self;
+    return self.release().ptr();
 }
 
 PyObject* NPyAllSegOfSecIter_new_safe(PyTypeObject* type, PyObject* args, PyObject* kwds) {
@@ -996,10 +991,8 @@ static PyObject* nrnpy_set_psection(PyObject* self, PyObject* args) {
         PyErr_SetString(PyExc_TypeError, "argument must be a callable");
         return NULL;
     }
-    if (nrnpy_psection) {
-        Py_DECREF(nrnpy_psection);
-        nrnpy_psection = NULL;
-    }
+
+    Py_XDECREF(nrnpy_psection);
     nrnpy_psection = po;
     Py_INCREF(po);
     return po;
@@ -1861,17 +1854,16 @@ static PyObject* mech_of_segment_iter(NPySegObj* self) {
     CHECK_SEC_INVALID(sec)
     Node* nd = node_exact(sec, self->x_);
     Prop* p = mech_of_segment_prop(nd->prop);
-    NPyMechOfSegIter* mi = PyObject_New(NPyMechOfSegIter, pmech_of_seg_iter_generic_type);
+    auto mi = nb::steal((PyObject*) PyObject_New(NPyMechOfSegIter, pmech_of_seg_iter_generic_type));
     if (!mi) {
-        return NULL;
+        return nullptr;
     }
-    NPyMechObj* m = new_pymechobj(self, p);
+    auto m = nb::steal((PyObject*) new_pymechobj(self, p));
     if (!m) {
-        Py_XDECREF(mi);
-        return NULL;
+        return nullptr;
     }
-    mi->pymech_ = m;
-    return (PyObject*) mi;
+    ((NPyMechOfSegIter*) mi.ptr())->pymech_ = (NPyMechObj*) m.release().ptr();
+    return mi.release().ptr();
 }
 
 static PyObject* mech_of_segment_iter_safe(NPySegObj* self) {
@@ -3130,8 +3122,4 @@ void nrnpy_reg_mech(int type) {
         Symbol* sym = mf.sym->u.ppsym[i];
         rangevars_add(sym);
     }
-}
-
-void nrnpy_unreg_mech(int type) {
-    // not implemented but needed when KSChan name changed.
 }

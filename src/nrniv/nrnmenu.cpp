@@ -666,10 +666,10 @@ static Member_func ms_members[] = {{"panel", ms_panel},
                                    {"is_array", ms_is_array},
                                    {"name", ms_name},
                                    {"save", ms_save},
-                                   {0, 0}};
+                                   {nullptr, nullptr}};
 
 void MechanismStandard_reg() {
-    class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members, NULL, NULL);
+    class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members, nullptr, nullptr);
     ms_class_sym_ = hoc_lookup("MechanismStandard");
 }
 
@@ -1129,8 +1129,7 @@ static Member_ret_obj_func mt_retobj_members[] = {{"pp_begin", mt_pp_begin},
                                                   {0, 0}};
 static Member_ret_str_func mt_retstr_func[] = {{"code", mt_code}, {"file", mt_file}, {0, 0}};
 void MechanismType_reg() {
-    class2oc(
-        "MechanismType", mt_cons, mt_destruct, mt_members, mt_retobj_members, mt_retstr_func);
+    class2oc("MechanismType", mt_cons, mt_destruct, mt_members, mt_retobj_members, mt_retstr_func);
     mt_class_sym_ = hoc_lookup("MechanismType");
 }
 

@@ -6,7 +6,7 @@
 #include "parse.hpp"
 #include "hocparse.h"
 #include "code.h"
-#include "hoc_membf.h"
+#include "classreg.h"
 
 /* needs trailing '}' */
 #define ITERATE_REMOVE(q1, q2, lst)                \
@@ -115,12 +115,10 @@ static double subtree(void* v) {
 }
 
 static double wholetree(void* v) {
-    List* sl;
-    Section *s, *sec, *ch;
-    Item *i, *j, *first, *last;
-    sec = nrn_secarg(1);
-    sl = (List*) v;
+    Section* sec = nrn_secarg(1);
+    List* sl = (List*) v;
     /*find root*/
+    Section* s = nullptr;
     for (s = sec; s->parentsec; s = s->parentsec) {
     }
 
@@ -252,16 +250,7 @@ static Member_func members[] = {{"append", append},
                                 {"printnames", printnames},
                                 {"contains", contains},
                                 {"allroots", allroots},
-                                {0, 0}};
-
-
-extern void class2oc(const char*,
-                     void* (*cons)(Object*),
-                     void (*destruct)(void*),
-                     Member_func*,
-                     Member_ret_obj_func*,
-                     Member_ret_str_func*);
-
+                                {nullptr, nullptr}};
 
 void SectionList_reg(void) {
     /*	printf("SectionList_reg\n");*/

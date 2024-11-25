@@ -3737,7 +3737,7 @@ static Member_func v_members[] = {
 
     {"scale", v_scale},
 
-    {0, 0}};
+    {nullptr, nullptr}};
 
 static Member_ret_obj_func v_retobj_members[] = {{"c", v_c},
                                                  {"cl", v_cl},
@@ -3813,11 +3813,11 @@ static Member_ret_obj_func v_retobj_members[] = {{"c", v_c},
                                                  {"to_python", v_to_python},
                                                  {"as_numpy", v_as_numpy},
 
-                                                 {0, 0}};
+                                                 {nullptr, nullptr}};
 
 static Member_ret_str_func v_retstr_members[] = {{"label", v_label},
 
-                                                 {0, 0}};
+                                                 {nullptr, nullptr}};
 
 extern int hoc_araypt(Symbol*, int);
 

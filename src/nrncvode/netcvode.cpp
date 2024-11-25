@@ -763,7 +763,7 @@ static Member_func members[] = {{"active", nc_active},
                                 {"weight", 0},
                                 {"threshold", 0},
                                 {"x", 0},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 static Member_ret_obj_func omembers[] = {{"syn", nc_syn},
                                          {"pre", nc_pre},
@@ -776,7 +776,7 @@ static Member_ret_obj_func omembers[] = {{"syn", nc_syn},
                                          {"precelllist", nc_precelllist},
                                          {"postcelllist", nc_postcelllist},
                                          {"get_recordvec", nc_get_recordvec},
-                                         {0, 0}};
+                                         {nullptr, nullptr}};
 
 static void steer_val(void* v) {
     NetCon* d = (NetCon*) v;
@@ -848,7 +848,7 @@ static void destruct(void* v) {
 }
 
 void NetCon_reg() {
-    class2oc("NetCon", cons, destruct, members, omembers, NULL);
+    class2oc("NetCon", cons, destruct, members, omembers, nullptr);
     Symbol* nc = hoc_lookup("NetCon");
     nc->u.ctemplate->steer = steer_val;
     Symbol* s;
@@ -1355,7 +1355,6 @@ void NetCvode::del_cv_memb_list(Cvode* cvode) {
 void CvodeThreadData::delete_memb_list(CvMembList* cmlist) {
     CvMembList *cml, *cmlnext;
     for (cml = cmlist; cml; cml = cmlnext) {
-        auto const& ml = cml->ml;
         cmlnext = cml->next;
         for (auto& ml: cml->ml) {
             delete[] std::exchange(ml.nodelist, nullptr);
@@ -3065,8 +3064,10 @@ void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
             TQItem* q = ns->p[i].tq_->least();
             Cvode* cv = (Cvode*) q->data_;
             if (tt < cv->t_) {
-                int err = NVI_SUCCESS;
-                err = cv->handle_step(nrn_ensure_model_data_are_sorted(), ns, tt);
+                if (int err = cv->handle_step(nrn_ensure_model_data_are_sorted(), ns, tt);
+                    err != NVI_SUCCESS) {
+                    Printf("warning: cv->handle_step failed with error %d", err);
+                }
                 ns->p[i].tq_->move_least(cv->t_);
             }
         }

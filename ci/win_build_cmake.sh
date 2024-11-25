@@ -32,7 +32,7 @@ cd $BUILD_SOURCESDIRECTORY/build
 	-DNRN_BINARY_DIST_BUILD=ON \
 	-DPYTHON_EXECUTABLE=/c/Python39/python.exe \
 	-DNRN_ENABLE_PYTHON_DYNAMIC=ON  \
-	-DNRN_PYTHON_DYNAMIC='c:/Python38/python.exe;c:/Python39/python.exe;c:/Python310/python.exe;c:/Python311/python.exe;c:/Python312/python.exe'  \
+	-DNRN_PYTHON_DYNAMIC='c:/Python39/python.exe;c:/Python310/python.exe;c:/Python311/python.exe;c:/Python312/python.exe'  \
 	-DCMAKE_INSTALL_PREFIX='/c/nrn-install' \
 	-DMPI_CXX_LIB_NAMES:STRING=msmpi \
 	-DMPI_C_LIB_NAMES:STRING=msmpi \

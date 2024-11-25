@@ -230,14 +230,14 @@ Functions
             are proportional to :hoc:data:`dt`.
 
         =1 
-            crank-nicholson Can give large (but damped) numerical error 
+            crank-nicolson Can give large (but damped) numerical error 
             oscillations. For small :hoc:data:`dt` the numerical errors are proportional
             to ``dt^2``. Cannot be used with voltage clamps. Ionic currents 
             are first order correct. Channel conductances are second order 
             correct when plotted at ``t+dt/2`` 
 
         =2 
-            crank-nicholson like 1 but in addition Ion currents (*ina*, *ik*, 
+            crank-nicolson like 1 but in addition Ion currents (*ina*, *ik*, 
             etc) are fixed up so that they are second order correct when 
             plotted at ``t-dt/2`` 
 
