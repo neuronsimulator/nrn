@@ -16,6 +16,10 @@
 #include "ocmatrix.h"
 #include "ivocvect.h"
 
+#include <nanobind/nanobind.h>
+
+namespace nb = nanobind;
+
 static void ode_solve(double, double*, double*);
 extern PyTypeObject* hocobject_type;
 extern int structure_change_cnt;
@@ -41,7 +45,7 @@ extern double* dt_ptr;
 extern double* t_ptr;
 
 
-fptr _setup, _initialize, _setup_matrices, _setup_units;
+fptr *_setup, *_initialize, *_setup_matrices, *_setup_units;
 extern NrnThread* nrn_threads;
 
 /*intracellular diffusion*/
@@ -328,18 +332,17 @@ void apply_node_flux(int n,
                     states[j] += dt * *(src->u.px_) / scale[i];
                 }
             } else {
-                auto result = PyObject_CallObject(source[i], nullptr);
-                if (PyFloat_Check(result)) {
-                    states[j] += dt * PyFloat_AsDouble(result) / scale[i];
-                } else if (PyLong_Check(result)) {
-                    states[j] += dt * (double) PyLong_AsLong(result) / scale[i];
-                } else if (PyInt_Check(result)) {
-                    states[j] += dt * (double) PyInt_AsLong(result) / scale[i];
+                auto result = nb::steal(PyObject_CallObject(source[i], nullptr));
+                if (PyFloat_Check(result.ptr())) {
+                    states[j] += dt * PyFloat_AsDouble(result.ptr()) / scale[i];
+                } else if (PyLong_Check(result.ptr())) {
+                    states[j] += dt * (double) PyLong_AsLong(result.ptr()) / scale[i];
+                } else if (PyInt_Check(result.ptr())) {
+                    states[j] += dt * (double) PyInt_AsLong(result.ptr()) / scale[i];
                 } else {
                     PyErr_SetString(PyExc_Exception,
                                     "node._include_flux callback did not return a number.\n");
                 }
-                Py_DECREF(result);
             }
         } else {
             PyErr_SetString(PyExc_Exception, "node._include_flux unrecognised source term.\n");
@@ -474,20 +477,20 @@ static void mul(int nnonzero,
     }
 }
 
-extern "C" NRN_EXPORT void set_setup(const fptr setup_fn) {
+extern "C" NRN_EXPORT void set_setup(const fptr* setup_fn) {
     _setup = setup_fn;
 }
 
-extern "C" NRN_EXPORT void set_initialize(const fptr initialize_fn) {
+extern "C" NRN_EXPORT void set_initialize(const fptr* initialize_fn) {
     _initialize = initialize_fn;
     set_num_threads(NUM_THREADS);
 }
 
-extern "C" NRN_EXPORT void set_setup_matrices(fptr setup_matrices) {
+extern "C" NRN_EXPORT void set_setup_matrices(fptr* setup_matrices) {
     _setup_matrices = setup_matrices;
 }
 
-extern "C" NRN_EXPORT void set_setup_units(fptr setup_units) {
+extern "C" NRN_EXPORT void set_setup_units(fptr* setup_units) {
     _setup_units = setup_units;
 }
 
@@ -861,7 +864,7 @@ extern "C" NRN_EXPORT void register_rate(int nspecies,
                                          int nmult,
                                          double* mult,
                                          PyHocObject** vptrs,
-                                         ReactionRate f) {
+                                         ReactionRate* f) {
     int i, j, k, idx, ecs_id, ecs_index, ecs_offset;
     unsigned char counted;
     Grid_node* g;

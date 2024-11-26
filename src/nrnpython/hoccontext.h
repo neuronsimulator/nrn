@@ -17,11 +17,11 @@ extern Symlist* hoc_symlist;
         hc_restore_(hc_); \
     }
 
-typedef struct HocContext {
+struct HocContext {
     Object* obj;
     Objectdata* obd;
     Symlist* sl;
-} HocContext;
+};
 
 static HocContext* hc_save_and_set_to_top_(HocContext* hc) {
     hc->obj = hoc_thisobject;

@@ -31,16 +31,6 @@ struct Py2Nrn final {
     PyObject* po_{};
 };
 
-static void* p_cons(Object*) {
-    return new Py2Nrn{};
-}
-
-static void p_destruct(void* v) {
-    delete static_cast<Py2Nrn*>(v);
-}
-
-Member_func p_members[] = {{nullptr, nullptr}};
-
 static void call_python_with_section(Object* pyact, Section* sec) {
     nb::callable po = nb::borrow<nb::callable>(((Py2Nrn*) pyact->u.this_pointer)->po_);
     nanobind::gil_scoped_acquire lock{};
@@ -674,6 +664,7 @@ static nb::list char2pylist(const std::vector<char>& buf,
 }
 
 #if NRNMPI
+// Returns a new reference.
 static PyObject* py_allgather(PyObject* psrc) {
     int np = nrnmpi_numprocs;
     auto sbuf = pickle(psrc);
@@ -689,6 +680,7 @@ static PyObject* py_allgather(PyObject* psrc) {
     return char2pylist(rbuf, rcnt, rdispl).release().ptr();
 }
 
+// Returns a new reference.
 static PyObject* py_gather(PyObject* psrc, int root) {
     int np = nrnmpi_numprocs;
     auto sbuf = pickle(psrc);
@@ -708,15 +700,14 @@ static PyObject* py_gather(PyObject* psrc, int root) {
 
     nrnmpi_char_gatherv(sbuf.data(), scnt, rbuf.data(), rcnt.data(), rdispl.data(), root);
 
-    PyObject* pdest = Py_None;
+    nb::object pdest = nb::none();
     if (root == nrnmpi_myid) {
-        pdest = char2pylist(rbuf, rcnt, rdispl).release().ptr();
-    } else {
-        Py_INCREF(pdest);
+        pdest = char2pylist(rbuf, rcnt, rdispl);
     }
-    return pdest;
+    return pdest.release().ptr();
 }
 
+// Returns a new reference.
 static PyObject* py_broadcast(PyObject* psrc, int root) {
     // Note: root returns reffed psrc.
     std::vector<char> buf{};
@@ -730,14 +721,13 @@ static PyObject* py_broadcast(PyObject* psrc, int root) {
         buf.resize(cnt);
     }
     nrnmpi_char_broadcast(buf.data(), cnt, root);
-    PyObject* pdest = psrc;
+    nb::object pdest;
     if (root != nrnmpi_myid) {
-        nb::object po = unpickle(buf);
-        pdest = po.release().ptr();
+        pdest = unpickle(buf);
     } else {
-        Py_INCREF(pdest);
+        pdest = nb::borrow(psrc);
     }
-    return pdest;
+    return pdest.release().ptr();
 }
 #endif
 
@@ -920,13 +910,21 @@ static void restore_thread(PyThreadState* g) {
 void nrnpython_reg_real_nrnpython_cpp(neuron::python::impl_ptrs* ptrs);
 void nrnpython_reg_real_nrnpy_hoc_cpp(neuron::python::impl_ptrs* ptrs);
 
+static void* p_cons(Object*) {
+    return new Py2Nrn{};
+}
+
+static void p_destruct(void* v) {
+    delete static_cast<Py2Nrn*>(v);
+}
+
 /**
  * @brief Populate NEURON state with information from a specific Python.
  * @param ptrs Logically a return value; avoidi
  */
 extern "C" NRN_EXPORT void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
     assert(ptrs);
-    class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr);
+    class2oc("PythonObject", p_cons, p_destruct, nullptr, nullptr, nullptr);
     nrnpy_pyobj_sym_ = hoc_lookup("PythonObject");
     assert(nrnpy_pyobj_sym_);
     ptrs->callable_with_args = callable_with_args;

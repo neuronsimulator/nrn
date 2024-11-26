@@ -370,9 +370,9 @@ static Member_func l_members[] = {{"substr", l_substr},
                                   {"references", l_ref},
                                   {"is_point_process", l_is_point},
                                   {"is_artificial", l_is_artificial},
-                                  {0, 0}};
+                                  {nullptr, nullptr}};
 
-static Member_ret_obj_func l_obj_members[] = {{"alias_list", l_alias_list}, {0, 0}};
+static Member_ret_obj_func l_obj_members[] = {{"alias_list", l_alias_list}, {nullptr, nullptr}};
 
 static void* l_cons(Object*) {
     return nullptr;

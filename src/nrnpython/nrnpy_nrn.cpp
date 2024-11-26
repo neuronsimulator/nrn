@@ -44,25 +44,25 @@ extern int hocobj_pushargs(PyObject*, std::vector<char*>&);
 extern void hocobj_pushargs_free_strings(std::vector<char*>&);
 
 
-typedef struct {
+struct NPyAllSegOfSecIter {
     PyObject_HEAD
     NPySecObj* pysec_;
     int allseg_iter_;
-} NPyAllSegOfSecIter;
+};
 
-typedef struct {
+struct NPySegOfSecIter {
     PyObject_HEAD
     NPySecObj* pysec_;
     int seg_iter_;
-} NPySegOfSecIter;
+};
 
-typedef struct {
+struct NPySegObj {
     PyObject_HEAD
     NPySecObj* pysec_;
     double x_;
-} NPySegObj;
+};
 
-typedef struct {
+struct NPyMechObj {
     PyObject_HEAD
     NPySegObj* pyseg_;
     Prop* prop_;
@@ -70,43 +70,43 @@ typedef struct {
     // wrapper.
     neuron::container::non_owning_identifier_without_container prop_id_;
     int type_;
-} NPyMechObj;
+};
 
-typedef struct {
+struct NPyMechOfSegIter {
     PyObject_HEAD
     NPyMechObj* pymech_;
-} NPyMechOfSegIter;
+};
 
-typedef struct {
+struct NPyMechFunc {
     PyObject_HEAD
     NPyMechObj* pymech_;
     NPyDirectMechFunc* f_;
-} NPyMechFunc;
+};
 
-typedef struct {
+struct NPyVarOfMechIter {
     PyObject_HEAD
     NPyMechObj* pymech_;
     Symbol* msym_;
     int i_;
-} NPyVarOfMechIter;
+};
 
-typedef struct {
+struct NPyRVItr {
     PyObject_HEAD
     NPyMechObj* pymech_;
     int index_;
-} NPyRVItr;
+};
 
-typedef struct {
+struct NPyRangeVar {
     PyObject_HEAD
     NPyMechObj* pymech_;
     Symbol* sym_;
     int isptr_;
     int attr_from_sec_;  // so section.xraxial[0] = e assigns to all segments.
-} NPyRangeVar;
+};
 
-typedef struct {
+struct NPyOpaquePointer {
     PyObject_HEAD
-} NPyOpaquePointer;
+};
 
 PyTypeObject* psection_type;
 static PyTypeObject* pallseg_of_sec_iter_type;
@@ -2970,13 +2970,14 @@ static void rangevars_add(Symbol* sym) {
     PyDict_SetItemString(rangevars_, sym->name, (PyObject*) r);
 }
 
+// Returns a borrowed reference.
 PyObject* nrnpy_nrn(void) {
-    PyObject* m;
+    nb::object m;
 
     int err = 0;
     PyObject* modules = PyImport_GetModuleDict();
-    if ((m = PyDict_GetItemString(modules, "nrn")) != NULL && PyModule_Check(m)) {
-        return m;
+    if ((m = nb::borrow(PyDict_GetItemString(modules, "nrn"))) && PyModule_Check(m.ptr())) {
+        return m.ptr();
     }
     psection_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_SectionType_spec);
     psection_type->tp_new = PyType_GenericNew;
@@ -3019,18 +3020,18 @@ PyObject* nrnpy_nrn(void) {
         goto fail;
     Py_INCREF(opaque_pointer_type);
 
-    m = PyModule_Create(&nrnsectionmodule);  // like nrn but namespace will not include mechanims.
-    PyModule_AddObject(m, "Section", (PyObject*) psection_type);
-    PyModule_AddObject(m, "Segment", (PyObject*) psegment_type);
+    m = nb::steal(PyModule_Create(&nrnsectionmodule));  // like nrn but namespace will not include
+                                                        // mechanims.
+    PyModule_AddObject(m.ptr(), "Section", (PyObject*) psection_type);
+    PyModule_AddObject(m.ptr(), "Segment", (PyObject*) psegment_type);
 
-    err = PyDict_SetItemString(modules, "_neuron_section", m);
+    err = PyDict_SetItemString(modules, "_neuron_section", m.ptr());
     assert(err == 0);
-    Py_DECREF(m);
-    m = PyModule_Create(&nrnmodule);  //
-    nrnmodule_ = m;
-    PyModule_AddObject(m, "Section", (PyObject*) psection_type);
-    PyModule_AddObject(m, "Segment", (PyObject*) psegment_type);
-    PyModule_AddObject(m, "OpaquePointer", (PyObject*) opaque_pointer_type);
+    m = nb::steal(PyModule_Create(&nrnmodule));  //
+    nrnmodule_ = m.ptr();
+    PyModule_AddObject(m.ptr(), "Section", (PyObject*) psection_type);
+    PyModule_AddObject(m.ptr(), "Segment", (PyObject*) psegment_type);
+    PyModule_AddObject(m.ptr(), "OpaquePointer", (PyObject*) opaque_pointer_type);
 
     pmech_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_MechanismType_spec);
     pmechfunc_generic_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_MechFuncType_spec);
@@ -3052,10 +3053,10 @@ PyObject* nrnpy_nrn(void) {
     Py_INCREF(pmechfunc_generic_type);
     Py_INCREF(pmech_of_seg_iter_generic_type);
     Py_INCREF(pvar_of_mech_iter_generic_type);
-    PyModule_AddObject(m, "Mechanism", (PyObject*) pmech_generic_type);
-    PyModule_AddObject(m, "MechFunc", (PyObject*) pmechfunc_generic_type);
-    PyModule_AddObject(m, "MechOfSegIterator", (PyObject*) pmech_of_seg_iter_generic_type);
-    PyModule_AddObject(m, "VarOfMechIterator", (PyObject*) pvar_of_mech_iter_generic_type);
+    PyModule_AddObject(m.ptr(), "Mechanism", (PyObject*) pmech_generic_type);
+    PyModule_AddObject(m.ptr(), "MechFunc", (PyObject*) pmechfunc_generic_type);
+    PyModule_AddObject(m.ptr(), "MechOfSegIterator", (PyObject*) pmech_of_seg_iter_generic_type);
+    PyModule_AddObject(m.ptr(), "VarOfMechIterator", (PyObject*) pvar_of_mech_iter_generic_type);
     remake_pmech_types();
     nrnpy_reg_mech_p_ = nrnpy_reg_mech;
     nrnpy_ob_is_seg = ob_is_seg;
@@ -3067,10 +3068,9 @@ PyObject* nrnpy_nrn(void) {
     nrnpy_pysec_cell_p_ = pysec_cell;
     nrnpy_pysec_cell_equals_p_ = pysec_cell_equals;
 
-    err = PyDict_SetItemString(modules, "nrn", m);
+    err = PyDict_SetItemString(modules, "nrn", m.ptr());
     assert(err == 0);
-    Py_DECREF(m);
-    return m;
+    return m.ptr();
 fail:
     return NULL;
 }
