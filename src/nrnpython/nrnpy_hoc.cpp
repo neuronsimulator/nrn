@@ -103,7 +103,6 @@ static PyObject* pfunc_get_docstring = NULL;
 // follow the add_methods implementation of python3.6.2 in typeobject.c
 // and the GenericGetAttr implementation in object.c
 static PyObject* topmethdict = NULL;
-static void add2topdict(PyObject*);
 
 static const char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object wrapper";
 
@@ -982,21 +981,21 @@ int nrn_is_hocobj_ptr(PyObject* po, neuron::container::data_handle<double>& pd) 
     return ret;
 }
 
-static void symlist2dict(Symlist* sl, PyObject* dict) {
-    auto nn = nb::steal(Py_BuildValue(""));
+static void symlist2dict(Symlist* sl, nb::handle dict) {
     for (Symbol* s = sl->first; s; s = s->next) {
         if (s->type == UNDEF) {
             continue;
         }
         if (s->cpublic == 1 || sl == hoc_built_in_symlist || sl == hoc_top_level_symlist) {
             if (strcmp(s->name, "del") == 0) {
-                PyDict_SetItemString(dict, "delay", nn.ptr());
+                dict["delay"] = nb::none();
             } else {
-                PyDict_SetItemString(dict, s->name, nn.ptr());
+                dict[s->name] = nb::none();
             }
         }
     }
 }
+static void add2topdict(nb::handle);
 
 static int setup_doc_system() {
     PyObject* pdoc;
@@ -1076,7 +1075,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             } else if (self->sym_ && self->sym_->type == TEMPLATE) {
                 sl = self->sym_->u.ctemplate->symtable;
             }
-            PyObject* dict = PyDict_New();
+            nb::dict dict{};
             if (sl) {
                 symlist2dict(sl, dict);
             } else {
@@ -1088,12 +1087,12 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             // Is the self->ho_ a Vector?  If so, add the __array_interface__ symbol
 
             if (is_obj_type(self->ho_, "Vector")) {
-                PyDict_SetItemString(dict, "__array_interface__", Py_None);
+                dict["__array_interface__"] = nb::none();
             } else if (is_obj_type(self->ho_, "RangeVarPlot") ||
                        is_obj_type(self->ho_, "PlotShape")) {
-                PyDict_SetItemString(dict, "plot", Py_None);
+                dict["plot"] = nb::none();
             }
-            return dict;
+            return dict.release().ptr();
         } else if (strncmp(n, "_ref_", 5) == 0) {
             if (self->type_ > PyHoc::HocObject) {
                 PyErr_SetString(PyExc_TypeError, "not a HocTopLevelInterpreter or HocObject");
@@ -1132,20 +1131,14 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             // return __array_interface__
             // printf("building array interface\n");
             Vect* v = (Vect*) self->ho_->u.this_pointer;
-            int size = v->size();
-            double* x = vector_vec(v);
 
-            return Py_BuildValue("{s:(i),s:s,s:i,s:(N,O)}",
-                                 "shape",
-                                 size,
-                                 "typestr",
-                                 array_interface_typestr,
-                                 "version",
-                                 3,
-                                 "data",
-                                 PyLong_FromVoidPtr(x),
-                                 Py_True);
-
+            nb::dict ret{};
+            ret["shape"] = v->size();
+            // We should use PyCapsule instead of `PyLOng_FromVoidPtr` here.
+            ret["data"] = nb::steal(PyLong_FromVoidPtr(v->data()));
+            ret["typestr"] = array_interface_typestr;
+            ret["version"] = nb::make_tuple(3, true);
+            return ret.release().ptr();
         } else if (is_obj_type(self->ho_, "RangeVarPlot") && strcmp(n, "plot") == 0) {
             return PyObject_CallFunctionObjArgs(rvp_plot, (PyObject*) self, NULL);
         } else if (is_obj_type(self->ho_, "PlotShape") && strcmp(n, "plot") == 0) {
@@ -3062,16 +3055,12 @@ static PyMethodDef toplevel_methods[] = {
      "Return full path to file that contains Py_Initialize()"},
     {NULL, NULL, 0, NULL}};
 
-static void add2topdict(PyObject* dict) {
-    for (PyMethodDef* meth = toplevel_methods; meth->ml_name != NULL; meth++) {
-        int err;
-        auto nn = nb::steal(Py_BuildValue("s", meth->ml_doc));
-        if (!nn) {
-            return;
-        }
-        err = PyDict_SetItemString(dict, meth->ml_name, nn.ptr());
-        if (err) {
-            return;
+static void add2topdict(nb::handle dict) {
+    for (PyMethodDef* meth = toplevel_methods; meth->ml_name != nullptr; meth++) {
+        try {
+            dict[meth->ml_name] = nb::none();
+        } catch (const nb::python_error&) {
+            break;
         }
     }
 }
