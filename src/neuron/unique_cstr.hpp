@@ -22,6 +22,7 @@ class unique_cstr {
 
     const unique_cstr& operator=(const unique_cstr&) = delete;
     const unique_cstr& operator=(unique_cstr&& other) {
+        std::free(this->str_);
         this->str_ = std::exchange(other.str_, nullptr);
         return *this;
     }
