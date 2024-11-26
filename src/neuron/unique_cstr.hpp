@@ -53,8 +53,4 @@ class unique_cstr {
     char* str_ = nullptr;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const unique_cstr& cstr) {
-    return os << cstr.c_str();
-}
-
 }  // namespace neuron
