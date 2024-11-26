@@ -20,8 +20,8 @@ class unique_cstr {
         *this = std::move(other);
     }
 
-    const unique_cstr& operator=(const unique_cstr&) = delete;
-    const unique_cstr& operator=(unique_cstr&& other) noexcept {
+    unique_cstr& operator=(const unique_cstr&) = delete;
+    unique_cstr& operator=(unique_cstr&& other) noexcept {
         std::free(this->str_);
         this->str_ = std::exchange(other.str_, nullptr);
         return *this;
