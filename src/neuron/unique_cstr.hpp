@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <utility>
+#include <ostream>
 
 namespace neuron {
 
@@ -50,5 +51,9 @@ class unique_cstr {
   private:
     char* str_ = nullptr;
 };
+
+inline std::ostream& operator<<(std::ostream& os, const unique_cstr& cstr) {
+  return os << cstr;
+}
 
 }  // namespace neuron
