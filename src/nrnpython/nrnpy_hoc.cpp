@@ -409,17 +409,14 @@ static Inst* save_pc(Inst* newpc) {
 
 // also called from nrnpy_nrn.cpp
 int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
-    int i, narg = PyTuple_Size(args);
-    for (i = 0; i < narg; ++i) {
-        PyObject* po = PyTuple_GetItem(args, i);
-        // PyObject_Print(po, stdout, 0);
-        // printf("  pushargs %d\n", i);
-        if (nrnpy_numbercheck(po)) {
-            nb::float_ pn(po);
-            hoc_pushx(static_cast<double>(pn));
-        } else if (is_python_string(po)) {
+    const nb::tuple tup(args);
+    for (int i = 0; i < tup.size(); ++i) {
+        nb::object po(tup[i]);
+        if (nrnpy_numbercheck(po.ptr())) {
+            hoc_pushx(nb::cast<double>(po));
+        } else if (is_python_string(po.ptr())) {
             char** ts = hoc_temp_charptr();
-            Py2NRNString str(po, /* disable_release */ true);
+            Py2NRNString str(po.ptr(), /* disable_release */ true);
             if (str.err()) {
                 // Since Python error has been set, need to clear, or hoc_execerror
                 // printing with Printf will generate a
@@ -434,7 +431,7 @@ int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
             *ts = str.c_str();
             s2free.push_back(*ts);
             hoc_pushstr(ts);
-        } else if (PyObject_TypeCheck(po, hocobject_type)) {
+        } else if (PyObject_TypeCheck(po.ptr(), hocobject_type)) {
             // The PyObject_TypeCheck above used to be PyObject_IsInstance. The
             // problem with the latter is that it calls the __class__ method of
             // the object which can raise an error for nrn.Section, nrn.Segment,
@@ -443,7 +440,7 @@ int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
             // Exception ignored on calling ctypes callback function: <function Printf
             // thus obscuring the actual error, such as
             // nrn.Segment associated with deleted internal Section.
-            PyHocObject* pho = (PyHocObject*) po;
+            PyHocObject* pho = (PyHocObject*) po.ptr();
             PyHoc::ObjectType tp = pho->type_;
             if (tp == PyHoc::HocObject) {
                 hoc_push_object(pho->ho_);
@@ -463,28 +460,25 @@ int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
             } else {
                 // make a hoc python object and push that
                 Object* ob = NULL;
-                pyobject_in_objptr(&ob, po);
+                pyobject_in_objptr(&ob, po.ptr());
                 hoc_push_object(ob);
                 hoc_obj_unref(ob);
             }
         } else {  // make a hoc PythonObject and push that?
             Object* ob = NULL;
-            if (po != Py_None) {
-                pyobject_in_objptr(&ob, po);
+            if (!po.is_none()) {
+                pyobject_in_objptr(&ob, po.ptr());
             }
             hoc_push_object(ob);
             hoc_obj_unref(ob);
         }
     }
-    return narg;
+    return tup.size();
 }
 
 void hocobj_pushargs_free_strings(std::vector<char*>& s2free) {
-    std::vector<char*>::iterator it = s2free.begin();
-    for (; it != s2free.end(); ++it) {
-        if (*it) {
-            free(*it);
-        }
+    for (char* e: s2free) {
+        free(e);
     }
     s2free.clear();
 }
@@ -2765,10 +2759,9 @@ static Object** gui_helper_(const char* name, Object* obj) {
 
 static Object** vec_as_numpy_helper(int size, double* data) {
     if (vec_as_numpy) {
-        PyObject* po = (*vec_as_numpy)(size, data);
-        if (po != Py_None) {
-            Object* ho = nrnpy_po2ho(po);
-            Py_DECREF(po);
+        auto po = nb::steal((*vec_as_numpy)(size, data));
+        if (!po.is_none()) {
+            Object* ho = nrnpy_po2ho(po.release().ptr());
             --ho->refcount;
             return hoc_temp_objptr(ho);
         }

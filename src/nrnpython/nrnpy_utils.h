@@ -1,37 +1,17 @@
 #pragma once
 
 #include "nrnwrap_Python.h"
+#include "nrn_export.hpp"
 #include <cassert>
+
 
 inline bool is_python_string(PyObject* python_string) {
     return PyUnicode_Check(python_string) || PyBytes_Check(python_string);
 }
 
-class Py2NRNString {
+class NRN_EXPORT Py2NRNString {
   public:
-    Py2NRNString(PyObject* python_string, bool disable_release = false) {
-        disable_release_ = disable_release;
-        str_ = NULL;
-        if (PyUnicode_Check(python_string)) {
-            PyObject* py_bytes = PyUnicode_AsASCIIString(python_string);
-            if (py_bytes) {
-                str_ = strdup(PyBytes_AsString(py_bytes));
-                if (!str_) {  // errno is ENOMEM
-                    PyErr_SetString(PyExc_MemoryError, "strdup in Py2NRNString");
-                }
-            }
-            Py_XDECREF(py_bytes);
-        } else if (PyBytes_Check(python_string)) {
-            str_ = strdup(PyBytes_AsString(python_string));
-            // assert(strlen(str_) == PyBytes_Size(python_string))
-            // not checking for embedded '\0'
-            if (!str_) {  // errno is ENOMEM
-                PyErr_SetString(PyExc_MemoryError, "strdup in Py2NRNString");
-            }
-        } else {  // Neither Unicode or PyBytes
-            PyErr_SetString(PyExc_TypeError, "Neither Unicode or PyBytes");
-        }
-    }
+    Py2NRNString(PyObject* python_string, bool disable_release = false);
 
     ~Py2NRNString() {
         if (!disable_release_ && str_) {
@@ -44,53 +24,9 @@ class Py2NRNString {
     inline bool err() const {
         return str_ == NULL;
     }
-    inline void set_pyerr(PyObject* type, const char* message) {
-        PyObject* ptype = NULL;
-        PyObject* pvalue = NULL;
-        PyObject* ptraceback = NULL;
-        if (err()) {
-            PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-        }
-        if (pvalue && ptype) {
-            PyObject* umes = PyUnicode_FromFormat("%s (Note: %S: %S)", message, ptype, pvalue);
-            PyErr_SetObject(type, umes);  // umes is borrowed reference
-            Py_XDECREF(umes);
-        } else {
-            PyErr_SetString(type, message);
-        }
-        Py_XDECREF(ptype);
-        Py_XDECREF(pvalue);
-        Py_XDECREF(ptraceback);
-    }
-    inline char* get_pyerr() {
-        PyObject* ptype = NULL;
-        PyObject* pvalue = NULL;
-        PyObject* ptraceback = NULL;
-        if (err()) {
-            PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-            if (pvalue) {
-                PyObject* pstr = PyObject_Str(pvalue);
-                if (pstr) {
-                    const char* err_msg = PyUnicode_AsUTF8(pstr);
-                    if (err_msg) {
-                        str_ = strdup(err_msg);
-                    } else {
-                        str_ = strdup("get_pyerr failed at PyUnicode_AsUTF8");
-                    }
-                    Py_XDECREF(pstr);
-                } else {
-                    str_ = strdup("get_pyerr failed at PyObject_Str");
-                }
-            } else {
-                str_ = strdup("get_pyerr failed at PyErr_Fetch");
-            }
-        }
-        PyErr_Clear();  // in case could not turn pvalue into c_str.
-        Py_XDECREF(ptype);
-        Py_XDECREF(pvalue);
-        Py_XDECREF(ptraceback);
-        return str_;
-    }
+
+    void set_pyerr(PyObject* type, const char* message);
+    char* get_pyerr();
 
   private:
     Py2NRNString();
@@ -107,7 +43,7 @@ class Py2NRNString {
  *         hoc_execerr_ext("hoc message : %s", e.c_str());
  *  e will be automatically deleted even though execerror does not return.
  */
-class PyErr2NRNString {
+class NRN_EXPORT PyErr2NRNString {
   public:
     PyErr2NRNString() {
         str_ = NULL;
@@ -123,35 +59,7 @@ class PyErr2NRNString {
         return str_;
     }
 
-    inline char* get_pyerr() {
-        PyObject* ptype = NULL;
-        PyObject* pvalue = NULL;
-        PyObject* ptraceback = NULL;
-        if (PyErr_Occurred()) {
-            PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-            if (pvalue) {
-                PyObject* pstr = PyObject_Str(pvalue);
-                if (pstr) {
-                    const char* err_msg = PyUnicode_AsUTF8(pstr);
-                    if (err_msg) {
-                        str_ = strdup(err_msg);
-                    } else {
-                        str_ = strdup("get_pyerr failed at PyUnicode_AsUTF8");
-                    }
-                    Py_XDECREF(pstr);
-                } else {
-                    str_ = strdup("get_pyerr failed at PyObject_Str");
-                }
-            } else {
-                str_ = strdup("get_pyerr failed at PyErr_Fetch");
-            }
-        }
-        PyErr_Clear();  // in case could not turn pvalue into c_str.
-        Py_XDECREF(ptype);
-        Py_XDECREF(pvalue);
-        Py_XDECREF(ptraceback);
-        return str_;
-    }
+    char* get_pyerr();
 
   private:
     PyErr2NRNString(const PyErr2NRNString&);

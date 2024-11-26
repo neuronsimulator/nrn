@@ -1021,8 +1021,8 @@ int point_reg_helper(Symbol* s2) {
 }
 
 extern void class2oc_base(const char*,
-                          void* (*cons)(Object*),
-                          void (*destruct)(void*),
+                          ctor_f* cons,
+                          dtor_f* destruct,
                           Member_func*,
                           Member_ret_obj_func*,
                           Member_ret_str_func*);
