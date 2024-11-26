@@ -54,7 +54,7 @@ class unique_cstr {
 };
 
 inline std::ostream& operator<<(std::ostream& os, const unique_cstr& cstr) {
-    return os << cstr;
+    return os << cstr.c_str();
 }
 
 }  // namespace neuron
