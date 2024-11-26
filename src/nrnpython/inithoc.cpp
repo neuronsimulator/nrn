@@ -208,25 +208,31 @@ static int have_opt(const char* arg) {
 }
 
 void nrnpython_finalize() {
-    printf("nrnpython_finalize()\n");
+    // Try to call python_gui_cleanup() if defined in Python
+    PyRun_SimpleString(
+        "try:\n"
+        "    gui.cleanup()\n"
+        "except NameError:\n"
+        "    pass\n");
+
 #if NRN_ENABLE_THREADS
     if (main_thread_ == std::this_thread::get_id()) {
 #else
-    {
+    if (1) {
 #endif
-        // Call python_gui_cleanup() if defined in Python
+        Py_Finalize();
+    } else {  // in the gui thread
         PyRun_SimpleString(
             "try:\n"
-            "    gui.cleanup()\n"
+            "    gui.finalize()\n"
             "except NameError:\n"
             "    pass\n");
-
-        // Finalize Python
-        Py_Finalize();
     }
-#if linux
-    if (system("stty sane > /dev/null 2>&1")) {
-    }  // 'if' to avoid ignoring return value warning
+#if __linux__
+    int err = system("stty sane > /dev/null 2>&1");
+    if (err) {
+        printf("stty sane returned %d\r\n", err);
+    }
 #endif
 }
 
