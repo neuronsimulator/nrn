@@ -200,6 +200,7 @@ static int hoc_evalpointer_err() {
     return 0;
 }
 
+// Returns a new reference.
 static PyObject* nrnexec(PyObject* self, PyObject* args) {
     const char* cmd;
     if (!PyArg_ParseTuple(args, "s", &cmd)) {
@@ -703,14 +704,17 @@ static int set_final_from_stk(PyObject* po) {
 }
 
 
+// Returns a new reference.
 static void* nrnpy_hoc_int_pop() {
     return (void*) Py_BuildValue("i", (long) hoc_xpop());
 }
 
+// Returns a new reference.
 static void* nrnpy_hoc_bool_pop() {
     return (void*) PyBool_FromLong((long) hoc_xpop());
 }
 
+// Returns a new reference.
 static void* fcall(void* vself, void* vargs) {
     PyHocObject* self = (PyHocObject*) vself;
     if (self->ho_) {
@@ -741,19 +745,20 @@ static void* fcall(void* vself, void* vargs) {
         hoc_pushx(d);
     } else if (self->sym_->type == TEMPLATE) {
         Object* ho = hoc_newobj1(self->sym_, narg);
-        PyHocObject* result = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
-        result->ho_ = ho;
-        result->type_ = PyHoc::HocObject;
+        auto result = nb::steal(hocobj_new(hocobject_type, 0, 0));
+        auto* pho = (PyHocObject*) result.ptr();
+        pho->ho_ = ho;
+        pho->type_ = PyHoc::HocObject;
         // Note: I think the only reason we're not using ho2po here is because we don't have to
         //       hocref ho since it was created by hoc_newobj1... but it would be better if we did
         //       so we could avoid repetitive code
         auto location = sym_to_type_map.find(ho->ctemplate->sym);
         if (location != sym_to_type_map.end()) {
             Py_INCREF(location->second);
-            ((PyObject*) result)->ob_type = location->second;
+            result.ptr()->ob_type = location->second;
         }
 
-        return result;
+        return result.release().ptr();
     } else {
         HocTopContextSet
         Inst fc[4];
