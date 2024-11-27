@@ -3189,19 +3189,19 @@ static PyObject* py_hocobj_div(PyObject* obj1, PyObject* obj2) {
 char get_endian_character() {
     char endian_character = 0;
 
-    PyObject* psys = PyImport_ImportModule("sys");
-    if (psys == NULL) {
+    auto psys = nb::steal(PyImport_ImportModule("sys"));
+    if (!psys) {
         PyErr_SetString(PyExc_ImportError, "Failed to import sys to determine system byteorder.");
         return 0;
     }
 
-    PyObject* pbo = PyObject_GetAttrString(psys, "byteorder");
-    if (pbo == NULL) {
+    auto pbo = nb::steal(PyObject_GetAttrString(psys.ptr(), "byteorder"));
+    if (!pbo) {
         PyErr_SetString(PyExc_AttributeError, "sys module does not have attribute 'byteorder'!");
         return 0;
     }
 
-    Py2NRNString byteorder(pbo);
+    Py2NRNString byteorder(pbo.ptr());
     if (byteorder.c_str() == NULL) {
         return 0;
     }
