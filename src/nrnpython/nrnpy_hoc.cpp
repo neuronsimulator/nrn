@@ -1394,21 +1394,20 @@ static PyObject* hocobj_baseattr_safe(PyObject* subself, PyObject* args) {
 
 static int refuse_to_look;
 static PyObject* hocobj_getattro(PyObject* subself, PyObject* name) {
-    PyObject* result = 0;
     if ((PyTypeObject*) PyObject_Type(subself) != hocobject_type) {
         // printf("try generic %s\n", PyString_AsString(name));
-        result = PyObject_GenericGetAttr(subself, name);
+        nb::object result = nb::steal(PyObject_GenericGetAttr(subself, name));
         if (result) {
             // printf("found generic %s\n", PyString_AsString(name));
-            return result;
+            return result.release().ptr();
         } else {
             PyErr_Clear();
         }
     }
     if (!refuse_to_look) {
-        result = hocobj_getattr(subself, name);
+        return hocobj_getattr(subself, name);
     }
-    return result;
+    return nullptr;
 }
 
 static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value) {
