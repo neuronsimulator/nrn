@@ -9,7 +9,6 @@
 #endif
 #include "ocmisc.h"
 #include "hocstr.h"
-#include "hoclist.h"
 #include "parse.hpp"
 #include "hocparse.h"
 #include <errno.h>
@@ -576,8 +575,7 @@ static int hoc_Load_file(int always, const char* name) {
         Temporarily change to the directory containing the file so
         that it can xopen files relative to its location.
     */
-    static hoc_List* loaded;
-    hoc_Item* q;
+    static std::vector<std::string> loaded;
     int b, is_loaded;
     int goback;
     char expname[hoc_load_file_size_];
@@ -590,11 +588,9 @@ static int hoc_Load_file(int always, const char* name) {
     goback = 0;
     /* has the file already been loaded */
     is_loaded = 0;
-    if (!loaded) {
-        loaded = hoc_l_newlist();
-    }
-    ITERATE(q, loaded) {
-        if (strcmp(STR(q), name) == 0) {
+
+    for (const std::string& q: loaded) {
+        if (q == name) {
             if (!always) {
                 return 1;
             } else {
@@ -660,7 +656,7 @@ static int hoc_Load_file(int always, const char* name) {
     /* add the name to the list of loaded packages */
     if (f) {
         if (!is_loaded) {
-            hoc_l_lappendstr(loaded, name);
+            loaded.push_back(name);
         }
         b = 1;
     } else {
