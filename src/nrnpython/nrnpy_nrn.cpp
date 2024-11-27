@@ -1169,7 +1169,7 @@ static PyObject* pysec_subtree_impl(Section* sec) {
         return nullptr;
     }
 
-    if(!pysec_subtree1(result.ptr(), sec)) {
+    if (!pysec_subtree1(result.ptr(), sec)) {
         return nullptr;
     }
 
