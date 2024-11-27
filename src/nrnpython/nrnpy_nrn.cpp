@@ -1188,15 +1188,18 @@ static PyObject* pysec_subtree_safe(NPySecObj* const self) {
     return nrn::convert_cxx_exceptions(pysec_subtree, self);
 }
 
+static Section* find_root_section(Section* sec) {
+    for (; sec->parentsec; sec = sec->parentsec) {
+    }
+
+    return sec;
+}
+
 static PyObject* pysec_wholetree(NPySecObj* const self) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
-    Section* s;
 
-    for (s = sec; s->parentsec; s = s->parentsec) {
-    }
-
-    return pysec_subtree_impl(s);
+    return pysec_subtree_impl(find_root_section(sec));
 }
 
 static PyObject* pysec_wholetree_safe(NPySecObj* const self) {
