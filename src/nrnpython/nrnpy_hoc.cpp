@@ -958,11 +958,11 @@ static void eval_component(PyHocObject* po, int ix) {
 
 // Returns a new reference.
 PyObject* nrn_hocobj_handle(neuron::container::data_handle<double> d) {
-    PyObject* result = hocobj_new(hocobject_type, 0, 0);
-    auto* const po = reinterpret_cast<PyHocObject*>(result);
+    auto result = nb::steal(hocobj_new(hocobject_type, 0, 0));
+    auto* const po = reinterpret_cast<PyHocObject*>(result.ptr());
     po->type_ = PyHoc::HocScalarPtr;
     po->u.px_ = d;
-    return result;
+    return result.release().ptr();
 }
 
 // Returns a new reference.
