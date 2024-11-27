@@ -569,24 +569,23 @@ PyObject* nrnpy_ho2po(Object* o) {
     // or be a native hoc class instance such as Graph.
     // The return value is None, or the encapsulated PyObject or
     // an encapsulating PyHocObject
-    PyObject* po;
+    nb::object po;
     if (!o) {
-        po = Py_BuildValue("");
+        po = nb::none();
     } else if (o->ctemplate->sym == nrnpy_pyobj_sym_) {
-        po = nrnpy_hoc2pyobject(o);
-        Py_INCREF(po);
+        po = nb::borrow(nrnpy_hoc2pyobject(o));
     } else {
-        po = hocobj_new(hocobject_type, 0, 0);
-        ((PyHocObject*) po)->ho_ = o;
-        ((PyHocObject*) po)->type_ = PyHoc::HocObject;
+        po = nb::steal(hocobj_new(hocobject_type, 0, 0));
+        ((PyHocObject*) po.ptr())->ho_ = o;
+        ((PyHocObject*) po.ptr())->type_ = PyHoc::HocObject;
         auto location = sym_to_type_map.find(o->ctemplate->sym);
         if (location != sym_to_type_map.end()) {
             Py_INCREF(location->second);
-            po->ob_type = location->second;
+            po.ptr()->ob_type = location->second;
         }
         hoc_obj_ref(o);
     }
-    return po;
+    return po.release().ptr();
 }
 
 // not static because it's used in nrnpy_nrn.cpp
