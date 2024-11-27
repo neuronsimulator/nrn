@@ -1241,9 +1241,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                 nrn_inpython_ = 0;
                 if (t == SECTION || t == SECTIONREF) {
                     section_object_seen = 0;
-                    PyObject* ret = nrnpy_cas(0, 0);
+                    auto ret = nb::steal(nrnpy_cas(0, 0));
                     nrn_popsec();
-                    return ret;
+                    return ret.release().ptr();
                 } else {
                     if (isptr) {
                         auto handle = hoc_pop_handle<double>();
