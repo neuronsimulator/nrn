@@ -1699,12 +1699,12 @@ static int hocobj_nonzero(PyObject* self) {
 }
 
 PyObject* nrnpy_forall(PyObject* self, PyObject* args) {
-    PyObject* po = hocobj_new(hocobject_type, 0, 0);
-    PyHocObject* pho = (PyHocObject*) po;
+    auto po = nb::steal(hocobj_new(hocobject_type, 0, 0));
+    PyHocObject* pho = (PyHocObject*) po.ptr();
     pho->type_ = PyHoc::HocForallSectionIterator;
     pho->u.its_ = PyHoc::Begin;
     pho->iteritem_ = section_list;
-    return po;
+    return po.release().ptr();
 }
 
 PyObject* nrnpy_forall_safe(PyObject* self, PyObject* args) {
