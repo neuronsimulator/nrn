@@ -1917,10 +1917,11 @@ static void rv_noexist(Section* sec, const char* n, double x, int err) {
     PyErr_SetString(PyExc_AttributeError, buf);
 }
 
+// Returns a (casted) new reference.
 static NPyRangeVar* rvnew(Symbol* sym, NPySecObj* sec, double x) {
     NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
     if (!r) {
-        return NULL;
+        return nullptr;
     }
     r->pymech_ = new_pymechobj();
     r->pymech_->pyseg_ = PyObject_New(NPySegObj, psegment_type);
