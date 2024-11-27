@@ -1071,7 +1071,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         }
         if (strcmp(n, "__dict__") == 0) {
             // all the public names
-            Symlist* sl = 0;
+            Symlist* sl = nullptr;
             if (self->ho_) {
                 sl = self->ho_->ctemplate->symtable;
             } else if (self->sym_ && self->sym_->type == TEMPLATE) {
