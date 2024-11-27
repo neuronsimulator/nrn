@@ -790,7 +790,7 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
     curargs_ = args;
 
     PyObject* section = 0;
-    PyObject* result{};
+    nb::object result;
     if (kwrds && PyDict_Check(kwrds)) {
 #if 0
 		PyObject* keys = PyDict_Keys(kwrds);
@@ -832,10 +832,10 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
         }
     }
     if (self->type_ == PyHoc::HocTopLevelInterpreter) {
-        result = nrnexec((PyObject*) self, args);
+        result = nb::steal(nrnexec((PyObject*) self, args));
     } else if (self->type_ == PyHoc::HocFunction) {
         try {
-            result = static_cast<PyObject*>(OcJump::fpycall(fcall, self, args));
+            result = nb::steal(static_cast<PyObject*>(OcJump::fpycall(fcall, self, args)));
         } catch (std::exception const& e) {
             std::ostringstream oss;
             oss << "hocobj_call error: " << e.what();
@@ -851,7 +851,7 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
         nrn_popsec();
     }
     curargs_ = prevargs_;
-    return result;
+    return result.release().ptr();
 }
 
 static Arrayinfo* hocobj_aray(Symbol* sym, Object* ho) {
