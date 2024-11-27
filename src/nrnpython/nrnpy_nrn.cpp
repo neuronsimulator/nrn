@@ -1968,18 +1968,17 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
         return nullptr;
     }
     // printf("section_getattr %s\n", n);
-    PyObject* result = nullptr;
+    nb::object result;
     if (strcmp(n, "L") == 0) {
-        result = Py_BuildValue("d", section_length(sec));
+        result = nb::steal(Py_BuildValue("d", section_length(sec)));
     } else if (strcmp(n, "Ra") == 0) {
-        result = Py_BuildValue("d", nrn_ra(sec));
+        result = nb::steal(Py_BuildValue("d", nrn_ra(sec)));
     } else if (strcmp(n, "nseg") == 0) {
-        result = Py_BuildValue("i", sec->nnode - 1);
+        result = nb::steal(Py_BuildValue("i", sec->nnode - 1));
     } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
         Symbol* sym = ((NPyRangeVar*) rv)->sym_;
         if (is_array(*sym)) {
-            NPyRangeVar* r = rvnew(sym, self, 0.5);
-            result = (PyObject*) r;
+            result = nb::steal((PyObject*) rvnew(sym, self, 0.5));
         } else {
             int err;
             auto const d = nrnpy_rangepointer(sec, sym, 0.5, &err, 0 /* idx */);
@@ -1990,22 +1989,22 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
                 if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
                     nrn_area_ri(sec);
                 }
-                result = build_python_value(d);
+                result = nb::steal(build_python_value(d));
             }
         }
     } else if (strcmp(n, "rallbranch") == 0) {
-        result = Py_BuildValue("d", sec->prop->dparam[4].get<double>());
+        result = nb::steal(Py_BuildValue("d", sec->prop->dparam[4].get<double>()));
     } else if (strcmp(n, "__dict__") == 0) {
         nb::dict out_dict{};
         out_dict["L"] = nb::none();
         out_dict["Ra"] = nb::none();
         out_dict["nseg"] = nb::none();
         out_dict["rallbranch"] = nb::none();
-        result = out_dict.release().ptr();
+        result = std::move(out_dict);
     } else {
-        result = PyObject_GenericGetAttr((PyObject*) self, pyname);
+        result = nb::steal(PyObject_GenericGetAttr((PyObject*) self, pyname));
     }
-    return result;
+    return result.release().ptr();
 }
 
 static PyObject* section_getattro_safe(NPySecObj* self, PyObject* pyname) {
