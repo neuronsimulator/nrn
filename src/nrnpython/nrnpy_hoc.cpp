@@ -789,7 +789,7 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
     PyObject* prevargs_ = curargs_;
     curargs_ = args;
 
-    PyObject* section = 0;
+    PyObject* section = nullptr;
     nb::object result;
     if (kwrds && PyDict_Check(kwrds)) {
 #if 0
@@ -1384,7 +1384,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
 static PyObject* hocobj_baseattr(PyObject* subself, PyObject* args) {
     PyObject* name;
     if (!PyArg_ParseTuple(args, "O", &name)) {
-        return NULL;
+        return nullptr;
     }
     return hocobj_getattr(subself, name);
 }
