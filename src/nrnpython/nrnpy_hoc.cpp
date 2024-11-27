@@ -1,6 +1,7 @@
 #include "cabcode.h"
 #include "ivocvect.h"
 #include "neuron/container/data_handle.hpp"
+#include "neuron/unique_cstr.hpp"
 #include "nrniv_mf.h"
 #include "nrn_pyhocobject.h"
 #include "nrnoc2iv.h"
@@ -410,7 +411,7 @@ static Inst* save_pc(Inst* newpc) {
 }
 
 // also called from nrnpy_nrn.cpp
-int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
+int hocobj_pushargs(PyObject* args, std::vector<neuron::unique_cstr>& s2free) {
     const nb::tuple tup(args);
     for (int i = 0; i < tup.size(); ++i) {
         nb::object po(tup[i]);
@@ -425,13 +426,14 @@ int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
                 // Exception ignored on calling ctypes callback function.
                 // So get the message, clear, and make the message
                 // part of the execerror.
-                *ts = str.get_pyerr();
-                s2free.push_back(*ts);
+                auto err = neuron::unique_cstr(str.get_pyerr());
+                *ts = err.c_str();
+                s2free.push_back(std::move(err));
                 hoc_execerr_ext("python string arg cannot decode into c_str. Pyerr message: %s",
                                 *ts);
             }
             *ts = str.c_str();
-            s2free.push_back(*ts);
+            s2free.push_back(neuron::unique_cstr(*ts));
             hoc_pushstr(ts);
         } else if (PyObject_TypeCheck(po.ptr(), hocobject_type)) {
             // The PyObject_TypeCheck above used to be PyObject_IsInstance. The
@@ -476,13 +478,6 @@ int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
         }
     }
     return tup.size();
-}
-
-void hocobj_pushargs_free_strings(std::vector<char*>& s2free) {
-    for (char* e: s2free) {
-        free(e);
-    }
-    s2free.clear();
 }
 
 static Symbol* getsym(char* name, Object* ho, int fail) {
@@ -725,16 +720,12 @@ static void* fcall(void* vself, void* vargs) {
         hoc_push_object(self->ho_);
     }
 
-    // TODO: this will still have some memory leaks in case of errors.
-    //      see discussion in https://github.com/neuronsimulator/nrn/pull/1437
-    std::vector<char*> strings_to_free;
-
+    std::vector<neuron::unique_cstr> strings_to_free;
     int narg = hocobj_pushargs((PyObject*) vargs, strings_to_free);
     int var_type;
     if (self->ho_) {
         self->nindex_ = narg;
         var_type = component(self);
-        hocobj_pushargs_free_strings(strings_to_free);
         switch (var_type) {
         case 2:
             return nrnpy_hoc_bool_pop();
@@ -765,7 +756,6 @@ static void* fcall(void* vself, void* vargs) {
             ((PyObject*) result)->ob_type = location->second;
         }
 
-        hocobj_pushargs_free_strings(strings_to_free);
         return result;
     } else {
         HocTopContextSet
@@ -780,7 +770,6 @@ static void* fcall(void* vself, void* vargs) {
         hoc_pc = pcsav;
         HocContextRestore;
     }
-    hocobj_pushargs_free_strings(strings_to_free);
 
     return nrnpy_hoc_pop("laststatement fcall");
 }

@@ -11,6 +11,7 @@
 #include "nrnpy.h"
 #include "nrnpy_utils.h"
 #include "convert_cxx_exceptions.hpp"
+#include "neuron/unique_cstr.hpp"
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
@@ -40,8 +41,7 @@ extern void nrn_pt3dstyle0(Section* sec);
 
 extern PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op);
 // used to be static in nrnpy_hoc.cpp
-extern int hocobj_pushargs(PyObject*, std::vector<char*>&);
-extern void hocobj_pushargs_free_strings(std::vector<char*>&);
+extern int hocobj_pushargs(PyObject*, std::vector<neuron::unique_cstr>&);
 
 
 struct NPyAllSegOfSecIter {
@@ -1318,7 +1318,7 @@ static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
     // patterning after fcall
     Symbol sym{};  // in case of error, need the name.
     sym.name = (char*) self->f_->name;
-    std::vector<char*> strings_to_free;
+    std::vector<neuron::unique_cstr> strings_to_free;
     int narg = hocobj_pushargs(args, strings_to_free);
     hoc_push_frame(&sym, narg);  // get_argument uses the current frame
     try {
@@ -1330,7 +1330,6 @@ static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
         PyErr_SetString(PyExc_RuntimeError, oss.str().c_str());
     }
     hoc_pop_frame();
-    hocobj_pushargs_free_strings(strings_to_free);
 
     return result;
 }
