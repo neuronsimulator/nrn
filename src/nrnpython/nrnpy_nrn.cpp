@@ -1319,9 +1319,10 @@ static PyObject* NPyMechFunc_name_safe(NPyMechFunc* self) {
     return nrn::convert_cxx_exceptions(NPyMechFunc_name, self);
 }
 
+// Returns a new reference.
 static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
     CHECK_PROP_INVALID(self->pymech_->prop_id_);
-    PyObject* result = NULL;
+    nb::object result;
     auto& f = self->f_->func;
 
     // patterning after fcall
@@ -1332,7 +1333,7 @@ static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
     hoc_push_frame(&sym, narg);  // get_argument uses the current frame
     try {
         double x = (f) (self->pymech_->prop_);
-        result = Py_BuildValue("d", x);
+        result = nb::steal(Py_BuildValue("d", x));
     } catch (std::exception const& e) {
         std::ostringstream oss;
         oss << "mechanism.function call error: " << e.what();
@@ -1340,7 +1341,7 @@ static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
     }
     hoc_pop_frame();
 
-    return result;
+    return result.release().ptr();
 }
 
 static PyObject* NPyMechFunc_call_safe(NPyMechFunc* self, PyObject* args) {
