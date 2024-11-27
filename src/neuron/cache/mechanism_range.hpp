@@ -55,7 +55,7 @@ struct MechanismRange {
                    NrnThread&,
                    Memb_list& ml,
                    int type)
-        : MechanismRange{type, ml.get_storage_offset()} {
+        : MechanismRange{type, ml.get_storage_offset(), ml.m_cache_offset} {
         auto const& ptr_cache = mechanism::_get::_pdata_ptr_cache_data(cache_token, type);
         m_pdata_ptrs = ptr_cache.data();
         assert(ptr_cache.size() <= NumDatumFields);

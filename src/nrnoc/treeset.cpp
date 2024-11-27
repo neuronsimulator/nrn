@@ -73,6 +73,95 @@ extern short* nrn_is_artificial_;
 extern cTemplate** nrn_pnt_template_;
 #endif
 
+namespace nrn {
+static size_t cacheline_bytesize{64};  // Would like to determine dynamically.
+size_t xtra_padding(size_t nbytes) {
+    auto x = nbytes % cacheline_bytesize;
+    return x ? cacheline_bytesize - x : 0;
+}
+// assert(xtra_padding(63) == 1);
+// assert(xtra_padding(64) == 0);
+// assert(xtra_padding(65) == 63);
+
+static void pr_nodecount(const char* mesg) {
+    NrnThread* nt{};
+    printf("ZZZ %s\n", mesg);
+    FOR_THREADS(nt) {
+        printf("ZZZ %d node %d offset=%zd\n", nt->id, nt->end, nt->_node_data_offset);
+        for (auto tml = nt->tml; tml; tml = tml->next) {
+            Memb_list* ml = tml->ml;
+            const char* s = memb_func[tml->index].sym->name;
+            printf("ZZZ %d %s %d offset=%zd\n", nt->id, s, ml->nodecount, ml->get_storage_offset());
+        }
+    }
+}
+
+static void pr_thread_padding() {
+    NrnThread* nt{};
+    FOR_THREADS(nt) {
+        if (nt->node_padding) {
+            auto& np = *nt->node_padding;
+            for (auto& node: np) {
+                std::cout << "QQQ tid=" << nt->id << "  " << *node << std::endl;
+            }
+        }
+        for (auto tml = nt->tml; tml; tml = tml->next) {
+            Memb_list* ml = tml->ml;
+            if (ml->mech_padding) {
+                auto& mp = *ml->mech_padding;
+                for (Prop* p: mp) {
+                    const char* s = memb_func[tml->index].sym->name;
+                    std::cout << "XXX " << nt->id << "  " << s << "  " << p->id() << std::endl;
+                }
+            }
+        }
+    }
+}
+
+static void add_thread_padding() {
+    //    pr_nodecount("before thread padding");
+    NrnThread* nt;
+    FOR_THREADS(nt) {
+        auto dsz = sizeof(double);
+        size_t npad = xtra_padding(nt->end * dsz) / dsz;
+        if (!nt->node_padding) {
+            nt->node_padding = new std::vector<Node*>();
+        }
+        auto& np = *nt->node_padding;
+        for (size_t i = 0; i < np.size(); ++i) {
+            delete np[i];
+        }
+        np.clear();
+        np.reserve(npad);
+        for (size_t i = 0; i < npad; ++i) {
+            np.push_back(new Node());
+        }
+
+        for (auto tml = nt->tml; tml; tml = tml->next) {
+            Memb_list* ml = tml->ml;
+            npad = xtra_padding(ml->nodecount * dsz) / dsz;
+            if (!ml->mech_padding) {
+                ml->mech_padding = new std::vector<Prop*>();
+            }
+            if (ml->mech_padding) {
+                auto& mp = *ml->mech_padding;
+                for (auto& ptr: mp) {
+                    delete ptr;
+                }
+                mp.clear();
+                mp.reserve(npad);
+                for (size_t i = 0; i < npad; ++i) {
+                    Prop* p = new Prop(tml->index);
+                    mp.push_back(p);
+                }
+            }
+        }
+    }
+    //    pr_thread_padding();
+    //    pr_nodecount("after thread padding");
+}
+}  // namespace nrn
+
 /*
 (2002-04-06)
 One reason for going into the following in depth is to allow
@@ -1735,6 +1824,9 @@ void v_setup_vectors(void) {
             }
         }
     }
+
+    nrn::add_thread_padding();
+
     neuron::model().node_data().mark_as_unsorted();
     // The assumption here is that one can arbitrarily permute the
     // NrnThread node order (within the constraint that
@@ -1756,6 +1848,8 @@ void v_setup_vectors(void) {
     long_difus_solve(nrn_ensure_model_data_are_sorted(), 3, *nrn_threads);  // !!!
     nrn_nonvint_block_setup();
     diam_changed = 1;
+    //    nrn::pr_thread_padding();
+    //    nrn::pr_nodecount("after sorting");
 
 #if 0
     for (int tid = 0; tid < nrn_nthread; ++tid) {
@@ -1976,10 +2070,11 @@ static void nrn_sort_mech_data(
                                             pdata_hack.at(field).reserve(mech_data_size);
                                             pdata_fields_to_cache.push_back(field);
                                         });
-        std::size_t global_i{}, trivial_counter{};
+        std::size_t global_i{}, trivial_counter{}, cache_count{};
         std::vector<std::size_t> mech_data_permutation(mech_data_size,
                                                        std::numeric_limits<std::size_t>::max());
         NrnThread* nt{};
+
         FOR_THREADS(nt) {
             // the Memb_list for this mechanism in this thread, this might be
             // null if there are no entries, or if it's an artificial cell type(?)
@@ -1987,6 +2082,8 @@ static void nrn_sort_mech_data(
             if (ml) {
                 // Tell the Memb_list what global offset its values start at
                 ml->set_storage_offset(global_i);
+                ml->m_cache_offset = cache_count;
+                cache_count += ml->nodecount;
             }
             // Record where in the global storage this NrnThread's instances of
             // the mechanism start
@@ -2021,6 +2118,7 @@ static void nrn_sort_mech_data(
                 }
             }
             assert(!ml || ml->nodecount == nt_mech_count);
+
             // Look for any artificial cells attached to this NrnThread
             if (nrn_is_artificial_[type]) {
                 cTemplate* tmp = nrn_pnt_template_[type];
@@ -2038,6 +2136,15 @@ static void nrn_sort_mech_data(
                                 pnt->prop->dparam + field);
                         }
                     }
+                }
+            }
+
+            // permute the padding to global_id
+            if (ml && ml->mech_padding) {
+                auto& mp = *ml->mech_padding;
+                for (std::size_t i = 0; i < mp.size(); ++i) {
+                    auto ipad = mp[i]->current_row();
+                    mech_data_permutation.at(ipad) = global_i++;
                 }
             }
         }
@@ -2143,6 +2250,8 @@ static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_ty
                                                    std::numeric_limits<std::size_t>::max());
     // Process threads one at a time -- this means that the data for each
     // NrnThread will be contiguous.
+    // and we will permute the NrnThread.node_padding after NrnThread.end;
+
     NrnThread* nt{};
     FOR_THREADS(nt) {
         // What offset in the global node data structure do the values for this thread
@@ -2155,6 +2264,13 @@ static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_ty
             assert(current_node_row < node_data_size);
             assert(global_i < node_data_size);
             node_data_permutation.at(current_node_row) = global_i;
+        }
+        if (nt->node_padding) {
+            auto& np = *nt->node_padding;
+            for (std::size_t i = 0; i < np.size(); ++i) {
+                auto ipad = (*np[i])._node_handle.current_row();
+                node_data_permutation.at(ipad) = global_i++;
+            }
         }
     }
     if (global_i != node_data_size) {

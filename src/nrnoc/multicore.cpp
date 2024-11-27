@@ -327,6 +327,7 @@ void nrn_threads_create(int n, bool parallel) {
                 nt = nrn_threads + i;
                 nt->_t = 0.;
                 nt->_dt = -1e9;
+                nt->node_padding = nullptr;
                 nt->id = i;
                 nt->_stop_stepping = 0;
                 nt->tml = (NrnThreadMembList*) 0;
@@ -387,6 +388,14 @@ void nrn_threads_free() {
     for (it = 0; it < nrn_nthread; ++it) {
         NrnThread* nt = nrn_threads + it;
         NrnThreadMembList *tml, *tml2;
+        if (nt->node_padding) {
+            auto& np = *nt->node_padding;
+            for (std::size_t i = 0; i < np.size(); ++i) {
+                delete np[i];
+            }
+            delete nt->node_padding;
+            nt->node_padding = nullptr;
+        }
         for (tml = nt->tml; tml; tml = tml2) {
             Memb_list* ml = tml->ml;
             tml2 = tml->next;
