@@ -589,7 +589,7 @@ static int hoc_Load_file(int always, const char* name) {
     /* has the file already been loaded */
     is_loaded = 0;
 
-    for(const char* q: loaded) {
+    for (const char* q: loaded) {
         if (strcmp(q, name) == 0) {
             if (!always) {
                 return 1;
