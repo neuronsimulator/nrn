@@ -2699,18 +2699,16 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
             auto active_obj = nb::steal(nrnpy_ho2po(*hoc_objgetarg(iiarg)));
             PyTuple_SetItem(args.ptr(), iarg + 3, active_obj.release().ptr());
         } else if (hoc_is_pdouble_arg(iiarg)) {
-            PyHocObject* ptr_nrn = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
+            auto py_ptr = nb::steal(hocobj_new(hocobject_type, 0, 0));
+            PyHocObject* ptr_nrn = (PyHocObject*) py_ptr.ptr();
             ptr_nrn->type_ = PyHoc::HocScalarPtr;
             ptr_nrn->u.px_ = hoc_hgetarg<double>(iiarg);
-            PyObject* py_ptr = (PyObject*) ptr_nrn;
-            Py_INCREF(py_ptr);
-            PyTuple_SetItem(args.ptr(), iarg + 3, py_ptr);
+            PyTuple_SetItem(args.ptr(), iarg + 3, py_ptr.release().ptr());
         } else if (hoc_is_str_arg(iiarg)) {
             if (handle_strptr > 0) {
                 char** str_arg = hoc_pgargstr(iiarg);
-                PyObject* py_ptr = cpp2refstr(str_arg);
-                Py_INCREF(py_ptr);
-                PyTuple_SetItem(args.ptr(), iarg + 3, py_ptr);
+                auto py_ptr = nb::steal(cpp2refstr(str_arg));
+                PyTuple_SetItem(args.ptr(), iarg + 3, py_ptr.release().ptr());
             } else {
                 auto py_str = nb::steal(PyString_FromString(gargstr(iiarg)));
                 PyTuple_SetItem(args.ptr(), iarg + 3, py_str.release().ptr());
