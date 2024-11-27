@@ -1699,18 +1699,19 @@ static PyObject* seg_point_processes_safe(NPySegObj* self) {
     return nrn::convert_cxx_exceptions(seg_point_processes, self);
 }
 
+// Returns a new reference.
 static PyObject* node_index1(NPySegObj* self) {
     Section* sec = self->pysec_->sec_;
     CHECK_SEC_INVALID(sec);
     Node* nd = node_exact(sec, self->x_);
-    PyObject* result = Py_BuildValue("i", nd->v_node_index);
-    return result;
+    return Py_BuildValue("i", nd->v_node_index);
 }
 
 static PyObject* node_index1_safe(NPySegObj* self) {
     return nrn::convert_cxx_exceptions(node_index1, self);
 }
 
+// Returns a new reference.
 static PyObject* seg_area(NPySegObj* self) {
     Section* sec = self->pysec_->sec_;
     CHECK_SEC_INVALID(sec);
@@ -1723,8 +1724,7 @@ static PyObject* seg_area(NPySegObj* self) {
         Node* nd = node_exact(sec, x);
         a = NODEAREA(nd);
     }
-    PyObject* result = Py_BuildValue("d", a);
-    return result;
+    return Py_BuildValue("d", a);
 }
 
 static PyObject* seg_area_safe(NPySegObj* self) {
@@ -1763,6 +1763,7 @@ static int arg_bisect_arc3d(Section* sec, int npt3d, double x) {
     return left;
 }
 
+// Returns a new reference.
 static PyObject* seg_volume(NPySegObj* self) {
     Section* sec = self->pysec_->sec_;
     CHECK_SEC_INVALID(sec);
@@ -1814,14 +1815,14 @@ static PyObject* seg_volume(NPySegObj* self) {
             }
         }
     }
-    PyObject* result = Py_BuildValue("d", a);
-    return result;
+    return Py_BuildValue("d", a);
 }
 
 static PyObject* seg_volume_safe(NPySegObj* self) {
     return nrn::convert_cxx_exceptions(seg_volume, self);
 }
 
+// Returns a new reference.
 static PyObject* seg_ri(NPySegObj* self) {
     Section* sec = self->pysec_->sec_;
     CHECK_SEC_INVALID(sec);
@@ -1833,8 +1834,7 @@ static PyObject* seg_ri(NPySegObj* self) {
     if (NODERINV(nd)) {
         ri = 1. / NODERINV(nd);
     }
-    PyObject* result = Py_BuildValue("d", ri);
-    return result;
+    return Py_BuildValue("d", ri);
 }
 
 static PyObject* seg_ri_safe(NPySegObj* self) {
@@ -2652,15 +2652,15 @@ static Py_ssize_t rv_len_safe(PyObject* self) {
     return nrn::convert_cxx_exceptions(rv_len, self);
 }
 
+// Returns a new reference.
 static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
     NPyRangeVar* r = (NPyRangeVar*) self;
     Section* sec = r->pymech_->pyseg_->pysec_->sec_;
     CHECK_SEC_INVALID(sec)
 
-    PyObject* result = NULL;
     if (ix < 0 || ix >= rv_len(self)) {
         PyErr_SetString(PyExc_IndexError, r->sym_->name);
-        return NULL;
+        return nullptr;
     }
     if (is_array(*r->sym_)) {
         assert(r->sym_->arayinfo->nsub == 1);
@@ -2677,14 +2677,13 @@ static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
     auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, ix);
     if (d.is_invalid_handle()) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
-        return NULL;
+        return nullptr;
     }
     if (r->isptr_) {
-        result = nrn_hocobj_handle(neuron::container::data_handle<double>(d));
+        return nrn_hocobj_handle(neuron::container::data_handle<double>(d));
     } else {
-        result = build_python_value(d);
+        return build_python_value(d);
     }
-    return result;
 }
 
 static PyObject* rv_getitem_safe(PyObject* self, Py_ssize_t ix) {

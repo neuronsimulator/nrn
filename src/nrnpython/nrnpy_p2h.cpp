@@ -73,6 +73,7 @@ static int pysame(Object* o1, Object* o2) {
     return 0;
 }
 
+// Returns a borrowed reference.
 PyObject* nrnpy_hoc2pyobject(Object* ho) {
     PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
     if (!po) {
@@ -534,8 +535,7 @@ static std::vector<char> pickle(PyObject* p) {
 static std::vector<char> po2pickle(Object* ho) {
     setpickle();
     if (ho && ho->ctemplate->sym == nrnpy_pyobj_sym_) {
-        PyObject* po = nrnpy_hoc2pyobject(ho);
-        return pickle(po);
+        return pickle(nrnpy_hoc2pyobject(ho));
     } else {
         return {};
     }
