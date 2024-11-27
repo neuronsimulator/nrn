@@ -2486,8 +2486,6 @@ static PyObject* hocobj_same_safe(PyHocObject* pself, PyObject* args) {
 
 static char* double_array_interface(PyObject* po, long& stride) {
     void* data = 0;
-    PyObject* pstride;
-    PyObject* psize;
     if (PyObject_HasAttrString(po, "__array_interface__")) {
         auto ai = nb::steal(PyObject_GetAttrString(po, "__array_interface__"));
         auto typestr = Py2NRNString::as_ascii(PyDict_GetItemString(ai.ptr(), "typestr"));
@@ -2497,12 +2495,12 @@ static char* double_array_interface(PyObject* po, long& stride) {
             if (PyErr_Occurred()) {
                 data = 0;
             }
-            pstride = PyDict_GetItemString(ai.ptr(), "strides");
+            PyObject* pstride = PyDict_GetItemString(ai.ptr(), "strides");
             if (pstride == Py_None) {
                 stride = 8;
             } else if (PyTuple_Check(pstride)) {
                 if (PyTuple_Size(pstride) == 1) {
-                    psize = PyTuple_GetItem(pstride, 0);
+                    PyObject* psize = PyTuple_GetItem(pstride, 0);
                     if (PyLong_Check(psize)) {
                         stride = PyLong_AsLong(psize);
                     } else if (PyInt_Check(psize)) {
