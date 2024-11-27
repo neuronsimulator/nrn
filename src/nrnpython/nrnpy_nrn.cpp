@@ -1163,10 +1163,7 @@ static PyObject* pysec_subtree1(PyObject* const sl, Section* const sec) {
 }
 
 // Returns a new reference.
-static PyObject* pysec_subtree(NPySecObj* const self) {
-    Section* const sec = self->sec_;
-    CHECK_SEC_INVALID(sec);
-
+static PyObject* pysec_subtree_impl(Section* sec) {
     auto result = nb::steal(PyList_New(0));
     if (!result) {
         return nullptr;
@@ -1179,6 +1176,14 @@ static PyObject* pysec_subtree(NPySecObj* const self) {
     return result.release().ptr();
 }
 
+// Returns a new reference.
+static PyObject* pysec_subtree(NPySecObj* const self) {
+    Section* const sec = self->sec_;
+    CHECK_SEC_INVALID(sec);
+
+    return pysec_subtree_impl(sec);
+}
+
 static PyObject* pysec_subtree_safe(NPySecObj* const self) {
     return nrn::convert_cxx_exceptions(pysec_subtree, self);
 }
@@ -1188,19 +1193,10 @@ static PyObject* pysec_wholetree(NPySecObj* const self) {
     CHECK_SEC_INVALID(sec);
     Section* s;
 
-    nb::object result = nb::steal(PyList_New(0));
-    if (!result) {
-        return NULL;
-    }
-
     for (s = sec; s->parentsec; s = s->parentsec) {
     }
 
-    if(!pysec_subtree1(result.ptr(), s)) {
-        return nullptr;
-    }
-
-    return result.release().ptr();
+    return pysec_subtree_impl(s);
 }
 
 static PyObject* pysec_wholetree_safe(NPySecObj* const self) {
