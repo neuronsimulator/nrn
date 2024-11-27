@@ -807,7 +807,7 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
         if (num_kwargs > 1) {
             PyErr_SetString(PyExc_RuntimeError, "invalid keyword argument");
             curargs_ = prevargs_;
-            return NULL;
+            return nullptr;
         }
         if (section) {
             if (PyObject_TypeCheck(section, psection_type)) {
@@ -815,19 +815,19 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
                 if (!sec->prop) {
                     nrnpy_sec_referr();
                     curargs_ = prevargs_;
-                    return NULL;
+                    return nullptr;
                 }
                 nrn_pushsec(sec);
             } else {
                 PyErr_SetString(PyExc_TypeError, "sec is not a Section");
                 curargs_ = prevargs_;
-                return NULL;
+                return nullptr;
             }
         } else {
             if (num_kwargs) {
                 PyErr_SetString(PyExc_RuntimeError, "invalid keyword argument");
                 curargs_ = prevargs_;
-                return NULL;
+                return nullptr;
             }
         }
     }
@@ -845,7 +845,7 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
     } else {
         PyErr_SetString(PyExc_TypeError, "object is not callable");
         curargs_ = prevargs_;
-        return NULL;
+        return nullptr;
     }
     if (section) {
         nrn_popsec();
