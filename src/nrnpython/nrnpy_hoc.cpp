@@ -1077,24 +1077,24 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             } else if (self->sym_ && self->sym_->type == TEMPLATE) {
                 sl = self->sym_->u.ctemplate->symtable;
             }
-            PyObject* dict = PyDict_New();
+            auto dict = nb::steal(PyDict_New());
             if (sl) {
-                symlist2dict(sl, dict);
+                symlist2dict(sl, dict.ptr());
             } else {
-                symlist2dict(hoc_built_in_symlist, dict);
-                symlist2dict(hoc_top_level_symlist, dict);
-                add2topdict(dict);
+                symlist2dict(hoc_built_in_symlist, dict.ptr());
+                symlist2dict(hoc_top_level_symlist, dict.ptr());
+                add2topdict(dict.ptr());
             }
 
             // Is the self->ho_ a Vector?  If so, add the __array_interface__ symbol
 
             if (is_obj_type(self->ho_, "Vector")) {
-                PyDict_SetItemString(dict, "__array_interface__", Py_None);
+                PyDict_SetItemString(dict.ptr(), "__array_interface__", Py_None);
             } else if (is_obj_type(self->ho_, "RangeVarPlot") ||
                        is_obj_type(self->ho_, "PlotShape")) {
-                PyDict_SetItemString(dict, "plot", Py_None);
+                PyDict_SetItemString(dict.ptr(), "plot", Py_None);
             }
-            return dict;
+            return dict.release().ptr();
         } else if (strncmp(n, "_ref_", 5) == 0) {
             if (self->type_ > PyHoc::HocObject) {
                 PyErr_SetString(PyExc_TypeError, "not a HocTopLevelInterpreter or HocObject");
