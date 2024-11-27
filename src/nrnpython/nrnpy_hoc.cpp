@@ -205,8 +205,11 @@ static PyObject* nrnexec(PyObject* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "s", &cmd)) {
         return NULL;
     }
-    bool b = hoc_valid_stmt(cmd, 0);
-    return b ? Py_True : Py_False;
+    if(hoc_valid_stmt(cmd, 0)) {
+       Py_RETURN_TRUE;
+    } else {
+       Py_RETURN_FALSE;
+    }
 }
 
 static PyObject* nrnexec_safe(PyObject* self, PyObject* args) {
