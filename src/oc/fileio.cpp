@@ -575,7 +575,7 @@ static int hoc_Load_file(int always, const char* name) {
         Temporarily change to the directory containing the file so
         that it can xopen files relative to its location.
     */
-    static std::vector<const char*> loaded;
+    static std::vector<std::string> loaded;
     int b, is_loaded;
     int goback;
     char expname[hoc_load_file_size_];
@@ -589,8 +589,8 @@ static int hoc_Load_file(int always, const char* name) {
     /* has the file already been loaded */
     is_loaded = 0;
 
-    for (const char* q: loaded) {
-        if (strcmp(q, name) == 0) {
+    for (const std::string& q: loaded) {
+        if (q == name) {
             if (!always) {
                 return 1;
             } else {
