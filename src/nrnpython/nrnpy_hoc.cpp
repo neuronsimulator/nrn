@@ -1021,16 +1021,15 @@ static int setup_doc_system() {
 // Most likely returns a new reference.
 PyObject* toplevel_get(PyObject* subself, const char* n) {
     PyHocObject* self = (PyHocObject*) subself;
-    PyObject* result = NULL;
     if (self->type_ == PyHoc::HocTopLevelInterpreter) {
         auto descr = nb::borrow(PyDict_GetItemString(topmethdict, n));
         if (descr) {
             descrgetfunc f = descr.ptr()->ob_type->tp_descr_get;
             assert(f);
-            result = f(descr.ptr(), subself, (PyObject*) Py_TYPE(subself));
+            return f(descr.ptr(), subself, (PyObject*) Py_TYPE(subself));
         }
     }
-    return result;
+    return nullptr;
 }
 
 // Returns a new reference.
