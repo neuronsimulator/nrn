@@ -966,12 +966,10 @@ static PyObject* pyseg_repr_safe(PyObject* p) {
     return nrn::convert_cxx_exceptions(pyseg_repr, p);
 }
 
+// Returns a new reference.
 static PyObject* hoc_internal_name(NPySecObj* self) {
-    PyObject* result;
-    char buf[256];
-    Sprintf(buf, "__nrnsec_%p", self->sec_);
-    result = PyString_FromString(buf);
-    return result;
+    auto buf = fmt::format("__nrnsec_{:p}", (void*) self->sec_);
+    return PyString_FromString(buf.c_str());
 }
 
 static PyObject* hoc_internal_name_safe(NPySecObj* self) {
