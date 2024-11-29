@@ -207,7 +207,7 @@ static int have_opt(const char* arg) {
     return 0;
 }
 
-#if __linux__
+#if __linux__ || DARWIN
 
 /* we do this because thread sanitizer does not allow system calls.
    In particular
@@ -242,7 +242,7 @@ void nrnpython_finalize() {
 #endif
         Py_Finalize();
     }
-#if __linux__
+#if __linux__ || DARWIN
     restore_original_terminal_settings();
 #endif
 }
@@ -254,7 +254,7 @@ extern "C" NRN_EXPORT PyObject* PyInit_hoc() {
     main_thread_ = std::this_thread::get_id();
 #endif
 
-#if __linux__
+#if __linux__ || DARWIN
     save_original_terminal_settings();
 #endif  // __linux__
 
