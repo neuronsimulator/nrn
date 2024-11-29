@@ -219,30 +219,20 @@ static int have_opt(const char* arg) {
 #include <termios.h>
 #include <unistd.h>
 
-static void set_terminal_sane() {
-    struct termios settings;
+static struct termios original_termios;
 
-    if (tcgetattr(STDIN_FILENO, &settings) != 0) {
-        std::cerr << "Error getting terminal attributes\r\n";
-        return;
-    }
-
-    // Set the specific attributes back to their sane values
-    settings.c_iflag |= (BRKINT | IMAXBEL);
-    settings.c_iflag &= ~(IGNBRK | INLCR | IXOFF | IUTF8);
-
-    settings.c_oflag |= (OPOST | ONLCR);  // ONLCR gives correct newlines
-    settings.c_oflag &= ~(ONLRET | OFILL | ONOCR);  // Clear flags not needed
-
-    settings.c_cflag |= (CS8);
-
-    settings.c_lflag |= (ISIG | ICANON | IEXTEN | ECHO);
-
-    if (tcsetattr(STDIN_FILENO, TCSANOW, &settings) != 0) {
-        std::cerr << "Error setting terminal attributes\r\n";
+static void save_original_terminal_settings() {
+    if (tcgetattr(STDIN_FILENO, &original_termios) == -1) {
+        std::cerr << "Error getting original terminal attributes\n";
     }
 }
-#endif // __linux__
+
+static void restore_original_terminal_settings() {
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &original_termios) == -1) {
+        std::cerr << "Error restoring terminal attributes\n";
+    }
+}
+#endif  // __linux__
 
 void nrnpython_finalize() {
 #if NRN_ENABLE_THREADS
@@ -253,7 +243,7 @@ void nrnpython_finalize() {
         Py_Finalize();
     }
 #if __linux__
-    set_terminal_sane();
+    restore_original_terminal_settings();
 #endif
 }
 
@@ -263,6 +253,10 @@ extern "C" NRN_EXPORT PyObject* PyInit_hoc() {
 #if NRN_ENABLE_THREADS
     main_thread_ = std::this_thread::get_id();
 #endif
+
+#if __linux__
+    save_original_terminal_settings();
+#endif  // __linux__
 
     if (nrn_global_argv) {  // ivocmain was already called so already loaded
         return nrnpy_hoc();
