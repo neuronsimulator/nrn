@@ -207,6 +207,43 @@ static int have_opt(const char* arg) {
     return 0;
 }
 
+#if __linux__
+
+/* we do this because thread sanitizer does not allow system calls.
+   In particular
+      system("stty sane")
+   returns an error code of 139
+*/
+
+#include <iostream>
+#include <termios.h>
+#include <unistd.h>
+
+static void set_terminal_sane() {
+    struct termios settings;
+
+    if (tcgetattr(STDIN_FILENO, &settings) != 0) {
+        std::cerr << "Error getting terminal attributes\r\n";
+        return;
+    }
+
+    // Set the specific attributes back to their sane values
+    settings.c_iflag |= (BRKINT | IMAXBEL);
+    settings.c_iflag &= ~(IGNBRK | INLCR | IXOFF | IUTF8);
+
+    settings.c_oflag |= (OPOST | ONLCR);  // ONLCR gives correct newlines
+    settings.c_oflag &= ~(ONLRET | OFILL | ONOCR);  // Clear flags not needed
+
+    settings.c_cflag |= (CS8);
+
+    settings.c_lflag |= (ISIG | ICANON | IEXTEN | ECHO);
+
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &settings) != 0) {
+        std::cerr << "Error setting terminal attributes\r\n";
+    }
+}
+#endif // __linux__
+
 void nrnpython_finalize() {
 #if NRN_ENABLE_THREADS
     if (main_thread_ == std::this_thread::get_id()) {
@@ -215,9 +252,8 @@ void nrnpython_finalize() {
 #endif
         Py_Finalize();
     }
-#if linux
-    if (system("stty sane > /dev/null 2>&1")) {
-    }  // 'if' to avoid ignoring return value warning
+#if __linux__
+    set_terminal_sane();
 #endif
 }
 
