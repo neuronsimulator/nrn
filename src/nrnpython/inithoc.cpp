@@ -207,6 +207,33 @@ static int have_opt(const char* arg) {
     return 0;
 }
 
+#if defined(__linux__) || defined(DARWIN)
+
+/* we do this because thread sanitizer does not allow system calls.
+   In particular
+      system("stty sane")
+   returns an error code of 139
+*/
+
+#include <iostream>
+#include <termios.h>
+#include <unistd.h>
+
+static struct termios original_termios;
+
+static void save_original_terminal_settings() {
+    if (tcgetattr(STDIN_FILENO, &original_termios) == -1) {
+        std::cerr << "Error getting original terminal attributes\n";
+    }
+}
+
+static void restore_original_terminal_settings() {
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &original_termios) == -1) {
+        std::cerr << "Error restoring terminal attributes\n";
+    }
+}
+#endif  // __linux__
+
 void nrnpython_finalize() {
     // Try to call python_gui_cleanup() if defined in Python
     PyRun_SimpleString(
@@ -228,11 +255,8 @@ void nrnpython_finalize() {
             "except NameError:\n"
             "    pass\n");
     }
-#if __linux__
-    int err = system("stty sane > /dev/null 2>&1");
-    if (err) {
-        printf("stty sane returned %d\r\n", err);
-    }
+#if defined(__linux__) || defined(DARWIN)
+    restore_original_terminal_settings();
 #endif
 }
 
@@ -242,6 +266,10 @@ extern "C" NRN_EXPORT PyObject* PyInit_hoc() {
 #if NRN_ENABLE_THREADS
     main_thread_ = std::this_thread::get_id();
 #endif
+
+#if defined(__linux__) || defined(DARWIN)
+    save_original_terminal_settings();
+#endif  // __linux__
 
     if (nrn_global_argv) {  // ivocmain was already called so already loaded
         return nrnpy_hoc();
