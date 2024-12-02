@@ -549,7 +549,7 @@ static Object** nc_synlist(void* v) {
     OcList* o;
     Object** po = newoclist(1, o);
     if (net_cvode_instance->psl_)
-        for (PreSyn* ps: *net_cvode_instance->psl_) {
+        for (const PreSyn* ps: *net_cvode_instance->psl_) {
             for (const auto& nc: ps->dil_) {
                 if (nc->obj_ && nc->target_ == d->target_) {
                     o->append(nc->obj_);
@@ -568,7 +568,7 @@ static Object** nc_postcelllist(void* v) {
         cell = nrn_sec2cell(d->target_->sec);
     }
     if (cell && net_cvode_instance->psl_)
-        for (PreSyn* ps: *net_cvode_instance->psl_) {
+        for (const PreSyn* ps: *net_cvode_instance->psl_) {
             for (const auto& nc: ps->dil_) {
                 if (nc->obj_ && nc->target_ && nrn_sec2cell_equals(nc->target_->sec, cell)) {
                     o->append(nc->obj_);
@@ -4011,7 +4011,7 @@ void NetCvode::fornetcon_prepare() {
     // two loops over all netcons. one to count, one to fill in argslist
     // count
     if (psl_)
-        for(PreSyn* ps: *psl_) {
+        for(const PreSyn* ps: *psl_) {
             const NetConPList& dil = ps->dil_;
             for (const auto& d1: dil) {
                 Point_process* pnt = d1->target_;
@@ -4054,7 +4054,7 @@ void NetCvode::fornetcon_prepare() {
     }
     // fill in argslist and count again
     if (psl_) {
-        for(PreSyn* ps: *psl_) {
+        for(const PreSyn* ps: *psl_) {
             const NetConPList& dil = ps->dil_;
             for (const auto& d1: dil) {
                 Point_process* pnt = d1->target_;
@@ -5009,24 +5009,16 @@ void PreSynSave::invalid() {
 }
 
 PreSyn* PreSynSave::hindx2presyn(long id) {
-    PreSyn* ps;
     if (!idxtable_) {
-        int cnt = 0;
-        for(PreSyn* ps: *net_cvode_instance->psl_) {
-            ++cnt;
-        }
-        // printf("%d PreSyn instances\n", cnt);
-        idxtable_ = new PreSynSaveIndexTable(2 * cnt);
-        cnt = 0;
-        for(PreSyn* ps: *net_cvode_instance->psl_) {
-            assert(ps->hi_index_ == cnt);
+        idxtable_ = new PreSynSaveIndexTable(2 * net_cvode_instance->psl_->size());
+        for(auto&& [index, ps]: enumerate(*net_cvode_instance->psl_)) {
+            assert(ps->hi_index_ == index);
             (*idxtable_)[ps->hi_index_] = ps;
-            ++cnt;
         }
     }
     auto idxti = idxtable_->find(id);
     if (idxti != idxtable_->end()) {
-        ps = idxti->second;
+        PreSyn* ps = idxti->second;
         assert(ps->hi_index_ == id);
         return ps;
     } else {
