@@ -1146,7 +1146,7 @@ NetCvode::~NetCvode() {
     // and should also iterate and delete the MaxStateItem
     delete std::exchange(mst_, nullptr);
     if (psl_) {
-        for(PreSyn* ps: *psl_) {
+        for (PreSyn* ps: *psl_) {
             std::for_each(ps->dil_.rbegin(), ps->dil_.rend(), [](NetCon*& d) {
                 d->src_ = nullptr;
                 delete std::exchange(d, nullptr);
@@ -1361,7 +1361,7 @@ void NetCvode::distribute_dinfo(int* cellnum, int tid) {
     int j;
     // printf("distribute_dinfo %d\n", pst_cnt_);
     if (psl_) {
-        for(PreSyn* ps: *psl_) {
+        for (PreSyn* ps: *psl_) {
             // printf("\tPreSyn %s\n", ps->osrc_ ? hoc_object_name(ps->osrc_):secname(ps->ssrc_));
             if (ps->thvar_) {  // artcells and presyns for gid's not on this cpu have no threshold
                                // check
@@ -2728,7 +2728,7 @@ void NetCvode::init_events() {
         p[i].tqe_->shift_bin(nt_t - 0.5 * nt_dt);
     }
     if (psl_) {
-        for(PreSyn* ps: *psl_) {
+        for (PreSyn* ps: *psl_) {
             ps->init();
             ps->flag_ = false;
             NetConPList& dil = ps->dil_;
@@ -4011,7 +4011,7 @@ void NetCvode::fornetcon_prepare() {
     // two loops over all netcons. one to count, one to fill in argslist
     // count
     if (psl_)
-        for(const PreSyn* ps: *psl_) {
+        for (const PreSyn* ps: *psl_) {
             const NetConPList& dil = ps->dil_;
             for (const auto& d1: dil) {
                 Point_process* pnt = d1->target_;
@@ -4054,7 +4054,7 @@ void NetCvode::fornetcon_prepare() {
     }
     // fill in argslist and count again
     if (psl_) {
-        for(const PreSyn* ps: *psl_) {
+        for (const PreSyn* ps: *psl_) {
             const NetConPList& dil = ps->dil_;
             for (const auto& d1: dil) {
                 Point_process* pnt = d1->target_;
@@ -4872,7 +4872,7 @@ void NetCvode::update_ps2nt() {
         }
     }
     if (psl_) {
-        for(PreSyn* ps: *psl_) {
+        for (PreSyn* ps: *psl_) {
             ps_thread_link(ps);
         }
     }
@@ -5011,7 +5011,7 @@ void PreSynSave::invalid() {
 PreSyn* PreSynSave::hindx2presyn(long id) {
     if (!idxtable_) {
         idxtable_ = new PreSynSaveIndexTable(2 * net_cvode_instance->psl_->size());
-        for(auto&& [index, ps]: enumerate(*net_cvode_instance->psl_)) {
+        for (auto&& [index, ps]: enumerate(*net_cvode_instance->psl_)) {
             assert(ps->hi_index_ == index);
             (*idxtable_)[ps->hi_index_] = ps;
         }

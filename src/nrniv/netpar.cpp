@@ -1354,7 +1354,7 @@ static double set_mindelay(double maxdelay) {
     last_maxstep_arg_ = maxdelay;
     if (nrn_use_selfqueue_ || net_cvode_instance->localstep() || nrn_nthread > 1) {
         if (net_cvode_instance->psl_)
-            for(PreSyn* ps: *net_cvode_instance->psl_) {
+            for (PreSyn* ps: *net_cvode_instance->psl_) {
                 double md = ps->mindelay();
                 if (mindelay > md) {
                     mindelay = md;
