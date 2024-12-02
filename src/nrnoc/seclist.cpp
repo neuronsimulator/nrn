@@ -1,4 +1,7 @@
 #include <../../nrnconf.h>
+
+#include <functional>
+
 #define HOC_L_LIST 1
 #include "section.h"
 #include "neuron.h"
@@ -8,14 +11,33 @@
 #include "code.h"
 #include "classreg.h"
 
-/* needs trailing '}' */
-#define ITERATE_REMOVE(q1, q2, lst)                \
-    for (q1 = (lst)->next; q1 != (lst); q1 = q2) { \
-        q2 = q1->next;                             \
-        if (q1->element.sec->prop == NULL) {       \
-            hoc_l_delete(q1);                      \
-            continue;                              \
+bool seclist_iterate_remove_until(List* sl, std::function<void(Item*)> fun, Section* sec) {
+    Item* q2 = nullptr;
+    for (Item* q1 = sl->next; q1 != sl; q1 = q2) {
+        q2 = q1->next;
+        if (q1->element.sec->prop == nullptr) {
+            hoc_l_delete(q1);
+            continue;
         }
+        if (q1->element.sec == sec) {
+            fun(q1);
+            return true;
+        }
+    }
+    return false;
+}
+
+void seclist_iterate_remove(List* sl, std::function<void(Item*)> fun) {
+    Item* q2 = nullptr;
+    for (Item* q1 = sl->next; q1 != sl; q1 = q2) {
+        q2 = q1->next;
+        if (q1->element.sec->prop == nullptr) {
+            hoc_l_delete(q1);
+            continue;
+        }
+        fun(q1);
+    }
+}
 
 extern int hoc_return_type_code;
 Section* (*nrnpy_o2sec_p_)(Object* o);
@@ -156,41 +178,43 @@ static double seclist_remove(void* v) {
     if (!ifarg(1)) {
 #endif
         sec = nrn_secarg(1);
-        ITERATE_REMOVE(q, q1, sl) /*{*/
-        if (sec == q->element.sec) {
-            hoc_l_delete(q);
-            section_unref(sec);
+        if (seclist_iterate_remove_until(
+                sl,
+                [](Item* q) {
+                    Section* s = q->element.sec;
+                    hoc_l_delete(q);
+                    section_unref(s);
+                },
+                sec)) {
             return 1.;
         }
+        hoc_warning(secname(sec), "not in this section list");
+    } else {
+        Object* o;
+        o = *hoc_objgetarg(1);
+        check_obj_type(o, "SectionList");
+        seclist_iterate_remove(sl, [](Item* q) {
+            Section* s = hocSEC(q);
+            s->volatile_mark = 0;
+        });
+        sl = (List*) o->u.this_pointer;
+        seclist_iterate_remove(sl, [](Item* q) {
+            Section* s = hocSEC(q);
+            s->volatile_mark = 1;
+        });
+        sl = (List*) v;
+        i = 0;
+        for (q = sl->next; q != sl; q = q1) {
+            q1 = q->next;
+            s = hocSEC(q);
+            if (s->volatile_mark) {
+                hoc_l_delete(q);
+                section_unref(s);
+                ++i;
+            }
+        }
     }
-    hoc_warning(secname(sec), "not in this section list");
-}
-else {
-    Object* o;
-    o = *hoc_objgetarg(1);
-    check_obj_type(o, "SectionList");
-    ITERATE_REMOVE(q, q1, sl) /*{*/
-    s = hocSEC(q);
-    s->volatile_mark = 0;
-}
-sl = (List*) o->u.this_pointer;
-ITERATE_REMOVE(q, q1, sl) /*{*/
-s = hocSEC(q);
-s->volatile_mark = 1;
-}
-sl = (List*) v;
-i = 0;
-for (q = sl->next; q != sl; q = q1) {
-    q1 = q->next;
-    s = hocSEC(q);
-    if (s->volatile_mark) {
-        hoc_l_delete(q);
-        section_unref(s);
-        ++i;
-    }
-}
-}
-return (double) i;
+    return (double) i;
 }
 
 static double unique(void* v) {
@@ -199,21 +223,21 @@ static double unique(void* v) {
     Item *q, *q1;
     List* sl = (List*) v;
     hoc_return_type_code = 1; /* integer */
-    ITERATE_REMOVE(q, q1, sl) /*{*/
-    s = hocSEC(q);
-    s->volatile_mark = 0;
-}
-i = 0;
-for (q = sl->next; q != sl; q = q1) {
-    q1 = q->next;
-    s = hocSEC(q);
-    if (s->volatile_mark++) {
-        hoc_l_delete(q);
-        section_unref(s);
-        ++i;
+    seclist_iterate_remove(sl, [](Item* q) {
+        Section* s = hocSEC(q);
+        s->volatile_mark = 1;
+    });
+    i = 0;
+    for (q = sl->next; q != sl; q = q1) {
+        q1 = q->next;
+        s = hocSEC(q);
+        if (s->volatile_mark++) {
+            hoc_l_delete(q);
+            section_unref(s);
+            ++i;
+        }
     }
-}
-return (double) i;
+    return (double) i;
 }
 
 static double contains(void* v) {
@@ -222,23 +246,18 @@ static double contains(void* v) {
     List* sl = (List*) v;
     hoc_return_type_code = 2; /* boolean */
     s = nrn_secarg(1);
-    ITERATE_REMOVE(q, q1, sl) /*{*/
-    if (hocSEC(q) == s) {
-        return 1.;
-    }
-}
-return (0.);
+    return seclist_iterate_remove_until(
+        sl, [](Item*) {}, s);
 }
 
 static double printnames(void* v) {
-    Item *q, *q1;
     List* sl = (List*) v;
-    ITERATE_REMOVE(q, q1, sl) /*{*/
-    if (q->element.sec->prop) {
-        Printf("%s\n", secname(q->element.sec));
-    }
-}
-return 1.;
+    seclist_iterate_remove(sl, [](Item* q) {
+        if (q->element.sec->prop) {
+            Printf("%s\n", secname(q->element.sec));
+        }
+    });
+    return 1.;
 }
 
 static Member_func members[] = {{"append", append},
@@ -319,33 +338,29 @@ void forall_sectionlist(void) {
 
 void hoc_ifseclist(void) {
     Inst* savepc = pc;
-    Item *q, *q1;
     Section* sec = chk_access();
-    List* sl;
-    Object* ob;
-    Object** obp;
 
     /* if arg is a string use forall_section */
     if (hoc_stacktype() == STRING) {
         hoc_ifsec();
         return;
     }
-    obp = hoc_objpop();
-    ob = *obp;
+    Object** obp = hoc_objpop();
+    Object* ob = *obp;
     check(ob);
-    sl = (List*) (ob->u.this_pointer);
-    ITERATE_REMOVE(q, q1, sl) /*{*/
-    if (sec == q->element.sec) {
+    List* sl = (List*) (ob->u.this_pointer);
+    bool result = seclist_iterate_remove_until(sl, [&](Item* q) {
         hoc_execute(relative(savepc));
         if (!hoc_returning) {
             pc = relative(savepc + 1);
         }
         hoc_tobj_unref(obp);
+    }, sec);
+    if (result) {
         return;
     }
-}
-hoc_tobj_unref(obp);
-if (!hoc_returning) {
-    pc = relative(savepc + 1);
-}
+    hoc_tobj_unref(obp);
+    if (!hoc_returning) {
+        pc = relative(savepc + 1);
+    }
 }
