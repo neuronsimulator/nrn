@@ -235,7 +235,6 @@ static void restore_original_terminal_settings() {
 #endif  // __linux__
 
 void nrnpython_finalize() {
-    printf("nrnpython_finalize()\n");
 #if NRN_ENABLE_THREADS
     if (main_thread_ == std::this_thread::get_id()) {
 #else

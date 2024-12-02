@@ -13,6 +13,7 @@ import threading
 import time
 import atexit
 
+# recursive, especially in case stop/start pairs called from doNotify code.
 _lock = threading.RLock()
 
 
@@ -22,6 +23,15 @@ def stop():
 
 def start():
     _lock.release()
+
+
+"""
+This allows one to temporarily disable the process_events loop using a construct
+like:
+from neuron import gui
+with gui.disabled():
+    something_that_would_interact_badly_with_process_events()
+"""
 
 
 @contextmanager
@@ -106,7 +116,6 @@ if h.nrnversion(9) == "2":  # Launched with Python (instead of nrniv)
 
     def cleanup():
         if timer.started:
-            print("Cleanup called: Stopping the GUI thread")
             timer.stop()
 
     atexit.register(cleanup)
