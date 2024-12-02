@@ -1153,7 +1153,7 @@ NetCvode::~NetCvode() {
             });
             delete ps;
         }
-        delete psl_;
+        delete std::exchange(psl_, nullptr);
     }
     delete std::exchange(pst_, nullptr);
     delete std::exchange(fixed_play_, nullptr);
@@ -4573,6 +4573,7 @@ NetCon* NetCvode::install_deliver(neuron::container::data_handle<double> dsrc,
         }
     } else if (target) {  // no source so use the special presyn
         if (!unused_presyn) {
+            unused_presyn = new PreSyn({}, nullptr, nullptr);
             psl_->push_back(unused_presyn);
         }
         ps = unused_presyn;
