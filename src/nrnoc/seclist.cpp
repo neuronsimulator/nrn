@@ -247,7 +247,9 @@ static double contains(void* v) {
     hoc_return_type_code = 2; /* boolean */
     s = nrn_secarg(1);
     return seclist_iterate_remove_until(
-        sl, [](Item*) {}, s);
+               sl, [](Item*) {}, s)
+               ? 1.
+               : 0.;
 }
 
 static double printnames(void* v) {
@@ -349,13 +351,16 @@ void hoc_ifseclist(void) {
     Object* ob = *obp;
     check(ob);
     List* sl = (List*) (ob->u.this_pointer);
-    bool result = seclist_iterate_remove_until(sl, [&](Item* q) {
-        hoc_execute(relative(savepc));
-        if (!hoc_returning) {
-            pc = relative(savepc + 1);
-        }
-        hoc_tobj_unref(obp);
-    }, sec);
+    bool result = seclist_iterate_remove_until(
+        sl,
+        [&](Item* q) {
+            hoc_execute(relative(savepc));
+            if (!hoc_returning) {
+                pc = relative(savepc + 1);
+            }
+            hoc_tobj_unref(obp);
+        },
+        sec);
     if (result) {
         return;
     }
