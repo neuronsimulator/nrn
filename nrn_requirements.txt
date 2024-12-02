@@ -4,7 +4,7 @@ setuptools<=70.3.0
 scikit-build
 matplotlib
 ipython
-mpi4py<4 # MUSIC not compatible with MPI 4
+mpi4py
 find_libpython
 -r packaging/python/build_requirements.txt
 -r packaging/python/test_requirements.txt
