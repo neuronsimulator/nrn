@@ -235,25 +235,21 @@ static void restore_original_terminal_settings() {
 #endif  // __linux__
 
 void nrnpython_finalize() {
-    // Try to call python_gui_cleanup() if defined in Python
-    PyRun_SimpleString(
-        "try:\n"
-        "    gui.cleanup()\n"
-        "except NameError:\n"
-        "    pass\n");
-
+    printf("nrnpython_finalize()\n");
 #if NRN_ENABLE_THREADS
     if (main_thread_ == std::this_thread::get_id()) {
 #else
-    if (1) {
+    {
 #endif
-        Py_Finalize();
-    } else {  // in the gui thread
+        // Call python_gui_cleanup() if defined in Python
         PyRun_SimpleString(
             "try:\n"
-            "    gui.finalize()\n"
+            "    gui.cleanup()\n"
             "except NameError:\n"
             "    pass\n");
+
+        // Finalize Python
+        Py_Finalize();
     }
 #if defined(__linux__) || defined(DARWIN)
     restore_original_terminal_settings();
