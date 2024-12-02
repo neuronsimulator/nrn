@@ -647,7 +647,7 @@ class Node3D(Node):
         except:
             pass  # ignore the error and try Node3D specific conditions
 
-        if isinstance(condition, tuple) and len(condition) == 3: 
+        if isinstance(condition, tuple) and len(condition) == 3:
             x, y, z = condition
             mesh = self._r._mesh_grid
             return (
@@ -882,7 +882,7 @@ class NodeExtracellular(Node):
         except:
             pass  # ignore the error and try NodeExtracellular specific conditions
 
-        if isinstance(condition, tuple) and len(condition) == 3: 
+        if isinstance(condition, tuple) and len(condition) == 3:
             x, y, z = condition
             r = self._regionref()
             return (
