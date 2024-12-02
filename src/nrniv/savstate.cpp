@@ -1024,9 +1024,7 @@ void SaveState::readnet(FILE* f) {
     if (npss_ != 0) {
         pss_ = new PreSynState[npss_];
         ASSERTfread(pss_, sizeof(PreSynState), npss_, f);
-        PreSyn* ps;
         int i = 0;
-        hoc_Item* q;
         if (net_cvode_instance_psl())
             for (PreSyn* ps: *net_cvode_instance_psl()) {
                 ps->hi_index_ = i;
