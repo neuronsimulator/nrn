@@ -240,6 +240,14 @@ void nrnpython_finalize() {
 #else
     {
 #endif
+        // Call python_gui_cleanup() if defined in Python
+        PyRun_SimpleString(
+            "try:\n"
+            "    gui.cleanup()\n"
+            "except NameError:\n"
+            "    pass\n");
+
+        // Finalize Python
         Py_Finalize();
     }
 #if defined(__linux__) || defined(DARWIN)
