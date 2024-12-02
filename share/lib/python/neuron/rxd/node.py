@@ -37,6 +37,7 @@ _molecule_node = 1
 
 _floor = numpy.floor
 
+
 def _get_data():
     return (_volumes, _surface_area, _diffs)
 
