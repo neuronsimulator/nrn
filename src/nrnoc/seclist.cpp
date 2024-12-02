@@ -1,4 +1,7 @@
 #include <../../nrnconf.h>
+
+#include <queue>
+
 #define HOC_L_LIST 1
 #include "section.h"
 #include "neuron.h"
@@ -65,16 +68,11 @@ static double append(void* v) {
     return 1.;
 }
 
-
-static Item* children1(List* sl, Section* sec) {
-    Item* i;
-    Section* ch;
-    i = sl->prev;
-    for (ch = sec->child; ch; ch = ch->sibling) {
-        i = lappendsec(sl, ch);
+static void children1(List* sl, Section* sec) {
+    for (Section* ch = sec->child; ch; ch = ch->sibling) {
+        lappendsec(sl, ch);
         section_ref(ch);
     }
-    return i;
 }
 
 static double children(void* v) {
@@ -86,23 +84,20 @@ static double children(void* v) {
     return 1.;
 }
 
-static Item* subtree1(List* sl, Section* sec) {
-    Item *i, *j, *last, *first;
-    Section* s;
-    /* it is confusing to span the tree from the root without using
-      recursion.
-    */
-    s = sec;
-    i = lappendsec(sl, s);
-    section_ref(s);
-    last = i->prev;
-    while (i != last) {
-        for (first = last->next, last = i, j = first; j->prev != last; j = j->next) {
-            s = hocSEC(j);
-            i = children1(sl, s);
+static void subtree1(List* sl, Section* sec) {
+    lappendsec(sl, sec);
+    section_ref(sec);
+    std::queue<Section*> remainings{};
+    remainings.push(sec);
+    while (!remainings.empty()) {
+        Section* remain = remainings.front();
+        for (Section* ch = remain->child; ch; ch = ch->sibling) {
+            lappendsec(sl, ch);
+            remainings.push(ch);
+            section_ref(ch);
         }
+        remainings.pop();
     }
-    return i;
 }
 
 static double subtree(void* v) {
