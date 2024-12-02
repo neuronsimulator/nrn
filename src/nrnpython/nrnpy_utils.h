@@ -10,7 +10,7 @@ inline bool is_python_string(PyObject* python_string) {
     return PyUnicode_Check(python_string) || PyBytes_Check(python_string);
 }
 
-class Py2NRNString {
+class NRN_EXPORT Py2NRNString {
   public:
     [[nodiscard]] static neuron::unique_cstr as_ascii(PyObject* python_string);
 
