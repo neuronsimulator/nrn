@@ -35,6 +35,7 @@ _point_indices = {}
 _concentration_node = 0
 _molecule_node = 1
 
+_floor = numpy.floor
 
 def _get_data():
     return (_volumes, _surface_area, _diffs)
@@ -646,13 +647,13 @@ class Node3D(Node):
         except:
             pass  # ignore the error and try Node3D specific conditions
 
-        if isinstance(condition, tuple) and len(condition) == 3:
+        if isinstance(condition, tuple) and len(condition) == 3: # Int replaced by floor to accept negative coordinates.
             x, y, z = condition
             mesh = self._r._mesh_grid
             return (
-                int((x - mesh["xlo"]) / mesh["dx"]) == self._i
-                and int((y - mesh["ylo"]) / mesh["dy"]) == self._j
-                and int((z - mesh["zlo"]) / mesh["dz"]) == self._k
+                _floor((x - mesh["xlo"]) / mesh["dx"]) == self._i
+                and _floor((y - mesh["ylo"]) / mesh["dy"]) == self._j
+                and _floor((z - mesh["zlo"]) / mesh["dz"]) == self._k
             )
         # check for a position condition so as to provide a more useful error
         checked_for_normalized_position = False
@@ -881,12 +882,12 @@ class NodeExtracellular(Node):
         except:
             pass  # ignore the error and try NodeExtracellular specific conditions
 
-        if isinstance(condition, tuple) and len(condition) == 3:
+        if isinstance(condition, tuple) and len(condition) == 3: # Int replaced by floor to accept negative coordinates.
             x, y, z = condition
             r = self._regionref()
             return (
-                int((x - r._xlo) / r._dx[0]) == self._i
-                and int((y - r._ylo) / r._dx[1]) == self._j
-                and int((z - r._zlo) / r._dx[2]) == self._k
+                _floor((x - r._xlo) / r._dx[0]) == self._i
+                and _floor((y - r._ylo) / r._dx[1]) == self._j
+                and _floor((z - r._zlo) / r._dx[2]) == self._k
             )
         raise RxDException(f"unrecognized node condition: {condition}")
