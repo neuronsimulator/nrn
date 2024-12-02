@@ -81,7 +81,6 @@ extern int nrn_use_daspk_;
 int linmod_extra_eqn_count();
 extern int nrn_modeltype();
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
-extern std::vector<PreSyn*>* net_cvode_instance_psl();
 extern std::vector<PlayRecord*>* net_cvode_instance_prl();
 extern void nrn_use_busywait(int);
 void* nrn_interthread_enqueue(NrnThread*);
