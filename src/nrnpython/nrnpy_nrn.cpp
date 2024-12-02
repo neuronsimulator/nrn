@@ -1127,66 +1127,80 @@ static bool lappendsec(PyObject* const sl, Section* const s) {
     return true;
 }
 
-static PyObject* pysec_children1(PyObject* const sl, Section* const sec) {
-    for (Section* s = sec->child; s; s = s->sibling) {
-        if (!lappendsec(sl, s)) {
-            return NULL;
-        }
-    }
-    return sl;
-}
 
+// Returns a new reference.
 static PyObject* pysec_children(NPySecObj* const self) {
     Section* const sec = self->sec_;
     CHECK_SEC_INVALID(sec);
-    PyObject* const result = PyList_New(0);
+
+    nb::object result = nb::steal(PyList_New(0));
     if (!result) {
-        return NULL;
+        return nullptr;
     }
-    return pysec_children1(result, sec);
+
+    for (Section* s = sec->child; s; s = s->sibling) {
+        if (!lappendsec(result.ptr(), s)) {
+            return nullptr;
+        }
+    }
+    return result.release().ptr();
 }
 
 static PyObject* pysec_children_safe(NPySecObj* const self) {
     return nrn::convert_cxx_exceptions(pysec_children, self);
 }
 
+// Returns a borrowed reference (to `sl`).
 static PyObject* pysec_subtree1(PyObject* const sl, Section* const sec) {
     if (!lappendsec(sl, sec)) {
-        return NULL;
+        return nullptr;
     }
     for (Section* s = sec->child; s; s = s->sibling) {
         if (!pysec_subtree1(sl, s)) {
-            return NULL;
+            return nullptr;
         }
     }
     return sl;
 }
 
+// Returns a new reference.
+static PyObject* pysec_subtree_impl(Section* sec) {
+    auto result = nb::steal(PyList_New(0));
+    if (!result) {
+        return nullptr;
+    }
+
+    if (!pysec_subtree1(result.ptr(), sec)) {
+        return nullptr;
+    }
+
+    return result.release().ptr();
+}
+
+// Returns a new reference.
 static PyObject* pysec_subtree(NPySecObj* const self) {
     Section* const sec = self->sec_;
     CHECK_SEC_INVALID(sec);
-    PyObject* const result = PyList_New(0);
-    if (!result) {
-        return NULL;
-    }
-    return pysec_subtree1(result, sec);
+
+    return pysec_subtree_impl(sec);
 }
 
 static PyObject* pysec_subtree_safe(NPySecObj* const self) {
     return nrn::convert_cxx_exceptions(pysec_subtree, self);
 }
 
+static Section* find_root_section(Section* sec) {
+    for (; sec->parentsec; sec = sec->parentsec) {
+    }
+
+    return sec;
+}
+
 static PyObject* pysec_wholetree(NPySecObj* const self) {
     Section* sec = self->sec_;
     CHECK_SEC_INVALID(sec);
-    Section* s;
-    PyObject* result = PyList_New(0);
-    if (!result) {
-        return NULL;
-    }
-    for (s = sec; s->parentsec; s = s->parentsec) {
-    }
-    return pysec_subtree1(result, s);
+
+    return pysec_subtree_impl(find_root_section(sec));
 }
 
 static PyObject* pysec_wholetree_safe(NPySecObj* const self) {
