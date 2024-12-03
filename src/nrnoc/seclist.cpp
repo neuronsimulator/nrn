@@ -27,7 +27,7 @@ bool seclist_iterate_remove_until(List* sl, std::function<void(Item*)> fun, Sect
     return false;
 }
 
-void seclist_iterate_remove(List* sl, std::function<void(Item*)> fun) {
+void seclist_iterate_remove(List* sl, std::function<void(Section*)> fun) {
     Item* q2 = nullptr;
     for (Item* q1 = sl->next; q1 != sl; q1 = q2) {
         q2 = q1->next;
@@ -35,7 +35,7 @@ void seclist_iterate_remove(List* sl, std::function<void(Item*)> fun) {
             hoc_l_delete(q1);
             continue;
         }
-        fun(q1);
+        fun(q1->element.sec);
     }
 }
 
@@ -193,13 +193,11 @@ static double seclist_remove(void* v) {
         Object* o;
         o = *hoc_objgetarg(1);
         check_obj_type(o, "SectionList");
-        seclist_iterate_remove(sl, [](Item* q) {
-            Section* s = hocSEC(q);
+        seclist_iterate_remove(sl, [](Section* s) {
             s->volatile_mark = 0;
         });
         sl = (List*) o->u.this_pointer;
-        seclist_iterate_remove(sl, [](Item* q) {
-            Section* s = hocSEC(q);
+        seclist_iterate_remove(sl, [](Section* s) {
             s->volatile_mark = 1;
         });
         sl = (List*) v;
@@ -223,9 +221,8 @@ static double unique(void* v) {
     Item *q, *q1;
     List* sl = (List*) v;
     hoc_return_type_code = 1; /* integer */
-    seclist_iterate_remove(sl, [](Item* q) {
-        Section* s = hocSEC(q);
-        s->volatile_mark = 1;
+    seclist_iterate_remove(sl, [](Section* s) {
+        s->volatile_mark = 0;
     });
     i = 0;
     for (q = sl->next; q != sl; q = q1) {
@@ -253,9 +250,9 @@ static double contains(void* v) {
 
 static double printnames(void* v) {
     List* sl = (List*) v;
-    seclist_iterate_remove(sl, [](Item* q) {
-        if (q->element.sec->prop) {
-            Printf("%s\n", secname(q->element.sec));
+    seclist_iterate_remove(sl, [](Section* s) {
+        if (s->prop) {
+            Printf("%s\n", secname(s));
         }
     });
     return 1.;
@@ -352,7 +349,7 @@ void hoc_ifseclist(void) {
     List* sl = (List*) (ob->u.this_pointer);
     if (seclist_iterate_remove_until(
             sl,
-            [&](Item* q) {
+            [&](Item*) {
                 hoc_execute(relative(savepc));
                 if (!hoc_returning) {
                     pc = relative(savepc + 1);
