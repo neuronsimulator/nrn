@@ -242,7 +242,6 @@ static double unique(void* v) {
 
 static double contains(void* v) {
     Section* s;
-    Item *q, *q1;
     List* sl = (List*) v;
     hoc_return_type_code = 2; /* boolean */
     s = nrn_secarg(1);
