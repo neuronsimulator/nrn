@@ -153,22 +153,29 @@ for i in $args ; do
   chk $i
 done
 
-#/Applications/Packages.app from
-# http://s.sudre.free.fr/Software/Packages/about.html
-# For mac to do a productsign, need my developerID_installer.cer
-# and Neurondev.p12 file. To add to the keychain, double click each
-# of those files. By default, I added my certificates to the login keychain.
-ninja macpkg # will sign the binaries, construct below
-            # mentioned PACKAGE_FILE_NAME, request notarization from
-            # Apple, and staple the package.
-
-# Copy the package to $HOME/$PACKAGE_FULL_NAME
-# You should then manually upload that to github.
 describe="`sh $NRN_SRC/nrnversion.sh describe`"
 macos=macos${MACOSX_DEPLOYMENT_TARGET}
 PACKAGE_FULL_NAME=nrn-${describe}-${mac_platform}-${PYVS}.pkg
 PACKAGE_FILE_NAME=$NRN_BLD/src/mac/build/NEURON.pkg
 
+#/Applications/Packages.app from
+# http://s.sudre.free.fr/Software/Packages/about.html
+# For mac to do a productsign, need my developerID_installer.cer
+# and Neurondev.p12 file. To add to the keychain, double click each
+# of those files. By default, I added my certificates to the login keychain.
+
+# Will sign the binaries, construct above
+# mentioned PACKAGE_FILE_NAME, request notarization from
+# Apple, and staple the package.
+if ! ninja macpkg ; then 
+  echo "ninja macpkg failed. (because of notification failure?)"
+  echo "Not creating $PACKAGE_FULL_NAME"
+  echo "  from $PACKAGE_FILE_NAME"
+  exit 1
+fi
+
+# Copy the package to $HOME/$PACKAGE_FULL_NAME
+# You should then manually upload that to github.
 cp $PACKAGE_FILE_NAME $HOME/$PACKAGE_FULL_NAME
 
 echo "
