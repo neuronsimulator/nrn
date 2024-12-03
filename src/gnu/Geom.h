@@ -24,10 +24,7 @@ protected:
 public:
     Geometric(double mean, RNG *gen);
 
-    double mean();
-    double mean(double x);
-
-    virtual double operator()();
+    double operator()() override;
 
 };
 
@@ -35,10 +32,4 @@ public:
 inline Geometric::Geometric(double mean, RNG *gen) : Random(gen)
 {
   pMean = mean;
-}
-
-
-inline double Geometric::mean() { return pMean; }
-inline double Geometric::mean(double x) {
-  double tmp = pMean; pMean = x; return tmp;
 }

@@ -29,12 +29,7 @@ protected:
 public:
     HyperGeometric(double mean, double variance, RNG *gen);
 
-    double mean();
-    double mean(double x);
-    double variance();
-    double variance(double x);
-
-    virtual double operator()();
+    double operator()() override;
 };
 
 
@@ -47,18 +42,4 @@ inline HyperGeometric::HyperGeometric(double mean, double variance, RNG *gen)
 : Random(gen) {
   pMean = mean; pVariance = variance;
   setState();
-}
-
-inline double HyperGeometric::mean() { return pMean; };
-
-inline double HyperGeometric::mean(double x) {
-  double t = pMean; pMean = x;
-  setState(); return t;
-}
-
-inline double HyperGeometric::variance() { return pVariance; }
-
-inline double HyperGeometric::variance(double x) {
-  double t = pVariance; pVariance = x;
-  setState(); return t;
 }

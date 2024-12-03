@@ -26,11 +26,7 @@ protected:
     void setState();
 public:
     LogNormal(double mean, double variance, RNG *gen);
-    double mean();
-    double mean(double x);
-    double variance();
-    double variance(double x);
-    virtual double operator()();
+    double operator()() override;
 };
 
 
@@ -49,24 +45,4 @@ inline LogNormal::LogNormal(double mean, double variance, RNG *gen)
     logMean = mean;
     logVariance = variance;
     setState();
-}
-
-inline double LogNormal::mean() {
-    return logMean;
-}
-
-inline double LogNormal::mean(double x)
-{
-    double t=logMean; logMean = x; setState();
-    return t;
-}
-
-inline double LogNormal::variance() {
-    return logVariance;
-}
-
-inline double LogNormal::variance(double x)
-{
-    double t=logVariance; logVariance = x; setState();
-    return t;
 }
