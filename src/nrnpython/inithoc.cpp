@@ -230,13 +230,13 @@ static int have_opt(const char* arg) {
 static struct termios original_termios;
 
 static void save_original_terminal_settings() {
-    if (tcgetattr(STDIN_FILENO, &original_termios) == -1) {
+    if (tcgetattr(STDIN_FILENO, &original_termios) == -1 && isatty(STDIN_FILENO)) {
         std::cerr << "Error getting original terminal attributes\n";
     }
 }
 
 static void restore_original_terminal_settings() {
-    if (tcsetattr(STDIN_FILENO, TCSANOW, &original_termios) == -1) {
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &original_termios) == -1 && isatty(STDIN_FILENO)) {
         std::cerr << "Error restoring terminal attributes\n";
     }
 }
