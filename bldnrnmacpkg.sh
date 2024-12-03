@@ -6,10 +6,12 @@ default_pythons="python3.9 python3.10 python3.11 python3.12 python3.13"
 # bash bldnrnmacpkgcmake.sh
 # without args, default are the pythons above.
 
+if test "$RX3D_OPT" = "" ; then
+  RX3D_OPT=1 # a value of 2 takes much longer to build
+fi
+
 # If all the pythons are universal, then so is NEURON.
 # Otherwise $CPU
-# All pythons must have the same macos version and that will become
-# the MACOSX_DEPLOYMENT_TARGET
 
 # Now obsolete...
 # On my machine, to build nrn-x.x.x-macosx-10.9-universal2-py-38-39-310-311.pkg
@@ -24,10 +26,6 @@ default_pythons="python3.9 python3.10 python3.11 python3.12 python3.13"
 READLINE_LIST="/opt/nrnwheel/arm64/readline;/opt/nrnwheel/arm64/ncurses"
 
 CPU=`uname -m`
-
-if test "$RX3D_OPT" = "" ; then
-  RX3D_OPT=1 # a value of 2 takes much longer to build
-fi
 
 universal="yes" # changes to "no" if any python not universal
 
