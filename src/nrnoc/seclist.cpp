@@ -11,7 +11,8 @@
 #include "code.h"
 #include "classreg.h"
 
-bool seclist_iterate_remove_until(List* sl, std::function<void(Item*)> fun, Section* sec) {
+template <typename F>
+bool seclist_iterate_remove_until(List* sl, F fun, const Section* sec) {
     Item* q2 = nullptr;
     for (Item* q1 = sl->next; q1 != sl; q1 = q2) {
         q2 = q1->next;
@@ -27,7 +28,8 @@ bool seclist_iterate_remove_until(List* sl, std::function<void(Item*)> fun, Sect
     return false;
 }
 
-void seclist_iterate_remove(List* sl, std::function<void(Section*)> fun) {
+template <typename F>
+void seclist_iterate_remove(List* sl, F fun) {
     Item* q2 = nullptr;
     for (Item* q1 = sl->next; q1 != sl; q1 = q2) {
         q2 = q1->next;
@@ -193,13 +195,9 @@ static double seclist_remove(void* v) {
         Object* o;
         o = *hoc_objgetarg(1);
         check_obj_type(o, "SectionList");
-        seclist_iterate_remove(sl, [](Section* s) {
-            s->volatile_mark = 0;
-        });
+        seclist_iterate_remove(sl, [](Section* s) { s->volatile_mark = 0; });
         sl = (List*) o->u.this_pointer;
-        seclist_iterate_remove(sl, [](Section* s) {
-            s->volatile_mark = 1;
-        });
+        seclist_iterate_remove(sl, [](Section* s) { s->volatile_mark = 1; });
         sl = (List*) v;
         i = 0;
         for (q = sl->next; q != sl; q = q1) {
@@ -221,9 +219,7 @@ static double unique(void* v) {
     Item *q, *q1;
     List* sl = (List*) v;
     hoc_return_type_code = 1; /* integer */
-    seclist_iterate_remove(sl, [](Section* s) {
-        s->volatile_mark = 0;
-    });
+    seclist_iterate_remove(sl, [](Section* s) { s->volatile_mark = 0; });
     i = 0;
     for (q = sl->next; q != sl; q = q1) {
         q1 = q->next;
