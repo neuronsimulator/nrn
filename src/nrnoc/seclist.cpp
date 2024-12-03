@@ -352,15 +352,15 @@ void hoc_ifseclist(void) {
     check(ob);
     List* sl = (List*) (ob->u.this_pointer);
     if (seclist_iterate_remove_until(
-        sl,
-        [&](Item* q) {
-            hoc_execute(relative(savepc));
-            if (!hoc_returning) {
-                pc = relative(savepc + 1);
-            }
-            hoc_tobj_unref(obp);
-        },
-        sec)) {
+            sl,
+            [&](Item* q) {
+                hoc_execute(relative(savepc));
+                if (!hoc_returning) {
+                    pc = relative(savepc + 1);
+                }
+                hoc_tobj_unref(obp);
+            },
+            sec)) {
         return;
     }
     hoc_tobj_unref(obp);
