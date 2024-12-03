@@ -1,7 +1,4 @@
 #include <../../nrnconf.h>
-
-#include <queue>
-
 #define HOC_L_LIST 1
 #include "section.h"
 #include "neuron.h"
@@ -87,18 +84,12 @@ static double children(void* v) {
 // Create a list of section from the subtree with root `sec` by
 // doing breadth-first traversal.
 static void subtree1(List* sl, Section* sec) {
-    lappendsec(sl, sec);
+    const Item* end = sl;
+    Item* current = lappendsec(sl, sec);
     section_ref(sec);
-    std::queue<Section*> remainings{};
-    remainings.push(sec);
-    while (!remainings.empty()) {
-        Section* remain = remainings.front();
-        for (Section* ch = remain->child; ch; ch = ch->sibling) {
-            lappendsec(sl, ch);
-            remainings.push(ch);
-            section_ref(ch);
-        }
-        remainings.pop();
+    while (current != end) {
+        children1(sl, hocSEC(current));
+        current = current->next;
     }
 }
 
