@@ -302,7 +302,6 @@ class PreSyn: public ConditionEvent {
     IvocVect* idvec_;
     HocCommand* stmt_;
     NrnThread* nt_;
-    hoc_Item* hi_;     // in the netcvode psl_
     hoc_Item* hi_th_;  // in the netcvode psl_th_
     long hi_index_;    // for SaveState read and write
     int use_min_delay_;
