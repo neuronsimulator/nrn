@@ -84,6 +84,8 @@ static double children(void* v) {
     return 1.;
 }
 
+// Create a list of section from the subtree with root `sec` by
+// doing breadth-first traversal.
 static void subtree1(List* sl, Section* sec) {
     lappendsec(sl, sec);
     section_ref(sec);
