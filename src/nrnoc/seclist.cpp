@@ -167,19 +167,14 @@ static double allroots(void* v) {
 }
 
 static double seclist_remove(void* v) {
-    Section *sec, *s;
-    Item *q, *q1;
-    List* sl;
-    int i;
-
-    sl = (List*) v;
-    i = 0;
+    List* sl = (List*) v;
+    int i = 0;
 #if USE_PYTHON
     if (!ifarg(1) || (*hoc_objgetarg(1))->ctemplate->sym == nrnpy_pyobj_sym_) {
 #else
     if (!ifarg(1)) {
 #endif
-        sec = nrn_secarg(1);
+        Section* sec = nrn_secarg(1);
         if (seclist_iterate_remove_until(
                 sl,
                 [](Item* q) {
@@ -199,10 +194,10 @@ static double seclist_remove(void* v) {
         sl = (List*) o->u.this_pointer;
         seclist_iterate_remove(sl, [](Section* s) { s->volatile_mark = 1; });
         sl = (List*) v;
-        i = 0;
-        for (q = sl->next; q != sl; q = q1) {
+        Item* q1;
+        for (Item* q = sl->next; q != sl; q = q1) {
             q1 = q->next;
-            s = hocSEC(q);
+            Section* s = hocSEC(q);
             if (s->volatile_mark) {
                 hoc_l_delete(q);
                 section_unref(s);
@@ -214,16 +209,14 @@ static double seclist_remove(void* v) {
 }
 
 static double unique(void* v) {
-    int i; /* number deleted */
-    Section* s;
-    Item *q, *q1;
+    Item* q1;
     List* sl = (List*) v;
     hoc_return_type_code = 1; /* integer */
     seclist_iterate_remove(sl, [](Section* s) { s->volatile_mark = 0; });
-    i = 0;
-    for (q = sl->next; q != sl; q = q1) {
+    int i = 0; /* number deleted */
+    for (Item* q = sl->next; q != sl; q = q1) {
         q1 = q->next;
-        s = hocSEC(q);
+        Section* s = hocSEC(q);
         if (s->volatile_mark++) {
             hoc_l_delete(q);
             section_unref(s);
@@ -234,10 +227,9 @@ static double unique(void* v) {
 }
 
 static double contains(void* v) {
-    Section* s;
     List* sl = (List*) v;
     hoc_return_type_code = 2; /* boolean */
-    s = nrn_secarg(1);
+    Section* s = nrn_secarg(1);
     return seclist_iterate_remove_until(
                sl, [](Item*) {}, s)
                ? 1.
