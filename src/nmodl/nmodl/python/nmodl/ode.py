@@ -543,10 +543,12 @@ def integrate2c(diff_string, dt_var, vars, use_pade_approx=False):
         if _a1 == 0 and _a2 == 0:
             solution = _a0
 
+    custom_fcts = {str(f.func): str(f.func) for f in solution.atoms(sp.Function)}
+
     # return result as C code in NEURON format:
     #   - in the lhs x_0 refers to the state var at time (t+dt)
     #   - in the rhs x_0 refers to the state var at time t
-    return f"{sp.ccode(x)} = {sp.ccode(solution.evalf())}"
+    return f"{sp.ccode(x)} = {sp.ccode(solution.evalf(), user_functions=custom_fcts)}"
 
 
 def forwards_euler2c(diff_string, dt_var, vars, function_calls):

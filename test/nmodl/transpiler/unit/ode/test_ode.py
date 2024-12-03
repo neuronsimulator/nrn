@@ -170,6 +170,8 @@ def test_integrate2c():
         ("a", "x + a*dt"),
         ("a*x", "x*exp(a*dt)"),
         ("a*x+b", "(-b + (a*x + b)*exp(a*dt))/a"),
+        # assume custom_function is defined in mod file
+        ("custom_function(a)*x", "x*exp(custom_function(a)*dt)"),
     ]
     for eq, sol in test_cases:
         assert _equivalent(
