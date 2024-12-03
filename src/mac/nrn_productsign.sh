@@ -13,4 +13,5 @@ rm -f $1.signed
 productsign --sign "Developer ID Installer: Michael Hines (8APKV34642)" \
   $1 $1.signed
 
+echo "mv $1.signed $1"
 mv $1.signed $1
