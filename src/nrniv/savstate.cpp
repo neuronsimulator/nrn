@@ -23,7 +23,7 @@ extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
-extern hoc_Item* net_cvode_instance_psl();
+extern std::vector<PreSyn*>* net_cvode_instance_psl();
 extern std::vector<PlayRecord*>* net_cvode_instance_prl();
 extern double t;
 extern short* nrn_is_artificial_;
@@ -937,8 +937,7 @@ void SaveState::savenet() {
         ++i;
     }
     if (int i = 0; net_cvode_instance_psl()) {
-        ITERATE(q, net_cvode_instance_psl()) {
-            auto* ps = static_cast<PreSyn*>(VOIDITM(q));
+        for (PreSyn* ps: *net_cvode_instance_psl()) {
             ps->hi_index_ = i;
             pss_[i].flag = ps->flag_;
             pss_[i].valthresh = ps->valthresh_;
@@ -985,8 +984,7 @@ void SaveState::restorenet() {
     }
     // PreSyn's
     if (int i = 0; net_cvode_instance_psl())
-        ITERATE(q, net_cvode_instance_psl()) {
-            auto* ps = static_cast<PreSyn*>(VOIDITM(q));
+        for (PreSyn* ps: *net_cvode_instance_psl()) {
             ps->hi_index_ = i;
             ps->flag_ = pss_[i].flag;
             ps->valthresh_ = pss_[i].valthresh;
@@ -1026,12 +1024,9 @@ void SaveState::readnet(FILE* f) {
     if (npss_ != 0) {
         pss_ = new PreSynState[npss_];
         ASSERTfread(pss_, sizeof(PreSynState), npss_, f);
-        PreSyn* ps;
         int i = 0;
-        hoc_Item* q;
         if (net_cvode_instance_psl())
-            ITERATE(q, net_cvode_instance_psl()) {
-                ps = (PreSyn*) VOIDITM(q);
+            for (PreSyn* ps: *net_cvode_instance_psl()) {
                 ps->hi_index_ = i;
                 ++i;
             }
@@ -1142,10 +1137,9 @@ bool SaveState::checknet(bool warn) {
     }
     // PreSyn's
     i = 0;
-    if (net_cvode_instance_psl())
-        ITERATE(q, net_cvode_instance_psl()) {
-            ++i;
-        }
+    if (net_cvode_instance_psl()) {
+        i = net_cvode_instance_psl()->size();
+    }
     if (npss_ != i) {
         if (warn) {
             fprintf(stderr,
@@ -1177,8 +1171,7 @@ void SaveState::allocnet() {
     }
     npss_ = 0;
     if (net_cvode_instance_psl())
-        ITERATE(q, net_cvode_instance_psl()) {
-            auto* ps = static_cast<PreSyn*>(VOIDITM(q));
+        for (PreSyn* ps: *net_cvode_instance_psl()) {
             ps->hi_index_ = npss_;
             ++npss_;
         }
@@ -1274,8 +1267,8 @@ static Member_func members[] = {{"save", save},
                                 {"restore", restore},
                                 {"fread", ssread},
                                 {"fwrite", sswrite},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 void SaveState_reg() {
-    class2oc("SaveState", cons, destruct, members, NULL, NULL);
+    class2oc("SaveState", cons, destruct, members, nullptr, nullptr);
 }

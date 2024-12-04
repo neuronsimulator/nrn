@@ -81,7 +81,6 @@ extern int nrn_use_daspk_;
 int linmod_extra_eqn_count();
 extern int nrn_modeltype();
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
-extern hoc_Item* net_cvode_instance_psl();
 extern std::vector<PlayRecord*>* net_cvode_instance_prl();
 extern void nrn_use_busywait(int);
 void* nrn_interthread_enqueue(NrnThread*);
@@ -273,7 +272,7 @@ TQueue* net_cvode_instance_event_queue(NrnThread* nt) {
     return net_cvode_instance->event_queue(nt);
 }
 
-hoc_Item* net_cvode_instance_psl() {
+std::vector<PreSyn*>* net_cvode_instance_psl() {
     return net_cvode_instance->psl_;
 }
 
@@ -548,10 +547,8 @@ static Object** nc_synlist(void* v) {
     NetCon* d = (NetCon*) v;
     OcList* o;
     Object** po = newoclist(1, o);
-    hoc_Item* q;
     if (net_cvode_instance->psl_)
-        ITERATE(q, net_cvode_instance->psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (const PreSyn* ps: *net_cvode_instance->psl_) {
             for (const auto& nc: ps->dil_) {
                 if (nc->obj_ && nc->target_ == d->target_) {
                     o->append(nc->obj_);
@@ -565,14 +562,12 @@ static Object** nc_postcelllist(void* v) {
     NetCon* d = (NetCon*) v;
     OcList* o;
     Object** po = newoclist(1, o);
-    hoc_Item* q;
     Object* cell = nullptr;
     if (d->target_ && d->target_->sec) {
         cell = nrn_sec2cell(d->target_->sec);
     }
     if (cell && net_cvode_instance->psl_)
-        ITERATE(q, net_cvode_instance->psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (const PreSyn* ps: *net_cvode_instance->psl_) {
             for (const auto& nc: ps->dil_) {
                 if (nc->obj_ && nc->target_ && nrn_sec2cell_equals(nc->target_->sec, cell)) {
                     o->append(nc->obj_);
@@ -586,14 +581,12 @@ static Object** nc_precelllist(void* v) {
     NetCon* d = (NetCon*) v;
     OcList* o;
     Object** po = newoclist(1, o);
-    hoc_Item* q;
     Object* cell = nullptr;
     if (d->src_ && d->src_->ssrc_) {
         cell = nrn_sec2cell(d->src_->ssrc_);
     }
     if (cell && net_cvode_instance->psl_)
-        ITERATE(q, net_cvode_instance->psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (PreSyn* ps: *net_cvode_instance->psl_) {
             for (const auto& nc: ps->dil_) {
                 if (nc->obj_ && nc->src_ && ps->ssrc_ && nrn_sec2cell_equals(ps->ssrc_, cell)) {
                     o->append(nc->obj_);
@@ -763,7 +756,7 @@ static Member_func members[] = {{"active", nc_active},
                                 {"weight", 0},
                                 {"threshold", 0},
                                 {"x", 0},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 static Member_ret_obj_func omembers[] = {{"syn", nc_syn},
                                          {"pre", nc_pre},
@@ -776,7 +769,7 @@ static Member_ret_obj_func omembers[] = {{"syn", nc_syn},
                                          {"precelllist", nc_precelllist},
                                          {"postcelllist", nc_postcelllist},
                                          {"get_recordvec", nc_get_recordvec},
-                                         {0, 0}};
+                                         {nullptr, nullptr}};
 
 static void steer_val(void* v) {
     NetCon* d = (NetCon*) v;
@@ -848,7 +841,7 @@ static void destruct(void* v) {
 }
 
 void NetCon_reg() {
-    class2oc("NetCon", cons, destruct, members, omembers, NULL);
+    class2oc("NetCon", cons, destruct, members, omembers, nullptr);
     Symbol* nc = hoc_lookup("NetCon");
     nc->u.ctemplate->steer = steer_val;
     Symbol* s;
@@ -937,10 +930,8 @@ Object** NetCvode::netconlist() {
         star = get_regex(3);
     }
 
-    hoc_Item* q;
     if (psl_) {
-        ITERATE(q, psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (PreSyn* ps: *psl_) {
             bool b = false;
             if (ps->ssrc_) {
                 Object* precell = nrn_sec2cell(ps->ssrc_);
@@ -1154,17 +1145,14 @@ NetCvode::~NetCvode() {
     // and should also iterate and delete the MaxStateItem
     delete std::exchange(mst_, nullptr);
     if (psl_) {
-        hoc_Item* q;
-        ITERATE(q, psl_) {
-            auto* const ps = static_cast<PreSyn*>(VOIDITM(q));
+        for (PreSyn* ps: *psl_) {
             std::for_each(ps->dil_.rbegin(), ps->dil_.rend(), [](NetCon*& d) {
                 d->src_ = nullptr;
                 delete std::exchange(d, nullptr);
             });
             delete ps;
-            VOIDITM(q) = nullptr;
         }
-        hoc_l_freelist(&psl_);
+        delete std::exchange(psl_, nullptr);
     }
     delete std::exchange(pst_, nullptr);
     delete std::exchange(fixed_play_, nullptr);
@@ -1372,9 +1360,7 @@ void NetCvode::distribute_dinfo(int* cellnum, int tid) {
     int j;
     // printf("distribute_dinfo %d\n", pst_cnt_);
     if (psl_) {
-        hoc_Item* q;
-        ITERATE(q, psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (PreSyn* ps: *psl_) {
             // printf("\tPreSyn %s\n", ps->osrc_ ? hoc_object_name(ps->osrc_):secname(ps->ssrc_));
             if (ps->thvar_) {  // artcells and presyns for gid's not on this cpu have no threshold
                                // check
@@ -2731,7 +2717,6 @@ void NetCvode::free_event_pools() {
 }
 
 void NetCvode::init_events() {
-    hoc_Item* q;
     int i, j;
     for (i = 0; i < nrn_nthread; ++i) {
         p[i].tqe_->nshift_ = -1;
@@ -2742,8 +2727,7 @@ void NetCvode::init_events() {
         p[i].tqe_->shift_bin(nt_t - 0.5 * nt_dt);
     }
     if (psl_) {
-        ITERATE(q, psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (PreSyn* ps: *psl_) {
             ps->init();
             ps->flag_ = false;
             NetConPList& dil = ps->dil_;
@@ -2774,6 +2758,7 @@ void NetCvode::init_events() {
         Symbol* sym = hoc_lookup("NetCon");
         nclist = sym->u.ctemplate->olist;
     }
+    hoc_Item* q = nullptr;
     ITERATE(q, nclist) {
         Object* obj = OBJ(q);
         auto* d = static_cast<NetCon*>(obj->u.this_pointer);
@@ -4024,10 +4009,8 @@ void NetCvode::fornetcon_prepare() {
     }
     // two loops over all netcons. one to count, one to fill in argslist
     // count
-    hoc_Item* q;
     if (psl_)
-        ITERATE(q, psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (const PreSyn* ps: *psl_) {
             const NetConPList& dil = ps->dil_;
             for (const auto& d1: dil) {
                 Point_process* pnt = d1->target_;
@@ -4070,8 +4053,7 @@ void NetCvode::fornetcon_prepare() {
     }
     // fill in argslist and count again
     if (psl_) {
-        ITERATE(q, psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (const PreSyn* ps: *psl_) {
             const NetConPList& dil = ps->dil_;
             for (const auto& d1: dil) {
                 Point_process* pnt = d1->target_;
@@ -4547,7 +4529,7 @@ NetCon* NetCvode::install_deliver(neuron::container::data_handle<double> dsrc,
         pst_cnt_ = 0;
     }
     if (!psl_) {
-        psl_ = hoc_l_newlist();
+        psl_ = new std::vector<PreSyn*>();
     }
     if (osrc) {
         assert(!dsrc);
@@ -4567,7 +4549,7 @@ NetCon* NetCvode::install_deliver(neuron::container::data_handle<double> dsrc,
         auto psti = pst_->find(psrc);
         if (psti == pst_->end()) {
             ps = new PreSyn(psrc, osrc, ssrc);
-            ps->hi_ = hoc_l_insertvoid(psl_, ps);
+            psl_->push_back(ps);
             (*pst_)[psrc] = ps;
             ++pst_cnt_;
         } else {
@@ -4585,13 +4567,13 @@ NetCon* NetCvode::install_deliver(neuron::container::data_handle<double> dsrc,
             if (threshold != -1e9) {
                 ps->threshold_ = threshold;
             }
-            ps->hi_ = hoc_l_insertvoid(psl_, ps);
+            psl_->push_back(ps);
             pnt->presyn_ = ps;
         }
     } else if (target) {  // no source so use the special presyn
         if (!unused_presyn) {
             unused_presyn = new PreSyn({}, nullptr, nullptr);
-            unused_presyn->hi_ = hoc_l_insertvoid(psl_, unused_presyn);
+            psl_->push_back(unused_presyn);
         }
         ps = unused_presyn;
     }
@@ -4605,18 +4587,20 @@ NetCon* NetCvode::install_deliver(neuron::container::data_handle<double> dsrc,
 
 void NetCvode::psl_append(PreSyn* ps) {
     if (!psl_) {
-        psl_ = hoc_l_newlist();
+        psl_ = new std::vector<PreSyn*>();
     }
-    ps->hi_ = hoc_l_insertvoid(psl_, ps);
+    psl_->push_back(ps);
 }
 
 void NetCvode::presyn_disconnect(PreSyn* ps) {
     if (ps == unused_presyn) {
         unused_presyn = nullptr;
     }
-    if (ps->hi_) {
-        hoc_l_delete(ps->hi_);
-        ps->hi_ = nullptr;
+    if (psl_) {
+        auto it = std::find(psl_->begin(), psl_->end(), ps);
+        if (it != psl_->end()) {
+            psl_->erase(it);
+        }
     }
     if (ps->hi_th_) {
         hoc_l_delete(ps->hi_th_);
@@ -4881,17 +4865,16 @@ void NetCvode::update_ps2nt() {
     // first, opportunistically create p[]
     p_construct(nrn_nthread);
     // iterate over all threshold PreSyn and fill the NrnThread field
-    hoc_Item* q;
     for (i = 0; i < nrn_nthread; ++i) {
         if (p[i].psl_thr_) {
             hoc_l_freelist(&p[i].psl_thr_);
         }
     }
-    if (psl_)
-        ITERATE(q, psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+    if (psl_) {
+        for (PreSyn* ps: *psl_) {
             ps_thread_link(ps);
         }
+    }
 }
 
 void NetCvode::p_construct(int n) {
@@ -5025,26 +5008,16 @@ void PreSynSave::invalid() {
 }
 
 PreSyn* PreSynSave::hindx2presyn(long id) {
-    PreSyn* ps;
     if (!idxtable_) {
-        hoc_Item* q;
-        int cnt = 0;
-        ITERATE(q, net_cvode_instance->psl_) {
-            ++cnt;
-        }
-        // printf("%d PreSyn instances\n", cnt);
-        idxtable_ = new PreSynSaveIndexTable(2 * cnt);
-        cnt = 0;
-        ITERATE(q, net_cvode_instance->psl_) {
-            ps = (PreSyn*) VOIDITM(q);
-            assert(ps->hi_index_ == cnt);
+        idxtable_ = new PreSynSaveIndexTable(2 * net_cvode_instance->psl_->size());
+        for (auto&& [index, ps]: enumerate(*net_cvode_instance->psl_)) {
+            assert(ps->hi_index_ == index);
             (*idxtable_)[ps->hi_index_] = ps;
-            ++cnt;
         }
     }
     auto idxti = idxtable_->find(id);
     if (idxti != idxtable_->end()) {
-        ps = idxti->second;
+        PreSyn* ps = idxti->second;
         assert(ps->hi_index_ == id);
         return ps;
     } else {

@@ -653,7 +653,7 @@ static void destruct(void* v) {
 #endif
 }
 void Cvode_reg() {
-    class2oc("CVode", cons, destruct, members, omembers, NULL);
+    class2oc("CVode", cons, destruct, members, omembers, nullptr);
     net_cvode_instance = new NetCvode(1);
     Daspk::dteps_ = 1e-9;  // change with cvode.dae_init_dteps(newval)
 }

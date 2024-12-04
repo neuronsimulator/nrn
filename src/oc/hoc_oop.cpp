@@ -1581,8 +1581,8 @@ void hoc_endtemplate(Symbol* t) {
 }
 
 void class2oc_base(const char* name,
-                   void* (*cons)(Object*),
-                   void (*destruct)(void*),
+                   ctor_f* cons,
+                   dtor_f* destruct,
                    Member_func* m,
                    Member_ret_obj_func* mobjret,
                    Member_ret_str_func* strret) {
@@ -1629,8 +1629,8 @@ void class2oc_base(const char* name,
 
 
 void class2oc(const char* name,
-              void* (*cons)(Object*),
-              void (*destruct)(void*),
+              ctor_f* cons,
+              dtor_f* destruct,
               Member_func* m,
               Member_ret_obj_func* mobjret,
               Member_ret_str_func* strret) {

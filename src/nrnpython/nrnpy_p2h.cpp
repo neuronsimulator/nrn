@@ -31,16 +31,6 @@ struct Py2Nrn final {
     PyObject* po_{};
 };
 
-static void* p_cons(Object*) {
-    return new Py2Nrn{};
-}
-
-static void p_destruct(void* v) {
-    delete static_cast<Py2Nrn*>(v);
-}
-
-Member_func p_members[] = {{nullptr, nullptr}};
-
 static void call_python_with_section(Object* pyact, Section* sec) {
     nb::callable po = nb::borrow<nb::callable>(((Py2Nrn*) pyact->u.this_pointer)->po_);
     nanobind::gil_scoped_acquire lock{};
@@ -182,9 +172,8 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         for (i = 0; i < nindex; ++i) {
             nb::object arg = nb::steal(nrnpy_hoc_pop("isfunc py2n_component"));
             if (!arg) {
-                PyErr2NRNString e;
-                e.get_pyerr();
-                hoc_execerr_ext("arg %d error: %s", i, e.c_str());
+                auto err = Py2NRNString::get_pyerr();
+                hoc_execerr_ext("arg %d error: %s", i, err.c_str());
             }
             args.append(arg);
         }
@@ -241,8 +230,8 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         hoc_pushx(d);
     } else if (is_python_string(result.ptr())) {
         char** ts = hoc_temp_charptr();
-        Py2NRNString str(result.ptr(), true);
-        *ts = str.c_str();
+        // TODO double check that this doesn't leak.
+        *ts = Py2NRNString::as_ascii(result.ptr()).release();
         hoc_pop_defer();
         hoc_pushstr(ts);
     } else {
@@ -373,7 +362,7 @@ static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
     nb::object r = hoccommand_exec_help(ho);
     if (r.is_valid()) {
         nb::str pn(r);
-        Py2NRNString str(pn.ptr());
+        auto str = Py2NRNString::as_ascii(pn.ptr());
         strncpy(buf, str.c_str(), size);
         buf[size - 1] = '\0';
     } else {
@@ -482,48 +471,37 @@ static double func_call(Object* ho, int narg, int* err) {
 }
 
 static double guigetval(Object* ho) {
-    PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    nanobind::gil_scoped_acquire lock{};
-    PyObject* r = NULL;
-    PyObject* p = PyTuple_GetItem(po, 0);
-    if (PySequence_Check(p) || PyMapping_Check(p)) {
-        r = PyObject_GetItem(p, PyTuple_GetItem(po, 1));
+    nb::gil_scoped_acquire lock{};
+    nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
+    if (nb::sequence::check_(po[0]) || nb::mapping::check_(po[0])) {
+        return nb::cast<double>(po[0][po[1]]);
     } else {
-        r = PyObject_GetAttr(p, PyTuple_GetItem(po, 1));
+        return nb::cast<double>(po[0].attr(po[1]));
     }
-    auto pn = nb::steal(PyNumber_Float(r));
-    double x = PyFloat_AsDouble(pn.ptr());
-    return x;
 }
 
 static void guisetval(Object* ho, double x) {
-    PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    nanobind::gil_scoped_acquire lock{};
-    auto pn = nb::steal(PyFloat_FromDouble(x));
-    PyObject* p = PyTuple_GetItem(po, 0);
-    if (PySequence_Check(p) || PyMapping_Check(p)) {
-        PyObject_SetItem(p, PyTuple_GetItem(po, 1), pn.ptr());
+    nb::gil_scoped_acquire lock{};
+    nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
+    if (nb::sequence::check_(po[0]) || nb::mapping::check_(po[0])) {
+        po[0][po[1]] = x;
     } else {
-        PyObject_SetAttr(p, PyTuple_GetItem(po, 1), pn.ptr());
+        po[0].attr(po[1]) = x;
     }
 }
 
 static int guigetstr(Object* ho, char** cpp) {
-    PyObject* po = ((Py2Nrn*) ho->u.this_pointer)->po_;
-    nanobind::gil_scoped_acquire lock{};
-
-    PyObject* r = PyObject_GetAttr(PyTuple_GetItem(po, 0), PyTuple_GetItem(po, 1));
-    auto pn = nb::steal(PyObject_Str(r));
-    Py2NRNString name(pn.ptr());
-    char* cp = name.c_str();
-    if (*cpp && strcmp(*cpp, cp) == 0) {
+    nb::gil_scoped_acquire lock{};
+    nb::tuple po(((Py2Nrn*) ho->u.this_pointer)->po_);
+    auto name = nb::cast<std::string>(po[0].attr(po[1]));
+    if (*cpp && name == *cpp) {
         return 0;
     }
     if (*cpp) {
         delete[] * cpp;
     }
-    *cpp = new char[strlen(cp) + 1];
-    strcpy(*cpp, cp);
+    *cpp = new char[name.size() + 1];
+    strcpy(*cpp, name.c_str());
     return 1;
 }
 
@@ -661,8 +639,8 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
 
 #include "nrnmpi.h"
 
-int* mk_displ(int* cnts) {
-    int* displ = new int[nrnmpi_numprocs + 1];
+static std::vector<int> mk_displ(int* cnts) {
+    std::vector<int> displ(nrnmpi_numprocs + 1);
     displ[0] = 0;
     for (int i = 0; i < nrnmpi_numprocs; ++i) {
         displ[i + 1] = displ[i] + cnts[i];
@@ -670,73 +648,65 @@ int* mk_displ(int* cnts) {
     return displ;
 }
 
-static PyObject* char2pylist(char* buf, int np, int* cnt, int* displ) {
-    PyObject* plist = PyList_New(np);
-    assert(plist != NULL);
-    for (int i = 0; i < np; ++i) {
+static nb::list char2pylist(const std::vector<char>& buf,
+                            const std::vector<int>& cnt,
+                            const std::vector<int>& displ) {
+    nb::list plist{};
+    for (int i = 0; i < cnt.size(); ++i) {
         if (cnt[i] == 0) {
-            Py_INCREF(Py_None);  // 'Fatal Python error: deallocating None' eventually
-            PyList_SetItem(plist, i, Py_None);
+            plist.append(nb::none());
         } else {
-            nb::object po = unpickle(buf + displ[i], cnt[i]);
-            PyObject* p = po.release().ptr();
-            PyList_SetItem(plist, i, p);
+            plist.append(unpickle(buf.data() + displ[i], cnt[i]));
         }
     }
     return plist;
 }
 
 #if NRNMPI
+// Returns a new reference.
 static PyObject* py_allgather(PyObject* psrc) {
     int np = nrnmpi_numprocs;
     auto sbuf = pickle(psrc);
     // what are the counts from each rank
-    int* rcnt = new int[np];
+    std::vector<int> rcnt(np);
     rcnt[nrnmpi_myid] = static_cast<int>(sbuf.size());
-    nrnmpi_int_allgather_inplace(rcnt, 1);
-    int* rdispl = mk_displ(rcnt);
-    char* rbuf = new char[rdispl[np]];
+    nrnmpi_int_allgather_inplace(rcnt.data(), 1);
+    auto rdispl = mk_displ(rcnt.data());
+    std::vector<char> rbuf(rdispl[np]);
 
-    nrnmpi_char_allgatherv(sbuf.data(), rbuf, rcnt, rdispl);
+    nrnmpi_char_allgatherv(sbuf.data(), rbuf.data(), rcnt.data(), rdispl.data());
 
-    PyObject* pdest = char2pylist(rbuf, np, rcnt, rdispl);
-    delete[] rbuf;
-    delete[] rcnt;
-    delete[] rdispl;
-    return pdest;
+    return char2pylist(rbuf, rcnt, rdispl).release().ptr();
 }
 
+// Returns a new reference.
 static PyObject* py_gather(PyObject* psrc, int root) {
     int np = nrnmpi_numprocs;
     auto sbuf = pickle(psrc);
     // what are the counts from each rank
     int scnt = static_cast<int>(sbuf.size());
-    int* rcnt = NULL;
+    std::vector<int> rcnt;
     if (root == nrnmpi_myid) {
-        rcnt = new int[np];
+        rcnt.resize(np);
     }
-    nrnmpi_int_gather(&scnt, rcnt, 1, root);
-    int* rdispl = NULL;
-    char* rbuf = NULL;
+    nrnmpi_int_gather(&scnt, rcnt.data(), 1, root);
+    std::vector<int> rdispl;
+    std::vector<char> rbuf;
     if (root == nrnmpi_myid) {
-        rdispl = mk_displ(rcnt);
-        rbuf = new char[rdispl[np]];
+        rdispl = mk_displ(rcnt.data());
+        rbuf.resize(rdispl[np]);
     }
 
-    nrnmpi_char_gatherv(sbuf.data(), scnt, rbuf, rcnt, rdispl, root);
+    nrnmpi_char_gatherv(sbuf.data(), scnt, rbuf.data(), rcnt.data(), rdispl.data(), root);
 
-    PyObject* pdest = Py_None;
+    nb::object pdest = nb::none();
     if (root == nrnmpi_myid) {
-        pdest = char2pylist(rbuf, np, rcnt, rdispl);
-        delete[] rbuf;
-        delete[] rcnt;
-        delete[] rdispl;
-    } else {
-        Py_INCREF(pdest);
+        pdest = char2pylist(rbuf, rcnt, rdispl);
     }
-    return pdest;
+    return pdest.release().ptr();
 }
 
+// Returns a new reference.
 static PyObject* py_broadcast(PyObject* psrc, int root) {
     // Note: root returns reffed psrc.
     std::vector<char> buf{};
@@ -750,14 +720,13 @@ static PyObject* py_broadcast(PyObject* psrc, int root) {
         buf.resize(cnt);
     }
     nrnmpi_char_broadcast(buf.data(), cnt, root);
-    PyObject* pdest = psrc;
+    nb::object pdest;
     if (root != nrnmpi_myid) {
-        nb::object po = unpickle(buf);
-        pdest = po.release().ptr();
+        pdest = unpickle(buf);
     } else {
-        Py_INCREF(pdest);
+        pdest = nb::borrow(psrc);
     }
-    return pdest;
+    return pdest.release().ptr();
 }
 #endif
 
@@ -839,9 +808,6 @@ static Object* py_alltoall_type(int size, int type) {
 
         std::vector<char> s{};
         std::vector<int> scnt{};
-        int* sdispl = NULL;
-        int* rcnt = NULL;
-        int* rdispl = NULL;
 
         // setup source buffer for transfer s, scnt, sdispl
         // for alltoall, each rank handled identically
@@ -869,59 +835,44 @@ static Object* py_alltoall_type(int size, int type) {
         if (type == 1) {  // alltoall
 
             // what are destination counts
-            int* ones = new int[np];
-            for (int i = 0; i < np; ++i) {
-                ones[i] = 1;
-            }
-            sdispl = mk_displ(ones);
-            rcnt = new int[np];
-            nrnmpi_int_alltoallv(scnt.data(), ones, sdispl, rcnt, ones, sdispl);
-            delete[] ones;
-            delete[] sdispl;
+            std::vector<int> ones(np, 1);
+            auto sdispl = mk_displ(ones.data());
+            std::vector<int> rcnt(np);
+            nrnmpi_int_alltoallv(
+                scnt.data(), ones.data(), sdispl.data(), rcnt.data(), ones.data(), sdispl.data());
 
             // exchange
             sdispl = mk_displ(scnt.data());
-            rdispl = mk_displ(rcnt);
+            auto rdispl = mk_displ(rcnt.data());
             if (size < 0) {
                 pdest = nb::make_tuple(sdispl[np], rdispl[np]);
-                delete[] sdispl;
-                delete[] rcnt;
-                delete[] rdispl;
             } else {
-                char* r = new char[rdispl[np] + 1];  // force > 0 for all None case
-                nrnmpi_char_alltoallv(s.data(), scnt.data(), sdispl, r, rcnt, rdispl);
-                delete[] sdispl;
+                std::vector<char> r(rdispl[np] + 1);  // force > 0 for all None case
+                nrnmpi_char_alltoallv(
+                    s.data(), scnt.data(), sdispl.data(), r.data(), rcnt.data(), rdispl.data());
 
-                pdest = nb::steal(char2pylist(r, np, rcnt, rdispl));
-
-                delete[] r;
-                delete[] rcnt;
-                delete[] rdispl;
+                pdest = char2pylist(r, rcnt, rdispl);
             }
 
         } else {  // scatter
 
             // destination counts
-            rcnt = new int[1];
-            nrnmpi_int_scatter(scnt.data(), rcnt, 1, root);
-            std::vector<char> r(rcnt[0] + 1);  // rcnt[0] can be 0
+            int rcnt = -1;
+            nrnmpi_int_scatter(scnt.data(), &rcnt, 1, root);
+            std::vector<char> r(rcnt + 1);  // rcnt can be 0
+            std::vector<int> sdispl;
 
             // exchange
             if (nrnmpi_myid == root) {
                 sdispl = mk_displ(scnt.data());
             }
-            nrnmpi_char_scatterv(s.data(), scnt.data(), sdispl, r.data(), rcnt[0], root);
-            if (sdispl)
-                delete[] sdispl;
+            nrnmpi_char_scatterv(s.data(), scnt.data(), sdispl.data(), r.data(), rcnt, root);
 
-            if (rcnt[0]) {
+            if (rcnt) {
                 pdest = unpickle(r);
             } else {
                 pdest = nb::none();
             }
-
-            delete[] rcnt;
-            assert(rdispl == NULL);
         }
     }
 
@@ -958,13 +909,21 @@ static void restore_thread(PyThreadState* g) {
 void nrnpython_reg_real_nrnpython_cpp(neuron::python::impl_ptrs* ptrs);
 void nrnpython_reg_real_nrnpy_hoc_cpp(neuron::python::impl_ptrs* ptrs);
 
+static void* p_cons(Object*) {
+    return new Py2Nrn{};
+}
+
+static void p_destruct(void* v) {
+    delete static_cast<Py2Nrn*>(v);
+}
+
 /**
  * @brief Populate NEURON state with information from a specific Python.
  * @param ptrs Logically a return value; avoidi
  */
 extern "C" NRN_EXPORT void nrnpython_reg_real(neuron::python::impl_ptrs* ptrs) {
     assert(ptrs);
-    class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr);
+    class2oc("PythonObject", p_cons, p_destruct, nullptr, nullptr, nullptr);
     nrnpy_pyobj_sym_ = hoc_lookup("PythonObject");
     assert(nrnpy_pyobj_sym_);
     ptrs->callable_with_args = callable_with_args;

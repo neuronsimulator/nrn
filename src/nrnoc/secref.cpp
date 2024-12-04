@@ -18,7 +18,7 @@ access s1.sec	// soma becomes the default section
 #include <stdlib.h>
 #include "section.h"
 #include "parse.hpp"
-#include "hoc_membf.h"
+#include "classreg.h"
 #include "oc_ansi.h"
 
 extern int hoc_return_type_code;
@@ -297,7 +297,7 @@ static Member_func members[] = {{"sec", s_rename}, /* will actually become a SEC
                                 {"rename", s_rename},
                                 {"unname", s_unname},
                                 {"is_cas", s_cas},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex) {
     Section* s = 0;
@@ -360,15 +360,6 @@ Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex) {
     }
     return s;
 }
-
-
-extern void class2oc(const char*,
-                     void* (*cons)(Object*),
-                     void (*destruct)(void*),
-                     Member_func*,
-                     Member_ret_obj_func*,
-                     Member_ret_str_func*);
-
 
 void SectionRef_reg(void) {
     Symbol *s, *sr;
