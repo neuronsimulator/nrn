@@ -113,8 +113,9 @@ static int add_neuron_options() {
             PySys_WriteStdout("A neuron_options key:value is not a string:string or string:None\n");
             continue;
         }
-        Py2NRNString skey(key);
-        Py2NRNString sval(value);
+
+        auto skey = Py2NRNString::as_ascii(key);
+        auto sval = Py2NRNString::as_ascii(value);
         if (strcmp(skey.c_str(), "-print-options") == 0) {
             rval = 1;
             continue;
