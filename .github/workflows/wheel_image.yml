@@ -12,6 +12,12 @@ on:
           - 'manylinux_2_28'
           - 'manylinux_2_34'
 
+      upload:
+        description: 'Whether to upload (push) the image to DockerHub'
+        default: 'false'
+        required: true
+        type: 'boolean'
+
 jobs:
   docker:
     runs-on: ubuntu-latest
@@ -19,9 +25,9 @@ jobs:
       matrix:
         include:
           - platform: 'linux/amd64'
-            tag: 'x86_64'
+            arch: 'x86_64'
           - platform: 'linux/arm64'
-            tag: 'aarch64'
+            arch: 'aarch64'
 
     steps:
       - name: Login to Docker Hub
@@ -40,7 +46,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           platforms: ${{ matrix.platform }}
-          push: true
+          push: ${{ github.event.inputs.upload }}
           tags: neuronsimulator/neuron_wheel:latest
           build-args: |
-            MANYLINUX_IMAGE: ${{ github.event.inputs.base_image }}_${{ matrix.tag }}
+            MANYLINUX_IMAGE: ${{ github.event.inputs.base_image }}_${{ matrix.arch }}
