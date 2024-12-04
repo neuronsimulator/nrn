@@ -89,16 +89,11 @@ static double append(void* v) {
     return 1.;
 }
 
-
-static Item* children1(List* sl, Section* sec) {
-    Item* i;
-    Section* ch;
-    i = sl->prev;
-    for (ch = sec->child; ch; ch = ch->sibling) {
-        i = lappendsec(sl, ch);
+static void children1(List* sl, Section* sec) {
+    for (Section* ch = sec->child; ch; ch = ch->sibling) {
+        lappendsec(sl, ch);
         section_ref(ch);
     }
-    return i;
 }
 
 static double children(void* v) {
@@ -110,23 +105,19 @@ static double children(void* v) {
     return 1.;
 }
 
-static Item* subtree1(List* sl, Section* sec) {
-    Item *i, *j, *last, *first;
-    Section* s;
-    /* it is confusing to span the tree from the root without using
-      recursion.
-    */
-    s = sec;
-    i = lappendsec(sl, s);
-    section_ref(s);
-    last = i->prev;
-    while (i != last) {
-        for (first = last->next, last = i, j = first; j->prev != last; j = j->next) {
-            s = hocSEC(j);
-            i = children1(sl, s);
-        }
+// Create a list of section from the subtree with root `sec` by
+// doing breadth-first traversal.
+static void subtree1(List* sl, Section* sec) {
+    const Item* end = sl;
+    // The pointer `sl` points to a past-the-end
+    // marker. Therefore, appending items means
+    // they appear immediately before `sl`.
+    Item* current = lappendsec(sl, sec);
+    section_ref(sec);
+    while (current != end) {
+        children1(sl, hocSEC(current));
+        current = current->next;
     }
-    return i;
 }
 
 static double subtree(void* v) {
