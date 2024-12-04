@@ -53,6 +53,7 @@ jobs:
               310) pyenv_py_ver="3.10" ;;
               311) pyenv_py_ver="3.11" ;;
               312) pyenv_py_ver="3.12" ;;
+              313) pyenv_py_ver="3.13" ;;
               *) echo "Error: pyenv python version not specified or not supported." && exit 1;;
             esac
 
@@ -86,7 +87,7 @@ workflows:
                 - /circleci\/.*/
           matrix:
             parameters:
-              NRN_PYTHON_VERSION: ["312"]
+              NRN_PYTHON_VERSION: ["313"]
               NRN_NIGHTLY_UPLOAD: ["false"]
 
   nightly:
@@ -101,5 +102,5 @@ workflows:
       - manylinux2014-aarch64:
           matrix:
             parameters:
-              NRN_PYTHON_VERSION: ["39", "310", "311", "312"]
+              NRN_PYTHON_VERSION: ["39", "310", "311", "312", "313"]
               NRN_NIGHTLY_UPLOAD: ["true"]
