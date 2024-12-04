@@ -18,6 +18,11 @@ on:
         required: true
         type: 'boolean'
 
+      tag:
+        description: 'The tag for the final Docker image'
+        default: 'latest'
+        required: true
+
 jobs:
   docker:
     runs-on: ubuntu-latest
@@ -47,6 +52,6 @@ jobs:
         with:
           platforms: ${{ matrix.platform }}
           push: ${{ github.event.inputs.upload }}
-          tags: neuronsimulator/neuron_wheel:latest
+          tags: neuronsimulator/neuron_wheel:${{ github.event.inputs.tag }}
           build-args: |
             MANYLINUX_IMAGE: ${{ github.event.inputs.base_image }}_${{ matrix.arch }}
