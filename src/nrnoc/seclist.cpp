@@ -109,6 +109,9 @@ static double children(void* v) {
 // doing breadth-first traversal.
 static void subtree1(List* sl, Section* sec) {
     const Item* end = sl;
+    // The pointer `sl` points to a past-the-end
+    // marker. Therefore, appending items means
+    // they appear immediately before `sl`.
     Item* current = lappendsec(sl, sec);
     section_ref(sec);
     while (current != end) {
