@@ -9,11 +9,13 @@ Structure-Of-Arrays (SoA) memory layout, migration of the codebase and translati
 of MOD files to C++, and the introduction of random number generator construct natively
 in the NMODL language. Additionally, many legacy NMODL constructs have been removed,
 and legacy code and libraries have been replaced with modern alternatives
-like Eigen, ensuring improved performance and maintainability.
+like Eigen, ensuring improved performance and maintainability. DataHandles (pointers) into
+the SoA memory layout are valid (point to the correct value) regardless of how memory is
+internally reorganized or reallocated for purposes of higher simulation performance. 
 
 ### What’s New
 
-- Use of SoA memory layout for internal data structures ([#2027](https://github.com/neuronsimulator/nrn/issues/2027), [#2381](https://github.com/neuronsimulator/nrn/issues/2381), [#2712](https://github.com/neuronsimulator/nrn/issues/2712))
+- Use of SoA memory layout for internal data structures and DataHandles instead of pointers into that memory. ([#2027](https://github.com/neuronsimulator/nrn/issues/2027), [#2381](https://github.com/neuronsimulator/nrn/issues/2381), [#2712](https://github.com/neuronsimulator/nrn/issues/2712))
 - Support for random number generator language construct (RANDOM) in NMODL ([#2627](https://github.com/neuronsimulator/nrn/issues/2627))
 - Replace pthread-based threading implementation with std::thread ([#1859](https://github.com/neuronsimulator/nrn/issues/1859))
 - Introduce meaningful Python types: HOC classes associated with Python types ([#1858](https://github.com/neuronsimulator/nrn/issues/1858))
