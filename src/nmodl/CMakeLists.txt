@@ -1,4 +1,101 @@
 # =============================================================================
+# Build options for NMODL
+# =============================================================================
+set(NMODL_MAX_ERRORS
+    1
+    CACHE STRING "Number of errors before Clang/GCC stop.")
+option(NMODL_ENABLE_PYTHON_BINDINGS "Enable pybind11 based python bindings" ON)
+option(NMODL_ENABLE_TESTS "Enable build of tests" ON)
+option(NMODL_ENABLE_USECASES
+       "If building tests, additionally enable build of usecase tests. Requires neuron." OFF)
+option(NMODL_ENABLE_BACKWARD "Use backward, enables blame." OFF)
+set(NMODL_EXTRA_CXX_FLAGS
+    ""
+    CACHE STRING "Add extra compile flags for NMODL sources")
+separate_arguments(NMODL_EXTRA_CXX_FLAGS)
+option(LINK_AGAINST_PYTHON "Should the Python library be linked or not" ON)
+option(NMODL_BUILD_WHEEL "Flag to signal we are building a wheel" OFF)
+if(NMODL_BUILD_WHEEL)
+  set(LINK_AGAINST_PYTHON OFF)
+  set(NMODL_ENABLE_TESTS OFF)
+endif()
+
+include(${PROJECT_SOURCE_DIR}/cmake/nmodl/PythonLinkHelper.cmake)
+
+set(NMODL_PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(NMODL_PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+include_directories(${NMODL_PROJECT_SOURCE_DIR} ${NMODL_PROJECT_BINARY_DIR})
+
+# =============================================================================
+# Create some random files.
+# =============================================================================
+
+# generate file with version number from git and nrnunits.lib file path
+configure_file(${NMODL_PROJECT_SOURCE_DIR}/config/config.cpp.in
+               ${NMODL_PROJECT_BINARY_DIR}/config/config.cpp @ONLY)
+
+# generate Doxyfile with correct source paths
+configure_file(${PROJECT_SOURCE_DIR}/docs/nmodl/transpiler/Doxyfile.in
+               ${PROJECT_BINARY_DIR}/docs/nmodl/transpiler/Doxyfile)
+
+# =============================================================================
+# Generate NMODL code, e.g. ast & visitor base classes.
+# -----------------------------------------------------------------------------
+if(NOT NMODL_ENABLE_PYTHON_BINDINGS)
+  list(APPEND CODE_GENERATOR_OPTS "--disable-pybind")
+endif()
+
+# -----------------------------------------------------------------------------
+# Part I: generate the list of generated files
+# -----------------------------------------------------------------------------
+execute_process(
+  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/language/code_generator.py
+  ${CODE_GENERATOR_OPTS} --generate-cmake --base-dir ${CMAKE_CURRENT_BINARY_DIR}/language
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/language)
+
+# Ensure that the above runs again, if its dependencies update.
+set_property(
+  DIRECTORY
+  APPEND
+  PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/language/code_generator.py")
+
+set_property(
+  DIRECTORY
+  APPEND
+  PROPERTY CMAKE_CONFIGURE_DEPENDS
+           ${CMAKE_CURRENT_SOURCE_DIR}/language/templates/code_generator.cmake)
+
+# The list should be up-to-date now.
+include(${CMAKE_CURRENT_BINARY_DIR}/language/code_generator.cmake)
+
+# -----------------------------------------------------------------------------
+# Part II: generate AST/Visitor classes from language definition
+# -----------------------------------------------------------------------------
+set_source_files_properties(${NMODL_GENERATED_SOURCES} PROPERTIES GENERATED TRUE)
+
+# Make the codegen options available as a dependency by storing them in a file.
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/language/code_generator_opts.in
+               ${CMAKE_CURRENT_BINARY_DIR}/language/code_generator_opts)
+
+add_custom_command(
+  OUTPUT ${NMODL_GENERATED_SOURCES}
+  COMMAND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/language/code_generator.py
+          ${CODE_GENERATOR_OPTS} --base-dir ${CMAKE_CURRENT_BINARY_DIR}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/language
+  DEPENDS ${CODE_GENERATOR_PY_FILES}
+  DEPENDS ${CODE_GENERATOR_YAML_FILES}
+  DEPENDS ${CODE_GENERATOR_JINJA_FILES}
+  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/language/code_generator_opts
+  COMMENT "-- NMODL : GENERATING AST CLASSES WITH PYTHON GENERATOR! --")
+unset(CODE_GENERATOR_OPTS)
+
+# -----------------------------------------------------------------------------
+# Target to propagate dependencies properly to lexer
+# -----------------------------------------------------------------------------
+add_custom_target(pyastgen DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ast/ast.cpp)
+
+# =============================================================================
 # Add extra compile flags to NMODL sources
 # =============================================================================
 add_compile_options(${NMODL_EXTRA_CXX_FLAGS})
@@ -37,6 +134,10 @@ target_link_libraries(
 add_dependencies(nmodl nmodl_copy_python_files nmodl_copy_solver_files)
 cpp_cc_configure_sanitizers(TARGET nmodl)
 
+# set(nmodl_BINARY bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
+add_executable(nmodl::nmodl ALIAS nmodl)
+
+
 # =============================================================================
 # Add dependency with nmodl Python module (for consumer projects)
 # =============================================================================
@@ -53,3 +154,26 @@ install(
   TARGETS nmodl
   EXPORT nmodlTargets
   RUNTIME DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin)
+
+
+configure_file(${PROJECT_SOURCE_DIR}/share/nmodl/nrnunits.lib ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib COPYONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib
+        DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}share/nmodl)
+
+install(
+  EXPORT nmodlTargets
+  FILE nmodlTargets.cmake
+  NAMESPACE nmodl::
+  DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}lib/cmake/nmodl)
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+  ${PROJECT_SOURCE_DIR}/cmake/nmodl/Config.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfig.cmake"
+  INSTALL_DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}lib/cmake/nmodl)
+write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/nmodlConfigVersion.cmake"
+                                 COMPATIBILITY AnyNewerVersion)
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfig.cmake"
+              "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfigVersion.cmake"
+        DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}lib/cmake/nmodl)
+

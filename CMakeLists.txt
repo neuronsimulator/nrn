@@ -507,14 +507,24 @@ cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 # Enable NMODL code-generator support
 # =============================================================================
 if(NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON)
+  cpp_cc_git_submodule(json BUILD PACKAGE nlohmann_json REQUIRED)
+  cpp_cc_git_submodule(pybind11 BUILD PACKAGE pybind11 REQUIRED)
+
+  option(SPDLOG_FMT_EXTERNAL "Force to use an external {{fmt}}" ON)
+  option(SPDLOG_SYSTEM_INCLUDE "Include spdlog as a system lib" ON)
+  cpp_cc_git_submodule(spdlog BUILD PACKAGE spdlog REQUIRED)
+  if(${CODING_CONV_PREFIX}_3RDPARTY_USE_SPDLOG)
+    # See above, same logic as fmt
+    set_target_properties(spdlog PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  endif()
 
   set(NMODL_ENABLE_PYTHON_BINDINGS
       OFF
       CACHE BOOL "Enable NMODL python bindings")
-  nrn_add_external_project(nmodl)
+  add_subdirectory(src/nmodl)
   set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
   set(NMODL_TARGET_TO_DEPEND nmodl)
-  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
+  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/src/nmodl)
   # install nrnunits.lib and libpywrapper.so from external/nmodl
   install(
     FILES ${NMODL_PROJECT_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}

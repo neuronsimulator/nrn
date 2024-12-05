@@ -2,32 +2,32 @@
 # Various project components and their source files
 # =============================================================================
 set(BISON_GENERATED_SOURCE_FILES
-    ${PROJECT_BINARY_DIR}/src/parser/nmodl/nmodl_parser.cpp
-    ${PROJECT_BINARY_DIR}/src/parser/verbatim_parser.cpp
-    ${PROJECT_BINARY_DIR}/src/parser/diffeq/diffeq_parser.cpp
-    ${PROJECT_BINARY_DIR}/src/parser/c/c11_parser.cpp
-    ${PROJECT_BINARY_DIR}/src/parser/unit/unit_parser.cpp)
+    ${CMAKE_CURRENT_BINARY_DIR}/../parser/nmodl/nmodl_parser.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/../parser/verbatim_parser.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/../parser/diffeq/diffeq_parser.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/../parser/c/c11_parser.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/../parser/unit/unit_parser.cpp)
 set(BISON_GENERATED_HEADER_FILES
-    ${PROJECT_BINARY_DIR}/src/parser/nmodl/location.hh
-    ${PROJECT_BINARY_DIR}/src/parser/nmodl/nmodl_parser.hpp
-    ${PROJECT_BINARY_DIR}/src/parser/nmodl/position.hh
-    ${PROJECT_BINARY_DIR}/src/parser/verbatim_parser.hpp
-    ${PROJECT_BINARY_DIR}/src/parser/diffeq/diffeq_parser.hpp
-    ${PROJECT_BINARY_DIR}/src/parser/c/c11_parser.hpp
-    ${PROJECT_BINARY_DIR}/src/parser/unit/unit_parser.hpp)
+    ${CMAKE_CURRENT_BINARY_DIR}/../parser/nmodl/location.hh
+    ${CMAKE_CURRENT_BINARY_DIR}/../parser/nmodl/nmodl_parser.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/../parser/nmodl/position.hh
+    ${CMAKE_CURRENT_BINARY_DIR}/../parser/verbatim_parser.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/../parser/diffeq/diffeq_parser.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/../parser/c/c11_parser.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/../parser/unit/unit_parser.hpp)
 
-set(UNIT_SOURCE_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/units/units.cpp)
+set(UNIT_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/../units/units.cpp)
 
-set(NMODL_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/nmodl_driver.cpp)
+set(NMODL_DRIVER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/../parser/nmodl_driver.cpp)
 
-set(DIFFEQ_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_driver.cpp
-                        ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_context.cpp)
+set(DIFFEQ_DRIVER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/../parser/diffeq_driver.cpp
+                        ${CMAKE_CURRENT_SOURCE_DIR}/../parser/diffeq_context.cpp)
 
-set(C_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/c11_driver.cpp)
+set(C_DRIVER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/../parser/c11_driver.cpp)
 
 set_source_files_properties(${AST_GENERATED_SOURCES} PROPERTIES GENERATED TRUE)
 
-set(UNIT_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/unit_driver.cpp)
+set(UNIT_DRIVER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/../parser/unit_driver.cpp)
 
 set(LEXER_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/token_mapping.cpp
@@ -49,11 +49,14 @@ if(NMODL_PGI_COMPILER)
                               PROPERTIES COMPILE_FLAGS "--diag_suppress 550")
 endif()
 
+set(NMODL_PARSER_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../parser")
+set(NMODL_PARSER_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/../parser")
+
 # =============================================================================
 # Directories for parsers (as they need to be in separate directories)
 # =============================================================================
-file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/parser/nmodl ${PROJECT_BINARY_DIR}/src/parser/diffeq
-     ${PROJECT_BINARY_DIR}/src/parser/c ${PROJECT_BINARY_DIR}/src/parser/unit)
+file(MAKE_DIRECTORY ${NMODL_PARSER_BINARY_DIR}/nmodl ${NMODL_PARSER_BINARY_DIR}/diffeq
+  ${NMODL_PARSER_BINARY_DIR}/c ${NMODL_PARSER_BINARY_DIR}/unit)
 
 # =============================================================================
 # Lexer & Parser commands
@@ -61,8 +64,6 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/parser/nmodl ${PROJECT_BINARY_DIR}
 # Command to generate nmodl parser Construct a relative path to avoid baking any absolute paths into
 # the output .cpp and .hpp files (via __FILE__ and so on), which cause ccache misses when the build
 # prefix changes (e.g. GitLab CI).
-set(NMODL_PARSER_SOURCE_DIR "${NMODL_PROJECT_SOURCE_DIR}/src/parser")
-set(NMODL_PARSER_BINARY_DIR "${NMODL_PROJECT_BINARY_DIR}/src/parser")
 file(RELATIVE_PATH NMODL_YY_FROM_PARSER_BINARY_DIR "${NMODL_PARSER_BINARY_DIR}"
      "${NMODL_PARSER_SOURCE_DIR}/nmodl.yy")
 add_custom_command(
