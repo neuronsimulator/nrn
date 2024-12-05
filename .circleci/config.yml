@@ -54,6 +54,7 @@ jobs:
               docker run --rm -v $PWD:/mnt cimg/python:3.13.1 bash -c "
                 python --version;
                 # test wheel
+                cd /mnt
                 packaging/python/test_wheels.sh $(which python) $(ls -t wheelhouse/*.whl)
               "
             else
