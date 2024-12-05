@@ -1,3 +1,97 @@
+# NEURON 9.0
+
+## NEURON 9.0.0
+_Release Date_ : 24-12-2024
+
+NEURON 9.0 marks a major milestone with significant under-the-hood updates.
+This release features a redesign of internal data structures using the
+Structure-Of-Arrays (SoA) memory layout, migration of the codebase and translation
+of MOD files to C++, and the introduction of random number generator construct natively
+in the NMODL language. Additionally, many legacy NMODL constructs have been removed,
+and legacy code and libraries have been replaced with modern alternatives
+like Eigen, ensuring improved performance and maintainability.
+
+### What’s New
+
+- Use of SoA memory layout for internal data structures ([#2027](https://github.com/neuronsimulator/nrn/issues/2027), [#2381](https://github.com/neuronsimulator/nrn/issues/2381), [#2712](https://github.com/neuronsimulator/nrn/issues/2712))
+- Support for random number generator language construct (RANDOM) in NMODL ([#2627](https://github.com/neuronsimulator/nrn/issues/2627))
+- Replace pthread-based threading implementation with std::thread ([#1859](https://github.com/neuronsimulator/nrn/issues/1859))
+- Introduce meaningful Python types: HOC classes associated with Python types ([#1858](https://github.com/neuronsimulator/nrn/issues/1858))
+- Formalization of C API for NEURON (first version) ([#2357](https://github.com/neuronsimulator/nrn/issues/2357))
+- Introduce nanobind to gradually replace C Python API usage ([#2545](https://github.com/neuronsimulator/nrn/issues/2545))
+- Requires C++17 compiler and flex >= 2.6 ([#1893](https://github.com/neuronsimulator/nrn/issues/1893))
+- CoreNEURON repository is merged into NEURON ([#2055](https://github.com/neuronsimulator/nrn/issues/2055))
+- Support for `numpy>=2` added ([#3040](https://github.com/neuronsimulator/nrn/issues/3040))
+- Replace legacy Meschach source copy with Eigen library ([#2470](https://github.com/neuronsimulator/nrn/issues/2470))
+
+### Breaking Changes
+
+- MOD files are compiled as C++ instead of C (see [migration guide](guide/porting_mechanisms_to_cpp.rst#porting-mechanisms-to-cpp) for VERBATIM blocks)
+- API changes in the functions related to random numbers, see [#2618](https://github.com/neuronsimulator/nrn/issues/2618)
+- Restored usage of TABLE statement in hh.mod, results are now same as 8.0.2 (see [#1764](https://github.com/neuronsimulator/nrn/issues/1764))
+- NMODL: Disallow use of ion variable in the CONSTANT block ([#1955](https://github.com/neuronsimulator/nrn/issues/1955))
+- NMODL: Disallow declaring variables and functions with the same name ([#1992](https://github.com/neuronsimulator/nrn/issues/1992))
+- Usage of Eigen library could introduce floating point differences, but they are very small, validated and can be ignored
+
+
+### Removal / Deprecation
+
+- Removed usage of legacy OS X carbon libraries ([#1869](https://github.com/neuronsimulator/nrn/issues/1869))
+- Removed legacy LINDA code and Java bindings ([#1919](https://github.com/neuronsimulator/nrn/issues/1919), [#1937](https://github.com/neuronsimulator/nrn/issues/1937))
+- Removed unused NMODL methods: adams, heun, clsoda, seidel, simplex, gear ([#2032](https://github.com/neuronsimulator/nrn/issues/2032))
+- Removed support for Python 3.7 and 3.8 ([#2194](https://github.com/neuronsimulator/nrn/issues/2194), [#3108](https://github.com/neuronsimulator/nrn/issues/3108))
+- Removed support for legacy units and dynamic units selection ([#2539](https://github.com/neuronsimulator/nrn/issues/2539))
+- Removed unused NEMO simulator compatibility ([#3035](https://github.com/neuronsimulator/nrn/issues/3035))
+- Removed checkpoint feature (`h.checkpoint()`), superseded by SaveState ([#3092](https://github.com/neuronsimulator/nrn/issues/3092))
+- Removed legacy Random.MLCG and Random.ACG random number generators ([#3189](https://github.com/neuronsimulator/nrn/issues/3189), [#3190](https://github.com/neuronsimulator/nrn/issues/3190))
+- Removed support for mod2c transpiler for CoreNEURON ([#2247](https://github.com/neuronsimulator/nrn/issues/2247))
+- Removed unused NMODL constructs: PUTQ, GETQ, RESET, MATCH, TERMINAL, SECTION,
+  IFERROR, MODEL_LEVEL, PLOT, SENS, etc. ([#1956](https://github.com/neuronsimulator/nrn/issues/1956), [#1974](https://github.com/neuronsimulator/nrn/issues/1974), [#1975](https://github.com/neuronsimulator/nrn/issues/1975), [#2001](https://github.com/neuronsimulator/nrn/issues/2001), [#2004](https://github.com/neuronsimulator/nrn/issues/2004), [#2005](https://github.com/neuronsimulator/nrn/issues/2005))
+- Removed `__MWERKS__` (CodeWarrior compiler) related code ([#2655](https://github.com/neuronsimulator/nrn/issues/2655))
+- Removed obsolete uxnrnbbs code ([#2203](https://github.com/neuronsimulator/nrn/issues/2203))
+- Removed old tqueue implementations ([#2225](https://github.com/neuronsimulator/nrn/issues/2225), [#2740](https://github.com/neuronsimulator/nrn/issues/2740))
+
+
+### Bug Fixes
+
+- Fix segfault from unref hoc_obj, see [#1857](https://github.com/neuronsimulator/nrn/issues/1857) ([#1917](https://github.com/neuronsimulator/nrn/issues/1917))
+- Fix bug in rxd reactions involving rxd parameters ([#1933](https://github.com/neuronsimulator/nrn/issues/1933))
+- Fix CoreNEURON bug when checkpointing VecPlay instances ([#2148](https://github.com/neuronsimulator/nrn/issues/2148))
+- Fix nocmodl bug with unused STATE + COMPARTMENT variable in KINETIC block ([#2210](https://github.com/neuronsimulator/nrn/issues/2210))
+- Fix for dynamic ECS diffusion characteristics ([#2229](https://github.com/neuronsimulator/nrn/issues/2229))
+- Various fixes for compatibility with newer NVHPC compiler releases ([#2239](https://github.com/neuronsimulator/nrn/issues/2239), [#2591](https://github.com/neuronsimulator/nrn/issues/2591))
+- Fix Windows and Mac crash on multiline HOC statements input from terminal ([#2258](https://github.com/neuronsimulator/nrn/issues/2258))
+- Fix for Vector.max_ind ([#2251](https://github.com/neuronsimulator/nrn/issues/2251))
+- Fix for detecting ION channel type in LoadBalance ([#2310](https://github.com/neuronsimulator/nrn/issues/2310))
+- Fix for RangeVarPlot adding extra point at section ends when using plotly ([#2410](https://github.com/neuronsimulator/nrn/issues/2410))
+- Fixed mod file array variable assignment (seg.mech.array[i] = x) ([#2504](https://github.com/neuronsimulator/nrn/issues/2504))
+- Various fixes in RxD features ([#2593](https://github.com/neuronsimulator/nrn/issues/2593), [#2588](https://github.com/neuronsimulator/nrn/issues/2588))
+- Fix CoreNEURON bug causing in-memory model copy with file mode ([#2767](https://github.com/neuronsimulator/nrn/issues/2767))
+- Fix CoreNEURON bug when using array variables in MOD files ([#2779](https://github.com/neuronsimulator/nrn/issues/2779))
+- Fix lexer for ONTOLOGY parsing ([#3091](https://github.com/neuronsimulator/nrn/issues/3091))
+- Fix issue while using Anaconda Python on MacOS ([#3088](https://github.com/neuronsimulator/nrn/issues/3088))
+
+### Other Improvements and Changes
+
+- Allow `segment.mechanism.func(args)` to call a FUNCTION or PROCEDURE ([#2475](https://github.com/neuronsimulator/nrn/issues/2475))
+- Simplify INDEPENDENT statement as only `t` variable is accepted ([#2013](https://github.com/neuronsimulator/nrn/issues/2013))
+- Fix various memory leaks and related improvements ([#3255](https://github.com/neuronsimulator/nrn/issues/3255), [#3257](https://github.com/neuronsimulator/nrn/issues/3257), [#3243](https://github.com/neuronsimulator/nrn/issues/3243), [#2456](https://github.com/neuronsimulator/nrn/issues/2456))
+- Support for reading reporting related information with in-memory mode ([#2555](https://github.com/neuronsimulator/nrn/issues/2555))
+- NMODL language documentation update ([#2152](https://github.com/neuronsimulator/nrn/issues/2152), [#2771](https://github.com/neuronsimulator/nrn/issues/2771), [#2885](https://github.com/neuronsimulator/nrn/issues/2885))
+- Documentation improvements including transfer from nrn.yale.edu to nrn.readthedocs.io ([#1901](https://github.com/neuronsimulator/nrn/issues/1901), [#2922](https://github.com/neuronsimulator/nrn/issues/2922), [#2971](https://github.com/neuronsimulator/nrn/issues/2971), [#3106](https://github.com/neuronsimulator/nrn/issues/3106), [#3187](https://github.com/neuronsimulator/nrn/issues/3187))
+- Various test, CI, and build infrastructure improvements ([#1991](https://github.com/neuronsimulator/nrn/issues/1991), [#2260](https://github.com/neuronsimulator/nrn/issues/2260), [#2474](https://github.com/neuronsimulator/nrn/issues/2474))
+- Migrate many C code parts to C++ ([#2083](https://github.com/neuronsimulator/nrn/issues/2083), [#2305](https://github.com/neuronsimulator/nrn/issues/2305))
+- Support online LFP calculation in CoreNEURON (via SONATA reports for BBP use cases) ([#2118](https://github.com/neuronsimulator/nrn/issues/2118), [#2360](https://github.com/neuronsimulator/nrn/issues/2360))
+- Adopt CoreNEURON cell permute functionality into NEURON ([#2598](https://github.com/neuronsimulator/nrn/issues/2598))
+- Allow legacy `a.b(i)` syntax for 1d arrays (extend to `PointProcess.var[i]` and `ob.dblarray[i]`) ([#2256](https://github.com/neuronsimulator/nrn/issues/2256))
+- Add an ability to run NEURON ModelDB CI using label ([#2108](https://github.com/neuronsimulator/nrn/issues/2108))
+- Remove unused code parts under various preprocessor variables ([#2007](https://github.com/neuronsimulator/nrn/issues/2007))
+- Return error/exit codes properly in `nrniv -c` and nrnivmodl ([#1871](https://github.com/neuronsimulator/nrn/issues/1871))
+- No limit on number of ion mechanisms that can be used ([#3089](https://github.com/neuronsimulator/nrn/issues/3089))
+- Added Jupyter support for ModelView ([#1907](https://github.com/neuronsimulator/nrn/issues/1907))
+- Make notebooks work with `bokeh>=3` ([#3061](https://github.com/neuronsimulator/nrn/issues/3061))
+- Added new method `ParallelContext.get_partition()` ([#2351](https://github.com/neuronsimulator/nrn/issues/2351))
+
 # NEURON 8.2
 
 ## 8.2.6
