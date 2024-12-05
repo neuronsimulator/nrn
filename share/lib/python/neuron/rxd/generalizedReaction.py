@@ -44,7 +44,8 @@ def get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(args, kwargs):
             rate1 = args[1]
             rate2 = args[2]
         else:
-            scheme = args[0] > args[1]
+            scheme = args[0].__gt__(args[1])
+            # don't use '>' to avoid Python prioritizing subclass methods
             rate1 = args[2]
             rate2 = None
     elif len(args) == 2:
@@ -173,9 +174,11 @@ class GeneralizedReaction(object):
             sp_regions = list(
                 set.intersection(
                     *[
-                        set(sptr()._regions)
-                        if isinstance(sptr(), species.Species)
-                        else {sptr()._region()}
+                        (
+                            set(sptr()._regions)
+                            if isinstance(sptr(), species.Species)
+                            else {sptr()._region()}
+                        )
                         for sptr in sources + dests
                     ]
                 )
@@ -250,9 +253,11 @@ class GeneralizedReaction(object):
             if self._trans_membrane:
                 src_regions = intersection(
                     [
-                        set(sptr()._regions)
-                        if isinstance(sptr(), species.Species)
-                        else {sptr()._region()}
+                        (
+                            set(sptr()._regions)
+                            if isinstance(sptr(), species.Species)
+                            else {sptr()._region()}
+                        )
                         for sptr in sources
                     ]
                 )
@@ -265,9 +270,11 @@ class GeneralizedReaction(object):
                 )
                 dest_regions = intersection(
                     [
-                        set(sptr()._regions)
-                        if isinstance(sptr(), species.Species)
-                        else {sptr()._region()}
+                        (
+                            set(sptr()._regions)
+                            if isinstance(sptr(), species.Species)
+                            else {sptr()._region()}
+                        )
                         for sptr in dests
                     ]
                 )
@@ -284,9 +291,11 @@ class GeneralizedReaction(object):
                 active_regions = list(
                     intersection(
                         [
-                            set(sptr()._regions)
-                            if isinstance(sptr(), species.Species)
-                            else {sptr()._region()}
+                            (
+                                set(sptr()._regions)
+                                if isinstance(sptr(), species.Species)
+                                else {sptr()._region()}
+                            )
                             for sptr in sources + dests
                         ]
                     )
