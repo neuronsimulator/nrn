@@ -161,10 +161,10 @@ add_custom_target(
   --execute
   --inplace
   --ExecutePreprocessor.timeout=360
-  "${CMAKE_SOURCE_DIR}/docs/notebooks/*.ipynb"
+  "${PROJECT_SOURCE_DIR}/docs/nmodl/transpiler/notebooks/*.ipynb"
   &&
   clean_ipynb
-  "${CMAKE_SOURCE_DIR}/docs/notebooks/*.ipynb")
+  "${PROJECT_SOURCE_DIR}/docs/nmodl/transpiler/notebooks/*.ipynb")
 
 # =============================================================================
 # Adjust install prefix for wheel
@@ -190,28 +190,18 @@ if(NMODL_PGI_COMPILER)
   add_compile_definitions(JSON_SKIP_UNSUPPORTED_COMPILER_CHECK=1)
 endif()
 
-include_directories(${NMODL_PROJECT_SOURCE_DIR} ${NMODL_PROJECT_SOURCE_DIR}/src
-                    ${PROJECT_BINARY_DIR}/src)
+include_directories(${NMODL_PROJECT_SOURCE_DIR} ${NMODL_PROJECT_BINARY_DIR})
 
 # generate file with version number from git and nrnunits.lib file path
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in
-               ${PROJECT_BINARY_DIR}/src/config/config.cpp @ONLY)
+configure_file(${NMODL_PROJECT_SOURCE_DIR}/config/config.cpp.in
+               ${NMODL_PROJECT_BINARY_DIR}/config/config.cpp @ONLY)
 
 # generate Doxyfile with correct source paths
 configure_file(${NMODL_PROJECT_SOURCE_DIR}/docs/Doxyfile.in
                ${NMODL_PROJECT_SOURCE_DIR}/docs/Doxyfile)
 
-# =============================================================================
-# Memory checker options and add tests
-# =============================================================================
-find_program(MEMORYCHECK_COMMAND valgrind)
-set(MEMORYCHECK_COMMAND_OPTIONS
-    "--trace-children=yes \
-                                 --leak-check=full \
-                                 --track-origins=yes \
-                                 --show-possibly-lost=no")
 # do not enable tests if nmodl is used as submodule
-if(NOT NMODL_AS_SUBPROJECT AND NMODL_ENABLE_TESTS)
+if(NMODL_ENABLE_TESTS)
   cpp_cc_git_submodule(eigen)
   cpp_cc_git_submodule(catch2 BUILD PACKAGE Catch2 REQUIRED)
   if(NMODL_3RDPARTY_USE_CATCH2)
@@ -294,7 +284,7 @@ unset(CODE_GENERATOR_OPTS)
 # -----------------------------------------------------------------------------
 # Target to propagate dependencies properly to lexer
 # -----------------------------------------------------------------------------
-add_custom_target(pyastgen DEPENDS ${PROJECT_BINARY_DIR}/src/ast/ast.cpp)
+add_custom_target(pyastgen DEPENDS ${PROJECT_BINARY_DIR}/src/nmodl/ast/ast.cpp)
 
 # =============================================================================
 # Deal with the hand-written code
