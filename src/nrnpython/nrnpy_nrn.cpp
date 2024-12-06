@@ -409,9 +409,10 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
                     Py_XDECREF(self->cell_weakref_);
                     return -1;
                 }
-                Py2NRNString str(cell_str.ptr());
-                if (str.err()) {
-                    str.set_pyerr(PyExc_TypeError, "cell name contains non ascii character");
+                auto str = Py2NRNString::as_ascii(cell_str.ptr());
+                if (!str.is_valid()) {
+                    Py2NRNString::set_pyerr(PyExc_TypeError,
+                                            "cell name contains non ascii character");
                     Py_XDECREF(self->cell_weakref_);
                     return -1;
                 }
@@ -1965,10 +1966,10 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
     CHECK_SEC_INVALID(sec);
     PyObject* rv;
     auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
-    Py2NRNString name(pyname);
+    auto name = Py2NRNString::as_ascii(pyname);
     char* n = name.c_str();
-    if (name.err()) {
-        name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
+    if (!name.is_valid()) {
+        Py2NRNString::set_pyerr(PyExc_TypeError, "attribute name must be a string");
         return nullptr;
     }
     // printf("section_getattr %s\n", n);
@@ -2025,10 +2026,10 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
     PyObject* rv;
     int err = 0;
     auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
-    Py2NRNString name(pyname);
+    auto name = Py2NRNString::as_ascii(pyname);
     char* n = name.c_str();
-    if (name.err()) {
-        name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
+    if (!name.is_valid()) {
+        Py2NRNString::set_pyerr(PyExc_TypeError, "attribute name must be a string");
         return -1;
     }
     // printf("section_setattro %s\n", n);
@@ -2179,10 +2180,10 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
 
     Symbol* sym;
     auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
-    Py2NRNString name(pyname);
+    auto name = Py2NRNString::as_ascii(pyname);
     char* n = name.c_str();
-    if (name.err()) {
-        name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
+    if (!name.is_valid()) {
+        Py2NRNString::set_pyerr(PyExc_TypeError, "attribute name must be a string");
         return nullptr;
     }
     // printf("segment_getattr %s\n", n);
@@ -2322,10 +2323,10 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
     Symbol* sym;
     int err = 0;
     auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
-    Py2NRNString name(pyname);
+    auto name = Py2NRNString::as_ascii(pyname);
     char* n = name.c_str();
-    if (name.err()) {
-        name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
+    if (!name.is_valid()) {
+        Py2NRNString::set_pyerr(PyExc_TypeError, "attribute name must be a string");
         return -1;
     }
     // printf("segment_setattro %s\n", n);
@@ -2472,10 +2473,10 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     CHECK_SEC_INVALID(sec)
     CHECK_PROP_INVALID(self->prop_id_);
     auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
-    Py2NRNString name(pyname);
+    auto name = Py2NRNString::as_ascii(pyname);
     char* n = name.c_str();
     if (!n) {
-        name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
+        Py2NRNString::set_pyerr(PyExc_TypeError, "attribute name must be a string");
         return nullptr;
     }
     // printf("mech_getattro %s\n", n);
@@ -2566,10 +2567,10 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
 
     int err = 0;
     auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
-    Py2NRNString name(pyname);
+    auto name = Py2NRNString::as_ascii(pyname);
     char* n = name.c_str();
-    if (name.err()) {
-        name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
+    if (!name.is_valid()) {
+        Py2NRNString::set_pyerr(PyExc_TypeError, "attribute name must be a string");
         return -1;
     }
     // printf("mech_setattro %s\n", n);
@@ -2619,7 +2620,7 @@ neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject* pyname
     NPyMechObj* m = (NPyMechObj*) mech;
     Symbol* msym = memb_func[m->type_].sym;
     char buf[200];
-    Py2NRNString name(pyname);
+    auto name = Py2NRNString::as_ascii(pyname);
     char* n = name.c_str();
     if (!n) {
         return nullptr;
