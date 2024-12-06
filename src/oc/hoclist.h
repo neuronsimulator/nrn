@@ -47,6 +47,31 @@ struct hoc_Item {
 };
 using hoc_List = hoc_Item;
 
+constexpr auto range_sec(hoc_List* iterable) {
+    struct iterator {
+        hoc_Item* iter;
+        bool operator!=(const iterator& other) const {
+            return iter != other.iter;
+        }
+        void operator++() {
+            iter = iter->next;
+        }
+        Section* operator*() const {
+            return iter->element.sec;
+        }
+    };
+    struct iterable_wrapper {
+        hoc_List* iterable;
+        auto begin() {
+            return iterator{iterable->next};
+        }
+        auto end() {
+            return iterator{(hoc_Item*)(iterable)};
+        }
+    };
+    return iterable_wrapper{iterable};
+}
+
 #define ITEM0 (hoc_Item*) 0
 #define LIST0 (hoc_List*) 0
 
@@ -91,7 +116,7 @@ extern hoc_Item* hoc_l_lappendobj(hoc_List*, struct Object*);
 extern void hoc_l_freelist(hoc_List**);
 extern hoc_Item* hoc_l_next(hoc_Item*);
 extern hoc_Item* hoc_l_prev(hoc_Item*);
-extern void hoc_l_delete(hoc_Item*);
+extern hoc_Item* hoc_l_delete(hoc_Item*);
 extern void hoc_l_move(hoc_Item*, hoc_Item*, hoc_Item*);
 extern void hoc_l_movelist(hoc_Item*, hoc_Item*, hoc_List*);
 extern void hoc_l_replacstr(hoc_Item*, const char*);
