@@ -197,7 +197,7 @@ class _c_region:
     def _initalize(self):
         from .species import Species, SpeciesOnRegion
 
-        self.num_segments = numpy.sum([x.nseg for x in self._overlap])
+        self.num_segments = numpy.sum([x.nseg for x in list(self._overlap)])
         self.location_index = -numpy.ones(
             (self.num_regions, self.num_species + self.num_params, self.num_segments),
             ctypes.c_int,
