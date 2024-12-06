@@ -49,7 +49,7 @@ def test_rvp():  # for coverage of ptrlist changes in nrniv/shape.cpp
     assert rvp.right() == 30.0
     sl = h.SectionList()
     rvp.list(sl)
-    sz = sum([1 for _ in sl])
+    sz = sum([1 for _ in list(sl)])
     assert sz == 3
 
 
