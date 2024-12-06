@@ -35,7 +35,7 @@ def _sort_secs(secs):
     #        raise RxDException('still need to deal with backwards sections')
     secs = [
         secs_names[sec.hoc_internal_name()]
-        for sec in all_sorted
+        for sec in list(all_sorted)
         if sec.hoc_internal_name() in secs_names
     ]
     # return an empty list rather than an empty SectionList because
