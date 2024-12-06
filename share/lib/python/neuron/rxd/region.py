@@ -75,7 +75,7 @@ class _c_region:
         for rptr in self._regions:
             r = rptr()
             self._overlap = h.SectionList(
-                [sec for sec in list(r._secs1d) if sec in self._overlap]
+                [sec for sec in list(r._secs1d) if sec in list(self._overlap)]
             )
             if r in _c_region_lookup:
                 _c_region_lookup[rptr].append(self)
