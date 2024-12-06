@@ -75,7 +75,7 @@ class _c_region:
         for rptr in self._regions:
             r = rptr()
             self._overlap = h.SectionList(
-                [sec for sec in r._secs1d if sec in self._overlap]
+                [sec for sec in list(r._secs1d) if sec in self._overlap]
             )
             if r in _c_region_lookup:
                 _c_region_lookup[rptr].append(self)
@@ -1026,7 +1026,7 @@ class Region(object):
                 vol += numpy.sum(self._vol)
             if hasattr(self, "_geometry") and any(self._secs1d):
                 vol += numpy.sum(
-                    [self._geometry.volumes1d(sec) for sec in self._secs1d]
+                    [self._geometry.volumes1d(sec) for sec in list(self._secs1d)]
                 )
             return vol
         return self._vol[index]
