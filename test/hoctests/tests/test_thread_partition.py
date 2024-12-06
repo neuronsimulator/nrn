@@ -38,7 +38,7 @@ def assertpart(parts="default"):
     if str(parts) == "default":  # not round-robin but root order
         roots = h.SectionList()
         roots.allroots()
-        roots = [root for root in list(roots)]
+        roots = list(roots)
         i = 0
         for ith in range(pc.nthread()):
             sl = pc.get_partition(ith)

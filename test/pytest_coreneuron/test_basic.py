@@ -209,7 +209,7 @@ def test_HocObject_no_deferred_unref():
     for sec in h.allsec():
         print(sec)
         sl.append(sec=sec)
-    assert len([s for s in list(sl)]) == 0
+    assert list(sl)
 
 
 def test_deleted_sec():

@@ -29,7 +29,7 @@ def _sort_secs(secs):
     all_sorted = h.SectionList()
     for root in root_secs:
         all_sorted.wholetree(sec=root)
-    secs_names = dict([(sec.hoc_internal_name(), sec) for sec in list(secs)])
+    secs_names = {sec.hoc_internal_name(): sec for sec in list(secs)}
     # for sec in secs:
     #    if sec.orientation():
     #        raise RxDException('still need to deal with backwards sections')
@@ -645,7 +645,7 @@ class Region(object):
         else:
             return {"instantiated": False}
         result = {"instantiated": True}
-        total_num_3d_segs = sum(sec.nseg for sec in self._secs3d)
+        total_num_3d_segs = sum(sec.nseg for sec in list(self._secs3d))
         segs_with_surface = {node.segment for node in sp.nodes if node.surface_area}
         result["3dsegswithoutsurface"] = len(segs_with_surface) - total_num_3d_segs
         return result
@@ -725,7 +725,9 @@ class Region(object):
             self._xs, self._ys, self._zs = zip(*self._points)
             maps = {
                 seg: i
-                for i, seg in enumerate([seg for sec in self._secs3d for seg in sec])
+                for i, seg in enumerate(
+                    [seg for sec in list(self._secs3d) for seg in sec]
+                )
             }
             segs = []
 
@@ -753,13 +755,13 @@ class Region(object):
             self._surface_nodes_by_seg = surface_nodes_by_seg
             self._nodes_by_seg = nodes_by_seg
             self._secs3d_names = {
-                sec.hoc_internal_name(): sec.nseg for sec in self._secs3d
+                sec.hoc_internal_name(): sec.nseg for sec in list(self._secs3d)
             }
             self._segsidx = segs
             self._dx = self.dx
 
     def _segs3d(self, index=None):
-        segs = [seg for sec in self._secs3d for seg in sec]
+        segs = [seg for sec in list(self._secs3d) for seg in sec]
         if index:
             return [seg for i, seg in enumerate(segs) if i in index]
         return segs
