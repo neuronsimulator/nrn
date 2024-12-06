@@ -29,7 +29,7 @@ def _sort_secs(secs):
     all_sorted = h.SectionList()
     for root in root_secs:
         all_sorted.wholetree(sec=root)
-    secs_names = dict([(sec.hoc_internal_name(), sec) for sec in secs])
+    secs_names = dict([(sec.hoc_internal_name(), sec) for sec in list(secs)])
     # for sec in secs:
     #    if sec.orientation():
     #        raise RxDException('still need to deal with backwards sections')
