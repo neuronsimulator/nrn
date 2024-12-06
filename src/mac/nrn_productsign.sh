@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -ex
 
 # Signing the package with an identified developer certificate means the
 # installer does not have to lower the security settings on their machine.
@@ -13,5 +14,4 @@ rm -f $1.signed
 productsign --sign "Developer ID Installer: Michael Hines (8APKV34642)" \
   $1 $1.signed
 
-echo "mv $1.signed $1"
 mv $1.signed $1
