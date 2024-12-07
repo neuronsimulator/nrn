@@ -225,7 +225,6 @@ void extnode_free_elements(Extnode* nde) {
 }
 
 static void check_if_extracellular_in_use() {
-    hoc_Item* qsec;
     for (Section* sec: range_sec(section_list)) {
         if (sec->pnode[0]->extnode) {
             hoc_execerror("Cannot change nlayer_extracellular when instances exist", NULL);
