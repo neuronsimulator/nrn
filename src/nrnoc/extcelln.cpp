@@ -484,7 +484,6 @@ void ext_con_coef(void) /* setup a and b */
 {
     int j, k;
     double dx, area;
-    hoc_Item* qsec;
     Node *nd, **pnd;
     Extnode* nde;
 
