@@ -66,7 +66,7 @@ constexpr auto range_sec(hoc_List* iterable) {
             return iterator{iterable->next};
         }
         auto end() {
-            return iterator{(hoc_Item*)(iterable)};
+            return iterator{(hoc_Item*) (iterable)};
         }
     };
     return iterable_wrapper{iterable};
