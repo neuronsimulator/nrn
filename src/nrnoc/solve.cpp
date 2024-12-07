@@ -289,8 +289,6 @@ static void dashes(Section* sec, int offset, int first);
 
 void nrnhoc_topology(void) /* print the topology of the branched cable */
 {
-    hoc_Item* q;
-
     v_setup_vectors();
     Printf("\n");
     for (Section* sec: range_sec(section_list)) {
