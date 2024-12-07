@@ -1646,6 +1646,16 @@ static int araychk(Arrayinfo* a, PyHocObject* po, int ix) {
     return 0;
 }
 
+static Py_ssize_t seclist_count(Object* ho) {
+    assert(ho->ctemplate == hoc_sectionlist_template_);
+    hoc_List* sl = (hoc_List*) (ho->u.this_pointer);
+    Py_ssize_t n = 0;
+    for (hoc_Item* q1 = sl->next; q1 != sl; q1 = q1->next) {
+        n++;
+    }
+    return n;
+}
+
 static Py_ssize_t hocobj_len(PyObject* self) {
     PyHocObject* po = (PyHocObject*) self;
     if (po->type_ == PyHoc::HocObject) {
@@ -1654,8 +1664,7 @@ static Py_ssize_t hocobj_len(PyObject* self) {
         } else if (po->ho_->ctemplate == hoc_list_template_) {
             return ivoc_list_count(po->ho_);
         } else if (po->ho_->ctemplate == hoc_sectionlist_template_) {
-            PyErr_SetString(PyExc_TypeError, "hoc.SectionList has no len()");
-            return -1;
+            return seclist_count(po->ho_);
         }
     } else if (po->type_ == PyHoc::HocArray) {
         Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
@@ -1682,6 +1691,8 @@ static int hocobj_nonzero(PyObject* self) {
             b = vector_capacity((Vect*) po->ho_->u.this_pointer) > 0;
         } else if (po->ho_->ctemplate == hoc_list_template_) {
             b = ivoc_list_count(po->ho_) > 0;
+        } else if (po->ho_->ctemplate == hoc_sectionlist_template_) {
+            b = seclist_count(po->ho_) > 0;
         }
     } else if (po->type_ == PyHoc::HocArray) {
         Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
@@ -1729,6 +1740,16 @@ static PyObject* hocobj_iter(PyObject* raw_self) {
             pho2->iteritem_ = ((hoc_Item*) po->ho_->u.this_pointer);
             return po2.release().ptr();
         }
+    } else if (po->type_ == PyHoc::HocSectionListIterator) {
+        // Can anyone explain why this block has become needed since
+        // Python3.13.1 and why a copy of the above body suffices.
+        // need a clone of self so nested loops do not share iteritem_
+        auto po2 = nb::steal(nrnpy_ho2po(po->ho_));
+        PyHocObject* pho2 = (PyHocObject*) po2.ptr();
+        pho2->type_ = PyHoc::HocSectionListIterator;
+        pho2->u.its_ = PyHoc::Begin;
+        pho2->iteritem_ = ((hoc_Item*) po->ho_->u.this_pointer);
+        return po2.release().ptr();
     } else if (po->type_ == PyHoc::HocForallSectionIterator) {
         po->iteritem_ = section_list;
         po->u.its_ = PyHoc::Begin;
