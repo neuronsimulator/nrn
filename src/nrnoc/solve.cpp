@@ -736,12 +736,9 @@ void section_order(void) /* create a section order consistent */
 {
     int order, isec;
     Section* ch;
-    hoc_Item* qsec;
 
     /* count the sections */
     section_count = 0;
-    /*SUPPRESS 765*/
-    // ForAllSections(sec)
     for (Section* sec: range_sec(section_list)) {
         sec->order = -1;
         ++section_count;
@@ -765,8 +762,6 @@ void section_order(void) /* create a section order consistent */
 
     for (isec = 0; isec < section_count; isec++) {
         if (isec >= order) {
-            // Sections form a loop.
-            // ForAllSections(sec)
             for (Section* sec: range_sec(section_list)) {
                 Section *psec, *s = sec;
                 for (psec = sec->parentsec; psec; s = psec, psec = psec->parentsec) {
