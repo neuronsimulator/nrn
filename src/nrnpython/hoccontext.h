@@ -26,13 +26,12 @@ static void hc_restore_(HocContext* hc) {
     hoc_symlist = hc->sl;
 }
 
-template <typename T>
 class HocTopContext {
   private:
     HocContext* hc_ = nullptr;
 
   public:
-    explicit HocTopContext(const T& hoc_thisobject) {
+    explicit HocTopContext(const Object* /* placeholder */) {
         HocContext hcref;
         if (hoc_thisobject) {
             hc_ = hc_save_and_set_to_top_(&hcref);

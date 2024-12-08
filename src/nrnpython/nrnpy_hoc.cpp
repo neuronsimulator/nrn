@@ -1354,6 +1354,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         result = nb::steal(toplevel_get(subself, n));
         break;
     default:  // otherwise
+    {
         if (PyDict_GetItemString(pmech_types, n)) {
             result = nb::steal(PyObject_CallFunction(get_mech_object_, "s", n));
             break;
@@ -1369,6 +1370,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                          sym->type);
             break;
         }
+    }
     }
     return result.release().ptr();
 }
@@ -1995,7 +1997,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 hocobj_pushtop(po, po->sym_, ix);
                 if (hoc_evalpointer_err()) {
                     --po->nindex_;
-                    return NULL;
+                    return nullptr;
                 }
                 --po->nindex_;
                 if (po->type_ == PyHoc::HocArrayIncomplete) {
