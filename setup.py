@@ -4,6 +4,7 @@ import subprocess
 import sys
 from collections import defaultdict
 import logging
+import platform
 
 logging.basicConfig(level=logging.INFO)
 from shutil import copytree, which
@@ -461,6 +462,8 @@ def setup_package():
                 + ["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")],
             )
         )
+        if platform.system() == "Darwin":
+            rxd_params["extra_link_args"] = ["-headerpad_max_install_names"]
 
         logging.info("RX3D compile flags %s" % str(rxd_params))
 
