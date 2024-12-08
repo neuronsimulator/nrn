@@ -1751,7 +1751,7 @@ class Species(_SpeciesMathable):
         d = self._d
 
         self._secs = [
-            Section1D(self, sec, d, r) for r in self._regions for sec in list(r._secs1d)
+            Section1D(self, sec, d, r) for r in self._regions for sec in r._secs1d
         ]
         if self._secs:
             self._offset = self._secs[0]._offset
