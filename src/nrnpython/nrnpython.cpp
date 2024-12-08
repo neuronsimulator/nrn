@@ -383,12 +383,9 @@ static int nrnpython_start(int b) {
 static void nrnpython_real() {
     int retval = 0;
 #if USE_PYTHON
-    HocTopContextSet
-    {
-        nanobind::gil_scoped_acquire lock{};
-        retval = (PyRun_SimpleString(hoc_gargstr(1)) == 0);
-    }
-    HocContextRestore
+    auto interp = HocTopContext(hoc_thisobject);
+    nanobind::gil_scoped_acquire lock{};
+    retval = (PyRun_SimpleString(hoc_gargstr(1)) == 0);
 #endif
     hoc_retpushx(retval);
 }

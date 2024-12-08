@@ -756,7 +756,7 @@ static void* fcall(void* vself, void* vargs) {
 
         return result;
     } else {
-        HocTopContextSet
+        auto interp = HocTopContext(hoc_thisobject);
         Inst fc[4];
         // ugh. so a potential call of hoc_get_last_pointer_symbol will return nullptr.
         fc[0].in = STOP;
@@ -766,7 +766,6 @@ static void* fcall(void* vself, void* vargs) {
         Inst* pcsav = save_pc(fc + 1);
         hoc_call();
         hoc_pc = pcsav;
-        HocContextRestore;
     }
 
     return nrnpy_hoc_pop("laststatement fcall");
@@ -1263,7 +1262,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         }
     }
     // top level interpreter fork
-    HocTopContextSet
+    auto interp = HocTopContext(hoc_thisobject);
     switch (sym->type) {
     case VAR:  // double*
         if (!is_array(*sym)) {
@@ -1355,7 +1354,6 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         result = nb::steal(toplevel_get(subself, n));
         break;
     default:  // otherwise
-    {
         if (PyDict_GetItemString(pmech_types, n)) {
             result = nb::steal(PyObject_CallFunction(get_mech_object_, "s", n));
             break;
@@ -1372,8 +1370,6 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             break;
         }
     }
-    }
-    HocContextRestore
     return result.release().ptr();
 }
 
@@ -1499,7 +1495,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
             return -1;
         }
     }
-    HocTopContextSet
+    auto interp = HocTopContext(hoc_thisobject);
     switch (sym->type) {
     case VAR:  // double*
         if (is_array(*sym)) {
@@ -1533,7 +1529,6 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
             } else {
                 hoc_pushs(sym);
                 if (hoc_evalpointer_err()) {  // not possible to raise error.
-                    HocContextRestore;
                     return -1;
                 }
                 err = PyArg_Parse(value, "d", hoc_pxpop()) == 0;
@@ -1590,7 +1585,6 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
         err = -1;
         break;
     }
-    HocContextRestore
     return err;
 }
 
@@ -1995,13 +1989,12 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 }
             }
         } else {  // must be a top level intermediate
-            HocTopContextSet
+            auto interp = HocTopContext(hoc_thisobject);
             switch (po->sym_->type) {
             case VAR:
                 hocobj_pushtop(po, po->sym_, ix);
                 if (hoc_evalpointer_err()) {
                     --po->nindex_;
-                    HocContextRestore;
                     return NULL;
                 }
                 --po->nindex_;
@@ -2026,7 +2019,6 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 --po->nindex_;
                 break;
             }
-            HocContextRestore;
         }
     }
     return result.release().ptr();
@@ -2144,12 +2136,11 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
             err = set_final_from_stk(arg);
         }
     } else {  // must be a top level intermediate
-        HocTopContextSet
+        auto interp = HocTopContext(hoc_thisobject);
         switch (po->sym_->type) {
         case VAR:
             hocobj_pushtop(po, po->sym_, i);
             if (hoc_evalpointer_err()) {
-                HocContextRestore;
                 --po->nindex_;
                 return -1;
             }
@@ -2180,7 +2171,6 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
             PyErr_SetString(PyExc_TypeError, "not assignable");
             break;
         }
-        HocContextRestore;
     }
     return err;
 }

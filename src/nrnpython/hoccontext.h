@@ -5,18 +5,6 @@ extern Objectdata* hoc_top_level_data;
 extern Symlist* hoc_top_level_symlist;
 extern Symlist* hoc_symlist;
 
-#define HocTopContextSet                       \
-    HocContext hcref;                          \
-    HocContext* hc_ = 0;                       \
-    if (hoc_thisobject) {                      \
-        hc_ = hc_save_and_set_to_top_(&hcref); \
-    }
-
-#define HocContextRestore \
-    if (hc_) {            \
-        hc_restore_(hc_); \
-    }
-
 struct HocContext {
     Object* obj;
     Objectdata* obd;
@@ -37,3 +25,22 @@ static void hc_restore_(HocContext* hc) {
     hoc_objectdata = hc->obd;
     hoc_symlist = hc->sl;
 }
+
+template <typename T>
+class HocTopContext {
+  private:
+    HocContext* hc_ = nullptr;
+
+  public:
+    explicit HocTopContext(const T& hoc_thisobject) {
+        HocContext hcref;
+        if (hoc_thisobject) {
+            hc_ = hc_save_and_set_to_top_(&hcref);
+        }
+    }
+    ~HocTopContext() {
+        if (hc_) {
+            hc_restore_(hc_);
+        }
+    }
+};
