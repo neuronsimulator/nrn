@@ -21,7 +21,7 @@ if(NMODL_BUILD_WHEEL)
 endif()
 
 include(${PROJECT_SOURCE_DIR}/cmake/nmodl/PythonLinkHelper.cmake)
-
+include(${PROJECT_SOURCE_DIR}/cmake/nmodl/FlexHelper.cmake)
 set(NMODL_PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(NMODL_PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
