@@ -31,7 +31,7 @@ jobs:
 
             export PYTHON_EXE=$(which python3.<< parameters.NRN_PYTHON_VERSION_MINOR >>)
 
-            
+            $PYTHON_EXE --version            
 
 
 
