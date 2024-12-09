@@ -3,13 +3,9 @@
 // define to 0 if do not wish use_min_delay_ to ever be 1
 #define USE_MIN_DELAY 1
 
-#include <stdlib.h>
 #include <nrnmpi.h>
-#include <errno.h>
-#include <time.h>
-#include <regex>
+#include "cabcode.h"
 #include "classreg.h"
-#include "nrnoc2iv.h"
 #include "parse.hpp"
 #include "cvodeobj.h"
 #include "hoclist.h"
@@ -19,7 +15,6 @@
 #include "nrnneosm.h"
 #include "datapath.h"
 #include "objcmd.h"
-#include "shared/sundialsmath.h"
 #include "kssingle.h"
 #include "ocnotify.h"
 #include "utils/enumerate.h"
@@ -41,8 +36,13 @@
 #include "nrnste.h"
 #include "profile.h"
 #include "utils/profile/profiler_interface.h"
+#include "utils/formatting.hpp"
 
 #include <array>
+#include <cerrno>
+#include <cstdlib>
+#include <ctime>
+#include <regex>
 #include <unordered_set>
 #include <utility>
 
@@ -55,8 +55,6 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 #define NVI_SUCCESS 0
 #define PP2NT(pp)   ((NrnThread*) ((pp)->_vnt))
 #define PP2t(pp)    (PP2NT(pp)->_t)
-#define LOCK(m)     /**/
-#define UNLOCK(m)   /**/
 // classical and when DiscreteEvent::deliver is already in the right thread
 // via a future thread instance of NrnNetItem with its own tqe.
 #define POINT_RECEIVE(type, tar, w, f) (*pnt_receive[type])(tar, w, f)
@@ -66,8 +64,6 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
 #include "membfunc.h"
 extern void single_event_run();
-extern void setup_topology(), v_setup_vectors();
-extern int nrn_errno_check(int);
 extern NetCvode* net_cvode_instance;
 extern cTemplate** nrn_pnt_template_;
 extern double t, dt;
@@ -75,29 +71,17 @@ extern void nrn_cvfun(double t, double* y, double* ydot);
 extern void nrn_cleanup_presyn(PreSyn*);
 #define nt_dt nrn_threads->_dt
 #define nt_t  nrn_threads->_t
-extern void nrn_parent_info(Section*);
-extern Object* nrn_sec2cell(Section*);
-extern int nrn_sec2cell_equals(Section*, Object*);
-extern ReceiveFunc* pnt_receive;
-extern ReceiveFunc* pnt_receive_init;
 extern short* nrn_is_artificial_;  // should be bool but not using that type in c
 extern short* nrn_artcell_qindex_;
 int nrn_use_selfqueue_;
 void nrn_pending_selfqueue(double tt, NrnThread*);
 static void all_pending_selfqueue(double tt);
 static void* pending_selfqueue(NrnThread*);
-extern int hoc_araypt(Symbol*, int);
-extern int hoc_stacktype();
-void nrn_use_daspk(int);
 extern int nrn_use_daspk_;
 int linmod_extra_eqn_count();
 extern int nrn_modeltype();
-extern Symlist* hoc_built_in_symlist;
-extern Symlist* hoc_top_level_symlist;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
-extern hoc_Item* net_cvode_instance_psl();
 extern std::vector<PlayRecord*>* net_cvode_instance_prl();
-extern void nrn_update_ps2nt();
 extern void nrn_use_busywait(int);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
@@ -185,13 +169,6 @@ int nrn_presyn_count(PreSyn* ps) {
 void* nrn_presyn_netcon(PreSyn* ps, int i) {
     return ps->dil_[i];
 }
-
-#if USENEOSIM
-void neosim2nrn_advance(void*, void*, double);
-void neosim2nrn_deliver(void*, void*);
-void (*p_nrn2neosim_send)(void*, double);
-static void* neosim_entity_;
-#endif
 
 void ncs2nrn_integrate(double tstop);
 extern void (*nrn_allthread_handle)();
@@ -295,7 +272,7 @@ TQueue* net_cvode_instance_event_queue(NrnThread* nt) {
     return net_cvode_instance->event_queue(nt);
 }
 
-hoc_Item* net_cvode_instance_psl() {
+std::vector<PreSyn*>* net_cvode_instance_psl() {
     return net_cvode_instance->psl_;
 }
 
@@ -570,10 +547,8 @@ static Object** nc_synlist(void* v) {
     NetCon* d = (NetCon*) v;
     OcList* o;
     Object** po = newoclist(1, o);
-    hoc_Item* q;
     if (net_cvode_instance->psl_)
-        ITERATE(q, net_cvode_instance->psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (const PreSyn* ps: *net_cvode_instance->psl_) {
             for (const auto& nc: ps->dil_) {
                 if (nc->obj_ && nc->target_ == d->target_) {
                     o->append(nc->obj_);
@@ -587,14 +562,12 @@ static Object** nc_postcelllist(void* v) {
     NetCon* d = (NetCon*) v;
     OcList* o;
     Object** po = newoclist(1, o);
-    hoc_Item* q;
     Object* cell = nullptr;
     if (d->target_ && d->target_->sec) {
         cell = nrn_sec2cell(d->target_->sec);
     }
     if (cell && net_cvode_instance->psl_)
-        ITERATE(q, net_cvode_instance->psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (const PreSyn* ps: *net_cvode_instance->psl_) {
             for (const auto& nc: ps->dil_) {
                 if (nc->obj_ && nc->target_ && nrn_sec2cell_equals(nc->target_->sec, cell)) {
                     o->append(nc->obj_);
@@ -608,14 +581,12 @@ static Object** nc_precelllist(void* v) {
     NetCon* d = (NetCon*) v;
     OcList* o;
     Object** po = newoclist(1, o);
-    hoc_Item* q;
     Object* cell = nullptr;
     if (d->src_ && d->src_->ssrc_) {
         cell = nrn_sec2cell(d->src_->ssrc_);
     }
     if (cell && net_cvode_instance->psl_)
-        ITERATE(q, net_cvode_instance->psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (PreSyn* ps: *net_cvode_instance->psl_) {
             for (const auto& nc: ps->dil_) {
                 if (nc->obj_ && nc->src_ && ps->ssrc_ && nrn_sec2cell_equals(ps->ssrc_, cell)) {
                     o->append(nc->obj_);
@@ -785,7 +756,7 @@ static Member_func members[] = {{"active", nc_active},
                                 {"weight", 0},
                                 {"threshold", 0},
                                 {"x", 0},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 static Member_ret_obj_func omembers[] = {{"syn", nc_syn},
                                          {"pre", nc_pre},
@@ -798,7 +769,7 @@ static Member_ret_obj_func omembers[] = {{"syn", nc_syn},
                                          {"precelllist", nc_precelllist},
                                          {"postcelllist", nc_postcelllist},
                                          {"get_recordvec", nc_get_recordvec},
-                                         {0, 0}};
+                                         {nullptr, nullptr}};
 
 static void steer_val(void* v) {
     NetCon* d = (NetCon*) v;
@@ -870,7 +841,7 @@ static void destruct(void* v) {
 }
 
 void NetCon_reg() {
-    class2oc("NetCon", cons, destruct, members, NULL, omembers, NULL);
+    class2oc("NetCon", cons, destruct, members, omembers, nullptr);
     Symbol* nc = hoc_lookup("NetCon");
     nc->u.ctemplate->steer = steer_val;
     Symbol* s;
@@ -921,6 +892,19 @@ static char* escape_bracket(const char* s) {
     return b;
 }
 
+static std::regex get_regex(int id) {
+    std::string s(gargstr(id));
+    if (s.empty()) {
+        return std::regex(".*");
+    } else {
+        try {
+            return std::regex(escape_bracket(s.data()));
+        } catch (std::regex_error&) {
+            hoc_execerror_fmt("Argument {} is not a valid regular expression '{}'.", id, s);
+        }
+    }
+}
+
 Object** NetCvode::netconlist() {
     // interface to cvode.netconlist(precell, postcell, target, [list])
     OcList* o;
@@ -933,50 +917,21 @@ Object** NetCvode::netconlist() {
     if (hoc_is_object_arg(1)) {
         opre = *hoc_objgetarg(1);
     } else {
-        std::string s(gargstr(1));
-        if (s.empty()) {
-            spre = std::regex(".*");
-        } else {
-            try {
-                spre = std::regex(escape_bracket(s.data()));
-            } catch (std::regex_error&) {
-                hoc_execerror(gargstr(1), "not a valid regular expression");
-            }
-        }
+        spre = get_regex(1);
     }
     if (hoc_is_object_arg(2)) {
         opost = *hoc_objgetarg(2);
     } else {
-        std::string s(gargstr(2));
-        if (s.empty()) {
-            spost = std::regex(".*");
-        } else {
-            try {
-                spost = std::regex(escape_bracket(s.data()));
-            } catch (std::regex_error&) {
-                hoc_execerror(gargstr(2), "not a valid regular expression");
-            }
-        }
+        spost = get_regex(2);
     }
     if (hoc_is_object_arg(3)) {
         otar = *hoc_objgetarg(3);
     } else {
-        std::string s(gargstr(3));
-        if (s.empty()) {
-            star = std::regex(".*");
-        } else {
-            try {
-                star = std::regex(escape_bracket(s.data()));
-            } catch (std::regex_error&) {
-                hoc_execerror(gargstr(3), "not a valid regular expression");
-            }
-        }
+        star = get_regex(3);
     }
 
-    hoc_Item* q;
     if (psl_) {
-        ITERATE(q, psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (PreSyn* ps: *psl_) {
             bool b = false;
             if (ps->ssrc_) {
                 Object* precell = nrn_sec2cell(ps->ssrc_);
@@ -1190,17 +1145,14 @@ NetCvode::~NetCvode() {
     // and should also iterate and delete the MaxStateItem
     delete std::exchange(mst_, nullptr);
     if (psl_) {
-        hoc_Item* q;
-        ITERATE(q, psl_) {
-            auto* const ps = static_cast<PreSyn*>(VOIDITM(q));
+        for (PreSyn* ps: *psl_) {
             std::for_each(ps->dil_.rbegin(), ps->dil_.rend(), [](NetCon*& d) {
                 d->src_ = nullptr;
                 delete std::exchange(d, nullptr);
             });
             delete ps;
-            VOIDITM(q) = nullptr;
         }
-        hoc_l_freelist(&psl_);
+        delete std::exchange(psl_, nullptr);
     }
     delete std::exchange(pst_, nullptr);
     delete std::exchange(fixed_play_, nullptr);
@@ -1391,7 +1343,6 @@ void NetCvode::del_cv_memb_list(Cvode* cvode) {
 void CvodeThreadData::delete_memb_list(CvMembList* cmlist) {
     CvMembList *cml, *cmlnext;
     for (cml = cmlist; cml; cml = cmlnext) {
-        auto const& ml = cml->ml;
         cmlnext = cml->next;
         for (auto& ml: cml->ml) {
             delete[] std::exchange(ml.nodelist, nullptr);
@@ -1409,9 +1360,7 @@ void NetCvode::distribute_dinfo(int* cellnum, int tid) {
     int j;
     // printf("distribute_dinfo %d\n", pst_cnt_);
     if (psl_) {
-        hoc_Item* q;
-        ITERATE(q, psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (PreSyn* ps: *psl_) {
             // printf("\tPreSyn %s\n", ps->osrc_ ? hoc_object_name(ps->osrc_):secname(ps->ssrc_));
             if (ps->thvar_) {  // artcells and presyns for gid's not on this cpu have no threshold
                                // check
@@ -1491,12 +1440,6 @@ void NetCvode::alloc_list() {
         }
     }
     empty_ = false;
-#if USENEOSIM
-    if (p_nrn2neosim_send)
-        for (i = 0; i < nlist_; ++i) {
-            p.lcv_[i].neosim_self_events_ = new TQueue();
-        }
-#endif
 }
 
 bool NetCvode::init_global() {
@@ -2045,16 +1988,16 @@ int NetCvode::solve(double tout) {
                     return err;
                 }
 #if HAVE_IV
-                IFGUI
-                if (rt < time(nullptr)) {
-                    //				if (++cnt > 10000) {
-                    //					cnt = 0;
-                    Oc oc;
-                    oc.notify();
-                    single_event_run();
-                    rt = time(nullptr);
+                if (hoc_usegui) {
+                    if (rt < time(nullptr)) {
+                        //				if (++cnt > 10000) {
+                        //					cnt = 0;
+                        Oc oc;
+                        oc.notify();
+                        single_event_run();
+                        rt = time(nullptr);
+                    }
                 }
-                ENDGUI
 #endif
             }
             int n = p[0].nlcv_;
@@ -2272,17 +2215,7 @@ void NetCvode::move_event(TQItem* q, double tnew, NrnThread* nt) {
                tnew);
     }
 #endif
-#if USENEOSIM
-    // only self events move
-    if (neosim_entity_) {
-        assert(0);
-        // cvode_instance->neosim_self_events_->move(q, tnew);
-    } else {
-        p[tid].tqe_->move(q, tnew);
-    }
-#else
     p[tid].tqe_->move(q, tnew);
-#endif
 }
 
 void NetCvode::remove_event(TQItem* q, int tid) {
@@ -2310,16 +2243,7 @@ void nrn_net_send(Datum* v, double* weight, Point_process* pnt, double td, doubl
         hoc_execerror("net_send delay < 0", 0);
     }
     TQItem* q;
-#if USENEOSIM
-    if (neosim_entity_) {
-        assert(0);
-        // cvode_instance->neosim_self_events_->insert(td, se);
-    } else {
-        q = net_cvode_instance->event(td, se, nt);
-    }
-#else
     q = net_cvode_instance->event(td, se, nt);
-#endif
     if (flag == 1.0) {
         *v = q;
     }
@@ -2379,15 +2303,7 @@ void net_event(Point_process* pnt, double time) {
             ps->pr(buf, time, net_cvode_instance);
             hoc_execerror("net_event time < t", 0);
         }
-#if USENEOSIM
-        if (neosim_entity_) {
-            (*p_nrn2neosim_send)(neosim_entity_, nt_t);
-        } else {
-#endif
-            ps->send(time, net_cvode_instance, ps->nt_);
-#if USENEOSIM
-        }
-#endif
+        ps->send(time, net_cvode_instance, ps->nt_);
     }
 }
 
@@ -2593,28 +2509,13 @@ void NetCvode::null_event(double tt) {
     if (tt - nt->_t < 0) {
         return;
     }
-#if USENEOSIM
-    if (neosim_entity_) {
-        // ignore for neosim. There is no appropriate cvode_instance
-        // cvode_instance->neosim_self_events_->insert(nt_t + delay, null_event_);
-    } else {
-        event(tt, null_event_, nt);
-    }
-#else
     event(tt, null_event_, nt);
-#endif
 }
 
 void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit, Object* pyact) {
     if (!ppobj && tt - nt_t < 0) {
         return;
     }
-#if USENEOSIM
-    if (neosim_entity_) {
-        // ignore for neosim. There is no appropriate cvode_instance
-        // cvode_instance->neosim_self_events_->insert(nt_t + delay, null_event_);
-    } else
-#endif
     {
         NrnThread* nt = nrn_threads;
         if (nrn_nthread > 1 && (!cvode_active_ || localstep())) {
@@ -2769,16 +2670,6 @@ void NetCvode::clear_events() {
     HocEvent::reclaim();
     allthread_hocevents_->clear();
     nrn_allthread_handle = nullptr;
-#if USENEOSIM
-    if (p_nrn2neosim_send)
-        for (i = 0; i < nlist_; ++i) {
-            TQueue* tq = p.lcv_[i].neosim_self_events_;
-            while (tq->least()) {
-                tq->remove(tq->least());
-            }
-            // and have already been reclaimed by SelfEvent::reclaim()
-        }
-#endif
     if (!MUTCONSTRUCTED) {
         MUTCONSTRUCT(1);
     }
@@ -2826,7 +2717,6 @@ void NetCvode::free_event_pools() {
 }
 
 void NetCvode::init_events() {
-    hoc_Item* q;
     int i, j;
     for (i = 0; i < nrn_nthread; ++i) {
         p[i].tqe_->nshift_ = -1;
@@ -2837,8 +2727,7 @@ void NetCvode::init_events() {
         p[i].tqe_->shift_bin(nt_t - 0.5 * nt_dt);
     }
     if (psl_) {
-        ITERATE(q, psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (PreSyn* ps: *psl_) {
             ps->init();
             ps->flag_ = false;
             NetConPList& dil = ps->dil_;
@@ -2869,6 +2758,7 @@ void NetCvode::init_events() {
         Symbol* sym = hoc_lookup("NetCon");
         nclist = sym->u.ctemplate->olist;
     }
+    hoc_Item* q = nullptr;
     ITERATE(q, nclist) {
         Object* obj = OBJ(q);
         auto* d = static_cast<NetCon*>(obj->u.this_pointer);
@@ -3159,8 +3049,10 @@ void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
             TQItem* q = ns->p[i].tq_->least();
             Cvode* cv = (Cvode*) q->data_;
             if (tt < cv->t_) {
-                int err = NVI_SUCCESS;
-                err = cv->handle_step(nrn_ensure_model_data_are_sorted(), ns, tt);
+                if (int err = cv->handle_step(nrn_ensure_model_data_are_sorted(), ns, tt);
+                    err != NVI_SUCCESS) {
+                    Printf("warning: cv->handle_step failed with error %d", err);
+                }
                 ns->p[i].tq_->move_least(cv->t_);
             }
         }
@@ -3587,7 +3479,7 @@ void NetCvode::local_retreat(double t, Cvode* cv) {
         if (print_event_) {
             Printf("microstep local retreat from %g (cvode_%p is at %g) for event onset=%g\n",
                    cv->tqitem_->t_,
-                   cv,
+                   fmt::ptr(cv),
                    cv->t_,
                    t);
         }
@@ -3596,7 +3488,10 @@ void NetCvode::local_retreat(double t, Cvode* cv) {
         tq->move(cv->tqitem_, t);
 #if PRINT_EVENT
         if (print_event_ > 1) {
-            Printf("after target solve time for %p is %g , dt=%g\n", cv, cv->time(), nt_dt);
+            Printf("after target solve time for %p is %g , dt=%g\n",
+                   fmt::ptr(cv),
+                   cv->time(),
+                   nt_dt);
         }
 #endif
     } else {
@@ -3613,7 +3508,7 @@ void NetCvode::retreat(double t, Cvode* cv) {
     if (print_event_) {
         Printf("microstep retreat from %g (cvode_%p is at %g) for event onset=%g\n",
                tq ? cv->tqitem_->t_ : cv->t_,
-               cv,
+               fmt::ptr(cv),
                cv->t_,
                t);
     }
@@ -3624,62 +3519,10 @@ void NetCvode::retreat(double t, Cvode* cv) {
     }
 #if PRINT_EVENT
     if (print_event_ > 1) {
-        Printf("after target solve time for %p is %g , dt=%g\n", cv, cv->time(), dt);
+        Printf("after target solve time for %p is %g , dt=%g\n", fmt::ptr(cv), cv->time(), dt);
     }
 #endif
 }
-
-#if USENEOSIM
-
-bool neosim_deliver_self_events(TQueue* tqe, double til);
-bool neosim_deliver_self_events(TQueue* tqe, double til) {
-    bool b;
-    TQItem* q;
-    DiscreteEvent* d;
-    b = false;
-    while (tqe->least_t() <= til + .5e-8) {
-        b = true;
-        q = tqe->least();
-        t = q->t_;
-        d = (DiscreteEvent*) q->data_;
-        assert(d->type() == SelfEventType);
-        tqe->remove(q);
-        d->deliver(t, net_cvode_instance);
-    }
-}
-
-void neosim2nrn_advance(void* e, void* v, double tout) {
-    neosim_entity_ = e;
-    NetCon* d = (NetCon*) v;
-    TQueue* tqe;
-
-    // now can integrate to tout since it is guaranteed there will
-    // be no further real events to this cell before tout.
-    // but we must handle self events. The implementation is
-    // analogous to the NetCvode::solve with single and tout
-    Cvode* cv = (Cvode*) d->target_->nvi_;  // so self event from INITIAL block
-    tqe = cv->neosim_self_events_;
-    // not a bug even if there is no BREAKPOINT block. I.e.
-    // artificial cells will work.
-    t = cv->time();
-    while (tout > t) {
-        do {
-            cv->check_deliver();
-        } while (neosim_deliver_self_events(tqe, t));
-        cv->solve();
-    }
-    cv->interpolate(tout);
-    cv->check_deliver();
-}
-
-void neosim2nrn_deliver(void* e, void* v) {
-    neosim_entity_ = e;
-    NetCon* d = (NetCon*) v;
-    Cvode* cv = (Cvode*) d->target_->nvi_;
-    d->deliver(cv->t_, net_cvode_instance);
-}
-
-#endif
 
 // parallel global variable time-step
 int NetCvode::pgvts(double tstop) {
@@ -4166,10 +4009,8 @@ void NetCvode::fornetcon_prepare() {
     }
     // two loops over all netcons. one to count, one to fill in argslist
     // count
-    hoc_Item* q;
     if (psl_)
-        ITERATE(q, psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (const PreSyn* ps: *psl_) {
             const NetConPList& dil = ps->dil_;
             for (const auto& d1: dil) {
                 Point_process* pnt = d1->target_;
@@ -4212,8 +4053,7 @@ void NetCvode::fornetcon_prepare() {
     }
     // fill in argslist and count again
     if (psl_) {
-        ITERATE(q, psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+        for (const PreSyn* ps: *psl_) {
             const NetConPList& dil = ps->dil_;
             for (const auto& d1: dil) {
                 Point_process* pnt = d1->target_;
@@ -4689,7 +4529,7 @@ NetCon* NetCvode::install_deliver(neuron::container::data_handle<double> dsrc,
         pst_cnt_ = 0;
     }
     if (!psl_) {
-        psl_ = hoc_l_newlist();
+        psl_ = new std::vector<PreSyn*>();
     }
     if (osrc) {
         assert(!dsrc);
@@ -4709,7 +4549,7 @@ NetCon* NetCvode::install_deliver(neuron::container::data_handle<double> dsrc,
         auto psti = pst_->find(psrc);
         if (psti == pst_->end()) {
             ps = new PreSyn(psrc, osrc, ssrc);
-            ps->hi_ = hoc_l_insertvoid(psl_, ps);
+            psl_->push_back(ps);
             (*pst_)[psrc] = ps;
             ++pst_cnt_;
         } else {
@@ -4727,13 +4567,13 @@ NetCon* NetCvode::install_deliver(neuron::container::data_handle<double> dsrc,
             if (threshold != -1e9) {
                 ps->threshold_ = threshold;
             }
-            ps->hi_ = hoc_l_insertvoid(psl_, ps);
+            psl_->push_back(ps);
             pnt->presyn_ = ps;
         }
     } else if (target) {  // no source so use the special presyn
         if (!unused_presyn) {
             unused_presyn = new PreSyn({}, nullptr, nullptr);
-            unused_presyn->hi_ = hoc_l_insertvoid(psl_, unused_presyn);
+            psl_->push_back(unused_presyn);
         }
         ps = unused_presyn;
     }
@@ -4747,18 +4587,20 @@ NetCon* NetCvode::install_deliver(neuron::container::data_handle<double> dsrc,
 
 void NetCvode::psl_append(PreSyn* ps) {
     if (!psl_) {
-        psl_ = hoc_l_newlist();
+        psl_ = new std::vector<PreSyn*>();
     }
-    ps->hi_ = hoc_l_insertvoid(psl_, ps);
+    psl_->push_back(ps);
 }
 
 void NetCvode::presyn_disconnect(PreSyn* ps) {
     if (ps == unused_presyn) {
         unused_presyn = nullptr;
     }
-    if (ps->hi_) {
-        hoc_l_delete(ps->hi_);
-        ps->hi_ = nullptr;
+    if (psl_) {
+        auto it = std::find(psl_->begin(), psl_->end(), ps);
+        if (it != psl_->end()) {
+            psl_->erase(it);
+        }
     }
     if (ps->hi_th_) {
         hoc_l_delete(ps->hi_th_);
@@ -5023,17 +4865,16 @@ void NetCvode::update_ps2nt() {
     // first, opportunistically create p[]
     p_construct(nrn_nthread);
     // iterate over all threshold PreSyn and fill the NrnThread field
-    hoc_Item* q;
     for (i = 0; i < nrn_nthread; ++i) {
         if (p[i].psl_thr_) {
             hoc_l_freelist(&p[i].psl_thr_);
         }
     }
-    if (psl_)
-        ITERATE(q, psl_) {
-            PreSyn* ps = (PreSyn*) VOIDITM(q);
+    if (psl_) {
+        for (PreSyn* ps: *psl_) {
             ps_thread_link(ps);
         }
+    }
 }
 
 void NetCvode::p_construct(int n) {
@@ -5167,26 +5008,16 @@ void PreSynSave::invalid() {
 }
 
 PreSyn* PreSynSave::hindx2presyn(long id) {
-    PreSyn* ps;
     if (!idxtable_) {
-        hoc_Item* q;
-        int cnt = 0;
-        ITERATE(q, net_cvode_instance->psl_) {
-            ++cnt;
-        }
-        // printf("%d PreSyn instances\n", cnt);
-        idxtable_ = new PreSynSaveIndexTable(2 * cnt);
-        cnt = 0;
-        ITERATE(q, net_cvode_instance->psl_) {
-            ps = (PreSyn*) VOIDITM(q);
-            assert(ps->hi_index_ == cnt);
+        idxtable_ = new PreSynSaveIndexTable(2 * net_cvode_instance->psl_->size());
+        for (auto&& [index, ps]: enumerate(*net_cvode_instance->psl_)) {
+            assert(ps->hi_index_ == index);
             (*idxtable_)[ps->hi_index_] = ps;
-            ++cnt;
         }
     }
     auto idxti = idxtable_->find(id);
     if (idxti != idxtable_->end()) {
-        ps = idxti->second;
+        PreSyn* ps = idxti->second;
         assert(ps->hi_index_ == id);
         return ps;
     } else {
@@ -5314,15 +5145,7 @@ void ConditionEvent::check(NrnThread* nt, double tt, double teps) {
         if (flag_ == false) {
             flag_ = true;
             valthresh_ = 0.;
-#if USENEOSIM
-            if (neosim_entity_) {
-                (*p_nrn2neosim_send)(neosim_entity_, tt);
-            } else {
-#endif
-                send(tt + teps, net_cvode_instance, nt);
-#if USENEOSIM
-            }
-#endif
+            send(tt + teps, net_cvode_instance, nt);
         }
     } else {
         flag_ = false;
@@ -5731,7 +5554,7 @@ static int trajec_buffered(NrnThread& nt,
         if (err) {
             Fprintf(stderr,
                     "Pointer %p of PlayRecord type %d ignored because not a Range Variable",
-                    static_cast<double*>(pd),
+                    fmt::ptr(static_cast<double*>(pd)),
                     pr->type());
         }
     }

@@ -98,7 +98,7 @@ void* get_global_dbl_item(void* p, const char*& name, int& size, double*& val) {
     for (; sp; sp = sp->next) {
         if (sp->type == VAR && sp->subtype == USERDOUBLE) {
             name = sp->name;
-            if (ISARRAY(sp)) {
+            if (is_array(*sp)) {
                 Arrayinfo* a = sp->arayinfo;
                 if (a->nsub == 1) {
                     size = a->sub[0];
@@ -176,7 +176,7 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<doub
         data = &nt._t;
         n = 1;
     } else if (type > 0 && type < n_memb_func) {
-        auto set_mdata = [type, tid, &mdata](Memb_list* ml) -> size_t {
+        auto set_mdata = [&mdata](Memb_list* ml) -> size_t {
             mdata = ml->data();
             return ml->nodecount;
         };
@@ -553,10 +553,11 @@ int nrnthread_dat2_corepointer_mech(int tid,
     icnt = 0;
     // data size and allocate
     for (int i = 0; i < ml->nodecount; ++i) {
-        (*nrn_bbcore_write_[type])(NULL, NULL, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, &nt);
+        (*nrn_bbcore_write_[type])(
+            nullptr, nullptr, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, nullptr, &nt);
     }
-    dArray = NULL;
-    iArray = NULL;
+    dArray = nullptr;
+    iArray = nullptr;
     if (icnt) {
         iArray = new int[icnt];
     }
@@ -567,7 +568,7 @@ int nrnthread_dat2_corepointer_mech(int tid,
     // data values
     for (int i = 0; i < ml->nodecount; ++i) {
         (*nrn_bbcore_write_[type])(
-            dArray, iArray, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, &nt);
+            dArray, iArray, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, nullptr, &nt);
     }
 
     return 1;
@@ -593,7 +594,8 @@ int core2nrn_corepointer_mech(int tid, int type, int icnt, int dcnt, int* iArray
     int dk = 0;
     // data values
     for (int i = 0; i < ml->nodecount; ++i) {
-        (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, ml, i, ml->pdata[i], ml->_thread, &nt);
+        (*nrn_bbcore_read_[type])(
+            dArray, iArray, &dk, &ik, ml, i, ml->pdata[i], ml->_thread, nullptr, &nt);
     }
     assert(dk == dcnt);
     assert(ik == icnt);
@@ -668,10 +670,10 @@ int* datum2int(int type,
                 }
             } else if (etype == -9) {
                 pdata[jj] = eindex;
-            } else if (etype > 0 && etype < 1000) {  // ion pointer
+            } else if (nrn_semantics_is_ion(etype)) {  // ion pointer
                 pdata[jj] = eindex;
-            } else if (etype > 1000 && etype < 2000) {  // ionstyle can be explicit instead of
-                                                        // pointer to int*
+            } else if (nrn_semantics_is_ionstyle(etype)) {
+                // ionstyle can be explicit instead of pointer to int*
                 pdata[jj] = eindex;
             } else if (etype == -2) {  // an ion and this is the iontype
                 pdata[jj] = eindex;
@@ -1016,7 +1018,6 @@ static void set_info(TQItem* tqi,
         Fprintf(stderr,
                 "WARNING: CVode.event(...) for delivery at time step nearest %g discarded. "
                 "CoreNEURON cannot presently handle interpreter events (rank %d, thread %d).\n",
-                nrnmpi_myid,
                 tdeliver,
                 nrnmpi_myid,
                 tid);

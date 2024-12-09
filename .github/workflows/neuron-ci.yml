@@ -38,14 +38,15 @@ jobs:
       BUILD_TYPE: Release
       DESIRED_CMAKE_VERSION: 3.17
       DYNAMIC_PYTHON_CMAKE_VERSION: 3.18
-      PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
+      PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.9' }}
       PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.12' }}
       MUSIC_INSTALL_DIR: /opt/MUSIC
-      MUSIC_VERSION: 1.2.1
+      # hash of commit containing mpi4py 4 fix
+      MUSIC_VERSION: '13f312338dcccebfe74d391b1b24f1b6d816ac6c'
 
     strategy:
       matrix:
-        os: [ macOS-12, ubuntu-20.04]
+        os: [macOS-13, ubuntu-20.04]
         config:
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
           - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", music: ON}
@@ -70,7 +71,7 @@ jobs:
               # TODO: address-leak is the dream, but there are many problems,
               # including external ones from the MPI implementations
               sanitizer: address
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             config:
               build_mode: cmake
               # Cannot use a non-instrumented OpenMP with TSan, and we don't
@@ -141,7 +142,7 @@ jobs:
         run: |
           sudo apt-get install build-essential ccache libopenmpi-dev \
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
-            openmpi-bin flex libfl-dev bison
+            openmpi-bin flex libfl-dev bison libreadline-dev
           # The sanitizer builds use ubuntu 22.04
           if [[ "${{matrix.os}}" == "ubuntu-20.04" ]]; then
             sudo apt-get install g++-7 g++-8
@@ -171,9 +172,9 @@ jobs:
         if: ${{ matrix.config.python_dynamic == 'ON' }}
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install --upgrade pip -r nrn_requirements.txt
           python -m pip install --upgrade -r external/nmodl/requirements.txt
           python -m pip install --upgrade -r ci_requirements.txt
+          python -m pip install --upgrade pip -r nrn_requirements.txt
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
         uses: actions/setup-python@v5
@@ -183,17 +184,17 @@ jobs:
       - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install --upgrade pip -r nrn_requirements.txt
           python -m pip install --upgrade -r external/nmodl/requirements.txt
           python -m pip install --upgrade -r ci_requirements.txt
+          python -m pip install --upgrade pip -r nrn_requirements.txt
 
       - name: Install a new automake
-        # A new automake is needed for python 3.12 because it generate a python script
+        # A automake >= 1.16.5 is needed for python 3.12 because it generates a python script
         # called py-compile and the original one is not supporting this version of python
         # Once ubuntu got a newer version of automake we can remove this part.
         if: matrix.config.music == 'ON' && startsWith(matrix.os, 'ubuntu')
         run: |
-          curl -L -o automake.tar.xz https://ftp.gnu.org/gnu/automake/automake-1.16.5.tar.xz
+          curl -L -o automake.tar.xz https://ftpmirror.gnu.org/gnu/automake/automake-1.16.5.tar.xz
           tar -xf automake.tar.xz
           cd automake-1.16.5/
           ./configure --prefix=/usr/
@@ -207,10 +208,10 @@ jobs:
         run: |
           python3 -m venv music-venv
           source music-venv/bin/activate
-          python3 -m pip install mpi4py "cython<3" numpy setuptools
+          python3 -m pip install mpi4py cython numpy setuptools
           sudo mkdir -p $MUSIC_INSTALL_DIR
           sudo chown -R $USER $MUSIC_INSTALL_DIR
-          curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip
+          curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/${MUSIC_VERSION}.zip
           unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
           ./autogen.sh
           # on some systems MPI library detection fails, provide exact flags/compilers
@@ -237,10 +238,10 @@ jobs:
           echo -----
 
       - name: Restore compiler cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
+        id: restore-compiler-cache
         with:
           path: ${{runner.workspace}}/ccache
-          save-always: true
           key: ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-${{github.sha}}
           restore-keys: |
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
@@ -440,6 +441,15 @@ jobs:
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
           INSTALL_DIR : ${{ runner.workspace }}/install
           MATRIX_EVAL: ${{ matrix.config.matrix_eval }}
+
+      - name: Save compiler cache
+        uses: actions/cache/save@v4
+        if: always() && steps.restore-compiler-cache.outputs.cache-hit != 'true'
+        with:
+          path: ${{runner.workspace}}/ccache
+          key: |
+            ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
+            ${{matrix.os}}-${{hashfiles('matrix.json')}}-
 
       # This step will set up an SSH connection on tmate.io for live debugging.
       # To enable it, you have to:

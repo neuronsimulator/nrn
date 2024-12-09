@@ -7,39 +7,39 @@
 #define SPECIES_ABSENT -1
 #define PREFETCH       4
 
-typedef void (*fptr)(void);
+using fptr = void(void);
 
 // @olupton 2022-09-16: deleted a declaration of OcPtrVector that did not match
 // the one in ocptrvector.h
 
-typedef struct {
+struct ReactSet {
     Reaction* reaction;
     int idx;
-} ReactSet;
+};
 
-typedef struct {
+struct ReactGridData {
     ReactSet* onset;
     ReactSet* offset;
-} ReactGridData;
+};
 
 
-typedef struct {
+struct CurrentData {
     Grid_node* g;
     int onset, offset;
     double* val;
-} CurrentData;
+};
 
 
-typedef struct SpeciesIndexList {
+struct SpeciesIndexList {
     int id;
     double atolscale;
     int* indices;
     int length;
     struct SpeciesIndexList* next;
-} SpeciesIndexList;
+};
 
-typedef struct ICSReactions {
-    ReactionRate reaction;
+struct ICSReactions {
+    ReactionRate* reaction;
     int num_species;
     int num_regions;
     int num_params;
@@ -63,23 +63,23 @@ typedef struct ICSReactions {
     int* mc_flux_idx;
     double** vptrs;
     struct ICSReactions* next;
-} ICSReactions;
+};
 
-typedef struct TaskList {
+struct TaskList {
     void* (*task)(void*);
     void* args;
     void* result;
     struct TaskList* next;
-} TaskList;
+};
 
-typedef struct TaskQueue {
+struct TaskQueue {
     std::condition_variable task_cond, waiting_cond;
     std::mutex task_mutex, waiting_mutex;
     std::vector<bool> exit;
     int length{};
     struct TaskList* first;
     struct TaskList* last;
-} TaskQueue;
+};
 
 extern "C" void set_num_threads(const int);
 void _fadvance(void);

@@ -6,6 +6,7 @@
 #include "nrnmpi.h"
 #include "ocfunc.h"
 #include "section.h"
+#include "multicore.h"
 
 #include <exception>
 
@@ -19,7 +20,6 @@ extern "C" void modl_reg() {}
 void nrnmpi_stubs();
 #endif
 
-extern int nrn_how_many_processors();
 namespace nrn::test {
 int PROCESSORS{0};
 int MAX_PROCESSORS{nrn_how_many_processors()};

@@ -1,13 +1,14 @@
 
 #include <../../nrnconf.h>
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #if HAVE_IV
 #include "secbrows.h"
 #include "ivoc.h"
 #endif
+#include "cabcode.h"
 #include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "nrnpy.h"
@@ -15,20 +16,16 @@
 #include "classreg.h"
 #include "gui-redirect.h"
 
-typedef void (*ReceiveFunc)(Point_process*, double*, double);
 extern int hoc_return_type_code;
 // from nrnoc
 #include "membfunc.h"
 #include "parse.hpp"
 extern Symlist* hoc_built_in_symlist;
 extern Symbol** pointsym;
-extern ReceiveFunc* pnt_receive;
 extern int nrn_has_net_event_cnt_;
 extern int* nrn_has_net_event_;
 extern short* nrn_is_artificial_;
-extern int node_index(Section*, double);
 extern char* pnt_map;
-extern void nrn_parent_info(Section*);
 
 // to nrnoc
 void nrnallsectionmenu();
@@ -50,9 +47,9 @@ void nrnallsectionmenu() {
     TRY_GUI_REDIRECT_DOUBLE("nrnallsectionmenu", NULL);
 
 #if HAVE_IV
-    IFGUI
-    SectionBrowser::make_section_browser();
-    ENDGUI
+    if (hoc_usegui) {
+        SectionBrowser::make_section_browser();
+    }
 #endif
 
     hoc_retpushx(1.);
@@ -61,20 +58,20 @@ void nrnallsectionmenu() {
 void nrnsecmenu() {
     TRY_GUI_REDIRECT_DOUBLE("nrnsecmenu", NULL);
 #if HAVE_IV
-    IFGUI
-    double x;
-    Section* sec = NULL;
-    if (hoc_is_object_arg(1)) {  // x = -1 not allowed
-        nrn_seg_or_x_arg(1, &sec, &x);
-        nrn_pushsec(sec);
-    } else {
-        x = chkarg(1, -1., 1.);
+    if (hoc_usegui) {
+        double x;
+        Section* sec = NULL;
+        if (hoc_is_object_arg(1)) {  // x = -1 not allowed
+            nrn_seg_or_x_arg(1, &sec, &x);
+            nrn_pushsec(sec);
+        } else {
+            x = chkarg(1, -1., 1.);
+        }
+        section_menu(x, (int) chkarg(2, 1., 3.));
+        if (sec) {
+            nrn_popsec();
+        }
     }
-    section_menu(x, (int) chkarg(2, 1., 3.));
-    if (sec) {
-        nrn_popsec();
-    }
-    ENDGUI
 #endif
     hoc_retpushx(1.);
 }
@@ -94,59 +91,59 @@ static bool has_globals(const char* name) {
 void nrnglobalmechmenu() {
     TRY_GUI_REDIRECT_DOUBLE("nrnglobalmechmenu", NULL);
 #if HAVE_IV
-    IFGUI
-    Symbol* sp;
-    char* s;
-    char buf[200];
-    char suffix[100];
-    if (!ifarg(1)) {
-        hoc_ivmenu("Mechanisms (Globals)");
-        for (sp = hoc_built_in_symlist->first; sp; sp = sp->next) {
-            if (sp->type == MECHANISM && sp->subtype != MORPHOLOGY && has_globals(sp->name)) {
-                Sprintf(buf, "nrnglobalmechmenu(\"%s\")", sp->name);
-                hoc_ivbutton(sp->name, buf);
+    if (hoc_usegui) {
+        Symbol* sp;
+        char* s;
+        char buf[200];
+        char suffix[100];
+        if (!ifarg(1)) {
+            hoc_ivmenu("Mechanisms (Globals)");
+            for (sp = hoc_built_in_symlist->first; sp; sp = sp->next) {
+                if (sp->type == MECHANISM && sp->subtype != MORPHOLOGY && has_globals(sp->name)) {
+                    Sprintf(buf, "nrnglobalmechmenu(\"%s\")", sp->name);
+                    hoc_ivbutton(sp->name, buf);
+                }
             }
+            hoc_ivmenu(0);
+            hoc_retpushx(1.);
+            return;
         }
-        hoc_ivmenu(0);
-        hoc_retpushx(1.);
-        return;
-    }
-    char* name = gargstr(1);
-    Sprintf(suffix, "_%s", name);
-    if (ifarg(2) && *getarg(2) == 0.) {
-        int cnt = 0;
+        char* name = gargstr(1);
+        Sprintf(suffix, "_%s", name);
+        if (ifarg(2) && *getarg(2) == 0.) {
+            int cnt = 0;
+            for (sp = hoc_built_in_symlist->first; sp; sp = sp->next) {
+                if (sp->type == VAR && sp->subtype == USERDOUBLE &&
+                    (s = strstr(sp->name, suffix)) != 0 && s[strlen(suffix)] == '\0') {
+                    ++cnt;
+                }
+            }
+            hoc_retpushx(double(cnt));
+            return;
+        }
+        Sprintf(buf, "%s (Globals)", name);
+        hoc_ivpanel(buf);
         for (sp = hoc_built_in_symlist->first; sp; sp = sp->next) {
             if (sp->type == VAR && sp->subtype == USERDOUBLE &&
                 (s = strstr(sp->name, suffix)) != 0 && s[strlen(suffix)] == '\0') {
-                ++cnt;
-            }
-        }
-        hoc_retpushx(double(cnt));
-        return;
-    }
-    Sprintf(buf, "%s (Globals)", name);
-    hoc_ivpanel(buf);
-    for (sp = hoc_built_in_symlist->first; sp; sp = sp->next) {
-        if (sp->type == VAR && sp->subtype == USERDOUBLE && (s = strstr(sp->name, suffix)) != 0 &&
-            s[strlen(suffix)] == '\0') {
-            if (ISARRAY(sp)) {
-                char n[50];
-                int i;
-                Arrayinfo* a = sp->arayinfo;
-                for (i = 0; i < a->sub[0]; i++) {
-                    if (i > 5)
-                        break;
-                    Sprintf(buf, "%s[%d]", sp->name, i);
-                    Sprintf(n, "%s[%d]", sp->name, i);
-                    hoc_ivpvalue(n, hoc_val_handle(buf), false, sp->extra);
+                if (is_array(*sp)) {
+                    char n[50];
+                    int i;
+                    Arrayinfo* a = sp->arayinfo;
+                    for (i = 0; i < a->sub[0]; i++) {
+                        if (i > 5)
+                            break;
+                        Sprintf(buf, "%s[%d]", sp->name, i);
+                        Sprintf(n, "%s[%d]", sp->name, i);
+                        hoc_ivpvalue(n, hoc_val_handle(buf), false, sp->extra);
+                    }
+                } else {
+                    hoc_ivvalue(sp->name, sp->name, 1);
                 }
-            } else {
-                hoc_ivvalue(sp->name, sp->name, 1);
             }
         }
+        hoc_ivpanelmap();
     }
-    hoc_ivpanelmap();
-    ENDGUI
 #endif
     hoc_retpushx(1.);
 }
@@ -293,7 +290,7 @@ static void mech_menu(Prop* p1, double x, int type, const char* path, MechSelect
             vsym = sym->u.ppsym[j];
             if (nrn_vartype(vsym) == type) {
                 if (vsym->type == RANGEVAR) {
-                    if (ISARRAY(vsym)) {
+                    if (is_array(*vsym)) {
                         char n[50];
                         Arrayinfo* a = vsym->arayinfo;
                         for (i = 0; i < a->sub[0]; i++) {
@@ -345,65 +342,66 @@ static void mech_menu(Prop* p1, double x, int type, const char* path, MechSelect
 void nrnallpointmenu() {
     TRY_GUI_REDIRECT_DOUBLE("nrnallpointmenu", NULL);
 #if HAVE_IV
-    IFGUI
-    int i;
-    double x = n_memb_func - 1;
-    Symbol *sp, *psym;
-    char buf[200];
-    hoc_Item* q;
+    if (hoc_usegui) {
+        int i;
+        double x = n_memb_func - 1;
+        Symbol *sp, *psym;
+        char buf[200];
+        hoc_Item* q;
 
-    if (!ifarg(1)) {
-        hoc_ivmenu("Point Processes");
-        for (i = 1; (sp = pointsym[i]) != (Symbol*) 0; i++) {
-            Sprintf(buf, "nrnallpointmenu(%d)", i);
-            hoc_ivbutton(sp->name, buf);
-        }
-        hoc_ivmenu(0);
-        hoc_retpushx(1.);
-        return;
-    }
-
-    i = (int) chkarg(1, 0., x);
-    if ((psym = pointsym[i]) != (Symbol*) 0) {
-        hoc_ivpanel(psym->name);
-        sp = hoc_table_lookup(psym->name, hoc_built_in_symlist);
-        assert(sp && sp->type == TEMPLATE);
-
-        bool locmenu = false;
-        ITERATE(q, sp->u.ctemplate->olist) {  // are there any
-            hoc_ivmenu("locations");
-            locmenu = true;
-            break;
+        if (!ifarg(1)) {
+            hoc_ivmenu("Point Processes");
+            for (i = 1; (sp = pointsym[i]) != (Symbol*) 0; i++) {
+                Sprintf(buf, "nrnallpointmenu(%d)", i);
+                hoc_ivbutton(sp->name, buf);
+            }
+            hoc_ivmenu(0);
+            hoc_retpushx(1.);
+            return;
         }
 
-        bool are_globals = false;
-        char suffix[100];
-        Sprintf(suffix, "_%s", sp->name);
-        for (Symbol* stmp = hoc_built_in_symlist->first; stmp; stmp = stmp->next) {
-            if (stmp->type == VAR && stmp->subtype == USERDOUBLE && strstr(stmp->name, suffix)) {
-                are_globals = true;
+        i = (int) chkarg(1, 0., x);
+        if ((psym = pointsym[i]) != (Symbol*) 0) {
+            hoc_ivpanel(psym->name);
+            sp = hoc_table_lookup(psym->name, hoc_built_in_symlist);
+            assert(sp && sp->type == TEMPLATE);
+
+            bool locmenu = false;
+            ITERATE(q, sp->u.ctemplate->olist) {  // are there any
+                hoc_ivmenu("locations");
+                locmenu = true;
                 break;
             }
-        }
 
-        ITERATE(q, sp->u.ctemplate->olist) {
-            Object* ob = OBJ(q);
-            Point_process* pp = ob2pntproc(ob);
-            if (pp->sec) {
-                Sprintf(buf, "nrnpointmenu(%p)", ob);
-                hoc_ivbutton(sec_and_position(pp->sec, pp->node), buf);
+            bool are_globals = false;
+            char suffix[100];
+            Sprintf(suffix, "_%s", sp->name);
+            for (Symbol* stmp = hoc_built_in_symlist->first; stmp; stmp = stmp->next) {
+                if (stmp->type == VAR && stmp->subtype == USERDOUBLE &&
+                    strstr(stmp->name, suffix)) {
+                    are_globals = true;
+                    break;
+                }
             }
+
+            ITERATE(q, sp->u.ctemplate->olist) {
+                Object* ob = OBJ(q);
+                Point_process* pp = ob2pntproc(ob);
+                if (pp->sec) {
+                    Sprintf(buf, "nrnpointmenu(%p)", ob);
+                    hoc_ivbutton(sec_and_position(pp->sec, pp->node), buf);
+                }
+            }
+            if (locmenu) {
+                hoc_ivmenu(0);
+            }
+            if (are_globals) {
+                Sprintf(buf, "nrnglobalmechmenu(\"%s\")", psym->name);
+                hoc_ivbutton("Globals", buf);
+            }
+            hoc_ivpanelmap();
         }
-        if (locmenu) {
-            hoc_ivmenu(0);
-        }
-        if (are_globals) {
-            Sprintf(buf, "nrnglobalmechmenu(\"%s\")", psym->name);
-            hoc_ivbutton("Globals", buf);
-        }
-        hoc_ivpanelmap();
     }
-    ENDGUI
 #endif
     hoc_retpushx(1.);
 }
@@ -411,23 +409,23 @@ void nrnallpointmenu() {
 void nrnpointmenu() {
     TRY_GUI_REDIRECT_DOUBLE("nrnpointmenu", NULL);
 #if HAVE_IV
-    IFGUI
-    Object* ob;
-    if (hoc_is_object_arg(1)) {
-        ob = *hoc_objgetarg(1);
-    } else {
-        ob = (Object*) ((size_t) (*getarg(1)));
+    if (hoc_usegui) {
+        Object* ob;
+        if (hoc_is_object_arg(1)) {
+            ob = *hoc_objgetarg(1);
+        } else {
+            ob = (Object*) ((size_t) (*getarg(1)));
+        }
+        Symbol* sym = hoc_table_lookup(ob->ctemplate->sym->name, ob->ctemplate->symtable);
+        if (!sym || sym->type != MECHANISM || !memb_func[sym->subtype].is_point) {
+            hoc_execerror(ob->ctemplate->sym->name, "not a point process");
+        }
+        int make_label = 1;
+        if (ifarg(2)) {
+            make_label = int(chkarg(2, -1., 1.));
+        }
+        point_menu(ob, make_label);
     }
-    Symbol* sym = hoc_table_lookup(ob->ctemplate->sym->name, ob->ctemplate->symtable);
-    if (!sym || sym->type != MECHANISM || !memb_func[sym->subtype].is_point) {
-        hoc_execerror(ob->ctemplate->sym->name, "not a point process");
-    }
-    int make_label = 1;
-    if (ifarg(2)) {
-        make_label = int(chkarg(2, -1., 1.));
-    }
-    point_menu(ob, make_label);
-    ENDGUI
 #endif
     hoc_retpushx(1.);
 }
@@ -484,7 +482,7 @@ static void point_menu(Object* ob, int make_label) {
             } else {
                 deflt = false;
             }
-            if (ISARRAY(vsym)) {
+            if (is_array(*vsym)) {
                 Arrayinfo* a = vsym->arayinfo;
                 for (m = 0; m < vsym->arayinfo->sub[0]; m++) {
                     if (m > 5)
@@ -512,13 +510,13 @@ static Symbol* ms_class_sym_;
 static double ms_panel(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("MechanismStandard.panel", ms_class_sym_, v);
 #if HAVE_IV
-    IFGUI
-    char* label = NULL;
-    if (ifarg(1)) {
-        label = gargstr(1);
+    if (hoc_usegui) {
+        char* label = NULL;
+        if (ifarg(1)) {
+            label = gargstr(1);
+        }
+        ((MechanismStandard*) v)->panel(label);
     }
-    ((MechanismStandard*) v)->panel(label);
-    ENDGUI
 #endif
     return 0.;
 }
@@ -668,10 +666,10 @@ static Member_func ms_members[] = {{"panel", ms_panel},
                                    {"is_array", ms_is_array},
                                    {"name", ms_name},
                                    {"save", ms_save},
-                                   {0, 0}};
+                                   {nullptr, nullptr}};
 
 void MechanismStandard_reg() {
-    class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members, NULL, NULL, NULL);
+    class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members, nullptr, nullptr);
     ms_class_sym_ = hoc_lookup("MechanismStandard");
 }
 
@@ -1022,10 +1020,10 @@ static double mt_count(void* v) {
 static double mt_menu(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("MechanismType.menu", mt_class_sym_, v);
 #if HAVE_IV
-    IFGUI
-    MechanismType* mt = (MechanismType*) v;
-    mt->menu();
-    ENDGUI
+    if (hoc_usegui) {
+        MechanismType* mt = (MechanismType*) v;
+        mt->menu();
+    }
 #endif
     return 0.;
 }
@@ -1131,8 +1129,7 @@ static Member_ret_obj_func mt_retobj_members[] = {{"pp_begin", mt_pp_begin},
                                                   {0, 0}};
 static Member_ret_str_func mt_retstr_func[] = {{"code", mt_code}, {"file", mt_file}, {0, 0}};
 void MechanismType_reg() {
-    class2oc(
-        "MechanismType", mt_cons, mt_destruct, mt_members, NULL, mt_retobj_members, mt_retstr_func);
+    class2oc("MechanismType", mt_cons, mt_destruct, mt_members, mt_retobj_members, mt_retstr_func);
     mt_class_sym_ = hoc_lookup("MechanismType");
 }
 
@@ -1271,8 +1268,7 @@ const char* MechanismType::selected() {
 int MechanismType::internal_type() {
     return mti_->type_[selected_item()];
 }
-extern void mech_insert1(Section*, int);
-extern void mech_uninsert1(Section*, Symbol*);
+
 void MechanismType::insert(Section* sec) {
     if (!mti_->is_point_) {
         mech_insert1(sec, memb_func[mti_->type_[selected_item()]].sym->subtype);

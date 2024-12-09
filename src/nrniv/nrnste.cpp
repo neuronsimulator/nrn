@@ -46,7 +46,9 @@ static double ste_state(void* v) {
     return (double) state;
 }
 
-static Member_func members[] = {{"transition", ste_transition}, {"state", ste_state}, {0, 0}};
+static Member_func members[] = {{"transition", ste_transition},
+                                {"state", ste_state},
+                                {nullptr, nullptr}};
 
 static void* ste_cons(Object*) {
     int nstate = (int) chkarg(1, 1, 1e6);
@@ -65,7 +67,7 @@ static void ste_destruct(void* v) {
 }
 
 void StateTransitionEvent_reg() {
-    class2oc("StateTransitionEvent", ste_cons, ste_destruct, members, NULL, NULL, NULL);
+    class2oc("StateTransitionEvent", ste_cons, ste_destruct, members, nullptr, nullptr);
 }
 
 StateTransitionEvent::StateTransitionEvent(int nstate, Point_process* pnt)

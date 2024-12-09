@@ -282,7 +282,6 @@ function(nrn_add_test)
     set(feature_mod_compatibility_enabled OFF)
   endif()
   set(feature_gpu_enabled ${CORENRN_ENABLE_GPU})
-  set(feature_nmodl_enabled ${CORENRN_ENABLE_NMODL})
   # Check REQUIRES
   set(requires_coreneuron OFF)
   foreach(required_feature ${NRN_ADD_TEST_REQUIRES})

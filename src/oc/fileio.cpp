@@ -7,20 +7,17 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include "hoc.h"
 #include "ocmisc.h"
 #include "hocstr.h"
-#include "hoclist.h"
 #include "parse.hpp"
 #include "hocparse.h"
 #include <errno.h>
 #include "nrnfilewrap.h"
 
-
 extern char* neuron_home;
 
-NrnFILEWrap* frin;
-FILE* fout;
+NrnFILEWrap* hoc_frin;
+FILE* hoc_fout;
 
 void hoc_stdout(void) {
     static int prev = -1;
@@ -49,11 +46,11 @@ void hoc_stdout(void) {
         close(prev);
         prev = -1;
     }
-    ret();
-    pushx((double) fileno(stdout));
+    hoc_ret();
+    hoc_pushx((double) fileno(stdout));
 }
 
-void ropen(void) /* open file for reading */
+void hoc_ropen(void) /* open file for reading */
 {
     double d;
     const char* fname;
@@ -63,25 +60,25 @@ void ropen(void) /* open file for reading */
     else
         fname = "";
     d = 1.;
-    if (!nrn_fw_eq(frin, stdin))
-        IGNORE(nrn_fw_fclose(frin));
-    frin = nrn_fw_set_stdin();
+    if (!nrn_fw_eq(hoc_frin, stdin))
+        IGNORE(nrn_fw_fclose(hoc_frin));
+    hoc_frin = nrn_fw_set_stdin();
     if (fname[0] != 0) {
-        if ((frin = nrn_fw_fopen(fname, "r")) == (NrnFILEWrap*) 0) {
+        if ((hoc_frin = nrn_fw_fopen(fname, "r")) == (NrnFILEWrap*) 0) {
             const char* retry;
             retry = expand_env_var(fname);
-            if ((frin = nrn_fw_fopen(retry, "r")) == (NrnFILEWrap*) 0) {
+            if ((hoc_frin = nrn_fw_fopen(retry, "r")) == (NrnFILEWrap*) 0) {
                 d = 0.;
-                frin = nrn_fw_set_stdin();
+                hoc_frin = nrn_fw_set_stdin();
             }
         }
     }
     errno = 0;
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
-void wopen(void) /* open file for writing */
+void hoc_wopen(void) /* open file for writing */
 {
     const char* fname;
     double d;
@@ -91,17 +88,19 @@ void wopen(void) /* open file for writing */
     else
         fname = "";
     d = 1.;
-    if (fout != stdout)
-        ERRCHK(IGNORE(fclose(fout));)
-    fout = stdout;
-    if (fname[0] != 0)
-        ERRCHK(if ((fout = fopen(expand_env_var(fname), "w")) == (FILE*) 0) {
+    if (hoc_fout != stdout) {
+        IGNORE(fclose(hoc_fout));
+    }
+    hoc_fout = stdout;
+    if (fname[0] != 0) {
+        if ((hoc_fout = fopen(expand_env_var(fname), "w")) == nullptr) {
             d = 0.;
-            fout = stdout;
-        })
+            hoc_fout = stdout;
+        }
+    }
     errno = 0;
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 const char* expand_env_var(const char* s) {
@@ -223,39 +222,39 @@ int hoc_xopen1(const char* name, const char* rcs) {
     return 0;
 }
 
-void xopen(void) /* read and execute a hoc program */
+void hoc_xopen(void) /* read and execute a hoc program */
 {
     if (ifarg(2)) {
         hoc_xopen1(gargstr(1), gargstr(2));
     } else {
         hoc_xopen1(gargstr(1), 0);
     }
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
-void Fprint(void) /* fprintf function */
+void hoc_Fprint(void) /* fprintf function */
 {
     char* buf;
     double d;
 
     hoc_sprint1(&buf, 1);
-    d = (double) fprintf(fout, "%s", buf);
-    ret();
-    pushx(d);
+    d = (double) fprintf(hoc_fout, "%s", buf);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
-void PRintf(void) /* printf function */
+void hoc_PRintf(void) /* printf function */
 {
     char* buf;
     double d;
 
     hoc_sprint1(&buf, 1);
     d = (int) strlen(buf);
-    plprint(buf);
+    hoc_plprint(buf);
     fflush(stdout);
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 
@@ -267,8 +266,8 @@ void hoc_Sprint(void) /* sprintf_function */
     cpp = hoc_pgargstr(1);
     hoc_sprint1(&buf, 2);
     hoc_assign_str(cpp, buf);
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
 double hoc_scan(FILE* fi) {
@@ -277,7 +276,7 @@ double hoc_scan(FILE* fi) {
 
     for (;;) {
         if (fscanf(fi, "%255s", fs) == EOF) {
-            execerror("EOF in fscan", (char*) 0);
+            hoc_execerror("EOF in fscan", (char*) 0);
         }
         if (fs[0] == 'i' || fs[0] == 'n' || fs[0] == 'I' || fs[0] == 'N') {
             continue;
@@ -299,7 +298,7 @@ double hoc_fw_scan(NrnFILEWrap* fi) {
 
     for (;;) {
         if (nrn_fw_fscanf(fi, "%255s", fs) == EOF) {
-            execerror("EOF in fscan", (char*) 0);
+            hoc_execerror("EOF in fscan", (char*) 0);
         }
         if (fs[0] == 'i' || fs[0] == 'n' || fs[0] == 'I' || fs[0] == 'N') {
             continue;
@@ -313,19 +312,19 @@ double hoc_fw_scan(NrnFILEWrap* fi) {
     return d;
 }
 
-void Fscan(void) /* read a number from input file */
+void hoc_Fscan(void) /* read a number from input file */
 {
     double d;
     NrnFILEWrap* fi;
 
-    if (nrn_fw_eq(frin, stdin)) {
-        fi = fin;
+    if (nrn_fw_eq(hoc_frin, stdin)) {
+        fi = hoc_fin;
     } else {
-        fi = frin;
+        fi = hoc_frin;
     }
     d = hoc_fw_scan(fi);
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 void hoc_Getstr(void) /* read a line (or word) from input file */
@@ -334,10 +333,10 @@ void hoc_Getstr(void) /* read a line (or word) from input file */
     char** cpp;
     NrnFILEWrap* fi;
     int word = 0;
-    if (nrn_fw_eq(frin, stdin)) {
-        fi = fin;
+    if (nrn_fw_eq(hoc_frin, stdin)) {
+        fi = hoc_fin;
     } else {
-        fi = frin;
+        fi = hoc_frin;
     }
     cpp = hoc_pgargstr(1);
     if (ifarg(2)) {
@@ -346,16 +345,16 @@ void hoc_Getstr(void) /* read a line (or word) from input file */
     if (word) {
         buf = hoc_tmpbuf->buf;
         if (nrn_fw_fscanf(fi, "%s", buf) != 1) {
-            execerror("EOF in getstr", (char*) 0);
+            hoc_execerror("EOF in getstr", (char*) 0);
         }
     } else {
         if ((buf = fgets_unlimited(hoc_tmpbuf, fi)) == (char*) 0) {
-            execerror("EOF in getstr", (char*) 0);
+            hoc_execerror("EOF in getstr", (char*) 0);
         }
     }
     hoc_assign_str(cpp, buf);
-    ret();
-    pushx((double) strlen(buf));
+    hoc_ret();
+    hoc_pushx((double) strlen(buf));
 }
 
 void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for conversion */
@@ -536,18 +535,18 @@ static void hoc_load(const char* stype) {
 
 void hoc_load_proc(void) {
     hoc_load("proc");
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 void hoc_load_func(void) {
     hoc_load("func");
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 void hoc_load_template(void) {
     hoc_load("begintemplate");
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
 void hoc_load_file(void) {
@@ -560,8 +559,8 @@ void hoc_load_file(void) {
     if (!ifarg(iarg + 1) || !hoc_lookup(gargstr(iarg + 1))) {
         i = hoc_Load_file(i, gargstr(iarg));
     }
-    ret();
-    pushx((double) i);
+    hoc_ret();
+    hoc_pushx((double) i);
 }
 
 static constexpr auto hoc_load_file_size_ = 1024;
@@ -576,8 +575,7 @@ static int hoc_Load_file(int always, const char* name) {
         Temporarily change to the directory containing the file so
         that it can xopen files relative to its location.
     */
-    static hoc_List* loaded;
-    hoc_Item* q;
+    static std::vector<std::string> loaded;
     int b, is_loaded;
     int goback;
     char expname[hoc_load_file_size_];
@@ -590,11 +588,9 @@ static int hoc_Load_file(int always, const char* name) {
     goback = 0;
     /* has the file already been loaded */
     is_loaded = 0;
-    if (!loaded) {
-        loaded = hoc_l_newlist();
-    }
-    ITERATE(q, loaded) {
-        if (strcmp(STR(q), name) == 0) {
+
+    for (const std::string& q: loaded) {
+        if (q == name) {
             if (!always) {
                 return 1;
             } else {
@@ -660,7 +656,7 @@ static int hoc_Load_file(int always, const char* name) {
     /* add the name to the list of loaded packages */
     if (f) {
         if (!is_loaded) {
-            hoc_l_lappendstr(loaded, name);
+            loaded.push_back(name);
         }
         b = 1;
     } else {
@@ -735,8 +731,8 @@ void hoc_machine_name(void) {
     gethostname(buf, 20);
     hoc_assign_str(hoc_pgargstr(1), buf);
 #endif
-    ret();
-    pushx(0.);
+    hoc_ret();
+    hoc_pushx(0.);
 }
 
 int hoc_chdir(const char* path) {
@@ -745,12 +741,12 @@ int hoc_chdir(const char* path) {
 
 void hoc_Chdir(void) {
     int i = hoc_chdir(gargstr(1));
-    ret();
-    pushx((double) i);
+    hoc_ret();
+    hoc_pushx((double) i);
 }
 
 int nrn_is_python_extension;
-static int (*nrnpy_pr_stdoe_callback)(int, char*);
+int (*nrnpy_pr_stdoe_callback)(int, char*);
 static int (*nrnpy_pass_callback)();
 
 extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {
@@ -761,78 +757,9 @@ extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()
 void nrnpy_pass() {
     if (nrnpy_pass_callback) {
         if ((*nrnpy_pass_callback)() != 1) {
-            hoc_execerror("nrnpy_pass", 0);
+            hoc_execerror("nrnpy_pass", nullptr);
         }
     }
-}
-
-static int vnrnpy_pr_stdoe(FILE* stream, const char* fmt, va_list ap) {
-    int size = 0;
-    char* p = NULL;
-
-    if (!nrnpy_pr_stdoe_callback || (stream != stderr && stream != stdout)) {
-        size = vfprintf(stream, fmt, ap);
-        return size;
-    }
-
-    /* Determine required size */
-    va_list apc;
-#ifndef va_copy
-#if defined(__GNUC__) || defined(__clang__)
-#define va_copy(dest, src) __builtin_va_copy(dest, src)
-#else
-#define va_copy(dest, src) (dest = src)
-#endif
-#endif
-    va_copy(apc, ap);
-    size = vsnprintf(p, size, fmt, apc);
-    va_end(apc);
-
-    if (size < 0)
-        return 0;
-
-    size++; /* For '\0' */
-    p = static_cast<char*>(malloc(size));
-    if (p == NULL)
-        return 0;
-
-    size = vsnprintf(p, size, fmt, ap);
-    if (size < 0) {
-        free(p);
-        return 0;
-    }
-
-    // if any non-ascii translate to '?' or nrnpy_pr will raise an exception.
-    if (stream == stderr) {
-        for (int i = 0; p[i] != '\0'; ++i) {
-            if (!isascii((unsigned char) p[i])) {
-                p[i] = '?';
-            }
-        }
-    }
-
-    (*nrnpy_pr_stdoe_callback)((stream == stderr) ? 2 : 1, p);
-
-    free(p);
-    return size;
-}
-
-int nrnpy_pr(const char* fmt, ...) {
-    int n;
-    va_list ap;
-    va_start(ap, fmt);
-    n = vnrnpy_pr_stdoe(stdout, fmt, ap);
-    va_end(ap);
-    return n;
-}
-
-int Fprintf(FILE* stream, const char* fmt, ...) {
-    int n;
-    va_list ap;
-    va_start(ap, fmt);
-    n = vnrnpy_pr_stdoe(stream, fmt, ap);
-    va_end(ap);
-    return n;
 }
 
 /** printf style specification of hoc_execerror message. (512 char limit) **/
