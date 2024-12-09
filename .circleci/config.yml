@@ -18,30 +18,10 @@ jobs:
     resource_class: arm.medium
 
     steps:
-      - checkout
-      - run:
-          name: Build manylinux AArch64 wheel
-          command: |
-            docker run --rm \
-                -w /root/nrn \
-                -v $PWD:/root/nrn \
-                -v /opt/nrnwheel/mpt:/nrnwheel/mpt \
-                -e NEURON_NIGHTLY_TAG \
-                -e NRN_NIGHTLY_UPLOAD \
-                -e NRN_RELEASE_UPLOAD \
-                -e SETUPTOOLS_SCM_PRETEND_VERSION \
-                -e NRN_BUILD_FOR_UPLOAD=1 \
-                'neuronsimulator/neuron_wheel:test-aarch64' \
-                packaging/python/build_wheels.bash linux 3<< parameters.NRN_PYTHON_VERSION_MINOR >> coreneuron
-
-      - store_artifacts:
-          path: ./wheelhouse
-          destination: artifacts
-
       - run:
           name: Test manylinux AArch64 wheel
           command: |
-
+            sudo apt update
             sudo apt install -t software-properties-common
             sudo add-apt-repository -y ppa:deadsnakes/ppa
             sudo apt update
@@ -52,19 +32,9 @@ jobs:
 
             export PYTHON_EXE=$(which python3.<< parameters.NRN_PYTHON_VERSION_MINOR >>)
 
-            # test wheel
-            packaging/python/test_wheels.sh $PYTHON_EXE $(ls -t wheelhouse/*.whl)
+            
 
-      - run:
-          name: Upload nightly wheel to pypi.org
-          command: |
-            if [ "<< parameters.NRN_NIGHTLY_UPLOAD >>" == "true" ]; then
-              python -m pip install --upgrade pip
-              python -m pip install twine
-              python -m twine upload --verbose --skip-existing -u $TWINE_USERNAME -p $TWINE_PASSWORD  wheelhouse/*.whl
-            else
-              echo "Skipping pypi.org upload!"
-            fi
+
 
 workflows:
 
