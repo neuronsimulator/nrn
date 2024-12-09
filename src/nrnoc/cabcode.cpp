@@ -1968,7 +1968,9 @@ static char* objectname(void) {
     return buf;
 }
 
-#define relative(pc) (pc + (pc)->i)
+static Inst* relative(Inst* pc) {
+    return pc + pc->i;
+}
 
 void forall_section(void) {
     /*statement pointed to by pc
