@@ -87,9 +87,6 @@ ENV PATH /nrnwheel/openmpi/bin:$PATH
 RUN yum -y install epel-release libX11-devel libXcomposite-devel vim-enhanced && yum -y clean all && rm -rf /var/cache
 RUN yum -y remove ncurses-devel
 
-# Copy Dockerfile for reference
-COPY Dockerfile .
-
 # build wheels from there
 WORKDIR /root
 
