@@ -756,7 +756,7 @@ static void* fcall(void* vself, void* vargs) {
 
         return result;
     } else {
-        auto interp = HocTopContext(hoc_thisobject);
+        auto interp = HocTopContext();
         Inst fc[4];
         // ugh. so a potential call of hoc_get_last_pointer_symbol will return nullptr.
         fc[0].in = STOP;
@@ -1262,7 +1262,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         }
     }
     // top level interpreter fork
-    auto interp = HocTopContext(hoc_thisobject);
+    auto interp = HocTopContext();
     switch (sym->type) {
     case VAR:  // double*
         if (!is_array(*sym)) {
@@ -1497,7 +1497,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
             return -1;
         }
     }
-    auto interp = HocTopContext(hoc_thisobject);
+    auto interp = HocTopContext();
     switch (sym->type) {
     case VAR:  // double*
         if (is_array(*sym)) {
@@ -1991,7 +1991,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 }
             }
         } else {  // must be a top level intermediate
-            auto interp = HocTopContext(hoc_thisobject);
+            auto interp = HocTopContext();
             switch (po->sym_->type) {
             case VAR:
                 hocobj_pushtop(po, po->sym_, ix);
@@ -2138,7 +2138,7 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
             err = set_final_from_stk(arg);
         }
     } else {  // must be a top level intermediate
-        auto interp = HocTopContext(hoc_thisobject);
+        auto interp = HocTopContext();
         switch (po->sym_->type) {
         case VAR:
             hocobj_pushtop(po, po->sym_, i);

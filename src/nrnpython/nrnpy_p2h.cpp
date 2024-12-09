@@ -100,7 +100,7 @@ static nb::object nrnpy_pyCallObject(nb::callable callable, nb::object args) {
     // When hoc calls a PythonObject method, then in case python
     // calls something back in hoc, the hoc interpreter must be
     // at the top level
-    auto interp = HocTopContext(hoc_thisobject);
+    auto interp = HocTopContext();
     nb::tuple tup(args);
     nb::object p = nb::steal(PyObject_CallObject(callable.ptr(), tup.ptr()));
 #if 0

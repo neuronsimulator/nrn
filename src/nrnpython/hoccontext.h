@@ -28,11 +28,11 @@ static void hc_restore_(HocContext* hc) {
 
 class HocTopContext {
   private:
+    HocContext hcref;
     HocContext* hc_ = nullptr;
 
   public:
-    explicit HocTopContext(const Object* /* placeholder */) {
-        HocContext hcref;
+    HocTopContext() {
         if (hoc_thisobject) {
             hc_ = hc_save_and_set_to_top_(&hcref);
         }
