@@ -42,13 +42,13 @@ jobs:
           name: Test manylinux AArch64 wheel
           command: |
 
-            sudo apt install software-properties-common
-            sudo add-apt-repository ppa:deadsnakes/ppa
+            sudo apt install -t software-properties-common
+            sudo add-apt-repository -y ppa:deadsnakes/ppa
             sudo apt update
             # install mpi dependencies
             sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
             # install Python from deadsnakes
-            sudo apt install python3.<< parameters.NRN_PYTHON_VERSION_MINOR >>
+            sudo apt install -y python3.<< parameters.NRN_PYTHON_VERSION_MINOR >>
 
             export PYTHON_EXE=$(which python3.<< parameters.NRN_PYTHON_VERSION_MINOR >>)
 
