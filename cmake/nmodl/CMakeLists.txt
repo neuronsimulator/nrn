@@ -53,7 +53,7 @@ endif()
 # =============================================================================
 # Compile static libraries with hidden visibility
 # =============================================================================
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+# set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 # =============================================================================
 # Find required packages

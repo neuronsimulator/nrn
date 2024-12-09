@@ -1,9 +1,6 @@
 # =============================================================================
 # Build options for NMODL
 # =============================================================================
-set(NMODL_MAX_ERRORS
-    1
-    CACHE STRING "Number of errors before Clang/GCC stop.")
 option(NMODL_ENABLE_PYTHON_BINDINGS "Enable pybind11 based python bindings" ON)
 option(NMODL_ENABLE_TESTS "Enable build of tests" ON)
 option(NMODL_ENABLE_USECASES
@@ -26,6 +23,8 @@ set(NMODL_PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(NMODL_PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 include_directories(${NMODL_PROJECT_SOURCE_DIR} ${NMODL_PROJECT_BINARY_DIR})
+
+list(APPEND NMODL_EXTRA_CXX_FLAGS ${NMODL_SANITIZER_COMPILER_FLAGS})
 
 # =============================================================================
 # Create some random files.
