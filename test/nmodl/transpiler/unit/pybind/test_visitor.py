@@ -67,7 +67,6 @@ def test_json_visitor(ch_ast):
 
 
 def test_custom_visitor(ch_ast):
-
     class StateVisitor(visitor.AstVisitor):
         def __init__(self):
             visitor.AstVisitor.__init__(self)

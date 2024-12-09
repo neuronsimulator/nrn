@@ -50,7 +50,7 @@ endif()
 # -----------------------------------------------------------------------------
 execute_process(
   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/language/code_generator.py
-  ${CODE_GENERATOR_OPTS} --generate-cmake --base-dir ${CMAKE_CURRENT_BINARY_DIR}/language
+          ${CODE_GENERATOR_OPTS} --generate-cmake --base-dir ${CMAKE_CURRENT_BINARY_DIR}/language
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/language)
 
 # Ensure that the above runs again, if its dependencies update.
@@ -136,7 +136,6 @@ cpp_cc_configure_sanitizers(TARGET nmodl)
 # set(nmodl_BINARY bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
 add_executable(nmodl::nmodl ALIAS nmodl)
 
-
 # =============================================================================
 # Add dependency with nmodl Python module (for consumer projects)
 # =============================================================================
@@ -154,8 +153,8 @@ install(
   EXPORT nmodlTargets
   RUNTIME DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin)
 
-
-configure_file(${PROJECT_SOURCE_DIR}/share/nmodl/nrnunits.lib ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/share/nmodl/nrnunits.lib
+               ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib COPYONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib
         DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}share/nmodl)
 
@@ -175,4 +174,3 @@ write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/nmodlConfigVersion
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfig.cmake"
               "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfigVersion.cmake"
         DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}lib/cmake/nmodl)
-

@@ -12,7 +12,6 @@ namespace visitor {
 
 class CreateLongitudinalDiffusionBlocks: public AstVisitor {
   public:
-
     void visit_program(ast::Program& node) override;
 };
 

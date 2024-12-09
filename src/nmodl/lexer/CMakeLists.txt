@@ -56,7 +56,7 @@ set(NMODL_PARSER_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/../parser")
 # Directories for parsers (as they need to be in separate directories)
 # =============================================================================
 file(MAKE_DIRECTORY ${NMODL_PARSER_BINARY_DIR}/nmodl ${NMODL_PARSER_BINARY_DIR}/diffeq
-  ${NMODL_PARSER_BINARY_DIR}/c ${NMODL_PARSER_BINARY_DIR}/unit)
+     ${NMODL_PARSER_BINARY_DIR}/c ${NMODL_PARSER_BINARY_DIR}/unit)
 
 # =============================================================================
 # Lexer & Parser commands
