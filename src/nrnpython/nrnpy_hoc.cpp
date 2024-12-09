@@ -1726,13 +1726,16 @@ static PyObject* hocobj_iter(PyObject* raw_self) {
 
     nb::object self = nb::borrow(raw_self);
     PyHocObject* po = (PyHocObject*) self.ptr();
-    if (po->type_ == PyHoc::HocObject) {
+    if (po->type_ == PyHoc::HocObject || po->type_ == PyHoc::HocSectionListIterator) {
         if (po->ho_->ctemplate == hoc_vec_template_) {
             return PySeqIter_New(self.ptr());
         } else if (po->ho_->ctemplate == hoc_list_template_) {
             return PySeqIter_New(self.ptr());
         } else if (po->ho_->ctemplate == hoc_sectionlist_template_) {
             // need a clone of self so nested loops do not share iteritem_
+            // The HocSectionListIter arm of the outer 'if' became necessary
+            // at Python-3.13.1 upon which the following body is executed
+            // twice. See https://github.com/python/cpython/issues/127682
             auto po2 = nb::steal(nrnpy_ho2po(po->ho_));
             PyHocObject* pho2 = (PyHocObject*) po2.ptr();
             pho2->type_ = PyHoc::HocSectionListIterator;
