@@ -4,6 +4,8 @@
 #include <utility>
 #include <ostream>
 
+#include "nrnpython/nrn_export.hpp"
+
 namespace neuron {
 
 /** A RAII wrapper for C-style strings.
@@ -13,7 +15,7 @@ namespace neuron {
  * ownership, this is achieved using `.release()`, which returns the contained C-string and makes
  * this object invalid.
  */
-class unique_cstr {
+class NRN_EXPORT unique_cstr {
   public:
     unique_cstr(const unique_cstr&) = delete;
     unique_cstr(unique_cstr&& other) noexcept {
