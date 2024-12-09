@@ -33,6 +33,7 @@ class HocTopContext {
 
   public:
     HocTopContext() {
+        // ``hoc_thisobject`` is global
         if (hoc_thisobject) {
             hc_ = hc_save_and_set_to_top_(&hcref);
         }
