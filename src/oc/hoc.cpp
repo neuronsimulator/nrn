@@ -137,8 +137,6 @@ static CHAR* hoc_cbuf;
 CHAR* hoc_ctp;
 int hoc_ictp;
 
-extern const char* RCS_hoc_version;
-extern const char* RCS_hoc_date;
 extern char* neuron_home;
 extern int hoc_print_first_instance;
 
@@ -816,7 +814,6 @@ void hoc_main1_init(const char* pname, const char** envp) {
     hoc_frin = nrn_fw_set_stdin();
     hoc_fout = stdout;
     if (!nrn_is_cable()) {
-        Fprintf(stderr, "OC INTERPRETER   %s   %s\n", RCS_hoc_version, RCS_hoc_date);
         Fprintf(stderr,
                 "Copyright 1992 -  Michael Hines, Neurobiology Dept., DUMC, Durham, NC.  27710\n");
     }
@@ -948,7 +945,6 @@ void inputReadyThread() {
 #endif
 
 void hoc_final_exit(void) {
-    char* buf;
 #if defined(USE_PYTHON)
     if (neuron::python::methods.interpreter_start) {
         neuron::python::methods.interpreter_start(0);

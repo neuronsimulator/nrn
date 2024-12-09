@@ -794,11 +794,11 @@ static Member_func members[] = {{"count", pwman_count},
                                 {"printfile", pwman_printfile},
                                 {"landscape", pwman_landscape},
                                 {"deco", pwman_deco},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
-static Member_ret_obj_func retobj_members[] = {{"group", pwman_group}, {0, 0}};
+static Member_ret_obj_func retobj_members[] = {{"group", pwman_group}, {nullptr, nullptr}};
 
-static Member_ret_str_func s_memb[] = {{"name", pwman_name}, {0, 0}};
+static Member_ret_str_func s_memb[] = {{"name", pwman_name}, {nullptr, nullptr}};
 
 void PWManager_reg() {
     class2oc("PWManager", pwman_cons, pwman_destruct, members, retobj_members, s_memb);

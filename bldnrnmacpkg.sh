@@ -1,19 +1,29 @@
 #!/usr/bin/env bash
 set -ex
 
-default_pythons="python3.8 python3.9 python3.10 python3.11"
+default_pythons="python3.9 python3.10 python3.11 python3.12 python3.13"
 # distribution built with
 # bash bldnrnmacpkgcmake.sh
 # without args, default are the pythons above.
 
+if test "$RX3D_OPT" = "" ; then
+  RX3D_OPT=1 # a value of 2 takes much longer to build
+fi
+
 # If all the pythons are universal, then so is NEURON.
 # Otherwise $CPU
-# All pythons must have the same macos version and that will become
-# the MACOSX_DEPLOYMENT_TARGET
 
+# Now obsolete...
 # On my machine, to build nrn-x.x.x-macosx-10.9-universal2-py-38-39-310-311.pkg
 # I built my own versions of 3.8 in $HOME/soft/python3.8, and
-export PATH=$HOME/soft/python3.8/bin:$PATH
+# export PATH=$HOME/soft/python3.8/bin:$PATH
+# All other python versions installed from python.org universal2 installers.
+
+# As of Python-3.13.0, we configure to link universal2 static readline
+# (and ncurses) into libnrniv.dylib.
+# The packages were downloade and the universal libraries were built with
+# nrn/packaging/python/build_static_readline_osx.bash
+READLINE_LIST="/opt/nrnwheel/arm64/readline;/opt/nrnwheel/arm64/ncurses"
 
 CPU=`uname -m`
 
@@ -24,10 +34,15 @@ if test "$args" = "" ; then
   args="$default_pythons"
 fi
 
+MPI_LIST="/opt/homebrew/opt/openmpi/include;/opt/homebrew/opt/mpich/include"
 
 # sysconfig.get_platform() looks like, e.g. "macosx-12.2-arm64" or
 # "macosx-11-universal2". I.e. encodes MACOSX_DEPLOYMENT_TARGET and archs.
 # Demand all pythons we are building against have same platform.
+# Update: nrn software now requires at least 10.15. All the python's on this
+# machine are 10.9, except python 3.13 is 10.13. The substantive aspect of
+# the following fragment (exit 1 if not all the same platform), has been
+# commented out.
 mac_platform=""
 for i in $args ; do
   last_py=$i
@@ -38,7 +53,7 @@ for i in $args ; do
   fi
   if test "$mac_platform" != "$mplat" ; then
     echo "$i platform \"$mplat\" differs from previous python \"$mac_platform\"."
-    exit 1
+#    exit 1
   fi
 done
 
@@ -93,13 +108,15 @@ fi
 
 cmake .. -G Ninja -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DNRN_ENABLE_MPI_DYNAMIC=ON \
+  -DNRN_MPI_DYNAMIC="$MPI_LIST" \
   -DPYTHON_EXECUTABLE=`which python3` -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
   -DNRN_PYTHON_DYNAMIC="$pythons" \
   -DIV_ENABLE_X11_DYNAMIC=ON \
   -DNRN_ENABLE_CORENEURON=OFF \
-  -DNRN_RX3D_OPT_LEVEL=2 \
+  -DNRN_RX3D_OPT_LEVEL=$RX3D_OPT \
+  -DNRN_WHEEL_STATIC_READLINE=ON \
   $archs_cmake \
-  -DCMAKE_PREFIX_PATH=/usr/X11 \
+  -DCMAKE_PREFIX_PATH="/usr/X11;$READLINE_LIST" \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 
 ninja install
@@ -134,22 +151,29 @@ for i in $args ; do
   chk $i
 done
 
-#/Applications/Packages.app from
-# http://s.sudre.free.fr/Software/Packages/about.html
-# For mac to do a productsign, need my developerID_installer.cer
-# and Neurondev.p12 file. To add to the keychain, double click each
-# of those files. By default, I added my certificates to the login keychain.
-ninja macpkg # will sign the binaries, construct below
-            # mentioned PACKAGE_FILE_NAME, request notarization from
-            # Apple, and staple the package.
-
-# Copy the package to $HOME/$PACKAGE_FULL_NAME
-# You should then manually upload that to github.
 describe="`sh $NRN_SRC/nrnversion.sh describe`"
 macos=macos${MACOSX_DEPLOYMENT_TARGET}
 PACKAGE_FULL_NAME=nrn-${describe}-${mac_platform}-${PYVS}.pkg
 PACKAGE_FILE_NAME=$NRN_BLD/src/mac/build/NEURON.pkg
 
+#/Applications/Packages.app from
+# http://s.sudre.free.fr/Software/Packages/about.html
+# For mac to do a productsign, need my developerID_installer.cer
+# and Neurondev.p12 file. To add to the keychain, double click each
+# of those files. By default, I added my certificates to the login keychain.
+
+# Will sign the binaries, construct above
+# mentioned PACKAGE_FILE_NAME, request notarization from
+# Apple, and staple the package.
+if ! ninja macpkg ; then 
+  echo "ninja macpkg failed. (because of notification failure?)"
+  echo "Not creating $PACKAGE_FULL_NAME"
+  echo "  from $PACKAGE_FILE_NAME"
+  exit 1
+fi
+
+# Copy the package to $HOME/$PACKAGE_FULL_NAME
+# You should then manually upload that to github.
 cp $PACKAGE_FILE_NAME $HOME/$PACKAGE_FULL_NAME
 
 echo "

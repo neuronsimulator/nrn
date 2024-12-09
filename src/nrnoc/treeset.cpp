@@ -813,10 +813,9 @@ Node* nrn_parent_node(Node* nd) {
 void connection_coef(void) /* setup a and b */
 {
     int j;
-    double dx, diam, area, ra;
+    double area;
     hoc_Item* qsec;
     Node* nd;
-    Prop* p;
 #if RA_WARNING
     extern int nrn_ra_set;
 #endif
@@ -1130,7 +1129,7 @@ void nrn_pt3dinsert(Section* sec, int i0, double x, double y, double z, double d
 
 void pt3dinsert(void) {
     Section* sec;
-    int i, n, i0;
+    int n, i0;
     sec = chk_access();
     n = sec->npt3d;
     i0 = (int) chkarg(1, 0., (double) (n));
@@ -1181,7 +1180,7 @@ void nrn_pt3dremove(Section* sec, int i0) {
 }
 
 void pt3dremove(void) {
-    int i, i0, n;
+    int i0, n;
     Section* sec = chk_access();
     n = sec->npt3d;
     i0 = (int) chkarg(1, 0., (double) (n - 1));
@@ -1603,10 +1602,6 @@ static double diam_from_list(Section* sec, int inode, Prop* p, double rparent)
 
 void v_setup_vectors(void) {
     int inode, i;
-    int isec;
-    Section* sec;
-    Node* nd;
-    Prop* p;
     NrnThread* _nt;
 
     if (tree_changed) {
@@ -1692,7 +1687,6 @@ void v_setup_vectors(void) {
             ITERATE(q, list) {
                 Object* obj = OBJ(q);
                 auto* pnt = static_cast<Point_process*>(obj->u.this_pointer);
-                p = pnt->prop;
                 memb_list[i].nodelist[j] = nullptr;
                 /* for now, round robin all the artificial cells */
                 /* but put the non-threadsafe ones in thread 0 */
@@ -1799,7 +1793,6 @@ void nrn_matrix_node_free() {
 /* 0 means no model, 1 means ODE, 2 means DAE */
 int nrn_modeltype(void) {
     NrnThread* nt;
-    static cTemplate* lm = (cTemplate*) 0;
     int type;
     v_setup_vectors();
 
@@ -1862,8 +1855,7 @@ and therefore is passed to spSolve as actual_rhs intead of actual_rhs-1.
 */
 
 static void nrn_matrix_node_alloc(void) {
-    int i, b;
-    Node* nd;
+    int i;
     NrnThread* nt;
 
     nrn_method_consistent();

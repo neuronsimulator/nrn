@@ -164,7 +164,6 @@ int nrnpy_pyrun(const char* fname) {
  * @return 0 on success, nonzero on failure.
  */
 static int nrnmingw_pyrun_interactiveloop() {
-    int code{};
     std::string lines[3]{
         "import code as nrnmingw_code\n",
         "nrnmingw_interpreter = nrnmingw_code.InteractiveConsole(locals=globals())\n",
@@ -319,6 +318,13 @@ static int nrnpython_start(int b) {
         // del g
         // Also, NEURONMainMenu/File/Quit did not work. The solution to both
         // seems to be to just avoid gui threads if MINGW and launched nrniv
+
+        // Beginning with Python 3.13.0 it seems that the readline
+        // module has not been loaded yet. Since PyInit_readline sets
+        // PyOS_ReadlineFunctionPointer = call_readline; without checking,
+        // we need to import here.
+        PyRun_SimpleString("import readline as nrn_readline");
+
         PyOS_ReadlineFunctionPointer = nrnpython_getline;
 
         // Is there a -c "command" or file.py arg.

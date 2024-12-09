@@ -1397,7 +1397,7 @@ void hoc_pop_frame(void) {
 
 // call a function
 void hoc_call() {
-    int i, isec;
+    int isec;
     Symbol* sp = pc[0].sym; /* symbol table entry */
     /* for function */
     if (++fp >= framelast) {
@@ -1575,7 +1575,7 @@ void hoc_Numarg(void) {
 }
 
 void hoc_Argtype() {
-    int narg, iarg, type, itype = 0;
+    int iarg, itype = 0;
     Frame* f = fp - 1;
     if (f == frame) {
         hoc_execerror("argtype can only be called in a func or proc", 0);
@@ -1813,9 +1813,7 @@ Symbol* hoc_get_last_pointer_symbol(void) { /* hard to imagine a kludgier functi
 
 void hoc_autoobject(void) { /* AUTOOBJ symbol at pc+1. */
     /* pointer to object pointer left on stack */
-    int i;
     Symbol* obs;
-    Object** obp;
 #if PDEBUG
     printf("code for hoc_autoobject()\n");
 #endif
@@ -2068,7 +2066,7 @@ void hoc_le(void) {
 }
 
 void hoc_eq() {
-    auto const& entry1 = get_stack_entry_variant(0);
+    /* auto const& entry1 = */ get_stack_entry_variant(0);
     auto const& entry2 = get_stack_entry_variant(1);
     auto const type2 = get_legacy_int_type(entry2);
     double result{};
@@ -2097,7 +2095,7 @@ void hoc_eq() {
 
 void hoc_ne() {
     auto const& entry1 = get_stack_entry_variant(0);
-    auto const& entry2 = get_stack_entry_variant(1);
+    /* auto const& entry2 = */ get_stack_entry_variant(1);
     auto const type1 = get_legacy_int_type(entry1);
     double result{};
     switch (type1) {
@@ -2425,16 +2423,10 @@ list. */
 /* modified greatly by Hines. Very unsafe in general. */
 {
 #if 1
-    /*---- local variables -----*/
-    Symbol *doomed, *sp;
-    /*---- start function ------*/
-
     /* copy address of the symbol that will be deleted */
-    doomed = (pc++)->sym;
+    Symbol* doomed = (pc++)->sym;
 
-#endif
-/*	hoc_execerror("delete_symbol doesn't work right now.", (char *)0);*/
-#if 1
+    /*	hoc_execerror("delete_symbol doesn't work right now.", (char *)0);*/
     if (doomed->type == UNDEF)
         fprintf(stderr, "%s: no such variable\n", doomed->name);
     else if (doomed->defined_on_the_fly == 0)

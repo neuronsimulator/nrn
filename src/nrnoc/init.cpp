@@ -474,7 +474,6 @@ void nrn_register_mech_common(const char** m,
                               int vectorized) {
     // initialize at first entry, it will be incremented at exit of the function
     static int mechtype = 2; /* 0 unused, 1 for cable section */
-    int modltype;
     int modltypemax;
     Symbol* mech_symbol;
     const char** m2;
@@ -1022,8 +1021,8 @@ int point_reg_helper(Symbol* s2) {
 }
 
 extern void class2oc_base(const char*,
-                          void* (*cons)(Object*),
-                          void (*destruct)(void*),
+                          ctor_f* cons,
+                          dtor_f* destruct,
                           Member_func*,
                           Member_ret_obj_func*,
                           Member_ret_str_func*);

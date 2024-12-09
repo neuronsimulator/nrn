@@ -21,6 +21,7 @@ set(NRNPYTHON_FILES_LIST
     nrn_metaclass.cpp
     nrnpy_nrn.cpp
     nrnpy_p2h.cpp
+    nrnpy_utils.cpp
     grids.cpp
     rxd.cpp
     rxd_extracellular.cpp
