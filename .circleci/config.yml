@@ -7,7 +7,7 @@ jobs:
   manylinux2014-aarch64:
 
     parameters:
-      NRN_PYTHON_VERSION:
+      NRN_PYTHON_VERSION_MINOR:
         type: string
       NRN_NIGHTLY_UPLOAD:
         type: string
@@ -32,7 +32,7 @@ jobs:
                 -e SETUPTOOLS_SCM_PRETEND_VERSION \
                 -e NRN_BUILD_FOR_UPLOAD=1 \
                 'neuronsimulator/neuron_wheel:test-aarch64' \
-                packaging/python/build_wheels.bash linux << parameters.NRN_PYTHON_VERSION >> coreneuron
+                packaging/python/build_wheels.bash linux 3<< parameters.NRN_PYTHON_VERSION_MINOR >> coreneuron
 
       - store_artifacts:
           path: ./wheelhouse
@@ -41,40 +41,19 @@ jobs:
       - run:
           name: Test manylinux AArch64 wheel
           command: |
-
-            # install mpi dependencies
             sudo apt update
+            echo "deb http://ppa.launchpad.net/deadsnakes/ppa/ubuntu jammy main" | sudo tee /etc/apt/sources.list.d/deadsnakes-ppa.list && sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F23C5A6CF475977595C89F51BA6932366A755776 && sudo apt update
+            sudo apt update
+            # install mpi dependencies
             sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
+            # install Python from deadsnakes
+            sudo apt install -y python3.<< parameters.NRN_PYTHON_VERSION_MINOR >>-venv
 
-            # use the desired python version from the docker image directly
-            echo "Using Python << parameters.NRN_PYTHON_VERSION >>"
+            export PYTHON_EXE=$(which python3.<< parameters.NRN_PYTHON_VERSION_MINOR >>)
 
-            # set python version using the correct docker image
-            if [ "<< parameters.NRN_PYTHON_VERSION >>" == "313" ]; then
-              docker run --rm -v $PWD:/mnt cimg/python:3.13.1 bash -c "
-                python --version;
-                # test wheel
-                cd /mnt
-                packaging/python/test_wheels.sh $(which python) $(ls -t wheelhouse/*.whl)
-              "
-            else
-              # for older versions, fallback to pyenv approach
-              pyenv_py_ver=""
-              case << parameters.NRN_PYTHON_VERSION >> in
-                39) pyenv_py_ver="3.9" ;;
-                310) pyenv_py_ver="3.10" ;;
-                311) pyenv_py_ver="3.11" ;;
-                312) pyenv_py_ver="3.12" ;;
-                *) echo "Error: pyenv python version not specified or not supported." && exit 1;;
-              esac
+            # test wheel
+            packaging/python/test_wheels.sh $PYTHON_EXE $(ls -t wheelhouse/*.whl)
 
-              env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $pyenv_py_ver --force
-              pyenv global $pyenv_py_ver
-              export PYTHON_EXE=$(which python)
-
-              # test wheel
-              packaging/python/test_wheels.sh $PYTHON_EXE $(ls -t wheelhouse/*.whl)
-            fi
       - run:
           name: Upload nightly wheel to pypi.org
           command: |
@@ -98,7 +77,7 @@ workflows:
                 - /circleci\/.*/
           matrix:
             parameters:
-              NRN_PYTHON_VERSION: ["313"]
+              NRN_PYTHON_VERSION_MINOR: ["13"]
               NRN_NIGHTLY_UPLOAD: ["false"]
 
   nightly:
@@ -113,5 +92,5 @@ workflows:
       - manylinux2014-aarch64:
           matrix:
             parameters:
-              NRN_PYTHON_VERSION: ["39", "310", "311", "312", "313"]
+              NRN_PYTHON_VERSION_MINOR: ["9", "10", "11", "12", "13"]
               NRN_NIGHTLY_UPLOAD: ["true"]
