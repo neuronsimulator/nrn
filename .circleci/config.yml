@@ -51,12 +51,12 @@ jobs:
 
             # set python version using the correct docker image
             if [ "<< parameters.NRN_PYTHON_VERSION >>" == "313" ]; then
-              docker run --rm -v $PWD:/mnt cimg/python:3.13.1 bash -c "
+              docker run --rm -v $PWD:/mnt cimg/python:3.13.1 bash -c '
                 python --version;
                 # test wheel
                 cd /mnt
                 packaging/python/test_wheels.sh $(which python) $(ls -t wheelhouse/*.whl)
-              "
+              '
             else
               # for older versions, fallback to pyenv approach
               pyenv_py_ver=""
