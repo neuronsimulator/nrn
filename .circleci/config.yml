@@ -46,35 +46,26 @@ jobs:
             sudo apt update
             sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
 
-            # use the desired python version from the docker image directly
-            echo "Using Python << parameters.NRN_PYTHON_VERSION >>"
+            # choose available python versions from pyenv
+            pyenv update || cd $(pyenv root) && git pull && cd -
 
-            # set python version using the correct docker image
-            if [ "<< parameters.NRN_PYTHON_VERSION >>" == "313" ]; then
-              docker run --rm -v $PWD:/mnt cimg/python:3.13.1 bash -c '
-                python --version;
-                # test wheel
-                cd /mnt
-                packaging/python/test_wheels.sh $(which python) $(ls -t wheelhouse/*.whl)
-              '
-            else
-              # for older versions, fallback to pyenv approach
-              pyenv_py_ver=""
-              case << parameters.NRN_PYTHON_VERSION >> in
-                39) pyenv_py_ver="3.9" ;;
-                310) pyenv_py_ver="3.10" ;;
-                311) pyenv_py_ver="3.11" ;;
-                312) pyenv_py_ver="3.12" ;;
-                *) echo "Error: pyenv python version not specified or not supported." && exit 1;;
-              esac
+            pyenv_py_ver=""
+            case << parameters.NRN_PYTHON_VERSION >> in
+              39) pyenv_py_ver="3.9" ;;
+              310) pyenv_py_ver="3.10" ;;
+              311) pyenv_py_ver="3.11" ;;
+              312) pyenv_py_ver="3.12" ;;
+              313) pyenv_py_ver="3.13" ;;
+              *) echo "Error: pyenv python version not specified or not supported." && exit 1;;
+            esac
 
-              env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $pyenv_py_ver --force
-              pyenv global $pyenv_py_ver
-              export PYTHON_EXE=$(which python)
+            env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $pyenv_py_ver --force
+            pyenv global $pyenv_py_ver
+            export PYTHON_EXE=$(which python)
 
-              # test wheel
-              packaging/python/test_wheels.sh $PYTHON_EXE $(ls -t wheelhouse/*.whl)
-            fi
+            # test wheel
+            packaging/python/test_wheels.sh $PYTHON_EXE $(ls -t wheelhouse/*.whl)
+
       - run:
           name: Upload nightly wheel to pypi.org
           command: |
