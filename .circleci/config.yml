@@ -22,8 +22,7 @@ jobs:
           name: Test manylinux AArch64 wheel
           command: |
             sudo apt update
-            sudo apt install -t software-properties-common
-            sudo add-apt-repository -y ppa:deadsnakes/ppa
+            echo "deb http://ppa.launchpad.net/deadsnakes/ppa/ubuntu jammy main" | sudo tee /etc/apt/sources.list.d/deadsnakes-ppa.list && sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F23C5A6CF475977595C89F51BA6932366A755776 && sudo apt update
             sudo apt update
             # install mpi dependencies
             sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
