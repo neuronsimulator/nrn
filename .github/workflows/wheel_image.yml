@@ -1,6 +1,7 @@
 name: Build custom Docker image for manylinux wheels
 
 on:
+  push:
   workflow_dispatch:
     inputs:
       base_image:
