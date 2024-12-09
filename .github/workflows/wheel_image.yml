@@ -68,9 +68,9 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          file: packaging/python/Dockerfile
+          context: "{{defaultContext}}:packaging/python"
           platforms: ${{ matrix.platform }}
           push: ${{ github.event.inputs.upload }}
           tags: ${{ github.event.inputs.container_registry }}/neuronsimulator/neuron_wheel:${{ github.event.inputs.tag }}-${{ matrix.arch }}
           build-args: |
-            MANYLINUX_IMAGE: ${{ github.event.inputs.base_image }}_${{ matrix.arch }}
+            MANYLINUX_IMAGE=${{ github.event.inputs.base_image }}_${{ matrix.arch }}
