@@ -1,0 +1,51 @@
+#ast {
+    position: fixed;
+    left: 0px;
+    right: 0px;
+    top: 0px;
+    bottom: 0px;
+}
+
+.node {
+    cursor: pointer;
+}
+
+.node circle {
+    fill: #ffc8c8 !important;
+    stroke: #c57bc4;
+    stroke-width: 2.5px;
+}
+
+.node text {
+    font-size: 12px !important;
+    font-family: sans-serif;
+    fill: #1f1f92;
+}
+
+.link {
+    fill: none;
+    stroke: #DCA5DB;
+    stroke-width: 3px;
+}
+
+.templink {
+    fill: none;
+    stroke: red;
+    stroke-width: 3px;
+}
+
+.dots {
+    cursor: pointer;
+}
+
+.tooltip {
+    background: #23298aeb;
+    white-space: pre;
+    padding: 10px;
+    border-radius: 3px;
+    color: white;
+    font-size: 13px;
+    font-family: "Monaco";
+    position: "absolute";
+    z-index: 10;
+}
