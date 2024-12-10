@@ -5240,7 +5240,7 @@ void ConditionEvent::abandon_statistics(Cvode* cv) {
 }
 
 WatchCondition::WatchCondition(Point_process* pnt, double (*c)(Point_process*))
-    : HTList(nullptr) {
+    : HTList() {
     pnt_ = pnt;
     c_ = c;
     watch_index_ = 0;  // For transfer, will be a small positive integer.
@@ -5280,7 +5280,7 @@ void WatchCondition::activate(double flag) {
     id = (cv->nctd_ > 1) ? thread()->id : 0;
     HTList*& wl = cv->ctd_[id].watch_list_;
     if (!wl) {
-        wl = new HTList(nullptr);
+        wl = new HTList();
         net_cvode_instance->wl_list_[id].push_back(wl);
     }
     Remove();
