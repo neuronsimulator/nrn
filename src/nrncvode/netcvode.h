@@ -29,7 +29,6 @@ class HTList;
 // Thread segregated HTList* of all the CVode.CvodeThreadData.HTList*
 // Interior vector needed because of the chance of local variable time step.
 //   Practically it will always have length <= 1.
-using HTListList = std::vector<std::vector<HTList*>>;
 class NetCvode;
 class MaxStateItem;
 typedef std::unordered_map<void*, MaxStateItem*> MaxStateTable;
@@ -244,7 +243,7 @@ class NetCvode {
     void set_CVRhsFn();
     bool use_partrans();
     std::vector<PreSyn*>* psl_;
-    HTListList wl_list_;  // nrn_nthread of these for faster deliver_net_events when many cvode
+    std::vector<std::vector<std::list<WatchCondition*>*>> wl_list_;  // nrn_nthread of these for faster deliver_net_events when many cvode
     int pcnt_;
     NetCvodeThreadData* p;
     int enqueueing_;
