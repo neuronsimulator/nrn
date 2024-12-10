@@ -818,5 +818,7 @@ add_subdirectory(external)
 # ============================================
 # Test NMODL
 # ============================================
-add_subdirectory(nmodl/transpiler/unit)
-add_subdirectory(nmodl/transpiler/integration)
+if((NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON) AND NMODL_ENABLE_TESTS)
+  add_subdirectory(nmodl/transpiler/unit)
+  add_subdirectory(nmodl/transpiler/integration)
+endif()
