@@ -48,7 +48,7 @@ jobs:
             sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
             version=3.<< parameters.NRN_PYTHON_VERSION_MINOR >>
             # install Python from deadsnakes
-            sudo apt install -y python${version}-venv libpython${version}-dev
+            sudo apt install -y python${version}-venv libpython${version}-dev g++ make
 
             export PYTHON_EXE=$(which python3.<< parameters.NRN_PYTHON_VERSION_MINOR >>)
 
