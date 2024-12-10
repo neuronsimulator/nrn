@@ -243,7 +243,9 @@ class NetCvode {
     void set_CVRhsFn();
     bool use_partrans();
     std::vector<PreSyn*>* psl_;
-    std::vector<std::vector<std::list<WatchCondition*>*>> wl_list_;  // nrn_nthread of these for faster deliver_net_events when many cvode
+    std::vector<std::vector<std::list<WatchCondition*>*>> wl_list_;  // nrn_nthread of these for
+                                                                     // faster deliver_net_events
+                                                                     // when many cvode
     int pcnt_;
     NetCvodeThreadData* p;
     int enqueueing_;

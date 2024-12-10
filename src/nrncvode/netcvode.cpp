@@ -5238,8 +5238,9 @@ void ConditionEvent::abandon_statistics(Cvode* cv) {
 }
 
 WatchCondition::WatchCondition(Point_process* pnt, double (*c)(Point_process*))
-    : pnt_(pnt), c_(c), watch_index_(0)
-{}
+    : pnt_(pnt)
+    , c_(c)
+    , watch_index_(0) {}
 
 WatchCondition::~WatchCondition() {
     Remove();
@@ -5451,7 +5452,7 @@ void Cvode::evaluate_conditions(NrnThread* nt) {
         }
     }
     if (z.watch_list_) {
-        for (WatchCondition* item: *z.watch_list_){
+        for (WatchCondition* item: *z.watch_list_) {
             item->condition(this);
         }
     }
@@ -5479,7 +5480,7 @@ void Cvode::check_deliver(NrnThread* nt) {
         }
     }
     if (z.watch_list_) {
-        for (auto& item: *z.watch_list_){
+        for (auto& item: *z.watch_list_) {
             item->check(nt, nt->_t);
         }
     }
