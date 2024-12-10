@@ -16,9 +16,6 @@
 [submodule "external/Random123"]
 	path = external/Random123
 	url = https://github.com/BlueBrain/Random123.git
-[submodule "external/nmodl"]
-	path = external/nmodl
-	url = https://github.com/BlueBrain/nmodl
 [submodule "external/CLI11"]
 	path = external/CLI11
 	url = https://github.com/CLIUtils/CLI11.git
