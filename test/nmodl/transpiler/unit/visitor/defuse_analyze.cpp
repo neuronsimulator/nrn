@@ -11,7 +11,7 @@
 #include "ast/binary_expression.hpp"
 #include "ast/program.hpp"
 #include "parser/nmodl_driver.hpp"
-#include "test/unit/utils/test_utils.hpp"
+#include "utils/test_utils.hpp"
 #include "visitors/checkparent_visitor.hpp"
 #include "visitors/defuse_analyze_visitor.hpp"
 #include "visitors/inline_visitor.hpp"

@@ -1,27 +1,4 @@
-# =============================================================================
-# Build options for NMODL
-# =============================================================================
-option(NMODL_ENABLE_PYTHON_BINDINGS "Enable pybind11 based python bindings" ON)
-option(NMODL_ENABLE_TESTS "Enable build of tests" ON)
-option(NMODL_ENABLE_USECASES
-       "If building tests, additionally enable build of usecase tests. Requires neuron." OFF)
-option(NMODL_ENABLE_BACKWARD "Use backward, enables blame." OFF)
-set(NMODL_EXTRA_CXX_FLAGS
-    ""
-    CACHE STRING "Add extra compile flags for NMODL sources")
-separate_arguments(NMODL_EXTRA_CXX_FLAGS)
-option(LINK_AGAINST_PYTHON "Should the Python library be linked or not" ON)
-option(NMODL_BUILD_WHEEL "Flag to signal we are building a wheel" OFF)
-if(NMODL_BUILD_WHEEL)
-  set(LINK_AGAINST_PYTHON OFF)
-  set(NMODL_ENABLE_TESTS OFF)
-endif()
-
-include(${PROJECT_SOURCE_DIR}/cmake/nmodl/PythonLinkHelper.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/nmodl/FlexHelper.cmake)
-set(NMODL_PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(NMODL_PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
-
 include_directories(${NMODL_PROJECT_SOURCE_DIR} ${NMODL_PROJECT_BINARY_DIR})
 
 list(APPEND NMODL_EXTRA_CXX_FLAGS ${NMODL_SANITIZER_COMPILER_FLAGS})

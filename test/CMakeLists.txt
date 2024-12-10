@@ -814,3 +814,9 @@ endif()
 
 # Add tests that are configured using external repositories
 add_subdirectory(external)
+
+# ============================================
+# Test NMODL
+# ============================================
+add_subdirectory(nmodl/transpiler/unit)
+add_subdirectory(nmodl/transpiler/integration)
