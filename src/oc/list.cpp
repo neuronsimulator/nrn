@@ -194,14 +194,11 @@ Item* lappendobj(List* list, Object* obj) {
 Item* lappendvoid(List* list, void* obj) {
     return insertvoid(list, obj);
 }
-
-Item* hoc_l_delete(Item* item) {
+void hoc_l_delete(Item* item) {
     assert(item->itemtype); /* can't delete list */
-    Item* next = item->next;
     item->next->prev = item->prev;
     item->prev->next = item->next;
     Free(item);
-    return next;
 }
 
 char* stralloc(const char* buf, char* rel) {
