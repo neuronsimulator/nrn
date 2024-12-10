@@ -29,6 +29,10 @@ py_ver=""
 # for NEURON and its submodules
 python_requirements_path="$(mktemp -d)/requirements.txt"
 
+nmodl_add_requirements() {
+    sed -e '/^# runtime dependencies/,$ d' nmodl_requirements.txt >> "${python_requirements_path}"
+}
+
 
 setup_venv() {
     local py_bin="$1"
@@ -67,6 +71,7 @@ build_wheel_linux() {
 
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
+        nmodl_add_requirements
         CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF,CORENRN_ENABLE_OPENMP=ON"
     fi
 
@@ -121,6 +126,7 @@ build_wheel_osx() {
 
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
+        nmodl_add_requirements
         CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
     fi
 
