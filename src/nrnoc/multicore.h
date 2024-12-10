@@ -129,41 +129,40 @@ void nrn_thread_memblist_setup();
 std::size_t nof_worker_threads();
 
 
-class ThreadRange {
-    NrnThread* base_;
-    int count_;
-
-  public:
-    explicit ThreadRange(NrnThread* base, int count)
-        : base_(base)
-        , count_(count) {}
-
-    struct Iterator {
+// helper function for iterating over ``NrnThread``s
+inline auto for_threads(NrnThread* threads, int num_threads) {
+    struct iterator {
         NrnThread* current;
 
         NrnThread* operator*() const {
             return current;
         }
-        Iterator& operator++() {
+        iterator& operator++() {
             ++current;
             return *this;
         }
-        bool operator!=(const Iterator& other) const {
+        bool operator!=(const iterator& other) const {
             return current != other.current;
         }
     };
 
-    Iterator begin() const {
-        return Iterator{base_};
-    }
-    Iterator end() const {
-        return Iterator{base_ + count_};
-    }
-};
+    struct iterable_wrapper {
+        NrnThread* base_;
+        int count_;
 
-// Helper function to create a ThreadRange
-inline ThreadRange for_threads(NrnThread* threads, int num_threads) {
-    return ThreadRange(threads, num_threads);
+        iterable_wrapper(NrnThread* base, int count)
+            : base_(base)
+            , count_(count) {}
+
+        iterator begin() const {
+            return iterator{base_};
+        }
+        iterator end() const {
+            return iterator{base_ + count_};
+        }
+    };
+
+    return iterable_wrapper(threads, num_threads);
 }
 
 
