@@ -38,10 +38,9 @@ for fast insertion, deletion, iteration
 
 /*****************************************************************************/
 
-HTList::HTList(void* p) {
+HTList::HTList() {
     _next = this;
     _prev = this;
-    _object = p;
 }
 
 HTList::~HTList() {
@@ -59,13 +58,6 @@ void HTList::Append(HTList* e) {
     _prev = e;
 }
 
-void HTList::Prepend(HTList* e) {
-    _next->_prev = e;
-    e->_prev = this;
-    e->_next = _next;
-    _next = e;
-}
-
 void HTList::Remove(HTList* e) {
     e->_prev->_next = e->_next;
     e->_next->_prev = e->_prev;
@@ -81,41 +73,9 @@ void HTList::Remove() {
     }
     _prev = _next = NULL;
 }
+
 void HTList::RemoveAll() {
     while (!IsEmpty()) {
         Remove(First());
     }
-}
-void HTList::Delete(void* p) {
-    HTList* e;
-
-    e = Find(p);
-    if (e != NULL) {
-        Remove(e);
-        delete e;
-    }
-}
-
-HTList* HTList::Find(void* p) {
-    HTList* e;
-
-    for (e = _next; e != this; e = e->_next) {
-        if (e->_object == p) {
-            return e;
-        }
-    }
-    return NULL;
-}
-
-HTList* HTList::operator[](int count) {
-    HTList* pos = First();
-    int i;
-
-    for (i = 1; i < count && pos != End(); ++i) {
-        pos = pos->Next();
-    }
-    if (i == count) {
-        return pos;
-    }
-    return NULL;
 }

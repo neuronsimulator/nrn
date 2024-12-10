@@ -33,29 +33,20 @@ for fast insertion, deletion, iteration
 
 class HTList {
   public:
-    HTList(void* = NULL);
+    HTList();
     virtual ~HTList();
 
     bool IsEmpty();
     void Append(HTList*);
-    void Prepend(HTList*);
-    void Remove(HTList*);
     void Remove();
     void RemoveAll();
-    void Delete(void*);
-    HTList* Find(void*);
     HTList* First();
-    HTList* Last();
     HTList* End();
     HTList* Next();
-    HTList* Prev();
-
-    void* vptr();
-    void* operator()();
-    HTList* operator[](int count);
 
   protected:
-    void* _object;
+    void Remove(HTList*);
+
     HTList* _next;
     HTList* _prev;
 };
@@ -66,21 +57,9 @@ inline bool HTList::IsEmpty() {
 inline HTList* HTList::First() {
     return _next;
 }
-inline HTList* HTList::Last() {
-    return _prev;
-}
 inline HTList* HTList::End() {
     return this;
 }
 inline HTList* HTList::Next() {
     return _next;
-}
-inline HTList* HTList::Prev() {
-    return _prev;
-}
-inline void* HTList::operator()() {
-    return _object;
-}
-inline void* HTList::vptr() {
-    return _object;
 }
