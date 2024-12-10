@@ -195,7 +195,7 @@ set_tests_properties(Ode PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONP
 
 if(NMODL_ENABLE_PYTHON_BINDINGS)
   add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest
-                                ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
+                               ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
   set_tests_properties(Pybind PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
   cpp_cc_configure_sanitizers(TEST Pybind PRELOAD)
 endif()
