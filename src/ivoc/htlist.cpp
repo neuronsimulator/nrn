@@ -46,7 +46,7 @@ HTList::HTList() {
 HTList::~HTList() {
     HTList* next = _next;
     if (next != this && next != NULL) {
-        Remove(this);
+        this->Remove();
         delete next;
     }
 }
@@ -56,12 +56,6 @@ void HTList::Append(HTList* e) {
     e->_prev = _prev;
     e->_next = this;
     _prev = e;
-}
-
-void HTList::Remove(HTList* e) {
-    e->_prev->_next = e->_next;
-    e->_next->_prev = e->_prev;
-    e->_prev = e->_next = NULL;
 }
 
 void HTList::Remove() {
@@ -76,6 +70,6 @@ void HTList::Remove() {
 
 void HTList::RemoveAll() {
     while (!IsEmpty()) {
-        Remove(First());
+        First()->Remove();
     }
 }

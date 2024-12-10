@@ -45,8 +45,6 @@ class HTList {
     HTList* Next();
 
   protected:
-    void Remove(HTList*);
-
     HTList* _next;
     HTList* _prev;
 };
