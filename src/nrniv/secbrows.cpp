@@ -127,7 +127,7 @@ OcSectionBrowser::OcSectionBrowser(Object* ob)
         }
         psec_ = new Section*[scnt_];
         scnt_ = 0;
-        for (const Section* sec: range_sec(section_list)) {
+        for (Section* sec: range_sec(section_list)) {
             psec_[scnt_++] = sec;
         }
     }
