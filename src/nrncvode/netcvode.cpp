@@ -5239,8 +5239,7 @@ void ConditionEvent::abandon_statistics(Cvode* cv) {
 
 WatchCondition::WatchCondition(Point_process* pnt, double (*c)(Point_process*))
     : pnt_(pnt)
-    , c_(c)
-    , watch_index_(0) {}
+    , c_(c) {}
 
 WatchCondition::~WatchCondition() {
     Remove();
