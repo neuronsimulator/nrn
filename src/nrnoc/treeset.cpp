@@ -814,7 +814,6 @@ void connection_coef(void) /* setup a and b */
 {
     int j;
     double area;
-    hoc_Item* qsec;
     Node* nd;
 #if RA_WARNING
     extern int nrn_ra_set;
@@ -836,9 +835,7 @@ void connection_coef(void) /* setup a and b */
 #endif
     ++recalc_diam_count_;
     nrn_area_ri_nocount_ = 1;
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         nrn_area_ri(sec);
     }
     nrn_area_ri_nocount_ = 0;
@@ -858,9 +855,7 @@ void connection_coef(void) /* setup a and b */
         std::fill_n(nt.node_a_storage(), nt.end, 0.0);
         std::fill_n(nt.node_b_storage(), nt.end, 0.0);
     }
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         // Unnecessary because they are unused, but help when looking at fmatrix.
         if (!sec->parentsec) {
             if (auto* const ptr = nrn_classicalNodeA(sec->parentnode)) {
@@ -889,9 +884,7 @@ void connection_coef(void) /* setup a and b */
         }
     }
     /* now the effect of parent on node equation. */
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (const Section* sec: range_sec(section_list)) {
         for (j = 0; j < sec->nnode; j++) {
             nd = sec->pnode[j];
             *nrn_classicalNodeB(nd) = -1.e2 * NODERINV(nd) / NODEAREA(nd);
