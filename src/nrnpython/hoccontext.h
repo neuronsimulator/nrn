@@ -26,19 +26,20 @@ static void hc_restore_(HocContext* hc) {
     hoc_symlist = hc->sl;
 }
 
-class HocTopContext {
+// RAII guard for the top HOC context
+class HocTopContextManager {
   private:
     HocContext hcref;
     HocContext* hc_ = nullptr;
 
   public:
-    HocTopContext() {
+    HocTopContextManager() {
         // ``hoc_thisobject`` is global
         if (hoc_thisobject) {
             hc_ = hc_save_and_set_to_top_(&hcref);
         }
     }
-    ~HocTopContext() {
+    ~HocTopContextManager() {
         if (hc_) {
             hc_restore_(hc_);
         }
