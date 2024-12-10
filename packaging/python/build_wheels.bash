@@ -29,11 +29,8 @@ py_ver=""
 # for NEURON and its submodules
 python_requirements_path="$(mktemp -d)/requirements.txt"
 
-clone_nmodl_and_add_requirements() {
-    git config --global --add safe.directory /root/nrn
-    git submodule update --init --recursive --force --depth 1 -- external/nmodl
-    # We only want the _build_ dependencies
-    sed -e '/^# runtime dependencies/,$ d' external/nmodl/requirements.txt >> "${python_requirements_path}"
+nmodl_add_requirements() {
+    sed -e '/^# runtime dependencies/,$ d' nmodl_requirements.txt >> "${python_requirements_path}"
 }
 
 
@@ -74,7 +71,7 @@ build_wheel_linux() {
 
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
-        clone_nmodl_and_add_requirements
+        nmodl_add_requirements
         CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF,CORENRN_ENABLE_OPENMP=ON"
     fi
 
@@ -129,7 +126,7 @@ build_wheel_osx() {
 
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
-        clone_nmodl_and_add_requirements
+        nmodl_add_requirements
         CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
     fi
 
