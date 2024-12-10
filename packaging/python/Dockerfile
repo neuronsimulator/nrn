@@ -93,4 +93,7 @@ COPY Dockerfile .
 # build wheels from there
 WORKDIR /root
 
+# remove Python 3.13t since we do not support the free-threaded build yet
+RUN rm -fr /opt/python/cp313-cp313t
+
 ENV NMODL_PYLIB=/nrnwheel/python/lib/libpython3.10.so.1.0
