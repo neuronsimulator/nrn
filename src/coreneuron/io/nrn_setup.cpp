@@ -220,6 +220,12 @@ std::vector<int> nrn_read_filesdat(const char* filesdat) {
         int iFile;
         nrn_assert(fscanf(fp, "%d\n", &iFile) == 1);
         if ((iNum % nrnmpi_numprocs) == nrnmpi_myid) {
+            // A "-1" entry means that this rank should not be assigned further gid groups.
+            // It is a way to create files.dat files which deterministically assign gid groups to
+            // ranks, particularly useful for very large simulations which required load balancing.
+            if (iFile == -1) {
+                break;
+            }
             rank_cell_groups.push_back(iFile);
         }
     }
