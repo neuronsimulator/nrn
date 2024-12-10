@@ -116,7 +116,7 @@ extern hoc_Item* hoc_l_lappendobj(hoc_List*, struct Object*);
 extern void hoc_l_freelist(hoc_List**);
 extern hoc_Item* hoc_l_next(hoc_Item*);
 extern hoc_Item* hoc_l_prev(hoc_Item*);
-extern hoc_Item* hoc_l_delete(hoc_Item*);
+extern void hoc_l_delete(hoc_Item*);
 extern void hoc_l_move(hoc_Item*, hoc_Item*, hoc_Item*);
 extern void hoc_l_movelist(hoc_Item*, hoc_Item*, hoc_List*);
 extern void hoc_l_replacstr(hoc_Item*, const char*);
