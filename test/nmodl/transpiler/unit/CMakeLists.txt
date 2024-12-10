@@ -1,13 +1,13 @@
 # =============================================================================
 # Add extra compile flags to NMODL test sources
 # =============================================================================
-# add_compile_options(${NMODL_EXTRA_CXX_FLAGS})
-# add_link_options(${NMODL_EXTRA_CXX_FLAGS})
+# add_compile_options(${NMODL_EXTRA_CXX_FLAGS}) add_link_options(${NMODL_EXTRA_CXX_FLAGS})
 # add_compile_options(${NMODL_TESTS_COMPILER_WARNING_SUPPRESSIONS})
 
 add_library(nmodl_test_flags INTERFACE)
 
-target_include_directories(nmodl_test_flags INTERFACE ${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
+target_include_directories(nmodl_test_flags INTERFACE ${PYBIND11_INCLUDE_DIR}
+                                                      ${PYTHON_INCLUDE_DIRS})
 target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_SOURCE_DIR}/solver)
 target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_SOURCE_DIR}/utils)
 target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_SOURCE_DIR})
@@ -177,7 +177,8 @@ foreach(
                        "${_environment_vars_list}")
 endforeach()
 
-# Generate include files used in test input, see test/nmodl/transpiler/unit/utils/nmodl_constructs.cpp
+# Generate include files used in test input, see
+# test/nmodl/transpiler/unit/utils/nmodl_constructs.cpp
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Unit.inc" "UNITSON \n UNITSOFF \n UNITSON \n UNITSOFF")
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/included.file" "TITLE")
 
@@ -194,8 +195,7 @@ add_test(NAME Ode COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_
 set_tests_properties(Ode PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
 
 if(NMODL_ENABLE_PYTHON_BINDINGS)
-  add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest
-                               ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
+  add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
   set_tests_properties(Pybind PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
   cpp_cc_configure_sanitizers(TEST Pybind PRELOAD)
 endif()

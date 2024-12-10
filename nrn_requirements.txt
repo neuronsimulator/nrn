@@ -8,3 +8,4 @@ mpi4py
 find_libpython
 -r packaging/python/build_requirements.txt
 -r packaging/python/test_requirements.txt
+-r nmodl_requirements.txt
