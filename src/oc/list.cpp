@@ -194,6 +194,7 @@ Item* lappendobj(List* list, Object* obj) {
 Item* lappendvoid(List* list, void* obj) {
     return insertvoid(list, obj);
 }
+
 void hoc_l_delete(Item* item) {
     assert(item->itemtype); /* can't delete list */
     item->next->prev = item->prev;
