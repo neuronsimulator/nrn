@@ -5238,14 +5238,10 @@ void ConditionEvent::abandon_statistics(Cvode* cv) {
 }
 
 WatchCondition::WatchCondition(Point_process* pnt, double (*c)(Point_process*))
-    : HTList(nullptr) {
-    pnt_ = pnt;
-    c_ = c;
-    watch_index_ = 0;  // For transfer, will be a small positive integer.
-}
+    : pnt_(pnt), c_(c), watch_index_(0)
+{}
 
 WatchCondition::~WatchCondition() {
-    // printf("~WatchCondition\n");
     Remove();
 }
 
@@ -5455,7 +5451,7 @@ void Cvode::evaluate_conditions(NrnThread* nt) {
         }
     }
     if (z.watch_list_) {
-        for (auto& item: *z.watch_list_){
+        for (WatchCondition* item: *z.watch_list_){
             item->condition(this);
         }
     }

@@ -2,7 +2,6 @@
 
 #undef check
 
-#include "htlist.h"
 #include "neuron/container/data_handle.hpp"
 #include "nrnmpi.h"
 #include "nrnneosm.h"
@@ -212,7 +211,7 @@ class ConditionEvent: public DiscreteEvent {
     static unsigned long deliver_qthresh_;
 };
 
-class WatchCondition: public ConditionEvent, public HTList {
+class WatchCondition: public ConditionEvent {
   public:
     WatchCondition(Point_process*, double (*)(Point_process*));
     virtual ~WatchCondition();
@@ -242,6 +241,19 @@ class WatchCondition: public ConditionEvent, public HTList {
 
     static unsigned long watch_send_;
     static unsigned long watch_deliver_;
+
+    void Remove() {
+        if (next) {
+            next->prev = prev;
+        }
+        if (prev) {
+            prev->next = next;
+        }
+        prev = nullptr;
+        next = nullptr;
+    }
+    WatchCondition* next = nullptr;
+    WatchCondition* prev = nullptr;
 };
 
 class STECondition: public WatchCondition {

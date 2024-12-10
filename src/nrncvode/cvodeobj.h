@@ -18,7 +18,6 @@ struct BAMech;
 struct NrnThread;
 class PlayRecord;
 class STEList;
-class HTList;
 namespace neuron {
 struct model_sorted_token;
 }
