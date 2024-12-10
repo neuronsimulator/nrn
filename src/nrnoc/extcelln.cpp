@@ -593,7 +593,7 @@ static void printnode(const char* s) {
 	Extnode* nde;	
 	double *pd;
 	NrnThread* _nt;
-	FOR_THREADS(_nt) for (in=0; in < _nt->end; ++in) {
+	for (NrnThread* _nt : for_threads(nrn_threads, nrn_nthread)) for (in=0; in < _nt->end; ++in) {
 		nd = _nt->_v_node[in];
 		if (nd->extnode) {
 			sec = nd->sec;

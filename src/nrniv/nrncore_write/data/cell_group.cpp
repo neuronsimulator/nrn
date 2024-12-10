@@ -554,7 +554,7 @@ size_t CellGroup::get_mla_rankbytes(CellGroup* cellgroups_) {
     size_t nbytes;
     NrnThread* nt;
     NrnThreadMembList* tml;
-    FOR_THREADS(nt) {
+    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         size_t threadbytes = 0;
         size_t npnt = 0;
         size_t nart = 0;
