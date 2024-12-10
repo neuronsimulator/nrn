@@ -96,10 +96,10 @@ set(CODING_CONV_PREFIX NMODL)
 add_subdirectory(cmake/hpc-coding-conventions/cpp)
 
 # =============================================================================
-# Enable sanitizer support if the NMODL_SANITIZERS variable is set
+# Enable sanitizer support if the NRN_SANITIZERS variable is set
 # =============================================================================
 include(cmake/hpc-coding-conventions/cpp/cmake/sanitizers.cmake)
-list(APPEND NMODL_EXTRA_CXX_FLAGS ${NMODL_SANITIZER_COMPILER_FLAGS})
+list(APPEND NMODL_EXTRA_CXX_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 
 # =============================================================================
 # Initialize external libraries as submodules
