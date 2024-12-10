@@ -225,7 +225,7 @@ void extnode_free_elements(Extnode* nde) {
 }
 
 static void check_if_extracellular_in_use() {
-    for (Section* sec: range_sec(section_list)) {
+    for (const Section* sec: range_sec(section_list)) {
         if (sec->pnode[0]->extnode) {
             hoc_execerror("Cannot change nlayer_extracellular when instances exist", NULL);
         }
@@ -524,7 +524,7 @@ void ext_con_coef(void) /* setup a and b */
     section connects straight to the point*/
     /* for the near future we always have a last node at x=1 with
     no properties */
-    for (Section* sec: range_sec(section_list)) {
+    for (const Section* sec: range_sec(section_list)) {
         if (sec->pnode[0]->extnode) {
             /* node half resistances in general get added to the
             node and to the node's "child node in the same section".
@@ -569,7 +569,7 @@ void ext_con_coef(void) /* setup a and b */
         }
     }
     /* now the effect of parent on node equation. */
-    for (Section* sec: range_sec(section_list)) {
+    for (const Section* sec: range_sec(section_list)) {
         if (sec->pnode[0]->extnode) {
             for (j = 0; j < sec->nnode; j++) {
                 nd = sec->pnode[j];

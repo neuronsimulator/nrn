@@ -100,16 +100,13 @@ Section** secorder;
 double debugsolve(void) /* returns solution error */
 {
     short inode;
-    int i;
-    Section *psec, *ch;
     Node *nd, *pnd, **ndP;
     double err, sum;
 
     /* save parts of matrix that will be destroyed */
     assert(0);
     /* need to save the rootnodes too */
-    // ForAllSections(sec)
-    for (Section* sec: range_sec(section_list)) {
+    for (const Section* sec: range_sec(section_list)) {
         assert(sec->pnode && sec->nnode);
         for (inode = sec->nnode - 1; inode >= 0; inode--) {
             nd = sec->pnode[inode];
@@ -123,8 +120,7 @@ double debugsolve(void) /* returns solution error */
 
     err = 0.;
     /* need to check the rootnodes too */
-    // ForAllSections(sec)
-    for (Section* sec: range_sec(section_list)) {
+    for (const Section* sec: range_sec(section_list)) {
         for (inode = sec->nnode - 1; inode >= 0; inode--) {
             ndP = sec->pnode + inode;
             nd = sec->pnode[inode];
@@ -139,10 +135,9 @@ double debugsolve(void) /* returns solution error */
             if (inode < sec->nnode - 1) {
                 sum += NODEA(ndP[1]) * NODERHS(ndP[1]);
             }
-            for (ch = nd->child; ch; ch = ch->sibling) {
-                psec = ch;
-                pnd = psec->pnode[0];
-                assert(pnd && psec->nnode);
+            for (const Section* ch = nd->child; ch; ch = ch->sibling) {
+                pnd = ch->pnode[0];
+                assert(pnd && ch->nnode);
                 sum += NODEA(pnd) * NODERHS(pnd);
             }
             sum -= nd->savrhs;

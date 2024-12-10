@@ -884,7 +884,7 @@ void connection_coef(void) /* setup a and b */
         }
     }
     /* now the effect of parent on node equation. */
-    for (Section* sec: range_sec(section_list)) {
+    for (const Section* sec: range_sec(section_list)) {
         for (j = 0; j < sec->nnode; j++) {
             nd = sec->pnode[j];
             *nrn_classicalNodeB(nd) = -1.e2 * NODERINV(nd) / NODEAREA(nd);
