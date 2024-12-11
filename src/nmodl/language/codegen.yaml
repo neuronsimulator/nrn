@@ -1,0 +1,158 @@
+# Copyright 2023 Blue Brain Project, EPFL.
+# See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+######################### NMODL Abstract Language Definition ##############################
+#
+# PURPOSE
+# =======
+#
+# NMODL language specification in nmod.yaml takes care of representing NMODL language
+# AST generation. This AST is sufficient for NMODL level analysis and optimizations.
+# In order to perform code generation transformations, we need to perform various
+# transoformations on AST and add new node types. For example, PROCEDURE and FUNCTION
+# nodes in NMODL doesn't have return type (double by default).  Also, we can't represent
+# code generation specific information (e.g. variable or function qualifiers) with the
+# existing AST nodes. This yaml specification describe additional node types that can
+# be used for code generation purpose. Note that they are using same inheritance
+# hierarchy because we would like to use single AST to represent the NMODL with and
+# without code generation transformations.
+
+- AST:
+    children:
+      - Node:
+          children:
+            - Expression:
+                children:
+                  - Number:
+                  - Identifier:
+                  - Block:
+                      children:
+                        - NrnStateBlock:
+                            nmodl: "NRN_STATE "
+                            brief: "Represents the coreneuron nrn_state callback function"
+                            members:
+                              - solve_statements:
+                                  brief: "solve blocks to be called or generated"
+                                  type: Statement
+                                  vector: true
+                        - EigenNewtonSolverBlock:
+                            brief: "Represent newton solver solution block based on Eigen"
+                            nmodl: "EIGEN_NEWTON_SOLVE"
+                            members:
+                              - n_state_vars:
+                                  brief: "number of state vars used in solve"
+                                  type: Integer
+                                  prefix: {value: "["}
+                                  suffix: {value: "]"}
+                              - variable_block:
+                                  brief: "Statements to be declared in the functor"
+                                  type: StatementBlock
+                              - initialize_block:
+                                  brief: "Statement block to be executed before calling newton solver"
+                                  type: StatementBlock
+                              - setup_x_block:
+                                  brief: "update X from states"
+                                  type: StatementBlock
+                              - functor_block:
+                                  brief: "odes as functor for eigen"
+                                  type: StatementBlock
+                              - update_states_block:
+                                  brief: "update back states from X"
+                                  type: StatementBlock
+                              - finalize_block:
+                                  brief: "Statement block to be executed after calling newton solver"
+                                  type: StatementBlock
+                        - EigenLinearSolverBlock:
+                            brief: "Represent linear solver solution block based on Eigen"
+                            nmodl: "EIGEN_LINEAR_SOLVE"
+                            members:
+                              - n_state_vars:
+                                  brief: "number of state vars used in solve"
+                                  type: Integer
+                                  prefix: {value: "["}
+                                  suffix: {value: "]"}
+                              - variable_block:
+                                  brief: "Statements to be declared in the functor"
+                                  type: StatementBlock
+                              - initialize_block:
+                                  brief: "Statement block to be executed before calling linear solver"
+                                  type: StatementBlock
+                              - setup_x_block:
+                                  brief: "update X from states"
+                                  type: StatementBlock
+                              - update_states_block:
+                                  brief: "update back states from X"
+                                  type: StatementBlock
+                              - finalize_block:
+                                  brief: "Statement block to be executed after calling linear solver"
+                                  type: StatementBlock
+                        - CvodeBlock:
+                            nmodl: "CVODE_BLOCK "
+                            members:
+                              - name:
+                                  brief: "Name of the block"
+                                  type: Name
+                                  node_name: true
+                                  suffix: {value: " "}
+                              - n_odes:
+                                  brief: "number of ODEs to solve"
+                                  type: Integer
+                                  prefix: {value: "["}
+                                  suffix: {value: "]"}
+                              - non_stiff_block:
+                                  brief: "Block with statements of the form Dvar = f(var), used for updating non-stiff systems"
+                                  type: StatementBlock
+                              - stiff_block:
+                                  brief: "Block with statements of the form Dvar = Dvar / (1 - dt * J(f)), used for updating stiff systems"
+                                  type: StatementBlock
+                            brief: "Represents a block used for variable timestep integration (CVODE) of DERIVATIVE blocks"
+                        - LongitudinalDiffusionBlock:
+                            brief: "Extracts information required for LONGITUDINAL_DIFFUSION for each KINETIC block."
+                            nmodl: "LONGITUDINAL_DIFFUSION_BLOCK"
+                            members:
+                              - name:
+                                  brief: "Name of the longitudinal diffusion block"
+                                  type: Name
+                                  node_name: true
+                                  prefix: { value: " "}
+                                  suffix: { value: " "}
+                              - longitudinal_diffusion_statements:
+                                  brief: "All LONGITUDINAL_DIFFUSION statements in the KINETIC block."
+                                  type: StatementBlock
+                              - compartment_statements:
+                                  brief: "All (required) COMPARTMENT statements in the KINETIC block."
+                                  type: StatementBlock
+
+                  - WrappedExpression:
+                      brief: "Wrap any other expression type"
+                      members:
+                        - expression:
+                            brief: "Expression that is being wrapped"
+                            type: Expression
+                  - DerivimplicitCallback:
+                      brief: "Represent a callback to NEURON's derivimplicit solver"
+                      members:
+                        - node_to_solve:
+                            brief: "Block to be solved (typically derivative)"
+                            type: Block
+                  - SolutionExpression:
+                      brief: "Represent solution of a block in the AST"
+                      members:
+                        - solve_block:
+                            type: SolveBlock
+                        - node_to_solve:
+                            brief: "Block to be solved (callback node or solution node itself)"
+                            type: Expression
+            - Statement:
+                brief: "Statement base class"
+                children:
+                  - UpdateDt:
+                      nmodl: "dt"
+                      members:
+                        - value:
+                            brief: "Value of new timestep"
+                            type: Double
+                            prefix: {value: " = "}
+                      brief: "Statement to indicate a change in timestep in a given block"
