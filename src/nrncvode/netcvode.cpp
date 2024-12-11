@@ -1460,7 +1460,6 @@ bool NetCvode::init_global() {
     structure_change_cnt_ = structure_change_cnt;
     matrix_change_cnt_ = -1;
     playrec_change_cnt_ = 0;
-    NrnThread* _nt;
     // We copy Memb_list* into cml->ml below. At the moment this CVode code
     // generates its own complicated set of Memb_list* that operate in
     // list-of-handles mode instead of referring to contiguous sets of values.
@@ -3963,7 +3962,6 @@ void NetCvode::re_init(double t) {
 }
 
 void NetCvode::fornetcon_prepare() {
-    NrnThread* nt;
     NrnThreadMembList* tml;
     if (fornetcon_change_cnt_ == structure_change_cnt) {
         return;

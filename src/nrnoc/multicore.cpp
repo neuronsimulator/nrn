@@ -766,7 +766,7 @@ void reorder_secorder() {
       in either case, we can then point to v, d, rhs in proper
       node order
     */
-    for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread))
+    for (const NrnThread* _nt: for_threads(nrn_threads, nrn_nthread))
         for (inode = 0; inode < _nt->end; ++inode) {
             _nt->_v_node[inode]->_classical_parent = _nt->_v_parent[inode];
         }

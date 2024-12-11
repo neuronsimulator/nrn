@@ -970,7 +970,7 @@ void Cvode::maxstate(double* pd) {
 
 void Cvode::maxacor(double* pd) {
     if (maxacor_) {
-        for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
+        for (const NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
             double* m = n_vector_data(maxacor_, nt->id);
             int n = ctd_[nt->id].nvsize_;
             int o = ctd_[nt->id].nvoffset_;

@@ -1793,7 +1793,7 @@ int nrn_modeltype(void) {
     type = 0;
     if (nrn_global_ncell > 0) {
         type = 1;
-        for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread))
+        for (const NrnThread* nt: for_threads(nrn_threads, nrn_nthread))
             if (nt->_ecell_memb_list) {
                 type = 2;
             }

@@ -552,9 +552,8 @@ void CellGroup::mk_tml_with_art(neuron::model_sorted_token const& cache_token, C
 size_t CellGroup::get_mla_rankbytes(CellGroup* cellgroups_) {
     size_t mla_rankbytes = 0;
     size_t nbytes;
-    NrnThread* nt;
     NrnThreadMembList* tml;
-    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
+    for (const NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         size_t threadbytes = 0;
         size_t npnt = 0;
         size_t nart = 0;

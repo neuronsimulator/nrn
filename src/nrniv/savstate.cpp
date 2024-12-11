@@ -597,7 +597,7 @@ void SaveState::save() {
     if (!check(false)) {
         alloc();
     }
-    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
+    for (const NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         assert(t == nt->_t);
     }
     t_ = t;
@@ -1192,7 +1192,6 @@ void SaveState::free_tq() {
 void SaveState::alloc_tq() {
     free_tq();
     tqcnt_ = 0;
-    NrnThread* nt;
     for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         TQueue* tq = net_cvode_instance_event_queue(nt);
         this_savestate = this;
