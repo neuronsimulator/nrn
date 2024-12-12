@@ -172,9 +172,8 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         for (i = 0; i < nindex; ++i) {
             nb::object arg = nb::steal(nrnpy_hoc_pop("isfunc py2n_component"));
             if (!arg) {
-                PyErr2NRNString e;
-                e.get_pyerr();
-                hoc_execerr_ext("arg %d error: %s", i, e.c_str());
+                auto err = Py2NRNString::get_pyerr();
+                hoc_execerr_ext("arg %d error: %s", i, err.c_str());
             }
             args.append(arg);
         }
@@ -231,8 +230,8 @@ static void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
         hoc_pushx(d);
     } else if (is_python_string(result.ptr())) {
         char** ts = hoc_temp_charptr();
-        Py2NRNString str(result.ptr(), true);
-        *ts = str.c_str();
+        // TODO double check that this doesn't leak.
+        *ts = Py2NRNString::as_ascii(result.ptr()).release();
         hoc_pop_defer();
         hoc_pushstr(ts);
     } else {
@@ -363,7 +362,7 @@ static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
     nb::object r = hoccommand_exec_help(ho);
     if (r.is_valid()) {
         nb::str pn(r);
-        Py2NRNString str(pn.ptr());
+        auto str = Py2NRNString::as_ascii(pn.ptr());
         strncpy(buf, str.c_str(), size);
         buf[size - 1] = '\0';
     } else {

@@ -2,6 +2,7 @@
 
 #include "nrnwrap_Python.h"
 #include "nrn_export.hpp"
+#include "neuron/unique_cstr.hpp"
 #include <cassert>
 
 
@@ -11,61 +12,15 @@ inline bool is_python_string(PyObject* python_string) {
 
 class NRN_EXPORT Py2NRNString {
   public:
-    Py2NRNString(PyObject* python_string, bool disable_release = false);
+    [[nodiscard]] static neuron::unique_cstr as_ascii(PyObject* python_string);
 
-    ~Py2NRNString() {
-        if (!disable_release_ && str_) {
-            free(str_);
-        }
-    }
-    inline char* c_str() const {
-        return str_;
-    }
-    inline bool err() const {
-        return str_ == NULL;
-    }
-
-    void set_pyerr(PyObject* type, const char* message);
-    char* get_pyerr();
+    static void set_pyerr(PyObject* type, const char* message);
+    [[nodiscard]] static neuron::unique_cstr get_pyerr();
 
   private:
-    Py2NRNString();
-    Py2NRNString(const Py2NRNString&);
-    Py2NRNString& operator=(const Py2NRNString&);
-
-    char* str_;
-    bool disable_release_;
-};
-
-/** @brief For when hoc_execerror must handle the Python error.
- *  Idiom: PyErr2NRNString e;
- *         -- clean up any python objects --
- *         hoc_execerr_ext("hoc message : %s", e.c_str());
- *  e will be automatically deleted even though execerror does not return.
- */
-class NRN_EXPORT PyErr2NRNString {
-  public:
-    PyErr2NRNString() {
-        str_ = NULL;
-    }
-
-    ~PyErr2NRNString() {
-        if (str_) {
-            free(str_);
-        }
-    }
-
-    inline char* c_str() const {
-        return str_;
-    }
-
-    char* get_pyerr();
-
-  private:
-    PyErr2NRNString(const PyErr2NRNString&);
-    PyErr2NRNString& operator=(const PyErr2NRNString&);
-
-    char* str_;
+    Py2NRNString() = delete;
+    Py2NRNString(const Py2NRNString&) = delete;
+    Py2NRNString& operator=(const Py2NRNString&) = delete;
 };
 
 extern void nrnpy_sec_referr();

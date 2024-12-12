@@ -419,21 +419,19 @@ int hocobj_pushargs(PyObject* args, std::vector<neuron::unique_cstr>& s2free) {
             hoc_pushx(nb::cast<double>(po));
         } else if (is_python_string(po.ptr())) {
             char** ts = hoc_temp_charptr();
-            Py2NRNString str(po.ptr(), /* disable_release */ true);
-            if (str.err()) {
+            auto str = Py2NRNString::as_ascii(po.ptr());
+            if (!str.is_valid()) {
                 // Since Python error has been set, need to clear, or hoc_execerror
                 // printing with Printf will generate a
                 // Exception ignored on calling ctypes callback function.
                 // So get the message, clear, and make the message
                 // part of the execerror.
-                auto err = neuron::unique_cstr(str.get_pyerr());
-                *ts = err.c_str();
-                s2free.push_back(std::move(err));
+                auto err = Py2NRNString::get_pyerr();
                 hoc_execerr_ext("python string arg cannot decode into c_str. Pyerr message: %s",
-                                *ts);
+                                err.c_str());
             }
             *ts = str.c_str();
-            s2free.push_back(neuron::unique_cstr(*ts));
+            s2free.push_back(std::move(str));
             hoc_pushstr(ts);
         } else if (PyObject_TypeCheck(po.ptr(), hocobject_type)) {
             // The PyObject_TypeCheck above used to be PyObject_IsInstance. The
@@ -1042,10 +1040,10 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
 
     nb::object result;
     int isptr = 0;
-    Py2NRNString name(pyname);
+    auto name = Py2NRNString::as_ascii(pyname);
     char* n = name.c_str();
     if (!n) {
-        name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
+        Py2NRNString::set_pyerr(PyExc_TypeError, "attribute name must be a string");
         return nullptr;
     }
 
@@ -1433,10 +1431,10 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
     if (self->type_ == PyHoc::HocObject && !self->ho_) {
         return 1;
     }
-    Py2NRNString name(pyname);
+    auto name = Py2NRNString::as_ascii(pyname);
     char* n = name.c_str();
     if (!n) {
-        name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
+        Py2NRNString::set_pyerr(PyExc_TypeError, "attribute name must be a string");
         return -1;
     }
     // printf("hocobj_setattro %s\n", n);
@@ -1648,6 +1646,16 @@ static int araychk(Arrayinfo* a, PyHocObject* po, int ix) {
     return 0;
 }
 
+static Py_ssize_t seclist_count(Object* ho) {
+    assert(ho->ctemplate == hoc_sectionlist_template_);
+    hoc_List* sl = (hoc_List*) (ho->u.this_pointer);
+    Py_ssize_t n = 0;
+    for (hoc_Item* q1 = sl->next; q1 != sl; q1 = q1->next) {
+        n++;
+    }
+    return n;
+}
+
 static Py_ssize_t hocobj_len(PyObject* self) {
     PyHocObject* po = (PyHocObject*) self;
     if (po->type_ == PyHoc::HocObject) {
@@ -1656,8 +1664,7 @@ static Py_ssize_t hocobj_len(PyObject* self) {
         } else if (po->ho_->ctemplate == hoc_list_template_) {
             return ivoc_list_count(po->ho_);
         } else if (po->ho_->ctemplate == hoc_sectionlist_template_) {
-            PyErr_SetString(PyExc_TypeError, "hoc.SectionList has no len()");
-            return -1;
+            return seclist_count(po->ho_);
         }
     } else if (po->type_ == PyHoc::HocArray) {
         Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
@@ -1684,6 +1691,8 @@ static int hocobj_nonzero(PyObject* self) {
             b = vector_capacity((Vect*) po->ho_->u.this_pointer) > 0;
         } else if (po->ho_->ctemplate == hoc_list_template_) {
             b = ivoc_list_count(po->ho_) > 0;
+        } else if (po->ho_->ctemplate == hoc_sectionlist_template_) {
+            b = seclist_count(po->ho_) > 0;
         }
     } else if (po->type_ == PyHoc::HocArray) {
         Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
@@ -1717,13 +1726,16 @@ static PyObject* hocobj_iter(PyObject* raw_self) {
 
     nb::object self = nb::borrow(raw_self);
     PyHocObject* po = (PyHocObject*) self.ptr();
-    if (po->type_ == PyHoc::HocObject) {
+    if (po->type_ == PyHoc::HocObject || po->type_ == PyHoc::HocSectionListIterator) {
         if (po->ho_->ctemplate == hoc_vec_template_) {
             return PySeqIter_New(self.ptr());
         } else if (po->ho_->ctemplate == hoc_list_template_) {
             return PySeqIter_New(self.ptr());
         } else if (po->ho_->ctemplate == hoc_sectionlist_template_) {
             // need a clone of self so nested loops do not share iteritem_
+            // The HocSectionListIter arm of the outer 'if' became necessary
+            // at Python-3.13.1 upon which the following body is executed
+            // twice. See https://github.com/python/cpython/issues/127682
             auto po2 = nb::steal(nrnpy_ho2po(po->ho_));
             PyHocObject* pho2 = (PyHocObject*) po2.ptr();
             pho2->type_ = PyHoc::HocSectionListIterator;
@@ -2244,9 +2256,10 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
         } else if (is_python_string(pa)) {
             result->type_ = PyHoc::HocRefStr;
             result->u.s_ = 0;
-            Py2NRNString str(pa);
-            if (str.err()) {
-                str.set_pyerr(PyExc_TypeError, "string arg must have only ascii characters");
+            auto str = Py2NRNString::as_ascii(pa);
+            if (!str.is_valid()) {
+                Py2NRNString::set_pyerr(PyExc_TypeError,
+                                        "string arg must have only ascii characters");
                 return NULL;
             }
             char* cpa = str.c_str();
@@ -2301,10 +2314,11 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
             if (hpp->type_ != PyHoc::HocObject) {
                 goto done;
             }
-            Py2NRNString str(name);
+            auto str = Py2NRNString::as_ascii(name);
             char* n = str.c_str();
-            if (str.err()) {
-                str.set_pyerr(PyExc_TypeError, "POINTER name can contain only ascii characters");
+            if (!str.is_valid()) {
+                Py2NRNString::set_pyerr(PyExc_TypeError,
+                                        "POINTER name can contain only ascii characters");
                 return NULL;
             }
             Symbol* sym = getsym(n, hpp->ho_, 0);
@@ -2488,7 +2502,7 @@ static char* double_array_interface(PyObject* po, long& stride) {
     PyObject* psize;
     if (PyObject_HasAttrString(po, "__array_interface__")) {
         auto ai = nb::steal(PyObject_GetAttrString(po, "__array_interface__"));
-        Py2NRNString typestr(PyDict_GetItemString(ai.ptr(), "typestr"));
+        auto typestr = Py2NRNString::as_ascii(PyDict_GetItemString(ai.ptr(), "typestr"));
         if (strcmp(typestr.c_str(), array_interface_typestr) == 0) {
             data = PyLong_AsVoidPtr(PyTuple_GetItem(PyDict_GetItemString(ai.ptr(), "data"), 0));
             // printf("double_array_interface idata = %ld\n", idata);
@@ -2755,8 +2769,7 @@ static char** gui_helper_3_str_(const char* name, Object* obj, int handle_strptr
     if (gui_callback) {
         auto po = nb::steal(gui_helper_3_helper_(name, obj, handle_strptr));
         char** ts = hoc_temp_charptr();
-        Py2NRNString str(po.ptr(), true);
-        *ts = str.c_str();
+        *ts = Py2NRNString::as_ascii(po.ptr()).release();
         // TODO: is there a memory leak here? do I need to: s2free.push_back(*ts);
         return ts;
     }
@@ -3190,8 +3203,8 @@ char get_endian_character() {
         return 0;
     }
 
-    Py2NRNString byteorder(pbo.ptr());
-    if (byteorder.c_str() == NULL) {
+    auto byteorder = Py2NRNString::as_ascii(pbo.ptr());
+    if (!byteorder.is_valid()) {
         return 0;
     }
 
@@ -3295,9 +3308,9 @@ static char* nrncore_arg(double tstop) {
                 if (ts) {
                     auto arg = nb::steal(PyObject_CallObject(callable.ptr(), ts.ptr()));
                     if (arg) {
-                        Py2NRNString str(arg.ptr());
-                        if (str.err()) {
-                            str.set_pyerr(
+                        auto str = Py2NRNString::as_ascii(arg.ptr());
+                        if (!str.is_valid()) {
+                            Py2NRNString::set_pyerr(
                                 PyExc_TypeError,
                                 "neuron.coreneuron.nrncore_arg() must return an ascii string");
                             return nullptr;
