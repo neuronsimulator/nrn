@@ -186,7 +186,6 @@ N_Vector N_VNew_NrnThread(long int length, int nthread, long int* sizes) {
     int i;
     N_Vector v;
     N_Vector data;
-    N_VectorContent_NrnThread* content;
 
     v = N_VNewEmpty_NrnThread(length, nthread, sizes);
     if (v == NULL)

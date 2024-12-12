@@ -135,7 +135,6 @@ class FileHandler {
                 lfp_factors = read_vector<double>(total_lfp_factors);
             }
 
-            int factor_offset = 0;
             for (int i = 0; i < nseg; i++) {
                 mapinfo->add_segment(sec[i], seg[i]);
                 ntmapping->add_segment_id(seg[i]);

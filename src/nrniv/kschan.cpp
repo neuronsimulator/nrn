@@ -1089,7 +1089,6 @@ void KSChan::update_prop() {
     Symbol* gsym = rlsym_->u.ppsym[soffset_ - 2];
     Symbol* isym = rlsym_->u.ppsym[soffset_ - 1];
     Symbol* esym = ion_sym_ ? NULL : rlsym_->u.ppsym[gmaxoffset_ + 1];
-    int old_gmaxoffset = gmaxoffset_;
     int old_soffset = soffset_;
     int old_svarn = rlsym_->s_varn;
 
@@ -2179,7 +2178,6 @@ void KSChan::fillmat(double v, Datum* pd) {
 void KSChan::mat_dt(double dt, Memb_list* ml, std::size_t instance, std::size_t offset) {
     // y' = m*y  this part add the dt for the form ynew/dt - yold/dt =m*ynew
     // the matrix ends up as (m-1/dt)ynew = -1/dt*yold
-    int i;
     double dt1 = -1. / dt;
     for (int i = 0; i < nksstate_; ++i) {
         *(diag_[i]) += dt1;
@@ -2418,7 +2416,6 @@ void KSChan::ion_consist() {
     for (i = iligtrans_; i < ntrans_; ++i) {
         trans_[i].lig2pd(poff);
     }
-    int ppsize = poff + 2 * nligand_;
     // ForAllSections(sec)
     ITERATE(qsec, section_list) {
         Section* sec = hocSEC(qsec);

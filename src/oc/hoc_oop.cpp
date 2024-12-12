@@ -857,7 +857,6 @@ void hoc_constobject(void) { /* template at pc, index at pc+1, objpointer left o
 }
 
 Object* hoc_name2obj(const char* name, int index) {
-    char buf[200];
     Object* obj;
     hoc_Item* q;
     cTemplate* t;

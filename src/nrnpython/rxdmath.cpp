@@ -23,10 +23,6 @@ extern "C" NRN_EXPORT void radians(const double degrees, double* radians) {
 }
 
 
-extern "C" NRN_EXPORT double log1p(const double x) {
-    return log(x + 1.);
-}
-
 extern "C" NRN_EXPORT double vtrap(const double x, const double y) {
     if (fabs(x / y) < 1e-6) {
         return y * (1.0 - x / y / 2.0);

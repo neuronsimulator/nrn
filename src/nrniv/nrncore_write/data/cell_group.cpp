@@ -205,7 +205,6 @@ void CellGroup::mk_cellgroups(neuron::model_sorted_token const& cache_token, Cel
 void CellGroup::datumtransform(CellGroup* cgs) {
     // ions, area, and POINTER to v or mechanism data.
     for (int ith = 0; ith < nrn_nthread; ++ith) {
-        NrnThread& nt = nrn_threads[ith];
         CellGroup& cg = cgs[ith];
         // how many mechanisms in use and how many DatumIndices do we need.
         MlWithArt& mla = cgs[ith].mlwithart;
@@ -246,7 +245,6 @@ void CellGroup::datumtransform(CellGroup* cgs) {
 
 void CellGroup::datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_list* ml) {
     NrnThread& nt = nrn_threads[ith];
-    int nnode = nt.end;
     int mcnt = ml->nodecount;
     int dsize = bbcore_dparam_size[di.type];
     if (dsize == 0) {
@@ -553,7 +551,6 @@ size_t CellGroup::get_mla_rankbytes(CellGroup* cellgroups_) {
     size_t mla_rankbytes = 0;
     size_t nbytes;
     NrnThread* nt;
-    NrnThreadMembList* tml;
     FOR_THREADS(nt) {
         size_t threadbytes = 0;
         size_t npnt = 0;
