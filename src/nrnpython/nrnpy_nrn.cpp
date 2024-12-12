@@ -177,13 +177,25 @@ static Object* pysec_cell(Section* sec) {
     if (auto* pv = sec->prop->dparam[PROP_PY_INDEX].get<void*>(); pv) {
         PyObject* cell_weakref = static_cast<NPySecObj*>(pv)->cell_weakref_;
         if (cell_weakref) {
+#if PY_VERSION_HEX >= 0x030D0000
+            PyObject* cell = nullptr;
+            int err = PyWeakref_GetRef(cell_weakref, &cell);
+            if (err == -1) {
+                PyErr_Print();
+                hoc_execerror("Error getting cell for", secname(sec));
+            } else if (err == 0) {
+                return nullptr;
+            }
+#else
             PyObject* cell = PyWeakref_GetObject(cell_weakref);
             if (!cell) {
                 PyErr_Print();
                 hoc_execerror("Error getting cell for", secname(sec));
-            } else if (cell != Py_None) {
-                return nrnpy_po2ho(cell);
+            } else if (cell == Py_None) {
+                return nullptr;
             }
+#endif
+            return nrnpy_po2ho(cell);
         }
     }
     return NULL;
@@ -215,11 +227,20 @@ static int pysec_cell_equals(Section* sec, Object* obj) {
     if (auto* pv = sec->prop->dparam[PROP_PY_INDEX].get<void*>(); pv) {
         PyObject* cell_weakref = static_cast<NPySecObj*>(pv)->cell_weakref_;
         if (cell_weakref) {
+#if PY_VERSION_HEX >= 0x030D0000
+            PyObject* cell = nullptr;
+            int err = PyWeakref_GetRef(cell_weakref, &cell);
+            if (err == -1) {
+                PyErr_Print();
+                hoc_execerror("Error getting cell for", secname(sec));
+            }
+#else
             PyObject* cell = PyWeakref_GetObject(cell_weakref);
             if (!cell) {
                 PyErr_Print();
                 hoc_execerror("Error getting cell for", secname(sec));
             }
+#endif
             return nrnpy_ho_eq_po(obj, cell);
         }
         return nrnpy_ho_eq_po(obj, Py_None);
@@ -1212,7 +1233,13 @@ static PyObject* pysec_wholetree_safe(NPySecObj* const self) {
 static PyObject* pysec2cell(NPySecObj* self) {
     nb::object result;
     if (self->cell_weakref_) {
+#if PY_VERSION_HEX >= 0x030D0000
+        PyObject* cell = nullptr;
+        PyWeakref_GetRef(self->cell_weakref_, &cell);
+        result = nb::steal(cell);
+#else
         result = nb::borrow(PyWeakref_GetObject(self->cell_weakref_));
+#endif
     } else if (auto* o = self->sec_->prop->dparam[6].get<Object*>(); self->sec_->prop && o) {
         result = nb::steal(nrnpy_ho2po(o));
     } else {
