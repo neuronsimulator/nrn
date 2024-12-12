@@ -194,9 +194,6 @@ static int nrnpython_start(int b) {
     static int started = 0;
     if (b == 1 && !started) {
         p_nrnpy_pyrun = nrnpy_pyrun;
-        if (nrnpy_nositeflag) {
-            Py_NoSiteFlag = 1;
-        }
         // Create a Python configuration, see
         // https://docs.python.org/3.8/c-api/init_config.html#python-configuration, so that
         // {nrniv,special} -python behaves as similarly as possible to python. In particular this
@@ -204,6 +201,9 @@ static int nrnpython_start(int b) {
         // handle settings like LC_ALL=C, so using a different configuration can lead to surprising
         // differences.
         PythonConfigWrapper config;
+        if (nrnpy_nositeflag) {
+            config->site_import = 0;
+        }
         auto const check = [](const char* desc, PyStatus status) {
             if (PyStatus_Exception(status)) {
                 std::ostringstream oss;
