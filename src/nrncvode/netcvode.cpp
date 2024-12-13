@@ -1460,7 +1460,6 @@ bool NetCvode::init_global() {
     structure_change_cnt_ = structure_change_cnt;
     matrix_change_cnt_ = -1;
     playrec_change_cnt_ = 0;
-    NrnThread* _nt;
     // We copy Memb_list* into cml->ml below. At the moment this CVode code
     // generates its own complicated set of Memb_list* that operate in
     // list-of-handles mode instead of referring to contiguous sets of values.
@@ -1486,7 +1485,7 @@ bool NetCvode::init_global() {
         del_cv_memb_list();
         Cvode& cv = *gcv_;
         distribute_dinfo(nullptr, 0);
-        FOR_THREADS(_nt) {
+        for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
             CvodeThreadData& z = cv.ctd_[_nt->id];
             z.rootnodecount_ = _nt->ncell;
             z.v_node_count_ = _nt->end;
@@ -3963,7 +3962,6 @@ void NetCvode::re_init(double t) {
 }
 
 void NetCvode::fornetcon_prepare() {
-    NrnThread* nt;
     NrnThreadMembList* tml;
     if (fornetcon_change_cnt_ == structure_change_cnt) {
         return;
@@ -3994,17 +3992,19 @@ void NetCvode::fornetcon_prepare() {
                 fnc->size = 0;
             }
         } else {
-            FOR_THREADS(nt) for (tml = nt->tml; tml; tml = tml->next) if (tml->index == type) {
-                Memb_list* m = tml->ml;
-                for (j = 0; j < m->nodecount; ++j) {
-                    void** v = &(m->pdata[j][index].literal_value<void*>());
-                    _nrn_free_fornetcon(v);
-                    ForNetConsInfo* fnc = new ForNetConsInfo;
-                    *v = fnc;
-                    fnc->argslist = 0;
-                    fnc->size = 0;
-                }
-            }
+            for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread))
+                for (tml = nt->tml; tml; tml = tml->next)
+                    if (tml->index == type) {
+                        Memb_list* m = tml->ml;
+                        for (j = 0; j < m->nodecount; ++j) {
+                            void** v = &(m->pdata[j][index].literal_value<void*>());
+                            _nrn_free_fornetcon(v);
+                            ForNetConsInfo* fnc = new ForNetConsInfo;
+                            *v = fnc;
+                            fnc->argslist = 0;
+                            fnc->size = 0;
+                        }
+                    }
         }
     }
     // two loops over all netcons. one to count, one to fill in argslist
@@ -4037,18 +4037,19 @@ void NetCvode::fornetcon_prepare() {
                 }
             }
         } else {
-            FOR_THREADS(nt)
-            for (tml = nt->tml; tml; tml = tml->next)
-                if (tml->index == nrn_fornetcon_type_[i]) {
-                    Memb_list* m = tml->ml;
-                    for (j = 0; j < m->nodecount; ++j) {
-                        auto* fnc = static_cast<ForNetConsInfo*>(m->pdata[j][index].get<void*>());
-                        if (fnc->size > 0) {
-                            fnc->argslist = new double*[fnc->size];
-                            fnc->size = 0;
+            for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread))
+                for (tml = nt->tml; tml; tml = tml->next)
+                    if (tml->index == nrn_fornetcon_type_[i]) {
+                        Memb_list* m = tml->ml;
+                        for (j = 0; j < m->nodecount; ++j) {
+                            auto* fnc = static_cast<ForNetConsInfo*>(
+                                m->pdata[j][index].get<void*>());
+                            if (fnc->size > 0) {
+                                fnc->argslist = new double*[fnc->size];
+                                fnc->size = 0;
+                            }
                         }
                     }
-                }
         }
     }
     // fill in argslist and count again
