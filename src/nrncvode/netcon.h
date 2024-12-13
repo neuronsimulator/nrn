@@ -214,7 +214,7 @@ class ConditionEvent: public DiscreteEvent {
 #include <list>
 
 template <typename T>
-class signal {
+class signal_ {
   public:
     template <typename F>
     void connect(F f) {
@@ -262,7 +262,7 @@ class WatchCondition: public ConditionEvent {
     static unsigned long watch_send_;
     static unsigned long watch_deliver_;
 
-    signal<WatchCondition*> del;
+    signal_<WatchCondition*> del;
 };
 
 class STECondition: public WatchCondition {
