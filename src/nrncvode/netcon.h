@@ -7,6 +7,7 @@
 #include "nrnneosm.h"
 #include "pool.hpp"
 #include "tqitem.hpp"
+#include "utils/signal.hpp"
 
 #include <InterViews/observe.h>
 
@@ -209,26 +210,6 @@ class ConditionEvent: public DiscreteEvent {
     static unsigned long abandon_above_;
     static unsigned long abandon_below_;
     static unsigned long deliver_qthresh_;
-};
-
-#include <list>
-
-template <typename T>
-class signal_ {
-  public:
-    template <typename F>
-    void connect(F f) {
-        functors.push_back(f);
-    }
-
-    void send(T wc) {
-        for (auto& f: functors) {
-            std::invoke(f, wc);
-        }
-    }
-
-  private:
-    std::list<std::function<void(T)>> functors;
 };
 
 class WatchCondition: public ConditionEvent {
