@@ -1,6 +1,7 @@
 # =============================================================================
 # Add extra compile flags to NMODL test sources
 # =============================================================================
+include(${PROJECT_SOURCE_DIR}/cmake/nmodl/FlexHelper.cmake)
 add_compile_options(${NMODL_EXTRA_CXX_FLAGS})
 add_link_options(${NMODL_EXTRA_CXX_FLAGS})
 add_compile_options(${NMODL_TESTS_COMPILER_WARNING_SUPPRESSIONS})
