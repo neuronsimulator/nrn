@@ -5240,8 +5240,7 @@ void ConditionEvent::abandon_statistics(Cvode* cv) {
 #endif
 }
 
-WatchCondition::WatchCondition(Point_process* pnt, double (*c)(Point_process*))
-{
+WatchCondition::WatchCondition(Point_process* pnt, double (*c)(Point_process*)) {
     pnt_ = pnt;
     c_ = c;
     watch_index_ = 0;  // For transfer, will be a small positive integer.
@@ -5253,11 +5252,9 @@ WatchCondition::~WatchCondition() {
 
 // A WatchCondition but with different deliver
 STECondition::STECondition(Point_process* pnt, double (*c)(Point_process*))
-    : WatchCondition(pnt, c) {
-}
+    : WatchCondition(pnt, c) {}
 
-STECondition::~STECondition() {
-}
+STECondition::~STECondition() {}
 
 void WatchCondition::activate(double flag) {
     Cvode* cv = NULL;
@@ -5455,8 +5452,7 @@ void Cvode::evaluate_conditions(NrnThread* nt) {
         }
     }
     if (z.watch_list_) {
-        for (auto item = z.watch_list_->First(); item != z.watch_list_->End();
-             ++item) {
+        for (auto item = z.watch_list_->First(); item != z.watch_list_->End(); ++item) {
             (*item)->condition(this);
         }
     }
@@ -5484,8 +5480,7 @@ void Cvode::check_deliver(NrnThread* nt) {
         }
     }
     if (z.watch_list_) {
-        for (auto item = z.watch_list_->First(); item != z.watch_list_->End();
-             ++item) {
+        for (auto item = z.watch_list_->First(); item != z.watch_list_->End(); ++item) {
             (*item)->check(nt, nt->_t);
         }
     }

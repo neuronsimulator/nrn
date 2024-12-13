@@ -276,7 +276,7 @@ class HTList {
     }
     void Append(WatchCondition* wc) {
         _list.push_back(wc);
-        wc->del.connect([=](WatchCondition* wc) {this->Remove(wc);});
+        wc->del.connect([=](WatchCondition* wc) { this->Remove(wc); });
     }
     void Remove(WatchCondition* wc) {
         auto it = std::find(_list.begin(), _list.end(), wc);
