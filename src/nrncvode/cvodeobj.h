@@ -1,5 +1,7 @@
 #pragma once
 
+#include <list>
+
 #include "nrnmpi.h"
 #include "nrnneosm.h"
 //#include "shared/nvector_serial.h"

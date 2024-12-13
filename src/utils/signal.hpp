@@ -1,21 +1,31 @@
 #pragma
 
-#include <list>
+#include <map>
 
-template <typename T>
+template <typename... Args>
 class signal_ {
   public:
     template <typename F>
-    void connect(F f) {
-        functors.push_back(f);
+    unsigned connect(F f) {
+        ++counter;
+        functors[counter] = f;
+        return counter;
     }
 
-    void send(T wc) {
-        for (auto& f: functors) {
-            std::invoke(f, wc);
+    void disconnect(unsigned i) {
+        auto it = functors.find(i);
+        if (it != functors.end()) {
+            functors.erase(it);
+        }
+    }
+
+    void send(Args... args) {
+        for (const auto& [i, f]: functors) {
+            std::invoke(f, args...);
         }
     }
 
   private:
-    std::list<std::function<void(T)>> functors;
+    unsigned counter = 0;
+    std::map<int, std::function<void(Args...)>> functors;
 };
