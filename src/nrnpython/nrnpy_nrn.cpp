@@ -186,16 +186,18 @@ static Object* pysec_cell(Section* sec) {
             } else if (err == 0) {
                 return nullptr;
             }
+            auto ret = nrnpy_po2ho(cell);
+            Py_DECREF(cell);
+            return ret;
 #else
             PyObject* cell = PyWeakref_GetObject(cell_weakref);
             if (!cell) {
                 PyErr_Print();
                 hoc_execerror("Error getting cell for", secname(sec));
-            } else if (cell == Py_None) {
-                return nullptr;
+            } else if (cell != Py_None) {
+                return nrnpy_po2ho(cell);
             }
 #endif
-            return nrnpy_po2ho(cell);
         }
     }
     return NULL;
@@ -234,14 +236,17 @@ static int pysec_cell_equals(Section* sec, Object* obj) {
                 PyErr_Print();
                 hoc_execerror("Error getting cell for", secname(sec));
             }
+            auto ret = nrnpy_ho_eq_po(obj, cell);
+            Py_DECREF(cell);
+            return ret;
 #else
             PyObject* cell = PyWeakref_GetObject(cell_weakref);
             if (!cell) {
                 PyErr_Print();
                 hoc_execerror("Error getting cell for", secname(sec));
             }
-#endif
             return nrnpy_ho_eq_po(obj, cell);
+#endif
         }
         return nrnpy_ho_eq_po(obj, Py_None);
     }
