@@ -2,7 +2,6 @@
 
 #undef check
 
-#include "htlist.h"
 #include "neuron/container/data_handle.hpp"
 #include "nrnmpi.h"
 #include "nrnneosm.h"
@@ -264,38 +263,6 @@ class WatchCondition: public ConditionEvent {
     static unsigned long watch_deliver_;
 
     signal<WatchCondition*> del;
-};
-
-class HTList {
-  public:
-    HTList() = default;
-    virtual ~HTList() = default;
-
-    bool IsEmpty() {
-        return _list.empty();
-    }
-    void Append(WatchCondition* wc) {
-        _list.push_back(wc);
-        wc->del.connect([=](WatchCondition* wc) { this->Remove(wc); });
-    }
-    void Remove(WatchCondition* wc) {
-        auto it = std::find(_list.begin(), _list.end(), wc);
-        if (it != _list.end()) {
-            _list.erase(it);
-        }
-    }
-    void RemoveAll() {
-        _list.clear();
-    }
-    std::list<WatchCondition*>::iterator First() {
-        return _list.begin();
-    }
-    std::list<WatchCondition*>::iterator End() {
-        return _list.end();
-    }
-
-  private:
-    std::list<WatchCondition*> _list;
 };
 
 class STECondition: public WatchCondition {

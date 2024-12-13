@@ -23,7 +23,6 @@ extern int hoc_return_type_code;
 #include "nrnpy.h"
 #include "tqueue.hpp"
 #include "mymath.h"
-#include "htlist.h"
 #include <nrnmutdec.h>
 
 #if NRN_ENABLE_THREADS
