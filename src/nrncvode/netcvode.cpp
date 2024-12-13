@@ -2325,7 +2325,7 @@ void _nrn_watch_activate(Datum* d,
     }
     if (r == 0) {
         for (auto wc1: *wl) {
-            wc1->del.send(wc1);
+            wc1->unregister.send(wc1);
             if (wc1->qthresh_) {  // is it on the queue?
                 net_cvode_instance->remove_event(wc1->qthresh_, PP2NT(pnt)->id);
                 wc1->qthresh_ = nullptr;
@@ -2443,7 +2443,7 @@ void _nrn_free_watch(Datum* d, int offset, int n) {
     }
     for (i = offset + 1; i < nn; ++i) {
         if (auto* wc = d[i].get<WatchCondition*>(); wc) {
-            wc->del.send(wc);
+            wc->unregister.send(wc);
             delete wc;
             d[i] = nullptr;
         }
@@ -5246,7 +5246,7 @@ WatchCondition::WatchCondition(Point_process* pnt, double (*c)(Point_process*)) 
 }
 
 WatchCondition::~WatchCondition() {
-    del.send(this);
+    unregister.send(this);
 }
 
 // A WatchCondition but with different deliver
@@ -5277,9 +5277,9 @@ void WatchCondition::activate(double flag) {
         wl = new std::list<WatchCondition*>();
         net_cvode_instance->wl_list_[id].push_back(wl);
     }
-    del.send(this);
+    unregister.send(this);
     wl->push_back(this);
-    del.connect([&](WatchCondition* wc) {
+    unregister.connect([&](WatchCondition* wc) {
         auto it = std::find(wl->begin(), wl->end(), wc);
         if (it != wl->end()) {
             wl->erase(it);
@@ -5353,7 +5353,7 @@ void STETransition::deactivate() {
         net_cvode_instance->remove_event(stec_->qthresh_, stec_->thread()->id);
         stec_->qthresh_ = nullptr;
     }
-    stec_->del.send(stec_.get());
+    stec_->unregister.send(stec_.get());
 }
 
 void STECondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {

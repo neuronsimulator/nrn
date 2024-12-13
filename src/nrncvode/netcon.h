@@ -262,7 +262,7 @@ class WatchCondition: public ConditionEvent {
     static unsigned long watch_send_;
     static unsigned long watch_deliver_;
 
-    signal_<WatchCondition*> del;
+    signal_<WatchCondition*> unregister;
 };
 
 class STECondition: public WatchCondition {
