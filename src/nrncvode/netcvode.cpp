@@ -5279,7 +5279,12 @@ void WatchCondition::activate(double flag) {
     }
     del.send(this);
     wl->push_back(this);
-    del.connect([&](WatchCondition* wc) {auto it = std::find(wl->begin(), wl->end(), wc); if (it != wl->end()) {wl->erase(it);}});
+    del.connect([&](WatchCondition* wc) {
+        auto it = std::find(wl->begin(), wl->end(), wc);
+        if (it != wl->end()) {
+            wl->erase(it);
+        }
+    });
 }
 
 void WatchCondition::asf_err() {
