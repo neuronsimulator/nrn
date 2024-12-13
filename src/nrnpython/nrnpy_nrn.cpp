@@ -1240,8 +1240,12 @@ static PyObject* pysec2cell(NPySecObj* self) {
     if (self->cell_weakref_) {
 #if PY_VERSION_HEX >= 0x030D0000
         PyObject* cell = nullptr;
-        PyWeakref_GetRef(self->cell_weakref_, &cell);
-        result = nb::steal(cell);
+        int ret = PyWeakref_GetRef(self->cell_weakref_, &cell);
+        if (ret > 0) {
+            result = nb::steal(cell);
+        } else {
+            result = nb::none();
+        }
 #else
         result = nb::borrow(PyWeakref_GetObject(self->cell_weakref_));
 #endif
