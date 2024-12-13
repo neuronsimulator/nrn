@@ -86,16 +86,6 @@ project(
   LANGUAGES CXX)
 
 # =============================================================================
-# HPC Coding Conventions
-# =============================================================================
-# initialize submodule of coding conventions under cmake
-if(NOT EXISTS "${PROJECT_SOURCE_DIR}/cmake/hpc-coding-conventions/cpp/CMakeLists.txt")
-  initialize_submodule("${PROJECT_SOURCE_DIR}/cmake/hpc-coding-conventions")
-endif()
-set(CODING_CONV_PREFIX NMODL)
-add_subdirectory(cmake/hpc-coding-conventions/cpp)
-
-# =============================================================================
 # Enable sanitizer support if the NRN_SANITIZERS variable is set
 # =============================================================================
 include(cmake/hpc-coding-conventions/cpp/cmake/sanitizers.cmake)
