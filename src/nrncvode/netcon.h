@@ -212,7 +212,27 @@ class ConditionEvent: public DiscreteEvent {
     static unsigned long deliver_qthresh_;
 };
 
-class WatchCondition: public ConditionEvent, public HTList {
+#include <list>
+
+template <typename T>
+class signal {
+  public:
+    template <typename F>
+    void connect(F f) {
+        functors.push_back(f);
+    }
+
+    void send(T wc) {
+        for (auto& f: functors) {
+            std::invoke(f, wc);
+        }
+    }
+
+  private:
+    std::list<std::function<void(T)>> functors;
+};
+
+class WatchCondition: public ConditionEvent {
   public:
     WatchCondition(Point_process*, double (*)(Point_process*));
     virtual ~WatchCondition();
@@ -242,6 +262,40 @@ class WatchCondition: public ConditionEvent, public HTList {
 
     static unsigned long watch_send_;
     static unsigned long watch_deliver_;
+
+    signal<WatchCondition*> del;
+};
+
+class HTList {
+  public:
+    HTList() = default;
+    virtual ~HTList() = default;
+
+    bool IsEmpty() {
+        return _list.empty();
+    }
+    void Append(WatchCondition* wc) {
+        _list.push_back(wc);
+        wc->del.connect([=](WatchCondition* wc) {this->Remove(wc);});
+    }
+    void Remove(WatchCondition* wc) {
+        auto it = std::find(_list.begin(), _list.end(), wc);
+        if (it != _list.end()) {
+            _list.erase(it);
+        }
+    }
+    void RemoveAll() {
+        _list.clear();
+    }
+    std::list<WatchCondition*>::iterator First() {
+        return _list.begin();
+    }
+    std::list<WatchCondition*>::iterator End() {
+        return _list.end();
+    }
+
+  private:
+    std::list<WatchCondition*> _list;
 };
 
 class STECondition: public WatchCondition {

@@ -2326,7 +2326,7 @@ void _nrn_watch_activate(Datum* d,
     }
     if (r == 0) {
         for (auto wc1: *wl) {
-            wc1->Remove();
+            wc1->del.send(wc1);
             if (wc1->qthresh_) {  // is it on the queue?
                 net_cvode_instance->remove_event(wc1->qthresh_, PP2NT(pnt)->id);
                 wc1->qthresh_ = nullptr;
@@ -2444,7 +2444,7 @@ void _nrn_free_watch(Datum* d, int offset, int n) {
     }
     for (i = offset + 1; i < nn; ++i) {
         if (auto* wc = d[i].get<WatchCondition*>(); wc) {
-            wc->Remove();
+            wc->del.send(wc);
             delete wc;
             d[i] = nullptr;
         }
@@ -5241,25 +5241,22 @@ void ConditionEvent::abandon_statistics(Cvode* cv) {
 }
 
 WatchCondition::WatchCondition(Point_process* pnt, double (*c)(Point_process*))
-    : HTList() {
+{
     pnt_ = pnt;
     c_ = c;
     watch_index_ = 0;  // For transfer, will be a small positive integer.
 }
 
 WatchCondition::~WatchCondition() {
-    // printf("~WatchCondition\n");
-    Remove();
+    del.send(this);
 }
 
 // A WatchCondition but with different deliver
 STECondition::STECondition(Point_process* pnt, double (*c)(Point_process*))
     : WatchCondition(pnt, c) {
-    // printf("STECondition\n");
 }
 
 STECondition::~STECondition() {
-    // printf("~STECondition\n");
 }
 
 void WatchCondition::activate(double flag) {
@@ -5284,7 +5281,7 @@ void WatchCondition::activate(double flag) {
         wl = new HTList();
         net_cvode_instance->wl_list_[id].push_back(wl);
     }
-    Remove();
+    del.send(this);
     wl->Append(this);
 }
 
@@ -5354,7 +5351,7 @@ void STETransition::deactivate() {
         net_cvode_instance->remove_event(stec_->qthresh_, stec_->thread()->id);
         stec_->qthresh_ = nullptr;
     }
-    stec_->Remove();
+    stec_->del.send(stec_.get());
 }
 
 void STECondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {
@@ -5458,9 +5455,9 @@ void Cvode::evaluate_conditions(NrnThread* nt) {
         }
     }
     if (z.watch_list_) {
-        for (HTList* item = z.watch_list_->First(); item != z.watch_list_->End();
-             item = item->Next()) {
-            ((WatchCondition*) item)->condition(this);
+        for (auto item = z.watch_list_->First(); item != z.watch_list_->End();
+             ++item) {
+            (*item)->condition(this);
         }
     }
 }
@@ -5487,9 +5484,9 @@ void Cvode::check_deliver(NrnThread* nt) {
         }
     }
     if (z.watch_list_) {
-        for (HTList* item = z.watch_list_->First(); item != z.watch_list_->End();
-             item = item->Next()) {
-            ((WatchCondition*) item)->check(nt, nt->_t);
+        for (auto item = z.watch_list_->First(); item != z.watch_list_->End();
+             ++item) {
+            (*item)->check(nt, nt->_t);
         }
     }
 }
@@ -5902,9 +5899,8 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
     }
 
     for (HTList* wl: wl_list_[nt->id]) {
-        for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
-            WatchCondition* wc = (WatchCondition*) item;
-            wc->check(nt, nt->_t);
+        for (auto item = wl->First(); item != wl->End(); ++item) {
+            (*item)->check(nt, nt->_t);
         }
     }
 }
@@ -5920,9 +5916,8 @@ void nrn2core_transfer_WATCH(void (*cb)(int, int, int, int, int)) {
     // segregated by threads.
     for (auto& htlists_of_thread: net_cvode_instance->wl_list_) {
         for (HTList* wl: htlists_of_thread) {
-            for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
-                WatchCondition* wc = (WatchCondition*) item;
-                nrn2core_transfer_WatchCondition(wc, cb);
+            for (auto item = wl->First(); item != wl->End(); ++item) {
+                nrn2core_transfer_WatchCondition(*item, cb);
             }
         }
     }
