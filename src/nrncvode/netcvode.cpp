@@ -5253,8 +5253,6 @@ WatchCondition::~WatchCondition() {
 STECondition::STECondition(Point_process* pnt, double (*c)(Point_process*))
     : WatchCondition(pnt, c) {}
 
-STECondition::~STECondition() {}
-
 void WatchCondition::activate(double flag) {
     Cvode* cv = NULL;
     int id = 0;
@@ -5898,7 +5896,7 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
         }
     }
 
-    for (auto* wl: wl_list_[nt->id]) {
+    for (const auto* wl: wl_list_[nt->id]) {
         for (auto wc: *wl) {
             wc->check(nt, nt->_t);
         }
@@ -5915,7 +5913,7 @@ void nrn2core_transfer_WATCH(void (*cb)(int, int, int, int, int)) {
     // should be revisited for possible simplification since wl_list now
     // segregated by threads.
     for (auto& htlists_of_thread: net_cvode_instance->wl_list_) {
-        for (auto* wl: htlists_of_thread) {
+        for (const auto* wl: htlists_of_thread) {
             for (auto wc: *wl) {
                 nrn2core_transfer_WatchCondition(wc, cb);
             }

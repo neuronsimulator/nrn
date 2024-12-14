@@ -19,7 +19,7 @@ class signal_ {
         }
     }
 
-    void send(Args... args) {
+    void send(Args... args) const {
         for (const auto& [i, f]: functors) {
             std::invoke(f, args...);
         }
