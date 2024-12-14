@@ -27,6 +27,7 @@
 
 #include <cfenv>
 #include <condition_variable>
+#include <filesystem>
 #include <iostream>
 #include <mutex>
 #include <thread>
@@ -168,9 +169,6 @@ static int c = '\n'; /* global for use by warning() */
 void set_intset() {
     hoc_intset++;
 }
-#endif
-#ifdef WIN32
-extern void hoc_win32_cleanup();
 #endif
 
 static int follow(int expect, int ifyes, int ifno); /* look ahead for >=, etc. */
@@ -960,16 +958,10 @@ void hoc_final_exit(void) {
     rl_deprep_terminal();
 #endif
     ivoc_cleanup();
-#ifdef WIN32
-    hoc_win32_cleanup();
-#else
-    std::string cmd{neuron_home};
-    cmd += "/lib/cleanup ";
-    cmd += std::to_string(hoc_pid());
-    if (system(cmd.c_str())) {  // fix warning: ignoring return value
-        return;
-    }
-#endif
+    auto tmp_dir = std::getenv("TEMP");
+    auto path = std::filesystem::path(tmp_dir ? tmp_dir : "/tmp") / "oc" /
+                std::to_string(hoc_pid()) / ".hl";
+    std::filesystem::remove(path);
 }
 
 void hoc_quit(void) {
