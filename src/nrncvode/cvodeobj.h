@@ -1,5 +1,7 @@
 #pragma once
 
+#include <list>
+
 #include "nrnmpi.h"
 #include "nrnneosm.h"
 //#include "shared/nvector_serial.h"
@@ -16,7 +18,6 @@ struct BAMech;
 struct NrnThread;
 class PlayRecord;
 class STEList;
-class HTList;
 namespace neuron {
 struct model_sorted_token;
 }
@@ -72,7 +73,7 @@ class CvodeThreadData {
     Node** v_node_;
     Node** v_parent_;
     PreSynList* psl_th_;  // with a threshold
-    HTList* watch_list_;
+    std::list<WatchCondition*>* watch_list_;
     std::vector<neuron::container::data_handle<double>> pv_, pvdot_;
     int nvoffset_;              // beginning of this threads states
     int nvsize_;                // total number of states for this thread
