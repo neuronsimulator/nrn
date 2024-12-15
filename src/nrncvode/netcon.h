@@ -249,11 +249,10 @@ class WatchCondition: public ConditionEvent {
 class STECondition: public WatchCondition {
   public:
     STECondition(Point_process*, double (*)(Point_process*) = NULL);
-    virtual ~STECondition() = default;
-    virtual void deliver(double, NetCvode*, NrnThread*);
-    virtual void pgvts_deliver(double t, NetCvode*);
-    virtual double value();
-    virtual NrnThread* thread();
+    void deliver(double, NetCvode*, NrnThread*) override;
+    void pgvts_deliver(double t, NetCvode*) override;
+    double value() override;
+    NrnThread* thread() override;
 
     STETransition* stet_;
 };
