@@ -916,8 +916,6 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${NRN_INSTA
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
-install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
-        DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
 
 # Copy NEURON headers that will be included in the installation into the build directory.
 set(headers_in_build_dir)
