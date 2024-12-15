@@ -960,7 +960,7 @@ void hoc_final_exit(void) {
     ivoc_cleanup();
     auto tmp_dir = std::getenv("TEMP");
     auto path = std::filesystem::path(tmp_dir ? std::string(tmp_dir) : "/tmp") /
-                ("oc" + std::to_string(hoc_pid()) + ".hl");
+                fmt::format("oc{}.hl", hoc_pid());
     std::filesystem::remove(path);
 }
 
