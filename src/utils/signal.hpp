@@ -1,12 +1,14 @@
-#pragma
+#pragma once
 
-#include <map>
+#include <unordered_map>
 
 template <typename... Args>
 class signal_ {
   public:
+    using key_type = unsigned;
+
     template <typename F>
-    unsigned connect(F f) {
+    key_type connect(F f) {
         ++counter;
         functors[counter] = f;
         return counter;
@@ -26,6 +28,6 @@ class signal_ {
     }
 
   private:
-    unsigned counter = 0;
-    std::map<int, std::function<void(Args...)>> functors;
+    key_type counter = 0;
+    std::unordered_map<key_type, std::function<void(Args...)>> functors;
 };
