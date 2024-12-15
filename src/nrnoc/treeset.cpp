@@ -18,9 +18,10 @@
 #include "ocnotify.h"
 #include "partrans.h"
 #include "section.h"
-#include "spmatrix.h"
+#include "ocmatrix.h"
 #include "utils/profile/profiler_interface.h"
 #include "multicore.h"
+#include "ocmatrix.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -31,8 +32,6 @@
 #include <string>
 
 #include <fmt/format.h>
-
-extern spREAL* spGetElement(char*, int, int);
 
 int nrn_shape_changed_; /* for notifying Shape class in nrniv */
 double* nrn_mech_wtime_;
@@ -353,7 +352,9 @@ void update_sp13_rhs_based_on_actual_rhs(NrnThread* nt) {
  */
 void update_actual_d_based_on_sp13_mat(NrnThread* nt) {
     for (int i = 0; i < nt->end; ++i) {
-        nt->actual_d(i) = *nt->_v_node[i]->_d_matelm;
+        const int index = nt->_v_node[i]->eqn_index_;
+        OcMatrix& m = *nt->_sp13mat;
+        nt->actual_d(i) = m.getval(index - 1, index - 1);
     }
 }
 
@@ -362,7 +363,9 @@ void update_actual_d_based_on_sp13_mat(NrnThread* nt) {
  */
 void update_sp13_mat_based_on_actual_d(NrnThread* nt) {
     for (int i = 0; i < nt->end; ++i) {
-        *nt->_v_node[i]->_d_matelm = nt->actual_d(i);
+        const int index = nt->_v_node[i]->eqn_index_;
+        OcMatrix& m = *nt->_sp13mat;
+        m(index - 1, index - 1) = nt->actual_d(i);
     }
 }
 
@@ -394,7 +397,7 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     if (use_sparse13) {
         int i, neqn;
         nrn_thread_error("nrn_rhs use_sparse13");
-        neqn = spGetSize(_nt->_sp13mat, 0);
+        neqn = _nt->_sp13mat->nrow();
         for (i = 1; i <= neqn; ++i) {
             _nt->_sp13_rhs[i] = 0.;
         }
@@ -500,7 +503,7 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
 
     if (use_sparse13) {
         // Zero the sparse13 matrix
-        spClear(_nt->_sp13mat);
+        _nt->_sp13mat->zero();
     }
 
     // Make sure the SoA node diagonals are also zeroed (is this needed?)
@@ -550,7 +553,6 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
         }
     }
 #if EXTRACELLULAR
-    /* nde->_d[0] contains the -ELECTRODE_CURRENT contribution to nd->_d */
     nrn_setup_ext(_nt);
 #endif
     if (use_sparse13) {
@@ -571,16 +573,21 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
         update_sp13_mat_based_on_actual_d(_nt);  // just because of activclamp_lhs
         for (i = i2; i < i3; ++i) {              // note i2
             Node* nd = _nt->_v_node[i];
+            OcMatrix& m = *_nt->_sp13mat;
             auto const parent_i = _nt->_v_parent_index[i];
             auto* const parent_nd = _nt->_v_node[parent_i];
             auto const nd_a = NODEA(nd);
             auto const nd_b = NODEB(nd);
             // Update entries in sp13_mat
-            *nd->_a_matelm += nd_a;
-            *nd->_b_matelm += nd_b; /* b may have value from lincir */
-            *nd->_d_matelm -= nd_b;
-            // used to update NODED (sparse13 matrix) using NODEA and NODEB ("SoA")
-            *parent_nd->_d_matelm -= nd_a;
+            {
+                const int index = nd->eqn_index_;
+                const int parent_index = parent_nd->eqn_index_;
+                m(parent_index - 1, index - 1) += nd_a;
+                m(index - 1, parent_index - 1) += nd_b; /* b may have value from lincir */
+                m(index - 1, index - 1) -= nd_b;
+                // used to update NODED (sparse13 matrix) using NODEA and NODEB ("SoA")
+                m(parent_index - 1, parent_index - 1) -= nd_a;
+            }
             // Also update the Node's d value in the SoA storage (is this needed?)
             vec_d[i] -= nd_b;
             vec_d[parent_i] -= nd_a;
@@ -1774,8 +1781,8 @@ void nrn_matrix_node_free() {
             free(std::exchange(nt->_sp13_rhs, nullptr));
         }
         if (nt->_sp13mat) {
-            spDestroy(nt->_sp13mat);
-            nt->_sp13mat = (char*) 0;
+            delete nt->_sp13mat;
+            nt->_sp13mat = nullptr;
         }
     }
     diam_changed = 1;
@@ -1869,7 +1876,7 @@ static void nrn_matrix_node_alloc(void) {
     }
     ++nrn_matrix_cnt_;
     if (use_sparse13) {
-        int in, err, extn, neqn, j;
+        int in, extn, neqn;
         nt = nrn_threads;
         neqn = nt->end + nrndae_extra_eqn_count();
         extn = 0;
@@ -1879,49 +1886,27 @@ static void nrn_matrix_node_alloc(void) {
         /*printf(" %d extracellular nodes\n", extn);*/
         neqn += extn;
         nt->_sp13_rhs = (double*) ecalloc(neqn + 1, sizeof(double));
-        nt->_sp13mat = spCreate(neqn, 0, &err);
-        if (err != spOKAY) {
-            hoc_execerror("Couldn't create sparse matrix", (char*) 0);
-        }
+        nt->_sp13mat = OcMatrix::instance(neqn, neqn, OcMatrix::MSPARSE);
         for (in = 0, i = 1; in < nt->end; ++in, ++i) {
-            nt->_v_node[in]->eqn_index_ = i;
+            nt->_v_node[in]->eqn_index_ = i; // 1-indexed
             if (nt->_v_node[in]->extnode) {
                 i += nlayer;
             }
         }
         for (in = 0; in < nt->end; ++in) {
             int ie, k;
-            Node *nd, *pnd;
+            Node *nd;
             Extnode* nde;
             nd = nt->_v_node[in];
             nde = nd->extnode;
-            pnd = nt->_v_parent[in];
             i = nd->eqn_index_;
             nt->_sp13_rhs[i] = nt->actual_rhs(in);
-            nd->_d_matelm = spGetElement(nt->_sp13mat, i, i);
             if (nde) {
+                nde->eqn_index_ = i; // 0-indexed
                 for (ie = 0; ie < nlayer; ++ie) {
                     k = i + ie + 1;
-                    nde->_d[ie] = spGetElement(nt->_sp13mat, k, k);
                     nde->_rhs[ie] = nt->_sp13_rhs + k;
-                    nde->_x21[ie] = spGetElement(nt->_sp13mat, k, k - 1);
-                    nde->_x12[ie] = spGetElement(nt->_sp13mat, k - 1, k);
                 }
-            }
-            if (pnd) {
-                j = pnd->eqn_index_;
-                nd->_a_matelm = spGetElement(nt->_sp13mat, j, i);
-                nd->_b_matelm = spGetElement(nt->_sp13mat, i, j);
-                if (nde && pnd->extnode)
-                    for (ie = 0; ie < nlayer; ++ie) {
-                        int kp = j + ie + 1;
-                        k = i + ie + 1;
-                        nde->_a_matelm[ie] = spGetElement(nt->_sp13mat, kp, k);
-                        nde->_b_matelm[ie] = spGetElement(nt->_sp13mat, k, kp);
-                    }
-            } else { /* not needed if index starts at 1 */
-                nd->_a_matelm = nullptr;
-                nd->_b_matelm = nullptr;
             }
         }
         nrndae_alloc();
