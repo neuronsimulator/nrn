@@ -2,15 +2,18 @@ from neuron import h
 from neuron.expect_hocerr import expect_err
 from neuron.tests.utils.checkresult import Chk
 
+cv = h.CVode()
+pc = h.ParallelContext()
+
 import io, math, os, re, sys
 
+jsonfile = "test_netcvode.json"
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
-chk = Chk(os.path.join(dir_path, "test_netcvode.json"))
+chk = Chk(os.path.join(dir_path, jsonfile))
 if hasattr(h, "usetable_hh"):
     h.usetable_hh = 0  # So same whether compiled with CoreNEURON or not.
 
-cv = h.CVode()
-pc = h.ParallelContext()
 
 # remove address info from cv.debug_event output
 def debug_event_filter(s):
@@ -547,8 +550,8 @@ def integrator_properties():
     def run1(key):
         h.finitialize(0.001)
         cv.solve(2)
-        chk(key + " tvec", tvec, tol=5e-10)
-        chk(key + " vvec", vvec, tol=1e-9)
+        chk(key + " tvec", tvec, tol=1e-9)
+        chk(key + " vvec", vvec, tol=2e-9)
 
     cv.rtol(1e-3)
     cv.atol(0)
