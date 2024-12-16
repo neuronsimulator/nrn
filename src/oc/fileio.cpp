@@ -22,9 +22,9 @@
 
 // separator for items in env variables
 #if defined(WIN32)
-const auto os_pathsep = std::string(";");
+static const auto os_pathsep = std::string(";");
 #else
-const auto os_pathsep = std::string(":");
+static const auto os_pathsep = std::string(":");
 #endif
 
 extern char* neuron_home;
