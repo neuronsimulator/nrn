@@ -169,6 +169,7 @@ static int c = '\n'; /* global for use by warning() */
 void set_intset() {
     hoc_intset++;
 }
+extern void ivoc_win32_cleanup();
 #endif
 
 static int follow(int expect, int ifyes, int ifno); /* look ahead for >=, etc. */
