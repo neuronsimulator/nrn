@@ -1,0 +1,1847 @@
+# Copyright 2023 Blue Brain Project, EPFL.
+# See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+######################### NMODL Abstract Language Definition ##############################
+#
+# PURPOSE
+# =======
+#
+# Lot of information about language constructs is necessary at various stages
+# like AST definitions, visitors implementation, source-to-source transformations
+# etc. In case of small changes in grammar or AST definition, especially
+# during development stage, we have to re-write considerable part of the code.
+# The idea of "abstract" language definition is to define framework that can automatically
+# generate part of this "mechanical" code. This approach has been used in some open source
+# projects (e.g. compiler design courses, TableGen format in LLVM).
+#
+# During first prototyping phase we defined simple text rules inspired by compiler course
+# assignment available at jazariethach/project6_CS160.git (no longer available on github).
+#
+# The basic format of the every construct specification was:
+#
+#       BaseType:ChildType => MemberType<member_name>
+#
+# Here "ChildType" is a new AST class that we are defining. "ParentType" is the base class,
+# "MemberType" is the type of member variable with variable name "member_name". The name is
+# specified in the angle braces "< >". This will generate C++ class definition like :
+#
+#       class ChildType : public BaseType {
+#         private:
+#           MemberType member_name;
+#       };
+#
+# This specification format was sufficient for first AST design but as we started
+# implementing more features and compiler passes, we need to add more information to language
+# definition. For example, we need to make certain members vector, some are optional, some need
+# specific method (getter/setter) etc. In the future we may need to make certain members private.
+# Above text definition is limiting if we have to accomodate future enhancements.
+#
+# To overcome above limitation, we are moving to YAML definition format. This allows easy
+# extension to language construct. For example, new properties could be easily added to
+# exisiting specification.
+#
+#
+# NOTE
+# ====
+#
+# Old text specification has been converted to YAML format. The old documentation has information
+# about how/why specific types were choosen for AST. You can find that documentation in the older
+# commits of this file (e.g. a0a20e277ccf26752af4f648c245b4e06a44af20).
+#
+# YAML BASED RULE SPECIFICATION
+# =============================
+#
+# Text based specification described above is very limiting in terms adding extra properties.
+# YAML based specification allows easy addition of new properties. Below are some comments
+# about the properties and specification :
+#
+# 1.  Every key in YAML specification is AST node
+# 2.  The hierarchy defines parent-child class relationship
+# 3.  members is an array of member variables of the class
+# 4.  optional : indicates if variable is optional in bison specification (i.e. pointer)
+# 5.  type : type of the member
+# 6.  vector : if member variable is std::vector type
+# 7.  prefix/suffix :
+#         value  : indicates the value (i.e. string here) of prefix/suffix itself
+#         force  : print value always even if member if null pointer itself (e.g. arguments)
+# 8.  separator : for the vector data type, the separator for prinitng elements
+# 9.  node_name : add get_node_name() method to class and return corresponding value as name
+# 10. add : need to have addMemberType method for corresponding variable (todo : remove this)
+# 11. order of the members is important and determines how constructors/nmodl visitor get
+#     defined from python code generators.
+#
+# TODO : Add detailed information about YAML specification by porting old text based rule
+# specification
+
+## @package nmodl_yaml
+#  Specification of NMODL in YAML format
+#
+
+- Ast:
+    brief: "Top level AST base class"
+    description: |
+                  Ast is a top level, abstract base class defining the interface
+                  for all nodes of Abstract Syntax Tree (AST).
+
+    children:
+
+      - Node:
+          brief: "Base class for all AST node"
+          description: |
+                  Base class for all nodes in the AST. This can replace ast::Ast in
+                  the next refactoring.
+
+          children:
+
+            - Expression:
+                brief: "Base class for all expressions in the NMODL"
+                description: |
+                        Base class for all expression types. This is one of the top level node
+                        in the AST representing higher level expression constructs. %Expressions
+                        can be a variable itself or complex binary expressions.
+
+                        \sa ast::Statement
+
+                children:
+
+                  - String:
+                      members:
+                        - value:
+                            brief: "Value of string"
+                            type: std::string
+                      brief: "Represents a string"
+                      description: |
+                              All statements encapsulating text block are stored in the AST as ast::String.
+                              For example, nodes like ast::LineComment and ast::Verbatim block use ast::String::value
+                              to store the underlying text:
+
+                              \code{.mod}
+                                  COMMENT
+                                    This text is stored as String
+                                  ENDCOMMENT
+
+                                  VERBATIM
+                                      int *x;
+                                      *x = ...
+                                  ENDVERBATIM
+                              \endcode
+
+                  - Number:
+                      brief: "Base class for all numbers"
+                      description: |
+                              Base class for all number types like ast::Integer, ast::Float and ast::Double.
+
+                      children:
+
+                        - Integer:
+                            members:
+                              - value:
+                                  brief: "Value of integer"
+                                  type: int
+                              - macro:
+                                  brief: "if integer is a macro then it's name"
+                                  type: Name
+                                  optional: true
+                            brief: "Represents an integer variable"
+                            description: |
+                                    Non floating value in the mod file is parsed as an integer. For example,
+                                    in the below code, integer literals like `0` and `11` are stored as ast::Integer
+                                    in the AST :
+
+                                    \code{.mod}
+                                        FROM i=0 TO N {
+                                            tau = X[i] + 11
+                                        }
+                                    \endcode
+
+                                    \sa ast::Float ast::Double
+
+                        - Float:
+                            members:
+                              - value:
+                                  brief: "Value of float"
+                                  type: std::string
+                            brief: "Represents a float variable"
+                            description: |
+                                    Single precision float value in the mod file can be represented by ast::Float.
+
+                                    \note Currently every float variable in the NMODL is stored as ast::Double and hence
+                                    this type is note used. This will be changed soon for variables like ast::ParamAssign.
+
+                                    \sa ast::Integer ast::Double
+
+                        - Double:
+                            members:
+                              - value:
+                                  brief: "Value of double"
+                                  type: std::string
+                            brief: "Represents a double variable"
+                            description: |
+                                    %Double precision float value in the mod file is represented by ast::Double.
+                                    For example, float literals like `0.1` in the mod file are parsed as double
+                                    and stored using ast::Double::value :
+
+                                    \code{.mod}
+                                        PROCEDURE foo() {
+                                          LOCAL x
+                                          x = 0.1 + tau
+                                        }
+                                    \endcode
+
+                                    Note that the variables are not classified ast integer or float in the AST. The
+                                    decision about variable types is done by code generation backends.
+
+                                    \sa ast::Integer ast::Float
+
+                        - Boolean:
+                            members:
+                              - value:
+                                  brief: "Value of boolean"
+                                  type: int
+                            brief: "Represents a boolean variable"
+                            description: |
+                                    %Boolean values in the mod file can be represented by ast::Boolean.
+
+                                    \note Currently this type is used as only flag in some of the AST nodes. Similar to ast::Float,
+                                    this type was introduced for data type specific code generation support in the future.
+
+                  - Identifier:
+                      brief: "Base class for all identifiers"
+                      description: |
+                              Base class for all variable types like ast::Name, ast::PrimeName and ast::Argument.
+
+                              \sa ast::Number
+
+                      children:
+
+                        - Name:
+                            members:
+                              - value:
+                                  brief: "Value of name"
+                                  type: String
+                                  node_name: true
+                            brief: "Represents a name"
+                            description: |
+                                    Whenever lexer encounters string variable, it returns a ast::Name
+                                    type. So, along with ast::Integer, ast::Double ast::String and ast::PrimeName,
+                                    ast::Name is one of the fundamental type in the AST. Many other variable types
+                                    (e.g. ast::GlobalVar, ast::RangeVar) have underlying value stored as ast::Name.
+
+                                    \note This node should be able to use std::string as value type instead of ast::String
+
+                        - PrimeName:
+                            members:
+                              - value:
+                                  brief: "Name of prime variable"
+                                  type: String
+                                  node_name: true
+                              - order:
+                                  brief: "order of ODE"
+                                  type: Integer
+                            brief: "Represents a prime variable (for ODE)"
+                            description: |
+                                    In case of ODE specification, all state variables appearing on LHS
+                                    with \` as suffix are parsed by lexer as ast::PrimeName. For example,
+                                    in below NMODL construct, m\` is stored as ast::PrimeName with `m` as a
+                                    ast::PrimeName::value and `1` as an ast::PrimeName::order.
+
+                                    \code
+                                        DERIVATIVE states {
+                                          m` = m + h
+                                        }
+                                    \endcode
+
+                        - IndexedName:
+                            members:
+                              - name:
+                                  brief: "Name of array variable"
+                                  type: Identifier
+                                  node_name: true
+                              - length:
+                                  brief: "length of an array or index position"
+                                  type: Expression
+                                  prefix: {value: "["}
+                                  suffix: {value: "]"}
+                            brief: "Represents specific element of an array variable"
+                            description: |
+                                    If variable is declared as an array or when array element is accessed,
+                                    it is stored in the ast as ast::IndexedName. For example, in below NMODL,
+                                    construct `m[4]` is stored as ast::IndexedName with `m` as ast::IndexedName::name
+                                    and `4` as ast::IndexedName::length.
+
+                                    \code
+                                        STATE {
+                                          m[4]
+                                        }
+                                    \endcode
+
+                        - VarName:
+                            members:
+                              - name:
+                                  brief: "Name of variable"
+                                  type: Identifier
+                                  node_name: true
+                              - at:
+                                  brief: "Value specified with `@`"
+                                  type: Integer
+                                  optional: true
+                                  prefix: {value: "@"}
+                              - index:
+                                  brief: "index value in case of array"
+                                  type: Expression
+                                  optional: true
+                                  prefix: {value: "["}
+                                  suffix: {value: "]"}
+                            brief: "Represents a variable"
+                            description: |
+                                    This type was introduced to store variables of different types like
+                                    ast::Name or ast::IndexedName in the AST.
+
+                                    \note With ast::Identifier as top level base class, this type can be
+                                    removed in the future refactoring.
+
+                        - Argument:
+                            members:
+                              - name:
+                                  brief: "Name of the argument"
+                                  type: Identifier
+                                  node_name: true
+                              - unit:
+                                  brief: "Unit of the argument"
+                                  type: Unit
+                                  optional: true
+                            brief: "Represents an argument to functions and procedures"
+                            description: |
+                                    In case of function definitions from different ast nodes like ast::FunctionBlock,
+                                    ast::ProcedureBlock, the arguments are store in the ast::Argument. For example,
+                                    in below NMODL construct, `weight` is stored as ast::Argument::name and `uS` is
+                                    stored as ast::Argument::unit:
+
+                                    \code {.mod}
+                                        NET_RECEIVE(weight (uS)) {
+                                            g = g + weight
+                                        }
+                                    \endcode
+
+                        - ReactVarName:
+                            brief: "TODO"
+                            members:
+                              - value:
+                                  brief: "TODO"
+                                  type: Integer
+                                  optional: true
+                                  prefix: {value: " "}
+                              - name:
+                                  brief: "TODO"
+                                  type: VarName
+                                  node_name: true
+
+                        - ReadIonVar:
+                            brief: "TODO"
+                            members:
+                              - name:
+                                  brief: "TODO"
+                                  type: Name
+                                  node_name: true
+
+                        - WriteIonVar:
+                            brief: "TODO"
+                            members:
+                              - name:
+                                  brief: "TODO"
+                                  type: Name
+                                  node_name: true
+
+                        - NonspecificCurVar:
+                            brief: "TODO"
+                            members:
+                              - name:
+                                  brief: "TODO"
+                                  type: Name
+                                  node_name: true
+
+                        - ElectrodeCurVar:
+                            brief: "TODO"
+                            members:
+                              - name:
+                                  brief: "TODO"
+                                  type: Name
+                                  node_name: true
+
+                        - RangeVar:
+                            brief: "TODO"
+                            members:
+                              - name:
+                                  brief: "TODO"
+                                  type: Name
+                                  node_name: true
+
+                        - GlobalVar:
+                            brief: "TODO"
+                            members:
+                              - name:
+                                  brief: "TODO"
+                                  type: Name
+                                  node_name: true
+
+                        - PointerVar:
+                            brief: "TODO"
+                            members:
+                              - name:
+                                  brief: "TODO"
+                                  type: Name
+                                  node_name: true
+
+                        - RandomVar:
+                            brief: "Single variable of type RANDOM. pointer to a nrnran123_State"
+                            members:
+                              - name:
+                                  brief: "Name of the a RANDOM variable"
+                                  type: Name
+                                  node_name: true
+
+                        - BbcorePointerVar:
+                            members:
+                              - name:
+                                  brief: "Variable name"
+                                  type: Name
+                                  node_name: true
+                            brief: "Represent a single variable of type BBCOREPOINTER"
+                            description: |
+                                    See ast::BbcorePointer for an example.
+
+                        - ExternVar:
+                            brief: "TODO"
+                            members:
+                              - name:
+                                  brief: "TODO"
+                                  type: Name
+                                  node_name: true
+
+                  - Block:
+                      brief: "Base class for all block scoped nodes"
+                      description: |
+                              NMODL has different local and globals block scoped nodes like
+                              ast::NeuronBlock, ast::ParamBlock, ast::IfStatement etc. Ast::Block
+                              is base class and defines common interface for these nodes.
+
+                      children:
+
+                        - ParamBlock:
+                            nmodl: "PARAMETER "
+                            members:
+                              - statements:
+                                  brief: "Vector of parameters"
+                                  type: ParamAssign
+                                  vector: true
+                            brief: "Represents a `PARAMETER` block in the NMODL"
+                            description: |
+                                    Variables whose values are normally specified by the user are parameters
+                                    and are declared in a `PARAMETER` block. Here is an example :
+
+                                    \code{.mod}
+                                        PARAMETER {
+                                            gkbar=.01   (mho/cm2) : Maximum Permeability
+                                            d1 = .84
+                                            k2 = .13e-6 (mM)
+                                            abar = .28  (/ms)
+                                            lcai (mV)
+                                        }
+                                    \endcode
+
+                                    All parameters are stored in the ast::ParamBlock::statements as vector.
+
+                        - IndependentBlock:
+                            nmodl: "INDEPENDENT "
+                            members:
+                              - variables:
+                                  brief: "List of variable that should be independent"
+                                  type: Name
+                                  vector: true
+                                  separator: " "
+                            brief: "Represents a `INDEPENDENT` block in the NMODL"
+                            description: |
+                                    `INDEPENDENT` has following form in the NMODL specification :
+
+                                    \code{.mod}
+                                        INDEPENDENT {
+                                          t FROM 0 TO 1 WITH 1 (ms)
+                                        }
+                                    \endcode
+
+                        - AssignedBlock:
+                            nmodl: "ASSIGNED "
+                            members:
+                              - definitions:
+                                  brief: "Vector of assigned variables"
+                                  type: AssignedDefinition
+                                  vector: true
+                                  add: true
+                            brief: "Represents a `ASSIGNED` block in the NMODL"
+                            description: |
+                                    The `ASSIGNED` block is used for declaring two kinds of variables :
+                                      - those that are given values outside the mod files
+                                      - those that appear on the left hand side of assignment statements within
+                                        the mod file
+
+                                    Below is an example of `ASSIGNED` block in the mod file:
+
+                                    \code{.mod}
+                                        ASSIGNED {
+                                            ina     (mA/cm2)
+                                            gna     (pS/um2)
+                                            mtau (ms)   htau (ms)
+                                            tadj
+                                        }
+                                    \endcode
+
+                        - StateBlock:
+                            nmodl: "STATE "
+                            members:
+                              - definitions:
+                                  brief: "Vector of state variables"
+                                  type: AssignedDefinition
+                                  vector: true
+                            brief: "Represents a `STATE` block in the NMODL"
+                            description: |
+                                  If a model involves differential equations, families of algebraic equations,
+                                  or kinetic reaction schemes, their dependent variables or unknowns are to be
+                                  listed in the `STATE` block. Below is an example of `STATE`:
+
+                                    \code{.mod}
+                                        STATE {
+                                            m
+                                            h
+                                        }
+                                    \endcode
+
+                                    Note that the state variable specification has form of ast::AssignedDefinition and
+                                    hence can have associated unit specification.
+
+                        - InitialBlock:
+                            nmodl: "INITIAL "
+                            members:
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
+                            brief: "Represents a `INITIAL` block in the NMODL"
+                            description: |
+                                  The code in the `INITIAL` block is executed when the hoc function `finitialize()`
+                                  is called. Here is an example :
+
+                                    \code{.mod}
+                                        INITIAL {
+                                            rates(v+vshift)
+                                            m = minf
+                                            h = hinf
+                                            tadj = q10^((celsius - temp)/10)
+                                        }
+                                    \endcode
+
+                        - ConstructorBlock:
+                            nmodl: "CONSTRUCTOR "
+                            members:
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
+                            brief: "Represents a `CONSTRUCTOR` block in the NMODL"
+                            description: |
+                                  The code in the `CONSTRUCTOR` is called when the channel is instantiated. Like any
+                                  other global block, `CONSTRUCTOR` block can have any statements. It often used with
+                                  `VERBATIM` block for initialization purpose :
+
+                                    \code{.mod}
+                                        CONSTRUCTOR {
+                                            VERBATIM
+                                              if (ifarg(1)) { id= *getarg(1); } else { id= -1; }
+                                            ENDVERBATIM
+                                        }
+                                    \endcode
+
+                                    \sa ast::DestructorBlock
+
+                        - DestructorBlock:
+                            nmodl: "DESTRUCTOR "
+                            members:
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
+                            brief: "Represents a `DESTRUCTOR` block in the NMODL"
+                            description: |
+                                  The code in the `DESTRUCTOR` is called when the channel instance is deleted. It often
+                                  used with `VERBATIM` block for finalization purpose :
+
+                                    \code{.mod}
+                                        DESTRUCTOR {
+                                            VERBATIM {
+                                                nsyn = maxsyn = 0;
+                                                free(PRECAST);
+                                                link = 0;
+                                            }
+                                            ENDVERBATIM
+                                        }
+                                    \endcode
+
+                                    \sa ast::ConstructorBlock
+
+                        - StatementBlock:
+                            members:
+                              - statements:
+                                  brief: "Vector of statements"
+                                  type: Statement
+                                  vector: true
+                                  add: true
+                            brief: "Represents block encapsulating list of statements"
+                            description: |
+                                  Statement block is used to hold list of statements between `{ }`. This
+                                  represents a new block scope in the mod file and has following form :
+
+                                    \code{.mod}
+                                        {
+                                            statement1
+                                            {
+                                              statement2
+                                            }
+                                        }
+                                    \endcode
+
+                                    Note that the statement blocks can be nested where inner block will
+                                    be wrapped as statement with ast::ExpressionStatement.
+
+                        - DerivativeBlock:
+                            nmodl: "DERIVATIVE "
+                            members:
+                              - name:
+                                  brief: "Name of the derivative block"
+                                  type: Name
+                                  node_name: true
+                                  suffix: {value: " "}
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
+                            brief: "Represents `DERIVATIVE` block in the NMODL"
+                            description: |
+                                  This block is used to assign values to the derivatives of those
+                                  `STATE`s that are described by differential equations. The statements
+                                  in this block are of the form \f$y' = expr\f$. Here is an example :
+
+                                    \code{.mod}
+                                        DERIVATIVE states {
+                                            rates(v)
+                                            m' =  (minf-m)/mtau
+                                            h' = (hinf-h)/htau
+                                        }
+                                    \endcode
+
+                        - LinearBlock:
+                            nmodl: "LINEAR "
+                            members:
+                              - name:
+                                  brief: "Name of the linear block"
+                                  type: Name
+                                  node_name: true
+                                  suffix: {value: " "}
+                              - solvefor:
+                                  brief: "TODO"
+                                  type: Name
+                                  vector: true
+                                  separator: ","
+                                  prefix: {value: " SOLVEFOR "}
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
+                            brief: "Represents `LINEAR` block in the NMODL"
+                            description: |
+
+                                  A set of simultaneous equations can be specified in a `LINEAR` block.
+                                  Here is an example :
+
+                                    \code{.mod}
+                                        LINEAR clamp {
+                                            LOCAL t1, t2
+                                            t1 = tau1/dt
+                                            t2 = tau2/dt
+                                            ~ vi = v + fac*vo - fac*v
+                                            ~ t2*vo - t2*vo0 + vo = -gain * e
+                                            ~ -stim - e  +  vi - e  +  t1*vi - t1*e - t1*(vi0 - e0) = 0
+                                        }
+                                    \endcode
+
+                        - NonLinearBlock:
+                            nmodl: "NONLINEAR "
+                            members:
+                              - name:
+                                  brief: "Name of the non-linear block"
+                                  type: Name
+                                  node_name: true
+                              - solvefor:
+                                  brief: "Name of the integration method"
+                                  type: Name
+                                  vector: true
+                                  separator: ","
+                                  prefix: {value: " SOLVEFOR "}
+                                  suffix: {value: " ", force: true}
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
+                            brief: "Represents `NONLINEAR` block in the NMODL"
+                            description: |
+
+                                  A set of simultaneous equations can be specified in a `NONLINEAR` block.
+                                  Here is an example :
+
+                                    \code{.mod}
+                                        NONLINEAR nonlin {
+                                            ~ s[0] = 1
+                                            ~ s[1] = 3
+                                            ~ s[2] + s[1] = s[0]
+                                        }
+                                    \endcode
+
+                        - DiscreteBlock:
+                            brief: "TODO"
+                            nmodl: "DISCRETE "
+                            members:
+                              - name:
+                                  brief: "Name of the discrete block"
+                                  type: Name
+                                  node_name: true
+                                  suffix: {value: " "}
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
+
+                        - FunctionTableBlock:
+                            brief: "TODO"
+                            nmodl: "FUNCTION_TABLE "
+                            members:
+                              - name:
+                                  brief: "Name of the function table block"
+                                  type: Name
+                                  node_name: true
+                              - parameters:
+                                  brief: "Vector of the parameters"
+                                  type: Argument
+                                  vector: true
+                                  prefix: {value: "(", force: true}
+                                  suffix: {value: ")", force: true}
+                                  separator: ", "
+                                  getter: {override: true}
+                              - unit:
+                                  brief: "Unit if specified"
+                                  type: Unit
+                                  optional: true
+                                  prefix: {value: " "}
+
+                        - FunctionBlock:
+                            brief: "TODO"
+                            nmodl: "FUNCTION "
+                            members:
+                              - name:
+                                  brief: "Name of the function"
+                                  type: Name
+                                  node_name: true
+                              - parameters:
+                                  brief: "Vector of the parameters"
+                                  type: Argument
+                                  vector: true
+                                  prefix: {value: "(", force: true}
+                                  suffix: {value: ")", force: true}
+                                  separator: ", "
+                                  getter: {override: true}
+                              - unit:
+                                  brief: "Unit if specified"
+                                  type: Unit
+                                  optional: true
+                                  prefix: {value: " "}
+                                  suffix: {value: " ", force: true}
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
+
+                        - ProcedureBlock:
+                            brief: "TODO"
+                            nmodl: "PROCEDURE "
+                            members:
+                              - name:
+                                  brief: "Name of the procedure"
+                                  type: Name
+                                  node_name: true
+                              - parameters:
+                                  brief: "Vector of the parameters"
+                                  type: Argument
+                                  vector: true
+                                  prefix: {value: "(", force: true}
+                                  suffix: {value: ") ", force: true}
+                                  separator: ", "
+                                  getter: {override: true}
+                              - unit:
+                                  brief: "Unit if specified"
+                                  type: Unit
+                                  optional: true
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
+
+                        - NetReceiveBlock:
+                            brief: "TODO"
+                            nmodl: "NET_RECEIVE "
+                            members:
+                              - parameters:
+                                  brief: "Parameters to the net receive block"
+                                  type: Argument
+                                  vector: true
+                                  prefix: {value: "(", force: true}
+                                  suffix: {value: ") ", force: true}
+                                  separator: ", "
+                                  getter: {override: true}
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
+
+                        - SolveBlock:
+                            brief: "TODO"
+                            nmodl: SOLVE
+                            members:
+                              - block_name:
+                                  brief: "Name of the block to solve"
+                                  type: Name
+                                  prefix: {value: " "}
+                              - method:
+                                  brief: "Name of the integration method"
+                                  type: Name
+                                  optional: true
+                                  prefix: {value: " METHOD "}
+                              - steadystate:
+                                  brief: "Name of the integration method"
+                                  type: Name
+                                  optional: true
+                                  prefix: {value: " STEADYSTATE "}
+
+                        - BreakpointBlock:
+                            nmodl: "BREAKPOINT "
+                            members:
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
+                            brief: "Represents a `BREAKPOINT` block in NMODL"
+                            description: |
+                                        The `BREAKPOINT` block is used to update current and conductance.
+                                        at each time step. Here is an example of `BREAKPOINT` :
+
+                                        \code{.mod}
+                                            BREAKPOINT {
+                                                SOLVE states METHOD cnexp
+                                                gna = gnabar*m*m*m*h
+                                                ina = gna*(v - ena)
+                                                gk = gkbar*n*n*n*n
+                                                ik = gk*(v - ek)
+                                                il = gl*(v - el)
+                                            }
+                                        \endcode
+
+                                        \sa ast::DerivativeBlock ast::InitialBlock
+
+                        - BeforeBlock:
+                            nmodl: "BEFORE "
+                            members:
+                              - bablock:
+                                  brief: "Block to be called before"
+                                  type: BABlock
+                            brief: "Represents a `BEFORE` block in NMODL"
+
+                        - AfterBlock:
+                            nmodl: "AFTER "
+                            members:
+                              - bablock:
+                                  brief: "Block to be called after"
+                                  type: BABlock
+                            brief: "Represents a `AFTER` block in NMODL"
+                            description: |
+                                        This represents a block to be executed before another block.
+                                        Here is an example of `BEFORE` :
+
+                                        \code{.mod}
+                                            BEFORE STEP {
+                                              if (mode==1) {
+                                                if (ica<imax) {
+                                                  imax = ica
+                                                  timax = t
+                                                }
+                                              }
+                                            }
+                                        \endcode
+
+                        - BABlock:
+                            members:
+                              - type:
+                                  brief: "Type of NMODL block"
+                                  type: BABlockType
+                                  suffix: {value: " "}
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
+                            brief: "Represents a block to be executed before or after another block"
+                            description: |
+                                        This represents a block to be executed before or after another
+                                        block in NMODL. See ast::BeforeBlock and ast::AfterBlock for usage.
+
+                        - ForNetcon:
+                            brief: "TODO"
+                            nmodl: "FOR_NETCONS "
+                            members:
+                              - parameters:
+                                  brief: "Arguments to the for netcon block"
+                                  type: Argument
+                                  vector: true
+                                  prefix: {value: "(", force: true}
+                                  suffix: {value: ") ", force: true}
+                                  separator: ", "
+                                  getter: {override: true}
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
+
+                        - KineticBlock:
+                            brief: "TODO"
+                            nmodl: "KINETIC "
+                            members:
+                              - name:
+                                  brief: "Name of the kinetic block"
+                                  type: Name
+                                  node_name: true
+                                  suffix: {value: " "}
+                              - solvefor:
+                                  brief: "Solve for specification (TODO)"
+                                  type: Name
+                                  vector: true
+                                  separator: ","
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
+
+                        - UnitBlock:
+                            brief: "TODO"
+                            nmodl: "UNITS "
+                            members:
+                              - definitions:
+                                  brief: "Vector of unit statements"
+                                  type: Expression
+                                  vector: true
+
+                        - ConstantBlock:
+                            nmodl: "CONSTANT "
+                            members:
+                              - statements:
+                                  brief: "Vector of constant statements"
+                                  type: ConstantStatement
+                                  vector: true
+                            brief: "Represent `CONSTANT` block in the mod file"
+                            description: |
+                                            Here is an example of `CONSTANT` block in mod file:
+
+                                            \code{.mod}
+                                                CONSTANT {
+                                                    q10 = 3
+
+                                                    cvm = 28.9 (mV)
+                                                    ckm = 6.2 (mV)
+                                                    ctm = 0.000505 (s)
+                                                }
+                                            \endcode
+
+                        - NeuronBlock:
+                            nmodl: "NEURON "
+                            members:
+                              - statement_block:
+                                  brief: "Block with statements vector"
+                                  type: StatementBlock
+                                  getter: {override: true}
+                            brief: "Represent `NEURON` block in the mod file"
+                            description: |
+                                            The keyword `NEURON` introduces a special block which contains statements
+                                            that tell NMODL how to organize the variables for access at the NEURON user
+                                            level. Here is an example of `NEURON` block from `HH` channel:
+
+                                            \code{.mod}
+                                                NEURON {
+                                                        SUFFIX hh
+                                                        USEION na READ ena WRITE ina
+                                                        USEION k READ ek WRITE ik
+                                                        NONSPECIFIC_CURRENT il
+                                                        RANGE gnabar, gkbar, gl, el, gna, gk
+                                                        RANGE minf, hinf, ninf, mtau, htau, ntau
+                                                        THREADSAFE
+                                                }
+                                            \endcode
+
+                            url: "https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/mechanisms/nmodl2.html#neuron"
+
+                  - Unit:
+                      brief: "TODO"
+                      members:
+                        - name:
+                            brief: "TODO"
+                            type: String
+                            node_name: true
+                            prefix: {value: "("}
+                            suffix: {value: ")"}
+
+                  - DoubleUnit:
+                      brief: "TODO"
+                      members:
+                        - value:
+                            brief: "TODO"
+                            type: Double
+                        - unit:
+                            brief: "TODO"
+                            type: Unit
+                            optional: true
+
+                  - LocalVar:
+                      brief: "TODO"
+                      members:
+                        - name:
+                            brief: "TODO"
+                            type: Identifier
+                            node_name: true
+
+                  - Limits:
+                      brief: "TODO"
+                      members:
+                        - min:
+                            brief: "TODO"
+                            type: Number
+                            prefix: {value: "<"}
+                            suffix: {value: ","}
+                        - max:
+                            brief: "TODO"
+                            type: Number
+                            suffix: {value: ">"}
+
+                  - NumberRange:
+                      brief: "TODO"
+                      members:
+                        - min:
+                            brief: "TODO"
+                            type: Number
+                            prefix: {value: "<"}
+                            suffix: {value: ","}
+                        - max:
+                            brief: "TODO"
+                            type: Number
+                            suffix: {value: ">"}
+
+                  - ConstantVar:
+                      members:
+                        - name:
+                            brief: "Name of the variable"
+                            type: Name
+                            node_name: true
+                        - value:
+                            brief: "Value of the constant"
+                            type: Number
+                            prefix: {value: " = "}
+                        - unit:
+                            brief: "Unit for the variable"
+                            type: Unit
+                            optional: true
+                            prefix: {value: " "}
+                      brief: "Represents a variable in the ast::ConstantBlock"
+
+                  - BinaryOperator:
+                      members:
+                        - value:
+                            brief: "Operator"
+                            type: BinaryOp
+                      brief: "Operator used in ast::BinaryExpression"
+
+                  - UnaryOperator:
+                      brief: "TODO"
+                      members:
+                        - value:
+                            brief: "TODO"
+                            type: UnaryOp
+
+                  - ReactionOperator:
+                      brief: "TODO"
+                      members:
+                        - value:
+                            brief: "TODO"
+                            type: ReactionOp
+
+                  - ParenExpression:
+                      brief: "TODO"
+                      members:
+                        - expression:
+                            brief: "TODO"
+                            type: Expression
+                            prefix: {value: "("}
+                            suffix: {value: ")"}
+
+                  - BinaryExpression:
+                      members:
+                        - lhs:
+                            brief: "LHS of the binary expression"
+                            type: Expression
+                        - op:
+                            brief: "Operator"
+                            type: BinaryOperator
+                        - rhs:
+                            brief: "RHS of the binary expression"
+                            type: Expression
+                      brief: "Represents binary expression in the NMODL"
+                      description: |
+                              Any binary expression in the mod file is represented by this node type.
+                              For example, in below example, there are three binary expressions :
+
+                              \code{.mod}
+                                  BREAKPOINT {
+                                      SOLVE states METHOD cnexp
+                                      ina = gna*(v - ena)
+                                  }
+                              \endcode
+
+                              Note that the statement itself is stored in another type ast::ExpressionStatement.
+
+                              \sa ast::ExpressionStatement
+
+                  - DiffEqExpression:
+                      brief: "Represents differential equation in DERIVATIVE block"
+                      members:
+                        - expression:
+                            brief: "Differential Expression"
+                            type: BinaryExpression
+
+                  - UnaryExpression:
+                      brief: "TODO"
+                      members:
+                        - op:
+                            brief: "TODO"
+                            type: UnaryOperator
+                        - expression:
+                            brief: "TODO"
+                            type: Expression
+
+                  - NonLinEquation:
+                      brief: "One equation in a system of equations that collectively make a NONLINEAR block."
+                      nmodl: "~ "
+                      members:
+                        - lhs:
+                            brief: "Left-hand-side of the equation."
+                            type: Expression
+                            suffix: {value: " = "}
+                        - rhs:
+                            brief: "Right-hand-side of the equation."
+                            type: Expression
+
+                  - LinEquation:
+                      brief: "One equation in a system of equations tha collectively form a LINEAR block."
+                      nmodl: "~ "
+                      members:
+                        - lhs:
+                            brief: "Left-hand-side of the equation."
+                            type: Expression
+                            suffix: {value: " = "}
+                        - rhs:
+                            brief: "Right-hand-side of the equation."
+                            type: Expression
+
+                  - FunctionCall:
+                      brief: "TODO"
+                      members:
+                        - name:
+                            brief: "TODO"
+                            type: Name
+                            node_name: true
+                        - arguments:
+                            brief: "TODO"
+                            type: Expression
+                            vector: true
+                            separator: ", "
+                            prefix: {value: "(", force: true}
+                            suffix: {value: ")", force: true}
+
+                  - Watch:
+                      brief: "TODO"
+                      members:
+                        - expression:
+                            brief: "TODO"
+                            type: Expression
+                            prefix: {value: "("}
+                            suffix: {value: ")"}
+                        - value:
+                            brief: "TODO"
+                            type: Expression
+                            prefix: {value: " "}
+
+                  - BABlockType:
+                      members:
+                        - value:
+                            brief: "block type"
+                            type: BAType
+                      brief: "Type to represent different block types for before/after block"
+                      description: |
+                              Different NMODL blocks can be used with ast::BeforeBlock and ast::AfterBlock.
+                              This type is used to represent such block types.
+
+                              \sa ast::BeforeBlock as::AfterBlock
+                  - UnitDef:
+                      brief: "TODO"
+                      members:
+                        - unit1:
+                            brief: "TODO"
+                            type: Unit
+                            node_name: true
+                        - unit2:
+                            brief: "TODO"
+                            type: Unit
+                            prefix: {value: " = "}
+                  - FactorDef:
+                      brief: "TODO"
+                      members:
+                        - name:
+                            brief: "TODO"
+                            type: Name
+                            node_name: true
+                            suffix: {value: " ="}
+                        - value:
+                            brief: "TODO"
+                            type: Double
+                            optional: true
+                            prefix: {value: " "}
+                        - unit1:
+                            brief: "TODO"
+                            type: Unit
+                            prefix: {value: " "}
+                        - gt:
+                            brief: "Todo: Michael : rename variable gt as well"
+                            type: Boolean
+                            nmodl: " ->"
+                            optional: true
+                        - unit2:
+                            brief: "TODO"
+                            type: Unit
+                            optional: true
+                            prefix: {value: " "}
+                  - Valence:
+                      brief: "TODO"
+                      members:
+                        - type:
+                            type: Name
+                            brief: "TODO"
+                            prefix: {value: " "}
+                            suffix: {value: " "}
+                        - value:
+                            brief: "TODO"
+                            type: Double
+
+            - Statement:
+                brief: "TODO"
+                children:
+                  - UnitState:
+                      brief: "TODO"
+                      members:
+                        - value:
+                            brief: "TODO"
+                            type: UnitStateType
+
+                  - LocalListStatement:
+                      brief: "TODO"
+                      nmodl: "LOCAL "
+                      members:
+                        - variables:
+                            brief: "TODO"
+                            type: LocalVar
+                            vector: true
+                            separator: ", "
+                            add: true
+
+                  - Model:
+                      brief: "TODO"
+                      nmodl: TITLE
+                      members:
+                        - title:
+                            brief: "TODO"
+                            type: String
+
+                  - Define:
+                      nmodl: "DEFINE "
+                      members:
+                        - name:
+                            brief: "Name of the macro"
+                            type: Name
+                            node_name: true
+                        - value:
+                            brief: "Value of the macro"
+                            type: Integer
+                            prefix: {value: " "}
+                      brief: "Represents a `DEFINE` statement in NMODL"
+
+                  - Include:
+                      brief: "Represents an `INCLUDE` statement in NMODL"
+                      nmodl: "INCLUDE "
+                      members:
+                        - filename:
+                            brief: "path to the file to include"
+                            type: String
+                        - blocks:
+                            brief: "AST of the included file"
+                            type: Node
+                            vector: true
+
+                  - ParamAssign:
+                      brief: "TODO"
+                      members:
+                        - name:
+                            brief: "TODO"
+                            type: Identifier
+                            node_name: true
+                        - value:
+                            brief: "TODO"
+                            type: Number
+                            optional: true
+                            prefix: {value: " = "}
+                        - unit:
+                            brief: "TODO"
+                            type: Unit
+                            optional: true
+                            prefix: {value: " "}
+                        - limit:
+                            brief: "TODO"
+                            type: Limits
+                            optional: true
+                            prefix: {value: " "}
+
+                  - AssignedDefinition:
+                      members:
+                        - name:
+                            brief: "Name of the variable"
+                            type: Identifier
+                            node_name: true
+                        - length:
+                            brief: "Length in case of array"
+                            type: Integer
+                            optional: true
+                            prefix: {value: "["}
+                            suffix: {value: "]"}
+                        - from:
+                            brief: "TODO"
+                            type: Number
+                            prefix: {value: " FROM "}
+                            optional: true
+                        - to:
+                            brief: "TODO"
+                            type: Number
+                            prefix: {value: " TO "}
+                            optional: true
+                        - start:
+                            brief: "TODO"
+                            type: Number
+                            prefix: {value: " START "}
+                            optional: true
+                        - unit:
+                            brief: "TODO"
+                            type: Unit
+                            optional: true
+                            prefix: {value: " "}
+                        - abstol:
+                            brief: "TODO"
+                            type: Double
+                            prefix: {value: " <"}
+                            suffix: {value: ">"}
+                            optional: true
+                      brief: "Represents a statement in `ASSIGNED` or `STATE` block"
+
+                  - ConductanceHint:
+                      nmodl: "CONDUCTANCE "
+                      members:
+                        - conductance:
+                            brief: "Conductance variable"
+                            type: Name
+                        - ion:
+                            brief: "Ion name"
+                            type: Name
+                            optional: true
+                            prefix: {value: " USEION "}
+                      brief: "Represents `CONDUCTANCE` statement in NMODL"
+                      description: |
+                                If `I/V` relation in the `BREAKPOINT` block is ohomic then one can
+                                specify `CONDUCTANCE` hint for optimised code generation:
+
+                                \code{.mod}
+                                    CONDUCTANCE g USEION I
+                                \endcode
+
+                                \sa nmodl::visitor::SympyConductanceVisitor
+
+                  - ExpressionStatement:
+                      brief: "TODO"
+                      members:
+                        - expression:
+                            brief: "TODO"
+                            type: Expression
+
+                  - ProtectStatement:
+                      brief: "TODO"
+                      nmodl: "PROTECT "
+                      members:
+                        - expression:
+                            brief: "TODO"
+                            type: Expression
+
+                  - FromStatement:
+                      brief: "TODO"
+                      nmodl: "FROM "
+                      members:
+                        - name:
+                            brief: "TODO"
+                            type: Name
+                            node_name: true
+                        - from:
+                            brief: "TODO"
+                            type: Expression
+                            prefix: {value: " = "}
+                        - to:
+                            brief: "TODO"
+                            type: Expression
+                            prefix: {value: " TO "}
+                        - increment:
+                            brief: "TODO"
+                            type: Expression
+                            prefix: {value: " BY "}
+                            suffix: {value: " ", force: true}
+                            optional: true
+                        - statement_block:
+                            brief: "TODO"
+                            type: StatementBlock
+                            getter: {override: true}
+
+                  - WhileStatement:
+                      brief: "TODO"
+                      nmodl: "WHILE "
+                      members:
+                        - condition:
+                            brief: "TODO"
+                            type: Expression
+                            prefix: {value: "("}
+                            suffix: {value: ") "}
+                        - statement_block:
+                            brief: "TODO"
+                            type: StatementBlock
+                            getter: {override: true}
+
+                  - IfStatement:
+                      brief: "TODO"
+                      nmodl: "IF "
+                      members:
+                        - condition:
+                            brief: "TODO"
+                            type: Expression
+                            prefix: {value: "("}
+                            suffix: {value: ") "}
+                        - statement_block:
+                            brief: "TODO"
+                            type: StatementBlock
+                            getter: {override: true}
+                        - elseifs:
+                            brief: "TODO"
+                            type: ElseIfStatement
+                            vector: true
+                        - elses:
+                            brief: "TODO"
+                            type: ElseStatement
+                            optional: true
+
+                  - ElseIfStatement:
+                      brief: "TODO"
+                      nmodl: " ELSE IF "
+                      members:
+                        - condition:
+                            brief: "TODO"
+                            type: Expression
+                            prefix: {value: "("}
+                            suffix: {value: ") "}
+                        - statement_block:
+                            brief: "TODO"
+                            type: StatementBlock
+                            getter: {override: true}
+
+                  - ElseStatement:
+                      brief: "TODO"
+                      nmodl: " ELSE "
+                      members:
+                        - statement_block:
+                            brief: "TODO"
+                            type: StatementBlock
+                            getter: {override: true}
+
+                  - WatchStatement:
+                      nmodl: "WATCH "
+                      members:
+                        - statements:
+                            brief: "Vector of watch statements"
+                            type: Watch
+                            vector: true
+                            separator: ","
+                            add: true
+                      brief: "Represent WATCH statement in NMODL"
+
+                  - MutexLock:
+                      nmodl: MUTEXLOCK
+                      brief: "Represent MUTEXLOCK statement in NMODL"
+
+                  - MutexUnlock:
+                      nmodl: MUTEXUNLOCK
+                      brief: "Represent MUTEXUNLOCK statement in NMODL"
+
+                  - Conserve:
+                      nmodl: CONSERVE
+                      members:
+                        - react:
+                            brief: "TODO"
+                            type: Expression
+                            prefix: {value: " "}
+                        - expr:
+                            brief: "TODO"
+                            type: Expression
+                            prefix: {value: " = "}
+                      brief: "Represent CONSERVE statement in NMODL"
+
+                  - Compartment:
+                      nmodl: COMPARTMENT
+                      members:
+                        - index_name:
+                            brief: "Name of the index variable in volume expression"
+                            type: Name
+                            optional: true
+                            prefix: {value: " "}
+                            suffix: {value: ","}
+                        - volume:
+                            brief: "The volume of the compartment"
+                            type: Expression
+                            prefix: {value: " "}
+                        - species:
+                            brief: "The names of the species that reside in this compartment"
+                            type: Name
+                            vector: true
+                            prefix: {value: " {"}
+                            suffix: {value: "}"}
+                            separator: " "
+                      brief: "Represent COMPARTMENT statement in NMODL"
+
+                  - LonDiffuse:
+                      nmodl: LONGITUDINAL_DIFFUSION
+                      members:
+                        - index_name:
+                            brief: "Index variable name"
+                            type: Name
+                            optional: true
+                            prefix: {value: " "}
+                            suffix: {value: ","}
+                        - rate:
+                            brief: "Diffusion coefficient/rate"
+                            type: Expression
+                            prefix: {value: " "}
+                        - species:
+                            brief: "Names of the diffusing species"
+                            type: Name
+                            vector: true
+                            prefix: {value: " {"}
+                            suffix: {value: "}"}
+                            separator: " "
+                      brief: "Represent LONGITUDINAL_DIFFUSION statement in NMODL"
+
+
+                  - ReactionStatement:
+                      brief: "TODO"
+                      nmodl: "~ "
+                      members:
+                        - reaction1:
+                            brief: "TODO"
+                            type: Expression
+                        - op:
+                            brief: "TODO"
+                            type: ReactionOperator
+                            prefix: {value: " "}
+                        - reaction2:
+                            brief: "TODO"
+                            type: Expression
+                            prefix: {value: " "}
+                            optional: true
+                        - expression1:
+                            brief: "TODO"
+                            type: Expression
+                            prefix: {value: " ("}
+                        - expression2:
+                            brief: "TODO"
+                            type: Expression
+                            prefix: {value: ", "}
+                            suffix: {value: ")", force: true}
+                            optional: true
+
+                  - LagStatement:
+                      nmodl: "LAG "
+                      members:
+                        - name:
+                            brief: "Name of the variable (TODO)"
+                            type: Identifier
+                        - byname:
+                            brief: "Name of the variable (TODO)"
+                            type: Name
+                            prefix: {value: " BY "}
+                      brief: "Represents a LAG statement in the mod file"
+                      description: |
+                                An example of LAG statement usage:
+
+                                \code{.mod}
+                                    PROCEDURE lates() {
+                                        LAG ina BY tau
+                                        neo = lag_ina_tau
+                                        if (ena < 70) {ena = 70}
+                                    }
+                                \endcode
+
+                  - ConstantStatement:
+                      members:
+                        - constant:
+                            brief: "single constant variable"
+                            type: ConstantVar
+                      brief: "Represent statement in CONSTANT block of NMODL"
+                      description: |
+                              \todo As ConstantStatement wraps a single ConstantVar,
+                                    this or ast::ConstantVar can be redundant in the future.
+
+                  - TableStatement:
+                      nmodl: "TABLE "
+                      members:
+                        - table_vars:
+                            brief: "Variables in the table"
+                            type: Name
+                            vector: true
+                            separator: ","
+                        - depend_vars:
+                            brief: "dependent variables"
+                            type: Name
+                            vector: true
+                            prefix: {value: " DEPEND "}
+                            separator: ","
+                        - from:
+                            brief: "from value"
+                            type: Expression
+                            prefix: {value: " FROM "}
+                        - to:
+                            brief: "to values"
+                            type: Expression
+                            prefix: {value: " TO "}
+                        - with:
+                            brief: "an increment factor"
+                            type: Integer
+                            prefix: {value: " WITH "}
+                      brief: "Represents TABLE statement in NMODL"
+
+                  - Suffix:
+                      members:
+                        - type:
+                            brief: "type of channel"
+                            type: Name
+                            suffix: {value: " "}
+                        - name:
+                            brief: "Name of the channel"
+                            type: Name
+                            node_name: true
+                      brief: "Represents SUFFIX statement in NMODL"
+
+                  - Useion:
+                      nmodl: "USEION "
+                      members:
+                        - name:
+                            brief: "Name of ion"
+                            type: Name
+                            node_name: true
+                        - readlist:
+                            brief: "Variables being read"
+                            type: ReadIonVar
+                            vector: true
+                            prefix: {value: " READ "}
+                            separator: ", "
+                        - writelist:
+                            brief: "Variables being written"
+                            type: WriteIonVar
+                            vector: true
+                            prefix: {value: " WRITE "}
+                            separator: ", "
+                        - valence:
+                            brief: "(TODO)"
+                            type: Valence
+                            optional: true
+                        - ontology_id:
+                            brief: "Ontology to indicate the chemical ion"
+                            type: String
+                            optional: true
+                            prefix: {value: " REPRESENTS "}
+                      brief: "Represents USEION statement in NMODL"
+
+                  - Nonspecific:
+                      nmodl: "NONSPECIFIC_CURRENT "
+                      members:
+                        - currents:
+                            brief: "Vector of non specific variables"
+                            type: NonspecificCurVar
+                            vector: true
+                            separator: ", "
+                      brief: "Represents NONSPECIFIC_CURRENT variables statement in NMODL"
+
+                  - ElectrodeCurrent:
+                      nmodl: "ELECTRODE_CURRENT "
+                      members:
+                        - currents:
+                            brief: "Vector of electrode current variables"
+                            type: ElectrodeCurVar
+                            vector: true
+                            separator: ", "
+                      brief: "Represents ELECTRODE_CURRENT variables statement in NMODL"
+
+                  - Range:
+                      nmodl: "RANGE "
+                      members:
+                        - variables:
+                            brief: "Vector of range variables"
+                            type: RangeVar
+                            vector: true
+                            separator: ", "
+                      brief: "Represents RANGE variables statement in NMODL"
+
+                  - Global:
+                      brief: "TODO"
+                      nmodl: "GLOBAL "
+                      members:
+                        - variables:
+                            brief: "Vector of global variables"
+                            type: GlobalVar
+                            vector: true
+                            add: true
+                            separator: ", "
+                      brief: "Represents GLOBAL statement in NMODL"
+
+                  - RandomVarList:
+                      brief: "Represents RANDOM statement in NMODL"
+                      nmodl: "RANDOM "
+                      members:
+                        - variables:
+                            brief: "Vector of random variables"
+                            type: RandomVar
+                            vector: true
+                            separator: ", "
+                      description: |
+                                Here is an example of RANDOM statement
+
+                                \code{.mod}
+                                      NEURON {
+                                          THREADSAFE
+                                          POINT_PROCESS NetStim
+                                          RANDOM ranvar
+                                \endcode
+
+                  - Pointer:
+                      nmodl: "POINTER "
+                      members:
+                        - variables:
+                            brief: "Vector of pointer variables"
+                            type: PointerVar
+                            vector: true
+                            add: true
+                            separator: ", "
+                      brief: "Represents POINTER statement in NMODL"
+
+                  - BbcorePointer:
+                      nmodl: "BBCOREPOINTER "
+                      members:
+                        - variables:
+                            brief: "Vector of bbcore pointer variables"
+                            type: BbcorePointerVar
+                            vector: true
+                            separator: ", "
+                      brief: "Represents BBCOREPOINTER statement in NMODL"
+                      description: |
+                                Here is an example of BBCOREPOINTER statement:
+
+                                \code{.mod}
+                                      NEURON {
+                                          THREADSAFE
+                                          POINT_PROCESS ProbAMPANMDA_EMS
+                                          BBCOREPOINTER rng, data
+                                \endcode
+
+                  - External:
+                      nmodl: "EXTERNAL "
+                      members:
+                        - variables:
+                            brief: "Vector of external variables"
+                            type: ExternVar
+                            vector: true
+                            separator: ", "
+                      brief: "This construct is deprecated and no longer supported in the NMODL"
+
+                  - ThreadSafe:
+                      nmodl: THREADSAFE
+                      brief: "Represents THREADSAFE statement in NMODL"
+
+                  - Verbatim:
+                      brief: "Represents a C code block"
+                      nmodl: VERBATIM
+                      members:
+                        - statement:
+                            brief: "C code as a string"
+                            type: String
+                            suffix: {value: "ENDVERBATIM"}
+
+                  - LineComment:
+                      brief: "Represents a one line comment in NMODL"
+                      members:
+                        - statement:
+                            brief: "comment text"
+                            type: String
+
+                  - BlockComment:
+                      brief: "Represents a multi-line comment in NMODL"
+                      nmodl: COMMENT
+                      members:
+                        - statement:
+                            brief: "comment text"
+                            type: String
+                            suffix: {value: "ENDCOMMENT"}
+
+                  - OntologyStatement:
+                      nmodl: "REPRESENTS "
+                      members:
+                        - ontology_id:
+                            brief: "Ontology name"
+                            type: String
+                      brief: "Represents CURIE information in NMODL"
+
+- Program:
+    brief: "Represents top level AST node for whole NMODL input"
+    members:
+      - blocks:
+          brief: "Vector of top level blocks in the mod file"
+          type: Node
+          vector: true
+          add: true
+          # public: true

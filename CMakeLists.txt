@@ -210,6 +210,25 @@ set(NRN_PROFILER
     CACHE STRING "Set which profiler to build against ('caliper', 'likwid')")
 
 # =============================================================================
+# Build options for NMODL
+# =============================================================================
+option(NMODL_ENABLE_PYTHON_BINDINGS "Enable pybind11 based python bindings" ON)
+option(NMODL_ENABLE_TESTS "Enable build of tests" ON)
+option(NMODL_ENABLE_USECASES
+       "If building tests, additionally enable build of usecase tests. Requires neuron." OFF)
+option(NMODL_ENABLE_BACKWARD "Use backward, enables blame." OFF)
+set(NMODL_EXTRA_CXX_FLAGS
+    ""
+    CACHE STRING "Add extra compile flags for NMODL sources")
+separate_arguments(NMODL_EXTRA_CXX_FLAGS)
+option(LINK_AGAINST_PYTHON "Should the Python library be linked or not" ON)
+option(NMODL_BUILD_WHEEL "Flag to signal we are building a wheel" OFF)
+if(NMODL_BUILD_WHEEL)
+  set(LINK_AGAINST_PYTHON OFF)
+  set(NMODL_ENABLE_TESTS OFF)
+endif()
+
+# =============================================================================
 # Include cmake modules
 # =============================================================================
 # sub-directorty containing project submodules
@@ -507,14 +526,30 @@ cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 # Enable NMODL code-generator support
 # =============================================================================
 if(NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON)
+  cpp_cc_git_submodule(json BUILD PACKAGE nlohmann_json REQUIRED)
+  cpp_cc_git_submodule(pybind11 BUILD PACKAGE pybind11 REQUIRED)
+
+  option(SPDLOG_FMT_EXTERNAL "Force to use an external {{fmt}}" ON)
+  option(SPDLOG_SYSTEM_INCLUDE "Include spdlog as a system lib" ON)
+  cpp_cc_git_submodule(spdlog BUILD PACKAGE spdlog REQUIRED)
+  if(${CODING_CONV_PREFIX}_3RDPARTY_USE_SPDLOG)
+    # See above, same logic as fmt
+    set_target_properties(spdlog PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  endif()
 
   set(NMODL_ENABLE_PYTHON_BINDINGS
       OFF
       CACHE BOOL "Enable NMODL python bindings")
-  nrn_add_external_project(nmodl)
+
+  include(${PROJECT_SOURCE_DIR}/cmake/nmodl/PythonLinkHelper.cmake)
+
+  set(NMODL_PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/nmodl)
+  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/nmodl)
+
+  add_subdirectory(src/nmodl)
   set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
   set(NMODL_TARGET_TO_DEPEND nmodl)
-  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
+  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/src/nmodl)
   # install nrnunits.lib and libpywrapper.so from external/nmodl
   install(
     FILES ${NMODL_PROJECT_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
