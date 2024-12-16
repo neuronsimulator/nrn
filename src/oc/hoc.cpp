@@ -964,7 +964,8 @@ void hoc_final_exit(void) {
     auto tmp_dir = std::getenv("TEMP");
     auto path = std::filesystem::path(tmp_dir ? std::string(tmp_dir) : "/tmp") /
                 fmt::format("oc{}.hl", hoc_pid());
-    std::filesystem::remove(path);
+    std::error_code ec;
+    std::filesystem::remove(path, ec);
 }
 
 void hoc_quit(void) {
