@@ -958,6 +958,9 @@ void hoc_final_exit(void) {
     rl_deprep_terminal();
 #endif
     ivoc_cleanup();
+#if defined(WIN32) && HAVE_IV
+    ivoc_win32_cleanup();
+#endif
     auto tmp_dir = std::getenv("TEMP");
     auto path = std::filesystem::path(tmp_dir ? std::string(tmp_dir) : "/tmp") /
                 fmt::format("oc{}.hl", hoc_pid());
