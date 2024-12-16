@@ -563,8 +563,8 @@ static void hoc_load(const char* stype) {
         ++i;
         const Symbol* sym = hoc_lookup(s);
         if (!sym || sym->type == UNDEF) {
-            auto file = search_hoc_files_regex(std::regex("^(func|proc|begintemplate)"),
-                                               default_search_paths());
+            auto pattern = std::regex(fmt::format("^{} {}", stype, s));
+            auto file = search_hoc_files_regex(pattern, default_search_paths());
             if (file) {
                 fprintf(stderr, "Getting %s from %s\n", s, file->c_str());
                 hoc_Load_file(0, file->c_str());
