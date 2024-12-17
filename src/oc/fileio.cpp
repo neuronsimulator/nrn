@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <locale>
 #include <optional>
 #include <regex>
 #ifdef HAVE_UNISTD_H
@@ -534,18 +535,37 @@ static std::optional<std::string> search_hoc_files_regex(const std::regex& patte
                                                          const std::vector<std::string>& paths) {
     namespace fs = std::filesystem;
     for (const auto& path: paths) {
+        // construct a list containing names of, in this order:
+        // - `.oc` files (sorted according to locale)
+        // - `.hoc` files (sorted according to locale)
+        std::vector<std::string> paths_oc;
+        std::vector<std::string> paths_hoc;
         for (const auto& entry: fs::directory_iterator(path)) {
-            if (entry.is_regular_file() &&
-                (entry.path().extension() == ".oc" || entry.path().extension() == ".hoc")) {
-                auto file = std::ifstream(entry.path());
-                if (!file.is_open())
-                    continue;
+            if (entry.is_regular_file() && entry.path().extension() == ".oc") {
+                paths_oc.push_back(entry.path());
+            } else if (entry.is_regular_file() && entry.path().extension() == ".hoc") {
+                paths_hoc.push_back(entry.path());
+            }
+        }
+        std::sort(paths_oc.begin(), paths_oc.end(), std::locale());
+        std::sort(paths_hoc.begin(), paths_hoc.end(), std::locale());
 
-                std::string line;
-                while (std::getline(file, line)) {
-                    if (std::regex_search(line, pattern)) {
-                        return entry.path().string();
-                    }
+        std::vector<std::string> result;
+        std::merge(paths_oc.begin(),
+                   paths_oc.end(),
+                   paths_hoc.begin(),
+                   paths_hoc.end(),
+                   back_inserter(result));
+
+        for (const auto& entry: result) {
+            auto file = std::ifstream(entry);
+            if (!file.is_open())
+                continue;
+
+            std::string line;
+            while (std::getline(file, line)) {
+                if (std::regex_search(line, pattern)) {
+                    return entry;
                 }
             }
         }
