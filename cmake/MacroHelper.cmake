@@ -153,6 +153,11 @@ macro(nocmodl_mod_to_cpp modfile_basename)
   if(CMAKE_VERSION VERSION_LESS "3.17")
     set(REMOVE_CMAKE_COMMAND "remove")
   endif()
+  set(MODFILE_CONFIG_FILE ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod.in)
+  if(EXISTS ${MODFILE_CONFIG_FILE})
+    configure_file(${MODFILE_CONFIG_FILE} ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod @ONLY)
+  endif()
+
   get_filename_component(modfile_output_dir ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod DIRECTORY)
   add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp

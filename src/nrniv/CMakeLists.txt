@@ -115,6 +115,17 @@ endif()
 # Translate all MOD files to C and mark them generated
 # =============================================================================
 foreach(modfile ${NRN_MODFILE_BASE_NAMES})
+  # =============================================================================
+  # ~~~
+  # Set the correct supported keyword for CoreNEURON compatibility
+  # - Replace GLOBAL variable by RANGE
+  # ~~~
+  # =============================================================================
+  if(NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY)
+    set(NRN_SUPPORTED_KEYWORD "RANGE")
+  else()
+    set(NRN_SUPPORTED_KEYWORD "GLOBAL")
+  endif()
   nocmodl_mod_to_cpp(${modfile})
   list(APPEND NRN_MODFILE_CPP ${PROJECT_BINARY_DIR}/${modfile}.cpp)
 endforeach()
