@@ -144,7 +144,7 @@ endmacro()
 # =============================================================================
 # Run nocmodl to convert NMODL to C
 # =============================================================================
-macro(nocmodl_mod_to_cpp modfile_basename)
+macro(nocmodl_mod_to_cpp modfile_basename modfile_subdir)
   set(NOCMODL_SED_EXPR "s/_reg()/_reg_()/")
   if(NOT MSVC)
     set(NOCMODL_SED_EXPR "'${NOCMODL_SED_EXPR}'")
@@ -153,18 +153,44 @@ macro(nocmodl_mod_to_cpp modfile_basename)
   if(CMAKE_VERSION VERSION_LESS "3.17")
     set(REMOVE_CMAKE_COMMAND "remove")
   endif()
-  get_filename_component(modfile_output_dir ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod DIRECTORY)
+  string(REPLACE "/" ";" path_parts "${modfile_basename}")
+
+  # Create a variable to hold the base path (all but the last part)
+  set(base_path "")
+  list(LENGTH path_parts path_length)
+  math(EXPR last_index "${path_length} - 1")
+
+  # Append all parts except the last one to base_path
+  foreach(i RANGE 0 ${last_index})
+    list(GET path_parts ${i} part)
+    if(${i} LESS ${last_index})
+      if(base_path STREQUAL "")
+        set(base_path "${part}")
+      else()
+        set(base_path "${base_path}/${part}")
+      endif()
+    endif()
+  endforeach()
+
+  # Append the custom part and the last part
+  list(GET path_parts ${last_index} last_part)
+  set(modfile_basename_real "${base_path}/${modfile_subdir}/${last_part}")
+  message(WARNING ${modfile_basename_real})
+
+  get_filename_component(modfile_output_dir ${PROJECT_SOURCE_DIR}/${modfile_basename_real}.mod
+                         DIRECTORY)
   add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
     COMMAND
       ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
       ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:${NRN_CODEGENERATOR_TARGET}>
-      ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod ${NRN_NMODL_--neuron} -o ${modfile_output_dir}
-    COMMAND sed ${NOCMODL_SED_EXPR} ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp >
+      ${PROJECT_SOURCE_DIR}/${modfile_basename_real}.mod ${NRN_NMODL_--neuron} -o
+      ${modfile_output_dir}
+    COMMAND sed ${NOCMODL_SED_EXPR} ${PROJECT_SOURCE_DIR}/${modfile_basename_real}.cpp >
             ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
     COMMAND ${CMAKE_COMMAND} -E ${REMOVE_CMAKE_COMMAND}
-            ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp
-    DEPENDS ${NRN_CODEGENERATOR_TARGET} ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
+            ${PROJECT_SOURCE_DIR}/${modfile_basename_real}.cpp
+    DEPENDS ${NRN_CODEGENERATOR_TARGET} ${PROJECT_SOURCE_DIR}/${modfile_basename_real}.mod
             ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
 endmacro()

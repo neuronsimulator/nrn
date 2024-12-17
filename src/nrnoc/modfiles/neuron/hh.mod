@@ -29,7 +29,6 @@ NEURON {
         USEION k READ ek WRITE ik REPRESENTS CHEBI:29103
         NONSPECIFIC_CURRENT il
         RANGE gnabar, gkbar, gl, el, gna, gk
-        : `GLOBAL minf` will be replaced with `RANGE minf` if CoreNEURON enabled
         GLOBAL minf, hinf, ninf, mtau, htau, ntau
 	THREADSAFE : assigned GLOBALs will be per thread
 }
