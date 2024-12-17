@@ -1,7 +1,16 @@
 The NMODL Framework
 ===================
 
-|github workflow| |Build Status| |codecov| |CII Best Practices|
+WARNING
+_______
+
+**NMODL has been fully integrated into the NEURON repository.**
+There will be no further development efforts on NMODL as an independent project.
+
+All future development will happen at:
+`https://github.com/neuronsimulator/nrn <https://github.com/neuronsimulator/nrn>`_.
+
+---------------------
 
 The NMODL Framework is a code generation engine for **N**\ EURON
 **MOD**\ eling **L**\ anguage
@@ -137,7 +146,7 @@ API to load NMOD file as:
 
    from nmodl import dsl
 
-   examples = dsl.list_examples() 
+   examples = dsl.list_examples()
    nmodl_string = dsl.load_example(examples[-1])
    driver = dsl.NmodlDriver()
    modast = driver.parse_string(nmodl_string)
@@ -328,7 +337,15 @@ Citation
 --------
 
 If you would like to know more about the the NMODL Framework, see
-following paper:
+the following paper:
+
+- Pramod Kumbhar, Omar Awile, Liam Keegan, Jorge Blanco Alonso, James King,
+  Michael Hines, and Felix Schürmann. 2020. An optimizing multi-platform
+  source-to-source compiler framework for the NEURON MODeling Language.
+  In *Computational Science – ICCS 2020*, Springer, Cham, 45–58.
+  DOI: `10.1007/978-3-030-50371-0_4 <https://doi.org/10.1007/978-3-030-50371-0_4>`__
+
+Some additional details are covered in the pre-print:
 
 -  Pramod Kumbhar, Omar Awile, Liam Keegan, Jorge Alonso, James King,
    Michael Hines and Felix Schürmann. 2019. An optimizing multi-platform
@@ -367,12 +384,4 @@ the Grant Number R01NS11613 (Yale University) and the European Union’s
 Horizon 2020 Framework Programme for Research and Innovation under the
 Specific Grant Agreement No. 785907 (Human Brain Project SGA2).
 
-Copyright © 2017-2023 Blue Brain Project, EPFL
-
-.. |github workflow| image:: https://github.com/BlueBrain/nmodl/actions/workflows/nmodl-ci.yml/badge.svg?branch=master
-.. |Build Status| image:: https://dev.azure.com/pramodskumbhar/nmodl/_apis/build/status/BlueBrain.nmodl?branchName=master
-   :target: https://dev.azure.com/pramodskumbhar/nmodl/_build/latest?definitionId=2&branchName=master
-.. |codecov| image:: https://codecov.io/gh/BlueBrain/nmodl/branch/master/graph/badge.svg?token=A3NU9VbNcB
-   :target: https://codecov.io/gh/BlueBrain/nmodl
-.. |CII Best Practices| image:: https://bestpractices.coreinfrastructure.org/projects/4467/badge
-   :target: https://bestpractices.coreinfrastructure.org/projects/4467
+Copyright © 2017-2024 Blue Brain Project, EPFL
