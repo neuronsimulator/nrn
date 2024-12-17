@@ -542,9 +542,9 @@ static std::optional<std::string> search_hoc_files_regex(const std::regex& patte
         std::vector<std::string> paths_hoc;
         for (const auto& entry: fs::directory_iterator(path)) {
             if (entry.is_regular_file() && entry.path().extension() == ".oc") {
-                paths_oc.push_back(entry.path());
+                paths_oc.push_back(entry.path().string());
             } else if (entry.is_regular_file() && entry.path().extension() == ".hoc") {
-                paths_hoc.push_back(entry.path());
+                paths_hoc.push_back(entry.path().string());
             }
         }
         std::sort(paths_oc.begin(), paths_oc.end(), std::locale());
