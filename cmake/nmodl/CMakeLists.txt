@@ -367,3 +367,11 @@ message(STATUS "--------------------+-------------------------------------------
 message(STATUS " See documentation : https://github.com/BlueBrain/nmodl/")
 message(STATUS "--------------------+--------------------------------------------------------")
 message(STATUS "")
+
+message(
+  WARNING
+    "=========================================================
+This repository is unmaintained. NMODL is now developed
+as part of:
+  https://github.com/neuronsimulator/nrn
+==========================================================")
