@@ -175,7 +175,6 @@ macro(nocmodl_mod_to_cpp modfile_basename modfile_subdir)
   # Append the custom part and the last part
   list(GET path_parts ${last_index} last_part)
   set(modfile_basename_real "${base_path}/${modfile_subdir}/${last_part}")
-  message(WARNING ${modfile_basename_real})
 
   get_filename_component(modfile_output_dir ${PROJECT_SOURCE_DIR}/${modfile_basename_real}.mod
                          DIRECTORY)
