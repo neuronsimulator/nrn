@@ -174,11 +174,9 @@ class GeneralizedReaction(object):
             sp_regions = list(
                 set.intersection(
                     *[
-                        (
-                            set(sptr()._regions)
-                            if isinstance(sptr(), species.Species)
-                            else {sptr()._region()}
-                        )
+                        set(sptr()._regions)
+                        if isinstance(sptr(), species.Species)
+                        else {sptr()._region()}
                         for sptr in sources + dests
                     ]
                 )
@@ -253,11 +251,9 @@ class GeneralizedReaction(object):
             if self._trans_membrane:
                 src_regions = intersection(
                     [
-                        (
-                            set(sptr()._regions)
-                            if isinstance(sptr(), species.Species)
-                            else {sptr()._region()}
-                        )
+                        set(sptr()._regions)
+                        if isinstance(sptr(), species.Species)
+                        else {sptr()._region()}
                         for sptr in sources
                     ]
                 )
@@ -270,11 +266,9 @@ class GeneralizedReaction(object):
                 )
                 dest_regions = intersection(
                     [
-                        (
-                            set(sptr()._regions)
-                            if isinstance(sptr(), species.Species)
-                            else {sptr()._region()}
-                        )
+                        set(sptr()._regions)
+                        if isinstance(sptr(), species.Species)
+                        else {sptr()._region()}
                         for sptr in dests
                     ]
                 )
@@ -291,11 +285,9 @@ class GeneralizedReaction(object):
                 active_regions = list(
                     intersection(
                         [
-                            (
-                                set(sptr()._regions)
-                                if isinstance(sptr(), species.Species)
-                                else {sptr()._region()}
-                            )
+                            set(sptr()._regions)
+                            if isinstance(sptr(), species.Species)
+                            else {sptr()._region()}
                             for sptr in sources + dests
                         ]
                     )
