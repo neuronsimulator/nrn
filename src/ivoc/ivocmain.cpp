@@ -546,22 +546,22 @@ nrniv [options] [fileargs]
         };
 #ifdef WIN32
         if (file_exists(nrn_def_path1)) {
-            session->style()->load_file(String(nrn_def_path1.c_str()), -5);
+            session->style()->load_file(String(nrn_def_path1.native()), -5);
         } else if (file_exists(nrn_def_path2)) {
-            session->style()->load_file(String(nrn_def_path2.c_str()), -5);
+            session->style()->load_file(String(nrn_def_path2.native()), -5);
         } else {
             char buf[256];
-            Sprintf(buf, "Can't load NEURON resources from %s[aults]", nrn_def_path1.c_str());
+            Sprintf(buf, "Can't load NEURON resources from %s[aults]", nrn_def_path1.native());
             printf("%s\n", buf);
         }
 #else
-        session->style()->load_file(String(nrn_def_path1.c_str()), -5);
+        session->style()->load_file(String(nrn_def_path1.native()), -5);
 #endif
         char* h = getenv("HOME");
         if (h) {
             const auto nrn_def_path_dot = fs::path(h) / ".nrn.defaults";
             if (file_exists(nrn_def_path_dot)) {
-                session->style()->load_file(String(nrn_def_path_dot.c_str()), -5);
+                session->style()->load_file(String(nrn_def_path_dot.native()), -5);
             }
         }
     }
