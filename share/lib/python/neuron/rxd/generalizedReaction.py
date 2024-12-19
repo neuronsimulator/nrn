@@ -182,7 +182,6 @@ class GeneralizedReaction(object):
                     ]
                 )
             )
-
         # The reactants do not share a common region
         if not sp_regions:
             active_regions = [
@@ -434,7 +433,7 @@ class GeneralizedReaction(object):
                         * s().alpha_by_location(loc)
                     )
                     / molecules_per_mM_um3
-                    for loc,area in zip(locs,areas)
+                    for loc, area in zip(locs, areas)
                     for s in sources_ecs
                 ] + [
                     area
@@ -443,7 +442,7 @@ class GeneralizedReaction(object):
                         * d().alpha_by_location(loc)
                     )
                     / molecules_per_mM_um3
-                    for loc,area in zip(locs,areas)
+                    for loc, area in zip(locs, areas)
                     for d in dests_ecs
                 ]
             else:
