@@ -11,6 +11,7 @@
 #include "ivocvect.h"
 #include "vrecitem.h"
 #include "membfunc.h"
+#include "ztime.h"
 #include "nonvintblock.h"
 #include "nrndigest.h"
 
@@ -455,6 +456,7 @@ double* Cvode::n_vector_data(N_Vector v, int tid) {
 extern void nrn_extra_scatter_gather(int, int);
 
 void Cvode::scatter_y(neuron::model_sorted_token const& sorted_token, double* y, int tid) {
+    ZTBEGIN;
     CvodeThreadData& z = CTD(tid);
     assert(std::size_t(z.nonvint_extra_offset_) == z.pv_.size());
     for (int i = 0; i < z.nonvint_extra_offset_; ++i) {
@@ -473,6 +475,7 @@ void Cvode::scatter_y(neuron::model_sorted_token const& sorted_token, double* y,
         }
     }
     nrn_extra_scatter_gather(0, tid);
+    ZTTOTAL(1);
 }
 
 static Cvode* gather_cv;
@@ -492,6 +495,7 @@ void Cvode::gather_y(N_Vector y) {
     nrn_multithread_job(gather_y_thread);
 }
 void Cvode::gather_y(double* y, int tid) {
+    ZTBEGIN;
     CvodeThreadData& z = CTD(tid);
     nrn_extra_scatter_gather(1, tid);
     assert(std::size_t(z.nonvint_extra_offset_) == z.pv_.size());
@@ -502,14 +506,17 @@ void Cvode::gather_y(double* y, int tid) {
         }
         // printf("gather_y %d %d %g\n", tid, i,  y[i]);
     }
+    ZTTOTAL(1);
 }
 void Cvode::scatter_ydot(double* ydot, int tid) {
+    ZTBEGIN;
     int i;
     CvodeThreadData& z = CTD(tid);
     for (i = 0; i < z.nonvint_extra_offset_; ++i) {
         *(z.pvdot_[i]) = ydot[i];
         // printf("scatter_ydot %d %d %g\n", tid, i, ydot[i]);
     }
+    ZTTOTAL(1);
 }
 static void* gather_ydot_thread(NrnThread* nt) {
     Cvode* cv = gather_cv;
@@ -526,6 +533,7 @@ void Cvode::gather_ydot(N_Vector y) {
     nrn_multithread_job(gather_ydot_thread);
 }
 void Cvode::gather_ydot(double* ydot, int tid) {
+    ZTBEGIN;
     int i;
     if (ydot) {
         CvodeThreadData& z = CTD(tid);
@@ -534,6 +542,7 @@ void Cvode::gather_ydot(double* ydot, int tid) {
             // printf("%d gather_ydot %d %d %g\n", nrnmpi_myid, tid, i, ydot[i]);
         }
     }
+    ZTTOTAL(1);
 }
 
 int Cvode::setup(N_Vector ypred, N_Vector fpred) {

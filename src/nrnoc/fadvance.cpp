@@ -11,6 +11,7 @@
 #include "node_order_optim/node_order_optim.h"
 #define nrnoc_fadvance_c
 #include "utils/profile/profiler_interface.h"
+#include "ztime.h"
 #include "nonvintblock.h"
 #include "nrncvode.h"
 #include "spmatrix.h"
@@ -150,12 +151,14 @@ bool nrn_use_fast_imem;
 #include "profile.h"
 
 void fadvance() {
+    ZTBEGIN;
     nrn::Instrumentor::phase p_fadvance("fadvance");
     tstopunset;
     if (cvode_active_) {
         cvode_fadvance(-1.);
         tstopunset;
         hoc_retpushx(1.);
+        ZTTOTAL(0);
         return;
     }
     if (tree_changed) {
@@ -171,6 +174,7 @@ void fadvance() {
     nrn_fixed_step(cache_token);
     tstopunset;
     hoc_retpushx(1.);
+    ZTTOTAL(0);
 }
 
 /*

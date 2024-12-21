@@ -23,6 +23,11 @@
 #include "nrnfilewrap.h"
 #include "../nrniv/backtrace_utils.h"
 
+#include "ztime.h"
+size_t ztime[MAX_ZTIME];
+int ztcnt[MAX_ZTIME];
+size_t ztime_detail[MAX_ZTIME][MAX_ZTIME_DETAIL + 1];
+
 #include "../utils/profile/profiler_interface.h"
 
 #include <cfenv>
@@ -972,7 +977,23 @@ void hoc_final_exit(void) {
 #endif
 }
 
+static void ztimeout() {
+    FILE* f = fopen("ztime.tmp", "w");
+    for (int i = 0; i < MAX_ZTIME; ++i) {
+        if (ztcnt[i] > 0) {
+            printf("ZTIME %d %g %d\n", i, zttotal(i), ztcnt[i]);
+            fprintf(f, "%d %g %d %d\n", i, zttotal(i), ztcnt[i], MAX_ZTIME_DETAIL);
+            for (int j = 0; j <= MAX_ZTIME_DETAIL; ++j) {
+                size_t x = ztime_detail[i][j];
+                fprintf(f, "%zd\n", x);
+            }
+        }
+    }
+    fclose(f);
+}
+
 void hoc_quit(void) {
+    ztimeout();
     hoc_final_exit();
     ivoc_final_exit();
 #if defined(USE_PYTHON)
