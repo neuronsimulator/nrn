@@ -74,7 +74,9 @@ class CvodeThreadData {
     Node** v_parent_;
     PreSynList* psl_th_;  // with a threshold
     std::list<WatchCondition*>* watch_list_;
-    std::vector<neuron::container::data_handle<double>> pv_, pvdot_;
+    // since scatter/gather are hot loops, don't want to use data_handle
+    //std::vector<neuron::container::data_handle<double>> pv_, pvdot_;
+    std::vector<double*> pv_, pvdot_;
     int nvoffset_;              // beginning of this threads states
     int nvsize_;                // total number of states for this thread
     int neq_v_;                 // for daspk, number of voltage states for this thread
