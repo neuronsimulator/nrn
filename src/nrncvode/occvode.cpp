@@ -258,12 +258,7 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
                     pv.resize(n);
                     pvdot.resize(n);
                     for (j = 0; j < ml.nodecount; ++j) {
-                        mf.ode_map(ml.prop[j],
-                                   ieq,
-                                   pv.data(),
-                                   pvdot.data(),
-                                   atv + ieq,
-                                   cml->index);
+                        mf.ode_map(ml.prop[j], ieq, pv.data(), pvdot.data(), atv + ieq, cml->index);
                         for (auto k = 0; k < n; ++k) {
                             z.pv_[k + ieq] = static_cast<double*>(pv[k]);
                             z.pvdot_[k + ieq] = static_cast<double*>(pvdot[k]);
@@ -408,7 +403,8 @@ void Cvode::daspk_init_eqn() {
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
                     k = i + ie + 1;
-                    z.pv_[k] = static_cast<double*>(neuron::container::data_handle<double>{nde->v + ie});
+                    z.pv_[k] = static_cast<double*>(
+                        neuron::container::data_handle<double>{nde->v + ie});
                     z.pvdot_[k] = static_cast<double*>(
                         neuron::container::data_handle<double>{neuron::container::do_not_search,
                                                                nde->_rhs[ie]});
@@ -439,12 +435,7 @@ void Cvode::daspk_init_eqn() {
         for (auto& ml: cml->ml) {
             for (j = 0; j < ml.nodecount; ++j) {
                 assert(ode_map);
-                ode_map(ml.prop[j],
-                        ieq,
-                        pv.data(),
-                        pvdot.data(),
-                        atv + ieq,
-                        cml->index);
+                ode_map(ml.prop[j], ieq, pv.data(), pvdot.data(), atv + ieq, cml->index);
                 for (auto k = 0; k < n; ++k) {
                     z.pv_[k + ieq] = static_cast<double*>(pv[k]);
                     z.pvdot_[k + ieq] = static_cast<double*>(pvdot[k]);
