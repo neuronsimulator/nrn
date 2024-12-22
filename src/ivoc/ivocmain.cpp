@@ -550,11 +550,7 @@ nrniv [options] [fileargs]
         } else if (file_exists(nrn_def_path2)) {
             session->style()->load_file(String(nrn_def_path2.string().c_str()), -5);
         } else {
-            char buf[256];
-            Sprintf(buf,
-                    "Can't load NEURON resources from %s[aults]",
-                    nrn_def_path1.string().c_str());
-            printf("%s\n", buf);
+            fmt::print("Can't load NEURON resources from {}[aults]\n", nrn_def_path1);
         }
 #else
         session->style()->load_file(String(nrn_def_path1.string().c_str()), -5);
