@@ -195,6 +195,7 @@ endif()
 # =============================================================================
 add_test(NAME Ode COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/ode)
 set_tests_properties(Ode PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
+cpp_cc_configure_sanitizers(TEST Ode PRELOAD)
 
 if(NMODL_ENABLE_PYTHON_BINDINGS)
   add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
