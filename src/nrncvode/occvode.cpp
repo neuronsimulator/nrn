@@ -176,7 +176,8 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
         if (z.cmlcap_) {
             for (auto& ml: z.cmlcap_->ml) {
                 // support `1 x n` and `n x 1` but not `n x m`
-                assert(z.cmlcap_->ml.size() == 1 || ml.nodecount == 1);
+                // why not? (I'm trying to improve lvardt performance)
+                // assert(z.cmlcap_->ml.size() == 1 || ml.nodecount == 1);
                 zneq_cap_v += ml.nodecount;
             }
         }
@@ -207,12 +208,15 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
             // sentinal values for determining no_cap
             NODERHS(z.v_node_[i]) = 1.;
         }
-        for (i = 0; i < zneq_cap_v; ++i) {
-            auto* const node = z.cmlcap_->ml.size() == 1 ? z.cmlcap_->ml[0].nodelist[i]
-                                                         : z.cmlcap_->ml[i].nodelist[0];
-            z.pv_[i] = node->v_handle();
-            z.pvdot_[i] = node->rhs_handle();
-            *z.pvdot_[i] = 0.;  // only ones = 1 are no_cap
+        i = 0;
+        for (auto& ml: z.cmlcap_->ml) {
+            for (int j = 0; j < ml.nodecount; ++j) {
+                auto* const node = ml.nodelist[j];
+                z.pv_[i] = node->v_handle();
+                z.pvdot_[i] = node->rhs_handle();
+                *z.pvdot_[i] = 0.;  // only ones = 1 are no_cap
+                ++i;
+            }
         }
 
         // the remainder are no_cap nodes

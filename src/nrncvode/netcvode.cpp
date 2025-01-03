@@ -1616,8 +1616,19 @@ bool NetCvode::init_global() {
             }
 
             // Modified to also count the nodes and set the offsets for
-            // each CvMembList.ml[contig_region]
-            // See the long comment after this loop.
+            // each CvMembList.ml[contig_region].
+            // The sum of the ml[i].nodecount must equal the mechanism
+            // nodecount for the cell and each ml[i] data must be contiguous.
+            // Ideally the node permutation would be such that each cell
+            // is contiguous. So only needing a ml[0]. That is sadly not
+            // the case with the default permutation. The cell root nodes are
+            // all at the beginning, and thereafter only Section nodes are
+            // contiguous. It would be easy to permute nodes so that each cell
+            // is contiguous (except root node). This would result in a
+            // CvMembList.ml.size() == 1 almost always with an exception of
+            // size() == 2 only for extracellular and for POINT_PROCESSes
+            // located both in the root node and other cell nodes.
+
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
                 i = tml->index;
                 const Memb_func& mf = memb_func[i];
@@ -1638,23 +1649,23 @@ bool NetCvode::init_global() {
                         CvodeThreadData& z = cv.ctd_[0];
 
                         // Circumstances for creating a new CvMembList
-                        // or (due to non-contiguity of a cell), 
+                        // or (due to non-contiguity of a cell),
                         // appending a Memb_list instance to cml->ml
-                        if (!z.cv_memb_list_) { // initialize the first
+                        if (!z.cv_memb_list_) {  // initialize the first
                             cml = new CvMembList{i};
                             z.cv_memb_list_ = cml;
                             cml->next = nullptr;
                             last[cellnum[inode]] = cml;
                             assert(cml->ml.size() == 1);
                             assert(cml->ml[0].nodecount == 0);
-                        } else if (last[cellnum[inode]]->index != i) { // initialize next
+                        } else if (last[cellnum[inode]]->index != i) {  // initialize next
                             cml = new CvMembList{i};
                             last[cellnum[inode]]->next = cml;
                             cml->next = nullptr;
                             last[cellnum[inode]] = cml;
                             assert(cml->ml.size() == 1);
                             assert(cml->ml[0].nodecount == 0);
-                        } else { // if non-contiguous, append Memb_list
+                        } else {  // if non-contiguous, append Memb_list
                             cml = last[cellnum[inode]];
                             auto& cvml = cml->ml.back();
                             auto cvml_offset = cvml.get_storage_offset() + cvml.nodecount;
@@ -1667,7 +1678,7 @@ bool NetCvode::init_global() {
                         }
 
                         auto& cvml = cml->ml.back();
-                        if (cvml.nodecount == 0) { //first time for this Memb_List
+                        if (cvml.nodecount == 0) {  // first time for this Memb_List
                             cvml.set_storage_offset(offset);
                         }
                         // Increment count of last Memb_list in cml->ml.
@@ -1675,30 +1686,10 @@ bool NetCvode::init_global() {
                     }
                 }
             }
-            // each NetCvode.p[id].lcv_[nt->ncell].ctd_[0].cv_memb_list_->ml[0].nodecount
-            // is setup and ml.size() == 1.
-
-            // if ml[0] data is not contiguous, need to count number
-            // of contiguous data regions and reserve that number of Memb_list
-            // in the ml vector. The sum of the ml[i].nodecount must equal
-            // the present ml[0].nodecount and each ml[i] data must be
-            // contiguous.
-            // Ideally the node permutation would be such that each cell
-            // is contiguous. That is almost the case with the default
-            // permutation. But the cell root nodes are all at the
-            // beginning, and thereafter the rest of the cell is contiguous.
-            // For all density mechanims (except extracellular) this is fine
-            // since those mechanisms do not exist at the root node. And
-            // most of the time, there are no POINT_PROCESSes in the
-            // root nodes. So, we expect that most of the time, we have
-            // the default node permutation and that will result in
-            // almost all CvMembList.ml.size() == 1 with a very occasional
-            // size() == 2 
-
 
             std::vector<CvMembList*> cvml(d.nlcv_);
             for (i = 0; i < d.nlcv_; ++i) {
-                cvml[i] = d.lcv_[i].ctd_[0].cv_memb_list_; // whole cell in thread
+                cvml[i] = d.lcv_[i].ctd_[0].cv_memb_list_;  // whole cell in thread
             }
             // fill pointers (and nodecount)
             // now list order is from 0 to n_memb_func
@@ -1718,24 +1709,31 @@ bool NetCvode::init_global() {
                         int kk = j;
                         for (auto& newml: cml->ml) {
                             auto nodecount = newml.nodecount;
-                            if (! newml.nodelist) {
+                            if (!newml.nodelist) {
+                                // do nodecount of these for ml and then
+                                // skip forward by nodecount in the outer
+                                // ml->nodecount j loop (i.e. a contiguity
+                                // region)
                                 newml.nodelist = new Node*[nodecount];
                                 newml.nodeindices = new int[nodecount];
-                                newml.prop = new Prop* [nodecount];
+                                newml.prop = new Prop*[nodecount];
                                 if (!mf.hoc_mech) {
-                                    newml.pdata = new Datum* [nodecount];
+                                    newml.pdata = new Datum*[nodecount];
                                 }
                                 for (int k = 0; k < nodecount; ++k) {
-                                    newml.nodelist[k] = ml->nodelist[kk+k];
-                                    newml.nodeindices[k] = ml->nodeindices[kk+k];
-                                    assert (cellnum[newml.nodeindices[k]] == cellnum[ml->nodeindices[j]]);
-                                    newml.prop[k] = ml->prop[kk+k];
+                                    newml.nodelist[k] = ml->nodelist[kk + k];
+                                    newml.nodeindices[k] = ml->nodeindices[kk + k];
+                                    assert(cellnum[newml.nodeindices[k]] ==
+                                           cellnum[ml->nodeindices[j]]);
+                                    newml.prop[k] = ml->prop[kk + k];
                                     if (!mf.hoc_mech) {
-                                        newml.pdata[k] = ml->pdata[kk+k];
+                                        newml.pdata[k] = ml->pdata[kk + k];
                                     }
                                 }
                                 kk += nodecount;
                                 newml._thread = ml->_thread;
+                                j += nodecount - 1;
+                                break;
                             }
                         }
                     }
