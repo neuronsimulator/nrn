@@ -652,6 +652,11 @@ void nrn_thread_memblist_setup() {
 /* at the beginning of each thread region */
 /* this differs from original secorder where all roots are at the beginning */
 /* in passing, also set start and end indices. */
+// Until 2025-01-03 I was under the misamprehension that (except for roots)
+// this ordering kept cells contiguous. Lvardt sizes for CvMembList.ml disabused
+// me of that. reorder_secorder now, in fact, keeps cells contiguous except
+// for roots.
+#include <queue>  // for breadth first cell traversal without recursion
 
 void reorder_secorder() {
     Section *sec, *ch;
@@ -670,31 +675,40 @@ void reorder_secorder() {
         /* roots of this thread */
         sl = _nt->roots;
         inode = 0;
+        // just for inode and rootnode threads.
         ITERATE(qsec, sl) {
             sec = hocSEC(qsec);
             assert(sec->order == -1);
-            secorder[order] = sec;
-            sec->order = order;
-            ++order;
             nd = sec->parentnode;
             nd->_nt = _nt;
             inode += 1;
         }
-        /* all children of what is already in secorder */
-        for (isec = order - _nt->ncell; isec < order; ++isec) {
-            sec = secorder[isec];
-            /* to make it easy to fill in PreSyn.nt_*/
-            sec->prop->dparam[9] = {neuron::container::do_not_search, _nt};
-            for (j = 0; j < sec->nnode; ++j) {
-                nd = sec->pnode[j];
-                nd->_nt = _nt;
-                inode += 1;
-            }
-            for (ch = sec->child; ch; ch = ch->sibling) {
-                assert(ch->order == -1);
-                secorder[order] = ch;
-                ch->order = order;
+
+        // To provide cell contiguity, need to traverse the sections
+        // of each cell. We choose to do this with breadth first traversal
+        // without recursion.
+        ITERATE(qsec, sl) {
+            Section* sec = hocSEC(qsec);
+            std::queue<Section*> que;
+            que.push(sec);  // insert at end
+            while (!que.empty()) {
+                Section* sec = que.front();  // first element
+                que.pop();                   // remove first element
+                for (auto ch = sec->child; ch; ch = ch->sibling) {
+                    que.push(ch);
+                }
+                // process
+                assert(sec->order == -1);
+                /* to make it easy to fill in PreSyn.nt_*/
+                sec->prop->dparam[9] = {neuron::container::do_not_search, _nt};
+                secorder[order] = sec;
+                sec->order = order;
                 ++order;
+                for (int j = 0; j < sec->nnode; ++j) {
+                    auto nd = sec->pnode[j];
+                    nd->_nt = _nt;
+                    inode += 1;
+                }
             }
         }
         _nt->end = inode;
@@ -702,56 +716,57 @@ void reorder_secorder() {
         CACHELINE_CALLOC(_nt->_v_parent, Node*, inode);
         CACHELINE_CALLOC(_nt->_v_parent_index, int, inode);
     }
-    /* do it again and fill _v_node and _v_parent */
+    /* re-traverse and fill _v_node and _v_parent */
     /* index each cell section in relative order. Do offset later */
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
-        sec->order = -1;
-    }
     order = 0;
     for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
         /* roots of this thread */
         sl = _nt->roots;
         inode = 0;
+        // just the rootnodes
         ITERATE(qsec, sl) {
             sec = hocSEC(qsec);
-            assert(sec->order == -1);
-            secorder[order] = sec;
-            sec->order = order;
-            ++order;
             nd = sec->parentnode;
-            nd->_nt = _nt;
+            assert(nd->_nt == _nt);
             _nt->_v_node[inode] = nd;
             _nt->_v_parent[inode] = nullptr;  // because this is a root node
             _nt->_v_node[inode]->v_node_index = inode;
             ++inode;
         }
-        /* all children of what is already in secorder */
-        for (isec = order - _nt->ncell; isec < order; ++isec) {
-            sec = secorder[isec];
-            /* to make it easy to fill in PreSyn.nt_*/
-            sec->prop->dparam[9] = {neuron::container::do_not_search, _nt};
-            for (j = 0; j < sec->nnode; ++j) {
-                nd = sec->pnode[j];
-                nd->_nt = _nt;
-                _nt->_v_node[inode] = nd;
-                if (j) {
-                    _nt->_v_parent[inode] = sec->pnode[j - 1];
-                } else {
-                    _nt->_v_parent[inode] = sec->parentnode;
+
+        ITERATE(qsec, sl) {
+            Section* sec = hocSEC(qsec);
+            std::queue<Section*> que;
+            que.push(sec);  // insert at end
+            while (!que.empty()) {
+                Section* sec = que.front();  // first element
+                que.pop();                   // remove first element
+                for (auto ch = sec->child; ch; ch = ch->sibling) {
+                    que.push(ch);
                 }
-                _nt->_v_node[inode]->v_node_index = inode;
-                inode += 1;
-            }
-            for (ch = sec->child; ch; ch = ch->sibling) {
-                assert(ch->order == -1);
-                secorder[order] = ch;
-                ch->order = order;
+                // process
+                assert(sec->order == order);
+                /* to make it easy to fill in PreSyn.nt_*/
+                sec->prop->dparam[9] = {neuron::container::do_not_search, _nt};
+                assert(secorder[order] == sec);
+                assert(sec->order == order);
                 ++order;
+                for (int j = 0; j < sec->nnode; ++j) {
+                    auto nd = sec->pnode[j];
+                    assert(nd->_nt == _nt);
+                    _nt->_v_node[inode] = nd;
+                    if (j) {
+                        _nt->_v_parent[inode] = sec->pnode[j - 1];
+                    } else {
+                        _nt->_v_parent[inode] = sec->parentnode;
+                    }
+                    _nt->_v_node[inode]->v_node_index = inode;
+
+                    inode += 1;
+                }
             }
         }
-        _nt->end = inode;
+        assert(_nt->end == inode);
     }
     assert(order == section_count);
     /*assert(inode == v_node_count);*/
