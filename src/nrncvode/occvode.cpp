@@ -209,15 +209,16 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
             NODERHS(z.v_node_[i]) = 1.;
         }
         i = 0;
-        if (zneq_cap_v) for (auto& ml: z.cmlcap_->ml) {
-            for (int j = 0; j < ml.nodecount; ++j) {
-                auto* const node = ml.nodelist[j];
-                z.pv_[i] = node->v_handle();
-                z.pvdot_[i] = node->rhs_handle();
-                *z.pvdot_[i] = 0.;  // only ones = 1 are no_cap
-                ++i;
+        if (zneq_cap_v)
+            for (auto& ml: z.cmlcap_->ml) {
+                for (int j = 0; j < ml.nodecount; ++j) {
+                    auto* const node = ml.nodelist[j];
+                    z.pv_[i] = node->v_handle();
+                    z.pvdot_[i] = node->rhs_handle();
+                    *z.pvdot_[i] = 0.;  // only ones = 1 are no_cap
+                    ++i;
+                }
             }
-        }
 
         // the remainder are no_cap nodes
         if (z.no_cap_node_) {
