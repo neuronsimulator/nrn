@@ -209,16 +209,17 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
             NODERHS(z.v_node_[i]) = 1.;
         }
         i = 0;
-        if (zneq_cap_v)
+        if (zneq_cap_v) {
             for (auto& ml: z.cmlcap_->ml) {
                 for (int j = 0; j < ml.nodecount; ++j) {
                     auto* const node = ml.nodelist[j];
-                    z.pv_[i] = node->v_handle();
-                    z.pvdot_[i] = node->rhs_handle();
+                    z.pv_[i] = static_cast<double*>(node->v_handle());
+                    z.pvdot_[i] = static_cast<double*>(node->rhs_handle());
                     *z.pvdot_[i] = 0.;  // only ones = 1 are no_cap
                     ++i;
                 }
             }
+        }
 
         // the remainder are no_cap nodes
         if (z.no_cap_node_) {
@@ -249,6 +250,9 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
             if (!mf.ode_count) {
                 continue;
             }
+            // rather than change ode_map pv,pvdot args back to double*
+            // from data_handle<double>, do the static_cast here
+            std::vector<neuron::container::data_handle<double>> pv, pvdot;
             for (auto& ml: cml->ml) {
                 if (int n; (n = mf.ode_count(cml->index)) > 0) {
                     // Note: if mf.hoc_mech then all cvode related
@@ -257,13 +261,14 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
                     // if it does, hocmech.cpp must follow all the
                     // nrn_ode_..._t prototypes to avoid segfault
                     // with Apple M1.
+                    pv.resize(n);
+                    pvdot.resize(n);
                     for (j = 0; j < ml.nodecount; ++j) {
-                        mf.ode_map(ml.prop[j],
-                                   ieq,
-                                   z.pv_.data() + ieq,
-                                   z.pvdot_.data() + ieq,
-                                   atv + ieq,
-                                   cml->index);
+                        mf.ode_map(ml.prop[j], ieq, pv.data(), pvdot.data(), atv + ieq, cml->index);
+                        for (auto k = 0; k < n; ++k) {
+                            z.pv_[k + ieq] = static_cast<double*>(pv[k]);
+                            z.pvdot_[k + ieq] = static_cast<double*>(pvdot[k]);
+                        }
                         ieq += n;
                     }
                 }
@@ -399,15 +404,16 @@ void Cvode::daspk_init_eqn() {
             nd = _nt->_v_node[in];
             nde = nd->extnode;
             i = nd->eqn_index_ - 1;  // the sparse matrix index starts at 1
-            z.pv_[i] = nd->v_handle();
-            z.pvdot_[i] = nd->rhs_handle();
+            z.pv_[i] = static_cast<double*>(nd->v_handle());
+            z.pvdot_[i] = static_cast<double*>(nd->rhs_handle());
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
                     k = i + ie + 1;
-                    z.pv_[k] = neuron::container::data_handle<double>{nde->v + ie};
-                    z.pvdot_[k] =
+                    z.pv_[k] = static_cast<double*>(
+                        neuron::container::data_handle<double>{nde->v + ie});
+                    z.pvdot_[k] = static_cast<double*>(
                         neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                               nde->_rhs[ie]};
+                                                               nde->_rhs[ie]});
                 }
             }
         }
@@ -430,15 +436,16 @@ void Cvode::daspk_init_eqn() {
             continue;
         }
         auto const ode_map = mf.ode_map;
+        // ode_map uses data_handle. Do static_cast<double*> here
+        std::vector<neuron::container::data_handle<double>> pv(n), pvdot(n);
         for (auto& ml: cml->ml) {
             for (j = 0; j < ml.nodecount; ++j) {
                 assert(ode_map);
-                ode_map(ml.prop[j],
-                        ieq,
-                        z.pv_.data() + ieq,
-                        z.pvdot_.data() + ieq,
-                        atv + ieq,
-                        cml->index);
+                ode_map(ml.prop[j], ieq, pv.data(), pvdot.data(), atv + ieq, cml->index);
+                for (auto k = 0; k < n; ++k) {
+                    z.pv_[k + ieq] = static_cast<double*>(pv[k]);
+                    z.pvdot_[k + ieq] = static_cast<double*>(pvdot[k]);
+                }
                 ieq += n;
             }
         }
@@ -463,10 +470,7 @@ void Cvode::scatter_y(neuron::model_sorted_token const& sorted_token, double* y,
     CvodeThreadData& z = CTD(tid);
     assert(std::size_t(z.nonvint_extra_offset_) == z.pv_.size());
     for (int i = 0; i < z.nonvint_extra_offset_; ++i) {
-        // TODO: understand why this wasn't needed before
-        if (z.pv_[i]) {
-            *(z.pv_[i]) = y[i];
-        }
+        *(z.pv_[i]) = y[i];
         // printf("%d scatter_y %d %d %g\n", nrnmpi_myid, tid, i,  y[i]);
     }
     for (CvMembList* cml = z.cv_memb_list_; cml; cml = cml->next) {
@@ -501,10 +505,7 @@ void Cvode::gather_y(double* y, int tid) {
     nrn_extra_scatter_gather(1, tid);
     assert(std::size_t(z.nonvint_extra_offset_) == z.pv_.size());
     for (int i = 0; i < z.nonvint_extra_offset_; ++i) {
-        // TODO: understand why this wasn't needed before
-        if (z.pv_[i]) {
-            y[i] = *(z.pv_[i]);
-        }
+        y[i] = *(z.pv_[i]);
         // printf("gather_y %d %d %g\n", tid, i,  y[i]);
     }
 }
