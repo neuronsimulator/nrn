@@ -12,6 +12,7 @@ if hasattr(h, "usetable_hh"):
 cv = h.CVode()
 pc = h.ParallelContext()
 
+
 # remove address info from cv.debug_event output
 def debug_event_filter(s):
     s = re.sub(r"cvode_0x[0-9abcdef]* ", "cvode_0x... ", s)
@@ -762,6 +763,21 @@ def nc_event_before_init():
     expect_err("nc.event(0)")  # nrn_assert triggered if outside of finitialize
 
 
+def contiguous():
+    # cover a couple of lines in the lvardt part of init_global().
+    # Need same POINT_PROCESS type in rootnode and somewhere else on cell
+    net = Net(8)
+    syns = [h.ExpSyn(seg) for cell in net.cells for seg in cell.soma.allseg()]
+    cv.active(1)
+    cv.use_local_dt(1)
+    h.finitialize(-65)
+    pc.nthread(2)
+    h.finitialize(-65)
+    pc.nthread(1)
+    cv.use_local_dt(0)
+    cv.active(0)
+
+
 def test_netcvode_cover():
     nrn_use_daspk()
     node()
@@ -774,6 +790,7 @@ def test_netcvode_cover():
     scatter_gather()
     playrecord()
     interthread()
+    contiguous()
     nc_event_before_init()
 
 
