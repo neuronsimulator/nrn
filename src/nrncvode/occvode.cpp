@@ -175,9 +175,6 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
         zneq_cap_v = 0;
         if (z.cmlcap_) {
             for (auto& ml: z.cmlcap_->ml) {
-                // support `1 x n` and `n x 1` but not `n x m`
-                // why not? (I'm trying to improve lvardt performance)
-                // assert(z.cmlcap_->ml.size() == 1 || ml.nodecount == 1);
                 zneq_cap_v += ml.nodecount;
             }
         }

@@ -1701,21 +1701,23 @@ bool NetCvode::init_global() {
                 Memb_list* ml = tml->ml;
                 if (ml->nodecount && (mf.current || mf.ode_count || mf.ode_matsol || mf.ode_spec ||
                                       mf.state || i == CAP || ba_candidate.count(i) == 1)) {
-                    for (int j = 0; j < ml->nodecount; ++j) {
+                    int increment = 1;  // newml.nodecount is handled in the newml loop below
+                    for (int j = 0; j < ml->nodecount; j += increment) {
                         int icell = cellnum[ml->nodelist[j]->v_node_index];
                         if (cvml[icell]->index != i) {
                             cvml[icell] = cvml[icell]->next;
                             assert(cvml[icell] && cvml[icell]->index == i);
                         }
                         auto& cml = cvml[icell];
-                        int kk = j;
+                        increment = 1;
                         for (auto& newml: cml->ml) {
-                            auto nodecount = newml.nodecount;
                             if (!newml.nodelist) {
+                                auto nodecount = newml.nodecount;
                                 // do nodecount of these for ml and then
                                 // skip forward by nodecount in the outer
                                 // ml->nodecount j loop (i.e. a contiguity
                                 // region)
+                                increment = nodecount;
                                 newml.nodelist = new Node*[nodecount];
                                 newml.nodeindices = new int[nodecount];
                                 newml.prop = new Prop*[nodecount];
@@ -1723,18 +1725,16 @@ bool NetCvode::init_global() {
                                     newml.pdata = new Datum*[nodecount];
                                 }
                                 for (int k = 0; k < nodecount; ++k) {
-                                    newml.nodelist[k] = ml->nodelist[kk + k];
-                                    newml.nodeindices[k] = ml->nodeindices[kk + k];
+                                    newml.nodelist[k] = ml->nodelist[j + k];
+                                    newml.nodeindices[k] = ml->nodeindices[j + k];
                                     assert(cellnum[newml.nodeindices[k]] ==
                                            cellnum[ml->nodeindices[j]]);
-                                    newml.prop[k] = ml->prop[kk + k];
+                                    newml.prop[k] = ml->prop[j + k];
                                     if (!mf.hoc_mech) {
-                                        newml.pdata[k] = ml->pdata[kk + k];
+                                        newml.pdata[k] = ml->pdata[j + k];
                                     }
                                 }
-                                kk += nodecount;
                                 newml._thread = ml->_thread;
-                                j += nodecount - 1;
                                 break;
                             }
                         }
