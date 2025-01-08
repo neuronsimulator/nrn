@@ -198,7 +198,11 @@ set_tests_properties(Ode PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONP
 cpp_cc_configure_sanitizers(TEST Ode PRELOAD)
 
 if(NMODL_ENABLE_PYTHON_BINDINGS)
-  add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
-  set_tests_properties(Pybind PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
-  cpp_cc_configure_sanitizers(TEST Pybind PRELOAD)
+  # Apple Clang and ASAN do not play along nicely with NMODL's Python bindings, so we skip these
+  # tests
+  if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NRN_SANITIZERS))
+    add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
+    set_tests_properties(Pybind PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
+    cpp_cc_configure_sanitizers(TEST Pybind PRELOAD)
+  endif()
 endif()
