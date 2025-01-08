@@ -1363,6 +1363,7 @@ void NetCvode::distribute_dinfo(int* cellnum, int tid) {
             // printf("\tPreSyn %s\n", ps->osrc_ ? hoc_object_name(ps->osrc_):secname(ps->ssrc_));
             if (ps->thvar_) {  // artcells and presyns for gid's not on this cpu have no threshold
                                // check
+                ps->thvar_raw = static_cast<double*>(ps->thvar_);
                 NrnThread* nt;
                 Cvode* cvsrc;
                 CvodeThreadData* z;
@@ -1404,6 +1405,8 @@ void NetCvode::distribute_dinfo(int* cellnum, int tid) {
                         }
                     }
                 }
+            } else {
+                ps->thvar_raw = nullptr;
             }
         }
     }
@@ -4660,6 +4663,7 @@ void NetCvode::presyn_disconnect(PreSyn* ps) {
         --pst_cnt_;
         pst_->erase(ps->thvar_);
         ps->thvar_ = {};
+        ps->thvar_raw = nullptr;
     }
     if (gcv_) {
         for (int it = 0; it < gcv_->nctd_; ++it) {
@@ -5083,6 +5087,7 @@ void PreSyn::init() {
     if (idvec_) {
         idvec_->resize(0);
     }
+    thvar_raw = static_cast<double*>(thvar_);
 }
 
 void PreSyn::record_stmt(const char* stmt) {
@@ -5186,6 +5191,7 @@ if (d->obj_) {
     }
     net_cvode_instance->presyn_disconnect(this);
     thvar_ = {};
+    thvar_raw = nullptr;
     osrc_ = nullptr;
     delete this;
 }
@@ -5939,7 +5945,7 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
             PreSyn* ps = (PreSyn*) VOIDITM(q1);
             // only the ones for this thread
             if (ps->nt_ == nt) {
-                if (ps->thvar_) {
+                if (ps->thvar_raw) {
                     ps->check(nt, nt->_t, 1e-10);
                 }
             }

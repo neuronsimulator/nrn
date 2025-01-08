@@ -279,8 +279,7 @@ class PreSyn: public ConditionEvent {
     static DiscreteEvent* savestate_read(FILE*);
 
     virtual double value() {
-        assert(thvar_);
-        return *thvar_ - threshold_;
+        return *thvar_raw - threshold_;
     }
 
     void update(Observable*);
@@ -297,6 +296,7 @@ class PreSyn: public ConditionEvent {
     double threshold_;
     double delay_;
     neuron::container::data_handle<double> thvar_{};
+    double* thvar_raw{};  // raw pointer of thvar
     Object* osrc_;
     Section* ssrc_;
     IvocVect* tvec_;
