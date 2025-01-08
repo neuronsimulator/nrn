@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
-set -e
+set -eu
 
-NRNMPI_SOURCE='@PROJECT_SOURCE_DIR@/src/nrnmpi/nrnmpidec.h'
+NRNMPI_OUTPUT_PATH="${1}"
 
 names="$(sed -n '
 /extern /s/extern [a-z*]* \(nrnmpi_[a-zA-Z0-9_]*\)(.*);/\1/p
-' "${NRNMPI_SOURCE}")"
+' nrnmpidec.h)"
 
 #generate nrnmpi_dynam_wrappers.inc
 sed -n '
 /extern void/s/extern \(void\) \(nrnmpi_[a-zA-Z0-9_]*\)\(.*\);/\1 \2\3 {@  (*p_\2)\3;@}/p
 /extern [^v]/s/extern \([a-z*]*\) \(nrnmpi_[a-zA-Z0-9_]*\)\(.*\);/\1 \2\3 {@  return (*p_\2)\3;@}/p
-' "${NRNMPI_SOURCE}" | tr '@' '\n' | sed '
+' nrnmpidec.h | tr '@' '\n' | sed '
 /p_nrnmpi/ {
 s/, const [a-zA-Z0-9_:*&]* /, /g
 s/)(const [a-zA-Z0-9_:*&]* /)(/
@@ -23,7 +23,7 @@ s/char\* //g
 s/char\*\* //g
 s/std::string& //g
 }
-'> nrnmpi_dynam_wrappers.inc
+'> "${NRNMPI_OUTPUT_PATH}/nrnmpi_dynam_wrappers.inc"
 
 #generate nrnmpi_dynam.h
 (
@@ -43,14 +43,14 @@ echo '
 
 #endif
 '
-) > nrnmpi_dynam.h
+) > "${NRNMPI_OUTPUT_PATH}/nrnmpi_dynam.h"
 
 #generate nrnmpi_dynam_cinc
 (
 
 sed -n '
 /extern/s/extern \([a-z*]*\) \(nrnmpi_[a-zA-Z0-9_]*\)\(.*\);/static \1 (*p_\2)\3;/p
-' "${NRNMPI_SOURCE}"
+' nrnmpidec.h
 echo '
 static struct {
 	const char* name;
@@ -62,4 +62,4 @@ done
 echo '	0,0
 };
 '
-) > nrnmpi_dynam_cinc
+) > "${NRNMPI_OUTPUT_PATH}/nrnmpi_dynam_cinc"

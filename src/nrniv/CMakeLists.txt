@@ -274,13 +274,13 @@ add_dependencies(generated_source_files generate_hocusr_header)
 
 # header for dynamic mpi
 if(NRN_ENABLE_MPI_DYNAMIC)
-  configure_file(${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.sh.in
-                 ${PROJECT_BINARY_DIR}/src/nrnmpi/mkdynam.sh @ONLY)
+  file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/src/nrnmpi")
   add_custom_command(
     OUTPUT ${NRNMPI_DYNAMIC_INCLUDE_FILE}
-    COMMAND sh mkdynam.sh
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrnmpi
-    DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpidec.h)
+    COMMAND sh mkdynam.sh "${PROJECT_BINARY_DIR}/src/nrnmpi"
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/nrnmpi
+    DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.sh
+            ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpidec.h)
 endif()
 
 # =============================================================================
