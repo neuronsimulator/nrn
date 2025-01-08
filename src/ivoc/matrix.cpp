@@ -657,7 +657,7 @@ static Member_func m_members[] = {
     {"printf", m_printf},
     {"fprint", m_fprint},
     {"scanf", m_scanf},
-    {0, 0}};
+    {nullptr, nullptr}};
 
 static Member_ret_obj_func m_retobj_members[] = {
     // returns Vector
@@ -687,7 +687,7 @@ static Member_ret_obj_func m_retobj_members[] = {
     {"set", m_set},
     {"to_vector", m_to_vector},
     {"from_vector", m_from_vector},
-    {0, 0}};
+    {nullptr, nullptr}};
 
 static void* m_cons(Object* o) {
     int i = 1, j = 1, storage_type = Matrix::MFULL;
@@ -729,7 +729,7 @@ void Matrix_reg();
 #endif
 
 void Matrix_reg() {
-    class2oc("Matrix", m_cons, m_destruct, m_members, m_retobj_members, NULL);
+    class2oc("Matrix", m_cons, m_destruct, m_members, m_retobj_members, nullptr);
     nrn_matrix_sym = hoc_lookup("Matrix");
     // now make the x variable an actual double
     Symbol* sx = hoc_table_lookup("x", nrn_matrix_sym->u.ctemplate->symtable);

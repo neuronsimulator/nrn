@@ -4,6 +4,7 @@ import subprocess
 import sys
 from collections import defaultdict
 import logging
+import platform
 
 logging.basicConfig(level=logging.INFO)
 from shutil import copytree, which
@@ -434,7 +435,7 @@ def setup_package():
     ]
 
     if Components.MUSIC:
-        extensions += [
+        music_extensions = [
             CyExtension(
                 "neuronmusic",
                 ["src/neuronmusic/neuronmusic.pyx"],
@@ -443,6 +444,9 @@ def setup_package():
                 **extension_common_params,
             )
         ]
+        for ext in music_extensions:
+            ext.cython_c_in_temp = True
+            extensions.append(ext)
 
     if Components.RX3D:
         include_dirs = ["share/lib/python/neuron/rxd/geometry3d", numpy.get_include()]
@@ -461,10 +465,12 @@ def setup_package():
                 + ["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")],
             )
         )
+        if platform.system() == "Darwin":
+            rxd_params["extra_link_args"] += ["-headerpad_max_install_names"]
 
         logging.info("RX3D compile flags %s" % str(rxd_params))
 
-        extensions += [
+        rxd_extensions = [
             CyExtension(
                 "neuron.rxd.geometry3d.graphicsPrimitives",
                 ["share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx"],
@@ -487,6 +493,9 @@ def setup_package():
                 **rxd_params,
             ),
         ]
+        for ext in rxd_extensions:
+            ext.cython_c_in_temp = True
+            extensions.append(ext)
 
     logging.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
 

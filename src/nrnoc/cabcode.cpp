@@ -450,10 +450,7 @@ Section* chk_access() {
     Section* sec = secstack[isecstack];
     if (!sec || !sec->prop) {
         /* use any existing section as a default section */
-        hoc_Item* qsec;
-        // ForAllSections(lsec)
-        ITERATE(qsec, section_list) {
-            Section* lsec = hocSEC(qsec);
+        for (Section* lsec: range_sec(section_list)) {
             if (lsec->prop) {
                 sec = lsec;
                 ++sec->refcount;
@@ -479,10 +476,7 @@ Section* nrn_noerr_access(void) /* return 0 if no accessed section */
     Section* sec = secstack[isecstack];
     if (!sec || !sec->prop) {
         /* use any existing section as a default section */
-        hoc_Item* qsec;
-        // ForAllSections(lsec)
-        ITERATE(qsec, section_list) {
-            Section* lsec = hocSEC(qsec);
+        for (Section* lsec: range_sec(section_list)) {
             if (lsec->prop) {
                 sec = lsec;
                 ++sec->refcount;
@@ -1639,8 +1633,6 @@ void nrn_parent_info(Section* s) {
 }
 
 void setup_topology(void) {
-    Item* qsec;
-
     /* use connection info in section property to connect nodes. */
     /* for the moment we assume uniform dx and range 0-1 */
 
@@ -1656,9 +1648,7 @@ void setup_topology(void) {
 
     nrn_global_ncell = 0;
 
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
 #if 0
 		if (sec->nnode < 1) { /* last node is not a segment */
 			hoc_execerror(secname(sec),
@@ -2200,15 +2190,11 @@ void hoc_level_pushsec(Section* sec) {
 }
 
 void push_section(void) {
-    Section* sec;
+    Section* sec = nullptr;
     if (hoc_is_str_arg(1)) {
-        Item* qsec;
         char* s;
-        sec = (Section*) 0;
         s = gargstr(1);
-        // ForAllSections(sec1) /* I can't imagine a more inefficient way */
-        ITERATE(qsec, section_list) {
-            Section* sec1 = hocSEC(qsec);
+        for (Section* sec1: range_sec(section_list)) {
             if (strcmp(s, nrn_sec2pysecname(sec1)) == 0) {
                 sec = sec1;
                 break;

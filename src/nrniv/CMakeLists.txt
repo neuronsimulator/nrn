@@ -115,7 +115,11 @@ endif()
 # Translate all MOD files to C and mark them generated
 # =============================================================================
 foreach(modfile ${NRN_MODFILE_BASE_NAMES})
-  nocmodl_mod_to_cpp(${modfile})
+  set(modfile_compat OFF)
+  if((NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY) AND modfile MATCHES "hh$")
+    set(modfile_compat ON)
+  endif()
+  nocmodl_mod_to_cpp(${modfile} ${modfile_compat})
   list(APPEND NRN_MODFILE_CPP ${PROJECT_BINARY_DIR}/${modfile}.cpp)
 endforeach()
 set_property(

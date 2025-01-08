@@ -35,8 +35,8 @@ set(HEADER_FILES_TO_INSTALL
     nrnoc/options.h
     nrnoc/section_fwd.hpp
     nrnoc/treeset.h
+    oc/classreg.h
     oc/hoc.h
-    oc/hoc_membf.h
     oc/hocassrt.h
     oc/hocdec.h
     oc/hocgetsym.h
@@ -156,7 +156,6 @@ set(IVOC_FILE_LIST
     grglyph.cpp
     grmanip.cpp
     hocmark.cpp
-    htlist.cpp
     idraw.cpp
     ivoc.cpp
     ivocmain.cpp
