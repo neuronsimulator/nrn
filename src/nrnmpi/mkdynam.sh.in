@@ -2,15 +2,17 @@
 
 set -e
 
-names=`sed -n '
+NRNMPI_SOURCE='@PROJECT_SOURCE_DIR@/src/nrnmpi/nrnmpidec.h'
+
+names="$(sed -n '
 /extern /s/extern [a-z*]* \(nrnmpi_[a-zA-Z0-9_]*\)(.*);/\1/p
-' nrnmpidec.h`
+' "${NRNMPI_SOURCE}")"
 
 #generate nrnmpi_dynam_wrappers.inc
 sed -n '
 /extern void/s/extern \(void\) \(nrnmpi_[a-zA-Z0-9_]*\)\(.*\);/\1 \2\3 {@  (*p_\2)\3;@}/p
 /extern [^v]/s/extern \([a-z*]*\) \(nrnmpi_[a-zA-Z0-9_]*\)\(.*\);/\1 \2\3 {@  return (*p_\2)\3;@}/p
-' nrnmpidec.h | tr '@' '\n' | sed '
+' "${NRNMPI_SOURCE}" | tr '@' '\n' | sed '
 /p_nrnmpi/ {
 s/, const [a-zA-Z0-9_:*&]* /, /g
 s/)(const [a-zA-Z0-9_:*&]* /)(/
@@ -48,7 +50,7 @@ echo '
 
 sed -n '
 /extern/s/extern \([a-z*]*\) \(nrnmpi_[a-zA-Z0-9_]*\)\(.*\);/static \1 (*p_\2)\3;/p
-' nrnmpidec.h
+' "${NRNMPI_SOURCE}"
 echo '
 static struct {
 	const char* name;
@@ -61,4 +63,3 @@ echo '	0,0
 };
 '
 ) > nrnmpi_dynam_cinc
-
