@@ -859,11 +859,7 @@ static PyObject* NPySecObj_pt3dstyle(NPySecObj* self, PyObject* args) {
             return NULL;
         }
     }
-
-    if (sec->logical_connection) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return PyBool_FromLong(sec->logical_connection != nullptr);
 }
 
 static PyObject* NPySecObj_pt3dstyle_safe(NPySecObj* self, PyObject* args) {
@@ -956,10 +952,7 @@ static PyObject* NPySecObj_spine3d(NPySecObj* self, PyObject* args) {
     if (pt3d == NULL) {
         return NULL;
     }
-    if (pt3d->d < 0) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return PyBool_FromLong(pt3d->d < 0);
 }
 
 static PyObject* NPySecObj_spine3d_safe(NPySecObj* self, PyObject* args) {
@@ -1044,10 +1037,8 @@ static PyObject* NPySecObj_psection_safe(NPySecObj* self) {
 
 static PyObject* is_pysec(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
-    if (self->sec_->prop && self->sec_->prop->dparam[PROP_PY_INDEX].get<void*>()) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return PyBool_FromLong(self->sec_->prop &&
+                           self->sec_->prop->dparam[PROP_PY_INDEX].get<void*>());
 }
 
 static PyObject* is_pysec_safe(NPySecObj* self) {
@@ -1316,14 +1307,9 @@ static PyObject* pysec_richcmp_safe(NPySecObj* self, PyObject* other, int op) {
 
 static PyObject* pysec_same(NPySecObj* self, PyObject* args) {
     PyObject* pysec;
-    if (PyArg_ParseTuple(args, "O", &pysec)) {
-        if (PyObject_TypeCheck(pysec, psection_type)) {
-            if (((NPySecObj*) pysec)->sec_ == self->sec_) {
-                Py_RETURN_TRUE;
-            }
-        }
-    }
-    Py_RETURN_FALSE;
+    return PyBool_FromLong(PyArg_ParseTuple(args, "O", &pysec) &&
+                           PyObject_TypeCheck(pysec, psection_type) &&
+                           ((NPySecObj*) pysec)->sec_ == self->sec_);
 }
 
 static PyObject* pysec_same_safe(NPySecObj* self, PyObject* args) {
@@ -1391,10 +1377,7 @@ static PyObject* NPyMechFunc_call_safe(NPyMechFunc* self, PyObject* args) {
 
 static PyObject* NPyMechObj_is_ion(NPyMechObj* self) {
     CHECK_PROP_INVALID(self->prop_id_);
-    if (nrn_is_ion(self->type_)) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return PyBool_FromLong(nrn_is_ion(self->type_));
 }
 
 static PyObject* NPyMechObj_is_ion_safe(NPyMechObj* self) {
