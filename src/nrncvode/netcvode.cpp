@@ -1486,10 +1486,16 @@ bool NetCvode::init_global() {
         distribute_dinfo(nullptr, 0);
         for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
             CvodeThreadData& z = cv.ctd_[_nt->id];
+
             z.rootnodecount_ = _nt->ncell;
             z.v_node_count_ = _nt->end;
             z.v_node_ = _nt->_v_node;
             z.v_parent_ = _nt->_v_parent;
+
+            z.rootnode_begin_index_ = 0;
+            z.rootnode_end_index_ = _nt->ncell;
+            z.vnode_begin_index_ = _nt->ncell;
+            z.vnode_end_index_ = _nt->end;
 
             CvMembList* last = 0;
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
@@ -1577,10 +1583,25 @@ bool NetCvode::init_global() {
             }
 
             for (i = 0; i < _nt->ncell; ++i) {
-                d.lcv_[i].ctd_[0].v_node_count_ = 0;
+                d.lcv_[i].ctd_[0].v_node_count_ = 1;
+                auto& z = d.lcv_[i].ctd_[0];
+                z.rootnode_begin_index_ = i;
+                z.rootnode_end_index_ = i + 1;
+                // start counting these
+                z.vnode_begin_index_ = 0;
+                z.vnode_end_index_ = 0;
             }
-            for (i = 0; i < _nt->end; ++i) {
+            for (i = _nt->ncell; i < _nt->end; ++i) {
                 ++d.lcv_[cellnum[i]].ctd_[0].v_node_count_;
+                auto& z = d.lcv_[cellnum[i]].ctd_[0];
+                // valid only if cell contiguity (except root) is satisified.
+                if (!z.vnode_begin_index_) {
+                    z.vnode_begin_index_ = i;
+                }
+                if (i > _nt->ncell) {  // verify contiguity constraint
+                    assert(z.vnode_end_index_ == i);
+                }
+                z.vnode_end_index_ = i + 1;
             }
             for (i = 0; i < _nt->ncell; ++i) {
                 d.lcv_[cellnum[i]].ctd_[0].v_node_ =

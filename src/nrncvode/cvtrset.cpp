@@ -17,25 +17,32 @@ void Cvode::rhs(neuron::model_sorted_token const& sorted_token, NrnThread* _nt) 
     if (z.v_node_count_ == 0) {
         return;
     }
-    for (int i = 0; i < z.v_node_count_; ++i) {
-        NODERHS(z.v_node_[i]) = 0.;
+    auto* const vec_rhs = _nt->node_rhs_storage();
+    for (int i = z.rootnode_begin_index_; i < z.rootnode_end_index_; ++i) {
+        vec_rhs[i] = 0.;
+    }
+    for (int i = z.vnode_begin_index_; i < z.vnode_end_index_; ++i) {
+        vec_rhs[i] = 0.;
     }
     auto const vec_sav_rhs = _nt->node_sav_rhs_storage();
     if (vec_sav_rhs) {
-        for (int i = 0; i < z.v_node_count_; ++i) {
-            Node* nd = z.v_node_[i];
-            vec_sav_rhs[nd->v_node_index] = 0;
+        for (int i = z.rootnode_begin_index_; i < z.rootnode_end_index_; ++i) {
+            vec_sav_rhs[i] = 0.;
+        }
+        for (int i = z.vnode_begin_index_; i < z.vnode_end_index_; ++i) {
+            vec_sav_rhs[i] = 0.;
         }
     }
 
     rhs_memb(sorted_token, z.cv_memb_list_, _nt);
-    auto const vec_rhs = _nt->node_rhs_storage();
     nrn_nonvint_block_current(_nt->end, vec_rhs, _nt->id);
 
     if (vec_sav_rhs) {
-        for (int i = 0; i < z.v_node_count_; ++i) {
-            auto const node_index = z.v_node_[i]->v_node_index;
-            vec_sav_rhs[node_index] -= vec_rhs[node_index];
+        for (int i = z.rootnode_begin_index_; i < z.rootnode_end_index_; ++i) {
+            vec_sav_rhs[i] -= vec_rhs[i];
+        }
+        for (int i = z.vnode_begin_index_; i < z.vnode_end_index_; ++i) {
+            vec_sav_rhs[i] -= vec_rhs[i];
         }
     }
 
@@ -46,13 +53,13 @@ void Cvode::rhs(neuron::model_sorted_token const& sorted_token, NrnThread* _nt) 
     auto const vec_a = _nt->node_a_storage();
     auto const vec_b = _nt->node_b_storage();
     auto const vec_v = _nt->node_voltage_storage();
-    for (auto i = z.rootnodecount_; i < z.v_node_count_; ++i) {
-        auto const node_i = z.v_node_[i]->v_node_index;
-        auto const parent_i = z.v_parent_[i]->v_node_index;
-        auto const dv = vec_v[parent_i] - vec_v[node_i];
-        // our connection coefficients are negative
-        vec_rhs[node_i] -= vec_b[node_i] * dv;
-        vec_rhs[parent_i] += vec_a[node_i] * dv;
+    auto* const parent_i = _nt->_v_parent_index;
+    for (int i = z.vnode_begin_index_; i < z.vnode_end_index_; ++i) {
+        auto const pi = parent_i[i];
+        auto const dv = vec_v[pi] - vec_v[i];
+        // our connection coefficients are negative so
+        vec_rhs[i] -= vec_b[i] * dv;
+        vec_rhs[pi] += vec_a[i] * dv;
     }
 }
 
@@ -83,8 +90,12 @@ void Cvode::lhs(neuron::model_sorted_token const& sorted_token, NrnThread* _nt) 
     if (z.v_node_count_ == 0) {
         return;
     }
-    for (i = 0; i < z.v_node_count_; ++i) {
-        NODED(z.v_node_[i]) = 0.;
+    auto* const vec_d = _nt->node_d_storage();
+    for (int i = z.rootnode_begin_index_; i < z.rootnode_end_index_; ++i) {
+        vec_d[i] = 0.;
+    }
+    for (int i = z.vnode_begin_index_; i < z.vnode_end_index_; ++i) {
+        vec_d[i] = 0.;
     }
 
     lhs_memb(sorted_token, z.cv_memb_list_, _nt);
@@ -96,11 +107,12 @@ void Cvode::lhs(neuron::model_sorted_token const& sorted_token, NrnThread* _nt) 
     // fast_imem not needed since exact icap added in nrn_div_capacity
 
     /* now add the axial currents */
-    for (i = 0; i < z.v_node_count_; ++i) {
-        NODED(z.v_node_[i]) -= NODEB(z.v_node_[i]);
-    }
-    for (i = z.rootnodecount_; i < z.v_node_count_; ++i) {
-        NODED(z.v_parent_[i]) -= NODEA(z.v_node_[i]);
+    auto* const vec_a = _nt->node_a_storage();
+    auto* const vec_b = _nt->node_b_storage();
+    auto* const parent_i = _nt->_v_parent_index;
+    for (int i = z.vnode_begin_index_; i < z.vnode_end_index_; ++i) {
+        vec_d[i] -= vec_b[i];
+        vec_d[parent_i[i]] -= vec_a[i];
     }
 }
 
@@ -125,33 +137,33 @@ void Cvode::lhs_memb(neuron::model_sorted_token const& sorted_token,
 
 /* triangularization of the matrix equations */
 void Cvode::triang(NrnThread* _nt) {
-    Node *nd, *pnd;
-    double p;
-    int i;
     CvodeThreadData& z = CTD(_nt->id);
 
-    for (i = z.v_node_count_ - 1; i >= z.rootnodecount_; --i) {
-        nd = z.v_node_[i];
-        pnd = z.v_parent_[i];
-        p = NODEA(nd) / NODED(nd);
-        NODED(pnd) -= p * NODEB(nd);
-        NODERHS(pnd) -= p * NODERHS(nd);
+    auto* const vec_a = _nt->node_a_storage();
+    auto* const vec_b = _nt->node_b_storage();
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
+    for (int i = z.vnode_end_index_ - 1; i >= z.vnode_begin_index_; --i) {
+        double const p = vec_a[i] / vec_d[i];
+        auto const pi = _nt->_v_parent_index[i];
+        vec_d[pi] -= p * vec_b[i];
+        vec_rhs[pi] -= p * vec_rhs[i];
     }
 }
 
 /* back substitution to finish solving the matrix equations */
 void Cvode::bksub(NrnThread* _nt) {
-    Node *nd, *cnd;
-    int i;
     CvodeThreadData& z = CTD(_nt->id);
 
-    for (i = 0; i < z.rootnodecount_; ++i) {
-        NODERHS(z.v_node_[i]) /= NODED(z.v_node_[i]);
+    auto* const vec_b = _nt->node_b_storage();
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
+    auto* const parent_i = _nt->_v_parent_index;
+    for (int i = z.rootnode_begin_index_; i < z.rootnode_end_index_; ++i) {
+        vec_rhs[i] /= vec_d[i];
     }
-    for (i = z.rootnodecount_; i < z.v_node_count_; ++i) {
-        cnd = z.v_node_[i];
-        nd = z.v_parent_[i];
-        NODERHS(cnd) -= NODEB(cnd) * NODERHS(nd);
-        NODERHS(cnd) /= NODED(cnd);
+    for (int i = z.vnode_begin_index_; i < z.vnode_end_index_; ++i) {
+        vec_rhs[i] -= vec_b[i] * vec_rhs[parent_i[i]];
+        vec_rhs[i] /= vec_d[i];
     }
 }

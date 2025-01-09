@@ -69,10 +69,25 @@ class CvodeThreadData {
     BAMechList* before_breakpoint_;
     BAMechList* after_solve_;
     BAMechList* before_step_;
+
     int rootnodecount_;
     int v_node_count_;
     Node** v_node_;
     Node** v_parent_;
+
+    // Analogous to NrnThread ncell and end to allow similar SoA container
+    // indexing as in fixed step triang and bksub in nrnoc/solve.cpp.
+    // The v, rhs, d, a, b, parent storage containers are assumed to be
+    // sorted for cell contiguity (when lvardt is used) though roots are
+    // all at the beginning of each thread. The following 4 indices are
+    // used to directly access regions of those containers for tree setup
+    // and solving. This eliminates the use of low performance
+    // Node** v_node_, v_parent_ to access the containers.
+    int rootnode_begin_index_;
+    int rootnode_end_index_;
+    int vnode_begin_index_;
+    int vnode_end_index_;
+
     PreSynList* psl_th_;  // with a threshold
     std::list<WatchCondition*>* watch_list_;
     // since scatter/gather are hot loops, don't want to use data_handle
