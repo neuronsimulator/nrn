@@ -1598,7 +1598,7 @@ bool NetCvode::init_global() {
                 if (!z.vnode_begin_index_) {
                     z.vnode_begin_index_ = i;
                 }
-                if (i > _nt->ncell) {  // verify contiguity constraint
+                if (z.vnode_end_index_ > 0) {  // verify contiguity constraint
                     assert(z.vnode_end_index_ == i);
                 }
                 z.vnode_end_index_ = i + 1;
