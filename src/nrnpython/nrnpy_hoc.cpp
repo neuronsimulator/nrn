@@ -206,7 +206,7 @@ static PyObject* nrnexec(PyObject* self, PyObject* args) {
         return NULL;
     }
     bool b = hoc_valid_stmt(cmd, 0);
-    return b ? Py_True : Py_False;
+    return PyBool_FromLong(b);
 }
 
 static PyObject* nrnexec_safe(PyObject* self, PyObject* args) {

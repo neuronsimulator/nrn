@@ -1590,7 +1590,7 @@ static PyObject* NPySecObj_has_membrane(NPySecObj* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "s", &mechanism_name)) {
         return NULL;
     }
-    result = has_membrane(mechanism_name, self->sec_) ? Py_True : Py_False;
+    result = PyBool_FromLong(has_membrane(mechanism_name, self->sec_));
     Py_XINCREF(result);
     return result;
 }
