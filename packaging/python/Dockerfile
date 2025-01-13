@@ -9,7 +9,10 @@ LABEL authors="Pramod Kumbhar, Fernando Pereira, Alexandru Savulescu, Goran Jeli
 # solution: use a well-defined oldest-supported version of GCC
 # we need to do this _before_ building any libraries from source
 ARG OLDEST_SUPPORTED_GCC_VERSION=10
-RUN yum install -y gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}-gcc gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}-gcc-c++
+RUN yum -y install \
+    gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}-gcc \
+    gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}-gcc-c++ \
+    && yum -y clean all && rm -rf /var/cache
 ENV PATH /opt/rh/gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}/root/usr/bin:$PATH
 ENV LD_LIBRARY_PATH=/opt/rh/gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}/root/usr/lib64:/opt/rh/gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}/root/usr/lib:/opt/rh/gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}/root/usr/lib64/dyninst:/opt/rh/gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}/root/usr/lib/dyninst
 ENV DEVTOOLSET_ROOTPATH=/opt/rh/gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}/root
