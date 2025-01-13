@@ -14,10 +14,8 @@ RUN yum -y install \
     curl \
     unzip \
     flex \
-    readline \
-    ncurses \
-    mpich \
-    openmpi \
+    mpich-devel \
+    openmpi-devel \
     bison \
     autoconf \
     automake \
@@ -32,6 +30,27 @@ RUN yum -y install \
     rpm-build && yum -y clean all && rm -rf /var/cache
 
 WORKDIR /root
+
+RUN wget http://ftpmirror.gnu.org/ncurses/ncurses-6.4.tar.gz \
+    && tar -xvzf ncurses-6.4.tar.gz \
+    && cd ncurses-6.4  \
+    && ./configure --prefix=/nrnwheel/ncurses --without-shared --without-debug CFLAGS="-fPIC" \
+    && make -j install \
+    && cd .. && rm -rf ncurses-6.4 ncurses-6.4.tar.gz
+
+RUN curl -L -o readline-7.0.tar.gz https://ftp.gnu.org/gnu/readline/readline-7.0.tar.gz \
+    && tar -xvzf readline-7.0.tar.gz \
+    && cd readline-7.0  \
+    && ./configure --prefix=/nrnwheel/readline --disable-shared CFLAGS="-fPIC" \
+    && make -j install \
+    && cd .. && rm -rf readline-7.0 readline-7.0.tar.gz
+
+# create readline with ncurses
+RUN cd /nrnwheel/readline/lib \
+    && ar -x libreadline.a \
+    && ar -x ../../ncurses/lib/libncurses.a \
+    && ar cq libreadline.a *.o \
+    && rm *.o
 
 # NOTE: NMODL transpiler is used in during build step but it requires
 # sympy+python available in order to translate MOD files to C++. But under
@@ -48,9 +67,7 @@ RUN curl -L -o Python-3.10.0.tar.gz https://www.python.org/ftp/python/3.10.0/Pyt
     && cd .. && rm -rf Python-3.10.0 Python-3.10.0.tar.gz
 
 RUN yum -y install epel-release libX11-devel libXcomposite-devel vim-enhanced && yum -y clean all && rm -rf /var/cache
-
-# Copy Dockerfile for reference
-COPY Dockerfile .
+RUN yum -y remove ncurses-devel
 
 # build wheels from there
 WORKDIR /root
@@ -59,3 +76,8 @@ WORKDIR /root
 RUN rm -fr /opt/python/cp313-cp313t
 
 ENV NMODL_PYLIB=/nrnwheel/python/lib/libpython3.10.so.1.0
+
+ENV PATH /usr/lib64/openmpi/bin:$PATH
+
+# Copy Dockerfile for reference
+COPY Dockerfile .
