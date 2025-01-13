@@ -36,10 +36,6 @@ run_mpi_test () {
   echo "======= Testing $mpi_name ========"
   if [ -n "$mpi_module" ]; then
      echo "Loading module $mpi_module"
-     if [[ $(hostname -f) = *r*bbp.epfl.ch* ]]; then
-        echo "\tusing unstable on BB5"
-        module load unstable
-     fi
      module load $mpi_module
   fi
 
@@ -190,12 +186,6 @@ run_parallel_test() {
       # choose openmpi
       sudo update-alternatives --set mpi-x86_64-linux-gnu /usr/lib/x86_64-linux-gnu/openmpi/include
       run_mpi_test "mpirun.openmpi" "OpenMPI" ""
-
-    # BB5 with multiple MPI libraries
-    elif [[ $(hostname -f) = *r*bbp.epfl.ch* ]]; then
-      run_mpi_test "srun" "HPE-MPT" "hpe-mpi"
-      run_mpi_test "mpirun" "Intel MPI" "intel-oneapi-mpi"
-      run_mpi_test "srun" "MVAPICH2" "mvapich2"
 
     # circle-ci build
     elif [[ "$CIRCLECI" == "true" ]]; then
