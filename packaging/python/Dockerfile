@@ -3,6 +3,17 @@ ARG MANYLINUX_IMAGE=manylinux_2_28_x86_64
 FROM quay.io/pypa/$MANYLINUX_IMAGE
 LABEL authors="Pramod Kumbhar, Fernando Pereira, Alexandru Savulescu, Goran Jelic-Cizmek"
 
+# problem: libstdc++ is _not_ forwards compatible, so if we try to compile mod
+# files on a system that ships a version of it older than the one used for
+# building the wheel itself, we'll get linker errors.
+# solution: use a well-defined oldest-supported version of GCC
+# we need to do this _before_ building any libraries from source
+ARG OLDEST_SUPPORTED_GCC_VERSION=10
+RUN yum install -y gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}-gcc gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}-gcc-c++
+ENV PATH /opt/rh/gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}/root/usr/bin:$PATH
+ENV LD_LIBRARY_PATH=/opt/rh/gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}/root/usr/lib64:/opt/rh/gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}/root/usr/lib:/opt/rh/gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}/root/usr/lib64/dyninst:/opt/rh/gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}/root/usr/lib/dyninst
+ENV DEVTOOLSET_ROOTPATH=/opt/rh/gcc-toolset-${OLDEST_SUPPORTED_GCC_VERSION}/root
+
 RUN gcc --version && python3 --version
 
 # install basic packages
