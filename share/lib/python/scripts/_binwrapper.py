@@ -50,15 +50,18 @@ def _check_cpp_compiler_version(min_version: str):
     try:
         cpp_compiler = os.environ.get("CXX", "")
         version = subprocess.run(
-            [cpp_compiler, "--version"], stdout=subprocess.PIPE
+            [cpp_compiler, "--version"],
+            stdout=subprocess.PIPE,
         ).stdout.decode("utf-8")
-        if "GCC" in version:
+        if "gcc" in version.lower() or "gnu" in version.lower():
             version = subprocess.run(
-                [cpp_compiler, "-dumpversion"], stdout=subprocess.PIPE
+                [cpp_compiler, "-dumpversion"],
+                stdout=subprocess.PIPE,
             ).stdout.decode("utf-8")
             if Version(version) <= Version(min_version):
                 warnings.warn(
-                    f"Warning: GCC >= {min_version} is required with this version of NEURON but found {version}",
+                    f"Warning: GCC >= {min_version} is required with this version of NEURON"
+                    f"but found version {version}",
                 )
     except:
         pass
