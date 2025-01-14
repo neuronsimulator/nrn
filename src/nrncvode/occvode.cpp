@@ -200,12 +200,15 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
             atv[i] *= vtol;
         }
 
-        // deal with voltage nodes
-        // only cap nodes for cvode
-        for (i = 0; i < z.v_node_count_; ++i) {
-            // sentinal values for determining no_cap
-            NODERHS(z.v_node_[i]) = 1.;
+        // mark all nodes to help with marking only no_cap nodes
+        auto* const vec_rhs = nt_->node_rhs_storage();
+        for (int i = z.rootnode_begin_index_; i < z.rootnode_end_index_; ++i) {
+            vec_rhs[i] = 1.;
         }
+        for (int i = z.vnode_begin_index_; i < z.vnode_end_index_; ++i) {
+            vec_rhs[i] = 1.;
+        }
+
         i = 0;
         if (zneq_cap_v) {
             for (auto& ml: z.cmlcap_->ml) {
@@ -224,7 +227,6 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
         z.no_cap_indices_.resize(n_vnode - zneq_cap_v);
         // possibly a few more than needed.
         z.no_cap_child_indices_.resize(n_vnode - zneq_cap_v);
-        auto* const vec_rhs = nt_->node_rhs_storage();
         int nocap_index = 0;
         int nocap_child_index = 0;
         for (int i = z.rootnode_begin_index_; i < z.rootnode_end_index_; ++i) {
@@ -763,9 +765,12 @@ void Cvode::fun_thread_transfer_part2(neuron::model_sorted_token const& sorted_t
         }
     }
     if (auto const vec_sav_rhs = nt->node_sav_rhs_storage(); vec_sav_rhs) {
-        for (int i = 0; i < z.v_node_count_; ++i) {
-            Node* nd = z.v_node_[i];
-            vec_sav_rhs[nd->v_node_index] *= NODEAREA(nd) * 0.01;
+        auto* const vec_area = nt->node_area_storage();
+        for (int i = z.rootnode_begin_index_; i < z.rootnode_end_index_; ++i) {
+            vec_sav_rhs[i] *= vec_area[i] * 0.01;
+        }
+        for (int i = z.vnode_begin_index_; i < z.vnode_end_index_; ++i) {
+            vec_sav_rhs[i] *= vec_area[i] * 0.01;
         }
     }
     gather_ydot(ydot, nt->id);

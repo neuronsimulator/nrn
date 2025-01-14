@@ -1238,10 +1238,6 @@ CvodeThreadData::CvodeThreadData() {
     before_breakpoint_ = nullptr;
     after_solve_ = nullptr;
     before_step_ = nullptr;
-    rootnodecount_ = 0;
-    v_node_count_ = 0;
-    v_node_ = nullptr;
-    v_parent_ = nullptr;
     psl_th_ = nullptr;
     watch_list_ = nullptr;
     nvoffset_ = 0;
@@ -1313,10 +1309,6 @@ void NetCvode::del_cv_memb_list(Cvode* cvode) {
             delete std::exchange(z.psl_th_, nullptr);
         }
         if (cvode != gcv_) {
-            if (z.v_node_) {
-                delete[] std::exchange(z.v_node_, nullptr);
-                delete[] std::exchange(z.v_parent_, nullptr);
-            }
             z.delete_memb_list(std::exchange(z.cv_memb_list_, nullptr));
         } else {
             CvMembList *cml, *cmlnext;
@@ -1479,11 +1471,6 @@ bool NetCvode::init_global() {
         for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
             CvodeThreadData& z = cv.ctd_[_nt->id];
 
-            z.rootnodecount_ = _nt->ncell;
-            z.v_node_count_ = _nt->end;
-            z.v_node_ = _nt->_v_node;
-            z.v_parent_ = _nt->_v_parent;
-
             z.rootnode_begin_index_ = 0;
             z.rootnode_end_index_ = _nt->ncell;
             z.vnode_begin_index_ = _nt->ncell;
@@ -1575,7 +1562,6 @@ bool NetCvode::init_global() {
             }
 
             for (i = 0; i < _nt->ncell; ++i) {
-                d.lcv_[i].ctd_[0].v_node_count_ = 1;
                 auto& z = d.lcv_[i].ctd_[0];
                 z.rootnode_begin_index_ = i;
                 z.rootnode_end_index_ = i + 1;
@@ -1584,7 +1570,6 @@ bool NetCvode::init_global() {
                 z.vnode_end_index_ = 0;
             }
             for (i = _nt->ncell; i < _nt->end; ++i) {
-                ++d.lcv_[cellnum[i]].ctd_[0].v_node_count_;
                 auto& z = d.lcv_[cellnum[i]].ctd_[0];
                 // valid only if cell contiguity (except root) is satisified.
                 if (!z.vnode_begin_index_) {
@@ -1594,22 +1579,6 @@ bool NetCvode::init_global() {
                     assert(z.vnode_end_index_ == i);
                 }
                 z.vnode_end_index_ = i + 1;
-            }
-            for (i = 0; i < _nt->ncell; ++i) {
-                d.lcv_[cellnum[i]].ctd_[0].v_node_ =
-                    new Node*[d.lcv_[cellnum[i]].ctd_[0].v_node_count_];
-                d.lcv_[cellnum[i]].ctd_[0].v_parent_ =
-                    new Node*[d.lcv_[cellnum[i]].ctd_[0].v_node_count_];
-            }
-            for (i = 0; i < _nt->ncell; ++i) {
-                d.lcv_[i].ctd_[0].v_node_count_ = 0;
-                d.lcv_[i].ctd_[0].rootnodecount_ = 1;
-            }
-            for (i = 0; i < _nt->end; ++i) {
-                d.lcv_[cellnum[i]].ctd_[0].v_node_[d.lcv_[cellnum[i]].ctd_[0].v_node_count_] =
-                    _nt->_v_node[i];
-                d.lcv_[cellnum[i]].ctd_[0].v_parent_[d.lcv_[cellnum[i]].ctd_[0].v_node_count_++] =
-                    _nt->_v_parent[i];
             }
             // divide the memb_list info into per cell info
             // count
@@ -4181,7 +4150,9 @@ int NetCvode::cellindex() {
     } else {
         ii = 0;
         lvardtloop(i, j) {
-            if (sec == p[i].lcv_[j].ctd_[0].v_node_[p[i].lcv_[j].ctd_[0].rootnodecount_]->sec) {
+            NrnThread* nt_ = nrn_threads + i;
+            int inode = p[i].lcv_[j].ctd_[0].vnode_begin_index_;
+            if (sec == nt_->_v_node[inode]->sec) {
                 return ii;
             }
             ii++;
@@ -6406,11 +6377,16 @@ void NetCvode::playrec_setup() {
 
 // is a pointer to range variable in this cell
 bool Cvode::is_owner(neuron::container::data_handle<double> const& handle) {
-    int in, it;
-    for (it = 0; it < nrn_nthread; ++it) {
+    for (int it = 0; it < nrn_nthread; ++it) {
         CvodeThreadData& z = CTD(it);
-        for (in = 0; in < z.v_node_count_; ++in) {
-            Node* nd = z.v_node_[in];
+        NrnThread* nt_ = nrn_threads + it;
+        // ugly start but include root in single for loop
+        for (int i = -1; i < z.vnode_end_index_; ++i) {
+            int in = (i == -1) ? z.rootnode_begin_index_ : i;
+            if (i == -1) {
+                i = z.vnode_begin_index_ - 1; // ready for ++i on next iteration
+            }
+            Node* nd = nt_->_v_node[in];
             if (handle == nd->v_handle()) {
                 return true;
             }

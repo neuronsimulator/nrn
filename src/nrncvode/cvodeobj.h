@@ -68,11 +68,6 @@ class CvodeThreadData {
     BAMechList* after_solve_;
     BAMechList* before_step_;
 
-    int rootnodecount_;
-    int v_node_count_;
-    Node** v_node_;
-    Node** v_parent_;
-
     // Analogous to NrnThread ncell and end to allow similar SoA container
     // indexing as in fixed step triang and bksub in nrnoc/solve.cpp.
     // The v, rhs, d, a, b, parent storage containers are assumed to be

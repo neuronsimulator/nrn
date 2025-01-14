@@ -14,7 +14,7 @@ void Cvode::rhs(neuron::model_sorted_token const& sorted_token, NrnThread* _nt) 
     if (diam_changed) {
         recalc_diam();
     }
-    if (z.v_node_count_ == 0) {
+    if (z.rootnode_end_index_ == 0) {
         return;
     }
     auto* const vec_rhs = _nt->node_rhs_storage();
@@ -87,7 +87,7 @@ void Cvode::lhs(neuron::model_sorted_token const& sorted_token, NrnThread* _nt) 
     int i;
 
     CvodeThreadData& z = CTD(_nt->id);
-    if (z.v_node_count_ == 0) {
+    if (z.rootnode_end_index_ == 0) {
         return;
     }
     auto* const vec_d = _nt->node_d_storage();
