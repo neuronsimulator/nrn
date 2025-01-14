@@ -1231,10 +1231,6 @@ void BAMechList::destruct(BAMechList** first) {
 }
 
 CvodeThreadData::CvodeThreadData() {
-    no_cap_count_ = 0;
-    no_cap_child_count_ = 0;
-    no_cap_node_ = nullptr;
-    no_cap_child_ = nullptr;
     cv_memb_list_ = nullptr;
     cmlcap_ = nullptr;
     cmlext_ = nullptr;
@@ -1258,10 +1254,6 @@ CvodeThreadData::CvodeThreadData() {
 CvodeThreadData::~CvodeThreadData() {
     if (no_cap_memb_) {
         delete_memb_list(no_cap_memb_);
-    }
-    if (no_cap_node_) {
-        delete[] no_cap_node_;
-        delete[] no_cap_child_;
     }
     if (watch_list_) {
         watch_list_->clear();

@@ -58,10 +58,8 @@ class CvodeThreadData {
     virtual ~CvodeThreadData();
     void delete_memb_list(CvMembList*);
 
-    int no_cap_count_;  // number of nodes with no capacitance
-    int no_cap_child_count_;
-    Node** no_cap_node_;
-    Node** no_cap_child_;  // connected to nodes that have no capacitance
+    std::vector<int> no_cap_indices_;
+    std::vector<int> no_cap_child_indices_;
     CvMembList* cv_memb_list_;
     CvMembList* cmlcap_;
     CvMembList* cmlext_;       // used only by daspk

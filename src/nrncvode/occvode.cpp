@@ -171,6 +171,7 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
     atolvec_alloc(neq_);
     for (int id = 0; id < nctd_; ++id) {
         CvodeThreadData& z = ctd_[id];
+        NrnThread* nt_ = nrn_threads + id;
         double* atv = n_vector_data(atolnvec_, id);
         zneq_cap_v = 0;
         if (z.cmlcap_) {
@@ -218,24 +219,30 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
             }
         }
 
-        // the remainder are no_cap nodes
-        if (z.no_cap_node_) {
-            delete[] z.no_cap_node_;
-            delete[] z.no_cap_child_;
-        }
-        z.no_cap_node_ = new Node*[z.v_node_count_ - zneq_cap_v];
-        z.no_cap_child_ = new Node*[z.v_node_count_ - zneq_cap_v];
-        z.no_cap_count_ = 0;
-        j = 0;
-        for (i = 0; i < z.v_node_count_; ++i) {
-            if (NODERHS(z.v_node_[i]) > .5) {
-                z.no_cap_node_[z.no_cap_count_++] = z.v_node_[i];
-            }
-            if (z.v_parent_[i] && NODERHS(z.v_parent_[i]) > .5) {
-                z.no_cap_child_[j++] = z.v_node_[i];
+        int n_vnode = (z.vnode_end_index_ - z.vnode_begin_index_)
+                      + (z.rootnode_end_index_ - z.rootnode_begin_index_);
+        z.no_cap_indices_.resize(n_vnode - zneq_cap_v);
+        // possibly a few more than needed.
+        z.no_cap_child_indices_.resize(n_vnode - zneq_cap_v);
+        auto* const vec_rhs = nt_->node_rhs_storage();
+        int nocap_index = 0;
+        int nocap_child_index = 0;
+        for (int i = z.rootnode_begin_index_; i < z.rootnode_end_index_; ++i) {
+            if (vec_rhs[i] > .5) {
+                z.no_cap_indices_[nocap_index++] = i;
             }
         }
-        z.no_cap_child_count_ = j;
+        for (int i = z.vnode_begin_index_; i < z.vnode_end_index_; ++i) {
+            if (vec_rhs[i] > .5) {
+                z.no_cap_indices_[nocap_index++] = i;
+            }
+            auto pi = nt_->_v_parent_index[i];
+            if (vec_rhs[pi] > .5) {
+                z.no_cap_child_indices_[nocap_child_index++] = i;
+            }
+        }
+        z.no_cap_indices_.resize(nocap_index);
+        z.no_cap_child_indices_.resize(nocap_child_index);
 
         // use the sentinal values in NODERHS to construct a new no cap membrane list
         new_no_cap_memb(z, nullptr);
@@ -581,8 +588,9 @@ int Cvode::solvex_thread(neuron::model_sorted_token const& sorted_token,
             nrn_mul_capacity(sorted_token, nt, &ml);
         }
     }
-    for (i = 0; i < z.no_cap_count_; ++i) {
-        NODERHS(z.no_cap_node_[i]) = 0.;
+    auto* const vec_rhs = nt->node_rhs_storage();
+    for (auto i: z.no_cap_indices_) {
+        vec_rhs[i] = 0;
     }
     // solve it
 #if NRNMPI
@@ -633,8 +641,9 @@ int Cvode::solvex_thread_part1(double* b, NrnThread* nt) {
         assert(z.cmlcap_->ml.size() == 1);
         nrn_mul_capacity(sorted_token, nt, &z.cmlcap_->ml[0]);
     }
-    for (i = 0; i < z.no_cap_count_; ++i) {
-        NODERHS(z.no_cap_node_[i]) = 0.;
+    auto* const vec_rhs = nt->node_rhs_storage();
+    for (auto i: z.no_cap_indices_) {
+        vec_rhs[i] = 0.;
     }
     // solve it
     nrn_multisplit_triang(nt);
@@ -851,32 +860,33 @@ void Cvode::nocap_v(neuron::model_sorted_token const& sorted_token, NrnThread* _
     int i;
     CvodeThreadData& z = CTD(_nt->id);
 
-    for (i = 0; i < z.no_cap_count_; ++i) {  // initialize storage
-        Node* nd = z.no_cap_node_[i];
-        NODED(nd) = 0;
-        NODERHS(nd) = 0;
+    auto* const vec_rhs = _nt->node_rhs_storage();
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_v = _nt->node_voltage_storage();
+    for (auto i: z.no_cap_indices_) {
+        vec_rhs[i] = 0.;
+        vec_d[i] = 0.;
     }
+
     // compute the i(vmold) and di/dv
     rhs_memb(sorted_token, z.no_cap_memb_, _nt);
     lhs_memb(sorted_token, z.no_cap_memb_, _nt);
 
-    for (i = 0; i < z.no_cap_count_; ++i) {  // parent axial current
-        Node* nd = z.no_cap_node_[i];
-        // following from global v_parent
-        NODERHS(nd) += NODED(nd) * NODEV(nd);
-        Node* pnd = _nt->_v_parent[nd->v_node_index];
-        if (pnd) {
-            NODERHS(nd) -= NODEB(nd) * NODEV(pnd);
-            NODED(nd) -= NODEB(nd);
+    auto* const vec_b = _nt->node_b_storage();
+    for (auto i: z.no_cap_indices_) {
+        vec_rhs[i] += vec_d[i] * vec_v[i];;
+        if (i >= z.rootnode_end_index_) {
+            auto const pi = _nt->_v_parent_index[i];
+            vec_rhs[i] -= vec_b[i] * vec_v[pi];
+            vec_d[i] -= vec_b[i];
         }
     }
 
-    for (i = 0; i < z.no_cap_child_count_; ++i) {  // child axial current
-        Node* nd = z.no_cap_child_[i];
-        // following from global v_parent
-        Node* pnd = _nt->_v_parent[nd->v_node_index];
-        NODERHS(pnd) -= NODEA(nd) * NODEV(nd);
-        NODED(pnd) -= NODEA(nd);
+    auto* const vec_a = _nt->node_a_storage();
+    for (auto i: z.no_cap_child_indices_) {
+        auto const pi = _nt->_v_parent_index[i];
+        vec_rhs[pi] -= vec_a[i] * vec_v[i];
+        vec_d[pi] -= vec_a[i];
     }
 
 #if NRNMPI
@@ -885,10 +895,8 @@ void Cvode::nocap_v(neuron::model_sorted_token const& sorted_token, NrnThread* _
     }
 #endif
 
-    for (i = 0; i < z.no_cap_count_; ++i) {
-        Node* nd = z.no_cap_node_[i];
-        nd->v() = NODERHS(nd) / NODED(nd);
-        //		printf("%d %d %g v=%g\n", nrnmpi_myid, i, _nt->_t, NODEV(nd));
+    for (auto i: z.no_cap_indices_) {
+        vec_v[i] = vec_rhs[i] / vec_d[i];
     }
     // no_cap v's are now consistent with adjacent v's
 }
@@ -897,34 +905,36 @@ void Cvode::nocap_v_part1(NrnThread* _nt) {
     int i;
     CvodeThreadData& z = ctd_[_nt->id];
 
-    for (i = 0; i < z.no_cap_count_; ++i) {  // initialize storage
-        Node* nd = z.no_cap_node_[i];
-        NODED(nd) = 0;
-        NODERHS(nd) = 0;
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
+    auto* const vec_v = _nt->node_voltage_storage();
+    auto* const vec_b = _nt->node_b_storage();
+    auto* const vec_a = _nt->node_a_storage();
+    for (auto i: z.no_cap_indices_) {
+        vec_d[i] = 0.;
+        vec_rhs[i] = 0.;
     }
+
     // compute the i(vmold) and di/dv
     auto const sorted_token = nrn_ensure_model_data_are_sorted();
     rhs_memb(sorted_token, z.no_cap_memb_, _nt);
     lhs_memb(sorted_token, z.no_cap_memb_, _nt);
 
-    for (i = 0; i < z.no_cap_count_; ++i) {  // parent axial current
-        Node* nd = z.no_cap_node_[i];
-        // following from global v_parent
-        NODERHS(nd) += NODED(nd) * NODEV(nd);
-        Node* pnd = _nt->_v_parent[nd->v_node_index];
-        if (pnd) {
-            NODERHS(nd) -= NODEB(nd) * NODEV(pnd);
-            NODED(nd) -= NODEB(nd);
+    for (auto i:  z.no_cap_indices_) {  // parent axial current
+        vec_rhs[i] += vec_d[i] * vec_v[i];
+        if (i >= z.rootnode_end_index_) {
+            auto const pi = _nt->_v_parent_index[i];
+            vec_rhs[i] -= vec_b[i] * vec_v[pi];
+            vec_d[i] -= vec_b[i];
         }
     }
 
-    for (i = 0; i < z.no_cap_child_count_; ++i) {  // child axial current
-        Node* nd = z.no_cap_child_[i];
-        // following from global v_parent
-        Node* pnd = _nt->_v_parent[nd->v_node_index];
-        NODERHS(pnd) -= NODEA(nd) * NODEV(nd);
-        NODED(pnd) -= NODEA(nd);
+    for (auto i: z.no_cap_child_indices_) {
+        auto const pi = _nt->_v_parent_index[i];
+        vec_rhs[pi] -= vec_a[i] * vec_v[i];
+        vec_d[pi] -= vec_a[i];
     }
+
     nrn_multisplit_nocap_v_part1(_nt);
 }
 void Cvode::nocap_v_part2(NrnThread* _nt) {
@@ -934,10 +944,12 @@ void Cvode::nocap_v_part3(NrnThread* _nt) {
     int i;
     nrn_multisplit_nocap_v_part3(_nt);
     CvodeThreadData& z = ctd_[_nt->id];
-    for (i = 0; i < z.no_cap_count_; ++i) {
-        Node* nd = z.no_cap_node_[i];
-        nd->v() = NODERHS(nd) / NODED(nd);
-        //		printf("%d %d %g v=%g\n", nrnmpi_myid, i, t, NODEV(nd));
+
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
+    auto* const vec_v = _nt->node_voltage_storage();
+    for (auto i: z.no_cap_indices_) {
+        vec_v[i] = vec_rhs[i] / vec_d[i];
     }
     // no_cap v's are now consistent with adjacent v's
 }
