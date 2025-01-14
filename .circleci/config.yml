@@ -4,7 +4,7 @@ orbs:
   python: circleci/python@3.0.0
 
 jobs:
-  manylinux2014-aarch64:
+  manylinux_2_28-aarch64:
 
     parameters:
       NRN_PYTHON_VERSION_MINOR:
@@ -71,7 +71,7 @@ workflows:
 
   build-workflow:
     jobs:
-      - manylinux2014-aarch64:
+      - manylinux_2_28-aarch64:
           filters:
             branches:
               only:
@@ -91,7 +91,7 @@ workflows:
               only:
                 - master
     jobs:
-      - manylinux2014-aarch64:
+      - manylinux_2_28-aarch64:
           matrix:
             parameters:
               NRN_PYTHON_VERSION_MINOR: ["9", "10", "11", "12", "13"]
