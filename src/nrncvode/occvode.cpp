@@ -222,8 +222,8 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
             }
         }
 
-        int n_vnode = (z.vnode_end_index_ - z.vnode_begin_index_)
-                      + (z.rootnode_end_index_ - z.rootnode_begin_index_);
+        int n_vnode = (z.vnode_end_index_ - z.vnode_begin_index_) +
+                      (z.rootnode_end_index_ - z.rootnode_begin_index_);
         z.no_cap_indices_.resize(n_vnode - zneq_cap_v);
         // possibly a few more than needed.
         z.no_cap_child_indices_.resize(n_vnode - zneq_cap_v);
@@ -879,7 +879,8 @@ void Cvode::nocap_v(neuron::model_sorted_token const& sorted_token, NrnThread* _
 
     auto* const vec_b = _nt->node_b_storage();
     for (auto i: z.no_cap_indices_) {
-        vec_rhs[i] += vec_d[i] * vec_v[i];;
+        vec_rhs[i] += vec_d[i] * vec_v[i];
+        ;
         if (i >= z.rootnode_end_index_) {
             auto const pi = _nt->_v_parent_index[i];
             vec_rhs[i] -= vec_b[i] * vec_v[pi];
@@ -925,7 +926,7 @@ void Cvode::nocap_v_part1(NrnThread* _nt) {
     rhs_memb(sorted_token, z.no_cap_memb_, _nt);
     lhs_memb(sorted_token, z.no_cap_memb_, _nt);
 
-    for (auto i:  z.no_cap_indices_) {  // parent axial current
+    for (auto i: z.no_cap_indices_) {  // parent axial current
         vec_rhs[i] += vec_d[i] * vec_v[i];
         if (i >= z.rootnode_end_index_) {
             auto const pi = _nt->_v_parent_index[i];

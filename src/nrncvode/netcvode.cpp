@@ -6384,7 +6384,7 @@ bool Cvode::is_owner(neuron::container::data_handle<double> const& handle) {
         for (int i = -1; i < z.vnode_end_index_; ++i) {
             int in = (i == -1) ? z.rootnode_begin_index_ : i;
             if (i == -1) {
-                i = z.vnode_begin_index_ - 1; // ready for ++i on next iteration
+                i = z.vnode_begin_index_ - 1;  // ready for ++i on next iteration
             }
             Node* nd = nt_->_v_node[in];
             if (handle == nd->v_handle()) {
