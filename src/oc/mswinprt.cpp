@@ -121,19 +121,6 @@ char* hoc_back2forward(char* s) {
 void ivoc_win32_cleanup();
 #endif
 
-void hoc_win32_cleanup() {
-    char buf[256];
-    char* path;
-#if HAVE_IV
-    ivoc_win32_cleanup();
-#endif
-    path = getenv("TEMP");
-    if (path) {
-        Sprintf(buf, "%s/oc%d.hl", path, getpid());
-        unlink(buf);
-        //      DebugMessage("unlinked %s\n", buf);
-    }
-}
 
 void hoc_win_exec(void) {
     int i;
