@@ -825,30 +825,6 @@ add_custom_target(
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 # =============================================================================
-# ~~~
-# Update hh.mod for CoreNEURON compatibility
-# - Replace GLOBAL variable by RANGE
-# - Comment out TABLE
-# ~~~
-# =============================================================================
-if(NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY)
-  set(GLOBAL_VAR_TOGGLE_COMMAND "'s/ GLOBAL minf/ RANGE minf/'")
-else()
-  set(GLOBAL_VAR_TOGGLE_COMMAND "'s/ RANGE minf/ GLOBAL minf/'")
-endif()
-separate_arguments(GLOBAL_VAR_TOGGLE_COMMAND UNIX_COMMAND "${GLOBAL_VAR_TOGGLE_COMMAND}")
-add_custom_target(
-  hh_update
-  COMMAND sed ${GLOBAL_VAR_TOGGLE_COMMAND} ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod >
-          ${CMAKE_BINARY_DIR}/hh.mod.1
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.1
-          ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
-  COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1
-  COMMENT "Update hh.mod for CoreNEURON compatibility"
-  VERBATIM)
-add_dependencies(nrniv_lib hh_update)
-
-# =============================================================================
 # Generate help_data.dat
 # =============================================================================
 if(NRN_ENABLE_PYTHON)
@@ -950,8 +926,6 @@ install(
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${NRN_INSTALL_SHARE_DIR})
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
-        DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
-install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
 
 # Copy NEURON headers that will be included in the installation into the build directory.

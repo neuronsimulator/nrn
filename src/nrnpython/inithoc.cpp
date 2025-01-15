@@ -113,8 +113,9 @@ static int add_neuron_options() {
             PySys_WriteStdout("A neuron_options key:value is not a string:string or string:None\n");
             continue;
         }
-        Py2NRNString skey(key);
-        Py2NRNString sval(value);
+
+        auto skey = Py2NRNString::as_ascii(key);
+        auto sval = Py2NRNString::as_ascii(value);
         if (strcmp(skey.c_str(), "-print-options") == 0) {
             rval = 1;
             continue;
@@ -222,13 +223,13 @@ static int have_opt(const char* arg) {
 static struct termios original_termios;
 
 static void save_original_terminal_settings() {
-    if (tcgetattr(STDIN_FILENO, &original_termios) == -1) {
+    if (tcgetattr(STDIN_FILENO, &original_termios) == -1 && isatty(STDIN_FILENO)) {
         std::cerr << "Error getting original terminal attributes\n";
     }
 }
 
 static void restore_original_terminal_settings() {
-    if (tcsetattr(STDIN_FILENO, TCSANOW, &original_termios) == -1) {
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &original_termios) == -1 && isatty(STDIN_FILENO)) {
         std::cerr << "Error restoring terminal attributes\n";
     }
 }
