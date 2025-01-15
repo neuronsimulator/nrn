@@ -21,13 +21,6 @@
 #include "nrnfilewrap.h"
 #include <fmt/format.h>
 
-// separator for items in env variables
-#if defined(WIN32)
-static const auto os_pathsep = std::string(";");
-#else
-static const auto os_pathsep = std::string(":");
-#endif
-
 extern char* neuron_home;
 
 NrnFILEWrap* hoc_frin;
@@ -491,6 +484,13 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
 // Split a string containing an env variable into multiple paths (OS-specific)
 // and return a container with the results
 static auto split_paths(const std::string& input) {
+    // separator for items in env variables
+#if defined(WIN32)
+    static constexpr auto os_pathsep = ";";
+#else
+    static constexpr auto os_pathsep = ":";
+#endif
+
     std::vector<std::string> result;
     std::size_t start = 0;
     std::size_t end = 0;
