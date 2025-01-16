@@ -1427,7 +1427,10 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
                 mechname,
                 fs::absolute(finname).c_str());
 #else
-        Sprintf(buf1, "\tivoc_help(\"help ?1 %s %s\\n\");\n", mechname, finname);
+        Sprintf(buf1,
+                "\tivoc_help(\"help ?1 %s %s\\n\");\n",
+                mechname,
+                fs::path(finname).filename().c_str());
 #endif
         Lappendstr(defs_list, buf1);
     }
