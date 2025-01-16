@@ -11,7 +11,6 @@
 #include <InterViews/adjust.h>
 #include <InterViews/hit.h>
 #include "ocglyph.h"
-#include "checkpnt.h"
 #include "apwindow.h"
 #include "ocbrowsr.h"
 #include "objcmd.h"
@@ -453,38 +452,9 @@ OcList::~OcList() {
     remove_all();
 }
 
-static int l_chkpt(void** vp) {
-#if HAVE_IV
-    OcList* o;
-    Checkpoint& chk = *Checkpoint::instance();
-    if (chk.out()) {
-        long cnt;
-        o = (OcList*) (*vp);
-        cnt = o->count();
-        CKPT(chk, cnt);
-        for (long i = 0; i < cnt; ++i) {
-            Object* item = o->object(i);
-            CKPT(chk, item);
-        }
-    } else {
-        long cnt;
-        CKPT(chk, cnt);
-        o = new OcList(cnt);
-        o->ref();
-        for (long i = 0; i < cnt; ++i) {
-            Object* item;
-            CKPT(chk, item);
-            o->append(item);
-        }
-        *vp = (void*) o;
-    }
-#endif
-    return 1;
-}
-
 void OcList_reg() {
     // printf("Oclist_reg\n");
-    class2oc("List", l_cons, l_destruct, l_members, l_chkpt, l_retobj_members, NULL);
+    class2oc("List", l_cons, l_destruct, l_members, l_retobj_members, nullptr);
     list_class_sym_ = hoc_lookup("List");
 }
 

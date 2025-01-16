@@ -42,6 +42,8 @@ void iv_display_scale(float);
 #include <IV-X11/ivx11_dynam.h>
 #endif
 
+#include "utils/logger.hpp"
+
 #if 1
 void pr_profile();
 #define PR_PROFILE pr_profile();
@@ -232,14 +234,6 @@ extern std::string nrnmpi_load();
 void nrnmpi_load_or_exit();
 #endif
 
-// some things are defined in libraries earlier than they are used so...
-#include <nrnisaac.h>
-static void force_load() {
-    if (always_false) {
-        nrnisaac_new();
-    }
-}
-
 #ifdef MINGW
 // see iv/src/OS/directory.cpp
 #include <sys/stat.h>
@@ -312,7 +306,7 @@ void hoc_nrnmpi_init() {
         nrnmpi_stubs();
         auto const pmes = nrnmpi_load();
         if (!pmes.empty()) {
-            std::cout << pmes << std::endl;
+            Printf(fmt::format("{}\n", pmes).c_str());
         }
 #endif
 
@@ -380,7 +374,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     // extern char** environ;
     int i;
     //	prargs("at beginning", argc, argv);
-    force_load();
     nrn_global_argc = argc;
     // https://en.cppreference.com/w/cpp/language/main_function, note that argv is
     // of length argc + 1 and argv[argc] is null.

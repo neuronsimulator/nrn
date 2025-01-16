@@ -29,7 +29,7 @@ include(${CODING_CONV_CMAKE}/build-time-copy.cmake)
 # =============================================================================
 # Build options
 # =============================================================================
-option(CORENRN_ENABLE_OPENMP "Build the CORE NEURON with OpenMP implementation" ON)
+option(CORENRN_ENABLE_OPENMP "Build the CORE NEURON with OpenMP implementation" OFF)
 option(CORENRN_ENABLE_OPENMP_OFFLOAD "Prefer OpenMP target offload to OpenACC" ON)
 option(CORENRN_ENABLE_TIMEOUT "Enable nrn_timeout implementation" ON)
 option(CORENRN_ENABLE_REPORTING "Enable use of libsonata for soma reports" OFF)
@@ -197,11 +197,7 @@ if(NRN_ENABLE_MPI_DYNAMIC)
 endif()
 
 if(CORENRN_ENABLE_OPENMP)
-  find_package(OpenMP QUIET)
-  if(OPENMP_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} ${ADDITIONAL_THREADSAFE_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} ${ADDITIONAL_THREADSAFE_FLAGS}")
-  endif()
+  find_package(OpenMP REQUIRED)
 endif()
 
 list(APPEND CORENRN_COMPILE_DEFS LAYOUT=0)
@@ -244,42 +240,6 @@ endif()
 if(MINGW)
   list(APPEND CORENRN_COMPILE_DEFS MINGW)
 endif()
-
-# =============================================================================
-# NMODL specific options
-# =============================================================================
-find_package(nmodl)
-if(NOT "${CORENRN_NMODL_DIR}" STREQUAL "" AND NOT nmodl_FOUND)
-  message(FATAL_ERROR "Cannot find NMODL in ${CORENRN_NMODL_DIR}")
-endif()
-if(nmodl_FOUND)
-  set(CORENRN_NMODL_BINARY ${nmodl_BINARY})
-else()
-  message(FATAL_ERROR "BLARGH")
-  set(NMODL_ENABLE_PYTHON_BINDINGS
-      OFF
-      CACHE BOOL "Enable NMODL python bindings")
-  nrn_add_external_project(nmodl DISABLE_ADD)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/external/nmodl ${CMAKE_BINARY_DIR}/external/nmodl)
-  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
-  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
-  # install nrnunits.lib and libpywrapper.so from external/nmodl
-  install(
-    FILES ${NMODL_PROJECT_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
-    DESTINATION lib
-    COMPONENT pywrapper
-    OPTIONAL)
-  install(
-    FILES ${NMODL_PROJECT_BINARY_DIR}/share/nmodl/nrnunits.lib
-    DESTINATION share/nmodl
-    COMPONENT nrnunits)
-endif()
-set_property(GLOBAL PROPERTY CORENRN_NMODL_BINARY "${CORENRN_NMODL_BINARY}")
-
-# set correct arguments for nmodl for cpu/gpu target
-set(CORENRN_NMODL_FLAGS
-    ""
-    CACHE STRING "Extra NMODL options such as passes")
 
 # =============================================================================
 # Profiler/Instrumentation Options
@@ -444,10 +404,14 @@ endif()
 # https://forums.developer.nvidia.com/t/cannot-dynamically-load-a-shared-library-containing-both-openacc-and-cuda-code/210972
 add_library(coreneuron-core STATIC ${CORENEURON_CODE_FILES} ${CORENRN_MPI_OBJ})
 add_dependencies(coreneuron-core coreneuron-copy-nrnivmodl-core-dependencies)
-set_target_properties(coreneuron-core PROPERTIES EXPORT_NAME corenrn)
-set(CORENRN_INSTALL_TARGETS
-    coreneuron-core
-    PARENT_SCOPE)
+if(CORENRN_ENABLE_OPENMP)
+  # target_link_libraries(coreneuron-core PUBLIC OpenMP::OpenMP_CXX)
+  target_compile_options(coreneuron-core PUBLIC ${OpenMP_CXX_FLAGS})
+  target_link_libraries(coreneuron-core PUBLIC ${OpenMP_CXX_LIB_NAMES})
+  # The first line uses a generator expression to arrive at -fopenmp (or equivalent) - this will not
+  # work with our Makefile generation. Thus specify the flag manually. Enable the first line and
+  # remove the last two lines below once we get rid of the mechanism building Makefile.
+endif()
 if(CORENRN_ENABLE_GPU)
   set(coreneuron_cuda_target coreneuron-cuda)
   add_library(coreneuron-cuda ${COMPILE_LIBRARY_TYPE} ${CORENEURON_CUDA_FILES})

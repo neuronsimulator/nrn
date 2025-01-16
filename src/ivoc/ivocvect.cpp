@@ -36,6 +36,8 @@
 
 #include "gui-redirect.h"
 
+#include "utils/logger.hpp"
+
 #ifndef PI
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -3735,7 +3737,7 @@ static Member_func v_members[] = {
 
     {"scale", v_scale},
 
-    {0, 0}};
+    {nullptr, nullptr}};
 
 static Member_ret_obj_func v_retobj_members[] = {{"c", v_c},
                                                  {"cl", v_cl},
@@ -3811,11 +3813,11 @@ static Member_ret_obj_func v_retobj_members[] = {{"c", v_c},
                                                  {"to_python", v_to_python},
                                                  {"as_numpy", v_as_numpy},
 
-                                                 {0, 0}};
+                                                 {nullptr, nullptr}};
 
 static Member_ret_str_func v_retstr_members[] = {{"label", v_label},
 
-                                                 {0, 0}};
+                                                 {nullptr, nullptr}};
 
 extern int hoc_araypt(Symbol*, int);
 
@@ -3841,7 +3843,7 @@ static void steer_x(void* v) {
 }
 
 void Vector_reg() {
-    class2oc("Vector", v_cons, v_destruct, v_members, NULL, v_retobj_members, v_retstr_members);
+    class2oc("Vector", v_cons, v_destruct, v_members, v_retobj_members, v_retstr_members);
     svec_ = hoc_lookup("Vector");
     // now make the x variable an actual double
     Symbol* sv = hoc_lookup("Vector");

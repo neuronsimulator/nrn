@@ -294,12 +294,14 @@ Member_func f_members[] = {{"ropen", f_ropen},
                            {"mktemp", f_mktemp},
                            {"unlink", f_unlink},
                            {"flush", f_flush},
-                           {0, 0}};
+                           {nullptr, nullptr}};
 
-static Member_ret_str_func f_retstr_members[] = {{"getname", f_get_name}, {"dir", f_dir}, {0, 0}};
+static Member_ret_str_func f_retstr_members[] = {{"getname", f_get_name},
+                                                 {"dir", f_dir},
+                                                 {nullptr, nullptr}};
 
 void OcFile_reg() {
-    class2oc("File", f_cons, f_destruct, f_members, NULL, NULL, f_retstr_members);
+    class2oc("File", f_cons, f_destruct, f_members, nullptr, f_retstr_members);
     file_class_sym_ = hoc_lookup("File");
 }
 

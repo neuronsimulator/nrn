@@ -89,7 +89,7 @@ static void finithnd_destruct(void* v) {
 }
 
 void FInitializeHandler_reg() {
-    class2oc("FInitializeHandler", finithnd_cons, finithnd_destruct, members, NULL, NULL, NULL);
+    class2oc("FInitializeHandler", finithnd_cons, finithnd_destruct, members, nullptr, nullptr);
 }
 
 std::vector<FInitialHandler*> FInitialHandler::fihlist_[4];

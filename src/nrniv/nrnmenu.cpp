@@ -1,13 +1,14 @@
 
 #include <../../nrnconf.h>
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #if HAVE_IV
 #include "secbrows.h"
 #include "ivoc.h"
 #endif
+#include "cabcode.h"
 #include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "nrnpy.h"
@@ -15,20 +16,16 @@
 #include "classreg.h"
 #include "gui-redirect.h"
 
-typedef void (*ReceiveFunc)(Point_process*, double*, double);
 extern int hoc_return_type_code;
 // from nrnoc
 #include "membfunc.h"
 #include "parse.hpp"
 extern Symlist* hoc_built_in_symlist;
 extern Symbol** pointsym;
-extern ReceiveFunc* pnt_receive;
 extern int nrn_has_net_event_cnt_;
 extern int* nrn_has_net_event_;
 extern short* nrn_is_artificial_;
-extern int node_index(Section*, double);
 extern char* pnt_map;
-extern void nrn_parent_info(Section*);
 
 // to nrnoc
 void nrnallsectionmenu();
@@ -669,10 +666,10 @@ static Member_func ms_members[] = {{"panel", ms_panel},
                                    {"is_array", ms_is_array},
                                    {"name", ms_name},
                                    {"save", ms_save},
-                                   {0, 0}};
+                                   {nullptr, nullptr}};
 
 void MechanismStandard_reg() {
-    class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members, NULL, NULL, NULL);
+    class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members, nullptr, nullptr);
     ms_class_sym_ = hoc_lookup("MechanismStandard");
 }
 
@@ -1132,8 +1129,7 @@ static Member_ret_obj_func mt_retobj_members[] = {{"pp_begin", mt_pp_begin},
                                                   {0, 0}};
 static Member_ret_str_func mt_retstr_func[] = {{"code", mt_code}, {"file", mt_file}, {0, 0}};
 void MechanismType_reg() {
-    class2oc(
-        "MechanismType", mt_cons, mt_destruct, mt_members, NULL, mt_retobj_members, mt_retstr_func);
+    class2oc("MechanismType", mt_cons, mt_destruct, mt_members, mt_retobj_members, mt_retstr_func);
     mt_class_sym_ = hoc_lookup("MechanismType");
 }
 
@@ -1272,8 +1268,7 @@ const char* MechanismType::selected() {
 int MechanismType::internal_type() {
     return mti_->type_[selected_item()];
 }
-extern void mech_insert1(Section*, int);
-extern void mech_uninsert1(Section*, Symbol*);
+
 void MechanismType::insert(Section* sec) {
     if (!mti_->is_point_) {
         mech_insert1(sec, memb_func[mti_->type_[selected_item()]].sym->subtype);

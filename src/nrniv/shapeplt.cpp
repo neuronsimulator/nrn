@@ -347,11 +347,11 @@ static Member_func sh_members[] = {{"hinton", sh_hinton},
                                    {"erase_all", ivoc_erase_all},
                                    {"len_scale", nrniv_len_scale},
                                    {"gif", ivoc_gr_gif},
-                                   {0, 0}};
+                                   {nullptr, nullptr}};
 
 static Member_ret_obj_func retobj_members[] = {{"nearest_seg", nrniv_sh_nearest_seg},
                                                {"selected_seg", nrniv_sh_selected_seg},
-                                               {NULL, NULL}};
+                                               {nullptr, nullptr}};
 
 static void* sh_cons(Object* ho) {
     TRY_GUI_REDIRECT_OBJ("PlotShape", NULL);
@@ -426,7 +426,7 @@ static void sh_destruct(void* v) {
 }
 void PlotShape_reg() {
     //	printf("PlotShape_reg\n");
-    class2oc("PlotShape", sh_cons, sh_destruct, sh_members, NULL, retobj_members, NULL);
+    class2oc("PlotShape", sh_cons, sh_destruct, sh_members, retobj_members, nullptr);
 }
 
 void* ShapePlotData::varobj() const {
