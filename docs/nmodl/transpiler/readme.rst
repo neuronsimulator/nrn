@@ -1,11 +1,8 @@
-The NMODL Framework
+The NMODL Transpiler
 ===================
 
-|github workflow| |Build Status| |codecov| |CII Best Practices|
-
-The NMODL Framework is a code generation engine for **N**\ EURON
-**MOD**\ eling **L**\ anguage
-(`NMODL <https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/mechanisms/nmodl.html>`__).
+The NMODL Transpiler is a code generation engine for the **N**\ EURON
+**MOD**\ eling **L**\ anguage (`NMODL <../../nmodl/language.html>`__).
 It is designed with modern compiler and code generation techniques to:
 
 -  Provide **modular tools** for parsing, analysing and transforming
@@ -19,10 +16,9 @@ It is designed with modern compiler and code generation techniques to:
 About NMODL
 -----------
 
-Simulators like `NEURON <https://www.neuron.yale.edu/neuron/>`__ use
-NMODL as a domain specific language (DSL) to describe a wide range of
-membrane and intracellular submodels. Here is an example of exponential
-synapse specified in NMODL:
+Simulators like NEURON use NMODL as a domain specific language (DSL) to
+describe a wide range of membrane and intracellular submodels. Here is an
+example of exponential synapse specified in NMODL:
 
 .. code::
 
@@ -66,12 +62,12 @@ Installation
 
 See
 `INSTALL.rst <https://github.com/neuronsimulator/nrn/blob/master/INSTALL.rst>`__
-for detailed instructions to build the NMODL from source.
+for detailed instructions to build the NMODL transpiler from source.
 
 Try NMODL
 ---------------------
 
-NMODL is distributed as part of NEURON.
+The NMODL transpiler is distributed as part of NEURON.
 
 You can try the NMODL Python API discussed later in this README as:
 
@@ -84,27 +80,10 @@ You can try the NMODL Python API discussed later in this README as:
    >>> nmodl_string = dsl.load_example(examples[-1])
    ...
 
-To try Jupyter notebooks you can download docker compose file and run it
-as:
-
-::
-
-   [I 09:49:53.923 NotebookApp] The Jupyter Notebook is running at:
-   [I 09:49:53.923 NotebookApp] http://(4c8edabe52e1 or 127.0.0.1):8888/?token=a7902983bad430a11935
-   [I 09:49:53.923 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
-       To access the notebook, open this file in a browser:
-           file:///root/.local/share/jupyter/runtime/nbserver-1-open.html
-       Or copy and paste one of these URLs:
-           http://(4c8edabe52e1 or 127.0.0.1):8888/?token=a7902983bad430a11935
-
-Based on the example above you should then open your browser and
-navigate to the URL
-``http://127.0.0.1:8888/?token=a7902983bad430a11935``.
-
-You can open and run all example notebooks provided in the ``examples``
-folder. You can also create new notebooks in ``my_notebooks``, which
-will be stored in a subfolder ``notebooks`` at your current working
-directory.
+You can open and run all example notebooks provided in the
+``docs/nmodl/transpiler/notebooks`` folder. You can also create new notebooks
+in ``my_notebooks``, which will be stored in a subfolder ``notebooks`` at your
+current working directory.
 
 Using the Python API
 --------------------
@@ -171,8 +150,8 @@ various analysis/optimisations. One can also easily write his own custom
 visitor using Python Visitor API. See `Python API
 tutorial <docs/notebooks/nmodl-python-tutorial.ipynb>`__ for details.
 
-The NMODL Framework also allows us to transform the AST representation back to
-NMODL form as:
+The NMODL Transpiler also allows us to transform the AST representation back
+to NMODL form as:
 
 .. code:: python
 
@@ -200,7 +179,7 @@ High Level Analysis and Code Generation
 
 The NMODL Framework provides rich model introspection and analysis
 capabilities using `various
-visitors <https://bluebrain.github.io/nmodl/html/doxygen/group__visitor__classes.html>`__.
+visitors <../../doxygen/group__visitor__classes.html>`__.
 Here is an example of theoretical performance characterisation of
 channels and synapses from rat neocortical column microcircuit
 `published in
@@ -214,7 +193,7 @@ channels and synapses from rat neocortical column microcircuit
 
 To understand how you can write your own introspection and analysis
 tool, see `this
-tutorial <docs/notebooks/nmodl-python-tutorial.ipynb>`__.
+tutorial <notebooks/nmodl-python-tutorial.ipynb>`__.
 
 Once analysis and optimization passes are performed, the NMODL Framework
 can generate optimised code for modern compute architectures including
