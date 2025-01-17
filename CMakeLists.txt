@@ -213,20 +213,10 @@ set(NRN_PROFILER
 # Build options for NMODL
 # =============================================================================
 option(NMODL_ENABLE_PYTHON_BINDINGS "Enable pybind11 based python bindings" ON)
-option(NMODL_ENABLE_TESTS "Enable build of tests" ON)
-option(NMODL_ENABLE_USECASES
-       "If building tests, additionally enable build of usecase tests. Requires neuron." OFF)
-option(NMODL_ENABLE_BACKWARD "Use backward, enables blame." OFF)
 set(NMODL_EXTRA_CXX_FLAGS
     ""
     CACHE STRING "Add extra compile flags for NMODL sources")
 separate_arguments(NMODL_EXTRA_CXX_FLAGS)
-option(LINK_AGAINST_PYTHON "Should the Python library be linked or not" ON)
-option(NMODL_BUILD_WHEEL "Flag to signal we are building a wheel" OFF)
-if(NMODL_BUILD_WHEEL)
-  set(LINK_AGAINST_PYTHON OFF)
-  set(NMODL_ENABLE_TESTS OFF)
-endif()
 
 # =============================================================================
 # Include cmake modules
@@ -526,6 +516,14 @@ cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 # Enable NMODL code-generator support
 # =============================================================================
 if(NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON)
+  # NMODL Python build dependencies
+  nrn_find_python_module(MODULE jinja2 REQUIRED)
+  # N.B. `nrn_find_python_module` uses the _importable_ name of the package to find it, _not_ the
+  # actual package name. In this case, `pip install pyyaml` actually installs an importable package
+  # called `yaml`
+  nrn_find_python_module(MODULE yaml REQUIRED)
+
+  # NMODL non-Python build dependencies
   cpp_cc_git_submodule(json BUILD PACKAGE nlohmann_json REQUIRED)
   cpp_cc_git_submodule(pybind11 BUILD PACKAGE pybind11 REQUIRED)
 
@@ -543,21 +541,25 @@ if(NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON)
 
   include(${PROJECT_SOURCE_DIR}/cmake/nmodl/PythonLinkHelper.cmake)
 
-  set(NMODL_PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/nmodl)
-  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/nmodl)
+  # where the platform-specific sources are located
+  set(NMODL_PROJECT_PLATLIB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/nmodl)
+  set(NMODL_PROJECT_PLATLIB_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/nmodl)
+  # where the platform-independent sources are located
+  set(NMODL_PROJECT_PURELIB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/python/neuron/nmodl)
+  set(NMODL_PROJECT_PURELIB_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/nmodl)
 
   add_subdirectory(src/nmodl)
   set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
   set(NMODL_TARGET_TO_DEPEND nmodl)
-  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/src/nmodl)
+  set(NMODL_PROJECT_PLATLIB_BINARY_DIR ${CMAKE_BINARY_DIR}/src/nmodl)
   # install nrnunits.lib and libpywrapper.so from external/nmodl
   install(
-    FILES ${NMODL_PROJECT_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
+    FILES ${NMODL_PROJECT_PLATLIB_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
     DESTINATION lib
     COMPONENT pywrapper
     OPTIONAL)
   install(
-    FILES ${NMODL_PROJECT_BINARY_DIR}/share/nmodl/nrnunits.lib
+    FILES ${NMODL_PROJECT_PLATLIB_BINARY_DIR}/share/nmodl/nrnunits.lib
     DESTINATION share/nmodl
     COMPONENT nrnunits)
 
@@ -683,6 +685,13 @@ function(prepend_to_var var new_path)
 endfunction()
 set(NRN_RUN_FROM_BUILD_DIR_ENV "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
                                "NRNHOME=${PROJECT_BINARY_DIR}")
+
+# if we do not link against Python, NMODL will complain that some of the env variables are missing
+# when building coreNEURON mod files
+if(NOT NRN_LINK_AGAINST_PYTHON)
+  set(NRN_RUN_FROM_BUILD_DIR_ENV "${NRN_RUN_FROM_BUILD_DIR_ENV}" "NMODLHOME=${PROJECT_BINARY_DIR}"
+                                 "NMODL_PYLIB=${PYTHON_LIBRARY}")
+endif()
 prepend_to_var(PATH "${PROJECT_BINARY_DIR}/bin")
 if(APPLE)
   prepend_to_var(DYLD_LIBRARY_PATH "${PROJECT_BINARY_DIR}/lib")

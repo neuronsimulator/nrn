@@ -15,7 +15,7 @@ add_library(
 set_property(TARGET util PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(util PUBLIC fmt::fmt nlohmann_json::nlohmann_json spdlog::spdlog)
 
-if(NMODL_ENABLE_BACKWARD)
-  target_link_libraries(util PRIVATE Backward::Interface)
-  target_compile_definitions(util PUBLIC NMODL_ENABLE_BACKWARD=1)
+if(NRN_ENABLE_BACKTRACE)
+  add_backward(util)
+  target_compile_definitions(util PUBLIC NRN_USE_BACKWARD=1)
 endif()

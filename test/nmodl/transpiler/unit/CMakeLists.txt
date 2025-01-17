@@ -10,10 +10,10 @@ add_library(nmodl_test_flags INTERFACE)
 
 target_include_directories(nmodl_test_flags INTERFACE ${PYBIND11_INCLUDE_DIR}
                                                       ${PYTHON_INCLUDE_DIRS})
-target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_SOURCE_DIR}/solver)
-target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_SOURCE_DIR}/utils)
-target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_SOURCE_DIR})
-target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_BINARY_DIR})
+target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/solver)
+target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/utils)
+target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR})
+target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_BINARY_DIR})
 target_include_directories(nmodl_test_flags INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(nmodl_test_flags INTERFACE ${PROJECT_SOURCE_DIR}/external/eigen)
 
@@ -131,7 +131,7 @@ target_link_libraries(testunitparser PRIVATE lexer test_util config nmodl_test_f
 # =============================================================================
 set(test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
 set(testvisitor_env "PYTHONPATH=${PROJECT_BINARY_DIR}/lib:$ENV{PYTHONPATH}")
-if(NOT LINK_AGAINST_PYTHON)
+if(NOT NRN_LINK_AGAINST_PYTHON)
   list(APPEND testvisitor_env "NMODL_PYLIB=$ENV{NMODL_PYLIB}")
 endif()
 
@@ -154,11 +154,9 @@ target_link_libraries(testunitparser PRIVATE Catch2::Catch2WithMain nmodl_test_f
 foreach(
   test_name
   testutils
-  testcodegen
   testmodtoken
   testlexer
   testparser
-  testvisitor
   testprinter
   testsymtab
   testnewton
@@ -179,32 +177,49 @@ foreach(
                        "${_environment_vars_list}")
 endforeach()
 
+foreach(test_name testcodegen testvisitor)
+  if(NOT NRN_LINK_AGAINST_PYTHON)
+    target_link_libraries(${test_name} PRIVATE pywrapper ${PYTHON_LIBRARY})
+  endif()
+  cpp_cc_configure_sanitizers(TARGET ${test_name})
+  set(env ${test_env})
+  list(APPEND env ${${test_name}_env})
+  string(REPLACE ";" ";ENVIRONMENT;" _environment_vars_list "${env}")
+  catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
+                       "${_environment_vars_list}")
+endforeach()
+
 # Generate include files used in test input, see
 # test/nmodl/transpiler/unit/utils/nmodl_constructs.cpp
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Unit.inc" "UNITSON \n UNITSOFF \n UNITSON \n UNITSOFF")
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/included.file" "TITLE")
 
 if(WIN32)
-  set(NMODL_TEST_PYTHONPATH "${PROJECT_BINARY_DIR}/lib;$ENV{PYTHONPATH}")
+  set(NMODL_TEST_PYTHONPATH "${PROJECT_BINARY_DIR}/lib/python;$ENV{PYTHONPATH}")
 else()
-  set(NMODL_TEST_PYTHONPATH "${PROJECT_BINARY_DIR}/lib:$ENV{PYTHONPATH}")
+  set(NMODL_TEST_PYTHONPATH "${PROJECT_BINARY_DIR}/lib/python:$ENV{PYTHONPATH}")
 endif()
 
 # =============================================================================
 # pybind11 tests
 # =============================================================================
-if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NRN_SANITIZERS))
-  add_test(NAME Ode COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/ode)
-  set_tests_properties(Ode PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
-  cpp_cc_configure_sanitizers(TEST Ode PRELOAD)
-endif()
-
-if(NMODL_ENABLE_PYTHON_BINDINGS)
-  # Apple Clang and ASAN do not play along nicely with NMODL's Python bindings, so we skip these
-  # tests
+if(NRN_ENABLE_PYTHON)
   if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NRN_SANITIZERS))
-    add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
-    set_tests_properties(Pybind PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
-    cpp_cc_configure_sanitizers(TEST Pybind PRELOAD)
+    add_test(NAME Ode COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/ode)
+    set_tests_properties(Ode PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
+    cpp_cc_configure_sanitizers(TEST Ode PRELOAD)
+  endif()
+
+  if(NMODL_ENABLE_PYTHON_BINDINGS)
+    # Apple Clang and ASAN do not play along nicely with NMODL's Python bindings, so we skip these
+    # tests
+    if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NRN_SANITIZERS))
+      add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest
+                                   ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
+      set_tests_properties(
+        Pybind PROPERTIES ENVIRONMENT
+                          "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NMODLHOME=${PROJECT_BINARY_DIR}")
+      cpp_cc_configure_sanitizers(TEST Pybind PRELOAD)
+    endif()
   endif()
 endif()

@@ -1,11 +1,8 @@
-The NMODL Framework
+The NMODL Transpiler
 ===================
 
-|github workflow| |Build Status| |codecov| |CII Best Practices|
-
-The NMODL Framework is a code generation engine for **N**\ EURON
-**MOD**\ eling **L**\ anguage
-(`NMODL <https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/mechanisms/nmodl.html>`__).
+The NMODL Transpiler is a code generation engine for the **N**\ EURON
+**MOD**\ eling **L**\ anguage (`NMODL <../../nmodl/language.html>`__).
 It is designed with modern compiler and code generation techniques to:
 
 -  Provide **modular tools** for parsing, analysing and transforming
@@ -19,10 +16,9 @@ It is designed with modern compiler and code generation techniques to:
 About NMODL
 -----------
 
-Simulators like `NEURON <https://www.neuron.yale.edu/neuron/>`__ use
-NMODL as a domain specific language (DSL) to describe a wide range of
-membrane and intracellular submodels. Here is an example of exponential
-synapse specified in NMODL:
+Simulators like NEURON use NMODL as a domain specific language (DSL) to
+describe a wide range of membrane and intracellular submodels. Here is an
+example of exponential synapse specified in NMODL:
 
 .. code::
 
@@ -65,77 +61,41 @@ Installation
 ------------
 
 See
-`INSTALL.rst <https://github.com/BlueBrain/nmodl/blob/master/INSTALL.rst>`__
-for detailed instructions to build the NMODL from source.
+`here <https://github.com/neuronsimulator/nrn/blob/master/docs/install/install_instructions.md>`__
+for detailed instructions of building the NMODL transpiler from source (as
+part of NEURON).
 
-Try NMODL with Docker
+Try NMODL
 ---------------------
 
-To quickly test the NMODL Framework’s analysis capabilities we provide a
-`docker <https://www.docker.com>`__ image, which includes the NMODL
-Framework python library and a fully functional Jupyter notebook
-environment. After installing
-`docker <https://docs.docker.com/compose/install/>`__ and
-`docker-compose <https://docs.docker.com/compose/install/>`__ you can
-pull and run the NMODL image from your terminal.
+The NMODL transpiler is distributed as part of NEURON.
 
-To try Python interface directly from CLI, you can run docker image as:
-
-::
-
-   docker run -it --entrypoint=/bin/sh bluebrain/nmodl
-
-And try NMODL Python API discussed later in this README as:
+Once NEURON is installed, you can try the NMODL Python API discussed later in
+this README as:
 
 ::
 
    $ python3
    Python 3.6.8 (default, Apr  8 2019, 18:17:52)
    >>> from nmodl import dsl
-   >>> import os
    >>> examples = dsl.list_examples()
    >>> nmodl_string = dsl.load_example(examples[-1])
    ...
 
-To try Jupyter notebooks you can download docker compose file and run it
-as:
-
-.. code:: sh
-
-   wget "https://raw.githubusercontent.com/BlueBrain/nmodl/master/docker/docker-compose.yml"
-   DUID=$(id -u) DGID=$(id -g) HOSTNAME=$(hostname) docker-compose up
-
-If all goes well you should see at the end status messages similar to
-these:
-
-::
-
-   [I 09:49:53.923 NotebookApp] The Jupyter Notebook is running at:
-   [I 09:49:53.923 NotebookApp] http://(4c8edabe52e1 or 127.0.0.1):8888/?token=a7902983bad430a11935
-   [I 09:49:53.923 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
-       To access the notebook, open this file in a browser:
-           file:///root/.local/share/jupyter/runtime/nbserver-1-open.html
-       Or copy and paste one of these URLs:
-           http://(4c8edabe52e1 or 127.0.0.1):8888/?token=a7902983bad430a11935
-
-Based on the example above you should then open your browser and
-navigate to the URL
-``http://127.0.0.1:8888/?token=a7902983bad430a11935``.
-
-You can open and run all example notebooks provided in the ``examples``
-folder. You can also create new notebooks in ``my_notebooks``, which
-will be stored in a subfolder ``notebooks`` at your current working
-directory.
+You can open and run all example notebooks provided in the
+``docs/nmodl/transpiler/notebooks`` folder. You can also create new notebooks
+in ``my_notebooks``, which will be stored in a subfolder ``notebooks`` at your
+current working directory.
 
 Using the Python API
 --------------------
 
-Once the NMODL Framework is installed, you can use the Python parsing
+Once the NMODL transpiler is installed, you can use the Python parsing
 API to load NMOD file as:
 
 .. code:: python
 
-   from nmodl import dsl
+   from neuron.nmodl import dsl
 
    examples = dsl.list_examples() 
    nmodl_string = dsl.load_example(examples[-1])
@@ -172,7 +132,7 @@ visualization API to look at the details of AST as:
 
 ::
 
-   from nmodl import ast
+   from neuron.nmodl import ast
    ast.view(modast)
 
 which will open AST view in web browser:
@@ -181,7 +141,7 @@ which will open AST view in web browser:
    https://user-images.githubusercontent.com/666852/57329449-12c9a400-7114-11e9-8da5-0042590044ec.gif
    :alt: ast_viz
 
-   Vizualisation of the AST in the NMODL Framework
+   Vizualisation of the AST in the NMODL transpiler
 
 The central *Program* node represents the whole MOD file and each of
 it’s children represent the block in the input NMODL file. Note that
@@ -192,8 +152,8 @@ various analysis/optimisations. One can also easily write his own custom
 visitor using Python Visitor API. See `Python API
 tutorial <docs/notebooks/nmodl-python-tutorial.ipynb>`__ for details.
 
-The NMODL Framework also allows us to transform the AST representation back to
-NMODL form as:
+The NMODL Transpiler also allows us to transform the AST representation back
+to NMODL form as:
 
 .. code:: python
 
@@ -219,9 +179,9 @@ NMODL form as:
 High Level Analysis and Code Generation
 ---------------------------------------
 
-The NMODL Framework provides rich model introspection and analysis
+The NMODL transpiler provides rich model introspection and analysis
 capabilities using `various
-visitors <https://bluebrain.github.io/nmodl/html/doxygen/group__visitor__classes.html>`__.
+visitors <../../doxygen/group__visitor__classes.html>`__.
 Here is an example of theoretical performance characterisation of
 channels and synapses from rat neocortical column microcircuit
 `published in
@@ -231,13 +191,13 @@ channels and synapses from rat neocortical column microcircuit
    https://user-images.githubusercontent.com/666852/57336711-2cc0b200-7127-11e9-8053-8f662e2ec191.png
    :alt: nmodl-perf-stats
 
-   Performance results of the NMODL Framework
+   Performance results of the NMODL transpiler
 
 To understand how you can write your own introspection and analysis
 tool, see `this
-tutorial <docs/notebooks/nmodl-python-tutorial.ipynb>`__.
+tutorial <notebooks/nmodl-python-tutorial.ipynb>`__.
 
-Once analysis and optimization passes are performed, the NMODL Framework
+Once analysis and optimization passes are performed, the NMODL transpiler
 can generate optimised code for modern compute architectures including
 CPUs (Intel, AMD, ARM) and GPUs (NVIDIA, AMD) platforms. For example,
 C++, OpenACC and OpenMP backends are implemented and one can choose
@@ -249,13 +209,13 @@ these backends on command line as:
 
 To know more about code generation backends, `see
 here <https://bluebrain.github.io/nmodl/html/doxygen/group__codegen__backends.html>`__.
-NMODL Framework provides number of options (for code generation,
+NMODL transpiler provides number of options (for code generation,
 optimization passes and ODE solver) which can be listed as:
 
 ::
 
    $ nmodl -H
-   NMODL : Source-to-Source Code Generation Framework [version]
+   NMODL : Source-to-Source Code Generation transpiler [version]
    Usage: /path/<>/nmodl [OPTIONS] file... [SUBCOMMAND]
 
    Positionals:
@@ -318,21 +278,19 @@ optimization passes and ODE solver) which can be listed as:
 Documentation
 -------------
 
-We are working on user documentation, you can find current drafts of :
+We are working on user documentation, you can find the current version as part of the NEURON readthedocs page:
 
--  `User Documentation <https://bluebrain.github.io/nmodl/>`__
--  `Developer / API
-   Documentation <https://bluebrain.github.io/nmodl/html/doxygen/index.html>`__
+-  `Documentation <https://nrn.readthedocs.org/>`__
 
 Citation
 --------
 
-If you would like to know more about the the NMODL Framework, see
+If you would like to know more about the the NMODL transpiler, see
 following paper:
 
 -  Pramod Kumbhar, Omar Awile, Liam Keegan, Jorge Alonso, James King,
    Michael Hines and Felix Schürmann. 2019. An optimizing multi-platform
-   source-to-source compiler framework for the NEURON MODeling Language.
+   source-to-source compiler transpiler for the NEURON MODeling Language.
    In Eprint :
    `arXiv:1905.02241 <https://arxiv.org/pdf/1905.02241.pdf>`__
 
@@ -340,20 +298,20 @@ Support / Contribuition
 -----------------------
 
 If you see any issue, feel free to `raise a
-ticket <https://github.com/BlueBrain/nmodl/issues/new>`__. If you would
-like to improve this framework, see `open
-issues <https://github.com/BlueBrain/nmodl/issues>`__ and `contribution
+ticket <https://github.com/neuronsimulator/nrn/issues/new>`__. If you would
+like to improve this transpiler, see `open
+issues <https://github.com/neuronsimulator/nrn/issues>`__ and `contribution
 guidelines <CONTRIBUTING.rst>`__.
 
 Examples / Benchmarks
 ---------------------
 
 The benchmarks used to test the performance and parsing capabilities of
-NMODL Framework are currently being migrated to GitHub. These benchmarks
+NMODL transpiler are currently being migrated to GitHub. These benchmarks
 will be published soon in following repositories:
 
--  `NMODL Benchmark <https://github.com/BlueBrain/nmodlbench>`__
--  `NMODL Database <https://github.com/BlueBrain/nmodldb>`__
+-  `NMODL Benchmark <https://github.com/neuronsimulator/nrnbench>`__
+-  `NMODL Database <https://github.com/neuronsimulator/nrndb>`__
 
 Funding & Acknowledgment
 ------------------------
@@ -367,12 +325,12 @@ the Grant Number R01NS11613 (Yale University) and the European Union’s
 Horizon 2020 Framework Programme for Research and Innovation under the
 Specific Grant Agreement No. 785907 (Human Brain Project SGA2).
 
-Copyright © 2017-2023 Blue Brain Project, EPFL
+Copyright © 2017-2024 Blue Brain Project, EPFL
 
-.. |github workflow| image:: https://github.com/BlueBrain/nmodl/actions/workflows/nmodl-ci.yml/badge.svg?branch=master
+.. |github workflow| image:: https://github.com/neuronsimulator/nrn/actions/workflows/nmodl-ci.yml/badge.svg?branch=master
 .. |Build Status| image:: https://dev.azure.com/pramodskumbhar/nmodl/_apis/build/status/BlueBrain.nmodl?branchName=master
    :target: https://dev.azure.com/pramodskumbhar/nmodl/_build/latest?definitionId=2&branchName=master
-.. |codecov| image:: https://codecov.io/gh/BlueBrain/nmodl/branch/master/graph/badge.svg?token=A3NU9VbNcB
-   :target: https://codecov.io/gh/BlueBrain/nmodl
+.. |codecov| image:: https://codecov.io/gh/neuronsimulator/nrn/branch/master/graph/badge.svg?token=A3NU9VbNcB
+   :target: https://codecov.io/gh/neuronsimulator/nrn
 .. |CII Best Practices| image:: https://bestpractices.coreinfrastructure.org/projects/4467/badge
    :target: https://bestpractices.coreinfrastructure.org/projects/4467

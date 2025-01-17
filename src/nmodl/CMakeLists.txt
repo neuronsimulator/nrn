@@ -1,5 +1,5 @@
 include(${PROJECT_SOURCE_DIR}/cmake/nmodl/FlexHelper.cmake)
-include_directories(${NMODL_PROJECT_SOURCE_DIR} ${NMODL_PROJECT_BINARY_DIR})
+include_directories(${NMODL_PROJECT_PLATLIB_SOURCE_DIR} ${NMODL_PROJECT_PLATLIB_BINARY_DIR})
 
 list(APPEND NMODL_EXTRA_CXX_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 
@@ -8,8 +8,8 @@ list(APPEND NMODL_EXTRA_CXX_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 # =============================================================================
 
 # generate file with version number from git and nrnunits.lib file path
-configure_file(${NMODL_PROJECT_SOURCE_DIR}/config/config.cpp.in
-               ${NMODL_PROJECT_BINARY_DIR}/config/config.cpp @ONLY)
+configure_file(${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/config/config.cpp.in
+               ${NMODL_PROJECT_PLATLIB_BINARY_DIR}/config/config.cpp @ONLY)
 
 # generate Doxyfile with correct source paths
 configure_file(${PROJECT_SOURCE_DIR}/docs/nmodl/transpiler/Doxyfile.in
@@ -151,3 +151,24 @@ write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/nmodlConfigVersion
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfig.cmake"
               "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfigVersion.cmake"
         DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}lib/cmake/nmodl)
+
+# =============================================================================
+# Build status
+# =============================================================================
+message(STATUS "")
+message(STATUS "Configured NMODL")
+message(STATUS "")
+message(STATUS "-- NMODL is enabled with following build configuration:")
+message(STATUS "--------------------+--------------------------------------------------------")
+message(STATUS " Build option       | Status")
+message(STATUS "--------------------+--------------------------------------------------------")
+message(STATUS "CXX COMPILER        | ${CMAKE_CXX_COMPILER}")
+message(STATUS "COMPILE FLAGS       | ${COMPILER_FLAGS}")
+message(STATUS "Build Type          | ${CMAKE_BUILD_TYPE}")
+message(STATUS "Python Bindings     | ${NMODL_ENABLE_PYTHON_BINDINGS}")
+message(STATUS "Flex                | ${FLEX_EXECUTABLE}")
+message(STATUS "Bison               | ${BISON_EXECUTABLE}")
+message(STATUS "Python              | ${PYTHON_EXECUTABLE}")
+message(STATUS "  Linked against    | ${NRN_LINK_AGAINST_PYTHON}")
+message(STATUS "--------------------+--------------------------------------------------------")
+message(STATUS "")

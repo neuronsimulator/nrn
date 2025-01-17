@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import pytest
-from nmodl.dsl import NmodlDriver
+from neuron.nmodl.dsl import NmodlDriver
 
 CHANNEL = """NEURON  {
     SUFFIX NaTs2_t
