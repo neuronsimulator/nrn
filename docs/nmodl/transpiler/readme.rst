@@ -65,48 +65,27 @@ Installation
 ------------
 
 See
-`INSTALL.rst <https://github.com/BlueBrain/nmodl/blob/master/INSTALL.rst>`__
+`INSTALL.rst <https://github.com/neuronsimulator/nrn/blob/master/INSTALL.rst>`__
 for detailed instructions to build the NMODL from source.
 
-Try NMODL with Docker
+Try NMODL
 ---------------------
 
-To quickly test the NMODL Framework’s analysis capabilities we provide a
-`docker <https://www.docker.com>`__ image, which includes the NMODL
-Framework python library and a fully functional Jupyter notebook
-environment. After installing
-`docker <https://docs.docker.com/compose/install/>`__ and
-`docker-compose <https://docs.docker.com/compose/install/>`__ you can
-pull and run the NMODL image from your terminal.
+NMODL is distributed as part of NEURON.
 
-To try Python interface directly from CLI, you can run docker image as:
-
-::
-
-   docker run -it --entrypoint=/bin/sh bluebrain/nmodl
-
-And try NMODL Python API discussed later in this README as:
+You can try the NMODL Python API discussed later in this README as:
 
 ::
 
    $ python3
    Python 3.6.8 (default, Apr  8 2019, 18:17:52)
    >>> from nmodl import dsl
-   >>> import os
    >>> examples = dsl.list_examples()
    >>> nmodl_string = dsl.load_example(examples[-1])
    ...
 
 To try Jupyter notebooks you can download docker compose file and run it
 as:
-
-.. code:: sh
-
-   wget "https://raw.githubusercontent.com/BlueBrain/nmodl/master/docker/docker-compose.yml"
-   DUID=$(id -u) DGID=$(id -g) HOSTNAME=$(hostname) docker-compose up
-
-If all goes well you should see at the end status messages similar to
-these:
 
 ::
 
@@ -135,7 +114,7 @@ API to load NMOD file as:
 
 .. code:: python
 
-   from nmodl import dsl
+   from neuron.nmodl import dsl
 
    examples = dsl.list_examples() 
    nmodl_string = dsl.load_example(examples[-1])
@@ -172,7 +151,7 @@ visualization API to look at the details of AST as:
 
 ::
 
-   from nmodl import ast
+   from neuron.nmodl import ast
    ast.view(modast)
 
 which will open AST view in web browser:
@@ -318,11 +297,9 @@ optimization passes and ODE solver) which can be listed as:
 Documentation
 -------------
 
-We are working on user documentation, you can find current drafts of :
+We are working on user documentation, you can find the current version as part of the NEURON readthedocs page:
 
--  `User Documentation <https://bluebrain.github.io/nmodl/>`__
--  `Developer / API
-   Documentation <https://bluebrain.github.io/nmodl/html/doxygen/index.html>`__
+-  `Documentation <https://nrn.readthedocs.org/>`__
 
 Citation
 --------
@@ -340,9 +317,9 @@ Support / Contribuition
 -----------------------
 
 If you see any issue, feel free to `raise a
-ticket <https://github.com/BlueBrain/nmodl/issues/new>`__. If you would
+ticket <https://github.com/neuronsimulator/nrn/issues/new>`__. If you would
 like to improve this framework, see `open
-issues <https://github.com/BlueBrain/nmodl/issues>`__ and `contribution
+issues <https://github.com/neuronsimulator/nrn/issues>`__ and `contribution
 guidelines <CONTRIBUTING.rst>`__.
 
 Examples / Benchmarks
@@ -352,8 +329,8 @@ The benchmarks used to test the performance and parsing capabilities of
 NMODL Framework are currently being migrated to GitHub. These benchmarks
 will be published soon in following repositories:
 
--  `NMODL Benchmark <https://github.com/BlueBrain/nmodlbench>`__
--  `NMODL Database <https://github.com/BlueBrain/nmodldb>`__
+-  `NMODL Benchmark <https://github.com/neuronsimulator/nrnbench>`__
+-  `NMODL Database <https://github.com/neuronsimulator/nrndb>`__
 
 Funding & Acknowledgment
 ------------------------
@@ -367,12 +344,12 @@ the Grant Number R01NS11613 (Yale University) and the European Union’s
 Horizon 2020 Framework Programme for Research and Innovation under the
 Specific Grant Agreement No. 785907 (Human Brain Project SGA2).
 
-Copyright © 2017-2023 Blue Brain Project, EPFL
+Copyright © 2017-2024 Blue Brain Project, EPFL
 
-.. |github workflow| image:: https://github.com/BlueBrain/nmodl/actions/workflows/nmodl-ci.yml/badge.svg?branch=master
+.. |github workflow| image:: https://github.com/neuronsimulator/nrn/actions/workflows/nmodl-ci.yml/badge.svg?branch=master
 .. |Build Status| image:: https://dev.azure.com/pramodskumbhar/nmodl/_apis/build/status/BlueBrain.nmodl?branchName=master
    :target: https://dev.azure.com/pramodskumbhar/nmodl/_build/latest?definitionId=2&branchName=master
-.. |codecov| image:: https://codecov.io/gh/BlueBrain/nmodl/branch/master/graph/badge.svg?token=A3NU9VbNcB
-   :target: https://codecov.io/gh/BlueBrain/nmodl
+.. |codecov| image:: https://codecov.io/gh/neuronsimulator/nrn/branch/master/graph/badge.svg?token=A3NU9VbNcB
+   :target: https://codecov.io/gh/neuronsimulator/nrn
 .. |CII Best Practices| image:: https://bestpractices.coreinfrastructure.org/projects/4467/badge
    :target: https://bestpractices.coreinfrastructure.org/projects/4467

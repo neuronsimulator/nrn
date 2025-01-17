@@ -18,7 +18,7 @@ with the repository itself:
 
 .. code:: sh
 
-   git clone --recursive https://github.com/BlueBrain/nmodl.git
+   git clone --recursive https://github.com/neuronsimulator/nrn.git
    cd nmodl
 
 Prerequisites

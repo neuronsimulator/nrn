@@ -12,14 +12,14 @@ Got a Question?
 ---------------
 
 Please do not hesitate to raise an issue on `github project
-page <https://github.com/BlueBrain/nmodl>`__.
+page <https://github.com/neuronsimulator/nrn>`__.
 
 Found a Bug?
 ------------
 
 If you find a bug in the source code, you can help us by `submitting an
 issue <#submit-issue>`__ to our `GitHub
-Repository <https://github.com/BlueBrain/nmodl>`__. Even better, you can
+Repository <https://github.com/neuronsimulator/nrn>`__. Even better, you can
 `submit a Pull Request <#submit-pr>`__ with a fix.
 
 Missing a Feature?
@@ -72,18 +72,16 @@ following guidelines:
 
 -  Create your patch, **including appropriate test cases**.
 
--  Enable ``NMODL_TEST_FORMATTING`` CMake variable to ensure that your
-   change follows the coding conventions of this project when running
-   the tests. The formatting utility can also be used directly:
+-  Format the files accordingly:
 
    -  to format CMake and C++ files:
-      ``cmake/hpc-coding-conventions/bin/format``
+      ``external/coding-conventions/bin/format``
    -  to format only the C++ files:
-      ``cmake/hpc-coding-conventions/bin/format --lang c++``
+      ``external/coding-conventions/bin/format --lang c++``
    -  to format a subset of files or directories:
-      ``cmake/hpc-coding-conventions/bin/format src/codegen/ src/main.cpp``
+      ``external/coding-conventions/bin/format src/nmodl/codegen/ src/nmodl/main.cpp``
    -  to check the formatting of CMake files:
-      ``cmake/hpc-coding-conventions/bin/format --dry-run --lang cmake``
+      ``external/coding-conventions/bin/format --dry-run --lang cmake``
 
 -  Run the full test suite, and ensure that all tests pass.
 
@@ -168,7 +166,7 @@ Run the HPC coding conventions formatter to format all source files:
 
 .. code:: bash
 
-   cmake/hpc-coding-conventions/bin/format
+   external/coding-conventions/bin/format
 
 The HPC coding conventions formatter installs any dependencies into a Python
 virtual environment.
@@ -229,5 +227,5 @@ One can find the line by doing:
 
 which will print a backtrace every time NMODL writes to line 105. While this is
 useful for finding the line responsible for printing, i.e. convert AST to C++,
-that line it doesn't immediately explain why the AST ended up that way.
+that line doesn't immediately explain why the AST ended up that way.
 Currently, we don't have a tool for the latter.

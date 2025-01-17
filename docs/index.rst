@@ -53,6 +53,7 @@ and more (use the links on the side or search).
    :hidden:
 
    nmodl/language
+   nmodl/transpiler
 
 .. toctree::
    :maxdepth: 2
