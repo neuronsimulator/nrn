@@ -171,7 +171,18 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
     atolvec_alloc(neq_);
     for (int id = 0; id < nctd_; ++id) {
         CvodeThreadData& z = ctd_[id];
-        NrnThread* nt_ = nrn_threads + id;
+        // If lvardt, this is a cvode integrating a particular cell in a
+        // particular thread, i.e., nth_. But nctd_ = 1.
+        // If gvardt, this cvode is unique and nctd_ is nrn_nthread and
+        // the relevant thread is nrn_threads + id;
+        NrnThread* nt_;
+        if (nctd_ > 1) {  // definitely gvardt
+            nt_ = nrn_threads + id;
+        } else if (nrn_nthread > 1) {  // definitely lvardt
+            nt_ = nth_;
+        } else {  // either way, certainly thread 0
+            nt_ = nrn_threads;
+        }
         double* atv = n_vector_data(atolnvec_, id);
         zneq_cap_v = 0;
         if (z.cmlcap_) {
