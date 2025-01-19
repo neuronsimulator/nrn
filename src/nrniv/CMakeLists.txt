@@ -208,6 +208,7 @@ set(NRN_INCLUDE_DIRS
     ${NRN_OC_SRC_DIR}
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/src/nrncvode
+    ${PROJECT_BINARY_DIR}/src/nrnmpi
     ${PROJECT_BINARY_DIR}/src/nrnoc
     ${PROJECT_BINARY_DIR}/src/nrnpython
     ${PROJECT_BINARY_DIR}/src/oc
@@ -273,9 +274,10 @@ add_dependencies(generated_source_files generate_hocusr_header)
 
 # header for dynamic mpi
 if(NRN_ENABLE_MPI_DYNAMIC)
+  file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/src/nrnmpi")
   add_custom_command(
     OUTPUT ${NRNMPI_DYNAMIC_INCLUDE_FILE}
-    COMMAND sh mkdynam.sh
+    COMMAND sh mkdynam.sh "${PROJECT_BINARY_DIR}/src/nrnmpi"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/nrnmpi
     DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.sh
             ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpidec.h)
