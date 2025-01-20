@@ -421,6 +421,11 @@ if(CORENRN_ENABLE_GPU)
   set(CORENRN_INSTALL_TARGETS
       "coreneuron-core;coreneuron-cuda"
       PARENT_SCOPE)
+else()
+  set_target_properties(coreneuron-core PROPERTIES EXPORT_NAME corenrn)
+  set(CORENRN_INSTALL_TARGETS
+      coreneuron-core
+      PARENT_SCOPE)
 endif()
 
 foreach(target coreneuron-core ${coreneuron_cuda_target})
