@@ -43,6 +43,7 @@ def nrn_use_daspk():
     cv.use_daspk(0)
     s = h.Section()
     cv.active(1)
+    s.insert("hh")  # coverage of ode_map for Cvode::daspk_init_eqn()
     s.insert("extracellular")
     h.finitialize(-65)
     s.diam = 200
