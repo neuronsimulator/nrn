@@ -10,10 +10,10 @@ add_library(nmodl_test_flags INTERFACE)
 
 target_include_directories(nmodl_test_flags INTERFACE ${PYBIND11_INCLUDE_DIR}
                                                       ${PYTHON_INCLUDE_DIRS})
-target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_SOURCE_DIR}/solver)
-target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_SOURCE_DIR}/utils)
-target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_SOURCE_DIR})
-target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_BINARY_DIR})
+target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/solver)
+target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/utils)
+target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR})
+target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_BINARY_DIR})
 target_include_directories(nmodl_test_flags INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(nmodl_test_flags INTERFACE ${PROJECT_SOURCE_DIR}/external/eigen)
 

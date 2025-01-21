@@ -39,8 +39,8 @@ endif()
 # =============================================================================
 # Settings to enable project as submodule
 # =============================================================================
-set(NMODL_PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(NMODL_PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(NMODL_PROJECT_PLATLIB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(NMODL_PROJECT_PLATLIB_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(NMODL_AS_SUBPROJECT OFF)
 if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   set(NMODL_AS_SUBPROJECT ON)
@@ -180,15 +180,15 @@ if(NMODL_PGI_COMPILER)
   add_compile_definitions(JSON_SKIP_UNSUPPORTED_COMPILER_CHECK=1)
 endif()
 
-include_directories(${NMODL_PROJECT_SOURCE_DIR} ${NMODL_PROJECT_BINARY_DIR})
+include_directories(${NMODL_PROJECT_PLATLIB_SOURCE_DIR} ${NMODL_PROJECT_PLATLIB_BINARY_DIR})
 
 # generate file with version number from git and nrnunits.lib file path
-configure_file(${NMODL_PROJECT_SOURCE_DIR}/config/config.cpp.in
-               ${NMODL_PROJECT_BINARY_DIR}/config/config.cpp @ONLY)
+configure_file(${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/config/config.cpp.in
+               ${NMODL_PROJECT_PLATLIB_BINARY_DIR}/config/config.cpp @ONLY)
 
 # generate Doxyfile with correct source paths
-configure_file(${NMODL_PROJECT_SOURCE_DIR}/docs/Doxyfile.in
-               ${NMODL_PROJECT_SOURCE_DIR}/docs/Doxyfile)
+configure_file(${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/docs/Doxyfile.in
+               ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/docs/Doxyfile)
 
 # do not enable tests if nmodl is used as submodule
 if(NMODL_ENABLE_TESTS)

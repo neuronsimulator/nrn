@@ -1,5 +1,5 @@
 include(${PROJECT_SOURCE_DIR}/cmake/nmodl/FlexHelper.cmake)
-include_directories(${NMODL_PROJECT_SOURCE_DIR} ${NMODL_PROJECT_BINARY_DIR})
+include_directories(${NMODL_PROJECT_PLATLIB_SOURCE_DIR} ${NMODL_PROJECT_PLATLIB_BINARY_DIR})
 
 list(APPEND NMODL_EXTRA_CXX_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 
@@ -8,8 +8,8 @@ list(APPEND NMODL_EXTRA_CXX_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 # =============================================================================
 
 # generate file with version number from git and nrnunits.lib file path
-configure_file(${NMODL_PROJECT_SOURCE_DIR}/config/config.cpp.in
-               ${NMODL_PROJECT_BINARY_DIR}/config/config.cpp @ONLY)
+configure_file(${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/config/config.cpp.in
+               ${NMODL_PROJECT_PLATLIB_BINARY_DIR}/config/config.cpp @ONLY)
 
 # generate Doxyfile with correct source paths
 configure_file(${PROJECT_SOURCE_DIR}/docs/nmodl/transpiler/Doxyfile.in
@@ -120,7 +120,6 @@ add_dependencies(nmodl pywrapper)
 
 if(NMODL_ENABLE_PYTHON_BINDINGS)
   add_dependencies(nmodl _nmodl)
-  add_subdirectory(python)
 endif()
 
 # =============================================================================

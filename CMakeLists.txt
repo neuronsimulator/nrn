@@ -541,21 +541,25 @@ if(NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON)
 
   include(${PROJECT_SOURCE_DIR}/cmake/nmodl/PythonLinkHelper.cmake)
 
-  set(NMODL_PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/nmodl)
-  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/nmodl)
+  # where the platform-specific sources are located
+  set(NMODL_PROJECT_PLATLIB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/nmodl)
+  set(NMODL_PROJECT_PLATLIB_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/nmodl)
+  # where the platform-independent sources are located
+  set(NMODL_PROJECT_PURELIB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/python/neuron/nmodl)
+  set(NMODL_PROJECT_PURELIB_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/nmodl)
 
   add_subdirectory(src/nmodl)
   set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
   set(NMODL_TARGET_TO_DEPEND nmodl)
-  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/src/nmodl)
+  set(NMODL_PROJECT_PLATLIB_BINARY_DIR ${CMAKE_BINARY_DIR}/src/nmodl)
   # install nrnunits.lib and libpywrapper.so from external/nmodl
   install(
-    FILES ${NMODL_PROJECT_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
+    FILES ${NMODL_PROJECT_PLATLIB_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
     DESTINATION lib
     COMPONENT pywrapper
     OPTIONAL)
   install(
-    FILES ${NMODL_PROJECT_BINARY_DIR}/share/nmodl/nrnunits.lib
+    FILES ${NMODL_PROJECT_PLATLIB_BINARY_DIR}/share/nmodl/nrnunits.lib
     DESTINATION share/nmodl
     COMPONENT nrnunits)
 

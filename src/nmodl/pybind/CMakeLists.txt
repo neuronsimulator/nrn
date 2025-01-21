@@ -5,7 +5,7 @@ set_source_files_properties(${PYBIND_GENERATED_SOURCES} PROPERTIES GENERATED TRU
 
 # Set -fno-var-tracking-assignments on pyast.cpp with GCC to avoid a warning + double compilation
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-  foreach(pybind_file "${NMODL_PROJECT_BINARY_DIR}/pybind/pyast.cpp")
+  foreach(pybind_file "${NMODL_PROJECT_PLATLIB_BINARY_DIR}/pybind/pyast.cpp")
     get_source_file_property(pybind_file_compile_options "${pybind_file}" COMPILE_OPTIONS)
     if("${pybind_file_compile_options}" STREQUAL "NOTFOUND")
       set(pybind_file_compile_options)
@@ -16,14 +16,14 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
   endforeach()
 endif()
 
-# build nmodl python module under lib/nmodl
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/nmodl)
+# build nmodl Python module under lib/python/neuron/nmodl
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${NMODL_PROJECT_PURELIB_BINARY_DIR})
 
-file(READ ${NMODL_PROJECT_SOURCE_DIR}/python/nmodl/ode.py NMODL_ODE_PY)
+file(READ ${NMODL_PROJECT_PURELIB_SOURCE_DIR}/ode.py NMODL_ODE_PY)
 set_property(
   DIRECTORY
   APPEND
-  PROPERTY CMAKE_CONFIGURE_DEPENDS ${NMODL_PROJECT_SOURCE_DIR}/python/nmodl/ode.py)
+  PROPERTY CMAKE_CONFIGURE_DEPENDS ${NMODL_PROJECT_PURELIB_SOURCE_DIR}/ode.py)
 if(WIN32)
   # MSVC can't handle long string literals, even if the documentation claims so See
   # https://developercommunity.visualstudio.com/t/c-string-literal-max-length-much-shorter-than-docu/758957
@@ -40,7 +40,7 @@ target_link_libraries(pyembed PRIVATE fmt::fmt)
 if(NOT NRN_LINK_AGAINST_PYTHON)
   add_library(pywrapper SHARED ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
   set_target_properties(pywrapper PROPERTIES LIBRARY_OUTPUT_DIRECTORY
-                                             ${NMODL_PROJECT_BINARY_DIR}/lib)
+                                             ${NMODL_PROJECT_PLATLIB_BINARY_DIR}/lib)
 else()
   add_library(pywrapper ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
   set_property(TARGET pywrapper PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -71,13 +71,13 @@ if(NMODL_ENABLE_PYTHON_BINDINGS)
   # for pybind using NO_EXTRAS. See #266.
   # ~~~
   pybind11_add_module(
-    _nmodl NO_EXTRAS ${NMODL_PROJECT_SOURCE_DIR}/ast/ast_common.hpp
-    ${NMODL_PROJECT_SOURCE_DIR}/pybind/pybind_utils.hpp
-    ${NMODL_PROJECT_SOURCE_DIR}/pybind/pynmodl.cpp ${PYBIND_GENERATED_SOURCES})
+    _nmodl NO_EXTRAS ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/ast/ast_common.hpp
+    ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pybind_utils.hpp
+    ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pynmodl.cpp ${PYBIND_GENERATED_SOURCES})
   add_dependencies(_nmodl lexer pyastgen util)
   target_link_libraries(_nmodl PRIVATE printer symtab visitor pyembed)
   set_target_properties(_nmodl PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG
-                                          ${CMAKE_BINARY_DIR}/lib/nmodl)
+                                          ${NMODL_PROJECT_PURELIB_BINARY_DIR})
 
   if(MSVC)
     target_compile_options(_nmodl PRIVATE /bigobj)
@@ -94,27 +94,24 @@ endif()
 # =============================================================================
 file(
   GLOB NMODL_PYTHON_FILES
-  RELATIVE "${NMODL_PROJECT_SOURCE_DIR}/python/nmodl/"
-  CONFIGURE_DEPENDS "${NMODL_PROJECT_SOURCE_DIR}/python/nmodl/*.py")
+  RELATIVE "${NMODL_PROJECT_PURELIB_SOURCE_DIR}/"
+  CONFIGURE_DEPENDS "${NMODL_PROJECT_PURELIB_SOURCE_DIR}/*.py")
 
 foreach(file IN LISTS NMODL_PYTHON_FILES)
   cpp_cc_build_time_copy(
-    INPUT ${NMODL_PROJECT_SOURCE_DIR}/python/nmodl/${file}
-    OUTPUT ${CMAKE_BINARY_DIR}/lib/nmodl/${file}
+    INPUT ${NMODL_PROJECT_PURELIB_SOURCE_DIR}/${file}
+    OUTPUT ${NMODL_PROJECT_PURELIB_BINARY_DIR}/${file}
     NO_TARGET)
-  list(APPEND nmodl_python_binary_dir_files "${CMAKE_BINARY_DIR}/lib/nmodl/${file}")
+  list(APPEND nmodl_python_binary_dir_files "${NMODL_PROJECT_PURELIB_BINARY_DIR}/${file}")
 endforeach()
 add_custom_target(nmodl_copy_python_files ALL DEPENDS ${nmodl_python_binary_dir_files})
-file(COPY ${NMODL_PROJECT_SOURCE_DIR}/python/nmodl/ext DESTINATION ${CMAKE_BINARY_DIR}/lib/nmodl/)
+file(COPY ${NMODL_PROJECT_PURELIB_SOURCE_DIR}/ext DESTINATION ${NMODL_PROJECT_PURELIB_BINARY_DIR})
 
 # =============================================================================
 # Install python binding components
 # =============================================================================
 if(NOT NRN_LINK_AGAINST_PYTHON AND NMODL_ENABLE_PYTHON_BINDINGS)
-  install(
-    TARGETS _nmodl
-    DESTINATION lib/python/neuron/nmodl
-    PATTERN "__pycache__" EXCLUDE)
+  install(TARGETS _nmodl DESTINATION lib/python/neuron/nmodl)
 else()
   install(
     DIRECTORY ${CMAKE_BINARY_DIR}/lib/
