@@ -110,21 +110,10 @@ file(COPY ${NMODL_PROJECT_SOURCE_DIR}/python/nmodl/ext DESTINATION ${CMAKE_BINAR
 # =============================================================================
 # Install python binding components
 # =============================================================================
-# ~~~
-# scikit already installs the package in /nmodl. If we add it another time
-# things are installed twice with the wheel and in weird places. Let's just
-# move the .so libs
-# ~~~
-if(NOT NRN_LINK_AGAINST_PYTHON)
-  install(TARGETS pywrapper DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}lib)
-  if(NMODL_ENABLE_PYTHON_BINDINGS)
-    install(TARGETS _nmodl DESTINATION nmodl/)
-  endif()
-elseif(SKBUILD)
-  # skbuild needs the installation dir to be in nmodl to do the correct inplace
+if(NOT NRN_LINK_AGAINST_PYTHON AND NMODL_ENABLE_PYTHON_BINDINGS)
   install(
-    DIRECTORY ${CMAKE_BINARY_DIR}/lib/nmodl
-    DESTINATION .
+    TARGETS _nmodl
+    DESTINATION lib/python/neuron/nmodl
     PATTERN "__pycache__" EXCLUDE)
 else()
   install(

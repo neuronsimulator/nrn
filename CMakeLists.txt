@@ -518,9 +518,9 @@ cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 if(NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON)
   # NMODL Python build dependencies
   nrn_find_python_module(MODULE jinja2 REQUIRED)
-  # N.B. `nrn_find_python_module` uses the _importable_ name of the package to
-  # find it, _not_ the actual package name. In this case, `pip install pyyaml`
-  # actually installs an importable package called `yaml`
+  # N.B. `nrn_find_python_module` uses the _importable_ name of the package to find it, _not_ the
+  # actual package name. In this case, `pip install pyyaml` actually installs an importable package
+  # called `yaml`
   nrn_find_python_module(MODULE yaml REQUIRED)
 
   # NMODL non-Python build dependencies

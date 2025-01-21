@@ -120,6 +120,7 @@ add_dependencies(nmodl pywrapper)
 
 if(NMODL_ENABLE_PYTHON_BINDINGS)
   add_dependencies(nmodl _nmodl)
+  add_subdirectory(python)
 endif()
 
 # =============================================================================
