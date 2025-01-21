@@ -50,6 +50,7 @@ Post-release
 - [ ] Let people know :rocket:
 - [ ] Cherrypick changelog and installer links to `master`
 - [ ] Update the changelog for the release on GitHub
+- [ ] Update `codemeta.json` (`master` branch only) with the new version, changelog, date, and links
 
 
 Changelog
