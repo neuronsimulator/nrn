@@ -72,7 +72,7 @@ build_wheel_linux() {
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
         nmodl_add_requirements
-        CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF,CORENRN_ENABLE_OPENMP=ON"
+        CMAKE_DEFS="${CMAKE_DEFS},NRN_LINK_AGAINST_PYTHON=OFF,CORENRN_ENABLE_OPENMP=ON"
     fi
 
     cat "${python_requirements_path}"
@@ -127,7 +127,7 @@ build_wheel_osx() {
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
         nmodl_add_requirements
-        CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
+        CMAKE_DEFS="${CMAKE_DEFS},NRN_LINK_AGAINST_PYTHON=OFF"
     fi
 
     cat "${python_requirements_path}"

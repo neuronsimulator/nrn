@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <string>
 
-#if NMODL_ENABLE_BACKWARD
+#if NRN_USE_BACKWARD
 #include <backward.hpp>
 #endif
 
@@ -23,7 +23,7 @@ class NoBlame: public Blame {
     }
 };
 
-#if NMODL_ENABLE_BACKWARD
+#if NRN_USE_BACKWARD
 size_t first_relevant_trace(backward::TraceResolver& tr, const backward::StackTrace& st) {
     std::vector<std::string> stop_at{"printer/code_printer.cpp", "printer/code_printer.hpp"};
     int start_from = int(st.size()) - 2;

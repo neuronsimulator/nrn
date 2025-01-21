@@ -131,7 +131,7 @@ target_link_libraries(testunitparser PRIVATE lexer test_util config nmodl_test_f
 # =============================================================================
 set(test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
 set(testvisitor_env "PYTHONPATH=${PROJECT_BINARY_DIR}/lib:$ENV{PYTHONPATH}")
-if(NOT LINK_AGAINST_PYTHON)
+if(NOT NRN_LINK_AGAINST_PYTHON)
   list(APPEND testvisitor_env "NMODL_PYLIB=$ENV{NMODL_PYLIB}")
 endif()
 

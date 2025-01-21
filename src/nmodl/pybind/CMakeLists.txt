@@ -37,7 +37,7 @@ set_property(TARGET pyembed PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(pyembed PRIVATE util)
 target_link_libraries(pyembed PRIVATE fmt::fmt)
 
-if(NOT LINK_AGAINST_PYTHON)
+if(NOT NRN_LINK_AGAINST_PYTHON)
   add_library(pywrapper SHARED ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
   set_target_properties(pywrapper PROPERTIES LIBRARY_OUTPUT_DIRECTORY
                                              ${NMODL_PROJECT_BINARY_DIR}/lib)
@@ -57,7 +57,7 @@ target_include_directories(pywrapper PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 # libpython, we can use `module` interface library from pybind11.
 # ~~~
 target_link_libraries(pyembed PRIVATE ${CMAKE_DL_LIBS})
-if(NOT LINK_AGAINST_PYTHON)
+if(NOT NRN_LINK_AGAINST_PYTHON)
   target_link_libraries(pywrapper PRIVATE pybind11::module)
 else()
   target_link_libraries(pyembed PRIVATE ${PYTHON_LIBRARIES} pywrapper)
@@ -84,7 +84,7 @@ if(NMODL_ENABLE_PYTHON_BINDINGS)
   endif()
 
   # in case of wheel, python module shouldn't link to wrapper library
-  if(LINK_AGAINST_PYTHON)
+  if(NRN_LINK_AGAINST_PYTHON)
     target_link_libraries(_nmodl PRIVATE pywrapper)
   endif()
 endif()
@@ -115,7 +115,7 @@ file(COPY ${NMODL_PROJECT_SOURCE_DIR}/python/nmodl/ext DESTINATION ${CMAKE_BINAR
 # things are installed twice with the wheel and in weird places. Let's just
 # move the .so libs
 # ~~~
-if(NOT LINK_AGAINST_PYTHON)
+if(NOT NRN_LINK_AGAINST_PYTHON)
   install(TARGETS pywrapper DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}lib)
   if(NMODL_ENABLE_PYTHON_BINDINGS)
     install(TARGETS _nmodl DESTINATION nmodl/)
