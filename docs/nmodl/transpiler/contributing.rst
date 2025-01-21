@@ -1,18 +1,22 @@
-Contributing to the NMODL Framework
-===================================
+Contributing to the NMODL transpiler
+====================================
 
-We would love for you to contribute to the NMODL Framework and help make
+We would love for you to contribute to the NMODL transpiler and help make
 it better than it is today. As a contributor, here are the guidelines we
-would like you to follow: - `Question or Problem? <#question>`__ -
-`Issues and Bugs <#issue>`__ - `Feature Requests <#feature>`__ -
-`Submission Guidelines <#submit>`__ - `Development
-Conventions <#devconv>`__
+would like you to follow:
+
+- `Question or Problem? <#got-a-question>`__
+- `Issues and Bugs <#found-a-bug>`__
+- `Feature Requests <#missing-a-feature>`__
+- `Submission Guidelines <#submission-guidelines>`__
+- `Development Conventions <#development-conventions>`__
+
 
 Got a Question?
 ---------------
 
-Please do not hesitate to raise an issue on `github project
-page <https://github.com/neuronsimulator/nrn>`__.
+Please do not hesitate to raise an issue on the project's `GitHub page
+<https://github.com/neuronsimulator/nrn>`__.
 
 Found a Bug?
 ------------

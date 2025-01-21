@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-About NMODL
-===========
+About the NMODL transpiler
+==========================
 
 .. toctree::
    :maxdepth: 2
@@ -53,11 +53,3 @@ About NMODL
    :caption: Reference:
 
    modules.rst
-   doxygen.rst
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

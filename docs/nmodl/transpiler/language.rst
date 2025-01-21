@@ -1,13 +1,13 @@
 The NEURON MODeling language
 ============================
 
-The NMODL Framework is able to parse all language features and constructs of the NMODL DSL.
-The programmer is thus able to parse any mechanism file with the NMODL Framework and process
+The NMODL transpiler is able to parse all language features and constructs of the NMODL DSL.
+The programmer is thus able to parse any mechanism file with the NMODL transpiler and process
 the AST data structures with a few notable exceptions (mainly VERBATIM C blocks).
 
-The Framework however still lacks code generation support for a some of the language constructs.
+The transpiler however still lacks code generation support for a some of the language constructs.
 In the following table we summarize the various NMODL DSL constructs and their support in the
-framework. Code generation information is related to CoreNEURON backend.
+transpiler. Code generation information is related to CoreNEURON backend.
 
 
 +------------------------+-------------------+-------------------+---------------------+

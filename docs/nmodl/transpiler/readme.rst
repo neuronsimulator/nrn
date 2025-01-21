@@ -61,15 +61,17 @@ Installation
 ------------
 
 See
-`INSTALL.rst <https://github.com/neuronsimulator/nrn/blob/master/INSTALL.rst>`__
-for detailed instructions to build the NMODL transpiler from source.
+`here <https://github.com/neuronsimulator/nrn/blob/master/docs/install/install_instructions.md>`__
+for detailed instructions of building the NMODL transpiler from source (as
+part of NEURON).
 
 Try NMODL
 ---------------------
 
 The NMODL transpiler is distributed as part of NEURON.
 
-You can try the NMODL Python API discussed later in this README as:
+Once NEURON is installed, you can try the NMODL Python API discussed later in
+this README as:
 
 ::
 
@@ -88,7 +90,7 @@ current working directory.
 Using the Python API
 --------------------
 
-Once the NMODL Framework is installed, you can use the Python parsing
+Once the NMODL transpiler is installed, you can use the Python parsing
 API to load NMOD file as:
 
 .. code:: python
@@ -139,7 +141,7 @@ which will open AST view in web browser:
    https://user-images.githubusercontent.com/666852/57329449-12c9a400-7114-11e9-8da5-0042590044ec.gif
    :alt: ast_viz
 
-   Vizualisation of the AST in the NMODL Framework
+   Vizualisation of the AST in the NMODL transpiler
 
 The central *Program* node represents the whole MOD file and each of
 it’s children represent the block in the input NMODL file. Note that
@@ -177,7 +179,7 @@ to NMODL form as:
 High Level Analysis and Code Generation
 ---------------------------------------
 
-The NMODL Framework provides rich model introspection and analysis
+The NMODL transpiler provides rich model introspection and analysis
 capabilities using `various
 visitors <../../doxygen/group__visitor__classes.html>`__.
 Here is an example of theoretical performance characterisation of
@@ -189,13 +191,13 @@ channels and synapses from rat neocortical column microcircuit
    https://user-images.githubusercontent.com/666852/57336711-2cc0b200-7127-11e9-8053-8f662e2ec191.png
    :alt: nmodl-perf-stats
 
-   Performance results of the NMODL Framework
+   Performance results of the NMODL transpiler
 
 To understand how you can write your own introspection and analysis
 tool, see `this
 tutorial <notebooks/nmodl-python-tutorial.ipynb>`__.
 
-Once analysis and optimization passes are performed, the NMODL Framework
+Once analysis and optimization passes are performed, the NMODL transpiler
 can generate optimised code for modern compute architectures including
 CPUs (Intel, AMD, ARM) and GPUs (NVIDIA, AMD) platforms. For example,
 C++, OpenACC and OpenMP backends are implemented and one can choose
@@ -207,13 +209,13 @@ these backends on command line as:
 
 To know more about code generation backends, `see
 here <https://bluebrain.github.io/nmodl/html/doxygen/group__codegen__backends.html>`__.
-NMODL Framework provides number of options (for code generation,
+NMODL transpiler provides number of options (for code generation,
 optimization passes and ODE solver) which can be listed as:
 
 ::
 
    $ nmodl -H
-   NMODL : Source-to-Source Code Generation Framework [version]
+   NMODL : Source-to-Source Code Generation transpiler [version]
    Usage: /path/<>/nmodl [OPTIONS] file... [SUBCOMMAND]
 
    Positionals:
@@ -283,12 +285,12 @@ We are working on user documentation, you can find the current version as part o
 Citation
 --------
 
-If you would like to know more about the the NMODL Framework, see
+If you would like to know more about the the NMODL transpiler, see
 following paper:
 
 -  Pramod Kumbhar, Omar Awile, Liam Keegan, Jorge Alonso, James King,
    Michael Hines and Felix Schürmann. 2019. An optimizing multi-platform
-   source-to-source compiler framework for the NEURON MODeling Language.
+   source-to-source compiler transpiler for the NEURON MODeling Language.
    In Eprint :
    `arXiv:1905.02241 <https://arxiv.org/pdf/1905.02241.pdf>`__
 
@@ -297,7 +299,7 @@ Support / Contribuition
 
 If you see any issue, feel free to `raise a
 ticket <https://github.com/neuronsimulator/nrn/issues/new>`__. If you would
-like to improve this framework, see `open
+like to improve this transpiler, see `open
 issues <https://github.com/neuronsimulator/nrn/issues>`__ and `contribution
 guidelines <CONTRIBUTING.rst>`__.
 
@@ -305,7 +307,7 @@ Examples / Benchmarks
 ---------------------
 
 The benchmarks used to test the performance and parsing capabilities of
-NMODL Framework are currently being migrated to GitHub. These benchmarks
+NMODL transpiler are currently being migrated to GitHub. These benchmarks
 will be published soon in following repositories:
 
 -  `NMODL Benchmark <https://github.com/neuronsimulator/nrnbench>`__

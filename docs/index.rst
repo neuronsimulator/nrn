@@ -49,11 +49,11 @@ and more (use the links on the side or search).
 
 .. toctree::
    :maxdepth: 2
-   :caption: NMODLanguage:
+   :caption: NMOD Language:
    :hidden:
 
-   nmodl/language
-   nmodl/transpiler
+   nmodl/language.rst
+   nmodl/transpiler/index.rst
 
 .. toctree::
    :maxdepth: 2
