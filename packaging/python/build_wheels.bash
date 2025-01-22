@@ -49,9 +49,10 @@ setup_venv() {
 
     . "$venv_dir/bin/activate"
 
-    if ! pip install -U pip setuptools wheel; then
+    if ! pip install -U pip setuptools wheel uv; then
         curl https://raw.githubusercontent.com/pypa/get-pip/20.3.4/get-pip.py | python
-        pip install -U setuptools wheel
+        pip install uv
+        python -m uv pip install -U setuptools wheel
     fi
 
 }
@@ -64,7 +65,7 @@ build_wheel_linux() {
     (( $skip )) && return 0
 
     echo " - Installing build requirements"
-    pip install auditwheel
+    python -m uv pip install auditwheel
     cp packaging/python/build_requirements.txt "${python_requirements_path}"
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
@@ -79,7 +80,7 @@ build_wheel_linux() {
     fi
 
     cat "${python_requirements_path}"
-    pip install -r "${python_requirements_path}"
+    python -m uv pip install -r "${python_requirements_path}"
     pip check
 
     echo " - Building..."
@@ -134,7 +135,7 @@ build_wheel_osx() {
     fi
 
     cat "${python_requirements_path}"
-    pip install -U delocate -r "${python_requirements_path}"
+    python -m uv pip install -U delocate -r "${python_requirements_path}"
     pip check
 
     echo " - Building..."

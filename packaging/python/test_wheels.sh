@@ -260,12 +260,12 @@ fi
 
 
 # gpu wheel needs updated pip
-$python_exe -m pip install --upgrade pip
+$python_exe -m pip install --upgrade pip uv
 
 
 # install test requirements
-$python_exe -m pip install -r packaging/python/test_requirements.txt
-$python_exe -m pip install $python_wheel
+$python_exe -m uv pip install -r packaging/python/test_requirements.txt
+$python_exe -m uv pip install $python_wheel
 $python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
 
 
@@ -281,7 +281,7 @@ test_wheel
 
 # run basic python tests with oldest supported NumPy
 echo " == Running basic python tests with oldest supported NumPy == "
-$python_exe -m pip install -r packaging/python/oldest_numpy_requirements.txt
+$python_exe -m uv pip install -r packaging/python/oldest_numpy_requirements.txt
 test_wheel_basic_python
 
 # cleanup
