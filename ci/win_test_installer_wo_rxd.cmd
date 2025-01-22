@@ -26,6 +26,7 @@ C:\Python39\python -c "import neuron; neuron.test(); quit()" || set "errorfound=
 C:\Python310\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python311\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python312\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
+C:\Python313\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 
 :: install numpy dependency
 python -m pip install "numpy<2"

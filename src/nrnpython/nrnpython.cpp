@@ -210,6 +210,13 @@ extern "C" int nrnpython_start(int b) {
         // del g
         // Also, NEURONMainMenu/File/Quit did not work. The solution to both
         // seems to be to just avoid gui threads if MINGW and launched nrniv
+
+        // Beginning with Python 3.13.0 it seems that the readline
+        // module has not been loaded yet. Since PyInit_readline sets
+        // PyOS_ReadlineFunctionPointer = call_readline; without checking,
+        // we need to import here.
+        PyRun_SimpleString("import readline as nrn_readline");
+
         PyOS_ReadlineFunctionPointer = nrnpython_getline;
 
         // Is there a -c "command" or file.py arg.

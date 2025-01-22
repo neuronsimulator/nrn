@@ -23,7 +23,7 @@ env:
   BUILD_TYPE: Release
   DESIRED_CMAKE_VERSION: 3.15.0
   PY_MIN_VERSION: '3.7'
-  PY_MAX_VERSION: '3.11'
+  PY_MAX_VERSION: '3.13'
 
 jobs:
   ci:
@@ -40,12 +40,12 @@ jobs:
       BUILD_TYPE: Release
       DESIRED_CMAKE_VERSION: 3.15.0
       PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
-      PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.11' }}
+      PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.12' }}
       MUSIC_INSTALL_DIR: /opt/MUSIC
 
     strategy:
       matrix:
-        os: [ macOS-12, ubuntu-20.04]
+        os: [ macOS-13, ubuntu-20.04]
         config:
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
           - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake", music: ON}
@@ -156,7 +156,7 @@ jobs:
           unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
           ./autogen.sh
           # workaround for MUSIC on MacOS 12
-          if [[ "${{matrix.os}}" == "macOS-12" ]]; then
+          if [[ "${{matrix.os}}" == "macOS-13" ]]; then
             MPI_CXXFLAGS="-g" MPI_CFLAGS="-g" MPI_LDFLAGS="-g" CC=mpicc CXX=mpicxx ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
           else
             ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource

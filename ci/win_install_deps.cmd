@@ -9,6 +9,7 @@ python-3.9.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustFo
 python-3.10.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python310 || goto :error
 python-3.11.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python311 || goto :error
 python-3.12.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python312 || goto :error
+python-3.13.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python313 || goto :error
 
 :: fix msvcc version for all python3
 pwsh -command "(Get-Content C:\Python37\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1900'':' | Out-File C:\Python37\Lib\distutils\cygwinccompiler.py"
@@ -32,6 +33,7 @@ C:\Python39\python.exe -m pip install  numpy==1.19.3 "cython < 3" || goto :error
 C:\Python310\python.exe -m pip install numpy==1.21.3 "cython < 3" || goto :error
 C:\Python311\python.exe -m pip install numpy==1.23.5 "cython < 3" || goto :error
 C:\Python312\python.exe -m pip install numpy==1.26.3 "cython < 3" || goto :error
+C:\Python313\python.exe -m pip install numpy cython || goto :error
 :: setuptools 70.2 leads to an error
 C:\Python312\python.exe -m pip install setuptools==70.1.1 || goto :error
 
