@@ -685,6 +685,17 @@ function(prepend_to_var var new_path)
 endfunction()
 set(NRN_RUN_FROM_BUILD_DIR_ENV "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
                                "NRNHOME=${PROJECT_BINARY_DIR}")
+
+# if we do not link against Python, NMODL will complain that some of the env variables are missing
+# when building coreNEURON mod files
+if(NOT NRN_LINK_AGAINST_PYTHON)
+  execute_process(
+    COMMAND "${NRN_DEFAULT_PYTHON_EXECUTABLE}" -m find_libpython
+    OUTPUT_VARIABLE PYTHONLIB
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  set(NRN_RUN_FROM_BUILD_DIR_ENV "${NRN_RUN_FROM_BUILD_DIR_ENV}" "NMODLHOME=${PROJECT_BINARY_DIR}"
+                                 "NMODL_PYLIB=${PYTHONLIB}")
+endif()
 prepend_to_var(PATH "${PROJECT_BINARY_DIR}/bin")
 if(APPLE)
   prepend_to_var(DYLD_LIBRARY_PATH "${PROJECT_BINARY_DIR}/lib")
