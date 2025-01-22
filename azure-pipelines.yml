@@ -29,15 +29,11 @@ stages:
     jobs:
 
     - job: 'ManyLinuxWheels'
-      timeoutInMinutes: 30
+      timeoutInMinutes: 45
       pool:
         vmImage: 'ubuntu-20.04'
       strategy:
         matrix:
-          Python37:
-            python.version: '3.7'
-          Python38:
-            python.version: '3.8'
           Python39:
             python.version: '3.9'
           Python310:
@@ -46,6 +42,9 @@ stages:
             python.version: '3.11'
           Python312:
             python.version: '3.12'
+          Python313:
+            python.version: '3.13'
+
       steps:
 
       # Secure files documentation:
@@ -69,49 +68,46 @@ stages:
             -e NEURON_NIGHTLY_TAG \
             -e NRN_NIGHTLY_UPLOAD \
             -e NRN_RELEASE_UPLOAD \
-            -e NEURON_WHEEL_VERSION \
+            -e SETUPTOOLS_SCM_PRETEND_VERSION \
             -e NRN_BUILD_FOR_UPLOAD=1 \
-            'neuronsimulator/neuron_wheel:latest-gcc9-x86_64' \
+            'neuronsimulator/neuron_wheel:latest-x86_64' \
             packaging/python/build_wheels.bash linux $(python.version) coreneuron
         displayName: 'Building ManyLinux Wheel'
 
       - script: |
           sudo apt update
           sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
-        displayName: 'Install Test System Depdendencies'
+        displayName: 'Install Test System Dependencies'
 
       - template: ci/azure-wheel-test-upload.yml
 
+
     # Jobs to build OSX wheels natively
     - job: 'MacOSWheels'
-      timeoutInMinutes: 40
+      timeoutInMinutes: 60
       pool:
-        vmImage: 'macOS-12'
+        vmImage: 'macOS-13'
       strategy:
         matrix:
-          Python37:
-            python.version: '3.7'
-            python.org.version: '3.7.7'
-            python.installer.name: 'macosx10.9.pkg'
-          Python38:
-            python.version: '3.8'
-            python.org.version: '3.8.2'
-            python.installer.name: 'macosx10.9.pkg'
           Python39:
             python.version: '3.9'
-            python.org.version: '3.9.0'
-            python.installer.name: 'macosx10.9.pkg'
+            python.org.version: '3.9.13'
+            python.installer.name: 'macos11.pkg'
           Python310:
             python.version: '3.10'
-            python.org.version: '3.10.0'
+            python.org.version: '3.10.11'
             python.installer.name: 'macos11.pkg'
           Python311:
             python.version: '3.11'
-            python.org.version: '3.11.1'
+            python.org.version: '3.11.7'
             python.installer.name: 'macos11.pkg'
           Python312:
             python.version: '3.12'
-            python.org.version: '3.12.2'
+            python.org.version: '3.12.0'
+            python.installer.name: 'macos11.pkg'
+          Python313:
+            python.version: '3.13'
+            python.org.version: '3.13.0'
             python.installer.name: 'macos11.pkg'
 
       steps:
@@ -145,51 +141,21 @@ stages:
         inputs:
           secureFile: 'readline7.0-ncurses6.4.tar.gz'
 
+      # 10.14 is required for full C++17 support according to
+      # https://cibuildwheel.readthedocs.io/en/stable/cpp_standards, but it
+      # seems that 10.15 is actually needed for std::filesystem::path.
       - script: |
           export MACOSX_DEPLOYMENT_TARGET=10.15
           export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
           export NRN_BUILD_FOR_UPLOAD=1
-          sudo mkdir /opt/nrnwheel
-          sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/
+          sudo mkdir -p /opt/nrnwheel/$(uname -m)
+          sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/$(uname -m)
           packaging/python/build_wheels.bash osx $(python.version) coreneuron
         displayName: 'Build MacOS Wheel'
 
       - template: ci/azure-wheel-test-upload.yml
 
-
-    # Jobs to build NEURON installer natively
-    - job: 'WindowsInstaller'
-      timeoutInMinutes: 60
-      pool:
-        vmImage: windows-2019
-      variables:
-        MSYS2_ROOT: C:\msys64
-
-      steps:
-
-      - task: BatchScript@1
-        inputs:
-          filename: ci/win_download_deps.cmd
-        displayName: "Download Dependencies"
-        condition: succeeded()
-
-      - task: BatchScript@1
-        inputs:
-          filename: ci/win_install_deps.cmd
-        displayName: "Install Dependencies"
-        condition: succeeded()
-
-      # WSL is enabled by default in the image, with no installed linux distribution.
-      # WSL creates an unusable `bash.EXE` that can be resolved first from the environment.
-      # This is why we remove that file.
-      - script: |
-          rm.exe "C:/WINDOWS/system32/bash.EXE"
-          %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/ci/win_build_cmake.sh"
-        displayName: "Build and Create Installer"
-        condition: succeeded()
-
-      - template: ci/azure-win-installer-upload.yml
 
   - stage: Final
     jobs:
@@ -204,8 +170,9 @@ stages:
               echo "Setting dropurl to $AZURE_DROP_URL"
               echo "##vso[task.setvariable variable=dropurl]$AZURE_DROP_URL"
             displayName: 'Resolve Azure drop URL'
-
+              
           - task: GitHubComment@0
+            continueOnError: true
             inputs:
               gitHubConnection: 'neuronsimulator'
               repositoryName: '$(Build.Repository.Name)'

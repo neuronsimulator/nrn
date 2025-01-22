@@ -21,10 +21,10 @@ pwsh -command "(Get-Content C:\Python310\Lib\distutils\cygwinccompiler.py) -repl
 pwsh -command "(Get-Content C:\Python311\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python311\Lib\distutils\cygwinccompiler.py"
 
 :: install numpy
-C:\Python39\python.exe -m pip install  numpy "cython" || goto :error
-C:\Python310\python.exe -m pip install numpy "cython" || goto :error
-C:\Python311\python.exe -m pip install numpy "cython" || goto :error
-C:\Python312\python.exe -m pip install numpy "cython" || goto :error
+C:\Python39\python.exe -m pip install  numpy cython || goto :error
+C:\Python310\python.exe -m pip install numpy cython || goto :error
+C:\Python311\python.exe -m pip install numpy cython || goto :error
+C:\Python312\python.exe -m pip install numpy cython || goto :error
 C:\Python313\python.exe -m pip install numpy cython || goto :error
 :: setuptools 70.2 leads to an error
 C:\Python312\python.exe -m pip install setuptools==70.1.1 || goto :error
@@ -53,6 +53,9 @@ if not exist "%MSYS2_ROOT%\usr\bin\bash.exe" (
 )
 set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%PATH%
 
+:: update pacman cache (sometimes required when new GH/Azure runner images are deployed)
+:: %MSYS2_ROOT%\usr\bin\pacman -Syy
+
 %MSYS2_ROOT%\usr\bin\pacman --noconfirm --needed -S --disable-download-timeout ^
 cmake ^
 git ^
@@ -60,13 +63,13 @@ zip ^
 unzip ^
 base-devel ^
 mingw-w64-x86_64-cmake ^
+mingw-w64-x86_64-ninja ^
 mingw-w64-x86_64-ncurses ^
 mingw-w64-x86_64-readline ^
-mingw-w64-x86_64-python3 ^
-mingw64/mingw-w64-x86_64-cython ^
-mingw-w64-x86_64-python3-setuptools ^
-mingw-w64-x86_64-python3-packaging ^
-mingw-w64-x86_64-python3-pip ^
+mingw-w64-x86_64-python ^
+mingw-w64-x86_64-python-setuptools ^
+mingw-w64-x86_64-python-packaging ^
+mingw-w64-x86_64-python-pip ^
 mingw64/mingw-w64-x86_64-dlfcn ^
 mingw-w64-x86_64-toolchain || goto :error
 
