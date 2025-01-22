@@ -151,3 +151,24 @@ write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/nmodlConfigVersion
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfig.cmake"
               "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfigVersion.cmake"
         DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}lib/cmake/nmodl)
+
+# =============================================================================
+# Build status
+# =============================================================================
+message(STATUS "")
+message(STATUS "Configured NMODL")
+message(STATUS "")
+message(STATUS "-- NMODL is enabled with following build configuration:")
+message(STATUS "--------------------+--------------------------------------------------------")
+message(STATUS " Build option       | Status")
+message(STATUS "--------------------+--------------------------------------------------------")
+message(STATUS "CXX COMPILER        | ${CMAKE_CXX_COMPILER}")
+message(STATUS "COMPILE FLAGS       | ${COMPILER_FLAGS}")
+message(STATUS "Build Type          | ${CMAKE_BUILD_TYPE}")
+message(STATUS "Python Bindings     | ${NMODL_ENABLE_PYTHON_BINDINGS}")
+message(STATUS "Flex                | ${FLEX_EXECUTABLE}")
+message(STATUS "Bison               | ${BISON_EXECUTABLE}")
+message(STATUS "Python              | ${PYTHON_EXECUTABLE}")
+message(STATUS "  Linked against    | ${NRN_LINK_AGAINST_PYTHON}")
+message(STATUS "--------------------+--------------------------------------------------------")
+message(STATUS "")
