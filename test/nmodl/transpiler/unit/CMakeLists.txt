@@ -179,17 +179,14 @@ endforeach()
 
 foreach(test_name testcodegen testvisitor)
   if(NOT LINK_AGAINST_PYTHON)
-    add_test(NAME ${test_name}
-             COMMAND ${CMAKE_COMMAND} -E env "NMODLHOME=${PROJECT_BINARY_DIR}"
-                     "NMODL_PYLIB=${PYTHONLIB}" ${PROJECT_BINARY_DIR}/bin/test/${test_name})
-  else()
-    cpp_cc_configure_sanitizers(TARGET ${test_name})
-    set(env ${test_env})
-    list(APPEND env ${${test_name}_env})
-    string(REPLACE ";" ";ENVIRONMENT;" _environment_vars_list "${env}")
-    catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
-                         "${_environment_vars_list}")
+    target_link_libraries(${test_name} PRIVATE pywrapper ${PYTHONLIB})
   endif()
+  cpp_cc_configure_sanitizers(TARGET ${test_name})
+  set(env ${test_env})
+  list(APPEND env ${${test_name}_env})
+  string(REPLACE ";" ";ENVIRONMENT;" _environment_vars_list "${env}")
+  catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
+                       "${_environment_vars_list}")
 endforeach()
 
 # Generate include files used in test input, see
