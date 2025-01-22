@@ -39,8 +39,7 @@ target_link_libraries(pyembed PRIVATE fmt::fmt)
 
 if(NOT NRN_LINK_AGAINST_PYTHON)
   add_library(pywrapper SHARED ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
-  set_target_properties(pywrapper PROPERTIES LIBRARY_OUTPUT_DIRECTORY
-                                             ${NMODL_PROJECT_PLATLIB_BINARY_DIR}/lib)
+  set_target_properties(pywrapper PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 else()
   add_library(pywrapper ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
   set_property(TARGET pywrapper PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -110,8 +109,11 @@ file(COPY ${NMODL_PROJECT_PURELIB_SOURCE_DIR}/ext DESTINATION ${NMODL_PROJECT_PU
 # =============================================================================
 # Install python binding components
 # =============================================================================
-if(NOT NRN_LINK_AGAINST_PYTHON AND NMODL_ENABLE_PYTHON_BINDINGS)
-  install(TARGETS _nmodl DESTINATION lib/python/neuron/nmodl)
+if(NOT NRN_LINK_AGAINST_PYTHON)
+  install(TARGETS pywrapper DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+  if(NMODL_ENABLE_PYTHON_BINDINGS)
+    install(TARGETS _nmodl DESTINATION lib/python/neuron/nmodl)
+  endif()
 else()
   install(
     DIRECTORY ${CMAKE_BINARY_DIR}/lib/
