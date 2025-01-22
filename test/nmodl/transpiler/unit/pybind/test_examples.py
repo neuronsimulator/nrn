@@ -1,7 +1,4 @@
-from json import loads
-from pathlib import Path
-
-from nmodl import dsl
+from neuron.nmodl import dsl
 
 
 def test_example():
