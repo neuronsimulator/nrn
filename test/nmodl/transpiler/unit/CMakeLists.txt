@@ -154,11 +154,9 @@ target_link_libraries(testunitparser PRIVATE Catch2::Catch2WithMain nmodl_test_f
 foreach(
   test_name
   testutils
-  testcodegen
   testmodtoken
   testlexer
   testparser
-  testvisitor
   testprinter
   testsymtab
   testnewton
@@ -177,6 +175,21 @@ foreach(
   # does not seem to check the exit code.
   catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
                        "${_environment_vars_list}")
+endforeach()
+
+foreach(test_name testcodegen testvisitor)
+  if(NOT LINK_AGAINST_PYTHON)
+    add_test(NAME ${test_name}
+             COMMAND ${CMAKE_COMMAND} -E env "NMODLHOME=${PROJECT_BINARY_DIR}"
+                     "NMODL_PYLIB=${PYTHONLIB}" ${PROJECT_BINARY_DIR}/bin/test/${test_name})
+  else()
+    cpp_cc_configure_sanitizers(TARGET ${test_name})
+    set(env ${test_env})
+    list(APPEND env ${${test_name}_env})
+    string(REPLACE ";" ";ENVIRONMENT;" _environment_vars_list "${env}")
+    catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
+                         "${_environment_vars_list}")
+  endif()
 endforeach()
 
 # Generate include files used in test input, see
