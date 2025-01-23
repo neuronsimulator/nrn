@@ -10,4 +10,4 @@ packaging
 pytest
 pytest-cov
 mpi4py
-numpy<2
+numpy
