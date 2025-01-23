@@ -148,7 +148,7 @@ jobs:
         run: |
           python3 -m venv music-venv
           source music-venv/bin/activate
-          python3 -m pip install mpi4py "cython<3" "numpy<2"
+          python3 -m pip install mpi4py cython "numpy<2"
           sudo mkdir -p $MUSIC_INSTALL_DIR
           sudo chown -R $USER $MUSIC_INSTALL_DIR
           # Stable build: https://github.com/INCF/MUSIC/archive/refs/heads/switch-to-MPI-C-interface.zip  @ f33b66ea9348888eed1761738ab48c23ffc8a0d0

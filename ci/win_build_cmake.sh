@@ -9,8 +9,8 @@ export MINGW_CHOST=x86_64-w64-mingw32
 export MSYSTEM_PREFIX=/mingw64
 export PATH=/mingw64/bin:$PATH
 
-# have compatible cython3
-python3 -m pip install "cython<3"
+# have compatible cython
+python3 -m pip install cython
 
 # if BUILD_SOURCESDIRECTORY not available, use te root of the repo
 if [ -z "$BUILD_SOURCESDIRECTORY" ]; then

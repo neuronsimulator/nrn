@@ -27,12 +27,12 @@ pwsh -command "(Get-Content C:\Python310\Lib\distutils\cygwinccompiler.py) -repl
 pwsh -command "(Get-Content C:\Python311\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python311\Lib\distutils\cygwinccompiler.py"
 
 :: install numpy
-C:\Python37\python.exe -m pip install numpy==1.14.6 "cython < 3" || goto :error
-C:\Python38\python.exe -m pip install  numpy==1.17.5 "cython < 3" || goto :error
-C:\Python39\python.exe -m pip install  numpy==1.19.3 "cython < 3" || goto :error
-C:\Python310\python.exe -m pip install numpy==1.21.3 "cython < 3" || goto :error
-C:\Python311\python.exe -m pip install numpy==1.23.5 "cython < 3" || goto :error
-C:\Python312\python.exe -m pip install numpy==1.26.3 "cython < 3" || goto :error
+C:\Python37\python.exe -m pip install numpy==1.14.6 cython || goto :error
+C:\Python38\python.exe -m pip install  numpy==1.17.5 cython || goto :error
+C:\Python39\python.exe -m pip install  numpy==1.19.3 cython || goto :error
+C:\Python310\python.exe -m pip install numpy==1.21.3 cython || goto :error
+C:\Python311\python.exe -m pip install numpy==1.23.5 cython || goto :error
+C:\Python312\python.exe -m pip install numpy==1.26.3 cython || goto :error
 C:\Python313\python.exe -m pip install numpy cython || goto :error
 :: setuptools 70.2 leads to an error
 C:\Python312\python.exe -m pip install setuptools==70.1.1 || goto :error

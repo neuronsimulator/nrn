@@ -5,7 +5,7 @@ matplotlib
 # bokeh 3 seems to break docs notebooks
 bokeh<3
 ipython
-cython<3
+cython
 packaging
 pytest
 pytest-cov
