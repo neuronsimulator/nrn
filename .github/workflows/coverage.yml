@@ -20,8 +20,8 @@ on:
 #      - 'docs/**'
 
 env:
-  PY_MIN_VERSION: '3.9'
-  PY_MAX_VERSION: '3.13'
+  PY_MIN_VERSION: '3.7'
+  PY_MAX_VERSION: '3.11'
 
 jobs:
   coverage:
@@ -35,7 +35,7 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf gpg
+          sudo apt-get install  build-essential doxygen lcov libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf gpg
         shell: bash
 
       - name: Setup Caliper profiler
