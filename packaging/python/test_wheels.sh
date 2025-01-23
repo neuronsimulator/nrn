@@ -22,20 +22,7 @@ python_exe=$1   # python to be used for testing
 python_wheel=$2 # python wheel to be tested
 use_venv=$3     # if $3 is not "false" then use virtual environment
 
-# There are some considerations to test coreneuron with gpu support:
-# - if coreneuron support exist then we can always run all tests on cpu
-# - if coreneuron gpu support exist then we can run always binaries like
-#   nrniv and nrniv-core without existence of NVC/NVC++ compilers
-# - if coreneuron gpu support exist and nvc compiler available then we
-#   can compile mod files and run tests via special binary
-# - Note that the tests that use coreneuron can not be launched using
-#   python or nrniv -python because in gpu build coreneuron is created
-#   as a static library and linked to special. Hence only special can
-#   be used to launch GPU tests
 has_coreneuron=false   # true if coreneuron support is available
-has_gpu_support=false  # true if coreneuron gpu support is available
-has_dev_env=true       # true if c/c++ dev environment exist to compile mod files
-run_gpu_test=false     # true if test should be run on the gpu
 
 # python version being used
 python_ver=$("$python_exe" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
@@ -66,15 +53,12 @@ run_mpi_test () {
   if [[ "$has_coreneuron" == "true" ]] && [[ $mpi_name == *"MPICH"* || $mpi_name == *"Intel MPI"* ]]; then
       site_package_dir=`$python_exe -c 'import os, neuron; print(os.path.dirname(neuron.__file__))'`
       corenrn_mpi_lib=`ls $site_package_dir/.data/lib/libcorenrnmpi_mpich*`
-      $mpi_launcher -n 1 nrniv-core --datpath external/coreneuron/tests/integration/ring --mpi-lib=$corenrn_mpi_lib
-      diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
-  fi
 
-  # rest of the tests we need development environment. For GPU wheel
-  # make sure we have necessary compiler.
-  if [[ "$has_dev_env" == "false" ]]; then
-      echo "WARNING: Development environment missing, skipping rest of the MPI tests!"
-      return
+      HOC_LIBRARY_PATH=${PWD}/test/ringtest nrniv test/ringtest/ring.hoc
+      mv out.dat out.nrn.dat
+      $mpi_launcher -n 1 nrniv-core --datpath . --mpi-lib=$corenrn_mpi_lib
+      diff -w out.dat out.nrn.dat
+      rm -rf *.dat
   fi
 
   # build new special
@@ -90,20 +74,21 @@ run_mpi_test () {
   # coreneuron execution via neuron
   if [[ "$has_coreneuron" == "true" ]]; then
     rm -rf $ARCH_DIR
-    nrnivmodl -coreneuron "test/coreneuron/mod files/"
-
-    # python as a launcher can be used only with non-gpi build
-    if [[ "$has_gpu_support" == "false" ]]; then
-      $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
+    TEMP_DIR="${TMPDIR:-/tmp}/test/coreneuron/mod files/"
+    if [ ! -d "${TEMP_DIR}" ]; then
+        mkdir -p "${TEMP_DIR}"
     fi
+    cp "test/coreneuron/mod files/"* "${TEMP_DIR}/"
+    # also copy one MOD file containing sparse solver
+    cp share/examples/nrniv/nmodl/capmp.mod "${TEMP_DIR}"
+    nrnivmodl -coreneuron "${TEMP_DIR}"
+
+    $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
 
     # using -python doesn't work on Azure CI
     if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-      if [[ "$has_gpu_support" == "false" ]]; then
-        $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
-      fi
-      run_on_gpu=$([ "$run_gpu_test" == "true" ] && echo "1" || echo "0")
-      NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=$run_on_gpu $mpi_launcher -n 2 ./$ARCH_DIR/special -python -mpi test/coreneuron/test_direct.py
+      $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
+      NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=0 $mpi_launcher -n 2 ./$ARCH_DIR/special -python -mpi test/coreneuron/test_direct.py
     fi
   fi
 
@@ -124,14 +109,11 @@ run_serial_test () {
 
     # Test 3: run coreneuron binary shipped inside wheel
     if [[ "$has_coreneuron" == "true" ]]; then
-        nrniv-core --datpath external/coreneuron/tests/integration/ring
-        diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
-    fi
-
-    # rest of the tests we need development environment
-    if [[ "$has_dev_env" == "false" ]]; then
-        echo "WARNING: Development environment missing, skipping rest of the serial tests!"
-        return
+        HOC_LIBRARY_PATH=${PWD}/test/ringtest nrniv test/ringtest/ring.hoc
+        mv out.dat out.nrn.dat
+        nrniv-core --datpath .
+        diff -w out.dat out.nrn.dat
+        rm -rf *.dat
     fi
 
     # Test 4: execute nrnivmodl
@@ -161,30 +143,17 @@ run_serial_test () {
       rm -rf $ARCH_DIR
 
       # first test vanialla coreneuron support, without nrnivmodl
-      if [[ "$has_gpu_support" == "false" ]]; then
-        $python_exe test/coreneuron/test_psolve.py
-      fi
+      $python_exe test/coreneuron/test_psolve.py
 
       nrnivmodl -coreneuron "test/coreneuron/mod files/"
 
       # coreneuron+gpu can be used via python but special only
-      if [[ "$has_gpu_support" == "false" ]]; then
-        $python_exe test/coreneuron/test_direct.py
-      fi
+      $python_exe test/coreneuron/test_direct.py
 
       # using -python doesn't work on Azure CI
       if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-        # we can run special with or without gpu wheel
         ./$ARCH_DIR/special -python test/coreneuron/test_direct.py
-
-        # python and nrniv can be used only for non-gpu wheel
-        if [[ "$has_gpu_support" == "false" ]]; then
-          nrniv -python test/coreneuron/test_direct.py
-        fi
-
-        if [[ "$run_gpu_test" == "true" ]]; then
-          NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=1 ./$ARCH_DIR/special -python test/coreneuron/test_direct.py
-        fi
+        nrniv -python test/coreneuron/test_direct.py
       fi
 
       rm -rf $ARCH_DIR
@@ -203,16 +172,12 @@ run_parallel_test() {
     # this is for MacOS system
     if [[ "$OSTYPE" == "darwin"* ]]; then
       # assume both MPIs are installed via brew.
+      BREW_PREFIX=$(brew --prefix)
 
       brew unlink openmpi
       brew link mpich
-      BREW_PREFIX=$(brew --prefix)
-
-      # TODO : latest mpich has issuee on Azure OSX
-      if [[ "$CI_OS_NAME" == "osx" ]]; then
-          export DYLD_LIBRARY_PATH=${BREW_PREFIX}/opt/mpich/lib:$DYLD_LIBRARY_PATH
-          run_mpi_test "${BREW_PREFIX}/opt/mpich/bin/mpirun" "MPICH" ""
-      fi
+      export DYLD_LIBRARY_PATH=${BREW_PREFIX}/opt/mpich/lib:$DYLD_LIBRARY_PATH
+      run_mpi_test "${BREW_PREFIX}/opt/mpich/bin/mpirun" "MPICH" ""
 
       brew unlink mpich
       brew link openmpi
@@ -262,6 +227,9 @@ test_wheel () {
     mkdir -p tmp_mod
     cp share/examples/nrniv/nmodl/cacum.mod tmp_mod/
 
+    # check gcc and python versions
+    gcc --version && python --version
+
     echo "Using `which $python_exe` : `$python_exe --version`"
     echo "=========== SERIAL TESTS ==========="
     run_serial_test
@@ -271,6 +239,12 @@ test_wheel () {
 
     #clean-up
     rm -rf tmp_mod $ARCH_DIR
+}
+
+
+test_wheel_basic_python () {
+    echo "=========== BASIC PYTHON TESTS ==========="
+    $python_exe -c "import neuron; neuron.test(); neuron.test_rxd()"
 }
 
 
@@ -293,19 +267,11 @@ fi
 # gpu wheel needs updated pip
 $python_exe -m pip install --upgrade pip
 
-# we'll want setuptools installed and up-to-date
-$python_exe -m pip install --upgrade setuptools
 
-
-# install numpy, pytest and neuron
-# we install setuptools because since python 3.12 it is no more installed
-# by default
-$python_exe -m pip install "numpy" pytest setuptools
+# install test requirements
+$python_exe -m pip install -r packaging/python/test_requirements.txt
 $python_exe -m pip install $python_wheel
-$python_exe -m pip show neuron \
-    || $python_exe -m pip show neuron-nightly \
-    || $python_exe -m pip show neuron-gpu \
-    || $python_exe -m pip show neuron-gpu-nightly
+$python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
 
 
 # check the existence of coreneuron support
@@ -314,27 +280,14 @@ if echo $compile_options | grep "NRN_ENABLE_CORENEURON=ON" > /dev/null ; then
   has_coreneuron=true
 fi
 
-# check if the gpu support is enabled
-if echo $compile_options | grep "CORENRN_ENABLE_GPU=ON" > /dev/null ; then
-  has_gpu_support=true
-fi
+# run tests with latest NumPy
+echo " == Running tests with latest NumPy == "
+test_wheel
 
-# in case of gpu support, nvc/nvc++ compiler must exist to compile mod files
-if [[ "$has_gpu_support" == "true" ]]; then
-  if ! command -v nvc &> /dev/null; then
-    has_dev_env=false
-  fi
-
-  # check if nvidia gpu exist (todo: not a robust check)
-  if pgaccelinfo -nvidia | grep -q "Device Name"; then
-    run_gpu_test=true
-  fi
-fi
-
-
-# run tests
-test_wheel $(which python)
-
+# run basic python tests with oldest supported NumPy
+echo " == Running basic python tests with oldest supported NumPy == "
+$python_exe -m pip install -r packaging/python/oldest_numpy_requirements.txt
+test_wheel_basic_python
 
 # cleanup
 if [[ "$use_venv" != "false" ]]; then

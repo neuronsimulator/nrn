@@ -9,20 +9,19 @@ Current NEURON Linux image is based on `manylinux2014`.
 ### Setting up Docker
 
 [Docker](https://en.wikipedia.org/wiki/Docker_(software)) is required for building Linux wheels.
-You can find instructions on how to setup Docker on Linux [here](https://docs.docker.com/engine/install/). 
+You can find instructions on how to setup Docker on Linux [here](https://docs.docker.com/engine/install/).
 
 
 ### NEURON Docker Image Workflow
 
-When required (i.e. update packages, add new software), `NEURON maintainers` are in charge of updating the NEURON docker
-images published on Docker Hub under: 
-* [neuronsimulator/neuron_wheel](https://hub.docker.com/r/neuronsimulator/neuron_wheel)
-* [neuronsimulator/neuron_wheel_gpu](https://hub.docker.com/r/neuronsimulator/neuron_wheel_gpu)
+When required (i.e. update packages, add new software), `NEURON maintainers` are in charge of
+updating the NEURON docker images published on Docker Hub under
+[neuronsimulator/neuron_wheel](https://hub.docker.com/r/neuronsimulator/neuron_wheel).
 
 Azure pipelines pull this image off DockerHub for Linux wheels building.
 
-Updating and publishing the public images are done by a manual process that relies on a `Docker file` 
-(see [packaging/python/Dockerfile](../../packaging/python/Dockerfile) and [packaging/python/Dockerfile_gpu](../../packaging/python/Dockerfile_gpu)).
+Updating and publishing the public images are done by a manual process that relies on a
+`Docker file`  (see [packaging/python/Dockerfile](../../packaging/python/Dockerfile)).
 Any official update of these files shall imply a PR reviewed and merged before `DockerHub` publishing.
 
 All wheels built on Azure are:
@@ -30,26 +29,39 @@ All wheels built on Azure are:
 * Published to `Pypi.org` as
   * `neuron-nightly` -> when the pipeline is launched in CRON mode
   * `neuron-x.y.z` -> when the pipeline is manually triggered for release `x.y.z`
-  * additionally, for Linux only: `neuron-gpu-nightly` and `neuron-gpu-x.y.z`
 * Stored as `Azure artifacts` in the Azure pipeline for every run.
 
-Refer to the following image for the NEURON Docker Image workflow: 
+Refer to the following image for the NEURON Docker Image workflow:
 ![](images/docker-workflow.png)
 
 
-### Building the docker image
+### Building the docker images automatically
+If you run the workflow manually on Gitlab (with the "Run pipeline" button), it will now have the `mac_m1_container_build` and `x86_64_container_build` jobs added to it. These jobs need to be started manually and will not affect the overal workflow status. They don't need to be run every time, just when a refresh of the container images is necessary.
+They will build the container images and push to docker hub. If you want to, you can still build manually (see next section), but there shouldn't be a requirement to do so any more.
+
+A word of warning: podman on OSX uses a virtual machine. The job can take care of starting it, but we generally try to have it running to avoid jobs cleaning up after themselves and killing the machine for other jobs. When starting the machine, set the variables that need to be set during the container build, ie. proxy and `BUILDAH_FORMAT`.
+
+`BUILDAH_FORMAT` ensures that `ONBUILD` instructions are enabled.
+
+```
+export http_proxy=http://bbpproxy.epfl.ch:80
+export https_proxy=http://bbpproxy.epfl.ch:80
+export HTTP_PROXY=http://bbpproxy.epfl.ch:80
+export HTTPS_PROXY=http://bbpproxy.epfl.ch:80
+export BUILDAH_FORMAT=docker
+```
+
+### Building the docker image manually
 After making updates to any of the docker files, you can build the image with:
 ```
 cd nrn/packaging/python
 # update Dockerfile
-docker build -t neuronsimulator/neuron_wheel[_gpu]:<tag> .
+docker build -t neuronsimulator/neuron_wheel:<tag> .
 ```
 where `<tag>` is:
-* `latest-x86_64` or `latest-aarch64` for official publishing on respective platforms (after merging related PR)
+* `latest-x86_64` or `latest-aarch64` for official publishing on respective platforms. For `master`, we are using `latest-gcc9-x86_64` and `latest-gcc9-aarch64` (see [Use GCC9 for building wheels #1971](https://github.com/neuronsimulator/nrn/pull/1971)).
 * `feature-name` for updates (for local testing or for PR testing purposes where you can temporarily publish the tag on DockerHub and tweak Azure CI pipelines to use it - refer to
-  `Job: 'ManyLinuxWheels'` or `Job: 'ManyLinuxGPUWheels'` in [azure-pipelines.yml](../../azure-pipelines.yml) )
-
-and `_gpu` is needed for the GPU wheel. 
+  `Job: 'ManyLinuxWheels'` in [azure-pipelines.yml](../../azure-pipelines.yml) )
 
 If you are building an image for AArch64 i.e. with `latest-aarch64` tag then you additionally pass `--build-arg` argument to docker build command in order to use compatible manylinux image for ARM64 platform (e.g. while building on Apple M1 or QEMU emulation):
 
@@ -63,7 +75,7 @@ docker build -t neuronsimulator/neuron_wheel:latest-aarch64 --build-arg MANYLINU
 In order to push the image and its tag:
 ```
 docker login --username=<username>
-docker push neuronsimulator/neuron_wheel[_gpu]:<tag>
+docker push neuronsimulator/neuron_wheel:<tag>
 ```
 
 ### Using the docker image
@@ -84,14 +96,8 @@ We can conveniently mount the local NEURON repository inside docker, by using th
 docker run -v $PWD/nrn:/root/nrn -w /root/nrn -it neuronsimulator/neuron_wheel:latest-x86_64 bash
 ```
 where `$PWD/nrn` is a NEURON repository on the host machine that ends up mounted at `/root/nrn`.
-This is how you can test your NEURON updates inside the NEURON Docker image. 
+This is how you can test your NEURON updates inside the NEURON Docker image.
 Note that `-w` sets the working directory inside the container.
-
-If you want to build wheels with `GPU support` via CoreNEURON, then you have to use the `neuronsimulator/neuron_wheel_gpu` image:
-
-```
-docker run -v $PWD/nrn:/root/nrn -w /root/nrn -it neuronsimulator/neuron_wheel_gpu bash
-```
 
 ### MPI support
 
@@ -120,38 +126,52 @@ For upcoming `universal2` wheels (targeting both `x86_64` and `arm64`) we will c
 
 
 You can use [packaging/python/build_static_readline_osx.bash](../../packaging/python/build_static_readline_osx.bash) to build a static readline library.
-You can have a look at the script for requirements and usage. 
+You can have a look at the script for requirements and usage.
+
+### Installing macOS prerequisites
+
+Install the necessary Python versions by downloading the universal2 installers from https://www.python.org/downloads/macos/
+You'll need several other packages installed as well (brew is fine):
+
+```
+brew install --cask xquartz
+brew install flex bison mpich cmake
+brew unlink mpich && brew install openmpi
+brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
+```
+
+Bison and flex installed through brew will not be symlinked into /opt/homebrew (installing it next to the version provided by OSX can cause problems). To ensure the installed versions will actually be picked up:
+
+```
+export BREW_PREFIX=$(brew --prefix)
+export PATH=/opt/homebrew/opt/bison/bin:/opt/homebrew/opt/flex/bin:$PATH
+```
 
 ## Launch the wheel building
 
 ### Linux
-Once we've cloned and mounted NEURON inside Docker(c.f. `-v` option described previously), we can proceed with wheels building. 
+Once we've cloned and mounted NEURON inside Docker(c.f. `-v` option described previously), we can proceed with wheels building.
 There is a build script which loops over available pythons in the Docker image under `/opt/python`, and then builds and audits the generated wheels.
 Wheels are generated under `/root/nrn/wheelhouse` and also accessible in the mounted NEURON folder from outside the Docker image.
 
 ```
 # Working directory is /root/nrn
-bash packaging/python/build_wheels.bash linux 
+bash packaging/python/build_wheels.bash linux
 ls -la wheelhouse
 ```
 
-You can build the wheel for a specific python version: 
+You can build the wheel for a specific python version:
 ```
-bash packaging/python/build_wheels.bash linux 38    # 38 for Python v3.8
+bash packaging/python/build_wheels.bash linux 39    # 39 for Python v3.9
 ```
 
-To build wheels with GPU support you have to pass an additional argument:
-* `coreneuron` : build wheel with `CoreNEURON` support
-* `coreneuron-gpu` : build wheel with `CoreNEURON` and `GPU` support
-
+To build wheels with CoreNEURON support you have to pass an additional argument: `coreneuron`.
 ```
-bash packaging/python/build_wheels.bash linux 38 coreneuron-gpu
-
-# or
-
 bash packaging/python/build_wheels.bash linux 3* coreneuron
 ```
-In the last example we are passing `3*` to build the wheels with `CoreNEURON` support for all python 3 versions.
+Where we are passing `3*` to build the wheels with `CoreNEURON` support for all python 3 versions.
+
+You can also control the level of parallelization used for the build using the `NRN_PARALLEL_BUILDS` env variable (default: 4).
 
 ### macOS
 As mentioned above, for macOS all dependencies have to be available on a system. You have to then clone NEURON repository and execute:
@@ -161,21 +181,29 @@ cd nrn
 bash packaging/python/build_wheels.bash osx
 ```
 
+In some cases, setuptools-scm will see extra commits and consider your build as "dirty," resulting in filenames such as `NEURON-9.0a1.dev0+g9a96a3a4d.d20230717-cp310-cp310-macosx_11_0_arm64.whl` (which should have been `NEURON-9.0a0-cp310-cp310-macosx_11_0_arm64.whl`). If this happens, you can set an environment variable to correct this behavior:
+
+```
+export SETUPTOOLS_SCM_PRETEND_VERSION=9.0a
+```
+
+Change the pretend version to whatever is relevant for your case.
+
 ## Testing the wheels
 
 To test the generated wheels, you can do:
 
 ```
 # first arg is a python exe and second arg is the corresponding wheel
-bash packaging/python/test_wheels.sh python3.8 wheelhouse/NEURON-7.8.0.236-cp38-cp38-macosx_10_9_x86_64.whl
+bash packaging/python/test_wheels.sh python3.9 wheelhouse/NEURON-7.8.0.236-cp39-cp39-macosx_10_9_x86_64.whl
 
 # Or, you can provide the pypi url
-bash packaging/python/test_wheels.sh python3.8 "-i https://test.pypi.org/simple/NEURON==7.8.11.2"
+bash packaging/python/test_wheels.sh python3.9 "-i https://test.pypi.org/simple/NEURON==7.8.11.2"
 ```
 
 ### MacOS considerations
 
-On MacOS, launching `nrniv -python` or `special -python` can fail to load `neuron` module due to security restrictions. 
+On MacOS, launching `nrniv -python` or `special -python` can fail to load `neuron` module due to security restrictions.
 For this specific purpose, please `export SKIP_EMBEDED_PYTHON_TEST=true` before launching the tests.
 
 ### Testing on BB5
@@ -184,32 +212,19 @@ On BB5, we can test CPU wheels with:
 ```
 salloc -A proj16  -N 1 --ntasks-per-node=4 -C "cpu" --time=1:00:00 -p interactive
 module load unstable python
-bash packaging/python/test_wheels.sh python3.7 wheelhouse/NEURON-7.8.0.236-cp37-cp37m-manylinux1_x86_64.whl
+bash packaging/python/test_wheels.sh python3.9 wheelhouse/NEURON-7.8.0.236-cp39-cp39-manylinux1_x86_64.whl
 ```
-
-The GPU wheels can be also tested in same way on the CPU partition. In this case only pre-compiled binaries
-like `nrniv` and `nrniv-core` are tested on  the CPU. In order to test full functionality of GPU wheels we need to
-do the following:
-* Allocate GPU node
-* Load NVHPC compiler
-* Launch `test_wheels.sh`
-
-```
-salloc -A proj16 -N 1 --ntasks-per-node=4 -C "volta" --time=1:00:00 -p prod --partition=prod --exclusive
-module load unstable python nvhpc
-
-bash packaging/python/test_wheels.sh python3 NEURON_gpu_nightly-8.0a709-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-```
-
-The `test_wheels.sh` will check if `nvc/nvc++` compilers are available and run tests for `hpe-mpi`, `intel-mpi` and `mvapich2` MPI modules.
-Also, it checks if GPU is available (using `pgaccelinfo -nvidia` command) and then runs a few tests on the GPU as well.
-
-Similar to BB5, the wheel can be tested on any desktop system provided that NVHPC compiler module is loaded or appropriate PATH environment variable is setup.
-
 
 ## Publishing the wheels on Pypi via Azure
 
-### Official Release wheels
+### Variables that drive PyPI upload
+
+We need to manipulate the following three predefined variables, listed hereafter with their default values:
+   * `NRN_NIGHTLY_UPLOAD` : `true`
+   * `NRN_RELEASE_UPLOAD` : `false`
+   * `NEURON_NIGHTLY_TAG` : `-nightly`
+
+### Release wheels
 
 Head over to the [neuronsimulator.nrn](https://dev.azure.com/neuronsimulator/nrn/_build?definitionId=1) pipeline on Azure.
 
@@ -217,23 +232,22 @@ After creating the tag on the `release/x.y` or on the `master` branch, perform t
 
 1) Click on `Run pipeline`
 2) Input the release tag ref `refs/tags/x.y.z`
-3) Click on `Variables`
-4) We need to define three variables:
+3) Click on `Advanced options` then select `Variables`
+4) Update driving variables to:
    * `NRN_NIGHTLY_UPLOAD` : `false`
    * `NRN_RELEASE_UPLOAD` : `false`
    * `NEURON_NIGHTLY_TAG` : undefined (leave empty)
 
-   Do so by clicking `Add variable`, input the variable name and optionally the value and then click `Create`.
+   Do so by clicking `Variables` in `Advanced options` and update/clear the variable values.
 5) Click on `Run`
 
 ![](images/azure-release-no-upload.png)
 
 With above, wheel will be created like release from the provided tag but they won't be uploaded to the pypi.org ( as we have set  `NRN_RELEASE_UPLOAD=false`). These wheels now you can download from artifacts section and perform thorough testing. Once you are happy with the testing result, set `NRN_RELEASE_UPLOAD` to `true` and trigger the pipeline same way:
-   * `NRN_NIGHTLY_UPLOAD` : `true`
-   * `NRN_RELEASE_UPLOAD` : `false`
+   * `NRN_NIGHTLY_UPLOAD` : `false`
+   * `NRN_RELEASE_UPLOAD` : `true`
    * `NEURON_NIGHTLY_TAG` : undefined (leave empty)
 
-![](images/azure-release.png)
 
 
 ## Publishing the wheels on Pypi via CircleCI
@@ -252,27 +266,55 @@ $ git checkout 8.1a -b release/8.1a-aarch64
 # manually updated `.circleci/config.yml`
 $ git diff
 
-@@ -15,6 +15,10 @@ jobs:
+@@ -14,6 +14,11 @@ jobs:
+
      machine:
        image: ubuntu-2004:202101-01
 +    environment:
-+      NEURON_WHEEL_VERSION: 8.1a
++      SETUPTOOLS_SCM_PRETEND_VERSION: 8.2.6
 +      NEURON_NIGHTLY_TAG: ""
 +      NRN_NIGHTLY_UPLOAD: false
 +      NRN_RELEASE_UPLOAD: false
 
-@@ -89,7 +95,7 @@ workflows:
-       - manylinux2014-aarch64:
+     resource_class: arm.medium
+
+@@ -54,6 +59,7 @@ jobs:
+               39) pyenv_py_ver="3.9.1" ;;
+               310) pyenv_py_ver="3.10.1" ;;
+               311) pyenv_py_ver="3.11.0" ;;
++              312) pyenv_py_ver="3.12.2" ;;
+               *) echo "Error: pyenv python version not specified!" && exit 1;;
+             esac
+
+@@ -95,7 +101,7 @@ workflows:
+                 - /circleci\/.*/
            matrix:
              parameters:
--              NRN_PYTHON_VERSION: ["310"]
-+              NRN_PYTHON_VERSION: ["37", "38", "39", "310"]
+-              NRN_PYTHON_VERSION: ["311"]
++              NRN_PYTHON_VERSION: ["39", "310", "311", "312"]
+               NRN_NIGHTLY_UPLOAD: ["false"]
+
+   nightly:
 ```
 
-The reason we are setting `NEURON_WHEEL_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
+The reason we are setting `SETUPTOOLS_SCM_PRETEND_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
+`SETUPTOOLS_SCM_PRETEND_VERSION` will also stop your wheels from getting extra numbers on the version.
 
 
-### Nightly wheels
+## Nightly wheels
 
 Nightly wheels get automatically published from `master` in CRON mode.
 
+
+## How to test Azure wheels locally
+
+After retrieving the Azure drop URL (i.e. from the GitHub PR comment, or by going to Azure for a specific build):
+
+```bash
+python3 -m pip wheel neuron-gpu-nightly --wheel-dir tmp --find-links 'https://dev.azure.com/neuronsimulator/aa1fb98d-a914-45c3-a215-5e5ef1bd7687/_apis/build/builds/7600/artifacts?artifactName=drop&api-version=7.0&%24format=zip'
+```
+will download the wheel and its dependencies to `tmp/` and then you can test it with:
+
+```bash
+./packaging/python/test_wheels.sh python3 ./tmp/NEURON_gpu_nightly-...whl true
+```
