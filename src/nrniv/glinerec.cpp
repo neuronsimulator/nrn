@@ -10,7 +10,6 @@
 
 #include "hocparse.h"
 #include "code.h"
-#undef begin
 #undef add
 
 #include <OS/list.h>

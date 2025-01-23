@@ -190,7 +190,7 @@ int lineno;
 #include <signal.h>
 #include <setjmp.h>
 static int control_jmpbuf = 0; /* don't change jmp_buf if being controlled */
-jmp_buf begin;
+jmp_buf begin_;
 static int hoc_oc_jmpbuf;
 static jmp_buf hoc_oc_begin;
 int intset; /* safer interrupt handling */
@@ -695,7 +695,7 @@ extern void hoc_newobj1_err();
  *  hoc_newobj1_err needs handle to know how much to unwrap the newobj1 stack.
  **/
 void* nrn_get_hoc_jmp() {
-    void* jmp = hoc_oc_jmpbuf ? (void*) hoc_oc_begin : (void*) begin;
+    void* jmp = hoc_oc_jmpbuf ? (void*) hoc_oc_begin : (void*) begin_;
     return jmp;
 }
 
@@ -748,7 +748,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
         longjmp(hoc_oc_begin, 1);
     }
     hoc_newobj1_err();
-    longjmp(begin, 1);
+    longjmp(begin_, 1);
 }
 
 extern "C" void hoc_execerror(const char* s, const char* t) /* recover from run-time error */
@@ -928,7 +928,7 @@ void hoc_main1_init(const char* pname, const char** envp) {
         }
     }
     progname = pname;
-    if (setjmp(begin)) {
+    if (setjmp(begin_)) {
         nrn_exit(1);
     }
 
@@ -1007,7 +1007,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
 	controlled = control_jmpbuf;
 	if (!controlled) {
 		control_jmpbuf = 1;
-		if (setjmp(begin)) {
+		if (setjmp(begin_)) {
 			control_jmpbuf = 0;
 			return 1;
 		}
@@ -1385,7 +1385,7 @@ static int hoc_run1(void) /* execute until EOF */
     if (!controlled) {
         set_signals();
         control_jmpbuf = 1;
-        if (setjmp(begin)) {
+        if (setjmp(begin_)) {
             fin = sav_fin;
             if (!nrn_fw_eq(fin, stdin)) {
                 return EXIT_FAILURE;
@@ -1430,7 +1430,7 @@ static int hoc_run1(void) /* execute until EOF */
    Where do we go in case of an hoc_execerror. We have to go to the beginning
    of hoc. But just maybe that is here. However hoc_oc may be called
    recursively. Or it may be called from the original hoc_run. Or it may be
-   There is therefore a notion of the controlling routine for the jmp_buf begin.
+   There is therefore a notion of the controlling routine for the jmp_buf begin_.
    We only do a setjmp and set the signals
    when there is no other controlling routine.
 */
