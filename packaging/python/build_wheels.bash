@@ -61,7 +61,7 @@ pip_numpy_install() {
     esac
 
     # older version for apple m1 as building from source fails
-    if [[ `uname -m` == 'arm64' ]] && [[ $py_ver <= 311 ]] ; then
+    if [[ `uname -m` == 'arm64' ]] && [[ $py_ver -le 311 ]] ; then
       numpy_ver="numpy==1.21.3"
     fi
 
