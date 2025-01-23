@@ -1,16 +1,20 @@
 import os
+import re
 import shutil
 import subprocess
 import sys
 from collections import defaultdict
 import logging
-import platform
 
 logging.basicConfig(level=logging.INFO)
 from shutil import copytree, which
 from setuptools import Command, Extension
 from setuptools import setup
 
+ver_lt_38 = sys.version_info[0] == 3 and sys.version_info[1] < 8
+if ver_lt_38:
+    # dirs_exist_ok for copytree does not exist
+    from distutils.dir_util import copy_tree
 
 logging.info("setup.py called with:" + " ".join(sys.argv))
 
@@ -21,6 +25,7 @@ class Components:
     MPI = True
     MUSIC = False  # still early support
     CORENRN = False  # still early support
+    GPU = False  # still early support
 
 
 # Check if we've got --cmake-build-dir path that will be used to build extensions only
@@ -75,6 +80,39 @@ if "--without-nrnpython" in sys.argv:
     without_nrnpython = True
     sys.argv.remove("--without-nrnpython")
 
+# Main source of the version. Dont rename, used by Cmake
+try:
+    # github actions somehow fails with check_output and python3
+
+    # Official Versioning shall rely on annotated tags (don't use `--tags` or `--all`)
+    # (please refer to NEURON SCM documentation)
+    v = (
+        subprocess.run(["git", "describe"], stdout=subprocess.PIPE)
+        .stdout.strip()
+        .decode()
+    )
+
+    __version__ = v[: v.rfind("-")].replace("-", ".") if "-" in v else v
+
+    # if version is not a valid PEP440 version, then create a bogus version
+    # that will be used only for development purposes which appends the commit hash
+    if not re.match(r"^\d+(\.\d+)*(\.dev)?$", __version__):
+        __version__ = "0.0.dev0+g" + (
+            subprocess.run(
+                ["git", "rev-parse", "--short", "HEAD"], stdout=subprocess.PIPE
+            )
+            .stdout.strip()
+            .decode()
+        )
+
+    # allow to override version during development/testing
+    if "NEURON_WHEEL_VERSION" in os.environ:
+        __version__ = os.environ["NEURON_WHEEL_VERSION"]
+
+except Exception as e:
+    raise RuntimeError("Could not get version from Git repo : " + str(e))
+
+
 # setup options must be checked for very early as it impacts imports
 if "--disable-rx3d" in sys.argv:
     Components.RX3D = False
@@ -92,6 +130,10 @@ if "--disable-mpi" in sys.argv:
 if "--enable-coreneuron" in sys.argv:
     Components.CORENRN = True
     sys.argv.remove("--enable-coreneuron")
+
+if "--enable-gpu" in sys.argv:
+    Components.GPU = True
+    sys.argv.remove("--enable-gpu")
 
 if "--enable-music" in sys.argv:
     Components.MUSIC = True
@@ -202,7 +244,10 @@ class CMakeAugmentedBuilder(build_ext):
                     ext.cmake_install_prefix, ext.cmake_install_python_files
                 )
                 if os.path.isdir(src_py_dir):
-                    copytree(src_py_dir, self.build_lib, dirs_exist_ok=True)
+                    if ver_lt_38:
+                        copy_tree(src_py_dir, self.build_lib)
+                    else:
+                        copytree(src_py_dir, self.build_lib, dirs_exist_ok=True)
                     shutil.rmtree(src_py_dir)  # avoid being collected to data dir
 
                 for d in ext.cmake_collect_dirs:
@@ -237,7 +282,7 @@ class CMakeAugmentedBuilder(build_ext):
             "-DPYTHON_EXECUTABLE=" + sys.executable,
             "-DCMAKE_BUILD_TYPE=" + cfg,
         ] + ext.cmake_flags
-        # RTD needs quick config
+        # RTD neds quick config
         if self.docs and os.environ.get("READTHEDOCS"):
             cmake_args = ["-DNRN_ENABLE_MPI=OFF", "-DNRN_ENABLE_INTERVIEWS=OFF"]
         if self.docs:
@@ -248,12 +293,7 @@ class CMakeAugmentedBuilder(build_ext):
         if self.cmake_defs:
             cmake_args += ["-D" + opt for opt in self.cmake_defs.split(",")]
 
-        build_args = [
-            "--config",
-            cfg,
-            "--",
-            f"-j{os.environ.get('NRN_PARALLEL_BUILDS', 4)}",
-        ]
+        build_args = ["--config", cfg, "--", "-j4"]  # , 'VERBOSE=1']
 
         env = os.environ.copy()
         env["CXXFLAGS"] = "{} -DVERSION_INFO='{}'".format(
@@ -321,6 +361,16 @@ class CMakeAugmentedBuilder(build_ext):
                     cwd=self.build_temp,
                     env=env,
                 )
+                if Components.GPU:
+                    subprocess.check_call(
+                        [
+                            ext.sourcedir
+                            + "/packaging/python/fix_target_processor_in_makefiles.sh",
+                            ext.cmake_install_prefix,
+                        ],
+                        cwd=self.build_temp,
+                        env=env,
+                    )
 
         except subprocess.CalledProcessError as exc:
             logging.error("Status : FAIL. Logging.\n%s", exc.output)
@@ -378,13 +428,18 @@ def setup_package():
 
     ext_common_libraries = ["nrniv"]
     if not without_nrnpython:
-        nrn_python_lib = "nrnpython{}.{}".format(*sys.version_info[:2])
+        nrn_python_lib = "nrnpython{}".format(
+            sys.version_info[0]
+            if sys.platform != "win32"
+            else str(sys.version_info[0]) + str(sys.version_info[1])
+        )
         ext_common_libraries.append(nrn_python_lib)
 
     extension_common_params = defaultdict(
         list,
         library_dirs=[os.path.join(cmake_build_dir, "lib")],
         libraries=ext_common_libraries,
+        language="c++",
     )
 
     logging.info("Extension common compile flags %s" % str(extension_common_params))
@@ -408,13 +463,18 @@ def setup_package():
                 "-DNRN_ENABLE_PYTHON_DYNAMIC=ON",
                 "-DNRN_ENABLE_MODULE_INSTALL=OFF",
                 "-DNRN_ENABLE_REL_RPATH=ON",
+                "-DLINK_AGAINST_PYTHON=OFF",
                 "-DCMAKE_VERBOSE_MAKEFILE=OFF",
+                "-DCORENRN_ENABLE_OPENMP=ON",  # TODO: manylinux portability questions
             ]
             + (
                 [
-                    "-DNMODL_ENABLE_PYTHON_BINDINGS=ON",
+                    "-DCORENRN_ENABLE_GPU=ON",
+                    "-DCMAKE_C_COMPILER=nvc",  # use nvc and nvc++ for GPU support
+                    "-DCMAKE_CXX_COMPILER=nvc++",
+                    "-DCMAKE_CUDA_COMPILER=nvcc",
                 ]
-                if Components.CORENRN
+                if Components.GPU
                 else []
             ),
             include_dirs=[
@@ -435,18 +495,14 @@ def setup_package():
     ]
 
     if Components.MUSIC:
-        music_extensions = [
+        extensions += [
             CyExtension(
                 "neuronmusic",
                 ["src/neuronmusic/neuronmusic.pyx"],
                 include_dirs=["src/nrnpython", "src/nrnmusic"],
-                language="c++",
                 **extension_common_params,
             )
         ]
-        for ext in music_extensions:
-            ext.cython_c_in_temp = True
-            extensions.append(ext)
 
     if Components.RX3D:
         include_dirs = ["share/lib/python/neuron/rxd/geometry3d", numpy.get_include()]
@@ -465,12 +521,10 @@ def setup_package():
                 + ["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")],
             )
         )
-        if platform.system() == "Darwin":
-            rxd_params["extra_link_args"] += ["-headerpad_max_install_names"]
 
         logging.info("RX3D compile flags %s" % str(rxd_params))
 
-        rxd_extensions = [
+        extensions += [
             CyExtension(
                 "neuron.rxd.geometry3d.graphicsPrimitives",
                 ["share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx"],
@@ -493,55 +547,41 @@ def setup_package():
                 **rxd_params,
             ),
         ]
-        for ext in rxd_extensions:
-            ext.cython_c_in_temp = True
-            extensions.append(ext)
 
     logging.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
 
     # package name
-    package_name = "NEURON"
+    package_name = "NEURON-gpu" if Components.GPU else "NEURON"
 
     # For CI, we want to build separate wheel with "-nightly" suffix
     package_name += os.environ.get("NEURON_NIGHTLY_TAG", "-nightly")
 
+    # GPU wheels use patchelf to avoid duplicating NVIDIA runtime libraries when
+    # using nrnivmodl.
+    maybe_patchelf = ["patchelf"] if Components.GPU else []
+
     setup(
         name=package_name,
+        version=__version__,
         package_dir={"": NRN_PY_ROOT},
         packages=py_packages,
-        package_data={"neuron": ["*.dat", "tests/*.json"]},
+        package_data={"neuron": ["*.dat"]},
         ext_modules=extensions,
         scripts=[
             os.path.join(NRN_PY_SCRIPTS, f)
             for f in os.listdir(NRN_PY_SCRIPTS)
             if f[0] != "_"
         ],
-        use_scm_version={
-            "local_scheme": "no-local-version"
-            if os.getenv("NRN_NIGHTLY_UPLOAD", False) == "true"
-            else "node-and-date"
-        },
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
         install_requires=[
             "numpy>=1.9.3",
             "packaging",
             "find_libpython",
-            "setuptools<=70.3.0",
+            "setuptools",
         ]
-        + (
-            [
-                "sympy>=1.3",
-                "importlib_resources;python_version<'3.9'",
-                "importlib_metadata;python_version<'3.9'",
-            ]
-            if Components.CORENRN
-            else []
-        ),
+        + maybe_patchelf,
         tests_require=["flake8", "pytest"],
-        setup_requires=["wheel", "setuptools_scm"]
-        + maybe_docs
-        + maybe_test_runner
-        + maybe_rxd_reqs,
+        setup_requires=["wheel"] + maybe_docs + maybe_test_runner + maybe_rxd_reqs,
         dependency_links=[],
     )
 
@@ -565,9 +605,6 @@ def mac_osx_setenv():
     logging.info("Setting SDKROOT=%s", sdk_root)
     os.environ["SDKROOT"] = sdk_root
 
-    # Extract the macOS version targeted by the Python framework
-    py_osx_framework = extract_macosx_min_system_version(sys.executable)
-
     def fmt(version):
         return ".".join(str(x) for x in version)
 
@@ -576,6 +613,17 @@ def mac_osx_setenv():
         # helpful message
         explicit_target = tuple(
             int(x) for x in os.environ["MACOSX_DEPLOYMENT_TARGET"].split(".")
+        )
+
+    # Match Python OSX framework
+    py_osx_framework = extract_macosx_min_system_version(sys.executable)
+    if py_osx_framework is None:
+        py_osx_framework = [10, 9]
+    if py_osx_framework[1] > 9:
+        logging.warning(
+            "[ WARNING ] You are building a wheel with a Python built"
+            " for a recent MACOS version (from brew?). Your wheel won't be portable."
+            " Consider using an official Python build from python.org"
         )
         if py_osx_framework is not None and explicit_target > py_osx_framework:
             logging.warning(
