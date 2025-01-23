@@ -1,14 +1,13 @@
 name: Check formatting
 
-concurrency:
-  # Don't cancel on master, creating a PR when a push workflow is already going will cancel the push workflow in favour of the PR workflow
-  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
-  cancel-in-progress: true
+concurrency: 
+  group: ${{ github.workflow }}#${{ github.ref }}
+  cancel-in-progress: true  
 
 on:
-  merge_group:
   push:
-    branches:
+    branches: 
+      - master
       - release/**
   pull_request:
     branches:
@@ -16,28 +15,102 @@ on:
       - release/**
 
 jobs:
-  all:
-    name: C/C++, CMake and Python
-    runs-on: ubuntu-22.04
+  black:
+    name: Python
+    runs-on: ubuntu-20.04
     timeout-minutes: 5
     steps:
+      - name: Set up Python@3.7
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.7
+      
+      - name: Install Black
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade black[jupyter]==22.12.0
+
       - uses: actions/checkout@v4
-      - name: Update submodule
-        working-directory: ${{runner.workspace}}/nrn
-        run: git submodule update --init external/coding-conventions
-      - name: Check formatting
+
+      - name: Check Python formatting
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          external/coding-conventions/bin/format
+          git ls-tree -z -r HEAD --name-only \
+          | grep -z '\.\(py\|ipynb\)$' \
+          | xargs -0 black --check --color --diff --target-version py37
 
-          modified_files=$(git diff --name-only)
-          if [ -n "$modified_files" ]; then
-              echo "Some files are not well formatted:"
-              echo "$modified_files"
-              echo ""
-              echo "The diff is:"
-              git --no-pager diff
-              exit 1
-          fi
+  cmake:
+    name: CMake
+    runs-on: ubuntu-20.04
+    timeout-minutes: 5
+    steps:
+      - name: Set up Python@3.7
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.7
 
+      - name: Install cmake-format
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade cmake-format pyyaml
 
+      - name: Install Ninja
+        run: |
+          sudo apt-get update
+          sudo apt-get install ninja-build
+
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+          mkdir build
+          cd build/
+          # Need to configure the build to trigger the hpc-coding-conventions
+          # YAML magic
+          cmake -G Ninja .. \
+            -DNRN_CMAKE_FORMAT=ON \
+            -DNRN_ENABLE_RX3D=OFF \
+            -DNRN_ENABLE_PYTHON=OFF \
+            -DNRN_ENABLE_INTERVIEWS=OFF \
+            -DNRN_ENABLE_MPI=OFF
+
+      - name: Check CMake formatting
+        working-directory: ${{runner.workspace}}/nrn/build
+        run: ninja check-cmake-format
+
+  cpp:
+    name: C/C++
+    runs-on: ubuntu-20.04
+    timeout-minutes: 5
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install ninja-build
+          # The last .1 refers to ssciwr/clang-format-wheel#23.
+          sudo pip install clang-format==12.0.1.1
+          command -v clang-format
+          clang-format --version
+
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+          mkdir build
+          cd build/
+          # Need to configure the build to trigger the hpc-coding-conventions
+          # YAML magic. Disable as much as possible now that the list of files
+          # to format is based on git ls-tree.
+          cmake -G Ninja .. \
+            -DClangFormat_EXECUTABLE=$(command -v clang-format) \
+            -DNRN_CLANG_FORMAT=ON \
+            -DNRN_ENABLE_INTERVIEWS=OFF \
+            -DNRN_ENABLE_MPI=OFF \
+            -DNRN_ENABLE_PYTHON=OFF \
+            -DNRN_ENABLE_RX3D=OFF
+
+      - name: Check C/C++ formatting
+        working-directory: ${{runner.workspace}}/nrn/build
+        run: ninja check-clang-format
