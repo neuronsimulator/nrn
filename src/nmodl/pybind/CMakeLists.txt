@@ -110,7 +110,7 @@ file(COPY ${NMODL_PROJECT_PURELIB_SOURCE_DIR}/ext DESTINATION ${NMODL_PROJECT_PU
 # Install python binding components
 # =============================================================================
 if(NOT NRN_LINK_AGAINST_PYTHON)
-  install(TARGETS pywrapper DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+  install(TARGETS pywrapper DESTINATION lib)
   if(NMODL_ENABLE_PYTHON_BINDINGS)
     install(TARGETS _nmodl DESTINATION lib/python/neuron/nmodl)
   endif()
