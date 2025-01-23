@@ -88,7 +88,7 @@ Installation
 
          pip3 install neuron
 
-      Alternatively, you can use the `PKG installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.6/nrn-8.2.6-macosx-10.9-universal2-py-38-39-310-311-312.pkg>`_.
+      Alternatively, you can use the `PKG installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.6/nrn-8.2.6-macosx-10.9-universal2-py-38-39-310-311-312-313.pkg>`_.
 
       For troubleshooting, see the `detailed installation instructions <install/install_instructions.html>`_.
 
