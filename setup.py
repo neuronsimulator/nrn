@@ -614,6 +614,9 @@ def mac_osx_setenv():
         explicit_target = tuple(
             int(x) for x in os.environ["MACOSX_DEPLOYMENT_TARGET"].split(".")
         )
+    else:
+        # default deployment target
+        explicit_target = (10, 9)
 
     # Match Python OSX framework
     py_osx_framework = extract_macosx_min_system_version(sys.executable)
