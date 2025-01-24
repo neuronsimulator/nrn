@@ -50,8 +50,9 @@ stages:
             python.version: '3.13'
 
       steps:
-      - checkout: self
-        submodules: true
+      - script: |
+          git submodule update --init --recursive
+        displayName: Init submodules
 
       # Secure files documentation:
       #   https://docs.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops
@@ -124,6 +125,9 @@ stages:
             python.installer.name: 'macos11.pkg'
 
       steps:
+      - script: |
+          git submodule update --init --recursive
+        displayName: Init submodules
 
       - script: |
           installer=python-$(python.org.version)-$(python.installer.name)
