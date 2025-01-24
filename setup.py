@@ -613,18 +613,21 @@ def mac_osx_setenv():
     def fmt(version):
         return ".".join(str(x) for x in version)
 
+    # Match Python OSX framework
+    py_osx_framework = extract_macosx_min_system_version(sys.executable)
+
     if "MACOSX_DEPLOYMENT_TARGET" in os.environ:
         # Don't override the value if it is set explicitly, but try and print a
         # helpful message
         explicit_target = tuple(
             int(x) for x in os.environ["MACOSX_DEPLOYMENT_TARGET"].split(".")
         )
+    else:
+        explicit_target = (10, 9)
 
-    # Match Python OSX framework
-    py_osx_framework = extract_macosx_min_system_version(sys.executable)
     if py_osx_framework is None:
-        py_osx_framework = [10, 9]
-    if py_osx_framework[1] > 9:
+        py_osx_framework = (10, 9)
+    if py_osx_framework > (10, 9):
         logging.warning(
             "[ WARNING ] You are building a wheel with a Python built"
             " for a recent MACOS version (from brew?). Your wheel won't be portable."
@@ -641,14 +644,14 @@ def mac_osx_setenv():
         # Python framework, or 10.9 if the version targeted by the framework
         # cannot be determined
         if py_osx_framework is None:
-            py_osx_framework = (10, 15)
-        if py_osx_framework < (10, 15):
+            py_osx_framework = (10, 9)
+        if py_osx_framework < (10, 9):
             logging.warning(
-                "C++17 support is required to build NEURON on macOS, "
-                "therefore minimum MACOSX_DEPLOYMENT_TARGET version is 10.15."
+                "C++11 support is required to build NEURON on macOS, "
+                "therefore minimum MACOSX_DEPLOYMENT_TARGET version is 10.9."
             )
-            py_osx_framework = (10, 15)
-        if py_osx_framework > (10, 15):
+            py_osx_framework = (10, 9)
+        if py_osx_framework > (10, 9):
             logging.warning(
                 "You are building a wheel with a Python built for macOS >={}. "
                 "Your wheel won't run on older versions, consider using an "
