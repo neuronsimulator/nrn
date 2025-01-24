@@ -49,6 +49,8 @@ stages:
           Python313:
             python.version: '3.13'
       steps:
+        - checkout: self
+          submodules: true
 
       # Secure files documentation:
       #   https://docs.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops
