@@ -413,9 +413,9 @@ def setup_package():
     ver_lt_313 = sys.version_info[0] == 3 and sys.version_info[1] < 13
     if Components.RX3D:
         if ver_lt_313:
-            maybe_rxd_reqs = ["numpy<2", "Cython<3"]
+            maybe_rxd_reqs = ["numpy", "Cython"]
         else:
-            maybe_rxd_reqs = ["numpy>=2", "Cython>=3"]
+            maybe_rxd_reqs = ["numpy", "Cython"]
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ["pytest-runner"] if "test" in sys.argv else []
 
@@ -579,7 +579,7 @@ def setup_package():
         ],
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
         install_requires=[
-            "numpy>=1.9.3,<2",
+            "numpy",
             "packaging",
             "find_libpython",
             "setuptools",
