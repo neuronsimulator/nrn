@@ -335,7 +335,6 @@ def compare_dicts(dict1, dict2):
 
 
 def test_bas():
-
     # h.execute1(...) does not call mpi_abort on failure
     assert h.execute1("1/0") == 0
     assert h.execute1("2/0", 0) == 0  # no error message printed

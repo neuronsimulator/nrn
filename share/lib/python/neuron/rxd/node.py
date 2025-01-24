@@ -71,7 +71,7 @@ def _remove(start, stop):
 
     # remove _node_flux
     newflux = {"index": [], "type": [], "source": [], "scale": [], "region": []}
-    for (i, idx) in enumerate(_node_fluxes["index"]):
+    for i, idx in enumerate(_node_fluxes["index"]):
         if idx not in dels:
             for key in _node_fluxes:
                 newflux[key].append(_node_fluxes[key][i])
@@ -79,7 +79,7 @@ def _remove(start, stop):
     _has_node_fluxes = _node_fluxes["index"] != []
 
     # remove _node_flux
-    for (i, idx) in enumerate(_node_fluxes["index"]):
+    for i, idx in enumerate(_node_fluxes["index"]):
         if idx in dels:
             for lst in _node_fluxes.values():
                 del lst[i]
@@ -108,7 +108,7 @@ def _replace(old_offset, old_nseg, new_offset, new_nseg):
     _states = numpy.delete(_states, list(range(start, stop)))
 
     # update _node_flux index
-    for (i, idx) in enumerate(_node_fluxes["index"]):
+    for i, idx in enumerate(_node_fluxes["index"]):
         if idx in dels:
             j = int(((idx + 0.5) / new_nseg) * old_nseg)
             _node_fluxes["index"][i] = j

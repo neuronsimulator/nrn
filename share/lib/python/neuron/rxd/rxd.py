@@ -608,7 +608,6 @@ def _update_node_data(force=False, newspecies=False):
         or _structure_change_count.value != last_structure_change_cnt
         or force
     ):
-
         last_diam_change_cnt = _diam_change_count.value
         last_structure_change_cnt = _structure_change_count.value
         # if not species._has_3d:
@@ -663,9 +662,7 @@ def _matrix_to_rxd_sparse(m):
 
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices():
-
     with initializer._init_lock:
-
         # update _node_fluxes in C
         _include_flux()
 
@@ -1462,7 +1459,7 @@ def _compile_reactions():
                             continue
                         fxn_string += "\n\trate = %s;" % rate_str
                         summed_mults = collections.defaultdict(lambda: 0)
-                        for (mult, sp) in zip(r._mult, r._sources + r._dests):
+                        for mult, sp in zip(r._mult, r._sources + r._dests):
                             summed_mults[creg._species_ids.get(sp()._id)] += mult
                         for idx in sorted([k for k in summed_mults if k is not None]):
                             operator = "+=" if species_ids_used[idx][region_id] else "="
@@ -2007,7 +2004,7 @@ def _windows_remove_dlls():
             kernel32.FreeLibrary.argtypes = [ctypes.c_void_p]
         else:
             kernel32 = ctypes.windll.kernel32
-    for (dll_ptr, filepath) in zip(_windows_dll, _windows_dll_files):
+    for dll_ptr, filepath in zip(_windows_dll, _windows_dll_files):
         dll = dll_ptr()
         if dll:
             handle = dll._handle

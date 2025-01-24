@@ -67,7 +67,7 @@ class _SectionLookup:
 
 def add_values(mat, i, js, vals):
     mat_i = mat[i]
-    for (j, val) in zip(js, vals):
+    for j, val in zip(js, vals):
         if val == 0:
             continue
         if j in mat_i:

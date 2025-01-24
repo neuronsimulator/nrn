@@ -102,13 +102,11 @@ class VectorTestCase(unittest.TestCase):
             pass
 
 
-
 def suite():
     return unittest.defaultTestLoader.loadTestsFromTestCase(VectorTestCase)
 
 
 if __name__ == "__main__":
-
     # unittest.main()
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite())

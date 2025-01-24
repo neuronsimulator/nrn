@@ -1617,7 +1617,6 @@ class HOCDomain(Domain):
         multiple_matches = len(matches) > 1
 
         for name, obj in matches:
-
             if multiple_matches and obj.aliased:
                 # Skip duplicated matches
                 continue

@@ -211,7 +211,6 @@ class CMakeAugmentedBuilder(build_ext):
         the CMake building, sets the extension build environment and collects files.
         """
         for ext in self.extensions:
-
             if isinstance(ext, CMakeAugmentedExtension):
                 if ext.cmake_done:
                     continue
