@@ -11,7 +11,7 @@ export PATH=/mingw64/bin:$PATH
 
 
 # have compatible cython and setuptools
-python3 -m pip install cython 'setuptools;python_version>=3.12'
+python3 -m pip install cython setuptools
 
 # if BUILD_SOURCESDIRECTORY not available, use te root of the repo
 if [ -z "$BUILD_SOURCESDIRECTORY" ]; then
