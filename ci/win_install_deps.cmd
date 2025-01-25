@@ -36,6 +36,7 @@ C:\Python312\python.exe -m pip install numpy==1.26.3 cython || goto :error
 C:\Python313\python.exe -m pip install numpy cython || goto :error
 :: setuptools 70.2 leads to an error
 C:\Python312\python.exe -m pip install setuptools==70.1.1 || goto :error
+C:\Python313\python.exe -m pip install setuptools==70.1.1 || goto :error
 
 :: install nsis
 nsis-3.05-setup.exe /S || goto :error
