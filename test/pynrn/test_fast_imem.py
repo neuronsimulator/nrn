@@ -256,7 +256,6 @@ def print_fast_imem():
 
 
 def test_fastimem_corenrn():
-
     if not coreneuron_available():
         return
 

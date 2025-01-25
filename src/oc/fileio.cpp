@@ -16,7 +16,7 @@
 #include "nrnfilewrap.h"
 
 
-extern jmp_buf begin;
+extern jmp_buf begin_;
 extern char* neuron_home;
 
 NrnFILEWrap* frin;

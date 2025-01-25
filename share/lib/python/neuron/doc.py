@@ -207,7 +207,6 @@ def get_docstring(objtype, symbol):
         f.close()
 
     if (objtype, symbol) == ("", ""):
-
         return doc_h
 
     # are we asking for help on a class, e.g. h.Vector
@@ -229,7 +228,6 @@ def get_docstring(objtype, symbol):
     if full_name in _help_dict:
         return _get_from_help_dict(full_name)
     else:
-
         return default_member_doc_template % (
             objtype,
             symbol,
