@@ -2,7 +2,8 @@ wheel
 setuptools<=70.3.0
 scikit-build
 matplotlib
-bokeh
+# bokeh 3 seems to break docs notebooks
+bokeh<3
 ipython
 cython
 packaging
