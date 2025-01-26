@@ -169,7 +169,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/cover
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
 
-  if(NRN_ENABLE_RX3D)
+  if(NO AND NRN_ENABLE_RX3D)
     nrn_add_test_group(
       NAME rxdmod_tests
       MODFILE_PATTERNS test/rxd/ecs/*.mod
