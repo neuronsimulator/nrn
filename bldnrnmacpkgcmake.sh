@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -ex
 
-default_pythons="python3.8 python3.9 python3.10 python3.11 python3.12"
+default_pythons="python3.8 python3.9 python3.10 python3.11 python3.12 python3.13"
 # distribution built with
 # bash bldnrnmacpkgcmake.sh
 # without args, default are the pythons above.
