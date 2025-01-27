@@ -207,18 +207,56 @@ if(NRN_ENABLE_MODULE_INSTALL)
   endif()
 
   # Build python module
-  foreach(pyexe ${NRN_PYTHON_EXECUTABLES})
-    add_custom_command(
-      TARGET hoc_module
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
-              ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-      COMMAND ${CMAKE_COMMAND} -E env ${extra_env} ${pyexe} setup.py build
-              ${NRN_SETUP_PY_BUILD_OPTIONS} ${NRN_SETUP_PY_BUILD_EXT_OPTIONS}
-      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-      COMMENT "Building python module with: ${pyexe} setup.py build
-      ${NRN_SETUP_PY_BUILD_OPTIONS} ${NRN_SETUP_PY_BUILD_EXT_OPTIONS}")
-  endforeach(pyexe)
+  foreach(val RANGE 0 ${NRN_PYTHON_ITERATION_LIMIT})
+
+    # Create library
+    add_library(hoc SHARED ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp)
+
+    # Add all necessary includes
+    list(GET NRN_PYTHON_INCLUDES ${val} py_include)
+    target_include_directories(
+      hoc
+      PRIVATE ${PROJECT_SOURCE_DIR}/src
+              ${PROJECT_SOURCE_DIR}/src/oc
+              ${PROJECT_BINARY_DIR}/src/oc
+              ${PROJECT_BINARY_DIR}/include
+              ${CMAKE_CURRENT_SOURCE_DIR}
+              # for nrnconf.h
+              ${CMAKE_CURRENT_BINARY_DIR}
+              ${PROJECT_BINARY_DIR}/nrnmpi
+              ${py_include})
+
+    # Set RPATH and platform-specific extension
+    if(APPLE)
+      set(rel_rpath "@loader_path")
+      set(os_string "darwin")
+    elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+      set(rel_rpath "\$ORIGIN")
+      set(os_string "${CMAKE_LIBRARY_ARCHITECTURE}")
+      # TODO figure out how Windows does it
+    elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
+
+    endif()
+
+    # Set RPATH based on whether we're building a wheel or not
+    if(NRN_BUILD_WHEEL)
+      set(extension_path "/.data")
+    else()
+      set(extension_path "/../../")
+    endif()
+
+    target_link_options(hoc PRIVATE "-Wl,-rpath,${rel_rpath}${extension_path}")
+
+    list(GET NRN_PYTHON_VERSIONS ${val} py_version)
+    string(REPLACE "." "" py_version "${py_version}")
+    set_target_properties(
+      hoc
+      PROPERTIES OUTPUT_NAME "hoc.cpython-${py_version}-${os_string}"
+                 PREFIX ""
+                 SUFFIX ".so"
+                 LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/python/neuron)
+
+  endforeach(val)
 
   add_dependencies(hoc_module nrniv_lib rxdmath ${nrnpython_lib_list})
   install(DIRECTORY ${NRN_PYTHON_BUILD_LIB} DESTINATION lib)
