@@ -48,6 +48,8 @@ endif()
 # user has selected dynamic python support (could be multiple versions)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+
+    # the NEURON Python library (with nanobind)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
     list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
@@ -63,7 +65,50 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     add_dependencies(nrnpython${pyver} nrniv_lib)
     list(APPEND nrnpython_lib_list nrnpython${pyver})
     install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
-  endforeach()
+
+    # the hoc Python library
+    set(hoc_module_name "hoc_module${pyver}")
+    add_library(${hoc_module_name} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp)
+    target_link_libraries(${hoc_module_name} PUBLIC nrniv_lib nrnpython${pyver})
+    if(NRN_LINK_AGAINST_PYTHON)
+      target_link_libraries(${hoc_module_name} PUBLIC ${pylib})
+    endif()
+    target_include_directories(
+      ${hoc_module_name}
+      PRIVATE ${PROJECT_SOURCE_DIR}/src
+              ${PROJECT_SOURCE_DIR}/src/oc
+              ${PROJECT_BINARY_DIR}/src/oc
+              ${PROJECT_BINARY_DIR}/include
+              ${CMAKE_CURRENT_SOURCE_DIR}
+              # for nrnconf.h
+              ${CMAKE_CURRENT_BINARY_DIR}
+              ${PROJECT_BINARY_DIR}/nrnmpi
+              ${pyinc})
+    if(APPLE)
+      set(rel_rpath "@loader_path")
+      set(os_string "darwin")
+    elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+      set(rel_rpath "\$ORIGIN")
+      set(os_string "${CMAKE_LIBRARY_ARCHITECTURE}")
+    elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
+      # TODO figure out how Windows does it
+    endif()
+    if(NRN_BUILD_WHEEL)
+      set(extension_path "/.data/lib/")
+    else()
+      set(extension_path "/../../")
+    endif()
+    target_link_options(${hoc_module_name} PRIVATE "-Wl,-rpath,${rel_rpath}${extension_path}")
+    string(REPLACE "." "" pyver_nodot "${pyver}")
+    set_target_properties(
+      ${hoc_module_name}
+      PROPERTIES OUTPUT_NAME "hoc.cpython-${pyver_nodot}-${os_string}"
+                 PREFIX ""
+                 SUFFIX ".so"
+                 LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/python/neuron)
+    add_dependencies(${hoc_module_name} nrniv_lib rxdmath ${nrnpython_lib_list})
+
+  endforeach(val)
 else()
   add_library(nrnpython OBJECT ${NRNPYTHON_FILES_LIST})
   add_dependencies(nrnpython generated_source_files)
@@ -133,16 +178,6 @@ if(NRN_ENABLE_MODULE_INSTALL)
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS ${source_dir_filename} ${inithoc_hdeps})
 
-  add_custom_target(
-    hoc_module ALL
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    DEPENDS ${binary_dir_filename})
-
-  # =============================================================================
-  # Copy necessary files to build directory
-  # =============================================================================
-  add_dependencies(hoc_module copy_share_demo_to_build copy_share_lib_to_build)
-
   # =============================================================================
   # Build python module
   # =============================================================================
@@ -206,60 +241,6 @@ if(NRN_ENABLE_MODULE_INSTALL)
     list(APPEND NRN_SETUP_PY_BUILD_EXT_OPTIONS "--force")
   endif()
 
-  # Build python module
-  foreach(val RANGE 0 ${NRN_PYTHON_ITERATION_LIMIT})
-
-    # Create library
-    add_library(hoc SHARED ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp)
-
-    # Add all necessary includes
-    list(GET NRN_PYTHON_INCLUDES ${val} py_include)
-    target_include_directories(
-      hoc
-      PRIVATE ${PROJECT_SOURCE_DIR}/src
-              ${PROJECT_SOURCE_DIR}/src/oc
-              ${PROJECT_BINARY_DIR}/src/oc
-              ${PROJECT_BINARY_DIR}/include
-              ${CMAKE_CURRENT_SOURCE_DIR}
-              # for nrnconf.h
-              ${CMAKE_CURRENT_BINARY_DIR}
-              ${PROJECT_BINARY_DIR}/nrnmpi
-              ${py_include})
-
-    # Set RPATH and platform-specific extension
-    if(APPLE)
-      set(rel_rpath "@loader_path")
-      set(os_string "darwin")
-    elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
-      set(rel_rpath "\$ORIGIN")
-      set(os_string "${CMAKE_LIBRARY_ARCHITECTURE}")
-      # TODO figure out how Windows does it
-    elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
-
-    endif()
-
-    # Set RPATH based on whether we're building a wheel or not
-    if(NRN_BUILD_WHEEL)
-      set(extension_path "/.data")
-    else()
-      set(extension_path "/../../")
-    endif()
-
-    target_link_options(hoc PRIVATE "-Wl,-rpath,${rel_rpath}${extension_path}")
-
-    list(GET NRN_PYTHON_VERSIONS ${val} py_version)
-    string(REPLACE "." "" py_version "${py_version}")
-    set_target_properties(
-      hoc
-      PROPERTIES OUTPUT_NAME "hoc.cpython-${py_version}-${os_string}"
-                 PREFIX ""
-                 SUFFIX ".so"
-                 LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/python/neuron)
-
-  endforeach(val)
-
-  add_dependencies(hoc_module nrniv_lib rxdmath ${nrnpython_lib_list})
-  install(DIRECTORY ${NRN_PYTHON_BUILD_LIB} DESTINATION lib)
 else()
   # Make sure this is included in the wheels
   install(FILES "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
