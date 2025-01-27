@@ -178,7 +178,7 @@ foreach(
 endforeach()
 
 foreach(test_name testcodegen testvisitor)
-  if(NOT LINK_AGAINST_PYTHON)
+  if(NOT NRN_LINK_AGAINST_PYTHON)
     target_link_libraries(${test_name} PRIVATE pywrapper ${PYTHONLIB})
   endif()
   cpp_cc_configure_sanitizers(TARGET ${test_name})

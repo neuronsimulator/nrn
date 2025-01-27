@@ -689,10 +689,7 @@ set(NRN_RUN_FROM_BUILD_DIR_ENV "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
 # if we do not link against Python, NMODL will complain that some of the env variables are missing
 # when building coreNEURON mod files
 if(NOT NRN_LINK_AGAINST_PYTHON)
-  execute_process(
-    COMMAND "${NRN_DEFAULT_PYTHON_EXECUTABLE}" -m find_libpython
-    OUTPUT_VARIABLE PYTHONLIB
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  list(GET NRN_PYTHON_LIBRARIES 0 PYTHONLIB)
   set(NRN_RUN_FROM_BUILD_DIR_ENV "${NRN_RUN_FROM_BUILD_DIR_ENV}" "NMODLHOME=${PROJECT_BINARY_DIR}"
                                  "NMODL_PYLIB=${PYTHONLIB}")
 endif()
