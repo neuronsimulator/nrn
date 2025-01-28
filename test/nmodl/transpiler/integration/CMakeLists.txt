@@ -16,6 +16,11 @@ foreach(modfile ${modfiles})
   else()
     set(NMODL_TEST_PYTHONPATH "${PROJECT_BINARY_DIR}/lib:$ENV{PYTHONPATH}")
   endif()
-  set_tests_properties(${modfile_name} PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
+  set_tests_properties(
+    ${modfile_name}
+    PROPERTIES
+      ENVIRONMENT
+      "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NMODL_PYLIB=${PYTHON_LIBRARY};NMODLHOME=${CMAKE_BINARY_DIR}"
+  )
   cpp_cc_configure_sanitizers(TEST ${modfile_name})
 endforeach()
