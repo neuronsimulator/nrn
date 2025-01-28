@@ -21,13 +21,13 @@ on:
 
 
 jobs:
-  build-test-macos:
+  build-test:
     name: Build and test Python ${{ matrix.python-version }} wheel on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
       matrix:
-        os: [macos-13, macos-14]
+        os: ['macos-13', 'macos-14', 'ubuntu-22.04', 'ubuntu-22.04-arm']
         python-version: ['3.9', '3.13']
         include:
           - python-version: '3.9'
@@ -38,76 +38,9 @@ jobs:
             python-org-version: '3.13.0'
             python-installer-name: 'macos11.pkg'
 
-    steps:
-      - name: Check out code
-        if: github.event_name != 'workflow_dispatch'
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Check out code for release
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.inputs.rel_release }}
-          submodules: recursive
-
-      - name: Install Python from python.org
-        run: |
-          installer="python-${{ matrix.python-org-version }}-${{ matrix.python-installer-name }}"
-          url="https://www.python.org/ftp/python/${{ matrix.python-org-version }}/${installer}"
-          curl $url -o $installer
-          sudo installer -pkg $installer -target /
-
-      - name: Install System Dependencies
-        run: |
-          brew install --cask xquartz
-          brew install flex bison cmake mpich
-          brew unlink mpich && brew install openmpi
-          cmake --version
-          # Uninstall libomp for compatibility with issue #817
-          brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
-          echo "$(brew --prefix)/opt/cmake/bin:$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
-
-      - name: Install readline
-        run: |
-          sudo mkdir -p /opt/nrnwheel/$(uname -m)
-          sudo bash packaging/python/build_static_readline_osx.bash
-
-      - name: Set env for release
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          echo "NRN_NIGHTLY_UPLOAD=false" >> $GITHUB_ENV
-          echo NRN_RELEASE_UPLOAD=${{ github.event.inputs.upload }} >> $GITHUB_ENV
-          echo "NEURON_NIGHTLY_TAG=" >> $GITHUB_ENV
-          echo SETUPTOOLS_SCM_PRETEND_VERSION=${{ github.event.inputs.rel_version }} >> $GITHUB_ENV
-
-      - name: Build wheel
-        run: |
-          packaging/python/build_wheels.bash osx ${{ matrix.python-version }} coreneuron
-
-      - name: Upload wheel files
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-${{ matrix.python-version }}-${{ matrix.os }}
-          path: wheelhouse/*.whl
-
-      - name: Test wheel with ${{ matrix.python-version }}
-        run: |
-          minor_version="$(python${{ matrix.python-version }} -c 'import sys;print(sys.version_info.minor)')"
-          packaging/python/test_wheels.sh $(which python${{ matrix.python-version }}) wheelhouse/*cp3${minor_version}*.whl
-
-  build-test-linux:
-    name: Build and test Python ${{ matrix.python-version }} wheel on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
-    strategy:
-      matrix:
-        os: ['ubuntu-22.04', 'ubuntu-22.04-arm']
-        python-version: ['3.9', '3.13']
-        include:
           - os: 'ubuntu-22.04'
             base_image: 'docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64'
+
           - os: 'ubuntu-22.04-arm'
             base_image: 'docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64'
 
@@ -125,7 +58,46 @@ jobs:
           ref: ${{ github.inputs.rel_release }}
           submodules: recursive
 
+      - name: Install Python from python.org
+        if: runner.os == 'macOS'
+        run: |
+          installer="python-${{ matrix.python-org-version }}-${{ matrix.python-installer-name }}"
+          url="https://www.python.org/ftp/python/${{ matrix.python-org-version }}/${installer}"
+          curl $url -o $installer
+          sudo installer -pkg $installer -target /
+
+      - name: Install System Dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install --cask xquartz
+          brew install flex bison cmake mpich
+          brew unlink mpich && brew install openmpi
+          cmake --version
+          # Uninstall libomp for compatibility with issue #817
+          brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
+          echo "$(brew --prefix)/opt/cmake/bin:$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
+
+      - name: Install readline
+        if: runner.os == 'macOS'
+        run: |
+          sudo mkdir -p /opt/nrnwheel/$(uname -m)
+          sudo bash packaging/python/build_static_readline_osx.bash
+
+      - name: Set env for release
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "NRN_NIGHTLY_UPLOAD=false" >> $GITHUB_ENV
+          echo NRN_RELEASE_UPLOAD=${{ github.event.inputs.upload }} >> $GITHUB_ENV
+          echo "NEURON_NIGHTLY_TAG=" >> $GITHUB_ENV
+          echo SETUPTOOLS_SCM_PRETEND_VERSION=${{ github.event.inputs.rel_version }} >> $GITHUB_ENV
+
+      - name: Build wheel
+        if: runner.os == 'macOS'
+        run: |
+          packaging/python/build_wheels.bash osx ${{ matrix.python-version }} coreneuron
+
       - name: Build Manylinux wheel
+        if: runner.os != 'macOS'
         run: |
           docker run --rm \
             -w /root/nrn \
@@ -144,10 +116,16 @@ jobs:
           name: wheels-${{ matrix.python-version }}-${{ matrix.os }}
           path: wheelhouse/*.whl
 
-      - name: Setup Python ${{ matrix.python-version }}
+      - name: Setup Python ${{ matrix.python-version }} for testing
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Install test dependencies
+        if: runner.os != 'macOS'
+        run: |
+          sudo apt update
+          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
 
       - name: Test wheel with ${{ matrix.python-version }}
         run: |
@@ -157,7 +135,7 @@ jobs:
   merge:
     name: Merge artifacts
     runs-on: ubuntu-latest
-    needs: [build-test-macos, build-test-linux]
+    needs: [build-test]
     steps:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
