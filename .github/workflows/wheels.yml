@@ -102,6 +102,7 @@ jobs:
         os: ['macos-13', 'macos-14']
         python-version: ['3.9', '3.13']
 
+    steps:
       - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -169,6 +170,7 @@ jobs:
           - os: 'ubuntu-22.04-arm'
             base_image: 'docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64'
 
+    steps:
       - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
