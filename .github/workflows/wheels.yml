@@ -21,25 +21,28 @@ on:
 
 
 jobs:
-  build-test:
-    name: Build Python wheels
+  build-test-macos:
+    name: Build Python ${{ matrix.python-version }} wheel on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
       matrix:
-        os: [macos-14]
+        os: [macos-13, macos-14]
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
 
     steps:
       - name: Check out code
         if: github.event_name != 'workflow_dispatch'
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Check out code for release
         if: github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v4
         with:
           ref: ${{ github.inputs.rel_release }}
+          submodules: recursive
 
       - uses: actions/setup-python@v5
         with:
@@ -79,8 +82,52 @@ jobs:
 
       - name: Test wheel
         run: |
-          minor_version="$(python -c 'import sys;print(sys.version_info.minor)')"
-          packaging/python/test_wheels.sh $(which python) wheelhouse/*cp3${minor_version}*.whl
+          minor_version="$(python${{ matrix.python-version }} -c 'import sys;print(sys.version_info.minor)')"
+          packaging/python/test_wheels.sh $(which python${{ matrix.python-version }}) wheelhouse/*cp3${minor_version}*.whl
+
+      - name: Upload wheel files
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.python-version }}-${{ matrix.os }}
+          path: wheelhouse/*.whl
+
+
+  build-test-linux:
+    name: Build Python ${{ matrix.python-version }} wheel on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    container: ${{ matrix.base_image }}
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        include:
+          - os: 'ubuntu-22.04'
+            base_image: 'docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64'
+          - os: 'ubuntu-22.04-arm'
+            base_image: 'docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64'
+
+    steps:
+      - name: Check out code
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Check out code for release
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.inputs.rel_release }}
+          submodules: recursive
+
+      - name: Build Manylinux wheel
+        run: |
+          packaging/python/build_wheels.bash linux ${{ matrix.python-version }} coreneuron
+
+      - name: Test wheel
+        run: |
+          minor_version="$(python${{ matrix.python-version }} -c 'import sys;print(sys.version_info.minor)')"
+          packaging/python/test_wheels.sh $(which python${{ matrix.python-version }}) wheelhouse/*cp3${minor_version}*.whl
 
       - name: Upload wheel files
         uses: actions/upload-artifact@v4
