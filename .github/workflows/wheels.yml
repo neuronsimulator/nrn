@@ -82,8 +82,8 @@ jobs:
 
       - name: Test wheel
         run: |
-          minor_version="$(python${{ matrix.python-version }} -c 'import sys;print(sys.version_info.minor)')"
-          packaging/python/test_wheels.sh $(which python${{ matrix.python-version }}) wheelhouse/*cp3${minor_version}*.whl
+          minor_version="$(python -c 'import sys;print(sys.version_info.minor)')"
+          packaging/python/test_wheels.sh $(which python) wheelhouse/*cp3${minor_version}*.whl
 
       - name: Upload wheel files
         uses: actions/upload-artifact@v4
@@ -126,8 +126,8 @@ jobs:
 
       - name: Test wheel
         run: |
-          minor_version="$(python${{ matrix.python-version }} -c 'import sys;print(sys.version_info.minor)')"
-          packaging/python/test_wheels.sh $(which python${{ matrix.python-version }}) wheelhouse/*cp3${minor_version}*.whl
+          minor_version="$(python -c 'import sys;print(sys.version_info.minor)')"
+          packaging/python/test_wheels.sh $(which python) wheelhouse/*cp3${minor_version}*.whl
 
       - name: Upload wheel files
         uses: actions/upload-artifact@v4
