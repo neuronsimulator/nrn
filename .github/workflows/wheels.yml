@@ -21,29 +21,18 @@ on:
 
 
 jobs:
-  build-test-macos:
+  build-macos:
     name: Build Python ${{ matrix.python-version }} wheel on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
       matrix:
         os: [macos-13, macos-14]
+        python-version: ['3.9', '3.13']
         include:
           - python-version: '3.9'
             python-org-version: '3.9.13'
             python-installer-name: 'macos11.pkg'
-
-              #- python-version: '3.10'
-              #  python.org.version: '3.10.11'
-              #  python.installer.name: 'macos11.pkg'
-
-              #- python-version: '3.11'
-              #  python.org.version: '3.11.7'
-              #  python.installer.name: 'macos11.pkg'
-
-              #- python-version: '3.12'
-              #  python.org.version: '3.12.0'
-              #  python.installer.name: 'macos11.pkg'
 
           - python-version: '3.13'
             python-org-version: '3.13.0'
@@ -93,15 +82,9 @@ jobs:
           echo "NEURON_NIGHTLY_TAG=" >> $GITHUB_ENV
           echo SETUPTOOLS_SCM_PRETEND_VERSION=${{ github.event.inputs.rel_version }} >> $GITHUB_ENV
 
-      - name: Build wheels on MacOS
-        if: startsWith(runner.os, 'macOS')
+      - name: Build wheel
         run: |
           packaging/python/build_wheels.bash osx ${{ matrix.python-version }} coreneuron
-
-      - name: Test wheel
-        run: |
-          minor_version="$(python -c 'import sys;print(sys.version_info.minor)')"
-          packaging/python/test_wheels.sh $(which python) wheelhouse/*cp3${minor_version}*.whl
 
       - name: Upload wheel files
         uses: actions/upload-artifact@v4
@@ -109,14 +92,37 @@ jobs:
           name: wheels-${{ matrix.python-version }}-${{ matrix.os }}
           path: wheelhouse/*.whl
 
+  test-macos:
+    name: Test MacOS wheel with ${{ matrix.python-version }}
+    needs: build-macos
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        os: ['macos-13', 'macos-14']
+        python-version: ['3.9', '3.13']
 
-  build-test-linux:
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Get wheel
+        uses: actions/download-artifact@v4
+
+      - name: Test wheel with ${{ matrix.python-version }}
+        run: |
+          minor_version="$(python${{ matrix.python-version }} -c 'import sys;print(sys.version_info.minor)')"
+          packaging/python/test_wheels.sh $(which python${{ matrix.python-version }}) wheelhouse/*cp3${minor_version}*.whl
+
+  build-linux:
     name: Build Python ${{ matrix.python-version }} wheel on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     container: ${{ matrix.base_image }}
     strategy:
       matrix:
+        os: ['ubuntu-22.04', 'ubuntu-22.04-arm']
         python-version: ['3.9', '3.13']
         include:
           - os: 'ubuntu-22.04'
@@ -142,20 +148,43 @@ jobs:
         run: |
           packaging/python/build_wheels.bash linux ${{ matrix.python-version }} coreneuron
 
-      - name: Test wheel
-        run: |
-          minor_version="$(python${{ matrix.python-version }} -c 'import sys;print(sys.version_info.minor)')"
-          packaging/python/test_wheels.sh $(which python${{ matrix.python-version }}) wheelhouse/*cp3${minor_version}*.whl
-
       - name: Upload wheel files
         uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.python-version }}-${{ matrix.os }}
           path: wheelhouse/*.whl
 
+  test-linux:
+    name: Test manylinux wheel
+    needs: build-linux
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        os: ['ubuntu-22.04', 'ubuntu-22.04-arm']
+        python-version: ['3.9', '3.13']
+        include:
+          - os: 'ubuntu-22.04'
+            base_image: 'docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64'
+          - os: 'ubuntu-22.04-arm'
+            base_image: 'docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64'
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Get wheel
+        uses: actions/download-artifact@v4
+
+      - name: Test wheel with ${{ matrix.python-version }}
+        run: |
+          minor_version="$(python${{ matrix.python-version }} -c 'import sys;print(sys.version_info.minor)')"
+          packaging/python/test_wheels.sh $(which python${{ matrix.python-version }}) wheelhouse/*cp3${minor_version}*.whl
+
   merge:
     runs-on: ubuntu-latest
-    needs: [build-test-macos, build-test-linux]
+    needs: [build-macos, build-linux]
     steps:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
@@ -163,3 +192,18 @@ jobs:
           delete-merged: true
           name: wheels
           pattern: wheels-*
+
+  final:
+    name: Final CI
+    needs: [build-macos, test-macos, build-linux, test-linux, merge]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if CI matrix is successful
+        if: >-
+          ${{
+               contains(needs.*.result, 'failure')
+            || contains(needs.*.result, 'cancelled')
+            || contains(needs.*.result, 'skipped')
+          }}
+        run: exit 1
