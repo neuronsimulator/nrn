@@ -65,7 +65,7 @@ jobs:
 
       - name: Install Python from python.org
         run: |
-          installer=python-${{ matrix.python.org.version }}-${{ matrix.python.installer.name }}
+          installer="python-${{ matrix.python.org.version }}-${{ matrix.python.installer.name }}"
           url="https://www.python.org/ftp/python/${{ matrix.python.org.version }}/${installer}"
           curl $url -o $installer
           sudo installer -pkg $installer -target /
