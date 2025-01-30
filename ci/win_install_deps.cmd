@@ -3,8 +3,6 @@
 :: install all dependencies
 
 :: install python
-python-3.7.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python37 || goto :error
-python-3.8.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python38 || goto :error
 python-3.9.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python39 || goto :error
 python-3.10.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python310 || goto :error
 python-3.11.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python311 || goto :error
@@ -12,23 +10,17 @@ python-3.12.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustF
 python-3.13.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python313 || goto :error
 
 :: fix msvcc version for all python3
-pwsh -command "(Get-Content C:\Python37\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1900'':' | Out-File C:\Python37\Lib\distutils\cygwinccompiler.py"
-pwsh -command "(Get-Content C:\Python38\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1916'':' | Out-File C:\Python38\Lib\distutils\cygwinccompiler.py"
 pwsh -command "(Get-Content C:\Python39\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1927'':' | Out-File C:\Python39\Lib\distutils\cygwinccompiler.py"
 pwsh -command "(Get-Content C:\Python310\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1929'':' | Out-File C:\Python310\Lib\distutils\cygwinccompiler.py"
 pwsh -command "(Get-Content C:\Python311\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1934'':' | Out-File C:\Python311\Lib\distutils\cygwinccompiler.py"
 
 
 :: fix msvc runtime library for all python
-pwsh -command "(Get-Content C:\Python37\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python37\Lib\distutils\cygwinccompiler.py"
-pwsh -command "(Get-Content C:\Python38\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python38\Lib\distutils\cygwinccompiler.py"
 pwsh -command "(Get-Content C:\Python39\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python39\Lib\distutils\cygwinccompiler.py"
 pwsh -command "(Get-Content C:\Python310\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python310\Lib\distutils\cygwinccompiler.py"
 pwsh -command "(Get-Content C:\Python311\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python311\Lib\distutils\cygwinccompiler.py"
 
 :: install numpy
-C:\Python37\python.exe -m pip install numpy==1.14.6 cython || goto :error
-C:\Python38\python.exe -m pip install  numpy==1.17.5 cython || goto :error
 C:\Python39\python.exe -m pip install  numpy==1.19.3 cython || goto :error
 C:\Python310\python.exe -m pip install numpy==1.21.3 cython || goto :error
 C:\Python311\python.exe -m pip install numpy==1.23.5 cython || goto :error
