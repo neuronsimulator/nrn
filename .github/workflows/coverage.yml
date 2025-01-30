@@ -20,7 +20,7 @@ on:
 #      - 'docs/**'
 
 env:
-  PY_MIN_VERSION: '3.7'
+  PY_MIN_VERSION: '3.9'
   PY_MAX_VERSION: '3.13'
 
 jobs:
@@ -63,11 +63,13 @@ jobs:
       - name: Install Python@${{ env.PY_MIN_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
         run: |
+          python${PY_MIN_VERSION} -m pip install --upgrade -r ci_requirements.txt
           python${PY_MIN_VERSION} -m pip install --upgrade pip -r nrn_requirements.txt
 
       - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
         run: |
+          python${PY_MAX_VERSION} -m pip install --upgrade -r ci_requirements.txt
           python${PY_MAX_VERSION} -m pip install --upgrade pip -r nrn_requirements.txt
 
       - name: Build & Test
