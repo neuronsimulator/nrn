@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <array>
 
 extern int nrn_nopython;
 extern int nrnpy_nositeflag;
@@ -361,7 +362,16 @@ static int pylib2pyver10(std::string pylib) {
         pylib = pylib.substr(pos + 1);
     }
 
-    // erase nondigits
+    // erase the suffix
+    const std::array<std::string, 3> suffixes = {".so", ".dylib", ".dll"};
+    for (const auto& suffix: suffixes) {
+        size_t pos = pylib.find(suffix);
+        if (pos != std::string::npos) {
+            pylib.erase(pos);
+            break;
+        }
+    }
+
     pylib.erase(std::remove_if(pylib.begin(), pylib.end(), [](char c) { return !std::isdigit(c); }),
                 pylib.end());
 
