@@ -22,7 +22,7 @@ on:
 env:
   BUILD_TYPE: Release
   DESIRED_CMAKE_VERSION: 3.15.0
-  PY_MIN_VERSION: '3.7'
+  PY_MIN_VERSION: '3.9'
   PY_MAX_VERSION: '3.13'
 
 jobs:
@@ -39,8 +39,8 @@ jobs:
       SKIP_WHEELHOUSE_REPAIR: true
       BUILD_TYPE: Release
       DESIRED_CMAKE_VERSION: 3.15.0
-      PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
-      PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.12' }}
+      PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.9' }}
+      PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.13' }}
       MUSIC_INSTALL_DIR: /opt/MUSIC
 
     strategy:
