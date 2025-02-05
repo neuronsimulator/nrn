@@ -60,12 +60,12 @@ ICS_insert_inhom.argtypes = ICS_insert.argtypes = [
     ctypes.c_int,
     ctypes.py_object,
     ctypes.c_long,
-    numpy.ctypeslib.ndpointer(dtype=int),
-    numpy.ctypeslib.ndpointer(dtype=int),
+    numpy.ctypeslib.ndpointer(dtype=ctypes.c_long),
+    numpy.ctypeslib.ndpointer(dtype=ctypes.c_long),
     ctypes.c_long,
-    numpy.ctypeslib.ndpointer(dtype=int),
+    numpy.ctypeslib.ndpointer(dtype=ctypes.c_long),
     ctypes.c_long,
-    numpy.ctypeslib.ndpointer(dtype=int),
+    numpy.ctypeslib.ndpointer(dtype=ctypes.c_long),
     ctypes.c_long,
     numpy.ctypeslib.ndpointer(dtype=float),
     ctypes.c_double,
@@ -842,7 +842,7 @@ class _IntracellularSpecies(_SpeciesMathable):
 
         # sort list for parallelization
         line_defs.sort(key=lambda x: x[1], reverse=True)
-        line_defs = numpy.asarray(line_defs, dtype=int)
+        line_defs = numpy.asarray(line_defs, dtype=ctypes.c_long)
         line_defs = line_defs.reshape(2 * len(line_defs))
         return line_defs
 
@@ -862,7 +862,7 @@ class _IntracellularSpecies(_SpeciesMathable):
 
     def create_neighbors_array(self, nodes, nodes_length):
         self._isalive()
-        my_array = numpy.zeros((nodes_length, 3), dtype=int)
+        my_array = numpy.zeros((nodes_length, 3), dtype=ctypes.c_long)
         for n in nodes:
             for i, ele in enumerate(n.neighbors[::2]):
                 my_array[n._index, i] = ele if ele is not None else -1
@@ -1507,7 +1507,6 @@ class _ExtracellularSpecies(_SpeciesMathable):
                     self._states[i] = getattr(seg, stateo)
 
     def _semi_compile(self, reg, instruction):
-
         self._isalive()
         if self._species:
             sp = _defined_species[self._species][self._region]()
@@ -1523,7 +1522,6 @@ class _ExtracellularSpecies(_SpeciesMathable):
 
     @property
     def d(self):
-
         self._isalive()
         return self._d
 
@@ -2283,7 +2281,8 @@ class Species(_SpeciesMathable):
     def nodes(self):
         """A NodeList of all the nodes corresponding to the species.
 
-        This can then be further restricted using the callable property of NodeList objects."""
+        This can then be further restricted using the callable property of NodeList objects.
+        """
 
         from . import rxd
 

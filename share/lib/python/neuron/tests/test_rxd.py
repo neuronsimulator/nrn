@@ -798,8 +798,7 @@ class RxDTestCase(unittest.TestCase):
 
 
 def suite():
-    suite = unittest.makeSuite(RxDTestCase, "test")
-    return suite
+    return unittest.defaultTestLoader.loadTestsFromTestCase(RxDTestCase)
 
 
 def test():

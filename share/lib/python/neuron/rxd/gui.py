@@ -1204,6 +1204,7 @@ class _SpeciesEditor:
 
 _the_species_editor = _SpeciesEditor()
 
+
 # this is a way of faking the Singleton pattern
 def SpeciesEditor():
     if not _the_species_editor.is_mapped:
@@ -1248,6 +1249,7 @@ class _SpeciesPane:
 
 
 _the_species_pane = _SpeciesPane()
+
 
 # this is a way of faking the Singleton pattern
 def SpeciesPane():
@@ -1699,6 +1701,7 @@ class _ReactionPane(object):
 
 
 _the_reaction_pane = _ReactionPane()
+
 
 # this is a way of faking the Singleton pattern
 def ReactionPane():

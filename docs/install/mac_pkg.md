@@ -55,7 +55,7 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
 
 The default variables above will be
 ```
-pythons="python3.9;python3.10;python3.11;python3.12"
+pythons="python3.9;python3.10;python3.11;python3.12;python3.13"
 archs_cmake='-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'
 ```
 

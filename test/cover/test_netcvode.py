@@ -12,6 +12,7 @@ if hasattr(h, "usetable_hh"):
 cv = h.CVode()
 pc = h.ParallelContext()
 
+
 # remove address info from cv.debug_event output
 def debug_event_filter(s):
     s = re.sub(r"cvode_0x[0-9abcdef]* ", "cvode_0x... ", s)

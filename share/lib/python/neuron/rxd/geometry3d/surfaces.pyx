@@ -1,13 +1,11 @@
 import os
 import numpy
-import graphicsPrimitives
-import neuron
-import numpy
 cimport numpy
 import itertools
 import bisect
 cimport cython
 
+from neuron.rxd.geometry3d import graphicsPrimitives
 
 """
 The surfaces module

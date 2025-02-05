@@ -52,15 +52,16 @@ pip_numpy_install() {
       36) numpy_ver="numpy==1.12.1" ;;
       37) numpy_ver="numpy==1.14.6" ;;
       38) numpy_ver="numpy==1.17.5" ;;
-      39) numpy_ver="numpy==1.19.3" ;;
-      310) numpy_ver="numpy==1.21.3" ;;
-      311) numpy_ver="numpy==1.23.5" ;;
-      312) numpy_ver="numpy==1.26.0" ;;
+      39) numpy_ver="numpy>=2" ;;
+      310) numpy_ver="numpy>=2" ;;
+      311) numpy_ver="numpy>=2" ;;
+      312) numpy_ver="numpy>=2" ;;
+      313) numpy_ver="numpy>=2" ;;
       *) echo "Error: numpy version not specified for this python!" && exit 1;;
     esac
 
     # older version for apple m1 as building from source fails
-    if [[ `uname -m` == 'arm64' ]] && [[ $py_ver != 311 ]] && [[ $py_ver != 312 ]]; then
+    if [[ `uname -m` == 'arm64' ]] && [[ $py_ver -le 311 ]] ; then
       numpy_ver="numpy==1.21.3"
     fi
 

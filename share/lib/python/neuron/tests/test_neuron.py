@@ -277,13 +277,10 @@ def basicRxD3D():
 
 
 def suite():
-
-    suite = unittest.makeSuite(NeuronTestCase, "test")
-    return suite
+    return unittest.defaultTestLoader.loadTestsFromTestCase(NeuronTestCase)
 
 
 if __name__ == "__main__":
-
     # unittest.main()
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite())
