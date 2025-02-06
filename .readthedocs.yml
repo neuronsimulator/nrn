@@ -10,3 +10,6 @@ build:
 
 conda:
   environment: docs/conda_environment.yml
+
+apt_packages:
+  - libmpich-dev
