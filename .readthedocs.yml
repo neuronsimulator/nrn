@@ -7,9 +7,8 @@ build:
   os: "ubuntu-22.04"
   tools:
     python: "mambaforge-22.9"
+  apt_packages:
+    - libmpich-dev
 
 conda:
   environment: docs/conda_environment.yml
-
-apt_packages:
-  - libmpich-dev
