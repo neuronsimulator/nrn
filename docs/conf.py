@@ -123,12 +123,12 @@ if os.environ.get("READTHEDOCS"):
         sys.exit(1)
         # Build and install NEURON from source
         subprocess.run(
-            ["cd", "..", "&&", "python", "setup.py", "build_ext", "bdist_wheel"],
+            "cd .. && python setup.py build_ext bdist_wheel",
             shell=True,
             check=True,
         )
         subprocess.run(
-            ["pip", "install", glob.glob("../dist/NEURON*.whl")[0]],
+            f"pip install {glob.glob('../dist/*.whl')[0]}",
             shell=True,
             check=True,
         )
