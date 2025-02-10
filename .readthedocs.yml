@@ -15,6 +15,11 @@ build:
     - ffmpeg
     - doxygen
     - pandoc
+    - cmake
+    - bison
+    - flex
+    - libfl-dev
+    - libreadline-dev
 
 submodules:
   recursive: true
