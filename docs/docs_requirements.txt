@@ -17,3 +17,4 @@ sphinx-design
 sphinx-inline-tabs
 packaging==21.3
 tenacity<8.4
+anywidget
