@@ -10,6 +10,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import glob
 import os
 import sys
 import subprocess
@@ -115,17 +116,32 @@ if os.environ.get("READTHEDOCS"):
 
     rtd_ver = PKGVER.parse(os.environ.get("READTHEDOCS_VERSION"))
 
-    # Install neuron accordingly (nightly for master, otherwise incoming version)
-    # Note that neuron wheel must be published a priori.
-    subprocess.run(
-        "pip install neuron{}".format(
-            "=={}".format(rtd_ver.base_version)
-            if isinstance(rtd_ver, PKGVER.Version)
-            else "-nightly"
-        ),
-        shell=True,
-        check=True,
-    )
+    # see:
+    # https://docs.readthedocs.com/platform/stable/reference/environment-variables.html#envvar-READTHEDOCS_VERSION_TYPE
+    if os.environ.get("READTHEDOCS_VERSION_TYPE") == "external":
+        # Build and install NEURON from source
+        subprocess.run(
+            ["cd", "..", "&&", "python", "setup.py", "build_ext", "bdist_wheel"],
+            shell=True,
+            check=True,
+        )
+        subprocess.run(
+            ["pip", "install", glob.glob("../dist/NEURON*.whl")[0]],
+            shell=True,
+            check=True,
+        )
+    else:
+        # Install neuron accordingly (nightly for master, otherwise incoming version)
+        # Note that neuron wheel must be published a priori.
+        subprocess.run(
+            "pip install neuron{}".format(
+                "=={}".format(rtd_ver.base_version)
+                if isinstance(rtd_ver, PKGVER.Version)
+                else "-nightly"
+            ),
+            shell=True,
+            check=True,
+        )
 
     # Execute & convert notebooks + doxygen
     subprocess.run("cd .. && python setup.py docs", check=True, shell=True)

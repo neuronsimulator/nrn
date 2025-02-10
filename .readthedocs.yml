@@ -6,9 +6,20 @@ sphinx:
 build:
   os: "ubuntu-22.04"
   tools:
-    python: "mambaforge-22.9"
+    python: "3.12"
   apt_packages:
+    - build-essential
+    - libx11-dev
+    - libxcomposite-dev
     - libmpich-dev
+    - ffmpeg
+    - doxygen
+    - pandoc
 
-conda:
-  environment: docs/conda_environment.yml
+submodules:
+  recursive: true
+
+python:
+  install:
+    - requirements: nrn_requirements.txt
+    - requirements: docs/docs_requirements.txt
