@@ -119,6 +119,7 @@ if os.environ.get("READTHEDOCS"):
     # see:
     # https://docs.readthedocs.com/platform/stable/reference/environment-variables.html#envvar-READTHEDOCS_VERSION_TYPE
     if os.environ.get("READTHEDOCS_VERSION_TYPE") == "external":
+        print(f"Current dir: {os.getcwd()}")
         # Build and install NEURON from source
         subprocess.run(
             ["cd", "..", "&&", "python", "setup.py", "build_ext", "bdist_wheel"],
@@ -135,7 +136,7 @@ if os.environ.get("READTHEDOCS"):
         # Note that neuron wheel must be published a priori.
         subprocess.run(
             "pip install neuron{}".format(
-                "=={}".format(rtd_ver.base_version)
+                f"=={rtd_ver.base_version}"
                 if isinstance(rtd_ver, PKGVER.Version)
                 else "-nightly"
             ),
