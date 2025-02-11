@@ -17,11 +17,10 @@ Pre-release
 
 Sanity checks
 ---
-- [ ] Create `release/x.y` branch and make sure GitHub, Azure and CircleCI builds pass
-- [ ] Run [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci/actions/workflows/build-neuron.yml) for the respective Azure build; see [Azure drop guide](https://github.com/neuronsimulator/nrn-build-ci#azure-wheels-testing---manual-workflow) 
+- [ ] Create `release/x.y` branch and make sure GitHub Actions builds pass
+- [ ] Run [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci/actions/workflows/build-neuron.yml) for the respective GitHub Actions build; see [the guide](https://github.com/neuronsimulator/nrn-build-ci#wheels-testing---manual-workflow)
 - [ ] Activate ReadTheDocs build for `release/x.y` & make it hidden. Check docs are fine after build is done.
-- [ ] Run BBP Simulation Stack & other relevant tests
-- [ ] Build release wheels but WITHOUT upload ([see details](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure))
+- [ ] Run a test wheel build WITHOUT upload for `release/x.y` to ensure all the wheels build ([see details](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-github-actions))
 
 
 Releasing
@@ -29,9 +28,11 @@ Releasing
 - [ ] Update changelog below and agree on it with everyone; then commit it to `docs/changelog` (copy structure as-is)
 - [ ] Update `docs/index.rst` accordingly with the new `.pkg` and `.exe` links for `PKG installer` and `Windows Installer`
 - [ ] Run the ReadTheDocs build again for `release-x.y`, make sure the build passes and inspect the Changelog page.
-- [ ] Create new release+tag on GitHub via [release workflow](https://github.com/neuronsimulator/nrn/actions/workflows/release.yml?query=workflow%3A%22NEURON+Release%22)
-- [ ] Create, test and upload manual artifacts (MacOS package installers, arm64/aarch64 wheels, ...)
-- [ ] Publish the `x.y.z` wheels on Pypi; see [wheel publishing instructions](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure)
+- [ ] Create new release+tag on GitHub via [release workflow](https://github.com/neuronsimulator/nrn/actions/workflows/release.yml?query=workflow%3A%22NEURON+Release%22). Note that the GitHub release will be marked as pre-release and  will contain the full-src-package and the Windows installer at the end of the release workflow.
+- [ ] Build release wheels but WITHOUT upload ([see details](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-github-actions))
+- [ ] Create, test and upload manual artifacts
+  - [ ] MacOS package installer (manual task, ask Michael)
+- [ ] Publish the `x.y.z` wheels on Pypi; see [wheel publishing instructions](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-github-actions)
 - [ ] Once wheels are published, activate the `x.y.z` tag on ReadTheDocs
 - [ ] Upload Windows installer from the wheels publishing Azure run (to get correct tag)
 - [ ] Publish release on GitHub (edit https://github.com/neuronsimulator/nrn/releases/tag/x.y.z)
