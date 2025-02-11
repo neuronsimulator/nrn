@@ -197,8 +197,7 @@ After creating the tag on the `release/x.y` or on the `master` branch, perform t
 3) Update the following driving variables to:
    * `type` : `release`
    * `upload` : `false`
-
-5) Click on the green `Run workflow` button.
+4) Click on the green `Run workflow` button.
 
 TODO replace this image with one that uses GitHub Actions (or a generic artifacts cache).
 ![](images/azure-release-no-upload.png)
