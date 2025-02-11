@@ -91,19 +91,18 @@ jobs:
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo bash packaging/python/build_static_readline_osx.bash
 
-      - name: Set env for release
-        if: ${{ github.event.inputs.type == 'release' }}
+      - name: Set env
         run: |
-          echo "NRN_NIGHTLY_UPLOAD=false" >> $GITHUB_ENV
-          echo NRN_RELEASE_UPLOAD=${{ github.event.inputs.upload }} >> $GITHUB_ENV
-          echo "NEURON_NIGHTLY_TAG=" >> $GITHUB_ENV
-
-      - name: Set env for nightly
-        if: ${{ github.event.inputs.type == 'nightly' }}
-        run: |
-          echo "NRN_RELEASE_UPLOAD=false" >> $GITHUB_ENV
-          echo NRN_NIGHTLY_UPLOAD=${{ github.event.inputs.upload }} >> $GITHUB_ENV
-          echo "NEURON_NIGHTLY_TAG=-nightly" >> $GITHUB_ENV
+          if [ ${{ github.event.inputs.type }} == 'nightly' ]
+          then
+            echo "NRN_RELEASE_UPLOAD=false" >> $GITHUB_ENV
+            echo NRN_NIGHTLY_UPLOAD=${{ github.event.inputs.upload }} >> $GITHUB_ENV
+            echo "NEURON_NIGHTLY_TAG=-nightly" >> $GITHUB_ENV
+          else
+            echo "NRN_NIGHTLY_UPLOAD=false" >> $GITHUB_ENV
+            echo NRN_RELEASE_UPLOAD=${{ github.event.inputs.upload }} >> $GITHUB_ENV
+            echo "NEURON_NIGHTLY_TAG=" >> $GITHUB_ENV
+          fi
 
       - name: Override env for scheduled run
         if: github.event_name == 'schedule'
