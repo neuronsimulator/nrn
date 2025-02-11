@@ -55,8 +55,8 @@
 
 #pragma once
 
-#include "nvector.h"
-#include "sundialstypes.h"
+#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
+#include <sundials/sundials_types.h> /* definition of type realtype*/
 extern "C" {
 extern void N_VOneMask_Serial(N_Vector x);
 }
@@ -265,7 +265,7 @@ void N_VPrint_NrnThread(N_Vector v);
 
 N_Vector N_VClone_NrnThread(N_Vector w);
 void N_VDestroy_NrnThread(N_Vector v);
-void N_VSpace_NrnThread(N_Vector v, long int* lrw, long int* liw);
+void N_VSpace_NrnThread(N_Vector v, sunindextype* lrw, sunindextype* liw);
 realtype* N_VGetArrayPointer_NrnThread(N_Vector v);
 void N_VSetArrayPointer_NrnThread(realtype* v_data, N_Vector v);
 void N_VLinearSum_NrnThread(realtype a, N_Vector x, realtype b, N_Vector y, N_Vector z);
