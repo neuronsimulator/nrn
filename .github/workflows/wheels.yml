@@ -64,7 +64,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.inputs.rel_release }}
+          ref: ${{ github.event.inputs.rel_release }}
           submodules: recursive
 
       - name: Install Python from python.org
