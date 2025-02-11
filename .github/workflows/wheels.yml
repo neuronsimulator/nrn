@@ -101,11 +101,9 @@ jobs:
           UPLOAD="${UPLOAD:-false}"
           if [ "${BUILD_TYPE}" = 'nightly' ]
           then
-            echo "NRN_RELEASE_UPLOAD=false" >> $GITHUB_ENV
             echo "NRN_NIGHTLY_UPLOAD=true" >> $GITHUB_ENV
             echo "NEURON_NIGHTLY_TAG=-nightly" >> $GITHUB_ENV
           else
-            echo "NRN_RELEASE_UPLOAD=${UPLOAD}" >> $GITHUB_ENV
             echo "NRN_NIGHTLY_UPLOAD=false" >> $GITHUB_ENV
             echo "NEURON_NIGHTLY_TAG=" >> $GITHUB_ENV
           fi
@@ -113,18 +111,15 @@ jobs:
       - name: Override env for scheduled run
         if: github.event_name == 'schedule'
         run: |
-          echo "NRN_RELEASE_UPLOAD=false" >> $GITHUB_ENV
           echo "NRN_NIGHTLY_UPLOAD=true" >> $GITHUB_ENV
           echo "NEURON_NIGHTLY_TAG=-nightly" >> $GITHUB_ENV
 
-      - name: Set version
+      - name: Set custom version
+        if: github.event.inputs.rel_version != ''
         run: |
-          if [ -n ${{ github.event.inputs.rel_version }} ]
-          then
-            echo SETUPTOOLS_SCM_PRETEND_VERSION=${{ github.event.inputs.rel_version }} >> $GITHUB_ENV
-          fi
+          echo SETUPTOOLS_SCM_PRETEND_VERSION=${{ github.event.inputs.rel_version }} >> $GITHUB_ENV
 
-      - name: Build wheel
+      - name: Build MacOS wheel
         if: runner.os == 'macOS'
         run: |
           packaging/python/build_wheels.bash osx ${{ matrix.python-version }} coreneuron
@@ -137,7 +132,6 @@ jobs:
             -v $(pwd):/root/nrn \
             -e NEURON_NIGHTLY_TAG \
             -e NRN_NIGHTLY_UPLOAD \
-            -e NRN_RELEASE_UPLOAD \
             -e SETUPTOOLS_SCM_PRETEND_VERSION \
             -e NRN_BUILD_FOR_UPLOAD=1 \
             ${{ matrix.base_image }} \
