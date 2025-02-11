@@ -34,7 +34,6 @@ Releasing
   - [ ] MacOS package installer (manual task, ask Michael)
 - [ ] Publish the `x.y.z` wheels on Pypi; see [wheel publishing instructions](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-github-actions)
 - [ ] Once wheels are published, activate the `x.y.z` tag on ReadTheDocs
-- [ ] Upload Windows installer from the wheels publishing Azure run (to get correct tag)
 - [ ] Publish release on GitHub (edit https://github.com/neuronsimulator/nrn/releases/tag/x.y.z)
 
 
