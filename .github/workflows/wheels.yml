@@ -110,7 +110,7 @@ jobs:
           echo "NEURON_NIGHTLY_TAG=-nightly" >> $GITHUB_ENV
 
       - name: Override env for scheduled run
-        if: github.event.schedule != ''
+        if: github.event_name == 'schedule'
         run: |
           echo "NRN_RELEASE_UPLOAD=false" >> $GITHUB_ENV
           echo "NRN_NIGHTLY_UPLOAD=true" >> $GITHUB_ENV
