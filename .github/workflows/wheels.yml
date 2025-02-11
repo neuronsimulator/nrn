@@ -179,14 +179,41 @@ jobs:
           body: |
             ✔️ ${{ github.sha }} -> [artifacts URL](${{ steps.merge-artifacts.outputs.artifact-url }})
 
-  upload:
-    name: Upload wheels
+  pypi-publish-nightly:
+    name: Upload nightly wheels to PyPI
     runs-on: ubuntu-latest
     needs: merge
+    if: github.event_name == 'schedule'
+    environment:
+      name: pypi
+      url: https://pypi.org/p/neuron-nightly
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
-      - name: Upload wheels
-        if: github.event.inputs.upload == true
-        run: echo "TODO"
+      - name: Download wheels from artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  pypi-publish-release:
+    name: Upload release wheels to PyPI
+    runs-on: ubuntu-latest
+    needs: merge
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.upload == 'true'
+    environment:
+      name: pypi
+      url: https://pypi.org/p/neuron
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+    steps:
+      - name: Download wheels from artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
 
   final:
     name: Final CI
