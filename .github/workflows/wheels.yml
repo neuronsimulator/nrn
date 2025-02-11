@@ -170,11 +170,19 @@ jobs:
     needs: [build-test]
     steps:
       - name: Merge Artifacts
+        id: merge-artifacts
         uses: actions/upload-artifact/merge@v4
         with:
           delete-merged: true
           name: wheels
           pattern: wheels-*
+
+      - name: Create comment with URL to artifact
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ✔️ ${{ github.sha }} -> [artifacts URL](${{ steps.merge-artifacts.outputs.artifact-url }})
 
   upload:
     name: Upload wheels
