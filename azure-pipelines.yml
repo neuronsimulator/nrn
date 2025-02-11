@@ -62,6 +62,7 @@ stages:
           echo "value of NEURON_RELEASE_UPLOAD: ${NEURON_RELEASE_UPLOAD}"
           echo "value of NRN_NIGHTLY_UPLOAD: ${NRN_NIGHTLY_UPLOAD}"
           echo "value of NEURON_NIGHTLY_TAG: ${NEURON_NIGHTLY_TAG}"
+          echo "value of SETUPTOOLS_SCM_PRETEND_VERSION: ${SETUPTOOLS_SCM_PRETEND_VERSION}"
           exit 1
 
           sudo mkdir -p /opt/nrnwheel/mpt
