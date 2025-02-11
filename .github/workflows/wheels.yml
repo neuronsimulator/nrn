@@ -9,8 +9,6 @@ on:
       - master
   schedule:
     - cron: "0 0 * * *"
-    branches:
-      - master
 
   workflow_dispatch:
     inputs:
