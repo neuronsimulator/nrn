@@ -39,15 +39,11 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        os: ['macos-13', 'macos-14', 'ubuntu-22.04', 'ubuntu-22.04-arm']
-        python-version: ['3.9', '3.13']
+        os: ['ubuntu-22.04', 'ubuntu-22.04-arm']
+        python-version: ['3.9']
         include:
           - python-version: '3.9'
             python-org-version: '3.9.13'
-            python-installer-name: 'macos11.pkg'
-
-          - python-version: '3.13'
-            python-org-version: '3.13.0'
             python-installer-name: 'macos11.pkg'
 
           - os: 'ubuntu-22.04'
