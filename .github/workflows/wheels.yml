@@ -31,6 +31,8 @@ on:
         options:
           - 'nightly'
           - 'release'
+      base_image:
+        description: The custom base container image to use for manylinux builds
 
 jobs:
   build-test:
@@ -127,6 +129,8 @@ jobs:
       - name: Build Manylinux wheel
         if: runner.os != 'macOS'
         run: |
+          BASE_IMAGE="${{ github.event.inputs.base_image }}"
+          BASE_IMAGE="${BASE_IMAGE:-${{ matrix.base_image }}"
           docker run --rm \
             -w /root/nrn \
             -v $(pwd):/root/nrn \
@@ -134,7 +138,7 @@ jobs:
             -e NRN_NIGHTLY_UPLOAD \
             -e SETUPTOOLS_SCM_PRETEND_VERSION \
             -e NRN_BUILD_FOR_UPLOAD=1 \
-            ${{ matrix.base_image }} \
+            ${BASE_IMAGE} \
             packaging/python/build_wheels.bash linux ${{ matrix.python-version }} coreneuron
 
       - name: Upload wheel files
