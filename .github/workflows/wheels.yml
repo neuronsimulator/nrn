@@ -173,6 +173,7 @@ jobs:
           pattern: wheels-*
 
       - name: Create comment with URL to artifact
+        if: github.event.pull_request
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
