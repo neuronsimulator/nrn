@@ -59,6 +59,11 @@ stages:
       # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
       # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
       - script: |
+        echo "value of NEURON_RELEASE_UPLOAD: ${NEURON_RELEASE_UPLOAD}"
+        echo "value of NRN_NIGHTLY_UPLOAD: ${NRN_NIGHTLY_UPLOAD}"
+        echo "value of NEURON_NIGHTLY_TAG: ${NEURON_NIGHTLY_TAG}"
+          exit 1
+
           sudo mkdir -p /opt/nrnwheel/mpt
           sudo tar -zxf $(mpt_headersSF.secureFilePath) --directory /opt/nrnwheel/mpt
           docker run --rm \
