@@ -5,7 +5,7 @@ on:
     inputs:
       base_image:
         description: 'The base Docker image to use'
-        default: 'manylinux2014'
+        default: 'manylinux_2_28'
         type: choice
         options:
           - 'manylinux2014'
