@@ -25,7 +25,7 @@ on:
         default: false
         required: true
         type: boolean
-      type:
+      build_type:
         description: The type of build (release or nightly)
         default: 'nightly'
         options:
@@ -93,7 +93,7 @@ jobs:
 
       - name: Set env
         run: |
-          if [ ${{ github.event.inputs.type }} == 'nightly' ]
+          if [ ${{ github.event.inputs.build_type }} == 'nightly' ]
           then
             echo "NRN_RELEASE_UPLOAD=false" >> $GITHUB_ENV
             echo NRN_NIGHTLY_UPLOAD=${{ github.event.inputs.upload }} >> $GITHUB_ENV
