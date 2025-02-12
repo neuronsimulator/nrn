@@ -70,6 +70,7 @@ jobs:
         with:
           ref: ${{ github.event.inputs.rel_release }}
           submodules: recursive
+          fetch-depth: 0
 
       - name: Install Python from python.org
         if: runner.os == 'macOS'
