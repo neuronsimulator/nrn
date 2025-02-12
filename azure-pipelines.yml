@@ -38,6 +38,8 @@ stages:
             python.version: '3.9'
 
       steps:
+      - checkout: self
+        submodules: true
 
       # Secure files documentation:
       #   https://docs.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops
@@ -87,6 +89,8 @@ stages:
             python.installer.name: 'macos11.pkg'
 
       steps:
+      - checkout: self
+        submodules: true
 
       - script: |
           installer=python-$(python.org.version)-$(python.installer.name)
