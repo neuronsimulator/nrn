@@ -134,7 +134,7 @@ jobs:
           # manylinux does not support multi-platform images yet (see
           # https://github.com/pypa/manylinux/issues/1306), so as a workaround,
           # we use two custom input variables, one for x86, and one for arm
-          if [[ "${{ runner.os }}" =~ .*arm$ ]]
+          if [[ "${{ matrix.os }}" =~ .*arm$ ]]
           then
             BASE_IMAGE="${{ github.event.inputs.base_image_aarch64 }}"
             BASE_IMAGE="${BASE_IMAGE:-${{ matrix.base_image }}}"
