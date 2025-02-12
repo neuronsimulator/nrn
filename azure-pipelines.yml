@@ -39,7 +39,7 @@ stages:
 
       steps:
       - checkout: self
-        submodules: true
+        submodules: recursive
 
       # Secure files documentation:
       #   https://docs.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops
@@ -90,7 +90,7 @@ stages:
 
       steps:
       - checkout: self
-        submodules: true
+        submodules: recursive
 
       - script: |
           installer=python-$(python.org.version)-$(python.installer.name)
