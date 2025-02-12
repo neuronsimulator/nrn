@@ -31,8 +31,10 @@ on:
         options:
           - 'nightly'
           - 'release'
-      base_image:
-        description: The custom base container image to use for manylinux builds
+      base_image_x86_64:
+        description: The custom base container image to use for manylinux builds (x86_64)
+      base_image_aarch64:
+        description: The custom base container image to use for manylinux builds (aarch64)
 
 jobs:
   build-test:
@@ -129,8 +131,17 @@ jobs:
       - name: Build Manylinux wheel
         if: runner.os != 'macOS'
         run: |
-          BASE_IMAGE="${{ github.event.inputs.base_image }}"
-          BASE_IMAGE="${BASE_IMAGE:-${{ matrix.base_image }}"
+          # manylinux does not support multi-platform images yet (see
+          # https://github.com/pypa/manylinux/issues/1306), so as a workaround,
+          # we use two custom input variables, one for x86, and one for arm
+          if [[ "${{ runner.os }}" =~ .*arm$ ]]
+          then
+            BASE_IMAGE="${{ github.event.inputs.base_image_aarch64 }}"
+            BASE_IMAGE="${BASE_IMAGE:-${{ matrix.base_image }}}"
+          else
+            BASE_IMAGE="${{ github.event.inputs.base_image_x86_64 }}"
+            BASE_IMAGE="${BASE_IMAGE:-${{ matrix.base_image }}}"
+          fi
           docker run --rm \
             -w /root/nrn \
             -v $(pwd):/root/nrn \
