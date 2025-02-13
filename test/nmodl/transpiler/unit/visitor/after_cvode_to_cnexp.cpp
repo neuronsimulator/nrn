@@ -9,7 +9,7 @@
 
 #include "ast/program.hpp"
 #include "parser/nmodl_driver.hpp"
-#include "test/unit/utils/test_utils.hpp"
+#include "utils/test_utils.hpp"
 #include "visitors/after_cvode_to_cnexp_visitor.hpp"
 #include "visitors/checkparent_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"

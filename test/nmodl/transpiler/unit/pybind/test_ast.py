@@ -3,8 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from nmodl.dsl import ast
-import nmodl.dsl as nmodl
+from neuron.nmodl.dsl import ast
+import neuron.nmodl.dsl as nmodl
 import pytest
 
 

@@ -32,23 +32,6 @@
 namespace nmodl::ast {
 
 /**
- * \page ast_design Design of Abstract Syntax Tree (AST)
- *
- * This page describes the AST design aspects.
- *
- * \tableofcontents
- *
- * \section sec_1 AST Class Hierarchy
- * This section describes the AST design
- *
- * \section sec_2 Block Scoped Nodes
- * This section describes block scoped nodes.
- *
- * \section sec_3 Symbol Table Nodes
- * This section describes nodes with symbol table.
- */
-
-/**
  * \defgroup ast_class AST Classes
  * \ingroup ast
  * \brief Classes for implementing Abstract Syntax Tree (AST)

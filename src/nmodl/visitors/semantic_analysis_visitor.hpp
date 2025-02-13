@@ -99,6 +99,7 @@ class SemanticAnalysisVisitor: public ConstAstVisitor {
     bool check_name_conflict(const ast::Program& node);
 
     bool check_table_vars(const ast::Program& node);
+
   public:
     SemanticAnalysisVisitor(bool accel_backend = false)
         : accel_backend(accel_backend) {}

@@ -10,7 +10,7 @@
 #include "ast/program.hpp"
 #include "codegen/codegen_transform_visitor.hpp"
 #include "parser/nmodl_driver.hpp"
-#include "test/unit/utils/test_utils.hpp"
+#include "utils/test_utils.hpp"
 #include "visitors/nmodl_visitor.hpp"
 
 using namespace nmodl;

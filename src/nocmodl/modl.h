@@ -9,7 +9,7 @@
 
 /**
  * \dir
- * \brief NMODL NMODL Translator (NOCMODL) Implementation
+ * \brief NOCMODL Legacy NMODL Translator (NOCMODL) Implementation
  *
  * \file
  * \brief NMODL parser global flags / functions

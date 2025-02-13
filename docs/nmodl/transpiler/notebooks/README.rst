@@ -22,20 +22,20 @@ For more specific implementation details: -
 |image8|
 
 .. |Open In Colab| image:: https://colab.research.google.com/assets/colab-badge.svg
-   :target: https://colab.research.google.com/github/BlueBrain/nmodl/blob/master/docs/notebooks/nmodl-python-tutorial.ipynb
+   :target: https://colab.research.google.com/github/neuronsimulator/nrn/blob/master/docs/notebooks/nmodl-python-tutorial.ipynb
 .. |image1| image:: https://colab.research.google.com/assets/colab-badge.svg
-   :target: https://colab.research.google.com/github/BlueBrain/nmodl/blob/master/docs/notebooks/nmodl-odes-overview.ipynb
+   :target: https://colab.research.google.com/github/neuronsimulator/nrn/blob/master/docs/notebooks/nmodl-odes-overview.ipynb
 .. |image2| image:: https://colab.research.google.com/assets/colab-badge.svg
-   :target: https://colab.research.google.com/github/BlueBrain/nmodl/blob/master/docs/notebooks/nmodl-kinetic-schemes.ipynb
+   :target: https://colab.research.google.com/github/neuronsimulator/nrn/blob/master/docs/notebooks/nmodl-kinetic-schemes.ipynb
 .. |image3| image:: https://colab.research.google.com/assets/colab-badge.svg
-   :target: https://colab.research.google.com/github/BlueBrain/nmodl/blob/master/docs/notebooks/nmodl-sympy-solver-cnexp.ipynb
+   :target: https://colab.research.google.com/github/neuronsimulator/nrn/blob/master/docs/notebooks/nmodl-sympy-solver-cnexp.ipynb
 .. |image4| image:: https://colab.research.google.com/assets/colab-badge.svg
-   :target: https://colab.research.google.com/github/BlueBrain/nmodl/blob/master/docs/notebooks/nmodl-sympy-solver-sparse.ipynb
+   :target: https://colab.research.google.com/github/neuronsimulator/nrn/blob/master/docs/notebooks/nmodl-sympy-solver-sparse.ipynb
 .. |image5| image:: https://colab.research.google.com/assets/colab-badge.svg
-   :target: https://colab.research.google.com/github/BlueBrain/nmodl/blob/master/docs/notebooks/nmodl-sympy-solver-derivimplicit.ipynb
+   :target: https://colab.research.google.com/github/neuronsimulator/nrn/blob/master/docs/notebooks/nmodl-sympy-solver-derivimplicit.ipynb
 .. |image6| image:: https://colab.research.google.com/assets/colab-badge.svg
-   :target: https://colab.research.google.com/github/BlueBrain/nmodl/blob/master/docs/notebooks/nmodl-linear-solver.ipynb
+   :target: https://colab.research.google.com/github/neuronsimulator/nrn/blob/master/docs/notebooks/nmodl-linear-solver.ipynb
 .. |image7| image:: https://colab.research.google.com/assets/colab-badge.svg
-   :target: https://colab.research.google.com/github/BlueBrain/nmodl/blob/master/docs/notebooks/nmodl-nonlinear-solver.ipynb
+   :target: https://colab.research.google.com/github/neuronsimulator/nrn/blob/master/docs/notebooks/nmodl-nonlinear-solver.ipynb
 .. |image8| image:: https://colab.research.google.com/assets/colab-badge.svg
-   :target: https://colab.research.google.com/github/BlueBrain/nmodl/blob/master/docs/notebooks/nmodl-sympy-conductance.ipynb
+   :target: https://colab.research.google.com/github/neuronsimulator/nrn/blob/master/docs/notebooks/nmodl-sympy-conductance.ipynb

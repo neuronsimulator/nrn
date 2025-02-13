@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import io
-from nmodl.dsl import ast, visitor, symtab
+from neuron.nmodl.dsl import ast, visitor, symtab
 
 
 def test_symtab(ch_ast):

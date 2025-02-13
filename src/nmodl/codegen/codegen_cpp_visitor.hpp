@@ -1491,7 +1491,6 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     virtual void setup(const ast::Program& node);
 
   public:
-
     /**
      * Main and only member function to call after creating an instance of this class.
      * \param program the AST to translate to C++ code
@@ -1500,7 +1499,6 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
 
 
   protected:
-
     /**
      * Print the structure that wraps all range and int variables required for the NMODL
      *

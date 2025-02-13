@@ -14,7 +14,7 @@
 #include "ast/program.hpp"
 #include "codegen/codegen_coreneuron_cpp_visitor.hpp"
 #include "parser/nmodl_driver.hpp"
-#include "test/unit/utils/test_utils.hpp"
+#include "utils/test_utils.hpp"
 #include "visitors/checkparent_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
