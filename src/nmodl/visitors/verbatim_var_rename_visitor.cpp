@@ -11,7 +11,7 @@
 #include "ast/string.hpp"
 #include "ast/verbatim.hpp"
 #include "parser/c11_driver.hpp"
-#include "src/utils/logger.hpp"
+#include "utils/logger.hpp"
 
 
 namespace nmodl {

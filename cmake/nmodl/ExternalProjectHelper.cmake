@@ -8,5 +8,5 @@ function(initialize_submodule path)
   endif()
   message(STATUS "Sub-module : missing ${path}: running git submodule update --init")
   execute_process(COMMAND git submodule update --init -- ${path}
-                  WORKING_DIRECTORY ${NMODL_PROJECT_SOURCE_DIR})
+                  WORKING_DIRECTORY ${NMODL_PROJECT_PLATLIB_SOURCE_DIR})
 endfunction()

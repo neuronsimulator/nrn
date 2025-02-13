@@ -19,9 +19,9 @@ const std::string nmodl::CMakeInfo::SHARED_LIBRARY_SUFFIX = "@CMAKE_SHARED_LIBRA
  * \brief Path of nrnutils.lib file
  *
  * nrnunits.lib need to be loaded at runtime. Before project is
- * installed it needs to be read from NMODL_PROJECT_BINARY_DIR and later
- * from CMAKE_INSTALL_PREFIX. Note that this use of NMODL_PROJECT_BINARY_DIR
+ * installed it needs to be read from NMODL_PROJECT_PLATLIB_BINARY_DIR and later
+ * from CMAKE_INSTALL_PREFIX. Note that this use of NMODL_PROJECT_PLATLIB_BINARY_DIR
  * will cause ccache misses when the build prefix is changed.
  */
 std::vector<std::string> nmodl::NrnUnitsLib::NRNUNITSLIB_PATH =
-    {"@CMAKE_INSTALL_PREFIX@/share/nmodl/nrnunits.lib", "@NMODL_PROJECT_BINARY_DIR@/share/nmodl/nrnunits.lib"};
+    {"@CMAKE_INSTALL_PREFIX@/share/nmodl/nrnunits.lib", "@NMODL_PROJECT_PLATLIB_BINARY_DIR@/share/nmodl/nrnunits.lib"};

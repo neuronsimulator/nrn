@@ -4,7 +4,7 @@ set -eu
 function run_tests() {
   echo ""
   echo "Running tests:"
-  for f in test_*.py simulate.py
+  for f in "${2}/"test_*.py "${2}/simulate.py"
   do
     if [[ -f "$f" ]]
     then
@@ -26,17 +26,16 @@ nmodl="$1"
 output_dir="$(uname -m)"
 usecase_dir="$2"
 
-pushd "${usecase_dir}" > /dev/null
 
 # NRN + nocmodl
 echo "-- Running NRN+nocmodl ------"
 rm -r "${output_dir}" tmp || true
-nrnivmodl
-run_tests nocmodl
+nrnivmodl "${usecase_dir}"
+run_tests nocmodl "${usecase_dir}"
 
 
 # NRN + NMODL
 echo "-- Running NRN+NMODL --------"
 rm -r "${output_dir}" tmp || true
-nrnivmodl -nmodl "${nmodl}" -nmodlflags "codegen --cvode"
-run_tests nmodl
+nrnivmodl -nmodl "${nmodl}" -nmodlflags "codegen --cvode" "${usecase_dir}"
+run_tests nmodl "${usecase_dir}"

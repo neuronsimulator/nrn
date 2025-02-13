@@ -36,7 +36,15 @@ set(NMODL_USECASE_DIRS
     verbatim)
 
 foreach(usecase ${NMODL_USECASE_DIRS})
-  add_test(NAME usecase_${usecase}
-           COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/run_test.sh ${CMAKE_BINARY_DIR}/bin/nmodl
-                   ${CMAKE_CURRENT_SOURCE_DIR}/${usecase})
+  make_directory(${CMAKE_CURRENT_BINARY_DIR}/${usecase})
+  add_test(
+    NAME usecase_${usecase}
+    COMMAND
+      ${CMAKE_COMMAND} -E env "PATH=${CMAKE_BINARY_DIR}/bin:$ENV{PATH}"
+      "NRNHOME=${CMAKE_BINARY_DIR}" "NEURONHOME=${CMAKE_BINARY_DIR}/share/nrn"
+      "CORENRNHOME=${CMAKE_BINARY_DIR}" "NMODL_PYLIB=${PYTHON_LIBRARY}"
+      "NMODLHOME=${CMAKE_BINARY_DIR}" "PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python:$ENV{PYTHONPATH}"
+      ${CMAKE_CURRENT_SOURCE_DIR}/run_test.sh ${CMAKE_BINARY_DIR}/bin/nmodl
+      ${CMAKE_CURRENT_SOURCE_DIR}/${usecase}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${usecase})
 endforeach()

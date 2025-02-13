@@ -1,13 +1,24 @@
-import os
-import sys
+"""
+NMODL transpiler Python bindings
+"""
 
-if sys.version_info >= (3, 9):
-    from importlib.resources import files
-else:
-    from importlib_resources import files
+import builtins
+import os
+import warnings
+
+from importlib.util import find_spec
+from pathlib import Path
 
 from find_libpython import find_libpython
 
+NRN_PREFIX = str(Path(find_spec("neuron").origin).parent / ".data")
+
+# add nmodl home to environment (i.e. necessary for nrnunits.lib) if not
+# already set
+# `files` will automatically raise a `ModuleNotFoundError`
+os.environ["NMODLHOME"] = os.environ.get(
+    "NMODLHOME", os.path.join(NRN_PREFIX, "share/nrn")
+)
 # try to add libpython*.so path to environment if not already set
 try:
     os.environ["NMODL_PYLIB"] = os.environ.get(
@@ -22,16 +33,6 @@ except TypeError as exc:
         "to the Python library"
     ) from exc
 
-# add nmodl home to environment (i.e. necessary for nrnunits.lib) if not
-# already set
-# `files` will automatically raise a `ModuleNotFoundError`
-os.environ["NMODLHOME"] = os.environ.get(
-    "NMODLHOME",
-    str(files("nmodl") / ".data"),
-)
-
-
-import builtins
 
 nmodl_binding_check = True
 
@@ -48,6 +49,6 @@ if nmodl_binding_check:
 
         __all__ = ["NmodlDriver", "to_json", "to_nmodl"]
     except ImportError:
-        print(
+        warnings.warn(
             "[NMODL] [warning] :: Python bindings are not available with this installation"
         )

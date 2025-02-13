@@ -11,7 +11,7 @@
 #include "ast/program.hpp"
 #include "codegen/codegen_neuron_cpp_visitor.hpp"
 #include "parser/nmodl_driver.hpp"
-#include "test/unit/utils/test_utils.hpp"
+#include "utils/test_utils.hpp"
 #include "visitors/function_callpath_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/neuron_solve_visitor.hpp"

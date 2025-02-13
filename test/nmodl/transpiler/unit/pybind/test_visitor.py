@@ -3,9 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import nmodl
-from nmodl.dsl import ast, visitor
-import pytest
+from neuron import nmodl
+from neuron.nmodl.dsl import ast, visitor
 
 
 def test_lookup_visitor(ch_ast):
@@ -67,7 +66,6 @@ def test_json_visitor(ch_ast):
 
 
 def test_custom_visitor(ch_ast):
-
     class StateVisitor(visitor.AstVisitor):
         def __init__(self):
             visitor.AstVisitor.__init__(self)

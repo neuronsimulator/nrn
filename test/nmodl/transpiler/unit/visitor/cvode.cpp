@@ -2,7 +2,7 @@
 
 #include "ast/program.hpp"
 #include "parser/nmodl_driver.hpp"
-#include "test/unit/utils/test_utils.hpp"
+#include "utils/test_utils.hpp"
 #include "visitors/checkparent_visitor.hpp"
 #include "visitors/cvode_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"

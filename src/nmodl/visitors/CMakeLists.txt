@@ -49,7 +49,7 @@ target_link_libraries(visitor PUBLIC lexer util)
 # pybind11::embed adds PYTHON_LIBRARIES to target_link_libraries. To avoid link to
 # libpython, we can use `pybind11::module` interface library from pybind11.
 # ~~~
-if(NOT LINK_AGAINST_PYTHON)
+if(NOT NRN_LINK_AGAINST_PYTHON)
   target_link_libraries(visitor PRIVATE pybind11::module)
 else()
   target_link_libraries(visitor PRIVATE pybind11::embed)

@@ -289,7 +289,7 @@ int run_nmodl(int argc, const char* argv[]) {
         codegen_cvode,
         fmt::format("Print code for CVODE ({})", codegen_cvode))->ignore_case();
 
-#if NMODL_ENABLE_BACKWARD
+#if NRN_USE_BACKWARD
     auto blame_opt = app.add_subcommand("blame", "Blame NMODL code that generated some code.");
     blame_opt->add_option("--line", blame_line, "Justify why this line was generated.");
     blame_opt->add_flag("--detailed", detailed_blame, "Justify by printing full backtraces.");

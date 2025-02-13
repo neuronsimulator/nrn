@@ -1,6 +1,7 @@
-import nmodl
 from pathlib import Path
+
 import pytest
+from neuron import nmodl
 
 
 def test_parse_directory():
