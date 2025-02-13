@@ -9,8 +9,8 @@
 
 #include "ast/program.hpp"
 #include "parser/nmodl_driver.hpp"
-#include "test/unit/utils/nmodl_constructs.hpp"
-#include "test/unit/utils/test_utils.hpp"
+#include "utils/nmodl_constructs.hpp"
+#include "utils/test_utils.hpp"
 #include "utils/common_utils.hpp"
 #include "visitors/checkparent_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"

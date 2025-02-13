@@ -9,7 +9,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "pybind/pyembed.hpp"
-#include "utils/logger.hpp"
+#include "nmodl/utils/logger.hpp"
 
 using namespace nmodl;
 

@@ -1,9 +1,4 @@
-import sys
-
-if sys.version_info >= (3, 9):
-    from importlib.resources import files
-else:
-    from importlib_resources import files
+from pathlib import Path
 
 from ._nmodl import *
 
@@ -18,7 +13,7 @@ def list_examples():
     Returns:
         List of available examples
     """
-    path = files("nmodl") / RESOURCE_DIR
+    path = Path(__file__).parent / RESOURCE_DIR
     if path.exists() and path.is_dir():
         return [result.name for result in path.glob("*.mod")]
 
@@ -37,7 +32,7 @@ def load_example(example):
     Returns:
         An path to the example as a string
     """
-    path = files("nmodl") / RESOURCE_DIR / example
+    path = Path(__file__).parent / RESOURCE_DIR / example
     if path.exists():
         return path.read_text()
 

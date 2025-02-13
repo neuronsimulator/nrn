@@ -32,7 +32,6 @@ class CodegenAccVisitor: public CodegenCoreneuronCppVisitor {
     using CodegenCoreneuronCppVisitor::CodegenCoreneuronCppVisitor;
 
   protected:
-
     /// name of the code generation backend
     std::string backend_name() const override;
 

@@ -5,11 +5,11 @@
 # Lesser General Public License. See top-level LICENSE file for details.
 # ***********************************************************************
 
+import re
 from importlib import import_module
 
 import itertools
 import sympy as sp
-import re
 
 # import known_functions through low-level mechanism because the ccode
 # module is overwritten in sympy and contents of that submodule cannot be

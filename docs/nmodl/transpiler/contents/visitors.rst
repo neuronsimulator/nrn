@@ -9,7 +9,7 @@ Parsing Model and constructing AST
 
 Once the NMODL is setup properly we should be able to import nmodl module and create the channel:
 
-    >>> import nmodl.dsl as nmodl
+    >>> import neuron.nmodl.dsl as nmodl
     >>> channel = """
     ... NEURON  {
     ...     SUFFIX CaDynamics

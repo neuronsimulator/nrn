@@ -3,8 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from nmodl.ode import differentiate2c, integrate2c, make_symbol
-from nmodl.ode import transform_expression, discretize_derivative
+from neuron.nmodl.ode import differentiate2c, integrate2c, make_symbol
+from neuron.nmodl.ode import transform_expression, discretize_derivative
 import pytest
 
 import sympy as sp

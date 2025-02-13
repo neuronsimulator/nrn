@@ -1,28 +1,33 @@
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
-
 # =============================================================================
 # Add extra compile flags to NMODL test sources
 # =============================================================================
+include(${PROJECT_SOURCE_DIR}/cmake/nmodl/FlexHelper.cmake)
 add_compile_options(${NMODL_EXTRA_CXX_FLAGS})
 add_link_options(${NMODL_EXTRA_CXX_FLAGS})
 add_compile_options(${NMODL_TESTS_COMPILER_WARNING_SUPPRESSIONS})
 
-include_directories(${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
-include_directories(${NMODL_PROJECT_SOURCE_DIR}/test)
-include_directories(${NMODL_PROJECT_SOURCE_DIR}/src/solver)
-include_directories(${NMODL_PROJECT_SOURCE_DIR}/src/utils)
-include_directories(${NMODL_PROJECT_SOURCE_DIR}/ext/eigen)
+add_library(nmodl_test_flags INTERFACE)
+
+target_include_directories(nmodl_test_flags INTERFACE ${PYBIND11_INCLUDE_DIR}
+                                                      ${PYTHON_INCLUDE_DIRS})
+target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/solver)
+target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/utils)
+target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_SOURCE_DIR})
+target_include_directories(nmodl_test_flags INTERFACE ${NMODL_PROJECT_PLATLIB_BINARY_DIR})
+target_include_directories(nmodl_test_flags INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(nmodl_test_flags INTERFACE ${PROJECT_SOURCE_DIR}/external/eigen)
 
 # =============================================================================
 # Common input data library
 # =============================================================================
 add_library(test_util STATIC utils/nmodl_constructs.cpp utils/test_utils.cpp)
-target_link_libraries(test_util PUBLIC spdlog::spdlog)
+target_link_libraries(test_util PUBLIC spdlog::spdlog nmodl_test_flags)
 
 # =============================================================================
 # Common input data library
 # =============================================================================
-add_library(config STATIC ${PROJECT_BINARY_DIR}/src/config/config.cpp)
+add_library(config STATIC ${PROJECT_BINARY_DIR}/src/nmodl/config/config.cpp)
+target_link_libraries(config PUBLIC nmodl_test_flags)
 
 # =============================================================================
 # Test executables
@@ -81,9 +86,9 @@ add_executable(
   codegen/transform.cpp
   codegen/codegen_compatibility_visitor.cpp)
 
-target_link_libraries(testutils PRIVATE lexer util)
-target_link_libraries(testmodtoken PRIVATE lexer util)
-target_link_libraries(testlexer PRIVATE lexer util)
+target_link_libraries(testutils PRIVATE lexer util nmodl_test_flags)
+target_link_libraries(testmodtoken PRIVATE lexer util nmodl_test_flags)
+target_link_libraries(testlexer PRIVATE lexer util nmodl_test_flags)
 target_link_libraries(
   testparser
   PRIVATE visitor
@@ -92,7 +97,8 @@ target_link_libraries(
           util
           test_util
           printer
-          ${NMODL_WRAPPER_LIBS})
+          ${NMODL_WRAPPER_LIBS}
+          nmodl_test_flags)
 target_link_libraries(
   testvisitor
   PRIVATE visitor
@@ -102,7 +108,8 @@ target_link_libraries(
           test_util
           printer
           codegen
-          ${NMODL_WRAPPER_LIBS})
+          ${NMODL_WRAPPER_LIBS}
+          nmodl_test_flags)
 target_link_libraries(
   testcodegen
   PRIVATE codegen
@@ -112,45 +119,44 @@ target_link_libraries(
           util
           test_util
           printer
-          ${NMODL_WRAPPER_LIBS})
-target_link_libraries(testprinter PRIVATE printer util)
-target_link_libraries(testsymtab PRIVATE symtab lexer util)
-target_link_libraries(testunitlexer PRIVATE lexer util)
-target_link_libraries(testunitparser PRIVATE lexer test_util config)
+          ${NMODL_WRAPPER_LIBS}
+          nmodl_test_flags)
+target_link_libraries(testprinter PRIVATE printer util nmodl_test_flags)
+target_link_libraries(testsymtab PRIVATE symtab lexer util nmodl_test_flags)
+target_link_libraries(testunitlexer PRIVATE lexer util nmodl_test_flags)
+target_link_libraries(testunitparser PRIVATE lexer test_util config nmodl_test_flags)
 
 # =============================================================================
 # Use catch_discover instead of add_test for granular test result reporting.
 # =============================================================================
-set(test_env ${NMODL_SANITIZER_ENABLE_ENVIRONMENT})
+set(test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
 set(testvisitor_env "PYTHONPATH=${PROJECT_BINARY_DIR}/lib:$ENV{PYTHONPATH}")
-if(NOT LINK_AGAINST_PYTHON)
+if(NOT NRN_LINK_AGAINST_PYTHON)
   list(APPEND testvisitor_env "NMODL_PYLIB=$ENV{NMODL_PYLIB}")
 endif()
 
 # Without main from Catch2
-target_link_libraries(testcodegen PRIVATE Catch2::Catch2)
-target_link_libraries(testvisitor PRIVATE Catch2::Catch2)
+target_link_libraries(testcodegen PRIVATE Catch2::Catch2 nmodl_test_flags)
+target_link_libraries(testvisitor PRIVATE Catch2::Catch2 nmodl_test_flags)
 
 # With main from Catch2
-target_link_libraries(testutils PRIVATE Catch2::Catch2WithMain)
-target_link_libraries(testmodtoken PRIVATE Catch2::Catch2WithMain)
-target_link_libraries(testlexer PRIVATE Catch2::Catch2WithMain)
-target_link_libraries(testparser PRIVATE Catch2::Catch2WithMain)
-target_link_libraries(testprinter PRIVATE Catch2::Catch2WithMain)
-target_link_libraries(testsymtab PRIVATE Catch2::Catch2WithMain)
-target_link_libraries(testnewton PRIVATE Catch2::Catch2WithMain)
-target_link_libraries(testcrout PRIVATE Catch2::Catch2WithMain)
-target_link_libraries(testunitlexer PRIVATE Catch2::Catch2WithMain)
-target_link_libraries(testunitparser PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(testutils PRIVATE Catch2::Catch2WithMain nmodl_test_flags)
+target_link_libraries(testmodtoken PRIVATE Catch2::Catch2WithMain nmodl_test_flags)
+target_link_libraries(testlexer PRIVATE Catch2::Catch2WithMain nmodl_test_flags)
+target_link_libraries(testparser PRIVATE Catch2::Catch2WithMain nmodl_test_flags)
+target_link_libraries(testprinter PRIVATE Catch2::Catch2WithMain nmodl_test_flags)
+target_link_libraries(testsymtab PRIVATE Catch2::Catch2WithMain nmodl_test_flags)
+target_link_libraries(testnewton PRIVATE Catch2::Catch2WithMain nmodl_test_flags)
+target_link_libraries(testcrout PRIVATE Catch2::Catch2WithMain nmodl_test_flags)
+target_link_libraries(testunitlexer PRIVATE Catch2::Catch2WithMain nmodl_test_flags)
+target_link_libraries(testunitparser PRIVATE Catch2::Catch2WithMain nmodl_test_flags)
 
 foreach(
   test_name
   testutils
-  testcodegen
   testmodtoken
   testlexer
   testparser
-  testvisitor
   testprinter
   testsymtab
   testnewton
@@ -171,25 +177,49 @@ foreach(
                        "${_environment_vars_list}")
 endforeach()
 
-# Generate include files used in test input, see test/unit/utils/nmodl_constructs.cpp
+foreach(test_name testcodegen testvisitor)
+  if(NOT NRN_LINK_AGAINST_PYTHON)
+    target_link_libraries(${test_name} PRIVATE pywrapper ${PYTHON_LIBRARY})
+  endif()
+  cpp_cc_configure_sanitizers(TARGET ${test_name})
+  set(env ${test_env})
+  list(APPEND env ${${test_name}_env})
+  string(REPLACE ";" ";ENVIRONMENT;" _environment_vars_list "${env}")
+  catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
+                       "${_environment_vars_list}")
+endforeach()
+
+# Generate include files used in test input, see
+# test/nmodl/transpiler/unit/utils/nmodl_constructs.cpp
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Unit.inc" "UNITSON \n UNITSOFF \n UNITSON \n UNITSOFF")
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/included.file" "TITLE")
 
 if(WIN32)
-  set(NMODL_TEST_PYTHONPATH "${PROJECT_BINARY_DIR}/lib;$ENV{PYTHONPATH}")
+  set(NMODL_TEST_PYTHONPATH "${PROJECT_BINARY_DIR}/lib/python;$ENV{PYTHONPATH}")
 else()
-  set(NMODL_TEST_PYTHONPATH "${PROJECT_BINARY_DIR}/lib:$ENV{PYTHONPATH}")
+  set(NMODL_TEST_PYTHONPATH "${PROJECT_BINARY_DIR}/lib/python:$ENV{PYTHONPATH}")
 endif()
 
 # =============================================================================
 # pybind11 tests
 # =============================================================================
-add_test(NAME Ode COMMAND ${PYTHON_EXECUTABLE} -m pytest ${NMODL_PROJECT_SOURCE_DIR}/test/unit/ode)
-set_tests_properties(Ode PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
+if(NRN_ENABLE_PYTHON)
+  if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NRN_SANITIZERS))
+    add_test(NAME Ode COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/ode)
+    set_tests_properties(Ode PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
+    cpp_cc_configure_sanitizers(TEST Ode PRELOAD)
+  endif()
 
-if(NMODL_ENABLE_PYTHON_BINDINGS)
-  add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest
-                               ${NMODL_PROJECT_SOURCE_DIR}/test/unit/pybind)
-  set_tests_properties(Pybind PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
-  cpp_cc_configure_sanitizers(TEST Pybind PRELOAD)
+  if(NMODL_ENABLE_PYTHON_BINDINGS)
+    # Apple Clang and ASAN do not play along nicely with NMODL's Python bindings, so we skip these
+    # tests
+    if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NRN_SANITIZERS))
+      add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest
+                                   ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
+      set_tests_properties(
+        Pybind PROPERTIES ENVIRONMENT
+                          "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NMODLHOME=${PROJECT_BINARY_DIR}")
+      cpp_cc_configure_sanitizers(TEST Pybind PRELOAD)
+    endif()
+  endif()
 endif()

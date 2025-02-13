@@ -12,9 +12,9 @@
 #include "ast/factor_def.hpp"
 #include "ast/program.hpp"
 #include "parser/nmodl_driver.hpp"
-#include "src/config/config.h"
-#include "test/unit/utils/nmodl_constructs.hpp"
-#include "test/unit/utils/test_utils.hpp"
+#include "nmodl/config/config.h"
+#include "utils/nmodl_constructs.hpp"
+#include "utils/test_utils.hpp"
 #include "visitors/checkparent_visitor.hpp"
 #include "visitors/units_visitor.hpp"
 
