@@ -1337,15 +1337,7 @@ class _PlotShapePlot(_WrapperPlot):
         raise NotImplementedError
 
 
-def _nmodl():
-    try:
-        from .nmodl import dsl as nmodl
-
-        return nmodl
-    except ModuleNotFoundError:
-        raise Exception(
-            "Missing nmodl module; install from https://github.com/bluebrain/nmodl"
-        )
+from .nmodl import dsl as nmodl
 
 
 class DensityMechanism:
@@ -1360,15 +1352,9 @@ class DensityMechanism:
         self.__mt.select(name)
         if self.__mt.selected() == -1:
             raise Exception("No DensityMechanism: " + name)
-        self.__has_nmodl = False
         self.__ast = None
         self.__ions = None
-        try:
-            import nmodl
-
-            self.__has_nmodl = True
-        except ModuleNotFoundError:
-            pass
+        self.__has_nmodl = True
 
     def __repr__(self):
         return "neuron.DensityMechanism(%r)" % self.__name
@@ -1383,13 +1369,10 @@ class DensityMechanism:
     def ast(self):
         """Abstract Syntax Tree representation.
 
-        Requires the nmodl module, available from: https://github.com/bluebrain/nmodl
-
         The model is parsed on first access, and the results are cached for quick reaccess
         using the same neuron.DensityMechanism instance.
         """
         if self.__ast is None:
-            nmodl = _nmodl()
             driver = nmodl.NmodlDriver()
             self.__ast = driver.parse_string(self.code)
         return self.__ast
@@ -1422,7 +1405,6 @@ class DensityMechanism:
     def ions(self):
         """Dictionary of the ions involved in this mechanism"""
         if self.__ions is None:
-            nmodl = _nmodl()
             lookup_visitor = nmodl.visitor.AstLookupVisitor()
             ions = lookup_visitor.lookup(self.ast, nmodl.ast.AstNodeType.USEION)
             result = {}
@@ -1452,7 +1434,6 @@ class DensityMechanism:
 
     @property
     def ontology_ids(self):
-        nmodl = _nmodl()
         lookup_visitor = nmodl.visitor.AstLookupVisitor()
 
         try:

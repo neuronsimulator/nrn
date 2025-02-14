@@ -402,14 +402,14 @@ Other CoreNEURON options:
 NMODL options
 =============
 
-To see all the NMODL CMake options you can look in https://github.com/BlueBrain/nmodl/blob/master/CMakeLists.txt.
+To see all the NMODL CMake options you can look in `CMakeLists.txt <https://github.com/neuronsimulator/nrn/blob/master/src/nmodl/CMakeLists.txt>`__.
 
 NMODL_ENABLE_PYTHON_BINDINGS:BOOL=OFF
 -------------------------------------
   Enable pybind11 based python bindings
 
   Using this option the user can use the NMODL python package to use NMODL via python. For more information look at
-  the NMODL documentation in https://bluebrain.github.io/nmodl/html/notebooks/nmodl-python-tutorial.html.
+  the NMODL documentation `here <../../nmodl/transpiler/notebooks/nmodl-python-tutorial.ipynb>`__.
 
 
 Occasionally useful advanced options:

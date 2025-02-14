@@ -304,7 +304,7 @@ We recommend using platform specific instructions provided in [nrn-build-ci](htt
 Starting with the 7.8.1 release, NEURON can be installed using the [CMake build system](https://cmake.org/).
 One of the primary advantages of a CMake-based build system is cross-platform support and integration with
 other projects like [Interviews](https://github.com/neuronsimulator/iv), [CoreNEURON](https://github.com/neuronsimulator/nrn/tree/master/src/coreneuron),
-[NMODL](https://github.com/BlueBrain/nmodl/) etc. These projects are now integrated into single a CMake-based
+[NMODL](https://github.com/neuronsimulator/nrn/tree/master/src/nmodl) etc. These projects are now integrated into single a CMake-based
 build system.
 
 Please refer to [the CMake build system
