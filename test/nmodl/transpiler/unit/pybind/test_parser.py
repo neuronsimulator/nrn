@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from neuron import nmodl
+from neuron.nmodl import NmodlDriver
 
 
 def test_parse_directory():
@@ -10,4 +10,4 @@ def test_parse_directory():
     """
 
     with pytest.raises(RuntimeError):
-        nmodl.NmodlDriver().parse_file(str(Path(__file__).parent))
+        NmodlDriver().parse_file(str(Path(__file__).parent))

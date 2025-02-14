@@ -3,12 +3,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from neuron.nmodl.dsl import ast
-import neuron.nmodl.dsl as nmodl
-import pytest
+from neuron.nmodl.dsl import ast, to_json, to_nmodl
 
 
-class TestAst(object):
+class TestAst:
     def test_empty_program(self):
         pnode = ast.Program()
         assert str(pnode) == ""
@@ -16,35 +14,35 @@ class TestAst(object):
     def test_ast_construction(self):
         string = ast.String("tau")
         name = ast.Name(string)
-        assert nmodl.to_nmodl(name) == "tau"
+        assert to_nmodl(name) == "tau"
 
-        int_macro = nmodl.ast.Integer(1, ast.Name(ast.String("x")))
-        assert nmodl.to_nmodl(int_macro) == "x"
+        int_macro = ast.Integer(1, ast.Name(ast.String("x")))
+        assert to_nmodl(int_macro) == "x"
 
         statements = []
         block = ast.StatementBlock(statements)
         neuron_block = ast.NeuronBlock(block)
-        assert nmodl.to_nmodl(neuron_block) == "NEURON {\n}"
+        assert to_nmodl(neuron_block) == "NEURON {\n}"
 
     def test_get_parent(self):
         x_name = ast.Name(ast.String("x"))
-        int_macro = nmodl.ast.Integer(1, x_name)
+        int_macro = ast.Integer(1, x_name)
         assert x_name.parent == int_macro  # getting the parent
 
     def test_set_parent(self):
         x_name = ast.Name(ast.String("x"))
         y_name = ast.Name(ast.String("y"))
-        int_macro = nmodl.ast.Integer(1, x_name)
+        int_macro = ast.Integer(1, x_name)
         y_name.parent = int_macro  # setting the parent
         int_macro.macro = y_name
-        assert nmodl.to_nmodl(int_macro) == "y"
+        assert to_nmodl(int_macro) == "y"
 
     def test_ast_node_repr(self):
         string = ast.String("tau")
         name = ast.Name(string)
-        assert repr(name) == nmodl.to_json(name, compact=True)
+        assert repr(name) == to_json(name, compact=True)
 
     def test_ast_node_str(self):
         string = ast.String("tau")
         name = ast.Name(string)
-        assert str(name) == nmodl.to_nmodl(name)
+        assert str(name) == to_nmodl(name)
