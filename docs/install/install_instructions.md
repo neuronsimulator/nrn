@@ -107,7 +107,7 @@ architecture.
 
 #### Linux
 
-Like Mac OS, since 7.8.1 release python wheels are provided and you can use `pip` to install NEURON by opening a terminal and typing:
+Like Mac OS, since 7.8.1 release Python wheels are provided and you can use `pip` to install NEURON by opening a terminal and typing:
 
 ```
 pip3 install neuron
@@ -115,6 +115,15 @@ pip3 install neuron
 
 Note that Python2 wheels are provided for the 8.0.x release series exclusively. Also, we are not providing .rpm or .deb
 installers for recent releases.
+
+**Note**: as of NEURON major version 9, the minimum system requirements for using NEURON Python wheels on Linux are:
+
+* Debian 10 or higher
+* Ubuntu 18.10 or higher
+* Fedora 29 or higher
+* CentOS/RHEL 8 or higher
+
+Furthermore, GCC >= 10 is required (older versions of GCC may work, but are not recommended).
 
 #### Windows
 
