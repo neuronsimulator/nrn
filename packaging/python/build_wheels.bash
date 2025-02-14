@@ -190,7 +190,15 @@ coreneuron=$3
 case "$1" in
 
   linux)
-    MPI_INCLUDE_HEADERS="/nrnwheel/openmpi/include;/nrnwheel/mpich/include"
+    MPI_POSSIBLE_INCLUDE_HEADERS="/usr/include/openmpi-$(uname -m) /usr/include/mpich-$(uname -m) /usr/lib/$(uname -m)-linux-gnu/openmpi/include /usr/include/$(uname -m)-linux-gnu/mpich"
+    MPI_INCLUDE_HEADERS=""
+    for dir in $MPI_POSSIBLE_INCLUDE_HEADERS
+    do
+        if [ -d "${dir}" ]; then
+            MPI_INCLUDE_HEADERS="${MPI_INCLUDE_HEADERS};${dir}"
+        fi
+    done
+
     # Check for MPT headers. On Azure, we extract them from a secure file and mount them in the docker image in:
     MPT_INCLUDE_PATH="/nrnwheel/mpt/include"
     if [ -d "$MPT_INCLUDE_PATH" ]; then
@@ -218,7 +226,16 @@ case "$1" in
         MPI_INCLUDE_HEADERS="${BREW_PREFIX}/opt/openmpi/include;${BREW_PREFIX}/opt/mpich/include"
         build_wheel_osx $(which python3) "$coreneuron" "$MPI_INCLUDE_HEADERS"
     else
-        MPI_INCLUDE_HEADERS="/usr/lib/x86_64-linux-gnu/openmpi/include;/usr/include/x86_64-linux-gnu/mpich"
+        # first two are for AlmaLinux 8 (default for manylinux_2_28);
+        # second two are for Debian/Ubuntu derivatives
+        MPI_POSSIBLE_INCLUDE_HEADERS="/usr/include/openmpi-$(uname -m) /usr/include/mpich-$(uname -m) /usr/lib/$(uname -m)-linux-gnu/openmpi/include /usr/include/$(uname -m)-linux-gnu/mpich"
+        MPI_INCLUDE_HEADERS=""
+        for dir in $MPI_POSSIBLE_INCLUDE_HEADERS
+        do
+            if [ -d "${dir}" ]; then
+                MPI_INCLUDE_HEADERS="${MPI_INCLUDE_HEADERS};${dir}"
+            fi
+        done
         build_wheel_linux $(which python3) "$coreneuron" "$MPI_INCLUDE_HEADERS"
     fi
     ls wheelhouse/
