@@ -15,13 +15,6 @@ set(NRN_LINK_AGAINST_PYTHON
 
 mark_as_advanced(NRN_LINK_AGAINST_PYTHON)
 
-# Flags for ignoring undefined symbols for wheel
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  set(UNDEFINED_SYMBOLS_IGNORE_FLAG "-Wl,-undefined,dynamic_lookup")
-else()
-  set(UNDEFINED_SYMBOLS_IGNORE_FLAG "-Wl,--unresolved-symbols=ignore-all")
-endif()
-
 if(NOT NRN_LINK_AGAINST_PYTHON)
   string(APPEND CMAKE_EXE_LINKER_FLAGS " ${UNDEFINED_SYMBOLS_IGNORE_FLAG}")
   set(NMODL_WRAPPER_LIBS pyembed dl)
