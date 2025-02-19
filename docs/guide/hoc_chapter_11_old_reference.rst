@@ -310,7 +310,7 @@ Keywords
 	string_dialog	doEvents	doNotify	numarg	hoc_pointer_
 	execute	execute1	load_proc	load_func	load_template
 	machine_name	saveaudit	retrieveaudit	coredump_on_error
-	checkpoint	quit	object_push	object_pop	pwman_place
+	quit	object_push	object_pop	pwman_place
 	show_errmess_always	numprocs	myproc	psync	settext
     secname 
 
@@ -338,7 +338,7 @@ Names introduced by nrnoc
 .. code::
     c++
 
-    node_data	disconnect	batch_run	batch_save
+    disconnect	batch_run	batch_save
 	pt3dclear	pt3dadd	n3d	x3d	y3d	z3d	diam3d	arc3d
 	define_shape	p3dconst	spine3d	setSpineArea	getSpineArea
 	area	ri	initnrn	topology	fadvance	distance

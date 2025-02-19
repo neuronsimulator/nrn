@@ -5,7 +5,7 @@
 #include "classreg.h"
 #include "code.h"
 #include "hocdec.h"
-#include "hoc_membf.h"
+#include "classreg.h"
 #include "ocfunc.h"
 
 #include <sstream>
@@ -145,7 +145,6 @@ SCENARIO("Test calling code from HOC that throws exceptions", "[NEURON][hoc_inte
                  throwing_util_constructor,
                  throwing_util_destructor,
                  throwing_util_members,
-                 nullptr /* checkpoint */,
                  throwing_util_ret_obj_members,
                  throwing_util_ret_str_members);
         registered = true;

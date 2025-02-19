@@ -5,7 +5,7 @@ set -xe
 # See CMake's CMAKE_HOST_SYSTEM_PROCESSOR documentation
 # On the systems where we are building wheel we can rely
 # on uname -m. Note that this is just wheel testing script.
-ARCH_DIR=`uname -m`
+ARCH_DIR="$(uname -m)"
 
 if [ ! -f setup.py ]; then
     echo "Error: Please launch $0 from the root dir"
@@ -36,10 +36,6 @@ run_mpi_test () {
   echo "======= Testing $mpi_name ========"
   if [ -n "$mpi_module" ]; then
      echo "Loading module $mpi_module"
-     if [[ $(hostname -f) = *r*bbp.epfl.ch* ]]; then
-        echo "\tusing unstable on BB5"
-        module load unstable
-     fi
      module load $mpi_module
   fi
 
@@ -74,9 +70,14 @@ run_mpi_test () {
   # coreneuron execution via neuron
   if [[ "$has_coreneuron" == "true" ]]; then
     rm -rf $ARCH_DIR
+    TEMP_DIR="${TMPDIR:-/tmp}/test/coreneuron/mod files/"
+    if [ ! -d "${TEMP_DIR}" ]; then
+        mkdir -p "${TEMP_DIR}"
+    fi
+    cp "test/coreneuron/mod files/"* "${TEMP_DIR}/"
     # also copy one MOD file containing sparse solver
-    cp share/examples/nrniv/nmodl/capmp.mod "test/coreneuron/mod files/"
-    nrnivmodl -coreneuron "test/coreneuron/mod files/"
+    cp share/examples/nrniv/nmodl/capmp.mod "${TEMP_DIR}"
+    nrnivmodl -coreneuron "${TEMP_DIR}"
 
     $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
 
@@ -179,29 +180,16 @@ run_parallel_test() {
       export DYLD_LIBRARY_PATH=${BREW_PREFIX}/opt/open-mpi/lib:$DYLD_LIBRARY_PATH
       run_mpi_test "${BREW_PREFIX}/opt/open-mpi/bin/mpirun" "OpenMPI" ""
 
-    # CI Linux or Azure Linux
-    elif [[ "$CI_OS_NAME" == "linux" || "$AGENT_OS" == "Linux" ]]; then
+    # CI Linux or Azure Linux or circleCI build (all on Debian/Ubuntu)
+    elif [[ "$CI_OS_NAME" == "linux" || "$AGENT_OS" == "Linux" || "$CIRCLECI" == "true" ]]; then
       # make debugging easier
       sudo update-alternatives --get-selections | grep mpi
-      sudo update-alternatives --list mpi-x86_64-linux-gnu
+      sudo update-alternatives --list mpi-${ARCH_DIR}-linux-gnu
       # choose mpich
-      sudo update-alternatives --set mpi-x86_64-linux-gnu /usr/include/x86_64-linux-gnu/mpich
+      sudo update-alternatives --set mpi-${ARCH_DIR}-linux-gnu /usr/include/${ARCH_DIR}-linux-gnu/mpich
       run_mpi_test "mpirun.mpich" "MPICH" ""
       # choose openmpi
-      sudo update-alternatives --set mpi-x86_64-linux-gnu /usr/lib/x86_64-linux-gnu/openmpi/include
-      run_mpi_test "mpirun.openmpi" "OpenMPI" ""
-
-    # BB5 with multiple MPI libraries
-    elif [[ $(hostname -f) = *r*bbp.epfl.ch* ]]; then
-      run_mpi_test "srun" "HPE-MPT" "hpe-mpi"
-      run_mpi_test "mpirun" "Intel MPI" "intel-oneapi-mpi"
-      run_mpi_test "srun" "MVAPICH2" "mvapich2"
-
-    # circle-ci build
-    elif [[ "$CIRCLECI" == "true" ]]; then
-      sudo update-alternatives --set mpi-aarch64-linux-gnu /usr/include/aarch64-linux-gnu/mpich
-      run_mpi_test "mpirun.mpich" "MPICH" ""
-      sudo update-alternatives --set mpi-aarch64-linux-gnu /usr/lib/aarch64-linux-gnu/openmpi/include
+      sudo update-alternatives --set mpi-${ARCH_DIR}-linux-gnu /usr/lib/${ARCH_DIR}-linux-gnu/openmpi/include
       run_mpi_test "mpirun.openmpi" "OpenMPI" ""
 
     # linux desktop or docker container used for wheel
@@ -237,6 +225,12 @@ test_wheel () {
 }
 
 
+test_wheel_basic_python () {
+    echo "=========== BASIC PYTHON TESTS ==========="
+    $python_exe -c "import neuron; neuron.test(); neuron.test_rxd()"
+}
+
+
 echo "== Testing $python_wheel using $python_exe ($python_ver) =="
 
 
@@ -257,10 +251,8 @@ fi
 $python_exe -m pip install --upgrade pip
 
 
-# install numpy, pytest and neuron
-# we install setuptools because since python 3.12 it is no more installed
-# by default
-$python_exe -m pip install numpy pytest setuptools
+# install test requirements
+$python_exe -m pip install -r packaging/python/test_requirements.txt
 $python_exe -m pip install $python_wheel
 $python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
 
@@ -271,8 +263,14 @@ if echo $compile_options | grep "NRN_ENABLE_CORENEURON=ON" > /dev/null ; then
   has_coreneuron=true
 fi
 
-# run tests
-test_wheel "${python_exe}"
+# run tests with latest NumPy
+echo " == Running tests with latest NumPy == "
+test_wheel
+
+# run basic python tests with oldest supported NumPy
+echo " == Running basic python tests with oldest supported NumPy == "
+$python_exe -m pip install -r packaging/python/oldest_numpy_requirements.txt
+test_wheel_basic_python
 
 # cleanup
 if [[ "$use_venv" != "false" ]]; then

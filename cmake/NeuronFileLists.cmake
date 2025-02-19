@@ -10,15 +10,17 @@ set(STRUCTURED_HEADER_FILES_TO_INSTALL
     neuron/model_data_fwd.hpp)
 set(HEADER_FILES_TO_INSTALL
     gnu/mcran4.h
-    gnu/nrnisaac.h
     gnu/nrnran123.h
     nrniv/backtrace_utils.h
     nrniv/bbsavestate.h
+    nrniv/neuronapi.h
     nrnmpi/nrnmpidec.h
     nrnoc/cabvars.h
+    nrnoc/cabcode.h
     nrnoc/md1redef.h
     nrnoc/md2redef.h
     nrnoc/membdef.h
+    nrnoc/ion_semantics.h
     nrnoc/membfunc.h
     nrnoc/multicore.h
     nrnoc/multisplit.h
@@ -33,8 +35,8 @@ set(HEADER_FILES_TO_INSTALL
     nrnoc/options.h
     nrnoc/section_fwd.hpp
     nrnoc/treeset.h
+    oc/classreg.h
     oc/hoc.h
-    oc/hoc_membf.h
     oc/hocassrt.h
     oc/hocdec.h
     oc/hocgetsym.h
@@ -104,7 +106,6 @@ set(OC_FILE_LIST
     plt.cpp
     scoprand.cpp
     symbol.cpp
-    version.cpp
     x.cpp
     xred.cpp)
 
@@ -125,7 +126,6 @@ set(NRNOC_FILE_LIST
     ldifus.cpp
     membfunc.cpp
     memblist.cpp
-    nrnnemo.cpp
     nrntimeout.cpp
     nrnversion.cpp
     passive0.cpp
@@ -148,7 +148,6 @@ set(IVOC_FILE_LIST
     axis.cpp
     bndedval.cpp
     cbwidget.cpp
-    checkpnt.cpp
     epsprint.cpp
     fourier.cpp
     gifimage.cpp
@@ -157,7 +156,6 @@ set(IVOC_FILE_LIST
     grglyph.cpp
     grmanip.cpp
     hocmark.cpp
-    htlist.cpp
     idraw.cpp
     ivoc.cpp
     ivocmain.cpp
@@ -221,6 +219,7 @@ set(NRNIV_FILE_LIST
     netpar.cpp
     nmodlrandom.cpp
     nonlinz.cpp
+    neuronapi.cpp
     nrncore_write.cpp
     nrncore_write/callbacks/nrncore_callbacks.cpp
     nrncore_write/data/cell_group.cpp
@@ -381,10 +380,9 @@ set(MODLUNIT_FILES_LIST
     passn.cpp
     symbol.cpp
     units.cpp
-    units1.cpp
-    version.cpp)
+    units1.cpp)
 
-set(NMODL_FILES_LIST
+set(NOCMODL_FILES_LIST
     consist.cpp
     deriv.cpp
     discrete.cpp
@@ -399,8 +397,7 @@ set(NMODL_FILES_LIST
     netrec_discon.cpp
     simultan.cpp
     solve.cpp
-    symbol.cpp
-    version.cpp)
+    symbol.cpp)
 
 set(IVOS_FILES_LIST observe.cpp resource.cpp)
 
@@ -429,7 +426,7 @@ set(NRN_NODEORDEROPTIM_SRC_DIR ${PROJECT_SOURCE_DIR}/src/coreneuron/permute)
 set(NRN_NRNCVODE_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrncvode)
 set(NRN_NRNIV_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrniv)
 set(NRN_MODLUNIT_SRC_DIR ${PROJECT_SOURCE_DIR}/src/modlunit)
-set(NRN_NMODL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nmodl)
+set(NRN_NOCMODL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nocmodl)
 set(NRN_IVOS_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivos)
 set(NRN_MUSIC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/neuronmusic)
 set(NRN_PARALLEL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/parallel)
@@ -461,13 +458,13 @@ nrn_create_file_list(NRN_MODFILE_BASE_NAMES src/nrnoc ${MODFILE_BASE_NAMES})
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.cpp)
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)
 nrn_create_file_list(NRN_MODLUNIT_SRC_FILES ${NRN_MODLUNIT_SRC_DIR} ${MODLUNIT_FILES_LIST})
-nrn_create_file_list(NRN_NMODL_SRC_FILES ${NRN_NMODL_SRC_DIR} ${NMODL_FILES_LIST})
+nrn_create_file_list(NRN_NOCMODL_SRC_FILES ${NRN_NOCMODL_SRC_DIR} ${NOCMODL_FILES_LIST})
 nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmpi
                      ${MPI_DYNAMIC_INCLUDE})
 nrn_create_file_list(NRN_IVOS_SRC_FILES ${NRN_IVOS_SRC_DIR} ${IVOS_FILES_LIST})
 nrn_create_file_list(NRN_MUSIC_SRC_FILES ${NRN_MUSIC_SRC_DIR} ${NRN_MUSIC_FILES_LIST})
 list(APPEND NRN_OC_SRC_FILES ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
-list(APPEND NRN_NMODL_SRC_FILES ${NRN_MODLUNIT_SRC_DIR}/units.cpp)
+list(APPEND NRN_NOCMODL_SRC_FILES ${NRN_MODLUNIT_SRC_DIR}/units.cpp)
 
 # =============================================================================
 # Create mswin install lists needed for setup_exe target
@@ -479,7 +476,7 @@ if(MINGW)
   list(APPEND MSWIN_FILES ${MSWIN_SRC_DIR}/notes.txt)
 
   list(APPEND NRN_MODLUNIT_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/extra/d2upath.cpp)
-  list(APPEND NRN_NMODL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/extra/d2upath.cpp)
+  list(APPEND NRN_NOCMODL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/extra/d2upath.cpp)
   list(APPEND NRN_OC_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/extra/d2upath.cpp)
 
   nrn_create_file_list(MSWIN_BIN_FILES ${MSWIN_SRC_DIR} nrniv.ico nrniv10.ico nmodl2a.ico)

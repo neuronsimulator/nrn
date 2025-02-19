@@ -1,15 +1,10 @@
 wheel
-setuptools
 setuptools_scm
+setuptools<=70.3.0
 scikit-build
 matplotlib
-# bokeh 3 seems to break docs notebooks
-bokeh<3
 ipython
-cython<3
-packaging
-pytest<=8.1.1 # potential bug from 8.2.0 due to parallelism?
-pytest-cov
 mpi4py
-numpy
 find_libpython
+-r packaging/python/build_requirements.txt
+-r packaging/python/test_requirements.txt

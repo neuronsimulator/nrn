@@ -145,25 +145,25 @@ static void* scons(Object*) {
     TRY_GUI_REDIRECT_OBJ("SymChooser", NULL);
 #if HAVE_IV
     SymChooser* sc = NULL;
-    IFGUI
-    const char* caption = "Choose a Variable Name or";
-    if (ifarg(1)) {
-        caption = gargstr(1);
-    }
-    Style* style = new Style(Session::instance()->style());
-    style->attribute("caption", caption);
-    if (ifarg(2)) {
-        Symbol* sym = hoc_lookup(gargstr(2));
-        int type = RANGEVAR;
-        if (sym) {
-            type = sym->type;
+    if (hoc_usegui) {
+        const char* caption = "Choose a Variable Name or";
+        if (ifarg(1)) {
+            caption = gargstr(1);
         }
-        sc = new SymChooser(new SymDirectory(type), WidgetKit::instance(), style, NULL, 1);
-    } else {
-        sc = new SymChooser(NULL, WidgetKit::instance(), style);
+        Style* style = new Style(Session::instance()->style());
+        style->attribute("caption", caption);
+        if (ifarg(2)) {
+            Symbol* sym = hoc_lookup(gargstr(2));
+            int type = RANGEVAR;
+            if (sym) {
+                type = sym->type;
+            }
+            sc = new SymChooser(new SymDirectory(type), WidgetKit::instance(), style, NULL, 1);
+        } else {
+            sc = new SymChooser(NULL, WidgetKit::instance(), style);
+        }
+        Resource::ref(sc);
     }
-    Resource::ref(sc);
-    ENDGUI
     return (void*) sc;
 #else
     return nullptr;
@@ -180,16 +180,16 @@ static double srun(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SymChooser.run", v);
 #if HAVE_IV
     bool b = false;
-    IFGUI
-    SymChooser* sc = (SymChooser*) v;
-    Display* d = Session::instance()->default_display();
-    Coord x, y;
-    if (nrn_spec_dialog_pos(x, y)) {
-        b = sc->post_at_aligned(x, y, 0.0, 0.0);
-    } else {
-        b = sc->post_at_aligned(d->width() / 2, d->height() / 2, .5, .5);
+    if (hoc_usegui) {
+        SymChooser* sc = (SymChooser*) v;
+        Display* d = Session::instance()->default_display();
+        Coord x, y;
+        if (nrn_spec_dialog_pos(x, y)) {
+            b = sc->post_at_aligned(x, y, 0.0, 0.0);
+        } else {
+            b = sc->post_at_aligned(d->width() / 2, d->height() / 2, .5, .5);
+        }
     }
-    ENDGUI
     return double(b);
 #else
     return 0.;
@@ -198,18 +198,18 @@ static double srun(void* v) {
 static double text(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SymChooser.text", v);
 #if HAVE_IV
-    IFGUI
-    SymChooser* sc = (SymChooser*) v;
-    hoc_assign_str(hoc_pgargstr(1), sc->selected().c_str());
-    ENDGUI
+    if (hoc_usegui) {
+        SymChooser* sc = (SymChooser*) v;
+        hoc_assign_str(hoc_pgargstr(1), sc->selected().c_str());
+    }
     return 0.;
 #else
     return 0.;
 #endif /* HAVE_IV */
 }
-static Member_func members[] = {{"run", srun}, {"text", text}, {0, 0}};
+static Member_func members[] = {{"run", srun}, {"text", text}, {nullptr, nullptr}};
 void SymChooser_reg() {
-    class2oc("SymChooser", scons, sdestruct, members, NULL, NULL, NULL);
+    class2oc("SymChooser", scons, sdestruct, members, nullptr, nullptr);
 }
 #if HAVE_IV
 

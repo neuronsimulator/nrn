@@ -4,7 +4,8 @@ struct Object;
 union Objectdata;
 struct Symlist;
 
-/** @brief How many NEURON try { ... } catch(...) { ... } blocks are in the call stack.
+/** @brief How many NEURON try { ... } catch(...) { ... } blocks are in the call
+ * stack.
  *
  *  Errors inside NEURON are triggered using hoc_execerror, which ultimately
  *  throws an exception. To replicate the old logic, we sometimes need to insert
@@ -40,4 +41,6 @@ struct OcJump {
     static bool execute(Inst* p);
     static bool execute(const char*, Object* ob = NULL);
     static void* fpycall(void* (*) (void*, void*), void*, void*);
+    static void execute_throw_on_exception(Symbol* sym, int narg);
+    static void execute_throw_on_exception(Object* obj, Symbol* sym, int narg);
 };

@@ -35,7 +35,7 @@ struct Model {
      */
     template <typename Callable>
     void apply_to_mechanisms(Callable const& callable) {
-        for (auto type = 0; type < m_mech_data.size(); ++type) {
+        for (std::size_t type = 0; type < m_mech_data.size(); ++type) {
             if (!m_mech_data[type]) {
                 continue;
             }
@@ -45,7 +45,7 @@ struct Model {
 
     template <typename Callable>
     void apply_to_mechanisms(Callable const& callable) const {
-        for (auto type = 0; type < m_mech_data.size(); ++type) {
+        for (std::size_t type = 0; type < m_mech_data.size(); ++type) {
             if (!m_mech_data[type]) {
                 continue;
             }
@@ -77,10 +77,10 @@ struct Model {
     /** @brief Destroy the structure holding the data of a particular mechanism.
      */
     void delete_mechanism(int type) {
-        if (type >= m_mech_data.size() || !m_mech_data[type]) {
+        if (type < 0 || std::size_t(type) >= m_mech_data.size() || !m_mech_data[type]) {
             return;
         }
-        if (auto const size = m_mech_data[type]->size(); size > 0) {
+        if (std::size_t const size = m_mech_data[type]->size(); size > 0) {
             throw std::runtime_error("delete_mechanism(" + std::to_string(type) +
                                      "): refusing to delete storage that still hosts " +
                                      std::to_string(size) + " instances");
@@ -105,7 +105,7 @@ struct Model {
     }
 
     [[nodiscard]] bool is_valid_mechanism(int type) const {
-        return 0 <= type && type < mechanism_storage_size() && m_mech_data[type];
+        return 0 <= type && std::size_t(type) < mechanism_storage_size() && m_mech_data[type];
     }
 
     /**
@@ -124,7 +124,7 @@ struct Model {
 
   private:
     container::Mechanism::storage& mechanism_data_impl(int type) const {
-        if (0 <= type && type >= m_mech_data.size()) {
+        if (type < 0 || std::size_t(type) >= m_mech_data.size()) {
             throw std::runtime_error("mechanism_data(" + std::to_string(type) +
                                      "): type out of range");
         }

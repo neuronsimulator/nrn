@@ -1,6 +1,8 @@
 #include <math.h>
 
-extern "C" double llgramarea(double* p0, double* p1, double* p2) {
+#include "nrn_export.hpp"
+
+extern "C" NRN_EXPORT double llgramarea(double* p0, double* p1, double* p2) {
     /* setup the vectors */
     double a[] = {p0[0] - p1[0], p0[1] - p1[1], p0[2] - p1[2]};
     double b[] = {p0[0] - p2[0], p0[1] - p2[1], p0[2] - p2[2]};
@@ -13,7 +15,7 @@ extern "C" double llgramarea(double* p0, double* p1, double* p2) {
 }
 
 
-extern "C" double llpipedfromoriginvolume(double* p0, double* p1, double* p2) {
+extern "C" NRN_EXPORT double llpipedfromoriginvolume(double* p0, double* p1, double* p2) {
     /* take the cross-product */
     double cpx = p1[1] * p2[2] - p1[2] * p2[1];
     double cpy = p1[2] * p2[0] - p1[0] * p2[2];

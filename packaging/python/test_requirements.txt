@@ -1,0 +1,6 @@
+pytest<=8.1.1 # potential bug from 8.2.0 due to parallelism?
+# for coverage
+pytest-cov
+# for RXD test
+plotly
+anywidget

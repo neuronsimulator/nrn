@@ -14,7 +14,7 @@ Shape
         If the first arg is a :class:`SectionList` (then a second arg of 0 will 
         prevent default mapping) then only the sections in the list are 
         drawn. Shape is redrawn automatically whenever length or diameter 
-        of a section changes. 
+        of a section changes. This automatically calls :func:`define_shape`.
         
         .. warning::
         

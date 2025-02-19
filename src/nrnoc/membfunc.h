@@ -5,6 +5,7 @@ extern void hoc_register_prop_size(int type, int psize, int dpsize);
 #include "nrnoc_ml.h"
 #include "oc_ansi.h"  // neuron::model_sorted_token
 #include "options.h"  // EXTRACELLULAR
+#include "ion_semantics.h"
 
 #include <string>
 #include <type_traits>
@@ -44,6 +45,7 @@ using nrn_thread_table_check_t = void (*)(Memb_list*,
                                           std::size_t,
                                           Datum*,
                                           Datum*,
+                                          double*,
                                           NrnThread*,
                                           int,
                                           neuron::model_sorted_token const&);
@@ -84,7 +86,7 @@ struct Memb_func {
     int is_point;
     void* hoc_mech;
     void (*setdata_)(struct Prop*);
-    int* dparam_semantics;                    // for nrncore writing.
+    std::unique_ptr<int[]> dparam_semantics;  // for nrncore writing.
     const std::vector<double>* parm_default;  // for NrnProperty
   private:
     nrn_init_t m_initialize{};
@@ -295,6 +297,7 @@ namespace _get {
 // See https://github.com/neuronsimulator/nrn/issues/2234 for context of how this might be done
 // better in future...
 [[nodiscard]] long& _nrn_mechanism_access_alloc_seq(Prop*);
+[[nodiscard]] Node* _nrn_mechanism_access_node(Prop* prop);
 [[nodiscard]] double& _nrn_mechanism_access_a(Node*);
 [[nodiscard]] double& _nrn_mechanism_access_b(Node*);
 [[nodiscard]] double& _nrn_mechanism_access_d(Node*);

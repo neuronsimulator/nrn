@@ -25,10 +25,15 @@ fi
 
 py_ver=""
 
-clone_install_nmodl_requirements() {
+# path to the (temp) requirements file containing all of the build dependencies
+# for NEURON and its submodules
+python_requirements_path="$(mktemp -d)/requirements.txt"
+
+clone_nmodl_and_add_requirements() {
     git config --global --add safe.directory /root/nrn
     git submodule update --init --recursive --force --depth 1 -- external/nmodl
-    pip install -r external/nmodl/requirements.txt
+    # We only want the _build_ dependencies
+    sed -e '/^# runtime dependencies/,$ d' external/nmodl/requirements.txt >> "${python_requirements_path}"
 }
 
 
@@ -52,29 +57,6 @@ setup_venv() {
 }
 
 
-pip_numpy_install() {
-    # numpy is special as we want the minimum wheel version
-    numpy_ver="numpy"
-    case "$py_ver" in
-      36) numpy_ver="numpy==1.12.1" ;;
-      37) numpy_ver="numpy==1.14.6" ;;
-      38) numpy_ver="numpy==1.17.5" ;;
-      39) numpy_ver="numpy==1.19.3" ;;
-      310) numpy_ver="numpy==1.21.3" ;;
-      311) numpy_ver="numpy==1.23.5" ;;
-      312) numpy_ver="numpy==1.26.0" ;;
-      *) echo "Error: numpy version not specified for this python!" && exit 1;;
-    esac
-
-    # older version for apple m1 as building from source fails
-    if [[ `uname -m` == 'arm64' && "$py_ver" == "39" ]]; then
-      numpy_ver="numpy==1.21.3"
-    fi
-
-    echo " - pip install $numpy_ver"
-    pip install $numpy_ver
-}
-
 build_wheel_linux() {
     echo "[BUILD WHEEL] Building with interpreter $1"
     local skip=
@@ -83,11 +65,7 @@ build_wheel_linux() {
 
     echo " - Installing build requirements"
     pip install auditwheel
-    pip install -r packaging/python/build_requirements.txt
-    pip_numpy_install
-
-    echo " - Building..."
-    rm -rf dist build
+    cp packaging/python/build_requirements.txt "${python_requirements_path}"
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
@@ -96,9 +74,16 @@ build_wheel_linux() {
 
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
-        clone_install_nmodl_requirements
-        CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
+        clone_nmodl_and_add_requirements
+        CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF,CORENRN_ENABLE_OPENMP=ON"
     fi
+
+    cat "${python_requirements_path}"
+    pip install -r "${python_requirements_path}"
+    pip check
+
+    echo " - Building..."
+    rm -rf dist build
 
     # Workaround for https://github.com/pypa/manylinux/issues/1309
     git config --global --add safe.directory "*"
@@ -135,22 +120,25 @@ build_wheel_osx() {
     (( $skip )) && return 0
 
     echo " - Installing build requirements"
-    pip install -U delocate -r packaging/python/build_requirements.txt
-    pip_numpy_install
-
-    echo " - Building..."
-    rm -rf dist build
-
-    if [ "$2" == "coreneuron" ]; then
-        setup_args="--enable-coreneuron"
-        clone_install_nmodl_requirements
-        CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
-    fi
+    cp packaging/python/build_requirements.txt "${python_requirements_path}"
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
       CMAKE_DEFS="$CMAKE_DEFS,NRN_BINARY_DIST_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
     fi
+
+    if [ "$2" == "coreneuron" ]; then
+        setup_args="--enable-coreneuron"
+        clone_nmodl_and_add_requirements
+        CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
+    fi
+
+    cat "${python_requirements_path}"
+    pip install -U delocate -r "${python_requirements_path}"
+    pip check
+
+    echo " - Building..."
+    rm -rf dist build
 
     # We need to "fix" the platform tag if the Python installer is universal2
     # See:
@@ -176,7 +164,7 @@ build_wheel_osx() {
       fi
     fi
 
-    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
+    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
 
     echo " - Calling delocate-listdeps"
     delocate-listdeps dist/*.whl
@@ -205,7 +193,15 @@ coreneuron=$3
 case "$1" in
 
   linux)
-    MPI_INCLUDE_HEADERS="/nrnwheel/openmpi/include;/nrnwheel/mpich/include"
+    MPI_POSSIBLE_INCLUDE_HEADERS="/usr/include/openmpi-$(uname -m) /usr/include/mpich-$(uname -m) /usr/lib/$(uname -m)-linux-gnu/openmpi/include /usr/include/$(uname -m)-linux-gnu/mpich"
+    MPI_INCLUDE_HEADERS=""
+    for dir in $MPI_POSSIBLE_INCLUDE_HEADERS
+    do
+        if [ -d "${dir}" ]; then
+            MPI_INCLUDE_HEADERS="${MPI_INCLUDE_HEADERS};${dir}"
+        fi
+    done
+
     # Check for MPT headers. On Azure, we extract them from a secure file and mount them in the docker image in:
     MPT_INCLUDE_PATH="/nrnwheel/mpt/include"
     if [ -d "$MPT_INCLUDE_PATH" ]; then
@@ -233,7 +229,16 @@ case "$1" in
         MPI_INCLUDE_HEADERS="${BREW_PREFIX}/opt/openmpi/include;${BREW_PREFIX}/opt/mpich/include"
         build_wheel_osx $(which python3) "$coreneuron" "$MPI_INCLUDE_HEADERS"
     else
-        MPI_INCLUDE_HEADERS="/usr/lib/x86_64-linux-gnu/openmpi/include;/usr/include/x86_64-linux-gnu/mpich"
+        # first two are for AlmaLinux 8 (default for manylinux_2_28);
+        # second two are for Debian/Ubuntu derivatives
+        MPI_POSSIBLE_INCLUDE_HEADERS="/usr/include/openmpi-$(uname -m) /usr/include/mpich-$(uname -m) /usr/lib/$(uname -m)-linux-gnu/openmpi/include /usr/include/$(uname -m)-linux-gnu/mpich"
+        MPI_INCLUDE_HEADERS=""
+        for dir in $MPI_POSSIBLE_INCLUDE_HEADERS
+        do
+            if [ -d "${dir}" ]; then
+                MPI_INCLUDE_HEADERS="${MPI_INCLUDE_HEADERS};${dir}"
+            fi
+        done
         build_wheel_linux $(which python3) "$coreneuron" "$MPI_INCLUDE_HEADERS"
     fi
     ls wheelhouse/
