@@ -49,8 +49,7 @@ void setup_report_engine(double dt_report, double mindelay) {
     static_cast<void>(min_steps_to_record);
 #ifdef ENABLE_SONATA_REPORTS
     sonata_set_min_steps_to_record(min_steps_to_record);
-    sonata_setup_communicators();
-    sonata_prepare_datasets();
+    sonata_setup_reports();
 #endif
 }
 
