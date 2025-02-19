@@ -9,6 +9,8 @@ Python RXD tutorials
    Reaction-Diffusion tutorial
    basic-initialization
    Changing initial conditions and parameters
+   radial_diffusion
+   intracellular
    thresholds
    extracellular
    Restricting reactions to certain sections
@@ -21,5 +23,5 @@ Python RXD tutorials
    circadian
    calcium waves
    combining currents from mod files with rxd
+   mGLUR
    ip3-demo
-
