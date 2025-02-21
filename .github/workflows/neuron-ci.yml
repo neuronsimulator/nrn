@@ -125,6 +125,8 @@ jobs:
             brew install cmake
             echo "$(brew --prefix)/opt/cmake/bin" >> $GITHUB_PATH
           fi
+          # workaround for fmt 11.1 (see https://github.com/gabime/spdlog/pull/3312)
+          brew unlink fmt
           echo "$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
           if [[ "${{matrix.os}}" == "macOS-13" ]]; then

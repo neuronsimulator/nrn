@@ -100,7 +100,7 @@ static nb::object nrnpy_pyCallObject(nb::callable callable, nb::object args) {
     // When hoc calls a PythonObject method, then in case python
     // calls something back in hoc, the hoc interpreter must be
     // at the top level
-    HocTopContextSet
+    auto interp = HocTopContextManager();
     nb::tuple tup(args);
     nb::object p = nb::steal(PyObject_CallObject(callable.ptr(), tup.ptr()));
 #if 0
@@ -110,7 +110,6 @@ printf("\nargs\n");
 PyObject_Print(args, stdout, 0);
 printf("\nreturn %p\n", p);
 #endif
-    HocContextRestore
     // It would be nice to handle the error here, ending with a hoc_execerror
     // for any Exception (note, that does not include SystemExit). However
     // since many, but not all, of the callers need to clean up and

@@ -156,7 +156,6 @@ set(IVOC_FILE_LIST
     grglyph.cpp
     grmanip.cpp
     hocmark.cpp
-    htlist.cpp
     idraw.cpp
     ivoc.cpp
     ivocmain.cpp
