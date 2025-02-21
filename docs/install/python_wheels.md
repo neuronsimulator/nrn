@@ -4,7 +4,7 @@
 ## Linux wheels
 
 In order to have NEURON binaries run on most Linux distros, we rely on the [manylinux project](https://github.com/pypa/manylinux).
-Current NEURON Linux image is based on `manylinux2014`.
+Current NEURON Linux image is based on `manylinux_2_28`.
 
 ### Setting up Docker
 
@@ -35,23 +35,8 @@ Refer to the following image for the NEURON Docker Image workflow:
 ![](images/docker-workflow.png)
 
 
-### Building the docker images automatically
-If you run the workflow manually on Gitlab (with the "Run pipeline" button), it will now have the `mac_m1_container_build` and `x86_64_container_build` jobs added to it. These jobs need to be started manually and will not affect the overal workflow status. They don't need to be run every time, just when a refresh of the container images is necessary.
-They will build the container images and push to docker hub. If you want to, you can still build manually (see next section), but there shouldn't be a requirement to do so any more.
-
-A word of warning: podman on OSX uses a virtual machine. The job can take care of starting it, but we generally try to have it running to avoid jobs cleaning up after themselves and killing the machine for other jobs. When starting the machine, set the variables that need to be set during the container build, ie. proxy and `BUILDAH_FORMAT`.
-
-`BUILDAH_FORMAT` ensures that `ONBUILD` instructions are enabled.
-
-```
-export http_proxy=http://bbpproxy.epfl.ch:80
-export https_proxy=http://bbpproxy.epfl.ch:80
-export HTTP_PROXY=http://bbpproxy.epfl.ch:80
-export HTTPS_PROXY=http://bbpproxy.epfl.ch:80
-export BUILDAH_FORMAT=docker
-```
-
 ### Building the docker image manually
+
 After making updates to any of the docker files, you can build the image with:
 ```
 cd nrn/packaging/python
@@ -108,11 +93,6 @@ For `HPE-MPT MPI`, since it's not open source, you need to acquire the headers a
 docker run -v $PWD/nrn:/root/nrn -w /root/nrn -v $PWD/mpt-headers/2.21/include:/nrnwheel/mpt/include -it neuronsimulator/neuron_wheel:latest-x86_64 bash
 ```
 where `$PWD/mpt-headers` is the path to the HPE-MPT MPI headers on the host machine that end up mounted at `/nrnwheel/mpt/include`.
-You can download the headers with:
-
-```
-git clone ssh://bbpcode.epfl.ch/user/kumbhar/mpt-headers
-```
 
 ## macOS wheels
 
@@ -205,15 +185,6 @@ bash packaging/python/test_wheels.sh python3.9 "-i https://test.pypi.org/simple/
 
 On MacOS, launching `nrniv -python` or `special -python` can fail to load `neuron` module due to security restrictions.
 For this specific purpose, please `export SKIP_EMBEDED_PYTHON_TEST=true` before launching the tests.
-
-### Testing on BB5
-On BB5, we can test CPU wheels with:
-
-```
-salloc -A proj16  -N 1 --ntasks-per-node=4 -C "cpu" --time=1:00:00 -p interactive
-module load unstable python
-bash packaging/python/test_wheels.sh python3.9 wheelhouse/NEURON-7.8.0.236-cp39-cp39-manylinux1_x86_64.whl
-```
 
 ## Publishing the wheels on Pypi via Azure
 
