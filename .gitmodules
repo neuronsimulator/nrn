@@ -16,9 +16,6 @@
 [submodule "external/Random123"]
 	path = external/Random123
 	url = https://github.com/BlueBrain/Random123.git
-[submodule "external/nmodl"]
-	path = external/nmodl
-	url = https://github.com/BlueBrain/nmodl
 [submodule "external/CLI11"]
 	path = external/CLI11
 	url = https://github.com/CLIUtils/CLI11.git
@@ -31,3 +28,12 @@
 [submodule "external/fmt"]
 	path = external/fmt
 	url = https://github.com/fmtlib/fmt
+[submodule "external/pybind11"]
+	path = external/pybind11
+	url = https://github.com/pybind/pybind11.git
+[submodule "external/json"]
+	path = external/json
+	url = https://github.com/nlohmann/json.git
+[submodule "external/spdlog"]
+	path = external/spdlog
+	url = https://github.com/gabime/spdlog.git

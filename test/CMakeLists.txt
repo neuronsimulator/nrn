@@ -814,3 +814,14 @@ endif()
 
 # Add tests that are configured using external repositories
 add_subdirectory(external)
+
+# ============================================
+# Test NMODL
+# ============================================
+if((NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON) AND NRN_ENABLE_TESTS)
+  add_subdirectory(nmodl/transpiler/unit)
+  add_subdirectory(nmodl/transpiler/integration)
+  if(NRN_ENABLE_PYTHON AND NOT NRN_SANITIZERS)
+    add_subdirectory(nmodl/transpiler/usecases)
+  endif()
+endif()
