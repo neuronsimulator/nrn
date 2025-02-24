@@ -36,16 +36,10 @@ stages:
         matrix:
           Python39:
             python.version: '3.9'
-          Python310:
-            python.version: '3.10'
-          Python311:
-            python.version: '3.11'
-          Python312:
-            python.version: '3.12'
-          Python313:
-            python.version: '3.13'
 
       steps:
+      - checkout: self
+        submodules: recursive
 
       # Secure files documentation:
       #   https://docs.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops
@@ -93,24 +87,10 @@ stages:
             python.version: '3.9'
             python.org.version: '3.9.13'
             python.installer.name: 'macos11.pkg'
-          Python310:
-            python.version: '3.10'
-            python.org.version: '3.10.11'
-            python.installer.name: 'macos11.pkg'
-          Python311:
-            python.version: '3.11'
-            python.org.version: '3.11.7'
-            python.installer.name: 'macos11.pkg'
-          Python312:
-            python.version: '3.12'
-            python.org.version: '3.12.0'
-            python.installer.name: 'macos11.pkg'
-          Python313:
-            python.version: '3.13'
-            python.org.version: '3.13.0'
-            python.installer.name: 'macos11.pkg'
 
       steps:
+      - checkout: self
+        submodules: recursive
 
       - script: |
           installer=python-$(python.org.version)-$(python.installer.name)
@@ -170,7 +150,7 @@ stages:
               echo "Setting dropurl to $AZURE_DROP_URL"
               echo "##vso[task.setvariable variable=dropurl]$AZURE_DROP_URL"
             displayName: 'Resolve Azure drop URL'
-              
+
           - task: GitHubComment@0
             continueOnError: true
             inputs:
