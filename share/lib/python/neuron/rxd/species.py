@@ -431,7 +431,7 @@ class SpeciesOnExtracellular(_SpeciesMathable):
                 index += (i * e._ny + j) * e._nz + k
             else:
                 e = ecs._region
-                index += e._nz * e._ny * e._nz
+                index += e._nx * e._ny * e._nz
         return self._species()._extracellular_nodes[index]
 
     @property
