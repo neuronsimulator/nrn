@@ -194,7 +194,7 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            ✔️ ${{ github.sha }} -> [artifacts URL](${{ steps.merge-artifacts.outputs.artifact-url }})
+            ✔️ ${{ github.event.pull_request.head.sha }} -> [artifacts URL](${{ steps.merge-artifacts.outputs.artifact-url }})
 
   pypi-publish-nightly:
     name: Upload nightly wheels to PyPI
