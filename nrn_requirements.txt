@@ -1,10 +1,9 @@
-wheel
-setuptools_scm
+wheel<=0.45.1
+setuptools_scm<=8.1.0
 setuptools<=70.3.0
-scikit-build
-matplotlib
-ipython
-mpi4py
-find_libpython
+matplotlib<=3.10.0
+ipython<=8.32.0
+mpi4py<=4.0.3
+find_libpython<=0.4.0
 -r packaging/python/build_requirements.txt
 -r packaging/python/test_requirements.txt

@@ -207,7 +207,7 @@ static PyObject* nrnexec(PyObject* self, PyObject* args) {
         return NULL;
     }
     bool b = hoc_valid_stmt(cmd, 0);
-    return b ? Py_True : Py_False;
+    return PyBool_FromLong(b);
 }
 
 static PyObject* nrnexec_safe(PyObject* self, PyObject* args) {
@@ -2388,10 +2388,7 @@ PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op) {
         result = self_ptr >= other_ptr;
         break;
     }
-    if (result) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return PyBool_FromLong(result);
 }
 
 // TODO: unfortunately, this duplicates code from hocobj_same; consolidate?
@@ -2442,20 +2439,14 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
                     break;
                 }
                 if (self->nindex_ != pyhoc_other->nindex_ || self->sym_ != pyhoc_other->sym_) {
-                    if (op == Py_NE) {
-                        Py_RETURN_TRUE;
-                    }
-                    Py_RETURN_FALSE;
+                    return PyBool_FromLong(op == Py_NE);
                 }
                 for (int i = 0; i < self->nindex_; i++) {
                     if (self->indices_[i] != pyhoc_other->indices_[i]) {
                         are_equal = false;
                     }
                 }
-                if (are_equal == (op == Py_EQ)) {
-                    Py_RETURN_TRUE;
-                }
-                Py_RETURN_FALSE;
+                return PyBool_FromLong(are_equal == (op == Py_EQ));
             default:
                 other_ptr = pyhoc_other->ho_;
             }
@@ -2476,12 +2467,8 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
 static PyObject* hocobj_same(PyHocObject* pself, PyObject* args) {
     PyObject* po;
     if (PyArg_ParseTuple(args, "O", &po)) {
-        if (PyObject_TypeCheck(po, hocobject_type)) {
-            if (((PyHocObject*) po)->ho_ == pself->ho_) {
-                Py_RETURN_TRUE;
-            }
-        }
-        Py_RETURN_FALSE;
+        return PyBool_FromLong(PyObject_TypeCheck(po, hocobject_type) &&
+                               ((PyHocObject*) po)->ho_ == pself->ho_);
     }
     return NULL;
 }
