@@ -216,8 +216,15 @@ void unGets(char* buf)		/* all this because we don't have an ENDBLOCK
 char* current_line() { /* assumes we actually want the previous line */
     static char buf[NRN_BUFSIZE];
     char* p;
-    Sprintf(
-        buf, "at line %d in file %s:\\n%s", linenum - 1, finname, inlinebuf[whichbuf ? 0 : 1] + 30);
+    Sprintf(buf,
+            "at line %d in file %s:\\n%s",
+            linenum - 1,
+#if !defined(NRN_AVOID_ABSOLUTE_PATHS)
+            finname,
+#else
+            fs::absolute(finname).filename().c_str(),
+#endif
+            inlinebuf[whichbuf ? 0 : 1] + 30);
     for (p = buf; *p; ++p) {
         if (*p == '\n') {
             *p = '\0';
