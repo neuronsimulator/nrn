@@ -538,7 +538,7 @@ def setup_package():
             else []
         ),
         tests_require=["flake8", "pytest"],
-        setup_requires=["wheel", "setuptools_scm"]
+        setup_requires=["wheel", "setuptools_scm<8.2"]
         + maybe_docs
         + maybe_test_runner
         + maybe_rxd_reqs,
