@@ -523,22 +523,22 @@ def setup_package():
         },
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
         install_requires=[
-            "numpy>=1.9.3",
-            "packaging",
-            "find_libpython",
+            "numpy>=1.9.3,<=2.2.3",
+            "packaging<=24.2.0",
+            "find_libpython<=0.4.0",
             "setuptools<=70.3.0",
         ]
         + (
             [
-                "sympy>=1.3",
+                "sympy>=1.3,<=1.13.3",
                 "importlib_resources;python_version<'3.9'",
                 "importlib_metadata;python_version<'3.9'",
             ]
             if Components.CORENRN
             else []
         ),
-        tests_require=["flake8", "pytest"],
-        setup_requires=["wheel", "setuptools_scm"]
+        tests_require=["flake8<=7.1.2", "pytest<=8.1.1"],
+        setup_requires=["wheel<=0.45.1", "setuptools_scm<=8.1.0"]
         + maybe_docs
         + maybe_test_runner
         + maybe_rxd_reqs,
