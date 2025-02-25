@@ -28,6 +28,9 @@ on:
       build_type:
         description: The type of build (release or nightly)
         default: 'nightly'
+        options:
+          - 'nightly'
+          - 'release'
       base_image_x86_64:
         description: The custom base container image to use for manylinux builds (x86_64)
       base_image_aarch64:
@@ -105,18 +108,9 @@ jobs:
           then
             echo "NRN_NIGHTLY_UPLOAD=true" >> $GITHUB_ENV
             echo "NEURON_NIGHTLY_TAG=-nightly" >> $GITHUB_ENV
-          elif [ "${BUILD_TYPE}" = 'release' ]
-          then
+          else
             echo "NRN_NIGHTLY_UPLOAD=false" >> $GITHUB_ENV
             echo "NEURON_NIGHTLY_TAG=" >> $GITHUB_ENV
-          else
-            if [[ "${BUILD_TYPE}" =~ .*-nightly$ ]]
-            then
-              echo "NRN_NIGHTLY_UPLOAD=true" >> $GITHUB_ENV
-            else
-              echo "NRN_NIGHTLY_UPLOAD=false" >> $GITHUB_ENV
-            fi
-            echo "NEURON_NIGHTLY_TAG=${BUILD_TYPE}" >> $GITHUB_ENV
           fi
 
       - name: Override env for scheduled run
@@ -170,6 +164,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install test dependencies
+        if: runner.os != 'macOS'
+        run: |
+          sudo apt update
+          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
+
+      - name: Test wheel with ${{ matrix.python-version }}
+        run: |
+          minor_version="$(python${{ matrix.python-version }} -c 'import sys;print(sys.version_info.minor)')"
+          packaging/python/test_wheels.sh $(which python${{ matrix.python-version }}) wheelhouse/*cp3${minor_version}*.whl
+
   merge:
     name: Merge artifacts
     runs-on: ubuntu-latest
@@ -195,10 +200,10 @@ jobs:
     name: Upload nightly wheels to PyPI
     runs-on: ubuntu-latest
     needs: merge
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.upload == 'true' && github.event.inputs.build_type == '-test-upload-nightly'
+    if: github.event_name == 'schedule'
     environment:
-      name: test pypi
-      url: https://test.pypi.org/p/neuron-test-upload-nightly
+      name: pypi
+      url: https://pypi.org/p/neuron-nightly
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
@@ -209,17 +214,15 @@ jobs:
           path: dist/
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
 
   pypi-publish-release:
     name: Upload release wheels to PyPI
     runs-on: ubuntu-latest
     needs: merge
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.upload == 'true' && github.event.inputs.build_type == '-test-upload'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.upload == 'true'
     environment:
-      name: test pypi
-      url: https://test.pypi.org/p/neuron-test-upload
+      name: pypi
+      url: https://pypi.org/p/neuron
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
@@ -230,8 +233,6 @@ jobs:
           path: dist/
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
 
   final:
     name: Final CI
