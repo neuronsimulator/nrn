@@ -254,7 +254,7 @@ $python_exe -m pip install --upgrade pip
 # install test requirements
 $python_exe -m pip install -r packaging/python/test_requirements.txt
 $python_exe -m pip install $python_wheel
-$python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
+#$python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
 
 
 # check the existence of coreneuron support
