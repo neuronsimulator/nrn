@@ -49,9 +49,9 @@ setup_venv() {
 
     . "$venv_dir/bin/activate"
 
-    if ! pip install -U pip setuptools wheel; then
+    if ! pip install -U 'pip<=25.0.1' 'setuptools<=70.3.0' 'wheel<=0.45.1'; then
         curl https://raw.githubusercontent.com/pypa/get-pip/20.3.4/get-pip.py | python
-        pip install -U setuptools wheel
+        pip install -U 'setuptools<=70.3.0' 'wheel<=0.45.1'
     fi
 
 }
@@ -64,7 +64,7 @@ build_wheel_linux() {
     (( $skip )) && return 0
 
     echo " - Installing build requirements"
-    pip install auditwheel
+    pip install 'auditwheel<=6.2.0'
     cp packaging/python/build_requirements.txt "${python_requirements_path}"
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
@@ -134,7 +134,7 @@ build_wheel_osx() {
     fi
 
     cat "${python_requirements_path}"
-    pip install -U delocate -r "${python_requirements_path}"
+    pip install -U 'delocate<=0.13.0' -r "${python_requirements_path}"
     pip check
 
     echo " - Building..."
