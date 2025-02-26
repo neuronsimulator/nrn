@@ -13,26 +13,26 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  get-last-azure-url:
+  get-last-artifact-url:
     runs-on: ubuntu-latest
     if: ${{ github.event.label.name == 'nrn-modeldb-ci-nightly' }}
     outputs:
-      azure_drop_url: ${{ steps.drop.outputs.azure_drop_url }}
-      pr_azure_sha:  ${{ steps.drop.outputs.pr_azure_sha }}
+      artifact_url: ${{ steps.drop.outputs.artifact_url }}
+      last_commit_sha:  ${{ steps.drop.outputs.last_commit_sha }}
     steps:
       - id: drop
         run: |
-          # use jq to get the last Azure drop URL from the PR and the SHA1 from the same body
-          export pr_json=$(gh pr view $PR_URL --json comments -q 'last(.comments[] .body | capture(".*(?<pr_azure_sha>[0-9a-f]{40}).*?(?<azure_drop_url>https://dev.azure.com/neuronsimulator/.*=zip)"))')
+          # use jq to get the last artifact URL from the PR and the SHA1 from the same body
+          export pr_json=$(gh pr view $PR_URL --json comments -q 'last(.comments[] .body | capture(".*(?<last_commit_sha>[0-9a-f]{40}).*?(?<artifact_url>https://github.com/neuronsimulator/nrn/actions/runs/.*)"))')
           if [ -z "$pr_json" ]; then
-            echo "Unable to retrieve AZURE drop url and SHA from comments!"
+            echo "Unable to retrieve artifact URL and SHA from comments!"
             exit 1
           fi
-          # use jq to get pr_azure_sha and azure_drop_url from the json
-          export azure_drop_url=$(echo $pr_json | jq -r .azure_drop_url)
-          export pr_azure_sha=$(echo $pr_json | jq -r .pr_azure_sha)
-          echo azure_drop_url=$azure_drop_url >> $GITHUB_OUTPUT
-          echo pr_azure_sha=$pr_azure_sha >> $GITHUB_OUTPUT
+          # use jq to get last_commit_sha and artifact_url from the json
+          export artifact_url=$(echo $pr_json | jq -r .artifact_url)
+          export last_commit_sha=$(echo $pr_json | jq -r .last_commit_sha)
+          echo artifact_url=$artifact_url >> $GITHUB_OUTPUT
+          echo last_commit_sha=$last_commit_sha >> $GITHUB_OUTPUT
 
       - id: remove-label
         if: always()
@@ -41,31 +41,31 @@ jobs:
           gh pr edit $PR_URL --remove-label nrn-modeldb-ci-nightly
           # if we encounter an error in last github action step, add a comment
           if [ ${{ steps.drop.outcome }} == 'failure' ]; then
-            gh pr comment $PR_URL --body "Unable to retrieve AZURE drop url from comments!"
+            gh pr comment $PR_URL --body "Unable to retrieve artifact URL from comments!"
           else
-            gh pr comment $PR_URL --body "NEURON ModelDB CI: launching for ${pr_azure_sha} via its [drop url]($azure_drop_url)"
+            gh pr comment $PR_URL --body "NEURON ModelDB CI: launching for ${last_commit_sha} via its [artifact URL]($artifact_url)"
           fi
         env:
-          pr_azure_sha: ${{ steps.drop.outputs.pr_azure_sha }}
-          azure_drop_url: ${{ steps.drop.outputs.azure_drop_url }}
+          last_commit_sha: ${{ steps.drop.outputs.last_commit_sha }}
+          artifact_url: ${{ steps.drop.outputs.artifact_url }}
 
   nrn-modeldb-ci:
-    needs: get-last-azure-url
+    needs: get-last-artifact-url
     uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@master
     with:
-      neuron_v1: ${{needs.get-last-azure-url.outputs.azure_drop_url}}
+      neuron_v1: ${{needs.get-last-artifact-url.outputs.artifact_url}}
       neuron_v2: neuron-nightly
 
   pr-update:
     needs:
       - nrn-modeldb-ci
-      - get-last-azure-url
+      - get-last-artifact-url
     runs-on: ubuntu-latest
     steps:
     - run: |
-        gh pr comment $PR_URL --body "NEURON ModelDB CI: ${pr_azure_sha} -> download reports [from here](${ARTIFACTS_URL})"
+        gh pr comment $PR_URL --body "NEURON ModelDB CI: ${last_commit_sha} -> download reports [from here](${ARTIFACTS_URL})"
       name: Post NEURON ModelDB CI Artifact URL
       if: always() || cancelled()
       env:
         ARTIFACTS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        pr_azure_sha: ${{ needs.get-last-azure-url.outputs.pr_azure_sha }}
+        last_commit_sha: ${{ needs.get-last-artifact-url.outputs.last_commit_sha }}

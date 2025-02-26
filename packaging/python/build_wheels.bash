@@ -30,8 +30,6 @@ py_ver=""
 python_requirements_path="$(mktemp -d)/requirements.txt"
 
 clone_nmodl_and_add_requirements() {
-    git config --global --add safe.directory /root/nrn
-    git submodule update --init --recursive --force --depth 1 -- external/nmodl
     # We only want the _build_ dependencies
     sed -e '/^# runtime dependencies/,$ d' external/nmodl/requirements.txt >> "${python_requirements_path}"
 }
