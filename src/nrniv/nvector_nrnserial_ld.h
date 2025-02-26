@@ -62,8 +62,8 @@ mv temp nvector_nrnserial_ld.cpp
 
 #pragma once
 
-#include "nvector.h"
-#include "sundialstypes.h"
+#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
+#include <sundials/sundials_types.h> /* definition of type realtype*/
 
 /*
  * -----------------------------------------------------------------
@@ -256,7 +256,7 @@ void N_VPrint_NrnSerialLD(N_Vector v);
 
 N_Vector N_VClone_NrnSerialLD(N_Vector w);
 void N_VDestroy_NrnSerialLD(N_Vector v);
-void N_VSpace_NrnSerialLD(N_Vector v, long int* lrw, long int* liw);
+void N_VSpace_NrnSerialLD(N_Vector v, sunindextype* lrw, sunindextype* liw);
 realtype* N_VGetArrayPointer_NrnSerialLD(N_Vector v);
 void N_VSetArrayPointer_NrnSerialLD(realtype* v_data, N_Vector v);
 void N_VLinearSum_NrnSerialLD(realtype a, N_Vector x, realtype b, N_Vector y, N_Vector z);
