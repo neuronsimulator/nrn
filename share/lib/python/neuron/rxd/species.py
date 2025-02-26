@@ -429,6 +429,7 @@ class SpeciesOnExtracellular(_SpeciesMathable):
             if ecs == s:
                 e = s._region
                 index += (i * e._ny + j) * e._nz + k
+                break
             else:
                 e = ecs._region
                 index += e._nx * e._ny * e._nz
