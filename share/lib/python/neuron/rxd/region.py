@@ -14,6 +14,23 @@ from .geometry import FractionalVolume
 import warnings
 import math
 import ctypes
+from .rxdmath import _ast_config
+
+if _ast_config["nmodl_support"]:
+    try:
+        from nmodl.ast import (
+            Name,
+            String,
+            DerivativeBlock,
+            StatementBlock,
+            KineticBlock,
+            StateBlock,
+            AssignedDefinition,
+            Program,
+        )
+    except ModuleNotFoundError as e:
+        _ast_config["nmodl_support"] = False
+        _ast_config["exception"] = e
 
 _all_regions = []
 _region_count = 0
@@ -256,6 +273,47 @@ class _c_region:
             self._ecs_initalize()
         self._initialized = True
 
+    def ast(self):
+        """Return AST for the set of reactions"""
+        if not _ast_config["nmodl_support"]:
+            return
+        from . import Rate, rxd
+
+        species = []
+        blocks = []
+        reactions = []
+        rates = []
+        states = []
+        for rptr, rlst in self._react_regions.items():
+            rast, sp = rptr().ast(rlst)
+            species += sp
+            rast = rast if hasattr(rast, "__len__") else [rast]
+            if (
+                isinstance(rptr(), Rate)
+                or rxd._ast_kinetic_block == "off"
+                or (rxd._ast_kinetic_block == "mass_action" and rptr()._custom_dynamics)
+            ):
+                rates += rast
+            else:
+                reactions += rast
+
+        for name in set(species):
+            states.append(
+                AssignedDefinition(
+                    Name(String(name)), None, None, None, None, None, None
+                )
+            )
+        if states != []:
+            blocks.append(StateBlock(states))
+        if reactions != []:
+            blocks.append(
+                KineticBlock(Name(String("reactions")), [], StatementBlock(reactions))
+            )
+        if rates != []:
+            blocks.append(DerivativeBlock(Name(String("rates")), StatementBlock(rates)))
+
+        return Program(blocks)
+
 
 class Extracellular:
     """Declare an extracellular region
@@ -328,18 +386,15 @@ class Extracellular:
             )
 
     def __repr__(self):
-        return (
-            "Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)"
-            % (
-                self._xlo,
-                self._ylo,
-                self._zlo,
-                self._xhi,
-                self._yhi,
-                self._zhi,
-                self.tortuosity,
-                self.alpha,
-            )
+        return "Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)" % (
+            self._xlo,
+            self._ylo,
+            self._zlo,
+            self._xhi,
+            self._yhi,
+            self._zhi,
+            self.tortuosity,
+            self.alpha,
         )
 
     def _short_repr(self):
@@ -556,7 +611,7 @@ class Extracellular:
     @property
     def permeability(self):
         if hasattr(self, "_tortuosity"):
-            return 1.0 / self._tortuosity**2
+            return 1.0 / self._tortuosity ** 2
         return self._permeability
 
     @tortuosity.setter
@@ -789,7 +844,7 @@ class Region(object):
             nx = x - sec.x3d(n - 2)
             ny = y - sec.y3d(n - 2)
             nz = z - sec.z3d(n - 2)
-            scale = dx / (nx**2 + ny**2 + nz**2) ** 0.5
+            scale = dx / (nx ** 2 + ny ** 2 + nz ** 2) ** 0.5
             x -= nx * scale
             y -= ny * scale
             z -= nz * scale
@@ -804,7 +859,7 @@ class Region(object):
         # dn = (nx**2 + ny**2 + nz**2)**0.5
         # nx, ny, nz = nx/dn, ny/dn, nz/dn
         # x, y, z = x * x1 + (1 - x) * x0, x * y1 + (1 - x) * y0, x * z1 + (1 - x) * z1
-        r = sec(position).diam * 0.5 + self.dx * 3**0.5
+        r = sec(position).diam * 0.5 + self.dx * 3 ** 0.5
         plane_of_disc = geometry3d.graphicsPrimitives.Plane(x, y, z, nx, ny, nz)
 
         xs = numpy.arange(
@@ -833,7 +888,7 @@ class Region(object):
         sphere_indices = [
             (i, j, k)
             for i, j, k in itertools.product(i_indices, j_indices, k_indices)
-            if (xs[i] - x) ** 2 + (ys[j] - y) ** 2 + (zs[k] - z) ** 2 <= r**2
+            if (xs[i] - x) ** 2 + (ys[j] - y) ** 2 + (zs[k] - z) ** 2 <= r ** 2
         ]
         dx = self.dx
         disc_indices = []

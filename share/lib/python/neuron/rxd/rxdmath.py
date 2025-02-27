@@ -3,6 +3,40 @@ import numpy
 from .rxdException import RxDException
 from . import initializer
 
+# _ast_config used for two flags
+# nmodl_support default to True -- will be set to False if nmodl is not
+# installed of install without python bindings
+
+# "kinetic_block" determines how to handle reactions
+# set to "off" for ast to only use DERIVATIVE blocks
+# set to "on" for reactions to be KINETIC blocks
+# set to "mass_action" for mass action reaction to be KINETIC blocks while
+#         non-mass action reactions and rates are DERIVATIVE blocks
+
+_ast_config = {"nmodl_support": True, "kinetic_block": "off"}
+
+
+if _ast_config["nmodl_support"]:
+    try:
+        from nmodl.ast import (
+            Name,
+            String,
+            ReactionStatement,
+            VarName,
+            Integer,
+            BinaryOperator,
+            BinaryOp,
+            BinaryExpression,
+            ReactionOperator,
+            FunctionCall,
+            Double,
+            LocalVar,
+            WrappedExpression,
+        )
+    except ModuleNotFoundError as e:
+        _ast_config["nmodl_support"] = False
+        _ast_config["exception"] = e
+
 
 def _vectorized(f, objs):
     if hasattr(objs, "__len__"):
@@ -40,7 +74,7 @@ def _lgamma(objs):
 
 def _power(objs1, objs2):
     # TODO? assumes numpy arrays; won't work for lists
-    return objs1**objs2
+    return objs1 ** objs2
 
 
 def _neg(objs):
@@ -200,6 +234,15 @@ class _Function:
         except AttributeError:
             return False
 
+    def ast(self, region=None):
+        if _ast_config["nmodl_support"]:
+            if hasattr(self._obj, "ast"):
+                obj = self._obj.ast(region)
+            else:
+                obj = Name(String(self._obj))
+            fun = Name(String(self._fname))
+            return FunctionCall(fun, [obj])
+
 
 class _Function2:
     def __init__(self, obj1, obj2, f, fname):
@@ -252,6 +295,20 @@ class _Function2:
             except AttributeError:
                 pass
         return False
+
+    def ast(self, region=None):
+        if _ast_config["nmodl_support"]:
+            if hasattr(self._obj1, "ast"):
+                obj1 = self._obj1.ast(region)
+            else:
+                obj1 = Name(String(self._obj1))
+            if hasattr(self._obj2, "ast"):
+                obj2 = self._obj2.ast(region)
+            else:
+                obj2 = Name(String(self._obj2))
+
+            fun = Name(String(self._fname))
+            return FunctionCall(fun, [obj1, obj2])
 
 
 # wrappers for the functions in module math from python 2.7
@@ -538,6 +595,20 @@ class _Product:
         self._a._involved_species(the_dict)
         self._b._involved_species(the_dict)
 
+    def ast(self, region=None):
+        if _ast_config["nmodl_support"]:
+            if hasattr(self._a, "ast"):
+                lhs = self._a.ast(region)
+            else:
+                lhs = Name(String(self._a))
+            if hasattr(self._b, "ast"):
+                rhs = self._b.ast(region)
+            else:
+                rhs = Name(String(self._b))
+            return BinaryExpression(
+                lhs, BinaryOperator(BinaryOp.BOP_MULTIPLICATION), rhs
+            )
+
 
 class _Quotient:
     def __init__(self, a, b):
@@ -595,6 +666,18 @@ class _Quotient:
         self._a._involved_species(the_dict)
         self._b._involved_species(the_dict)
 
+    def ast(self, region=None):
+        if _ast_config["nmodl_support"]:
+            if hasattr(self._a, "ast"):
+                lhs = self._a.ast(region)
+            else:
+                lhs = Name(String(self._a))
+            if hasattr(self._b, "ast"):
+                rhs = self._b.ast(region)
+            else:
+                rhs = Name(String(self._b))
+            return BinaryExpression(lhs, BinaryOperator(BinaryOp.BOP_DIVISION), rhs)
+
 
 class _Reaction:
     def __init__(self, lhs, rhs, direction):
@@ -617,6 +700,23 @@ class _Reaction:
             except AttributeError:
                 pass
         return False
+
+    def ast(self, region=None):
+        if _ast_config["nmodl_support"]:
+            lhs = self._lhs.ast(region)
+            rhs = self._rhs.ast(region)
+            # TODO: Placeholder rates should be replaced by in rxd.Reaction
+            if region:
+                rid = region._id
+                rname = region.name if region.name else ""
+                rint = Integer(rid, Name(String(rname)))
+            else:
+                rint = Integer(0, Name(String("unassigned")))
+
+            # should be replaced by rxd.Reaction with the actual values
+            kf = Double("0.0")
+            kb = Double("0.0")
+            return ReactionStatement(lhs, ReactionOperator(), rhs, kf, kb)
 
 
 class _Arithmeticed:
@@ -741,6 +841,44 @@ class _Arithmeticed:
         if not result:
             result = "0"
         return result
+
+    def ast(self, region=None):
+        if _ast_config["nmodl_support"]:
+            from . import species
+
+            nodes = None
+            for item, count in zip(
+                list(self._items.keys()), list(self._items.values())
+            ):
+                if hasattr(item, "ast"):
+                    item_node = item.ast(region)
+                elif isinstance(item, int) or isinstance(item, float):
+                    item_node = Double(str(item))
+                else:
+                    item_node = LocalVar(Name(String(item)))
+
+                if count == 1:
+                    term_node = item_node
+                # elif count == -1:
+                # TODO: Get UnaryOperator working
+                else:
+                    term_node = BinaryExpression(
+                        Integer(count, Name(String(str(count)))),
+                        BinaryOperator(BinaryOp.BOP_MULTIPLICATION),
+                        item_node,
+                    )
+
+                if nodes is None:
+                    nodes = term_node
+                else:
+                    nodes = WrappedExpression(
+                        (
+                            BinaryExpression(
+                                nodes, BinaryOperator(BinaryOp.BOP_ADDITION), item_node
+                            )
+                        )
+                    )
+            return nodes
 
     @property
     def _voltage_dependent(self):
@@ -889,6 +1027,10 @@ class Vm(_Arithmeticed, object):
         @property
         def _voltage_dependent(self):
             return True
+
+        def ast(self, region=None):
+            if _ast_config["nmodl_support"]:
+                return VarName(Name(String("v")), None, None)
 
     def __init__(self):
         super(Vm, self).__init__(Vm._Vm(), valid_reaction_term=True)
