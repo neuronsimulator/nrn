@@ -10,6 +10,14 @@ from . import options
 from .rxdException import RxDException
 from . import initializer
 from collections.abc import Callable
+from .rxdmath import _ast_config
+
+if _ast_config["nmodl_support"]:
+    try:
+        from nmodl.ast import PrimeName, VarName, Name, String, Integer
+    except ModuleNotFoundError as e:
+        _ast_config["nmodl_support"] = False
+        _ast_config["exception"] = e
 
 
 import ctypes
@@ -330,6 +338,21 @@ class _SpeciesMathable(object):
                 _diffs[self._indices1d()] = value
                 rxd._setup_matrices()
 
+    def ast(self, region=None, prime=False):
+        if region is not None:
+            regions = region if hasattr(region, "__len__") else [region]
+            for r in regions:
+                if r in self._regions:
+                    return self[r].ast(prime=prime)
+                elif r in self._extracellular_instances:
+                    return self[r].ast(prime=prime)
+        if len(self._regions) == 1 and len(self._extracellular_instances) == 0:
+            return self[self._regions[0]].ast(prime=prime)
+        if len(self._regions) == 0 and len(self._extracellular_instances) == 1:
+            for ecs in self._extracellular_instances:
+                return self[ecs].ast(prime=prime)
+        raise RxDException(f"Invalid Region: {region}")
+
 
 class SpeciesOnExtracellular(_SpeciesMathable):
     def __init__(self, species, extracellular):
@@ -477,6 +500,64 @@ class SpeciesOnExtracellular(_SpeciesMathable):
     def defined_on_region(self, r):
         return r == self._extracellular()
 
+    def ast(self, region=None, prime=False):
+        """
+        Generate an AST node representing the species variable with region-specific information,
+        optionally as a derivative (primed) variable.
+        The name will be `Specie Name@Extracellular[Grid ID]`
+
+        This method constructs an AST node using classes from `nmodl.ast` that encapsulates the
+        species’ identity along with its associated region. The resulting node is either a `VarName`
+        (for a normal species variable) or a `PrimeName` (for its time derivative) depending on
+        the `prime` flag.
+
+
+        Parameters:
+            region (optional): A region argument for compatibility (not used -- the region will
+                        always be the one the species is defined on
+            prime (bool): If True, returns a `PrimeName` node (representing a derivative);
+                        otherwise returns a `VarName` node.
+
+        Returns:
+            An AST node (from `nmodl.ast`):
+            - A `PrimeName` node if `prime` is True.
+            - A `VarName` node otherwise.
+
+        """
+        if not _ast_config["nmodl_support"]:
+            if "exception" in _ast_config:
+                raise _ast_config["exception"]
+            else:
+                raise RxDException(
+                    'NMODL AST are disabled set rxd._ast_config["nmodl_support"] to True'
+                )
+        if not initializer.is_initialized():
+            initializer._do_init()
+
+        rint = Integer(
+            self._id, Name(String(str(self._extracellular()._region._short_repr())))
+        )
+        name = (
+            self._species().name
+            if self._species().name is not None
+            else f"{self._species().__class__.__name__}_{self._species()._id}"
+        )
+
+        # strip charactered used to give the region and region id
+        name = name.replace("@", "").replace("[", "").replace("]", "")
+
+        # Unlike VarName , PrimeName  does not support an index -- so the index has been added to the name
+        if prime:
+            return PrimeName(
+                String(f"{VarName(Name(String(name)),rint, None)}[{rint.eval()}]"),
+                Integer(1, None),
+            )
+        return VarName(
+            Name(String(f"{VarName(Name(String(name)),rint, None)}[{rint.eval()}]")),
+            None,
+            None,
+        )
+
 
 class SpeciesOnRegion(_SpeciesMathable):
     def __init__(self, species, region):
@@ -621,6 +702,66 @@ class SpeciesOnRegion(_SpeciesMathable):
     @property
     def _id(self):
         return self._species()._id
+
+    def ast(self, region=None, prime=False):
+        """
+        Generate an AST node representing the species variable with region-specific information,
+        optionally as a derivative (primed) variable.
+        The name will be `Specie Name@Region Name[Region Id]`
+
+        This method constructs an AST node using classes from `nmodl.ast` that encapsulates the
+        species’ identity along with its associated region. The resulting node is either a `VarName`
+        (for a normal species variable) or a `PrimeName` (for its time derivative) depending on
+        the `prime` flag.
+
+
+        Parameters:
+            region (optional): A region argument for compatibility (not used -- the region will
+                        always be the one the species is defined on
+            prime (bool): If True, returns a `PrimeName` node (representing a derivative);
+                        otherwise returns a `VarName` node.
+
+        Returns:
+            An AST node (from `nmodl.ast`):
+            - A `PrimeName` node if `prime` is True.
+            - A `VarName` node otherwise.
+
+        """
+        if not _ast_config["nmodl_support"]:
+            if "exception" in _ast_config:
+                raise _ast_config["exception"]
+            else:
+                raise RxDException(
+                    'NMODL AST are disabled set rxd._ast_config["nmodl_support"] to True'
+                )
+        if not initializer.is_initialized():
+            initializer._do_init()
+
+        rint = Integer(int(self._region()._id), Name(String(str(self._region().name))))
+        name = (
+            self._species().name
+            if self._species().name is not None
+            else f"{self._species().__class__.__name__}_{self._species()._id}"
+        )
+
+        # strip charactered used to give the region and region id
+        name = name.replace("@", "").replace("[", "").replace("]", "")
+
+        # avoid using 'v' -- used for rxdmath.v:
+        # if name == 'v':
+        #    name = f"{self._species().__class__.__name__}_v"
+
+        # PrimeName take a String argument, so unlike VarName they cannot be indexed -- index added to the name.
+        if prime:
+            return PrimeName(
+                String(f"{VarName(Name(String(name)),rint, None)}[{rint.eval()}]"),
+                Integer(1, None),
+            )
+        return VarName(
+            Name(String(f"{VarName(Name(String(name)),rint, None)}[{rint.eval()}]")),
+            None,
+            None,
+        )
 
 
 # 3d matrix stuff
@@ -870,7 +1011,7 @@ class _IntracellularSpecies(_SpeciesMathable):
 
     def create_alphas(self):
         self._isalive()
-        alphas = [vol / self._dx**3 for vol in self._region._vol]
+        alphas = [vol / self._dx ** 3 for vol in self._region._vol]
         return numpy.asarray(alphas, dtype=float)
 
     def _import_concentration(self):

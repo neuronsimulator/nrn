@@ -5,6 +5,21 @@ from .generalizedReaction import (
     get_scheme_rate1_rate2_regions_custom_dynamics_mass_action,
 )
 from .rxdException import RxDException
+from .rxdmath import _ast_config
+
+if _ast_config["nmodl_support"]:
+    try:
+        from nmodl.ast import (
+            Double,
+            ExpressionStatement,
+            DiffEqExpression,
+            BinaryExpression,
+            BinaryOperator,
+            BinaryOp,
+        )
+    except ModuleNotFoundError as e:
+        _ast_config["nmodl_support"] = False
+        _ast_config["exception"] = e
 
 
 class Reaction(GeneralizedReaction):
@@ -116,13 +131,13 @@ class Reaction(GeneralizedReaction):
                 if v == 1:
                     rate_f *= k
                 else:
-                    rate_f *= k**v
+                    rate_f *= k ** v
             if self._dir == "<>":
                 for k, v in rhs.items():
                     if v == 1:
                         rate_b *= k
                     else:
-                        rate_b *= k**v
+                        rate_b *= k ** v
         rate = rate_f - rate_b
         self._rate_arithmeticed = rate
 
@@ -278,3 +293,128 @@ class Reaction(GeneralizedReaction):
     def _do_memb_scales(self):
         # nothing to do since NEVER a membrane flux
         pass
+
+    def ast(self, regions=None):
+        """Provide an AST representation of the reactions.
+
+        Args:
+            regions (List[weakref.ref]): A list of weak references `rxd.Region`
+                                         if None all regions where the rate is
+                                         valid are used.
+
+        Depending on rxd._ast_config["kinetic_block"] if 'off' (default) or
+        if rxd._ast_config["kinetic_block"] if 'mass_action' and the reaction has
+        custom dynamics then the reaction will be represented as as list of
+        DiffEqExpression each wrapped in ExpressionStatement.
+        If rxd._ast_config["kinetic_block"] if 'on' or
+        if rxd._ast_config["kinetic_block"] if 'mass_action' and the reaction
+        has mass action kinetics then the reaction will be represent as a
+        ReactionStatement.
+
+
+        Returns:
+            List[nmodl.ast]: A list of ExpressionStatement or ReactionStatement
+            List[str]:  A list of the species (AST state names)
+        """
+        from .species import Parameter, ParameterOnRegion, ParameterOnExtracellular
+
+        if not _ast_config["nmodl_support"]:
+            if "exception" in _ast_config:
+                raise _ast_config["exception"]
+            else:
+                raise RxDException(
+                    'NMODL AST are disabled set rxd._ast_config["nmodl_support"] to True'
+                )
+
+        kinetic_block = _ast_config["kinetic_block"]
+        if not initializer.is_initialized():
+            initializer._do_init()
+        def get_ast(region):
+            if kinetic_block == "off" or (
+                kinetic_block == "non_mass_action" and self._custom_dynamics
+            ):
+                rate = self._rate_arithmeticed
+                frate = rate.ast(region)
+                brate = (-rate).ast(region)
+                diff, species = [], []
+                for idx, sref in enumerate(self._sources + self._dests):
+                    sp = sref()
+                    if (
+                        isinstance(sp, Parameter)
+                        or isinstance(sp, ParameterOnRegion)
+                        or isinstance(sp, ParameterOnExtracellular)
+                    ):
+                        continue
+                    rast = frate if idx < len(self._sources) else brate
+                    if sp and hasattr(sp, "name"):
+                        name = sp.ast(region).get_node_name()
+                        dx = sp.ast(region, prime=True)
+                    elif sp and hasattr(sp, "_species") and sp._species():
+                        name = sp.ast().get_node_name()
+                        dx = sp.ast(prime=True)
+                    else:
+                        raise RxDException(f"Unknown species: {sp}")
+                    diff.append(
+                        ExpressionStatement(
+                            DiffEqExpression(
+                                (
+                                    BinaryExpression(
+                                        dx, BinaryOperator(BinaryOp.BOP_ASSIGN), rast
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    species.append(name)
+                return diff, species
+            else:
+                react = self._scheme.ast(region)
+                # replace placeholder rates
+                if hasattr(self.f_rate, "ast"):
+                    kf = self.f_rate.ast(region)
+                else:
+                    kf = Double(str(self.f_rate))
+
+                if hasattr(self.b_rate, "ast"):
+                    kb = self.b_rate.ast(region)
+                else:
+                    kb = Double(str(self.b_rate))
+                react.expression1 = kf
+                react.expression2 = kb
+                species = []
+                for sref in set(self._sources + self._dests):
+                    sp = sref()
+                    if (
+                        isinstance(sp, Parameter)
+                        or isinstance(sp, ParameterOnRegion)
+                        or isinstance(sp, ParameterOnExtracellular)
+                    ):
+                        continue
+                    if sp and hasattr(sp, "name"):
+                        name = sp.ast(region).get_node_name()
+                    elif sp and hasattr(sp, "_species") and sp._species():
+                        name = sp.ast().get_node_name()
+                    else:
+                        raise RxDException(f"Unknown species: {sp}")
+                    species.append(name)
+                return [react], species
+
+        reactions = []
+        species = []
+        if regions is None:
+            for region in self._react_regions:
+                r, s = get_ast(region)
+                reactions += r
+                species += s
+        else:
+            for rptr in regions:
+                if rptr():
+                    region = rptr()
+                    r, s = get_ast(region)
+                    if self._custom_dynamics:
+                        reactions += r
+                        species += s
+                    else:
+                        reactions += r
+                        species += s
+        return reactions, species

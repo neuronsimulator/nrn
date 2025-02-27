@@ -862,7 +862,7 @@ def _setup_matrices():
                 sp = grid_id_species[grid_id]
                 # TODO: use 3D anisotropic diffusion coefficients
                 dc = grid_id_dc[grid_id]
-                grids_dx.append(sp._dx**3)
+                grids_dx.append(sp._dx ** 3)
                 num_1d_indices_per_grid.append(len(grid_id_indices1d[grid_id]))
                 grid_3d_indices_cnt = 0
                 for index1d in grid_id_indices1d[grid_id]:
@@ -1134,6 +1134,55 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
             "should never get here; _get_node_indices apparently only partly converted to allow connecting to 1d in middle"
         )
     return index_1d, indices3d, vol1d, vols3d
+
+
+def ast():
+    """
+    Generates an Abstract Syntax Tree (AST) representation of the rxd model.
+    Reactions are grouped by the sections they have in common. This function
+    iterates over groups of reactions and returns their AST representations.
+
+    ### **Behavior Based on `rxd._ast_config["kinetic_block"]` Setting**:
+    - `"off"`: Default beahviour. Converts all reactions into `DERIVATIVE`
+      blocks (`nmodl.ast.DerivativeBlock`).
+    - `"on"`: Converts reactions into `KINETIC` blocks (`nmodl.ast.KineticBlock`) and
+      rate equations into `DERIVATIVE` blocks.
+    - `"mass_action"`: Uses `KINETIC` blocks for **mass-action reactions** while
+      keeping **of AST nodes (`nmodl.ast.Program`)** representing the rxd model.
+
+    ### **Example Use Case**:
+    ```python
+    from neuron import h, rxd
+    from neuron.units import nM, mV
+    from nmodl.ast import view
+
+    # create a simple rxd model -- calcium buffering
+    # Where -- soma
+    soma = h.Section(name="soma")
+    cyt = rxd.Region([soma], name="cyt")
+
+    # Who -- calcium and a buffer
+    ca = rxd.Species(cyt, name="ca", charge=2, initial=60 * nM)
+    buf = rxd.Species(cyt, name="buf", initial=10 * nM)
+    cabuf = rxd.Species(cyt, name="cabuf", initial=0)
+
+    # What -- buffering mass-action reaction
+    buffering = rxd.Reaction(ca + buf, cabuf, 0.02, 0.01)
+
+    # View the AST
+    view(rxd.ast()[0])
+
+    Returns:
+        List[nmodl.ast.AstNode]: A list of AST nodes representing transformed reactions.
+    """
+
+    if not initializer.is_initialized():
+        _init()
+    grouped_reactions = []
+    for cr in region._c_region_lookup.values():
+        if cr[0] not in grouped_reactions:
+            grouped_reactions.append(cr[0])
+    return [cr.ast() for cr in grouped_reactions]
 
 
 def _compile_reactions():
