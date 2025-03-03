@@ -248,7 +248,7 @@ fi
 
 
 # gpu wheel needs updated pip
-$python_exe -m pip install --upgrade pip
+$python_exe -m pip install --upgrade 'pip<=25.0.1'
 
 
 # install test requirements
