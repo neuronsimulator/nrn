@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 // solver interface to CVode
+#include "nonvintblock.h"
 
 #include "nrnmpi.h"
 
@@ -25,6 +26,11 @@ extern int hoc_return_type_code;
 #include "mymath.h"
 #include <nrnmutdec.h>
 
+// #include "cvodes_impl.h"
+#include <cvode/cvode_impl.h>
+#include <sunmatrix/sunmatrix_dense.h>
+#include <sunlinsol/sunlinsol_dense.h>
+
 #if NRN_ENABLE_THREADS
 static MUTDEC
 #endif
@@ -46,14 +52,26 @@ static void static_mutex_for_at_time(bool b) {
 // and math.h alone just moves the problem
 // to these
 //#include "shared/sundialstypes.h"
-//#include "shared/nvector_serial.h"
-#include "cvodes/cvodes.h"
-#include "cvodes/cvodes_impl.h"
-#include "cvodes/cvdense.h"
-#include "cvodes/cvdiag.h"
-#include "shared/dense.h"
-#include "ida/ida.h"
-#include "nonvintblock.h"
+//#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
+#include <cvode/cvode.h>             /* prototypes for CVODE fcts, consts*/
+#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
+#include <sundials/sundials_types.h> /* definition of type realtype*/
+
+// For Sparse Matrix resolutions
+//#include <cvodes/cvodes_superlumt.h>  /* prototype for CVSUPERLUMT */
+//#include <sundials/sundials_sparse.h> /* definitions SlsMat */
+
+// For Dense Matrix resolutions
+#include <cvode/cvode_direct.h>      /* access to CVDls interface            */
+#include <sundials/sundials_types.h> /* defs. of realtype, sunindextype */
+// #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver */
+// #include <sunmatrix/sunmatrix_dense.h> /* access to dense SUNMatrix */
+
+#include <ida/ida.h>
+#include <cvode/cvode.h>
+#include <cvode/cvode_impl.h>
+// For Pre-conditioned matrix solvers
+#include <cvode/cvode_diag.h> /*For Approx Diagonal matrix*/
 
 extern double dt, t;
 #define nt_dt nrn_threads->_dt
@@ -71,10 +89,8 @@ extern short* nrn_is_artificial_;
 extern void nrn2ncs_netcons();
 #endif  // USENCS
 #if NRNMPI
-extern "C" {
-extern N_Vector N_VNew_Parallel(int comm, long int local_length, long int global_length);
-extern N_Vector N_VNew_NrnParallelLD(int comm, long int local_length, long int global_length);
-}  // extern "C"
+#include "nvector_parallel.h"
+#include "nvector_nrnparallel_ld.h"
 #endif
 
 extern bool nrn_use_fifo_queue_;
@@ -575,6 +591,13 @@ static double free_event_queues(void*) {
     return 0;
 }
 
+const char** sundials_version(void*) {
+    static const std::string ver{SUNDIALS_VERSION};
+    char** ps = hoc_temp_charptr();
+    *ps = (char*) ver.c_str();
+    return (const char**) (ps);
+}
+
 static Member_func members[] = {{"solve", solve},
                                 {"atol", nrn_atol},
                                 {"rtol", rtol},
@@ -629,6 +652,8 @@ static Member_func members[] = {{"solve", solve},
 
 static Member_ret_obj_func omembers[] = {{"netconlist", netconlist}, {nullptr, nullptr}};
 
+static Member_ret_str_func smembers[] = {{"version", sundials_version}, {nullptr, nullptr}};
+
 static void* cons(Object*) {
 #if 0
 	NetCvode* d;
@@ -652,7 +677,7 @@ static void destruct(void* v) {
 #endif
 }
 void Cvode_reg() {
-    class2oc("CVode", cons, destruct, members, omembers, nullptr);
+    class2oc("CVode", cons, destruct, members, omembers, smembers);
     net_cvode_instance = new NetCvode(1);
     Daspk::dteps_ = 1e-9;  // change with cvode.dae_init_dteps(newval)
 }
@@ -660,6 +685,7 @@ void Cvode_reg() {
 /* Functions Called by the CVODE Solver */
 
 static int minit(CVodeMem cv_mem);
+#if 0   // unused
 static int msetup(CVodeMem cv_mem,
                   int convfail,
                   N_Vector ypred,
@@ -668,15 +694,15 @@ static int msetup(CVodeMem cv_mem,
                   N_Vector vtemp,
                   N_Vector vtemp2,
                   N_Vector vtemp3);
+#endif  // unused
 static int msolve(CVodeMem cv_mem, N_Vector b, N_Vector weight, N_Vector ycur, N_Vector fcur);
 static int msolve_lvardt(CVodeMem cv_mem,
                          N_Vector b,
                          N_Vector weight,
                          N_Vector ycur,
                          N_Vector fcur);
-static void mfree(CVodeMem cv_mem);
-static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data);
-static void f_lvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data);
+static int f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data);
+static int f_lvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data);
 static CVRhsFn pf_;
 
 static void msolve_thread(neuron::model_sorted_token const&, NrnThread&);
@@ -844,7 +870,7 @@ Cvode::~Cvode() {
         N_VDestroy(atolnvec_);
     }
     if (mem_) {
-        CVodeFree(mem_);
+        CVodeFree((void**) (&mem_));
     }
     if (maxstate_) {
         N_VDestroy(maxstate_);
@@ -870,11 +896,11 @@ void Cvode::init_prepare() {
             y_ = nullptr;
         }
         if (mem_) {
-            CVodeFree(mem_);
+            CVodeFree((void**) (&mem_));
             mem_ = nullptr;
         }
         if (atolnvec_) {
-            N_VDestroy(atolnvec_);
+            N_VDestroy_Serial(atolnvec_);
             atolnvec_ = nullptr;
         }
         if (daspk_) {
@@ -1031,7 +1057,7 @@ void Cvode::maxstep(double x) {
 
 void Cvode::free_cvodemem() {
     if (mem_) {
-        CVodeFree(mem_);
+        CVodeFree((void**) (&mem_));
         mem_ = nullptr;
     }
 }
@@ -1057,7 +1083,8 @@ int Cvode::cvode_init(double) {
     // TODO: this needs changed if want to support more than one thread or local variable timestep
     nrn_nonvint_block_ode_reinit(neq_, N_VGetArrayPointer(y_), 0);
     if (mem_) {
-        err = CVodeReInit(mem_, pf_, t0_, y_, CV_SV, &ncv_->rtol_, atolnvec_);
+        err = CVodeReInit(mem_, t0_, y_);
+        err = CVodeSetUserData(mem_, (void*) this);
         // printf("CVodeReInit\n");
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVReInit error %d\n",
@@ -1067,14 +1094,20 @@ int Cvode::cvode_init(double) {
             return err;
         }
     } else {
-        mem_ = CVodeCreate(CV_BDF, ncv_->stiff() ? CV_NEWTON : CV_FUNCTIONAL);
+        mem_ = (CVodeMem) CVodeCreate(CV_BDF, ncv_->stiff() ? CV_NEWTON : CV_FUNCTIONAL);
         if (!mem_) {
             hoc_execerror("CVodeCreate error", 0);
         }
         maxorder(ncv_->maxorder());  // Memory Leak if changed after CVodeMalloc
         minstep(ncv_->minstep());
         maxstep(ncv_->maxstep());
-        CVodeMalloc(mem_, pf_, t0_, y_, CV_SV, &ncv_->rtol_, atolnvec_);
+        // CVodeMalloc was replaced by CVodeCreate/CVodeInit
+        // CVodeInit allocates and initializes memory for a problem
+        err = CVodeInit(mem_, pf_, t0_, y_);
+        // atolnvec_ set by Cvode::init_eqn
+        err = CVodeSVtolerances(mem_, ncv_->rtol_, atolnvec_);
+
+        err = CVodeSetUserData(mem_, (void*) this);
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVodeMalloc error %d\n",
                    fmt::ptr(this),
@@ -1304,17 +1337,21 @@ int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
     }
 #endif
     std::pair<Cvode*, neuron::model_sorted_token const&> opaque{this, sorted_token};
-    CVodeSetFdata(mem_, &opaque);
+    CVodeSetUserData(mem_, &opaque);
     CVodeSetStopTime(mem_, tstop_);
+    /* Note: CV_ONE_STEP_TSTOP is removed, now CV_ONE_STEP does the
+     * same. From documentation: If tstop is enabled (through a call
+     * to CVodeSetStopTime), then CVode returns the solution at tstop.
+     */
     // printf("cvode_advance_tn begin t0_=%g t_=%g tn_=%g tstop=%g\n", t0_, t_, tn_, tstop_);
-    int err = CVode(mem_, tstop_, y_, &t_, CV_ONE_STEP_TSTOP);
-    CVodeSetFdata(mem_, nullptr);
+    int err = CVode(mem_, tstop_, y_, &t_, CV_ONE_STEP);
+    CVodeSetUserData(mem_, nullptr);
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         Printf("t_=%.20g\n", t_);
     }
 #endif
-    if (err < 0) {
+    if (err != CV_SUCCESS && err != CV_TSTOP_RETURN) {
         Printf("CVode %p %s advance_tn failed, err=%d.\n",
                fmt::ptr(this),
                secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
@@ -1348,10 +1385,10 @@ int Cvode::cvode_interpolate(double tout) {
     // is this really necessary anymore. Maybe NORMAL mode ignores tstop
     auto const sorted_token = nrn_ensure_model_data_are_sorted();
     std::pair<Cvode*, neuron::model_sorted_token const&> opaque{this, sorted_token};
-    CVodeSetFdata(mem_, &opaque);
+    CVodeSetUserData(mem_, &opaque);
     CVodeSetStopTime(mem_, tstop_ + tstop_);
     int err = CVode(mem_, tout, y_, &t_, CV_NORMAL);
-    CVodeSetFdata(mem_, nullptr);
+    CVodeSetUserData(mem_, nullptr);
 #if PRINT_EVENT
     if (net_cvode_instance->print_event_ > 1) {
         Printf("%.20g\n", t_);
@@ -1436,37 +1473,51 @@ void Cvode::statistics() {
 
 void Cvode::matmeth() {
     switch (ncv_->jacobian()) {
-    case 1:
-        CVDense(mem_, neq_);
+    case 1: {
+        /* Create dense SUNMatrix for use in linear solver */
+        SUNMatrix A = SUNDenseMatrix(neq_, neq_);
+        assert(A);
+
+        /* Create dense SUNLinearSolver object for use by CVode */
+        SUNLinearSolver LS = SUNDenseLinearSolver(y_, A);
+        assert(LS);
+
+        /* attach the matrix and linear solver to CVode */
+        int flag = CVDlsSetLinearSolver(mem_, LS, A);
+        assert(flag == CVDLS_SUCCESS);
+
+        /* Set jacobian and allocate memory */
+        /* Null means we wish to use the default internal difference
+         *  quotient function for dense matrices. */
+        flag = CVDlsSetJacFn(mem_, NULL);
+        if (flag != CVDLS_SUCCESS)
+            throw std::runtime_error("ERROR: can't allocate memory for dense jacobian");
         break;
+    }
     case 2:
         CVDiag(mem_);
         break;
-    default:
-        // free previous method
-        if (((CVodeMem) mem_)->cv_lfree) {
-            ((CVodeMem) mem_)->cv_lfree((CVodeMem) mem_);
-            ((CVodeMem) mem_)->cv_lfree = NULL;
-        }
-
-        ((CVodeMem) mem_)->cv_linit = minit;
-        ((CVodeMem) mem_)->cv_lsetup = msetup;
-        ((CVodeMem) mem_)->cv_setupNonNull = TRUE;  // but since our's does not do anything...
-        if (nth_) {                                 // lvardt
+    default: {
+        /* CVODES guide chapter 8: Providing Alternate Linear
+         * Solver Modules: only lsolve function is mandatory
+         * (non-used functions need to be set to null) */
+        ((CVodeMem) mem_)->cv_linit = NULL;
+        // TODO can the set-up be set to NULL? Comment says it does not do anything!
+        ((CVodeMem) mem_)->cv_lsetup = NULL;
+        //((CVodeMem)mem_)->cv_setupNonNull = TRUE; // but since our's does not do anything...
+        if (nth_) {  // lvardt
             ((CVodeMem) mem_)->cv_lsolve = msolve_lvardt;
         } else {
             ((CVodeMem) mem_)->cv_lsolve = msolve;
         }
-        ((CVodeMem) mem_)->cv_lfree = mfree;
+        ((CVodeMem) mem_)->cv_lfree = NULL;
         break;
+    }
     }
 }
 
-static int minit(CVodeMem) {
-    //	printf("minit\n");
-    return CV_NO_FAILURES;
-}
 
+#if 0   // unused
 static int msetup(CVodeMem m,
                   int convfail,
                   N_Vector yp,
@@ -1478,9 +1529,10 @@ static int msetup(CVodeMem m,
     //	printf("msetup\n");
     *jcurPtr = true;
     auto* const cv =
-        static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(m->cv_f_data)->first;
+        static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(m->cv_user_data)->first;
     return cv->setup(yp, fp);
 }
+#endif  // unused
 
 static N_Vector msolve_b_;
 static N_Vector msolve_ycur_;
@@ -1491,7 +1543,7 @@ static int msolve(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vect
     //	N_VIth(b, 0) /= (1. + m->cv_gammap);
     //	N_VIth(b,0) *= 2./(1. + m->cv_gamrat);
     auto* const f_typed_data = static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(
-        m->cv_f_data);
+        m->cv_user_data);
     msolve_cv_ = f_typed_data->first;
     auto const& sorted_token = f_typed_data->second;
     Cvode& cv = *msolve_cv_;
@@ -1515,7 +1567,7 @@ static int msolve(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vect
 }
 static int msolve_lvardt(CVodeMem m, N_Vector b, N_Vector weight, N_Vector ycur, N_Vector fcur) {
     auto* const f_typed_data = static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(
-        m->cv_f_data);
+        m->cv_user_data);
     auto* const cv = f_typed_data->first;
     auto const& sorted_token = f_typed_data->second;
     ++cv->mxb_calls_;
@@ -1560,15 +1612,11 @@ static void* msolve_thread_part3(NrnThread* nt) {
     return 0;
 }
 
-static void mfree(CVodeMem) {
-    //	printf("mfree\n");
-}
-
 static realtype f_t_;
 static N_Vector f_y_;
 static N_Vector f_ydot_;
 static Cvode* f_cv_;
-static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
+static int f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
     auto* const f_typed_data = static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(
         f_data);
     f_cv_ = f_typed_data->first;
@@ -1604,8 +1652,9 @@ static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
     } else {
         nrn_multithread_job(f_typed_data->second, f_thread);
     }
+    return CV_SUCCESS;
 }
-static void f_lvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
+static int f_lvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
     auto* const f_typed_data = static_cast<std::pair<Cvode*, neuron::model_sorted_token const&>*>(
         f_data);
     auto* const cv = f_typed_data->first;
@@ -1614,6 +1663,7 @@ static void f_lvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data) {
     cv->nth_->_vcv = cv;
     cv->fun_thread(sorted_token, t, cv->n_vector_data(y, 0), cv->n_vector_data(ydot, 0), cv->nth_);
     cv->nth_->_vcv = 0;
+    return CV_SUCCESS;
 }
 
 static void f_thread(neuron::model_sorted_token const& sorted_token, NrnThread& ntr) {
