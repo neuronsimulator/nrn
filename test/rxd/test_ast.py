@@ -3,6 +3,7 @@ import json
 
 try:
     from nmodl import to_json
+
     skip = False
 except:
     skip = True
@@ -241,6 +242,7 @@ def test_reaction_ast(setup_section):
             break
     else:
         assert False  # given ast is not in rates
+
 
 @pytest.mark.skipif(skip, reason="nmodl not installed")
 def test_multicompartment_reaction_ast(setup_section):

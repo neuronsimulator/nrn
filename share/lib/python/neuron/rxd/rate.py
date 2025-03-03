@@ -376,6 +376,7 @@ class Rate(GeneralizedReaction):
                 )
 
         from .species import Parameter, ParameterOnRegion, ParameterOnExtracellular
+
         if not initializer.is_initialized():
             initializer._do_init()
         sp = self._species()

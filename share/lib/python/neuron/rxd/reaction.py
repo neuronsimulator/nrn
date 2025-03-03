@@ -329,6 +329,7 @@ class Reaction(GeneralizedReaction):
         kinetic_block = _ast_config["kinetic_block"]
         if not initializer.is_initialized():
             initializer._do_init()
+
         def get_ast(region):
             if kinetic_block == "off" or (
                 kinetic_block == "non_mass_action" and self._custom_dynamics
