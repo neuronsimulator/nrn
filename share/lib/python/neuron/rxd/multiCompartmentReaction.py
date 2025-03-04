@@ -215,7 +215,9 @@ class MultiCompartmentReaction(GeneralizedReaction):
             msg = (
                 "sources and destinations"
                 if sources and dests
-                else "sources" if sources else "destinations"
+                else "sources"
+                if sources
+                else "destinations"
             )
             raise RxDException(
                 "Multicompartment reactions the membrane and %s must share common sections. %r"
