@@ -93,9 +93,13 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
       # TODO figure out how Windows does it
     endif()
-    if(NRN_BUILD_WHEEL)
+    # module install = installation using CMake
+    if(NOT NRN_ENABLE_MODULE_INSTALL)
+      # taken from setup.py
       set(extension_path "/.data/lib/")
+      # previous installation method (using setup.py)
     else()
+      # taken from setup.py
       set(extension_path "/../../")
     endif()
     target_link_options(${hoc_module_name} PRIVATE "-Wl,-rpath,${rel_rpath}${extension_path}")
