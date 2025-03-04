@@ -138,7 +138,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
                 if v == 1:
                     rate_f = rate_f * k
                 else:
-                    rate_f = rate_f * k ** v
+                    rate_f = rate_f * k**v
         if rate_b is not None:
             if self._dir in ("<", ">"):
                 raise RxDException(
@@ -149,7 +149,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
                     if v == 1:
                         rate_b = rate_b * k
                     else:
-                        rate_b = rate_b * k ** v
+                        rate_b = rate_b * k**v
             rate = rate_f - rate_b
             self._sources = _ref_list_with_mult(lhs)
             self._dests = _ref_list_with_mult(rhs)
@@ -215,9 +215,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
             msg = (
                 "sources and destinations"
                 if sources and dests
-                else "sources"
-                if sources
-                else "destinations"
+                else "sources" if sources else "destinations"
             )
             raise RxDException(
                 "Multicompartment reactions the membrane and %s must share common sections. %r"
@@ -272,14 +270,17 @@ class MultiCompartmentReaction(GeneralizedReaction):
             else self._original_rate_b
         )
 
-        return "MultiCompartmentReaction(%r, %s, rate_b=%s, membrane=%s, custom_dynamics=%r, membrane_flux=%r, scale_by_area=%r)" % (
-            self._scheme,
-            short_f,
-            short_b,
-            self._regions[0]._short_repr(),
-            self._custom_dynamics,
-            self._membrane_flux,
-            self._scale_by_area,
+        return (
+            "MultiCompartmentReaction(%r, %s, rate_b=%s, membrane=%s, custom_dynamics=%r, membrane_flux=%r, scale_by_area=%r)"
+            % (
+                self._scheme,
+                short_f,
+                short_b,
+                self._regions[0]._short_repr(),
+                self._custom_dynamics,
+                self._membrane_flux,
+                self._scale_by_area,
+            )
         )
 
     def _do_memb_scales(self, cur_map):

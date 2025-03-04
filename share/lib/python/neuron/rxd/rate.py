@@ -214,9 +214,11 @@ class Rate(GeneralizedReaction):
                         sptr()._regions + sptr()._extracellular_regions
                         if isinstance(sptr(), species.Species)
                         else [
-                            sptr()._region()
-                            if isinstance(sptr(), species.SpeciesOnRegion)
-                            else sptr()._extracellular()
+                            (
+                                sptr()._region()
+                                if isinstance(sptr(), species.SpeciesOnRegion)
+                                else sptr()._extracellular()
+                            )
                         ]
                     )
                     for sptr in list(self._involved_species) + [self._species]
@@ -227,9 +229,11 @@ class Rate(GeneralizedReaction):
             self._species()._regions + self._species()._extracellular_regions
             if isinstance(self._species(), species.Species)
             else [
-                self._species()._region()
-                if isinstance(self._species(), species.SpeciesOnRegion)
-                else self._species()._extracellular()
+                (
+                    self._species()._region()
+                    if isinstance(self._species(), species.SpeciesOnRegion)
+                    else self._species()._extracellular()
+                )
             ]
         )
         actr = sp_regions

@@ -183,14 +183,18 @@ class _c_region:
         )
 
         self._ecs_react_species.sort(
-            key=lambda sp: sp()._extracellular()._grid_id
-            if isinstance(sp(), species.SpeciesOnExtracellular)
-            else sp()._grid_id
+            key=lambda sp: (
+                sp()._extracellular()._grid_id
+                if isinstance(sp(), species.SpeciesOnExtracellular)
+                else sp()._grid_id
+            )
         )
         self._ecs_react_params.sort(
-            key=lambda sp: sp()._extracellular()._grid_id
-            if isinstance(sp(), species.ParameterOnExtracellular)
-            else sp()._grid_id
+            key=lambda sp: (
+                sp()._extracellular()._grid_id
+                if isinstance(sp(), species.ParameterOnExtracellular)
+                else sp()._grid_id
+            )
         )
 
         # Set the local ids of the regions and species involved in the reactions
@@ -226,14 +230,14 @@ class _c_region:
         self._params_ids = {}
         self._region_ids = {}
         self._react_species.sort(
-            key=lambda sp: sp()._species()._id
-            if isinstance(sp(), SpeciesOnRegion)
-            else sp()._id
+            key=lambda sp: (
+                sp()._species()._id if isinstance(sp(), SpeciesOnRegion) else sp()._id
+            )
         )
         self._react_params.sort(
-            key=lambda sp: sp()._species()._id
-            if isinstance(sp(), ParameterOnRegion)
-            else sp()._id
+            key=lambda sp: (
+                sp()._species()._id if isinstance(sp(), ParameterOnRegion) else sp()._id
+            )
         )
 
         self._regions.sort(key=lambda rp: rp()._id)
@@ -386,15 +390,18 @@ class Extracellular:
             )
 
     def __repr__(self):
-        return "Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)" % (
-            self._xlo,
-            self._ylo,
-            self._zlo,
-            self._xhi,
-            self._yhi,
-            self._zhi,
-            self.tortuosity,
-            self.alpha,
+        return (
+            "Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)"
+            % (
+                self._xlo,
+                self._ylo,
+                self._zlo,
+                self._xhi,
+                self._yhi,
+                self._zhi,
+                self.tortuosity,
+                self.alpha,
+            )
         )
 
     def _short_repr(self):
@@ -611,7 +618,7 @@ class Extracellular:
     @property
     def permeability(self):
         if hasattr(self, "_tortuosity"):
-            return 1.0 / self._tortuosity ** 2
+            return 1.0 / self._tortuosity**2
         return self._permeability
 
     @tortuosity.setter
@@ -844,7 +851,7 @@ class Region(object):
             nx = x - sec.x3d(n - 2)
             ny = y - sec.y3d(n - 2)
             nz = z - sec.z3d(n - 2)
-            scale = dx / (nx ** 2 + ny ** 2 + nz ** 2) ** 0.5
+            scale = dx / (nx**2 + ny**2 + nz**2) ** 0.5
             x -= nx * scale
             y -= ny * scale
             z -= nz * scale
@@ -859,7 +866,7 @@ class Region(object):
         # dn = (nx**2 + ny**2 + nz**2)**0.5
         # nx, ny, nz = nx/dn, ny/dn, nz/dn
         # x, y, z = x * x1 + (1 - x) * x0, x * y1 + (1 - x) * y0, x * z1 + (1 - x) * z1
-        r = sec(position).diam * 0.5 + self.dx * 3 ** 0.5
+        r = sec(position).diam * 0.5 + self.dx * 3**0.5
         plane_of_disc = geometry3d.graphicsPrimitives.Plane(x, y, z, nx, ny, nz)
 
         xs = numpy.arange(
@@ -888,7 +895,7 @@ class Region(object):
         sphere_indices = [
             (i, j, k)
             for i, j, k in itertools.product(i_indices, j_indices, k_indices)
-            if (xs[i] - x) ** 2 + (ys[j] - y) ** 2 + (zs[k] - z) ** 2 <= r ** 2
+            if (xs[i] - x) ** 2 + (ys[j] - y) ** 2 + (zs[k] - z) ** 2 <= r**2
         ]
         dx = self.dx
         disc_indices = []

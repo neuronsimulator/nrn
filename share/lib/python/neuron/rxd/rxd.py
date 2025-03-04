@@ -862,7 +862,7 @@ def _setup_matrices():
                 sp = grid_id_species[grid_id]
                 # TODO: use 3D anisotropic diffusion coefficients
                 dc = grid_id_dc[grid_id]
-                grids_dx.append(sp._dx ** 3)
+                grids_dx.append(sp._dx**3)
                 num_1d_indices_per_grid.append(len(grid_id_indices1d[grid_id]))
                 grid_3d_indices_cnt = 0
                 for index1d in grid_id_indices1d[grid_id]:
@@ -1101,7 +1101,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
             and _point_indices[region][point] not in indices3d
         ):
             indices3d.append(_point_indices[region][point])
-            vols3d.append(surf[point][0] if point in surf else region.dx ** 3)
+            vols3d.append(surf[point][0] if point in surf else region.dx**3)
             # print 'found node %d with coordinates (%g, %g, %g)' % (node._index, node.x3d, node.y3d, node.z3d)
     # discard duplicates...
     # TODO: really, need to figure out all the 3d nodes connecting to a given 1d endpoint, then unique that

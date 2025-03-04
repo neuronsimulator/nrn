@@ -74,7 +74,7 @@ def _lgamma(objs):
 
 def _power(objs1, objs2):
     # TODO? assumes numpy arrays; won't work for lists
-    return objs1 ** objs2
+    return objs1**objs2
 
 
 def _neg(objs):
