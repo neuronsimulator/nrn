@@ -481,6 +481,14 @@ void c_out_vectorize() {
     /* things which must go first and most declarations */
     P("/* VECTORIZED */\n#define NRN_VECTORIZED 1\n");
     P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
+    fprintf(fcout,
+            "#define NRN_TRACE 0\n"
+            "#if NRN_TRACE\n"
+            "#include \"nrn_trace.h\"\n"
+            "#else\n"
+            "#define NRN_TRACE_START(name) /**/\n"
+            "#define NRN_TRACE_END(name) /**/\n"
+            "#endif\n");
     P("#undef PI\n");
     P("#define nil 0\n");
     P("#define _pval pval\n");  // due to some old models using _pval
@@ -592,6 +600,7 @@ void c_out_vectorize() {
     if (brkpnt_exists) {
         P("\nstatic void nrn_cur(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
           "Memb_list* _ml_arg, int _type) {\n");
+        fprintf(fcout, "  NRN_TRACE_START(\"nrn_cur_%s\");\n", mechname);
         P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
         P("auto const _vec_rhs = _nt->node_rhs_storage();\n");
         P("auto const _vec_sav_rhs = _nt->node_sav_rhs_storage();\n");
@@ -656,11 +665,13 @@ void c_out_vectorize() {
             }
         }
         P(" \n}\n");
+        fprintf(fcout, "  NRN_TRACE_END(\"nrn_cur_%s\");\n", mechname);
         P(" \n}\n");
         /* for the classic breakpoint block, nrn_cur computed the conductance, _g,
            and now the jacobian calculation merely returns that */
         P("\nstatic void nrn_jacob(_nrn_model_sorted_token const& _sorted_token, NrnThread* "
           "_nt, Memb_list* _ml_arg, int _type) {\n");
+        fprintf(fcout, "  NRN_TRACE_START(\"nrn_jacob_%s\");\n", mechname);
         P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
         P("auto const _vec_d = _nt->node_d_storage();\n");
         P("auto const _vec_sav_d = _nt->node_sav_d_storage();\n");
@@ -688,6 +699,7 @@ void c_out_vectorize() {
             P("  _vec_d[_ni[_iml]] += _g;\n");
         }
         P(" \n}\n");
+        fprintf(fcout, "  NRN_TRACE_END(\"nrn_jacob_%s\");\n", mechname);
         P(" \n}\n");
     }
 
@@ -695,6 +707,7 @@ void c_out_vectorize() {
        advances states by dt */
     P("\nstatic void nrn_state(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
       "Memb_list* _ml_arg, int _type) {\n");
+    fprintf(fcout, "  NRN_TRACE_START(\"nrn_state_%s\");\n", mechname);
     P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
     P("auto* const _vec_v = _nt->node_voltage_storage();\n");
     P("auto* const _ml = &_lmr;\n");
@@ -728,6 +741,7 @@ void c_out_vectorize() {
             P(" dt = _dtsav;");
         }
     }
+    fprintf(fcout, "  NRN_TRACE_END(\"nrn_state_%s\");\n", mechname);
     P("\n}\n");
 
     P("\nstatic void terminal(){}\n");
