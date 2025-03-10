@@ -1,6 +1,6 @@
 import logging
-import platform
 import os
+import platform
 import re
 import shutil
 import subprocess
