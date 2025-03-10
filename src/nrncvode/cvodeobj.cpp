@@ -1050,6 +1050,11 @@ void NetCvode::set_CVRhsFn() {
     }
 }
 
+static Section* cv_rootsec(const Cvode* cv) {
+    NrnThread* nt = cv->nth_ ? cv->nth_ : nrn_threads;
+    return nt->_v_node[cv->ctd_[0].vnode_begin_index_]->sec;
+}
+
 int Cvode::cvode_init(double) {
     int err = SUCCESS;
     // note, a change in stiff_ due to call of stiff() destroys mem_
@@ -1062,7 +1067,7 @@ int Cvode::cvode_init(double) {
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVReInit error %d\n",
                    fmt::ptr(this),
-                   secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+                   secname(cv_rootsec(this)),
                    err);
             return err;
         }
@@ -1078,7 +1083,7 @@ int Cvode::cvode_init(double) {
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVodeMalloc error %d\n",
                    fmt::ptr(this),
-                   secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+                   secname(cv_rootsec(this)),
                    err);
             return err;
         }
@@ -1317,7 +1322,7 @@ int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
     if (err < 0) {
         Printf("CVode %p %s advance_tn failed, err=%d.\n",
                fmt::ptr(this),
-               secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+               secname(cv_rootsec(this)),
                err);
         pf_(t_, y_, nullptr, &opaque);
         return err;
@@ -1360,7 +1365,7 @@ int Cvode::cvode_interpolate(double tout) {
     if (err < 0) {
         Printf("CVode %p %s interpolate failed, err=%d.\n",
                fmt::ptr(this),
-               secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+               secname(cv_rootsec(this)),
                err);
         return err;
     }
@@ -1404,7 +1409,7 @@ void Cvode::statistics() {
 #if 1
     Printf("\nCvode instance %p %s statistics : %d %s states\n",
            fmt::ptr(this),
-           secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+           secname(cv_rootsec(this)),
            neq_,
            (use_daspk_ ? "IDA" : "CVode"));
     Printf("   %d advance_tn, %d interpolate, %d init (%d due to at_time)\n",
