@@ -87,8 +87,10 @@ build_wheel_linux() {
 
     # Workaround for https://github.com/pypa/manylinux/issues/1309
     git config --global --add safe.directory "*"
+    CMAKE_PREFIX_PATH="/nrnwheel/ncurses;/nrnwheel/readline"
+    export CMAKE_PREFIX_PATH
 
-    python setup.py build_ext --cmake-prefix="/nrnwheel/ncurses;/nrnwheel/readline" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
+    python setup.py build_ext --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
 
     # For CI runs we skip wheelhouse repairs
     if [ "$SKIP_WHEELHOUSE_REPAIR" = true ] ; then
@@ -164,7 +166,10 @@ build_wheel_osx() {
       fi
     fi
 
-    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
+    CMAKE_PREFIX_PATH="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11"
+    export CMAKE_PREFIX_PATH
+
+    python setup.py build_ext --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
 
     echo " - Calling delocate-listdeps"
     delocate-listdeps dist/*.whl

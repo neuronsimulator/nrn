@@ -152,14 +152,13 @@ class CMakeAugmentedBuilder(build_ext):
     """Builder which understands CMakeAugmentedExtension"""
 
     user_options = build_ext.user_options + [
-        ("cmake-prefix=", None, "value for CMAKE_PREFIX_PATH"),
         ("cmake-defs=", None, "Additional CMake definitions, comma split"),
     ]
     boolean_options = build_ext.boolean_options + ["docs"]
 
     def initialize_options(self):
         build_ext.initialize_options(self)
-        self.cmake_prefix = None
+        self.cmake_prefix = os.getenv("CMAKE_PREFIX_PATH", "")
         self.cmake_defs = None
         self.docs = False
 
