@@ -249,9 +249,11 @@ case "${platform}" in
   CI)
     if [ "$CI_OS_NAME" == "${PLATFORM_MACOS}" ]; then
         set_mpi_headers_macos
+        USE_STATIC_READLINE=0
         build_wheel "$(which python3)" "$coreneuron" "$MPI_INCLUDE_HEADERS"
     elif [ "$CI_OS_NAME" == "${PLATFORM_LINUX}" ]; then
         set_mpi_headers_linux
+        USE_STATIC_READLINE=0
         build_wheel "$(which python3)" "$coreneuron" "$MPI_INCLUDE_HEADERS"
     fi
     ls wheelhouse/
