@@ -90,7 +90,7 @@ configure_macos() {
 
 fix_wheel_linux() {
     # For CI runs we skip wheelhouse repairs
-    if [ "$SKIP_WHEELHOUSE_REPAIR" = true ] ; then
+    if [ "${SKIP_WHEELHOUSE_REPAIR:-}" = true ] ; then
         echo " - Skipping wheelhouse repair ..."
         mkdir wheelhouse && cp dist/*.whl wheelhouse/
     else
