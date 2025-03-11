@@ -69,7 +69,9 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     # the hoc Python library
     set(hoc_module_name "hoc_module${pyver}")
     add_library(${hoc_module_name} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp)
-    target_link_libraries(${hoc_module_name} PUBLIC nrniv_lib nrnpython${pyver})
+    # TODO figure out if we need this target_link_libraries(${hoc_module_name} PUBLIC nrniv_lib
+    # nrnpython${pyver}) TODO figure out if we need this (it seems `otool -L <hoc.so>` is not
+    # explicitly linked to Python, even if `NRN_LINK_AGAINST_PYTHON=ON`)
     if(NRN_LINK_AGAINST_PYTHON)
       target_link_libraries(${hoc_module_name} PUBLIC ${pylib})
     endif()
@@ -110,10 +112,11 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
                  PREFIX ""
                  SUFFIX ".so"
                  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/python/neuron)
-    add_dependencies(${hoc_module_name} nrniv_lib rxdmath ${nrnpython_lib_list})
+    add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
 
   endforeach(val)
 else()
+  # libnrnpython
   add_library(nrnpython OBJECT ${NRNPYTHON_FILES_LIST})
   add_dependencies(nrnpython generated_source_files)
   set_property(TARGET nrnpython PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -129,6 +132,50 @@ else()
   target_include_directories(nrnpython PUBLIC ${PROJECT_BINARY_DIR}/src/nrniv/oc_generated)
   make_nanobind_target(nanobind ${NRN_DEFAULT_PYTHON_INCLUDES})
   target_link_libraries(nrnpython nanobind)
+
+  # hoc*.so
+  set(hoc_module_name "hoc_module")
+  add_library(${hoc_module_name} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp)
+  target_include_directories(
+    ${hoc_module_name}
+    PRIVATE ${PROJECT_SOURCE_DIR}/src
+            ${PROJECT_SOURCE_DIR}/src/oc
+            ${PROJECT_BINARY_DIR}/src/oc
+            ${PROJECT_BINARY_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}
+            # for nrnconf.h
+            ${CMAKE_CURRENT_BINARY_DIR}
+            ${PROJECT_BINARY_DIR}/nrnmpi
+            ${NRN_DEFAULT_PYTHON_INCLUDES})
+  target_link_libraries(${hoc_module_name} PRIVATE nrniv_lib rxdmath)
+  if(APPLE)
+    set(rel_rpath "@loader_path")
+    set(os_string "darwin")
+  elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    set(rel_rpath "\$ORIGIN")
+    set(os_string "${CMAKE_LIBRARY_ARCHITECTURE}")
+  elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
+    # TODO figure out how Windows does it
+  endif()
+  # module install = installation using CMake
+  if(NOT NRN_ENABLE_MODULE_INSTALL)
+    # taken from setup.py
+    set(extension_path "/.data/lib/")
+  else()
+    # taken from setup.py
+    set(extension_path "/../../")
+  endif()
+  target_link_options(${hoc_module_name} PRIVATE "-Wl,-rpath,${rel_rpath}${extension_path}")
+  string(REPLACE "." "" pyver_nodot "${NRN_DEFAULT_PYTHON_VERSION}")
+  set_target_properties(
+    ${hoc_module_name}
+    PROPERTIES OUTPUT_NAME "hoc.cpython-${pyver_nodot}-${os_string}"
+               PREFIX ""
+               SUFFIX ".so"
+               INSTALL_RPATH ${rel_rpath}
+               LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/python/neuron)
+  add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
+
 endif()
 
 configure_file(_config_params.py.in "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
