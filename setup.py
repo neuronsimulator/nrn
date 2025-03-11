@@ -85,7 +85,7 @@ if "--cmake-build-dir" in sys.argv:
 rx3d_opt_level = os.getenv("NRN_RX3D_OPT_LEVEL", "0")
 
 # If NRN_ENABLE_PYTHON_DYNAMIC is ON, we will build the wheel without the nrnpython library
-with_nrnpython = not strtobool(os.getenv("NRN_ENABLE_PYTHON_DYNAMIC", "OFF"))
+with_nrnpython = strtobool(os.getenv("NRN_ENABLE_PYTHON_DYNAMIC", "OFF"))
 
 # setup options must be checked for very early as it impacts imports
 if Components.RX3D:
