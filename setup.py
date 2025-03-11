@@ -86,7 +86,10 @@ if "--cmake-build-dir" in sys.argv:
 rx3d_opt_level = os.getenv("NRN_RX3D_OPT_LEVEL", "0")
 
 # If NRN_ENABLE_PYTHON_DYNAMIC is ON, we will build the wheel without the nrnpython library
-with_nrnpython = strtobool(os.getenv("NRN_ENABLE_PYTHON_DYNAMIC", "OFF"))
+without_nrnpython = False
+if "--without-nrnpython" in sys.argv:
+    without_nrnpython = True
+    sys.argv.remove("--without-nrnpython")
 
 # setup options must be checked for very early as it impacts imports
 if Components.RX3D:
@@ -375,7 +378,7 @@ def setup_package():
     REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
 
     ext_common_libraries = ["nrniv"]
-    if with_nrnpython:
+    if not without_nrnpython:
         nrn_python_lib = "nrnpython{}.{}".format(*sys.version_info[:2])
         ext_common_libraries.append(nrn_python_lib)
 
