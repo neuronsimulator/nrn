@@ -1,15 +1,18 @@
+import logging
 import os
+import platform
+import re
 import shutil
 import subprocess
 import sys
-from collections import defaultdict
-import logging
-import platform
 
-logging.basicConfig(level=logging.INFO)
+from collections import defaultdict
 from shutil import copytree, which
+
 from setuptools import Command, Extension
 from setuptools import setup
+
+logging.basicConfig(level=logging.INFO)
 
 
 logging.info("setup.py called with:" + " ".join(sys.argv))
@@ -109,6 +112,13 @@ if Components.RX3D:
         sys.exit(1)
 else:
     from setuptools.command.build_ext import build_ext
+
+
+def normalize_package_name(name):
+    """
+    Normalize a package name to conform to PEP 503.
+    """
+    return re.sub(r"[-_.]+", "-", name).lower()
 
 
 class CMakeAugmentedExtension(Extension):
@@ -506,7 +516,7 @@ def setup_package():
     package_name += os.environ.get("NEURON_NIGHTLY_TAG", "-nightly")
 
     setup(
-        name=package_name,
+        name=normalize_package_name(package_name),
         package_dir={"": NRN_PY_ROOT},
         packages=py_packages,
         package_data={"neuron": ["*.dat", "tests/*.json"]},
