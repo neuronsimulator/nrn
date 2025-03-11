@@ -437,8 +437,8 @@ jobs:
           BUILD_MODE: ${{ matrix.config.build_mode }}
           CCACHE_BASEDIR: ${{runner.workspace}}/nrn
           CCACHE_DIR: ${{runner.workspace}}/ccache
-          NRN_ENABLE_PYTHON_DYNAMIC : ${{ matrix.config.python_dynamic }}
-          NRN_ENABLE_MUSIC: ${{ matrix.config.music }}
+          NRN_ENABLE_PYTHON_DYNAMIC : ${{ matrix.config.python_dynamic || 'OFF' }}
+          NRN_ENABLE_MUSIC: ${{ matrix.config.music || 'OFF' }}
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
           INSTALL_DIR : ${{ runner.workspace }}/install
