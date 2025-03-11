@@ -216,7 +216,14 @@ case "$1" in
 
   osx)
     BREW_PREFIX=$(brew --prefix)
-    MPI_INCLUDE_HEADERS="${BREW_PREFIX}/opt/openmpi/include;${BREW_PREFIX}/opt/mpich/include"
+    MPI_POSSIBLE_INCLUDE_HEADERS="${BREW_PREFIX}/opt/openmpi/include ${BREW_PREFIX}/opt/mpich/include"
+    MPI_INCLUDE_HEADERS=""
+    for dir in $MPI_POSSIBLE_INCLUDE_HEADERS
+    do
+        if [ -d "${dir}" ]; then
+            MPI_INCLUDE_HEADERS="${MPI_INCLUDE_HEADERS};${dir}"
+        fi
+    done
     USE_STATIC_READLINE=1
     for py_bin in /Library/Frameworks/Python.framework/Versions/${python_wheel_version}*/bin/python3; do
         build_wheel_osx "$py_bin" "$coreneuron" "$MPI_INCLUDE_HEADERS"
