@@ -427,7 +427,7 @@ jobs:
           fi;
 
           if [ "$BUILD_MODE" == "setuptools" ]; then
-            neuron_wheel=wheelhouse/NEURON*.whl;
+            neuron_wheel=wheelhouse/*.whl;
             # test with virtual environment
             ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel
             # test with global installation
