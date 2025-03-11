@@ -171,21 +171,22 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # Prepare build options for setup.py build
   set(NRN_SETUP_PY_BUILD_OPTIONS "--cmake-build-dir")
   list(APPEND NRN_SETUP_PY_BUILD_OPTIONS ${CMAKE_BINARY_DIR})
-  if(NOT NRN_ENABLE_RX3D)
-    list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--disable-rx3d")
-  else()
-    list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--rx3d-opt-level" ${NRN_RX3D_OPT_LEVEL})
-  endif()
   if(MINGW)
     list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--compiler=mingw32")
   endif()
-  if(NOT NRN_ENABLE_PYTHON_DYNAMIC)
-    list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--without-nrnpython")
-  endif()
-  if(NRN_ENABLE_MUSIC)
-    list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--enable-music")
-  endif()
   list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--build-lib=${NRN_PYTHON_BUILD_LIB}")
+  set(setup_py_env_vars
+      NRN_ENABLE_PYTHON_DYNAMIC
+      NRN_RX3D_OPT_LEVEL
+      NRN_ENABLE_RX3D
+      NRN_ENABLE_INTERVIEWS
+      NRN_ENABLE_MPI
+      NRN_ENABLE_MUSIC
+      NRN_ENABLE_CORENEURON)
+
+  foreach(var IN LISTS setup_py_env_vars)
+    list(APPEND extra_env "${var}=${${var}}")
+  endforeach()
 
   # Prepare build_ext options for setup.py build
   set(NRN_SETUP_PY_BUILD_EXT_OPTIONS "build_ext")

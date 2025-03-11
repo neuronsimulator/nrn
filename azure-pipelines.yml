@@ -71,7 +71,7 @@ stages:
             -e SETUPTOOLS_SCM_PRETEND_VERSION \
             -e NRN_BUILD_FOR_UPLOAD=1 \
             'docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64' \
-            packaging/python/build_wheels.bash linux $(python.version) coreneuron
+            packaging/python/build_wheels.bash $(uname -s) $(python.version) coreneuron
         displayName: 'Building ManyLinux Wheel'
 
       - script: |
@@ -151,7 +151,7 @@ stages:
           export NRN_BUILD_FOR_UPLOAD=1
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/$(uname -m)
-          packaging/python/build_wheels.bash osx $(python.version) coreneuron
+          packaging/python/build_wheels.bash $(uname -s) $(python.version) coreneuron
         displayName: 'Build MacOS Wheel'
 
       - template: ci/azure-wheel-test-upload.yml

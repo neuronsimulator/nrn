@@ -181,7 +181,7 @@ run_parallel_test() {
       run_mpi_test "${BREW_PREFIX}/opt/open-mpi/bin/mpirun" "OpenMPI" ""
 
     # CI Linux or Azure Linux or circleCI build (all on Debian/Ubuntu)
-    elif [[ "$CI_OS_NAME" == "linux" || "$AGENT_OS" == "Linux" || "$CIRCLECI" == "true" ]]; then
+    elif [[ "$CI_OS_NAME" == "Linux" || "$AGENT_OS" == "Linux" || "$CIRCLECI" == "true" ]]; then
       # make debugging easier
       sudo update-alternatives --get-selections | grep mpi
       sudo update-alternatives --list mpi-${ARCH_DIR}-linux-gnu
