@@ -210,12 +210,15 @@ set_mpi_headers_macos() {
 
 # platform for which to build the wheel (default: host machine platform)
 # supported values: Linux, Darwin, CI
-platform="${1:-$(uname -s)}"
+platform=
+if [ $# -ge 1 ]; then
+    platform=$1
+fi
 
 # python version for which wheel to be built; 3* (default) means all python 3 versions
 python_wheel_version=
 if [ $# -ge 2 ]; then
-  python_wheel_version=$2
+    python_wheel_version=$2
 fi
 
 # enable coreneuron support: "coreneuron" enables support (default: without coreneuron)
