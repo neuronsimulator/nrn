@@ -7,3 +7,4 @@ mpi4py<=4.0.3
 find_libpython<=0.4.0
 -r packaging/python/build_requirements.txt
 -r packaging/python/test_requirements.txt
+-r nmodl_requirements.txt

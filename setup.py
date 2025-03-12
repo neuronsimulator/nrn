@@ -1,15 +1,18 @@
+import logging
 import os
+import platform
+import re
 import shutil
 import subprocess
 import sys
-from collections import defaultdict
-import logging
-import platform
 
-logging.basicConfig(level=logging.INFO)
+from collections import defaultdict
 from shutil import copytree, which
+
 from setuptools import Command, Extension
 from setuptools import setup
+
+logging.basicConfig(level=logging.INFO)
 
 
 logging.info("setup.py called with:" + " ".join(sys.argv))
@@ -109,6 +112,13 @@ if Components.RX3D:
         sys.exit(1)
 else:
     from setuptools.command.build_ext import build_ext
+
+
+def normalize_package_name(name):
+    """
+    Normalize a package name to conform to PEP 503.
+    """
+    return re.sub(r"[-_.]+", "-", name).lower()
 
 
 class CMakeAugmentedExtension(Extension):
@@ -364,15 +374,19 @@ def setup_package():
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ["pytest-runner"] if "test" in sys.argv else []
 
-    py_packages = [
-        "neuron",
-        "neuron.neuroml",
-        "neuron.tests",
-        "neuron.tests.utils",
-        "neuron.rxd",
-        "neuron.crxd",
-        "neuron.gui2",
-    ] + (["neuron.rxd.geometry3d"] if Components.RX3D else [])
+    py_packages = (
+        [
+            "neuron",
+            "neuron.neuroml",
+            "neuron.tests",
+            "neuron.tests.utils",
+            "neuron.rxd",
+            "neuron.crxd",
+            "neuron.gui2",
+        ]
+        + (["neuron.rxd.geometry3d"] if Components.RX3D else [])
+        + (["neuron.nmodl"] if Components.CORENRN else [])
+    )
 
     REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
 
@@ -506,10 +520,10 @@ def setup_package():
     package_name += os.environ.get("NEURON_NIGHTLY_TAG", "-nightly")
 
     setup(
-        name=package_name,
+        name=normalize_package_name(package_name),
         package_dir={"": NRN_PY_ROOT},
         packages=py_packages,
-        package_data={"neuron": ["*.dat", "tests/*.json"]},
+        package_data={"neuron": ["*.dat", "tests/*.json", "nmodl/ext/**/*.*"]},
         ext_modules=extensions,
         scripts=[
             os.path.join(NRN_PY_SCRIPTS, f)
