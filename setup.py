@@ -374,15 +374,19 @@ def setup_package():
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ["pytest-runner"] if "test" in sys.argv else []
 
-    py_packages = [
-        "neuron",
-        "neuron.neuroml",
-        "neuron.tests",
-        "neuron.tests.utils",
-        "neuron.rxd",
-        "neuron.crxd",
-        "neuron.gui2",
-    ] + (["neuron.rxd.geometry3d"] if Components.RX3D else [])
+    py_packages = (
+        [
+            "neuron",
+            "neuron.neuroml",
+            "neuron.tests",
+            "neuron.tests.utils",
+            "neuron.rxd",
+            "neuron.crxd",
+            "neuron.gui2",
+        ]
+        + (["neuron.rxd.geometry3d"] if Components.RX3D else [])
+        + (["neuron.nmodl"] if Components.CORENRN else [])
+    )
 
     REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
 
@@ -519,7 +523,7 @@ def setup_package():
         name=normalize_package_name(package_name),
         package_dir={"": NRN_PY_ROOT},
         packages=py_packages,
-        package_data={"neuron": ["*.dat", "tests/*.json"]},
+        package_data={"neuron": ["*.dat", "tests/*.json", "nmodl/ext/**/*.*"]},
         ext_modules=extensions,
         scripts=[
             os.path.join(NRN_PY_SCRIPTS, f)
