@@ -37,22 +37,28 @@ We use [setup.py](../../../setup.py) in two operational modes
 ## Creating a Development Python Package
 
 `setup.py` can be lanched manually as well to create a dev build package, which can be tested
-immediately. It supports several arguments to that the build can be tuned:
+immediately. It supports several environmental variables through which the build can be tuned:
 
 ```
- --disable-rx3d       Disables Rx3d. Implies CMake -DNRN_ENABLE_RX3D=OFF
- --disable-iv         Disables IV. Implies CMake -DNRN_ENABLE_INTERVIEWS=OFF
- --disable-mpi        Disables MPI. Implies -DNRN_ENABLE_MPI=OFF and disabling of neuronmusic
- --enable-music       Enables neuronmusic
- --enable-coreneuron  Enables experimental CorenNeuron support
- --rx3d-opt-level     Sets the rx3d optimization level. Default: 0 (-O0)
- --cmake-build-dir    Declares one wants to use a specic NEURON build (with CMake), instead
-                      of creating one behind the scenes. Only builds extensions and package.
+ NRN_ENABLE_RX3D       Enables RX3D.
+ NRN_ENABLE_INTERVIEWS Enables IV.
+ NRN_ENABLE_MPI        Enables MPI.
+ NRN_ENABLE_MUSIC      Enables neuronmusic
+ NRN_ENABLE_CORENEURON Enables experimental CorenNeuron support
+ NRN_RX3D_OPT_LEVEL    Sets the RX3D optimization level. Default: 0 (-O0)
+```
+
+It also supports certain command-line arguments:
+
+```
+ --cmake-build-dir     Declares one wants to use a specic NEURON build (with CMake), instead
+                       of creating one behind the scenes. Only builds extensions and package.
 ```
 
 A quick build for testing a change to a core component could therefore be:
+
 ```
-python setup.py build --disable-rx3d --disable-iv --disable-mpi
+NRN_ENABLE_RX3D=OFF NRN_ENABLE_INTERVIEWS=OFF NRN_ENABLE_MPI=OFF python setup.py build
 ```
 
 ---
