@@ -1339,7 +1339,7 @@ class _PlotShapePlot(_WrapperPlot):
 
 def _nmodl():
     try:
-        import nmodl.dsl as nmodl
+        from .nmodl import dsl as nmodl
 
         return nmodl
     except ModuleNotFoundError:
