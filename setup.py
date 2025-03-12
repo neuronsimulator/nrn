@@ -31,7 +31,7 @@ def strtobool(val: str) -> bool:
     if val in ("n", "no", "f", "false", "off", "0"):
         return False
 
-    raise ValueError("invalid truth value %r" % (val,))
+    raise ValueError(f"invalid truth value {val}")
 
 
 class Components:
@@ -86,10 +86,9 @@ if "--cmake-build-dir" in sys.argv:
 rx3d_opt_level = os.getenv("NRN_RX3D_OPT_LEVEL", "0")
 
 # If NRN_ENABLE_PYTHON_DYNAMIC is ON, we will build the wheel without the nrnpython library
-without_nrnpython = False
-if "--without-nrnpython" in sys.argv:
-    without_nrnpython = True
-    sys.argv.remove("--without-nrnpython")
+without_nrnpython = strtobool(
+    os.getenv("NRN_ENABLE_MODULE_INSTALL", "OFF")
+) and not strtobool(os.getenv("NRN_ENABLE_PYTHON_DYNAMIC", "OFF"))
 
 # setup options must be checked for very early as it impacts imports
 if Components.RX3D:

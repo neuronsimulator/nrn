@@ -174,12 +174,16 @@ if(NRN_ENABLE_MODULE_INSTALL)
   if(MINGW)
     list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--compiler=mingw32")
   endif()
-  if(NOT NRN_ENABLE_PYTHON_DYNAMIC)
-    list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--without-nrnpython")
-  endif()
   list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--build-lib=${NRN_PYTHON_BUILD_LIB}")
-  set(setup_py_env_vars NRN_RX3D_OPT_LEVEL NRN_ENABLE_RX3D NRN_ENABLE_INTERVIEWS NRN_ENABLE_MPI
-                        NRN_ENABLE_MUSIC NRN_ENABLE_CORENEURON)
+  set(setup_py_env_vars
+      NRN_ENABLE_PYTHON_DYNAMIC
+      NRN_ENABLE_MODULE_INSTALL
+      NRN_RX3D_OPT_LEVEL
+      NRN_ENABLE_RX3D
+      NRN_ENABLE_INTERVIEWS
+      NRN_ENABLE_MPI
+      NRN_ENABLE_MUSIC
+      NRN_ENABLE_CORENEURON)
 
   foreach(var IN LISTS setup_py_env_vars)
     list(APPEND extra_env "${var}=${${var}}")
