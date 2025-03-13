@@ -18,7 +18,12 @@ on:
         description: Release version (tag name)
         default: 'x.y.z'
         required: true
-
+      build_type:
+        description: The type of build (release or nightly)
+        default: 'nightly'
+        options:
+          - 'nightly'
+          - 'release'
 
 jobs:
   build-test:
@@ -64,12 +69,23 @@ jobs:
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo bash packaging/python/build_static_readline_osx.bash
 
-      - name: Set env for release
-        if: github.event_name == 'workflow_dispatch'
+      - name: Set env
         run: |
-          echo "NRN_NIGHTLY_UPLOAD=false" >> $GITHUB_ENV
-          echo NRN_RELEASE_UPLOAD=${{ github.event.inputs.upload }} >> $GITHUB_ENV
-          echo "NEURON_NIGHTLY_TAG=" >> $GITHUB_ENV
+          BUILD_TYPE="${{ github.event.inputs.build_type }}"
+          # if it's empty, it means its not a workflow_dispatch, so we set a default
+          BUILD_TYPE="${BUILD_TYPE:-nightly}"
+          if [ "${BUILD_TYPE}" = 'nightly' ]
+          then
+            echo "NRN_NIGHTLY_UPLOAD=true" >> $GITHUB_ENV
+            echo "NEURON_NIGHTLY_TAG=-nightly" >> $GITHUB_ENV
+          else
+            echo "NRN_NIGHTLY_UPLOAD=false" >> $GITHUB_ENV
+            echo "NEURON_NIGHTLY_TAG=" >> $GITHUB_ENV
+          fi
+
+      - name: Set custom version
+        if: github.event.inputs.rel_version != ''
+        run: |
           echo SETUPTOOLS_SCM_PRETEND_VERSION=${{ github.event.inputs.rel_version }} >> $GITHUB_ENV
 
       - name: Build wheels on MacOS
