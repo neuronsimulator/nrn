@@ -272,6 +272,7 @@ int ilint;
 #define Strncpy strncpy
 #endif
 using neuron::Sprintf;
+using neuron::SprintfAsrt;
 
 // No longer used because of clang format difficulty
 // #define IFGUI  if (hoc_usegui) {
