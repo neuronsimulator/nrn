@@ -1775,7 +1775,7 @@ void units_reg() {
         if (s->nrntype & NRNGLOBAL) {
             decode_ustr(s, &d1, &d2, u);
             if (u[0]) {
-                Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, suffix, u);
+                assert(Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, suffix, u) < sizeof(buf));
                 lappendstr(defs_list, buf);
             }
         }
@@ -1784,7 +1784,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
+            assert(Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u) < sizeof(buf));
             lappendstr(defs_list, buf);
         }
     }
@@ -1792,7 +1792,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
+            assert(Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u) < sizeof(buf));
             lappendstr(defs_list, buf);
         }
     }
@@ -1800,7 +1800,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
+            assert(Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u) < sizeof(buf));
             lappendstr(defs_list, buf);
         }
     }
@@ -1808,7 +1808,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
+            assert(Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u) < sizeof(buf));
             lappendstr(defs_list, buf);
         }
     }

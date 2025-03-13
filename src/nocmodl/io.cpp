@@ -216,15 +216,15 @@ void unGets(char* buf)		/* all this because we don't have an ENDBLOCK
 char* current_line() { /* assumes we actually want the previous line */
     static char buf[NRN_BUFSIZE];
     char* p;
-    Sprintf(buf,
-            "at line %d in file %s:\\n%s",
-            linenum - 1,
+    assert(Sprintf(buf,
+                   "at line %d in file %s:\\n%s",
+                   linenum - 1,
 #if !defined(NRN_AVOID_ABSOLUTE_PATHS)
-            finname,
+                   finname,
 #else
-            fs::absolute(finname).filename().c_str(),
+                   fs::absolute(finname).filename().c_str(),
 #endif
-            inlinebuf[whichbuf ? 0 : 1] + 30);
+                   inlinebuf[whichbuf ? 0 : 1] + 30) < sizeof(buf));
     for (p = buf; *p; ++p) {
         if (*p == '\n') {
             *p = '\0';
@@ -432,7 +432,7 @@ void include_file(Item* q) {
 }
 
 static void pop_file_stack() {
-    Sprintf(buf, ":::end INCLUDE %s\n", finname);
+    assert(Sprintf(buf, ":::end INCLUDE %s\n", finname) < sizeof(buf));
     lappendstr(filetxtlist, buf);
     FileStackItem* fsi;
     fsi = (FileStackItem*) (SYM(filestack->prev));
