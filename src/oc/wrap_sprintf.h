@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <utility>  // std::forward
+#include <stdexcept>
 #include <assert.h>
 
 namespace neuron {
@@ -20,12 +21,18 @@ int Sprintf(char (&buf)[N], const char* fmt, Args&&... args) {
 }
 
 /**
- * @brief Assert that the Sprintf format data fits into buf
+ * @brief assert if the Sprintf format data does not fit into buf
  */
 template <std::size_t N, typename... Args>
 void SprintfAsrt(char (&buf)[N], const char* fmt, Args&&... args) {
     int sz = Sprintf(buf, fmt, std::forward<Args>(args)...);
+#ifdef UNIT_TESTING
+    if (sz < 0 || std::size_t(sz) >= N) {
+        throw std::runtime_error("SprintfAsrt buffer too small or snprintf error");
+    }
+#else
     assert(sz >= 0 && std::size_t(sz) < N);
+#endif
 }
 
 }  // namespace neuron
