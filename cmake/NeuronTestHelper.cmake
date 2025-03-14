@@ -418,10 +418,6 @@ function(nrn_add_test)
   # merging, which sounds hard in the general case.
   list(APPEND new_vars_being_set ${extra_env_var_names})
   list(REMOVE_ITEM new_vars_being_set ${test_env_var_names})
-  if(NOT "${new_vars_being_set}" STREQUAL "${extra_env_var_names}")
-    message(FATAL_ERROR "New (${extra_env_var_names}) vars overlap old (${test_env_var_names}). "
-                        "This is not supported.")
-  endif()
   list(APPEND test_env ${extra_environment})
   if(NRN_ADD_TEST_PRELOAD_SANITIZER AND NRN_SANITIZER_LIBRARY_PATH)
     list(APPEND test_env ${NRN_SANITIZER_PRELOAD_VAR}=${NRN_SANITIZER_LIBRARY_PATH})
