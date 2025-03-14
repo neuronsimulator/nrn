@@ -409,8 +409,8 @@ def setup_package():
 
     extensions = [
         CMakeAugmentedExtension(
-            "neuron.hoc",
-            ["src/nrnpython/inithoc.cpp"],
+            "neuron.dummy",
+            ["src/nrnpython/dummy.cpp"],
             cmake_collect_dirs=NRN_COLLECT_DIRS,
             cmake_flags=[
                 "-DNRN_ENABLE_CORENEURON=" + ("ON" if Components.CORENRN else "OFF"),
