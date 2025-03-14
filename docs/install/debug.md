@@ -210,6 +210,27 @@ NMODL supports the sanitizers in a similar way, but this has to be enabled
 explicitly: `-DNRN_SANITIZERS=undefined` will also compile NMODL code with UBSan
 enabled.
 
+#### Updating rxd test data for new versions of CVode
+
+Updates to new versions of SUNDIALS integrators produce different,
+but presumably as accurate, results. These differences can cause CI failures.
+A method to update rxd test data is, from the top level nrn folder:
+```
+nrnivmodl test/rxd/*.mod
+PYTHONPATH=./test/rxd:$PYTHONPATH pytest -s ./test/rxd/ --save ./test/rxd/testdata/tests
+python share/lib/python/neuron/rxdtests/run_all.py
+cp -r ./share/lib/python/neuron/rxdtests/test_data/* ./test/rxd/testdata/rxdtests/
+cp -r ./test/rxd/testdata/tests/* ./test/rxd/testdata/test
+rm -r -f ./test/rxd/testdata/tests
+(cd share/lib/python/neuron/tests; python test_rxd.py --save test_rxd.json)
+```
+When everything is working again, cd to test/rxd/testdata, start a new branch,
+commit, and push to ``https://github.com/neuronsimulator/rxdtestdata``.
+Individual rxd tests can be run, e.g., by
+```
+PYTHONPATH=./test/rxd:$PYTHONPATH pytest -s ./test/rxd/3d/test_ics_currents.py
+```
+
 Profiling and performance benchmarking
 --------------------------------------
 
