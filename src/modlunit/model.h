@@ -224,6 +224,7 @@ extern Item* qlint;
 #define IGNORE(arg) arg
 #endif
 using neuron::Sprintf;
+using neuron::SprintfAsrt;
 
 /* model.h,v
  * Revision 1.2  1997/11/24  16:19:13  hines

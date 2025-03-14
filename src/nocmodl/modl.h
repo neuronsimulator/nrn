@@ -330,6 +330,7 @@ extern Item* qlint;
 #define Free(arg)   free((void*) (arg))
 #endif
 using neuron::Sprintf;
+using neuron::SprintfAsrt;
 
 void verbatim_adjust(char* q);
 /** @} */  // end of hoc_functions
