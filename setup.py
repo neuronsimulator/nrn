@@ -482,35 +482,6 @@ def setup_package():
         if platform.system() == "Darwin":
             rxd_params["extra_link_args"] += ["-headerpad_max_install_names"]
 
-        logging.info("RX3D compile flags %s" % str(rxd_params))
-
-        rxd_extensions = [
-            CyExtension(
-                "neuron.rxd.geometry3d.graphicsPrimitives",
-                ["share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx"],
-                **rxd_params,
-            ),
-            CyExtension(
-                "neuron.rxd.geometry3d.ctng",
-                ["share/lib/python/neuron/rxd/geometry3d/ctng.pyx"],
-                include_dirs=include_dirs,
-                **rxd_params,
-            ),
-            CyExtension(
-                "neuron.rxd.geometry3d.surfaces",
-                [
-                    "share/lib/python/neuron/rxd/geometry3d/surfaces.pyx",
-                    "src/nrnpython/rxd_marching_cubes.cpp",
-                    "src/nrnpython/rxd_llgramarea.cpp",
-                ],
-                include_dirs=include_dirs,
-                **rxd_params,
-            ),
-        ]
-        for ext in rxd_extensions:
-            ext.cython_c_in_temp = True
-            extensions.append(ext)
-
     logging.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
 
     # package name
