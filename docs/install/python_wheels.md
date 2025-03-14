@@ -136,18 +136,18 @@ Wheels are generated under `/root/nrn/wheelhouse` and also accessible in the mou
 
 ```
 # Working directory is /root/nrn
-bash packaging/python/build_wheels.bash linux
+bash packaging/python/build_wheels.bash Linux
 ls -la wheelhouse
 ```
 
 You can build the wheel for a specific python version:
 ```
-bash packaging/python/build_wheels.bash linux 39    # 39 for Python v3.9
+bash packaging/python/build_wheels.bash Linux 39    # 39 for Python v3.9
 ```
 
 To build wheels with CoreNEURON support you have to pass an additional argument: `coreneuron`.
 ```
-bash packaging/python/build_wheels.bash linux 3* coreneuron
+bash packaging/python/build_wheels.bash Linux 3* coreneuron
 ```
 Where we are passing `3*` to build the wheels with `CoreNEURON` support for all python 3 versions.
 
@@ -158,7 +158,7 @@ As mentioned above, for macOS all dependencies have to be available on a system.
 
 ```
 cd nrn
-bash packaging/python/build_wheels.bash osx
+bash packaging/python/build_wheels.bash Darwin
 ```
 
 In some cases, setuptools-scm will see extra commits and consider your build as "dirty," resulting in filenames such as `NEURON-9.0a1.dev0+g9a96a3a4d.d20230717-cp310-cp310-macosx_11_0_arm64.whl` (which should have been `NEURON-9.0a0-cp310-cp310-macosx_11_0_arm64.whl`). If this happens, you can set an environment variable to correct this behavior:

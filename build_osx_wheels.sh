@@ -27,9 +27,9 @@ fi
 
 set -e
 
-packaging/python/build_wheels.bash osx 3.9 coreneuron &>3.9-output
-packaging/python/build_wheels.bash osx 3.10 coreneuron &>3.10-output
-packaging/python/build_wheels.bash osx 3.11 coreneuron &>3.11-output
+packaging/python/build_wheels.bash "$(uname -s)" 3.9 coreneuron &>3.9-output
+packaging/python/build_wheels.bash "$(uname -s)" 3.10 coreneuron &>3.10-output
+packaging/python/build_wheels.bash "$(uname -s)" 3.11 coreneuron &>3.11-output
 
 if [ -n $INTERACTIVE_OK ]
 then
