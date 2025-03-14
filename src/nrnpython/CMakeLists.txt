@@ -4,6 +4,8 @@ add_compile_options(${NRN_COMPILE_FLAGS})
 add_compile_definitions(${NRN_COMPILE_DEFS})
 add_link_options(${NRN_LINK_FLAGS})
 
+include(${PROJECT_SOURCE_DIR}/cmake/PythonCompileHelper.cmake)
+
 # =============================================================================
 # rxdmath libraries (always build)
 # =============================================================================
@@ -67,53 +69,52 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
     # the hoc Python library
-    set(hoc_module_name "hoc_module${pyver}")
-    add_library(${hoc_module_name} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp)
-    # TODO figure out if we need this target_link_libraries(${hoc_module_name} PUBLIC nrniv_lib
-    # nrnpython${pyver}) TODO figure out if we need this (it seems `otool -L <hoc.so>` is not
-    # explicitly linked to Python, even if `NRN_LINK_AGAINST_PYTHON=ON`)
-    if(NRN_LINK_AGAINST_PYTHON)
-      target_link_libraries(${hoc_module_name} PUBLIC ${pylib})
-    endif()
-    target_include_directories(
-      ${hoc_module_name}
-      PRIVATE ${PROJECT_SOURCE_DIR}/src
-              ${PROJECT_SOURCE_DIR}/src/oc
-              ${PROJECT_BINARY_DIR}/src/oc
-              ${PROJECT_BINARY_DIR}/include
-              ${CMAKE_CURRENT_SOURCE_DIR}
-              # for nrnconf.h
-              ${CMAKE_CURRENT_BINARY_DIR}
-              ${PROJECT_BINARY_DIR}/nrnmpi
-              ${pyinc})
-    if(APPLE)
-      set(rel_rpath "@loader_path")
-      set(os_string "darwin")
-    elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
-      set(rel_rpath "\$ORIGIN")
-      set(os_string "${CMAKE_LIBRARY_ARCHITECTURE}")
-    elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
-      # TODO figure out how Windows does it
-    endif()
+
     # module install = installation using CMake
     if(NOT NRN_ENABLE_MODULE_INSTALL)
       # taken from setup.py
-      set(extension_path "/.data/lib/")
-      # previous installation method (using setup.py)
+      set(libraries_rpath "/.data/lib/")
     else()
       # taken from setup.py
-      set(extension_path "/../../")
+      set(libraries_rpath "/../../")
     endif()
-    target_link_options(${hoc_module_name} PRIVATE "-Wl,-rpath,${rel_rpath}${extension_path}")
-    string(REPLACE "." "" pyver_nodot "${pyver}")
-    set_target_properties(
+
+    set(hoc_module_name hoc${pyver})
+
+    add_nrn_python_library(
+      hoc
+      TARGET
       ${hoc_module_name}
-      PROPERTIES OUTPUT_NAME "hoc.cpython-${pyver_nodot}-${os_string}"
-                 PREFIX ""
-                 SUFFIX ".so"
-                 LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/python/neuron)
+      PYTHON_VERSION
+      ${pyver}
+      LANGUAGE
+      "CXX"
+      SOURCES
+      ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
+      INCLUDES
+      ${PROJECT_SOURCE_DIR}/src
+      ${PROJECT_SOURCE_DIR}/src/oc
+      ${PROJECT_BINARY_DIR}/src/oc
+      ${PROJECT_BINARY_DIR}/include
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      # for nrnconf.h
+      ${CMAKE_CURRENT_BINARY_DIR}
+      ${PROJECT_BINARY_DIR}/nrnmpi
+      ${pyinc}
+      LIBRARIES
+      nrniv_lib
+      rxdmath
+      nrnpython${pyver}
+      REL_RPATH
+      ${libraries_rpath}
+      OUTPUT_DIR
+      ${PROJECT_BINARY_DIR}/lib/python/neuron)
+
+    if(NRN_LINK_AGAINST_PYTHON)
+      target_link_libraries(${hoc_module_name} PUBLIC ${pylib})
+    endif()
+
     add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
-    target_link_libraries(${hoc_module_name} PRIVATE nrniv_lib rxdmath nrnpython${pyver})
 
   endforeach(val)
 else()
@@ -134,47 +135,45 @@ else()
   make_nanobind_target(nanobind ${NRN_DEFAULT_PYTHON_INCLUDES})
   target_link_libraries(nrnpython nanobind)
 
-  # hoc*.so
-  set(hoc_module_name "hoc_module")
-  add_library(${hoc_module_name} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp)
-  target_include_directories(
-    ${hoc_module_name}
-    PRIVATE ${PROJECT_SOURCE_DIR}/src
-            ${PROJECT_SOURCE_DIR}/src/oc
-            ${PROJECT_BINARY_DIR}/src/oc
-            ${PROJECT_BINARY_DIR}/include
-            ${CMAKE_CURRENT_SOURCE_DIR}
-            # for nrnconf.h
-            ${CMAKE_CURRENT_BINARY_DIR}
-            ${PROJECT_BINARY_DIR}/nrnmpi
-            ${NRN_DEFAULT_PYTHON_INCLUDES})
-  target_link_libraries(${hoc_module_name} PRIVATE nrniv_lib rxdmath)
-  if(APPLE)
-    set(rel_rpath "@loader_path")
-    set(os_string "darwin")
-  elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
-    set(rel_rpath "\$ORIGIN")
-    set(os_string "${CMAKE_LIBRARY_ARCHITECTURE}")
-  elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
-    # TODO figure out how Windows does it
-  endif()
   # module install = installation using CMake
   if(NOT NRN_ENABLE_MODULE_INSTALL)
     # taken from setup.py
-    set(extension_path "/.data/lib/")
+    set(libraries_rpath "/.data/lib/")
   else()
     # taken from setup.py
-    set(extension_path "/../../")
+    set(libraries_rpath "/../../")
   endif()
-  target_link_options(${hoc_module_name} PRIVATE "-Wl,-rpath,${rel_rpath}${extension_path}")
-  string(REPLACE "." "" pyver_nodot "${NRN_DEFAULT_PYTHON_VERSION}")
-  set_target_properties(
+
+  # hoc*.so
+  set(hoc_module_name "hoc_module")
+  add_nrn_python_library(
+    hoc
+    TARGET
     ${hoc_module_name}
-    PROPERTIES OUTPUT_NAME "hoc.cpython-${pyver_nodot}-${os_string}"
-               PREFIX ""
-               SUFFIX ".so"
-               INSTALL_RPATH ${rel_rpath}
-               LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/python/neuron)
+    PYTHON_VERSION
+    ${NRN_DEFAULT_PYTHON_VERSION}
+    LANGUAGE
+    "CXX"
+    SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
+    INCLUDES
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/src/oc
+    ${PROJECT_BINARY_DIR}/src/oc
+    ${PROJECT_BINARY_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    # for nrnconf.h
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}/nrnmpi
+    ${pyinc}
+    LIBRARIES
+    nrniv_lib
+    rxdmath
+    REL_RPATH
+    ${libraries_rpath}
+    OUTPUT_DIR
+    ${PROJECT_BINARY_DIR}/lib/python/neuron)
+
   add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
 
 endif()
