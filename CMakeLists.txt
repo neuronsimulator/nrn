@@ -664,11 +664,11 @@ endif()
 # =============================================================================
 add_subdirectory(src/sparse13)
 add_subdirectory(src/gnu)
+add_subdirectory(src/nrniv)
+
 if(NRN_ENABLE_PYTHON)
   add_subdirectory(src/nrnpython)
 endif()
-
-add_subdirectory(src/nrniv)
 
 # Collect the environment variables that are needed to execute NEURON from the build directory. This
 # is used when configuring tests, and when building documentation targets.

@@ -113,7 +113,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
                  SUFFIX ".so"
                  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/python/neuron)
     add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
-    target_link_libraries(${hoc_module} PRIVATE nrniv_lib rxdmath)
+    target_link_libraries(${hoc_module_name} PRIVATE nrniv_lib rxdmath nrnpython${pyver})
 
   endforeach(val)
 else()
