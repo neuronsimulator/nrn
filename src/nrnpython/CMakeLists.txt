@@ -296,4 +296,5 @@ else()
   # Make sure this is included in the wheels
   install(FILES "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
           DESTINATION lib/python/neuron)
+  install(TARGETS ${hoc_module_name} DESTINATION lib/python/neuron)
 endif()
