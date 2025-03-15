@@ -51,8 +51,10 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
         SOURCES
         ${${source}_sources}
         INCLUDES
-        "${pyinc}"
+        # on Linux, if numpy is installed via the system package manager, CMake would use those
+        # instead, so we place the numpy headers before the Python ones
         "${npinc}"
+        "${pyinc}"
         LIBRARIES
         nrnpython${pyver}
         REL_RPATH
@@ -83,8 +85,10 @@ else(NRN_ENABLE_PYTHON_DYNAMIC)
       SOURCES
       ${${source}_sources}
       INCLUDES
-      "${NRN_DEFAULT_PYTHON_INCLUDES}"
+      # on Linux, if numpy is installed via the system package manager, CMake would use those
+      # instead, so we place the numpy headers before the Python ones
       "${NRN_DEFAULT_PYTHON_NUMPY_INCLUDES}"
+      "${NRN_DEFAULT_PYTHON_INCLUDES}"
       REL_RPATH
       ${rel_rpath}
       OUTPUT_DIR
