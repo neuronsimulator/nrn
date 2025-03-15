@@ -73,6 +73,11 @@ function(add_nrn_python_library name)
     target_link_options(${ARG_TARGET} PRIVATE "-Wl,-rpath,${rel_rpath}${ARG_REL_RPATH}")
   endif()
 
+  # MinGW does not play nicely with cython
+  if(MINGW)
+    target_compile_definitions(${ARG_TARGET} PUBLIC MS_WIN64=1)
+  endif()
+
   # set library name and output dir
   string(REPLACE "." "" pyver_nodot "${ARG_PYTHON_VERSION}")
   set_target_properties(
