@@ -677,6 +677,10 @@ if(NRN_ENABLE_RX3D)
   add_subdirectory(share/lib/python/neuron/rxd/geometry3d)
 endif()
 
+if(NRN_ENABLE_MUSIC)
+  add_subdirectory(src/neuronmusic)
+endif()
+
 # Collect the environment variables that are needed to execute NEURON from the build directory. This
 # is used when configuring tests, and when building documentation targets.
 function(prepend_to_var var new_path)

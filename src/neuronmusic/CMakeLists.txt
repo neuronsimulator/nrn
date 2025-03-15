@@ -16,7 +16,6 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
     list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
-    list(GET NRN_PYTHON_NUMPY_INCLUDES ${val} npinc)
 
     add_nrn_python_library(
       ${source}
@@ -27,10 +26,10 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       LANGUAGE
       "CXX"
       SOURCES
-      ${source}.cpp
+      ${CMAKE_CURRENT_BINARY_DIR}/${source}.cpp
       INCLUDES
       "${pyinc}"
-      "${npinc}"
+      "${MUSIC_ROOT}/include"
       ${PROJECT_SOURCE_DIR}/src/nrnpython
       ${CMAKE_CURRENT_SOURCE_DIR}
       LIBRARIES
@@ -51,10 +50,10 @@ else()
     LANGUAGE
     "CXX"
     SOURCES
-    ${source}.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/${source}.cpp
     INCLUDES
-    "${pyinc}"
-    "${npinc}"
+    "${NRN_DEFAULT_PYTHON_INCLUDES}"
+    "${MUSIC_ROOT}/include"
     ${PROJECT_SOURCE_DIR}/src/nrnpython
     ${CMAKE_CURRENT_SOURCE_DIR}
     OUTPUT_DIR
