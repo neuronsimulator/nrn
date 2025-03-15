@@ -41,10 +41,12 @@ function(add_nrn_python_library name)
     target_link_libraries(${ARG_TARGET} PRIVATE ${ARG_LIBRARIES})
   endif()
 
-  # Set relative rpath
+  # set platform-specific config
   if(APPLE)
     set(rel_rpath "@loader_path")
     set(os_string "darwin")
+    set(lib_suffix ".so")
+    set(python_interp "cpython-")
   elseif(UNIX AND NOT APPLE)
     set(rel_rpath "\$ORIGIN")
     # sometimes CMAKE_LIBRARY_ARCHITECTURE is not set, so here we build it manually
@@ -63,9 +65,13 @@ function(add_nrn_python_library name)
           CACHE INTERNAL "Guessed library architecture")
     endif()
     set(os_string "${CMAKE_LIBRARY_ARCHITECTURE}")
+    set(lib_suffix ".so")
+    set(python_interp "cpython-")
   elseif(WIN32)
     set(rel_rpath "")
-    set(os_string "windows")
+    set(os_string "win_amd64")
+    set(lib_suffix ".pyd")
+    set(python_interp "cp")
   else()
     message(WARNING "Unknown platform; RPATH may not be set correctly")
   endif()
@@ -82,10 +88,10 @@ function(add_nrn_python_library name)
   string(REPLACE "." "" pyver_nodot "${ARG_PYTHON_VERSION}")
   set_target_properties(
     ${ARG_TARGET}
-    PROPERTIES OUTPUT_NAME "${name}.cpython-${pyver_nodot}-${os_string}"
+    PROPERTIES OUTPUT_NAME "${name}.${python_interp}${pyver_nodot}-${os_string}"
                LINKER_LANGUAGE ${ARG_LANGUAGE}
                PREFIX ""
-               SUFFIX ".so"
+               SUFFIX ${lib_suffix}
                LIBRARY_OUTPUT_DIRECTORY ${ARG_OUTPUT_DIR})
 
 endfunction()
