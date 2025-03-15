@@ -308,7 +308,6 @@ if(NRN_ENABLE_PYTHON)
       get_filename_component(name "${hoc_script}" NAME_WLE)
       nrn_add_test(
         GROUP hoctests
-        ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}/share/nrn/lib/python"
         NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
         COMMAND ${${ext}_exe} "${hoc_script}"
         SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${${ext}test_utils})

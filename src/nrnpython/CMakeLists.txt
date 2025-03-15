@@ -207,6 +207,21 @@ if(NRN_ENABLE_MODULE_INSTALL)
         CACHE INTERNAL "" FORCE)
   endif()
 
+  # copy all files from `${CMAKE_SOURCE_DIR}/share/lib/python` to `${CMAKE_BINARY_DIR}/lib/python`
+  set(SRC_DIR "${PROJECT_SOURCE_DIR}/share/lib/python/neuron")
+  set(DST_DIR "${PROJECT_BINARY_DIR}/lib/python/neuron")
+
+  file(
+    GLOB_RECURSE ALL_FILES
+    RELATIVE "${SRC_DIR}"
+    "${SRC_DIR}/*")
+
+  foreach(file IN LISTS ALL_FILES)
+    get_filename_component(dir "${file}" DIRECTORY)
+    file(MAKE_DIRECTORY "${DST_DIR}/${dir}")
+    file(COPY "${SRC_DIR}/${file}" DESTINATION "${DST_DIR}/${dir}")
+  endforeach()
+
   # Here and for the neuron/rxd/geometry3d extensions, we build the neuron module in lib/python
   set(NRN_PYTHON_BUILD_LIB
       ${PROJECT_BINARY_DIR}/lib/python
