@@ -94,7 +94,7 @@ function(nrn_find_python)
     string(SHA1 pyexe_hash "${opt_NAME}")
     string(SUBSTRING "${pyexe_hash}" 0 6 pyexe_hash)
     # Which attributes we're trying to learn about this Python
-    set(python_vars Python_INCLUDE_DIRS Python_VERSION)
+    set(python_vars Python_INCLUDE_DIRS Python_VERSION Python_NumPy_INCLUDE_DIRS)
     if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_LINK_AGAINST_PYTHON)
       # Do not link against Python, so we don't need the library -- just as well, it's not available
       # in manylinux
@@ -113,7 +113,7 @@ function(nrn_find_python)
     execute_process(
       COMMAND
         ${CMAKE_COMMAND} "-DPython_EXECUTABLE:STRING=${opt_NAME}"
-        "-DPython_COMPONENTS=${dev_component};Interpreter" -S
+        "-DPython_COMPONENTS=${dev_component};Interpreter;NumPy" -S
         ${CMAKE_SOURCE_DIR}/cmake/ExecuteFindPython -B
         ${CMAKE_BINARY_DIR}/ExecuteFindPython_${pyexe_hash}
       RESULT_VARIABLE result
@@ -133,6 +133,9 @@ function(nrn_find_python)
     endforeach()
     set("${opt_PREFIX}_INCLUDES"
         "${Python_INCLUDE_DIRS}"
+        PARENT_SCOPE)
+    set("${opt_PREFIX}_NUMPY_INCLUDES"
+        "${Python_NumPy_INCLUDE_DIRS}"
         PARENT_SCOPE)
     set("${opt_PREFIX}_LIBRARIES"
         "${Python_LIBRARIES}"
@@ -188,12 +191,13 @@ if(NRN_MACOS_BUILD)
 endif()
 
 # For each Python in NRN_PYTHON_EXECUTABLES, find its version number, its include directory, and its
-# library path. Store those in the new lists NRN_PYTHON_VERSIONS, NRN_PYTHON_INCLUDES and
-# NRN_PYTHON_LIBRARIES. Set NRN_PYTHON_COUNT to be the length of those lists, and
-# NRN_PYTHON_ITERATION_LIMIT to be NRN_PYTHON_COUNT - 1.
+# library path. Store those in the new lists NRN_PYTHON_VERSIONS, NRN_PYTHON_INCLUDES,
+# NRN_PYTHON_NUMPY_INCLUDES, and NRN_PYTHON_LIBRARIES. Set NRN_PYTHON_COUNT to be the length of
+# those lists, and NRN_PYTHON_ITERATION_LIMIT to be NRN_PYTHON_COUNT - 1.
 set(NRN_PYTHON_EXECUTABLES)
 set(NRN_PYTHON_VERSIONS)
 set(NRN_PYTHON_INCLUDES)
+set(NRN_PYTHON_NUMPY_INCLUDES)
 set(NRN_PYTHON_LIBRARIES)
 foreach(pyexe ${python_executables})
   message(STATUS "Checking if ${pyexe} is a working python")
@@ -219,6 +223,7 @@ foreach(pyexe ${python_executables})
     endif()
     list(APPEND NRN_PYTHON_VERSIONS "${nrnpy_VERSION}")
     list(APPEND NRN_PYTHON_INCLUDES "${nrnpy_INCLUDES}")
+    list(APPEND NRN_PYTHON_NUMPY_INCLUDES "${nrnpy_NUMPY_INCLUDES}")
     list(APPEND NRN_PYTHON_LIBRARIES "${nrnpy_LIBRARIES}")
   endif()
   list(APPEND NRN_PYTHON_EXECUTABLES "${nrnpy_EXECUTABLE}")
@@ -229,6 +234,7 @@ list(GET NRN_PYTHON_EXECUTABLES 0 NRN_DEFAULT_PYTHON_EXECUTABLE)
 list(GET NRN_PYTHON_VERSIONS 0 NRN_DEFAULT_PYTHON_VERSION)
 if(NRN_ENABLE_PYTHON)
   list(GET NRN_PYTHON_INCLUDES 0 NRN_DEFAULT_PYTHON_INCLUDES)
+  list(GET NRN_PYTHON_NUMPY_INCLUDES 0 NRN_DEFAULT_PYTHON_NUMPY_INCLUDES)
   list(GET NRN_PYTHON_LIBRARIES 0 NRN_DEFAULT_PYTHON_LIBRARIES)
   list(LENGTH NRN_PYTHON_EXECUTABLES NRN_PYTHON_COUNT)
   math(EXPR NRN_PYTHON_ITERATION_LIMIT "${NRN_PYTHON_COUNT} - 1")

@@ -370,7 +370,6 @@ def setup_package():
     NRN_COLLECT_DIRS = ["bin", "lib", "include", "share"]
 
     docs_require = []  # sphinx, themes, etc
-    maybe_rxd_reqs = ["numpy", "Cython"] if Components.RX3D else []
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ["pytest-runner"] if "test" in sys.argv else []
 
@@ -409,8 +408,8 @@ def setup_package():
 
     extensions = [
         CMakeAugmentedExtension(
-            "neuron.hoc",
-            ["src/nrnpython/inithoc.cpp"],
+            "neuron.dummy",
+            ["src/nrnpython/dummy.cpp"],
             cmake_collect_dirs=NRN_COLLECT_DIRS,
             cmake_flags=[
                 "-DNRN_ENABLE_CORENEURON=" + ("ON" if Components.CORENRN else "OFF"),
@@ -447,71 +446,6 @@ def setup_package():
             **extension_common_params,
         )
     ]
-
-    if Components.MUSIC:
-        music_extensions = [
-            CyExtension(
-                "neuronmusic",
-                ["src/neuronmusic/neuronmusic.pyx"],
-                include_dirs=["src/nrnpython", "src/nrnmusic"],
-                language="c++",
-                **extension_common_params,
-            )
-        ]
-        for ext in music_extensions:
-            ext.cython_c_in_temp = True
-            extensions.append(ext)
-
-    if Components.RX3D:
-        include_dirs = ["share/lib/python/neuron/rxd/geometry3d", numpy.get_include()]
-
-        # Cython files take a long time to compile with O2 so default O0
-        # But pay the price if uploading distribution
-        rxd_params = extension_common_params.copy()
-        rxd_params["libraries"].append("rxdmath")
-        rxd_params.update(
-            dict(
-                # Cython files take a long time to compile with O2 but this
-                # is a distribution...
-                extra_compile_args=extra_compile_args
-                + ["-O2" if "NRN_BUILD_FOR_UPLOAD" in os.environ else rx3d_opt_level],
-                extra_link_args=extra_link_args
-                + ["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")],
-            )
-        )
-        if platform.system() == "Darwin":
-            rxd_params["extra_link_args"] += ["-headerpad_max_install_names"]
-
-        logging.info("RX3D compile flags %s" % str(rxd_params))
-
-        rxd_extensions = [
-            CyExtension(
-                "neuron.rxd.geometry3d.graphicsPrimitives",
-                ["share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx"],
-                **rxd_params,
-            ),
-            CyExtension(
-                "neuron.rxd.geometry3d.ctng",
-                ["share/lib/python/neuron/rxd/geometry3d/ctng.pyx"],
-                include_dirs=include_dirs,
-                **rxd_params,
-            ),
-            CyExtension(
-                "neuron.rxd.geometry3d.surfaces",
-                [
-                    "share/lib/python/neuron/rxd/geometry3d/surfaces.pyx",
-                    "src/nrnpython/rxd_marching_cubes.cpp",
-                    "src/nrnpython/rxd_llgramarea.cpp",
-                ],
-                include_dirs=include_dirs,
-                **rxd_params,
-            ),
-        ]
-        for ext in rxd_extensions:
-            ext.cython_c_in_temp = True
-            extensions.append(ext)
-
-    logging.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
 
     # package name
     package_name = "NEURON"
@@ -554,8 +488,7 @@ def setup_package():
         tests_require=["flake8<=7.1.2", "pytest<=8.1.1"],
         setup_requires=["wheel<=0.45.1", "setuptools_scm<=8.1.0"]
         + maybe_docs
-        + maybe_test_runner
-        + maybe_rxd_reqs,
+        + maybe_test_runner,
         dependency_links=[],
     )
 
