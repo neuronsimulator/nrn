@@ -116,6 +116,8 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
 
     add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
 
+    install(TARGETS ${hoc_module_name} DESTINATION lib/python/neuron)
+
   endforeach(val)
 else()
   # libnrnpython
@@ -175,6 +177,8 @@ else()
     ${PROJECT_BINARY_DIR}/lib/python/neuron)
 
   add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
+
+  install(TARGETS ${hoc_module_name} DESTINATION lib/python/neuron)
 
 endif()
 
