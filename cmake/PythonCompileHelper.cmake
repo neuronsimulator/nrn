@@ -47,6 +47,21 @@ function(add_nrn_python_library name)
     set(os_string "darwin")
   elseif(UNIX AND NOT APPLE)
     set(rel_rpath "\$ORIGIN")
+    # sometimes CMAKE_LIBRARY_ARCHITECTURE is not set, so here we build it manually
+    if(NOT CMAKE_LIBRARY_ARCHITECTURE)
+      set(arch "${CMAKE_SYSTEM_PROCESSOR}")
+      string(TOLOWER "${CMAKE_SYSTEM_NAME}" os)
+
+      if(arch STREQUAL "x86_64" OR arch STREQUAL "aarch64")
+        set(lib_arch "${arch}-linux-gnu")
+      else()
+        set(lib_arch "${arch}-${os}")
+      endif()
+
+      set(CMAKE_LIBRARY_ARCHITECTURE
+          "${lib_arch}"
+          CACHE INTERNAL "Guessed library architecture")
+    endif()
     set(os_string "${CMAKE_LIBRARY_ARCHITECTURE}")
   elseif(WIN32)
     set(rel_rpath "")
