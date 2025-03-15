@@ -447,20 +447,6 @@ def setup_package():
         )
     ]
 
-    if Components.MUSIC:
-        music_extensions = [
-            CyExtension(
-                "neuronmusic",
-                ["src/neuronmusic/neuronmusic.pyx"],
-                include_dirs=["src/nrnpython", "src/nrnmusic"],
-                language="c++",
-                **extension_common_params,
-            )
-        ]
-        for ext in music_extensions:
-            ext.cython_c_in_temp = True
-            extensions.append(ext)
-
     # package name
     package_name = "NEURON"
 

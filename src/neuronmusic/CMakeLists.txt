@@ -30,6 +30,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       INCLUDES
       "${pyinc}"
       "${MUSIC_ROOT}/include"
+      "${MPI_C_INCLUDE_DIRS}"
       ${PROJECT_SOURCE_DIR}/src/nrnpython
       ${CMAKE_CURRENT_SOURCE_DIR}
       LIBRARIES
@@ -54,6 +55,7 @@ else()
     INCLUDES
     "${NRN_DEFAULT_PYTHON_INCLUDES}"
     "${MUSIC_ROOT}/include"
+    "${MPI_C_INCLUDE_DIRS}"
     ${PROJECT_SOURCE_DIR}/src/nrnpython
     ${CMAKE_CURRENT_SOURCE_DIR}
     OUTPUT_DIR
