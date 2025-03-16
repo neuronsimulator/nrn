@@ -44,7 +44,8 @@ def get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(args, kwargs):
             rate1 = args[1]
             rate2 = args[2]
         else:
-            scheme = args[0] > args[1]
+            scheme = args[0].__gt__(args[1])
+            # don't use '>' to avoid Python prioritizing subclass methods
             rate1 = args[2]
             rate2 = None
     elif len(args) == 2:
