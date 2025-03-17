@@ -47,6 +47,13 @@ else()
   list(APPEND INCLUDE_DIRS ../ivos)
 endif()
 
+# module install = installation using CMake
+if(NRN_ENABLE_MODULE_INSTALL)
+  set(libraries_rpath "/../../")
+else()
+  set(libraries_rpath "/.data/lib/")
+endif()
+
 # user has selected dynamic python support (could be multiple versions)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
@@ -69,18 +76,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
     # the hoc Python library
-
-    # module install = installation using CMake
-    if(NOT NRN_ENABLE_MODULE_INSTALL)
-      # taken from setup.py
-      set(libraries_rpath "/.data/lib/")
-    else()
-      # taken from setup.py
-      set(libraries_rpath "/../../")
-    endif()
-
     set(hoc_module_name hoc${pyver})
-
     add_nrn_python_library(
       hoc
       TARGET
@@ -137,16 +133,7 @@ else()
   make_nanobind_target(nanobind ${NRN_DEFAULT_PYTHON_INCLUDES})
   target_link_libraries(nrnpython nanobind)
 
-  # module install = installation using CMake
-  if(NOT NRN_ENABLE_MODULE_INSTALL)
-    # taken from setup.py
-    set(libraries_rpath "/.data/lib/")
-  else()
-    # taken from setup.py
-    set(libraries_rpath "/../../")
-  endif()
-
-  # hoc*.so
+  # the hoc Python library
   set(hoc_module_name "hoc_module")
   add_nrn_python_library(
     hoc
@@ -201,17 +188,6 @@ install(
 # =============================================================================
 if(NRN_ENABLE_MODULE_INSTALL)
 
-  # Setup MinGW toolchain for setuptools
-  if(MINGW)
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/setup.cfg "[build]\ncompiler=mingw32")
-
-    # replace windows path of the form C:/msys64 to C:\msys64
-    string(REPLACE ":/" ":\\\\" module_install_opts "${NRN_MODULE_INSTALL_OPTIONS}")
-    set(NRN_MODULE_INSTALL_OPTIONS
-        "${module_install_opts}"
-        CACHE INTERNAL "" FORCE)
-  endif()
-
   # copy all files from `${CMAKE_SOURCE_DIR}/share/lib/python` to `${CMAKE_BINARY_DIR}/lib/python`
   set(SRC_DIR "${PROJECT_SOURCE_DIR}/share/lib/python/neuron")
   set(DST_DIR "${PROJECT_BINARY_DIR}/lib/python/neuron")
@@ -238,5 +214,4 @@ else()
   # Make sure this is included in the wheels
   install(FILES "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
           DESTINATION lib/python/neuron)
-  install(TARGETS ${hoc_module_name} DESTINATION lib/python/neuron)
 endif()
