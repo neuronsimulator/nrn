@@ -2,12 +2,11 @@ wheel
 setuptools<=70.3.0
 scikit-build
 matplotlib
-# bokeh 3 seems to break docs notebooks
-bokeh<3
+bokeh>=3
 ipython
-cython<3
+cython>=3
 packaging
 pytest
 pytest-cov
 mpi4py
-numpy<2
+numpy>=2
