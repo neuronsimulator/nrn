@@ -48,7 +48,7 @@ function(add_nrn_python_library name)
     set(lib_suffix ".so")
     set(python_interp "cpython-")
   elseif(UNIX AND NOT APPLE)
-    set(rel_rpath "\\\$ORIGIN")
+    set(rel_rpath "\$ORIGIN")
     # sometimes CMAKE_LIBRARY_ARCHITECTURE is not set, so here we build it manually
     if(NOT CMAKE_LIBRARY_ARCHITECTURE)
       set(arch "${CMAKE_SYSTEM_PROCESSOR}")
