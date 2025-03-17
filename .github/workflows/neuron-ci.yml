@@ -34,6 +34,7 @@ jobs:
     env:
       INSTALL_DIR: install
       SDK_ROOT: $(xcrun --sdk macosx --show-sdk-path)
+      SKIP_WHEELHOUSE_REPAIR: true
       BUILD_TYPE: Release
       DESIRED_CMAKE_VERSION: 3.17
       DYNAMIC_PYTHON_CMAKE_VERSION: 3.18
