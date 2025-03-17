@@ -64,7 +64,7 @@ build_wheel_linux() {
     pip install 'auditwheel<=6.2.0'
     cp packaging/python/build_requirements.txt "${python_requirements_path}"
 
-    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
+    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3,NRN_ENABLE_MODULE_INSTALL=OFF"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
       CMAKE_DEFS="$CMAKE_DEFS,NRN_BINARY_DIST_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
     fi
@@ -119,7 +119,7 @@ build_wheel_osx() {
     echo " - Installing build requirements"
     cp packaging/python/build_requirements.txt "${python_requirements_path}"
 
-    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
+    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3,NRN_ENABLE_MODULE_INSTALL=OFF"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
       CMAKE_DEFS="$CMAKE_DEFS,NRN_BINARY_DIST_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
     fi
