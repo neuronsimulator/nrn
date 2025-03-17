@@ -437,6 +437,13 @@ jobs:
           INSTALL_DIR : ${{ runner.workspace }}/install
           MATRIX_EVAL: ${{ matrix.config.matrix_eval }}
 
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: neuron_wheel
+          path: wheelhouse/*.whl
+
       - name: Save compiler cache
         uses: actions/cache/save@v4
         if: always() && steps.restore-compiler-cache.outputs.cache-hit != 'true'
