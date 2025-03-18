@@ -410,7 +410,7 @@ def setup_package():
     NRN_COLLECT_DIRS = ["bin", "lib", "include", "share"]
 
     docs_require = []  # sphinx, themes, etc
-    maybe_rxd_reqs = ["numpy<2", "Cython<3"] if Components.RX3D else []
+    maybe_rxd_reqs = ["numpy", "Cython"] if Components.RX3D else []
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ["pytest-runner"] if "test" in sys.argv else []
 

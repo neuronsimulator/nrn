@@ -1596,13 +1596,16 @@ PyObject* nrnpy_forall(PyObject* self, PyObject* args) {
 static PyObject* hocobj_iter(PyObject* self) {
     //	printf("hocobj_iter %p\n", self);
     PyHocObject* po = (PyHocObject*) self;
-    if (po->type_ == PyHoc::HocObject) {
+    if (po->type_ == PyHoc::HocObject || po->type_ == PyHoc::HocSectionListIterator) {
         if (po->ho_->ctemplate == hoc_vec_template_) {
             return PySeqIter_New(self);
         } else if (po->ho_->ctemplate == hoc_list_template_) {
             return PySeqIter_New(self);
         } else if (po->ho_->ctemplate == hoc_sectionlist_template_) {
             // need a clone of self so nested loops do not share iteritem_
+            // The HocSectionListIter arm of the outer 'if' became necessary
+            // at Python-3.13.1 upon which the following body is executed
+            // twice. See https://github.com/python/cpython/issues/127682
             PyObject* po2 = nrnpy_ho2po(po->ho_);
             PyHocObject* pho2 = (PyHocObject*) po2;
             pho2->type_ = PyHoc::HocSectionListIterator;
