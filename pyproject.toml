@@ -47,24 +47,32 @@ metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 
 [tool.scikit-build.cmake.define]
 MACOSX_DEPLOYMENT_TARGET = "11.0"
-NRN_BINARY_DIST_BUILD = "ON"
+NRN_BINARY_DIST_BUILD = {default="OFF", env="NRN_BINARY_DIST_BUILD"}
 NRN_WHEEL_STATIC_READLINE = {env="NRN_WHEEL_STATIC_READLINE", default="OFF"}
 NRN_LINK_AGAINST_PYTHON = "OFF"
 # coreNEURON is enabled for shipped wheels
-NRN_ENABLE_CORENEURON = "ON"
+NRN_ENABLE_CORENEURON = {env="NRN_ENABLE_CORENEURON", default="OFF"}
 # RX3D is always enabled
-NRN_ENABLE_RX3D = "ON"
+NRN_ENABLE_RX3D = {default="ON", env="NRN_ENABLE_RX3D"}
+NRN_RX3D_OPT_LEVEL = {env="NRN_RX3D_OPT_LEVEL", default="0"}
 # interviews is always enabled
-NRN_ENABLE_INTERVIEWS = "ON"
+NRN_ENABLE_INTERVIEWS = {default="ON", env="NRN_ENABLE_INTERVIEWS"}
 IV_ENABLE_X11_DYNAMIC = "ON"
 # specific options
 NRN_ENABLE_PYTHON_DYNAMIC = "ON"
 NRN_ENABLE_MODULE_INSTALL = "OFF"
 NRN_ENABLE_REL_RPATH = "ON"
 CMAKE_VERBOSE_MAKEFILE = "OFF"
+# for MUSIC
+# NOTE: when building wheels with MUSIC, modify CMAKE_PREFIX_PATH as well to
+# include MUSIC_ROOT
+NRN_ENABLE_MUSIC = {default="OFF", env="NRN_ENABLE_MUSIC"}
+MUSIC_ROOT = {default="", env="MUSIC_ROOT"}
 # for coreNEURON (turn on for Linux)
 CORENRN_ENABLE_OPENMP = {env="CORENRN_ENABLE_OPENMP", default="OFF"}
 NMODL_ENABLE_PYTHON_BINDINGS = "ON"
+# MPI options
+NRN_ENABLE_MPI = {default="ON", env="NRN_ENABLE_MPI"}
 # as a workaround for the fact that MPI headers are platform-specific
 # NOTE: these MUST be set in the CI env!
 NRN_MPI_DYNAMIC = {env="NRN_MPI_DYNAMIC"}
@@ -77,14 +85,13 @@ manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28
 manylinux-x86_64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64"
 skip = ["pp*", "*-win32", "*-manylinux_i686", "*-musllinux_i686", "*-musllinux_x86_64", "*-musllinux_aarch64"]
 
+[tool.cibuildwheel.linux]
+environment = { CMAKE_PREFIX_PATH="/nrnwheel/ncurses;/nrnwheel/readline", CORENRN_ENABLE_OPENMP="ON", NRN_MPI_DYNAMIC="/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)", NRN_WHEEL_STATIC_READLINE="ON", NRN_ENABLE_CORENEURON="ON" }
+environment-pass = ["CMAKE_PREFIX_PATH", "CORENRN_ENABLE_OPENMP", "NRN_MPI_DYNAMIC", "NRN_WHEEL_STATIC_READLINE", "SETUPTOOLS_SCM_PRETEND_VERSION", "NRN_ENABLE_CORENEURON"]
+repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so'"
+
 [tool.cibuildwheel.macos]
-environment = { CMAKE_PREFIX_PATH="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11", NRN_MPI_DYNAMIC="$(brew --prefix)/opt/openmpi/include;$(brew --prefix)/opt/mpich/include", NRN_WHEEL_STATIC_READLINE="ON" }
+environment = { CMAKE_PREFIX_PATH="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11", NRN_MPI_DYNAMIC="$(brew --prefix)/opt/openmpi/include;$(brew --prefix)/opt/mpich/include", NRN_WHEEL_STATIC_READLINE="ON", NRN_ENABLE_CORENEURON="ON" }
 # workaround for NMODL issue when building in temp dir
 config-settings = {build-dir = "_build"}
 test-command = "true"
-
-[tool.cibuildwheel.linux]
-# we set NRN_MPI_DYNAMIC here since we have full control of the container
-environment = { CMAKE_PREFIX_PATH="/nrnwheel/ncurses;/nrnwheel/readline", CORENRN_ENABLE_OPENMP="ON", NRN_MPI_DYNAMIC="/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)", NRN_WHEEL_STATIC_READLINE="ON" }
-environment-pass = ["CMAKE_PREFIX_PATH", "CORENRN_ENABLE_OPENMP", "NRN_MPI_DYNAMIC", "NRN_WHEEL_STATIC_READLINE", "SETUPTOOLS_SCM_PRETEND_VERSION"]
-repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so'"
