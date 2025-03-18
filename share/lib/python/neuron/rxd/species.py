@@ -537,7 +537,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         """
         if r == self._region():
             return self
-        raise RxDException(f"{repr(self)} is not defined on {repr(r)}")
+        raise RxDException(f"{repr(self)} is not defined on region {repr(r)}")
 
     @property
     def states(self):
