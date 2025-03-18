@@ -159,7 +159,10 @@ fi
 
 # enable coreneuron support: "coreneuron" enables support (default: without coreneuron)
 # this should be removed/improved once wheel is stable
-coreneuron="${3:-}"
+coreneuron=
+if [[ $# -ge 3 ]]; then
+    coreneuron="${3}"
+fi
 
 
 case "${platform}" in
