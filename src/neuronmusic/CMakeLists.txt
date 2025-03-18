@@ -7,7 +7,7 @@ cythonize(
   OUTPUT
   ${CMAKE_CURRENT_BINARY_DIR}/${source}.cpp
   LANGUAGE
-  "C"
+  "CXX"
   PYTHON_EXECUTABLE
   ${NRN_DEFAULT_PYTHON_EXECUTABLE})
 

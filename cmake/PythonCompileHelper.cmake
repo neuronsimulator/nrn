@@ -1,23 +1,24 @@
 # cmake-format: off
-# Helper for compiling Python modules currently used for the following modules:
+# Helper for compiling Python modules
+# currently used for the following modules:
 # - neuron.hoc
 # - neuron.rxd.geometry3d.surfaces
 # - neuron.rxd.geometry3d.ctng
 # - neuron.rxd.geometry3d.graphicsPrimitives
-# - neuron music module
+# - neuronmusic
 # cmake-format: on
 
 # convert a pyx file into a c or cpp file
 function(cythonize input_file)
   cmake_parse_arguments(ARG "" "LANGUAGE;PYTHON_EXECUTABLE;OUTPUT" "" ${ARGN})
-  string(TOLOWER "${ARG_LANGUAGE}" ARG_LANGUAGE)
-  if(ARG_LANGUAGE STREQUAL "c++")
+  string(TOUPPER "${ARG_LANGUAGE}" ARG_LANGUAGE)
+  if(ARG_LANGUAGE STREQUAL "CXX")
     add_custom_command(
       OUTPUT ${ARG_OUTPUT}
       COMMAND ${ARG_PYTHON_EXECUTABLE} -m cython --cplus ${input_file} --output-file ${ARG_OUTPUT}
       DEPENDS ${input_file}
       VERBATIM)
-  elseif(ARG_LANGUAGE STREQUAL "c")
+  elseif(ARG_LANGUAGE STREQUAL "C")
     add_custom_command(
       OUTPUT ${ARG_OUTPUT}
       COMMAND ${ARG_PYTHON_EXECUTABLE} -m cython ${input_file} --output-file ${ARG_OUTPUT}
