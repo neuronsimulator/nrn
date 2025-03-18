@@ -39,7 +39,7 @@ parse_dirs() {
     OUTPUT_VAR="${2}"
     for dir in ${INPUT_VAR}
     do
-        if [ -d "${dir}" ]; then
+        if [[ -d "${dir}" ]]; then
             OUTPUT_VAR="${OUTPUT_VAR};${dir}"
         fi
     done
@@ -100,7 +100,7 @@ build_wheel_portable() {
 
 # for building non-portable wheels
 build_wheel_local() {
-    interp="$(command -v python3)"
+    interp="${1:-}"
     echo "[BUILD WHEEL] Building with interpreter ${interp}"
     local skip=
     setup_venv "${interp}"
@@ -109,7 +109,7 @@ build_wheel_local() {
     echo " - Building..."
     rm -rf _build
 
-    if [[ "${2}" == "coreneuron" ]]; then
+    if [[ "${2:-}" == "coreneuron" ]]; then
         NRN_ENABLE_CORENEURON=ON
         # on Linux we also enable OpenMP support
         if [[ "$(uname -s)" == "${PLATFORM_LINUX}" ]]; then
@@ -144,11 +144,12 @@ platform="${1}"
 
 
 # Python version for which to build the wheel; '3*' (default) means all Python 3 versions
-python_wheel_version=
-if [ $# -ge 2 ]; then
-    python_wheel_version="${2}"
+# note that if `platform=CI`, then this represents the _interpreter path_ instead
+python_version_or_interpreter=
+if [[ $# -ge 2 ]]; then
+    python_version_or_interpreter="${2}"
     CIBW_BUILD=""
-    for ver in ${python_wheel_version}; do
+    for ver in ${python_version_or_interpreter}; do
         # we only build cpython-compatible wheels for now
         CIBW_BUILD="${CIBW_BUILD} cp${ver}*"
     done
@@ -181,7 +182,7 @@ case "${platform}" in
     else
         collect_dirs_linux
     fi
-    build_wheel_local "${coreneuron}"
+    build_wheel_local "${python_version_or_interpreter}" "${coreneuron}"
     ;;
 
   *)
