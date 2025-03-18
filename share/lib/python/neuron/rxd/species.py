@@ -537,7 +537,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         """
         if r == self._region():
             return self
-        raise RxDException("no such region")
+        raise RxDException(f"{repr(self)} is not defined on {repr(r)}")
 
     @property
     def states(self):
@@ -1983,7 +1983,7 @@ class Species(_SpeciesMathable):
                         self, self._extracellular_instances[r]
                     )
                 return self._species_on_region[r]
-        raise RxDException("no such region")
+        raise RxDException(f"{repr(self)} is not defined on region {repr{r})")
 
     def _update_node_data(self):
         nsegs_changed = 0
@@ -2473,7 +2473,7 @@ class Parameter(Species):
                         self, self._extracellular_instances[r]
                     )
                 return self._species_on_region[r]
-        raise RxDException("no such region")
+        raise RxDException(f"{repr(self)} not defined on region {repr(r)}")
 
 
 class ParameterOnRegion(SpeciesOnRegion):
