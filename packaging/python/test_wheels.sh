@@ -7,13 +7,13 @@ set -xe
 # on uname -m. Note that this is just wheel testing script.
 ARCH_DIR="$(uname -m)"
 
-if [ ! -f setup.py ]; then
+if [ ! -f pyproject.toml ]; then
     echo "Error: Please launch $0 from the root dir"
     exit 1
 fi
 
 if [ "$#" -lt 2 ]; then
-    echo "Usage: $(basename $0) python_exe python_wheel [use_virtual_env]"
+    echo "Usage: $(basename "$0") python_exe python_wheel [use_virtual_env]"
     exit 1
 fi
 
