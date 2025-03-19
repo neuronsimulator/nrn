@@ -1983,7 +1983,7 @@ class Species(_SpeciesMathable):
                         self, self._extracellular_instances[r]
                     )
                 return self._species_on_region[r]
-        raise RxDException(f"{repr(self)} is not defined on region {repr{r})")
+        raise RxDException(f"{repr(self)} is not defined on region {repr(r)}")
 
     def _update_node_data(self):
         nsegs_changed = 0
