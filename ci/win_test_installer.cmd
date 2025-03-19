@@ -17,8 +17,6 @@ echo %NEURONHOME%
 if not exist association.hoc.out (start /wait /REALTIME %cd%\ci\association.hoc)
 
 :: test all pythons
-C:\Python37\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
-C:\Python38\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python39\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python310\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python311\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
@@ -26,8 +24,6 @@ C:\Python312\python -c "import neuron; neuron.test(); quit()" || set "errorfound
 C:\Python313\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 
 :: install oldest supported numpy
-C:\Python37\python.exe -m pip install -r packaging/python/oldest_numpy_requirements.txt || goto :error
-C:\Python38\python.exe -m pip install -r packaging/python/oldest_numpy_requirements.txt || goto :error
 C:\Python39\python.exe -m pip install -r packaging/python/oldest_numpy_requirements.txt || goto :error
 C:\Python310\python.exe -m pip install -r packaging/python/oldest_numpy_requirements.txt || goto :error
 C:\Python311\python.exe -m pip install -r packaging/python/oldest_numpy_requirements.txt || goto :error
@@ -35,8 +31,6 @@ C:\Python312\python.exe -m pip install -r packaging/python/oldest_numpy_requirem
 C:\Python313\python.exe -m pip install -r packaging/python/oldest_numpy_requirements.txt || goto :error
 
 :: test all pythons again
-C:\Python37\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
-C:\Python38\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python39\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python310\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python311\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
