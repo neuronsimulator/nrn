@@ -1,62 +1,70 @@
-[project]
-name = "NEURON"
-description = "Empirically-based simulator for modeling neurons and networks of neurons"
-authors = [
-    {name="Michael Hines", email="michael.hines@yale.edu"},
-    {name="Yale"},
-    {name="Blue Brain Project"}
-]
-# maintainer is the field chosen for docs `contributors`
-maintainers = [{name="Michael Hines"}]
-license = {file ="Copyright"}
-readme = {file = "README.md", content-type="text/markdown"}
-classifiers = [
-   "Programming Language :: C++",
-   "Programming Language :: Python",
-   "Topic :: Scientific/Engineering",
-   "License :: Other/Proprietary License",
-]
-dynamic = ["version"]
-requires-python = ">=3.9"
-dependencies = ["numpy>=1.9.3", "packaging", "find_libpython", "setuptools"]
-
-[project.urls]
-website = "https://neuron.yale.edu/neuron/"
-source = "https://github.com/neuronsimulator/nrn"
-
 [build-system]
-requires = [
-    "setuptools-scm",
-    "scikit-build-core",
-    "cython",
-    "numpy",
-    "Jinja2>=2.9.3",
-    "PyYAML>=3.13",
-    "pytest",
-    "sympy",
-]
 build-backend = "scikit_build_core.build"
+
+requires = [
+  "cython",
+  "jinja2>=2.9.3",
+  "numpy",
+  "pytest",
+  "pyyaml>=3.13",
+  "scikit-build-core",
+  "setuptools-scm",
+  "sympy",
+]
+
+[project]
+name = "neuron"
+description = "Empirically-based simulator for modeling neurons and networks of neurons"
+readme = { file = "README.md", content-type = "text/markdown" }
+license = { file = "Copyright" }
+# maintainer is the field chosen for docs `contributors`
+maintainers = [ { name = "Michael Hines" } ]
+authors = [
+  { name = "Michael Hines", email = "michael.hines@yale.edu" },
+  { name = "Yale" },
+  { name = "Blue Brain Project" },
+]
+requires-python = ">=3.9"
+classifiers = [
+  "License :: Other/Proprietary License",
+  "Programming Language :: C++",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering",
+]
+dynamic = [ "version" ]
+dependencies = [ "find-libpython", "numpy>=1.9.3", "packaging", "setuptools" ]
+
+urls.source = "https://github.com/neuronsimulator/nrn"
+urls.website = "https://neuron.yale.edu/neuron/"
+
+[tool.setuptools_scm]
 
 [tool.scikit-build]
 # where all of the Python files are located
-wheel.packages = ["share/lib/python/neuron"]
+wheel.packages = [ "share/lib/python/neuron" ]
 # where CMake will place all of the other files
 wheel.install-dir = "neuron/.data/"
-wheel.exclude = ["**.c", "**.cpp", "**.o"]
+wheel.exclude = [ "**.c", "**.cpp", "**.o" ]
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 
 [tool.scikit-build.cmake.define]
 MACOSX_DEPLOYMENT_TARGET = "11.0"
-NRN_BINARY_DIST_BUILD = {default="OFF", env="NRN_BINARY_DIST_BUILD"}
-NRN_WHEEL_STATIC_READLINE = {env="NRN_WHEEL_STATIC_READLINE", default="OFF"}
+NRN_BINARY_DIST_BUILD = { default = "OFF", env = "NRN_BINARY_DIST_BUILD" }
+NRN_WHEEL_STATIC_READLINE = { env = "NRN_WHEEL_STATIC_READLINE", default = "OFF" }
 NRN_LINK_AGAINST_PYTHON = "OFF"
 # coreNEURON is enabled for shipped wheels
-NRN_ENABLE_CORENEURON = {env="NRN_ENABLE_CORENEURON", default="OFF"}
+NRN_ENABLE_CORENEURON = { env = "NRN_ENABLE_CORENEURON", default = "OFF" }
 # RX3D is always enabled
-NRN_ENABLE_RX3D = {default="ON", env="NRN_ENABLE_RX3D"}
-NRN_RX3D_OPT_LEVEL = {env="NRN_RX3D_OPT_LEVEL", default="0"}
+NRN_ENABLE_RX3D = { default = "ON", env = "NRN_ENABLE_RX3D" }
+NRN_RX3D_OPT_LEVEL = { env = "NRN_RX3D_OPT_LEVEL", default = "0" }
 # interviews is always enabled
-NRN_ENABLE_INTERVIEWS = {default="ON", env="NRN_ENABLE_INTERVIEWS"}
+NRN_ENABLE_INTERVIEWS = { default = "ON", env = "NRN_ENABLE_INTERVIEWS" }
 IV_ENABLE_X11_DYNAMIC = "ON"
 # specific options
 NRN_ENABLE_PYTHON_DYNAMIC = "ON"
@@ -66,32 +74,48 @@ CMAKE_VERBOSE_MAKEFILE = "OFF"
 # for MUSIC
 # NOTE: when building wheels with MUSIC, modify CMAKE_PREFIX_PATH as well to
 # include MUSIC_ROOT
-NRN_ENABLE_MUSIC = {default="OFF", env="NRN_ENABLE_MUSIC"}
-MUSIC_ROOT = {default="", env="MUSIC_ROOT"}
+NRN_ENABLE_MUSIC = { default = "OFF", env = "NRN_ENABLE_MUSIC" }
+MUSIC_ROOT = { default = "", env = "MUSIC_ROOT" }
 # for coreNEURON (turn on for Linux)
-CORENRN_ENABLE_OPENMP = {env="CORENRN_ENABLE_OPENMP", default="OFF"}
+CORENRN_ENABLE_OPENMP = { env = "CORENRN_ENABLE_OPENMP", default = "OFF" }
 NMODL_ENABLE_PYTHON_BINDINGS = "ON"
 # MPI options
-NRN_ENABLE_MPI = {default="ON", env="NRN_ENABLE_MPI"}
+NRN_ENABLE_MPI = { default = "ON", env = "NRN_ENABLE_MPI" }
 # as a workaround for the fact that MPI headers are platform-specific
 # NOTE: these MUST be set in the CI env!
-NRN_MPI_DYNAMIC = {env="NRN_MPI_DYNAMIC"}
-CMAKE_PREFIX_PATH = {env="CMAKE_PREFIX_PATH"}
-
-[tool.setuptools_scm]
+NRN_MPI_DYNAMIC = { env = "NRN_MPI_DYNAMIC" }
+CMAKE_PREFIX_PATH = { env = "CMAKE_PREFIX_PATH" }
 
 [tool.cibuildwheel]
 manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64"
 manylinux-x86_64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64"
-skip = ["pp*", "*-win32", "*-manylinux_i686", "*-musllinux_i686", "*-musllinux_x86_64", "*-musllinux_aarch64"]
+skip = [ "pp*", "*-win32", "*-manylinux_i686", "*-musllinux_i686", "*-musllinux_x86_64", "*-musllinux_aarch64" ]
 
 [tool.cibuildwheel.linux]
-environment = { CMAKE_PREFIX_PATH="/nrnwheel/ncurses;/nrnwheel/readline", CORENRN_ENABLE_OPENMP="ON", NRN_MPI_DYNAMIC="/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)", NRN_WHEEL_STATIC_READLINE="ON", NRN_ENABLE_CORENEURON="ON" }
-environment-pass = ["CMAKE_PREFIX_PATH", "CORENRN_ENABLE_OPENMP", "NRN_MPI_DYNAMIC", "NRN_WHEEL_STATIC_READLINE", "SETUPTOOLS_SCM_PRETEND_VERSION", "NRN_ENABLE_CORENEURON"]
+environment-pass = [
+  "CMAKE_PREFIX_PATH",
+  "NRN_MPI_DYNAMIC",
+  "NRN_WHEEL_STATIC_READLINE",
+  "NRN_ENABLE_CORENEURON",
+  "CORENRN_ENABLE_OPENMP",
+  "SETUPTOOLS_SCM_PRETEND_VERSION",
+]
 repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so'"
 
+[tool.cibuildwheel.linux.environment]
+CMAKE_PREFIX_PATH = "/nrnwheel/ncurses;/nrnwheel/readline"
+NRN_MPI_DYNAMIC = "/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)"
+NRN_WHEEL_STATIC_READLINE = "ON"
+NRN_ENABLE_CORENEURON = "ON"
+CORENRN_ENABLE_OPENMP = "ON"
+
 [tool.cibuildwheel.macos]
-environment = { CMAKE_PREFIX_PATH="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11", NRN_MPI_DYNAMIC="$(brew --prefix)/opt/openmpi/include;$(brew --prefix)/opt/mpich/include", NRN_WHEEL_STATIC_READLINE="ON", NRN_ENABLE_CORENEURON="ON" }
 # workaround for NMODL issue when building in temp dir
-config-settings = {build-dir = "_build"}
+config-settings = { build-dir = "_build" }
 test-command = "true"
+
+[tool.cibuildwheel.macos.environment]
+CMAKE_PREFIX_PATH = "/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11"
+NRN_MPI_DYNAMIC = "$(brew --prefix)/opt/openmpi/include;$(brew --prefix)/opt/mpich/include"
+NRN_WHEEL_STATIC_READLINE = "ON"
+NRN_ENABLE_CORENEURON = "ON"
