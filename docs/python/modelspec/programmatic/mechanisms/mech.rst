@@ -71,7 +71,7 @@ General
         .. code-block::
             python
 
-            >>> s = h.Section(name='s')
+            >>> s = h.Section('s')
             >>> ic = h.IClamp(s(0.5))
             >>> ic.get_segment()
             s(0.5)
@@ -331,12 +331,12 @@ General
             from neuron import h
 
             # setup for three simulations
-            s1 = h.Section(name='s1')
-            s2 = h.Section(name='s2')
-            s3 = h.Section(name='s3')
+            s1 = h.Section('s1')
+            s2 = h.Section('s2')
+            s3 = h.Section('s3')
 
             for sec in [s1, s2, s3]:
-                sec.insert('hh')   # equivalently: sec.insert(h.hh)
+                sec.insert(h.hh)
                 sec.L = sec.diam = 3
 
             c1 = h.IClamp(s1(0.5))
@@ -363,7 +363,7 @@ General
 
             while h.t < 0.4:
                 h.fadvance()
-                print('%11g %11g %11g %11g %11g %11g' % (s1.v, s2.v, s3.v, c1.i, c2.i, c3.i))
+                print(f'{s1.v:11g} {s2.v:11g} {s3.v:11g} {c1.i:11g} {c2.i:11g} {c3.i:11g}')
                         
 
         Output:

@@ -38,7 +38,7 @@ SaveState
             from neuron.units import mV, ms
             h.load_file("stdrun.hoc")
 
-            soma = h.Section(name="soma")
+            soma = h.Section("soma")
             soma.insert(h.hh)
             soma.nseg = 51
             cyt = rxd.Region(h.allsec(), name="cyt")

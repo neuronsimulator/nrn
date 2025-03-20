@@ -483,7 +483,7 @@ Graph
                 g.begin()
                 for h.t in range(4000):
                     g.plot(h.t) 
-                    if (h.t % 10 == 0) :
+                    if h.t % 10 == 0:
                         g.fastflush() 
                         h.doNotify() 
                 g.flush() 
@@ -515,16 +515,16 @@ Graph
         graphical user interface. 
 
 
-        1 
+        ``True`` 
             equivalent to the sequence ---Erase lines; Keep Lines toggled on; 
             use current graph color and brush when plotting the lines. 
 
-        0 
+        ``False`` 
             Turn off family mode. Original color restored to plot expressions; 
             Keep Lines toggled off. 
 
          
-        With a string argument which is a variable name, 
+        With a string argument which is a HOC variable name, 
         the string is printed as a label and when keep lines 
         is selected each line is labeled with the value of the variable. 
          
@@ -569,18 +569,11 @@ Graph
         .. code::
 
             from neuron import h, gui
-            import numpy
+            import numpy as np
 
-            num_elements = 629
-
-            x = h.Vector(num_elements)
-            y = h.Vector(num_elements)
-
-            # fill x with 0, 0.01, 0.02, etc
-            x.indgen(0.01)
-
-            # set y to the sin of x via numpy
-            y.as_numpy()[:] = numpy.sin(x)
+            # x = 0, 0.01, 0.02, ..., 6.28
+            x = h.Vector(np.arange(0., 6.29, 0.01))
+            y = h.Vector(np.sin(x))
 
             # create the graph
             g = h.Graph()
@@ -1132,12 +1125,12 @@ Graph
 
             def crossact(x, y, c):
               '''For g.crosshair_action(crossact)'''
-              print ("x=%g y=%g c=%c" % (x, y, int(c)))
+              print (f"x={x} y={y} c={int(c)}")
 
-            def crossact_vflag1(i, c, xvec, yvec):
+            def crossact_vflag1(i, c, x, y):
               '''For g.crosshair_action(crossact_vflag1, 1)'''
               i = int(i)
-              print ("i=%d x[i]=%g y[i]=%g c=%c" % (i, xvec[i], yvec[i], int(c)))
+              print (f"i={i} x[i]={x[i]} y[i]={y[i]} c={int(c)}")
 
             g.crosshair_action(crossact_vflag1, 1)
 
@@ -1154,18 +1147,11 @@ Graph
             python
 
             from neuron import h, gui
-            import numpy
+            import numpy as np
 
-            num_elements = 629
-
-            x = h.Vector(num_elements)
-            y = h.Vector(num_elements)
-
-            # fill x with 0, 0.01, 0.02, etc
-            x.indgen(0.01)
-
-            # set y to the sin of x via numpy
-            y.as_numpy()[:] = numpy.sin(x)
+            # x = 0, 0.01, 0.02, ..., 6.28
+            x = h.Vector(np.arange(0., 6.29, 0.01))
+            y = h.Vector(np.sin(x))
 
             # create the graph
             g = h.Graph()
@@ -1173,7 +1159,7 @@ Graph
             g.vector(num_elements, x._ref_x[0], y._ref_x[0])
 
             def crosshair(x, y, key):
-                print('x = %g, y = %g, key = %c' % (x, y, key)(
+                print(f'x = {x}, y = {y}, key = {key}')
 
             g.crosshair_action(crosshair)
 

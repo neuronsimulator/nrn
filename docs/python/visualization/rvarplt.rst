@@ -60,8 +60,8 @@ RangeVarPlot
 
             from neuron import h, gui
 
-            dend1 = h.Section(name='dend1')
-            dend2 = h.Section(name='dend2')
+            dend1 = h.Section('dend1')
+            dend2 = h.Section('dend2')
 
             for sec in h.allsec():
                 sec.nseg = sec.L = 501
@@ -92,8 +92,8 @@ RangeVarPlot
 
             from neuron import h, gui
 
-            dend1 = h.Section(name='dend1')
-            dend2 = h.Section(name='dend2')
+            dend1 = h.Section('dend1')
+            dend2 = h.Section('dend2')
 
             for sec in h.allsec():
                 sec.nseg = sec.L = 501
@@ -189,7 +189,7 @@ RangeVarPlot
             import bokeh.plotting as b
             import math
 
-            dend = h.Section(name='dend')
+            dend = h.Section('dend')
             dend.nseg = 55
             dend.L = 6.28
 

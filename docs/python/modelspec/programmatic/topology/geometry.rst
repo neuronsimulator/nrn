@@ -115,7 +115,7 @@ truncated cones as long as the diameter does not change too much.
     from neuron import h
     import numpy
 
-    sec = h.Section(name='sec')
+    sec = h.Section('sec')
     sec.nseg = 11
     sec.Ra = 100
     sec.L = 1000
@@ -184,7 +184,7 @@ Example:
         from neuron import h, gui
         import numpy
 
-        a, b, c, d, e = [h.Section(name=n) for n in ['a', 'b', 'c', 'd', 'e']]
+        a, b, c, d, e = [h.Section(n) for n in ['a', 'b', 'c', 'd', 'e']]
         b.connect(a)
         c.connect(b(1), 1) # connect the 1 end of c to the 1 end of b
         d.connect(b)
@@ -258,7 +258,7 @@ Example:
         h.xradiobutton("nseg = 101", (pr, 101))
         h.xpanel()
 
-        sec = h.Section(name='sec')
+        sec = h.Section('sec')
         sec.Ra = 100
         sec.L = 100
         sec.nseg = 3
@@ -337,7 +337,7 @@ Example:
         from neuron import h, gui
         from math import sin, cos
 
-        sec = h.Section(name='sec')
+        sec = h.Section('sec')
         sec.Ra=100 
         sec.nseg = 11 
         sec.pt3dclear() 
@@ -483,7 +483,7 @@ Defining the 3D Shape
             zvec = h.Vector(theta)
             dvec = h.Vector([1] * len(theta))
 
-            dend = h.Section(name='dend')
+            dend = h.Section('dend')
             h.pt3dadd(xvec, yvec, zvec, dvec, sec=dend)
 
             s = h.Shape()
@@ -975,8 +975,8 @@ Reading 3D Data from NEURON
 
             from neuron import h
 
-            soma = h.Section(name='soma')
-            dend = h.Section(name='dend')
+            soma = h.Section('soma')
+            dend = h.Section('dend')
             dend.connect(soma(0.5))       
             
             soma.L = 10
@@ -1039,7 +1039,7 @@ Reading 3D Data from NEURON
             diam_change_cnt = neuron.nrn_dll_sym('diam_change_cnt', ctypes.c_int)
             print(h.diam_changed, diam_change_cnt.value)    # 1 0
 
-            s = h.Section(name='s')
+            s = h.Section('s')
             print(h.diam_changed, diam_change_cnt.value)    # 1 0
 
             time.sleep(0.2)

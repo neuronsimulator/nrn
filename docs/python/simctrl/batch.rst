@@ -47,7 +47,7 @@ Running and Saving Batch Jobs
             from neuron import h
 
             # define a geometry
-            soma = h.Section(name="soma")
+            soma = h.Section("soma")
             soma.L = 10
             soma.diam = 10
 

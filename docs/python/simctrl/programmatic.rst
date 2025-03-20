@@ -164,7 +164,7 @@ Functions
 
             from neuron import h
 
-            soma = h.Section(name="soma")
+            soma = h.Section("soma")
             soma.insert(h.hh)
             print(f"default el_hh = {soma.el_hh}")
 
@@ -393,10 +393,10 @@ FInitializeHandler
             # specify an example model 
             from neuron import h, gui
 
-            a = h.Section(name="a")
-            b = h.Section(name="b")
+            a = h.Section("a")
+            b = h.Section("b")
 
-            for sec in h.allsec():
+            for sec in [a, b]:
                 sec.insert(h.hh)
 
             def fi0():
@@ -427,11 +427,11 @@ FInitializeHandler
                 def __init__(self):
                     self.fih = h.FInitializeHandler(self.p)
                 def p(self):
-                    print('inside %r.p()' % self)
+                    print(f'inside {self}.p()')
 
             test = Test() 
 
-            h.stdinit() 
+            h.finitialize(-65)
             fih[0].allprint() 
 
 

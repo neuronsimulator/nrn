@@ -572,7 +572,7 @@ Vector
                   from neuron import h
                   import pylab as plt, numpy as np
                   h.load_file('stdrun.hoc')
-                  sec = h.Section(name='sec')
+                  sec = h.Section('sec')
                   sec.insert(h.pas)
                   inp = np.zeros(500)
                   inp[50:250] = 1
@@ -597,7 +597,7 @@ Vector
             import numpy
 
             # create a geometry
-            soma = h.Section(name='soma')
+            soma = h.Section('soma')
 
             # insert variables for sodium ions
             soma.insert('na_ion')
