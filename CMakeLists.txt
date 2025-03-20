@@ -34,6 +34,24 @@ if(NOT "cxx_std_17" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
       "This compiler does not fully support C++17, choose a higher version or another compiler.")
 endif()
 
+# We modify the install prefix for _all_ non-Python files if we are building a wheel. Is there some
+# other way that doesn't involve modifying CMAKE_INSTALL_PREFIX directly? In short, since we are
+# relying on external packages (such as iv), then no, since that would require us to modify the
+# sources of those packages
+if(SKBUILD)
+  set(NRN_WHEEL_INSTALL_PREFIX "${SKBUILD_PLATLIB_DIR}/neuron/")
+  set(NRN_ORIGINAL_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
+  set(CMAKE_INSTALL_PREFIX "${SKBUILD_PLATLIB_DIR}/neuron/.data/")
+  set(FMT_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib")
+  set(FMT_INC_DIR "${CMAKE_INSTALL_PREFIX}/include")
+  set(FMT_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/pkgconfig")
+  set(FMT_CMAKE_DIR "${CMAKE_INSTALL_PREFIX}/cmake")
+  set(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
+else()
+  set(NRN_WHEEL_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/lib/python/neuron")
+  set(NRN_ORIGINAL_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
+endif()
+
 # =============================================================================
 # CMake common project settings
 # =============================================================================
@@ -558,12 +576,12 @@ if(NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON)
   # install nrnunits.lib and libpywrapper.so from external/nmodl
   install(
     FILES ${NMODL_PROJECT_PLATLIB_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
-    DESTINATION lib
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
     COMPONENT pywrapper
     OPTIONAL)
   install(
     FILES ${NMODL_PROJECT_PLATLIB_BINARY_DIR}/share/nmodl/nrnunits.lib
-    DESTINATION share/nmodl
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nmodl
     COMPONENT nrnunits)
 
   # set correct arguments for nmodl for cpu/gpu target
@@ -653,13 +671,13 @@ include(ConfigFileSetting)
 # well. Setting these here as setup.py.in needs it.
 # ~~~
 if(MINGW)
-  set(NRN_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX})
+  set(NRN_INSTALL_SHARE_DIR "")
   set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR})
-  set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/bin)
+  set(NRN_INSTALL_SHARE_LIB_DIR bin)
 else()
-  set(NRN_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX}/share/nrn)
+  set(NRN_INSTALL_SHARE_DIR share/nrn)
   set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR}/share/nrn)
-  set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib)
+  set(NRN_INSTALL_SHARE_LIB_DIR lib)
 endif()
 
 # =============================================================================
@@ -671,6 +689,7 @@ add_subdirectory(src/nrniv)
 
 if(NRN_ENABLE_PYTHON)
   add_subdirectory(src/nrnpython)
+  add_subdirectory(share/lib/python/neuron)
 endif()
 
 if(NRN_ENABLE_RX3D)
@@ -857,7 +876,13 @@ if(NRN_ENABLE_PYTHON)
     VERBATIM)
   add_dependencies(nrniv_lib help_data_dat)
   # also ensure help_data.dat is copied to the install location
-  install(FILES ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat DESTINATION lib/python/neuron)
+  if(SKBUILD)
+    install(FILES ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
+            DESTINATION ${CMAKE_INSTALL_PREFIX})
+  else()
+    install(FILES ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
+            DESTINATION lib/python/neuron)
+  endif()
 endif()
 
 include("${CODING_CONV_CMAKE}/build-time-copy.cmake") # cpp_cc_build_time_copy
@@ -941,12 +966,13 @@ endif()
 # =============================================================================
 install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib
-  DESTINATION ${NRN_INSTALL_SHARE_DIR}
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn
   PATTERN "python" EXCLUDE)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${NRN_INSTALL_SHARE_DIR})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn)
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
-        DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 # Copy NEURON headers that will be included in the installation into the build directory.
 set(headers_in_build_dir)
@@ -972,7 +998,7 @@ add_custom_target(
   COMMENT "Copying headers to build directory"
   DEPENDS ${headers_in_build_dir})
 add_dependencies(nrniv_lib copy_headers_to_build)
-install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION "${CMAKE_INSTALL_PREFIX}")
 
 if(NRN_MACOS_BUILD)
   # universal build for neurondemo needs to be after, or at end of, install
@@ -997,7 +1023,7 @@ if(MINGW)
     set(BASH_EXE "f:/msys64/usr/bin/bash.exe")
     message(WARNING "Can not find bash.exe, trying to use ${BASH_EXE}")
   endif()
-  install(PROGRAMS ${BASH_EXE} DESTINATION ${CMAKE_INSTALL_PREFIX}/mingw/usr/bin)
+  install(PROGRAMS ${BASH_EXE} DESTINATION mingw/usr/bin)
 endif()
 
 # =============================================================================

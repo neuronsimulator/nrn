@@ -594,10 +594,11 @@ endif()
 # For now, we keep this distinction as it reduces the PATH and is
 # expected when ctypes looks for dlls
 # ~~~
-install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
-install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+install(TARGETS nrniv nocmodl modlunit DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(TARGETS nrniv_lib DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 if(LIBIVX11DYNAM_NAME)
-  install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME} DESTINATION lib)
+  install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME}
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
 
 # =============================================================================
@@ -625,4 +626,5 @@ add_custom_target(
           ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h ${CMAKE_BINARY_DIR}/include/nrnconf.h)
 
 # For the installation
-install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
+install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn)

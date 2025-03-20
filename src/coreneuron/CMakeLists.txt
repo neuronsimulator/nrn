@@ -487,7 +487,7 @@ if(NRN_ENABLE_MPI AND NRN_ENABLE_MPI_DYNAMIC)
     PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
                LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
                POSITION_INDEPENDENT_CODE ON)
-  install(TARGETS ${corenrn_mpi_targets} DESTINATION lib)
+  install(TARGETS ${corenrn_mpi_targets} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
 
 # Suppress some compiler warnings.
@@ -630,42 +630,43 @@ install(
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   INCLUDES
-  DESTINATION $<INSTALL_INTERFACE:include>)
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 
 # headers and some standalone code files for nrnivmodl-core
 install(
   DIRECTORY ${CMAKE_BINARY_DIR}/include/coreneuron
-  DESTINATION include/
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/include/
   FILES_MATCHING
   PATTERN "*.h*"
   PATTERN "*.ipp")
-install(FILES ${MODFUNC_SHELL_SCRIPT} ${ENGINEMECH_CODE_FILE} DESTINATION share/coreneuron)
+install(FILES ${MODFUNC_SHELL_SCRIPT} ${ENGINEMECH_CODE_FILE}
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/coreneuron)
 
 # copy nmodl for nrnivmodl-core
-install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION bin)
+install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 # install nrniv-core app
 install(
   PROGRAMS ${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR}/special-core
-  DESTINATION bin
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
   RENAME nrniv-core)
-install(FILES apps/coreneuron.cpp DESTINATION share/coreneuron)
+install(FILES apps/coreneuron.cpp DESTINATION ${CMAKE_INSTALL_PREFIX}/share/coreneuron)
 
 # install mechanism library in shared library builds, if we're linking statically then there is no
 # need
 if(CORENRN_ENABLE_SHARED)
-  install(FILES ${corenrn_mech_library} DESTINATION lib)
+  install(FILES ${corenrn_mech_library} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
 
 # install mod files
-install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION share)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION ${CMAKE_INSTALL_PREFIX}/share)
 
 # =============================================================================
 # Install for end users
 # =============================================================================
 install(FILES ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile
-        DESTINATION share/coreneuron)
-install(PROGRAMS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core DESTINATION bin)
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/coreneuron)
+install(PROGRAMS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 # =============================================================================
 # Set flag for NEURON linking

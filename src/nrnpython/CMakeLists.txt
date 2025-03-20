@@ -6,11 +6,20 @@ add_link_options(${NRN_LINK_FLAGS})
 
 include(${PROJECT_SOURCE_DIR}/cmake/PythonCompileHelper.cmake)
 
+# module install = installation using CMake note that some modules should be placed in the `neuron`
+# Python directory (as they are directly importable), while others should be placed in
+# `neuron/.data/lib` (as they are not directly importable)
+if(NRN_ENABLE_MODULE_INSTALL)
+  set(libraries_rpath "/../../")
+else()
+  set(libraries_rpath "/.data/lib/")
+endif()
+
 # =============================================================================
 # rxdmath libraries (always build)
 # =============================================================================
 add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
-install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+install(TARGETS rxdmath DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 # =============================================================================
 # nrnpython libraries (one lib per python)
@@ -47,13 +56,6 @@ else()
   list(APPEND INCLUDE_DIRS ../ivos)
 endif()
 
-# module install = installation using CMake
-if(NRN_ENABLE_MODULE_INSTALL)
-  set(libraries_rpath "/../../")
-else()
-  set(libraries_rpath "/.data/lib/")
-endif()
-
 # user has selected dynamic python support (could be multiple versions)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
@@ -73,7 +75,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     endif()
     add_dependencies(nrnpython${pyver} nrniv_lib)
     list(APPEND nrnpython_lib_list nrnpython${pyver})
-    install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+    install(TARGETS nrnpython${pyver} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
     # the hoc Python library
     set(hoc_module_name hoc${pyver})
@@ -112,7 +114,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
 
     add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
 
-    install(TARGETS ${hoc_module_name} DESTINATION lib/python/neuron)
+    install(TARGETS ${hoc_module_name} DESTINATION ${NRN_WHEEL_INSTALL_PREFIX})
 
   endforeach(val)
 else()
@@ -165,53 +167,12 @@ else()
 
   add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
 
-  install(TARGETS ${hoc_module_name} DESTINATION lib/python/neuron)
+  install(TARGETS ${hoc_module_name} DESTINATION ${NRN_WHEEL_INSTALL_PREFIX})
 
 endif()
 
 configure_file(_config_params.py.in "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
                @ONLY)
 
-# Install package files that were created in build (e.g. .py.in)
-install(
-  DIRECTORY ${PROJECT_BINARY_DIR}/share/lib/python
-  DESTINATION lib
-  FILES_MATCHING
-  PATTERN *.py
-  PATTERN *.so
-  PATTERN *.dylib
-  PATTERN *.dat
-  PATTERN "CMakeFiles" EXCLUDE)
-
-# =============================================================================
-# If NEURON python module installation is enabled (CMake install)
-# =============================================================================
-if(NRN_ENABLE_MODULE_INSTALL)
-
-  # copy all files from `${CMAKE_SOURCE_DIR}/share/lib/python` to `${CMAKE_BINARY_DIR}/lib/python`
-  set(SRC_DIR "${PROJECT_SOURCE_DIR}/share/lib/python/neuron")
-  set(DST_DIR "${PROJECT_BINARY_DIR}/lib/python/neuron")
-
-  file(
-    GLOB_RECURSE ALL_FILES
-    RELATIVE "${SRC_DIR}"
-    "${SRC_DIR}/*")
-
-  foreach(file IN LISTS ALL_FILES)
-    get_filename_component(dir "${file}" DIRECTORY)
-    file(MAKE_DIRECTORY "${DST_DIR}/${dir}")
-    file(COPY "${SRC_DIR}/${file}" DESTINATION "${DST_DIR}/${dir}")
-  endforeach()
-
-  # Here and for the neuron/rxd/geometry3d extensions, we build the neuron module in lib/python
-  set(NRN_PYTHON_BUILD_LIB
-      ${PROJECT_BINARY_DIR}/lib/python
-      CACHE INTERNAL "" FORCE)
-
-  install(DIRECTORY ${NRN_PYTHON_BUILD_LIB} DESTINATION lib)
-
-else()
-  # Make sure this is included in the wheels
-  install(FILES "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
-          DESTINATION lib/python/neuron)
-endif()
+install(FILES "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
+        DESTINATION ${NRN_WHEEL_INSTALL_PREFIX})

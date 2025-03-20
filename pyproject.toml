@@ -46,15 +46,14 @@ urls.website = "https://neuron.yale.edu/neuron/"
 [tool.setuptools_scm]
 
 [tool.scikit-build]
-# where all of the Python files are located
-wheel.packages = [ "share/lib/python/neuron" ]
-# where CMake will place all of the other files
-wheel.install-dir = "neuron/.data/"
+# delegate installation to CMake
+wheel.packages = []
+# where CMake will place all files
+#wheel.install-dir = ""
 wheel.exclude = [ "**.c", "**.cpp", "**.o" ]
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 
 [tool.scikit-build.cmake.define]
-MACOSX_DEPLOYMENT_TARGET = "11.0"
 NRN_BINARY_DIST_BUILD = { default = "OFF", env = "NRN_BINARY_DIST_BUILD" }
 NRN_WHEEL_STATIC_READLINE = { env = "NRN_WHEEL_STATIC_READLINE", default = "OFF" }
 NRN_LINK_AGAINST_PYTHON = "OFF"
@@ -81,6 +80,7 @@ CORENRN_ENABLE_OPENMP = { env = "CORENRN_ENABLE_OPENMP", default = "OFF" }
 NMODL_ENABLE_PYTHON_BINDINGS = "ON"
 # MPI options
 NRN_ENABLE_MPI = { default = "ON", env = "NRN_ENABLE_MPI" }
+NRN_ENABLE_MPI_DYNAMIC = { default = "ON", env="NRN_ENABLE_MPI_DYNAMIC" }
 # as a workaround for the fact that MPI headers are platform-specific
 # NOTE: these MUST be set in the CI env!
 NRN_MPI_DYNAMIC = { env = "NRN_MPI_DYNAMIC" }
@@ -95,9 +95,11 @@ skip = [ "pp*", "*-win32", "*-manylinux_i686", "*-musllinux_i686", "*-musllinux_
 environment-pass = [
   "CMAKE_PREFIX_PATH",
   "NRN_MPI_DYNAMIC",
+  "NRN_ENABLE_MPI_DYNAMIC",
   "NRN_WHEEL_STATIC_READLINE",
   "NRN_ENABLE_CORENEURON",
   "CORENRN_ENABLE_OPENMP",
+  "NRN_BINARY_DIST_BUILD",
   "SETUPTOOLS_SCM_PRETEND_VERSION",
 ]
 repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so'"
@@ -105,17 +107,23 @@ repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'li
 [tool.cibuildwheel.linux.environment]
 CMAKE_PREFIX_PATH = "/nrnwheel/ncurses;/nrnwheel/readline"
 NRN_MPI_DYNAMIC = "/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)"
+NRN_ENABLE_MPI_DYNAMIC = "ON"
 NRN_WHEEL_STATIC_READLINE = "ON"
 NRN_ENABLE_CORENEURON = "ON"
 CORENRN_ENABLE_OPENMP = "ON"
+NRN_BINARY_DIST_BUILD = "ON"
 
 [tool.cibuildwheel.macos]
 # workaround for NMODL issue when building in temp dir
 config-settings = { build-dir = "_build" }
 test-command = "true"
+repair-wheel-command = "delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}"
 
 [tool.cibuildwheel.macos.environment]
 CMAKE_PREFIX_PATH = "/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11"
+NRN_ENABLE_MPI_DYNAMIC = "ON"
 NRN_MPI_DYNAMIC = "$(brew --prefix)/opt/openmpi/include;$(brew --prefix)/opt/mpich/include"
 NRN_WHEEL_STATIC_READLINE = "ON"
 NRN_ENABLE_CORENEURON = "ON"
+NRN_BINARY_DIST_BUILD = "ON"
+MACOSX_DEPLOYMENT_TARGET = "11.0"

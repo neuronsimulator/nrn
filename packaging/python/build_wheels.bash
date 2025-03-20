@@ -21,8 +21,7 @@ set -eux
 setup_venv() {
     local py_bin="$1"
     py_ver=$("$py_bin" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
-    suffix=$("$py_bin" -c "print(str(hash(\"$py_bin\"))[0:8])")
-    local venv_dir="nrn_build_venv${py_ver}_${suffix}"
+    local venv_dir="nrn_build_venv${py_ver}"
 
     echo " - Creating $venv_dir: $py_bin -m venv $venv_dir"
 
@@ -92,7 +91,7 @@ build_wheel_portable() {
     echo " - Building..."
     rm -rf _build
 
-    python -m cibuildwheel --debug-traceback --platform "${platform}" --output-dir wheelhouse
+    CIBW_BUILD_VERBOSITY=1 python -m cibuildwheel --debug-traceback --platform "${platform}" --output-dir wheelhouse
 
     deactivate
 }
@@ -120,7 +119,7 @@ build_wheel_local() {
     fi
     export NRN_ENABLE_CORENEURON
 
-    python -m pip wheel -v --no-deps --config-settings=build-dir=_build --wheel-dir=wheelhouse .
+    python -m pip wheel -v --no-deps --config-settings=build-dir=_build --wheel-dir=dist .
 
     deactivate
 }
@@ -140,6 +139,10 @@ PLATFORM_MACOS="Darwin"
 
 
 # platform (operating system) for which to build the wheel
+if [[ $# -lt 1 ]]; then
+    echo "Usage: $(basename "$0") < linux | osx | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 39|310|3*] [coreneuron]"
+    exit 1
+fi
 platform="${1}"
 
 

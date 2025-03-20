@@ -109,12 +109,14 @@ file(COPY ${NMODL_PROJECT_PURELIB_SOURCE_DIR}/ext DESTINATION ${NMODL_PROJECT_PU
 # =============================================================================
 # Install python binding components
 # =============================================================================
+
 if(NOT NRN_LINK_AGAINST_PYTHON)
-  install(TARGETS pywrapper DESTINATION lib)
+  install(TARGETS pywrapper DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
   if(NMODL_ENABLE_PYTHON_BINDINGS)
-    install(TARGETS _nmodl DESTINATION lib/python/neuron/nmodl)
+    install(TARGETS _nmodl DESTINATION ${NRN_WHEEL_INSTALL_PREFIX}/nmodl)
   endif()
 else()
+  # wtf does this even install?
   install(
     DIRECTORY ${CMAKE_BINARY_DIR}/lib/
     DESTINATION lib
