@@ -156,7 +156,9 @@ set(NRN_PYTHON_RX3D_FILES_LIST
     rxdtests/tests/hybrid/torun.txt
     rxdtests/do_test.py
     rxdtests/readme.txt
-    rxdtests/run_all.py)
+    rxdtests/run_all.py
+    tests/test_rxd.py
+    tests/test_rxd.json)
 
 foreach(pyfile IN LISTS NRN_PYTHON_FILES_LIST)
   get_filename_component(pyfile_abs "${CMAKE_CURRENT_SOURCE_DIR}/${pyfile}" ABSOLUTE)

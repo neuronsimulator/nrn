@@ -690,6 +690,7 @@ add_subdirectory(src/nrniv)
 if(NRN_ENABLE_PYTHON)
   add_subdirectory(src/nrnpython)
   add_subdirectory(share/lib/python/neuron)
+  add_subdirectory(share/lib/python/scripts)
 endif()
 
 if(NRN_ENABLE_RX3D)
@@ -878,7 +879,7 @@ if(NRN_ENABLE_PYTHON)
   # also ensure help_data.dat is copied to the install location
   if(SKBUILD)
     install(FILES ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
-            DESTINATION ${CMAKE_INSTALL_PREFIX})
+        DESTINATION "${NRN_WHEEL_INSTALL_PREFIX}")
   else()
     install(FILES ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
             DESTINATION lib/python/neuron)
@@ -972,7 +973,7 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo
         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn)
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn/lib)
 
 # Copy NEURON headers that will be included in the installation into the build directory.
 set(headers_in_build_dir)
@@ -1000,7 +1001,7 @@ add_custom_target(
 add_dependencies(nrniv_lib copy_headers_to_build)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION "${CMAKE_INSTALL_PREFIX}")
 
-if(NRN_MACOS_BUILD)
+if(NRN_MACOS_BUILD AND NOT SKBUILD)
   # universal build for neurondemo needs to be after, or at end of, install
   nrn_macos_after_install()
 endif()

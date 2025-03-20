@@ -500,7 +500,7 @@ if(NRN_ENABLE_MPI)
         target_link_libraries(${libname}_lib nrniv_lib)
       endif()
       set_property(TARGET ${libname}_lib PROPERTY OUTPUT_NAME ${libname})
-      install(TARGETS ${libname}_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+      install(TARGETS ${libname}_lib DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
     endforeach(val)
     if(NRN_ENABLE_MUSIC)
       # libnrnmusic does not depend explicitly on MPI so don't need mpi version specific versions.

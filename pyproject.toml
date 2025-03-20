@@ -9,7 +9,6 @@ requires = [
   "pyyaml>=3.13",
   "scikit-build-core",
   "setuptools-scm",
-  "sympy",
 ]
 
 [project]
@@ -38,7 +37,7 @@ classifiers = [
   "Topic :: Scientific/Engineering",
 ]
 dynamic = [ "version" ]
-dependencies = [ "find-libpython", "numpy>=1.9.3", "packaging", "setuptools" ]
+dependencies = [ "find-libpython", "numpy>=1.9.3", "packaging", "setuptools", "sympy" ]
 
 urls.source = "https://github.com/neuronsimulator/nrn"
 urls.website = "https://neuron.yale.edu/neuron/"
@@ -50,7 +49,7 @@ urls.website = "https://neuron.yale.edu/neuron/"
 wheel.packages = []
 # where CMake will place all files
 #wheel.install-dir = ""
-wheel.exclude = [ "**.c", "**.cpp", "**.o" ]
+#wheel.exclude = [ "**.c", "**.cpp", "**.o" ]
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 
 [tool.scikit-build.cmake.define]
