@@ -70,6 +70,7 @@ HOC-based Mechanisms
 
             from neuron import h
             import math
+            h.load_file("stdrun.hoc")
 
             soma = h.Section("soma")
             soma.L = soma.diam = math.sqrt(100 / math.pi)
@@ -97,7 +98,7 @@ HOC-based Mechanisms
             ''')
 
             h.make_mechanism('max', 'Max')
-            soma.insert('max')
+            soma.insert('max')  # could also do: soma.insert(h.max)
             h.run()
 
             print(f'V_max = {soma(0.5).max.V}')

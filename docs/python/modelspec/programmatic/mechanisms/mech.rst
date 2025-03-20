@@ -1094,7 +1094,7 @@ Mechanisms
 **extracellular**
 
     Syntax:
-        ``section.insert('extracellular')``
+        ``section.insert(h.extracellular)``
 
         ``nlayer = h.nlayer_extracellular()``
 
