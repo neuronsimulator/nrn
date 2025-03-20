@@ -1135,7 +1135,7 @@ Graph
             g.crosshair_action(crossact_vflag1, 1)
 
             # plot something
-            x = h.Vector().indgen(50, 100, 1)
+            x = h.Vector(range(50, 101))
             y = x + 50 # needs NEURON 7.7+
             y.line(g, x)
 
