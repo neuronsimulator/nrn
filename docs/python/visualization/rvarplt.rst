@@ -63,7 +63,7 @@ RangeVarPlot
             dend1 = h.Section('dend1')
             dend2 = h.Section('dend2')
 
-            for sec in h.allsec():
+            for sec in [dend1, dend2]:
                 sec.nseg = sec.L = 501
                 sec.diam = 1
 
@@ -95,7 +95,7 @@ RangeVarPlot
             dend1 = h.Section('dend1')
             dend2 = h.Section('dend2')
 
-            for sec in h.allsec():
+            for sec in [dend1, dend2]:
                 sec.nseg = sec.L = 501
                 sec.diam = 1
 

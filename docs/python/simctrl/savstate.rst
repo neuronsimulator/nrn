@@ -41,7 +41,7 @@ SaveState
             soma = h.Section("soma")
             soma.insert(h.hh)
             soma.nseg = 51
-            cyt = rxd.Region(h.allsec(), name="cyt")
+            cyt = rxd.Region(soma.wholetree(), name="cyt")
             c = rxd.Species(cyt, name="c", d=1, initial=lambda node: 1 if node.x < 0.5 else 0)
             c2 = rxd.Species(
                 cyt, name="c2", d=0.6, initial=lambda node: 1 if node.x > 0.5 else 0
