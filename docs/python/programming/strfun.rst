@@ -9,7 +9,7 @@ StringFunctions (String Manipulation Class)
 
 
     Syntax:
-        ``obj = h.StringFunctions()``
+        ``sf = h.StringFunctions()``
 
 
     Description:
@@ -35,11 +35,12 @@ StringFunctions (String Manipulation Class)
 
 
     Syntax:
-        ``length = strobj.len(str)``
+        ``length = sf.len(str)``
 
 
     Description:
-        Return the length of a string. 
+        Return the length of a string. Works with both NEURON string references and
+        regular Python strings.
 
     Example: 
         .. code-block::
@@ -50,7 +51,13 @@ StringFunctions (String Manipulation Class)
             sf = h.StringFunctions()
             length = sf.len(s)
             print(length)
-         
+    
+    .. note::
+
+        This is approximately equivalent to ``len(s)`` for Python strings
+        and to ``len(s[0])`` for references to NEURON strings, but it uses
+        the same syntax for both types of strings.
+
 
 ----
 
@@ -60,12 +67,14 @@ StringFunctions (String Manipulation Class)
 
 
     Syntax:
-        ``index = strobj.substr(s1, s2)``
+        ``index = sf.substr(s1, s2)``
 
 
     Description:
-        Return the index into *s1* of the first occurrence of *s2*. 
-        If *s2* isn't a substring then the return value is -1. 
+        Return the index into ``s1`` of the first occurrence of ``s2``. 
+        If ``s2`` isn't a substring then the return value is -1. 
+        The arguments can be either NEURON string references or regular Python strings.
+
 
     Example:
         .. code-block::
@@ -86,7 +95,7 @@ StringFunctions (String Manipulation Class)
 
 
     Syntax:
-        ``strobj.head(str, "regexp", result)``
+        ``sf.head(str, "regexp", result)``
 
 
     Description:
@@ -105,6 +114,9 @@ StringFunctions (String Manipulation Class)
             index = sf.head(s1, "[e]", s2)
             print(s2[0])
 
+    .. seealso::
+        
+        Python's regular expression module ``re``.
          
 
 ----
@@ -115,7 +127,7 @@ StringFunctions (String Manipulation Class)
 
 
     Syntax:
-        ``strobj.tail(str, "regexp", result)``
+        ``sf.tail(str, "regexp", result)``
 
 
     Description:
@@ -148,12 +160,13 @@ StringFunctions (String Manipulation Class)
 
 
     Syntax:
-        ``strobj.right(str, n)``
+        ``sf.right(str, n)``
 
 
     Description:
-        Removes first n characters from *str* and puts the result in 
-        *str*.
+        Removes first n characters from the NEURON string ``str`` and puts the result
+        back in ``str``. This cannot be used with regular Python strings
+        because they are immutable.
 
     Example:
         .. code-block::
@@ -176,12 +189,14 @@ StringFunctions (String Manipulation Class)
 
 
     Syntax:
-        ``.left(str, n)``
+        ``sf.left(str, n)``
 
 
     Description:
-        Removes all but first n characters from *str* and puts the 
-        result in *str* 
+
+        Removes all but the first n characters from the NEURON string ``str`` and puts
+        the result back in ``str``. This cannot be used with regular Python strings
+        because they are immutable.
 
     Example:
         .. code-block::
@@ -202,11 +217,11 @@ StringFunctions (String Manipulation Class)
 
 
     Syntax:
-        ``.is_name(item)``
+        ``sf.is_name(item)``
 
 
     Description:
-        Returns True if the *item* is the name of a symbol, False otherwise. 
+        Returns ``True`` if the ``item`` is the name of a symbol, False otherwise. 
         This is so useful that the same thing is available with the top level 
         :func:`name_declared` function (except that returns 1 or 0 instead of True
         or False). 
@@ -236,7 +251,8 @@ StringFunctions (String Manipulation Class)
     
     .. note::
 
-        This is approximately equivalent to ``item in dir(h)``.
+        This is approximately equivalent to ``item in dir(h)`` but the Python module
+        ``h`` contains additional names that are not NEURON symbols per se.
 ----
 
 
@@ -245,13 +261,13 @@ StringFunctions (String Manipulation Class)
 
 
     Syntax:
-        ``.alias(obj, "name", &var2)``
+        ``sf.alias(obj, "name", &var2)``
 
-        ``.alias(obj, "name", obj2)``
+        ``sf.alias(obj, "name", obj2)``
 
-        ``.alias(obj, "name")``
+        ``sf.alias(obj, "name")``
 
-        ``.alias(obj)``
+        ``sf.alias(obj)``
 
 
     Description:
@@ -282,7 +298,7 @@ StringFunctions (String Manipulation Class)
 
 
     Syntax:
-        ``list = sf.alias_list(obj)``
+        ``listobj = sf.alias_list(obj)``
 
 
     Description:
@@ -291,7 +307,7 @@ StringFunctions (String Manipulation Class)
 
     .. warning::
         The String class is not a built-in class. It generally gets declared when 
-        the nrngui.hoc file is loaded and lives in stdlib.hoc. 
+        ``gui`` is imported or ``stdrun.hoc`` is loaded.
         Note that the String class must exist and its 
         constructor must allow a single strdef argument. Minimally: 
 
@@ -349,7 +365,8 @@ StringFunctions (String Manipulation Class)
     Description:
         Returns 0 if the object is not a POINT_PROCESS. Otherwise 
         returns the point type (which is always 1 greater than the index into the 
-        :func:`MechanismType(1) <MechanismType>` list). 
+        :func:`MechanismType(1) <MechanismType>` list). In particular, the return
+        value is an integer not a boolean because it indicates position in a list.
 
     Example:
         .. code-block::
@@ -382,7 +399,8 @@ StringFunctions (String Manipulation Class)
     Description:
         Returns 0 if the object is not an ARTIFICIAL_CELL. Otherwise 
         returns the point type (which is always 1 greater than the index into the 
-        :func:`MechanismType(1) <MechanismType>` list). 
+        :func:`MechanismType(1) <MechanismType>` list). In particular, the return
+        value is an integer not a boolean because it indicates position in a list.
 
          
 

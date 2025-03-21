@@ -1404,6 +1404,10 @@ class DensityMechanism:
         """source file path"""
         return self.__mt.file()
 
+    @property
+    def name(self):
+        return self.__name
+
     def insert(self, secs):
         """insert this mechanism into a section or iterable of sections"""
         if isinstance(secs, nrn.Section):
