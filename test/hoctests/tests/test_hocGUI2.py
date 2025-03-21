@@ -32,10 +32,17 @@ class Cell:
 
 class GUI:
     def __init__(self, cell):
+        self.x = h.ref(0)
+        self.s = h.ref("hello")
+        self.y = 0
         self.cell = cell
         self.vec = h.Vector(1)  # for hoc ref variable self.vec._ref_x[0]
         self.build()
         self.map()
+
+    def pyact(self):
+        self.s[0] = f"pyact x={self.x} y={self.y}"
+        print(f"{self.s[0]}\r")
 
     def build(self):
         self.box = h.HBox()
@@ -43,8 +50,14 @@ class GUI:
         self.box.ref(self)
 
         h.xpanel("")
+        h.xlabel("fixed string")
+        h.xvarlabel(self.s)
         h.xstatebutton("hoc var1", h._ref_var1, "act1()")
+        h.xstatebutton("GUI.x", self.x, self.pyact)
+        h.xstatebutton("GUI.y", (self, "y"), self.pyact)
         h.xcheckbox("hoc var1", h._ref_var1, "act1()")
+        h.xcheckbox("GUI.x", self.x, self.pyact)
+        h.xcheckbox("GUI.y", (self, "y"), self.pyact)
         h.xmenu("hoc var1")
         h.xcheckbox("hoc var1", h._ref_var1, "act1()")
         h.xmenu()
@@ -138,5 +151,5 @@ def test_Hinton():  # PlotShape.hinton
 
 if __name__ == "__main__":
     gui = test1()
-    cells = test2()
-    net = test_Hinton()
+#    cells = test2()
+#    net = test_Hinton()
