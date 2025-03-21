@@ -153,8 +153,6 @@ platform="${1}"
 # note that if `platform=CI`, then this represents the _interpreter path_ instead
 python_version_or_interpreter=
 if [[ $# -ge 2 ]]; then
-    # remove any dots
-    python_version_or_interpreter="${2//./}"
     CIBW_BUILD=""
     for ver in ${python_version_or_interpreter}; do
         # we only build cpython-compatible wheels for now
