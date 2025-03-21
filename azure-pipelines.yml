@@ -36,19 +36,19 @@ stages:
         matrix:
           Python39:
             python.version: '3.9'
-            python.version.nodot: '39'
+            python.nodot: '39'
           Python310:
             python.version: '3.10'
-            python.version.nodot: '310'
+            python.nodot: '310'
           Python311:
             python.version: '3.11'
-            python.version.nodot: '311'
+            python.nodot: '311'
           Python312:
             python.version: '3.12'
-            python.version.nodot: '312'
+            python.nodot: '312'
           Python313:
             python.version: '3.13'
-            python.version.nodot: '313'
+            python.nodot: '313'
 
       steps:
 
@@ -66,7 +66,7 @@ stages:
       - script: |
           sudo mkdir -p /opt/nrnwheel/mpt
           sudo tar -zxf $(mpt_headersSF.secureFilePath) --directory /opt/nrnwheel/mpt
-          packaging/python/build_wheels.bash linux $(python.version.nodot) coreneuron
+          packaging/python/build_wheels.bash linux $(python.nodot) coreneuron
         displayName: 'Building ManyLinux Wheel'
 
       - script: |
@@ -86,27 +86,27 @@ stages:
         matrix:
           Python39:
             python.version: '3.9'
-            python.version.nodot: '39'
+            python.nodot: '39'
             python.org.version: '3.9.13'
             python.installer.name: 'macos11.pkg'
           Python310:
             python.version: '3.10'
-            python.version.nodot: '310'
+            python.nodot: '310'
             python.org.version: '3.10.11'
             python.installer.name: 'macos11.pkg'
           Python311:
             python.version: '3.11'
-            python.version.nodot: '311'
+            python.nodot: '311'
             python.org.version: '3.11.7'
             python.installer.name: 'macos11.pkg'
           Python312:
             python.version: '3.12'
-            python.version.nodot: '312'
+            python.nodot: '312'
             python.org.version: '3.12.0'
             python.installer.name: 'macos11.pkg'
           Python313:
             python.version: '3.13'
-            python.version.nodot: '313'
+            python.nodot: '313'
             python.org.version: '3.13.0'
             python.installer.name: 'macos11.pkg'
 
@@ -151,7 +151,7 @@ stages:
           export NRN_BUILD_FOR_UPLOAD=1
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/$(uname -m)
-          packaging/python/build_wheels.bash osx $(python.version.nodot) coreneuron
+          packaging/python/build_wheels.bash osx $(python.nodot) coreneuron
         displayName: 'Build MacOS Wheel'
 
       - template: ci/azure-wheel-test-upload.yml
