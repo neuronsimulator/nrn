@@ -438,11 +438,11 @@ Layout
             
             from neuron import h, gui
             import neuron
-            import numpy
+            import numpy as np
 
             def size(obj):
                 if obj.ismapped():
-                    s = numpy.array([0, 0, 0, 0], 'd')
+                    s = np.array([0, 0, 0, 0], 'd')
                     obj.size(neuron.numpy_element_ref(s, 0))
                     print(obj.hname(), s[0], s[1], s[2], s[3])
 
