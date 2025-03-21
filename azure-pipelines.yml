@@ -66,17 +66,7 @@ stages:
       - script: |
           sudo mkdir -p /opt/nrnwheel/mpt
           sudo tar -zxf $(mpt_headersSF.secureFilePath) --directory /opt/nrnwheel/mpt
-          docker run --rm \
-            -w /root/nrn \
-            -v $PWD:/root/nrn \
-            -v /opt/nrnwheel/mpt:/nrnwheel/mpt \
-            -e NEURON_NIGHTLY_TAG \
-            -e NRN_NIGHTLY_UPLOAD \
-            -e NRN_RELEASE_UPLOAD \
-            -e SETUPTOOLS_SCM_PRETEND_VERSION \
-            -e NRN_BUILD_FOR_UPLOAD=1 \
-            'docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64' \
-            packaging/python/build_wheels.bash linux $(python.version.nodot) coreneuron
+          packaging/python/build_wheels.bash linux $(python.version.nodot) coreneuron
         displayName: 'Building ManyLinux Wheel'
 
       - script: |
