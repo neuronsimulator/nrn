@@ -101,7 +101,7 @@ target_link_libraries(
   nmodl
   CLI11::CLI11
   printer
-  codegen
+  nmodl_codegen
   visitor
   symtab
   util
@@ -125,6 +125,8 @@ endif()
 # =============================================================================
 # Install executable
 # =============================================================================
+set(NMODL_INSTALL_DIR_SUFFIX ${NRN_INSTALL_DATA_PREFIX})
+
 install(
   TARGETS nmodl
   EXPORT nmodlTargets
