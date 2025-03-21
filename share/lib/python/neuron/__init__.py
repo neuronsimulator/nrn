@@ -1403,7 +1403,7 @@ class DensityMechanism:
     def file(self):
         """source file path"""
         return self.__mt.file()
-    
+
     @property
     def name(self):
         return self.__name
