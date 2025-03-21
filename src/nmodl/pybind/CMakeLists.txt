@@ -116,7 +116,6 @@ if(NOT NRN_LINK_AGAINST_PYTHON)
     install(TARGETS _nmodl DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/nmodl)
   endif()
 else()
-  # wtf does this even install?
   install(
     DIRECTORY ${CMAKE_BINARY_DIR}/lib/
     DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib
