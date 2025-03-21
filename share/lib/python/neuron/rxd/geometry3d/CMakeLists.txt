@@ -56,6 +56,8 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
         "${npinc}"
         "${pyinc}"
         LIBRARIES
+        nrniv_lib
+        rxdmath
         nrnpython${pyver}
         REL_RPATH
         ${rel_rpath}
@@ -89,6 +91,9 @@ else(NRN_ENABLE_PYTHON_DYNAMIC)
       # instead, so we place the numpy headers before the Python ones
       "${NRN_DEFAULT_PYTHON_NUMPY_INCLUDES}"
       "${NRN_DEFAULT_PYTHON_INCLUDES}"
+      LIBRARIES
+      nrniv_lib
+      rxdmath
       REL_RPATH
       ${rel_rpath}
       OUTPUT_DIR

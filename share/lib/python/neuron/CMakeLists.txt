@@ -94,69 +94,6 @@ set(NRN_PYTHON_RX3D_FILES_LIST
     rxd/geometry3d/surface.py
     rxd/gui.py
     rxd/reaction.py
-    rxdtests/tests/ca_pump.py
-    rxdtests/tests/3d/pure_diffusion_3d_cvode.py
-    rxdtests/tests/3d/circadian_rhythm.py
-    rxdtests/tests/3d/include_flux3d.py
-    rxdtests/tests/3d/pure_diffusion_3d.py
-    rxdtests/tests/3d/multicompartment_reactions.py
-    rxdtests/tests/3d/include_flux3d_cvode.py
-    rxdtests/tests/3d/torun.txt
-    rxdtests/tests/multicompartment_mebrane_mismatch.py
-    rxdtests/tests/wave1d/wave1d_125_1.py
-    rxdtests/tests/wave1d/wave1d_tree2_125_1.py
-    rxdtests/tests/wave1d/wave1d_tree2_25_5.py
-    rxdtests/tests/wave1d/caleak.mod
-    rxdtests/tests/wave1d/wave1d_tree_125_1.py
-    rxdtests/tests/wave1d/wave1d_taper_25_5.py
-    rxdtests/tests/wave1d/readme.txt
-    rxdtests/tests/wave1d/torun.txt
-    rxdtests/tests/wave1d/wave1d_25_5.py
-    rxdtests/tests/wave1d/wave1d_taper_125_1.py
-    rxdtests/tests/wave1d/wave1d_tree_25_5.py
-    rxdtests/tests/wave1d/cal2.mod
-    rxdtests/tests/multicompartment_reactions_with_v.py
-    rxdtests/tests/nodes_update.py
-    rxdtests/tests/c91662.swc
-    rxdtests/tests/hh_param.py
-    rxdtests/tests/cabuf.py
-    rxdtests/tests/ecs/ecs_include_flux_cvode.py
-    rxdtests/tests/ecs/ecs_before_sections.py
-    rxdtests/tests/ecs/ecs_example_cvode.py
-    rxdtests/tests/ecs/ecs_multi_example.py
-    rxdtests/tests/ecs/ecs_multi_example_cvode.py
-    rxdtests/tests/ecs/pump.mod
-    rxdtests/tests/ecs/torun.txt
-    rxdtests/tests/ecs/ecs_example.py
-    rxdtests/tests/ecs/ecs_include_flux.py
-    rxdtests/tests/hh_cvode.py
-    rxdtests/tests/include_flux_cvode.py
-    rxdtests/tests/hh_param_cvode.py
-    rxdtests/tests/cabuf_fixed_step.py
-    rxdtests/tests/pure_diffusion_cvode.py
-    rxdtests/tests/hh_morph.py
-    rxdtests/tests/IraHH.py
-    rxdtests/tests/react_region_specified.py
-    rxdtests/tests/include_flux.py
-    rxdtests/tests/verify_no_initialization_order_issue.py
-    rxdtests/tests/hh.py
-    rxdtests/tests/reaction_test.py
-    rxdtests/tests/multicompartment_reactions_del.py
-    rxdtests/tests/reaction_param_test.py
-    rxdtests/tests/multicompartment_reactions.py
-    rxdtests/tests/pure_diffusion.py
-    rxdtests/tests/torun.txt
-    rxdtests/tests/reaction_null_dest.py
-    rxdtests/tests/hybrid/pure_diffusion_hybrid_cvode.py
-    rxdtests/tests/hybrid/bistable_hybrid_cvode.py
-    rxdtests/tests/hybrid/bistable_hybrid_change_nthread.py
-    rxdtests/tests/hybrid/pure_diffusion_hybrid.py
-    rxdtests/tests/hybrid/bistable_hybrid_cvode_change_nthread.py
-    rxdtests/tests/hybrid/bistable_hybrid.py
-    rxdtests/tests/hybrid/torun.txt
-    rxdtests/do_test.py
-    rxdtests/readme.txt
-    rxdtests/run_all.py
     tests/test_rxd.py
     tests/test_rxd.json)
 

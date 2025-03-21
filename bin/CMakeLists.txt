@@ -22,11 +22,11 @@ elseif(NRN_WINDOWS_BUILD)
 endif()
 
 # for nrnmech_makefile
-set(CMAKE_INSTALL_BINDIR ${CMAKE_INSTALL_PREFIX}/bin)
-set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX}/lib)
-set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_PREFIX}/include)
-set(CMAKE_INSTALL_DATADIR ${CMAKE_INSTALL_PREFIX}/share/nrn)
-set(CMAKE_INSTALL_DATADIR_NMODL ${CMAKE_INSTALL_PREFIX}/share/nmodl)
+set(CMAKE_INSTALL_BINDIR bin)
+set(CMAKE_INSTALL_LIBDIR lib)
+set(CMAKE_INSTALL_INCLUDEDIR include)
+set(CMAKE_INSTALL_DATADIR share/nrn)
+set(CMAKE_INSTALL_DATADIR_NMODL share/nmodl)
 
 # =============================================================================
 # Include nrnivmodl makefile generator
