@@ -34,6 +34,11 @@ if(NOT "cxx_std_17" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
       "This compiler does not fully support C++17, choose a higher version or another compiler.")
 endif()
 
+# remove annoying message about path normalization
+if(POLICY CMP0177)
+  cmake_policy(SET CMP0177 NEW)
+endif()
+
 # if we're building a wheel, we have a different layout of files
 if(SKBUILD)
   set(NRN_INSTALL_PYTHON_PREFIX "neuron/")

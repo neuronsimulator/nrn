@@ -137,9 +137,9 @@ fi
 PLATFORM_LINUX="Linux"
 PLATFORM_MACOS="Darwin"
 
-help_message="Usage: $(basename "$0") < linux | osx | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 39|310|3*] [coreneuron]"
+help_message="Usage: $(basename "$0") < CI | linux | osx | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 39|310|3*|path_to_interp] [coreneuron]"
 
-if [[ $# -lt 1 ]]; then
+if [[ $# -lt 2 ]]; then
     echo "${help_message}"
     exit 1
 fi
@@ -149,17 +149,15 @@ fi
 platform="${1}"
 
 
-# Python version for which to build the wheel; '3*' (default) means all Python 3 versions
+# Python version for which to build the wheel; '3*' means all Python 3 versions
 # note that if `platform=CI`, then this represents the _interpreter path_ instead
-python_version_or_interpreter=
-if [[ $# -ge 2 ]]; then
-    CIBW_BUILD=""
-    for ver in ${python_version_or_interpreter}; do
-        # we only build cpython-compatible wheels for now
-        CIBW_BUILD="${CIBW_BUILD} cp${ver}*"
-    done
-    export CIBW_BUILD
-fi
+python_version_or_interpreter="${2}"
+CIBW_BUILD=""
+for ver in ${python_version_or_interpreter}; do
+    # we only build cpython-compatible wheels for now
+    CIBW_BUILD="${CIBW_BUILD} cp${ver}*"
+done
+export CIBW_BUILD
 
 
 # enable coreneuron support: "coreneuron" enables support (default: without coreneuron)
