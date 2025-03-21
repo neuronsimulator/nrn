@@ -119,7 +119,7 @@ build_wheel_local() {
     fi
     export NRN_ENABLE_CORENEURON
 
-    python -m pip wheel -v --no-deps --config-settings=build-dir=_build --wheel-dir=dist .
+    python -m pip wheel -v --no-deps --config-settings=build-dir=_build --wheel-dir=wheelhouse .
 
     deactivate
 }
@@ -152,12 +152,14 @@ platform="${1}"
 # Python version for which to build the wheel; '3*' means all Python 3 versions
 # note that if `platform=CI`, then this represents the _interpreter path_ instead
 python_version_or_interpreter="${2}"
-CIBW_BUILD=""
-for ver in ${python_version_or_interpreter}; do
-    # we only build cpython-compatible wheels for now
-    CIBW_BUILD="${CIBW_BUILD} cp${ver}*"
-done
-export CIBW_BUILD
+if [[ "${platform}" != 'CI' ]]; then
+    CIBW_BUILD=""
+    for ver in ${python_version_or_interpreter}; do
+        # we only build cpython-compatible wheels for now
+        CIBW_BUILD="${CIBW_BUILD} cp${ver}*"
+    done
+    export CIBW_BUILD
+fi
 
 
 # enable coreneuron support: "coreneuron" enables support (default: without coreneuron)
