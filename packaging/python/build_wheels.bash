@@ -99,7 +99,7 @@ build_wheel_portable() {
 
 # for building non-portable wheels
 build_wheel_local() {
-    interp="${1:-}"
+    interp="${1}"
     echo "[BUILD WHEEL] Building with interpreter ${interp}"
     local skip=
     setup_venv "${interp}"
@@ -108,7 +108,7 @@ build_wheel_local() {
     echo " - Building..."
     rm -rf _build
 
-    if [[ "${2:-}" == "coreneuron" ]]; then
+    if [[ $# -ge 2 ]] && [[ "${2}" == "coreneuron" ]]; then
         NRN_ENABLE_CORENEURON=ON
         # on Linux we also enable OpenMP support
         if [[ "$(uname -s)" == "${PLATFORM_LINUX}" ]]; then
