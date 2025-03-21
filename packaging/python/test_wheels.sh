@@ -253,7 +253,7 @@ $python_exe -m pip install --upgrade 'pip<=25.0.1'
 
 # install test requirements
 $python_exe -m pip install -r packaging/python/test_requirements.txt
-$python_exe -m pip install $python_wheel
+$python_exe -m pip install --force-reinstall $python_wheel
 $python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
 
 
