@@ -137,12 +137,15 @@ fi
 PLATFORM_LINUX="Linux"
 PLATFORM_MACOS="Darwin"
 
+help_message="Usage: $(basename "$0") < linux | osx | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 39|310|3*] [coreneuron]"
 
-# platform (operating system) for which to build the wheel
 if [[ $# -lt 1 ]]; then
-    echo "Usage: $(basename "$0") < linux | osx | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 39|310|3*] [coreneuron]"
+    echo "${help_message}"
     exit 1
 fi
+
+
+# platform (operating system) for which to build the wheel
 platform="${1}"
 
 
@@ -150,7 +153,8 @@ platform="${1}"
 # note that if `platform=CI`, then this represents the _interpreter path_ instead
 python_version_or_interpreter=
 if [[ $# -ge 2 ]]; then
-    python_version_or_interpreter="${2}"
+    # remove any dots
+    python_version_or_interpreter="${2//./}"
     CIBW_BUILD=""
     for ver in ${python_version_or_interpreter}; do
         # we only build cpython-compatible wheels for now
@@ -192,7 +196,7 @@ case "${platform}" in
     ;;
 
   *)
-    echo "Usage: $(basename "$0") < linux | osx | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 39|310|3*] [coreneuron]"
+    echo "${help_message}"
     exit 1
     ;;
 
