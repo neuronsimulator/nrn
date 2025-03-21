@@ -151,5 +151,5 @@ def test_Hinton():  # PlotShape.hinton
 
 if __name__ == "__main__":
     gui = test1()
-#    cells = test2()
-#    net = test_Hinton()
+    cells = test2()
+    net = test_Hinton()
