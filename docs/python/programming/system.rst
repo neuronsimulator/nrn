@@ -33,9 +33,6 @@ Path Manipulation
 
 .. function:: neuronhome
 
-    Name:
-        neuronhome -- installation path 
-
     Syntax:
         ``h.neuronhome()``
 
