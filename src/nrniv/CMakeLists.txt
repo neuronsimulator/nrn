@@ -500,7 +500,7 @@ if(NRN_ENABLE_MPI)
         target_link_libraries(${libname}_lib nrniv_lib)
       endif()
       set_property(TARGET ${libname}_lib PROPERTY OUTPUT_NAME ${libname})
-      install(TARGETS ${libname}_lib DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+      install(TARGETS ${libname}_lib DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
     endforeach(val)
     if(NRN_ENABLE_MUSIC)
       # libnrnmusic does not depend explicitly on MPI so don't need mpi version specific versions.
@@ -594,11 +594,11 @@ endif()
 # For now, we keep this distinction as it reduces the PATH and is
 # expected when ctypes looks for dlls
 # ~~~
-install(TARGETS nrniv nocmodl modlunit DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-install(TARGETS nrniv_lib DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+install(TARGETS nrniv nocmodl modlunit DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
+install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
 if(LIBIVX11DYNAM_NAME)
   install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME}
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+          DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
 endif()
 
 # =============================================================================
@@ -627,4 +627,4 @@ add_custom_target(
 
 # For the installation
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/nrn)
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn)

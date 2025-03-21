@@ -125,7 +125,7 @@ endif()
 # =============================================================================
 # Install executable
 # =============================================================================
-set(NMODL_INSTALL_DIR_SUFFIX ${CMAKE_INSTALL_PREFIX})
+set(NMODL_INSTALL_DIR_SUFFIX ${NRN_INSTALL_DATA_PREFIX})
 
 install(
   TARGETS nmodl

@@ -487,7 +487,7 @@ if(NRN_ENABLE_MPI AND NRN_ENABLE_MPI_DYNAMIC)
     PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
                LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
                POSITION_INDEPENDENT_CODE ON)
-  install(TARGETS ${corenrn_mpi_targets} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+  install(TARGETS ${corenrn_mpi_targets} DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
 endif()
 
 # Suppress some compiler warnings.
@@ -627,46 +627,46 @@ endif()
 install(
   TARGETS coreneuron-core ${coreneuron_cuda_target}
   EXPORT coreneuron
-  LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+  LIBRARY DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib
+  ARCHIVE DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib
   INCLUDES
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/include)
 
 # headers and some standalone code files for nrnivmodl-core
 install(
   DIRECTORY ${CMAKE_BINARY_DIR}/include/coreneuron
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/include/
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/include/
   FILES_MATCHING
   PATTERN "*.h*"
   PATTERN "*.ipp")
 install(FILES ${MODFUNC_SHELL_SCRIPT} ${ENGINEMECH_CODE_FILE}
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/coreneuron)
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/coreneuron)
 
 # copy nmodl for nrnivmodl-core
-install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
 
 # install nrniv-core app
 install(
   PROGRAMS ${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR}/special-core
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin
   RENAME nrniv-core)
-install(FILES apps/coreneuron.cpp DESTINATION ${CMAKE_INSTALL_PREFIX}/share/coreneuron)
+install(FILES apps/coreneuron.cpp DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/coreneuron)
 
 # install mechanism library in shared library builds, if we're linking statically then there is no
 # need
 if(CORENRN_ENABLE_SHARED)
-  install(FILES ${corenrn_mech_library} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+  install(FILES ${corenrn_mech_library} DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
 endif()
 
 # install mod files
-install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION ${CMAKE_INSTALL_PREFIX}/share)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share)
 
 # =============================================================================
 # Install for end users
 # =============================================================================
 install(FILES ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/coreneuron)
-install(PROGRAMS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/coreneuron)
+install(PROGRAMS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
 
 # =============================================================================
 # Set flag for NEURON linking

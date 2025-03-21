@@ -19,7 +19,7 @@ endif()
 # rxdmath libraries (always build)
 # =============================================================================
 add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
-install(TARGETS rxdmath DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
 
 # =============================================================================
 # nrnpython libraries (one lib per python)
@@ -75,7 +75,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     endif()
     add_dependencies(nrnpython${pyver} nrniv_lib)
     list(APPEND nrnpython_lib_list nrnpython${pyver})
-    install(TARGETS nrnpython${pyver} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+    install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
 
     # the hoc Python library
     set(hoc_module_name hoc${pyver})
@@ -114,7 +114,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
 
     add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
 
-    install(TARGETS ${hoc_module_name} DESTINATION ${NRN_WHEEL_INSTALL_PREFIX})
+    install(TARGETS ${hoc_module_name} DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
 
   endforeach(val)
 else()
@@ -167,7 +167,7 @@ else()
 
   add_dependencies(${hoc_module_name} nrniv_lib rxdmath)
 
-  install(TARGETS ${hoc_module_name} DESTINATION ${NRN_WHEEL_INSTALL_PREFIX})
+  install(TARGETS ${hoc_module_name} DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
 
 endif()
 
@@ -175,4 +175,4 @@ configure_file(_config_params.py.in "${PROJECT_BINARY_DIR}/lib/python/neuron/_co
                @ONLY)
 
 install(FILES "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
-        DESTINATION ${NRN_WHEEL_INSTALL_PREFIX})
+        DESTINATION ${NRN_INSTALL_PYTHON_PREFIX})
