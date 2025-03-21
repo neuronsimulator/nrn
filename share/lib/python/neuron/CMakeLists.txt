@@ -42,7 +42,9 @@ set(NRN_PYTHON_FILES_LIST
     gui2/utilities.py
     crxd/__init__.py
     gui.py
-    nonvint_block_supervisor.py)
+    nonvint_block_supervisor.py
+    tests/test_rxd.py
+    tests/test_rxd.json)
 
 set(NRN_PYTHON_NMODL_FILES_LIST
     nmodl/dsl.py
@@ -93,9 +95,7 @@ set(NRN_PYTHON_RX3D_FILES_LIST
     rxd/geometry3d/voxelize2.py
     rxd/geometry3d/surface.py
     rxd/gui.py
-    rxd/reaction.py
-    tests/test_rxd.py
-    tests/test_rxd.json)
+    rxd/reaction.py)
 
 foreach(pyfile IN LISTS NRN_PYTHON_FILES_LIST)
   get_filename_component(pyfile_abs "${CMAKE_CURRENT_SOURCE_DIR}/${pyfile}" ABSOLUTE)
