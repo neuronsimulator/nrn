@@ -175,12 +175,17 @@ a class. This allows multiple independent instances to be created. For example:
             python
             
             h.xstatebutton('prompt', (obj_or_module, 'varname') [, action_fn])
+            h.xstatebutton('prompt', hoc_reference [, action_fn])
 
 
     Description:
         like :func:`xbutton`, but when pressed var is set to 0 or 1 so that it matches the 
         telltale state of the button. If the var is set by another way the 
         telltale state is updated to reflect the correct value. 
+        An example of a statement that constructs a hoc_reference is
+        `self.x = h.ref(1.0)` and then the arg would be `self.x`.
+        The action_fn may be either a python callable or a hoc
+        executable string.
     
     Example:
         .. code-block::
@@ -213,6 +218,7 @@ a class. This allows multiple independent instances to be created. For example:
             python
             
             h.xcheckbox('prompt', (obj_or_module, 'varname') [, action_fn])
+            h.xcheckbox('prompt', hoc_reference [, action_fn])
 
 
     Description:
