@@ -378,7 +378,11 @@ static void load_nrnpython(int pyver10, const char* pylib) {
     if (pyver10 < 1 && pylib) {
         pv10 = pylib2pyver10(pylib);
     }
-    sprintf(name, "libnrnpython%d", pv10);
+    std::string pyver = std::to_string(pv10);
+    if (pyver.length() > 1) {
+        pyver.insert(1, ".");
+    }
+    sprintf(name, "libnrnpython%s", pyver.c_str());
     handle = load_nrnpython_helper(name);
     if (!handle) {
         printf("Could not load %s\n", name);
