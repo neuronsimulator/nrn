@@ -1,0 +1,2 @@
+pytest
+setuptools;python_version>='3.12' # From 3.12, no longer installed by default

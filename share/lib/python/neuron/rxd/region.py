@@ -447,7 +447,6 @@ class Extracellular:
         return parsed_value, ecs_permeability
 
     def _parse_volume_fraction(self, volume_fraction):
-
         if numpy.isscalar(volume_fraction):
             alpha = float(volume_fraction)
             alpha = alpha

@@ -14,9 +14,17 @@
 # Thus, at least for MINGW, parallel to the NRN_PYTHON_DYNAMIC list
 # we construct the lists NRN_PYTHON_VER_LIST, NRN_PYTHON_INCLUDE_LIST,
 # and NRN_PYTHON_LIB_LIST
+
+# set(LINK_AGAINST_PYTHON ${MINGW})
+# sadly, the Python ABI seems to have changed for Python 3.13 (possibly 3.12)
+# and for 3.13 we experience
+# libnrnpython3.so: undefined symbol: _PyObject_NextNotImplemented
+# if <3.13 is first in the dynamic list. And abort on others if 3.13 is first.
+# so
 # ~~~
 
-set(LINK_AGAINST_PYTHON ${MINGW})
+set(LINK_AGAINST_PYTHON ON)
+
 set(NRN_PYTHON_VER_LIST
     ""
     CACHE INTERNAL "" FORCE)

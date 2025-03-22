@@ -1,5 +1,10 @@
 # NEURON 8.2
 
+## 8.2.7
+_Release Date_ : 01-02-2025
+
+This release allows use of Python 3.13
+
 ## 8.2.6
 _Release Date_ : 24-07-2024
 
