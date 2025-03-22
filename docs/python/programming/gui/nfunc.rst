@@ -3,7 +3,14 @@
 Miscellaneous Menus
 -------------------
 
+.. note::
 
+    GUI menus require one to have previously ran:
+
+    .. code-block::
+        python
+
+        from neuron import gui
 
 .. function:: nrnglobalmechmenu
 
