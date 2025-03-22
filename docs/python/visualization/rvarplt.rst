@@ -271,13 +271,14 @@ RangeVarPlot
 
 
     Syntax:
-        ``rvp.origin(x, sec=section)``
+        ``rvp.origin(x)``
 
 
     Description:
-        Defines the origin (location 0) of the space plot as ``section(x)``.
-        The default is usually 
-        suitable unless you want to have several rangvarplots in one graph 
+        Defines the origin (location 0) of the space plot as ``x``.
+        This is the value that is returned by :meth:`RangeVarPlot.left`.
+        The default of 0 is usually 
+        suitable unless you want to have several RangeVarPlots in one graph 
         in which case this function is used to arrange all the plots relative 
         to each other. 
 
@@ -295,7 +296,8 @@ RangeVarPlot
 
 
     Description:
-        returns the coordinate of the beginning of the path. 
+        returns the coordinate of the beginning of the path. This is typically
+        0 but can be changed by calling :meth:`RangeVarPlot.origin`.
 
          
 
