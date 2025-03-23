@@ -805,7 +805,7 @@ Vector
     .. note::
     
         An h.Vector is a Python iterable, so you can also use Python's ``in``
-        keyword: ``5 in h.Vector([1, 5])`` returns True.
+        keyword: ``5 in h.Vector([1, 5])`` returns ``True``.
     
         
          
@@ -834,31 +834,34 @@ Vector
 
 
     Description:
-        Copies some or all of *vsrc* into *vdest*. 
-        If the dest_start argument is present (an integer index), 
-        source elements (beginning at *src*``[0]``) 
-        are copied to  *vdest* beginning at *dest*``[dest_start]``, 
-        *Src_start* and *src_end* here refer to indices of *vsrcx*, 
-        not *vdest*.  If *vdest* is too small for the size required by *vsrc* and the 
+        Copies some or all of ``vsrc`` into ``vdest``. 
+        This function can be slightly more efficient than slicing or :meth:`Vector.c` since 
+        if vdest contains enough space, memory will not have to 
+        be allocated for it. Also it is convenient for those cases 
+        in which ``vdest`` is being plotted and therefore reallocation 
+        of memory (with consequent removal of vdest from the Graph) 
+        is to be explicitly avoided. 
+
+
+        If the ``dest_start`` argument is present (an integer index), 
+        source elements (beginning at ``src[0]``) 
+        are copied to  ``vdest`` beginning at ``dest[dest_start]``, 
+        ``src_start`` and ``src_end`` here refer to indices of ``vsrc``, 
+        not ``vdest``.  If ``vdest`` is too small for the size required by ``vsrc`` and the 
         arguments, then it is resized to hold the data. 
-        If the *dest* is larger than required AND there is more than one 
-        argument the *dest* is NOT resized. 
+        If the ``dest`` is larger than required AND there is more than one 
+        argument the ``dest`` is NOT resized. 
         One may use -1 for the 
         src_end argument to specify the entire size (instead of the tedious ``len(src)-1``) 
          
-        If the second (and third) argument is a vector, 
-        the elements of that vector are the 
-        indices of the vsrc to be copied to the same indices of the vdest. 
-        In this case the vdest is not resized and any indices that are out of 
-        range of either vsrc or vdest are ignored. This function allows mapping 
+        If the second (and third) argument is a :class:`Vector`, 
+        the elements of that ``Vector`` are the 
+        indices of the ``vsrc`` to be copied to the same indices of the ``vdest``. 
+        In this case the ``vdest`` is not resized and any indices that are out of 
+        range of either ``vsrc`` or ``vdest`` are ignored. This function allows mapping 
         of a subset of a source vector into the subset of a destination vector. 
          
-        This function can be slightly more efficient than :func:`c` since 
-        if vdest contains enough space, memory will not have to 
-        be allocated for it. Also it is convenient for those cases 
-        in which vdest is being plotted and therefore reallocation 
-        of memory (with consequent removal of vdest from the Graph) 
-        is to be explicitly avoided. 
+
 
     Example:
         To copy the odd elements use:
@@ -897,9 +900,9 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(100,10) 
+            vec = h.Vector(100, 10) 
             vec1 = h.Vector() 
-            vec1.indgen(5,105,10) 
+            vec1.indgen(5, 105, 10) 
             vec.copy(vec1, 50, 3, 6) 
 
         turns ``vec`` from a 100 element into a 54 element vector. 
@@ -937,14 +940,22 @@ Vector
 
 
     Description:
-        Return a ``h.Vector`` which is a copy of the vsrc Vector, but does not copy 
+        Return a new ``h.Vector`` which is a copy of the ``vsrc`` Vector, but does not copy 
         the label. For a complete copy including the label use :meth:`Vector.cl`. 
         (Identical to the :meth:`Vector.at` function but has a short name that suggests 
         copy or clone). Useful in the construction of filter chains. 
 
         In versions of NEURON before 7.7, this was often used in building Vectors
         from other Vectors, e.g. ``vec2 = vec1.c().add(1)``; in new code, it is
-        recommended to use the shorter equivalent ``vec2 = vec1 + 1``.         
+        recommended to use the shorter equivalent ``vec2 = vec1 + 1``.
+
+        The three syntaxes shown above are equivalent to the following slices:
+        * ``newvec = vsrc[:]``
+        * ``newvec = vsrc[srcstart:]``
+        * ``newvec = vsrc[srcstart:srcend + 1]``
+
+        In particular, slices are copies (not views) into a :class:`Vector` and the 
+        ``srcend`` argument is included when using the ``.c`` method.
 
          
 
@@ -966,9 +977,8 @@ Vector
     Description:
         Return a h.Vector which is a copy, including the label, of the vsrc vector. 
         (Similar to the :meth:`Vector.c` function which does not copy the label) 
-        Useful in the construction of filter chains. 
-        Note that with no arguments, it is not necessary to type the 
-        parentheses. 
+        Useful in the construction of filter chains.
+        ``srcend``, if specified, is included.
 
          
 
@@ -984,11 +994,11 @@ Vector
 
         ``newvec = vsrc.at(start)``
 
-        ``newvec = vsrc.at(start,end)``
+        ``newvec = vsrc.at(start, end)``
 
 
     Description:
-        Return a h.Vector consisting of all or part of another. 
+        Return a :class:`Vector` consisting of all or part of another. 
          
         This function predates the introduction of the vsrc.c, "clone", function 
         which is synonymous but is retained for backward compatibility. 
@@ -1030,7 +1040,7 @@ Vector
 
 
     Description:
-        Resizes the vector to size n and copies the values from the double array 
+        Resizes the :class:`Vector` to size ``n`` and copies the values from the double array 
         to the vector.
         
     Examples:
@@ -1106,6 +1116,10 @@ Vector
 
         Op2string requires two numbers defining open/closed ranges and matches one 
         of these: ``"[]"``, ``"[)"``, ``"(]"``, ``"()"``
+
+        Sometimes is advantageous to avoid reallocating memory for ``vdest``, however
+        in practice, it may often be more convenient to create a new :class:`Vector`,
+        store the results into there, and save the return (see the first example below).
          
 
     Example:
@@ -1114,8 +1128,7 @@ Vector
             python
 
             vec = h.Vector(range(0, 245, 10))
-            vec1 = h.Vector() 
-            vec1.where(vec, ">=", 50) 
+            vec1 = h.Vector().where(vec, ">=", 50) 
 
         creates ``vec1`` with 20 elements ranging in value from 50 to 240 in 
         increments of 10. 
@@ -1123,16 +1136,17 @@ Vector
         .. code-block::
             python
 
-            r = h.Random() 
-            vec = h.Vector(25) 
+            import random
+            vec = h.Vector([random.uniform(10, 20) for _ in range(25)])
             vec1 = h.Vector() 
-            r.uniform(10,20) 
-            vec.fill(r) 
             vec1.where(vec, ">", 15) 
 
         creates ``vec1`` with random elements gotten from ``vec`` which have values 
-        greater than 15.  The h.elements in vec1 will be ordered 
+        greater than 15.  The elements in ``vec1`` will be ordered 
         according to the order of their appearance in ``vec``. 
+
+        A similar effect could be obtained by creating a new :class:`Vector` from the
+        results of a list comprehension 
 
     .. seealso::
         :meth:`Vector.indvwhere`, :meth:`Vector.indwhere`
@@ -1163,18 +1177,13 @@ Vector
 
         ``i = vsrc.indwhere(op2string, low, high)``
 
+        ``obj = vsrcdest.indvwhere(opstring, value)``
 
-        ``obj = vsrcdest.indvwhere(opstring,value)``
-
-        ``obj = vsrcdest.indvwhere(opstring,value)``
-
-        ``obj = vdest.indvwhere(vsource,op2string,low, high)``
-
-        ``obj = vdest.indvwhere(vsource,op2string,low, high)``
+        ``obj = vdest.indvwhere(vsource, op2string, low, high)``
 
 
     Description:
-        The  i = vsrc form returns the index of the first element of v matching 
+        The  ``i = vsrc`` form returns the index of the first element of v matching 
         the criterion given by the opstring. If there is no match, the return value 
         is -1. 
          
@@ -1195,19 +1204,22 @@ Vector
         .. code-block::
             python
 
-            vs = h.Vector() 
-             
-            vs.indgen(0, .9, .1) 
-            vs.printf()
+            import numpy as np
+            vs = h.Vector(np.arange(0, 0.95, 0.1))
+            print(list(vs)) 
              
             print(vs.indwhere(">", .3))
             print(f"note roundoff error, vs[3] - 0.3 = {vs[3] - 0.3}")
             print(vs.indwhere("==", .5))
              
-            vd = vs.c().indvwhere(vs, "[)", .3, .7) 
-            vd.printf()
+            vd = h.Vector().indvwhere(vs, "[)", .3, .7) 
+            print(list(vd))
 
+    .. warning::
 
+        :class:`Vector` objects only store doubles, so the values in `vd` are all
+        doubles (Python floats) and thus need to be cast to an integer with ``int`` before
+        using them with `[]` to get :class:`Vector` elements.
          
 
     .. seealso::
@@ -1242,7 +1254,11 @@ Vector
         Return value is the number of items. (0 if error) 
          
         :func:`fread` is used to read a file containing numbers stored by ``fwrite`` but 
-        must have the same size. 
+        must have the same size.
+
+        :class:`Vector` objects can also be saved and loaded via Python's ``pickle`` module,
+        saved as ``numpy`` objects with ``np.save`` and converted to lists and then saved
+        with the ``json`` module.
 
          
 
