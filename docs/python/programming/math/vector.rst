@@ -9,14 +9,7 @@ Vector
 .. class:: Vector
 
          
-    This class was implemented by 
-
-    .. code-block::
-        none
-
-        ----------------------------- 
-        Zach Mainen and Michael Hines
-        -----------------------------
+    This class was implemented by Zach Mainen and Michael Hines.
          
     Syntax:
         ``obj = h.Vector()``
@@ -29,19 +22,20 @@ Vector
 
     Description:
 
-        NEURON's Vector class provides functionality that is similar (and partly interchangeable) with a numpy
+        NEURON's Vector class provides functionality that is similar (and partly interchangeable) with a ``numpy``
         one-dimensional array of doubles.  
-        The reason for the continued use of Vector is both due to back-compatibility and due to the many faster C-level
-        extensions that have been written as NMOD programs that make use of this class.
+        The reason for the continued use of ``Vector`` is both due to back-compatibility and due to the many faster C-level
+        extensions that have been written as NMODL programs that make use of this class.
 
-        A Vector is itself an iterable and can be used in any context that takes an iterable, e.g.,
+        A ``Vector`` is itself an iterable and can be used in any context that takes an iterable, e.g.,
 
         .. code-block::
            python
 
            for x in vec: print(x)
            [x for x in vec]
-           numpy.array(vec)
+           np.array(vec)
+           plt.plot(t_vec, v_vec)
 
         A Vector object created with this class can be thought of as 
         containing a  one dimensional x array with elements of type float.
@@ -57,7 +51,7 @@ Vector
             vec = h.Vector([0, 1, 2, 3, 4, 5, 6, 7, 8])
             new_vec = v[2:6]
 
-        will assign new_vec as a vector containing the values [2, 3, 4, 5]
+        will assign ``new_vec`` to be a ``Vector`` containing the values [2, 3, 4, 5]
 
         .. code-block::
             python
@@ -66,7 +60,7 @@ Vector
 
         will update the values at indices 5,6 resulting in ``vec = [0, 1, 2, 3, 4, 1, 2, 7, 8]``
 
-        A vector can be created with length *size* and with each element set to the value of *init* or can be created using
+        A ``Vector`` can be created with length *size* and with each element set to the value of *init* or can be created using
         a Python iterable.
          
         Vector methods that modify the elements are generally of the form 
@@ -98,9 +92,9 @@ Vector
     Examples:
 
         .. code-block::
-            none
+            python
 
-            vec = h.Vector(20,5)
+            vec = h.Vector(20, 5)
 
         will create a vector with 20 indices, each having the value of 5. 
 
@@ -125,10 +119,10 @@ Vector
         .. code-block::
             python
             
-            import numpy
+            import numpy as np
             
-            x = numpy.linspace(0, 2 * numpy.pi, 50)
-            y = h.Vector(numpy.sin(x))
+            x = np.linspace(0, 2 * np.pi, 50)
+            y = h.Vector(np.sin(x))
         
         produces a vector ``y`` of length 50 corresponding to the sine of evenly
         spaced points between 0 and 2 pi, inclusive.
@@ -169,7 +163,7 @@ Vector
             h.xpanel() 
 
         Note, however, that there is a potential difficulty with the :func:`xpvalue` field 
-        editor since, if vec is resized to be larger than vec.buffer_size() a reallocation of the
+        editor since, if vec is resized to be larger than :meth:`Vector.buffer_size` a reallocation of the
         memory will cause the pointer to be invalid. In this case, the field editor will display the string, "Free'd". 
 
     .. warning::
@@ -186,7 +180,7 @@ Vector
 
 
     Description:
-        Deprecated in favor of len(vec); note that ``len(vec) == vec.size()``
+        Deprecated in favor of ``len(vec)``; note that ``len(vec) == vec.size()``
         Return the number of elements in the vector. The last element has the index: 
         ``vec.size() - 1`` which can be abbreviated using -1 as above.
 
@@ -212,7 +206,7 @@ Vector
         freed and reallocated if the size needed is greater than the memory storage 
         previously allocated to the vector. Thus the memory used by vectors 
         tends to grow but not shrink. To reduce the memory used by a vector, one 
-        can explicitly call :func:`buffer_size` . 
+        can explicitly call :meth:`Vector.buffer_size` . 
          
     .. seealso::
         :meth:`Vector.buffer_size`
@@ -225,15 +219,15 @@ Vector
         ``obj = vsrcdest.resize(new_size)``
 
     Description:
-        Resize the vector.  If the vector is made smaller, then trailing elements 
+        Resize the ``Vector``.  If the ``Vector`` is made smaller, then trailing elements 
         will be zeroed.  If it is expanded, the new elements will be initialized to 0.0;
         original elements will remain unchanged. 
          
         Warning: Any function that 
-        resizes the vector to a larger size than its available space will reallocate and thereby
+        resizes the ``Vector`` to a larger size than its available space will reallocate and thereby
         make existing pointers to the elements invalid 
         (see note in :meth:`Vector.size`). 
-        For example, resizing vectors that have been plotted will remove that vector 
+        For example, resizing Vectors that have been plotted will remove that Vector 
         from the plot list. Other functions may not be so forgiving and result in 
         a memory error (segmentation violation or unhandled exception). 
 
@@ -242,10 +236,10 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(20,5) 
-            vec.resize(30) # Appends 10 elements, each having a value of 0
+            vec = h.Vector(20, 5) 
+            vec.resize(30)  # Appends 10 elements, each having a value of 0
             vec.printf()
-            vec.resize(10) # removes the last 20 elements; values of the first 10 elements are unchanged
+            vec.resize(10)  # removes the last 20 elements; values of the first 10 elements are unchanged
         
     .. seealso::
         :meth:`Vector.buffer_size`
@@ -298,17 +292,19 @@ Vector
     Description:
         Return the value of a vector element index.
 
+        It is simpler in Python to write ``x = vec[index]`` instead.
+
 ----
 
 .. method:: Vector.set
 
 
     Syntax:
-        ``obj = vsrcdest.set(index,value)``
+        ``obj = vec.set(index, value)``
 
 
     Description:
-        Set vector element index to value.  Equivalent to ``vec[i] = expr`` notation.
+        Set vector element index to value.  Equivalent to ``vec[i] = valu`` notation.
 
 ----
 
@@ -329,11 +325,19 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(20,5) 
-            vec.fill(9,2,7) 
+            vec = h.Vector(20, 5) 
+            vec.fill(9, 2, 7) 
 
-        assigns 9 to vec[2] through vec[7] 
-        (a total of 6 elements) 
+        assigns 9 to ``vec[2]`` through ``vec[7]`` 
+        (a total of 6 = 7 - 2 + 1 elements) 
+
+        An alternative to the last line using regular Python syntax would be to use slicing:
+        .. code-block::
+            python
+
+            vec[2:8] = [9] * 6
+        
+        (The slice index is 2:8 because the beginning is included but the end is not.)
 
     .. seealso::
         :meth:`Vector.indgen`, :meth:`Vector.append`
@@ -382,17 +386,18 @@ Vector
 
 
     Description:
-        Save the stream of values of "*var*" during a simulation into the vdest vector. 
-        Previous record and play specifications of this Vector (if any) are destroyed. 
+        Save the stream of values of "*var*" during a simulation into the ``vdest`` vector. 
+        Previous record and play specifications of this :class:`Vector` (if any) are destroyed. 
          
         Details: 
-        NEURON pointers in python are handled using the _ref_ syntax.  e.g., soma(0.5)._ref_v
+
+        NEURON pointers in python are handled using the ``_ref_`` syntax.  e.g., ``soma(0.5)._ref_v``
     To save a scalar from NEURON that scalar must exist in NEURON's scope.
     
 
-        Transfers take place on exit from ``finitialize()`` and on exit from ``fadvance()``. 
-        At the end of ``finitialize()``, ``v[0] = var``. At the end of ``fadvance``, 
-        *var* will be saved if ``t`` (after being incremented by ``fadvance``) 
+        Transfers take place on exit from :func:`finitialize` and on exit from :func:`fadvance`. 
+        At the end of :func:`finitialize`, ``v[0] = var``. At the end of :func:`fadvance`, 
+        *var* will be saved if ``t`` (after being incremented by :func:`fadvance`) 
         is equal or greater than the associated time of the 
         next index. The system maintains a set of record vectors and the vector will 
         be removed from the list if the vector or var is destroyed. 
@@ -423,7 +428,7 @@ Vector
         local step method but will use it for multiple threads. It is therefore 
         a good idea to supply it if possible. 
 
-        Prior to version 7.7, the record methode returned 1.0 .
+        Prior to version 7.7, the record method returned 1.0 .
 
     .. warning::
         record/play behavior is reasonable but surprising if :data:`dt` is greater than 
@@ -540,7 +545,7 @@ Vector
         have different t values (if the last two values are at the same time, 
         the constant average will be returned). 
          
-        The indices_of_discontinuities_vector argument is used to 
+        The ``indices_of_discontinuities_vector`` argument is used to 
         specifying the indices in tvec of the times at which discrete events should 
         be used to notify that a discontinuity in the function, or any derivative 
         of the function, occurs. Presently, linear interpolation is used to 
@@ -567,25 +572,25 @@ Vector
     Example of playing into an Iclamp for varying current:
 
         .. code-block::
-                  python
-        
-                  from neuron import h
-                  import pylab as plt, numpy as np
-                  h.load_file('stdrun.hoc')
-                  sec = h.Section('sec')
-                  sec.insert(h.pas)
-                  inp = np.zeros(500)
-                  inp[50:250] = 1
-                  pvec = h.Vector().from_python(inp)
-                  stim = h.IClamp(sec(0.5))
-                  stim.dur = 1e9
-                  pvec.play(stim, stim._ref_amp, True)
-                  rd = {k:h.Vector().record(v) for k,v in zip(['t', 'v', 'stim_i', 'amp'],
-                                                              [h._ref_t, sec(0.5)._ref_v, stim._ref_i, stim._ref_amp])}
-                  h.v_init, h.tstop= -70, 500
-                  h.run()
-                  plt.plot(rd['t'], rd['v'])
-                  plt.show()
+            python
+
+            from neuron import h
+            import pylab as plt, numpy as np
+            h.load_file('stdrun.hoc')
+            sec = h.Section('sec')
+            sec.insert(h.pas)
+            inp = np.zeros(500)
+            inp[50:250] = 1
+            pvec = h.Vector().from_python(inp)
+            stim = h.IClamp(sec(0.5))
+            stim.dur = 1e9
+            pvec.play(stim, stim._ref_amp, True)
+            rd = {k:h.Vector().record(v) for k,v in zip(['t', 'v', 'stim_i', 'amp'],
+                                                        [h._ref_t, sec(0.5)._ref_v, stim._ref_i, stim._ref_amp])}
+            h.v_init, h.tstop= -70, 500
+            h.run()
+            plt.plot(rd['t'], rd['v'])
+            plt.show()
 
             
     Example of playing into a segment's ina:
@@ -694,6 +699,18 @@ Vector
             vec.indgen(90, 1000, 30) 
 
         expands the vector to 31 elements going from 90 to 990 in increments of 30. 
+        This is roughly equivalent to the Python code:
+
+        .. code-block::
+            python
+
+            vec = h.Vector(range(90, 1000, 30))
+
+        In this case ``range`` returns a generator and is very memory efficient.
+        By contrast if we used ``np.arange``, that would create a ``numpy`` array
+        which would then be copied over to a new :class:`Vector` object. In most
+        cases, readability is a bigger concern than memory and time efficiency,
+        but you must decide for yourself which is more important.
 
     .. seealso::
         :meth:`Vector.fill`, :meth:`Vector.append`
@@ -776,7 +793,7 @@ Vector
             vec = h.Vector(range(0, 49, 5)) 
             vec.contains(30) 
 
-        returns True, meaning the vector does contain an element whose value is 30. 
+        returns True, meaning the ``Vector`` does contain an element whose value is 30. 
 
         .. code-block::
             python
@@ -920,7 +937,7 @@ Vector
 
 
     Description:
-        Return a h.Vector which is a copy of the vsrc Vector, but does not copy 
+        Return a ``h.Vector`` which is a copy of the vsrc Vector, but does not copy 
         the label. For a complete copy including the label use :meth:`Vector.cl`. 
         (Identical to the :meth:`Vector.at` function but has a short name that suggests 
         copy or clone). Useful in the construction of filter chains. 
