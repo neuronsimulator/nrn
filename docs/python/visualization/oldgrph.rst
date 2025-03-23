@@ -26,7 +26,7 @@ Obsolete Plotting
 
         ``h.graphmode(-1)``
             Flushes the stored plots. Subsequent calls to 
-            :func:`h.graph(t) <graph>`` will start new lines. 
+            :func:`h.graph(t) <graph>` will start new lines. 
             Should be executed just before a :func:`h.plt(-1) <plt>` to ensure the entire lines 
             are plotted. 
 
@@ -71,10 +71,10 @@ Obsolete Plotting
 
         ``h.graph(s1, s2)``
             Adds a new plot specification 
-            to the graph list. s1 must be a HOC
-            string which contains an expression, usually a variable. e.g "y". s2 is a HOC
-            string which contains any number of statements used to initialize axes. etc. 
-            E.G "``axis(0,5,1,-1,1,2) axis()``". 
+            to the graph list. s1 must be a
+            string which contains a HOC expression, usually a variable. e.g ``"y"``. s2 is a
+            string which contains any number of HOC statements used to initialize axes. etc. 
+            E.G ``"axis(0,5,1,-1,1,2) axis()"``. 
 
         ``h.graph(t)`` 
             The current value of each 
@@ -89,6 +89,7 @@ Obsolete Plotting
             python
             
             from neuron import h, gui
+            import numpy as np
 
             # define a HOC variable x
             h('x = 0')
@@ -99,13 +100,12 @@ Obsolete Plotting
                 h.axis(0, 15, 3, -1, 1, 2) 
                 h.axis() 
                 h.plot(1) 
-                for i in range(150):
+                for h.x in np.arange(0, 15, 0.1):
                     # using h.x instead of x is essential to allow the sin and
                     # cos graphs to update
-                    h.x = i * 0.1
                     h.plot(h.x, h.x / 15.)    # ramp 
                     h.graph(h.x)  # plots graph list if any
-                h.graph(-1) # flush remaining part of graphs, if any 
+                h.graph(-1)  # flush remaining part of graphs, if any 
                 h.plt(-1) 
 
              
@@ -268,14 +268,13 @@ Obsolete Plotting
             python
 
             from neuron import h, gui
-            import math
+            import numpy as np
 
             # plot the sin function from 0 to 10 radians 
-            h.axis(0, 10, 5, -1, 1, 2) #/* setup scale */ 
+            h.axis(0, 10, 5, -1, 1, 2) # setup scale 
             h.plot(1) 
-            for i in range(101):
-                x = i * 0.1
-                h.plot(x, math.sin(x))  # plot the function
+            for x in np.linspace(0, 10, 100):
+                h.plot(x, np.sin(x))  # plot the function
 
             h.axis()
             
