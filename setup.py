@@ -1,4 +1,5 @@
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -79,6 +80,11 @@ without_nrnpython = False
 if "--without-nrnpython" in sys.argv:
     without_nrnpython = True
     sys.argv.remove("--without-nrnpython")
+
+mac_pkg = False
+if "--mac_pkg" in sys.argv:
+    mac_pkg = True
+    sys.argv.remove("--mac_pkg")
 
 # Main source of the version. Dont rename, used by Cmake
 try:
@@ -211,7 +217,6 @@ class CMakeAugmentedBuilder(build_ext):
         the CMake building, sets the extension build environment and collects files.
         """
         for ext in self.extensions:
-
             if isinstance(ext, CMakeAugmentedExtension):
                 if ext.cmake_done:
                     continue
@@ -410,7 +415,7 @@ def setup_package():
     NRN_COLLECT_DIRS = ["bin", "lib", "include", "share"]
 
     docs_require = []  # sphinx, themes, etc
-    maybe_rxd_reqs = ["numpy<2", "Cython<3"] if Components.RX3D else []
+    maybe_rxd_reqs = ["numpy", "Cython"] if Components.RX3D else []
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ["pytest-runner"] if "test" in sys.argv else []
 
@@ -433,13 +438,16 @@ def setup_package():
             if sys.platform != "win32"
             else str(sys.version_info[0]) + str(sys.version_info[1])
         )
+        if mac_pkg:
+            nrn_python_lib = "nrnpython{}".format(
+                str(sys.version_info[0]) + str(sys.version_info[1])
+            )
         ext_common_libraries.append(nrn_python_lib)
 
     extension_common_params = defaultdict(
         list,
         library_dirs=[os.path.join(cmake_build_dir, "lib")],
         libraries=ext_common_libraries,
-        language="c++",
     )
 
     logging.info("Extension common compile flags %s" % str(extension_common_params))
@@ -500,6 +508,7 @@ def setup_package():
                 "neuronmusic",
                 ["src/neuronmusic/neuronmusic.pyx"],
                 include_dirs=["src/nrnpython", "src/nrnmusic"],
+                language="c++",
                 **extension_common_params,
             )
         ]
@@ -521,6 +530,9 @@ def setup_package():
                 + ["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")],
             )
         )
+
+        if platform.system() == "Darwin":
+            rxd_params["extra_link_args"] += ["-headerpad_max_install_names"]
 
         logging.info("RX3D compile flags %s" % str(rxd_params))
 
@@ -574,7 +586,7 @@ def setup_package():
         ],
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
         install_requires=[
-            "numpy>=1.9.3,<2",
+            "numpy>=1.9.3",
             "packaging",
             "find_libpython",
             "setuptools",
@@ -614,6 +626,9 @@ def mac_osx_setenv():
         explicit_target = tuple(
             int(x) for x in os.environ["MACOSX_DEPLOYMENT_TARGET"].split(".")
         )
+    else:
+        # default deployment target
+        explicit_target = (10, 9)
 
     # Match Python OSX framework
     py_osx_framework = extract_macosx_min_system_version(sys.executable)

@@ -1,7 +1,9 @@
+import ctypes
+import gc
 import os.path as osp
+
 import numpy
 import pytest
-import gc
 
 from .testutils import collect_data
 
@@ -77,7 +79,7 @@ def neuron_nosave_instance(neuron_import):
     rxd.rxd.rxd_include_node_flux1D(0, None, None, None)
     rxd.species._has_1d = False
     rxd.species._has_3d = False
-    rxd.rxd._zero_volume_indices = numpy.ndarray(0, dtype=numpy.int_)
+    rxd.rxd._zero_volume_indices = numpy.ndarray(0, dtype=ctypes.c_long)
     rxd.set_solve_type(dimension=1)
 
 

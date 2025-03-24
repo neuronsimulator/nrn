@@ -1751,3 +1751,14 @@ def _mview_html_tree(hlist, inside_mechanisms_in_use=0):
 if _get_ipython() is not None:
     html_formatter = _get_ipython().display_formatter.formatters["text/html"]
     html_formatter.for_type(hoc.HocObject, _hocobj_html)
+
+# in case Bokeh is installed, register a serialization function for hoc.Vector
+try:
+    from bokeh.core.serialization import Serializer
+
+    Serializer.register(
+        type(h.Vector),
+        lambda obj, serializer: [serializer.encode(item) for item in obj],
+    )
+except ImportError:
+    pass

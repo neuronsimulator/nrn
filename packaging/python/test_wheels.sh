@@ -274,6 +274,12 @@ test_wheel () {
 }
 
 
+test_wheel_basic_python () {
+    echo "=========== BASIC PYTHON TESTS ==========="
+    $python_exe -c "import neuron; neuron.test(); neuron.test_rxd()"
+}
+
+
 echo "== Testing $python_wheel using $python_exe ($python_ver) =="
 
 
@@ -297,10 +303,8 @@ $python_exe -m pip install --upgrade pip
 $python_exe -m pip install --upgrade setuptools
 
 
-# install numpy, pytest and neuron
-# we install setuptools because since python 3.12 it is no more installed
-# by default
-$python_exe -m pip install "numpy<2" pytest setuptools
+# install test requirements
+$python_exe -m pip install -r packaging/python/test_requirements.txt
 $python_exe -m pip install $python_wheel
 $python_exe -m pip show neuron \
     || $python_exe -m pip show neuron-nightly \
@@ -332,9 +336,14 @@ if [[ "$has_gpu_support" == "true" ]]; then
 fi
 
 
-# run tests
-test_wheel $(which python)
+# run tests with latest NumPy
+echo " == Running tests with latest NumPy == "
+test_wheel
 
+# run basic python tests with oldest supported NumPy
+echo " == Running basic python tests with oldest supported NumPy == "
+$python_exe -m pip install -r packaging/python/oldest_numpy_requirements.txt
+test_wheel_basic_python
 
 # cleanup
 if [[ "$use_venv" != "false" ]]; then

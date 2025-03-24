@@ -59,6 +59,7 @@ ks.iv_type(0)
 ks.gmax(0)
 ks.erev(0)
 
+
 # Cell with enough nonsense stuff to exercise transfer possibilities.
 class Cell:
     def __init__(self):
@@ -186,7 +187,6 @@ def check_values():
 
 
 def test_partrans():
-
     # no transfer targets or sources.
     mkmodel(4)
     run()

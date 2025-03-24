@@ -32,7 +32,7 @@ def cell_model(neuron_instance):
                     for i in range(sec.n3d())
                 ]
                 sec.pt3dclear()
-                for (x, y, z, diam) in pts:
+                for x, y, z, diam in pts:
                     sec.pt3dadd(x + sx, y + sy, z + sz, diam)
 
     yield (h, rxd, data, save_path, Cell)
