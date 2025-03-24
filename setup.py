@@ -81,6 +81,11 @@ if "--without-nrnpython" in sys.argv:
     without_nrnpython = True
     sys.argv.remove("--without-nrnpython")
 
+mac_pkg = False
+if "--mac_pkg" in sys.argv:
+    mac_pkg = True
+    sys.argv.remove("--mac_pkg")
+
 # Main source of the version. Dont rename, used by Cmake
 try:
     # github actions somehow fails with check_output and python3
@@ -433,6 +438,10 @@ def setup_package():
             if sys.platform != "win32"
             else str(sys.version_info[0]) + str(sys.version_info[1])
         )
+        if mac_pkg:
+            nrn_python_lib = "nrnpython{}".format(
+                str(sys.version_info[0]) + str(sys.version_info[1])
+            )
         ext_common_libraries.append(nrn_python_lib)
 
     extension_common_params = defaultdict(

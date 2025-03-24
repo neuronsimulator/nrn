@@ -198,6 +198,9 @@ if(NRN_ENABLE_MODULE_INSTALL)
   if(NRN_ENABLE_MUSIC)
     list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--enable-music")
   endif()
+  if(NRN_MAC_PKG)
+    list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--mac_pkg")
+  endif()
   list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--build-lib=${NRN_PYTHON_BUILD_LIB}")
 
   # Prepare build_ext options for setup.py build

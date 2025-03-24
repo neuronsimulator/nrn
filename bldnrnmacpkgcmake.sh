@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -ex
 
-default_pythons="python3.8 python3.9 python3.10 python3.11 python3.12 python3.13"
+default_pythons="python3.9 python3.10 python3.11 python3.12 python3.13"
 # distribution built with
 # bash bldnrnmacpkgcmake.sh
 # without args, default are the pythons above.
@@ -13,13 +13,21 @@ if test "$rx3doptlevel" = "" ; then
   rx3doptlevel=2
 fi
 
+# Now obsolete...
 # python3.8 needs to be universal and macosx-10.9. So we built our own
 # from python.org python3.8.18 sources. Unfortunately, I cannot get pip
 # to work (OpenSSH issues), so I installed python.org Python3.8.10 installer
 # (which would have been fine by itself except it is macosx-11)
 # and copied relevant site-packages from that into the python3.8.18
 # installation site-packages.
-export PATH=$HOME/soft/python3.8/bin:$PATH
+# export PATH=$HOME/soft/python3.8/bin:$PATH
+
+# As of Python-3.13.0, we configure to link universal2 static readline
+# (and ncurses) into libnrniv.dylib.
+# The packages were downloade and the universal libraries were built with
+# nrn/packaging/python/build_static_readline_osx.bash
+READLINE_LIST="/opt/nrnwheel/readline;/opt/nrnwheel/ncurses"
+
 # In the top level source dir?# 
 if test -f nrnversion.sh ; then
   NRN_SRC=`pwd`
@@ -30,10 +38,6 @@ fi
 # All pythons must have the same macos version and that will become
 # the MACOSX_DEPLOYMENT_TARGET
 
-# On my machine, to build nrn-x.x.x-macosx-10.9-universal2-py-38-39-310-311.pkg
-# I built my own versions of 3.8 in $HOME/soft/python3.8, and
-export PATH=$HOME/soft/python3.8/bin:$PATH
-
 CPU=`uname -m`
 
 universal="yes" # changes to "no" if any python not universal
@@ -43,10 +47,13 @@ if test "$args" = "" ; then
   args="$default_pythons"
 fi
 
-
 # sysconfig.get_platform() looks like, e.g. "macosx-12.2-arm64" or
 # "macosx-11-universal2". I.e. encodes MACOSX_DEPLOYMENT_TARGET and archs.
 # Demand all pythons we are building against have same platform.
+# Python 3.13 is 10.13. The substantive aspect of
+# the following fragment (exit 1 if not all the same platform), has been
+# commented out.
+
 mac_platform=""
 for i in $args ; do
   last_py=$i
@@ -57,7 +64,7 @@ for i in $args ; do
   fi
   if test "$mac_platform" != "$mplat" ; then
     echo "$i platform \"$mplat\" differs from previous python \"$mac_platform\"."
-    exit 1
+#    exit 1
   fi
 done
 
@@ -117,6 +124,8 @@ cmake .. -G Ninja -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DIV_ENABLE_X11_DYNAMIC=ON \
   -DNRN_ENABLE_CORENEURON=OFF \
   -DNRN_RX3D_OPT_LEVEL=$rx3doptlevel \
+  -DLINK_AGAINST_PYTHON=ON \
+  -DNRN_MAC_PKG=ON \
   $archs_cmake \
   -DCMAKE_PREFIX_PATH=/usr/X11 \
   -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=c++
