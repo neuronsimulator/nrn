@@ -22,7 +22,6 @@ from neuron import h, _sec_db
 
 
 def find_parent_seg(join, sdict, objects):
-
     if not join:
         return None
     elif join[0] not in objects:
@@ -65,7 +64,6 @@ def sort_spheres_last(item):
 
 
 def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
-
     """Input: object source; arguments to pass to ctng
     Output: all voxels with SA and volume associated, categorized by segment"""
     source = list(source)

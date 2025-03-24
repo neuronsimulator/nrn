@@ -10,7 +10,6 @@ from pathlib import Path
 
 
 class ParseRst(object):
-
     help_dictionary = {}
 
     def __init__(self, rst_path, out_file):
