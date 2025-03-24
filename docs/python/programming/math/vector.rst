@@ -1278,12 +1278,14 @@ Vector
 
 
     Description:
-        Read the elements of a vector from the file in binary as written by ``fwrite.`` 
-        If *n* is present, the vector is resized before reading. Note that 
-        files created with fwrite cannot be fread on a machine with different 
+        Read the elements of a vector from the file in binary as written by :meth:`~Vector.fwrite`. 
+        If the argument *n* is present, the vector is resized before reading. Note that 
+        files created with :meth:`~Vector.fwrite` cannot be :meth:`~Vector.fread` on a machine with different 
         byte ordering. E.g. spark and intel cpus have different byte ordering. 
+        (Intel- and arm-based macs are both little-endian, so you can move files between them.)
          
-        It is almost always better to use ``vwrite`` in combination with ``vread``. 
+        It is almost always better to use :meth:`~Vector.vwrite` in combination with :meth:`~Vector.vread`
+        since the corresponding vread will take care of machine dependent binary byte ordering differences. 
         See vwrite for the meaning of the *precision* argment. 
          
         Return value is 1 (no error checking). 
@@ -1305,13 +1307,13 @@ Vector
 
     Description:
         Write the vector in binary format 
-        to an already opened for writing * fileobj* of type 
+        to an already opened for writing *fileobj* of type 
         :class:`File`. 
-        :meth:`~Vector.vwrite` is easier to use than ``fwrite()`` 
+        :meth:`~Vector.vwrite` is easier to use than :meth:`~Vector.fwrite`
         since it stores the size of the vector and type information 
         for a more 
         automated read/write. The file data can also be vread on a machine with 
-        different byte ordering. e.g. you can vwrite with an intel cpu and vread 
+        different byte ordering. e.g. you can vwrite with an intel or arm cpu and vread 
         on a sparc. 
         Precision formats 1 and 2 employ a simple automatic 
         compression which is uncompressed automatically by vread.  Formats 3 and 4 
@@ -1321,21 +1323,42 @@ Vector
         used for numbers in oc and therefore requires no conversion or 
         compression 
 
-        .. code-block::
-            python
+        .. list-table::
+            :header-rows: 1
 
-            *  1 : char            shortest    8  bits    
-            *  2 : short                       16 bits 
-               3 : float                       32 bits 
-               4 : double          longest     64 bits    
-               5 : int                         sizeof(int) bytes 
+            * - Value
+              - Type
+              - Description
+              - Size
+            * - 1
+              - char
+              - shortest
+              - 8 bits
+            * - 2
+              - short
+              - 
+              - 16 bits
+            * - 3
+              - float
+              - 
+              - 32 bits
+            * - 4
+              - double
+              - longest
+              - 64 bits
+            * - 5
+              - int
+              - 
+              - sizeof(int) bytes
 
-         
         .. warning::
         
             These are useful primarily for storage of data: exact 
             values will not necessarily be maintained due to the conversion 
             process.
+
+            For type 5, these are stored as C-style integers. Unlike Python
+            integers, C-style integers have a fixed size and a fixed range.
          
         Return value is 1. Only if the type field is invalid will the return 
         value be 0. 
@@ -1354,11 +1377,10 @@ Vector
 
 
     Description:
-        Read vector from binary format file written with ``vwrite()``. 
+        Read vector from binary format file written with :meth:`~Vector.vwrite`. 
         Size and data type have 
-        been stored by ``vwrite()`` to allow correct retrieval syntax, byte ordering, and 
+        been stored by :meth:`~Vector.vwrite` to allow correct retrieval syntax, byte ordering, and 
         decompression (where necessary).  The vector is automatically resized. 
-         
         Return value is 1. (No error checking.) 
 
     Example:
@@ -1402,8 +1424,8 @@ Vector
 
 
     Description:
-        Print the values of the vector in ascii either to the screen or a File instance 
-        (if ``fileobj`` is present).  *Start* and *end* enable you to specify 
+        Print the values of the vector in ascii either to the screen or a :class:`File` instance 
+        (if ``fileobj`` is present).  *start* and *end* enable you to specify 
         which particular set of indexed values to print. 
         Use ``format_string`` for formatting the output of each element. 
         This string must contain exactly one ``%f``, ``%g``, or ``%e``, 
@@ -1416,13 +1438,13 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector() 
-            vec.indgen(0, 1, 0.1) 
+            import numpy as np
+            vec = h.Vector(np.arange(0, 0.95, 0.1)) 
             vec.printf("%8.4f\n") 
 
         prints the numbers 0.0000 through 0.9000 in increments of 0.1.  Each number will 
         take up a total of eight spaces, will have four decimal places 
-        and will be printed on a h.line. 
+        and will be printed on its own line. 
 
     .. warning::
         No error checking is done on the format string and invalid formats can cause 
@@ -1460,9 +1482,9 @@ Vector
         memory reallocation when scanning very long vectors (e.g. > 50000 elements) 
         it is a good idea to presize the vector to a larger value than the 
         expected number of elements to be scanned. 
-        Note that although the vector is resized to 
+        Note that although the Vector is resized to 
         the actual number of elements scanned, the space allocated to the 
-        vector remains available for growth. See :meth:`Vector.buffer_size` . 
+        Vector remains available for growth. See :meth:`Vector.buffer_size` . 
          
         Read from 
         column *c* of *nc* columns when data is in column format.  It numbers 
@@ -1491,8 +1513,8 @@ Vector
 
 
     Description:
-        Like :meth:`Vector.scanf` but scans til it reads a value equal to the 
-        sentinel. e.g. -1e15 is a possible sentinel value in many situations. 
+        Like :meth:`Vector.scanf` but scans until it reads a value equal to the 
+        sentinel. e.g., -1e15 is a possible sentinel value in many situations. 
         The vector does not include the sentinel value. The file pointer is 
         left at the character following the sentinel. 
          
@@ -1504,6 +1526,9 @@ Vector
         character following the sentinel. 
          
         The scan takes place at the current position of the file. 
+
+        *fileobj* here is an instance of :class:`File` that has been opened for reading;
+        it is not a Python file object.
          
         Return value is number of items read. 
 
@@ -1550,13 +1575,13 @@ Vector
         in order to display further changes to the vector.  In this way it 
         is possible to produce rather rapid line animation. 
          
-        If the vector :meth:`Graph.label` is not empty it will be used as the label for 
+        If the vector label is not empty it will be used as the label for 
         the line on the Graph. 
          
         Resizing a vector that has been plotted will remove it from the Graph. 
          
         The number of points plotted is the minimum of vec.size and x_vec.size 
-        at the time vec.plot is called. x_vec is assumed to be an unchanging 
+        at the time ``vec.plot`` is called. x_vec is assumed to be an unchanging 
         Vector. 
          
 
@@ -1567,13 +1592,12 @@ Vector
 
             from neuron import h, gui
             import time
+            import numpy as np
             
             g = h.Graph() 
-            g.size(0,10,-1,1) 
-            vec = h.Vector() 
-            vec.indgen(0,10, .1) 
-            vec.apply("sin") 
-            vec.plot(g, .1) 
+            g.size(0, 10, -1, 1) 
+            vec = h.Vector(np.sin(np.arange(0, 10, 0.1))) 
+            vec.plot(g, 0.1) 
             def do_run():
                 for i in range(len(vec)):
                     vec.rotate(1)
@@ -1624,7 +1648,7 @@ Vector
          
         The line on a graph is given the :meth:`Graph.label` if the label is not empty. 
          
-        The number of point plotted is the minimum of vec.size and x_vec.size . 
+        The number of point plotted is the minimum of ``len(vec)`` and ``len(x_vec)``. 
          
 
     Example:
@@ -1633,11 +1657,11 @@ Vector
             python
 
             from neuron import h, gui
+            import numpy as np
+            
             g = h.Graph() 
-            g.size(0,10,-1,1) 
-            vec = h.Vector() 
-            vec.indgen(0,10, .1) 
-            vec.apply("sin")
+            g.size(0, 10, -1, 1) 
+            vec = h.Vector(np.sin(np.arange(0, 10, 0.1))) 
             for i in range(4):
                 vec.line(g, 0.1)
                 vec.rotate(10)
@@ -1683,13 +1707,11 @@ Vector
             python
 
             g = h.Graph() 
-            g.size(0,100, 0,250) 
-            vec = h.Vector() 
-            xvec = h.Vector() 
+            g.size(0, 100, 0, 250) 
+            vec = h.Vector(range(0, 201, 20)) 
+            xvec = h.Vector(range(0, 101, 10)) 
             errvec = h.Vector() 
              
-            vec.indgen(0,200,20) 
-            xvec.indgen(0,100,10) 
             errvec.copy(xvec) 
             errvec.apply("sqrt") 
             vec.ploterr(g, xvec, errvec, 10) 
@@ -1785,14 +1807,14 @@ Vector
             interval = h.Vector(100) 
             interval.setrand(rand) # random intervals 
              
-            hist = interval.histogram(0, 10, .1) 
+            hist = interval.histogram(0, 10, 0.1) 
              
             # and for a manhattan style plot ... 
             g = h.Graph() 
-            g.size(0,10,0,30) 
+            g.size(0, 10, 0, 30) 
             # create an index vector with 0,0, 1,1, 2,2, 3,3, ... 
             v2 = h.Vector(2*len(hist))
-            v2.indgen(.5)  
+            v2.indgen(0.5)  
             v2.apply("int")  
             #  
             v3 = h.Vector(1)  
@@ -1823,7 +1845,7 @@ Vector
 
 
     Description:
-        Similar to :func:`histogram` (but notice the different argument meanings. 
+        Similar to :meth:`~Vector.histogram` (but notice the different argument meanings. 
         Put a histogram in *vdest* by binning 
         the data in *vsrc*. 
         Bins run from *low* to ``low + size * width`` 
@@ -1922,7 +1944,7 @@ Vector
 
 
     Description:
-        Return a h.Vector consisting of the elements of ``vsrc`` whose indices are given 
+        Return a :class:`Vector` consisting of the elements of ``vsrc`` whose indices are given 
         by the elements of ``vindex``. 
          
 
@@ -1931,14 +1953,20 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(100) 
-            vec2 = h.Vector() 
-            vec.indgen(5) 
-            vec2.indgen(49, 59, 1) 
+            vec = h.Vector(range(0, 500, 5)) 
+            vec2 = h.Vector(range(49, 60))
             vec1 = vec.ind(vec2) 
 
-        creates ``vec1`` to contain the fiftieth through the sixtieth elements of ``vec2`` 
+        creates ``vec1`` to contain the fiftieth through the sixtieth elements
+        (recall Vectors like Python lists are 0 indexed and range does not include the
+        end point) of ``vec2`` 
         which would have the values 245 through 295 in increments of 5. 
+    
+    .. note::
+
+        If, as in the example, the indices are in order and separated by
+        a constant amount, one could equivalently use slicing, e.g., 
+        ``vec1 = vec[49:60]``. (Requires NEURON 9+).
          
 
          
@@ -1971,7 +1999,7 @@ Vector
             g = h.Graph() 
             g.size(0,50,0,100) 
             r = h.Random() 
-            r.poisson(.2) 
+            r.poisson(0.2) 
             vec.plot(g)
 
             def race():
