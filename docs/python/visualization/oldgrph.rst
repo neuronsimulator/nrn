@@ -185,14 +185,6 @@ Obsolete Plotting
         ``h.axis(xstart, xstop, nticx, ystart, ystop, nticy)`` 
             Determines relative scale and origin. 
 
-         
-        Specification of the precision of axis tic labels is available by 
-        recompiling :file:`hoc/SRC/plot.c` with ``#define Jaslove 1+``. With this definition, 
-        the number of tics specified in the 3rd and 6th arguments of ``axis()`` should 
-        be of the form m.n. m is the number of tic marks, and n is the number of 
-        digits after the decimal point which are printed. This contribution was 
-        made by Stewart Jaslove. 
-
 
     .. seealso::
 
