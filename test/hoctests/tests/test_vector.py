@@ -23,3 +23,11 @@ func subtract_two() {
 """)
 vec.apply("subtract_two")
 assert list(vec) == [4.0, -1.5, 17]
+
+
+def unusable_function(x):
+    # this should fail because of the return value
+    return unusable_function
+
+
+expect_err("vec.apply(unusable_function)")
