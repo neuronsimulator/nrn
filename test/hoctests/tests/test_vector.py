@@ -16,11 +16,13 @@ expect_err("vec.apply('hocfunctionthatdoesnotexist')")
 expect_err("vec.apply(vec)")
 expect_err("vec.apply(42)")
 
-h("""
+h(
+    """
 func subtract_two() {
     return $1 - 2
 }
-""")
+"""
+)
 vec.apply("subtract_two")
 assert list(vec) == [4.0, -1.5, 17]
 
