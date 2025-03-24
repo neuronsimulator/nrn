@@ -1,7 +1,6 @@
 from neuron import h
 
 def add_two(x):
-    print("hello from add_two")
     return x + 2
 
 vec = h.Vector([4, -1.5, 17])

@@ -2061,10 +2061,8 @@ static Object** v_apply(void* v) {
     } else if (hoc_is_object_arg(1) && nrnpy_call_func) {
         Object* funcobj = *hoc_objgetarg(1);
         for (int i = start; i <= end; i++) {
-            std::cout << "i = " << i << std::endl;
             x->elem(i) = nrnpy_call_func(funcobj, x->elem(i));
         }
-        std::cout << "done" << std::endl;
     } else {
         hoc_execerror("apply: first argument must be a HOC string or a Python callable", nullptr);
     }
