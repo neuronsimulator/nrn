@@ -2039,6 +2039,9 @@ static Object** v_apply(void* v) {
     int start = 0;
     int end = top;
     Object* ob;
+    if (ifarg(4)) {
+        hoc_execerror("Too many parameters to apply method.", nullptr);
+    }
     if (ifarg(2)) {
         start = int(chkarg(2, 0, top));
         end = int(chkarg(3, start, top));
