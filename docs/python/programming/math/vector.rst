@@ -882,11 +882,9 @@ Vector
         .. code-block::
             python
             
-            v1 = h.Vector(15) 
-            v1.indgen() 
+            v1 = h.Vector(range(15)) 
             v1.printf() 
-            v2 = h.Vector(15) 
-            v2.indgen(10) 
+            v2 = h.Vector(range(0, 150, 10)) 
             v2.printf() 
             
             v3 = h.Vector() 
@@ -901,8 +899,7 @@ Vector
             python
 
             vec = h.Vector(100, 10) 
-            vec1 = h.Vector() 
-            vec1.indgen(5, 105, 10) 
+            vec1 = h.Vector(range(5, 110, 10)) 
             vec.copy(vec1, 50, 3, 6) 
 
         turns ``vec`` from a 100 element into a 54 element vector. 
@@ -1018,8 +1015,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector() 
-            vec.indgen(10,50,2) 
+            vec = h.Vector(range(10, 51, 2)) 
             vec1 = vec.at(2, 10) 
 
         creates ``vec1`` with 9 elements which correspond to the values at indices 
@@ -1815,8 +1811,8 @@ Vector
             # create an index vector with 0,0, 1,1, 2,2, 3,3, ... 
             v2 = h.Vector(2*len(hist))
             v2.indgen(0.5)  
-            v2.apply("int")  
-            #  
+            v2.apply(int)  
+              
             v3 = h.Vector(1)  
             v3.index(hist, v2)  
             v3.rotate(-1)            # so different y's within each pair 
@@ -1897,9 +1893,9 @@ Vector
             data = h.Vector(100) 
             data.setrand(r) 
              
-            hist = data.sumgauss(-4, 6, .5, 1) 
+            hist = data.sumgauss(-4, 6, 0.5, 1) 
             x = h.Vector(len(hist))
-            x.indgen(-4, 6, .5) 
+            x.indgen(-4, 6, 0.5) 
              
             g = h.Graph() 
             g.size(-4, 6, 0, 30) 
@@ -2091,17 +2087,57 @@ Vector
 
 
     Syntax:
-        ``obj = vsrcdest.apply("func")``
 
-        ``obj = vsrcdest.apply("func", start, end)``
+        ``obj = vsrcdest.apply(pyfunction)``
+
+        ``obj = vsrcdest.apply(pyfunction, start, end)``
+
+        ``obj = vsrcdest.apply("hocfunc")``
+
+        ``obj = vsrcdest.apply("hocfunc", start, end)``
 
 
     Description:
-        Apply a hoc function to each of the elements in the vector. 
-        The function can be any function that is accessible in oc.  It 
+        Apply a function to each of the elements in the vector. It
         must take only one scalar argument and return a scalar. 
-        Note that the function name must be in quotes and that the parentheses 
-        are omitted. 
+        The result is stored in the Vector; it does not create a new vector.
+        The return value is the Vector itself; ths allows chaining multiple
+        calls to ``apply``.
+
+        If a string is supplied, the string is assumed to refer to the name
+        of some function defined known to HOC (in particular, do not pass
+        the name of a Python function as a string). For this format, provide
+        only the function name as a string, not the parentheses.
+
+    Example:
+
+        .. code-block::
+            python
+
+            vec = h.Vector([1, 2, 20])
+            def my_function(x):
+                if x > 13:
+                    return x * x + 7
+                else:
+                    return x - 2
+
+            vec.apply(my_function) 
+
+            print(list(vec))  # [-1.0, 0.0, 407.0]
+
+        applies the Python function ``my_function`` to all elements of the vector ``vec``.
+    
+    Example:
+
+        This example demonstrates chaining. For each value in ``vec``, we take the sine.
+        We then apply the ReLU function. Thus we end up with a Vector that has the sine
+        of the original values where that sine is positive, and 0 otherwise.
+
+        .. code-block::
+            python
+
+            relu = lambda x: x if x > 0 else 0
+            vec.apply(h.sin).apply(relu)
 
     Example:
 
@@ -2110,7 +2146,17 @@ Vector
 
             vec.apply("sin", 0, 9) 
 
-        applies the sin function to the first ten elements of the vector ``vec``. 
+        applies the HOC sin function to the first ten elements of the vector ``vec``. 
+
+    .. note::
+
+        Support for Python functions was added in NEURON 9.
+
+        Prior to NEURON 9, extra arguments in the call to ``apply`` were ignored;
+        beginning in NEURON 9, calling ``apply`` with extra arguments will raise an
+        error.
+
+
 
          
 
@@ -2169,13 +2215,23 @@ Vector
 
 
     Syntax:
-        ``vec.floor()``
+        ``vec = vec.floor()``
 
 
     Description:
         Rounds toward negative infinity. Note that :data:`float_epsilon` is not 
-        used in this calculation. 
+        used in this calculation. The Vector is modified in place and the return
+        value is the Vector itself, to allow for chaining.
 
+        This is a slightly faster equivalent to:
+
+        .. code-block::
+            python
+
+            import math
+            vec.apply(math.floor)
+
+        Calling ``np.floor(vec)`` is similar, but would return a numpy array, not a Vector.
          
          
 
@@ -2195,9 +2251,11 @@ Vector
 
 
     Description:
-        Copy the vector elements from the hoc vector to a pythonlist or 
+        Copy the vector elements from the NEURON vector to a pythonlist or 
         1-d numpyarray. If the arg exists the pythonobject must have the same 
-        size as the hoc vector. 
+        size as the NEURON vector. 
+
+        The first form is equivalent to ``pythonlist = list(vec)``.
 
          
 
@@ -2215,10 +2273,10 @@ Vector
 
 
     Description:
-        Copy the python list elements into the hoc vector. The elements must be 
+        Copy the python list elements into the NEURON vector. The elements must be 
         numbers that are convertable to doubles. 
-        Copy the numpy 1-d array elements into the hoc vector. 
-        The hoc vector is resized. 
+        Copy the numpy 1-d array elements into the NEURON vector. 
+        The Vector is resized. 
 
 
 ----
@@ -2233,7 +2291,7 @@ Vector
 
     Description:
     
-        The numpyarray points into the data of the Hoc Vector, i.e. does not
+        The numpyarray points into the data of the NEURON Vector, i.e. does not
         copy the data. Do not
         use the numpyarray if the Vector is destroyed.
 
@@ -2398,11 +2456,11 @@ Vector
              
             xd = h.Vector() 
              
-            xd.indgen(-.5, 10.5, .1) 
+            xd.indgen(-0.5, 10.5, 0.1) 
             yd = ys.c().interpolate(xd, xs) 
             yd.line(g, xd, 3, 0) # blue more points than reference 
              
-            xd.indgen(-.5, 13, 3) 
+            xd.indgen(-0.5, 13, 3) 
             yd = ys.c().interpolate(xd, xs) 
             yd.line(g, xd, 2, 0) # red fewer points than reference 
 
@@ -2963,8 +3021,7 @@ Vector
         .. code-block::
             python
 
-            v1 = h.Vector() 
-            v1.indgen(-.5, .5, .1) 
+            v = h.Vector(i * 0.1 for i in range(-5, 6))
             v1.printf() 
             v1.abs().printf() 
 
@@ -2996,15 +3053,15 @@ Vector
             python
 
             from neuron import h
+            import numpy as np
 
-            vec = h.Vector() 
+            # vec will have 51 values from 0 to 5, with increment=0.1
+            vec = h.Vector(np.arange(0, 5.1, 0.1)) 
             vec1 = h.Vector() 
-            vec2 = h.Vector() 
+            vec2 = h.Vector(range(0, 51, 10)) 
             vec3 = h.Vector(6) 
-            vec.indgen(0, 5.1, 0.1)	# vec will have 51 values from 0 to 5, with increment=0.1 
             vec1.integral(vec, 0.1)	# Euler integral of vec elements approximating 
                                     # an x-squared function, dx = 0.1 
-            vec2.indgen(0, 50, 10) 
             vec3.index(vec1, vec2)  # put the value of every 10th index in vec2 
 
 
@@ -3028,6 +3085,8 @@ Vector
 
     Description:
         Return the minimum value. 
+        
+        This is a slightly faster equivalent to ``min(vec)`` and ``min(vec[start:end + 1])``.
 
          
 
@@ -3065,6 +3124,7 @@ Vector
     Description:
         Return the maximum value. 
 
+        This is a slightly faster equivalent to ``max(vec)`` and ``max(vec[start:end + 1])``.
          
 
 ----
@@ -3099,7 +3159,7 @@ Vector
         Some older versions of NEURON reported erroneous values for `max_ind`
         when `start` and `end` are specified. Test for this with the example 
         above. All released versions _newer_ than 8.2.2 work correctly, as 
-        does the current develoopment version.
+        does the current development version.
 
 ----
 
@@ -3115,7 +3175,10 @@ Vector
 
 
     Description:
-        Return the sum of element values. 
+        Return the sum of element values. Positions ``start`` and ``end`` are inclusive.
+
+        This is a slightly faster equivalent to ``x = sum(vec)`` and 
+        ``x = sum(vec[start:end + 1])``
 
          
 
@@ -3221,7 +3284,9 @@ Vector
 
 
     Description:
-        Return the dot (inner) product of ``vec`` and *vec1*. 
+        Return the dot (inner) product of *vec* and *vec1*. 
+
+        Equivalent to ``np.dot(vec, vec1)``.
 
          
 
@@ -3259,6 +3324,14 @@ Vector
         elements of *vec1* to the elements of ``vsrcdest``. 
         ``vsrcdest`` and *vec1* must have the same size. 
 
+        The Vector *vsrcdest* is modified. The return value is the Vector itself,
+        to allow for chaining.
+
+        If you want to keep the original Vector unchanged and create a new one, 
+        use the regular arithmetic operators; e.g., ``v2 = v1 + 1`` or 
+        ``v3 = v1 + v2``.
+
+
          
 
 ----
@@ -3276,9 +3349,15 @@ Vector
 
     Description:
         Subtract either a scalar from each element of the vector or subtract the 
-        corresponding elements of *vec1* from the elements of ``vsrcdest``. 
-        ``vsrcdest`` and *vec1* must have the same size. 
+        corresponding elements of *vec1* from the elements of *vsrcdest*. 
+        *vsrcdest* and *vec1* must have the same size. 
 
+        The Vector *vsrcdest* is modified. The return value is the Vector itself,
+        to allow for chaining.
+
+        If you want to keep the original Vector unchanged and create a new one, 
+        use the regular arithmetic operators; e.g., ``v2 = v1 - 1`` or 
+        ``v3 = v1 - v2``.
          
 
 ----
