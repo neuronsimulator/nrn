@@ -11,7 +11,7 @@ def add_two(x):
 vec = h.Vector([4, -1.5, 17])
 vec.apply(add_two)
 assert list(vec) == [6.0, 0.5, 19.0]
-expect_err("vec.apply(add_two, 1, 2, 5, 24, 13'))  # too many args
+expect_err("vec.apply(add_two, 1, 2, 5, 24, 13)")  # too many args
 expect_err("vec.apply('hocfunctionthatdoesnotexist')")
 expect_err("vec.apply(vec)")
 expect_err("vec.apply(42)")
