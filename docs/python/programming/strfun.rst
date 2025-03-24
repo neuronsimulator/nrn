@@ -13,7 +13,7 @@ StringFunctions (String Manipulation Class)
 
 
     Description:
-        The StringFunctions class contains functions which you can apply to a \ ``strdef``.  This class 
+        The StringFunctions class contains functions which you can apply to a ``strdef``.  This class 
         exists purely for the utility of preventing pollution of name space with string operations. 
 
     Example:
@@ -136,7 +136,7 @@ StringFunctions (String Manipulation Class)
         return index of first char. 
          
         Other functions can be added as needed, 
-        eg., \ ``index(s1, c1)``, \ ``char(s1, i)``, etc. 
+        eg., ``index(s1, c1)``, ``char(s1, i)``, etc. 
         without polluting the global name space. In recent versions 
         functions can return strings. 
 
