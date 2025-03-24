@@ -78,7 +78,7 @@ Note: NEURON argument indices are always numbered from 1.
 Check for the existence of an argument
 --------------------------------------
 
-Use ``ifarg(n)`` to check to see if there is an ``n``th argument (the arguments are numbered from 1).
+Use ``ifarg(n)`` to check to see if there is an ``n``\ th argument (the arguments are numbered from 1).
 
 Many existing functions and methods currently do not check for too many arguments, however doing
 so is recommended as it indicates a probable user error.

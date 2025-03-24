@@ -29,11 +29,8 @@ py_ver=""
 # for NEURON and its submodules
 python_requirements_path="$(mktemp -d)/requirements.txt"
 
-clone_nmodl_and_add_requirements() {
-    git config --global --add safe.directory /root/nrn
-    git submodule update --init --recursive --force --depth 1 -- external/nmodl
-    # We only want the _build_ dependencies
-    sed -e '/^# runtime dependencies/,$ d' external/nmodl/requirements.txt >> "${python_requirements_path}"
+nmodl_add_requirements() {
+    sed -e '/^# runtime dependencies/,$ d' nmodl_requirements.txt >> "${python_requirements_path}"
 }
 
 
@@ -49,9 +46,9 @@ setup_venv() {
 
     . "$venv_dir/bin/activate"
 
-    if ! pip install -U pip setuptools wheel; then
+    if ! pip install -U 'pip<=25.0.1' 'setuptools<=70.3.0' 'wheel<=0.45.1'; then
         curl https://raw.githubusercontent.com/pypa/get-pip/20.3.4/get-pip.py | python
-        pip install -U setuptools wheel
+        pip install -U 'setuptools<=70.3.0' 'wheel<=0.45.1'
     fi
 
 }
@@ -64,7 +61,7 @@ build_wheel_linux() {
     (( $skip )) && return 0
 
     echo " - Installing build requirements"
-    pip install auditwheel
+    pip install 'auditwheel<=6.2.0'
     cp packaging/python/build_requirements.txt "${python_requirements_path}"
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
@@ -74,8 +71,8 @@ build_wheel_linux() {
 
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
-        clone_nmodl_and_add_requirements
-        CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF,CORENRN_ENABLE_OPENMP=ON"
+        nmodl_add_requirements
+        CMAKE_DEFS="${CMAKE_DEFS},NRN_LINK_AGAINST_PYTHON=OFF,CORENRN_ENABLE_OPENMP=ON"
     fi
 
     cat "${python_requirements_path}"
@@ -129,12 +126,12 @@ build_wheel_osx() {
 
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
-        clone_nmodl_and_add_requirements
-        CMAKE_DEFS="${CMAKE_DEFS},LINK_AGAINST_PYTHON=OFF"
+        nmodl_add_requirements
+        CMAKE_DEFS="${CMAKE_DEFS},NRN_LINK_AGAINST_PYTHON=OFF"
     fi
 
     cat "${python_requirements_path}"
-    pip install -U delocate -r "${python_requirements_path}"
+    pip install -U 'delocate<=0.13.0' -r "${python_requirements_path}"
     pip check
 
     echo " - Building..."

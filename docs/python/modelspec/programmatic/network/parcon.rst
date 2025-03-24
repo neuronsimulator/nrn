@@ -2093,8 +2093,11 @@ Description:
             def f(arg):
                 ret = pc.id_world() * 100 + pc.id_bbs() * 10 + pc.id()
                 print( 
-                    "userid=%d arg=%d ret=%03d  world %d of %d  bbs %d of %d  net %d of %d" %
-                    (h.hoc_ac_, arg, ret, pc.id_world(), pc.nhost_world(), pc.id_bbs(), pc.nhost_bbs(), pc.id(), pc.nhost()))
+                    f"userid={h.hoc_ac_} arg={arg} ret={ret:3d}"
+                    f"  world {pc.id_world():d} of {pc.nhost_world():d}"
+                    f"  bbs {pc.id_bbs():d} of {pc.nhost_bbs():d}"
+                    f"  net {pc.id()} of {pc.nhost()}"
+                )
                 time.sleep(1)
                 return ret
 
@@ -2115,7 +2118,7 @@ Description:
                 userid = pc.working()
                 if not userid: break
                 arg = pc.upkscalar()
-                print("result userid=%d arg=%d return=%03d" % (userid, arg, pc.pyret()))
+                print(f"result userid={userid} arg={arg} return={pc.pyret():03d}")
 
              
             print("\nafter working") 
