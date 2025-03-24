@@ -2028,7 +2028,41 @@ Vector
         Sets random values for the elements of the vector by sampling from the 
         same distribution as last picked in *randobj*. 
 
-         
+        *randobj* is an instance of :class:`Random` not a Python random object.
+
+        Note that both the *start* and *end* indices are included in the randomization.
+
+    Example:
+
+        .. code-block::
+            python
+
+            from neuron import h
+            import matplotlib.pyplot as plt
+
+            vec = h.Vector(10_000)
+            r = h.Random()
+            r.normal(0, 1)  # sets the distribution we want
+            vec.setrand(r)
+            plt.hist(vec, bins=50)
+            plt.show() 
+
+        .. image:: ../../images/vector-setrand.png
+            :align: center
+    
+    .. note::
+
+        To do something approximately equivalent in Python with a Python
+        random number generator, in NEURON 9+ assign to a slice of the vector, e.g.,
+
+        .. code-block::
+            python
+
+            import random
+            vec[40:60] = [random.normalvariate(0, 1) for _ in range(40, 60)]
+
+        Remember that this assigns to indivies 40 - 59, not 40 - 60 (i.e., the end
+        of a slice is not included.)
 
 ----
 
