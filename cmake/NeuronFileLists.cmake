@@ -156,7 +156,6 @@ set(IVOC_FILE_LIST
     grglyph.cpp
     grmanip.cpp
     hocmark.cpp
-    htlist.cpp
     idraw.cpp
     ivoc.cpp
     ivocmain.cpp
@@ -460,7 +459,7 @@ nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.c
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)
 nrn_create_file_list(NRN_MODLUNIT_SRC_FILES ${NRN_MODLUNIT_SRC_DIR} ${MODLUNIT_FILES_LIST})
 nrn_create_file_list(NRN_NOCMODL_SRC_FILES ${NRN_NOCMODL_SRC_DIR} ${NOCMODL_FILES_LIST})
-nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmpi
+nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_BINARY_DIR}/src/nrnmpi
                      ${MPI_DYNAMIC_INCLUDE})
 nrn_create_file_list(NRN_IVOS_SRC_FILES ${NRN_IVOS_SRC_DIR} ${IVOS_FILES_LIST})
 nrn_create_file_list(NRN_MUSIC_SRC_FILES ${NRN_MUSIC_SRC_DIR} ${NRN_MUSIC_FILES_LIST})

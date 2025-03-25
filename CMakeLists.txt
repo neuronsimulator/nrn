@@ -210,6 +210,15 @@ set(NRN_PROFILER
     CACHE STRING "Set which profiler to build against ('caliper', 'likwid')")
 
 # =============================================================================
+# Build options for NMODL
+# =============================================================================
+option(NMODL_ENABLE_PYTHON_BINDINGS "Enable pybind11 based python bindings" ON)
+set(NMODL_EXTRA_CXX_FLAGS
+    ""
+    CACHE STRING "Add extra compile flags for NMODL sources")
+separate_arguments(NMODL_EXTRA_CXX_FLAGS)
+
+# =============================================================================
 # Include cmake modules
 # =============================================================================
 # sub-directorty containing project submodules
@@ -507,22 +516,50 @@ cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 # Enable NMODL code-generator support
 # =============================================================================
 if(NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON)
+  # NMODL Python build dependencies
+  nrn_find_python_module(MODULE jinja2 REQUIRED)
+  # N.B. `nrn_find_python_module` uses the _importable_ name of the package to find it, _not_ the
+  # actual package name. In this case, `pip install pyyaml` actually installs an importable package
+  # called `yaml`
+  nrn_find_python_module(MODULE yaml REQUIRED)
+
+  # NMODL non-Python build dependencies
+  cpp_cc_git_submodule(json BUILD PACKAGE nlohmann_json REQUIRED)
+  cpp_cc_git_submodule(pybind11 BUILD PACKAGE pybind11 REQUIRED)
+
+  option(SPDLOG_FMT_EXTERNAL "Force to use an external {{fmt}}" ON)
+  option(SPDLOG_SYSTEM_INCLUDE "Include spdlog as a system lib" ON)
+  cpp_cc_git_submodule(spdlog BUILD PACKAGE spdlog REQUIRED)
+  if(${CODING_CONV_PREFIX}_3RDPARTY_USE_SPDLOG)
+    # See above, same logic as fmt
+    set_target_properties(spdlog PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  endif()
 
   set(NMODL_ENABLE_PYTHON_BINDINGS
       OFF
       CACHE BOOL "Enable NMODL python bindings")
-  nrn_add_external_project(nmodl)
+
+  include(${PROJECT_SOURCE_DIR}/cmake/nmodl/PythonLinkHelper.cmake)
+
+  # where the platform-specific sources are located
+  set(NMODL_PROJECT_PLATLIB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/nmodl)
+  set(NMODL_PROJECT_PLATLIB_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/nmodl)
+  # where the platform-independent sources are located
+  set(NMODL_PROJECT_PURELIB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/python/neuron/nmodl)
+  set(NMODL_PROJECT_PURELIB_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/nmodl)
+
+  add_subdirectory(src/nmodl)
   set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
   set(NMODL_TARGET_TO_DEPEND nmodl)
-  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
+  set(NMODL_PROJECT_PLATLIB_BINARY_DIR ${CMAKE_BINARY_DIR}/src/nmodl)
   # install nrnunits.lib and libpywrapper.so from external/nmodl
   install(
-    FILES ${NMODL_PROJECT_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
+    FILES ${NMODL_PROJECT_PLATLIB_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
     DESTINATION lib
     COMPONENT pywrapper
     OPTIONAL)
   install(
-    FILES ${NMODL_PROJECT_BINARY_DIR}/share/nmodl/nrnunits.lib
+    FILES ${NMODL_PROJECT_PLATLIB_BINARY_DIR}/share/nmodl/nrnunits.lib
     DESTINATION share/nmodl
     COMPONENT nrnunits)
 
@@ -648,6 +685,13 @@ function(prepend_to_var var new_path)
 endfunction()
 set(NRN_RUN_FROM_BUILD_DIR_ENV "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
                                "NRNHOME=${PROJECT_BINARY_DIR}")
+
+# if we do not link against Python, NMODL will complain that some of the env variables are missing
+# when building coreNEURON mod files
+if(NOT NRN_LINK_AGAINST_PYTHON)
+  set(NRN_RUN_FROM_BUILD_DIR_ENV "${NRN_RUN_FROM_BUILD_DIR_ENV}" "NMODLHOME=${PROJECT_BINARY_DIR}"
+                                 "NMODL_PYLIB=${PYTHON_LIBRARY}")
+endif()
 prepend_to_var(PATH "${PROJECT_BINARY_DIR}/bin")
 if(APPLE)
   prepend_to_var(DYLD_LIBRARY_PATH "${PROJECT_BINARY_DIR}/lib")
@@ -790,30 +834,6 @@ add_custom_target(
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 # =============================================================================
-# ~~~
-# Update hh.mod for CoreNEURON compatibility
-# - Replace GLOBAL variable by RANGE
-# - Comment out TABLE
-# ~~~
-# =============================================================================
-if(NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY)
-  set(GLOBAL_VAR_TOGGLE_COMMAND "'s/ GLOBAL minf/ RANGE minf/'")
-else()
-  set(GLOBAL_VAR_TOGGLE_COMMAND "'s/ RANGE minf/ GLOBAL minf/'")
-endif()
-separate_arguments(GLOBAL_VAR_TOGGLE_COMMAND UNIX_COMMAND "${GLOBAL_VAR_TOGGLE_COMMAND}")
-add_custom_target(
-  hh_update
-  COMMAND sed ${GLOBAL_VAR_TOGGLE_COMMAND} ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod >
-          ${CMAKE_BINARY_DIR}/hh.mod.1
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.1
-          ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
-  COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1
-  COMMENT "Update hh.mod for CoreNEURON compatibility"
-  VERBATIM)
-add_dependencies(nrniv_lib hh_update)
-
-# =============================================================================
 # Generate help_data.dat
 # =============================================================================
 if(NRN_ENABLE_PYTHON)
@@ -915,8 +935,6 @@ install(
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${NRN_INSTALL_SHARE_DIR})
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
-        DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
-install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
 
 # Copy NEURON headers that will be included in the installation into the build directory.

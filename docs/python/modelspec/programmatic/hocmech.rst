@@ -68,12 +68,13 @@ HOC-based Mechanisms
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import h
             import math
+            h.load_file("stdrun.hoc")
 
-            soma = h.Section(name="soma")
+            soma = h.Section("soma")
             soma.L = soma.diam = math.sqrt(100 / math.pi)
-            soma.insert('hh')  # equivalently: soma.insert(h.hh)
+            soma.insert(h.hh)
 
             stim = h.IClamp(soma(0.5))
             stim.dur = 0.1
@@ -97,9 +98,9 @@ HOC-based Mechanisms
             ''')
 
             h.make_mechanism('max', 'Max')
-            soma.insert('max')
+            soma.insert('max')  # could also do: soma.insert(h.max)
             h.run()
 
-            print('V_max = %g' % soma(0.5).max.V)
+            print(f'V_max = {soma(0.5).max.V}')
          
 

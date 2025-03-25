@@ -477,11 +477,11 @@ static void mul(int nnonzero,
     }
 }
 
-extern "C" NRN_EXPORT void set_setup(const fptr* setup_fn) {
+extern "C" NRN_EXPORT void set_setup(fptr* setup_fn) {
     _setup = setup_fn;
 }
 
-extern "C" NRN_EXPORT void set_initialize(const fptr* initialize_fn) {
+extern "C" NRN_EXPORT void set_initialize(fptr* initialize_fn) {
     _initialize = initialize_fn;
     set_num_threads(NUM_THREADS);
 }
