@@ -3484,10 +3484,14 @@ static double nrnpy_call_func_(Object* obj, double x) {
         // leave whatever error occurred set
         return 0.0;
     }
-    if (!PyFloat_Check(result.ptr())) {
-        PyErr_SetString(PyExc_TypeError, "Expected a float result from Python function");
+    if (!PyNumber_Check(result.ptr())) {
+        PyErr_SetString(PyExc_TypeError, "Expected a numeric result from Python function");
         return 0.0;
     }
     double value = PyFloat_AsDouble(result.ptr());
+    if (PyErr_Occurred()) {
+        PyErr_SetString(PyExc_TypeError, "Failed to convert result to float");
+        return 0.0;
+    }
     return value;
 }
