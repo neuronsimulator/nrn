@@ -814,7 +814,6 @@ void connection_coef(void) /* setup a and b */
 {
     int j;
     double area;
-    hoc_Item* qsec;
     Node* nd;
 #if RA_WARNING
     extern int nrn_ra_set;
@@ -836,9 +835,7 @@ void connection_coef(void) /* setup a and b */
 #endif
     ++recalc_diam_count_;
     nrn_area_ri_nocount_ = 1;
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         nrn_area_ri(sec);
     }
     nrn_area_ri_nocount_ = 0;
@@ -858,9 +855,7 @@ void connection_coef(void) /* setup a and b */
         std::fill_n(nt.node_a_storage(), nt.end, 0.0);
         std::fill_n(nt.node_b_storage(), nt.end, 0.0);
     }
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         // Unnecessary because they are unused, but help when looking at fmatrix.
         if (!sec->parentsec) {
             if (auto* const ptr = nrn_classicalNodeA(sec->parentnode)) {
@@ -889,9 +884,7 @@ void connection_coef(void) /* setup a and b */
         }
     }
     /* now the effect of parent on node equation. */
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (const Section* sec: range_sec(section_list)) {
         for (j = 0; j < sec->nnode; j++) {
             nd = sec->pnode[j];
             *nrn_classicalNodeB(nd) = -1.e2 * NODERINV(nd) / NODEAREA(nd);
@@ -1602,7 +1595,6 @@ static double diam_from_list(Section* sec, int inode, Prop* p, double rparent)
 
 void v_setup_vectors(void) {
     int inode, i;
-    NrnThread* _nt;
 
     if (tree_changed) {
         setup_topology(); /* now classical secorder */
@@ -1665,7 +1657,7 @@ void v_setup_vectors(void) {
     reorder_secorder();
 #endif
 
-    FOR_THREADS(_nt) {
+    for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
         for (inode = 0; inode < _nt->end; inode++) {
             if (_nt->_v_parent[inode] != NULL) {
                 _nt->_v_parent_index[inode] = _nt->_v_parent[inode]->v_node_index;
@@ -1777,8 +1769,7 @@ void v_setup_vectors(void) {
 
 
 void nrn_matrix_node_free() {
-    NrnThread* nt;
-    FOR_THREADS(nt) {
+    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         if (nt->_sp13_rhs) {
             free(std::exchange(nt->_sp13_rhs, nullptr));
         }
@@ -1792,7 +1783,6 @@ void nrn_matrix_node_free() {
 
 /* 0 means no model, 1 means ODE, 2 means DAE */
 int nrn_modeltype(void) {
-    NrnThread* nt;
     int type;
     v_setup_vectors();
 
@@ -1803,9 +1793,10 @@ int nrn_modeltype(void) {
     type = 0;
     if (nrn_global_ncell > 0) {
         type = 1;
-        FOR_THREADS(nt) if (nt->_ecell_memb_list) {
-            type = 2;
-        }
+        for (const NrnThread* nt: for_threads(nrn_threads, nrn_nthread))
+            if (nt->_ecell_memb_list) {
+                type = 2;
+            }
     }
     if (type == 0 && nrn_nonvint_block_ode_count(0, 0)) {
         type = 1;
@@ -1856,10 +1847,9 @@ and therefore is passed to spSolve as actual_rhs intead of actual_rhs-1.
 
 static void nrn_matrix_node_alloc(void) {
     int i;
-    NrnThread* nt;
 
     nrn_method_consistent();
-    nt = nrn_threads;
+    NrnThread* nt = nrn_threads;
     /*printf("use_sparse13=%d sp13mat=%lx rhs=%lx\n", use_sparse13, (long)nt->_sp13mat,
      * (long)nt->_actual_rhs);*/
     if (use_sparse13) {
@@ -1936,7 +1926,7 @@ static void nrn_matrix_node_alloc(void) {
         }
         nrndae_alloc();
     } else {
-        FOR_THREADS(nt) {
+        for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
             assert(nrndae_extra_eqn_count() == 0);
             assert(!nt->_ecell_memb_list || nt->_ecell_memb_list->nodecount == 0);
         }
@@ -1979,8 +1969,7 @@ static void nrn_sort_mech_data(
         std::size_t global_i{}, trivial_counter{};
         std::vector<std::size_t> mech_data_permutation(mech_data_size,
                                                        std::numeric_limits<std::size_t>::max());
-        NrnThread* nt{};
-        FOR_THREADS(nt) {
+        for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
             // the Memb_list for this mechanism in this thread, this might be
             // null if there are no entries, or if it's an artificial cell type(?)
             auto* const ml = nt->_ml_list[type];
@@ -2143,8 +2132,7 @@ static void nrn_sort_node_data(neuron::container::Node::storage::frozen_token_ty
                                                    std::numeric_limits<std::size_t>::max());
     // Process threads one at a time -- this means that the data for each
     // NrnThread will be contiguous.
-    NrnThread* nt{};
-    FOR_THREADS(nt) {
+    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         // What offset in the global node data structure do the values for this thread
         // start at
         nt->_node_data_offset = global_i;

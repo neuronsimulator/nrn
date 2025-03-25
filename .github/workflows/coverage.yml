@@ -24,7 +24,7 @@ on:
 env:
   PY_MIN_VERSION: '3.9'
   PY_MID_VERSION: '3.10'
-  PY_MAX_VERSION: '3.12'
+  PY_MAX_VERSION: '3.13'
 
 jobs:
   coverage:
@@ -59,7 +59,7 @@ jobs:
         run: |
           python3 -m venv music-venv
           source music-venv/bin/activate
-          python3 -m pip install mpi4py cython numpy setuptools
+          python3 -m pip install 'mpi4py<=4.0.3' 'cython<=3.0.12' 'numpy<=2.2.3' 'setuptools<=70.3.0'
           sudo mkdir -p $MUSIC_INSTALL_DIR
           sudo chown -R $USER $MUSIC_INSTALL_DIR
           curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/${MUSIC_VERSION}.zip
@@ -79,11 +79,6 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Clone nmodl
-        working-directory: ${{runner.workspace}}/nrn
-        run: |
-            git submodule update --init --recursive --force --depth 1 -- external/nmodl
-
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         uses: actions/setup-python@v5
         with:
@@ -92,7 +87,6 @@ jobs:
       - name: Install Python@${{ env.PY_MIN_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install --upgrade -r external/nmodl/requirements.txt
           python -m pip install --upgrade -r ci_requirements.txt
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
@@ -109,7 +103,6 @@ jobs:
       - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install --upgrade -r external/nmodl/requirements.txt
           python -m pip install --upgrade -r ci_requirements.txt
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
