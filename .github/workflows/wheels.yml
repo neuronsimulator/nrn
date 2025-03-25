@@ -1,0 +1,203 @@
+name: Build NEURON Python wheels
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: "0 0 * * *"
+    branches:
+      - master
+
+  workflow_dispatch:
+    inputs:
+      rel_release:
+        description: Release branch/commit
+        default: 'release/x.y'
+        required: true
+      rel_version:
+        description: Release version (tag name), in format major.minor.patch
+        default: ''
+        required: false
+      upload:
+        description: Whether to upload to PyPI or not
+        default: false
+        required: true
+        type: boolean
+      type:
+        description: The type of build (release or nightly)
+        default: 'nightly'
+        options:
+          - 'nightly'
+          - 'release'
+
+jobs:
+  build-test:
+    name: Build and test Python ${{ matrix.python-version }} wheel on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        os: ['macos-13', 'macos-14', 'ubuntu-22.04', 'ubuntu-22.04-arm']
+        python-version: ['3.9', '3.13']
+        include:
+          - python-version: '3.9'
+            python-org-version: '3.9.13'
+            python-installer-name: 'macos11.pkg'
+
+          - python-version: '3.13'
+            python-org-version: '3.13.0'
+            python-installer-name: 'macos11.pkg'
+
+          - os: 'ubuntu-22.04'
+            base_image: 'docker.io/neuronsimulator/neuron_wheel:latest-gcc9-x86_64'
+
+          - os: 'ubuntu-22.04-arm'
+            base_image: 'docker.io/neuronsimulator/neuron_wheel:latest-gcc9-aarch64'
+
+    steps:
+      - name: Check out code
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Check out code for specific release
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.inputs.rel_release }}
+          submodules: recursive
+
+      - name: Install Python from python.org
+        if: runner.os == 'macOS'
+        run: |
+          installer="python-${{ matrix.python-org-version }}-${{ matrix.python-installer-name }}"
+          url="https://www.python.org/ftp/python/${{ matrix.python-org-version }}/${installer}"
+          curl $url -o $installer
+          sudo installer -pkg $installer -target /
+
+      - name: Install System Dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install --cask xquartz
+          brew install flex bison cmake mpich
+          brew unlink mpich && brew install openmpi
+          cmake --version
+          # Uninstall libomp for compatibility with issue #817
+          brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
+          echo "$(brew --prefix)/opt/cmake/bin:$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
+
+      - name: Install readline
+        if: runner.os == 'macOS'
+        run: |
+          sudo mkdir -p /opt/nrnwheel/$(uname -m)
+          sudo bash packaging/python/build_static_readline_osx.bash
+
+      - name: Set env for release
+        if: github.event.inputs.type == 'release'
+        run: |
+          echo "NRN_NIGHTLY_UPLOAD=false" >> $GITHUB_ENV
+          echo NRN_RELEASE_UPLOAD=${{ github.event.inputs.upload }} >> $GITHUB_ENV
+          echo "NEURON_NIGHTLY_TAG=" >> $GITHUB_ENV
+
+      - name: Set env for nightly
+        if: github.event.inputs.type == 'nightly'
+        run: |
+          echo "NRN_RELEASE_UPLOAD=false" >> $GITHUB_ENV
+          echo NRN_NIGHTLY_UPLOAD=${{ github.event.inputs.upload }} >> $GITHUB_ENV
+          echo "NEURON_NIGHTLY_TAG=-nightly" >> $GITHUB_ENV
+
+      - name: Override env for scheduled run
+        if: github.event.schedule != ''
+        run: |
+          echo "NRN_RELEASE_UPLOAD=false" >> $GITHUB_ENV
+          echo "NRN_NIGHTLY_UPLOAD=true" >> $GITHUB_ENV
+          echo "NEURON_NIGHTLY_TAG=-nightly" >> $GITHUB_ENV
+
+      - name: Set version
+        run: |
+          if [ -n ${{ github.event.inputs.rel_version }} ]
+          then
+            echo SETUPTOOLS_SCM_PRETEND_VERSION=${{ github.event.inputs.rel_version }} >> $GITHUB_ENV
+          fi
+
+      - name: Build wheel
+        if: runner.os == 'macOS'
+        run: |
+          packaging/python/build_wheels.bash osx ${{ matrix.python-version }} coreneuron
+
+      - name: Build Manylinux wheel
+        if: runner.os != 'macOS'
+        run: |
+          docker run --rm \
+            -w /root/nrn \
+            -v $(pwd):/root/nrn \
+            -e NEURON_NIGHTLY_TAG \
+            -e NRN_NIGHTLY_UPLOAD \
+            -e NRN_RELEASE_UPLOAD \
+            -e SETUPTOOLS_SCM_PRETEND_VERSION \
+            -e NRN_BUILD_FOR_UPLOAD=1 \
+            ${{ matrix.base_image }} \
+            packaging/python/build_wheels.bash linux ${{ matrix.python-version }} coreneuron
+
+      - name: Upload wheel files
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.python-version }}-${{ matrix.os }}
+          path: wheelhouse/*.whl
+
+      - name: Setup Python ${{ matrix.python-version }} for testing
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install test dependencies
+        if: runner.os != 'macOS'
+        run: |
+          sudo apt update
+          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
+
+      - name: Test wheel with ${{ matrix.python-version }}
+        run: |
+          minor_version="$(python${{ matrix.python-version }} -c 'import sys;print(sys.version_info.minor)')"
+          packaging/python/test_wheels.sh $(which python${{ matrix.python-version }}) wheelhouse/*cp3${minor_version}*.whl
+
+  merge:
+    name: Merge artifacts
+    runs-on: ubuntu-latest
+    needs: [build-test]
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          delete-merged: true
+          name: wheels
+          pattern: wheels-*
+
+  upload:
+    name: Upload wheels
+    runs-on: ubuntu-latest
+    needs: merge
+    steps:
+      - name: Upload wheels
+        if: github.event.inputs.upload == true
+        run: echo "TODO"
+
+  final:
+    name: Final CI
+    needs: [merge]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if CI matrix is successful
+        if: >-
+          ${{
+               contains(needs.*.result, 'failure')
+            || contains(needs.*.result, 'cancelled')
+            || contains(needs.*.result, 'skipped')
+          }}
+        run: exit 1

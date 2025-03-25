@@ -19,19 +19,18 @@ images published on Docker Hub under:
 * [neuronsimulator/neuron_wheel](https://hub.docker.com/r/neuronsimulator/neuron_wheel)
 * [neuronsimulator/neuron_wheel_gpu](https://hub.docker.com/r/neuronsimulator/neuron_wheel_gpu)
 
-Azure pipelines pull this image off DockerHub for Linux wheels building.
+GitHub Actions pull this image off DockerHub for Linux wheels building.
 
-Updating and publishing the public images are done by a manual process that relies on a `Docker file` 
-(see [packaging/python/Dockerfile](../../packaging/python/Dockerfile) and [packaging/python/Dockerfile_gpu](../../packaging/python/Dockerfile_gpu)).
-Any official update of these files shall imply a PR reviewed and merged before `DockerHub` publishing.
+Updating and publishing the public images are done by a manual process that relies on a
+`Docker file` (see [packaging/python/Dockerfile](../../packaging/python/Dockerfile)).
+Any official update of these files shall imply a PR reviewed and merged before publishing to `DockerHub`.
 
-All wheels built on Azure are:
+All wheels built on GitHub Actions are:
 
 * Published to `Pypi.org` as
-  * `neuron-nightly` -> when the pipeline is launched in CRON mode
+  * `neuron-nightly` -> when the pipeline is launched on a schedule
   * `neuron-x.y.z` -> when the pipeline is manually triggered for release `x.y.z`
-  * additionally, for Linux only: `neuron-gpu-nightly` and `neuron-gpu-x.y.z`
-* Stored as `Azure artifacts` in the Azure pipeline for every run.
+* Stored as artifacts for every run.
 
 Refer to the following image for the NEURON Docker Image workflow: 
 ![](images/docker-workflow.png)
@@ -46,8 +45,7 @@ docker build -t neuronsimulator/neuron_wheel[_gpu]:<tag> .
 ```
 where `<tag>` is:
 * `latest-x86_64` or `latest-aarch64` for official publishing on respective platforms (after merging related PR)
-* `feature-name` for updates (for local testing or for PR testing purposes where you can temporarily publish the tag on DockerHub and tweak Azure CI pipelines to use it - refer to
-  `Job: 'ManyLinuxWheels'` or `Job: 'ManyLinuxGPUWheels'` in [azure-pipelines.yml](../../azure-pipelines.yml) )
+* `feature-name` for updates (for local testing or for PR testing purposes where you can temporarily publish the tag on DockerHub and tweak GitHub Actions to use it - refer to `Job: 'Build Manylinux wheel'` in [wheels.yml](../../.github/workflows/wheels.yml))
 
 and `_gpu` is needed for the GPU wheel. 
 
@@ -114,10 +112,9 @@ Note that for macOS there is no docker image needed, but all required dependenci
 In order to have the wheels working on multiple macOS target versions, special consideration must be made for `MACOSX_DEPLOYMENT_TARGET`.
 
 
-Taking Azure macOS `x86_64` wheels for example, `readline` was built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure (under `Pipelines > Library > Secure files`).
-For `arm64` we need to set `MACOSX_DEPLOYMENT_TARGET=11.0`. The wheels currently need to be built manually, using `universal2` Python installers.
+Taking macOS `x86_64` wheels built by GitHub Actions for example, `readline` was built with `MACOSX_DEPLOYMENT_TARGET=10.9`.
+For `arm64` we need to set `MACOSX_DEPLOYMENT_TARGET=11.0`.
 For upcoming `universal2` wheels (targeting both `x86_64` and `arm64`) we will consider leveling everything to `MACOSX_DEPLOYMENT_TARGET=11.0`.
-
 
 You can use [packaging/python/build_static_readline_osx.bash](../../packaging/python/build_static_readline_osx.bash) to build a static readline library.
 You can have a look at the script for requirements and usage. 
@@ -207,72 +204,29 @@ Also, it checks if GPU is available (using `pgaccelinfo -nvidia` command) and th
 Similar to BB5, the wheel can be tested on any desktop system provided that NVHPC compiler module is loaded or appropriate PATH environment variable is setup.
 
 
-## Publishing the wheels on Pypi via Azure
+## Publishing the wheels on Pypi via GitHub Actions
 
 ### Official Release wheels
 
-Head over to the [neuronsimulator.nrn](https://dev.azure.com/neuronsimulator/nrn/_build?definitionId=1) pipeline on Azure.
+Head over to the [Build NEURON Python wheels](https://github.com/neuronsimulator/nrn/actions/workflows/wheels.yml) workflow on GitHub Actions.
 
 After creating the tag on the `release/x.y` or on the `master` branch, perform the following steps:
 
-1) Click on `Run pipeline`
-2) Input the release tag ref `refs/tags/x.y.z`
-3) Click on `Variables`
-4) We need to define three variables:
-   * `NRN_NIGHTLY_UPLOAD` : `false`
-   * `NRN_RELEASE_UPLOAD` : `false`
-   * `NEURON_NIGHTLY_TAG` : undefined (leave empty)
-
-   Do so by clicking `Add variable`, input the variable name and optionally the value and then click `Create`.
-5) Click on `Run`
+1) Click on "Run workflow"
+2) Input the release branch `release/x.y` in the field "Release branch/commit"
+3) Update the following driving variables to:
+   * `type` : `release`
+   * `upload` : `false`
+4) Click on the green `Run workflow` button.
 
 ![](images/azure-release-no-upload.png)
 
-With above, wheel will be created like release from the provided tag but they won't be uploaded to the pypi.org ( as we have set  `NRN_RELEASE_UPLOAD=false`). These wheels now you can download from artifacts section and perform thorough testing. Once you are happy with the testing result, set `NRN_RELEASE_UPLOAD` to `true` and trigger the pipeline same way:
-   * `NRN_NIGHTLY_UPLOAD` : `true`
-   * `NRN_RELEASE_UPLOAD` : `false`
-   * `NEURON_NIGHTLY_TAG` : undefined (leave empty)
+With the above, wheels will be created like a release from the provided tag, but they won't be uploaded to PyPI (as we have set `upload=false`). These wheels can now be downloaded from the artifacts section and perform thorough testing. Once you are happy with the testing result, set `upload=true` and trigger the workflow the same way:
+   * `type` : `release`
+   * `upload` : `true`
 
 ![](images/azure-release.png)
-
-
-## Publishing the wheels on Pypi via CircleCI
-
-Currently CircleCI doesn't have automated pipeline for uploading `release` wheels to pypi.org (nightly wheels are uploaded automatically though). Currently we are using a **hacky**, semi-automated approach described below:
-
-* Checkout your tag as a new branch
-* Update `.circleci/config.yml` as shown below
-* Trigger CI pipeline manually for [the nrn project](https://app.circleci.com/pipelines/github/neuronsimulator/nrn)
-* Upload wheels from artifacts manually
-
-```
-# checkout release tag as a new branch
-$ git checkout 8.1a -b release/8.1a-aarch64
-
-# manually updated `.circleci/config.yml`
-$ git diff
-
-@@ -15,6 +15,10 @@ jobs:
-     machine:
-       image: ubuntu-2004:202101-01
-+    environment:
-+      NEURON_WHEEL_VERSION: 8.1a
-+      NEURON_NIGHTLY_TAG: ""
-+      NRN_NIGHTLY_UPLOAD: false
-+      NRN_RELEASE_UPLOAD: false
-
-@@ -89,7 +95,7 @@ workflows:
-       - manylinux2014-aarch64:
-           matrix:
-             parameters:
--              NRN_PYTHON_VERSION: ["310"]
-+              NRN_PYTHON_VERSION: ["37", "38", "39", "310"]
-```
-
-The reason we are setting `NEURON_WHEEL_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
-
 
 ### Nightly wheels
 
 Nightly wheels get automatically published from `master` in CRON mode.
-
