@@ -2,11 +2,14 @@
 Tests that used to live in the fast/ subdirectory of the
 https://github.com/neuronsimulator/nrntest repository
 """
+
 import math
 import numpy as np
 import os
 import pytest
 from neuron import h
+
+h.use_exp_pow_precision(1)  # help with mac identity to linux. see issue 3123
 from neuron.tests.utils import (
     cvode_enabled,
     cvode_use_global_timestep,
@@ -19,12 +22,41 @@ from neuron.tests.utils.checkresult import Chk
 
 h.load_file("stdrun.hoc")
 
+# Sundials specific tolerances
+cv2tol = {
+    "t13:cvode:t": 5e-8,
+    "t13:cvode:v": 6e-7,
+    "t14:cvode:t:1": 8e-10,
+    "t14:cvode:t:2:ld": 2e-10,
+    "t14:cvode:t:2": 8e-10,
+    "t14:cvode:v:1": 2e-9,
+    "t14:cvode:v:2:ld": 4e-10,
+    "t14:cvode:v:2": 2e-9,
+}
+cv3tol = {
+    "t13:cvode:t": 2e-6,
+    "t13:cvode:v": 6e-7,
+    "t14:cvode:t:1": 1e-9,
+    "t14:cvode:t:2:ld": 1e-9,
+    "t14:cvode:t:2": 1e-9,
+    "t14:cvode:v:1": 6e-9,
+    "t14:cvode:v:2:ld": 1e-9,
+    "t14:cvode:v:2": 4e-9,
+}
+cvtol = cv2tol
+
 
 @pytest.fixture(scope="module")
 def chk():
     """Manage access to JSON reference data."""
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    checker = Chk(os.path.join(dir_path, "test_nrntest_fast.json"))
+    fname = "test_nrntest_fast.json"
+    if True:
+        if h.CVode().version().split(".")[0] == "3":
+            global cvtol
+            cvtol = cv3tol
+
+    checker = Chk(os.path.join(dir_path, fname))
     yield checker
     # Save results to disk if they've changed; this is called after all tests
     # using chk have executed
@@ -215,7 +247,7 @@ def test_t13(chk, t13_model_data, field, threads):
         tolerance = 1e-10
     elif method.startswith("cvode"):
         if field == "t":
-            tolerance = 5e-8
+            tolerance = cvtol["t13:cvode:t"]
         elif field == "v":
             tolerance = 6e-7
 
@@ -287,20 +319,20 @@ def test_t14(chk, t14_model_data, field, threads):
     elif method.startswith("cvode"):
         if field == "t":
             if threads == 1:
-                tolerance = 8e-10
+                tolerance = cvtol["t14:cvode:t:1"]
             else:
                 if "long_double" in method:
-                    tolerance = 2e-10
+                    tolerance = cvtol["t14:cvode:t:2:ld"]
                 else:
-                    tolerance = 8e-10
+                    tolerance = cvtol["t14:cvode:t:2"]
         elif field == "v":
             if threads == 1:
-                tolerance = 2e-9
+                tolerance = cvtol["t14:cvode:v:1"]
             else:
                 if "long_double" in method:
-                    tolerance = 4e-10
+                    tolerance = cvtol["t14:cvode:v:2:ld"]
                 else:
-                    tolerance = 2e-9
+                    tolerance = cvtol["t14:cvode:v:2"]
 
     compare_time_and_voltage_trajectories(
         chk, t14_model_data, field, threads, "t14", tolerance

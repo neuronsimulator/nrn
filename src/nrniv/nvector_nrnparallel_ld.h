@@ -62,11 +62,12 @@ mv temp nvector_nrnparallel_ld.cpp
 
 #pragma once
 
-#include <nrnmpiuse.h>
+// may want to just get rid of MPI_Comm altogether
+#undef MPI_Comm
 #define MPI_Comm int
 
-#include "nvector.h"
-#include "sundialstypes.h"
+#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts, macros*/
+#include <sundials/sundials_types.h> /* definition of type realtype*/
 
 /*
  * -----------------------------------------------------------------
@@ -292,7 +293,7 @@ void N_VPrint_NrnParallelLD(N_Vector v);
 
 N_Vector N_VClone_NrnParallelLD(N_Vector w);
 void N_VDestroy_NrnParallelLD(N_Vector v);
-void N_VSpace_NrnParallelLD(N_Vector v, long int* lrw, long int* liw);
+void N_VSpace_NrnParallelLD(N_Vector v, sunindextype* lrw, sunindextype* liw);
 realtype* N_VGetArrayPointer_NrnParallelLD(N_Vector v);
 void N_VSetArrayPointer_NrnParallelLD(realtype* v_data, N_Vector v);
 void N_VLinearSum_NrnParallelLD(realtype a, N_Vector x, realtype b, N_Vector y, N_Vector z);
