@@ -4,6 +4,7 @@
 #include "modl.h"
 #include "parse1.hpp"
 #include "symbol.h"
+#include "splitfor.h"
 
 extern const char* nmodl_version_;
 
@@ -71,6 +72,10 @@ void c_out() {
 
     Fprintf(fcout, "/* Created by Language version: %s */\n", nmodl_version_);
     Fflush(fcout);
+
+    if (splitfor()) {
+        P("#define SPLITFOR 1\n");
+    }
 
     if (vectorize) {
         vectorize_do_substitute();
@@ -584,6 +589,7 @@ void c_out_vectorize() {
             P(buf);
         }
         P("\n} return _current;\n}\n");
+        splitfor_current();
     }
 
     /* For the classic BREAKPOINT block, the neuron current also has to compute the dcurrent/dv as
@@ -689,6 +695,7 @@ void c_out_vectorize() {
         }
         P(" \n}\n");
         P(" \n}\n");
+        splitfor_cur();
     }
 
     /* nrnstate list contains the EQUATION solve statement so this
@@ -729,6 +736,7 @@ void c_out_vectorize() {
         }
     }
     P("\n}\n");
+    splitfor_solve();
 
     P("\nstatic void terminal(){}\n");
 

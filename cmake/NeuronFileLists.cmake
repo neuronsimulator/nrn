@@ -397,6 +397,7 @@ set(NOCMODL_FILES_LIST
     netrec_discon.cpp
     simultan.cpp
     solve.cpp
+    splitfor.cpp
     symbol.cpp)
 
 set(IVOS_FILES_LIST observe.cpp resource.cpp)
