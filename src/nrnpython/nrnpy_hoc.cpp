@@ -3476,19 +3476,19 @@ static double nrnpy_call_func_(Object* obj, double x) {
     }
     PyObject* func = nrnpy_hoc2pyobject(obj);
     if (!PyCallable_Check(func)) {
-	    hoc_execerror("Object is not callable", nullptr);
+        hoc_execerror("Object is not callable", nullptr);
     }
     auto result = nb::steal(PyObject_CallFunction(func, "d", x));
     if (!result) {
         PyErr_Clear();
-	    hoc_execerror("Python function call raised exception", nullptr);
+        hoc_execerror("Python function call raised exception", nullptr);
     }
     if (!PyNumber_Check(result.ptr())) {
         hoc_execerror("Expected a numeric result from Python function", nullptr);
     }
     double value = PyFloat_AsDouble(result.ptr());
     if (PyErr_Occurred()) {
-	    hoc_execerror("Failed to convert result to float", nullptr);
+        hoc_execerror("Failed to convert result to float", nullptr);
     }
     return value;
 }
