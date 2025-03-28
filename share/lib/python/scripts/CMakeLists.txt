@@ -15,7 +15,7 @@ if(SKBUILD)
 
   foreach(script IN LISTS scripts)
     install(
-      PROGRAMS _binwrapper.py
+      PROGRAMS binwrapper.py
       DESTINATION "${SKBUILD_SCRIPTS_DIR}"
       RENAME "${script}")
   endforeach()
