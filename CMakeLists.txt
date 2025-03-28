@@ -34,6 +34,30 @@ if(NOT "cxx_std_17" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
       "This compiler does not fully support C++17, choose a higher version or another compiler.")
 endif()
 
+# remove annoying message about path normalization
+if(POLICY CMP0177)
+  cmake_policy(SET CMP0177 NEW)
+endif()
+
+# if we're building a wheel, we have a different layout of files
+if(SKBUILD)
+  set(NRN_INSTALL_PYTHON_PREFIX "neuron/")
+  set(NRN_INSTALL_DATA_PREFIX "neuron/.data/")
+  # need to force fmtlib install prefixes
+  set(FMT_LIB_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
+  set(FMT_INC_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
+  set(FMT_PKGCONFIG_DIR "${NRN_INSTALL_DATA_PREFIX}/pkgconfig")
+  set(FMT_CMAKE_DIR "${NRN_INSTALL_DATA_PREFIX}/cmake/fmt")
+  # need to force IV install prefixes
+  set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
+  set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
+  set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/bin")
+else()
+  set(NRN_INSTALL_PYTHON_PREFIX "lib/python/neuron")
+  # TODO figure out if this needs to be set to NRN_INSTALL_DATA_PREFIX instead
+  set(NRN_INSTALL_DATA_PREFIX ".")
+endif()
+
 # =============================================================================
 # CMake common project settings
 # =============================================================================
@@ -297,7 +321,7 @@ include(cmake/PythonHelper.cmake)
 if(NRN_SANITIZERS)
   configure_file(bin/nrn-enable-sanitizer.in bin/nrn-enable-sanitizer @ONLY)
   install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrn-enable-sanitizer
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+          DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
 endif()
 
 # =============================================================================
@@ -395,7 +419,10 @@ if(NRN_ENABLE_MUSIC)
   if(NOT NRN_ENABLE_PYTHON)
     message(FATAL "MUSIC requires -DNRN_ENABLE_PYTHON=ON")
   endif()
-  find_package(Cython REQUIRED)
+  # rx3d already looks for cython
+  if(NOT Cython_FOUND)
+    find_package(Cython REQUIRED)
+  endif()
   find_package(MUSIC REQUIRED)
   set(NRN_MUSIC 1)
 endif()
@@ -555,12 +582,12 @@ if(NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON)
   # install nrnunits.lib and libpywrapper.so from external/nmodl
   install(
     FILES ${NMODL_PROJECT_PLATLIB_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
-    DESTINATION lib
+    DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib
     COMPONENT pywrapper
     OPTIONAL)
   install(
     FILES ${NMODL_PROJECT_PLATLIB_BINARY_DIR}/share/nmodl/nrnunits.lib
-    DESTINATION share/nmodl
+    DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nmodl
     COMPONENT nrnunits)
 
   # set correct arguments for nmodl for cpu/gpu target
@@ -611,7 +638,7 @@ if(NRN_ENABLE_CORENEURON)
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/coreneuron)
 
   # By default `nrnivmodl` should look for `nrnivmodl-core` in the NEURON install prefix.
-  set(cnrn_prefix "${CMAKE_INSTALL_PREFIX}")
+  set(cnrn_prefix "${NRN_INSTALL_DATA_PREFIX}")
   # CoreNEURON exports this list of flags as a property; turn it into a variable in this scope. If
   # CoreNEURON is installed externally then this is exported into coreneuron-config.cmake.
   get_property(CORENRN_LIB_LINK_FLAGS GLOBAL PROPERTY CORENRN_LIB_LINK_FLAGS)
@@ -650,13 +677,13 @@ include(ConfigFileSetting)
 # well. Setting these here as setup.py.in needs it.
 # ~~~
 if(MINGW)
-  set(NRN_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX})
+  set(NRN_INSTALL_SHARE_DIR ${NRN_INSTALL_DATA_PREFIX})
   set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR})
-  set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/bin)
+  set(NRN_INSTALL_SHARE_LIB_DIR ${NRN_INSTALL_DATA_PREFIX}/bin)
 else()
-  set(NRN_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX}/share/nrn)
+  set(NRN_INSTALL_SHARE_DIR ${NRN_INSTALL_DATA_PREFIX}/share/nrn)
   set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR}/share/nrn)
-  set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib)
+  set(NRN_INSTALL_SHARE_LIB_DIR ${NRN_INSTALL_DATA_PREFIX}/lib)
 endif()
 
 # =============================================================================
@@ -664,11 +691,21 @@ endif()
 # =============================================================================
 add_subdirectory(src/sparse13)
 add_subdirectory(src/gnu)
+add_subdirectory(src/nrniv)
+
 if(NRN_ENABLE_PYTHON)
   add_subdirectory(src/nrnpython)
+  add_subdirectory(share/lib/python/neuron)
+  add_subdirectory(share/lib/python/scripts)
 endif()
 
-add_subdirectory(src/nrniv)
+if(NRN_ENABLE_RX3D)
+  add_subdirectory(share/lib/python/neuron/rxd/geometry3d)
+endif()
+
+if(NRN_ENABLE_MUSIC)
+  add_subdirectory(src/neuronmusic)
+endif()
 
 # Collect the environment variables that are needed to execute NEURON from the build directory. This
 # is used when configuring tests, and when building documentation targets.
@@ -846,7 +883,8 @@ if(NRN_ENABLE_PYTHON)
     VERBATIM)
   add_dependencies(nrniv_lib help_data_dat)
   # also ensure help_data.dat is copied to the install location
-  install(FILES ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat DESTINATION lib/python/neuron)
+  install(FILES ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
+          DESTINATION "${NRN_INSTALL_PYTHON_PREFIX}")
 endif()
 
 include("${CODING_CONV_CMAKE}/build-time-copy.cmake") # cpp_cc_build_time_copy
@@ -930,12 +968,13 @@ endif()
 # =============================================================================
 install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib
-  DESTINATION ${NRN_INSTALL_SHARE_DIR}
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn
   PATTERN "python" EXCLUDE)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${NRN_INSTALL_SHARE_DIR})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn)
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
-        DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn/lib)
 
 # Copy NEURON headers that will be included in the installation into the build directory.
 set(headers_in_build_dir)
@@ -961,9 +1000,9 @@ add_custom_target(
   COMMENT "Copying headers to build directory"
   DEPENDS ${headers_in_build_dir})
 add_dependencies(nrniv_lib copy_headers_to_build)
-install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION "${NRN_INSTALL_DATA_PREFIX}")
 
-if(NRN_MACOS_BUILD)
+if(NRN_MACOS_BUILD AND NOT SKBUILD)
   # universal build for neurondemo needs to be after, or at end of, install
   nrn_macos_after_install()
 endif()
@@ -986,7 +1025,7 @@ if(MINGW)
     set(BASH_EXE "f:/msys64/usr/bin/bash.exe")
     message(WARNING "Can not find bash.exe, trying to use ${BASH_EXE}")
   endif()
-  install(PROGRAMS ${BASH_EXE} DESTINATION ${CMAKE_INSTALL_PREFIX}/mingw/usr/bin)
+  install(PROGRAMS ${BASH_EXE} DESTINATION mingw/usr/bin)
 endif()
 
 # =============================================================================
@@ -994,10 +1033,10 @@ endif()
 # =============================================================================
 if(NOT NRN_WINDOWS_BUILD)
   # create arch folder under prefix with symlink to bin and lib
-  nrn_install_dir_symlink(${CMAKE_INSTALL_PREFIX}/bin
-                          ${CMAKE_INSTALL_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/bin)
-  nrn_install_dir_symlink(${CMAKE_INSTALL_PREFIX}/lib
-                          ${CMAKE_INSTALL_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/lib)
+  nrn_install_dir_symlink(${NRN_INSTALL_DATA_PREFIX}/bin
+                          ${NRN_INSTALL_DATA_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/bin)
+  nrn_install_dir_symlink(${NRN_INSTALL_DATA_PREFIX}/lib
+                          ${NRN_INSTALL_DATA_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/lib)
 endif()
 
 # =============================================================================
@@ -1070,6 +1109,7 @@ if(NRN_ENABLE_PYTHON)
     list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
+    list(GET NRN_PYTHON_NUMPY_INCLUDES ${val} pynpinc)
     list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
     unset(suffix)
     if(val EQUAL 0)
@@ -1078,6 +1118,7 @@ if(NRN_ENABLE_PYTHON)
     message(STATUS " python${pyver}${suffix}")
     message(STATUS "  EXE         | ${exe}")
     message(STATUS "  INC         | ${pyinc}")
+    message(STATUS "  NUMPY INC   | ${pynpinc}")
     message(STATUS "  LIB         | ${pylib}")
   endforeach()
 endif()
