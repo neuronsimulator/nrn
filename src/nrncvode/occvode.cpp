@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
-#include <errno.h>
+#include "hocdec.h"
+#include "cabcode.h"
 #include "nrn_ansi.h"
 #include "nrndae_c.h"
 #include "nrniv_mf.h"
@@ -11,17 +12,11 @@
 #include "vrecitem.h"
 #include "membfunc.h"
 #include "nonvintblock.h"
+#include "nrndigest.h"
 
-#include <utility>
+#include <cerrno>
+#include <numeric>
 
-extern void setup_topology(), v_setup_vectors();
-extern void recalc_diam();
-extern int nrn_errno_check(int);
-// extern double t, dt;
-#define nt_dt nrn_threads->_dt
-#define nt_t  nrn_threads->_t
-
-extern Symlist* hoc_built_in_symlist;
 
 #include "spmatrix.h"
 extern double* sp13mat;
@@ -45,8 +40,6 @@ extern void (*nrn_multisplit_solve_)();
 #endif
 
 static Symbol* vsym;  // for absolute tolerance
-#define SETUP 1
-#define USED  2
 /*
 CVODE expects dy/dt = f(y) and solve (I - gamma*J)*x = b with approx to
 J=df/dy.
@@ -106,7 +99,6 @@ bool Cvode::init_global() {
 void Cvode::init_eqn() {
     double vtol;
 
-    NrnThread* _nt;
     CvMembList* cml;
     int i, j, zneq, zneq_v, zneq_cap_v;
     // printf("Cvode::init_eqn\n");
@@ -132,7 +124,7 @@ void Cvode::init_eqn() {
         daspk_init_eqn();
         return;
     }
-    FOR_THREADS(_nt) {
+    for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
         // for lvardt, this body done only once and for ctd_[0]
         CvodeThreadData& z = ctd_[_nt->id];
         // how many ode's are there? First ones are non-zero capacitance
@@ -243,7 +235,7 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
         z.no_cap_child_count_ = j;
 
         // use the sentinal values in NODERHS to construct a new no cap membrane list
-        new_no_cap_memb(z, _nt);
+        new_no_cap_memb(z, nullptr);
 
         // map the membrane mechanism ode state and dstate pointers
         int ieq = zneq_v;
@@ -277,7 +269,7 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
     structure_change_ = false;
 }
 
-void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
+void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* /* thread */) {
     z.delete_memb_list(z.no_cap_memb_);
     z.no_cap_memb_ = nullptr;
     CvMembList* ncm{};
@@ -331,7 +323,7 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
                 }
             }
         }
-        assert(ncm->ml.size() == n);
+        assert(ncm->ml.size() == std::size_t(n));
     }
 }
 
@@ -464,7 +456,7 @@ extern void nrn_extra_scatter_gather(int, int);
 
 void Cvode::scatter_y(neuron::model_sorted_token const& sorted_token, double* y, int tid) {
     CvodeThreadData& z = CTD(tid);
-    assert(z.nonvint_extra_offset_ == z.pv_.size());
+    assert(std::size_t(z.nonvint_extra_offset_) == z.pv_.size());
     for (int i = 0; i < z.nonvint_extra_offset_; ++i) {
         // TODO: understand why this wasn't needed before
         if (z.pv_[i]) {
@@ -502,7 +494,7 @@ void Cvode::gather_y(N_Vector y) {
 void Cvode::gather_y(double* y, int tid) {
     CvodeThreadData& z = CTD(tid);
     nrn_extra_scatter_gather(1, tid);
-    assert(z.nonvint_extra_offset_ == z.pv_.size());
+    assert(std::size_t(z.nonvint_extra_offset_) == z.pv_.size());
     for (int i = 0; i < z.nonvint_extra_offset_; ++i) {
         // TODO: understand why this wasn't needed before
         if (z.pv_[i]) {
@@ -573,6 +565,12 @@ int Cvode::solvex_thread(neuron::model_sorted_token const& sorted_token,
     if (z.nvsize_ == 0) {
         return 0;
     }
+#if NRN_DIGEST
+    if (nrn_digest_) {
+        nrn_digest_dbl_array("solvex enter b", nt->id, t_, b, z.nvsize_);
+        nrn_digest_dbl_array("solvex enter y", nt->id, t_, y, z.nvsize_);
+    }
+#endif
     lhs(sorted_token, nt);  // special version for cvode.
     scatter_ydot(b, nt->id);
     if (z.cmlcap_) {
@@ -605,6 +603,11 @@ int Cvode::solvex_thread(neuron::model_sorted_token const& sorted_token,
     // printf("\texit b\n");
     // for (i=0; i < neq_; ++i) { printf("\t\t%d %g\n", i, b[i]);}
     nrn_nonvint_block_ode_solve(z.nvsize_, b, y, nt->id);
+#if NRN_DIGEST
+    if (nrn_digest_) {
+        nrn_digest_dbl_array("solvex leave b", nt->id, t_, b, z.nvsize_);
+    }
+#endif
     return 0;
 }
 
@@ -678,9 +681,20 @@ void Cvode::fun_thread(neuron::model_sorted_token const& sorted_token,
                        double* ydot,
                        NrnThread* nt) {
     CvodeThreadData& z = CTD(nt->id);
+#if NRN_DIGEST
+    if (nrn_digest_) {
+        nrn_digest_dbl_array("y", nt->id, tt, y, z.nvsize_);
+    }
+#endif
     fun_thread_transfer_part1(sorted_token, tt, y, nt);
     nrn_nonvint_block_ode_fun(z.nvsize_, y, ydot, nt->id);
     fun_thread_transfer_part2(sorted_token, ydot, nt);
+
+#if NRN_DIGEST
+    if (nrn_digest_ && ydot) {
+        nrn_digest_dbl_array("ydot", nt->id, tt, ydot, z.nvsize_);
+    }
+#endif
 }
 
 void Cvode::fun_thread_transfer_part1(neuron::model_sorted_token const& sorted_token,
@@ -748,7 +762,6 @@ void Cvode::fun_thread_transfer_part2(neuron::model_sorted_token const& sorted_t
 }
 
 void Cvode::fun_thread_ms_part1(double tt, double* y, NrnThread* nt) {
-    CvodeThreadData& z = ctd_[nt->id];
     nt->_t = tt;
 
     // fix this!!!
@@ -1009,7 +1022,6 @@ void Cvode::error_weights(double* pd) {
 
 void Cvode::acor(double* pd) {
     int i, id;
-    NrnThread* nt;
     for (id = 0; id < nctd_; ++id) {
         CvodeThreadData& z = ctd_[id];
         double* s = n_vector_data(acorvec(), id);

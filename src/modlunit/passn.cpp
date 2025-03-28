@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 /* /local/src/master/nrn/src/modlunit/passn.c,v 1.1.1.1 1994/10/12 17:22:50 hines Exp */
 
 /* Returns parse tokens in same order that lexical analyzer did */

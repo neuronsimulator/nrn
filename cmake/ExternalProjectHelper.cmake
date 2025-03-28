@@ -23,13 +23,26 @@ endfunction(nrn_submodule_file_not_found)
 
 # initialize submodule with given path
 function(nrn_initialize_submodule path)
+  cmake_parse_arguments(PARSE_ARGV 1 opt "RECURSIVE;SHALLOW" "" "")
+  set(UPDATE_OPTIONS "")
+  if(opt_RECURSIVE)
+    list(APPEND UPDATE_OPTIONS --recursive)
+  endif()
+  if(opt_SHALLOW)
+    # RHEL7-family distributions ship with an old git that does not support the --depth argument to
+    # git submodule update
+    if(GIT_VERSION_STRING VERSION_GREATER_EQUAL "1.8.4")
+      list(APPEND UPDATE_OPTIONS --depth 1)
+    endif()
+  endif()
   if(NOT ${GIT_FOUND})
     message(
       FATAL_ERROR "git not found and ${path} sub-module not cloned (use git clone --recursive)")
   endif()
-  message(STATUS "Sub-module : missing ${path} : running git submodule update --init")
+  message(
+    STATUS "Sub-module : missing ${path} : running git submodule update ${UPDATE_OPTIONS} --init")
   execute_process(
-    COMMAND ${GIT_EXECUTABLE} submodule update --init -- ${path}
+    COMMAND ${GIT_EXECUTABLE} submodule update ${UPDATE_OPTIONS} --init -- ${path}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     RESULT_VARIABLE ret)
   if(NOT ret EQUAL 0)
@@ -39,6 +52,7 @@ endfunction()
 
 # check for external project and initialize submodule if it is missing
 function(nrn_add_external_project name)
+  cmake_parse_arguments(PARSE_ARGV 1 opt "RECURSIVE;SHALLOW;DISABLE_ADD" "" "")
   find_path(
     ${name}_PATH
     NAMES CMakeLists.txt
@@ -46,16 +60,18 @@ function(nrn_add_external_project name)
     NO_DEFAULT_PATH)
   if(NOT EXISTS ${${name}_PATH})
     nrn_submodule_file_not_found("${THIRD_PARTY_DIRECTORY}/${name}")
-    nrn_initialize_submodule("${THIRD_PARTY_DIRECTORY}/${name}")
+    set(OPTIONS "")
+    if(opt_RECURSIVE)
+      list(APPEND OPTIONS "RECURSIVE")
+    endif()
+    if(opt_SHALLOW)
+      list(APPEND OPTIONS "SHALLOW")
+    endif()
+    nrn_initialize_submodule("${THIRD_PARTY_DIRECTORY}/${name}" ${OPTIONS})
   else()
     message(STATUS "Sub-project : using ${name} from from ${THIRD_PARTY_DIRECTORY}/${name}")
   endif()
-  # if second argument is passed and if it's OFF then skip add_subdirectory
-  if(${ARGC} GREATER 1)
-    if(${ARGV2})
-      add_subdirectory("${THIRD_PARTY_DIRECTORY}/${name}")
-    endif()
-  else()
+  if(NOT opt_DISABLE_ADD)
     add_subdirectory("${THIRD_PARTY_DIRECTORY}/${name}")
   endif()
 endfunction()

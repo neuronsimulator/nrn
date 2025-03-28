@@ -1,0 +1,16 @@
+foreach(api_test_file hh_sim.cpp netcon.cpp sections.cpp vclamp.cpp)
+  string(REPLACE "." "_" api_test_name "${api_test_file}")
+  add_executable(${api_test_name} ${api_test_file})
+  cpp_cc_configure_sanitizers(TARGET ${api_test_name})
+  target_link_libraries(${api_test_name} ${CMAKE_DL_LIBS})
+  target_link_libraries(${api_test_name} nrniv_lib)
+  target_link_options(${api_test_name} PRIVATE -rdynamic)
+  if(NRN_ENABLE_CORENEURON)
+    target_compile_definitions(${api_test_name} PUBLIC CORENEURON_ENABLED)
+  endif()
+
+  set(test_name "api::${api_test_name}")
+  add_test(NAME "${test_name}" COMMAND ${api_test_name})
+  set_property(TEST "${test_name}" PROPERTY ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}"
+                                            "CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
+endforeach()

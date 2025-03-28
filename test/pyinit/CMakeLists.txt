@@ -167,7 +167,6 @@ foreach(val RANGE ${NRN_PYTHON_COUNT})
           # Not an error if a user's system doesn't have all the names in ${search_names}
           continue()
         endif()
-        set(nrnpy_VERSION "${nrnpy_VERSION_MAJOR}.${nrnpy_VERSION_MINOR}")
         if(NOT nrnpy_VERSION IN_LIST NRN_PYTHON_VERSIONS)
           # e.g. python or python3 points to a version we didn't build against
           continue()

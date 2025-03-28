@@ -10,7 +10,7 @@ PlotShape
         Class for making a Shape window useful for coloring a shape 
         according to a variable value and creating time and space graphs 
         of a variable. The default variable is *v*. The first arg may be 
-        a SectionList. 
+        a SectionList.  This automatically calls :func:`define_shape`.
 
 ----
 
@@ -55,8 +55,9 @@ PlotShape
             pyplot.show()
         
         .. note::
-            In Jupyter, you can use %matplotlib notebook to get interactive PlotShape
-	    or use plotly instead.
+
+            In Jupyter, you can use ``%matplotlib notebook`` to get interactive PlotShape
+	        or use plotly instead.
     
     Example:
 
@@ -586,7 +587,7 @@ PlotShape
 			from neuron import h, gui
 			import time
 
-			soma = h.Section(name="soma")  
+			soma = h.Section("soma")  
 
 			sl = h.SectionList() 
  

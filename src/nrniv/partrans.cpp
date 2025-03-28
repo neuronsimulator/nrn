@@ -22,6 +22,8 @@
 #include "have2want.hpp"
 #endif
 
+#include "utils/formatting.hpp"
+
 
 #if NRNLONGSGID
 #if NRNMPI
@@ -247,10 +249,10 @@ static neuron::container::data_handle<double> non_vsrc_update(Node* nd,
             return p->param_handle(ix);
         }
     }
-    hoc_execerr_ext("partrans update: could not find parameter index (%d, %d) of %s",
-                    ix.field,
-                    ix.array_index,
-                    memb_func[type].sym->name);
+    hoc_execerror_fmt("partrans update: could not find parameter index ({}, {}) of {}",
+                      ix.field,
+                      ix.array_index,
+                      memb_func[type].sym->name);
 }
 
 // Find the Node associated with the voltage.
@@ -945,7 +947,7 @@ extern size_t nrnbbcore_gap_write(const char* path, int* group_ids);
   ntar  // number of targets in this thread (vpre)
   nsrc  // number of sources in this thread (v)
 
-  Note: type, index is sufficient for CoreNEURON stdindex2ptr to determine
+  Note: type, index is sufficient for CoreNEURON legacy_index2pointer to determine
     double* in its NrnThread.data array.
 
   src_sid // nsrc of these

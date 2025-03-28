@@ -16,7 +16,7 @@ typedef struct core2nrn_callback_t {
     CNB f;
 } core2nrn_callback_t;
 
-// Mechanism type to be used from stdindex2ptr (in CoreNeuron) and nrn_dblpntr2nrncore.
+// Mechanism type to be used from legacy_index2pointer (in CoreNeuron) and nrn_dblpntr2nrncore.
 // Values of the mechanism types should be negative numbers to avoid any conflict with
 // mechanism types of Memb_list(>0) or time(0) passed to CoreNeuron
 enum mech_type { voltage = -1, i_membrane_ = -2 };

@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 /* /local/src/master/nrn/src/modlunit/units1.c,v 1.1.1.1 1994/10/12 17:22:51 hines Exp */
 /* Just a connection to units.c so that file doesn't need to include modl.h */
 #include "model.h"

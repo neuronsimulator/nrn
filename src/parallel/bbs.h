@@ -19,7 +19,7 @@ class BBS {
     double upkdouble();
     void upkvec(int n, double* px);  // n input px space must exist
     char* upkstr();                  // delete [] char* when finished
-    char* upkpickle(size_t* size);   // delete [] char* when finished
+    std::vector<char> upkpickle();
 
     // before posting use these
     void pkbegin();
@@ -27,7 +27,7 @@ class BBS {
     void pkdouble(double);
     void pkvec(int n, double* px);  // doesn't pack n
     void pkstr(const char*);
-    void pkpickle(const char*, size_t size);
+    void pkpickle(const std::vector<char>&);
     void post(const char*);
 
     int submit(int userid);

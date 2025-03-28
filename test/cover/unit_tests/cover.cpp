@@ -3,7 +3,7 @@
 
 extern bool hoc_valid_stmt(const char*, Object*);
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 // Help cover PR's
 

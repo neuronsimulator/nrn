@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "nrn_export.hpp"
+
 #include <iostream>
 #include <string>
 
@@ -22,7 +24,7 @@ extern int nrn_main_launch;
 // int nrn_global_argc;
 extern char** nrn_global_argv;
 extern void (*p_nrnpython_finalize)();
-extern PyObject* nrnpy_hoc();
+extern "C" PyObject* nrnpy_hoc();
 
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
@@ -111,8 +113,9 @@ static int add_neuron_options() {
             PySys_WriteStdout("A neuron_options key:value is not a string:string or string:None\n");
             continue;
         }
-        Py2NRNString skey(key);
-        Py2NRNString sval(value);
+
+        auto skey = Py2NRNString::as_ascii(key);
+        auto sval = Py2NRNString::as_ascii(value);
         if (strcmp(skey.c_str(), "-print-options") == 0) {
             rval = 1;
             continue;
@@ -205,26 +208,64 @@ static int have_opt(const char* arg) {
     return 0;
 }
 
+#if defined(__linux__) || defined(DARWIN)
+
+/* we do this because thread sanitizer does not allow system calls.
+   In particular
+      system("stty sane")
+   returns an error code of 139
+*/
+
+#include <iostream>
+#include <termios.h>
+#include <unistd.h>
+
+static struct termios original_termios;
+
+static void save_original_terminal_settings() {
+    if (tcgetattr(STDIN_FILENO, &original_termios) == -1 && isatty(STDIN_FILENO)) {
+        std::cerr << "Error getting original terminal attributes\n";
+    }
+}
+
+static void restore_original_terminal_settings() {
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &original_termios) == -1 && isatty(STDIN_FILENO)) {
+        std::cerr << "Error restoring terminal attributes\n";
+    }
+}
+#endif  // __linux__
+
 void nrnpython_finalize() {
 #if NRN_ENABLE_THREADS
     if (main_thread_ == std::this_thread::get_id()) {
 #else
     {
 #endif
+        // Call python_gui_cleanup() if defined in Python
+        PyRun_SimpleString(
+            "try:\n"
+            "    gui.cleanup()\n"
+            "except NameError:\n"
+            "    pass\n");
+
+        // Finalize Python
         Py_Finalize();
     }
-#if linux
-    if (system("stty sane > /dev/null 2>&1")) {
-    }  // 'if' to avoid ignoring return value warning
+#if defined(__linux__) || defined(DARWIN)
+    restore_original_terminal_settings();
 #endif
 }
 
 static char* env[] = {0};
 
-extern "C" PyObject* PyInit_hoc() {
+extern "C" NRN_EXPORT PyObject* PyInit_hoc() {
 #if NRN_ENABLE_THREADS
     main_thread_ = std::this_thread::get_id();
 #endif
+
+#if defined(__linux__) || defined(DARWIN)
+    save_original_terminal_settings();
+#endif  // __linux__
 
     if (nrn_global_argv) {  // ivocmain was already called so already loaded
         return nrnpy_hoc();
@@ -368,5 +409,5 @@ extern "C" PyObject* PyInit_hoc() {
 }
 
 #if !defined(MINGW)
-extern "C" void modl_reg() {}
+extern "C" NRN_EXPORT void modl_reg() {}
 #endif  // !defined(MINGW)

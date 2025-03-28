@@ -1,4 +1,8 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
+
+#include <algorithm>
+#include <string>
+
 /* /local/src/master/nrn/src/modlunit/units.c,v 1.5 1997/11/24 16:19:13 hines Exp */
 /* Mostly from Berkeley */
 #include "model.h"
@@ -13,8 +17,9 @@
 #include <cstring>
 
 #ifdef MINGW
-#include "../mswin/extra/d2upath.cpp"
+#include "../mswin/extra/d2upath.h"
 #endif
+
 #if defined(WIN32)
 #include <windows.h>
 #endif
@@ -108,28 +113,21 @@ static int Getc(FILE* inp) {
 #define UNIT_STK_SIZE 20
 static struct unit unit_stack[UNIT_STK_SIZE], *usp{nullptr};
 
-static char* neuronhome() {
-#if defined(WIN32)
-    int i;
-    static char buf[256];
-    GetModuleFileName(NULL, buf, 256);
-    for (i = strlen(buf); i >= 0 && buf[i] != '\\'; --i) {
-        ;
-    }
-    buf[i] = '\0';  // /neuron.exe gone
-    //      printf("setneuronhome |%s|\n", buf);
-    for (i = strlen(buf); i >= 0 && buf[i] != '\\'; --i) {
-        ;
-    }
-    buf[i] = '\0';  // /bin gone
-    {
-        char* u = hoc_dos2unixpath(buf);
-        strcpy(buf, hoc_dos2unixpath(u));
-        free(u);
-    }
+static std::string neuronhome() {
+#if defined(MINGW)
+    std::string buf(256, '\0');
+    GetModuleFileName(nullptr, buf.data(), 256);
+    // Remove neuron.exe
+    auto pos = buf.find_last_of('\\');
+    buf.resize(pos);
+    // Remove bin
+    pos = buf.find_last_of('\\');
+    buf.resize(pos);
+    std::replace(buf.begin(), buf.end(), '\\', '/');
     return buf;
 #else
-    return getenv("NEURONHOME");
+    char* buf = std::getenv("NEURONHOME");
+    return (buf != nullptr) ? std::string(buf) : std::string();
 #endif
 }
 
@@ -509,7 +507,6 @@ void unit_stk_clean() {
 
 // allow the outside world to call either modl_units() or unit_init().
 static void units_alloc() {
-    int i;
     static int units_alloc_called = 0;
     if (!units_alloc_called) {
         units_alloc_called = 1;
@@ -523,7 +520,6 @@ static void units_alloc() {
 extern void unit_init();
 
 void modl_units() {
-    int i;
     static int first = 1;
     unitonflag = 1;
     if (first) {
@@ -551,25 +547,19 @@ void unit_init() {
     }
 #if defined(__MINGW32__)
     if (!inpfile) {
-        s = strdup(neuronhome());
-        if (s) {
-            if (strncmp(s, "/cygdrive/", 10) == 0) {
-                /* /cygdrive/x/... to c:/... */
-                Sprintf(buf, "%c:%s/lib/nrnunits.lib", s[10], s + 11);
-            } else {
-                Sprintf(buf, "%s/lib/nrnunits.lib", s);
-            }
-            inpfile = fopen(buf, "r");
-            free(s);
+        auto s = neuronhome();
+        if (!s.empty()) {
+            std::string filename = s + "/lib/nrnunits.lib";
+            inpfile = fopen(filename.c_str(), "r");
         }
     }
 #else
-    if (!inpfile && (inpfile = fopen(dfile, "r")) == (FILE*) 0) {
-        if ((inpfile = fopen(dfilealt, "r")) == (FILE*) 0) {
-            s = neuronhome();
-            if (s) {
-                Sprintf(buf, "%s/lib/nrnunits.lib", s);
-                inpfile = fopen(buf, "r");
+    if (!inpfile && (inpfile = fopen(dfile, "r")) == nullptr) {
+        if ((inpfile = fopen(dfilealt, "r")) == nullptr) {
+            auto s = neuronhome();
+            if (!s.empty()) {
+                std::string filename = s + "/lib/nrnunits.lib";
+                inpfile = fopen(filename.c_str(), "r");
             }
         }
     }

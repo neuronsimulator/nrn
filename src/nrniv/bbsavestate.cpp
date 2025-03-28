@@ -168,6 +168,7 @@ callback to bbss_early when needed.
 */
 
 #include "bbsavestate.h"
+#include "cabcode.h"
 #include "classreg.h"
 #include "nrncvode.h"
 #include "nrnoc2iv.h"
@@ -201,13 +202,11 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 #include "membfunc.h"
 extern int section_count;
 extern "C" void nrn_shape_update();
-extern Section* nrn_section_exists(char* name, int index, Object* cell);
 extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 extern cTemplate** nrn_pnt_template_;
-extern hoc_Item* net_cvode_instance_psl();
 extern void nrn_netcon_event(NetCon*, double);
 extern double t;
 typedef void (*PFIO)(int, Object*);
@@ -219,22 +218,27 @@ extern int nrn_gid_exists(int gid);
 
 #if NRNMPI
 extern void nrnmpi_barrier();
-extern void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
-extern void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
+extern void nrnmpi_int_alltoallv(const int*, const int*, const int*, int*, int*, int*);
+extern void nrnmpi_dbl_alltoallv(const double*, const int*, const int*, double*, int*, int*);
 extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgather(int* s, int* r, int n);
 extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
 extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
 #else
 static void nrnmpi_barrier() {}
-static void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) {
+static void nrnmpi_int_alltoallv(const int* s,
+                                 const int* scnt,
+                                 const int* sdispl,
+                                 int* r,
+                                 int* rcnt,
+                                 int* rdispl) {
     for (int i = 0; i < scnt[0]; ++i) {
         r[i] = s[i];
     }
 }
-static void nrnmpi_dbl_alltoallv(double* s,
-                                 int* scnt,
-                                 int* sdispl,
+static void nrnmpi_dbl_alltoallv(const double* s,
+                                 const int* scnt,
+                                 const int* sdispl,
                                  double* r,
                                  int* rcnt,
                                  int* rdispl) {
@@ -771,10 +775,9 @@ void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
     BBSaveState* ss = new BBSaveState();
     *global_size = 0;
     if (nrnmpi_myid == 0) {  // save global time
-        BBSS_Cnt* io = new BBSS_Cnt();
-        io->d(1, nrn_threads->_t);
-        *global_size = io->bytecnt();
-        delete io;
+        BBSS_Cnt io{};
+        io.d(1, nrn_threads->_t);
+        *global_size = io.bytecnt();
     }
     *len = ss->counts(gids, sizes);
     return ss;
@@ -782,17 +785,15 @@ void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
 void bbss_save_global(void* bbss, char* buffer,
                       int sz) {  // call only on host 0
     usebin_ = 1;
-    BBSS_IO* io = new BBSS_BufferOut(buffer, sz);
-    io->d(1, nrn_threads->_t);
-    delete io;
+    BBSS_BufferOut io(buffer, sz);
+    io.d(1, nrn_threads->_t);
 }
 void bbss_restore_global(void* bbss, char* buffer,
                          int sz) {  // call on all hosts
     usebin_ = 1;
-    BBSS_IO* io = new BBSS_BufferIn(buffer, sz);
-    io->d(1, nrn_threads->_t);
+    BBSS_BufferIn io(buffer, sz);
+    io.d(1, nrn_threads->_t);
     t = nrn_threads->_t;
-    delete io;
     bbss_restore_begin();
 }
 void bbss_save(void* bbss, int gid, char* buffer, int sz) {
@@ -1006,10 +1007,10 @@ static Member_func members[] = {{"save", save},
                                 {"ignore", ppignore},
                                 // allow Vector.play to work
                                 {"vector_play_init", vector_play_init},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 void BBSaveState_reg() {
-    class2oc("BBSaveState", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("BBSaveState", cons, destruct, members, nullptr, nullptr);
 }
 
 // from savstate.cpp

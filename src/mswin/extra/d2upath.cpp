@@ -5,18 +5,19 @@ up to 11 characters longer.
 the output string should be freed with free() when no longer needed.
 */
 
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
 
 char* hoc_dos2unixpath(const char* d) {
     /* translate x: and x:/ and x:\, to /cygdrive/x/ */
     /* and all backslashes to forward slashes */
     /* or, for mingw, just backslashes to forward slashes */
-    char* cp;
+    char* cp = nullptr;
     auto* const u = static_cast<char*>(malloc(strlen(d) + 12));
     assert(u);
-    int i{}, j{};
+    size_t i = 0;
+    int j = 0;
     if (d[0] && d[1] == ':') {
         strcpy(u, "/cygdrive/");
         i = strlen(u);

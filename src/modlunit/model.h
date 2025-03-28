@@ -1,13 +1,6 @@
 /* /local/src/master/nrn/src/modlunit/model.h,v 1.2 1997/11/24 16:19:13 hines Exp */
 #include "wrap_sprintf.h"
 #include <stdio.h>
-#if 1
-#if defined(STDC_HEADERS) || defined(SYSV)
-#include <string.h>
-#else
-#include <strings.h>
-#endif
-#endif
 #include <assert.h>
 
 #define NRN_BUFSIZE 8192
@@ -231,6 +224,7 @@ extern Item* qlint;
 #define IGNORE(arg) arg
 #endif
 using neuron::Sprintf;
+using neuron::SprintfAsrt;
 
 /* model.h,v
  * Revision 1.2  1997/11/24  16:19:13  hines

@@ -96,11 +96,12 @@ GUIMath
     Example:
 
         .. code::
+            python
 
             from neuron import h
 
             gm = h.GUIMath()
-            print('default rounding mode %d' % gm.feround())
+            print(f'default rounding mode {gm.feround()}')
 
             def test_round(mode):
                 gm = h.GUIMath()
@@ -108,7 +109,7 @@ GUIMath
                 x = 0
                 for i in range(1, 1000001):
                     x += 0.1
-                print('round mode %d x=%25.17lf' % (mode, x))
+                print(f'round mode {mode} x={x:25.17f}')
                 gm.feround(old)
 
             for i in range(1, 5):

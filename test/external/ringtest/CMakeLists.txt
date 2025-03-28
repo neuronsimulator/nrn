@@ -46,6 +46,20 @@ nrn_add_test(
   ENVIRONMENT NEURON_INIT_MPI=1
   COMMAND ${ringtest_python} -tstop 100)
 
+# creep into this file to add a nrn only test for ParallelContext.optimize_node_order(i)
+nrn_add_test_group(
+  NAME external_ringtest_nrn
+  SUBMODULE tests/ringtest # git submodule where the relevant tests are defined
+  ENVIRONMENT OMP_NUM_THREADS=1
+  MODFILE_PATTERNS "mod/*.mod"
+  SCRIPT_PATTERNS "*.py" "*.hoc")
+
+nrn_add_test(
+  GROUP external_ringtest_nrn
+  NAME optim_node_order
+  REQUIRES python
+  COMMAND nrniv -python test_optimize_node_order.py -tstop 50 -rparm -npt 1)
+
 foreach(processor cpu gpu)
   if("${processor}" STREQUAL "gpu")
     set(gpu_arg -gpu)

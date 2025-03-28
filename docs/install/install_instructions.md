@@ -107,7 +107,7 @@ architecture.
 
 #### Linux
 
-Like Mac OS, since 7.8.1 release python wheels are provided and you can use `pip` to install NEURON by opening a terminal and typing:
+Like Mac OS, since 7.8.1 release Python wheels are provided and you can use `pip` to install NEURON by opening a terminal and typing:
 
 ```
 pip3 install neuron
@@ -115,6 +115,15 @@ pip3 install neuron
 
 Note that Python2 wheels are provided for the 8.0.x release series exclusively. Also, we are not providing .rpm or .deb
 installers for recent releases.
+
+**Note**: as of NEURON major version 9, the minimum system requirements for using NEURON Python wheels on Linux are:
+
+* Debian 10 or higher
+* Ubuntu 18.10 or higher
+* Fedora 29 or higher
+* CentOS/RHEL 8 or higher
+
+Furthermore, GCC >= 10 is required (older versions of GCC may work, but are not recommended).
 
 #### Windows
 
@@ -207,14 +216,9 @@ In order to build NEURON from source, the following packages must be available:
 The following packages are optional (see build options):
 
 - Python >=3.8 (for Python interface)
-- Cython < 3 (for RXD)
+- Cython (for RXD)
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)
-
-Note that you may have to force Cython version:
-```bash
-pip install "cython<3"
-```
 
 Depending on platform you can install these dependencies as follows:
 
@@ -226,20 +230,27 @@ The easiest way to install dependencies on Mac OS is to use [brew](https://brew.
 once [brew is installed](https://docs.brew.sh/Installation) you can do:
 
 ```bash
-brew install coreutils openmpi cmake
+brew install coreutils openmpi cmake flex bison
 brew install --cask xquartz
 ```
 
 Once these packages are installed, setup PATH as:
 
 ```bash
-export PATH=/usr/local/bin/:$PATH
+export PATH="/usr/local/bin:/usr/local/opt/bison/bin:/usr/local/opt/flex/bin:$PATH"
 ```
 
 If the desired python version is not installed, you can install it using
-[official distribution](https://www.python.org/downloads/macos/). Also, note that
+[official distribution](https://www.python.org/downloads/macos/) or via brew. Also, note that
 [Xcode Command Line Tools](https://stackoverflow.com/questions/9329243/how-to-install-xcode-command-line-tools)
 needs to be installed for development.
+
+Finally, if you are building NEURON with the Python interface, you need to install all of the Python dependencies:
+
+```bash
+pip3 install --user --upgrade pip
+pip3 install --user -r nrn_requirements.txt
+```
 
 <a name="Apple-M1-Build-Dependencies"></a>
 #### Mac OS - Apple M1
@@ -267,20 +278,17 @@ needs to be installed for development.
   echo 'eval $(/opt/homebrew/bin/brew shellenv)' >> $HOME/.zprofile
   eval $(/opt/homebrew/bin/brew shellenv)
 
-  brew install cmake
-  brew install open-mpi
+  brew install open-mpi cmake flex bison
 
   pip3 install --user --upgrade pip
-  export PATH="$HOME/Library/Python/3.8/bin":$PATH
-  pip3 install --user cython
+  pip3 install --user -r nrn_requirements.txt
   ```
 
 Once these packages are installed, setup PATH as:
 
 ```bash
-export PATH=/opt/homebrew/opt/bison/bin/:/opt/homebrew/opt/flex/bin/:/opt/homebrew/bin/:$PATH
+export PATH="/opt/homebrew/opt/bison/bin/:/opt/homebrew/opt/flex/bin/:/opt/homebrew/bin/:$PATH"
 ```
-
 
 #### Linux
 
@@ -291,9 +299,10 @@ install dependencies. For example, on Ubuntu:
 sudo apt-get update
 sudo apt-get install -y bison cmake flex git \
      libncurses-dev libopenmpi-dev libx11-dev \
-     libxcomposite-dev openmpi-bin python3-dev
+     libxcomposite-dev openmpi-bin python3-dev \
+     libreadline-dev
 # for python dependencies
-pip install scipy numpy cython
+pip install -r nrn_requirements.txt
 ```
 
 We recommend using platform specific instructions provided in [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci#scheduled-ci-builds-for-neuron) repository.
@@ -472,3 +481,34 @@ export CFLAGS="-fno-strict-aliasing -fno-common -dynamic -g -Os -pipe -DMACOSX -
 ```
 
 If you see any other issues, please open [an issue here](https://github.com/neuronsimulator/nrn/issues/new/choose).
+
+* **I'm seeing compiler errors related to Python and RXD.***
+The error can manifest as follows:
+```
+share/lib/python/neuron/rxd/geometry3d/surfaces.cpp:14605:41: error: no member named 'subarray' in '_PyArray_Descr'
+    __Pyx_INCREF(((PyObject*)__pyx_v_d->subarray->shape));
+                             ~~~~~~~~~  ^
+```
+often there's something related to NumPy nearby, e.g. `npy`.
+
+The issue is that certain versions of NEURON (below 9.0) are not
+compatible with `numpy>=2`. Check the numpy version, e.g.,
+```
+python -c "import numpy; print(numpy.__version__)"
+```
+
+If it prints `2.0` or higher, try installing an older version:
+```
+pip install "numpy<2"
+```
+(mind the quotes.) Then delete the build directory, reconfigure and compile. If the error persists, carefully check which version of Python NEURON picked up by checking the output of the CMake configure command and make sure that that exact version of Python doesn't pick up an incompatible version of Numpy.
+
+
+* **NEURON segfaults when using the Anaconda Python distribution. What can I do?**
+
+Some Anaconda distributions (e.g., macOS) ship Python binaries with `libpython` statically linked,
+which has caused issues in NEURON and other packages (see discussion [here](https://github.com/neuronsimulator/nrn/issues/2358)).
+
+On the macOS platform, NEURON attempts to detect the use of Anaconda Python by checking for the `/anaconda`
+prefix in the Python binary path. An alternative solution is to build NEURON with the dynamic Python
+option enabled, using the CMake flag `-DNRN_ENABLE_PYTHON_DYNAMIC=ON`.

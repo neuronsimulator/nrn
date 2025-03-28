@@ -1,14 +1,18 @@
+import logging
 import os
+import platform
+import re
 import shutil
 import subprocess
 import sys
-from collections import defaultdict
-import logging
 
-logging.basicConfig(level=logging.INFO)
+from collections import defaultdict
 from shutil import copytree, which
+
 from setuptools import Command, Extension
 from setuptools import setup
+
+logging.basicConfig(level=logging.INFO)
 
 
 logging.info("setup.py called with:" + " ".join(sys.argv))
@@ -108,6 +112,13 @@ if Components.RX3D:
         sys.exit(1)
 else:
     from setuptools.command.build_ext import build_ext
+
+
+def normalize_package_name(name):
+    """
+    Normalize a package name to conform to PEP 503.
+    """
+    return re.sub(r"[-_.]+", "-", name).lower()
 
 
 class CMakeAugmentedExtension(Extension):
@@ -247,7 +258,12 @@ class CMakeAugmentedBuilder(build_ext):
         if self.cmake_defs:
             cmake_args += ["-D" + opt for opt in self.cmake_defs.split(",")]
 
-        build_args = ["--config", cfg, "--", "-j4"]  # , 'VERBOSE=1']
+        build_args = [
+            "--config",
+            cfg,
+            "--",
+            f"-j{os.environ.get('NRN_PARALLEL_BUILDS', 4)}",
+        ]
 
         env = os.environ.copy()
         env["CXXFLAGS"] = "{} -DVERSION_INFO='{}'".format(
@@ -354,19 +370,23 @@ def setup_package():
     NRN_COLLECT_DIRS = ["bin", "lib", "include", "share"]
 
     docs_require = []  # sphinx, themes, etc
-    maybe_rxd_reqs = ["numpy", "Cython<3"] if Components.RX3D else []
+    maybe_rxd_reqs = ["numpy", "Cython"] if Components.RX3D else []
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ["pytest-runner"] if "test" in sys.argv else []
 
-    py_packages = [
-        "neuron",
-        "neuron.neuroml",
-        "neuron.tests",
-        "neuron.tests.utils",
-        "neuron.rxd",
-        "neuron.crxd",
-        "neuron.gui2",
-    ] + (["neuron.rxd.geometry3d"] if Components.RX3D else [])
+    py_packages = (
+        [
+            "neuron",
+            "neuron.neuroml",
+            "neuron.tests",
+            "neuron.tests.utils",
+            "neuron.rxd",
+            "neuron.crxd",
+            "neuron.gui2",
+        ]
+        + (["neuron.rxd.geometry3d"] if Components.RX3D else [])
+        + (["neuron.nmodl"] if Components.CORENRN else [])
+    )
 
     REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
 
@@ -379,7 +399,6 @@ def setup_package():
         list,
         library_dirs=[os.path.join(cmake_build_dir, "lib")],
         libraries=ext_common_libraries,
-        language="c++",
     )
 
     logging.info("Extension common compile flags %s" % str(extension_common_params))
@@ -407,7 +426,6 @@ def setup_package():
             ]
             + (
                 [
-                    "-DCORENRN_ENABLE_OPENMP=ON",  # TODO: manylinux portability questions
                     "-DNMODL_ENABLE_PYTHON_BINDINGS=ON",
                 ]
                 if Components.CORENRN
@@ -431,14 +449,18 @@ def setup_package():
     ]
 
     if Components.MUSIC:
-        extensions += [
+        music_extensions = [
             CyExtension(
                 "neuronmusic",
                 ["src/neuronmusic/neuronmusic.pyx"],
                 include_dirs=["src/nrnpython", "src/nrnmusic"],
+                language="c++",
                 **extension_common_params,
             )
         ]
+        for ext in music_extensions:
+            ext.cython_c_in_temp = True
+            extensions.append(ext)
 
     if Components.RX3D:
         include_dirs = ["share/lib/python/neuron/rxd/geometry3d", numpy.get_include()]
@@ -457,10 +479,12 @@ def setup_package():
                 + ["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")],
             )
         )
+        if platform.system() == "Darwin":
+            rxd_params["extra_link_args"] += ["-headerpad_max_install_names"]
 
         logging.info("RX3D compile flags %s" % str(rxd_params))
 
-        extensions += [
+        rxd_extensions = [
             CyExtension(
                 "neuron.rxd.geometry3d.graphicsPrimitives",
                 ["share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx"],
@@ -483,6 +507,9 @@ def setup_package():
                 **rxd_params,
             ),
         ]
+        for ext in rxd_extensions:
+            ext.cython_c_in_temp = True
+            extensions.append(ext)
 
     logging.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
 
@@ -493,10 +520,10 @@ def setup_package():
     package_name += os.environ.get("NEURON_NIGHTLY_TAG", "-nightly")
 
     setup(
-        name=package_name,
+        name=normalize_package_name(package_name),
         package_dir={"": NRN_PY_ROOT},
         packages=py_packages,
-        package_data={"neuron": ["*.dat"]},
+        package_data={"neuron": ["*.dat", "tests/*.json", "nmodl/ext/**/*.*"]},
         ext_modules=extensions,
         scripts=[
             os.path.join(NRN_PY_SCRIPTS, f)
@@ -509,9 +536,23 @@ def setup_package():
             else "node-and-date"
         },
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
-        install_requires=["numpy>=1.9.3", "packaging", "find_libpython", "setuptools"],
-        tests_require=["flake8", "pytest"],
-        setup_requires=["wheel", "setuptools_scm"]
+        install_requires=[
+            "numpy>=1.9.3,<=2.2.3",
+            "packaging<=24.2.0",
+            "find_libpython<=0.4.0",
+            "setuptools<=70.3.0",
+        ]
+        + (
+            [
+                "sympy>=1.3,<=1.13.3",
+                "importlib_resources;python_version<'3.9'",
+                "importlib_metadata;python_version<'3.9'",
+            ]
+            if Components.CORENRN
+            else []
+        ),
+        tests_require=["flake8<=7.1.2", "pytest<=8.1.1"],
+        setup_requires=["wheel<=0.45.1", "setuptools_scm<=8.1.0"]
         + maybe_docs
         + maybe_test_runner
         + maybe_rxd_reqs,

@@ -95,7 +95,7 @@ Psym* hoc_getsym(const char* cp) {
     case UNDEF:
         hoc_execerror(s, " is undefined");
     case VAR:
-        if (ISARRAY(sym)) {
+        if (is_array(*sym)) {
             Arrayinfo* a;
             if (sym->subtype == NOTUSER) {
                 a = OPARINFO(sym);
@@ -130,7 +130,7 @@ static void arayonstack(Psym* p) {
     double d;
 
     if (p->nsub) {
-        if (!ISARRAY(p->sym) || p->nsub != p->arayinfo->nsub) {
+        if (!is_array(*p->sym) || p->nsub != p->arayinfo->nsub) {
             hoc_execerror("wrong number of subscripts for ", p->sym->name);
         }
         for (i = 0; i < p->nsub; i++) {

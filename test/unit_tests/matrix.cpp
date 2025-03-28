@@ -3,7 +3,7 @@
 #include <iostream>
 #include "ivocvect.h"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 using namespace Catch::literals;
 
 template <typename T = double>
@@ -93,6 +93,11 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
         {
             m.setrow(3, 2.0);
             REQUIRE(compareMatrix(m, {{3., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}, {2., 2., 2.}}));
+        }
+        {
+            std::vector<std::pair<int, int>> nzs = m.nonzeros();
+            std::vector<std::pair<int, int>> res = {{0, 0}, {1, 1}, {2, 2}, {3, 0}, {3, 1}, {3, 2}};
+            REQUIRE(nzs == res);
         }
         {
             std::vector<int> x, y;

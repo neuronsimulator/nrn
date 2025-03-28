@@ -22,7 +22,7 @@ extern NetCvode* net_cvode_instance;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 
 int chkpnt;
-const char* bbcore_write_version = "1.7";  // NMODLRandom
+const char* bbcore_write_version = "1.8";  // Include ArrayDims
 
 /// create directory with given path
 void create_dir_path(const std::string& path) {
@@ -549,7 +549,7 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
     /** number of gids in NrnThread */
     int count;
     nrnthread_dat3_cell_count(count);
-    fprintf(f, "%zd\n", count);
+    fprintf(f, "%d\n", count);
 
     /** all cells mapping information in NrnThread */
     for (size_t i = 0; i < count; i++) {
@@ -559,7 +559,7 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
         int n_seclist;
         nrnthread_dat3_cellmapping(i, cgid, t_sec, t_seg, n_seclist);
         /** gid, #section, #compartments,  #sectionlists */
-        fprintf(f, "%d %d %d %zd\n", cgid, t_sec, t_seg, n_seclist);
+        fprintf(f, "%d %d %d %d\n", cgid, t_sec, t_seg, n_seclist);
 
         for (size_t j = 0; j < n_seclist; j++) {
             std::string sclname;
@@ -582,7 +582,7 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
                                       data_lfp);
             /** section list name, number of sections, number of segments */
             fprintf(f,
-                    "%s %d %zd %zd %d\n",
+                    "%s %d %d %zd %d\n",
                     sclname.c_str(),
                     nsec,
                     nseg,

@@ -1,172 +1,101 @@
-/* config.h.in.  Generated from configure.ac by autoheader.  */
+#pragma once
 
+/* Define to one if want to debug using sha1 hashes of data */
+#cmakedefine01 NRN_ENABLE_DIGEST
 
-#ifndef H_nrnconf_included
-#define H_nrnconf_included 1
-
+/* Define to one if want to allow selection of architecture independent */
+/* 53 bit double precision of exp and pow from mpfr */
+#cmakedefine01 NRN_ENABLE_ARCH_INDEP_EXP_POW
 
 /* Define if building universal (internal helper macro) */
-#undef AC_APPLE_UNIVERSAL_BUILD
-
-/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
-   systems. This function is required for `alloca.c' support on those systems.
-   */
-#undef CRAY_STACKSEG_END
+#cmakedefine AC_APPLE_UNIVERSAL_BUILD @AC_APPLE_UNIVERSAL_BUILD@
 
 /* if mac os x */
-#undef DARWIN
-
-/* Define to 1 if you have the `bcopy' function. */
-#undef HAVE_BCOPY
-
-/* Define to 1 if you have the `bzero' function. */
-#undef HAVE_BZERO
+#cmakedefine DARWIN @DARWIN@
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
-#undef HAVE_DLFCN_H
+#cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
 
 /* Define to 1 if you have the <execinfo.h> header file. */
-#undef HAVE_EXECINFO_H
-
-/* Define to 1 if you have the <fenv.h> header file. */
-#undef HAVE_FENV_H
-
-/* Define to 1 if you have the `fesetround' function. */
-#undef HAVE_FESETROUND
-
-/* Define to 1 if you have the `feenableexcept' function. */
-#undef HAVE_FEENABLEEXCEPT
-
-/* Define to 1 if you have the `gettimeofday' function. */
-#undef HAVE_GETTIMEOFDAY
+#cmakedefine HAVE_EXECINFO_H @HAVE_EXECINFO_H@
 
 /* Define to 1 if you have the `index' function. */
-#undef HAVE_INDEX
+#cmakedefine HAVE_INDEX @HAVE_INDEX@
 
 /* Define to 1 if you have the `isatty' function. */
-#undef HAVE_ISATTY
+#cmakedefine HAVE_ISATTY @HAVE_ISATTY@
 
 /* define if using InterViews */
-#undef HAVE_IV
+#cmakedefine HAVE_IV @HAVE_IV@
 
 /* Define to 1 if you have the `mallinfo' function. */
-#undef HAVE_MALLINFO
+#cmakedefine HAVE_MALLINFO @HAVE_MALLINFO@
 
 /* Define to 1 if you have the `mallinfo2' function. */
-#undef HAVE_MALLINFO2
+#cmakedefine HAVE_MALLINFO2 @HAVE_MALLINFO2@
 
 /* Define to 1 if you have the <malloc.h> header file. */
-#undef HAVE_MALLOC_H
+#cmakedefine HAVE_MALLOC_H @HAVE_MALLOC_H@
 
 /* Define to 1 if you have the `mkstemp' function. */
-#undef HAVE_MKSTEMP
+#cmakedefine HAVE_MKSTEMP @HAVE_MKSTEMP@
 
 /* Define to 1 if you have the `posix_memalign' function. */
-#undef HAVE_POSIX_MEMALIGN
-
-/* Define to 1 if you have the `realpath' function. */
-#undef HAVE_REALPATH
+#cmakedefine HAVE_POSIX_MEMALIGN @HAVE_POSIX_MEMALIGN@
 
 /* Define to 1 if you have the `setenv' function. */
-#undef HAVE_SETENV
+#cmakedefine HAVE_SETENV @HAVE_SETENV@
 
 /* Define to 1 if you have the `setitimer' function. */
-#undef HAVE_SETITIMER
+#cmakedefine HAVE_SETITIMER @HAVE_SETITIMER@
 
 /* Define to 1 if you have the `sigaction' function. */
-#undef HAVE_SIGACTION
+#cmakedefine HAVE_SIGACTION @HAVE_SIGACTION@
 
 /* Define to 1 if you have the `sigprocmask' function. */
-#undef HAVE_SIGPROCMASK
+#cmakedefine HAVE_SIGPROCMASK @HAVE_SIGPROCMASK@
 
 /* (Define if this signal exists) */
-#undef HAVE_SIGBUS
-
-/* Define to 1 if you have the <strings.h> header file. */
-#undef HAVE_STRINGS_H
+#cmakedefine HAVE_SIGBUS @HAVE_SIGBUS@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
-#undef HAVE_SYS_TYPES_H
+#cmakedefine HAVE_SYS_TYPES_H @HAVE_SYS_TYPES_H@
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#undef HAVE_UNISTD_H
+#cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
 /* define if using mingw */
-#undef MINGW
-
-/* define if using Mike Neubig <neubig@salk.edu> contributions */
-#undef MikeNeubig
+#cmakedefine MINGW @MINGW@
 
 /* where the lib hoc is */
-#undef NEURON_DATA_DIR
+#cmakedefine NEURON_DATA_DIR @NEURON_DATA_DIR@
 
 /* host triplet */
-#undef NRNHOST
+#cmakedefine NRNHOST @NRNHOST@
 
 /* if 1 then dlopen nrnmech instead of special */
-#undef NRNMECH_DLL_STYLE
-
-/* if 1 then dynamic units default is legacy units */
-#undef DYNAMIC_UNITS_USE_LEGACY_DEFAULT
+#cmakedefine NRNMECH_DLL_STYLE @NRNMECH_DLL_STYLE@
 
 /* if nrnoc can use X11 */
-#undef NRNOC_X11
+#cmakedefine NRNOC_X11 @NRNOC_X11@
 
 /* location of NEURON libraries */
-#undef NRN_LIBDIR
+#cmakedefine NRN_LIBDIR @NRN_LIBDIR@
 
 /* Name of package */
-#undef PACKAGE
-
-/* Define to the address where bug reports for this package should be sent. */
-#undef PACKAGE_BUGREPORT
-
-/* Define to the full name of this package. */
-#undef PACKAGE_NAME
-
-/* Define to the full name and version of this package. */
-#undef PACKAGE_STRING
-
-/* Define to the one symbol short name of this package. */
-#undef PACKAGE_TARNAME
-
-/* Define to the home page for this package. */
-#undef PACKAGE_URL
+#cmakedefine PACKAGE @PACKAGE@
 
 /* Define to the version of this package. */
-#undef PACKAGE_VERSION
-
-/* Define as the return type of signal handlers (`int' or `void'). */
-#undef RETSIGTYPE
-
-/* define if RETSIGTYPE(*)(int) is not the prototype for a signal handler */
-#undef SIGNAL_CAST
-
-/* If using the C implementation of alloca, define if you know the
-   direction of stack growth for your system; otherwise it will be
-   automatically deduced at runtime.
-	STACK_DIRECTION > 0 => grows toward higher addresses
-	STACK_DIRECTION < 0 => grows toward lower addresses
-	STACK_DIRECTION = 0 => direction of growth unknown */
-#undef STACK_DIRECTION
-
-/* Define to 1 if you have the ANSI C header files. */
-#undef STDC_HEADERS
+#cmakedefine PACKAGE_VERSION @PACKAGE_VERSION@
 
 /* Define SUNDIALS data type 'realtype' as 'long double' */
-#undef SUNDIALS_DOUBLE_PRECISION
+#cmakedefine SUNDIALS_DOUBLE_PRECISION @SUNDIALS_DOUBLE_PRECISION@
 
 /* Use generic math functions */
-#undef SUNDIALS_USE_GENERIC_MATH
-
-/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
-#undef TIME_WITH_SYS_TIME
-
-/* Define to 1 if your <sys/time.h> declares `struct tm'. */
-#undef TM_IN_SYS_TIME
+#cmakedefine SUNDIALS_USE_GENERIC_MATH @SUNDIALS_USE_GENERIC_MATH@
 
 /* Version number of package */
-#undef VERSION
+#cmakedefine VERSION @VERSION@
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
@@ -176,29 +105,16 @@
 # endif
 #else
 # ifndef WORDS_BIGENDIAN
-#  undef WORDS_BIGENDIAN
+#  cmakedefine WORDS_BIGENDIAN @WORDS_BIGENDIAN@
 # endif
 #endif
 
-/* Define to 1 if the X Window System is missing or not being used. */
-#undef X_DISPLAY_MISSING
-
 /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
    `char[]'. */
-#undef YYTEXT_POINTER
-
-/* Define to the type of a signed integer type of width exactly 64 bits if
-   such a type exists and the standard includes do not define it. */
-#undef int64_t
-
-/* Define to `long int' if <sys/types.h> does not define. */
-#undef off_t
+#cmakedefine YYTEXT_POINTER @YYTEXT_POINTER@
 
 /* Define to `int' if <sys/types.h> does not define. */
-#undef pid_t
-
-/* Define to `unsigned int' if <sys/types.h> does not define. */
-#undef size_t
+#cmakedefine pid_t @pid_t@
 
 /* __cplusplus guard still needed because this header is included from C code in
  * mesch (and maybe others)
@@ -220,6 +136,3 @@ namespace neuron::config {
 #ifdef MINGW
 #define WIN32 1
 #endif
-
-#endif /* H_nrnconf_included */
-

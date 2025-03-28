@@ -3,14 +3,15 @@ Import this module if you would like to use the NEURON GUI.
 
 It loads nrngui.hoc, and starts a thread to periodically process
 the NEURON GUI event loop.
+
+Note that python threads are not used if nrniv is launched instead of Python
 """
 
-
 from neuron import h
-
 from contextlib import contextmanager
 import threading
 import time
+import atexit
 
 # recursive, especially in case stop/start pairs called from doNotify code.
 _lock = threading.RLock()
@@ -46,9 +47,10 @@ def process_events():
     _lock.acquire()
     try:
         h.doNotify()
-    except:
-        print("Exception in gui thread")
-    _lock.release()
+    except Exception as e:
+        print(f"Exception in gui thread: {e}")
+    finally:
+        _lock.release()
 
 
 class Timer:
@@ -84,34 +86,40 @@ class Timer:
 
 class LoopTimer(threading.Thread):
     """
-    a Timer that calls f every interval
+    A Timer that calls a function at regular intervals.
     """
 
     def __init__(self, interval, fun):
-        """
-        @param interval: time in seconds between call to fun()
-        @param fun: the function to call on timer update
-        """
         self.started = False
         self.interval = interval
         self.fun = fun
+        self._running = threading.Event()
         threading.Thread.__init__(self, daemon=True)
 
     def run(self):
         h.nrniv_bind_thread(threading.current_thread().ident)
         self.started = True
-        while True:
+        self._running.set()
+        while self._running.is_set():
             self.fun()
             time.sleep(self.interval)
 
+    def stop(self):
+        """Stop the timer thread and wait for it to terminate."""
+        self._running.clear()
+        self.join()
 
-if (
-    h.nrnversion(9) == "2"
-    or h.nrnversion(8).find("mingw") > 0
-    or h.nrnversion(8).find("Windows")
-):
+
+if h.nrnversion(9) == "2":  # Launched with Python (instead of nrniv)
     timer = LoopTimer(0.1, process_events)
     timer.start()
+
+    def cleanup():
+        if timer.started:
+            timer.stop()
+
+    atexit.register(cleanup)
+
     while not timer.started:
         time.sleep(0.001)
 

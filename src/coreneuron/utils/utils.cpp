@@ -5,7 +5,7 @@
 # See top-level LICENSE file for details.
 # =============================================================================.
 */
-#include <sys/time.h>
+#include <chrono>
 #include "utils.hpp"
 #include "coreneuron/apps/corenrn_parameters.hpp"
 
@@ -26,9 +26,9 @@ double nrn_wtime() {
     } else
 #endif
     {
-        struct timeval time1;
-        gettimeofday(&time1, nullptr);
-        return (time1.tv_sec + time1.tv_usec / 1.e6);
+        const auto now = std::chrono::time_point_cast<std::chrono::duration<double>>(
+            std::chrono::system_clock::now());
+        return now.time_since_epoch().count();
     }
 }
 

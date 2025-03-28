@@ -5,16 +5,28 @@
 # See top-level LICENSE file for details.
 # =============================================================================
 */
+#include <set>
+#include <vector>
 
+#if CORENRN_BUILD
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/utils/nrn_assert.h"
+#include "coreneuron/apps/corenrn_parameters.hpp"
+#else
+#include "nrnoc/multicore.h"
+#include "nrnoc/nrn_ansi.h"
+#include "nrnoc/nrniv_mf.h"
+#include "nrnoc/section.h"
+#include "oc/nrnassrt.h"
+#include "node_order_optim/permute_utils.hpp"
+#endif
+
 #include "coreneuron/permute/cellorder.hpp"
 #include "coreneuron/network/tnode.hpp"
 #include "coreneuron/utils/lpt.hpp"
 #include "coreneuron/utils/memory.h"
 #include "coreneuron/utils/offload.hpp"
-#include "coreneuron/apps/corenrn_parameters.hpp"
 
 #include "coreneuron/permute/node_permute.h"  // for print_quality
 
@@ -22,9 +34,11 @@
 #include <openacc.h>
 #endif
 
-#include <set>
-
+#if CORENRN_BUILD
 namespace coreneuron {
+#else
+namespace neuron {
+#endif
 int interleave_permute_type;
 InterleaveInfo* interleave_info;  // nrn_nthread array
 
@@ -108,6 +122,11 @@ void destroy_interleave_info() {
 // more precise visualization of the warp quality
 // can be called after admin2
 static void print_quality2(int iwarp, InterleaveInfo& ii, int* p) {
+    // '.' p[i] = p[i-1] + 1 (but first of cacheline is 'o')
+    // 'o' p[i] != p[i-1] + 1 and not a child race
+    // 'r' p[i] = p[i-1] + 1 and race
+    // 'R' p[1] != p[i-1] + 1 and race
+    // 'X' core is unused
     int pc = (iwarp == 0);  // print warp 0
     pc = 0;                 // turn off printing
     int nodebegin = ii.lastnode[iwarp];
@@ -116,12 +135,11 @@ static void print_quality2(int iwarp, InterleaveInfo& ii, int* p) {
 
     int inode = nodebegin;
 
-    size_t nn = 0;  // number of nodes in warp. '.'
-    size_t nx = 0;  // number of idle cores on all cycles. 'X'
-    size_t ncacheline = 0;
-    ;                // number of parent memory cacheline accesses.
-                     //   assmue warpsize is max number in a cachline so all o
-    size_t ncr = 0;  // number of child race. nchild-1 of same parent in same cycle
+    size_t nn = 0;          // number of nodes in warp. '.oRr'
+    size_t nx = 0;          // number of idle cores on all cycles. 'X'
+    size_t ncacheline = 0;  // number of parent memory cacheline accesses.
+                            //   assume warpsize is max number in a cacheline so all o
+    size_t ncr = 0;         // number of child race. nchild-1 of same parent in same cycle
 
     for (int icycle = 0; icycle < ncycle; ++icycle) {
         int s = stride[icycle];
@@ -285,10 +303,53 @@ static void warp_balance(int ith, InterleaveInfo& ii) {
 #endif
 }
 
+#if !CORENRN_BUILD
+static void prnode(const char* mes, NrnThread& nt) {
+    printf("%s nrnthread %d node info\n", mes, nt.id);
+    for (int i = 0; i < nt.end; ++i) {
+        printf(
+            " _v_node[%2d]->v_node_index=%2d %p"
+            " _v_parent[%2d]->v_node_index=%2d  parent[%2d]=%2d\n",
+            i,
+            nt._v_node[i]->v_node_index,
+            nt._v_node[i],
+            i,
+            nt._v_parent[i] ? nt._v_parent[i]->v_node_index : -1,
+            i,
+            nt._v_parent_index[i]);
+    }
+    for (auto tml = nt.tml; tml; tml = tml->next) {
+        Memb_list* ml = tml->ml;
+        printf("  %s %d\n", memb_func[tml->index].sym->name, ml->nodecount);
+        for (int i = 0; i < ml->nodecount; ++i) {
+            printf("   %2d ndindex=%2d nd=%p [%2d] pdata=%p prop=%p\n",
+                   i,
+                   ml->nodeindices[i],
+                   ml->nodelist[i],
+                   ml->nodelist[i]->v_node_index,
+                   ml->pdata[i],
+                   ml->prop[i]);
+        }
+    }
+}
+
+int nrn_optimize_node_order(int type) {
+    if (type != interleave_permute_type) {
+        tree_changed = 1;  // calls setup_topology. v_stucture_change = 1 may be better.
+    }
+    interleave_permute_type = type;
+    return type;
+}
+#endif  // !CORENRN_BUILD
+
+#if CORENRN_BUILD
 int* interleave_order(int ith, int ncell, int nnode, int* parent) {
+#else
+std::vector<int> interleave_order(int ith, int ncell, int nnode, int* parent) {
+#endif
     // return if there are no nodes to permute
     if (nnode <= 0)
-        return nullptr;
+        return {};
 
     // ensure parent of root = -1
     for (int i = 0; i < ncell; ++i) {
@@ -300,7 +361,7 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
     int nwarp = 0, nstride = 0, *stride = nullptr, *firstnode = nullptr;
     int *lastnode = nullptr, *cellsize = nullptr, *stridedispl = nullptr;
 
-    int* order = node_order(
+    auto order = node_order(
         ncell, nnode, parent, nwarp, nstride, stride, firstnode, lastnode, cellsize, stridedispl);
 
     if (interleave_info) {
@@ -327,12 +388,18 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
         }
         if (ith == 0) {
             // needed for print_quality[12] and done once here to save time
-            int* p = new int[nnode];
+            std::vector<int> p(nnode);
+
             for (int i = 0; i < nnode; ++i) {
                 p[i] = parent[i];
             }
-            permute_ptr(p, nnode, order);
-            node_permute(p, nnode, order);
+#if CORENRN_BUILD
+            permute_ptr(p.data(), p.size(), order);
+            node_permute(p.data(), p.size(), order);
+#else
+            forward_permute(p, order);
+            update_parent_index(p.data(), p.size(), order);
+#endif
 
             ii.nnode = new size_t[nwarp];
             ii.ncycle = new size_t[nwarp];
@@ -341,19 +408,58 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
             ii.child_race = new size_t[nwarp];
             for (int i = 0; i < nwarp; ++i) {
                 if (interleave_permute_type == 1) {
-                    print_quality1(i, interleave_info[ith], ncell, p);
+                    print_quality1(i, interleave_info[ith], ncell, p.data());
                 }
                 if (interleave_permute_type == 2) {
-                    print_quality2(i, interleave_info[ith], p);
+                    print_quality2(i, interleave_info[ith], p.data());
                 }
             }
-            delete[] p;
             warp_balance(ith, interleave_info[ith]);
         }
     }
 
     return order;
 }
+
+#if !CORENRN_BUILD
+void nrn_permute_node_order() {
+    if (!interleave_permute_type) {
+        return;
+    }
+    //    printf("enter nrn_permute_node_order\n");
+    destroy_interleave_info();
+    create_interleave_info();
+    for (int tid = 0; tid < nrn_nthread; ++tid) {
+        auto& nt = nrn_threads[tid];
+        auto perm = interleave_order(tid, nt.ncell, nt.end, nt._v_parent_index);
+        auto p = inverse_permute_vector(perm);
+#if 0
+        for (int i = 0; i < nt.end; ++i) {
+            int x = nt._v_parent_index[p[i]];
+            int par = x >= 0 ? perm[x] : -1;
+            printf("%2d <- %2d  parent=%2d\n", i, p[i], par);
+        }
+#endif
+        //        prnode("before perm", nt);
+        forward_permute(nt._v_node, nt.end, p);
+        forward_permute(nt._v_parent, nt.end, p);
+        forward_permute(nt._v_parent_index, nt.end, p);
+        update_parent_index(nt._v_parent_index, nt.end, perm);
+        for (int i = 0; i < nt.end; ++i) {
+            nt._v_node[i]->v_node_index = i;
+        }
+        for (auto tml = nt.tml; tml; tml = tml->next) {
+            Memb_list* ml = tml->ml;
+            for (int i = 0; i < ml->nodecount; ++i) {
+                ml->nodeindices[i] = perm[ml->nodeindices[i]];
+            }
+            sort_ml(ml);  // all fields in increasing nodeindex order
+        }
+        //        prnode("after perm", nt);
+    }
+    //    printf("leave nrn_permute_node_order\n");
+}
+#endif  // !CORENRN_BUILD
 
 #if INTERLEAVE_DEBUG  // only the cell per core style
 static int** cell_indices_debug(NrnThread& nt, InterleaveInfo& ii) {
@@ -422,11 +528,19 @@ void mk_cell_indices() {
 }
 #endif  // INTERLEAVE_DEBUG
 
-#define GPU_V(i)      nt->_actual_v[i]
-#define GPU_A(i)      nt->_actual_a[i]
-#define GPU_B(i)      nt->_actual_b[i]
-#define GPU_D(i)      nt->_actual_d[i]
-#define GPU_RHS(i)    nt->_actual_rhs[i]
+#if CORENRN_BUILD
+#define GPU_V(i)   nt->_actual_v[i]
+#define GPU_A(i)   nt->_actual_a[i]
+#define GPU_B(i)   nt->_actual_b[i]
+#define GPU_D(i)   nt->_actual_d[i]
+#define GPU_RHS(i) nt->_actual_rhs[i]
+#else
+#define GPU_V(i)   vec_v[i]
+#define GPU_A(i)   vec_a[i]
+#define GPU_B(i)   vec_b[i]
+#define GPU_D(i)   vec_d[i]
+#define GPU_RHS(i) vec_rhs[i]
+#endif
 #define GPU_PARENT(i) nt->_v_parent_index[i]
 
 // How does the interleaved permutation with stride get used in
@@ -439,6 +553,12 @@ static void triang_interleaved(NrnThread* nt,
                                int nstride,
                                int* stride,
                                int* lastnode) {
+#if !CORENRN_BUILD
+    auto* const vec_a = nt->node_a_storage();
+    auto* const vec_b = nt->node_b_storage();
+    auto* const vec_d = nt->node_d_storage();
+    auto* const vec_rhs = nt->node_rhs_storage();
+#endif
     int i = lastnode[icell];
     for (int istride = nstride - 1; istride >= 0; --istride) {
         if (istride < icellsize) {  // only first icellsize strides matter
@@ -462,6 +582,12 @@ static void bksub_interleaved(NrnThread* nt,
                               int /* nstride */,
                               int* stride,
                               int* firstnode) {
+#if !CORENRN_BUILD
+    auto* const vec_a = nt->node_a_storage();
+    auto* const vec_b = nt->node_b_storage();
+    auto* const vec_d = nt->node_d_storage();
+    auto* const vec_rhs = nt->node_rhs_storage();
+#endif
     int i = firstnode[icell];
     GPU_RHS(icell) /= GPU_D(icell);  // the root
     for (int istride = 0; istride < icellsize; ++istride) {
@@ -483,6 +609,12 @@ static void solve_interleaved2_loop_body(NrnThread* nt,
                                          int* stridedispl,
                                          int* rootbegin,
                                          int* nodebegin) {
+#if !CORENRN_BUILD
+    auto* const vec_a = nt->node_a_storage();
+    auto* const vec_b = nt->node_b_storage();
+    auto* const vec_d = nt->node_d_storage();
+    auto* const vec_rhs = nt->node_rhs_storage();
+#endif
     int iwarp = icore / warpsize;     // figure out the >> value
     int ic = icore & (warpsize - 1);  // figure out the & mask
     int ncycle = ncycles[iwarp];
@@ -564,7 +696,7 @@ static void solve_interleaved2_loop_body(NrnThread* nt,
 /**
  * \brief Solve Hines matrices/cells with compartment-based granularity.
  *
- * The node ordering/permuation guarantees cell interleaving (as much coalesced memory access as
+ * The node ordering/permutation guarantees cell interleaving (as much coalesced memory access as
  * possible) and balanced warps (through the use of lpt algorithm to define the groups/warps). Every
  * warp deals with a group of cells, therefore multiple compartments (finer level of parallelism).
  */
@@ -593,7 +725,12 @@ void solve_interleaved2(int ith) {
         int nstride = stridedispl[nwarp];
 #endif
         // nvc++/22.3 does not respect an if clause inside nrn_pragma_omp...
+#if CORENRN_BUILD
         if (nt->compute_gpu) {
+#else
+    // bad clang-format
+    if (0) {  // nt->compute_gpu) {
+#endif
             /* If we compare this loop with the one from cellorder.cu (CUDA version), we will
              * understand that the parallelism here is exposed in steps, while in the CUDA version
              * all the parallelism is exposed from the very beginning of the loop. In more details,

@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
-set -e
+set -eu
 
-names=`sed -n '
+NRNMPI_OUTPUT_PATH="${1}"
+
+names="$(sed -n '
 /extern /s/extern [a-z*]* \(nrnmpi_[a-zA-Z0-9_]*\)(.*);/\1/p
-' nrnmpidec.h`
+' nrnmpidec.h)"
 
 #generate nrnmpi_dynam_wrappers.inc
 sed -n '
@@ -12,6 +14,8 @@ sed -n '
 /extern [^v]/s/extern \([a-z*]*\) \(nrnmpi_[a-zA-Z0-9_]*\)\(.*\);/\1 \2\3 {@  return (*p_\2)\3;@}/p
 ' nrnmpidec.h | tr '@' '\n' | sed '
 /p_nrnmpi/ {
+s/, const [a-zA-Z0-9_:*&]* /, /g
+s/)(const [a-zA-Z0-9_:*&]* /)(/
 s/, [a-zA-Z0-9_:*&]* /, /g
 s/)([a-zA-Z0-9_:*&]* /)(/
 s/const& //g
@@ -19,7 +23,7 @@ s/char\* //g
 s/char\*\* //g
 s/std::string& //g
 }
-'> nrnmpi_dynam_wrappers.inc
+'> "${NRNMPI_OUTPUT_PATH}/nrnmpi_dynam_wrappers.inc"
 
 #generate nrnmpi_dynam.h
 (
@@ -39,7 +43,7 @@ echo '
 
 #endif
 '
-) > nrnmpi_dynam.h
+) > "${NRNMPI_OUTPUT_PATH}/nrnmpi_dynam.h"
 
 #generate nrnmpi_dynam_cinc
 (
@@ -58,5 +62,4 @@ done
 echo '	0,0
 };
 '
-) > nrnmpi_dynam_cinc
-
+) > "${NRNMPI_OUTPUT_PATH}/nrnmpi_dynam_cinc"

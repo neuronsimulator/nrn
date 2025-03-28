@@ -29,31 +29,31 @@ class GrGlyph: public Resource {
 double gr_addglyph(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.addglyph", v);
 #if HAVE_IV
-    IFGUI
-    Graph* g = (Graph*) v;
-    Object* obj = *hoc_objgetarg(1);
-    check_obj_type(obj, "Glyph");
-    GrGlyph* gl = (GrGlyph*) (obj->u.this_pointer);
-    Coord x = *getarg(2);
-    Coord y = *getarg(3);
-    Coord sx = ifarg(4) ? *getarg(4) : 1.;
-    Coord sy = ifarg(5) ? *getarg(5) : 1.;
-    Coord rot = ifarg(6) ? *getarg(6) : 0.;
-    int fix = ifarg(7) ? int(chkarg(7, 0, 2)) : 0;
-    GrGlyphItem* ggi = new GrGlyphItem(gl, sx, sy, rot);
-    switch (fix) {
-    case 0:
-        g->append(ggi);
-        break;
-    case 1:
-        g->append_fixed(ggi);
-        break;
-    case 2:
-        g->append_viewfixed(ggi);
-        break;
+    if (hoc_usegui) {
+        Graph* g = (Graph*) v;
+        Object* obj = *hoc_objgetarg(1);
+        check_obj_type(obj, "Glyph");
+        GrGlyph* gl = (GrGlyph*) (obj->u.this_pointer);
+        Coord x = *getarg(2);
+        Coord y = *getarg(3);
+        Coord sx = ifarg(4) ? *getarg(4) : 1.;
+        Coord sy = ifarg(5) ? *getarg(5) : 1.;
+        Coord rot = ifarg(6) ? *getarg(6) : 0.;
+        int fix = ifarg(7) ? int(chkarg(7, 0, 2)) : 0;
+        GrGlyphItem* ggi = new GrGlyphItem(gl, sx, sy, rot);
+        switch (fix) {
+        case 0:
+            g->append(ggi);
+            break;
+        case 1:
+            g->append_fixed(ggi);
+            break;
+        case 2:
+            g->append_viewfixed(ggi);
+            break;
+        }
+        g->move(g->count() - 1, x, y);
     }
-    g->move(g->count() - 1, x, y);
-    ENDGUI
 #endif
     return 0.;
 }
@@ -62,9 +62,9 @@ static Object** g_new_path(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.path", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
-    g->new_path();
-    ENDGUI
+    if (hoc_usegui) {
+        g->new_path();
+    }
 #endif
     return g->temp_objvar();
 }
@@ -73,9 +73,9 @@ static Object** g_move_to(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.m", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
-    g->move_to(*getarg(1), *getarg(2));
-    ENDGUI
+    if (hoc_usegui) {
+        g->move_to(*getarg(1), *getarg(2));
+    }
 #endif
     return g->temp_objvar();
 }
@@ -84,9 +84,9 @@ static Object** g_line_to(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.l", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
-    g->line_to(*getarg(1), *getarg(2));
-    ENDGUI
+    if (hoc_usegui) {
+        g->line_to(*getarg(1), *getarg(2));
+    }
 #endif
     return g->temp_objvar();
 }
@@ -95,9 +95,9 @@ static Object** g_control_point(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.cpt", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
-    g->control_point(*getarg(1), *getarg(2));
-    ENDGUI
+    if (hoc_usegui) {
+        g->control_point(*getarg(1), *getarg(2));
+    }
 #endif
     return g->temp_objvar();
 }
@@ -106,9 +106,9 @@ static Object** g_curve_to(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.curve", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
-    g->curve_to(*getarg(1), *getarg(2), *getarg(3), *getarg(4), *getarg(5), *getarg(6));
-    ENDGUI
+    if (hoc_usegui) {
+        g->curve_to(*getarg(1), *getarg(2), *getarg(3), *getarg(4), *getarg(5), *getarg(6));
+    }
 #endif
     return g->temp_objvar();
 }
@@ -117,11 +117,11 @@ static Object** g_stroke(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.s", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
-    int ci = ifarg(1) ? int(chkarg(1, 0, 10000)) : 1;
-    int bi = ifarg(2) ? int(chkarg(2, 0, 10000)) : 0;
-    g->stroke(ci, bi);
-    ENDGUI
+    if (hoc_usegui) {
+        int ci = ifarg(1) ? int(chkarg(1, 0, 10000)) : 1;
+        int bi = ifarg(2) ? int(chkarg(2, 0, 10000)) : 0;
+        g->stroke(ci, bi);
+    }
 #endif
     return g->temp_objvar();
 }
@@ -130,9 +130,9 @@ static Object** g_close_path(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.close", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
-    g->close_path();
-    ENDGUI
+    if (hoc_usegui) {
+        g->close_path();
+    }
 #endif
     return g->temp_objvar();
 }
@@ -141,10 +141,10 @@ static Object** g_fill(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.fill", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
-    int ci = ifarg(1) ? int(chkarg(1, 0, 10000)) : 1;
-    g->fill(ci);
-    ENDGUI
+    if (hoc_usegui) {
+        int ci = ifarg(1) ? int(chkarg(1, 0, 10000)) : 1;
+        g->fill(ci);
+    }
 #endif
     return g->temp_objvar();
 }
@@ -153,9 +153,9 @@ static Object** g_erase(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.erase", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
-    g->erase();
-    ENDGUI
+    if (hoc_usegui) {
+        g->erase();
+    }
 #endif
     return g->temp_objvar();
 }
@@ -164,9 +164,9 @@ static Object** g_circle(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.circle", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
-    g->circle(*getarg(1), *getarg(2), *getarg(3));
-    ENDGUI
+    if (hoc_usegui) {
+        g->circle(*getarg(1), *getarg(2), *getarg(3));
+    }
 #endif
     return g->temp_objvar();
 }
@@ -175,16 +175,14 @@ static Object** g_gif(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_OBJ("Glyph.gif", v);
     GrGlyph* g = (GrGlyph*) v;
 #if HAVE_IV
-    IFGUI
-    g->gif(gargstr(1));
-    ENDGUI
+    if (hoc_usegui) {
+        g->gif(gargstr(1));
+    }
 #endif
     return g->temp_objvar();
 }
 
 static Symbol* sggl_;
-
-Member_func members[] = {{0, 0}};
 
 Member_ret_obj_func objmembers[] = {{"path", g_new_path},
                                     {"m", g_move_to},
@@ -197,7 +195,7 @@ Member_ret_obj_func objmembers[] = {{"path", g_new_path},
                                     {"erase", g_erase},
                                     {"gif", g_gif},
                                     {"circle", g_circle},
-                                    {0, 0}};
+                                    {nullptr, nullptr}};
 
 static void* cons(Object* o) {
     TRY_GUI_REDIRECT_OBJ("Glyph", NULL);
@@ -213,33 +211,33 @@ static void destruct(void* v) {
 }
 
 void GrGlyph_reg() {
-    class2oc("Glyph", cons, destruct, members, NULL, objmembers, NULL);
+    class2oc("Glyph", cons, destruct, nullptr, objmembers, nullptr);
     sggl_ = hoc_lookup("Glyph");
 }
 
 GrGlyph::GrGlyph(Object* o) {
     obj_ = o;
 #if HAVE_IV
-    IFGUI
-    type_ = new DataVec(10);
-    x_ = new DataVec(10);
-    y_ = new DataVec(10);
-    type_->ref();
-    x_->ref();
-    y_->ref();
-    gif_ = NULL;
-    ENDGUI
+    if (hoc_usegui) {
+        type_ = new DataVec(10);
+        x_ = new DataVec(10);
+        y_ = new DataVec(10);
+        type_->ref();
+        x_->ref();
+        y_->ref();
+        gif_ = NULL;
+    }
 #endif
 }
 
 GrGlyph::~GrGlyph() {
 #if HAVE_IV
-    IFGUI
-    type_->unref();
-    x_->unref();
-    y_->unref();
-    Resource::unref(gif_);
-    ENDGUI
+    if (hoc_usegui) {
+        type_->unref();
+        x_->unref();
+        y_->unref();
+        Resource::unref(gif_);
+    }
 #endif
 }
 

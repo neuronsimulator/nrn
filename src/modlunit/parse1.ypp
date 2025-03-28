@@ -1,8 +1,9 @@
 %{
 /* /local/src/master/nrn/src/modlunit/parse1.y,v 1.11 1999/02/27 21:13:50 hines Exp */
 
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 #include <stdlib.h>
+#include <cstring>
 #include "model.h"
 
 /* Constructs a parse tree. No translation is done, ie. on exit printing

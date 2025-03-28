@@ -31,9 +31,6 @@ Installing from source
 **********************
 To enable CoreNEURON when building NEURON, simply pass the ``-DNRN_ENABLE_CORENEURON=ON`` option to CMake.
 
-By default, CoreNEURON will use the `mod2c <https://github.com/BlueBrain/mod2c>`_ source-to-source compiler to translate MOD files into C++ code.
-To use the more modern `NMODL <https://github.com/BlueBrain/nmodl>`_ source-to-source compiler, you should additionally pass ``-DCORENRN_ENABLE_NMODL=ON`` to CMake.
-
 Most of CoreNEURON's build dependencies (Bison, Flex, CMake, Python, MPI (optional), ...) are already dependencies of NEURON, but you may want to use a specialised compiler to get optimal performance.
 To enable GPU support the `NVIDIA HPC SDK <https://developer.nvidia.com/hpc-sdk>`_. is also required.
 

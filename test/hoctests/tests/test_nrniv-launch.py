@@ -40,6 +40,7 @@ func square() {
 print "a = ", a
 print "square(a)=", square(a)
 quit()
+
 """,
 )
 

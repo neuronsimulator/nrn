@@ -15,39 +15,71 @@ install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 # =============================================================================
 set(nrnpython_lib_list)
 
+set(NRNPYTHON_FILES_LIST
+    nrnpython.cpp
+    nrnpy_hoc.cpp
+    nrn_metaclass.cpp
+    nrnpy_nrn.cpp
+    nrnpy_p2h.cpp
+    nrnpy_utils.cpp
+    grids.cpp
+    rxd.cpp
+    rxd_extracellular.cpp
+    rxd_intracellular.cpp
+    rxd_vol.cpp
+    rxd_marching_cubes.cpp
+    rxd_llgramarea.cpp)
+
+set(INCLUDE_DIRS
+    ..
+    ../oc
+    ../nrnoc
+    ../ivoc
+    ../nrniv
+    ../nrnmpi
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}/src/oc)
+if(NRN_ENABLE_INTERVIEWS)
+  list(APPEND INCLUDE_DIRS ${IV_INCLUDE_DIR})
+else()
+  list(APPEND INCLUDE_DIRS ../ivos)
+endif()
+
 # user has selected dynamic python support (could be multiple versions)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
-  set(INCLUDE_DIRS
-      .
-      ..
-      ../oc
-      ../nrnoc
-      ../ivoc
-      ../nrniv
-      ../gnu
-      ../nrnmpi
-      ${PROJECT_BINARY_DIR}/src/nrnpython
-      ${PROJECT_BINARY_DIR}/src/ivos
-      ${PROJECT_BINARY_DIR}/src/oc)
-  if(NRN_ENABLE_INTERVIEWS)
-    list(APPEND INCLUDE_DIRS ${IV_INCLUDE_DIR})
-  else()
-    list(APPEND INCLUDE_DIRS ../ivos)
-  endif()
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
     list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
-    add_library(nrnpython${pyver} SHARED ${NRN_NRNPYTHON_SRC_FILES})
+    set(nanobind_target "nanobind_py${pyver}")
+    make_nanobind_target(${nanobind_target} ${pyinc})
+    add_library(nrnpython${pyver} SHARED ${NRNPYTHON_FILES_LIST})
     target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
-    target_link_libraries(nrnpython${pyver} nrniv_lib ${Readline_LIBRARY})
+    target_link_libraries(nrnpython${pyver} PUBLIC nrniv_lib)
+    target_link_libraries(nrnpython${pyver} PRIVATE ${Readline_LIBRARY} ${nanobind_target})
     if(NRN_LINK_AGAINST_PYTHON)
-      target_link_libraries(nrnpython${pyver} ${pylib})
+      target_link_libraries(nrnpython${pyver} PUBLIC ${pylib})
     endif()
     add_dependencies(nrnpython${pyver} nrniv_lib)
     list(APPEND nrnpython_lib_list nrnpython${pyver})
     install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
   endforeach()
+else()
+  add_library(nrnpython OBJECT ${NRNPYTHON_FILES_LIST})
+  add_dependencies(nrnpython generated_source_files)
+  set_property(TARGET nrnpython PROPERTY POSITION_INDEPENDENT_CODE ON)
+  target_include_directories(nrnpython PUBLIC ${INCLUDE_DIRS})
+  target_include_directories(nrnpython PUBLIC "${NRN_DEFAULT_PYTHON_INCLUDES}")
+  # see nrn/issues/2358
+  if(NOT NRN_WITH_MACOS_CONDA_PYTHON)
+    target_link_libraries(nrnpython ${NRN_DEFAULT_PYTHON_LIBRARIES})
+  endif()
+  target_link_libraries(nrnpython fmt::fmt)
+  target_include_directories(nrnpython SYSTEM
+                             PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
+  target_include_directories(nrnpython PUBLIC ${PROJECT_BINARY_DIR}/src/nrniv/oc_generated)
+  make_nanobind_target(nanobind ${NRN_DEFAULT_PYTHON_INCLUDES})
+  target_link_libraries(nrnpython nanobind)
 endif()
 
 configure_file(_config_params.py.in "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"

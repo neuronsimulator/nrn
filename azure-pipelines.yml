@@ -34,8 +34,6 @@ stages:
         vmImage: 'ubuntu-20.04'
       strategy:
         matrix:
-          Python38:
-            python.version: '3.8'
           Python39:
             python.version: '3.9'
           Python310:
@@ -44,6 +42,9 @@ stages:
             python.version: '3.11'
           Python312:
             python.version: '3.12'
+          Python313:
+            python.version: '3.13'
+
       steps:
 
       # Secure files documentation:
@@ -69,14 +70,14 @@ stages:
             -e NRN_RELEASE_UPLOAD \
             -e SETUPTOOLS_SCM_PRETEND_VERSION \
             -e NRN_BUILD_FOR_UPLOAD=1 \
-            'neuronsimulator/neuron_wheel:latest-x86_64' \
+            'docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64' \
             packaging/python/build_wheels.bash linux $(python.version) coreneuron
         displayName: 'Building ManyLinux Wheel'
 
       - script: |
           sudo apt update
           sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
-        displayName: 'Install Test System Depdendencies'
+        displayName: 'Install Test System Dependencies'
 
       - template: ci/azure-wheel-test-upload.yml
 
@@ -85,13 +86,9 @@ stages:
     - job: 'MacOSWheels'
       timeoutInMinutes: 60
       pool:
-        vmImage: 'macOS-12'
+        vmImage: 'macOS-13'
       strategy:
         matrix:
-          Python38:
-            python.version: '3.8'
-            python.org.version: '3.8.10'
-            python.installer.name: 'macos11.pkg'
           Python39:
             python.version: '3.9'
             python.org.version: '3.9.13'
@@ -107,6 +104,10 @@ stages:
           Python312:
             python.version: '3.12'
             python.org.version: '3.12.0'
+            python.installer.name: 'macos11.pkg'
+          Python313:
+            python.version: '3.13'
+            python.org.version: '3.13.0'
             python.installer.name: 'macos11.pkg'
 
       steps:
@@ -148,8 +149,8 @@ stages:
           export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
           export NRN_BUILD_FOR_UPLOAD=1
-          sudo mkdir /opt/nrnwheel
-          sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/
+          sudo mkdir -p /opt/nrnwheel/$(uname -m)
+          sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/$(uname -m)
           packaging/python/build_wheels.bash osx $(python.version) coreneuron
         displayName: 'Build MacOS Wheel'
 

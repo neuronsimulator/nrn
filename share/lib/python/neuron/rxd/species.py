@@ -60,12 +60,12 @@ ICS_insert_inhom.argtypes = ICS_insert.argtypes = [
     ctypes.c_int,
     ctypes.py_object,
     ctypes.c_long,
-    numpy.ctypeslib.ndpointer(dtype=int),
-    numpy.ctypeslib.ndpointer(dtype=int),
+    numpy.ctypeslib.ndpointer(dtype=ctypes.c_long),
+    numpy.ctypeslib.ndpointer(dtype=ctypes.c_long),
     ctypes.c_long,
-    numpy.ctypeslib.ndpointer(dtype=int),
+    numpy.ctypeslib.ndpointer(dtype=ctypes.c_long),
     ctypes.c_long,
-    numpy.ctypeslib.ndpointer(dtype=int),
+    numpy.ctypeslib.ndpointer(dtype=ctypes.c_long),
     ctypes.c_long,
     numpy.ctypeslib.ndpointer(dtype=float),
     ctypes.c_double,
@@ -204,7 +204,7 @@ def _1d_submatrix_n():
 
 
 _ontology_id = re.compile(
-    "^\[[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]*\]|[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]*$"
+    r"^\[[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]*\]|[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]*$"
 )
 
 
@@ -842,7 +842,7 @@ class _IntracellularSpecies(_SpeciesMathable):
 
         # sort list for parallelization
         line_defs.sort(key=lambda x: x[1], reverse=True)
-        line_defs = numpy.asarray(line_defs, dtype=int)
+        line_defs = numpy.asarray(line_defs, dtype=ctypes.c_long)
         line_defs = line_defs.reshape(2 * len(line_defs))
         return line_defs
 
@@ -862,7 +862,7 @@ class _IntracellularSpecies(_SpeciesMathable):
 
     def create_neighbors_array(self, nodes, nodes_length):
         self._isalive()
-        my_array = numpy.zeros((nodes_length, 3), dtype=int)
+        my_array = numpy.zeros((nodes_length, 3), dtype=ctypes.c_long)
         for n in nodes:
             for i, ele in enumerate(n.neighbors[::2]):
                 my_array[n._index, i] = ele if ele is not None else -1
@@ -960,10 +960,13 @@ class _IntracellularSpecies(_SpeciesMathable):
                         )
                     ]
                     # These are in the same order as self._surface_nodes_per_seg so self._surface_nodes_per_seg_start_indices will work for this list as well
-                    geom_area = [
-                        sum(self._region.geometry.surface_areas1d(sec))
-                        for sec in self._region._secs3d
-                    ]
+                    try:
+                        geom_area = [
+                            sum(self._region.geometry.surface_areas1d(sec))
+                            for sec in self._region._secs3d
+                        ]
+                    except TypeError:
+                        return
                     node_area = [node.surface_area for node in self._nodes]
                     node_vol = [node.volume for node in self._nodes]
                     scale = geom_area / sum(node_area)

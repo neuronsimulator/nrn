@@ -1,4 +1,4 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 /* /local/src/master/nrn/src/modlunit/init.c,v 1.9 1998/03/25 14:33:55 hines Exp */
 
 #include "model.h"

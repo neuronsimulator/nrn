@@ -7,7 +7,11 @@ import os
 import shutil
 import subprocess
 import sys
-from pkg_resources import working_set
+import warnings
+from importlib.metadata import metadata, PackageNotFoundError
+from importlib.util import find_spec
+from pathlib import Path
+
 from setuptools.command.build_ext import new_compiler
 from packaging.version import Version
 from sysconfig import get_config_vars, get_config_var
@@ -41,21 +45,23 @@ def _set_default_compiler():
     os.environ.setdefault("CXX", ccompiler.compiler_cxx[0])
 
 
-def _check_cpp_compiler_version():
-    """Check if GCC compiler is >= 9.0 otherwise show warning"""
+def _check_cpp_compiler_version(min_version: str):
+    """Check if GCC compiler is >= min supported one, otherwise show warning"""
     try:
         cpp_compiler = os.environ.get("CXX", "")
         version = subprocess.run(
-            [cpp_compiler, "--version"], stdout=subprocess.PIPE
+            [cpp_compiler, "--version"],
+            stdout=subprocess.PIPE,
         ).stdout.decode("utf-8")
-        if "GCC" in version:
+        if "gcc" in version.lower() or "gnu" in version.lower():
             version = subprocess.run(
-                [cpp_compiler, "-dumpversion"], stdout=subprocess.PIPE
+                [cpp_compiler, "-dumpversion"],
+                stdout=subprocess.PIPE,
             ).stdout.decode("utf-8")
-            if Version(version) <= Version("9.0"):
-                print(
-                    "Warning: GCC >= 9.0 is required with this version of NEURON but found",
-                    version,
+            if Version(version) <= Version(min_version):
+                warnings.warn(
+                    f"Warning: GCC >= {min_version} is required with this version of NEURON"
+                    f"but found version {version}",
                 )
     except:
         pass
@@ -63,21 +69,14 @@ def _check_cpp_compiler_version():
 
 def _config_exe(exe_name):
     """Sets the environment to run the real executable (returned)"""
-
-    package_name = "neuron"
-
-    # determine package to find the install location
-    if "neuron-nightly" in working_set.by_key:
+    try:
+        metadata("neuron-nightly")
         print("INFO : Using neuron-nightly Package (Developer Version)")
-        package_name = "neuron-nightly"
-    elif "neuron" in working_set.by_key:
-        package_name = "neuron"
-    else:
-        raise RuntimeError("NEURON package not found! Verify PYTHONPATH")
+    except PackageNotFoundError:
+        pass
 
-    NRN_PREFIX = os.path.join(
-        working_set.by_key[package_name].location, "neuron", ".data"
-    )
+    NRN_PREFIX = str(Path(find_spec("neuron").origin).parent / ".data")
+
     os.environ["NEURONHOME"] = os.path.join(NRN_PREFIX, "share/nrn")
     os.environ["NRNHOME"] = NRN_PREFIX
     os.environ["CORENRNHOME"] = NRN_PREFIX
@@ -90,6 +89,10 @@ def _config_exe(exe_name):
         os.environ["NMODLHOME"] = NRN_PREFIX
     if "NMODL_PYLIB" not in os.environ:
         os.environ["NMODL_PYLIB"] = find_libpython()
+
+    # nmodl module is inside <prefix>/lib directory
+    sys.path.insert(0, os.path.join(NRN_PREFIX, "lib"))
+    os.environ["PYTHONPATH"] = ":".join(sys.path)
 
     _set_default_compiler()
     return os.path.join(NRN_PREFIX, "bin", exe_name)
@@ -111,7 +114,7 @@ if __name__ == "__main__":
 
     if exe.endswith("nrnivmodl"):
         # To create a wrapper for special (so it also gets ENV vars) we intercept nrnivmodl
-        _check_cpp_compiler_version()
+        _check_cpp_compiler_version("10.0")
         subprocess.check_call([exe, *sys.argv[1:]])
         _wrap_executable("special")
         sys.exit(0)

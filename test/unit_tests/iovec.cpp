@@ -1,9 +1,10 @@
 #include <algorithm>
+#include <numeric>
 #include <vector>
 
 #include "oc_ansi.h"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 // This function is the one that is used in all nrn-modeldb-ci
 // Keep as is

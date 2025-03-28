@@ -31,6 +31,10 @@ class IvocVect {
         return vec_;
     }
 
+    inline double const* data() const {
+        return vec_.data();
+    }
+
     inline double* data() {
         return vec_.data();
     }
@@ -55,6 +59,14 @@ class IvocVect {
 
     inline double& operator[](size_t index) {
         return vec_.at(index);
+    }
+
+    inline auto begin() const -> std::vector<double>::const_iterator {
+        return vec_.begin();
+    }
+
+    inline auto end() const -> std::vector<double>::const_iterator {
+        return vec_.end();
     }
 
     inline auto begin() -> std::vector<double>::iterator {
