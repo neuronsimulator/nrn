@@ -25,7 +25,8 @@ function(cythonize input_file)
       DEPENDS ${input_file}
       VERBATIM)
   else()
-    message(FATAL_ERROR "Unsupported language: ${ARG_LANGUAGE}; only c and c++ are allowed")
+    message(
+      FATAL_ERROR "Unsupported Cython output language: ${ARG_LANGUAGE}; only C and CXX are allowed")
   endif()
 endfunction()
 
