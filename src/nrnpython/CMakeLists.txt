@@ -85,6 +85,9 @@ endif()
 configure_file(_config_params.py.in "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
                @ONLY)
 
+# Maybe NRN_COVERAGE_FILES mentions a file compiled by this CMakeLists.txt
+nrn_enable_coverage_files()
+
 # Install package files that were created in build (e.g. .py.in)
 install(
   DIRECTORY ${PROJECT_BINARY_DIR}/share/lib/python
