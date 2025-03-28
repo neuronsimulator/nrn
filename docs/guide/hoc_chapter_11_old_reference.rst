@@ -310,7 +310,7 @@ Keywords
 	string_dialog	doEvents	doNotify	numarg	hoc_pointer_
 	execute	execute1	load_proc	load_func	load_template
 	machine_name	saveaudit	retrieveaudit	coredump_on_error
-	checkpoint	quit	object_push	object_pop	pwman_place
+	quit	object_push	object_pop	pwman_place
 	show_errmess_always	numprocs	myproc	psync	settext
     secname 
 

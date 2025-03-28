@@ -21,6 +21,7 @@ set(NRNPYTHON_FILES_LIST
     nrn_metaclass.cpp
     nrnpy_nrn.cpp
     nrnpy_p2h.cpp
+    nrnpy_utils.cpp
     grids.cpp
     rxd.cpp
     rxd_extracellular.cpp
@@ -69,9 +70,13 @@ else()
   set_property(TARGET nrnpython PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_include_directories(nrnpython PUBLIC ${INCLUDE_DIRS})
   target_include_directories(nrnpython PUBLIC "${NRN_DEFAULT_PYTHON_INCLUDES}")
-  target_link_libraries(nrnpython ${NRN_DEFAULT_PYTHON_LIBRARIES})
+  # see nrn/issues/2358
+  if(NOT NRN_WITH_MACOS_CONDA_PYTHON)
+    target_link_libraries(nrnpython ${NRN_DEFAULT_PYTHON_LIBRARIES})
+  endif()
   target_link_libraries(nrnpython fmt::fmt)
-  target_include_directories(nrnpython PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
+  target_include_directories(nrnpython SYSTEM
+                             PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
   target_include_directories(nrnpython PUBLIC ${PROJECT_BINARY_DIR}/src/nrniv/oc_generated)
   make_nanobind_target(nanobind ${NRN_DEFAULT_PYTHON_INCLUDES})
   target_link_libraries(nrnpython nanobind)

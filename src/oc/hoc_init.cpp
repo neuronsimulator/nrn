@@ -170,7 +170,6 @@ static struct { /* Builtin functions with multiple or variable args */
                  {"saveaudit", hoc_Saveaudit},
                  {"retrieveaudit", hoc_Retrieveaudit},
                  {"coredump_on_error", hoc_coredump_on_error},
-                 {"checkpoint", hoc_checkpoint},
                  {"quit", hoc_quit},
                  {"object_push", hoc_object_push},
                  {"object_pop", hoc_object_pop},
@@ -196,6 +195,10 @@ static struct { /* Builtin functions with multiple or variable args */
 #if defined(WIN32)
                  {"WinExec", hoc_win_exec},
 #endif
+#if NRN_DIGEST
+                 {"nrn_digest", nrn_digest},
+#endif
+                 {"use_exp_pow_precision", hoc_use_exp_pow_precision},
                  {0, 0}};
 
 static struct { /* functions that return a string */
@@ -319,8 +322,7 @@ void hoc_unix_mac_pc(void) {
 #endif
 }
 void hoc_show_winio(void) {
-    int b;
-    b = (int) chkarg(1, 0., 1.);
+    int b = (int) chkarg(1, 0., 1.);
 #if defined(WIN32)
     hoc_winio_show(b);
 #endif

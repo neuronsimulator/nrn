@@ -89,7 +89,7 @@ LinearMechanism
 
             tstop = 5
             
-            soma = h.Section(name="soma")
+            soma = h.Section("soma")
             soma.insert(h.hh)
             
             # ideal voltage clamp. 
@@ -104,7 +104,7 @@ LinearMechanism
             
             h.finitialize(-65)
             while h.t < tstop:
-                print('t=%-8g v=%-8g y[1]=%-8g' % (h.t, soma(0.5).v, y[1]))
+                print(f't={h.t:<8g} v={soma(0.5).v:<8g} y[1]={y[1]:<8g}')
                 h.fadvance()
 
 
@@ -159,7 +159,7 @@ LinearMechanism
 
             nlm = h.LinearMechanism(callback, cmat, gmat, y, y0, b)
 
-            dummy = h.Section(name="dummy")
+            dummy = h.Section("dummy")
             trajec = h.Vector().record(y._ref_x[0])
             tvec = h.Vector().record(h._ref_t)
 

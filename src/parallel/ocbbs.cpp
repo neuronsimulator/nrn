@@ -577,7 +577,6 @@ static double multisplit(void* v) {
     Section* sec = NULL;
     int sid = -1;
     int backbone_style = 2;
-    int reducedtree_host = 0;
     if (ifarg(1)) {
         nrn_seg_or_x_arg(1, &sec, &x);
         sid = (int) chkarg(2, 0, (double) (0x7fffffff));
@@ -1136,7 +1135,7 @@ static void destruct(void* v) {
 }
 
 void ParallelContext_reg() {
-    class2oc("ParallelContext", cons, destruct, members, nullptr, retobj_members, retstr_members);
+    class2oc("ParallelContext", cons, destruct, members, retobj_members, retstr_members);
 }
 
 // A BBS message is something to execute.
@@ -1424,11 +1423,10 @@ void BBSImpl::return_args(int id) {
     // perhaps it would be better to do this directly
     // and avoid the meaningless create and delete.
     // but then they all would have to know this format
-    int i;
     char* s;
     // printf("BBSImpl::return_args(%d):\n", id);
-    i = upkint();  // userid
-    int wid = upkint();
+    upkint();  // userid
+    /* int wid = */ upkint();
     int style = upkint();
     // printf("message userid=%d style=%d\n", i, style);
     switch (style) {
@@ -1439,19 +1437,19 @@ void BBSImpl::return_args(int id) {
         break;
     case 2:            // obj first
         s = upkstr();  // template name
-        i = upkint();  // instance index
+        upkint();      // instance index
                        // printf("object %s[%d]\n", s, i);
         delete[] s;
         // fall through
     case 1:
         s = upkstr();  // fname
-        i = upkint();  // arg manifest
+        upkint();      // arg manifest
                        // printf("fname=|%s| manifest=%o\n", s, i);
         delete[] s;
         break;
     case 3:
         auto pickle = upkpickle();  // pickled callable
-        i = upkint();               // arg manifest
+        upkint();                   // arg manifest
         break;
     }
     // now only args are left and ready to unpack.

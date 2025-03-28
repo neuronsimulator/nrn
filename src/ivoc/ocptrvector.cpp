@@ -206,9 +206,9 @@ static Member_func members[] = {{"size", get_size},
                                 {"scatter", scatter},
                                 {"gather", gather},
                                 {"plot", ptr_plot},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
-static Member_ret_str_func retstr_members[] = {{"label", ptr_label}, {0, 0}};
+static Member_ret_str_func retstr_members[] = {{"label", ptr_label}, {nullptr, nullptr}};
 
 static void* cons(Object*) {
     int sz;
@@ -222,6 +222,6 @@ static void destruct(void* v) {
 }
 
 void OcPtrVector_reg() {
-    class2oc("PtrVector", cons, destruct, members, 0, 0, retstr_members);
+    class2oc("PtrVector", cons, destruct, members, nullptr, retstr_members);
     pv_class_sym_ = hoc_lookup("PtrVector");
 }

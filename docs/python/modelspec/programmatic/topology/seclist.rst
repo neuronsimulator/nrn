@@ -31,6 +31,10 @@ SectionList
             for sec in python_iterable_of_sections:
                 sl.append(sec)
 
+        ``len(sl)`` returns the number of sections in the SectionList.
+
+        ``list(sl)`` and ``[s for s in sl]`` generate equivalent lists.
+
     .. seealso::
         :class:`SectionBrowser`, :class:`Shape`, :meth:`RangeVarPlot.list`
 
@@ -104,9 +108,9 @@ SectionList
             python
 
             >>> from neuron import h
-            >>> s = h.Section(name='s')
-            >>> t = h.Section(name='t')
-            >>> u = h.Section(name='u')
+            >>> s = h.Section('s')
+            >>> t = h.Section('t')
+            >>> u = h.Section('u')
             >>> t.connect(s)
             t
             >>> u.connect(s)

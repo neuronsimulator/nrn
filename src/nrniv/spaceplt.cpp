@@ -254,9 +254,9 @@ static Member_func s_members[] = {{"begin", s_begin},
                                   {"color", s_color},
                                   {"to_vector", to_vector},
                                   {"from_vector", from_vector},
-                                  {0, 0}};
+                                  {nullptr, nullptr}};
 
-static Member_ret_obj_func rvp_retobj_members[] = {{"vector", rvp_vector}, {0, 0}};
+static Member_ret_obj_func rvp_retobj_members[] = {{"vector", rvp_vector}, {nullptr, nullptr}};
 
 static void* s_cons(Object*) {
     char* var = NULL;
@@ -291,7 +291,7 @@ static void s_destruct(void* v) {
 
 void RangeVarPlot_reg() {
     // printf("RangeVarPlot_reg\n");
-    class2oc("RangeVarPlot", s_cons, s_destruct, s_members, NULL, rvp_retobj_members, NULL);
+    class2oc("RangeVarPlot", s_cons, s_destruct, s_members, rvp_retobj_members, nullptr);
 }
 
 #if HAVE_IV

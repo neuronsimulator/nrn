@@ -1,0 +1,49 @@
+{
+    "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+    "type": "SoftwareSourceCode",
+    "applicationCategory": "neuroscience",
+    "author": [
+        {
+            "id": "_:author_1",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "Yale University"
+            },
+            "email": "michael.hines@yale.edu",
+            "familyName": "Hines",
+            "givenName": "Michael"
+        }
+    ],
+    "codeRepository": "git+https://github.com/neuronsimulator/nrn.git",
+    "dateModified": "2024-07-24",
+    "description": "Empirically-based simulator for modeling neurons and networks of neurons",
+    "downloadUrl": "https://github.com/neuronsimulator/nrn/releases/tag/8.2.6",
+    "funder": {
+        "type": "Organization",
+        "name": "Yale University"
+    },
+    "license": "https://spdx.org/licenses/BSD-3-Clause",
+    "name": "NEURON",
+    "operatingSystem": [
+        "Linux",
+        "Windows",
+        "macOS"
+    ],
+    "programmingLanguage": [
+        "C++",
+        "Python 3"
+    ],
+    "relatedLink": "https://nrn.readthedocs.io/",
+    "schema:releaseNotes": "This release pins numpy to <2 and includes backports for several fixes.\n\n### Bug Fixes\n- Informative error when cannot import hoc module\n- ParallelContext: hoc_ac_ encodes global id of submitted process.\n- Python 3.12 compatibility with Windows installer (#2963)\n- Windows 11 fix for nrniv -python (#2946)\n- Fix for dynamic ECS diffusion characteristics.\n- python38 is back. For testing can use rx3doptlevel=0 bash bldnrnmacpkgcmake.sh\n- Fix cvode.use_fast_imem(1) error with electrode time varying conductance.\n- Apple M1 cmake failure in cloning subrepository. See #2326.\n- Update iv",
+    "softwareRequirements": [
+        "Bison",
+        "Flex",
+        "C/C++ compiler",
+        "CMake >= 3.15.0"
+    ],
+    "version": "8.2.6",
+    "developmentStatus": "active",
+    "funding": "R01NS11613",
+    "issueTracker": "https://github.com/neuronsimulator/nrn/issues"
+}

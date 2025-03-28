@@ -144,10 +144,10 @@ static Member_func members[] = {{"compute", compute},
                                 {"input_phase", input_phase},
                                 {"transfer_phase", transfer_phase},
                                 {"deltafac", deltafac},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 void Impedance_reg() {
-    class2oc("Impedance", cons, destruct, members, nullptr, nullptr, nullptr);
+    class2oc("Impedance", cons, destruct, members, nullptr, nullptr);
 }
 
 Imp::~Imp() {

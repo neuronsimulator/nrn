@@ -52,7 +52,6 @@ static void* p_cons(Object*) {
     return nullptr;
 }
 static void p_destruct(void*) {}
-static Member_func p_members[] = {{nullptr, nullptr}};
 
 #ifdef NRNPYTHON_DYNAMICLOAD
 static std::string nrnpy_pylib{}, nrnpy_pyversion{};
@@ -251,14 +250,14 @@ void nrnpython_reg() {
 #endif
     // Stub implementation of PythonObject if Python support was not enabled, or a nrnpython library
     // could not be loaded.
-    class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr, nullptr);
+    class2oc("PythonObject", p_cons, p_destruct, nullptr, nullptr, nullptr);
 }
 
 #ifdef NRNPYTHON_DYNAMICLOAD  // to end of file
 static nrnpython_reg_real_t load_nrnpython() {
     std::string pyversion{};
     if (auto const pv10 = nrn_is_python_extension; pv10 > 0) {
-        // pv10 is one of the packed integers like 310 (3.10) or 38 (3.8)
+        // pv10 is one of the packed integers like 310 (3.10) or 39 (3.9)
         auto const factor = (pv10 >= 100) ? 100 : 10;
         pyversion = std::to_string(pv10 / factor) + "." + std::to_string(pv10 % factor);
     } else {

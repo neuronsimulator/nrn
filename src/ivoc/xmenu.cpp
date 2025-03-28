@@ -246,67 +246,54 @@ void hoc_xbutton() {
     hoc_pushx(0.);
 }
 
+static void hoc_state_or_checkbox(int style) {
+    if (hoc_usegui) {
+        char* sname = gargstr(1);
+        neuron::container::data_handle<double> ptr2{};
+        Object* ho2 = NULL;
+        char* s3 = NULL;
+        Object* ho3 = NULL;
+
+        if (hoc_is_object_arg(2)) {
+            ho2 = *hoc_objgetarg(2);
+        } else {
+            ptr2 = hoc_hgetarg<double>(2);
+        }
+
+        if (ifarg(3)) {
+            if (hoc_is_object_arg(3)) {
+                ho3 = *hoc_objgetarg(3);
+            } else {
+                s3 = gargstr(3);
+            }
+        }
+
+        hoc_ivstatebutton(ptr2, sname, s3, style, ho2, ho3);
+    }
+}
+
 /*
-xstatebutton("prompt",&var [,"action"])
+xstatebutton("prompt",&var [,"action" or ,pyact])
    like xbutton, but var is set to 0 or 1 depending to match the
    telltale state of the button
 */
 
 void hoc_xstatebutton() {
     TRY_GUI_REDIRECT_DOUBLE("xstatebutton", NULL);
-    if (hoc_usegui) {
-        char *s1, *s2 = (char*) 0;
-
-        s1 = gargstr(1);
-
-        if (hoc_is_object_arg(2)) {
-            neuron::container::data_handle<double> ptr1{};
-            hoc_ivstatebutton(ptr1,
-                              s1,
-                              NULL,
-                              HocStateButton::PALETTE,
-                              *hoc_objgetarg(2),
-                              ifarg(3) ? *hoc_objgetarg(3) : NULL);
-        } else {
-            if (ifarg(3)) {
-                s2 = gargstr(3);
-            }
-            hoc_ivstatebutton(hoc_hgetarg<double>(2), s1, s2, HocStateButton::PALETTE);
-        }
-    }
+    hoc_state_or_checkbox(HocStateButton::PALETTE);
     hoc_ret();
     hoc_pushx(0.);
 }
 
-
 /*
-xcheckbox("prompt",&var [,"action"])
+xcheckbox("prompt",&var [,"action" or ,pyact])
    like xbutton, but var is set to 0 or 1 depending to match the
    telltale state of the button
 */
 
 void hoc_xcheckbox() {
     TRY_GUI_REDIRECT_DOUBLE("xcheckbox", NULL);
-    if (hoc_usegui) {
-        char *s1, *s2 = (char*) 0;
-
-        s1 = gargstr(1);
-
-        if (hoc_is_object_arg(2)) {
-            neuron::container::data_handle<double> ptr1{};
-            hoc_ivstatebutton(ptr1,
-                              s1,
-                              NULL,
-                              HocStateButton::CHECKBOX,
-                              *hoc_objgetarg(2),
-                              ifarg(3) ? *hoc_objgetarg(3) : 0);
-        } else {
-            if (ifarg(3)) {
-                s2 = gargstr(3);
-            }
-            hoc_ivstatebutton(hoc_hgetarg<double>(2), s1, s2, HocStateButton::CHECKBOX);
-        }
-    }
+    hoc_state_or_checkbox(HocStateButton::CHECKBOX);
     hoc_ret();
     hoc_pushx(0.);
 }
@@ -3125,7 +3112,7 @@ static double vfe_default(void* v) {
 #endif
     return x;
 }
-static Member_func vfe_members[] = {{"default", vfe_default}, {0, 0}};
+static Member_func vfe_members[] = {{"default", vfe_default}, {nullptr, nullptr}};
 void ValueFieldEditor_reg() {
-    class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members, NULL, NULL, NULL);
+    class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members, nullptr, nullptr);
 }

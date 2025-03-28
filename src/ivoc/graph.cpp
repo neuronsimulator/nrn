@@ -1194,7 +1194,7 @@ static Member_func gr_members[] = {{"plot", gr_plot},
                                    {"gif", ivoc_gr_gif},
                                    {"menu_remove", ivoc_gr_menu_remove},
                                    {"line_info", gr_line_info},
-                                   {0, 0}};
+                                   {nullptr, nullptr}};
 
 static void* gr_cons(Object* ho) {
     TRY_GUI_REDIRECT_OBJ("Graph", NULL);
@@ -1226,7 +1226,7 @@ static void gr_destruct(void* v) {
 }
 void Graph_reg() {
     // printf("Graph_reg\n");
-    class2oc("Graph", gr_cons, gr_destruct, gr_members, NULL, NULL, NULL);
+    class2oc("Graph", gr_cons, gr_destruct, gr_members, NULL, NULL);
 #if HAVE_IV
     if (hoc_usegui) {
         colors = new ColorPalette();

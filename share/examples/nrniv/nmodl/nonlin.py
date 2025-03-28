@@ -17,7 +17,8 @@ r.uniform(-csize, csize)
 
 def dif(tol):
     for cell in cells:
-        assert cell.dif() < tol
+        residual = cell.dif()
+        assert residual < tol, f"{residual = }, {tol = }"
 
 
 def solve(a, b, c):

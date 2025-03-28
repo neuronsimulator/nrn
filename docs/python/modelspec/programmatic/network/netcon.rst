@@ -644,9 +644,10 @@ NetCon
         .. code-block::
             python  
             
-            from neuron import h, gui
+            from neuron import h
+            h.load_file('stdrun.hoc')  # for h.run() and h.cvode
 
-            soma = h.Section(name='soma')
+            soma = h.Section('soma')
             soma.insert(h.hh)
             soma.L = 3.183098861837907
             soma.diam = 10
@@ -659,8 +660,8 @@ NetCon
             g.addexpr('v(0.5)', 1, 1, 0.8, 0.9, 2, sec=soma)
 
             def handle():
-                print("called handle() at time %g  when soma(0.5).v = %g" % (h.t, soma(0.5).v))
-                h.stoprun = 1 # Will stop but may go one extra step. Also with 
+                print(f"called handle() at time {h.t} when soma(0.5).v = {soma(0.5).v}")
+                h.stoprun = True  # Will stop but may go one extra step. Also with 
                 # local step the cells will be at different times. 
                 # So may wish to do a further... 
                 h.cvode.event(h.t + 1e-6)  
@@ -673,7 +674,7 @@ NetCon
             h.cvode.condition_order(2) # optional. but much more accurate event time evaluation. 
              
             h.run() 
-            print("after h.run(), t = %g  when soma(0.5).v = %g" % (h.t, soma(0.5).v))
+            print(f"after h.run(), t = {h.t} when soma(0.5).v = {soma(0.5).v}")
 
 
 

@@ -148,7 +148,6 @@ inline void prmat(SparseObj* so) {
 
 inline void free_elm(SparseObj* so) {
     unsigned i;
-    Elm *el, *elnext;
 
     /* free all elements */
     nrn_pool_freeall(so->elmpool);
@@ -709,7 +708,7 @@ int _cvode_sparse_thread(void** v, int n, IndexArray x, Array p, Callable fun, A
     auto const x_ = [&p, &x](auto arg) -> auto& {
         return p[x[arg]];
     };
-    int i, j, ierr;
+    int i, ierr;
     SparseObj* so;
 
     so = (SparseObj*) (*v);

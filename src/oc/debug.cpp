@@ -1,11 +1,20 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/debug.cpp,v 1.7 1996/04/09 16:39:14 hines Exp */
+
 #include "hocdec.h"
 #include "code.h"
 #include "equation.h"
+#include "multicore.h"
 #include <stdio.h>
 
 #include "utils/logger.hpp"
+
+#include "nrndigest.h"
+#if NRN_DIGEST
+#include <openssl/sha.h>
+#include <vector>
+#include <string>
+#endif
 
 int hoc_zzdebug;
 
@@ -144,3 +153,86 @@ void debugzz(Inst* p) {
     }
 #endif /*OCSMALL*/
 }
+
+#if NRN_DIGEST
+
+int nrn_digest_;
+static std::vector<std::vector<std::string>> digest;  // nthread string vectors
+static std::vector<size_t> digest_cnt;                // nthread counts.
+static int nrn_digest_print_item_ = -1;
+static int nrn_digest_print_tid_ = 0;
+static bool nrn_digest_abort_ = false;
+
+void nrn_digest() {
+    if (ifarg(1) && hoc_is_str_arg(1)) {
+        // print the digest to the file and turn off accumulation
+        const char* fname = gargstr(1);
+        FILE* f = fopen(fname, "w");
+        if (!f) {
+            hoc_execerr_ext("Could not open %s for writing", fname);
+        }
+
+        int tid = 0;
+        for (auto& d: digest) {
+            fprintf(f, "tid=%d size=%zd\n", tid, digest[tid].size());
+            for (auto& s: d) {
+                fprintf(f, "%s\n", s.c_str());
+            }
+            tid++;
+        }
+        fclose(f);
+        nrn_digest_ = 0;
+    } else {  // start accumulating digest info
+        nrn_digest_ = 1;
+        nrn_digest_print_item_ = -1;
+        nrn_digest_print_tid_ = 0;
+        if (ifarg(2)) {
+            nrn_digest_print_tid_ = int(chkarg(1, 0., nrn_nthread - 1));
+            nrn_digest_print_item_ = int(chkarg(2, 0., 1e9));
+        }
+        nrn_digest_abort_ = (ifarg(3) && strcmp(gargstr(3), "abort") == 0);
+    }
+    size_t size = digest.size() ? digest[0].size() : 0;
+    digest.clear();  // in any case, start over.
+    digest.resize(nrn_nthread);
+    digest_cnt.clear();
+    digest_cnt.resize(nrn_nthread);
+    hoc_ret();
+    hoc_pushx(double(size));
+}
+
+void nrn_digest_dbl_array(const char* msg, int tid, double t, double* array, size_t sz) {
+    if (!nrn_digest_) {
+        return;
+    }
+    unsigned char md[SHA_DIGEST_LENGTH];
+    size_t n = sz * sizeof(double);
+    unsigned char* d = (unsigned char*) array;
+    SHA1(d, n, md);
+
+    std::string s(msg);
+    char buf[100];
+    int ix = int(digest_cnt[tid]);
+    digest_cnt[tid]++;
+    sprintf(buf, " %d %d %.17g ", tid, ix, t);
+    s += buf;
+
+    for (int i = 0; i < 8; ++i) {
+        sprintf(buf, "%02x", (int) md[i]);
+        s += buf;
+    }
+
+    digest[tid].push_back(s);
+
+    if (nrn_digest_print_item_ == ix && nrn_digest_print_tid_ == tid) {
+        printf("ZZ %s\n", s.c_str());
+        if (nrn_digest_abort_) {
+            abort();
+        }
+        for (size_t i = 0; i < sz; ++i) {
+            printf("Z %zd %.20g\n", i, array[i]);
+        }
+    }
+}
+
+#endif  // NRN_DIGEST

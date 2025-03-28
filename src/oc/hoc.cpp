@@ -27,6 +27,7 @@
 
 #include <cfenv>
 #include <condition_variable>
+#include <filesystem>
 #include <iostream>
 #include <mutex>
 #include <thread>
@@ -137,8 +138,6 @@ static CHAR* hoc_cbuf;
 CHAR* hoc_ctp;
 int hoc_ictp;
 
-extern const char* RCS_hoc_version;
-extern const char* RCS_hoc_date;
 extern char* neuron_home;
 extern int hoc_print_first_instance;
 
@@ -170,9 +169,7 @@ static int c = '\n'; /* global for use by warning() */
 void set_intset() {
     hoc_intset++;
 }
-#endif
-#ifdef WIN32
-extern void hoc_win32_cleanup();
+extern void ivoc_win32_cleanup();
 #endif
 
 static int follow(int expect, int ifyes, int ifno); /* look ahead for >=, etc. */
@@ -816,7 +813,6 @@ void hoc_main1_init(const char* pname, const char** envp) {
     hoc_frin = nrn_fw_set_stdin();
     hoc_fout = stdout;
     if (!nrn_is_cable()) {
-        Fprintf(stderr, "OC INTERPRETER   %s   %s\n", RCS_hoc_version, RCS_hoc_date);
         Fprintf(stderr,
                 "Copyright 1992 -  Michael Hines, Neurobiology Dept., DUMC, Durham, NC.  27710\n");
     }
@@ -891,21 +887,6 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
             gargv += 2;
             gargc -= 2;
         }
-        if (argc > 1 && argv[1][0] != '-') {
-            /* first file may be a checkpoint file */
-            extern int hoc_readcheckpoint(char*);
-            switch (hoc_readcheckpoint(const_cast<char*>(argv[1]))) {
-            case 1:
-                ++gargv;
-                --gargc;
-                break;
-            case 2:
-                nrn_exit(1);
-                break;
-            default:
-                break;
-            }
-        }
 
         if (gargc == 1) /* fake an argument list */
         {
@@ -963,7 +944,6 @@ void inputReadyThread() {
 #endif
 
 void hoc_final_exit(void) {
-    char* buf;
 #if defined(USE_PYTHON)
     if (neuron::python::methods.interpreter_start) {
         neuron::python::methods.interpreter_start(0);
@@ -979,16 +959,14 @@ void hoc_final_exit(void) {
     rl_deprep_terminal();
 #endif
     ivoc_cleanup();
-#ifdef WIN32
-    hoc_win32_cleanup();
-#else
-    std::string cmd{neuron_home};
-    cmd += "/lib/cleanup ";
-    cmd += std::to_string(hoc_pid());
-    if (system(cmd.c_str())) {  // fix warning: ignoring return value
-        return;
-    }
+#if defined(WIN32) && HAVE_IV
+    ivoc_win32_cleanup();
 #endif
+    auto tmp_dir = std::getenv("TEMP");
+    auto path = std::filesystem::path(tmp_dir ? std::string(tmp_dir) : "/tmp") /
+                fmt::format("oc{}.hl", hoc_pid());
+    std::error_code ec;
+    std::filesystem::remove(path, ec);
 }
 
 void hoc_quit(void) {

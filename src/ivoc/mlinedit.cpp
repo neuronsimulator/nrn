@@ -101,9 +101,9 @@ static const char** v_text(void* v) {
 }
 
 
-static Member_func members[] = {{"readonly", readonly}, {"map", map}, {0, 0}};
+static Member_func members[] = {{"readonly", readonly}, {"map", map}, {nullptr, nullptr}};
 
-static Member_ret_str_func retstr_members[] = {{"text", v_text}, {0, 0}};
+static Member_ret_str_func retstr_members[] = {{"text", v_text}, {nullptr, nullptr}};
 
 static void* cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("TextEditor", NULL);
@@ -141,7 +141,7 @@ static void destruct(void* v) {
 }
 
 void TextEditor_reg() {
-    class2oc("TextEditor", cons, destruct, members, NULL, NULL, retstr_members);
+    class2oc("TextEditor", cons, destruct, members, NULL, retstr_members);
 }
 
 #if HAVE_IV

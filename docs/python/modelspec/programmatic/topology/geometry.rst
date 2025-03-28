@@ -11,7 +11,7 @@ any tree-shaped structure but loops are not permitted. (You may, however,
 develop membrane mechanisms, such as electrical gap junctions 
 which do not have the loop restriction. But be aware that the electrical 
 current flows through such connections are calculated by a modified euler 
-method instead of the more numerically robust fully implicit/crank-nicholson 
+method instead of the more numerically robust fully implicit/crank-nicolson 
 methods) 
  
 Do not confuse sections with segments. Sections are divided into segments 
@@ -54,8 +54,13 @@ There are two ways to specify section geometry:
  
 Choose the stylized method if the notions of cable length and diameter 
 are authoritative and where 3-d shape is irrelevant. For plotting purposes, 
+e.g. using :class:`Shape` or :class:`PlotShape`,
 length and diameter will be used to generate 3-d info automatically for 
-a stylized straight cylinder. (see :func:`define_shape`) 
+a stylized straight cylinder. (see :func:`define_shape`) . This
+translation of length-diameter information into 3-d points, and then
+back again can make small changes to length and diameter since 3-d
+points are stored as 32bit floating point numbers which have about 7
+decimal digits of precision.
  
 Choose the 3-D method if the shape comes from 3-d reconstruction data 
 or if your 3-d visualization is paramount. This method makes the 3-d info 
@@ -108,15 +113,15 @@ truncated cones as long as the diameter does not change too much.
     python
 
     from neuron import h
-    import numpy
+    import numpy as np
 
-    sec = h.Section(name='sec')
+    sec = h.Section('sec')
     sec.nseg = 11
     sec.Ra = 100
     sec.L = 1000
     # linearly interpolate diameters from 11 to 100
     for seg in sec:
-        seg.diam = numpy.interp(seg.x, [0, 1], [11, 100])
+        seg.diam = np.interp(seg.x, [0, 1], [11, 100])
 
     for seg in sec.allseg():
         print(seg.x, seg.diam, seg.area(),
@@ -177,25 +182,25 @@ Example:
         python
         
         from neuron import h, gui
-        import numpy
+        import numpy as np
 
-        a, b, c, d, e = [h.Section(name=n) for n in ['a', 'b', 'c', 'd', 'e']]
+        a, b, c, d, e = [h.Section(n) for n in ['a', 'b', 'c', 'd', 'e']]
         b.connect(a)
         c.connect(b(1), 1) # connect the 1 end of c to the 1 end of b
         d.connect(b)
         e.connect(a(0)) # connect the 0 end of e to the 0 end of a
-        for sec in h.allsec():
+        for sec in a.wholetree():
             sec.nseg = 21
             sec.L = 100
             for seg in sec:
-                seg.diam = numpy.interp(seg.x, [0, 1], [10, 40])
+                seg.diam = np.interp(seg.x, [0, 1], [10, 40])
 
         s = h.Shape()
         s.show(False)
         s.color(2, sec=a) # color section "a" red
         h.topology()
         h.finitialize(-65)
-        for sec in h.allsec():
+        for sec in a.wholetree():
             print(sec)
             for i in range(sec.n3d()):
                 print(f'{i}: ({sec.x3d(i)}, {sec.y3d(i)}, {sec.z3d(i)}; {sec.diam3d(i)})')
@@ -253,7 +258,7 @@ Example:
         h.xradiobutton("nseg = 101", (pr, 101))
         h.xpanel()
 
-        sec = h.Section(name='sec')
+        sec = h.Section('sec')
         sec.Ra = 100
         sec.L = 100
         sec.nseg = 3
@@ -332,7 +337,7 @@ Example:
         from neuron import h, gui
         from math import sin, cos
 
-        sec = h.Section(name='sec')
+        sec = h.Section('sec')
         sec.Ra=100 
         sec.nseg = 11 
         sec.pt3dclear() 
@@ -469,16 +474,16 @@ Defining the 3D Shape
             python
 
             from neuron import h, gui
-            import numpy
+            import numpy as np
 
             # compute vectors defining a geometry
-            theta = numpy.linspace(0, 6.28, 63)
-            xvec = h.Vector(4 * numpy.cos(theta))
-            yvec = h.Vector(4 * numpy.sin(theta))
+            theta = np.linspace(0, 6.28, 63)
+            xvec = h.Vector(4 * np.cos(theta))
+            yvec = h.Vector(4 * np.sin(theta))
             zvec = h.Vector(theta)
             dvec = h.Vector([1] * len(theta))
 
-            dend = h.Section(name='dend')
+            dend = h.Section('dend')
             h.pt3dadd(xvec, yvec, zvec, dvec, sec=dend)
 
             s = h.Shape()
@@ -606,6 +611,9 @@ Defining the 3D Shape
         Insert the point (so it becomes the i'th point) to ``section``. If i is equal to 
         ``section.n3d()``, the point is appended (equivalent to :func:`pt3dadd`). 
 
+    .. note::
+
+        A more object-oriented approach is to use ``sec.pt3dinsert`` instead.
          
 
 ----
@@ -854,11 +862,24 @@ Reading 3D Data from NEURON
         a logical connection point if the translation ruins the 
         visualization. 
          
+        pt3d information is stored as 32 bit floating point numbers. These
+        numbers have about 7 decimal digits of resolution. In contrast, most
+        other values in NEURON are double precision and have about 16 decimal
+        digits of resolution. Thus values of diam which do not happen to have
+        exact single precision representation, can change slightly in the
+        process of translating from diam to 3-d points and then back to diam.
+        Note that the latter transformation happens when an internal function
+        checks the :data:`diam_changed` variable and if non-zero, calls the internal
+        function, recalc_diam. This latter function can be called by several
+        functions such as :func:`finitialize`, segment.area(), and segment.ri()
+        See :func:`pt3dconst` for more about interpolation issues.
+
         Note: This may not work right when a branch is connected to 
         the interior of a parent section \ ``0 < x < 1``, 
         rather only when it is connected to the parent at 0 or 1. 
 
-         
+        When :class:`Shape` or :class:`PlotShape` instances are created
+        this function is called automatically.
 
 ----
 
@@ -957,8 +978,8 @@ Reading 3D Data from NEURON
 
             from neuron import h
 
-            soma = h.Section(name='soma')
-            dend = h.Section(name='dend')
+            soma = h.Section('soma')
+            dend = h.Section('dend')
             dend.connect(soma(0.5))       
             
             soma.L = 10
@@ -1021,7 +1042,7 @@ Reading 3D Data from NEURON
             diam_change_cnt = neuron.nrn_dll_sym('diam_change_cnt', ctypes.c_int)
             print(h.diam_changed, diam_change_cnt.value)    # 1 0
 
-            s = h.Section(name='s')
+            s = h.Section('s')
             print(h.diam_changed, diam_change_cnt.value)    # 1 0
 
             time.sleep(0.2)
