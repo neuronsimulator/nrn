@@ -50,14 +50,17 @@ wheel.packages = []
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 
 [tool.scikit-build.cmake.define]
+# for linux, we pass the readline and ncurses dirs
+# for macos, we pass the same + X11 dirs
+CMAKE_PREFIX_PATH = { env = "CMAKE_PREFIX_PATH" }
 NRN_BINARY_DIST_BUILD = { default = "OFF", env = "NRN_BINARY_DIST_BUILD" }
-NRN_WHEEL_STATIC_READLINE = { env = "NRN_WHEEL_STATIC_READLINE", default = "OFF" }
+NRN_WHEEL_STATIC_READLINE = { default = "OFF", env = "NRN_WHEEL_STATIC_READLINE" }
 NRN_LINK_AGAINST_PYTHON = "OFF"
 # coreNEURON is enabled for shipped wheels
-NRN_ENABLE_CORENEURON = { env = "NRN_ENABLE_CORENEURON", default = "OFF" }
+NRN_ENABLE_CORENEURON = { default = "OFF", env = "NRN_ENABLE_CORENEURON" }
 # RX3D is always enabled
 NRN_ENABLE_RX3D = { default = "ON", env = "NRN_ENABLE_RX3D" }
-NRN_RX3D_OPT_LEVEL = { env = "NRN_RX3D_OPT_LEVEL", default = "0" }
+NRN_RX3D_OPT_LEVEL = { default = "0", env = "NRN_RX3D_OPT_LEVEL" }
 # interviews is always enabled
 NRN_ENABLE_INTERVIEWS = { default = "ON", env = "NRN_ENABLE_INTERVIEWS" }
 IV_ENABLE_X11_DYNAMIC = "ON"
@@ -72,15 +75,13 @@ CMAKE_VERBOSE_MAKEFILE = "OFF"
 NRN_ENABLE_MUSIC = { default = "OFF", env = "NRN_ENABLE_MUSIC" }
 MUSIC_ROOT = { default = "", env = "MUSIC_ROOT" }
 # for coreNEURON (turn on for Linux)
-CORENRN_ENABLE_OPENMP = { env = "CORENRN_ENABLE_OPENMP", default = "OFF" }
+CORENRN_ENABLE_OPENMP = { default = "OFF", env = "CORENRN_ENABLE_OPENMP" }
 NMODL_ENABLE_PYTHON_BINDINGS = "ON"
 # MPI options
 NRN_ENABLE_MPI = { default = "ON", env = "NRN_ENABLE_MPI" }
 NRN_ENABLE_MPI_DYNAMIC = { default = "ON", env="NRN_ENABLE_MPI_DYNAMIC" }
-# as a workaround for the fact that MPI headers are platform-specific
-# NOTE: these MUST be set in the CI env!
+# MPI headers are platform-specific, so we do not set defaults
 NRN_MPI_DYNAMIC = { env = "NRN_MPI_DYNAMIC" }
-CMAKE_PREFIX_PATH = { env = "CMAKE_PREFIX_PATH" }
 
 [tool.cibuildwheel]
 manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64"
@@ -88,6 +89,8 @@ manylinux-x86_64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_
 skip = [ "pp*", "*-win32", "*-manylinux_i686", "*-musllinux_i686", "*-musllinux_x86_64", "*-musllinux_aarch64" ]
 
 [tool.cibuildwheel.linux]
+# since the linux build uses containers (either docker or podman), we need to
+# explicitly pass any env vars to the container
 environment-pass = [
   "CMAKE_PREFIX_PATH",
   "NRN_MPI_DYNAMIC",
@@ -96,11 +99,22 @@ environment-pass = [
   "NRN_ENABLE_CORENEURON",
   "CORENRN_ENABLE_OPENMP",
   "NRN_BINARY_DIST_BUILD",
+  "NRN_RX3D_OPT_LEVEL",
+  # when making a release, we need to override the version
   "SETUPTOOLS_SCM_PRETEND_VERSION",
 ]
+# comment originally from `build_wheels.bash`:
+#   libgomp:  still need work to make sure this robust and usable
+#             currently this will break when coreneuron is used and when
+#             dev environment is not installed. Note that on aarch64 we have
+#             seen issue with libgomp.so and hence we started excluding it.
+#   libnrniv: we ship precompiled version of neurondemo containing libnrnmech.so
+#             which is linked to libnrniv.so. auditwheel manipulate rpaths and
+#             ships an extra copy of libnrniv.so and hence exclude it here.
 repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so'"
 
 [tool.cibuildwheel.linux.environment]
+# all of these need to be specified under `[tool.cibuildwheel.linux.environment-pass]`
 CMAKE_PREFIX_PATH = "/nrnwheel/ncurses;/nrnwheel/readline"
 NRN_MPI_DYNAMIC = "/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)"
 NRN_ENABLE_MPI_DYNAMIC = "ON"
@@ -108,6 +122,8 @@ NRN_WHEEL_STATIC_READLINE = "ON"
 NRN_ENABLE_CORENEURON = "ON"
 CORENRN_ENABLE_OPENMP = "ON"
 NRN_BINARY_DIST_BUILD = "ON"
+# TODO change this to 2 before merging
+NRN_RX3D_OPT_LEVEL = "0"
 
 [tool.cibuildwheel.macos]
 # workaround for NMODL issue when building in temp dir
@@ -122,4 +138,7 @@ NRN_MPI_DYNAMIC = "$(brew --prefix)/opt/openmpi/include;$(brew --prefix)/opt/mpi
 NRN_WHEEL_STATIC_READLINE = "ON"
 NRN_ENABLE_CORENEURON = "ON"
 NRN_BINARY_DIST_BUILD = "ON"
+# NOTE: on x86_64 MacOS, it may be possible to use 10.15 instead
 MACOSX_DEPLOYMENT_TARGET = "11.0"
+# TODO change this to 2 before merging
+NRN_RX3D_OPT_LEVEL = "0"
