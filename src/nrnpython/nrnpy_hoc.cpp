@@ -33,6 +33,7 @@ extern void* (*nrnpy_get_pyobj)(Object* obj);
 extern void (*nrnpy_restore_savestate)(int64_t, char*);
 extern void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size);
 extern void (*nrnpy_decref)(void* pyobj);
+extern double (*nrnpy_call_func)(Object*, double);
 extern void lvappendsec_and_ref(void* sl, Section* sec);
 extern void hoc_pushs(Symbol*);
 extern double* hoc_evalpointer();
@@ -65,6 +66,7 @@ extern int section_object_seen;
 extern Symbol* nrn_child_sym;
 extern int nrn_secref_nchild(Section*);
 static void pyobject_in_objptr(Object**, PyObject*);
+static double nrnpy_call_func_(Object*, double);
 extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
 extern Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
@@ -3333,6 +3335,7 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
     nrnpy_sectionlist_helper_ = sectionlist_helper_;
     nrnpy_get_pyobj = nrnpy_get_pyobj_;
+    nrnpy_call_func = nrnpy_call_func_;
     nrnpy_decref = nrnpy_decref_;
     nrnpy_nrncore_arg_p_ = nrncore_arg;
     nrnpy_nrncore_enable_value_p_ = nrncore_enable_value;
@@ -3465,4 +3468,27 @@ void nrnpython_reg_real_nrnpy_hoc_cpp(neuron::python::impl_ptrs* ptrs) {
     ptrs->gui_helper3 = gui_helper_3_;
     ptrs->gui_helper3_str = gui_helper_3_str_;
     ptrs->object_to_double = object_to_double_;
+}
+
+static double nrnpy_call_func_(Object* obj, double x) {
+    if (obj->ctemplate->sym != nrnpy_pyobj_sym_) {
+        hoc_execerror(hoc_object_name(obj), " is not a Python Object");
+    }
+    PyObject* func = nrnpy_hoc2pyobject(obj);
+    if (!PyCallable_Check(func)) {
+        hoc_execerror("Object is not callable", nullptr);
+    }
+    auto result = nb::steal(PyObject_CallFunction(func, "d", x));
+    if (!result) {
+        PyErr_Clear();
+        hoc_execerror("Python function call raised exception", nullptr);
+    }
+    if (!PyNumber_Check(result.ptr())) {
+        hoc_execerror("Expected a numeric result from Python function", nullptr);
+    }
+    double value = PyFloat_AsDouble(result.ptr());
+    if (PyErr_Occurred()) {
+        hoc_execerror("Failed to convert result to float", nullptr);
+    }
+    return value;
 }
