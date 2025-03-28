@@ -107,12 +107,12 @@ target_link_libraries(
           util
           test_util
           printer
-          nmodl_codegen
+          codegen
           ${NMODL_WRAPPER_LIBS}
           nmodl_test_flags)
 target_link_libraries(
   testcodegen
-  PRIVATE nmodl_codegen
+  PRIVATE codegen
           visitor
           symtab
           lexer

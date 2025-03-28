@@ -101,7 +101,7 @@ target_link_libraries(
   nmodl
   CLI11::CLI11
   printer
-  nmodl_codegen
+  codegen
   visitor
   symtab
   util
