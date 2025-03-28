@@ -47,7 +47,7 @@ if(SKBUILD)
   set(FMT_LIB_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
   set(FMT_INC_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
   set(FMT_PKGCONFIG_DIR "${NRN_INSTALL_DATA_PREFIX}/pkgconfig")
-  set(FMT_CMAKE_DIR "${NRN_INSTALL_DATA_PREFIX}/cmake")
+  set(FMT_CMAKE_DIR "${NRN_INSTALL_DATA_PREFIX}/cmake/fmt")
   # need to force IV install prefixes
   set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
   set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
