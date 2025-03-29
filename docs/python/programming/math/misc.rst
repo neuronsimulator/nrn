@@ -13,7 +13,7 @@ Miscellaneous
          
         Allows somewhat safer NEURON logical comparisons and integer truncation for 
         floating point numbers. Most NEURON comparisons are treated as true if they are 
-        within float_epsilon of being true. eg. 
+        within float_epsilon of being true. e.g., 
          
 
         .. code::
