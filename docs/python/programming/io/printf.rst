@@ -104,21 +104,17 @@ Printf (Formatted Output)
                     42 
 
          
-    Pure Python equivalent example:
+    Pure Python almost equivalent example:
 
         .. code::
 
             import math
-            print('\tpi=%-20.10g sin(pi)=%f' % (math.pi, math.sin(math.pi)))
+            print(f'\tpi={math.pi:<20.10g} sin(pi)={math.sin(math.pi):f}')
 
         .. note::
 
-            The parentheses around the ``print`` argument are supplied in this way to allow
-            it to work with both Python 2 and Python 3.
-
-            This is not an identical replacement because it does not return the number of characters.
-            In Python 2, this is a statement not a function and attempting to assign it to a variable is
-            a syntax error. In Python 3, ``print`` is a function and the return is ``None``.
+            This is not an identical replacement because it does not return the number of characters;
+            the return is always ``None``.
 
 
     .. seealso::
