@@ -963,6 +963,16 @@ if(NRN_ENABLE_TESTS)
   add_subdirectory(test)
 endif()
 
+add_subdirectory(share/demo/release)
+add_custom_target(
+  neurondemo_release ALL
+  COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_SANITIZER_ENABLE_ENVIRONMENT}
+          "${PROJECT_BINARY_DIR}/bin/nrnivmodl"
+  DEPENDS nrnivmodl_dependency nrniv_lib
+  COMMENT "Building mod files for demo release"
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/share/nrn/demo/release
+  VERBATIM)
+
 # =============================================================================
 # Install targets
 # =============================================================================
@@ -970,8 +980,13 @@ install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib
   DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn
   PATTERN "python" EXCLUDE)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo
-        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn)
+install(
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn
+  PATTERN CMakeLists.txt EXCLUDE
+  PATTERN *swp EXCLUDE)
+install(DIRECTORY ${PROJECT_BINARY_DIR}/share/nrn/demo/release
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn/demo)
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
         DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn/lib)
