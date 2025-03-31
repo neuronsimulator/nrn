@@ -393,7 +393,7 @@ void printitem(Item* q) {
 
 void debugprintitem(Item* q) {
     if (q->itemtype == SYMBOL) {
-        printf("SYM %s\n", SYM(q)->name);
+        printf("SYM %s type=%d subtype=%lo\n", SYM(q)->name, SYM(q)->type, SYM(q)->subtype);
     } else if (q->itemtype == VERBATIM) {
         printf("VERB %s\n", STR(q));
     } else if (q->itemtype == ITEM) {
@@ -610,6 +610,7 @@ void c_out_vectorize() {
         P("_thread = _ml_arg->_thread;\n");
         P("double* _globals = nullptr;\n");
         P("if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n");
+        splitfor_cur(1);
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
         P(" _ppvar = _ml_arg->_pdata[_iml];\n");
         ext_vdef();
@@ -662,6 +663,7 @@ void c_out_vectorize() {
             }
         }
         P(" \n}\n");
+        splitfor_cur(2);
         P(" \n}\n");
         /* for the classic breakpoint block, nrn_cur computed the conductance, _g,
            and now the jacobian calculation merely returns that */
@@ -695,7 +697,6 @@ void c_out_vectorize() {
         }
         P(" \n}\n");
         P(" \n}\n");
-        splitfor_cur();
     }
 
     /* nrnstate list contains the EQUATION solve statement so this
