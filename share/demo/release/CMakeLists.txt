@@ -9,4 +9,4 @@ set(SOURCE_FILES
     nacaex.mod
     nachan.mod
     release.mod)
-file(COPY ${SOURCE_FILES} DESTINATION ${PROJECT_BINARY_DIR}/share/nrn/demo/release)
+file(COPY ${SOURCE_FILES} DESTINATION ${NRN_BUILD_SHARE_DIR}/demo/release)

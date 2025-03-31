@@ -970,10 +970,9 @@ else()
             ${NRN_SANITIZER_ENABLE_ENVIRONMENT} "${PROJECT_BINARY_DIR}/bin/nrnivmodl"
     DEPENDS nrnivmodl_dependency nrniv_lib
     COMMENT "Building mod files for demo release"
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/share/nrn/demo/release
+    WORKING_DIRECTORY ${NRN_BUILD_SHARE_DIR}/demo/release
     VERBATIM)
-  install(DIRECTORY ${PROJECT_BINARY_DIR}/share/nrn/demo/release
-          DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn/demo)
+  install(DIRECTORY ${NRN_BUILD_SHARE_DIR}/demo/release DESTINATION ${NRN_INSTALL_SHARE_DIR}/demo)
 
 endif()
 # =============================================================================
