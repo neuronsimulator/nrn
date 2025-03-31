@@ -62,9 +62,9 @@ bool splitfor() {
     static bool called;
     if (!called) {
         called = true;
-        // if there is a breakpoint block with multiple currents and assigns
+        // if there is a breakpoint block with at least one current and assigns
         // only range variables.
-        if (brkpnt_exists && currents->next != currents && currents->next->next != currents) {
+        if (brkpnt_exists && currents->next != currents && !electrode_current) {
             // check for assignment to non-range variable
             if (!assign_non_range(modelfunc)) {
                 split_cur_ = true;
@@ -174,6 +174,7 @@ void splitfor_cur(int part) {
     }
     P("#else /*SPLITFOR*/\n");
     P("#define _ZFOR for (int _iml = 0; _iml < _cntml; ++_iml)\n");
+    P("  {\n");
 
     // modified copy of noccout.cpp output between calls to splitfor_cur
     // P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
@@ -232,37 +233,46 @@ void splitfor_cur(int part) {
             for (Item* q = currents->next; q != currents; q = q->next) {
                 sprintf(buf, "(_temp_%s[_iml] - %s)", SYM(q)->name, SYM(q)->name);
                 s += buf;
-                s += (q->next == currents) ? ") / 0.001; }\n" : " + ";
+                s += (q->next == currents) ? ") / 0.001" : " + ";
             }
+            s += point_process ? " * 1.e2/(_nd_area)" : "";
+            s += "; }\n";
             P(s.c_str());
 
             /* set the ion variable values */
             printlist(splitfor_ion_stmts(set_ion_variables(0)));
         } /* end of not conductance */
-        if (point_process) {
-            P("    _g *=  1.e2/(_nd_area);\n");
-            P("    _rhs *= 1.e2/(_nd_area);\n");
+
+        // store scaled sum of currents
+        P("    std::vector<double> _rhsv(_cntml);\n");
+        std::string s1 = ZF "_rhsv[_iml] = (";
+        for (Item* q = currents->next; q != currents; q = q->next) {
+            s1 += SYM(q)->name;
+            s1 += (q->next == currents) ? ")" : " + ";
         }
+        s1 += point_process ? " * 1.e2/(_nd_area)" : "";
+        s1 += "; }\n";
+        P(s1.c_str());
+
         if (electrode_current) {
-            P("	 _vec_rhs[_ni[_iml]] += _rhs;\n");
-            P("  if (_vec_sav_rhs) {\n");
-            P("    _vec_sav_rhs[_ni[_iml]] += _rhs;\n");
-            P("  }\n");
+            P(ZF "  _vec_rhs[_ni[_iml]] += _rhsv[_iml];\n");
+            P("    if (_vec_sav_rhs) {\n");
+            P("        _ZFOR { _vec_sav_rhs[_ni[_iml]] += _rhsv[_iml]; }\n");
+            P("    }\n");
             P("#if EXTRACELLULAR\n");
-            P(" if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
-            P("   *_extnode->_rhs[0] += _rhs;\n");
-            P(" }\n");
+            P(ZF "\n");
+            P("        if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) "
+              "{\n");
+            P("            *_extnode->_rhs[0] += _rhsv[_iml];\n");
+            P("        }\n");
+            P("    }\n");
             P("#endif\n");
         } else {
-            std::string s2 = ZF " _vec_rhs[_ni[_iml]] -= ";
-            for (Item* q = currents->next; q != currents; q = q->next) {
-                s2 += SYM(q)->name;
-                s2 += (q->next == currents) ? "; }\n" : " + ";
-            }
-            P(s2.c_str());
+            P(ZF " _vec_rhs[_ni[_iml]] -= _rhsv[_iml]; }\n");
         }
     }
 
+    P("  }\n");
     P("\n#undef _ZFOR\n");
     P("#endif /*SPLITFOR*/\n");
 }
