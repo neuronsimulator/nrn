@@ -121,7 +121,7 @@ if os.environ.get("READTHEDOCS"):
     if os.environ.get("READTHEDOCS_VERSION_TYPE") == "external":
         # Build and install NEURON from source
         subprocess.run(
-            "cd .. && python setup.py build_ext bdist_wheel --enable-coreneuron",
+            "cd .. && python setup.py build_ext bdist_wheel --enable-nmodl-docs",
             shell=True,
             check=True,
         )
@@ -145,7 +145,7 @@ if os.environ.get("READTHEDOCS"):
 
     # Execute & convert notebooks + doxygen
     subprocess.run(
-        "cd .. && python setup.py docs --enable-coreneuron",
+        "cd .. && python setup.py docs --enable-nmodl-docs",
         check=True,
         shell=True,
     )

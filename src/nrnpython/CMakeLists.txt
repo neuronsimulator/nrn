@@ -188,6 +188,9 @@ if(NRN_ENABLE_MODULE_INSTALL)
   if(NRN_ENABLE_CORENEURON)
     list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--enable-coreneuron")
   endif()
+  if(NRN_ENABLE_DOCS_NMODL)
+    list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--enable-nmodl-docs")
+  endif()
   list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--build-lib=${NRN_PYTHON_BUILD_LIB}")
 
   # Prepare build_ext options for setup.py build

@@ -24,6 +24,7 @@ class Components:
     MPI = True
     MUSIC = False  # still early support
     CORENRN = False  # still early support
+    NMODL_DOCS = False  # only for docs
 
 
 # Check if we've got --cmake-build-dir path that will be used to build extensions only
@@ -95,6 +96,10 @@ if "--disable-mpi" in sys.argv:
 if "--enable-coreneuron" in sys.argv:
     Components.CORENRN = True
     sys.argv.remove("--enable-coreneuron")
+
+if "--enable-nmodl-docs" in sys.argv:
+    Components.NMODL_DOCS = True
+    sys.argv.remove("--enable-nmodl-docs")
 
 if "--enable-music" in sys.argv:
     Components.MUSIC = True
@@ -255,7 +260,7 @@ class CMakeAugmentedBuilder(build_ext):
                 [
                     "-DNRN_ENABLE_DOCS=ON",
                     "-DNRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION=ON",
-                    "-DNRN_ENABLE_CORENEURON=ON",
+                    "-DNRN_ENABLE_DOCS_NMODL=ON",
                 ]
             )
         if self.cmake_prefix:
@@ -390,7 +395,7 @@ def setup_package():
             "neuron.gui2",
         ]
         + (["neuron.rxd.geometry3d"] if Components.RX3D else [])
-        + (["neuron.nmodl"] if Components.CORENRN else [])
+        + (["neuron.nmodl"] if (Components.CORENRN or Components.NMODL_DOCS) else [])
     )
 
     REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
@@ -433,7 +438,7 @@ def setup_package():
                 [
                     "-DNMODL_ENABLE_PYTHON_BINDINGS=ON",
                 ]
-                if Components.CORENRN
+                if (Components.CORENRN or Components.NMODL_DOCS)
                 else []
             ),
             include_dirs=[
@@ -550,10 +555,8 @@ def setup_package():
         + (
             [
                 "sympy>=1.3,<=1.13.3",
-                "importlib_resources;python_version<'3.9'",
-                "importlib_metadata;python_version<'3.9'",
             ]
-            if Components.CORENRN
+            if (Components.CORENRN or Components.NMODL_DOCS)
             else []
         ),
         tests_require=["flake8<=7.1.2", "pytest<=8.1.1"],

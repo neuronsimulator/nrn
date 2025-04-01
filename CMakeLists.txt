@@ -58,6 +58,7 @@ option(
   "Build documentation without building NEURON. It will be assumed that import neuron works, nrnivmodl is in PATH, etc."
   ${NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION_DEFAULT})
 mark_as_advanced(NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
+option(NRN_ENABLE_DOCS_NMODL "Enable documentation for NMODL" ${NRN_ENABLE_DOCS_NMODL_DEFAULT})
 option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)"
        ${NRN_ENABLE_SHARED_DEFAULT})
 option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_DEFAULT})
@@ -515,7 +516,9 @@ cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 # =============================================================================
 # Enable NMODL code-generator support
 # =============================================================================
-if(NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON)
+if(NRN_ENABLE_NMODL
+   OR NRN_ENABLE_CORENEURON
+   OR NRN_ENABLE_DOCS_NMODL)
   # NMODL Python build dependencies
   nrn_find_python_module(MODULE jinja2 REQUIRED)
   # N.B. `nrn_find_python_module` uses the _importable_ name of the package to find it, _not_ the
