@@ -779,28 +779,22 @@ as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
   # =============================================================================
   include(cmake/PythonNotebookHelper.cmake)
   set(notebook_directories "docs/tutorials" "docs/rxd-tutorials" "docs/nmodl")
-  # "docs/nmodl/transpiler/notebooks")
 
   foreach(dir ${notebook_directories})
-    set(output_dir "${PROJECT_BINARY_DIR}/${dir}")
     file(GLOB notebook_files "${dir}/*.ipynb")
     foreach(nb_file ${notebook_files})
       get_filename_component(nb_filename "${nb_file}" NAME)
       string(REGEX REPLACE "[^a-zA-Z0-9_]" "_" sanitized_filename "${nb_filename}")
-      add_notebook(
-        "notebook_${sanitized_filename}"
-        INPUT_PATH
-        "${nb_file}"
-        OUTPUT_DIR
-        "${output_dir}"
-        ENV
-        ${NRN_RUN_FROM_BUILD_DIR_ENV}
-        NEURON_MODULE_OPTIONS="-nogui")
-      list(APPEND all_notebooks "notebook_${sanitized_filename}")
+      set(target_name "notebook_${sanitized_filename}")
+      add_notebook("${target_name}" INPUT_PATH "${nb_file}" ENV ${NRN_RUN_FROM_BUILD_DIR_ENV}
+                   NEURON_MODULE_OPTIONS="-nogui")
+      list(APPEND all_notebooks "${target_name}")
+      list(APPEND all_notebooks_clean "clean_${target_name}")
     endforeach()
   endforeach()
 
   add_custom_target(notebooks DEPENDS ${all_notebooks})
+  add_custom_target(notebooks-clean DEPENDS ${all_notebooks_clean})
 
   # =============================================================================
   # Setup Sphinx documentation
@@ -831,10 +825,12 @@ as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
   # =============================================================================
   add_custom_target(
     docs
-    COMMENT "Generating full documentation"
-    COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html")
-  add_dependencies(docs doxygen notebooks sphinx)
-
+    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target doxygen --parallel
+    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target notebooks --parallel
+    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target sphinx --parallel
+    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target notebooks-clean --parallel
+    COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
+    COMMENT "Generating full documentation")
 endif()
 
 # =============================================================================
