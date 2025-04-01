@@ -719,6 +719,17 @@ if(NRN_ENABLE_DOCS)
     # IPython notebook execution doesn't have enough magic to preload ASan
     message(FATAL_ERROR "macOS + ASan + docs is not supported")
   endif()
+
+  if(NOT TARGET nmodl AND NOT TARGET _nmodl)
+    # doxygen requires building NMODL first (due to the AST templates), while sphinx requires
+    # building NMODL's Python module first
+    message(
+      FATAL_ERROR
+        "NMODL is required to build the documentation, \
+please add NRN_ENABLE_CORENEURON=ON or NRN_ENABLE_NMODL=ON, \
+as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
+  endif()
+
   # Do we need to set extra environment variables to find NEURON?
   set(NRN_DOCS_COMMAND_PREFIX ${CMAKE_COMMAND} -E env)
   if(NOT NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
@@ -760,6 +771,8 @@ if(NRN_ENABLE_DOCS)
     COMMENT "Generating API documentation with Doxygen"
     VERBATIM)
 
+  add_dependencies(doxygen nmodl)
+
   # =============================================================================
   # Setup Sphinx documentation
   # =============================================================================
@@ -771,14 +784,6 @@ if(NRN_ENABLE_DOCS)
     COMMAND ${NRN_DOCS_COMMAND_PREFIX} NEURON_MODULE_OPTIONS="-nogui" bash
             ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs)
-  if(NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
-    message(STATUS "**Not** making the notebooks target depend on the rest of the NEURON build.")
-    message(STATUS "Documentation building will probably fail if you haven't installed NEURON.")
-  else()
-    # We need NEURON to execute the notebooks. If we're building documentation as part of a normal
-    # build, this means we need to schedule the documenation targets sufficiently late in the build.
-    add_dependencies(notebooks hoc_module rxdmath)
-  endif()
 
   add_custom_target(
     sphinx
@@ -787,6 +792,17 @@ if(NRN_ENABLE_DOCS)
     COMMAND echo "Copy/Paste to Browser file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
     COMMENT "Generating documentation with Sphinx")
+
+  if(NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
+    message(STATUS "**Not** making the notebooks target depend on the rest of the NEURON build.")
+    message(STATUS "Documentation building will probably fail if you haven't installed NEURON.")
+  else()
+    # We need NEURON to execute the notebooks. If we're building documentation as part of a normal
+    # build, this means we need to schedule the documentation targets sufficiently late in the
+    # build.
+    add_dependencies(notebooks hoc_module rxdmath)
+    add_dependencies(sphinx _nmodl hoc_module)
+  endif()
 
   # Executing notebooks will add outputs in-place. We don't want those committed to the repo. This
   # commands cleans them out.

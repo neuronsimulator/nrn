@@ -251,8 +251,13 @@ class CMakeAugmentedBuilder(build_ext):
         if self.docs and os.environ.get("READTHEDOCS"):
             cmake_args = ["-DNRN_ENABLE_MPI=OFF", "-DNRN_ENABLE_INTERVIEWS=OFF"]
         if self.docs:
-            cmake_args.append("-DNRN_ENABLE_DOCS=ON")
-            cmake_args.append("-DNRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION=ON")
+            cmake_args.extend(
+                [
+                    "-DNRN_ENABLE_DOCS=ON",
+                    "-DNRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION=ON",
+                    "-DNRN_ENABLE_CORENEURON=ON",
+                ]
+            )
         if self.cmake_prefix:
             cmake_args.append("-DCMAKE_PREFIX_PATH=" + self.cmake_prefix)
         if self.cmake_defs:

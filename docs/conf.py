@@ -19,7 +19,6 @@ from pathlib import Path
 # Make translators & domains available for include
 sys.path.insert(0, os.path.abspath("./translators"))
 sys.path.insert(0, os.path.abspath("./domains"))
-sys.path.insert(0, str(Path(__file__).parent.parent / "src" / "nmodl" / "python"))
 
 import html2  # responsible for creating jump tables in python and hoc documentation
 import hocdomain  # Sphinx HOC domain (hacked from the Python domain via docs/generate_hocdomain.py)
