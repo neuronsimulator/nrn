@@ -720,9 +720,9 @@ if(NRN_ENABLE_DOCS)
     message(FATAL_ERROR "macOS + ASan + docs is not supported")
   endif()
 
-  if(NOT TARGET nmodl AND NOT TARGET _nmodl)
-    # doxygen requires building NMODL first (due to the AST templates), while sphinx requires
-    # building NMODL's Python module first
+  if(NOT TARGET nmodl_gen_sources OR NOT TARGET _nmodl)
+    # doxygen requires building NMODL AST templates, while sphinx requires building NMODL's Python
+    # module first
     message(
       FATAL_ERROR
         "NMODL is required to build the documentation, \
