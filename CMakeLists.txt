@@ -786,15 +786,24 @@ as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
       get_filename_component(nb_filename "${nb_file}" NAME)
       string(REGEX REPLACE "[^a-zA-Z0-9_]" "_" sanitized_filename "${nb_filename}")
       set(target_name "notebook_${sanitized_filename}")
-      add_notebook("${target_name}" INPUT_PATH "${nb_file}" ENV ${NRN_RUN_FROM_BUILD_DIR_ENV}
-                   NEURON_MODULE_OPTIONS="-nogui")
+      add_notebook(
+        "${target_name}"
+        INPUT_PATH
+        "${nb_file}"
+        ENV
+        ${NRN_RUN_FROM_BUILD_DIR_ENV}
+        NEURON_MODULE_OPTIONS="-nogui"
+        WORKING_DIRECTORY
+        "${PROJECT_SOURCE_DIR}/docs")
       list(APPEND all_notebooks "${target_name}")
       list(APPEND all_notebooks_clean "clean_${target_name}")
     endforeach()
   endforeach()
 
-  add_custom_target(notebooks DEPENDS ${all_notebooks})
-  add_custom_target(notebooks-clean DEPENDS ${all_notebooks_clean})
+  add_custom_target(notebooks COMMENT "Build all of the notebooks in-place")
+  add_dependencies(notebooks ${all_notebooks})
+  add_custom_target(notebooks-clean COMMENT "Clean-up all of the notebooks in-place")
+  add_dependencies(notebooks-clean ${all_notebooks_clean})
 
   # =============================================================================
   # Setup Sphinx documentation
@@ -817,6 +826,9 @@ as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
     # We need NEURON and NMODL to execute the notebooks. If we're building documentation as part of
     # a normal build, this means we need to schedule the documentation targets sufficiently late in
     # the build.
+    foreach(notebook ${all_notebooks})
+      add_dependencies(${notebook} hoc_module rxdmath nrnivmodl_dependency)
+    endforeach()
     add_dependencies(sphinx _nmodl hoc_module rxdmath)
   endif()
 
