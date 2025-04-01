@@ -819,6 +819,9 @@ as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
     COMMENT "Generating documentation with Sphinx")
 
+  # we need to first run the notebooks, and _then_ build the documentation via sphinx
+  add_dependencies(sphinx ${all_notebooks} doxygen)
+
   if(NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
     message(STATUS "**Not** making the notebooks target depend on the rest of the NEURON build.")
     message(STATUS "Documentation building will probably fail if you haven't installed NEURON.")
@@ -837,12 +840,9 @@ as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
   # =============================================================================
   add_custom_target(
     docs
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target doxygen --parallel
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target notebooks --parallel
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target sphinx --parallel
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target notebooks-clean --parallel
     COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
     COMMENT "Generating full documentation")
+  add_dependencies(docs doxygen notebooks sphinx)
 endif()
 
 # =============================================================================

@@ -14,7 +14,6 @@ import glob
 import os
 import sys
 import subprocess
-from pathlib import Path
 
 # Make translators & domains available for include
 sys.path.insert(0, os.path.abspath("./translators"))
@@ -145,4 +144,8 @@ if os.environ.get("READTHEDOCS"):
         )
 
     # Execute & convert notebooks + doxygen
-    subprocess.run("cd .. && python setup.py docs", check=True, shell=True)
+    subprocess.run(
+        "cd .. && python setup.py docs --enable-coreneuron",
+        check=True,
+        shell=True,
+    )
