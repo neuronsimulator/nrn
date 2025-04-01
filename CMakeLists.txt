@@ -774,17 +774,40 @@ as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
   add_dependencies(doxygen nmodl)
 
   # =============================================================================
+  # Setup notebooks. Due to https://github.com/executablebooks/MyST-NB/issues/421 we cannot use the
+  # `myst_nb` extension and sphinx to execute the notebooks
+  # =============================================================================
+  include(cmake/PythonNotebookHelper.cmake)
+  set(notebook_directories "docs/tutorials" "docs/rxd-tutorials" "docs/nmodl")
+  # "docs/nmodl/transpiler/notebooks")
+
+  foreach(dir ${notebook_directories})
+    set(output_dir "${PROJECT_BINARY_DIR}/${dir}")
+    file(GLOB notebook_files "${dir}/*.ipynb")
+    foreach(nb_file ${notebook_files})
+      get_filename_component(nb_filename "${nb_file}" NAME)
+      string(REGEX REPLACE "[^a-zA-Z0-9_]" "_" sanitized_filename "${nb_filename}")
+      add_notebook(
+        "notebook_${sanitized_filename}"
+        INPUT_PATH
+        "${nb_file}"
+        OUTPUT_DIR
+        "${output_dir}"
+        ENV
+        ${NRN_RUN_FROM_BUILD_DIR_ENV}
+        NEURON_MODULE_OPTIONS="-nogui")
+      list(APPEND all_notebooks "notebook_${sanitized_filename}")
+    endforeach()
+  endforeach()
+
+  add_custom_target(notebooks DEPENDS ${all_notebooks})
+
+  # =============================================================================
   # Setup Sphinx documentation
   # =============================================================================
 
   # Target to execute && convert notebooks to html. Note that neuron must be available for python
   # import, so we use NRN_RUN_FROM_BUILD_DIR_ENV. See docs/README.md.
-  add_custom_target(
-    notebooks
-    COMMAND ${NRN_DOCS_COMMAND_PREFIX} NEURON_MODULE_OPTIONS="-nogui" bash
-            ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs)
-
   add_custom_target(
     sphinx
     COMMAND ${NRN_DOCS_COMMAND_PREFIX} ${SPHINX_EXECUTABLE} -j auto -b html
@@ -797,31 +820,21 @@ as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
     message(STATUS "**Not** making the notebooks target depend on the rest of the NEURON build.")
     message(STATUS "Documentation building will probably fail if you haven't installed NEURON.")
   else()
-    # We need NEURON to execute the notebooks. If we're building documentation as part of a normal
-    # build, this means we need to schedule the documentation targets sufficiently late in the
-    # build.
-    add_dependencies(notebooks hoc_module rxdmath)
-    add_dependencies(sphinx _nmodl hoc_module)
+    # We need NEURON and NMODL to execute the notebooks. If we're building documentation as part of
+    # a normal build, this means we need to schedule the documentation targets sufficiently late in
+    # the build.
+    add_dependencies(sphinx _nmodl hoc_module rxdmath)
   endif()
-
-  # Executing notebooks will add outputs in-place. We don't want those committed to the repo. This
-  # commands cleans them out.
-  add_custom_target(
-    notebooks-clean
-    COMMAND ${NRN_DOCS_COMMAND_PREFIX} bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh --clean
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs)
 
   # =============================================================================
   # Build full docs
   # =============================================================================
   add_custom_target(
     docs
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target doxygen
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target notebooks
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target sphinx
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target notebooks-clean
-    COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
-    COMMENT "Generating full documentation")
+    COMMENT "Generating full documentation"
+    COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html")
+  add_dependencies(docs doxygen notebooks sphinx)
+
 endif()
 
 # =============================================================================
