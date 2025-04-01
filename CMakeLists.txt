@@ -771,7 +771,7 @@ as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
     COMMENT "Generating API documentation with Doxygen"
     VERBATIM)
 
-  add_dependencies(doxygen nmodl)
+  add_dependencies(doxygen nmodl_gen_sources)
 
   # =============================================================================
   # Setup notebooks. Due to https://github.com/executablebooks/MyST-NB/issues/421 we cannot use the
