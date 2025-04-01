@@ -79,9 +79,11 @@ CORENRN_ENABLE_OPENMP = { default = "OFF", env = "CORENRN_ENABLE_OPENMP" }
 NMODL_ENABLE_PYTHON_BINDINGS = "ON"
 # MPI options
 NRN_ENABLE_MPI = { default = "ON", env = "NRN_ENABLE_MPI" }
-NRN_ENABLE_MPI_DYNAMIC = { default = "ON", env="NRN_ENABLE_MPI_DYNAMIC" }
+NRN_ENABLE_MPI_DYNAMIC = { default = "ON", env = "NRN_ENABLE_MPI_DYNAMIC" }
 # MPI headers are platform-specific, so we do not set defaults
 NRN_MPI_DYNAMIC = { env = "NRN_MPI_DYNAMIC" }
+NRN_ENABLE_DOCS = { default = "OFF", env = "NRN_ENABLE_DOCS" }
+NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION = { default = "OFF", env = "NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION" }
 
 [tool.cibuildwheel]
 manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64"
