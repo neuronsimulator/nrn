@@ -825,6 +825,10 @@ if(NRN_ENABLE_DOCS)
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
     COMMENT "Generating documentation with Sphinx")
 
+  # if we have Sphinx, which is a Python module, we also need to build the HOC Python and NMODL
+  # Python extensions
+  add_dependencies(sphinx _nmodl hoc_module)
+
   # Executing notebooks will add outputs in-place. We don't want those committed to the repo. This
   # commands cleans them out.
   add_custom_target(
@@ -837,12 +841,11 @@ if(NRN_ENABLE_DOCS)
   # =============================================================================
   add_custom_target(
     docs
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target doxygen
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target notebooks
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target sphinx
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target notebooks-clean
-    COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
-    COMMENT "Generating full documentation")
+    COMMENT "Generating full documentation"
+    COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html")
+
+  add_dependencies(docs doxygen notebooks sphinx)
+
 endif()
 
 # =============================================================================

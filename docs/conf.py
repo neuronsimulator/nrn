@@ -10,7 +10,6 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import glob
 import os
 import sys
 import subprocess
@@ -19,7 +18,6 @@ from pathlib import Path
 # Make translators & domains available for include
 sys.path.insert(0, os.path.abspath("./translators"))
 sys.path.insert(0, os.path.abspath("./domains"))
-sys.path.insert(0, str(Path(__file__).parent.parent / "src" / "nmodl" / "python"))
 
 import html2  # responsible for creating jump tables in python and hoc documentation
 import hocdomain  # Sphinx HOC domain (hacked from the Python domain via docs/generate_hocdomain.py)
@@ -111,26 +109,33 @@ mathjax2_config = {
     }
 }
 
+root_dir = Path(__file__).parent.parent
+build_dir = root_dir / "build_docs"
+
 if os.environ.get("READTHEDOCS"):
     # Get RTD build version ('latest' for master and actual version for tags)
     # Use alias PKGVER to avoid mixin' with sphinx and wasting lots of time on debugging that
     from packaging import version as PKGVER
 
     rtd_ver = PKGVER.parse(os.environ.get("READTHEDOCS_VERSION"))
+    env = {
+        "NRN_ENABLE_MPI": "OFF",
+        "NRN_ENABLE_INTERVIEWS": "OFF",
+        "NRN_ENABLE_DOCS": "ON",
+        "NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION": "OFF",
+        # for documenting coreneuron and NMODL
+        "NRN_ENABLE_CORENEURON": "ON",
+    }
 
     # see:
     # https://docs.readthedocs.com/platform/stable/reference/environment-variables.html#envvar-READTHEDOCS_VERSION_TYPE
     if os.environ.get("READTHEDOCS_VERSION_TYPE") == "external":
         # Build and install NEURON from source
         subprocess.run(
-            "cd .. && python setup.py build_ext bdist_wheel",
+            ["pip", "install", "--force-reinstall", root_dir],
             shell=True,
             check=True,
-        )
-        subprocess.run(
-            f"pip install {glob.glob('../dist/*.whl')[0]}",
-            shell=True,
-            check=True,
+            env=env,
         )
     else:
         # Install neuron accordingly (nightly for master, otherwise incoming version)
@@ -146,4 +151,18 @@ if os.environ.get("READTHEDOCS"):
         )
 
     # Execute & convert notebooks + doxygen
-    subprocess.run("cd .. && python setup.py docs", check=True, shell=True)
+    subprocess.check_call(
+        ["cmake", "-B", build_dir, "-S", root_dir] + [f"-D{key}={value}" for key, value in env.items()],
+        cwd=root_dir,
+        env=env,
+    )
+    subprocess.check_call(
+        ["cmake", "--build", build_dir, "--target", "notebooks"],
+        cwd=root_dir,
+        env=env,
+    )
+    subprocess.check_call(
+        ["cmake", "--build", build_dir, "--target", "doxygen"],
+        cwd=root_dir,
+        env=env,
+    )
