@@ -10,7 +10,6 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import glob
 import os
 import sys
 import subprocess
@@ -119,7 +118,6 @@ if os.environ.get("READTHEDOCS"):
             "-DNRN_ENABLE_INTERVIEWS=OFF",
             "-DNRN_ENABLE_MPI=ON",
             "-DNRN_ENABLE_DOCS=ON",
-            "-DNRN_ENABLE_DOCS_NMODL=ON",
             "-DNMODL_ENABLE_PYTHON_BINDINGS=ON",
             "-B",
             Path(__file__).parent.parent / "build",
@@ -141,5 +139,5 @@ if os.environ.get("READTHEDOCS"):
         ],
         check=True,
     )
-    # since we're not building a wheel, we need to let RTD know where to load the Python module from
+    # since we're not building a wheel, we need to let RTD know where to load the NEURON Python module from
     sys.path.insert(0, str(Path(__file__).parent.parent / "build" / "lib" / "python"))

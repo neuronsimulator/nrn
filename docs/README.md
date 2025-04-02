@@ -42,7 +42,7 @@ On MacOS, you can install these packages using `brew`:
 brew install doxygen pandoc
 ```
 
-#### Confguring the build
+#### Configuring the build
 
 With all dependencies installed, configure project with CMake (>= v3.17) as described in [CMake Build Options](./cmake_doc/options.rst#nrn-enable-docs-bool-off).
 
@@ -54,17 +54,13 @@ cmake .. -DNRN_ENABLE_DOCS=ON
 
 #### Building the documentation
 
-Note that executing the jupyter notebooks requires working NEURON installation. So make sure the neuron python
-module can be imported. For this, you can build and install neuron from source first or you could also do a
-`pip install neuron` (in case you don't want/need to compile NEURON from source).
-
 In order to build the full documentation (Doxygen, Jupyter notebooks, Sphinx):
 ```
 make docs
 ```
 That will build everything in the `nrn/docs/_build` folder from where you can open `index.html` locally.
 
-In case you just want the Sphinx build to be performed(i.e. you are not working on Jupyter notebooks or doxygen):
+In case you just want the Sphinx build to be performed (i.e. you are not working on Jupyter notebooks or doxygen):
 ```
 make sphinx
 ```
@@ -74,12 +70,12 @@ make sphinx
 When working locally on documentation, depending on what you work on, be aware of the following targets to speed up building process:
 
 * `doxygen` 			- build the API documentation only. Ends up in ``_generated`` folder under ``docs``.
-* `notebooks` 			- execute & embed outputs in-place into jupyter notebooks, see [notebooks.sh](notebooks.sh)
+* `notebooks` 			- execute & embed outputs in-place into jupyter notebooks, see [PythonNotebookHelper.cmake](../cmake/PythonNotebookHelper.cmake)
 * `notebooks-clean`     - clears outputs from notebooks. Remember that executing notebooks will add outputs in-place, and we don't want those committed to the repo.
 * `sphinx` 				- build Sphinx documentation
 
 **NOTE**:
-* `docs` target calls: `doxygen` `notebooks` `sphinx` and `notebooks-clean`.
+* `docs` target calls: `doxygen` `notebooks` `sphinx`.
 * `sphinx` target is the one that will assemble all generated output (doxygen, notebooks).
 
 ### ReadTheDocs setup
