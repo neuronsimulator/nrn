@@ -109,60 +109,35 @@ mathjax2_config = {
     }
 }
 
-root_dir = Path(__file__).parent.parent
-build_dir = root_dir / "build_docs"
-
 if os.environ.get("READTHEDOCS"):
-    # Get RTD build version ('latest' for master and actual version for tags)
-    # Use alias PKGVER to avoid mixin' with sphinx and wasting lots of time on debugging that
-    from packaging import version as PKGVER
 
-    rtd_ver = PKGVER.parse(os.environ.get("READTHEDOCS_VERSION"))
-    env = {
-        "NRN_ENABLE_MPI": "OFF",
-        "NRN_ENABLE_INTERVIEWS": "OFF",
-        "NRN_ENABLE_DOCS": "ON",
-        "NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION": "OFF",
-        # for documenting coreneuron and NMODL
-        "NRN_ENABLE_CORENEURON": "ON",
-    }
-
-    # see:
-    # https://docs.readthedocs.com/platform/stable/reference/environment-variables.html#envvar-READTHEDOCS_VERSION_TYPE
-    if os.environ.get("READTHEDOCS_VERSION_TYPE") == "external":
-        # Build and install NEURON from source
-        subprocess.run(
-            ["pip", "install", "--force-reinstall", root_dir],
-            shell=True,
-            check=True,
-            env=env,
-        )
-    else:
-        # Install neuron accordingly (nightly for master, otherwise incoming version)
-        # Note that neuron wheel must be published a priori.
-        subprocess.run(
-            "pip install neuron{}".format(
-                f"=={rtd_ver.base_version}"
-                if isinstance(rtd_ver, PKGVER.Version)
-                else "-nightly"
-            ),
-            shell=True,
-            check=True,
-        )
-
-    # Execute & convert notebooks + doxygen
-    subprocess.check_call(
-        ["cmake", "-B", build_dir, "-S", root_dir] + [f"-D{key}={value}" for key, value in env.items()],
-        cwd=root_dir,
-        env=env,
+    # Execute & convert notebooks + doxygen (RTD calls sphinx on its own)
+    subprocess.run(
+        [
+            "cmake",
+            "-DNRN_ENABLE_INTERVIEWS=OFF",
+            "-DNRN_ENABLE_MPI=ON",
+            "-DNRN_ENABLE_DOCS=ON",
+            "-DNMODL_ENABLE_PYTHON_BINDINGS=ON",
+            "-B",
+            Path(__file__).parent.parent / "build",
+            "-S",
+            Path(__file__).parent.parent,
+        ],
+        check=True,
     )
-    subprocess.check_call(
-        ["cmake", "--build", build_dir, "--target", "notebooks"],
-        cwd=root_dir,
-        env=env,
+    subprocess.run(
+        [
+            "cmake",
+            "--build",
+            Path(__file__).parent.parent / "build",
+            "--target",
+            "doxygen",
+            "notebooks",
+            "--parallel",
+            f"{os.cpu_count()}",
+        ],
+        check=True,
     )
-    subprocess.check_call(
-        ["cmake", "--build", build_dir, "--target", "doxygen"],
-        cwd=root_dir,
-        env=env,
-    )
+    # since we're not building a wheel, we need to let RTD know where to load the NEURON Python module from
+    sys.path.insert(0, str(Path(__file__).parent.parent / "build" / "lib" / "python"))
