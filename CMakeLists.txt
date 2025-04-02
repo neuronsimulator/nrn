@@ -709,6 +709,8 @@ if(NRN_ENABLE_MUSIC)
   add_subdirectory(src/neuronmusic)
 endif()
 
+add_subdirectory(share/lib/hoc)
+
 # Collect the environment variables that are needed to execute NEURON from the build directory. This
 # is used when configuring tests, and when building documentation targets.
 function(prepend_to_var var new_path)
