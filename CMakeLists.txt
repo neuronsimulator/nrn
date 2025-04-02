@@ -710,6 +710,7 @@ if(NRN_ENABLE_MUSIC)
 endif()
 
 add_subdirectory(share/lib/hoc)
+add_subdirectory(share/demo)
 
 # Collect the environment variables that are needed to execute NEURON from the build directory. This
 # is used when configuring tests, and when building documentation targets.
