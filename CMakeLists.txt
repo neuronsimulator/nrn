@@ -808,19 +808,17 @@ as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
   # =============================================================================
   # Setup Sphinx documentation
   # =============================================================================
+  function(add_sphinx_target target)
+    add_custom_target(
+      ${target}
+      COMMAND ${NRN_DOCS_COMMAND_PREFIX} ${SPHINX_EXECUTABLE} -j auto -b html
+              "${PROJECT_SOURCE_DIR}/docs" "${PROJECT_SOURCE_DIR}/docs/_build"
+      COMMAND echo "Copy/Paste to Browser file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
+      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+      COMMENT "Generating documentation with Sphinx")
+  endfunction()
 
-  # Target to execute && convert notebooks to html. Note that neuron must be available for python
-  # import, so we use NRN_RUN_FROM_BUILD_DIR_ENV. See docs/README.md.
-  add_custom_target(
-    sphinx
-    COMMAND ${NRN_DOCS_COMMAND_PREFIX} ${SPHINX_EXECUTABLE} -j auto -b html
-            "${PROJECT_SOURCE_DIR}/docs" "${PROJECT_SOURCE_DIR}/docs/_build"
-    COMMAND echo "Copy/Paste to Browser file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
-    COMMENT "Generating documentation with Sphinx")
-
-  # we need to first run the notebooks, and _then_ build the documentation via sphinx
-  add_dependencies(sphinx ${all_notebooks} doxygen)
+  add_sphinx_target(sphinx)
 
   if(NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
     message(STATUS "**Not** making the notebooks target depend on the rest of the NEURON build.")
@@ -836,6 +834,10 @@ as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
     add_dependencies(doxygen nmodl_gen_sources)
   endif()
 
+  # a custom target that first builds the notebooks and doxygen, then runs sphinx
+  add_sphinx_target(_sphinx_with_deps)
+  add_dependencies(_sphinx_with_deps doxygen notebooks)
+
   # =============================================================================
   # Build full docs
   # =============================================================================
@@ -843,7 +845,7 @@ as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
     docs
     COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
     COMMENT "Generating full documentation")
-  add_dependencies(docs doxygen notebooks sphinx)
+  add_dependencies(docs _sphinx_with_deps)
 endif()
 
 # =============================================================================
