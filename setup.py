@@ -259,7 +259,6 @@ class CMakeAugmentedBuilder(build_ext):
             cmake_args.extend(
                 [
                     "-DNRN_ENABLE_DOCS=ON",
-                    "-DNRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION=ON",
                     "-DNRN_ENABLE_DOCS_NMODL=ON",
                 ]
             )

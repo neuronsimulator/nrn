@@ -14,6 +14,7 @@ import glob
 import os
 import sys
 import subprocess
+from pathlib import Path
 
 # Make translators & domains available for include
 sys.path.insert(0, os.path.abspath("./translators"))
@@ -110,42 +111,35 @@ mathjax2_config = {
 }
 
 if os.environ.get("READTHEDOCS"):
-    # Get RTD build version ('latest' for master and actual version for tags)
-    # Use alias PKGVER to avoid mixin' with sphinx and wasting lots of time on debugging that
-    from packaging import version as PKGVER
 
-    rtd_ver = PKGVER.parse(os.environ.get("READTHEDOCS_VERSION"))
-
-    # see:
-    # https://docs.readthedocs.com/platform/stable/reference/environment-variables.html#envvar-READTHEDOCS_VERSION_TYPE
-    if os.environ.get("READTHEDOCS_VERSION_TYPE") == "external":
-        # Build and install NEURON from source
-        subprocess.run(
-            "cd .. && python setup.py build_ext bdist_wheel --enable-nmodl-docs",
-            shell=True,
-            check=True,
-        )
-        subprocess.run(
-            f"pip install {glob.glob('../dist/*.whl')[0]}",
-            shell=True,
-            check=True,
-        )
-    else:
-        # Install neuron accordingly (nightly for master, otherwise incoming version)
-        # Note that neuron wheel must be published a priori.
-        subprocess.run(
-            "pip install neuron{}".format(
-                f"=={rtd_ver.base_version}"
-                if isinstance(rtd_ver, PKGVER.Version)
-                else "-nightly"
-            ),
-            shell=True,
-            check=True,
-        )
-
-    # Execute & convert notebooks + doxygen
+    # Execute & convert notebooks + doxygen (RTD calls sphinx on its own)
     subprocess.run(
-        "cd .. && python setup.py docs --enable-nmodl-docs",
+        [
+            "cmake",
+            "-DNRN_ENABLE_INTERVIEWS=OFF",
+            "-DNRN_ENABLE_MPI=OFF",
+            "-DNRN_ENABLE_DOCS=ON",
+            "-DNRN_ENABLE_DOCS_NMODL=ON",
+            "-DNMODL_ENABLE_PYTHON_BINDINGS=ON",
+            "-B",
+            Path(__file__).parent.parent / "build",
+            "-S",
+            Path(__file__).parent.parent,
+        ],
         check=True,
-        shell=True,
     )
+    subprocess.run(
+        [
+            "cmake",
+            "--build",
+            Path(__file__).parent.parent / "build",
+            "--target",
+            "doxygen",
+            "notebooks",
+            "--parallel",
+            f"{os.cpu_count()}",
+        ],
+        check=True,
+    )
+    # since we're not building a wheel, we need to let RTD know where to load the Python module from
+    sys.path.insert(0, str(Path(__file__).parent.parent / "build" / "lib" / "python"))

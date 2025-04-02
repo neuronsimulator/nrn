@@ -774,8 +774,6 @@ as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
     COMMENT "Generating API documentation with Doxygen"
     VERBATIM)
 
-  add_dependencies(doxygen nmodl_gen_sources)
-
   # =============================================================================
   # Setup notebooks. Due to https://github.com/executablebooks/MyST-NB/issues/421 we cannot use the
   # `myst_nb` extension and sphinx to execute the notebooks
@@ -833,9 +831,10 @@ as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
     # a normal build, this means we need to schedule the documentation targets sufficiently late in
     # the build.
     foreach(notebook ${all_notebooks})
-      add_dependencies(${notebook} hoc_module rxdmath nrnivmodl_dependency)
+      add_dependencies(${notebook} _nmodl hoc_module rxdmath nrnivmodl_dependency)
     endforeach()
     add_dependencies(sphinx _nmodl hoc_module rxdmath)
+    add_dependencies(doxygen nmodl_gen_sources)
   endif()
 
   # =============================================================================
