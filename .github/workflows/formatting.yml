@@ -17,7 +17,7 @@ on:
 jobs:
   black:
     name: Python
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
       - name: Set up Python@3.7
@@ -41,7 +41,7 @@ jobs:
 
   cmake:
     name: CMake
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
       - name: Set up Python@3.7
@@ -81,7 +81,7 @@ jobs:
 
   cpp:
     name: C/C++
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
       - name: Install dependencies
