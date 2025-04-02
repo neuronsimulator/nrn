@@ -108,7 +108,7 @@ jobs:
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
             openmpi-bin patchelf
           # The sanitizer builds use ubuntu 22.04
-          if [[ "${{matrix.os}}" == "ubuntu-20.04" ]]; then
+          if [[ "${{matrix.os}}" == "ubuntu-22.04" ]]; then
             sudo apt-get install g++-7 g++-8
           fi
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources

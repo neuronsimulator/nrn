@@ -31,7 +31,7 @@ stages:
     - job: 'ManyLinuxWheels'
       timeoutInMinutes: 30
       pool:
-        vmImage: 'ubuntu-20.04'
+        vmImage: 'ubuntu-22.04'
       strategy:
         matrix:
           Python37:
@@ -208,7 +208,7 @@ stages:
     jobs:
       - job: AzureDropURL
         pool:
-          vmImage: 'ubuntu-20.04'
+          vmImage: 'ubuntu-22.04'
         condition: eq(variables['Build.Reason'], 'PullRequest')
         steps:
           - checkout: none
