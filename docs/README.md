@@ -93,14 +93,6 @@ For RTD we need to call `doxygen` and `notebooks` make targets, since only `sphi
 The only way to gather extra documentation in RTD is to make use of `conf.py`.
 Have a look at `if os.environ.get("READTHEDOCS"):` block in [conf.py](conf.py) to see how we leverage the aforementioned targets and outputs.
 
-#### Notebooks execution with `neuron` wheels
-
-For `notebooks` we are using `neuron` Python wheel as follows:
-* `neuron-nightly` for `master` RTD builds.
-* `neuron==X.Y.Z` for `release` RTD builds. Note that wheels need to be published first (see next section).
-
-To achieve this, we parse the RTD environment variable `READTHEDOCS_VERSION` and `pip install` it (see [conf.py](conf.py)).
-
 #### New release on RTD
 
 To create a new public release on RTD, follow these steps:
