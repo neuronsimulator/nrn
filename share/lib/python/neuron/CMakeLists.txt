@@ -115,7 +115,9 @@ if(NRN_ENABLE_RX3D)
   endforeach()
 endif()
 
-if(NRN_ENABLE_CORENEURON OR NRN_ENABLE_NMODL)
+if(NRN_ENABLE_CORENEURON
+   OR NRN_ENABLE_NMODL
+   OR NRN_ENABLE_DOCS)
   foreach(pyfile IN LISTS NRN_PYTHON_NMODL_FILES_LIST)
     get_filename_component(pyfile_abs "${CMAKE_CURRENT_SOURCE_DIR}/${pyfile}" ABSOLUTE)
     get_filename_component(pyfile_dir "${pyfile}" DIRECTORY)
