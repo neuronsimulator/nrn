@@ -38,6 +38,11 @@ jobs:
           sudo apt-get install  build-essential doxygen lcov libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf gpg
         shell: bash
 
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version : '3.18'
+
       - name: Setup Caliper profiler
         run: |
           git clone https://github.com/LLNL/Caliper.git
