@@ -120,9 +120,5 @@ set(NRN_HOC_FILES_LIST
     pointman.hoc
     mview.hoc)
 
-foreach(file IN LISTS NRN_HOC_FILES_LIST)
-  get_filename_component(file_abs "${CMAKE_CURRENT_SOURCE_DIR}/${file}" ABSOLUTE)
-  get_filename_component(file_dir "${file}" DIRECTORY)
-  file(COPY "${file_abs}" DESTINATION "${NRN_BUILD_SHARE_DIR}/lib/hoc/${file_dir}")
-  install(FILES "${file_abs}" DESTINATION "${NRN_INSTALL_DATA_PREFIX}/lib/hoc/${file_dir}")
-endforeach()
+copy_and_install_files(NRN_HOC_FILES_LIST "${NRN_BUILD_SHARE_DIR}/lib/hoc"
+                       "${NRN_INSTALL_DATA_PREFIX}/lib/hoc")

@@ -212,3 +212,13 @@ macro(nrn_mpi_find_package)
     find_package(MPI REQUIRED)
   endif()
 endmacro()
+
+# copy a list of files to the build dir and later install it in an install dir
+function(copy_and_install_files FILE_LIST BUILD_PREFIX INSTALL_PREFIX)
+  foreach(file IN LISTS ${FILE_LIST})
+    get_filename_component(file_abs "${CMAKE_CURRENT_SOURCE_DIR}/${file}" ABSOLUTE)
+    get_filename_component(file_dir "${file}" DIRECTORY)
+    file(COPY "${file_abs}" DESTINATION "${BUILD_PREFIX}/${file_dir}")
+    install(FILES "${file_abs}" DESTINATION "${INSTALL_PREFIX}/${file_dir}")
+  endforeach()
+endfunction()

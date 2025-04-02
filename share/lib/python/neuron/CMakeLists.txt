@@ -97,33 +97,19 @@ set(NRN_PYTHON_RX3D_FILES_LIST
     rxd/gui.py
     rxd/reaction.py)
 
-foreach(pyfile IN LISTS NRN_PYTHON_FILES_LIST)
-  get_filename_component(pyfile_abs "${CMAKE_CURRENT_SOURCE_DIR}/${pyfile}" ABSOLUTE)
-  get_filename_component(pyfile_dir "${pyfile}" DIRECTORY)
-  file(COPY "${pyfile_abs}"
-       DESTINATION "${PROJECT_BINARY_DIR}/${NRN_INSTALL_PYTHON_PREFIX}/${pyfile_dir}")
-  install(FILES "${pyfile_abs}" DESTINATION "${NRN_INSTALL_PYTHON_PREFIX}/${pyfile_dir}")
-endforeach()
+copy_and_install_files(NRN_PYTHON_FILES_LIST "${PROJECT_BINARY_DIR}/${NRN_INSTALL_PYTHON_PREFIX}"
+                       "${NRN_INSTALL_PYTHON_PREFIX}")
 
 if(NRN_ENABLE_RX3D)
-  foreach(pyfile IN LISTS NRN_PYTHON_RX3D_FILES_LIST)
-    get_filename_component(pyfile_abs "${CMAKE_CURRENT_SOURCE_DIR}/${pyfile}" ABSOLUTE)
-    get_filename_component(pyfile_dir "${pyfile}" DIRECTORY)
-    file(COPY "${pyfile_abs}"
-         DESTINATION "${PROJECT_BINARY_DIR}/${NRN_INSTALL_PYTHON_PREFIX}/${pyfile_dir}")
-    install(FILES "${pyfile_abs}" DESTINATION "${NRN_INSTALL_PYTHON_PREFIX}/${pyfile_dir}")
-  endforeach()
+  copy_and_install_files(
+    NRN_PYTHON_RX3D_FILES_LIST "${PROJECT_BINARY_DIR}/${NRN_INSTALL_PYTHON_PREFIX}"
+    "${NRN_INSTALL_PYTHON_PREFIX}")
 endif()
 
 if(NRN_ENABLE_CORENEURON
    OR NRN_ENABLE_NMODL
    OR NRN_ENABLE_DOCS)
-  foreach(pyfile IN LISTS NRN_PYTHON_NMODL_FILES_LIST)
-    get_filename_component(pyfile_abs "${CMAKE_CURRENT_SOURCE_DIR}/${pyfile}" ABSOLUTE)
-    get_filename_component(pyfile_dir "${pyfile}" DIRECTORY)
-    file(COPY "${pyfile_abs}"
-         DESTINATION "${PROJECT_BINARY_DIR}/${NRN_INSTALL_PYTHON_PREFIX}/${pyfile_dir}")
-    install(FILES "${pyfile_abs}" DESTINATION "${NRN_INSTALL_PYTHON_PREFIX}/${pyfile_dir}")
-  endforeach()
-
+  copy_and_install_files(
+    NRN_PYTHON_NMODL_FILES_LIST "${PROJECT_BINARY_DIR}/${NRN_INSTALL_PYTHON_PREFIX}"
+    "${NRN_INSTALL_PYTHON_PREFIX}")
 endif()

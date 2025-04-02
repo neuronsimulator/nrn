@@ -28,9 +28,6 @@ set(NRN_DEMO_HOC_FILES_LIST
     hh.ses
     pyramid.nrn
     dend3/dend3.nrn)
-foreach(file IN LISTS NRN_DEMO_HOC_FILES_LIST)
-  get_filename_component(file_abs "${CMAKE_CURRENT_SOURCE_DIR}/${file}" ABSOLUTE)
-  get_filename_component(file_dir "${file}" DIRECTORY)
-  file(COPY "${file_abs}" DESTINATION "${NRN_BUILD_SHARE_DIR}/demo/${file_dir}")
-  install(FILES "${file_abs}" DESTINATION "${NRN_INSTALL_DATA_PREFIX}/demo/${file_dir}")
-endforeach()
+
+copy_and_install_files(NRN_DEMO_HOC_FILES_LIST "${NRN_BUILD_SHARE_DIR}/demo"
+                       "${NRN_INSTALL_DATA_PREFIX}/demo")
