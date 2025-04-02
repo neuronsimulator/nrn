@@ -117,7 +117,7 @@ if os.environ.get("READTHEDOCS"):
         [
             "cmake",
             "-DNRN_ENABLE_INTERVIEWS=OFF",
-            "-DNRN_ENABLE_MPI=OFF",
+            "-DNRN_ENABLE_MPI=ON",
             "-DNRN_ENABLE_DOCS=ON",
             "-DNRN_ENABLE_DOCS_NMODL=ON",
             "-DNMODL_ENABLE_PYTHON_BINDINGS=ON",
