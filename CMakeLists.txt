@@ -722,16 +722,6 @@ if(NRN_ENABLE_DOCS)
     message(FATAL_ERROR "macOS + ASan + docs is not supported")
   endif()
 
-  if(NOT TARGET nmodl_gen_sources OR NOT TARGET _nmodl)
-    # doxygen requires building NMODL AST templates, while sphinx requires building NMODL's Python
-    # module first
-    message(
-      FATAL_ERROR
-        "NMODL is required to build the documentation, \
-please add NRN_ENABLE_CORENEURON=ON or NRN_ENABLE_NMODL=ON, \
-as well as NMODL_ENABLE_PYTHON_BINDINGS=ON to your CMake definitions")
-  endif()
-
   # Do we need to set extra environment variables to find NEURON?
   set(NRN_DOCS_COMMAND_PREFIX ${CMAKE_COMMAND} -E env)
   if(NOT NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
