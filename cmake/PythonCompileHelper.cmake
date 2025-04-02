@@ -35,7 +35,7 @@ function(add_nrn_python_library name)
   cmake_parse_arguments(ARG "" "TARGET;PYTHON_VERSION;LANGUAGE;OUTPUT_DIR"
                         "SOURCES;INCLUDES;LIBRARIES;REL_RPATH" ${ARGN})
 
-  add_library(${ARG_TARGET} SHARED ${ARG_SOURCES})
+  add_library(${ARG_TARGET} MODULE ${ARG_SOURCES})
   if(ARG_INCLUDES)
     target_include_directories(${ARG_TARGET} PRIVATE ${ARG_INCLUDES})
   endif()
