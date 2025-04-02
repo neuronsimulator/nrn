@@ -64,6 +64,8 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
         OUTPUT_DIR
         ${PROJECT_BINARY_DIR}/lib/python/neuron/rxd/geometry3d)
       target_compile_options(${source}${pyver} PRIVATE "-O${NRN_RX3D_OPT_LEVEL}")
+      target_compile_definitions(${source}${pyver}
+                                 PRIVATE NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
       if(APPLE)
         target_link_options(${source}${pyver} PRIVATE "-headerpad_max_install_names")
       endif()
@@ -99,6 +101,7 @@ else(NRN_ENABLE_PYTHON_DYNAMIC)
       OUTPUT_DIR
       ${PROJECT_BINARY_DIR}/lib/python/neuron/rxd/geometry3d)
     target_compile_options(${source} PRIVATE "-O${NRN_RX3D_OPT_LEVEL}")
+    target_compile_definitions(${source} PRIVATE NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)
     if(APPLE)
       target_link_options(${source} PRIVATE "-headerpad_max_install_names")
     endif()
