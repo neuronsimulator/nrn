@@ -107,10 +107,6 @@ jobs:
           sudo apt-get install build-essential ccache libopenmpi-dev \
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
             openmpi-bin patchelf
-          # The sanitizer builds use ubuntu 22.04
-          if [[ "${{matrix.os}}" == "ubuntu-22.04" ]]; then
-            sudo apt-get install g++-7 g++-8
-          fi
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
           echo CMAKE_BUILD_PARALLEL_LEVEL=2 >> $GITHUB_ENV
           echo CTEST_PARALLEL_LEVEL=2 >> $GITHUB_ENV
