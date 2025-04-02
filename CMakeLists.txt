@@ -46,8 +46,8 @@ if(SKBUILD)
   # need to force fmtlib install prefixes
   set(FMT_LIB_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
   set(FMT_INC_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
-  set(FMT_PKGCONFIG_DIR "${NRN_INSTALL_DATA_PREFIX}/pkgconfig")
-  set(FMT_CMAKE_DIR "${NRN_INSTALL_DATA_PREFIX}/cmake/fmt")
+  set(FMT_PKGCONFIG_DIR "${NRN_INSTALL_DATA_PREFIX}/lib/pkgconfig")
+  set(FMT_CMAKE_DIR "${NRN_INSTALL_DATA_PREFIX}/lib/cmake/fmt")
   # need to force IV install prefixes
   set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
   set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
@@ -1014,12 +1014,12 @@ endif()
 install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib
   DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn
-  PATTERN "python" EXCLUDE)
+  PATTERN "python" EXCLUDE
+  PATTERN CMakeLists.txt EXCLUDE)
 install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo
   DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn
-  PATTERN CMakeLists.txt EXCLUDE
-  PATTERN *swp EXCLUDE)
+  PATTERN CMakeLists.txt EXCLUDE)
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
         DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn/lib)

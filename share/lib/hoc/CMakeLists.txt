@@ -120,5 +120,4 @@ set(NRN_HOC_FILES_LIST
     pointman.hoc
     mview.hoc)
 
-copy_and_install_files(NRN_HOC_FILES_LIST "${NRN_BUILD_SHARE_DIR}/lib/hoc"
-                       "${NRN_INSTALL_DATA_PREFIX}/lib/hoc")
+copy_build_list(NRN_HOC_FILES_LIST "${NRN_BUILD_SHARE_DIR}/lib/hoc")

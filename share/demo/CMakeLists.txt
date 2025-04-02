@@ -29,5 +29,4 @@ set(NRN_DEMO_HOC_FILES_LIST
     pyramid.nrn
     dend3/dend3.nrn)
 
-copy_and_install_files(NRN_DEMO_HOC_FILES_LIST "${NRN_BUILD_SHARE_DIR}/demo"
-                       "${NRN_INSTALL_DATA_PREFIX}/demo")
+copy_build_list(NRN_DEMO_HOC_FILES_LIST "${NRN_BUILD_SHARE_DIR}/demo")
