@@ -64,6 +64,7 @@ add_custom_command(
   DEPENDS ${CODE_GENERATOR_JINJA_FILES}
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/language/code_generator_opts
   COMMENT "-- NMODL : GENERATING AST CLASSES WITH PYTHON GENERATOR! --")
+add_custom_target(nmodl_gen_sources DEPENDS ${NMODL_GENERATED_SOURCES})
 unset(CODE_GENERATOR_OPTS)
 
 # -----------------------------------------------------------------------------

@@ -77,7 +77,7 @@ this README as:
 
    $ python3
    Python 3.6.8 (default, Apr  8 2019, 18:17:52)
-   >>> from nmodl import dsl
+   >>> from neuron.nmodl import dsl
    >>> examples = dsl.list_examples()
    >>> nmodl_string = dsl.load_example(examples[-1])
    ...
