@@ -160,6 +160,7 @@ else()
     LIBRARIES
     nrniv_lib
     rxdmath
+    nrnpython${NRN_DEFAULT_PYTHON_VERSION}
     REL_RPATH
     ${libraries_rpath}
     OUTPUT_DIR
