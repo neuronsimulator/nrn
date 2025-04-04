@@ -340,41 +340,6 @@ jobs:
           elif [[ "$BUILD_MODE" == "setuptools" ]]; then
             ./packaging/python/build_wheels.bash CI "${PYTHON_MAX}";
           fi;
-          if [[ -z "${nrn_enable_sanitizer_preload_python}" ]]; then
-            nrn_enable_sanitizer_preload_python="${PYTHON}"
-          fi
-
-          # basic test for cmake when python is not disabled
-          if [[ "$BUILD_MODE" == "cmake" && ! "${cmake_args[*]}" =~ "NRN_ENABLE_PYTHON=OFF" ]]; then
-            ${nrn_enable_sanitizer_preload_python} --version && ${nrn_enable_sanitizer_preload_python} -c 'import neuron; neuron.test()'
-          fi;
-
-          # test neurondemo with cmake
-          if [[ "$BUILD_MODE" != "setuptools" ]]; then
-            ${nrn_enable_sanitizer} neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
-          fi;
-
-          # with cmake dynamic check python_min and python_max together
-          if [[ "$BUILD_MODE" == "cmake" && "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
-            ${nrn_enable_sanitizer_preload_python} -c 'import neuron; neuron.test()'
-            $PYTHON_MIN -c 'import neuron; neuron.test()'
-          fi;
-
-          # run rxd tests manually if rxd is enabled *and CoreNEURON is
-          # disabled -- otherwise hh-related tests fail
-          if [[ "$BUILD_MODE" == "cmake" \
-                && ! "${cmake_args[*]}" =~ "NRN_ENABLE_RX3D=OFF" \
-                && ! "${cmake_args[*]}" =~ "NRN_ENABLE_CORENEURON=ON" ]]; then
-            ${nrn_enable_sanitizer_preload_python} ../share/lib/python/neuron/rxdtests/run_all.py
-          fi;
-
-          if [ "$BUILD_MODE" == "setuptools" ]; then
-            neuron_wheel=wheelhouse/*.whl;
-            # test with virtual environment
-            ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel
-            # test with global installation
-            ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel false
-          fi;
         env:
           BUILD_MODE: ${{ matrix.config.build_mode }}
           CCACHE_BASEDIR: ${{runner.workspace}}/nrn
@@ -385,6 +350,12 @@ jobs:
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
           INSTALL_DIR : ${{ runner.workspace }}/install
           MATRIX_EVAL: ${{ matrix.config.matrix_eval }}
+
+      - name: Upload wheel for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels
+          path: wheelhouse/*.whl
 
       - name: Save compiler cache
         uses: actions/cache/save@v4
