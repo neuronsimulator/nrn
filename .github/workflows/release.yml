@@ -55,32 +55,18 @@ jobs:
     needs: tag-n-release
     steps:
     - name: Checkout feature-rich code
-      run: |
-        git clone --depth=1 --shallow-submodules --recurse-submodules $GH_REPO -b $REL_TAG --single-branch
-        cd nrn
-        LOCAL_TAG=`git tag`
-        if [ $REL_TAG != $LOCAL_TAG ]; then
-          echo "Wrong tag downloaded!"
-          exit 1
-        else
-          git log --oneline
-        fi
-
-    - name: Make nrnversion.h
-      run: |
-        mkdir build && cd build
-        cmake -DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF ../nrn
-        make nrnversion_h VERBOSE=1
-
-    - name: Create nrn-full-src-package
-      id: tar
-      run: |
-        tar -czvf nrn-full-src-package-${REL_TAG}.tar.gz nrn
-        echo "asset_file=nrn-full-src-package-${REL_TAG}.tar.gz" >> $GITHUB_OUTPUT
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 1
 
     - name: Upload nrn-full-src-package to release
       run: |
-        gh release upload ${{ needs.tag-n-release.outputs.rel_tag }} ${{ steps.tar.outputs.asset_file }}
+        filename="nrn-full-src-package-${{ needs.tag-n-release.outputs.rel_tag }}.tar.gz"
+        # taken from:
+        # https://stackoverflow.com/a/67389978
+        git ls-files --recurse-submodules | tar caf ${filename} -T-
+        gh release upload ${{ needs.tag-n-release.outputs.rel_tag }} ${filename}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
