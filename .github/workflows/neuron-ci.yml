@@ -46,9 +46,56 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-22.04]
+        os: [macOS-13, ubuntu-22.04]
         config:
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
+          - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", music: ON}
+          - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", python_dynamic: ON}
+          - { matrix_eval : "CC=gcc-9 CXX=g++-9" ,  build_mode: "cmake", cmake_option: "-DNRN_ENABLE_CORENEURON=ON"}
+          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake", cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"}
+          - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"}
+        include:
+          - os: ubuntu-22.04
+            config:
+              build_mode: cmake
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON
+                -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=undefined
+              flag_warnings: ON
+              sanitizer: undefined
+          - os: ubuntu-22.04
+            config:
+              build_mode: cmake
+              # TODO: CoreNEURON is only LeakSanitizer-clean if we disable MPI
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON
+                -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=address
+              # TODO: address-leak is the dream, but there are many problems,
+              # including external ones from the MPI implementations
+              sanitizer: address
+          - os: ubuntu-24.04
+            config:
+              build_mode: cmake
+              # Cannot use a non-instrumented OpenMP with TSan, and we don't
+              # have a TSan-instrumented OpenMP runtime available.
+              # TODO: debug RX3D + TSan
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_MPI=OFF
+                -DCORENRN_ENABLE_OPENMP=OFF -DNRN_ENABLE_RX3D=OFF
+              sanitizer: thread
+          - os: macOS-13
+            config:
+              build_mode: cmake
+              # TODO: investigate rxd test timeouts in this build and re-enable them
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
+                -DNRN_ENABLE_RX3D=OFF -DNMODL_SANITIZERS=address
+              sanitizer: address
+          - os: macOS-14
+            config:
+              build_mode: cmake
+              # TODO: investigate rxd test timeouts in this build and re-enable them
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
+                -DNRN_ENABLE_RX3D=OFF -DNMODL_SANITIZERS=address
+              sanitizer: thread
+      fail-fast: false
+
     steps:
 
       - name: Fix kernel mmap rnd bits
