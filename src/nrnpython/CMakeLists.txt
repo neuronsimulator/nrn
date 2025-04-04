@@ -103,7 +103,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       nrniv_lib
       rxdmath
       nrnpython${pyver}
-      REL_RPATH
+      INSTALL_REL_RPATH
       ${libraries_rpath}
       OUTPUT_DIR
       ${PROJECT_BINARY_DIR}/lib/python/neuron)
@@ -160,7 +160,7 @@ else()
     LIBRARIES
     nrniv_lib
     rxdmath
-    REL_RPATH
+    INSTALL_REL_RPATH
     ${libraries_rpath}
     OUTPUT_DIR
     ${PROJECT_BINARY_DIR}/lib/python/neuron)

@@ -33,7 +33,7 @@ endfunction()
 # create a target that links to nrnpython
 function(add_nrn_python_library name)
   cmake_parse_arguments(ARG "" "TARGET;PYTHON_VERSION;LANGUAGE;OUTPUT_DIR"
-                        "SOURCES;INCLUDES;LIBRARIES;REL_RPATH" ${ARGN})
+                        "SOURCES;INCLUDES;LIBRARIES;INSTALL_REL_RPATH;BUILD_REL_RPATH" ${ARGN})
 
   add_library(${ARG_TARGET} MODULE ${ARG_SOURCES})
   if(ARG_INCLUDES)
@@ -77,8 +77,14 @@ function(add_nrn_python_library name)
   else()
     message(WARNING "Unknown platform; RPATH may not be set correctly")
   endif()
-  if(ARG_REL_RPATH)
-    target_link_options(${ARG_TARGET} PRIVATE "-Wl,-rpath,${rel_rpath}${ARG_REL_RPATH}")
+
+  if(ARG_INSTALL_REL_RPATH)
+    set_target_properties(${ARG_TARGET} PROPERTIES INSTALL_RPATH
+                                                   "${rel_rpath}${ARG_INSTALL_REL_RPATH}")
+  endif()
+
+  if(ARG_BUILD_REL_RPATH)
+    set_target_properties(${ARG_TARGET} PROPERTIES BUILD_RPATH "${rel_rpath}${ARG_BUILD_REL_RPATH}")
   endif()
 
   # MinGW does not play nicely with cython

@@ -59,7 +59,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
         nrniv_lib
         rxdmath
         nrnpython${pyver}
-        REL_RPATH
+        INSTALL_REL_RPATH
         ${rel_rpath}
         OUTPUT_DIR
         ${PROJECT_BINARY_DIR}/lib/python/neuron/rxd/geometry3d)
@@ -96,7 +96,7 @@ else(NRN_ENABLE_PYTHON_DYNAMIC)
       LIBRARIES
       nrniv_lib
       rxdmath
-      REL_RPATH
+      INSTALL_REL_RPATH
       ${rel_rpath}
       OUTPUT_DIR
       ${PROJECT_BINARY_DIR}/lib/python/neuron/rxd/geometry3d)

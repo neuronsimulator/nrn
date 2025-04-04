@@ -35,7 +35,8 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       ${CMAKE_CURRENT_SOURCE_DIR}
       LIBRARIES
       nrnpython${pyver}
-      REL_RPATH
+      # TODO figure out where to put this module so RPATH can be adjusted
+      INSTALL_REL_RPATH
       ${rel_rpath}
       OUTPUT_DIR
       ${PROJECT_BINARY_DIR}/lib/python)
@@ -58,6 +59,9 @@ else()
     "${MPI_C_INCLUDE_DIRS}"
     ${PROJECT_SOURCE_DIR}/src/nrnpython
     ${CMAKE_CURRENT_SOURCE_DIR}
+    # TODO figure out where to put this module so RPATH can be adjusted
+    INSTALL_REL_RPATH
+    ${rel_rpath}
     OUTPUT_DIR
     ${PROJECT_BINARY_DIR}/lib/python)
 
