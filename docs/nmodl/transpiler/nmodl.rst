@@ -1,7 +1,7 @@
 Module contents
 ===============
 
-.. automodule:: nmodl
+.. automodule:: neuron.nmodl
     :members:
     :undoc-members:
     :show-inheritance:
@@ -10,42 +10,42 @@ Module contents
 Submodules
 ==========
 
-nmodl.ast module
+neuron.nmodl.ast module
 ----------------
 
-.. automodule:: nmodl.ast
+.. automodule:: neuron.nmodl.ast
     :members:
     :no-undoc-members:
     :show-inheritance:
 
-nmodl.dsl module
+neuron.nmodl.dsl module
 ----------------
 
-.. automodule:: nmodl.dsl
+.. automodule:: neuron.nmodl.dsl
     :members:
     :undoc-members:
     :show-inheritance:
 
-nmodl.ode module
+neuron.nmodl.ode module
 ----------------
 
-.. automodule:: nmodl.ode
+.. automodule:: neuron.nmodl.ode
     :members:
     :undoc-members:
     :show-inheritance:
 
-nmodl.symtab module
+neuron.nmodl.symtab module
 -------------------
 
-.. automodule:: nmodl.symtab
+.. automodule:: neuron.nmodl.symtab
     :members:
     :undoc-members:
     :show-inheritance:
 
-nmodl.visitor module
+neuron.nmodl.visitor module
 --------------------
 
-.. automodule:: nmodl.visitor
+.. automodule:: neuron.nmodl.visitor
     :members:
     :undoc-members:
     :show-inheritance:

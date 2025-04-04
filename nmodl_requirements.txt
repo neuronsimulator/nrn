@@ -1,5 +1,4 @@
 # build time dependencies
-scikit-build-core
 setuptools-scm>=8.0
 Jinja2>=2.9.3
 PyYAML>=3.13
