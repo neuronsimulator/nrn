@@ -45,11 +45,15 @@ C:\Python312\python -c "import neuron; neuron.test(); quit()" || set "errorfound
 C:\Python313\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 
 :: run also using whatever is system python
+python.exe -m pip install "pyreadline3<=3.5.4"
 python -m pip install "numpy<=2.2.3"
 python --version
 python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 
 :: test python and nrniv
+
+python -c "import sys; print(sys.path)"
+nrniv -python -c "import sys; print(sys.path)"
 python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()" || set "errorfound=y"
 nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()" || set "errorfound=y"
 
