@@ -119,7 +119,7 @@ build_wheel_local() {
     fi
     export NRN_ENABLE_CORENEURON
 
-    python -m pip wheel -vvv --no-deps --config-settings=build-dir=_build --wheel-dir=wheelhouse .
+    python -m pip wheel -v --no-deps --config-settings=build-dir=_build --wheel-dir=wheelhouse .
 
     deactivate
 }
