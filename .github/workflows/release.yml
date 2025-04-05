@@ -54,6 +54,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: tag-n-release
     steps:
+    - name: Install possibly missing packages
+      run: |
+        sudo apt install libreadline-dev
+      shell: bash
+
     - name: Checkout feature-rich code
       run: |
         git clone --depth=1 --shallow-submodules --recurse-submodules $GH_REPO -b $REL_TAG --single-branch
