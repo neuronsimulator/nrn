@@ -53,9 +53,6 @@ python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 :: test python and nrniv
 python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()" || set "errorfound=y"
 python -m pip install "pyreadline3<=3.5.4"
-python -c "import sys; print(sys.executable)"
-python -c "import sys; print(sys.path)"
-nrniv -python -c "import sys; print(sys.path)"
 nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()" || set "errorfound=y"
 
 :: test mpi
