@@ -11,3 +11,4 @@ pytest
 pytest-cov
 mpi4py
 numpy
+pyreadline3<=3.5.4; sys_platform == "win32"

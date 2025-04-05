@@ -590,6 +590,7 @@ def setup_package():
             "packaging",
             "find_libpython",
             "setuptools",
+            'pyreadline3<=3.5.4; sys_platform == "win32"',
         ]
         + maybe_patchelf,
         tests_require=["flake8", "pytest"],
