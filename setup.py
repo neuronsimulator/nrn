@@ -14,16 +14,34 @@ from setuptools import setup
 
 logging.basicConfig(level=logging.INFO)
 
-
 logging.info("setup.py called with:" + " ".join(sys.argv))
 
 
+def strtobool(val: str) -> bool:
+    """
+    Convert a string representation of truth to True or False.
+
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+    'val' is anything else.
+    """
+    val = val.lower()
+    if val in ("y", "yes", "t", "true", "on", "1"):
+        return True
+    if val in ("n", "no", "f", "false", "off", "0"):
+        return False
+
+    raise ValueError(f"invalid truth value {val}")
+
+
 class Components:
-    RX3D = True
-    IV = True
-    MPI = True
-    MUSIC = False  # still early support
-    CORENRN = False  # still early support
+    RX3D = strtobool(os.getenv("NRN_ENABLE_RX3D", "ON"))
+    IV = strtobool(os.getenv("NRN_ENABLE_INTERVIEWS", "ON"))
+    MPI = strtobool(os.getenv("NRN_ENABLE_MPI", "ON"))
+    MUSIC = strtobool(os.getenv("NRN_ENABLE_MUSIC", "OFF"))  # still early support
+    CORENRN = strtobool(
+        os.getenv("NRN_ENABLE_CORENEURON", "OFF")
+    )  # still early support
 
 
 # Check if we've got --cmake-build-dir path that will be used to build extensions only
@@ -65,41 +83,14 @@ if "--cmake-build-dir" in sys.argv:
     just_extensions = True
 
 # Check for RX3D Optimization Level
-rx3d_opt_level = "-O0"
-if "--rx3d-opt-level" in sys.argv:
-    rx3d_opt_level_arg = sys.argv[sys.argv.index("--rx3d-opt-level") + 1]
-    rx3d_opt_level = "-O{}".format(int(rx3d_opt_level_arg))
-    sys.argv.remove("--rx3d-opt-level")
-    sys.argv.remove(rx3d_opt_level_arg)
+rx3d_opt_level = os.getenv("NRN_RX3D_OPT_LEVEL", "0")
 
 # If NRN_ENABLE_PYTHON_DYNAMIC is ON, we will build the wheel without the nrnpython library
-without_nrnpython = False
-if "--without-nrnpython" in sys.argv:
-    without_nrnpython = True
-    sys.argv.remove("--without-nrnpython")
+without_nrnpython = strtobool(
+    os.getenv("NRN_ENABLE_MODULE_INSTALL", "OFF")
+) and not strtobool(os.getenv("NRN_ENABLE_PYTHON_DYNAMIC", "OFF"))
 
 # setup options must be checked for very early as it impacts imports
-if "--disable-rx3d" in sys.argv:
-    Components.RX3D = False
-    sys.argv.remove("--disable-rx3d")
-
-if "--disable-iv" in sys.argv:
-    Components.IV = False
-    sys.argv.remove("--disable-iv")
-
-if "--disable-mpi" in sys.argv:
-    Components.MPI = False
-    Components.MUSIC = False
-    sys.argv.remove("--disable-mpi")
-
-if "--enable-coreneuron" in sys.argv:
-    Components.CORENRN = True
-    sys.argv.remove("--enable-coreneuron")
-
-if "--enable-music" in sys.argv:
-    Components.MUSIC = True
-    sys.argv.remove("--enable-music")
-
 if Components.RX3D:
     try:
         from Cython.Distutils import Extension as CyExtension
@@ -162,14 +153,13 @@ class CMakeAugmentedBuilder(build_ext):
     """Builder which understands CMakeAugmentedExtension"""
 
     user_options = build_ext.user_options + [
-        ("cmake-prefix=", None, "value for CMAKE_PREFIX_PATH"),
         ("cmake-defs=", None, "Additional CMake definitions, comma split"),
     ]
     boolean_options = build_ext.boolean_options + ["docs"]
 
     def initialize_options(self):
         build_ext.initialize_options(self)
-        self.cmake_prefix = None
+        self.cmake_prefix = os.getenv("CMAKE_PREFIX_PATH", "")
         self.cmake_defs = None
         self.docs = False
 
@@ -401,7 +391,7 @@ def setup_package():
         libraries=ext_common_libraries,
     )
 
-    logging.info("Extension common compile flags %s" % str(extension_common_params))
+    logging.info("Extension common compile flags %s", extension_common_params)
 
     # Get extra_compile_args and  extra_link_args from environment variable
     extra_link_args = os.environ.get("LDFLAGS", "").split()
@@ -474,7 +464,11 @@ def setup_package():
                 # Cython files take a long time to compile with O2 but this
                 # is a distribution...
                 extra_compile_args=extra_compile_args
-                + ["-O2" if "NRN_BUILD_FOR_UPLOAD" in os.environ else rx3d_opt_level],
+                + [
+                    "-O2"
+                    if "NRN_BUILD_FOR_UPLOAD" in os.environ
+                    else f"-O{rx3d_opt_level}"
+                ],
                 extra_link_args=extra_link_args
                 + ["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")],
             )
@@ -482,7 +476,7 @@ def setup_package():
         if platform.system() == "Darwin":
             rxd_params["extra_link_args"] += ["-headerpad_max_install_names"]
 
-        logging.info("RX3D compile flags %s" % str(rxd_params))
+        logging.info("RX3D compile flags %s", rxd_params)
 
         rxd_extensions = [
             CyExtension(

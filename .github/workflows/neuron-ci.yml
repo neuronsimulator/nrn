@@ -136,7 +136,7 @@ jobs:
             echo CMAKE_BUILD_PARALLEL_LEVEL=3 >> $GITHUB_ENV
             echo CTEST_PARALLEL_LEVEL=3 >> $GITHUB_ENV
           fi
-          echo CI_OS_NAME=osx >> $GITHUB_ENV
+          echo CI_OS_NAME=$(uname -s) >> $GITHUB_ENV
         shell: bash
 
       - name: Install apt packages
@@ -148,7 +148,7 @@ jobs:
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
           echo CMAKE_BUILD_PARALLEL_LEVEL=4 >> $GITHUB_ENV
           echo CTEST_PARALLEL_LEVEL=4 >> $GITHUB_ENV
-          echo CI_OS_NAME=linux >> $GITHUB_ENV
+          echo CI_OS_NAME=$(uname -s) >> $GITHUB_ENV
         shell: bash
 
       - uses: actions/checkout@v4
@@ -426,8 +426,8 @@ jobs:
           BUILD_MODE: ${{ matrix.config.build_mode }}
           CCACHE_BASEDIR: ${{runner.workspace}}/nrn
           CCACHE_DIR: ${{runner.workspace}}/ccache
-          NRN_ENABLE_PYTHON_DYNAMIC : ${{ matrix.config.python_dynamic }}
-          NRN_ENABLE_MUSIC: ${{ matrix.config.music }}
+          NRN_ENABLE_PYTHON_DYNAMIC : ${{ matrix.config.python_dynamic || 'OFF' }}
+          NRN_ENABLE_MUSIC: ${{ matrix.config.music || 'OFF' }}
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
           INSTALL_DIR : ${{ runner.workspace }}/install
