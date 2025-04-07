@@ -99,6 +99,8 @@ jobs:
           # we build a simple configuration to save on CI time
           cmake -B build -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_MPI=OFF -DNMODL_ENABLE_PYTHON_BINDINGS=OFF -DNRN_ENABLE_CORENEURON=OFF .
           cmake --build build --parallel $(nproc)
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   windows-installer:
     needs: tag-n-release
