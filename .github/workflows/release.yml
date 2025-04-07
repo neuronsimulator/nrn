@@ -95,9 +95,9 @@ jobs:
         run: |
           gh release download ${{ needs.tag-n-release.outputs.rel_tag }} --pattern 'nrn-full-src-package*' --output nrn.tar.gz
           tar xf nrn.tar.gz
-          python -m pip install -r nrn_requirements.txt
+          python -m pip install -r nrn/nrn_requirements.txt
           # we build a simple configuration to save on CI time
-          cmake -B build -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_MPI=OFF -DNMODL_ENABLE_PYTHON_BINDINGS=OFF -DNRN_ENABLE_CORENEURON=OFF .
+          cmake -B build -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_MPI=OFF -DNMODL_ENABLE_PYTHON_BINDINGS=OFF -DNRN_ENABLE_CORENEURON=OFF -S nrn/
           cmake --build build --parallel $(nproc)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
