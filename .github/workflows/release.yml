@@ -73,6 +73,33 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  test-full-src-package:
+    runs-on: ubuntu-latest
+    needs: tag-n-release
+    steps:
+      - name: Install apt packages
+        run: |
+          apt-get install -y bison flex libreadline-dev libfl-dev
+
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version : '3.18'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build nrn-full-src-package
+        run: |
+        gh release download ${{ needs.tag-n-release.outputs.rel_tag }} --pattern 'nrn-full-src-package*' --output nrn.tar.gz
+        tar xf nrn.tar.gz
+        python -m pip install -r nrn_requirements.txt
+        # we build a simple configuration to save on CI time
+        cmake -B build -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_MPI=OFF -DNMODL_ENABLE_PYTHON_BINDINGS=OFF -DNRN_ENABLE_CORENEURON=OFF .
+        cmake --build build --parallel $(nproc)
+
   windows-installer:
     needs: tag-n-release
     uses: neuronsimulator/nrn/.github/workflows/windows.yml@master
