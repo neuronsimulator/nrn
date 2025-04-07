@@ -75,11 +75,11 @@ jobs:
 
   test-full-src-package:
     runs-on: ubuntu-latest
-    needs: tag-n-release
+    needs: nrn-full-src-package
     steps:
       - name: Install apt packages
         run: |
-          apt-get install -y bison flex libreadline-dev libfl-dev
+          sudo apt-get install -y bison flex libreadline-dev libfl-dev
 
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
