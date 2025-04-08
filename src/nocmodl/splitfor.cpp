@@ -29,6 +29,32 @@ static bool assign_non_range(List* lst) {
     return b;
 }
 
+static bool not_allowed(List* lst) {
+    // b = false when some statements occur
+    bool b{false};
+    for (Item* q = lst->next; q != lst; q = q->next) {
+        if (q->itemtype == SYMBOL) {
+            Symbol* s = SYM(q);
+            switch (s->type) {
+            case IF:
+            case FROM:
+            case VERBATIM:
+            case '[':
+                b = true;
+                break;
+            }
+            if (s->type == NAME && s->subtype & PROCED) {
+                b = true;
+            }
+        }
+        if (b) {
+            break;
+        }
+    }
+    return b;
+}
+
+
 static void split_printlist(List* lst) {
     std::unordered_map<Item*, bool> items{};
     // item Rangevar before "=", insert "_ZFOR{"
@@ -64,9 +90,9 @@ bool splitfor() {
         called = true;
         // if there is a breakpoint block with at least one current and assigns
         // only range variables.
-        if (brkpnt_exists && currents->next != currents && !electrode_current) {
+        if (brkpnt_exists && currents->next != currents) {  // && !electrode_current) {
             // check for assignment to non-range variable
-            if (!assign_non_range(modelfunc)) {
+            if (!assign_non_range(modelfunc) and !not_allowed(modelfunc)) {
                 split_cur_ = true;
             }
         }
