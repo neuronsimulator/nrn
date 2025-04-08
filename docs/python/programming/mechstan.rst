@@ -73,7 +73,7 @@ MechanismStandard (Parameter Control)
 
             from neuron import h, gui
 
-            soma = h.Section(name="soma")
+            soma = h.Section("soma")
             def pname(msname):
                 s = h.ref('')
                 for i in range(-1, 4):
@@ -81,7 +81,7 @@ MechanismStandard (Parameter Control)
                     print(f'\n{msname}   vartype={i}')
                     for j in range(ms.count()):
                         k = ms.name(s, j)
-                        print('%-5d %-20s size=%d' % (j, s[0], k))
+                        print(f'{j:<5} {s[0]:<20} size={k}')
 
             def ptype():
                 msname = h.ref('')
@@ -90,7 +90,7 @@ MechanismStandard (Parameter Control)
                     for j in range(mt.count()):
                         mt.select(j)
                         mt.selected(msname)
-                        print('\n\n{msname[0]} mechanismtype={j}')
+                        print(f'\n\n{msname[0]} mechanismtype={j}')
                         pname(msname[0])
 
 
@@ -185,9 +185,9 @@ MechanismStandard (Parameter Control)
 
             from neuron import h, gui
 
-            soma = h.Section(name='soma')
-            axon = h.Section(name='axon')
-            dend = [h.Section(name='dend[%d]' % i) for i in range(3)]
+            soma = h.Section('soma')
+            axon = h.Section('axon')
+            dend = [h.Section(f'dend[{i}]' for i in range(3)]
 
             axon.insert(h.hh)
             for sec in dend:
@@ -195,7 +195,7 @@ MechanismStandard (Parameter Control)
 
             h.xpanel("Updated when MechanismStandard is changed")
             for i, sec in enumerate(dend):
-                h.xvalue("dend[%d](0.5).pas.g" % i, sec(0.5).pas._ref_g)
+                h.xvalue(f"dend[{i}](0.5).pas.g", sec(0.5).pas._ref_g)
 
             h.xpanel()
 
@@ -259,7 +259,7 @@ MechanismStandard (Parameter Control)
 
             from neuron import h
 
-            s = h.Section(name='soma')
+            s = h.Section('soma')
             s.insert(h.hh)
             s(0.5).hh.gnabar = 0.5
 

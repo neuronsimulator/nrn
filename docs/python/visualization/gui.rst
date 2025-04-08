@@ -236,44 +236,63 @@ than the number in the ``*panel_scroll:`` resource in the
 are shown in a scroll box so that they do not take up so much screen 
 space. 
  
-See :func:`xpanel` for hoc functions to generate panels 
+See :func:`xpanel` for NEURON functions to generate panels 
 
 .. code-block::
     python
     
-    from neuron import h
-    
+    from neuron import h, gui
+    import __main__
+
+    # we use refs so NEURON can see these as they change
+    tempstr = h.ref("slider.................")
+    xx = h.ref(0)
+    x = h.ref(0.1)
+
+
+    # we can also have NEURON use variable names within __main__
+    y = 0
+    z = 0
+
+    # GUI callbacks
+    def on_push_button():
+        print("released button")
+
+    def on_radio_button(value):
+        print(f"selected radio button {value}")
+
+    def on_slide():
+        tempstr[0] = f"slider for xx = {xx[0]}"
+
+    def on_checkbox():
+        print(f"state y is {y}")
+
     # pop up example panel 
-    strdef tempstr 
-    tempstr = "slider................." 
-    x=.1 
-    xx = 0 
-    y=0 
-    z=0 
     h.xpanel("Example Panel") 
-    h.xbutton("PushButton", "print \"released button\"") 
+    h.xbutton("PushButton", on_push_button) 
     h.xlabel("Following two are for variable x") 
-    h.xvalue("Value Editor", "x", 0, "print x") 
-    h.xvalue("Default Value Editor for variable x", "x", 1, "print x") 
-    h.xcheckbox("Checkbox", &y, "print \"state y is \", y") 
-    h.xstatebutton("StateButton", &z, "print \"state z is \", z") 
+    h.xvalue("Value Editor", x, 0, lambda: print(x[0])) 
+    h.xvalue("Default Value Editor for variable x", x, 1, lambda: print(x[0]))
+    h.xcheckbox("Checkbox", (__main__, "y"), on_checkbox) 
+    h.xstatebutton("StateButton", (__main__, "z"), lambda: print(f"state z is {z}"))
     h.xmenu("Example Menu") 
-    h.xbutton("Item 1", "print \"selected item 1\"") 
-    h.xbutton("Item 2", "print \"selected item 2\"") 
-    h.xcheckbox("Checkbox", &y, "print \"state y is \", y") 
-    h.xradiobutton("Radio 1", "print 1") 
-    h.xradiobutton("Radio 2", "print 2") 
-    h.xradiobutton("Radio 3", "print 3") 
+    h.xbutton("Item 1", lambda: print("selected item 1")) 
+    h.xbutton("Item 2", lambda: print("selected item 2"))
+    h.xcheckbox("Checkbox", (__main__, "y"), on_checkbox) 
+    h.xradiobutton("Radio 1", lambda: on_radio_button(1)) 
+    h.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
+    h.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
     h.xmenu() 
     h.xlabel("Following 3 are mutually exclusive") 
-    h.xradiobutton("Radio 1", "print 1") 
-    h.xradiobutton("Radio 2", "print 2") 
-    h.xradiobutton("Radio 3", "print 3") 
-    h.xvarlabel(tempstr) 
-    h.xslider(&xx, 0, 100, "sprint(tempstr, \"slider for xx = %g\", xx)") 
-    h.xpanel() 
+    h.xradiobutton("Radio 1", lambda: on_radio_button(1)) 
+    h.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
+    h.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
+    h.xvarlabel(tempstr)
+    h.xslider(xx, 0, 100, on_slide)
+    h.xpanel()
 
-
+.. image:: ../images/panel.png
+    :align: center
      
 
 Button
