@@ -49,6 +49,10 @@ urls.website = "https://neuron.yale.edu/neuron/"
 wheel.packages = []
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 
+[[tool.scikit-build.overrides]]
+if.platform-system = "darwin"
+cmake.build-type = "Fast"
+
 [tool.scikit-build.cmake.define]
 # for linux, we pass the readline and ncurses dirs
 # for macos, we pass the same + X11 dirs
@@ -63,7 +67,7 @@ NRN_ENABLE_RX3D = { default = "ON", env = "NRN_ENABLE_RX3D" }
 NRN_RX3D_OPT_LEVEL = { default = "0", env = "NRN_RX3D_OPT_LEVEL" }
 # interviews is always enabled
 NRN_ENABLE_INTERVIEWS = { default = "ON", env = "NRN_ENABLE_INTERVIEWS" }
-IV_ENABLE_X11_DYNAMIC = "ON"
+IV_ENABLE_X11_DYNAMIC = { default = "ON", env = "IV_ENABLE_X11_DYNAMIC" }
 # specific options
 NRN_ENABLE_PYTHON_DYNAMIC = "ON"
 NRN_ENABLE_MODULE_INSTALL = "OFF"
