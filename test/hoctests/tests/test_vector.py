@@ -33,3 +33,7 @@ def unusable_function(x):
 
 
 expect_err("vec.apply(unusable_function)")
+
+# check works with ints and not just floats
+vec.apply(int)
+assert list(vec) == [4.0, -1.0, 17.0]

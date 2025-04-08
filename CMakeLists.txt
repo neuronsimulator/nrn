@@ -515,7 +515,9 @@ cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 # =============================================================================
 # Enable NMODL code-generator support
 # =============================================================================
-if(NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON)
+if(NRN_ENABLE_NMODL
+   OR NRN_ENABLE_CORENEURON
+   OR NRN_ENABLE_DOCS)
   # NMODL Python build dependencies
   nrn_find_python_module(MODULE jinja2 REQUIRED)
   # N.B. `nrn_find_python_module` uses the _importable_ name of the package to find it, _not_ the
@@ -719,6 +721,7 @@ if(NRN_ENABLE_DOCS)
     # IPython notebook execution doesn't have enough magic to preload ASan
     message(FATAL_ERROR "macOS + ASan + docs is not supported")
   endif()
+
   # Do we need to set extra environment variables to find NEURON?
   set(NRN_DOCS_COMMAND_PREFIX ${CMAKE_COMMAND} -E env)
   if(NOT NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
@@ -761,51 +764,78 @@ if(NRN_ENABLE_DOCS)
     VERBATIM)
 
   # =============================================================================
+  # Setup notebooks. Due to https://github.com/executablebooks/MyST-NB/issues/421 we cannot use the
+  # `myst_nb` extension and sphinx to execute the notebooks
+  # =============================================================================
+  include(cmake/PythonNotebookHelper.cmake)
+  set(notebook_directories "docs/tutorials" "docs/rxd-tutorials" "docs/nmodl")
+
+  foreach(dir ${notebook_directories})
+    file(GLOB notebook_files "${dir}/*.ipynb")
+    foreach(nb_file ${notebook_files})
+      get_filename_component(nb_filename "${nb_file}" NAME)
+      string(REGEX REPLACE "[^a-zA-Z0-9_]" "_" sanitized_filename "${nb_filename}")
+      set(target_name "notebook_${sanitized_filename}")
+      add_notebook(
+        "${target_name}"
+        INPUT_PATH
+        "${nb_file}"
+        ENV
+        ${NRN_RUN_FROM_BUILD_DIR_ENV}
+        NEURON_MODULE_OPTIONS="-nogui"
+        WORKING_DIRECTORY
+        "${PROJECT_SOURCE_DIR}/docs")
+      list(APPEND all_notebooks "${target_name}")
+      list(APPEND all_notebooks_clean "clean_${target_name}")
+    endforeach()
+  endforeach()
+
+  add_custom_target(notebooks COMMENT "Build all of the notebooks in-place")
+  add_dependencies(notebooks ${all_notebooks})
+  add_custom_target(notebooks-clean COMMENT "Clean-up all of the notebooks in-place")
+  add_dependencies(notebooks-clean ${all_notebooks_clean})
+
+  # =============================================================================
   # Setup Sphinx documentation
   # =============================================================================
+  function(add_sphinx_target target)
+    add_custom_target(
+      ${target}
+      COMMAND ${NRN_DOCS_COMMAND_PREFIX} ${SPHINX_EXECUTABLE} -j auto -b html
+              "${PROJECT_SOURCE_DIR}/docs" "${PROJECT_SOURCE_DIR}/docs/_build"
+      COMMAND echo "Copy/Paste to Browser file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
+      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+      COMMENT "Generating documentation with Sphinx")
+  endfunction()
 
-  # Target to execute && convert notebooks to html. Note that neuron must be available for python
-  # import, so we use NRN_RUN_FROM_BUILD_DIR_ENV. See docs/README.md.
-  add_custom_target(
-    notebooks
-    COMMAND ${NRN_DOCS_COMMAND_PREFIX} NEURON_MODULE_OPTIONS="-nogui" bash
-            ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs)
+  add_sphinx_target(sphinx)
+
   if(NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
     message(STATUS "**Not** making the notebooks target depend on the rest of the NEURON build.")
     message(STATUS "Documentation building will probably fail if you haven't installed NEURON.")
   else()
-    # We need NEURON to execute the notebooks. If we're building documentation as part of a normal
-    # build, this means we need to schedule the documenation targets sufficiently late in the build.
-    add_dependencies(notebooks hoc_module rxdmath)
+    # We need NEURON and NMODL to execute the notebooks. If we're building documentation as part of
+    # a normal build, this means we need to schedule the documentation targets sufficiently late in
+    # the build.
+    foreach(notebook ${all_notebooks})
+      add_dependencies(${notebook} _nmodl hoc_module rxdmath nrnivmodl_dependency)
+    endforeach()
+    add_dependencies(sphinx _nmodl hoc_module rxdmath)
+    add_dependencies(doxygen nmodl_gen_sources)
   endif()
 
-  add_custom_target(
-    sphinx
-    COMMAND ${NRN_DOCS_COMMAND_PREFIX} ${SPHINX_EXECUTABLE} -j auto -b html
-            "${PROJECT_SOURCE_DIR}/docs" "${PROJECT_SOURCE_DIR}/docs/_build"
-    COMMAND echo "Copy/Paste to Browser file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
-    COMMENT "Generating documentation with Sphinx")
-
-  # Executing notebooks will add outputs in-place. We don't want those committed to the repo. This
-  # commands cleans them out.
-  add_custom_target(
-    notebooks-clean
-    COMMAND ${NRN_DOCS_COMMAND_PREFIX} bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh --clean
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs)
+  # a custom target that first builds the notebooks and doxygen, then runs sphinx
+  add_sphinx_target(_sphinx_with_deps)
+  add_dependencies(_sphinx_with_deps doxygen notebooks)
 
   # =============================================================================
   # Build full docs
   # =============================================================================
   add_custom_target(
     docs
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target doxygen
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target notebooks
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target sphinx
-    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target notebooks-clean
     COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
     COMMENT "Generating full documentation")
+  add_dependencies(docs _sphinx_with_deps)
 endif()
 
 # =============================================================================
