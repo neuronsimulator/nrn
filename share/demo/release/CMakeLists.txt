@@ -9,9 +9,4 @@ set(SOURCE_FILES
     nacaex.mod
     nachan.mod
     release.mod)
-
-if(WIN32)
-  file(MAKE_DIRECTORY "${NRN_BUILD_SHARE_DIR}/demo/release")
-endif()
-
-file(COPY ${SOURCE_FILES} DESTINATION "${NRN_BUILD_SHARE_DIR}/demo/release")
+file(COPY ${SOURCE_FILES} DESTINATION ${NRN_BUILD_SHARE_DIR}/demo/release)
