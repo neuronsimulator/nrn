@@ -63,12 +63,13 @@ jobs:
     - name: Upload nrn-full-src-package to release
       run: |
         filename="nrn-full-src-package-${{ needs.tag-n-release.outputs.rel_tag }}.tar.gz"
+        topdir="nrn-${{ needs.tag-n-release.outputs.rel_tag }}"
         # taken from:
         # https://stackoverflow.com/a/67389978
         git ls-files --recurse-submodules > nrn_files
         # we also need the .git dir for now
         find .git >> nrn_files
-        cat nrn_files | tar caf ${filename} -T-
+        cat nrn_files | tar caf ${filename} --xform s:^:${topdir}/: -T-
         gh release upload ${{ needs.tag-n-release.outputs.rel_tag }} ${filename}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
