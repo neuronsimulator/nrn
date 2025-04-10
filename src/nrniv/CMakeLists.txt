@@ -394,14 +394,8 @@ if(NRN_ENABLE_MUSIC)
                               PROPERTIES INCLUDE_DIRECTORIES ${MUSIC_INCDIR})
 endif()
 
-if(NRN_COVERAGE_FILES)
-  foreach(f ${NRN_COVERAGE_FILES})
-    set_property(
-      SOURCE ${PROJECT_SOURCE_DIR}/${f}
-      APPEND
-      PROPERTY COMPILE_FLAGS ${NRN_COVERAGE_FLAGS})
-  endforeach()
-endif()
+# Maybe NRN_COVERAGE_FILES mentions a file compiled by this CMakeLists.txt
+nrn_enable_coverage_files()
 
 # =============================================================================
 # All source directories to include
