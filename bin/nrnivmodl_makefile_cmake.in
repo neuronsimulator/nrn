@@ -66,7 +66,7 @@ ifeq ($(origin CC), default)
     CC = @CMAKE_C_COMPILER@
     CXX = @CMAKE_CXX_COMPILER@
 endif
-CFLAGS = @BUILD_TYPE_C_FLAGS@ @CMAKE_C_FLAGS@
+CFLAGS = @BUILD_TYPE_C_FLAGS@ @CMAKE_C_FLAGS@ @C11_STANDARD_COMPILE_OPTION@
 CXXFLAGS = @BUILD_TYPE_CXX_FLAGS@ @CMAKE_CXX_FLAGS@ @CXX11_STANDARD_COMPILE_OPTION@
 
 COMPILE = $(CC) $(CFLAGS) @NRN_COMPILE_DEFS_STRING@ @NRN_COMPILE_FLAGS_STRING@
@@ -139,7 +139,7 @@ mech_lib_static: mod_func.o $(mod_objs) $(nrn_lib) build_always
 
 mod_func.o: mod_func.cpp
 	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
-	$(COMPILE) $(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@
+	$(CXXCOMPILE) $(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@
 
 # Generic build c->o. Need PIC for shared lib
 $(OBJS_DIR)/%.o: $(MODC_DIR)/%.c | $(OBJS_DIR)

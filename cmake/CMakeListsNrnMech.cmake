@@ -68,6 +68,7 @@ endforeach()
 
 # PGI add --c++11;-A option for c++11 flag
 string(REPLACE ";" " " CXX11_STANDARD_COMPILE_OPTION "${CMAKE_CXX11_STANDARD_COMPILE_OPTION}")
+set(C11_STANDARD_COMPILE_OPTION "${CMAKE_C11_STANDARD_COMPILE_OPTION}")
 
 # Compiler flags depending on cmake build type from BUILD_TYPE_<LANG>_FLAGS
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
