@@ -69,14 +69,19 @@ jobs:
         git ls-files --recurse-submodules > nrn_files
         # we also need the .git dir for now
         find .git >> nrn_files
-        cat nrn_files | tar caf ${filename} --xform s:^:${topdir}/: -T-
+        # cannot use --xform as it screws up the symbolic links. So
+        # do a normal tar, untar into topdir, and tar again.
+        mkdir -p tmp/$topdir
+        tar -c -T nrn_files | tar -x -C tmp/$topdir
+        (cd tmp && tar caf ../$filename $topdir)
+        rm -rf tmp
         gh release upload ${{ needs.tag-n-release.outputs.rel_tag }} ${filename}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   test-full-src-package:
     runs-on: ubuntu-latest
-    needs: nrn-full-src-package
+    needs: [nrn-full-src-package, tag-n-release]
     steps:
       - name: Install apt packages
         run: |
@@ -94,11 +99,12 @@ jobs:
 
       - name: Build nrn-full-src-package
         run: |
+          topdir="nrn-${{ needs.tag-n-release.outputs.rel_tag }}"
           gh release download ${{ needs.tag-n-release.outputs.rel_tag }} --pattern 'nrn-full-src-package*' --output nrn.tar.gz
           tar xf nrn.tar.gz
-          python -m pip install -r nrn/nrn_requirements.txt
+          python -m pip install -r ${topdir}/nrn_requirements.txt
           # we build a simple configuration to save on CI time
-          cmake -B build -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_MPI=OFF -DNMODL_ENABLE_PYTHON_BINDINGS=OFF -DNRN_ENABLE_CORENEURON=OFF -S nrn/
+          cmake -B build -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_MPI=OFF -DNMODL_ENABLE_PYTHON_BINDINGS=OFF -DNRN_ENABLE_CORENEURON=OFF -S ${topdir}/
           cmake --build build --parallel $(nproc)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
