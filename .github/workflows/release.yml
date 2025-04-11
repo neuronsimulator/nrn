@@ -76,7 +76,7 @@ jobs:
 
   test-full-src-package:
     runs-on: ubuntu-latest
-    needs: nrn-full-src-package
+    needs: [nrn-full-src-package, tag-n-release]
     steps:
       - name: Install apt packages
         run: |
