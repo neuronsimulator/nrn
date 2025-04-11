@@ -553,12 +553,6 @@ else()
   target_link_libraries(nrniv_lib ${X11_LIBRARIES})
 endif()
 
-if(NRN_COVERAGE_FILES)
-  target_link_libraries(nrniv_lib ${NRN_COVERAGE_LIB})
-  target_link_libraries(modlunit ${NRN_COVERAGE_LIB})
-  target_link_libraries(nocmodl ${NRN_COVERAGE_LIB})
-endif()
-
 # =============================================================================
 # Final executable
 # =============================================================================
