@@ -20,6 +20,8 @@ if [ -d .git ] || git rev-parse --git-dir > /dev/null 2>&1; then
         echo "#define GIT_BRANCH \"$branch\""
         echo "#define GIT_CHANGESET \"${gcs}${modified}\""
         echo "#define GIT_DESCRIBE \"${describe}${modified}\""
+elif test -f _nrnversion_h ; then
+        cat _nrnversion_h
 elif test -f src/nrnoc/nrnversion.h ; then
         sed -n '1,$p' src/nrnoc/nrnversion.h
 else
