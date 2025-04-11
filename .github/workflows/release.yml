@@ -67,9 +67,8 @@ jobs:
         # taken from:
         # https://stackoverflow.com/a/67389978
         git ls-files --recurse-submodules > nrn_files
-        # we can avoid .git  if we save the generated build/src/nrnoc/nrnversion.h
-        bash git2nrnversion_h.sh > _nrnversion_h
-        echo _nrnversion_h >> nrn_files
+        # we also need the .git dir for now
+        find .git >> nrn_files
         # cannot use --xform as it screws up the symbolic links. So
         # do a normal tar, untar into topdir, and tar again.
         mkdir -p tmp/$topdir
