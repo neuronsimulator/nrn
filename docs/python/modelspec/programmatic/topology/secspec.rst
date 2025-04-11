@@ -70,8 +70,8 @@ stack by the following commands. *Use this only as a last resort.*
 
             from neuron import h
             
-            soma = h.Section(name='soma')
-            apical = h.Section(name='apical')
+            soma = h.Section('soma')
+            apical = h.Section('apical')
             stims = [h.IClamp(soma(i / 4.)) for i in range(5)] + [h.IClamp(apical(0.5))]
             for stim in stims: 
                 x = stim.get_loc() 
@@ -128,8 +128,8 @@ stack by the following commands. *Use this only as a last resort.*
 
             from neuron import h
 
-            soma = h.Section(name='soma')
-            apical = h.Section(name='apical')
+            soma = h.Section('soma')
+            apical = h.Section('apical')
 
             # get a number to allow pushing by number
             soma_id = h.this_section(sec=soma)

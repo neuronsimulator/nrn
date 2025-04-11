@@ -25,8 +25,8 @@ SectionBrowser
             python
 
             from neuron import h, gui
-            soma = h.Section(name='soma')
-            dend = h.Section(name='dend')
+            soma = h.Section('soma')
+            dend = h.Section('dend')
             sl = h.SectionList([soma])  # only the soma will be shown
             sb = h.SectionBrowser(sl)
             
@@ -59,8 +59,8 @@ SectionBrowser
             python
 
             from neuron import h, gui
-            soma = h.Section(name='soma')
-            axon = h.Section(name='axon')
+            soma = h.Section('soma')
+            axon = h.Section('axon')
 
             sb = h.SectionBrowser()
             sb.select(sec=axon)        
@@ -92,8 +92,8 @@ SectionBrowser
             python
 
             from neuron import h, gui
-            soma = h.Section(name='soma')
-            axon = h.Section(name='axon')
+            soma = h.Section('soma')
+            axon = h.Section('axon')
 
             def select(sec):
                 print(f'select: {sec} {type(sec)}')
@@ -135,8 +135,8 @@ SectionBrowser
             python
 
             from neuron import h, gui
-            soma = h.Section(name='soma')
-            axon = h.Section(name='axon')
+            soma = h.Section('soma')
+            axon = h.Section('axon')
 
             def select(sec):
                 print(f'select: {sec} {type(sec)}')

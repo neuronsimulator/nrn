@@ -572,7 +572,7 @@ Vector
                   from neuron import h
                   import pylab as plt, numpy as np
                   h.load_file('stdrun.hoc')
-                  sec = h.Section(name='sec')
+                  sec = h.Section('sec')
                   sec.insert(h.pas)
                   inp = np.zeros(500)
                   inp[50:250] = 1
@@ -594,17 +594,17 @@ Vector
             python
         
             from neuron import h, gui
-            import numpy
+            import numpy as np
 
             # create a geometry
-            soma = h.Section(name='soma')
+            soma = h.Section('soma')
 
             # insert variables for sodium ions
-            soma.insert('na_ion')
+            soma.insert(h.na_ion)
 
             # driving stimulus
-            t = h.Vector(numpy.linspace(0, 2 * numpy.pi, 50))
-            y = h.Vector(numpy.sin(t))
+            t = h.Vector(np.linspace(0, 2 * np.pi, 50))
+            y = h.Vector(np.sin(t))
 
             # play the stimulus into soma(0.5)'s ina
             # the last True means to interpolate; it's not the default, but unless
@@ -1043,9 +1043,10 @@ Vector
             
             from neuron import h
             import neuron
-            import numpy
+            import numpy as np
 
-            a = numpy.array([5, 1, 6], 'd')
+            # the 'd' here indicates that this is an array of doubles
+            a = np.array([5, 1, 6], 'd')
             v = h.Vector()
 
             v.from_double(3, neuron.numpy_element_ref(a, 0))
@@ -2481,10 +2482,10 @@ Vector
             python
 
             from neuron import h
-            import numpy
+            import numpy as np
 
             # set vec to the squares of 51 values from 0 to 5
-            vec = h.Vector(numpy.linspace(0, 5, 51))
+            vec = h.Vector(np.linspace(0, 5, 51))
             vec.pow(2)
 
             vec1 = h.Vector()

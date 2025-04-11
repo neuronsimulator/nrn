@@ -815,6 +815,8 @@ WARN_LOGFILE           =
 
 INPUT                  = @PROJECT_SOURCE_DIR@/src
 INPUT                 += @PROJECT_SOURCE_DIR@/test
+INPUT                 += @PROJECT_BINARY_DIR@/src/nmodl/ast
+INPUT                 += @PROJECT_BINARY_DIR@/src/nmodl/visitors
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -871,6 +873,7 @@ RECURSIVE              = YES
 
 EXCLUDE               += @PROJECT_SOURCE_DIR@/src/scopmath
 EXCLUDE               += @PROJECT_SOURCE_DIR@/src/sundials
+EXCLUDE               += @PROJECT_SOURCE_DIR@/src/nmodl/language/templates
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded

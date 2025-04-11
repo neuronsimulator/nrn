@@ -1,0 +1,128 @@
+# Test Suite
+
+This page describe the status of NMODL test suite. The goal of test suite is to cover all NMODL language constructs and test implementation of lexer, parser, ast and visitors.
+
+## Legend
+
+The following symbols are used in the document to descrive the status :
+
+* ✅ = Test implemented
+* ❌ = Test doesn't exist
+* ❓ = Unclear
+
+## Status
+
+| Token | Lexer |
+| ----- | -------------- |
+|TITLE | ✅ |
+|CONSTANT | ✅  |
+|INDEPENDENT | ✅ |
+|ASSIGNED | ✅ |
+|STATE | ✅ |
+|INITIAL | ✅ |
+|DERIVATIVE | ✅ |
+|SOLVE | ✅ |
+|USING | ✅ |
+|WITH | ✅ |
+|DISCRETE | ✅ |
+|FROM | ✅ |
+|TO | ✅ |
+|BY | ✅ |
+|WHILE | ✅ |
+|IF | ✅ |
+|ELSE | ✅ |
+|START | ✅ |
+|STEP | ✅ |
+|SOLVEFOR | ✅ |
+|PROCEDURE | ✅ |
+|DEFINE | ✅ |
+|PARAMETER | ✅ |
+|EQUATION | ✅ |
+|LINEAR | ✅ |
+|NONLINEAR | ✅ |
+|FUNCTION | ✅ |
+|LOCAL | ✅ |
+| ~ | ✅ |
+|~+ | ❓ |
+|TABLE | ✅ |
+|DEPEND | ✅ |
+|BREAKPOINT | ✅ |
+|INCLUDE | ✅ |
+|FUNCTION_TABLE | ✅ |
+|PROTECT | ✅ |
+|MUTEXLOCK | ✅ |
+|MUTEXUNLOCK | ✅ |
+| &#124; &#124; | ✅ |
+| && | ✅ |
+| \> | ✅ |
+| \< | ✅ |
+| \<= | ✅ |
+| == | ✅ |
+| != | ✅ |
+| ! | ✅ |
+| \>= | ✅ |
+|VS | ✅ |
+|LAG | ✅ |
+|SWEEP | ✅ |
+|KINETIC | ✅ |
+|CONSERVE | ✅ |
+|REACTION | ✅ |
+|<-> | ✅ |
+|COMPARTMENT | ✅ |
+|UNITS | ✅ |
+|UNITSON | ✅ |
+|UNITSOFF | ✅ |
+|LONGDIFUS | ✅ |
+|NEURON | ✅ |
+|NONSPECIFIC | ✅ |
+|READ | ✅ |
+|WRITE | ✅ |
+|USEION | ✅ |
+|THREADSAFE | ✅ |
+|GLOBAL | ✅ |
+|RANGE | ✅ |
+|POINTER | ✅ |
+|BBCOREPOINTER | ✅ |
+|EXTERNAL | ✅ |
+|BEFORE | ✅ |
+|AFTER | ✅ |
+|WATCH | ✅ |
+|ELECTRODE_CURRENT | ✅ |
+|CONSTRUCTOR | ✅ |
+|DESTRUCTOR | ✅ |
+|NETRECEIVE | ✅ |
+|FOR_NETCONS | ✅ |
+|CONDUCTANCE | ✅ |
+|REAL | ✅ |
+|INTEGER | ✅ |
+|DEFINEDVAR | ✅ |
+|NAME | ✅ |
+|METHOD | ✅ |
+|SUFFIX | ✅ |
+|VALENCE | ✅ |
+|DEL | ✅ |
+|DEL2 | ✅ |
+|PRIME | ✅ |
+|VERBATIM | ✅ |
+|COMMENT ENDCOMMENT | ✅ |
+|: | ✅ |
+|? | ✅ |
+|STRING | ✅ |
+|{ | ✅ |
+|} | ✅ |
+|( | ✅ |
+|) | ✅ |
+|[ | ✅ |
+|] | ✅ |
+|@ | ✅ |
+|+ | ✅ |
+|x | ✅ |
+|- | ✅ |
+|/ | ✅ |
+|= | ✅ |
+|^ | ✅ |
+|: | ✅ |
+|, | ✅ |
+|~ | ✅ |
+|. | ✅ |
+|- | ✅ |
