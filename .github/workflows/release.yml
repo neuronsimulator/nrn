@@ -69,7 +69,12 @@ jobs:
         git ls-files --recurse-submodules > nrn_files
         # we also need the .git dir for now
         find .git >> nrn_files
-        cat nrn_files | tar caf ${filename} --xform s:^:${topdir}/: -T-
+        # cannot use --xform as it screws up the symbolic links. So
+        # do a normal tar, untar into topdir, and tar again.
+        mkdir -p tmp/$topdir
+        tar -c -T nrn_files | tar -x -C tmp/$topdir
+        (cd tmp && tar caf ../$filename $topdir)
+        rm -rf tmp
         gh release upload ${{ needs.tag-n-release.outputs.rel_tag }} ${filename}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
