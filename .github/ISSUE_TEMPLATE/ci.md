@@ -1,6 +1,6 @@
 ---
 name: NEURON CI bug
-about: Bugs related to the NEURON CIs (GitHub Actions, Azure, ReadTheDocs, CodeCov)
+about: Bugs related to the NEURON CIs (GitHub Actions, ReadTheDocs, CodeCov)
 title: ''
 labels: 'bug, CI'
 assignees: ''
