@@ -189,19 +189,19 @@ PtrVector
             python
 
             from neuron import h, gui
+            import numpy as np
             import time
             
             g = h.Graph() 
-            g.size(0,10,-1,1) 
-            vec = h.Vector().indgen(0, 10, 0.1) 
-            vec.apply("sin")
+            g.size(0, 10, -1, 1) 
+            vec = h.Vector(np.sin(np.arange(0, 10.1, 0.1))
 
             pv = h.PtrVector(len(vec))
             pv.label("PtrVector")
             for i in range(len(vec)):
               pv.pset(i, vec._ref_x[i])
           
-            pv.plot(g, .1) 
+            pv.plot(g, 0.1) 
             def do_run():
                 for i in range(len(vec)):
                     vec.rotate(1)

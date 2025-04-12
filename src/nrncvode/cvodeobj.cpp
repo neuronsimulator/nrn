@@ -23,7 +23,6 @@ extern int hoc_return_type_code;
 #include "nrnpy.h"
 #include "tqueue.hpp"
 #include "mymath.h"
-#include "htlist.h"
 #include <nrnmutdec.h>
 
 #if NRN_ENABLE_THREADS
@@ -956,14 +955,12 @@ void Cvode::maxstate(bool b, NrnThread* nt) {
 }
 
 void Cvode::maxstate(double* pd) {
-    int i;
-    NrnThread* nt;
     if (maxstate_) {
-        FOR_THREADS(nt) {
+        for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
             double* m = n_vector_data(maxstate_, nt->id);
             int n = ctd_[nt->id].nvsize_;
             int o = ctd_[nt->id].nvoffset_;
-            for (i = 0; i < n; ++i) {
+            for (int i = 0; i < n; ++i) {
                 pd[i + o] = m[i];
             }
         }
@@ -971,14 +968,12 @@ void Cvode::maxstate(double* pd) {
 }
 
 void Cvode::maxacor(double* pd) {
-    int i;
-    NrnThread* nt;
     if (maxacor_) {
-        FOR_THREADS(nt) {
+        for (const NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
             double* m = n_vector_data(maxacor_, nt->id);
             int n = ctd_[nt->id].nvsize_;
             int o = ctd_[nt->id].nvoffset_;
-            for (i = 0; i < n; ++i) {
+            for (int i = 0; i < n; ++i) {
                 pd[i + o] = m[i];
             }
         }
@@ -1221,13 +1216,12 @@ int Cvode::init(double tout) {
 }
 
 int Cvode::interpolate(double tout) {
-    NrnThread* _nt;
     if (neq_ == 0) {
         t_ = tout;
         if (nth_) {
             nth_->_t = t_;
         } else {
-            FOR_THREADS(_nt) {
+            for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
                 _nt->_t = t_;
             }
         }
@@ -1241,7 +1235,7 @@ int Cvode::interpolate(double tout) {
         if (nth_) {  // lvardt
             nth_->_t = tout;
         } else {
-            FOR_THREADS(_nt) {
+            for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
                 _nt->_t = tout;  // but leave t_ at the initialization point.
             }
         }

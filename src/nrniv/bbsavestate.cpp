@@ -207,7 +207,6 @@ extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 extern cTemplate** nrn_pnt_template_;
-extern hoc_Item* net_cvode_instance_psl();
 extern void nrn_netcon_event(NetCon*, double);
 extern double t;
 typedef void (*PFIO)(int, Object*);

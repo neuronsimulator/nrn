@@ -38,10 +38,10 @@ SaveState
             from neuron.units import mV, ms
             h.load_file("stdrun.hoc")
 
-            soma = h.Section(name="soma")
+            soma = h.Section("soma")
             soma.insert(h.hh)
             soma.nseg = 51
-            cyt = rxd.Region(h.allsec(), name="cyt")
+            cyt = rxd.Region(soma.wholetree(), name="cyt")
             c = rxd.Species(cyt, name="c", d=1, initial=lambda node: 1 if node.x < 0.5 else 0)
             c2 = rxd.Species(
                 cyt, name="c2", d=0.6, initial=lambda node: 1 if node.x > 0.5 else 0
@@ -54,6 +54,8 @@ SaveState
 
             h.continuerun(5 * ms)
 
+            # this function is here solely for the demo to show the state has changed
+            # there's no need to do this in your code
             def get_state():
                 return (
                     soma(0.5).v,
@@ -70,6 +72,10 @@ SaveState
             # s.fread(file_obj) to read state from a file before restoring.
 
             h.continuerun(10 * ms)
+
+            # store the current state (don't need to do this in general, this is just to show
+            # that we're no longer here after the restore)
+            s2 = get_state()
 
             # go back to the way things were at 5 * ms (when we called s.save())
             s.restore()

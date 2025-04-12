@@ -115,7 +115,11 @@ endif()
 # Translate all MOD files to C and mark them generated
 # =============================================================================
 foreach(modfile ${NRN_MODFILE_BASE_NAMES})
-  nocmodl_mod_to_cpp(${modfile})
+  set(modfile_compat OFF)
+  if((NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY) AND modfile MATCHES "hh$")
+    set(modfile_compat ON)
+  endif()
+  nocmodl_mod_to_cpp(${modfile} ${modfile_compat})
   list(APPEND NRN_MODFILE_CPP ${PROJECT_BINARY_DIR}/${modfile}.cpp)
 endforeach()
 set_property(
@@ -204,6 +208,7 @@ set(NRN_INCLUDE_DIRS
     ${NRN_OC_SRC_DIR}
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/src/nrncvode
+    ${PROJECT_BINARY_DIR}/src/nrnmpi
     ${PROJECT_BINARY_DIR}/src/nrnoc
     ${PROJECT_BINARY_DIR}/src/nrnpython
     ${PROJECT_BINARY_DIR}/src/oc
@@ -269,9 +274,10 @@ add_dependencies(generated_source_files generate_hocusr_header)
 
 # header for dynamic mpi
 if(NRN_ENABLE_MPI_DYNAMIC)
+  file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/src/nrnmpi")
   add_custom_command(
     OUTPUT ${NRNMPI_DYNAMIC_INCLUDE_FILE}
-    COMMAND sh mkdynam.sh
+    COMMAND sh mkdynam.sh "${PROJECT_BINARY_DIR}/src/nrnmpi"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/nrnmpi
     DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.sh
             ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpidec.h)
@@ -388,14 +394,8 @@ if(NRN_ENABLE_MUSIC)
                               PROPERTIES INCLUDE_DIRECTORIES ${MUSIC_INCDIR})
 endif()
 
-if(NRN_COVERAGE_FILES)
-  foreach(f ${NRN_COVERAGE_FILES})
-    set_property(
-      SOURCE ${PROJECT_SOURCE_DIR}/${f}
-      APPEND
-      PROPERTY COMPILE_FLAGS ${NRN_COVERAGE_FLAGS})
-  endforeach()
-endif()
+# Maybe NRN_COVERAGE_FILES mentions a file compiled by this CMakeLists.txt
+nrn_enable_coverage_files()
 
 # =============================================================================
 # All source directories to include
@@ -551,12 +551,6 @@ if(IV_ENABLE_X11_DYNAMIC)
   endif()
 else()
   target_link_libraries(nrniv_lib ${X11_LIBRARIES})
-endif()
-
-if(NRN_COVERAGE_FILES)
-  target_link_libraries(nrniv_lib ${NRN_COVERAGE_LIB})
-  target_link_libraries(modlunit ${NRN_COVERAGE_LIB})
-  target_link_libraries(nocmodl ${NRN_COVERAGE_LIB})
 endif()
 
 # =============================================================================

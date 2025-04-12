@@ -39,13 +39,14 @@ jobs:
       DESIRED_CMAKE_VERSION: 3.17
       DYNAMIC_PYTHON_CMAKE_VERSION: 3.18
       PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.9' }}
-      PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.12' }}
+      PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.13' }}
       MUSIC_INSTALL_DIR: /opt/MUSIC
-      MUSIC_VERSION: 1.2.1
+      # hash of commit containing mpi4py 4 fix
+      MUSIC_VERSION: '13f312338dcccebfe74d391b1b24f1b6d816ac6c'
 
     strategy:
       matrix:
-        os: [macOS-13, ubuntu-20.04]
+        os: [macOS-13, ubuntu-22.04]
         config:
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
           - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", music: ON}
@@ -124,6 +125,8 @@ jobs:
             brew install cmake
             echo "$(brew --prefix)/opt/cmake/bin" >> $GITHUB_PATH
           fi
+          # workaround for fmt 11.1 (see https://github.com/gabime/spdlog/pull/3312)
+          brew unlink fmt
           echo "$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
           if [[ "${{matrix.os}}" == "macOS-13" ]]; then
@@ -142,10 +145,6 @@ jobs:
           sudo apt-get install build-essential ccache libopenmpi-dev \
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
             openmpi-bin flex libfl-dev bison libreadline-dev
-          # The sanitizer builds use ubuntu 22.04
-          if [[ "${{matrix.os}}" == "ubuntu-20.04" ]]; then
-            sudo apt-get install g++-7 g++-8
-          fi
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
           echo CMAKE_BUILD_PARALLEL_LEVEL=4 >> $GITHUB_ENV
           echo CTEST_PARALLEL_LEVEL=4 >> $GITHUB_ENV
@@ -155,11 +154,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-
-      - name: Clone nmodl
-        working-directory: ${{runner.workspace}}/nrn
-        run: |
-            git submodule update --init --recursive --force --depth 1 -- external/nmodl
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         if: ${{matrix.config.python_dynamic == 'ON'}}
@@ -171,7 +165,6 @@ jobs:
         if: ${{ matrix.config.python_dynamic == 'ON' }}
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install --upgrade -r external/nmodl/requirements.txt
           python -m pip install --upgrade -r ci_requirements.txt
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
@@ -183,7 +176,6 @@ jobs:
       - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install --upgrade -r external/nmodl/requirements.txt
           python -m pip install --upgrade -r ci_requirements.txt
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
@@ -207,10 +199,10 @@ jobs:
         run: |
           python3 -m venv music-venv
           source music-venv/bin/activate
-          python3 -m pip install 'mpi4py<4' cython numpy setuptools
+          python3 -m pip install 'mpi4py<=4.0.3' 'cython<=3.0.12' 'numpy<=2.2.3' 'setuptools<=70.3.0'
           sudo mkdir -p $MUSIC_INSTALL_DIR
           sudo chown -R $USER $MUSIC_INSTALL_DIR
-          curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip
+          curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/${MUSIC_VERSION}.zip
           unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
           ./autogen.sh
           # on some systems MPI library detection fails, provide exact flags/compilers
@@ -424,7 +416,7 @@ jobs:
           fi;
 
           if [ "$BUILD_MODE" == "setuptools" ]; then
-            neuron_wheel=wheelhouse/NEURON*.whl;
+            neuron_wheel=wheelhouse/*.whl;
             # test with virtual environment
             ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel
             # test with global installation
