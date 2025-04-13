@@ -53,6 +53,12 @@ setup_venv() {
 
 }
 
+if [[ "$1" == "osx" && "$ARCHFLAGS" == "-arch x86_64 -arch arm64" ]]; then
+  echo "Building universal2 readline and ncurses for macOS"
+  bash packaging/python/build_static_readline_osx.bash
+  export LDFLAGS="-L/opt/nrnwheel/universal2/readline/lib -L/opt/nrnwheel/universal2/ncurses/lib"
+  export CFLAGS="-I/opt/nrnwheel/universal2/readline/include -I/opt/nrnwheel/universal2/ncurses/include"
+fi
 
 build_wheel_linux() {
     echo "[BUILD WHEEL] Building with interpreter $1"
@@ -162,7 +168,7 @@ build_wheel_osx() {
       CMAKE_DEFS="${CMAKE_DEFS},CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
     fi
 
-    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
+    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/universal2/readline;/opt/nrnwheel/universal2/ncurses;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
 
     echo " - Calling delocate-listdeps"
     delocate-listdeps dist/*.whl
