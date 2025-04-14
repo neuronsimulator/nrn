@@ -79,7 +79,7 @@ stages:
           export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
           export NRN_BUILD_FOR_UPLOAD=1
-          export ARCHFLAGS="-arch x86_64 -arch arm64"  # For universal2
+          export ARCHFLAGS="-arch arm64 -arch x86_64"  # For universal2
           sudo mkdir -p /opt/nrnwheel/universal2
           sudo chown $USER:staff /opt/nrnwheel/universal2
           sudo chmod 755 /opt/nrnwheel/universal2

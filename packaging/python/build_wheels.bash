@@ -53,7 +53,7 @@ setup_venv() {
 
 }
 
-if [[ "$1" == "osx" && "$ARCHFLAGS" == "-arch x86_64 -arch arm64" ]]; then
+if [[ "$1" == "osx" && "$ARCHFLAGS" =~ "-arch x86_64" && "$ARCHFLAGS" =~ "-arch arm64" ]]; then
   echo "Building universal2 readline and ncurses for macOS"
   bash packaging/python/build_static_readline_osx.bash
   export LDFLAGS="-L/opt/nrnwheel/universal2/readline/lib -L/opt/nrnwheel/universal2/ncurses/lib"

@@ -41,6 +41,12 @@ export CXXFLAGS="-arch x86_64 -arch arm64 -fPIC"
     && make -j \
     && make install)
 
+# Combine readline and ncurses static libraries with libtool
+(cd "${ULOC}/readline/lib" \
+    && mv libreadline.a libreadline_orig.a \
+    && libtool -static -o libreadline.a libreadline_orig.a ../../ncurses/lib/libncurses.a \
+    && rm libreadline_orig.a)
+
 # Verify universal2
 RDL_ARCHS="$(lipo -info "${ULOC}/readline/lib/libreadline.a")"
 if [[ ! "${RDL_ARCHS}" =~ "x86_64" || ! "${RDL_ARCHS}" =~ "arm64" ]]; then

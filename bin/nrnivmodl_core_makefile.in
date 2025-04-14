@@ -22,6 +22,22 @@ ifeq ($(OS_NAME), Darwin)
   endif
 endif
 
+# Set UNIVERSAL2 to TRUE for macOS with both x86_64 and arm64 in ARCHFLAGS
+UNIVERSAL2 = @UNIVERSAL2@
+$(info ARCHFLAGS = $(ARCHFLAGS))
+$(info UNIVERSAL2 = $(UNIVERSAL2))
+
+# Define ARX and ARR macros for archive operations
+ifeq ($(UNIVERSAL2),TRUE)
+  # Use libtool for universal2 on macOS
+  ARX = mkdir -p $(MOD_OBJS_DIR)/libcoreneuron-core; cp \$(1) $(MOD_OBJS_DIR)/libcoreneuron-core/libcoreneuron-core.a
+  ARR = libtool -static -o
+else
+  # Use ar for single architecture or non-macOS (Linux, etc.)
+  ARX = cd $(MOD_OBJS_DIR)/libcoreneuron-core && ar x
+  ARR = ar r
+endif
+
 # CoreNEURON installation directories
 CORENRN_BIN_DIR := $(ROOT)/bin
 CORENRN_LIB_DIR := $(ROOT)/lib
@@ -159,22 +175,23 @@ coremech_lib_shared: $(ALL_OBJS) $(ENGINEMECH_OBJ) build_always
 	mkdir -p $(MOD_OBJS_DIR)/libcoreneuron-core
 	rm -f $(MOD_OBJS_DIR)/libcoreneuron-core/*.o
 	# --output is only supported by modern versions of ar
-	(cd $(MOD_OBJS_DIR)/libcoreneuron-core && ar x $(CORENRN_LIB_DIR)/libcoreneuron-core.a)
+	( $(call ARX,$(CORENRN_LIB_DIR)/libcoreneuron-core.a) )
 	$(CXX_SHARED_LIB_CMD) $(ENGINEMECH_OBJ) -o ${COREMECH_LIB_PATH} $(ALL_OBJS) \
 	  -I$(CORENRN_INC_DIR) $(INCFLAGS) \
 	  @CORENEURON_LINKER_START_GROUP@ \
-	  $(MOD_OBJS_DIR)/libcoreneuron-core/*.o @CORENEURON_LINKER_END_GROUP@ \
-		$(LDFLAGS) ${SONAME_OPTION} \
-		-Wl,-rpath,$(CORENRN_LIB_DIR) -L$(CORENRN_LIB_DIR)
+	  $(if $(filter TRUE,$(UNIVERSAL2)),$(MOD_OBJS_DIR)/libcoreneuron-core/libcoreneuron-core.a,$(MOD_OBJS_DIR)/libcoreneuron-core/*.o) \
+	  @CORENEURON_LINKER_END_GROUP@ \
+	  $(LDFLAGS) ${SONAME_OPTION} \
+	  -Wl,-rpath,$(CORENRN_LIB_DIR) -L$(CORENRN_LIB_DIR)
 	# cleanup
-	rm $(MOD_OBJS_DIR)/libcoreneuron-core/*.o
+	rm -f $(MOD_OBJS_DIR)/libcoreneuron-core/*.o
 
 # build static library of mechanisms
 coremech_lib_static: $(ALL_OBJS) $(ENGINEMECH_OBJ) build_always
 	# make a libcorenrnmech.a by copying libcoreneuron-core.a and then appending
 	# the newly compiled objects
 	cp $(CORENRN_LIB_DIR)/libcoreneuron-core.a ${COREMECH_LIB_PATH}
-	ar r ${COREMECH_LIB_PATH} $(ENGINEMECH_OBJ) $(ALL_OBJS)
+	$(ARR) ${COREMECH_LIB_PATH} $(ENGINEMECH_OBJ) $(ALL_OBJS)
 
 # compile cpp files to .o
 $(MOD_OBJS_DIR)/%.o: $(MOD_TO_CPP_DIR)/%.cpp | $(MOD_OBJS_DIR)
