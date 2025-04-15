@@ -125,6 +125,10 @@ build_wheel_osx() {
     echo " - Installing build requirements"
     cp packaging/python/build_requirements.txt "${python_requirements_path}"
 
+    if [ -z "$MACOSX_DEPLOYMENT_TARGET" ]; then
+        MACOSX_DEPLOYMENT_TARGET=$(python -c "import sysconfig; print(sysconfig.get_platform().split('-')[1])")
+    fi
+
     if [[ "$ARCHFLAGS" =~ "-arch x86_64" && "$ARCHFLAGS" =~ "-arch arm64" ]]; then
         UNIVERSAL2=1
     else
