@@ -89,6 +89,9 @@ endif()
 configure_file(_config_params.py.in "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
                @ONLY)
 
+# Maybe NRN_COVERAGE_FILES mentions a file compiled by this CMakeLists.txt
+nrn_enable_coverage_files()
+
 # Install package files that were created in build (e.g. .py.in)
 install(
   DIRECTORY ${PROJECT_BINARY_DIR}/share/lib/python
@@ -188,6 +191,12 @@ if(NRN_ENABLE_MODULE_INSTALL)
   endif()
   if(NRN_ENABLE_MUSIC)
     list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--enable-music")
+  endif()
+  if(NRN_ENABLE_CORENEURON)
+    list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--enable-coreneuron")
+  endif()
+  if(NRN_ENABLE_DOCS)
+    list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--enable-nmodl-docs")
   endif()
   list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--build-lib=${NRN_PYTHON_BUILD_LIB}")
 

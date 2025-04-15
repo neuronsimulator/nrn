@@ -394,14 +394,8 @@ if(NRN_ENABLE_MUSIC)
                               PROPERTIES INCLUDE_DIRECTORIES ${MUSIC_INCDIR})
 endif()
 
-if(NRN_COVERAGE_FILES)
-  foreach(f ${NRN_COVERAGE_FILES})
-    set_property(
-      SOURCE ${PROJECT_SOURCE_DIR}/${f}
-      APPEND
-      PROPERTY COMPILE_FLAGS ${NRN_COVERAGE_FLAGS})
-  endforeach()
-endif()
+# Maybe NRN_COVERAGE_FILES mentions a file compiled by this CMakeLists.txt
+nrn_enable_coverage_files()
 
 # =============================================================================
 # All source directories to include
@@ -562,12 +556,6 @@ if(IV_ENABLE_X11_DYNAMIC)
   endif()
 else()
   target_link_libraries(nrniv_lib PRIVATE ${X11_LIBRARIES})
-endif()
-
-if(NRN_COVERAGE_FILES)
-  target_link_libraries(nrniv_lib PRIVATE ${NRN_COVERAGE_LIB})
-  target_link_libraries(modlunit ${NRN_COVERAGE_LIB})
-  target_link_libraries(nocmodl ${NRN_COVERAGE_LIB})
 endif()
 
 # =============================================================================

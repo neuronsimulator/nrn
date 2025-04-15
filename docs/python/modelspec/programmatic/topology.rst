@@ -24,9 +24,9 @@ This document describes the construction and manipulation of a stylized topology
         .. code::
 
             dend = h.Section()
-            dend = h.Section(name='dend')
+            dend = h.Section('dend')
             dend = h.Section(cell=mycell)
-            dend = h.Section(name='dend', cell=mycell)
+            dend = h.Section('dend', cell=mycell)
 
     Description:
         Creates a new section. If no cell argument is specified, the name argument (optional) will be returned via ``str(s)`` or ``s.hname()``; if no name is provided, one will be automatically generated.
@@ -36,9 +36,9 @@ This document describes the construction and manipulation of a stylized topology
 
         .. code::
 
-            soma = h.Section(name='soma')
-            axon = h.Section(name='axon')
-            dend = [h.Section(name=f'dend[{i}]') for i in range(3)]
+            soma = h.Section('soma')
+            axon = h.Section('axon')
+            dend = [h.Section(f'dend[{i}]') for i in range(3)]
             for sec in h.allsec():
                 print(sec)
 
@@ -67,8 +67,8 @@ This document describes the construction and manipulation of a stylized topology
                 def __init__(self):
                     self.id = self._ids.next()
                     # create the morphology and connect it
-                    self.soma = h.Section(name='soma', cell=self)
-                    self.dend = h.Section(name='dend', cell=self)
+                    self.soma = h.Section('soma', cell=self)
+                    self.dend = h.Section('dend', cell=self)
                     self.dend.connect(self.soma(0.5))
 
             # create two cells
@@ -127,9 +127,9 @@ This document describes the construction and manipulation of a stylized topology
         .. code::
 
             from neuron import h, gui
-            soma = h.Section(name='soma')
-            axon = h.Section(name='axon')
-            dend = [h.Section(name=f'dend[{i}]') for i in range(3)]
+            soma = h.Section('soma')
+            axon = h.Section('axon')
+            dend = [h.Section(f'dend[{i}]') for i in range(3)]
             for sec in dend:
                 sec.connect(soma(1), 0)
 
@@ -157,7 +157,7 @@ This document describes the construction and manipulation of a stylized topology
         .. code::
 
             from neuron import h
-            sl = [h.Section(name=f"s_{i}") for i in range(4)]
+            sl = [h.Section(f"s_{i}") for i in range(4)]
             for i, sec in enumerate(sl[1:]):
                 sec.connect(sl[i](1))
 
@@ -309,12 +309,12 @@ This document describes the construction and manipulation of a stylized topology
             python
 
             >>> from neuron import h
-            >>> soma = h.Section(name='soma')
-            >>> dend1 = h.Section(name='dend1')
-            >>> dend2 = h.Section(name='dend2')
-            >>> dend3 = h.Section(name='dend3')
-            >>> dend4 = h.Section(name='dend4')
-            >>> dend5 = h.Section(name='dend5')
+            >>> soma = h.Section('soma')
+            >>> dend1 = h.Section('dend1')
+            >>> dend2 = h.Section('dend2')
+            >>> dend3 = h.Section('dend3')
+            >>> dend4 = h.Section('dend4')
+            >>> dend5 = h.Section('dend5')
             >>> dend2.connect(soma)
             dend2
             >>> dend1.connect(soma)
@@ -337,7 +337,7 @@ This document describes the construction and manipulation of a stylized topology
             1.0
             >>> dend2.subtree()
             [dend2, dend4, dend5, dend3]
-            >>> dend7 = h.Section(name='dend7')
+            >>> dend7 = h.Section('dend7')
             >>> dend7.subtree()
             [dend7]
             >>> dend1.subtree()
@@ -362,12 +362,12 @@ This document describes the construction and manipulation of a stylized topology
             python
 
             >>> from neuron import h
-            >>> soma = h.Section(name='soma')
-            >>> dend1 = h.Section(name='dend1')
-            >>> dend2 = h.Section(name='dend2')
-            >>> dend3 = h.Section(name='dend3')
-            >>> dend4 = h.Section(name='dend4')
-            >>> dend5 = h.Section(name='dend5')
+            >>> soma = h.Section('soma')
+            >>> dend1 = h.Section('dend1')
+            >>> dend2 = h.Section('dend2')
+            >>> dend3 = h.Section('dend3')
+            >>> dend4 = h.Section('dend4')
+            >>> dend5 = h.Section('dend5')
             >>> dend2.connect(soma)
             dend2
             >>> dend1.connect(soma)
@@ -390,7 +390,7 @@ This document describes the construction and manipulation of a stylized topology
             1.0
             >>> dend2.wholetree()
             [soma, dend1, dend2, dend4, dend5, dend3]
-            >>> dend7 = h.Section(name='dend7')
+            >>> dend7 = h.Section('dend7')
             >>> dend7.wholetree()
             [dend7]
             >>> soma.wholetree()
@@ -547,9 +547,9 @@ This document describes the construction and manipulation of a stylized topology
         .. code::
 
             from neuron import h, gui
-            soma = h.Section(name='soma')
-            axon = h.Section(name='axon')
-            dend = [h.Section(name=f'dend[{i}]') for i in range(3)]
+            soma = h.Section('soma')
+            axon = h.Section('axon')
+            dend = [h.Section(f'dend[{i}]') for i in range(3)]
             for section in h.allsec():
                 if h.issection('s.*', sec=section):
                     print(section)

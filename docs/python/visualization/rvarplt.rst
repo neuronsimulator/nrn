@@ -60,10 +60,10 @@ RangeVarPlot
 
             from neuron import h, gui
 
-            dend1 = h.Section(name='dend1')
-            dend2 = h.Section(name='dend2')
+            dend1 = h.Section('dend1')
+            dend2 = h.Section('dend2')
 
-            for sec in h.allsec():
+            for sec in [dend1, dend2]:
                 sec.nseg = sec.L = 501
                 sec.diam = 1
 
@@ -92,10 +92,10 @@ RangeVarPlot
 
             from neuron import h, gui
 
-            dend1 = h.Section(name='dend1')
-            dend2 = h.Section(name='dend2')
+            dend1 = h.Section('dend1')
+            dend2 = h.Section('dend2')
 
-            for sec in h.allsec():
+            for sec in [dend1, dend2]:
                 sec.nseg = sec.L = 501
                 sec.diam = 1
 
@@ -189,7 +189,7 @@ RangeVarPlot
             import bokeh.plotting as b
             import math
 
-            dend = h.Section(name='dend')
+            dend = h.Section('dend')
             dend.nseg = 55
             dend.L = 6.28
 
@@ -271,13 +271,14 @@ RangeVarPlot
 
 
     Syntax:
-        ``rvp.origin(x, sec=section)``
+        ``rvp.origin(x)``
 
 
     Description:
-        Defines the origin (location 0) of the space plot as ``section(x)``.
-        The default is usually 
-        suitable unless you want to have several rangvarplots in one graph 
+        Defines the origin (location 0) of the space plot as ``x``.
+        This is the value that is returned by :meth:`RangeVarPlot.left`.
+        The default of 0 is usually 
+        suitable unless you want to have several RangeVarPlots in one graph 
         in which case this function is used to arrange all the plots relative 
         to each other. 
 
@@ -295,7 +296,8 @@ RangeVarPlot
 
 
     Description:
-        returns the coordinate of the beginning of the path. 
+        returns the coordinate of the beginning of the path. This is typically
+        0 but can be changed by calling :meth:`RangeVarPlot.origin`.
 
          
 

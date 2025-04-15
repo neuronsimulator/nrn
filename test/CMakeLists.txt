@@ -24,6 +24,7 @@ add_executable(
   unit_tests/container/node.cpp
   unit_tests/node_order_optim/permutations.cpp
   unit_tests/utils/enumerate.cpp
+  unit_tests/utils/Sprintf.cpp
   unit_tests/oc/hoc_interpreter.cpp
   cover/unit_tests/cover.cpp)
 set(catch2_targets testneuron)
@@ -814,3 +815,14 @@ endif()
 
 # Add tests that are configured using external repositories
 add_subdirectory(external)
+
+# ============================================
+# Test NMODL
+# ============================================
+if((NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON) AND NRN_ENABLE_TESTS)
+  add_subdirectory(nmodl/transpiler/unit)
+  add_subdirectory(nmodl/transpiler/integration)
+  if(NRN_ENABLE_PYTHON AND NOT NRN_SANITIZERS)
+    add_subdirectory(nmodl/transpiler/usecases)
+  endif()
+endif()

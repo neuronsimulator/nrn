@@ -108,9 +108,9 @@ SectionList
             python
 
             >>> from neuron import h
-            >>> s = h.Section(name='s')
-            >>> t = h.Section(name='t')
-            >>> u = h.Section(name='u')
+            >>> s = h.Section('s')
+            >>> t = h.Section('t')
+            >>> u = h.Section('u')
             >>> t.connect(s)
             t
             >>> u.connect(s)
