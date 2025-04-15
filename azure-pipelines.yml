@@ -28,6 +28,60 @@ stages:
   - stage: BuildTestDeploy
     jobs:
 
+    - job: 'ManyLinuxWheels'
+      timeoutInMinutes: 45
+      pool:
+        vmImage: 'ubuntu-22.04'
+      strategy:
+        matrix:
+          Python39:
+            python.version: '3.9'
+          Python310:
+            python.version: '3.10'
+          Python311:
+            python.version: '3.11'
+          Python312:
+            python.version: '3.12'
+          Python313:
+            python.version: '3.13'
+
+      steps:
+
+      # Secure files documentation:
+      #   https://docs.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops
+      #   NOTE: when uploading new secure files, access must be permitted from the Azure pipeline interface (check message there)
+      - task: DownloadSecureFile@1
+        name: mpt_headersSF
+        displayName: 'Download mpt_headers secure file'
+        inputs:
+          secureFile: 'mpt_headears.2.21.tar.gz'
+
+      # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
+      # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
+      - script: |
+          sudo mkdir -p /opt/nrnwheel/mpt
+          sudo tar -zxf $(mpt_headersSF.secureFilePath) --directory /opt/nrnwheel/mpt
+          docker run --rm \
+            -w /root/nrn \
+            -v $PWD:/root/nrn \
+            -v /opt/nrnwheel/mpt:/nrnwheel/mpt \
+            -e NEURON_NIGHTLY_TAG \
+            -e NRN_NIGHTLY_UPLOAD \
+            -e NRN_RELEASE_UPLOAD \
+            -e SETUPTOOLS_SCM_PRETEND_VERSION \
+            -e NRN_BUILD_FOR_UPLOAD=1 \
+            'docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64' \
+            packaging/python/build_wheels.bash linux $(python.version) coreneuron
+        displayName: 'Building ManyLinux Wheel'
+
+      - script: |
+          sudo apt update
+          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
+        displayName: 'Install Test System Dependencies'
+
+      - template: ci/azure-wheel-test-upload.yml
+
+
     # Jobs to build OSX wheels natively
     - job: 'MacOSWheels'
       timeoutInMinutes: 90
@@ -35,6 +89,22 @@ stages:
         vmImage: 'macOS-13'
       strategy:
         matrix:
+          Python39:
+            python.version: '3.9'
+            python.org.version: '3.9.13'
+            python.installer.name: 'macos11.pkg'
+          Python310:
+            python.version: '3.10'
+            python.org.version: '3.10.11'
+            python.installer.name: 'macos11.pkg'
+          Python311:
+            python.version: '3.11'
+            python.org.version: '3.11.7'
+            python.installer.name: 'macos11.pkg'
+          Python312:
+            python.version: '3.12'
+            python.org.version: '3.12.0'
+            python.installer.name: 'macos11.pkg'
           Python313:
             python.version: '3.13'
             python.org.version: '3.13.0'
