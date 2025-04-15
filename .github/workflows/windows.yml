@@ -39,6 +39,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ inputs.tag }}
+        submodules: recursive
 
     - name: Retrieve rxd test data
       run: |
