@@ -48,10 +48,7 @@ urls.website = "https://neuron.yale.edu/neuron/"
 # delegate installation to CMake
 wheel.packages = []
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
-
-[[tool.scikit-build.overrides]]
-if.platform-system = "darwin"
-cmake.build-type = "Fast"
+install.strip = false
 
 [tool.scikit-build.cmake.define]
 # for linux, we pass the readline and ncurses dirs
