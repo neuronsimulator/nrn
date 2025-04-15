@@ -34,7 +34,7 @@ ifeq ($(UNIVERSAL2),TRUE)
   ARR = libtool -static -o
 else
   # Use ar for single architecture or non-macOS (Linux, etc.)
-  ARX = cd $(MOD_OBJS_DIR)/libcoreneuron-core && ar x
+  ARX = cd $(MOD_OBJS_DIR)/libcoreneuron-core && ar x \$(1)
   ARR = ar r
 endif
 
