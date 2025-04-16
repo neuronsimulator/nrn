@@ -53,11 +53,25 @@ setup_venv() {
 
 }
 
-if [[ "$1" == "osx" && "$ARCHFLAGS" =~ "-arch x86_64" && "$ARCHFLAGS" =~ "-arch arm64" ]]; then
-  echo "Building universal2 readline and ncurses for macOS"
+if [[ "$1" == "osx" ]]; then
+    if [[ "$ARCHFLAGS" =~ "-arch x86_64" && "$ARCHFLAGS" =~ "-arch arm64" ]]; then
+        ARCHTYPE=universal2
+    elif [[ "$ARCHFLAGS" == "-arch x86_64" ]]; then
+        ARCHTYPE=x86_64
+    elif [[ "$ARCHFLAGS" == "-arch arm64" ]]; then
+        ARCHTYPE=arm64
+    else
+        echo "Error: Cannot determine ARCHTYPE from ARCHFLAGS \"$ARCHFLAGS\""
+        exit 1
+    fi
+    export ARCHTYPE # passed to build_static_readline_osx.bash
+fi
+
+if [[ "$1" == "osx" ]]; then
+  echo "Building $ARCHTYPE readline and ncurses for macOS"
   bash packaging/python/build_static_readline_osx.bash
-  export LDFLAGS="-L/opt/nrnwheel/universal2/readline/lib -L/opt/nrnwheel/universal2/ncurses/lib"
-  export CFLAGS="-I/opt/nrnwheel/universal2/readline/include -I/opt/nrnwheel/universal2/ncurses/include"
+  export LDFLAGS="-L/opt/nrnwheel/$ARCHTYPE/readline/lib -L/opt/nrnwheel/$ARCHTYPE/ncurses/lib"
+  export CFLAGS="-I/opt/nrnwheel/$ARCHTYPE/readline/include -I/opt/nrnwheel/$ARCHTYPE/ncurses/include"
 fi
 
 build_wheel_linux() {
@@ -129,7 +143,7 @@ build_wheel_osx() {
         MACOSX_DEPLOYMENT_TARGET=$(python -c "import sysconfig; print(sysconfig.get_platform().split('-')[1])")
     fi
 
-    if [[ "$ARCHFLAGS" =~ "-arch x86_64" && "$ARCHFLAGS" =~ "-arch arm64" ]]; then
+    if [ "$ARCHTYPE" == "universal2"]; then
         UNIVERSAL2=1
     else
         UNIVERSAL2=0
@@ -155,15 +169,13 @@ build_wheel_osx() {
 
     if [ "$UNIVERSAL2" == "1" ]; then
         CMAKE_DEFS="${CMAKE_DEFS},CMAKE_OSX_ARCHITECTURES=x86_64;arm64"
-    fi
-
-    if [ "$UNIVERSAL2" == "1" ]; then
-        PLAT_NAME="macosx_${MACOSX_DEPLOYMENT_TARGET//./_}_universal2"
     else
-        PLAT_NAME="macosx_${MACOSX_DEPLOYMENT_TARGET//./_}_$(uname -m)"
+        CMAKE_DEFS="${CMAKE_DEFS},CMAKE_OSX_ARCHITECTURES=$ARCHTYPE"
     fi
 
-    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/universal2/readline;/opt/nrnwheel/universal2/ncurses;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel --plat-name="$PLAT_NAME"
+    PLAT_NAME="macosx_${MACOSX_DEPLOYMENT_TARGET//./_}_$ARCHTYPE"
+
+    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/$ARCHTYPE/readline;/opt/nrnwheel/$ARCHTYPE/ncurses;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel --plat-name="$PLAT_NAME"
 
     echo " - Calling delocate-listdeps"
     delocate-listdeps dist/*.whl
