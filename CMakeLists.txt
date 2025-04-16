@@ -994,8 +994,8 @@ if(NRN_ENABLE_TESTS)
   cpp_cc_git_submodule(rxd/testdata)
   set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "${backup}")
   add_subdirectory(test)
-else()
-
+elseif(NOT WIN32)
+  # Windows installs the demo separately
   add_subdirectory(share/demo/release)
 
   # `rm` was added in 3.17, and `remove_directory` was deprecated
