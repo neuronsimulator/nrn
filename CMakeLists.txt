@@ -639,8 +639,6 @@ if(NRN_ENABLE_CORENEURON)
 
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/coreneuron)
 
-  # By default `nrnivmodl` should look for `nrnivmodl-core` in the NEURON install prefix.
-  set(cnrn_prefix "${NRN_INSTALL_DATA_PREFIX}")
   # CoreNEURON exports this list of flags as a property; turn it into a variable in this scope. If
   # CoreNEURON is installed externally then this is exported into coreneuron-config.cmake.
   get_property(CORENRN_LIB_LINK_FLAGS GLOBAL PROPERTY CORENRN_LIB_LINK_FLAGS)
