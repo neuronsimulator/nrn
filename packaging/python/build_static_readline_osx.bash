@@ -36,27 +36,32 @@ curl -L -o readline-7.0.tar.gz https://ftp.gnu.org/gnu/readline/readline-7.0.tar
 # Set  flags
 export CFLAGS="$ARCHFLAGS -fPIC"
 export CXXFLAGS="$ARCHFLAGS -fPIC"
-if [ "ARCHFLAGS" == "universal2" ]; then
+hostarg=""
+if [ "$ARCHTYPE" == "universal2" ]; then
     export MACOSX_DEPLOYMENT_TARGET=11.0  # Required for universal2?
-    hostarg=""
-elif [ "ARCHFLAGS" == "x86_64" ]; then
+elif [ "$ARCHTYPE" == "x86_64" ]; then
     export MACOSX_DEPLOYMENT_TARGET=10.15
-    hostarg="--nhost=x86_64-apple-darwin"
-elif [ "ARCHFLAGS" == "arm64" ]; then
+    if [ "$ARCHTYPE" != $(uname -m) ]; then
+        hostarg="--host=x86_64-apple-darwin"
+    fi
+elif [ "$ARCHTYPE" == "arm64" ]; then
     export MACOSX_DEPLOYMENT_TARGET=10.15
-    hostarg="--nhost=aarch64-apple-darwin"
+    if [ "$ARCHTYPE" != $(uname -m) ]; then
+        hostarg="--host=aarch64-apple-darwin"
+    fi
 fi
+echo "hostarg=$hostarg"
 
 # Build ncurses (static only, no executables)
 (cd ncurses-6.4 \
-    && ./configure --prefix="${ULOC}/ncurses" --without-shared --without-tests \
+    && ./configure --prefix="${ULOC}/ncurses" --without-shared --without-tests $hostarg \
     && make clean \
     && make -j \
     && make install)
 
 # Build readline (static only)
 (cd readline-7.0 \
-    && ./configure --prefix="${ULOC}/readline" --disable-shared \
+    && ./configure --prefix="${ULOC}/readline" --disable-shared $hostarg \
     && make clean \
     && make -j \
     && make install)
