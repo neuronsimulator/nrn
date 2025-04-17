@@ -232,6 +232,13 @@ include(cmake/ExternalProjectHelper.cmake)
 include(cmake/modules/FindPythonModule.cmake)
 include(cmake/Coverage.cmake)
 
+# see: https://github.com/neuronsimulator/nrn/issues/3387
+if(NRN_LINUX_BUILD
+   AND NRN_LINUX_VARIANT MATCHES "debian"
+   AND CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+  list(APPEND NMODL_EXTRA_CXX_FLAGS "-fno-plt")
+endif()
+
 # set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and CMAKE_BUILD_TYPE_DEFAULT
 set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast FastDebug)
 include(ReleaseDebugAutoFlags)
