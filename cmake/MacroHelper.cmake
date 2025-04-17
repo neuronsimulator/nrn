@@ -198,17 +198,22 @@ endmacro(nrn_install_dir_symlink)
 # macos package on an arm64 architecture even if the mpi library has no slice for x86_64.
 # ========================================================================
 macro(nrn_mpi_find_package)
-  if("arm64" IN_LIST CMAKE_OSX_ARCHITECTURES
-     AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES
+  if(APPLE
+     AND NRN_ENABLE_MPI
      AND NRN_ENABLE_MPI_DYNAMIC)
+    # Temporarily unset CMAKE_OSX_ARCHITECTURES to use host architecture for MPI tests
     set(_temp ${CMAKE_OSX_ARCHITECTURES})
     unset(CMAKE_OSX_ARCHITECTURES CACHE)
     find_package(MPI REQUIRED)
     set(CMAKE_OSX_ARCHITECTURES
         ${_temp}
-        CACHE INTERNAL "" FORCE)
-    set(NRN_UNIVERSAL2_BUILD ON)
+        CACHE STRING "Target architectures for macOS" FORCE)
+    # Flag universal2 builds for downstream use
+    if("arm64" IN_LIST _temp AND "x86_64" IN_LIST _temp)
+      set(NRN_UNIVERSAL2_BUILD ON)
+    endif()
   else()
+    # Standard MPI detection for non-dynamic MPI or non-macOS platforms
     find_package(MPI REQUIRED)
   endif()
 endmacro()
