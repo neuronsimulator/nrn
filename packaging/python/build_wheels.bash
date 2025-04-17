@@ -119,6 +119,8 @@ build_wheel_local() {
     fi
     export NRN_ENABLE_CORENEURON
 
+    # on some distributions, we need a newer pip to be able to use `--config-settings`
+    python -m pip install --upgrade pip
     python -m pip wheel -v --no-deps --config-settings=build-dir=_build --wheel-dir=wheelhouse .
 
     deactivate
