@@ -1,9 +1,0 @@
-include CMakeLists.txt
-include *.h *.in *.sh
-graft cmake
-graft src
-graft bin
-graft share/demo
-graft share/examples
-include share/lib/*
-graft share/lib/hoc
