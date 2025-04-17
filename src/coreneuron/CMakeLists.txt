@@ -600,6 +600,17 @@ include(MakefileBuildOptions)
 # =============================================================================
 
 # =============================================================================
+# Might be UNIVERSAL2
+# =============================================================================
+if(APPLE
+   AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES
+   AND "arm64" IN_LIST CMAKE_OSX_ARCHITECTURES)
+  set(UNIVERSAL2 TRUE)
+else()
+  set(UNIVERSAL2 FALSE)
+endif()
+
+# =============================================================================
 # Copy first into build directory as it will be used for special-core
 # =============================================================================
 configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl_core_makefile.in
