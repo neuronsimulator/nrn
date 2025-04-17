@@ -26,15 +26,17 @@ function(create_nrnmech)
 
   foreach(MOD_FILE IN LISTS MOD_FILES)
     get_filename_component(MOD_STUB "${MOD_FILE}" NAME_WLE)
+    # nocmodl has trouble with symlinks, so we always use the real path
+    get_filename_component(MOD_ABSPATH "${MOD_FILE}" REALPATH)
     set(CPP_FILE "cpp/${MOD_STUB}.cpp")
-    file(RELATIVE_PATH MOD_SHORT "${CMAKE_SOURCE_DIR}" "${MOD_FILE}")
+    file(RELATIVE_PATH MOD_SHORT "${CMAKE_SOURCE_DIR}" "${MOD_ABSPATH}")
 
     list(APPEND L_MECH_DECLARE "extern \"C\" void _${MOD_STUB}_reg(void)\;")
     list(APPEND L_MECH_PRINT "fprintf(stderr, \" \\\"${MOD_SHORT}\\\"\")\;")
     list(APPEND L_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
     add_custom_command(
-      COMMAND neuron::nocmodl -o "${CMAKE_CURRENT_BINARY_DIR}/cpp" "${MOD_FILE}"
+      COMMAND neuron::nocmodl -o "${CMAKE_CURRENT_BINARY_DIR}/cpp" "${MOD_ABSPATH}"
       OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}"
       DEPENDS neuron::nocmodl)
 
@@ -56,15 +58,17 @@ function(create_nrnmech)
 
     foreach(MOD_FILE IN LISTS MOD_FILES)
       get_filename_component(MOD_STUB "${MOD_FILE}" NAME_WLE)
+      # nmodl _may_ have trouble with symlinks, so we always use the real path
+      get_filename_component(MOD_ABSPATH "${MOD_FILE}" REALPATH)
       set(CPP_FILE "cpp_core/${MOD_STUB}.cpp")
-      file(RELATIVE_PATH MOD_SHORT "${CMAKE_SOURCE_DIR}" "${MOD_FILE}")
+      file(RELATIVE_PATH MOD_SHORT "${CMAKE_SOURCE_DIR}" "${MOD_ABSPATH}")
 
       list(APPEND L_CORE_MECH_DECLARE "extern int void _${MOD_STUB}_reg(void)\;")
       list(APPEND L_CORE_MECH_PRINT "fprintf(stderr, \" \\\"${MOD_SHORT}\\\"\")\;")
       list(APPEND L_CORE_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
       add_custom_command(
-        COMMAND "${NMODL}" -o "${CMAKE_CURRENT_BINARY_DIR}/cpp_core" "${MOD_FILE}"
+        COMMAND "${NMODL}" -o "${CMAKE_CURRENT_BINARY_DIR}/cpp_core" "${MOD_ABSPATH}"
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}"
         DEPENDS "${NMODL}")
 
