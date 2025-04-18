@@ -1,292 +1,57 @@
-#!/usr/bin/env bash
-set -e
+#!/usr/bin/env sh
 
-ARCH=@host_cpu@
-MODSUBDIR=@modsubdir@
-USER_PWD="$PWD"
+# =============================================================================
+# Simple wrapper for CMake that builds mod files
+# =============================================================================
 
-if [ -z "$NRNHOME" ] ; then
-  prefix=@prefix@
-  exec_prefix=@exec_prefix@
-  bindir=@bindir@
-  libdir=@libdir@
+set -eu
+
+srcdir="${PWD}"
+bindir="$(uname -m)"
+
+# Where the `*.cmake` files are located
+NRN_CMAKE_PREFIX_PATH_DEFAULT="$(readlink -f "$(dirname "${0}")/../lib/cmake/")"
+if [ -n "${CMAKE_PREFIX_PATH:-}" ]; then
+    CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}:${NRN_CMAKE_PREFIX_PATH_DEFAULT}"
 else
-  prefix="$NRNHOME"
-  exec_prefix="${prefix}/${ARCH}"
-  bindir="${prefix}/bin"
-  libdir="${prefix}/lib"
+    CMAKE_PREFIX_PATH="${NRN_CMAKE_PREFIX_PATH_DEFAULT}"
 fi
-
-if [ -z ${CORENRNHOME+x} ] ; then
-  # CORENRNHOME wasn't set, use the install prefix
-  cnrn_prefix=@cnrn_prefix@
-else
-  cnrn_prefix="${CORENRNHOME}"
-fi
-
-if [ "${NRNHOME_EXEC}" ] ; then
-  exec_prefix="${NRNHOME_EXEC}"
-  bindir="${exec_prefix}/bin"
-  libdir="${exec_prefix}/lib"
-fi
-
-export prefix
-export bindir
-export libdir
 
 if command -v xcrun >/dev/null 2>&1; then
-    @NRN_OSX_BUILD_TRUE@export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+    @NRN_OSX_BUILD_TRUE@export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
     @NRN_OSX_BUILD_TRUE@export MACOSX_DEPLOYMENT_TARGET="@CMAKE_OSX_DEPLOYMENT_TARGET@"
     if [ -z "${MACOSX_DEPLOYMENT_TARGET}" ]; then
         unset MACOSX_DEPLOYMENT_TARGET
     fi
 fi
 
-LinkCoreNEURON=false
-UserINCFLAGS=""
-UserLDFLAGS=""
-UserCOREFLAGS=()
-UserNMODLBIN=""
-UserNMODLFLAGS=""
-
-# - options come first but can be in any order.
-while [ "$1" ] ; do
-    case "$1" in
-    -coreneuron)
-        # also run nrnivmodl-core
-        LinkCoreNEURON=true
-        shift;;
-    -incflags)
-        # extra include flags and paths (NEURON only)
-        UserINCFLAGS="$2"
-        # extra include flags and paths for CoreNEURON
-        UserCOREFLAGS+=(-i "${2}")
-        shift
-        shift;;
-    -loadflags)
-        # extra link flags, paths, libraries (NEURON only)
-        UserLDFLAGS="$2"
-        # extra lin flags, paths. libraries (CoreNEURON)
-        UserCOREFLAGS+=(-l "${2}")
-        shift
-        shift;;
-    -nmodl)
-        echo "[NMODL][warning] Code generation with NMODL is pre-alpha, lacks features and is intended only for development use"
-        UserNMODLBIN="$2"
-        UserNMODLFLAGS="--neuron $UserNMODLFLAGS"
-        shift
-        shift;;
-    -nmodlflags)
-        echo "[NMODL][warning] If sympy is enabled, NMODL needs to be found in PYTHONPATH"
-        UserNMODLFLAGS="$UserNMODLFLAGS $2"
-        shift
-        shift;;
-    -h|--help)
-        echo "Usage: nrnivmodl [options] [mod files or directories with mod files]"
-        echo "Options:"
-        echo "  -coreneuron                      Compile MOD files for CoreNEURON using nrnivmodl-core."
-        echo "  -incflags    \"include flags\"     Extra include flags and paths when MOD (C++) files are compiled."
-        echo "  -loadflags   \"link flags\"        Extra link flags, paths, and libraries when MOD (C++) files are linked."
-        echo "  -nmodl /path/to/nmodl            Path to the new NMODL transpiler for MOD files (pre-alpha, development use only)."
-        echo "  -nmodlflags  \"CLI flags\"         Additional CLI flags for new NMODL transpiler"
-        echo "  -h, --help                       Show this help message and exit."
-        echo "If no MOD files or directories provided then MOD files from current directory are used."
-        exit 0;;
-    -*)
-        echo "$1 unrecognized, check available CLI options with --help"
-        exit 1;;
-    *)
-        break;;
-    esac
-done
-
-echo "$PWD"
-
-# Mod file paths may contain spaces which make variable lists of those
-# hard to manage as space is the item separator. Furthermore, when a
-# path is used, sometimes the spaces must be escaped (eg. a Makefile
-# dependency pattern, and sometimes it is more useful for readability to
-# enclose the path in "". To work around this issue, when creating a list
-# of paths, translate the spaces for each item to +++ and after retrieval
-# of an item, retranslate back to either a space or an escaped space.
-# Only do this for cmake
-
-shopt -s nullglob
-# files is the complete list of mod files to process
-files=()
-cfiles=()
-if [ $# -gt 0 ] ; then
-  for i in "$@" ; do
-    if [ -d "$i" ] ; then
-      files+=( "$i"/*.mod )
-    elif [ "${i##*.}" = "c" ] ; then
-        cfiles+=( "$i" )
-    elif [ -e "$i" ] || [ -e "$i.mod" ] ; then
-      files+=( "$i" )
-    else
-      echo "Arg Error: \"$i\" is not a folder or mod file name or prefix"
-
-      echo ""
-      echo -n "  Mod file, folder args:"
-      for j in "$@" ; do
-        echo -n " \"$j\""
-      done
-      echo ""
-
-      exit 1
-    fi
-  done
-else
-  files=( *.mod )
-fi
-echo cfiles = $cfiles
-
-base_names=()
-for i in "${files[@]}" ; do
-  base_names+=( "$(basename "$i" .mod)" )
-done
-
-echo -n "Mod files:"
-for i in "${files[@]}" ; do
-  dir_name=$(dirname "$i")
-  echo -n " \"${i%.mod}.mod\""
-done
-echo ""
-echo ""
-
-
-if [ ! -d "$MODSUBDIR" ] ; then
-  echo "Creating '$MODSUBDIR' directory for .o files."
-  echo
-  mkdir "$MODSUBDIR"
-fi
-
-files=( "${files[@]%.mod}" )
-
-cd $MODSUBDIR
-mdir="$PWD"
-
-# construct file to be included by makefile to specify mod to c rule when
-# executed in $MODSUBDIR (child folder of launch location folder)
-# Since $(PWD) may contain spaces in the path name, use the relative path.
-# Otherwise, it is very difficult to pass around paths with spaces in
-# makefiles. However, to help the user know where things are, when
-# compiling use the full path to *.cpp
-MODMAKE=makemod2c_inc
-> "$MODMAKE"
-for i in "${files[@]}" ; do
-  case "$i" in
-    /*) f="$i";; # absolute, fine as is
-    *)  f="../$i";; # relative
-  esac
-  base_name="$(basename "$f")"
-  dir_name="$(dirname "$f")"
-  # Note: indentation for shell lines in make rules must be a tab
-  f=${f// /\\ }
-  f=${f//:/\\:}
-  echo "\
-${base_name// /\\ }.cpp: ${f}.mod \$(NOCMODL)
-	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
-	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" @NRN_NMODL_--neuron@ -o \"$mdir\" $UserNMODLFLAGS)
-
-./${base_name// /\\ }.o: ${base_name// /\\ }.cpp
-	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) ${PWD}/\$<\\\n\"
-	\$(CXXCOMPILE) -I\"$dir_name\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \"${PWD}/\$<\" -o \$@
-" >> "$MODMAKE"
-done
-
-# *.c
-cbase_names=()
-for i in "${cfiles[@]}" ; do
-  case "$i" in
-    /*) f="$i";; # absolute, fine as is
-    *)  f="../$i";; # relative
-  esac
-  base_name="$(basename "$f")"
-  cbase_names+=( "${base_name// /\\ }" )
-  dir_name="$(dirname "$f")"
-  # Note: indentation for shell lines in make rules must be a tab
-  f=${f// /\\ }
-  f=${f//:/\\:}
-  echo "\
-./${base_name// /\\ }.o: ${i}
-	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
-	\$(CCOMPILE) -I\"$dir_name\" \$(INCLUDES) @CMAKE_C_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
-" >> "$MODMAKE"
-done
-
-MODOBJS=
-
-{
-  echo '#include <stdio.h>
-#include "hocdec.h"
-extern int nrnmpi_myid;
-extern int nrn_nobanner_;
-'
-
-  for i in "${base_names[@]}" ; do
-    echo "extern \"C\" void _${i// }_reg(void);"
-  done
-
-  echo ""
-  echo "extern \"C\" void modl_reg() {"
-  echo "  if (!nrn_nobanner_) if (nrnmpi_myid < 1) {"
-  printf '    fprintf(stderr, "Additional mechanisms from files\\n");\n'
-
-  for i in "${files[@]}"
-  do
-    echo '    fprintf(stderr, " \"'"$i"'.mod\"");'
-  done
-
-  printf '    fprintf(stderr, "\\n");\n'
-
-  echo "  }"
-
-  for i in "${base_names[@]}" ; do
-    echo "  _${i// }_reg();"
-    MODOBJS="$MODOBJS ./${i// /\\ }.o"
-  done
-
-  for i in "${cbase_names[@]}" ; do
-    MODOBJS="$MODOBJS ./${i// /\\ }.o"
-  done
-
-  echo "}"
-} > mod_func.cpp
-
-echo "MODOBJS=$MODOBJS"
-
-# call nrnivmodl-core if CoreNEURON is enabled and requested via CLI
-UsingCoreNEURON=false
-@CORENEURON_ENABLED_TRUE@UsingCoreNEURON=true
-if [ "$LinkCoreNEURON" = true ] ; then
-  if [ "$UsingCoreNEURON" = true ] ; then
-    if [ "$#" -gt 1 ] ; then
-        printf "ERROR : when called with -coreneuron only 1 mod dir is accepted.\n"
-        exit 1
-    fi
-    cd "$USER_PWD"
-    "${cnrn_prefix}/bin/nrnivmodl-core" "${UserCOREFLAGS[@]}" "$@"
-    cd "$MODSUBDIR"
-  else
-    printf "ERROR : CoreNEURON support is not enabled!\n"
+# Check they are the same; if not, report an error, and force the user to choose
+default_cmakelists="${NRN_CMAKE_PREFIX_PATH_DEFAULT}/neuron/nrnivmodl.cmake"
+current_cmakelists="${srcdir}/CMakeLists.txt"
+if [ -f "${current_cmakelists}" ] && ! cmp --silent "${default_cmakelists}" "${current_cmakelists}"; then
+    printf "ERROR: %s exists and is different from %s; " "${current_cmakelists}" "${default_cmakelists}"
+    printf "please remove %s manually, " "${current_cmakelists}"
+    echo "or change to another directory, and then rerun nrnivmodl again"
     exit 1
-  fi
 fi
 
-set +e
+# copy to current dir
+cp -a "${default_cmakelists}" "${current_cmakelists}"
 
-make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" "UserNMODLBIN=$UserNMODLBIN" "UserNMODLFLAGS=$UserNMODLFLAGS" special
+# In case of no files, default to using the files in the current dir
+if [ $# -lt 1 ]; then
+    set -- ./*.mod
+fi
 
- MAKE_STATUS=$?
+# TODO what if the mod filenames contain semicolons?
+modfiles="$(printf "%s;" "$@")"
+# remove any trailing semicolons from the list
+modfiles="${modfiles%%;}"
 
- set -e
+# Configure the mod files
+cmake -S "${srcdir}" -B "${bindir}" -DMOD_FILES="${modfiles}" -DCORENEURON="@CORENEURON@"
 
- if [ $MAKE_STATUS -eq 0 ]; then
-     echo "Successfully created $MODSUBDIR/special"
- else
-     printf "\nNOTE: If you are encountering MOD file compilation errors only with NEURON version 9.0 or later\n"
-     printf "refer to the C++ migration guide at https://nrn.readthedocs.io/en/9.0.0/guide/porting_mechanisms_to_cpp.html\n\n"
- fi
-
-exit $MAKE_STATUS
+# Parallelism for the build can be set by the `CMAKE_BUILD_PARALLEL_LEVEL` env
+# variable
+CMAKE_BUILD_PARALLEL_LEVEL="${CMAKE_BUILD_PARALLEL_LEVEL:-4}"
+cmake --build "${bindir}"
