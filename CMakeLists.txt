@@ -1020,6 +1020,10 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/neuronMechMaker.cmake DESTINATIO
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_nrn.cpp.in
               ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_corenrn.cpp.in DESTINATION share/nrn)
 
+# configuration and installation of nrnivmodl and nrnivmodl-core
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/nrnivmodl.cmake
+               ${CMAKE_CURRENT_BINARY_DIR}/cmake/nrnivmodl.cmake @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cmake/nrnivmodl.cmake DESTINATION lib/cmake/neuron)
 # =============================================================================
 # Copy bash executable for windows
 # =============================================================================

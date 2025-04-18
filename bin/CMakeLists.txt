@@ -62,13 +62,31 @@ foreach(NRN_CONFIG_EXE_FILE ${NRN_CONFIG_EXE_FILES})
       WORLD_READ
       WORLD_EXECUTE)
 endforeach()
+
+# install nrnivmodl-core as nrnivmodl-core2 for now
+set(CORENEURON "CORENEURON")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl.in
+               "${CMAKE_CURRENT_BINARY_DIR}/tmp/nrnivmodl-core2" @ONLY)
+file(
+  COPY "${CMAKE_CURRENT_BINARY_DIR}/tmp/nrnivmodl-core2"
+  DESTINATION "${CMAKE_CURRENT_BINARY_DIR}"
+  FILE_PERMISSIONS
+    OWNER_READ
+    OWNER_WRITE
+    OWNER_EXECUTE
+    GROUP_READ
+    GROUP_EXECUTE
+    WORLD_READ
+    WORLD_EXECUTE)
+unset(CORENEURON)
 file(REMOVE_RECURSE "${CMAKE_CURRENT_BINARY_DIR}/bin/tmp")
 
 # =============================================================================
 # Install targets
 # =============================================================================
 install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrngui ${PROJECT_BINARY_DIR}/bin/neurondemo
-                 ${PROJECT_BINARY_DIR}/bin/nrnivmodl DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+                 ${PROJECT_BINARY_DIR}/bin/nrnivmodl ${PROJECT_BINARY_DIR}/bin/nrnivmodl-core2
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/sortspike ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe
