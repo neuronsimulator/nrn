@@ -1,9 +1,12 @@
 # CheckGitDescribeCompatibility.cmake
 #
-# Validates that git describe output is compatible with PEP 440 versioning. Normalizes the version
-# string to a PEP 440-compliant format for validation purposes. Skips validation gracefully if tags
-# are unavailable (e.g., in shallow clones). Used to check user-chosen tags, not to set PyPI package
-# versions.
+# ~~~
+# Sets PROJECT_VERSION
+# Validates that git describe output is compatible with PEP 440 versioning.
+# Normalizes the version string to a PEP 440-compliant format for validation
+# purposes. Skips validation gracefully if tags are unavailable (e.g., in shallow
+# clones). Used to check user-chosen tags, not to set PyPI package versions.
+# ~~~
 
 find_package(Git QUIET)
 if(NOT GIT_FOUND)
@@ -32,6 +35,41 @@ if(NOT GIT_EXIT_CODE EQUAL 0)
   message(STATUS "PROJECT_VERSION ${PROJECT_VERSION}")
   return()
 endif()
+
+# ~~~
+# Function to check if a version string is canonical per PEP 440
+# Usage: is_pep440_canonical_version(VERSION <version_string> RESULT <output_variable>)
+# Returns TRUE if the version matches the canonical PEP 440 format, FALSE otherwise.
+# ~~~
+function(is_pep440_canonical_version)
+  cmake_parse_arguments(ARG "" "VERSION;RESULT" "" ${ARGN})
+  if(NOT ARG_VERSION OR NOT ARG_RESULT)
+    message(FATAL_ERROR "is_pep440_canonical_version requires VERSION and RESULT arguments")
+  endif()
+
+  # ~~~
+  # PEP 440 canonical regex adapted for CMake
+  # Matches: ^([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$
+  # ~~~
+  set(regex
+      "^([1-9][0-9]*!)?([0-9]|[1-9][0-9]*)(\\.([0-9]|[1-9][0-9]*))*((a|b|rc)([0-9]|[1-9][0-9]*))?(\\.post([0-9]|[1-9][0-9]*))?(\\.dev([0-9]|[1-9][0-9]*))?$"
+  )
+  # note (0|[1-9][0-9]*) is equivalent to ([0-9]|[1-9][0-9]*)
+
+  # Check if the version matches the regex
+  string(REGEX MATCH "${regex}" match "${ARG_VERSION}")
+
+  # Set result to TRUE if matched, FALSE otherwise
+  if(match)
+    set(${ARG_RESULT}
+        TRUE
+        PARENT_SCOPE)
+  else()
+    set(${ARG_RESULT}
+        FALSE
+        PARENT_SCOPE)
+  endif()
+endfunction()
 
 # Function to normalize version string to PEP 440
 function(normalize_pep440_version input_version output_version expected_project_version)
@@ -72,9 +110,9 @@ function(normalize_pep440_version input_version output_version expected_project_
   # Normalize pre-release (a, b, rc)
   if(pre_type)
     if(pre_num)
-      set(normalized_version "${normalized_version}.${pre_type}${pre_num}")
+      set(normalized_version "${normalized_version}${pre_type}${pre_num}")
     else()
-      set(normalized_version "${normalized_version}.${pre_type}0")
+      set(normalized_version "${normalized_version}${pre_type}0")
     endif()
   endif()
 
@@ -94,13 +132,12 @@ function(normalize_pep440_version input_version output_version expected_project_
   endif()
 
   # Validate PEP 440 compliance
-  if(normalized_version
-     AND NOT
-         normalized_version
-         MATCHES
-         "^[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)*(\\.a[0-9]+|\\.b[0-9]+|\\.rc[0-9]+)?(\\.post[0-9]+)?$"
-  )
-    message(WARNING "Normalized version '${normalized_version}' is not PEP 440 compliant.")
+  is_pep440_canonical_version(VERSION ${normalized_version} RESULT result)
+  if(NOT result)
+    message(
+      WARNING
+        "From '${input_version}' Normalized version '${normalized_version}' is not PEP 440 compliant."
+    )
     set(${output_version}
         ""
         PARENT_SCOPE)
@@ -122,7 +159,7 @@ endfunction()
 normalize_pep440_version("${GIT_DESCRIBE_OUTPUT}" PEP440_VERSION EXPECTED_PROJECT_VERSION)
 
 if(PEP440_VERSION)
-  message(STATUS "PEP 440 compliant version: ${PEP440_VERSION}")
+  message(STATUS "From '${GIT_DESCRIBE_OUTPUT}', PEP 440 compliant version: ${PEP440_VERSION}")
   # Compare with PROJECT_VERSION
   set(cmake_version "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
   if(EXPECTED_PROJECT_VERSION AND NOT cmake_version STREQUAL EXPECTED_PROJECT_VERSION)
