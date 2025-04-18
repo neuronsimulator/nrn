@@ -38,7 +38,7 @@ function(create_nrnmech)
     add_custom_command(
       COMMAND neuron::nocmodl -o "${CMAKE_CURRENT_BINARY_DIR}/cpp" "${MOD_ABSPATH}"
       OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}"
-      DEPENDS neuron::nocmodl)
+      DEPENDS neuron::nocmodl "${MOD_ABSPATH}")
 
     list(APPEND L_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}")
   endforeach()
@@ -70,7 +70,7 @@ function(create_nrnmech)
       add_custom_command(
         COMMAND "${NMODL}" -o "${CMAKE_CURRENT_BINARY_DIR}/cpp_core" "${MOD_ABSPATH}"
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}"
-        DEPENDS "${NMODL}")
+        DEPENDS "${NMODL}" "${MOD_ABSPATH}")
 
       list(APPEND L_CORE_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}")
     endforeach()
