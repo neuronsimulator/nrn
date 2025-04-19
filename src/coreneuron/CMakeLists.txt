@@ -426,6 +426,7 @@ else()
   set(CORENRN_INSTALL_TARGETS
       coreneuron-core
       PARENT_SCOPE)
+  add_library(neuron::corenrn ALIAS coreneuron-core)
 endif()
 
 foreach(target coreneuron-core ${coreneuron_cuda_target})

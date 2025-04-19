@@ -2,7 +2,7 @@
 #
 function(create_nrnmech)
   set(options CORENEURON INSTALL_CPP INSTALL_MOD SPECIAL)
-  set(oneValueArgs MECHANISM_NAME)
+  set(oneValueArgs MECHANISM_NAME TARGET_NAME OUTPUT_DIR)
   cmake_parse_arguments(NRN_MECH "${options}" "${oneValueArgs}" "MOD_FILES" ${ARGN})
 
   if(NRN_MECH_CORENEURON)
@@ -13,6 +13,11 @@ function(create_nrnmech)
 
   if(NOT MECHANISM_NAME)
     set(MECHANISM_NAME neuron)
+  endif()
+
+  # Where to output the mod files
+  if(NOT OUTPUT_DIR)
+    set(OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
   endif()
 
   set(LIBNAME "nrnmech")
@@ -36,11 +41,11 @@ function(create_nrnmech)
     list(APPEND L_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
     add_custom_command(
-      COMMAND neuron::nocmodl -o "${CMAKE_CURRENT_BINARY_DIR}/cpp" "${MOD_ABSPATH}"
-      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}"
+      COMMAND neuron::nocmodl -o "${OUTPUT_DIR}/cpp" "${MOD_ABSPATH}"
+      OUTPUT "${OUTPUT_DIR}/${CPP_FILE}"
       DEPENDS neuron::nocmodl "${MOD_ABSPATH}")
 
-    list(APPEND L_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}")
+    list(APPEND L_SOURCES "${OUTPUT_DIR}/${CPP_FILE}")
   endforeach()
 
   if(NRN_MECH_CORENEURON)
@@ -68,28 +73,37 @@ function(create_nrnmech)
       list(APPEND L_CORE_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
       add_custom_command(
-        COMMAND "${NMODL}" -o "${CMAKE_CURRENT_BINARY_DIR}/cpp_core" "${MOD_ABSPATH}"
-        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}"
+        COMMAND "${NMODL}" -o "${OUTPUT_DIR}/cpp_core" "${MOD_ABSPATH}"
+        OUTPUT "${OUTPUT_DIR}/${CPP_FILE}"
         DEPENDS "${NMODL}" "${MOD_ABSPATH}")
 
-      list(APPEND L_CORE_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${CPP_FILE}")
+      list(APPEND L_CORE_SOURCES "${OUTPUT_DIR}/${CPP_FILE}")
     endforeach()
   endif()
 
-  add_library(${LIBNAME} SHARED ${L_SOURCES})
-  target_link_libraries(${LIBNAME} PUBLIC neuron::nrniv)
+  # Override the target name, but not the library name. This is useful when we are using this
+  # function in NEURON itself, since we may experience collisions in the target names
+  if(NRN_MECH_TARGET_NAME)
+    set(TARGET_NAME "${NRN_MECH_TARGET_NAME}")
+  else()
+    set(TARGET_NAME "${LIBNAME}")
+  endif()
+  add_library(${TARGET_NAME} SHARED ${L_SOURCES})
+  set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME "${LIBNAME}")
+  target_link_libraries(${TARGET_NAME} PUBLIC neuron::nrniv)
   # set_target_properties(${LIBNAME} PROPERTIES OUTPUT_NAME
   # "${LIBNAME}$<$<BOOL:${NRN_MECH_MECHANISM_NAME}>:_${NRN_MECH_MECHANISM_NAME}>")
-  install(TARGETS ${LIBNAME} DESTINATION lib)
+  install(TARGETS ${TARGET_NAME} DESTINATION lib)
 
   if(NRN_MECH_CORENEURON)
-    add_library(core${LIBNAME} SHARED ${_CORENEURON_MECH_ENG} ${L_CORE_SOURCES})
-    target_include_directories(core${LIBNAME} PRIVATE ${_CORENEURON_RANDOM_INCLUDE})
-    target_compile_options(core${LIBNAME} PRIVATE ${_CORENEURON_FLAGS})
-    target_link_libraries(core${LIBNAME} PUBLIC neuron::corenrn)
+    add_library(core${TARGET_NAME} SHARED ${_CORENEURON_MECH_ENG} ${L_CORE_SOURCES})
+    set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME "core${LIBNAME}")
+    target_include_directories(core${TARGET_NAME} PRIVATE ${_CORENEURON_RANDOM_INCLUDE})
+    target_compile_options(core${TARGET_NAME} PRIVATE ${_CORENEURON_FLAGS})
+    target_link_libraries(core${TARGET_NAME} PUBLIC neuron::corenrn)
     # set_target_properties(${LIBNAME} PROPERTIES OUTPUT_NAME
     # "${LIBNAME}$<$<BOOL:${NRN_MECH_MECHANISM_NAME}>:_${NRN_MECH_MECHANISM_NAME}>")
-    install(TARGETS core${LIBNAME} DESTINATION lib)
+    install(TARGETS core${TARGET_NAME} DESTINATION lib)
   endif()
 
   if(NRN_MECH_INSTALL_CPP)
