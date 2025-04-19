@@ -43,6 +43,11 @@ if [ $# -lt 1 ]; then
     set -- ./*.mod
 fi
 
+# In case of a single input, check if it's a directory; if it is, collect all mod files in it
+if [ $# -eq 1 ] && [ -d "${1}" ]; then
+    set -- "${1}"/*.mod
+fi
+
 # TODO what if the mod filenames contain semicolons?
 modfiles="$(printf "%s;" "$@")"
 # remove any trailing semicolons from the list
