@@ -217,3 +217,48 @@ macro(nrn_mpi_find_package)
     find_package(MPI REQUIRED)
   endif()
 endmacro()
+
+# ~~~
+# Macro to append build architecture flags to executable and its source
+# files on macOS. Arg is the executable target (e.g., mkgstates).
+# ~~~
+macro(nrn_buildarch_executable EXECUTABLE_NAME)
+  if(APPLE)
+    # Get the build architecture (set by the build system)
+    set(BUILD_ARCH "${CMAKE_SYSTEM_PROCESSOR}") # Example: "arm64" or "x86_64"
+    # Set BUILD_ARCH_FLAGS based on CMAKE_OSX_ARCHITECTURES and BUILD_ARCH
+    set(BUILD_ARCH_FLAGS "")
+    if(BUILD_ARCH AND NOT "${BUILD_ARCH}" IN_LIST CMAKE_OSX_ARCHITECTURES)
+      set(BUILD_ARCH_FLAGS "-arch ${BUILD_ARCH}")
+    endif()
+
+    get_target_property(SOURCE_FILES ${EXECUTABLE_NAME} SOURCES)
+
+    # Append BUILD_ARCH_FLAGS to each source file's COMPILE_FLAGS
+    if(BUILD_ARCH_FLAGS)
+      foreach(SOURCE_FILE IN LISTS SOURCE_FILES)
+        get_source_file_property(EXISTING_FLAGS "${SOURCE_FILE}" COMPILE_FLAGS)
+        if(EXISTING_FLAGS)
+          set(NEW_FLAGS "${EXISTING_FLAGS} ${BUILD_ARCH_FLAGS}")
+        else()
+          set(NEW_FLAGS "${BUILD_ARCH_FLAGS}")
+        endif()
+        set_source_files_properties("${SOURCE_FILE}" PROPERTIES COMPILE_FLAGS "${NEW_FLAGS}")
+      endforeach()
+
+      # Append BUILD_ARCH_FLAGS to the executable's linker flags
+      separate_arguments(ARCH_FLAGS_LIST UNIX_COMMAND "${BUILD_ARCH_FLAGS}")
+      target_link_options(${EXECUTABLE_NAME} PRIVATE ${ARCH_FLAGS_LIST})
+    endif()
+
+    # Debug output to verify settings
+    if(BUILD_ARCH_FLAGS)
+      message(
+        STATUS
+          "nrn_buildarch_executable: Applied BUILD_ARCH_FLAGS=${BUILD_ARCH_FLAGS} to ${EXECUTABLE_NAME} and source files: ${SOURCE_FILES}"
+      )
+    endif()
+  else()
+    message(STATUS "nrn_buildarch_executable ignored, only relevant to macOS (APPLE)")
+  endif()
+endmacro()
