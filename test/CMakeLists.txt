@@ -273,7 +273,7 @@ if(NRN_ENABLE_PYTHON)
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
   nrn_add_test_group(
     NAME example_nmodl
-    MODFILE_PATTERNS *.mod *.inc
+    MODFILE_PATTERNS *.mod
     SIM_DIRECTORY share/examples/nrniv/nmodl)
   set(py_exe ${NRN_DEFAULT_PYTHON_EXECUTABLE})
   set(py_preload PRELOAD_SANITIZER)
@@ -295,8 +295,8 @@ if(NRN_ENABLE_PYTHON)
 
   # independent run of each hoc and python file in test/hoc/* folders
   nrn_add_test_group(
-    NAME hoctests
-    MODFILE_PATTERNS *.mod *.inc
+      NAME hoctests
+    MODFILE_PATTERNS *.mod
     SIM_DIRECTORY test/hoctests)
   set(hoctest_utils expect_err.hoc)
   foreach(ext hoc py)
@@ -520,7 +520,7 @@ if(NRN_ENABLE_PYTHON)
     # This get used in 4 tests so make it the default and override in other tests.
     SCRIPT_PATTERNS test/coreneuron/test_spikes.py
     MODFILE_PATTERNS
-      "test/coreneuron/mod files/*.mod" "test/coreneuron/mod files/axial.inc"
+      "test/coreneuron/mod files/*.mod"
       test/pytest_coreneuron/unitstest.mod test/pytest_coreneuron/version_macros.mod
       test/gjtests/natrans.mod)
   nrn_add_test(

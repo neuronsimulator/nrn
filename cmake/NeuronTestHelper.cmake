@@ -189,28 +189,6 @@ function(nrn_add_test_group)
     set(nrnivmodl_directory "${PROJECT_BINARY_DIR}/test/nrnivmodl/${nrnivmodl_command_hash}")
     # Short-circuit if the target has already been created.
     if(NOT TARGET "${binary_target_name}")
-      # Copy modfiles from source -> build tree.
-      foreach(modfile ${modfiles})
-        # Construct the build tree path of the modfile.
-        get_filename_component(modfile_name "${modfile}" NAME)
-        set(modfile_build_path "${nrnivmodl_directory}/${modfile_name}")
-        # Add a build rule that copies this modfile from the source tree to the build tree.
-        cpp_cc_build_time_copy(
-          INPUT "${modfile}"
-          OUTPUT "${modfile_build_path}"
-          NO_TARGET)
-        # Store a list of the modfile paths in the build tree so we can declare nrnivmodl's
-        # dependency on these.
-        list(APPEND modfile_build_paths "${modfile_build_path}")
-      endforeach()
-      # Construct the names of the important output files
-      set(special "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/special")
-      # Add the custom command to generate the binaries. Get nrnivmodl from the build directory. At
-      # the moment it seems that `nrnivmodl` is generated at configure time, so there is no target
-      # to depend on and it should always be available, but it will try and link against libnrniv.so
-      # and libcorenrnmech.so so we must depend on those.
-      set(output_binaries "${special}")
-      list(APPEND nrnivmodl_dependencies nrniv_lib)
       if(NRN_ENABLE_CORENEURON AND NRN_ADD_TEST_GROUP_CORENEURON)
         list(APPEND output_binaries "${special}-core")
         if((NOT coreneuron_FOUND) AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES))
