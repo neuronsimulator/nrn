@@ -262,3 +262,44 @@ macro(nrn_buildarch_executable EXECUTABLE_NAME)
     message(STATUS "nrn_buildarch_executable ignored, only relevant to macOS (APPLE)")
   endif()
 endmacro()
+
+# ~~~
+# Macro to temporarily set CMAKE_OSX_ARCHITECTURES to universal2 (x86_64;arm64) and restore it.
+# Usage:
+#   nrn_set_universal2_begin()
+#   # Code that needs universal2 (e.g., add_subdirectory)
+#   nrn_set_universal2_end()
+# Sets universal2 only if CMAKE_SYSTEM_PROCESSOR is not in CMAKE_OSX_ARCHITECTURES.
+# ~~~
+macro(nrn_set_universal2_begin)
+  if(APPLE)
+    # Check if system processor is in target architectures
+    set(_NRN_NEED_UNIVERSAL2 FALSE)
+    if(CMAKE_SYSTEM_PROCESSOR AND NOT "${CMAKE_SYSTEM_PROCESSOR}" IN_LIST CMAKE_OSX_ARCHITECTURES)
+      set(_NRN_NEED_UNIVERSAL2 TRUE)
+    endif()
+    if(_NRN_NEED_UNIVERSAL2)
+      # Save original CMAKE_OSX_ARCHITECTURES
+      set(_NRN_ORIGINAL_OSX_ARCHITECTURES ${CMAKE_OSX_ARCHITECTURES})
+      # Set universal2 architectures
+      set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Target architectures for macOS" FORCE)
+      message(STATUS "nrn_set_universal2_begin: Set CMAKE_OSX_ARCHITECTURES to x86_64;arm64 (system: ${CMAKE_SYSTEM_PROCESSOR})")
+    else()
+      message(STATUS "nrn_set_universal2_begin: Skipped, system processor ${CMAKE_SYSTEM_PROCESSOR} already in CMAKE_OSX_ARCHITECTURES")
+    endif()
+  endif()
+endmacro()
+
+macro(nrn_set_universal2_end)
+  if(APPLE AND DEFINED _NRN_ORIGINAL_OSX_ARCHITECTURES)
+    # Restore original CMAKE_OSX_ARCHITECTURES
+    if(_NRN_ORIGINAL_OSX_ARCHITECTURES)
+      set(CMAKE_OSX_ARCHITECTURES "${_NRN_ORIGINAL_OSX_ARCHITECTURES}" CACHE STRING "Target architectures for macOS" FORCE)
+      message(STATUS "nrn_set_universal2_end: Restored CMAKE_OSX_ARCHITECTURES to ${_NRN_ORIGINAL_OSX_ARCHITECTURES}")
+    else()
+      unset(CMAKE_OSX_ARCHITECTURES CACHE)
+      message(STATUS "nrn_set_universal2_end: Unset CMAKE_OSX_ARCHITECTURES")
+    endif()
+    unset(_NRN_ORIGINAL_OSX_ARCHITECTURES)
+  endif()
+endmacro()

@@ -1,3 +1,8 @@
+# Temporarily set universal2 architectures for nmodl and its dependencies
+if(APPLE)
+  nrn_set_universal2_begin()
+endif()
+
 include(${PROJECT_SOURCE_DIR}/cmake/nmodl/FlexHelper.cmake)
 include_directories(${NMODL_PROJECT_PLATLIB_SOURCE_DIR} ${NMODL_PROJECT_PLATLIB_BINARY_DIR})
 
@@ -152,6 +157,11 @@ write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/nmodlConfigVersion
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfig.cmake"
               "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfigVersion.cmake"
         DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}lib/cmake/nmodl)
+
+# Restore original CMAKE_OSX_ARCHITECTURES
+if(APPLE)
+  nrn_set_universal2_end()
+endif()
 
 # =============================================================================
 # Build status

@@ -263,7 +263,9 @@ endif()
 include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
 cpp_cc_git_submodule(eigen)
+nrn_set_universal2_begin()
 nrn_add_external_project(fmt)
+nrn_set_universal2_end()
 set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/Random123/include/Random123"
@@ -531,7 +533,9 @@ if(NRN_ENABLE_NMODL
 
   option(SPDLOG_FMT_EXTERNAL "Force to use an external {{fmt}}" ON)
   option(SPDLOG_SYSTEM_INCLUDE "Include spdlog as a system lib" ON)
+  nrn_set_universal2_begin()
   cpp_cc_git_submodule(spdlog BUILD PACKAGE spdlog REQUIRED)
+  nrn_set_universal2_end()
   if(${CODING_CONV_PREFIX}_3RDPARTY_USE_SPDLOG)
     # See above, same logic as fmt
     set_target_properties(spdlog PROPERTIES POSITION_INDEPENDENT_CODE ON)
