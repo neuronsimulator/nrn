@@ -688,8 +688,9 @@ function(prepend_to_var var new_path)
       "${old_list}"
       PARENT_SCOPE)
 endfunction()
-set(NRN_RUN_FROM_BUILD_DIR_ENV "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
-                               "NRNHOME=${PROJECT_BINARY_DIR}")
+set(NRN_RUN_FROM_BUILD_DIR_ENV
+    "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn" "NRNHOME=${PROJECT_BINARY_DIR}"
+    "MODLUNIT=${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib")
 
 # if we do not link against Python, NMODL will complain that some of the env variables are missing
 # when building coreNEURON mod files
@@ -934,18 +935,7 @@ if(NRN_ENABLE_TESTS)
   # unexpected stderr.
   set(neurondemo_prefix
       "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}")
-  set(neurondemo_files
-      "${neurondemo_prefix}/special"
-      "${neurondemo_prefix}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}")
-
-  add_custom_command(
-    OUTPUT ${neurondemo_files}
-    COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
-            ${NRN_SANITIZER_ENABLE_ENVIRONMENT} "${PROJECT_BINARY_DIR}/bin/nrnivmodl"
-    DEPENDS nrnivmodl_dependency
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/share/nrn/demo/release
-    VERBATIM)
-
+  add_subdirectory(share/demo)
   add_custom_target(generate-neurondemo-mechanism-library ALL DEPENDS ${neurondemo_files} nrniv
                                                                       copy_share_lib_to_build)
   # Initialize the submodule *before* including the test/CMakeLists.txt that uses it. This ensures
@@ -965,7 +955,6 @@ install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib
   DESTINATION ${NRN_INSTALL_SHARE_DIR}
   PATTERN "python" EXCLUDE)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${NRN_INSTALL_SHARE_DIR})
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
         DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)

@@ -1,9 +1,13 @@
 # ~~~
-#
+# Helper functions for generating NEURON mechanism libraries directly in CMake
+# The basic idea is
+# ~~~
 function(create_nrnmech)
-  set(options CORENEURON INSTALL_CPP INSTALL_MOD SPECIAL)
-  set(oneValueArgs MECHANISM_NAME TARGET_NAME OUTPUT_DIR)
-  cmake_parse_arguments(NRN_MECH "${options}" "${oneValueArgs}" "MOD_FILES" ${ARGN})
+  set(options CORENEURON SPECIAL NMODL_NEURON_CODEGEN)
+  set(oneValueArgs MECHANISM_NAME TARGET_LIBRARY_NAME TARGET_EXECUTABLE_NAME OUTPUT_DIR
+                   NOCMODL_EXECUTABLE NMODL_EXECUTABLE)
+  set(multiValueArgs MOD_FILES NMODL_EXTRA_ARGS EXTRA_ENV)
+  cmake_parse_arguments(NRN_MECH "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   if(NRN_MECH_CORENEURON)
     if(NOT NRN_ENABLE_CORENEURON)
@@ -15,11 +19,41 @@ function(create_nrnmech)
     set(MECHANISM_NAME neuron)
   endif()
 
-  # Where to output the mod files
-  if(NOT OUTPUT_DIR)
-    set(OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+  # the `nmodl` and `nocmodl` executables are usually found through `find_program` on the user's
+  # system, but we allow overrides (for testing purposes only)
+  if(NRN_MECH_NMODL_EXECUTABLE)
+    set(NMODL_EXECUTABLE "${NRN_MECH_NMODL_EXECUTABLE}")
+  else()
+    set(NMODL_EXECUTABLE "${NMODL}")
   endif()
 
+  if(NRN_MECH_NOCMODL_EXECUTABLE)
+    set(NOCMODL_EXECUTABLE "${NRN_MECH_NOCMODL_EXECUTABLE}")
+  else()
+    set(NOCMODL_EXECUTABLE "${NOCMODL}")
+  endif()
+
+  # nmodl by default generates code for coreNEURON, so we toggle this via an option
+  if(NRN_MECH_NMODL_NEURON_CODEGEN)
+    set(NEURON_TRANSPILER_LAUNCHER ${NMODL_EXECUTABLE} --neuron)
+  else()
+    set(NEURON_TRANSPILER_LAUNCHER ${NOCMODL_EXECUTABLE})
+  endif()
+
+  # any extra environment variables that need to be passed (for testing purposes only) because CMake
+  # likes to escape and quote things, we need to do it the roundabout way...
+  if(NRN_MECH_EXTRA_ENV)
+    set(NRN_MECH_ENV_COMMAND "${CMAKE_COMMAND}" -E env ${NRN_MECH_EXTRA_ENV})
+  else()
+    set(NRN_MECH_ENV_COMMAND)
+  endif()
+
+  # Where to output the mod files
+  if(NOT NRN_MECH_OUTPUT_DIR)
+    set(NRN_MECH_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+  endif()
+
+  # The names of the output library and the executable
   set(LIBNAME "nrnmech")
   set(EXENAME "special")
 
@@ -41,11 +75,15 @@ function(create_nrnmech)
     list(APPEND L_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
     add_custom_command(
-      COMMAND neuron::nocmodl -o "${OUTPUT_DIR}/cpp" "${MOD_ABSPATH}"
-      OUTPUT "${OUTPUT_DIR}/${CPP_FILE}"
-      DEPENDS neuron::nocmodl "${MOD_ABSPATH}")
+      COMMAND ${NRN_MECH_ENV_COMMAND} ${NEURON_TRANSPILER_LAUNCHER} -o "${NRN_MECH_OUTPUT_DIR}/cpp"
+              "${MOD_ABSPATH}" ${NRN_MECH_NMODL_EXTRA_ARGS}
+      OUTPUT "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
+      COMMENT
+        "Converting ${MOD_ABSPATH} to ${NRN_MECH_OUTPUT_DIR}/${CPP_FILE} with env ${NRN_MECH_EXTRA_ENV}"
+      DEPENDS "${MOD_ABSPATH}"
+      VERBATIM)
 
-    list(APPEND L_SOURCES "${OUTPUT_DIR}/${CPP_FILE}")
+    list(APPEND L_SOURCES "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}")
   endforeach()
 
   if(NRN_MECH_CORENEURON)
@@ -73,77 +111,75 @@ function(create_nrnmech)
       list(APPEND L_CORE_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
       add_custom_command(
-        COMMAND "${NMODL}" -o "${OUTPUT_DIR}/cpp_core" "${MOD_ABSPATH}"
-        OUTPUT "${OUTPUT_DIR}/${CPP_FILE}"
-        DEPENDS "${NMODL}" "${MOD_ABSPATH}")
+        COMMAND ${NRN_MECH_ENV_COMMAND} ${NEURON_TRANSPILER_LAUNCHER} -o
+                "${NRN_MECH_OUTPUT_DIR}/cpp_core" "${MOD_ABSPATH}"
+        OUTPUT "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
+        COMMENT "Converting ${MOD_ABSPATH} to ${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
+        DEPENDS "${MOD_ABSPATH}"
+        VERBATIM)
 
-      list(APPEND L_CORE_SOURCES "${OUTPUT_DIR}/${CPP_FILE}")
+      list(APPEND L_CORE_SOURCES "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}")
     endforeach()
   endif()
 
-  # Override the target name, but not the library name. This is useful when we are using this
-  # function in NEURON itself, since we may experience collisions in the target names
-  if(NRN_MECH_TARGET_NAME)
-    set(TARGET_NAME "${NRN_MECH_TARGET_NAME}")
+  # Override the _target_ name, but not the library name. This is useful when we are using this
+  # function for building NEURON components, since we may experience collisions in the target names
+  if(NRN_MECH_TARGET_LIBRARY_NAME)
+    set(TARGET_LIBRARY_NAME "${NRN_MECH_TARGET_LIBRARY_NAME}")
   else()
-    set(TARGET_NAME "${LIBNAME}")
+    set(TARGET_LIBRARY_NAME "${LIBNAME}")
   endif()
-  add_library(${TARGET_NAME} SHARED ${L_SOURCES})
-  set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME "${LIBNAME}")
-  target_link_libraries(${TARGET_NAME} PUBLIC neuron::nrniv)
-  # set_target_properties(${LIBNAME} PROPERTIES OUTPUT_NAME
-  # "${LIBNAME}$<$<BOOL:${NRN_MECH_MECHANISM_NAME}>:_${NRN_MECH_MECHANISM_NAME}>")
-  install(TARGETS ${TARGET_NAME} DESTINATION lib)
+
+  add_library(${TARGET_LIBRARY_NAME} SHARED ${L_SOURCES})
+  set_target_properties(${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "${LIBNAME}")
+  target_link_libraries(${TARGET_LIBRARY_NAME} PUBLIC neuron::nrniv)
 
   if(NRN_MECH_CORENEURON)
-    add_library(core${TARGET_NAME} SHARED ${_CORENEURON_MECH_ENG} ${L_CORE_SOURCES})
-    set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME "core${LIBNAME}")
-    target_include_directories(core${TARGET_NAME} PRIVATE ${_CORENEURON_RANDOM_INCLUDE})
-    target_compile_options(core${TARGET_NAME} PRIVATE ${_CORENEURON_FLAGS})
-    target_link_libraries(core${TARGET_NAME} PUBLIC neuron::corenrn)
-    # set_target_properties(${LIBNAME} PROPERTIES OUTPUT_NAME
-    # "${LIBNAME}$<$<BOOL:${NRN_MECH_MECHANISM_NAME}>:_${NRN_MECH_MECHANISM_NAME}>")
-    install(TARGETS core${TARGET_NAME} DESTINATION lib)
+    add_library(core${TARGET_LIBRARY_NAME} SHARED ${_CORENEURON_MECH_ENG} ${L_CORE_SOURCES})
+    set_target_properties(${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "core${LIBNAME}")
+    target_include_directories(core${TARGET_LIBRARY_NAME} PRIVATE ${_CORENEURON_RANDOM_INCLUDE})
+    target_compile_options(core${TARGET_LIBRARY_NAME} PRIVATE ${_CORENEURON_FLAGS})
+    target_link_libraries(core${TARGET_LIBRARY_NAME} PUBLIC neuron::corenrn)
   endif()
 
-  if(NRN_MECH_INSTALL_CPP)
-    install(FILES ${L_SOURCES} DESTINATION "share/${NRN_MECH_MECHANISM_NAME}/cpp")
-    if(NRN_ENABLE_CORENEURON)
-      install(FILES ${L_CORE_SOURCES} DESTINATION "share/${NRN_MECH_MECHANISM_NAME}/cpp_core")
-    endif()
-  endif()
+  # we need to link the `mech_func.cpp` file as well
+  list(JOIN L_MECH_DECLARE "\n" MECH_DECLARE)
+  list(JOIN L_MECH_PRINT "    \n" MECH_PRINT)
+  list(JOIN L_MECH_REGISTRE "  \n" MECH_REGISTRE)
+  get_filename_component(MECH_REG "${_NEURON_MECH_REG}" NAME_WLE)
+  configure_file(${_NEURON_MECH_REG} ${MECH_REG} @ONLY)
+  target_sources(${TARGET_LIBRARY_NAME} PRIVATE ${MECH_REG})
 
-  if(NRN_MECH_INSTALL_MOD)
-    install(FILES ${MOD_FILES} DESTINATION "share/${NRN_MECH_MECHANISM_NAME}/mod")
+  # Override the _target_ name, but not the executable name. This is useful when we are using this
+  # function for building NEURON components, since we may experience collisions in the target names
+  if(NRN_MECH_TARGET_EXECUTABLE_NAME)
+    set(TARGET_EXECUTABLE_NAME "${NRN_MECH_TARGET_EXECUTABLE_NAME}")
+  else()
+    set(TARGET_EXECUTABLE_NAME "${LIBNAME}")
   endif()
 
   if(NRN_MECH_SPECIAL)
-    list(JOIN L_MECH_DECLARE "\n" MECH_DECLARE)
-    list(JOIN L_MECH_PRINT "    \n" MECH_PRINT)
-    list(JOIN L_MECH_REGISTRE "  \n" MECH_REGISTRE)
+    add_executable(${TARGET_EXECUTABLE_NAME} ${_NEURON_MAIN} ${MECH_REG})
+    target_include_directories(${TARGET_EXECUTABLE_NAME} PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
+    target_link_libraries(${TARGET_EXECUTABLE_NAME} ${LIBNAME})
+    set_target_properties(${TARGET_EXECUTABLE_NAME} PROPERTIES OUTPUT_NAME "special")
+  endif()
 
-    get_filename_component(MECH_REG "${_NEURON_MECH_REG}" NAME_WLE)
-    configure_file(${_NEURON_MECH_REG} ${MECH_REG} @ONLY)
+  if(NRN_MECH_CORENEURON)
+    list(JOIN L_CORE_MECH_DECLARE "\n" MECH_DECLARE)
+    list(JOIN L_CORE_MECH_PRINT "    \n" MECH_PRINT)
+    list(JOIN L_CORE_MECH_REGISTRE "  \n" MECH_REGISTRE)
 
-    add_executable(${EXENAME} ${_NEURON_MAIN} ${MECH_REG})
-    target_include_directories(${EXENAME} PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
-    target_link_libraries(${EXENAME} ${LIBNAME})
-    set_target_properties(${EXENAME} PROPERTIES OUTPUT_NAME "special")
-    install(TARGETS ${EXENAME} DESTINATION bin)
+    get_filename_component(CORE_MECH_REG "${_NEURON_COREMECH_REG}" NAME_WLE)
+    configure_file(${_NEURON_MECH_REG} core${CORE_MECH_REG} @ONLY)
 
-    if(NRN_MECH_CORENEURON)
-      list(JOIN L_CORE_MECH_DECLARE "\n" MECH_DECLARE)
-      list(JOIN L_CORE_MECH_PRINT "    \n" MECH_PRINT)
-      list(JOIN L_CORE_MECH_REGISTRE "  \n" MECH_REGISTRE)
+    target_sources(core${TARGET_LIBRARY_NAME} PRIVATE core${CORE_MECH_REG})
 
-      get_filename_component(CORE_MECH_REG "${_NEURON_COREMECH_REG}" NAME_WLE)
-      configure_file(${_NEURON_MECH_REG} core${CORE_MECH_REG} @ONLY)
-
-      add_executable(core${EXENAME} ${_CORENEURON_MAIN} core${CORE_MECH_REG})
-      target_include_directories(core${EXENAME} PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
-      target_link_libraries(core${EXENAME} core${LIBNAME})
-      set_target_properties(core${EXENAME} PROPERTIES OUTPUT_NAME "special-core")
-      install(TARGETS core${EXENAME} DESTINATION bin)
+    if(NRN_MECH_SPECIAL)
+      add_executable(core${TARGET_EXECUTABLE_NAME} ${_CORENEURON_MAIN} core${CORE_MECH_REG})
+      target_include_directories(core${TARGET_EXECUTABLE_NAME} PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
+      target_link_libraries(core${TARGET_EXECUTABLE_NAME} core${LIBNAME})
+      set_target_properties(core${TARGET_EXECUTABLE_NAME} PROPERTIES OUTPUT_NAME "special-core")
     endif()
   endif()
 endfunction()
