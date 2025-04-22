@@ -54,17 +54,17 @@ setup_venv() {
 }
 
 if [[ "$1" == "osx" ]]; then
-    if [[ "$ARCHFLAGS" =~ "-arch x86_64" && "$ARCHFLAGS" =~ "-arch arm64" ]]; then
-        ARCHTYPE=universal2
-    elif [[ "$ARCHFLAGS" == "-arch x86_64" ]]; then
-        ARCHTYPE=x86_64
-    elif [[ "$ARCHFLAGS" == "-arch arm64" ]]; then
-        ARCHTYPE=arm64
+    if [ "$ARCHTYPE" == "universal2" ]; then
+        ARCHFLAGS="-arch arm64 -arch x86_64"
+    elif [ "$ARCHTYPE" == "arm64" ]; then
+        ARCHFLAGS="-arch arm64"
+    elif [ "$ARCHTYPE" == "x86_64" ]; then
+        ARCHFLAGS="-arch x86_64"
     else
-        echo "Error: Cannot determine ARCHTYPE from ARCHFLAGS \"$ARCHFLAGS\""
+        echo "Error: Cannot determine ARCHFLAGS from ARCHTYPE \"$ARCHTYPE\""
         exit 1
     fi
-    export ARCHTYPE # passed to build_static_readline_osx.bash
+    export ARCHFLAGS # passed to build_static_readline_osx.bash
 fi
 
 if [[ "$1" == "osx" ]]; then

@@ -232,6 +232,25 @@ include(cmake/ExternalProjectHelper.cmake)
 include(cmake/modules/FindPythonModule.cmake)
 include(cmake/Coverage.cmake)
 
+# TARGET_ARCH is usually CMAKE_SYSTEM_PROCESSOR. But for APPLE wheels we sometimes want to
+# cross-compile and not bloat all the executables as universal2. TARGET_TYPE is computed as x86_64
+# or arm64 or universal2
+set(TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR}) # not cross-compile
+if(APPLE AND NOT "${TARGET_ARCH}" IN_LIST CMAKE_OSX_ARCHITECTURES)
+  if(TARGET_ARCH STREQUAL "x86_64")
+    set(TARGET_ARCH "arm64")
+  else()
+    set(TARGET_ARCH "x86_64")
+  endif()
+endif()
+set(TARGET_TYPE ${TARGET_ARCH})
+if(APPLE
+   AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES
+   AND "arm64" IN_LIST CMAKE_OSX_ARCHITECTURES)
+  set(TARGET_TYPE "universal2")
+  set(NRN_UNIVERSAL2_BUILD ON)
+endif()
+
 # set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and CMAKE_BUILD_TYPE_DEFAULT
 set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast FastDebug)
 include(ReleaseDebugAutoFlags)
@@ -1073,6 +1092,10 @@ message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTy
 message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
 message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
 message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
+if(APPLE)
+  message(STATUS "TARGET_ARCH   | ${TARGET_ARCH}")
+  message(STATUS "TARGET_TYPE   | ${TARGET_TYPE}")
+endif()
 if(NRN_ENABLE_MPI)
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_MPI_DYNAMIC}")
   if(NRN_ENABLE_MPI_DYNAMIC)

@@ -109,7 +109,7 @@ else
 fi
 
 # temporary directory where mod files will be copied
-temp_mod_dir="@CMAKE_HOST_SYSTEM_PROCESSOR@/corenrn/mod2c"
+temp_mod_dir="@TARGET_ARCH@/corenrn/mod2c"
 mkdir -p "$temp_mod_dir"
 
 # copy mod files with include files. note that ${ROOT_DIR}/share

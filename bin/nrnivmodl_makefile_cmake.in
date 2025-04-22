@@ -12,7 +12,7 @@
 MECH_NAME =
 MECH_VERSION = 0.0
 MODS_PATH = .
-# in the @CMAKE_HOST_SYSTEM_PROCESSOR@ folder
+# in the @modsubdir@ folder
 OUTPUT = .
 DESTDIR =
 UserINCFLAGS =

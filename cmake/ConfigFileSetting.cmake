@@ -24,9 +24,11 @@ set(prefix ${CMAKE_INSTALL_PREFIX})
 set(host_cpu ${CMAKE_SYSTEM_PROCESSOR})
 set(exec_prefix ${prefix})
 set(bindir \${exec_prefix}/bin)
-set(modsubdir ${host_cpu})
 set(bindir \${exec_prefix}/bin)
 set(libdir \${exec_prefix}/lib)
+set(target_arch ${TARGET_ARCH})
+set(modsubdir ${target_arch})
+message(STATUS "ConfigFile  modsubdir ${modsubdir}")
 
 # =============================================================================
 # Comment or empty character to enable/disable cmake specific settings

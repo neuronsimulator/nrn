@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-ARCH=@host_cpu@
+ARCH=@target_arch@
 MODSUBDIR=@modsubdir@
 USER_PWD="$PWD"
 

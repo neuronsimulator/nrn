@@ -208,10 +208,6 @@ macro(nrn_mpi_find_package)
     set(CMAKE_OSX_ARCHITECTURES
         ${_temp}
         CACHE STRING "Target architectures for macOS" FORCE)
-    # Flag universal2 builds for downstream use
-    if("arm64" IN_LIST _temp AND "x86_64" IN_LIST _temp)
-      set(NRN_UNIVERSAL2_BUILD ON)
-    endif()
   else()
     # Standard MPI detection for non-dynamic MPI or non-macOS platforms
     find_package(MPI REQUIRED)
@@ -282,10 +278,18 @@ macro(nrn_set_universal2_begin)
       # Save original CMAKE_OSX_ARCHITECTURES
       set(_NRN_ORIGINAL_OSX_ARCHITECTURES ${CMAKE_OSX_ARCHITECTURES})
       # Set universal2 architectures
-      set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Target architectures for macOS" FORCE)
-      message(STATUS "nrn_set_universal2_begin: Set CMAKE_OSX_ARCHITECTURES to x86_64;arm64 (system: ${CMAKE_SYSTEM_PROCESSOR})")
+      set(CMAKE_OSX_ARCHITECTURES
+          "x86_64;arm64"
+          CACHE STRING "Target architectures for macOS" FORCE)
+      message(
+        STATUS
+          "nrn_set_universal2_begin: Set CMAKE_OSX_ARCHITECTURES to x86_64;arm64 (system: ${CMAKE_SYSTEM_PROCESSOR})"
+      )
     else()
-      message(STATUS "nrn_set_universal2_begin: Skipped, system processor ${CMAKE_SYSTEM_PROCESSOR} already in CMAKE_OSX_ARCHITECTURES")
+      message(
+        STATUS
+          "nrn_set_universal2_begin: Skipped, system processor ${CMAKE_SYSTEM_PROCESSOR} already in CMAKE_OSX_ARCHITECTURES"
+      )
     endif()
   endif()
 endmacro()
@@ -294,8 +298,13 @@ macro(nrn_set_universal2_end)
   if(APPLE AND DEFINED _NRN_ORIGINAL_OSX_ARCHITECTURES)
     # Restore original CMAKE_OSX_ARCHITECTURES
     if(_NRN_ORIGINAL_OSX_ARCHITECTURES)
-      set(CMAKE_OSX_ARCHITECTURES "${_NRN_ORIGINAL_OSX_ARCHITECTURES}" CACHE STRING "Target architectures for macOS" FORCE)
-      message(STATUS "nrn_set_universal2_end: Restored CMAKE_OSX_ARCHITECTURES to ${_NRN_ORIGINAL_OSX_ARCHITECTURES}")
+      set(CMAKE_OSX_ARCHITECTURES
+          "${_NRN_ORIGINAL_OSX_ARCHITECTURES}"
+          CACHE STRING "Target architectures for macOS" FORCE)
+      message(
+        STATUS
+          "nrn_set_universal2_end: Restored CMAKE_OSX_ARCHITECTURES to ${_NRN_ORIGINAL_OSX_ARCHITECTURES}"
+      )
     else()
       unset(CMAKE_OSX_ARCHITECTURES CACHE)
       message(STATUS "nrn_set_universal2_end: Unset CMAKE_OSX_ARCHITECTURES")
