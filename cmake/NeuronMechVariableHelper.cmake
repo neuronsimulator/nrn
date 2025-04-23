@@ -9,5 +9,3 @@ set(_CORENEURON_MECH_REG "${PROJECT_SOURCE_DIR}/cmake/mod_reg_corenrn.cpp.in")
 set(_CORENEURON_MECH_ENG "${_prefix}/share/coreneuron/enginemech.cpp")
 set(_CORENEURON_RANDOM_INCLUDE "${_prefix}/include/coreneuron/utils/randoms")
 set(_CORENEURON_FLAGS ${CORENRN_CXX_FLAGS})
-
-
