@@ -49,8 +49,10 @@ foreach(usecase ${NMODL_USECASE_DIRS})
     ${NRN_RUN_FROM_BUILD_DIR_ENV}
     NOCMODL_EXECUTABLE
     ${PROJECT_BINARY_DIR}/bin/nocmodl
-    OUTPUT_DIR
-    "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nocmodl/${CMAKE_HOST_SYSTEM_PROCESSOR}")
+    ARTIFACTS_OUTPUT_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nocmodl/${CMAKE_HOST_SYSTEM_PROCESSOR}"
+    LIBRARY_OUTPUT_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nocmodl/${CMAKE_HOST_SYSTEM_PROCESSOR}/.libs")
   add_dependencies(${usecase}_nocmodl neuron::nrniv neuron::nocmodl)
   target_include_directories(${usecase}_nocmodl PRIVATE "${PROJECT_BINARY_DIR}/include")
   set_target_properties(
@@ -73,8 +75,10 @@ foreach(usecase ${NMODL_USECASE_DIRS})
     ${usecase}_nmodl
     NMODL_EXECUTABLE
     ${PROJECT_BINARY_DIR}/bin/nmodl
-    OUTPUT_DIR
-    "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nmodl/${CMAKE_HOST_SYSTEM_PROCESSOR}")
+    ARTIFACTS_OUTPUT_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nmodl/${CMAKE_HOST_SYSTEM_PROCESSOR}"
+    LIBRARY_OUTPUT_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nmodl/${CMAKE_HOST_SYSTEM_PROCESSOR}/.libs")
   add_dependencies(${usecase}_nmodl nmodl::nmodl neuron::nrniv)
   target_include_directories(${usecase}_nmodl PRIVATE "${PROJECT_BINARY_DIR}/include")
   set_target_properties(

@@ -564,6 +564,7 @@ target_include_directories(coreneuron-mod-lib PRIVATE ${PROJECT_BINARY_DIR}/incl
 target_include_directories(coreneuron-mod-bin PRIVATE ${PROJECT_BINARY_DIR}/include)
 set_target_properties(coreneuron-mod-lib PROPERTIES OUTPUT_NAME "corenrnmech_internal"
                                                     LIBRARY_OUTPUT_DIRECTORY ${nrniv_core_prefix})
+set_target_properties(coreneuron-mod-bin PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${nrniv_core_prefix})
 add_dependencies(coreneuron-mod-lib coreneuron-core nmodl::nmodl)
 add_dependencies(coreneuron-mod-bin coreneuron-core nmodl::nmodl)
 
@@ -679,13 +680,6 @@ endif()
 
 # install mod files
 install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION share)
-
-# =============================================================================
-# Install for end users
-# =============================================================================
-install(FILES ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile
-        DESTINATION share/coreneuron)
-install(PROGRAMS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core DESTINATION bin)
 
 # =============================================================================
 # Set flag for NEURON linking

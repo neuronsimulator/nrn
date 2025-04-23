@@ -216,7 +216,11 @@ function(nrn_add_test_group)
         ${PROJECT_BINARY_DIR}/bin/nmodl
         EXTRA_ENV
         "${NRN_RUN_FROM_BUILD_DIR_ENV}"
-        OUTPUT_DIR
+        ARTIFACTS_OUTPUT_DIR
+        "${nrnivmodl_directory}"
+        LIBRARY_OUTPUT_DIR
+        "${nrnivmodl_directory}"
+        EXECUTABLE_OUTPUT_DIR
         "${nrnivmodl_directory}"
         TARGET_LIBRARY_NAME
         ${binary_target_name}

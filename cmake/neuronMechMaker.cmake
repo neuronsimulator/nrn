@@ -8,7 +8,9 @@ function(create_nrnmech)
       MECHANISM_NAME
       TARGET_LIBRARY_NAME
       TARGET_EXECUTABLE_NAME
-      OUTPUT_DIR
+      LIBRARY_OUTPUT_DIR
+      EXECUTABLE_OUTPUT_DIR
+      ARTIFACTS_OUTPUT_DIR
       LIBRARY_TYPE
       NOCMODL_EXECUTABLE
       NMODL_EXECUTABLE)
@@ -96,9 +98,25 @@ function(create_nrnmech)
     set(TARGET_EXECUTABLE_NAME "${EXENAME}")
   endif()
 
-  # Where to output the intermediate files
-  if(NOT NRN_MECH_OUTPUT_DIR)
-    set(NRN_MECH_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+  # Where to output the library (during build)
+  if(NRN_MECH_LIBRARY_OUTPUT_DIR)
+    set(LIBRARY_OUTPUT_DIR "${NRN_MECH_LIBRARY_OUTPUT_DIR}")
+  else()
+    set(LIBRARY_OUTPUT_DIR "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+  endif()
+
+  # Where to output the executable (during build)
+  if(NRN_MECH_EXECUTABLE_OUTPUT_DIR)
+    set(EXECUTABLE_OUTPUT_DIR "${NRN_MECH_EXECUTABLE_OUTPUT_DIR}")
+  else()
+    set(EXECUTABLE_OUTPUT_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+  endif()
+
+  # Where the intermediate CPP files will be placed
+  if(NRN_MECH_ARTIFACTS_OUTPUT_DIR)
+    set(ARTIFACTS_OUTPUT_DIR "${NRN_MECH_ARTIFACTS_OUTPUT_DIR}")
+  else()
+    set(ARTIFACTS_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
   endif()
 
   # Collect mod files, output any warnings
@@ -126,22 +144,24 @@ function(create_nrnmech)
       list(APPEND L_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
       add_custom_command(
-        COMMAND ${ENV_COMMAND} ${NEURON_TRANSPILER_LAUNCHER} -o "${NRN_MECH_OUTPUT_DIR}/cpp"
+        COMMAND ${ENV_COMMAND} ${NEURON_TRANSPILER_LAUNCHER} -o "${ARTIFACTS_OUTPUT_DIR}/cpp"
                 "${MOD_ABSPATH}" ${NRN_MECH_NMODL_EXTRA_ARGS}
-        OUTPUT "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
-        COMMENT "Converting ${MOD_ABSPATH} to ${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
+        OUTPUT "${ARTIFACTS_OUTPUT_DIR}/${CPP_FILE}"
+        COMMENT "Converting ${MOD_ABSPATH} to ${ARTIFACTS_OUTPUT_DIR}/${CPP_FILE}"
         # TODO some mod files may include other files, and NMODL can get the AST of a given file in
         # JSON form, which we could potentially parse with CMake and get the full list of
         # dependencies
         DEPENDS "${MOD_ABSPATH}"
         VERBATIM)
 
-      list(APPEND L_SOURCES "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}")
+      list(APPEND L_SOURCES "${ARTIFACTS_OUTPUT_DIR}/${CPP_FILE}")
     endforeach()
 
     # add the nrnmech library
     add_library(${TARGET_LIBRARY_NAME} ${LIBRARY_TYPE} ${L_SOURCES})
-    set_target_properties(${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "${LIBNAME}")
+    set_target_properties(
+      ${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "${LIBNAME}" LIBRARY_OUTPUT_DIRECTORY
+                                                                 "${LIBRARY_OUTPUT_DIR}")
     target_link_libraries(${TARGET_LIBRARY_NAME} PUBLIC neuron::nrniv)
 
     # we need to add the `mech_func.cpp` file as well since it handles registration of mechanisms
@@ -157,7 +177,9 @@ function(create_nrnmech)
       add_executable(${TARGET_EXECUTABLE_NAME} ${_NEURON_MAIN} ${MECH_REG})
       target_include_directories(${TARGET_EXECUTABLE_NAME} PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
       target_link_libraries(${TARGET_EXECUTABLE_NAME} ${TARGET_LIBRARY_NAME})
-      set_target_properties(${TARGET_EXECUTABLE_NAME} PROPERTIES OUTPUT_NAME "special")
+      set_target_properties(
+        ${TARGET_EXECUTABLE_NAME} PROPERTIES OUTPUT_NAME "special" RUNTIME_OUTPUT_DIRECTORY
+                                                                   "${EXECUTABLE_OUTPUT_DIR}")
     endif()
 
   endif()
@@ -187,19 +209,21 @@ function(create_nrnmech)
       list(APPEND L_CORE_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
       add_custom_command(
-        COMMAND ${ENV_COMMAND} ${NMODL_EXECUTABLE} -o "${NRN_MECH_OUTPUT_DIR}/cpp_core"
+        COMMAND ${ENV_COMMAND} ${NMODL_EXECUTABLE} -o "${ARTIFACTS_OUTPUT_DIR}/cpp_core"
                 "${MOD_ABSPATH}" ${NRN_MECH_NMODL_EXTRA_ARGS}
-        OUTPUT "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
-        COMMENT "Converting ${MOD_ABSPATH} to ${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
+        OUTPUT "${ARTIFACTS_OUTPUT_DIR}/${CPP_FILE}"
+        COMMENT "Converting ${MOD_ABSPATH} to ${ARTIFACTS_OUTPUT_DIR}/${CPP_FILE}"
         DEPENDS "${MOD_ABSPATH}"
         VERBATIM)
 
-      list(APPEND L_CORE_SOURCES "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}")
+      list(APPEND L_CORE_SOURCES "${ARTIFACTS_OUTPUT_DIR}/${CPP_FILE}")
     endforeach()
 
     add_library(core${TARGET_LIBRARY_NAME} ${LIBRARY_TYPE} ${_CORENEURON_MECH_ENG}
                                            ${L_CORE_SOURCES})
-    set_target_properties(core${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "core${LIBNAME}")
+    set_target_properties(
+      core${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "core${LIBNAME}" LIBRARY_OUTPUT_DIRECTORY
+                                                                         "${LIBRARY_OUTPUT_DIR}")
     target_include_directories(core${TARGET_LIBRARY_NAME} PRIVATE ${_CORENEURON_RANDOM_INCLUDE})
     target_compile_options(core${TARGET_LIBRARY_NAME} PRIVATE ${_CORENEURON_FLAGS})
     target_link_libraries(core${TARGET_LIBRARY_NAME} PUBLIC neuron::corenrn)
@@ -217,7 +241,9 @@ function(create_nrnmech)
       add_executable(core${TARGET_EXECUTABLE_NAME} ${_CORENEURON_MAIN} core${CORE_MECH_REG})
       target_include_directories(core${TARGET_EXECUTABLE_NAME} PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
       target_link_libraries(core${TARGET_EXECUTABLE_NAME} core${TARGET_LIBRARY_NAME})
-      set_target_properties(core${TARGET_EXECUTABLE_NAME} PROPERTIES OUTPUT_NAME "special-core")
+      set_target_properties(
+        core${TARGET_EXECUTABLE_NAME}
+        PROPERTIES OUTPUT_NAME "special-core" RUNTIME_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_DIR}")
     endif()
   endif()
 endfunction()
