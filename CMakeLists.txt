@@ -909,6 +909,7 @@ endfunction()
 copy_share_subdir_at_build_time(SUBDIR demo TARGET copy_share_demo_to_build)
 copy_share_subdir_at_build_time(SUBDIR lib TARGET copy_share_lib_to_build)
 
+add_subdirectory(share/demo)
 # =============================================================================
 # Add tests if enabled
 # =============================================================================
@@ -930,12 +931,6 @@ if(NRN_ENABLE_TESTS)
     endif()
   endif()
   add_dependencies(nrniv_lib copy_share_demo_to_build)
-  # Execute neurondemo as part of the build because it lazily calls nrnivmodl. If we don't do this
-  # then test_neurondemo.py will run nrnivmodl in a clean build, and report compilation warnings as
-  # unexpected stderr.
-  set(neurondemo_prefix
-      "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}")
-  add_subdirectory(share/demo)
   add_custom_target(generate-neurondemo-mechanism-library ALL DEPENDS ${neurondemo_files} nrniv
                                                                       copy_share_lib_to_build)
   # Initialize the submodule *before* including the test/CMakeLists.txt that uses it. This ensures

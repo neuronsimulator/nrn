@@ -9,6 +9,8 @@ create_nrnmech(
   ${neurondemo_files}
   TARGET_LIBRARY_NAME
   neurondemo
+  TARGET_EXECUTABLE_NAME
+  neurondemo-special
   NOCMODL_EXECUTABLE
   ${PROJECT_BINARY_DIR}/bin/nocmodl
   EXTRA_ENV
@@ -16,8 +18,13 @@ create_nrnmech(
   OUTPUT_DIR
   "${CMAKE_CURRENT_BINARY_DIR}/release")
 target_include_directories(neurondemo PRIVATE "${PROJECT_BINARY_DIR}/include")
+target_include_directories(neurondemo-special PRIVATE "${PROJECT_BINARY_DIR}/include")
 add_dependencies(neurondemo neuron::nocmodl neuron::nrniv)
-install(TARGETS neurondemo DESTINATION "${NRN_INSTALL_SHARE_DIR}/demo/release/.libs")
+add_dependencies(neurondemo-special neuron::nocmodl neuron::nrniv)
+install(TARGETS neurondemo
+        DESTINATION "${NRN_INSTALL_SHARE_DIR}/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}/.libs")
+install(TARGETS neurondemo-special
+        DESTINATION "${NRN_INSTALL_SHARE_DIR}/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}/")
 # also install all of the source files (except current CMakeLists.txt)
 install(
   DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
