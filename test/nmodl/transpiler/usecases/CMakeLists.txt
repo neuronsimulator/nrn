@@ -82,20 +82,20 @@ foreach(usecase ${NMODL_USECASE_DIRS})
   file(GLOB testfiles "${usecase}/test_*.py" "${usecase}/simulate.py")
   foreach(testfile ${testfiles})
     get_filename_component(abs_testfile "${testfile}" REALPATH)
-    string(SHA256 hash "${testfile}")
+    get_filename_component(testname "${abs_testfile}" NAME_WLE)
     # run with NOCMODL beforehand because it may generate some files
     add_custom_target(
-      usecase_nocmodl_${usecase}_${hash}
+      usecase_gendata_${usecase}_${testname}
       COMMAND ${CMAKE_COMMAND} -E env "${NRN_RUN_FROM_BUILD_DIR_ENV}"
               ${NRN_DEFAULT_PYTHON_EXECUTABLE} "${abs_testfile}"
       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nocmodl")
 
     add_test(
-      NAME usecase_nmodl_${usecase}_${hash}
+      NAME nmodl::usecase::${usecase}::${testname}
       COMMAND ${CMAKE_COMMAND} -E env "${NRN_RUN_FROM_BUILD_DIR_ENV}"
               ${NRN_DEFAULT_PYTHON_EXECUTABLE} "${abs_testfile}"
       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nmodl")
-    set_tests_properties(usecase_nmodl_${usecase}_${hash}
-                         PROPERTIES DEPENDS usecase_nocmodl_${usecase}_${hash})
+    set_tests_properties(nmodl::usecase::${usecase}::${testname}
+                         PROPERTIES DEPENDS usecase_gendata_${usecase}_${testname})
   endforeach()
 endforeach()

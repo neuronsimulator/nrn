@@ -512,6 +512,7 @@ if(NRN_ENABLE_PYTHON)
     NAME "test_path_spaces"
     SCRIPT_PATTERNS "test/nmodl/Project Path Space/test.*"
     ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
+                NRN_NRNIVMODL_CMAKE_PATH=${PROJECT_BINARY_DIR}/cmake/nrnivmodl.cmake
     COMMAND bash -c "pwd && cd 'test/nmodl/Project Path Space' && nrnivmodl")
 
   nrn_add_test_group(

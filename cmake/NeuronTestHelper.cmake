@@ -219,9 +219,9 @@ function(nrn_add_test_group)
         ARTIFACTS_OUTPUT_DIR
         "${nrnivmodl_directory}"
         LIBRARY_OUTPUT_DIR
-        "${nrnivmodl_directory}"
+        "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/.libs"
         EXECUTABLE_OUTPUT_DIR
-        "${nrnivmodl_directory}"
+        "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}"
         TARGET_LIBRARY_NAME
         ${binary_target_name}
         TARGET_EXECUTABLE_NAME

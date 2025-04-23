@@ -31,9 +31,27 @@ if command -v xcrun >/dev/null 2>&1; then
     fi
 fi
 
-# Check they are the same; if not, report an error, and force the user to choose
+
 default_cmakelists="${NRN_CMAKE_PREFIX_PATH_DEFAULT}/neuron/nrnivmodl.cmake"
+
+# If it does not exist, check the NRN_NRNIVMODL_CMAKE_PATH variable next
+if [ ! -f "${default_cmakelists}" ]; then
+    if [ -z "${NRN_NRNIVMODL_CMAKE_PATH:-}" ]; then
+        printf "ERROR: default file %s does not exist, " "${default_cmakelists}"
+        echo "and env var NRN_NRNIVMODL_CMAKE_PATH is empty; please set it\n"
+        exit 2
+    fi
+    if [ ! -f "${NRN_NRNIVMODL_CMAKE_PATH}" ]; then
+        printf "ERROR: file %s does not exist\n" "${NRN_NRNIVMODL_CMAKE_PATH}"
+        exit 3
+    fi
+    default_cmakelists="${NRN_NRNIVMODL_CMAKE_PATH}"
+fi
+
 current_cmakelists="${srcdir}/CMakeLists.txt"
+
+# Check default cmakelists and one in current dir are the same; if not, report
+# an error, and force the user to choose
 if [ -f "${current_cmakelists}" ] && ! cmp --silent "${default_cmakelists}" "${current_cmakelists}"; then
     printf "ERROR: %s exists and is different from %s; " "${current_cmakelists}" "${default_cmakelists}"
     printf "please remove %s manually, " "${current_cmakelists}"
