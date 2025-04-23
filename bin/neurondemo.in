@@ -27,6 +27,13 @@ if [ ! -f "${NRNDEMO}neuron" ] ; then
 	(cd "${NRNDEMO}release" ; "${NRNBIN}nrnivmodl" ; cd .. ; rm -f neuron ; touch neuron)
 fi
 
+# When a build on APPLE x86_64 is cross compiling for another arch, ie. arm64,
+# the build can't run the executable for testing.
+if [ "$1" == "-cross-compiling" ]; then
+    echo "Not launching neurondemo because first arg is -cross-compiling"
+    exit 0
+fi
+
 if [ "@NRN_ENABLE_SHARED@" = "ON" ]; then
     ${NRNBIN}nrniv -dll "${NRNDEMO}release/${MODSUBDIR}/.libs/libnrnmech.so" "${NRNDEMO}demo.hoc" "$@" -
 else
