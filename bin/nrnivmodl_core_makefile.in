@@ -11,7 +11,7 @@ COMMA_OP =,
 # Default variables for various targets
 MECHLIB_SUFFIX =
 MODS_PATH = .
-OUTPUT_DIR = @CMAKE_HOST_SYSTEM_PROCESSOR@
+OUTPUT_DIR = @TARGET_ARCH@
 DESTDIR =
 TARGET_LIB_TYPE = $(BUILD_TYPE)
 
@@ -24,6 +24,7 @@ endif
 
 # Set UNIVERSAL2 to TRUE for macOS with both x86_64 and arm64 in ARCHFLAGS
 UNIVERSAL2 = @UNIVERSAL2@
+ARCHFLAGS = @TARGET_ARCH_FLAGS@
 $(info ARCHFLAGS = $(ARCHFLAGS))
 $(info UNIVERSAL2 = $(UNIVERSAL2))
 
@@ -79,7 +80,7 @@ ifeq ($(wildcard $(CORENRN_PYTHONEXE)),)
   CORENRN_PYTHONEXE=python
 endif
 
-CXXFLAGS = @CORENRN_CXX_FLAGS@
+CXXFLAGS = @CORENRN_CXX_FLAGS@ $(ARCHFLAGS)
 CXX_COMPILE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ $(INCLUDES)
 CXX_LINK_EXE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@
 CXX_SHARED_LIB_CMD = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@
@@ -124,7 +125,7 @@ mod_files_names = $(sort $(notdir $(wildcard $(MODS_PATH)/*.mod)))
 mod_files_no_ext = $(mod_files_names:.mod=)
 mod_files_for_cpp_backend = $(foreach mod_file, $(mod_files_paths), $(addprefix $(MOD_TO_CPP_DIR)/, $(notdir $(mod_file))))
 
-# CPP files and their obkects
+# CPP files and their objects
 mod_cpp_files = $(patsubst %.mod,%.cpp,$(mod_files_for_cpp_backend))
 mod_cpp_objs = $(addprefix $(MOD_OBJS_DIR)/,$(addsuffix .o,$(basename $(mod_files_no_ext))))
 

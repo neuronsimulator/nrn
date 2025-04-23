@@ -239,8 +239,10 @@ set(TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR}) # not cross-compile
 if(APPLE AND NOT "${TARGET_ARCH}" IN_LIST CMAKE_OSX_ARCHITECTURES)
   if(TARGET_ARCH STREQUAL "x86_64")
     set(TARGET_ARCH "arm64")
+    set(TARGET_ARCH_FLAGS "-arch arm64")
   else()
     set(TARGET_ARCH "x86_64")
+    set(TARGET_ARCH_FLAGS "-arch x86_64")
   endif()
 endif()
 set(TARGET_TYPE ${TARGET_ARCH})
@@ -249,6 +251,7 @@ if(APPLE
    AND "arm64" IN_LIST CMAKE_OSX_ARCHITECTURES)
   set(TARGET_TYPE "universal2")
   set(NRN_UNIVERSAL2_BUILD ON)
+  set(TARGET_ARCH_FLAGS "-arch arm64 -arch x86_64")
 endif()
 
 # see: https://github.com/neuronsimulator/nrn/issues/3387
