@@ -1,0 +1,13 @@
+set(_prefix "${PROJECT_BINARY_DIR}")
+set(_NEURON_MAIN "${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp")
+set(_NEURON_MAIN_INCLUDE_DIR "${_prefix}/include/nrncvode")
+set(_NEURON_MECH_REG "${PROJECT_SOURCE_DIR}/cmake/mod_reg_nrn.cpp.in")
+
+set(_CORENEURON_BASE_MOD "${_prefix}/share/modfile")
+set(_CORENEURON_MAIN "${_prefix}/share/coreneuron/coreneuron.cpp")
+set(_CORENEURON_MECH_REG "${PROJECT_SOURCE_DIR}/cmake/mod_reg_corenrn.cpp.in")
+set(_CORENEURON_MECH_ENG "${_prefix}/share/coreneuron/enginemech.cpp")
+set(_CORENEURON_RANDOM_INCLUDE "${_prefix}/include/coreneuron/utils/randoms")
+set(_CORENEURON_FLAGS ${CORENRN_CXX_FLAGS})
+
+

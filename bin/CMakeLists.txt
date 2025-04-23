@@ -38,8 +38,6 @@ include(CMakeListsNrnMech)
 # =============================================================================
 configure_file("nrngui.in" "nrngui" @ONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sortspike ${CMAKE_CURRENT_BINARY_DIR}/sortspike COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl_makefile_cmake.in
-               ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile @ONLY)
 string(JOIN " " NRN_PYTHON_VERSIONS_STRING ${NRN_PYTHON_VERSIONS})
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh.in ${PROJECT_BINARY_DIR}/bin/nrnpyenv.sh
                @ONLY)
@@ -88,7 +86,6 @@ install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrngui ${PROJECT_BINARY_DIR}/bin/neur
                  ${PROJECT_BINARY_DIR}/bin/nrnivmodl ${PROJECT_BINARY_DIR}/bin/nrnivmodl-core2
         DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
-install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/sortspike ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe
                  ${PROJECT_BINARY_DIR}/bin/nrnpyenv.sh ${CMAKE_CURRENT_SOURCE_DIR}/set_nrnpyenv.sh
         DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
