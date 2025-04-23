@@ -3,11 +3,26 @@
 # The basic idea is
 # ~~~
 function(create_nrnmech)
-  set(options CORENEURON SPECIAL NMODL_NEURON_CODEGEN)
-  set(oneValueArgs MECHANISM_NAME TARGET_LIBRARY_NAME TARGET_EXECUTABLE_NAME OUTPUT_DIR
-                   NOCMODL_EXECUTABLE NMODL_EXECUTABLE)
+  set(options NEURON CORENEURON SPECIAL NMODL_NEURON_CODEGEN)
+  set(oneValueArgs
+      MECHANISM_NAME
+      TARGET_LIBRARY_NAME
+      TARGET_EXECUTABLE_NAME
+      OUTPUT_DIR
+      LIBRARY_TYPE
+      NOCMODL_EXECUTABLE
+      NMODL_EXECUTABLE)
   set(multiValueArgs MOD_FILES NMODL_EXTRA_ARGS EXTRA_ENV)
   cmake_parse_arguments(NRN_MECH "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  # The name of the output library
+  set(LIBNAME "nrnmech")
+  # The name of the output executable
+  set(EXENAME "special")
+  # The default type of the output library
+  set(DEFAULT_LIBRARY_TYPE "SHARED")
+  # The default name of the mechanism
+  set(DEFAULT_MECHANISM_NAME "neuron")
 
   if(NRN_MECH_CORENEURON)
     if(NOT NRN_ENABLE_CORENEURON)
@@ -15,8 +30,17 @@ function(create_nrnmech)
     endif()
   endif()
 
-  if(NOT MECHANISM_NAME)
-    set(MECHANISM_NAME neuron)
+  if(NOT NRN_MECH_NEURON AND NOT NRN_MECH_CORENEURON)
+    message(
+      FATAL_ERROR
+        "No output specified for mod files, please specify at least one of `NEURON` or `CORENEURON` outputs"
+    )
+  endif()
+
+  if(NRN_MECH_MECHANISM_NAME)
+    set(MECHANISM_NAME "${NRN_MECH_MECHANISM_NAME}")
+  else()
+    set(MECHANISM_NAME "${DEFAULT_MECHANISM_NAME}")
   endif()
 
   # the `nmodl` and `nocmodl` executables are usually found through `find_program` on the user's
@@ -31,6 +55,14 @@ function(create_nrnmech)
     set(NOCMODL_EXECUTABLE "${NRN_MECH_NOCMODL_EXECUTABLE}")
   else()
     set(NOCMODL_EXECUTABLE $<TARGET_FILE:neuron::nocmodl>)
+  endif()
+
+  # the option `CORENRN_ENABLE_SHARED` toggles the kind of library we want to build, so we respect
+  # it here
+  if(NRN_MECH_LIBRARY_TYPE)
+    set(LIBRARY_TYPE "${NRN_MECH_LIBRARY_TYPE}")
+  else()
+    set(LIBRARY_TYPE "${DEFAULT_LIBRARY_TYPE}")
   endif()
 
   # nmodl by default generates code for coreNEURON, so we toggle this via an option
@@ -48,15 +80,28 @@ function(create_nrnmech)
     set(ENV_COMMAND)
   endif()
 
-  # Where to output the mod files
+  # Override the _target_ name, but not the library name. This is useful when we are using this
+  # function for building NEURON components, since we may experience collisions in the target names
+  if(NRN_MECH_TARGET_LIBRARY_NAME)
+    set(TARGET_LIBRARY_NAME "${NRN_MECH_TARGET_LIBRARY_NAME}")
+  else()
+    set(TARGET_LIBRARY_NAME "${LIBNAME}")
+  endif()
+
+  # Override the _target_ name, but not the executable name. This is useful when we are using this
+  # function for building NEURON components, since we may experience collisions in the target names
+  if(NRN_MECH_TARGET_EXECUTABLE_NAME)
+    set(TARGET_EXECUTABLE_NAME "${NRN_MECH_TARGET_EXECUTABLE_NAME}")
+  else()
+    set(TARGET_EXECUTABLE_NAME "${EXENAME}")
+  endif()
+
+  # Where to output the intermediate files
   if(NOT NRN_MECH_OUTPUT_DIR)
     set(NRN_MECH_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
   endif()
 
-  # The names of the output library and the executable
-  set(LIBNAME "nrnmech")
-  set(EXENAME "special")
-
+  # Collect mod files, output any warnings
   foreach(MOD_FILE IN LISTS NRN_MECH_MOD_FILES)
     if(NOT MOD_FILE MATCHES ".*mod$")
       message(WARNING "File ${MOD_FILE} has an extension that is not .mod, compilation may fail")
@@ -66,30 +111,58 @@ function(create_nrnmech)
     list(APPEND MOD_FILES "${MOD_FILE}")
   endforeach()
 
-  foreach(MOD_FILE IN LISTS MOD_FILES)
-    get_filename_component(MOD_STUB "${MOD_FILE}" NAME_WLE)
-    # nocmodl has trouble with symlinks, so we always use the real path
-    get_filename_component(MOD_ABSPATH "${MOD_FILE}" REALPATH)
-    set(CPP_FILE "cpp/${MOD_STUB}.cpp")
-    file(RELATIVE_PATH MOD_SHORT "${CMAKE_SOURCE_DIR}" "${MOD_ABSPATH}")
+  # Convert mod files for use with NEURON
+  if(NRN_MECH_NEURON)
+    # Convert to CPP files
+    foreach(MOD_FILE IN LISTS MOD_FILES)
+      get_filename_component(MOD_STUB "${MOD_FILE}" NAME_WLE)
+      # nocmodl has trouble with symlinks, so we always use the real path
+      get_filename_component(MOD_ABSPATH "${MOD_FILE}" REALPATH)
+      set(CPP_FILE "cpp/${MOD_STUB}.cpp")
+      file(RELATIVE_PATH MOD_SHORT "${CMAKE_SOURCE_DIR}" "${MOD_ABSPATH}")
 
-    list(APPEND L_MECH_DECLARE "extern \"C\" void _${MOD_STUB}_reg(void)\;")
-    list(APPEND L_MECH_PRINT "fprintf(stderr, \" \\\"${MOD_SHORT}\\\"\")\;")
-    list(APPEND L_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
+      list(APPEND L_MECH_DECLARE "extern \"C\" void _${MOD_STUB}_reg(void)\;")
+      list(APPEND L_MECH_PRINT "fprintf(stderr, \" \\\"${MOD_SHORT}\\\"\")\;")
+      list(APPEND L_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
-    add_custom_command(
-      COMMAND ${ENV_COMMAND} ${NEURON_TRANSPILER_LAUNCHER} -o "${NRN_MECH_OUTPUT_DIR}/cpp"
-              "${MOD_ABSPATH}" ${NRN_MECH_NMODL_EXTRA_ARGS}
-      OUTPUT "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
-      COMMENT "Converting ${MOD_ABSPATH} to ${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
-      # TODO some mod files may include other files, and NMODL can get the AST of a given file in
-      # JSON form, which we could potentially parse with CMake and get the full list of dependencies
-      DEPENDS "${MOD_ABSPATH}"
-      VERBATIM)
+      add_custom_command(
+        COMMAND ${ENV_COMMAND} ${NEURON_TRANSPILER_LAUNCHER} -o "${NRN_MECH_OUTPUT_DIR}/cpp"
+                "${MOD_ABSPATH}" ${NRN_MECH_NMODL_EXTRA_ARGS}
+        OUTPUT "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
+        COMMENT "Converting ${MOD_ABSPATH} to ${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
+        # TODO some mod files may include other files, and NMODL can get the AST of a given file in
+        # JSON form, which we could potentially parse with CMake and get the full list of
+        # dependencies
+        DEPENDS "${MOD_ABSPATH}"
+        VERBATIM)
 
-    list(APPEND L_SOURCES "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}")
-  endforeach()
+      list(APPEND L_SOURCES "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}")
+    endforeach()
 
+    # add the nrnmech library
+    add_library(${TARGET_LIBRARY_NAME} ${LIBRARY_TYPE} ${L_SOURCES})
+    set_target_properties(${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "${LIBNAME}")
+    target_link_libraries(${TARGET_LIBRARY_NAME} PUBLIC neuron::nrniv)
+
+    # we need to add the `mech_func.cpp` file as well since it handles registration of mechanisms
+    list(JOIN L_MECH_DECLARE "\n" MECH_DECLARE)
+    list(JOIN L_MECH_PRINT "    \n" MECH_PRINT)
+    list(JOIN L_MECH_REGISTRE "  \n" MECH_REGISTRE)
+    get_filename_component(MECH_REG "${_NEURON_MECH_REG}" NAME_WLE)
+    configure_file(${_NEURON_MECH_REG} ${MECH_REG} @ONLY)
+    target_sources(${TARGET_LIBRARY_NAME} PRIVATE ${MECH_REG})
+
+    # add the special executable
+    if(NRN_MECH_SPECIAL)
+      add_executable(${TARGET_EXECUTABLE_NAME} ${_NEURON_MAIN} ${MECH_REG})
+      target_include_directories(${TARGET_EXECUTABLE_NAME} PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
+      target_link_libraries(${TARGET_EXECUTABLE_NAME} ${TARGET_LIBRARY_NAME})
+      set_target_properties(${TARGET_EXECUTABLE_NAME} PROPERTIES OUTPUT_NAME "special")
+    endif()
+
+  endif()
+
+  # Convert mod files for use with coreNEURON
   if(NRN_MECH_CORENEURON)
     # CoreNEURON requires additional mod files. Only append them to the input list if similar named
     # mods are _not yet present_
@@ -101,6 +174,7 @@ function(create_nrnmech)
       endif()
     endforeach()
 
+    # Convert to CPP files
     foreach(MOD_FILE IN LISTS MOD_FILES)
       get_filename_component(MOD_STUB "${MOD_FILE}" NAME_WLE)
       # nmodl _may_ have trouble with symlinks, so we always use the real path
@@ -113,7 +187,7 @@ function(create_nrnmech)
       list(APPEND L_CORE_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
       add_custom_command(
-        COMMAND ${ENV_COMMAND} ${NEURON_TRANSPILER_LAUNCHER} -o "${NRN_MECH_OUTPUT_DIR}/cpp_core"
+        COMMAND ${ENV_COMMAND} ${NMODL_EXECUTABLE} -o "${NRN_MECH_OUTPUT_DIR}/cpp_core"
                 "${MOD_ABSPATH}" ${NRN_MECH_NMODL_EXTRA_ARGS}
         OUTPUT "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
         COMMENT "Converting ${MOD_ABSPATH} to ${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
@@ -122,52 +196,14 @@ function(create_nrnmech)
 
       list(APPEND L_CORE_SOURCES "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}")
     endforeach()
-  endif()
 
-  # Override the _target_ name, but not the library name. This is useful when we are using this
-  # function for building NEURON components, since we may experience collisions in the target names
-  if(NRN_MECH_TARGET_LIBRARY_NAME)
-    set(TARGET_LIBRARY_NAME "${NRN_MECH_TARGET_LIBRARY_NAME}")
-  else()
-    set(TARGET_LIBRARY_NAME "${LIBNAME}")
-  endif()
-
-  add_library(${TARGET_LIBRARY_NAME} SHARED ${L_SOURCES})
-  set_target_properties(${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "${LIBNAME}")
-  target_link_libraries(${TARGET_LIBRARY_NAME} PUBLIC neuron::nrniv)
-
-  if(NRN_MECH_CORENEURON)
-    add_library(core${TARGET_LIBRARY_NAME} SHARED ${_CORENEURON_MECH_ENG} ${L_CORE_SOURCES})
-    set_target_properties(${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "core${LIBNAME}")
+    add_library(core${TARGET_LIBRARY_NAME} ${LIBRARY_TYPE} ${_CORENEURON_MECH_ENG}
+                                           ${L_CORE_SOURCES})
+    set_target_properties(core${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "core${LIBNAME}")
     target_include_directories(core${TARGET_LIBRARY_NAME} PRIVATE ${_CORENEURON_RANDOM_INCLUDE})
     target_compile_options(core${TARGET_LIBRARY_NAME} PRIVATE ${_CORENEURON_FLAGS})
     target_link_libraries(core${TARGET_LIBRARY_NAME} PUBLIC neuron::corenrn)
-  endif()
 
-  # we need to link the `mech_func.cpp` file as well since it handles registration of mechanisms
-  list(JOIN L_MECH_DECLARE "\n" MECH_DECLARE)
-  list(JOIN L_MECH_PRINT "    \n" MECH_PRINT)
-  list(JOIN L_MECH_REGISTRE "  \n" MECH_REGISTRE)
-  get_filename_component(MECH_REG "${_NEURON_MECH_REG}" NAME_WLE)
-  configure_file(${_NEURON_MECH_REG} ${MECH_REG} @ONLY)
-  target_sources(${TARGET_LIBRARY_NAME} PRIVATE ${MECH_REG})
-
-  # Override the _target_ name, but not the executable name. This is useful when we are using this
-  # function for building NEURON components, since we may experience collisions in the target names
-  if(NRN_MECH_TARGET_EXECUTABLE_NAME)
-    set(TARGET_EXECUTABLE_NAME "${NRN_MECH_TARGET_EXECUTABLE_NAME}")
-  else()
-    set(TARGET_EXECUTABLE_NAME "${EXENAME}")
-  endif()
-
-  if(NRN_MECH_SPECIAL)
-    add_executable(${TARGET_EXECUTABLE_NAME} ${_NEURON_MAIN} ${MECH_REG})
-    target_include_directories(${TARGET_EXECUTABLE_NAME} PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
-    target_link_libraries(${TARGET_EXECUTABLE_NAME} ${TARGET_LIBRARY_NAME})
-    set_target_properties(${TARGET_EXECUTABLE_NAME} PROPERTIES OUTPUT_NAME "special")
-  endif()
-
-  if(NRN_MECH_CORENEURON)
     list(JOIN L_CORE_MECH_DECLARE "\n" MECH_DECLARE)
     list(JOIN L_CORE_MECH_PRINT "    \n" MECH_PRINT)
     list(JOIN L_CORE_MECH_REGISTRE "  \n" MECH_REGISTRE)

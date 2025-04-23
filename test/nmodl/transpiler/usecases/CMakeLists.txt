@@ -40,6 +40,7 @@ foreach(usecase ${NMODL_USECASE_DIRS})
   file(GLOB modfiles "${usecase}/*.mod")
   # build modfiles with NOCMODL
   create_nrnmech(
+    NEURON
     MOD_FILES
     ${modfiles}
     TARGET_LIBRARY_NAME
@@ -59,6 +60,7 @@ foreach(usecase ${NMODL_USECASE_DIRS})
 
   # build modfiles with NMODL
   create_nrnmech(
+    NEURON
     NMODL_NEURON_CODEGEN
     MOD_FILES
     ${modfiles}

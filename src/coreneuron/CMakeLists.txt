@@ -542,18 +542,32 @@ set(nrniv_core_prefix "${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}")
 set(corenrn_mech_library
     "${nrniv_core_prefix}/${CMAKE_${COMPILE_LIBRARY_TYPE}_LIBRARY_PREFIX}corenrnmech_internal${CMAKE_${COMPILE_LIBRARY_TYPE}_LIBRARY_SUFFIX}"
 )
-set(output_binaries "${nrniv_core_prefix}/special-core" "${corenrn_mech_library}")
 
-add_custom_command(
-  OUTPUT ${output_binaries}
-  DEPENDS coreneuron-core nmodl::nmodl ${CORENEURON_BUILTIN_MODFILES}
-  COMMAND
-    ${CMAKE_COMMAND} -E env NMODLHOME=${NMODL_PROJECT_PLATLIB_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b ${COMPILE_LIBRARY_TYPE} -m ${CORENRN_NMODL_BINARY} -n
-    "internal" -p 4 "."
-  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-  COMMENT "Running nrnivmodl-core with internal mod files")
-add_custom_target(nrniv-core ALL DEPENDS ${output_binaries})
+include(${PROJECT_SOURCE_DIR}/cmake/NeuronMechVariableHelper.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/neuronMechMaker.cmake)
+create_nrnmech(
+  CORENEURON
+  SPECIAL
+  MOD_FILES
+  ${builtin_modfiles}
+  TARGET_LIBRARY_NAME
+  neuron-mod-lib
+  TARGET_EXECUTABLE_NAME
+  neuron-mod-bin
+  LIBRARY_TYPE
+  ${COMPILE_LIBRARY_TYPE}
+  NMODL_EXECUTABLE
+  ${PROJECT_BINARY_DIR}/bin/nmodl
+  EXTRA_ENV
+  ${NRN_RUN_FROM_BUILD_DIR_ENV})
+target_include_directories(coreneuron-mod-lib PRIVATE ${PROJECT_BINARY_DIR}/include)
+target_include_directories(coreneuron-mod-bin PRIVATE ${PROJECT_BINARY_DIR}/include)
+set_target_properties(coreneuron-mod-lib PROPERTIES OUTPUT_NAME "corenrnmech_internal"
+                                                    LIBRARY_OUTPUT_DIRECTORY ${nrniv_core_prefix})
+add_dependencies(coreneuron-mod-lib coreneuron-core nmodl::nmodl)
+add_dependencies(coreneuron-mod-bin coreneuron-core nmodl::nmodl)
+
+add_custom_target(nrniv-core ALL DEPENDS coreneuron-mod-lib coreneuron-mod-bin)
 
 # Build a target representing the libcorenrnmech_internal.so that is produced under bin/x86_64,
 # which executables such as the unit tests must link against
@@ -619,17 +633,6 @@ set(CORENRN_CXX_FLAGS
 # =============================================================================
 # Copy first into build directory as it will be used for special-core
 # =============================================================================
-configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl_core_makefile.in
-               ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile @ONLY)
-configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl-core.in ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
-               @ONLY)
-# nrnivmodl-core depends on the building of nmodl::nmodl and the configuration of the nrnivmodl-core
-# and nrnivmodl_core_makefile this doesn't imply that whenever there is a change in one of those
-# files then the prebuilt mod files are going to be rebuilt
-add_custom_target(
-  nrnivmodl-core ALL
-  DEPENDS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
-          ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile nmodl::nmodl)
 
 if(CORENRN_ENABLE_UNIT_TESTS)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/coreneuron/unit

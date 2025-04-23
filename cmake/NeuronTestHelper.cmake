@@ -206,6 +206,7 @@ function(nrn_add_test_group)
       # Actually build the target (compile modfiles)
       create_nrnmech(
         ${cnrn_option}
+        NEURON
         SPECIAL
         MOD_FILES
         ${modfiles}

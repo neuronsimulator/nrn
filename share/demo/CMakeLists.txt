@@ -4,6 +4,7 @@ include(${PROJECT_SOURCE_DIR}/cmake/neuronMechMaker.cmake)
 # compile all mod files and install them
 file(GLOB neurondemo_files "${CMAKE_CURRENT_SOURCE_DIR}/release/*.mod")
 create_nrnmech(
+  NEURON
   SPECIAL
   MOD_FILES
   ${neurondemo_files}

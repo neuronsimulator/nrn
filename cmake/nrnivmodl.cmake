@@ -5,4 +5,4 @@ find_package(neuron REQUIRED)
 
 message(STATUS "Received mod files: ${MOD_FILES}")
 
-create_nrnmech(${CORENEURON} MOD_FILES ${MOD_FILES})
+create_nrnmech(NEURON ${CORENEURON} MOD_FILES ${MOD_FILES})
