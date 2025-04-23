@@ -43,9 +43,9 @@ function(create_nrnmech)
   # any extra environment variables that need to be passed (for testing purposes only). Because
   # CMake likes to escape and quote things, we need to do it the roundabout way...
   if(NRN_MECH_EXTRA_ENV)
-    set(NRN_MECH_ENV_COMMAND "${CMAKE_COMMAND}" -E env ${NRN_MECH_EXTRA_ENV})
+    set(ENV_COMMAND "${CMAKE_COMMAND}" -E env ${NRN_MECH_EXTRA_ENV})
   else()
-    set(NRN_MECH_ENV_COMMAND)
+    set(ENV_COMMAND)
   endif()
 
   # Where to output the mod files
@@ -59,7 +59,7 @@ function(create_nrnmech)
 
   foreach(MOD_FILE IN LISTS NRN_MECH_MOD_FILES)
     if(NOT MOD_FILE MATCHES ".*mod$")
-      message(WARNING "File ${MOD_FILE} has an extension that is not .mod, nrnivmodl may fail")
+      message(WARNING "File ${MOD_FILE} has an extension that is not .mod, compilation may fail")
     endif()
     get_filename_component(MOD_STUB "${MOD_FILE}" NAME_WLE)
     list(APPEND INPUT_STUBS "${MOD_STUB}")
@@ -78,10 +78,12 @@ function(create_nrnmech)
     list(APPEND L_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
     add_custom_command(
-      COMMAND ${NRN_MECH_ENV_COMMAND} ${NEURON_TRANSPILER_LAUNCHER} -o "${NRN_MECH_OUTPUT_DIR}/cpp"
+      COMMAND ${ENV_COMMAND} ${NEURON_TRANSPILER_LAUNCHER} -o "${NRN_MECH_OUTPUT_DIR}/cpp"
               "${MOD_ABSPATH}" ${NRN_MECH_NMODL_EXTRA_ARGS}
       OUTPUT "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
       COMMENT "Converting ${MOD_ABSPATH} to ${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
+      # TODO some mod files may include other files, and NMODL can get the AST of a given file in
+      # JSON form, which we could potentially parse with CMake and get the full list of dependencies
       DEPENDS "${MOD_ABSPATH}"
       VERBATIM)
 
@@ -94,9 +96,7 @@ function(create_nrnmech)
     file(GLOB BASE_MOD_FILES "${_CORENEURON_BASE_MOD}/*.mod")
     foreach(MOD_FILE IN LISTS BASE_MOD_FILES)
       get_filename_component(MOD_STUB "${MOD_FILE}" NAME_WLE)
-      if("${MOD_STUB}" IN_LIST INPUT_STUBS)
-
-      else()
+      if(NOT "${MOD_STUB}" IN_LIST INPUT_STUBS)
         list(APPEND MOD_FILES "${MOD_FILE}")
       endif()
     endforeach()
@@ -113,8 +113,8 @@ function(create_nrnmech)
       list(APPEND L_CORE_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
       add_custom_command(
-        COMMAND ${NRN_MECH_ENV_COMMAND} ${NEURON_TRANSPILER_LAUNCHER} -o
-                "${NRN_MECH_OUTPUT_DIR}/cpp_core" "${MOD_ABSPATH}"
+        COMMAND ${ENV_COMMAND} ${NEURON_TRANSPILER_LAUNCHER} -o "${NRN_MECH_OUTPUT_DIR}/cpp_core"
+                "${MOD_ABSPATH}" ${NRN_MECH_NMODL_EXTRA_ARGS}
         OUTPUT "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
         COMMENT "Converting ${MOD_ABSPATH} to ${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
         DEPENDS "${MOD_ABSPATH}"
@@ -144,7 +144,7 @@ function(create_nrnmech)
     target_link_libraries(core${TARGET_LIBRARY_NAME} PUBLIC neuron::corenrn)
   endif()
 
-  # we need to link the `mech_func.cpp` file as well
+  # we need to link the `mech_func.cpp` file as well since it handles registration of mechanisms
   list(JOIN L_MECH_DECLARE "\n" MECH_DECLARE)
   list(JOIN L_MECH_PRINT "    \n" MECH_PRINT)
   list(JOIN L_MECH_REGISTRE "  \n" MECH_REGISTRE)

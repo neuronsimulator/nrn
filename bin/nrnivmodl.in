@@ -7,7 +7,7 @@
 set -eu
 
 srcdir="${PWD}"
-bindir="$(uname -m)"
+bindir="$(uname -m)/.libs"
 
 # Where the `*.cmake` files are located
 NRN_CMAKE_PREFIX_PATH_DEFAULT="$(readlink -f "$(dirname "${0}")/../lib/cmake/")"
