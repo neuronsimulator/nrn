@@ -30,7 +30,7 @@ function(create_nrnmech)
   if(NRN_MECH_NOCMODL_EXECUTABLE)
     set(NOCMODL_EXECUTABLE "${NRN_MECH_NOCMODL_EXECUTABLE}")
   else()
-    set(NOCMODL_EXECUTABLE "${NOCMODL}")
+    set(NOCMODL_EXECUTABLE $<TARGET_FILE:neuron::nocmodl>)
   endif()
 
   # nmodl by default generates code for coreNEURON, so we toggle this via an option
@@ -40,8 +40,8 @@ function(create_nrnmech)
     set(NEURON_TRANSPILER_LAUNCHER ${NOCMODL_EXECUTABLE})
   endif()
 
-  # any extra environment variables that need to be passed (for testing purposes only) because CMake
-  # likes to escape and quote things, we need to do it the roundabout way...
+  # any extra environment variables that need to be passed (for testing purposes only). Because
+  # CMake likes to escape and quote things, we need to do it the roundabout way...
   if(NRN_MECH_EXTRA_ENV)
     set(NRN_MECH_ENV_COMMAND "${CMAKE_COMMAND}" -E env ${NRN_MECH_EXTRA_ENV})
   else()
@@ -155,7 +155,7 @@ function(create_nrnmech)
   if(NRN_MECH_TARGET_EXECUTABLE_NAME)
     set(TARGET_EXECUTABLE_NAME "${NRN_MECH_TARGET_EXECUTABLE_NAME}")
   else()
-      set(TARGET_EXECUTABLE_NAME "${EXENAME}")
+    set(TARGET_EXECUTABLE_NAME "${EXENAME}")
   endif()
 
   if(NRN_MECH_SPECIAL)
