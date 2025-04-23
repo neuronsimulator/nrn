@@ -283,17 +283,6 @@ class CMakeAugmentedBuilder(build_ext):
                 cwd=self.build_temp,
                 env=env,
             )
-            subprocess.check_call(
-                [
-                    ext.cmake_install_prefix + "/bin/neurondemo",
-                    "-nopython",
-                    "-nogui",
-                    "-c",
-                    "quit()",
-                ],
-                cwd=self.build_temp,
-                env=env,
-            )
             # mac: libnrnmech of neurondemo need to point to relative libnrniv
             REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
             subprocess.check_call(
