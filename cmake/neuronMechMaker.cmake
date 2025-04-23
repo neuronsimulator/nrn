@@ -58,6 +58,9 @@ function(create_nrnmech)
   set(EXENAME "special")
 
   foreach(MOD_FILE IN LISTS NRN_MECH_MOD_FILES)
+    if(NOT MOD_FILE MATCHES ".*mod$")
+      message(WARNING "File ${MOD_FILE} has an extension that is not .mod, nrnivmodl may fail")
+    endif()
     get_filename_component(MOD_STUB "${MOD_FILE}" NAME_WLE)
     list(APPEND INPUT_STUBS "${MOD_STUB}")
     list(APPEND MOD_FILES "${MOD_FILE}")
@@ -78,8 +81,7 @@ function(create_nrnmech)
       COMMAND ${NRN_MECH_ENV_COMMAND} ${NEURON_TRANSPILER_LAUNCHER} -o "${NRN_MECH_OUTPUT_DIR}/cpp"
               "${MOD_ABSPATH}" ${NRN_MECH_NMODL_EXTRA_ARGS}
       OUTPUT "${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
-      COMMENT
-        "Converting ${MOD_ABSPATH} to ${NRN_MECH_OUTPUT_DIR}/${CPP_FILE} with env ${NRN_MECH_EXTRA_ENV}"
+      COMMENT "Converting ${MOD_ABSPATH} to ${NRN_MECH_OUTPUT_DIR}/${CPP_FILE}"
       DEPENDS "${MOD_ABSPATH}"
       VERBATIM)
 

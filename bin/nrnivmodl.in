@@ -58,5 +58,4 @@ cmake -S "${srcdir}" -B "${bindir}" -DMOD_FILES="${modfiles}" -DCORENEURON="@COR
 
 # Parallelism for the build can be set by the `CMAKE_BUILD_PARALLEL_LEVEL` env
 # variable
-CMAKE_BUILD_PARALLEL_LEVEL="${CMAKE_BUILD_PARALLEL_LEVEL:-4}"
-cmake --build "${bindir}"
+CMAKE_BUILD_PARALLEL_LEVEL="${CMAKE_BUILD_PARALLEL_LEVEL:-4}" cmake --build "${bindir}"
