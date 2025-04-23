@@ -16,6 +16,12 @@ if [ -n "${CMAKE_PREFIX_PATH:-}" ]; then
 else
     CMAKE_PREFIX_PATH="${NRN_CMAKE_PREFIX_PATH_DEFAULT}"
 fi
+export CMAKE_PREFIX_PATH
+
+# Parallelism for the build can be set by the `CMAKE_BUILD_PARALLEL_LEVEL` env
+# variable
+CMAKE_BUILD_PARALLEL_LEVEL="${CMAKE_BUILD_PARALLEL_LEVEL:-4}"
+export CMAKE_BUILD_PARALLEL_LEVEL
 
 if command -v xcrun >/dev/null 2>&1; then
     @NRN_OSX_BUILD_TRUE@export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
@@ -56,6 +62,5 @@ modfiles="${modfiles%%;}"
 # Configure the mod files
 cmake -S "${srcdir}" -B "${bindir}" -DMOD_FILES="${modfiles}" -DCORENEURON="@CORENEURON@"
 
-# Parallelism for the build can be set by the `CMAKE_BUILD_PARALLEL_LEVEL` env
-# variable
-CMAKE_BUILD_PARALLEL_LEVEL="${CMAKE_BUILD_PARALLEL_LEVEL:-4}" cmake --build "${bindir}"
+# Actually build them
+cmake --build "${bindir}"
