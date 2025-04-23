@@ -221,7 +221,7 @@ endmacro()
 macro(nrn_buildarch_executable EXECUTABLE_NAME)
   if(APPLE)
     # Get the build architecture (set by the build system)
-    set(BUILD_ARCH "${CMAKE_SYSTEM_PROCESSOR}") # Example: "arm64" or "x86_64"
+    set(BUILD_ARCH "${CMAKE_HOST_SYSTEM_PROCESSOR}") # Example: "arm64" or "x86_64"
     # Set BUILD_ARCH_FLAGS based on CMAKE_OSX_ARCHITECTURES and BUILD_ARCH
     set(BUILD_ARCH_FLAGS "")
     if(BUILD_ARCH AND NOT "${BUILD_ARCH}" IN_LIST CMAKE_OSX_ARCHITECTURES)
@@ -265,13 +265,14 @@ endmacro()
 #   nrn_set_universal2_begin()
 #   # Code that needs universal2 (e.g., add_subdirectory)
 #   nrn_set_universal2_end()
-# Sets universal2 only if CMAKE_SYSTEM_PROCESSOR is not in CMAKE_OSX_ARCHITECTURES.
+# Sets universal2 only if CMAKE_HOST_SYSTEM_PROCESSOR is not in CMAKE_OSX_ARCHITECTURES.
 # ~~~
 macro(nrn_set_universal2_begin)
   if(APPLE)
     # Check if system processor is in target architectures
     set(_NRN_NEED_UNIVERSAL2 FALSE)
-    if(CMAKE_SYSTEM_PROCESSOR AND NOT "${CMAKE_SYSTEM_PROCESSOR}" IN_LIST CMAKE_OSX_ARCHITECTURES)
+    if(CMAKE_HOST_SYSTEM_PROCESSOR AND NOT "${CMAKE_HOST_SYSTEM_PROCESSOR}" IN_LIST
+                                       CMAKE_OSX_ARCHITECTURES)
       set(_NRN_NEED_UNIVERSAL2 TRUE)
     endif()
     if(_NRN_NEED_UNIVERSAL2)
@@ -283,12 +284,12 @@ macro(nrn_set_universal2_begin)
           CACHE STRING "Target architectures for macOS" FORCE)
       message(
         STATUS
-          "nrn_set_universal2_begin: Set CMAKE_OSX_ARCHITECTURES to x86_64;arm64 (system: ${CMAKE_SYSTEM_PROCESSOR})"
+          "nrn_set_universal2_begin: Set CMAKE_OSX_ARCHITECTURES to x86_64;arm64 (system: ${CMAKE_HOST_SYSTEM_PROCESSOR})"
       )
     else()
       message(
         STATUS
-          "nrn_set_universal2_begin: Skipped, system processor ${CMAKE_SYSTEM_PROCESSOR} already in CMAKE_OSX_ARCHITECTURES"
+          "nrn_set_universal2_begin: Skipped, system processor ${CMAKE_HOST_SYSTEM_PROCESSOR} already in CMAKE_OSX_ARCHITECTURES"
       )
     endif()
   endif()

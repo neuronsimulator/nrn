@@ -12,7 +12,7 @@ add_compile_definitions(${CORENRN_COMPILE_DEFS})
 add_compile_options(${CORENRN_EXTRA_CXX_FLAGS})
 add_link_options(${CORENRN_EXTRA_LINK_FLAGS})
 
-set(CMAKE_BUILD_RPATH ${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR})
+set(CMAKE_BUILD_RPATH ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR})
 if(CORENRN_ENABLE_UNIT_TESTS)
   include_directories(${PROJECT_SOURCE_DIR}/src)
   add_library(coreneuron-unit-test INTERFACE)

@@ -218,20 +218,6 @@ set(NMODL_EXTRA_CXX_FLAGS
     CACHE STRING "Add extra compile flags for NMODL sources")
 separate_arguments(NMODL_EXTRA_CXX_FLAGS)
 
-# =============================================================================
-# Include cmake modules
-# =============================================================================
-# sub-directorty containing project submodules
-set(THIRD_PARTY_DIRECTORY "${PROJECT_SOURCE_DIR}/external")
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
-include(cmake/PlatformHelper.cmake)
-include(cmake/CompilerHelper.cmake)
-include(cmake/MacroHelper.cmake)
-include(cmake/RpathHelper.cmake)
-include(cmake/ExternalProjectHelper.cmake)
-include(cmake/modules/FindPythonModule.cmake)
-include(cmake/Coverage.cmake)
-
 # TARGET_ARCH is usually CMAKE_SYSTEM_PROCESSOR. But for APPLE wheels we sometimes want to
 # cross-compile and not bloat all the executables as universal2. TARGET_TYPE is computed as x86_64
 # or arm64 or universal2
@@ -246,6 +232,9 @@ if(APPLE AND NOT "${TARGET_ARCH}" IN_LIST CMAKE_OSX_ARCHITECTURES)
   endif()
 endif()
 set(TARGET_TYPE ${TARGET_ARCH})
+set(CMAKE_SYSTEM_PROCESSOR
+    ${TARGET_ARCH}
+    CACHE STRING "Target system processor" FORCE)
 if(APPLE
    AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES
    AND "arm64" IN_LIST CMAKE_OSX_ARCHITECTURES)
@@ -253,6 +242,20 @@ if(APPLE
   set(NRN_UNIVERSAL2_BUILD ON)
   set(TARGET_ARCH_FLAGS "-arch arm64 -arch x86_64")
 endif()
+
+# =============================================================================
+# Include cmake modules
+# =============================================================================
+# sub-directorty containing project submodules
+set(THIRD_PARTY_DIRECTORY "${PROJECT_SOURCE_DIR}/external")
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
+include(cmake/PlatformHelper.cmake)
+include(cmake/CompilerHelper.cmake)
+include(cmake/MacroHelper.cmake)
+include(cmake/RpathHelper.cmake)
+include(cmake/ExternalProjectHelper.cmake)
+include(cmake/modules/FindPythonModule.cmake)
+include(cmake/Coverage.cmake)
 
 # see: https://github.com/neuronsimulator/nrn/issues/3387
 if(NRN_LINUX_BUILD
@@ -962,8 +965,7 @@ if(NRN_ENABLE_TESTS)
   # Execute neurondemo as part of the build because it lazily calls nrnivmodl. If we don't do this
   # then test_neurondemo.py will run nrnivmodl in a clean build, and report compilation warnings as
   # unexpected stderr.
-  set(neurondemo_prefix
-      "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}")
+  set(neurondemo_prefix "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_SYSTEM_PROCESSOR}")
   set(neurondemo_files
       "${neurondemo_prefix}/special"
       "${neurondemo_prefix}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}")
@@ -1058,9 +1060,9 @@ endif()
 if(NOT NRN_WINDOWS_BUILD)
   # create arch folder under prefix with symlink to bin and lib
   nrn_install_dir_symlink(${CMAKE_INSTALL_PREFIX}/bin
-                          ${CMAKE_INSTALL_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/bin)
+                          ${CMAKE_INSTALL_PREFIX}/${CMAKE_SYSTEM_PROCESSOR}/bin)
   nrn_install_dir_symlink(${CMAKE_INSTALL_PREFIX}/lib
-                          ${CMAKE_INSTALL_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/lib)
+                          ${CMAKE_INSTALL_PREFIX}/${CMAKE_SYSTEM_PROCESSOR}/lib)
 endif()
 
 # =============================================================================

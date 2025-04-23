@@ -143,7 +143,7 @@ build_wheel_osx() {
         MACOSX_DEPLOYMENT_TARGET=$(python -c "import sysconfig; print(sysconfig.get_platform().split('-')[1])")
     fi
 
-    if [ "$ARCHTYPE" == "universal2"]; then
+    if [ "$ARCHTYPE" == "universal2" ]; then
         UNIVERSAL2=1
     else
         UNIVERSAL2=0

@@ -284,7 +284,7 @@ class CMakeAugmentedBuilder(build_ext):
                 env=env,
             )
             if (
-                "CMAKE_OSX_ARCHITECTURES=arm64" in cmake_args
+                "-DCMAKE_OSX_ARCHITECTURES=arm64" in cmake_args
                 and platform.machine() == "x86_64"
             ):
                 firstarg = "-cross-compiling"

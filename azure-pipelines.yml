@@ -46,6 +46,11 @@ stages:
             python.org.version: '3.13.0'
             python.installer.name: 'macos11.pkg'
             arch: arm64
+          Python313_universal2:
+            python.version: '3.13'
+            python.org.version: '3.13.0'
+            python.installer.name: 'macos11.pkg'
+            arch: universal2
 
       steps:
 

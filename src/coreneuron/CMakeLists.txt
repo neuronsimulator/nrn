@@ -657,7 +657,7 @@ install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION bin)
 
 # install nrniv-core app
 install(
-  PROGRAMS ${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR}/special-core
+  PROGRAMS ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}/special-core
   DESTINATION bin
   RENAME nrniv-core)
 install(FILES apps/coreneuron.cpp DESTINATION share/coreneuron)

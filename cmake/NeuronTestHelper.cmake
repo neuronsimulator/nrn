@@ -208,7 +208,7 @@ function(nrn_add_test_group)
         list(APPEND modfile_build_paths "${modfile_build_path}")
       endforeach()
       # Construct the names of the important output files
-      set(special "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/special")
+      set(special "${nrnivmodl_directory}/${CMAKE_SYSTEM_PROCESSOR}/special")
       # Add the custom command to generate the binaries. Get nrnivmodl from the build directory. At
       # the moment it seems that `nrnivmodl` is generated at configure time, so there is no target
       # to depend on and it should always be available, but it will try and link against libnrniv.so
@@ -344,9 +344,8 @@ function(nrn_add_test)
   file(MAKE_DIRECTORY "${working_directory}")
   if(DEFINED nrnivmodl_directory)
     execute_process(
-      COMMAND
-        ${CMAKE_COMMAND} -E create_symlink "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}"
-        "${working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}")
+      COMMAND ${CMAKE_COMMAND} -E create_symlink "${nrnivmodl_directory}/${CMAKE_SYSTEM_PROCESSOR}"
+              "${working_directory}/${CMAKE_SYSTEM_PROCESSOR}")
   endif()
   # Set up the actual test. First, collect the script files that need to be copied into the test-
   # specific working directory and copy them there.
@@ -395,7 +394,7 @@ function(nrn_add_test)
     list(
       APPEND
       test_env
-      "CORENEURONLIB=${build_prefix}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}${mech_lib_name}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+      "CORENEURONLIB=${build_prefix}/${CMAKE_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}${mech_lib_name}${CMAKE_SHARED_LIBRARY_SUFFIX}"
     )
   endif()
   # Get [VAR1, VAR2, ...] from [VAR1=VAL1, VAR2=VAL2, ...]
@@ -407,7 +406,7 @@ function(nrn_add_test)
     endif()
     # PATH will already be set in test_env
     list(TRANSFORM test_env REPLACE "^PATH="
-                                    "PATH=${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:")
+                                    "PATH=${nrnivmodl_directory}/${CMAKE_SYSTEM_PROCESSOR}:")
   endif()
   list(TRANSFORM test_env REPLACE "^PYTHONPATH="
                                   "PYTHONPATH=${CMAKE_SOURCE_DIR}/docs/nmodl/python_scripts:")
