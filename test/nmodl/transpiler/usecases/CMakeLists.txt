@@ -55,10 +55,6 @@ foreach(usecase ${NMODL_USECASE_DIRS})
     "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nocmodl/${CMAKE_HOST_SYSTEM_PROCESSOR}/.libs")
   add_dependencies(${usecase}_nocmodl neuron::nrniv neuron::nocmodl)
   target_include_directories(${usecase}_nocmodl PRIVATE "${PROJECT_BINARY_DIR}/include")
-  set_target_properties(
-    ${usecase}_nocmodl
-    PROPERTIES LIBRARY_OUTPUT_DIRECTORY
-               "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nocmodl/${CMAKE_HOST_SYSTEM_PROCESSOR}")
 
   # build modfiles with NMODL
   create_nrnmech(
@@ -81,10 +77,6 @@ foreach(usecase ${NMODL_USECASE_DIRS})
     "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nmodl/${CMAKE_HOST_SYSTEM_PROCESSOR}/.libs")
   add_dependencies(${usecase}_nmodl nmodl::nmodl neuron::nrniv)
   target_include_directories(${usecase}_nmodl PRIVATE "${PROJECT_BINARY_DIR}/include")
-  set_target_properties(
-    ${usecase}_nmodl
-    PROPERTIES LIBRARY_OUTPUT_DIRECTORY
-               "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nmodl/${CMAKE_HOST_SYSTEM_PROCESSOR}")
 
   # add all usecase tests
   file(GLOB testfiles "${usecase}/test_*.py" "${usecase}/simulate.py")

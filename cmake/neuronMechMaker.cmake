@@ -169,12 +169,14 @@ function(create_nrnmech)
     list(JOIN L_MECH_PRINT "    \n" MECH_PRINT)
     list(JOIN L_MECH_REGISTRE "  \n" MECH_REGISTRE)
     get_filename_component(MECH_REG "${_NEURON_MECH_REG}" NAME_WLE)
-    configure_file(${_NEURON_MECH_REG} ${MECH_REG} @ONLY)
-    target_sources(${TARGET_LIBRARY_NAME} PRIVATE ${MECH_REG})
+    configure_file(${_NEURON_MECH_REG} "${ARTIFACTS_OUTPUT_DIR}/${MECH_REG}" @ONLY)
+    target_sources(${TARGET_LIBRARY_NAME} PRIVATE "${ARTIFACTS_OUTPUT_DIR}/${MECH_REG}")
+    target_compile_definitions(${TARGET_LIBRARY_NAME} PUBLIC AUTO_DLOPEN_NRNMECH=0)
 
     # add the special executable
     if(NRN_MECH_SPECIAL)
-      add_executable(${TARGET_EXECUTABLE_NAME} ${_NEURON_MAIN} ${MECH_REG})
+      add_executable(${TARGET_EXECUTABLE_NAME} ${_NEURON_MAIN}
+                                               "${ARTIFACTS_OUTPUT_DIR}/${MECH_REG}")
       target_include_directories(${TARGET_EXECUTABLE_NAME} PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
       target_link_libraries(${TARGET_EXECUTABLE_NAME} ${TARGET_LIBRARY_NAME})
       set_target_properties(
@@ -233,12 +235,14 @@ function(create_nrnmech)
     list(JOIN L_CORE_MECH_REGISTRE "  \n" MECH_REGISTRE)
 
     get_filename_component(CORE_MECH_REG "${_NEURON_COREMECH_REG}" NAME_WLE)
-    configure_file(${_NEURON_MECH_REG} core${CORE_MECH_REG} @ONLY)
+    configure_file(${_NEURON_MECH_REG} "${ARTIFACTS_OUTPUT_DIR}/core${CORE_MECH_REG}" @ONLY)
 
-    target_sources(core${TARGET_LIBRARY_NAME} PRIVATE core${CORE_MECH_REG})
+    target_sources(core${TARGET_LIBRARY_NAME}
+                   PRIVATE "${ARTIFACTS_OUTPUT_DIR}/core${CORE_MECH_REG}")
 
     if(NRN_MECH_SPECIAL)
-      add_executable(core${TARGET_EXECUTABLE_NAME} ${_CORENEURON_MAIN} core${CORE_MECH_REG})
+      add_executable(core${TARGET_EXECUTABLE_NAME} ${_CORENEURON_MAIN}
+                                                   "${ARTIFACTS_OUTPUT_DIR}/core${CORE_MECH_REG}")
       target_include_directories(core${TARGET_EXECUTABLE_NAME} PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
       target_link_libraries(core${TARGET_EXECUTABLE_NAME} core${TARGET_LIBRARY_NAME})
       set_target_properties(
