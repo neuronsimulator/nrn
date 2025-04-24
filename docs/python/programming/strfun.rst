@@ -47,9 +47,8 @@ StringFunctions (String Manipulation Class)
             python
     
             from neuron import h
-            s = h.ref("hello")
             sf = h.StringFunctions()
-            length = sf.len(s)
+            length = sf.len("hello")
             print(length)
     
     .. note::
@@ -85,6 +84,12 @@ StringFunctions (String Manipulation Class)
             s2 = h.ref("low")
             sf = h.StringFunctions()
             index = sf.substr(s1, s2)
+    
+    .. note::
+
+        When working with pure Python strings (not NEURON string references), the return value is the same as
+        ``s1.find(s2)``. e.g., ``sf.substr("allowed", "low")`` is equivalent to ``"allowed".find("low")`` and
+        both return ``2``.
          
 
 ----
@@ -176,9 +181,15 @@ StringFunctions (String Manipulation Class)
             s = h.ref("hello")
             sf = h.StringFunctions()
             sf.right(s, 3)
-            print(s[0])
+            print(s[0])  # prints: "lo"
 
+    .. note::
 
+        This is approximately equivalent to ``s = s[n:]`` for Python strings
+        except that it modifies the NEURON string in place. That is, ``sf.right(s, 3)``
+        always changes the value of ``s``, while ``s = s[n:]`` creates a new string
+        and assigns it to ``s``, but it could be assigned to any other variable and
+        leave the original string unchanged.
          
 
 ----
@@ -206,8 +217,16 @@ StringFunctions (String Manipulation Class)
             s = h.ref("hello")
             sf = h.StringFunctions()
             sf.left(s, 3)
-            print(s[0])
-             
+            print(s[0])  # prints "hel"
+    
+    .. note::
+
+        This is approximately equivalent to ``s = s[:n]`` for Python strings
+        except that it modifies the NEURON string in place. That is, ``sf.left(s, 3)``
+        always changes the value of ``s``, while ``s = s[:n]`` creates a new string
+        and assigns it to ``s``, but it could be assigned to any other variable and
+        leave the original string unchanged.
+
 
 ----
 
@@ -221,7 +240,7 @@ StringFunctions (String Manipulation Class)
 
 
     Description:
-        Returns ``True`` if the ``item`` is the name of a symbol, False otherwise. 
+        Returns ``True`` if the ``item`` is the name of a symbol, ``False`` otherwise. 
         This is so useful that the same thing is available with the top level 
         :func:`name_declared` function (except that returns 1 or 0 instead of True
         or False). 
@@ -261,7 +280,7 @@ StringFunctions (String Manipulation Class)
 
 
     Syntax:
-        ``sf.alias(obj, "name", &var2)``
+        ``sf.alias(obj, "name", _ref_var2)``
 
         ``sf.alias(obj, "name", obj2)``
 
@@ -272,7 +291,7 @@ StringFunctions (String Manipulation Class)
 
     Description:
         "name" becomes a public variable for obj and points to the 
-        scalar var2 or object obj2. obj.name may be used anywhere the var2 or obj2 may 
+        scalar pointed at by ``_ref_var2`` or object obj2. obj.name may be used anywhere the var2 or obj2 may 
         be used. With no third arg, the "name" is removed from the objects 
         alias list. With no second arg, the objects alias list is cleared. 
 
@@ -346,9 +365,9 @@ StringFunctions (String Manipulation Class)
             python
 
             from neuron import h
-            s1 = h.Section('soma')
-            strobj = h.StringFunctions()
-            strobj.references(s1)
+            soma = h.Section('soma')
+            sf = h.StringFunctions()
+            sf.references(soma)
 
 
 ----
