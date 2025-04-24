@@ -86,14 +86,14 @@ foreach(usecase ${NMODL_USECASE_DIRS})
     # run with NOCMODL beforehand because it may generate some files
     add_custom_target(
       usecase_gendata_${usecase}_${testname}
-      COMMAND ${CMAKE_COMMAND} -E env "${NRN_RUN_FROM_BUILD_DIR_ENV}"
-              ${NRN_DEFAULT_PYTHON_EXECUTABLE} "${abs_testfile}"
+      COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_DEFAULT_PYTHON_EXECUTABLE}
+              "${abs_testfile}"
       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nocmodl")
 
     add_test(
       NAME nmodl::usecase::${usecase}::${testname}
-      COMMAND ${CMAKE_COMMAND} -E env "${NRN_RUN_FROM_BUILD_DIR_ENV}"
-              ${NRN_DEFAULT_PYTHON_EXECUTABLE} "${abs_testfile}"
+      COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_DEFAULT_PYTHON_EXECUTABLE}
+              "${abs_testfile}"
       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nmodl")
     set_tests_properties(nmodl::usecase::${usecase}::${testname}
                          PROPERTIES DEPENDS usecase_gendata_${usecase}_${testname})
