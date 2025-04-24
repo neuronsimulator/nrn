@@ -533,6 +533,24 @@ set_target_properties(
              POSITION_INDEPENDENT_CODE ${CORENRN_ENABLE_SHARED})
 cpp_cc_configure_sanitizers(TARGET coreneuron-core ${coreneuron_cuda_target} ${corenrn_mpi_targets})
 
+# Make headers avail to build tree
+configure_file(engine.h.in ${CMAKE_BINARY_DIR}/include/coreneuron/engine.h @ONLY)
+
+file(
+  GLOB_RECURSE main_headers
+  RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+  *.h *.hpp)
+
+configure_file(${CMAKE_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp
+               ${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp COPYONLY)
+foreach(header ${main_headers})
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${header}
+                 ${CMAKE_BINARY_DIR}/include/coreneuron/${header} COPYONLY)
+endforeach()
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
+               ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h COPYONLY)
+
 # =============================================================================
 # create special-core with inbuilt mode files
 # =============================================================================
@@ -600,24 +618,6 @@ if(coreneuron_core_deps)
     target_link_libraries(coreneuron-all INTERFACE ${dep})
   endforeach()
 endif()
-
-# Make headers avail to build tree
-configure_file(engine.h.in ${CMAKE_BINARY_DIR}/include/coreneuron/engine.h @ONLY)
-
-file(
-  GLOB_RECURSE main_headers
-  RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
-  *.h *.hpp)
-
-configure_file(${CMAKE_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp
-               ${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp COPYONLY)
-foreach(header ${main_headers})
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${header}
-                 ${CMAKE_BINARY_DIR}/include/coreneuron/${header} COPYONLY)
-endforeach()
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
-               ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h COPYONLY)
 
 # Extract the various compiler option strings to use inside nrnivmodl-core. Sets the global property
 # CORENRN_LIB_LINK_FLAGS, which contains the arguments that must be added to the link line for

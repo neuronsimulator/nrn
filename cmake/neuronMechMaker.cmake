@@ -1,6 +1,20 @@
 # ~~~
-# Helper functions for generating NEURON mechanism libraries directly in CMake
-# The basic idea is
+# Helper functions for generating (core)NEURON mechanism libraries directly in CMake
+# The basic idea is to replicate all of the previous functionality of the Makefiles,
+# but without having to deal with reading Makefiles or having to worry about dependencies.
+# What `nrnivmodl` and `nrnivmodl -coreneuron` were doing was essentially:
+# - create a subdir equivalent to `CMAKE_HOST_SYSTEM_PROCESSOR` in the current working directory
+# - translate a given list of mod files to cpp files (using either NOCMODL or NMODL)
+# - create a file `mod_func.cpp` which dynamically (that is, upon running `nrniv` or similar) registers the mechanisms in NEURON
+# - create a `nrnmech` library in the `CMAKE_HOST_SYSTEM_PROCESSOR/.libs/` subdirectory from all of the above listed cpp files
+# - create a `special` executable in the `CMAKE_HOST_SYSTEM_PROCESSOR` subdirectory from the `nrnmain.cpp` file
+# - link the above executable to the `nrnmech` library
+# In case the `-coreneuron` option is given, it additionally does the following:
+# - create a `corenrnmech` library in the `CMAKE_HOST_SYSTEM_PROCESSOR` subdirectory from all of the above listed cpp files, except with a different `mod_func.cpp` which correctly registers it under the `coreneuron` cpp namespace
+# - create a `special-core` executable in the `CMAKE_HOST_SYSTEM_PROCESSOR` subdirectory from the `coreneuron.cpp` file
+# - link the above executable to the `corenrnmech` library
+# Note that any other files created are basically noise.
+# TODO figure out why we get missing symbols when testing
 # ~~~
 function(create_nrnmech)
   set(options NEURON CORENEURON SPECIAL NMODL_NEURON_CODEGEN)
@@ -120,6 +134,7 @@ function(create_nrnmech)
   endif()
 
   # Collect mod files, output any warnings
+  set(MOD_FILES "")
   foreach(MOD_FILE IN LISTS NRN_MECH_MOD_FILES)
     if(NOT MOD_FILE MATCHES ".*mod$")
       message(WARNING "File ${MOD_FILE} has an extension that is not .mod, compilation may fail")
@@ -157,11 +172,12 @@ function(create_nrnmech)
       list(APPEND L_SOURCES "${ARTIFACTS_OUTPUT_DIR}/${CPP_FILE}")
     endforeach()
 
-    # add the nrnmech library
+    # add the nrnmech library. It must _always_ go to the `.libs` subdir because this is how
+    # NEURON's discovery mechanism works
     add_library(${TARGET_LIBRARY_NAME} ${LIBRARY_TYPE} ${L_SOURCES})
     set_target_properties(
       ${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "${LIBNAME}" LIBRARY_OUTPUT_DIRECTORY
-                                                                 "${LIBRARY_OUTPUT_DIR}")
+                                                                 "${LIBRARY_OUTPUT_DIR}/.libs")
     target_link_libraries(${TARGET_LIBRARY_NAME} PUBLIC neuron::nrniv)
 
     # we need to add the `mech_func.cpp` file as well since it handles registration of mechanisms
@@ -177,7 +193,8 @@ function(create_nrnmech)
     if(NRN_MECH_SPECIAL)
       add_executable(${TARGET_EXECUTABLE_NAME} ${_NEURON_MAIN}
                                                "${ARTIFACTS_OUTPUT_DIR}/${MECH_REG}")
-      target_include_directories(${TARGET_EXECUTABLE_NAME} PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
+      target_include_directories(${TARGET_EXECUTABLE_NAME} BEFORE
+                                 PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
       target_link_libraries(${TARGET_EXECUTABLE_NAME} ${TARGET_LIBRARY_NAME})
       set_target_properties(
         ${TARGET_EXECUTABLE_NAME} PROPERTIES OUTPUT_NAME "special" RUNTIME_OUTPUT_DIRECTORY
@@ -206,7 +223,7 @@ function(create_nrnmech)
       set(CPP_FILE "cpp_core/${MOD_STUB}.cpp")
       file(RELATIVE_PATH MOD_SHORT "${CMAKE_SOURCE_DIR}" "${MOD_ABSPATH}")
 
-      list(APPEND L_CORE_MECH_DECLARE "extern int void _${MOD_STUB}_reg(void)\;")
+      list(APPEND L_CORE_MECH_DECLARE "extern int _${MOD_STUB}_reg(void)\;")
       list(APPEND L_CORE_MECH_PRINT "fprintf(stderr, \" \\\"${MOD_SHORT}\\\"\")\;")
       list(APPEND L_CORE_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
@@ -226,16 +243,18 @@ function(create_nrnmech)
     set_target_properties(
       core${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "core${LIBNAME}" LIBRARY_OUTPUT_DIRECTORY
                                                                          "${LIBRARY_OUTPUT_DIR}")
-    target_include_directories(core${TARGET_LIBRARY_NAME} PRIVATE ${_CORENEURON_RANDOM_INCLUDE})
-    target_compile_options(core${TARGET_LIBRARY_NAME} PRIVATE ${_CORENEURON_FLAGS})
+    target_include_directories(core${TARGET_LIBRARY_NAME} BEFORE
+                               PUBLIC ${_CORENEURON_RANDOM_INCLUDE})
+    target_compile_options(core${TARGET_LIBRARY_NAME} BEFORE PRIVATE ${_CORENEURON_FLAGS})
     target_link_libraries(core${TARGET_LIBRARY_NAME} PUBLIC neuron::corenrn)
+    target_compile_definitions(core${TARGET_LIBRARY_NAME} PUBLIC ADDITIONAL_MECHS)
 
     list(JOIN L_CORE_MECH_DECLARE "\n" MECH_DECLARE)
     list(JOIN L_CORE_MECH_PRINT "    \n" MECH_PRINT)
     list(JOIN L_CORE_MECH_REGISTRE "  \n" MECH_REGISTRE)
 
-    get_filename_component(CORE_MECH_REG "${_NEURON_COREMECH_REG}" NAME_WLE)
-    configure_file(${_NEURON_MECH_REG} "${ARTIFACTS_OUTPUT_DIR}/core${CORE_MECH_REG}" @ONLY)
+    get_filename_component(CORE_MECH_REG "${_CORENEURON_MECH_REG}" NAME_WLE)
+    configure_file(${_CORENEURON_MECH_REG} "${ARTIFACTS_OUTPUT_DIR}/core${CORE_MECH_REG}" @ONLY)
 
     target_sources(core${TARGET_LIBRARY_NAME}
                    PRIVATE "${ARTIFACTS_OUTPUT_DIR}/core${CORE_MECH_REG}")
@@ -243,8 +262,10 @@ function(create_nrnmech)
     if(NRN_MECH_SPECIAL)
       add_executable(core${TARGET_EXECUTABLE_NAME} ${_CORENEURON_MAIN}
                                                    "${ARTIFACTS_OUTPUT_DIR}/core${CORE_MECH_REG}")
-      target_include_directories(core${TARGET_EXECUTABLE_NAME} PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
+      target_include_directories(core${TARGET_EXECUTABLE_NAME} BEFORE
+                                 PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
       target_link_libraries(core${TARGET_EXECUTABLE_NAME} core${TARGET_LIBRARY_NAME})
+      target_compile_definitions(core${TARGET_EXECUTABLE_NAME} PUBLIC ADDITIONAL_MECHS)
       set_target_properties(
         core${TARGET_EXECUTABLE_NAME}
         PROPERTIES OUTPUT_NAME "special-core" RUNTIME_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_DIR}")

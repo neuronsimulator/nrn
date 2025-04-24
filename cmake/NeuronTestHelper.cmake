@@ -198,12 +198,14 @@ function(nrn_add_test_group)
         endif()
         list(APPEND nrnivmodl_dependencies ${CORENEURON_BUILTIN_MODFILES})
       endif()
-      if(CORENEURON)
+      if(NRN_ADD_TEST_GROUP_CORENEURON)
         set(cnrn_option "CORENEURON")
       else()
         set(cnrn_option "")
       endif()
+      # ======================================================================================
       # Actually build the target (compile modfiles)
+      # ======================================================================================
       create_nrnmech(
         ${cnrn_option}
         NEURON
@@ -219,15 +221,43 @@ function(nrn_add_test_group)
         ARTIFACTS_OUTPUT_DIR
         "${nrnivmodl_directory}"
         LIBRARY_OUTPUT_DIR
-        "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/.libs"
+        "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}"
+        "${library_output_path}"
         EXECUTABLE_OUTPUT_DIR
         "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}"
         TARGET_LIBRARY_NAME
-        ${binary_target_name}
+        ${binary_target_name}-lib
         TARGET_EXECUTABLE_NAME
         ${binary_target_name}-special)
-      target_include_directories(${binary_target_name} PRIVATE ${PROJECT_BINARY_DIR}/include)
+      # Set the right include dirs and dependencies
+      foreach(neuron_target ${binary_target_name}-lib ${binary_target_name}-special)
+        target_include_directories(${neuron_target} BEFORE PRIVATE ${PROJECT_BINARY_DIR}/include)
+        add_dependencies(${neuron_target} neuron::nrniv neuron::nocmodl)
+      endforeach()
+      if(NRN_ADD_TEST_GROUP_CORENEURON)
+        # NEURON sets a lot of needless compile options, but we want to build things the way users
+        # would build them, so we need to set the COMPILE_OPTIONS, COMPILE_DEFINITONS, and
+        # INCLUDE_DIRECTORIES by hand for the core* targets
+        foreach(coreneuron_target core${binary_target_name}-lib core${binary_target_name}-special)
+          set_target_properties(
+            ${coreneuron_target}
+            PROPERTIES COMPILE_OPTIONS ""
+                       INCLUDE_DIRECTORIES ""
+                       COMPILE_FLAGS ""
+                       COMPILE_DEFINITIONS "")
+          add_dependencies(${coreneuron_target} nmodl::nmodl neuron::corenrn)
+          target_include_directories(
+            ${coreneuron_target} BEFORE
+            PRIVATE ${_CORENEURON_RANDOM_INCLUDE} ${PROJECT_BINARY_DIR}/include
+                    ${PROJECT_BINARY_DIR}/generated)
+          target_compile_options(${coreneuron_target} BEFORE PRIVATE ${_CORENEURON_FLAGS})
+          target_compile_definitions(${coreneuron_target} PUBLIC ADDITIONAL_MECHS)
+        endforeach()
 
+      endif()
+      add_custom_target(${binary_target_name} ALL)
+      add_dependencies(${binary_target_name} ${binary_target_name}-lib
+                       ${binary_target_name}-special)
     endif()
     set(${prefix}_NRNIVMODL_DIRECTORY
         "${nrnivmodl_directory}"

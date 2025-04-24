@@ -19,7 +19,7 @@ create_nrnmech(
   EXECUTABLE_OUTPUT_DIR
   "${CMAKE_CURRENT_BINARY_DIR}/release/${CMAKE_HOST_SYSTEM_PROCESSOR}"
   LIBRARY_OUTPUT_DIR
-  "${CMAKE_CURRENT_BINARY_DIR}/release/${CMAKE_HOST_SYSTEM_PROCESSOR}/.libs")
+  "${CMAKE_CURRENT_BINARY_DIR}/release/${CMAKE_HOST_SYSTEM_PROCESSOR}")
 target_include_directories(neurondemo PRIVATE "${PROJECT_BINARY_DIR}/include")
 target_include_directories(neurondemo-special PRIVATE "${PROJECT_BINARY_DIR}/include")
 add_dependencies(neurondemo neuron::nocmodl neuron::nrniv)
