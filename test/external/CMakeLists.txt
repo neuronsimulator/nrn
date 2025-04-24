@@ -41,15 +41,15 @@ if(NRN_ENABLE_CORENEURON)
   add_subdirectory(reduced_dentate)
   add_subdirectory(ringtest)
   add_subdirectory(testcorenrn)
-endif()
 
-# tqperf requires libcrypto library
-find_package(OpenSSL)
+  # tqperf requires libcrypto library
+  find_package(OpenSSL)
 
-if(OPENSSL_FOUND)
-  add_subdirectory(tqperf)
-else()
-  message(STATUS "Skipping tqperf test as OpenSSL package not found")
+  if(OPENSSL_FOUND)
+    add_subdirectory(tqperf)
+  else()
+    message(STATUS "Skipping tqperf test as OpenSSL package not found")
+  endif()
 endif()
 
 if("channel-benchmark" IN_LIST NRN_ENABLE_MODEL_TESTS)
