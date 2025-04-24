@@ -188,6 +188,7 @@ function(create_nrnmech)
     configure_file(${_NEURON_MECH_REG} "${ARTIFACTS_OUTPUT_DIR}/${MECH_REG}" @ONLY)
     target_sources(${TARGET_LIBRARY_NAME} PRIVATE "${ARTIFACTS_OUTPUT_DIR}/${MECH_REG}")
     target_compile_definitions(${TARGET_LIBRARY_NAME} PUBLIC AUTO_DLOPEN_NRNMECH=0)
+    target_include_directories(${TARGET_LIBRARY_NAME} BEFORE PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
 
     # add the special executable
     if(NRN_MECH_SPECIAL)
