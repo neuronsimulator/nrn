@@ -37,9 +37,11 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(nrntest reduced_dentate ringtest testcorenrn tqperf)
 
 add_subdirectory(nrntest)
-add_subdirectory(reduced_dentate)
-add_subdirectory(ringtest)
-add_subdirectory(testcorenrn)
+if(NRN_ENABLE_CORENEURON)
+  add_subdirectory(reduced_dentate)
+  add_subdirectory(ringtest)
+  add_subdirectory(testcorenrn)
+endif()
 
 # tqperf requires libcrypto library
 find_package(OpenSSL)
