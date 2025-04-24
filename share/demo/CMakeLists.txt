@@ -16,10 +16,12 @@ create_nrnmech(
   ${PROJECT_BINARY_DIR}/bin/nocmodl
   EXTRA_ENV
   ${NRN_RUN_FROM_BUILD_DIR_ENV}
+  # TODO it would probably make more sense to use CMAKE_CURRENT_BINARY_DIR here, so either move this
+  # dir to `share/nrn/demo`, or modify scripts to handle `share/demo` instead
   EXECUTABLE_OUTPUT_DIR
-  "${CMAKE_CURRENT_BINARY_DIR}/release/${CMAKE_HOST_SYSTEM_PROCESSOR}"
+  "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}"
   LIBRARY_OUTPUT_DIR
-  "${CMAKE_CURRENT_BINARY_DIR}/release/${CMAKE_HOST_SYSTEM_PROCESSOR}")
+  "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}")
 target_include_directories(neurondemo PRIVATE "${PROJECT_BINARY_DIR}/include")
 target_include_directories(neurondemo-special PRIVATE "${PROJECT_BINARY_DIR}/include")
 add_dependencies(neurondemo neuron::nocmodl neuron::nrniv)
