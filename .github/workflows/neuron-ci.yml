@@ -444,8 +444,15 @@ jobs:
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-
 
+      - name: Collect build file list
+        if: failure()
+        id: make-build-file-list
+        run: |
+            find ${{runner.workspace}}/nrn/build >> ${{runner.workspace}}/nrn/build_files.txt
+
       - name: Upload build artifacts
         if: failure()
+        needs: make-build-file-list
         uses: actions/upload-artifact@v4
         with:
           name: build_files-${{matrix.os}}-${{hashfiles('matrix.json')}}
@@ -458,6 +465,8 @@ jobs:
             ${{runner.workspace}}/nrn/build/cmake_install/CMakeCache.txt
             ${{runner.workspace}}/nrn/build/cmake_install/build.ninja
             ${{runner.workspace}}/nrn/build/cmake_install/cmake_install.cmake
+            # the list of files in the build tree
+            ${{runner.workspace}}/nrn/build_files.txt
 
       # This step will set up an SSH connection on tmate.io for live debugging.
       # To enable it, you have to:
