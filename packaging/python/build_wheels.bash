@@ -53,7 +53,13 @@ setup_venv() {
 
 }
 
-if [[ "$1" == "osx" ]]; then
+
+if [ -z "$ARCHTYPE" ]; then
+    ARCHTYPE=$(uname -m)
+    export ARCHTYPE
+fi
+
+if [[ "$1" == "osx" || ( "$1" == "CI" && "$CI_OS_NAME" == "osx" ) ]]; then
     if [ "$ARCHTYPE" == "universal2" ]; then
         ARCHFLAGS="-arch arm64 -arch x86_64"
     elif [ "$ARCHTYPE" == "arm64" ]; then
@@ -246,6 +252,8 @@ case "$1" in
     if [ "$CI_OS_NAME" == "osx" ]; then
         BREW_PREFIX=$(brew --prefix)
         MPI_INCLUDE_HEADERS="${BREW_PREFIX}/opt/openmpi/include;${BREW_PREFIX}/opt/mpich/include"
+        MACOSX_DEPLOYMENT_TARGET="10.15"
+        export MACOSX_DEPLOYMENT_TARGET
         build_wheel_osx $(which python3) "$coreneuron" "$MPI_INCLUDE_HEADERS"
     else
         # first two are for AlmaLinux 8 (default for manylinux_2_28);
