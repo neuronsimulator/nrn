@@ -446,7 +446,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: build_files-${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
+          name: build_files-${{matrix.os}}-${{hashfiles('matrix.json')}}
           path: |
             # when doing a CMake build
             ${{runner.workspace}}/nrn/build/CMakeCache.txt
