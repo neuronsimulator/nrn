@@ -7,7 +7,7 @@ if(NRN_MACOS_BUILD)
   # end of) install, so we create a macro and run at end of top level CMakeLists.txt
   macro(nrn_macos_after_install)
     install(
-      CODE "execute_process(COMMAND sh ${PROJECT_SOURCE_DIR}/src/mac/activate-apps-cmake.sh \"CMAKE_SYSTEM_PROCESSOR\" \"${CMAKE_INSTALL_PREFIX}\" \"${PROJECT_SOURCE_DIR}\" \"${CMAKE_INSTALL_PREFIX}/lib\" \"${NRN_UNIVERSAL2_BUILD}\")"
+      CODE "execute_process(COMMAND sh ${PROJECT_SOURCE_DIR}/src/mac/activate-apps-cmake.sh \"${CMAKE_SYSTEM_PROCESSOR}\" \"${CMAKE_INSTALL_PREFIX}\" \"${PROJECT_SOURCE_DIR}\" \"${CMAKE_INSTALL_PREFIX}/lib\" \"${NRN_UNIVERSAL2_BUILD}\")"
     )
   endmacro()
 
