@@ -3,8 +3,8 @@ nrn_add_test_group(
   CORENEURON
   NAME tqperf
   SUBMODULE tests/tqperf
-  MODFILE_PATTERNS "mod/*.mod" "modx/*.mod"
-  NRNIVMODL_ARGS CXXFLAGS="${OPENSSL_INCLUDE_DIR}" LDFLAGS="${OPENSSL_CRYPTO_LIBRARY}"
+  MODFILE_PATTERNS "mod/*.mod" "modx/*.mod" NRNIVMODL_EXTRA_INCLUDES ${OPENSSL_INCLUDE_DIR}
+                   NRNIVMODL_EXTRA_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY}
   SCRIPT_PATTERNS "test1.py" "*.hoc")
 if("tqperf-heavy" IN_LIST NRN_ENABLE_MODEL_TESTS)
   set(tqperf_mpi_ranks 16)

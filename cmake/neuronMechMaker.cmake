@@ -196,7 +196,7 @@ function(create_nrnmech)
                                                "${ARTIFACTS_OUTPUT_DIR}/${MECH_REG}")
       target_include_directories(${TARGET_EXECUTABLE_NAME} BEFORE
                                  PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
-      target_link_libraries(${TARGET_EXECUTABLE_NAME} ${TARGET_LIBRARY_NAME})
+      target_link_libraries(${TARGET_EXECUTABLE_NAME} PUBLIC ${TARGET_LIBRARY_NAME})
       set_target_properties(
         ${TARGET_EXECUTABLE_NAME} PROPERTIES OUTPUT_NAME "special" RUNTIME_OUTPUT_DIRECTORY
                                                                    "${EXECUTABLE_OUTPUT_DIR}")
@@ -265,7 +265,7 @@ function(create_nrnmech)
                                                    "${ARTIFACTS_OUTPUT_DIR}/core${CORE_MECH_REG}")
       target_include_directories(core${TARGET_EXECUTABLE_NAME} BEFORE
                                  PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
-      target_link_libraries(core${TARGET_EXECUTABLE_NAME} core${TARGET_LIBRARY_NAME})
+      target_link_libraries(core${TARGET_EXECUTABLE_NAME} PUBLIC core${TARGET_LIBRARY_NAME})
       target_compile_definitions(core${TARGET_EXECUTABLE_NAME} PUBLIC ADDITIONAL_MECHS)
       set_target_properties(
         core${TARGET_EXECUTABLE_NAME}

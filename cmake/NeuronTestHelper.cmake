@@ -105,8 +105,14 @@ function(nrn_add_test_group)
   # subsequent calls to nrn_add_test that actually set up CTest tests.
   set(options CORENEURON)
   set(oneValueArgs NAME SUBMODULE)
-  set(multiValueArgs ENVIRONMENT MODFILE_PATTERNS NRNIVMODL_ARGS OUTPUT SCRIPT_PATTERNS
-                     SIM_DIRECTORY)
+  set(multiValueArgs
+      ENVIRONMENT
+      MODFILE_PATTERNS
+      NRNIVMODL_EXTRA_INCLUDES
+      NRNIVMODL_EXTRA_LIBRARIES
+      OUTPUT
+      SCRIPT_PATTERNS
+      SIM_DIRECTORY)
   cmake_parse_arguments(NRN_ADD_TEST_GROUP "${options}" "${oneValueArgs}" "${multiValueArgs}"
                         ${ARGN})
   if(DEFINED NRN_ADD_TEST_GROUP_MISSING_VALUES)
@@ -154,7 +160,9 @@ function(nrn_add_test_group)
   if(NOT "${NRN_ADD_TEST_GROUP_MODFILE_PATTERNS}" STREQUAL "NONE")
     # Add a rule to build the modfiles for this test group. Multiple groups may ask for exactly the
     # same thing (testcorenrn), so it's worth deduplicating.
-    set(hash_components ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
+    set(hash_components
+        "${NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_INCLUDES} ${NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_LIBRARIES}"
+    )
     # The user decides whether or not this test group should have its MOD files compiled for
     # CoreNEURON.
     set(nrnivmodl_dependencies)
@@ -206,8 +214,6 @@ function(nrn_add_test_group)
       # ============================================
       # Actually build the target (compile modfiles)
       # ============================================
-      set(env_vars "${NRN_RUN_FROM_BUILD_DIR_ENV}")
-      list(APPEND env_vars ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
       create_nrnmech(
         ${cnrn_option}
         NEURON
@@ -219,7 +225,7 @@ function(nrn_add_test_group)
         NMODL_EXECUTABLE
         ${PROJECT_BINARY_DIR}/bin/nmodl
         EXTRA_ENV
-        ${env_vars}
+        ${NRN_RUN_FROM_BUILD_DIR_ENV}
         ARTIFACTS_OUTPUT_DIR
         "${nrnivmodl_directory}"
         LIBRARY_OUTPUT_DIR
@@ -235,6 +241,14 @@ function(nrn_add_test_group)
       foreach(neuron_target ${binary_target_name}-lib ${binary_target_name}-special)
         target_include_directories(${neuron_target} BEFORE PRIVATE ${PROJECT_BINARY_DIR}/include)
         add_dependencies(${neuron_target} neuron::nrniv neuron::nocmodl nrnivmodl_dependency)
+        if(NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_INCLUDES)
+          target_include_directories(${neuron_target}
+                                     PRIVATE ${NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_INCLUDES})
+        endif()
+        if(NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_LIBRARIES)
+          target_link_libraries(${neuron_target}
+                                PRIVATE ${NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_LIBRARIES})
+        endif()
       endforeach()
       if(NRN_ADD_TEST_GROUP_CORENEURON)
         # NEURON sets a lot of needless compile options, but we want to build things the way users
@@ -254,6 +268,14 @@ function(nrn_add_test_group)
                     ${PROJECT_BINARY_DIR}/generated)
           target_compile_options(${coreneuron_target} BEFORE PRIVATE ${_CORENEURON_FLAGS})
           target_compile_definitions(${coreneuron_target} PUBLIC ADDITIONAL_MECHS)
+          if(NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_INCLUDES)
+            target_include_directories(${coreneuron_target}
+                                       PRIVATE ${NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_INCLUDES})
+          endif()
+          if(NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_LIBRARIES)
+            target_link_libraries(${coreneuron_target}
+                                  PRIVATE ${NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_LIBRARIES})
+          endif()
         endforeach()
 
       endif()
