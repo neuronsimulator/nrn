@@ -203,9 +203,11 @@ function(nrn_add_test_group)
       else()
         set(cnrn_option "")
       endif()
-      # ======================================================================================
+      # ============================================
       # Actually build the target (compile modfiles)
-      # ======================================================================================
+      # ============================================
+      set(env_vars "${NRN_RUN_FROM_BUILD_DIR_ENV}")
+      list(APPEND env_vars ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
       create_nrnmech(
         ${cnrn_option}
         NEURON
@@ -217,7 +219,7 @@ function(nrn_add_test_group)
         NMODL_EXECUTABLE
         ${PROJECT_BINARY_DIR}/bin/nmodl
         EXTRA_ENV
-        "${NRN_RUN_FROM_BUILD_DIR_ENV}"
+        ${env_vars}
         ARTIFACTS_OUTPUT_DIR
         "${nrnivmodl_directory}"
         LIBRARY_OUTPUT_DIR
@@ -232,7 +234,7 @@ function(nrn_add_test_group)
       # Set the right include dirs and dependencies
       foreach(neuron_target ${binary_target_name}-lib ${binary_target_name}-special)
         target_include_directories(${neuron_target} BEFORE PRIVATE ${PROJECT_BINARY_DIR}/include)
-        add_dependencies(${neuron_target} neuron::nrniv neuron::nocmodl)
+        add_dependencies(${neuron_target} neuron::nrniv neuron::nocmodl nrnivmodl_dependency)
       endforeach()
       if(NRN_ADD_TEST_GROUP_CORENEURON)
         # NEURON sets a lot of needless compile options, but we want to build things the way users
@@ -245,7 +247,7 @@ function(nrn_add_test_group)
                        INCLUDE_DIRECTORIES ""
                        COMPILE_FLAGS ""
                        COMPILE_DEFINITIONS "")
-          add_dependencies(${coreneuron_target} nmodl::nmodl neuron::corenrn)
+          add_dependencies(${coreneuron_target} nmodl::nmodl neuron::corenrn nrnivmodl_dependency)
           target_include_directories(
             ${coreneuron_target} BEFORE
             PRIVATE ${_CORENEURON_RANDOM_INCLUDE} ${PROJECT_BINARY_DIR}/include
