@@ -160,6 +160,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PY_MIN_VERSION }}
+          cache: 'pip'
 
       - name: Install Python@${{ env.PY_MIN_VERSION }} dependencies
         if: ${{ matrix.config.python_dynamic == 'ON' }}
@@ -172,6 +173,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PY_MAX_VERSION }}
+          cache: 'pip'
 
       - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
