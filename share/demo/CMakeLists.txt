@@ -26,6 +26,7 @@ target_include_directories(neurondemo PRIVATE "${PROJECT_BINARY_DIR}/include")
 target_include_directories(neurondemo-special PRIVATE "${PROJECT_BINARY_DIR}/include")
 add_dependencies(neurondemo neuron::nocmodl neuron::nrniv nrnivmodl_dependency)
 add_dependencies(neurondemo-special neuron::nocmodl neuron::nrniv nrnivmodl_dependency)
+file(TOUCH "${PROJECT_BINARY_DIR}/share/nrn/demo/neuron")
 install(TARGETS neurondemo
         DESTINATION "${NRN_INSTALL_SHARE_DIR}/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}/.libs")
 install(TARGETS neurondemo-special
