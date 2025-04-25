@@ -103,9 +103,9 @@ include("${CMAKE_CURRENT_LIST_DIR}/NeuronMechVariableHelper.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/neuronMechMaker.cmake")
 function(nrn_add_test_group)
   # NAME is used as a key, [CORENEURON, MODFILE_PATTERNS, NRNIVMODL_EXTRA_INCLUDES,
-  # NRNIVMODL_EXTRA_LIBRARIES and SUBMODULE] are used to
-  # set up a custom target that runs nrnivmod, everything else is a default that can be overriden in
-  # subsequent calls to nrn_add_test that actually set up CTest tests.
+  # NRNIVMODL_EXTRA_LIBRARIES and SUBMODULE] are used to set up a custom target that runs nrnivmod,
+  # everything else is a default that can be overriden in subsequent calls to nrn_add_test that
+  # actually set up CTest tests.
   set(options CORENEURON)
   set(oneValueArgs NAME SUBMODULE)
   set(multiValueArgs
