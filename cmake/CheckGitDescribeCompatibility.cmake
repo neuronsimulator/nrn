@@ -76,13 +76,14 @@ function(normalize_pep440_version input_version output_version expected_project_
   # Remove leading 'v'
   string(REGEX REPLACE "^v" "" clean_version "${input_version}")
 
-  # Match version patterns: X.Y(.Z)?(a|b|rc|dev)?(N)?(-N-gHASH)?
-  string(REGEX MATCH "^([0-9]+\\.[0-9]+(\\.[0-9]+)?)(a|b|rc|dev)?([0-9]+)?(-([0-9]+)-g[0-9a-f]+)?$"
+  # Match version patterns: X.Y(.Z)?(\.?(a|b|rc|dev))?(N)?(-N-gHASH)?
+  string(REGEX MATCH
+               "^([0-9]+\\.[0-9]+(\\.[0-9]+)?)(\\.?(a|b|rc|dev))?([0-9]+)?(-([0-9]+)-g[0-9a-f]+)?$"
                version_match "${clean_version}")
   if(NOT version_match)
     message(
       WARNING
-        "Version '${clean_version}' does not match expected format X.Y(.Z)?(a|b|rc|dev)?(N)?(-N-gHASH)?. Note '?' mean 0 or 1 of preceding group."
+        "Version '${clean_version}' does not match expected format X.Y(.Z)?(.?(a|b|rc|dev))?(N)?(-N-gHASH)?. Note '?' means 0 or 1 of preceding group."
     )
     set(${output_version}
         ""
@@ -96,9 +97,9 @@ function(normalize_pep440_version input_version output_version expected_project_
   # Extract components
   set(main_version "${CMAKE_MATCH_1}")
   set(third_digit "${CMAKE_MATCH_2}")
-  set(pre_type "${CMAKE_MATCH_3}")
-  set(pre_num "${CMAKE_MATCH_4}")
-  set(post_part "${CMAKE_MATCH_6}")
+  set(pre_type "${CMAKE_MATCH_4}")
+  set(pre_num "${CMAKE_MATCH_5}")
+  set(post_part "${CMAKE_MATCH_7}")
   message(STATUS "main_version ${main_version}")
   message(STATUS "third_digit ${third_digit}")
   message(STATUS "pre_type ${pre_type}")
