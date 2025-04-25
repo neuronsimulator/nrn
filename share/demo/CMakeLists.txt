@@ -22,13 +22,11 @@ create_nrnmech(
   "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}"
   LIBRARY_OUTPUT_DIR
   "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}")
-# we need the latter because nrnconf.h is not in `include`
 target_include_directories(neurondemo PRIVATE "${PROJECT_BINARY_DIR}/include"
-                                              "${PROJECT_BINARY_DIR}")
-target_include_directories(neurondemo-special PRIVATE "${PROJECT_BINARY_DIR}/include"
-                                                      "${PROJECT_BINARY_DIR}")
-add_dependencies(neurondemo neuron::nocmodl neuron::nrniv)
-add_dependencies(neurondemo-special neuron::nocmodl neuron::nrniv)
+)
+target_include_directories(neurondemo-special PRIVATE "${PROJECT_BINARY_DIR}/include")
+add_dependencies(neurondemo neuron::nocmodl neuron::nrniv nrnivmodl_dependency)
+add_dependencies(neurondemo-special neuron::nocmodl neuron::nrniv nrnivmodl_dependency)
 install(TARGETS neurondemo
         DESTINATION "${NRN_INSTALL_SHARE_DIR}/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}/.libs")
 install(TARGETS neurondemo-special
