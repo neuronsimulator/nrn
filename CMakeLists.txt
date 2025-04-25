@@ -218,17 +218,19 @@ set(NMODL_EXTRA_CXX_FLAGS
     CACHE STRING "Add extra compile flags for NMODL sources")
 separate_arguments(NMODL_EXTRA_CXX_FLAGS)
 
-# TARGET_ARCH is usually CMAKE_SYSTEM_PROCESSOR. But for APPLE wheels we sometimes want to
+# TARGET_ARCH is usually CMAKE_HOST_SYSTEM_PROCESSOR. But for APPLE wheels we sometimes want to
 # cross-compile and not bloat all the executables as universal2. TARGET_TYPE is computed as x86_64
 # or arm64 or universal2
-set(TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR}) # not cross-compile
-if(APPLE AND NOT "${TARGET_ARCH}" IN_LIST CMAKE_OSX_ARCHITECTURES)
-  if(TARGET_ARCH STREQUAL "x86_64")
-    set(TARGET_ARCH "arm64")
-    set(TARGET_ARCH_FLAGS "-arch arm64")
-  else()
-    set(TARGET_ARCH "x86_64")
-    set(TARGET_ARCH_FLAGS "-arch x86_64")
+set(TARGET_ARCH ${CMAKE_HOST_SYSTEM_PROCESSOR}) # not cross-compile
+if(CMAKE_OSX_ARCHITECTURES)
+  if(APPLE AND NOT "${TARGET_ARCH}" IN_LIST CMAKE_OSX_ARCHITECTURES)
+    if(TARGET_ARCH STREQUAL "x86_64")
+      set(TARGET_ARCH "arm64")
+      set(TARGET_ARCH_FLAGS "-arch arm64")
+    else()
+      set(TARGET_ARCH "x86_64")
+      set(TARGET_ARCH_FLAGS "-arch x86_64")
+    endif()
   endif()
 endif()
 set(TARGET_TYPE ${TARGET_ARCH})
@@ -242,6 +244,12 @@ if(APPLE
   set(NRN_UNIVERSAL2_BUILD ON)
   set(TARGET_ARCH_FLAGS "-arch arm64 -arch x86_64")
 endif()
+message(STATUS "TARGET_ARCH ${TARGET_ARCH}")
+message(STATUS "TARGET_ARCH_FLAGS ${TARGET_ARCH_FLAGS}")
+message(STATUS "TARGET_TYPE ${TARGET_TYPE}")
+message(STATUS "NRN_UNIVERSAL2_BUILD ${NRN_UNIVERSAL2_BUILD}")
+message(STATUS "CMAKE_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR}")
+message(STATUS "CMAKE_OSX_ARCHITECTURES ${CMAKE_OSX_ARCHITECTURES}")
 
 # =============================================================================
 # Include cmake modules

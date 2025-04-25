@@ -265,14 +265,13 @@ endmacro()
 #   nrn_set_universal2_begin()
 #   # Code that needs universal2 (e.g., add_subdirectory)
 #   nrn_set_universal2_end()
-# Sets universal2 only if CMAKE_HOST_SYSTEM_PROCESSOR is not in CMAKE_OSX_ARCHITECTURES.
+# Sets universal2 only if CMAKE_HOST_SYSTEM_PROCESSOR is not CMAKE_SYSTEM_PROCESSOR.
 # ~~~
 macro(nrn_set_universal2_begin)
   if(APPLE)
-    # Check if system processor is in target architectures
+    # Check if system processor is not the  build architecture
     set(_NRN_NEED_UNIVERSAL2 FALSE)
-    if(CMAKE_HOST_SYSTEM_PROCESSOR AND NOT "${CMAKE_HOST_SYSTEM_PROCESSOR}" IN_LIST
-                                       CMAKE_OSX_ARCHITECTURES)
+    if(NOT "${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL "${CMAKE_SYSTEM_PROCESSOR}")
       set(_NRN_NEED_UNIVERSAL2 TRUE)
     endif()
     if(_NRN_NEED_UNIVERSAL2)
