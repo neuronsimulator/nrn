@@ -7,7 +7,8 @@
 #                       [CORENEURON]
 #                       [ENVIRONMENT var1=val2 ...]
 #                       [MODFILE_PATTERNS mod/file/dir/*.mod ...]
-#                       [NRNIVMODL_ARGS arg1 ...]
+#                       [NRNIVMODL_EXTRA_INCLUDES arg1 ...]
+#                       [NRNIVMODL_EXTRA_LIBRARIES arg1 ...]
 #                       [OUTPUT datatype::file.ext ...]
 #                       [SCRIPT_PATTERNS "*.py" ...]
 #                       [SIM_DIRECTORY sim_dir]
@@ -30,7 +31,8 @@
 #                       be compiled (using nrnivmodl) to run the test. The special
 #                       value "NONE" will not emit a warning if nothing matches it
 #                       and will stop nrnivmodl from being called.
-#    NRNIVMODL_ARGS   - extra arguments that will be passed to nrnivmodl.
+#    NRNIVMODL_EXTRA_INCLUDES  - extra includes that will be passed to nrnivmodl.
+#    NRNIVMODL_EXTRA_LIBRARIES  - extra libraries that will be passed to nrnivmodl.
 #    OUTPUT           - zero or more expressions of the form `datatype::path`
 #                       describing the output data produced by a test. The
 #                       data type must be supported by the comparison script
@@ -100,7 +102,8 @@ include("${CODING_CONV_CMAKE}/build-time-copy.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/NeuronMechVariableHelper.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/neuronMechMaker.cmake")
 function(nrn_add_test_group)
-  # NAME is used as a key, [CORENEURON, MODFILE_PATTERNS, NRNIVMODL_ARGS and SUBMODULE] are used to
+  # NAME is used as a key, [CORENEURON, MODFILE_PATTERNS, NRNIVMODL_EXTRA_INCLUDES,
+  # NRNIVMODL_EXTRA_LIBRARIES and SUBMODULE] are used to
   # set up a custom target that runs nrnivmod, everything else is a default that can be overriden in
   # subsequent calls to nrn_add_test that actually set up CTest tests.
   set(options CORENEURON)
