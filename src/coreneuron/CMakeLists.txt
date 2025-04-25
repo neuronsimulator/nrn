@@ -590,9 +590,7 @@ add_custom_target(nrniv-core ALL DEPENDS coreneuron-mod-lib coreneuron-mod-bin)
 
 # Build a target representing the libcorenrnmech_internal.so that is produced under bin/x86_64,
 # which executables such as the unit tests must link against
-add_library(builtin-libcorenrnmech SHARED IMPORTED)
-add_dependencies(builtin-libcorenrnmech nrniv-core)
-set_target_properties(builtin-libcorenrnmech PROPERTIES IMPORTED_LOCATION "${corenrn_mech_library}")
+add_library(builtin-libcorenrnmech ALIAS coreneuron-mod-lib)
 
 if(CORENRN_ENABLE_GPU)
   separate_arguments(CORENRN_ACC_FLAGS UNIX_COMMAND "${NVHPC_ACC_COMP_FLAGS}")
