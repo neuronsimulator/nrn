@@ -161,6 +161,7 @@ jobs:
         with:
           python-version: ${{ env.PY_MIN_VERSION }}
           cache: 'pip'
+          cache-dependency-path: '**/*requirements*.txt'
 
       - name: Install Python@${{ env.PY_MIN_VERSION }} dependencies
         if: ${{ matrix.config.python_dynamic == 'ON' }}
@@ -174,6 +175,7 @@ jobs:
         with:
           python-version: ${{ env.PY_MAX_VERSION }}
           cache: 'pip'
+          cache-dependency-path: '**/*requirements*.txt'
 
       - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
