@@ -690,8 +690,7 @@ function(prepend_to_var var new_path)
 endfunction()
 set(NRN_RUN_FROM_BUILD_DIR_ENV
     "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn" "NRNHOME=${PROJECT_BINARY_DIR}"
-    "MODLUNIT=${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib"
-    "NRN_NRNIVMODL_CMAKE_PATH=${PROJECT_BINARY_DIR}/cmake/nrnivmodl.cmake")
+    "MODLUNIT=${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib")
 
 # if we do not link against Python, NMODL will complain that some of the env variables are missing
 # when building coreNEURON mod files
@@ -1018,8 +1017,17 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_nrn.cpp.in
 
 # configuration and installation of nrnivmodl and nrnivmodl-core
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/nrnivmodl.cmake
-               ${CMAKE_CURRENT_BINARY_DIR}/cmake/nrnivmodl.cmake @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cmake/nrnivmodl.cmake DESTINATION lib/cmake/neuron)
+               ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/nrnivmodl/CMakeLists.txt @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/nrnivmodl/CMakeLists.txt
+        DESTINATION lib/cmake/neuron/nrnivmodl)
+
+set(CORENEURON "CORENEURON")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/nrnivmodl.cmake
+               ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/nrnivmodl-core/CMakeLists.txt @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/nrnivmodl-core/CMakeLists.txt
+        DESTINATION lib/cmake/neuron/nrnivmodl-core)
+unset(CORENEURON)
+
 # =============================================================================
 # Copy bash executable for windows
 # =============================================================================

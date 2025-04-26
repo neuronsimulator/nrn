@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # =============================================================================
 # Simple wrapper for CMake that builds mod files
@@ -6,8 +6,11 @@
 
 set -eu
 
-srcdir="${PWD}"
+# Where the output files will be placed
 bindir="$(uname -m)"
+
+# The name of the current program
+program_name="$(basename "${0}")"
 
 # Where the `*.cmake` files are located
 NRN_CMAKE_PREFIX_PATH_DEFAULT="$(readlink -f "$(dirname "${0}")/../lib/cmake/")"
@@ -23,6 +26,7 @@ export CMAKE_PREFIX_PATH
 CMAKE_BUILD_PARALLEL_LEVEL="${CMAKE_BUILD_PARALLEL_LEVEL:-4}"
 export CMAKE_BUILD_PARALLEL_LEVEL
 
+# On MacOS we need to set the deployment target to be equal to the one of NEURON
 if command -v xcrun >/dev/null 2>&1; then
     @NRN_OSX_BUILD_TRUE@export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
     @NRN_OSX_BUILD_TRUE@export MACOSX_DEPLOYMENT_TARGET="@CMAKE_OSX_DEPLOYMENT_TARGET@"
@@ -31,51 +35,37 @@ if command -v xcrun >/dev/null 2>&1; then
     fi
 fi
 
-
-default_cmakelists="${NRN_CMAKE_PREFIX_PATH_DEFAULT}/neuron/nrnivmodl.cmake"
-
-# If it does not exist, check the NRN_NRNIVMODL_CMAKE_PATH variable next
-if [ ! -f "${default_cmakelists}" ]; then
-    if [ -z "${NRN_NRNIVMODL_CMAKE_PATH:-}" ]; then
-        printf "ERROR: default file %s does not exist, " "${default_cmakelists}"
-        echo "and env var NRN_NRNIVMODL_CMAKE_PATH is empty; please set it\n"
-        exit 2
-    fi
-    if [ ! -f "${NRN_NRNIVMODL_CMAKE_PATH}" ]; then
-        printf "ERROR: file %s does not exist\n" "${NRN_NRNIVMODL_CMAKE_PATH}"
-        exit 3
-    fi
-    default_cmakelists="${NRN_NRNIVMODL_CMAKE_PATH}"
-fi
-
-current_cmakelists="${srcdir}/CMakeLists.txt"
-
-# Check default cmakelists and one in current dir are the same; if not, report
-# an error, and force the user to choose
-if [ -f "${current_cmakelists}" ] && ! cmp --silent "${default_cmakelists}" "${current_cmakelists}"; then
-    printf "ERROR: %s exists and is different from %s; " "${current_cmakelists}" "${default_cmakelists}"
-    printf "please remove %s manually, " "${current_cmakelists}"
-    echo "or change to another directory, and then rerun nrnivmodl again"
-    exit 1
-fi
-
-# copy to current dir
-cp -a "${default_cmakelists}" "${current_cmakelists}"
+# We use the CMakeLists.txt from the NEURON installation directory to not have
+# to deal with any pre-existing CMakeLists.txt in the current directory
+srcdir="${NRN_CMAKE_PREFIX_PATH_DEFAULT}/neuron/${program_name}/"
 
 # In case of no files, default to using the files in the current dir
 if [ $# -lt 1 ]; then
     set -- ./*.mod
-fi
-
 # In case of a single input, check if it's a directory; if it is, collect all mod files in it
-if [ $# -eq 1 ] && [ -d "${1}" ]; then
+elif [ $# -eq 1 ] && [ -d "${1}" ]; then
+    printf "[%s] Collecting mod files under %s\n" "${program_name}" "$(readlink -f "${1}")"
     set -- "${1}"/*.mod
 fi
 
+# After collecting the mod files, check each mod file actually exists
+for mod_file in "$@"; do
+    if [ ! -e "${mod_file}" ]; then
+        printf "[%s] ERROR: Mod file %s does not exist!\n" "${program_name}" "${mod_file}" >2
+        exit 4
+    fi
+done
+
+# Convert all mod file paths to absolute paths because the source dir is in the NEURON install
+args=()
+for f in "$@"; do
+  resolved=$(readlink -f "$f") || exit 1
+  args+=("$resolved")
+done
+set -- "${args[@]}"
+
 # TODO what if the mod filenames contain semicolons?
-modfiles="$(printf "%s;" "$@")"
-# remove any trailing semicolons from the list
-modfiles="${modfiles%%;}"
+modfiles=$(IFS=";"; echo "$*")
 
 # Configure the mod files
 cmake -S "${srcdir}" -B "${bindir}" -DMOD_FILES="${modfiles}" -DCORENEURON="@CORENEURON@"
