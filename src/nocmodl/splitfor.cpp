@@ -312,11 +312,7 @@ static void splitfor_conductance_cout() {
     m = newlist();
     ITERATE(q, modelfunc) {
         if (q->itemtype == SYMBOL) {
-            if (strcmp(SYM(q)->name, "v") == 0) {
-                lappendstr(m, "_v");
-            } else {
-                lappendsym(m, SYM(q));
-            }
+            lappendsym(m, SYM(q));
         } else if (q->itemtype == STRING) {
             lappendstr(m, STR(q));
         } else {
@@ -342,11 +338,11 @@ static void splitfor_conductance_cout() {
         }
     }
 
-    printlist(m);
+    split_printlist(m);
 
     ITERATE(q, currents) {
         if (i == 0) {
-            Sprintf(buf, "  _rhs = %s", breakpoint_current(SYM(q))->name);
+            Sprintf(buf, ZF "_rhs = %s", breakpoint_current(SYM(q))->name);
         } else {
             Sprintf(buf, " + %s", breakpoint_current(SYM(q))->name);
         }
@@ -354,13 +350,13 @@ static void splitfor_conductance_cout() {
         i += 1;
     }
     if (i > 0) {
-        P(";\n");
+        P("; }\n");
     }
 
     i = 0;
     ITERATE(q, conductance_) {
         if (i == 0) {
-            Sprintf(buf, "  _g = %s", SYM(q)->name);
+            Sprintf(buf, ZF "_g = %s", SYM(q)->name);
         } else {
             Sprintf(buf, " + %s", SYM(q)->name);
         }
@@ -369,17 +365,17 @@ static void splitfor_conductance_cout() {
         q = q->next;
     }
     if (i > 0) {
-        P(";\n");
+        P("; }\n");
     }
 
     ITERATE(q, conductance_) {
         if (SYM(q->next)) {
-            Sprintf(buf, "  _ion_di%sdv += %s", SYM(q->next)->name, SYM(q)->name);
+            Sprintf(buf, ZF "_ion_di%sdv += %s", SYM(q->next)->name, SYM(q)->name);
             P(buf);
             if (point_process) {
                 P("* 1.e2/(_nd_area)");
             }
-            P(";\n");
+            P("; }\n");
         }
         q = q->next;
     }
