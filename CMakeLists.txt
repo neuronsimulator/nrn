@@ -1009,7 +1009,8 @@ install(
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/neuronConfig.cmake.in
                ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/neuronConfig.cmake @ONLY)
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/neuronConfig.cmake DESTINATION lib/cmake/neuron)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/neuronConfig.cmake
+        DESTINATION lib/cmake/neuron)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/neuronMechMaker.cmake DESTINATION lib/cmake/neuron)
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_nrn.cpp.in
