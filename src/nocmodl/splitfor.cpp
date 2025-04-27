@@ -15,84 +15,14 @@ static bool split_cur_;
 static bool split_solve_;
 static std::vector<Item*> ssi;  // splitfor_solve_info
 
-// check for assignment to non-range variable
-static bool assign_non_range(List* lst) {
-    bool b{false};
-    for (Item* q = lst->next; q != lst; q = q->next) {
-        if (q->itemtype == SYMBOL && strcmp(SYM(q)->name, "=") == 0) {
-            Symbol* s = (q->prev->itemtype == SYMBOL) ? SYM(q->prev) : NULL;
-            if (!s || ((s->nrntype & (NRNRANGE | NRNCUROUT)) == 0 && s->type != PRIME)) {
-                printf("ZZZ assigning to %s nrntype=%o type=%hd subtype=%lo\n",
-                       s->name,
-                       s->nrntype,
-                       s->type,
-                       s->subtype);
-                b = true;
-                break;
-            }
-        }
-    }
-    return b;
-}
-
-static bool not_allowed(List* lst, Symbol** symproc = nullptr) {
-    // b = false when some statements occur
-    bool b{false};
-    for (Item* q = lst->next; q != lst; q = q->next) {
-        if (q->itemtype == SYMBOL) {
-            Symbol* s = SYM(q);
-            switch (s->type) {
-            case IF:
-            case FROM:
-            case VERBATIM:
-            case '[':
-                b = true;
-                break;
-            }
-            if (s->type == NAME && s->subtype & PROCED) {
-                if (symproc && *symproc == nullptr) {
-                    *symproc = s;  // one is ok and caller must check if ok.
-                } else {
-                    printf("ZZZ calling PROCEDURE %s\n", s->name);
-                    b = true;
-                }
-            }
-        }
-        if (b) {
-            break;
-        }
-    }
-    return b;
-}
-
-
-static void split_printlist(List* lst) {
-    std::unordered_map<Item*, bool> items{};
-    // item Rangevar before "=", insert "_ZFOR{"
-    // item SEMI, append "}"
-    for (Item* q = lst->next; q != lst; q = q->next) {
-        if (q->itemtype == SYMBOL && strcmp(SYM(q)->name, "=") == 0) {
-            Symbol* s = (q->prev->itemtype == SYMBOL) ? SYM(q->prev) : NULL;
-            if (s && (s->nrntype & (NRNRANGE | NRNCUROUT))) {
-                items[q->prev] = true;
-            }
-        }
-        if (q->itemtype == SYMBOL && SYM(q) == semi) {
-            items[q] = false;
-        }
-    }
-
-    for (Item* q = lst->next; q != lst; q = q->next) {
-        auto search = items.find(q);
-        if (search != items.end() && search->second) {
-            P(ZF);
-        }
-        printitem(q);
-        if (search != items.end() && !search->second) {
-            P("}\n");
-        }
-    }
-}
+// Helper functions implemented after callers.
+static bool assign_non_range(List* lst);
+static bool not_allowed(List* lst, Symbol** symproc = nullptr);
+static void split_printlist(List* lst);
+static void splitfor_conductance_cout();
+static void splitfor_ext_vdef();
+static List* splitfor_ion_stmts(List* lst);
+static List* splitfor_end_dion_stmt(const char* strdel);
 
 // return true if any splitfor code should be generated
 bool splitfor() {
@@ -169,64 +99,6 @@ void splitfor_current() {
     split_printlist(modelfunc);
     P("\n#undef _ZFOR\n"
       "}\n");
-}
-
-static void splitfor_conductance_cout();
-static void splitfor_ext_vdef();
-static List* splitfor_ion_stmts(List* lst) {
-    for (Item* q = lst->next; q != lst; q = q->next) {
-        assert(q->itemtype == STRING);
-        char* s = STR(q);
-        int len = strlen(s);
-        if (s[len - 1] != '\n') {  // rest of the statement is in q->next
-            sprintf(buf, ZF "%s", s);
-            replacstr(q, buf);
-            q = q->next;  // this one must have newline
-            assert(q->itemtype == STRING);
-            s = STR(q);
-            len = strlen(s);
-            assert(s[len - 1] == '\n');
-            s[len - 1] = '\0';
-            sprintf(buf, "%s }\n", s);
-            replacstr(q, buf);
-        } else {  // an entire statement
-            s[len - 1] = '\0';
-            sprintf(buf, ZF "%s }\n", s);
-            replacstr(q, buf);
-        }
-    }
-    return lst;
-}
-
-static List* splitfor_end_dion_stmt(const char* strdel) {
-    Item *q, *q1;
-    static List* l;
-    char* strion;
-
-    l = newlist();
-    ITERATE(q, useion) {
-        strion = SYM(q)->name;
-        q = q->next;
-        q = q->next;
-        ITERATE(q1, LST(q)) {
-            if (SYM(q1)->nrntype & NRNCUROUT) {
-                Sprintf(buf,
-                        ZF " _ion_di%sdv += (_temp_%s[_iml] - %s)/%s",
-                        strion,
-                        SYM(q1)->name,
-                        SYM(q1)->name,
-                        strdel);
-                Lappendstr(l, buf);
-                if (point_process) {
-                    Lappendstr(l, "* 1.e2/ (_nd_area); }\n");
-                } else {
-                    Lappendstr(l, "; }\n");
-                }
-            }
-        }
-        q = q->next;
-    }
-    return l;
 }
 
 void splitfor_cur(int part) {
@@ -342,6 +214,143 @@ void splitfor_cur(int part) {
     P("#endif /*SPLITFOR*/\n");
 }
 
+void splitfor_solve(int part) {
+    if (!split_solve_) {
+        return;
+    }
+    if (part == 1) {
+        P("#if !SPLITFOR\n");
+        return;
+    }
+    printf("ZZZ splitfor_solve()\n");
+
+    P("#else /*SPLITFOR*/\n");
+    P("#define _ZFOR for (int _iml = 0; _iml < _cntml; ++_iml)\n");
+    P("  {\n");
+
+    P("  }\n");
+    P("\n#undef _ZFOR\n");
+    P("#endif /*SPLITFOR*/\n");
+}
+
+// args are --- derivblk: DERIVATIVE NAME stmtlist '}'
+// see massagederiv in deriv.cpp *
+void splitfor_solve_info(Item* q1, Item* q2, Item* q3, Item* q4) {
+    ssi.push_back(q1);
+    ssi.push_back(q2);
+    ssi.push_back(q3);
+    ssi.push_back(q4);
+    List* lst = newlist();
+    ssi.push_back((Item*) lst);
+    copyitems(q3->prev, q4, lst);
+}
+
+// check for assignment to non-range variable
+static bool assign_non_range(List* lst) {
+    bool b{false};
+    for (Item* q = lst->next; q != lst; q = q->next) {
+        if (q->itemtype == SYMBOL && strcmp(SYM(q)->name, "=") == 0) {
+            Symbol* s = (q->prev->itemtype == SYMBOL) ? SYM(q->prev) : NULL;
+            if (!s || ((s->nrntype & (NRNRANGE | NRNCUROUT)) == 0 && s->type != PRIME)) {
+                printf("ZZZ assigning to %s nrntype=%o type=%hd subtype=%lo\n",
+                       s->name,
+                       s->nrntype,
+                       s->type,
+                       s->subtype);
+                b = true;
+                break;
+            }
+        }
+    }
+    return b;
+}
+
+static bool not_allowed(List* lst, Symbol** symproc = nullptr) {
+    // b = false when some statements occur
+    bool b{false};
+    for (Item* q = lst->next; q != lst; q = q->next) {
+        if (q->itemtype == SYMBOL) {
+            Symbol* s = SYM(q);
+            switch (s->type) {
+            case IF:
+            case FROM:
+            case VERBATIM:
+            case '[':
+                b = true;
+                break;
+            }
+            if (s->type == NAME && s->subtype & PROCED) {
+                if (symproc && *symproc == nullptr) {
+                    *symproc = s;  // one is ok and caller must check if ok.
+                } else {
+                    printf("ZZZ calling PROCEDURE %s\n", s->name);
+                    b = true;
+                }
+            }
+        }
+        if (b) {
+            break;
+        }
+    }
+    return b;
+}
+
+static List* splitfor_ion_stmts(List* lst) {
+    for (Item* q = lst->next; q != lst; q = q->next) {
+        assert(q->itemtype == STRING);
+        char* s = STR(q);
+        int len = strlen(s);
+        if (s[len - 1] != '\n') {  // rest of the statement is in q->next
+            sprintf(buf, ZF "%s", s);
+            replacstr(q, buf);
+            q = q->next;  // this one must have newline
+            assert(q->itemtype == STRING);
+            s = STR(q);
+            len = strlen(s);
+            assert(s[len - 1] == '\n');
+            s[len - 1] = '\0';
+            sprintf(buf, "%s }\n", s);
+            replacstr(q, buf);
+        } else {  // an entire statement
+            s[len - 1] = '\0';
+            sprintf(buf, ZF "%s }\n", s);
+            replacstr(q, buf);
+        }
+    }
+    return lst;
+}
+
+static List* splitfor_end_dion_stmt(const char* strdel) {
+    Item *q, *q1;
+    static List* l;
+    char* strion;
+
+    l = newlist();
+    ITERATE(q, useion) {
+        strion = SYM(q)->name;
+        q = q->next;
+        q = q->next;
+        ITERATE(q1, LST(q)) {
+            if (SYM(q1)->nrntype & NRNCUROUT) {
+                Sprintf(buf,
+                        ZF " _ion_di%sdv += (_temp_%s[_iml] - %s)/%s",
+                        strion,
+                        SYM(q1)->name,
+                        SYM(q1)->name,
+                        strdel);
+                Lappendstr(l, buf);
+                if (point_process) {
+                    Lappendstr(l, "* 1.e2/ (_nd_area); }\n");
+                } else {
+                    Lappendstr(l, "; }\n");
+                }
+            }
+        }
+        q = q->next;
+    }
+    return l;
+}
+
 static void splitfor_conductance_cout() {
     int i = 0;
     Item* q;
@@ -420,6 +429,34 @@ static void splitfor_conductance_cout() {
     }
 }
 
+static void split_printlist(List* lst) {
+    std::unordered_map<Item*, bool> items{};
+    // item Rangevar before "=", insert "_ZFOR{"
+    // item SEMI, append "}"
+    for (Item* q = lst->next; q != lst; q = q->next) {
+        if (q->itemtype == SYMBOL && strcmp(SYM(q)->name, "=") == 0) {
+            Symbol* s = (q->prev->itemtype == SYMBOL) ? SYM(q->prev) : NULL;
+            if (s && (s->nrntype & (NRNRANGE | NRNCUROUT))) {
+                items[q->prev] = true;
+            }
+        }
+        if (q->itemtype == SYMBOL && SYM(q) == semi) {
+            items[q] = false;
+        }
+    }
+
+    for (Item* q = lst->next; q != lst; q = q->next) {
+        auto search = items.find(q);
+        if (search != items.end() && search->second) {
+            P(ZF);
+        }
+        printitem(q);
+        if (search != items.end() && !search->second) {
+            P("}\n");
+        }
+    }
+}
+
 static void splitfor_ext_vdef() {
     if (artificial_cell) {
         return;
@@ -442,35 +479,4 @@ static void splitfor_ext_vdef() {
     } else {
         P(ZF " v = _vec_v[_ni[_iml]] _DV; }\n");
     }
-}
-
-void splitfor_solve(int part) {
-    if (!split_solve_) {
-        return;
-    }
-    if (part == 1) {
-        P("#if !SPLITFOR\n");
-        return;
-    }
-    printf("ZZZ splitfor_solve()\n");
-
-    P("#else /*SPLITFOR*/\n");
-    P("#define _ZFOR for (int _iml = 0; _iml < _cntml; ++_iml)\n");
-    P("  {\n");
-
-    P("  }\n");
-    P("\n#undef _ZFOR\n");
-    P("#endif /*SPLITFOR*/\n");
-}
-
-// args are --- derivblk: DERIVATIVE NAME stmtlist '}'
-// see massagederiv in deriv.cpp *
-void splitfor_solve_info(Item* q1, Item* q2, Item* q3, Item* q4) {
-    ssi.push_back(q1);
-    ssi.push_back(q2);
-    ssi.push_back(q3);
-    ssi.push_back(q4);
-    List* lst = newlist();
-    ssi.push_back((Item*) lst);
-    copyitems(q3->prev, q4, lst);
 }
