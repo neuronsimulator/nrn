@@ -3,7 +3,8 @@
 extern bool splitfor();
 extern void splitfor_current();
 extern void splitfor_cur(int);
-extern void splitfor_solve();
+extern void splitfor_solve(int);
+extern void splitfor_solve_info(Item*, Item*, Item*, Item*);
 
 extern int brkpnt_exists;
 extern List* currents;

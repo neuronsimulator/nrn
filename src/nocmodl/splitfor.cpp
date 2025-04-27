@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 
 #include <unordered_map>
+#include <vector>
 #include <stdio.h>
 #include "modl.h"
 #include "parse1.hpp"
@@ -12,6 +13,7 @@
 
 static bool split_cur_;
 static bool split_solve_;
+static std::vector<Item*> ssi;  // splitfor_solve_info
 
 // check for assignment to non-range variable
 static bool assign_non_range(List* lst) {
@@ -19,8 +21,12 @@ static bool assign_non_range(List* lst) {
     for (Item* q = lst->next; q != lst; q = q->next) {
         if (q->itemtype == SYMBOL && strcmp(SYM(q)->name, "=") == 0) {
             Symbol* s = (q->prev->itemtype == SYMBOL) ? SYM(q->prev) : NULL;
-            if (!s || (s->nrntype & (NRNRANGE | NRNCUROUT)) == 0) {
-                printf("ZZZ assigning to %s nrntype=%o\n", s->name, s->nrntype);
+            if (!s || ((s->nrntype & (NRNRANGE | NRNCUROUT)) == 0 && s->type != PRIME)) {
+                printf("ZZZ assigning to %s nrntype=%o type=%hd subtype=%lo\n",
+                       s->name,
+                       s->nrntype,
+                       s->type,
+                       s->subtype);
                 b = true;
                 break;
             }
@@ -29,7 +35,7 @@ static bool assign_non_range(List* lst) {
     return b;
 }
 
-static bool not_allowed(List* lst) {
+static bool not_allowed(List* lst, Symbol** symproc = nullptr) {
     // b = false when some statements occur
     bool b{false};
     for (Item* q = lst->next; q != lst; q = q->next) {
@@ -44,7 +50,12 @@ static bool not_allowed(List* lst) {
                 break;
             }
             if (s->type == NAME && s->subtype & PROCED) {
-                b = true;
+                if (symproc && *symproc == nullptr) {
+                    *symproc = s;  // one is ok and caller must check if ok.
+                } else {
+                    printf("ZZZ calling PROCEDURE %s\n", s->name);
+                    b = true;
+                }
             }
         }
         if (b) {
@@ -98,21 +109,49 @@ bool splitfor() {
         }
 
         // if there is one nrnstate and it's solve method is cnexp
-        printf("QQQ determine split_solve_\n");
         if (solvq) {
+            split_solve_ = false;
+            // not really a for loop, break if more than one solvq triple
+            // break if meth not cnexp
             for (Item* lq = solvq->next; lq != solvq; lq = lq->next) {
                 Item* qsol = ITM(lq);
                 lq = lq->next;
                 Symbol* meth = SYM(lq);
                 lq = lq->next;
                 List* errstmt = LST(lq);
-                if (meth && strcmp(meth->name, "cnexp") == 0) {
-                    debugprintitem(qsol);
+                if (lq->next != solvq) {
+                    break;  // there is more than one.
                 }
+                if (!meth || strcmp(meth->name, "cnexp") != 0) {
+                    break;  // not cnexp
+                }
+                if (ssi.size() < 1) {
+                    break;
+                }
+                if (assign_non_range(ssi[4])) {
+                    break;
+                }
+                Symbol* symproc = nullptr;
+                if (not_allowed(ssi[4], &symproc) == false) {
+                    if (symproc) {
+                        printf("ZZZ need to verify that %s can be SPLITFOR\n", symproc->name);
+                    }
+                }
+                if (ssi.size() > 1) {
+                    printf("qsol\n");
+                    debugprintitem(qsol);
+                    printf("PPP q3 to q4\n");
+                    for (Item* q = ssi[2]; q != ssi[3]; q = q->next) {
+                        debugprintitem(q);
+                    }
+                }
+                split_solve_ = true;
+
+                // check for things that might make split_solve_ false
             }
-            split_solve_ = false;
         }
     }
+    printf("QQQ split_solve_ %d\n", split_solve_);
     return split_cur_ || split_solve_;
 }
 
@@ -405,9 +444,33 @@ static void splitfor_ext_vdef() {
     }
 }
 
-void splitfor_solve() {
+void splitfor_solve(int part) {
     if (!split_solve_) {
         return;
     }
+    if (part == 1) {
+        P("#if !SPLITFOR\n");
+        return;
+    }
     printf("ZZZ splitfor_solve()\n");
+
+    P("#else /*SPLITFOR*/\n");
+    P("#define _ZFOR for (int _iml = 0; _iml < _cntml; ++_iml)\n");
+    P("  {\n");
+
+    P("  }\n");
+    P("\n#undef _ZFOR\n");
+    P("#endif /*SPLITFOR*/\n");
+}
+
+// args are --- derivblk: DERIVATIVE NAME stmtlist '}'
+// see massagederiv in deriv.cpp *
+void splitfor_solve_info(Item* q1, Item* q2, Item* q3, Item* q4) {
+    ssi.push_back(q1);
+    ssi.push_back(q2);
+    ssi.push_back(q3);
+    ssi.push_back(q4);
+    List* lst = newlist();
+    ssi.push_back((Item*) lst);
+    copyitems(q3->prev, q4, lst);
 }

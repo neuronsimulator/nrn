@@ -399,6 +399,8 @@ void debugprintitem(Item* q) {
     } else if (q->itemtype == ITEM) {
         printf("ITM ");
         debugprintitem(ITM(q));
+    } else if (q->itemtype == LIST) {
+        printf("LIST\n");
     } else {
         printf("STR %s\n", STR(q));
     }
@@ -731,6 +733,7 @@ void c_out_vectorize() {
         P("_thread = _ml_arg->_thread;\n");
         P("double* _globals = nullptr;\n");
         P("if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n");
+        splitfor_solve(1);
         P("for (size_t _iml = 0; _iml < _cntml; ++_iml) {\n");
         P(" _ppvar = _ml_arg->_pdata[_iml];\n");
         P(" _nd = _ml_arg->_nodelist[_iml];\n");
@@ -750,8 +753,8 @@ void c_out_vectorize() {
         }
     }
     fprintf(fcout, "  NRN_TRACE_END(\"nrn_state_%s\");\n", mechname);
+    splitfor_solve(2);
     P("\n}\n");
-    splitfor_solve();
 
     P("\nstatic void terminal(){}\n");
 
