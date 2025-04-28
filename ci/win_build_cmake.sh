@@ -39,8 +39,8 @@ cd $BUILD_SOURCESDIRECTORY/build
 	-DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib
 ninja install
 # compile mod files afterwards since we don't do it in cmake
-mkdir -p /c/nrn-install/share/nrn/demo/release
-cd /c/nrn-install/share/nrn/demo/release && /c/nrn-install/bin/nrnivmodl && cd -
+mkdir -p /c/nrn-install/demo/release
+cd /c/nrn-install/demo/release && /c/nrn-install/bin/nrnivmodl && cd -
 ctest -VV
 ninja setup_exe
 
