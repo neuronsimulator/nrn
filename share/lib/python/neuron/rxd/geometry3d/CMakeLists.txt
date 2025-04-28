@@ -20,7 +20,7 @@ set(surfaces_sources
     ${PROJECT_SOURCE_DIR}/src/nrnpython/rxd_marching_cubes.cpp
     ${PROJECT_SOURCE_DIR}/src/nrnpython/rxd_llgramarea.cpp)
 
-if(NRN_ENABLE_MODULE_INSTALL)
+if(NOT SKBUILD)
   set(rel_rpath "/../../")
 else()
   set(rel_rpath "/../../.data/lib")

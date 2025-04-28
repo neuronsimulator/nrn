@@ -6,10 +6,9 @@ add_link_options(${NRN_LINK_FLAGS})
 
 include(${PROJECT_SOURCE_DIR}/cmake/PythonCompileHelper.cmake)
 
-# module install = installation using CMake note that some modules should be placed in the `neuron`
-# Python directory (as they are directly importable), while others should be placed in
-# `neuron/.data/lib` (as they are not directly importable)
-if(NRN_ENABLE_MODULE_INSTALL)
+# Some modules should be placed in the `neuron` Python directory (as they are directly importable),
+# while others should be placed in `neuron/.data/lib` (as they are not directly importable).
+if(NOT SKBUILD)
   set(libraries_rpath "/../../")
 else()
   set(libraries_rpath "/.data/lib/")

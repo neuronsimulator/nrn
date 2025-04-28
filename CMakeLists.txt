@@ -177,9 +177,6 @@ mark_as_advanced(NRN_BINARY_DIST_BUILD)
 #   - ON        : Collect code coverage for files (default all).
 #   - <string>  : semicolon (;) separated list of files to collect coverage.
 # ~~~
-option(NRN_ENABLE_MODULE_INSTALL
-       "Enable installation of NEURON Python module for regular CMake builds"
-       ${NRN_ENABLE_MODULE_INSTALL_DEFAULT})
 option(NRN_ENABLE_PYTHON_DYNAMIC "Enable dynamic Python version support"
        ${NRN_ENABLE_PYTHON_DYNAMIC_DEFAULT})
 option(NRN_LINK_AGAINST_PYTHON
@@ -1159,7 +1156,6 @@ endif()
 message(STATUS "Python        | ${NRN_ENABLE_PYTHON}")
 if(NRN_ENABLE_PYTHON)
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_PYTHON_DYNAMIC}")
-  message(STATUS "  MODULE      | ${NRN_ENABLE_MODULE_INSTALL}")
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
     list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
