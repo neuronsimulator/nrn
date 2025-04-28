@@ -8,6 +8,7 @@ CXXFLAGS = \
 -std=c++17 \
 -DDLL_EXPORT -DPIC \
 -I$N/include -I$N/src/scopmath -I$N/src/nrnoc -I$N/src/oc \
+-L$N/lib \
 $(EXTRA_FLAGS)
 
 TARGET=nrnmech.dll
