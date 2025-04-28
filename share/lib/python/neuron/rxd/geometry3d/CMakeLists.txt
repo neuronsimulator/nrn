@@ -1,21 +1,10 @@
 include(${PROJECT_SOURCE_DIR}/cmake/PythonCompileHelper.cmake)
 
-# cmake-format: off
-# convert pyx files to C files using Cython
-# we only need to use the default Python executable since the output of the
-# transpilation (from pyx to C) does not depend on which Python version we are
-# using
-# cmake-format: on
+# Convert pyx files to C files using Cython.
 set(rxd_sources graphicsPrimitives ctng surfaces)
 foreach(source ${rxd_sources})
-  cythonize(
-    "${CMAKE_CURRENT_SOURCE_DIR}/${source}.pyx"
-    OUTPUT
-    ${CMAKE_CURRENT_BINARY_DIR}/${source}.cpp
-    LANGUAGE
-    "C"
-    PYTHON_EXECUTABLE
-    ${NRN_DEFAULT_PYTHON_EXECUTABLE})
+  cythonize("${CMAKE_CURRENT_SOURCE_DIR}/${source}.pyx" OUTPUT
+            ${CMAKE_CURRENT_BINARY_DIR}/${source}.cpp LANGUAGE "C")
 endforeach(source)
 
 set(graphicsPrimitives_sources ${CMAKE_CURRENT_BINARY_DIR}/graphicsPrimitives.cpp)

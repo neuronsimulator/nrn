@@ -1,36 +1,77 @@
-# cmake-format: off
-# Helper for compiling Python modules
-# currently used for the following modules:
+# ~~~
+# Helper functions for compiling NEURON Python modules.
+# Currently used for the following Python modules:
 # - neuron.hoc
 # - neuron.rxd.geometry3d.surfaces
 # - neuron.rxd.geometry3d.ctng
 # - neuron.rxd.geometry3d.graphicsPrimitives
 # - neuronmusic
-# cmake-format: on
+# ~~~
 
-# convert a pyx file into a c or cpp file
+# ~~~
+# cythonize(input_file
+# [OUTPUT path/to/output]
+# [LANGUAGE language]
+# [PYTHON_EXECUTABLE path/to/executable]
+# )
+#
+# Convert a pyx file into a c or cpp file using Cython.
+#
+# input_file - the full path to the input file that should be converted
+# OUTPUT - the full path to the output file (with extension!)
+# LANGUAGE - the language used for the output file
+#
+# Note that `find_package(Cython)` must be called before invoking this function!
+# ~~~
 function(cythonize input_file)
-  cmake_parse_arguments(ARG "" "LANGUAGE;PYTHON_EXECUTABLE;OUTPUT" "" ${ARGN})
+  cmake_parse_arguments(ARG "" "LANGUAGE;OUTPUT" "" ${ARGN})
   string(TOUPPER "${ARG_LANGUAGE}" ARG_LANGUAGE)
-  if(ARG_LANGUAGE STREQUAL "CXX")
-    add_custom_command(
-      OUTPUT ${ARG_OUTPUT}
-      COMMAND ${ARG_PYTHON_EXECUTABLE} -m cython --cplus ${input_file} --output-file ${ARG_OUTPUT}
-      DEPENDS ${input_file}
-      VERBATIM)
-  elseif(ARG_LANGUAGE STREQUAL "C")
-    add_custom_command(
-      OUTPUT ${ARG_OUTPUT}
-      COMMAND ${ARG_PYTHON_EXECUTABLE} -m cython ${input_file} --output-file ${ARG_OUTPUT}
-      DEPENDS ${input_file}
-      VERBATIM)
-  else()
+  set(supported_languages "C" "CXX")
+  if(NOT ARG_LANGUAGE IN_LIST supported_languages)
     message(
-      FATAL_ERROR "Unsupported Cython output language: ${ARG_LANGUAGE}; only C and CXX are allowed")
+      FATAL_ERROR
+        "Unsupported Cython output language: ${ARG_LANGUAGE}; supported languages are ${supported_languages}"
+    )
   endif()
+
+  if(ARG_LANGUAGE STREQUAL "CXX")
+    set(command ${CYTHON_EXECUTABLE} --cplus)
+  elseif(ARG_LANGUAGE STREQUAL "C")
+    set(command ${CYTHON_EXECUTABLE})
+  endif()
+  add_custom_command(
+    OUTPUT ${ARG_OUTPUT}
+    COMMAND ${command} ${input_file} --output-file ${ARG_OUTPUT}
+    DEPENDS ${input_file}
+    COMMENT "Cythonizing ${input_file} to ${ARG_OUTPUT}"
+    VERBATIM)
 endfunction()
 
-# create a target that links to nrnpython
+# ~~~
+# add_nrn_python_library(
+# <name>
+# [TARGET target_name]
+# [PYTHON_VERSION python_version]
+# [LANGUAGE link_language]
+# [OUTPUT_DIR path/to/output]
+# [SOURCES src1 src2 ...]
+# [INCLUDES dir1 dir2 ...]
+# [LIBRARIES lib1 lib2 ...]
+# [INSTALL_REL_RPATH path1 path2 ...])
+#
+# Create a target that links to nrnpython.
+#
+# <name> - the actual name of the library being built.
+# TARGET - the name of the CMake target. Can be anything, but may not conflict with existing targets.
+# PYTHON_VERSION - the version of Python to create the library for (for example, 3.9).
+# LANGUAGE - the language used for linking the library. See also the LINKER_LANGUAGE CMake variable.
+# OUTPUT_DIR - the path to the directory where the library will be placed afer building.
+# SOURCES - the list of source files used for compiling the library.
+# INCLUDES - the list of include directories.
+# LIBRARIES - the list of libraries we are linking with.
+# INSTALL_REL_RPATH - the list of RPATHs to use when installing the target.
+# BUILD_REL_RPATH - the list of RPATHs to use when building the target.
+# ~~~
 function(add_nrn_python_library name)
   cmake_parse_arguments(ARG "" "TARGET;PYTHON_VERSION;LANGUAGE;OUTPUT_DIR"
                         "SOURCES;INCLUDES;LIBRARIES;INSTALL_REL_RPATH;BUILD_REL_RPATH" ${ARGN})
@@ -44,14 +85,14 @@ function(add_nrn_python_library name)
   endif()
 
   # set platform-specific config
-  if(APPLE)
-    set(rel_rpath "@loader_path")
+  if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+    set(rel_rpath_name "@loader_path")
     set(os_string "darwin")
-    set(lib_suffix ".so")
+    set(lib_suffix "${CMAKE_SHARED_MODULE_SUFFIX}")
     set(python_interp "cpython-")
     set(undefined_link_flag "-Wl,-undefined,dynamic_lookup")
-  elseif(UNIX AND NOT APPLE)
-    set(rel_rpath "\\\$ORIGIN")
+  elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    set(rel_rpath_name "\\\$ORIGIN")
     # sometimes CMAKE_LIBRARY_ARCHITECTURE is not set, so here we build it manually
     if(NOT CMAKE_LIBRARY_ARCHITECTURE)
       set(arch "${CMAKE_SYSTEM_PROCESSOR}")
@@ -68,19 +109,29 @@ function(add_nrn_python_library name)
           CACHE INTERNAL "Guessed library architecture")
     endif()
     set(os_string "${CMAKE_LIBRARY_ARCHITECTURE}")
-    set(lib_suffix ".so")
+    set(lib_suffix "${CMAKE_SHARED_MODULE_SUFFIX}")
     set(python_interp "cpython-")
     set(undefined_link_flag "-Wl,--unresolved-symbols=ignore-all")
-  elseif(WIN32)
-    set(rel_rpath "")
+  elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+    set(rel_rpath_name "")
+    # Running Windows 11 in a VM on an ARM-based MacOS shows that cPython's `platform.machine`
+    # function correctly returns `ARM64`. On the other hand, Python's library loading mechanism
+    # itself is specified by `importlib.machinery.EXTENSION_SUFFIXES`, which returns
+    # `cpX.Y-win_amd64.pyd`, so the below should also work on Windows on ARM.
     set(os_string "win_amd64")
     set(lib_suffix ".pyd")
     set(python_interp "cp")
   else()
-    message(WARNING "Unknown platform; RPATH may not be set correctly")
+    message(
+      WARNING
+        "Unknown platform ${CMAKE_SYSTEM_NAME}; the built Python library may not function properly")
   endif()
 
   if(ARG_INSTALL_REL_RPATH)
+    # the INSTALL_RPATH property is special in that we cannot set it to the literal `$ORIGIN` in any
+    # other way due to the fact that CMake will always escape it (for instance, using
+    # target_link_options(target "-Wl,-rpath,\$ORIGIN/some/path") does not work as intended), so
+    # this is the only way to actually set it
     set_target_properties(${ARG_TARGET} PROPERTIES INSTALL_RPATH
                                                    "${rel_rpath}${ARG_INSTALL_REL_RPATH}")
   endif()
@@ -89,11 +140,12 @@ function(add_nrn_python_library name)
     set_target_properties(${ARG_TARGET} PROPERTIES BUILD_RPATH "${rel_rpath}${ARG_BUILD_REL_RPATH}")
   endif()
 
-  # MinGW does not play nicely with cython
+  # MinGW does not play nicely with cython, see: https://github.com/cython/cython/issues/3405
   if(MINGW)
     target_compile_definitions(${ARG_TARGET} PUBLIC MS_WIN64=1)
   endif()
 
+  # the linker should ignore undefined symbols since we cannot link to libpython
   target_link_options(${ARG_TARGET} PRIVATE "${undefined_link_flag}")
 
   # set library name and output dir

@@ -1,11 +1,10 @@
-# cmake-format: off
-# ===============================================================
+# ~~~
 # The NEURON Python module
+#
 # The module used to be installed by setuptools, but now we do it manually
 # since scikit-build-core (the new build backend) is not flexible enough for
 # our needs
-# ===============================================================
-# cmake-format: on
+# ~~~
 
 set(NRN_PYTHON_FILES_LIST
     hclass3.py
