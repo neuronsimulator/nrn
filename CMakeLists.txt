@@ -1026,7 +1026,7 @@ install(
   PATTERN CMakeLists.txt EXCLUDE)
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
-        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn/lib)
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
 
 # Copy NEURON headers that will be included in the installation into the build directory.
 set(headers_in_build_dir)
