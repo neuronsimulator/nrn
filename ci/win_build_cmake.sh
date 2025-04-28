@@ -38,6 +38,8 @@ cd $BUILD_SOURCESDIRECTORY/build
 	-DMPI_C_LIB_NAMES:STRING=msmpi \
 	-DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib
 ninja install
+# install the demo manually since we don't do it in cmake
+/c/nrn-install/bin/neurondemo -nopython -nogui -c 'quit()'
 ctest -VV
 ninja setup_exe
 
