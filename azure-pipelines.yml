@@ -61,6 +61,12 @@ stages:
         inputs:
           secureFile: 'mpt_headears.2.21.tar.gz'
 
+      - script: |
+        python3 -m pip install tomli tomli-w
+        python3 packaging/python/change_name.py ./pyproject.toml neuron
+        condition: and(in(variables['Build.Reason'], 'Manual'), eq(variables['NRN_RELEASE_UPLOAD'], 'true'))
+        displayName: 'Change name of package for release'
+
       # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
       # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
       - script: |
@@ -140,6 +146,12 @@ stages:
         displayName: 'Download readline secure file'
         inputs:
           secureFile: 'readline7.0-ncurses6.4.tar.gz'
+
+      - script: |
+        python3 -m pip install tomli tomli-w
+        python3 packaging/python/change_name.py ./pyproject.toml neuron
+        condition: and(in(variables['Build.Reason'], 'Manual'), eq(variables['NRN_RELEASE_UPLOAD'], 'true'))
+        displayName: 'Change name of package for release'
 
       # 10.14 is required for full C++17 support according to
       # https://cibuildwheel.readthedocs.io/en/stable/cpp_standards, but it
