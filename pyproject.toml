@@ -1,3 +1,7 @@
+# ================================================
+# pyproject.toml configuration for building NEURON
+# ================================================
+
 [build-system]
 build-backend = "scikit_build_core.build"
 
@@ -59,47 +63,61 @@ local_scheme = "no-local-version"
 # delegate installation to CMake
 wheel.packages = []
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
-# the default `strip=true`, but this results in missing symbols on MacOS, for more
-# details see: https://github.com/neuronsimulator/nrn/issues/3385
+# The default, `strip=true`, results in missing symbols on MacOS. For more
+# details, see: https://github.com/neuronsimulator/nrn/issues/3385
 install.strip = false
 
 [tool.scikit-build.cmake.define]
-# for linux, we pass the readline and ncurses dirs to CMAKE_PREFIX_PATH
-# for macos, we pass the same + X11 dirs
+# When building a redistributable wheel for Linux, we pass the readline and
+# ncurses dirs to CMAKE_PREFIX_PATH. For MacOS, we pass the same + X11 dirs.
 CMAKE_PREFIX_PATH = { env = "CMAKE_PREFIX_PATH" }
+
 NRN_BINARY_DIST_BUILD = { default = "OFF", env = "NRN_BINARY_DIST_BUILD" }
 NRN_WHEEL_STATIC_READLINE = { default = "OFF", env = "NRN_WHEEL_STATIC_READLINE" }
 NRN_LINK_AGAINST_PYTHON = "OFF"
+
 # coreNEURON is enabled for shipped wheels
 NRN_ENABLE_CORENEURON = { default = "OFF", env = "NRN_ENABLE_CORENEURON" }
+
 # RX3D is always enabled
 NRN_ENABLE_RX3D = { default = "ON", env = "NRN_ENABLE_RX3D" }
 NRN_RX3D_OPT_LEVEL = { default = "0", env = "NRN_RX3D_OPT_LEVEL" }
+
 # interviews is always enabled
 NRN_ENABLE_INTERVIEWS = { default = "ON", env = "NRN_ENABLE_INTERVIEWS" }
 IV_ENABLE_X11_DYNAMIC = { default = "ON", env = "IV_ENABLE_X11_DYNAMIC" }
+
 # specific options that are hardcoded
 NRN_ENABLE_PYTHON_DYNAMIC = "ON"
 NRN_ENABLE_REL_RPATH = "ON"
 NRN_ENABLE_TESTS = "OFF"
 NRN_ENABLE_DOCS = "OFF"
-# for MUSIC
-# NOTE: when building wheels with MUSIC, modify CMAKE_PREFIX_PATH as well to
-# include MUSIC_ROOT
+
+# Configuration for MUSIC.
+# Note that when building wheels with MUSIC, one must modify CMAKE_PREFIX_PATH
+# as well to include MUSIC_ROOT
 NRN_ENABLE_MUSIC = { default = "OFF", env = "NRN_ENABLE_MUSIC" }
 MUSIC_ROOT = { default = "", env = "MUSIC_ROOT" }
-# for coreNEURON (turn on for Linux)
+
+# Configuration for coreNEURON. For Linux we enable OpenMP.
 CORENRN_ENABLE_OPENMP = { default = "OFF", env = "CORENRN_ENABLE_OPENMP" }
+
+# NMODL bindings are always on for wheels
 NMODL_ENABLE_PYTHON_BINDINGS = "ON"
+
 # MPI options
 NRN_ENABLE_MPI = { default = "ON", env = "NRN_ENABLE_MPI" }
 NRN_ENABLE_MPI_DYNAMIC = { default = "ON", env = "NRN_ENABLE_MPI_DYNAMIC" }
+
 # MPI headers are platform-specific, so we do not set defaults
 NRN_MPI_DYNAMIC = { env = "NRN_MPI_DYNAMIC" }
 
 [tool.cibuildwheel]
+# We can specify a custom Docker image when building NEURON
 manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64"
 manylinux-x86_64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64"
+
+# certain platforms are not supported
 skip = [ "pp*", "*-win32", "*-manylinux_i686", "*-musllinux_i686", "*-musllinux_x86_64", "*-musllinux_aarch64" ]
 
 [tool.cibuildwheel.linux]
@@ -117,6 +135,7 @@ environment-pass = [
   # when making a release, we need to override the version
   "SETUPTOOLS_SCM_PRETEND_VERSION",
 ]
+
 # comment originally from `build_wheels.bash`:
 #   libgomp:  still need work to make sure this robust and usable
 #             currently this will break when coreneuron is used and when
@@ -128,7 +147,7 @@ environment-pass = [
 repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so'"
 
 [tool.cibuildwheel.linux.environment]
-# all of these need to be specified under `[tool.cibuildwheel.linux.environment-pass]`
+# all of the below env variables need to be specified under `[tool.cibuildwheel.linux.environment-pass]`
 CMAKE_PREFIX_PATH = "/nrnwheel/ncurses;/nrnwheel/readline"
 NRN_MPI_DYNAMIC = "/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)"
 NRN_ENABLE_MPI_DYNAMIC = "ON"
@@ -142,7 +161,6 @@ NRN_RX3D_OPT_LEVEL = "0"
 [tool.cibuildwheel.macos]
 # workaround for NMODL issue when building in temp dir
 config-settings = { build-dir = "_build" }
-test-command = "true"
 repair-wheel-command = "delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}"
 
 [tool.cibuildwheel.macos.environment]
