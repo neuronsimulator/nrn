@@ -17,9 +17,11 @@
 #
 # Convert a pyx file into a c or cpp file using Cython.
 #
-# input_file - the full path to the input file that should be converted
-# OUTPUT - the full path to the output file (with extension!)
-# LANGUAGE - the language used for the output file
+# input_file        - the full path to the input file that should be converted
+# OUTPUT            - the full path to the output file (with extension!)
+# LANGUAGE          - the language used for the output file
+# PYTHON_EXECUTABLE - (optional) the full path to the Python executable used for launching
+#                     Cython. If not specified, defaults to the value of `CYTHON_EXECUTABLE`.
 #
 # Note that `find_package(Cython)` must be called before invoking this function!
 # ~~~
@@ -32,6 +34,10 @@ function(cythonize input_file)
       FATAL_ERROR
         "Unsupported Cython output language: ${ARG_LANGUAGE}; supported languages are ${supported_languages}"
     )
+  endif()
+
+  if(NOT ARG_PYTHON_EXECUTABLE)
+    set(ARG_PYTHON_EXECUTABLE ${CYTHON_EXECUTABLE})
   endif()
 
   if(ARG_LANGUAGE STREQUAL "CXX")
@@ -61,20 +67,30 @@ endfunction()
 #
 # Create a target that links to nrnpython.
 #
-# <name> - the actual name of the library being built.
-# TARGET - the name of the CMake target. Can be anything, but may not conflict with existing targets.
-# PYTHON_VERSION - the version of Python to create the library for (for example, 3.9).
-# LANGUAGE - the language used for linking the library. See also the LINKER_LANGUAGE CMake variable.
-# OUTPUT_DIR - the path to the directory where the library will be placed afer building.
-# SOURCES - the list of source files used for compiling the library.
-# INCLUDES - the list of include directories.
-# LIBRARIES - the list of libraries we are linking with.
-# INSTALL_REL_RPATH - the list of RPATHs to use when installing the target.
-# BUILD_REL_RPATH - the list of RPATHs to use when building the target.
+# <name>            - the actual name of the library being built
+# NO_EXTENSION      - (optional, default unset) in case one wants to create a
+#                     library without any platform-specific naming (so `hoc.so` instead of
+#                     `hoc.cpython39-darwin.so` or similar). Note that no prefix is added.
+# TARGET            - (optional, defaults to <name>) the name of the CMake
+#                     target. Can be anything, but may not conflict with existing targets.
+# PYTHON_VERSION    - the version of Python to create the library for (for example, 3.9).
+# LANGUAGE          - the language used for linking the library. See also the LINKER_LANGUAGE CMake variable.
+# OUTPUT_DIR        - the path to the directory where the library will be placed afer building.
+# SOURCES           - the list of source files used for compiling the library.
+# INCLUDES          - (optional) the list of include directories.
+# LIBRARIES         - (optional) the list of libraries we are linking with.
+# INSTALL_REL_RPATH - (optional) the list of RPATHs to use when installing the target.
+# BUILD_REL_RPATH   - (optional) the list of RPATHs to use when building the target.
 # ~~~
 function(add_nrn_python_library name)
-  cmake_parse_arguments(ARG "" "TARGET;PYTHON_VERSION;LANGUAGE;OUTPUT_DIR"
-                        "SOURCES;INCLUDES;LIBRARIES;INSTALL_REL_RPATH;BUILD_REL_RPATH" ${ARGN})
+  set(options NO_EXTENSION)
+  set(oneValueArgs TARGET PYTHON_VERSION LANGUAGE OUTPUT_DIR)
+  set(multiValueArgs SOURCES INCLUDES LIBRARIES INSTALL_REL_RPATH BUILD_REL_RPATH)
+  cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  if(NOT ARG_TARGET)
+    set(ARG_TARGET "${name}")
+  endif()
 
   add_library(${ARG_TARGET} MODULE ${ARG_SOURCES})
   if(ARG_INCLUDES)
@@ -151,9 +167,16 @@ function(add_nrn_python_library name)
 
   # set library name and output dir
   string(REPLACE "." "" pyver_nodot "${ARG_PYTHON_VERSION}")
+
+  if(ARG_NO_EXTENSION)
+    set(output_name "${name}")
+  else()
+    set(output_name "${name}.${python_interp}${pyver_nodot}-${os_string}")
+  endif()
+
   set_target_properties(
     ${ARG_TARGET}
-    PROPERTIES OUTPUT_NAME "${name}.${python_interp}${pyver_nodot}-${os_string}"
+    PROPERTIES OUTPUT_NAME "${output_name}"
                LINKER_LANGUAGE ${ARG_LANGUAGE}
                PREFIX ""
                SUFFIX ${lib_suffix}
