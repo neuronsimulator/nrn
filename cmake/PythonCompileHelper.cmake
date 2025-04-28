@@ -133,11 +133,12 @@ function(add_nrn_python_library name)
     # target_link_options(target "-Wl,-rpath,\$ORIGIN/some/path") does not work as intended), so
     # this is the only way to actually set it
     set_target_properties(${ARG_TARGET} PROPERTIES INSTALL_RPATH
-                                                   "${rel_rpath}${ARG_INSTALL_REL_RPATH}")
+                                                   "${rel_rpath_name}${ARG_INSTALL_REL_RPATH}")
   endif()
 
   if(ARG_BUILD_REL_RPATH)
-    set_target_properties(${ARG_TARGET} PROPERTIES BUILD_RPATH "${rel_rpath}${ARG_BUILD_REL_RPATH}")
+    set_target_properties(${ARG_TARGET} PROPERTIES BUILD_RPATH
+                                                   "${rel_rpath_name}${ARG_BUILD_REL_RPATH}")
   endif()
 
   # MinGW does not play nicely with cython, see: https://github.com/cython/cython/issues/3405
