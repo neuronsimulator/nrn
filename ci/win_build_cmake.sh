@@ -40,6 +40,7 @@ cd $BUILD_SOURCESDIRECTORY/build
 ninja install
 # compile mod files afterwards since we don't do it in cmake
 mkdir -p /c/nrn-install/demo/release
+cp -a ../share/demo/release/*.mod /c/nrn-install/demo/release/
 cd /c/nrn-install/demo/release && /c/nrn-install/bin/nrnivmodl && cd -
 ctest -VV
 ninja setup_exe
