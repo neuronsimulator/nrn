@@ -386,7 +386,7 @@ void printitem(Item* q) {
         verbatim_adjust(STR(q));
     } else if (q->itemtype == ITEM) {
         printitem(ITM(q));
-    } else {
+    } else if (q->itemtype == STRING) {
         Fprintf(fcout, " %s", STR(q));
     }
 }
@@ -748,12 +748,12 @@ void c_out_vectorize() {
         }
         printlist(set_ion_variables(1));
         P("}}\n");
+        splitfor_solve(2);
         if (dtsav_for_nrn_state && nrnstate) {
             P(" dt = _dtsav;");
         }
     }
     fprintf(fcout, "  NRN_TRACE_END(\"nrn_state_%s\");\n", mechname);
-    splitfor_solve(2);
     P("\n}\n");
 
     P("\nstatic void terminal(){}\n");

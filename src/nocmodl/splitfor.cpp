@@ -23,6 +23,7 @@ static void splitfor_conductance_cout();
 static void splitfor_ext_vdef();
 static List* splitfor_ion_stmts(List* lst);
 static List* splitfor_end_dion_stmt(const char* strdel);
+static void split_deriv_print(Item* q1, Item* q2);
 
 // return true if any splitfor code should be generated
 bool splitfor() {
@@ -67,21 +68,12 @@ bool splitfor() {
                         printf("ZZZ need to verify that %s can be SPLITFOR\n", symproc->name);
                     }
                 }
-                if (ssi.size() > 1) {
-                    printf("qsol\n");
-                    debugprintitem(qsol);
-                    printf("PPP q3 to q4\n");
-                    for (Item* q = ssi[2]; q != ssi[3]; q = q->next) {
-                        debugprintitem(q);
-                    }
-                }
                 split_solve_ = true;
 
                 // check for things that might make split_solve_ false
             }
         }
     }
-    printf("QQQ split_solve_ %d\n", split_solve_);
     return split_cur_ || split_solve_;
 }
 
@@ -91,7 +83,6 @@ void splitfor_current() {
     if (!split_cur_) {
         return;
     }
-    printf("ZZZ splitfor_current()\n");
     P("\nstatic void _split_nrn_current(_internalthreadargsprotocomma_ "
       " int _nodecount){\n"
       "#define _ZFOR for (int _iml = 0; _iml < _nodecount; ++_iml)\n");
@@ -149,7 +140,7 @@ void splitfor_cur(int part) {
 
             s = ZF;
             for (Item* q = currents->next; q != currents; q = q->next) {
-                sprintf(buf, " _temp_%s[_iml] = %s;", SYM(q)->name, SYM(q)->name);
+                Sprintf(buf, " _temp_%s[_iml] = %s;", SYM(q)->name, SYM(q)->name);
                 s += buf;
             }
             s += " }\n";
@@ -168,7 +159,7 @@ void splitfor_cur(int part) {
 
             s = ZF " _g = (";
             for (Item* q = currents->next; q != currents; q = q->next) {
-                sprintf(buf, "(_temp_%s[_iml] - %s)", SYM(q)->name, SYM(q)->name);
+                Sprintf(buf, "(_temp_%s[_iml] - %s)", SYM(q)->name, SYM(q)->name);
                 s += buf;
                 s += (q->next == currents) ? ") / 0.001" : " + ";
             }
@@ -222,12 +213,20 @@ void splitfor_solve(int part) {
         P("#if !SPLITFOR\n");
         return;
     }
-    printf("ZZZ splitfor_solve()\n");
-
     P("#else /*SPLITFOR*/\n");
     P("#define _ZFOR for (int _iml = 0; _iml < _cntml; ++_iml)\n");
     P("  {\n");
 
+    // modified copy of noccout.cpp output between calls to splitfor_solve
+    P("#undef _DV\n#define _DV /**/\n");
+    splitfor_ext_vdef();
+    if (currents->next != currents) {
+        printlist(splitfor_ion_stmts(get_ion_variables(1)));
+    }
+    split_deriv_print(ssi[2], ssi[3]);
+    if (currents->next != currents) {
+        printlist(splitfor_ion_stmts(set_ion_variables(1)));
+    }
     P("  }\n");
     P("\n#undef _ZFOR\n");
     P("#endif /*SPLITFOR*/\n");
@@ -265,7 +264,7 @@ static bool assign_non_range(List* lst) {
     return b;
 }
 
-static bool not_allowed(List* lst, Symbol** symproc = nullptr) {
+static bool not_allowed(List* lst, Symbol** symproc) {
     // b = false when some statements occur
     bool b{false};
     for (Item* q = lst->next; q != lst; q = q->next) {
@@ -300,8 +299,10 @@ static List* splitfor_ion_stmts(List* lst) {
         assert(q->itemtype == STRING);
         char* s = STR(q);
         int len = strlen(s);
-        if (s[len - 1] != '\n') {  // rest of the statement is in q->next
-            sprintf(buf, ZF "%s", s);
+        if (len == 0) {
+            continue;
+        } else if (s[len - 1] != '\n') {  // rest of the statement is in q->next
+            Sprintf(buf, ZF "%s", s);
             replacstr(q, buf);
             q = q->next;  // this one must have newline
             assert(q->itemtype == STRING);
@@ -309,11 +310,11 @@ static List* splitfor_ion_stmts(List* lst) {
             len = strlen(s);
             assert(s[len - 1] == '\n');
             s[len - 1] = '\0';
-            sprintf(buf, "%s }\n", s);
+            Sprintf(buf, "%s }\n", s);
             replacstr(q, buf);
         } else {  // an entire statement
             s[len - 1] = '\0';
-            sprintf(buf, ZF "%s }\n", s);
+            Sprintf(buf, ZF "%s }\n", s);
             replacstr(q, buf);
         }
     }
@@ -478,5 +479,44 @@ static void splitfor_ext_vdef() {
         P("#endif\n");
     } else {
         P(ZF " v = _vec_v[_ni[_iml]] _DV; }\n");
+    }
+}
+
+void split_deriv_print(Item* q1, Item* q2) {
+    List* lst = newlist();
+    copyitems(q1->prev, q2, lst);
+
+    std::unordered_map<Item*, bool> items{};
+    // item Rangevar before "=", insert "_ZFOR{"
+    // item STR containing " = ", insert "_ZFOR{"
+    // item PROCEDURE, insert "_ZFOR{"
+    // item SEMI, append "}"
+    for (Item* q = lst->next; q != lst; q = q->next) {
+        if (q->itemtype == SYMBOL && strcmp(SYM(q)->name, "=") == 0) {
+            Symbol* s = (q->prev->itemtype == SYMBOL) ? SYM(q->prev) : NULL;
+            if (s && (s->nrntype & (NRNRANGE | NRNCUROUT))) {
+                items[q->prev] = true;
+            }
+        }
+        if (q->itemtype == STRING && strstr(STR(q), " = ") && strstr(STR(q), "(1. - exp(dt*((")) {
+            items[q] = true;
+        }
+        if (q->itemtype == SYMBOL && SYM(q)->type == NAME && SYM(q)->subtype == PROCED) {
+            items[q] = true;
+        }
+        if (q->itemtype == SYMBOL && SYM(q) == semi) {
+            items[q] = false;
+        }
+    }
+
+    for (Item* q = lst->next; q != lst; q = q->next) {
+        auto search = items.find(q);
+        if (search != items.end() && search->second) {
+            P(ZF);
+        }
+        printitem(q);
+        if (search != items.end() && !search->second) {
+            P("}\n");
+        }
     }
 }
