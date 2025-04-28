@@ -68,7 +68,8 @@ IV_ENABLE_X11_DYNAMIC = { default = "ON", env = "IV_ENABLE_X11_DYNAMIC" }
 # specific options
 NRN_ENABLE_PYTHON_DYNAMIC = "ON"
 NRN_ENABLE_REL_RPATH = "ON"
-CMAKE_VERBOSE_MAKEFILE = "OFF"
+NRN_ENABLE_TESTS = "OFF"
+NRN_ENABLE_DOCS = "OFF"
 # for MUSIC
 # NOTE: when building wheels with MUSIC, modify CMAKE_PREFIX_PATH as well to
 # include MUSIC_ROOT
@@ -82,8 +83,6 @@ NRN_ENABLE_MPI = { default = "ON", env = "NRN_ENABLE_MPI" }
 NRN_ENABLE_MPI_DYNAMIC = { default = "ON", env = "NRN_ENABLE_MPI_DYNAMIC" }
 # MPI headers are platform-specific, so we do not set defaults
 NRN_MPI_DYNAMIC = { env = "NRN_MPI_DYNAMIC" }
-NRN_ENABLE_DOCS = { default = "OFF", env = "NRN_ENABLE_DOCS" }
-NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION = { default = "OFF", env = "NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION" }
 
 [tool.cibuildwheel]
 manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64"
