@@ -62,8 +62,8 @@ stages:
           secureFile: 'mpt_headears.2.21.tar.gz'
 
       - script: |
-        python3 -m pip install tomli tomli-w
-        python3 packaging/python/change_name.py ./pyproject.toml neuron
+          python3 -m pip install tomli tomli-w
+          python3 packaging/python/change_name.py ./pyproject.toml neuron
         condition: and(in(variables['Build.Reason'], 'Manual'), eq(variables['NRN_RELEASE_UPLOAD'], 'true'))
         displayName: 'Change name of package for release'
 
@@ -148,8 +148,8 @@ stages:
           secureFile: 'readline7.0-ncurses6.4.tar.gz'
 
       - script: |
-        python3 -m pip install tomli tomli-w
-        python3 packaging/python/change_name.py ./pyproject.toml neuron
+          python3 -m pip install tomli tomli-w
+          python3 packaging/python/change_name.py ./pyproject.toml neuron
         condition: and(in(variables['Build.Reason'], 'Manual'), eq(variables['NRN_RELEASE_UPLOAD'], 'true'))
         displayName: 'Change name of package for release'
 
