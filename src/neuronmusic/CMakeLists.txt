@@ -2,8 +2,14 @@ include(${PROJECT_SOURCE_DIR}/cmake/PythonCompileHelper.cmake)
 
 set(source neuronmusic)
 
-cythonize("${CMAKE_CURRENT_SOURCE_DIR}/${source}.pyx" OUTPUT
-          ${CMAKE_CURRENT_BINARY_DIR}/${source}.cpp LANGUAGE "CXX")
+cythonize(
+  "${CMAKE_CURRENT_SOURCE_DIR}/${source}.pyx"
+  OUTPUT
+  ${CMAKE_CURRENT_BINARY_DIR}/${source}.cpp
+  LANGUAGE
+  "CXX"
+  PYTHON_EXECUTABLE
+  ${NRN_DEFAULT_PYTHON_EXECUTABLE})
 
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})

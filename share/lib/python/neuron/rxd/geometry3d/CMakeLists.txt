@@ -3,8 +3,14 @@ include(${PROJECT_SOURCE_DIR}/cmake/PythonCompileHelper.cmake)
 # Convert pyx files to C files using Cython.
 set(rxd_sources graphicsPrimitives ctng surfaces)
 foreach(source ${rxd_sources})
-  cythonize("${CMAKE_CURRENT_SOURCE_DIR}/${source}.pyx" OUTPUT
-            ${CMAKE_CURRENT_BINARY_DIR}/${source}.cpp LANGUAGE "C")
+  cythonize(
+    "${CMAKE_CURRENT_SOURCE_DIR}/${source}.pyx"
+    OUTPUT
+    ${CMAKE_CURRENT_BINARY_DIR}/${source}.cpp
+    LANGUAGE
+    "C"
+    PYTHON_EXECUTABLE
+    ${NRN_DEFAULT_PYTHON_EXECUTABLE})
 endforeach(source)
 
 set(graphicsPrimitives_sources ${CMAKE_CURRENT_BINARY_DIR}/graphicsPrimitives.cpp)

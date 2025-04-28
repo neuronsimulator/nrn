@@ -24,7 +24,7 @@
 # Note that `find_package(Cython)` must be called before invoking this function!
 # ~~~
 function(cythonize input_file)
-  cmake_parse_arguments(ARG "" "LANGUAGE;OUTPUT" "" ${ARGN})
+  cmake_parse_arguments(ARG "" "LANGUAGE;PYTHON_EXECUTABLE;OUTPUT" "" ${ARGN})
   string(TOUPPER "${ARG_LANGUAGE}" ARG_LANGUAGE)
   set(supported_languages "C" "CXX")
   if(NOT ARG_LANGUAGE IN_LIST supported_languages)
@@ -35,9 +35,9 @@ function(cythonize input_file)
   endif()
 
   if(ARG_LANGUAGE STREQUAL "CXX")
-    set(command ${CYTHON_EXECUTABLE} --cplus)
+    set(command ${ARG_PYTHON_EXECUTABLE} -m cython --cplus)
   elseif(ARG_LANGUAGE STREQUAL "C")
-    set(command ${CYTHON_EXECUTABLE})
+    set(command ${ARG_PYTHON_EXECUTABLE} -m cython)
   endif()
   add_custom_command(
     OUTPUT ${ARG_OUTPUT}
