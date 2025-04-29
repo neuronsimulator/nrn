@@ -100,6 +100,22 @@ function(add_nrn_python_library name)
     target_link_libraries(${ARG_TARGET} PRIVATE ${ARG_LIBRARIES})
   endif()
 
+  # Check passed version is supported
+  if(NOT ${ARG_PYTHON_VERSION} IN_LIST NRN_PYTHON_VERSIONS)
+    message(
+      FATAL_ERROR
+        "Unsupported Python version: ${ARG_PYTHON_VERSION} (available: ${NRN_PYTHON_VERSIONS})")
+  endif()
+
+  # Iterate over Python versions and find the right Python library (needed for Windows)
+  foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+    list(GET NRN_PYTHON_LIBRARIES ${val} nrnlib)
+    list(GET NRN_PYTHON_VERSIONS ${val} nrnver)
+    if(${nrnver} STREQUAL ${ARG_PYTHON_VERSION})
+      break()
+    endif()
+  endforeach()
+
   # set platform-specific config
   if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
     set(rel_rpath_name "@loader_path")
@@ -137,6 +153,8 @@ function(add_nrn_python_library name)
     set(os_string "win_amd64")
     set(lib_suffix ".pyd")
     set(python_interp "cp")
+    # On Windows we need to explicitly link to Python
+    target_link_libraries(${ARG_TARGET} PRIVATE msvcrt ${nrnlib})
   else()
     message(
       WARNING
