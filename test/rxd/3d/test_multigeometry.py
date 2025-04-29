@@ -8,11 +8,11 @@ def test_multi_geometry3d(neuron_nosave_instance, hybrid):
     """A model using multiple different geometries in a 3D model"""
 
     h, rxd, save_path = neuron_nosave_instance
-    dendA = h.Section(name="dendA")
+    dendA = h.Section("dendA")
     dendA.diam = 1
     dendA.nseg = 3
     dendA.L = 5
-    dendB = h.Section(name="dendB")
+    dendB = h.Section("dendB")
     dendB.diam = 1
     dendB.nseg = 3
     dendB.L = 5

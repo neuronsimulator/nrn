@@ -597,37 +597,29 @@ class MultipleGeometry(RxDGeometry):
         geos = {}
         for sec in source:
             geo = self._get_geo(sec)
-            if geo in geos:
-                geos[geo].append(sec)
-            else:
-                geos[geo] = [sec]
+            geos.setdefault(geo, []).append(sec)
         internal_voxels, surface_voxels, mesh_grid = geometry3d.voxelize2(source, dx)
         internal_key = lambda itm: itm[1][1].sec
         surface_key = lambda itm: itm[1][2].sec
         internal_by_sec = groupby(internal_voxels.items(), key=internal_key)
         surface_by_sec = groupby(surface_voxels.items(), key=surface_key)
         for geo, secs in geos.items():
-            # skip if the scaling is 1
-            if geo._scale_internal_volumes3d == 1:
-                continue
-
+            # only scale if not multiplying by 1
+            if geo._scale_internal_volumes3d != 1:
                 for sec, voxels in internal_by_sec:
-                    # skip is the sec is not in this geometry
-                    if sec not in secs:
-                        continue
-                    # scale the internal volume
-                    for key, _ in voxels:
-                        internal_voxels[key][0] *= geo._scale_internal_volumes3d
-            # skip if the scaling is 1
-            if geo._scale_surface_volumes3d == 1:
-                continue
-            for sec, voxels in surface_by_sec:
-                # skip is the sec is not in this geometry
-                if sec not in secs:
-                    continue
-                # scale the surface volume
-                for key, _ in voxels:
-                    surface_voxels[key][0] *= geo._scale_surface_volumes3d
+                    # only scale if sec is in this geometry
+                    if sec in secs:
+                        # scale the internal volume
+                        for key, _ in voxels:
+                            internal_voxels[key][0] *= geo._scale_internal_volumes3d
+            # only scale if not multiplying by 1
+            if geo._scale_surface_volumes3d != 1:
+                for sec, voxels in surface_by_sec:
+                    # only scale if sec is in this geometry
+                    if sec in secs:
+                        # scale the surface volume
+                        for key, _ in voxels:
+                            surface_voxels[key][0] *= geo._scale_surface_volumes3d
 
         return internal_voxels, surface_voxels, mesh_grid
 
