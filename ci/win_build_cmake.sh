@@ -53,4 +53,4 @@ cd "${BUILD_BUILDDIRECTORY}" && ctest -VV || cd -
 ${CMAKE_COMMAND} --build "${BUILD_BUILDDIRECTORY}" --target setup_exe
 
 # copy installer with fixed name for nightly upload
-cp "${BUILD_BUILDDIRECTORY}/src/mswin/nrn*AMD64.exe" "${BUILD_SOURCESDIRECTORY}/nrn-nightly-AMD64.exe"
+cp "${BUILD_BUILDDIRECTORY}/src/mswin/"nrn*AMD64.exe "${BUILD_SOURCESDIRECTORY}/nrn-nightly-AMD64.exe"
