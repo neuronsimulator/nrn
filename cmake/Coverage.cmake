@@ -34,7 +34,7 @@ if(NRN_ENABLE_COVERAGE)
   if(NOT BUILD_TYPE_UPPER STREQUAL "DEBUG")
     message(WARNING "Using CMAKE_BUILD_TYPE=Debug is recommended with NRN_ENABLE_COVERAGE")
   endif()
-  set(NRN_COVERAGE_FLAGS_UNQUOTED --coverage -fno-inline)
+  set(NRN_COVERAGE_FLAGS_UNQUOTED --coverage -fno-inline -fprofile-update=atomic)
   string(JOIN " " NRN_COVERAGE_FLAGS ${NRN_COVERAGE_FLAGS_UNQUOTED})
   set(NRN_COVERAGE_LINK_FLAGS --coverage)
 
@@ -46,6 +46,8 @@ if(NRN_ENABLE_COVERAGE)
     # they are compiled and linked in src/nrnpython/CMakeLists.txt.
     # I.e. successful with
     # -DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"
+    # Used to work but now files compiled in other CMakeLists.txt need the
+    # coverage flags set there.
     # ~~~
     if(NRN_ADDED_COVERAGE_FLAGS)
       message(
@@ -75,6 +77,26 @@ else()
     )
   endif()
 endif()
+
+# Macro to apply coverage flags to source files Use this macro in any CMakeLists.txt file that might
+# compile a file mentioned in NRN_COVERAGE_FILES
+macro(nrn_enable_coverage_files)
+  if(NRN_COVERAGE_FILES)
+    foreach(f ${NRN_COVERAGE_FILES})
+      get_property(
+        current_flags
+        SOURCE ${PROJECT_SOURCE_DIR}/${f}
+        PROPERTY COMPILE_FLAGS)
+      string(FIND "${current_flags}" "${NRN_COVERAGE_FLAGS}" found_pos)
+      if(found_pos EQUAL -1) # -1 means not found
+        set_property(
+          SOURCE ${PROJECT_SOURCE_DIR}/${f}
+          APPEND
+          PROPERTY COMPILE_FLAGS ${NRN_COVERAGE_FLAGS})
+      endif()
+    endforeach()
+  endif()
+endmacro()
 
 if(NRN_ENABLE_COVERAGE)
   set(cover_clean_command find "${PROJECT_BINARY_DIR}" "-name" "*.gcda" "-type" "f" "-delete")

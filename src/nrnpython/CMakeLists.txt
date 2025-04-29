@@ -18,8 +18,10 @@ set(nrnpython_lib_list)
 set(NRNPYTHON_FILES_LIST
     nrnpython.cpp
     nrnpy_hoc.cpp
+    nrn_metaclass.cpp
     nrnpy_nrn.cpp
     nrnpy_p2h.cpp
+    nrnpy_utils.cpp
     grids.cpp
     rxd.cpp
     rxd_extracellular.cpp
@@ -49,11 +51,14 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
     list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
+    set(nanobind_target "nanobind_py${pyver}")
+    make_nanobind_target(${nanobind_target} ${pyinc})
     add_library(nrnpython${pyver} SHARED ${NRNPYTHON_FILES_LIST})
     target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
-    target_link_libraries(nrnpython${pyver} nrniv_lib ${Readline_LIBRARY})
+    target_link_libraries(nrnpython${pyver} PUBLIC nrniv_lib)
+    target_link_libraries(nrnpython${pyver} PRIVATE ${Readline_LIBRARY} ${nanobind_target})
     if(NRN_LINK_AGAINST_PYTHON)
-      target_link_libraries(nrnpython${pyver} ${pylib})
+      target_link_libraries(nrnpython${pyver} PUBLIC ${pylib})
     endif()
     add_dependencies(nrnpython${pyver} nrniv_lib)
     list(APPEND nrnpython_lib_list nrnpython${pyver})
@@ -65,13 +70,23 @@ else()
   set_property(TARGET nrnpython PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_include_directories(nrnpython PUBLIC ${INCLUDE_DIRS})
   target_include_directories(nrnpython PUBLIC "${NRN_DEFAULT_PYTHON_INCLUDES}")
-  target_link_libraries(nrnpython ${NRN_DEFAULT_PYTHON_LIBRARIES})
-  target_include_directories(nrnpython PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
+  # see nrn/issues/2358
+  if(NOT NRN_WITH_MACOS_CONDA_PYTHON)
+    target_link_libraries(nrnpython ${NRN_DEFAULT_PYTHON_LIBRARIES})
+  endif()
+  target_link_libraries(nrnpython fmt::fmt)
+  target_include_directories(nrnpython SYSTEM
+                             PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
   target_include_directories(nrnpython PUBLIC ${PROJECT_BINARY_DIR}/src/nrniv/oc_generated)
+  make_nanobind_target(nanobind ${NRN_DEFAULT_PYTHON_INCLUDES})
+  target_link_libraries(nrnpython nanobind)
 endif()
 
 configure_file(_config_params.py.in "${PROJECT_BINARY_DIR}/lib/python/neuron/_config_params.py"
                @ONLY)
+
+# Maybe NRN_COVERAGE_FILES mentions a file compiled by this CMakeLists.txt
+nrn_enable_coverage_files()
 
 # Install package files that were created in build (e.g. .py.in)
 install(
@@ -172,6 +187,12 @@ if(NRN_ENABLE_MODULE_INSTALL)
   endif()
   if(NRN_ENABLE_MUSIC)
     list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--enable-music")
+  endif()
+  if(NRN_ENABLE_CORENEURON)
+    list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--enable-coreneuron")
+  endif()
+  if(NRN_ENABLE_DOCS)
+    list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--enable-nmodl-docs")
   endif()
   list(APPEND NRN_SETUP_PY_BUILD_OPTIONS "--build-lib=${NRN_PYTHON_BUILD_LIB}")
 

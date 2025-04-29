@@ -239,8 +239,12 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
     } catch (const std::filesystem::filesystem_error& e) {
         handle = dlopen(relpath, flags);
         if (!handle) {
-            std::cerr << "std::filesystem::absolute failed (" << e.what()
-                      << ") and dlopen failed with '" << relpath << "'" << std::endl;
+            Fprintf(
+                stderr,
+                fmt::format("std::filesystem::absolute failed ({}) and dlopen failed with '{}'\n",
+                            e.what(),
+                            relpath)
+                    .c_str());
 #if DARWIN
             nrn_possible_mismatched_arch(relpath);
 #endif
@@ -470,7 +474,6 @@ void nrn_register_mech_common(const char** m,
                               int vectorized) {
     // initialize at first entry, it will be incremented at exit of the function
     static int mechtype = 2; /* 0 unused, 1 for cable section */
-    int modltype;
     int modltypemax;
     Symbol* mech_symbol;
     const char** m2;
@@ -761,7 +764,7 @@ namespace {
  */
 
 // name to int map for the negative types
-// xx_ion and #xx_ion will get values of type and type+1000 respectively
+// xx_ion and #xx_ion will get values of type*2 and type*2+1 respectively
 static std::unordered_map<std::string, int> name_to_negint = {{"area", -1},
                                                               {"iontype", -2},
                                                               {"cvodeieq", -3},
@@ -781,7 +784,7 @@ int dparam_semantics_to_int(std::string_view name) {
         bool const i{name[0] == '#'};
         Symbol* s = hoc_lookup(std::string{name.substr(i)}.c_str());
         if (s && s->type == MECHANISM) {
-            return s->subtype + i * 1000;
+            return nrn_semantics_from_ion(s->subtype, i);
         }
         throw std::runtime_error("unknown dparam semantics: " + std::string{name});
     }
@@ -1018,10 +1021,9 @@ int point_reg_helper(Symbol* s2) {
 }
 
 extern void class2oc_base(const char*,
-                          void* (*cons)(Object*),
-                          void (*destruct)(void*),
+                          ctor_f* cons,
+                          dtor_f* destruct,
                           Member_func*,
-                          int (*checkpoint)(void**),
                           Member_ret_obj_func*,
                           Member_ret_str_func*);
 
@@ -1041,7 +1043,7 @@ int point_register_mech(const char** m,
     Symlist* sl;
     Symbol *s, *s2;
     nrn_load_name_check(m[1]);
-    class2oc_base(m[1], constructor, destructor, fmember, nullptr, nullptr, nullptr);
+    class2oc_base(m[1], constructor, destructor, fmember, nullptr, nullptr);
     s = hoc_lookup(m[1]);
     sl = hoc_symlist;
     hoc_symlist = s->u.ctemplate->symtable;
@@ -1222,7 +1224,7 @@ void hoc_register_tolerance(int mechtype, HocStateTolerance* tol, Symbol*** stol
                         psym[i] = vsym;
                         /*printf("identified %s at index %d of %s\n", vsym->name, index,
                          * msym->name);*/
-                        if (ISARRAY(vsym)) {
+                        if (is_array(*vsym)) {
                             int const na = vsym->arayinfo->sub[0];
                             for (int k = 1; k < na; ++k) {
                                 psym[++i] = vsym;

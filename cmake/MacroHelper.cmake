@@ -144,28 +144,41 @@ endmacro()
 # =============================================================================
 # Run nocmodl to convert NMODL to C
 # =============================================================================
-macro(nocmodl_mod_to_cpp modfile_basename)
+macro(nocmodl_mod_to_cpp modfile_basename modfile_compat)
   set(NOCMODL_SED_EXPR "s/_reg()/_reg_()/")
   if(NOT MSVC)
     set(NOCMODL_SED_EXPR "'${NOCMODL_SED_EXPR}'")
   endif()
-  set(REMOVE_CMAKE_COMMAND "rm")
-  if(CMAKE_VERSION VERSION_LESS "3.17")
-    set(REMOVE_CMAKE_COMMAND "remove")
+  set(MODFILE_INPUT_PATH "${PROJECT_SOURCE_DIR}/${modfile_basename}.mod")
+  set(MODFILE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/${modfile_basename}.mod")
+
+  # for coreNEURON only
+  if(modfile_compat)
+    file(READ "${MODFILE_INPUT_PATH}" FILE_CONTENT)
+    string(REGEX REPLACE " GLOBAL minf" " RANGE minf" FILE_CONTENT "${FILE_CONTENT}")
+    file(WRITE "${MODFILE_OUTPUT_PATH}" "${FILE_CONTENT}")
+  else()
+    configure_file("${MODFILE_INPUT_PATH}" "${MODFILE_OUTPUT_PATH}" COPYONLY)
   endif()
+
+  get_filename_component(modfile_output_dir "${MODFILE_OUTPUT_PATH}" DIRECTORY)
+  get_filename_component(modfile_name "${MODFILE_OUTPUT_PATH}" NAME_WE)
+  set(CPPFILE_OUTPUT_PATH "${modfile_output_dir}/${modfile_name}.cpp")
+
   add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
+    OUTPUT ${CPPFILE_OUTPUT_PATH}
     COMMAND
       ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
-      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:nocmodl>
-      ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
-    COMMAND sed ${NOCMODL_SED_EXPR} ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp >
-            ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
-    COMMAND ${CMAKE_COMMAND} -E ${REMOVE_CMAKE_COMMAND}
-            ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp
-    DEPENDS nocmodl ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
+      "NMODL_PYLIB=${PYTHON_LIBRARY}" "NMODLHOME=${PROJECT_BINARY_DIR}"
+      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:${NRN_CODEGENERATOR_TARGET}>
+      ${MODFILE_OUTPUT_PATH} ${NRN_NMODL_--neuron} -o ${modfile_output_dir}
+    COMMAND sed ${NOCMODL_SED_EXPR} ${CPPFILE_OUTPUT_PATH} > ${CPPFILE_OUTPUT_PATH}.tmp
+    COMMAND ${CMAKE_COMMAND} -E copy ${CPPFILE_OUTPUT_PATH}.tmp ${CPPFILE_OUTPUT_PATH}
+    COMMAND ${CMAKE_COMMAND} -E remove ${CPPFILE_OUTPUT_PATH}.tmp
+    DEPENDS ${NRN_CODEGENERATOR_TARGET} ${MODFILE_INPUT_PATH}
             ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
+
 endmacro()
 
 # =============================================================================

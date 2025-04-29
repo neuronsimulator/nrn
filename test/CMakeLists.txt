@@ -24,6 +24,7 @@ add_executable(
   unit_tests/container/node.cpp
   unit_tests/node_order_optim/permutations.cpp
   unit_tests/utils/enumerate.cpp
+  unit_tests/utils/Sprintf.cpp
   unit_tests/oc/hoc_interpreter.cpp
   cover/unit_tests/cover.cpp)
 set(catch2_targets testneuron)
@@ -100,11 +101,7 @@ list(APPEND TESTS ringtest)
 # Add small hoc test
 # =============================================================================
 set(HOCTEST_DIR ${PROJECT_SOURCE_DIR}/test/hoc_tests/connect_dend)
-if(NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY)
-  set(REF_FILE cell3soma.core.dat.ref)
-else()
-  set(REF_FILE cell3soma.dat.ref)
-endif()
+set(REF_FILE cell3soma.dat.ref)
 add_test(
   connect_dend
   ${CMAKE_COMMAND}
@@ -491,13 +488,6 @@ if(NRN_ENABLE_PYTHON)
     COMMAND ${modtests_launch_py} test/nmodl/test_table.py)
   nrn_add_test(
     GROUP nmodl_tests
-    NAME test_disc
-    REQUIRES ${modtests_preload_sanitizer}
-    SCRIPT_PATTERNS test/nmodl/test_disc.py
-    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
-    COMMAND ${modtests_launch_py} test/nmodl/test_disc.py)
-  nrn_add_test(
-    GROUP nmodl_tests
     NAME test_function_table
     REQUIRES ${modtests_preload_sanitizer}
     SCRIPT_PATTERNS test/nmodl/test_function_table.py
@@ -761,13 +751,6 @@ if(NRN_ENABLE_PYTHON)
       COMMAND ${modtests_launch_py} test/nmodl/test_table.py)
     nrn_add_test(
       GROUP nmodl_tests_coreneuron
-      NAME test_disc_coreneuron_${processor}
-      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/nmodl/test_disc.py
-      ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${processor_env}
-      COMMAND ${modtests_launch_py} test/nmodl/test_disc.py)
-    nrn_add_test(
-      GROUP nmodl_tests_coreneuron
       NAME test_function_table_coreneuron_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/nmodl/test_function_table.py
@@ -832,3 +815,14 @@ endif()
 
 # Add tests that are configured using external repositories
 add_subdirectory(external)
+
+# ============================================
+# Test NMODL
+# ============================================
+if((NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON) AND NRN_ENABLE_TESTS)
+  add_subdirectory(nmodl/transpiler/unit)
+  add_subdirectory(nmodl/transpiler/integration)
+  if(NRN_ENABLE_PYTHON AND NOT NRN_SANITIZERS)
+    add_subdirectory(nmodl/transpiler/usecases)
+  endif()
+endif()

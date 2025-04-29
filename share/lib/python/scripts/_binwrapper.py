@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 import sys
+import warnings
 from importlib.metadata import metadata, PackageNotFoundError
 from importlib.util import find_spec
 from pathlib import Path
@@ -44,21 +45,23 @@ def _set_default_compiler():
     os.environ.setdefault("CXX", ccompiler.compiler_cxx[0])
 
 
-def _check_cpp_compiler_version():
-    """Check if GCC compiler is >= 9.0 otherwise show warning"""
+def _check_cpp_compiler_version(min_version: str):
+    """Check if GCC compiler is >= min supported one, otherwise show warning"""
     try:
         cpp_compiler = os.environ.get("CXX", "")
         version = subprocess.run(
-            [cpp_compiler, "--version"], stdout=subprocess.PIPE
+            [cpp_compiler, "--version"],
+            stdout=subprocess.PIPE,
         ).stdout.decode("utf-8")
-        if "GCC" in version:
+        if "gcc" in version.lower() or "gnu" in version.lower():
             version = subprocess.run(
-                [cpp_compiler, "-dumpversion"], stdout=subprocess.PIPE
+                [cpp_compiler, "-dumpversion"],
+                stdout=subprocess.PIPE,
             ).stdout.decode("utf-8")
-            if Version(version) <= Version("9.0"):
-                print(
-                    "Warning: GCC >= 9.0 is required with this version of NEURON but found",
-                    version,
+            if Version(version) <= Version(min_version):
+                warnings.warn(
+                    f"Warning: GCC >= {min_version} is required with this version of NEURON"
+                    f"but found version {version}",
                 )
     except:
         pass
@@ -111,7 +114,7 @@ if __name__ == "__main__":
 
     if exe.endswith("nrnivmodl"):
         # To create a wrapper for special (so it also gets ENV vars) we intercept nrnivmodl
-        _check_cpp_compiler_version()
+        _check_cpp_compiler_version("10.0")
         subprocess.check_call([exe, *sys.argv[1:]])
         _wrap_executable("special")
         sys.exit(0)

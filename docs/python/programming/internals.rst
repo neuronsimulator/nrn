@@ -261,3 +261,115 @@ Miscellaneous
         the variable from its interpreter name. Not needed by or useful for the user; returns 1.0 on
         success.
 
+----
+
+Debugging
+~~~~~~~~~~~
+
+.. function:: nrn_digest
+
+    Syntax:
+        ``h.nrn_digest()``
+
+        ``h.nrn_digest(tid, i)``
+
+        ``h.nrn_digest(tid, i, "abort")``
+
+        ``h.nrn_digest(filename)``
+
+    Description:
+        Available when configured with the cmake option ``-DNRN_ENABLE_DIGEST=ON``
+
+        If the same simulation gives different results on different machines,
+        this function can help isolate the statement that generates the
+        first difference during the simulation.
+        I think :meth:`ParallelContext.prcellstate` is generally better, but in rare
+        situations, nrn_digest can be very helpful.
+
+        The first three forms begin digest gathering. The last form
+        prints the gathered digest information to the filename.
+        With just the two ``tid, i`` arguments, the i gathered item of the
+        tid thread is printed (for single thread simulations, use ``tid = 0``),
+        to the terminal as well as the individual values of the array
+        for that digest item. With the third ``"abort"`` argument, the
+        ith gathered item is printed and ``abort()`` is called (dropping
+        into gdb if that is being used so that one can observe the backtrace).
+
+        Lines are inserted into the digest by calling the C function declared
+        in ``src/oc/nrndigest.h``.
+            ``void nrn_digest_dbl_array(const char* msg, int tid, double t, double* array, size_t sz);``
+        at the moment, such lines are present in ``src/nrncvode/occvode.cpp``
+        to instrument the cvode callbacks that compute ``y' = f(y, t)`` and the
+        approximate jacobian matrix solver ``M*x = b``. I.e in part
+
+        .. code-block::
+
+            #include "nrndigest.h"
+            ...
+            void Cvode::fun_thread(neuron::model_sorted_token const& sorted_token,
+                       double tt,
+                       double* y,
+                       double* ydot,
+                       NrnThread* nt) {
+                CvodeThreadData& z = CTD(nt->id);
+            #if NRN_DIGEST
+                if (nrn_digest_) {
+                    nrn_digest_dbl_array("y", nt->id, tt, y, z.nvsize_);
+                }
+            #endif
+            ...
+            #if NRN_DIGEST
+                if (nrn_digest_ && ydot) {
+                    nrn_digest_dbl_array("ydot", nt->id, tt, ydot, z.nvsize_);
+                }
+            #endif
+
+        Note: when manually adding such lines, the conditional compilation and
+        nrn\_digest\_ test are not needed. The arguments to
+        ``nrn_digest_dbl_array`` determine the line added to the digest.
+        The 5th arg is the size of the 4th arg double array. The double array
+        is processed by SHA1 and the first 16 hex digits are appended to the line.
+        An example of the first few lines of output in a digest file is
+        .. code-block::
+
+            tid=0 size=1344
+            y 0 0 0 e1f6a372856b45e6
+            y 0 1 0 e1f6a372856b45e6
+            ydot 0 2 0 523c9694c335e458
+            y 0 3 4.7121609153871379e-09 fabb4bc469447404
+            ydot 0 4 4.7121609153871379e-09 60bcff174645fc29
+
+        The first line is thread id and number of lines for that thread.
+        Other thread groups, if any, follow the end of each thread group.
+        The digest lines consist of thread id, line identifier (start from 0
+        for each group), double value of the 3rd arg, hash of the array.
+
+----
+
+.. function:: use_exp_pow_precision
+
+    Syntax:
+        ``h.use_exp_pow_precision(istyle)``
+
+    Description:
+        Works when configured with the cmake option
+        ``-DNRN_ENABLE_ARCH_INDEP_EXP_POW=ON`` and otherwise does nothing.
+
+        * istyle = 1
+            All calls to :func:`exp` and :func:`pow` as well as their use
+            internally, in mod files, and by cvode, are computed on mac, linux,
+            windows so that double precision floating point results are
+            cross platform consistent. (Makes use of a
+            multiple precision floating-point computation library.)
+
+        * istyle = 2
+            exp and pow are rounded to 32 bits of mantissa
+
+        * istyle = 0
+            Default.
+            exp and pow calcualted natively (cross platform values can have
+            round off error differences.)
+
+            When using clang (eg. on a mac) cross platform floating point
+            identity is often attainable with  C and C++ flag option
+            ``"-ffp-contract=off"``.

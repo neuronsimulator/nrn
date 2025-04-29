@@ -23,7 +23,7 @@ using TQItemPool = MutexPool<TQItem>;
 
 #define COLLECT_TQueue_STATISTICS 1
 template <typename T>
-struct SPTree;
+class SPTree;
 
 // helper class for the TQueue (SplayTBinQueue).
 class BinQ {

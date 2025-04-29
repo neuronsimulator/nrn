@@ -1,13 +1,11 @@
 #include <list>
 #include <InterViews/resource.h>
+
 #include "classreg.h"
-#include "oc2iv.h"
 #include "ivocvect.h"
 #include "hoclist.h"
 #include "bbs.h"
 #include "bbsimpl.h"
-#include "ivocvect.h"
-#include "parse.hpp"
 #include "section.h"
 #include "membfunc.h"
 #include "multicore.h"
@@ -15,7 +13,7 @@
 #include "utils/profile/profiler_interface.h"
 #include "node_order_optim/node_order_optim.h"
 #include <nrnmpi.h>
-#include <errno.h>
+#include <cerrno>
 
 #undef MD
 #define MD 2147483647.
@@ -24,7 +22,6 @@ extern int hoc_return_type_code;
 
 extern int vector_arg_px(int, double**);
 Symbol* hoc_which_template(Symbol*);
-void bbs_done();
 extern double t;
 extern void nrnmpi_source_var(), nrnmpi_target_var(), nrnmpi_setup_transfer();
 extern int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
@@ -48,15 +45,12 @@ static void nrnmpi_char_broadcast(char*, int, int) {}
 static void nrnmpi_dbl_broadcast(double*, int, int) {}
 #endif
 extern double* nrn_mech_wtime_;
-extern int nrn_nthread;
-extern void nrn_thread_partition(int, Object*);
-extern Object** nrn_get_thread_partition(int);
-extern int nrn_allow_busywait(int);
-extern int nrn_how_many_processors();
+
+extern bool nrn_trajectory_request_per_time_step_;
+
 extern size_t nrncore_write();
 extern size_t nrnbbcore_register_mapping();
 extern int nrncore_run(const char*);
-extern bool nrn_trajectory_request_per_time_step_;
 extern int nrncore_is_enabled();
 extern int nrncore_is_file_mode();
 extern int nrncore_psolve(double tstop, int file_mode);
@@ -583,7 +577,6 @@ static double multisplit(void* v) {
     Section* sec = NULL;
     int sid = -1;
     int backbone_style = 2;
-    int reducedtree_host = 0;
     if (ifarg(1)) {
         nrn_seg_or_x_arg(1, &sec, &x);
         sid = (int) chkarg(2, 0, (double) (0x7fffffff));
@@ -1142,7 +1135,7 @@ static void destruct(void* v) {
 }
 
 void ParallelContext_reg() {
-    class2oc("ParallelContext", cons, destruct, members, nullptr, retobj_members, retstr_members);
+    class2oc("ParallelContext", cons, destruct, members, retobj_members, retstr_members);
 }
 
 // A BBS message is something to execute.
@@ -1305,9 +1298,10 @@ std::vector<char> BBSImpl::execute_helper(int id, bool exec) {
             }
             hoc_ac_ = 0.;
         } else {
-            hoc_ac_ = 0.;
             if (exec) {
                 hoc_ac_ = hoc_call_objfunc(fname, narg, ob);
+            } else {
+                hoc_ac_ = 0.;
             }
         }
         for (auto& arg: sarg) {
@@ -1429,11 +1423,10 @@ void BBSImpl::return_args(int id) {
     // perhaps it would be better to do this directly
     // and avoid the meaningless create and delete.
     // but then they all would have to know this format
-    int i;
     char* s;
     // printf("BBSImpl::return_args(%d):\n", id);
-    i = upkint();  // userid
-    int wid = upkint();
+    upkint();  // userid
+    /* int wid = */ upkint();
     int style = upkint();
     // printf("message userid=%d style=%d\n", i, style);
     switch (style) {
@@ -1444,19 +1437,19 @@ void BBSImpl::return_args(int id) {
         break;
     case 2:            // obj first
         s = upkstr();  // template name
-        i = upkint();  // instance index
+        upkint();      // instance index
                        // printf("object %s[%d]\n", s, i);
         delete[] s;
         // fall through
     case 1:
         s = upkstr();  // fname
-        i = upkint();  // arg manifest
+        upkint();      // arg manifest
                        // printf("fname=|%s| manifest=%o\n", s, i);
         delete[] s;
         break;
     case 3:
         auto pickle = upkpickle();  // pickled callable
-        i = upkint();               // arg manifest
+        upkint();                   // arg manifest
         break;
     }
     // now only args are left and ready to unpack.

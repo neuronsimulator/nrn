@@ -1,3 +1,5 @@
+#include "multicore.h"
+
 #include <nrnmpi.h>
 
 #include "hoclist.h"
@@ -58,7 +60,6 @@ void (*nrn_mk_transfer_thread_data_)();
 
 static int busywait_;
 static int busywait_main_;
-extern void nrn_thread_error(const char*);
 extern void (*nrn_multisplit_setup_)();
 extern int v_structure_change;
 extern int diam_changed;
@@ -653,12 +654,11 @@ void nrn_thread_memblist_setup() {
 /* in passing, also set start and end indices. */
 
 void reorder_secorder() {
-    NrnThread* _nt;
     Section *sec, *ch;
     Node* nd;
     hoc_Item* qsec;
     hoc_List* sl;
-    int order, isec, i, j, inode;
+    int order, isec, j, inode;
     /* count and allocate */
     // ForAllSections(sec)
     ITERATE(qsec, section_list) {
@@ -666,7 +666,7 @@ void reorder_secorder() {
         sec->order = -1;
     }
     order = 0;
-    FOR_THREADS(_nt) {
+    for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
         /* roots of this thread */
         sl = _nt->roots;
         inode = 0;
@@ -710,7 +710,7 @@ void reorder_secorder() {
         sec->order = -1;
     }
     order = 0;
-    FOR_THREADS(_nt) {
+    for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
         /* roots of this thread */
         sl = _nt->roots;
         inode = 0;
@@ -766,9 +766,10 @@ void reorder_secorder() {
       in either case, we can then point to v, d, rhs in proper
       node order
     */
-    FOR_THREADS(_nt) for (inode = 0; inode < _nt->end; ++inode) {
-        _nt->_v_node[inode]->_classical_parent = _nt->_v_parent[inode];
-    }
+    for (const NrnThread* _nt: for_threads(nrn_threads, nrn_nthread))
+        for (inode = 0; inode < _nt->end; ++inode) {
+            _nt->_v_node[inode]->_classical_parent = _nt->_v_parent[inode];
+        }
     if (nrn_multisplit_setup_) {
         /* classical order abandoned */
         (*nrn_multisplit_setup_)();
@@ -811,8 +812,10 @@ void nrn_mk_table_check() {
 void nrn_thread_table_check(neuron::model_sorted_token const& sorted_token) {
     for (auto [id, tml]: table_check_) {
         Memb_list* ml = tml->ml;
+        // here _globals cannot be guessed (missing _gth) so we give nullptr, and set the variable
+        // locally in _check_table_thread
         memb_func[tml->index].thread_table_check_(
-            ml, 0, ml->pdata[0], ml->_thread, nrn_threads + id, tml->index, sorted_token);
+            ml, 0, ml->pdata[0], ml->_thread, nullptr, nrn_threads + id, tml->index, sorted_token);
     }
 }
 
@@ -945,7 +948,6 @@ int nrn_user_partition() {
     hoc_List* sl;
     char buf[256];
     Section* sec;
-    NrnThread* nt;
     /* all one or all the other*/
     b = (nrn_threads[0].userpart != nullptr);
     for (it = 1; it < nrn_nthread; ++it) {
@@ -959,7 +961,7 @@ int nrn_user_partition() {
 
     /* discard partition if any section mentioned has been deleted. The
         model has changed */
-    FOR_THREADS(nt) {
+    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         sl = nt->roots;
         ITERATE(qsec, sl) {
             sec = hocSEC(qsec);
@@ -980,7 +982,7 @@ int nrn_user_partition() {
     /* fill in ncell and verify consistency */
     n = 0;
     for (it = 0; it < nrn_nthread; ++it) {
-        nt = nrn_threads + it;
+        NrnThread* nt = nrn_threads + it;
         sl = nt->roots;
         nt->ncell = 0;
         ITERATE(qsec, sl) {

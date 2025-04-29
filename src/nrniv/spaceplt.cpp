@@ -18,7 +18,6 @@
 
 extern int nrn_multisplit_active_;
 extern int hoc_execerror_messages;
-extern int node_index(Section*, double);
 extern int nrn_shape_changed_;
 extern int hoc_return_type_code;
 Object* (*nrnpy_rvp_rxd_to_callable)(Object*) = 0;
@@ -255,9 +254,9 @@ static Member_func s_members[] = {{"begin", s_begin},
                                   {"color", s_color},
                                   {"to_vector", to_vector},
                                   {"from_vector", from_vector},
-                                  {0, 0}};
+                                  {nullptr, nullptr}};
 
-static Member_ret_obj_func rvp_retobj_members[] = {{"vector", rvp_vector}, {0, 0}};
+static Member_ret_obj_func rvp_retobj_members[] = {{"vector", rvp_vector}, {nullptr, nullptr}};
 
 static void* s_cons(Object*) {
     char* var = NULL;
@@ -292,7 +291,7 @@ static void s_destruct(void* v) {
 
 void RangeVarPlot_reg() {
     // printf("RangeVarPlot_reg\n");
-    class2oc("RangeVarPlot", s_cons, s_destruct, s_members, NULL, rvp_retobj_members, NULL);
+    class2oc("RangeVarPlot", s_cons, s_destruct, s_members, rvp_retobj_members, nullptr);
 }
 
 #if HAVE_IV
@@ -349,9 +348,9 @@ int RangeVarPlot::get_color(void) {
 void RangeVarPlot::set_color(int new_color) {
     color_ = new_color;
 #if HAVE_IV
-    IFGUI
-    color(colors->color(color_));
-    ENDGUI
+    if (hoc_usegui) {
+        color(colors->color(color_));
+    }
 #endif
 }
 

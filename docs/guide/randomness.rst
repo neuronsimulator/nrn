@@ -20,14 +20,14 @@ These papers present models implemented with NEURON that provide some examples o
 
         Carnevale NT, Hines ML. (2008). Translating network models to parallel hardware in NEURON. *Journal of neuroscience methods*, 169(2), 425. `doi:10.1016/j.jneumeth.2007.09.010 <https://doi.org/10.1016/j.jneumeth.2007.09.010>`_
 
-        Preprint available from http://www.neuron.yale.edu/neuron/nrnpubs/, source code available via accession number 96444 from ModelDB http://modeldb.yale.edu/96444
+        Preprint available from http://www.neuron.yale.edu/neuron/nrnpubs/, source code available via accession number 96444 from ModelDB http://modeldb.science/96444
 
 *
     The network models in
 
         Brette, R., Rudolph, M., Carnevale, T., Hines, M., Beeman, D., Bower, J. M., ...  Destexhe, A. (2007). Simulation of networks of spiking neurons: a review of tools and strategies. *Journal of computational neuroscience*, 23(3), 349-398. `doi:10.1007/s10827-007-0038-6 <https://doi.org/10.1007/s10827-007-0038-6>`_
 
-        Preprint available from http://www.neuron.yale.edu/neuron/nrnpubs/, source code available via accession number 83319 from ModelDB http://modeldb.yale.edu/83319
+        Preprint available from http://www.neuron.yale.edu/neuron/nrnpubs/, source code available via accession number 83319 from ModelDB http://modeldb.science/83319
 
 Interested users are encouraged to read these papers, and download and analyze the related source code, in order to better understand how to apply randomization in the construction and simulation of models.
 

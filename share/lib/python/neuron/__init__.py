@@ -104,7 +104,7 @@ import os
 import warnings
 import weakref
 
-embedded = True if "hoc" in sys.modules else False
+embedded = "hoc" in sys.modules
 
 # First, check that the compiled extension (neuron.hoc) was built for this version of
 # Python. If not, fail early and helpfully.
@@ -291,7 +291,6 @@ def test_rxd(exitOnError=True):
 # using the idiom self.basemethod = self.baseattr('methodname')
 # ------------------------------------------------------------------------------
 
-import sys, types
 from neuron.hclass3 import HocBaseObject, hclass
 
 # global list of paths already loaded by load_mechanisms
@@ -340,8 +339,6 @@ def load_mechanisms(path, warn_if_already_loaded=True):
     print("NEURON mechanisms not found in %s." % path)
     return False
 
-
-import os, sys
 
 if "NRN_NMODL_PATH" in os.environ:
     nrn_nmodl_path = os.environ["NRN_NMODL_PATH"].split(":")
@@ -476,21 +473,6 @@ def quit(*args, **kwargs):
         stacklevel=2,
     )
     return h.quit(*args, **kwargs)
-
-
-def hoc_execute(hoc_commands, comment=None):
-    assert isinstance(hoc_commands, list)
-    if comment:
-        logging.debug(comment)
-    for cmd in hoc_commands:
-        logging.debug(cmd)
-        success = hoc.execute(cmd)
-        if not success:
-            raise HocError('Error produced by hoc command "%s"' % cmd)
-
-
-def hoc_comment(comment):
-    logging.debug(comment)
 
 
 def psection(section):
@@ -650,7 +632,6 @@ def nrn_dll_sym(name, type=None):
     """
     # TODO: this won't work under Windows; will need to search through until
     #       can find the right dll (should we cache the results of the search?)
-    import os
 
     if os.name == "nt":
         return nrn_dll_sym_nt(name, type)
@@ -671,7 +652,6 @@ def nrn_dll_sym_nt(name, type):
     """
     global nt_dlls
     import ctypes
-    import os
 
     if len(nt_dlls) == 0:
         b = "bin"
@@ -708,8 +688,6 @@ def nrn_dll(printpath=False):
     """
     import ctypes
     import glob
-    import os
-    import sys
 
     try:
         # extended? if there is a __file__, then use that
@@ -764,14 +742,13 @@ def nrn_dll(printpath=False):
 
 def _modelview_mechanism_docstrings(dmech, tree):
     if dmech.name not in ("Ra", "capacitance"):
-        docs = getattr(h, dmech.name).__doc__
-        if docs.strip():
-            for line in docs.split("\n"):
-                tree.append(line, dmech.location, 0)
+        if hasattr(nrn, dmech.name):  # KSChan not listed (and has no __doc__)
+            docs = getattr(h, dmech.name).__doc__
+            if docs.strip():
+                for line in docs.split("\n"):
+                    tree.append(line, dmech.location, 0)
 
 
-# TODO: put this someplace else
-#       can't be in rxd because that would break things if no scipy
 _sec_db = {}
 
 
@@ -1362,7 +1339,7 @@ class _PlotShapePlot(_WrapperPlot):
 
 def _nmodl():
     try:
-        import nmodl.dsl as nmodl
+        from .nmodl import dsl as nmodl
 
         return nmodl
     except ModuleNotFoundError:
@@ -1858,3 +1835,13 @@ def _mview_html_tree(hlist, inside_mechanisms_in_use=0):
 if _get_ipython() is not None:
     html_formatter = _get_ipython().display_formatter.formatters["text/html"]
     html_formatter.for_type(hoc.HocObject, _hocobj_html)
+
+# in case Bokeh is installed, register a serialization function for hoc.Vector
+try:
+    from bokeh.core.serialization import Serializer
+
+    Serializer.register(
+        h.Vector, lambda obj, serializer: [serializer.encode(item) for item in obj]
+    )
+except ImportError:
+    pass

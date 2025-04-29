@@ -73,7 +73,7 @@ create_coef_list makes a list for fast setup, does minimum ordering and
 ensures all elements needed are present */
 /* this could easily be made recursive but it isn't right now */
 
-inline void subrow(SparseObj* so, Elm* pivot, Elm* rowsub) {
+inline __attribute__((always_inline)) void subrow(SparseObj* so, Elm* pivot, Elm* rowsub) {
     double r;
     Elm* el;
 
@@ -89,7 +89,7 @@ inline void subrow(SparseObj* so, Elm* pivot, Elm* rowsub) {
     }
 }
 
-inline void bksub(SparseObj* so) {
+inline __attribute__((always_inline)) void bksub(SparseObj* so) {
     unsigned i;
     Elm* el;
 
@@ -103,7 +103,7 @@ inline void bksub(SparseObj* so) {
     }
 }
 
-inline int matsol(SparseObj* so) {
+inline __attribute__((always_inline)) int matsol(SparseObj* so) {
     Elm *pivot, *el;
     unsigned i;
 
@@ -148,7 +148,6 @@ inline void prmat(SparseObj* so) {
 
 inline void free_elm(SparseObj* so) {
     unsigned i;
-    Elm *el, *elnext;
 
     /* free all elements */
     nrn_pool_freeall(so->elmpool);
@@ -239,7 +238,10 @@ saves much time allocating and freeing during the solve phase
 */
 
 /* return pointer to row col element maintaining order in rows */
-inline Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* newElm) {
+inline __attribute__((always_inline)) Elm* getelm(SparseObj* so,
+                                                  unsigned row,
+                                                  unsigned col,
+                                                  Elm* newElm) {
     Elm *el, *elnext;
     unsigned vrow, vcol;
 
@@ -517,7 +519,7 @@ inline void reduce_order(SparseObj* so, unsigned row) {
     insert(so, order);
 }
 
-inline void get_next_pivot(SparseObj* so, unsigned i) {
+inline __attribute__((always_inline)) void get_next_pivot(SparseObj* so, unsigned i) {
     /* get varord[i], etc. from the head of the orderlist. */
     Item* order;
     Elm *pivot, *el;
@@ -587,7 +589,7 @@ void create_coef_list(SparseObj* so, int n, Callable fun, Args&&... args) {
     so->phase = 0;
 }
 
-inline void init_coef_list(SparseObj* so) {
+inline __attribute__((always_inline)) void init_coef_list(SparseObj* so) {
     unsigned i;
     Elm* el;
 
@@ -706,7 +708,7 @@ int _cvode_sparse_thread(void** v, int n, IndexArray x, Array p, Callable fun, A
     auto const x_ = [&p, &x](auto arg) -> auto& {
         return p[x[arg]];
     };
-    int i, j, ierr;
+    int i, ierr;
     SparseObj* so;
 
     so = (SparseObj*) (*v);
@@ -731,7 +733,7 @@ int _cvode_sparse_thread(void** v, int n, IndexArray x, Array p, Callable fun, A
     return SUCCESS;
 }
 
-inline double* _nrn_thread_getelm(SparseObj* so, int row, int col) {
+inline __attribute__((always_inline)) double* _nrn_thread_getelm(SparseObj* so, int row, int col) {
     detail::sparse_thread::Elm* el;
     if (!so->phase) {
         return so->coef_list[so->ngetcall++];

@@ -85,8 +85,7 @@ NetCon
         the overhead of threshold detection at every time step. 
          
         The source may be a NULLObject. In this case events can only occur by 
-        calling :hoc:func:`event` from hoc. (It is also used by NEOSIM to implement
-        its own delivery system.) 
+        calling :hoc:func:`event` from hoc. 
          
         A source used by multiple NetCon instances is shared by those instances 
         to allow faster threshold detection (ie on a per source basis instead 

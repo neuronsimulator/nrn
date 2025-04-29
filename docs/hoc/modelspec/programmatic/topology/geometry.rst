@@ -13,7 +13,7 @@ any tree-shaped structure but loops are not permitted. (You may, however,
 develop membrane mechanisms, such as electrical gap junctions 
 which do not have the loop restriction. But be aware that the electrical 
 current flows through such connections are calculated by a modified euler 
-method instead of the more numerically robust fully implicit/crank-nicholson 
+method instead of the more numerically robust fully implicit/crank-nicolson 
 methods) 
  
 Do not confuse sections with segments. Sections are divided into segments 
