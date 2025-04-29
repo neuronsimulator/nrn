@@ -731,7 +731,7 @@ CVode
             h.load_file('stdrun.hoc')    # defines h.cvode
 
             result = h.ref('')
-            soma = h.Section(name='soma')
+            soma = h.Section('soma')
             h.cvode_active(True)
             h.cvode.statename(0, result)
             print(result[0])         

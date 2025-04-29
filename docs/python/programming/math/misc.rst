@@ -25,7 +25,7 @@ Miscellaneous
             """)
 
             def print_i(i):
-                print('%3g %g' % (i, int(10*i)))
+                print(f'{i:3g} {int(10*i)}')
 
             rv = h.count_to_1(print_i)
 

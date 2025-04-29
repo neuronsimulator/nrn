@@ -55,8 +55,9 @@ PlotShape
             pyplot.show()
         
         .. note::
-            In Jupyter, you can use %matplotlib notebook to get interactive PlotShape
-	    or use plotly instead.
+
+            In Jupyter, you can use ``%matplotlib notebook`` to get interactive PlotShape
+	        or use plotly instead.
     
     Example:
 
@@ -586,7 +587,7 @@ PlotShape
 			from neuron import h, gui
 			import time
 
-			soma = h.Section(name="soma")  
+			soma = h.Section("soma")  
 
 			sl = h.SectionList() 
  

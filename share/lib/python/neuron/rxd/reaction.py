@@ -117,27 +117,18 @@ class Reaction(GeneralizedReaction):
     def _update_rates(self):
         lhs = self._scheme._lhs._items
         rhs = self._scheme._rhs._items
-        if self._dir == "<":
-            # TODO: remove this limitation (probably means doing with rate_b what done with rate_f and making sure _sources and _dests are correct
-            raise RxDException(
-                "pure reverse reaction currently not supported; reformulate as a forward reaction"
-            )
 
         rate_f = rxdmath._ensure_arithmeticed(self._original_rate_f)
         rate_b = rxdmath._ensure_arithmeticed(self._original_rate_b)
 
         if not self._custom_dynamics:
-            for k, v in zip(list(lhs.keys()), list(lhs.values())):
-                if v == 1:
-                    rate_f *= k
-                else:
-                    rate_f *= k**v
-            if self._dir == "<>":
+            if ">" in self._dir:
+                for k, v in lhs.items():
+                    rate_f *= k if v == 1 else k**v
+            if "<" in self._dir:
                 for k, v in rhs.items():
-                    if v == 1:
-                        rate_b *= k
-                    else:
-                        rate_b *= k**v
+                    rate_b *= k if v == 1 else k**v
+
         rate = rate_f - rate_b
         self._rate_arithmeticed = rate
 

@@ -46,7 +46,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macOS-13, ubuntu-20.04]
+        os: [macOS-13, ubuntu-22.04]
         config:
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
           - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", music: ON}
@@ -145,10 +145,6 @@ jobs:
           sudo apt-get install build-essential ccache libopenmpi-dev \
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
             openmpi-bin flex libfl-dev bison libreadline-dev
-          # The sanitizer builds use ubuntu 22.04
-          if [[ "${{matrix.os}}" == "ubuntu-20.04" ]]; then
-            sudo apt-get install g++-7 g++-8
-          fi
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
           echo CMAKE_BUILD_PARALLEL_LEVEL=4 >> $GITHUB_ENV
           echo CTEST_PARALLEL_LEVEL=4 >> $GITHUB_ENV
@@ -158,11 +154,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-
-      - name: Clone nmodl
-        working-directory: ${{runner.workspace}}/nrn
-        run: |
-            git submodule update --init --recursive --force --depth 1 -- external/nmodl
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         if: ${{matrix.config.python_dynamic == 'ON'}}
@@ -174,7 +165,6 @@ jobs:
         if: ${{ matrix.config.python_dynamic == 'ON' }}
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install --upgrade -r external/nmodl/requirements.txt
           python -m pip install --upgrade -r ci_requirements.txt
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
@@ -186,7 +176,6 @@ jobs:
       - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install --upgrade -r external/nmodl/requirements.txt
           python -m pip install --upgrade -r ci_requirements.txt
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
@@ -210,7 +199,7 @@ jobs:
         run: |
           python3 -m venv music-venv
           source music-venv/bin/activate
-          python3 -m pip install mpi4py cython numpy setuptools
+          python3 -m pip install 'mpi4py<=4.0.3' 'cython<=3.0.12' 'numpy<=2.2.3' 'setuptools<=70.3.0'
           sudo mkdir -p $MUSIC_INSTALL_DIR
           sudo chown -R $USER $MUSIC_INSTALL_DIR
           curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/${MUSIC_VERSION}.zip
@@ -427,7 +416,7 @@ jobs:
           fi;
 
           if [ "$BUILD_MODE" == "setuptools" ]; then
-            neuron_wheel=wheelhouse/NEURON*.whl;
+            neuron_wheel=wheelhouse/*.whl;
             # test with virtual environment
             ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel
             # test with global installation
