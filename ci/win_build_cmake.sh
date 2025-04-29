@@ -14,6 +14,13 @@ python3 -m pip install "cython<=3.0.12"
 
 # if BUILD_SOURCESDIRECTORY not available, use the root of the repo
 if [ -z "${BUILD_SOURCESDIRECTORY:-}" ]; then
+    # this exits with non-zero status code if we're not inside of a git work tree
+    if ! git rev-parse --is-inside-work-tree >& /dev/null; then
+        printf "Not inside of a git repository, and BUILD_SOURCESDIRECTORY is not set; "
+        printf "either change the current directory to be anywhere inside the NEURON directory, "
+        echo "or set the BUILD_SOURCESDIRECTORY environment variable to the top-level NEURON source directory"
+        exit 1
+    fi
     BUILD_SOURCESDIRECTORY="$(git rev-parse --show-toplevel)"
     export BUILD_SOURCESDIRECTORY
 fi
