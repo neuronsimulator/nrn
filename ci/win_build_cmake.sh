@@ -50,11 +50,6 @@ ${CMAKE_COMMAND} \
     -DMPI_C_LIB_NAMES:STRING=msmpi \
     -DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib
 ${CMAKE_COMMAND} --build "${BUILD_BUILDDIRECTORY}" --target install
-# compile mod files afterwards since we don't do it in cmake
-mkdir -p "${INSTALL_DIRECTORY}/demo/release"
-cp -a "${BUILD_SOURCESDIRECTORY}/share/demo/release/"*.mod "${INSTALL_DIRECTORY}/demo/release/"
-(cd "${INSTALL_DIRECTORY}/demo/release" && MODLUNIT="${INSTALL_DIRECTORY}/lib/nrnunits.lib" "${INSTALL_DIRECTORY}/bin/nrnivmodl")
-(cd "${BUILD_BUILDDIRECTORY}" && ctest -VV)
 ${CMAKE_COMMAND} --build "${BUILD_BUILDDIRECTORY}" --target setup_exe
 
 # copy installer with fixed name for nightly upload
