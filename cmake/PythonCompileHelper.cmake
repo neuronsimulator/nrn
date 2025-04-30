@@ -153,6 +153,7 @@ function(add_nrn_python_library name)
     set(os_string "win_amd64")
     set(lib_suffix ".pyd")
     set(python_interp "cp")
+    set(WINDOWS_EXPORT_ALL_SYMBOLS ON)
     # On Windows we need to explicitly link to Python
     target_link_libraries(${ARG_TARGET} PRIVATE msvcrt ${nrnlib})
   else()
