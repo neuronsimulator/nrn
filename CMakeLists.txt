@@ -1024,16 +1024,16 @@ endif()
 # =============================================================================
 install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib
-  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn
+  DESTINATION ${NRN_INSTALL_SHARE_DIR}
   PATTERN "python" EXCLUDE
   PATTERN CMakeLists.txt EXCLUDE)
 install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo
-  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn
+  DESTINATION ${NRN_INSTALL_SHARE_DIR}
   PATTERN CMakeLists.txt EXCLUDE)
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
-        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
+        DESTINATION ${NRN_INSTALL_SHARE_DIR}/lib)
 
 # Copy NEURON headers that will be included in the installation into the build directory.
 set(headers_in_build_dir)

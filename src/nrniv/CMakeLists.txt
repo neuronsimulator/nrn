@@ -494,7 +494,7 @@ if(NRN_ENABLE_MPI)
         target_link_libraries(${libname}_lib nrniv_lib)
       endif()
       set_property(TARGET ${libname}_lib PROPERTY OUTPUT_NAME ${libname})
-      install(TARGETS ${libname}_lib DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
+      install(TARGETS ${libname}_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
     endforeach(val)
     if(NRN_ENABLE_MUSIC)
       # libnrnmusic does not depend explicitly on MPI so don't need mpi version specific versions.
@@ -583,7 +583,7 @@ endif()
 # expected when ctypes looks for dlls
 # ~~~
 install(TARGETS nrniv nocmodl modlunit DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
-install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
+install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 if(LIBIVX11DYNAM_NAME)
   install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME}
           DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
