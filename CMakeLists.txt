@@ -536,6 +536,11 @@ if(NRN_ENABLE_NMODL
   cpp_cc_git_submodule(json BUILD PACKAGE nlohmann_json REQUIRED)
   cpp_cc_git_submodule(pybind11 BUILD PACKAGE pybind11 REQUIRED)
 
+  if(NRN_WINDOWS_BUILD)
+    # TODO: maybe we can make this a submodule? This way we can control which version is installed
+    find_package(dlfcn-win32 REQUIRED)
+  endif()
+
   option(SPDLOG_FMT_EXTERNAL "Force to use an external {{fmt}}" ON)
   option(SPDLOG_SYSTEM_INCLUDE "Include spdlog as a system lib" ON)
   cpp_cc_git_submodule(spdlog BUILD PACKAGE spdlog REQUIRED)

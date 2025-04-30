@@ -37,6 +37,11 @@ set_property(TARGET pyembed PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(pyembed PRIVATE util)
 target_link_libraries(pyembed PRIVATE fmt::fmt)
 
+# we need dlfcn on Windows
+if(MINGW)
+  target_link_libraries(pyembed PRIVATE dlfcn-win32::dl)
+endif()
+
 if(NOT NRN_LINK_AGAINST_PYTHON)
   add_library(pywrapper SHARED ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
   set_target_properties(pywrapper PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
@@ -103,7 +108,6 @@ foreach(file IN LISTS NMODL_PYTHON_FILES)
     NO_TARGET)
   list(APPEND nmodl_python_binary_dir_files "${NMODL_PROJECT_PURELIB_BINARY_DIR}/${file}")
 endforeach()
-add_custom_target(nmodl_copy_python_files ALL DEPENDS ${nmodl_python_binary_dir_files})
 file(COPY ${NMODL_PROJECT_PURELIB_SOURCE_DIR}/ext DESTINATION ${NMODL_PROJECT_PURELIB_BINARY_DIR})
 
 # =============================================================================
