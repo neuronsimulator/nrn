@@ -79,7 +79,6 @@ add_compile_options(${NMODL_EXTRA_CXX_FLAGS})
 add_link_options(${NMODL_EXTRA_CXX_FLAGS})
 
 add_subdirectory(codegen)
-add_subdirectory(language)
 add_subdirectory(lexer)
 add_subdirectory(parser)
 add_subdirectory(printer)
@@ -108,7 +107,7 @@ target_link_libraries(
   util
   lexer
   ${NMODL_WRAPPER_LIBS})
-add_dependencies(nmodl nmodl_copy_python_files nmodl_copy_solver_files)
+add_dependencies(nmodl nmodl_copy_solver_files)
 cpp_cc_configure_sanitizers(TARGET nmodl)
 
 # set(nmodl_BINARY bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})

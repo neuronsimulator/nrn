@@ -477,6 +477,7 @@ if(NRN_ENABLE_MPI AND NRN_ENABLE_MPI_DYNAMIC)
     if(MINGW) # type msmpi only
       add_dependencies(core${libname}_lib coreneuron-core)
       target_link_libraries(core${libname}_lib ${MPI_C_LIBRARIES} coreneuron-core)
+      target_link_libraries(core${libname}_lib dlfcn-win32::dl)
     endif()
     set_property(TARGET core${libname}_lib PROPERTY OUTPUT_NAME core${libname})
     list(APPEND corenrn_mpi_targets "core${libname}_lib")
