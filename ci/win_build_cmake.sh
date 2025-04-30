@@ -11,14 +11,15 @@ export PATH=/mingw64/bin:$PATH
 
 export DEFAULT_PYTHON=/c/Python39/python.exe
 
-# install dependencies for the default Python
-${DEFAULT_PYTHON} -m pip install --upgrade pip
-${DEFAULT_PYTHON} -m pip install -r nrn_requirements.txt
-
 # if BUILD_SOURCESDIRECTORY not available, use te root of the repo
 if [ -z "$BUILD_SOURCESDIRECTORY" ]; then
     export BUILD_SOURCESDIRECTORY=$(git rev-parse --show-toplevel)
 fi
+
+# install dependencies for the default Python
+${DEFAULT_PYTHON} -m pip install --upgrade pip
+${DEFAULT_PYTHON} -m pip install -r "${BUILD_SOURCESDIRECTORY}/nrn_requirements.txt"
+
 mkdir -p $BUILD_SOURCESDIRECTORY/build
 cd $BUILD_SOURCESDIRECTORY/build
 
