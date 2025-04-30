@@ -22,7 +22,7 @@ jobs:
       - run:
           name: Build manylinux AArch64 wheel
           command: |
-            packaging/python/build_wheels.bash linux 3<< parameters.NRN_PYTHON_VERSION_MINOR >> coreneuron
+            packaging/python/build_wheels.bash linux 3<< parameters.NRN_PYTHON_VERSION_MINOR >>
 
       - store_artifacts:
           path: ./wheelhouse

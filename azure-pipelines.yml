@@ -72,7 +72,7 @@ stages:
       - script: |
           sudo mkdir -p /opt/nrnwheel/mpt
           sudo tar -zxf $(mpt_headersSF.secureFilePath) --directory /opt/nrnwheel/mpt
-          packaging/python/build_wheels.bash linux $(python.nodot) coreneuron
+          packaging/python/build_wheels.bash linux $(python.nodot)
         displayName: 'Building ManyLinux Wheel'
 
       - script: |
@@ -163,7 +163,7 @@ stages:
           export NRN_BUILD_FOR_UPLOAD=1
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/$(uname -m)
-          packaging/python/build_wheels.bash osx $(python.nodot) coreneuron
+          packaging/python/build_wheels.bash osx $(python.nodot)
         displayName: 'Build MacOS Wheel'
 
       - template: ci/azure-wheel-test-upload.yml

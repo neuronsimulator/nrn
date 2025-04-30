@@ -16,7 +16,6 @@ set -eux
 #  - C/C++ compiler
 #  - ncurses
 
-
 # setup a venv with a given Python interpreter and activate it
 setup_venv() {
     local py_bin="$1"
@@ -89,7 +88,7 @@ build_wheel_portable() {
 
     python -m pip install cibuildwheel
     echo " - Building..."
-    rm -rf _build
+    rm -rf "${build_dir}"
 
     CIBW_BUILD_VERBOSITY=1 python -m cibuildwheel --debug-traceback --platform "${platform}" --output-dir wheelhouse
 
@@ -106,22 +105,11 @@ build_wheel_local() {
     (( skip )) && return 0
 
     echo " - Building..."
-    rm -rf _build
-
-    if [[ $# -ge 2 ]] && [[ "${2}" == "coreneuron" ]]; then
-        NRN_ENABLE_CORENEURON=ON
-        # on Linux we also enable OpenMP support
-        if [[ "$(uname -s)" == "${PLATFORM_LINUX}" ]]; then
-            export CORENRN_ENABLE_OPENMP=ON
-        fi
-    else
-        NRN_ENABLE_CORENEURON=OFF
-    fi
-    export NRN_ENABLE_CORENEURON
+    rm -rf "${build_dir}"
 
     # on some distributions, we need a newer pip to be able to use `--config-settings`
     python -m pip install --upgrade pip
-    python -m pip wheel -v --no-deps --config-settings=build-dir=_build --wheel-dir=wheelhouse .
+    python -m pip wheel -v --no-deps --config-settings=build-dir="${build_dir}" --wheel-dir=wheelhouse .
 
     deactivate
 }
@@ -135,11 +123,17 @@ if [ ! -f pyproject.toml ]; then
 fi
 
 
+# where the build files will be placed
+build_dir="build_wheel"
+
+
 # various platform identifiers (as reported by `uname -s`)
 PLATFORM_LINUX="Linux"
 PLATFORM_MACOS="Darwin"
 
-help_message="Usage: $(basename "$0") < CI | linux | osx | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 39|310|3*|path_to_interp] [coreneuron]"
+
+# help message in case of no arguments
+help_message="Usage: $(basename "$0") < CI | linux | osx | ${PLATFORM_LINUX} | ${PLATFORM_MACOS} > [python version 39|310|3*|path_to_interp]"
 
 if [[ $# -lt 2 ]]; then
     echo "${help_message}"
@@ -164,14 +158,6 @@ if [[ "${platform}" != 'CI' ]]; then
 fi
 
 
-# enable coreneuron support: "coreneuron" enables support (default: without coreneuron)
-# this should be removed/improved once wheel is stable
-coreneuron=
-if [[ $# -ge 3 ]]; then
-    coreneuron="${3}"
-fi
-
-
 case "${platform}" in
 
   linux | "${PLATFORM_LINUX}")
@@ -192,7 +178,7 @@ case "${platform}" in
     else
         collect_dirs_linux
     fi
-    build_wheel_local "${python_version_or_interpreter}" "${coreneuron}"
+    build_wheel_local "${python_version_or_interpreter}"
     ;;
 
   *)
