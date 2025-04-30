@@ -18,7 +18,7 @@ endif()
 # rxdmath libraries (always build)
 # =============================================================================
 add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
-install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
+install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
 # =============================================================================
 # nrnpython libraries (one lib per python)
@@ -74,7 +74,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     endif()
     add_dependencies(nrnpython${pyver} nrniv_lib)
     list(APPEND nrnpython_lib_list nrnpython${pyver})
-    install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
+    install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
     # the hoc Python library
     set(hoc_module_name hoc${pyver})
