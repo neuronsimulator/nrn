@@ -67,7 +67,7 @@ mod_func.o: mod_func.cpp
 
 nrnmech.dll: mod_func.o $(MODOBJFILES)
 	$(CXX) $(EXTRA_FLAGS) -shared mod_func.o $(MODOBJFILES) \
-  -L$N/$(bin) -L$N/lib -lnrniv -lpthread -o $(TARGET)
+  -L$N/$(bin) -lnrniv -lpthread -o $(TARGET)
 	@nrnskip_rebase@rebase -b 0x64000000 -v nrnmech.dll
 
 mod_func.o $(MODOBJFILES): $(N)/$(bin)/nrniv.exe
