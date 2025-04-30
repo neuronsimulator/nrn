@@ -5,7 +5,7 @@ set -xe
 #
 # Note: It should be invoked from nrn directory
 #
-# PREREQUESITES:
+# PREREQUISITES:
 #  - cmake (>=3.5)
 #  - flex
 #  - bison
@@ -59,11 +59,6 @@ pip_numpy_install() {
       313) numpy_ver="numpy>=2" ;;
       *) echo "Error: numpy version not specified for this python!" && exit 1;;
     esac
-
-    # older version for apple m1 as building from source fails
-    if [[ `uname -m` == 'arm64' ]] && [[ $py_ver -le 311 ]] ; then
-      numpy_ver="numpy==1.21.3"
-    fi
 
     echo " - pip install $numpy_ver"
     pip install $numpy_ver
