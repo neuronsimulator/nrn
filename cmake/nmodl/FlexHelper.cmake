@@ -6,12 +6,29 @@
 get_filename_component(FLEX_BIN_DIR ${FLEX_EXECUTABLE} DIRECTORY)
 
 if(NOT FLEX_BIN_DIR MATCHES "/usr/bin")
-  if(NOT FLEX_INCLUDE_PATH)
-    get_filename_component(FLEX_INCLUDE_PATH ${FLEX_BIN_DIR} PATH)
-    set(FLEX_INCLUDE_PATH ${FLEX_INCLUDE_PATH}/include/)
+  if(NOT FLEX_INCLUDE_DIRS)
+    get_filename_component(FLEX_INCLUDE_DIRS ${FLEX_BIN_DIR} PATH)
+    set(FLEX_INCLUDE_DIRS ${FLEX_INCLUDE_DIRS}/include/)
   endif()
-  if(EXISTS "${FLEX_INCLUDE_PATH}/FlexLexer.h")
-    message(STATUS " Adding Flex include path as : ${FLEX_INCLUDE_PATH}")
-    include_directories(${FLEX_INCLUDE_PATH})
+  if(EXISTS "${FLEX_INCLUDE_DIRS}/FlexLexer.h")
+    message(STATUS " Adding Flex include path as : ${FLEX_INCLUDE_DIRS}")
+    include_directories(${FLEX_INCLUDE_DIRS})
+  else()
+    message(
+      FATAL_ERROR
+        "${FLEX_INCLUDE_DIRS} does not contain file FlexLexer.h, please set NRN_FLEX_INCLUDE_DIRS manually"
+    )
   endif()
+endif()
+
+# Try to set include dir manually
+set(NRN_FLEX_INCLUDE_DIRS
+    "${FLEX_INCLUDE_DIRS}"
+    CACHE STRING "The path to the dir containing Flex headers")
+
+if(NOT NRN_FLEX_INCLUDE_DIRS AND NOT EXISTS "${NRN_FLEX_INCLUDE_DIRS}/FlexLexer.h")
+  message(FATAL_ERROR "FlexLexer.h not found in ${NRN_FLEX_INCLUDE_DIRS}, "
+                      "please set another value for NRN_FLEX_INCLUDE_DIRS")
+else()
+  include_directories("${NRN_FLEX_INCLUDE_DIRS}")
 endif()
