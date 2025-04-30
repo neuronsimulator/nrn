@@ -51,7 +51,7 @@ ${CMAKE_COMMAND} \
 ${CMAKE_COMMAND} --build "${BUILD_BUILDDIRECTORY}" --target install
 # compile mod files afterwards since we don't do it in cmake
 mkdir -p /c/nrn-install/demo/release
-cp -a ../share/demo/release/*.mod /c/nrn-install/demo/release/
+cp -a "${BUILD_SOURCESDIRECTORY}/share/demo/release/"*.mod /c/nrn-install/demo/release/
 cd /c/nrn-install/demo/release && /c/nrn-install/bin/nrnivmodl && cd -
 cd "${BUILD_BUILDDIRECTORY}" && ctest -VV || cd -
 ${CMAKE_COMMAND} --build "${BUILD_BUILDDIRECTORY}" --target setup_exe
