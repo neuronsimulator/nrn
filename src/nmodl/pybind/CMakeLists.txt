@@ -109,7 +109,6 @@ file(COPY ${NMODL_PROJECT_PURELIB_SOURCE_DIR}/ext DESTINATION ${NMODL_PROJECT_PU
 # =============================================================================
 # Install python binding components
 # =============================================================================
-
 if(NOT NRN_LINK_AGAINST_PYTHON)
   install(TARGETS pywrapper DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
   if(NMODL_ENABLE_PYTHON_BINDINGS)

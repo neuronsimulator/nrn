@@ -26,7 +26,6 @@ if [ -z "${BUILD_SOURCESDIRECTORY:-}" ]; then
 fi
 
 export BUILD_BUILDDIRECTORY="${BUILD_SOURCESDIRECTORY}/build"
-export INSTALL_DIRECTORY="/c/nrn-install"
 export CMAKE_COMMAND=/mingw64/bin/cmake
 
 # build and create installer
@@ -45,7 +44,7 @@ ${CMAKE_COMMAND} \
     -DPYTHON_EXECUTABLE=/c/Python39/python.exe \
     -DNRN_ENABLE_PYTHON_DYNAMIC=ON  \
     -DNRN_PYTHON_DYNAMIC='c:/Python39/python.exe;c:/Python310/python.exe;c:/Python311/python.exe;c:/Python312/python.exe;c:/Python313/python.exe'  \
-    -DCMAKE_INSTALL_PREFIX="${INSTALL_DIRECTORY}" \
+    -DCMAKE_INSTALL_PREFIX='/c/nrn-install' \
     -DMPI_CXX_LIB_NAMES:STRING=msmpi \
     -DMPI_C_LIB_NAMES:STRING=msmpi \
     -DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib
