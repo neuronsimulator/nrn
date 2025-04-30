@@ -50,6 +50,7 @@ ${CMAKE_COMMAND} \
     -DMPI_C_LIB_NAMES:STRING=msmpi \
     -DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib
 ${CMAKE_COMMAND} --build "${BUILD_BUILDDIRECTORY}" --target install
+cd "${BUILD_BUILDDIRECTORY}" && ctest -VV || cd -
 ${CMAKE_COMMAND} --build "${BUILD_BUILDDIRECTORY}" --target setup_exe
 
 # copy installer with fixed name for nightly upload
