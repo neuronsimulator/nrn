@@ -179,6 +179,4 @@ NRN_MPI_DYNAMIC = "$(brew --prefix)/opt/openmpi/include;$(brew --prefix)/opt/mpi
 NRN_WHEEL_STATIC_READLINE = "ON"
 NRN_ENABLE_CORENEURON = "ON"
 NRN_BINARY_DIST_BUILD = "ON"
-# NOTE: on x86_64 MacOS, it may be possible to use 10.15 instead
-MACOSX_DEPLOYMENT_TARGET = "11.0"
 NRN_RX3D_OPT_LEVEL = "2"

@@ -99,6 +99,12 @@ build_wheel_portable() {
         export NRN_MPI_DYNAMIC
     fi
 
+    if [ "${platform}" = 'macos' ] && [ "$(uname -m)" = 'x86_64' ]; then
+        export MACOSX_DEPLOYMENT_TARGET='10.15'
+    else
+        export MACOSX_DEPLOYMENT_TARGET='11.0'
+    fi
+
     CIBW_BUILD_VERBOSITY=1 python -m cibuildwheel --debug-traceback --platform "${platform}" --output-dir wheelhouse
 
     deactivate
