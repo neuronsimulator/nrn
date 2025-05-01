@@ -90,6 +90,12 @@ build_wheel_portable() {
     echo " - Building..."
     rm -rf "${build_dir}"
 
+    # if we are building on Azure, we can use the MPT headers as well
+    if [ "${platform}" = 'linux'] && [ -n "${TF_BUILD}" ]; then
+        NRN_MPI_DYNAMIC="/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m);/host/opt/nrnwheel/mpt"
+        export NRN_MPI_DYNAMIC
+    fi
+
     CIBW_BUILD_VERBOSITY=1 python -m cibuildwheel --debug-traceback --platform "${platform}" --output-dir wheelhouse
 
     deactivate

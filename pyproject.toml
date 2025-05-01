@@ -144,6 +144,8 @@ environment-pass = [
   "NRN_RX3D_OPT_LEVEL",
   # when making a release, we need to override the version
   "SETUPTOOLS_SCM_PRETEND_VERSION",
+  # in case the user wants to use less resources
+  "CMAKE_BUILD_PARALLEL_LEVEL",
 ]
 
 # comment originally from `build_wheels.bash`:
@@ -165,8 +167,7 @@ NRN_WHEEL_STATIC_READLINE = "ON"
 NRN_ENABLE_CORENEURON = "ON"
 CORENRN_ENABLE_OPENMP = "ON"
 NRN_BINARY_DIST_BUILD = "ON"
-# TODO change this to 2 before merging
-NRN_RX3D_OPT_LEVEL = "0"
+NRN_RX3D_OPT_LEVEL = "2"
 
 [tool.cibuildwheel.macos]
 repair-wheel-command = "delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}"
@@ -180,5 +181,4 @@ NRN_ENABLE_CORENEURON = "ON"
 NRN_BINARY_DIST_BUILD = "ON"
 # NOTE: on x86_64 MacOS, it may be possible to use 10.15 instead
 MACOSX_DEPLOYMENT_TARGET = "11.0"
-# TODO change this to 2 before merging
-NRN_RX3D_OPT_LEVEL = "0"
+NRN_RX3D_OPT_LEVEL = "2"
