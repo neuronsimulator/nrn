@@ -115,7 +115,7 @@ extern Symbol* indepsym;
 extern Symbol* scop_indep;
 extern List* indeplist;
 extern Symbol* stepsym;
-extern char* reprime();
+extern char* reprime(Symbol*);
 extern List* symlist[];
 extern List* ldifuslist;
 extern char* finname;
@@ -1447,7 +1447,7 @@ void ldifusreg() {
         dfdcur = STR(q);
         ++n;
         sprintf(buf,
-                "static void* _difspace%d;\nextern double nrn_nernst_coef();\n\
+                "static void* _difspace%d;\nextern double nrn_nernst_coef(int);\n\
 static double _difcoef%d(int _i, double* _p, Datum* _ppvar, double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt) {\n  \
  *_pdvol = ",
                 n,
@@ -2814,7 +2814,7 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
             insertstr(qstmt, " assert(_tsav <= t); _tsav = t;");
         } else {
             insertstr(qstmt,
-                      " if (_tsav > t){ extern char* hoc_object_name(); "
+                      " if (_tsav > t){ extern char* hoc_object_name(Object*); "
                       "hoc_execerror(hoc_object_name(_pnt->ob), \":Event arrived out of order. "
                       "Must call ParallelContext.set_maxstep AFTER assigning minimum "
                       "NetCon.delay\");}\n _tsav = t;");

@@ -315,11 +315,13 @@ void massagekinetic(Item* q1, Item* q2, Item* q3, Item* q4, int sensused) /*KINE
     fun->u.i = numlist;
 
     Sprintf(buf, "static int %s();\n", SYM(q2)->name);
-    Linsertstr(procfunc, buf);
+    Item* qvstatic = linsertstr(procfunc, buf);
     replacstr(q1, "\nstatic int");
     qv = insertstr(q3, "()\n");
 #if VECTORIZE
     if (vectorize) {
+        Sprintf(buf, "static int %s(void*, double*, _threadargsproto_);\n", SYM(q2)->name);
+        vectorize_substitute(qvstatic, buf);
         kin_vect1(q1, q2, q4);
         vectorize_substitute(qv,
                              "(void* _so, double* _rhs, double* _p, Datum* _ppvar, Datum* _thread, "
