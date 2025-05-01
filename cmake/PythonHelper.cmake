@@ -94,7 +94,7 @@ function(nrn_find_python)
     string(SHA1 pyexe_hash "${opt_NAME}")
     string(SUBSTRING "${pyexe_hash}" 0 6 pyexe_hash)
     # Which attributes we're trying to learn about this Python
-    set(python_vars Python_INCLUDE_DIRS Python_VERSION Python_NumPy_INCLUDE_DIRS)
+    set(python_vars Python_INCLUDE_DIRS Python_VERSION Python_NumPy_INCLUDE_DIRS Python_SITEARCH)
     if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_LINK_AGAINST_PYTHON)
       # Do not link against Python, so we don't need the library -- just as well, it's not available
       # in manylinux
@@ -142,6 +142,9 @@ function(nrn_find_python)
         PARENT_SCOPE)
     set("${opt_PREFIX}_VERSION"
         "${Python_VERSION}"
+        PARENT_SCOPE)
+    set("${opt_PREFIX}_SITEARCHS"
+        "${Python_SITEARCH}"
         PARENT_SCOPE)
   endif()
   # Finally do our special treatment for macOS + sanitizers
@@ -199,6 +202,7 @@ set(NRN_PYTHON_VERSIONS)
 set(NRN_PYTHON_INCLUDES)
 set(NRN_PYTHON_NUMPY_INCLUDES)
 set(NRN_PYTHON_LIBRARIES)
+set(NRN_PYTHON_SITEARCHS)
 foreach(pyexe ${python_executables})
   message(STATUS "Checking if ${pyexe} is a working python")
   nrn_find_python(NAME "${pyexe}" PREFIX nrnpy)
@@ -225,6 +229,7 @@ foreach(pyexe ${python_executables})
     list(APPEND NRN_PYTHON_INCLUDES "${nrnpy_INCLUDES}")
     list(APPEND NRN_PYTHON_NUMPY_INCLUDES "${nrnpy_NUMPY_INCLUDES}")
     list(APPEND NRN_PYTHON_LIBRARIES "${nrnpy_LIBRARIES}")
+    list(APPEND NRN_PYTHON_SITEARCHS "${nrnpy_SITEARCHS}")
   endif()
   list(APPEND NRN_PYTHON_EXECUTABLES "${nrnpy_EXECUTABLE}")
 endforeach()
@@ -236,6 +241,7 @@ if(NRN_ENABLE_PYTHON)
   list(GET NRN_PYTHON_INCLUDES 0 NRN_DEFAULT_PYTHON_INCLUDES)
   list(GET NRN_PYTHON_NUMPY_INCLUDES 0 NRN_DEFAULT_PYTHON_NUMPY_INCLUDES)
   list(GET NRN_PYTHON_LIBRARIES 0 NRN_DEFAULT_PYTHON_LIBRARIES)
+  list(GET NRN_PYTHON_SITEARCHS 0 NRN_DEFAULT_PYTHON_SITEARCH)
   list(LENGTH NRN_PYTHON_EXECUTABLES NRN_PYTHON_COUNT)
   math(EXPR NRN_PYTHON_ITERATION_LIMIT "${NRN_PYTHON_COUNT} - 1")
 endif()

@@ -54,7 +54,7 @@ if(SKBUILD)
   set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/bin")
 else()
   set(NRN_INSTALL_PYTHON_PREFIX "lib/python/neuron")
-  # TODO figure out if this needs to be set to NRN_INSTALL_DATA_PREFIX instead
+  # if not building a wheel, respect CMAKE_INSTALL_PREFIX
   set(NRN_INSTALL_DATA_PREFIX ".")
 endif()
 
@@ -326,6 +326,12 @@ if(NRN_SANITIZERS)
   configure_file(bin/nrn-enable-sanitizer.in bin/nrn-enable-sanitizer @ONLY)
   install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrn-enable-sanitizer
           DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
+endif()
+
+# If building via CMake, but not building for multiple Python versions, we can install Python
+# modules in Python_SITEARCH
+if(NRN_ENABLE_PYTHON AND "${NRN_PYTHON_COUNT}" STREQUAL 1)
+  set(NRN_INSTALL_PYTHON_PREFIX "${NRN_DEFAULT_PYTHON_SITEARCH}/neuron")
 endif()
 
 # =============================================================================
@@ -1225,6 +1231,8 @@ if(NRN_ENABLE_PROFILING)
     message(STATUS "  Caliper     | ${caliper_DIR}")
   endif()
 endif()
+message(STATUS "Non-Python install prefix | ${NRN_INSTALL_DATA_PREFIX}")
+message(STATUS "Python install prefix     | ${NRN_INSTALL_PYTHON_PREFIX}")
 if(NRN_ENABLE_DIGEST OR NRN_ENABLE_ARCH_INDEP_EXP_POW)
   message(STATUS "NRN_ENABLE_DIGEST | ${NRN_ENABLE_DIGEST}")
   message(STATUS "NRN_ENABLE_ARCH_INDEP_EXP_POW | ${NRN_ENABLE_ARCH_INDEP_EXP_POW}")
