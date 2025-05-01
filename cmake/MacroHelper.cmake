@@ -198,17 +198,117 @@ endmacro(nrn_install_dir_symlink)
 # macos package on an arm64 architecture even if the mpi library has no slice for x86_64.
 # ========================================================================
 macro(nrn_mpi_find_package)
-  if("arm64" IN_LIST CMAKE_OSX_ARCHITECTURES
-     AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES
+  if(APPLE
+     AND NRN_ENABLE_MPI
      AND NRN_ENABLE_MPI_DYNAMIC)
+    # Temporarily unset CMAKE_OSX_ARCHITECTURES to use host architecture for MPI tests
     set(_temp ${CMAKE_OSX_ARCHITECTURES})
     unset(CMAKE_OSX_ARCHITECTURES CACHE)
     find_package(MPI REQUIRED)
     set(CMAKE_OSX_ARCHITECTURES
         ${_temp}
-        CACHE INTERNAL "" FORCE)
-    set(NRN_UNIVERSAL2_BUILD ON)
+        CACHE STRING "Target architectures for macOS" FORCE)
   else()
+    # Standard MPI detection for non-dynamic MPI or non-macOS platforms
     find_package(MPI REQUIRED)
+  endif()
+endmacro()
+
+# ~~~
+# Macro to append build architecture flags to executable and its source
+# files on macOS. Arg is the executable target (e.g., mkgstates).
+# ~~~
+macro(nrn_buildarch_executable EXECUTABLE_NAME)
+  if(APPLE)
+    # Get the build architecture (set by the build system)
+    set(BUILD_ARCH "${CMAKE_HOST_SYSTEM_PROCESSOR}") # Example: "arm64" or "x86_64"
+    # Set BUILD_ARCH_FLAGS based on CMAKE_OSX_ARCHITECTURES and BUILD_ARCH
+    set(BUILD_ARCH_FLAGS "")
+    if(BUILD_ARCH AND NOT "${BUILD_ARCH}" IN_LIST CMAKE_OSX_ARCHITECTURES)
+      set(BUILD_ARCH_FLAGS "-arch ${BUILD_ARCH}")
+    endif()
+
+    get_target_property(SOURCE_FILES ${EXECUTABLE_NAME} SOURCES)
+
+    # Append BUILD_ARCH_FLAGS to each source file's COMPILE_FLAGS
+    if(BUILD_ARCH_FLAGS)
+      foreach(SOURCE_FILE IN LISTS SOURCE_FILES)
+        get_source_file_property(EXISTING_FLAGS "${SOURCE_FILE}" COMPILE_FLAGS)
+        if(EXISTING_FLAGS)
+          set(NEW_FLAGS "${EXISTING_FLAGS} ${BUILD_ARCH_FLAGS}")
+        else()
+          set(NEW_FLAGS "${BUILD_ARCH_FLAGS}")
+        endif()
+        set_source_files_properties("${SOURCE_FILE}" PROPERTIES COMPILE_FLAGS "${NEW_FLAGS}")
+      endforeach()
+
+      # Append BUILD_ARCH_FLAGS to the executable's linker flags
+      separate_arguments(ARCH_FLAGS_LIST UNIX_COMMAND "${BUILD_ARCH_FLAGS}")
+      target_link_options(${EXECUTABLE_NAME} PRIVATE ${ARCH_FLAGS_LIST})
+    endif()
+
+    # Debug output to verify settings
+    if(BUILD_ARCH_FLAGS)
+      message(
+        STATUS
+          "nrn_buildarch_executable: Applied BUILD_ARCH_FLAGS=${BUILD_ARCH_FLAGS} to ${EXECUTABLE_NAME} and source files: ${SOURCE_FILES}"
+      )
+    endif()
+  else()
+    message(STATUS "nrn_buildarch_executable ignored, only relevant to macOS (APPLE)")
+  endif()
+endmacro()
+
+# ~~~
+# Macro to temporarily set CMAKE_OSX_ARCHITECTURES to universal2 (x86_64;arm64) and restore it.
+# Usage:
+#   nrn_set_universal2_begin()
+#   # Code that needs universal2 (e.g., add_subdirectory)
+#   nrn_set_universal2_end()
+# Sets universal2 only if CMAKE_HOST_SYSTEM_PROCESSOR is not CMAKE_SYSTEM_PROCESSOR.
+# ~~~
+macro(nrn_set_universal2_begin)
+  if(APPLE)
+    # Check if system processor is not the  build architecture
+    set(_NRN_NEED_UNIVERSAL2 FALSE)
+    if(NOT "${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL "${CMAKE_SYSTEM_PROCESSOR}")
+      set(_NRN_NEED_UNIVERSAL2 TRUE)
+    endif()
+    if(_NRN_NEED_UNIVERSAL2)
+      # Save original CMAKE_OSX_ARCHITECTURES
+      set(_NRN_ORIGINAL_OSX_ARCHITECTURES ${CMAKE_OSX_ARCHITECTURES})
+      # Set universal2 architectures
+      set(CMAKE_OSX_ARCHITECTURES
+          "x86_64;arm64"
+          CACHE STRING "Target architectures for macOS" FORCE)
+      message(
+        STATUS
+          "nrn_set_universal2_begin: Set CMAKE_OSX_ARCHITECTURES to x86_64;arm64 (system: ${CMAKE_HOST_SYSTEM_PROCESSOR})"
+      )
+    else()
+      message(
+        STATUS
+          "nrn_set_universal2_begin: Skipped, system processor ${CMAKE_HOST_SYSTEM_PROCESSOR} already in CMAKE_OSX_ARCHITECTURES"
+      )
+    endif()
+  endif()
+endmacro()
+
+macro(nrn_set_universal2_end)
+  if(APPLE AND DEFINED _NRN_ORIGINAL_OSX_ARCHITECTURES)
+    # Restore original CMAKE_OSX_ARCHITECTURES
+    if(_NRN_ORIGINAL_OSX_ARCHITECTURES)
+      set(CMAKE_OSX_ARCHITECTURES
+          "${_NRN_ORIGINAL_OSX_ARCHITECTURES}"
+          CACHE STRING "Target architectures for macOS" FORCE)
+      message(
+        STATUS
+          "nrn_set_universal2_end: Restored CMAKE_OSX_ARCHITECTURES to ${_NRN_ORIGINAL_OSX_ARCHITECTURES}"
+      )
+    else()
+      unset(CMAKE_OSX_ARCHITECTURES CACHE)
+      message(STATUS "nrn_set_universal2_end: Unset CMAKE_OSX_ARCHITECTURES")
+    endif()
+    unset(_NRN_ORIGINAL_OSX_ARCHITECTURES)
   endif()
 endmacro()

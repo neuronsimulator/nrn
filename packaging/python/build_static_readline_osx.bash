@@ -1,55 +1,89 @@
 #!/usr/bin/env bash
 set -eux
-# A script to build a static readline library for osx
+# A script to build a static readline library for macOS
+# universal2 or x86_64 or arm64
 #
-# PREREQUESITES:
+# PREREQUISITES:
 #  - curl
 #  - C/C++ compiler
-#  - /opt/nrnwheel/[ARCH] folder created with access rights (this specific path is kept for consistency wrt `build_wheels.bash`)
+#  - /opt/nrnwheel folder created with access rights
 
 if [[ "$(uname -s)" != 'Darwin' ]]; then
-    echo "Error: this script is for macOS only. readline is already built statically in the linux Docker images"
+    echo "Error: this script is for macOS only."
     exit 1
 fi
 
-ARCH="$(uname -m)"
-
-NRNWHEEL_DIR="${1:-/opt/nrnwheel/${ARCH}}"
-if [[ ! -d "$NRNWHEEL_DIR" || ! -x "$NRNWHEEL_DIR" ]]; then
-    echo "Error: ${NRNWHEEL_DIR} must exist and be accessible, i.e: sudo mkdir -p ${NRNWHEEL_DIR} && sudo chown -R ${USER} ${NRNWHEEL_DIR}"
+if [ "$ARCHTYPE" == "" ]; then
+    echo "Error ARCHTYPE must exist as universal2 or x86_64 or arm64."
     exit 1
 fi
 
-# Set MACOSX_DEPLOYMENT_TARGET based on wheel arch.
-# For upcoming `universal2` wheels we will consider leveling everything to 11.0.
-if [[ "${ARCH}" == 'arm64' ]]; then
-	export MACOSX_DEPLOYMENT_TARGET=11.0  # for arm64 we need 11.0
-else
-	export MACOSX_DEPLOYMENT_TARGET=10.9  # for x86_64
+if [ "$ARCHFLAGS" == "" ]; then
+    echo "Error: ARCHFLAGS must exist."
+    exit 1
 fi
 
-(curl -L -o ncurses-6.4.tar.gz http://ftpmirror.gnu.org/ncurses/ncurses-6.4.tar.gz \
-    && tar -xvzf ncurses-6.4.tar.gz \
-    && cd ncurses-6.4  \
-    && ./configure --prefix="${NRNWHEEL_DIR}/ncurses" --without-shared CFLAGS="-fPIC" \
-    && make -j install)
+LOC="/opt/nrnwheel"
+ULOC="${LOC}/${ARCHTYPE}"
+mkdir -p "${ULOC}"
 
-(curl -L -o readline-7.0.tar.gz https://ftp.gnu.org/gnu/readline/readline-7.0.tar.gz \
-    && tar -xvzf readline-7.0.tar.gz \
-    && cd readline-7.0  \
-    && ./configure --prefix="${NRNWHEEL_DIR}/readline" --disable-shared CFLAGS="-fPIC" \
-    && make -j install)
+# Download packages
+curl -L -o ncurses-6.4.tar.gz http://ftpmirror.gnu.org/ncurses/ncurses-6.4.tar.gz \
+    && tar -xvzf ncurses-6.4.tar.gz
+curl -L -o readline-7.0.tar.gz https://ftp.gnu.org/gnu/readline/readline-7.0.tar.gz \
+    && tar -xvzf readline-7.0.tar.gz
 
-(cd "${NRNWHEEL_DIR}/readline/lib" \
-    && ar -x libreadline.a \
-    && ar -x ../../ncurses/lib/libncurses.a \
-    && ar cq libreadline.a *.o \
-    && rm *.o)
-
-RDL_MINOS="$(otool -l "${NRNWHEEL_DIR}/readline/lib/libreadline.a" | grep -e "minos \|version " | uniq | awk '{print $2}')"
-
-if [ "$RDL_MINOS" != "$MACOSX_DEPLOYMENT_TARGET" ]; then 
-	echo "Error: ${NRNWHEEL_DIR}/readline/lib/libreadline.a doesn't match MACOSX_DEPLOYMENT_TARGET ($MACOSX_DEPLOYMENT_TARGET)"
-	exit 1
+# Set  flags
+export CFLAGS="$ARCHFLAGS -fPIC"
+export CXXFLAGS="$ARCHFLAGS -fPIC"
+hostarg=""
+ncursearg=""
+if [ "$ARCHTYPE" == "universal2" ]; then
+    export MACOSX_DEPLOYMENT_TARGET=11.0  # Required for universal2?
+elif [ "$ARCHTYPE" == "x86_64" ]; then
+    export MACOSX_DEPLOYMENT_TARGET=10.15
+    if [ "$ARCHTYPE" != $(uname -m) ]; then
+        hostarg="--host=x86_64-apple-darwin"
+        ncursearg="--without-progs --disable-db-install"
+    fi
+elif [ "$ARCHTYPE" == "arm64" ]; then
+    export MACOSX_DEPLOYMENT_TARGET=10.15
+    if [ "$ARCHTYPE" != $(uname -m) ]; then
+        hostarg="--host=aarch64-apple-darwin"
+        ncursearg="--without-progs --disable-db-install"
+    fi
 fi
-echo "Done." 
+echo "hostarg=$hostarg"
+echo "ncursearg=$ncursearg"
+
+# Build ncurses (static only, no executables)
+(cd ncurses-6.4 \
+    && ./configure --prefix="${ULOC}/ncurses" --without-shared --without-tests $hostarg $ncursearg \
+    && make clean \
+    && make -j \
+    && make install)
+
+# Build readline (static only)
+(cd readline-7.0 \
+    && ./configure --prefix="${ULOC}/readline" --disable-shared $hostarg \
+    && make clean \
+    && make -j \
+    && make install)
+
+# Combine readline and ncurses static libraries with libtool
+(cd "${ULOC}/readline/lib" \
+    && mv libreadline.a libreadline_orig.a \
+    && libtool -static -o libreadline.a libreadline_orig.a ../../ncurses/lib/libncurses.a \
+    && rm libreadline_orig.a)
+
+# Verify universal2
+if [ "$ARCHTYPE" == "universal2" ]; then
+    RDL_ARCHS="$(lipo -info "${ULOC}/readline/lib/libreadline.a")"
+    if [[ ! "${RDL_ARCHS}" =~ "x86_64" || ! "${RDL_ARCHS}" =~ "arm64" ]]; then
+        echo "Error: ${ULOC}/readline/lib/libreadline.a is not universal2"
+        exit 1
+    fi
+fi
+
+echo "Done."
+

@@ -218,6 +218,39 @@ set(NMODL_EXTRA_CXX_FLAGS
     CACHE STRING "Add extra compile flags for NMODL sources")
 separate_arguments(NMODL_EXTRA_CXX_FLAGS)
 
+# TARGET_ARCH is usually CMAKE_HOST_SYSTEM_PROCESSOR. But for APPLE wheels we sometimes want to
+# cross-compile and not bloat all the executables as universal2. TARGET_TYPE is computed as x86_64
+# or arm64 or universal2
+set(TARGET_ARCH ${CMAKE_HOST_SYSTEM_PROCESSOR}) # not cross-compile
+if(CMAKE_OSX_ARCHITECTURES)
+  if(APPLE AND NOT "${TARGET_ARCH}" IN_LIST CMAKE_OSX_ARCHITECTURES)
+    if(TARGET_ARCH STREQUAL "x86_64")
+      set(TARGET_ARCH "arm64")
+      set(TARGET_ARCH_FLAGS "-arch arm64")
+    else()
+      set(TARGET_ARCH "x86_64")
+      set(TARGET_ARCH_FLAGS "-arch x86_64")
+    endif()
+  endif()
+endif()
+set(TARGET_TYPE ${TARGET_ARCH})
+set(CMAKE_SYSTEM_PROCESSOR
+    ${TARGET_ARCH}
+    CACHE STRING "Target system processor" FORCE)
+if(APPLE
+   AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES
+   AND "arm64" IN_LIST CMAKE_OSX_ARCHITECTURES)
+  set(TARGET_TYPE "universal2")
+  set(NRN_UNIVERSAL2_BUILD ON)
+  set(TARGET_ARCH_FLAGS "-arch arm64 -arch x86_64")
+endif()
+message(STATUS "TARGET_ARCH ${TARGET_ARCH}")
+message(STATUS "TARGET_ARCH_FLAGS ${TARGET_ARCH_FLAGS}")
+message(STATUS "TARGET_TYPE ${TARGET_TYPE}")
+message(STATUS "NRN_UNIVERSAL2_BUILD ${NRN_UNIVERSAL2_BUILD}")
+message(STATUS "CMAKE_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR}")
+message(STATUS "CMAKE_OSX_ARCHITECTURES ${CMAKE_OSX_ARCHITECTURES}")
+
 # =============================================================================
 # Include cmake modules
 # =============================================================================
@@ -270,7 +303,9 @@ endif()
 include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
 cpp_cc_git_submodule(eigen)
+nrn_set_universal2_begin()
 nrn_add_external_project(fmt)
+nrn_set_universal2_end()
 set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/Random123/include/Random123"
@@ -538,7 +573,9 @@ if(NRN_ENABLE_NMODL
 
   option(SPDLOG_FMT_EXTERNAL "Force to use an external {{fmt}}" ON)
   option(SPDLOG_SYSTEM_INCLUDE "Include spdlog as a system lib" ON)
+  nrn_set_universal2_begin()
   cpp_cc_git_submodule(spdlog BUILD PACKAGE spdlog REQUIRED)
+  nrn_set_universal2_end()
   if(${CODING_CONV_PREFIX}_3RDPARTY_USE_SPDLOG)
     # See above, same logic as fmt
     set_target_properties(spdlog PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -936,8 +973,7 @@ if(NRN_ENABLE_TESTS)
   # Execute neurondemo as part of the build because it lazily calls nrnivmodl. If we don't do this
   # then test_neurondemo.py will run nrnivmodl in a clean build, and report compilation warnings as
   # unexpected stderr.
-  set(neurondemo_prefix
-      "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}")
+  set(neurondemo_prefix "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_SYSTEM_PROCESSOR}")
   set(neurondemo_files
       "${neurondemo_prefix}/special"
       "${neurondemo_prefix}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}")
@@ -1032,9 +1068,9 @@ endif()
 if(NOT NRN_WINDOWS_BUILD)
   # create arch folder under prefix with symlink to bin and lib
   nrn_install_dir_symlink(${CMAKE_INSTALL_PREFIX}/bin
-                          ${CMAKE_INSTALL_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/bin)
+                          ${CMAKE_INSTALL_PREFIX}/${CMAKE_SYSTEM_PROCESSOR}/bin)
   nrn_install_dir_symlink(${CMAKE_INSTALL_PREFIX}/lib
-                          ${CMAKE_INSTALL_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/lib)
+                          ${CMAKE_INSTALL_PREFIX}/${CMAKE_SYSTEM_PROCESSOR}/lib)
 endif()
 
 # =============================================================================
@@ -1076,6 +1112,10 @@ message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTy
 message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
 message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
 message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
+if(APPLE)
+  message(STATUS "TARGET_ARCH   | ${TARGET_ARCH}")
+  message(STATUS "TARGET_TYPE   | ${TARGET_TYPE}")
+endif()
 if(NRN_ENABLE_MPI)
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_MPI_DYNAMIC}")
   if(NRN_ENABLE_MPI_DYNAMIC)

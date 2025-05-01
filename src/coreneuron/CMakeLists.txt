@@ -600,6 +600,17 @@ include(MakefileBuildOptions)
 # =============================================================================
 
 # =============================================================================
+# Might be UNIVERSAL2
+# =============================================================================
+if(APPLE
+   AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES
+   AND "arm64" IN_LIST CMAKE_OSX_ARCHITECTURES)
+  set(UNIVERSAL2 TRUE)
+else()
+  set(UNIVERSAL2 FALSE)
+endif()
+
+# =============================================================================
 # Copy first into build directory as it will be used for special-core
 # =============================================================================
 configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl_core_makefile.in
@@ -646,7 +657,7 @@ install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION bin)
 
 # install nrniv-core app
 install(
-  PROGRAMS ${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR}/special-core
+  PROGRAMS ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}/special-core
   DESTINATION bin
   RENAME nrniv-core)
 install(FILES apps/coreneuron.cpp DESTINATION share/coreneuron)

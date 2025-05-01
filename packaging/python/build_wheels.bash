@@ -54,6 +54,32 @@ setup_venv() {
 }
 
 
+if [ -z "$ARCHTYPE" ]; then
+    ARCHTYPE=$(uname -m)
+    export ARCHTYPE
+fi
+
+if [[ "$1" == "osx" || ( "$1" == "CI" && "$CI_OS_NAME" == "osx" ) ]]; then
+    if [ "$ARCHTYPE" == "universal2" ]; then
+        ARCHFLAGS="-arch arm64 -arch x86_64"
+    elif [ "$ARCHTYPE" == "arm64" ]; then
+        ARCHFLAGS="-arch arm64"
+    elif [ "$ARCHTYPE" == "x86_64" ]; then
+        ARCHFLAGS="-arch x86_64"
+    else
+        echo "Error: Cannot determine ARCHFLAGS from ARCHTYPE \"$ARCHTYPE\""
+        exit 1
+    fi
+    export ARCHFLAGS # passed to build_static_readline_osx.bash
+fi
+
+if [[ "$1" == "osx" ]]; then
+  echo "Building $ARCHTYPE readline and ncurses for macOS"
+  bash packaging/python/build_static_readline_osx.bash
+  export LDFLAGS="-L/opt/nrnwheel/$ARCHTYPE/readline/lib -L/opt/nrnwheel/$ARCHTYPE/ncurses/lib"
+  export CFLAGS="-I/opt/nrnwheel/$ARCHTYPE/readline/include -I/opt/nrnwheel/$ARCHTYPE/ncurses/include"
+fi
+
 build_wheel_linux() {
     echo "[BUILD WHEEL] Building with interpreter $1"
     local skip=
@@ -119,6 +145,16 @@ build_wheel_osx() {
     echo " - Installing build requirements"
     cp packaging/python/build_requirements.txt "${python_requirements_path}"
 
+    if [ -z "$MACOSX_DEPLOYMENT_TARGET" ]; then
+        MACOSX_DEPLOYMENT_TARGET=$(python -c "import sysconfig; print(sysconfig.get_platform().split('-')[1])")
+    fi
+
+    if [ "$ARCHTYPE" == "universal2" ]; then
+        UNIVERSAL2=1
+    else
+        UNIVERSAL2=0
+    fi
+
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
       CMAKE_DEFS="$CMAKE_DEFS,NRN_BINARY_DIST_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
@@ -137,34 +173,26 @@ build_wheel_osx() {
     echo " - Building..."
     rm -rf dist build
 
-    # We need to "fix" the platform tag if the Python installer is universal2
-    # See:
-    #     * https://github.com/pypa/setuptools/issues/2520
-    #     * https://github.com/neuronsimulator/nrn/pull/1562
-    py_platform=$(python -c "import sysconfig; print('%s' % sysconfig.get_platform());")
-
-    echo " - Python platform: ${py_platform}"
-    if [[ "${py_platform}" == *"-universal2" ]]; then
-      if [[ `uname -m` == 'arm64' ]]; then
-        export _PYTHON_HOST_PLATFORM="${py_platform/universal2/arm64}"
-        echo " - Python installation is universal2 and we are on arm64, setting _PYTHON_HOST_PLATFORM to: ${_PYTHON_HOST_PLATFORM}"
-        export ARCHFLAGS="-arch arm64"
-        echo " - Setting ARCHFLAGS to: ${ARCHFLAGS}"
-        # This is a shortcut to have a successful delocate-wheel. See:
-        # https://github.com/matthew-brett/delocate/issues/153
-        python -c "import os,delocate; print(os.path.join(os.path.dirname(delocate.__file__), 'tools.py'));quit()"  | xargs -I{} sed -i."" "s/first, /input.pop('i386',None); first, /g" {}
-      else
-        export _PYTHON_HOST_PLATFORM="${py_platform/universal2/x86_64}"
-        echo " - Python installation is universal2 and we are on x84_64, setting _PYTHON_HOST_PLATFORM to: ${_PYTHON_HOST_PLATFORM}"
-        export ARCHFLAGS="-arch x86_64"
-        echo " - Setting ARCHFLAGS to: ${ARCHFLAGS}"
-      fi
+    if [ "$UNIVERSAL2" == "1" ]; then
+        CMAKE_DEFS="${CMAKE_DEFS},CMAKE_OSX_ARCHITECTURES=x86_64;arm64"
+    else
+        CMAKE_DEFS="${CMAKE_DEFS},CMAKE_OSX_ARCHITECTURES=$ARCHTYPE"
     fi
 
-    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
+    PLAT_NAME="macosx_${MACOSX_DEPLOYMENT_TARGET//./_}_$ARCHTYPE"
+
+    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/$ARCHTYPE/readline;/opt/nrnwheel/$ARCHTYPE/ncurses;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel --plat-name="$PLAT_NAME"
 
     echo " - Calling delocate-listdeps"
     delocate-listdeps dist/*.whl
+
+    # Remove static .a files from wheel (not needed, avoids delocate issues)
+    # ...well... except for libcoreneuron-core.a which is needed by nrnivmodl_core_makefile
+    libafiles=$(unzip -t dist/*.whl | sed -n 's,.*\(neuron/\.data/lib/lib.*\.a\)  .*,\1,p' | grep -v 'libcoreneuron-core\.a')
+    echo "removing from wheel: $libafiles"
+    if test "$libafiles" != "" ; then
+        zip -d dist/*.whl $libafiles
+    fi
 
     echo " - Repairing..."
     delocate-wheel -w wheelhouse -v dist/*.whl  # we started clean, there's a single wheel
@@ -224,6 +252,8 @@ case "$1" in
     if [ "$CI_OS_NAME" == "osx" ]; then
         BREW_PREFIX=$(brew --prefix)
         MPI_INCLUDE_HEADERS="${BREW_PREFIX}/opt/openmpi/include;${BREW_PREFIX}/opt/mpich/include"
+        MACOSX_DEPLOYMENT_TARGET="10.15"
+        export MACOSX_DEPLOYMENT_TARGET
         build_wheel_osx $(which python3) "$coreneuron" "$MPI_INCLUDE_HEADERS"
     else
         # first two are for AlmaLinux 8 (default for manylinux_2_28);

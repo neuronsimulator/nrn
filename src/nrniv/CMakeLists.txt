@@ -111,6 +111,9 @@ if(NRN_NOCMODL_CXX_FLAGS)
   target_compile_options(nocmodl PRIVATE ${NRN_NOCMODL_CXX_FLAGS})
 endif()
 
+# if crosscompiling on APPLE append build arch if needed
+nrn_buildarch_executable(nocmodl)
+
 # =============================================================================
 # Translate all MOD files to C and mark them generated
 # =============================================================================

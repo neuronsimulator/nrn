@@ -122,7 +122,7 @@ if(CORENRN_CXX_LINKER_SUPPORTS_START_GROUP)
   set(CORENEURON_LINKER_END_GROUP -Wl,--end-group)
 endif()
 
-# Things that used to be in CORENRN_LIB_LINK_FLAGS: -lrt -L${CMAKE_HOST_SYSTEM_PROCESSOR}
+# Things that used to be in CORENRN_LIB_LINK_FLAGS: -lrt -L${CMAKE_SYSTEM_PROCESSOR}
 # -L${caliper_LIB_DIR} -l${CALIPER_LIB}
 
 # =============================================================================

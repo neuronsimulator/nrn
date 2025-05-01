@@ -283,10 +283,19 @@ class CMakeAugmentedBuilder(build_ext):
                 cwd=self.build_temp,
                 env=env,
             )
+            if (
+                "-DCMAKE_OSX_ARCHITECTURES=arm64" in cmake_args
+                and platform.machine() == "x86_64"
+            ):
+                firstarg = "-cross-compiling"
+            else:
+                firstarg = "-nopython"
+            logging.info("[neurondemo] firstarg: %s", firstarg)
+
             subprocess.check_call(
                 [
                     ext.cmake_install_prefix + "/bin/neurondemo",
-                    "-nopython",
+                    firstarg,
                     "-nogui",
                     "-c",
                     "quit()",

@@ -9,10 +9,11 @@ set -ex
 
 instdir=$1
 REL_RPATH=$2
-if [[ `uname -m` == 'arm64' ]]; then
-  libnrnmech_dir=$instdir/share/nrn/demo/release/arm64
+libnrnmech_dir="$instdir/share/nrn/demo/release"
+if [ -d "$libnrnmech_dir/arm64" ]; then
+  libnrnmech_dir="$libnrnmech_dir/arm64"
 else
-  libnrnmech_dir=$instdir/share/nrn/demo/release/x86_64
+  libnrnmech_dir="$libnrnmech_dir/x86_64"
 fi
 
 if test "`uname -s`" = "Darwin" ; then

@@ -27,6 +27,17 @@ has_coreneuron=false   # true if coreneuron support is available
 # python version being used
 python_ver=$("$python_exe" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
 
+# Determine if the wheel is for macOS or Linux
+if [[ "$python_wheel" =~ macosx ]]; then
+    # Extract the macosxarchitecture part from the wheel filename
+    WHEEL_ARCH=$(echo "$python_wheel" | grep -oE 'macosx_[0-9]+_[0-9]+_(universal2|x86_64|arm64)\.whl' | grep -oE '(universal2|x86_64|arm64)')
+
+    # Skip test if wheel is not universal2 and wheel arch doesn't match ARCH_DIR
+    if [[ "$WHEEL_ARCH" != "universal2" && "$WHEEL_ARCH" != "$ARCH_DIR" ]]; then
+        echo "Skipping test for $WHEEL_FILE: Wheel architecture ($WHEEL_ARCH) does not match system architecture ($ARCH_DIR) and is not universal2."
+        exit 0
+    fi
+fi
 
 run_mpi_test () {
   mpi_launcher=${1}

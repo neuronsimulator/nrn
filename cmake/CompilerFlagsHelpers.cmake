@@ -76,8 +76,7 @@ foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})
       set(CMAKE_${COMPILER_LANGUAGE}_LINK_TIME_OPT "-flto")
     endif()
 
-    if((CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^ppc") OR (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^power"
-                                                       ))
+    if((CMAKE_SYSTEM_PROCESSOR MATCHES "^ppc") OR (CMAKE_SYSTEM_PROCESSOR MATCHES "^power"))
       # ppc arch do not support -march= syntax
       set(CMAKE_${COMPILER_LANGUAGE}_GEN_NATIVE "-mcpu=native")
     else()

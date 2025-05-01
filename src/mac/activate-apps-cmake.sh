@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+set -xe
 # This started as a copy of after-install.sh and is modified to work in the
 # context subsequent to a cmake build 'make install'. The main differences
 # are that icons and apps are installed in CMAKE_INSTALL_PREFIX,
@@ -22,7 +22,7 @@ if test "$2" = "" ; then
 fi
 
 #ignore $1 and use
-CPU=`uname -m`
+CPU=$1
 NRN_INSTALL=$2
 NRN_SRC=$3
 ivlibdir=$4
@@ -68,6 +68,10 @@ if test "${NRN_UNIVERSAL_BUILD}" = "ON" ; then
     rm -f ${DEMO}/neuron ; touch ${DEMO}/neuron
   )
 fi
-$NRN_INSTALL/bin/neurondemo << here
-quit()
-here
+
+# possibly nrnivmodl but not run of nrniv (note CPU is the target arch)
+xcompile=""
+if [[ "$CPU" == "arm64" && "$(uname -m)" == "x86_64" && "$NRN_UNIVERSAL_BUILD" != "ON" ]]; then
+  xcompile="-cross-compiling"
+fi
+$NRN_INSTALL/bin/neurondemo $xcompile -c 'quit()'
