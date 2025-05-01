@@ -944,7 +944,7 @@ for(_i=%d;_i<%d;_i++){\n",
                     static int first = 1;
                     if (first) {
                         first = 0;
-                        Sprintf(buf, "extern double *_getelm();\n");
+                        Sprintf(buf, "extern double *_getelm(int, int);\n");
                         qv = linsertstr(procfunc, buf);
 #if VECTORIZE
                         Sprintf(buf, "extern double *_nrn_thread_getelm(SparseObj*, int, int);\n");

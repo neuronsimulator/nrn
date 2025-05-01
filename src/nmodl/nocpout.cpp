@@ -341,7 +341,7 @@ void parout() {
 	/*SUPPRESS 763*/\n\
 	/*SUPPRESS 765*/\n\
 	");
-    Lappendstr(defs_list, "extern double *getarg();\n");
+    Lappendstr(defs_list, "extern double *getarg(int);\n");
 #if VECTORIZE
     if (vectorize) {
         Sprintf(buf, "/* Thread safe. No static _p or _ppvar. */\n");
