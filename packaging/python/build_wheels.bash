@@ -90,9 +90,12 @@ build_wheel_portable() {
     echo " - Building..."
     rm -rf "${build_dir}"
 
-    # if we are building on Azure, we can use the MPT headers as well
-    if [ "${platform}" = 'linux' ] && [ -n "${TF_BUILD}" ]; then
-        NRN_MPI_DYNAMIC="/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m);/host/opt/nrnwheel/mpt/include"
+    if [ "${platform}" = 'linux' ]; then
+        NRN_MPI_DYNAMIC="/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)"
+        # if we are building on Azure, we can use the MPT headers as well
+        if [ -n "${TF_BUILD}" ]; then
+            NRN_MPI_DYNAMIC="${NRN_MPI_DYNAMIC};/host/opt/nrnwheel/mpt/include"
+        fi
         export NRN_MPI_DYNAMIC
     fi
 

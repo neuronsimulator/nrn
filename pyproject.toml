@@ -135,6 +135,7 @@ skip = [ "pp*", "*-win32", "*-manylinux_i686", "*-musllinux_i686", "*-musllinux_
 # explicitly pass any env vars to the container
 environment-pass = [
   "CMAKE_PREFIX_PATH",
+  # for the value of NRN_MPI_DYNAMIC passed to the container, see the `build_wheels.bash` script
   "NRN_MPI_DYNAMIC",
   "NRN_ENABLE_MPI_DYNAMIC",
   "NRN_WHEEL_STATIC_READLINE",
@@ -161,7 +162,6 @@ repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'li
 [tool.cibuildwheel.linux.environment]
 # all of the below env variables need to be specified under `[tool.cibuildwheel.linux.environment-pass]`
 CMAKE_PREFIX_PATH = "/nrnwheel/ncurses;/nrnwheel/readline"
-NRN_MPI_DYNAMIC = "/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)"
 NRN_ENABLE_MPI_DYNAMIC = "ON"
 NRN_WHEEL_STATIC_READLINE = "ON"
 NRN_ENABLE_CORENEURON = "ON"
