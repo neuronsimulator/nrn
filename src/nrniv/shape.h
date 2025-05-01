@@ -1,5 +1,4 @@
-#ifndef shape_h
-#define shape_h
+#pragma once
 
 #include "scenevie.h"
 #include "graph.h"
@@ -178,5 +177,3 @@ class SectionHandler: public Handler {
   private:
     ShapeSection* ss_;
 };
-
-#endif

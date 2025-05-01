@@ -1,5 +1,49 @@
 # NEURON 8.2
 
+## 8.2.6
+_Release Date_ : 24-07-2024
+
+This release pins numpy to <2 and includes backports for several fixes.
+
+### Bug Fixes
+- Informative error when cannot import hoc module
+- ParallelContext: hoc_ac_ encodes global id of submitted process.
+- Python 3.12 compatibility with Windows installer (#2963)
+- Windows 11 fix for nrniv -python (#2946)
+- Fix for dynamic ECS diffusion characteristics.
+- python38 is back. For testing can use rx3doptlevel=0 bash bldnrnmacpkgcmake.sh
+- Fix cvode.use_fast_imem(1) error with electrode time varying conductance.
+- Apple M1 cmake failure in cloning subrepository. See #2326.
+- Update iv
+
+## 8.2.4
+_Release Date_ : 08-02-2024
+
+
+### What's New
+
+This release brings no new features, just bugfixes and minor improvements.
+
+
+### Bug Fixes
+- Python 3.12 compatibility fixes
+    - replace distutils with setuptools
+    - fix segfault on exit
+- updates to CI
+    - move from MacOS 11 to MacOS 12
+    - add MUSIC
+    - bugfix for coverage CI
+- small bugfix for edge case in RX3D
+- unified setup.py
+- misc cmake improvements
+
+### Improvements /  Other Changes
+- Disabled RXD code in notebook to avoid breaking docs build (see [GitHub Issue #2710](https://github.com/neuronsimulator/nrn/issues/2710))
+- Disabled RXD tests on Windows (see [GitHub Issue #2585](https://github.com/neuronsimulator/nrn/issues/2585))
+
+
+For the complete list of commits check  [GitHub Issue #2700](https://github.com/neuronsimulator/nrn/issues/2700)
+
 ## 8.2.3
 _Release Date_ : 15-09-2023
 
@@ -64,7 +108,7 @@ _Release Date_ : 12-08-2022
 - Documentation
   - added new INCF/CNS 2022 online material (#1932)
   - updates (dealing with sims, generating movie, modelview, more #1925 )
-  - transfer from Yale website (#1867) 
+  - transfer from Yale website (#1867)
 - nrnmpi_load: drop printf for already loaded lib (#1938)
 
 For the complete list of commits, see the list in [GitHub Issue #1944](https://github.com/neuronsimulator/nrn/issues/1944)
@@ -76,7 +120,7 @@ _Release Date_ : 01-07-2022
 * Allow multiple BEFORE/AFTER blocks of same type in a MOD file. #1722
 * Several documentation updates, including randomness in NEURON models #1727,
   NEURON course exercise sets from 2018 #1735 and publications using NEURON #1819.
-* CMake: improved documentation targets. (#1725)  
+* CMake: improved documentation targets. (#1725)
 
 ### Breaking Changes
 * Support for Python 3.6 was dropped, as it has reached end-of-life (#1733).
@@ -87,7 +131,7 @@ _Release Date_ : 01-07-2022
 * Declaring STATE variables as GLOBAL is now disallowed. (#1723)
 
 ### Deprecations & future changes
-* NEURON is in the process of being fully migrated to a `C++` codebase.  
+* NEURON is in the process of being fully migrated to a `C++` codebase.
   Starting with next major release `9.0.0`, `MOD` files will be converted to `C++` instead of `C`.
   This will break compatibility with some legacy MOD files containing VERBATIM blocks and code may have to be updated
   given that some valid C code is not valid C++.
@@ -102,7 +146,7 @@ _Release Date_ : 01-07-2022
 
 ### Improvements /  Other Changes
 * Support for using `mallinfo2()` (#1805)
-* HOC domain for Sphinx `5.0.1` 
+* HOC domain for Sphinx `5.0.1`
 
 ### Upgrade Steps
 * If your MOD files contain VERBATIM blocks you may need to refer to the aforementioned
@@ -213,7 +257,7 @@ _Release Date_ : 25-03-2022
   * Internal API for saving/restoring 3D voxelization (#1476)
   * Prevent RxD keeping objects alive (#1270, #1103, #1072)
   * Improved assignment of 3D voxels to segments (#1149)
-  
+
 ### Upgrade Steps
 * Linux wheels are now `manylinux2014`: upgrade your `pip`
 * Legacy internal `readline` source code is removed: install `readline` on your system
@@ -246,7 +290,7 @@ For the complete list of bug fixes, see the list in [GitHub PR #1603](https://gi
 
 ### Improvements /  Other Changes
 
-- Introduce a Sphinx HOC domain for NEURON documentation 
+- Introduce a Sphinx HOC domain for NEURON documentation
 
 
 ## 8.0.0
@@ -270,7 +314,7 @@ _Release Date_ : 30-04-2021
 -  For 3d reaction-diffusion simulations, the voxelization and segment mapping algorithms have been adjusted, especially around the soma. Voxel indices and sometimes counts will change from previous versions.
 
 ### Deprecations
-- Five functions in the `neuron` module: `neuron.init`, `neuron.run`, `neuron.psection`, `neuron.xopen`, and `neuron.quit`. 
+- Five functions in the `neuron` module: `neuron.init`, `neuron.run`, `neuron.psection`, `neuron.xopen`, and `neuron.quit`.
 - Autotools build is deprecated and will be removed in the next release. Use CMake instead.
 - Python 2 and Python 3.5 support  is deprecated and will be removed in the next release. Use `Python >= 3.6`
 
@@ -279,7 +323,7 @@ _Release Date_ : 30-04-2021
 For the complete list of bug fixes, see the list on the [GitHub here](https://github.com/neuronsimulator/nrn/issues/1211#issuecomment-826919173).
 
 ### Improvements /  Other Changes
-- Allow for two point (single section) SWC somas 
+- Allow for two point (single section) SWC somas
 - GitHub Actions and Azure as primary CI systems. Travis CI removed.
 - GitHub [Releases](https://github.com/neuronsimulator/nrn/releases) provides full source tarballs, binary installers and python wheels.
 - Improved testing and CI infrastructure including GPUs
@@ -287,18 +331,18 @@ For the complete list of bug fixes, see the list on the [GitHub here](https://gi
 - Improved integration of CoreNEURON
 - Support for recent numpy version
 - Various build improvements on Linux, MacOS and HPC platforms
-- Documentation from various repositories is consolidated under `nrn` repository 
-- New releases via Spack and Easybuild package managers 
+- Documentation from various repositories is consolidated under `nrn` repository
+- New releases via Spack and Easybuild package managers
 - Fix deadlock when compiling NEURON with AVX-512
 - Add backward-cpp for better backtraces
-- NEURON_MODULE_OPTIONS environment variable to pass in nrniv options before `neuron import` 
+- NEURON_MODULE_OPTIONS environment variable to pass in nrniv options before `neuron import`
 
 ### Upgrade Steps
 
 Existing models should work without any changes.  In order to upgrade NEURON version you can:
 - Use python wheels provided for Linux or Mac OS platform
 - Use binary installer provided for windows
-- Install from source, preferably using CMake build system 
+- Install from source, preferably using CMake build system
 - For new version, it's always a good idea to start over from scratch with nrnivmodl (deleting existing directory like `x86_64`)
 
 See `Installation` section under [nrn.readthedocs.io/](nrn.readthedocs.io/). In the very rare case that numerical differences exist, check selection of legacy vs modern units.

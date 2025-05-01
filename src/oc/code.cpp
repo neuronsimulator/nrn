@@ -2,8 +2,8 @@
 /* /local/src/master/nrn/src/oc/code.cpp,v 1.37 1999/07/03 14:20:21 hines Exp */
 
 #include "backtrace_utils.h"
-#include <errno.h>
-#include "hoc.h"
+#include "bbslsrv2.h"
+#include "cabcode.h"
 #include "code.h"
 #include "hocstr.h"
 #include "parse.hpp"
@@ -12,9 +12,6 @@
 #include "oc_ansi.h"
 #include "hocparse.h"
 #include "equation.h"
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <nrnmpi.h>
 #include "nrnfilewrap.h"
 #include "utils/enumerate.h"
@@ -23,6 +20,10 @@
 #include "options.h"
 #include "section.h"
 
+#include <cerrno>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <vector>
 #include <variant>
 #include <sstream>
@@ -73,12 +74,12 @@ using StackDatum = std::variant<double,
 static std::vector<StackDatum> stack{};
 
 #define NPROG 50000
-Inst* prog;               /* the machine */
-Inst* progp;              /* next free spot for code generation */
-Inst* pc;                 /* program counter during execution */
-Inst* progbase;           /* start of current subprogram */
-Inst* prog_parse_recover; /* start after parse error */
-int hoc_returning;        /* 1 if return stmt seen, 2 if break, 3 if continue */
+Inst* hoc_prog;               /* the machine */
+Inst* hoc_progp;              /* next free spot for code generation */
+Inst* hoc_pc;                 /* program counter during execution */
+Inst* hoc_progbase;           /* start of current subprogram */
+Inst* hoc_prog_parse_recover; /* start after parse error */
+int hoc_returning;            /* 1 if return stmt seen, 2 if break, 3 if continue */
 /* 4 if stop */
 namespace nrn::oc {
 struct frame {             /* proc/func call stack frame */
@@ -422,7 +423,7 @@ void hoc_init_space() {
         hoc_nstack = 1000;
     }
     stack.reserve(hoc_nstack);
-    progp = progbase = prog = (Inst*) emalloc(sizeof(Inst) * NPROG);
+    hoc_progp = hoc_progbase = hoc_prog = (Inst*) emalloc(sizeof(Inst) * NPROG);
     fp = frame = (Frame*) emalloc(sizeof(Frame) * hoc_nframe);
     framelast = frame + hoc_nframe;
     hoc_temp_obj_pool_ = (Object**) emalloc(sizeof(Object*) * TOBJ_POOL_SIZE);
@@ -460,7 +461,7 @@ void hoc_prstack() {
 }
 
 void hoc_on_init_register(Pfrv pf) {
-    /* modules that may have to be cleaned up after an execerror */
+    /* modules that may have to be cleaned up after an hoc_execerror */
     if (maxinitfcns < MAXINITFCNS) {
         initfcns[maxinitfcns++] = pf;
     } else {
@@ -477,8 +478,8 @@ void hoc_initcode() {
         fprintf(stderr, "errno set %d times on last execution\n", hoc_errno_count);
     }
     hoc_errno_count = 0;
-    prog_parse_recover = progbase = prog;
-    progp = progbase;
+    hoc_prog_parse_recover = hoc_progbase = hoc_prog;
+    hoc_progp = hoc_progbase;
     hoc_unref_defer();
 
     frame_objauto_recover_on_err(frame);
@@ -492,9 +493,9 @@ void hoc_initcode() {
         tobj_count = 0;
     }
     fp = frame;
-    free_list(&p_symlist);
+    hoc_free_list(&hoc_p_symlist);
     hoc_returning = 0;
-    do_equation = 0;
+    hoc_do_equation = 0;
     for (i = 0; i < maxinitfcns; ++i) {
         (*initfcns[i])();
     }
@@ -518,17 +519,17 @@ void oc_save_code(Inst** a1,
                   Symlist** a10,
                   Inst** a11,
                   int* a12) {
-    *a1 = progbase;
-    *a2 = progp;
+    *a1 = hoc_progbase;
+    *a2 = hoc_progp;
     a3 = stack.size();
     *a4 = fp;
     *a5 = hoc_returning;
-    *a6 = do_equation;
+    *a6 = hoc_do_equation;
     *a7 = pc;
     *a8 = rframe;
     a9 = rstack;
-    *a10 = p_symlist;
-    *a11 = prog_parse_recover;
+    *a10 = hoc_p_symlist;
+    *a11 = hoc_prog_parse_recover;
     *a12 = tobj_count;
 }
 
@@ -544,8 +545,8 @@ void oc_restore_code(Inst** a1,
                      Symlist** a10,
                      Inst** a11,
                      int* a12) {
-    progbase = *a1;
-    progp = *a2;
+    hoc_progbase = *a1;
+    hoc_progp = *a2;
     frame_objauto_recover_on_err(*a4);
     if (tobj_count > *a12) {
         stack_obtmp_recover_on_err(*a12);
@@ -561,12 +562,12 @@ void oc_restore_code(Inst** a1,
     stack.resize(a3);
     fp = *a4;
     hoc_returning = *a5;
-    do_equation = *a6;
+    hoc_do_equation = *a6;
     pc = *a7;
     rframe = *a8;
     rstack = a9;
-    p_symlist = *a10;
-    prog_parse_recover = *a11;
+    hoc_p_symlist = *a10;
+    hoc_prog_parse_recover = *a11;
 }
 
 int hoc_strgets_need(void) {
@@ -619,16 +620,16 @@ int hoc_ParseExec(int yystart) {
     if (yystart) {
         sframe = rframe;
         sfp = fp;
-        sprogbase = progbase;
-        sprogp = progp;
-        spc = pc, sprog_parse_recover = prog_parse_recover;
+        sprogbase = hoc_progbase;
+        sprogp = hoc_progp;
+        spc = pc, sprog_parse_recover = hoc_prog_parse_recover;
         sstackp = stack.size();
         sstack = rstack;
-        sp_symlist = p_symlist;
+        sp_symlist = hoc_p_symlist;
         rframe = fp;
         rstack = stack.size();
-        progbase = progp;
-        p_symlist = (Symlist*) 0;
+        hoc_progbase = hoc_progp;
+        hoc_p_symlist = (Symlist*) 0;
         rinitcode();
     }
     if (hoc_in_yyparse) {
@@ -649,16 +650,16 @@ int hoc_ParseExec(int yystart) {
     if (yystart) {
         rframe = sframe;  // restore the old value
         fp = sfp;
-        progbase = sprogbase;
-        progp = sprogp;
+        hoc_progbase = sprogbase;
+        hoc_progp = sprogp;
         pc = spc;
-        prog_parse_recover = sprog_parse_recover;
+        hoc_prog_parse_recover = sprog_parse_recover;
         if (sstackp > stack.size()) {
             hoc_execerror("hoc_ParseExec cannot summon entries from nowhere", nullptr);
         }
         stack.resize(sstackp);
         rstack = sstack;
-        p_symlist = sp_symlist;
+        hoc_p_symlist = sp_symlist;
     }
 
     return yret;
@@ -669,18 +670,18 @@ int hoc_xopen_run(Symbol* sp, const char* str) { /*recursively parse and execute
                                                  /* without executing. Note str must be a 'list'*/
     int n = 0;
     Frame *sframe = rframe, *sfp = fp;
-    Inst *sprogbase = progbase, *sprogp = progp, *spc = pc,
-         *sprog_parse_recover = prog_parse_recover;
-    Symlist* sp_symlist = p_symlist;
+    Inst *sprogbase = hoc_progbase, *sprogp = hoc_progp, *spc = pc,
+         *sprog_parse_recover = hoc_prog_parse_recover;
+    Symlist* sp_symlist = hoc_p_symlist;
     std::size_t sstack{rstack}, sstackp{stack.size()};
     rframe = fp;
     rstack = stack.size();
-    progbase = progp;
-    p_symlist = (Symlist*) 0;
+    hoc_progbase = hoc_progp;
+    hoc_p_symlist = (Symlist*) 0;
 
     if (sp == (Symbol*) 0) {
         for (rinitcode(); hoc_yyparse(); rinitcode())
-            execute(progbase);
+            hoc_execute(hoc_progbase);
     } else {
         int savpipeflag;
         rinitcode();
@@ -688,25 +689,25 @@ int hoc_xopen_run(Symbol* sp, const char* str) { /*recursively parse and execute
         hoc_pipeflag = 2;
         parsestr = str;
         if (!hoc_yyparse()) {
-            execerror("Nothing to parse", (char*) 0);
+            hoc_execerror("Nothing to parse", (char*) 0);
         }
-        n = (int) (progp - progbase);
+        n = (int) (hoc_progp - hoc_progbase);
         hoc_pipeflag = savpipeflag;
         hoc_define(sp);
         rinitcode();
     }
     rframe = sframe;
     fp = sfp;
-    progbase = sprogbase;
-    progp = sprogp;
+    hoc_progbase = sprogbase;
+    hoc_progp = sprogp;
     pc = spc;
-    prog_parse_recover = sprog_parse_recover;
+    hoc_prog_parse_recover = sprog_parse_recover;
     if (sstackp > stack.size()) {
         hoc_execerror("hoc_xopen_run cannot summon entries from nowhere", nullptr);
     }
     stack.resize(sstackp);
     rstack = sstack;
-    p_symlist = sp_symlist;
+    hoc_p_symlist = sp_symlist;
     return n;
 }
 
@@ -997,16 +998,16 @@ void hoc_varpush() {
 
 #define relative(pc) (pc + (pc)->i)
 
-void forcode(void) {
+void hoc_forcode(void) {
     double d;
     Inst* savepc = pc; /* loop body */
     int isec;
 
     isec = nrn_isecstack();
-    execute(savepc + 3); /* condition */
+    hoc_execute(savepc + 3); /* condition */
     d = hoc_xpop();
     while (d) {
-        execute(relative(savepc)); /* body */
+        hoc_execute(relative(savepc)); /* body */
         if (hoc_returning) {
             nrn_secstack(isec);
         }
@@ -1018,9 +1019,9 @@ void forcode(void) {
             break;
         } else /* continue */
             hoc_returning = 0;
-        if ((savepc + 2)->i)               /* diff between while and for */
-            execute(relative(savepc + 2)); /* increment */
-        execute(savepc + 3);
+        if ((savepc + 2)->i)                   /* diff between while and for */
+            hoc_execute(relative(savepc + 2)); /* increment */
+        hoc_execute(savepc + 3);
         d = hoc_xpop();
     }
     if (!hoc_returning)
@@ -1041,9 +1042,9 @@ void hoc_shortfor(void) {
     case UNDEF:
         hoc_execerror(sym->name, "undefined variable");
     case VAR:
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             if (sym->subtype == USERINT) {
-                execerror("integer iteration variable", sym->name);
+                hoc_execerror("integer iteration variable", sym->name);
             } else if (sym->subtype == USERDOUBLE) {
                 pval = sym->u.pval;
             } else {
@@ -1052,22 +1053,22 @@ void hoc_shortfor(void) {
             break;
         } else {
             if (sym->subtype == USERINT)
-                execerror("integer iteration variable", sym->name);
+                hoc_execerror("integer iteration variable", sym->name);
             else if (sym->subtype == USERDOUBLE)
-                pval = sym->u.pval + araypt(sym, SYMBOL);
+                pval = sym->u.pval + hoc_araypt(sym, SYMBOL);
             else
-                pval = OPVAL(sym) + araypt(sym, OBJECTVAR);
+                pval = OPVAL(sym) + hoc_araypt(sym, OBJECTVAR);
         }
         break;
     case AUTO: {
         pval = &(cast<double>(fp->argn[sym->u.u_auto]));
     } break;
     default:
-        execerror("for loop non-variable", sym->name);
+        hoc_execerror("for loop non-variable", sym->name);
     }
     isec = nrn_isecstack();
     for (*pval = begin; *pval <= end; *pval += 1.) {
-        execute(relative(savepc));
+        hoc_execute(relative(savepc));
         if (hoc_returning) {
             nrn_secstack(isec);
         }
@@ -1086,7 +1087,7 @@ void hoc_shortfor(void) {
 
 void hoc_iterator(void) {
     /* pc is ITERATOR symbol, argcount, stmtbegin, stmtend */
-    /* for testing execute stmt once */
+    /* for testing hoc_execute stmt once */
     Symbol* sym;
     int argcount;
     Inst *stmtbegin, *stmtend;
@@ -1103,7 +1104,7 @@ void hoc_iterator_object(Symbol* sym, int argcount, Inst* beginpc, Inst* endpc, 
     fp++;
     if (fp >= framelast) {
         fp--;
-        execerror(sym->name, "call nested too deeply, increase with -NFRAME framesize option");
+        hoc_execerror(sym->name, "call nested too deeply, increase with -NFRAME framesize option");
     }
     fp->sp = sym;
     fp->nargs = argcount;
@@ -1164,7 +1165,7 @@ void hoc_iterator_stmt() {
 
     pcsav = pc;
     isec = nrn_isecstack();
-    execute(iter_f->iter_stmt_begin);
+    hoc_execute(iter_f->iter_stmt_begin);
     pc = pcsav;
     hoc_objectdata = hoc_objectdata_restore(obdsav);
     hoc_thisobject = obsav;
@@ -1179,7 +1180,7 @@ void hoc_iterator_stmt() {
         hoc_execerror("return from within an iterator statement not allowed.",
                       "Set a flag and use break.");
     case 2: /* break means return from iter */
-        procret();
+        hoc_procret();
         break;
     case 3: /* continue means go on from iter as though nothing happened*/
         hoc_returning = 0;
@@ -1201,9 +1202,9 @@ static void for_segment2(Symbol* sym, int mode) {
     case UNDEF:
         hoc_execerror(sym->name, "undefined variable");
     case VAR:
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             if (sym->subtype == USERINT) {
-                execerror("integer iteration variable", sym->name);
+                hoc_execerror("integer iteration variable", sym->name);
             } else if (sym->subtype == USERDOUBLE) {
                 pval = sym->u.pval;
             } else {
@@ -1212,11 +1213,11 @@ static void for_segment2(Symbol* sym, int mode) {
             break;
         } else {
             if (sym->subtype == USERINT)
-                execerror("integer iteration variable", sym->name);
+                hoc_execerror("integer iteration variable", sym->name);
             else if (sym->subtype == USERDOUBLE)
-                pval = sym->u.pval + araypt(sym, SYMBOL);
+                pval = sym->u.pval + hoc_araypt(sym, SYMBOL);
             else
-                pval = OPVAL(sym) + araypt(sym, OBJECTVAR);
+                pval = OPVAL(sym) + hoc_araypt(sym, OBJECTVAR);
         }
         break;
     case AUTO: {
@@ -1225,7 +1226,7 @@ static void for_segment2(Symbol* sym, int mode) {
         pval = &(cast<double>(entry));
     } break;
     default:
-        execerror("for loop non-variable", sym->name);
+        hoc_execerror("for loop non-variable", sym->name);
     }
     imax = segment_limits(&dx);
     {
@@ -1244,7 +1245,7 @@ static void for_segment2(Symbol* sym, int mode) {
                 }
                 *pval = 1.;
             }
-            execute(relative(savepc));
+            hoc_execute(relative(savepc));
             if (hoc_returning) {
                 nrn_secstack(isec);
             }
@@ -1281,31 +1282,31 @@ void for_segment1(void) {
     for_segment2(sym, mode);
 }
 
-void ifcode(void) {
+void hoc_ifcode(void) {
     double d;
     Inst* savepc = pc; /* then part */
 
-    execute(savepc + 3); /* condition */
+    hoc_execute(savepc + 3); /* condition */
     d = hoc_xpop();
     if (d)
-        execute(relative(savepc));
+        hoc_execute(relative(savepc));
     else if ((savepc + 1)->i) /* else part? */
-        execute(relative(savepc + 1));
+        hoc_execute(relative(savepc + 1));
     if (!hoc_returning)
         pc = relative(savepc + 2); /* next stmt */
 }
 
-void Break(void) /* break statement */
+void hoc_Break(void) /* break statement */
 {
     hoc_returning = 2;
 }
 
-void Continue(void) /* continue statement */
+void hoc_Continue(void) /* continue statement */
 {
     hoc_returning = 3;
 }
 
-void Stop(void) /* stop statement */
+void hoc_Stop(void) /* stop statement */
 {
     hoc_returning = 4;
 }
@@ -1315,18 +1316,18 @@ void hoc_define(Symbol* sp) { /* put func/proc in symbol table */
 
     if (sp->u.u_proc->defn.in != STOP)
         free((char*) sp->u.u_proc->defn.in);
-    free_list(&(sp->u.u_proc->list));
-    sp->u.u_proc->list = p_symlist;
-    p_symlist = (Symlist*) 0;
-    sp->u.u_proc->size = (unsigned) (progp - progbase);
-    sp->u.u_proc->defn.in = (Inst*) emalloc((unsigned) (progp - progbase) * sizeof(Inst));
+    hoc_free_list(&(sp->u.u_proc->list));
+    sp->u.u_proc->list = hoc_p_symlist;
+    hoc_p_symlist = (Symlist*) 0;
+    sp->u.u_proc->size = (unsigned) (hoc_progp - hoc_progbase);
+    sp->u.u_proc->defn.in = (Inst*) emalloc((unsigned) (hoc_progp - hoc_progbase) * sizeof(Inst));
     newinst = sp->u.u_proc->defn.in;
-    for (inst = progbase; inst != progp;)
+    for (inst = hoc_progbase; inst != hoc_progp;)
         *newinst++ = *inst++;
-    progp = progbase; /* next code starts here */
+    hoc_progp = hoc_progbase; /* next code starts here */
 }
 
-// print the call sequence on an execerror
+// print the call sequence on an hoc_execerror
 void frame_debug() {
     Frame* f;
     int i, j;
@@ -1376,7 +1377,7 @@ void frame_debug() {
 void hoc_push_frame(Symbol* sp, int narg) { /* helpful for explicit function calls */
     if (++fp >= framelast) {
         --fp;
-        execerror(sp->name, "call nested too deeply, increase with -NFRAME framesize option");
+        hoc_execerror(sp->name, "call nested too deeply, increase with -NFRAME framesize option");
     }
     fp->sp = sp;
     fp->nargs = narg;
@@ -1384,7 +1385,7 @@ void hoc_push_frame(Symbol* sp, int narg) { /* helpful for explicit function cal
     fp->ob = hoc_thisobject;
 }
 
-void pop_frame(void) {
+void hoc_pop_frame(void) {
     int i;
     frameobj_clean(fp);
     for (i = 0; i < fp->nargs; i++) {
@@ -1396,12 +1397,12 @@ void pop_frame(void) {
 
 // call a function
 void hoc_call() {
-    int i, isec;
+    int isec;
     Symbol* sp = pc[0].sym; /* symbol table entry */
     /* for function */
     if (++fp >= framelast) {
         --fp;
-        execerror(sp->name, "call nested too deeply, increase with -NFRAME framesize option");
+        hoc_execerror(sp->name, "call nested too deeply, increase with -NFRAME framesize option");
     }
     fp->sp = sp;
     fp->nargs = pc[1].i;
@@ -1439,18 +1440,18 @@ void hoc_call() {
             hoc_thisobject = 0;
             hoc_symlist = hoc_top_level_symlist;
 
-            execute(sp->u.u_proc->defn.in);
+            hoc_execute(sp->u.u_proc->defn.in);
 
             hoc_objectdata = hoc_objectdata_restore(odsav);
             hoc_thisobject = obsav;
             hoc_symlist = slsav;
         } else {
-            execute(sp->u.u_proc->defn.in);
+            hoc_execute(sp->u.u_proc->defn.in);
         }
         /* the autoobject pointers were unreffed at the ret() */
 
     } else {
-        execerror(sp->name, "undefined function");
+        hoc_execerror(sp->name, "undefined function");
     }
     if (hoc_returning) {
         nrn_secstack(isec);
@@ -1516,23 +1517,23 @@ void hoc_ret() {
     hoc_returning = 1;
 }
 
-void funcret(void) /* return from a function */
+void hoc_funcret(void) /* return from a function */
 {
     double d;
     if (fp->sp->type != FUNCTION)
-        execerror(fp->sp->name, "(proc or iterator) returns value");
+        hoc_execerror(fp->sp->name, "(proc or iterator) returns value");
     d = hoc_xpop(); /* preserve function return value */
-    ret();
+    hoc_ret();
     hoc_pushx(d);
 }
 
-void procret(void) /* return from a procedure */
+void hoc_procret(void) /* return from a procedure */
 {
     if (fp->sp->type == FUNCTION)
-        execerror(fp->sp->name, "(func) returns no value");
+        hoc_execerror(fp->sp->name, "(func) returns no value");
     if (fp->sp->type == HOCOBJFUNCTION)
-        execerror(fp->sp->name, "(obfunc) returns no value");
-    ret();
+        hoc_execerror(fp->sp->name, "(obfunc) returns no value");
+    hoc_ret();
     hoc_pushx(0.); /*will be popped immediately; necessary because caller
                  may have compiled it as a function*/
 }
@@ -1541,7 +1542,7 @@ void hocobjret(void) /* return from a hoc level obfunc */
 {
     Object** d;
     if (fp->sp->type != HOCOBJFUNCTION)
-        execerror(fp->sp->name, "objfunc returns objref");
+        hoc_execerror(fp->sp->name, "objfunc returns objref");
     d = hoc_objpop(); /* preserve function return value */
     Object* o = *d;   // safe to deref here even if d points to localobj on stack.
     if (o) {
@@ -1550,7 +1551,7 @@ void hocobjret(void) /* return from a hoc level obfunc */
     // d may point to an Object* on the stack, ie. localobj name.
     // if so, d after ret() would point outside the stack,
     // so it cannot be dereferenced without a sanitizer error on the mac.
-    ret();
+    hoc_ret();
     /*make a temp and ref it in case autoobj returned since ret would
     have unreffed it*/
     hoc_push_object(o);
@@ -1569,15 +1570,15 @@ void hoc_Numarg(void) {
     } else {
         narg = f->nargs;
     }
-    ret();
+    hoc_ret();
     hoc_pushx((double) narg);
 }
 
 void hoc_Argtype() {
-    int narg, iarg, type, itype = 0;
+    int iarg, itype = 0;
     Frame* f = fp - 1;
     if (f == frame) {
-        execerror("argtype can only be called in a func or proc", 0);
+        hoc_execerror("argtype can only be called in a func or proc", 0);
     }
     iarg = (int) chkarg(1, -1000., 100000.);
     if (iarg > f->nargs || iarg < 1) {
@@ -1685,7 +1686,7 @@ double hoc_opasgn(int op, double dest, double src) {
     }
 }
 
-void argassign(void) /* store top of stack in argument */
+void hoc_argassign(void) /* store top of stack in argument */
 {
     double d;
     int i, op;
@@ -1753,7 +1754,7 @@ void hoc_argrefarg(void) {
     hoc_pushpx(pd);
 }
 
-void bltin(void) /* evaluate built-in on top of stack */
+void hoc_bltin(void) /* evaluate built-in on top of stack */
 {
     double d;
     d = hoc_xpop();
@@ -1769,7 +1770,7 @@ Symbol* hoc_get_symbol(const char* var) {
     hoc_run_stmt(prc);
 
     last = (Inst*) prc->u.u_proc->defn.in + prc->u.u_proc->size - 1;
-    if (last[-2].pf == eval) {
+    if (last[-2].pf == hoc_eval) {
         sym = last[-3].sym;
     } else if (last[-3].pf == rangepoint || last[-3].pf == rangevareval) {
         sym = last[-2].sym;
@@ -1778,7 +1779,7 @@ Symbol* hoc_get_symbol(const char* var) {
     } else {
         sym = (Symbol*) 0;
     }
-    free_list(&sl);
+    hoc_free_list(&sl);
     return sym;
 }
 
@@ -1812,9 +1813,7 @@ Symbol* hoc_get_last_pointer_symbol(void) { /* hard to imagine a kludgier functi
 
 void hoc_autoobject(void) { /* AUTOOBJ symbol at pc+1. */
     /* pointer to object pointer left on stack */
-    int i;
     Symbol* obs;
-    Object** obp;
 #if PDEBUG
     printf("code for hoc_autoobject()\n");
 #endif
@@ -1822,13 +1821,12 @@ void hoc_autoobject(void) { /* AUTOOBJ symbol at pc+1. */
     hoc_pushobj(&(cast<Object*>(fp->argn[obs->u.u_auto])));
 }
 
-void eval(void) /* evaluate variable on stack */
+void hoc_eval(void) /* evaluate variable on stack */
 {
     Objectdata* odsav;
     Object* obsav = 0;
     Symlist* slsav;
     double d = 0.0;
-    extern double cable_prop_eval(Symbol*);
     Symbol* sym;
     sym = hoc_spop();
     if (sym->cpublic == 2) {
@@ -1842,12 +1840,12 @@ void eval(void) /* evaluate variable on stack */
     }
     switch (sym->type) {
     case UNDEF:
-        execerror("undefined variable", sym->name);
+        hoc_execerror("undefined variable", sym->name);
     case VAR:
-        if (!ISARRAY(sym)) {
-            if (do_equation && sym->s_varn > 0 && hoc_access[sym->s_varn] == 0) {
-                hoc_access[sym->s_varn] = var_access;
-                var_access = sym->s_varn;
+        if (!is_array(*sym)) {
+            if (hoc_do_equation && sym->s_varn > 0 && hoc_access[sym->s_varn] == 0) {
+                hoc_access[sym->s_varn] = hoc_var_access;
+                hoc_var_access = sym->s_varn;
             }
             switch (sym->subtype) {
             case USERDOUBLE:
@@ -1869,24 +1867,16 @@ void eval(void) /* evaluate variable on stack */
         } else {
             switch (sym->subtype) {
             case USERDOUBLE:
-                d = (sym->u.pval)[araypt(sym, SYMBOL)];
+                d = (sym->u.pval)[hoc_araypt(sym, SYMBOL)];
                 break;
             case USERINT:
-                d = (sym->u.pvalint)[araypt(sym, SYMBOL)];
+                d = (sym->u.pvalint)[hoc_araypt(sym, SYMBOL)];
                 break;
             case USERFLOAT:
-                d = (sym->u.pvalfloat)[araypt(sym, SYMBOL)];
+                d = (sym->u.pvalfloat)[hoc_araypt(sym, SYMBOL)];
                 break;
-#if NEMO
-            case NEMONODE:
-                hoc_eval_nemonode(sym, hoc_xpop(), &d);
-                break;
-            case NEMOAREA:
-                hoc_eval_nemoarea(sym, hoc_xpop(), &d);
-                break;
-#endif /*NEMO*/
             default:
-                d = (OPVAL(sym))[araypt(sym, OBJECTVAR)];
+                d = (OPVAL(sym))[hoc_araypt(sym, OBJECTVAR)];
                 break;
             }
         }
@@ -1895,7 +1885,7 @@ void eval(void) /* evaluate variable on stack */
         d = cast<double>(fp->argn[sym->u.u_auto]);
         break;
     default:
-        execerror("attempt to evaluate a non-variable", sym->name);
+        hoc_execerror("attempt to evaluate a non-variable", sym->name);
     }
 
     if (obsav) {
@@ -1926,16 +1916,16 @@ void hoc_evalpointer() {
     }
     switch (sym->type) {
     case UNDEF:
-        execerror("undefined variable", sym->name);
+        hoc_execerror("undefined variable", sym->name);
     case VAR:
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             switch (sym->subtype) {
             case USERDOUBLE:
                 d = sym->u.pval;
                 break;
             case USERINT:
             case USERFLOAT:
-                execerror("can use pointer only to doubles", sym->name);
+                hoc_execerror("can use pointer only to doubles", sym->name);
                 break;
             case USERPROPERTY:
                 d = cable_prop_eval_pointer(sym);
@@ -1947,18 +1937,14 @@ void hoc_evalpointer() {
         } else {
             switch (sym->subtype) {
             case USERDOUBLE:
-                d = sym->u.pval + araypt(sym, SYMBOL);
+                d = sym->u.pval + hoc_araypt(sym, SYMBOL);
                 break;
             case USERINT:
             case USERFLOAT:
-#if NEMO
-            case NEMONODE:
-            case NEMOAREA:
-#endif /*NEMO*/
-                execerror("can use pointer only to doubles", sym->name);
+                hoc_execerror("can use pointer only to doubles", sym->name);
                 break;
             default:
-                d = OPVAL(sym) + araypt(sym, OBJECTVAR);
+                d = OPVAL(sym) + hoc_araypt(sym, OBJECTVAR);
                 break;
             }
         }
@@ -1967,7 +1953,7 @@ void hoc_evalpointer() {
         d = &(cast<double>(fp->argn[sym->u.u_auto]));
     } break;
     default:
-        execerror("attempt to evaluate pointer to a non-variable", sym->name);
+        hoc_execerror("attempt to evaluate pointer to a non-variable", sym->name);
     }
     if (obsav) {
         hoc_objectdata = hoc_objectdata_restore(odsav);
@@ -1977,7 +1963,7 @@ void hoc_evalpointer() {
     hoc_pushpx(d);
 }
 
-void add(void) /* add top two elems on stack */
+void hoc_add(void) /* add top two elems on stack */
 {
     double d1, d2;
     d2 = hoc_xpop();
@@ -1995,7 +1981,7 @@ void hoc_sub(void) /* subtract top two elems on stack */
     hoc_pushx(d1);
 }
 
-void mul(void) /* multiply top two elems on stack */
+void hoc_mul(void) /* multiply top two elems on stack */
 {
     double d1, d2;
     d2 = hoc_xpop();
@@ -2009,7 +1995,7 @@ void hoc_div(void) /* divide top two elems on stack */
     double d1, d2;
     d2 = hoc_xpop();
     if (d2 == 0.0)
-        execerror("division by zero", (char*) 0);
+        hoc_execerror("division by zero", (char*) 0);
     d1 = hoc_xpop();
     d1 /= d2;
     hoc_pushx(d1);
@@ -2021,7 +2007,7 @@ void hoc_cyclic(void) /* the modulus function */
     double r, q;
     d2 = hoc_xpop();
     if (d2 <= 0.)
-        execerror("a%b, b<=0", (char*) 0);
+        hoc_execerror("a%b, b<=0", (char*) 0);
     d1 = hoc_xpop();
     r = d1;
     if (r >= d2) {
@@ -2047,7 +2033,7 @@ void hoc_negate() {
     hoc_pushx(-d);
 }
 
-void gt(void) {
+void hoc_gt(void) {
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();
@@ -2063,7 +2049,7 @@ void hoc_lt() {
     hoc_pushx(d1);
 }
 
-void ge(void) {
+void hoc_ge(void) {
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();
@@ -2071,7 +2057,7 @@ void ge(void) {
     hoc_pushx(d1);
 }
 
-void le(void) {
+void hoc_le(void) {
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();
@@ -2080,7 +2066,7 @@ void le(void) {
 }
 
 void hoc_eq() {
-    auto const& entry1 = get_stack_entry_variant(0);
+    /* auto const& entry1 = */ get_stack_entry_variant(0);
     auto const& entry2 = get_stack_entry_variant(1);
     auto const type2 = get_legacy_int_type(entry2);
     double result{};
@@ -2109,7 +2095,7 @@ void hoc_eq() {
 
 void hoc_ne() {
     auto const& entry1 = get_stack_entry_variant(0);
-    auto const& entry2 = get_stack_entry_variant(1);
+    /* auto const& entry2 = */ get_stack_entry_variant(1);
     auto const type1 = get_legacy_int_type(entry1);
     double result{};
     switch (type1) {
@@ -2162,7 +2148,7 @@ void hoc_power() {
     double d1, d2;
     d2 = hoc_xpop();
     d1 = hoc_xpop();
-    d1 = Pow(d1, d2);
+    d1 = hoc_Pow(d1, d2);
     hoc_pushx(d1);
 }
 
@@ -2190,7 +2176,7 @@ void hoc_assign() {
     case UNDEF:
         hoc_execerror(sym->name, "undefined variable");
     case VAR:
-        if (!ISARRAY(sym)) {
+        if (!is_array(*sym)) {
             switch (sym->subtype) {
             case USERDOUBLE:
                 if (op) {
@@ -2224,36 +2210,28 @@ void hoc_assign() {
             int ind;
             switch (sym->subtype) {
             case USERDOUBLE:
-                ind = araypt(sym, SYMBOL);
+                ind = hoc_araypt(sym, SYMBOL);
                 if (op) {
                     d2 = hoc_opasgn(op, (sym->u.pval)[ind], d2);
                 }
                 (sym->u.pval)[ind] = d2;
                 break;
             case USERINT:
-                ind = araypt(sym, SYMBOL);
+                ind = hoc_araypt(sym, SYMBOL);
                 if (op) {
                     d2 = hoc_opasgn(op, (double) ((sym->u.pvalint)[ind]), d2);
                 }
                 (sym->u.pvalint)[ind] = (int) (d2 + hoc_epsilon);
                 break;
             case USERFLOAT:
-                ind = araypt(sym, SYMBOL);
+                ind = hoc_araypt(sym, SYMBOL);
                 if (op) {
                     d2 = hoc_opasgn(op, (double) ((sym->u.pvalfloat)[ind]), d2);
                 }
                 (sym->u.pvalfloat)[ind] = (float) d2;
                 break;
-#if NEMO
-            case NEMONODE:
-                hoc_asgn_nemonode(sym, hoc_xpop(), &d2, op);
-                break;
-            case NEMOAREA:
-                hoc_asgn_nemoarea(sym, hoc_xpop(), &d2, op);
-                break;
-#endif /*NEMO*/
             default:
-                ind = araypt(sym, OBJECTVAR);
+                ind = hoc_araypt(sym, OBJECTVAR);
                 if (op) {
                     d2 = hoc_opasgn(op, (OPVAL(sym))[ind], d2);
                 }
@@ -2269,7 +2247,7 @@ void hoc_assign() {
         fp->argn[sym->u.u_auto] = d2;
         break;
     default:
-        execerror("assignment to non-variable", sym->name);
+        hoc_execerror("assignment to non-variable", sym->name);
     }
     if (obsav) {
         hoc_objectdata = hoc_objectdata_restore(odsav);
@@ -2288,7 +2266,7 @@ void hoc_assign_str(char** cpp, const char* buf) {
     }
 }
 
-void assstr(void) { /* assign string on top to stack - 1 */
+void hoc_assstr(void) { /* assign string on top to stack - 1 */
     char **ps1, **ps2;
 
     ps1 = hoc_strpop();
@@ -2304,7 +2282,7 @@ char* hoc_araystr(Symbol* sym, int index, Objectdata* obd) {
     int i, n, j, n1;
 
     *--cp = '\0';
-    if (ISARRAY(sym)) {
+    if (is_array(*sym)) {
         Arrayinfo* a;
         if (sym->subtype == 0) {
             a = obd[sym->u.oboff + 1].arayinfo;
@@ -2390,14 +2368,14 @@ int hoc_araypt(Symbol* sp, int type) {
 }
 
 // pop top value from stack, print it
-void print() {
-    nrnpy_pr("\t");
-    prexpr();
-    nrnpy_pr("\n");
+void hoc_print() {
+    Printf("\t");
+    hoc_prexpr();
+    Printf("\n");
 }
 
 // print numeric value
-void prexpr() {
+void hoc_prexpr() {
     static HocStr* s;
     char* ss;
     Object** pob;
@@ -2422,10 +2400,10 @@ void prexpr() {
     default:
         hoc_execerror("Don't know how to print this type\n", nullptr);
     }
-    plprint(s->buf);
+    hoc_plprint(s->buf);
 }
 
-void prstr(void) /* print string value */
+void hoc_prstr(void) /* print string value */
 {
     static HocStr* s;
     char** cpp;
@@ -2434,7 +2412,7 @@ void prstr(void) /* print string value */
     cpp = hoc_strpop();
     hocstr_resize(s, strlen(*cpp) + 10);
     std::snprintf(s->buf, s->size + 1, "%s", *cpp);
-    plprint(s->buf);
+    hoc_plprint(s->buf);
 }
 
 /*-----------------------------------------------------------------*/
@@ -2445,16 +2423,10 @@ list. */
 /* modified greatly by Hines. Very unsafe in general. */
 {
 #if 1
-    /*---- local variables -----*/
-    Symbol *doomed, *sp;
-    /*---- start function ------*/
-
     /* copy address of the symbol that will be deleted */
-    doomed = (pc++)->sym;
+    Symbol* doomed = (pc++)->sym;
 
-#endif
-/*	hoc_execerror("delete_symbol doesn't work right now.", (char *)0);*/
-#if 1
+    /*	hoc_execerror("delete_symbol doesn't work right now.", (char *)0);*/
     if (doomed->type == UNDEF)
         fprintf(stderr, "%s: no such variable\n", doomed->name);
     else if (doomed->defined_on_the_fly == 0)
@@ -2470,28 +2442,28 @@ list. */
 
 void hoc_newline(void) /* print newline */
 {
-    plprint("\n");
+    hoc_plprint("\n");
 }
 
-void varread(void) /* read into variable */
+void hoc_varread(void) /* read into variable */
 {
     double d = 0.0;
-    extern NrnFILEWrap* fin;
+    extern NrnFILEWrap* hoc_fin;
     Symbol* var = (pc++)->sym;
 
     assert(var->cpublic != 2);
-    if (!((var->type == VAR || var->type == UNDEF) && !ISARRAY(var) && var->subtype == NOTUSER)) {
-        execerror(var->name, "is not a scalar variable");
+    if (!((var->type == VAR || var->type == UNDEF) && !is_array(*var) && var->subtype == NOTUSER)) {
+        hoc_execerror(var->name, "is not a scalar variable");
     }
 Again:
-    switch (nrn_fw_fscanf(fin, "%lf", OPVAL(var))) {
+    switch (nrn_fw_fscanf(hoc_fin, "%lf", OPVAL(var))) {
     case EOF:
         if (hoc_moreinput())
             goto Again;
         d = *(OPVAL(var)) = 0.0;
         break;
     case 0:
-        execerror("non-number read into", var->name);
+        hoc_execerror("non-number read into", var->name);
         break;
     default:
         d = 1.0;
@@ -2503,76 +2475,64 @@ Again:
 
 
 static Inst* codechk(void) {
-    if (progp >= prog + NPROG - 1)
-        execerror("procedure too big", (char*) 0);
-    if (zzdebug)
-        debugzz(progp);
-    return progp++;
+    if (hoc_progp >= hoc_prog + NPROG - 1)
+        hoc_execerror("procedure too big", (char*) 0);
+    if (hoc_zzdebug)
+        debugzz(hoc_progp);
+    return hoc_progp++;
 }
 
-Inst* Code(Pfrv f) { /* install one instruction or operand */
-    progp->pf = f;
+Inst* hoc_Code(Pfrv f) { /* install one instruction or operand */
+    hoc_progp->pf = f;
     return codechk();
 }
 
-Inst* codei(int f) {
-    progp->pf = NULL; /* zero high order bits to avoid debugzz problem */
-    progp->i = f;
+Inst* hoc_codei(int f) {
+    hoc_progp->pf = NULL; /* zero high order bits to avoid debugzz problem */
+    hoc_progp->i = f;
     return codechk();
 }
 
 Inst* hoc_codeptr(void* vp) {
-    progp->ptr = vp;
+    hoc_progp->ptr = vp;
     return codechk();
 }
 
-void codesym(Symbol* f) {
-    progp->sym = f;
+void hoc_codesym(Symbol* f) {
+    hoc_progp->sym = f;
     IGNORE(codechk());
 }
 
-void codein(Inst* f) {
-    progp->in = f;
+void hoc_codein(Inst* f) {
+    hoc_progp->in = f;
     IGNORE(codechk());
 }
 
-void insertcode(Inst* begin, Inst* end, Pfrv f) {
+void hoc_insertcode(Inst* begin, Inst* end, Pfrv f) {
     Inst* i;
     for (i = end - 1; i != begin; i--) {
         *i = *(i - 1);
     }
     begin->pf = f;
 
-    if (zzdebug) {
+    if (hoc_zzdebug) {
         Inst* p;
         printf("insert code: what follows is the entire code so far\n");
-        for (p = prog; p < progp; ++p) {
+        for (p = hoc_prog; p < hoc_progp; ++p) {
             debugzz(p);
         }
         printf("end of insert code debugging\n");
     }
 }
 
-#if defined(DOS) || defined(WIN32)
-static int ntimes;
-#endif
-
-void execute(Inst* p) /* run the machine */
+void hoc_execute(Inst* p) /* run the machine */
 {
     Inst* pcsav;
 
     BBSPOLL
     for (pc = p; pc->in != STOP && !hoc_returning;) {
-#if defined(DOS)
-        if (++ntimes > 10) {
-            ntimes = 0;
-#if 0
-            kbhit(); /* DOS can't capture interrupt when number crunching*/
-#endif
-        }
-#endif
         if (hoc_intset)
-            execerror("interrupted", (char*) 0);
+            hoc_execerror("interrupted", (char*) 0);
         /* (*((pc++)->pf))(); DEC 5000 increments pc after the return!*/
         pcsav = pc++;
         (*((pcsav)->pf))();

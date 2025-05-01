@@ -34,7 +34,7 @@ export prefix
 export bindir
 export libdir
 
-if command -v xcrun; then
+if command -v xcrun >/dev/null 2>&1; then
     @NRN_OSX_BUILD_TRUE@export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
     @NRN_OSX_BUILD_TRUE@export MACOSX_DEPLOYMENT_TARGET="@CMAKE_OSX_DEPLOYMENT_TARGET@"
     if [ -z "${MACOSX_DEPLOYMENT_TARGET}" ]; then
@@ -81,8 +81,19 @@ while [ "$1" ] ; do
         UserNMODLFLAGS="$UserNMODLFLAGS $2"
         shift
         shift;;
+    -h|--help)
+        echo "Usage: nrnivmodl [options] [mod files or directories with mod files]"
+        echo "Options:"
+        echo "  -coreneuron                      Compile MOD files for CoreNEURON using nrnivmodl-core."
+        echo "  -incflags    \"include flags\"     Extra include flags and paths when MOD (C++) files are compiled."
+        echo "  -loadflags   \"link flags\"        Extra link flags, paths, and libraries when MOD (C++) files are linked."
+        echo "  -nmodl /path/to/nmodl            Path to the new NMODL transpiler for MOD files (pre-alpha, development use only)."
+        echo "  -nmodlflags  \"CLI flags\"         Additional CLI flags for new NMODL transpiler"
+        echo "  -h, --help                       Show this help message and exit."
+        echo "If no MOD files or directories provided then MOD files from current directory are used."
+        exit 0;;
     -*)
-        echo "$1 unrecognized"
+        echo "$1 unrecognized, check available CLI options with --help"
         exit 1;;
     *)
         break;;
@@ -157,6 +168,10 @@ mdir="$PWD"
 
 # construct file to be included by makefile to specify mod to c rule when
 # executed in $MODSUBDIR (child folder of launch location folder)
+# Since $(PWD) may contain spaces in the path name, use the relative path.
+# Otherwise, it is very difficult to pass around paths with spaces in
+# makefiles. However, to help the user know where things are, when
+# compiling use the full path to *.cpp
 MODMAKE=makemod2c_inc
 > "$MODMAKE"
 for i in "${files[@]}" ; do
@@ -170,13 +185,13 @@ for i in "${files[@]}" ; do
   f=${f// /\\ }
   f=${f//:/\\:}
   echo "\
-./${base_name// /\\ }.cpp: ${f}.mod
+${base_name// /\\ }.cpp: ${f}.mod \$(NOCMODL)
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
-	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\" $UserNMODLFLAGS)
+	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" @NRN_NMODL_--neuron@ -o \"$mdir\" $UserNMODLFLAGS)
 
-./${base_name// /\\ }.o: ./${base_name// /\\ }.cpp
-	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
-	\$(CXXCOMPILE) -I\"$dir_name\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
+./${base_name// /\\ }.o: ${base_name// /\\ }.cpp
+	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) ${PWD}/\$<\\\n\"
+	\$(CXXCOMPILE) -I\"$dir_name\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \"${PWD}/\$<\" -o \$@
 " >> "$MODMAKE"
 done
 
@@ -259,5 +274,19 @@ if [ "$LinkCoreNEURON" = true ] ; then
   fi
 fi
 
-make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" "UserNMODLBIN=$UserNMODLBIN" "UserNMODLFLAGS=$UserNMODLFLAGS" special &&
-echo "Successfully created $MODSUBDIR/special"
+set +e
+
+make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" "UserNMODLBIN=$UserNMODLBIN" "UserNMODLFLAGS=$UserNMODLFLAGS" special
+
+ MAKE_STATUS=$?
+
+ set -e
+
+ if [ $MAKE_STATUS -eq 0 ]; then
+     echo "Successfully created $MODSUBDIR/special"
+ else
+     printf "\nNOTE: If you are encountering MOD file compilation errors only with NEURON version 9.0 or later\n"
+     printf "refer to the C++ migration guide at https://nrn.readthedocs.io/en/9.0.0/guide/porting_mechanisms_to_cpp.html\n\n"
+ fi
+
+exit $MAKE_STATUS

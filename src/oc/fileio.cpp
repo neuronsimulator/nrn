@@ -4,23 +4,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstdarg>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <locale>
+#include <optional>
+#include <regex>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include "hoc.h"
 #include "ocmisc.h"
 #include "hocstr.h"
-#include "hoclist.h"
 #include "parse.hpp"
 #include "hocparse.h"
 #include <errno.h>
 #include "nrnfilewrap.h"
-
+#include <fmt/format.h>
 
 extern char* neuron_home;
 
-NrnFILEWrap* frin;
-FILE* fout;
+NrnFILEWrap* hoc_frin;
+FILE* hoc_fout;
 
 void hoc_stdout(void) {
     static int prev = -1;
@@ -49,11 +53,11 @@ void hoc_stdout(void) {
         close(prev);
         prev = -1;
     }
-    ret();
-    pushx((double) fileno(stdout));
+    hoc_ret();
+    hoc_pushx((double) fileno(stdout));
 }
 
-void ropen(void) /* open file for reading */
+void hoc_ropen(void) /* open file for reading */
 {
     double d;
     const char* fname;
@@ -63,25 +67,25 @@ void ropen(void) /* open file for reading */
     else
         fname = "";
     d = 1.;
-    if (!nrn_fw_eq(frin, stdin))
-        IGNORE(nrn_fw_fclose(frin));
-    frin = nrn_fw_set_stdin();
+    if (!nrn_fw_eq(hoc_frin, stdin))
+        IGNORE(nrn_fw_fclose(hoc_frin));
+    hoc_frin = nrn_fw_set_stdin();
     if (fname[0] != 0) {
-        if ((frin = nrn_fw_fopen(fname, "r")) == (NrnFILEWrap*) 0) {
+        if ((hoc_frin = nrn_fw_fopen(fname, "r")) == (NrnFILEWrap*) 0) {
             const char* retry;
             retry = expand_env_var(fname);
-            if ((frin = nrn_fw_fopen(retry, "r")) == (NrnFILEWrap*) 0) {
+            if ((hoc_frin = nrn_fw_fopen(retry, "r")) == (NrnFILEWrap*) 0) {
                 d = 0.;
-                frin = nrn_fw_set_stdin();
+                hoc_frin = nrn_fw_set_stdin();
             }
         }
     }
     errno = 0;
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
-void wopen(void) /* open file for writing */
+void hoc_wopen(void) /* open file for writing */
 {
     const char* fname;
     double d;
@@ -91,17 +95,19 @@ void wopen(void) /* open file for writing */
     else
         fname = "";
     d = 1.;
-    if (fout != stdout)
-        ERRCHK(IGNORE(fclose(fout));)
-    fout = stdout;
-    if (fname[0] != 0)
-        ERRCHK(if ((fout = fopen(expand_env_var(fname), "w")) == (FILE*) 0) {
+    if (hoc_fout != stdout) {
+        IGNORE(fclose(hoc_fout));
+    }
+    hoc_fout = stdout;
+    if (fname[0] != 0) {
+        if ((hoc_fout = fopen(expand_env_var(fname), "w")) == nullptr) {
             d = 0.;
-            fout = stdout;
-        })
+            hoc_fout = stdout;
+        }
+    }
     errno = 0;
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 const char* expand_env_var(const char* s) {
@@ -223,39 +229,39 @@ int hoc_xopen1(const char* name, const char* rcs) {
     return 0;
 }
 
-void xopen(void) /* read and execute a hoc program */
+void hoc_xopen(void) /* read and execute a hoc program */
 {
     if (ifarg(2)) {
         hoc_xopen1(gargstr(1), gargstr(2));
     } else {
         hoc_xopen1(gargstr(1), 0);
     }
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
-void Fprint(void) /* fprintf function */
+void hoc_Fprint(void) /* fprintf function */
 {
     char* buf;
     double d;
 
     hoc_sprint1(&buf, 1);
-    d = (double) fprintf(fout, "%s", buf);
-    ret();
-    pushx(d);
+    d = (double) fprintf(hoc_fout, "%s", buf);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
-void PRintf(void) /* printf function */
+void hoc_PRintf(void) /* printf function */
 {
     char* buf;
     double d;
 
     hoc_sprint1(&buf, 1);
     d = (int) strlen(buf);
-    plprint(buf);
+    hoc_plprint(buf);
     fflush(stdout);
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 
@@ -267,8 +273,8 @@ void hoc_Sprint(void) /* sprintf_function */
     cpp = hoc_pgargstr(1);
     hoc_sprint1(&buf, 2);
     hoc_assign_str(cpp, buf);
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
 double hoc_scan(FILE* fi) {
@@ -277,7 +283,7 @@ double hoc_scan(FILE* fi) {
 
     for (;;) {
         if (fscanf(fi, "%255s", fs) == EOF) {
-            execerror("EOF in fscan", (char*) 0);
+            hoc_execerror("EOF in fscan", (char*) 0);
         }
         if (fs[0] == 'i' || fs[0] == 'n' || fs[0] == 'I' || fs[0] == 'N') {
             continue;
@@ -299,7 +305,7 @@ double hoc_fw_scan(NrnFILEWrap* fi) {
 
     for (;;) {
         if (nrn_fw_fscanf(fi, "%255s", fs) == EOF) {
-            execerror("EOF in fscan", (char*) 0);
+            hoc_execerror("EOF in fscan", (char*) 0);
         }
         if (fs[0] == 'i' || fs[0] == 'n' || fs[0] == 'I' || fs[0] == 'N') {
             continue;
@@ -313,19 +319,19 @@ double hoc_fw_scan(NrnFILEWrap* fi) {
     return d;
 }
 
-void Fscan(void) /* read a number from input file */
+void hoc_Fscan(void) /* read a number from input file */
 {
     double d;
     NrnFILEWrap* fi;
 
-    if (nrn_fw_eq(frin, stdin)) {
-        fi = fin;
+    if (nrn_fw_eq(hoc_frin, stdin)) {
+        fi = hoc_fin;
     } else {
-        fi = frin;
+        fi = hoc_frin;
     }
     d = hoc_fw_scan(fi);
-    ret();
-    pushx(d);
+    hoc_ret();
+    hoc_pushx(d);
 }
 
 void hoc_Getstr(void) /* read a line (or word) from input file */
@@ -334,10 +340,10 @@ void hoc_Getstr(void) /* read a line (or word) from input file */
     char** cpp;
     NrnFILEWrap* fi;
     int word = 0;
-    if (nrn_fw_eq(frin, stdin)) {
-        fi = fin;
+    if (nrn_fw_eq(hoc_frin, stdin)) {
+        fi = hoc_fin;
     } else {
-        fi = frin;
+        fi = hoc_frin;
     }
     cpp = hoc_pgargstr(1);
     if (ifarg(2)) {
@@ -346,16 +352,16 @@ void hoc_Getstr(void) /* read a line (or word) from input file */
     if (word) {
         buf = hoc_tmpbuf->buf;
         if (nrn_fw_fscanf(fi, "%s", buf) != 1) {
-            execerror("EOF in getstr", (char*) 0);
+            hoc_execerror("EOF in getstr", (char*) 0);
         }
     } else {
         if ((buf = fgets_unlimited(hoc_tmpbuf, fi)) == (char*) 0) {
-            execerror("EOF in getstr", (char*) 0);
+            hoc_execerror("EOF in getstr", (char*) 0);
         }
     }
     hoc_assign_str(cpp, buf);
-    ret();
-    pushx((double) strlen(buf));
+    hoc_ret();
+    hoc_pushx((double) strlen(buf));
 }
 
 void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for conversion */
@@ -474,61 +480,116 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
     *ppbuf = hs->buf;
 }
 
+
+// Split a string containing an env variable into multiple paths (OS-specific)
+// and return a container with the results
+static auto split_paths(const std::string& input) {
+    // separator for items in env variables
 #if defined(WIN32)
-static FILE* oc_popen(char const* const cmd, char const* const type) {
-    FILE* fp;
-    char buf[1024];
-    assert(strlen(cmd) + 20 < 1024);
-    Sprintf(buf, "sh %s > hocload.tmp", cmd);
-    if (system(buf) != 0) {
-        return (FILE*) 0;
-    } else if ((fp = fopen("hocload.tmp", "r")) == (FILE*) 0) {
-        return (FILE*) 0;
-    } else {
-        return fp;
-    }
-}
-static void oc_pclose(FILE* fp) {
-    fclose(fp);
-    unlink("hocload.tmp");
-}
+    static constexpr auto os_pathsep = ";";
 #else
-#define oc_popen  popen
-#define oc_pclose pclose
+    static constexpr auto os_pathsep = ":";
 #endif
+
+    std::vector<std::string> result;
+    std::size_t start = 0;
+    std::size_t end = 0;
+
+    while ((end = input.find(os_pathsep, start)) != std::string::npos) {
+        if (end > start) {
+            result.push_back(input.substr(start, end - start));
+        }
+        start = end + 1;
+    }
+
+    // Add the last segment if it's non-empty
+    if (start < input.size()) {
+        result.push_back(input.substr(start));
+    }
+
+    return result;
+}
+
+// return the default search paths for loading files
+static auto default_search_paths() {
+    auto result = std::vector<std::string>({"."});
+
+    // insert hoc paths (if any)
+    auto hoc_library_path = getenv("HOC_LIBRARY_PATH");
+    if (hoc_library_path) {
+        auto paths = split_paths(std::string(hoc_library_path));
+        std::copy(begin(paths), end(paths), back_inserter(result));
+    }
+
+    // insert home path
+    auto home_path = fmt::format("{}/lib/hoc", std::string(neuron_home));
+    result.push_back(home_path);
+
+    return result;
+}
+
+// look for regex ``pattern`` in ``paths`` (non-recursively);
+// if there is no match, return empty value
+// if there is a match, return the path of the first file containing the match
+static std::optional<std::string> search_hoc_files_regex(const std::regex& pattern,
+                                                         const std::vector<std::string>& paths) {
+    namespace fs = std::filesystem;
+    for (const auto& path: paths) {
+        // construct a list containing names of, in this order:
+        // - `.oc` files (sorted according to locale)
+        // - `.hoc` files (sorted according to locale)
+        std::vector<std::string> paths_oc;
+        std::vector<std::string> paths_hoc;
+        for (const auto& entry: fs::directory_iterator(path)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".oc") {
+                paths_oc.push_back(entry.path().string());
+            } else if (entry.is_regular_file() && entry.path().extension() == ".hoc") {
+                paths_hoc.push_back(entry.path().string());
+            }
+        }
+        std::sort(paths_oc.begin(), paths_oc.end(), std::locale());
+        std::sort(paths_hoc.begin(), paths_hoc.end(), std::locale());
+
+        std::vector<std::string> result;
+        std::merge(paths_oc.begin(),
+                   paths_oc.end(),
+                   paths_hoc.begin(),
+                   paths_hoc.end(),
+                   back_inserter(result));
+
+        for (const auto& entry: result) {
+            auto file = std::ifstream(entry);
+            if (!file.is_open())
+                continue;
+
+            std::string line;
+            while (std::getline(file, line)) {
+                if (std::regex_search(line, pattern)) {
+                    return entry;
+                }
+            }
+        }
+    }
+    return {};
+}
 
 static int hoc_Load_file(int, const char*);
 
 static void hoc_load(const char* stype) {
     int i = 1;
-    char* s;
-    Symbol* sym;
-    char cmd[1024];
-    FILE* p;
-    char file[1024], *f;
 
     while (ifarg(i)) {
-        s = gargstr(i);
+        const char* s = gargstr(i);
         ++i;
-        sym = hoc_lookup(s);
+        const Symbol* sym = hoc_lookup(s);
         if (!sym || sym->type == UNDEF) {
-            assert(strlen(stype) + strlen(s) + 50 < 1024);
-            Sprintf(cmd, "$NEURONHOME/lib/hocload.sh %s %s %d", stype, s, hoc_pid());
-            p = oc_popen(cmd, "r");
-            if (p) {
-                f = fgets(file, 1024, p);
-                if (f) {
-                    f[strlen(f) - 1] = '\0';
-                }
-                oc_pclose(p);
-                if (f) {
-                    fprintf(stderr, "Getting %s from %s\n", s, f);
-                    hoc_Load_file(0, f);
-                } else {
-                    fprintf(stderr, "Couldn't find a file that declares %s\n", s);
-                }
+            auto pattern = std::regex(fmt::format("^{} {}", stype, s));
+            auto file = search_hoc_files_regex(pattern, default_search_paths());
+            if (file) {
+                fprintf(stderr, "Getting %s from %s\n", s, file->c_str());
+                hoc_Load_file(0, file->c_str());
             } else {
-                hoc_execerror("can't run:", cmd);
+                fprintf(stderr, "Couldn't find a file that declares %s\n", s);
             }
         }
     }
@@ -536,18 +597,18 @@ static void hoc_load(const char* stype) {
 
 void hoc_load_proc(void) {
     hoc_load("proc");
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 void hoc_load_func(void) {
     hoc_load("func");
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 void hoc_load_template(void) {
     hoc_load("begintemplate");
-    ret();
-    pushx(1.);
+    hoc_ret();
+    hoc_pushx(1.);
 }
 
 void hoc_load_file(void) {
@@ -560,8 +621,8 @@ void hoc_load_file(void) {
     if (!ifarg(iarg + 1) || !hoc_lookup(gargstr(iarg + 1))) {
         i = hoc_Load_file(i, gargstr(iarg));
     }
-    ret();
-    pushx((double) i);
+    hoc_ret();
+    hoc_pushx((double) i);
 }
 
 static constexpr auto hoc_load_file_size_ = 1024;
@@ -576,8 +637,7 @@ static int hoc_Load_file(int always, const char* name) {
         Temporarily change to the directory containing the file so
         that it can xopen files relative to its location.
     */
-    static hoc_List* loaded;
-    hoc_Item* q;
+    static std::vector<std::string> loaded;
     int b, is_loaded;
     int goback;
     char expname[hoc_load_file_size_];
@@ -590,11 +650,9 @@ static int hoc_Load_file(int always, const char* name) {
     goback = 0;
     /* has the file already been loaded */
     is_loaded = 0;
-    if (!loaded) {
-        loaded = hoc_l_newlist();
-    }
-    ITERATE(q, loaded) {
-        if (strcmp(STR(q), name) == 0) {
+
+    for (const std::string& q: loaded) {
+        if (q == name) {
             if (!always) {
                 return 1;
             } else {
@@ -660,7 +718,7 @@ static int hoc_Load_file(int always, const char* name) {
     /* add the name to the list of loaded packages */
     if (f) {
         if (!is_loaded) {
-            hoc_l_lappendstr(loaded, name);
+            loaded.push_back(name);
         }
         b = 1;
     } else {
@@ -735,8 +793,8 @@ void hoc_machine_name(void) {
     gethostname(buf, 20);
     hoc_assign_str(hoc_pgargstr(1), buf);
 #endif
-    ret();
-    pushx(0.);
+    hoc_ret();
+    hoc_pushx(0.);
 }
 
 int hoc_chdir(const char* path) {
@@ -745,12 +803,12 @@ int hoc_chdir(const char* path) {
 
 void hoc_Chdir(void) {
     int i = hoc_chdir(gargstr(1));
-    ret();
-    pushx((double) i);
+    hoc_ret();
+    hoc_pushx((double) i);
 }
 
 int nrn_is_python_extension;
-static int (*nrnpy_pr_stdoe_callback)(int, char*);
+int (*nrnpy_pr_stdoe_callback)(int, char*);
 static int (*nrnpy_pass_callback)();
 
 extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {
@@ -761,78 +819,9 @@ extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()
 void nrnpy_pass() {
     if (nrnpy_pass_callback) {
         if ((*nrnpy_pass_callback)() != 1) {
-            hoc_execerror("nrnpy_pass", 0);
+            hoc_execerror("nrnpy_pass", nullptr);
         }
     }
-}
-
-static int vnrnpy_pr_stdoe(FILE* stream, const char* fmt, va_list ap) {
-    int size = 0;
-    char* p = NULL;
-
-    if (!nrnpy_pr_stdoe_callback || (stream != stderr && stream != stdout)) {
-        size = vfprintf(stream, fmt, ap);
-        return size;
-    }
-
-    /* Determine required size */
-    va_list apc;
-#ifndef va_copy
-#if defined(__GNUC__) || defined(__clang__)
-#define va_copy(dest, src) __builtin_va_copy(dest, src)
-#else
-#define va_copy(dest, src) (dest = src)
-#endif
-#endif
-    va_copy(apc, ap);
-    size = vsnprintf(p, size, fmt, apc);
-    va_end(apc);
-
-    if (size < 0)
-        return 0;
-
-    size++; /* For '\0' */
-    p = static_cast<char*>(malloc(size));
-    if (p == NULL)
-        return 0;
-
-    size = vsnprintf(p, size, fmt, ap);
-    if (size < 0) {
-        free(p);
-        return 0;
-    }
-
-    // if any non-ascii translate to '?' or nrnpy_pr will raise an exception.
-    if (stream == stderr) {
-        for (int i = 0; p[i] != '\0'; ++i) {
-            if (!isascii((unsigned char) p[i])) {
-                p[i] = '?';
-            }
-        }
-    }
-
-    (*nrnpy_pr_stdoe_callback)((stream == stderr) ? 2 : 1, p);
-
-    free(p);
-    return size;
-}
-
-int nrnpy_pr(const char* fmt, ...) {
-    int n;
-    va_list ap;
-    va_start(ap, fmt);
-    n = vnrnpy_pr_stdoe(stdout, fmt, ap);
-    va_end(ap);
-    return n;
-}
-
-int Fprintf(FILE* stream, const char* fmt, ...) {
-    int n;
-    va_list ap;
-    va_start(ap, fmt);
-    n = vnrnpy_pr_stdoe(stream, fmt, ap);
-    va_end(ap);
-    return n;
 }
 
 /** printf style specification of hoc_execerror message. (512 char limit) **/

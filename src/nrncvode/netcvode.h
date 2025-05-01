@@ -1,5 +1,4 @@
-#ifndef netcvode_h
-#define netcvode_h
+#pragma once
 
 #define PRINT_EVENT 1
 
@@ -7,7 +6,7 @@
 
 #include "cvodeobj.h"
 #include "neuron/container/data_handle.hpp"
-#include "tqueue.h"
+#include "tqueue.hpp"
 
 #include <cmath>
 #include <vector>
@@ -25,12 +24,11 @@ struct hoc_Item;
 class PlayRecord;
 class IvocVect;
 struct BAMechList;
-class HTList;
 // nrn_nthread vectors of HTList* for fixed step method
 // Thread segregated HTList* of all the CVode.CvodeThreadData.HTList*
 // Interior vector needed because of the chance of local variable time step.
 //   Practically it will always have length <= 1.
-using HTListList = std::vector<std::vector<HTList*>>;
+using HTListList = std::vector<std::vector<std::list<WatchCondition*>*>>;
 class NetCvode;
 class MaxStateItem;
 typedef std::unordered_map<void*, MaxStateItem*> MaxStateTable;
@@ -86,12 +84,7 @@ class NetCvode {
     void move_event(TQItem*, double, NrnThread*);
     void remove_event(TQItem*, int threadid);
     TQItem* event(double tdeliver, DiscreteEvent*, NrnThread*);
-#if BBTQ == 4
-    TQItem* fifo_event(double tdeliver, DiscreteEvent*, NrnThread*);
-#endif
-#if BBTQ == 5
     TQItem* bin_event(double tdeliver, DiscreteEvent*, NrnThread*);
-#endif
     void send2thread(double, DiscreteEvent*, NrnThread*);
     void null_event(double);
     void tstop_event(double);
@@ -249,7 +242,7 @@ class NetCvode {
     Cvode* gcv_;
     void set_CVRhsFn();
     bool use_partrans();
-    hoc_Item* psl_;       // actually a hoc_List
+    std::vector<PreSyn*>* psl_;
     HTListList wl_list_;  // nrn_nthread of these for faster deliver_net_events when many cvode
     int pcnt_;
     NetCvodeThreadData* p;
@@ -267,5 +260,3 @@ class NetCvode {
     void allthread_handle();
     HocEventList* allthread_hocevents_;
 };
-
-#endif

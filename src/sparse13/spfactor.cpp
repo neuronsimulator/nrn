@@ -13,7 +13,6 @@
  *  spPartition
  *
  *  >>> Other functions contained in this file:
- *  FactorComplexMatrix         CreateInternalVectors
  *  CountMarkowitz              MarkowitzProducts
  *  SearchForPivot              SearchForSingleton
  *  QuicklySearchDiagonal       SearchDiagonal
@@ -21,7 +20,7 @@
  *  FindBiggestInColExclude     ExchangeRowsAndCols
  *  spcRowExchange              spcColExchange
  *  ExchangeColElements         ExchangeRowElements
- *  RealRowColElimination       ComplexRowColElimination
+ *  RealRowColElimination
  *  UpdateMarkowitzNumbers      CreateFillin
  *  MatrixIsSingular            ZeroPivot
  *  WriteStatus
@@ -43,11 +42,6 @@
  *  or implied warranty.
  */
 
-#ifndef lint
-static char copyright[] = "Sparse1.3: Copyright (c) 1985,86,87,88 by Kenneth S. Kundert";
-static char RCSid[] = "@(#)$Header$";
-#endif
-
 /*
  *  IMPORTS
  *
@@ -67,7 +61,6 @@ static char RCSid[] = "@(#)$Header$";
 #include <climits>
 
 /* avoid "declared implicitly `extern' and later `static' " warnings. */
-static int FactorComplexMatrix(MatrixPtr Matrix);
 static void CreateInternalVectors(MatrixPtr Matrix);
 static void CountMarkowitz(MatrixPtr Matrix, RealVector RHS, int Step);
 static void MarkowitzProducts(MatrixPtr Matrix, int Step);
@@ -82,7 +75,6 @@ static void ExchangeRowsAndCols(MatrixPtr Matrix, ElementPtr pPivot, int Step);
 static void ExchangeColElements(MatrixPtr Matrix, int Row1, ElementPtr Element1, int Row2, ElementPtr Element2, int Column);
 static void ExchangeRowElements(MatrixPtr Matrix, int Col1, ElementPtr Element1, int Col2, ElementPtr Element2, int Row);
 static void RealRowColElimination(MatrixPtr Matrix, ElementPtr pPivot);
-static void ComplexRowColElimination(MatrixPtr Matrix, ElementPtr pPivot);
 static void UpdateMarkowitzNumbers(MatrixPtr Matrix, ElementPtr pPivot);
 static ElementPtr CreateFillin(MatrixPtr Matrix, int Row, int Col);
 static int MatrixIsSingular(MatrixPtr Matrix, int Step);
@@ -215,10 +207,7 @@ int spOrderAndFactor(char* eMatrix, RealNumber* RHS, RealNumber RelThreshold, Re
             pPivot = Matrix->Diag[Step];
             LargestInCol = FindLargestInCol(pPivot->NextInCol);
             if ((LargestInCol * RelThreshold < ELEMENT_MAG(pPivot))) {
-                if (Matrix->Complex)
-                    ComplexRowColElimination(Matrix, pPivot);
-                else
-                    RealRowColElimination(Matrix, pPivot);
+                RealRowColElimination(Matrix, pPivot);
             } else {
                 ReorderingRequired = YES;
                 break; /* for loop */
@@ -265,10 +254,7 @@ int spOrderAndFactor(char* eMatrix, RealNumber* RHS, RealNumber RelThreshold, Re
             return MatrixIsSingular(Matrix, Step);
         ExchangeRowsAndCols(Matrix, pPivot, Step);
 
-        if (Matrix->Complex)
-            ComplexRowColElimination(Matrix, pPivot);
-        else
-            RealRowColElimination(Matrix, pPivot);
+        RealRowColElimination(Matrix, pPivot);
 
         if (Matrix->Error >= spFATAL)
             return Matrix->Error;
@@ -335,10 +321,6 @@ int spFactor(char* eMatrix)
     }
     if (NOT Matrix->Partitioned)
         spPartition(eMatrix, spDEFAULT_PARTITION);
-#if spCOMPLEX
-    if (Matrix->Complex)
-        return FactorComplexMatrix(Matrix);
-#endif
 
 #if REAL
     Size = Matrix->Size;
@@ -412,117 +394,6 @@ int spFactor(char* eMatrix)
 #endif /* REAL */
 }
 
-#if spCOMPLEX
-/*
- *  FACTOR COMPLEX MATRIX
- *
- *  This routine is the companion routine to spFactor(), it
- *  handles complex matrices.  It is otherwise identical.
- *
- *  >>> Returned:
- *  The error code is returned.  Possible errors are listed below.
- *
- *  >>> Arguments:
- *  Matrix  <input>  (char *)
- *      Pointer to matrix.
- *
- *  >>> Possible errors:
- *  spSINGULAR
- *  Error is cleared in this function.
- */
-
-static int FactorComplexMatrix(MatrixPtr Matrix)
-{
-    ElementPtr pElement;
-    ElementPtr pColumn;
-    int Step, Size;
-    ComplexNumber Mult, Pivot;
-
-    /* Begin `FactorComplexMatrix'. */
-    ASSERT(Matrix->Complex);
-
-    Size = Matrix->Size;
-    pElement = Matrix->Diag[1];
-    if (ELEMENT_MAG(pElement) == 0.0)
-        return ZeroPivot(Matrix, 1);
-    /* Cmplx expr: *pPivot = 1.0 / *pPivot. */
-    CMPLX_RECIPROCAL(*pElement, *pElement);
-
-    /* Start factorization. */
-    for (Step = 2; Step <= Size; Step++) {
-        if (Matrix->DoCmplxDirect[Step]) { /* Update column using direct addressing scatter-gather. */
-            ComplexNumber* Dest;
-            Dest = (ComplexNumber*)Matrix->Intermediate;
-
-            /* Scatter. */
-            pElement = Matrix->FirstInCol[Step];
-            while (pElement != NULL) {
-                Dest[pElement->Row] = *(ComplexNumber*)pElement;
-                pElement = pElement->NextInCol;
-            }
-
-            /* Update column. */
-            pColumn = Matrix->FirstInCol[Step];
-            while (pColumn->Row < Step) {
-                pElement = Matrix->Diag[pColumn->Row];
-                /* Cmplx expr: Mult = Dest[pColumn->Row] * (1.0 / *pPivot). */
-                CMPLX_MULT(Mult, Dest[pColumn->Row], *pElement);
-                CMPLX_ASSIGN(*pColumn, Mult);
-                while ((pElement = pElement->NextInCol) != NULL) { /* Cmplx expr: Dest[pElement->Row] -= Mult * pElement */
-                    CMPLX_MULT_SUBT_ASSIGN(Dest[pElement->Row], Mult, *pElement);
-                }
-                pColumn = pColumn->NextInCol;
-            }
-
-            /* Gather. */
-            pElement = Matrix->Diag[Step]->NextInCol;
-            while (pElement != NULL) {
-                *(ComplexNumber*)pElement = Dest[pElement->Row];
-                pElement = pElement->NextInCol;
-            }
-
-            /* Check for singular matrix. */
-            Pivot = Dest[Step];
-            if (CMPLX_1_NORM(Pivot) == 0.0)
-                return ZeroPivot(Matrix, Step);
-            CMPLX_RECIPROCAL(*Matrix->Diag[Step], Pivot);
-        } else { /* Update column using direct addressing scatter-gather. */
-            ComplexNumber** pDest;
-            pDest = (ComplexNumber**)Matrix->Intermediate;
-
-            /* Scatter. */
-            pElement = Matrix->FirstInCol[Step];
-            while (pElement != NULL) {
-                pDest[pElement->Row] = (ComplexNumber*)pElement;
-                pElement = pElement->NextInCol;
-            }
-
-            /* Update column. */
-            pColumn = Matrix->FirstInCol[Step];
-            while (pColumn->Row < Step) {
-                pElement = Matrix->Diag[pColumn->Row];
-                /* Cmplx expr: Mult = *pDest[pColumn->Row] * (1.0 / *pPivot). */
-                CMPLX_MULT(Mult, *pDest[pColumn->Row], *pElement);
-                CMPLX_ASSIGN(*pDest[pColumn->Row], Mult);
-                while ((pElement = pElement->NextInCol) != NULL) { /* Cmplx expr: *pDest[pElement->Row] -= Mult * pElement */
-                    CMPLX_MULT_SUBT_ASSIGN(*pDest[pElement->Row], Mult, *pElement);
-                }
-                pColumn = pColumn->NextInCol;
-            }
-
-            /* Check for singular matrix. */
-            pElement = Matrix->Diag[Step];
-            if (ELEMENT_MAG(pElement) == 0.0)
-                return ZeroPivot(Matrix, Step);
-            CMPLX_RECIPROCAL(*pElement, *pElement);
-        }
-    }
-
-    Matrix->Factored = YES;
-    return (Matrix->Error = spOKAY);
-}
-#endif /* spCOMPLEX */
-
 /*
  *  PARTITION MATRIX
  *
@@ -566,7 +437,7 @@ void spPartition(char* eMatrix, int Mode)
     ElementPtr pElement, pColumn;
     int Step, Size;
     int *Nc, *No, *Nm;
-    BOOLEAN *DoRealDirect, *DoCmplxDirect;
+    BOOLEAN *DoRealDirect;
 
     /* Begin `spPartition'. */
     ASSERT(IS_SPARSE(Matrix));
@@ -574,7 +445,6 @@ void spPartition(char* eMatrix, int Mode)
         return;
     Size = Matrix->Size;
     DoRealDirect = Matrix->DoRealDirect;
-    DoCmplxDirect = Matrix->DoCmplxDirect;
     Matrix->Partitioned = YES;
 
     /* If partition is specified by the user, this is easy. */
@@ -585,17 +455,11 @@ void spPartition(char* eMatrix, int Mode)
 #if REAL
             DoRealDirect[Step] = YES;
 #endif
-#if spCOMPLEX
-        DoCmplxDirect[Step] = YES;
-#endif
         return;
     } else if (Mode == spINDIRECT_PARTITION) {
         for (Step = 1; Step <= Size; Step++)
 #if REAL
             DoRealDirect[Step] = NO;
-#endif
-#if spCOMPLEX
-        DoCmplxDirect[Step] = NO;
 #endif
         return;
     } else
@@ -639,36 +503,8 @@ void spPartition(char* eMatrix, int Mode)
          *   No is the number of operations in the inner loop.
          */
 
-#define generic
-#ifdef hp9000s300
 #if REAL
         DoRealDirect[Step] = (Nm[Step] + No[Step] > 3 * Nc[Step] - 2 * Nm[Step]);
-#endif
-#if spCOMPLEX
-        /* On the hp350, it is never profitable to use direct for complex. */
-        DoCmplxDirect[Step] = NO;
-#endif
-#undef generic
-#endif
-
-#ifdef vax
-#if REAL
-        DoRealDirect[Step] = (Nm[Step] + No[Step] > 3 * Nc[Step] - 2 * Nm[Step]);
-#endif
-#if spCOMPLEX
-        DoCmplxDirect[Step] = (Nm[Step] + No[Step] > 7 * Nc[Step] - 4 * Nm[Step]);
-#endif
-#undef generic
-#endif
-
-#ifdef generic
-#if REAL
-        DoRealDirect[Step] = (Nm[Step] + No[Step] > 3 * Nc[Step] - 2 * Nm[Step]);
-#endif
-#if spCOMPLEX
-        DoCmplxDirect[Step] = (Nm[Step] + No[Step] > 7 * Nc[Step] - 4 * Nm[Step]);
-#endif
-#undef generic
 #endif
     }
 
@@ -728,25 +564,12 @@ static void CreateInternalVectors(MatrixPtr Matrix)
             Matrix->Error = spNO_MEMORY;
     }
 #endif
-#if spCOMPLEX
-    if (Matrix->DoCmplxDirect == NULL) {
-        if ((Matrix->DoCmplxDirect = ALLOC(BOOLEAN, Size + 1)) == NULL)
-            Matrix->Error = spNO_MEMORY;
-    }
-#endif
 
 /* Create Intermediate vectors for use in MatrixSolve. */
-#if spCOMPLEX
-    if (Matrix->Intermediate == NULL) {
-        if ((Matrix->Intermediate = ALLOC(RealNumber, 2 * (Size + 1))) == NULL)
-            Matrix->Error = spNO_MEMORY;
-    }
-#else
     if (Matrix->Intermediate == NULL) {
         if ((Matrix->Intermediate = ALLOC(RealNumber, Size + 1)) == NULL)
             Matrix->Error = spNO_MEMORY;
     }
-#endif
 
     if (Matrix->Error != spNO_MEMORY)
         Matrix->InternalVectorsAllocated = YES;
@@ -790,17 +613,8 @@ static void CountMarkowitz(MatrixPtr Matrix, RealVector RHS, int Step)
 
 /* Correct array pointer for ARRAY_OFFSET. */
 #if NOT ARRAY_OFFSET
-#if spSEPARATED_COMPLEX_VECTORS OR NOT spCOMPLEX
     if (RHS != NULL)
         --RHS;
-#else
-    if (RHS != NULL) {
-        if (Matrix->Complex)
-            RHS -= 2;
-        else
-            --RHS;
-    }
-#endif
 #endif
 
     /* Generate MarkowitzRow Count for each row. */
@@ -818,19 +632,9 @@ static void CountMarkowitz(MatrixPtr Matrix, RealVector RHS, int Step)
         /* Include nonzero elements in the RHS vector. */
         ExtRow = Matrix->IntToExtRowMap[I];
 
-#if spSEPARATED_COMPLEX_VECTORS OR NOT spCOMPLEX
         if (RHS != NULL)
             if (RHS[ExtRow] != 0.0)
                 Count++;
-#else
-        if (RHS != NULL) {
-            if (Matrix->Complex) {
-                if ((RHS[2 * ExtRow] != 0.0) OR(RHS[2 * ExtRow + 1] != 0.0))
-                    Count++;
-            } else if (RHS[I] != 0.0)
-                Count++;
-        }
-#endif
         Matrix->MarkowitzRow[I] = Count;
     }
 
@@ -2040,10 +1844,6 @@ void spcRowExchange(MatrixPtr Matrix, int Row1, int Row2)
         SWAP(int, Matrix->MarkowitzRow[Row1], Matrix->MarkowitzRow[Row2]);
     SWAP(ElementPtr, Matrix->FirstInRow[Row1], Matrix->FirstInRow[Row2]);
     SWAP(int, Matrix->IntToExtRowMap[Row1], Matrix->IntToExtRowMap[Row2]);
-#if TRANSLATE
-    Matrix->ExtToIntRowMap[Matrix->IntToExtRowMap[Row1]] = Row1;
-    Matrix->ExtToIntRowMap[Matrix->IntToExtRowMap[Row2]] = Row2;
-#endif
 
     return;
 }
@@ -2127,10 +1927,6 @@ void spcColExchange(MatrixPtr Matrix, int Col1, int Col2)
         SWAP(int, Matrix->MarkowitzCol[Col1], Matrix->MarkowitzCol[Col2]);
     SWAP(ElementPtr, Matrix->FirstInCol[Col1], Matrix->FirstInCol[Col2]);
     SWAP(int, Matrix->IntToExtColMap[Col1], Matrix->IntToExtColMap[Col2]);
-#if TRANSLATE
-    Matrix->ExtToIntColMap[Matrix->IntToExtColMap[Col1]] = Col1;
-    Matrix->ExtToIntColMap[Matrix->IntToExtColMap[Col2]] = Col2;
-#endif
 
     return;
 }
@@ -2478,57 +2274,6 @@ static void RealRowColElimination(MatrixPtr Matrix, ElementPtr pPivot)
  *  Possible errors:
  *  spNO_MEMORY
  */
-
-static void ComplexRowColElimination(MatrixPtr Matrix, ElementPtr pPivot)
-{
-#if spCOMPLEX
-    ElementPtr pSub;
-    int Row;
-    ElementPtr pLower, pUpper;
-
-    /* Begin `ComplexRowColElimination'. */
-
-    /* Test for zero pivot. */
-    if (ELEMENT_MAG(pPivot) == 0.0) {
-        (void)MatrixIsSingular(Matrix, pPivot->Row);
-        return;
-    }
-    CMPLX_RECIPROCAL(*pPivot, *pPivot);
-
-    pUpper = pPivot->NextInRow;
-    while (pUpper != NULL) {
-        /* Calculate upper triangular element. */
-        /* Cmplx expr: *pUpper = *pUpper * (1.0 / *pPivot). */
-        CMPLX_MULT_ASSIGN(*pUpper, *pPivot);
-
-        pSub = pUpper->NextInCol;
-        pLower = pPivot->NextInCol;
-        while (pLower != NULL) {
-            Row = pLower->Row;
-
-            /* Find element in row that lines up with current lower triangular element. */
-            while (pSub != NULL AND pSub->Row < Row)
-                pSub = pSub->NextInCol;
-
-            /* Test to see if desired element was not found, if not, create fill-in. */
-            if (pSub == NULL OR pSub->Row > Row) {
-                pSub = CreateFillin(Matrix, Row, pUpper->Col);
-                if (pSub == NULL) {
-                    Matrix->Error = spNO_MEMORY;
-                    return;
-                }
-            }
-
-            /* Cmplx expr: pElement -= *pUpper * pLower. */
-            CMPLX_MULT_SUBT_ASSIGN(*pSub, *pUpper, *pLower);
-            pSub = pSub->NextInCol;
-            pLower = pLower->NextInCol;
-        }
-        pUpper = pUpper->NextInRow;
-    }
-    return;
-#endif /* spCOMPLEX */
-}
 
 /*
  *  UPDATE MARKOWITZ NUMBERS

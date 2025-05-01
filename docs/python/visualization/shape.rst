@@ -14,7 +14,7 @@ Shape
         If the first arg is a :class:`SectionList` (then a second arg of 0 will 
         prevent default mapping) then only the sections in the list are 
         drawn. Shape is redrawn automatically whenever length or diameter 
-        of a section changes. 
+        of a section changes. This automatically calls :func:`define_shape`.
         
         .. warning::
         
@@ -496,18 +496,23 @@ Shape
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import h, gui
+
+            # note: this assumes Shape[0] has already been created
 
             ss = h.Shape[0]
             def p(type, x, y, keystate):
                 if type == 2:
                     ss.color_all(1)
                     d = ss.nearest(x, y)
-                    arc = ss.push_selected()
-                    if arc >= 0:
+                    # the next line returns normalized position and pushes to
+                    # the section stack if and only if something is selected
+                    a = ss.push_selected()
+                    if a >= 0:
+                        seg = h.cas()(a)
                         ss.select()
-                        print('%g from %s(%g)' % (d, h.secname(), a))
-                    h.pop_section()
+                        print(f'{d} from {seg}')
+                        h.pop_section()
 
             ss.menu_tool('test', p)
             ss.exec_menu('test')

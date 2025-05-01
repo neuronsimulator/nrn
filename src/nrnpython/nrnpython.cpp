@@ -1,5 +1,5 @@
-#include <nrnpython.h>
-#include <nrnpy_utils.h>
+#include "nrnpython.h"
+#include "nrnpy_utils.h"
 #include "oc_ansi.h"
 #include <stdio.h>
 #include <InterViews/resource.h>
@@ -7,7 +7,7 @@
 #include <InterViews/session.h>
 #endif
 #include <nrnoc2iv.h>
-#include <hoccontext.h>
+#include "hoccontext.h"
 #include <ocfile.h>  // bool isDirExist(const std::string& path);
 
 #include <hocstr.h>
@@ -16,6 +16,10 @@
 #include <filesystem>
 #include <string>
 #include <sstream>
+#include <fstream>
+
+#include <nanobind/nanobind.h>
+
 extern HocStr* hoc_cbufstr;
 extern int nrnpy_nositeflag;
 extern std::string nrnpy_pyexe;
@@ -78,7 +82,7 @@ PyObject* basic_sys_path{};
  * @param new_first Path to decode and prepend to sys.path.
  */
 void reset_sys_path(std::string_view new_first) {
-    PyLockGIL _{};
+    nanobind::gil_scoped_acquire _{};
     auto* const path = PySys_GetObject("path");
     nrn_assert(path);
     // Clear sys.path
@@ -119,19 +123,61 @@ static void nrnpython_set_path(std::string_view fname) {
  * @return 0 on failure, 1 on success.
  */
 int nrnpy_pyrun(const char* fname) {
-    nrnpython_set_path(fname);
-    auto* const fp = fopen(fname, "r");
+    auto* fp = fopen(fname, "r");
+    if (fp) {
+        nrnpython_set_path(fname);
+    } else {
+        Fprintf(stderr, fmt::format("Could not open {}\n", fname).c_str());
+        return 0;
+    }
+    fclose(fp);
+#if !defined(MINGW)
+    fp = fopen(fname, "r");
     if (fp) {
         int const code = PyRun_AnyFile(fp, fname);
         fclose(fp);
         return !code;
-    } else {
-        std::cerr << "Could not open " << fname << std::endl;
+    }
+    return 0;
+#else   // MINGW
+    // MINGW and Python have incompatible FILE* so try to accomplish
+    // with pure Python
+    std::string exec{"with open('"};
+    exec += fname;
+    exec +=
+        "', 'rb') as nrnmingw_file:"
+        " exec(nrnmingw_file.read(), globals())\n";
+    int const code = PyRun_SimpleString(exec.c_str());
+    if (code) {
+        PyErr_Print();
         return 0;
     }
+    PyRun_SimpleString("del nrnmingw_file\n");
+    return 1;
+#endif  // MINGW
 }
 
-extern PyObject* nrnpy_hoc();
+/**
+ * @brief Like a PyRun_InteractiveLoop that does not need a FILE*
+ * Use InteractiveConsole to work around the issue of mingw FILE*
+ * not being compatible with Python via the CAPI on windows11.
+ * @return 0 on success, nonzero on failure.
+ */
+static int nrnmingw_pyrun_interactiveloop() {
+    std::string lines[3]{
+        "import code as nrnmingw_code\n",
+        "nrnmingw_interpreter = nrnmingw_code.InteractiveConsole(locals=globals())\n",
+        "nrnmingw_interpreter.interact(\"\")\n"};
+    for (const auto& line: lines) {
+        if (PyRun_SimpleString(line.c_str())) {
+            PyErr_Print();
+            return -1;
+        }
+    }
+    return 0;
+}
+
+extern "C" PyObject* nrnpy_hoc();
 extern PyObject* nrnpy_nrn();
 
 /** @brief Start the Python interpreter.
@@ -148,9 +194,6 @@ static int nrnpython_start(int b) {
     static int started = 0;
     if (b == 1 && !started) {
         p_nrnpy_pyrun = nrnpy_pyrun;
-        if (nrnpy_nositeflag) {
-            Py_NoSiteFlag = 1;
-        }
         // Create a Python configuration, see
         // https://docs.python.org/3.8/c-api/init_config.html#python-configuration, so that
         // {nrniv,special} -python behaves as similarly as possible to python. In particular this
@@ -158,6 +201,9 @@ static int nrnpython_start(int b) {
         // handle settings like LC_ALL=C, so using a different configuration can lead to surprising
         // differences.
         PythonConfigWrapper config;
+        if (nrnpy_nositeflag) {
+            config->site_import = 0;
+        }
         auto const check = [](const char* desc, PyStatus status) {
             if (PyStatus_Exception(status)) {
                 std::ostringstream oss;
@@ -217,7 +263,7 @@ static int nrnpython_start(int b) {
         check("Could not initialise Python", Py_InitializeFromConfig(config));
         // Manipulate sys.path, starting from the default values
         {
-            PyLockGIL _{};
+            nanobind::gil_scoped_acquire _{};
             auto* const sys_path = PySys_GetObject("path");
             if (!sys_path) {
                 throw std::runtime_error("Could not get sys.path from C++");
@@ -265,10 +311,22 @@ static int nrnpython_start(int b) {
         // There used to be a call to PySys_SetArgv here, which dates back to
         // e48d933e03b5c25a454e294deea55e399f8ba1b1 and a comment about sys.argv not being set with
         // nrniv -python. Today, it seems like this is not needed any more.
-#if !defined(MINGW)
-        // cannot get this to avoid crashing with MINGW
+
+        // Used to crash with MINGW when assocated with a python gui thread e.g
+        // from neuron import h, gui
+        // g = h.Graph()
+        // del g
+        // Also, NEURONMainMenu/File/Quit did not work. The solution to both
+        // seems to be to just avoid gui threads if MINGW and launched nrniv
+
+        // Beginning with Python 3.13.0 it seems that the readline
+        // module has not been loaded yet. Since PyInit_readline sets
+        // PyOS_ReadlineFunctionPointer = call_readline; without checking,
+        // we need to import here.
+        PyRun_SimpleString("import readline as nrn_readline");
+
         PyOS_ReadlineFunctionPointer = nrnpython_getline;
-#endif
+
         // Is there a -c "command" or file.py arg.
         bool python_error_encountered{false}, have_reset_sys_path{false};
         for (int i = 1; i < nrn_global_argc; ++i) {
@@ -299,7 +357,15 @@ static int nrnpython_start(int b) {
                 // it.
                 reset_sys_path("");
             }
+#if !defined(MINGW)
             PyRun_InteractiveLoop(hoc_fin, "stdin");
+#else
+            // mingw FILE incompatible with windows11 Python FILE.
+            int ret = nrnmingw_pyrun_interactiveloop();
+            if (ret) {
+                python_error_encountered = ret;
+            }
+#endif
         }
         return python_error_encountered;
     }
@@ -317,12 +383,11 @@ static int nrnpython_start(int b) {
 static void nrnpython_real() {
     int retval = 0;
 #if USE_PYTHON
-    HocTopContextSet
     {
-        PyLockGIL lock;
+        auto interp = HocTopContextManager();
+        nanobind::gil_scoped_acquire lock{};
         retval = (PyRun_SimpleString(hoc_gargstr(1)) == 0);
     }
-    HocContextRestore
 #endif
     hoc_retpushx(retval);
 }

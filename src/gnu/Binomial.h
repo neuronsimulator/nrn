@@ -15,11 +15,7 @@ You should have received a copy of the GNU Library General Public
 License along with this library; if not, write to the Free Software
 Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
-#ifndef _Binomial_h
-#ifdef __GNUG__
-//#pragma interface
-#endif
-#define _Binomial_h 1
+#pragma once
 
 #include "Random.h"
 
@@ -51,5 +47,3 @@ inline int Binomial::n(int xn) { int tmp = pN; pN = xn; return tmp; }
 
 inline double Binomial::u() { return pU; }
 inline double Binomial::u(int xu) { double tmp = pU; pU = xu; return tmp; }
-
-#endif

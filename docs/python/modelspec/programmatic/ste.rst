@@ -32,7 +32,7 @@ StateTransitionEvent
       from neuron import h
       h.load_file("stdrun.hoc") # use h.run(), h.cvode, etc
       
-      soma = h.Section(name="soma") # empty model not allowed.
+      soma = h.Section("soma") # empty model not allowed.
       ste = h.StateTransitionEvent(1)
 
       tnext = h.ref(1)

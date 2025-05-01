@@ -37,7 +37,7 @@ def chkpr(key):
 h.load_file("chanbild.hoc")
 
 # For checking if a run is doing something useful
-# Activate the graphics by uncomment the "# return" statement in
+# To activate graphics, comment the "return" statement in
 # hrun below. Need to press the "Continue" button after each pause.
 # If the graph seems incorrect or unexpected, you can stop by hitting
 # (ctrl)C in the terminal window and then pressing the "Continue" button
@@ -58,17 +58,21 @@ def hrun(name, t_tol=0.0, v_tol=0.0, v_tol_per_time=0.0):
     The reference files are typically generated with GCC, and the tolerances
     are typically driven by the requirements of NVHPC and oneAPI...
     """
+    print(name)
     h.run()
     ref_data = chk.get(name)
-    if ref_data is None:
-        raise Exception("No reference data for key: " + key)
-    ref_tv, ref_vv = ref_data
     new_tv, new_vv = trec.to_python(), vrec.to_python()
-    assert len(ref_tv) == len(ref_vv)
-    assert len(ref_tv) == len(new_tv)
-    assert len(ref_tv) == len(new_vv)
+    if ref_data is None:
+        chk("ZZZ" + name, [new_tv, new_vv])
+        chk.save()
+        raise Exception("No reference data for key: " + name)
+    ref_tv, ref_vv = ref_data
+    np.testing.assert_equal(len(ref_tv), len(ref_vv))
+    np.testing.assert_equal(len(ref_tv), len(new_tv))
+    np.testing.assert_equal(len(ref_tv), len(new_vv))
     match = True
     max_diff_t, max_diff_v = 0.0, 0.0
+
     # Interpolate the new v values to the reference t values
     def interp(new_t, old_t, old_v):
         assert np.all(np.diff(old_t) > 0)
@@ -124,12 +128,17 @@ def test_1():
     s, ic = cell()
     s.insert("khh")  # exists in soma and has one state
     chkstdout("khh inserted", capture_stdout("h.psection()", True))
-    # It is not supported (anymore) to change the number of variables
+    # It is not supported (anymore) to change the number or names of variables
     # of a mechanism while instances of that mechanism are active.
+    # This is because name and number changes re-register the mechanism.
     # In this case the change would be from 1 state to 2 states.
     expect_err("cb.nahh()")  # cb changes name and inserted na_ion before failure
-    cb.ks.name("khh")  # change name back
-    chkstdout("khh same except for na_ion", capture_stdout("h.psection()", True))
+    # change name back (but there is still an instance)
+    expect_err('cb.ks.name("khh");1/0')
+    s.uninsert("khh")
+    cb.ks.name("khh")
+    s.insert("khh")
+    chkstdout("khh same", capture_stdout("h.psection()", True))
     s.uninsert("khh")
     cb.nahh()  # try again
     s.insert("nahh")

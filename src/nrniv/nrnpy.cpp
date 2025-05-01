@@ -52,7 +52,6 @@ static void* p_cons(Object*) {
     return nullptr;
 }
 static void p_destruct(void*) {}
-static Member_func p_members[] = {{nullptr, nullptr}};
 
 #ifdef NRNPYTHON_DYNAMICLOAD
 static std::string nrnpy_pylib{}, nrnpy_pyversion{};
@@ -163,8 +162,9 @@ static void set_nrnpylib() {
                 line.remove_prefix(prefix.size());
                 line.remove_suffix(suffix.size());
                 if (!glob_var.empty() && glob_var != line) {
-                    std::cout << "WARNING: overriding " << env_var << '=' << glob_var << " with "
-                              << line << std::endl;
+                    Printf(fmt::format(
+                               "WARNING: overriding {} = {} with {}\n", env_var, glob_var, line)
+                               .c_str());
                 }
                 glob_var = line;
             }
@@ -216,13 +216,15 @@ void nrnpython_reg() {
             try {
                 set_nrnpylib();
             } catch (std::exception const& e) {
-                std::cerr << "Could not determine Python library details: " << e.what()
-                          << std::endl;
+                Fprintf(stderr,
+                        fmt::format("Could not determine Python library details: {}\n", e.what())
+                            .c_str());
                 exit(1);
             }
             handle = dlopen(nrnpy_pylib.c_str(), RTLD_NOW | RTLD_GLOBAL);
             if (!handle) {
-                std::cerr << "Could not dlopen NRN_PYLIB: " << nrnpy_pylib << std::endl;
+                Fprintf(stderr,
+                        fmt::format("Could not dlopen NRN_PYLIB: {}\n", nrnpy_pylib).c_str());
 #if DARWIN
                 nrn_possible_mismatched_arch(nrnpy_pylib.c_str());
 #endif
@@ -248,20 +250,24 @@ void nrnpython_reg() {
 #endif
     // Stub implementation of PythonObject if Python support was not enabled, or a nrnpython library
     // could not be loaded.
-    class2oc("PythonObject", p_cons, p_destruct, p_members, nullptr, nullptr, nullptr);
+    class2oc("PythonObject", p_cons, p_destruct, nullptr, nullptr, nullptr);
 }
 
 #ifdef NRNPYTHON_DYNAMICLOAD  // to end of file
 static nrnpython_reg_real_t load_nrnpython() {
     std::string pyversion{};
     if (auto const pv10 = nrn_is_python_extension; pv10 > 0) {
-        // pv10 is one of the packed integers like 310 (3.10) or 38 (3.8)
+        // pv10 is one of the packed integers like 310 (3.10) or 39 (3.9)
         auto const factor = (pv10 >= 100) ? 100 : 10;
         pyversion = std::to_string(pv10 / factor) + "." + std::to_string(pv10 % factor);
     } else {
         if (nrnpy_pylib.empty() || nrnpy_pyversion.empty()) {
-            std::cerr << "Do not know what Python to load [nrnpy_pylib=" << nrnpy_pylib
-                      << " nrnpy_pyversion=" << nrnpy_pyversion << ']' << std::endl;
+            Fprintf(
+                stderr,
+                fmt::format("Do not know what Python to load [nrnpy_pylib={} nrnpy_pyversion={}]\n",
+                            nrnpy_pylib,
+                            nrnpy_pyversion)
+                    .c_str());
             return nullptr;
         }
         pyversion = nrnpy_pyversion;
@@ -272,15 +278,18 @@ static nrnpython_reg_real_t load_nrnpython() {
         auto const iter =
             std::find(supported_versions.begin(), supported_versions.end(), pyversion);
         if (iter == supported_versions.end()) {
-            std::cerr << "Python " << pyversion
-                      << " is not supported by this NEURON installation (supported:";
+            Fprintf(
+                stderr,
+                fmt::format("Python {} is not supported by this NEURON installation (supported:",
+                            pyversion)
+                    .c_str());
             for (auto const& good_ver: supported_versions) {
-                std::cerr << ' ' << good_ver;
+                Fprintf(stderr, fmt::format(" {}", good_ver).c_str());
             }
-            std::cerr << "). If you are seeing this message, your environment probably contains "
-                         "NRN_PYLIB, NRN_PYTHONEXE and NRN_PYTHONVERSION settings that are "
-                         "incompatible with this NEURON. Try unsetting them."
-                      << std::endl;
+            Fprintf(stderr,
+                    "). If you are seeing this message, your environment probably contains "
+                    "NRN_PYLIB, NRN_PYTHONEXE and NRN_PYTHONVERSION settings that are "
+                    "incompatible with this NEURON. Try unsetting them.\n");
             return nullptr;
         }
     }
@@ -296,13 +305,15 @@ static nrnpython_reg_real_t load_nrnpython() {
 #endif
     auto* const handle = dlopen(name.c_str(), RTLD_NOW);
     if (!handle) {
-        std::cerr << "Could not load " << name << std::endl;
-        std::cerr << "nrn_is_python_extension=" << nrn_is_python_extension << std::endl;
+        Fprintf(stderr, fmt::format("Could not load {}\n", name).c_str());
+        Fprintf(stderr,
+                fmt::format("nrn_is_python_extension={}\n", nrn_is_python_extension).c_str());
         return nullptr;
     }
     auto* const reg = reinterpret_cast<nrnpython_reg_real_t>(dlsym(handle, "nrnpython_reg_real"));
     if (!reg) {
-        std::cerr << "Could not load registration function from " << name << std::endl;
+        Fprintf(stderr,
+                fmt::format("Could not load registration function from {}\n", name).c_str());
     }
     return reg;
 }

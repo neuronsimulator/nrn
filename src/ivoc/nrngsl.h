@@ -1,5 +1,4 @@
-#ifndef nrngsl_h
-#define nrngsl_h
+#pragma once
 
 #define BASE                 double
 #define GSL_ERROR(a, b)      hoc_execerror(a, "b")
@@ -9,4 +8,3 @@
 
 int FUNCTION(gsl_fft_halfcomplex,
              radix2_transform)(BASE data[], const size_t stride, const size_t n);
-#endif

@@ -71,7 +71,7 @@ CXX_LINK_EXE = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@ @NRN_LINK_FLAGS_STRIN
 CXX_LINK_SHARED = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@ @NRN_LINK_FLAGS_STRING@
 
 ifeq ($(UserNMODLBIN), )
-NOCMODL = $(bindir)/nocmodl
+NOCMODL = $(bindir)/@NRN_CODEGENERATOR_NAME@
 else
 NOCMODL = $(UserNMODLBIN)
 endif
@@ -121,21 +121,21 @@ C_GREEN := \033[32m
 
 # Take the main and link with nrnmech.
 # RPATH is set for DESTDIR_RPATH and coreneuron lib
-special: $(mech_lib)
-	@printf " => $(C_GREEN)LINKING$(C_RESET) executable $(special) LDFLAGS are: $(LDFLAGS)\n"
+special: $(mech_lib) $(datadir)/nrnmain.cpp
+	@printf " => $(C_GREEN)LINKING$(C_RESET) executable \"${PWD}/$(special)\" LDFLAGS are: $(LDFLAGS)\n"
 	$(CXX_LINK_EXE) -I $(incdir) -I $(incdir)/nrncvode -DAUTO_DLOPEN_NRNMECH=0 $(datadir)/nrnmain.cpp -o $(special) \
 	  -L$(OBJS_DIR) -l$(mech_libname) $(NRNLIB_FLAGS) -l$(mech_libname) $(extra_lib_link) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS) $(EXTRA_LDFLAGS)
 
 $(mech_lib): $(mech_lib_type)
 
 mech_lib_shared: mod_func.o $(mod_objs) build_always
-	@printf " => $(C_GREEN)LINKING$(C_RESET) shared library $(mech_lib)\n"
+	@printf " => $(C_GREEN)LINKING$(C_RESET) shared library \"${PWD}/$(mech_lib)\"\n"
 	$(CXX_LINK_SHARED) -I $(incdir) -o ${mech_lib} ${_SONAME} \
 	  $(mod_func_o) $(mod_objs) $(NRNLIB_FLAGS) $(NRNLIB_RPATH_FLAGS) $(LDFLAGS)
 	rm -f $(OBJS_DIR)/.libs/libnrnmech.so ; mkdir -p $(OBJS_DIR)/.libs ; cp $(mech_lib) $(OBJS_DIR)/.libs/libnrnmech.so
 
 mech_lib_static: mod_func.o $(mod_objs) build_always
-	@printf " => $(C_GREEN)LINKING$(C_RESET) static library $(mech_lib)\n"
+	@printf " => $(C_GREEN)LINKING$(C_RESET) static library \"${PWD}/$(mech_lib)\"\n"
 	ar cq ${mech_lib} $(mod_func_o) $(mod_objs) $(cobjs);
 
 mod_func.o: mod_func.cpp

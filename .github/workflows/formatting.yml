@@ -1,7 +1,8 @@
 name: Check formatting
 
 concurrency:
-  group: ${{ github.workflow }}#${{ github.ref }}
+  # Don't cancel on master, creating a PR when a push workflow is already going will cancel the push workflow in favour of the PR workflow
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 on:
@@ -20,10 +21,23 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Update submodule
         working-directory: ${{runner.workspace}}/nrn
         run: git submodule update --init external/coding-conventions
       - name: Check formatting
         working-directory: ${{runner.workspace}}/nrn
-        run: external/coding-conventions/bin/format -v --dry-run
+        run: |
+          external/coding-conventions/bin/format
+
+          modified_files=$(git diff --name-only)
+          if [ -n "$modified_files" ]; then
+              echo "Some files are not well formatted:"
+              echo "$modified_files"
+              echo ""
+              echo "The diff is:"
+              git --no-pager diff
+              exit 1
+          fi
+
+

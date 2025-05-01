@@ -33,7 +33,7 @@ Random Class
         from the gnu c++ class library. As of version 5.2, a cryptographic quality 
         RNG class wrapper for :func:`mcell_ran4` was added and is available 
         with the :meth:`Random.MCellRan4` method. The current default random generator 
-        is :meth:`Random.ACG`. 
+        is :meth:`Random.Random123`.
          
         As of version 7.3, a more versatile cryptographic quality generator, 
         Random123, is available with the :meth:`Random.Random123` method. This generator 
@@ -67,52 +67,6 @@ Random Class
 
         prints 20 random numbers ranging in value between 30 and 50. 
          
-
-         
-
-----
-
-
-
-.. method:: Random.ACG
-
-
-    Syntax:
-        ``r.ACG()``
-
-        ``r.ACG(seed)``
-
-        ``r.ACG(seed, size)``
-
-
-    Description:
-        Use a variant of the Linear Congruential Generator (algorithm M) 
-        described in Knuth, Art of Computer Programming, Vol. III in 
-        combination with a Fibonacci Additive Congruential Generator.  This is 
-        a "very high quality" random number generator, Default size is 55, 
-        giving a size of 1244 bytes to the structure. Minimum size is 7 (total 
-        100 bytes), maximum size is 98 (total 2440 bytes). 
-
-         
-
-----
-
-
-
-.. method:: Random.MLCG
-
-
-    Syntax:
-        ``r.MLCG()``
-
-        ``r.MLCG(seed1)``
-
-        ``r.MLCG(seed1, seed2)``
-
-
-    Description:
-        Use a Multiplicative Linear Congruential Generator.  Not as high 
-        quality as the ACG.  It uses only 8 bytes. 
 
          
 
@@ -767,4 +721,93 @@ Random Class
         Create a Weibull distribution. 
 
          
+
+----
+
+NMODLRandom Class
+=================
+
+.. class:: NMODLRandom
+
+    Syntax:
+        ``r = point_process.ranvar``
+
+        ``r = section(x).mech.ranvar``
+
+        ``r = section(x).ranvar_mech``
+
+
+    Description:
+        Returns an NMODLRandom wrapper for the nrnran123_State associated with the mechanism
+        :ref:`RANDOM ranvar <nmodlrandom>` variable.
+        Note that an attempt to assign a value to ranvar will raise an error.
+        At present, all mentions of ranvar in the context of a specific mechanism instance return a wrapper for
+        the same nrnran123_State (though the NMODLRandom instances are different).
+
+----
+
+.. method:: NMODLRandom.get_ids
+
+    Syntax:
+        ``vector = r.get_ids()``
+
+    Description:
+        Returns a HOC Vector of size 3 containing the 32 bit id1, id2, id3 of the nrnran123_State
+
+----
+
+.. method:: NMODLRandom.set_ids
+
+    Syntax:
+        ``r = r.set_ids(id1, id2, id3)``
+
+    Description:
+        Sets the 32 bit id1, id2, id3 of the nrnran123_State and returns the same NModlRandom instance.
+
+
+----
+
+.. method:: NMODLRandom.get_seq
+
+    Syntax:
+        ``x = r.get_seq()``
+
+    Description:
+        Returns as a float, the 34 bit sequence position of the nrnran123_State
+
+----
+
+.. method:: NMODLRandom.set_seq
+
+    Syntax:
+        ``r = r.set_seq(x)``
+
+    Description:
+        Sets the 34 bit sequence position of the nrnran123_State. Returns the same NMODLRandom instance.
+
+----
+
+.. method:: NMODLRandom.uniform
+
+    Syntax:
+        ``x = r.uniform()``
+
+    Description:
+        Returns as a float, the uniform random value in the open interval 0 to 1 at the current sequence
+        position of the nrnran123_State (the current sequence position is then incremented by 1)
+        This is, for testing purposes, the only distribution exposed to
+        the interpreter. We don't forsee any practical use of
+        NMODLRandom within the interpreter in regard to sampling. The purpose
+        of NMODLRandom is to allow setting of stream properties for a
+        mod file RANDOM variable. Indeed, if one explicitly constructs an NMODLRandom
+        from the interpreter, then
+
+        .. code-block::
+            python
+
+            from neuron import h
+            r = h.NMODLRandom()
+            print(r.uniform())
+
+            NEURON: NMODLRandom wrapped handle is not valid
 

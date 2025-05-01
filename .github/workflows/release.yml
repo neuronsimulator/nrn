@@ -25,7 +25,7 @@ jobs:
       release_url: ${{ steps.create_release.outputs.upload_url }}
       rel_tag: ${{ env.REL_TAG }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         name: Checkout branch ${{ env.REL_BRANCH }}
         with:
             ref: ${{ env.REL_BRANCH }}
@@ -55,34 +55,59 @@ jobs:
     needs: tag-n-release
     steps:
     - name: Checkout feature-rich code
-      run: |
-        git clone --depth=1 --shallow-submodules --recurse-submodules $GH_REPO -b $REL_TAG --single-branch
-        cd nrn
-        LOCAL_TAG=`git tag`
-        if [ $REL_TAG != $LOCAL_TAG ]; then
-          echo "Wrong tag downloaded!"
-          exit 1
-        else
-          git log --oneline
-        fi
-
-    - name: Make nrnversion.h
-      run: |
-        mkdir build && cd build
-        cmake -DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF ../nrn
-        make nrnversion_h VERBOSE=1
-
-    - name: Create nrn-full-src-package
-      id: tar
-      run: |
-        tar -czvf nrn-full-src-package-${REL_TAG}.tar.gz nrn
-        echo "asset_file=nrn-full-src-package-${REL_TAG}.tar.gz" >> $GITHUB_OUTPUT
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 1
 
     - name: Upload nrn-full-src-package to release
       run: |
-        gh release upload ${{ needs.tag-n-release.outputs.rel_tag }} ${{ steps.tar.outputs.asset_file }}
+        filename="nrn-full-src-package-${{ needs.tag-n-release.outputs.rel_tag }}.tar.gz"
+        topdir="nrn-${{ needs.tag-n-release.outputs.rel_tag }}"
+        # taken from:
+        # https://stackoverflow.com/a/67389978
+        git ls-files --recurse-submodules > nrn_files
+        # we also need the .git dir for now
+        find .git >> nrn_files
+        # cannot use --xform as it screws up the symbolic links. So
+        # do a normal tar, untar into topdir, and tar again.
+        mkdir -p tmp/$topdir
+        tar -c -T nrn_files | tar -x -C tmp/$topdir
+        (cd tmp && tar caf ../$filename $topdir)
+        rm -rf tmp
+        gh release upload ${{ needs.tag-n-release.outputs.rel_tag }} ${filename}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test-full-src-package:
+    runs-on: ubuntu-latest
+    needs: [nrn-full-src-package, tag-n-release]
+    steps:
+      - name: Install apt packages
+        run: |
+          sudo apt-get install -y bison flex libreadline-dev libfl-dev libmpich-dev
+
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version : '3.18'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build nrn-full-src-package
+        run: |
+          topdir="nrn-${{ needs.tag-n-release.outputs.rel_tag }}"
+          gh release download ${{ needs.tag-n-release.outputs.rel_tag }} --pattern 'nrn-full-src-package*' --output nrn.tar.gz
+          tar xf nrn.tar.gz
+          python -m pip install -r ${topdir}/nrn_requirements.txt
+          # we build a simple configuration to save on CI time
+          cmake -B build -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_MPI=OFF -DNMODL_ENABLE_PYTHON_BINDINGS=OFF -DNRN_ENABLE_CORENEURON=OFF -S ${topdir}/
+          cmake --build build --parallel $(nproc)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   windows-installer:
     needs: tag-n-release

@@ -115,6 +115,7 @@ class Phase2 {
         std::vector<int> iArray;
         std::vector<double> dArray;
         std::vector<int> pointer2type;
+        std::vector<uint32_t> nmodlrandom{};
     };
     std::vector<TML> tmls;
     std::vector<int> output_vindex;

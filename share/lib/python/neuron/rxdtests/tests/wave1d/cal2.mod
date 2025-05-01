@@ -5,8 +5,8 @@ TITLE L-calcium channel
 : conduction density estimate of 50-200 pS/mu2; 0.0025 S/cm2 (5-20 channels of 10 each)
 : M. Migliore, E. Cook, D.B. Jaffe, D.A. Turner and D. Johnston, Computer simulations of morphologically reconstructed CA3
 : hippocampal neurons, J. Neurophysiol. 73, 1157-1168 (1995). 
-: adapted from http://senselab.med.yale.edu/modeldb/ShowModel.asp?model=3263&file=\ca3_db\cal2.mod
-: this version from https://senselab.med.yale.edu/ModelDB/ShowModel.asp?model=148094&file=\kv72-R213QW-mutations\cal2.mod
+: adapted from https://modeldb.science/3263?tab=2&file=ca3_db/cal2.mod
+: this version from https://modeldb.science/148094?tab=2&file=kv72-R213QW-mutations/cal2.mod
 : Miceli F, Soldovieri MV, Ambrosino P, Barrese V, Migliore M, Cilio MR, Taglialatela M (2013) Genotype-phenotype
 : correlations in neonatal epilepsies caused by mutations in the voltage sensor of Kv7.2 potassium channel subunits. PNAS 110:4386-4391
 

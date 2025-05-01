@@ -23,67 +23,67 @@
 static double sb_select(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SectionBrowser.select", v);
 #if HAVE_IV
-    IFGUI
-    Section* sec = chk_access();
-    ((OcSectionBrowser*) v)->select_section(sec);
-    ENDGUI
+    if (hoc_usegui) {
+        Section* sec = chk_access();
+        ((OcSectionBrowser*) v)->select_section(sec);
+    }
 #endif
     return 1.;
 }
 static double sb_select_action(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SectionBrowser.select_action", v);
 #if HAVE_IV
-    IFGUI
-    char* str_action = NULL;
-    Object* obj_action = NULL;
-    if (hoc_is_object_arg(1)) {
-        obj_action = *hoc_objgetarg(1);
-    } else {
-        str_action = gargstr(1);
-    }
+    if (hoc_usegui) {
+        char* str_action = NULL;
+        Object* obj_action = NULL;
+        if (hoc_is_object_arg(1)) {
+            obj_action = *hoc_objgetarg(1);
+        } else {
+            str_action = gargstr(1);
+        }
 
-    ((OcSectionBrowser*) v)->set_select_action(str_action, obj_action);
-    ENDGUI
+        ((OcSectionBrowser*) v)->set_select_action(str_action, obj_action);
+    }
 #endif
     return 1.;
 }
 static double sb_accept_action(void* v) {
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("SectionBrowser.accept_action", v);
 #if HAVE_IV
-    IFGUI
-    char* str_action = NULL;
-    Object* obj_action = NULL;
-    if (hoc_is_object_arg(1)) {
-        obj_action = *hoc_objgetarg(1);
-    } else {
-        str_action = gargstr(1);
-    }
+    if (hoc_usegui) {
+        char* str_action = NULL;
+        Object* obj_action = NULL;
+        if (hoc_is_object_arg(1)) {
+            obj_action = *hoc_objgetarg(1);
+        } else {
+            str_action = gargstr(1);
+        }
 
-    ((OcSectionBrowser*) v)->set_accept_action(str_action, obj_action);
-    ENDGUI
+        ((OcSectionBrowser*) v)->set_accept_action(str_action, obj_action);
+    }
 #endif
     return 1.;
 }
 static Member_func sb_members[] = {{"select", sb_select},
                                    {"select_action", sb_select_action},
                                    {"accept_action", sb_accept_action},
-                                   {0, 0}};
+                                   {nullptr, nullptr}};
 static void* sb_cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("SectionBrowser", NULL);
     Object* ob;
 #if HAVE_IV
     OcSectionBrowser* b = NULL;
-    IFGUI
-    if (ifarg(1)) {
-        ob = *hoc_objgetarg(1);
-        b = new OcSectionBrowser(ob);
-    } else {
-        b = new OcSectionBrowser(NULL);
+    if (hoc_usegui) {
+        if (ifarg(1)) {
+            ob = *hoc_objgetarg(1);
+            b = new OcSectionBrowser(ob);
+        } else {
+            b = new OcSectionBrowser(NULL);
+        }
+        b->ref();
+        Window* w = new StandardWindow(b->standard_glyph());
+        w->map();
     }
-    b->ref();
-    Window* w = new StandardWindow(b->standard_glyph());
-    w->map();
-    ENDGUI
     return (void*) b;
 #else
     return 0;
@@ -96,7 +96,7 @@ static void sb_destruct(void* v) {
 #endif
 }
 void SectionBrowser_reg() {
-    class2oc("SectionBrowser", sb_cons, sb_destruct, sb_members, NULL, NULL, NULL);
+    class2oc("SectionBrowser", sb_cons, sb_destruct, sb_members, nullptr, nullptr);
 }
 
 #if HAVE_IV
@@ -121,17 +121,13 @@ OcSectionBrowser::OcSectionBrowser(Object* ob)
             psec_[scnt_++] = sec;
         }
     } else {
-        struct hoc_Item* qsec;
         scnt_ = 0;
-        // ForAllSections(sec)  //{
-        ITERATE(qsec, section_list) {
+        for (const Section* sec: range_sec(section_list)) {
             ++scnt_;
         }
         psec_ = new Section*[scnt_];
         scnt_ = 0;
-        // ForAllSections(sec)  //{
-        ITERATE(qsec, section_list) {
-            Section* sec = hocSEC(qsec);
+        for (Section* sec: range_sec(section_list)) {
             psec_[scnt_++] = sec;
         }
     }
@@ -359,18 +355,13 @@ void BrowserAccept::execute() {
 }
 
 SectionBrowserImpl::SectionBrowserImpl() {
-    struct hoc_Item* qsec;
     scnt_ = 0;
-    // ForAllSections(sec)  //{
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (const Section* sec: range_sec(section_list)) {
         ++scnt_;
     }
     psec_ = new Section*[scnt_];
     scnt_ = 0;
-    // ForAllSections(sec)  //{
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         psec_[scnt_++] = sec;
         section_ref(sec);
     }

@@ -14,9 +14,9 @@ Given a `list` of sections:
     from neuron import h, gui 
 
     secs = [
-        h.Section(name='soma'),
-        h.Section(name='dend'),
-        h.Section(name='axon')
+        h.Section('soma'),
+        h.Section('dend'),
+        h.Section('axon')
     ]
 
 and given some data
@@ -78,7 +78,7 @@ Connect the two cells with a gap junction (see :ref:`halfgap.mod <halfgap_mod_sc
 Exercise 5
 ----------
 
-Download the model from http://modeldb.yale.edu/126814 Create a Python script that loads the model, injects current into the center of the soma from t=2 to t=4 ms sufficient to generate an action potential, and records and plots membrane potential, sodium current, and potassium current as functions of time from t=0 to t=10 ms.
+Download the model from https://modeldb.science/126814 Create a Python script that loads the model, injects current into the center of the soma from t=2 to t=4 ms sufficient to generate an action potential, and records and plots membrane potential, sodium current, and potassium current as functions of time from t=0 to t=10 ms.
 
 *Hint*: ``h.load_file('mosinit.hoc')``
 
@@ -105,7 +105,7 @@ where
 
     g' = - g / \tau
 
-What is the role of :math:`E_syn`? How does it change for an excitatory vs an inhibitory synapse? (Note, this is the parameter ``e`` in the code.
+What is the role of :math:`E_{syn}`? How does it change for an excitatory vs an inhibitory synapse? (Note, this is the parameter ``e`` in the code.
 
 Construct two single compartment neurons with Hodgkin-Huxley dynamics, one of which receives a current pulse at 2 ms, another which receives a current pulse at 10 ms. Ensure that both cells fire action potentials after the input.
 
@@ -121,18 +121,18 @@ halfgap.mod
     none
 
     NEURON {
-    POINT_PROCESS HalfGap
-    POINTER vgap
-    RANGE r, i
-    ELECTRODE_CURRENT i
+        POINT_PROCESS HalfGap
+        POINTER vgap
+        RANGE r, i
+        ELECTRODE_CURRENT i
     } 
 
     PARAMETER {r = 3 (megohm)}
 
     ASSIGNED {
-    v (millivolt)
-    vgap (millivolt)
-    i (nanoamp)
+        v (millivolt)
+        vgap (millivolt)
+        i (nanoamp)
     } 
 
     BREAKPOINT { i = (vgap - v) / r }

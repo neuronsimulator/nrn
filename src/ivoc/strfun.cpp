@@ -1,10 +1,10 @@
 #include <../../nrnconf.h>
-#include <InterViews/regexp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "classreg.h"
 #include "oc2iv.h"
 #include <string.h>
+#include <regex>
 // for alias
 #include <symdir.h>
 #include <oclist.h>
@@ -14,6 +14,9 @@
 #if HAVE_IV
 #include <ocbox.h>
 #endif
+
+#include "utils/logger.hpp"
+
 extern Objectdata* hoc_top_level_data;
 extern Symlist* hoc_built_in_symlist;
 extern int nrn_is_artificial(int);
@@ -39,31 +42,52 @@ static double l_len(void*) {
 
 static double l_head(void*) {
     std::string text(gargstr(1));
-    Regexp r(gargstr(2));
-    r.Search(text.c_str(), text.size(), 0, text.size());
-    int i = r.BeginningOfMatch();
-    //	text.set_to_left(i); doesnt work
-    char** head = hoc_pgargstr(3);
-    if (i > 0) {
-        hoc_assign_str(head, text.substr(0, i).c_str());
-    } else {
-        hoc_assign_str(head, "");
+    {  // Clean the text so we keep only the first line
+       // Imitation of std::multiline in our case
+        std::regex r("^(.*)(\n|$)");
+        std::smatch sm;
+        std::regex_search(text, sm, r);
+        text = sm[1];
     }
+    int i = -1;
+    std::string result{};
+    try {
+        std::regex r(gargstr(2), std::regex::egrep);
+        if (std::smatch sm; std::regex_search(text, sm, r)) {
+            i = sm.position();
+            result = sm.prefix().str();
+        }
+    } catch (const std::regex_error& e) {
+        Fprintf(stderr, fmt::format("{}\n", e.what()).c_str());
+    }
+    char** head = hoc_pgargstr(3);
+    hoc_assign_str(head, result.c_str());
     hoc_return_type_code = 1;  // integer
     return double(i);
 }
 
 static double l_tail(void*) {
     std::string text(gargstr(1));
-    Regexp r(gargstr(2));
-    r.Search(text.c_str(), text.size(), 0, text.size());
-    int i = r.EndOfMatch();
-    char** tail = hoc_pgargstr(3);
-    if (i >= 0) {
-        hoc_assign_str(tail, text.c_str() + i);
-    } else {
-        hoc_assign_str(tail, "");
+    {  // Clean the text so we keep only the first line
+       // Imitation of std::multiline in our case
+        std::regex r("^(.*)(\n|$)");
+        std::smatch sm;
+        std::regex_search(text, sm, r);
+        text = sm[1];
     }
+    int i = -1;
+    std::string result{};
+    try {
+        std::regex r(gargstr(2), std::regex::egrep);
+        if (std::smatch sm; std::regex_search(text, sm, r)) {
+            i = sm.position() + sm.length();
+            result = sm.suffix().str();
+        }
+    } catch (const std::regex_error& e) {
+        Fprintf(stderr, fmt::format("{}\n", e.what()).c_str());
+    }
+    char** tail = hoc_pgargstr(3);
+    hoc_assign_str(tail, result.c_str());
     hoc_return_type_code = 1;  // integer
     return double(i);
 }
@@ -346,16 +370,16 @@ static Member_func l_members[] = {{"substr", l_substr},
                                   {"references", l_ref},
                                   {"is_point_process", l_is_point},
                                   {"is_artificial", l_is_artificial},
-                                  {0, 0}};
+                                  {nullptr, nullptr}};
 
-static Member_ret_obj_func l_obj_members[] = {{"alias_list", l_alias_list}, {0, 0}};
+static Member_ret_obj_func l_obj_members[] = {{"alias_list", l_alias_list}, {nullptr, nullptr}};
 
 static void* l_cons(Object*) {
     return nullptr;
 }
 
 void StringFunctions_reg() {
-    class2oc("StringFunctions", l_cons, nullptr, l_members, nullptr, l_obj_members, nullptr);
+    class2oc("StringFunctions", l_cons, nullptr, l_members, l_obj_members, nullptr);
 }
 
 

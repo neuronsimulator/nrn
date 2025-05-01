@@ -11,9 +11,14 @@
 #include <numeric>
 #include <queue>
 
+#if CORENRN_BUILD
 #include "coreneuron/nrnconf.h"  // for size_t
-#include "coreneuron/utils/lpt.hpp"
 #include "coreneuron/utils/nrn_assert.h"
+#else
+#include "oc/nrnassrt.h"
+#endif
+
+#include "coreneuron/utils/lpt.hpp"
 
 using P = std::pair<size_t, size_t>;
 

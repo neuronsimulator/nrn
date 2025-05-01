@@ -23,10 +23,18 @@ std::uint32_t nrnran123_get_globalindex() {
     return k[0];
 }
 
-nrnran123_State* nrnran123_newstream(std::uint32_t id1, std::uint32_t id2) {
-    return nrnran123_newstream3(id1, id2, 0);
-}
+/* deprecated */
 nrnran123_State* nrnran123_newstream3(std::uint32_t id1, std::uint32_t id2, std::uint32_t id3) {
+    return nrnran123_newstream(id1, id2, id3);
+}
+
+nrnran123_State* nrnran123_newstream() {
+    extern int nrnmpi_myid;
+    static std::uint32_t id3{};
+    return nrnran123_newstream(1, nrnmpi_myid, ++id3);
+}
+
+nrnran123_State* nrnran123_newstream(std::uint32_t id1, std::uint32_t id2, std::uint32_t id3) {
     auto* s = new nrnran123_State;
     s->c[1] = id3;
     s->c[2] = id1;
@@ -54,18 +62,49 @@ void nrnran123_setseq(nrnran123_State* s, std::uint32_t seq, char which) {
     s->r = philox4x32(s->c, k);
 }
 
+/** @brief seq4which is 34 bit uint encoded as double(seq)*4 + which
+ *  More convenient to get and set from interpreter
+*/
+void nrnran123_setseq(nrnran123_State* s, double seq4which) {
+    if (seq4which < 0.0) {
+        seq4which = 0.0;
+    }
+    if (seq4which > double(0XffffffffffLL)) {
+        seq4which = 0.0;
+    }
+    // at least 64 bits even on 32 bit machine (could be more)
+    unsigned long long x = ((unsigned long long) seq4which) & 0X3ffffffffLL;
+    char which = x & 0X3;
+    uint32_t seq = x >> 2;
+    nrnran123_setseq(s, seq, which);
+}
+
 void nrnran123_getids(nrnran123_State* s, std::uint32_t* id1, std::uint32_t* id2) {
     *id1 = s->c[2];
     *id2 = s->c[3];
 }
 
-void nrnran123_getids3(nrnran123_State* s,
+void nrnran123_getids(nrnran123_State* s,
                        std::uint32_t* id1,
                        std::uint32_t* id2,
                        std::uint32_t* id3) {
     *id3 = s->c[1];
     *id1 = s->c[2];
     *id2 = s->c[3];
+}
+
+/* Deprecated */
+void nrnran123_getids3(nrnran123_State* s, 
+                       std::uint32_t* id1,
+                       std::uint32_t* id2,
+                       std::uint32_t* id3) {
+    nrnran123_getids(s, id1, id2, id3);
+}
+
+void nrnran123_setids(nrnran123_State* s, std::uint32_t id1, std::uint32_t id2, std::uint32_t id3) {
+    s->c[1] = id3;
+    s->c[2] = id1;
+    s->c[3] = id2;
 }
 
 std::uint32_t nrnran123_ipick(nrnran123_State* s) {
@@ -86,6 +125,19 @@ double nrnran123_dblpick(nrnran123_State* s) {
     return ((double) u + 1.0) * SHIFT32;
 }
 
+double nrnran123_uniform(nrnran123_State* s) {
+    return nrnran123_dblpick(s);
+}
+
+double nrnran123_uniform(nrnran123_State* s, double a, double b) {
+    return a + nrnran123_dblpick(s) * (b - a);
+}
+
+double nrnran123_negexp(nrnran123_State* s, double mean) {
+    /* min 2.3283064e-10 to max 22.18071 (if mean is 1) */
+    return -std::log(nrnran123_dblpick(s)) * mean;
+}
+
 double nrnran123_negexp(nrnran123_State* s) {
     /* min 2.3283064e-10 to max 22.18071 */
     return -std::log(nrnran123_dblpick(s));
@@ -104,9 +156,13 @@ double nrnran123_normal(nrnran123_State* s) {
         w = (u1 * u1) + (u2 * u2);
     } while (w > 1);
 
-    y = std::sqrt((-2. * log(w)) / w);
+    y = std::sqrt((-2. * std::log(w)) / w);
     x = u1 * y;
     return x;
+}
+
+double nrnran123_normal(nrnran123_State* s, double mu, double sigma) {
+    return mu + nrnran123_normal(s) * sigma;
 }
 
 nrnran123_array4x32 nrnran123_iran(std::uint32_t seq, std::uint32_t id1, std::uint32_t id2) {

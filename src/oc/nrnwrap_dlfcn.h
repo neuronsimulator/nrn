@@ -1,5 +1,4 @@
-#ifndef nrnwrap_dlfcn_h
-#define nrnwrap_dlfcn_h
+#pragma once
 
 #include "../../nrnconf.h"
 #if defined(HAVE_DLFCN_H)
@@ -10,5 +9,3 @@
 #include "../mswin/dlfcn.h"
 #define HAVE_DLFCN_H 1
 #endif
-
-#endif /* nrnwrap_dlfcn_h */

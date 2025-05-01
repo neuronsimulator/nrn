@@ -1,5 +1,4 @@
-#ifndef scenepicker_h
-#define scenepicker_h
+#pragma once
 
 #include <InterViews/hit.h>
 #include "ocpicker.h"
@@ -53,5 +52,3 @@ class ScenePicker: public StandardPicker {
   private:
     ScenePickerImpl* spi_;
 };
-
-#endif

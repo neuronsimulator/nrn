@@ -41,8 +41,8 @@ SectionRef
 
             from neuron import h
 
-            s = h.Section(name="s")
-            s2 = h.Section(name="s2")
+            s = h.Section("s")
+            s2 = h.Section("s2")
             sref = h.SectionRef(sec=s2)
 
             print(sref.sec==s)  # False

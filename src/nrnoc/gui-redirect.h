@@ -1,5 +1,4 @@
-#ifndef gui_redirect_h
-#define gui_redirect_h
+#pragma once
 
 #include "hocdec.h"
 #include "nrnpy.h"
@@ -89,5 +88,3 @@ extern Object* nrn_get_gui_redirect_obj();
             }                                                                                     \
         }                                                                                         \
     }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef NRN_CELL_GROUP_H
-#define NRN_CELL_GROUP_H
+#pragma once
 
 #include "datum_indices.h"
 #include <vector>
@@ -33,8 +32,8 @@ class CellGroup {
     // following three are parallel arrays
     std::vector<PreSyn*> output_ps;  // n_presyn of these, real are first, tml order for acell.
     std::vector<int> output_gid;     // n_presyn of these, -(type + 1000*index) if no gid
-    std::vector<int> output_vindex;  // n_presyn of these. >=0 if associated with voltage, -(type +
-                                     // 1000*index) for acell.
+    std::vector<int> output_vindex;  // n_presyn of these. >=0 if associated with voltage,
+                                     // -(type + 1000*index) for acell.
     int n_netcon;  // all that have targets associated with this threads Point_process.
     std::vector<NetCon*> netcons;
     int* netcon_srcgid;  // -(type + 1000*index) refers to acell with no gid
@@ -90,5 +89,3 @@ class CellGroup {
         return p->id().current_row() - sorted_token.thread_cache(tid).mechanism_offset.at(type);
     }
 };
-
-#endif  // NRN_CELL_GROUP_H

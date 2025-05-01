@@ -139,7 +139,7 @@ void get_nrn_trajectory_requests(int bsize) {
                 tr->varrays = varrays;
                 tr->scatter = pvars;
                 for (int i = 0; i < n_trajec; ++i) {
-                    tr->gather[i] = stdindex2ptr(types[i], indices[i], nt);
+                    tr->gather[i] = legacy_index2pointer(types[i], indices[i], nt);
                 }
                 delete[] types;
                 delete[] indices;
@@ -195,8 +195,10 @@ void nrn_init_and_load_data(int argc,
     }
 #endif
 
-    // full path of files.dat file
-    std::string filesdat(corenrn_param.datpath + "/" + corenrn_param.filesdat);
+    // Default path of files.dat is relative to datpath
+    if (corenrn_param.filesdat.empty()) {
+        corenrn_param.filesdat = corenrn_param.datpath + "/" + corenrn_param.default_dat_filename;
+    }
 
     // read the global variable names and set their values from globals.dat
     set_globals(corenrn_param.datpath.c_str(), (corenrn_param.seed >= 0), corenrn_param.seed);
@@ -257,7 +259,7 @@ void nrn_init_and_load_data(int argc,
     use_phase2_ = (corenrn_param.ms_phases == 2) ? 1 : 0;
 
     // reading *.dat files and setting up the data structures, setting mindelay
-    nrn_setup(filesdat.c_str(),
+    nrn_setup(corenrn_param.filesdat.c_str(),
               is_mapping_needed,
               checkPoints,
               run_setup_cleanup,

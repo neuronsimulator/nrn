@@ -396,16 +396,16 @@ Other CoreNEURON options:
 -------------------------
   There are 20 or so cmake arguments specific to a CoreNEURON
   build that are listed in https://github.com/neuronsimulator/nrn/blob/master/src/coreneuron/CMakeLists.txt.
-  The ones of particular interest that can be used on the NEURON
-  CMake configure line are `CORENRN_ENABLE_NMODL` and `CORENRN_ENABLE_GPU`.
+  The one of particular interest that can be used on the NEURON
+  CMake configure line is `CORENRN_ENABLE_GPU`.
 
 NMODL options
 =============
 
 To see all the NMODL CMake options you can look in https://github.com/BlueBrain/nmodl/blob/master/CMakeLists.txt.
 
-NMODL_ENABLE_PYTHON_BINDINGS:BOOL=ON
-------------------------------------
+NMODL_ENABLE_PYTHON_BINDINGS:BOOL=OFF
+-------------------------------------
   Enable pybind11 based python bindings
 
   Using this option the user can use the NMODL python package to use NMODL via python. For more information look at
@@ -579,6 +579,15 @@ NRN_COVERAGE_FILES:STRING=
 
   ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
 
+  For a list of all the cpp files changed in a pull request, consider
+  copy/pasting the ``;`` separated list obtained with
+
+  .. code-block:: shell
+
+     a=`git diff --name-only master | grep '\.cpp'`
+     echo $a | sed 's/ /;/g'
+
+
 NRN_SANITIZERS:STRING=
 ----------------------
   Enable some combination of AddressSanitizer, LeakSanitizer, ThreadSanitizer
@@ -588,6 +597,11 @@ NRN_SANITIZERS:STRING=
   Note that on macOS it can be a little intricate to combine
   ``-DNRN_SANITIZERS=address`` with the use of Python virtual environments; if
   you attempt this then the CMake code should recommend a solution.
+
+  Note: the ``address`` sanitizer also prints leak infornation when a
+  launch exits. That can be avoided with
+
+  ``export ASAN_OPTIONS=detect_leaks=0``
 
 Miscellaneous Rarely used options specific to NEURON:
 =====================================================
@@ -660,3 +674,23 @@ NRN_ENABLE_MATH_OPT:BOOL=OFF
 
   Note: Compilers like Intel, NVHPC, Cray etc enable such optimisations
   by default.
+
+NRN_ENABLE_DIGEST:BOOL=OFF
+------------------------------
+  Provides \ :func:`nrn_digest` function for debugging cross platform floating
+  result differences.
+
+  Requires libcrypto
+
+NRN_ENABLE_ARCH_INDEP_EXP_POW:BOOL=OFF
+---------------------------------
+  Provides \ :func:`use_exp_pow_precision` function so that exp and pow produce
+  same results on all platforms.
+
+  Requires mpfr (multiple precision floating-point computation). eg.
+  ``sudo apt install libmpfr-dev``
+
+  To get platform independent floating point results with clang,
+  also consider using
+  ``-DCMAKE_C_FLAGS="-ffp-contract=off" -DCMAKE_CXX_FLAGS="-ffp-contract=off"``
+  or, alternatively, ``"-fp-model=strict``

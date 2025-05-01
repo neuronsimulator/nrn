@@ -100,17 +100,13 @@ Section** secorder;
 double debugsolve(void) /* returns solution error */
 {
     short inode;
-    int i;
-    Section *sec, *psec, *ch;
     Node *nd, *pnd, **ndP;
     double err, sum;
 
     /* save parts of matrix that will be destroyed */
-    assert(0)
-        /* need to save the rootnodes too */
-        // ForAllSections(sec)
-        ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    assert(0);
+    /* need to save the rootnodes too */
+    for (const Section* sec: range_sec(section_list)) {
         assert(sec->pnode && sec->nnode);
         for (inode = sec->nnode - 1; inode >= 0; inode--) {
             nd = sec->pnode[inode];
@@ -124,9 +120,7 @@ double debugsolve(void) /* returns solution error */
 
     err = 0.;
     /* need to check the rootnodes too */
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (const Section* sec: range_sec(section_list)) {
         for (inode = sec->nnode - 1; inode >= 0; inode--) {
             ndP = sec->pnode + inode;
             nd = sec->pnode[inode];
@@ -141,10 +135,9 @@ double debugsolve(void) /* returns solution error */
             if (inode < sec->nnode - 1) {
                 sum += NODEA(ndP[1]) * NODERHS(ndP[1]);
             }
-            for (ch = nd->child; ch; ch = ch->sibling) {
-                psec = ch;
-                pnd = psec->pnode[0];
-                assert(pnd && psec->nnode);
+            for (const Section* ch = nd->child; ch; ch = ch->sibling) {
+                pnd = ch->pnode[0];
+                assert(pnd && ch->nnode);
                 sum += NODEA(pnd) * NODERHS(pnd);
             }
             sum -= nd->savrhs;
@@ -291,12 +284,9 @@ static void dashes(Section* sec, int offset, int first);
 
 void nrnhoc_topology(void) /* print the topology of the branched cable */
 {
-    hoc_Item* q;
-
     v_setup_vectors();
     Printf("\n");
-    ITERATE(q, section_list) {
-        Section* sec = (Section*) VOIDITM(q);
+    for (Section* sec: range_sec(section_list)) {
         if (sec->parentsec == (Section*) 0) {
             Printf("|");
             dashes(sec, 0, '-');
@@ -401,7 +391,6 @@ void nrn_solve(NrnThread* _nt) {
 
 /* triangularization of the matrix equations */
 static void triang(NrnThread* _nt) {
-    Node *nd, *pnd;
     int i, i2, i3;
     i2 = _nt->ncell;
     i3 = _nt->end;
@@ -435,10 +424,7 @@ void bksub(NrnThread* _nt) {
 }
 
 void nrn_clear_mark(void) {
-    hoc_Item* qsec;
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         sec->volatile_mark = 0;
     }
 }
@@ -501,7 +487,7 @@ void sec_free(hoc_Item* secitem) {
     prop_free(&(sec->prop));
     node_free(sec);
     if (!sec->parentsec && sec->parentnode) {
-        delete sec->parentnode;
+        delete std::exchange(sec->parentnode, nullptr);
     }
 #if DIAMLIST
     if (sec->pt3d) {
@@ -582,9 +568,9 @@ Node::~Node() {
 // this is delete[]...apart from the order?
 void node_destruct(Node** pnode, int n) {
     for (int i = n - 1; i >= 0; --i) {
-        delete pnode[i];
+        delete std::exchange(pnode[i], nullptr);
     }
-    delete[] pnode;
+    delete[] std::exchange(pnode, nullptr);
 }
 
 #if KEEP_NSEG_PARM
@@ -639,19 +625,9 @@ static Node* node_clone(Node* nd1) {
     return nd2;
 }
 
-static Node* node_interp(Node* nd1, Node* nd2, double frac) {
-    Node* nd;
-    if (frac > .5) {
-        nd = node_clone(nd2);
-    } else {
-        nd = node_clone(nd1);
-    }
-    return nd;
-}
-
 static void node_realloc(Section* sec, short nseg) {
     Node **pn1, **pn2;
-    int n1, n2, i1, i2, i;
+    int n1, n2, i1, i2;
     double x;
     pn1 = sec->pnode;
     n1 = sec->nnode;
@@ -755,15 +731,10 @@ void section_order(void) /* create a section order consistent */
 {
     int order, isec;
     Section* ch;
-    Section* sec;
-    hoc_Item* qsec;
 
     /* count the sections */
     section_count = 0;
-    /*SUPPRESS 765*/
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         sec->order = -1;
         ++section_count;
     }
@@ -776,9 +747,7 @@ void section_order(void) /* create a section order consistent */
         secorder = (Section**) emalloc(section_count * sizeof(Section*));
     }
     order = 0;
-    // ForAllSections(sec) /* all the roots first */
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         if (!sec->parentsec) {
             secorder[order] = sec;
             sec->order = order;
@@ -788,10 +757,7 @@ void section_order(void) /* create a section order consistent */
 
     for (isec = 0; isec < section_count; isec++) {
         if (isec >= order) {
-            // Sections form a loop.
-            // ForAllSections(sec)
-            ITERATE(qsec, section_list) {
-                Section* sec = hocSEC(qsec);
+            for (Section* sec: range_sec(section_list)) {
                 Section *psec, *s = sec;
                 for (psec = sec->parentsec; psec; s = psec, psec = psec->parentsec) {
                     if (!psec || s->order >= 0) {
@@ -809,7 +775,7 @@ void section_order(void) /* create a section order consistent */
                 }
             }
         }
-        sec = secorder[isec];
+        Section* sec = secorder[isec];
         for (ch = sec->child; ch; ch = ch->sibling) {
             secorder[order] = ch;
             ch->order = order;

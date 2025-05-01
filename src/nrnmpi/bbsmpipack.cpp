@@ -224,14 +224,14 @@ void nrnmpi_pkbegin(bbsmpibuf* r) {
 }
 
 void nrnmpi_enddata(bbsmpibuf* r) {
-    int p, type, isize, oldsize;
+    int p, type, isize;
     p = r->pkposition;
     type = 0;
 #if debug
     printf("%d nrnmpi_enddata %p size=%d pkposition=%d\n", nrnmpi_myid_bbs, r, r->size, p);
+    int oldsize = r->size;
 #endif
     nrn_mpi_assert(MPI_Pack_size(1, MPI_INT, nrn_bbs_comm, &isize));
-    oldsize = r->size;
     resize(r, r->pkposition + isize);
 #if debug
     if (oldsize < r->pkposition + isize) {
@@ -257,8 +257,9 @@ void nrnmpi_enddata(bbsmpibuf* r) {
 
 static void pack(void* inbuf, int incount, int my_datatype, bbsmpibuf* r, const char* e) {
     int type[2];
-    int dsize, isize, oldsize;
+    int dsize, isize;
 #if debug
+    int oldsize = r->size;
     printf("%d pack %p count=%d type=%d outbuf-%p pkposition=%d %s\n",
            nrnmpi_myid_bbs,
            r,
@@ -270,7 +271,6 @@ static void pack(void* inbuf, int incount, int my_datatype, bbsmpibuf* r, const 
 #endif
     nrn_mpi_assert(MPI_Pack_size(incount, mytypes[my_datatype], nrn_bbs_comm, &dsize));
     nrn_mpi_assert(MPI_Pack_size(2, MPI_INT, nrn_bbs_comm, &isize));
-    oldsize = r->size;
     resize(r, r->pkposition + dsize + isize);
 #if debug
     if (oldsize < r->pkposition + dsize + isize) {
@@ -399,8 +399,6 @@ int nrnmpi_bbsrecv(int source, bbsmpibuf* r) {
 
 int nrnmpi_bbssendrecv(int dest, int tag, bbsmpibuf* s, bbsmpibuf* r) {
     int size, itag, source;
-    int msgtag;
-    MPI_Status status;
 #if debug
     printf("%d nrnmpi_bbssendrecv dest=%d tag=%d\n", nrnmpi_myid_bbs, dest, tag);
 #endif
@@ -429,7 +427,6 @@ int nrnmpi_iprobe(int* size, int* tag, int* source) {
 }
 
 void nrnmpi_probe(int* size, int* tag, int* source) {
-    int flag = 0;
     MPI_Status status;
     nrn_mpi_assert(MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, nrn_bbs_comm, &status));
     if (source)

@@ -26,8 +26,7 @@
  * Coordinates for graphics allocation and rendering.
  */
 
-#ifndef iv_coord_h
-#define iv_coord_h
+#pragma once
 
 #include <InterViews/enter-scope.h>
 
@@ -48,5 +47,3 @@ typedef int _lib_iv2_6(Coord);
 
 extern double inch, inches, cm, mm, point, points;
 static const int pixels = 1;
-
-#endif

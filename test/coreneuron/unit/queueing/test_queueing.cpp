@@ -8,8 +8,7 @@
 #include "coreneuron/network/netcvode.hpp"
 #include "coreneuron/network/tqueue.hpp"
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include <cstdlib>
 #include <vector>

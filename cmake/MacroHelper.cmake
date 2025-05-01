@@ -63,68 +63,6 @@ macro(nrn_check_type_exists HEADER TYPE DEFAULT_TYPE VARIABLE)
 endmacro()
 
 # =============================================================================
-# Check return type of signal
-# =============================================================================
-macro(nrn_check_signal_return_type VARIABLE)
-  # code template to check signal support
-  string(CONCAT CONFTEST_RETSIGTYPE "#include <sys/types.h>\n" "#include <signal.h>\n"
-                "int main () {\n" "  return *(signal (0, 0)) (0) == 1\;\n" "}\n")
-  file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp ${CONFTEST_RETSIGTYPE})
-  try_compile(MY_RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp)
-  if(MY_RESULT_VAR)
-    set(${VARIABLE} int)
-  else()
-    set(${VARIABLE} void)
-  endif()
-  file(REMOVE "conftest.cpp")
-endmacro()
-
-# =============================================================================
-# Transform PROJECT_SOURCE_DIR/sdir/sfile.in to PROJECT_BINARY_DIR/bdir/bfile
-# =============================================================================
-# ~~~
-# This 4 arg macro transformsPROJECT_SOURCE_DIR/sdir/sfile.in into
-# PROJECT_BINARY_DIR/bdir/bfile .
-# THE shorter two arg form transforms PROJECT_SOURCE_DIR/dir/file.in into
-# PROJECT_BINARY_DIR/dir/file
-# This first copies with some replacement the sfile.in to _cmake_tmp_bfile.in
-# so that the normal cmake configure_file command works to make a proper
-# cmake_file. Then that is compared to a possibly existing bfile and,
-# if different, copies _cmake_tmp_bfile to bfile. This prevents recompilation of
-# .o files that depend on unchanged bfile. The sdir arg is the path relative to
-# PROJECT_SOURCE_DIR, the bdir arg is the path relative to PROJECT_BINARY_DIR.
-# Note that everytime cmake is run, the bfile is compared to a newly created
-# _cmake_tmp_bfile consistent with the current cmake args.
-# Note that the sfile arg does NOT contain the .in suffix.
-# ~~~
-macro(nrn_configure_dest_src bfile bdir sfile sdir)
-  set(infile ${PROJECT_SOURCE_DIR}/${sdir}/${sfile}.in)
-  set(bin_dir ${PROJECT_BINARY_DIR}/${bdir})
-  file(MAKE_DIRECTORY ${bin_dir})
-  execute_process(
-    COMMAND sed "s/\#undef *\\(.*\\)/\#cmakedefine \\1 @\\1@/"
-    INPUT_FILE ${infile}
-    OUTPUT_FILE ${bin_dir}/_cmake_tmp_${bfile}.in)
-  configure_file(${bin_dir}/_cmake_tmp_${bfile}.in ${bin_dir}/_cmake_tmp_${bfile} @ONLY)
-  execute_process(COMMAND cmp -s ${bin_dir}/_cmake_tmp_${bfile} ${bin_dir}/${bfile}
-                  RESULT_VARIABLE result)
-  if(result EQUAL 0)
-    file(REMOVE ${bin_dir}/_cmake_tmp_${bfile})
-  else()
-    file(RENAME ${bin_dir}/_cmake_tmp_${bfile} ${bin_dir}/${bfile})
-  endif()
-  file(REMOVE ${bin_dir}/_cmake_tmp_${bfile}.in)
-  set_property(
-    DIRECTORY
-    APPEND
-    PROPERTY CMAKE_CONFIGURE_DEPENDS ${infile})
-endmacro()
-
-macro(nrn_configure_file file dir)
-  nrn_configure_dest_src(${file} ${dir} ${file} ${dir})
-endmacro()
-
-# =============================================================================
 # Perform check_include_files and add it to NRN_HEADERS_INCLUDE_LIST if exist Passing an optional
 # CXX will call check_include_files_cxx instead.
 # =============================================================================
@@ -206,27 +144,41 @@ endmacro()
 # =============================================================================
 # Run nocmodl to convert NMODL to C
 # =============================================================================
-macro(nocmodl_mod_to_cpp modfile_basename)
+macro(nocmodl_mod_to_cpp modfile_basename modfile_compat)
   set(NOCMODL_SED_EXPR "s/_reg()/_reg_()/")
   if(NOT MSVC)
     set(NOCMODL_SED_EXPR "'${NOCMODL_SED_EXPR}'")
   endif()
-  set(REMOVE_CMAKE_COMMAND "rm")
-  if(CMAKE_VERSION VERSION_LESS "3.17")
-    set(REMOVE_CMAKE_COMMAND "remove")
+  set(MODFILE_INPUT_PATH "${PROJECT_SOURCE_DIR}/${modfile_basename}.mod")
+  set(MODFILE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/${modfile_basename}.mod")
+
+  # for coreNEURON only
+  if(modfile_compat)
+    file(READ "${MODFILE_INPUT_PATH}" FILE_CONTENT)
+    string(REGEX REPLACE " GLOBAL minf" " RANGE minf" FILE_CONTENT "${FILE_CONTENT}")
+    file(WRITE "${MODFILE_OUTPUT_PATH}" "${FILE_CONTENT}")
+  else()
+    configure_file("${MODFILE_INPUT_PATH}" "${MODFILE_OUTPUT_PATH}" COPYONLY)
   endif()
+
+  get_filename_component(modfile_output_dir "${MODFILE_OUTPUT_PATH}" DIRECTORY)
+  get_filename_component(modfile_name "${MODFILE_OUTPUT_PATH}" NAME_WE)
+  set(CPPFILE_OUTPUT_PATH "${modfile_output_dir}/${modfile_name}.cpp")
+
   add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
+    OUTPUT ${CPPFILE_OUTPUT_PATH}
     COMMAND
       ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
-      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:nocmodl>
-      ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
-    COMMAND sed ${NOCMODL_SED_EXPR} ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp >
-            ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
-    COMMAND ${CMAKE_COMMAND} -E ${REMOVE_CMAKE_COMMAND}
-            ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp
-    DEPENDS nocmodl ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
+      "NMODL_PYLIB=${PYTHON_LIBRARY}" "NMODLHOME=${PROJECT_BINARY_DIR}"
+      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:${NRN_CODEGENERATOR_TARGET}>
+      ${MODFILE_OUTPUT_PATH} ${NRN_NMODL_--neuron} -o ${modfile_output_dir}
+    COMMAND sed ${NOCMODL_SED_EXPR} ${CPPFILE_OUTPUT_PATH} > ${CPPFILE_OUTPUT_PATH}.tmp
+    COMMAND ${CMAKE_COMMAND} -E copy ${CPPFILE_OUTPUT_PATH}.tmp ${CPPFILE_OUTPUT_PATH}
+    COMMAND ${CMAKE_COMMAND} -E remove ${CPPFILE_OUTPUT_PATH}.tmp
+    DEPENDS ${NRN_CODEGENERATOR_TARGET} ${MODFILE_INPUT_PATH}
+            ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
+
 endmacro()
 
 # =============================================================================

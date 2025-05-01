@@ -1,5 +1,4 @@
-#ifndef NRN_NRNCORE_IO_H
-#define NRN_NRNCORE_IO_H
+#pragma once
 #include "hocdec.h"
 
 #include <string>
@@ -31,17 +30,24 @@ void write_nrnthread(const char* fname, NrnThread& nt, CellGroup& cg);
 void writeint_(int* p, size_t size, FILE* f);
 void writedbl_(double* p, size_t size, FILE* f);
 
+void write_uint32vec(std::vector<uint32_t>& vec, FILE* f);
+
 #define writeint(p, size) writeint_(p, size, f)
 #define writedbl(p, size) writedbl_(p, size, f)
 // also for read
 struct Memb_list;
-using bbcore_write_t =
-    void (*)(double*, int*, int*, int*, Memb_list*, std::size_t, Datum*, Datum*, NrnThread*);
+using bbcore_write_t = void (*)(double*,
+                                int*,
+                                int*,
+                                int*,
+                                Memb_list*,
+                                std::size_t,
+                                Datum*,
+                                Datum*,
+                                double*,
+                                NrnThread*);
 
 void write_nrnthread_task(const char*, CellGroup* cgs, bool append);
 void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt);
 
 void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo);
-
-
-#endif  // NRN_NRNCORE_IO_H

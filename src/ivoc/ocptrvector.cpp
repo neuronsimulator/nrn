@@ -141,58 +141,58 @@ static double ptr_plot(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("PtrVector.plot", pv_class_sym_, v);
     OcPtrVector* opv = (OcPtrVector*) v;
 #if HAVE_IV
-    IFGUI
-    int i;
-    auto const& y = opv->pd_;
-    auto n = opv->size();
-    char* label = opv->label_;
+    if (hoc_usegui) {
+        int i;
+        auto const& y = opv->pd_;
+        auto n = opv->size();
+        char* label = opv->label_;
 
-    Object* ob1 = *hoc_objgetarg(1);
-    check_obj_type(ob1, "Graph");
-    Graph* g = (Graph*) (ob1->u.this_pointer);
+        Object* ob1 = *hoc_objgetarg(1);
+        check_obj_type(ob1, "Graph");
+        Graph* g = (Graph*) (ob1->u.this_pointer);
 
-    GraphVector* gv = new GraphVector("");
+        GraphVector* gv = new GraphVector("");
 
-    if (ifarg(5)) {
-        hoc_execerror("PtrVector.plot:", "too many arguments");
-    }
-    if (narg() == 3) {
-        gv->color((colors->color(int(*getarg(2)))));
-        gv->brush((brushes->brush(int(*getarg(3)))));
-    } else if (narg() == 4) {
-        gv->color((colors->color(int(*getarg(3)))));
-        gv->brush((brushes->brush(int(*getarg(4)))));
-    }
-
-    if (narg() == 2 || narg() == 4) {
-        // passed a vector or xinterval and possibly line attributes
-        if (hoc_is_object_arg(2)) {
-            // passed a vector
-            Vect* vp2 = vector_arg(2);
-            n = std::min(n, vp2->size());
-            for (i = 0; i < n; ++i)
-                gv->add(vp2->elem(i), y[i]);
-        } else {
-            // passed xinterval
-            double interval = *getarg(2);
-            for (i = 0; i < n; ++i)
-                gv->add(i * interval, y[i]);
+        if (ifarg(5)) {
+            hoc_execerror("PtrVector.plot:", "too many arguments");
         }
-    } else {
-        // passed line attributes or nothing
-        for (i = 0; i < n; ++i)
-            gv->add(i, y[i]);
-    }
+        if (narg() == 3) {
+            gv->color((colors->color(int(*getarg(2)))));
+            gv->brush((brushes->brush(int(*getarg(3)))));
+        } else if (narg() == 4) {
+            gv->color((colors->color(int(*getarg(3)))));
+            gv->brush((brushes->brush(int(*getarg(4)))));
+        }
 
-    if (label) {
-        GLabel* glab = g->label(label);
-        gv->label(glab);
-        ((GraphItem*) g->component(g->glyph_index(glab)))->save(false);
-    }
-    g->append(new GPolyLineItem(gv));
+        if (narg() == 2 || narg() == 4) {
+            // passed a vector or xinterval and possibly line attributes
+            if (hoc_is_object_arg(2)) {
+                // passed a vector
+                Vect* vp2 = vector_arg(2);
+                n = std::min(n, vp2->size());
+                for (i = 0; i < n; ++i)
+                    gv->add(vp2->elem(i), y[i]);
+            } else {
+                // passed xinterval
+                double interval = *getarg(2);
+                for (i = 0; i < n; ++i)
+                    gv->add(i * interval, y[i]);
+            }
+        } else {
+            // passed line attributes or nothing
+            for (i = 0; i < n; ++i)
+                gv->add(i, y[i]);
+        }
 
-    g->flush();
-    ENDGUI
+        if (label) {
+            GLabel* glab = g->label(label);
+            gv->label(glab);
+            ((GraphItem*) g->component(g->glyph_index(glab)))->save(false);
+        }
+        g->append(new GPolyLineItem(gv));
+
+        g->flush();
+    }
 #endif
     return 0.0;
 }
@@ -206,9 +206,9 @@ static Member_func members[] = {{"size", get_size},
                                 {"scatter", scatter},
                                 {"gather", gather},
                                 {"plot", ptr_plot},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
-static Member_ret_str_func retstr_members[] = {{"label", ptr_label}, {0, 0}};
+static Member_ret_str_func retstr_members[] = {{"label", ptr_label}, {nullptr, nullptr}};
 
 static void* cons(Object*) {
     int sz;
@@ -222,6 +222,6 @@ static void destruct(void* v) {
 }
 
 void OcPtrVector_reg() {
-    class2oc("PtrVector", cons, destruct, members, 0, 0, retstr_members);
+    class2oc("PtrVector", cons, destruct, members, nullptr, retstr_members);
     pv_class_sym_ = hoc_lookup("PtrVector");
 }

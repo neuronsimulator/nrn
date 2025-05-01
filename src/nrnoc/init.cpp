@@ -21,6 +21,9 @@
 #include "nrnmpi.h"
 
 #include <vector>
+#include <unordered_map>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] = "7.7.0";
@@ -111,6 +114,7 @@ int nrn_global_ncell = 0; /* used to be rootnodecount */
 extern double hoc_default_dll_loaded_;
 extern int nrn_istty_;
 extern int nrn_nobanner_;
+static std::vector<double> morph_parm_default{DEF_diam};
 
 static HocParmLimits _hoc_parm_limits[] = {{"Ra", {1e-6, 1e9}},
                                            {"L", {1e-4, 1e20}},
@@ -159,6 +163,7 @@ int* nrn_prop_dparam_size_;
 int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
 NrnWatchAllocateFunc_t* nrn_watch_allocate_;
+std::unordered_map<int, void (*)(Prop*)> nrn_mech_inst_destruct;
 
 void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
     nrn_watch_allocate_[type] = waf;
@@ -222,40 +227,27 @@ int nrn_is_cable(void) {
 }
 
 void* nrn_realpath_dlopen(const char* relpath, int flags) {
-    char* abspath = NULL;
-    void* handle = NULL;
-
-    /* use realpath or _fullpath even if is already a full path */
-
-#if defined(HAVE_REALPATH)
-    abspath = realpath(relpath, NULL);
-#else /* not HAVE_REALPATH */
-#if defined(__MINGW32__)
-    abspath = _fullpath(NULL, relpath, 0);
-#else  /* not __MINGW32__ */
-    abspath = strdup(relpath);
-#endif /* not __MINGW32__ */
-#endif /* not HAVE_REALPATH */
-    if (abspath) {
-        handle = dlopen(abspath, flags);
+    void* handle = nullptr;
+    try {  // Try with an absolute path otherwise relpath
+        auto abspath = fs::absolute(relpath);
+        handle = dlopen(abspath.string().c_str(), flags);
 #if DARWIN
         if (!handle) {
-            nrn_possible_mismatched_arch(abspath);
+            nrn_possible_mismatched_arch(abspath.c_str());
         }
-#endif  // DARWIN
-        free(abspath);
-    } else {
-        int patherr = errno;
+#endif
+    } catch (const std::filesystem::filesystem_error& e) {
         handle = dlopen(relpath, flags);
         if (!handle) {
-            Fprintf(stderr,
-                    "realpath failed errno=%d (%s) and dlopen failed with %s\n",
-                    patherr,
-                    strerror(patherr),
-                    relpath);
+            Fprintf(
+                stderr,
+                fmt::format("std::filesystem::absolute failed ({}) and dlopen failed with '{}'\n",
+                            e.what(),
+                            relpath)
+                    .c_str());
 #if DARWIN
-            nrn_possible_mismatched_arch(abspath);
-#endif  // DARWIN
+            nrn_possible_mismatched_arch(relpath);
+#endif
         }
     }
     return handle;
@@ -381,6 +373,7 @@ void hoc_last_init(void) {
     SectionList_reg();
     SectionRef_reg();
     register_mech(morph_mech, morph_alloc, nullptr, nullptr, nullptr, nullptr, -1, 0);
+    hoc_register_parm_default(MORPHOLOGY, &morph_parm_default);
     neuron::mechanism::register_data_fields(MORPHOLOGY, neuron::mechanism::field<double>{"diam"});
     hoc_register_prop_size(MORPHOLOGY, 1, 0);
     for (m = mechanism; *m; m++) {
@@ -463,7 +456,7 @@ void initialize_memb_func(int mechtype,
                           nrn_init_t initialize,
                           int vectorized);
 void check_mech_version(const char** m);
-std::pair<int, int> count_variables_in_mechanism(const char** m2, int modltypemax);
+int count_variables_in_mechanism(const char** m2, int modltypemax);
 void register_mech_vars(const char** var_buffers,
                         int modltypemax,
                         Symbol* mech_symbol,
@@ -481,7 +474,6 @@ void nrn_register_mech_common(const char** m,
                               int vectorized) {
     // initialize at first entry, it will be incremented at exit of the function
     static int mechtype = 2; /* 0 unused, 1 for cable section */
-    int modltype;
     int modltypemax;
     Symbol* mech_symbol;
     const char** m2;
@@ -503,9 +495,9 @@ void nrn_register_mech_common(const char** m,
     } else {
         modltypemax = NRNPOINTER;
     }
-    auto [nvartypes, nvars] = count_variables_in_mechanism(m2, modltypemax);
+    int nvars = count_variables_in_mechanism(m2, modltypemax);
     mech_symbol->s_varn = nvars;
-    mech_symbol->u.ppsym = (Symbol**) emalloc((unsigned) (nvartypes * sizeof(Symbol*)));
+    mech_symbol->u.ppsym = (Symbol**) emalloc((unsigned) (nvars * sizeof(Symbol*)));
 
     register_mech_vars(m2, modltypemax, mech_symbol, mechtype, nrnpointerindex);
     ++mechtype;
@@ -552,16 +544,8 @@ void register_mech_vars(const char** var_buffers,
                 nsub = 1;
                 varname.erase(subscript);
             }
-            /*SUPPRESS 624*/
             if ((var_symbol = hoc_lookup(varname.c_str()))) {
-#if 0
-                if (var_symbol->subtype != RANGEVAR) {
-                    IGNORE(fprintf(stderr, CHKmes,
-                    varname.c_str()));
-                }
-#else   // not 0
                 IGNORE(fprintf(stderr, CHKmes, varname.c_str()));
-#endif  // not 0
             } else {
                 var_symbol = hoc_install(varname.c_str(), RANGEVAR, 0.0, &hoc_symlist);
                 var_symbol->subtype = modltype;
@@ -595,16 +579,18 @@ void register_mech_vars(const char** var_buffers,
     }
 }
 
-std::pair<int, int> count_variables_in_mechanism(const char** m2, int modltypemax) {
-    int j, k, modltype;
+int count_variables_in_mechanism(const char** m2, int modltypemax) {
+    int j;
+    int modltype;
+    int nvars;
     // count the number of variables registered in this mechanism
-    for (j = 0, k = 0, modltype = nrnocCONST; modltype <= modltypemax; modltype++) {
+    for (j = 0, nvars = 0, modltype = nrnocCONST; modltype <= modltypemax; modltype++) {
         // while we have not encountered a 0 (sentinel for variable type)
         while (m2[j++]) {
-            k++;
+            nvars++;
         }
     }
-    return std::make_pair(j, k);
+    return nvars;
 }
 
 void reallocate_mech_data(int mechtype) {
@@ -751,6 +737,10 @@ void register_mech(const char** m,
     }
 }
 
+void hoc_register_parm_default(int mechtype, const std::vector<double>* pd) {
+    memb_func[mechtype].parm_default = pd;
+}
+
 void nrn_writes_conc(int mechtype, int unused) {
     static int lastion = EXTRACELL + 1;
     int i;
@@ -772,56 +762,136 @@ namespace {
  *
  * This logic used to live inside hoc_register_dparam_semantics.
  */
+
+// name to int map for the negative types
+// xx_ion and #xx_ion will get values of type*2 and type*2+1 respectively
+static std::unordered_map<std::string, int> name_to_negint = {{"area", -1},
+                                                              {"iontype", -2},
+                                                              {"cvodeieq", -3},
+                                                              {"netsend", -4},
+                                                              {"pointer", -5},
+                                                              {"pntproc", -6},
+                                                              {"bbcorepointer", -7},
+                                                              {"watch", -8},
+                                                              {"diam", -9},
+                                                              {"fornetcon", -10},
+                                                              {"random", -11}};
+
 int dparam_semantics_to_int(std::string_view name) {
-    // only interested in area, iontype, cvode_ieq, netsend, pointer, pntproc, bbcorepointer, watch,
-    // diam, fornetcon, xx_ion and #xx_ion which will get a semantics value of -1, -2, -3, -4, -5,
-    // -6, -7, -8, -9, -10 type, and type+1000 respectively
-    if (name == "area") {
-        return -1;
-    } else if (name == "iontype") {
-        return -2;
-    } else if (name == "cvodeieq") {
-        return -3;
-    } else if (name == "netsend") {
-        return -4;
-    } else if (name == "pointer") {
-        return -5;
-    } else if (name == "pntproc") {
-        return -6;
-    } else if (name == "bbcorepointer") {
-        return -7;
-    } else if (name == "watch") {
-        return -8;
-    } else if (name == "diam") {
-        return -9;
-    } else if (name == "fornetcon") {
-        return -10;
+    if (auto got = name_to_negint.find(std::string{name}); got != name_to_negint.end()) {
+        return got->second;
     } else {
         bool const i{name[0] == '#'};
         Symbol* s = hoc_lookup(std::string{name.substr(i)}.c_str());
         if (s && s->type == MECHANISM) {
-            return s->subtype + i * 1000;
+            return nrn_semantics_from_ion(s->subtype, i);
         }
         throw std::runtime_error("unknown dparam semantics: " + std::string{name});
     }
 }
+
+std::vector<int> indices_of_type(
+    const char* semantic_type,
+    std::vector<std::pair<const char*, const char*>> const& dparam_info) {
+    std::vector<int> indices{};
+    int inttype = dparam_semantics_to_int(std::string{semantic_type});
+    for (auto i = 0; i < dparam_info.size(); ++i) {
+        if (dparam_semantics_to_int(dparam_info[i].second) == inttype) {
+            indices.push_back(i);
+        }
+    }
+    return indices;
+}
+
+static std::unordered_map<int, std::vector<int>> mech_random_indices{};
+
+void update_mech_ppsym_for_modlrandom(
+    int mechtype,
+    std::vector<std::pair<const char*, const char*>> const& dparam_info) {
+    std::vector<int> indices = indices_of_type("random", dparam_info);
+    mech_random_indices[mechtype] = indices;
+    if (indices.empty()) {
+        return;
+    }
+    Symbol* mechsym = memb_func[mechtype].sym;
+    int is_point = memb_func[mechtype].is_point;
+
+    int k = mechsym->s_varn;
+    mechsym->s_varn += int(indices.size());
+    mechsym->u.ppsym = (Symbol**) erealloc(mechsym->u.ppsym, mechsym->s_varn * sizeof(Symbol*));
+
+
+    for (auto i: indices) {
+        auto& p = dparam_info[i];
+        Symbol* ransym{};
+        if (is_point) {
+            ransym = hoc_install(p.first, RANGEOBJ, 0.0, &(nrn_pnt_template_[mechtype]->symtable));
+        } else {
+            std::string s{p.first};
+            s += "_";
+            s += mechsym->name;
+            ransym = hoc_install(s.c_str(), RANGEOBJ, 0.0, &hoc_symlist);
+        }
+        ransym->subtype = NMODLRANDOM;
+        ransym->u.rng.type = mechtype;
+        ransym->cpublic = 1;
+        ransym->u.rng.index = i;
+        mechsym->u.ppsym[k++] = ransym;
+    }
+}
+
 }  // namespace
 
 namespace neuron::mechanism::detail {
+
+
+// Use this if string.c_str() causes possibility of
+// AddressSanitizer: stack-use-after-scope on address
+void register_data_fields(int mechtype,
+                          std::vector<std::pair<std::string, int>> const& param_info,
+                          std::vector<std::pair<std::string, std::string>> const& dparam_info) {
+    std::vector<std::pair<const char*, int>> params{};
+    std::vector<std::pair<const char*, const char*>> dparams{};
+
+    for (auto&& [str, i]: param_info) {
+        params.emplace_back(str.c_str(), i);
+    }
+    for (auto&& [str1, str2]: dparam_info) {
+        dparams.emplace_back(str1.c_str(), str2.c_str());
+    }
+
+    register_data_fields(mechtype, params, dparams);
+}
+
+
+// Count the number of floating point variables.
+//
+// An array variable with N elements counts as N floating point variables.
+static int count_prop_param_size(const std::vector<std::pair<const char*, int>>& param_info) {
+    int float_variables = 0;
+    for (const auto& [i, n]: param_info) {
+        float_variables += n;
+    }
+
+    return float_variables;
+}
+
 void register_data_fields(int mechtype,
                           std::vector<std::pair<const char*, int>> const& param_info,
                           std::vector<std::pair<const char*, const char*>> const& dparam_info) {
-    nrn_prop_param_size_[mechtype] = param_info.size();
+    nrn_prop_param_size_[mechtype] = count_prop_param_size(param_info);
     nrn_prop_dparam_size_[mechtype] = dparam_info.size();
-    delete[] std::exchange(memb_func[mechtype].dparam_semantics, nullptr);
-    if (!dparam_info.empty()) {
-        memb_func[mechtype].dparam_semantics = new int[dparam_info.size()];
+    if (dparam_info.empty()) {
+        memb_func[mechtype].dparam_semantics = nullptr;
+    } else {
+        memb_func[mechtype].dparam_semantics.reset(new int[dparam_info.size()]);
         for (auto i = 0; i < dparam_info.size(); ++i) {
             // dparam_info[i].first is the name of the variable, currently unused...
             memb_func[mechtype].dparam_semantics[i] = dparam_semantics_to_int(
                 dparam_info[i].second);
         }
     }
+
     // Translate param_info into the type we want to use internally now we're fully inside NEURON
     // library code (wheels...)
     std::vector<container::Mechanism::Variable> param_info_new{};
@@ -842,6 +912,7 @@ void register_data_fields(int mechtype,
                                                                        // of double-valued
                                                                        // per-instance variables
     memb_list[mechtype].set_storage_pointer(&mech_data);
+    update_mech_ppsym_for_modlrandom(mechtype, dparam_info);
 }
 }  // namespace neuron::mechanism::detail
 namespace neuron::mechanism {
@@ -909,6 +980,17 @@ void hoc_register_dparam_semantics(int mechtype, int ix, const char* name) {
     assert(memb_func[mechtype].dparam_semantics[ix] == dparam_semantics_to_int(name));
 }
 
+int nrn_dparam_semantics_to_int(const char* name) {
+    return dparam_semantics_to_int(name);
+}
+
+/**
+ * @brief dparam indices with random semantics for mechtype
+ */
+std::vector<int>& nrn_mech_random_indices(int type) {
+    return mech_random_indices[type];
+}
+
 void hoc_register_cvode(int i,
                         nrn_ode_count_t cnt,
                         nrn_ode_map_t map,
@@ -939,10 +1021,9 @@ int point_reg_helper(Symbol* s2) {
 }
 
 extern void class2oc_base(const char*,
-                          void* (*cons)(Object*),
-                          void (*destruct)(void*),
+                          ctor_f* cons,
+                          dtor_f* destruct,
                           Member_func*,
-                          int (*checkpoint)(void**),
                           Member_ret_obj_func*,
                           Member_ret_str_func*);
 
@@ -962,7 +1043,7 @@ int point_register_mech(const char** m,
     Symlist* sl;
     Symbol *s, *s2;
     nrn_load_name_check(m[1]);
-    class2oc_base(m[1], constructor, destructor, fmember, nullptr, nullptr, nullptr);
+    class2oc_base(m[1], constructor, destructor, fmember, nullptr, nullptr);
     s = hoc_lookup(m[1]);
     sl = hoc_symlist;
     hoc_symlist = s->u.ctemplate->symtable;
@@ -1143,7 +1224,7 @@ void hoc_register_tolerance(int mechtype, HocStateTolerance* tol, Symbol*** stol
                         psym[i] = vsym;
                         /*printf("identified %s at index %d of %s\n", vsym->name, index,
                          * msym->name);*/
-                        if (ISARRAY(vsym)) {
+                        if (is_array(*vsym)) {
                             int const na = vsym->arayinfo->sub[0];
                             for (int k = 1; k < na; ++k) {
                                 psym[++i] = vsym;

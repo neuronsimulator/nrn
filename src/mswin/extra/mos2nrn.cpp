@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstdio>
-#include "d2upath.cpp"
+#include "d2upath.h"
 
 char* nrnhome;
 char* nh;

@@ -1,5 +1,4 @@
-#ifndef utility_h
-#define utility_h
+#pragma once
 
 #include <InterViews/dialog.h>
 #include <IV-look/field.h>
@@ -87,5 +86,3 @@ class K {
 };
 
 void handle_old_focus();
-
-#endif

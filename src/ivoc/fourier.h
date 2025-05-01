@@ -1,5 +1,4 @@
-#ifndef fourier_h
-#define fourier_h
+#pragma once
 
 void nrn_convlv(double* data,
                 unsigned long n,
@@ -13,4 +12,3 @@ void nrn_spctrm(double* data, double* psd, int setsize, int numsegpairs);
 void nrngsl_realft(double* data, unsigned long n, int isign);
 void nrn_gsl2nrc(double* gsl, double* nrc, unsigned long n);
 void nrn_nrc2gsl(double* nrc, double* gsl, unsigned long n);
-#endif

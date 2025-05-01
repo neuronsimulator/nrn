@@ -1,6 +1,5 @@
-#ifndef nrniv_mf_h
-#define nrniv_mf_h
-#include "hoc_membf.h"
+#pragma once
+#include "classreg.h"
 #include "hocdec.h"
 #include "membfunc.h"
 
@@ -52,8 +51,8 @@ int point_register_mech(const char**,
                         nrn_init_t,
                         int,
                         int,
-                        void* (*) (Object*),
-                        void (*)(void*),
+                        ctor_f*,
+                        dtor_f*,
                         Member_func*);
 extern int nrn_get_mechtype(const char*);
 extern void nrn_writes_conc(int, int);
@@ -106,5 +105,3 @@ void* nrn_pool_alloc(void* pool);
 void* nrn_pool_create(long count, int itemsize);
 void nrn_pool_delete(void* pool);
 void nrn_pool_freeall(void* pool);
-
-#endif /* nrniv_mf_h */

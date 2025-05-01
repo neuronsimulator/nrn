@@ -86,13 +86,22 @@ static void update_parmsize() {
 #endif
     );
     // clang-format on
-    hoc_register_prop_size(EXTRACELL, nparm, 0);
+    int prop_size = nparm + 3 * (nrn_nlayer_extracellular - 1);
+    hoc_register_prop_size(EXTRACELL, prop_size, 0);
 }
+
+static std::vector<double> param_default{
+    1e9, /* xraxial */
+    1e9, /* xg */
+    0.0, /* xc */
+    0.0, /* e_extracellular */
+};
 
 extern "C" void extracell_reg_(void) {
     register_mech(mechanism, extcell_alloc, nullptr, nullptr, nullptr, extcell_init, -1, 1);
     int const i = nrn_get_mechtype(mechanism[1]);
     assert(i == EXTRACELL);
+    hoc_register_parm_default(EXTRACELL, &param_default);
     hoc_register_cvode(i, _ode_count, nullptr, nullptr, nullptr);
     hoc_register_limits(i, limits);
     hoc_register_units(i, units);
@@ -115,12 +124,10 @@ void nrn_update_2d(NrnThread* nt) {
     extern int secondorder;
     Node *nd, **ndlist;
     Extnode* nde;
-    double cfac;
     Memb_list* ml = nt->_ecell_memb_list;
     if (!ml) {
         return;
     }
-    cfac = .001 * nt->cj;
     cnt = ml->nodecount;
     ndlist = ml->nodelist;
 
@@ -174,11 +181,11 @@ static void extcell_alloc(Prop* p) {
     assert(p->param_size() == (nparm - 3) + 3 * nrn_nlayer_extracellular);
     assert(p->param_num_vars() == nparm);
     for (auto i = 0; i < nrn_nlayer_extracellular; ++i) {
-        p->param(xraxial_index, i) = 1e9;
-        p->param(xg_index, i) = 1e9;
-        p->param(xc_index, i) = 0.0;
+        p->param(xraxial_index, i) = param_default[0];
+        p->param(xg_index, i) = param_default[1];
+        p->param(xc_index, i) = param_default[2];
     }
-    p->param(e_extracellular_index) = 0.0;
+    p->param(e_extracellular_index) = param_default[3];
 }
 
 /*ARGSUSED*/
@@ -218,9 +225,7 @@ void extnode_free_elements(Extnode* nde) {
 }
 
 static void check_if_extracellular_in_use() {
-    hoc_Item* qsec;
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (const Section* sec: range_sec(section_list)) {
         if (sec->pnode[0]->extnode) {
             hoc_execerror("Cannot change nlayer_extracellular when instances exist", NULL);
         }
@@ -295,7 +300,6 @@ static void extnode_alloc_elements(Extnode* nde) {
 }
 
 void extcell_node_create(Node* nd) {
-    int i, j;
     Extnode* nde;
     Prop* p;
     /* may be a nnode increase so some may already be allocated */
@@ -303,7 +307,7 @@ void extcell_node_create(Node* nd) {
         nde = new Extnode{};
         extnode_alloc_elements(nde);
         nd->extnode = nde;
-        for (j = 0; j < nlayer; ++j) {
+        for (int j = 0; j < nlayer; ++j) {
             nde->v[j] = 0.;
         }
         for (p = nd->prop; p; p = p->next) {
@@ -322,12 +326,8 @@ void extcell_node_create(Node* nd) {
 }
 
 void extcell_2d_alloc(Section* sec) {
-    int i, j;
-    Node* nd;
-    Extnode* nde;
-    Prop* p;
     /* may be a nnode increase so some may already be allocated */
-    for (i = sec->nnode - 1; i >= 0; i--) {
+    for (int i = sec->nnode - 1; i >= 0; i--) {
         extcell_node_create(sec->pnode[i]);
     }
     /* if the rootnode is owned by this section then it gets extnode also*/
@@ -417,7 +417,6 @@ void nrn_rhs_ext(NrnThread* _nt) {
 void nrn_setup_ext(NrnThread* _nt) {
     int i, j, cnt;
     Node *nd, *pnd, **ndlist;
-    double* pd;
     double d, cfac, mfac;
     Extnode *nde, *pnde;
     Memb_list* ml = _nt->_ecell_memb_list;
@@ -485,15 +484,11 @@ void ext_con_coef(void) /* setup a and b */
 {
     int j, k;
     double dx, area;
-    hoc_Item* qsec;
     Node *nd, **pnd;
     Extnode* nde;
-    double* pd;
 
     /* temporarily store half segment resistances in rhs */
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         if (sec->pnode[0]->extnode) {
             dx = section_length(sec) / ((double) (sec->nnode - 1));
             for (j = 0; j < sec->nnode - 1; j++) {
@@ -529,9 +524,7 @@ void ext_con_coef(void) /* setup a and b */
     section connects straight to the point*/
     /* for the near future we always have a last node at x=1 with
     no properties */
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (const Section* sec: range_sec(section_list)) {
         if (sec->pnode[0]->extnode) {
             /* node half resistances in general get added to the
             node and to the node's "child node in the same section".
@@ -549,9 +542,7 @@ void ext_con_coef(void) /* setup a and b */
             }
         }
     }
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         if (sec->pnode[0]->extnode) {
             /* convert to siemens/cm^2 for all nodes except last
             and microsiemens for last.  This means that a*V = mamps/cm2
@@ -578,9 +569,7 @@ void ext_con_coef(void) /* setup a and b */
         }
     }
     /* now the effect of parent on node equation. */
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (const Section* sec: range_sec(section_list)) {
         if (sec->pnode[0]->extnode) {
             for (j = 0; j < sec->nnode; j++) {
                 nd = sec->pnode[j];
@@ -604,7 +593,7 @@ static void printnode(const char* s) {
 	Extnode* nde;	
 	double *pd;
 	NrnThread* _nt;
-	FOR_THREADS(_nt) for (in=0; in < _nt->end; ++in) {
+	for (NrnThread* _nt : for_threads(nrn_threads, nrn_nthread)) for (in=0; in < _nt->end; ++in) {
 		nd = _nt->_v_node[in];
 		if (nd->extnode) {
 			sec = nd->sec;

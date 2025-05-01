@@ -1,5 +1,4 @@
-#ifndef matrixmap_h
-#define matrixmap_h
+#pragma once
 
 #include "ocmatrix.h"
 #include "nrnoc2iv.h"
@@ -8,7 +7,6 @@ class MatrixMap {
   public:
     MatrixMap(Matrix*);
     MatrixMap(Matrix&);
-    ~MatrixMap();
 
     void alloc(int, int, Node**, int*);
     void mmfree();
@@ -117,9 +115,8 @@ class MatrixMap {
     Matrix& m_;
 
     // the map
-    int plen_;
-    double** pm_;
-    double** ptree_;
-};
+    std::vector<std::pair<int, int>> pm_{};
+    std::vector<double*> ptree_{};
 
-#endif
+    int compute_index(int, int, int, Node**, int*) const;
+};

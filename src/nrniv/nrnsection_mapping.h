@@ -1,5 +1,4 @@
-#ifndef NRN_SECTION_MAPPING
-#define NRN_SECTION_MAPPING
+#pragma once
 
 #include <string>
 #include <vector>
@@ -144,5 +143,3 @@ struct NrnMappingInfo {
 };
 
 void nrn_write_mapping_info(const char*, int, NrnMappingInfo&);
-
-#endif  // NRN_SECTION_MAPPING

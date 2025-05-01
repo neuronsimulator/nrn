@@ -19,6 +19,7 @@ Sanity checks
 - [ ] Create `release/x.y` branch and make sure GitHub, Azure and CircleCI builds pass
 - [ ] Run [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci/actions/workflows/build-neuron.yml) for the respective Azure build; see [Azure drop guide](https://github.com/neuronsimulator/nrn-build-ci#azure-wheels-testing---manual-workflow)
 - [ ] Activate ReadTheDocs build for `release/x.y` & make it hidden. Check docs are fine after build is done.
+- [ ] Run a test wheel build WITHOUT upload for `release/x.y` to ensure all the wheels build ([see details](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure))
 - [ ] Run BBP Simulation Stack & other relevant tests
 
 
@@ -32,11 +33,11 @@ Releasing
 - [ ] Build release wheels but WITHOUT upload ([see details](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure))
 - [ ] Create, test and upload manual artifacts
   - [ ] MacOS package installer (manual task, ask Michael)
-  - [ ] arm64 wheels (manual task, check with Alex or Pramod)
+  - [ ] arm64 wheels (manual task, check with Erik, Goran or Pramod)
   - [ ] aarch64 wheels (create a `release/x.y-aarch64` branch for this, see [guide](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-circleci))
 - [ ] Publish the `x.y.z` wheels on Pypi; see [wheel publishing instructions](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure)
 - [ ] Once wheels are published, activate the `x.y.z` tag on ReadTheDocs
-- [ ] Rename the Windows installer in the GitHub release to match the new version and the supported python versions (i.e. `nrn-8.2.2.w64-mingw-py-37-38-39-310-311-setup.exe`
+- [ ] Rename the Windows installer in the GitHub release to match the new version and the supported python versions (i.e. `nrn-8.2.2.w64-mingw-py-39-310-311-312-setup.exe`
 )
 - [ ] Publish release on GitHub (edit https://github.com/neuronsimulator/nrn/releases/tag/x.y.z and un-tick the pre-release checkbox)
 
@@ -51,6 +52,7 @@ Post-release
 - [ ] Let people know :rocket:
 - [ ] Cherrypick changelog and installer links to `master`
 - [ ] Update the changelog for the release on GitHub
+- [ ] Update `codemeta.json` (`master` branch only) with the new version, changelog, date, and links
 
 Changelog
 ======

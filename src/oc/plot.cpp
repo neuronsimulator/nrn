@@ -1,6 +1,9 @@
 #include <../../nrnconf.h>
-#include "hoc.h"
 
+#include "hocdec.h"
+#include "oc_ansi.h"
+
+#include "utils/logger.hpp"
 
 /*LINTLIBRARY*/
 #undef IGNORE
@@ -49,11 +52,6 @@ extern char** environ;
 
 #endif /*!__MINGW32__*/
 
-#if DOS
-#include <graphics.h>
-#include <dos.h>
-#endif
-
 static int console = 1; /* 1 plotting to console graphics */
 static int hardplot;    /* 1 hp style  2 fig style  3 coplot*/
 static int graphdev;
@@ -96,11 +94,7 @@ static void hoc_x11plot(int, double, double);
 
 static void hard_text_preamble();
 
-void plprint(const char* s) {
-#if DOS
-    extern int newstyle;
-    extern unsigned text_style, text_size, text_orient;
-#endif
+void hoc_plprint(const char* s) {
     char buf[128];
 
     if (text && s[strlen(s) - 1] == '\n') {
@@ -110,17 +104,6 @@ void plprint(const char* s) {
     }
 
     if (console && text) {
-#if DOS
-        if (egagrph == 2) {
-            if (newstyle) {
-                settextstyle(text_style, text_orient, text_size);
-                newstyle = 0;
-            }
-            outtext(s);
-        } else {
-            IGNORE(fprintf(cdev, "%s", s));
-        }
-#else
 #if SUNCORE
         hoc_pl_sunplot(s);
 #else
@@ -131,10 +114,9 @@ void plprint(const char* s) {
         IGNORE(fflush(cdev));
 #endif
 #endif
-#endif
 
     } else if (!text) {
-        nrnpy_pr("%s", s);
+        Printf("%s", s);
     }
     if (hardplot && hpdev && text && strlen(s)) {
         hard_text_preamble();
@@ -142,8 +124,8 @@ void plprint(const char* s) {
         IGNORE(fflush(hpdev));
     }
     if (text && s == buf) {
-        plt(1, xlast, ylast - 20);
-        plt(-2, 0., 0.);
+        hoc_plt(1, xlast, ylast - 20);
+        hoc_plt(-2, 0., 0.);
     }
 }
 
@@ -193,10 +175,6 @@ void initplot(void) {
 }
 
 void hoc_close_plot(void) {
-#if DOS
-    if (egagrph)
-        plt(-3, 0., 0.);
-#else
 #if SUNCORE
     hoc_close_sunplot();
 #else
@@ -205,10 +183,9 @@ void hoc_close_plot(void) {
 #else
 #endif
 #endif
-#endif
 }
 
-void plt(int mode, double x, double y) {
+void hoc_plt(int mode, double x, double y) {
     if (x < 0.)
         x = 0.;
     if (x > 1000.)
@@ -367,7 +344,7 @@ static void hardplot_file(const char* s) {
 }
 
 void Fig_file(const char* s, int dev) {
-    plt(-1, 0., 0.);
+    hoc_plt(-1, 0., 0.);
     hardplot_file(s);
     if (!hpdev)
         return;
@@ -569,7 +546,7 @@ void vtplot(int mode, double x, double y) {
 }
 #endif /*VT*/
 
-int set_color(int c) {
+int hoc_set_color(int c) {
     hoc_color = c;
 #if SUNCORE
     set_line_index(c);

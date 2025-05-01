@@ -7,10 +7,9 @@
 #include "nrncvode.h"
 #include "nrnoc2iv.h"
 #include "classreg.h"
-#include "ndatclas.h"
 #include "nrniv_mf.h"
 
-#include "tqueue.h"
+#include "tqueue.hpp"
 #include "netcon.h"
 #include "vrecitem.h"
 #include "utils/enumerate.h"
@@ -24,7 +23,7 @@ extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
-extern hoc_Item* net_cvode_instance_psl();
+extern std::vector<PreSyn*>* net_cvode_instance_psl();
 extern std::vector<PlayRecord*>* net_cvode_instance_prl();
 extern double t;
 extern short* nrn_is_artificial_;
@@ -232,14 +231,12 @@ void SaveState::ssi_def() {
     Symbol* s = hoc_lookup("NetCon");
     nct = s->u.ctemplate;
     ssi = new StateStructInfo[n_memb_func];
-    int sav = v_structure_change;
     for (int im = 0; im < n_memb_func; ++im) {
         ssi[im].offset = -1;
         ssi[im].size = 0;
         if (!memb_func[im].sym) {
             continue;
         }
-        NrnProperty* np = new NrnProperty(memb_func[im].sym->name);
         // generally we only save STATE variables. However for
         // models containing a NET_RECEIVE block, we also need to
         // save everything except the parameters
@@ -250,28 +247,26 @@ void SaveState::ssi_def() {
         // param array including PARAMETERs.
         if (pnt_receive[im]) {
             ssi[im].offset = 0;
-            ssi[im].size = np->prop()->param_size();  // sum over array dimensions
+            ssi[im].size = nrn_prop_param_size_[im];
         } else {
             int type = STATE;
-            for (Symbol* sym = np->first_var(); np->more_var(); sym = np->next_var()) {
-                if (np->var_type(sym) == type || np->var_type(sym) == STATE ||
-                    sym->subtype == _AMBIGUOUS) {
+            const Symbol* msym = memb_func[im].sym;
+            for (int i = 0; i < msym->s_varn; ++i) {
+                Symbol* sym = msym->u.ppsym[i];
+                int vartype = nrn_vartype(sym);
+                if (vartype == type || vartype == STATE || vartype == _AMBIGUOUS) {
                     if (ssi[im].offset < 0) {
-                        ssi[im].offset = np->prop_index(sym);
+                        ssi[im].offset = sym->u.rng.index;
                     } else {
                         // assert what we assume: that after this code the variables we want are
                         // `size` contiguous legacy indices starting at `offset`
-                        assert(ssi[im].offset + ssi[im].size == np->prop_index(sym));
+                        assert(ssi[im].offset + ssi[im].size == sym->u.rng.index);
                     }
                     ssi[im].size += hoc_total_array_data(sym, 0);
                 }
             }
         }
-        delete np;
     }
-    // Following set to 1 when NrnProperty constructor calls prop_alloc.
-    // so change back to original value.
-    v_structure_change = sav;
 }
 
 bool SaveState::check(bool warn) {
@@ -599,11 +594,10 @@ void SaveState::ssfree() {
 }
 
 void SaveState::save() {
-    NrnThread* nt;
     if (!check(false)) {
         alloc();
     }
-    FOR_THREADS(nt) {
+    for (const NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         assert(t == nt->_t);
     }
     t_ = t;
@@ -678,12 +672,11 @@ void SaveState::saveacell(ACellState& ac, int type) {
 }
 
 void SaveState::restore(int type) {
-    NrnThread* nt;
     if (!check(true)) {
         hoc_execerror("SaveState:", "Stored state inconsistent with current neuron structure");
     }
     t = t_;
-    FOR_THREADS(nt) {
+    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         nt->_t = t_;
     }
     for (int isec = 0; isec < nsec_; ++isec) {
@@ -942,8 +935,7 @@ void SaveState::savenet() {
         ++i;
     }
     if (int i = 0; net_cvode_instance_psl()) {
-        ITERATE(q, net_cvode_instance_psl()) {
-            auto* ps = static_cast<PreSyn*>(VOIDITM(q));
+        for (PreSyn* ps: *net_cvode_instance_psl()) {
             ps->hi_index_ = i;
             pss_[i].flag = ps->flag_;
             pss_[i].valthresh = ps->valthresh_;
@@ -954,8 +946,7 @@ void SaveState::savenet() {
     }
     alloc_tq();
     tqcnt_ = 0;
-    NrnThread* nt;
-    FOR_THREADS(nt) {
+    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         TQueue* tq = net_cvode_instance_event_queue(nt);
         this_savestate = this;
         callback_mode = 1;
@@ -990,8 +981,7 @@ void SaveState::restorenet() {
     }
     // PreSyn's
     if (int i = 0; net_cvode_instance_psl())
-        ITERATE(q, net_cvode_instance_psl()) {
-            auto* ps = static_cast<PreSyn*>(VOIDITM(q));
+        for (PreSyn* ps: *net_cvode_instance_psl()) {
             ps->hi_index_ = i;
             ps->flag_ = pss_[i].flag;
             ps->valthresh_ = pss_[i].valthresh;
@@ -1031,12 +1021,9 @@ void SaveState::readnet(FILE* f) {
     if (npss_ != 0) {
         pss_ = new PreSynState[npss_];
         ASSERTfread(pss_, sizeof(PreSynState), npss_, f);
-        PreSyn* ps;
         int i = 0;
-        hoc_Item* q;
         if (net_cvode_instance_psl())
-            ITERATE(q, net_cvode_instance_psl()) {
-                ps = (PreSyn*) VOIDITM(q);
+            for (PreSyn* ps: *net_cvode_instance_psl()) {
                 ps->hi_index_ = i;
                 ++i;
             }
@@ -1147,10 +1134,9 @@ bool SaveState::checknet(bool warn) {
     }
     // PreSyn's
     i = 0;
-    if (net_cvode_instance_psl())
-        ITERATE(q, net_cvode_instance_psl()) {
-            ++i;
-        }
+    if (net_cvode_instance_psl()) {
+        i = net_cvode_instance_psl()->size();
+    }
     if (npss_ != i) {
         if (warn) {
             fprintf(stderr,
@@ -1182,8 +1168,7 @@ void SaveState::allocnet() {
     }
     npss_ = 0;
     if (net_cvode_instance_psl())
-        ITERATE(q, net_cvode_instance_psl()) {
-            auto* ps = static_cast<PreSyn*>(VOIDITM(q));
+        for (PreSyn* ps: *net_cvode_instance_psl()) {
             ps->hi_index_ = npss_;
             ++npss_;
         }
@@ -1207,8 +1192,7 @@ void SaveState::free_tq() {
 void SaveState::alloc_tq() {
     free_tq();
     tqcnt_ = 0;
-    NrnThread* nt;
-    FOR_THREADS(nt) {
+    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         TQueue* tq = net_cvode_instance_event_queue(nt);
         this_savestate = this;
         callback_mode = 0;
@@ -1279,8 +1263,8 @@ static Member_func members[] = {{"save", save},
                                 {"restore", restore},
                                 {"fread", ssread},
                                 {"fwrite", sswrite},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 void SaveState_reg() {
-    class2oc("SaveState", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("SaveState", cons, destruct, members, nullptr, nullptr);
 }

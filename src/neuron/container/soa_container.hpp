@@ -5,6 +5,7 @@
 #include "neuron/container/generic_data_handle.hpp"
 #include "neuron/container/soa_identifier.hpp"
 
+#include <algorithm>  // std::transform
 #include <cstddef>
 #include <functional>
 #include <limits>
@@ -462,7 +463,7 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
      */
     template <may_cause_reallocation might_reallocate, typename Callable>
     Callable for_each_vector(Callable callable) {
-        for (auto i = 0; i < m_storage.size(); ++i) {
+        for (std::size_t i = 0; i < m_storage.size(); ++i) {
             callable(m_tag, m_storage[i], i, m_array_dims[i]);
         }
         if constexpr (might_reallocate == may_cause_reallocation::Yes) {
@@ -479,7 +480,7 @@ struct field_data<Tag, FieldImplementation::RuntimeVariable> {
      */
     template <typename Callable>
     Callable for_each_vector(Callable callable) const {
-        for (auto i = 0; i < m_storage.size(); ++i) {
+        for (std::size_t i = 0; i < m_storage.size(); ++i) {
             callable(m_tag, m_storage[i], i, m_array_dims[i]);
         }
 
@@ -594,8 +595,6 @@ class AccumulateMemoryUsage {
                     std::vector<detail::index_column_tag::type> const& vec,
                     int field_index,
                     int array_dim) {
-        auto element_size = sizeof(detail::index_column_tag::type);
-
         m_usage.stable_identifiers.size = vec.size() * (sizeof(vec[0]) + sizeof(size_t*));
         m_usage.stable_identifiers.capacity = m_usage.stable_identifiers.size +
                                               (vec.capacity() - vec.size()) * sizeof(vec[0]);
@@ -883,7 +882,7 @@ struct soa {
 
     template <typename Callable, typename Tag, typename... RemainingTags>
     Callable for_each_tag_vector_impl(Callable callable) const {
-        Callable tmp_callable = std::get<tag_index_v<Tag>>(m_data).template for_each_vector(
+        Callable tmp_callable = std::get<tag_index_v<Tag>>(m_data).template for_each_vector<>(
             callable);
         return for_each_tag_vector_impl<Callable, RemainingTags...>(tmp_callable);
     }

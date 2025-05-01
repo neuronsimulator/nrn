@@ -52,6 +52,12 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
 ```
 [^1]
 [^1]: NRN_RX3D_OPT_LEVEL=2 can build VERY slowly (cython translated cpp file can take a half hour or more). So for testing, we generally copy the script to temp.sh and modify to NRN_RX3D_OPT_LEVEL=0
+In order to build CoreNEURON support, one must add following options:
+```
+-DLINK_AGAINST_PYTHON=OFF \
+-DNMODL_ENABLE_PYTHON_BINDINGS=ON \
+-DNRN_ENABLE_CORENEURON=ON
+```
 
 The default variables above will be
 ```
@@ -156,7 +162,7 @@ generally only for the architecture indicated by ```uname -m```. That is
 ok for openmpi but since the various python libraries are linked against
 during build to create the version specific neuron modules, those python
 installers also have to be universal. Fortunately, universal python versions
-can be found at [python.org](http://python.org/Downloads/macOS) at least for
+can be found at [python.org](https://www.python.org/downloads/macos) at least for
 (as of 2022-01-01) python3.8, python3.9, and python3.10.
 
 - ```xcode-select --install```:

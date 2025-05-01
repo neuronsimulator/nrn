@@ -1,5 +1,4 @@
-#ifndef nrnpython_h
-#define nrnpython_h
+#pragma once
 
 #ifdef _WIN64
 #define MS_WIN64
@@ -13,7 +12,9 @@
 #if defined(USE_PYTHON)
 #undef _POSIX_C_SOURCE
 #undef _XOPEN_SOURCE
-#include <nrnwrap_Python.h>
+#include "nrnwrap_Python.h"
+
+#include "nrn_export.hpp"
 
 #endif /*USE_PYTHON*/
 
@@ -26,8 +27,8 @@
 #define PyInt_AsLong        PyLong_AsLong
 #define PyInt_FromLong      PyLong_FromLong
 
-static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 8),
-              "Python >= 3.8 required");
+static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 9),
+              "Python >= 3.9 required");
 
 extern PyObject* nrnpy_hoc_pop(const char* mes);
 extern int nrnpy_numbercheck(PyObject*);
@@ -95,4 +96,3 @@ extern "C" PyObject* nrn_hocobj_ptr(double*);
 int nrn_is_hocobj_ptr(PyObject*, neuron::container::data_handle<double>&);
 int nrn_pointer_assign(Prop*, Symbol*, PyObject*);
 neuron::container::generic_data_handle* nrnpy_setpointer_helper(PyObject*, PyObject*);
-#endif

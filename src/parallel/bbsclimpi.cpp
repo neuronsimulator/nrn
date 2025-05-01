@@ -20,13 +20,7 @@ extern void nrnmpi_int_broadcast(int*, int, int);
 
 #include <map>
 
-struct ltint {
-    bool operator()(int i, int j) const {
-        return i < j;
-    }
-};
-
-class KeepArgs: public std::map<int, bbsmpibuf*, ltint> {};
+class KeepArgs: public std::map<int, bbsmpibuf*> {};
 
 int BBSClient::sid_;
 
@@ -78,8 +72,12 @@ char* BBSClient::upkstr() {
     return nrnmpi_upkstr(recvbuf_);  // do not forget to free(string)
 }
 
-char* BBSClient::upkpickle(size_t* n) {
-    return nrnmpi_upkpickle(n, recvbuf_);  // do not forget to free(string)
+std::vector<char> BBSClient::upkpickle() {
+    std::size_t len{};
+    char* s = nrnmpi_upkpickle(&len, recvbuf_);
+    std::vector<char> ret(s, s + len);
+    delete[] s;
+    return ret;
 }
 
 void BBSClient::pkbegin() {
@@ -106,8 +104,8 @@ void BBSClient::pkstr(const char* s) {
     nrnmpi_pkstr(s, sendbuf_);
 }
 
-void BBSClient::pkpickle(const char* s, size_t n) {
-    nrnmpi_pkpickle(s, n, sendbuf_);
+void BBSClient::pkpickle(const std::vector<char>& s) {
+    nrnmpi_pkpickle(s.data(), s.size(), sendbuf_);
 }
 
 void BBSClient::post(const char* key) {
@@ -213,7 +211,6 @@ bool BBSClient::look(const char* key) {
 }
 
 void BBSClient::take(const char* key) {  // blocking
-    int bufid;
     get(key, TAKE);
     upkbegin();
 }
@@ -228,8 +225,6 @@ int BBSClient::look_take_todo() {
 
 int BBSClient::take_todo() {
     int type;
-    char* rs;
-    size_t n;
     while ((type = get(0, TAKE_TODO)) == CONTEXT) {
         upkbegin();
         upkint();  // throw away userid
@@ -238,10 +233,7 @@ int BBSClient::take_todo() {
         printf("%d execute context\n", nrnmpi_myid_bbs);
         fflush(stdout);
 #endif
-        rs = execute_helper(&n, -1);
-        if (rs) {
-            delete[] rs;
-        }
+        execute_helper(-1);
     }
     upkbegin();
     return type;
@@ -257,7 +249,7 @@ int BBSClient::look_take_result(int pid) {
 
 void BBSClient::save_args(int userid) {
     nrnmpi_ref(sendbuf_);
-    keepargs_->insert(std::pair<const int, bbsmpibuf*>(userid, sendbuf_));
+    keepargs_->emplace(userid, sendbuf_);
     post_todo(working_id_);
 }
 
@@ -307,9 +299,6 @@ void BBSClient::done() {
 }
 
 void BBSClient::start() {
-    char* client = 0;
-    int tid;
-    int n;
     if (started_) {
         return;
     }

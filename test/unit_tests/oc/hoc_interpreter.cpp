@@ -1,9 +1,11 @@
-#include <catch2/catch.hpp>
+#include <catch2/generators/catch_generators_range.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "classreg.h"
 #include "code.h"
 #include "hocdec.h"
-#include "hoc_membf.h"
+#include "classreg.h"
 #include "ocfunc.h"
 
 #include <sstream>
@@ -135,7 +137,7 @@ std::string hoc_oc_require_error(const char* buf) {
     return output;
 }
 
-using Catch::Matchers::Contains;  // ContainsSubstring in newer Catch2
+using Catch::Matchers::ContainsSubstring;
 SCENARIO("Test calling code from HOC that throws exceptions", "[NEURON][hoc_interpreter]") {
     static bool registered = false;
     if (!registered) {
@@ -143,7 +145,6 @@ SCENARIO("Test calling code from HOC that throws exceptions", "[NEURON][hoc_inte
                  throwing_util_constructor,
                  throwing_util_destructor,
                  throwing_util_members,
-                 nullptr /* checkpoint */,
                  throwing_util_ret_obj_members,
                  throwing_util_ret_str_members);
         registered = true;
@@ -152,15 +153,17 @@ SCENARIO("Test calling code from HOC that throws exceptions", "[NEURON][hoc_inte
     }
     GIVEN("A HOC object constructor that throws") {
         REQUIRE_THAT(hoc_oc_require_error("util = new UtilityThatLikesThrowing()\n"),
-                     Contains("hoc_execerror: UtilityThatLikesThrowing[0] constructor: need at "
-                              "least one argument"));
+                     ContainsSubstring(
+                         "hoc_execerror: UtilityThatLikesThrowing[0] constructor: need at "
+                         "least one argument"));
     }
     GIVEN("A HOC object destructor that throws") {
         REQUIRE_THAT(hoc_oc_require_error("util = nil\n"
                                           "util = new UtilityThatLikesThrowing(1)\n"
                                           "util = nil\n"),
-                     Contains("hoc_execerror: UtilityThatLikesThrowing[0] destructor: throwing "
-                              "from HOC destructor"));
+                     ContainsSubstring(
+                         "hoc_execerror: UtilityThatLikesThrowing[0] destructor: throwing "
+                         "from HOC destructor"));
     }
     GIVEN("A HOC object whose constructor and destructor succeed") {
         // Make sure there are not any instances alive from previous tests, otherwise we can't
@@ -173,14 +176,15 @@ SCENARIO("Test calling code from HOC that throws exceptions", "[NEURON][hoc_inte
         WHEN("A member function that throws is called") {
             REQUIRE_THAT(
                 hoc_oc_require_error(("util.throw_error" + method_suffix + "()\n").c_str()),
-                Contains("hoc_execerror: UtilityThatLikesThrowing[0]::throw_error" + method_suffix +
-                         ": throwing "
-                         "from throw_error"));
+                ContainsSubstring("hoc_execerror: UtilityThatLikesThrowing[0]::throw_error" +
+                                  method_suffix +
+                                  ": throwing "
+                                  "from throw_error"));
         }
         WHEN("A member function that calls hoc_execerror is called") {
             REQUIRE_THAT(hoc_oc_require_error(
                              ("util.call_execerror" + method_suffix + "()\n").c_str()),
-                         Contains("hoc_execerror: throwing a tantrum"));
+                         ContainsSubstring("hoc_execerror: throwing a tantrum"));
         }
     }
 }

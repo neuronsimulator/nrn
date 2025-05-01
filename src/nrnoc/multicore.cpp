@@ -1,4 +1,5 @@
-/* included by treeset.cpp */
+#include "multicore.h"
+
 #include <nrnmpi.h>
 
 #include "hoclist.h"
@@ -59,8 +60,6 @@ void (*nrn_mk_transfer_thread_data_)();
 
 static int busywait_;
 static int busywait_main_;
-extern void nrn_thread_error(const char*);
-extern double nrn_timeus();
 extern void (*nrn_multisplit_setup_)();
 extern int v_structure_change;
 extern int diam_changed;
@@ -391,24 +390,23 @@ void nrn_threads_free() {
         for (tml = nt->tml; tml; tml = tml2) {
             Memb_list* ml = tml->ml;
             tml2 = tml->next;
-            free((char*) ml->nodelist);
-            free((char*) ml->nodeindices);
-            delete[] ml->prop;
+            free((char*) std::exchange(ml->nodelist, nullptr));
+            free((char*) std::exchange(ml->nodeindices, nullptr));
+            delete[] std::exchange(ml->prop, nullptr);
             if (!memb_func[tml->index].hoc_mech) {
-                free((char*) ml->pdata);
+                free((char*) std::exchange(ml->pdata, nullptr));
             }
             if (ml->_thread) {
                 if (memb_func[tml->index].thread_cleanup_) {
                     (*memb_func[tml->index].thread_cleanup_)(ml->_thread);
                 }
-                delete[] ml->_thread;
+                delete[] std::exchange(ml->_thread, nullptr);
             }
-            delete ml;
-            free((char*) tml);
+            delete std::exchange(ml, nullptr);
+            free((char*) std::exchange(tml, nullptr));
         }
         if (nt->_ml_list) {
-            free((char*) nt->_ml_list);
-            nt->_ml_list = NULL;
+            free((char*) std::exchange(nt->_ml_list, nullptr));
         }
         for (i = 0; i < BEFORE_AFTER_SIZE; ++i) {
             NrnThreadBAList *tbl, *tbl2;
@@ -608,21 +606,29 @@ printf("thread_memblist_setup %lx v_node_count=%d ncell=%d end=%d\n", (long)nth,
     }
     /* fill in the Point_process._vnt value. */
     /* artificial cells done in v_setup_vectors() */
-    for (tml = _nt->tml; tml; tml = tml->next)
-        if (memb_func[tml->index].is_point) {
-            for (i = 0; i < tml->ml->nodecount; ++i) {
+    for (tml = _nt->tml; tml; tml = tml->next) {
+        if (!memb_func[tml->index].is_point) {
+            continue;
+        }
+        if (memb_func[tml->index].hoc_mech) {
+            // I don't think hoc_mech works with multiple threads.
+            for (int i = 0; i < tml->ml->nodecount; ++i) {
+                auto* pnt = tml->ml->prop[i]->dparam[1].get<Point_process*>();
+                pnt->_vnt = _nt;
+            }
+        } else {
+            for (int i = 0; i < tml->ml->nodecount; ++i) {
                 auto* pnt = tml->ml->pdata[i][1].get<Point_process*>();
                 pnt->_vnt = _nt;
             }
         }
+    }
 }
 
 void nrn_thread_memblist_setup() {
-    int it, *mlcnt;
-    void** vmap;
-    mlcnt = (int*) emalloc(n_memb_func * sizeof(int));
-    vmap = (void**) emalloc(n_memb_func * sizeof(void*));
-    for (it = 0; it < nrn_nthread; ++it) {
+    int* mlcnt = (int*) emalloc(n_memb_func * sizeof(int));
+    void** vmap = (void**) emalloc(n_memb_func * sizeof(void*));
+    for (int it = 0; it < nrn_nthread; ++it) {
         thread_memblist_setup(nrn_threads + it, mlcnt, vmap);
     }
     // Right now the sorting method updates the storage offsets inside the
@@ -648,12 +654,11 @@ void nrn_thread_memblist_setup() {
 /* in passing, also set start and end indices. */
 
 void reorder_secorder() {
-    NrnThread* _nt;
     Section *sec, *ch;
     Node* nd;
     hoc_Item* qsec;
     hoc_List* sl;
-    int order, isec, i, j, inode;
+    int order, isec, j, inode;
     /* count and allocate */
     // ForAllSections(sec)
     ITERATE(qsec, section_list) {
@@ -661,7 +666,7 @@ void reorder_secorder() {
         sec->order = -1;
     }
     order = 0;
-    FOR_THREADS(_nt) {
+    for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
         /* roots of this thread */
         sl = _nt->roots;
         inode = 0;
@@ -705,7 +710,7 @@ void reorder_secorder() {
         sec->order = -1;
     }
     order = 0;
-    FOR_THREADS(_nt) {
+    for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
         /* roots of this thread */
         sl = _nt->roots;
         inode = 0;
@@ -761,9 +766,10 @@ void reorder_secorder() {
       in either case, we can then point to v, d, rhs in proper
       node order
     */
-    FOR_THREADS(_nt) for (inode = 0; inode < _nt->end; ++inode) {
-        _nt->_v_node[inode]->_classical_parent = _nt->_v_parent[inode];
-    }
+    for (const NrnThread* _nt: for_threads(nrn_threads, nrn_nthread))
+        for (inode = 0; inode < _nt->end; ++inode) {
+            _nt->_v_node[inode]->_classical_parent = _nt->_v_parent[inode];
+        }
     if (nrn_multisplit_setup_) {
         /* classical order abandoned */
         (*nrn_multisplit_setup_)();
@@ -806,8 +812,10 @@ void nrn_mk_table_check() {
 void nrn_thread_table_check(neuron::model_sorted_token const& sorted_token) {
     for (auto [id, tml]: table_check_) {
         Memb_list* ml = tml->ml;
+        // here _globals cannot be guessed (missing _gth) so we give nullptr, and set the variable
+        // locally in _check_table_thread
         memb_func[tml->index].thread_table_check_(
-            ml, 0, ml->pdata[0], ml->_thread, nrn_threads + id, tml->index, sorted_token);
+            ml, 0, ml->pdata[0], ml->_thread, nullptr, nrn_threads + id, tml->index, sorted_token);
     }
 }
 
@@ -940,7 +948,6 @@ int nrn_user_partition() {
     hoc_List* sl;
     char buf[256];
     Section* sec;
-    NrnThread* nt;
     /* all one or all the other*/
     b = (nrn_threads[0].userpart != nullptr);
     for (it = 1; it < nrn_nthread; ++it) {
@@ -954,7 +961,7 @@ int nrn_user_partition() {
 
     /* discard partition if any section mentioned has been deleted. The
         model has changed */
-    FOR_THREADS(nt) {
+    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         sl = nt->roots;
         ITERATE(qsec, sl) {
             sec = hocSEC(qsec);
@@ -975,7 +982,7 @@ int nrn_user_partition() {
     /* fill in ncell and verify consistency */
     n = 0;
     for (it = 0; it < nrn_nthread; ++it) {
-        nt = nrn_threads + it;
+        NrnThread* nt = nrn_threads + it;
         sl = nt->roots;
         nt->ncell = 0;
         ITERATE(qsec, sl) {

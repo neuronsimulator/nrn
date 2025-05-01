@@ -75,4 +75,4 @@ To work properly with variable time step methods, models that change states and/
 
         fih = h.FInitializeHandler(setup_discontinuities)
 
-    It will be helpful to use the Crank-Nicholson fixed step method and compare the variable step method with and without the ``cvode.re_init()``. Zoom in around the discontinuity at 2 ms.
+    It will be helpful to use the Crank-Nicolson fixed step method and compare the variable step method with and without the ``cvode.re_init()``. Zoom in around the discontinuity at 2 ms.

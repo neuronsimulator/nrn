@@ -1,17 +1,49 @@
+#include "neuron/container/generic_data_handle.hpp"
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/cabcode.cpp,v 1.37 1999/07/08 14:24:59 hines Exp */
 
+#include <regex>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
+
 #define HOC_L_LIST 1
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
 #include "section.h"
-#include "nrn_ansi.h"
 #include "nrniv_mf.h"
 #include "membfunc.h"
 #include "parse.hpp"
 #include "hocparse.h"
 #include "membdef.h"
+
+static char* escape_bracket(const char* s) {
+    static char* b;
+    const char* p1;
+    char* p2;
+    if (!b) {
+        b = new char[256];
+    }
+    for (p1 = s, p2 = b; *p1; ++p1, ++p2) {
+        switch (*p1) {
+        case '<':
+            *p2 = '[';
+            break;
+        case '>':
+            *p2 = ']';
+            break;
+        case '[':
+        case ']':
+            *p2 = '\\';
+            *(++p2) = *p1;
+            break;
+        default:
+            *p2 = *p1;
+            break;
+        }
+    }
+    *p2 = '\0';
+    return b;
+}
+
 
 extern int hoc_execerror_messages;
 #define symlist hoc_symlist
@@ -287,17 +319,19 @@ void new_sections(Object* ob, Symbol* sym, Item** pitm, int size) {
     }
 }
 
+/// @brief Creates a new section and registers with the global section list
+Section* section_new(Symbol* sym) {
+    Section* sec = new_section(nullptr, sym, 0);
+    auto itm = lappendsec(section_list, sec);
+    sec->prop->dparam[8] = {neuron::container::do_not_search, itm};
+    return sec;
+}
+
 #if USE_PYTHON
 struct NPySecObj;
 Section* nrnpy_newsection(NPySecObj* v) {
-    Item* itm;
-    Section* sec;
-    sec = new_section((Object*) 0, (Symbol*) 0, 0);
-#if USE_PYTHON
+    auto sec = section_new(nullptr);
     sec->prop->dparam[PROP_PY_INDEX] = static_cast<void*>(v);
-#endif
-    itm = lappendsec(section_list, sec);
-    sec->prop->dparam[8] = itm;
     return sec;
 }
 #endif
@@ -412,20 +446,11 @@ double nrn_diameter(Node* nd) {
     return p->param(0);
 }
 
-void nrn_chk_section(Symbol* s) {
-    if (s->type != SECTION) {
-        execerror("Not a SECTION name:", s->name);
-    }
-}
-
 Section* chk_access() {
     Section* sec = secstack[isecstack];
     if (!sec || !sec->prop) {
         /* use any existing section as a default section */
-        hoc_Item* qsec;
-        // ForAllSections(lsec)
-        ITERATE(qsec, section_list) {
-            Section* lsec = hocSEC(qsec);
+        for (Section* lsec: range_sec(section_list)) {
             if (lsec->prop) {
                 sec = lsec;
                 ++sec->refcount;
@@ -451,10 +476,7 @@ Section* nrn_noerr_access(void) /* return 0 if no accessed section */
     Section* sec = secstack[isecstack];
     if (!sec || !sec->prop) {
         /* use any existing section as a default section */
-        hoc_Item* qsec;
-        // ForAllSections(lsec)
-        ITERATE(qsec, section_list) {
-            Section* lsec = hocSEC(qsec);
+        for (Section* lsec: range_sec(section_list)) {
             if (lsec->prop) {
                 sec = lsec;
                 ++sec->refcount;
@@ -477,7 +499,7 @@ Section* nrn_noerr_access(void) /* return 0 if no accessed section */
 /*sibling and child pointers do not ref sections to avoid mutual references */
 /* the sibling list is ordered according to increasing distance from parent */
 
-void nrn_remove_sibling_list(Section* sec) {
+static void nrn_remove_sibling_list(Section* sec) {
     Section* s;
     if (sec->parentsec) {
         if (sec->parentsec->child == sec) {
@@ -503,7 +525,7 @@ static double ncp_abs(Section* sec) {
     return x;
 }
 
-void nrn_add_sibling_list(Section* sec) {
+static void nrn_add_sibling_list(Section* sec) {
     Section* s;
     double x;
     if (sec->parentsec) {
@@ -543,7 +565,7 @@ static void reverse_sibling_list(Section* sec) {
     *pch = 0;
 }
 
-void disconnect(void) {
+void disconnect() {
     if (ifarg(1)) {
         hoc_execerror(
             "disconnect takes no positional arguments and disconnects the HOC currently accessed "
@@ -677,7 +699,9 @@ static Section* Sec_access(void) /* section symbol at pc */
         hoc_thisobject = 0;
         hoc_symlist = hoc_top_level_symlist;
     }
-    nrn_chk_section(s);
+    if (s->type != SECTION) {
+        execerror("Not a SECTION name:", s->name);
+    }
     itm = OPSECITM(s)[range_vec_indx(s)];
     if (obsav) {
         hoc_objectdata = hoc_objectdata_restore(odsav);
@@ -779,7 +803,7 @@ void* hoc_sec_internal_name2ptr(const char* s, int eflag) {
     return vp;
 }
 
-void* hoc_pysec_name2ptr(const char* s, int eflag) {
+void* hoc_pysec_name2ptr(const char* s, int /* eflag */) {
     /*
       syntax is _pysec.<name>  where <name> is the name of a python
       nrn.Section from (*nrnpy_pysec_name_p_)(sec)
@@ -800,14 +824,14 @@ below to keep the stack ok when it is popped at the end of the next
 statement.
 */
 
-void ob_sec_access_push(Item* qsec) {
+void ob_sec_access_push(hoc_Item* qsec) {
     if (!qsec) {
         hoc_execerror("section in the object was deleted", (char*) 0);
     }
     nrn_pushsec(qsec->element.sec);
 }
 
-void ob_sec_access(void) {
+void ob_sec_access() {
     if (!section_object_seen) {
         hoc_nopop();
         nrn_pushsec(secstack[isecstack]);
@@ -1002,7 +1026,7 @@ void range_const() {
 static int range_vec_indx(Symbol* s) {
     int indx;
 
-    if (ISARRAY(s)) {
+    if (is_array(*s)) {
         indx = hoc_araypt(s, SYMBOL);
     } else {
         indx = 0;
@@ -1279,10 +1303,7 @@ neuron::container::data_handle<double> nrn_rangepointer(Section* sec, Symbol* s,
     return dprop(s, indx, sec, i);
 }
 
-/* return nullptr if failure instead of hoc_execerror
-   and return pointer to the 0 element if an array
-*/
-neuron::container::data_handle<double> nrnpy_rangepointer(Section* sec,
+neuron::container::generic_data_handle nrnpy_rangepointer(Section* sec,
                                                           Symbol* s,
                                                           double d,
                                                           int* err,
@@ -1364,6 +1385,24 @@ void rangepoint(void) /* symbol at pc, return value on stack */
     rangevareval();
 }
 
+void rangeobjeval(void) /* symbol at pc, section location on stack, return object on stack*/
+{
+    Symbol* s{(pc++)->sym};
+    assert(s->subtype == NMODLRANDOM);  // the only possibility at the moment
+    double d = xpop();
+    Section* sec{nrn_sec_pop()};
+    auto const i = node_index(sec, d);
+    Prop* m = nrn_mechanism_check(s->u.rng.type, sec, i);
+    Object* ob = nrn_nmodlrandom_wrap(m, s);
+    hoc_push_object(ob);
+}
+
+void rangeobjevalmiddle(void) /* symbol at pc, return object on stack*/
+{
+    hoc_pushx(0.5);
+    rangeobjeval();
+}
+
 int node_index(Section* sec, double x) /* returns nearest index to x */
 {
     int i;
@@ -1384,7 +1423,6 @@ int node_index(Section* sec, double x) /* returns nearest index to x */
     return i;
 }
 
-/* return -1 if x at connection end, nnode-1 if at other end */
 int node_index_exact(Section* sec, double x) {
     if (x == 0.) {
         if (arc0at0(sec)) {
@@ -1419,6 +1457,7 @@ double cable_prop_eval(Symbol* sym) {
     }
     return 0.;
 }
+
 double* cable_prop_eval_pointer(Symbol* sym) {
     Section* sec;
     sec = nrn_sec_pop();
@@ -1469,6 +1508,7 @@ void nrn_change_nseg(Section* sec, int n) {
             }
     }
 }
+
 void cable_prop_assign(Symbol* sym, double* pd, int op) {
     Section* sec;
     sec = nrn_sec_pop();
@@ -1509,12 +1549,10 @@ void cable_prop_assign(Symbol* sym, double* pd, int op) {
     }
 }
 
-/* x of parent for this section */
 double nrn_connection_position(Section* sec) {
     return sec->prop->dparam[1].get<double>();
 }
 
-/* x=0,1 end connected to parent */
 double nrn_section_orientation(Section* sec) {
     return sec->prop->dparam[3].get<double>();
 }
@@ -1525,7 +1563,6 @@ int nrn_at_beginning(Section* sec) {
 }
 
 static void nrn_rootnode_alloc(Section* sec) {
-    Extnode* nde;
     sec->parentnode = new Node{};
     sec->parentnode->sec_node_index_ = 0;
     sec->parentnode->sec = sec;
@@ -1596,8 +1633,6 @@ void nrn_parent_info(Section* s) {
 }
 
 void setup_topology(void) {
-    Item* qsec;
-
     /* use connection info in section property to connect nodes. */
     /* for the moment we assume uniform dx and range 0-1 */
 
@@ -1613,9 +1648,7 @@ void setup_topology(void) {
 
     nrn_global_ncell = 0;
 
-    // ForAllSections(sec)
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
 #if 0
 		if (sec->nnode < 1) { /* last node is not a segment */
 			hoc_execerror(secname(sec),
@@ -1817,13 +1850,6 @@ int nrn_get_mechtype(const char* mechname) {
     return s->subtype;
 }
 
-int nrn_instance_count(int mechtype) {
-    if (v_structure_change) {
-        v_setup_vectors();
-    }
-    return memb_list[mechtype].nodecount;
-}
-
 #if EXTRACELLULAR
 /* want to handle vext(0), vext(1) correctly. No associated i_membrane though.*/
 /*
@@ -1836,7 +1862,7 @@ double* nrn_vext_pd(Symbol* s, int indx, Node* nd) {
     if (s->u.rng.type != EXTRACELL) {
         return (double*) 0;
     }
-    if (s->u.rng.index != neuron::extracellular::vext_pseudoindex()) {
+    if (std::size_t(s->u.rng.index) != neuron::extracellular::vext_pseudoindex()) {
         return nullptr;
     }
     zero = 0.;
@@ -1856,13 +1882,20 @@ double* nrn_vext_pd(Symbol* s, int indx, Node* nd) {
 }
 #endif
 
-/* if you change this then change nrnpy_dprop as well */
-/* returns location of property symbol */
-neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, short inode) {
-    auto* const m = nrn_mechanism_check(s->u.rng.type, sec, inode);
+class VoidPointerError: public std::runtime_error {
+  public:
+    using std::runtime_error::runtime_error;
+};
+
+neuron::container::generic_data_handle dprop_impl(Prop* m,
+                                                  Symbol* s,
+                                                  int indx,
+                                                  Section* sec,
+                                                  short inode) {
 #if EXTRACELLULAR
     // old comment: this does not handle vext(0) and vext(1) properly at this time
-    if (m->_type == EXTRACELL && s->u.rng.index == neuron::extracellular::vext_pseudoindex()) {
+    if (m->_type == EXTRACELL &&
+        std::size_t(s->u.rng.index) == neuron::extracellular::vext_pseudoindex()) {
         return neuron::container::data_handle<double>{neuron::container::do_not_search,
                                                       sec->pnode[inode]->extnode->v + indx};
     }
@@ -1875,17 +1908,29 @@ neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, 
             return m->param_handle_legacy(s->u.rng.index + indx);
         }
     } else {
-        neuron::container::data_handle<double> const p{m->dparam[s->u.rng.index + indx]};
-        if (!p) {
-            hoc_execerror(s->name, "wasn't made to point to anything");
+        neuron::container::generic_data_handle const p{m->dparam[s->u.rng.index + indx]};
+        if (p.is_invalid_handle()) {
+            throw VoidPointerError(std::string(s->name) + " wasn't made to point to anything");
         }
         return p;
     }
 }
 
+
+/* if you change this then change nrnpy_dprop as well */
+/* returns location of property symbol */
+neuron::container::data_handle<double> dprop(Symbol* s, int indx, Section* sec, short inode) {
+    auto* const m = nrn_mechanism_check(s->u.rng.type, sec, inode);
+    try {
+        return neuron::container::data_handle<double>{dprop_impl(m, s, indx, sec, inode)};
+    } catch (const VoidPointerError& e) {
+        hoc_execerror(e.what(), nullptr);
+    }
+}
+
 /* return nullptr instead of hoc_execerror. */
 /* returns location of property symbol */
-neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
+neuron::container::generic_data_handle nrnpy_dprop(Symbol* s,
                                                    int indx,
                                                    Section* sec,
                                                    short inode,
@@ -1895,26 +1940,12 @@ neuron::container::data_handle<double> nrnpy_dprop(Symbol* s,
         *err = 1;
         return {};
     }
-#if EXTRACELLULAR
-    /* this does not handle vext(0) and vext(1) properly at this time */
-    if (m->_type == EXTRACELL && s->u.rng.index == neuron::extracellular::vext_pseudoindex()) {
-        return neuron::container::data_handle<double>{sec->pnode[inode]->extnode->v + indx};
+    try {
+        return dprop_impl(m, s, indx, sec, inode);
+    } catch (const VoidPointerError& e) {
+        *err = 2;
     }
-#endif
-    if (s->subtype != NRNPOINTER) {
-        if (m->ob) {
-            return neuron::container::data_handle<double>{m->ob->u.dataspace[s->u.rng.index].pval +
-                                                          indx};
-        } else {
-            return m->param_handle_legacy(s->u.rng.index + indx);
-        }
-    } else {
-        neuron::container::data_handle<double> const p{m->dparam[s->u.rng.index + indx]};
-        if (!p) {
-            *err = 2;
-        }
-        return p;
-    }
+    return {};
 }
 
 static char* objectname(void) {
@@ -1938,7 +1969,6 @@ void forall_section(void) {
 
     Inst* savepc = pc;
     Item *qsec, *first, *last;
-    extern int hoc_returning;
     char buf[200];
     char** s;
     int istk;
@@ -1979,8 +2009,8 @@ void forall_section(void) {
         Section* sec = hocSEC(qsec);
         qsec = qsec->next;
         if (buf[0]) {
-            hoc_regexp_compile(buf);
-            if (!hoc_regexp_search(secname(sec))) {
+            std::regex pattern(escape_bracket(buf));
+            if (!std::regex_match(secname(sec), pattern)) {
                 continue;
             }
         }
@@ -2011,8 +2041,8 @@ void hoc_ifsec(void) {
 
     s = hoc_strpop();
     Sprintf(buf, ".*%s.*", *s);
-    hoc_regexp_compile(buf);
-    if (hoc_regexp_search(secname(chk_access()))) {
+    std::regex pattern(escape_bracket(buf));
+    if (std::regex_match(secname(chk_access()), pattern)) {
         hoc_execute(relative(savepc));
     }
     if (!hoc_returning)
@@ -2020,8 +2050,8 @@ void hoc_ifsec(void) {
 }
 
 void issection(void) { /* returns true if string is the access section */
-    hoc_regexp_compile(gargstr(1));
-    if (hoc_regexp_search(secname(chk_access()))) {
+    std::regex pattern(escape_bracket(gargstr(1)));
+    if (std::regex_match(secname(chk_access()), pattern)) {
         hoc_retpushx(1.);
     } else {
         hoc_retpushx(0.);
@@ -2042,15 +2072,8 @@ int has_membrane(char* mechanism_name, Section* sec) {
 
 void ismembrane(void) { /* return true if string is an inserted membrane in the
         access section */
-    char* str;
-    Prop* p;
-
-    str = gargstr(1);
+    char* str = gargstr(1);
     hoc_retpushx((double) has_membrane(str, chk_access()));
-}
-
-const char* secaccessname(void) {
-    return secname(chk_access());
 }
 
 void sectionname(void) {
@@ -2157,9 +2180,9 @@ void pop_section(void) {
     hoc_retpushx(1.);
 }
 
-/* turn off section stack fixing (in case of return,continue,break in a section
-statement) between exlicit user level push_section,etc and pop_section
-*/
+/* turn off section stack fixing (in case of return,continue,break in a section statement) between
+ * exlicit user level push_section,etc and pop_section
+ */
 
 void hoc_level_pushsec(Section* sec) {
     ++skip_secstack_check;
@@ -2167,15 +2190,11 @@ void hoc_level_pushsec(Section* sec) {
 }
 
 void push_section(void) {
-    Section* sec;
+    Section* sec = nullptr;
     if (hoc_is_str_arg(1)) {
-        Item* qsec;
         char* s;
-        sec = (Section*) 0;
         s = gargstr(1);
-        // ForAllSections(sec1) /* I can't imagine a more inefficient way */
-        ITERATE(qsec, section_list) {
-            Section* sec1 = hocSEC(qsec);
+        for (Section* sec1: range_sec(section_list)) {
             if (strcmp(s, nrn_sec2pysecname(sec1)) == 0) {
                 sec = sec1;
                 break;
@@ -2219,7 +2238,7 @@ Section* nrn_section_exists(char* name, int indx, Object* cell) {
             } else {
                 obd = hoc_top_level_data;
             }
-            if (indx < hoc_total_array_data(sym, obd)) {
+            if (indx >= 0 && std::size_t(indx) < hoc_total_array_data(sym, obd)) {
                 itm = *(obd[sym->u.oboff].psecitm + indx);
                 if (itm) {
                     sec = itm->element.sec;
@@ -2234,7 +2253,7 @@ void section_exists(void) {
     int iarg, indx;
     Section* sec;
     Object* obj;
-    char *str, *cp, buf[100];
+    char *str, buf[100];
 
     obj = nullptr;
     sec = (Section*) 0;

@@ -1,12 +1,12 @@
-// Has to be included early to stop NEURON's macros wreaking havoc
-#define CATCH_CONFIG_RUNNER
-#include <catch2/catch.hpp>
+#include <catch2/catch_session.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "code.h"
 #include "neuron.h"
 #include "nrnmpi.h"
 #include "ocfunc.h"
 #include "section.h"
+#include "multicore.h"
 
 #include <exception>
 
@@ -20,7 +20,6 @@ extern "C" void modl_reg() {}
 void nrnmpi_stubs();
 #endif
 
-extern int nrn_how_many_processors();
 namespace nrn::test {
 int PROCESSORS{0};
 int MAX_PROCESSORS{nrn_how_many_processors()};
@@ -55,7 +54,7 @@ int main(int argc, char* argv[]) {
 
     Catch::Session session{};
 
-    using namespace Catch::clara;
+    using namespace Catch::Clara;
     auto cli = session.cli() |
                Opt(nrn::test::PROCESSORS, "number of PROCESSORS to consider")["--processors"](
                    "How many processors are available for perf tests");

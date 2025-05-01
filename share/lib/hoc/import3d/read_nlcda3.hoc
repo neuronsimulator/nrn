@@ -545,7 +545,7 @@ proc b2soption_split() {local i, n, id, ip  localobj p, newsec, tobj
 }
 
 proc remove_trailspace() { // yuck
-  hoc_sf_.head(line, " *$", line)
+  hoc_sf_.rtrim(line, line)
   sprint(line, "%s\n", line)
 }
 

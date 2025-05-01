@@ -57,13 +57,6 @@ done
 
 echo "$lst"
 
-osascript -e 'tell application "Finder"'\
- -e 'activate'\
- -e 'make new Finder window'\
- -e 'set target of Finder window 1 to folder '"$lst"' of startup disk'\
- -e 'set target of Finder window 1 to folder "bin" of folder '"$lst"' of startup disk'\
- -e 'end tell'
-
 # force rebuild of the neurondemo (perhaps as universal2)
 DEMO="${NRN_INSTALL}/share/nrn/demo"
 rm -f -r ${DEMO}/neuron ${DEMO}/release/${CPU}

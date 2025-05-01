@@ -18,6 +18,7 @@ extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 #include "vrecitem.h"  // for nrnbbcore_vecplay_write
 
 #include "nrnwrap_dlfcn.h"
+#include "nrnsection_mapping.h"
 
 extern bbcore_write_t* nrn_bbcore_write_;
 extern bbcore_write_t* nrn_bbcore_read_;
@@ -26,6 +27,7 @@ extern bool corenrn_direct;
 extern int* bbcore_dparam_size;
 extern double nrn_ion_charge(Symbol*);
 extern CellGroup* cellgroups_;
+extern NrnMappingInfo mapinfo;
 extern NetCvode* net_cvode_instance;
 extern char* pnt_map;
 extern void* nrn_interthread_enqueue(NrnThread*);
@@ -56,10 +58,18 @@ void write_memb_mech_types_direct(std::ostream& s) {
     for (int type = 2; type < n_memb_func; ++type) {
         const char* w = " ";
         Memb_func& mf = memb_func[type];
+        Memb_list& ml = memb_list[type];
         s << mf.sym->name << w << type << w << int(pnt_map[type])
           << w  // the pointtype, 0 means not a POINT_PROCESS
           << nrn_is_artificial_[type] << w << nrn_is_ion(type) << w << nrn_prop_param_size_[type]
-          << w << bbcore_dparam_size[type] << std::endl;
+          << w << bbcore_dparam_size[type] << w;
+
+        int n_vars = ml.get_num_variables();
+        s << n_vars;
+        for (size_t i = 0; i < n_vars; ++i) {
+            s << w << ml.get_array_dims(i);
+        }
+        s << std::endl;
 
         if (nrn_is_ion(type)) {
             s << nrn_ion_charge(mf.sym) << std::endl;
@@ -88,7 +98,7 @@ void* get_global_dbl_item(void* p, const char*& name, int& size, double*& val) {
     for (; sp; sp = sp->next) {
         if (sp->type == VAR && sp->subtype == USERDOUBLE) {
             name = sp->name;
-            if (ISARRAY(sp)) {
+            if (is_array(*sp)) {
                 Arrayinfo* a = sp->arayinfo;
                 if (a->nsub == 1) {
                     size = a->sub[0];
@@ -138,7 +148,7 @@ void nrnthreads_all_weights_return(std::vector<double*>& weights) {
 
 /** @brief Return location for CoreNEURON to copy data into.
  *  The type is mechanism type or special negative type for voltage,
- *  i_membrane_, or time. See coreneuron/io/nrn_setup.cpp:stdindex2ptr.
+ *  i_membrane_, or time. See coreneuron/io/nrn_setup.cpp:legacy_index2pointer.
  *  We allow coreneuron to copy to NEURON's AoS data as CoreNEURON knows
  *  how its data is arranged (SoA and possibly permuted).
  *  This function figures out the size (just for sanity check)
@@ -166,16 +176,19 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<doub
         data = &nt._t;
         n = 1;
     } else if (type > 0 && type < n_memb_func) {
+        auto set_mdata = [&mdata](Memb_list* ml) -> size_t {
+            mdata = ml->data();
+            return ml->nodecount;
+        };
+
         Memb_list* ml = nt._ml_list[type];
         if (ml) {
-            mdata = ml->data();
-            n = ml->nodecount;
+            n = set_mdata(ml);
         } else {
             // The single thread case is easy
             if (nrn_nthread == 1) {
                 ml = &memb_list[type];
-                mdata = ml->data();
-                n = ml->nodecount;
+                n = set_mdata(ml);
             } else {
                 // mk_tml_with_art() created a cgs[id].mlwithart which appended
                 // artificial cells to the end. Turns out that
@@ -183,9 +196,8 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, std::vector<doub
                 // is the Memb_list we need. Sadly, by the time we get here, cellgroups_
                 // has already been deleted.  So we defer deletion of the necessary
                 // cellgroups_ portion (deleting it on return from nrncore_run).
-                auto& ml = CellGroup::deferred_type2artml_[tid][type];
-                n = size_t(ml->nodecount);
-                mdata = ml->data();
+                Memb_list* ml = CellGroup::deferred_type2artml_[tid][type];
+                n = set_mdata(ml);
             }
         }
     }
@@ -217,6 +229,40 @@ int nrnthread_dat1(int tid,
     cg.netcon_srcgid = NULL;
     netcon_negsrcgid_tid = cg.netcon_negsrcgid_tid;
     return 1;
+}
+
+void nrnthread_dat3_cell_count(int& cell_count) {
+    cell_count = mapinfo.size();
+}
+
+void nrnthread_dat3_cellmapping(int i, int& gid, int& nsec, int& nseg, int& n_seclist) {
+    CellMapping* c = mapinfo.mapping[i];
+    gid = c->gid;
+    nsec = c->num_sections();
+    nseg = c->num_segments();
+    n_seclist = c->size();
+}
+
+void nrnthread_dat3_secmapping(int i_c,
+                               int i_sec,
+                               std::string& sclname,
+                               int& nsec,
+                               int& nseg,
+                               size_t& total_lfp_factors,
+                               int& n_electrodes,
+                               std::vector<int>& data_sec,
+                               std::vector<int>& data_seg,
+                               std::vector<double>& data_lfp) {
+    CellMapping* c = mapinfo.mapping[i_c];
+    SecMapping* s = c->secmapping[i_sec];
+    sclname = s->name;
+    nsec = s->nsec;
+    nseg = s->size();
+    total_lfp_factors = s->seglfp_factors.size();
+    n_electrodes = s->num_electrodes;
+    data_sec = s->sections;
+    data_seg = s->segments;
+    data_lfp = s->seglfp_factors;
 }
 
 // sizes and total data count
@@ -256,9 +302,9 @@ int nrnthread_dat2_1(int tid,
         tml_index[j] = type;
         ml_nodecount[j] = ml->nodecount;
         cg.ml_vdata_offset[j] = vdata_offset;
-        int* ds = memb_func[type].dparam_semantics;
+        int* ds = memb_func[type].dparam_semantics.get();
         for (int psz = 0; psz < bbcore_dparam_size[type]; ++psz) {
-            if (ds[psz] == -4 || ds[psz] == -6 || ds[psz] == -7 || ds[psz] == 0) {
+            if (ds[psz] == -4 || ds[psz] == -6 || ds[psz] == -7 || ds[psz] == -11 || ds[psz] == 0) {
                 // printf("%s ds[%d]=%d vdata_offset=%d\n", memb_func[type].sym->name, psz, ds[psz],
                 // vdata_offset);
                 vdata_offset += ml->nodecount;
@@ -332,6 +378,7 @@ int nrnthread_dat2_mech(int tid,
                         int*& nodeindices,
                         double*& data,
                         int*& pdata,
+                        std::vector<uint32_t>& nmodlrandom,  // 5 uint32_t per var per instance
                         std::vector<int>& pointer2type) {
     if (tid >= nrn_nthread) {
         return 0;
@@ -347,6 +394,7 @@ int nrnthread_dat2_mech(int tid,
     int vdata_offset = cg.ml_vdata_offset[i];
     int isart = nrn_is_artificial_[type];
     int n = ml->nodecount;
+    int n_vars = ml->get_num_variables();
     int sz = nrn_prop_param_size_[type];
 
     // As the NEURON data is now transposed then for now always create a new
@@ -356,8 +404,11 @@ int nrnthread_dat2_mech(int tid,
         data = new double[n * sz];
     }
     for (auto instance = 0, k = 0; instance < n; ++instance) {
-        for (auto variable = 0; variable < sz; ++variable) {
-            data[k++] = ml->data(instance, variable);
+        for (int variable = 0; variable < n_vars; ++variable) {
+            auto array_dim = ml->get_array_dims(variable);
+            for (int array_index = 0; array_index < array_dim; ++array_index) {
+                data[k++] = ml->data(instance, variable, array_index);
+            }
         }
     }
 
@@ -392,6 +443,32 @@ int nrnthread_dat2_mech(int tid,
         pdata = NULL;
     }
 
+    // nmodlrandom: reserve 5 uint32 for each var of each instance
+    // id1, id2, id3, seq, uint32_t(which)
+    // Header is number of random variables followed by dparam indices
+    // if no destructor, skip. There are no random variables.
+    if (nrn_mech_inst_destruct.count(type)) {
+        auto& indices = nrn_mech_random_indices(type);
+        nmodlrandom.reserve(1 + indices.size() + 5 * n * indices.size());
+        nmodlrandom.push_back(indices.size());
+        for (int ix: indices) {
+            nmodlrandom.push_back((uint32_t) ix);
+        }
+        for (int ix: indices) {
+            uint32_t data[5];
+            char which;
+            for (int i = 0; i < n; ++i) {
+                auto& datum = ml->pdata[i][ix];
+                nrnran123_State* r = (nrnran123_State*) datum.get<void*>();
+                nrnran123_getids3(r, &data[0], &data[1], &data[2]);
+                nrnran123_getseq(r, &data[3], &which);
+                data[4] = uint32_t(which);
+                for (auto j: data) {
+                    nmodlrandom.push_back(j);
+                }
+            }
+        }
+    }
     return 1;
 }
 
@@ -476,10 +553,11 @@ int nrnthread_dat2_corepointer_mech(int tid,
     icnt = 0;
     // data size and allocate
     for (int i = 0; i < ml->nodecount; ++i) {
-        (*nrn_bbcore_write_[type])(NULL, NULL, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, &nt);
+        (*nrn_bbcore_write_[type])(
+            nullptr, nullptr, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, nullptr, &nt);
     }
-    dArray = NULL;
-    iArray = NULL;
+    dArray = nullptr;
+    iArray = nullptr;
     if (icnt) {
         iArray = new int[icnt];
     }
@@ -490,7 +568,7 @@ int nrnthread_dat2_corepointer_mech(int tid,
     // data values
     for (int i = 0; i < ml->nodecount; ++i) {
         (*nrn_bbcore_write_[type])(
-            dArray, iArray, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, &nt);
+            dArray, iArray, &dcnt, &icnt, ml, i, ml->pdata[i], ml->_thread, nullptr, &nt);
     }
 
     return 1;
@@ -516,10 +594,42 @@ int core2nrn_corepointer_mech(int tid, int type, int icnt, int dcnt, int* iArray
     int dk = 0;
     // data values
     for (int i = 0; i < ml->nodecount; ++i) {
-        (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, ml, i, ml->pdata[i], ml->_thread, &nt);
+        (*nrn_bbcore_read_[type])(
+            dArray, iArray, &dk, &ik, ml, i, ml->pdata[i], ml->_thread, nullptr, &nt);
     }
     assert(dk == dcnt);
     assert(ik == icnt);
+    return 1;
+}
+
+// NMODL RANDOM seq34 data return from coreneuron
+int core2nrn_nmodlrandom(int tid,
+                         int type,
+                         const std::vector<int>& indices,
+                         const std::vector<double>& nmodlrandom) {
+    if (tid >= nrn_nthread) {
+        return 0;
+    }
+    NrnThread& nt = nrn_threads[tid];
+    Memb_list* ml = nt._ml_list[type];
+    // ARTIFICIAL_CELL are not in nt.
+    if (!ml) {
+        ml = CellGroup::deferred_type2artml_[tid][type];
+        assert(ml);
+    }
+
+    auto& nrnindices = nrn_mech_random_indices(type);  // for sanity checking
+    assert(nrnindices == indices);
+    assert(nmodlrandom.size() == indices.size() * ml->nodecount);
+
+    int ir = 0;  // into nmodlrandom
+    for (const auto ix: nrnindices) {
+        for (int i = 0; i < ml->nodecount; ++i) {
+            auto& datum = ml->pdata[i][ix];
+            nrnran123_State* state = (nrnran123_State*) datum.get<void*>();
+            nrnran123_setseq(state, nmodlrandom[ir++]);
+        }
+    }
     return 1;
 }
 
@@ -533,21 +643,20 @@ int* datum2int(int type,
     int isart = nrn_is_artificial_[di.type];
     int sz = bbcore_dparam_size[type];
     int* pdata = new int[ml->nodecount * sz];
-    int* semantics = memb_func[type].dparam_semantics;
+    int* semantics = memb_func[type].dparam_semantics.get();
     for (int i = 0; i < ml->nodecount; ++i) {
         int ioff = i * sz;
         for (int j = 0; j < sz; ++j) {
             int jj = ioff + j;
-            int etype = di.ion_type[jj];
-            int eindex = di.ion_index[jj];
+            int etype = di.datum_type[jj];
+            int eindex = di.datum_index[jj];
             const int seman = semantics[j];
             // Would probably be more clear if use seman for as many as
             // possible of the cases
             // below and within each case deal with etype appropriately.
-            // ion_type and ion_index have become misnomers as they no longer
-            // refer to ions specificially but the mechanism type where the
+            // datum_type and datum_index refer to mechanism type where the
             // range variable lives (and otherwise is generally the same as
-            // seman). And ion_index refers to the index of the range variable
+            // seman). And datum_index refers to the index of the range variable
             // within the mechanism (or voltage, area, etc.)
             if (seman == -5) {  // POINTER to range variable (e.g. voltage)
                 pdata[jj] = eindex;
@@ -561,10 +670,10 @@ int* datum2int(int type,
                 }
             } else if (etype == -9) {
                 pdata[jj] = eindex;
-            } else if (etype > 0 && etype < 1000) {  // ion pointer
+            } else if (nrn_semantics_is_ion(etype)) {  // ion pointer
                 pdata[jj] = eindex;
-            } else if (etype > 1000 && etype < 2000) {  // ionstyle can be explicit instead of
-                                                        // pointer to int*
+            } else if (nrn_semantics_is_ionstyle(etype)) {
+                // ionstyle can be explicit instead of pointer to int*
                 pdata[jj] = eindex;
             } else if (etype == -2) {  // an ion and this is the iontype
                 pdata[jj] = eindex;
@@ -577,6 +686,8 @@ int* datum2int(int type,
             } else if (etype == -7) {  // bbcorepointer
                 pdata[jj] = ml_vdata_offset + eindex;
                 // printf("etype %d jj=%d eindex=%d pdata=%d\n", etype, jj, eindex, pdata[jj]);
+            } else if (etype == -11) {  // random
+                pdata[jj] = ml_vdata_offset + eindex;
             } else {                   // uninterpreted
                 assert(eindex != -3);  // avoided if last
                 pdata[jj] = 0;
@@ -678,7 +789,6 @@ int nrnthread_dat2_vecplay_inst(int tid,
                         continue;
                     }
                     Memb_list* ml = tml->ml;
-                    int nn = nrn_prop_param_size_[tml->index] * ml->nodecount;
                     auto const legacy_index = ml->legacy_index(pd);
                     if (legacy_index >= 0) {
                         mtype = tml->index;
@@ -772,7 +882,7 @@ static std::map<int, int> type2movable;
 static void setup_type2semantics() {
     if (type2movable.empty()) {
         for (int type = 0; type < n_memb_func; ++type) {
-            int* ds = memb_func[type].dparam_semantics;
+            int* ds = memb_func[type].dparam_semantics.get();
             if (ds) {
                 for (int psz = 0; psz < bbcore_dparam_size[type]; ++psz) {
                     if (ds[psz] == -4) {  // netsend semantics
@@ -908,7 +1018,6 @@ static void set_info(TQItem* tqi,
         Fprintf(stderr,
                 "WARNING: CVode.event(...) for delivery at time step nearest %g discarded. "
                 "CoreNEURON cannot presently handle interpreter events (rank %d, thread %d).\n",
-                nrnmpi_myid,
                 tdeliver,
                 nrnmpi_myid,
                 tid);

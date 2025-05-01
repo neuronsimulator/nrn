@@ -106,6 +106,18 @@ VERBATIM
 ENDVERBATIM
 }
 
+DESTRUCTOR {
+VERBATIM
+ {
+  nrnran123_State** pv = (nrnran123_State**)(&_p_ran);
+  if (*pv) {
+    nrnran123_deletestream(*pv);
+    *pv = nullptr;
+  }
+ }
+ENDVERBATIM
+}
+
 VERBATIM
 static void bbcore_write(double* z, int* d, int* zz, int* offset, _threadargsproto_) {
   if (d) {
@@ -115,6 +127,11 @@ static void bbcore_write(double* z, int* d, int* zz, int* offset, _threadargspro
     nrnran123_getids3(*pv, di, di+1, di+2);
     nrnran123_getseq(*pv, di+3, &which);
     di[4] = (int)which;
+#if NRNBBCORE
+    /* CoreNEURON does not call DESTRUCTOR so ... */
+    nrnran123_deletestream(*pv);
+    *pv = nullptr;
+#endif
   }                     
   *offset += 5;
 }

@@ -34,6 +34,7 @@
 #include "coreneuron/utils/nrnoc_aux.hpp"
 #include "coreneuron/io/phase1.hpp"
 #include "coreneuron/io/phase2.hpp"
+#include "coreneuron/io/phase3.hpp"
 #include "coreneuron/io/mech_report.h"
 #include "coreneuron/io/reports/nrnreport.hpp"
 
@@ -44,6 +45,7 @@
 
 /// --> Coreneuron
 bool corenrn_embedded;
+bool corenrn_file_mode;
 int corenrn_embedded_nthread;
 
 void (*nrn2core_group_ids_)(int*);
@@ -170,7 +172,7 @@ std::vector<std::vector<int>> nrnthreads_netcon_negsrcgid_tid;
 /* read files.dat file and distribute cellgroups to all mpi ranks */
 void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
     patstimtype = nrn_get_mechtype("PatternStim");
-    if (corenrn_embedded) {
+    if (corenrn_embedded && !corenrn_file_mode) {
         ngrp = corenrn_embedded_nthread;
         grp = new int[ngrp + 1];
         (*nrn2core_group_ids_)(grp);
@@ -214,6 +216,12 @@ void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
 
         nrn_assert(fscanf(fp, "%d\n", &iFile) == 1);
         if ((iNum % nrnmpi_numprocs) == nrnmpi_myid) {
+            // A "-1" entry means that this rank should not be assigned further gid groups.
+            // It is a way to create files.dat files which deterministically assign gid groups to
+            // ranks, particularly useful for very large simulations which required load balancing.
+            if (iFile == -1) {
+                break;
+            }
             grp[ngrp] = iFile;
             ngrp++;
         }
@@ -473,8 +481,8 @@ void nrn_setup(const char* filesdat,
     // of phase2.  So gap junction setup is deferred to after phase2.
 
     nrnthreads_netcon_negsrcgid_tid.resize(nrn_nthread);
-    if (!corenrn_embedded) {
-        coreneuron::phase_wrapper<coreneuron::phase::one>(userParams);
+    if (corenrn_file_mode) {
+        coreneuron::phase_wrapper<coreneuron::phase::one>(userParams, !corenrn_file_mode);
     } else {
         nrn_multithread_job([](NrnThread* n) {
             Phase1 p1{n->id};
@@ -490,11 +498,11 @@ void nrn_setup(const char* filesdat,
     // read the rest of the gidgroup's data and complete the setup for each
     // thread.
     /* nrn_multithread_job supports serial, pthread, and openmp. */
-    coreneuron::phase_wrapper<coreneuron::phase::two>(userParams, corenrn_embedded);
+    coreneuron::phase_wrapper<coreneuron::phase::two>(userParams, !corenrn_file_mode);
 
     // gap junctions
     // Gaps are done after phase2, in order to use layout and permutation
-    // information via calls to stdindex2ptr.
+    // information via calls to legacy_index2pointer.
     if (nrn_have_gaps) {
         nrn_partrans::transfer_thread_data_ = new nrn_partrans::TransferThreadData[nrn_nthread];
         if (!corenrn_embedded) {
@@ -515,7 +523,7 @@ void nrn_setup(const char* filesdat,
     }
 
     if (is_mapping_needed)
-        coreneuron::phase_wrapper<coreneuron::phase::three>(userParams);
+        coreneuron::phase_wrapper<coreneuron::phase::three>(userParams, !corenrn_file_mode);
 
     *mindelay = set_mindelay(*mindelay);
 
@@ -632,16 +640,16 @@ void read_phasegap(NrnThread& nt, UserParams& userParams) {
 // mech_type enum or non-artificial cell mechanisms.
 // take into account alignment, layout, permutation
 // only voltage, i_membrane_ or mechanism data index allowed. (mtype 0 means time)
-double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
+double* legacy_index2pointer(int mtype, int index, NrnThread& nt) {
     if (mtype == voltage) {  // voltage
-        int ix{index};       // relative to _actual_v
+        int ix = index;      // relative to _actual_v
         nrn_assert((ix >= 0) && (ix < nt.end));
         if (nt._permute) {
             node_permute(&ix, 1, nt._permute);
         }
         return nt._actual_v + ix;
     } else if (mtype == i_membrane_) {  // membrane current from fast_imem calculation
-        int ix{index};                  // relative to nrn_fast_imem->nrn_sav_rhs
+        int ix = index;                 // relative to nrn_fast_imem->nrn_sav_rhs
         nrn_assert((ix >= 0) && (ix < nt.end));
         if (nt._permute) {
             node_permute(&ix, 1, nt._permute);
@@ -650,15 +658,19 @@ double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
     } else if (mtype > 0 && mtype < static_cast<int>(corenrn.get_memb_funcs().size())) {  //
         Memb_list* ml = nt._ml_list[mtype];
         nrn_assert(ml);
-        int ix = nrn_param_layout(index, mtype, ml);
-        if (ml->_permute) {
-            ix = nrn_index_permute(ix, mtype, ml);
-        }
-        return ml->data + ix;
+
+        const std::vector<int>& array_dims = corenrn.get_array_dims()[mtype];
+        int padded_node_count = nrn_soa_padded_size(ml->nodecount, Layout::SoA);
+
+        auto soaos_index = legacy2soaos_index(index, array_dims);
+        auto cnrn_index =
+            soaos2cnrn_index(soaos_index, array_dims, padded_node_count, ml->_permute);
+
+        return ml->data + cnrn_index;
     } else if (mtype == 0) {  // time
         return &nt._t;
     } else {
-        printf("stdindex2ptr does not handle mtype=%d\n", mtype);
+        printf("legacy_index2pointer does not handle mtype=%d\n", mtype);
         nrn_assert(0);
     }
     return nullptr;
@@ -738,6 +750,16 @@ void nrn_cleanup() {
                 (*s)(nt, ml, tml->index);
             }
 
+            // Moved from below as priv_dtor is now deleting the RANDOM streams,
+            // and at this moment need an undeleted pdata.
+            // Destroy the global variables struct allocated in nrn_init
+            if (auto* const priv_dtor = corenrn.get_memb_func(tml->index).private_destructor) {
+                (*priv_dtor)(nt, ml, tml->index);
+                assert(!ml->instance);
+                assert(!ml->global_variables);
+                assert(ml->global_variables_size == 0);
+            }
+
             ml->data = nullptr;  // this was pointing into memory owned by nt
             free_memory(ml->pdata);
             ml->pdata = nullptr;
@@ -751,14 +773,6 @@ void nrn_cleanup() {
             if (ml->_thread) {
                 free_memory(ml->_thread);
                 ml->_thread = nullptr;
-            }
-
-            // Destroy the global variables struct allocated in nrn_init
-            if (auto* const priv_dtor = corenrn.get_memb_func(tml->index).private_destructor) {
-                (*priv_dtor)(nt, ml, tml->index);
-                assert(!ml->instance);
-                assert(!ml->global_variables);
-                assert(ml->global_variables_size == 0);
             }
 
             NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;
@@ -915,7 +929,7 @@ void read_phase1(NrnThread& nt, UserParams& userParams) {
 
 void read_phase2(NrnThread& nt, UserParams& userParams) {
     Phase2 p2;
-    if (corenrn_embedded) {
+    if (corenrn_embedded && !corenrn_file_mode) {
         p2.read_direct(nt.id, nt);
     } else {
         p2.read_file(userParams.file_reader[nt.id], nt);
@@ -925,37 +939,16 @@ void read_phase2(NrnThread& nt, UserParams& userParams) {
 
 /** read mapping information for neurons */
 void read_phase3(NrnThread& nt, UserParams& userParams) {
-    /** restore checkpoint state (before restoring queue items */
-    auto& F = userParams.file_reader[nt.id];
-    F.restore_checkpoint();
-
     /** mapping information for all neurons in single NrnThread */
     NrnThreadMappingInfo* ntmapping = new NrnThreadMappingInfo();
 
-    int count = 0;
-
-    F.read_mapping_cell_count(&count);
-
-    /** number of cells in mapping file should equal to cells in NrnThread */
-    nrn_assert(count == nt.ncell);
-
-    /** for every neuron */
-    for (int i = 0; i < nt.ncell; i++) {
-        int gid, nsec, nseg, nseclist;
-
-        // read counts
-        F.read_mapping_count(&gid, &nsec, &nseg, &nseclist);
-
-        CellMapping* cmap = new CellMapping(gid);
-
-        // read section-segment mapping for every section list
-        for (int j = 0; j < nseclist; j++) {
-            SecMapping* smap = new SecMapping();
-            F.read_mapping_info(smap, ntmapping, cmap);
-            cmap->add_sec_map(smap);
-        }
-
-        ntmapping->add_cell_mapping(cmap);
+    Phase3 p3;
+    if (corenrn_embedded && !corenrn_file_mode) {
+        p3.read_direct(ntmapping);
+    } else {
+        auto& F = userParams.file_reader[nt.id];
+        F.restore_checkpoint();
+        p3.read_file(F, ntmapping);
     }
 
     // make number #cells match with mapping size

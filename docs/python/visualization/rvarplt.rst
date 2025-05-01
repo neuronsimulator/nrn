@@ -60,10 +60,10 @@ RangeVarPlot
 
             from neuron import h, gui
 
-            dend1 = h.Section(name='dend1')
-            dend2 = h.Section(name='dend2')
+            dend1 = h.Section('dend1')
+            dend2 = h.Section('dend2')
 
-            for sec in h.allsec():
+            for sec in [dend1, dend2]:
                 sec.nseg = sec.L = 501
                 sec.diam = 1
 
@@ -92,10 +92,10 @@ RangeVarPlot
 
             from neuron import h, gui
 
-            dend1 = h.Section(name='dend1')
-            dend2 = h.Section(name='dend2')
+            dend1 = h.Section('dend1')
+            dend2 = h.Section('dend2')
 
-            for sec in h.allsec():
+            for sec in [dend1, dend2]:
                 sec.nseg = sec.L = 501
                 sec.diam = 1
 
@@ -128,7 +128,37 @@ RangeVarPlot
             rvp... #specify range begin and end 
             imp... #specify impedance computation 
             g = h.Graph() 
-            g.addobject(rvp) 
+            g.addobject(rvp)
+
+    Example (plotting a rxd species):
+        .. code-block::
+            python
+
+            from neuron import h
+            from neuron import rxd
+            import matplotlib.pyplot as plt
+
+            dend1 = h.Section("dend1")
+            dend1.nseg =4
+
+            cyt1 = rxd.Region(dend1.wholetree(), nrn_region="i")
+            ca1 = rxd.Species(cyt1, name="ca1", charge=2, initial=1e-12)
+
+            ca1.nodes(dend1(0.1))[0].include_flux(40)
+            ca1.nodes(dend1(0.4))[0].include_flux(-25)
+            ca1.nodes(dend1(0.7))[0].include_flux(70)
+
+            h.finitialize(-65)
+            h.dt /= 512
+            h.load_file("stdrun.hoc")
+            h.continuerun(0.025)
+
+            a_1 = h.RangeVarPlot(ca1, dend1(0), dend1(1))
+            a_1.plot(plt)
+            plt.show()
+
+        .. image:: ../images/rangevarplotrxd.png
+            :align: center
 
 ----
 
@@ -159,7 +189,7 @@ RangeVarPlot
             import bokeh.plotting as b
             import math
 
-            dend = h.Section(name='dend')
+            dend = h.Section('dend')
             dend.nseg = 55
             dend.L = 6.28
 
@@ -241,13 +271,14 @@ RangeVarPlot
 
 
     Syntax:
-        ``rvp.origin(x, sec=section)``
+        ``rvp.origin(x)``
 
 
     Description:
-        Defines the origin (location 0) of the space plot as ``section(x)``.
-        The default is usually 
-        suitable unless you want to have several rangvarplots in one graph 
+        Defines the origin (location 0) of the space plot as ``x``.
+        This is the value that is returned by :meth:`RangeVarPlot.left`.
+        The default of 0 is usually 
+        suitable unless you want to have several RangeVarPlots in one graph 
         in which case this function is used to arrange all the plots relative 
         to each other. 
 
@@ -265,7 +296,8 @@ RangeVarPlot
 
 
     Description:
-        returns the coordinate of the beginning of the path. 
+        returns the coordinate of the beginning of the path. This is typically
+        0 but can be changed by calling :meth:`RangeVarPlot.origin`.
 
          
 

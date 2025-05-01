@@ -1,0 +1,79 @@
+load_file("expect_err.hoc")
+
+objref rt, z
+z = new List("NMODLRandom")
+proc assert() {
+  if ($1 == 0) {
+    hoc_execerror("assert", "")
+  }
+}
+
+// ARTIFICIAL_CELL syntax tests (same as POINT_PROCESS wrt RANDOM)
+rt = new RanArt()
+
+print rt.ran1
+assert(z.count == 0)
+
+assert(rt.ran1.set_seq(5).set_ids(7,8,9).get_seq() == 5)
+assert(rt.ran1.get_ids().x[2] == 9)
+assert(z.count == 0)
+
+objref r
+r = rt.ran1
+r.set_seq(25)
+assert(rt.ran1.get_seq() == 25)
+assert(z.count == 1)
+assert(r.get_ids().x[1] == 8)
+objref r
+assert(z.count == 0)
+
+create cable
+access cable
+nseg=3
+insert rantst
+finitialize(-70)
+
+r =  cable.ran1_rantst
+assert(cable.ran1_rantst.set_seq(10).get_seq() == 10)
+assert(cable.ran1_rantst(.5).get_ids().eq(r.get_ids()))
+
+for (x,0) {
+  r = cable.ran1_rantst(x)
+  assert(ran1_rantst(x).get_ids().eq(r.get_ids()))
+}
+objref r
+assert(z.count == 0)
+
+// test syntax in a cell type
+begintemplate Cell
+public cable, rt
+create cable
+objref rt
+proc init() {
+  create cable
+  cable {
+    nseg = 3
+    insert rantst
+    rt = new RanPP(.1)
+  }
+}
+endtemplate Cell
+
+objref cell
+cell = new Cell()
+cell.cable print ran2_rantst
+cell.cable print ran2_rantst(.1)
+expect_err("cell.cable print ran2_rantst(.1, .2)")
+print cell.cable.ran2_rantst
+print cell.cable.ran2_rantst(.1)
+expect_err("print cell.cable.ran2_rantst(.1, .2)")
+cell.cable.ran2_rantst(.1).set_seq(10).set_ids(8,9,10)
+cell.cable.ran2_rantst(.5).set_seq(11).set_ids(1,2,3)
+assert( cell.cable.ran2_rantst(.1).get_seq() == 10)
+
+objref rp
+rp = cell.rt
+objref cell // but rp is still a reference to unlocated point process.
+expect_err("rp.ran1")
+
+

@@ -5,6 +5,7 @@ extern void hoc_register_prop_size(int type, int psize, int dpsize);
 #include "nrnoc_ml.h"
 #include "oc_ansi.h"  // neuron::model_sorted_token
 #include "options.h"  // EXTRACELLULAR
+#include "ion_semantics.h"
 
 #include <string>
 #include <type_traits>
@@ -44,6 +45,7 @@ using nrn_thread_table_check_t = void (*)(Memb_list*,
                                           std::size_t,
                                           Datum*,
                                           Datum*,
+                                          double*,
                                           NrnThread*,
                                           int,
                                           neuron::model_sorted_token const&);
@@ -84,7 +86,8 @@ struct Memb_func {
     int is_point;
     void* hoc_mech;
     void (*setdata_)(struct Prop*);
-    int* dparam_semantics;  // for nrncore writing.
+    std::unique_ptr<int[]> dparam_semantics;  // for nrncore writing.
+    const std::vector<double>* parm_default;  // for NrnProperty
   private:
     nrn_init_t m_initialize{};
 };
@@ -105,6 +108,8 @@ struct NPyDirectMechFunc {
 using NPyDirectMechFuncs = std::unordered_map<std::string, NPyDirectMechFunc*>;
 extern void hoc_register_npy_direct(int type, NPyDirectMechFunc*);
 extern std::unordered_map<int, NPyDirectMechFuncs> nrn_mech2funcs_map;
+
+extern void hoc_register_parm_default(int type, const std::vector<double>*);
 
 #define IMEMFAST     -2
 #define VINDEX       -1
@@ -160,8 +165,8 @@ inline std::size_t vext_pseudoindex() {
 pointers which connect variables  from other mechanisms via the _ppval array. \
 */
 
-#define _AMBIGUOUS 5  // for Ions
-#define RAND       6  // RANDOM
+#define _AMBIGUOUS  5  // for Ions
+#define NMODLRANDOM 6  // RANDOM variable in NEURON block
 
 #define BEFORE_INITIAL    0
 #define AFTER_INITIAL     1
@@ -180,6 +185,8 @@ extern std::vector<Memb_func> memb_func;
 extern int n_memb_func;
 extern int* nrn_prop_param_size_;
 extern int* nrn_prop_dparam_size_;
+extern int nrn_dparam_semantics_to_int(const char*);
+extern std::vector<int>& nrn_mech_random_indices(int type);
 
 extern std::vector<Memb_list> memb_list;
 /* for finitialize, order is same up through extracellular, then ions,
@@ -205,6 +212,9 @@ namespace detail {
 void register_data_fields(int mech_type,
                           std::vector<std::pair<const char*, int>> const& param_info,
                           std::vector<std::pair<const char*, const char*>> const& dparam_size);
+void register_data_fields(int mech_type,
+                          std::vector<std::pair<std::string, int>> const& param_info,
+                          std::vector<std::pair<std::string, std::string>> const& dparam_size);
 }  // namespace detail
 /**
  * @brief Type- and array-aware version of hoc_register_prop_size.
@@ -287,6 +297,7 @@ namespace _get {
 // See https://github.com/neuronsimulator/nrn/issues/2234 for context of how this might be done
 // better in future...
 [[nodiscard]] long& _nrn_mechanism_access_alloc_seq(Prop*);
+[[nodiscard]] Node* _nrn_mechanism_access_node(Prop* prop);
 [[nodiscard]] double& _nrn_mechanism_access_a(Node*);
 [[nodiscard]] double& _nrn_mechanism_access_b(Node*);
 [[nodiscard]] double& _nrn_mechanism_access_d(Node*);
@@ -312,3 +323,7 @@ _nrn_mechanism_get_param_handle(Prop* prop, int field, int array_index = 0) {
 [[nodiscard]] NrnThread* _nrn_mechanism_get_thread(Node*);
 [[nodiscard]] int _nrn_mechanism_get_type(Prop*);
 [[nodiscard]] int _nrn_mechanism_get_v_node_index(Node*);
+
+// Rarely (e.g. NEURON {RANDOM123 ranvar}) instances of a mod file
+// need to deallocate owning objects at end of their life.
+extern std::unordered_map<int, void (*)(Prop*)> nrn_mech_inst_destruct;

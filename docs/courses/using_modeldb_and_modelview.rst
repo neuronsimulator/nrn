@@ -3,7 +3,7 @@
 Using ModelDB with NEURON
 =========================
 
-`https://modeldb.yale.edu/ <https://modeldb.yale.edu/>`_ is the the home page of ModelDB.
+`https://modeldb.science <https://modeldb.science>`_ is the the home page of ModelDB.
 
 We'll be analyzing a couple of models in order to answer these questions:
 
@@ -16,7 +16,7 @@ We'll be analyzing a couple of models in order to answer these questions:
 3.
     What is the user interface, how was it implemented, and how do you use it?
 
-Example: Moore et al. 1983 `modeldb.yale.edu/9852 <https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=9852#tabs-1>`_
+Example: Moore et al. 1983 `modeldb.science/9852 <https://modeldb.science/9852>`_
 ------------------------------------------------------------------------------------------------------------------------------
 
     Moore JW, Stockbridge N, Westerfield M (1983)
@@ -170,12 +170,12 @@ Why does the space plot automatically save traces every 0.1 ms?
 What procedure actually changes the stimulus location, duration, and amplitude? Read about PointProcessManager in the help files.
 
 
-Another example: Mainen and Sejnowski 1996 `modeldb.yale.edu/2488 <https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=2488#tabs-1>`_
+Another example: Mainen and Sejnowski 1996 `modeldb.science/2488 <https://modeldb.science/2488>`_
 ----------------------------------------------------------------------------------------------------------------------------------------------
 
     Mainen ZF, Sejnowski TJ (1996). Influence of dendritic structure on firing pattern in model neocortical neurons. *Nature* 382:363-6. doi: `doi.org/10.1038/382363a0 <https://www.nature.com/articles/382363a0#citeas>`_
 
-This one has interesting anatomy and several mod files. Begin by downloading the model from `modeldb.yale.edu/2488 <https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=2488#tabs-1>`_
+This one has interesting anatomy and several mod files. Begin by downloading the model from `modeldb.science/2488 <https://modeldb.science/2488>`_
 
 The model archive patdemo.zip has already been downloaded and unzipped. Its contents are in :file:`exercises/modeldb_and_modelview/patdemo`
 
