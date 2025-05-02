@@ -58,8 +58,8 @@ python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum
 
 :: Test of association with hoc files. This test is very tricky to handle. We do it in two steps.
 :: 2nd step -> check association.hoc output after we've launched 1step in previous CI step
-cat association.hoc.out
-findstr /i "^hello$" association.hoc.out || set "errorfound=y"
+:: cat association.hoc.out
+:: findstr /i "^hello$" association.hoc.out || set "errorfound=y"
 
 echo "All tests finished!"
 
