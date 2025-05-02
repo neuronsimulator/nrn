@@ -1,11 +1,6 @@
 include("${PROJECT_SOURCE_DIR}/cmake/NeuronTestHelper.cmake")
 
 function(add_usecase_test usecase)
-  set(options)
-  set(oneValueArgs)
-  set(multiValueArgs OUTPUTS DEPENDENCIES)
-  cmake_parse_arguments(opt "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
   file(GLOB modfiles "${usecase}/*.mod")
   # build modfiles with NOCMODL
   create_nrnmech(
@@ -59,24 +54,6 @@ function(add_usecase_test usecase)
       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nmodl")
   endforeach()
 
-  if(opt_OUTPUTS)
-    # run with NOCMODL beforehand because it may generate some files
-    add_custom_command(
-      OUTPUT "${opt_OUTPUTS}"
-      COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_DEFAULT_PYTHON_EXECUTABLE}
-              "${abs_testfile}" nocmodl "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nocmodl"
-      DEPENDS "${out_DEPENDENCIES}"
-      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nocmodl")
-
-    add_custom_target(usecase_${usecase} ALL DEPENDS "${opt_OUTPUTS}")
-
-    add_dependencies(usecase_${usecase} ${usecase}_nocmodl)
-
-  endif()
-
-  if(opt_DEPENDENCIES)
-    add_dependencies(usecase_${usecase} ${opt_DEPENDENCIES})
-  endif()
 endfunction()
 
 set(NMODL_USECASE_DIRS
@@ -93,6 +70,7 @@ set(NMODL_USECASE_DIRS
     hodgkin_huxley
     kinetic
     linear
+    longitudinal_diffusion
     morphology
     net_event
     net_move
@@ -109,6 +87,7 @@ set(NMODL_USECASE_DIRS
     random
     solve
     state
+    steady_state
     suffix
     table
     useion
@@ -118,15 +97,24 @@ foreach(usecase ${NMODL_USECASE_DIRS})
   add_usecase_test(${usecase})
 endforeach()
 
+set(dependencies neuron::nrniv neuron::nocmodl)
+set(outputs "${CMAKE_CURRENT_BINARY_DIR}/steady_state/nocmodl/test_minipump.pkl"
+            "${CMAKE_CURRENT_BINARY_DIR}/steady_state/nocmodl/test_minipump-steady_state.pkl")
+
 # the steady_state and longitudinal_diffusion tests require NOCMODL to actually generate some files
-add_usecase_test(
-  steady_state
-  OUTPUTS
-  "${CMAKE_CURRENT_BINARY_DIR}/steady_state/nocmodl/test_minipump.pkl"
-  "${CMAKE_CURRENT_BINARY_DIR}/steady_state/nocmodl/test_minipump-steady_state.pkl"
-  DEPENDENCIES
-  neuron::nrniv
-  neuron::nocmodl)
+add_custom_command(
+  OUTPUT ${outputs}
+  COMMAND
+    ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_DEFAULT_PYTHON_EXECUTABLE}
+    "${CMAKE_CURRENT_SOURCE_DIR}/steady_state/test_minipump.py" nocmodl
+    "${CMAKE_CURRENT_BINARY_DIR}/steady_state/nocmodl"
+  DEPENDS ${dependencies}
+  VERBATIM
+  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/steady_state/nocmodl")
+
+add_custom_target(usecase_steady_state ALL DEPENDS ${outputs})
+
+add_dependencies(usecase_steady_state steady_state_nocmodl)
 
 file(GLOB modfiles "longitudinal_diffusion/*.mod")
 set(outputs)
@@ -135,5 +123,16 @@ foreach(modfile "${modfiles}")
   list(APPEND outputs
        "${CMAKE_CURRENT_BINARY_DIR}/longitudinal_diffusion/nocmodl/diffuse-${filename}.pkl")
 endforeach()
-add_usecase_test(longitudinal_diffusion OUTPUTS "${outputs}" DEPENDENCIES neuron::nrniv
-                 neuron::nocmodl)
+add_custom_command(
+  OUTPUT ${outputs}
+  COMMAND
+    ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_DEFAULT_PYTHON_EXECUTABLE}
+    "${CMAKE_CURRENT_SOURCE_DIR}/longitudinal_diffusion/test_heat_eqn.py" nocmodl
+    "${CMAKE_CURRENT_BINARY_DIR}/longitudinal_diffusion/nocmodl"
+  DEPENDS ${dependencies}
+  VERBATIM
+  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/longitudinal_diffusion/nocmodl")
+
+add_custom_target(usecase_longitudinal_diffusion ALL DEPENDS ${outputs})
+
+add_dependencies(usecase_longitudinal_diffusion longitudinal_diffusion_nocmodl)
