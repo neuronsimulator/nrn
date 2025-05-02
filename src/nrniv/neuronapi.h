@@ -62,6 +62,7 @@ void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
 Symbol* nrn_symbol(const char* name);
 void nrn_symbol_push(Symbol* sym);
 int nrn_symbol_type(const Symbol* sym);
+int nrn_symbol_subtype(Symbol const* sym);
 void nrn_double_push(double val);
 double nrn_double_pop(void);
 void nrn_double_ptr_push(double* addr);
