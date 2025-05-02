@@ -1,42 +1,11 @@
 include("${PROJECT_SOURCE_DIR}/cmake/NeuronTestHelper.cmake")
-set(NMODL_USECASE_DIRS
-    at_time
-    builtin_functions
-    constant
-    constructor
-    cvode
-    electrode_current
-    external
-    function
-    function_table
-    global
-    hodgkin_huxley
-    kinetic
-    linear
-    longitudinal_diffusion
-    morphology
-    net_event
-    net_move
-    net_receive
-    net_send
-    neuron_variables
-    nonlinear
-    nonspecific_current
-    parameter
-    point_process
-    pointer
-    procedure
-    protect
-    random
-    solve
-    state
-    steady_state
-    suffix
-    table
-    useion
-    verbatim)
 
-foreach(usecase ${NMODL_USECASE_DIRS})
+function(add_usecase_test usecase)
+  set(options)
+  set(oneValueArgs)
+  set(multiValueArgs OUTPUTS DEPENDENCIES)
+  cmake_parse_arguments(opt "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
   file(GLOB modfiles "${usecase}/*.mod")
   # build modfiles with NOCMODL
   create_nrnmech(
@@ -83,19 +52,88 @@ foreach(usecase ${NMODL_USECASE_DIRS})
   foreach(testfile ${testfiles})
     get_filename_component(abs_testfile "${testfile}" REALPATH)
     get_filename_component(testname "${abs_testfile}" NAME_WLE)
-    # run with NOCMODL beforehand because it may generate some files
-    add_custom_target(
-      usecase_gendata_${usecase}_${testname}
-      COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_DEFAULT_PYTHON_EXECUTABLE}
-              "${abs_testfile}"
-      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nocmodl")
-
     add_test(
       NAME nmodl::usecase::${usecase}::${testname}
       COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_DEFAULT_PYTHON_EXECUTABLE}
-              "${abs_testfile}"
+              "${abs_testfile}" nmodl "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nocmodl"
       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nmodl")
-    set_tests_properties(nmodl::usecase::${usecase}::${testname}
-                         PROPERTIES DEPENDS usecase_gendata_${usecase}_${testname})
   endforeach()
+
+  if(opt_OUTPUTS)
+    # run with NOCMODL beforehand because it may generate some files
+    add_custom_command(
+      OUTPUT "${opt_OUTPUTS}"
+      COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV} ${NRN_DEFAULT_PYTHON_EXECUTABLE}
+              "${abs_testfile}" nocmodl "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nocmodl"
+      DEPENDS "${out_DEPENDENCIES}"
+      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${usecase}/nocmodl")
+
+    add_custom_target(usecase_${usecase} ALL DEPENDS "${opt_OUTPUTS}")
+
+    add_dependencies(usecase_${usecase} ${usecase}_nocmodl)
+
+  endif()
+
+  if(opt_DEPENDENCIES)
+    add_dependencies(usecase_${usecase} ${opt_DEPENDENCIES})
+  endif()
+endfunction()
+
+set(NMODL_USECASE_DIRS
+    at_time
+    builtin_functions
+    constant
+    constructor
+    cvode
+    electrode_current
+    external
+    function
+    function_table
+    global
+    hodgkin_huxley
+    kinetic
+    linear
+    morphology
+    net_event
+    net_move
+    net_receive
+    net_send
+    neuron_variables
+    nonlinear
+    nonspecific_current
+    parameter
+    point_process
+    pointer
+    procedure
+    protect
+    random
+    solve
+    state
+    suffix
+    table
+    useion
+    verbatim)
+
+foreach(usecase ${NMODL_USECASE_DIRS})
+  add_usecase_test(${usecase})
 endforeach()
+
+# the steady_state and longitudinal_diffusion tests require NOCMODL to actually generate some files
+add_usecase_test(
+  steady_state
+  OUTPUTS
+  "${CMAKE_CURRENT_BINARY_DIR}/steady_state/nocmodl/test_minipump.pkl"
+  "${CMAKE_CURRENT_BINARY_DIR}/steady_state/nocmodl/test_minipump-steady_state.pkl"
+  DEPENDENCIES
+  neuron::nrniv
+  neuron::nocmodl)
+
+file(GLOB modfiles "longitudinal_diffusion/*.mod")
+set(outputs)
+foreach(modfile "${modfiles}")
+  get_filename_component(filename "${modfile}" NAME_WLE)
+  list(APPEND outputs
+       "${CMAKE_CURRENT_BINARY_DIR}/longitudinal_diffusion/nocmodl/diffuse-${filename}.pkl")
+endforeach()
+add_usecase_test(longitudinal_diffusion OUTPUTS "${outputs}" DEPENDENCIES neuron::nrniv
+                 neuron::nocmodl)

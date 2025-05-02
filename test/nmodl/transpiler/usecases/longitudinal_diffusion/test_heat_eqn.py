@@ -2,22 +2,22 @@ import os
 import sys
 import pickle
 
-from neuron import h, gui
-
 import numpy as np
+
+from neuron import h, gui
 
 
 def reference_filename(mech_name):
     return f"diffuse-{mech_name}.pkl"
 
 
-def save_state(mech_name, t, X):
-    with open(reference_filename(mech_name), "wb") as f:
+def save_state(location, mech_name, t, X):
+    with open(f"{location}/{reference_filename(mech_name)}", "wb") as f:
         pickle.dump((t, X), f)
 
 
-def load_state(mech_name):
-    filename = reference_filename(mech_name)
+def load_state(location, mech_name):
+    filename = f"{location}/{reference_filename(mech_name)}"
     if not os.path.exists(filename):
         raise RuntimeError("References unavailable. Try running with NOCMODL first.")
 
@@ -58,8 +58,8 @@ def run_simulation(mech_name, record_states):
     return t, X
 
 
-def check_timeseries(mech_name, t, X):
-    t_noc, X_noc = load_state(mech_name)
+def check_timeseries(location, mech_name, t, X):
+    t_noc, X_noc = load_state(location, mech_name)
 
     np.testing.assert_allclose(t, t_noc, atol=1e-10, rtol=0.0)
     np.testing.assert_allclose(X, X_noc, atol=1e-10, rtol=0.0)
@@ -96,11 +96,12 @@ def check_heat_equation(mech_name, record_states):
         plot_timeseries(mech_name, t, X, i_state)
 
     simulator = sys.argv[1]
+    location = sys.argv[2]
     if simulator == "nocmodl":
-        save_state(mech_name, t, X)
+        save_state(location, mech_name, t, X)
 
     else:
-        check_timeseries(mech_name, t, X)
+        check_timeseries(location, mech_name, t, X)
 
 
 def record_states_factory(array_size, get_reference):
