@@ -176,8 +176,10 @@ function(create_nrnmech)
     # NEURON's discovery mechanism works
     add_library(${TARGET_LIBRARY_NAME} ${LIBRARY_TYPE} ${L_SOURCES})
     set_target_properties(
-      ${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "${LIBNAME}" LIBRARY_OUTPUT_DIRECTORY
-                                                                 "${LIBRARY_OUTPUT_DIR}/.libs")
+      ${TARGET_LIBRARY_NAME}
+      PROPERTIES OUTPUT_NAME "${LIBNAME}"
+                 LIBRARY_OUTPUT_DIRECTORY "${LIBRARY_OUTPUT_DIR}/.libs"
+                 SUFFIX "${CMAKE_SHARED_MODULE_SUFFIX}")
     target_link_libraries(${TARGET_LIBRARY_NAME} PUBLIC neuron::nrniv)
 
     # we need to add the `mech_func.cpp` file as well since it handles registration of mechanisms
@@ -242,8 +244,10 @@ function(create_nrnmech)
     add_library(core${TARGET_LIBRARY_NAME} ${LIBRARY_TYPE} ${_CORENEURON_MECH_ENG}
                                            ${L_CORE_SOURCES})
     set_target_properties(
-      core${TARGET_LIBRARY_NAME} PROPERTIES OUTPUT_NAME "core${LIBNAME}" LIBRARY_OUTPUT_DIRECTORY
-                                                                         "${LIBRARY_OUTPUT_DIR}")
+      core${TARGET_LIBRARY_NAME}
+      PROPERTIES OUTPUT_NAME "core${LIBNAME}"
+                 LIBRARY_OUTPUT_DIRECTORY "${LIBRARY_OUTPUT_DIR}"
+                 SUFFIX "${CMAKE_SHARED_MODULE_SUFFIX}")
     target_include_directories(core${TARGET_LIBRARY_NAME} BEFORE
                                PUBLIC ${_CORENEURON_RANDOM_INCLUDE})
     target_compile_options(core${TARGET_LIBRARY_NAME} BEFORE PRIVATE ${_CORENEURON_FLAGS})
