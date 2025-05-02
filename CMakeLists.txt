@@ -715,7 +715,6 @@ if(NRN_ENABLE_MUSIC)
 endif()
 
 add_subdirectory(share/lib/hoc)
-add_subdirectory(share/demo)
 
 # Collect the environment variables that are needed to execute NEURON from the build directory. This
 # is used when configuring tests, and when building documentation targets.
@@ -984,28 +983,6 @@ if(NRN_ENABLE_TESTS)
   cpp_cc_git_submodule(rxd/testdata)
   set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "${backup}")
   add_subdirectory(test)
-elseif(NOT WIN32)
-  # Windows installs the demo separately
-  add_subdirectory(share/demo/release)
-
-  # `rm` was added in 3.17, and `remove_directory` was deprecated
-  if(CMAKE_VERSION VERSION_LESS 3.17)
-    set(rm_cmd "remove_directory")
-  else()
-    set(rm_cmd rm -fr --)
-  endif()
-  add_custom_target(
-    neurondemo_release ALL
-    COMMAND ${CMAKE_COMMAND} -E ${rm_cmd}
-            "${NRN_BUILD_SHARE_DIR}/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}"
-    COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
-            ${NRN_SANITIZER_ENABLE_ENVIRONMENT} "${PROJECT_BINARY_DIR}/bin/nrnivmodl"
-    DEPENDS nrnivmodl_dependency nrniv_lib
-    COMMENT "Building mod files for demo release"
-    WORKING_DIRECTORY ${NRN_BUILD_SHARE_DIR}/demo/release
-    VERBATIM)
-  install(DIRECTORY ${NRN_BUILD_SHARE_DIR}/demo/release DESTINATION ${NRN_INSTALL_SHARE_DIR}/demo)
-
 endif()
 # =============================================================================
 # Install targets
@@ -1014,10 +991,6 @@ install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib
   DESTINATION ${NRN_INSTALL_SHARE_DIR}
   PATTERN "python" EXCLUDE
-  PATTERN CMakeLists.txt EXCLUDE)
-install(
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo
-  DESTINATION ${NRN_INSTALL_SHARE_DIR}
   PATTERN CMakeLists.txt EXCLUDE)
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
