@@ -188,7 +188,8 @@ case "${platform}" in
     ;;
 
   CI)
-    if [[ "${CI_OS_NAME:-}" == "osx" || "${CI_OS_NAME:-}" == "${PLATFORM_MACOS}" ]]; then
+      CI_OS_NAME="${CI_OS_NAME:-$(uname -s)}"
+      if [[ "${CI_OS_NAME}" == "osx" || "${CI_OS_NAME}" == "${PLATFORM_MACOS}" ]]; then
         collect_dirs_macos
     else
         collect_dirs_linux
