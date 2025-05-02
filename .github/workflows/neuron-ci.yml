@@ -389,7 +389,7 @@ jobs:
                 echo nrn-enable-sanitizer not found, not using it
               fi
           elif [[ "$BUILD_MODE" == "setuptools" ]]; then
-            ./packaging/python/build_wheels.bash CI;
+            ./packaging/python/build_wheels.bash CI "${PYTHON_MAX}";
           fi;
           if [[ -z "${nrn_enable_sanitizer_preload_python}" ]]; then
             nrn_enable_sanitizer_preload_python="${PYTHON}"

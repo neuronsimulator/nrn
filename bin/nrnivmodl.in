@@ -51,7 +51,7 @@ fi
 # After collecting the mod files, check each mod file actually exists
 for mod_file in "$@"; do
     if [ ! -e "${mod_file}" ]; then
-        printf "[%s] ERROR: Mod file %s does not exist!\n" "${program_name}" "${mod_file}" >2
+        printf "[%s] ERROR: Mod file %s does not exist!\n" "${program_name}" "${mod_file}" >&2
         exit 4
     fi
 done
