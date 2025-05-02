@@ -507,4 +507,8 @@ Symlist* nrn_symbol_table(Symbol* sym) {
 Symlist* nrn_global_symbol_table(void) {
     return hoc_built_in_symlist;
 }
+
+Symlist* nrn_top_level_symbol_table(void) {
+    return hoc_top_level_symlist;
+}
 }

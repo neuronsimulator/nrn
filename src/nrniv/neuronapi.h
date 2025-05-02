@@ -109,6 +109,7 @@ void nrn_property_array_push(Object* obj, const char* name, int i);
 char const* nrn_symbol_name(const Symbol* sym);
 Symlist* nrn_symbol_table(Symbol* sym);
 Symlist* nrn_global_symbol_table(void);
+Symlist* nrn_top_level_symbol_table(void);
 // TODO: need shapeplot information extraction
 
 #ifdef __cplusplus
