@@ -17,7 +17,7 @@ echo %NEURONHOME%
 
 :: Mitigation strategy -> for reasons uknown(thank you Windows), association.hoc.out may not be generated from previous step.
 :: If so, try again to generate it. No wait required like previous strategies, we rely on testing entropy from this point on.
-if not exist association.hoc.out (start /wait /REALTIME %cd%\ci\association.hoc)
+:: if not exist association.hoc.out (start /wait /REALTIME %cd%\ci\association.hoc)
 
 :: test all pythons
 C:\Python39\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
