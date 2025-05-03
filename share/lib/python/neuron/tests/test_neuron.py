@@ -56,7 +56,7 @@ class NeuronTestCase(unittest.TestCase):
         """Test use of some  Py_LIMITED_API for python3."""
 
         # Py_nb_bool
-        assert True if h else False
+        assert True if n else False
         assert True if n.List else False
         # ensure creating a List doesn't change the truth value
         l = n.List()
