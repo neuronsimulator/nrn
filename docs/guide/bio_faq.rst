@@ -6,7 +6,7 @@ Biology Modeling FAQ
 How do I work with neuron morphologies?
 ---------------------------------------
 
-`NeuroMorpho.Org <http://neuromorpho.org>`_ hosts over 170k reconstructed neurons,
+`NeuroMorpho.Org <http://neuromorpho.org>`_ hosts over 270k reconstructed neurons,
 all of which are available in SWC format as well as their original format.
 
 NEURON's Import3D tool can read SWC files as well as several other neuron morphology
@@ -26,7 +26,6 @@ Example:
         python
 
         from neuron import h
-        h.load_file("stdlib.hoc")
         h.load_file("import3d.hoc")
 
         class Pyramidal:
