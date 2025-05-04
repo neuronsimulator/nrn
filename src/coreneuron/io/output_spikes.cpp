@@ -190,11 +190,19 @@ void output_spike_populations(const SpikesInfo& spikes_info) {
 }
 #endif  // ENABLE_SONATA_REPORTS
 
-/** Write generated spikes to out.dat using mpi parallel i/o.
+/** Write generated spikes to either:
+ *  - out.h5 using libsonatareport API when SONATA reports are enabled
+ *  - out.dat using mpi parallel i/o when SONATA reports are disabled
  *  \todo : MPI related code should be factored into nrnmpi.c
  *          Check spike record length which is set to 64 chars
  */
 static void output_spikes_parallel(const char* outpath, const SpikesInfo& spikes_info) {
+#ifdef ENABLE_SONATA_REPORTS
+    sonata_create_spikefile(outpath, spikes_info.file_name.data());
+    output_spike_populations(spikes_info);
+    sonata_write_spike_populations();
+    sonata_close_spikefile();
+#else
     std::stringstream ss;
     ss << outpath << "/out.dat";
     std::string fname = ss.str();
@@ -203,12 +211,6 @@ static void output_spikes_parallel(const char* outpath, const SpikesInfo& spikes
     if (nrnmpi_myid == 0) {
         remove(fname.c_str());
     }
-#ifdef ENABLE_SONATA_REPORTS
-    sonata_create_spikefile(outpath, spikes_info.file_name.data());
-    output_spike_populations(spikes_info);
-    sonata_write_spike_populations();
-    sonata_close_spikefile();
-#endif  // ENABLE_SONATA_REPORTS
 
     sort_spikes(spikevec_time, spikevec_gid);
     nrnmpi_barrier();
@@ -244,6 +246,7 @@ static void output_spikes_parallel(const char* outpath, const SpikesInfo& spikes
     nrnmpi_write_file(fname, spike_data, num_chars);
 
     free(spike_data);
+#endif  // ENABLE_SONATA_REPORTS
 }
 #endif
 
