@@ -203,6 +203,7 @@ static MapSgid2Int sgid2srcindex_;  // sgid2srcindex[sgids[i]] == i
 // source ssid -> (type,parray_index)
 static std::unordered_map<sgid_t, std::pair<int, neuron::container::field_index>>
     non_vsrc_update_info_;
+static std::unordered_map<sgid_t, neuron::container::data_handle<double>> non_vsrc_fixedptr_info_;
 
 static int max_targets_;
 static bool is_setup_;
@@ -260,6 +261,9 @@ static neuron::container::data_handle<double> non_vsrc_update(Node* nd,
 // Extended to any pointer to range variable in the section.
 // If not a voltage save pv associated with mechtype, p_array_index
 // in non_vsrc_update_info_
+// If that doesn't work, perhaps it is an rxd varible. For now assume it is
+// rxd and the pointer is always valid.
+
 static Node* pv2node(sgid_t ssid, neuron::container::data_handle<double> const& v) {
     Section* const sec = chk_access();
     if (auto* const nd = sec->parentnode; nd) {
@@ -273,7 +277,16 @@ static Node* pv2node(sgid_t ssid, neuron::container::data_handle<double> const& 
             return nd;
         }
     }
-    hoc_execerr_ext("Pointer to src is not in the currently accessed section %s", secname(sec));
+
+    non_vsrc_fixedptr_info_[ssid] = v;
+
+    // hoc_execerr_ext("Pointer to src is not in the currently accessed section %s", secname(sec));
+    Fprintf(stderr,
+            "Notice: ssid=%ld assumes fixed pointer %p (present value %g)\n",
+            (long) ssid,
+            v,
+            *v);
+    return nullptr;  // avoid coverage false negative.
 }
 
 static void thread_transfer(NrnThread* _nt);
@@ -324,6 +337,39 @@ void nrnmpi_target_var() {
     // printf("nrnmpi_target_var %p target_val=%g sgid=%ld\n", ptv, *ptv, (long)sgid);
 }
 
+#if 0
+<<<<<<< HEAD
+void nrn_partrans_update_ptrs() {
+    // These pointer changes require that the targets be range variables
+    // of a point process and the sources be range variables
+
+    // update the poutsrc that have no extracellular
+    for (int i = 0; i < outsrc_buf_size_; ++i) {
+        int isrc = poutsrc_indices_[i];
+        Node* nd = visources_[isrc];
+        if (nd) {
+            auto it = non_vsrc_update_info_.find(sgids_[isrc]);
+            if (it != non_vsrc_update_info_.end()) {
+                poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
+            } else if (!nd->extnode) {
+                poutsrc_[i] = &(NODEV(nd));
+            } else {
+                // pointers into SourceViBuf updated when
+                // latter is (re-)created
+            }
+        } else {
+            poutsrc_[i] = non_vsrc_fixedptr_info_[sgids_[isrc]];
+        }
+    }
+    vptr_change_cnt_ = nrn_node_ptr_change_cnt_;
+    // the target vgap pointers also need updating but they will not
+    // change til after this returns ... (verify this)
+    ++target_ptr_need_update_cnt_;
+}
+=======
+>>>>>>> master
+#endif
+
 static void rm_ttd() {
     if (!transfer_thread_data_) {
         return;
@@ -369,8 +415,10 @@ static std::unordered_map<Node*, double*> mk_svibuf() {
         Node* nd = visources_[i];
         auto const it = non_vsrc_update_info_.find(sgids_[i]);
         if (nd->extnode && it == non_vsrc_update_info_.end()) {
-            assert(nd->_nt >= nrn_threads && nd->_nt < (nrn_threads + nrn_nthread));
-            ++source_vi_buf_[nd->_nt->id].cnt;
+            if (non_vsrc_fixedptr_info_.find(sgids_[i]) == non_vsrc_fixedptr_info_.end()) {
+                assert(nd->_nt >= nrn_threads && nd->_nt < (nrn_threads + nrn_nthread));
+                ++source_vi_buf_[nd->_nt->id].cnt;
+            }
         }
     }
     // allocate
@@ -385,9 +433,12 @@ static std::unordered_map<Node*, double*> mk_svibuf() {
         Node* nd = visources_[i];
         auto const it = non_vsrc_update_info_.find(sgids_[i]);
         if (nd->extnode && it == non_vsrc_update_info_.end()) {
-            int tid = nd->_nt->id;
-            SourceViBuf& svib = source_vi_buf_[tid];
-            svib.nd[svib.cnt++] = nd;
+            if (non_vsrc_fixedptr_info_.find(sgids_[i]) == non_vsrc_fixedptr_info_.end()) {
+                int tid = nd->_nt->id;
+                SourceViBuf& svib = source_vi_buf_[tid];
+                svib.nd[svib.cnt] = nd;
+                ++svib.cnt;
+            }
         }
     }
     // now the only problem is how to get TransferThreadData and poutsrc_
@@ -413,12 +464,14 @@ static std::unordered_map<Node*, double*> mk_svibuf() {
         Node* nd = visources_[isrc];
         auto const it = non_vsrc_update_info_.find(sgids_[isrc]);
         if (nd->extnode && it == non_vsrc_update_info_.end()) {
-            auto const search = ndvi2pd.find(nd);
-            nrn_assert(search != ndvi2pd.end());
-            // olupton 2022-11-28: looks like search->second is always a pointer to a private vector
-            // in source_vi_buf_, so do_not_search makes sense.
-            poutsrc_[i] = neuron::container::data_handle<double>{neuron::container::do_not_search,
+            if (non_vsrc_fixedptr_info_.find(sgids_[i]) == non_vsrc_fixedptr_info_.end()) {
+                auto search = ndvi2pd.find(nd);
+                nrn_assert(search != ndvi2pd.end());
+                // olupton 2022-11-28: looks like search->second is always a pointer to a private vector
+                // in source_vi_buf_, so do_not_search makes sense.
+                poutsrc_[i] = neuron::container::data_handle<double>{neuron::container::do_not_search,
                                                                  search->second};
+            }
         }
     }
     nrnthread_vi_compute_ = thread_vi_compute;
@@ -502,6 +555,13 @@ static void mk_ttd() {
             auto it = non_vsrc_update_info_.find(sid);
             if (it != non_vsrc_update_info_.end()) {
                 ttd.sv[j] = non_vsrc_update(nd, it->second.first, it->second.second);
+            } else if (!nd) {
+                if (non_vsrc_fixedptr_info_.find(sid) != non_vsrc_fixedptr_info_.end()) {
+                    // assume the old pointer is valid!
+                    ttd.sv[j] = non_vsrc_fixedptr_info_[sid];
+                } else {
+                    assert(0);
+                }
             } else if (nd->extnode) {
                 auto search = ndvi2pd.find(nd);
                 nrn_assert(search != ndvi2pd.end());
@@ -738,6 +798,12 @@ void nrnmpi_setup_transfer() {
             auto const it = non_vsrc_update_info_.find(sid);
             if (it != non_vsrc_update_info_.end()) {
                 poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
+            } else if (!nd) {
+                if (non_vsrc_fixedptr_info_.find(sid) != non_vsrc_fixedptr_info_.end()) {
+                    poutsrc_[i] = non_vsrc_fixedptr_info_[sid];
+                } else {
+                    assert(0);
+                }
             } else if (!nd->extnode) {
                 poutsrc_[i] = nd->v_handle();
             } else {
@@ -785,6 +851,7 @@ void nrn_partrans_clear() {
     poutsrc_.clear();
     delete[] std::exchange(poutsrc_indices_, nullptr);
     non_vsrc_update_info_.clear();
+    non_vsrc_fixedptr_info_.clear();
     nrn_mk_transfer_thread_data_ = nullptr;
 }
 
@@ -1063,6 +1130,9 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
         for (size_t i = 0; i < sgids_.size(); ++i) {
             sgid_t sid = sgids_[i];
             Node* nd = visources_[i];
+            if (!nd) {
+                hoc_execerr_ext("CoreNEURON cannot be used with non_vsrc_fixed_ptr items (aka rxd)");
+            }
             int tid = nd->_nt ? nd->_nt->id : 0;
             int type = -1;  // default voltage
             int ix = 0;     // fill below
