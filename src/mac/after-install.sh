@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eu
+
 if test "$1" = "" ; then
 	echo "afer-install needs a host_cpu argument"
 	exit
@@ -58,15 +60,8 @@ quit()
 here
 if cd ${N}/share/nrn/demo/release/${CPU} ; then
 	rm -f *.o *.c *.lo *.mod
-	cd .libs
-	rm -f *.o
-	for i in *.so ; do
-		if test ! -L $i ; then
-			strip -x $i
-		fi
-	done
 	# make the -dll position independent
-	cd ../../..
+	cd ../..
 	sed '/\-dll/s,\-dll "/App.*/share/nrn,-dll "${NRNHOME}/share/nrn,' neuron > ntmp
 	mv ntmp neuron
 	chmod 755 neuron
@@ -106,14 +101,6 @@ if test -f "$ff" ; then
 f=`otool -L $IV/$CPU/bin/idraw | sed -n "s,.*$IV/$CPU/lib/\(.*dylib\).*,\
 -change $IV/$CPU/lib/\1 @executable_path/../lib/\1,p"`
 install_name_tool $f "$ff"
-fi
-
-#this one needs to be done from nrnivmodl, same as all the libnrnmech.so
-if false ; then
-ff="$N/share/nrn/demo/release/x86_64/.libs/libnrnmech.so"
-f=`otool -L $ff | sed -n "s,.*$N/$CPU/lib/\(.*dylib\).*,\
--change $N/$CPU/lib/\1 @executable_path/../lib/\1,p"`
-install_name_tool $f $ff
 fi
 
 # neurondemo for libnrnmech.so needs to follow the install location.

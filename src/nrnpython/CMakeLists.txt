@@ -55,6 +55,9 @@ else()
   list(APPEND INCLUDE_DIRS ../ivos)
 endif()
 
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp" @ONLY)
+
 # user has selected dynamic python support (could be multiple versions)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   # set(INCLUDE_DIRS . .. ../oc ../nrnoc ../ivoc ../nrniv ../gnu ../nrnmpi
@@ -91,7 +94,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       LANGUAGE
       "CXX"
       SOURCES
-      ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
+      ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
       INCLUDES
       ${PROJECT_SOURCE_DIR}/src
       ${PROJECT_SOURCE_DIR}/src/oc
@@ -149,7 +152,7 @@ else()
     LANGUAGE
     "CXX"
     SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
     INCLUDES
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/src/oc
