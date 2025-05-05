@@ -1037,9 +1037,18 @@ configure_file(cmake/mod_reg_nrn.cpp.in "${PROJECT_BINARY_DIR}/share/nrn/mod_reg
 configure_file(cmake/mod_reg_corenrn.cpp.in
                "${PROJECT_BINARY_DIR}/share/nrn/mod_reg_corenrn.cpp.in" COPYONLY)
 install(
-  TARGETS ${NRN_INSTALL_TARGETS} ${CORENRN_INSTALL_TARGETS}
+  TARGETS nrniv_lib
   EXPORT NeuronTargets
-  DESTINATION "${NRN_INSTALL_DATA_PREFIX}")
+  DESTINATION "${NRN_INSTALL_SHARE_LIB_DIR}")
+install(
+  TARGETS nocmodl
+  EXPORT NeuronTargets
+  DESTINATION "${NRN_INSTALL_DATA_PREFIX}/bin")
+install(
+  TARGETS ${CORENRN_INSTALL_TARGETS}
+  EXPORT NeuronTargets
+  DESTINATION "${NRN_INSTALL_SHARE_LIB_DIR}")
+
 export(
   EXPORT NeuronTargets
   FILE ${PROJECT_BINARY_DIR}/lib/cmake/neuron/neuronTargets.cmake

@@ -26,6 +26,12 @@ target_include_directories(neurondemo PRIVATE "${PROJECT_BINARY_DIR}/include")
 target_include_directories(neurondemo-special PRIVATE "${PROJECT_BINARY_DIR}/include")
 add_dependencies(neurondemo neuron::nocmodl neuron::nrniv nrnivmodl_dependency)
 add_dependencies(neurondemo-special neuron::nocmodl neuron::nrniv nrnivmodl_dependency)
+
+# because nrniv is under `<prefix>/lib`, but the demo files are in
+# `<prefix>/share/nrn/demo/release/<arch>/.libs/`
+set_target_properties(neurondemo PROPERTIES INSTALL_RPATH
+                                            "${LOADER_PATH_FLAG}/../../../../../../lib")
+
 file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/share/nrn/demo")
 file(TOUCH "${PROJECT_BINARY_DIR}/share/nrn/demo/neuron")
 install(TARGETS neurondemo
