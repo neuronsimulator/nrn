@@ -180,3 +180,6 @@ NRN_WHEEL_STATIC_READLINE = "ON"
 NRN_ENABLE_CORENEURON = "ON"
 NRN_BINARY_DIST_BUILD = "ON"
 NRN_RX3D_OPT_LEVEL = "2"
+# For some reason, cibuildwheel is not reading this from the env, so we set it here.
+# Note that the value is bumped to 11.0 on ARM.
+MACOSX_DEPLOYMENT_TARGET="10.15"
