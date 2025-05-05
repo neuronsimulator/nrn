@@ -507,7 +507,11 @@ target_link_libraries(coreneuron-core PUBLIC ${sonatareport_LIBRARY} ${CORENRN_C
                                              ${CORENRN_LIKWID_LIB})
 set_target_properties(coreneuron-core PROPERTIES EXPORT_NAME corenrn)
 target_compile_features(coreneuron-core PUBLIC cxx_std_17)
-target_include_directories(coreneuron-core INTERFACE $<INSTALL_INTERFACE:include>)
+if(SKBUILD)
+  target_include_directories(coreneuron-core INTERFACE $<INSTALL_INTERFACE:neuron/.data/include>)
+else()
+  target_include_directories(coreneuron-core INTERFACE $<INSTALL_INTERFACE:include>)
+endif()
 
 # TODO: fix adding a dependency of coreneuron-core on CLI11::CLI11 when CLI11 is a submodule. Right
 # now this doesn't work because the CLI11 targets are not exported/installed but coreneuron-core is.

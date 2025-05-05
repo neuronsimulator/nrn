@@ -420,7 +420,11 @@ target_include_directories(
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PUBLIC $<BUILD_INTERFACE:${NRN_OC_GEN}>)
-target_include_directories(nrniv_lib INTERFACE $<INSTALL_INTERFACE:include>)
+if(SKBUILD)
+  target_include_directories(nrniv_lib INTERFACE $<INSTALL_INTERFACE:neuron/.data/include>)
+else()
+  target_include_directories(nrniv_lib INTERFACE $<INSTALL_INTERFACE:include>)
+endif()
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
   target_link_libraries(nrniv_lib PRIVATE nrnpython)
 endif()
