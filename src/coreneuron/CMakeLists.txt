@@ -557,9 +557,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
 # We have to link things like unit tests against this because some "core" .cpp files refer to
 # symbols in the translated versions of default .mod files
 set(nrniv_core_prefix "${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}")
-set(corenrn_mech_library
-    "${nrniv_core_prefix}/${CMAKE_${COMPILE_LIBRARY_TYPE}_LIBRARY_PREFIX}corenrnmech_internal${CMAKE_${COMPILE_LIBRARY_TYPE}_LIBRARY_SUFFIX}"
-)
 
 include(${PROJECT_SOURCE_DIR}/cmake/NeuronMechVariableHelper.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/neuronMechMaker.cmake)
@@ -670,12 +667,6 @@ install(
   DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin
   RENAME nrniv-core)
 install(FILES apps/coreneuron.cpp DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/coreneuron)
-
-# install mechanism library in shared library builds, if we're linking statically then there is no
-# need
-if(CORENRN_ENABLE_SHARED)
-  install(FILES ${corenrn_mech_library} DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
-endif()
 
 # install mod files
 install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share)

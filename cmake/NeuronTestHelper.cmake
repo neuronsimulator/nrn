@@ -446,7 +446,7 @@ function(nrn_add_test)
     list(
       APPEND
       test_env
-      "CORENEURONLIB=${build_prefix}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}${mech_lib_name}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+      "CORENEURONLIB=${build_prefix}/${CMAKE_HOST_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}${mech_lib_name}${CMAKE_SHARED_MODULE_SUFFIX}"
     )
   endif()
   # Get [VAR1, VAR2, ...] from [VAR1=VAL1, VAR2=VAL2, ...]

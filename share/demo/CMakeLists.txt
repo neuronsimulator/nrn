@@ -31,6 +31,10 @@ add_dependencies(neurondemo-special neuron::nocmodl neuron::nrniv nrnivmodl_depe
 # `<prefix>/share/nrn/demo/release/<arch>/.libs/`
 set_target_properties(neurondemo PROPERTIES INSTALL_RPATH
                                             "${LOADER_PATH_FLAG}/../../../../../../lib")
+# `special` dynamically links to both `nrniv` and `nrnmech`
+set_target_properties(
+  neurondemo-special PROPERTIES INSTALL_RPATH
+                                "${LOADER_PATH_FLAG}/.libs;${LOADER_PATH_FLAG}/../../../../../lib")
 
 file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/share/nrn/demo")
 file(TOUCH "${PROJECT_BINARY_DIR}/share/nrn/demo/neuron")
