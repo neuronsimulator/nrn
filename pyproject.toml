@@ -157,7 +157,7 @@ environment-pass = [
 #   libnrniv: we ship precompiled version of neurondemo containing libnrnmech.so
 #             which is linked to libnrniv.so. auditwheel manipulate rpaths and
 #             ships an extra copy of libnrniv.so and hence exclude it here.
-repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so'"
+repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so' --exclude 'libcorenrnmech_internal.so' --exclude 'libnrnmech.so'"
 
 [tool.cibuildwheel.linux.environment]
 # all of the below env variables need to be specified under `[tool.cibuildwheel.linux.environment-pass]`
