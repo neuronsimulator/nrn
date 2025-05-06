@@ -1,27 +1,24 @@
 # build time dependencies
-scikit-build-core
-setuptools-scm>=8.0
-Jinja2>=2.9.3
-PyYAML>=3.13
+setuptools-scm>=8.0,<=8.1.0
+jinja2>=2.9.3,<=3.1.6
+pyyaml>=3.13,<=6.0.2
 # runtime dependencies
-find_libpython
-sympy>=1.3
-importlib-metadata;python_version<'3.9'
-importlib-resources;python_version<'3.9'
+find_libpython<=0.4.0
+sympy>=1.3,<=1.13.3
 # dependencies for test
 pytest<=8.1.1
 pytest-cov
-numpy
+numpy>=1.9.3,<=2.2.3
 scipy
 # dependencies for docs
 jupyter-client
 jupyter
-myst_parser<2.0.0
-mistune<3
+myst_parser<=4.0.1
+mistune<=3.1.3
 nbconvert
 nbsphinx>=0.3.2
-sphinxcontrib-applehelp<1.0.3
-sphinxcontrib-htmlhelp<=2.0.0
-sphinx<6
+sphinxcontrib-applehelp<=2.0.0
+sphinxcontrib-htmlhelp<=2.1.0
+sphinx<=8.2.3
 sphinx-rtd-theme
-docutils<0.20
+docutils<=0.21.2

@@ -9,7 +9,7 @@ NEURON Development topics
    data-structures.rst
    gpu-testing.rst
    workflow-code-paths.rst
-   ./setuptools/setuptools.md
+   ./python/wheels.md
    ./morphology/morphology.md
    hocdomain-sphinx.md
 

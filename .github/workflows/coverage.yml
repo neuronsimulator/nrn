@@ -47,6 +47,11 @@ jobs:
           sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin gpg ninja-build flex bison libfl-dev
         shell: bash
 
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version : '3.18'
+
       - name: Setup Caliper profiler
         run: |
           git clone https://github.com/LLNL/Caliper.git
@@ -94,6 +99,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PY_MID_VERSION }}
+
+      - name: Install Python@${{ env.PY_MID_VERSION }} dependencies
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+          python -m pip install --upgrade -r ci_requirements.txt
+          python -m pip install --upgrade pip -r nrn_requirements.txt
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
         uses: actions/setup-python@v5

@@ -394,14 +394,8 @@ if(NRN_ENABLE_MUSIC)
                               PROPERTIES INCLUDE_DIRECTORIES ${MUSIC_INCDIR})
 endif()
 
-if(NRN_COVERAGE_FILES)
-  foreach(f ${NRN_COVERAGE_FILES})
-    set_property(
-      SOURCE ${PROJECT_SOURCE_DIR}/${f}
-      APPEND
-      PROPERTY COMPILE_FLAGS ${NRN_COVERAGE_FLAGS})
-  endforeach()
-endif()
+# Maybe NRN_COVERAGE_FILES mentions a file compiled by this CMakeLists.txt
+nrn_enable_coverage_files()
 
 # =============================================================================
 # All source directories to include
@@ -559,12 +553,6 @@ else()
   target_link_libraries(nrniv_lib ${X11_LIBRARIES})
 endif()
 
-if(NRN_COVERAGE_FILES)
-  target_link_libraries(nrniv_lib ${NRN_COVERAGE_LIB})
-  target_link_libraries(modlunit ${NRN_COVERAGE_LIB})
-  target_link_libraries(nocmodl ${NRN_COVERAGE_LIB})
-endif()
-
 # =============================================================================
 # Final executable
 # =============================================================================
@@ -594,10 +582,11 @@ endif()
 # For now, we keep this distinction as it reduces the PATH and is
 # expected when ctypes looks for dlls
 # ~~~
-install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
+install(TARGETS nrniv nocmodl modlunit DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 if(LIBIVX11DYNAM_NAME)
-  install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME} DESTINATION lib)
+  install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME}
+          DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
 endif()
 
 # =============================================================================
@@ -625,4 +614,5 @@ add_custom_target(
           ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h ${CMAKE_BINARY_DIR}/include/nrnconf.h)
 
 # For the installation
-install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
+install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn)

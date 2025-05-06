@@ -46,7 +46,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macOS-13, ubuntu-20.04]
+        os: [macOS-13, ubuntu-22.04]
         config:
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
           - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", music: ON}
@@ -145,10 +145,6 @@ jobs:
           sudo apt-get install build-essential ccache libopenmpi-dev \
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
             openmpi-bin flex libfl-dev bison libreadline-dev
-          # The sanitizer builds use ubuntu 22.04
-          if [[ "${{matrix.os}}" == "ubuntu-20.04" ]]; then
-            sudo apt-get install g++-7 g++-8
-          fi
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
           echo CMAKE_BUILD_PARALLEL_LEVEL=4 >> $GITHUB_ENV
           echo CTEST_PARALLEL_LEVEL=4 >> $GITHUB_ENV
@@ -389,7 +385,7 @@ jobs:
                 echo nrn-enable-sanitizer not found, not using it
               fi
           elif [[ "$BUILD_MODE" == "setuptools" ]]; then
-            ./packaging/python/build_wheels.bash CI;
+            ./packaging/python/build_wheels.bash CI "${PYTHON_MAX}";
           fi;
           if [[ -z "${nrn_enable_sanitizer_preload_python}" ]]; then
             nrn_enable_sanitizer_preload_python="${PYTHON}"
