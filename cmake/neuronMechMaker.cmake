@@ -88,6 +88,10 @@ function(create_nrnmech)
     )
   endif()
 
+  if(NOT NRN_MECH_MOD_FILES)
+    message(FATAL_ERROR "No input mod files specified!")
+  endif()
+
   if(NRN_MECH_MECHANISM_NAME)
     set(MECHANISM_NAME "${NRN_MECH_MECHANISM_NAME}")
   else()

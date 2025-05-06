@@ -37,7 +37,7 @@ fi
 
 # We use the CMakeLists.txt from the NEURON installation directory to not have
 # to deal with any pre-existing CMakeLists.txt in the current directory
-srcdir="${NRN_CMAKE_PREFIX_PATH_DEFAULT}/neuron/${program_name}/"
+srcdir="${NRN_CMAKE_PREFIX_PATH_DEFAULT}/neuron/nrnivmodl/"
 
 # In case of no files, default to using the files in the current dir
 if [ $# -lt 1 ]; then
@@ -68,7 +68,7 @@ set -- "${args[@]}"
 modfiles=$(IFS=";"; echo "$*")
 
 # Configure the mod files
-cmake -S "${srcdir}" -B "${bindir}" -DMOD_FILES="${modfiles}" -DCORENEURON="@CORENEURON@"
+cmake -S "${srcdir}" -B "${bindir}" -DNRNIVMODL_MOD_FILES="${modfiles}" -DNRNIVMODL_NEURON=@NRNIVMODL_NEURON@ -DNRNIVMODL_CORENEURON=@NRNIVMODL_CORENEURON@
 
 # Actually build them
 cmake --build "${bindir}"

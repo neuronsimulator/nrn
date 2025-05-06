@@ -12,6 +12,6 @@ set(_CORENEURON_BASE_MOD "${PROJECT_SOURCE_DIR}/src/coreneuron/mechanism/mech/mo
 set(_CORENEURON_MAIN "${PROJECT_SOURCE_DIR}/src/coreneuron/apps/coreneuron.cpp")
 set(_CORENEURON_MECH_REG "${PROJECT_SOURCE_DIR}/cmake/mod_reg_corenrn.cpp.in")
 set(_CORENEURON_MECH_ENG "${PROJECT_SOURCE_DIR}/src/coreneuron/mechanism/mech/enginemech.cpp")
-set(_CORENEURON_RANDOM_INCLUDE "${_prefix}/include/coreneuron/utils/randoms")
+set(_CORENEURON_RANDOM_INCLUDE "${_prefix}/include/coreneuron/utils/randoms" "${_prefix}/include")
 set(_CORENEURON_FLAGS ${CORENRN_CXX_FLAGS})
 separate_arguments(_CORENEURON_FLAGS)

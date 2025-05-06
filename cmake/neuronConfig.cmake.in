@@ -17,7 +17,7 @@ set(_CORENEURON_BASE_MOD "${_prefix}/share/modfile")
 set(_CORENEURON_MAIN "${_prefix}/share/coreneuron/coreneuron.cpp")
 set(_CORENEURON_MECH_REG "${_prefix}/share/nrn/mod_reg_corenrn.cpp.in")
 set(_CORENEURON_MECH_ENG "${_prefix}/share/coreneuron/enginemech.cpp")
-set(_CORENEURON_RANDOM_INCLUDE "${_prefix}/include/coreneuron/utils/randoms")
+set(_CORENEURON_RANDOM_INCLUDE "${_prefix}/include/coreneuron/utils/randoms" "${_prefix}/include")
 set(_CORENEURON_FLAGS @CORENRN_CXX_FLAGS@)
 
 find_program(NMODL nmodl REQUIRED)

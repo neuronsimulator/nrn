@@ -46,6 +46,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh.in ${PROJECT_BINARY_DIR}/
 # prepare test files. This can be done more elegantly in newer CMake versions; v3.19+ have
 # file(CHMOD ...) and v3.20+ support setting permissions directly in configure_file(...).
 set(NRN_CONFIG_EXE_FILES "nrnivmodl" "neurondemo")
+set(NRNIVMODL_NEURON ON)
 foreach(NRN_CONFIG_EXE_FILE ${NRN_CONFIG_EXE_FILES})
   configure_file("${NRN_CONFIG_EXE_FILE}.in" "tmp/${NRN_CONFIG_EXE_FILE}" @ONLY)
   file(
@@ -60,22 +61,47 @@ foreach(NRN_CONFIG_EXE_FILE ${NRN_CONFIG_EXE_FILES})
       WORLD_READ
       WORLD_EXECUTE)
 endforeach()
+unset(NRNIVMODL_NEURON)
 
-set(CORENEURON "CORENEURON")
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl.in
-               "${CMAKE_CURRENT_BINARY_DIR}/tmp/nrnivmodl-core" @ONLY)
-unset(CORENEURON)
-file(
-  COPY "${CMAKE_CURRENT_BINARY_DIR}/tmp/nrnivmodl-core"
-  DESTINATION "${CMAKE_CURRENT_BINARY_DIR}"
-  FILE_PERMISSIONS
-    OWNER_READ
-    OWNER_WRITE
-    OWNER_EXECUTE
-    GROUP_READ
-    GROUP_EXECUTE
-    WORLD_READ
-    WORLD_EXECUTE)
+if(NRN_ENABLE_CORENEURON)
+  # nrnivmodl-core builds mechanisms for coreNEURON only
+  set(NRNIVMODL_CORENEURON ON)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl.in
+                 "${CMAKE_CURRENT_BINARY_DIR}/tmp/nrnivmodl-core" @ONLY)
+  file(
+    COPY "${CMAKE_CURRENT_BINARY_DIR}/tmp/nrnivmodl-core"
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}"
+    FILE_PERMISSIONS
+      OWNER_READ
+      OWNER_WRITE
+      OWNER_EXECUTE
+      GROUP_READ
+      GROUP_EXECUTE
+      WORLD_READ
+      WORLD_EXECUTE)
+  unset(NRNIVMODL_CORENEURON)
+
+  # nrnivmodl-all builds mechanisms for both NEURON and coreNEURON
+  set(NRNIVMODL_NEURON ON)
+  set(NRNIVMODL_CORENEURON ON)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl.in
+                 "${CMAKE_CURRENT_BINARY_DIR}/tmp/nrnivmodl-all" @ONLY)
+  file(
+    COPY "${CMAKE_CURRENT_BINARY_DIR}/tmp/nrnivmodl-all"
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}"
+    FILE_PERMISSIONS
+      OWNER_READ
+      OWNER_WRITE
+      OWNER_EXECUTE
+      GROUP_READ
+      GROUP_EXECUTE
+      WORLD_READ
+      WORLD_EXECUTE)
+  unset(NRNIVMODL_CORENEURON)
+  unset(NRNIVMODL_NEURON)
+endif()
+
+# Delete the temporary files
 file(REMOVE_RECURSE "${CMAKE_CURRENT_BINARY_DIR}/bin/tmp")
 
 # =============================================================================
@@ -83,7 +109,7 @@ file(REMOVE_RECURSE "${CMAKE_CURRENT_BINARY_DIR}/bin/tmp")
 # =============================================================================
 install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrngui ${PROJECT_BINARY_DIR}/bin/neurondemo
                  ${PROJECT_BINARY_DIR}/bin/nrnivmodl ${PROJECT_BINARY_DIR}/bin/nrnivmodl-core
-        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
+                 ${PROJECT_BINARY_DIR}/bin/nrnivmodl-all DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/sortspike ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe
                  ${PROJECT_BINARY_DIR}/bin/nrnpyenv.sh ${CMAKE_CURRENT_SOURCE_DIR}/set_nrnpyenv.sh
         DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
