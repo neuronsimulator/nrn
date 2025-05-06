@@ -672,8 +672,6 @@ class Region(object):
     """
 
     def __repr__(self):
-        # Note: this used to print out dimension, but that's now on a per-segment basis
-        # TODO: remove the note when that is fully true
         return "Region(..., nrn_region=%r, geometry=%r, dx=%r, name=%r)" % (
             self.nrn_region,
             self._geometry,
@@ -923,15 +921,12 @@ class Region(object):
         secs=None,
         nrn_region=None,
         geometry=None,
-        dimension=None,
         dx=None,
         name=None,
     ):
         """
         In NEURON 7.4+, secs is optional at initial region declaration, but it
         must be specified before the reaction-diffusion model is instantiated.
-
-        .. note:: dimension and dx will be deprecated in a future version
         """
         self._allow_setting = True
         if hasattr(secs, "__len__"):
@@ -954,13 +949,6 @@ class Region(object):
         self._name = name
         self.nrn_region = nrn_region
 
-        if dimension is not None:
-            warnings.warn(
-                "dimension argument was a development feature only; use set_solve_type instead... the current version sets all the sections to your requested dimension, but this will override any previous settings"
-            )
-            import neuron
-
-            neuron.rxd.set_solve_type(secs, dimension=dimension)
         if dx is not None:
             try:
                 dx = float(dx)

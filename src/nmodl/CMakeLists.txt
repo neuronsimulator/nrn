@@ -126,6 +126,8 @@ endif()
 # =============================================================================
 # Install executable
 # =============================================================================
+set(NMODL_INSTALL_DIR_SUFFIX ${NRN_INSTALL_DATA_PREFIX})
+
 install(
   TARGETS nmodl
   EXPORT nmodlTargets
