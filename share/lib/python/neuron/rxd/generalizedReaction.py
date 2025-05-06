@@ -164,11 +164,7 @@ class GeneralizedReaction(object):
         if self._trans_membrane:
             if sources or dests:
                 # assume sources share common regions and destinations share common regions
-                sp_regions = list(
-                    {sptr()._region() for sptr in sources}.union(
-                        {sptr()._region() for sptr in dests}
-                    )
-                )
+                sp_regions = list({sptr()._region() for sptr in sources + dests})
             elif sources_ecs or dests_ecs and self._regions != [None]:
                 sp_regions = self._regions
         elif sources and dests:
