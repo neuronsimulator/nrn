@@ -7,13 +7,13 @@ set -xe
 # on uname -m. Note that this is just wheel testing script.
 ARCH_DIR="$(uname -m)"
 
-if [ ! -f setup.py ]; then
+if [ ! -f pyproject.toml ]; then
     echo "Error: Please launch $0 from the root dir"
     exit 1
 fi
 
 if [ "$#" -lt 2 ]; then
-    echo "Usage: $(basename $0) python_exe python_wheel [use_virtual_env]"
+    echo "Usage: $(basename "$0") python_exe python_wheel [use_virtual_env]"
     exit 1
 fi
 
@@ -253,7 +253,7 @@ $python_exe -m pip install --upgrade 'pip<=25.0.1'
 
 # install test requirements
 $python_exe -m pip install -r packaging/python/test_requirements.txt
-$python_exe -m pip install $python_wheel
+$python_exe -m pip install --force-reinstall $python_wheel
 $python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
 
 
