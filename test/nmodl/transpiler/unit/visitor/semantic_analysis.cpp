@@ -5,14 +5,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "ast/program.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "utils/test_utils.hpp"
 #include "visitors/semantic_analysis_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
-#include "utils/logger.hpp"
+#include "nmodl/utils/logger.hpp"
 
 
 using namespace nmodl;
@@ -31,6 +33,7 @@ bool run_semantic_analysis_visitor(const std::string& text) {
     SymtabVisitor().visit_program(*ast);
     return SemanticAnalysisVisitor{}.check(*ast);
 }
+
 
 SCENARIO("TABLE stmt", "[visitor][semantic_analysis]") {
     GIVEN("Procedure with more than one argument") {
@@ -313,7 +316,26 @@ SCENARIO("FUNCTION block that does not return anything must raise a warning",
             }
         )";
         THEN("Semantic analysis should raise a warning") {
+            auto capture = test_utils::LoggerCapture();
             run_semantic_analysis_visitor(nmodl_text);
+            REQUIRE_THAT(capture.output(),
+                         Catch::Matchers::ContainsSubstring("does not have a return statement"));
+        }
+    }
+    GIVEN("A mod file with a FUNCTION that does not return anything and VERBATIM block") {
+        std::string nmodl_text = R"(
+            FUNCTION asdf() {
+                VERBATIM
+                _lasdf = 1;
+                ENDVERBATIM
+            }
+        )";
+        THEN("Semantic analysis should raise a warning") {
+            auto capture = test_utils::LoggerCapture();
+            run_semantic_analysis_visitor(nmodl_text);
+            REQUIRE_THAT(capture.output(),
+                         Catch::Matchers::ContainsSubstring(
+                             "possible return statement in VERBATIM block"));
         }
     }
 }
