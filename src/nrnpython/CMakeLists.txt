@@ -155,7 +155,7 @@ else()
     # for nrnconf.h
     ${CMAKE_CURRENT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/nrnmpi
-    ${pyinc}
+    ${NRN_DEFAULT_PYTHON_INCLUDES}
     LIBRARIES
     nrniv_lib
     rxdmath
