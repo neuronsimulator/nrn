@@ -342,7 +342,7 @@ extern "C" NRN_EXPORT PyObject* PyInit_hoc() {
 
 #endif  // NRNMPI
     std::string buf{neuron::config::system_processor};
-    buf += "/@CMAKE_MODULE_LIBRARY_PREFIX@nrnmech@CMAKE_MODULE_LIBRARY_SUFFIX@";
+    buf += "/@CMAKE_SHARED_LIBRARY_PREFIX@nrnmech@CMAKE_SHARED_LIBRARY_SUFFIX@";
     // printf("buf = |%s|\n", buf);
     FILE* f;
     if ((f = fopen(buf.c_str(), "r")) != 0) {
