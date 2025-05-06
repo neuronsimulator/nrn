@@ -69,16 +69,35 @@ static bool check_function_has_return_statement(const ast::FunctionBlock& node) 
     return false;
 }
 
+static bool check_function_has_verbatim_block(const ast::FunctionBlock& node) {
+    // check a given FUNCTION has a VERBATIM block; those can interfere with detecting return
+    // statements
+    const auto& func_name = node.get_node_name();
+    const auto& verbatim_blocks = collect_nodes(node, {ast::AstNodeType::VERBATIM});
+    return !verbatim_blocks.empty();
+}
+
+
 void SemanticAnalysisVisitor::check_functions_have_return_statements(const ast::Program& node) {
     // check that all functions have a return statement, i.e. that there is a statement of the form
     // <funcname> = <expr> somewhere in each FUNCTION block
     const auto& function_nodes = collect_nodes(node, {ast::AstNodeType::FUNCTION_BLOCK});
     for (const auto& func_node: function_nodes) {
         const auto& func = std::dynamic_pointer_cast<const ast::FunctionBlock>(func_node);
-        if (!check_function_has_return_statement(*func)) {
-            logger->warn(fmt::format(
-                "SemanticAnalysisVisitor :: FUNCTION {} does not have a return statement",
-                func->get_node_name()));
+        const auto& has_return_statement = check_function_has_return_statement(*func);
+        const auto& has_verbatim_block = check_function_has_verbatim_block(*func);
+        if (!has_return_statement) {
+            if (!has_verbatim_block) {
+                logger->warn(fmt::format(
+                    "SemanticAnalysisVisitor :: FUNCTION {} does not have a return statement",
+                    func->get_node_name()));
+            } else {
+                logger->warn(
+                    fmt::format("SemanticAnalysisVisitor :: FUNCTION {} does not have an explicit "
+                                "return statement, but VERBATIM block detected (possible return "
+                                "statement in VERBATIM block?)",
+                                func->get_node_name()));
+            }
         }
     }
 }

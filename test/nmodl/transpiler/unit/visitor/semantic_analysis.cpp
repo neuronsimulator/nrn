@@ -12,6 +12,7 @@
 #include "utils/test_utils.hpp"
 #include "visitors/semantic_analysis_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
+#include "utils/logger.hpp"
 
 
 using namespace nmodl;
@@ -300,6 +301,19 @@ SCENARIO("RANGE and FUNCTION/PROCEDURE block", "[visitor][semantic_analysis]") {
         )";
         THEN("Semantic analysis should fail") {
             REQUIRE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+}
+
+SCENARIO("FUNCTION block that does not return anything must raise a warning",
+         "[visitor][semantic_analysis]") {
+    GIVEN("A mod file with a FUNCTION that does not return anything") {
+        std::string nmodl_text = R"(
+            FUNCTION asdf() {
+            }
+        )";
+        THEN("Semantic analysis should raise a warning") {
+            run_semantic_analysis_visitor(nmodl_text);
         }
     }
 }
