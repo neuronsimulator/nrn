@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # =============================================================================
-# Simple wrapper for CMake that builds mod files
+# Simple wrapper for CMake that builds mechanisms from mod files
 # =============================================================================
 
 set -eu
