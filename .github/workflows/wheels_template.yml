@@ -13,7 +13,7 @@ on:
         type: string
       commit:
         description: The commit of NEURON for which to build the wheel
-        default: 'master'
+        required: true
         type: string
       version:
         description: Override version (tag name), in format major.minor.patch

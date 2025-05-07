@@ -14,7 +14,7 @@ on:
         required: true
         type: string
       version:
-        description: The version to use for the release
+        description: The version tag to use for the release
         default: 'x.y.z'
         required: true
         type: string
