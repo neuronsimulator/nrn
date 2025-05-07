@@ -23,6 +23,7 @@ on:
       build_type:
         description: The type of build (release or nightly)
         default: 'nightly'
+        type: choice
         options:
           - 'nightly'
           - 'release'
