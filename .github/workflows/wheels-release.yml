@@ -22,7 +22,7 @@ on:
 jobs:
   build-test:
     name: Build and test for release
-    uses: ./.github/workflows/wheels_template.yml
+    uses: ./.github/workflows/wheels-template.yml
     with:
       platform: ${{ matrix.os }}
       python_version: ${{ matrix.python_version }}
@@ -49,7 +49,7 @@ jobs:
           pattern: wheels-*
 
   pypi-publish:
-    uses: ./.github/workflows/pypi_upload_template.yml
+    uses: ./.github/workflows/pypi-upload-template.yml
     needs: merge
     if: github.event.inputs.upload == 'true'
     with:

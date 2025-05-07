@@ -6,7 +6,7 @@ on:
 jobs:
   build-test:
     name: Build and test for nightly
-    uses: ./.github/workflows/wheels_template.yml
+    uses: ./.github/workflows/wheels-template.yml
     with:
       platform: ${{ matrix.os }}
       python_version: ${{ matrix.python_version }}
@@ -33,7 +33,7 @@ jobs:
 
   pypi-publish:
     name: Upload wheel to PyPI
-    uses: ./.github/workflows/pypi_upload_template.yml
+    uses: ./.github/workflows/pypi-upload-template.yml
     needs: merge
     with:
       project_name: 'neuron-nightly'

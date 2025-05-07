@@ -11,7 +11,7 @@ on:
 jobs:
   build-test:
     name: Build and test NEURON Python wheels
-    uses: ./.github/workflows/wheels_template.yml
+    uses: ./.github/workflows/wheels-template.yml
     with:
       platform: ${{ matrix.os }}
       python_version: ${{ matrix.python_version }}
