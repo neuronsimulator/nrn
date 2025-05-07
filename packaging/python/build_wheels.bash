@@ -166,7 +166,7 @@ python_version_or_interpreter="${2}"
 if [[ "${platform}" != 'CI' ]]; then
     CIBW_BUILD=""
     # remove any dots since various CI actions require it, and it's easier to do it here
-    python_version_or_interpreter="${python_version_or_interpreter//./}"
+    python_version_or_interpreter="$(printf "%s" "${python_version_or_interpreter}" | tr -d '.')"
     for ver in ${python_version_or_interpreter}; do
         # we only build cpython-compatible wheels for now
         CIBW_BUILD="${CIBW_BUILD} cp${ver}*"
