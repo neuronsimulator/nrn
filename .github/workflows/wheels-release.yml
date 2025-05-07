@@ -32,7 +32,7 @@ jobs:
       version: ${{ github.event.inputs.version }}
     strategy:
       matrix:
-        os: ['macos-14', 'ubuntu-22.04-arm']
+        os: ['macos-14']
         python_version: ['3.9', '3.10', '3.11', '3.12', '3.13']
 
   merge:
