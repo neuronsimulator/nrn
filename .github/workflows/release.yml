@@ -11,6 +11,11 @@ on:
         description: 'Release version (tag name)'
         default: 'x.y.z'
         required: true
+      pypi_upload:
+        description: 'Whether to upload wheels to PyPI or not'
+        default: false
+        required: true
+        type: boolean
 
 env:
   GH_REPO: ${{ github.server_url }}/${{ github.repository }}
@@ -114,3 +119,11 @@ jobs:
     uses: neuronsimulator/nrn/.github/workflows/windows.yml@master
     with:
       tag: ${{ needs.tag-n-release.outputs.rel_tag }}
+
+  wheels-release:
+    name: Build and upload wheels
+    needs: tag-n-release
+    uses: neuronsimulator/nrn/.github/workflows/wheels-release.yml@master
+    with:
+      commit: ${{ github.event.inputs.rel_branch }}
+      version: ${{ github.event.inputs.rel_tag }}

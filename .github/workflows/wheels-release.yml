@@ -49,6 +49,7 @@ jobs:
           pattern: wheels-*
 
   pypi-publish:
+    name: Upload wheel to PyPI
     uses: ./.github/workflows/pypi-upload-template.yml
     needs: merge
     if: github.event.inputs.upload == 'true'
