@@ -62,6 +62,7 @@ void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
 Symbol* nrn_symbol(const char* name);
 void nrn_symbol_push(Symbol* sym);
 int nrn_symbol_type(const Symbol* sym);
+int nrn_symbol_subtype(Symbol const* sym);
 void nrn_double_push(double val);
 double nrn_double_pop(void);
 void nrn_double_ptr_push(double* addr);
@@ -108,6 +109,7 @@ void nrn_property_array_push(Object* obj, const char* name, int i);
 char const* nrn_symbol_name(const Symbol* sym);
 Symlist* nrn_symbol_table(Symbol* sym);
 Symlist* nrn_global_symbol_table(void);
+Symlist* nrn_top_level_symbol_table(void);
 // TODO: need shapeplot information extraction
 
 #ifdef __cplusplus

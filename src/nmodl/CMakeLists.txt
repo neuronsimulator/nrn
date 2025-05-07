@@ -126,6 +126,8 @@ endif()
 # =============================================================================
 # Install executable
 # =============================================================================
+set(NMODL_INSTALL_DIR_SUFFIX ${NRN_INSTALL_DATA_PREFIX})
+
 install(
   TARGETS nmodl
   EXPORT nmodlTargets
@@ -165,6 +167,7 @@ message(STATUS " Build option       | Status")
 message(STATUS "--------------------+--------------------------------------------------------")
 message(STATUS "CXX COMPILER        | ${CMAKE_CXX_COMPILER}")
 message(STATUS "COMPILE FLAGS       | ${COMPILER_FLAGS}")
+message(STATUS "EXTRA FLAGS         | ${NMODL_EXTRA_CXX_FLAGS}")
 message(STATUS "Build Type          | ${CMAKE_BUILD_TYPE}")
 message(STATUS "Python Bindings     | ${NMODL_ENABLE_PYTHON_BINDINGS}")
 message(STATUS "Flex                | ${FLEX_EXECUTABLE}")
