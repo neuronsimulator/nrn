@@ -167,7 +167,7 @@ if [[ "${platform}" != 'CI' ]]; then
     CIBW_BUILD=""
     for ver in ${python_version_or_interpreter}; do
         # remove any dots since various CI actions require it, and it's easier to do it here
-        ver="${ver//.}"
+        ver="${ver//./}"
         # we only build cpython-compatible wheels for now
         CIBW_BUILD="${CIBW_BUILD} cp${ver}*"
     done
