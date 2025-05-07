@@ -11,7 +11,7 @@ on:
 
 jobs:
   build-test:
-    uses: ci/wheels_template.yml
+    uses: ./ci/wheels_template.yml
     with:
       platform: ${{ matrix.os }}
       python_version: ${{ matrix.python_version }}
@@ -36,7 +36,7 @@ jobs:
           pattern: wheels-*
 
   pypi-publish:
-    uses: ci/pypi_upload.yml
+    uses: ./ci/pypi_upload.yml
     needs: merge
     if: github.event.inputs.upload == 'true'
     with:

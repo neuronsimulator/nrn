@@ -10,7 +10,7 @@ on:
 
 jobs:
   build-test:
-    uses: ci/wheels_template.yml
+    uses: ./ci/wheels_template.yml
     with:
       platform: ${{ matrix.os }}
       python_version: ${{ matrix.python_version }}

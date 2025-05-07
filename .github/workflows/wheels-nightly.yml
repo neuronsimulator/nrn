@@ -5,7 +5,7 @@ on:
     - cron: "0 0 * * *"
 jobs:
   build-test:
-    uses: ci/wheels_template.yml
+    uses: ./ci/wheels_template.yml
     with:
       platform: ${{ matrix.os }}
       python_version: ${{ matrix.python_version }}
@@ -30,7 +30,7 @@ jobs:
 
   pypi-publish:
     name: Upload wheel to PyPI
-    uses: ci/pypi_upload.yml
+    uses: ./ci/pypi_upload.yml
     needs: merge
     with:
       project_name: 'neuron-nightly'
