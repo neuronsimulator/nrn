@@ -6,9 +6,11 @@ on:
       platform:
         description: The platform (OS) for which to build the wheel
         required: true
+        type: string
       python_version:
         description: The Python version for which to build the wheel
         required: true
+        type: string
       commit:
         description: The commit of NEURON for which to build the wheel
         default: 'master'
@@ -17,6 +19,7 @@ on:
         description: Override version (tag name), in format major.minor.patch
         default: ''
         required: false
+        type: string
       build_type:
         description: The type of build (release or nightly)
         default: 'nightly'
@@ -25,7 +28,7 @@ on:
           - 'release'
       clone_depth:
         description: The depth to clone the repo
-        default: 1
+        default: '1'
         type: string
       optimize_rxd:
         description: Whether to optimize the RX3D Python module

@@ -10,6 +10,7 @@ jobs:
       platform: ${{ matrix.os }}
       python_version: ${{ matrix.python_version }}
       optimize_rxd: true
+      clone_depth: '0'
     strategy:
       matrix:
         os: ['macos-14', 'ubuntu-22.04-arm']
