@@ -165,6 +165,7 @@ platform="${1}"
 python_version_or_interpreter="${2}"
 if [[ "${platform}" != 'CI' ]]; then
     CIBW_BUILD=""
+    echo "AAAAAAAAAAAAAAAAAAAAAA"
     # remove any dots since various CI actions require it, and it's easier to do it here
     python_version_or_interpreter="$(printf "%s" "${python_version_or_interpreter}" | tr -d '.')"
     for ver in ${python_version_or_interpreter}; do
