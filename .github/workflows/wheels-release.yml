@@ -1,0 +1,43 @@
+name: Build NEURON Python wheels for release upload
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: Whether to upload the wheels to PyPI or not
+        type: boolean
+        default: false
+        required: true
+
+jobs:
+  build-test:
+    uses: ci/wheels_template.yml
+    with:
+      platform: ${{ matrix.os }}
+      python_version: ${{ matrix.python_version }}
+      build_type: 'release'
+      optimize_rxd: true
+    strategy:
+      matrix:
+        os: ['macos-14', 'ubuntu-22.04-arm']
+        python_version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+
+  merge:
+    name: Merge artifacts
+    runs-on: ubuntu-latest
+    needs: [build-test]
+    steps:
+      - name: Merge Artifacts
+        id: merge-artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          delete-merged: true
+          name: wheels
+          pattern: wheels-*
+
+  pypi-publish:
+    uses: ci/pypi_upload.yml
+    needs: merge
+    if: github.event.inputs.upload == 'true'
+    with:
+      project_name: 'neuron'

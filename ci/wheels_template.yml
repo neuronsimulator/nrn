@@ -1,0 +1,122 @@
+name: Template for building NEURON Python wheels
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        description: The platform (OS) for which to build the wheel
+        required: true
+      python_version:
+        description: The Python version for which to build the wheel
+        required: true
+      commit:
+        description: The commit of NEURON for which to build the wheel
+        default: 'master'
+        required: true
+      version:
+        description: Override version (tag name), in format major.minor.patch
+        default: ''
+        required: false
+      build_type:
+        description: The type of build (release or nightly)
+        default: 'nightly'
+        options:
+          - 'nightly'
+          - 'release'
+      clone_depth:
+        description: The depth to clone the repo
+        default: 1
+        type: string
+      optimize_rxd:
+        description: Whether to optimize the RX3D Python module
+        default: false
+        type: boolean
+
+jobs:
+  build-test:
+    name: Build and test Python ${{ inputs.python_version }} wheel on ${{ inputs.platform }}
+    runs-on: ${{ inputs.platform }}
+    timeout-minutes: 60
+    steps:
+      - name: Check out code at branch/commit ${{ inputs.commit }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit }}
+          submodules: recursive
+          fetch-depth: ${{ inputs.clone_depth }}
+
+      - name: Read MacOS Python installer configuration
+        if: runner.os == 'macOS'
+        uses: pietrobolcato/action-read-yaml@1.0.0
+        id: read_pyver
+        with:
+          config: ${{ github.workspace }}/ci/macos_python_installers.yml
+
+      - name: Install Python from python.org
+        if: runner.os == 'macOS'
+        run: |
+          version=${{ steps.read_pyver.outputs['Python${{ inputs.python_version }}.version'] }}
+          installer_name=${{ steps.read_pyver.outputs['Python${{ inputs.python_version }}.installer_name']
+          installer_filename="python-${version}-${installer_name}"
+          url="https://www.python.org/ftp/python/${version}/${installer_filename}"
+          curl $url -o $installer_filename
+          sudo installer -pkg $installer_filename -target /
+
+      - name: Install system dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install --cask xquartz
+          brew install flex bison cmake mpich
+          brew unlink mpich && brew install openmpi
+          cmake --version
+          # Uninstall libomp for compatibility with issue #817
+          brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
+          echo "$(brew --prefix)/opt/cmake/bin:$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
+
+      - name: Install readline
+        if: runner.os == 'macOS'
+        run: |
+          sudo mkdir -p /opt/nrnwheel/$(uname -m)
+          sudo bash packaging/python/build_static_readline_osx.bash
+
+      - name: Change name of package for release
+        if: inputs.build_type == 'release'
+        run: |
+          python3 -m pip install tomli tomli-w
+          python3 packaging/python/change_name.py ./pyproject.toml neuron
+
+      - name: Optimize RX3D Python module
+        if: inputs.optimize_rxd == true
+        run: |
+          echo "NRN_RX3D_OPT_LEVEL=2" >> $GITHUB_ENV
+
+      - name: Set custom version
+        if: inputs.version != ''
+        run: |
+          echo SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.version }} >> $GITHUB_ENV
+
+      - name: Build wheel
+        run: |
+          bash packaging/python/build_wheels.bash $(uname -s) ${{ inputs.python_version }}
+
+      - name: Upload wheel files
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ inputs.python_version }}-${{ inputs.platform }}
+          path: wheelhouse/*.whl
+
+      - name: Setup Python ${{ inputs.python_version }} for testing
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Install test dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt update
+          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
+
+      - name: Test wheel with ${{ inputs.python_version }}
+        run: |
+          minor_version="$(python${{ inputs.python_version }} -c 'import sys;print(sys.version_info.minor)')"
+          bash packaging/python/test_wheels.sh $(command -v python${{ inputs.python_version }}) wheelhouse/*cp3${minor_version}*.whl
