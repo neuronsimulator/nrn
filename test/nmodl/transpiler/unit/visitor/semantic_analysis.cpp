@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
@@ -14,7 +13,6 @@
 #include "utils/test_utils.hpp"
 #include "visitors/semantic_analysis_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
-#include "nmodl/utils/logger.hpp"
 
 
 using namespace nmodl;
@@ -33,7 +31,6 @@ bool run_semantic_analysis_visitor(const std::string& text) {
     SymtabVisitor().visit_program(*ast);
     return SemanticAnalysisVisitor{}.check(*ast);
 }
-
 
 SCENARIO("TABLE stmt", "[visitor][semantic_analysis]") {
     GIVEN("Procedure with more than one argument") {
