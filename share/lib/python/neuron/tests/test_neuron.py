@@ -7,7 +7,7 @@ $Id$
 
 import unittest
 import neuron
-from neuron import h
+from neuron import n
 
 
 class NeuronTestCase(unittest.TestCase):
@@ -26,23 +26,23 @@ class NeuronTestCase(unittest.TestCase):
         b.s = "two"
         assert a.s == "one"
         assert b.s == "two"
-        assert h.A[0].s == "one"
+        assert n.A[0].s == "one"
         assert a.p() == 7.0
         assert b.p() == 5.0
         a.a = 2
         b.a = 3
         assert a.a == 2
         assert b.a == 3
-        assert h.List("A").count() == 2
+        assert n.List("A").count() == 2
         a = 1
         b = 1
-        assert h.List("A").count() == 0
+        assert n.List("A").count() == 0
 
     @classmethod
     def psection(cls):
         """Test neuron.psection(Section)"""
 
-        s = h.Section(name="soma")
+        s = n.Section(name="soma")
         neuron.psection(s)
 
     def testpsection(self):
@@ -56,13 +56,13 @@ class NeuronTestCase(unittest.TestCase):
         """Test use of some  Py_LIMITED_API for python3."""
 
         # Py_nb_bool
-        assert True if h else False
-        assert True if h.List else False
+        assert True if n else False
+        assert True if n.List else False
         # ensure creating a List doesn't change the truth value
-        l = h.List()
-        assert True if h.List else False
+        l = n.List()
+        assert True if n.List else False
         assert False if l else True
-        v = h.Vector(1)
+        v = n.Vector(1)
         l.append(v)
         assert True if l else False
 
@@ -77,8 +77,8 @@ class NeuronTestCase(unittest.TestCase):
     def testIterators(self):
         """Test section, segment, mechanism, rangevar iterators."""
         # setup model
-        sections = [h.Section(name="s%d" % i) for i in range(3)]
-        iclamps = [h.IClamp(sec(0.5)) for sec in sections]
+        sections = [n.Section(name="s%d" % i) for i in range(3)]
+        iclamps = [n.IClamp(sec(0.5)) for sec in sections]
         for i, sec in enumerate(sections):
             sec.nseg = 3
             sec.insert("pas")
@@ -87,7 +87,7 @@ class NeuronTestCase(unittest.TestCase):
         import hashlib
 
         sha = hashlib.sha256()
-        for sec in h.allsec():
+        for sec in n.allsec():
             for seg in sec:
                 for mech in seg:
                     for var in mech:
@@ -110,14 +110,14 @@ class NeuronTestCase(unittest.TestCase):
 
     def testSectionArgOrder(self):
         """First optional arg for Section is name (but name="name" is recommended)"""
-        soma = h.Section("soma")
+        soma = n.Section("soma")
         assert soma.name() == "soma"
 
     def testSectionCell(self):
         """Section.cell() internally referenced as weakref."""
         err = -1
         try:
-            soma = h.Section(cell="foo", name="soma")
+            soma = n.Section(cell="foo", name="soma")
             err = 1
         except:
             err = 0
@@ -128,7 +128,7 @@ class NeuronTestCase(unittest.TestCase):
                 return "hello"
 
         c = Cell()
-        soma = h.Section(cell=c, name="soma")
+        soma = n.Section(cell=c, name="soma")
         assert soma.name() == "hello.soma"
         assert soma.cell() == c
         del c
@@ -138,17 +138,17 @@ class NeuronTestCase(unittest.TestCase):
         """As of v8.0, iteration over a SectionList does not change the cas"""
         # See issue 509. SectionList iterator bug requires change to
         # longstanding behavior
-        soma = h.Section(name="soma")
+        soma = n.Section(name="soma")
         soma.push()
-        sections = [h.Section(name="s%d" % i) for i in range(3)]
-        assert len([s for s in h.allsec()]) == 4
-        sl = h.SectionList(sections)
+        sections = [n.Section(name="s%d" % i) for i in range(3)]
+        assert len([s for s in n.allsec()]) == 4
+        sl = n.SectionList(sections)
         # Iteration over s SectionList does not change the currently accessed section
         for s in sl:
-            assert 1 and h.cas() == soma
+            assert 1 and n.cas() == soma
         # If an iteration does not complete the section stack is still ok.
         assert sections[1] in sl
-        assert 2 and h.cas() == soma
+        assert 2 and n.cas() == soma
 
     @classmethod
     def ExtendedSection(cls):
@@ -218,8 +218,8 @@ class NeuronTestCase(unittest.TestCase):
     def test_newobj_err(self):
         """Test deletion of incompletely constructed objects"""
         print()  # Error message not on above line
-        h.load_file("stdlib.hoc")  # need hoc String
-        h(
+        n.load_file("stdlib.hoc")  # need hoc String
+        n(
             """
 begintemplate Foo
 endtemplate Foo
@@ -250,9 +250,9 @@ endtemplate NewObj
         # arg[0] - arg[1] + 1 should be successfully constructed
         # arg[1] should be partially constructed and destroyed.
         args = (4, 2)
-        a = h.NewObj(*args)
-        b = h.List("NewObj")
-        c = h.List("Foo")
+        a = n.NewObj(*args)
+        b = n.List("NewObj")
+        c = n.List("Foo")
         print("#NewObj and #Foo in existence", b.count(), c.count())
         z = args[0] - args[1] + 1
         assert b.count() == z
@@ -261,8 +261,8 @@ endtemplate NewObj
         del a
         del b
         del c
-        b = h.List("NewObj")
-        c = h.List("Foo")
+        b = n.List("NewObj")
+        c = n.List("Foo")
         print("after del a #NewObj and #Foo in existence", b.count(), c.count())
         assert b.count() == 0
         assert c.count() == 0
@@ -273,13 +273,13 @@ endtemplate NewObj
 def basicRxD3D():
     from neuron import h, rxd
 
-    s = h.Section(name="s")
+    s = n.Section(name="s")
     s.L = s.diam = 1
     cyt = rxd.Region([s])
     ca = rxd.Species(cyt)
     rxd.set_solve_type(dimension=3)
-    h.finitialize(-65)
-    h.fadvance()
+    n.finitialize(-65)
+    n.fadvance()
     return 1
 
 
