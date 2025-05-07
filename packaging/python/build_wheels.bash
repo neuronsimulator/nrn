@@ -165,11 +165,11 @@ platform="${1}"
 python_version_or_interpreter="${2}"
 if [[ "${platform}" != 'CI' ]]; then
     CIBW_BUILD=""
+    # remove any dots since various CI actions require it, and it's easier to do it here
+    python_version_or_interpreter="${python_version_or_interpreter//./}"
     for ver in ${python_version_or_interpreter}; do
-        # remove any dots since various CI actions require it, and it's easier to do it here
-        ver_nodot="$(printf "%s" "${ver}" | tr -d '.')"
         # we only build cpython-compatible wheels for now
-        CIBW_BUILD="${CIBW_BUILD} cp${ver_nodot}*"
+        CIBW_BUILD="${CIBW_BUILD} cp${ver}*"
     done
     export CIBW_BUILD
 fi
