@@ -23,6 +23,7 @@ on:
       build_type:
         description: The type of build (release or nightly)
         default: 'nightly'
+        type: string
       clone_depth:
         description: The depth to clone the repo
         default: '1'
