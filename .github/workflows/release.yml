@@ -12,7 +12,7 @@ on:
         default: 'x.y.z'
         required: true
       pypi_upload:
-        description: 'Whether to upload wheels to PyPI or not'
+        description: 'Whether to upload wheels to PyPI or not (CAUTION: VERSIONS CANNOT BE REPLACED!)'
         default: false
         required: true
         type: boolean
