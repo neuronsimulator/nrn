@@ -14,12 +14,10 @@ on:
       commit:
         description: The commit of NEURON for which to build the wheel
         default: 'master'
-        required: true
         type: string
       version:
         description: Override version (tag name), in format major.minor.patch
         default: ''
-        required: false
         type: string
       build_type:
         description: The type of build (release or nightly)
