@@ -8,6 +8,16 @@ on:
         type: boolean
         default: false
         required: true
+      commit:
+        description: The branch/commit to use for the release
+        default: 'release/x.y'
+        required: true
+        type: string
+      version:
+        description: The version to use for the release
+        default: 'x.y.z'
+        required: true
+        type: string
 
 jobs:
   build-test:
@@ -17,6 +27,8 @@ jobs:
       python_version: ${{ matrix.python_version }}
       build_type: 'release'
       optimize_rxd: true
+      commit: ${{ github.event.inputs.commit }}
+      version: ${{ github.event.inputs.version }}
     strategy:
       matrix:
         os: ['macos-14', 'ubuntu-22.04-arm']
