@@ -46,18 +46,22 @@ jobs:
           submodules: recursive
           fetch-depth: ${{ inputs.clone_depth }}
 
-      - name: Read MacOS Python installer configuration
-        if: runner.os == 'macOS'
-        uses: pietrobolcato/action-read-yaml@1.0.0
-        id: read_pyver
-        with:
-          config: ${{ github.workspace }}/ci/macos_python_installers.yml
-
       - name: Install Python from python.org
         if: runner.os == 'macOS'
         run: |
-          version=${{ steps.read_pyver.outputs['Python${{ inputs.python_version }}.version'] }}
-          installer_name=${{ steps.read_pyver.outputs['Python${{ inputs.python_version }}.installer_name']
+          # I would've preferred the versions to be in their own YAML file for
+          # readability, but alas, GitHub Actions does not support expanding
+          # nested expressions, so we do this the brute-force way with Bash
+          case "${{ inputs.python_version }}" in
+            3.9) version="3.9.13" ;;
+            3.10) version="3.10.11" ;;
+            3.11) version="3.11.7" ;;
+            3.12) version="3.12.0" ;;
+            3.13) version="3.13.0" ;;
+            *) echo "Unknown Python version"; exit 1 ;;
+          esac
+
+          installer_name="macos11.pkg"
           installer_filename="python-${version}-${installer_name}"
           url="https://www.python.org/ftp/python/${version}/${installer_filename}"
           curl $url -o $installer_filename
