@@ -4,10 +4,9 @@ on:
   workflow_call:
     inputs:
       project_name:
-        description: The name of the PyPI project
-        options:
-          - 'neuron-nightly'
-          - 'neuron'
+        description: The name of the PyPI project (neuron or neuron-nightly)
+        type: string
+        required: true
 
 jobs:
   pypi-publish:
