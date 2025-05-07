@@ -5,6 +5,7 @@ on:
     - cron: "0 0 * * *"
 jobs:
   build-test:
+    name: Build and test for nightly
     uses: ./.github/workflows/wheels_template.yml
     with:
       platform: ${{ matrix.os }}

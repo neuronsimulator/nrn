@@ -21,6 +21,7 @@ on:
 
 jobs:
   build-test:
+    name: Build and test for release
     uses: ./.github/workflows/wheels_template.yml
     with:
       platform: ${{ matrix.os }}
