@@ -153,14 +153,12 @@ stages:
         condition: and(in(variables['Build.Reason'], 'Manual'), eq(variables['NRN_RELEASE_UPLOAD'], 'true'))
         displayName: 'Change name of package for release'
 
-      # 10.14 is required for full C++17 support according to
-      # https://cibuildwheel.readthedocs.io/en/stable/cpp_standards, but it
-      # seems that 10.15 is actually needed for std::filesystem::path.
       - script: |
-          export MACOSX_DEPLOYMENT_TARGET=10.15
           export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-          export NRN_BUILD_FOR_UPLOAD=1
+          if [ "$BUILD_REASON" = "Manual" ] || [ "$BUILD_REASON" = "Schedule" ]; then
+            export NRN_RX3D_OPT_LEVEL=1
+          endif
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/$(uname -m)
           packaging/python/build_wheels.bash osx $(python.nodot)
