@@ -72,6 +72,10 @@ jobs:
           brew install --cask xquartz
           brew install flex bison cmake mpich
           brew unlink mpich && brew install openmpi
+          # Install newer version of Bash on MacOS
+          brew install bash
+          # For debugging
+          bash --version
           cmake --version
           # Uninstall libomp for compatibility with issue #817
           brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
