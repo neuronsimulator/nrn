@@ -172,8 +172,7 @@ stages:
           fi
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/$(uname -m)
-          bash --version
-          bash packaging/python/build_wheels.bash osx $(python.nodot)
+          packaging/python/build_wheels.bash osx $(python.nodot)
         displayName: 'Build MacOS Wheel'
 
       - template: ci/azure-wheel-test-upload.yml
