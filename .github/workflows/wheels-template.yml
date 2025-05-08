@@ -92,7 +92,7 @@ jobs:
       - name: Optimize RX3D Python module
         if: inputs.optimize_rxd == true
         run: |
-          echo "NRN_RX3D_OPT_LEVEL=2" >> $GITHUB_ENV
+          echo "NRN_RX3D_OPT_LEVEL=1" >> $GITHUB_ENV
 
       - name: Set custom version
         if: inputs.version != ''
