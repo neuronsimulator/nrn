@@ -72,7 +72,7 @@ stages:
       - script: |
           if [ "$BUILD_REASON" = "Manual" ] || [ "$BUILD_REASON" = "Schedule" ]; then
             export NRN_RX3D_OPT_LEVEL=1
-          endif
+          fi
           sudo mkdir -p /opt/nrnwheel/mpt
           sudo tar -zxf $(mpt_headersSF.secureFilePath) --directory /opt/nrnwheel/mpt
           packaging/python/build_wheels.bash linux $(python.nodot)
@@ -161,7 +161,7 @@ stages:
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
           if [ "$BUILD_REASON" = "Manual" ] || [ "$BUILD_REASON" = "Schedule" ]; then
             export NRN_RX3D_OPT_LEVEL=1
-          endif
+          fi
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/$(uname -m)
           packaging/python/build_wheels.bash osx $(python.nodot)
