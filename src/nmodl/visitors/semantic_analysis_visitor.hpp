@@ -100,6 +100,9 @@ class SemanticAnalysisVisitor: public ConstAstVisitor {
 
     bool check_table_vars(const ast::Program& node);
 
+    /// Check functions have return statements, log warning otherwise
+    void check_functions_have_return_statements(const ast::Program& node);
+
   public:
     SemanticAnalysisVisitor(bool accel_backend = false)
         : accel_backend(accel_backend) {}

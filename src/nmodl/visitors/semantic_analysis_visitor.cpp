@@ -17,6 +17,7 @@
 #include "ast/statement_block.hpp"
 #include "ast/string.hpp"
 #include "ast/suffix.hpp"
+#include "ast/binary_expression.hpp"
 #include "ast/table_statement.hpp"
 #include "symtab/symbol_properties.hpp"
 #include "utils/logger.hpp"
@@ -50,6 +51,55 @@ bool SemanticAnalysisVisitor::check_table_vars(const ast::Program& node) {
     }
 
     return check_fail;
+}
+
+static bool check_function_has_return_statement(const ast::FunctionBlock& node) {
+    // check a given FUNCTION has a return statement, and return true if yes, false if no
+    const auto& func_name = node.get_node_name();
+    // get all binary expressions that are of the form x = y
+    const auto& binary_expr_nodes = collect_nodes(node, {ast::AstNodeType::BINARY_EXPRESSION});
+    for (const auto& binary_expr_node: binary_expr_nodes) {
+        const auto& expr = std::dynamic_pointer_cast<const ast::BinaryExpression>(binary_expr_node);
+        const auto& lhs = expr->get_lhs();
+        const auto& op = expr->get_op();
+        if (op.eval() == "=" && lhs->get_node_name() == func_name) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool check_function_has_verbatim_block(const ast::FunctionBlock& node) {
+    // check a given FUNCTION has a VERBATIM block; those can interfere with detecting return
+    // statements
+    const auto& func_name = node.get_node_name();
+    const auto& verbatim_blocks = collect_nodes(node, {ast::AstNodeType::VERBATIM});
+    return !verbatim_blocks.empty();
+}
+
+
+void SemanticAnalysisVisitor::check_functions_have_return_statements(const ast::Program& node) {
+    // check that all functions have a return statement, i.e. that there is a statement of the form
+    // <funcname> = <expr> somewhere in each FUNCTION block
+    const auto& function_nodes = collect_nodes(node, {ast::AstNodeType::FUNCTION_BLOCK});
+    for (const auto& func_node: function_nodes) {
+        const auto& func = std::dynamic_pointer_cast<const ast::FunctionBlock>(func_node);
+        const auto& has_return_statement = check_function_has_return_statement(*func);
+        const auto& has_verbatim_block = check_function_has_verbatim_block(*func);
+        if (!has_return_statement) {
+            if (!has_verbatim_block) {
+                logger->warn(fmt::format(
+                    "SemanticAnalysisVisitor :: FUNCTION {} does not have a return statement",
+                    func->get_node_name()));
+            } else {
+                logger->warn(
+                    fmt::format("SemanticAnalysisVisitor :: FUNCTION {} does not have an explicit "
+                                "return statement, but VERBATIM block detected (possible return "
+                                "statement in VERBATIM block?)",
+                                func->get_node_name()));
+            }
+        }
+    }
 }
 
 
@@ -113,6 +163,8 @@ bool SemanticAnalysisVisitor::check(const ast::Program& node) {
         }
     }
     /// -->
+
+    check_functions_have_return_statements(node);
 
     visit_program(node);
     return check_fail;
