@@ -159,27 +159,5 @@ environment-pass = [
 #             ships an extra copy of libnrniv.so and hence exclude it here.
 repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so' --exclude 'libcorenrnmech_internal.so' --exclude 'libnrnmech.so'"
 
-[tool.cibuildwheel.linux.environment]
-# all of the below env variables need to be specified under `[tool.cibuildwheel.linux.environment-pass]`
-CMAKE_PREFIX_PATH = "/nrnwheel/ncurses;/nrnwheel/readline"
-NRN_ENABLE_MPI_DYNAMIC = "ON"
-NRN_WHEEL_STATIC_READLINE = "ON"
-NRN_ENABLE_CORENEURON = "ON"
-CORENRN_ENABLE_OPENMP = "ON"
-NRN_BINARY_DIST_BUILD = "ON"
-NRN_RX3D_OPT_LEVEL = "2"
-
 [tool.cibuildwheel.macos]
 repair-wheel-command = "delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}"
-
-[tool.cibuildwheel.macos.environment]
-CMAKE_PREFIX_PATH = "/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11"
-NRN_ENABLE_MPI_DYNAMIC = "ON"
-NRN_MPI_DYNAMIC = "$(brew --prefix)/opt/openmpi/include;$(brew --prefix)/opt/mpich/include"
-NRN_WHEEL_STATIC_READLINE = "ON"
-NRN_ENABLE_CORENEURON = "ON"
-NRN_BINARY_DIST_BUILD = "ON"
-NRN_RX3D_OPT_LEVEL = "2"
-# For some reason, cibuildwheel is not reading this from the env, so we set it here.
-# Note that the value is bumped to 11.0 on ARM.
-MACOSX_DEPLOYMENT_TARGET="10.15"
