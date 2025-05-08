@@ -76,6 +76,53 @@ collect_dirs_macos() {
 }
 
 
+# cibuildwheel does not pass any environmental variables to the container
+# unless explicitly specified. Unfortunately, some of them should be set
+# dynamically, so we can't put them in pyproject.toml, and hence we set them
+# here. All of them can be overridden using its corresponding environmental
+# variable. Note that on Linux the variables must also be present in
+# pyproject.toml's `[tool.cibuildwheel.linux.environment-pass]` section, or set
+# as the `CIBW_ENVIRONMENT_PASS_LINUX` env variable.
+set_cibw_environment() {
+    platform="${1}"
+    if [ "${platform}" = 'macos' ]; then
+        declare -A defaults=(
+            [CMAKE_PREFIX_PATH]="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11"
+            [NRN_ENABLE_MPI_DYNAMIC]="ON"
+            [NRN_MPI_DYNAMIC]="$(brew --prefix)/opt/openmpi/include;$(brew --prefix)/opt/mpich/include"
+            [NRN_WHEEL_STATIC_READLINE]="ON"
+            [NRN_ENABLE_CORENEURON]="ON"
+            [NRN_BINARY_DIST_BUILD]="ON"
+            [NRN_RX3D_OPT_LEVEL]="0"
+            # 10.14 is required for full C++17 support according to
+            # https://cibuildwheel.readthedocs.io/en/stable/cpp_standards, but it
+            # seems that 10.15 is actually needed for std::filesystem::path.
+            # 11.0 is required on ARM machines
+            [MACOSX_DEPLOYMENT_TARGET]="10.15"
+        )
+    elif [ "${platform}" = 'linux' ]; then
+        declare -A defaults=(
+            [CMAKE_PREFIX_PATH]="/nrnwheel/ncurses;/nrnwheel/readline"
+            [NRN_ENABLE_MPI_DYNAMIC]="ON"
+            [NRN_MPI_DYNAMIC]="/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)"
+            [NRN_WHEEL_STATIC_READLINE]="ON"
+            [NRN_ENABLE_CORENEURON]="ON"
+            [CORENRN_ENABLE_OPENMP]="ON"
+            [NRN_BINARY_DIST_BUILD]="ON"
+            [NRN_RX3D_OPT_LEVEL]="0"
+        )
+    fi
+
+    local env_string=""
+    for var in "${!defaults[@]}"; do
+        local val="${!var:-${defaults[$var]}}"
+        env_string+="${var}='${val}' "
+    done
+
+    export CIBW_ENVIRONMENT="${env_string}"
+}
+
+
 # for building portable wheels
 # if building a Linux portable wheel, docker or podman must be installed
 # the preferred container engine can be set using the env variable `CIBW_CONTAINER_ENGINE`
@@ -99,11 +146,13 @@ build_wheel_portable() {
         export NRN_MPI_DYNAMIC
     fi
 
-    if [ "${platform}" = 'macos' ] && [ "$(uname -m)" = 'x86_64' ]; then
-        export MACOSX_DEPLOYMENT_TARGET='10.15'
-    else
-        export MACOSX_DEPLOYMENT_TARGET='11.0'
+    if [ "${platform}" = 'macos' ]; then
+        if [ "$(uname -m)" = 'arm64' ]; then
+            export MACOSX_DEPLOYMENT_TARGET='11.0'
+        fi
     fi
+
+    set_cibw_environment "${platform}"
 
     CIBW_BUILD_VERBOSITY=1 python -m cibuildwheel --debug-traceback --platform "${platform}" --output-dir wheelhouse
 
@@ -166,6 +215,8 @@ python_version_or_interpreter="${2}"
 if [[ "${platform}" != 'CI' ]]; then
     CIBW_BUILD=""
     for ver in ${python_version_or_interpreter}; do
+        # remove any dots since various CI actions require it, and it's easier to do it here
+        ver="${ver//./}"
         # we only build cpython-compatible wheels for now
         CIBW_BUILD="${CIBW_BUILD} cp${ver}*"
     done

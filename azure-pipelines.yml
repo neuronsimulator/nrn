@@ -70,6 +70,9 @@ stages:
       # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
       # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
       - script: |
+          if [ "$BUILD_REASON" = "Manual" ] || [ "$BUILD_REASON" = "Schedule" ]; then
+            export NRN_RX3D_OPT_LEVEL=1
+          fi
           sudo mkdir -p /opt/nrnwheel/mpt
           sudo tar -zxf $(mpt_headersSF.secureFilePath) --directory /opt/nrnwheel/mpt
           packaging/python/build_wheels.bash linux $(python.nodot)
@@ -130,6 +133,14 @@ stages:
           brew install flex bison mpich
           brew unlink mpich && brew install openmpi
           cmake --version
+          # the version of bash used by Azure (which is the default one
+          # provided by Apple) is too old and does not support associative
+          # arrays. This is because newer versions of bash have switched their
+          # license from GNU GPL v2 to GNU GPL v3, and Apple refuses to add any
+          # GNU GPL v3-licenced software in their stack, so we need to install
+          # the homebrew one
+          brew install bash
+          bash --version
           # see https://github.com/BlueBrain/CoreNeuron/issues/817, uninstall libomp until we fix this
           # as we are building wheels, we shouldn't enable OpenMP here anyway
           brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
@@ -153,14 +164,12 @@ stages:
         condition: and(in(variables['Build.Reason'], 'Manual'), eq(variables['NRN_RELEASE_UPLOAD'], 'true'))
         displayName: 'Change name of package for release'
 
-      # 10.14 is required for full C++17 support according to
-      # https://cibuildwheel.readthedocs.io/en/stable/cpp_standards, but it
-      # seems that 10.15 is actually needed for std::filesystem::path.
       - script: |
-          export MACOSX_DEPLOYMENT_TARGET=10.15
           export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-          export NRN_BUILD_FOR_UPLOAD=1
+          if [ "$BUILD_REASON" = "Manual" ] || [ "$BUILD_REASON" = "Schedule" ]; then
+            export NRN_RX3D_OPT_LEVEL=1
+          fi
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/$(uname -m)
           packaging/python/build_wheels.bash osx $(python.nodot)
