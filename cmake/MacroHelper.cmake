@@ -181,17 +181,69 @@ macro(nocmodl_mod_to_cpp modfile_basename modfile_compat)
 
 endmacro()
 
+# ~~~
 # =============================================================================
-# Create symbolic links
+# Create symbolic links during the install phase
+#
+# Usage: nrn_install_dir_symlink(source_dir symlink_dir)
+#
+# Creates a relative symbolic link at `CMAKE_INSTALL_PREFIX/symlink_dir` pointing
+# to `source_dir`, executed during `ninja install`. The link is relative to the
+# symlink's parent directory (e.g., `x86_64/bin -> ../bin`).
+#
+# Arguments:
+#   source_dir: Path to the target directory (absolute, e.g., `/home/user/bin`,
+#               or relative, e.g., `bin`, `neuron/.data/bin`).
+#   symlink_dir: Path where the symlink is created (absolute or relative, e.g.,
+#                `x86_64/bin`, `neuron/.data/x86_64/bin`).
+#
+# In NEURON, used to create `install/x86_64/bin -> ../bin` and `install/x86_64/lib -> ../lib`
+# for non-wheel builds, or `install/neuron/.data/x86_64/bin -> ../bin` for wheel builds.
+#
+# The macro ensures the symlink's parent directory (e.g., `install/x86_64`) exists
+# and computes the relative path from the symlink's parent to the source directory.
 # =============================================================================
+# ~~~
 macro(nrn_install_dir_symlink source_dir symlink_dir)
-  # make sure to have directory path exist upto parent dir
-  get_filename_component(parent_symlink_dir ${symlink_dir} DIRECTORY)
-  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${parent_symlink_dir})")
-  # create symbolic link
-  install(
-    CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${source_dir} ${symlink_dir})")
-endmacro(nrn_install_dir_symlink)
+  # Create variables for substitution (@arg@ not allowed for CONFIGURE)
+  set(src_dir "${source_dir}")
+  set(link_dir "${symlink_dir}")
+  get_filename_component(parent_symlink_dir "${link_dir}" DIRECTORY)
+
+  # ~~~
+  # Define CODE block with placeholders
+  # @name@ seems to be the only way to get names declared in this macro
+  # to get their proper value during install. ${name} ends up empty.
+  # ~~~
+  set(code
+      [[
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_INSTALL_PREFIX}/@parent_symlink_dir@"
+      COMMAND_ECHO STDOUT
+    )
+    if(IS_ABSOLUTE "@src_dir@")
+      set(abs_source_dir "@src_dir@")
+    else()
+      file(TO_CMAKE_PATH "${CMAKE_INSTALL_PREFIX}/@src_dir@" abs_source_dir)
+    endif()
+    if(IS_ABSOLUTE "@link_dir@")
+      set(abs_symlink_dir "@link_dir@")
+    else()
+      file(TO_CMAKE_PATH "${CMAKE_INSTALL_PREFIX}/@link_dir@" abs_symlink_dir)
+    endif()
+    # Compute relative path from symlink's parent to source
+    get_filename_component(abs_parent_symlink_dir "${abs_symlink_dir}" DIRECTORY)
+    file(RELATIVE_PATH rel_path "${abs_parent_symlink_dir}" "${abs_source_dir}")
+
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E create_symlink "${rel_path}" "${abs_symlink_dir}"
+      COMMAND_ECHO STDOUT
+    )
+  ]])
+
+  string(CONFIGURE "${code}" configured_code @ONLY)
+  install(CODE "${configured_code}")
+endmacro()
 
 # ========================================================================
 # There is an edge case to 'find_package(MPI REQUIRED)' in that we can still build a universal2
