@@ -205,21 +205,22 @@ endmacro()
 # =============================================================================
 # ~~~
 macro(nrn_install_dir_symlink source_dir symlink_dir)
-  # Create variables for substitution
+  # Create variables for substitution (@arg@ not allowed for CONFIGURE)
   set(src_dir "${source_dir}")
   set(link_dir "${symlink_dir}")
-  # Get the parent directory of the symlink
   get_filename_component(parent_symlink_dir "${link_dir}" DIRECTORY)
 
+  # ~~~
   # Define CODE block with placeholders
+  # @name@ seems to be the only way to get names declared in this macro
+  # to get their proper value during install. ${name} ends up empty.
+  # ~~~
   set(code
       [[
-    # Create parent directory
     execute_process(
       COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_INSTALL_PREFIX}/@parent_symlink_dir@"
       COMMAND_ECHO STDOUT
     )
-    # Resolve source and symlink paths
     if(IS_ABSOLUTE "@src_dir@")
       set(abs_source_dir "@src_dir@")
     else()
@@ -233,14 +234,13 @@ macro(nrn_install_dir_symlink source_dir symlink_dir)
     # Compute relative path from symlink's parent to source
     get_filename_component(abs_parent_symlink_dir "${abs_symlink_dir}" DIRECTORY)
     file(RELATIVE_PATH rel_path "${abs_parent_symlink_dir}" "${abs_source_dir}")
-    # Create symlink
+
     execute_process(
       COMMAND ${CMAKE_COMMAND} -E create_symlink "${rel_path}" "${abs_symlink_dir}"
       COMMAND_ECHO STDOUT
     )
   ]])
 
-  # Substitute variables into the CODE block
   string(CONFIGURE "${code}" configured_code @ONLY)
   install(CODE "${configured_code}")
 endmacro()
