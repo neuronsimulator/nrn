@@ -133,6 +133,14 @@ stages:
           brew install flex bison mpich
           brew unlink mpich && brew install openmpi
           cmake --version
+          # the version of bash used by Azure (which is the default one
+          # provided by Apple) is too old and does not support associative
+          # arrays. This is because newer versions of bash have switched their
+          # license from GNU GPL v2 to GNU GPL v3, and Apple refuses to add any
+          # GNU GPL v3-licenced software in their stack, so we need to install
+          # the homebrew one
+          brew install bash
+          bash --version
           # see https://github.com/BlueBrain/CoreNeuron/issues/817, uninstall libomp until we fix this
           # as we are building wheels, we shouldn't enable OpenMP here anyway
           brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
