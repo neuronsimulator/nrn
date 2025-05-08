@@ -12,6 +12,12 @@ bindir="$(uname -m)"
 # The name of the current program
 program_name="$(basename "${0}")"
 
+# If Ninja is available, and the user has not overridden CMAKE_GENERATOR, use
+# it instead of Make
+if command -v ninja >& /dev/null && [ -z "${CMAKE_GENERATOR:-}" ]; then
+    export CMAKE_GENERATOR='Ninja'
+fi
+
 # Where the `*.cmake` files are located
 NRN_CMAKE_PREFIX_PATH_DEFAULT="$(readlink -f "$(dirname "${0}")/../lib/cmake/")"
 if [ -n "${CMAKE_PREFIX_PATH:-}" ]; then
@@ -68,7 +74,13 @@ set -- "${args[@]}"
 modfiles=$(IFS=";"; echo "$*")
 
 # Configure the mod files
-cmake -S "${srcdir}" -B "${bindir}" -DNRNIVMODL_MOD_FILES="${modfiles}" -DNRNIVMODL_NEURON=@NRNIVMODL_NEURON@ -DNRNIVMODL_CORENEURON=@NRNIVMODL_CORENEURON@
+cmake \
+    -S "${srcdir}" \
+    -B "${bindir}" \
+    -G "${CMAKE_GENERATOR}" \
+    -DNRNIVMODL_MOD_FILES="${modfiles}" \
+    -DNRNIVMODL_NEURON=@NRNIVMODL_NEURON@ \
+    -DNRNIVMODL_CORENEURON=@NRNIVMODL_CORENEURON@
 
 # Actually build them
 cmake --build "${bindir}"
