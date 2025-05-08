@@ -120,7 +120,14 @@ add_executable(nmodl::nmodl ALIAS nmodl)
 add_dependencies(nmodl pywrapper)
 
 if(NMODL_ENABLE_PYTHON_BINDINGS)
-  add_dependencies(nmodl _nmodl)
+  if(NRN_ENABLE_PYTHON_DYNAMIC)
+    foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+      list(GET NRN_PYTHON_VERSIONS ${val} pyver)
+      add_dependencies(nmodl _nmodl${pyver})
+    endforeach()
+  else()
+    add_dependencies(nmodl _nmodl)
+  endif()
 endif()
 
 # =============================================================================

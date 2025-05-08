@@ -1,6 +1,7 @@
 # =============================================================================
 # pybind targets
 # =============================================================================
+include(${PROJECT_SOURCE_DIR}/cmake/PythonCompileHelper.cmake)
 set_source_files_properties(${PYBIND_GENERATED_SOURCES} PROPERTIES GENERATED TRUE)
 
 # Set -fno-var-tracking-assignments on pyast.cpp with GCC to avoid a warning + double compilation
@@ -69,15 +70,60 @@ if(NMODL_ENABLE_PYTHON_BINDINGS)
   # Note that LTO causes link time errors with GCC 8. To avoid this, we disable LTO
   # for pybind using NO_EXTRAS. See #266.
   # ~~~
-  pybind11_add_module(
-    _nmodl NO_EXTRAS ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/ast/ast_common.hpp
-    ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pybind_utils.hpp
-    ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pynmodl.cpp ${PYBIND_GENERATED_SOURCES})
-  add_dependencies(_nmodl lexer pyastgen util)
-  target_link_libraries(_nmodl PRIVATE printer symtab visitor pyembed)
-  set_target_properties(_nmodl PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG
-                                          ${NMODL_PROJECT_PURELIB_BINARY_DIR})
+  if(NRN_ENABLE_PYTHON_DYNAMIC)
+    foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+      list(GET NRN_PYTHON_VERSIONS ${val} pyver)
+      list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
+      list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
+      set(target "_nmodl${pyver}")
 
+      add_nrn_python_library(
+        _nmodl
+        TARGET
+        ${target}
+        PYTHON_VERSION
+        ${pyver}
+        LANGUAGE
+        "CXX"
+        SOURCES
+        ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pynmodl.cpp
+        ${PYBIND_GENERATED_SOURCES}
+        INCLUDES
+        ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}
+        ${PYBIND11_INCLUDE_DIR}
+        ${pyinc}
+        OUTPUT_DIR
+        ${PROJECT_BINARY_DIR}/lib/python/neuron/nmodl)
+
+    add_dependencies(${target} lexer pyastgen util)
+    target_compile_options(${target} PRIVATE "-fvisibility=hidden")
+      target_link_libraries(${target} PRIVATE printer symtab visitor pyembed)
+      set_target_properties(${target} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG
+                                                      ${NMODL_PROJECT_PURELIB_BINARY_DIR})
+    endforeach()
+  else()
+    add_nrn_python_library(
+      _nmodl
+      TARGET
+      _nmodl
+      PYTHON_VERSION
+      ${NRN_DEFAULT_PYTHON_VERSION}
+      LANGUAGE
+      "CXX"
+      SOURCES
+      ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pynmodl.cpp
+      ${PYBIND_GENERATED_SOURCES}
+      INCLUDES
+      ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}
+      ${NRN_DEFAULT_PYTHON_INCLUDES}
+      OUTPUT_DIR
+      ${PROJECT_BINARY_DIR}/lib/python/neuron/nmodl)
+
+    add_dependencies(_nmodl lexer pyastgen util)
+    target_link_libraries(_nmodl PRIVATE printer symtab visitor pyembed)
+    set_target_properties(_nmodl PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG
+                                            ${NMODL_PROJECT_PURELIB_BINARY_DIR})
+  endif()
   if(MSVC)
     target_compile_options(_nmodl PRIVATE /bigobj)
   endif()
@@ -112,7 +158,14 @@ file(COPY ${NMODL_PROJECT_PURELIB_SOURCE_DIR}/ext DESTINATION ${NMODL_PROJECT_PU
 if(NOT NRN_LINK_AGAINST_PYTHON)
   install(TARGETS pywrapper DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
   if(NMODL_ENABLE_PYTHON_BINDINGS)
-    install(TARGETS _nmodl DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/nmodl)
+    if(NRN_ENABLE_PYTHON_DYNAMIC)
+      foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+        list(GET NRN_PYTHON_VERSIONS ${val} pyver)
+        install(TARGETS _nmodl${pyver} DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/nmodl)
+      endforeach()
+    else()
+      install(TARGETS _nmodl DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/nmodl)
+    endif()
   endif()
 else()
   install(
