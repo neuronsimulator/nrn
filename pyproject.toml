@@ -160,4 +160,4 @@ environment-pass = [
 repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so' --exclude 'libcorenrnmech_internal.so' --exclude 'libnrnmech.so'"
 
 [tool.cibuildwheel.macos]
-repair-wheel-command = "delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}"
+repair-wheel-command = "delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel} --exclude 'libcorenrnmech_internal.dylib'"

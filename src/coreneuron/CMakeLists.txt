@@ -581,8 +581,9 @@ create_nrnmech(
   ${NRN_RUN_FROM_BUILD_DIR_ENV})
 target_include_directories(coreneuron-mod-lib PRIVATE ${PROJECT_BINARY_DIR}/include)
 target_include_directories(coreneuron-mod-bin PRIVATE ${PROJECT_BINARY_DIR}/include)
-set_target_properties(coreneuron-mod-lib PROPERTIES OUTPUT_NAME "corenrnmech_internal"
-                                                    LIBRARY_OUTPUT_DIRECTORY ${nrniv_core_prefix})
+set_target_properties(
+  coreneuron-mod-lib PROPERTIES OUTPUT_NAME "corenrnmech_internal" LIBRARY_OUTPUT_DIRECTORY
+                                                                   ${PROJECT_BINARY_DIR}/lib)
 set_target_properties(coreneuron-mod-bin PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${nrniv_core_prefix})
 add_dependencies(coreneuron-mod-lib coreneuron-core nmodl::nmodl)
 add_dependencies(coreneuron-mod-bin coreneuron-core nmodl::nmodl)
@@ -592,6 +593,7 @@ add_custom_target(nrniv-core ALL DEPENDS coreneuron-mod-lib coreneuron-mod-bin)
 # Build a target representing the libcorenrnmech_internal.so that is produced under bin/x86_64,
 # which executables such as the unit tests must link against
 add_library(builtin-libcorenrnmech ALIAS coreneuron-mod-lib)
+install(TARGETS coreneuron-mod-lib DESTINATION "${NRN_INSTALL_DATA_PREFIX}/lib")
 
 if(CORENRN_ENABLE_GPU)
   separate_arguments(CORENRN_ACC_FLAGS UNIX_COMMAND "${NVHPC_ACC_COMP_FLAGS}")
