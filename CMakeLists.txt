@@ -212,6 +212,24 @@ include(cmake/Coverage.cmake)
 set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast FastDebug)
 include(ReleaseDebugAutoFlags)
 
+# =============================================================================
+# Enable Python support
+# =============================================================================
+
+# Since PythonInterp module prefers system-wide python, if PYTHON_EXECUTABLE is not set, look it up
+# in the PATH exclusively.
+if(NOT PYTHON_EXECUTABLE)
+  message(
+    STATUS "-DPYTHON_EXECUTABLE not specified. Looking for `python3` in the PATH exclusively...")
+  find_program(
+    PYTHON_EXECUTABLE python3
+    PATHS ENV PATH
+    NO_DEFAULT_PATH)
+  message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
+endif()
+
+find_package(PythonInterp 3.7 REQUIRED)
+
 # Try and emit an intelligent warning if the version number currently set in the CMake project(...)
 # call is inconsistent with the output of git describe.
 include(cmake/CheckGitDescribeCompatibility.cmake)
@@ -397,23 +415,6 @@ else()
   set(HAVE_IV 0)
 endif()
 
-# =============================================================================
-# Enable Python support
-# =============================================================================
-
-# Since PythonInterp module prefers system-wide python, if PYTHON_EXECUTABLE is not set, look it up
-# in the PATH exclusively.
-if(NOT PYTHON_EXECUTABLE)
-  message(
-    STATUS "-DPYTHON_EXECUTABLE not specified. Looking for `python3` in the PATH exclusively...")
-  find_program(
-    PYTHON_EXECUTABLE python3
-    PATHS ENV PATH
-    NO_DEFAULT_PATH)
-  message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
-endif()
-
-find_package(PythonInterp 3.7 REQUIRED)
 if(NRN_ENABLE_PYTHON)
   # start afresh with PythonLibsNew's find_library without this, -DPYTHON_EXECUTABLE=`which python3`
   # -DNRN_PYTHON_DYNAMIC="python3.7;python3.9" would end up with a NRN_DEFAULT_PYTHON_LIBRARIES of
