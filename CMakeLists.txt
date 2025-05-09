@@ -264,6 +264,23 @@ endif()
 set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast FastDebug)
 include(ReleaseDebugAutoFlags)
 
+# ~~~
+# Figure out early what Python to use as a build helper for cmake.
+# Since PythonInterp module prefers system-wide python, if PYTHON_EXECUTABLE
+# is not set, look it up in the PATH exclusively.
+# ~~~
+if(NOT PYTHON_EXECUTABLE)
+  message(
+    STATUS "-DPYTHON_EXECUTABLE not specified. Looking for `python3` in the PATH exclusively...")
+  find_program(
+    PYTHON_EXECUTABLE python3
+    PATHS ENV PATH
+    NO_DEFAULT_PATH)
+  message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
+endif()
+
+find_package(PythonInterp 3.7 REQUIRED)
+
 # Try and emit an intelligent warning if the version number currently set in the CMake project(...)
 # call is inconsistent with the output of git describe.
 include(cmake/CheckGitDescribeCompatibility.cmake)
