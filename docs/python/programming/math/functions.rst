@@ -11,7 +11,14 @@ Diagnostics:
 
     These functions call the library routines supplied by the compiler. 
 
+.. note::
 
+    Every function on this page has a pure-Python alternative.
+    When working with Vector objects, to create a new Vector with the
+    function applied to each element of the original, use either list
+    comprehensions or numpy. When working with ``rxd`` objects (e.g.,
+    a :class:`rxd.Rate`), use the :ref:`rxd.rxdmath <rxdmath_prog_ref>`
+    module.
 ----
 
 .. function:: abs
@@ -51,7 +58,7 @@ Diagnostics:
         returns the integer part of its argument (truncates toward 0). 
 
         .. code-block::
-            none
+            python
 
             >>> h.int(3.14)
             3.0
@@ -104,7 +111,7 @@ Diagnostics:
 
             from neuron import h
 
-            for i in range(6,12):
+            for i in range(6, 12):
                 print(i, h.exp(i))
         
         .. note::
@@ -140,9 +147,24 @@ Diagnostics:
 
 .. function:: cos
 
-    trigonometric function of radian argument. 
+    Returns the trigonometric function of radian argument (a number).
 
-    see :meth:`Vector.sin` 
+    If you need to take the cosine of a Vector, use ``numpy``; e.g.,
+
+    .. code-block::
+        python
+
+        import numpy as np
+        from neuron import h
+
+        v = h.Vector([0, h.PI/6, h.PI/4, h.PI/2])
+        v2 = h.Vector(np.cos(v))
+        print(list(v2))
+
+        # [1.0, 0.8660254037844387, 0.7071067811865476, 6.123233995736766e-17]
+
+    To create a vector filled with a cosine/sine wave, see :meth:`Vector.sin` or
+    use ``numpy``.
 
     .. note::
 
@@ -154,9 +176,24 @@ Diagnostics:
 
 .. function:: sin
 
-    trigonometric function of radian argument. 
+   Returns the trigonometric function of radian argument (a number).
 
-    see :meth:`Vector.sin` for the :class:`Vector` class. 
+    If you need to take the sine of a Vector, use ``numpy``; e.g.,
+
+    .. code-block::
+        python
+
+        import numpy as np
+        from neuron import h
+
+        v = h.Vector([0, h.PI/6, h.PI/4, h.PI/2])
+        v2 = h.Vector(np.sin(v))
+        print(list(v2))
+
+        # [0.0, 0.49999999999999994, 0.7071067811865475, 1.0]
+
+    To create a vector filled with a sine wave, see :meth:`Vector.sin` or
+    use ``numpy``.
 
     .. note::
 
@@ -168,8 +205,22 @@ Diagnostics:
 
 .. function:: tanh
 
-        hyperbolic tangent. 
-        see :meth:`Vector.tanh` for the :class:`Vector` class. 
+        Hyperbolic tangent. 
+
+        For :class:`Vector` objects, use :meth:`Vector.tanh` to store the
+        values in-place, or use numpy to create a new Vector; e.g.,
+
+        .. code-block::
+            python
+
+            import numpy as np
+            from neuron import h
+
+            v = h.Vector([0, 1, 2, 3])
+            v2 = h.Vector(np.tanh(v))
+            print(list(v2))
+
+            # [0.0, 0.7615941559557649, 0.9640275800758169, 0.9950547536867305]
         
         .. note::
 
@@ -210,19 +261,19 @@ Diagnostics:
 
             from neuron import h
 
-            h.atan2(0,0) 
-            for i in range(-1,2):
+            print(h.atan2(0, 0)) 
+            for i in range(-1, 2):
                 print(h.atan2(i*1e-6, 10))
-            for i in range(-1,2):
+            for i in range(-1, 2):
                 print(h.atan2(i*1e-6, -10))
-            for i in range(-1,2):
+            for i in range(-1, 2):
                 print(h.atan2(10, i*1e-6))
-            for i in range(-1,2):
+            for i in range(-1, 2):
                 print(h.atan2(-10, i*1e-6))
-            h.atan2(10,10) 
-            h.atan2(10,-10) 
-            h.atan2(-10,10) 
-            h.atan2(-10,-10) 
+            print(h.atan2(10, 10)) 
+            print(h.atan2(10, -10)) 
+            print(h.atan2(-10, 10)) 
+            print(h.atan2(-10, -10)) 
             
         .. note::
     
