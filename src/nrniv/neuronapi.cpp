@@ -196,6 +196,10 @@ int nrn_symbol_subtype(Symbol const* sym) {
     return sym->subtype;
 }
 
+double* nrn_symbol_dataptr(Symbol* sym) {
+    return sym->u.pval;
+}
+
 void nrn_symbol_push(Symbol* sym) {
     hoc_pushpx(sym->u.pval);
 }
