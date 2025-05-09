@@ -10,6 +10,7 @@ if(SKBUILD)
       nrniv-core
       nrnivmodl
       nrnivmodl-core
+      nrnivmodl-all
       nrnpyenv.sh
       sortspike)
 

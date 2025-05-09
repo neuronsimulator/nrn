@@ -6,7 +6,8 @@ additional_commands:
       ENVIRONMENT: '+'
       NAME: 1
       MODFILE_PATTERNS: '+'
-      NRNIVMODL_ARGS: '+'
+      NRNIVMODL_EXTRA_INCLUDES: '+'
+      NRNIVMODL_EXTRA_LIBRARIES: '+'
       OUTPUT: '+'
       SCRIPT_PATTERNS: '+'
       SIM_DIRECTORY: 1

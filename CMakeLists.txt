@@ -543,6 +543,9 @@ endif()
 # initialize CLI11 submodule
 cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 
+# coreneuron targets will get propagated down from the subdirectory
+set(NRN_INSTALL_TARGETS nrniv_lib nocmodl)
+
 # =============================================================================
 # Enable NMODL code-generator support
 # =============================================================================
@@ -712,7 +715,6 @@ if(NRN_ENABLE_MUSIC)
 endif()
 
 add_subdirectory(share/lib/hoc)
-add_subdirectory(share/demo)
 
 # Collect the environment variables that are needed to execute NEURON from the build directory. This
 # is used when configuring tests, and when building documentation targets.
@@ -727,8 +729,9 @@ function(prepend_to_var var new_path)
       "${old_list}"
       PARENT_SCOPE)
 endfunction()
-set(NRN_RUN_FROM_BUILD_DIR_ENV "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
-                               "NRNHOME=${PROJECT_BINARY_DIR}")
+set(NRN_RUN_FROM_BUILD_DIR_ENV
+    "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn" "NRNHOME=${PROJECT_BINARY_DIR}"
+    "MODLUNIT=${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib")
 
 # if we do not link against Python, NMODL will complain that some of the env variables are missing
 # when building coreNEURON mod files
@@ -948,6 +951,7 @@ endfunction()
 copy_share_subdir_at_build_time(SUBDIR demo TARGET copy_share_demo_to_build)
 copy_share_subdir_at_build_time(SUBDIR lib TARGET copy_share_lib_to_build)
 
+add_subdirectory(share/demo)
 # =============================================================================
 # Add tests if enabled
 # =============================================================================
@@ -969,23 +973,6 @@ if(NRN_ENABLE_TESTS)
     endif()
   endif()
   add_dependencies(nrniv_lib copy_share_demo_to_build)
-  # Execute neurondemo as part of the build because it lazily calls nrnivmodl. If we don't do this
-  # then test_neurondemo.py will run nrnivmodl in a clean build, and report compilation warnings as
-  # unexpected stderr.
-  set(neurondemo_prefix
-      "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}")
-  set(neurondemo_files
-      "${neurondemo_prefix}/special"
-      "${neurondemo_prefix}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}")
-
-  add_custom_command(
-    OUTPUT ${neurondemo_files}
-    COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
-            ${NRN_SANITIZER_ENABLE_ENVIRONMENT} "${PROJECT_BINARY_DIR}/bin/nrnivmodl"
-    DEPENDS nrnivmodl_dependency
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/share/nrn/demo/release
-    VERBATIM)
-
   add_custom_target(generate-neurondemo-mechanism-library ALL DEPENDS ${neurondemo_files} nrniv
                                                                       copy_share_lib_to_build)
   # Initialize the submodule *before* including the test/CMakeLists.txt that uses it. This ensures
@@ -996,28 +983,6 @@ if(NRN_ENABLE_TESTS)
   cpp_cc_git_submodule(rxd/testdata)
   set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "${backup}")
   add_subdirectory(test)
-elseif(NOT WIN32)
-  # Windows installs the demo separately
-  add_subdirectory(share/demo/release)
-
-  # `rm` was added in 3.17, and `remove_directory` was deprecated
-  if(CMAKE_VERSION VERSION_LESS 3.17)
-    set(rm_cmd "remove_directory")
-  else()
-    set(rm_cmd rm -fr --)
-  endif()
-  add_custom_target(
-    neurondemo_release ALL
-    COMMAND ${CMAKE_COMMAND} -E ${rm_cmd}
-            "${NRN_BUILD_SHARE_DIR}/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}"
-    COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
-            ${NRN_SANITIZER_ENABLE_ENVIRONMENT} "${PROJECT_BINARY_DIR}/bin/nrnivmodl"
-    DEPENDS nrnivmodl_dependency nrniv_lib
-    COMMENT "Building mod files for demo release"
-    WORKING_DIRECTORY ${NRN_BUILD_SHARE_DIR}/demo/release
-    VERBATIM)
-  install(DIRECTORY ${NRN_BUILD_SHARE_DIR}/demo/release DESTINATION ${NRN_INSTALL_SHARE_DIR}/demo)
-
 endif()
 # =============================================================================
 # Install targets
@@ -1026,10 +991,6 @@ install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib
   DESTINATION ${NRN_INSTALL_SHARE_DIR}
   PATTERN "python" EXCLUDE
-  PATTERN CMakeLists.txt EXCLUDE)
-install(
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo
-  DESTINATION ${NRN_INSTALL_SHARE_DIR}
   PATTERN CMakeLists.txt EXCLUDE)
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
@@ -1065,6 +1026,56 @@ if(NRN_MACOS_BUILD AND NOT SKBUILD)
   # universal build for neurondemo needs to be after, or at end of, install
   nrn_macos_after_install()
 endif()
+
+# =============================================================================
+# Install CMake glue
+# =============================================================================
+configure_file(cmake/neuronMechMaker.cmake
+               "${PROJECT_BINARY_DIR}/lib/cmake/neuron/neuronMechMaker.cmake" COPYONLY)
+configure_file(cmake/mod_reg_nrn.cpp.in "${PROJECT_BINARY_DIR}/share/nrn/mod_reg_nrn.cpp.in"
+               COPYONLY)
+configure_file(cmake/mod_reg_corenrn.cpp.in
+               "${PROJECT_BINARY_DIR}/share/nrn/mod_reg_corenrn.cpp.in" COPYONLY)
+install(
+  TARGETS nrniv_lib
+  EXPORT NeuronTargets
+  DESTINATION "${NRN_INSTALL_SHARE_LIB_DIR}")
+install(
+  TARGETS nocmodl
+  EXPORT NeuronTargets
+  DESTINATION "${NRN_INSTALL_DATA_PREFIX}/bin")
+install(
+  TARGETS ${CORENRN_INSTALL_TARGETS}
+  EXPORT NeuronTargets
+  DESTINATION "${NRN_INSTALL_SHARE_LIB_DIR}")
+
+export(
+  EXPORT NeuronTargets
+  FILE ${PROJECT_BINARY_DIR}/lib/cmake/neuron/neuronTargets.cmake
+  NAMESPACE neuron::)
+
+install(
+  EXPORT NeuronTargets
+  FILE neuronTargets.cmake
+  NAMESPACE neuron::
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib/cmake/neuron)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/neuronConfig.cmake.in
+               ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/neuronConfig.cmake @ONLY)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/neuronConfig.cmake
+              ${CMAKE_CURRENT_SOURCE_DIR}/cmake/neuronMechMaker.cmake
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib/cmake/neuron)
+
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_nrn.cpp.in
+              ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_corenrn.cpp.in
+        DESTINATION ${NRN_INSTALL_SHARE_DIR})
+
+# configuration and installation of nrnivmodl
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/nrnivmodl.cmake
+               ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/nrnivmodl/CMakeLists.txt @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/nrnivmodl/CMakeLists.txt
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib/cmake/neuron/nrnivmodl)
 
 # =============================================================================
 # Copy bash executable for windows

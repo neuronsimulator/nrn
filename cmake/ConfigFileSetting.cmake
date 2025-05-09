@@ -13,7 +13,9 @@ nrn_set_string(PACKAGE_VERSION "${PROJECT_VERSION}")
 nrn_set_string(VERSION "${PROJECT_VERSION}")
 nrn_set_string(NRN_LIBDIR "${CMAKE_INSTALL_PREFIX}/lib")
 nrn_set_string(NEURON_DATA_DIR "${CMAKE_INSTALL_PREFIX}/share/nrn")
-nrn_set_string(DLL_DEFAULT_FNAME "${CMAKE_SYSTEM_PROCESSOR}/.libs/libnrnmech.so")
+nrn_set_string(
+  DLL_DEFAULT_FNAME
+  "${CMAKE_SYSTEM_PROCESSOR}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}")
 
 # indicate nmodl config is used
 add_definitions(-DHAVE_CONFIG_H)
