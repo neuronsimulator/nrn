@@ -48,6 +48,16 @@ dodemo()
 quit()
 """
 
+# an extra run for coverage of void NrnDAE::dkmap
+run(
+    "neurondemo",
+    """
+demo(6)
+cvode_active(1)
+run()
+""",
+)
+
 
 # run neurondemo and return the stdout lines between ZZZbegin and ZZZend
 def neurondemo(extra, input):
