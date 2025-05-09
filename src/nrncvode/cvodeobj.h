@@ -30,7 +30,8 @@ struct model_sorted_token;
  *   contiguous
  * - with ml.size() >= 1 and ml[i].nodecount == 1 when non-contiguous instances need to be processed
  *
- * generic configurations with ml.size() and ml[i].nodecount both larger than one are not supported.
+ * generic configurations with ml.size() and ml[i].nodecount both larger than one are only
+ * supported for the local variable time step method.
  */
 struct CvMembList {
     CvMembList(int type)
