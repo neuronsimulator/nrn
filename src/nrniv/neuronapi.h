@@ -63,6 +63,7 @@ Symbol* nrn_symbol(const char* name);
 void nrn_symbol_push(Symbol* sym);
 int nrn_symbol_type(const Symbol* sym);
 int nrn_symbol_subtype(Symbol const* sym);
+double* nrn_symbol_dataptr(Symbol* sym);
 void nrn_double_push(double val);
 double nrn_double_pop(void);
 void nrn_double_ptr_push(double* addr);
