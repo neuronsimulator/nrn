@@ -157,6 +157,8 @@ class MultiCompartmentReaction(GeneralizedReaction):
             if any(reg._secs1d) or any(reg._secs3d):
                 break
         else:
+            self._rate = None
+            self._involved_species = []
             return
 
         # check for 3D sections
