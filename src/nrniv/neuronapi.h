@@ -96,7 +96,7 @@ Section* nrn_sectionlist_iterator_next(SectionListIterator* sl);
 int nrn_sectionlist_iterator_done(SectionListIterator* sl);
 SymbolTableIterator* nrn_symbol_table_iterator_new(Symlist* my_symbol_table);
 void nrn_symbol_table_iterator_free(SymbolTableIterator* st);
-char const* nrn_symbol_table_iterator_next(SymbolTableIterator* st);
+Symbol* nrn_symbol_table_iterator_next(SymbolTableIterator* st);
 int nrn_symbol_table_iterator_done(SymbolTableIterator* st);
 int nrn_vector_capacity(const Object* vec);
 double* nrn_vector_data(Object* vec);
