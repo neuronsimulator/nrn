@@ -159,8 +159,8 @@ jobs:
 
       - name: Cache Python@${{ env.PY_MIN_VERSION }} dependencies
         if: ${{matrix.config.python_dynamic == 'ON'}}
-        id: cache-python-min-packages
-        uses: actions/cache@v4
+        id: cache-python-min-packages-restore
+        uses: actions/cache/restore@v4
         with:
           path: ${PYTHON_MIN_PACKAGES_CACHE_DIR}
           key: cache-${{ matrix.os }}-${{ env.PY_MIN_VERSION }}-${{ hashFiles('ci/requirements.txt') }}
@@ -178,8 +178,8 @@ jobs:
           python -m pip install -r ci/requirements.txt --cache-dir ${PYTHON_MIN_PACKAGES_CACHE_DIR}
 
       - name: Cache Python@${{ env.PY_MAX_VERSION }} dependencies
-        id: cache-python-max-packages
-        uses: actions/cache@v4
+        id: cache-python-max-packages-restore
+        uses: actions/cache/restore@v4
         with:
           path: ${PYTHON_MAX_PACKAGES_CACHE_DIR}
           key: cache-${{ matrix.os }}-${{ env.PY_MAX_VERSION }}-${{ hashFiles('ci/requirements.txt') }}
@@ -193,6 +193,23 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install -r ci/requirements.txt --cache-dir ${PYTHON_MAX_PACKAGES_CACHE_DIR}
+
+      - name: Always save Python@${{ env.PY_MIN_VERSION }} cache
+        if: ${{matrix.config.python_dynamic == 'ON'}}
+        id: cache-python-min-packages-save
+        if: always() && steps.cache-python-min-packages-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.cache-python-min-packages-restore.outputs.cache-primary-key }}
+          path: ${PYTHON_MIN_PACKAGES_CACHE_DIR}
+
+      - name: Always save Python@${{ env.PY_MAX_VERSION }} cache
+        id: cache-python-max-packages-save
+        if: always() && steps.cache-python-max-packages-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.cache-python-max-packages-restore.outputs.cache-primary-key }}
+          path: ${PYTHON_MAX_PACKAGES_CACHE_DIR}
 
   # see https://github.com/orgs/community/discussions/26822
   final:
