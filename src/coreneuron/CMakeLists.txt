@@ -578,7 +578,8 @@ create_nrnmech(
   NMODL_EXECUTABLE
   ${PROJECT_BINARY_DIR}/bin/nmodl
   EXTRA_ENV
-  ${NRN_RUN_FROM_BUILD_DIR_ENV})
+  ${NRN_RUN_FROM_BUILD_DIR_ENV}
+  ASAN_OPTIONS=detect_leaks=0)
 target_include_directories(coreneuron-mod-lib PRIVATE ${PROJECT_BINARY_DIR}/include)
 target_include_directories(coreneuron-mod-bin PRIVATE ${PROJECT_BINARY_DIR}/include)
 set_target_properties(

@@ -229,6 +229,8 @@ function(nrn_add_test_group)
         ${PROJECT_BINARY_DIR}/bin/nmodl
         EXTRA_ENV
         ${NRN_RUN_FROM_BUILD_DIR_ENV}
+        # disable ASAN since NMODL and NOCMODL have too many to count
+        ASAN_OPTIONS=detect_leaks=0
         ARTIFACTS_OUTPUT_DIR
         "${nrnivmodl_directory}"
         LIBRARY_OUTPUT_DIR

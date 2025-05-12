@@ -16,6 +16,7 @@ create_nrnmech(
   ${PROJECT_BINARY_DIR}/bin/nocmodl
   EXTRA_ENV
   ${NRN_RUN_FROM_BUILD_DIR_ENV}
+  ASAN_OPTIONS=detect_leaks=0
   # TODO it would probably make more sense to use CMAKE_CURRENT_BINARY_DIR here, so either move this
   # dir to `share/nrn/demo`, or modify scripts to handle `share/demo` instead
   EXECUTABLE_OUTPUT_DIR
