@@ -43,8 +43,6 @@ jobs:
       MUSIC_INSTALL_DIR: /opt/MUSIC
       # hash of commit containing mpi4py 4 fix
       MUSIC_VERSION: '13f312338dcccebfe74d391b1b24f1b6d816ac6c'
-      PYTHON_MIN_PACKAGES_CACHE_DIR: ${{ github.workspace }}/pip_cache${{ matrix.config.python_min_version }}
-      PYTHON_MAX_PACKAGES_CACHE_DIR: ${{ github.workspace }}/pip_cache${{ matrix.config.python_max_version }}
 
     strategy:
       matrix:
@@ -157,12 +155,13 @@ jobs:
         with:
           fetch-depth: 2
 
+      # Restore (and later save) dependencies for min version of Python
       - name: Cache Python@${{ env.PY_MIN_VERSION }} dependencies
         if: ${{matrix.config.python_dynamic == 'ON'}}
         id: cache-python-min-packages-restore
         uses: actions/cache/restore@v4
         with:
-          path: ${PYTHON_MIN_PACKAGES_CACHE_DIR}
+          path: ${{ github.workspace }}/pip_cache${{ matrix.config.python_min_version || '3.9' }}
           key: cache-${{ matrix.os }}-${{ env.PY_MIN_VERSION }}-${{ hashFiles('ci/requirements.txt') }}
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
@@ -175,13 +174,22 @@ jobs:
         if: ${{ matrix.config.python_dynamic == 'ON' }}
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install -r ci/requirements.txt --cache-dir ${PYTHON_MIN_PACKAGES_CACHE_DIR}
+          python -m pip install -r ci/requirements.txt --cache-dir ${{ github.workspace }}/pip_cache${{ matrix.config.python_min_version || '3.9' }}
 
+      - name: Always save Python@${{ env.PY_MIN_VERSION }} cache
+        if: ${{matrix.config.python_dynamic == 'ON'}} && steps.cache-python-min-packages-restore.outputs.cache-hit != 'true'
+        id: cache-python-min-packages-save
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.cache-python-min-packages-restore.outputs.cache-primary-key }}
+          path: ${{ github.workspace }}/pip_cache${{ matrix.config.python_min_version || '3.9' }}
+
+      # Restore (and later save) dependencies for max version of Python
       - name: Cache Python@${{ env.PY_MAX_VERSION }} dependencies
         id: cache-python-max-packages-restore
         uses: actions/cache/restore@v4
         with:
-          path: ${PYTHON_MAX_PACKAGES_CACHE_DIR}
+          path: ${{ github.workspace }}/pip_cache${{ matrix.config.python_max_version || '3.13' }}
           key: cache-${{ matrix.os }}-${{ env.PY_MAX_VERSION }}-${{ hashFiles('ci/requirements.txt') }}
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
@@ -192,15 +200,7 @@ jobs:
       - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install -r ci/requirements.txt --cache-dir ${{ github.workspace }}/pip_cache${{ matrix.config.python_max_version }}
-
-      - name: Always save Python@${{ env.PY_MIN_VERSION }} cache
-        if: ${{matrix.config.python_dynamic == 'ON'}} && steps.cache-python-min-packages-restore.outputs.cache-hit != 'true'
-        id: cache-python-min-packages-save
-        uses: actions/cache/save@v4
-        with:
-          key: ${{ steps.cache-python-min-packages-restore.outputs.cache-primary-key }}
-          path: ${PYTHON_MIN_PACKAGES_CACHE_DIR}
+          python -m pip install -r ci/requirements.txt --cache-dir ${{ github.workspace }}/pip_cache${{ matrix.config.python_max_version || '3.13' }}
 
       - name: Always save Python@${{ env.PY_MAX_VERSION }} cache
         id: cache-python-max-packages-save
@@ -208,7 +208,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           key: ${{ steps.cache-python-max-packages-restore.outputs.cache-primary-key }}
-          path: ${{ github.workspace }}/pip_cache${{ matrix.config.python_max_version }}
+          path: ${{ github.workspace }}/pip_cache${{ matrix.config.python_max_version || '3.13' }}
 
       - name: Install a new automake
         # A automake >= 1.16.5 is needed for python 3.12 because it generates a python script
