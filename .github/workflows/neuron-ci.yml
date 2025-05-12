@@ -158,6 +158,7 @@ jobs:
           fetch-depth: 2
 
       - name: Cache Python@${{ env.PY_MIN_VERSION }} dependencies
+        if: ${{matrix.config.python_dynamic == 'ON'}}
         id: cache-python${{ env.PY_MIN_VERSION }}-packages
         uses: actions/cache@v4
         with:
@@ -165,6 +166,7 @@ jobs:
           key: cache-${{ matrix.os }}-${{ env.PY_MIN_VERSION }}-${{ hashFiles('ci/requirements.txt') }}
 
       - name: Cache Python@${{ env.PY_MAX_VERSION }} dependencies
+        if: ${{matrix.config.python_dynamic == 'ON'}}
         id: cache-python${{ env.PY_MAX_VERSION }}-packages
         uses: actions/cache@v4
         with:
