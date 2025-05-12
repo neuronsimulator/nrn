@@ -159,9 +159,9 @@ jobs:
       - name: Cache Python dependencies
         id: cache-python-packages
         uses: actions/cache@v4
-          with:
-            path: ${PYTHON_PACKAGES_CACHE_DIR}
-            key: cache-${{ hashFiles('ci/requirements.txt') }}
+        with:
+          path: ${PYTHON_PACKAGES_CACHE_DIR}
+          key: cache-${{ hashFiles('ci/requirements.txt') }}
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         if: ${{matrix.config.python_dynamic == 'ON'}}
