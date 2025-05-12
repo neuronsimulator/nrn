@@ -43,7 +43,8 @@ jobs:
       MUSIC_INSTALL_DIR: /opt/MUSIC
       # hash of commit containing mpi4py 4 fix
       MUSIC_VERSION: '13f312338dcccebfe74d391b1b24f1b6d816ac6c'
-      PYTHON_PACKAGES_CACHE_DIR: pip_cache
+      PYTHON_MIN_PACKAGES_CACHE_DIR: ${{ github.workspace }}/pip_cache${{ matrix.config.python_min_version }}
+      PYTHON_MAX_PACKAGES_CACHE_DIR: ${{ github.workspace }}/pip_cache${{ matrix.config.python_max_version }}
 
     strategy:
       matrix:
@@ -156,12 +157,19 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Cache Python dependencies
-        id: cache-python-packages
+      - name: Cache Python@${{ env.PY_MIN_VERSION }} dependencies
+        id: cache-python${{ env.PY_MIN_VERSION }}-packages
         uses: actions/cache@v4
         with:
-          path: ${PYTHON_PACKAGES_CACHE_DIR}
-          key: cache-${{ hashFiles('ci/requirements.txt') }}
+          path: ${PYTHON_MIN_PACKAGES_CACHE_DIR}
+          key: cache-${{ matrix.os }}-${{ env.PY_MIN_VERSION }}-${{ hashFiles('ci/requirements.txt') }}
+
+      - name: Cache Python@${{ env.PY_MAX_VERSION }} dependencies
+        id: cache-python${{ env.PY_MAX_VERSION }}-packages
+        uses: actions/cache@v4
+        with:
+          path: ${PYTHON_MAX_PACKAGES_CACHE_DIR}
+          key: cache-${{ matrix.os }}-${{ env.PY_MAX_VERSION }}-${{ hashFiles('ci/requirements.txt') }}
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         if: ${{matrix.config.python_dynamic == 'ON'}}
@@ -173,7 +181,7 @@ jobs:
         if: ${{ matrix.config.python_dynamic == 'ON' }}
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install -r ci/requirements.txt --cache-dir ${PYTHON_PACKAGES_CACHE_DIR}
+          python -m pip install -r ci/requirements.txt --cache-dir ${PYTHON_MIN_PACKAGES_CACHE_DIR}
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
         uses: actions/setup-python@v5
@@ -183,7 +191,7 @@ jobs:
       - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install -r ci/requirements.txt --cache-dir ${PYTHON_PACKAGES_CACHE_DIR}
+          python -m pip install -r ci/requirements.txt --cache-dir ${PYTHON_MAX_PACKAGES_CACHE_DIR}
 
       - name: Install a new automake
         # A automake >= 1.16.5 is needed for python 3.12 because it generates a python script
