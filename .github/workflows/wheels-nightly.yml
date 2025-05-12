@@ -15,7 +15,7 @@ jobs:
       commit: 'master'
     strategy:
       matrix:
-        os: ['macos-14']
+        os: ['macos-14', 'ubuntu-22.04-arm']
         python_version: ['3.9', '3.10', '3.11', '3.12', '3.13']
 
   merge:
