@@ -195,7 +195,7 @@ jobs:
           python -m pip install -r ci/requirements.txt --cache-dir ${{ github.workspace }}/pip_cache${{ matrix.config.python_max_version }}
 
       - name: Always save Python@${{ env.PY_MIN_VERSION }} cache
-        if: ${{matrix.config.python_dynamic == 'ON'}} && always() && steps.cache-python-min-packages-restore.outputs.cache-hit != 'true'
+        if: ${{matrix.config.python_dynamic == 'ON'}} && steps.cache-python-min-packages-restore.outputs.cache-hit != 'true'
         id: cache-python-min-packages-save
         uses: actions/cache/save@v4
         with:
