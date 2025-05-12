@@ -110,7 +110,7 @@ char const* nrn_symbol_name(const Symbol* sym);
 Symlist* nrn_symbol_table(Symbol* sym);
 Symlist* nrn_global_symbol_table(void);
 Symlist* nrn_top_level_symbol_table(void);
-void nrn_register_function(void (*proc)(), const char* func_name)
+void nrn_register_function(void (*proc)(), const char* func_name);
 // TODO: need shapeplot information extraction
 
 #ifdef __cplusplus
