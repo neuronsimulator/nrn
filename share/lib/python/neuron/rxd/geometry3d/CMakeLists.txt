@@ -75,6 +75,10 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       endif()
     endforeach()
 
+    # ctng and surfaces import graphicsPrimitives
+    add_dependencies(ctng${pyver} graphicsPrimitives${pyver})
+    add_dependencies(surfaces${pyver} graphicsPrimitives${pyver})
+
     # install in the correct location
     install(TARGETS graphicsPrimitives${pyver} ctng${pyver} surfaces${pyver}
             DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d)
@@ -111,6 +115,11 @@ else(NRN_ENABLE_PYTHON_DYNAMIC)
     endif()
 
   endforeach()
+
+  # ctng and surfaces import graphicsPrimitives
+  add_dependencies(ctng graphicsPrimitives)
+  add_dependencies(surfaces graphicsPrimitives)
+
   install(TARGETS graphicsPrimitives ctng surfaces
           DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d)
 
