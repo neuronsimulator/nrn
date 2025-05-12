@@ -18,7 +18,7 @@ jobs:
       commit: ${{ github.sha }}
     strategy:
       matrix:
-        os: ['macos-14']
+        os: ['macos-14', 'ubuntu-22.04-arm']
         python_version: ['3.9', '3.13']
 
   merge:
