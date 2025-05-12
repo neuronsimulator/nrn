@@ -159,7 +159,7 @@ jobs:
 
       - name: Cache Python@${{ env.PY_MIN_VERSION }} dependencies
         if: ${{matrix.config.python_dynamic == 'ON'}}
-        id: cache-python${{ env.PY_MIN_VERSION }}-packages
+        id: cache-python-min-packages
         uses: actions/cache@v4
         with:
           path: ${PYTHON_MIN_PACKAGES_CACHE_DIR}
@@ -167,7 +167,7 @@ jobs:
 
       - name: Cache Python@${{ env.PY_MAX_VERSION }} dependencies
         if: ${{matrix.config.python_dynamic == 'ON'}}
-        id: cache-python${{ env.PY_MAX_VERSION }}-packages
+        id: cache-python-max-packages
         uses: actions/cache@v4
         with:
           path: ${PYTHON_MAX_PACKAGES_CACHE_DIR}
