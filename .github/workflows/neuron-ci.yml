@@ -195,9 +195,8 @@ jobs:
           python -m pip install -r ci/requirements.txt --cache-dir ${PYTHON_MAX_PACKAGES_CACHE_DIR}
 
       - name: Always save Python@${{ env.PY_MIN_VERSION }} cache
-        if: ${{matrix.config.python_dynamic == 'ON'}}
+        if: ${{matrix.config.python_dynamic == 'ON'}} && always() && steps.cache-python-min-packages-restore.outputs.cache-hit != 'true'
         id: cache-python-min-packages-save
-        if: always() && steps.cache-python-min-packages-restore.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           key: ${{ steps.cache-python-min-packages-restore.outputs.cache-primary-key }}
