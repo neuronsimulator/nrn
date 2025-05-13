@@ -131,18 +131,18 @@ endif()
 install(
   TARGETS nmodl
   EXPORT nmodlTargets
-  RUNTIME DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}/bin)
+  RUNTIME DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin)
 
 configure_file(${PROJECT_SOURCE_DIR}/share/nmodl/nrnunits.lib
                ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib COPYONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib
-        DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}/share/nmodl)
+        DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}share/nmodl)
 
 install(
   EXPORT nmodlTargets
   FILE nmodlTargets.cmake
   NAMESPACE nmodl::
-  DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}/lib/cmake/nmodl)
+  DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}lib/cmake/nmodl)
 
 include(CMakePackageConfigHelpers)
 configure_package_config_file(
@@ -153,7 +153,7 @@ write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/nmodlConfigVersion
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfig.cmake"
               "${CMAKE_CURRENT_BINARY_DIR}/nmodlConfigVersion.cmake"
-        DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}/lib/cmake/nmodl)
+        DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}lib/cmake/nmodl)
 
 # =============================================================================
 # Build status

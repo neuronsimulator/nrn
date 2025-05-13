@@ -498,7 +498,7 @@ if(NRN_ENABLE_MPI AND NRN_ENABLE_MPI_DYNAMIC)
     PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
                LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
                POSITION_INDEPENDENT_CODE ON)
-  install(TARGETS ${corenrn_mpi_targets} DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
+  install(TARGETS ${corenrn_mpi_targets} DESTINATION ${NRN_INSTALL_DATA_PREFIX}lib)
 endif()
 
 # Suppress some compiler warnings.
@@ -598,8 +598,8 @@ add_custom_target(nrniv-core ALL DEPENDS coreneuron-mod-lib coreneuron-mod-bin)
 # Build a target representing the libcorenrnmech_internal.so that is produced under bin/x86_64,
 # which executables such as the unit tests must link against
 add_library(builtin-libcorenrnmech ALIAS coreneuron-mod-lib)
-install(TARGETS coreneuron-mod-lib DESTINATION "${NRN_INSTALL_DATA_PREFIX}/lib")
-install(TARGETS coreneuron-mod-bin DESTINATION "${NRN_INSTALL_DATA_PREFIX}/bin")
+install(TARGETS coreneuron-mod-lib DESTINATION "${NRN_INSTALL_DATA_PREFIX}lib")
+install(TARGETS coreneuron-mod-bin DESTINATION "${NRN_INSTALL_DATA_PREFIX}bin")
 
 if(CORENRN_ENABLE_GPU)
   separate_arguments(CORENRN_ACC_FLAGS UNIX_COMMAND "${NVHPC_ACC_COMP_FLAGS}")
@@ -655,28 +655,28 @@ endif()
 install(
   TARGETS coreneuron-core ${coreneuron_cuda_target}
   EXPORT coreneuron
-  LIBRARY DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib
-  ARCHIVE DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib
+  LIBRARY DESTINATION ${NRN_INSTALL_DATA_PREFIX}lib
+  ARCHIVE DESTINATION ${NRN_INSTALL_DATA_PREFIX}lib
   INCLUDES
-  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/include)
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}include)
 
 # headers and some standalone code files for nrnivmodl-core
 install(
   DIRECTORY ${CMAKE_BINARY_DIR}/include/coreneuron
-  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/include/
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}include/
   FILES_MATCHING
   PATTERN "*.h*"
   PATTERN "*.ipp")
 install(FILES ${MODFUNC_SHELL_SCRIPT} ${ENGINEMECH_CODE_FILE}
-        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/coreneuron)
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}share/coreneuron)
 
 # copy nmodl for nrnivmodl-core
-install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
+install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)
 
-install(FILES apps/coreneuron.cpp DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/coreneuron)
+install(FILES apps/coreneuron.cpp DESTINATION ${NRN_INSTALL_DATA_PREFIX}share/coreneuron)
 
 # install mod files
-install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION ${NRN_INSTALL_DATA_PREFIX}share)
 
 # =============================================================================
 # Set flag for NEURON linking
