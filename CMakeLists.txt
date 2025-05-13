@@ -863,7 +863,7 @@ if(NRN_ENABLE_DOCS)
     # a normal build, this means we need to schedule the documentation targets sufficiently late in
     # the build.
     foreach(notebook ${all_notebooks})
-      add_dependencies(${notebook} _nmodl hoc_module rxdmath nrnivmodl_dependency)
+      add_dependencies(${notebook} nmodl hoc_module rxdmath nrnivmodl_dependency)
     endforeach()
     add_dependencies(sphinx _nmodl hoc_module rxdmath)
     add_dependencies(doxygen nmodl_gen_sources)
