@@ -663,7 +663,7 @@ install(
 # headers and some standalone code files for nrnivmodl-core
 install(
   DIRECTORY ${CMAKE_BINARY_DIR}/include/coreneuron
-  DESTINATION ${NRN_INSTALL_DATA_PREFIX}include/
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}include
   FILES_MATCHING
   PATTERN "*.h*"
   PATTERN "*.ipp")

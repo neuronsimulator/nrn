@@ -39,9 +39,9 @@ set_target_properties(
 file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/share/nrn/demo")
 file(TOUCH "${PROJECT_BINARY_DIR}/share/nrn/demo/neuron")
 install(TARGETS neurondemo
-        DESTINATION "${NRN_INSTALL_SHARE_DIR}/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}/")
+        DESTINATION "${NRN_INSTALL_SHARE_DIR}demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}/")
 install(TARGETS neurondemo-special
-        DESTINATION "${NRN_INSTALL_SHARE_DIR}/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}/")
+        DESTINATION "${NRN_INSTALL_SHARE_DIR}demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}/")
 # also install all of the source files (except current CMakeLists.txt)
 install(
   DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
