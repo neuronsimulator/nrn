@@ -426,8 +426,8 @@ else()
   set(CORENRN_INSTALL_TARGETS
       coreneuron-core
       PARENT_SCOPE)
-  add_library(neuron::corenrn ALIAS coreneuron-core)
 endif()
+add_library(neuron::corenrn ALIAS coreneuron-core)
 
 foreach(target coreneuron-core ${coreneuron_cuda_target})
   target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/src

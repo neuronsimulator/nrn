@@ -300,6 +300,8 @@ function(create_nrnmech)
     target_compile_options(core${TARGET_LIBRARY_NAME} BEFORE PRIVATE ${_CORENEURON_FLAGS})
     target_link_libraries(core${TARGET_LIBRARY_NAME} PUBLIC neuron::corenrn)
     target_compile_definitions(core${TARGET_LIBRARY_NAME} PUBLIC ADDITIONAL_MECHS)
+    # Random123 does not play nicely with NVHPC
+    target_compile_definitions(core${TARGET_LIBRARY_NAME} PUBLIC R123_USE_INTRIN_H=0)
 
     list(JOIN L_CORE_MECH_DECLARE "\n" MECH_DECLARE)
     list(JOIN L_CORE_MECH_PRINT "    \n" MECH_PRINT)
