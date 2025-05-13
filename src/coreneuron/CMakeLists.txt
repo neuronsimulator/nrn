@@ -585,7 +585,11 @@ target_include_directories(coreneuron-mod-bin PRIVATE ${PROJECT_BINARY_DIR}/incl
 set_target_properties(
   coreneuron-mod-lib PROPERTIES OUTPUT_NAME "corenrnmech_internal" LIBRARY_OUTPUT_DIRECTORY
                                                                    ${PROJECT_BINARY_DIR}/lib)
-set_target_properties(coreneuron-mod-bin PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${nrniv_core_prefix})
+set_target_properties(
+  coreneuron-mod-bin
+  PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${nrniv_core_prefix}
+             INSTALL_RPATH "${LOADER_PATH_FLAG}/../lib"
+             OUTPUT_NAME "nrniv-core")
 add_dependencies(coreneuron-mod-lib coreneuron-core nmodl::nmodl)
 add_dependencies(coreneuron-mod-bin coreneuron-core nmodl::nmodl)
 
@@ -595,6 +599,7 @@ add_custom_target(nrniv-core ALL DEPENDS coreneuron-mod-lib coreneuron-mod-bin)
 # which executables such as the unit tests must link against
 add_library(builtin-libcorenrnmech ALIAS coreneuron-mod-lib)
 install(TARGETS coreneuron-mod-lib DESTINATION "${NRN_INSTALL_DATA_PREFIX}/lib")
+install(TARGETS coreneuron-mod-bin DESTINATION "${NRN_INSTALL_DATA_PREFIX}/bin")
 
 if(CORENRN_ENABLE_GPU)
   separate_arguments(CORENRN_ACC_FLAGS UNIX_COMMAND "${NVHPC_ACC_COMP_FLAGS}")
@@ -668,11 +673,6 @@ install(FILES ${MODFUNC_SHELL_SCRIPT} ${ENGINEMECH_CODE_FILE}
 # copy nmodl for nrnivmodl-core
 install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
 
-# install nrniv-core app
-install(
-  PROGRAMS ${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR}/special-core
-  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin
-  RENAME nrniv-core)
 install(FILES apps/coreneuron.cpp DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/coreneuron)
 
 # install mod files
