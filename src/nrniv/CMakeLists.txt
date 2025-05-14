@@ -111,6 +111,11 @@ if(NRN_NOCMODL_CXX_FLAGS)
   target_compile_options(nocmodl PRIVATE ${NRN_NOCMODL_CXX_FLAGS})
 endif()
 
+# CLI11-included headers have some warnings on NVHPC
+if(NRN_NOCMODL_COMPILER_WARNING_SUPPRESSIONS)
+  target_compile_options(nocmodl PRIVATE ${NRN_NOCMODL_COMPILER_WARNING_SUPPRESSIONS})
+endif()
+
 # =============================================================================
 # Translate all MOD files to C and mark them generated
 # =============================================================================

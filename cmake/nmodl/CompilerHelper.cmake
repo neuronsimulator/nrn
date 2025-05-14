@@ -30,6 +30,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "PGI" OR CMAKE_CXX_COMPILER_ID MATCHES "NVHPC")
     # "ext/spdlog/include/spdlog/fmt/bundled/format.h", warning #1098-D: unknown attribute "fallthrough"
     # "ext/pybind11/include/pybind11/detail/common.h", warning #1626-D: routine is both "inline" and "noinline"
     # "ext/spdlog/include/spdlog/fmt/bundled/core.h", warning #1676-D: unrecognized GCC pragma
+    # "external/CLI11/include/CLI/TypeTools.hpp", warning #2362-D: invalid narrowing conversion from "int" to "double" [narrowing_conversion]
     # ~~~
     # The following warnings do not seem to be suppressible with --diag_suppress:
     # ~~~
@@ -38,11 +39,15 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "PGI" OR CMAKE_CXX_COMPILER_ID MATCHES "NVHPC")
     # ~~~
     # The situation may be better once https://github.com/fmtlib/fmt/pull/2582 is included in a
     # release.
-    set(NMODL_COMPILER_WARNING_SUPPRESSIONS --diag_suppress=1,111,128,185,186,998,1098,1626,1676)
+    set(NMODL_COMPILER_WARNING_SUPPRESSIONS
+        --diag_suppress=1,111,128,185,186,998,1098,1626,1676,2362)
     # There are a few more warnings produced by the unit test infrastructure.
     # ~~~
+    # "external/eigen/Eigen/src/Core/arch/AVX/PacketMath.h", warning #68-D: integer conversion resulted in a change of sign [integer_sign_change]
     # "test/unit/visitor/constant_folder.cpp", warning #177-D: variable "..." was declared but never referenced
+    # "src/ast/all.hpp", warning #998-D: function "..." is hidden by "..." -- virtual function override intended?
+    # "external/fmt/include/fmt/format.h", warning #1626-D: routine is both "inline" and "noinline"
     # ~~~
-    set(NMODL_TESTS_COMPILER_WARNING_SUPPRESSIONS --diag_suppress=177)
+    set(NMODL_TESTS_COMPILER_WARNING_SUPPRESSIONS --diag_suppress=68,177,998,1626)
   endif()
 endif()
