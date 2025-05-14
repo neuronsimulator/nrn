@@ -51,8 +51,16 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin gpg ninja-build flex bison libfl-dev ccache
+          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin gpg ninja-build flex bison libfl-dev
         shell: bash
+
+      - name: Install a new ccache
+        run: |
+          # versions older than 4.10 do not support -fprofile-update=atomic
+          wget 'https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3-linux-x86_64.tar.xz'
+          tar xf ccache-4.11.3-linux-x86_64.tar.xz
+          sudo cp -a ccache-4.11.3-linux-x86_64/ccache /usr/bin/ccache
+        working-directory: ${{runner.temp}}
 
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
