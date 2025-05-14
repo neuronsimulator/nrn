@@ -16,6 +16,7 @@ on:
       - master
       - release/**
   # so we can launch it manually from the GitHub or via GH-CLI without opening a PR
+  workflow_dispatch:
 # TODO : https://github.com/neuronsimulator/nrn/issues/1063
 #    paths-ignore:
 #      - '**.md'
@@ -26,10 +27,6 @@ env:
   PY_MIN_VERSION: '3.9'
   PY_MID_VERSION: '3.10'
   PY_MAX_VERSION: '3.13'
-  # The Linux runners have 4 cores:
-  # https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
-  CMAKE_BUILD_PARALLEL_LEVEL: '4'
-  CTEST_PARALLEL_LEVEL: '4'
 
 jobs:
   coverage:
