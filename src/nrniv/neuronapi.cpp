@@ -468,11 +468,6 @@ void nrn_property_array_set(Object* obj, const char* name, int i, double value) 
     }
 }
 
-void nrn_pp_property_array_set(Object* pp, const char* name, int i, double value) {
-    int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    ob2pntproc_0(pp)->prop->param_legacy(index + i) = value;
-}
-
 void nrn_property_push(Object* obj, const char* name) {
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
