@@ -294,6 +294,11 @@ cpp_cc_git_submodule(eigen)
 nrn_add_external_project(fmt)
 set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+# suppress warnings on NVHPC
+if(NRN_FMT_COMPILER_WARNING_SUPPRESSIONS)
+  target_compile_options(fmt PRIVATE ${NRN_FMT_COMPILER_WARNING_SUPPRESSIONS})
+endif()
+
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/Random123/include/Random123"
      DESTINATION "${CMAKE_BINARY_DIR}/include/")
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/eigen/Eigen"
@@ -567,6 +572,10 @@ if(NRN_ENABLE_NMODL
     # See above, same logic as fmt
     set_target_properties(spdlog PROPERTIES POSITION_INDEPENDENT_CODE ON)
   endif()
+
+  # suppress warnings on NVHPC
+  include(${PROJECT_SOURCE_DIR}/cmake/nmodl/CompilerHelper.cmake)
+  target_compile_options(spdlog PRIVATE "${NMODL_COMPILER_WARNING_SUPPRESSIONS}")
 
   set(NMODL_ENABLE_PYTHON_BINDINGS
       OFF
