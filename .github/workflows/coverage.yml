@@ -228,7 +228,10 @@ jobs:
                       -DMUSIC_ROOT="${MUSIC_INSTALL_DIR}")
           cmake .. "${cmake_args[@]}"
           # Coverage
+          ccache -z
+          ccache -s -v || ccache -s
           cmake --build .
+          ccache -s -v || ccache -s
           #cmake --build . --target cover_baseline
           #xvfb-run ctest --rerun-failed --output-on-failure
           #for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
