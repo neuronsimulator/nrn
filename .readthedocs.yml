@@ -26,5 +26,4 @@ submodules:
 
 python:
   install:
-    - requirements: nrn_requirements.txt
-    - requirements: docs/docs_requirements.txt
+    - requirements: ci/requirements.txt
