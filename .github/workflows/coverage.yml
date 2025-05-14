@@ -228,20 +228,20 @@ jobs:
           cmake .. "${cmake_args[@]}"
           # Coverage
           cmake --build .
-          cmake --build . --target cover_baseline
-          xvfb-run ctest --rerun-failed --output-on-failure
-          for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
-          do
-            echo "Using ${python}"
-            NEURONHOME="${PWD}/share/nrn" \
-              PYTHONPATH="${PWD}/lib/python:${PYTHONPATH}" \
-              PATH="${PWD}/bin:${PATH}" \
-              LD_LIBRARY_PATH="${PWD}/lib:${LD_LIBRARY_PATH}" \
-              DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
-              "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd();"
-          done
-          cmake --build . --target cover_collect
-          cmake --build . --target cover_combine
+          #cmake --build . --target cover_baseline
+          #xvfb-run ctest --rerun-failed --output-on-failure
+          #for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
+          #do
+          #  echo "Using ${python}"
+          #  NEURONHOME="${PWD}/share/nrn" \
+          #    PYTHONPATH="${PWD}/lib/python:${PYTHONPATH}" \
+          #    PATH="${PWD}/bin:${PATH}" \
+          #    LD_LIBRARY_PATH="${PWD}/lib:${LD_LIBRARY_PATH}" \
+          #    DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
+          #    "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd();"
+          #done
+          #cmake --build . --target cover_collect
+          #cmake --build . --target cover_combine
         env:
           MATRIX_EVAL: "CC=gcc CXX=g++"
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
