@@ -253,7 +253,7 @@ jobs:
         if: steps.restore-compiler-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
-          key: ccache-${{github.ref_name}}
+          key: ${{ steps.restore-compiler-cache.outputs.cache-primary-key }}
           path: ${{ github.workspace }}/ccache
 
       # This step will set up an SSH connection on tmate.io for live debugging.
