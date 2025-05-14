@@ -515,4 +515,13 @@ Symlist* nrn_global_symbol_table(void) {
 Symlist* nrn_top_level_symbol_table(void) {
     return hoc_top_level_symlist;
 }
+
+// Function to register function/object in hoc
+void nrn_register_function(void (*proc)(), const char* func_name) {
+    Symbol* sym;
+    sym = hoc_install(func_name, FUNCTION, 0, &hoc_top_level_symlist);
+    sym->u.u_proc->defn.pf = proc;
+    sym->u.u_proc->nauto = 0;
+    sym->u.u_proc->nobjauto = 0;
+}
 }
