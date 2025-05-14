@@ -15,6 +15,8 @@ on:
     branches:
       - master
       - release/**
+  # so we can launch it manually from the GitHub or via GH-CLI without opening a PR
+  workflow_dispatch:
 # TODO : https://github.com/neuronsimulator/nrn/issues/1063
 #    paths-ignore:
 #      - '**.md'
@@ -25,6 +27,10 @@ env:
   PY_MIN_VERSION: '3.9'
   PY_MID_VERSION: '3.10'
   PY_MAX_VERSION: '3.13'
+  # The Linux runners have 4 cores:
+  # https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+  CMAKE_BUILD_PARALLEL_LEVEL: '4'
+  CTEST_PARALLEL_LEVEL: '4'
 
 jobs:
   coverage:
@@ -44,7 +50,7 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin gpg ninja-build flex bison libfl-dev
+          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin gpg ninja-build flex bison libfl-dev ccache
         shell: bash
 
       - name: Setup cmake
@@ -54,11 +60,11 @@ jobs:
 
       - name: Setup Caliper profiler
         run: |
-          git clone https://github.com/LLNL/Caliper.git
+          git clone --branch v2.12.1 --depth 1 --recurse-submodules --shallow-submodules https://github.com/LLNL/Caliper.git
           cd Caliper
-          mkdir build && cd build
-          cmake ..
-          make && sudo make install
+          cmake -B build -G Ninja .
+          sudo cmake --build build --target install
+        working-directory: ${{runner.temp}}
 
       - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
         run: |
@@ -117,6 +123,15 @@ jobs:
           python -m pip install --upgrade -r ci_requirements.txt
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
+      # Restore (and later save) ccache
+      - name: Restore compiler cache
+        id: restore-compiler-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ github.workspace }}/ccache
+          key: ccache-${{github.ref}}
+          restore-keys: |
+            ccache-
 
       - name: Build & Test
         id: build-test
@@ -134,6 +149,9 @@ jobs:
           export PYTHON_MID=$(which $PYTHON_MID_NAME);
           export PYTHON_MAX=$(which $PYTHON_MAX_NAME);
 
+          # Update all submodules with depth 1
+          git submodule update --init --recursive --depth 1
+
           mkdir build && cd build;
 
           # CMake options & flags
@@ -141,6 +159,8 @@ jobs:
                       -DCMAKE_BUILD_TYPE=Debug \
                       -DCMAKE_C_COMPILER="$CC" \
                       -DCMAKE_CXX_COMPILER="$CXX" \
+                      -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+                      -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
                       -DNRN_ENABLE_BACKTRACE=ON \
                       -DNRN_ENABLE_CORENEURON=ON \
                       -DNRN_ENABLE_COVERAGE=ON \
@@ -158,12 +178,9 @@ jobs:
                       -DMUSIC_ROOT="${MUSIC_INSTALL_DIR}")
           cmake .. "${cmake_args[@]}"
           # Coverage
-          # The Linux runners have 4 cores:
-          # https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
-          # By default we get a modern version of CMake that understands --parallel.
-          cmake --build . --parallel 4
-          cmake --build . --target cover_baseline --parallel 4
-          xvfb-run ctest --rerun-failed --output-on-failure --parallel 4
+          cmake --build .
+          cmake --build . --target cover_baseline
+          xvfb-run ctest --rerun-failed --output-on-failure
           for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
           do
             echo "Using ${python}"
@@ -174,13 +191,20 @@ jobs:
               DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
               "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd();"
           done
-          cmake --build . --target cover_collect --parallel 4
-          cmake --build . --target cover_combine --parallel 4
+          cmake --build . --target cover_collect
+          cmake --build . --target cover_combine
         env:
           MATRIX_EVAL: "CC=gcc CXX=g++"
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
           PYTHON_MID_NAME: "python${{ env.PY_MID_VERSION }}"
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
+
+     - name: Save compiler cache
+        id: save-compiler-cache
+        uses: actions/cache/save@v4
+        with:
+          key: ccache-${{github.ref}}
+          path: ${{ github.workspace }}/ccache
 
       # This step will set up an SSH connection on tmate.io for live debugging.
       # To enable it, you have to:
