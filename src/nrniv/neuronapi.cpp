@@ -26,7 +26,7 @@ struct SectionListIterator {
 
 struct SymbolTableIterator {
     explicit SymbolTableIterator(Symlist*);
-    char const* next(void);
+    Symbol* next(void);
     int done(void) const;
 
   private:
@@ -359,8 +359,8 @@ int SectionListIterator::done(void) const {
 SymbolTableIterator::SymbolTableIterator(Symlist* list)
     : current(list->first) {}
 
-char const* SymbolTableIterator::next(void) {
-    auto result = current->name;
+Symbol* SymbolTableIterator::next(void) {
+    Symbol* result = current;
     current = current->next;
     return result;
 }
@@ -398,7 +398,7 @@ void nrn_symbol_table_iterator_free(SymbolTableIterator* st) {
     delete st;
 }
 
-char const* nrn_symbol_table_iterator_next(SymbolTableIterator* st) {
+Symbol* nrn_symbol_table_iterator_next(SymbolTableIterator* st) {
     return st->next();
 }
 
