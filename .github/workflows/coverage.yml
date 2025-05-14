@@ -16,7 +16,6 @@ on:
       - master
       - release/**
   # so we can launch it manually from the GitHub or via GH-CLI without opening a PR
-  workflow_dispatch:
 # TODO : https://github.com/neuronsimulator/nrn/issues/1063
 #    paths-ignore:
 #      - '**.md'
