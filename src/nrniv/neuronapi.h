@@ -63,6 +63,7 @@ Symbol* nrn_symbol(const char* name);
 void nrn_symbol_push(Symbol* sym);
 int nrn_symbol_type(const Symbol* sym);
 int nrn_symbol_subtype(Symbol const* sym);
+double* nrn_symbol_dataptr(Symbol* sym);
 void nrn_double_push(double val);
 double nrn_double_pop(void);
 void nrn_double_ptr_push(double* addr);
@@ -96,7 +97,7 @@ Section* nrn_sectionlist_iterator_next(SectionListIterator* sl);
 int nrn_sectionlist_iterator_done(SectionListIterator* sl);
 SymbolTableIterator* nrn_symbol_table_iterator_new(Symlist* my_symbol_table);
 void nrn_symbol_table_iterator_free(SymbolTableIterator* st);
-char const* nrn_symbol_table_iterator_next(SymbolTableIterator* st);
+Symbol* nrn_symbol_table_iterator_next(SymbolTableIterator* st);
 int nrn_symbol_table_iterator_done(SymbolTableIterator* st);
 int nrn_vector_capacity(const Object* vec);
 double* nrn_vector_data(Object* vec);
@@ -110,6 +111,7 @@ char const* nrn_symbol_name(const Symbol* sym);
 Symlist* nrn_symbol_table(Symbol* sym);
 Symlist* nrn_global_symbol_table(void);
 Symlist* nrn_top_level_symbol_table(void);
+void nrn_register_function(void (*proc)(), const char* func_name);
 // TODO: need shapeplot information extraction
 
 #ifdef __cplusplus
