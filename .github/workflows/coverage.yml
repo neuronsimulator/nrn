@@ -262,7 +262,7 @@ jobs:
 
       - name: Save compiler cache
         id: save-compiler-cache
-        if: steps.restore-compiler-cache.outputs.cache-hit != 'true'
+        if: always() && steps.restore-compiler-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           key: ${{ steps.restore-compiler-cache.outputs.cache-primary-key }}
