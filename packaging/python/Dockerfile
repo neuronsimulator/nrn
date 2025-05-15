@@ -83,6 +83,14 @@ RUN curl -L -o Python-3.10.0.tar.gz https://www.python.org/ftp/python/3.10.0/Pyt
 RUN yum -y install epel-release libX11-devel libXcomposite-devel vim-enhanced && yum -y clean all && rm -rf /var/cache
 RUN yum -y remove ncurses-devel
 
+# install newer version of Bison
+RUN yum -y remove bison
+RUN curl -L -o bison-3.7.tar.gz https://ftp.gnu.org/gnu/bison/bison-3.7.tar.gz \
+    && tar -xvzf bison-3.7.tar.gz \
+    && cd bison-3.7 \
+    && ./configure && make && make install \
+    && cd .. && rm -fr bison-3.7 bison-3.7.tar.gz
+
 # build wheels from there
 WORKDIR /root
 
