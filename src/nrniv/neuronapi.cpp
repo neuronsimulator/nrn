@@ -131,6 +131,13 @@ void nrn_mechanism_insert(Section* sec, const Symbol* mechanism) {
     mech_insert1(sec, mechanism->subtype);
 }
 
+bool nrn_section_is_alive(Section* sec) {
+    if (!sec->prop) {
+        return false;
+    }
+    return true;
+}
+
 /****************************************
  * Segments
  ****************************************/

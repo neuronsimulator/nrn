@@ -45,6 +45,7 @@ void nrn_section_pop(void);
 void nrn_mechanism_insert(Section* sec, const Symbol* mechanism);
 nrn_Item* nrn_allsec(void);
 nrn_Item* nrn_sectionlist_data(Object* obj);
+bool nrn_section_is_alive(Section* sec);
 
 /****************************************
  * Segments
