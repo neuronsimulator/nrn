@@ -73,8 +73,11 @@ add_custom_command(
          "${NMODL_PARSER_BINARY_DIR}/nmodl/position.hh"
          "${NMODL_PARSER_BINARY_DIR}/nmodl/stack.hh"
   WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
-  COMMAND ${BISON_EXECUTABLE} -d -o nmodl/nmodl_parser.cpp "${NMODL_YY_FROM_PARSER_BINARY_DIR}" -M
-          "${NMODL_YY_FROM_PARSER_BINARY_DIR}=../${NMODL_YY_FROM_PARSER_BINARY_DIR}"
+  COMMAND
+    ${BISON_EXECUTABLE} -d -o nmodl/nmodl_parser.cpp "${NMODL_YY_FROM_PARSER_BINARY_DIR}" -M
+    "${NMODL_YY_FROM_PARSER_BINARY_DIR}=../${NMODL_YY_FROM_PARSER_BINARY_DIR}" -M
+    "nmodl/location.hh=src/nmodl/parser/nmodl/location.hh" -M
+    "nmodl/nmodl_parser.hpp=src/nmodl/parser/nmodl/nmodl_parser.hpp"
   DEPENDS "${NMODL_PARSER_SOURCE_DIR}/nmodl.yy" pyastgen
   COMMENT "-- NMODL : GENERATING NMODL_CORE PARSER WITH BISON! --")
 
@@ -124,8 +127,10 @@ add_custom_command(
          "${NMODL_PARSER_BINARY_DIR}/unit/unit_parser.hpp"
          "${NMODL_PARSER_BINARY_DIR}/unit/stack.hh"
   WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
-  COMMAND ${BISON_EXECUTABLE} -d -o unit/unit_parser.cpp "${UNIT_YY_FROM_PARSER_BINARY_DIR}" -M
-          "${UNIT_YY_FROM_PARSER_BINARY_DIR}=../${UNIT_YY_FROM_PARSER_BINARY_DIR}"
+  COMMAND
+    ${BISON_EXECUTABLE} -d -o unit/unit_parser.cpp "${UNIT_YY_FROM_PARSER_BINARY_DIR}" -M
+    "${UNIT_YY_FROM_PARSER_BINARY_DIR}=../${UNIT_YY_FROM_PARSER_BINARY_DIR}" -M
+    "unit/unit_parser.hpp=src/nmodl/parser/unit/unit_parser.hpp"
   DEPENDS "${NMODL_PARSER_SOURCE_DIR}/unit.yy"
   COMMENT "-- NMODL : GENERATING UNIT PARSER WITH BISON! --")
 
