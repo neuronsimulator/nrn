@@ -22,4 +22,5 @@ Python RXD tutorials
    calcium waves
    combining currents from mod files with rxd
    ip3-demo
+   mGLUR
 
