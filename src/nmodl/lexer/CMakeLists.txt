@@ -59,19 +59,6 @@ file(MAKE_DIRECTORY ${NMODL_PARSER_BINARY_DIR}/nmodl ${NMODL_PARSER_BINARY_DIR}/
      ${NMODL_PARSER_BINARY_DIR}/c ${NMODL_PARSER_BINARY_DIR}/unit)
 
 # =============================================================================
-# If using CCache, we do not want to cause cache misses due to #line and similar, so we disable
-# those for both flex and bison
-# =============================================================================
-if("${CMAKE_C_COMPILER_LAUNCHER}" STREQUAL "ccache" OR "${CMAKE_CXX_COMPILER_LAUNCHER}" STREQUAL
-                                                       "ccache")
-  set(FLEX_LAUNCHER "${FLEX_EXECUTABLE}" "-L")
-  set(BISON_LAUNCHER "${BISON_EXECUTABLE}" "-l")
-else()
-  set(FLEX_LAUNCHER "${FLEX_EXECUTABLE}")
-  set(BISON_LAUNCHER "${BISON_EXECUTABLE}")
-endif()
-
-# =============================================================================
 # Lexer & Parser commands
 # =============================================================================
 # Command to generate nmodl parser Construct a relative path to avoid baking any absolute paths into
@@ -86,7 +73,8 @@ add_custom_command(
          "${NMODL_PARSER_BINARY_DIR}/nmodl/position.hh"
          "${NMODL_PARSER_BINARY_DIR}/nmodl/stack.hh"
   WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
-  COMMAND ${BISON_LAUNCHER} -d -o nmodl/nmodl_parser.cpp "${NMODL_YY_FROM_PARSER_BINARY_DIR}"
+  COMMAND ${BISON_EXECUTABLE} -d -o nmodl/nmodl_parser.cpp "${NMODL_YY_FROM_PARSER_BINARY_DIR}" -M
+          "${NMODL_YY_FROM_PARSER_BINARY_DIR}=../${NMODL_YY_FROM_PARSER_BINARY_DIR}"
   DEPENDS "${NMODL_PARSER_SOURCE_DIR}/nmodl.yy" pyastgen
   COMMENT "-- NMODL : GENERATING NMODL_CORE PARSER WITH BISON! --")
 
@@ -97,7 +85,7 @@ add_custom_command(
   OUTPUT "${NMODL_PARSER_BINARY_DIR}/verbatim_parser.cpp"
          "${NMODL_PARSER_BINARY_DIR}/verbatim_parser.hpp"
   WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
-  COMMAND ${BISON_LAUNCHER} -d -o verbatim_parser.cpp "${VERBATIM_YY_FROM_PARSER_BINARY_DIR}"
+  COMMAND ${BISON_EXECUTABLE} -d -o verbatim_parser.cpp "${VERBATIM_YY_FROM_PARSER_BINARY_DIR}"
   DEPENDS "${NMODL_PARSER_SOURCE_DIR}/verbatim.yy"
   COMMENT "-- NMODL : GENERATING VERBATIM PARSER WITH BISON! --")
 
@@ -109,7 +97,8 @@ add_custom_command(
          "${NMODL_PARSER_BINARY_DIR}/diffeq/diffeq_parser.hpp"
          "${NMODL_PARSER_BINARY_DIR}/diffeq/stack.hh"
   WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
-  COMMAND ${BISON_LAUNCHER} -d -o diffeq/diffeq_parser.cpp "${DIFFEQ_YY_FROM_PARSER_BINARY_DIR}"
+  COMMAND ${BISON_EXECUTABLE} -d -o diffeq/diffeq_parser.cpp "${DIFFEQ_YY_FROM_PARSER_BINARY_DIR}"
+          -M "${DIFFEQ_YY_FROM_PARSER_BINARY_DIR}=../${DIFFEQ_YY_FROM_PARSER_BINARY_DIR}"
   DEPENDS "${NMODL_PARSER_SOURCE_DIR}/diffeq.yy" "${NMODL_PARSER_SOURCE_DIR}/diffeq_context.hpp"
           "${NMODL_PARSER_SOURCE_DIR}/diffeq_context.cpp"
           "${NMODL_PARSER_SOURCE_DIR}/diffeq_helper.hpp"
@@ -122,7 +111,8 @@ add_custom_command(
   OUTPUT "${NMODL_PARSER_BINARY_DIR}/c/c11_parser.cpp" "${NMODL_PARSER_BINARY_DIR}/c/c11_parser.hpp"
          "${NMODL_PARSER_BINARY_DIR}/c/stack.hh"
   WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
-  COMMAND ${BISON_LAUNCHER} -d -o c/c11_parser.cpp "${C11_YY_FROM_PARSER_BINARY_DIR}"
+  COMMAND ${BISON_EXECUTABLE} -d -o c/c11_parser.cpp "${C11_YY_FROM_PARSER_BINARY_DIR}" -M
+          "${C11_YY_FROM_PARSER_BINARY_DIR}=../${C11_YY_FROM_PARSER_BINARY_DIR}"
   DEPENDS "${NMODL_PARSER_SOURCE_DIR}/c11.yy"
   COMMENT "-- NMODL : GENERATING C (11) PARSER WITH BISON! --")
 
@@ -134,7 +124,8 @@ add_custom_command(
          "${NMODL_PARSER_BINARY_DIR}/unit/unit_parser.hpp"
          "${NMODL_PARSER_BINARY_DIR}/unit/stack.hh"
   WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
-  COMMAND ${BISON_LAUNCHER} -d -o unit/unit_parser.cpp "${UNIT_YY_FROM_PARSER_BINARY_DIR}"
+  COMMAND ${BISON_EXECUTABLE} -d -o unit/unit_parser.cpp "${UNIT_YY_FROM_PARSER_BINARY_DIR}" -M
+          "${UNIT_YY_FROM_PARSER_BINARY_DIR}=../${UNIT_YY_FROM_PARSER_BINARY_DIR}"
   DEPENDS "${NMODL_PARSER_SOURCE_DIR}/unit.yy"
   COMMENT "-- NMODL : GENERATING UNIT PARSER WITH BISON! --")
 
@@ -144,7 +135,7 @@ file(RELATIVE_PATH NMODL_LL_FROM_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}"
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/nmodl_base_lexer.cpp
          ${CMAKE_CURRENT_BINARY_DIR}/nmodl_base_lexer.hpp
-  COMMAND ${FLEX_LAUNCHER} "${NMODL_LL_FROM_BINARY_DIR}"
+  COMMAND ${FLEX_EXECUTABLE} "${NMODL_LL_FROM_BINARY_DIR}"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/nmodl.ll ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_utils.hpp
   COMMENT "-- NMODL : GENERATING NMODL LEXER WITH FLEX! --")
@@ -155,7 +146,7 @@ file(RELATIVE_PATH VERBATIM_LL_FROM_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}"
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/verbatim_lexer.cpp
          ${CMAKE_CURRENT_BINARY_DIR}/verbatim_lexer.hpp
-  COMMAND ${FLEX_LAUNCHER} "${VERBATIM_LL_FROM_BINARY_DIR}"
+  COMMAND ${FLEX_EXECUTABLE} "${VERBATIM_LL_FROM_BINARY_DIR}"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/verbatim.l
   COMMENT "-- NMODL : GENERATING VERBATIM LEXER WITH FLEX! --")
@@ -166,7 +157,7 @@ file(RELATIVE_PATH DIFFEQ_LL_FROM_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}"
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/diffeq_base_lexer.cpp
          ${CMAKE_CURRENT_BINARY_DIR}/diffeq_base_lexer.hpp
-  COMMAND ${FLEX_LAUNCHER} "${DIFFEQ_LL_FROM_BINARY_DIR}"
+  COMMAND ${FLEX_EXECUTABLE} "${DIFFEQ_LL_FROM_BINARY_DIR}"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/diffeq.ll
   COMMENT "-- NMODL : GENERATING DIFFERENTIAL EQUATION LEXER WITH FLEX! --")
@@ -177,7 +168,7 @@ file(RELATIVE_PATH C11_LL_FROM_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}"
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/c11_base_lexer.cpp
          ${CMAKE_CURRENT_BINARY_DIR}/c11_base_lexer.hpp
-  COMMAND ${FLEX_LAUNCHER} "${C11_LL_FROM_BINARY_DIR}"
+  COMMAND ${FLEX_EXECUTABLE} "${C11_LL_FROM_BINARY_DIR}"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/c11.ll
   COMMENT "-- NMODL : GENERATING C(11) LEXER WITH FLEX! --")
@@ -188,7 +179,7 @@ file(RELATIVE_PATH UNIT_LL_FROM_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}"
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/unit_base_lexer.cpp
          ${CMAKE_CURRENT_BINARY_DIR}/unit_base_lexer.hpp
-  COMMAND ${FLEX_LAUNCHER} "${UNIT_LL_FROM_BINARY_DIR}"
+  COMMAND ${FLEX_EXECUTABLE} "${UNIT_LL_FROM_BINARY_DIR}"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/unit.ll
   COMMENT "-- NMODL : GENERATING UNIT LEXER WITH FLEX! --")
