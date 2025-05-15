@@ -19,7 +19,7 @@ MechanismStandard (Parameter Control)
 
 
     Description:
-        In Python, consider the use of 'sec.psection()' which encapsulates MechanismType and MechanismStandard so as to return a dictionary.
+        In Python, consider the use of ``sec.psection()`` which encapsulates MechanismType and MechanismStandard so as to return a dictionary.
 
         With no vartype or vartype = 1, this provides 
         storage for parameter values of a membrane mechanism or point process. 
@@ -123,6 +123,22 @@ MechanismStandard (Parameter Control)
             print(get_mech_globals('hh'))
 
 
+    .. warning::
+    
+        MechanismStandard only supports the names of mechanisms as strings, not the mechanism objects.
+        e.g., you can pass ``'hh'`` but not ``h.hh``.
+
+        If you have a density mechanism, e.g., ``mech = h.hh``, beginning with NEURON 9, you can get
+        the name of the mechanism as a string with ``mech.name``. You can then use this string
+        with MechanismStandard. For example:
+        .. code-block::
+            python
+
+            from neuron import h
+
+            mech = h.hh
+            ms = h.MechanismStandard(mech.name)
+            ms.panel()
 
     .. seealso::
         :class:`MechanismType`
@@ -176,7 +192,13 @@ MechanismStandard (Parameter Control)
         the index of the changed item in the object, and a third argument indicating
         position in an array (or 0 if the parameter is not an array; this is the usual
         case). The value is in `h.hoc_ac_` and this value may also be read via
-        ``nameref = h.ref(""); ms.name(nameref, i);  value = ms.get(nameref[0], j)``
+
+        .. code-block::
+            python
+
+            nameref = h.ref("")
+            ms.name(nameref, i)
+            value = ms.get(nameref[0], j)
 
     Example:
 
@@ -189,9 +211,8 @@ MechanismStandard (Parameter Control)
             axon = h.Section('axon')
             dend = [h.Section(f'dend[{i}]' for i in range(3)]
 
-            axon.insert(h.hh)
-            for sec in dend:
-                sec.insert(h.pas)
+            h.hh.insert(axon)
+            h.pas.insert(dend)  # puts into all dendrites in the list
 
             h.xpanel("Updated when MechanismStandard is changed")
             for i, sec in enumerate(dend):
