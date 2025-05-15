@@ -35,7 +35,7 @@ env:
 
 jobs:
   coverage:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     name: Code Coverage
 
@@ -187,9 +187,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ github.workspace }}/ccache
-          key: ccache-${{github.ref_name}}
+          key: ccache-coverage-${{runner.os}}-${{github.ref_name}}
           restore-keys: |
-            ccache-master
+            ccache-coverage-${{runner.os}}-master
 
       - name: Build & Test
         id: build-test
