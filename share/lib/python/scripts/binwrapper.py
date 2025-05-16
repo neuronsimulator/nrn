@@ -112,8 +112,8 @@ def _wrap_executable(output_name):
 if __name__ == "__main__":
     exe = _config_exe(os.path.basename(sys.argv[0]))
 
-    if exe.endswith("nrnivmodl"):
-        # To create a wrapper for special (so it also gets ENV vars) we intercept nrnivmodl
+    if Path(exe).name.startswith("nrnivmodl"):
+        # To create a wrapper for special (so it also gets ENV vars) we intercept nrnivmodl and its variants
         _check_cpp_compiler_version("10.0")
         subprocess.check_call([exe, *sys.argv[1:]])
         _wrap_executable("special")

@@ -7,7 +7,8 @@
 #                       [CORENEURON]
 #                       [ENVIRONMENT var1=val2 ...]
 #                       [MODFILE_PATTERNS mod/file/dir/*.mod ...]
-#                       [NRNIVMODL_ARGS arg1 ...]
+#                       [NRNIVMODL_EXTRA_INCLUDES arg1 ...]
+#                       [NRNIVMODL_EXTRA_LIBRARIES arg1 ...]
 #                       [OUTPUT datatype::file.ext ...]
 #                       [SCRIPT_PATTERNS "*.py" ...]
 #                       [SIM_DIRECTORY sim_dir]
@@ -30,7 +31,8 @@
 #                       be compiled (using nrnivmodl) to run the test. The special
 #                       value "NONE" will not emit a warning if nothing matches it
 #                       and will stop nrnivmodl from being called.
-#    NRNIVMODL_ARGS   - extra arguments that will be passed to nrnivmodl.
+#    NRNIVMODL_EXTRA_INCLUDES  - extra includes that will be passed to nrnivmodl.
+#    NRNIVMODL_EXTRA_LIBRARIES  - extra libraries that will be passed to nrnivmodl.
 #    OUTPUT           - zero or more expressions of the form `datatype::path`
 #                       describing the output data produced by a test. The
 #                       data type must be supported by the comparison script
@@ -96,14 +98,24 @@
 # ~~~
 # Load the cpp_cc_build_time_copy helper function.
 include("${CODING_CONV_CMAKE}/build-time-copy.cmake")
+# Load the nrnivmodl helpers
+include("${CMAKE_CURRENT_LIST_DIR}/NeuronMechVariableHelper.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/neuronMechMaker.cmake")
 function(nrn_add_test_group)
-  # NAME is used as a key, [CORENEURON, MODFILE_PATTERNS, NRNIVMODL_ARGS and SUBMODULE] are used to
-  # set up a custom target that runs nrnivmod, everything else is a default that can be overriden in
-  # subsequent calls to nrn_add_test that actually set up CTest tests.
+  # NAME is used as a key, [CORENEURON, MODFILE_PATTERNS, NRNIVMODL_EXTRA_INCLUDES,
+  # NRNIVMODL_EXTRA_LIBRARIES and SUBMODULE] are used to set up a custom target that runs nrnivmod,
+  # everything else is a default that can be overriden in subsequent calls to nrn_add_test that
+  # actually set up CTest tests.
   set(options CORENEURON)
   set(oneValueArgs NAME SUBMODULE)
-  set(multiValueArgs ENVIRONMENT MODFILE_PATTERNS NRNIVMODL_ARGS OUTPUT SCRIPT_PATTERNS
-                     SIM_DIRECTORY)
+  set(multiValueArgs
+      ENVIRONMENT
+      MODFILE_PATTERNS
+      NRNIVMODL_EXTRA_INCLUDES
+      NRNIVMODL_EXTRA_LIBRARIES
+      OUTPUT
+      SCRIPT_PATTERNS
+      SIM_DIRECTORY)
   cmake_parse_arguments(NRN_ADD_TEST_GROUP "${options}" "${oneValueArgs}" "${multiValueArgs}"
                         ${ARGN})
   if(DEFINED NRN_ADD_TEST_GROUP_MISSING_VALUES)
@@ -151,12 +163,9 @@ function(nrn_add_test_group)
   if(NOT "${NRN_ADD_TEST_GROUP_MODFILE_PATTERNS}" STREQUAL "NONE")
     # Add a rule to build the modfiles for this test group. Multiple groups may ask for exactly the
     # same thing (testcorenrn), so it's worth deduplicating.
-    set(hash_components ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
-    # Escape special characters (problematic with Windows paths when calling nrnivmodl)
-    string(REGEX REPLACE "([][+.*()^])" "\\\\\\1" NRN_RUN_FROM_BUILD_DIR_ENV
-                         "${NRN_RUN_FROM_BUILD_DIR_ENV}")
-    set(nrnivmodl_command cmake -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
-                          ${CMAKE_BINARY_DIR}/bin/nrnivmodl ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
+    set(hash_components
+        "${NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_INCLUDES} ${NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_LIBRARIES}"
+    )
     # The user decides whether or not this test group should have its MOD files compiled for
     # CoreNEURON.
     set(nrnivmodl_dependencies)
@@ -164,9 +173,7 @@ function(nrn_add_test_group)
       list(APPEND hash_components -coreneuron)
       list(APPEND nrnivmodl_dependencies ${CORENEURON_TARGET_TO_DEPEND})
       list(APPEND nrnivmodl_dependencies coreneuron-core)
-      list(APPEND nrnivmodl_command -coreneuron)
     endif()
-    list(APPEND nrnivmodl_command .)
     # Collect the list of modfiles that need to be compiled.
     set(modfiles)
     foreach(modfile_pattern ${NRN_ADD_TEST_GROUP_MODFILE_PATTERNS})
@@ -193,30 +200,6 @@ function(nrn_add_test_group)
     set(nrnivmodl_directory "${PROJECT_BINARY_DIR}/test/nrnivmodl/${nrnivmodl_command_hash}")
     # Short-circuit if the target has already been created.
     if(NOT TARGET "${binary_target_name}")
-      # Copy modfiles from source -> build tree.
-      foreach(modfile ${modfiles})
-        # Construct the build tree path of the modfile.
-        get_filename_component(modfile_name "${modfile}" NAME)
-        set(modfile_build_path "${nrnivmodl_directory}/${modfile_name}")
-        # Add a build rule that copies this modfile from the source tree to the build tree.
-        cpp_cc_build_time_copy(
-          INPUT "${modfile}"
-          OUTPUT "${modfile_build_path}"
-          NO_TARGET)
-        # Store a list of the modfile paths in the build tree so we can declare nrnivmodl's
-        # dependency on these.
-        list(APPEND modfile_build_paths "${modfile_build_path}")
-      endforeach()
-      # Construct the names of the important output files
-      set(special "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/special")
-      # Add the custom command to generate the binaries. Get nrnivmodl from the build directory. At
-      # the moment it seems that `nrnivmodl` is generated at configure time, so there is no target
-      # to depend on and it should always be available, but it will try and link against libnrniv.so
-      # and libcorenrnmech.so so we must depend on those. TODO: could the logic of `nrnivmodl` be
-      # translated to CMake, so it can be called natively here and the `nrnivmodl` executable would
-      # be a wrapper that invokes CMake?
-      set(output_binaries "${special}")
-      list(APPEND nrnivmodl_dependencies nrniv_lib)
       if(NRN_ENABLE_CORENEURON AND NRN_ADD_TEST_GROUP_CORENEURON)
         list(APPEND output_binaries "${special}-core")
         if((NOT coreneuron_FOUND) AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES))
@@ -226,14 +209,84 @@ function(nrn_add_test_group)
         endif()
         list(APPEND nrnivmodl_dependencies ${CORENEURON_BUILTIN_MODFILES})
       endif()
-      add_custom_command(
-        OUTPUT ${output_binaries}
-        DEPENDS ${nrnivmodl_dependencies} ${modfile_build_paths}
-        COMMAND ${nrnivmodl_command}
-        COMMENT "Building special[-core] for test group ${NRN_ADD_TEST_GROUP_NAME}"
-        WORKING_DIRECTORY "${nrnivmodl_directory}")
-      # Add a target that depends on the binaries that will always be built.
-      add_custom_target(${binary_target_name} DEPENDS ${output_binaries})
+      if(NRN_ADD_TEST_GROUP_CORENEURON)
+        set(cnrn_option "CORENEURON")
+      else()
+        set(cnrn_option "")
+      endif()
+      # ============================================
+      # Actually build the target (compile modfiles)
+      # ============================================
+      create_nrnmech(
+        ${cnrn_option}
+        NEURON
+        SPECIAL
+        MOD_FILES
+        ${modfiles}
+        NOCMODL_EXECUTABLE
+        ${PROJECT_BINARY_DIR}/bin/nocmodl
+        NMODL_EXECUTABLE
+        ${PROJECT_BINARY_DIR}/bin/nmodl
+        EXTRA_ENV
+        ${NRN_RUN_FROM_BUILD_DIR_ENV}
+        # disable ASAN since NMODL and NOCMODL have too many to count
+        ASAN_OPTIONS=detect_leaks=0
+        ARTIFACTS_OUTPUT_DIR
+        "${nrnivmodl_directory}"
+        LIBRARY_OUTPUT_DIR
+        "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}"
+        "${library_output_path}"
+        EXECUTABLE_OUTPUT_DIR
+        "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}"
+        TARGET_LIBRARY_NAME
+        ${binary_target_name}-lib
+        TARGET_EXECUTABLE_NAME
+        ${binary_target_name}-special)
+      # Set the right include dirs and dependencies
+      foreach(neuron_target ${binary_target_name}-lib ${binary_target_name}-special)
+        target_include_directories(${neuron_target} BEFORE PRIVATE ${PROJECT_BINARY_DIR}/include)
+        add_dependencies(${neuron_target} neuron::nrniv neuron::nocmodl nrnivmodl_dependency)
+        if(NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_INCLUDES)
+          target_include_directories(${neuron_target}
+                                     PRIVATE ${NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_INCLUDES})
+        endif()
+        if(NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_LIBRARIES)
+          target_link_libraries(${neuron_target}
+                                PRIVATE ${NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_LIBRARIES})
+        endif()
+      endforeach()
+      if(NRN_ADD_TEST_GROUP_CORENEURON)
+        # NEURON sets a lot of needless compile options, but we want to build things the way users
+        # would build them, so we need to set the COMPILE_OPTIONS, COMPILE_DEFINITONS, and
+        # INCLUDE_DIRECTORIES by hand for the core* targets
+        foreach(coreneuron_target core${binary_target_name}-lib core${binary_target_name}-special)
+          set_target_properties(
+            ${coreneuron_target}
+            PROPERTIES COMPILE_OPTIONS ""
+                       INCLUDE_DIRECTORIES ""
+                       COMPILE_FLAGS ""
+                       COMPILE_DEFINITIONS "")
+          add_dependencies(${coreneuron_target} nmodl::nmodl neuron::corenrn nrnivmodl_dependency)
+          target_include_directories(
+            ${coreneuron_target} BEFORE
+            PRIVATE ${_CORENEURON_RANDOM_INCLUDE} ${PROJECT_BINARY_DIR}/include
+                    ${PROJECT_BINARY_DIR}/generated)
+          target_compile_options(${coreneuron_target} BEFORE PRIVATE ${_CORENEURON_FLAGS})
+          target_compile_definitions(${coreneuron_target} PUBLIC ADDITIONAL_MECHS)
+          if(NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_INCLUDES)
+            target_include_directories(${coreneuron_target}
+                                       PRIVATE ${NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_INCLUDES})
+          endif()
+          if(NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_LIBRARIES)
+            target_link_libraries(${coreneuron_target}
+                                  PRIVATE ${NRN_ADD_TEST_GROUP_NRNIVMODL_EXTRA_LIBRARIES})
+          endif()
+        endforeach()
+
+      endif()
+      add_custom_target(${binary_target_name} ALL)
+      add_dependencies(${binary_target_name} ${binary_target_name}-lib
+                       ${binary_target_name}-special)
     endif()
     set(${prefix}_NRNIVMODL_DIRECTORY
         "${nrnivmodl_directory}"

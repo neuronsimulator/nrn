@@ -1,6 +1,7 @@
 include(${PROJECT_SOURCE_DIR}/cmake/nmodl/FlexHelper.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/nmodl/CompilerHelper.cmake)
 include_directories(${NMODL_PROJECT_PLATLIB_SOURCE_DIR} ${NMODL_PROJECT_PLATLIB_BINARY_DIR})
+set(NMODL_INSTALL_DIR_SUFFIX ${NRN_INSTALL_DATA_PREFIX})
 
 list(APPEND NMODL_EXTRA_CXX_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 
@@ -130,7 +131,6 @@ endif()
 # =============================================================================
 # Install executable
 # =============================================================================
-set(NMODL_INSTALL_DIR_SUFFIX ${NRN_INSTALL_DATA_PREFIX})
 
 install(
   TARGETS nmodl

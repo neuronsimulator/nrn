@@ -77,7 +77,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
 
     # install in the correct location
     install(TARGETS graphicsPrimitives${pyver} ctng${pyver} surfaces${pyver}
-            DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d)
+            DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}rxd/geometry3d)
 
   endforeach(val)
 else(NRN_ENABLE_PYTHON_DYNAMIC)
@@ -112,6 +112,6 @@ else(NRN_ENABLE_PYTHON_DYNAMIC)
 
   endforeach()
   install(TARGETS graphicsPrimitives ctng surfaces
-          DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d)
+          DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}rxd/geometry3d)
 
 endif(NRN_ENABLE_PYTHON_DYNAMIC)

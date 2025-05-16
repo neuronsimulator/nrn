@@ -40,7 +40,7 @@ pylibraryglob="
 pylibraries=`(cd $inst/lib/python/neuron ; for i in $pylibraryglob ; do ls $i ; done)`
 echo $pylibraries
 
-demolibnrnmech="$CPU/libnrnmech.dylib $CPU/.libs/libnrnmech.so $CPU/special"
+demolibnrnmech="$CPU/libnrnmech.dylib $CPU/special"
 
 #codesign a file, $1, prefixed by $inst
 sign() {

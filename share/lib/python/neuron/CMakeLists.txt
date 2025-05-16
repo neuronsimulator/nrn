@@ -30,7 +30,6 @@ set(NRN_PYTHON_FILES_LIST
     tests/utils/checkresult.py
     tests/test_neuron.py
     tests/test_vector.py
-    __init__.py
     coreneuron.py
     doc.py
     gui2/setup_threejs.py
@@ -96,6 +95,10 @@ set(NRN_PYTHON_RX3D_FILES_LIST
     rxd/gui.py
     rxd/reaction.py)
 
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/__init__.py.in"
+               "${PROJECT_BINARY_DIR}/lib/python/neuron/__init__.py")
+install(FILES "${PROJECT_BINARY_DIR}/lib/python/neuron/__init__.py"
+        DESTINATION "${NRN_INSTALL_PYTHON_PREFIX}")
 copy_build_list(NRN_PYTHON_FILES_LIST "${PROJECT_BINARY_DIR}/${NRN_INSTALL_PYTHON_PREFIX}")
 install_list(NRN_PYTHON_FILES_LIST "${NRN_INSTALL_PYTHON_PREFIX}")
 
