@@ -353,7 +353,7 @@ endif()
 # =============================================================================
 # Find required packages
 # =============================================================================
-find_package(BISON REQUIRED)
+find_package(BISON 3.7 REQUIRED)
 find_package(FLEX 2.6 REQUIRED)
 
 # When shipping the wheels we want to link readline libs statically.
