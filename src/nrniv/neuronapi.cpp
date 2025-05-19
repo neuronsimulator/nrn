@@ -10,6 +10,7 @@
 #include "ocjump.h"
 #include "parse.hpp"
 #include "section.h"
+#include "shapeplt.h"
 
 /// A public face of hoc_Item
 struct nrn_Item: public hoc_Item {};
@@ -129,6 +130,13 @@ void nrn_section_pop(void) {
 void nrn_mechanism_insert(Section* sec, const Symbol* mechanism) {
     // TODO: throw exception if mechanism is not an insertable mechanism?
     mech_insert1(sec, mechanism->subtype);
+}
+
+bool nrn_section_is_active(Section* sec) {
+    if (!sec->prop) {
+        return false;
+    }
+    return true;
 }
 
 /****************************************
@@ -318,6 +326,17 @@ void nrn_object_unref(Object* obj) {
 
 char const* nrn_class_name(const Object* obj) {
     return obj->ctemplate->sym->name;
+}
+
+/****************************************
+ * Plot Shape
+ ****************************************/
+
+ShapePlotInterface* nrn_get_plotshape_interface(Object* ps) {
+    ShapePlotInterface* spi;
+    hoc_Item** my_section_list;
+    spi = ((ShapePlotInterface*) ps->u.this_pointer);
+    return spi;
 }
 
 /****************************************
