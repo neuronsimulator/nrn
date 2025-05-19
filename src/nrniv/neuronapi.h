@@ -92,7 +92,7 @@ char const* nrn_class_name(Object const* obj);
 /****************************************
  * Shape Plot
  ****************************************/
-ShapePlotInterface* get_plotshape_interface(Object* ps);
+ShapePlotInterface* nrn_get_plotshape_interface(Object* ps);
 
 /****************************************
  * Miscellaneous

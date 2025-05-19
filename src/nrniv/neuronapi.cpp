@@ -332,7 +332,7 @@ char const* nrn_class_name(const Object* obj) {
  * Plot Shape
  ****************************************/
 
-ShapePlotInterface* get_plotshape_interface(Object* ps) {
+ShapePlotInterface* nrn_get_plotshape_interface(Object* ps) {
     ShapePlotInterface* spi;
     hoc_Item** my_section_list;
     spi = ((ShapePlotInterface*) ps->u.this_pointer);
