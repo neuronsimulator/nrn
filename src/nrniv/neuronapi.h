@@ -12,6 +12,7 @@ typedef struct SectionListIterator SectionListIterator;
 typedef struct nrn_Item nrn_Item;
 typedef struct SymbolTableIterator SymbolTableIterator;
 typedef struct Symlist Symlist;
+typedef struct ShapePlotInterface ShapePlotInterface;
 
 typedef enum {
     STACK_IS_STR = 1,
@@ -45,7 +46,7 @@ void nrn_section_pop(void);
 void nrn_mechanism_insert(Section* sec, const Symbol* mechanism);
 nrn_Item* nrn_allsec(void);
 nrn_Item* nrn_sectionlist_data(Object* obj);
-bool nrn_section_is_alive(Section* sec);
+bool nrn_section_is_active(Section* sec);
 
 /****************************************
  * Segments
@@ -87,6 +88,11 @@ void nrn_function_call(Symbol* sym, int narg);
 void nrn_object_ref(Object* obj);
 void nrn_object_unref(Object* obj);
 char const* nrn_class_name(Object const* obj);
+
+/****************************************
+ * Shape Plot
+ ****************************************/
+ShapePlotInterface* get_plotshape_interface(Object* ps);
 
 /****************************************
  * Miscellaneous
