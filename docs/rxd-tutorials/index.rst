@@ -10,7 +10,6 @@ Python RXD tutorials
    basic-initialization
    Changing initial conditions and parameters
    radial_diffusion
-   intracellular
    thresholds
    extracellular
    Restricting reactions to certain sections
