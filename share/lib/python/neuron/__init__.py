@@ -1358,7 +1358,7 @@ def _nmodl():
         return nmodl
     except ModuleNotFoundError:
         raise Exception(
-            "Missing nmodl module; install from https://github.com/bluebrain/nmodl"
+            "Missing nmodl module"
         )
 
 
@@ -1378,10 +1378,10 @@ class DensityMechanism:
         self.__ast = None
         self.__ions = None
         try:
-            import nmodl
+            _nmodl()
 
             self.__has_nmodl = True
-        except ModuleNotFoundError:
+        except:
             pass
 
     def __repr__(self):
