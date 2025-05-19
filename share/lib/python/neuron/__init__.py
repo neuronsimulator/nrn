@@ -1357,9 +1357,7 @@ def _nmodl():
 
         return nmodl
     except ModuleNotFoundError:
-        raise Exception(
-            "Missing nmodl module"
-        )
+        raise Exception("Missing nmodl module")
 
 
 class DensityMechanism:
