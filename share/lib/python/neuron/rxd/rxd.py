@@ -94,6 +94,7 @@ register_rate.argtypes = [
         ctypes.c_double, flags="contiguous"
     ),  # multicompartment multipliers
     ctypes.POINTER(ctypes.py_object),  # voltage pointers
+    ctypes._CFuncPtr,
 ]  # Reaction rate function
 
 setup_currents = nrn_dll_sym("setup_currents")
@@ -118,6 +119,7 @@ ics_register_reaction.argtypes = [
     numpy.ctypeslib.ndpointer(dtype=numpy.uint64),
     ctypes.c_int,
     numpy.ctypeslib.ndpointer(dtype=float),
+    ctypes._CFuncPtr,
 ]
 
 ecs_register_reaction = nrn_dll_sym("ecs_register_reaction")
@@ -126,6 +128,7 @@ ecs_register_reaction.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
     _int_ptr,
+    ctypes._CFuncPtr,
 ]
 
 

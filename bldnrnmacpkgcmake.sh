@@ -6,11 +6,11 @@ default_pythons="python3.9 python3.10 python3.11 python3.12 python3.13"
 # bash bldnrnmacpkgcmake.sh
 # without args, default are the pythons above.
 
-# rx3doptlevel=2 is default but very slow compiling. For script testing
+# rx3doptlevel=1 is default. 2 is very slow compiling. For script testing
 # launch with rx3doptlevel set to 0 or 1, e.g.
 # rx3doptlevel=0 bash bldnrnmacpkgcmake.sh
 if test "$rx3doptlevel" = "" ; then
-  rx3doptlevel=2
+  rx3doptlevel=1
 fi
 
 # Now obsolete...
