@@ -1,7 +1,7 @@
 # NEURON 8.2
 
 ## 8.2.7
-_Release Date_ : 25-04-2025
+_Release Date_ : 25-05-2025
 
 This release allows use of Python 3.13.
 Pins numpy to >=2.
