@@ -651,6 +651,14 @@ void c_out_vectorize() {
     /* things which must go first and most declarations */
     P("/* VECTORIZED */\n#define NRN_VECTORIZED 1\n");
     P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
+    fprintf(fcout,
+            "#define NRN_TRACE 0\n"
+            "#if NRN_TRACE\n"
+            "#include \"nrn_trace.h\"\n"
+            "#else\n"
+            "#define NRN_TRACE_START(name) /**/\n"
+            "#define NRN_TRACE_END(name) /**/\n"
+            "#endif\n");
     P("#undef PI\n");
     P("#define nil 0\n");
     P("#include \"md1redef.h\"\n");
@@ -757,6 +765,7 @@ void c_out_vectorize() {
 
     if (brkpnt_exists) {
         P("\nstatic void nrn_cur(NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
+        fprintf(fcout, "  NRN_TRACE_START(\"nrn_cur_%s\");\n", mechname);
         P("double* _p; Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; double _rhs, _v; int _iml, _cntml;\n");
         P("#if CACHEVEC\n");
@@ -839,10 +848,12 @@ void c_out_vectorize() {
             }
         }
         P(" \n}\n");
+        fprintf(fcout, "  NRN_TRACE_END(\"nrn_cur_%s\");\n", mechname);
         P(" \n}\n");
         /* for the classic breakpoint block, nrn_cur computed the conductance, _g,
            and now the jacobian calculation merely returns that */
         P("\nstatic void nrn_jacob(NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
+        fprintf(fcout, "  NRN_TRACE_START(\"nrn_jacob_%s\");\n", mechname);
         P("double* _p; Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; int* _ni; int _iml, _cntml;\n");
         P("#if CACHEVEC\n");
@@ -888,12 +899,14 @@ void c_out_vectorize() {
 #endif
         }
         P(" \n}\n");
+        fprintf(fcout, "  NRN_TRACE_END(\"nrn_jacob_%s\");\n", mechname);
         P(" \n}\n");
     }
 
     /* nrnstate list contains the EQUATION solve statement so this
        advances states by dt */
     P("\nstatic void nrn_state(NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
+    fprintf(fcout, "  NRN_TRACE_START(\"nrn_state_%s\");\n", mechname);
     if (nrnstate || currents->next == currents) {
         P("double* _p; Datum* _ppvar; Datum* _thread;\n");
         P("Node *_nd; double _v = 0.0; int* _ni; int _iml, _cntml;\n");
@@ -924,6 +937,7 @@ void c_out_vectorize() {
             P(" dt = _dtsav;");
         }
     }
+    fprintf(fcout, "  NRN_TRACE_END(\"nrn_state_%s\");\n", mechname);
     P("\n}\n");
 
     P("\nstatic void terminal(){}\n");

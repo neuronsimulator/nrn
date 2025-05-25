@@ -149,7 +149,7 @@ static List* nrnpointers;
 static List* uip; /* void _update_ion_pointer(Datum* _ppvar){...} text */
 static char suffix[256];
 static char* rsuffix; /* point process range and functions don't have suffix*/
-static char* mechname;
+char* mechname;
 int point_process;      /* 1 if a point process model */
 int artificial_cell;    /* 1 if also explicitly declared an ARTIFICIAL_CELL */
 static int diamdec = 0; /*1 if diam is declared*/
@@ -1139,6 +1139,9 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
 ");
     Sprintf(buf,
             "void _%s_reg() {\n\
+#if NRN_TRACE\n\
+	nrn_trace_logging();\n\
+#endif\n\
 	int _vectorized = %d;\n",
             modbase,
             vectorize);

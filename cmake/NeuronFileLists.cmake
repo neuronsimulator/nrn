@@ -29,6 +29,7 @@ set(HEADER_FILES_TO_INSTALL
     nrnapi.h
     nrnassrt.h
     nrncvode.h
+    nrn_trace.h
     nrnisaac.h
     nrniv_mf.h
     nrnoc_ml.h
