@@ -16,6 +16,7 @@ static bool split_solve_;
 static std::vector<Item*> ssi;  // splitfor_solve_info
 
 // Helper functions implemented after callers.
+static short sym_type(Item*);
 static bool assign_non_range(List* lst);
 static bool not_allowed(List* lst, Symbol** symproc = nullptr);
 static void split_printlist(List* lst);
@@ -65,7 +66,23 @@ bool splitfor() {
                 Symbol* symproc = nullptr;
                 if (not_allowed(ssi[4], &symproc) == false) {
                     if (symproc) {
-                        printf("ZZZ need to verify that %s can be SPLITFOR\n", symproc->name);
+                        // If all subtype DEP are nrntype NRNRANGE etc, then OK.
+                        bool ok = true;
+                        for (Item* q = ssi[4]->next; q != ssi[4]; q = q->next) {
+                            if (sym_type(q) == NAME && SYM(q)->subtype == DEP &&
+                                !(SYM(q)->nrntype & (NRNRANGE | NRNEXTRN))) {
+                                if (strcmp(SYM(q)->name, "v") != 0) {
+                                    ok = false;
+                                    printf("ZZZ can't split because of %s may be changed in %s\n",
+                                           SYM(q)->name,
+                                           symproc->name);
+                                    break;
+                                }
+                            }
+                        }
+                        if (!ok) {
+                            break;
+                        }
                     }
                 }
                 split_solve_ = true;
@@ -74,6 +91,7 @@ bool splitfor() {
             }
         }
     }
+    printf("split_cur = %d  split_solve_ = %d\n", split_cur_, split_solve_);
     return split_cur_ || split_solve_;
 }
 
@@ -241,7 +259,13 @@ void splitfor_solve_info(Item* q1, Item* q2, Item* q3, Item* q4) {
     ssi.push_back(q4);
     List* lst = newlist();
     ssi.push_back((Item*) lst);
+    // copy because translator will modify items from q3 to q4
+    // and we need to analyze the original mod file tokens.
     copyitems(q3->prev, q4, lst);
+}
+
+static short sym_type(Item* q) {
+    return (q->itemtype == SYMBOL) ? SYM(q)->type : -1;
 }
 
 // check for assignment to non-range variable
@@ -265,7 +289,7 @@ static bool assign_non_range(List* lst) {
 }
 
 static bool not_allowed(List* lst, Symbol** symproc) {
-    // b = false when some statements occur
+    // b becomes true when some statements occur
     bool b{false};
     for (Item* q = lst->next; q != lst; q = q->next) {
         if (q->itemtype == SYMBOL) {
