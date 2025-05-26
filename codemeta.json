@@ -16,7 +16,7 @@
         }
     ],
     "codeRepository": "git+https://github.com/neuronsimulator/nrn.git",
-    "dateModified": "2024-07-24",
+    "dateModified": "2025-05-25",
     "description": "Empirically-based simulator for modeling neurons and networks of neurons",
     "downloadUrl": "https://github.com/neuronsimulator/nrn/releases/tag/8.2.6",
     "funder": {
@@ -35,14 +35,14 @@
         "Python 3"
     ],
     "relatedLink": "https://nrn.readthedocs.io/",
-    "schema:releaseNotes": "This release pins numpy to <2 and includes backports for several fixes.\n\n### Bug Fixes\n- Informative error when cannot import hoc module\n- ParallelContext: hoc_ac_ encodes global id of submitted process.\n- Python 3.12 compatibility with Windows installer (#2963)\n- Windows 11 fix for nrniv -python (#2946)\n- Fix for dynamic ECS diffusion characteristics.\n- python38 is back. For testing can use rx3doptlevel=0 bash bldnrnmacpkgcmake.sh\n- Fix cvode.use_fast_imem(1) error with electrode time varying conductance.\n- Apple M1 cmake failure in cloning subrepository. See #2326.\n- Update iv",
+    "schema:releaseNotes": "This release allows use of Python 3.13, pins numpy to >=2 and includes backports for several fixes.\n\n### Bug Fixes\n- On h.quit(), leave terminal settings in same state as when neuron.hoc was imported.",
     "softwareRequirements": [
         "Bison",
         "Flex",
         "C/C++ compiler",
         "CMake >= 3.15.0"
     ],
-    "version": "8.2.6",
+    "version": "8.2.7",
     "developmentStatus": "active",
     "funding": "R01NS11613",
     "issueTracker": "https://github.com/neuronsimulator/nrn/issues"
