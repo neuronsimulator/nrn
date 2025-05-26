@@ -3,6 +3,7 @@ import warnings
 import numpy
 from neuron import h, nrn
 from .rxdException import RxDException
+from itertools import groupby
 
 try:
     from neuron.rxd import geometry3d
@@ -151,6 +152,8 @@ _always_0 = constant_function(0)
 inside = RxDGeometry()
 if has_geometry3d:
     inside.volumes3d = geometry3d.voxelize2
+    inside._scale_internal_volumes3d = 1
+    inside._scale_surface_volumes3d = 1
 # neighbor_area_fraction can be a constant or a function
 inside.neighbor_area_fraction = 1
 inside.volumes1d = _volumes1d
@@ -201,6 +204,8 @@ class DistributedBoundary(RxDGeometry):
 
     def __init__(self, area_per_vol, perim_per_area=0):
         self._area_per_vol = area_per_vol
+        self._scale_internal_volumes3d = area_per_vol
+        self._scale_surface_volumes3d = area_per_vol
         self._perim_per_area = 0
 
         self.surface_areas1d = _always_0
@@ -268,6 +273,9 @@ class FractionalVolume(RxDGeometry):
         self.is_volume = _always_true
         self.is_area = _always_false
         self._volume_fraction = volume_fraction
+        self._scale_internal_volumes3d = volume_fraction
+        self._scale_surface_volumes3d = volume_fraction
+
         self._surface_fraction = surface_fraction
         self._neighbor_areas_fraction = neighbor_areas_fraction
         # TODO: does the else case ever make sense?
@@ -584,6 +592,36 @@ class MultipleGeometry(RxDGeometry):
                     "MultipleGeometry is not defined on section %r" % sec
                 )
         return geo
+
+    def volumes3d(self, source, dx=0.25):
+        geos = {}
+        for sec in source:
+            geo = self._get_geo(sec)
+            geos.setdefault(geo, []).append(sec)
+        internal_voxels, surface_voxels, mesh_grid = geometry3d.voxelize2(source, dx)
+        internal_key = lambda itm: itm[1][1].sec
+        surface_key = lambda itm: itm[1][2].sec
+        internal_by_sec = groupby(internal_voxels.items(), key=internal_key)
+        surface_by_sec = groupby(surface_voxels.items(), key=surface_key)
+        for geo, secs in geos.items():
+            # only scale if not multiplying by 1
+            if geo._scale_internal_volumes3d != 1:
+                for sec, voxels in internal_by_sec:
+                    # only scale if sec is in this geometry
+                    if sec in secs:
+                        # scale the internal volume
+                        for key, _ in voxels:
+                            internal_voxels[key][0] *= geo._scale_internal_volumes3d
+            # only scale if not multiplying by 1
+            if geo._scale_surface_volumes3d != 1:
+                for sec, voxels in surface_by_sec:
+                    # only scale if sec is in this geometry
+                    if sec in secs:
+                        # scale the surface volume
+                        for key, _ in voxels:
+                            surface_voxels[key][0] *= geo._scale_surface_volumes3d
+
+        return internal_voxels, surface_voxels, mesh_grid
 
     def volumes1d(self, sec):
         return self._get_geo(sec).volumes1d(sec)

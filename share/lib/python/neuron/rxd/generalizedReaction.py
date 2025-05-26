@@ -162,14 +162,12 @@ class GeneralizedReaction(object):
         ]
 
         sp_regions = None
-        if self._trans_membrane and (
-            sources or dests
-        ):  # assume sources share common regions and destinations share common regions
-            sp_regions = list(
-                {sptr()._region() for sptr in sources}.union(
-                    {sptr()._region() for sptr in dests}
-                )
-            )
+        if self._trans_membrane:
+            if sources or dests:
+                # assume sources share common regions and destinations share common regions
+                sp_regions = list({sptr()._region() for sptr in sources + dests})
+            elif sources_ecs or dests_ecs and self._regions != [None]:
+                sp_regions = self._regions
         elif sources and dests:
             sp_regions = list(
                 set.intersection(
@@ -181,7 +179,6 @@ class GeneralizedReaction(object):
                     ]
                 )
             )
-
         # The reactants do not share a common region
         if not sp_regions:
             active_regions = [
@@ -393,13 +390,61 @@ class GeneralizedReaction(object):
                     / molecules_per_mM_um3
                     for s, si in zip(dests_ecs, sources_indices)
                 ]
+            elif self._trans_membrane:
+                # An ecs <-> ecs reaction that use the membrane area and intracellular concentration in the rates
+                if sources or dests:
+                    raise (
+                        RxDException(
+                            "A multi-compartment with extracellular source and destination can only be used in the absence of intracellular sources/destinations.  Please consider using two multi-compartment reactions instead"
+                        )
+                    )
 
+                if self._membrane_flux:
+                    raise (
+                        RxDException(
+                            "A multi-compartment with extracellular source and destination can not produce a membrane current, set 'membrane_flux=False'"
+                        )
+                    )
+                locs = []
+                for sec in active_secs_list:
+                    length = sec.L
+                    loc1d = [(i + 0.5) / sec.nseg for i in range(sec.nseg)]
+                    normalized_arc3d = [sec.arc3d(i) / length for i in range(sec.n3d())]
+                    x3d = [sec.x3d(i) for i in range(sec.n3d())]
+                    y3d = [sec.y3d(i) for i in range(sec.n3d())]
+                    z3d = [sec.z3d(i) for i in range(sec.n3d())]
+                    locs.extend(
+                        [
+                            (x, y, z)
+                            for x, y, z in zip(
+                                numpy.interp(loc1d, normalized_arc3d, x3d),
+                                numpy.interp(loc1d, normalized_arc3d, y3d),
+                                numpy.interp(loc1d, normalized_arc3d, z3d),
+                            )
+                        ]
+                    )
+                self._mult = [
+                    -area
+                    / (
+                        numpy.prod(s()._extracellular()._dx)
+                        * s().alpha_by_location(loc)
+                    )
+                    / molecules_per_mM_um3
+                    for loc, area in zip(locs, areas)
+                    for s in sources_ecs
+                ] + [
+                    area
+                    / (
+                        numpy.prod(d()._extracellular()._dx)
+                        * d().alpha_by_location(loc)
+                    )
+                    / molecules_per_mM_um3
+                    for loc, area in zip(locs, areas)
+                    for d in dests_ecs
+                ]
             else:
-                # If both the source & destination are in the ECS, they should use a reaction
-                # not a multicompartment reaction
-                RxDException(
-                    "An extracellular source and destination is not possible with a multi-compartment reaction."
-                )
+                # Should not reach here
+                raise (RxDException("A multicompartment reaction must have a membrane"))
         else:
             self._mult = list(-1 for v in sources_indices) + list(
                 1 for v in dests_indices

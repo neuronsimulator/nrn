@@ -10,6 +10,7 @@
 #include "ocjump.h"
 #include "parse.hpp"
 #include "section.h"
+#include "shapeplt.h"
 
 /// A public face of hoc_Item
 struct nrn_Item: public hoc_Item {};
@@ -26,7 +27,7 @@ struct SectionListIterator {
 
 struct SymbolTableIterator {
     explicit SymbolTableIterator(Symlist*);
-    char const* next(void);
+    Symbol* next(void);
     int done(void) const;
 
   private:
@@ -131,6 +132,13 @@ void nrn_mechanism_insert(Section* sec, const Symbol* mechanism) {
     mech_insert1(sec, mechanism->subtype);
 }
 
+bool nrn_section_is_active(Section* sec) {
+    if (!sec->prop) {
+        return false;
+    }
+    return true;
+}
+
 /****************************************
  * Segments
  ****************************************/
@@ -194,6 +202,10 @@ int nrn_symbol_type(Symbol const* sym) {
 
 int nrn_symbol_subtype(Symbol const* sym) {
     return sym->subtype;
+}
+
+double* nrn_symbol_dataptr(Symbol* sym) {
+    return sym->u.pval;
 }
 
 void nrn_symbol_push(Symbol* sym) {
@@ -317,6 +329,17 @@ char const* nrn_class_name(const Object* obj) {
 }
 
 /****************************************
+ * Plot Shape
+ ****************************************/
+
+ShapePlotInterface* nrn_get_plotshape_interface(Object* ps) {
+    ShapePlotInterface* spi;
+    hoc_Item** my_section_list;
+    spi = ((ShapePlotInterface*) ps->u.this_pointer);
+    return spi;
+}
+
+/****************************************
  * Miscellaneous
  ****************************************/
 int nrn_hoc_call(char const* const command) {
@@ -355,8 +378,8 @@ int SectionListIterator::done(void) const {
 SymbolTableIterator::SymbolTableIterator(Symlist* list)
     : current(list->first) {}
 
-char const* SymbolTableIterator::next(void) {
-    auto result = current->name;
+Symbol* SymbolTableIterator::next(void) {
+    Symbol* result = current;
     current = current->next;
     return result;
 }
@@ -394,7 +417,7 @@ void nrn_symbol_table_iterator_free(SymbolTableIterator* st) {
     delete st;
 }
 
-char const* nrn_symbol_table_iterator_next(SymbolTableIterator* st) {
+Symbol* nrn_symbol_table_iterator_next(SymbolTableIterator* st) {
     return st->next();
 }
 
@@ -464,11 +487,6 @@ void nrn_property_array_set(Object* obj, const char* name, int i, double value) 
     }
 }
 
-void nrn_pp_property_array_set(Object* pp, const char* name, int i, double value) {
-    int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    ob2pntproc_0(pp)->prop->param_legacy(index + i) = value;
-}
-
 void nrn_property_push(Object* obj, const char* name) {
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
@@ -510,5 +528,14 @@ Symlist* nrn_global_symbol_table(void) {
 
 Symlist* nrn_top_level_symbol_table(void) {
     return hoc_top_level_symlist;
+}
+
+// Function to register function/object in hoc
+void nrn_register_function(void (*proc)(), const char* func_name) {
+    Symbol* sym;
+    sym = hoc_install(func_name, FUNCTION, 0, &hoc_top_level_symlist);
+    sym->u.u_proc->defn.pf = proc;
+    sym->u.u_proc->nauto = 0;
+    sym->u.u_proc->nobjauto = 0;
 }
 }

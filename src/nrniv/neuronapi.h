@@ -12,6 +12,7 @@ typedef struct SectionListIterator SectionListIterator;
 typedef struct nrn_Item nrn_Item;
 typedef struct SymbolTableIterator SymbolTableIterator;
 typedef struct Symlist Symlist;
+typedef struct ShapePlotInterface ShapePlotInterface;
 
 typedef enum {
     STACK_IS_STR = 1,
@@ -45,6 +46,7 @@ void nrn_section_pop(void);
 void nrn_mechanism_insert(Section* sec, const Symbol* mechanism);
 nrn_Item* nrn_allsec(void);
 nrn_Item* nrn_sectionlist_data(Object* obj);
+bool nrn_section_is_active(Section* sec);
 
 /****************************************
  * Segments
@@ -63,6 +65,7 @@ Symbol* nrn_symbol(const char* name);
 void nrn_symbol_push(Symbol* sym);
 int nrn_symbol_type(const Symbol* sym);
 int nrn_symbol_subtype(Symbol const* sym);
+double* nrn_symbol_dataptr(Symbol* sym);
 void nrn_double_push(double val);
 double nrn_double_pop(void);
 void nrn_double_ptr_push(double* addr);
@@ -87,6 +90,11 @@ void nrn_object_unref(Object* obj);
 char const* nrn_class_name(Object const* obj);
 
 /****************************************
+ * Shape Plot
+ ****************************************/
+ShapePlotInterface* nrn_get_plotshape_interface(Object* ps);
+
+/****************************************
  * Miscellaneous
  ****************************************/
 int nrn_hoc_call(char const* command);
@@ -96,7 +104,7 @@ Section* nrn_sectionlist_iterator_next(SectionListIterator* sl);
 int nrn_sectionlist_iterator_done(SectionListIterator* sl);
 SymbolTableIterator* nrn_symbol_table_iterator_new(Symlist* my_symbol_table);
 void nrn_symbol_table_iterator_free(SymbolTableIterator* st);
-char const* nrn_symbol_table_iterator_next(SymbolTableIterator* st);
+Symbol* nrn_symbol_table_iterator_next(SymbolTableIterator* st);
 int nrn_symbol_table_iterator_done(SymbolTableIterator* st);
 int nrn_vector_capacity(const Object* vec);
 double* nrn_vector_data(Object* vec);
@@ -110,6 +118,7 @@ char const* nrn_symbol_name(const Symbol* sym);
 Symlist* nrn_symbol_table(Symbol* sym);
 Symlist* nrn_global_symbol_table(void);
 Symlist* nrn_top_level_symbol_table(void);
+void nrn_register_function(void (*proc)(), const char* func_name);
 // TODO: need shapeplot information extraction
 
 #ifdef __cplusplus
