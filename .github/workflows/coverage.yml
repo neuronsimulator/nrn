@@ -29,6 +29,7 @@ env:
   # https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
   CMAKE_BUILD_PARALLEL_LEVEL: '4'
   CTEST_PARALLEL_LEVEL: '4'
+  CCACHE_DIR: ${{ github.workspace }}/ccache
 
 jobs:
   coverage:
