@@ -279,7 +279,7 @@ Nonetheless, in isolated situations the following section may be useful:
             python
 
             from neuron import h
-            soma = h.Section(name='soma')
+            soma = h.Section('soma')
             soma.insert(h.pas)
             v = h.Vector().record(soma(0.5)._ref_v)
             pi = h.Vector().record(soma(0.5).pas._ref_i)
