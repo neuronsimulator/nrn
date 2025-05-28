@@ -109,7 +109,11 @@ embedded = "hoc" in sys.modules
 
 # First, check that the compiled extension (neuron.hoc) was built for this version of
 # Python. If not, fail early and helpfully.
-from ._config_params import supported_python_versions
+from ._config_params import (
+    supported_python_versions,
+    mechanism_prefix,
+    mechanism_suffix,
+)
 
 current_version = "{}.{}".format(*sys.version_info[:2])
 if current_version not in supported_python_versions:
@@ -334,18 +338,16 @@ def load_mechanisms(path, warn_if_already_loaded=True):
     # in case NEURON is assuming a different architecture to Python,
     # we try multiple possibilities
 
-    libname = "libnrnmech.so"
-    libsubdir = ".libs"
+    libname = f"{mechanism_prefix}nrnmech{mechanism_suffix}"
     arch_list = [platform.machine(), "i686", "x86_64", "powerpc", "umac"]
 
     # windows loads nrnmech.dll
     if n.unix_mac_pc() == 3:
         libname = "nrnmech.dll"
-        libsubdir = ""
         arch_list = [""]
 
     for arch in arch_list:
-        lib_path = os.path.join(path, arch, libsubdir, libname)
+        lib_path = os.path.join(path, arch, libname)
         if os.path.exists(lib_path):
             n.nrn_load_dll(lib_path)
             nrn_dll_loaded.append(path)
