@@ -35,7 +35,7 @@ jobs:
           pattern: wheels-*
 
       - name: Create comment with URL to artifact
-        if: github.event.pull_request
+        if: github.event.pull_request && github.event.pull_request.head.repo.full_name == github.repository
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
