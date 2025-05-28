@@ -115,7 +115,7 @@ endmacro()
 
 if(NRN_ENABLE_COVERAGE)
   if(LCOV_VERSION GREATER_EQUAL "2.0")
-    set(LCOV_LAUNCHER ${LCOV} --parallel ${CMAKE_BUILD_PARALLEL_LEVEL} --ignore-errors-mismatch)
+    set(LCOV_LAUNCHER ${LCOV} --parallel ${CMAKE_BUILD_PARALLEL_LEVEL} --ignore-errors mismatch)
     set(GENHTML_LAUNCHER genhtml --parallel ${CMAKE_BUILD_PARALLEL_LEVEL})
   else()
     set(LCOV_LAUNCHER ${LCOV})
@@ -123,13 +123,15 @@ if(NRN_ENABLE_COVERAGE)
   endif()
   set(cover_clean_command find "${PROJECT_BINARY_DIR}" "-name" "*.gcda" "-type" "f" "-delete")
   set(cover_baseline_command
-      "${LCOV}" "--capture" "--initial" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}"
-      "--directory" "${PROJECT_BINARY_DIR}" "--output-file" "coverage-base.info")
+      "${LCOV_LAUNCHER}" "--capture" "--initial" "--no-external" "--directory"
+      "${PROJECT_SOURCE_DIR}" "--directory" "${PROJECT_BINARY_DIR}" "--output-file"
+      "coverage-base.info")
   set(cover_collect_command
-      "${LCOV}" "--capture" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}" "--directory"
-      "${PROJECT_BINARY_DIR}" "--output-file" "coverage-run.info")
-  set(cover_combine_command "${LCOV}" "--add-tracefile" "coverage-base.info" "--add-tracefile"
-                            "coverage-run.info" "--output-file" "coverage-combined.info")
+      "${LCOV_LAUNCHER}" "--capture" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}"
+      "--directory" "${PROJECT_BINARY_DIR}" "--output-file" "coverage-run.info")
+  set(cover_combine_command
+      "${LCOV_LAUNCHER}" "--add-tracefile" "coverage-base.info" "--add-tracefile"
+      "coverage-run.info" "--output-file" "coverage-combined.info")
   set(cover_html_command ${GENHTML_LAUNCHER} "coverage-combined.info" "--output-directory" html)
   add_custom_target(
     cover_clean
