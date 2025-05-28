@@ -252,6 +252,8 @@ pip3 install --user --upgrade pip
 pip3 install --user -r nrn_requirements.txt
 ```
 
+**NOTE**: to minimize the possibility of Python dependencies causing issues (conflicting requirements, etc.), you may install the same set of dependencies that the developers and the CI use via `pip3 install --user -r ci/requirements.txt`.
+
 <a name="Apple-M1-Build-Dependencies"></a>
 #### Mac OS - Apple M1
 
