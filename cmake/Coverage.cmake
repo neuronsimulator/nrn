@@ -102,13 +102,18 @@ if(NRN_ENABLE_COVERAGE)
   set(cover_clean_command find "${PROJECT_BINARY_DIR}" "-name" "*.gcda" "-type" "f" "-delete")
   set(cover_baseline_command
       "${LCOV}" "--capture" "--initial" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}"
-      "--directory" "${PROJECT_BINARY_DIR}" "--output-file" "coverage-base.info")
+      "--directory" "${PROJECT_BINARY_DIR}" "--output-file" "coverage-base.info" --ignore-errors
+      mismatch --parallel ${CMAKE_BUILD_PARALLEL_LEVEL})
   set(cover_collect_command
       "${LCOV}" "--capture" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}" "--directory"
-      "${PROJECT_BINARY_DIR}" "--output-file" "coverage-run.info")
-  set(cover_combine_command "${LCOV}" "--add-tracefile" "coverage-base.info" "--add-tracefile"
-                            "coverage-run.info" "--output-file" "coverage-combined.info")
-  set(cover_html_command genhtml "coverage-combined.info" "--output-directory" html)
+      "${PROJECT_BINARY_DIR}" "--output-file" "coverage-run.info" --ignore-errors mismatch
+      --parallel ${CMAKE_BUILD_PARALLEL_LEVEL})
+  set(cover_combine_command
+      "${LCOV}" "--add-tracefile" "coverage-base.info" "--add-tracefile" "coverage-run.info"
+      "--output-file" "coverage-combined.info" --ignore-errors mismatch --parallel
+      ${CMAKE_BUILD_PARALLEL_LEVEL})
+  set(cover_html_command genhtml "coverage-combined.info" "--output-directory" html --parallel
+                         ${CMAKE_BUILD_PARALLEL_LEVEL})
   add_custom_target(
     cover_clean
     COMMAND ${cover_clean_command}
