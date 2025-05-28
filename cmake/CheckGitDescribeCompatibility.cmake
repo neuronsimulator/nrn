@@ -40,6 +40,9 @@ endif()
 # Function to check if a version string is canonical per PEP 440
 # Usage: is_pep440_canonical_version(VERSION <version_string> RESULT <output_variable>)
 # Returns TRUE if the version matches the canonical PEP 440 format, FALSE otherwise.
+# Since it seems that
+#   "^([1-9][0-9]*!)?([0-9]|[1-9][0-9]*)(\\.([0-9]|[1-9][0-9]*))*((a|b|rc)([0-9]|[1-9][0-9]*))?(\\.post([0-9]|[1-9][0-9]*))?(\\.dev([0-9]|[1-9][0-9]*))?$"
+# is too complicated for some versions of cmake, eg. 3.22.1, we use Python to do the check.
 # ~~~
 function(is_pep440_canonical_version)
   cmake_parse_arguments(ARG "" "VERSION;RESULT" "" ${ARGN})
@@ -47,20 +50,27 @@ function(is_pep440_canonical_version)
     message(FATAL_ERROR "is_pep440_canonical_version requires VERSION and RESULT arguments")
   endif()
 
-  # ~~~
-  # PEP 440 canonical regex adapted for CMake
-  # Matches: ^([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$
-  # ~~~
-  set(regex
-      "^([1-9][0-9]*!)?([0-9]|[1-9][0-9]*)(\\.([0-9]|[1-9][0-9]*))*((a|b|rc)([0-9]|[1-9][0-9]*))?(\\.post([0-9]|[1-9][0-9]*))?(\\.dev([0-9]|[1-9][0-9]*))?$"
-  )
-  # note (0|[1-9][0-9]*) is equivalent to ([0-9]|[1-9][0-9]*)
+  message(STATUS "Validating version: ${ARG_VERSION}")
 
-  # Check if the version matches the regex
-  string(REGEX MATCH "${regex}" match "${ARG_VERSION}")
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_SOURCE_DIR}/cmake/check_pep440_version.py"
+            "${ARG_VERSION}"
+    OUTPUT_VARIABLE PYTHON_OUTPUT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE PYTHON_EXIT_CODE
+    ERROR_QUIET)
 
-  # Set result to TRUE if matched, FALSE otherwise
-  if(match)
+  if(NOT PYTHON_EXIT_CODE EQUAL 0)
+    message(
+      WARNING
+        "Python validation failed for version '${ARG_VERSION}' (exit code: ${PYTHON_EXIT_CODE})")
+    set(${ARG_RESULT}
+        FALSE
+        PARENT_SCOPE)
+    return()
+  endif()
+
+  if(PYTHON_OUTPUT STREQUAL "TRUE")
     set(${ARG_RESULT}
         TRUE
         PARENT_SCOPE)
