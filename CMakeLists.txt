@@ -353,8 +353,14 @@ endif()
 # =============================================================================
 # Find required packages
 # =============================================================================
-find_package(BISON 3.7 REQUIRED)
+find_package(BISON REQUIRED)
 find_package(FLEX 2.6 REQUIRED)
+
+# lcov >= 2 and bison < 3.7 do not play nicely
+if(NRN_ENABLE_COVERAGE AND BISON_VERSION VERSION_LESS "3.7")
+  message(WARNING "Bison 3.7 or above is recommended with NRN_ENABLE_COVERAGE=ON;"
+                  " if using lcov 2 or above, you may experience errors!")
+endif()
 
 # When shipping the wheels we want to link readline libs statically.
 if(NRN_WHEEL_STATIC_READLINE)
