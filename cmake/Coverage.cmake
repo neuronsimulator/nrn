@@ -25,11 +25,26 @@
 #   All created files (folders) are relative to PROJECT_BINARY_DIR.
 # ~~~
 
+# find the version of lcov
+function(extract_version var)
+  execute_process(
+    COMMAND ${LCOV} --version
+    OUTPUT_VARIABLE LCOV_VERSION_OUTPUT
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  string(REGEX MATCH "([0-9]+\\.[0-9]+(\\.[0-9]+)?)" _ "${LCOV_VERSION_OUTPUT}")
+  set(${var}
+      "${CMAKE_MATCH_1}"
+      PARENT_SCOPE)
+endfunction()
+
 if(NRN_ENABLE_COVERAGE)
   find_program(LCOV lcov)
   if(LCOV STREQUAL "LCOV-NOTFOUND")
     message(ERROR "lcov is required with NRN_ENABLE_COVERAGE=ON and it was not found.")
   endif()
+
+  extract_version(LCOV_VERSION)
+
   string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE_UPPER)
   if(NOT BUILD_TYPE_UPPER STREQUAL "DEBUG")
     message(WARNING "Using CMAKE_BUILD_TYPE=Debug is recommended with NRN_ENABLE_COVERAGE")

@@ -43,6 +43,22 @@ set(LEXER_SOURCE_FILES
     ${C_DRIVER_FILES}
     ${UNIT_DRIVER_FILES})
 
+# ~~~
+# modify invocation of bison (use -M flag if version 3.7 or above)
+# ~~~
+function(compose_bison_command OUT_VAR)
+  cmake_parse_arguments(ARG "" "" "PATHS" ${ARGN})
+  set(BISON_CMD ${BISON_EXECUTABLE})
+  if(BISON_VERSION VERSION_GREATER_EQUAL "3.7")
+    foreach(path IN LISTS ARG_PATHS)
+      list(APPEND BISON_CMD -M "${path}")
+    endforeach()
+  endif()
+  set(${OUT_VAR}
+      "${BISON_CMD}"
+      PARENT_SCOPE)
+endfunction()
+
 if(NMODL_PGI_COMPILER)
   # "verbatim_lexer.cpp", warning #550-D: variable "..." was set but never used
   set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/verbatim_lexer.cpp
@@ -66,6 +82,10 @@ file(MAKE_DIRECTORY ${NMODL_PARSER_BINARY_DIR}/nmodl ${NMODL_PARSER_BINARY_DIR}/
 # prefix changes (e.g. GitLab CI).
 file(RELATIVE_PATH NMODL_YY_FROM_PARSER_BINARY_DIR "${NMODL_PARSER_BINARY_DIR}"
      "${NMODL_PARSER_SOURCE_DIR}/nmodl.yy")
+compose_bison_command(
+  BISON_CMD PATHS "${NMODL_YY_FROM_PARSER_BINARY_DIR}=../${NMODL_YY_FROM_PARSER_BINARY_DIR}"
+  "nmodl/location.hh=src/nmodl/parser/nmodl/location.hh"
+  "nmodl/nmodl_parser.hpp=src/nmodl/parser/nmodl/nmodl_parser.hpp")
 add_custom_command(
   OUTPUT "${NMODL_PARSER_BINARY_DIR}/nmodl/location.hh"
          "${NMODL_PARSER_BINARY_DIR}/nmodl/nmodl_parser.cpp"
@@ -73,7 +93,7 @@ add_custom_command(
          "${NMODL_PARSER_BINARY_DIR}/nmodl/position.hh"
          "${NMODL_PARSER_BINARY_DIR}/nmodl/stack.hh"
   WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
-  COMMAND ${BISON_EXECUTABLE} ARGS -d -o nmodl/nmodl_parser.cpp "${NMODL_YY_FROM_PARSER_BINARY_DIR}"
+  COMMAND ${BISON_CMD} -d -o nmodl/nmodl_parser.cpp "${NMODL_YY_FROM_PARSER_BINARY_DIR}"
   DEPENDS "${NMODL_PARSER_SOURCE_DIR}/nmodl.yy" pyastgen
   COMMENT "-- NMODL : GENERATING NMODL_CORE PARSER WITH BISON! --")
 
@@ -91,13 +111,14 @@ add_custom_command(
 # Command to generate differential equation parser. See comment above about absolute paths.
 file(RELATIVE_PATH DIFFEQ_YY_FROM_PARSER_BINARY_DIR "${NMODL_PARSER_BINARY_DIR}"
      "${NMODL_PARSER_SOURCE_DIR}/diffeq.yy")
+compose_bison_command(BISON_CMD PATHS
+                      "${DIFFEQ_YY_FROM_PARSER_BINARY_DIR}=../${DIFFEQ_YY_FROM_PARSER_BINARY_DIR}")
 add_custom_command(
   OUTPUT "${NMODL_PARSER_BINARY_DIR}/diffeq/diffeq_parser.cpp"
          "${NMODL_PARSER_BINARY_DIR}/diffeq/diffeq_parser.hpp"
          "${NMODL_PARSER_BINARY_DIR}/diffeq/stack.hh"
   WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
-  COMMAND ${BISON_EXECUTABLE} ARGS -d -o diffeq/diffeq_parser.cpp
-          "${DIFFEQ_YY_FROM_PARSER_BINARY_DIR}"
+  COMMAND ${BISON_CMD} -d -o diffeq/diffeq_parser.cpp "${DIFFEQ_YY_FROM_PARSER_BINARY_DIR}"
   DEPENDS "${NMODL_PARSER_SOURCE_DIR}/diffeq.yy" "${NMODL_PARSER_SOURCE_DIR}/diffeq_context.hpp"
           "${NMODL_PARSER_SOURCE_DIR}/diffeq_context.cpp"
           "${NMODL_PARSER_SOURCE_DIR}/diffeq_helper.hpp"
@@ -106,23 +127,28 @@ add_custom_command(
 # Command to generate C (11) parser. See comment above about absolute paths.
 file(RELATIVE_PATH C11_YY_FROM_PARSER_BINARY_DIR "${NMODL_PARSER_BINARY_DIR}"
      "${NMODL_PARSER_SOURCE_DIR}/c11.yy")
+compose_bison_command(BISON_CMD PATHS
+                      "${C11_YY_FROM_PARSER_BINARY_DIR}=../${C11_YY_FROM_PARSER_BINARY_DIR}")
 add_custom_command(
   OUTPUT "${NMODL_PARSER_BINARY_DIR}/c/c11_parser.cpp" "${NMODL_PARSER_BINARY_DIR}/c/c11_parser.hpp"
          "${NMODL_PARSER_BINARY_DIR}/c/stack.hh"
   WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
-  COMMAND ${BISON_EXECUTABLE} ARGS -d -o c/c11_parser.cpp "${C11_YY_FROM_PARSER_BINARY_DIR}"
+  COMMAND ${BISON_CMD} -d -o c/c11_parser.cpp "${C11_YY_FROM_PARSER_BINARY_DIR}"
   DEPENDS "${NMODL_PARSER_SOURCE_DIR}/c11.yy"
   COMMENT "-- NMODL : GENERATING C (11) PARSER WITH BISON! --")
 
 # Command to generate Units parser. See comment above about absolute paths.
 file(RELATIVE_PATH UNIT_YY_FROM_PARSER_BINARY_DIR "${NMODL_PARSER_BINARY_DIR}"
      "${NMODL_PARSER_SOURCE_DIR}/unit.yy")
+compose_bison_command(
+  BISON_CMD PATHS "${UNIT_YY_FROM_PARSER_BINARY_DIR}=../${UNIT_YY_FROM_PARSER_BINARY_DIR}"
+  "unit/unit_parser.hpp=src/nmodl/parser/unit/unit_parser.hpp")
 add_custom_command(
   OUTPUT "${NMODL_PARSER_BINARY_DIR}/unit/unit_parser.cpp"
          "${NMODL_PARSER_BINARY_DIR}/unit/unit_parser.hpp"
          "${NMODL_PARSER_BINARY_DIR}/unit/stack.hh"
   WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
-  COMMAND ${BISON_EXECUTABLE} ARGS -d -o unit/unit_parser.cpp "${UNIT_YY_FROM_PARSER_BINARY_DIR}"
+  COMMAND ${BISON_CMD} -d -o unit/unit_parser.cpp "${UNIT_YY_FROM_PARSER_BINARY_DIR}"
   DEPENDS "${NMODL_PARSER_SOURCE_DIR}/unit.yy"
   COMMENT "-- NMODL : GENERATING UNIT PARSER WITH BISON! --")
 
