@@ -71,7 +71,7 @@ Optimization
               return (v[0] + v[1] - 5) ** 2 + 5 * (v[0] -v[1] - 15) ** 2 
             h.attr_praxis(1e-5, 0.5, 0) 
             e = h.fit_praxis(efun, v) 
-            print("e=%g x=%g y=%g\n"%(e, v[0], v[1]))
+            print(f"e={e} x={v[0]} y={v[1]}\n")
 
 
     .. warning::

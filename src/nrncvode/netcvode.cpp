@@ -1644,7 +1644,7 @@ bool NetCvode::init_global() {
 
                         int inode = ml->nodelist[j]->v_node_index;
                         int icell = cellnum[inode];
-                        Cvode& cv = d.lcv_[cellnum[inode]];
+                        Cvode& cv = d.lcv_[icell];
                         CvodeThreadData& z = cv.ctd_[0];
 
                         // Circumstances for creating a new CvMembList
@@ -1661,11 +1661,18 @@ bool NetCvode::init_global() {
                             cml = new CvMembList{i};
                             last[cellnum[inode]]->next = cml;
                             cml->next = nullptr;
-                            last[cellnum[inode]] = cml;
+                            last[icell] = cml;
+                            assert(cml->ml.size() == 1);
+                            assert(cml->ml[0].nodecount == 0);
+                        } else if (last[icell]->index != i) {  // initialize next
+                            cml = new CvMembList{i};
+                            last[icell]->next = cml;
+                            cml->next = nullptr;
+                            last[icell] = cml;
                             assert(cml->ml.size() == 1);
                             assert(cml->ml[0].nodecount == 0);
                         } else {  // if non-contiguous, append Memb_list
-                            cml = last[cellnum[inode]];
+                            cml = last[icell];
                             auto& cvml = cml->ml.back();
                             auto cvml_offset = cvml.get_storage_offset() + cvml.nodecount;
                             if (cvml_offset != offset) {

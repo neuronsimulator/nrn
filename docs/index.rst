@@ -49,10 +49,11 @@ and more (use the links on the side or search).
 
 .. toctree::
    :maxdepth: 2
-   :caption: NMODLanguage:
+   :caption: NMOD Language:
    :hidden:
 
-   nmodl/language
+   nmodl/language.rst
+   nmodl/transpiler/index.rst
 
 .. toctree::
    :maxdepth: 2
@@ -98,7 +99,7 @@ Installation
 
          pip3 install neuron
 
-      Alternatively, you can use the `PKG installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.6/nrn-8.2.6-macosx-10.9-universal2-py-38-39-310-311-312.pkg>`_.
+      Alternatively, you can use the `PKG installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.7/nrn-8.2.7-macosx-10.13-universal2-py-39-310-311-312-313.pkg>`_.
 
       For troubleshooting, see the `detailed installation instructions <install/install_instructions.md>`_.
 
@@ -115,7 +116,7 @@ Installation
 
    .. tab-item:: Windows
 
-      `Download the Windows Installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.6/nrn-8.2.6.w64-mingw-py-38-39-310-311-312-setup.exe>`_.
+      `Download the Windows Installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.7/nrn-8.2.7.w64-mingw-py-39-310-311-312-313-setup.exe>`_.
 
       You can also install the Linux wheel via the Windows Subsystem for Linux (WSL). See `instructions <install/install_instructions.html#windows-subsystem-for-linux-wsl-python-wheel>`_.
 

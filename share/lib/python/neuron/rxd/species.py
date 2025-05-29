@@ -429,9 +429,10 @@ class SpeciesOnExtracellular(_SpeciesMathable):
             if ecs == s:
                 e = s._region
                 index += (i * e._ny + j) * e._nz + k
+                break
             else:
                 e = ecs._region
-                index += e._nz * e._ny * e._nz
+                index += e._nx * e._ny * e._nz
         return self._species()._extracellular_nodes[index]
 
     @property
@@ -537,7 +538,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         """
         if r == self._region():
             return self
-        raise RxDException("no such region")
+        raise RxDException(f"{self!r} is not defined on region {r!r}")
 
     @property
     def states(self):
@@ -1983,7 +1984,7 @@ class Species(_SpeciesMathable):
                         self, self._extracellular_instances[r]
                     )
                 return self._species_on_region[r]
-        raise RxDException("no such region")
+        raise RxDException(f"{self!r} is not defined on region {r!r}")
 
     def _update_node_data(self):
         nsegs_changed = 0
@@ -2473,7 +2474,7 @@ class Parameter(Species):
                         self, self._extracellular_instances[r]
                     )
                 return self._species_on_region[r]
-        raise RxDException("no such region")
+        raise RxDException(f"{self!r} is not defined on region {r!r}")
 
 
 class ParameterOnRegion(SpeciesOnRegion):
