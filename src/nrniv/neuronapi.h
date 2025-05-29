@@ -36,13 +36,13 @@ void nrn_stdout_redirect(int (*myprint)(int, char*));
 /****************************************
  * Sections
  ****************************************/
-Section* nrn_section_new(char const* name);
+Section* nrn_section_new(const char* name);
 void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x);
 void nrn_section_length_set(Section* sec, double length);
 double nrn_section_length_get(Section* sec);
 double nrn_section_Ra_get(Section* sec);
 void nrn_section_Ra_set(Section* sec, double val);
-double nrn_section_rallbranch_get(Section* sec);
+double nrn_section_rallbranch_get(const Section* sec);
 void nrn_section_rallbranch_set(Section* sec, double val);
 char const* nrn_secname(Section* sec);
 void nrn_section_push(Section* sec);
@@ -50,7 +50,7 @@ void nrn_section_pop(void);
 void nrn_mechanism_insert(Section* sec, const Symbol* mechanism);
 nrn_Item* nrn_allsec(void);
 nrn_Item* nrn_sectionlist_data(const Object* obj);
-bool nrn_section_is_active(Section* sec);
+bool nrn_section_is_active(const Section* sec);
 
 /****************************************
  * Segments
@@ -58,6 +58,7 @@ bool nrn_section_is_active(Section* sec);
 int nrn_nseg_get(const Section* sec);
 void nrn_nseg_set(Section* sec, int nseg);
 void nrn_segment_diam_set(Section* sec, double x, double diam);
+double nrn_segment_diam_get(Section* sec, double x);
 void nrn_rangevar_push(Symbol* sym, Section* sec, double x);
 double nrn_rangevar_get(Symbol* sym, Section* sec, double x);
 void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
@@ -68,9 +69,9 @@ void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value);
 Symbol* nrn_symbol(const char* name);
 void nrn_symbol_push(Symbol* sym);
 int nrn_symbol_type(const Symbol* sym);
-int nrn_symbol_subtype(Symbol const* sym);
-double* nrn_symbol_dataptr(Symbol* sym);
-bool nrn_symbol_is_array(Symbol* sym);
+int nrn_symbol_subtype(const Symbol* sym);
+double* nrn_symbol_dataptr(const Symbol* sym);
+bool nrn_symbol_is_array(const Symbol* sym);
 void nrn_double_push(double val);
 double nrn_double_pop(void);
 void nrn_double_ptr_push(double* addr);
@@ -84,7 +85,7 @@ Object* nrn_object_pop(void);
 nrn_stack_types_t nrn_stack_type(void);
 char const* nrn_stack_type_name(nrn_stack_types_t id);
 Object* nrn_object_new(Symbol* sym, int narg);
-Symbol* nrn_method_symbol(const Object* obj, char const* name);
+Symbol* nrn_method_symbol(const Object* obj, const char* name);
 // TODO: the next two functions throw exceptions in C++; need a version that
 //       returns a bool success indicator instead (this is actually the
 //       classic behavior of OcJump)
@@ -125,10 +126,10 @@ void nrn_property_array_set(Object* obj, const char* name, int i, double value);
 void nrn_property_push(Object* obj, const char* name);
 void nrn_property_array_push(Object* obj, const char* name, int i);
 char const* nrn_symbol_name(const Symbol* sym);
-Symlist* nrn_symbol_table(Symbol* sym);
+Symlist* nrn_symbol_table(const Symbol* sym);
 Symlist* nrn_global_symbol_table(void);
 Symlist* nrn_top_level_symbol_table(void);
-int nrn_symbol_array_length(Symbol* sym);
+int nrn_symbol_array_length(const Symbol* sym);
 void nrn_register_function(void (*proc)(), const char* func_name, int type);
 
 #ifdef __cplusplus
