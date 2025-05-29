@@ -47,6 +47,7 @@ the handling of v_structure_change as long as possible.
 #include <variant>
 #include <vector>
 #include <iostream>
+#include <queue>  // for breadth first cell traversal without recursion
 
 #define CACHELINE_ALLOC(name, type, size) \
     name = (type*) nrn_cacheline_alloc((void**) &name, size * sizeof(type))
@@ -656,7 +657,6 @@ void nrn_thread_memblist_setup() {
 // this ordering kept cells contiguous. Lvardt sizes for CvMembList.ml disabused
 // me of that. reorder_secorder now, in fact, keeps cells contiguous except
 // for roots.
-#include <queue>  // for breadth first cell traversal without recursion
 
 void reorder_secorder() {
     Section *sec, *ch;

@@ -1624,7 +1624,7 @@ bool NetCvode::init_global() {
             // the case with the default permutation. The root nodes are
             // all at the beginning, and thereafter all the cell nodes are
             // contiguous. This results in a
-            // CvMembList.ml.size() == 1 almost always with an exception of
+            // CvMembList.ml.size() == 1 almost always, with an exception of
             // size() == 2 only for extracellular and for POINT_PROCESSes
             // located both in the root node and other cell nodes.
 
@@ -1653,13 +1653,6 @@ bool NetCvode::init_global() {
                         if (!z.cv_memb_list_) {  // initialize the first
                             cml = new CvMembList{i};
                             z.cv_memb_list_ = cml;
-                            cml->next = nullptr;
-                            last[cellnum[inode]] = cml;
-                            assert(cml->ml.size() == 1);
-                            assert(cml->ml[0].nodecount == 0);
-                        } else if (last[cellnum[inode]]->index != i) {  // initialize next
-                            cml = new CvMembList{i};
-                            last[cellnum[inode]]->next = cml;
                             cml->next = nullptr;
                             last[icell] = cml;
                             assert(cml->ml.size() == 1);
