@@ -714,7 +714,7 @@ void reorder_secorder() {
             _nt->_v_node[inode] = nd;
             _nt->_v_parent[inode] = nullptr;  // Root nodes have no parent
             _nt->_v_node[inode]->v_node_index = inode;
-            inode++;
+            ++inode;
         }
         // Breadth-first traversal to fill arrays and set section order
         ITERATE(qsec, sl) {
@@ -742,7 +742,7 @@ void reorder_secorder() {
                         _nt->_v_parent[inode] = sec->parentnode;
                     }
                     _nt->_v_node[inode]->v_node_index = inode;
-                    inode++;
+                    ++inode;
                 }
             }
         }
