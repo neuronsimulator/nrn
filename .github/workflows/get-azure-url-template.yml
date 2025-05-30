@@ -9,11 +9,16 @@ on:
         description: 'The name of the CI to display in the comment'
         required: true
         type: string
+      pr_url:
+        description: 'The full URL to the pull request'
+        required: true
+        type: string
 
 jobs:
   get-last-azure-url:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR_URL: ${{ inputs.pr_url }}
 
     runs-on: ubuntu-latest
 
