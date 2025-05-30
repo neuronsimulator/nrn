@@ -758,8 +758,8 @@ void reorder_secorder() {
     }
 
     /* here is where multisplit reorders the nodes. Afterwards
-       in either case, we can then point to v, d, rhs in proper
-       node order
+      in either case, we can then point to v, d, rhs in proper
+      node order
     */
     for (const NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
         for (inode = 0; inode < _nt->end; ++inode) {
