@@ -98,12 +98,12 @@ Diagnostics:
     Returns the exponential function to the base e 
         
     When exp is used in model descriptions, it is often the 
-    case that the cvode variable step integrator extrapolates 
+    case that the CVode variable step integrator extrapolates 
     voltages to values which return out of range values for the exp (often used 
     in rate functions). There were so many of these false warnings that it was 
-    deemed better to turn off the warning message when Cvode is active. 
+    deemed better to turn off the warning message when CVode is active. 
     In any case the return value is exp(700). This message is not turned off 
-    at the interpreter level or when cvode is not active. 
+    at the interpreter level or when CVode is not active. 
 
     .. code-block::
         python

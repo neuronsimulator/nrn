@@ -43,7 +43,7 @@ Path Manipulation
         Note that for unix, it isn't exactly the installation path 
         but the 
         --prefix/share/nrn directory where --prefix is the 
-        location specified during installation. For the Windows version it is the location 
+        location specified during installation. For the Windows version, it is the location 
         selected during installation and the value is derived from the location 
         of ``neuron.exe`` in ``neuronhome()/bin/neuron.exe``. 
         For macOS, it is the folder that contains the neuron 

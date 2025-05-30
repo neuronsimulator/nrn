@@ -22,7 +22,7 @@ List
         using regular Python lists.
 
         Besides interacting with legacy code, the NEURON ``List`` class provides two key features
-        not avaialble in Python lists:
+        not available in Python lists:
 
         1. The ability to create a dynamic ``List`` of all the object instances of a template (e.g.,
            all instances of an ``"IClamp"`` or of a cell class.)
