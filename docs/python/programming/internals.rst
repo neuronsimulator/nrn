@@ -24,10 +24,10 @@ Namespace Related
         current object context. The last form also looks in the top level
         symbol table but is useful in Python to distinguish subtypes of
         variables which appear as doubles in HOC but internally are really
-        not doubles and so cannot be pointed to by double*, eg. ``h.secondorder``
-        which is ``<type 'int'>`` or ``h.nseg`` which returns either
+        not doubles and so cannot be pointed to by ``double*``, e.g., ``h.secondorder``
+        which is ``<type 'int'>`` or ``h._ref_nseg`` which raises either
         ``TypeError: Section access unspecified`` or
-        ``nseg  not a USERPROPERTY that can be pointed to``
+        ``TypeError: Cannot be a reference``
          
         If the name exists return:
 
@@ -59,7 +59,7 @@ Namespace Related
           * - 7
             - If an integer
           * - 8
-            - If a section property
+            - If a Section property
 
         If none of the above apply, return 1.
 

@@ -18,7 +18,7 @@ RangeVarPlot
 
 
     Description:
-        Class for making a space plot. eg. voltage as function of path between 
+        Class for making a space plot. e.g., voltage as function of path between 
         two points on a cell.  Specification of the start and stop segments is
         optional, but if one is specified both must be specified.
         

@@ -546,7 +546,7 @@ Vector
         the constant average will be returned). 
          
         The ``indices_of_discontinuities_vector`` argument is used to 
-        specifying the indices in tvec of the times at which discrete events should 
+        specify the indices in tvec of the times at which discrete events should 
         be used to notify that a discontinuity in the function, or any derivative 
         of the function, occurs. Presently, linear interpolation is used to 
         determine var(t) in the interval between these discontinuities (instead of 
@@ -706,7 +706,7 @@ Vector
 
             vec = h.Vector(range(90, 1000, 30))
 
-        In this case ``range`` returns a generator and is very memory efficient.
+        In this case, ``range`` returns a generator and is very memory efficient.
         By contrast if we used ``np.arange``, that would create a ``numpy`` array
         which would then be copied over to a new :class:`Vector` object. In most
         cases, readability is a bigger concern than memory and time efficiency,
@@ -845,9 +845,9 @@ Vector
 
         If the ``dest_start`` argument is present (an integer index), 
         source elements (beginning at ``src[0]``) 
-        are copied to  ``vdest`` beginning at ``dest[dest_start]``, 
+        are copied to ``vdest`` beginning at ``dest[dest_start]``, 
         ``src_start`` and ``src_end`` here refer to indices of ``vsrc``, 
-        not ``vdest``.  If ``vdest`` is too small for the size required by ``vsrc`` and the 
+        not ``vdest``. If ``vdest`` is too small for the size required by ``vsrc`` and the 
         arguments, then it is resized to hold the data. 
         If the ``dest`` is larger than required AND there is more than one 
         argument the ``dest`` is NOT resized. 
@@ -1113,7 +1113,7 @@ Vector
         Op2string requires two numbers defining open/closed ranges and matches one 
         of these: ``"[]"``, ``"[)"``, ``"(]"``, ``"()"``
 
-        Sometimes is advantageous to avoid reallocating memory for ``vdest``, however
+        Sometimes, it is advantageous to avoid reallocating memory for ``vdest``, however
         in practice, it may often be more convenient to create a new :class:`Vector`,
         store the results into there, and save the return (see the first example below).
          
@@ -1275,13 +1275,13 @@ Vector
 
     Description:
         Read the elements of a vector from the file in binary as written by :meth:`~Vector.fwrite`. 
-        If the argument *n* is present, the vector is resized before reading. Note that 
+        If the argument *n* is present, the ``Vector`` is resized before reading. Note that 
         files created with :meth:`~Vector.fwrite` cannot be :meth:`~Vector.fread` on a machine with different 
-        byte ordering. E.g. spark and intel cpus have different byte ordering. 
+        byte ordering. For example, Spark and Intel CPUs have different byte ordering. 
         (Intel- and arm-based macs are both little-endian, so you can move files between them.)
          
         It is almost always better to use :meth:`~Vector.vwrite` in combination with :meth:`~Vector.vread`
-        since the corresponding vread will take care of machine dependent binary byte ordering differences. 
+        since the corresponding vread will take care of machine-dependent binary byte ordering differences. 
         See vwrite for the meaning of the *precision* argment. 
          
         Return value is 1 (no error checking). 
@@ -1309,7 +1309,7 @@ Vector
         since it stores the size of the vector and type information 
         for a more 
         automated read/write. The file data can also be vread on a machine with 
-        different byte ordering. e.g. you can vwrite with an intel or arm cpu and vread 
+        different byte ordering. e.g. you can vwrite with an Intel or ARM CPU and vread 
         on a sparc. 
         Precision formats 1 and 2 employ a simple automatic 
         compression which is uncompressed automatically by vread.  Formats 3 and 4 
@@ -1420,7 +1420,7 @@ Vector
 
 
     Description:
-        Print the values of the vector in ascii either to the screen or a :class:`File` instance 
+        Print the values of the Vector in ASCII either to the screen or a :class:`File` instance 
         (if ``fileobj`` is present).  *start* and *end* enable you to specify 
         which particular set of indexed values to print. 
         Use ``format_string`` for formatting the output of each element. 
@@ -1511,7 +1511,7 @@ Vector
     Description:
         Like :meth:`Vector.scanf` but scans until it reads a value equal to the 
         sentinel. e.g., -1e15 is a possible sentinel value in many situations. 
-        The vector does not include the sentinel value. The file pointer is 
+        The Vector does not include the sentinel value. The file pointer is 
         left at the character following the sentinel. 
          
         Read from 
@@ -1571,10 +1571,10 @@ Vector
         in order to display further changes to the vector.  In this way it 
         is possible to produce rather rapid line animation. 
          
-        If the vector label is not empty it will be used as the label for 
+        If the Vector label is not empty it will be used as the label for 
         the line on the Graph. 
          
-        Resizing a vector that has been plotted will remove it from the Graph. 
+        Resizing a Vector that has been plotted will remove it from the Graph. 
          
         The number of points plotted is the minimum of vec.size and x_vec.size 
         at the time ``vec.plot`` is called. x_vec is assumed to be an unchanging 
@@ -2049,7 +2049,7 @@ Vector
     .. note::
 
         To do something approximately equivalent in Python with a Python
-        random number generator, in NEURON 9+ assign to a slice of the vector, e.g.,
+        random number generator, in NEURON 9+ assign to a slice of the Vector, e.g.,
 
         .. code-block::
             python
@@ -2146,7 +2146,7 @@ Vector
 
             vec.apply("sin", 0, 9) 
 
-        applies the HOC sin function to the first ten elements of the vector ``vec``. 
+        applies the HOC sin function to the first ten elements of the Vector ``vec``. 
 
     .. note::
 
@@ -2274,7 +2274,7 @@ Vector
 
     Description:
         Copy the python list elements into the NEURON vector. The elements must be 
-        numbers that are convertable to doubles. 
+        numbers that are convertible to doubles. 
         Copy the numpy 1-d array elements into the NEURON vector. 
         The Vector is resized. 
 

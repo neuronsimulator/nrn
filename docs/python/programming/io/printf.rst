@@ -29,7 +29,7 @@ Printf (Formatted Output)
         on the file opened with the ``h.wopen(filename)`` command (standard 
         output if no file is opened).  ``h.sprint`` places output in its ``strdef`` 
         argument. (Note: ``strdef`` must be a NEURON string reference, created via
-        e.g., ``mystr = h.ref("")`` not a regular Python string as the latter is immutable.)
+        e.g., ``mystr = h.ref("")``, not a regular Python string as the latter is immutable.)
         These functions are subsets of their counterparts in 
         the C standard library. 
          

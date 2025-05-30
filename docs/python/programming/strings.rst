@@ -36,7 +36,7 @@ Strings
         string object's ``format`` method or (for Python 3.6+) with f-strings. 
         As Python strings are immutable, these approaches each create a new string.
 
-        We can also use f-strings to update NEURON strings by writting to ``strdef[0]``; for example:
+        We can also use f-strings to update NEURON strings by writing to ``strdef[0]``; for example:
 
         .. code-block::
             python
@@ -77,6 +77,6 @@ Strings
         return ``False``.
         If you wish for accented and non-accented characters to be compared
         equal, one solution would be to use the third-party ``unidecode`` module,
-        available via ``pip install unidecode`` to remove accents before running
+        available via ``pip install unidecode``, to remove accents before running
         the comparison.
 

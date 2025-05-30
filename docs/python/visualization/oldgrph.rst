@@ -223,7 +223,7 @@ Obsolete Plotting
 
         ``h.plot(mode)``
 
-        ``inrange = h.plot(x,y)``
+        ``inrange = h.plot(x, y)``
 
 
 
@@ -393,7 +393,7 @@ Obsolete Plotting
             Move to point without plotting. 
 
         ``h.plt(2, x, y)`` 
-            Draw vector from former position to new position given by (x,y). 
+            Draw vector from former position to new position given by (x, y). 
             (*mode* can be any number >= 2) 
 
         Several extra options are available for X11 graphics. 

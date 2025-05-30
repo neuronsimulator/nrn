@@ -43,10 +43,10 @@ Path Manipulation
         Note that for unix, it isn't exactly the installation path 
         but the 
         --prefix/share/nrn directory where --prefix is the 
-        location specified during installation. For the mswin version it is the location 
+        location specified during installation. For the Windows version it is the location 
         selected during installation and the value is derived from the location 
-        of neuron.exe in neuronhome()/bin/neuron.exe. 
-        For macOS it is the folder that contains the neuron 
+        of ``neuron.exe`` in ``neuronhome()/bin/neuron.exe``. 
+        For macOS, it is the folder that contains the neuron 
         executable program. 
          
 
@@ -218,7 +218,7 @@ Execute a Command
 
     Description:
         Executes ``cmdstr`` as though it had been typed as 
-        command to a unix shell from the terminal.  NEURON waits until the command is 
+        command to a unix shell from the terminal. NEURON waits until the command is 
         completed. If the second strdef arg is present, it receives the stdout stream 
         from the command. Only available memory limits the line length and 
         number of lines. 

@@ -141,7 +141,7 @@ StringFunctions (String Manipulation Class)
         return index of first char. 
          
         Other functions can be added as needed, 
-        eg., ``index(s1, c1)``, ``char(s1, i)``, etc. 
+        e.g., ``index(s1, c1)``, ``char(s1, i)``, etc. 
         without polluting the global name space. In recent versions 
         functions can return strings. 
 
@@ -385,7 +385,7 @@ StringFunctions (String Manipulation Class)
         Returns 0 if the object is not a POINT_PROCESS. Otherwise 
         returns the point type (which is always 1 greater than the index into the 
         :func:`MechanismType(1) <MechanismType>` list). In particular, the return
-        value is an integer not a boolean because it indicates position in a list.
+        value is an integer, not a boolean, because it indicates position in a list.
 
     Example:
         .. code-block::
@@ -419,7 +419,7 @@ StringFunctions (String Manipulation Class)
         Returns 0 if the object is not an ARTIFICIAL_CELL. Otherwise 
         returns the point type (which is always 1 greater than the index into the 
         :func:`MechanismType(1) <MechanismType>` list). In particular, the return
-        value is an integer not a boolean because it indicates position in a list.
+        value is an integer, not a boolean, because it indicates position in a list.
 
          
 

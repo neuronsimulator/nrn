@@ -14,40 +14,40 @@ Diagnostics:
 .. note::
 
     Every function on this page has a pure-Python alternative.
-    When working with Vector objects, to create a new Vector with the
+    When working with :class:`Vector` objects, to create a new Vector with the
     function applied to each element of the original, use either list
-    comprehensions or numpy. When working with ``rxd`` objects (e.g.,
+    comprehensions or ``numpy``. When working with ``rxd`` objects (e.g.,
     a :class:`rxd.Rate`), use the :ref:`rxd.rxdmath <rxdmath_prog_ref>`
     module.
 ----
 
 .. function:: abs
 
-        absolute value 
+    Absolute value 
+
+    .. code-block::
+        none
+
+        >>> h.abs(-42.2)
+        42.2
+
+    See :meth:`Vector.abs` for the :class:`Vector` class. 
+
+    .. note::
+
+        In Python code, use Python's ``abs`` function, which works on both numbers and numpy arrays, as well as Vectors (Vectors do not print their contents) :
 
         .. code-block::
-            none
+            python
 
-            >>> h.abs(-42.2)
+            >>> abs(-42.2)
             42.2
-
-        See :meth:`Vector.abs` for the :class:`Vector` class. 
-
-        .. note::
-
-            In Python code, use Python's ``abs`` function, which works on both numbers and numpy arrays, as well as Vectors (Vectors do not print their contents) :
-
-            .. code-block::
-                python
-
-                >>> abs(-42.2)
-                42.2
-                >>> abs(-3 + 4j)
-                5.0
-                >>> v = h.Vector([1, 6, -2, -65])
-                >>> abs(v).printf()
-                1       6       2       65
-                4
+            >>> abs(-3 + 4j)
+            5.0
+            >>> v = h.Vector([1, 6, -2, -65])
+            >>> abs(v).printf()
+            1       6       2       65
+            4
 
 
 
@@ -55,27 +55,27 @@ Diagnostics:
 
 .. function:: int
 
-        returns the integer part of its argument (truncates toward 0). 
+    Returns the integer part of its argument (truncates toward 0). 
+
+    .. code-block::
+        python
+
+        >>> h.int(3.14)
+        3.0
+        >>> h.int(-3.14)
+        -3.0
+
+    .. note::
+
+        In Python code, use Python's ``int`` function instead. The behavior is slightly different in that the Python function returns an int type instead of a double:
 
         .. code-block::
             python
 
-            >>> h.int(3.14)
-            3.0
-            >>> h.int(-3.14)
-            -3.0
-
-        .. note::
-
-            In Python code, use Python's ``int`` function instead. The behavior is slightly different in that the Python function returns an int type instead of a double:
-
-            .. code-block::
-                python
-
-                >>> int(-3.14)
-                -3
-                >>> int(3.14)
-                3
+            >>> int(-3.14)
+            -3
+            >>> int(3.14)
+            3
 
 
 
@@ -83,63 +83,63 @@ Diagnostics:
 
 .. function:: sqrt
 
-        square root 
+    Square root 
 
-        see :meth:`Vector.sqrt` for the :class:`Vector` class. 
+    see :meth:`Vector.sqrt` for the :class:`Vector` class. 
 
-        .. note::
-        
-            Consider using Python's built in ``math.sqrt`` instead.
+    .. note::
+    
+        Consider using Python's built in ``math.sqrt`` instead.
 
 ----
 
 .. function:: exp
 
-    Description:
-        returns the exponential function to the base e 
-         
-        When exp is used in model descriptions, it is often the 
-        case that the cvode variable step integrator extrapolates 
-        voltages to values which return out of range values for the exp (often used 
-        in rate functions). There were so many of these false warnings that it was 
-        deemed better to turn off the warning message when Cvode is active. 
-        In any case the return value is exp(700). This message is not turned off 
-        at the interpreter level or when cvode is not active. 
-
-        .. code-block::
-            python
-
-            from neuron import h
-
-            for i in range(6, 12):
-                print(i, h.exp(i))
+    Returns the exponential function to the base e 
         
-        .. note::
-        
-            Consider using Python's built in ``math.exp`` instead.
+    When exp is used in model descriptions, it is often the 
+    case that the cvode variable step integrator extrapolates 
+    voltages to values which return out of range values for the exp (often used 
+    in rate functions). There were so many of these false warnings that it was 
+    deemed better to turn off the warning message when Cvode is active. 
+    In any case the return value is exp(700). This message is not turned off 
+    at the interpreter level or when cvode is not active. 
+
+    .. code-block::
+        python
+
+        from neuron import h
+
+        for i in range(6, 12):
+            print(i, h.exp(i))
+    
+    .. note::
+    
+        Consider using Python's built in ``math.exp`` instead.
 
 ----
 
 .. function:: log
 
-        logarithm to the base e 
-        see :meth:`Vector.log` for the :class:`Vector` class. 
-
-        .. note::
+    Logarithm to the base e
         
-            Consider using Python's built in ``math.log`` instead.
+    see :meth:`Vector.log` for the :class:`Vector` class. 
+
+    .. note::
+    
+        Consider using Python's built in ``math.log`` instead.
 
 ----
 
 .. function:: log10
 
-        logarithm to the base 10 
+    Logarithm to the base 10 
 
-        see :meth:`Vector.log10` for the :class:`Vector` class. 
-        
-        .. note::
+    see :meth:`Vector.log10` for the :class:`Vector` class. 
+    
+    .. note::
 
-            Consider using Python's built in ``math.log10`` instead.
+        Consider using Python's built in ``math.log10`` instead.
 
 
 
@@ -176,7 +176,7 @@ Diagnostics:
 
 .. function:: sin
 
-   Returns the trigonometric function of radian argument (a number).
+    Returns the trigonometric function of radian argument (a number).
 
     If you need to take the sine of a Vector, use ``numpy``; e.g.,
 
@@ -205,26 +205,26 @@ Diagnostics:
 
 .. function:: tanh
 
-        Hyperbolic tangent. 
+    Hyperbolic tangent. 
 
-        For :class:`Vector` objects, use :meth:`Vector.tanh` to store the
-        values in-place, or use numpy to create a new Vector; e.g.,
+    For :class:`Vector` objects, use :meth:`Vector.tanh` to store the
+    values in-place, or use numpy to create a new Vector; e.g.,
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            import numpy as np
-            from neuron import h
+        import numpy as np
+        from neuron import h
 
-            v = h.Vector([0, 1, 2, 3])
-            v2 = h.Vector(np.tanh(v))
-            print(list(v2))
+        v = h.Vector([0, 1, 2, 3])
+        v2 = h.Vector(np.tanh(v))
+        print(list(v2))
 
-            # [0.0, 0.7615941559557649, 0.9640275800758169, 0.9950547536867305]
-        
-        .. note::
+        # [0.0, 0.7615941559557649, 0.9640275800758169, 0.9950547536867305]
+    
+    .. note::
 
-            Consider using Python's built in ``math.tanh`` instead.
+        Consider using Python's built in ``math.tanh`` instead.
 
 
 
@@ -232,11 +232,11 @@ Diagnostics:
 
 .. function:: atan
 
-        returns the arc-tangent of y/x in the range :math:`-\pi/2` to :math:`\pi/2`. (x > 0) 
-        
-        .. note::
+    Returns the arc-tangent of y/x in the range :math:`-\pi/2` to :math:`\pi/2`. (x > 0) 
     
-            Consider using Python's built in ``math.atan`` instead.
+    .. note::
+
+        Consider using Python's built in ``math.atan`` instead.
 
 
 
@@ -285,24 +285,24 @@ Diagnostics:
 
 .. function:: erf
 
-        normalized error function 
+    Normalized error function 
 
-        .. math::
+    .. math::
 
-            {\rm erf}(z) = \frac{2}{\sqrt{\pi}} \int_{0}^{z} e^{-t^2} dt
+        {\rm erf}(z) = \frac{2}{\sqrt{\pi}} \int_{0}^{z} e^{-t^2} dt
 
-        .. note::
+    .. note::
 
-            In Python 3.2+, use ``math.erf`` instead.
+        In Python 3.2+, use ``math.erf`` instead.
 
 
 ----
 
 .. function:: erfc
 
-        returns ``1.0 - erf(z)`` but on sun machines computed by other methods 
-        that avoid cancellation for large z. 
+    Returns ``1.0 - erf(z)`` but on sun machines computed by other methods 
+    that avoid cancellation for large z. 
 
-        .. note::
+    .. note::
 
-            In Python 3.2+, use ``math.erfc`` instead.
+        In Python 3.2+, use ``math.erfc`` instead.

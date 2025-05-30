@@ -24,8 +24,8 @@ List
         Besides interacting with legacy code, the NEURON ``List`` class provides two key features
         not avaialble in Python lists:
 
-        1. The ability to create a dynamic ``List`` of all the object instances of a template (e.g.
-           all instances of an ``"IClamp"`` or of a cell class.
+        1. The ability to create a dynamic ``List`` of all the object instances of a template (e.g.,
+           all instances of an ``"IClamp"`` or of a cell class.)
         2. The ability to create a GUI browser for the list, which can be used to select and interact
            with the objects in the list.
 
@@ -164,7 +164,7 @@ List
         Return the index of the object in the ``List``. Return a -1 if the 
         object is not in the ``List``.
 
-        This is approximately analogous to the Python list method ``.index()``
+        This is approximately analogous to the Python list method ``.index()``,
         except that the method for Python lists raises a ``ValueError`` if the
         object is not in the list.
          

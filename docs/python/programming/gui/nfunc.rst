@@ -5,7 +5,7 @@ Miscellaneous Menus
 
 .. note::
 
-    GUI menus require one to have previously ran:
+    GUI menus require one to have previously run:
 
     .. code-block::
         python

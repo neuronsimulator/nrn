@@ -669,7 +669,7 @@ a session.
 
 .. note::
 
-    To see Sections created in Python via PlotWhat? you must select
+    To see Sections created in Python via PlotWhat?, you must select
     :menuselection:`Show --> Python Sections`
 
  
