@@ -12,6 +12,8 @@ on:
 
 jobs:
   get-last-azure-url:
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     runs-on: ubuntu-latest
     outputs:
       azure_drop_url: ${{ steps.drop.outputs.azure_drop_url }}
