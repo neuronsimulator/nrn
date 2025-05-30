@@ -4,7 +4,7 @@ NEURON Python Classes and Objects
 NEURON exposes its internal objects and hoc templates as Python objects via an automatic
 conversion layer, effectively making all entities from the HOC stack available to a Python program.
 
-There are basically two main objects which expose most Neuron entities. The first is `hoc` which
+There are basically two main objects which expose most NEURON entities. The first is `hoc` which
 exposes a number of internal established classes and functions.
 
 .. code-block::

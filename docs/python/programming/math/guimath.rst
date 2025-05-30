@@ -107,7 +107,7 @@ GUIMath
                 gm = h.GUIMath()
                 old = gm.feround(mode)
                 x = 0
-                for i in range(1, 1000001):
+                for i in range(1, 1_000_001):
                     x += 0.1
                 print(f'round mode {mode} x={x:25.17f}')
                 gm.feround(old)
