@@ -2156,9 +2156,9 @@ send2trash==1.8.3 \
     --hash=sha256:0c31227e0bd08961c7665474a3d1ef7193929fedda4233843689baa056be46c9 \
     --hash=sha256:b18e7a3966d99871aefeb00cfbcfdced55ce4871194810fc71f4aa484b953abf
     # via jupyter-server
-setuptools==70.3.0 \
-    --hash=sha256:f171bab1dfbc86b132997f26a119f6056a57950d058587841a0082e8830f9dc5 \
-    --hash=sha256:fe384da74336c398e0d956d1cae0669bc02eed936cdb1d49b57de1990dc11ffc
+setuptools==78.1.1 \
+    --hash=sha256:c3a9c4211ff4c309edb8b8c4f1cbfa7ae324c4ba9f91ff254e3d305b9fd54561 \
+    --hash=sha256:fcc17fd9cd898242f6b4adfaca46137a9edef687f43e6f78469692a5e70d851d
     # via
     #   -r nrn_requirements.txt
     #   jupyterlab
