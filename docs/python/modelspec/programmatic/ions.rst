@@ -85,7 +85,7 @@ Ions
 
         .. warning::
         
-            if other mechanisms are inserted subsequent to a call 
+            If other mechanisms are inserted subsequent to a call 
             of this function, the style will be "promoted" according to 
             the rules associated with adding the used ions to the style 
             previously in effect. 

@@ -706,7 +706,7 @@ Vector
 
             vec = h.Vector(range(90, 1000, 30))
 
-        In this case, ``range`` returns a generator and is very memory efficient.
+        In this case, ``range`` returns a generator and is very memory-efficient.
         By contrast if we used ``np.arange``, that would create a ``numpy`` array
         which would then be copied over to a new :class:`Vector` object. In most
         cases, readability is a bigger concern than memory and time efficiency,
