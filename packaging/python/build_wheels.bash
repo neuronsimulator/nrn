@@ -99,6 +99,9 @@ set_cibw_environment() {
             # seems that 10.15 is actually needed for std::filesystem::path.
             # 11.0 is required on ARM machines
             [MACOSX_DEPLOYMENT_TARGET]="10.15"
+            [CMAKE_C_COMPILER_LAUNCHER]=""
+            [CMAKE_CXX_COMPILER_LAUNCHER]=""
+            [CCACHE_DIR]=""
         )
     elif [ "${platform}" = 'linux' ]; then
         declare -A defaults=(
@@ -110,6 +113,9 @@ set_cibw_environment() {
             [CORENRN_ENABLE_OPENMP]="ON"
             [NRN_BINARY_DIST_BUILD]="ON"
             [NRN_RX3D_OPT_LEVEL]="0"
+            [CMAKE_C_COMPILER_LAUNCHER]=""
+            [CMAKE_CXX_COMPILER_LAUNCHER]=""
+            [CCACHE_DIR]=""
         )
     fi
 
@@ -149,6 +155,18 @@ build_wheel_portable() {
     if [ "${platform}" = 'macos' ]; then
         if [ "$(uname -m)" = 'arm64' ]; then
             export MACOSX_DEPLOYMENT_TARGET='11.0'
+        fi
+    fi
+
+    # use ccache if it is available
+    if command -v ccache >& /dev/null; then
+        export CMAKE_C_COMPILER_LAUNCHER=ccache
+        export CMAKE_CXX_COMPILER_LAUNCHER=ccache
+        if [ "${platform}" = 'linux' ]; then
+            # the host filesystem is available in the container at `/host`
+            export CCACHE_DIR="${CCACHE_DIR:-/host/tmp/ccache}"
+        elif [ "${platform}" = 'macos' ]; then
+            export CCACHE_DIR="${CCACHE_DIR:-/tmp/ccache}"
         fi
     fi
 
