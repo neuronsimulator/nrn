@@ -19,7 +19,7 @@ jobs:
     with:
       label: ${{ github.event.label.name }}
       ci_name: 'NEURON ModelDB CI'
-      pr_url: $PR_URL
+      pr_url: ${{ github.event.pull_request.html_url }}
 
   nrn-modeldb-ci:
     needs: get-last-azure-url-modeldb
@@ -48,7 +48,7 @@ jobs:
     with:
       label: ${{ github.event.label.name }}
       ci_name: 'NEURON build CI'
-      pr_url: $PR_URL
+      pr_url: ${{ github.event.pull_request.html_url }}
 
   nrn-build-ci:
     needs: get-last-azure-url-build
