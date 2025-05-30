@@ -1620,12 +1620,11 @@ bool NetCvode::init_global() {
             // The sum of the ml[i].nodecount must equal the mechanism
             // nodecount for the cell and each ml[i] data must be contiguous.
             // Ideally the node permutation would be such that each cell
-            // is contiguous. So only needing a ml[0]. That is sadly not
-            // the case with the default permutation. The cell root nodes are
-            // all at the beginning, and thereafter only Section nodes are
-            // contiguous. It would be easy to permute nodes so that each cell
-            // is contiguous (except root node). This would result in a
-            // CvMembList.ml.size() == 1 almost always with an exception of
+            // is contiguous. So only needing a ml[0]. This is now mostly
+            // the case with the default permutation. The root nodes are
+            // all at the beginning, and thereafter all the cell nodes are
+            // contiguous. This results in a
+            // CvMembList.ml.size() == 1 almost always, with an exception of
             // size() == 2 only for extracellular and for POINT_PROCESSes
             // located both in the root node and other cell nodes.
 
@@ -1674,6 +1673,9 @@ bool NetCvode::init_global() {
                                 // instance to cml->ml
                                 cml->ml.emplace_back(cml->index);
                                 assert(cml->ml.back().nodecount == 0);
+                                // For the default node permutation, cell
+                                // nodes are contiguous except for rootnode.
+                                assert(cml->ml.size() < 3);
                             }
                         }
 
