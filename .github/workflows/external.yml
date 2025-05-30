@@ -50,7 +50,7 @@ jobs:
 
   nrn-build-ci:
     needs: get-last-azure-url-build
-    uses: neuronsimulator/nrn-build-ci/.github/workflow/build-neuron-template.yml@jelic/reusable_workflow
+    uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@jelic/reusable_workflow
     with:
       azure_url: ${{needs.get-last-azure-url-modeldb.outputs.azure_drop_url}}
       neuron_branch: ${{github.ref_name}}
