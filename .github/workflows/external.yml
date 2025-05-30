@@ -1,8 +1,8 @@
 name: External CIs
 
 concurrency:
-  # Don't cancel on master, creating a PR when a push workflow is already going will cancel the push workflow in favour of the PR workflow
-  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
+  # Don't cancel when creating multiple labels
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}-${{ github.event.label.name }}
   cancel-in-progress: true
 
 on:
