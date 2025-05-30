@@ -330,7 +330,7 @@ StringFunctions (String Manipulation Class)
             python
 
             from neuron import h
-            s1 = h.Section(name='soma')
+            s1 = h.Section('soma')
             strobj = h.StringFunctions()
             strobj.references(s1)
 
@@ -357,7 +357,7 @@ StringFunctions (String Manipulation Class)
 
             from neuron import h
             h.load_file('stdrun.hoc')
-            s1 = h.Section(name='soma')
+            s1 = h.Section('soma')
             syn = h.ExpSyn(s1(0.5))
             sf = h.StringFunctions()
             # not point process
@@ -392,7 +392,7 @@ StringFunctions (String Manipulation Class)
 
             from neuron import h
             h.load_file('stdrun.hoc')
-            s1 = h.Section(name='soma')
+            s1 = h.Section('soma')
             syn = h.ExpSyn(s1(0.5))
             # initiate string function
             sf = h.StringFunctions()
