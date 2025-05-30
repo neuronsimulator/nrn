@@ -196,6 +196,10 @@ function(create_nrnmech)
     list(APPEND MOD_FILES "${MOD_FILE}")
   endforeach()
 
+  # We later include the directories where the mod files in case people add headers in VERBATIM
+  # blocks
+  set(MOD_DIRECTORIES)
+
   # Convert mod files for use with NEURON
   if(NRN_MECH_NEURON)
     # Convert to CPP files
@@ -203,6 +207,10 @@ function(create_nrnmech)
       get_filename_component(MOD_STUB "${MOD_FILE}" NAME_WLE)
       # nocmodl has trouble with symlinks, so we always use the real path
       get_filename_component(MOD_ABSPATH "${MOD_FILE}" REALPATH)
+      get_filename_component(MOD_DIRECTORY "${MOD_ABSPATH}" DIRECTORY)
+      if(NOT MOD_DIRECTORY IN_LIST MOD_DIRECTORIES)
+        list(APPEND MOD_DIRECTORIES "${MOD_DIRECTORY}")
+      endif()
       set(CPP_FILE "cpp/${MOD_STUB}.cpp")
       file(RELATIVE_PATH MOD_SHORT "${CMAKE_SOURCE_DIR}" "${MOD_ABSPATH}")
 
@@ -240,6 +248,9 @@ function(create_nrnmech)
     target_sources(${TARGET_LIBRARY_NAME} PRIVATE "${ARTIFACTS_OUTPUT_DIR}/${MECH_REG}")
     target_compile_definitions(${TARGET_LIBRARY_NAME} PUBLIC AUTO_DLOPEN_NRNMECH=0)
     target_include_directories(${TARGET_LIBRARY_NAME} BEFORE PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
+    # sometimes people will add `#include`s in VERBATIM blocks; usually those are in the same
+    # directory as the mod file, so let's add that as well
+    target_include_directories(${TARGET_LIBRARY_NAME} PRIVATE "${MOD_DIRECTORIES}")
 
     # add the special executable
     if(NRN_MECH_SPECIAL)
