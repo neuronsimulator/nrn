@@ -16,6 +16,7 @@ on:
 
 jobs:
   get-last-azure-url:
+    name: 'Get last Azure drop URL'
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       PR_URL: ${{ inputs.pr_url }}

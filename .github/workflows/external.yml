@@ -14,6 +14,7 @@ env:
 
 jobs:
   get-last-azure-url-modeldb:
+    name: 'Get Azure URL for ModelDB CI'
     uses: ./.github/workflows/get-azure-url-template.yml
     if: ${{ github.event.label.name == 'nrn-modeldb-ci-nightly' }}
     with:
@@ -43,6 +44,7 @@ jobs:
         pr_azure_sha: ${{ needs.get-last-azure-url.outputs.pr_azure_sha }}
 
   get-last-azure-url-build:
+    name: 'Get Azure URL for build CI'
     uses: ./.github/workflows/get-azure-url-template.yml
     if: ${{ github.event.label.name == 'nrn-build-ci-nightly' }}
     with:
@@ -55,4 +57,4 @@ jobs:
     uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@jelic/reusable_workflow
     with:
       azure_drop_url: ${{needs.get-last-azure-url-modeldb.outputs.azure_drop_url}}
-      neuron_branch: ${{github.ref_name}}
+      neuron_branch: ${{github.head_ref}}
