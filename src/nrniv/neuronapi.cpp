@@ -118,7 +118,7 @@ void nrn_section_Ra_set(Section* sec, double const val) {
     sec->recalc_area_ = 1;
 }
 
-double nrn_section_rallbranch_get(Section* sec) {
+double nrn_section_rallbranch_get(const Section* sec) {
     return sec->prop->dparam[4].get<double>();
 }
 
@@ -146,18 +146,26 @@ void nrn_mechanism_insert(Section* sec, const Symbol* mechanism) {
     mech_insert1(sec, mechanism->subtype);
 }
 
-bool nrn_section_is_active(Section* sec) {
+bool nrn_section_is_active(const Section* sec) {
     if (!sec->prop) {
         return false;
     }
     return true;
 }
 
+void nrn_section_ref(Section* sec) {
+    section_ref(sec);
+}
+
+void nrn_section_unref(Section* sec) {
+    section_unref(sec);
+}
+
 /****************************************
  * Segments
  ****************************************/
 
-int nrn_nseg_get(Section const* sec) {
+int nrn_nseg_get(const Section* sec) {
     // always one more node than nseg
     return sec->nnode - 1;
 }
@@ -218,21 +226,21 @@ Symbol* nrn_symbol(char const* const name) {
     return hoc_lookup(name);
 }
 
-int nrn_symbol_type(Symbol const* sym) {
+int nrn_symbol_type(const Symbol* sym) {
     // TODO: these types are in parse.hpp and are not the same between versions,
     // so we really should wrap
     return sym->type;
 }
 
-int nrn_symbol_subtype(Symbol const* sym) {
+int nrn_symbol_subtype(const Symbol* sym) {
     return sym->subtype;
 }
 
-double* nrn_symbol_dataptr(Symbol* sym) {
+double* nrn_symbol_dataptr(const Symbol* sym) {
     return sym->u.pval;
 }
 
-bool nrn_symbol_is_array(Symbol* sym) {
+bool nrn_symbol_is_array(const Symbol* sym) {
     return sym->arayinfo != nullptr;
 }
 
@@ -564,7 +572,7 @@ char const* nrn_symbol_name(const Symbol* sym) {
     return sym->name;
 }
 
-Symlist* nrn_symbol_table(Symbol* sym) {
+Symlist* nrn_symbol_table(const Symbol* sym) {
     // TODO: ensure sym is an object or class
     // NOTE: to use with an object, call nrn_get_symbol(nrn_class_name(obj))
     return sym->u.ctemplate->symtable;
@@ -578,7 +586,7 @@ Symlist* nrn_top_level_symbol_table(void) {
     return hoc_top_level_symlist;
 }
 
-int nrn_symbol_array_length(Symbol* sym) {
+int nrn_symbol_array_length(const Symbol* sym) {
     return sym->arayinfo->sub[0];
 }
 
