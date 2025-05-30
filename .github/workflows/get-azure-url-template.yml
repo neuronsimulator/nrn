@@ -14,11 +14,17 @@ jobs:
   get-last-azure-url:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     runs-on: ubuntu-latest
+
     outputs:
       azure_drop_url: ${{ steps.drop.outputs.azure_drop_url }}
       pr_azure_sha:  ${{ steps.drop.outputs.pr_azure_sha }}
+
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Get last Azure drop URL
         id: drop
         run: |
