@@ -857,7 +857,7 @@ Vector
         If the second (and third) argument is a :class:`Vector`, 
         the elements of that ``Vector`` are the 
         indices of the ``vsrc`` to be copied to the same indices of the ``vdest``. 
-        In this case the ``vdest`` is not resized and any indices that are out of 
+        In this case, the ``vdest`` is not resized and any indices that are out of 
         range of either ``vsrc`` or ``vdest`` are ignored. This function allows mapping 
         of a subset of a source vector into the subset of a destination vector. 
          
