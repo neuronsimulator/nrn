@@ -4,9 +4,11 @@ on:
       label:
         description: 'The label to add or remove'
         required: true
+        type: string
       ci_name:
         description: 'The name of the CI to display in the comment'
         required: true
+        type: string
 
 jobs:
   get-last-azure-url:
