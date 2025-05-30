@@ -1428,7 +1428,7 @@ Description:
         by John W. Moore, Michael Hines, and Ted Carnevale 
         Duke and Yale University -- Copyright 1984-2005 
          
-        loading membrane mechanisms from i686/libnrnmech.so 
+        loading membrane mechanisms from i686/libnrnmech.so
         Additional mechanisms from files 
          
         hello from id 0 on NeuronDev 

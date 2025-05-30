@@ -356,6 +356,17 @@ endif()
 find_package(BISON REQUIRED)
 find_package(FLEX 2.6 REQUIRED)
 
+# lcov >= 2 and bison < 3.7 do not play nicely
+if(NRN_ENABLE_COVERAGE
+   AND BISON_VERSION VERSION_LESS "3.7"
+   AND LCOV_VERSION VERSION_GREATER_EQUAL "2.0")
+  message(
+    WARNING
+      "Bison ${BISON_VERSION} detected;"
+      " Bison 3.7 or above is recommended with NRN_ENABLE_COVERAGE=ON and lcov ${LCOV_VERSION},"
+      " you may experience errors!")
+endif()
+
 # When shipping the wheels we want to link readline libs statically.
 if(NRN_WHEEL_STATIC_READLINE)
   # CMake will prefer dynamic libraries over static ones. With the following construct we make sure
