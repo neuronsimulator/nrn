@@ -12,12 +12,13 @@ RangeVarPlot
     Syntax:
         ``h.RangeVarPlot("rangevar" [, start_segment, stop_segment])``
         
-
         ``h.RangeVarPlot(py_callable [, start_segment, stop_segment])``
+
+        ``h.RangeVarPlot(rxd_species [, start_segment, stop_segment])``
 
 
     Description:
-        Class for making a space plot. eg. voltage as function of path between 
+        Class for making a space plot. e.g., voltage as function of path between 
         two points on a cell.  Specification of the start and stop segments is
         optional, but if one is specified both must be specified.
         
@@ -62,12 +63,11 @@ RangeVarPlot
 
             dend1 = h.Section('dend1')
             dend2 = h.Section('dend2')
+            dend2.connect(dend1)
 
-            for sec in [dend1, dend2]:
+            for sec in dend1.wholetree():
                 sec.nseg = sec.L = 501
                 sec.diam = 1
-
-            dend2.connect(dend1)
 
             ic = h.IClamp(dend1(0.5))
             ic.amp = 0.5
@@ -94,12 +94,11 @@ RangeVarPlot
 
             dend1 = h.Section('dend1')
             dend2 = h.Section('dend2')
+            dend2.connect(dend1)
 
-            for sec in [dend1, dend2]:
+            for sec in dend1.wholetree():
                 sec.nseg = sec.L = 501
                 sec.diam = 1
-
-            dend2.connect(dend1)
 
             def my_func(x):
                 sec = h.cas()  # find out which section
@@ -139,7 +138,8 @@ RangeVarPlot
             import matplotlib.pyplot as plt
 
             dend1 = h.Section("dend1")
-            dend1.nseg =4
+            dend1.nseg = 4  # we stronly recommend always making nseg odd
+                            # using an odd nseg means there is a middle point
 
             cyt1 = rxd.Region(dend1.wholetree(), nrn_region="i")
             ca1 = rxd.Species(cyt1, name="ca1", charge=2, initial=1e-12)
@@ -197,7 +197,7 @@ RangeVarPlot
             for seg in dend.allseg():
                 seg.v = math.sin(dend.L * seg.x)
 
-            r = h.RangeVarPlot('v', dend(0), dend(1)) #Three argument constructor in 7.7+
+            r = h.RangeVarPlot('v', dend(0), dend(1))  # Three argument constructor in 7.7+
 
             #matplotlib 
             graph = pyplot.gca()
@@ -231,7 +231,7 @@ RangeVarPlot
 
     Description:
         Begins the path for the space plot at the specified segment. Using the first syntax
-        is recommended in later code; the second is another way to specify the segment ``section(x)``.
+        is recommended in new code; the second is another way to specify the segment ``section(x)``.
     
     .. note::
     
@@ -254,7 +254,7 @@ RangeVarPlot
 
     Description:
         Ends the path for the space plot at the specified segment. Using the first syntax
-        is recommended in later code; the second is another way to specify the segment ``section(x)``.
+        is recommended in new code; the second is another way to specify the segment ``section(x)``.
     
     .. note::
     
@@ -347,7 +347,7 @@ RangeVarPlot
 
     Description:
         Change the color property. To see the change on an already plotted 
-        RangeVarPlot in a Graph, the Graph should be :meth:`~Graph.flush`\ ed. 
+        ``RangeVarPlot`` in a Graph, the Graph should be :meth:`~Graph.flush`\ ed. 
 
          
 
@@ -362,7 +362,7 @@ RangeVarPlot
         ``yvec = rvp.vector()``
 
     Description:
-        Copy the range variable values to a new :class:`Vector` yvec.
+        Copy the range variable values to a new :class:`Vector` ``yvec``.
         (``len(yvec)`` will be equal to the number of range points.)
 
     Note:
@@ -410,8 +410,8 @@ RangeVarPlot
 
 
     Description:
-        Copy the values in yvec to the range variables along the rvp path. 
-        The size of the vector must be consistent with rvp. 
+        Copy the values in ``yvec`` to the range variables along the rvp path. 
+        The size of the Vector must be consistent with rvp. 
 
          
 
