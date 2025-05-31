@@ -77,7 +77,7 @@ run_mpi_test () {
     cp "test/coreneuron/mod files/"* "${TEMP_DIR}/"
     # also copy one MOD file containing sparse solver
     cp share/examples/nrniv/nmodl/capmp.mod "${TEMP_DIR}"
-    nrnivmodl -coreneuron "${TEMP_DIR}"
+    nrnivmodl-all "${TEMP_DIR}"
 
     $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
 
@@ -141,7 +141,7 @@ run_serial_test () {
       # first test vanialla coreneuron support, without nrnivmodl
       $python_exe test/coreneuron/test_psolve.py
 
-      nrnivmodl -coreneuron "test/coreneuron/mod files/"
+      nrnivmodl-all "test/coreneuron/mod files/"
 
       # coreneuron+gpu can be used via python but special only
       $python_exe test/coreneuron/test_direct.py

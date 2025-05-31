@@ -34,13 +34,13 @@ def traces_filename(steady_state):
     return "test_minipump{}.pkl".format("-steady_state" if steady_state else "")
 
 
-def save_traces(t, X, Y, Z, steady_state):
-    with open(traces_filename(steady_state), "bw") as f:
+def save_traces(location, t, X, Y, Z, steady_state):
+    with open(f"{location}/{traces_filename(steady_state)}", "bw") as f:
         pickle.dump({"t": t, "X": X, "Y": Y, "Z": Z}, f)
 
 
-def load_traces(steady_state):
-    with open(traces_filename(steady_state), "br") as f:
+def load_traces(location, steady_state):
+    with open(f"{location}/{traces_filename(steady_state)}", "br") as f:
         d = pickle.load(f)
 
     return d["t"], d["X"], d["Y"], d["Z"]
@@ -56,11 +56,12 @@ def check_traces(t, X, Y, Z, steady_state):
         return
 
     codegen = sys.argv[1]
+    location = sys.argv[2]
     if codegen == "nocmodl":
-        save_traces(t, X, Y, Z, steady_state)
+        save_traces(location, t, X, Y, Z, steady_state)
 
     else:
-        t_ref, X_ref, Y_ref, Z_ref = load_traces(steady_state)
+        t_ref, X_ref, Y_ref, Z_ref = load_traces(location, steady_state)
 
         assert_almost_equal(t, t_ref, rtol=1e-8)
         assert_almost_equal(X, X_ref, rtol=1e-8)
