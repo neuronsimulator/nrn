@@ -1,6 +1,16 @@
 Running and Saving Batch Jobs
 -----------------------------
 
+.. note::
+
+    These functions are about running one simulation and saving state variables at
+    regular intervals. While this can be done manually with a series of calls to
+    e.g., ``h.continuerun()`` and then saving data to a file, these functions
+    avoid the overhead of returning back to the Python interpreter.
+
+    If you are instead looking to run a collection of simulations together using MPI,
+    look at e.g., :meth:`ParallelContext.runworker` and :meth:`ParallelContext.submit`.
+
 .. function:: batch_run
 
 

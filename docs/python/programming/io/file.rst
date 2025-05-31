@@ -368,7 +368,7 @@ File Access (objected-oriented via NEURON)
 
 
     Description:
-        Return true if a file is open. 
+        Return ``True`` if a file is open. 
 
          
 
@@ -413,7 +413,7 @@ File Access (objected-oriented via NEURON)
         The "*x*" style is unimplemented. Use 
 
         .. code-block::
-            none
+            python
 
             f.chooser("", "Execute a hoc file", "*.hoc", "Execute") 
             if f.chooser():
@@ -434,6 +434,24 @@ File Access (objected-oriented via NEURON)
         .. image:: ../../images/filechooser.png
             :align: center
 
+        The above example is approximately equivalent to the following pure Python solution, except
+        the graphics library is different. On most systems, the pure Python solution will have a
+        look-and-feel more consistent with the rest of the system.:
+
+        .. code-block::
+            python
+
+            import tkinter as tk
+            from tkinter import filedialog
+
+            root = tk.Tk()
+            root.withdraw()  # Hide the root window
+
+            file_path = filedialog.askopenfilename(title="Example file browser", filetypes=[("All files", "*")])
+            if not file_path:
+                print("No file selected")
+            else:
+                print(file_path)
 
 ----
 
