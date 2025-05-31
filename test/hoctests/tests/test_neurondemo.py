@@ -35,10 +35,12 @@ def run(cmd, input):
 # cycle through once but not twice with the mouse.
 
 # HOC: select demo, run, and print all lines on all Graphs
+#  After selecting demo and before run, allow modifications
 input = r"""
 proc dodemo() {
   usetable_hh = 0 // Compatible with -DNRN_ENABLE_CORENEURON=ON
   demo(%d)
+  %s
   run()
   printf("\nZZZbegin\n")
   prgraphs()
@@ -109,9 +111,8 @@ proc prgraphs() {local i, j, k  localobj xvec, yvec, glist
 }
 """
 
-# Run all the demos and compare their results to the reference
-for i in range(1, 8):
-    data = neurondemo(prgraphs, input % i)
+
+def data_compare(key, data):
     data.reverse()
     # parse the prgraphs output back into a rich structure
     rich_data = []
@@ -138,7 +139,6 @@ for i in range(1, 8):
         rich_data.append([graph_name, lines])
     # we should have munched everything
     assert len(data) == 0
-    key = "demo%d" % i
 
     if os.uname().sysname == "Darwin":
         # Sometimes a Graph y value str differs in last digit by 1
@@ -182,6 +182,22 @@ for i in range(1, 8):
                             )
     else:
         chk(key, rich_data)
+
+
+# Run all the demos and compare their results to the reference
+for i in range(1, 8):
+    data = neurondemo(prgraphs, input % (i, ""))
+    key = "demo%d" % i
+    data_compare(key, data)
+
+
+def special_run(key, demo_index, pre_run_stmts):
+    data = neurondemo(prgraphs, input % (demo_index, pre_run_stmts))
+    data_compare(key, data)
+
+
+# For full coverage of #3454, do another run of Dynamic Clamp with cvode active.
+special_run("cover3454", 6, "cvode_active(1)")
 
 chk.save()
 

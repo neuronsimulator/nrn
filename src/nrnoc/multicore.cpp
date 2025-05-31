@@ -710,7 +710,7 @@ void reorder_secorder() {
             sec = hocSEC(qsec);
             assert(sec->order == -1);
             nd = sec->parentnode;
-            assert(nd->_nt == _nt);
+            nd->_nt = _nt;
             _nt->_v_node[inode] = nd;
             _nt->_v_parent[inode] = nullptr;  // Root nodes have no parent
             _nt->_v_node[inode]->v_node_index = inode;
