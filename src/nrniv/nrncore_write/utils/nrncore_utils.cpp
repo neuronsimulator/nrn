@@ -122,6 +122,16 @@ void nrnbbcore_register_mapping() {
     mapinfo.add_sec_mapping(gid, smap);
 }
 
+// experiment with figuring out what information is needed to allow
+// modification of a variable in CoreNEURON file mode.
+size_t nrncore_refvar() {
+    printf("inside nrncore_refvar\n");
+    auto dh = hoc_hgetarg<double>(1);
+    printf("*dh = %g\n", *dh);
+    std::cout << dh << "\n";
+    return 0;
+}
+
 // This function is related to legacy_index2pointer in CoreNeuron to determine
 // which values should be transferred from CoreNeuron. Types correspond to the
 // value to be transferred based on mech_type enum or non-artificial cell

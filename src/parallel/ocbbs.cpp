@@ -49,6 +49,7 @@ extern double* nrn_mech_wtime_;
 extern bool nrn_trajectory_request_per_time_step_;
 
 extern size_t nrncore_write();
+extern size_t nrncore_refvar();
 extern size_t nrnbbcore_register_mapping();
 extern int nrncore_run(const char*);
 extern int nrncore_is_enabled();
@@ -995,6 +996,10 @@ static double nrncorewrite_argappend(void*) {
     return double(nrncore_write());
 }
 
+static double nrncore_refvar1(void*) {
+    return double(nrncore_refvar());
+}
+
 static double nrncorerun(void*) {
     if (ifarg(2)) {
         nrn_trajectory_request_per_time_step_ = chkarg(2, 0., 1.) != 0.0;
@@ -1096,6 +1101,7 @@ static Member_func members[] = {{"submit", submit},
 
                                 {"nrnbbcore_write", nrncorewrite_argvec},
                                 {"nrncore_write", nrncorewrite_argappend},
+                                {"nrncore_refvar", nrncore_refvar1},
                                 {"nrnbbcore_register_mapping", nrnbbcore_register_mapping},
                                 {"nrncore_run", nrncorerun},
                                 {"print_memory_stats", print_memory_stats},
