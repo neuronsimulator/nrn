@@ -2,7 +2,8 @@ matplotlib<=3.10.0
 ipython<=8.32.0
 mpi4py<=4.0.3
 find_libpython<=0.4.0
-packaging<=24.2.0
+packaging<=24.2.0,>=22.0
+setuptools<=80.8.0
 -r packaging/python/build_requirements.txt
 -r packaging/python/test_requirements.txt
 -r nmodl_requirements.txt
