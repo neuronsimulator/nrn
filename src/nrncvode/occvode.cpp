@@ -248,7 +248,9 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
                 continue;
             }
             // rather than change ode_map pv,pvdot args back to double*
-            // from data_handle<double>, do the static_cast here
+            // from data_handle<double>, use a small (single instance
+            // ode count) temporary data handle vector and do the
+            // static_cast here.
             std::vector<neuron::container::data_handle<double>> pv, pvdot;
             for (auto& ml: cml->ml) {
                 if (int n; (n = mf.ode_count(cml->index)) > 0) {
