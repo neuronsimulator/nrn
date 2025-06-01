@@ -199,7 +199,7 @@ Example:
         s.show(False)
         s.color(2, sec=a) # color section "a" red
         h.topology()
-        h.finitialize(-65)
+        n.finitialize(-65)
         for sec in a.wholetree():
             print(sec)
             for i in range(sec.n3d()):
@@ -526,7 +526,7 @@ Defining the 3D Shape
         shape will appear as a string of uniform diameter cylinders each of 
         length L/nseg. ie. after transfer \ ``sec.diam3d(i) == sec(sec.arc3d(i)/sec.L).diam``. 
         Then, after a call to an internal function such as \ ``area()`` or 
-        \ ``h.finitialize(-65)``, the 3d point info will be used to determine the values 
+        \ ``n.finitialize(-65)``, the 3d point info will be used to determine the values 
         of the segment diameters. 
          
         Because of the three separate interpolations: 

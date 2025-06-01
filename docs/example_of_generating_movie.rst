@@ -85,9 +85,9 @@ Simulation control and image saving
     ps.variable("v")
     ps.scale(-80, 50)
     # now let's run the sim, plt on a new figure every SAVE_EVERY, then yield
-    h.finitialize(-65 * mV)
+    n.finitialize(-65 * mV)
     for i in range(200):
-      h.continuerun(i * SAVE_EVERY)
+      n.continuerun(i * SAVE_EVERY)
       ps.plot(plt)
       if i < 40:
          theta = 9 * i

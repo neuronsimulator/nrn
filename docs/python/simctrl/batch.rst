@@ -5,7 +5,7 @@ Running and Saving Batch Jobs
 
     These functions are about running one simulation and saving state variables at
     regular intervals. While this can be done manually with a series of calls to
-    e.g., ``h.continuerun()`` and then saving data to a file, these functions
+    e.g., ``n.continuerun()`` and then saving data to a file, these functions
     avoid the overhead of returning back to the Python interpreter.
 
     If you are instead looking to run a collection of simulations together using MPI,
@@ -75,7 +75,7 @@ Running and Saving Batch Jobs
             h.batch_save(h._ref_t, soma(0.5)._ref_v)
 
             # initialize, run, and save
-            h.finitialize(-65)
+            n.finitialize(-65)
             h.batch_run(2, 0.1, 'hhsim.dat', 'My HH sim')
 
         The output (the time series of an action potential) is stored in the :file:`hhsim.dat`:

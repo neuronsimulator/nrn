@@ -175,8 +175,8 @@ Save the following to a file called :file:`initn.py`, then use python to execute
         # set random seed
         for ns in ns_list:
             ns.seed(1)
-        h.finitialize(-65 * mV)
-        h.continuerun(TSTOP)
+        n.finitialize(-65 * mV)
+        n.continuerun(TSTOP)
         print(" time         cell")
         for t, id_ in zip(stim_t, stim_id):
             print(f"{t:7.3f} \t{id_}")
@@ -313,8 +313,8 @@ This file shows how to take advantage of :meth:`NetStim.noiseFromRandom123` in y
         # set random seed
         for ns in ns_list:
             ns.seed(1)
-        h.finitialize(-65 * mV)
-        h.continuerun(TSTOP)
+        n.finitialize(-65 * mV)
+        n.continuerun(TSTOP)
 
         print(" time       cell")
         for t, id_ in zip(stim_t, stim_id):

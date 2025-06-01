@@ -49,10 +49,10 @@ SaveState
             r = rxd.Rate(c, -c * (1 - c) * (0.3 - c))
             r2 = rxd.Reaction(c + c2 > c2, 1)
 
-            h.finitialize(-65 * mV)
+            n.finitialize(-65 * mV)
             soma(0).v = -30 * mV
 
-            h.continuerun(5 * ms)
+            n.continuerun(5 * ms)
 
             # this function is here solely for the demo to show the state has changed
             # there's no need to do this in your code
@@ -71,7 +71,7 @@ SaveState
             # store the state to a file; use s.fwrite(file_obj) for that and 
             # s.fread(file_obj) to read state from a file before restoring.
 
-            h.continuerun(10 * ms)
+            n.continuerun(10 * ms)
 
             # store the current state (don't need to do this in general, this is just to show
             # that we're no longer here after the restore)

@@ -74,8 +74,8 @@ RangeVarPlot
             ic.delay = 0
             ic.dur = 1
 
-            h.finitialize(-65)
-            h.continuerun(1)
+            n.finitialize(-65)
+            n.continuerun(1)
 
             rvp = h.RangeVarPlot('v', dend1(0), dend2(1))
             g = h.Graph()
@@ -148,10 +148,10 @@ RangeVarPlot
             ca1.nodes(dend1(0.4))[0].include_flux(-25)
             ca1.nodes(dend1(0.7))[0].include_flux(70)
 
-            h.finitialize(-65)
+            n.finitialize(-65)
             h.dt /= 512
             h.load_file("stdrun.hoc")
-            h.continuerun(0.025)
+            n.continuerun(0.025)
 
             a_1 = h.RangeVarPlot(ca1, dend1(0), dend1(1))
             a_1.plot(plt)

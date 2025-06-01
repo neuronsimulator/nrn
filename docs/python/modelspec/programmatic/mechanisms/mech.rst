@@ -350,7 +350,7 @@ General
 
             # record an action potential
             ap = h.Vector().record(s1(0.5)._ref_v)
-            h.finitialize(-65)
+            n.finitialize(-65)
             while h.t < 1:
                 h.fadvance()
 
@@ -359,7 +359,7 @@ General
             ap.play_remove()
             ap.play(c2._ref_amp1, h.dt)
             apc.play(c3._ref_amp[0], h.dt)
-            h.finitialize(-65)
+            n.finitialize(-65)
 
             while h.t < 0.4:
                 h.fadvance()
@@ -693,7 +693,7 @@ General
 
       #Run
       pc.set_maxstep(10.)
-      h.finitialize(-65)
+      n.finitialize(-65)
       pc.psolve(7)
 
       for spike_t, spike_cell_id in zip(spike_ts, spike_ids):
@@ -795,8 +795,8 @@ General
             output_times_nc.record(output_times)
 
             # run the simulation
-            h.finitialize(-65 * mV)
-            h.continuerun(100 * ms)
+            n.finitialize(-65 * mV)
+            n.continuerun(100 * ms)
 
 
             # show a raster plot of the output spikes and the stimulus times

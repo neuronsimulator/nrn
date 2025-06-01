@@ -899,11 +899,11 @@ CVode
     	    def hi():
     	        print(f'hello from hi, h.t = {h.t}')
 
-    	    h.finitialize(-65)
+    	    n.finitialize(-65)
 
     	    h.CVode().event(1.3, hi)
 
-    	    h.continuerun(2)
+    	    n.continuerun(2)
 
 ----
 
@@ -1499,7 +1499,7 @@ CVode
 
              # declaring a function to run with every fadvance
              h.CVode().extra_scatter_gather(0, recording_callback)
-             h.finitialize(-65)
+             n.finitialize(-65)
              h.fadvance()
              h.fadvance()
 
@@ -1511,7 +1511,7 @@ CVode
              # declaring a new function to run with each fadvance
              recording_callback = (hello2, cort_secs)
              h.CVode().extra_scatter_gather(0, recording_callback)
-             h.finitialize(-65)
+             n.finitialize(-65)
              h.fadvance()
              h.fadvance()
 

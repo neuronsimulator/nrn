@@ -623,8 +623,8 @@ Vector
             h.graphList[0].append(g)
 
             # run the simulation
-            h.finitialize(-65)
-            h.continuerun(6.28)
+            n.finitialize(-65)
+            n.continuerun(6.28)
 
 
     A runnable example of using this method for a time-varying current clamp is available

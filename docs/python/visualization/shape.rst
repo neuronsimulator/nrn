@@ -108,8 +108,8 @@ Shape
             ic.dur = 1 * ms
             ic.amp = 10
 
-            h.finitialize(-65 * mV)
-            h.continuerun(2 * ms)
+            n.finitialize(-65 * mV)
+            n.continuerun(2 * ms)
 
             ps = h.PlotShape(False)
             ps.variable("v")

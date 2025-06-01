@@ -104,8 +104,8 @@ PlotShape
             ic.dur = 1 * ms
             ic.amp = 10
 
-            h.finitialize(-65 * mV)
-            h.continuerun(2 * ms)
+            n.finitialize(-65 * mV)
+            n.continuerun(2 * ms)
 
             ps = h.PlotShape(False)
             ps.variable("v")
@@ -133,8 +133,8 @@ PlotShape
                 ic.dur = 1 * ms
                 ic.amp = 10
 
-                h.finitialize(-65 * mV)
-                h.continuerun(2 * ms)
+                n.finitialize(-65 * mV)
+                n.continuerun(2 * ms)
 
                 ps = h.PlotShape(False)
                 ps.variable("v")
@@ -284,8 +284,8 @@ PlotShape
 
             ca.nodes(dend1(0.5))[0].include_flux(1e-13, units="mmol/ms")
 
-            h.finitialize(-65 * mV)
-            h.continuerun(50 * ms)
+            n.finitialize(-65 * mV)
+            n.continuerun(50 * ms)
 
             ps = h.PlotShape(False)
 

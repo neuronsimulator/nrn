@@ -97,7 +97,7 @@ In the same directory, make an :file:`init_ss.py` file with the contents:
 
     def ss_init(t0=-1e3, dur=1e2, dt=0.025):
         """Initialize to steady state.  
-        Executes as part of h.finitialize()
+        Executes as part of n.finitialize()
         Appropriate parameters depend on your model
         t0 -- how far to jump back (should be < 0)
         dur -- time allowed to reach steady state

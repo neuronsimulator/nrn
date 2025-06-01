@@ -37,7 +37,7 @@ The run call chain is
 .. code-block::
     none
 
-        h.run --> h.continuerun --> h.step --> h.advance --> h.fadvance 
+        h.run --> n.continuerun --> h.step --> h.advance --> h.fadvance 
 
 The default advance is merely a HOC function that calls :func:`fadvance`. It may be overriden via, e.g.
 
@@ -70,7 +70,7 @@ The init call chain is
 .. code-block::
     none
 
-        h.stdinit --> h.init --> (h.finitialize, h.fcurrent) 
+        h.stdinit --> h.init --> (n.finitialize, h.fcurrent) 
 
 When more complicated initialization is required, use 
 :class:`FInitializeHandler` objects or substitute a 

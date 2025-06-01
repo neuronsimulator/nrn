@@ -102,7 +102,7 @@ LinearMechanism
              
             model = h.LinearMechanism(c, g, y, b, 0.5, sec=soma) 
             
-            h.finitialize(-65)
+            n.finitialize(-65)
             while h.t < tstop:
                 print(f't={h.t:<8g} v={soma(0.5).v:<8g} y[1]={y[1]:<8g}')
                 h.fadvance()

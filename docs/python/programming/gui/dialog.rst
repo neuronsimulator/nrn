@@ -42,7 +42,7 @@ Dialog Boxes
         .. code-block::
             python
             
-            h.continue_dialog("message")
+            n.continue_dialog("message")
 
     Description:
         Provides information to the user.
@@ -54,7 +54,7 @@ Dialog Boxes
             python
             
             from neuron import n, gui
-            h.continue_dialog("You are reading a message from a dialog box.")
+            n.continue_dialog("You are reading a message from a dialog box.")
         
         .. image:: ../../images/continue_dialog.png
             :align: center

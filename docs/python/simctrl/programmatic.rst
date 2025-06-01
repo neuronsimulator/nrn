@@ -76,9 +76,9 @@ Functions
 
 
     Syntax:
-        ``h.finitialize()``
+        ``n.finitialize()``
 
-        ``h.finitialize(v)``
+        ``n.finitialize(v)``
 
 
     Description:
@@ -169,7 +169,7 @@ Functions
             print(f"default el_hh = {soma.el_hh}")
 
             # set el_hh so that the steady state is exactly -70 mV 
-            h.finitialize(-70) # sets v to -70 and m,h,n to corresponding steady state values 
+            n.finitialize(-70) # sets v to -70 and m,h,n to corresponding steady state values 
              
             h.fcurrent()       # set all assigned variables consistent with states 
              
@@ -431,7 +431,7 @@ FInitializeHandler
 
             test = Test() 
 
-            h.finitialize(-65)
+            n.finitialize(-65)
             fih[0].allprint() 
 
 
