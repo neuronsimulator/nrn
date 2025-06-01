@@ -233,7 +233,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
             print (f"I am {pc.id()} of {pc.nhost()}")
 
             pc.barrier()
-            h.quit()            
+            n.quit()            
          
         which gives ( the output lines are in indeterminate order)
 
@@ -1572,7 +1572,7 @@ Description:
 
             pc.runworker()
             pc.done()
-            h.quit()
+            n.quit()
 
         .. code-block::
             none
@@ -1642,7 +1642,7 @@ Description:
           pr("alltoall dest", dest) 
 
           pc.barrier()
-          h.quit()
+          n.quit()
 
        .. code-block::
           none
@@ -1724,7 +1724,7 @@ Description:
           pr("alltoall dest", dest)
 
           pc.barrier()
-          h.quit()
+          n.quit()
         
                     
         .. code-block::
@@ -1810,7 +1810,7 @@ Description:
           pr("alltoall dest", dest)
 
           pc.barrier()
-          h.quit()
+          n.quit()
          
          
                     
@@ -1894,7 +1894,7 @@ Description:
           pr("alltoall dest", dest)
 
           pc.barrier()
-          h.quit()
+          n.quit()
        
                     
         .. code-block::
@@ -2093,7 +2093,7 @@ Description:
             def f(arg):
                 ret = pc.id_world() * 100 + pc.id_bbs() * 10 + pc.id()
                 print( 
-                    f"userid={h.hoc_ac_} arg={arg} ret={ret:3d}"
+                    f"userid={n.hoc_ac_} arg={arg} ret={ret:3d}"
                     f"  world {pc.id_world():d} of {pc.nhost_world():d}"
                     f"  bbs {pc.id_bbs():d} of {pc.nhost_bbs():d}"
                     f"  net {pc.id()} of {pc.nhost()}"
@@ -2101,7 +2101,7 @@ Description:
                 time.sleep(1)
                 return ret
 
-            h.hoc_ac_ = -1 
+            n.hoc_ac_ = -1 
             if (pc.id_world() == 0):
                 print("before runworker")
             f(1)
@@ -3485,7 +3485,7 @@ Parallel Transfer
         .. code-block:: python
 
             from neuron import n, gui
-            pc = h. ParallelContext()
+            pc = n.ParallelContext()
             # construct model ...
 
             # run model

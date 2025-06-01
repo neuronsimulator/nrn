@@ -8,9 +8,9 @@ Ions
 
 
     Syntax:
-        ``oldstyle = h.ion_style("name_ion", c_style, e_style, einit, eadvance, cinit, sec=section)``
+        ``oldstyle = n.ion_style("name_ion", c_style, e_style, einit, eadvance, cinit, sec=section)``
 
-        ``oldstyle = h.ion_style("name_ion", sec=section)``
+        ``oldstyle = n.ion_style("name_ion", sec=section)``
 
 
     Description:
@@ -52,7 +52,7 @@ Ions
         cinit: 0 or 1. 
             If 1 then a call to finitialize() sets the concentrations 
             to the values of the global initial concentrations. eg. ``nai`` set to 
-            ``h.nai0_na_ion`` and ``nao`` set to ``h.nao0_na_ion``. 
+            ``n.nai0_na_ion`` and ``nao`` set to ``n.nao0_na_ion``. 
 
          
         The automatic style is chosen based on how the set of mechanisms that 
@@ -101,7 +101,7 @@ Ions
                 python
 
                 for sec in n.allsec():
-                    h.ion_style("ca_ion", 3, 2, 1, 1, 1, sec=sec)
+                    n.ion_style("ca_ion", 3, 2, 1, 1, 1, sec=sec)
 ----
 
 
@@ -110,7 +110,7 @@ Ions
 
 
     Syntax:
-        ``ion_type = h.ion_register("name", charge)``
+        ``ion_type = n.ion_register("name", charge)``
 
 
     Description:
@@ -130,7 +130,7 @@ Ions
 
 
     Syntax:
-        ``charge = h.ion_charge("name_ion")``
+        ``charge = n.ion_charge("name_ion")``
 
 
     Description:

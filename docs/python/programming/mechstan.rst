@@ -191,7 +191,7 @@ MechanismStandard (Parameter Control)
         The callback is sent three parameters; in order: the MechanismStandard object,
         the index of the changed item in the object, and a third argument indicating
         position in an array (or 0 if the parameter is not an array; this is the usual
-        case). The value is in `h.hoc_ac_` and this value may also be read via
+        case). The value is in `n.hoc_ac_` and this value may also be read via
 
         .. code-block::
             python

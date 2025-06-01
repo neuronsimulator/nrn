@@ -213,7 +213,7 @@ List
 
         ``l.browser("title", py_callable)`` 
             Browser labels are computed. For each item, ``py_callable`` is executed 
-            with ``h.hoc_ac_`` set to the index of the item. Some objects 
+            with ``n.hoc_ac_`` set to the index of the item. Some objects 
             notify the List when they change, ie point processes when they change 
             their location notify the list. 
 
@@ -247,7 +247,7 @@ List
                 my_list.append(n.String(word))
 
             def label_with_lengths():
-                item_id = h.hoc_ac_
+                item_id = n.hoc_ac_
                 item = my_list[item_id].s
                 return f'{item} ({len(item)})'
 
