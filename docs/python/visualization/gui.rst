@@ -165,7 +165,7 @@ Browsers are visible lists.
         
     from neuron import n, gui
 
-    f = h.File()
+    f = n.File()
     f.chooser('', 'Example file browser', '*', 'Type file name', 'Cancel')
     while f.chooser():
         print(f.getname())
@@ -249,9 +249,9 @@ See :func:`xpanel` for NEURON functions to generate panels
     import __main__
 
     # we use refs so NEURON can see these as they change
-    tempstr = h.ref("slider.................")
-    xx = h.ref(0)
-    x = h.ref(0.1)
+    tempstr = n.ref("slider.................")
+    xx = n.ref(0)
+    x = n.ref(0.1)
 
 
     # we can also have NEURON use variable names within __main__
@@ -273,26 +273,26 @@ See :func:`xpanel` for NEURON functions to generate panels
 
     # pop up example panel 
     n.xpanel("Example Panel") 
-    h.xbutton("PushButton", on_push_button) 
+    n.xbutton("PushButton", on_push_button) 
     n.xlabel("Following two are for variable x") 
-    h.xvalue("Value Editor", x, 0, lambda: print(x[0])) 
-    h.xvalue("Default Value Editor for variable x", x, 1, lambda: print(x[0]))
-    h.xcheckbox("Checkbox", (__main__, "y"), on_checkbox) 
-    h.xstatebutton("StateButton", (__main__, "z"), lambda: print(f"state z is {z}"))
-    h.xmenu("Example Menu") 
-    h.xbutton("Item 1", lambda: print("selected item 1")) 
-    h.xbutton("Item 2", lambda: print("selected item 2"))
-    h.xcheckbox("Checkbox", (__main__, "y"), on_checkbox) 
-    h.xradiobutton("Radio 1", lambda: on_radio_button(1)) 
-    h.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
-    h.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
-    h.xmenu() 
+    n.xvalue("Value Editor", x, 0, lambda: print(x[0])) 
+    n.xvalue("Default Value Editor for variable x", x, 1, lambda: print(x[0]))
+    n.xcheckbox("Checkbox", (__main__, "y"), on_checkbox) 
+    n.xstatebutton("StateButton", (__main__, "z"), lambda: print(f"state z is {z}"))
+    n.xmenu("Example Menu") 
+    n.xbutton("Item 1", lambda: print("selected item 1")) 
+    n.xbutton("Item 2", lambda: print("selected item 2"))
+    n.xcheckbox("Checkbox", (__main__, "y"), on_checkbox) 
+    n.xradiobutton("Radio 1", lambda: on_radio_button(1)) 
+    n.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
+    n.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
+    n.xmenu() 
     n.xlabel("Following 3 are mutually exclusive") 
-    h.xradiobutton("Radio 1", lambda: on_radio_button(1)) 
-    h.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
-    h.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
+    n.xradiobutton("Radio 1", lambda: on_radio_button(1)) 
+    n.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
+    n.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
     n.xvarlabel(tempstr)
-    h.xslider(xx, 0, 100, on_slide)
+    n.xslider(xx, 0, 100, on_slide)
     n.xpanel()
 
 .. image:: ../images/panel.png

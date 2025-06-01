@@ -33,9 +33,9 @@ Example:
                 self.load_morphology()
                 # do discretization, ion channels, etc
             def load_morphology(self):
-                cell = h.Import3d_SWC_read()
+                cell = n.Import3d_SWC_read()
                 cell.input("c91662.swc")
-                i3d = h.Import3d_GUI(cell, False)
+                i3d = n.Import3d_GUI(cell, False)
                 i3d.instantiate(self)
         
         pyr = Pyramidal()
@@ -45,8 +45,8 @@ Here ``pyr`` has lists of :class:`Section` objects:
 Each section has the appropriate ``.name()`` and ``.cell()``.
 
 Note: this example is for an SWC file specifically; other readers are supported
-for different formats including ``h.Import3d_Neurolucida3()``,
-``h.Import3d_MorphML()``, and ``h.Import3d_Eutectic_read()``.
+for different formats including ``n.Import3d_Neurolucida3()``,
+``n.Import3d_MorphML()``, and ``n.Import3d_Eutectic_read()``.
 
 Note: if multiple cells are instantiated from the same reconstruction, they
 will occupy the same spatial locations unless they are explicitly translated.
@@ -134,7 +134,7 @@ is to be affected by ion channel activity:
     python
 
     from neuron import rxd
-    cyt = rxd.Region(h.allsec(), name="cyt", nrn_region="i")
+    cyt = rxd.Region(n.allsec(), name="cyt", nrn_region="i")
     na = rxd.Species(cyt, name="na", charge=1)
 
 Here the ``nrn_region="i"`` indicates that we are talking about the intracellular concentration.

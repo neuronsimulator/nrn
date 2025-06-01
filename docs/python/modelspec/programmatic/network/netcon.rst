@@ -214,13 +214,13 @@ NetCon
             python
 
             x = netcon.preloc()
-            sec = h.cas()
+            sec = n.cas()
             h.pop_section()
 
 
     Description:
         The source section is pushed onto the section stack so that it is 
-        the currently accessed section (``h.cas()``). ``h.pop_section()`` must be called after you are 
+        the currently accessed section (``n.cas()``). ``h.pop_section()`` must be called after you are 
         finished with the section or have saved it as in the syntax block above.
 
     .. warning::
@@ -266,12 +266,12 @@ NetCon
             python
 
             x = netcon.postloc()
-            sec = h.cas()
+            sec = n.cas()
             h.pop_section()
 
     Description:
         The section of the target point process is pushed onto the section stack 
-        so that it is the currently accessed section (``h.cas()``). ``h.pop_section()`` must be called 
+        so that it is the currently accessed section (``n.cas()``). ``h.pop_section()`` must be called 
         after you are finished with the section or have saved it as in the syntax block above.
         The x return value is the 
         relative location of the point process in that section. If there

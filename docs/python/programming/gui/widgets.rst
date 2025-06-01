@@ -21,11 +21,11 @@ a class. This allows multiple independent instances to be created. For example:
             self.myval = 3.14
             self.checkbox = 1
             n.xpanel('demo')
-            h.xradiobutton('Click me', (self.clicked, 0), 1)
-            h.xradiobutton('or me', (self.clicked, 1), 0)
-            h.xstatebutton('press me', (self, 'mystate'), self.statepressed)
-            h.xcheckbox('I am a checkbox', (self, 'checkbox'), self.checkboxpressed)
-            h.xvalue('Type a number', (self, 'myval'), 1, self.numberset)
+            n.xradiobutton('Click me', (self.clicked, 0), 1)
+            n.xradiobutton('or me', (self.clicked, 1), 0)
+            n.xstatebutton('press me', (self, 'mystate'), self.statepressed)
+            n.xcheckbox('I am a checkbox', (self, 'checkbox'), self.checkboxpressed)
+            n.xvalue('Type a number', (self, 'myval'), 1, self.numberset)
             n.xpanel()
         def clicked(self, choice):
             print(f'you switched the radio button! choice = {choice}')
@@ -104,11 +104,11 @@ a class. This allows multiple independent instances to be created. For example:
 
     Syntax:
         
-        ``h.xbutton('prompt', py_callable)``
+        ``n.xbutton('prompt', py_callable)``
 
-        ``h.xbutton('prompt', (py_callable, arg))``
+        ``n.xbutton('prompt', (py_callable, arg))``
 
-        ``h.xbutton('prompt', (py_callable, (arg1, arg2, ...))``
+        ``n.xbutton('prompt', (py_callable, (arg1, arg2, ...))``
 
 
     Description:
@@ -132,7 +132,7 @@ a class. This allows multiple independent instances to be created. For example:
                 print('You pressed the button.')
 
             n.xpanel('Button demo')
-            h.xbutton('Press me', on_press)
+            n.xbutton('Press me', on_press)
             n.xpanel()
 
 
@@ -154,9 +154,9 @@ a class. This allows multiple independent instances to be created. For example:
                 print(f'Button args: {a}, {b}')
 
             n.xpanel('Button demo 2')
-            h.xbutton('Button 1', (on_press, 1))
-            h.xbutton('Button 2', (on_press, 2))
-            h.xbutton('Button 3', (on_press3, ('arg1', 'arg2')))
+            n.xbutton('Button 1', (on_press, 1))
+            n.xbutton('Button 2', (on_press, 2))
+            n.xbutton('Button 3', (on_press3, ('arg1', 'arg2')))
             n.xpanel()
 
         .. image:: ../../images/xbutton2.png
@@ -174,8 +174,8 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            h.xstatebutton('prompt', (obj_or_module, 'varname') [, action_fn])
-            h.xstatebutton('prompt', hoc_reference [, action_fn])
+            n.xstatebutton('prompt', (obj_or_module, 'varname') [, action_fn])
+            n.xstatebutton('prompt', hoc_reference [, action_fn])
 
 
     Description:
@@ -183,7 +183,7 @@ a class. This allows multiple independent instances to be created. For example:
         telltale state of the button. If the var is set by another way the 
         telltale state is updated to reflect the correct value. 
         An example of a statement that constructs a hoc_reference is
-        `self.x = h.ref(1.0)` and then the arg would be `self.x`.
+        `self.x = n.ref(1.0)` and then the arg would be `self.x`.
         The action_fn may be either a python callable or a hoc
         executable string.
     
@@ -200,7 +200,7 @@ a class. This allows multiple independent instances to be created. For example:
                 print(f'You pressed the button. The state is now: {button_state}')
 
             n.xpanel('StateButton demo')
-            h.xstatebutton('Press me', (this_module, 'button_state'), on_press)
+            n.xstatebutton('Press me', (this_module, 'button_state'), on_press)
             n.xpanel()
          
         .. image:: ../../images/xstatebutton.png
@@ -217,8 +217,8 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            h.xcheckbox('prompt', (obj_or_module, 'varname') [, action_fn])
-            h.xcheckbox('prompt', hoc_reference [, action_fn])
+            n.xcheckbox('prompt', (obj_or_module, 'varname') [, action_fn])
+            n.xcheckbox('prompt', hoc_reference [, action_fn])
 
 
     Description:
@@ -237,7 +237,7 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            h.xradiobutton('name', action_fn [, 0 or 1])
+            n.xradiobutton('name', action_fn [, 0 or 1])
 
 
     Description:
@@ -248,7 +248,7 @@ a class. This allows multiple independent instances to be created. For example:
         panel is mapped onto the screen. However, in 
         this case the action should also be explicitly executed by the programmer. 
         That is not done automatically since it is often the case that the action 
-        is invalid when the radio button is created. As with ``h.xbutton``, ``action_fn`` may
+        is invalid when the radio button is created. As with ``n.xbutton``, ``action_fn`` may
         be a Python function handle, a tuple containing a function handle and an argument, or
         a tuple containing a function handle and a tuple of arguments.
 
@@ -264,11 +264,11 @@ a class. This allows multiple independent instances to be created. For example:
                 print(n)
 
             n.xpanel('panel')
-            h.xmenu('menu')
+            n.xmenu('menu')
             for i in range(1, 11):
-                h.xradiobutton(f'item {i}', (a, i))
+                n.xradiobutton(f'item {i}', (a, i))
 
-            h.xmenu()
+            n.xmenu()
             n.xpanel()
 
          
@@ -287,24 +287,24 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            h.xmenu('title')
-            h.xmenu()
-            h.xmenu('title', 1)
-            h.xmenu(title, py_callable)
-            h.xmenu(title, py_callable, 1)
+            n.xmenu('title')
+            n.xmenu()
+            n.xmenu('title', 1)
+            n.xmenu(title, py_callable)
+            n.xmenu(title, py_callable, 1)
 
 
     Description:
 
 
-        ``h.xmenu("title")`` 
+        ``n.xmenu("title")`` 
             create a button in the panel with label "title" which, when 
             pressed, pops up a menu containing buttons and other menus. Every 
             :func:`xbutton` and :func:`xmenu` command between this and the closing ``xmenu()`` 
             command with no arguments becomes the menu. 
             Don't put values into menus. 
 
-        ``h.xmenu()`` 
+        ``n.xmenu()`` 
             done defining the menu. Menus can be nested as in 
 
             .. code-block::
@@ -319,18 +319,18 @@ a class. This allows multiple independent instances to be created. For example:
                     print('you selected option 2')
 
                 n.xpanel('xmenu demo')
-                h.xmenu('one')
-                h.xmenu('two')
-                h.xbutton('option 1', selected1)
-                h.xbutton('option 2', selected2)
-                h.xmenu()
-                h.xmenu()
+                n.xmenu('one')
+                n.xmenu('two')
+                n.xbutton('option 1', selected1)
+                n.xbutton('option 2', selected2)
+                n.xmenu()
+                n.xmenu()
                 n.xpanel()
 
             .. image:: ../../images/xmenu1.png
                 :align: center 
             
-        ``h.xmenu("title", 1)`` 
+        ``n.xmenu("title", 1)`` 
             adds the menu to the menubar. Note that a top level menu with no 
             second argument starts a new menubar. Normally these menubars have only 
             one top level item. 
@@ -345,32 +345,32 @@ a class. This allows multiple independent instances to be created. For example:
                     print(f'selected value {n}')
 
                 n.xpanel("menubar") 
-                h.xmenu("first") 
-                h.xbutton("one", (item_selected, 1))
-                h.xbutton("two", (item_selected, 2))
-                h.xbutton("Exit", sys.exit)
-                h.xmenu() 
-                h.xmenu("second", 1) 
-                h.xbutton("three", (item_selected, 3))
-                h.xbutton("four", (item_selected, 4))
-                h.xmenu("submenu") 
-                h.xbutton("PI", (item_selected, h.PI))
-                h.xmenu() 
-                h.xmenu() 
-                h.xmenu("third", 1) 
-                h.xbutton("five", (item_selected, 5)) 
-                h.xbutton("six", (item_selected, 6))
-                h.xmenu() 
-                h.xmenu("nextline") 
-                h.xbutton("seven", (item_selected, 7))
-                h.xbutton("eight", (item_selected, 8))
-                h.xmenu() 
+                n.xmenu("first") 
+                n.xbutton("one", (item_selected, 1))
+                n.xbutton("two", (item_selected, 2))
+                n.xbutton("Exit", sys.exit)
+                n.xmenu() 
+                n.xmenu("second", 1) 
+                n.xbutton("three", (item_selected, 3))
+                n.xbutton("four", (item_selected, 4))
+                n.xmenu("submenu") 
+                n.xbutton("PI", (item_selected, n.PI))
+                n.xmenu() 
+                n.xmenu() 
+                n.xmenu("third", 1) 
+                n.xbutton("five", (item_selected, 5)) 
+                n.xbutton("six", (item_selected, 6))
+                n.xmenu() 
+                n.xmenu("nextline") 
+                n.xbutton("seven", (item_selected, 7))
+                n.xbutton("eight", (item_selected, 8))
+                n.xmenu() 
                 n.xpanel() 
 
             .. image:: ../../images/xmenu2.png
                 :align: center 
 
-        ``h.xmenu("title", py_callable)`` and ``h.xmenu("title", py_callable, 1)`` 
+        ``n.xmenu("title", py_callable)`` and ``n.xmenu("title", py_callable, 1)`` 
             Dynamic menu added as item in panel or menu or (when third argument 
             is 1) to a menubar. An example of the first type is the 
             NEURONMainMenu/File/RecentDir and an example of the last type is the 
@@ -382,9 +382,9 @@ a class. This allows multiple independent instances to be created. For example:
             .. code-block::
                 python
 
-            	h.xmenu("title") 
+            	n.xmenu("title") 
             	py_callable()
-            	h.xmenu() 
+            	n.xmenu() 
 
             which should normally build a menu list and then this list is mapped to 
             the screen as a normal walking menu. 
@@ -401,12 +401,12 @@ a class. This allows multiple independent instances to be created. For example:
                 def make():
                     make.n += 1
                     for i in range(1, make.n + 1):
-                        h.xbutton(f'label {i}', (select, i))
+                        n.xbutton(f'label {i}', (select, i))
 
                 make.n = 0
 
                 n.xpanel("test") 
-                h.xmenu("dynamic", make) 
+                n.xmenu("dynamic", make) 
                 xpanel() 
             
             .. warning::
@@ -462,7 +462,7 @@ a class. This allows multiple independent instances to be created. For example:
             
             from neuron import n, gui
 
-            mystr = h.ref('')
+            mystr = n.ref('')
             n.xpanel('xvarlabel demo')
             n.xlabel('Dynamic text will appear below:')
             n.xvarlabel(mystr)
@@ -492,14 +492,14 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
 
-            h.xvalue("prompt", (obj_or_module, "varname") [, boolean_deflt, "action" [, boolean_canrun]])
-	    h.xvalue("prompt", ref_var, [, boolean_deflt, "action" [, boolean_canrun]])
-            h.xvalue("prompt", "variable", 2)
+            n.xvalue("prompt", (obj_or_module, "varname") [, boolean_deflt, "action" [, boolean_canrun]])
+	    n.xvalue("prompt", ref_var, [, boolean_deflt, "action" [, boolean_canrun]])
+            n.xvalue("prompt", "variable", 2)
 
 
     Description:
 
-        ``h.xvalue("prompt", (obj_or_module, "varname") [, boolean_deflt, "action" [, boolean_canrun]])`` 
+        ``n.xvalue("prompt", (obj_or_module, "varname") [, boolean_deflt, "action" [, boolean_canrun]])`` 
             create field editor for variable with the button labeled with "*prompt*". 
             If *boolean_deflt* == True (or 1) then add a checkbox which is checked when the 
             value of the field editor is different that when the editor was 
@@ -508,7 +508,7 @@ a class. This allows multiple independent instances to be created. For example:
             instead	of a push_button widget kit appearance. 
 
 
-        ``h.xvalue("prompt", (obj_or_module, "varname"), 2)`` 
+        ``n.xvalue("prompt", (obj_or_module, "varname"), 2)`` 
             a field editor that keeps getting updated every 10th :func:`doNotify`. 
 
         .. The domain of values that can be entered by the user into a field editor 
@@ -530,7 +530,7 @@ a class. This allows multiple independent instances to be created. For example:
             val = 42
 
             n.xpanel('demo')
-            h.xvalue('enter value', (this_module, 'val'))
+            n.xvalue('enter value', (this_module, 'val'))
             n.xpanel()
 
             # changing val in the dialog will change val as seen by the program
@@ -554,7 +554,7 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            h.xpvalue('prompt', ref, ...)
+            n.xpvalue('prompt', ref, ...)
             
 
 
@@ -568,14 +568,14 @@ a class. This allows multiple independent instances to be created. For example:
             
             from neuron import n, gui
 
-            val = h.ref(42)
+            val = n.ref(42)
 
             def show_val():
                 print(f'value is: {val[0]}')
 
             n.xpanel('demo')
-            h.xpvalue('enter value', val, 1)
-            h.xbutton('show value', show_val)
+            n.xpvalue('enter value', val, 1)
+            n.xbutton('show value', show_val)
             n.xpanel()
 
         .. image:: ../../images/xpvalue.png
@@ -598,7 +598,7 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            h.xfixedvalue("prompt", (obj_or_module, "varname"), boolean_deflt, boolean_usepointer)
+            n.xfixedvalue("prompt", (obj_or_module, "varname"), boolean_deflt, boolean_usepointer)
 
 
     Description:
@@ -623,8 +623,8 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            h.xslider((obj_or_module, "varname"), [low, high], [on_slide], [vert], [slow])
-            h.xslider(ref_var, [low, high], [on_slide], [vert], [slow])
+            n.xslider((obj_or_module, "varname"), [low, high], [on_slide], [vert], [slow])
+            n.xslider(ref_var, [low, high], [on_slide], [vert], [slow])
 
 
     Description:
@@ -649,20 +649,20 @@ a class. This allows multiple independent instances to be created. For example:
             import sys; this_module = sys.modules[__name__]
 
             val = 42
-            val_str = h.ref('Slider value:         ')
+            val_str = n.ref('Slider value:         ')
             def show_val():
                 val_str[0] = f'Slider value: {val}'
 
             n.xpanel('demo')
             n.xvarlabel(val_str)
-            h.xslider((this_module, 'val'), 0, 100, show_val)
+            n.xslider((this_module, 'val'), 0, 100, show_val)
             n.xpanel()
             show_val()
 
         .. image:: ../../images/xslider.png		   
             :align: center 
     
-        It is slightly more efficient to use an ``h.ref`` instead of a tuple.
+        It is slightly more efficient to use an ``n.ref`` instead of a tuple.
         The above example is functionally equivalent to:
     
         .. code-block::
@@ -670,14 +670,14 @@ a class. This allows multiple independent instances to be created. For example:
             
             from neuron import n, gui
 
-            val = h.ref(42)
-            val_str = h.ref('Slider value:         ')
+            val = n.ref(42)
+            val_str = n.ref('Slider value:         ')
             def show_val():
                 val_str[0] = f'Slider value: {val[0]}'
 
             n.xpanel('demo')
             n.xvarlabel(val_str)
-            h.xslider(val, 0, 100, show_val)
+            n.xslider(val, 0, 100, show_val)
             n.xpanel()
             show_val()
 
@@ -693,13 +693,13 @@ a class. This allows multiple independent instances to be created. For example:
 	    class ValuePanel:
 
 		def __init__(self, init_val=42, label='',lower_limit=0,upper_limit=100):
-		    self._val = h.ref(init_val)
+		    self._val = n.ref(init_val)
 		    n.xpanel('demo')
 		    n.xlabel(label)
-		    h.xvalue('enter value', self._val, True, self._bounds_check)
+		    n.xvalue('enter value', self._val, True, self._bounds_check)
 		    self.__lower_limit = lower_limit
 		    self.__upper_limit = upper_limit
-		    h.xslider(self._val, self.__lower_limit, self.__upper_limit)
+		    n.xslider(self._val, self.__lower_limit, self.__upper_limit)
 		    n.xpanel()
 
 		def _bounds_check(self):

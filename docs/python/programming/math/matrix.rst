@@ -325,7 +325,7 @@ Matrix
                 for i in range(m.nrow()):    
                     print(f"{i}  ", end='')
                     for jx in range(m.sprowlen(i)):
-                        j = h.ref(0)
+                        j = n.ref(0)
                         x=m.spgetrowval(i, jx, j) 
                         print(f"  {j[0]}:{x}", end='')
                     print()
@@ -425,7 +425,7 @@ Matrix
 
             from neuron import n
 
-            f = h.File("filename") 
+            f = n.File("filename") 
             f.ropen() 
             m = n.Matrix() 
             m.scanf(f) 
@@ -680,7 +680,7 @@ Matrix
             m.setval(0, 1, 20) 
             m.setval(1, 0, 30) 
             m.printf() 
-            ex = h.ref(0)
+            ex = n.ref(0)
             mant = m.det(ex) 
             print(mant*10**ex[0])
 
@@ -1076,7 +1076,7 @@ Matrix
             svdtest(a) 
  
             a = n.Matrix(6, 6) 
-            r = h.Random() 
+            r = n.Random() 
             r.discunif(1,10) 
             for i in range(a.nrow()):
                 a.setrow(i, a.getrow(i).setrand(r)) 

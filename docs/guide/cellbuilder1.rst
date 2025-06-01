@@ -344,8 +344,8 @@ Now see what happens when you type the Python command
 
 .. code:: python
 
-    for sec in h.allsec():
-        h.psection(sec=sec)
+    for sec in n.allsec():
+        n.psection(sec=sec)
 
 (For HOC, enter ``forall psection()`` instead.)
 

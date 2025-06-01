@@ -157,7 +157,7 @@ Diagnostics:
         import numpy as np
         from neuron import n
 
-        v = n.Vector([0, h.PI/6, h.PI/4, h.PI/2])
+        v = n.Vector([0, n.PI/6, n.PI/4, n.PI/2])
         v2 = n.Vector(np.cos(v))
         print(list(v2))
 
@@ -186,7 +186,7 @@ Diagnostics:
         import numpy as np
         from neuron import n
 
-        v = n.Vector([0, h.PI/6, h.PI/4, h.PI/2])
+        v = n.Vector([0, n.PI/6, n.PI/4, n.PI/2])
         v2 = n.Vector(np.sin(v))
         print(list(v2))
 

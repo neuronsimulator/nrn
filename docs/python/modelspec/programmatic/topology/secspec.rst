@@ -45,7 +45,7 @@ Default section
 
 If no ``sec=`` keyword argument is specified, the functions will use NEURON's
 default Section (sometimes called the *currently accessed section*),
-which can be identified via ``h.cas()``.
+which can be identified via ``n.cas()``.
 The default Section is controlled by a stack; it is initially
 the first Section created but entries may be pushed onto or popped off of the
 stack by the following commands. *Use this only as a last resort.*
@@ -75,7 +75,7 @@ stack by the following commands. *Use this only as a last resort.*
             stims = [n.IClamp(soma(i / 4.)) for i in range(5)] + [n.IClamp(apical(0.5))]
             for stim in stims: 
                 x = stim.get_loc() 
-                print(f"location of {stim} is {h.secname()}({x})")
+                print(f"location of {stim} is {n.secname()}({x})")
                 h.pop_section() 
             
         (Note: in this example as ``nseg=1``, the current clamps will either be at position 0, 0.5, or 1.)

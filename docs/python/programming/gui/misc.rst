@@ -55,7 +55,7 @@ Domain Restrictions for Fields
 
     .. note::
 
-        ``varname`` here would be things like ``t`` or ``diam`` not ``h.t`` or ``h.diam``; i.e.
+        ``varname`` here would be things like ``t`` or ``diam`` not ``h.t`` or ``n.diam``; i.e.
         omit the ``h.`` prefix.
 
 ----

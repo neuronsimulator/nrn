@@ -269,8 +269,8 @@ Graph
 
             g.begin()
 
-            for h.x in np.arange(0, 10.1, 0.1):
-                g.plot(h.x)
+            for n.x in np.arange(0, 10.1, 0.1):
+                g.plot(n.x)
 
             g.flush()
 
@@ -481,9 +481,9 @@ Graph
                     g.plot(h.t) 
                     if h.t % 10 == 0:
                         g.fastflush() 
-                        h.doNotify() 
+                        n.doNotify() 
                 g.flush() 
-                h.doNotify() 
+                n.doNotify() 
 
             pl() 
              
@@ -1042,7 +1042,7 @@ Graph
 
             g.beginline()   
             dt = 0.1
-            for t in np.arange(0, 2 * h.PI + dt, dt):
+            for t in np.arange(0, 2 * n.PI + dt, dt):
                 g.line(h.sin(t), h.cos(t))
 
             g.flush()

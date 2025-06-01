@@ -178,7 +178,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
 
             # pretend g is a Vector assigned earlier to conductances to test 
             for i in range(20): 
-                for sec in h.allsec():
+                for sec in n.allsec():
                     sec.gnabar_hh = g[i]
                 for j in range(5):
                     stim.amp = s[j]
@@ -191,7 +191,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
             python
 
             def single_run(i, j):
-                for sec in h.allsec():
+                for sec in n.allsec():
                     sec.gnabar_hh = g[i]
                 stim.amp = s[j]
                 n.run()
@@ -887,7 +887,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
 
     .. note::
 
-        ``str`` here is a ``strdef`` not a Python string. One may be created via e.g. ``s = h.ref('')``; the stored string
+        ``str`` here is a ``strdef`` not a Python string. One may be created via e.g. ``s = n.ref('')``; the stored string
         can then be accessed via ``s[0]``.
 
          
@@ -2763,7 +2763,7 @@ Description:
     .. note::
 
         The arguments for this function must be NEURON references to numbers; these can be
-        created via, e.g. ``_ref_nsend = h.ref(0)`` and then dereferenced to get their
+        created via, e.g. ``_ref_nsend = n.ref(0)`` and then dereferenced to get their
         values via ``_ref_nsend[0]``.
 
 ----

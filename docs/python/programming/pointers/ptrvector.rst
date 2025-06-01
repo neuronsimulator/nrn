@@ -4,7 +4,7 @@ PtrVector
 .. class:: PtrVector
 
   Syntax:
-    :samp:`pv = h.PtrVector({size})`
+    :samp:`pv = n.PtrVector({size})`
     
    
   Description:
@@ -28,7 +28,7 @@ PtrVector
       from neuron import n
       a = n.Vector(range(5))
       b = n.Vector([0] * 5)
-      pv = h.PtrVector(5)
+      pv = n.PtrVector(5)
       for i in range(len(a)):
         pv.pset(i, b._ref_x[i])
         
@@ -196,7 +196,7 @@ PtrVector
             g.size(0, 10, -1, 1) 
             vec = n.Vector(np.sin(np.arange(0, 10.1, 0.1))
 
-            pv = h.PtrVector(len(vec))
+            pv = n.PtrVector(len(vec))
             pv.label("PtrVector")
             for i in range(len(vec)):
               pv.pset(i, vec._ref_x[i])
@@ -206,11 +206,11 @@ PtrVector
                 for i in range(len(vec)):
                     vec.rotate(1)
                     g.flush()
-                    h.doNotify()
+                    n.doNotify()
                     time.sleep(0.01)
 
             n.xpanel("") 
-            h.xbutton("run", do_run) 
+            n.xbutton("run", do_run) 
             n.xpanel() 
 ----
 

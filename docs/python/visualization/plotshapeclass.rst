@@ -47,7 +47,7 @@ PlotShape
             from neuron import n
             from matplotlib import pyplot 
             n.load_file('c91662.ses')  # a morphology file
-            for sec in h.allsec():
+            for sec in n.allsec():
                 if 'apic' in str(sec):
                     sec.v = 0
             ps = n.PlotShape(False)  # False tells n.PlotShape not to use NEURON's gui
@@ -70,7 +70,7 @@ PlotShape
             from neuron import n
             from matplotlib import pyplot, cm
             n.load_file('c91662.ses')
-            sl = n.SectionList([sec for sec in h.allsec() if 'apic' in str(sec)])
+            sl = n.SectionList([sec for sec in n.allsec() if 'apic' in str(sec)])
             for sec in sl:
                 sec.v = 0
             ps = n.PlotShape(sl, False)
@@ -95,7 +95,7 @@ PlotShape
 
             n.load_file("c91662.ses")
 
-            for sec in h.allsec():
+            for sec in n.allsec():
                 sec.nseg = int(1 + 2 * (sec.L // 40))
                 sec.insert(n.hh)
 
@@ -124,7 +124,7 @@ PlotShape
                 from neuron.units import mV, ms
 
                 n.load_file("c91662.ses")
-                for sec in h.allsec():
+                for sec in n.allsec():
                     sec.nseg = int(1 + 2 * (sec.L // 40))
                     sec.insert(n.hh)
 
@@ -152,7 +152,7 @@ PlotShape
             from matplotlib import pyplot, cm
 
             n.load_file("c91662.ses")
-            sl = n.SectionList([sec for sec in h.allsec() if "apic" in str(sec)])
+            sl = n.SectionList([sec for sec in n.allsec() if "apic" in str(sec)])
             for sec in sl:
                 sec.v = 0
             ps = n.PlotShape(False)
@@ -610,16 +610,16 @@ PlotShape
 			s.size(-.5, 1, 0, 1) 
 			s.exec_menu("Shape Plot") 
  
-			r = h.Random() 
+			r = n.Random() 
 			r.poisson(.01) 
  
-			h.doNotify() 
+			n.doNotify() 
  
 			def p():
 				for i in range(1,1001): 
 					vec.setrand(r) 
 					s.fastflush() # faster by up to a factor of 4 
-					h.doNotify() 
+					n.doNotify() 
 
 			start = time.perf_counter()
 			p()

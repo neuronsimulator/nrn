@@ -73,7 +73,7 @@ ExecCommand
 .. image:: ../images/ExecCommand.png
     :align: center
 
-Usage: ``h.ExecCommand()`` or :menuselection:`Tools --> Miscellaneous --> Family --> Command`
+Usage: ``n.ExecCommand()`` or :menuselection:`Tools --> Miscellaneous --> Family --> Command`
 
 Specify a command and execute it. 
 

@@ -10,7 +10,7 @@ Read from Terminal and Files
 
 
     Syntax:
-        ``var = h.xred(promptstring, default, min, max)``
+        ``var = n.xred(promptstring, default, min, max)``
 
 
     Description:
@@ -57,7 +57,7 @@ Read from Terminal and Files
             def r_open(ndat):
                 h.ropen("file.dat")
                 string = ""
-                s = h.ref(string)
+                s = n.ref(string)
                 x = []
                 for i in range(ndat):
                     h.getstr(s, 1)

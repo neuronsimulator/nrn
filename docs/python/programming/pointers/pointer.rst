@@ -15,20 +15,20 @@ Pointer Class
 
 
     Syntax:
-        ``h.Pointer(_ref_x)``
+        ``n.Pointer(_ref_x)``
 
-        ``h.Pointer("variable")``
+        ``n.Pointer("variable")``
 
-        ``h.Pointer(_ref_x, "stmt that may contain $1")``
+        ``n.Pointer(_ref_x, "stmt that may contain $1")``
 
-        ``h.Pointer("variable", "stmt that may contain $1 or variable name")``
+        ``n.Pointer("variable", "stmt that may contain $1 or variable name")``
 
     Example:
 
         .. code-block::
             python
 
-            >>> p = h.Pointer(n._ref_t)
+            >>> p = n.Pointer(n._ref_t)
             >>> p.val
             0.0
             >>> p.assign(42)
@@ -92,7 +92,7 @@ Pointer Class
 
             >>> h('create soma')
             1
-            >>> p = h.Pointer('soma.v(0.5)')
+            >>> p = n.Pointer('soma.v(0.5)')
             >>> p.s()
             'soma.v(0.5)'
          

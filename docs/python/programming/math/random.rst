@@ -16,11 +16,11 @@ Random Class
 .. class:: Random
 
     Syntax:
-        ``h.Random()``
+        ``n.Random()``
 
-        ``h.Random(seed)``
+        ``n.Random(seed)``
 
-        ``h.Random(seed, size)``
+        ``n.Random(seed, size)``
 
 
     Description:
@@ -58,7 +58,7 @@ Random Class
 
             from neuron import n
 
-            r = h.Random() 
+            r = n.Random() 
             for i in range(10): 
                 print(r.uniform(30, 50)) # not as efficient as 
 
@@ -118,8 +118,8 @@ Random Class
 
             from neuron import n, gui
 
-            r = h.Random() 
-            index = h.ref(r.MCellRan4())
+            r = n.Random() 
+            index = n.ref(r.MCellRan4())
             r.uniform(0, 2) 
             vec = n.Vector(1000) 
             g1 = n.Graph() 
@@ -144,8 +144,8 @@ Random Class
             doit()
 
             n.xpanel("MCellRan4 test") 
-            h.xbutton("Sample", doit) 
-            h.xvalue("Original index", index, 1, set_index_then_doit) 
+            n.xbutton("Sample", doit) 
+            n.xvalue("Original index", index, 1, set_index_then_doit) 
             n.xpanel()
 
         .. image:: ../../images/random-mcellran4.png
@@ -231,7 +231,7 @@ Random Class
 
             from neuron import n
 
-            r = h.Random() 
+            r = n.Random() 
 
             r.negexp(1) 
 
@@ -352,12 +352,12 @@ Random Class
 
             from neuron import n
 
-            r = h.Random() 
+            r = n.Random() 
             # set the distribution
             r.uniform(0, 1)
 
             # create a reference, and have the uniform random variable update it at each time step
-            rv = h.ref(0)
+            rv = n.ref(0)
             r.play(rv)
 
             # print some random numbers
@@ -422,7 +422,7 @@ Random Class
             
             from neuron import n, gui
 
-            r = h.Random() 
+            r = n.Random() 
             r.normal(-1, .5) 
              
             vec = n.Vector() 
@@ -438,7 +438,7 @@ Random Class
             	if j >= 0:
             		hist[j] += 1
             	g.flush() 
-            	h.doNotify() 
+            	n.doNotify() 
 
         .. image:: ../../images/random-normal.png
             :align: center
@@ -467,7 +467,7 @@ Random Class
             python
 
             from neuron import n, gui
-            r = h.Random() 
+            r = n.Random() 
             r.lognormal(5,2) 
             n=20 
             xvec = n.Vector(n*3)	# bins look like discrete spikes 
@@ -488,7 +488,7 @@ Random Class
             		j = hist.size() - 1
             	hist[j] = hist[j]+1 
             	g.flush() 
-            	h.doNotify() 
+            	n.doNotify() 
             
 
         .. image:: ../../images/random-lognormal.png
@@ -516,7 +516,7 @@ Random Class
 
             from neuron import n, gui
 
-            r = h.Random() 
+            r = n.Random() 
             r.poisson(3) 
              
             n=20 
@@ -539,7 +539,7 @@ Random Class
             		j = hist.size() -1 
             	hist[j] = hist[j]+1 
             	g.flush() 
-            	h.doNotify() 
+            	n.doNotify() 
             
         .. image:: ../../images/random-poisson.png
             :align: center
@@ -571,7 +571,7 @@ Random Class
 
             from neuron import n, gui
 
-            r = h.Random() 
+            r = n.Random() 
             r.binomial(20, .5) 
              
             g = n.Graph() 
@@ -582,7 +582,7 @@ Random Class
             	j = int(r.repick()) # r.repick() always returns a float even though the binomial always is an integer
             	hist[j] += 1
             	g.flush() 
-            	h.doNotify() 
+            	n.doNotify() 
 
         .. image:: ../../images/random-binomial.png
             :align: center
@@ -612,7 +612,7 @@ Random Class
             
             from neuron import n, gui
 
-            r = h.Random() 
+            r = n.Random() 
             r.geometric(.8) 
             hist = new Vector(1000) 
             def sample(): 
@@ -625,7 +625,7 @@ Random Class
             g.size(0,40,0,200) 
             sample() 
             n.xpanel("Resample") 
-            h.xbutton("Resample", sample)
+            n.xbutton("Resample", sample)
             n.xpanel() 
 
         .. image:: ../../images/random-geometric.png
@@ -670,7 +670,7 @@ Random Class
             
             from neuron import n, gui
 
-            r = h.Random()  
+            r = n.Random()  
             r.negexp(2.5)  
             hist = n.Vector(1000) 
             def sample():
@@ -683,7 +683,7 @@ Random Class
             g.size(0,20,0,50) 
             sample() 
             n.xpanel("Resample") 
-            h.xbutton("Resample", sample) 
+            n.xbutton("Resample", sample) 
             n.xpanel() 
 
         .. image:: ../../images/random-negexp.png
@@ -806,7 +806,7 @@ NMODLRandom Class
             python
 
             from neuron import n
-            r = h.NMODLRandom()
+            r = n.NMODLRandom()
             print(r.uniform())
 
             NEURON: NMODLRandom wrapped handle is not valid

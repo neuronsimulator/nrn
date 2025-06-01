@@ -158,7 +158,7 @@ LinearMechanism
             def callback():
               b.x[1] = -sin(y.x[0])
             
-            nlm = h.LinearMechanism(callback, cmat, gmat, y, y0, b)
+            nlm = n.LinearMechanism(callback, cmat, gmat, y, y0, b)
             
             
             dummy = n.Section()

@@ -100,11 +100,11 @@ Obsolete Plotting
                 h.axis(0, 15, 3, -1, 1, 2) 
                 h.axis() 
                 h.plot(1) 
-                for h.x in np.arange(0, 15, 0.1):
-                    # using h.x instead of x is essential to allow the sin and
+                for n.x in np.arange(0, 15, 0.1):
+                    # using n.x instead of x is essential to allow the sin and
                     # cos graphs to update
-                    h.plot(h.x, h.x / 15.)    # ramp 
-                    h.graph(h.x)  # plots graph list if any
+                    h.plot(n.x, n.x / 15.)    # ramp 
+                    h.graph(n.x)  # plots graph list if any
                 h.graph(-1)  # flush remaining part of graphs, if any 
                 h.plt(-1) 
 
@@ -112,7 +112,7 @@ Obsolete Plotting
             p()    # plots the ramp alone
              
             h.graph() 
-            # x here refers to the variable known to Python as h.x
+            # x here refers to the variable known to Python as n.x
             h.graph("sin(x)","axis(100, 300, 100, 300) axis()") 
             h.graph("cos(x)", "")  # same axes as previous call to graph
              

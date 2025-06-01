@@ -93,14 +93,14 @@ Ions
         .. warning::
 
             If ``section`` is not specified, the style is set for the currently accessed
-            section only (the section returned by :func:`h.cas() <cas>`). In particular,
+            section only (the section returned by :func:`n.cas() <cas>`). In particular,
             this does not change the style for all sections. If you need to change for all
             sections, loop over the sections, e.g.,
 
             .. code-block::
                 python
 
-                for sec in h.allsec():
+                for sec in n.allsec():
                     h.ion_style("ca_ion", 3, 2, 1, 1, 1, sec=sec)
 ----
 

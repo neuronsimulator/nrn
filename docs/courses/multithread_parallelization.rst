@@ -72,7 +72,7 @@ I never bothered to make euler thread safe since the best practical methods are 
 
 Now one should build the dll as normally done on your machine and try the "Parallel Computing" tool again. My computer runs the model in 76s with one thread and 12s with 4 threads. The reason for the superlinear speedup is that multisplit forces "Cashe Efficient" on. It is often worthwhile turning that on even with a single thread (in my case, 49s).
 
-Note: Multisplit, divides the cell into many independent cells which are connected together internally (check with ":func:`n.topology() <topology>`"). When divided into pieces the cell as a whole is difficult to deal with (for example, :func:`h.distance() <distance>` and Shape tools don't work well. Even n.topology() gives an incomplete idea of what is going on). So it is best to turn off "Multisplit" to re-assemble the cell to its original condition before doing any GUI manipulation.
+Note: Multisplit, divides the cell into many independent cells which are connected together internally (check with ":func:`n.topology() <topology>`"). When divided into pieces the cell as a whole is difficult to deal with (for example, :func:`n.distance() <distance>` and Shape tools don't work well. Even n.topology() gives an incomplete idea of what is going on). So it is best to turn off "Multisplit" to re-assemble the cell to its original condition before doing any GUI manipulation.
 
  
 

@@ -29,7 +29,7 @@ Printf (Formatted Output)
         on the file opened with the ``h.wopen(filename)`` command (standard 
         output if no file is opened).  ``h.sprint`` places output in its ``strdef`` 
         argument. (Note: ``strdef`` must be a NEURON string reference, created via
-        e.g., ``mystr = h.ref("")``, not a regular Python string as the latter is immutable.)
+        e.g., ``mystr = n.ref("")``, not a regular Python string as the latter is immutable.)
         These functions are subsets of their counterparts in 
         the C standard library. 
          
@@ -95,7 +95,7 @@ Printf (Formatted Output)
 
         .. code::
 
-            h.printf("\tpi=%-20.10g sin(pi)=%f\n", h.PI, h.sin(h.PI)) 
+            h.printf("\tpi=%-20.10g sin(pi)=%f\n", n.PI, h.sin(n.PI)) 
 
                     pi=3.141592654          sin(pi)=0.000000 
                     42 
@@ -105,7 +105,7 @@ Printf (Formatted Output)
 
         .. code::
 
-            print(f'\tpi={h.PI:<20.10g} sin(pi)={h.sin(h.PI):f}')
+            print(f'\tpi={n.PI:<20.10g} sin(pi)={h.sin(n.PI):f}')
 
         .. note::
 
@@ -154,8 +154,8 @@ Redirect Standard Out
                 print('one') # to original standard out
                 h.hoc_stdout('temp.tmp')
                 print('two') # to temp.tmp
-                for sec in h.allsec():
-                    h.psection(sec=sec) # to temp.tmp
+                for sec in n.allsec():
+                    n.psection(sec=sec) # to temp.tmp
                 h.hoc_stdout()
                 print('three') # to the original standard out
 

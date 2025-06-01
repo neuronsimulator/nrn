@@ -211,7 +211,7 @@ SectionRef
 
     .. note::
 
-        An equivalent expression is ``(sref.sec == h.cas())``.
+        An equivalent expression is ``(sref.sec == n.cas())``.
 
          
 

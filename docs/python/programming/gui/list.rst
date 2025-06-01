@@ -227,9 +227,9 @@ List
             my_list = n.List()
 
             for word in ['Python', 'HOC', 'NEURON', 'NMODL']:
-                my_list.append(h.String(word))
+                my_list.append(n.String(word))
 
-            my_list.browser('title', 's')   # h.String objects have an s attribute that returns the Python string
+            my_list.browser('title', 's')   # n.String objects have an s attribute that returns the Python string
 
 
         .. image:: ../../images/list-browser1.png
@@ -244,7 +244,7 @@ List
 
             my_list = n.List()
             for word in ['NEURON', 'HOC', 'Python', 'NMODL']:
-                my_list.append(h.String(word))
+                my_list.append(n.String(word))
 
             def label_with_lengths():
                 item_id = h.hoc_ac_
@@ -261,7 +261,7 @@ List
         .. code-block::
             python
 
-            my_list.append(h.String('Neuroscience'))
+            my_list.append(n.String('Neuroscience'))
 
         .. image:: ../../images/list-browser2b.png
             :align: center
@@ -364,7 +364,7 @@ List
 
 
             for word in ['Python', 'HOC', 'NEURON', 'NMODL']:
-                my_list.append(h.String(word))
+                my_list.append(n.String(word))
 
             my_list.browser('title', 's')
             my_list.select_action(on_click)

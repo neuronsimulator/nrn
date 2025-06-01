@@ -28,7 +28,7 @@ PtrVector
       from neuron import n
       a = n.Vector(5).indgen()
       b = n.Vector(5).fill(0)
-      pv = h.PtrVector(5)
+      pv = n.PtrVector(5)
       for i in range(len(a)):
         pv.pset(i, b._ref_x[i])
         

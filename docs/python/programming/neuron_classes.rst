@@ -70,18 +70,18 @@ with `hoc_type` given as argument. E.g.:
 .. code-block::
     python
 
-    >>> class MyStim(neuron.HocBaseObject, hoc_type=h.NetStim):
+    >>> class MyStim(neuron.HocBaseObject, hoc_type=n.NetStim):
         pass
     >>> issubclass(MyStim, hoc.HocObject)
     True
     >>> issubclass(MyStim, neuron.HocBaseObject)
     True
-    >>> MyStim._hoc_type == h.NetStim
+    >>> MyStim._hoc_type == n.NetStim
     True
     >>> stim = MyStim()
     >>> isinstance(stim, MyStim)
     True
-    >>> isinstance(stim, h.NetStim)
+    >>> isinstance(stim, n.NetStim)
     True
-    >>> isinstance(stim, h.HocObject)
+    >>> isinstance(stim, n.HocObject)
     True

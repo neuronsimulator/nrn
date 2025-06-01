@@ -26,7 +26,7 @@ Strings
 
             from neuron import n
 
-            strdef = h.ref('')
+            strdef = n.ref('')
             h.sprint(strdef, 'There are %d %s.', 3, 'dendrites')
             print(strdef[0])
 
@@ -43,7 +43,7 @@ Strings
 
             from neuron import n
 
-            strdef = h.ref('')
+            strdef = n.ref('')
             num_parts = 3
             part = "dendrites"
             strdef[0] = f'There are {num_parts} {part}.'

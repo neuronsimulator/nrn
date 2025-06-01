@@ -18,7 +18,7 @@ String Parsing (sscanf)
         numbers and the * character. Explicit strings in the format are also understood. 
         A great deal of error checking is done to make sure the args match the 
         format string. The function returns the actual number of args that are 
-        assigned values. The arguments must be ``h.ref`` objects.
+        assigned values. The arguments must be ``n.ref`` objects.
          
         Note that %lf is always preferred to %f since the latter truncates to floating 
         point accuracy. Hence 
@@ -27,7 +27,7 @@ String Parsing (sscanf)
             python
             
             from neuron import n
-            x = h.ref(0)
+            x = n.ref(0)
             h.sscanf('0.3', '%f', x)
             print(x[0])
 
@@ -40,9 +40,9 @@ String Parsing (sscanf)
             python
 
             from neuron import n
-            s = h.ref('')
-            x = [h.ref(0) for i in range(20)]
-            y = h.ref(0)
+            s = n.ref('')
+            x = [n.ref(0) for i in range(20)]
+            y = n.ref(0)
 
             count = h.sscanf("this is a test\n", "%s", s)
             print(s[0])  # this

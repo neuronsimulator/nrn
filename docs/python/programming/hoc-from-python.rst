@@ -53,7 +53,7 @@ Nonetheless, in isolated situations the following section may be useful:
 
             h('strdef s') 
             h('{x = 3  s = "hello"}') 
-            print(h.x)          # prints 3.0 
+            print(n.x)          # prints 3.0 
             print(h.s)          # prints hello 
 
         And if it is assigned a value in the python world it will be that value 
@@ -63,7 +63,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            h.x = 25 
+            n.x = 25 
             h.s = 'goodbye' 
             h('print x, s')    #prints 25 goodbye 
 
@@ -165,7 +165,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            print(h.secname(sec=ax))
+            print(n.secname(sec=ax))
         
         .. note::
 
@@ -199,7 +199,7 @@ Nonetheless, in isolated situations the following section may be useful:
             python
 
             h('proc chgstr() { $s1 = "goodbye" }') 
-            s = h.ref('hello') 
+            s = n.ref('hello') 
             print(s[0])          # notice the index to dereference. prints hello 
             h.chgstr(s) 
             print(s[0])          # prints goodbye 
@@ -212,7 +212,7 @@ Nonetheless, in isolated situations the following section may be useful:
             python
 
             h('proc chgval() { $&1 = $2 }') 
-            x = h.ref(5) 
+            x = n.ref(5) 
             print(x[0])          # prints 5.0 
             h.chgval(x, 1+1) 
             print(x[0])          # prints 2.0 
@@ -223,7 +223,7 @@ Nonetheless, in isolated situations the following section may be useful:
             python
 
             h('proc chgobj() { $o1 = new List() }') 
-            v = h.ref([1,2,3])  # references a Python object 
+            v = n.ref([1,2,3])  # references a Python object 
             print(v[0])          # prints [1, 2, 3] 
             h.chgobj(v) 
             print(v[0])          # prints List[0] 
@@ -235,11 +235,11 @@ Nonetheless, in isolated situations the following section may be useful:
             python
 
             h('x = 1') 
-            y = h.ref(h.x) 
+            y = n.ref(n.x) 
             print(y)                     # prints hoc ref value 1 
-            print(h.x, y[0])             # prints 1.0 1.0 
-            h.x = 2 
-            print(h.x, y[0])             # prints 2.0 1.0 
+            print(n.x, y[0])             # prints 1.0 1.0 
+            n.x = 2 
+            print(n.x, y[0])             # prints 2.0 1.0 
             
         and thus in not what is needed in the most common 
         case of a hoc function holding a pointer to a variable such as 
@@ -252,11 +252,11 @@ Nonetheless, in isolated situations the following section may be useful:
             h('x = 1') 
             y = n._ref_x 
             print(y)                     # prints pointer to hoc value 1
-            print(h.x, y[0])             # prints 1.0 1.0 
-            h.x = 2 
-            print(h.x, y[0])             # prints 2.0 2.0 
+            print(n.x, y[0])             # prints 1.0 1.0 
+            n.x = 2 
+            print(n.x, y[0])             # prints 2.0 2.0 
             y[0] = 3 
-            print(h.x, y[0])             # prints 3.0 3.0 
+            print(n.x, y[0])             # prints 3.0 3.0 
 
         Of course, this works only for hoc variables, not python variables.  For 
         arrays, use all the index arguments and prefix the name with _ref_.  The 
@@ -445,11 +445,11 @@ Nonetheless, in isolated situations the following section may be useful:
 
 
 
-.. method:: neuron.h.cas
+.. method:: neuron.n.cas
 
 
     Syntax:
-        ``sec = h.cas()``
+        ``sec = n.cas()``
 
     Description:
         Returns the :ref:`currently accessed section <CurrentlyAccessedSection>` as a Python 
@@ -464,7 +464,7 @@ Nonetheless, in isolated situations the following section may be useful:
               access dend[1] 
             ''') 
              
-            sec = h.cas() 
+            sec = n.cas() 
             print(sec)
         
         It is generally best to avoid writing code that manipulatesd the section stack. Use Python
@@ -490,7 +490,7 @@ Nonetheless, in isolated situations the following section may be useful:
     Description:
         The Python Section object allows modification and evaluation of the 
         information associated with a NEURON :ref:`geometry_section`. The typical way to get 
-        a reference to a Section in Python is with :meth:`neuron.h.cas`  or 
+        a reference to a Section in Python is with :meth:`neuron.n.cas`  or 
         by using the hoc section name as in ``asec = n.dend[4]``. 
         The ``sec = Section()`` will create an anonymous Section with a hoc name 
         constructed from "Section" and the Python reference address. 
@@ -529,7 +529,7 @@ Nonetheless, in isolated situations the following section may be useful:
             ''') 
             #or 
             print(sec)
-            h.psection(sec=sec) 
+            n.psection(sec=sec) 
 
         When calling a hoc function it is generally preferred to named sec arg style 
         to automatically push and pop the section stack during the scope of the 
@@ -538,7 +538,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            h.psection(sec=sec) 
+            n.psection(sec=sec) 
         
         The ``psection`` section method is different, in that it returns a Python dictionary rather
         than printing to the screen. It also provides more information, such as reaction-diffusion
@@ -559,7 +559,7 @@ Nonetheless, in isolated situations the following section may be useful:
             python
 
             sr = n.SectionRef(sec=n.dend[2])
-            sr.root.push(); print(h.secname()); h.pop_section() 
+            sr.root.push(); print(n.secname()); h.pop_section() 
 
         or, more compactly and avoiding the modification of the section stack, 
         
@@ -567,7 +567,7 @@ Nonetheless, in isolated situations the following section may be useful:
             python
 
             sr = n.SectionRef(sec=n.dend[2]) 
-            print(sr.root.name(), h.secname(sec=sr.root))
+            print(sr.root.name(), n.secname(sec=sr.root))
 
          
         Iteration over sections is accomplished with 
@@ -575,7 +575,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            for s in h.allsec(): 
+            for s in n.allsec(): 
               print(s)
              
             sl = n.SectionList(); sl.wholetree() 

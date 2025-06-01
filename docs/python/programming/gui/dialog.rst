@@ -83,7 +83,7 @@ Dialog Boxes
 
             from neuron import n, gui
 
-            my_str = h.ref('')
+            my_str = n.ref('')
             if h.string_dialog('Type a string:', my_str):
                 print(f'You typed: {my_str[0]}')
             else:

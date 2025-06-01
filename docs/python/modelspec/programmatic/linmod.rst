@@ -10,13 +10,13 @@ LinearMechanism
 
 
     Syntax:
-        ``lm = h.LinearMechanism(c, g, y, [y0], b)``
+        ``lm = n.LinearMechanism(c, g, y, [y0], b)``
 
-        ``lm = h.LinearMechanism(c, g, y, [y0], b, x, sec=section)``
+        ``lm = n.LinearMechanism(c, g, y, [y0], b, x, sec=section)``
 
-        ``lm = h.LinearMechanism(c, g, y, [y0], b, sl, xvec, [layervec])``
+        ``lm = n.LinearMechanism(c, g, y, [y0], b, sl, xvec, [layervec])``
 
-        ``lm = h.LinearMechanism(pycallable, c, g, y, ...)``
+        ``lm = n.LinearMechanism(pycallable, c, g, y, ...)``
 
 
     Description:
@@ -100,7 +100,7 @@ LinearMechanism
             g.setval(0, 1, -1)
             g.setval(1, 0, 1)
              
-            model = h.LinearMechanism(c, g, y, b, 0.5, sec=soma) 
+            model = n.LinearMechanism(c, g, y, b, 0.5, sec=soma) 
             
             n.finitialize(-65)
             while h.t < tstop:
@@ -157,7 +157,7 @@ LinearMechanism
             def callback():
               b[1] = -sin(y[0])
 
-            nlm = h.LinearMechanism(callback, cmat, gmat, y, y0, b)
+            nlm = n.LinearMechanism(callback, cmat, gmat, y, y0, b)
 
             dummy = n.Section("dummy")
             trajec = n.Vector().record(y._ref_x[0])

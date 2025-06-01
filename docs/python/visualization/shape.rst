@@ -99,7 +99,7 @@ Shape
 
             n.load_file("c91662.ses")
 
-            for sec in h.allsec():
+            for sec in n.allsec():
                 sec.nseg = int(1 + 2 * (sec.L // 40))
                 sec.insert(n.hh)
 
@@ -167,7 +167,7 @@ Shape
             sl = n.SectionList()
             sl.append(n.soma)
             sl.append(n.dendrite_1[8])
-            h.Shape[0].observe(sl)
+            n.Shape[0].observe(sl)
 
 
 
@@ -500,7 +500,7 @@ Shape
 
             # note: this assumes Shape[0] has already been created
 
-            ss = h.Shape[0]
+            ss = n.Shape[0]
             def p(type, x, y, keystate):
                 if type == 2:
                     ss.color_all(1)
@@ -509,7 +509,7 @@ Shape
                     # the section stack if and only if something is selected
                     a = ss.push_selected()
                     if a >= 0:
-                        seg = h.cas()(a)
+                        seg = n.cas()(a)
                         ss.select()
                         print(f'{d} from {seg}')
                         h.pop_section()
@@ -565,7 +565,7 @@ Shape
 
     .. note::
         
-        The pushed section can be read via ``h.cas()``.
+        The pushed section can be read via ``n.cas()``.
 
     .. note::
              

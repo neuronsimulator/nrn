@@ -75,7 +75,7 @@ MechanismStandard (Parameter Control)
 
             soma = n.Section("soma")
             def pname(msname):
-                s = h.ref('')
+                s = n.ref('')
                 for i in range(-1, 4):
                     ms = n.MechanismStandard(msname, i)
                     print(f'\n{msname}   vartype={i}')
@@ -84,7 +84,7 @@ MechanismStandard (Parameter Control)
                         print(f'{j:<5} {s[0]:<20} size={k}')
 
             def ptype():
-                msname = h.ref('')
+                msname = n.ref('')
                 for i in range(2):
                     mt = n.MechanismType(i)
                     for j in range(mt.count()):
@@ -113,7 +113,7 @@ MechanismStandard (Parameter Control)
              
             def get_mech_globals(mechname):
                 ms = n.MechanismStandard(mechname, -1)
-                name = h.ref('')
+                name = n.ref('')
                 mech_globals = []
                 for j in range(ms.count()):
                     ms.name(name, j)
@@ -196,7 +196,7 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
 
-            nameref = h.ref("")
+            nameref = n.ref("")
             ms.name(nameref, i)
             value = ms.get(nameref[0], j)
 
@@ -216,12 +216,12 @@ MechanismStandard (Parameter Control)
 
             n.xpanel("Updated when MechanismStandard is changed")
             for i, sec in enumerate(dend):
-                h.xvalue(f"dend[{i}](0.5).pas.g", sec(0.5).pas._ref_g)
+                n.xvalue(f"dend[{i}](0.5).pas.g", sec(0.5).pas._ref_g)
 
             n.xpanel()
 
             def change_pas(ms, i, j):
-                for sec in h.allsec():
+                for sec in n.allsec():
                     if sec.has_membrane('pas'):
                         ms.out()
 
@@ -478,7 +478,7 @@ MechanismStandard (Parameter Control)
             from neuron import n, gui
 
             ms = n.MechanismStandard('hh')
-            name_strref = h.ref('')
+            name_strref = n.ref('')
 
             # read the name of the mechanism
             ms.name(name_strref)

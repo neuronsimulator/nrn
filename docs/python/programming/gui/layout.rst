@@ -49,7 +49,7 @@ Layout
             deck.flip_to(0)            # show the first plot of the deck
             n.xpanel('flip to')        # create a panel titled "flip to"
             for i in range(ncard):     # create radio buttons which will bring each card to the front
-                h.xradiobutton(f'card {i + 1}', flip_function(i), i == 0)
+                n.xradiobutton(f'card {i + 1}', flip_function(i), i == 0)
 
             n.xpanel()                 # close off the set of panel commands
 
@@ -326,13 +326,13 @@ Layout
             vbox.intercept(True)	# all following creations go into the "vbox" box 
             g = n.Graph() 
             n.xpanel("") 
-            x = h.ref(3)
-            h.xpvalue('x', x) 
+            x = n.ref(3)
+            n.xpvalue('x', x) 
 
             def on_button_press():
                 print('you pressed the button')
 
-            h.xbutton("press me", on_button_press) 
+            n.xbutton("press me", on_button_press) 
 
             n.xpanel() 
             vbox.intercept(False)   # ends intercept mode 

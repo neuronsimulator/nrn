@@ -14,9 +14,9 @@ File Access (objected-oriented via NEURON)
 
 
     Syntax:
-        ``fobj = h.File()``
+        ``fobj = n.File()``
 
-        ``fobj = h.File("filename")``
+        ``fobj = n.File("filename")``
 
 
     Description:
@@ -40,9 +40,9 @@ File Access (objected-oriented via NEURON)
             python
  
             from neuron import n
-            f1 = h.File()		//state that f1, f2, and f3 are pointers to the File class 
-            f2 = h.File() 
-            f3 = h.File() 
+            f1 = n.File()		//state that f1, f2, and f3 are pointers to the File class 
+            f2 = n.File() 
+            f3 = n.File() 
             f1.ropen("file1")	//open file1 for reading 
             f2.wopen("file2")	//open file2 for writing 
             f3.aopen("file3")	//open file3 for appending to the end of the file 
@@ -180,7 +180,7 @@ File Access (objected-oriented via NEURON)
         .. code-block::
             python
 
-            f = h.File()
+            f = n.File()
             if f.mktemp() != 1:
                 raise Exception('Unable to create temporary file')
             # create a tempoary file, get its name
@@ -284,7 +284,7 @@ File Access (objected-oriented via NEURON)
         If at the end of file, returns -1 and does not change the argument. 
 
         ``_ref_str`` is a reference to a NEURON string (e.g. one created via
-        ``_ref_str = h.ref('')``); it is not a Python string.
+        ``_ref_str = n.ref('')``); it is not a Python string.
 
          
 
@@ -426,7 +426,7 @@ File Access (objected-oriented via NEURON)
                 
             from neuron import n, gui
 
-            f = h.File()
+            f = n.File()
             f.chooser('', 'Example file browser', '*', 'Type file name', 'Cancel')
             while f.chooser():
                 print(f.getname())

@@ -65,14 +65,14 @@ Machine Identification
 
     Description:
         Sets the NEURON string (not a Python string) ``strdef`` to the hostname of the machine. 
-        Create a NEURON string via, e.g., ``h.ref('')``.
+        Create a NEURON string via, e.g., ``n.ref('')``.
     
     Example:
         .. code-block::
             python
 
             from neuron import n
-            my_machine_name = h.ref('')
+            my_machine_name = n.ref('')
             h.machine_name(my_machine_name)
             print(f"My hostname is {my_machine_name[0]}")
 
@@ -198,7 +198,7 @@ Execute a Command
 .. function:: WinExec
 
     Syntax:
-        ``h.WinExec("mswin command")``
+        ``n.WinExec("mswin command")``
 
     Description:
         MSWin version only. Use :func:`system` for a more generic solution, or

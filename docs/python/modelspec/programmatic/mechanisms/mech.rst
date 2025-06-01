@@ -28,13 +28,13 @@ General
             python
 
             x = pnt.get_loc()
-            sec = h.cas()
+            sec = n.cas()
             h.pop_section()
 
 
     Description:
         ``pnt.get_loc()`` pushes the section containing the POINT_PROCESS instance, pnt, 
-        onto the section stack (makes it the currently accessed section, readable via ``h.cas()``), and 
+        onto the section stack (makes it the currently accessed section, readable via ``n.cas()``), and 
         returns the position (ranging from 0 to 1) of the POINT_PROCESS instance. 
         The section stack should be popped when the section is no longer needed. 
 
@@ -159,7 +159,7 @@ General
 
 
     Syntax:
-        ``syn = h.AlphaSynapse(section(x))``
+        ``syn = n.AlphaSynapse(section(x))``
 
         ``syn.onset --- ms``
 
@@ -197,7 +197,7 @@ General
 
 
     Syntax:
-        ``vc = h.VClamp(section(x))``
+        ``vc = n.VClamp(section(x))``
 
         ``vc.dur[0]``, ``vc.dur[1]``, ``vc.dur[2]``
 
@@ -276,7 +276,7 @@ General
 
 
     Syntax:
-        ``clampobj = h.SEClamp(section(x))``
+        ``clampobj = n.SEClamp(section(x))``
 
         ``.dur1 .dur2 .dur3 -- ms``
 
@@ -340,8 +340,8 @@ General
                 sec.L = sec.diam = 3
 
             c1 = n.IClamp(s1(0.5))
-            c2 = h.SEClamp(s2(0.5))
-            c3 = h.VClamp(s3(0.5))
+            c2 = n.SEClamp(s2(0.5))
+            c3 = n.VClamp(s3(0.5))
             c1.dur = 0.1
             c1.amp = 0.3
             c2.dur1 = 1
@@ -397,7 +397,7 @@ General
 
 
     Syntax:
-        ``apc = h.APCount(section(x))``
+        ``apc = n.APCount(section(x))``
 
         ``apc.thresh ---	mV``
 
@@ -430,7 +430,7 @@ General
 
 
     Syntax:
-        ``syn = h.ExpSyn(section(x))``
+        ``syn = n.ExpSyn(section(x))``
 
         ``syn.tau --- ms decay time constant``
 
@@ -466,7 +466,7 @@ General
 
 
     Syntax:
-        ``syn = h.Exp2Syn(section(x))``
+        ``syn = n.Exp2Syn(section(x))``
 
         ``syn.tau1 --- ms rise time``
 
@@ -527,7 +527,7 @@ General
 
 
     Syntax:
-        ``s = h.NetStim()``
+        ``s = n.NetStim()``
 
         ``s.interval ms (mean) time between spikes``
 
@@ -565,7 +565,7 @@ General
             
             from neuron import n
 
-            nc = h.NetStim()
+            nc = n.NetStim()
             ns = n.NetCon(nc, target...) 
 
         That is, do not use ``nc._ref_y`` as the source for the netcon. 
@@ -579,7 +579,7 @@ General
 
             from neuron import n, gui
             
-            ns = h.NetStim()
+            ns = n.NetStim()
             ns.interval = 2
             ns.number = 5
             ns.start = -1 # NetStim starts in OFF state.
@@ -591,7 +591,7 @@ General
             ncout.record(pr)
             
             #another NetStim to cause ns to burst every 20 ms, 3 times, starting at 30ms
-            ns2 = h.NetStim()
+            ns2 = n.NetStim()
             ns2.interval = 20
             ns2.number = 3
             ns2.start=30
@@ -640,7 +640,7 @@ General
 .. class:: PatternStim
 
   Syntax:
-    ``s = h.PatternStim()``
+    ``s = n.PatternStim()``
     
     ``s.play(tvec, gidvec)``
     
@@ -670,7 +670,7 @@ General
       pc = n.ParallelContext()
 
       #Model
-      cell = h.IntFire1()
+      cell = n.IntFire1()
       cell.refrac = 0 # no limit on spike rate
       pc.set_gid2node(0, pc.id())
       pc.cell(0, n.NetCon(cell, None)) # generates a spike with gid=0
@@ -687,7 +687,7 @@ General
       #PatternStim
       tvec = n.Vector(range(10))
       gidvec = n.Vector(range(10)) # only 0,1,2 go to cell
-      ps = h.PatternStim()
+      ps = n.PatternStim()
       ps.play(tvec, gidvec)
       del tvec, gidvec # ps retains a copy of the (t, gid) info.
 
@@ -730,7 +730,7 @@ General
 
 
     Syntax:
-        ``c = h.IntFire1()``
+        ``c = n.IntFire1()``
 
         ``c.tau --- ms time constant``
 
@@ -772,12 +772,12 @@ General
             import matplotlib.pyplot as plt
             n.load_file("stdrun.hoc")
 
-            my_cell = h.IntFire1()
+            my_cell = n.IntFire1()
             my_cell.tau = 4 * ms
             my_cell.refrac = 10 * ms
 
             # stimuli
-            e_stims = h.NetStim()
+            e_stims = n.NetStim()
             e_stims.noise = True
             e_stims.interval = 3 * ms
             e_stims.start = 0 * ms
@@ -828,7 +828,7 @@ General
 
 
     Syntax:
-        ``c = h.IntFire2()``
+        ``c = n.IntFire2()``
 
         ``c.taum --- ms membrane time constant``
 
@@ -871,7 +871,7 @@ General
 
 
     Syntax:
-        ``c = h.IntFire4()``
+        ``c = n.IntFire4()``
 
         ``c.taue --- ms excitatory input time constant``
 

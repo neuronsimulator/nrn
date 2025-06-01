@@ -29,7 +29,7 @@ We can access the ``rxd`` module in HOC via:
 The above additionally provides access to an object called ``h`` which is traditionally
 how Python accesses core NEURON functionality (e.g. in Python one would use h. :class:`Vector`
 instead of :hoc:class:`Vector`). You might not need to use h since when working in HOC,
-but it does provide certain convenient functions like :func:`h.allsec`, which returns
+but it does provide certain convenient functions like :func:`n.allsec`, which returns
 an iterable of all sections usable with ``rxd`` without  having to explicitly construct
 a :hoc:class:`SectionList`.
 
@@ -58,7 +58,7 @@ Here's a full working example that simulates a calcium buffering reaction:
         // define the domain and the dynamics
         create soma
         
-        cyt = rxd.Region(h.allsec(), "i")
+        cyt = rxd.Region(n.allsec(), "i")
         ca = rxd.Species(cyt, 0, "ca", 2, 1)
         buf = rxd.Species(cyt, 0, "buf", 0, 1)
         cabuf = rxd.Species(cyt, 0, "cabuf", 0, 0)
@@ -135,7 +135,7 @@ Intracellular regions and regions in Frankenhauser-Hodgkin space
         
         Here:
 
-        * ``secs`` is a :hoc:class:`SectionList` or any Python iterable of sections (e.g. ``h.allsec()``)
+        * ``secs`` is a :hoc:class:`SectionList` or any Python iterable of sections (e.g. ``n.allsec()``)
         * ``nrn_region`` specifies the classic NEURON region associated with this object and must be either ``"i"`` for the region just inside the plasma membrane, ``"o"`` for the region just outside the plasma membrane or ``pyobj.None`` for none of the above.
         * ``name`` is the name of the region (e.g. ``cyt`` or ``er``); this has no effect on the simulation results but it is helpful for debugging
         * ``dx`` deprecated; when specifying ``name`` pass in ``pyobj.None`` here

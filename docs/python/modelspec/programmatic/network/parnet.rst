@@ -137,7 +137,7 @@ ParallelNetManager
 
                 for i in range(ncell):
                     if pnm.gid_exists(i):
-                        pnm.register_cell(i, h.IntFire1())
+                        pnm.register_cell(i, n.IntFire1())
 
             Notice how we don't construct a cell if the gid does not exist. 
             You only HAVE to call 
@@ -197,7 +197,7 @@ ParallelNetManager
 
                 # stimulate
                 if pnm.gid_exists(4):
-                    stim = h.NetStim(0.5)
+                    stim = n.NetStim(0.5)
                     ncstim = n.NetCon(stim, pnm.pc.gid2obj(4)) 
                     ncstim.weight[0] = 1.1 
                     ncstim.delay = 0 

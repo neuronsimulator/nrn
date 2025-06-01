@@ -61,7 +61,7 @@ mcell_ran4
                 def mcell_func(self):
                     self.g1.erase() 
                     self.g2.erase()
-                    highindex_ptr = h.ref(self.highindex)
+                    highindex_ptr = n.ref(self.highindex)
                     for i in range(len(self.vec)):            
                         self.vec[i] = h.mcell_ran4(highindex_ptr) 
                     # resync the highindex (needed for the GUI)
@@ -78,9 +78,9 @@ mcell_ran4
  
                 window = McellRan4Test()
                 n.xpanel('mcell_ran4 test') 
-                h.xbutton('Sample', window.mcell_func) 
-                h.xvalue('highindex', (window, 'highindex'), 1, window.mcell_func) 
-                h.xvalue('lowindex', (window, 'lowindex'), 1, window.mcell_func2) 
+                n.xbutton('Sample', window.mcell_func) 
+                n.xvalue('highindex', (window, 'highindex'), 1, window.mcell_func) 
+                n.xvalue('lowindex', (window, 'lowindex'), 1, window.mcell_func2) 
                 n.xpanel() 
 
     .. |logo1| image:: ../../images/mcran4-xvalue.png

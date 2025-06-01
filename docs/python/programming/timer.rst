@@ -9,7 +9,7 @@ Timer
 
 
     Syntax:
-        ``timer = h.Timer(python_func)``
+        ``timer = n.Timer(python_func)``
 
 
     Description:
@@ -35,7 +35,7 @@ Timer
             def foo():
                 print('Hello')
 
-            timer = h.Timer(foo)
+            timer = n.Timer(foo)
             timer.seconds(1)
             timer.start()
             # type timer.end() to end timer

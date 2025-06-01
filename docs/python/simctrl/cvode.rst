@@ -730,7 +730,7 @@ CVode
             from neuron import n
             n.load_file('stdrun.hoc')    # defines n.cvode
 
-            result = h.ref('')
+            result = n.ref('')
             soma = n.Section('soma')
             n.cvode_active(True)
             n.cvode.statename(0, result)
@@ -741,7 +741,7 @@ CVode
 
     .. warning::
 
-        ``dest_string`` must be a NEURON string reference (e.g. ``dest_string = h.ref('')``) 
+        ``dest_string`` must be a NEURON string reference (e.g. ``dest_string = n.ref('')``) 
         not a Python string, as those are immutable.
 ----
 
@@ -1325,7 +1325,7 @@ CVode
             def assert_whole_model_charge_conservation():
                 # sum over all membrane current
                 total_imem = 0.0
-                for sec in h.allsec():
+                for sec in n.allsec():
                     for seg in sec.allseg(): # also the 0 area nodes at 0 and 1
                         if seg.x == sec.orientation() and sec.parentseg() is not None:
                             continue # skip segment shared with parent

@@ -10,7 +10,7 @@ PWManager
 
 
     Syntax:
-        ``p = h.PWManager()``
+        ``p = n.PWManager()``
 
 
     Description:
@@ -42,7 +42,7 @@ PWManager
         python
 
         from neuron import n, gui
-        p = h.PWManager()
+        p = n.PWManager()
         print(p.count())
 
 
@@ -66,7 +66,7 @@ PWManager
         python
 
         from neuron import n, gui
-        p = h.PWManager()
+        p = n.PWManager()
         # not mapped
         print(p.is_mapped(1))
         p.map(1)
@@ -95,7 +95,7 @@ PWManager
         python
         
         from neuron import n, gui
-        p = h.PWManager()
+        p = n.PWManager()
         # mapped
         p.map(1)
 
@@ -120,7 +120,7 @@ PWManager
         python
         
         from neuron import n, gui
-        p = h.PWManager()
+        p = n.PWManager()
         # mapped
         p.map(1)
         print(p.is_mapped(1))
@@ -150,7 +150,7 @@ PWManager
         python
         
         from neuron import n, gui
-        p = h.PWManager()
+        p = n.PWManager()
         p.map(1)
         p.close(1)
 
@@ -175,7 +175,7 @@ PWManager
         python
         
         from neuron import n, gui
-        p = h.PWManager()
+        p = n.PWManager()
         p.map(1)
         p.iconify()
 
@@ -232,7 +232,7 @@ PWManager
         python
 
         from neuron import n, gui
-        p = h.PWManager()
+        p = n.PWManager()
         print(p.manager())
 
 
@@ -269,7 +269,7 @@ PWManager
         python
 
         from neuron import n, gui
-        p = h.PWManager()
+        p = n.PWManager()
         p.map(1)
         selected = 1
         n = p.save("file", selected, "Header")
@@ -298,7 +298,7 @@ PWManager
         python
 
         from neuron import n, gui
-        p = h.PWManager()
+        p = n.PWManager()
         g1 = p.group(0)
         g2 = p.group(1, g1)
 
@@ -329,7 +329,7 @@ PWManager
         python
 
         from neuron import n, gui
-        p = h.PWManager()
+        p = n.PWManager()
         p.snape("filename")
 
 ----
@@ -356,7 +356,7 @@ PWManager
         python
 
         from neuron import n, gui
-        p = h.PWManager()
+        p = n.PWManager()
         p.scale(2)
 ----
 
@@ -378,7 +378,7 @@ PWManager
         python
 
         from neuron import n, gui
-        p = h.PWManager()
+        p = n.PWManager()
         print(p.name(0))
 
          
@@ -404,7 +404,7 @@ PWManager
         python
 
         from neuron import n, gui
-        p = h.PWManager()
+        p = n.PWManager()
         p.window_place(0, 1000, 1000)
 
          

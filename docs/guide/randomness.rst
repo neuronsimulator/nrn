@@ -148,7 +148,7 @@ Save the following to a file called :file:`initn.py`, then use python to execute
     #
 
     # create netstims
-    ns_list = [h.NetStim() for _ in range(NSNUM)]
+    ns_list = [n.NetStim() for _ in range(NSNUM)]
 
     # set netstim parameters
     for ns in ns_list:
@@ -281,7 +281,7 @@ This file shows how to take advantage of :meth:`NetStim.noiseFromRandom123` in y
     #
 
     # create netstims
-    ns_list = [h.NetStim() for _ in range(NSNUM)]
+    ns_list = [n.NetStim() for _ in range(NSNUM)]
 
     all_random_streams = []
 

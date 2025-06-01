@@ -821,7 +821,7 @@ Description:
         .. code-block::
             python
 
-            syn = h.Syn(section(0.8)) 
+            syn = n.Syn(section(0.8)) 
             syn._ref_vpre = axon(1)._ref_v
 
     .. tab:: HOC

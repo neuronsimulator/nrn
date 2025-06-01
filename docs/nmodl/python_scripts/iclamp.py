@@ -31,5 +31,5 @@ if __name__ == "__main__":
     hh_IClamp_cell.record()
     hh_IClamp_cell.simulate(1, 0.1)
     hh_IClamp_cell.output()
-    h.delete_section(sec=n.soma)
+    n.delete_section(sec=n.soma)
     del hh_IClamp_cell

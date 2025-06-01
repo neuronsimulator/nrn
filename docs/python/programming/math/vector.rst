@@ -159,7 +159,7 @@ Vector
             python
 
             n.xpanel("show a field editor") 
-            h.xpvalue("last element", vec._ref_x[len(vec)-1]) 
+            n.xpvalue("last element", vec._ref_x[len(vec)-1]) 
             n.xpanel() 
 
         Note, however, that there is a potential difficulty with the :func:`xpvalue` field 
@@ -1386,7 +1386,7 @@ Vector
 
             v1 = n.Vector(range(20, 31, 2))
             v1.printf() 
-            f = h.File() 
+            f = n.File() 
             f.wopen("temp.tmp") 
             v1.vwrite(f) 
              
@@ -1598,11 +1598,11 @@ Vector
                 for i in range(len(vec)):
                     vec.rotate(1)
                     g.flush()
-                    h.doNotify()
+                    n.doNotify()
                     time.sleep(0.01)
 
             n.xpanel("") 
-            h.xbutton("run", do_run) 
+            n.xbutton("run", do_run) 
             n.xpanel() 
 
 
@@ -1797,7 +1797,7 @@ Vector
             python
 
              
-            rand = h.Random() 
+            rand = n.Random() 
             rand.negexp(1) 
              
             interval = n.Vector(100) 
@@ -1887,7 +1887,7 @@ Vector
             python
 
              
-            r = h.Random() 
+            r = n.Random() 
             r.normal(1, 2) 
              
             data = n.Vector(100) 
@@ -1994,7 +1994,7 @@ Vector
             vec = n.Vector(50) 
             g = n.Graph() 
             g.size(0,50,0,100) 
-            r = h.Random() 
+            r = n.Random() 
             r.poisson(0.2) 
             vec.plot(g)
 
@@ -2003,7 +2003,7 @@ Vector
                 for i in range(300):
                     vec.addrand(r)
                     g.flush()
-                    h.doNotify()
+                    n.doNotify()
 
             race()  
 
@@ -2037,7 +2037,7 @@ Vector
             import matplotlib.pyplot as plt
 
             vec = n.Vector(10_000)
-            r = h.Random()
+            r = n.Random()
             r.normal(0, 1)  # sets the distribution we want
             vec.setrand(r)
             plt.hist(vec, bins=50)
@@ -2408,8 +2408,8 @@ Vector
             fvec = n.Vector([1, 1]) 
             ivec = n.Vector(range(2))
              
-            a = h.ref(2)
-            b = h.ref(1) 
+            a = n.ref(2)
+            b = n.ref(1) 
             g.beginline() 
             error = dvec.fit(fvec, fun, ivec, a, b) 
             print(a[0], b[0], error)
@@ -2761,7 +2761,7 @@ Vector
 
             from neuron import n
             
-            r = h.Random() 
+            r = n.Random() 
             r.uniform(0, 100) 
             a = n.Vector(10) 
             a.setrand(r) 
@@ -3613,9 +3613,9 @@ Refer to this source for further information.
                     self.box = n.VBox()
                     self.box.intercept(1)
                     n.xpanel('', 1)
-                    h.xradiobutton('sin   ', lambda: self.p(0))
-                    h.xradiobutton('cos   ', lambda: self.p(1), 1)
-                    h.xvalue('freq (waves/domain)', (self, 'f'), 1, lambda: self.p(self.c))
+                    n.xradiobutton('sin   ', lambda: self.p(0))
+                    n.xradiobutton('cos   ', lambda: self.p(1), 1)
+                    n.xvalue('freq (waves/domain)', (self, 'f'), 1, lambda: self.p(self.c))
                     n.xpanel()
                     self.g1 = n.Graph()
                     self.g2 = n.Graph()
@@ -3629,7 +3629,7 @@ Refer to this source for further information.
                 
                 def p(self, c):
                     self.v1 = n.Vector(N)
-                    self.v1.sin(self.f, c * h.PI / 2, 1000. / N)
+                    self.v1.sin(self.f, c * n.PI / 2, 1000. / N)
                     self.v1.plot(self.g1)
                     
                     self.v2 = n.Vector()
@@ -3753,8 +3753,8 @@ Refer to this source for further information.
                     self.box = n.VBox()
                     self.box.intercept(1)
                     n.xpanel('')
-                    h.xvalue('delay (points)', (self, 'delay'), 1, self.p)
-                    h.xvalue('duration (points)', (self, 'duration'), 1, self.p)
+                    n.xvalue('delay (points)', (self, 'delay'), 1, self.p)
+                    n.xvalue('duration (points)', (self, 'duration'), 1, self.p)
                     n.xpanel()
                     self.g1 = n.Graph()
                     self.b1 = n.HBox()
@@ -3911,7 +3911,7 @@ Refer to this source for further information.
 
             v1 = n.Vector(VECSIZE) 
 
-            r = h.Random() 
+            r = n.Random() 
                     
             for ii in range(VECSIZE):
                 v1[ii] = int(r.uniform(0, 10))

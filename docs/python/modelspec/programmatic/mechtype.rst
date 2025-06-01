@@ -40,7 +40,7 @@ MechanismType
             from neuron import n
             # Print the names of all density mechanisms 
             mt = n.MechanismType(0) 
-            mname  = h.ref('')
+            mname  = n.ref('')
             for i in range(mt.count()):
             	mt.select(i) 
             	mt.selected(mname) 
@@ -87,7 +87,7 @@ MechanismType
 
     .. note::
 
-        ``strdef`` must be a NEURON string reference (e.g. one created via ``strdef = h.ref('')``);
+        ``strdef`` must be a NEURON string reference (e.g. one created via ``strdef = n.ref('')``);
         to access its contents use ``strdef[0]``; see the example for the constructor above. In
         particular ``strdef`` cannot be a Python string.
 
@@ -136,7 +136,7 @@ MechanismType
             Note that the newly created point process is not located in any section. 
             If *objectref* was the only reference to another object then 
             that object is destroyed. *objectref* is a NEURON pointer to an object, and
-            may be created via ``objectref = h.ref(None)``; the object created by a call
+            may be created via ``objectref = n.ref(None)``; the object created by a call
             to ``make`` may be accessed via ``objectref[0]``.
 
 
@@ -202,7 +202,7 @@ MechanismType
 
             def cb(mt, i):
                 mt.select(i)
-                nameref = h.ref("")
+                nameref = n.ref("")
                 mt.selected(nameref)
                 print (f"selected {nameref[0]}")
 

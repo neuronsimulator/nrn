@@ -30,7 +30,7 @@ Functions
         like *L* and *rallbranch*. Thus ``Ra`` can be different for different 
         sections.  In order to set ``Ra`` to a constant value, use: 
          
-        ``for sec in h.allsec(): sec.Ra=...`` 
+        ``for sec in n.allsec(): sec.Ra=...`` 
 
     .. warning::
         Not very useful. No way to completely restart neuron except to :func:`quit` and 

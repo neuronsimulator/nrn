@@ -34,9 +34,9 @@ StateTransitionEvent
       n.load_file("stdrun.hoc") # use n.run(), n.cvode, etc
       
       soma = n.Section() # empty model not allowed.
-      ste = h.StateTransitionEvent(1)
+      ste = n.StateTransitionEvent(1)
 
-      tnext = h.ref(1)
+      tnext = n.ref(1)
       
       def fteinit():
         tnext[0] = 1.0 # first transition at 1.0
@@ -159,7 +159,7 @@ StateTransitionEvent
    
     In python, the syntax for a triggervar reference is, for example, n._ref_t or sec(.5)._ref_v . A reference to a
     hoc variable is also allowed for a triggerthreash, but if the triggerthresh is a constant, one can declare a python
-    reference with triggerthresh = h.ref(value) and pass that for the ``triggerthresh`` arg.
+    reference with triggerthresh = n.ref(value) and pass that for the ``triggerthresh`` arg.
     One changes its value via the
     triggerthreash[0] = ... syntax. Since the ste object keeps pointers to these values, it is very important that
     triggerthresh not be destroyed unless the ste instance is also destroyed.

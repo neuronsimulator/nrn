@@ -125,8 +125,8 @@ truncated cones as long as the diameter does not change too much.
 
     for seg in sec.allseg():
         print(seg.x, seg.diam, seg.area(),
-              h.PI * seg.diam * sec.L / sec.nseg, seg.ri(),
-              0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2))
+              n.PI * seg.diam * sec.L / sec.nseg, seg.ri(),
+              0.01 * sec.Ra * sec.L / 2 / sec.nseg / (n.PI * (seg.diam / 2) ** 2))
 
 Output:
 
@@ -195,7 +195,7 @@ Example:
             for seg in sec:
                 seg.diam = np.interp(seg.x, [0, 1], [10, 40])
 
-        s = h.Shape()
+        s = n.Shape()
         s.show(False)
         s.color(2, sec=a) # color section "a" red
         n.topology()
@@ -253,9 +253,9 @@ Example:
                 print(seg.x * sec.L, seg.diam, seg.area(), seg.ri())
 
         n.xpanel("change nseg")
-        h.xradiobutton("nseg = 3", (pr, 3))
-        h.xradiobutton("nseg = 11", (pr, 11))
-        h.xradiobutton("nseg = 101", (pr, 101))
+        n.xradiobutton("nseg = 3", (pr, 3))
+        n.xradiobutton("nseg = 11", (pr, 11))
+        n.xradiobutton("nseg = 101", (pr, 101))
         n.xpanel()
 
         sec = n.Section('sec')
@@ -265,7 +265,7 @@ Example:
         setup_diam()
         print_stats()
 
-        s = h.Shape()
+        s = n.Shape()
         s.show(False)
 
         for i in range(sec.n3d()):
@@ -342,17 +342,17 @@ Example:
         sec.nseg = 11 
         sec.pt3dclear() 
         for i in range(31): 
-            x = h.PI * i / 30.
+            x = n.PI * i / 30.
             sec.pt3dadd(200 * sin(x), 200 * cos(x), 0, 100 * sin(4 * x)) 
 
-        s = h.Shape() 
+        s = n.Shape() 
         s.show(0) 
         print(sec.L)
         for seg in sec.allseg():
             print(
-                seg.x, seg.diam, seg.area(), h.PI * seg.diam * sec.L / sec.nseg,
+                seg.x, seg.diam, seg.area(), n.PI * seg.diam * sec.L / sec.nseg,
                 seg.ri(),
-                0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2))
+                0.01 * sec.Ra * sec.L / 2 / sec.nseg / (n.PI * (seg.diam / 2) ** 2))
 
     .. image:: ../../../images/geometry3.png
         :align: center
@@ -379,15 +379,15 @@ Example:
         n.xopen("$(NEURONHOME)/demo/pyramid.nrn") 
         mode = 1
         h.pt3dconst(mode) # uses default section from pyramid.nrn
-        s = h.Shape() 
+        s = n.Shape() 
         s.action(lambda: s.select(sec=n.dendrite_1[8]))
         s.color(2, sec=n.dendrite_1[8])
 
         n.xpanel("Change Length") 
-        h.xvalue("dendrite_1[8].L", "dendrite_1[8].L", 1) # using HOC syntax
+        n.xvalue("dendrite_1[8].L", "dendrite_1[8].L", 1) # using HOC syntax
                                                           # to directly access
                                                           # the length
-        h.xcheckbox("Can't change length", (__main__, 'mode'),
+        n.xcheckbox("Can't change length", (__main__, 'mode'),
                     lambda: h.pt3dconst(mode, sec=n.dendrite_1[8]))
         n.xpanel() 
 
@@ -486,7 +486,7 @@ Defining the 3D Shape
             dend = n.Section('dend')
             h.pt3dadd(xvec, yvec, zvec, dvec, sec=dend)
 
-            s = h.Shape()
+            s = n.Shape()
             s.show(0)
 
 
@@ -697,7 +697,7 @@ Reading 3D Data from NEURON
     Syntax:
         ``section.x3d(i)``
 
-        ``h.x3d(i, sec=section)``
+        ``n.x3d(i, sec=section)``
 
 
     Description:
@@ -757,7 +757,7 @@ Reading 3D Data from NEURON
     Syntax:
         ``section.diam3d(i)``
 
-        ``h.x3d(diam, sec=section)``
+        ``n.x3d(diam, sec=section)``
 
 
     Description:
@@ -943,11 +943,11 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.distance(sec=section)`` or ``h.distance(0, x, sec=section)`` or ``h.distance(0, section(x))``
+        ``n.distance(sec=section)`` or ``n.distance(0, x, sec=section)`` or ``n.distance(0, section(x))``
 
-        ``length = h.distance(x, sec=section)`` or ``length = h.distance(1, x, sec=section)``
+        ``length = n.distance(x, sec=section)`` or ``length = n.distance(1, x, sec=section)``
 
-        ``length = h.distance(segment1, segment2)``
+        ``length = n.distance(segment1, segment2)``
 
     Description:
 
@@ -956,18 +956,18 @@ Reading 3D Data from NEURON
          
 
 
-        ``h.distance(sec=section)``
+        ``n.distance(sec=section)``
             specifies the origin as location 0 
             of ``section``
 
-        ``h.distance(x, sec=section)`` or ``h.distance(section(x))`` for 0 <= x <= 1
+        ``n.distance(x, sec=section)`` or ``n.distance(section(x))`` for 0 <= x <= 1
             returns the distance (in microns) from the origin to 
             ``section(x)``.
 
          
         To overcome the 
-        old initialization restriction, ``h.distance(0, x, sec=section)``
-        or the shorter ``h.distance(0, section(x))`` can be used to set the 
+        old initialization restriction, ``n.distance(0, x, sec=section)``
+        or the shorter ``n.distance(0, section(x))`` can be used to set the 
         origin. Note that distance is measured from the centers of 
         segments. 
 
@@ -985,7 +985,7 @@ Reading 3D Data from NEURON
             soma.L = 10
             dend.L = 50
 
-            length = h.distance(soma(0.5), dend(1))
+            length = n.distance(soma(0.5), dend(1))
             
     .. warning::
         When subtrees are connected by :meth:`ParallelContext.multisplit` , the 
@@ -1011,7 +1011,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.diam_changed = 1``
+        ``n.diam_changed = 1``
 
 
     Description:
@@ -1029,7 +1029,7 @@ Reading 3D Data from NEURON
         so reading it may not always produce the result you expect.
 
         If it is important to monitor changes to the diameter, look at the internal variable
-        ``diam_change_cnt`` which increments every time ``h.diam_changed`` is automatically reset to 0:
+        ``diam_change_cnt`` which increments every time ``n.diam_changed`` is automatically reset to 0:
 
         .. code-block::
             python
@@ -1040,19 +1040,19 @@ Reading 3D Data from NEURON
             import time
 
             diam_change_cnt = neuron.nrn_dll_sym('diam_change_cnt', ctypes.c_int)
-            print(h.diam_changed, diam_change_cnt.value)    # 1 0
+            print(n.diam_changed, diam_change_cnt.value)    # 1 0
 
             s = n.Section('s')
-            print(h.diam_changed, diam_change_cnt.value)    # 1 0
+            print(n.diam_changed, diam_change_cnt.value)    # 1 0
 
             time.sleep(0.2)
-            print(h.diam_changed, diam_change_cnt.value)    # 0 1
+            print(n.diam_changed, diam_change_cnt.value)    # 0 1
 
             s.diam = 42
-            print(h.diam_changed, diam_change_cnt.value)    # 1 1
+            print(n.diam_changed, diam_change_cnt.value)    # 1 1
 
             time.sleep(0.2)
-            print(h.diam_changed, diam_change_cnt.value)    # 1 2
+            print(n.diam_changed, diam_change_cnt.value)    # 1 2
 
          
          
@@ -1094,7 +1094,7 @@ Reading 3D Data from NEURON
         Axial resistivity in ohm-cm. This used to be a global variable 
         so that it was the same for all sections. Now, it is a section 
         variable and must be set individually for each section. A simple 
-        way to set its value is ``for sec in h.allsec(): sec.Ra = 35.4``
+        way to set its value is ``for sec in n.allsec(): sec.Ra = 35.4``
          
         Prior to 1/6/95 the default value for Ra was 34.5. Presently it is 
         35.4. 

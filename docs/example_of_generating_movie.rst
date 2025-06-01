@@ -50,7 +50,7 @@ Setup the model
 .. code::
     python
 
-    for sec in h.allsec():
+    for sec in n.allsec():
       sec.nseg = 21
       if 'dend' not in sec.name():
         sec.insert(n.hh)
