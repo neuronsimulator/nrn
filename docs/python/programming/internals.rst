@@ -12,11 +12,11 @@ Namespace Related
 .. function:: name_declared
 
     Syntax:
-        ``type = h.name_declared("name")``
+        ``type = n.name_declared("name")``
 
-        ``type = h.name_declared("name", 1)``
+        ``type = n.name_declared("name", 1)``
 
-        ``type = h.name_declared("name", 2)``
+        ``type = n.name_declared("name", 2)``
 
     Description:
         Return 0 if the name is not in the NEURON/HOC symbol table. The first form looks 
@@ -115,7 +115,7 @@ Namespace Related
         symbols --- type the names of HOC functions and variables 
 
     Syntax:
-        ``h.symbols()``
+        ``n.symbols()``
 
     Description:
         Types a list of functions and variable names defined in HOC.  Dimensions 
@@ -166,7 +166,7 @@ Object Related
 .. function:: allobjectvars
 
     Syntax:
-        ``h.allobjectvars()``
+        ``n.allobjectvars()``
 
     Description:
         Prints all the HOC object references (objref variables) that have been 
@@ -181,14 +181,14 @@ Object Related
 
             >>> h('objref foo')
             1
-            >>> h.foo = n.Vector()
-            >>> h.allobjectvars()
+            >>> n.foo = n.Vector()
+            >>> n.allobjectvars()
             obp hoc_obj_[0] -> NULL
             obp hoc_obj_[1] -> NULL
             obp foo[0] -> Vector[0] with 1 refs.
             0.0
-            >>> banana = h.foo
-            >>> h.allobjectvars()
+            >>> banana = n.foo
+            >>> n.allobjectvars()
             obp hoc_obj_[0] -> NULL
             obp hoc_obj_[1] -> NULL
             obp foo[0] -> Vector[0] with 2 refs.
@@ -199,11 +199,11 @@ Object Related
 .. function:: allobjects
 
     Syntax:
-        ``h.allobjects()``
+        ``n.allobjects()``
 
-        ``h.allobjects("templatename")``
+        ``n.allobjects("templatename")``
 
-        ``nref = h.allobjects(objectref)``
+        ``nref = n.allobjects(objectref)``
 
     Description:
         Prints the internal names of all class instances (objects) available 
@@ -223,14 +223,14 @@ Object Related
 
             >>> v = n.Vector()
             >>> foo = n.List()
-            >>> h.allobjects()
+            >>> n.allobjects()
             List[0] with 1 refs
             Vector[0] with 1 refs
             0.0
-            >>> h.allobjects('Vector')
+            >>> n.allobjects('Vector')
             Vector[0] with 1 refs
             0.0
-            >>> h.allobjects(foo)
+            >>> n.allobjects(foo)
             2.0
     
     .. seealso::
@@ -271,7 +271,7 @@ Miscellaneous
 .. function:: hoc_pointer_
 
     Syntax:
-        ``h.hoc_pointer_(&variable)``
+        ``n.hoc_pointer_(&variable)``
 
     Description:
         A function used by C and C++ implementations to request a pointer to 
