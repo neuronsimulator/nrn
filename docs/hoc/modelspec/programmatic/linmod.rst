@@ -177,7 +177,7 @@ LinearMechanism
               h.run()
               trajec.line(graph, tvec)
             
-            h.dt /= 10
+            n.dt /= 10
             n.cvode.atol(1e-5)
             n.cvode_active(1)
             prun(0, 1.9999) # 2.0001 will keep it rotating

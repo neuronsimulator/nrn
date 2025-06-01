@@ -27,7 +27,7 @@ class Cell:
         pc = n.ParallelContext()
         pc.set_maxstep(10)
         h.stdinit()
-        h.dt = dt
+        n.dt = dt
         pc.psolve(tstop)
 
     def output(self):

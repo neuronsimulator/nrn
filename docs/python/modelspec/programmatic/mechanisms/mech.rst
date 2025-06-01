@@ -357,8 +357,8 @@ General
             # do the three cases while playing the recorder ap
             apc = ap.c() # unfortunately, cannot play into two variables, so clone it
             ap.play_remove()
-            ap.play(c2._ref_amp1, h.dt)
-            apc.play(c3._ref_amp[0], h.dt)
+            ap.play(c2._ref_amp1, n.dt)
+            apc.play(c3._ref_amp[0], n.dt)
             n.finitialize(-65)
 
             while h.t < 0.4:

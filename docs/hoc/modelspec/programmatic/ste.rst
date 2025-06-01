@@ -53,9 +53,9 @@ StateTransitionEvent
       print "default dt=0.025 fixed step run"
       h.run()
       
-      h.steps_per_ms = 64
-      h.dt = 1.0/h.steps_per_ms
-      print "dt=1/64 fixed step run ", h.dt
+      n.steps_per_ms = 64
+      n.dt = 1.0/n.steps_per_ms
+      print "dt=1/64 fixed step run ", n.dt
       h.run()
 
       for i in [1,2]:

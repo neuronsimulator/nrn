@@ -49,7 +49,7 @@ Functions
 
 
     Description:
-        Integrate all section equations over the interval :data:`h.dt` . 
+        Integrate all section equations over the interval :data:`n.dt` . 
         The value of :data:`t` is incremented by dt. 
         The default method is first order implicit but may be changed to 
         Crank-Nicolson by changing :data:`h.secondorder` = 2.
@@ -269,7 +269,7 @@ Functions
 
 
     Syntax:
-        ``h.dt``
+        ``n.dt``
 
 
     Description:

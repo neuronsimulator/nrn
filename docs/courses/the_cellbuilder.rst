@@ -234,7 +234,7 @@ More Exercises
     to see how many dendritic segments were required.
 
 5.
-    Is the time step (``h.dt`` in Python) short enough?
+    Is the time step (``n.dt`` in Python) short enough?
 
 6.
     Here's something you should try on your own, perhaps after class tonight: :ref:`using the CellBuilder to manage models "on the fly." <managing_models_on_the_fly>`

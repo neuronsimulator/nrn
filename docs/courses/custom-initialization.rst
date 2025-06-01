@@ -107,7 +107,7 @@ In the same directory, make an :file:`init_ss.py` file with the contents:
         # save CVode state to restore; initialization with fixed dt
         old_cvode_state = n.cvode.active()
         n.cvode.active(False)
-        h.dt = dt
+        n.dt = dt
         while (h.t < t0 + dur): 
             h.fadvance()
         

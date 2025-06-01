@@ -149,7 +149,7 @@ RangeVarPlot
             ca1.nodes(dend1(0.7))[0].include_flux(70)
 
             n.finitialize(-65)
-            h.dt /= 512
+            n.dt /= 512
             n.load_file("stdrun.hoc")
             n.continuerun(0.025)
 
