@@ -97,7 +97,7 @@ Shape
             from neuron.units import mV, ms
             import matplotlib
 
-            h.load_file("c91662.ses")
+            n.load_file("c91662.ses")
 
             for sec in h.allsec():
                 sec.nseg = int(1 + 2 * (sec.L // 40))

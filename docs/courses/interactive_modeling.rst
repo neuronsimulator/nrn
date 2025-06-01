@@ -62,7 +62,7 @@ Alternatively you can use NEURON to execute ``hhaxon.ses``
     python
 
     from neuron import n, gui
-    h.load_file('hhaxon.ses')
+    n.load_file('hhaxon.ses')
 
 
 Exercises

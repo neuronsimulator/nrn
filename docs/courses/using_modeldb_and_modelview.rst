@@ -41,7 +41,7 @@ Load mosinit.hoc
     python
 
     from neuron import n, gui
-    h.load_file('mosinit.hoc')
+    n.load_file('mosinit.hoc')
 
 The PointProcessManager shows a shape plot of the cell.
 

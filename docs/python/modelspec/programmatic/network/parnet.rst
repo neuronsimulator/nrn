@@ -62,7 +62,7 @@ ParallelNetManager
             .. code::
 
                 from neuron import n
-                h.load_file('stdrun.hoc')
+                n.load_file('stdrun.hoc')
                 tstop = 1000
 
             Yes, I know that this example is foolish since there is no computation 
@@ -74,7 +74,7 @@ ParallelNetManager
 
             .. code::
 
-                h.load_file("netparmpi.hoc") 
+                n.load_file("netparmpi.hoc") 
                 ncell = 128 
                 pnm = h.ParallelNetManager(ncell) 
 

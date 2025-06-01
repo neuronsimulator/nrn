@@ -150,7 +150,7 @@ RangeVarPlot
 
             n.finitialize(-65)
             h.dt /= 512
-            h.load_file("stdrun.hoc")
+            n.load_file("stdrun.hoc")
             n.continuerun(0.025)
 
             a_1 = h.RangeVarPlot(ca1, dend1(0), dend1(1))

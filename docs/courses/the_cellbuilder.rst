@@ -136,9 +136,9 @@ In the :menuselection:`course --> cellbuilder directory`, make an init.py file w
     from neuron import n, gui
 
     #load your model specification
-    h.load_file('ballstick.ses')
+    n.load_file('ballstick.ses')
     #your user interface
-    h.load_file("rig.ses")
+    n.load_file("rig.ses")
 
 Also make a rig.ses file that contains the single command
 

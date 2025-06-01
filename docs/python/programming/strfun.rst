@@ -336,7 +336,7 @@ StringFunctions (String Manipulation Class)
             python
     
             from neuron import n
-            h.load_file('stdrun.hoc')
+            n.load_file('stdrun.hoc')
             sf = h.StringFunctions()
             v = n.Vector()
             al = sf.alias_list(v)
@@ -392,7 +392,7 @@ StringFunctions (String Manipulation Class)
             python
 
             from neuron import n
-            h.load_file('stdrun.hoc')
+            n.load_file('stdrun.hoc')
             s1 = n.Section('soma')
             syn = h.ExpSyn(s1(0.5))
             sf = h.StringFunctions()
@@ -428,7 +428,7 @@ StringFunctions (String Manipulation Class)
             python
 
             from neuron import n
-            h.load_file('stdrun.hoc')
+            n.load_file('stdrun.hoc')
             s1 = n.Section('soma')
             syn = h.ExpSyn(s1(0.5))
             # initiate string function

@@ -116,7 +116,7 @@ code-loading
         .. code-block::
             python
 
-            h.xopen("$(NEURONHOME)/lib/hoc/noload.hoc") 
+            n.xopen("$(NEURONHOME)/lib/hoc/noload.hoc") 
 
 
 ----
@@ -124,11 +124,11 @@ code-loading
 .. function:: load_file
 
     Syntax:
-        ``h.load_file("filename")``
+        ``n.load_file("filename")``
 
-        ``h.load_file("filename", "name")``
+        ``n.load_file("filename", "name")``
 
-        ``h.load_file(0or1, "filename")``
+        ``n.load_file(0or1, "filename")``
 
     Description:
         Similar to :func:`load_proc` but loads files and so does not have the 

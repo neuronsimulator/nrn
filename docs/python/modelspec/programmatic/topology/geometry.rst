@@ -376,7 +376,7 @@ Example:
         from neuron import n, gui
         import __main__
 
-        h.xopen("$(NEURONHOME)/demo/pyramid.nrn") 
+        n.xopen("$(NEURONHOME)/demo/pyramid.nrn") 
         mode = 1
         h.pt3dconst(mode) # uses default section from pyramid.nrn
         s = h.Shape() 

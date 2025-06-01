@@ -80,9 +80,9 @@ Exercise 5
 
 Download the model from https://modeldb.science/126814 Create a Python script that loads the model, injects current into the center of the soma from t=2 to t=4 ms sufficient to generate an action potential, and records and plots membrane potential, sodium current, and potassium current as functions of time from t=0 to t=10 ms.
 
-*Hint*: ``h.load_file('mosinit.hoc')``
+*Hint*: ``n.load_file('mosinit.hoc')``
 
-*Hint*: This model uses the variable time step solver. Be sure to record ``t`` or switch to a fixed step solver with ``h.cvode_active(False)``.
+*Hint*: This model uses the variable time step solver. Be sure to record ``t`` or switch to a fixed step solver with ``n.cvode_active(False)``.
 
 *Bonus challenge*: Export the recorded data to a CSV file and then open and plot it in Excel, MATLAB, or a similar tool of your choice.
 

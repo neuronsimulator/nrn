@@ -645,7 +645,7 @@ NetCon
             python  
             
             from neuron import n
-            h.load_file('stdrun.hoc')  # for h.run() and h.cvode
+            n.load_file('stdrun.hoc')  # for h.run() and n.cvode
 
             soma = n.Section('soma')
             soma.insert(h.hh)
@@ -664,14 +664,14 @@ NetCon
                 h.stoprun = True  # Will stop but may go one extra step. Also with 
                 # local step the cells will be at different times. 
                 # So may wish to do a further... 
-                h.cvode.event(h.t + 1e-6)  
+                n.cvode.event(h.t + 1e-6)  
 
             nc = h.NetCon(soma(0.5)._ref_v, None, sec=soma) 
             nc.threshold = 0 # watch out! only one threshold per presyn location 
             nc.record(handle) 
              
-            h.cvode_active(True) # optional. but fixed step will probably do one extra time step 
-            h.cvode.condition_order(2) # optional. but much more accurate event time evaluation. 
+            n.cvode_active(True) # optional. but fixed step will probably do one extra time step 
+            n.cvode.condition_order(2) # optional. but much more accurate event time evaluation. 
              
             h.run() 
             print(f"after h.run(), t = {h.t} when soma(0.5).v = {soma(0.5).v}")

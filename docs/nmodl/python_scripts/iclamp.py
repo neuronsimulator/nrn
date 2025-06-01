@@ -6,7 +6,7 @@ from utils.cell import Cell
 class hhCellIClamp(Cell):
     def _create_cell(self):
         h("""create soma""")
-        h.load_file("stdrun.hoc")
+        n.load_file("stdrun.hoc")
         h.soma.L = 5.6419
         h.soma.diam = 5.6419
         h.soma.insert("hh")

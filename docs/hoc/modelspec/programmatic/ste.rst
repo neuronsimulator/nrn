@@ -31,7 +31,7 @@ StateTransitionEvent
       python
       
       from neuron import n
-      h.load_file("stdrun.hoc") # use h.run(), h.cvode, etc
+      n.load_file("stdrun.hoc") # use h.run(), n.cvode, etc
       
       soma = n.Section() # empty model not allowed.
       ste = h.StateTransitionEvent(1)
@@ -59,9 +59,9 @@ StateTransitionEvent
       h.run()
 
       for i in [1,2]:
-        h.cvode.condition_order(i)
-        print "cvode.condition_order() = %d" % int(h.cvode.condition_order())
-        h.cvode_active(1)
+        n.cvode.condition_order(i)
+        print "cvode.condition_order() = %d" % int(n.cvode.condition_order())
+        n.cvode_active(1)
         h.run()
 
     The results of a run are:

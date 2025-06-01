@@ -9,7 +9,7 @@ CVode
 
     Syntax:
 
-        ``cvode = h.CVode()``
+        ``cvode = n.CVode()``
 
 
     Description:
@@ -83,8 +83,8 @@ CVode
 
     .. note::
 
-        A ``from neuron import gui`` or ``h.load_file('stdrun.hoc')`` will create an instance called
-        ``h.cvode``. Although this class is not strictly speaking a singleton, there is only one
+        A ``from neuron import gui`` or ``n.load_file('stdrun.hoc')`` will create an instance called
+        ``n.cvode``. Although this class is not strictly speaking a singleton, there is only one
         integrator and it may be controlled and queried by any instance.\
 
 
@@ -602,7 +602,7 @@ CVode
         .. code-block::
             python
 
-            h.CVode().yscatter(n.Vector(data))
+            n.CVode().yscatter(n.Vector(data))
          
 
 ----
@@ -653,9 +653,9 @@ CVode
         .. code-block::
             python
 
-            h.CVode().active(False) 
+            n.CVode().active(False) 
             h.fadvance() 
-            h.CVode().active(True) 
+            n.CVode().active(True) 
 
         in order to allow the use of the CVode functions assigning state and 
         evaluating states and dstates/dt; use via:
@@ -663,7 +663,7 @@ CVode
         .. code-block::
             python
 
-            h.CVode().fixed_step()
+            n.CVode().fixed_step()
 
     .. warning::
         :meth:`CVode.dstates` are invalid and should be determined by a call to 
@@ -728,12 +728,12 @@ CVode
             python
 
             from neuron import n
-            h.load_file('stdrun.hoc')    # defines h.cvode
+            n.load_file('stdrun.hoc')    # defines n.cvode
 
             result = h.ref('')
             soma = n.Section('soma')
-            h.cvode_active(True)
-            h.cvode.statename(0, result)
+            n.cvode_active(True)
+            n.cvode.statename(0, result)
             print(result[0])         
 
 
@@ -783,7 +783,7 @@ CVode
         .. code-block::
             python
 
-            for nc in h.CVode().netconlist(precell, '', ''):
+            for nc in n.CVode().netconlist(precell, '', ''):
                 print(nc.postcell())
 
 
@@ -901,7 +901,7 @@ CVode
 
     	    n.finitialize(-65)
 
-    	    h.CVode().event(1.3, hi)
+    	    n.CVode().event(1.3, hi)
 
     	    n.continuerun(2)
 
@@ -1320,7 +1320,7 @@ CVode
         .. code:: python
 
             from neuron import n
-            h.CVode().use_fast_imem(1)
+            n.CVode().use_fast_imem(1)
 
             def assert_whole_model_charge_conservation():
                 # sum over all membrane current
@@ -1498,19 +1498,19 @@ CVode
              recording_callback = (hello1, cort_secs)
 
              # declaring a function to run with every fadvance
-             h.CVode().extra_scatter_gather(0, recording_callback)
+             n.CVode().extra_scatter_gather(0, recording_callback)
              n.finitialize(-65)
              h.fadvance()
              h.fadvance()
 
              # removing the previous function
-             h.CVode().extra_scatter_gather_remove(recording_callback)
+             n.CVode().extra_scatter_gather_remove(recording_callback)
 
              print('---')
 
              # declaring a new function to run with each fadvance
              recording_callback = (hello2, cort_secs)
-             h.CVode().extra_scatter_gather(0, recording_callback)
+             n.CVode().extra_scatter_gather(0, recording_callback)
              n.finitialize(-65)
              h.fadvance()
              h.fadvance()

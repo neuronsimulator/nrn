@@ -105,17 +105,17 @@ In the same directory, make an :file:`init_ss.py` file with the contents:
         """
         h.t = t0
         # save CVode state to restore; initialization with fixed dt
-        old_cvode_state = h.cvode.active()
-        h.cvode.active(False)
+        old_cvode_state = n.cvode.active()
+        n.cvode.active(False)
         h.dt = dt
         while (h.t < t0 + dur): 
             h.fadvance()
         
         # restore cvode active/inactive state if necessary
-        h.cvode.active(old_cvode_state)
+        n.cvode.active(old_cvode_state)
         h.t = 0
-        if h.cvode.active():
-            h.cvode.re_init()
+        if n.cvode.active():
+            n.cvode.re_init()
         else:
             h.fcurrent()
         h.frecord_init()
@@ -123,7 +123,7 @@ In the same directory, make an :file:`init_ss.py` file with the contents:
     fih = n.FInitializeHandler(ss_init)
 
     # model specification
-    h.load_file('all.ses') # ball and stick model with exptl rig
+    n.load_file('all.ses') # ball and stick model with exptl rig
 
 Now execute :file:`init_ss.py`.
 

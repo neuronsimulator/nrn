@@ -26,7 +26,7 @@ Example:
         python
 
         from neuron import n
-        h.load_file("import3d.hoc")
+        n.load_file("import3d.hoc")
 
         class Pyramidal:
             def __init__(self):

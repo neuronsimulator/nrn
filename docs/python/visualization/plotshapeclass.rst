@@ -46,7 +46,7 @@ PlotShape
 
             from neuron import n
             from matplotlib import pyplot 
-            h.load_file('c91662.ses')  # a morphology file
+            n.load_file('c91662.ses')  # a morphology file
             for sec in h.allsec():
                 if 'apic' in str(sec):
                     sec.v = 0
@@ -69,7 +69,7 @@ PlotShape
 
             from neuron import n
             from matplotlib import pyplot, cm
-            h.load_file('c91662.ses')
+            n.load_file('c91662.ses')
             sl = n.SectionList([sec for sec in h.allsec() if 'apic' in str(sec)])
             for sec in sl:
                 sec.v = 0
@@ -93,7 +93,7 @@ PlotShape
             from matplotlib.pyplot import cm
             from matplotlib import pyplot
 
-            h.load_file("c91662.ses")
+            n.load_file("c91662.ses")
 
             for sec in h.allsec():
                 sec.nseg = int(1 + 2 * (sec.L // 40))
@@ -123,7 +123,7 @@ PlotShape
                 from neuron import n
                 from neuron.units import mV, ms
 
-                h.load_file("c91662.ses")
+                n.load_file("c91662.ses")
                 for sec in h.allsec():
                     sec.nseg = int(1 + 2 * (sec.L // 40))
                     sec.insert(h.hh)
@@ -151,7 +151,7 @@ PlotShape
             from neuron import n
             from matplotlib import pyplot, cm
 
-            h.load_file("c91662.ses")
+            n.load_file("c91662.ses")
             sl = n.SectionList([sec for sec in h.allsec() if "apic" in str(sec)])
             for sec in sl:
                 sec.v = 0
@@ -268,7 +268,7 @@ PlotShape
             from neuron import n, rxd
             from neuron.units import mM, µm, ms, mV
             import plotly
-            h.load_file("stdrun.hoc")
+            n.load_file("stdrun.hoc")
 
             dend1 = n.Section('dend1')
             dend2 = n.Section('dend2')

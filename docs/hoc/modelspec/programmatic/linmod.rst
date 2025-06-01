@@ -144,7 +144,7 @@ LinearMechanism
             from neuron import n
             from math import sin
             
-            h.load_file('nrngui.hoc')
+            n.load_file('nrngui.hoc')
             
             cmat = h.Matrix(2,2,2).ident()
             
@@ -178,7 +178,7 @@ LinearMechanism
               trajec.line(graph, tvec)
             
             h.dt /= 10
-            h.cvode.atol(1e-5)
-            h.cvode_active(1)
+            n.cvode.atol(1e-5)
+            n.cvode_active(1)
             prun(0, 1.9999) # 2.0001 will keep it rotating
             graph.exec_menu("View = plot")

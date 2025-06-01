@@ -35,7 +35,7 @@ To work properly with variable time step methods, models that change states and/
             soma.v += 20
 
         def setup_discontinuities():
-            h.cvode.event(2, change)
+            n.cvode.event(2, change)
 
         fih = n.FInitializeHandler(setup_discontinuities)
     
@@ -52,7 +52,7 @@ To work properly with variable time step methods, models that change states and/
         def change():
             print(f'change at {h.t}')
             soma.v += 20
-            h.cvode.re_init()
+            n.cvode.re_init()
 
 4.
 
@@ -67,11 +67,11 @@ To work properly with variable time step methods, models that change states and/
                 soma(0.5).hh.gnabar *= 2
             else:
                 soma(0.5).hh.gnabar /= 2
-            # h.cvode.re_init()   # should be here for cvode, but see below
+            # n.cvode.re_init()   # should be here for cvode, but see below
 
         def setup_discontinuities():
-            h.cvode.event(2, (change, 'raise'))
-            h.cvode.event(3, (change, 'lower'))
+            n.cvode.event(2, (change, 'raise'))
+            n.cvode.event(3, (change, 'lower'))
 
         fih = n.FInitializeHandler(setup_discontinuities)
 

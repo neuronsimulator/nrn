@@ -29,7 +29,7 @@ File Access (objected-oriented via NEURON)
         .. code-block::
             python
 
-            h.xopen(fobj.getname())
+            n.xopen(fobj.getname())
 
         to execute a sequence of interpreter commands in a file. 
          
@@ -417,7 +417,7 @@ File Access (objected-oriented via NEURON)
 
             f.chooser("", "Execute a hoc file", "*.hoc", "Execute") 
             if f.chooser():
-                h.xopen(f.getname()) 
+                n.xopen(f.getname()) 
 
         Example:
 

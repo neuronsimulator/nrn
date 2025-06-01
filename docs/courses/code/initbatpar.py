@@ -12,7 +12,7 @@ import time
 
 # need the standard run system (didn't have to do this before, because this
 # is loaded whenever we import the gui)
-h.load_file("stdrun.hoc")
+n.load_file("stdrun.hoc")
 
 # create ParallelContext instance here so it exists whenever we need it
 pc = h.ParallelContext()

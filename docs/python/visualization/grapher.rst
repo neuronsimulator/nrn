@@ -24,7 +24,7 @@ To pop up the widget say:
 .. code-block::
     python
 
-    	h.load_file("grapher.hoc")  # reads this file 
+    	n.load_file("grapher.hoc")  # reads this file 
     	h.makegrapher(1)            # pop up a new grapher 
 
  

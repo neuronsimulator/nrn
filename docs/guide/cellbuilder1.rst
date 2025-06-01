@@ -382,7 +382,7 @@ Here's a concrete example of how to do this.
    .. code:: python
 
       from neuron import n, gui
-      h.load_file("mycell.ses")
+      n.load_file("mycell.ses")
 
 3. Start NEURON and have it read :file:`init.py` by typing ``python -i init.py`` on a terminal.
 4. Use the NEURON Main Menu toolbar to construct a custom graphical user interface that has the following items:
@@ -399,8 +399,8 @@ Here's a concrete example of how to do this.
    .. code:: python
 
       from neuron import n, gui
-      h.load_file("mycell.ses")
-      h.load_file("iclamprig.ses")
+      n.load_file("mycell.ses")
+      n.load_file("iclamprig.ses")
   
 Now when you run ``python -i init.py``, up comes your CellBuilder, which recreates your model cell, and you also get your custom experimental rig, all ready for you to run some current clamp simulations, as shown here :
 
@@ -420,16 +420,16 @@ For instance, you could set up an interface that uses an SEClamp to do voltage c
     .. code:: python
 
        from neuron import n, gui
-       h.load_file("mycell.ses")
-       h.load_file("iclamprig.ses")
+       n.load_file("mycell.ses")
+       n.load_file("iclamprig.ses")
 
   initvclamp.py
 
     .. code:: python
 
        from neuron import n, gui
-       h.load_file("mycell.ses")
-       h.load_file("vclamprig.ses")
+       n.load_file("mycell.ses")
+       n.load_file("vclamprig.ses")
 
 
 Also note that :file:`iclamprig.ses` and :file:`vclamprig.ses` are reusable with any model that happens to have a default section called soma.

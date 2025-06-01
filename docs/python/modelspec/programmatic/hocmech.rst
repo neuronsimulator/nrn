@@ -70,7 +70,7 @@ HOC-based Mechanisms
 
             from neuron import n
             import math
-            h.load_file("stdrun.hoc")
+            n.load_file("stdrun.hoc")
 
             soma = n.Section("soma")
             soma.L = soma.diam = math.sqrt(100 / math.pi)

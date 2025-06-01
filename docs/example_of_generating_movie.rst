@@ -38,8 +38,8 @@ Setup the model
     from neuron.units import ms, mV
 
     plt.rcParams["figure.figsize"] = (6, 6)
-    h.load_file("stdrun.hoc")
-    h.load_file("n275.hoc")
+    n.load_file("stdrun.hoc")
+    n.load_file("n275.hoc")
 
 .. code::
     python

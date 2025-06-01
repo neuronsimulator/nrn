@@ -113,7 +113,7 @@ LinearMechanism
     
         Does not work with the CVODE integrator but does work with the
         differential-algebraic solver IDA. Note that if the standard
-        run system is loaded, ``h.cvode_active(True)`` will automatically
+        run system is loaded, ``n.cvode_active(True)`` will automatically
         choose the correct variable step integrator.
 
     .. warning::
@@ -174,8 +174,8 @@ LinearMechanism
               trajec.line(graph, tvec)
 
             h.dt /= 10
-            h.cvode.atol(1e-5)
-            h.cvode_active(True)
+            n.cvode.atol(1e-5)
+            n.cvode_active(True)
             prun(0, 1.9999) # 2.0001 will keep it rotating
             graph.exec_menu("View = plot")
 

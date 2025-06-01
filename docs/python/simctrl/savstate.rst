@@ -36,7 +36,7 @@ SaveState
 
             from neuron import n, rxd
             from neuron.units import mV, ms
-            h.load_file("stdrun.hoc")
+            n.load_file("stdrun.hoc")
 
             soma = n.Section("soma")
             soma.insert(h.hh)

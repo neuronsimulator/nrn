@@ -116,13 +116,13 @@ Open and Write to Files (Obsolete)
 
 
     Syntax:
-        ``h.xopen("hocfile")``
+        ``n.xopen("hocfile")``
 
-        ``h.xopen("hocfile", "RCSrevision")``
+        ``n.xopen("hocfile", "RCSrevision")``
 
 
     Description:
-        ``h.xopen()`` executes the commands in ``hocfile``.  This is a convenient way 
+        ``n.xopen()`` executes the commands in ``hocfile``.  This is a convenient way 
         to define user functions and procedures. 
         An optional second argument is the RCS revision number in the form of a 
         string. The RCS file with that revision number is checked out into a 

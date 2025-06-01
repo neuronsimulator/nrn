@@ -460,8 +460,8 @@ Vector
         - starting NEURON by executing `nrngui -python`
         - executing any of the following statements:
           - from neuron import gui    # also brings up the NEURON Main Menu
-          - h.load_file("noload.hoc") # does not bring up the NEURON Main Menu
-          - h.load_file("stdrun.hoc") # does not bring up the NEURON Main Menu
+          - n.load_file("noload.hoc") # does not bring up the NEURON Main Menu
+          - n.load_file("stdrun.hoc") # does not bring up the NEURON Main Menu
 
 
     .. seealso::
@@ -576,7 +576,7 @@ Vector
 
             from neuron import n
             import pylab as plt, numpy as np
-            h.load_file('stdrun.hoc')
+            n.load_file('stdrun.hoc')
             sec = n.Section('sec')
             sec.insert(h.pas)
             inp = np.zeros(500)

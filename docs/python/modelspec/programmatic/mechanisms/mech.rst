@@ -600,7 +600,7 @@ General
             nctrig.weight[0] = 1
             
             h.tstop=500
-            h.cvode_active(True)
+            n.cvode_active(True)
             h.run()
             
     Output:
@@ -770,7 +770,7 @@ General
             from neuron import n
             from neuron.units import ms, mV
             import matplotlib.pyplot as plt
-            h.load_file("stdrun.hoc")
+            n.load_file("stdrun.hoc")
 
             my_cell = h.IntFire1()
             my_cell.tau = 4 * ms

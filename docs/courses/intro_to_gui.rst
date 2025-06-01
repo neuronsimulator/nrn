@@ -258,6 +258,6 @@ Halve the duration and double the amplitude.
 
         from neuron import n, gui
 
-        h.load_file('bilayer.hoc')
+        n.load_file('bilayer.hoc')
 
 

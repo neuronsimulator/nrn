@@ -94,7 +94,7 @@ Open with :menuselection:`Vector --> Gather Values` or to open programmatically 
 .. code::
 
     from neuron import n, gui
-    h.load_file('gatherv.hoc')
+    n.load_file('gatherv.hoc')
     h.makeGatherVec()
 
 .. image:: ../images/GatherVec.png
@@ -117,7 +117,7 @@ Open with :menuselection:`Vector --> Play` or to open programmatically import GU
 .. code::
 
     from neuron import n, gui
-    h.load_file('vplay.hoc')
+    n.load_file('vplay.hoc')
     h.makeVectorPlay()
 
 .. image:: ../images/VectorPlay.png
@@ -137,7 +137,7 @@ Open with :menuselection:`Vector --> Display` or to open programmatically import
 .. code::
 
     from neuron import n, gui
-    h.load_file('vecwrap.hoc')
+    n.load_file('vecwrap.hoc')
     h.makeVecWrap()
 
 .. image:: ../images/VecWrap.png

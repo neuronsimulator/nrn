@@ -86,8 +86,8 @@ new procedure for the default init procedure; e.g.
         # new code to happen after initialization here
         print('initializing...')
         # only need the following if states have been changed
-        if h.cvode.active():
-            h.cvode.re_init()
+        if n.cvode.active():
+            n.cvode.re_init()
         else:
             h.fcurrent()
         h.frecord_init()
