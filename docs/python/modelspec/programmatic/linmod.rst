@@ -104,7 +104,7 @@ LinearMechanism
             
             n.finitialize(-65)
             while h.t < tstop:
-                print(f't={h.t:<8g} v={soma(0.5).v:<8g} y[1]={y[1]:<8g}')
+                print(f't={n.t:<8g} v={soma(0.5).v:<8g} y[1]={y[1]:<8g}')
                 h.fadvance()
 
 
@@ -164,13 +164,13 @@ LinearMechanism
             tvec = n.Vector().record(n._ref_t)
 
             graph = n.Graph()
-            h.tstop=50
+            n.tstop=50
 
             def prun(theta0, omega0):
               graph.erase()
               y0[0] = theta0
               y0[1] = omega0
-              h.run()
+              n.run()
               trajec.line(graph, tvec)
 
             n.dt /= 10

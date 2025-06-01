@@ -445,7 +445,7 @@ Vector
             python
 
             dv = n.Vector().record(terminal(0.5)._ref_v) 
-            h.run() 
+            n.run() 
 
         Note that the next "run" will overwrite the previous time course stored 
         in the vector as it automatically performs an "init" before running a simulation.
@@ -587,8 +587,8 @@ Vector
             pvec.play(stim, stim._ref_amp, True)
             rd = {k:n.Vector().record(v) for k,v in zip(['t', 'v', 'stim_i', 'amp'],
                                                         [n._ref_t, sec(0.5)._ref_v, stim._ref_i, stim._ref_amp])}
-            h.v_init, h.tstop= -70, 500
-            h.run()
+            n.v_init, n.tstop= -70, 500
+            n.run()
             plt.plot(rd['t'], rd['v'])
             plt.show()
 

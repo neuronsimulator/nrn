@@ -53,7 +53,7 @@ This model was written in HOC, but we can still use Python to explore it. To see
 .. code::
     python
 
-    h.topology()
+    n.topology()
 
 and
 

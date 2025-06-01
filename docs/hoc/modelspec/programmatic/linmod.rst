@@ -168,13 +168,13 @@ LinearMechanism
             tvec.record(n._ref_t)
             
             graph = n.Graph()
-            h.tstop=50
+            n.tstop=50
             
             def prun(theta0, omega0):
               graph.erase()
               y0.x[0] = theta0
               y0.x[1] = omega0
-              h.run()
+              n.run()
               trajec.line(graph, tvec)
             
             n.dt /= 10

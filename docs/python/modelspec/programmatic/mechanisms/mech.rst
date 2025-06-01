@@ -599,9 +599,9 @@ General
             nctrig.delay = 0.1
             nctrig.weight[0] = 1
             
-            h.tstop=500
+            n.tstop=500
             n.cvode_active(True)
-            h.run()
+            n.run()
             
     Output:
         .. code-block::

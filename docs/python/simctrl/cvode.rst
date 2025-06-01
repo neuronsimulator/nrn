@@ -897,7 +897,7 @@ CVode
     	    from neuron import n
      
     	    def hi():
-    	        print(f'hello from hi, h.t = {h.t}')
+    	        print(f'hello from hi, h.t = {n.t}')
 
     	    n.finitialize(-65)
 

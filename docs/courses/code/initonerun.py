@@ -6,7 +6,7 @@ Displays response and reports spike frequency
 from neuron import n, gui
 
 # simulation parameter
-h.tstop = 500  # ms, more than long enough for 15 spikes at ISI = 25 ms
+n.tstop = 500  # ms, more than long enough for 15 spikes at ISI = 25 ms
 
 # model specification
 from cell import Cell
@@ -56,7 +56,7 @@ def onerun(amp):
     # plot v at distal end of dend
     g.addvar("dend(1).v", cell.dend(1)._ref_v)
     stim.amp = amp
-    h.run()
+    n.run()
     freq = get_frequency()
     print("stimulus %g frequency %g" % (amp, freq))
 

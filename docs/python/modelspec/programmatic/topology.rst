@@ -75,7 +75,7 @@ This document describes the construction and manipulation of a stylized topology
             my_cells = [MyCell(), MyCell()]
 
             # print the topology
-            h.topology()
+            n.topology()
             
         Displays:
 
@@ -133,7 +133,7 @@ This document describes the construction and manipulation of a stylized topology
             for sec in dend:
                 sec.connect(soma(1), 0)
 
-            h.topology()
+            n.topology()
             s = h.Shape()
 
         .. image:: ../../images/section-connection.png
@@ -161,15 +161,15 @@ This document describes the construction and manipulation of a stylized topology
             for i, sec in enumerate(sl[1:]):
                 sec.connect(sl[i](1))
 
-            h.topology()
+            n.topology()
             sl[2].disconnect()
-            h.topology()
+            n.topology()
             sl[2].connect(sl[0](.5), 1)
-            h.topology()
+            n.topology()
             sl[2].disconnect()
-            h.topology()
+            n.topology()
             sl[2].connect(sl[0](.5))
-            h.topology()
+            n.topology()
 
 ----
 
@@ -325,7 +325,7 @@ This document describes the construction and manipulation of a stylized topology
             dend4
             >>> dend5.connect(dend4)
             dend5
-            >>> h.topology()
+            >>> n.topology()
 
             |-|       soma(0-1)
                `|       dend2(0-1)
@@ -378,7 +378,7 @@ This document describes the construction and manipulation of a stylized topology
             dend4
             >>> dend5.connect(dend4)
             dend5
-            >>> h.topology()
+            >>> n.topology()
 
             |-|       soma(0-1)
                `|       dend2(0-1)
@@ -403,7 +403,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``h.topology()``
+        ``n.topology()``
 
 
     Description:

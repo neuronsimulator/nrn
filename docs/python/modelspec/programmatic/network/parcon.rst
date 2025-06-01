@@ -182,7 +182,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
                     sec.gnabar_hh = g[i]
                 for j in range(5):
                     stim.amp = s[j]
-                    h.run()
+                    n.run()
 
         ie we only need to set gnabar_hh 20 times. But the first pass at 
         parallelization would look like: 
@@ -194,7 +194,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
                 for sec in h.allsec():
                     sec.gnabar_hh = g[i]
                 stim.amp = s[j]
-                h.run()
+                n.run()
 
             for i in range(1, 20):
                for j in range(5):
@@ -3492,10 +3492,10 @@ Parallel Transfer
             from neuron import coreneuron
             coreneuron.enable = True
             h.stdinit()
-            pc.psolve(h.tstop)
+            pc.psolve(n.tstop)
 
         In this case, :func:`psolve`, uses ``nrncore_run`` behind the scenes
-        with the argstr it gets from ``coreneuron.nrncore_arg(h.tstop)``
+        with the argstr it gets from ``coreneuron.nrncore_arg(n.tstop)``
         which is ``" --tstop 5 --cell-permute 1 --verbose 2 --voltage 1000."``
 
         CoreNEURON in online mode does not do the

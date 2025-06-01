@@ -99,7 +99,7 @@ HOC-based Mechanisms
 
             h.make_mechanism('max', 'Max')
             soma.insert('max')  # could also do: soma.insert(h.max)
-            h.run()
+            n.run()
 
             print(f'V_max = {soma(0.5).max.V}')
          

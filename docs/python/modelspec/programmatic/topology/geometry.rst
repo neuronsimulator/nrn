@@ -198,7 +198,7 @@ Example:
         s = h.Shape()
         s.show(False)
         s.color(2, sec=a) # color section "a" red
-        h.topology()
+        n.topology()
         n.finitialize(-65)
         for sec in a.wholetree():
             print(sec)

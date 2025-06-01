@@ -64,7 +64,7 @@ SaveState
                 )
 
             s1 = get_state()   # our local copy, just to prove we saved
-            s = h.SaveState()
+            s = n.SaveState()
             s.save()
 
             # NOTE: calling s.save() stores the state to the s object; it does not

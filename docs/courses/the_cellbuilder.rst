@@ -173,7 +173,7 @@ Exercises
 1.
     Establish that the representation in the computer correspeonds to the conceptual model.
     
-    Connectivity? (``h.topology()``)
+    Connectivity? (``n.topology()``)
 
     Are the properties what you expect? Try
 

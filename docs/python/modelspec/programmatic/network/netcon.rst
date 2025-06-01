@@ -645,7 +645,7 @@ NetCon
             python  
             
             from neuron import n
-            n.load_file('stdrun.hoc')  # for h.run() and n.cvode
+            n.load_file('stdrun.hoc')  # for n.run() and n.cvode
 
             soma = n.Section('soma')
             soma.insert(n.hh)
@@ -660,7 +660,7 @@ NetCon
             g.addexpr('v(0.5)', 1, 1, 0.8, 0.9, 2, sec=soma)
 
             def handle():
-                print(f"called handle() at time {h.t} when soma(0.5).v = {soma(0.5).v}")
+                print(f"called handle() at time {n.t} when soma(0.5).v = {soma(0.5).v}")
                 h.stoprun = True  # Will stop but may go one extra step. Also with 
                 # local step the cells will be at different times. 
                 # So may wish to do a further... 
@@ -673,8 +673,8 @@ NetCon
             n.cvode_active(True) # optional. but fixed step will probably do one extra time step 
             n.cvode.condition_order(2) # optional. but much more accurate event time evaluation. 
              
-            h.run() 
-            print(f"after h.run(), t = {h.t} when soma(0.5).v = {soma(0.5).v}")
+            n.run() 
+            print(f"after n.run(), t = {n.t} when soma(0.5).v = {soma(0.5).v}")
 
 
 

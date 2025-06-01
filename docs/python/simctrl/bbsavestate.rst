@@ -28,10 +28,10 @@ BBSaveState
         def prun(tstop, restore=False):
           pc.set_maxstep(10)
           h.stdinit()
-          bbss = h.BBSaveState()
+          bbss = n.BBSaveState()
           if restore:
             bbss.restore("temp.dat")
-            print(f'after restore t={h.t}')
+            print(f'after restore t={n.t}')
           else:
             pc.psolve(tstop/2)
             bbss.save("temp.dat")

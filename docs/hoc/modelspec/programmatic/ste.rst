@@ -31,7 +31,7 @@ StateTransitionEvent
       python
       
       from neuron import n
-      n.load_file("stdrun.hoc") # use h.run(), n.cvode, etc
+      n.load_file("stdrun.hoc") # use n.run(), n.cvode, etc
       
       soma = n.Section() # empty model not allowed.
       ste = h.StateTransitionEvent(1)
@@ -51,18 +51,18 @@ StateTransitionEvent
       ste.transition(0, 0, n._ref_t, tnext, (foo, 0))
 
       print "default dt=0.025 fixed step run"
-      h.run()
+      n.run()
       
       n.steps_per_ms = 64
       n.dt = 1.0/n.steps_per_ms
       print "dt=1/64 fixed step run ", n.dt
-      h.run()
+      n.run()
 
       for i in [1,2]:
         n.cvode.condition_order(i)
         print "cvode.condition_order() = %d" % int(n.cvode.condition_order())
         n.cvode_active(1)
-        h.run()
+        n.run()
 
     The results of a run are:
     

@@ -94,7 +94,7 @@ We will instead save spike times in a single vector (``tvec``), using a second v
     python
 
     >>> savspks() # record spike times to tvec; indices to ind
-    >>> h.run() # or hit run button on GUI
+    >>> n.run() # or hit run button on GUI
  
 
 Make sure that the same number of spikes are being saved as were saved in sp.vecs[]
@@ -129,7 +129,7 @@ Look at synchronization routine
     python
 
     >>> syncer()
-    >>> for w in np.arange(0,-5e-2,-5e-3): weight(w); h.run(); print w,syncer()
+    >>> for w in np.arange(0,-5e-2,-5e-3): weight(w); n.run(); print w,syncer()
  
 
 Exercise*: write (or find and implement) a better synchronization routine
@@ -145,7 +145,7 @@ Graph synchronization
     >>>  [vec.resize(0) for vec in veclist]        # clear
     >>>  for w in np.arange(0, -5e-2, -5e-3):
             weight(w) 
-            h.run() 
+            n.run() 
             vec[1].append(w) 
             vec[2].append(syncer())
     >>>  print vec[1].size(), vec[2].size()         # make sure nothing went wrong

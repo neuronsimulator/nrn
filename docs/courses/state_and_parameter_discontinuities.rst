@@ -31,7 +31,7 @@ To work properly with variable time step methods, models that change states and/
         python
 
         def change():
-            print(f'change at {h.t}')
+            print(f'change at {n.t}')
             soma.v += 20
 
         def setup_discontinuities():
@@ -50,7 +50,7 @@ To work properly with variable time step methods, models that change states and/
         python
 
         def change():
-            print(f'change at {h.t}')
+            print(f'change at {n.t}')
             soma.v += 20
             n.cvode.re_init()
 
@@ -62,7 +62,7 @@ To work properly with variable time step methods, models that change states and/
         python
 
         def change(action):
-            print(f'change at {h.t}: {action}')
+            print(f'change at {n.t}: {action}')
             if action == 'raise':
                 soma(0.5).hh.gnabar *= 2
             else:

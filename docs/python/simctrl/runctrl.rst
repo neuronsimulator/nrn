@@ -37,7 +37,7 @@ The run call chain is
 .. code-block::
     none
 
-        h.run --> n.continuerun --> h.step --> h.advance --> h.fadvance 
+        n.run --> n.continuerun --> h.step --> h.advance --> h.fadvance 
 
 The default advance is merely a HOC function that calls :func:`fadvance`. It may be overriden via, e.g.
 
@@ -47,7 +47,7 @@ The default advance is merely a HOC function that calls :func:`fadvance`. It may
     h('proc advance() {nrnpython("myadvance()")}')
     
     def myadvance():
-        print(f'h.t = {h.t}')
+        print(f'h.t = {n.t}')
         h.fadvance()
 
 

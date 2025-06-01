@@ -12,7 +12,7 @@ import time
 # Simulation parameters
 
 PLOTRESULTS = True  # if True, generates a graph that shows f-i curve
-h.tstop = 500  # ms, more than long enough for 15 spikes at ISI = 25 ms
+n.tstop = 500  # ms, more than long enough for 15 spikes at ISI = 25 ms
 AMP0 = 0.1  # nA -- minimum stimulus
 D_AMP = 0.02  # nA -- stim increment between runs
 NRUNS = 30
@@ -77,7 +77,7 @@ def batchrun(n):
     freqs = []
     for run_id in range(n):
         set_params(run_id)
-        h.run()
+        n.run()
         stims.append(stim.amp)
         freqs.append(get_frequency(spvec))
         print("Finished %d of %d." % (run_id + 1, n))

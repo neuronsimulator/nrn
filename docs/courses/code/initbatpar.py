@@ -19,7 +19,7 @@ pc = n.ParallelContext()
 
 # Simulation parameters
 
-h.tstop = 500  # ms, more than long enough for 15 spikes at ISI = 25 ms
+n.tstop = 500  # ms, more than long enough for 15 spikes at ISI = 25 ms
 AMP0 = 0.1  # nA -- minimum stimulus
 D_AMP = 0.02  # nA -- stim increment between runs
 NRUNS = 30
@@ -80,7 +80,7 @@ def fi(run_id):
     """set params, execute a simulation, analyze and return results"""
     # NB: run_id is sent via NEURON, which turns it into a float
     set_params(run_id)
-    h.run()
+    n.run()
     return (int(run_id), stim.amp, get_frequency(spvec))
 
 

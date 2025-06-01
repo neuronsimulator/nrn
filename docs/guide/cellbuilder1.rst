@@ -334,7 +334,7 @@ At the Python interpreter's ``>>>`` prompt, (assuming you already did a ``from n
 
 .. code:: python
 
-    h.topology()
+    n.topology()
 
 (If you instead have an ``oc>`` prompt, you're using HOC as your interpreter, and should simply type ``topology()`` instead.)
 
