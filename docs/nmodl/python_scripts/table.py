@@ -5,7 +5,7 @@ from utils.cell import Cell
 
 class TableCell(Cell):
     def _create_cell(self):
-        self.section = h.Section()
+        self.section = n.Section()
         self.section.insert("table")
 
     def record(self):

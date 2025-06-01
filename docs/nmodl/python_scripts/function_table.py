@@ -5,7 +5,7 @@ from utils.cell import Cell
 
 class k3stCell(Cell):
     def _create_cell(self):
-        self.section = h.Section()
+        self.section = n.Section()
         self.section.insert("k3st")
         tau1_values = []
         voltage_values = []

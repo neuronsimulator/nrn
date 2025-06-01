@@ -9,9 +9,9 @@ SectionList
 
 
     Syntax:
-        ``sl = h.SectionList()``
+        ``sl = n.SectionList()``
 
-        ``sl = h.SectionList(python_iterable_of_sections)``
+        ``sl = n.SectionList(python_iterable_of_sections)``
 
 
     Description:
@@ -27,7 +27,7 @@ SectionList
         .. code-block::
             python
 
-            sl = h.SectionList()
+            sl = n.SectionList()
             for sec in python_iterable_of_sections:
                 sl.append(sec)
 
@@ -108,9 +108,9 @@ SectionList
             python
 
             >>> from neuron import n
-            >>> s = h.Section('s')
-            >>> t = h.Section('t')
-            >>> u = h.Section('u')
+            >>> s = n.Section('s')
+            >>> t = n.Section('t')
+            >>> u = n.Section('u')
             >>> t.connect(s)
             t
             >>> u.connect(s)

@@ -64,7 +64,7 @@ The following code simulates and plots an action potential in a Hodgkin-Huxley p
     h = neuron.h
     h.load_file("stdrun.hoc")
 
-    soma = h.Section("soma")
+    soma = n.Section("soma")
     soma.insert(h.hh)
     soma.L = 10
     soma.diam = 10

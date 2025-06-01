@@ -71,7 +71,7 @@ General
         .. code-block::
             python
 
-            >>> s = h.Section('s')
+            >>> s = n.Section('s')
             >>> ic = h.IClamp(s(0.5))
             >>> ic.get_segment()
             s(0.5)
@@ -331,9 +331,9 @@ General
             from neuron import n
 
             # setup for three simulations
-            s1 = h.Section('s1')
-            s2 = h.Section('s2')
-            s3 = h.Section('s3')
+            s1 = n.Section('s1')
+            s2 = n.Section('s2')
+            s3 = n.Section('s3')
 
             for sec in [s1, s2, s3]:
                 sec.insert(h.hh)

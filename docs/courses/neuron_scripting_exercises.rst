@@ -14,9 +14,9 @@ Given a `list` of sections:
     from neuron import n, gui
 
     secs = [
-        h.Section('soma'),
-        h.Section('dend'),
-        h.Section('axon')
+        n.Section('soma'),
+        n.Section('dend'),
+        n.Section('axon')
     ]
 
 and given some data

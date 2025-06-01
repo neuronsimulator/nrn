@@ -89,7 +89,7 @@ LinearMechanism
 
             tstop = 5
             
-            soma = h.Section("soma")
+            soma = n.Section("soma")
             soma.insert(h.hh)
             
             # ideal voltage clamp. 
@@ -159,7 +159,7 @@ LinearMechanism
 
             nlm = h.LinearMechanism(callback, cmat, gmat, y, y0, b)
 
-            dummy = h.Section("dummy")
+            dummy = n.Section("dummy")
             trajec = h.Vector().record(y._ref_x[0])
             tvec = h.Vector().record(h._ref_t)
 

@@ -5,7 +5,7 @@ from utils.cell import Cell
 
 class cadifusCell(Cell):
     def _create_cell(self):
-        self.section = h.Section()
+        self.section = n.Section()
         self.section.insert("cadifus")
         self.section(0.001).ca_cadifus[0] = 1e-2
 

@@ -14,7 +14,7 @@ SectionRef
 
 
     Syntax:
-        ``sref = h.SectionRef(sec=section)``
+        ``sref = n.SectionRef(sec=section)``
 
 
     Description:
@@ -41,9 +41,9 @@ SectionRef
 
             from neuron import n
 
-            s = h.Section("s")
-            s2 = h.Section("s2")
-            sref = h.SectionRef(sec=s2)
+            s = n.Section("s")
+            s2 = n.Section("s2")
+            sref = n.SectionRef(sec=s2)
 
             print(sref.sec==s)  # False
             print(sref.sec==s2) # True

@@ -70,7 +70,7 @@ PlotShape
             from neuron import n
             from matplotlib import pyplot, cm
             h.load_file('c91662.ses')
-            sl = h.SectionList([sec for sec in h.allsec() if 'apic' in str(sec)])
+            sl = n.SectionList([sec for sec in h.allsec() if 'apic' in str(sec)])
             for sec in sl:
                 sec.v = 0
             ps = h.PlotShape(sl, False)
@@ -152,7 +152,7 @@ PlotShape
             from matplotlib import pyplot, cm
 
             h.load_file("c91662.ses")
-            sl = h.SectionList([sec for sec in h.allsec() if "apic" in str(sec)])
+            sl = n.SectionList([sec for sec in h.allsec() if "apic" in str(sec)])
             for sec in sl:
                 sec.v = 0
             ps = h.PlotShape(False)
@@ -270,8 +270,8 @@ PlotShape
             import plotly
             h.load_file("stdrun.hoc")
 
-            dend1 = h.Section('dend1')
-            dend2 = h.Section('dend2')
+            dend1 = n.Section('dend1')
+            dend2 = n.Section('dend2')
             dend2.connect(dend1(1))
 
             dend1.nseg = dend1.L = dend2.nseg = dend2.L = 11
@@ -587,9 +587,9 @@ PlotShape
 			from neuron import n, gui
 			import time
 
-			soma = h.Section("soma")  
+			soma = n.Section("soma")  
 
-			sl = h.SectionList() 
+			sl = n.SectionList() 
  
 			s = h.PlotShape(sl) 
 			s.colormap(3) 

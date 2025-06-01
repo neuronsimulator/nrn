@@ -155,7 +155,7 @@ Nonetheless, in isolated situations the following section may be useful:
             h('create soma, axon') 
             ax = h.axon 
 
-        makes ax a Python :class:`~neuron.h.Section` which references the hoc 
+        makes ax a Python :class:`~neuron.n.Section` which references the hoc 
         axon section. Many hoc functions use the currently accessed section;
         most of these are now available as section methods, however for user
         written hoc and in legacy code, a "sec" keyword parameter temporarily
@@ -279,7 +279,7 @@ Nonetheless, in isolated situations the following section may be useful:
             python
 
             from neuron import n
-            soma = h.Section('soma')
+            soma = n.Section('soma')
             soma.insert(h.pas)
             v = h.Vector().record(soma(0.5)._ref_v)
             pi = h.Vector().record(soma(0.5).pas._ref_i)
@@ -453,7 +453,7 @@ Nonetheless, in isolated situations the following section may be useful:
 
     Description:
         Returns the :ref:`currently accessed section <CurrentlyAccessedSection>` as a Python 
-        :class:`~neuron.h.Section` object. 
+        :class:`~neuron.n.Section` object. 
 
         .. code-block::
             python
@@ -477,13 +477,13 @@ Nonetheless, in isolated situations the following section may be useful:
 
 
 
-.. class:: neuron.h.Section
+.. class:: neuron.n.Section
 
 
     Syntax:
-        ``sec = h.Section()``
+        ``sec = n.Section()``
 
-        ``sec = h.Section([name='string', [cell=self])``
+        ``sec = n.Section([name='string', [cell=self])``
 
 
 
@@ -504,7 +504,7 @@ Nonetheless, in isolated situations the following section may be useful:
             python
 
             from neuron import n
-            sec = h.Section() 
+            sec = n.Section() 
             print(sec)         # prints __nrnsec_0x7fa44eb70000
             sec.nseg = 3       # section has 3 segments (compartments) 
             sec.insert(h.hh)   # all compartments have the hh mechanism 
@@ -558,7 +558,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            sr = h.SectionRef(sec=h.dend[2])
+            sr = n.SectionRef(sec=h.dend[2])
             sr.root.push(); print(h.secname()); h.pop_section() 
 
         or, more compactly and avoiding the modification of the section stack, 
@@ -566,7 +566,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            sr = h.SectionRef(sec=h.dend[2]) 
+            sr = n.SectionRef(sec=h.dend[2]) 
             print(sr.root.name(), h.secname(sec=sr.root))
 
          
@@ -578,7 +578,7 @@ Nonetheless, in isolated situations the following section may be useful:
             for s in h.allsec(): 
               print(s)
              
-            sl = h.SectionList(); sl.wholetree() 
+            sl = n.SectionList(); sl.wholetree() 
             for s in sl: 
               print(s)
         

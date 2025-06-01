@@ -164,7 +164,7 @@ Shape
             python
             
             from neuron import n
-            sl = h.SectionList()
+            sl = n.SectionList()
             sl.append(h.soma)
             sl.append(h.dendrite_1[8])
             h.Shape[0].observe(sl)

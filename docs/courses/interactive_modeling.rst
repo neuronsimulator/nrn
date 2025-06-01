@@ -30,7 +30,7 @@ We *could* implement this model in Python:
 
     from neuron import n, gui
 
-    axon = h.Section(name='axon')
+    axon = n.Section(name='axon')
     axon.L = 2e4
     axon.diam = 100
     axon.nseg = 43

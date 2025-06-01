@@ -315,7 +315,7 @@ MechanismType
             
             from neuron import n
 
-            cable = h.Section('cable')
+            cable = n.Section('cable')
             cable.nseg = 5  
             stim = [h.IClamp(cable(i/2.)) for i in range(3)]
 
@@ -380,7 +380,7 @@ MechanismType
             python
             
             from neuron import n
-            s = h.Section('s')
+            s = n.Section('s')
             mt = h.MechanismType(0)
             mt.select('hh')
             print(mt.file())
@@ -402,7 +402,7 @@ MechanismType
             python
             
             from neuron import n
-            s = h.Section('s')
+            s = n.Section('s')
             mt = h.MechanismType(0)
             mt.select('hh')
             print('\n'.join(mt.code().split('\n')[:4]))

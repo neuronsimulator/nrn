@@ -73,7 +73,7 @@ MechanismStandard (Parameter Control)
 
             from neuron import n, gui
 
-            soma = h.Section("soma")
+            soma = n.Section("soma")
             def pname(msname):
                 s = h.ref('')
                 for i in range(-1, 4):
@@ -207,9 +207,9 @@ MechanismStandard (Parameter Control)
 
             from neuron import n, gui
 
-            soma = h.Section('soma')
-            axon = h.Section('axon')
-            dend = [h.Section(f'dend[{i}]' for i in range(3)]
+            soma = n.Section('soma')
+            axon = n.Section('axon')
+            dend = [n.Section(f'dend[{i}]' for i in range(3)]
 
             h.hh.insert(axon)
             h.pas.insert(dend)  # puts into all dendrites in the list
@@ -280,7 +280,7 @@ MechanismStandard (Parameter Control)
 
             from neuron import n
 
-            s = h.Section('soma')
+            s = n.Section('soma')
             s.insert(h.hh)
             s(0.5).hh.gnabar = 0.5
 

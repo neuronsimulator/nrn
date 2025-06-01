@@ -40,7 +40,7 @@ or in Python
 
     from neuron import n
 
-    soma = h.Section(name='soma')
+    soma = n.Section(name='soma')
     # . . . plus more code . . .
 
 1. 

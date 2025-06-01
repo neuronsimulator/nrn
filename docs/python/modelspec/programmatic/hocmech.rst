@@ -72,7 +72,7 @@ HOC-based Mechanisms
             import math
             h.load_file("stdrun.hoc")
 
-            soma = h.Section("soma")
+            soma = n.Section("soma")
             soma.L = soma.diam = math.sqrt(100 / math.pi)
             soma.insert(h.hh)
 

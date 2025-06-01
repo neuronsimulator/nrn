@@ -647,7 +647,7 @@ NetCon
             from neuron import n
             h.load_file('stdrun.hoc')  # for h.run() and h.cvode
 
-            soma = h.Section('soma')
+            soma = n.Section('soma')
             soma.insert(h.hh)
             soma.L = 3.183098861837907
             soma.diam = 10

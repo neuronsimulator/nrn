@@ -161,7 +161,7 @@ LinearMechanism
             nlm = h.LinearMechanism(callback, cmat, gmat, y, y0, b)
             
             
-            dummy = h.Section()
+            dummy = n.Section()
             trajec = h.Vector()
             tvec = h.Vector()
             trajec.record(y._ref_x[0])

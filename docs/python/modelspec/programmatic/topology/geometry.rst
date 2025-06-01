@@ -115,7 +115,7 @@ truncated cones as long as the diameter does not change too much.
     from neuron import n
     import numpy as np
 
-    sec = h.Section('sec')
+    sec = n.Section('sec')
     sec.nseg = 11
     sec.Ra = 100
     sec.L = 1000
@@ -184,7 +184,7 @@ Example:
         from neuron import n, gui
         import numpy as np
 
-        a, b, c, d, e = [h.Section(n) for n in ['a', 'b', 'c', 'd', 'e']]
+        a, b, c, d, e = [n.Section(n) for n in ['a', 'b', 'c', 'd', 'e']]
         b.connect(a)
         c.connect(b(1), 1) # connect the 1 end of c to the 1 end of b
         d.connect(b)
@@ -258,7 +258,7 @@ Example:
         h.xradiobutton("nseg = 101", (pr, 101))
         h.xpanel()
 
-        sec = h.Section('sec')
+        sec = n.Section('sec')
         sec.Ra = 100
         sec.L = 100
         sec.nseg = 3
@@ -337,7 +337,7 @@ Example:
         from neuron import n, gui
         from math import sin, cos
 
-        sec = h.Section('sec')
+        sec = n.Section('sec')
         sec.Ra=100 
         sec.nseg = 11 
         sec.pt3dclear() 
@@ -483,7 +483,7 @@ Defining the 3D Shape
             zvec = h.Vector(theta)
             dvec = h.Vector([1] * len(theta))
 
-            dend = h.Section('dend')
+            dend = n.Section('dend')
             h.pt3dadd(xvec, yvec, zvec, dvec, sec=dend)
 
             s = h.Shape()
@@ -978,8 +978,8 @@ Reading 3D Data from NEURON
 
             from neuron import n
 
-            soma = h.Section('soma')
-            dend = h.Section('dend')
+            soma = n.Section('soma')
+            dend = n.Section('dend')
             dend.connect(soma(0.5))       
             
             soma.L = 10
@@ -1042,7 +1042,7 @@ Reading 3D Data from NEURON
             diam_change_cnt = neuron.nrn_dll_sym('diam_change_cnt', ctypes.c_int)
             print(h.diam_changed, diam_change_cnt.value)    # 1 0
 
-            s = h.Section('s')
+            s = n.Section('s')
             print(h.diam_changed, diam_change_cnt.value)    # 1 0
 
             time.sleep(0.2)

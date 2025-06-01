@@ -61,8 +61,8 @@ RangeVarPlot
 
             from neuron import n, gui
 
-            dend1 = h.Section('dend1')
-            dend2 = h.Section('dend2')
+            dend1 = n.Section('dend1')
+            dend2 = n.Section('dend2')
             dend2.connect(dend1)
 
             for sec in dend1.wholetree():
@@ -92,8 +92,8 @@ RangeVarPlot
 
             from neuron import n, gui
 
-            dend1 = h.Section('dend1')
-            dend2 = h.Section('dend2')
+            dend1 = n.Section('dend1')
+            dend2 = n.Section('dend2')
             dend2.connect(dend1)
 
             for sec in dend1.wholetree():
@@ -137,7 +137,7 @@ RangeVarPlot
             from neuron import rxd
             import matplotlib.pyplot as plt
 
-            dend1 = h.Section("dend1")
+            dend1 = n.Section("dend1")
             dend1.nseg = 4  # we stronly recommend always making nseg odd
                             # using an odd nseg means there is a middle point
 
@@ -189,7 +189,7 @@ RangeVarPlot
             import bokeh.plotting as b
             import math
 
-            dend = h.Section('dend')
+            dend = n.Section('dend')
             dend.nseg = 55
             dend.L = 6.28
 

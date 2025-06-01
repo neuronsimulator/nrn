@@ -4,8 +4,8 @@ import math
 
 class Cell:
     def __init__(self):
-        soma = h.Section(name="soma", cell=self)
-        dend = h.Section(name="dend", cell=self)
+        soma = n.Section(name="soma", cell=self)
+        dend = n.Section(name="dend", cell=self)
         dend.connect(soma)
 
         soma.nseg = 1
