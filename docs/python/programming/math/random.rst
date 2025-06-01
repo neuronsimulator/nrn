@@ -469,9 +469,9 @@ Random Class
             from neuron import n, gui
             r = n.Random() 
             r.lognormal(5,2) 
-            n=20 
-            xvec = n.Vector(n*3)	# bins look like discrete spikes 
-            for i in range(n): 
+            num=20 
+            xvec = n.Vector(num*3)	# bins look like discrete spikes 
+            for i in range(num): 
             	xvec[3*i] = i - 0.1 
             	xvec[3*i+1] = i 
             	xvec[3*i+2] = i + .1 
@@ -519,9 +519,9 @@ Random Class
             r = n.Random() 
             r.poisson(3) 
              
-            n=20 
+            num=20 
             xvec = n.Vector(n*3) 
-            for i in range(n): 
+            for i in range(num):
             	xvec[3*i] = i-.1 
             	xvec[3*i+1] = i 
             	xvec[3*i+2] = i+.1 

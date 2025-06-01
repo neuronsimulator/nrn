@@ -245,9 +245,9 @@ PWManager
 
 
     Syntax:
-        ``n = p.save("filename", group_object, ["header"])``
+        ``m = p.save("filename", group_object, ["header"])``
 
-        ``n = p.save("filename", selected, ["header"])``
+        ``m = p.save("filename", selected, ["header"])``
 
 
     Description:
@@ -272,7 +272,7 @@ PWManager
         p = n.PWManager()
         p.map(1)
         selected = 1
-        n = p.save("file", selected, "Header")
+        m = p.save("file", selected, "Header")
 
 
 ----

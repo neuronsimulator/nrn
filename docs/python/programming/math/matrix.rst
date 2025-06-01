@@ -88,7 +88,7 @@ Matrix
 
 
     Syntax:
-        ``n = m.nrow()``
+        ``num_rows = m.nrow()``
 
 
     Description:
@@ -107,7 +107,7 @@ Matrix
 
 .. method:: Matrix.ncol
 
-        n = m.ncol()
+        num_cols = m.ncol()
 
     Description:
         returns the column dimension of the matrix. Column indices range 
@@ -281,7 +281,7 @@ Matrix
 
 
     Syntax:
-        ``n = m.sprowlen(i)``
+        ``num_existing_elements = m.sprowlen(i)``
 
 
     Description:

@@ -1231,9 +1231,9 @@ Vector
 
 
     Syntax:
-        ``n = vsrc.fwrite(fileobj)``
+        ``n_written = vsrc.fwrite(fileobj)``
 
-        ``n = vsrc.fwrite(fileobj, start, end)``
+        ``n_written = vsrc.fwrite(fileobj, start, end)``
 
 
     Description:
@@ -1266,16 +1266,16 @@ Vector
 
 
     Syntax:
-        ``n = vdest.fread(fileobj)``
+        ``always_one = vdest.fread(fileobj)``
 
-        ``n = vdest.fread(fileobj, n)``
+        ``always_one = vdest.fread(fileobj, new_size)``
 
-        ``n = vdest.fread(fileobj, n, precision)``
+        ``always_one = vdest.fread(fileobj, new_size, precision)``
 
 
     Description:
         Read the elements of a vector from the file in binary as written by :meth:`~Vector.fwrite`. 
-        If the argument *n* is present, the ``Vector`` is resized before reading. Note that 
+        If the argument *new_size* is present, the ``Vector`` is resized before reading. Note that 
         files created with :meth:`~Vector.fwrite` cannot be :meth:`~Vector.fread` on a machine with different 
         byte ordering. For example, Spark and Intel CPUs have different byte ordering. 
         (Intel- and arm-based macs are both little-endian, so you can move files between them.)
@@ -1296,9 +1296,9 @@ Vector
 
 
     Syntax:
-        ``n = vec.vwrite(fileobj)``
+        ``status = vec.vwrite(fileobj)``
 
-        ``n = vec.vwrite(fileobj, precision)``
+        ``status = vec.vwrite(fileobj, precision)``
 
 
     Description:
@@ -1369,7 +1369,7 @@ Vector
 
 
     Syntax:
-        ``n = vec.vread(fileobj)``
+        ``always_one = vec.vread(fileobj)``
 
 
     Description:
@@ -1406,17 +1406,17 @@ Vector
 
 
     Syntax:
-        ``n = vec.printf()``
+        ``num_printed = vec.printf()``
 
-        ``n = vec.printf(format_string)``
+        ``num_printed = vec.printf(format_string)``
 
-        ``n = vec.printf(format_string, start, end)``
+        ``num_printed = vec.printf(format_string, start, end)``
 
-        ``n = vec.printf(fileobj)``
+        ``num_printed = vec.printf(fileobj)``
 
-        ``n = vec.printf(fileobj, format_string)``
+        ``num_printed = vec.printf(fileobj, format_string)``
 
-        ``n = vec.printf(fileobj, format_string, start, end)``
+        ``num_printed = vec.printf(fileobj, format_string, start, end)``
 
 
     Description:
@@ -1456,13 +1456,13 @@ Vector
 
 
     Syntax:
-        ``n = vec.scanf(fileobj)``
+        ``num_read = vec.scanf(fileobj)``
 
-        ``n = vec.scanf(fileobj, n)``
+        ``num_read = vec.scanf(fileobj, n)``
 
-        ``n = vec.scanf(fileobj, c, nc)``
+        ``num_read = vec.scanf(fileobj, c, nc)``
 
-        ``n = vec.scanf(fileobj, n, c, nc)``
+        ``num_read = vec.scanf(fileobj, n, c, nc)``
 
 
     Description:
@@ -1503,9 +1503,9 @@ Vector
 
 
     Syntax:
-        ``n = vec.scantil(fileobj, sentinel)``
+        ``num_read = vec.scantil(fileobj, sentinel)``
 
-        ``n = vec.scantil(fileobj, sentinel, c, nc)``
+        ``num_read = vec.scantil(fileobj, sentinel, c, nc)``
 
 
     Description:
@@ -2303,12 +2303,12 @@ Vector
 
             from neuron import n
             v = n.Vector(range(5))
-            n = v.as_numpy()
-            print(n) #[0.  1.  2.  3.  4.]
+            np_vec = v.as_numpy()
+            print(np_vec) #[0.  1.  2.  3.  4.]
             v[1] += 10
-            n[2] += 20
-            print(n) #[  0.  11.  22.   3.   4.]
-            v.printf() #0	11	22	3	4
+            np_vec[2] += 20
+            print(np_vec)  # [  0.  11.  22.   3.   4.]
+            v.printf()  # 0	11	22	3	4
 
 
 ----
@@ -3677,7 +3677,7 @@ Refer to this source for further information.
             FFT(-1, vt_dest, vfr_src, vfi_src)
          
         The forward transform (first arg = 1) requires 
-        a time domain source vector with a length of N = 2^n where n is some positive 
+        a time domain source vector with a length of N = 2^m where m is some positive 
         integer. The resultant real (cosine amplitudes) and imaginary (sine amplitudes) 
         frequency components are stored in the N/2 + 1 
         locations of the vfr_dest and vfi_dest vectors respectively (Note: 
@@ -3692,7 +3692,7 @@ Refer to this source for further information.
         vector will have a size of N. 
          
         If the source vectors are not a power of 2, then the vectors are padded 
-        with 0's til vtsrc is 2^n or vfr_src is 2^n + 1. The destination vectors 
+        with 0's til vtsrc is 2^m or vfr_src is 2^m + 1. The destination vectors 
         are resized if necessary. 
          
         This function has the property that the sequence 
@@ -3714,22 +3714,22 @@ Refer to this source for further information.
             def FFT(direction, vt, vfr, vfi):
                 if direction == 1:   # forward
                     vfr.fft(vt, 1) 
-                    n = len(vfr)
-                    vfr.div(n/2) 
+                    m = len(vfr)
+                    vfr.div(m/2) 
                     vfr[0] /= 2	# makes the spectrum appear discontinuous 
                     vfr[1] /= 2	# but the amplitudes are intuitive 
                     vfi.copy(vfr, 0, 1, -1, 1, 2)   # odd elements 
                     vfr.copy(vfr, 0, 0, -1, 1, 2)   # even elements 
-                    vfr.resize(n/2+1) 
-                    vfi.resize(n/2+1) 
-                    vfr[n/2] = vfi[0]           #highest cos started in vfr[1]
-                    vfi[0] = vfi[n/2] = 0       # weights for sin(0*i)and sin(PI*i) 
+                    vfr.resize(m/2+1) 
+                    vfi.resize(m/2+1) 
+                    vfr[m/2] = vfi[0]           #highest cos started in vfr[1]
+                    vfi[0] = vfi[m/2] = 0       # weights for sin(0*i)and sin(PI*i) 
                 else:                # inverse
                     # shuffle vfr and vfi into vt
-                    n = len(vfr)
-                    vt.copy(vfr, 0, 0, n-2, 2, 1) 
-                    vt[1] = vfr[n-1] 
-                    vt.copy(vfi, 3, 1, n-2, 2, 1) 
+                    m = len(vfr)
+                    vt.copy(vfr, 0, 0, m-2, 2, 1) 
+                    vt[1] = vfr[m-1] 
+                    vt.copy(vfi, 3, 1, m-2, 2, 1) 
                     vt[0] *= 2 
                     vt[1] *= 2  
                     vt.fft(vt, -1) 
