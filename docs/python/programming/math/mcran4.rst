@@ -77,11 +77,11 @@ mcell_ran4
                     self.mcell_func()
  
                 window = McellRan4Test()
-                h.xpanel('mcell_ran4 test') 
+                n.xpanel('mcell_ran4 test') 
                 h.xbutton('Sample', window.mcell_func) 
                 h.xvalue('highindex', (window, 'highindex'), 1, window.mcell_func) 
                 h.xvalue('lowindex', (window, 'lowindex'), 1, window.mcell_func2) 
-                h.xpanel() 
+                n.xpanel() 
 
     .. |logo1| image:: ../../images/mcran4-xvalue.png
         :width: 200px

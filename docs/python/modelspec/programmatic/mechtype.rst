@@ -207,11 +207,11 @@ MechanismType
                 print (f"selected {nameref[0]}")
 
             mtypes = [n.MechanismType(i) for i in range(2)]
-            h.xpanel("MechanismTypes")
+            n.xpanel("MechanismTypes")
             for mt in mtypes:
                 mt.action(cb)
                 mt.menu()
-            h.xpanel()
+            n.xpanel()
 
 
     .. note::

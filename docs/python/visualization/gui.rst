@@ -272,9 +272,9 @@ See :func:`xpanel` for NEURON functions to generate panels
         print(f"state y is {y}")
 
     # pop up example panel 
-    h.xpanel("Example Panel") 
+    n.xpanel("Example Panel") 
     h.xbutton("PushButton", on_push_button) 
-    h.xlabel("Following two are for variable x") 
+    n.xlabel("Following two are for variable x") 
     h.xvalue("Value Editor", x, 0, lambda: print(x[0])) 
     h.xvalue("Default Value Editor for variable x", x, 1, lambda: print(x[0]))
     h.xcheckbox("Checkbox", (__main__, "y"), on_checkbox) 
@@ -287,13 +287,13 @@ See :func:`xpanel` for NEURON functions to generate panels
     h.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
     h.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
     h.xmenu() 
-    h.xlabel("Following 3 are mutually exclusive") 
+    n.xlabel("Following 3 are mutually exclusive") 
     h.xradiobutton("Radio 1", lambda: on_radio_button(1)) 
     h.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
     h.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
-    h.xvarlabel(tempstr)
+    n.xvarlabel(tempstr)
     h.xslider(xx, 0, 100, on_slide)
-    h.xpanel()
+    n.xpanel()
 
 .. image:: ../images/panel.png
     :align: center

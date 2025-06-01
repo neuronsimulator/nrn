@@ -20,13 +20,13 @@ a class. This allows multiple independent instances to be created. For example:
             self.mystate = 0
             self.myval = 3.14
             self.checkbox = 1
-            h.xpanel('demo')
+            n.xpanel('demo')
             h.xradiobutton('Click me', (self.clicked, 0), 1)
             h.xradiobutton('or me', (self.clicked, 1), 0)
             h.xstatebutton('press me', (self, 'mystate'), self.statepressed)
             h.xcheckbox('I am a checkbox', (self, 'checkbox'), self.checkboxpressed)
             h.xvalue('Type a number', (self, 'myval'), 1, self.numberset)
-            h.xpanel()
+            n.xpanel()
         def clicked(self, choice):
             print(f'you switched the radio button! choice = {choice}')
         def statepressed(self):
@@ -56,34 +56,34 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            h.xpanel('name')
-            h.xpanel('name', [0-1])
-            h.xpanel()
-            h.xpanel(x, y)
-            h.xpanel(scroll)
-            h.xpanel(scroll, x, y)
+            n.xpanel('name')
+            n.xpanel('name', [0-1])
+            n.xpanel()
+            n.xpanel(x, y)
+            n.xpanel(scroll)
+            n.xpanel(scroll, x, y)
 
 
     Description:
          
-        ``h.xpanel("name")`` 
+        ``n.xpanel("name")`` 
 
-        ``h.xpanel("name", [0-1])`` 
+        ``n.xpanel("name", [0-1])`` 
             Title of a new panel. Every 
             button, menu, and value between this and a closing ``xpanel()`` command 
             with no arguments (or placement args) belongs to this panel. 
             If the form is used with a second argument equal to 1, then 
             the panel is laid out horizontally. Otherwise the default is vertically. 
 
-        ``h.xpanel()`` 
+        ``n.xpanel()`` 
 
-        ``h.xpanel(x, y)`` 
+        ``n.xpanel(x, y)`` 
             done constructing the panel. so map it to the screen with position 
             optionally specified. 
 
-        ``h.xpanel(scroll)`` 
+        ``n.xpanel(scroll)`` 
 
-        ``h.xpanel(scroll, x, y)`` 
+        ``n.xpanel(scroll, x, y)`` 
             as above but if the first arg is a number, then the value determines 
             whether the panel will be inside a scrollbox. Scroll = 0 means a scrollbox 
             will NOT be used. Scroll = 1 means the panel will be inside a scrollbox. 
@@ -131,9 +131,9 @@ a class. This allows multiple independent instances to be created. For example:
             def on_press():
                 print('You pressed the button.')
 
-            h.xpanel('Button demo')
+            n.xpanel('Button demo')
             h.xbutton('Press me', on_press)
-            h.xpanel()
+            n.xpanel()
 
 
         .. image:: ../../images/xbutton.png
@@ -153,11 +153,11 @@ a class. This allows multiple independent instances to be created. For example:
             def on_press3(a, b):
                 print(f'Button args: {a}, {b}')
 
-            h.xpanel('Button demo 2')
+            n.xpanel('Button demo 2')
             h.xbutton('Button 1', (on_press, 1))
             h.xbutton('Button 2', (on_press, 2))
             h.xbutton('Button 3', (on_press3, ('arg1', 'arg2')))
-            h.xpanel()
+            n.xpanel()
 
         .. image:: ../../images/xbutton2.png
             :align: center         
@@ -199,9 +199,9 @@ a class. This allows multiple independent instances to be created. For example:
             def on_press():
                 print(f'You pressed the button. The state is now: {button_state}')
 
-            h.xpanel('StateButton demo')
+            n.xpanel('StateButton demo')
             h.xstatebutton('Press me', (this_module, 'button_state'), on_press)
-            h.xpanel()
+            n.xpanel()
          
         .. image:: ../../images/xstatebutton.png
             :align: center       
@@ -263,13 +263,13 @@ a class. This allows multiple independent instances to be created. For example:
                 """function to be called when a radio button is toggled"""
                 print(n)
 
-            h.xpanel('panel')
+            n.xpanel('panel')
             h.xmenu('menu')
             for i in range(1, 11):
                 h.xradiobutton(f'item {i}', (a, i))
 
             h.xmenu()
-            h.xpanel()
+            n.xpanel()
 
          
         .. image:: ../../images/xradiobutton.png
@@ -318,14 +318,14 @@ a class. This allows multiple independent instances to be created. For example:
                 def selected2():
                     print('you selected option 2')
 
-                h.xpanel('xmenu demo')
+                n.xpanel('xmenu demo')
                 h.xmenu('one')
                 h.xmenu('two')
                 h.xbutton('option 1', selected1)
                 h.xbutton('option 2', selected2)
                 h.xmenu()
                 h.xmenu()
-                h.xpanel()
+                n.xpanel()
 
             .. image:: ../../images/xmenu1.png
                 :align: center 
@@ -344,7 +344,7 @@ a class. This allows multiple independent instances to be created. For example:
                 def item_selected(n):
                     print(f'selected value {n}')
 
-                h.xpanel("menubar") 
+                n.xpanel("menubar") 
                 h.xmenu("first") 
                 h.xbutton("one", (item_selected, 1))
                 h.xbutton("two", (item_selected, 2))
@@ -365,7 +365,7 @@ a class. This allows multiple independent instances to be created. For example:
                 h.xbutton("seven", (item_selected, 7))
                 h.xbutton("eight", (item_selected, 8))
                 h.xmenu() 
-                h.xpanel() 
+                n.xpanel() 
 
             .. image:: ../../images/xmenu2.png
                 :align: center 
@@ -405,7 +405,7 @@ a class. This allows multiple independent instances to be created. For example:
 
                 make.n = 0
 
-                h.xpanel("test") 
+                n.xpanel("test") 
                 h.xmenu("dynamic", make) 
                 xpanel() 
             
@@ -430,7 +430,7 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            h.xlabel('string')
+            n.xlabel('string')
 
 
     Description:
@@ -449,7 +449,7 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            h.xvarlabel(strref)
+            n.xvarlabel(strref)
 
 
     Description:
@@ -463,10 +463,10 @@ a class. This allows multiple independent instances to be created. For example:
             from neuron import n, gui
 
             mystr = h.ref('')
-            h.xpanel('xvarlabel demo')
-            h.xlabel('Dynamic text will appear below:')
-            h.xvarlabel(mystr)
-            h.xpanel()
+            n.xpanel('xvarlabel demo')
+            n.xlabel('Dynamic text will appear below:')
+            n.xvarlabel(mystr)
+            n.xpanel()
 
             # change the text displayed by changing mystr
             mystr[0] = 'Hello world!'
@@ -529,9 +529,9 @@ a class. This allows multiple independent instances to be created. For example:
 
             val = 42
 
-            h.xpanel('demo')
+            n.xpanel('demo')
             h.xvalue('enter value', (this_module, 'val'))
-            h.xpanel()
+            n.xpanel()
 
             # changing val in the dialog will change val as seen by the program
         
@@ -573,10 +573,10 @@ a class. This allows multiple independent instances to be created. For example:
             def show_val():
                 print(f'value is: {val[0]}')
 
-            h.xpanel('demo')
+            n.xpanel('demo')
             h.xpvalue('enter value', val, 1)
             h.xbutton('show value', show_val)
-            h.xpanel()
+            n.xpanel()
 
         .. image:: ../../images/xpvalue.png
             :align: center 
@@ -653,10 +653,10 @@ a class. This allows multiple independent instances to be created. For example:
             def show_val():
                 val_str[0] = f'Slider value: {val}'
 
-            h.xpanel('demo')
-            h.xvarlabel(val_str)
+            n.xpanel('demo')
+            n.xvarlabel(val_str)
             h.xslider((this_module, 'val'), 0, 100, show_val)
-            h.xpanel()
+            n.xpanel()
             show_val()
 
         .. image:: ../../images/xslider.png		   
@@ -675,10 +675,10 @@ a class. This allows multiple independent instances to be created. For example:
             def show_val():
                 val_str[0] = f'Slider value: {val[0]}'
 
-            h.xpanel('demo')
-            h.xvarlabel(val_str)
+            n.xpanel('demo')
+            n.xvarlabel(val_str)
             h.xslider(val, 0, 100, show_val)
-            h.xpanel()
+            n.xpanel()
             show_val()
 
 
@@ -694,13 +694,13 @@ a class. This allows multiple independent instances to be created. For example:
 
 		def __init__(self, init_val=42, label='',lower_limit=0,upper_limit=100):
 		    self._val = h.ref(init_val)
-		    h.xpanel('demo')
-		    h.xlabel(label)
+		    n.xpanel('demo')
+		    n.xlabel(label)
 		    h.xvalue('enter value', self._val, True, self._bounds_check)
 		    self.__lower_limit = lower_limit
 		    self.__upper_limit = upper_limit
 		    h.xslider(self._val, self.__lower_limit, self.__upper_limit)
-		    h.xpanel()
+		    n.xpanel()
 
 		def _bounds_check(self):
 		    self.val = self.val
@@ -715,7 +715,7 @@ a class. This allows multiple independent instances to be created. For example:
 		    self._val[0] = min(new_val, self.__upper_limit)
 
 	    if __name__=="__main__":
-		hbox=h.HBox()  # Horizontal box
+		hbox=n.HBox()  # Horizontal box
 		hbox.intercept(True)
 		length=ValuePanel(label='length.val')
 		diam=ValuePanel(init_val=2,label='diam.val',lower_limit=0, upper_limit=5)

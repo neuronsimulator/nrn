@@ -143,10 +143,10 @@ Random Class
 
             doit()
 
-            h.xpanel("MCellRan4 test") 
+            n.xpanel("MCellRan4 test") 
             h.xbutton("Sample", doit) 
             h.xvalue("Original index", index, 1, set_index_then_doit) 
-            h.xpanel()
+            n.xpanel()
 
         .. image:: ../../images/random-mcellran4.png
             :align: center
@@ -624,9 +624,9 @@ Random Class
             g = n.Graph() 
             g.size(0,40,0,200) 
             sample() 
-            h.xpanel("Resample") 
+            n.xpanel("Resample") 
             h.xbutton("Resample", sample)
-            h.xpanel() 
+            n.xpanel() 
 
         .. image:: ../../images/random-geometric.png
             :align: center
@@ -682,9 +682,9 @@ Random Class
             g = n.Graph() 
             g.size(0,20,0,50) 
             sample() 
-            h.xpanel("Resample") 
+            n.xpanel("Resample") 
             h.xbutton("Resample", sample) 
-            h.xpanel() 
+            n.xpanel() 
 
         .. image:: ../../images/random-negexp.png
             :align: center

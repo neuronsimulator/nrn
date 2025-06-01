@@ -252,11 +252,11 @@ Example:
             for seg in sec.allseg():
                 print(seg.x * sec.L, seg.diam, seg.area(), seg.ri())
 
-        h.xpanel("change nseg")
+        n.xpanel("change nseg")
         h.xradiobutton("nseg = 3", (pr, 3))
         h.xradiobutton("nseg = 11", (pr, 11))
         h.xradiobutton("nseg = 101", (pr, 101))
-        h.xpanel()
+        n.xpanel()
 
         sec = n.Section('sec')
         sec.Ra = 100
@@ -383,13 +383,13 @@ Example:
         s.action(lambda: s.select(sec=n.dendrite_1[8]))
         s.color(2, sec=n.dendrite_1[8])
 
-        h.xpanel("Change Length") 
+        n.xpanel("Change Length") 
         h.xvalue("dendrite_1[8].L", "dendrite_1[8].L", 1) # using HOC syntax
                                                           # to directly access
                                                           # the length
         h.xcheckbox("Can't change length", (__main__, 'mode'),
                     lambda: h.pt3dconst(mode, sec=n.dendrite_1[8]))
-        h.xpanel() 
+        n.xpanel() 
 
     .. image:: ../../../images/geometry4.png
         :align: center

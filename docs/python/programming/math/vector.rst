@@ -158,9 +158,9 @@ Vector
         .. code-block::
             python
 
-            h.xpanel("show a field editor") 
+            n.xpanel("show a field editor") 
             h.xpvalue("last element", vec._ref_x[len(vec)-1]) 
-            h.xpanel() 
+            n.xpanel() 
 
         Note, however, that there is a potential difficulty with the :func:`xpvalue` field 
         editor since, if vec is resized to be larger than :meth:`Vector.buffer_size` a reallocation of the
@@ -1601,9 +1601,9 @@ Vector
                     h.doNotify()
                     time.sleep(0.01)
 
-            h.xpanel("") 
+            n.xpanel("") 
             h.xbutton("run", do_run) 
-            h.xpanel() 
+            n.xpanel() 
 
 
         .. image:: ../../images/vector-plot.png
@@ -3610,13 +3610,13 @@ Refer to this source for further information.
                 def __init__(self):
                     self.c = 1
                     self.f = 1 # waves per domain, max is N/2
-                    self.box = h.VBox()
+                    self.box = n.VBox()
                     self.box.intercept(1)
-                    h.xpanel('', 1)
+                    n.xpanel('', 1)
                     h.xradiobutton('sin   ', lambda: self.p(0))
                     h.xradiobutton('cos   ', lambda: self.p(1), 1)
                     h.xvalue('freq (waves/domain)', (self, 'f'), 1, lambda: self.p(self.c))
-                    h.xpanel()
+                    n.xpanel()
                     self.g1 = n.Graph()
                     self.g2 = n.Graph()
                     self.g3 = n.Graph()
@@ -3750,14 +3750,14 @@ Refer to this source for further information.
                 def __init__(self):
                     self.delay = 0
                     self.duration = N / 2
-                    self.box = h.VBox()
+                    self.box = n.VBox()
                     self.box.intercept(1)
-                    h.xpanel('')
+                    n.xpanel('')
                     h.xvalue('delay (points)', (self, 'delay'), 1, self.p)
                     h.xvalue('duration (points)', (self, 'duration'), 1, self.p)
-                    h.xpanel()
+                    n.xpanel()
                     self.g1 = n.Graph()
-                    self.b1 = h.HBox()
+                    self.b1 = n.HBox()
                     self.b1.intercept(1)
                     self.g2 = n.Graph()
                     self.g3 = n.Graph()
@@ -3895,7 +3895,7 @@ Refer to this source for further information.
 
             from neuron import n, gui
 
-            b = h.VBox() 
+            b = n.VBox() 
             b.intercept(1) 
             g1 = n.Graph() 
             g1.size(0,200,0,10) 

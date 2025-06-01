@@ -214,11 +214,11 @@ MechanismStandard (Parameter Control)
             n.hh.insert(axon)
             n.pas.insert(dend)  # puts into all dendrites in the list
 
-            h.xpanel("Updated when MechanismStandard is changed")
+            n.xpanel("Updated when MechanismStandard is changed")
             for i, sec in enumerate(dend):
                 h.xvalue(f"dend[{i}](0.5).pas.g", sec(0.5).pas._ref_g)
 
-            h.xpanel()
+            n.xpanel()
 
             def change_pas(ms, i, j):
                 for sec in h.allsec():

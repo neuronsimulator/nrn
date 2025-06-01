@@ -8,7 +8,7 @@ Layout
 
 
     Syntax:
-        ``h.Deck()``
+        ``n.Deck()``
 
 
     Description:
@@ -25,7 +25,7 @@ Layout
             from neuron import n, gui
             from math import sin, cos
 
-            deck = h.Deck()
+            deck = n.Deck()
             deck.intercept(True)      # all following windows will be placed in the deck
             ncard = 10                # there will be 10 cards in the deck
 
@@ -47,11 +47,11 @@ Layout
             deck.intercept(False)      # 9 graphs are being made
             deck.map()                 # put the deck on the screen
             deck.flip_to(0)            # show the first plot of the deck
-            h.xpanel('flip to')        # create a panel titled "flip to"
+            n.xpanel('flip to')        # create a panel titled "flip to"
             for i in range(ncard):     # create radio buttons which will bring each card to the front
                 h.xradiobutton(f'card {i + 1}', flip_function(i), i == 0)
 
-            h.xpanel()                 # close off the set of panel commands
+            n.xpanel()                 # close off the set of panel commands
 
             for i in range(1, ncard):  # now that the first card appears on the screen, make the rest
                 deck.intercept(True)   # reopen the deck
@@ -111,7 +111,7 @@ Layout
 
             from neuron import n, gui
             
-            d = h.Deck() 
+            d = n.Deck() 
             d.map()		# actually draws the deck window on the screen 
 
         creates an empty deck window on the screen. 
@@ -242,15 +242,15 @@ Layout
 
 
     Syntax:
-        ``h.HBox()``
+        ``n.HBox()``
 
-        ``h.HBox(frame)``
+        ``n.HBox(frame)``
 
-        ``h.VBox()``
+        ``n.VBox()``
 
-        ``h.VBox(frame)``
+        ``n.VBox(frame)``
 
-        ``h.VBox(frame, 0or1)``
+        ``n.VBox(frame, 0or1)``
 
 
     Description:
@@ -291,7 +291,7 @@ Layout
             python
 
             from neuron import n, gui
-            b = h.VBox(2)
+            b = n.VBox(2)
             b.map()
 
         creates an empty box on the screen with a light gray inset frame. 
@@ -322,10 +322,10 @@ Layout
             
             from neuron import n, gui
 
-            vbox = h.VBox()
+            vbox = n.VBox()
             vbox.intercept(True)	# all following creations go into the "vbox" box 
             g = n.Graph() 
-            h.xpanel("") 
+            n.xpanel("") 
             x = h.ref(3)
             h.xpvalue('x', x) 
 
@@ -334,7 +334,7 @@ Layout
 
             h.xbutton("press me", on_button_press) 
 
-            h.xpanel() 
+            n.xpanel() 
             vbox.intercept(False)   # ends intercept mode 
             vbox.map()		        # draw the box and its contents 
 
@@ -368,7 +368,7 @@ Layout
             python
 
             from neuron import n, gui
-            b = h.VBox(2) 
+            b = n.VBox(2) 
             b.map()          # actually draws the box on the screen 
 
         creates an empty box on the screen with a light gray inset frame. 
@@ -447,7 +447,7 @@ Layout
                     print(obj.hname(), s[0], s[1], s[2], s[3])
 
             # create two vboxes, but only map 1
-            vb1, vb2 = h.VBox(), h.VBox()
+            vb1, vb2 = n.VBox(), n.VBox()
             vb1.map()
 
             def show_all_sizes():

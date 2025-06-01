@@ -209,9 +209,9 @@ PtrVector
                     h.doNotify()
                     time.sleep(0.01)
 
-            h.xpanel("") 
+            n.xpanel("") 
             h.xbutton("run", do_run) 
-            h.xpanel() 
+            n.xpanel() 
 ----
 
 .. method:: PtrVector.label
