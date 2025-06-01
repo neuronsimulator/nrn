@@ -24,32 +24,44 @@ Namespace Related
         current object context. The last form also looks in the top level
         symbol table but is useful in Python to distinguish subtypes of
         variables which appear as doubles in HOC but internally are really
-        not doubles and so cannot be pointed to by double*, eg. h.secondorder
-        which is <type 'int'> or h.nseg which returns either
+        not doubles and so cannot be pointed to by ``double*``, e.g., ``h.secondorder``
+        which is ``<type 'int'>`` or ``h._ref_nseg`` which raises either
         ``TypeError: Section access unspecified`` or
-        ``nseg  not a USERPROPERTY that can be pointed to``
+        ``TypeError: Cannot be a reference``
          
-        If the name exists return 
-         
-        2 if an objref
-         
-        3 if a Section 
-         
-        4 if a :ref:`strdef <keyword_strdef>` 
-         
-        5 if a scalar or :ref:`double <keyword_double>` variable. (if second arg is not 2)
+        If the name exists return:
 
-          if second arg is 2
+        .. list-table::
+          :header-rows: 1
 
-          5 if a scalar double
+          * - Return Value
+            - Description
+          * - 2
+            - If an objref
+          * - 3
+            - If a Section
+          * - 4
+            - If a :ref:`strdef <keyword_strdef>`
+          * - 5
+            - If a scalar or :ref:`double <keyword_double>` variable (if second arg is not 2)
 
-          6 if a double array
+        If the second argument is 2:
 
-          7 if an integer
+        .. list-table::
+          :header-rows: 1
 
-          8 if a section property
-         	         
-        1 otherwise 
+          * - Return Value
+            - Description
+          * - 5
+            - If a scalar double
+          * - 6
+            - If a double array
+          * - 7
+            - If an integer
+          * - 8
+            - If a Section property
+
+        If none of the above apply, return 1.
 
         .. ::
 
@@ -81,7 +93,7 @@ Namespace Related
 
         Checking against ``globals()`` and ``dir()`` are also often useful.
 
-        If the name is known in advance, use a ``try``/``except`` block and catch NameError and AttributeError:
+        If the name is known in advance, use a ``try``/``except`` block and catch ``NameError`` and ``AttributeError``:
 
         .. code-block::
             python
@@ -133,7 +145,7 @@ Object Related
         except that this is equal to the value returned by Python's ``hash`` function.) 
          
         If the second argument is 1, it returns the index of the object name. Returns 
-        -1 if the object is the NULLObject. 
+        -1 if the object is the ``NULLObject``. 
 
     Example:
 
@@ -160,7 +172,7 @@ Object Related
         Prints all the HOC object references (objref variables) that have been 
         declared along with the class type of the object they reference and the 
         number of references. Objects created via Python and not assigned to a 
-        HOC objref
+        HOC objref will not appear.
 
     Example:
 
@@ -220,6 +232,11 @@ Object Related
             0.0
             >>> h.allobjects(foo)
             2.0
+    
+    .. seealso::
+
+        Use a :class:`List` to programmatically loop over all instances of a
+        template.
 
 ----
 
@@ -257,7 +274,7 @@ Miscellaneous
         ``h.hoc_pointer_(&variable)``
 
     Description:
-        A function used by c and c++ implementations to request a pointer to 
+        A function used by C and C++ implementations to request a pointer to 
         the variable from its interpreter name. Not needed by or useful for the user; returns 1.0 on
         success.
 

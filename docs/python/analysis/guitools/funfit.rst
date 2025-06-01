@@ -12,6 +12,30 @@ This widget may be saved in a session.
 The FunctionFitter starts out with entries for graphing a single exponential 
 with two parameters.  When a parameter value is changed the graph is replotted. 
 
+This widget requires the GUI thread to be running, which can be enabled via:
+
+.. code-block:: 
+    python
+
+    from neuron import gui
+
+After that, it can be either opened via
+:menuselection:`NRNMainMenu --> Tools --> Fitting --> Parameterized Function` 
+or from Python via:
+
+.. code-block:: '
+    python
+
+    from neuron import h
+    h.load_file('funfit.hoc')
+    h.makefitter()
+
+Either way, the Parameterized Function Fitter window will appear:
+
+.. image:: ../../images/parameterizedfunctionfitter.png
+    :alt: Parameterized Function Fitter
+    :align: center
+
 Plot
 ~~~~
 

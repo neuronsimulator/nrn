@@ -132,7 +132,6 @@ mech_lib_shared: mod_func.o $(mod_objs) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) shared library \"${PWD}/$(mech_lib)\"\n"
 	$(CXX_LINK_SHARED) -I $(incdir) -o ${mech_lib} ${_SONAME} \
 	  $(mod_func_o) $(mod_objs) $(NRNLIB_FLAGS) $(NRNLIB_RPATH_FLAGS) $(LDFLAGS)
-	rm -f $(OBJS_DIR)/.libs/libnrnmech.so ; mkdir -p $(OBJS_DIR)/.libs ; cp $(mech_lib) $(OBJS_DIR)/.libs/libnrnmech.so
 
 mech_lib_static: mod_func.o $(mod_objs) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) static library \"${PWD}/$(mech_lib)\"\n"

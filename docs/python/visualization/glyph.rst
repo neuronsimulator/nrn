@@ -18,7 +18,7 @@ Glyph
         as many times as desired using 
 
         .. code-block::
-            none
+            python
 
             graph.glyph(g, x, y, scalex, scaley, angle) 
 
@@ -214,7 +214,7 @@ Glyph
 
 
     Description:
-        The drawing is empty 
+        The drawing is erased. 
 
          
 

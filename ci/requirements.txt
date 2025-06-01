@@ -1432,9 +1432,9 @@ overrides==7.7.0 \
     --hash=sha256:55158fa3d93b98cc75299b1e67078ad9003ca27945c76162c1c0766d6f91820a \
     --hash=sha256:c7ed9d062f78b8e4c1a7b70bd8796b35ead4d9f510227ef9c5dc7626c60d7e49
     # via jupyter-server
-packaging==21.3 \
-    --hash=sha256:dd47c42927d89ab911e606518907cc2d3a1f38bbd026385970643f9c5b8ecfeb \
-    --hash=sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522
+packaging==24.2 \
+    --hash=sha256:09abb1bccd265c01f4a3aa3f7a7db064b36514d2cba19a2f694fe6150451a759 \
+    --hash=sha256:c228a6dc5e932d346bc5739379109d49e8853dd8223571c7c5b55260edc0b97f
     # via
     #   -r docs/docs_requirements.txt
     #   -r nrn_requirements.txt
@@ -1704,9 +1704,7 @@ pygments==2.19.1 \
 pyparsing==3.2.3 \
     --hash=sha256:a749938e02d6fd0b59b356ca504a24982314bb090c383e3cf201c95ef7e2bfcf \
     --hash=sha256:b9c13f1ab8b3b542f72e28f634bad4de758ab3ce4546e4301970ad6fa77c38be
-    # via
-    #   matplotlib
-    #   packaging
+    # via matplotlib
 pytest==8.1.1 \
     --hash=sha256:2a8386cfc11fa9d2c50ee7b2a57e7d898ef90470a7a34c4b949ff59662bb78b7 \
     --hash=sha256:ac978141a75948948817d360297b7aae0fcb9d6ff6bc9ec6d514b85d5a65c044
@@ -2158,9 +2156,9 @@ send2trash==1.8.3 \
     --hash=sha256:0c31227e0bd08961c7665474a3d1ef7193929fedda4233843689baa056be46c9 \
     --hash=sha256:b18e7a3966d99871aefeb00cfbcfdced55ce4871194810fc71f4aa484b953abf
     # via jupyter-server
-setuptools==70.3.0 \
-    --hash=sha256:f171bab1dfbc86b132997f26a119f6056a57950d058587841a0082e8830f9dc5 \
-    --hash=sha256:fe384da74336c398e0d956d1cae0669bc02eed936cdb1d49b57de1990dc11ffc
+setuptools==78.1.1 \
+    --hash=sha256:c3a9c4211ff4c309edb8b8c4f1cbfa7ae324c4ba9f91ff254e3d305b9fd54561 \
+    --hash=sha256:fcc17fd9cd898242f6b4adfaca46137a9edef687f43e6f78469692a5e70d851d
     # via
     #   -r nrn_requirements.txt
     #   jupyterlab
