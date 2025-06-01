@@ -39,7 +39,7 @@ File Access (objected-oriented via NEURON)
         .. code-block::
             python
  
-            from neuron import h
+            from neuron import n
             f1 = h.File()		//state that f1, f2, and f3 are pointers to the File class 
             f2 = h.File() 
             f3 = h.File() 
@@ -424,7 +424,7 @@ File Access (objected-oriented via NEURON)
         .. code-block::
             python
                 
-            from neuron import h, gui
+            from neuron import n, gui
 
             f = h.File()
             f.chooser('', 'Example file browser', '*', 'Type file name', 'Cancel')

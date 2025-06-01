@@ -24,7 +24,7 @@ Graphs and Shape windows are instances of views into a scene.
 .. code-block::
     python
     
-    from neuron import h, gui
+    from neuron import n, gui
     
     g = h.Graph() 
     g.label("here is some text") 
@@ -163,7 +163,7 @@ Browsers are visible lists.
 .. code-block::
     python
         
-    from neuron import h, gui
+    from neuron import n, gui
 
     f = h.File()
     f.chooser('', 'Example file browser', '*', 'Type file name', 'Cancel')
@@ -245,7 +245,7 @@ See :func:`xpanel` for NEURON functions to generate panels
 .. code-block::
     python
     
-    from neuron import h, gui
+    from neuron import n, gui
     import __main__
 
     # we use refs so NEURON can see these as they change

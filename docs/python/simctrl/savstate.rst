@@ -34,7 +34,7 @@ SaveState
 
         .. code:: python
 
-            from neuron import h, rxd
+            from neuron import n, rxd
             from neuron.units import mV, ms
             h.load_file("stdrun.hoc")
 

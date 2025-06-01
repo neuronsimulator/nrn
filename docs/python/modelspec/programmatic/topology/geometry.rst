@@ -112,7 +112,7 @@ truncated cones as long as the diameter does not change too much.
 .. code-block::
     python
 
-    from neuron import h
+    from neuron import n
     import numpy as np
 
     sec = h.Section('sec')
@@ -181,7 +181,7 @@ Example:
     .. code-block::
         python
         
-        from neuron import h, gui
+        from neuron import n, gui
         import numpy as np
 
         a, b, c, d, e = [h.Section(n) for n in ['a', 'b', 'c', 'd', 'e']]
@@ -235,7 +235,7 @@ Example:
     .. code-block::
         python
         
-        from neuron import h, gui
+        from neuron import n, gui
 
         def pr(nseg):
             sec.pt3dclear()
@@ -334,7 +334,7 @@ Example:
     .. code-block::
         python
 
-        from neuron import h, gui
+        from neuron import n, gui
         from math import sin, cos
 
         sec = h.Section('sec')
@@ -373,7 +373,7 @@ Example:
     .. code-block::
         python
         
-        from neuron import h, gui
+        from neuron import n, gui
         import __main__
 
         h.xopen("$(NEURONHOME)/demo/pyramid.nrn") 
@@ -473,7 +473,7 @@ Defining the 3D Shape
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             # compute vectors defining a geometry
@@ -976,7 +976,7 @@ Reading 3D Data from NEURON
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             soma = h.Section('soma')
             dend = h.Section('dend')
@@ -1034,7 +1034,7 @@ Reading 3D Data from NEURON
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             import neuron
             import ctypes
             import time

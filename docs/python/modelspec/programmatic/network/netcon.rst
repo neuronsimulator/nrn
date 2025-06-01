@@ -644,7 +644,7 @@ NetCon
         .. code-block::
             python  
             
-            from neuron import h
+            from neuron import n
             h.load_file('stdrun.hoc')  # for h.run() and h.cvode
 
             soma = h.Section('soma')

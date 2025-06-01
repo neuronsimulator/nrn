@@ -11,7 +11,7 @@ Given a `list` of sections:
 .. code::
     python 
 
-    from neuron import h, gui 
+    from neuron import n, gui
 
     secs = [
         h.Section('soma'),

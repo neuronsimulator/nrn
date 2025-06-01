@@ -85,7 +85,7 @@ LinearMechanism
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             tstop = 5
             
@@ -142,7 +142,7 @@ LinearMechanism
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
             from math import sin
 
             cmat = h.Matrix(2, 2, 2).ident()

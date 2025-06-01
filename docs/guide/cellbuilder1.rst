@@ -330,7 +330,7 @@ Using "Continuous Create"
 
 It may come as a surprise, but if you followed the instructions up to this point, no sections will actually exist. You can test this for yourself by executing a couple of simple Python (or HOC) commands.
 
-At the Python interpreter's ``>>>`` prompt, (assuming you already did a ``from neuron import h``) enter
+At the Python interpreter's ``>>>`` prompt, (assuming you already did a ``from neuron import n``) enter
 
 .. code:: python
 
@@ -381,7 +381,7 @@ Here's a concrete example of how to do this.
 
    .. code:: python
 
-      from neuron import h, gui
+      from neuron import n, gui
       h.load_file("mycell.ses")
 
 3. Start NEURON and have it read :file:`init.py` by typing ``python -i init.py`` on a terminal.
@@ -398,7 +398,7 @@ Here's a concrete example of how to do this.
 
    .. code:: python
 
-      from neuron import h, gui
+      from neuron import n, gui
       h.load_file("mycell.ses")
       h.load_file("iclamprig.ses")
   
@@ -419,7 +419,7 @@ For instance, you could set up an interface that uses an SEClamp to do voltage c
 
     .. code:: python
 
-       from neuron import h, gui
+       from neuron import n, gui
        h.load_file("mycell.ses")
        h.load_file("iclamprig.ses")
 
@@ -427,7 +427,7 @@ For instance, you could set up an interface that uses an SEClamp to do voltage c
 
     .. code:: python
 
-       from neuron import h, gui
+       from neuron import n, gui
        h.load_file("mycell.ses")
        h.load_file("vclamprig.ses")
 

@@ -22,7 +22,7 @@ Layout
         .. code-block::
             python
         
-            from neuron import h, gui
+            from neuron import n, gui
             from math import sin, cos
 
             deck = h.Deck()
@@ -109,7 +109,7 @@ Layout
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             
             d = h.Deck() 
             d.map()		# actually draws the deck window on the screen 
@@ -290,7 +290,7 @@ Layout
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             b = h.VBox(2)
             b.map()
 
@@ -320,7 +320,7 @@ Layout
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
             vbox = h.VBox()
             vbox.intercept(True)	# all following creations go into the "vbox" box 
@@ -367,7 +367,7 @@ Layout
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             b = h.VBox(2) 
             b.map()          # actually draws the box on the screen 
 
@@ -436,7 +436,7 @@ Layout
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
             import neuron
             import numpy as np
 

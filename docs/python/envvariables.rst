@@ -35,7 +35,7 @@ NEURON_MODULE_OPTIONS
 
      export NEURON_MODULE_OPTIONS="-nogui -NFRAME 1000 -NSTACK 10000"
      python -c '
-     from neuron import h
+     from neuron import n
      h("""
        func add_recurse() {
          if ($1 == 0) { return 0 }
@@ -59,5 +59,5 @@ NEURON_MODULE_OPTIONS
     import os
     nrn_options = "-nogui -NSTACK 3000 -NFRAME 525"
     os.environ["NEURON_MODULE_OPTIONS"] = nrn_options
-    from neuron import h
+    from neuron import n
     assert(nrn_options in h.nrnversion(7))

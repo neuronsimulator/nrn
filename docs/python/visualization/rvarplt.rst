@@ -59,7 +59,7 @@ RangeVarPlot
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             dend1 = h.Section('dend1')
             dend2 = h.Section('dend2')
@@ -90,7 +90,7 @@ RangeVarPlot
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             dend1 = h.Section('dend1')
             dend2 = h.Section('dend2')
@@ -133,7 +133,7 @@ RangeVarPlot
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             from neuron import rxd
             import matplotlib.pyplot as plt
 
@@ -184,7 +184,7 @@ RangeVarPlot
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             from matplotlib import pyplot
             import bokeh.plotting as b
             import math

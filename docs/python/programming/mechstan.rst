@@ -47,7 +47,7 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
             ms1 = h.MechanismStandard('hh')
             ms2 = h.MechanismStandard('AlphaSynapse')
             ms2.set('gmax', 0.3)
@@ -71,7 +71,7 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             soma = h.Section("soma")
             def pname(msname):
@@ -109,7 +109,7 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
              
             def get_mech_globals(mechname):
                 ms = h.MechanismStandard(mechname, -1)
@@ -134,7 +134,7 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             mech = h.hh
             ms = h.MechanismStandard(mech.name)
@@ -205,7 +205,7 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             soma = h.Section('soma')
             axon = h.Section('axon')
@@ -278,7 +278,7 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             s = h.Section('soma')
             s.insert(h.hh)
@@ -475,7 +475,7 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
             ms = h.MechanismStandard('hh')
             name_strref = h.ref('')

@@ -98,7 +98,7 @@ GUIMath
         .. code::
             python
 
-            from neuron import h
+            from neuron import n
 
             gm = h.GUIMath()
             print(f'default rounding mode {gm.feround()}')

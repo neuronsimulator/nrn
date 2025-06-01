@@ -45,7 +45,7 @@ mcell_ran4
         .. code-block::  
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             class McellRan4Test:
                 def __init__(self):

@@ -21,7 +21,7 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             sf = h.StringFunctions() 
 
 
@@ -46,7 +46,7 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
     
-            from neuron import h
+            from neuron import n
             sf = h.StringFunctions()
             length = sf.len("hello")
             print(length)
@@ -79,7 +79,7 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             s1 = h.ref("allowed")
             s2 = h.ref("low")
             sf = h.StringFunctions()
@@ -112,7 +112,7 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
         
-            from neuron import h
+            from neuron import n
             s1 = h.ref("hello world")
             s2 = h.ref("")
             sf = h.StringFunctions()
@@ -149,7 +149,7 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
         
-            from neuron import h
+            from neuron import n
             s1 = h.ref("hello world")
             s2 = h.ref("")
             sf = h.StringFunctions()
@@ -177,7 +177,7 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
         
-            from neuron import h
+            from neuron import n
             s = h.ref("hello")
             sf = h.StringFunctions()
             sf.right(s, 3)
@@ -213,7 +213,7 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
         
-            from neuron import h
+            from neuron import n
             s = h.ref("hello")
             sf = h.StringFunctions()
             sf.left(s, 3)
@@ -249,7 +249,7 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
     
-            from neuron import h
+            from neuron import n
             s1 = h.ref("hello world")
             sf = h.StringFunctions()
             name = sf.is_name(s1)
@@ -261,7 +261,7 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
         
-            from neuron import h
+            from neuron import n
             sf = h.StringFunctions()
             # valid name
             print(sf.is_name("xvalue"))
@@ -299,7 +299,7 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             sf = h.StringFunctions()
             v = h.Vector()
             sf.alias(v, 't', h._ref_t)
@@ -335,7 +335,7 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
     
-            from neuron import h
+            from neuron import n
             h.load_file('stdrun.hoc')
             sf = h.StringFunctions()
             v = h.Vector()
@@ -364,7 +364,7 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             soma = h.Section('soma')
             sf = h.StringFunctions()
             sf.references(soma)
@@ -391,7 +391,7 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             h.load_file('stdrun.hoc')
             s1 = h.Section('soma')
             syn = h.ExpSyn(s1(0.5))
@@ -427,7 +427,7 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             h.load_file('stdrun.hoc')
             s1 = h.Section('soma')
             syn = h.ExpSyn(s1(0.5))

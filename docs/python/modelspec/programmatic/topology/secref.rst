@@ -39,7 +39,7 @@ SectionRef
 
         .. code::
 
-            from neuron import h
+            from neuron import n
 
             s = h.Section("s")
             s2 = h.Section("s2")

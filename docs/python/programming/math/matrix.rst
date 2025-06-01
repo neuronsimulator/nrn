@@ -140,7 +140,7 @@ Matrix
         .. code-block::
             python
             
-            >>> from neuron import h
+            >>> from neuron import n
             >>> m = h.Matrix(3, 5)
             >>> ignore_return = m.printf()
              0        0        0        0        0
@@ -218,7 +218,7 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             m = h.Matrix(4,6) 
             for i in range(m.nrow()):
@@ -317,7 +317,7 @@ Matrix
             python
 
             from __future__ import print_function
-            from neuron import h
+            from neuron import n
 
             def sparse_print(m): 
                 m.printf()
@@ -423,7 +423,7 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             f = h.File("filename") 
             f.ropen() 
@@ -462,7 +462,7 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             v1 = h.Vector([1, 2, 3, 4]) 
             m = h.Matrix(3, 4) 
@@ -485,7 +485,7 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             v1 = h.Vector(range(1, 101)) 
             m = h.Matrix(100, 100, 2) ##sparse matrix 
@@ -568,7 +568,7 @@ Matrix
             python
 
             from __future__ import print_function
-            from neuron import h
+            from neuron import n
 
             m = h.Matrix(4,4) 
             for i in range(m.nrow()):
@@ -617,7 +617,7 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             b = h.Vector(3) 
             b.indgen(1,1) 
@@ -674,7 +674,7 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             m = h.Matrix(2,2) 
             m.setval(0, 1, 20) 
@@ -710,7 +710,7 @@ Matrix
     .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             m1 = h.Matrix(6, 6) 
             for i in range(-1, 2):
@@ -849,7 +849,7 @@ Matrix
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
 
             m = h.Matrix(5,7) 
             v1 = h.Vector(5) 
@@ -925,7 +925,7 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             m = h.Matrix(8,8) 
             v1 = h.Vector(8) 
@@ -963,7 +963,7 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             m = h.Matrix(6, 6) 
             m.ident()
@@ -1000,7 +1000,7 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             m = h.Matrix(7,7) 
             v1 = h.Vector(7) 
@@ -1049,7 +1049,7 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
  
             def svdtest(a): 
                 umat = h.Matrix() 
@@ -1111,7 +1111,7 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             m = h.Matrix(1,5) 
             for i in range(5):
@@ -1153,7 +1153,7 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h    
+            from neuron import n    
 
             m = h.Matrix(5,5) 
             m.setdiag(0, 2) 
@@ -1208,7 +1208,7 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             m = h.Matrix(4,5) 
             m.from_vector(m.to_vector().indgen()).printf()
@@ -1242,7 +1242,7 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             m = h.Matrix(4,5) 
             m.from_vector(m.to_vector().indgen()).printf() 

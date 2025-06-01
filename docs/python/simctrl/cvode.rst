@@ -727,7 +727,7 @@ CVode
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             h.load_file('stdrun.hoc')    # defines h.cvode
 
             result = h.ref('')
@@ -894,7 +894,7 @@ CVode
         .. code-block::
             python
     
-    	    from neuron import h
+    	    from neuron import n
      
     	    def hi():
     	        print(f'hello from hi, h.t = {h.t}')
@@ -1319,7 +1319,7 @@ CVode
 
         .. code:: python
 
-            from neuron import h
+            from neuron import n
             h.CVode().use_fast_imem(1)
 
             def assert_whole_model_charge_conservation():
@@ -1484,7 +1484,7 @@ CVode
     
          .. code::
          
-             from neuron import h
+             from neuron import n
 
              def hello1(cort_secs):
                  print('hello1')

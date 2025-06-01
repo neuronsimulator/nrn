@@ -31,7 +31,7 @@ Open and Write to Files (Obsolete)
             ### 12 9                                  #
             ###########################################
 
-            from neuron import h
+            from neuron import n
 
             def r_open(ndat):
                 h.ropen("file.dat")
@@ -87,7 +87,7 @@ Open and Write to Files (Obsolete)
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             def w_open(ndat, x, y):
                 h.wopen("file.dat") 

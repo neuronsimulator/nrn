@@ -126,7 +126,7 @@ This document describes the construction and manipulation of a stylized topology
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
             soma = h.Section('soma')
             axon = h.Section('axon')
             dend = [h.Section(f'dend[{i}]') for i in range(3)]
@@ -156,7 +156,7 @@ This document describes the construction and manipulation of a stylized topology
 
         .. code::
 
-            from neuron import h
+            from neuron import n
             sl = [h.Section(f"s_{i}") for i in range(4)]
             for i, sec in enumerate(sl[1:]):
                 sec.connect(sl[i](1))
@@ -308,7 +308,7 @@ This document describes the construction and manipulation of a stylized topology
         .. code-block::
             python
 
-            >>> from neuron import h
+            >>> from neuron import n
             >>> soma = h.Section('soma')
             >>> dend1 = h.Section('dend1')
             >>> dend2 = h.Section('dend2')
@@ -361,7 +361,7 @@ This document describes the construction and manipulation of a stylized topology
         .. code-block::
             python
 
-            >>> from neuron import h
+            >>> from neuron import n
             >>> soma = h.Section('soma')
             >>> dend1 = h.Section('dend1')
             >>> dend2 = h.Section('dend2')
@@ -546,7 +546,7 @@ This document describes the construction and manipulation of a stylized topology
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
             soma = h.Section('soma')
             axon = h.Section('axon')
             dend = [h.Section(f'dend[{i}]') for i in range(3)]

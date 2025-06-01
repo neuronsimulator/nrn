@@ -28,7 +28,7 @@ Nonetheless, in isolated situations the following section may be useful:
 
 
     Syntax:
-        ``from neuron import h``
+        ``from neuron import n``
 
         ``h = neuron.hoc.HocObject()``
 
@@ -278,7 +278,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             soma = h.Section('soma')
             soma.insert(h.pas)
             v = h.Vector().record(soma(0.5)._ref_v)
@@ -458,7 +458,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             h(''' 
               create soma, dend[3], axon 
               access dend[1] 
@@ -503,7 +503,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             sec = h.Section() 
             print(sec)         # prints __nrnsec_0x7fa44eb70000
             sec.nseg = 3       # section has 3 segments (compartments) 
@@ -521,7 +521,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            from neuron import h 
+            from neuron import n 
             h(''' 
             objref p 
             p = new PythonObject() 

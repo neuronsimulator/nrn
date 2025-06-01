@@ -88,7 +88,7 @@ Obsolete Plotting
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             # define a HOC variable x
@@ -259,7 +259,7 @@ Obsolete Plotting
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             # plot the sin function from 0 to 10 radians 
@@ -425,7 +425,7 @@ Obsolete Plotting
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             import math
 
             h.setcolor(3)      # color 3 is red for X11; to use with EGA, change to 4

@@ -10,7 +10,7 @@ Note: When programming, it is often convenient to use the units defined in :file
 
     .. code:: python
 
-        from neuron import h
+        from neuron import n
         from neuron.units import mV, ms
         h.load_file("stdrun.hoc")
         ...

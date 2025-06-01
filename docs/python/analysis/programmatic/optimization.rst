@@ -65,7 +65,7 @@ Optimization
         .. code-block::
             python
 
-            from neuron import h 
+            from neuron import n 
             v = h.Vector([0, 0]) 
             def efun(v): 
               return (v[0] + v[1] - 5) ** 2 + 5 * (v[0] -v[1] - 15) ** 2 

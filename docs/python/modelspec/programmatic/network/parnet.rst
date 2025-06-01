@@ -61,7 +61,7 @@ ParallelNetManager
 
             .. code::
 
-                from neuron import h
+                from neuron import n
                 h.load_file('stdrun.hoc')
                 tstop = 1000
 

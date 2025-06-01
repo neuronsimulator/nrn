@@ -68,7 +68,7 @@ HOC-based Mechanisms
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             import math
             h.load_file("stdrun.hoc")
 

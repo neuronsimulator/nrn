@@ -54,7 +54,7 @@ Running and Saving Batch Jobs
         .. code-block::
             python
                      
-            from neuron import h
+            from neuron import n
 
             # define a geometry
             soma = h.Section("soma")

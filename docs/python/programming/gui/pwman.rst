@@ -41,7 +41,7 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
+        from neuron import n, gui
         p = h.PWManager()
         print(p.count())
 
@@ -65,7 +65,7 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
+        from neuron import n, gui
         p = h.PWManager()
         # not mapped
         print(p.is_mapped(1))
@@ -94,7 +94,7 @@ PWManager
     .. code-block::
         python
         
-        from neuron import h, gui
+        from neuron import n, gui
         p = h.PWManager()
         # mapped
         p.map(1)
@@ -119,7 +119,7 @@ PWManager
     .. code-block::
         python
         
-        from neuron import h, gui
+        from neuron import n, gui
         p = h.PWManager()
         # mapped
         p.map(1)
@@ -149,7 +149,7 @@ PWManager
     .. code-block::
         python
         
-        from neuron import h, gui
+        from neuron import n, gui
         p = h.PWManager()
         p.map(1)
         p.close(1)
@@ -174,7 +174,7 @@ PWManager
     .. code-block::
         python
         
-        from neuron import h, gui
+        from neuron import n, gui
         p = h.PWManager()
         p.map(1)
         p.iconify()
@@ -231,7 +231,7 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
+        from neuron import n, gui
         p = h.PWManager()
         print(p.manager())
 
@@ -268,7 +268,7 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
+        from neuron import n, gui
         p = h.PWManager()
         p.map(1)
         selected = 1
@@ -297,7 +297,7 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
+        from neuron import n, gui
         p = h.PWManager()
         g1 = p.group(0)
         g2 = p.group(1, g1)
@@ -328,7 +328,7 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
+        from neuron import n, gui
         p = h.PWManager()
         p.snape("filename")
 
@@ -355,7 +355,7 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
+        from neuron import n, gui
         p = h.PWManager()
         p.scale(2)
 ----
@@ -377,7 +377,7 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
+        from neuron import n, gui
         p = h.PWManager()
         print(p.name(0))
 
@@ -403,7 +403,7 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
+        from neuron import n, gui
         p = h.PWManager()
         p.window_place(0, 1000, 1000)
 

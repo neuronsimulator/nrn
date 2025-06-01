@@ -65,7 +65,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             
 	    # importing MPI or h.nrnmpi_init() must come before the first instantiation of ParallelContext()
 	    h.nrnmpi_init()
@@ -226,7 +226,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             h.nrnmpi_init()
 
             pc = h.ParallelContext()
@@ -1538,7 +1538,7 @@ Description:
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             h.nrnmpi_init()
             pc = h.ParallelContext()
             nhost = pc.nhost()
@@ -1620,7 +1620,7 @@ Description:
         .. code-block::
           python
           
-          from neuron import h
+          from neuron import n
           pc = h.ParallelContext()
           nhost = pc.nhost()
           rank = pc.id()
@@ -1701,7 +1701,7 @@ Description:
         .. code-block::
           python
           
-          from neuron import h
+          from neuron import n
           pc = h.ParallelContext()
           nhost = pc.nhost()
           rank = pc.id()
@@ -1787,7 +1787,7 @@ Description:
         .. code-block::
           python
           
-          from neuron import h
+          from neuron import n
           pc = h.ParallelContext()
           nhost = pc.nhost()
           rank = pc.id()
@@ -1871,7 +1871,7 @@ Description:
         .. code-block::
           python
           
-          from neuron import h
+          from neuron import n
           pc = h.ParallelContext()
           nhost = pc.nhost()
           rank = pc.id()
@@ -2083,7 +2083,7 @@ Description:
                 from mpi4py import MPI
             except:
                 pass
-            from neuron import h
+            from neuron import n
             h.nrnmpi_init() #does nothing if mpi4py succeeded
             import time
 
@@ -3484,7 +3484,7 @@ Parallel Transfer
 
         .. code-block:: python
 
-            from neuron import h, gui
+            from neuron import n, gui
             pc = h. ParallelContext()
             # construct model ...
 

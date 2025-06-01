@@ -67,7 +67,7 @@ Error Handling
         .. code::
             python
 
-            from neuron import h
+            from neuron import n
             try:
                 h.execerror("Unable to initialize model", "not enough parameters")
             except RuntimeError as e:

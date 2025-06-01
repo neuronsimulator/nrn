@@ -141,7 +141,7 @@ LinearMechanism
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             from math import sin
             
             h.load_file('nrngui.hoc')

@@ -48,7 +48,7 @@ List
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             clamps = h.IClamp(), h.IClamp(), h.IClamp()
 
@@ -222,7 +222,7 @@ List
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             my_list = h.List()
 
@@ -240,7 +240,7 @@ List
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             my_list = h.List()
             for word in ['NEURON', 'HOC', 'Python', 'NMODL']:
@@ -353,7 +353,7 @@ List
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             my_list = h.List()
 

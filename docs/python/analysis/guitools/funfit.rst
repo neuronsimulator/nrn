@@ -26,7 +26,7 @@ or from Python via:
 .. code-block:: '
     python
 
-    from neuron import h
+    from neuron import n
     h.load_file('funfit.hoc')
     h.makefitter()
 

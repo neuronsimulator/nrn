@@ -206,7 +206,7 @@ ParallelContext
         .. code-block::
             none
 
-            from neuron import h 
+            from neuron import n 
              
             def f(arg):             # a function with no context that *CHANGES* 
                return arg*arg       #except its argument 
@@ -1614,7 +1614,7 @@ Description:
         .. code-block::
           python
 
-          from neuron import h
+          from neuron import n
           pc = h.ParallelContext()
           nhost = int(pc.nhost())
           rank = int(pc.id())

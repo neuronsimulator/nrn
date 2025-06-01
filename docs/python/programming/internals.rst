@@ -152,7 +152,7 @@ Object Related
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             a, b, c = h.List(), h.List(), h.Vector()
 

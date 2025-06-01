@@ -30,7 +30,7 @@ Glyph
         .. code-block::
             python
         
-            from neuron import h, gui
+            from neuron import n, gui
             
             gr = h.Graph()
             

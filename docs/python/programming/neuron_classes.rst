@@ -10,7 +10,7 @@ exposes a number of internal established classes and functions.
 .. code-block::
     python
 
-    >>> from neuron import hoc
+    >>> from neuron import noc
     >>> hoc.
     hoc.List(
     hoc.SectionList(
@@ -24,7 +24,7 @@ classes (templates) and objects, even if they were just created. E.g.:
 .. code-block::
     python
 
-    >>> from neuron import h
+    >>> from neuron import n
     >>> # Create objects in the hoc stack
     >>> h("objref vec")
     >>> h("vec = new Vector(5, 1)")

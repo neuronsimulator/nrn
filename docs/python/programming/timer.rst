@@ -30,7 +30,7 @@ Timer
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             def foo():
                 print('Hello')

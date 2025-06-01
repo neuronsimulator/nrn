@@ -3,7 +3,7 @@ Executes one simulation with specified stimulus.
 Displays response and reports spike frequency
 """
 
-from neuron import h, gui
+from neuron import n, gui
 
 # simulation parameter
 h.tstop = 500  # ms, more than long enough for 15 spikes at ISI = 25 ms

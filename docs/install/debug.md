@@ -71,7 +71,7 @@ can be eliminated with `export PYTHONMALLOC=malloc`
 
 ```
 export PYTHONMALLOC=malloc
-valgrind `pyenv which python` -c 'from neuron import h'
+valgrind `pyenv which python` -c 'from neuron import n'
     ==47683== Memcheck, a memory error detector
     ==47683== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
     ==47683== Using Valgrind-3.17.0 and LibVEX; rerun with -h for copyright info

@@ -24,7 +24,7 @@ SectionBrowser
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             soma = h.Section('soma')
             dend = h.Section('dend')
             sl = h.SectionList([soma])  # only the soma will be shown
@@ -58,7 +58,7 @@ SectionBrowser
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             soma = h.Section('soma')
             axon = h.Section('axon')
 
@@ -91,7 +91,7 @@ SectionBrowser
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             soma = h.Section('soma')
             axon = h.Section('axon')
 
@@ -134,7 +134,7 @@ SectionBrowser
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             soma = h.Section('soma')
             axon = h.Section('axon')
 

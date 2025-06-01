@@ -20,7 +20,7 @@ We can access the ``rxd`` module in HOC via:
 
     {
         // load reaction-diffusion support and get convenient handles
-        nrnpython("from neuron import h, rxd")
+        nrnpython("from neuron import n, rxd")
         pyobj = new PythonObject()
         rxd = pyobj.rxd
         h = pyobj.h
@@ -48,7 +48,7 @@ Here's a full working example that simulates a calcium buffering reaction:
 
     {
         // load reaction-diffusion support and get convenient handles
-        nrnpython("from neuron import h, rxd")
+        nrnpython("from neuron import n, rxd")
         pyobj = new PythonObject()
         rxd = pyobj.rxd
         h = pyobj.h
@@ -284,7 +284,7 @@ functions defined in ``neuron.rxd.rxdmath`` as listed :ref:`below <hoc_rxdmath_p
             hoc
 
             // here: ca + buf <> cabuf, kf = 1, kb = 0.1
-            nrnpython("from neuron import h")
+            nrnpython("from neuron import n")
             nrnpython("ca_plus_buf = h.ca + h.buf")
             buffering = rxd.Reaction(pyobj.ca_plus_buf, cabuf, 1, 0.1)
 
@@ -294,7 +294,7 @@ functions defined in ``neuron.rxd.rxdmath`` as listed :ref:`below <hoc_rxdmath_p
         .. code::
             hoc
 
-            nrnpython("from neuron import h")
+            nrnpython("from neuron import n")
             nrnpython("kf = h.ca ** 2 / (h.ca ** 2 + (1e-3) ** 2)")
             // and then work with pyobj.kf
 

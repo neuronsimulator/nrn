@@ -30,7 +30,7 @@ Setup the model
 .. code::
     python
 
-    from neuron import h
+    from neuron import n
     import matplotlib.pyplot as plt
     import tqdm
     from IPython.display import HTML

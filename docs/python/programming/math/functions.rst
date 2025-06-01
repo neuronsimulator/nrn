@@ -108,7 +108,7 @@ Diagnostics:
     .. code-block::
         python
 
-        from neuron import h
+        from neuron import n
 
         for i in range(6, 12):
             print(i, h.exp(i))
@@ -155,7 +155,7 @@ Diagnostics:
         python
 
         import numpy as np
-        from neuron import h
+        from neuron import n
 
         v = h.Vector([0, h.PI/6, h.PI/4, h.PI/2])
         v2 = h.Vector(np.cos(v))
@@ -184,7 +184,7 @@ Diagnostics:
         python
 
         import numpy as np
-        from neuron import h
+        from neuron import n
 
         v = h.Vector([0, h.PI/6, h.PI/4, h.PI/2])
         v2 = h.Vector(np.sin(v))
@@ -214,7 +214,7 @@ Diagnostics:
         python
 
         import numpy as np
-        from neuron import h
+        from neuron import n
 
         v = h.Vector([0, 1, 2, 3])
         v2 = h.Vector(np.tanh(v))
@@ -259,7 +259,7 @@ Diagnostics:
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             print(h.atan2(0, 0)) 
             for i in range(-1, 2):

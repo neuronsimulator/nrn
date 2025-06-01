@@ -71,7 +71,7 @@ Machine Identification
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             my_machine_name = h.ref('')
             h.machine_name(my_machine_name)
             print(f"My hostname is {my_machine_name[0]}")
@@ -94,7 +94,7 @@ Machine Identification
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             type = h.unix_mac_pc()
 
             if type == 1:
@@ -162,7 +162,7 @@ Machine Identification
           none
 
           $ python 2</dev/null
-          >>> from neuron import h
+          >>> from neuron import n
           >>> h.nrnversion(9)
           '2'
 
@@ -170,7 +170,7 @@ Machine Identification
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             h.nrnversion() 
             'NEURON -- VERSION 8.2.2 HEAD (93d41fafd) 2022-12-15'
 
@@ -289,7 +289,7 @@ Timing
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             from math import sin
             h.startsw()
             for i in range(100_000):
@@ -303,7 +303,7 @@ Timing
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             from math import sin
             import time
 

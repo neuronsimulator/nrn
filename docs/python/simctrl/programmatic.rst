@@ -162,7 +162,7 @@ Functions
         .. code-block::
             python        
 
-            from neuron import h
+            from neuron import n
 
             soma = h.Section("soma")
             soma.insert(h.hh)
@@ -391,7 +391,7 @@ FInitializeHandler
             python
 
             # specify an example model 
-            from neuron import h, gui
+            from neuron import n, gui
 
             a = h.Section("a")
             b = h.Section("b")

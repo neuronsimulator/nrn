@@ -30,7 +30,7 @@ Graph
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             # Create the graph
             g = h.Graph()
@@ -255,7 +255,7 @@ Graph
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             g = h.Graph()
@@ -374,7 +374,7 @@ Graph
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             # Assign "g" the role of pointing to a Graph 
@@ -465,7 +465,7 @@ Graph
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             g = h.Graph() 
             g.size(0, 4000, -1, 1) 
@@ -564,7 +564,7 @@ Graph
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             # x = 0, 0.01, 0.02, ..., 6.28
@@ -829,7 +829,7 @@ Graph
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             g = h.Graph() 
             g.align(0, 0) 
             g.label(.5,.5, "left bottom at (.5,.5)") 
@@ -1034,7 +1034,7 @@ Graph
             python
 
               
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             g = h.Graph()
@@ -1122,7 +1122,7 @@ Graph
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             g = h.Graph()
 
@@ -1149,7 +1149,7 @@ Graph
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             # x = 0, 0.01, 0.02, ..., 6.28
@@ -1312,7 +1312,7 @@ Graph
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
             def say_hi():
                 print('Hello world!')
@@ -1365,7 +1365,7 @@ Graph
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             def on_event(event_type, x, y, keystate):
                 print(event_type, x, y, keystate)

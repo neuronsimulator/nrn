@@ -68,7 +68,7 @@ stack by the following commands. *Use this only as a last resort.*
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             
             soma = h.Section('soma')
             apical = h.Section('apical')
@@ -126,7 +126,7 @@ stack by the following commands. *Use this only as a last resort.*
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             soma = h.Section('soma')
             apical = h.Section('apical')

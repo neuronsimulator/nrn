@@ -87,7 +87,7 @@ Optimization
         .. code-block::
             none
 
-            from neuron import h 
+            from neuron import n 
             v = h.Vector(2) 
             def efun(v): 
               return (v.x[0]+v.x[1] - 5)**2 + 5*(v.x[0]-v.x[1] - 15)**2 

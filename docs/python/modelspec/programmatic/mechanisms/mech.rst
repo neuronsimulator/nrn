@@ -328,7 +328,7 @@ General
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
 
             # setup for three simulations
             s1 = h.Section('s1')
@@ -563,7 +563,7 @@ General
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
 
             nc = h.NetStim()
             ns = h.NetCon(nc, target...) 
@@ -577,7 +577,7 @@ General
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             
             ns = h.NetStim()
             ns.interval = 2
@@ -666,7 +666,7 @@ General
     .. code-block::
       python
       
-      from neuron import h
+      from neuron import n
       pc = h.ParallelContext()
 
       #Model
@@ -767,7 +767,7 @@ General
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             from neuron.units import ms, mV
             import matplotlib.pyplot as plt
             h.load_file("stdrun.hoc")

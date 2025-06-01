@@ -61,7 +61,7 @@ Getting started
 .. code::
     python
 
-    from neuron import h, gui
+    from neuron import n, gui
 
 Making the representation of the biological properties
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -133,7 +133,7 @@ In the :menuselection:`course --> cellbuilder directory`, make an init.py file w
 .. code::
     python
 
-    from neuron import h, gui
+    from neuron import n, gui
 
     #load your model specification
     h.load_file('ballstick.ses')

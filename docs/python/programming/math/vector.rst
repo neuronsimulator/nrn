@@ -361,7 +361,7 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             vec = h.Vector() 
             print(vec.label())
             vec.label("hello") 
@@ -574,7 +574,7 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             import pylab as plt, numpy as np
             h.load_file('stdrun.hoc')
             sec = h.Section('sec')
@@ -598,7 +598,7 @@ Vector
         .. code-block::
             python
         
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             # create a geometry
@@ -1046,7 +1046,7 @@ Vector
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
             
             # create and populate a HOC array
             h('double px[5]')
@@ -1064,7 +1064,7 @@ Vector
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
             import neuron
             import numpy as np
 
@@ -1586,7 +1586,7 @@ Vector
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             import time
             import numpy as np
             
@@ -1652,7 +1652,7 @@ Vector
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
             
             g = h.Graph() 
@@ -1989,7 +1989,7 @@ Vector
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             vec = h.Vector(50) 
             g = h.Graph() 
@@ -2033,7 +2033,7 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             import matplotlib.pyplot as plt
 
             vec = h.Vector(10_000)
@@ -2186,7 +2186,7 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             vec = h.Vector(range(0, 10, 2))
             h("func sq(){return $1*$1}")
             print(vec.reduce("sq", 100))
@@ -2301,7 +2301,7 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             v = h.Vector(range(5))
             n = v.as_numpy()
             print(n) #[0.  1.  2.  3.  4.]
@@ -2392,7 +2392,7 @@ Vector
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             g = h.Graph() 
             g.size(0, 3, 0, 3) 
@@ -2522,7 +2522,7 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             vec = h.Vector(range(6)) 
             vec = vec * vec
             vec1 = h.Vector()
@@ -2613,7 +2613,7 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             vec = h.Vector([0, 1, 4, 9, 16, 25]) 
             vec1 = h.Vector() 
             vec1.integral(vec, 1)	# Euler integral of vec elements approximating 
@@ -2634,7 +2634,7 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             import numpy as np
 
             # set vec to the squares of 51 values from 0 to 5
@@ -2759,7 +2759,7 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             
             r = h.Random() 
             r.uniform(0, 100) 
@@ -3052,7 +3052,7 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             import numpy as np
 
             # vec will have 51 values from 0 to 5, with increment=0.1
@@ -3602,7 +3602,7 @@ Refer to this source for further information.
         .. code-block::
             python
          
-            from neuron import h, gui
+            from neuron import n, gui
 
             N = 16    # should be a power of 2
 
@@ -3742,7 +3742,7 @@ Refer to this source for further information.
         .. code-block::
             python
  
-            from neuron import h, gui
+            from neuron import n, gui
 
             N = 128
 
@@ -3893,7 +3893,7 @@ Refer to this source for further information.
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             b = h.VBox() 
             b.intercept(1) 

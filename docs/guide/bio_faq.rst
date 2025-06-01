@@ -25,7 +25,7 @@ Example:
     .. code::
         python
 
-        from neuron import h
+        from neuron import n
         h.load_file("import3d.hoc")
 
         class Pyramidal:
@@ -64,7 +64,7 @@ center of the soma from t = 1 ms to t = 1.1 ms:
 .. code::
    python
 
-   from neuron import h
+   from neuron import n
    from neuron.units import ms
    
    # setup the model here

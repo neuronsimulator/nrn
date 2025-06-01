@@ -34,7 +34,7 @@ Got to the working directory of your choice, start python, and enter the command
 .. code::
     python
 
-    from neuron import h, gui
+    from neuron import n, gui
 
 The get a CellBuilder by selecting :menuselection:`NEURONMainMenu --> Build --> Cell Builder`
 

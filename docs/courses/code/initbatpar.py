@@ -7,7 +7,7 @@ optionally plot fi curve
 """
 
 from mpi4py import MPI
-from neuron import h
+from neuron import n
 import time
 
 # need the standard run system (didn't have to do this before, because this

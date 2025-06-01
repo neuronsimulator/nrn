@@ -97,7 +97,7 @@ This model has a home-brew interface that does not show elapsed walltime, but to
     python
 
     import time
-    from neuron import h, gui
+    from neuron import n, gui
 
     h.load_file('mosinit.hoc')
 

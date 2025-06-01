@@ -1,4 +1,4 @@
-from neuron import h, gui
+from neuron import n, gui
 
 
 class Cell:

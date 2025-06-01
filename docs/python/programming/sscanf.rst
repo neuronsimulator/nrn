@@ -26,7 +26,7 @@ String Parsing (sscanf)
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
             x = h.ref(0)
             h.sscanf('0.3', '%f', x)
             print(x[0])
@@ -39,7 +39,7 @@ String Parsing (sscanf)
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             s = h.ref('')
             x = [h.ref(0) for i in range(20)]
             y = h.ref(0)

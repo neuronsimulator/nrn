@@ -93,7 +93,7 @@ In the same directory, make an :file:`init_ss.py` file with the contents:
 .. code:: 
     python
 
-    from neuron import h, gui
+    from neuron import n, gui
 
     def ss_init(t0=-1e3, dur=1e2, dt=0.025):
         """Initialize to steady state.  

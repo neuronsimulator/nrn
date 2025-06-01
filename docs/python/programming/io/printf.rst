@@ -148,7 +148,7 @@ Redirect Standard Out
 
         .. code::
 
-            from neuron import h
+            from neuron import n
 
             def p():
                 print('one') # to original standard out

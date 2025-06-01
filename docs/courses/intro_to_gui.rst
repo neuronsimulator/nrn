@@ -38,7 +38,7 @@ or in Python
 .. code::
     python
 
-    from neuron import h
+    from neuron import n
 
     soma = h.Section(name='soma')
     # . . . plus more code . . .
@@ -61,7 +61,7 @@ or in Python
 .. code::
     python
 
-    from neuron import h, gui
+    from neuron import n, gui
 
 4. 
     **Get a CellBuilder**
@@ -256,7 +256,7 @@ Halve the duration and double the amplitude.
     .. code::
         python
 
-        from neuron import h, gui
+        from neuron import n, gui
 
         h.load_file('bilayer.hoc')
 

@@ -25,7 +25,7 @@ PtrVector
     .. code-block::
       python
       
-      from neuron import h
+      from neuron import n
       a = h.Vector(5).indgen()
       b = h.Vector(5).fill(0)
       pv = h.PtrVector(5)

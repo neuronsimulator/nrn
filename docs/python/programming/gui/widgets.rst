@@ -13,7 +13,7 @@ a class. This allows multiple independent instances to be created. For example:
 .. code-block::
     python
 
-    from neuron import h, gui
+    from neuron import n, gui
 
     class MyWindow:
         def __init__(self):
@@ -126,7 +126,7 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             def on_press():
                 print('You pressed the button.')
@@ -145,7 +145,7 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             def on_press(button_id):
                 print(f'You clicked button: {button_id}')
@@ -191,7 +191,7 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             import sys; this_module = sys.modules[__name__]
 
             button_state = 0
@@ -257,7 +257,7 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
             def a(n):
                 """function to be called when a radio button is toggled"""
@@ -310,7 +310,7 @@ a class. This allows multiple independent instances to be created. For example:
             .. code-block::
                 python
                 
-                from neuron import h, gui
+                from neuron import n, gui
 
                 def selected1():
                     print('you selected option 1')
@@ -338,7 +338,7 @@ a class. This allows multiple independent instances to be created. For example:
             .. code-block::
                 python
 
-                from neuron import h, gui
+                from neuron import n, gui
                 import sys
 
                 def item_selected(n):
@@ -393,7 +393,7 @@ a class. This allows multiple independent instances to be created. For example:
             .. code-block::
                 python
                 
-                from neuron import h, gui
+                from neuron import n, gui
 
                 def select(i):
                     print(f'you selected {i}')
@@ -460,7 +460,7 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
             mystr = h.ref('')
             h.xpanel('xvarlabel demo')
@@ -524,7 +524,7 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
             import sys; this_module = sys.modules[__name__]
 
             val = 42
@@ -566,7 +566,7 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
             val = h.ref(42)
 
@@ -645,7 +645,7 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
             import sys; this_module = sys.modules[__name__]
 
             val = 42
@@ -668,7 +668,7 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
             val = h.ref(42)
             val_str = h.ref('Slider value:         ')
@@ -688,7 +688,7 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
 	    class ValuePanel:
 

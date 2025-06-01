@@ -37,7 +37,7 @@ MechanismType
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             # Print the names of all density mechanisms 
             mt = h.MechanismType(0) 
             mname  = h.ref('')
@@ -198,7 +198,7 @@ MechanismType
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             def cb(mt, i):
                 mt.select(i)
@@ -313,7 +313,7 @@ MechanismType
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
 
             cable = h.Section('cable')
             cable.nseg = 5  
@@ -379,7 +379,7 @@ MechanismType
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
             s = h.Section('s')
             mt = h.MechanismType(0)
             mt.select('hh')
@@ -401,7 +401,7 @@ MechanismType
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
             s = h.Section('s')
             mt = h.MechanismType(0)
             mt.select('hh')

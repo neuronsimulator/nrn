@@ -30,7 +30,7 @@ StateTransitionEvent
     .. code-block::
       python
       
-      from neuron import h
+      from neuron import n
       h.load_file("stdrun.hoc") # use h.run(), h.cvode, etc
       
       soma = h.Section() # empty model not allowed.

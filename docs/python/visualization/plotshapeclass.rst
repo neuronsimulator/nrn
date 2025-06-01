@@ -44,7 +44,7 @@ PlotShape
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             from matplotlib import pyplot 
             h.load_file('c91662.ses')  # a morphology file
             for sec in h.allsec():
@@ -67,7 +67,7 @@ PlotShape
         .. code-block::   
             python
 
-            from neuron import h
+            from neuron import n
             from matplotlib import pyplot, cm
             h.load_file('c91662.ses')
             sl = h.SectionList([sec for sec in h.allsec() if 'apic' in str(sec)])
@@ -88,7 +88,7 @@ PlotShape
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             from neuron.units import mV, ms
             from matplotlib.pyplot import cm
             from matplotlib import pyplot
@@ -120,7 +120,7 @@ PlotShape
 
                 import plotly
                 import matplotlib
-                from neuron import h
+                from neuron import n
                 from neuron.units import mV, ms
 
                 h.load_file("c91662.ses")
@@ -148,7 +148,7 @@ PlotShape
         .. code-block::   
             python
 
-            from neuron import h
+            from neuron import n
             from matplotlib import pyplot, cm
 
             h.load_file("c91662.ses")
@@ -265,7 +265,7 @@ PlotShape
         .. code-block::
             python
             
-            from neuron import h, rxd
+            from neuron import n, rxd
             from neuron.units import mM, µm, ms, mV
             import plotly
             h.load_file("stdrun.hoc")
@@ -584,7 +584,7 @@ PlotShape
         .. code-block::
             python
 
-			from neuron import h, gui
+			from neuron import n, gui
 			import time
 
 			soma = h.Section("soma")  

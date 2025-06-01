@@ -125,7 +125,7 @@ Save the following to a file called :file:`initn.py`, then use python to execute
     # load libraries
     #
 
-    from neuron import h
+    from neuron import n
     from neuron.units import ms, mV
     h.load_file("stdrun.hoc")
 
@@ -257,7 +257,7 @@ This file shows how to take advantage of :meth:`NetStim.noiseFromRandom123` in y
     # load libraries
     #
 
-    from neuron import h
+    from neuron import n
     from neuron.units import ms, mV
     import matplotlib.pyplot as plt
     h.load_file("stdrun.hoc")

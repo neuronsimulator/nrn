@@ -20,7 +20,7 @@ Dialog Boxes
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
             if h.boolean_dialog('Do you prefer to code in Python or HOC?', 'Python', 'HOC'):
                 print('You prefer Python!')
@@ -53,7 +53,7 @@ Dialog Boxes
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
             h.continue_dialog("You are reading a message from a dialog box.")
         
         .. image:: ../../images/continue_dialog.png
@@ -81,7 +81,7 @@ Dialog Boxes
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             my_str = h.ref('')
             if h.string_dialog('Type a string:', my_str):

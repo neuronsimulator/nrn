@@ -25,7 +25,7 @@ PtrVector
     .. code-block::
       python
       
-      from neuron import h
+      from neuron import n
       a = h.Vector(range(5))
       b = h.Vector([0] * 5)
       pv = h.PtrVector(5)
@@ -188,7 +188,7 @@ PtrVector
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
             import time
             

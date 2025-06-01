@@ -1,4 +1,4 @@
-from neuron import h
+from neuron import n
 
 from utils.cell import Cell
 

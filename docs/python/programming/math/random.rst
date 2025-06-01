@@ -56,7 +56,7 @@ Random Class
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             r = h.Random() 
             for i in range(10): 
@@ -116,7 +116,7 @@ Random Class
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             r = h.Random() 
             index = h.ref(r.MCellRan4())
@@ -229,7 +229,7 @@ Random Class
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             r = h.Random() 
 
@@ -350,7 +350,7 @@ Random Class
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             r = h.Random() 
             # set the distribution
@@ -420,7 +420,7 @@ Random Class
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
             r = h.Random() 
             r.normal(-1, .5) 
@@ -466,7 +466,7 @@ Random Class
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             r = h.Random() 
             r.lognormal(5,2) 
             n=20 
@@ -514,7 +514,7 @@ Random Class
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             r = h.Random() 
             r.poisson(3) 
@@ -569,7 +569,7 @@ Random Class
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             r = h.Random() 
             r.binomial(20, .5) 
@@ -610,7 +610,7 @@ Random Class
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
             r = h.Random() 
             r.geometric(.8) 
@@ -668,7 +668,7 @@ Random Class
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
             r = h.Random()  
             r.negexp(2.5)  
@@ -805,7 +805,7 @@ NMODLRandom Class
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             r = h.NMODLRandom()
             print(r.uniform())
 

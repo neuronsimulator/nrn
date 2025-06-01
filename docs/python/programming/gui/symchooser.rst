@@ -84,7 +84,7 @@ SymChooser
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             h('create soma')
             h.soma.insert(h.hh)

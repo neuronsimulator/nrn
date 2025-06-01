@@ -6,7 +6,7 @@ save i & corresponding f to a file
 optionally plot fi curve
 """
 
-from neuron import h, gui
+from neuron import n, gui
 import time
 
 # Simulation parameters

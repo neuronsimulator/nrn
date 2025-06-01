@@ -119,7 +119,7 @@ Vector
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
             v = h.Vector([1, 2, 3])
         
         will create a vector of length 3 whose entries are: 1, 2, and 3. The
@@ -129,7 +129,7 @@ Vector
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
             import numpy
             
             x = numpy.linspace(0, 2 * numpy.pi, 50)
@@ -2139,7 +2139,7 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             v = h.Vector(5).indgen()
             n = v.as_numpy()
             print n #[0.  1.  2.  3.  4.]

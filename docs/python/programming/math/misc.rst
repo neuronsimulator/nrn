@@ -18,7 +18,7 @@ Miscellaneous
 
         .. code::
 
-            from neuron import h
+            from neuron import n
 
             h("""
             proc count_to_1() {for (i = 0; i < 1; i += 0.1) $o1.__call__(i)}

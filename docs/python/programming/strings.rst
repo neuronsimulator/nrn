@@ -24,7 +24,7 @@ Strings
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             strdef = h.ref('')
             h.sprint(strdef, 'There are %d %s.', 3, 'dendrites')
@@ -41,7 +41,7 @@ Strings
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             strdef = h.ref('')
             num_parts = 3

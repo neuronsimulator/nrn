@@ -93,7 +93,7 @@ Shape
             python
 
             import plotly
-            from neuron import h, gui
+            from neuron import n, gui
             from neuron.units import mV, ms
             import matplotlib
 
@@ -163,7 +163,7 @@ Shape
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
             sl = h.SectionList()
             sl.append(h.soma)
             sl.append(h.dendrite_1[8])
@@ -496,7 +496,7 @@ Shape
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             # note: this assumes Shape[0] has already been created
 

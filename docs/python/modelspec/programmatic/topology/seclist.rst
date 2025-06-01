@@ -107,7 +107,7 @@ SectionList
         .. code::
             python
 
-            >>> from neuron import h
+            >>> from neuron import n
             >>> s = h.Section('s')
             >>> t = h.Section('t')
             >>> u = h.Section('u')
