@@ -177,7 +177,7 @@ def data_compare(key, data):
 # Run all the demos and compare their results to the reference
 for i in range(1, 8):
     data = neurondemo(prgraphs, input % (i, ""))
-    key = "demo%d" % i
+    key = f"demo{i}"
     data_compare(key, data)
 
 
@@ -187,7 +187,7 @@ def special_run(key, demo_index, pre_run_stmts):
 
 
 # For full coverage of #3454, do another run of Dynamic Clamp with cvode active.
-special_run("cover3454", 6, "cvode_active(1)")
+special_run("cover3454", 6, "cvode_active(True)")
 
 chk.save()
 
