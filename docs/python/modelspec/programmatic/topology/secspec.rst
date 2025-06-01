@@ -37,7 +37,7 @@ For example:
     python
 
     my_iclamp = n.IClamp(0.25, sec=soma)   # better to use n.IClamp(soma(0.25)) though
-    num_pts_3d = h.n3d(sec=apical)         # could get the same value as an int via apical.n3d()
+    num_pts_3d = n.n3d(sec=apical)         # could get the same value as an int via apical.n3d()
  
 
 Default section
@@ -94,9 +94,9 @@ stack by the following commands. *Use this only as a last resort.*
 
 
     Syntax:
-        ``h.push_section(number)``
+        ``n.push_section(number)``
 
-        ``h.push_section(section_name)``
+        ``n.push_section(section_name)``
 
 
     Description:
@@ -109,7 +109,7 @@ stack by the following commands. *Use this only as a last resort.*
 
         :samp:`push_section({number})` 
             Push the section identified by the number returned by 
-            ``h.this_section()``, etc. which you desire to be the currently accessed 
+            ``n.this_section()``, etc. which you desire to be the currently accessed 
             section. Any section pushed must have a corresponding ``n.pop_section()``
             later or else the section stack will be corrupted. The number is 
             not guaranteed to be the same across separate invocations of NEURON. 
@@ -132,16 +132,16 @@ stack by the following commands. *Use this only as a last resort.*
             apical = n.Section('apical')
 
             # get a number to allow pushing by number
-            soma_id = h.this_section(sec=soma)
+            soma_id = n.this_section(sec=soma)
 
             # push by name
-            h.push_section('apical')
+            n.push_section('apical')
 
             # push by number
-            h.push_section(soma_id)
+            n.push_section(soma_id)
 
             # RuntimeError -- no such section
-            h.push_section('basal')
+            n.push_section('basal')
 
 
     .. seealso::

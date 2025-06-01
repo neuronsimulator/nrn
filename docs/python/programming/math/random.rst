@@ -235,7 +235,7 @@ Random Class
 
             r.negexp(1) 
 
-            h.mcell_ran4_init(1) 
+            n.mcell_ran4_init(1) 
             r.MCellRan4(1) 
 
             for i in range(11):

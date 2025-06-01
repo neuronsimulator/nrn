@@ -7,7 +7,7 @@ mcell_ran4
 .. function:: mcell_ran4
 
     Syntax:
-        ``x = h.mcell_ran4(highindex_ptr)``
+        ``x = n.mcell_ran4(highindex_ptr)``
 
 
     Description:
@@ -55,7 +55,7 @@ mcell_ran4
                     self.g1.size(0, 1000, 0, 1) 
                     self.g2.size(0, 1, 0, 150) 
                     self.highindex = 1
-                    self.lowindex = h.mcell_ran4_init() 
+                    self.lowindex = n.mcell_ran4_init() 
                     self.mcell_func()
 
                 def mcell_func(self):
@@ -63,7 +63,7 @@ mcell_ran4
                     self.g2.erase()
                     highindex_ptr = n.ref(self.highindex)
                     for i in range(len(self.vec)):            
-                        self.vec[i] = h.mcell_ran4(highindex_ptr) 
+                        self.vec[i] = n.mcell_ran4(highindex_ptr) 
                     # resync the highindex (needed for the GUI)
                     self.highindex = highindex_ptr[0]
                     self.hist = self.vec.histogram(0, 1, 0.1) 
@@ -73,7 +73,7 @@ mcell_ran4
                     self.g2.flush() 
 
                 def mcell_func2(self):
-                    h.mcell_ran4_init(self.lowindex) 
+                    n.mcell_ran4_init(self.lowindex) 
                     self.mcell_func()
  
                 window = McellRan4Test()
@@ -142,9 +142,9 @@ mcell_ran4
 
 
     Syntax:
-        ``previous_lowindex = h.mcell_ran4_init(lowindex)``
+        ``previous_lowindex = n.mcell_ran4_init(lowindex)``
 
-        ``lowindex= h.mcell_ran4_init()``
+        ``lowindex= n.mcell_ran4_init()``
 
 
     Description:
