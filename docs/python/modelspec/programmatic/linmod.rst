@@ -105,7 +105,7 @@ LinearMechanism
             n.finitialize(-65)
             while h.t < tstop:
                 print(f't={n.t:<8g} v={soma(0.5).v:<8g} y[1]={y[1]:<8g}')
-                h.fadvance()
+                n.fadvance()
 
 
 

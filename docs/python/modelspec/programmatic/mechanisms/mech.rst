@@ -352,7 +352,7 @@ General
             ap = n.Vector().record(s1(0.5)._ref_v)
             n.finitialize(-65)
             while h.t < 1:
-                h.fadvance()
+                n.fadvance()
 
             # do the three cases while playing the recorder ap
             apc = ap.c() # unfortunately, cannot play into two variables, so clone it
@@ -362,7 +362,7 @@ General
             n.finitialize(-65)
 
             while h.t < 0.4:
-                h.fadvance()
+                n.fadvance()
                 print(f'{s1.v:11g} {s2.v:11g} {s3.v:11g} {c1.i:11g} {c2.i:11g} {c3.i:11g}')
                         
 

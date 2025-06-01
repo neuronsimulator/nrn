@@ -45,7 +45,7 @@ Functions
 
 
     Syntax:
-        ``h.fadvance()``
+        ``n.fadvance()``
 
 
     Description:

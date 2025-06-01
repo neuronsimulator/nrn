@@ -654,7 +654,7 @@ CVode
             python
 
             n.CVode().active(False) 
-            h.fadvance() 
+            n.fadvance() 
             n.CVode().active(True) 
 
         in order to allow the use of the CVode functions assigning state and 
@@ -1500,8 +1500,8 @@ CVode
              # declaring a function to run with every fadvance
              n.CVode().extra_scatter_gather(0, recording_callback)
              n.finitialize(-65)
-             h.fadvance()
-             h.fadvance()
+             n.fadvance()
+             n.fadvance()
 
              # removing the previous function
              n.CVode().extra_scatter_gather_remove(recording_callback)
@@ -1512,8 +1512,8 @@ CVode
              recording_callback = (hello2, cort_secs)
              n.CVode().extra_scatter_gather(0, recording_callback)
              n.finitialize(-65)
-             h.fadvance()
-             h.fadvance()
+             n.fadvance()
+             n.fadvance()
 
 
          

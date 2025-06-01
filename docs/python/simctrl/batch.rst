@@ -31,7 +31,7 @@ Running and Saving Batch Jobs
             
             while h.t < tstop:
                 for i in range(int(tstep / dt)):
-                    h.fadvance()
+                    n.fadvance()
                 # print results to filename
 
         and produces the most efficient run on any given neuron model.  This 

@@ -362,7 +362,7 @@ Random Class
 
             # print some random numbers
             for i in range(5):
-                h.fadvance()
+                n.fadvance()
                 print(rv[0])
 
     More practically, this might be used with a fixed time step to set, say, ``n.IClamp[0]._ref_amp`` for a random current injection.

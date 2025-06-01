@@ -109,7 +109,7 @@ In the same directory, make an :file:`init_ss.py` file with the contents:
         n.cvode.active(False)
         n.dt = dt
         while (h.t < t0 + dur): 
-            h.fadvance()
+            n.fadvance()
         
         # restore cvode active/inactive state if necessary
         n.cvode.active(old_cvode_state)

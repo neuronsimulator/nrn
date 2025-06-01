@@ -52,7 +52,7 @@ The run chain that eventually calls :func:`fadvance` is
 .. code-block::
     none
 
-        n.run --> n.continuerun --> h.step --> h.advance --> h.fadvance 
+        n.run --> n.continuerun --> n.step --> n.advance --> n.fadvance 
 
 There is often reason to substitute a new step or advance 
 procedure to do intermediate calculations on the fly. 
