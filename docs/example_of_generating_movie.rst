@@ -76,7 +76,7 @@ Simulation control and image saving
 
     def neuron_images():
     # rotation
-    ps = h.PlotShape(False)
+    ps = n.PlotShape(False)
     ps.plot(plt)
     for theta in range(0, 360, 9):
       plt.gca().view_init(0, theta, vertical_axis="y")

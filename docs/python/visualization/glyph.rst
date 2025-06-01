@@ -32,7 +32,7 @@ Glyph
         
             from neuron import n, gui
             
-            gr = h.Graph()
+            gr = n.Graph()
             
             gl = h.Glyph()
             gl.circle(0,0,1)

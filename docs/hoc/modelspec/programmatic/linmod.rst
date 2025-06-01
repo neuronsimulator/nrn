@@ -167,7 +167,7 @@ LinearMechanism
             trajec.record(y._ref_x[0])
             tvec.record(h._ref_t)
             
-            graph = h.Graph()
+            graph = n.Graph()
             h.tstop=50
             
             def prun(theta0, omega0):

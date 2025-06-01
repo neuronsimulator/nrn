@@ -10,9 +10,9 @@ Graph
 
 
     Syntax:
-        ``g = h.Graph()``
+        ``g = n.Graph()``
 
-        ``g = h.Graph(False)``
+        ``g = n.Graph(False)``
 
 
     Description:
@@ -33,7 +33,7 @@ Graph
             from neuron import n, gui
 
             # Create the graph
-            g = h.Graph()
+            g = n.Graph()
 
             # specify coordinate system for the canvas drawing area
             # numbers are: xmin, xmax, ymin, ymax respectively
@@ -136,7 +136,7 @@ Graph
          
             It is easiest to control the size of the axes and the scale of 
             the graph through the graphical user interface.  Normally, when a 
-            new graph is declared (eg. ``g = h.Graph()``), the y axis 
+            new graph is declared (eg. ``g = n.Graph()``), the y axis 
             ranges from 20-180 and the x axis ranges from 50-250. 
             With the mouse arrow on the graph window, click on the right button 
             and set the arrow on :guilabel:`View` at the top of the button window 
@@ -258,7 +258,7 @@ Graph
             from neuron import n, gui
             import numpy as np
 
-            g = h.Graph()
+            g = n.Graph()
             g.size(0, 10, -1, 1)
             g.addexpr("sin(x)")
             g.addexpr("cos(x)")
@@ -381,7 +381,7 @@ Graph
             # created from the Graph class, and produces 
             # a graph window with x and y axes on the  
             # screen. 
-            g = h.Graph()
+            g = n.Graph()
 
             # size the window to fit the graph 
             g.size(-4, 4, -4, 4)
@@ -467,7 +467,7 @@ Graph
 
             from neuron import n, gui
 
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0, 4000, -1, 1) 
             
             # plot a bunch of cosine waves of different periods
@@ -572,7 +572,7 @@ Graph
             y = n.Vector(np.sin(x))
 
             # create the graph
-            g = h.Graph()
+            g = n.Graph()
             g.size(0, 6.28, -1, 1)
             g.vector(num_elements, x._ref_x[0], y._ref_x[0])
             g.flush()
@@ -607,7 +607,7 @@ Graph
         unchanged. Note that thisindex is not necessarily equal to previndex+1. 
 
     Example:
-        To iterate over all the lines in ``h.Graph[0]`` use: 
+        To iterate over all the lines in ``n.Graph[0]`` use: 
 
         .. code-block::
             python
@@ -617,14 +617,14 @@ Graph
             xvec = n.Vector() 
             yvec = n.Vector() 
             j = 0
-            i = h.Graph[0].getline(-i, xvec, yvec)
+            i = n.Graph[0].getline(-i, xvec, yvec)
             while i != -1:
             	# xvec and yvec contain the line with Graph internal index i. 
             	# and can be associated with the sequential index j. 
             	print(j, i, yvec.label)
             	xline.append(xvec.c())
             	yline.append(yvec.cl()) # clone label as well 
-                i = h.Graph[0].getline(i, xvec, yvec)
+                i = n.Graph[0].getline(i, xvec, yvec)
 
          
 
@@ -830,7 +830,7 @@ Graph
             python
 
             from neuron import n, gui
-            g = h.Graph() 
+            g = n.Graph() 
             g.align(0, 0) 
             g.label(.5,.5, "left bottom at (.5,.5)") 
             g.align(0, 1) 
@@ -1037,7 +1037,7 @@ Graph
             from neuron import n, gui
             import numpy as np
 
-            g = h.Graph()
+            g = n.Graph()
             g.size(-1, 1, -1, 1)
 
             g.beginline()   
@@ -1124,7 +1124,7 @@ Graph
 
             from neuron import n, gui
 
-            g = h.Graph()
+            g = n.Graph()
 
             def crossact(x, y, c):
               '''For g.crosshair_action(crossact)'''
@@ -1157,7 +1157,7 @@ Graph
             y = n.Vector(np.sin(x))
 
             # create the graph
-            g = h.Graph()
+            g = n.Graph()
             g.size(0, 6.28, -1, 1)
             g.vector(num_elements, x._ref_x[0], y._ref_x[0])
 
@@ -1286,7 +1286,7 @@ Graph
         .. code-block::
             python
 
-            g = h.Graph() 
+            g = n.Graph() 
             g.exec_menu("Keep Lines") 
 
 
@@ -1317,7 +1317,7 @@ Graph
             def say_hi():
                 print('Hello world!')
 
-            g = h.Graph()
+            g = n.Graph()
             g.menu_action("Say hello", say_hi)
 
         .. image:: ../images/graph-menuaction.png
@@ -1370,7 +1370,7 @@ Graph
             def on_event(event_type, x, y, keystate):
                 print(event_type, x, y, keystate)
 
-            g = h.Graph()
+            g = n.Graph()
             g.menu_tool("mouse events", on_event)
 
         In this example, you must first select "mouse events" from the Graph's menu,

@@ -655,7 +655,7 @@ NetCon
             ic.dur = 0.1
             ic.amp = 3
 
-            g = h.Graph()
+            g = n.Graph()
             g.size(0, 5, -80, 40)
             g.addexpr('v(0.5)', 1, 1, 0.8, 0.9, 2, sec=soma)
 

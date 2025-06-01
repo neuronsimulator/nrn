@@ -192,7 +192,7 @@ PtrVector
             import numpy as np
             import time
             
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0, 10, -1, 1) 
             vec = n.Vector(np.sin(np.arange(0, 10.1, 0.1))
 

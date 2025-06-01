@@ -122,8 +122,8 @@ Random Class
             index = h.ref(r.MCellRan4())
             r.uniform(0, 2) 
             vec = n.Vector(1000) 
-            g1 = h.Graph() 
-            g2 = h.Graph() 
+            g1 = n.Graph() 
+            g2 = n.Graph() 
             g1.size(0, 1000, 0, 2) 
             g2.size(0, 2, 0, 150) 
 
@@ -428,7 +428,7 @@ Random Class
             vec = n.Vector() 
             vec.indgen(-3, 2, .1)	# x-axis for plot 
             hist = n.Vector(vec.size()) 
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(-3, 2, 0, 50) 
             hist.plot(g, vec)
             for i in range(500):
@@ -477,7 +477,7 @@ Random Class
             	xvec[3*i+2] = i + .1 
             
             hist = n.Vector(xvec.size()) 
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0, 15, 0, 120) 
             hist.plot(g, xvec) 
             for i in range(500):
@@ -527,7 +527,7 @@ Random Class
             	xvec[3*i+2] = i+.1 
             
             hist = n.Vector(xvec.size()) 
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0, 15, 0, 120) 
             hist.plot(g, xvec)
             for i in range(500):
@@ -574,7 +574,7 @@ Random Class
             r = h.Random() 
             r.binomial(20, .5) 
              
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0, 20, 0, 100) 
             hist = n.Vector(20) 
             hist.plot(g) 
@@ -621,7 +621,7 @@ Random Class
             	hist = hist.histogram(0,100,1) 
             	hist.plot(g) 
             
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0,40,0,200) 
             sample() 
             h.xpanel("Resample") 
@@ -679,7 +679,7 @@ Random Class
                     hist = hist.histogram(0,20,.1) 
                     hist.plot(g, .1) 
             
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0,20,0,50) 
             sample() 
             h.xpanel("Resample") 

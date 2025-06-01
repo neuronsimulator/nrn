@@ -26,7 +26,7 @@ Graphs and Shape windows are instances of views into a scene.
     
     from neuron import n, gui
     
-    g = h.Graph() 
+    g = n.Graph() 
     g.label("here is some text") 
     g.beginline() 
     g.line(100, 50) 

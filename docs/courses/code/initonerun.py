@@ -48,7 +48,7 @@ def get_frequency():
 
 def onerun(amp):
     # amp = amplitude of stimulus current
-    g = h.Graph(0)
+    g = n.Graph(0)
     g.size(0, 500, -80, 40)
     g.view(0, -80, 500, 120, 2, 105, 300.48, 200.32)
     # update graph throughout the simulation

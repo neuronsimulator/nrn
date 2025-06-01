@@ -31,7 +31,7 @@ Layout
 
             def mkgraph(n):
                 """make a new graph"""
-                g = h.Graph()          # the new graph is declared
+                g = n.Graph()          # the new graph is declared
                 g.size(-4, 4, -4, 4)   # and given a size
                 g.begin()
                 for i in range(629):
@@ -324,7 +324,7 @@ Layout
 
             vbox = h.VBox()
             vbox.intercept(True)	# all following creations go into the "vbox" box 
-            g = h.Graph() 
+            g = n.Graph() 
             h.xpanel("") 
             x = h.ref(3)
             h.xpvalue('x', x) 

@@ -78,7 +78,7 @@ RangeVarPlot
             n.continuerun(1)
 
             rvp = h.RangeVarPlot('v', dend1(0), dend2(1))
-            g = h.Graph()
+            g = n.Graph()
             g.addobject(rvp)
             g.size(0, 1002, -70, 50)
 
@@ -109,7 +109,7 @@ RangeVarPlot
                 return y
 
             rvp = h.RangeVarPlot(my_func, dend1(0), dend2(1))
-            g = h.Graph()
+            g = n.Graph()
             g.addobject(rvp)
             g.size(0, 1002, 0, 2)
             g.flush()
@@ -126,7 +126,7 @@ RangeVarPlot
             rvp = h.RangeVarPlot(imp.transfer)
             rvp... #specify range begin and end 
             imp... #specify impedance computation 
-            g = h.Graph() 
+            g = n.Graph() 
             g.addobject(rvp)
 
     Example (plotting a rxd species):
@@ -204,7 +204,7 @@ RangeVarPlot
             r.plot(graph, linewidth=10, color='r')
 
             #NEURON graph
-            g = h.Graph()
+            g = n.Graph()
             r.plot(g, 2, 3)
             g.exec_menu('View = plot')
 

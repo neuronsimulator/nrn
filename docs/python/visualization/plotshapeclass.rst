@@ -33,7 +33,7 @@ PlotShape
 
     .. note::
     
-        If Interviews is enabled, the flag ``False`` must be passed to the ``h.PlotShape``
+        If Interviews is enabled, the flag ``False`` must be passed to the ``n.PlotShape``
 	constructor to avoid additionally displaying a PlotShape using Interviews graphics.
 	See the example:
 
@@ -50,7 +50,7 @@ PlotShape
             for sec in h.allsec():
                 if 'apic' in str(sec):
                     sec.v = 0
-            ps = h.PlotShape(False)  # False tells h.PlotShape not to use NEURON's gui
+            ps = n.PlotShape(False)  # False tells n.PlotShape not to use NEURON's gui
             ps.plot(pyplot)
             pyplot.show()
         
@@ -73,7 +73,7 @@ PlotShape
             sl = n.SectionList([sec for sec in h.allsec() if 'apic' in str(sec)])
             for sec in sl:
                 sec.v = 0
-            ps = h.PlotShape(sl, False)
+            ps = n.PlotShape(sl, False)
             ps.scale(-80, 40)
             ps.variable('v')
             ax = ps.plot(pyplot, cmap=cm.jet)
@@ -107,7 +107,7 @@ PlotShape
             n.finitialize(-65 * mV)
             n.continuerun(2 * ms)
 
-            ps = h.PlotShape(False)
+            ps = n.PlotShape(False)
             ps.variable("v")
             ps.show(1)
             ps.plot(pyplot, cmap=cm.magma, line_width=10, color="red")
@@ -136,7 +136,7 @@ PlotShape
                 n.finitialize(-65 * mV)
                 n.continuerun(2 * ms)
 
-                ps = h.PlotShape(False)
+                ps = n.PlotShape(False)
                 ps.variable("v")
                 ps.show(1)
                 ps.plot(plotly, width=7, cmap=matplotlib.colormaps["viridis"]).show()
@@ -155,7 +155,7 @@ PlotShape
             sl = n.SectionList([sec for sec in h.allsec() if "apic" in str(sec)])
             for sec in sl:
                 sec.v = 0
-            ps = h.PlotShape(False)
+            ps = n.PlotShape(False)
             ps.scale(-80, 40)
             ps.variable("v")
             ax = ps.plot(pyplot, line_width=3, color="red")
@@ -287,7 +287,7 @@ PlotShape
             n.finitialize(-65 * mV)
             n.continuerun(50 * ms)
 
-            ps = h.PlotShape(False)
+            ps = n.PlotShape(False)
 
             ps.variable(ca[cyt])
 
@@ -450,7 +450,7 @@ PlotShape
 .. method:: PlotShape.mark
 
     Syntax:
-        ``ps = h.PlotShape(False)``
+        ``ps = n.PlotShape(False)``
 
         ``ps.plot(pyplot).mark(h.soma[0](0.5)).mark(h.apical_dendrite[68](1))``
 
@@ -591,7 +591,7 @@ PlotShape
 
 			sl = n.SectionList() 
  
-			s = h.PlotShape(sl) 
+			s = n.PlotShape(sl) 
 			s.colormap(3) 
 			s.colormap(0, 255, 0, 0) 
 			s.colormap(1, 255, 255, 0) 

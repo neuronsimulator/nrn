@@ -111,7 +111,7 @@ Shape
             n.finitialize(-65 * mV)
             n.continuerun(2 * ms)
 
-            ps = h.PlotShape(False)
+            ps = n.PlotShape(False)
             ps.variable("v")
             print(ps.show())  # prints the current mode
             ps.show(0)  # alters the mode to 0 that displays diameters for each segment

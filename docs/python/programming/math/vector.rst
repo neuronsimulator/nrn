@@ -617,7 +617,7 @@ Vector
             y.play(soma(0.5)._ref_ina, t, True)
 
             # setup a graph
-            g = h.Graph()
+            g = n.Graph()
             g.addvar("ina", soma(0.5)._ref_ina)
             g.size(0, 6.28, -1, 1)
             h.graphList[0].append(g)
@@ -1590,7 +1590,7 @@ Vector
             import time
             import numpy as np
             
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0, 10, -1, 1) 
             vec = n.Vector(np.sin(np.arange(0, 10, 0.1))) 
             vec.plot(g, 0.1) 
@@ -1655,7 +1655,7 @@ Vector
             from neuron import n, gui
             import numpy as np
             
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0, 10, -1, 1) 
             vec = n.Vector(np.sin(np.arange(0, 10, 0.1))) 
             for i in range(4):
@@ -1702,7 +1702,7 @@ Vector
         .. code-block::
             python
 
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0, 100, 0, 250) 
             vec = n.Vector(range(0, 201, 20)) 
             xvec = n.Vector(range(0, 101, 10)) 
@@ -1806,7 +1806,7 @@ Vector
             hist = interval.histogram(0, 10, 0.1) 
              
             # and for a manhattan style plot ... 
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0, 10, 0, 30) 
             # create an index vector with 0,0, 1,1, 2,2, 3,3, ... 
             v2 = n.Vector(2*len(hist))
@@ -1897,7 +1897,7 @@ Vector
             x = n.Vector(len(hist))
             x.indgen(-4, 6, 0.5) 
              
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(-4, 6, 0, 30) 
             hist.plot(g, x) 
 
@@ -1992,7 +1992,7 @@ Vector
             from neuron import n, gui
 
             vec = n.Vector(50) 
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0,50,0,100) 
             r = h.Random() 
             r.poisson(0.2) 
@@ -2394,7 +2394,7 @@ Vector
 
             from neuron import n, gui
 
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0, 3, 0, 3) 
              
             def fun(a, x, y):
@@ -2446,7 +2446,7 @@ Vector
         .. code-block::
             python
                 
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0,10,0,100) 
 
             #... 
@@ -3617,9 +3617,9 @@ Refer to this source for further information.
                     h.xradiobutton('cos   ', lambda: self.p(1), 1)
                     h.xvalue('freq (waves/domain)', (self, 'f'), 1, lambda: self.p(self.c))
                     h.xpanel()
-                    self.g1 = h.Graph()
-                    self.g2 = h.Graph()
-                    self.g3 = h.Graph()
+                    self.g1 = n.Graph()
+                    self.g2 = n.Graph()
+                    self.g3 = n.Graph()
                     self.box.intercept(0)
                     self.box.map()
                     self.g1.size(0, N, -1, 1)
@@ -3756,14 +3756,14 @@ Refer to this source for further information.
                     h.xvalue('delay (points)', (self, 'delay'), 1, self.p)
                     h.xvalue('duration (points)', (self, 'duration'), 1, self.p)
                     h.xpanel()
-                    self.g1 = h.Graph()
+                    self.g1 = n.Graph()
                     self.b1 = h.HBox()
                     self.b1.intercept(1)
-                    self.g2 = h.Graph()
-                    self.g3 = h.Graph()
+                    self.g2 = n.Graph()
+                    self.g3 = n.Graph()
                     self.b1.intercept(0)
                     self.b1.map()
-                    self.g4 = h.Graph()
+                    self.g4 = n.Graph()
                     self.box.intercept(0)
                     self.box.map()
                     self.g1.size(0, N, -1, 1)
@@ -3897,9 +3897,9 @@ Refer to this source for further information.
 
             b = h.VBox() 
             b.intercept(1) 
-            g1 = h.Graph() 
+            g1 = n.Graph() 
             g1.size(0,200,0,10) 
-            g2 = h.Graph() 
+            g2 = n.Graph() 
             g2.size(0,200,0,10) 
             b.intercept(0) 
             b.map("psth and mean freq") 

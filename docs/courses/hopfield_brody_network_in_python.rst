@@ -115,7 +115,7 @@ Graph spike times -- should look like SpikePlot1 graph
 .. code::
     python
 
-    >>> g = h.Graph()
+    >>> g = n.Graph()
     >>> ind.mark(g,tvec) # throw them up there
     >>> showspks() # fancier marking with sync lines
 
