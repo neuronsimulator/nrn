@@ -211,7 +211,7 @@ ParallelContext
             def f(arg):             # a function with no context that *CHANGES* 
                return arg*arg       #except its argument 
              
-            pc = h.ParallelContext() 
+            pc = n.ParallelContext() 
             pc.runworker()          # master returns immediately, workers in 
                                     # infinite loop 
             s = 0 
@@ -1615,7 +1615,7 @@ Description:
           python
 
           from neuron import n
-          pc = h.ParallelContext()
+          pc = n.ParallelContext()
           nhost = int(pc.nhost())
           rank = int(pc.id())
           

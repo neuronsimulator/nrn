@@ -93,8 +93,8 @@ LinearMechanism
             soma.insert(h.hh)
             
             # ideal voltage clamp. 
-            c = h.Matrix(2, 2, 2) # sparse - no elements used 
-            g = h.Matrix(2, 2) 
+            c = n.Matrix(2, 2, 2) # sparse - no elements used 
+            g = n.Matrix(2, 2) 
             y = n.Vector([0, 0])       # y[1] is injected current 
             b = n.Vector([0, 10])      # b[1] is voltage clamp level 
             g.setval(0, 1, -1)
@@ -145,9 +145,9 @@ LinearMechanism
             from neuron import n, gui
             from math import sin
 
-            cmat = h.Matrix(2, 2, 2).ident()
+            cmat = n.Matrix(2, 2, 2).ident()
 
-            gmat = h.Matrix(2, 2, 2)
+            gmat = n.Matrix(2, 2, 2)
             gmat.setval(0, 1, -1)
 
             y = n.Vector(2)

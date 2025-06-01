@@ -451,7 +451,7 @@ Layout
             vb1.map()
 
             def show_all_sizes():
-                for vbox in h.List('VBox'):
+                for vbox in n.List('VBox'):
                     size(vbox)
 
             show_all_sizes()

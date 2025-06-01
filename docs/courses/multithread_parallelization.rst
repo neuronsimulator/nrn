@@ -117,7 +117,7 @@ Sadly, threads cannot be used when any :attr:`NetCon.delay` is 0. Fortunately, t
 .. code::
     python
     
-    for netcon in h.List('NetCon'):
+    for netcon in n.List('NetCon'):
         netcon.delay = 0.5
 
 With two threads the run will be faster, but far from twice as fast. Try again with "Cache Efficient" checked.

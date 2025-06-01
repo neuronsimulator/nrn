@@ -10,9 +10,9 @@ Matrix
 
 
     Syntax:
-        ``mobj = h.Matrix(nrow, ncol)``
+        ``mobj = n.Matrix(nrow, ncol)``
 
-        ``mobj = h.Matrix(nrow, ncol, type)``
+        ``mobj = n.Matrix(nrow, ncol, type)``
 
 
     Description:
@@ -141,7 +141,7 @@ Matrix
             python
             
             >>> from neuron import n
-            >>> m = h.Matrix(3, 5)
+            >>> m = n.Matrix(3, 5)
             >>> ignore_return = m.printf()
              0        0        0        0        0
              0        0        0        0        0
@@ -220,7 +220,7 @@ Matrix
 
             from neuron import n
 
-            m = h.Matrix(4,6) 
+            m = n.Matrix(4,6) 
             for i in range(m.nrow()):
                 for j in range(m.ncol()):
                     m.setval(i, j, 1 + 10*i+j) 
@@ -231,7 +231,7 @@ Matrix
             print('')
             m.bcopy(1,2,2,3,2,3).printf() 
             print('')
-            m.bcopy(1,2,2,3,2,3, h.Matrix(8,8)).printf()
+            m.bcopy(1,2,2,3,2,3, n.Matrix(8,8)).printf()
 
 
     .. warning::
@@ -331,7 +331,7 @@ Matrix
                     print()
 
 
-            m = h.Matrix(4, 5, 2) 
+            m = n.Matrix(4, 5, 2) 
             m.setval(0, 2, 1.2) 
             m.setval(0, 4, 2.4) 
             m.setval(1, 1, 3.1) 
@@ -427,7 +427,7 @@ Matrix
 
             f = h.File("filename") 
             f.ropen() 
-            m = h.Matrix() 
+            m = n.Matrix() 
             m.scanf(f) 
             print(m.nrow(), m.ncol())
 
@@ -465,7 +465,7 @@ Matrix
             from neuron import n
 
             v1 = n.Vector([1, 2, 3, 4]) 
-            m = h.Matrix(3, 4) 
+            m = n.Matrix(3, 4) 
             for i in range(3):
                 for j in range(3):
                     m.setval(i, j, i*10 + j) 
@@ -488,7 +488,7 @@ Matrix
             from neuron import n
 
             v1 = n.Vector(range(1, 101)) 
-            m = h.Matrix(100, 100, 2) ##sparse matrix 
+            m = n.Matrix(100, 100, 2) ##sparse matrix 
             ##reverse permutation 
             for i in range(100): 
                 m.setval(i, 99 - i, 1) 
@@ -570,7 +570,7 @@ Matrix
             from __future__ import print_function
             from neuron import n
 
-            m = h.Matrix(4,4) 
+            m = n.Matrix(4,4) 
             for i in range(m.nrow()):
                 for j in range(m.ncol()):
                     m.setval(i, j, 1 + 10*j + 100*i)
@@ -621,7 +621,7 @@ Matrix
 
             b = n.Vector(3) 
             b.indgen(1,1) 
-            m = h.Matrix(3, 3) 
+            m = n.Matrix(3, 3) 
             for i in range(m.nrow()):
                 for j in range(m.ncol()):
                     m.setval(i, j, i*j + 1)
@@ -638,7 +638,7 @@ Matrix
         .. code-block::
             python
 
-            m = h.Matrix(1000, 1000, 2) ## sparse type 
+            m = n.Matrix(1000, 1000, 2) ## sparse type 
             m.setdiag(0, 3) 
             m.setdiag(-1, -1) 
             m.setdiag(1, -1) 
@@ -676,7 +676,7 @@ Matrix
 
             from neuron import n
 
-            m = h.Matrix(2,2) 
+            m = n.Matrix(2,2) 
             m.setval(0, 1, 20) 
             m.setval(1, 0, 30) 
             m.printf() 
@@ -712,7 +712,7 @@ Matrix
 
             from neuron import n
 
-            m1 = h.Matrix(6, 6) 
+            m1 = n.Matrix(6, 6) 
             for i in range(-1, 2):
                 if i == 0:
                     m1.setdiag(i, 2) 
@@ -774,7 +774,7 @@ Matrix
         .. code-block::
             python
 
-            m = h.Matrix(4,4) 
+            m = n.Matrix(4,4) 
             m.ident() 
             m.muls(-10) 
             m.printf()
@@ -851,7 +851,7 @@ Matrix
             
             from neuron import n
 
-            m = h.Matrix(5,7) 
+            m = n.Matrix(5,7) 
             v1 = n.Vector(5) 
             for i in range(-4,7): 
                 m.setdiag(i, i) 
@@ -899,7 +899,7 @@ Matrix
         .. code-block::
             python
 
-            m = h.Matrix(4, 6) 
+            m = n.Matrix(4, 6) 
             m.ident() 
             m.printf() 
 
@@ -927,7 +927,7 @@ Matrix
 
             from neuron import n
 
-            m = h.Matrix(8,8) 
+            m = n.Matrix(8,8) 
             v1 = n.Vector(8) 
             for i in range(-1,2):
                 v1.fill(2 - 3*abs(i)) 
@@ -965,7 +965,7 @@ Matrix
 
             from neuron import n
 
-            m = h.Matrix(6, 6) 
+            m = n.Matrix(6, 6) 
             m.ident()
             m.setval(0, 5, 1)
             m.setval(5, 0, 1) 
@@ -1002,7 +1002,7 @@ Matrix
 
             from neuron import n
 
-            m = h.Matrix(7,7) 
+            m = n.Matrix(7,7) 
             v1 = n.Vector(7) 
             for i in range(-1, 2):
                 v1.fill(2 - 3*abs(i))
@@ -1052,10 +1052,10 @@ Matrix
             from neuron import n
  
             def svdtest(a): 
-                umat = h.Matrix() 
-                vmat = h.Matrix() 
+                umat = n.Matrix() 
+                vmat = n.Matrix() 
                 dvec = a.svd(umat, vmat) 
-                dmat = h.Matrix(a.nrow(), a.ncol()) 
+                dmat = n.Matrix(a.nrow(), a.ncol()) 
                 dmat.setdiag(0, dvec) 
                 print("dvec")
                 dvec.printf()
@@ -1071,18 +1071,18 @@ Matrix
                 umat.transpose().mulm(dmat).mulm(vmat).printf() 
  
 
-            a = h.Matrix(5, 3) 
+            a = n.Matrix(5, 3) 
             a.setdiag(0, a.getdiag(0).indgen().add(1)) 
             svdtest(a) 
  
-            a = h.Matrix(6, 6) 
+            a = n.Matrix(6, 6) 
             r = h.Random() 
             r.discunif(1,10) 
             for i in range(a.nrow()):
                 a.setrow(i, a.getrow(i).setrand(r)) 
             svdtest(a) 
  
-            a = h.Matrix(2,2) 
+            a = n.Matrix(2,2) 
             a.setrow(0, 1) 
             a.setrow(1, 2) 
             svdtest(a) 
@@ -1113,7 +1113,7 @@ Matrix
 
             from neuron import n
 
-            m = h.Matrix(1,5) 
+            m = n.Matrix(1,5) 
             for i in range(5):
                 m.setval(0, i, i) 
             m.printf()
@@ -1155,13 +1155,13 @@ Matrix
 
             from neuron import n    
 
-            m = h.Matrix(5,5) 
+            m = n.Matrix(5,5) 
             m.setdiag(0, 2) 
             m.setdiag(-1, -1) 
             m.setdiag(1, -1) 
             m.printf()
  
-            q = h.Matrix(1,1) 
+            q = n.Matrix(1,1) 
             e = m.symmeig(q) 
             print("eigenvectors")
             q.printf()
@@ -1210,7 +1210,7 @@ Matrix
 
             from neuron import n
 
-            m = h.Matrix(4,5) 
+            m = n.Matrix(4,5) 
             m.from_vector(m.to_vector().indgen()).printf()
 
 
@@ -1244,7 +1244,7 @@ Matrix
 
             from neuron import n
 
-            m = h.Matrix(4,5) 
+            m = n.Matrix(4,5) 
             m.from_vector(m.to_vector().indgen()).printf() 
 
 

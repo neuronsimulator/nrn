@@ -146,9 +146,9 @@ LinearMechanism
             
             n.load_file('nrngui.hoc')
             
-            cmat = h.Matrix(2,2,2).ident()
+            cmat = n.Matrix(2,2,2).ident()
             
-            gmat = h.Matrix(2,2,2)
+            gmat = n.Matrix(2,2,2)
             gmat.setval(0,1, -1)
             
             y = n.Vector(2)

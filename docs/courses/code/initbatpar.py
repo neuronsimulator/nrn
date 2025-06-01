@@ -15,7 +15,7 @@ import time
 n.load_file("stdrun.hoc")
 
 # create ParallelContext instance here so it exists whenever we need it
-pc = h.ParallelContext()
+pc = n.ParallelContext()
 
 # Simulation parameters
 
@@ -51,7 +51,7 @@ def set_params(run_id):
 # data recording and analysis
 
 # count only those spikes that get to distal end of dend
-nc = h.NetCon(cell.dend(1)._ref_v, None, sec=cell.dend)
+nc = n.NetCon(cell.dend(1)._ref_v, None, sec=cell.dend)
 nc.threshold = -10  # mV
 spvec = n.Vector()
 nc.record(spvec)

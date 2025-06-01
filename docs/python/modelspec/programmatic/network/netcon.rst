@@ -9,9 +9,9 @@ NetCon
 
 
     Syntax:
-        ``netcon = h.NetCon(source_ref_v, target, [threshold, delay, weight], sec=section)``
+        ``netcon = n.NetCon(source_ref_v, target, [threshold, delay, weight], sec=section)``
 
-        ``netcon = h.NetCon(source, target, [threshold, delay, weight])``
+        ``netcon = n.NetCon(source, target, [threshold, delay, weight])``
 
 
     Description:
@@ -620,7 +620,7 @@ NetCon
             python
 
             vec = n.Vector() 
-            netcon = h.NetCon(section(x)._ref_v, None, sec=section) 
+            netcon = n.NetCon(section(x)._ref_v, None, sec=section) 
             netcon.record(vec) 
 
 
@@ -666,7 +666,7 @@ NetCon
                 # So may wish to do a further... 
                 n.cvode.event(h.t + 1e-6)  
 
-            nc = h.NetCon(soma(0.5)._ref_v, None, sec=soma) 
+            nc = n.NetCon(soma(0.5)._ref_v, None, sec=soma) 
             nc.threshold = 0 # watch out! only one threshold per presyn location 
             nc.record(handle) 
              

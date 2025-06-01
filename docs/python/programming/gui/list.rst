@@ -10,9 +10,9 @@ List
     List of objects 
 
     Syntax:
-        ``h.List()``
+        ``n.List()``
 
-        ``h.List("templatename")``
+        ``n.List("templatename")``
 
 
     Description:
@@ -32,11 +32,11 @@ List
 
         There are two ways of invoking the constructor:
 
-        ``h.List()`` 
+        ``n.List()`` 
             Create an empty list. Objects added to the list are referenced. 
             Objects removed from the list are unreferenced. 
 
-        ``h.List("templatename")`` 
+        ``n.List("templatename")`` 
             Create a list of all the object instances of the template. 
             These object instances are NOT referenced and therefore the list 
             dynamically changes as objects of template instances are 
@@ -52,7 +52,7 @@ List
 
             clamps = n.IClamp(), n.IClamp(), n.IClamp()
 
-            all_iclamps = h.List('IClamp')
+            all_iclamps = n.List('IClamp')
             print(f'There are initially {len(all_iclamps)} IClamp objects.') # 3
 
             another = n.IClamp()
@@ -224,7 +224,7 @@ List
 
             from neuron import n, gui
 
-            my_list = h.List()
+            my_list = n.List()
 
             for word in ['Python', 'HOC', 'NEURON', 'NMODL']:
                 my_list.append(h.String(word))
@@ -242,7 +242,7 @@ List
 
             from neuron import n, gui
 
-            my_list = h.List()
+            my_list = n.List()
             for word in ['NEURON', 'HOC', 'Python', 'NMODL']:
                 my_list.append(h.String(word))
 
@@ -355,7 +355,7 @@ List
 
             from neuron import n, gui
 
-            my_list = h.List()
+            my_list = n.List()
 
             def on_click():
                 item_id = my_list.selected()

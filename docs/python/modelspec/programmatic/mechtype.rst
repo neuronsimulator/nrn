@@ -9,9 +9,9 @@ MechanismType
 
 
     Syntax:
-        ``mt = h.MechanismType(0)``
+        ``mt = n.MechanismType(0)``
 
-        ``mt = h.MechanismType(1)``
+        ``mt = n.MechanismType(1)``
 
 
     Description:
@@ -39,7 +39,7 @@ MechanismType
 
             from neuron import n
             # Print the names of all density mechanisms 
-            mt = h.MechanismType(0) 
+            mt = n.MechanismType(0) 
             mname  = h.ref('')
             for i in range(mt.count()):
             	mt.select(i) 
@@ -206,7 +206,7 @@ MechanismType
                 mt.selected(nameref)
                 print (f"selected {nameref[0]}")
 
-            mtypes = [h.MechanismType(i) for i in range(2)]
+            mtypes = [n.MechanismType(i) for i in range(2)]
             h.xpanel("MechanismTypes")
             for mt in mtypes:
                 mt.action(cb)
@@ -319,7 +319,7 @@ MechanismType
             cable.nseg = 5  
             stim = [n.IClamp(cable(i/2.)) for i in range(3)]
 
-            mt = h.MechanismType(1) 
+            mt = n.MechanismType(1) 
             mt.select("IClamp") 
             pp = mt.pp_begin()
             while h.object_id(pp) != 0:
@@ -381,7 +381,7 @@ MechanismType
             
             from neuron import n
             s = n.Section('s')
-            mt = h.MechanismType(0)
+            mt = n.MechanismType(0)
             mt.select('hh')
             print(mt.file())
 
@@ -403,6 +403,6 @@ MechanismType
             
             from neuron import n
             s = n.Section('s')
-            mt = h.MechanismType(0)
+            mt = n.MechanismType(0)
             mt.select('hh')
             print('\n'.join(mt.code().split('\n')[:4]))

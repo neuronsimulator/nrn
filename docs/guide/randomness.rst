@@ -164,7 +164,7 @@ Save the following to a file called :file:`initn.py`, then use python to execute
     stim_t = n.Vector()
     stim_id = n.Vector()
     for ns in ns_list:
-        nc = h.NetCon(ns, None)
+        nc = n.NetCon(ns, None)
         nc.record(stim_t, stim_id)
 
     #
@@ -302,7 +302,7 @@ This file shows how to take advantage of :meth:`NetStim.noiseFromRandom123` in y
     stim_t = n.Vector()
     stim_id = n.Vector()
     for ns in ns_list:
-        nc = h.NetCon(ns, None)
+        nc = n.NetCon(ns, None)
         nc.record(stim_t, stim_id)
 
     #

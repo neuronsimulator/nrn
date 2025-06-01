@@ -44,7 +44,7 @@ def set_params(run_id):
 # data recording and analysis
 
 # count only those spikes that get to distal end of dend
-nc = h.NetCon(cell.dend(1)._ref_v, None, sec=cell.dend)
+nc = n.NetCon(cell.dend(1)._ref_v, None, sec=cell.dend)
 nc.threshold = -10  # mV
 spvec = n.Vector()
 nc.record(spvec)

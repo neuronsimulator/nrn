@@ -1332,7 +1332,7 @@ CVode
                         total_imem += seg.i_membrane_
 
                 # sum over all ELECTRODE_CURRENT (if only using IClamp)
-                total_iclamp_cur = sum(ic.i for ic in h.List('IClamp'))
+                total_iclamp_cur = sum(ic.i for ic in n.List('IClamp'))
 
                 print(f"total_imem={total_imem} total_iclamp_cur={total_iclamp_cur}")
                 assert(abs(total_imem - total_iclamp_cur) < 1e-12)

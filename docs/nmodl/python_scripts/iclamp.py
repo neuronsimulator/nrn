@@ -20,7 +20,7 @@ class hhCellIClamp(Cell):
         v.record(h.soma(0.5)._ref_v, sec=h.soma)
         tv = n.Vector()
         tv.record(h._ref_t, sec=h.soma)
-        nc = h.NetCon(h.soma(0.5)._ref_v, None, sec=h.soma)
+        nc = n.NetCon(h.soma(0.5)._ref_v, None, sec=h.soma)
         spikestime = n.Vector()
         nc.record(spikestime)
         self.record_vectors["spikes"] = spikestime.to_python()

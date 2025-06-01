@@ -16,9 +16,9 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
 
 
     Syntax:
-        ``pc = h.ParallelContext()``
+        ``pc = n.ParallelContext()``
 
-        ``pc = h.ParallelContext(nhost)``
+        ``pc = n.ParallelContext(nhost)``
 
 
     Description:
@@ -70,7 +70,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
 	    # importing MPI or h.nrnmpi_init() must come before the first instantiation of ParallelContext()
 	    h.nrnmpi_init()
                         
-            pc = h.ParallelContext()
+            pc = n.ParallelContext()
 
             def f(x):
                 """a function with no context that changes except its argument"""
@@ -229,7 +229,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
             from neuron import n
             h.nrnmpi_init()
 
-            pc = h.ParallelContext()
+            pc = n.ParallelContext()
             print (f"I am {pc.id()} of {pc.nhost()}")
 
             pc.barrier()
@@ -1540,7 +1540,7 @@ Description:
 
             from neuron import n
             h.nrnmpi_init()
-            pc = h.ParallelContext()
+            pc = n.ParallelContext()
             nhost = pc.nhost()
             rank = pc.id()
 
@@ -1621,7 +1621,7 @@ Description:
           python
           
           from neuron import n
-          pc = h.ParallelContext()
+          pc = n.ParallelContext()
           nhost = pc.nhost()
           rank = pc.id()
           
@@ -1702,7 +1702,7 @@ Description:
           python
           
           from neuron import n
-          pc = h.ParallelContext()
+          pc = n.ParallelContext()
           nhost = pc.nhost()
           rank = pc.id()
 
@@ -1788,7 +1788,7 @@ Description:
           python
           
           from neuron import n
-          pc = h.ParallelContext()
+          pc = n.ParallelContext()
           nhost = pc.nhost()
           rank = pc.id()
 
@@ -1872,7 +1872,7 @@ Description:
           python
           
           from neuron import n
-          pc = h.ParallelContext()
+          pc = n.ParallelContext()
           nhost = pc.nhost()
           rank = pc.id()
 
@@ -2087,7 +2087,7 @@ Description:
             h.nrnmpi_init() #does nothing if mpi4py succeeded
             import time
 
-            pc = h.ParallelContext() 
+            pc = n.ParallelContext() 
             pc.subworlds(3)
 
             def f(arg):
@@ -2436,7 +2436,7 @@ Description:
         Note that it is an error if the gid does not exist on this machine. The 
         normal idiom is to use a NetCon returned by a call to the cell's 
         connect2target(None, netcon) method or else, if the cell is an unwrapped 
-        artificial cell, use a \ ``netcon = h.NetCon(cell, None)`` statement.
+        artificial cell, use a \ ``netcon = n.NetCon(cell, None)`` statement.
         In either case, after
         ParallelContext.cell() has been called, this NetCon can be
         destroyed to save memory; the spike detection threshold
@@ -3162,7 +3162,7 @@ Parallel Transfer
         .. code-block:: python
 
             from neuron import config, h
-            pc = h.ParallelContext()
+            pc = n.ParallelContext()
             threads_enabled = config.arguments["NRN_ENABLE_THREADS"]
 
             # single threaded mode, no workers

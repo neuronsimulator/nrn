@@ -136,7 +136,7 @@ Nonetheless, in isolated situations the following section may be useful:
             for x in v: 
               print(x)
              
-            l = h.List(); l.append(v); l.append(v); l.append(v) 
+            l = n.List(); l.append(v); l.append(v); l.append(v) 
             for x in l: 
               print(x)
              

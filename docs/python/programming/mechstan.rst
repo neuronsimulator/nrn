@@ -14,8 +14,8 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
             
-            ms = h.MechanismStandard(name_str)
-            ms = h.MechanismStandard(name_str, vartype)
+            ms = n.MechanismStandard(name_str)
+            ms = n.MechanismStandard(name_str, vartype)
 
 
     Description:
@@ -48,14 +48,14 @@ MechanismStandard (Parameter Control)
             python
             
             from neuron import n, gui
-            ms1 = h.MechanismStandard('hh')
-            ms2 = h.MechanismStandard('AlphaSynapse')
+            ms1 = n.MechanismStandard('hh')
+            ms2 = n.MechanismStandard('AlphaSynapse')
             ms2.set('gmax', 0.3)
             ms1.panel()
             ms2.panel()
 
-            ms1 = h.MechanismStandard("hh") 
-            ms2 = h.MechanismStandard("AlphaSynapse") 
+            ms1 = n.MechanismStandard("hh") 
+            ms2 = n.MechanismStandard("AlphaSynapse") 
             ms2.set("gmax", .3) 
             ms1.panel() 
             ms2.panel() 
@@ -77,7 +77,7 @@ MechanismStandard (Parameter Control)
             def pname(msname):
                 s = h.ref('')
                 for i in range(-1, 4):
-                    ms = h.MechanismStandard(msname, i)
+                    ms = n.MechanismStandard(msname, i)
                     print(f'\n{msname}   vartype={i}')
                     for j in range(ms.count()):
                         k = ms.name(s, j)
@@ -86,7 +86,7 @@ MechanismStandard (Parameter Control)
             def ptype():
                 msname = h.ref('')
                 for i in range(2):
-                    mt = h.MechanismType(i)
+                    mt = n.MechanismType(i)
                     for j in range(mt.count()):
                         mt.select(j)
                         mt.selected(msname)
@@ -112,7 +112,7 @@ MechanismStandard (Parameter Control)
             from neuron import n
              
             def get_mech_globals(mechname):
-                ms = h.MechanismStandard(mechname, -1)
+                ms = n.MechanismStandard(mechname, -1)
                 name = h.ref('')
                 mech_globals = []
                 for j in range(ms.count()):
@@ -137,7 +137,7 @@ MechanismStandard (Parameter Control)
             from neuron import n
 
             mech = h.hh
-            ms = h.MechanismStandard(mech.name)
+            ms = n.MechanismStandard(mech.name)
             ms.panel()
 
     .. seealso::
@@ -225,7 +225,7 @@ MechanismStandard (Parameter Control)
                     if sec.has_membrane('pas'):
                         ms.out()
 
-            ms = h.MechanismStandard('pas')
+            ms = n.MechanismStandard('pas')
             ms.action(change_pas)
             ms.panel()
 
@@ -284,7 +284,7 @@ MechanismStandard (Parameter Control)
             s.insert(h.hh)
             s(0.5).hh.gnabar = 0.5
 
-            ms = h.MechanismStandard('hh')
+            ms = n.MechanismStandard('hh')
             ms.set("gnabar_hh", 0.3)
 
             print(ms.get("gnabar_hh"))
@@ -477,7 +477,7 @@ MechanismStandard (Parameter Control)
             
             from neuron import n, gui
 
-            ms = h.MechanismStandard('hh')
+            ms = n.MechanismStandard('hh')
             name_strref = h.ref('')
 
             # read the name of the mechanism

@@ -9,7 +9,7 @@ ParallelNetManager
 
 
     Syntax:
-        ``pnm = h.ParallelNetManager(ncell)``
+        ``pnm = n.ParallelNetManager(ncell)``
 
 
     Description:
@@ -76,7 +76,7 @@ ParallelNetManager
 
                 n.load_file("netparmpi.hoc") 
                 ncell = 128 
-                pnm = h.ParallelNetManager(ncell) 
+                pnm = n.ParallelNetManager(ncell) 
 
             If you know the global number of cells put it in. For the non-MPI 
             implementation of ParallelNetManager, ncell is absolutely necessary 
@@ -198,7 +198,7 @@ ParallelNetManager
                 # stimulate
                 if pnm.gid_exists(4):
                     stim = h.NetStim(0.5)
-                    ncstim = h.NetCon(stim, pnm.pc.gid2obj(4)) 
+                    ncstim = n.NetCon(stim, pnm.pc.gid2obj(4)) 
                     ncstim.weight[0] = 1.1 
                     ncstim.delay = 0 
                     stim.number=1 

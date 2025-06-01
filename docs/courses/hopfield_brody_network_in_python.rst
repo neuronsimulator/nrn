@@ -214,7 +214,7 @@ procedure wire() in :file:`ocomm.hoc` is slightly simplified from that in :file:
         for pre in cells: 
             for post in cells: 
                 if pre!=post: 
-                    nclist.append(h.NetCon(pre.pp,post.pp)) 
+                    nclist.append(n.NetCon(pre.pp,post.pp)) 
 
 
 Exercises

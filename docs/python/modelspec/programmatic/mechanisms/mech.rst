@@ -566,7 +566,7 @@ General
             from neuron import n
 
             nc = h.NetStim()
-            ns = h.NetCon(nc, target...) 
+            ns = n.NetCon(nc, target...) 
 
         That is, do not use ``nc._ref_y`` as the source for the netcon. 
          
@@ -587,7 +587,7 @@ General
             #print spike times coming from ns
             def pr():
               print (h.t)
-            ncout = h.NetCon(ns, None)
+            ncout = n.NetCon(ns, None)
             ncout.record(pr)
             
             #another NetStim to cause ns to burst every 20 ms, 3 times, starting at 30ms
@@ -595,7 +595,7 @@ General
             ns2.interval = 20
             ns2.number = 3
             ns2.start=30
-            nctrig = h.NetCon(ns2, ns)
+            nctrig = n.NetCon(ns2, ns)
             nctrig.delay = 0.1
             nctrig.weight[0] = 1
             
@@ -667,13 +667,13 @@ General
       python
       
       from neuron import n
-      pc = h.ParallelContext()
+      pc = n.ParallelContext()
 
       #Model
       cell = h.IntFire1()
       cell.refrac = 0 # no limit on spike rate
       pc.set_gid2node(0, pc.id())
-      pc.cell(0, h.NetCon(cell, None)) # generates a spike with gid=0
+      pc.cell(0, n.NetCon(cell, None)) # generates a spike with gid=0
       nclist = [pc.gid_connect(i, cell) for i in range(4)] #note gid=0 recursive connection
       for i, nc in enumerate(nclist):
         nc.weight[0] = 2 # anything above 1 causes immediate firing for IntFire1
@@ -782,16 +782,16 @@ General
             e_stims.interval = 3 * ms
             e_stims.start = 0 * ms
             e_stims.number = 1e10
-            nc = h.NetCon(e_stims, my_cell)
+            nc = n.NetCon(e_stims, my_cell)
             nc.weight[0] = 0.5
             nc.delay = 0 * ms
 
             # setup recording
             stim_times = n.Vector()
             output_times = n.Vector()
-            stim_times_nc = h.NetCon(e_stims, None)
+            stim_times_nc = n.NetCon(e_stims, None)
             stim_times_nc.record(stim_times)
-            output_times_nc = h.NetCon(my_cell, None)
+            output_times_nc = n.NetCon(my_cell, None)
             output_times_nc.record(output_times)
 
             # run the simulation

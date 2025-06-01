@@ -154,11 +154,11 @@ Object Related
 
             from neuron import n
 
-            a, b, c = h.List(), h.List(), n.Vector()
+            a, b, c = n.List(), n.List(), n.Vector()
 
             print(h.object_id(a))       # displays a double; equal to hash(a)
-            print(h.object_id(a, 1))    # 0 since a == h.List[0]
-            print(h.object_id(b, 1))    # 1 since b == h.List[1]
+            print(h.object_id(a, 1))    # 0 since a == n.List[0]
+            print(h.object_id(b, 1))    # 1 since b == n.List[1]
             print(h.object_id(c, 1))    # 0 since c == n.Vector[0]
 
 ----
@@ -222,7 +222,7 @@ Object Related
             python
 
             >>> v = n.Vector()
-            >>> foo = h.List()
+            >>> foo = n.List()
             >>> h.allobjects()
             List[0] with 1 refs
             Vector[0] with 1 refs
