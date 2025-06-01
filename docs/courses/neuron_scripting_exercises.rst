@@ -86,7 +86,7 @@ Download the model from https://modeldb.science/126814 Create a Python script th
 
 *Bonus challenge*: Export the recorded data to a CSV file and then open and plot it in Excel, MATLAB, or a similar tool of your choice.
 
-*Bonus challenge*: How does the plotted data change as ``h.celsius`` is varied?
+*Bonus challenge*: How does the plotted data change as ``n.celsius`` is varied?
 
  
 

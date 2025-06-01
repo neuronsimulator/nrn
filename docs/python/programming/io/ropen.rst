@@ -38,8 +38,8 @@ Open and Write to Files (Obsolete)
                 x = []
                 y = []
                 for i in range(ndat):
-                    x.append(h.fscan())
-                    y.append(h.fscan())
+                    x.append(n.fscan())
+                    y.append(n.fscan())
                 n.ropen()
                 return x, y
 
@@ -92,7 +92,7 @@ Open and Write to Files (Obsolete)
             def w_open(ndat, x, y):
                 n.wopen("file.dat") 
                 for i in range(ndat):
-                    h.fprint(f"{x[i]} {y[i]}\n")
+                    n.fprint(f"{x[i]} {y[i]}\n")
                 n.wopen()
 
             # ndat is number of data points
@@ -137,14 +137,14 @@ Open and Write to Files (Obsolete)
 .. function:: fprint
 
     Syntax:
-        ``h.fprint()``
+        ``n.fprint()``
 
     Example:
 
         .. code-block::
             python
 
-            h.fprint("%g %g\n", x, y)
+            n.fprint("%g %g\n", x, y)
 
     Description:
 

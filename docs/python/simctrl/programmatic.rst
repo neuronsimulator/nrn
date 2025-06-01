@@ -86,7 +86,7 @@ Functions
         inserted in the sections. 
         If the optional argument is present then all voltages of all sections 
         are initialized to *v*. 
-        :data:`h.t` is set to 0. 
+        :data:`n.t` is set to 0. 
          
         The order of principal actions during an finitialize call is:
         
@@ -190,9 +190,9 @@ Functions
 
 
     Syntax:
-        ``h.fmatrix()``
+        ``n.fmatrix()``
 
-        ``value = h.fmatrix(x, index, sec=section)``
+        ``value = n.fmatrix(x, index, sec=section)``
 
 
     Description:
@@ -253,7 +253,7 @@ Functions
 
 
     Syntax:
-        ``h.t``
+        ``n.t``
 
 
     Description:
@@ -296,7 +296,7 @@ Functions
 
 
     Syntax:
-        ``h.clamp_resist``
+        ``n.clamp_resist``
 
 
     Description:
@@ -312,7 +312,7 @@ Functions
 
 
     Syntax:
-        ``h.celsius = 6.3``
+        ``n.celsius = 6.3``
 
 
     Description:
@@ -332,7 +332,7 @@ Functions
 
 
     Syntax:
-        ``h.stoprun``
+        ``n.stoprun``
 
 
     Description:

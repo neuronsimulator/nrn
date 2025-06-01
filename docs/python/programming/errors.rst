@@ -4,7 +4,7 @@ Error Handling
 .. function:: coredump_on_error
 
     Syntax:
-        ``h.coredump_on_error(True or False)``
+        ``n.coredump_on_error(True or False)``
 
     Description:
         On unix machines, sets a flag which requests (True) a coredump in case 
@@ -40,7 +40,7 @@ Error Handling
 .. function:: show_errmess_always
 
     Syntax:
-        ``h.show_errmess_always(boolean)``
+        ``n.show_errmess_always(boolean)``
 
     Description:
         Sets or turns off a flag which, if on, always prints the error message even 
@@ -53,7 +53,7 @@ Error Handling
 .. function:: execerror
 
     Syntax:
-        ``h.execerror("message1", "message2")``
+        ``n.execerror("message1", "message2")``
 
     Description:
         Raise an error and print the messages along with a NEURON interpreter stack
@@ -69,7 +69,7 @@ Error Handling
 
             from neuron import n
             try:
-                h.execerror("Unable to initialize model", "not enough parameters")
+                n.execerror("Unable to initialize model", "not enough parameters")
             except RuntimeError as e:
                 print(f"Caught an error: {e}")
         

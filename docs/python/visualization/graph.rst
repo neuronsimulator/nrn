@@ -46,7 +46,7 @@ Graph
             # define a sine wave, 0 <= x <= 10
             for i in range(101):
                 x = i * 0.1
-                g.line(x, h.sin(x))
+                g.line(x, n.sin(x))
 
             # actually draw the plot on the graph in the window
             g.flush()
@@ -1043,7 +1043,7 @@ Graph
             g.beginline()   
             dt = 0.1
             for t in np.arange(0, 2 * n.PI + dt, dt):
-                g.line(h.sin(t), h.cos(t))
+                g.line(n.sin(t), n.cos(t))
 
             g.flush()
              

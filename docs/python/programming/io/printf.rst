@@ -18,14 +18,14 @@ Printf (Formatted Output)
     Syntax:
         ``n.printf(format, ...)``
 
-        ``h.fprint(format, ...)``
+        ``n.fprint(format, ...)``
 
         ``n.sprint(strdef, format, ...)``
 
 
 
     Description:
-        ``n.printf`` places output on the standard output.  ``h.fprint`` places output 
+        ``n.printf`` places output on the standard output.  ``n.fprint`` places output 
         on the file opened with the ``n.wopen(filename)`` command (standard 
         output if no file is opened).  ``n.sprint`` places output in its ``strdef`` 
         argument. (Note: ``strdef`` must be a NEURON string reference, created via
@@ -88,14 +88,14 @@ Printf (Formatted Output)
             - carriage return without the line feed
 
          
-        ``n.printf`` and ``h.fprint`` return the number of characters printed. 
+        ``n.printf`` and ``n.fprint`` return the number of characters printed. 
          
 
     Example:
 
         .. code::
 
-            n.printf("\tpi=%-20.10g sin(pi)=%f\n", n.PI, h.sin(n.PI)) 
+            n.printf("\tpi=%-20.10g sin(pi)=%f\n", n.PI, n.sin(n.PI)) 
 
                     pi=3.141592654          sin(pi)=0.000000 
                     42 
@@ -105,7 +105,7 @@ Printf (Formatted Output)
 
         .. code::
 
-            print(f'\tpi={n.PI:<20.10g} sin(pi)={h.sin(n.PI):f}')
+            print(f'\tpi={n.PI:<20.10g} sin(pi)={n.sin(n.PI):f}')
 
         .. note::
 
@@ -131,9 +131,9 @@ Redirect Standard Out
 
 
     Syntax:
-        :samp:`h.hoc_stdout("{filename}")`
+        :samp:`n.hoc_stdout("{filename}")`
 
-        ``h.hoc_stdout()``
+        ``n.hoc_stdout()``
 
 
     Description:
@@ -152,11 +152,11 @@ Redirect Standard Out
 
             def p():
                 print('one') # to original standard out
-                h.hoc_stdout('temp.tmp')
+                n.hoc_stdout('temp.tmp')
                 print('two') # to temp.tmp
                 for sec in n.allsec():
                     n.psection(sec=sec) # to temp.tmp
-                h.hoc_stdout()
+                n.hoc_stdout()
                 print('three') # to the original standard out
 
             p() 

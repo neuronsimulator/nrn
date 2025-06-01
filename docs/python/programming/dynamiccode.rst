@@ -16,9 +16,9 @@ code-executing
 .. function:: execute
 
     Syntax:
-        ``h.execute("statement")``
+        ``n.execute("statement")``
 
-        ``h.execute("statement", objref)``
+        ``n.execute("statement", objref)``
 
     Description:
         parse and execute the command in the context 
@@ -37,13 +37,13 @@ code-executing
 .. function:: execute1
 
     Syntax:
-        ``err = h.execute1("statement")``
+        ``err = n.execute1("statement")``
 
-        ``err = h.execute1("statement", objref)``
+        ``err = n.execute1("statement", objref)``
 
-        ``err = h.execute1("statement", show_err_mes)``
+        ``err = n.execute1("statement", show_err_mes)``
 
-        ``err = h.execute1("statement", objref, show_err_mes)``
+        ``err = n.execute1("statement", objref, show_err_mes)``
 
     Description:
         Same as :func:`execute` but returns 0 if there was an interpreter error 
@@ -74,9 +74,9 @@ code-executing
         .. code-block::
             python
             
-            h.execute1(f"{obj_name}.var = outside_var")
+            n.execute1(f"{obj_name}.var = outside_var")
 
-        Here, outside_var is unavailable from within the object and so 
+        Here, ``outside_var`` is unavailable from within the object and so 
         a command is constructed which can be executed at the top level where that 
         variable is available and sets the public var in the object. 
 
