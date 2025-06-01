@@ -179,7 +179,7 @@ Object Related
         .. code-block::
             python
 
-            >>> h('objref foo')
+            >>> n('objref foo')
             1
             >>> n.foo = n.Vector()
             >>> n.allobjectvars()
