@@ -184,7 +184,7 @@ Example:
         from neuron import n, gui
         import numpy as np
 
-        a, b, c, d, e = [n.Section(n) for n in ['a', 'b', 'c', 'd', 'e']]
+        a, b, c, d, e = [n.Section(name) for name in ['a', 'b', 'c', 'd', 'e']]
         b.connect(a)
         c.connect(b(1), 1) # connect the 1 end of c to the 1 end of b
         d.connect(b)
