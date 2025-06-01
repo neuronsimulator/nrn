@@ -34,7 +34,7 @@ We *could* implement this model in Python:
     axon.L = 2e4
     axon.diam = 100
     axon.nseg = 43
-    axon.insert(h.hh)
+    axon.insert(n.hh)
 
 **But** for this exercise, let's instead use the CellBuilder tool to create the model:
 

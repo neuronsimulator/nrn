@@ -872,6 +872,6 @@ Description:
 
         .. note::
 
-            For density mechanisms, one cannot pass in e.g. ``h.hh`` as this raises 
+            For density mechanisms, one cannot pass in e.g. ``n.hh`` as this raises 
             a TypeError; one can, however, pass in ``nrn.hh`` where ``nrn`` is defined
             via ``from neuron import nrn``.

@@ -165,7 +165,7 @@ Functions
             from neuron import n
 
             soma = n.Section("soma")
-            soma.insert(h.hh)
+            soma.insert(n.hh)
             print(f"default el_hh = {soma.el_hh}")
 
             # set el_hh so that the steady state is exactly -70 mV 
@@ -397,7 +397,7 @@ FInitializeHandler
             b = n.Section("b")
 
             for sec in [a, b]:
-                sec.insert(h.hh)
+                sec.insert(n.hh)
 
             def fi0():
                 print('fi0 called after v set but before INITIAL blocks')

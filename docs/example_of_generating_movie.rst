@@ -53,7 +53,7 @@ Setup the model
     for sec in h.allsec():
       sec.nseg = 21
       if 'dend' not in sec.name():
-        sec.insert(h.hh)
+        sec.insert(n.hh)
 
 .. code::
     python
@@ -62,7 +62,7 @@ Setup the model
     fire_times = [0 * ms, 15 * ms, 23 * ms, 31 * ms]
     iclamps = []
     for time in fire_times:
-        iclamp = n.IClamp(h.soma[0](0.5))
+        iclamp = n.IClamp(n.soma[0](0.5))
         iclamp.delay = time
         iclamp.amp = 2
         iclamp.dur = 0.5 * ms

@@ -182,8 +182,8 @@ Exercises
 
         from pprint import pprint #prettier printing (optional; could use print)
 
-        pprint(h.soma.psection())
-        pprint(h.dend.psection())
+        pprint(n.soma.psection())
+        pprint(n.dend.psection())
 
     Comments:
 
@@ -220,7 +220,7 @@ More Exercises
     .. code::
         python
 
-        h.dend.nseg *=3
+        n.dend.nseg *=3
 
     and run a new simulation. Repeat until you no longer see a significant difference between consecutive runs.
 
@@ -229,7 +229,7 @@ More Exercises
     .. code::
         python
 
-        print(h.dend.nseg)
+        print(n.dend.nseg)
 
     to see how many dendritic segments were required.
 

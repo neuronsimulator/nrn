@@ -126,9 +126,9 @@ MechanismStandard (Parameter Control)
     .. warning::
     
         MechanismStandard only supports the names of mechanisms as strings, not the mechanism objects.
-        e.g., you can pass ``'hh'`` but not ``h.hh``.
+        e.g., you can pass ``'hh'`` but not ``n.hh``.
 
-        If you have a density mechanism, e.g., ``mech = h.hh``, beginning with NEURON 9, you can get
+        If you have a density mechanism, e.g., ``mech = n.hh``, beginning with NEURON 9, you can get
         the name of the mechanism as a string with ``mech.name``. You can then use this string
         with MechanismStandard. For example:
         .. code-block::
@@ -136,7 +136,7 @@ MechanismStandard (Parameter Control)
 
             from neuron import n
 
-            mech = h.hh
+            mech = n.hh
             ms = n.MechanismStandard(mech.name)
             ms.panel()
 
@@ -211,8 +211,8 @@ MechanismStandard (Parameter Control)
             axon = n.Section('axon')
             dend = [n.Section(f'dend[{i}]' for i in range(3)]
 
-            h.hh.insert(axon)
-            h.pas.insert(dend)  # puts into all dendrites in the list
+            n.hh.insert(axon)
+            n.pas.insert(dend)  # puts into all dendrites in the list
 
             h.xpanel("Updated when MechanismStandard is changed")
             for i, sec in enumerate(dend):
@@ -281,7 +281,7 @@ MechanismStandard (Parameter Control)
             from neuron import n
 
             s = n.Section('soma')
-            s.insert(h.hh)
+            s.insert(n.hh)
             s(0.5).hh.gnabar = 0.5
 
             ms = n.MechanismStandard('hh')

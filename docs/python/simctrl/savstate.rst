@@ -39,7 +39,7 @@ SaveState
             n.load_file("stdrun.hoc")
 
             soma = n.Section("soma")
-            soma.insert(h.hh)
+            soma.insert(n.hh)
             soma.nseg = 51
             cyt = rxd.Region(soma.wholetree(), name="cyt")
             c = rxd.Species(cyt, name="c", d=1, initial=lambda node: 1 if node.x < 0.5 else 0)

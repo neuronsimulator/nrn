@@ -99,7 +99,7 @@ Namespace Related
             python
 
             try:
-                h.soma.squiggle
+                n.soma.squiggle
             except (NameError, AttributeError):
                 print('Name does not exist')
 

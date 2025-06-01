@@ -101,9 +101,9 @@ Shape
 
             for sec in h.allsec():
                 sec.nseg = int(1 + 2 * (sec.L // 40))
-                sec.insert(h.hh)
+                sec.insert(n.hh)
 
-            ic = n.IClamp(h.soma(0.5))
+            ic = n.IClamp(n.soma(0.5))
             ic.delay = 1 * ms
             ic.dur = 1 * ms
             ic.amp = 10
@@ -165,8 +165,8 @@ Shape
             
             from neuron import n
             sl = n.SectionList()
-            sl.append(h.soma)
-            sl.append(h.dendrite_1[8])
+            sl.append(n.soma)
+            sl.append(n.dendrite_1[8])
             h.Shape[0].observe(sl)
 
 

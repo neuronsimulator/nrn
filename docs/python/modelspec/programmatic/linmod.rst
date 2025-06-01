@@ -90,7 +90,7 @@ LinearMechanism
             tstop = 5
             
             soma = n.Section("soma")
-            soma.insert(h.hh)
+            soma.insert(n.hh)
             
             # ideal voltage clamp. 
             c = n.Matrix(2, 2, 2) # sparse - no elements used 

@@ -1,7 +1,7 @@
 from neuron import n, gui
 
 soma = n.Section(name="soma")
-soma.insert(h.hh)
+soma.insert(n.hh)
 soma.L = 5
 soma.diam = 5
 

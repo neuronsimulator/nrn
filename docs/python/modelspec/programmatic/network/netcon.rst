@@ -648,7 +648,7 @@ NetCon
             n.load_file('stdrun.hoc')  # for h.run() and n.cvode
 
             soma = n.Section('soma')
-            soma.insert(h.hh)
+            soma.insert(n.hh)
             soma.L = 3.183098861837907
             soma.diam = 10
             ic = n.IClamp(soma(0.5))

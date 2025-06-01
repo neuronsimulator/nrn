@@ -578,7 +578,7 @@ Vector
             import pylab as plt, numpy as np
             n.load_file('stdrun.hoc')
             sec = n.Section('sec')
-            sec.insert(h.pas)
+            sec.insert(n.pas)
             inp = np.zeros(500)
             inp[50:250] = 1
             pvec = n.Vector().from_python(inp)

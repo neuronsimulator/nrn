@@ -336,7 +336,7 @@ General
             s3 = n.Section('s3')
 
             for sec in [s1, s2, s3]:
-                sec.insert(h.hh)
+                sec.insert(n.hh)
                 sec.L = sec.diam = 3
 
             c1 = n.IClamp(s1(0.5))
@@ -1009,7 +1009,7 @@ Mechanisms
     Syntax:
         ``section.insert('hh')``
 
-        ``section.insert(h.hh)``
+        ``section.insert(n.hh)``
 
 
     Description:
@@ -1049,7 +1049,7 @@ Mechanisms
     Syntax:
         ``section.insert('pas')``
 
-        ``section.insert(h.pas)``
+        ``section.insert(n.pas)``
 
         ``section(x).pas.g -- mho/cm2	conductance``
 

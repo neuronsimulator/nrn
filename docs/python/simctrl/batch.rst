@@ -62,7 +62,7 @@ Running and Saving Batch Jobs
             soma.diam = 10
 
             # biophysics: Hodgkin-Huxley channels
-            soma.insert(h.hh)
+            soma.insert(n.hh)
 
             # add a stimulus
             iclamp = n.IClamp(soma(0.5))

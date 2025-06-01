@@ -153,7 +153,7 @@ Nonetheless, in isolated situations the following section may be useful:
             python
 
             h('create soma, axon') 
-            ax = h.axon 
+            ax = n.axon 
 
         makes ax a Python :class:`~neuron.n.Section` which references the hoc 
         axon section. Many hoc functions use the currently accessed section;
@@ -280,7 +280,7 @@ Nonetheless, in isolated situations the following section may be useful:
 
             from neuron import n
             soma = n.Section('soma')
-            soma.insert(h.pas)
+            soma.insert(n.pas)
             v = n.Vector().record(soma(0.5)._ref_v)
             pi = n.Vector().record(soma(0.5).pas._ref_i)
             ip = n.Vector().record(soma(0.5)._ref_i_pas)
@@ -491,7 +491,7 @@ Nonetheless, in isolated situations the following section may be useful:
         The Python Section object allows modification and evaluation of the 
         information associated with a NEURON :ref:`geometry_section`. The typical way to get 
         a reference to a Section in Python is with :meth:`neuron.h.cas`  or 
-        by using the hoc section name as in ``asec = h.dend[4]``. 
+        by using the hoc section name as in ``asec = n.dend[4]``. 
         The ``sec = Section()`` will create an anonymous Section with a hoc name 
         constructed from "Section" and the Python reference address. 
         Access to Section variables is through standard dot notation. 
@@ -507,7 +507,7 @@ Nonetheless, in isolated situations the following section may be useful:
             sec = n.Section() 
             print(sec)         # prints __nrnsec_0x7fa44eb70000
             sec.nseg = 3       # section has 3 segments (compartments) 
-            sec.insert(h.hh)   # all compartments have the hh mechanism 
+            sec.insert(n.hh)   # all compartments have the hh mechanism 
             sec.L = 20         # Length of the entire section is 20 um. 
             for seg in sec:    # iterates over the section compartments 
               for mech in seg: # iterates over the segment mechanisms 
@@ -558,7 +558,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            sr = n.SectionRef(sec=h.dend[2])
+            sr = n.SectionRef(sec=n.dend[2])
             sr.root.push(); print(h.secname()); h.pop_section() 
 
         or, more compactly and avoiding the modification of the section stack, 
@@ -566,7 +566,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            sr = n.SectionRef(sec=h.dend[2]) 
+            sr = n.SectionRef(sec=n.dend[2]) 
             print(sr.root.name(), h.secname(sec=sr.root))
 
          

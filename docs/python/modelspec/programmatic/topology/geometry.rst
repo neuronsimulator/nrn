@@ -380,15 +380,15 @@ Example:
         mode = 1
         h.pt3dconst(mode) # uses default section from pyramid.nrn
         s = h.Shape() 
-        s.action(lambda: s.select(sec=h.dendrite_1[8]))
-        s.color(2, sec=h.dendrite_1[8])
+        s.action(lambda: s.select(sec=n.dendrite_1[8]))
+        s.color(2, sec=n.dendrite_1[8])
 
         h.xpanel("Change Length") 
         h.xvalue("dendrite_1[8].L", "dendrite_1[8].L", 1) # using HOC syntax
                                                           # to directly access
                                                           # the length
         h.xcheckbox("Can't change length", (__main__, 'mode'),
-                    lambda: h.pt3dconst(mode, sec=h.dendrite_1[8]))
+                    lambda: h.pt3dconst(mode, sec=n.dendrite_1[8]))
         h.xpanel() 
 
     .. image:: ../../../images/geometry4.png

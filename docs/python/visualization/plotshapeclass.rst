@@ -97,9 +97,9 @@ PlotShape
 
             for sec in h.allsec():
                 sec.nseg = int(1 + 2 * (sec.L // 40))
-                sec.insert(h.hh)
+                sec.insert(n.hh)
 
-            ic = n.IClamp(h.soma(0.5))
+            ic = n.IClamp(n.soma(0.5))
             ic.delay = 1 * ms
             ic.dur = 1 * ms
             ic.amp = 10
@@ -126,9 +126,9 @@ PlotShape
                 n.load_file("c91662.ses")
                 for sec in h.allsec():
                     sec.nseg = int(1 + 2 * (sec.L // 40))
-                    sec.insert(h.hh)
+                    sec.insert(n.hh)
 
-                ic = n.IClamp(h.soma(0.5))
+                ic = n.IClamp(n.soma(0.5))
                 ic.delay = 1 * ms
                 ic.dur = 1 * ms
                 ic.amp = 10
@@ -452,7 +452,7 @@ PlotShape
     Syntax:
         ``ps = n.PlotShape(False)``
 
-        ``ps.plot(pyplot).mark(h.soma[0](0.5)).mark(h.apical_dendrite[68](1))``
+        ``ps.plot(pyplot).mark(n.soma[0](0.5)).mark(n.apical_dendrite[68](1))``
 
         ``plt.show()``
 
