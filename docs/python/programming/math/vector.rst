@@ -1610,7 +1610,7 @@ Vector
             :align: center
 
     .. seealso::
-        :meth:`Grapn.Vector`
+        :meth:`Graph.Vector`
 
          
 

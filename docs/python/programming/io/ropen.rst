@@ -9,13 +9,13 @@ Open and Write to Files (Obsolete)
 
 
     Syntax:
-        ``h.ropen("infile")``
+        ``n.ropen("infile")``
 
-        ``h.ropen()``
+        ``n.ropen()``
 
 
     Description:
-        ``h.ropen("infile")`` opens *infile* for reading.  A subsequent ``h.ropen()`` with no arguments 
+        ``n.ropen("infile")`` opens *infile* for reading.  A subsequent ``n.ropen()`` with no arguments 
         closes the previously opened *infile*. A file which is re-opened with 
         ``ropen(infile)`` positions the stream at the beginning of the file. 
 
@@ -34,13 +34,13 @@ Open and Write to Files (Obsolete)
             from neuron import n
 
             def r_open(ndat):
-                h.ropen("file.dat")
+                n.ropen("file.dat")
                 x = []
                 y = []
                 for i in range(ndat):
                     x.append(h.fscan())
                     y.append(h.fscan())
-                h.ropen()
+                n.ropen()
                 return x, y
 
             # ndat is number of data points
@@ -71,16 +71,16 @@ Open and Write to Files (Obsolete)
 
 
     Syntax:
-        ``h.wopen("outfile")``
+        ``n.wopen("outfile")``
 
-        ``h.wopen()``
+        ``n.wopen()``
 
 
     Description:
-        ``h.wopen()`` is similar to ``h.ropen()`` but opens a file for writing. Contents of an 
+        ``n.wopen()`` is similar to ``n.ropen()`` but opens a file for writing. Contents of an 
         already existing *outfile* are destroyed.  Wopened files are written to 
         with :func:`fprint`. With no argument, the previously wopened file is closed. 
-        h.wopen() returns 0 on failure to open a file. 
+        n.wopen() returns 0 on failure to open a file. 
 
     Example:
 
@@ -90,10 +90,10 @@ Open and Write to Files (Obsolete)
             from neuron import n
 
             def w_open(ndat, x, y):
-                h.wopen("file.dat") 
+                n.wopen("file.dat") 
                 for i in range(ndat):
                     h.fprint(f"{x[i]} {y[i]}\n")
-                h.wopen()
+                n.wopen()
 
             # ndat is number of data points
             ndat = 3

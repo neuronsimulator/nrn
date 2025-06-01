@@ -44,7 +44,7 @@ The get a CellBuilder by selecting :menuselection:`NEURONMainMenu --> Build --> 
         python
 
         n.load_file('celbild.hoc') # load the library
-        h.makecellbuilder()
+        n.makecellbuilder()
 
 Either way, a new CellBuilder will appear:
 

@@ -322,7 +322,7 @@ MechanismType
             mt = n.MechanismType(1) 
             mt.select("IClamp") 
             pp = mt.pp_begin()
-            while h.object_id(pp) != 0:
+            while n.object_id(pp) != 0:
                 seg = pp.get_segment() 
                 print(f"{pp} located at {seg}")
                 pp = mt.pp_next()

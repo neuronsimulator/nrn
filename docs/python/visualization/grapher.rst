@@ -25,7 +25,7 @@ To pop up the widget say:
     python
 
     	n.load_file("grapher.hoc")  # reads this file 
-    	h.makegrapher(1)            # pop up a new grapher 
+    	n.makegrapher(1)            # pop up a new grapher 
 
  
 Creating a grapher using 
@@ -33,7 +33,7 @@ Creating a grapher using
 .. code-block::
     python
 
-    	h.makegrapher() 
+    	n.makegrapher() 
 
 pops up a short form of the Grapher without "Indep Begin", "Indep 
 End", or "X-expr" buttons. The limits are defined by the x-axis length 
@@ -128,7 +128,7 @@ of variables that depend implicitly on the independent variable.
 IndepBegin
 ~~~~~~~~~~
 
-For a grapher made with ``h.makegrapher(1)``, specifies initial value 
+For a grapher made with ``n.makegrapher(1)``, specifies initial value 
 of the independent variable. 
 
 IndepEnd
@@ -139,7 +139,7 @@ Specifies final value of independent variable.
 Xexpr
 ~~~~~
 
-A grapher made with ``h.makegrapher(1)`` allows separate specification of 
+A grapher made with ``n.makegrapher(1)`` allows separate specification of 
 independent variable and the x axis plot functions. This allows 
 phase plane plots. The Xexpr may be any function of the independent 
 variable or an implicit function if a generator statement exists. 

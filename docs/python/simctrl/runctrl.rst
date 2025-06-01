@@ -70,7 +70,7 @@ The init call chain is
 .. code-block::
     none
 
-        h.stdinit --> h.init --> (n.finitialize, h.fcurrent) 
+        n.stdinit --> n.init --> (n.finitialize, n.fcurrent) 
 
 When more complicated initialization is required, use 
 :class:`FInitializeHandler` objects or substitute a 
@@ -89,8 +89,8 @@ new procedure for the default init procedure; e.g.
         if n.cvode.active():
             n.cvode.re_init()
         else:
-            h.fcurrent()
-        h.frecord_init()
+            n.fcurrent()
+        n.frecord_init()
 
 
 .. seealso::

@@ -141,7 +141,7 @@ Nonetheless, in isolated situations the following section may be useful:
               print(x)
              
             h('objref o[2][3]') 
-            for x in h.o: 
+            for x in n.o: 
               for y in x: 
                 print(x, y)
              
@@ -203,7 +203,7 @@ Nonetheless, in isolated situations the following section may be useful:
             print(s[0])          # notice the index to dereference. prints hello 
             h.chgstr(s) 
             print(s[0])          # prints goodbye 
-            h.sprint(s, 'value is %d', 2+2) 
+            n.sprint(s, 'value is %d', 2+2) 
             print(s[0])          # prints value is 4 
 
         and here is an example that changes a pointer to a double 
@@ -559,7 +559,7 @@ Nonetheless, in isolated situations the following section may be useful:
             python
 
             sr = n.SectionRef(sec=n.dend[2])
-            sr.root.push(); print(n.secname()); h.pop_section() 
+            sr.root.push(); print(n.secname()); n.pop_section() 
 
         or, more compactly and avoiding the modification of the section stack, 
         

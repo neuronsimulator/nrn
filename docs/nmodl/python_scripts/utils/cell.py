@@ -26,7 +26,7 @@ class Cell:
 
         pc = n.ParallelContext()
         pc.set_maxstep(10)
-        h.stdinit()
+        n.stdinit()
         n.dt = dt
         pc.psolve(tstop)
 

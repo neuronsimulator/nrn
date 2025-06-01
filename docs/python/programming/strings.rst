@@ -14,7 +14,7 @@ Strings
 .. function:: sprint
 
     Syntax:
-        ``h.sprint(strdef, "format", args)``
+        ``n.sprint(strdef, "format", args)``
 
     Description:
         Prints to a NEURON (i.e. not Python) string. See :func:`printf` for the description of the format.
@@ -27,7 +27,7 @@ Strings
             from neuron import n
 
             strdef = n.ref('')
-            h.sprint(strdef, 'There are %d %s.', 3, 'dendrites')
+            n.sprint(strdef, 'There are %d %s.', 3, 'dendrites')
             print(strdef[0])
 
     .. note::

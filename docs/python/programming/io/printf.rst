@@ -16,18 +16,18 @@ Printf (Formatted Output)
          
 
     Syntax:
-        ``h.printf(format, ...)``
+        ``n.printf(format, ...)``
 
         ``h.fprint(format, ...)``
 
-        ``h.sprint(strdef, format, ...)``
+        ``n.sprint(strdef, format, ...)``
 
 
 
     Description:
-        ``h.printf`` places output on the standard output.  ``h.fprint`` places output 
-        on the file opened with the ``h.wopen(filename)`` command (standard 
-        output if no file is opened).  ``h.sprint`` places output in its ``strdef`` 
+        ``n.printf`` places output on the standard output.  ``h.fprint`` places output 
+        on the file opened with the ``n.wopen(filename)`` command (standard 
+        output if no file is opened).  ``n.sprint`` places output in its ``strdef`` 
         argument. (Note: ``strdef`` must be a NEURON string reference, created via
         e.g., ``mystr = n.ref("")``, not a regular Python string as the latter is immutable.)
         These functions are subsets of their counterparts in 
@@ -88,14 +88,14 @@ Printf (Formatted Output)
             - carriage return without the line feed
 
          
-        ``h.printf`` and ``h.fprint`` return the number of characters printed. 
+        ``n.printf`` and ``h.fprint`` return the number of characters printed. 
          
 
     Example:
 
         .. code::
 
-            h.printf("\tpi=%-20.10g sin(pi)=%f\n", n.PI, h.sin(n.PI)) 
+            n.printf("\tpi=%-20.10g sin(pi)=%f\n", n.PI, h.sin(n.PI)) 
 
                     pi=3.141592654          sin(pi)=0.000000 
                     42 

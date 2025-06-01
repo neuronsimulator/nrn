@@ -241,7 +241,7 @@ Example:
             sec.pt3dclear()
             sec.nseg = nseg
             setup_diam()
-            h.define_shape()
+            n.define_shape()
             print_stats()
 
         def setup_diam():
@@ -378,7 +378,7 @@ Example:
 
         n.xopen("$(NEURONHOME)/demo/pyramid.nrn") 
         mode = 1
-        h.pt3dconst(mode) # uses default section from pyramid.nrn
+        n.pt3dconst(mode) # uses default section from pyramid.nrn
         s = n.Shape() 
         s.action(lambda: s.select(sec=n.dendrite_1[8]))
         s.color(2, sec=n.dendrite_1[8])
@@ -388,7 +388,7 @@ Example:
                                                           # to directly access
                                                           # the length
         n.xcheckbox("Can't change length", (__main__, 'mode'),
-                    lambda: h.pt3dconst(mode, sec=n.dendrite_1[8]))
+                    lambda: n.pt3dconst(mode, sec=n.dendrite_1[8]))
         n.xpanel() 
 
     .. image:: ../../../images/geometry4.png
@@ -424,9 +424,9 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``buffersize =  h.pt3dclear(sec=section)``
+        ``buffersize =  n.pt3dclear(sec=section)``
 
-        ``buffersize =  h.pt3dclear(buffersize, sec=section)``
+        ``buffersize =  n.pt3dclear(buffersize, sec=section)``
 
 
     Description:
@@ -448,9 +448,9 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``h.pt3dadd(x, y, z, d, sec=section)``
+        ``n.pt3dadd(x, y, z, d, sec=section)``
 
-        ``h.pt3dadd(xvec, yvec, zvec, dvec, sec=section)``
+        ``n.pt3dadd(xvec, yvec, zvec, dvec, sec=section)``
 
     Description:
          
@@ -458,9 +458,9 @@ Defining the 3D Shape
         at the end of the current pt3d 
         list. Assume that successive additions increase the arc length 
         monotonically. When pt3d points exist in ``section`` they are used 
-        to compute *diam* and *L*. When *diam* or *L* are changed and \ ``h.pt3dconst(sec=section)==0`` 
+        to compute *diam* and *L*. When *diam* or *L* are changed and \ ``n.pt3dconst(sec=section)==0`` 
         the 3-d info is changed to be consistent with the new values of 
-        *L* and *diam*. (Note: When *L* is changed, \ ``h.define_shape()`` should be executed 
+        *L* and *diam*. (Note: When *L* is changed, \ ``n.define_shape()`` should be executed 
         to adjust the 3-d info so that branches appear connected.) 
         The existence of a spine at this point is signaled 
         by a negative value for *d*. 
@@ -484,7 +484,7 @@ Defining the 3D Shape
             dvec = n.Vector([1] * len(theta))
 
             dend = n.Section('dend')
-            h.pt3dadd(xvec, yvec, zvec, dvec, sec=dend)
+            n.pt3dadd(xvec, yvec, zvec, dvec, sec=dend)
 
             s = n.Shape()
             s.show(0)
@@ -510,9 +510,9 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``h.pt3dconst(0, sec=section)``
+        ``n.pt3dconst(0, sec=section)``
 
-        ``h.pt3dconst(1, sec=section)``
+        ``n.pt3dconst(1, sec=section)``
 
 
     Description:
@@ -536,7 +536,7 @@ Defining the 3D Shape
          
         Because of the surprises noted above, when using 3d points 
         consider treating them as the authoritative diameter info and set 
-        \ ``h.pt3dconst(1, sec=section)``. 
+        \ ``n.pt3dconst(1, sec=section)``. 
          
         3d points are automatically generated when one uses 
         the NEURON Shape class. Experiment with ``sec.nseg`` and 
@@ -555,20 +555,20 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``style = h.pt3dstyle(sec=section)``
+        ``style = n.pt3dstyle(sec=section)``
 
-        ``style = h.pt3dstyle(0, sec=section)``
+        ``style = n.pt3dstyle(0, sec=section)``
 
-        ``style = h.pt3dstyle(1, x, y, z, sec=section)``
+        ``style = n.pt3dstyle(1, x, y, z, sec=section)``
 
-        ``style = h.pt3dstyle(1, _ref_x, _ref_y, _ref_z, sec=section)``
+        ``style = n.pt3dstyle(1, _ref_x, _ref_y, _ref_z, sec=section)``
 
 
     Description:
         With no args besides the ``sec=`` keyword, returns 1 if using a logical connection point. 
          
         With a first arg of 0, then style is NO logical connection point 
-        and (with :func:`pt3dconst` == 0 and ``h.define_shape()`` is executed) 
+        and (with :func:`pt3dconst` == 0 and ``n.define_shape()`` is executed) 
         the 3-d location info is translated so the first 3-d point coincides with 
         the parent connection location. This is the classical and default behavior. 
          
@@ -604,7 +604,7 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``h.pt3dinsert(i, x, y, z, diam, sec=section)``
+        ``n.pt3dinsert(i, x, y, z, diam, sec=section)``
 
 
     Description:
@@ -624,7 +624,7 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``h.pt3dremove(i, sec=section)``
+        ``n.pt3dremove(i, sec=section)``
 
 
     Description:
@@ -640,9 +640,9 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``h.pt3dchange(i, x, y, z, diam, sec=section)``
+        ``n.pt3dchange(i, x, y, z, diam, sec=section)``
 
-        ``h.pt3dchange(i, diam, sec=section)``
+        ``n.pt3dchange(i, diam, sec=section)``
 
 
     Description:
@@ -652,8 +652,8 @@ Defining the 3D Shape
         .. code-block::
             python
 
-            h.pt3dchange(5, section.x3d(5), section.y3d(5), section.z3d(5),
-                         section.diam3d(5) if not h.spine3d(sec=section) else -section.diam3d(5),
+            n.pt3dchange(5, section.x3d(5), section.y3d(5), section.z3d(5),
+                         section.diam3d(5) if not n.spine3d(sec=section) else -section.diam3d(5),
                          sec=section) 
 
         leaves the pt3d info unchanged. 
@@ -675,14 +675,14 @@ Reading 3D Data from NEURON
     Syntax:
         ``section.n3d()``
 
-        ``h.n3d(sec=section)``
+        ``n.n3d(sec=section)``
 
 
     Description:
         Return the number of 3d locations stored in the ``section``. The ``section.n3d()`` syntax returns an
-        integer and is generally clearer than the ``h.n3d(sec=section)`` which returns a float and therefore
+        integer and is generally clearer than the ``n.n3d(sec=section)`` which returns a float and therefore
         has to be cast to an int to use with ``range``. The latter form is, however, slightly more efficient
-        when used with ``section.push()`` and ``h.pop_section()`` to set a default section used for many
+        when used with ``section.push()`` and ``n.pop_section()`` to set a default section used for many
         morphology queries (in which case the sec= would be omitted).
 
          
@@ -722,7 +722,7 @@ Reading 3D Data from NEURON
     Syntax:
         ``section.y3d(i)``
 
-        ``h.y3d(i, sec=section)``
+        ``.y3d(i, sec=section)``
 
 
     .. seealso::
@@ -739,7 +739,7 @@ Reading 3D Data from NEURON
     Syntax:
         ``section.z3d(i)``
 
-        ``h.z3d(i, sec=section)``
+        ``n.z3d(i, sec=section)``
 
 
     .. seealso::
@@ -780,7 +780,7 @@ Reading 3D Data from NEURON
     Syntax:
         ``section.arc3d(i)``
 
-        ``h.arc3d(i, sec=section)``
+        ``n.arc3d(i, sec=section)``
 
 
     Description:
@@ -797,7 +797,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.spine3d(i, sec=section)``
+        ``n.spine3d(i, sec=section)``
 
 
     Description:
@@ -813,7 +813,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.setSpineArea(area)``
+        ``n.setSpineArea(area)``
 
 
     Description:
@@ -834,7 +834,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.getSpineArea()``
+        ``n.getSpineArea()``
 
 
     Description:
@@ -851,7 +851,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.define_shape()``
+        ``n.define_shape()``
 
 
     Description:
@@ -889,7 +889,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.area(x, sec=section)``
+        ``n.area(x, sec=section)``
 
         ``section(x).area()``
 
@@ -909,7 +909,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.ri(x, sec=section)``
+        ``n.ri(x, sec=section)``
 
         ``section(x).ri()``
 

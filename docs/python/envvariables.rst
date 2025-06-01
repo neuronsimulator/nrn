@@ -24,7 +24,7 @@ NEURON_MODULE_OPTIONS
 
   Note that the special option ``-print-options`` will cause the neuron module
   to print its options (except for that one) on first import. Also,
-  ``h.nrnversion(7)`` will return the effective command line indicating the
+  ``n.nrnversion(7)`` will return the effective command line indicating the
   options.
 
   If an arg appears multiple times, only the first will take effect.
@@ -44,7 +44,7 @@ NEURON_MODULE_OPTIONS
      """)
      i = 900
      assert(h.add_recurse(i) == i*(i+1)/2)
-     assert("-nogui -NFRAME 1000 -NSTACK 10000" in h.nrnversion(7))
+     assert("-nogui -NFRAME 1000 -NSTACK 10000" in n.nrnversion(7))
      '
 
   As the environment variable is only used on the first import of NEURON,
@@ -60,4 +60,4 @@ NEURON_MODULE_OPTIONS
     nrn_options = "-nogui -NSTACK 3000 -NFRAME 525"
     os.environ["NEURON_MODULE_OPTIONS"] = nrn_options
     from neuron import n
-    assert(nrn_options in h.nrnversion(7))
+    assert(nrn_options in n.nrnversion(7))

@@ -29,7 +29,7 @@ General
 
             x = pnt.get_loc()
             sec = n.cas()
-            h.pop_section()
+            n.pop_section()
 
 
     Description:

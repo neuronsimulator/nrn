@@ -114,13 +114,13 @@ mcell_ran4
 
 
     Syntax:
-        ``previous = h.use_mcell_ran4(next) # next must be 0 or 1``
+        ``previous = n.use_mcell_ran4(next) # next must be 0 or 1``
 
-        ``boolean = h.use_mcell_ran4()``
+        ``boolean = n.use_mcell_ran4()``
 
 
     Description:
-        h.use_mcell_ran4(1) causes scop_random in model descriptions to use 
+        n.use_mcell_ran4(1) causes scop_random in model descriptions to use 
         the :func:`mcell_ran4` cryptographic quality random generator. Otherwise, the 
         low quality (but faster) linear congruential generator is used. 
          

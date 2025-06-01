@@ -17,4 +17,4 @@ g.addvar("v", soma(0.5)._ref_v)
 
 # popup the variable step and run controls
 h.numericalmethodpanel.map()
-h.nrncontrolmenu()
+n.nrncontrolmenu()

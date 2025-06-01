@@ -117,8 +117,8 @@ In the same directory, make an :file:`init_ss.py` file with the contents:
         if n.cvode.active():
             n.cvode.re_init()
         else:
-            h.fcurrent()
-        h.frecord_init()
+            n.fcurrent()
+        n.frecord_init()
 
     fih = n.FInitializeHandler(ss_init)
 

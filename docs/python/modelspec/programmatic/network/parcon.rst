@@ -67,8 +67,8 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
 
             from neuron import n
             
-	    # importing MPI or h.nrnmpi_init() must come before the first instantiation of ParallelContext()
-	    h.nrnmpi_init()
+	    # importing MPI or n.nrnmpi_init() must come before the first instantiation of ParallelContext()
+	    n.nrnmpi_init()
                         
             pc = n.ParallelContext()
 
@@ -207,12 +207,12 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
         and we take the hit of repeated evaluation of gnabar_hh.
         A run must be quite lengthy to amortize this overhead. 
 
-        To run under MPI, be sure to include the ``h.nrnmpi_init()`` and then
+        To run under MPI, be sure to include the ``n.nrnmpi_init()`` and then
         launch your script via, e.g. ``mpiexec -n 4 python myscript.py``. NEURON
         also supports running via the PVM (parallel virtual machine), but the launch
         setup is different. If you do not have mpi4py and you have not exported
         the NEURON_INIT_MPI=1 environment variable then you can use the
-        h.nrnmpi_init() method as long as that is executed prior to the first
+        n.nrnmpi_init() method as long as that is executed prior to the first
         instantiation of ParallelContext.
 
         The exact same Python files should exist in the same relative locations 
@@ -227,7 +227,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
             python
 
             from neuron import n
-            h.nrnmpi_init()
+            n.nrnmpi_init()
 
             pc = n.ParallelContext()
             print (f"I am {pc.id()} of {pc.nhost()}")
@@ -1376,7 +1376,7 @@ Description:
 
 
     Syntax:
-        ``h.nrnmpi_init()``
+        ``n.nrnmpi_init()``
 
 
     Description:
@@ -1539,7 +1539,7 @@ Description:
             python
 
             from neuron import n
-            h.nrnmpi_init()
+            n.nrnmpi_init()
             pc = n.ParallelContext()
             nhost = pc.nhost()
             rank = pc.id()
@@ -2084,7 +2084,7 @@ Description:
             except:
                 pass
             from neuron import n
-            h.nrnmpi_init() #does nothing if mpi4py succeeded
+            n.nrnmpi_init() #does nothing if mpi4py succeeded
             import time
 
             pc = n.ParallelContext() 
@@ -3491,7 +3491,7 @@ Parallel Transfer
             # run model
             from neuron import coreneuron
             coreneuron.enable = True
-            h.stdinit()
+            n.stdinit()
             pc.psolve(n.tstop)
 
         In this case, :func:`psolve`, uses ``nrncore_run`` behind the scenes

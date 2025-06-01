@@ -194,7 +194,7 @@ Procedure interval2() in ocomm.hoc sets cell periods randomly
     .. code::
         python
 
-        >>> for ii in range(ncell): h.printf("%g ",cells[ii].pp.invl)
+        >>> for ii in range(ncell): n.printf("%g ",cells[ii].pp.invl)
 
 - Exercise: check results graphically by setting wt to 0, running sim, and graphing results
 

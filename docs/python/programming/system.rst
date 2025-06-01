@@ -82,7 +82,7 @@ Machine Identification
 .. function:: unix_mac_pc
 
     Syntax:
-        ``h.unix_mac_pc()``
+        ``n.unix_mac_pc()``
 
     Description:
         Return 1 if unix, 2 if (an older) mac, 3 if mswin, or 4 if mac osx darwin 
@@ -95,7 +95,7 @@ Machine Identification
             python
 
             from neuron import n
-            type = h.unix_mac_pc()
+            type = n.unix_mac_pc()
 
             if type == 1:
                 print("This os is unix based")
@@ -115,9 +115,9 @@ Machine Identification
 .. function:: nrnversion
 
     Syntax:
-        ``h.nrnversion()``
+        ``n.nrnversion()``
 
-        ``h.nrnversion(i)``
+        ``n.nrnversion(i)``
 
     Description:
         Returns a string consisting of version information. 
@@ -163,7 +163,7 @@ Machine Identification
 
           $ python 2</dev/null
           >>> from neuron import n
-          >>> h.nrnversion(9)
+          >>> n.nrnversion(9)
           '2'
 
     Example:
@@ -171,11 +171,11 @@ Machine Identification
             python
 
             from neuron import n, gui
-            h.nrnversion() 
+            n.nrnversion() 
             'NEURON -- VERSION 8.2.2 HEAD (93d41fafd) 2022-12-15'
 
             for i in range(10): 
-                print(f'{i} : {h.nrnversion(i)}')
+                print(f'{i} : {n.nrnversion(i)}')
             
             0 : 8.2.2
             1 : NEURON -- VERSION 8.2.2 HEAD (93d41fafd) 2022-12-15
@@ -329,7 +329,7 @@ Miscellaneous
 .. function:: nrn_load_dll
 
     Syntax:
-        ``h.nrn_load_dll(dll_file_name)``
+        ``n.nrn_load_dll(dll_file_name)``
 
     Description:
         Loads a dll containing membrane mechanisms (i.e., compiled MOD files).

@@ -10,7 +10,7 @@ Family
 For several values of a variable, execute an action. 
 Basically just a form for specifying a for loop. 
 
-Usage: ``h.makeFamily()`` constructs a Family and maps it to the screen. The Family 
+Usage: ``n.makeFamily()`` constructs a Family and maps it to the screen. The Family 
 instance is destroyed when its window is dismissed. 
 
 .. image:: ../images/makeFamily.png
@@ -95,7 +95,7 @@ Open with :menuselection:`Vector --> Gather Values` or to open programmatically 
 
     from neuron import n, gui
     n.load_file('gatherv.hoc')
-    h.makeGatherVec()
+    n.makeGatherVec()
 
 .. image:: ../images/GatherVec.png
     :align: center
@@ -118,7 +118,7 @@ Open with :menuselection:`Vector --> Play` or to open programmatically import GU
 
     from neuron import n, gui
     n.load_file('vplay.hoc')
-    h.makeVectorPlay()
+    n.makeVectorPlay()
 
 .. image:: ../images/VectorPlay.png
     :align: center
@@ -138,7 +138,7 @@ Open with :menuselection:`Vector --> Display` or to open programmatically import
 
     from neuron import n, gui
     n.load_file('vecwrap.hoc')
-    h.makeVecWrap()
+    n.makeVecWrap()
 
 .. image:: ../images/VecWrap.png
     :align: center

@@ -17,7 +17,7 @@ Error Handling
 .. function:: nrn_feenableexcept
 
     Syntax:
-        ``previous_floating_point_mask = h.nrn_feenableexcept(boolean)``
+        ``previous_floating_point_mask = n.nrn_feenableexcept(boolean)``
 
     Description:
         Sets or turns off a flag which, if on, causes a SIGFPE when a floating error occurs which consist of

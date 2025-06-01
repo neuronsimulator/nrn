@@ -215,19 +215,19 @@ NetCon
 
             x = netcon.preloc()
             sec = n.cas()
-            h.pop_section()
+            n.pop_section()
 
 
     Description:
         The source section is pushed onto the section stack so that it is 
-        the currently accessed section (``n.cas()``). ``h.pop_section()`` must be called after you are 
+        the currently accessed section (``n.cas()``). ``n.pop_section()`` must be called after you are 
         finished with the section or have saved it as in the syntax block above.
 
     .. warning::
         If the source was an object, the section is not pushed and the return 
         value is -1. 
         If the source is not a membrane potential (or an object) the
-	return value is -2. But the section was pushed and `h.pop_section()
+	return value is -2. But the section was pushed and `n.pop_section()
         needs to be called.
         
 
@@ -267,11 +267,11 @@ NetCon
 
             x = netcon.postloc()
             sec = n.cas()
-            h.pop_section()
+            n.pop_section()
 
     Description:
         The section of the target point process is pushed onto the section stack 
-        so that it is the currently accessed section (``n.cas()``). ``h.pop_section()`` must be called 
+        so that it is the currently accessed section (``n.cas()``). ``n.pop_section()`` must be called 
         after you are finished with the section or have saved it as in the syntax block above.
         The x return value is the 
         relative location of the point process in that section. If there

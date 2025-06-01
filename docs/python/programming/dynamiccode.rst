@@ -87,11 +87,11 @@ code-loading
 .. function:: load_proc
 
     Syntax:
-        ``h.load_proc("name1", ...)``
+        ``n.load_proc("name1", ...)``
 
-        ``h.load_func("name1", ...)``
+        ``n.load_func("name1", ...)``
 
-        ``h.load_template("name1", ..._``
+        ``n.load_template("name1", ..._``
 
     Description:
         Load the file containing a definition. 
@@ -163,7 +163,7 @@ code-loading
 .. function:: load_func
 
     Syntax:
-        ``h.load_func('name1', ...)``
+        ``n.load_func('name1', ...)``
 
         see :func:`load_proc` 
 
@@ -172,7 +172,7 @@ code-loading
 .. function:: load_template
 
     Syntax:
-        ``h.load_template('name1', ...)``
+        ``n.load_template('name1', ...)``
 
         see :func:`load_proc` 
 

@@ -75,8 +75,8 @@ A simple example of overriding init:
         if n.cvode.active():
             n.cvode.re_init()
         else:
-            h.fcurrent()
-        h.frecord_init()
+            n.fcurrent()
+        n.frecord_init()
 
      
      

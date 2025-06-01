@@ -39,7 +39,7 @@ Obsolete Stimuli
 
 
     Syntax:
-        ``h.fclamp()``
+        ``n.fclamp()``
 
 
     Description:
@@ -55,7 +55,7 @@ Obsolete Stimuli
 
 
     Syntax:
-        ``h.fclampi()``
+        ``n.fclampi()``
 
 
     Description:
@@ -71,7 +71,7 @@ Obsolete Stimuli
 
 
     Syntax:
-        ``h.fclampv()``
+        ``n.fclampv()``
 
 
     Description:

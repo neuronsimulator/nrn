@@ -736,8 +736,8 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            on or off = h.units(1 or 0)
-            current_units = h.units("varname" [, "units string"])
+            on or off = n.units(1 or 0)
+            current_units = n.units("varname" [, "units string"])
         
 
     Description:
@@ -749,7 +749,7 @@ a class. This allows multiple independent instances to be created. For example:
         variables must be given units before retrieving a session that shows them 
         in a panel. 
          
-        The units display may be turned off with \ ``h.units(0)`` or by setting the 
+        The units display may be turned off with \ ``n.units(0)`` or by setting the 
         \ ``*units_on_flag: off`` in the nrn/lib/nrn.defaults file. 
                  
         If the first arg is a string, it is treated as the name of the variable. 
@@ -765,15 +765,15 @@ a class. This allows multiple independent instances to be created. For example:
         .. code-block::
             python
             
-            print(h.units('dt'))        # ms
-            print(h.units('gna_hh'))    # S/cm2
-            print(h.units('Ra'))        # ohm-cm
-            print(h.units('L'))         # um
-            print(h.units('ExpSyn.g'))  # uS
+            print(n.units('dt'))        # ms
+            print(n.units('gna_hh'))    # S/cm2
+            print(n.units('Ra'))        # ohm-cm
+            print(n.units('L'))         # um
+            print(n.units('ExpSyn.g'))  # uS
 
     .. warning::
     
-        When passing a string to ``h.units``, note that the string must be the
+        When passing a string to ``n.units``, note that the string must be the
         name of a HOC variable. Unfortunately, there is currently no way to declare
         the units of a Python variable.
 

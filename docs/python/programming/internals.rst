@@ -135,9 +135,9 @@ Object Related
 .. function:: object_id
 
     Syntax:
-        ``h.object_id(objref)``
+        ``n.object_id(objref)``
 
-        ``h.object_id(objref, 1)``
+        ``n.object_id(objref, 1)``
 
     Description:
         Returns 0 if the object reference does not point to an object instance. 
@@ -156,10 +156,10 @@ Object Related
 
             a, b, c = n.List(), n.List(), n.Vector()
 
-            print(h.object_id(a))       # displays a double; equal to hash(a)
-            print(h.object_id(a, 1))    # 0 since a == n.List[0]
-            print(h.object_id(b, 1))    # 1 since b == n.List[1]
-            print(h.object_id(c, 1))    # 0 since c == n.Vector[0]
+            print(n.object_id(a))       # displays a double; equal to hash(a)
+            print(n.object_id(a, 1))    # 0 since a == n.List[0]
+            print(n.object_id(b, 1))    # 1 since b == n.List[1]
+            print(n.object_id(c, 1))    # 0 since c == n.Vector[0]
 
 ----
 
@@ -243,7 +243,7 @@ Object Related
 .. function:: object_push
 
     Syntax:
-        ``h.object_push(objref)``
+        ``n.object_push(objref)``
 
     Description:
         Enter the context of the object referenced by objref. In this context you 
@@ -258,7 +258,7 @@ Object Related
 .. function:: object_pop
 
     Syntax:
-        ``h.object_pop()``
+        ``n.object_pop()``
 
     Description:
         Pop the last object from an :func:`object_push` . 
@@ -286,13 +286,13 @@ Debugging
 .. function:: nrn_digest
 
     Syntax:
-        ``h.nrn_digest()``
+        ``n.nrn_digest()``
 
-        ``h.nrn_digest(tid, i)``
+        ``n.nrn_digest(tid, i)``
 
-        ``h.nrn_digest(tid, i, "abort")``
+        ``n.nrn_digest(tid, i, "abort")``
 
-        ``h.nrn_digest(filename)``
+        ``n.nrn_digest(filename)``
 
     Description:
         Available when configured with the cmake option ``-DNRN_ENABLE_DIGEST=ON``
@@ -366,7 +366,7 @@ Debugging
 .. function:: use_exp_pow_precision
 
     Syntax:
-        ``h.use_exp_pow_precision(istyle)``
+        ``n.use_exp_pow_precision(istyle)``
 
     Description:
         Works when configured with the cmake option

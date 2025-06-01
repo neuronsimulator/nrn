@@ -18,7 +18,7 @@ Functions
 
 
     Syntax:
-        ``h.initnrn()``
+        ``n.initnrn()``
 
 
     Description:
@@ -127,7 +127,7 @@ Functions
 
 
     Syntax:
-        ``h.frecord_init()``
+        ``n.frecord_init()``
 
 
     Description:
@@ -149,7 +149,7 @@ Functions
 
 
     Syntax:
-        ``h.fcurrent()``
+        ``n.fcurrent()``
 
 
     Description:
@@ -171,13 +171,13 @@ Functions
             # set el_hh so that the steady state is exactly -70 mV 
             n.finitialize(-70) # sets v to -70 and m,h,n to corresponding steady state values 
              
-            h.fcurrent()       # set all assigned variables consistent with states 
+            n.fcurrent()       # set all assigned variables consistent with states 
              
             # use current balance: 0 = ina + ik + gl_hh*(v - el_hh)		 
             soma.el_hh = (soma.ina + soma.ik + soma.gl_hh * soma.v) / soma.gl_hh 
              
             print(f"-70 mV steady state el_hh = {soma.el_hh}")
-            h.fcurrent()       # recalculate currents (il_hh) 
+            n.fcurrent()       # recalculate currents (il_hh) 
 
 
          

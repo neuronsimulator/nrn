@@ -55,7 +55,7 @@ stack by the following commands. *Use this only as a last resort.*
 
 
     Syntax:
-        ``h.pop_section()``
+        ``n.pop_section()``
 
 
     Description:
@@ -76,12 +76,12 @@ stack by the following commands. *Use this only as a last resort.*
             for stim in stims: 
                 x = stim.get_loc() 
                 print(f"location of {stim} is {n.secname()}({x})")
-                h.pop_section() 
+                n.pop_section() 
             
         (Note: in this example as ``nseg=1``, the current clamps will either be at position 0, 0.5, or 1.)
 
         (Note: a more Pythonic way to get the location of the point-process ``stim`` is to use ``seg = stim.get_segment()``,
-        but this is shown as an example of using ``h.pop_section()``.)
+        but this is shown as an example of using ``n.pop_section()``.)
 
 
          
@@ -100,7 +100,7 @@ stack by the following commands. *Use this only as a last resort.*
 
 
     Description:
-        This function, along with ``h.pop_section()`` should only be used as a last resort. 
+        This function, along with ``n.pop_section()`` should only be used as a last resort. 
         It will place a specified section on the top of the section stack, 
         becoming the current section to which all operations apply. It is 
         probably always better to use :class:`SectionRef` 
@@ -110,7 +110,7 @@ stack by the following commands. *Use this only as a last resort.*
         :samp:`push_section({number})` 
             Push the section identified by the number returned by 
             ``h.this_section()``, etc. which you desire to be the currently accessed 
-            section. Any section pushed must have a corresponding ``h.pop_section()``
+            section. Any section pushed must have a corresponding ``n.pop_section()``
             later or else the section stack will be corrupted. The number is 
             not guaranteed to be the same across separate invocations of NEURON. 
 

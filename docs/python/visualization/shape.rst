@@ -512,7 +512,7 @@ Shape
                         seg = n.cas()(a)
                         ss.select()
                         print(f'{d} from {seg}')
-                        h.pop_section()
+                        n.pop_section()
 
             ss.menu_tool('test', p)
             ss.exec_menu('test')
@@ -554,7 +554,7 @@ Shape
             arc = shape.push_selected()
             if arc >= 0:
                 # do something, then end with:
-            h.pop_section()
+            n.pop_section()
 
 
     Description:

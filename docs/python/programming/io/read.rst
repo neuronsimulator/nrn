@@ -55,14 +55,14 @@ Read from Terminal and Files
             from neuron import n
             
             def r_open(ndat):
-                h.ropen("file.dat")
+                n.ropen("file.dat")
                 string = ""
                 s = n.ref(string)
                 x = []
                 for i in range(ndat):
                     h.getstr(s, 1)
                     x.append(s[0])
-                h.ropen()
+                n.ropen()
                 return x
 
             # ndat is number of data points
@@ -156,13 +156,13 @@ Read from Terminal and Files
             from neuron import n
 
             def r_open(ndat):
-                h.ropen("file.dat")
+                n.ropen("file.dat")
                 x = []
                 y = []
                 for i in range(ndat):
                     x.append(h.fscan())
                     y.append(h.fscan())
-                    h.ropen()
+                    n.ropen()
                 return x, y
 
             # ndat is number of data points

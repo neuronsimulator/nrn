@@ -232,7 +232,7 @@ ParallelNetManager
             .. code::
 
                 import time
-                h.stdinit() 
+                n.stdinit() 
                 runtime = time.time() 
                 pnm.psolve(tstop) 
                 runtime = time.time() - runtime 
