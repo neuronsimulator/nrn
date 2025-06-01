@@ -36,14 +36,14 @@ NEURON_MODULE_OPTIONS
      export NEURON_MODULE_OPTIONS="-nogui -NFRAME 1000 -NSTACK 10000"
      python -c '
      from neuron import n
-     h("""
+     n("""
        func add_recurse() {
          if ($1 == 0) { return 0 }
          return $1 + add_recurse($1 - 1)
        }
      """)
      i = 900
-     assert(h.add_recurse(i) == i*(i+1)/2)
+     assert(n.add_recurse(i) == i*(i+1)/2)
      assert("-nogui -NFRAME 1000 -NSTACK 10000" in n.nrnversion(7))
      '
 

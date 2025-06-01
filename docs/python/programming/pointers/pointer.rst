@@ -33,10 +33,10 @@ Pointer Class
             0.0
             >>> p.assign(42)
             42.0
-            >>> h.t
+            >>> n.t
             42.0
             >>> p.val = 13
-            >>> h.t
+            >>> n.t
             13.0
 
     Description:
@@ -90,7 +90,7 @@ Pointer Class
         .. code-block::
             python
 
-            >>> h('create soma')
+            >>> n('create soma')
             1
             >>> p = n.Pointer('soma.v(0.5)')
             >>> p.s()

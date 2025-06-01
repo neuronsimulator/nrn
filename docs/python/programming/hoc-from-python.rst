@@ -43,7 +43,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            h("any hoc statement") 
+            n("any hoc statement") 
          
         Any hoc variable or string in the Hoc world can be accessed 
         in the Python world: 
@@ -51,10 +51,10 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            h('strdef s') 
-            h('{x = 3  s = "hello"}') 
+            n('strdef s') 
+            n('{x = 3  s = "hello"}') 
             print(n.x)          # prints 3.0 
-            print(h.s)          # prints hello 
+            print(n.s)          # prints hello 
 
         And if it is assigned a value in the python world it will be that value 
         in the Hoc world. (Note that any numeric python type becomes a double 
@@ -64,25 +64,25 @@ Nonetheless, in isolated situations the following section may be useful:
             python
 
             n.x = 25 
-            h.s = 'goodbye' 
-            h('print x, s')    #prints 25 goodbye 
+            n.s = 'goodbye' 
+            n('print x, s')    #prints 25 goodbye 
 
         Note, however, that new Hoc variables cannot be defined from Python except via, e.g.
-        ``h('strdef s')``.
+        ``n('strdef s')``.
 
 
         Any hoc object can be handled in Python, and can use Python idioms for that type of
         object despite being created in hoc. e.g. in hoc, you would have to use vec.size() to
         get the Vector's size. This still works in Python, but you can also use the Pythonic
-        len(h.vec): 
+        len(n.vec): 
 
         .. code-block::
             python
 
-            h('objref vec') 
-            h('vec = new Vector(5)') 
-            print(h.vec)        # prints Vector[0] 
-            print(len(h.vec))   # prints 5.0 
+            n('objref vec') 
+            n('vec = new Vector(5)') 
+            print(n.vec)        # prints Vector[0] 
+            print(len(n.vec))   # prints 5.0 
 
         There is, however, in pure Python models never a need to create a hoc object;
         e.g. if no HOC code needed to access the :class:`Vector`, the above is equivalent to
@@ -102,7 +102,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            x = h.vec.size     # not 5 but a python callable object 
+            x = n.vec.size     # not 5 but a python callable object 
             print(x)            # prints: Vector[0].size() 
             print(x())          # prints 5
 
@@ -111,9 +111,9 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            h.vec.indgen().add(10) # fills elements with 10, 11, ..., 14 
-            print(h.vec[2])    # prints 12.0 
-            x = h.vec.x        # a python indexable object 
+            n.vec.indgen().add(10) # fills elements with 10, 11, ..., 14 
+            print(n.vec[2])    # prints 12.0 
+            x = n.vec.x        # a python indexable object 
             print(x)           # prints Vector[0].x[?] 
             print(x[2])        # prints 12.0 
 
@@ -140,7 +140,7 @@ Nonetheless, in isolated situations the following section may be useful:
             for x in l: 
               print(x)
              
-            h('objref o[2][3]') 
+            n('objref o[2][3]') 
             for x in n.o: 
               for y in x: 
                 print(x, y)
@@ -152,7 +152,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            h('create soma, axon') 
+            n('create soma, axon') 
             ax = n.axon 
 
         makes ax a Python :class:`~neuron.n.Section` which references the hoc 
@@ -198,10 +198,10 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            h('proc chgstr() { $s1 = "goodbye" }') 
+            n('proc chgstr() { $s1 = "goodbye" }') 
             s = n.ref('hello') 
             print(s[0])          # notice the index to dereference. prints hello 
-            h.chgstr(s) 
+            n.chgstr(s) 
             print(s[0])          # prints goodbye 
             n.sprint(s, 'value is %d', 2+2) 
             print(s[0])          # prints value is 4 
@@ -211,10 +211,10 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            h('proc chgval() { $&1 = $2 }') 
+            n('proc chgval() { $&1 = $2 }') 
             x = n.ref(5) 
             print(x[0])          # prints 5.0 
-            h.chgval(x, 1+1) 
+            n.chgval(x, 1+1) 
             print(x[0])          # prints 2.0 
 
         Finally, here is an example that changes a objref arg. 
@@ -222,10 +222,10 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            h('proc chgobj() { $o1 = new List() }') 
+            n('proc chgobj() { $o1 = new List() }') 
             v = n.ref([1,2,3])  # references a Python object 
             print(v[0])          # prints [1, 2, 3] 
-            h.chgobj(v) 
+            n.chgobj(v) 
             print(v[0])          # prints List[0] 
 
         Unfortunately, the HocObject.ref() is not often useful since it is not really 
@@ -234,7 +234,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            h('x = 1') 
+            n('x = 1') 
             y = n.ref(n.x) 
             print(y)                     # prints hoc ref value 1 
             print(n.x, y[0])             # prints 1.0 1.0 
@@ -249,7 +249,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            h('x = 1') 
+            n('x = 1') 
             y = n._ref_x 
             print(y)                     # prints pointer to hoc value 1
             print(n.x, y[0])             # prints 1.0 1.0 
@@ -292,8 +292,8 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            h('obfunc newvec() { return new Vector($1) }') 
-            v = h.newvec(10).indgen().add(10) 
+            n('obfunc newvec() { return new Vector($1) }') 
+            v = n.newvec(10).indgen().add(10) 
             v.printf()          # prints 10 11 ... 19 (not 10.0 ... since printf is a hoc function) 
 
         but that idiom is more or less obsolete as the same thing can be accomplished 
@@ -321,8 +321,8 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            h('obfunc newlist() { return new List() }') 
-            my_list = h.newlist() 
+            n('obfunc newlist() { return new List() }') 
+            my_list = n.newlist() 
             apnd = my_list.append 
             apnd([1,2,3])      # Python list in hoc List 
             apnd(('a', 'b', 'c')) # Python tuple in hoc List 
@@ -330,7 +330,7 @@ Nonetheless, in isolated situations the following section may be useful:
             for item in my_list:
                 print(item)
              
-            h('for i=0, List[0].count-1 print List[0].object(i)') 
+            n('for i=0, List[0].count-1 print List[0].object(i)') 
 
          
         To see all the methods available for a hoc object, use, for example, 
@@ -341,7 +341,7 @@ Nonetheless, in isolated situations the following section may be useful:
             dir(n.Vector) 
 
          
-        h.anyclass can be subclassed with 
+        n.anyclass can be subclassed with 
 
         .. code-block::
             python
@@ -389,8 +389,8 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            h.setpointer(_ref_hocvar, 'POINTER_name', point_proces_object) 
-            h.setpointer(_ref_hocvar, 'POINTER_name', nrn.Mechanism_object) 
+            n.setpointer(_ref_hocvar, 'POINTER_name', point_proces_object) 
+            n.setpointer(_ref_hocvar, 'POINTER_name', nrn.Mechanism_object) 
 
         See :file:`nrn/share/examples/nrniv/nmodl/`\ (:file:`tstpnt1.py` and :file:`tstpnt2.py`) for 
         examples of usage. For a density mechanism, the 'POINTER_name' cannot 
@@ -400,7 +400,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            h.setpointer(_ref_t, 'bar', sec(x).foo) 
+            n.setpointer(_ref_t, 'bar', sec(x).foo) 
 
          
 
@@ -459,7 +459,7 @@ Nonetheless, in isolated situations the following section may be useful:
             python
 
             from neuron import n
-            h(''' 
+            n(''' 
               create soma, dend[3], axon 
               access dend[1] 
             ''') 
@@ -522,7 +522,7 @@ Nonetheless, in isolated situations the following section may be useful:
             python
 
             from neuron import n 
-            h(''' 
+            n(''' 
             objref p 
             p = new PythonObject() 
             {p.sec.push() psection() pop_section()} 

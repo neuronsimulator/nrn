@@ -12,7 +12,7 @@ iclamp.amp = 0.3
 
 g = n.Graph(False)
 g.view(0, -80, 5, 120, 624, 40, 300, 200)
-h.graphList[0].append(g)
+n.graphList[0].append(g)
 g.addvar("v", soma(0.5)._ref_v)
 
 # popup the variable step and run controls

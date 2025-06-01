@@ -52,7 +52,7 @@ def onerun(amp):
     g.size(0, 500, -80, 40)
     g.view(0, -80, 500, 120, 2, 105, 300.48, 200.32)
     # update graph throughout the simulation
-    h.graphList[0].append(g)
+    n.graphList[0].append(g)
     # plot v at distal end of dend
     g.addvar("dend(1).v", cell.dend(1)._ref_v)
     stim.amp = amp

@@ -605,7 +605,7 @@ Vector
             soma = n.Section('soma')
 
             # insert variables for sodium ions
-            soma.insert(h.na_ion)
+            soma.insert(n.na_ion)
 
             # driving stimulus
             t = n.Vector(np.linspace(0, 2 * np.pi, 50))
@@ -620,7 +620,7 @@ Vector
             g = n.Graph()
             g.addvar("ina", soma(0.5)._ref_ina)
             g.size(0, 6.28, -1, 1)
-            h.graphList[0].append(g)
+            n.graphList[0].append(g)
 
             # run the simulation
             n.finitialize(-65)
@@ -1049,9 +1049,9 @@ Vector
             from neuron import n
             
             # create and populate a HOC array
-            h('double px[5]')
-            h.px[0] = 5
-            h.px[3] = 2
+            n('double px[5]')
+            n.px[0] = 5
+            n.px[3] = 2
             
             # transfer the data
             v.from_double(5, n._ref_px[0])
@@ -2137,7 +2137,7 @@ Vector
             python
 
             relu = lambda x: x if x > 0 else 0
-            vec.apply(h.sin).apply(relu)
+            vec.apply(n.sin).apply(relu)
 
     Example:
 
@@ -2188,7 +2188,7 @@ Vector
 
             from neuron import n
             vec = n.Vector(range(0, 10, 2))
-            h("func sq(){return $1*$1}")
+            n("func sq(){return $1*$1}")
             print(vec.reduce("sq", 100))
 
         displays the value 320. 

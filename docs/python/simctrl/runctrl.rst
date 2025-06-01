@@ -44,10 +44,10 @@ The default advance is merely a HOC function that calls :func:`fadvance`. It may
 .. code-block::
     python
 
-    h('proc advance() {nrnpython("myadvance()")}')
+    n('proc advance() {nrnpython("myadvance()")}')
     
     def myadvance():
-        print(f'h.t = {n.t}')
+        print(f'n.t = {n.t}')
         n.fadvance()
 
 
@@ -80,7 +80,7 @@ new procedure for the default init procedure; e.g.
 .. code-block::
     python
 
-    h('proc init() {finitialize(v_init) nrnpython("myinit()")}')
+    n('proc init() {finitialize(v_init) nrnpython("myinit()")}')
 
     def myinit():
         # new code to happen after initialization here

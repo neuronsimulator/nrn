@@ -92,7 +92,7 @@ Obsolete Plotting
             import numpy as np
 
             # define a HOC variable x
-            h('x = 0')
+            n('x = 0')
 
 
             def p(): # plot ramp 

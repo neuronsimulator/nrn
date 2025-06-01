@@ -207,7 +207,7 @@ Graph
         To automatically plot a variable added to a graph ``g`` with ``addvar`` against
         ``t`` during a ``run()``, ``stdrun.hoc`` must be loaded (this is done automatically
         with a ``from neuron import gui``) and the graph must be
-        added to a graphList, such as by executing ``h.graphList[0].append(g)``.
+        added to a graphList, such as by executing ``n.graphList[0].append(g)``.
 
     Example:
 
@@ -265,7 +265,7 @@ Graph
             g.addexpr("exp(-x)")
 
             # have to initialize the variable in HOC
-            h("x = 0")
+            n("x = 0")
 
             g.begin()
 

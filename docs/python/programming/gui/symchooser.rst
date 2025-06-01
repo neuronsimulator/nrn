@@ -86,7 +86,7 @@ SymChooser
 
             from neuron import n, gui
 
-            h('create soma')
+            n('create soma')
             n.soma.insert(n.hh)
 
             scobj = n.SymChooser()

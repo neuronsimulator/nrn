@@ -10,7 +10,7 @@ exposes a number of internal established classes and functions.
 .. code-block::
     python
 
-    >>> from neuron import noc
+    >>> from neuron import hoc
     >>> hoc.
     hoc.List(
     hoc.SectionList(
@@ -18,7 +18,7 @@ exposes a number of internal established classes and functions.
     hoc.Vector(
         ...
 
-However, for *dynamic* entities NEURON provides the `h` gateway object. It gives access to internal
+However, for *dynamic* entities NEURON provides the `n` gateway object. It gives access to internal
 classes (templates) and objects, even if they were just created. E.g.:
 
 .. code-block::
@@ -26,10 +26,10 @@ classes (templates) and objects, even if they were just created. E.g.:
 
     >>> from neuron import n
     >>> # Create objects in the hoc stack
-    >>> h("objref vec")
-    >>> h("vec = new Vector(5, 1)")
+    >>> n("objref vec")
+    >>> n("vec = new Vector(5, 1)")
     >>> # Access to objects
-    >>> h.vec.as_numpy()
+    >>> n.vec.as_numpy()
     array([1., 1., 1., 1., 1.])
     >>>
     >>> # Access to exposed types

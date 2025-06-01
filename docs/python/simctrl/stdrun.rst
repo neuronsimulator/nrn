@@ -61,12 +61,16 @@ make sure you don't take away functionality which is already
 there. See `$NEURONHOME/lib/hoc/stdrun.hoc <https://github.com/neuronsimulator/nrn/blob/master/share/lib/hoc/stdrun.hoc>`_ for the 
 implementations of these procedures.
 
+.. seealso::
+
+    :class:`FInitializeHandler`
+
 A simple example of overriding init:
 
 .. code-block::
     python
 
-    h('proc init() {finitialize(v_init) nrnpython("myinit()")}')
+    n('proc init() {finitialize(v_init) nrnpython("myinit()")}')
 
     def myinit():
         # new code to happen after initialization here
@@ -101,7 +105,7 @@ LoadDLL
 """""""
 
 Pop up a File chooser for dynamically loading a dll containing 
-compiled and linked model descriptions. This is available only under mac os 
+compiled and linked model descriptions. This is available only under macOS 
 and mswin. 
 
 savesession
@@ -138,9 +142,6 @@ Quit
 Exits NEURON. 
  
 
-
-Edit
-====
 
 
 Build

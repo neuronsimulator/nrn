@@ -351,7 +351,7 @@ General
             # record an action potential
             ap = n.Vector().record(s1(0.5)._ref_v)
             n.finitialize(-65)
-            while h.t < 1:
+            while n.t < 1:
                 n.fadvance()
 
             # do the three cases while playing the recorder ap
@@ -361,7 +361,7 @@ General
             apc.play(c3._ref_amp[0], n.dt)
             n.finitialize(-65)
 
-            while h.t < 0.4:
+            while n.t < 0.4:
                 n.fadvance()
                 print(f'{s1.v:11g} {s2.v:11g} {s3.v:11g} {c1.i:11g} {c2.i:11g} {c3.i:11g}')
                         
@@ -586,7 +586,7 @@ General
             
             #print spike times coming from ns
             def pr():
-              print (h.t)
+              print (n.t)
             ncout = n.NetCon(ns, None)
             ncout.record(pr)
             
@@ -808,7 +808,7 @@ General
             ax.set_yticks([0, 1])
             ax.set_yticklabels(['excitatory\nstimuli','output\nevents'])
 
-            ax.set_xlim([0, h.t])
+            ax.set_xlim([0, n.t])
             ax.set_xlabel('time (ms)')
             
         `Click here <https://colab.research.google.com/drive/1c02kKjinPAfwdabxMv79fErlqugFVOPo?usp=sharing>`_
@@ -945,7 +945,7 @@ Mechanisms
 **setdata**
 
     Syntax:
-        ``h.setdata_suffix(section(x))``
+        ``n.setdata_suffix(section(x))``
 
     Deprecated for Python:
         In Python one can use the syntax ``section(x).suffix.fname(args)`` to call a FUNCTION
@@ -955,7 +955,7 @@ Mechanisms
         If a mechanism function is called that uses RANGE variables, then the 
         appropriate data needed by the function must first be indicated via a setdata call. 
         This is unnecessary if the function uses only GLOBAL variables. 
-        The suffix refers to the name of the mechanism. E.g. ``h.setdata_hh(soma(0.5)).`` 
+        The suffix refers to the name of the mechanism. E.g. ``n.setdata_hh(soma(0.5)).`` 
 
     .. warning::
         The THREADSAFE mechanism case is a bit more complicated if the mechanism 
@@ -1031,7 +1031,7 @@ Mechanisms
             hh.ina	mA/cm2		sodium current through the hh channels 
             hh.ik	mA/cm2		potassium current through the hh channels 
              
-            h.rates_hh(v) computes the global variables [mhn]inf_hh and [mhn]tau_hh 
+            n.rates_hh(v) computes the global variables [mhn]inf_hh and [mhn]tau_hh 
             from the rate functions. usetable_hh defaults to 1. 
 
         This model used the na and k ions to read ena, ek and write ina, ik. 
@@ -1094,11 +1094,11 @@ Mechanisms
 **extracellular**
 
     Syntax:
-        ``section.insert(h.extracellular)``
+        ``section.insert(n.extracellular)``
 
-        ``nlayer = h.nlayer_extracellular()``
+        ``nlayer = n.nlayer_extracellular()``
 
-        ``nlayer = h.nlayer_extracellular(nlayer)``
+        ``nlayer = n.nlayer_extracellular(nlayer)``
 
         ``.vext[nlayer] -- mV``
 
@@ -1155,7 +1155,7 @@ Mechanisms
             nlayer=1 is sufficient and faster than nlayer=2.
 
         The number of extracellular layers can be changed with the
-        h.nlayer_extracellular(nlayer) function. (Returns the current
+        n.nlayer_extracellular(nlayer) function. (Returns the current
         number extracellular layers with or without the argument). The number
         of layers can be changed only if there are no existing
         extracellular mechanism instances in any section. Array limits
