@@ -6,13 +6,13 @@ Optimization
 
 
     Syntax:
-        ``min = h.fit_praxis(n, "funname", x._ref_x[0])``
+        ``min = n.fit_praxis(n, "funname", x._ref_x[0])``
 
-        ``min = h.fit_praxis(n, "funname", Vector)``
+        ``min = n.fit_praxis(n, "funname", Vector)``
 
-        ``min = h.fit_praxis(..., ..., ..., "after quad statement")``
+        ``min = n.fit_praxis(..., ..., ..., "after quad statement")``
 
-        ``min = h.fit_praxis(efun_as_python_callable, neuron_vector)``
+        ``min = n.fit_praxis(efun_as_python_callable, neuron_vector)``
 
 
     Description:
@@ -69,8 +69,8 @@ Optimization
             v = n.Vector([0, 0]) 
             def efun(v): 
               return (v[0] + v[1] - 5) ** 2 + 5 * (v[0] -v[1] - 15) ** 2 
-            h.attr_praxis(1e-5, 0.5, 0) 
-            e = h.fit_praxis(efun, v) 
+            n.attr_praxis(1e-5, 0.5, 0) 
+            e = n.fit_praxis(efun, v) 
             print(f"e={e} x={v[0]} y={v[1]}\n")
 
 
@@ -91,9 +91,9 @@ Optimization
 
 
     Syntax:
-        ``h.attr_praxis(tolerance, maxstepsize, printmode)``
+        ``n.attr_praxis(tolerance, maxstepsize, printmode)``
 
-        ``previous_index = h.attr_praxis(mcell_ran4_index)``
+        ``previous_index = n.attr_praxis(mcell_ran4_index)``
 
 
     Description:
@@ -130,11 +130,11 @@ Optimization
 
 
     Syntax:
-        ``pval = h.pval_praxis(i)``
+        ``pval = n.pval_praxis(i)``
 
-        ``pval = h.pval_praxis(i, paxis._ref_x[0])``
+        ``pval = n.pval_praxis(i, paxis._ref_x[0])``
 
-        ``pval = h.pval_praxis(i, Vector)``
+        ``pval = n.pval_praxis(i, Vector)``
 
 
     Description:
@@ -151,9 +151,9 @@ Optimization
 
 
     Syntax:
-        ``h.stop_praxis()``
+        ``n.stop_praxis()``
 
-        ``h.stop_praxis(i)``
+        ``n.stop_praxis(i)``
 
 
     Description:

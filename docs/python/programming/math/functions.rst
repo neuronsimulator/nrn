@@ -28,7 +28,7 @@ Diagnostics:
     .. code-block::
         none
 
-        >>> h.abs(-42.2)
+        >>> n.abs(-42.2)
         42.2
 
     See :meth:`Vector.abs` for the :class:`Vector` class. 
@@ -60,9 +60,9 @@ Diagnostics:
     .. code-block::
         python
 
-        >>> h.int(3.14)
+        >>> n.int(3.14)
         3.0
-        >>> h.int(-3.14)
+        >>> n.int(-3.14)
         -3.0
 
     .. note::
@@ -111,7 +111,7 @@ Diagnostics:
         from neuron import n
 
         for i in range(6, 12):
-            print(i, h.exp(i))
+            print(i, n.exp(i))
     
     .. note::
     
@@ -261,19 +261,19 @@ Diagnostics:
 
             from neuron import n
 
-            print(h.atan2(0, 0)) 
+            print(n.atan2(0, 0)) 
             for i in range(-1, 2):
-                print(h.atan2(i*1e-6, 10))
+                print(n.atan2(i*1e-6, 10))
             for i in range(-1, 2):
-                print(h.atan2(i*1e-6, -10))
+                print(n.atan2(i*1e-6, -10))
             for i in range(-1, 2):
-                print(h.atan2(10, i*1e-6))
+                print(n.atan2(10, i*1e-6))
             for i in range(-1, 2):
-                print(h.atan2(-10, i*1e-6))
-            print(h.atan2(10, 10)) 
-            print(h.atan2(10, -10)) 
-            print(h.atan2(-10, 10)) 
-            print(h.atan2(-10, -10)) 
+                print(n.atan2(-10, i*1e-6))
+            print(n.atan2(10, 10)) 
+            print(n.atan2(10, -10)) 
+            print(n.atan2(-10, 10)) 
+            print(n.atan2(-10, -10)) 
             
         .. note::
     

@@ -19,8 +19,8 @@ Running and Saving Batch Jobs
         .. code-block::
             python
             
-            h.batch_run(tstop, tstep, 'filename')
-            h.batch_run(tstop, tstep, 'filename', 'comment')
+            n.batch_run(tstop, tstep, 'filename')
+            n.batch_run(tstop, tstep, 'filename', 'comment')
 
 
     Description:
@@ -29,7 +29,7 @@ Running and Saving Batch Jobs
         .. code-block::
             python
             
-            while h.t < tstop:
+            while n.t < tstop:
                 for i in range(int(tstep / dt)):
                     n.fadvance()
                 # print results to filename
@@ -71,12 +71,12 @@ Running and Saving Batch Jobs
             iclamp.amp = 0.5
 
             # define variables to be stored (time and the soma's membrane potential)
-            h.batch_save()
-            h.batch_save(n._ref_t, soma(0.5)._ref_v)
+            n.batch_save()
+            n.batch_save(n._ref_t, soma(0.5)._ref_v)
 
             # initialize, run, and save
             n.finitialize(-65)
-            h.batch_run(2, 0.1, 'hhsim.dat', 'My HH sim')
+            n.batch_run(2, 0.1, 'hhsim.dat', 'My HH sim')
 
         The output (the time series of an action potential) is stored in the :file:`hhsim.dat`:
          
@@ -123,17 +123,17 @@ Running and Saving Batch Jobs
         .. code-block::
             python
             
-            h.batch_save()
-            h.batch_save(varref1, varref2, ...)
+            n.batch_save()
+            n.batch_save(varref1, varref2, ...)
 
 
     Description:
 
 
-        ``h.batch_save()`` 
+        ``n.batch_save()`` 
             starts a new list of variables to save in a :func:`batch_run` . 
 
-        ``h.batch_save(varref1, varref2, ...)`` 
+        ``n.batch_save(varref1, varref2, ...)`` 
             adds pointers to the list of variables to be saved in a ``batch_run``. 
          
 
@@ -142,11 +142,11 @@ Running and Saving Batch Jobs
         .. code-block::
             python
 
-            h.batch_save()    # This clears whatever list existed and starts a new 
+            n.batch_save()    # This clears whatever list existed and starts a new 
             		          # list of variables to be saved. 
-            h.batch_save(soma(0.5)._ref_v, axon(1)._ref_v)
+            n.batch_save(soma(0.5)._ref_v, axon(1)._ref_v)
             for i in range(3):
-                h.batch_save(dend[i](0.3)._ref_v)
+                n.batch_save(dend[i](0.3)._ref_v)
 
         specifies five quantities to be saved from each :func:`batch_run`. 
 

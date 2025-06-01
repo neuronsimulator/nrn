@@ -26,9 +26,9 @@ We can access the ``rxd`` module in HOC via:
         h = pyobj.h
     }
 
-The above additionally provides access to an object called ``h`` which is traditionally
-how Python accesses core NEURON functionality (e.g. in Python one would use h. :class:`Vector`
-instead of :hoc:class:`Vector`). You might not need to use h since when working in HOC,
+The above additionally provides access to an object called ``n`` which is traditionally
+how Python accesses core NEURON functionality (e.g. in Python one would use n. :class:`Vector`
+instead of :hoc:class:`Vector`). You might not need to use ``n`` since when working in HOC,
 but it does provide certain convenient functions like :func:`n.allsec`, which returns
 an iterable of all sections usable with ``rxd`` without  having to explicitly construct
 a :hoc:class:`SectionList`.
@@ -285,7 +285,7 @@ functions defined in ``neuron.rxd.rxdmath`` as listed :ref:`below <hoc_rxdmath_p
 
             // here: ca + buf <> cabuf, kf = 1, kb = 0.1
             nrnpython("from neuron import n")
-            nrnpython("ca_plus_buf = h.ca + h.buf")
+            nrnpython("ca_plus_buf = n.ca + n.buf")
             buffering = rxd.Reaction(pyobj.ca_plus_buf, cabuf, 1, 0.1)
 
     This is admittedly longer than the previous example, but it allows the creation
@@ -295,7 +295,7 @@ functions defined in ``neuron.rxd.rxdmath`` as listed :ref:`below <hoc_rxdmath_p
             hoc
 
             nrnpython("from neuron import n")
-            nrnpython("kf = h.ca ** 2 / (h.ca ** 2 + (1e-3) ** 2)")
+            nrnpython("kf = n.ca ** 2 / (n.ca ** 2 + (1e-3) ** 2)")
             // and then work with pyobj.kf
 
     For more, see the :class:`rxd.Reaction` entry in the Python Programmer's reference.
