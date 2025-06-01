@@ -359,9 +359,9 @@ FInitializeHandler
 
 
     Syntax:
-        ``fih = h.FInitializeHandler(py_callable)``
+        ``fih = n.FInitializeHandler(py_callable)``
 
-        ``fih = h.FInitializeHandler(type, py_callable)``
+        ``fih = n.FInitializeHandler(type, py_callable)``
 
 
     Description:
@@ -419,13 +419,13 @@ FInitializeHandler
                 print(f'  a.v={a.v} a.m_hh={a.m_hh}')
                 print(f'  b.v={b.v} b.m_hh={b.m_hh}')
 
-            fih = [h.FInitializeHandler(0, fi0),
-                   h.FInitializeHandler(1, fi1),
-                   h.FInitializeHandler(2, fi2)]
+            fih = [n.FInitializeHandler(0, fi0),
+                   n.FInitializeHandler(1, fi1),
+                   n.FInitializeHandler(2, fi2)]
 
             class Test:
                 def __init__(self):
-                    self.fih = h.FInitializeHandler(self.p)
+                    self.fih = n.FInitializeHandler(self.p)
                 def p(self):
                     print(f'inside {self}.p()')
 

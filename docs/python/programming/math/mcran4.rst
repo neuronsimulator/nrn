@@ -49,7 +49,7 @@ mcell_ran4
 
             class McellRan4Test:
                 def __init__(self):
-                    self.vec = h.Vector(1000)
+                    self.vec = n.Vector(1000)
                     self.g1 = h.Graph()
                     self.g2 = h.Graph()
                     self.g1.size(0, 1000, 0, 1) 

@@ -619,7 +619,7 @@ NetCon
         .. code-block::
             python
 
-            vec = h.Vector() 
+            vec = n.Vector() 
             netcon = h.NetCon(section(x)._ref_v, None, sec=section) 
             netcon.record(vec) 
 
@@ -651,7 +651,7 @@ NetCon
             soma.insert(h.hh)
             soma.L = 3.183098861837907
             soma.diam = 10
-            ic = h.IClamp(soma(0.5))
+            ic = n.IClamp(soma(0.5))
             ic.dur = 0.1
             ic.amp = 3
 

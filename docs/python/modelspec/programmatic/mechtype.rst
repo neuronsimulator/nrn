@@ -317,7 +317,7 @@ MechanismType
 
             cable = n.Section('cable')
             cable.nseg = 5  
-            stim = [h.IClamp(cable(i/2.)) for i in range(3)]
+            stim = [n.IClamp(cable(i/2.)) for i in range(3)]
 
             mt = h.MechanismType(1) 
             mt.select("IClamp") 

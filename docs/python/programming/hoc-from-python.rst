@@ -90,7 +90,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            vec = h.Vector(5)
+            vec = n.Vector(5)
             print(vec)
             print(len(vec))
 
@@ -124,7 +124,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            v = h.Vector(range(10, 20)) 
+            v = n.Vector(range(10, 20)) 
 
          
         Iteration over hoc Vector, List, and arrays is supported. e.g. 
@@ -132,7 +132,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            v = h.Vector(range(10, 14)) 
+            v = n.Vector(range(10, 14)) 
             for x in v: 
               print(x)
              
@@ -267,7 +267,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            v = h.Vector(range(10, 14)) 
+            v = n.Vector(range(10, 14)) 
             y = v._ref_x[1]    # holds pointer to second element of v 
             print(v[2], y[1])  # prints 12.0 12.0 
             y[1] = 50 
@@ -281,9 +281,9 @@ Nonetheless, in isolated situations the following section may be useful:
             from neuron import n
             soma = n.Section('soma')
             soma.insert(h.pas)
-            v = h.Vector().record(soma(0.5)._ref_v)
-            pi = h.Vector().record(soma(0.5).pas._ref_i)
-            ip = h.Vector().record(soma(0.5)._ref_i_pas)
+            v = n.Vector().record(soma(0.5)._ref_v)
+            pi = n.Vector().record(soma(0.5).pas._ref_i)
+            ip = n.Vector().record(soma(0.5)._ref_i_pas)
 
          
         The factory idiom is one way to create Hoc objects and use them 
@@ -302,7 +302,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            vt = h.Vector 
+            vt = n.Vector 
             v = vt(4).indgen().add(10) 
         
         or equivalently,
@@ -310,7 +310,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            v = h.Vector(range(4)) + 10
+            v = n.Vector(range(4)) + 10
 
         Any Python object can be stored in a Hoc List. It is more efficient 
         when navigating the List to use a python callable that avoids repeated 
@@ -338,7 +338,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            dir(h.Vector) 
+            dir(n.Vector) 
 
          
         h.anyclass can be subclassed with 
@@ -346,7 +346,7 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            class MyVector(neuron.hclass(neuron.h.Vector)) : 
+            class MyVector(neuron.hclass(neuron.n.Vector)) : 
               pass 
             
             v = MyVector(10) 

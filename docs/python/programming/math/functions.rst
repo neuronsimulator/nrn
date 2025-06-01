@@ -44,7 +44,7 @@ Diagnostics:
             42.2
             >>> abs(-3 + 4j)
             5.0
-            >>> v = h.Vector([1, 6, -2, -65])
+            >>> v = n.Vector([1, 6, -2, -65])
             >>> abs(v).printf()
             1       6       2       65
             4
@@ -157,8 +157,8 @@ Diagnostics:
         import numpy as np
         from neuron import n
 
-        v = h.Vector([0, h.PI/6, h.PI/4, h.PI/2])
-        v2 = h.Vector(np.cos(v))
+        v = n.Vector([0, h.PI/6, h.PI/4, h.PI/2])
+        v2 = n.Vector(np.cos(v))
         print(list(v2))
 
         # [1.0, 0.8660254037844387, 0.7071067811865476, 6.123233995736766e-17]
@@ -186,8 +186,8 @@ Diagnostics:
         import numpy as np
         from neuron import n
 
-        v = h.Vector([0, h.PI/6, h.PI/4, h.PI/2])
-        v2 = h.Vector(np.sin(v))
+        v = n.Vector([0, h.PI/6, h.PI/4, h.PI/2])
+        v2 = n.Vector(np.sin(v))
         print(list(v2))
 
         # [0.0, 0.49999999999999994, 0.7071067811865475, 1.0]
@@ -216,8 +216,8 @@ Diagnostics:
         import numpy as np
         from neuron import n
 
-        v = h.Vector([0, 1, 2, 3])
-        v2 = h.Vector(np.tanh(v))
+        v = n.Vector([0, 1, 2, 3])
+        v2 = n.Vector(np.tanh(v))
         print(list(v2))
 
         # [0.0, 0.7615941559557649, 0.9640275800758169, 0.9950547536867305]

@@ -121,7 +121,7 @@ Random Class
             r = h.Random() 
             index = h.ref(r.MCellRan4())
             r.uniform(0, 2) 
-            vec = h.Vector(1000) 
+            vec = n.Vector(1000) 
             g1 = h.Graph() 
             g2 = h.Graph() 
             g1.size(0, 1000, 0, 2) 
@@ -365,7 +365,7 @@ Random Class
                 h.fadvance()
                 print(rv[0])
 
-    More practically, this might be used with a fixed time step to set, say, ``h.IClamp[0]._ref_amp`` for a random current injection.
+    More practically, this might be used with a fixed time step to set, say, ``n.IClamp[0]._ref_amp`` for a random current injection.
 
 
 ----
@@ -425,9 +425,9 @@ Random Class
             r = h.Random() 
             r.normal(-1, .5) 
              
-            vec = h.Vector() 
+            vec = n.Vector() 
             vec.indgen(-3, 2, .1)	# x-axis for plot 
-            hist = h.Vector(vec.size()) 
+            hist = n.Vector(vec.size()) 
             g = h.Graph() 
             g.size(-3, 2, 0, 50) 
             hist.plot(g, vec)
@@ -470,13 +470,13 @@ Random Class
             r = h.Random() 
             r.lognormal(5,2) 
             n=20 
-            xvec = h.Vector(n*3)	# bins look like discrete spikes 
+            xvec = n.Vector(n*3)	# bins look like discrete spikes 
             for i in range(n): 
             	xvec[3*i] = i - 0.1 
             	xvec[3*i+1] = i 
             	xvec[3*i+2] = i + .1 
             
-            hist = h.Vector(xvec.size()) 
+            hist = n.Vector(xvec.size()) 
             g = h.Graph() 
             g.size(0, 15, 0, 120) 
             hist.plot(g, xvec) 
@@ -520,13 +520,13 @@ Random Class
             r.poisson(3) 
              
             n=20 
-            xvec = h.Vector(n*3) 
+            xvec = n.Vector(n*3) 
             for i in range(n): 
             	xvec[3*i] = i-.1 
             	xvec[3*i+1] = i 
             	xvec[3*i+2] = i+.1 
             
-            hist = h.Vector(xvec.size()) 
+            hist = n.Vector(xvec.size()) 
             g = h.Graph() 
             g.size(0, 15, 0, 120) 
             hist.plot(g, xvec)
@@ -576,7 +576,7 @@ Random Class
              
             g = h.Graph() 
             g.size(0, 20, 0, 100) 
-            hist = h.Vector(20) 
+            hist = n.Vector(20) 
             hist.plot(g) 
             for i in range(500):
             	j = int(r.repick()) # r.repick() always returns a float even though the binomial always is an integer
@@ -616,7 +616,7 @@ Random Class
             r.geometric(.8) 
             hist = new Vector(1000) 
             def sample(): 
-            	hist = h.Vector(1000) 
+            	hist = n.Vector(1000) 
             	hist.setrand(r) 
             	hist = hist.histogram(0,100,1) 
             	hist.plot(g) 
@@ -672,9 +672,9 @@ Random Class
 
             r = h.Random()  
             r.negexp(2.5)  
-            hist = h.Vector(1000) 
+            hist = n.Vector(1000) 
             def sample():
-                    hist = h.Vector(1000) 
+                    hist = n.Vector(1000) 
                     hist.setrand(r) 
                     hist = hist.histogram(0,20,.1) 
                     hist.plot(g, .1) 

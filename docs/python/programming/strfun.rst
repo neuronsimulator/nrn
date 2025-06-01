@@ -301,7 +301,7 @@ StringFunctions (String Manipulation Class)
 
             from neuron import n
             sf = h.StringFunctions()
-            v = h.Vector()
+            v = n.Vector()
             sf.alias(v, 't', h._ref_t)
             print(f'v.t = {v.t}')
             h.t = 42
@@ -338,7 +338,7 @@ StringFunctions (String Manipulation Class)
             from neuron import n
             h.load_file('stdrun.hoc')
             sf = h.StringFunctions()
-            v = h.Vector()
+            v = n.Vector()
             al = sf.alias_list(v)
             print(al)
 

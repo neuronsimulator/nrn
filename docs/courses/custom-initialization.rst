@@ -120,7 +120,7 @@ In the same directory, make an :file:`init_ss.py` file with the contents:
             h.fcurrent()
         h.frecord_init()
 
-    fih = h.FInitializeHandler(ss_init)
+    fih = n.FInitializeHandler(ss_init)
 
     # model specification
     h.load_file('all.ses') # ball and stick model with exptl rig

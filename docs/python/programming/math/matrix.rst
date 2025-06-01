@@ -464,7 +464,7 @@ Matrix
 
             from neuron import n
 
-            v1 = h.Vector([1, 2, 3, 4]) 
+            v1 = n.Vector([1, 2, 3, 4]) 
             m = h.Matrix(3, 4) 
             for i in range(3):
                 for j in range(3):
@@ -487,7 +487,7 @@ Matrix
 
             from neuron import n
 
-            v1 = h.Vector(range(1, 101)) 
+            v1 = n.Vector(range(1, 101)) 
             m = h.Matrix(100, 100, 2) ##sparse matrix 
             ##reverse permutation 
             for i in range(100): 
@@ -619,7 +619,7 @@ Matrix
 
             from neuron import n
 
-            b = h.Vector(3) 
+            b = n.Vector(3) 
             b.indgen(1,1) 
             m = h.Matrix(3, 3) 
             for i in range(m.nrow()):
@@ -642,7 +642,7 @@ Matrix
             m.setdiag(0, 3) 
             m.setdiag(-1, -1) 
             m.setdiag(1, -1) 
-            b = h.Vector(1000) 
+            b = n.Vector(1000) 
             b[500] = 1 
             x = m.solv(b) 
             print()
@@ -852,7 +852,7 @@ Matrix
             from neuron import n
 
             m = h.Matrix(5,7) 
-            v1 = h.Vector(5) 
+            v1 = n.Vector(5) 
             for i in range(-4,7): 
                 m.setdiag(i, i) 
             m.printf()
@@ -928,7 +928,7 @@ Matrix
             from neuron import n
 
             m = h.Matrix(8,8) 
-            v1 = h.Vector(8) 
+            v1 = n.Vector(8) 
             for i in range(-1,2):
                 v1.fill(2 - 3*abs(i)) 
                 m.setdiag(i, v1) 
@@ -1003,7 +1003,7 @@ Matrix
             from neuron import n
 
             m = h.Matrix(7,7) 
-            v1 = h.Vector(7) 
+            v1 = n.Vector(7) 
             for i in range(-1, 2):
                 v1.fill(2 - 3*abs(i))
                 m.setdiag(i, v1)

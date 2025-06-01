@@ -37,7 +37,7 @@ To work properly with variable time step methods, models that change states and/
         def setup_discontinuities():
             h.cvode.event(2, change)
 
-        fih = h.FInitializeHandler(setup_discontinuities)
+        fih = n.FInitializeHandler(setup_discontinuities)
     
     Note the difference between the fixed and variable step methods.
 
@@ -73,6 +73,6 @@ To work properly with variable time step methods, models that change states and/
             h.cvode.event(2, (change, 'raise'))
             h.cvode.event(3, (change, 'lower'))
 
-        fih = h.FInitializeHandler(setup_discontinuities)
+        fih = n.FInitializeHandler(setup_discontinuities)
 
     It will be helpful to use the Crank-Nicolson fixed step method and compare the variable step method with and without the ``cvode.re_init()``. Zoom in around the discontinuity at 2 ms.

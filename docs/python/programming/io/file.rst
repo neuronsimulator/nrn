@@ -477,7 +477,7 @@ The following comes courtesy of Zach Mainen, ``zach@helmholtz.sdsc.edu``:
         Must be careful that  *x*\ [] has at least *n* 
         elements after its passed address. 
 
-        i.e. If ``x = h.Vector(10)`` and ``f`` is an instance of a :class:`File`
+        i.e. If ``x = n.Vector(10)`` and ``f`` is an instance of a :class:`File`
         opened for writing, then one might call ``f.vwrite(5, x._ref_x[0]`` to write
         the first five values to a file.)
 

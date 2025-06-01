@@ -69,7 +69,7 @@ center of the soma from t = 1 ms to t = 1.1 ms:
    
    # setup the model here
 
-   ic = h.IClamp(soma(0.5))
+   ic = n.IClamp(soma(0.5))
    ic.amp = 10
    ic.dur = 0.1 * ms
    ic.delay = 1 * ms
@@ -98,7 +98,7 @@ time points (in ms).
     .. code::
         python
 
-        t_stim_vec = h.Vector(t_stim)
+        t_stim_vec = n.Vector(t_stim)
 
 Use an h. :class:`IClamp` at a segment of your choice as described above, set the ``delay`` (start time) to 0,
 the ``dur`` ation to a large number (e.g. 1e9) and use :meth:`Vector.play` to play into the ``_ref_amp`` field
@@ -107,7 +107,7 @@ using interpolation (the ``True`` in the following); e.g.
 .. code::
     python
 
-    ic = h.IClamp(soma(0.5))
+    ic = n.IClamp(soma(0.5))
     ic.delay = 0
     ic.dur = 1e9
     i_stim.play(ic._ref_amp, t_stim, True)

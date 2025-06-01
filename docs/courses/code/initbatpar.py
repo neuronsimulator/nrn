@@ -32,7 +32,7 @@ cell = Cell()
 # instrumentation
 
 # experimental manipulations
-stim = h.IClamp(cell.soma(0.5))
+stim = n.IClamp(cell.soma(0.5))
 stim.delay = 1  # ms
 stim.dur = 1e9
 stim.amp = 0.1  # nA
@@ -53,7 +53,7 @@ def set_params(run_id):
 # count only those spikes that get to distal end of dend
 nc = h.NetCon(cell.dend(1)._ref_v, None, sec=cell.dend)
 nc.threshold = -10  # mV
-spvec = h.Vector()
+spvec = n.Vector()
 nc.record(spvec)
 
 NSETTLE = 5  # ignore the first NSETTLE ISI (allow freq to stablize)

@@ -33,7 +33,7 @@ classes (templates) and objects, even if they were just created. E.g.:
     array([1., 1., 1., 1., 1.])
     >>>
     >>> # Access to exposed types
-    >>> vv = h.Vector(5, 2)
+    >>> vv = n.Vector(5, 2)
     >>> vv.as_numpy()
     array([1., 1., 1., 1., 1.])
 
@@ -54,7 +54,7 @@ predicates and subclassing.
 
     >>> isinstance(hoc.Vector, type)
     True
-    >>> v = h.Vector()
+    >>> v = n.Vector()
     >>> isinstance(v, hoc.HocObject)
     True
     >>> isinstance(v, hoc.Vector)

@@ -12,13 +12,13 @@ Vector
     This class was implemented by Zach Mainen and Michael Hines.
          
     Syntax:
-        ``obj = h.Vector()``
+        ``obj = n.Vector()``
 
-        ``obj = h.Vector(size)``
+        ``obj = n.Vector(size)``
 
-        ``obj = h.Vector(size, init)``
+        ``obj = n.Vector(size, init)``
         
-        ``obj = h.Vector(python_iterable)``
+        ``obj = n.Vector(python_iterable)``
 
     Description:
 
@@ -48,7 +48,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector([0, 1, 2, 3, 4, 5, 6, 7, 8])
+            vec = n.Vector([0, 1, 2, 3, 4, 5, 6, 7, 8])
             new_vec = v[2:6]
 
         will assign ``new_vec`` to be a ``Vector`` containing the values [2, 3, 4, 5]
@@ -94,14 +94,14 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(20, 5)
+            vec = n.Vector(20, 5)
 
         will create a vector with 20 indices, each having the value of 5. 
 
         .. code-block::
             python
 
-            vec1 = h.Vector()
+            vec1 = n.Vector()
 
         will create a vector with 0 size.  It is seldom 
         necessary to specify a size for a Vector since most operations, if necessary, 
@@ -110,7 +110,7 @@ Vector
         .. code-block::
             python
             
-            v = h.Vector([1, 2, 3])
+            v = n.Vector([1, 2, 3])
         
         will create a vector of length 3 whose entries are: 1, 2, and 3. The
         constructor takes any Python iterable. In particular, it also works
@@ -122,7 +122,7 @@ Vector
             import numpy as np
             
             x = np.linspace(0, 2 * np.pi, 50)
-            y = h.Vector(np.sin(x))
+            y = n.Vector(np.sin(x))
         
         produces a vector ``y`` of length 50 corresponding to the sine of evenly
         spaced points between 0 and 2 pi, inclusive.
@@ -236,7 +236,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(20, 5) 
+            vec = n.Vector(20, 5) 
             vec.resize(30)  # Appends 10 elements, each having a value of 0
             vec.printf()
             vec.resize(10)  # removes the last 20 elements; values of the first 10 elements are unchanged
@@ -272,7 +272,7 @@ Vector
         .. code-block::
             python
 
-            y = h.Vector(10) 
+            y = n.Vector(10) 
             print(len(y))
             print(y.buffer_size())
             y.resize(5) 
@@ -325,7 +325,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(20, 5) 
+            vec = n.Vector(20, 5) 
             vec.fill(9, 2, 7) 
 
         assigns 9 to ``vec[2]`` through ``vec[7]`` 
@@ -362,7 +362,7 @@ Vector
             python
 
             from neuron import n
-            vec = h.Vector() 
+            vec = n.Vector() 
             print(vec.label())
             vec.label("hello") 
             print(vec.label())
@@ -444,7 +444,7 @@ Vector
         .. code-block::
             python
 
-            dv = h.Vector().record(terminal(0.5)._ref_v) 
+            dv = n.Vector().record(terminal(0.5)._ref_v) 
             h.run() 
 
         Note that the next "run" will overwrite the previous time course stored 
@@ -453,7 +453,7 @@ Vector
         To remove 
         dv from the list of record vectors, the easiest method is to destroy the instance 
         with 
-        ``dv = h.Vector()`` 
+        ``dv = n.Vector()`` 
 
         Any of the following makes NEURON load its standard run library:
 
@@ -581,11 +581,11 @@ Vector
             sec.insert(h.pas)
             inp = np.zeros(500)
             inp[50:250] = 1
-            pvec = h.Vector().from_python(inp)
-            stim = h.IClamp(sec(0.5))
+            pvec = n.Vector().from_python(inp)
+            stim = n.IClamp(sec(0.5))
             stim.dur = 1e9
             pvec.play(stim, stim._ref_amp, True)
-            rd = {k:h.Vector().record(v) for k,v in zip(['t', 'v', 'stim_i', 'amp'],
+            rd = {k:n.Vector().record(v) for k,v in zip(['t', 'v', 'stim_i', 'amp'],
                                                         [h._ref_t, sec(0.5)._ref_v, stim._ref_i, stim._ref_amp])}
             h.v_init, h.tstop= -70, 500
             h.run()
@@ -608,8 +608,8 @@ Vector
             soma.insert(h.na_ion)
 
             # driving stimulus
-            t = h.Vector(np.linspace(0, 2 * np.pi, 50))
-            y = h.Vector(np.sin(t))
+            t = n.Vector(np.linspace(0, 2 * np.pi, 50))
+            y = n.Vector(np.sin(t))
 
             # play the stimulus into soma(0.5)'s ina
             # the last True means to interpolate; it's not the default, but unless
@@ -681,7 +681,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(100) 
+            vec = n.Vector(100) 
             vec.indgen(5) 
 
         creates a vector with 100 elements going from 0 to 495 in increments of 5. 
@@ -704,7 +704,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(range(90, 1000, 30))
+            vec = n.Vector(range(90, 1000, 30))
 
         In this case, ``range`` returns a generator and is very memory-efficient.
         By contrast, if we used ``np.arange``, that would create a ``numpy`` array
@@ -732,11 +732,11 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(10,4) 
-            vec1 = h.Vector(10,5) 
-            vec2 = h.Vector(10,6) 
+            vec = n.Vector(10,4) 
+            vec1 = n.Vector(10,5) 
+            vec2 = n.Vector(10,6) 
             vec.append(vec1, vec2, 7, 8, 9) 
-            vec.append(h.Vector([4,1,2,7]))
+            vec.append(n.Vector([4,1,2,7]))
 
         turns ``vec`` into a 37 element vector, whose first ten elements = 4, whose 
         second ten elements = 5, whose third ten elements = 6, and whose 31st, 32nd, 
@@ -790,7 +790,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(range(0, 49, 5)) 
+            vec = n.Vector(range(0, 49, 5)) 
             vec.contains(30) 
 
         returns True, meaning the ``Vector`` does contain an element whose value is 30. 
@@ -804,8 +804,8 @@ Vector
 
     .. note::
     
-        An h.Vector is a Python iterable, so you can also use Python's ``in``
-        keyword: ``5 in h.Vector([1, 5])`` returns ``True``.
+        An n.Vector is a Python iterable, so you can also use Python's ``in``
+        keyword: ``5 in n.Vector([1, 5])`` returns ``True``.
     
         
          
@@ -870,10 +870,10 @@ Vector
             python
         
  
-            v1 = h.Vector(range(30))
+            v1 = n.Vector(range(30))
             v1.printf() 
             
-            v2 = h.Vector() 
+            v2 = n.Vector() 
             v2.copy(v1, 0, 1, -1, 1, 2) 
             v2.printf() 
 
@@ -882,12 +882,12 @@ Vector
         .. code-block::
             python
             
-            v1 = h.Vector(range(15)) 
+            v1 = n.Vector(range(15)) 
             v1.printf() 
-            v2 = h.Vector(range(0, 150, 10)) 
+            v2 = n.Vector(range(0, 150, 10)) 
             v2.printf() 
             
-            v3 = h.Vector() 
+            v3 = n.Vector() 
             v3.copy(v1, 0, 0, -1, 2, 1) 
             v3.copy(v2, 1, 0, -1, 2, 1) 
             v3.printf()
@@ -898,8 +898,8 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(100, 10) 
-            vec1 = h.Vector(range(5, 110, 10)) 
+            vec = n.Vector(100, 10) 
+            vec1 = n.Vector(range(5, 110, 10)) 
             vec.copy(vec1, 50, 3, 6) 
 
         turns ``vec`` from a 100 element into a 54 element vector. 
@@ -912,7 +912,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(range(20))
+            vec = n.Vector(range(20))
             vec.copy(vec, 10) 
 
         produces  a 30 element vector cycling three times from 0 to 9. However 
@@ -937,7 +937,7 @@ Vector
 
 
     Description:
-        Return a new ``h.Vector`` which is a copy of the ``vsrc`` Vector, but does not copy 
+        Return a new ``n.Vector`` which is a copy of the ``vsrc`` Vector, but does not copy 
         the label. For a complete copy including the label use :meth:`Vector.cl`. 
         (Identical to the :meth:`Vector.at` function but has a short name that suggests 
         copy or clone). Useful in the construction of filter chains. 
@@ -972,7 +972,7 @@ Vector
 
 
     Description:
-        Return a h.Vector which is a copy, including the label, of the vsrc vector. 
+        Return a n.Vector which is a copy, including the label, of the vsrc vector. 
         (Similar to the :meth:`Vector.c` function which does not copy the label) 
         Useful in the construction of filter chains.
         ``srcend``, if specified, is included.
@@ -1000,13 +1000,13 @@ Vector
         This function predates the introduction of the vsrc.c, "clone", function 
         which is synonymous but is retained for backward compatibility. 
          
-        It merely avoids the necessity of a ``vdest = h.Vector()`` command and 
+        It merely avoids the necessity of a ``vdest = n.Vector()`` command and 
         is equivalent to 
 
         .. code-block::
             python
 
-            vdest = h.Vector() 
+            vdest = n.Vector() 
             vdest.copy(vsrc, start, end) 
 
 
@@ -1015,7 +1015,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(range(10, 51, 2)) 
+            vec = n.Vector(range(10, 51, 2)) 
             vec1 = vec.at(2, 10) 
 
         creates ``vec1`` with 9 elements which correspond to the values at indices 
@@ -1070,7 +1070,7 @@ Vector
 
             # the 'd' here indicates that this is an array of doubles
             a = np.array([5, 1, 6], 'd')
-            v = h.Vector()
+            v = n.Vector()
 
             v.from_double(3, neuron.numpy_element_ref(a, 0))
 
@@ -1083,7 +1083,7 @@ Vector
     
         To create         
         a new vector from a numpy array just use
-        ``v = h.Vector(python_iterable)``.
+        ``v = n.Vector(python_iterable)``.
             
 
 ----
@@ -1123,8 +1123,8 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(range(0, 245, 10))
-            vec1 = h.Vector().where(vec, ">=", 50) 
+            vec = n.Vector(range(0, 245, 10))
+            vec1 = n.Vector().where(vec, ">=", 50) 
 
         creates ``vec1`` with 20 elements ranging in value from 50 to 240 in 
         increments of 10. 
@@ -1133,8 +1133,8 @@ Vector
             python
 
             import random
-            vec = h.Vector([random.uniform(10, 20) for _ in range(25)])
-            vec1 = h.Vector() 
+            vec = n.Vector([random.uniform(10, 20) for _ in range(25)])
+            vec1 = n.Vector() 
             vec1.where(vec, ">", 15) 
 
         creates ``vec1`` with random elements gotten from ``vec`` which have values 
@@ -1201,14 +1201,14 @@ Vector
             python
 
             import numpy as np
-            vs = h.Vector(np.arange(0, 0.95, 0.1))
+            vs = n.Vector(np.arange(0, 0.95, 0.1))
             print(list(vs)) 
              
             print(vs.indwhere(">", .3))
             print(f"note roundoff error, vs[3] - 0.3 = {vs[3] - 0.3}")
             print(vs.indwhere("==", .5))
              
-            vd = h.Vector().indvwhere(vs, "[)", .3, .7) 
+            vd = n.Vector().indvwhere(vs, "[)", .3, .7) 
             print(list(vd))
 
     .. warning::
@@ -1384,13 +1384,13 @@ Vector
         .. code-block::
             python
 
-            v1 = h.Vector(range(20, 31, 2))
+            v1 = n.Vector(range(20, 31, 2))
             v1.printf() 
             f = h.File() 
             f.wopen("temp.tmp") 
             v1.vwrite(f) 
              
-            v2 = h.Vector() 
+            v2 = n.Vector() 
             f.ropen("temp.tmp") 
             v2.vread(f) 
             v2.printf() 
@@ -1435,7 +1435,7 @@ Vector
             python
 
             import numpy as np
-            vec = h.Vector(np.arange(0, 0.95, 0.1)) 
+            vec = n.Vector(np.arange(0, 0.95, 0.1)) 
             vec.printf("%8.4f\n") 
 
         prints the numbers 0.0000 through 0.9000 in increments of 0.1.  Each number will 
@@ -1592,7 +1592,7 @@ Vector
             
             g = h.Graph() 
             g.size(0, 10, -1, 1) 
-            vec = h.Vector(np.sin(np.arange(0, 10, 0.1))) 
+            vec = n.Vector(np.sin(np.arange(0, 10, 0.1))) 
             vec.plot(g, 0.1) 
             def do_run():
                 for i in range(len(vec)):
@@ -1610,7 +1610,7 @@ Vector
             :align: center
 
     .. seealso::
-        :meth:`Graph.Vector`
+        :meth:`Grapn.Vector`
 
          
 
@@ -1657,7 +1657,7 @@ Vector
             
             g = h.Graph() 
             g.size(0, 10, -1, 1) 
-            vec = h.Vector(np.sin(np.arange(0, 10, 0.1))) 
+            vec = n.Vector(np.sin(np.arange(0, 10, 0.1))) 
             for i in range(4):
                 vec.line(g, 0.1)
                 vec.rotate(10)
@@ -1704,9 +1704,9 @@ Vector
 
             g = h.Graph() 
             g.size(0, 100, 0, 250) 
-            vec = h.Vector(range(0, 201, 20)) 
-            xvec = h.Vector(range(0, 101, 10)) 
-            errvec = h.Vector() 
+            vec = n.Vector(range(0, 201, 20)) 
+            xvec = n.Vector(range(0, 101, 10)) 
+            errvec = n.Vector() 
              
             errvec.copy(xvec) 
             errvec.apply("sqrt") 
@@ -1777,7 +1777,7 @@ Vector
         the range is not binned. 
          
         This function returns a vector that contains the counts in each bin, so while it is 
-        to execute ``newvect = h.Vector()``. 
+        to execute ``newvect = n.Vector()``. 
          
         The first element of ``newvect`` is 0 (``newvect[0] = 0``). 
         For ``ii > 0``, ``newvect[ii]`` equals the number of 
@@ -1800,7 +1800,7 @@ Vector
             rand = h.Random() 
             rand.negexp(1) 
              
-            interval = h.Vector(100) 
+            interval = n.Vector(100) 
             interval.setrand(rand) # random intervals 
              
             hist = interval.histogram(0, 10, 0.1) 
@@ -1809,11 +1809,11 @@ Vector
             g = h.Graph() 
             g.size(0, 10, 0, 30) 
             # create an index vector with 0,0, 1,1, 2,2, 3,3, ... 
-            v2 = h.Vector(2*len(hist))
+            v2 = n.Vector(2*len(hist))
             v2.indgen(0.5)  
             v2.apply(int)  
               
-            v3 = h.Vector(1)  
+            v3 = n.Vector(1)  
             v3.index(hist, v2)  
             v3.rotate(-1)            # so different y's within each pair 
             v3[0] = 0  
@@ -1877,7 +1877,7 @@ Vector
         for them all to have areas of 1 unit). 
          
         This function returns a vector, so while it is 
-        to declare *vectobj* as a ``h.Vector()``. 
+        to declare *vectobj* as a ``n.Vector()``. 
          
         To plot, use ``v.indgen(low,high,width)`` for the x-vector argument. 
 
@@ -1890,11 +1890,11 @@ Vector
             r = h.Random() 
             r.normal(1, 2) 
              
-            data = h.Vector(100) 
+            data = n.Vector(100) 
             data.setrand(r) 
              
             hist = data.sumgauss(-4, 6, 0.5, 1) 
-            x = h.Vector(len(hist))
+            x = n.Vector(len(hist))
             x.indgen(-4, 6, 0.5) 
              
             g = h.Graph() 
@@ -1949,8 +1949,8 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(range(0, 500, 5)) 
-            vec2 = h.Vector(range(49, 60))
+            vec = n.Vector(range(0, 500, 5)) 
+            vec2 = n.Vector(range(49, 60))
             vec1 = vec.ind(vec2) 
 
         creates ``vec1`` to contain the fiftieth through the sixtieth elements
@@ -1991,7 +1991,7 @@ Vector
 
             from neuron import n, gui
 
-            vec = h.Vector(50) 
+            vec = n.Vector(50) 
             g = h.Graph() 
             g.size(0,50,0,100) 
             r = h.Random() 
@@ -2036,7 +2036,7 @@ Vector
             from neuron import n
             import matplotlib.pyplot as plt
 
-            vec = h.Vector(10_000)
+            vec = n.Vector(10_000)
             r = h.Random()
             r.normal(0, 1)  # sets the distribution we want
             vec.setrand(r)
@@ -2114,7 +2114,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector([1, 2, 20])
+            vec = n.Vector([1, 2, 20])
             def my_function(x):
                 if x > 13:
                     return x * x + 7
@@ -2187,7 +2187,7 @@ Vector
             python
 
             from neuron import n
-            vec = h.Vector(range(0, 10, 2))
+            vec = n.Vector(range(0, 10, 2))
             h("func sq(){return $1*$1}")
             print(vec.reduce("sq", 100))
 
@@ -2302,7 +2302,7 @@ Vector
             python
 
             from neuron import n
-            v = h.Vector(range(5))
+            v = n.Vector(range(5))
             n = v.as_numpy()
             print(n) #[0.  1.  2.  3.  4.]
             v[1] += 10
@@ -2404,9 +2404,9 @@ Vector
                     print(a, x, y)
                 return (x - 1) ** 2 + (y - 0.5) ** 2
 
-            dvec = h.Vector(2) 
-            fvec = h.Vector([1, 1]) 
-            ivec = h.Vector(range(2))
+            dvec = n.Vector(2) 
+            fvec = n.Vector([1, 1]) 
+            ivec = n.Vector(range(2))
              
             a = h.ref(2)
             b = h.ref(1) 
@@ -2450,11 +2450,11 @@ Vector
             g.size(0,10,0,100) 
 
             #... 
-            xs = h.Vector(range(10))
+            xs = n.Vector(range(10))
             ys = xs * xs
             ys.line(g, xs, 1, 0) # black reference line 
              
-            xd = h.Vector() 
+            xd = n.Vector() 
              
             xd.indgen(-0.5, 10.5, 0.1) 
             yd = ys.c().interpolate(xd, xs) 
@@ -2523,9 +2523,9 @@ Vector
             python
 
             from neuron import n
-            vec = h.Vector(range(6)) 
+            vec = n.Vector(range(6)) 
             vec = vec * vec
-            vec1 = h.Vector()
+            vec1 = n.Vector()
             vec1.deriv(vec, 0.1) 
 
         creates ``vec1`` with elements: 
@@ -2614,8 +2614,8 @@ Vector
             python
 
             from neuron import n
-            vec = h.Vector([0, 1, 4, 9, 16, 25]) 
-            vec1 = h.Vector() 
+            vec = n.Vector([0, 1, 4, 9, 16, 25]) 
+            vec1 = n.Vector() 
             vec1.integral(vec, 1)	# Euler integral of vec elements approximating 
                                     # an x-squared function, dx = 0.1 
             vec1.printf() 
@@ -2638,10 +2638,10 @@ Vector
             import numpy as np
 
             # set vec to the squares of 51 values from 0 to 5
-            vec = h.Vector(np.linspace(0, 5, 51))
+            vec = n.Vector(np.linspace(0, 5, 51))
             vec.pow(2)
 
-            vec1 = h.Vector()
+            vec1 = n.Vector()
             vec1.integral(vec, 0.1) # Euler integral of vec elements approximating
                                     # an x-squared function, dx = 0.1
 
@@ -2749,7 +2749,7 @@ Vector
 
 
     Description:
-        Return a h.Vector of indices which sort the vsrc elements in numerical 
+        Return a n.Vector of indices which sort the vsrc elements in numerical 
         order. That is vsrc.index(vsrc.sortindex) is equivalent to vsrc.sort(). 
         If vdest is present, use that as the destination vector for the indices. 
         This, if it is large enough, avoids the destruct/construct of vdest. 
@@ -2763,7 +2763,7 @@ Vector
             
             r = h.Random() 
             r.uniform(0, 100) 
-            a = h.Vector(10) 
+            a = n.Vector(10) 
             a.setrand(r) 
             a.printf() 
              
@@ -2845,7 +2845,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(range(1, 6)) 
+            vec = n.Vector(range(1, 6)) 
             vec.printf()
             vec.c().rotate(2).printf()
             vec.c().rotate(2, 0).printf() 
@@ -3021,7 +3021,7 @@ Vector
         .. code-block::
             python
 
-            v = h.Vector(i * 0.1 for i in range(-5, 6))
+            v = n.Vector(i * 0.1 for i in range(-5, 6))
             v1.printf() 
             v1.abs().printf() 
 
@@ -3056,10 +3056,10 @@ Vector
             import numpy as np
 
             # vec will have 51 values from 0 to 5, with increment=0.1
-            vec = h.Vector(np.arange(0, 5.1, 0.1)) 
-            vec1 = h.Vector() 
-            vec2 = h.Vector(range(0, 51, 10)) 
-            vec3 = h.Vector(6) 
+            vec = n.Vector(np.arange(0, 5.1, 0.1)) 
+            vec1 = n.Vector() 
+            vec2 = n.Vector(range(0, 51, 10)) 
+            vec3 = n.Vector(6) 
             vec1.integral(vec, 0.1)	# Euler integral of vec elements approximating 
                                     # an x-squared function, dx = 0.1 
             vec3.index(vec1, vec2)  # put the value of every 10th index in vec2 
@@ -3148,7 +3148,7 @@ Vector
         .. code::
             python
 
-            v = h.Vector([4, 2, 61, 17, 13])
+            v = n.Vector([4, 2, 61, 17, 13])
             print(v.max_ind())      # 2
             print(v.max_ind(1, 2))  # 2
             print(v.max_ind(3, 4))  # 3
@@ -3510,9 +3510,9 @@ Refer to this source for further information.
         .. code-block::
             python
 
-            v1 = h.Vector(16) 
-            v2 = h.Vector(16) 
-            v3 = h.Vector() 
+            v1 = n.Vector(16) 
+            v2 = n.Vector(16) 
+            v3 = n.Vector() 
             v1[5] = v1[6] = 1 
             v2[3] = v2[4] = 3 
             v3.convlv(v1, v2) 
@@ -3628,15 +3628,15 @@ Refer to this source for further information.
                     self.p(self.c)
                 
                 def p(self, c):
-                    self.v1 = h.Vector(N)
+                    self.v1 = n.Vector(N)
                     self.v1.sin(self.f, c * h.PI / 2, 1000. / N)
                     self.v1.plot(self.g1)
                     
-                    self.v2 = h.Vector()
+                    self.v2 = n.Vector()
                     self.v2.fft(self.v1, 1)     # forward
                     self.v2.plot(self.g2)
                     
-                    self.v3 = h.Vector()
+                    self.v3 = n.Vector()
                     self.v3.fft(self.v2, -1)    # inverse
                     self.v3.plot(self.g3)       # amplitude N/2 times the original
 
@@ -3773,16 +3773,16 @@ Refer to this source for further information.
                     self.p()
                     
                 def p(self):
-                    self.v1 = h.Vector(N)
+                    self.v1 = n.Vector(N)
                     self.v1.fill(1, self.delay, self.delay + self.duration - 1)
                     self.v1.plot(self.g1)
                     
-                    self.v2 = h.Vector()
-                    self.v3 = h.Vector()
+                    self.v2 = n.Vector()
+                    self.v3 = n.Vector()
                     FFT(1, self.v1, self.v2, self.v3)
                     self.v2.plot(self.g2)
                     self.v3.plot(self.g3)
-                    self.v4 = h.Vector()
+                    self.v4 = n.Vector()
                     FFT(-1, self.v4, self.v2, self.v3)
                     self.v4.plot(self.g4)
 
@@ -3909,7 +3909,7 @@ Refer to this source for further information.
             DT = 1000	# ms per bin of v1 (vsrchist) 
             TRIALS = 1 
 
-            v1 = h.Vector(VECSIZE) 
+            v1 = n.Vector(VECSIZE) 
 
             r = h.Random() 
                     
@@ -3918,7 +3918,7 @@ Refer to this source for further information.
 
             v1.plot(g1) 
 
-            v2 = h.Vector() 
+            v2 = n.Vector() 
             v2.psth(v1, DT, TRIALS, MINSUM) 
             v2.plot(g2) 
 

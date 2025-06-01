@@ -1487,7 +1487,7 @@ Description:
             # host i and for i < j, all the elements of vdest on host i are < 
             # than all the elements on host j. 
             vsrc.sort()
-            cnts = h.Vector(pc.nhost()) 
+            cnts = n.Vector(pc.nhost()) 
             j = 0 
             for i in range(pc.nhost()):
               x = (i + 1) * tvl 
@@ -1606,7 +1606,7 @@ Description:
         arriving objects into an nhost size list such that the i'th element
         came from the i'th rank.
         The destlist is the same on every rank.
-        The srcitem may be any pickleable Python object including None, Bool, int, h.Vector,
+        The srcitem may be any pickleable Python object including None, Bool, int, n.Vector,
         etc. and will appear in the destination list as that type. This method can
         only be called from the python interpreter and cannot be called from HOC.
         All ranks (or all ranks in a subworld) must participate in this MPI collective.
@@ -1686,7 +1686,7 @@ Description:
         arriving objects into an nhost size list such that the i'th element came from
         the i'th rank.
         The destlist_on_root return value for non-root ranks is None.
-        The srcitem may be any pickleable Python object including None, Bool, int, h.Vector,
+        The srcitem may be any pickleable Python object including None, Bool, int, n.Vector,
         etc. and will appear in the destination list as that type. This method can
         only be called from the python interpreter and cannot be called from HOC.
         All ranks (or all ranks in a subworld) must participate in this MPI collective.
@@ -1771,7 +1771,7 @@ Description:
     Description:
         The root rank sends the i'th element in its nhost size list to the i'th rank.
         The srclist must contain nhost pickleable Python objects including None, Bool,
-        int, h.Vector,
+        int, n.Vector,
         etc. and will appear in the destination list as that type. This method can
         only be called from the python interpreter and cannot be called from HOC.
         All ranks (or all ranks in a subworld) must participate in this MPI collective.
@@ -1855,7 +1855,7 @@ Description:
     Description:
         The root rank sends the srcitem to every rank.
         The srcitem can be any pickleable Python object including None, Bool,
-        int, h.Vector,
+        int, n.Vector,
         etc. and will be returned as that type. This method can
         only be called from the python interpreter and cannot be called from HOC.
         All ranks (or all ranks in a subworld) must participate in this MPI collective.

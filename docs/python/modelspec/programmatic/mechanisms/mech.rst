@@ -72,7 +72,7 @@ General
             python
 
             >>> s = n.Section('s')
-            >>> ic = h.IClamp(s(0.5))
+            >>> ic = n.IClamp(s(0.5))
             >>> ic.get_segment()
             s(0.5)
 
@@ -126,7 +126,7 @@ General
 
 
     Syntax:
-        ``stimobj = h.IClamp(section(x))``
+        ``stimobj = n.IClamp(section(x))``
 
         ``delay -- ms``
 
@@ -339,7 +339,7 @@ General
                 sec.insert(h.hh)
                 sec.L = sec.diam = 3
 
-            c1 = h.IClamp(s1(0.5))
+            c1 = n.IClamp(s1(0.5))
             c2 = h.SEClamp(s2(0.5))
             c3 = h.VClamp(s3(0.5))
             c1.dur = 0.1
@@ -349,7 +349,7 @@ General
             c3.dur[0] = 1
 
             # record an action potential
-            ap = h.Vector().record(s1(0.5)._ref_v)
+            ap = n.Vector().record(s1(0.5)._ref_v)
             n.finitialize(-65)
             while h.t < 1:
                 h.fadvance()
@@ -680,13 +680,13 @@ General
         nc.delay = 1 + 0.1*i # incoming (t, gid) generates output (t + 1 + 0.1*gid, 0)
 
       # Record all spikes (cell is the only one generating output spikes)
-      spike_ts = h.Vector()
-      spike_ids = h.Vector()
+      spike_ts = n.Vector()
+      spike_ids = n.Vector()
       pc.spike_record(-1, spike_ts, spike_ids)
 
       #PatternStim
-      tvec = h.Vector(range(10))
-      gidvec = h.Vector(range(10)) # only 0,1,2 go to cell
+      tvec = n.Vector(range(10))
+      gidvec = n.Vector(range(10)) # only 0,1,2 go to cell
       ps = h.PatternStim()
       ps.play(tvec, gidvec)
       del tvec, gidvec # ps retains a copy of the (t, gid) info.
@@ -787,8 +787,8 @@ General
             nc.delay = 0 * ms
 
             # setup recording
-            stim_times = h.Vector()
-            output_times = h.Vector()
+            stim_times = n.Vector()
+            output_times = n.Vector()
             stim_times_nc = h.NetCon(e_stims, None)
             stim_times_nc.record(stim_times)
             output_times_nc = h.NetCon(my_cell, None)

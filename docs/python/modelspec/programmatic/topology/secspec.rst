@@ -36,7 +36,7 @@ For example:
 .. code-block::
     python
 
-    my_iclamp = h.IClamp(0.25, sec=soma)   # better to use h.IClamp(soma(0.25)) though
+    my_iclamp = n.IClamp(0.25, sec=soma)   # better to use n.IClamp(soma(0.25)) though
     num_pts_3d = h.n3d(sec=apical)         # could get the same value as an int via apical.n3d()
  
 
@@ -72,7 +72,7 @@ stack by the following commands. *Use this only as a last resort.*
             
             soma = n.Section('soma')
             apical = n.Section('apical')
-            stims = [h.IClamp(soma(i / 4.)) for i in range(5)] + [h.IClamp(apical(0.5))]
+            stims = [n.IClamp(soma(i / 4.)) for i in range(5)] + [n.IClamp(apical(0.5))]
             for stim in stims: 
                 x = stim.get_loc() 
                 print(f"location of {stim} is {h.secname()}({x})")

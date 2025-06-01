@@ -103,7 +103,7 @@ Shape
                 sec.nseg = int(1 + 2 * (sec.L // 40))
                 sec.insert(h.hh)
 
-            ic = h.IClamp(h.soma(0.5))
+            ic = n.IClamp(h.soma(0.5))
             ic.delay = 1 * ms
             ic.dur = 1 * ms
             ic.amp = 10

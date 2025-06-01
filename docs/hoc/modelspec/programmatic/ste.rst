@@ -42,7 +42,7 @@ StateTransitionEvent
         tnext[0] = 1.0 # first transition at 1.0
         ste.state(0)   # initial state
 
-      fih = h.FInitializeHandler(1, fteinit)
+      fih = n.FInitializeHandler(1, fteinit)
 
       def foo(src): # current state is the destination. arg gives the source
         print h.t, " transition ", src, int(ste.state()), " t-tnext =", h.t-tnext[0]

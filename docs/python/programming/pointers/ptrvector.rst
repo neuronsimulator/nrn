@@ -26,8 +26,8 @@ PtrVector
       python
       
       from neuron import n
-      a = h.Vector(range(5))
-      b = h.Vector([0] * 5)
+      a = n.Vector(range(5))
+      b = n.Vector([0] * 5)
       pv = h.PtrVector(5)
       for i in range(len(a)):
         pv.pset(i, b._ref_x[i])
@@ -194,7 +194,7 @@ PtrVector
             
             g = h.Graph() 
             g.size(0, 10, -1, 1) 
-            vec = h.Vector(np.sin(np.arange(0, 10.1, 0.1))
+            vec = n.Vector(np.sin(np.arange(0, 10.1, 0.1))
 
             pv = h.PtrVector(len(vec))
             pv.label("PtrVector")

@@ -120,7 +120,7 @@ Vector
             python
             
             from neuron import n
-            v = h.Vector([1, 2, 3])
+            v = n.Vector([1, 2, 3])
         
         will create a vector of length 3 whose entries are: 1, 2, and 3. The
         constructor takes any Python iterable. In particular, it also works
@@ -133,7 +133,7 @@ Vector
             import numpy
             
             x = numpy.linspace(0, 2 * numpy.pi, 50)
-            y = h.Vector(numpy.sin(x))
+            y = n.Vector(numpy.sin(x))
         
         produces a vector ``y`` of length 50 corresponding to the sine of evenly
         spaced points between 0 and 2 pi, inclusive.
@@ -2140,7 +2140,7 @@ Vector
             python
 
             from neuron import n
-            v = h.Vector(5).indgen()
+            v = n.Vector(5).indgen()
             n = v.as_numpy()
             print n #[0.  1.  2.  3.  4.]
             v.x[1] += 10

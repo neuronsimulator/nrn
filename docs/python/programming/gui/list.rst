@@ -50,12 +50,12 @@ List
 
             from neuron import n
 
-            clamps = h.IClamp(), h.IClamp(), h.IClamp()
+            clamps = n.IClamp(), n.IClamp(), n.IClamp()
 
             all_iclamps = h.List('IClamp')
             print(f'There are initially {len(all_iclamps)} IClamp objects.') # 3
 
-            another = h.IClamp()
+            another = n.IClamp()
 
             print(f'There are now {len(all_iclamps)} IClamp objects.')       # 4
 

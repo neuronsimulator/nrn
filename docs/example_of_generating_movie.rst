@@ -62,7 +62,7 @@ Setup the model
     fire_times = [0 * ms, 15 * ms, 23 * ms, 31 * ms]
     iclamps = []
     for time in fire_times:
-        iclamp = h.IClamp(h.soma[0](0.5))
+        iclamp = n.IClamp(h.soma[0](0.5))
         iclamp.delay = time
         iclamp.amp = 2
         iclamp.dur = 0.5 * ms

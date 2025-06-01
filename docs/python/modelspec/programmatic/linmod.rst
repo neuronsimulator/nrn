@@ -95,8 +95,8 @@ LinearMechanism
             # ideal voltage clamp. 
             c = h.Matrix(2, 2, 2) # sparse - no elements used 
             g = h.Matrix(2, 2) 
-            y = h.Vector([0, 0])       # y[1] is injected current 
-            b = h.Vector([0, 10])      # b[1] is voltage clamp level 
+            y = n.Vector([0, 0])       # y[1] is injected current 
+            b = n.Vector([0, 10])      # b[1] is voltage clamp level 
             g.setval(0, 1, -1)
             g.setval(1, 0, 1)
              
@@ -150,9 +150,9 @@ LinearMechanism
             gmat = h.Matrix(2, 2, 2)
             gmat.setval(0, 1, -1)
 
-            y = h.Vector(2)
-            y0 = h.Vector(2)
-            b = h.Vector(2)
+            y = n.Vector(2)
+            y0 = n.Vector(2)
+            b = n.Vector(2)
 
             def callback():
               b[1] = -sin(y[0])
@@ -160,8 +160,8 @@ LinearMechanism
             nlm = h.LinearMechanism(callback, cmat, gmat, y, y0, b)
 
             dummy = n.Section("dummy")
-            trajec = h.Vector().record(y._ref_x[0])
-            tvec = h.Vector().record(h._ref_t)
+            trajec = n.Vector().record(y._ref_x[0])
+            tvec = n.Vector().record(h._ref_t)
 
             graph = h.Graph()
             h.tstop=50

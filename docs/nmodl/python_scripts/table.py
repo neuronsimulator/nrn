@@ -9,9 +9,9 @@ class TableCell(Cell):
         self.section.insert("table")
 
     def record(self):
-        tvec = h.Vector()
+        tvec = n.Vector()
         tvec.record(h._ref_t, sec=self.section)
-        avec = h.Vector()
+        avec = n.Vector()
         avec.record(self.section(0.5)._ref_ainf_table, sec=self.section)
         self.record_vectors["ainf"] = avec
 

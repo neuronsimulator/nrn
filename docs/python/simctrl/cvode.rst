@@ -523,7 +523,7 @@ CVode
         .. code-block::
             python
 
-            states_copy = h.Vector()
+            states_copy = n.Vector()
             cvode.states(states_copy)
 
 
@@ -602,7 +602,7 @@ CVode
         .. code-block::
             python
 
-            h.CVode().yscatter(h.Vector(data))
+            h.CVode().yscatter(n.Vector(data))
          
 
 ----

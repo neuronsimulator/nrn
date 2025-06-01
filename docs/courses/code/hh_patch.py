@@ -5,7 +5,7 @@ soma.insert(h.hh)
 soma.L = 5
 soma.diam = 5
 
-iclamp = h.IClamp(soma(0.5))
+iclamp = n.IClamp(soma(0.5))
 iclamp.delay = 0.1
 iclamp.dur = 0.1
 iclamp.amp = 0.3

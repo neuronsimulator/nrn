@@ -151,9 +151,9 @@ LinearMechanism
             gmat = h.Matrix(2,2,2)
             gmat.setval(0,1, -1)
             
-            y = h.Vector(2)
-            y0 = h.Vector(2)
-            b = h.Vector(2)
+            y = n.Vector(2)
+            y0 = n.Vector(2)
+            b = n.Vector(2)
             
             def callback():
               b.x[1] = -sin(y.x[0])
@@ -162,8 +162,8 @@ LinearMechanism
             
             
             dummy = n.Section()
-            trajec = h.Vector()
-            tvec = h.Vector()
+            trajec = n.Vector()
+            tvec = n.Vector()
             trajec.record(y._ref_x[0])
             tvec.record(h._ref_t)
             

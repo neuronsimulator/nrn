@@ -76,7 +76,7 @@ HOC-based Mechanisms
             soma.L = soma.diam = math.sqrt(100 / math.pi)
             soma.insert(h.hh)
 
-            stim = h.IClamp(soma(0.5))
+            stim = n.IClamp(soma(0.5))
             stim.dur = 0.1
             stim.amp = 0.3
 

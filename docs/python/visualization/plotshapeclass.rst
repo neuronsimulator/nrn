@@ -99,7 +99,7 @@ PlotShape
                 sec.nseg = int(1 + 2 * (sec.L // 40))
                 sec.insert(h.hh)
 
-            ic = h.IClamp(h.soma(0.5))
+            ic = n.IClamp(h.soma(0.5))
             ic.delay = 1 * ms
             ic.dur = 1 * ms
             ic.amp = 10
@@ -128,7 +128,7 @@ PlotShape
                     sec.nseg = int(1 + 2 * (sec.L // 40))
                     sec.insert(h.hh)
 
-                ic = h.IClamp(h.soma(0.5))
+                ic = n.IClamp(h.soma(0.5))
                 ic.delay = 1 * ms
                 ic.dur = 1 * ms
                 ic.amp = 10
@@ -600,7 +600,7 @@ PlotShape
 
 			nx = 30 
 			ny = 30 
-			vec = h.Vector(nx*ny) 
+			vec = n.Vector(nx*ny) 
 			vec.fill(0) 
 
 			for i in range(nx):

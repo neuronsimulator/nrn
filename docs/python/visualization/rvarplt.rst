@@ -69,7 +69,7 @@ RangeVarPlot
                 sec.nseg = sec.L = 501
                 sec.diam = 1
 
-            ic = h.IClamp(dend1(0.5))
+            ic = n.IClamp(dend1(0.5))
             ic.amp = 0.5
             ic.delay = 0
             ic.dur = 1

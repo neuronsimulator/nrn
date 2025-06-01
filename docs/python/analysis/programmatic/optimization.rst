@@ -66,7 +66,7 @@ Optimization
             python
 
             from neuron import n 
-            v = h.Vector([0, 0]) 
+            v = n.Vector([0, 0]) 
             def efun(v): 
               return (v[0] + v[1] - 5) ** 2 + 5 * (v[0] -v[1] - 15) ** 2 
             h.attr_praxis(1e-5, 0.5, 0) 

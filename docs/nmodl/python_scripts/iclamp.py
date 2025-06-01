@@ -10,18 +10,18 @@ class hhCellIClamp(Cell):
         h.soma.L = 5.6419
         h.soma.diam = 5.6419
         h.soma.insert("hh")
-        ic = h.IClamp(h.soma(0.5))
+        ic = n.IClamp(h.soma(0.5))
         ic.delay = 0.5
         ic.dur = 0.1
         ic.amp = 0.3
 
     def record(self):
-        v = h.Vector()
+        v = n.Vector()
         v.record(h.soma(0.5)._ref_v, sec=h.soma)
-        tv = h.Vector()
+        tv = n.Vector()
         tv.record(h._ref_t, sec=h.soma)
         nc = h.NetCon(h.soma(0.5)._ref_v, None, sec=h.soma)
-        spikestime = h.Vector()
+        spikestime = n.Vector()
         nc.record(spikestime)
         self.record_vectors["spikes"] = spikestime.to_python()
 

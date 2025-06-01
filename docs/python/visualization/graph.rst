@@ -568,8 +568,8 @@ Graph
             import numpy as np
 
             # x = 0, 0.01, 0.02, ..., 6.28
-            x = h.Vector(np.arange(0., 6.29, 0.01))
-            y = h.Vector(np.sin(x))
+            x = n.Vector(np.arange(0., 6.29, 0.01))
+            y = n.Vector(np.sin(x))
 
             # create the graph
             g = h.Graph()
@@ -614,8 +614,8 @@ Graph
 
             xline = []
             yline = []
-            xvec = h.Vector() 
-            yvec = h.Vector() 
+            xvec = n.Vector() 
+            yvec = n.Vector() 
             j = 0
             i = h.Graph[0].getline(-i, xvec, yvec)
             while i != -1:
@@ -712,7 +712,7 @@ Graph
             points in the graph in dbl[0],..., dbl[3] respectively. This allows 
             convenient computation of a view size which will display everything on the 
             graph. See :ref:`gui_view_equal_plot`. In the absence of any graphics, it gives 
-            the size as in the .size(1-4) prototype. (e.g. if ``dbl = h.Vector(4)``, then use
+            the size as in the .size(1-4) prototype. (e.g. if ``dbl = n.Vector(4)``, then use
             ``g.size(dbl._ref_x[0])`` to store starting at the beginning.)
 
 
@@ -1138,7 +1138,7 @@ Graph
             g.crosshair_action(crossact_vflag1, 1)
 
             # plot something
-            x = h.Vector(range(50, 101))
+            x = n.Vector(range(50, 101))
             y = x + 50  # needs NEURON 7.7+
             y.line(g, x)
 
@@ -1153,8 +1153,8 @@ Graph
             import numpy as np
 
             # x = 0, 0.01, 0.02, ..., 6.28
-            x = h.Vector(np.arange(0., 6.29, 0.01))
-            y = h.Vector(np.sin(x))
+            x = n.Vector(np.arange(0., 6.29, 0.01))
+            y = n.Vector(np.sin(x))
 
             # create the graph
             g = h.Graph()

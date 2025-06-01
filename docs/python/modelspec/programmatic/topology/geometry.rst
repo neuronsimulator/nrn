@@ -478,10 +478,10 @@ Defining the 3D Shape
 
             # compute vectors defining a geometry
             theta = np.linspace(0, 6.28, 63)
-            xvec = h.Vector(4 * np.cos(theta))
-            yvec = h.Vector(4 * np.sin(theta))
-            zvec = h.Vector(theta)
-            dvec = h.Vector([1] * len(theta))
+            xvec = n.Vector(4 * np.cos(theta))
+            yvec = n.Vector(4 * np.sin(theta))
+            zvec = n.Vector(theta)
+            dvec = n.Vector([1] * len(theta))
 
             dend = n.Section('dend')
             h.pt3dadd(xvec, yvec, zvec, dvec, sec=dend)

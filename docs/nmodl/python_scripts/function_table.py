@@ -12,16 +12,16 @@ class k3stCell(Cell):
         for i in range(10):
             tau1_values.append(i * 0.25)
             voltage_values.append(-70 + 10 * i)
-        tau1_vector = h.Vector(tau1_values)
-        voltage_vector = h.Vector(voltage_values)
+        tau1_vector = n.Vector(tau1_values)
+        voltage_vector = n.Vector(voltage_values)
         h.table_tau1_k3st(tau1_vector, voltage_vector)
         h.table_tau2_k3st(100)
 
     def record(self):
-        tvec = h.Vector()
+        tvec = n.Vector()
         tvec.record(h._ref_t, sec=self.section)
-        tau1_vec = h.Vector()
-        tau2_vec = h.Vector()
+        tau1_vec = n.Vector()
+        tau2_vec = n.Vector()
         tau1_vec.record(self.section(0.5).k3st._ref_tau1_rec, sec=self.section)
         tau2_vec.record(self.section(0.5).k3st._ref_tau2_rec, sec=self.section)
         self.record_vectors["tau1_rec"] = tau1_vec

@@ -65,7 +65,7 @@ Running and Saving Batch Jobs
             soma.insert(h.hh)
 
             # add a stimulus
-            iclamp = h.IClamp(soma(0.5))
+            iclamp = n.IClamp(soma(0.5))
             iclamp.dur = 0.2
             iclamp.delay = 0.3
             iclamp.amp = 0.5
