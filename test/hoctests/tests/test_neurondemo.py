@@ -187,7 +187,7 @@ def special_run(key, demo_index, pre_run_stmts):
 
 
 # For full coverage of #3454, do another run of Dynamic Clamp with cvode active.
-special_run("cover3454", 6, "cvode_active(True)")
+special_run("cover3454", 6, "cvode_active(1)")
 
 chk.save()
 
