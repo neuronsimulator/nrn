@@ -165,7 +165,7 @@ LinearMechanism
             trajec = n.Vector()
             tvec = n.Vector()
             trajec.record(y._ref_x[0])
-            tvec.record(h._ref_t)
+            tvec.record(n._ref_t)
             
             graph = n.Graph()
             h.tstop=50

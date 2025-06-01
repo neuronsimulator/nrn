@@ -28,7 +28,7 @@ Pointer Class
         .. code-block::
             python
 
-            >>> p = h.Pointer(h._ref_t)
+            >>> p = h.Pointer(n._ref_t)
             >>> p.val
             0.0
             >>> p.assign(42)

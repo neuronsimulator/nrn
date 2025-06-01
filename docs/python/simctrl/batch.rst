@@ -72,7 +72,7 @@ Running and Saving Batch Jobs
 
             # define variables to be stored (time and the soma's membrane potential)
             h.batch_save()
-            h.batch_save(h._ref_t, soma(0.5)._ref_v)
+            h.batch_save(n._ref_t, soma(0.5)._ref_v)
 
             # initialize, run, and save
             n.finitialize(-65)

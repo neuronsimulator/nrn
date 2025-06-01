@@ -19,7 +19,7 @@ class k3stCell(Cell):
 
     def record(self):
         tvec = n.Vector()
-        tvec.record(h._ref_t, sec=self.section)
+        tvec.record(n._ref_t, sec=self.section)
         tau1_vec = n.Vector()
         tau2_vec = n.Vector()
         tau1_vec.record(self.section(0.5).k3st._ref_tau1_rec, sec=self.section)

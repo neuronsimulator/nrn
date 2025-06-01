@@ -302,7 +302,7 @@ StringFunctions (String Manipulation Class)
             from neuron import n
             sf = h.StringFunctions()
             v = n.Vector()
-            sf.alias(v, 't', h._ref_t)
+            sf.alias(v, 't', n._ref_t)
             print(f'v.t = {v.t}')
             h.t = 42
             print(f'v.t = {v.t}')

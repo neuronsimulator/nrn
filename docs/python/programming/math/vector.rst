@@ -586,7 +586,7 @@ Vector
             stim.dur = 1e9
             pvec.play(stim, stim._ref_amp, True)
             rd = {k:n.Vector().record(v) for k,v in zip(['t', 'v', 'stim_i', 'amp'],
-                                                        [h._ref_t, sec(0.5)._ref_v, stim._ref_i, stim._ref_amp])}
+                                                        [n._ref_t, sec(0.5)._ref_v, stim._ref_i, stim._ref_amp])}
             h.v_init, h.tstop= -70, 500
             h.run()
             plt.plot(rd['t'], rd['v'])
@@ -1054,7 +1054,7 @@ Vector
             h.px[3] = 2
             
             # transfer the data
-            v.from_double(5, h._ref_px[0])
+            v.from_double(5, n._ref_px[0])
             
             # print out the vector
             v.printf()

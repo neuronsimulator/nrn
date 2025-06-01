@@ -48,7 +48,7 @@ StateTransitionEvent
         print h.t, " transition ", src, int(ste.state()), " t-tnext =", h.t-tnext[0]
         tnext[0] += 1.0 # update for next transition
       
-      ste.transition(0, 0, h._ref_t, tnext, (foo, 0))
+      ste.transition(0, 0, n._ref_t, tnext, (foo, 0))
 
       print "default dt=0.025 fixed step run"
       h.run()
@@ -157,7 +157,7 @@ StateTransitionEvent
     with multiple threads or the local variable time step method. All ``triggervar`` for a given ``ste`` need to be
     in the same thread or cell as was specified by the StateTransitionEvent constructor.
    
-    In python, the syntax for a triggervar reference is, for example, h._ref_t or sec(.5)._ref_v . A reference to a
+    In python, the syntax for a triggervar reference is, for example, n._ref_t or sec(.5)._ref_v . A reference to a
     hoc variable is also allowed for a triggerthreash, but if the triggerthresh is a constant, one can declare a python
     reference with triggerthresh = h.ref(value) and pass that for the ``triggerthresh`` arg.
     One changes its value via the

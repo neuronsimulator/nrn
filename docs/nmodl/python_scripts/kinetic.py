@@ -11,7 +11,7 @@ class cadifusCell(Cell):
 
     def record(self):
         tvec = n.Vector()
-        tvec.record(h._ref_t, sec=self.section)
+        tvec.record(n._ref_t, sec=self.section)
         cai_vec = n.Vector()
         cai_vec.record(self.section(0.5).cadifus._ref_ca[0], sec=self.section)
         self.record_vectors["ca_ion[0]"] = cai_vec

@@ -47,7 +47,7 @@ StateTransitionEvent
         print(f'{h.t} transition {src} {int(ste.state())} t-tnext = {h.t-tnext[0]}')
         tnext[0] += 1.0 # update for next transition
       
-      ste.transition(0, 0, h._ref_t, tnext, (foo, 0))
+      ste.transition(0, 0, n._ref_t, tnext, (foo, 0))
 
       print("default dt=0.025 fixed step run")
       h.run()
@@ -150,7 +150,7 @@ StateTransitionEvent
     the earliest crossing will be the one actually taken.
 
     The ``triggervar`` may be the NEURON time variable t
-    (in this case, pass ``h._ref_t`` for the ``_ref_triggervar`` argument.
+    (in this case, pass ``n._ref_t`` for the ``_ref_triggervar`` argument.
     This will work properly with threads and local variable time steps
     as the system will point to the correct thread/cvode instance time. NEURON time as a ``triggerthresh``
     will work correctly
@@ -160,7 +160,7 @@ StateTransitionEvent
     
     The direction sense of threshold crossing can be reversed by reversing the order of the ``_ref_triggervar`` and ``_ref_triggerthresh`` args.
    
-    In Python, the syntax for a triggervar reference is, for example, h._ref_t or sec(.5)._ref_v . A reference to a
+    In Python, the syntax for a triggervar reference is, for example, n._ref_t or sec(.5)._ref_v . A reference to a
     hoc variable is also allowed for a triggerthreash, but if the triggerthresh is a constant, one can declare a Python
     reference with triggerthresh = h.ref(value) and pass that for the ``triggerthresh`` arg.
     One changes its value via the

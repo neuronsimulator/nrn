@@ -250,7 +250,7 @@ Nonetheless, in isolated situations the following section may be useful:
             python
 
             h('x = 1') 
-            y = h._ref_x 
+            y = n._ref_x 
             print(y)                     # prints pointer to hoc value 1
             print(h.x, y[0])             # prints 1.0 1.0 
             h.x = 2 

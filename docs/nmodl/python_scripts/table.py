@@ -10,7 +10,7 @@ class TableCell(Cell):
 
     def record(self):
         tvec = n.Vector()
-        tvec.record(h._ref_t, sec=self.section)
+        tvec.record(n._ref_t, sec=self.section)
         avec = n.Vector()
         avec.record(self.section(0.5)._ref_ainf_table, sec=self.section)
         self.record_vectors["ainf"] = avec
