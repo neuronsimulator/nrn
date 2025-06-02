@@ -4142,6 +4142,7 @@ void NetCvode::play_init() {
     }
 }
 
+#if 0  // never used, existed in Version 6.2
 int NetCvode::cellindex() {
     Section* sec = chk_access();
     int i, j, ii;
@@ -4161,6 +4162,7 @@ int NetCvode::cellindex() {
     hoc_execerror(secname(sec), " is not the root section for any local step cvode instance");
     return 0;
 }
+#endif
 
 void NetCvode::states() {
     Vect* v = vector_arg(1);
