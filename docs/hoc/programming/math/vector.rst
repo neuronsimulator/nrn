@@ -2141,12 +2141,12 @@ Vector
 
             from neuron import n
             v = n.Vector(5).indgen()
-            n = v.as_numpy()
-            print n #[0.  1.  2.  3.  4.]
+            v_np = v.as_numpy()
+            print(v_np)  # [0.  1.  2.  3.  4.]
             v.x[1] += 10
-            n[2] += 20
-            print n #[  0.  11.  22.   3.   4.]
-            v.printf() #0	11	22	3	4
+            v_np[2] += 20
+            print(v_np)  # [  0.  11.  22.   3.   4.]
+            v.printf()  #0	11	22	3	4
 
 
 ----
