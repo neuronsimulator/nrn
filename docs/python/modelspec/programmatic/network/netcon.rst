@@ -661,10 +661,10 @@ NetCon
 
             def handle():
                 print(f"called handle() at time {n.t} when soma(0.5).v = {soma(0.5).v}")
-                h.stoprun = True  # Will stop but may go one extra step. Also with 
+                n.stoprun = True  # Will stop but may go one extra step. Also with 
                 # local step the cells will be at different times. 
                 # So may wish to do a further... 
-                n.cvode.event(h.t + 1e-6)  
+                n.cvode.event(n.t + 1e-6)  
 
             nc = n.NetCon(soma(0.5)._ref_v, None, sec=soma) 
             nc.threshold = 0 # watch out! only one threshold per presyn location 

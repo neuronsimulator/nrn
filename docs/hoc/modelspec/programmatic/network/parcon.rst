@@ -1642,7 +1642,7 @@ Description:
           
           pc.runworker()
           pc.done()
-          h.quit()
+          n.quit()
 
         .. code-block::
           none
@@ -3022,16 +3022,16 @@ Parallel Transfer
         The files are written in the directory specified by the path argument
         (default '.').
 
-        Rank 0 writes a file called bbcore_mech.dat (into path) which lists
+        Rank 0 writes a file called ``bbcore_mech.dat`` (into path) which lists
         all the membrane mechanisms in ascii format of:
 
         name type pointtype artificial is_ion param_size dparam_size charge_if_ion
 
-        At the end of the bbcore_mech.dat file is a binary value that is
+        At the end of the ``bbcore_mech.dat`` file is a binary value that is
         used by the CoreNEURON reader to determine if byteswapping is needed
         in case of machine endianness difference between writing and reading.
 
-        Each rank also writes pc.nthread() pairs of model data files containing
+        Each rank also writes ``pc.nthread()`` pairs of model data files containing
         mixed ascii and binary data that completely defines the model
         specification within a thread, The pair of files in each thread are
         named <gidgroup>_1.dat and <gidgroup>_2.dat  where gidgroup is one
@@ -3051,8 +3051,8 @@ Parallel Transfer
         When one piece is constructed
         on each rank, this function can be called with a second argument which
         must be a Vector. In this case, rank 0 will NOT write a files.dat
-        and instead the pc.nthread() gidgroup values for the rank will be
-        returned in the Vector. 
+        and instead the ``pc.nthread()`` gidgroup values for the rank will be
+        returned in the :class:`Vector`. 
 
         Multisplit is not supported.
         The model cannot be more complicated than a spike or gap

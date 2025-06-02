@@ -32,9 +32,9 @@ Session Printing and Saving
 .. function:: save_session
 
     Syntax:
-        ``h.save_session("filename")``
+        ``n.save_session("filename")``
 
-        ``h.save_session("filename", "header")``
+        ``n.save_session("filename", "header")``
 
     Description:
         Save all the (saveable) windows on the screen to filename. 

@@ -729,7 +729,7 @@ Description:
         .. code-block::
             python
 
-            h.setdata_mechname(x) 
+            n.setdata_mechname(x) 
 
     .. tab:: HOC
 

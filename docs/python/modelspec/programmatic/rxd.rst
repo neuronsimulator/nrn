@@ -823,7 +823,7 @@ A :class:`rxd.node.Node` represents a particular state value or :class:`rxd.Para
                 node.include_flux(mglur, 'ip3flux', units='mol/ms') # units: moles/ms
                 node.include_flux(mglur._ref_ip3flux, units='molecule/ms')
                 node.include_flux(lambda: mglur.ip3flux)
-                node.include_flux(lambda: math.sin(h.t))
+                node.include_flux(lambda: math.sin(n.t))
                 node.include_flux(47)
 
         Warning:

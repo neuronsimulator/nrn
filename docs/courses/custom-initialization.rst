@@ -103,17 +103,17 @@ In the same directory, make an :file:`init_ss.py` file with the contents:
         dur -- time allowed to reach steady state
         dt -- initialization time step
         """
-        h.t = t0
+        n.t = t0
         # save CVode state to restore; initialization with fixed dt
         old_cvode_state = n.cvode.active()
         n.cvode.active(False)
         n.dt = dt
-        while (h.t < t0 + dur): 
+        while (n.t < t0 + dur): 
             n.fadvance()
         
         # restore cvode active/inactive state if necessary
         n.cvode.active(old_cvode_state)
-        h.t = 0
+        n.t = 0
         if n.cvode.active():
             n.cvode.re_init()
         else:

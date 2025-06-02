@@ -56,7 +56,7 @@ Strings
 .. function:: strcmp
 
     Syntax:
-        ``x = h.strcmp("string1", "string2")``
+        ``x = n.strcmp("string1", "string2")``
 
     Description:
         Returns negative, 0, or positive value 

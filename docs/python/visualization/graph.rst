@@ -400,9 +400,9 @@ Graph
             g.xexpr('3*cos(t)') 
 
             g.begin()
-            for h.t in np.arange(0, 6.4, 0.1):
-                # h.t ranges from 0 to 6.3 \approx 2 * pi
-                g.plot(h.t)
+            for n.t in np.arange(0, 6.4, 0.1):
+                # n.t ranges from 0 to 6.3 \approx 2 * pi
+                g.plot(n.t)
 
             # actually draws the graph
             g.flush()
@@ -477,9 +477,9 @@ Graph
             def pl():
                 g.erase()
                 g.begin()
-                for h.t in range(4_000):
-                    g.plot(h.t) 
-                    if h.t % 10 == 0:
+                for n.t in range(4_000):
+                    g.plot(n.t) 
+                    if n.t % 10 == 0:
                         g.fastflush() 
                         n.doNotify() 
                 g.flush() 
