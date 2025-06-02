@@ -165,6 +165,46 @@ h = hoc.HocObject()
 
 
 class _NEURON_INTERFACE(hoc.HocObject):
+    """
+    neuron.n
+    ========
+
+    neuron.n is the top-level NEURON inteface, starting in NEURON 9.
+
+    >>> from neuron import n
+    >>> n
+    <TopLevelNEURONInterface>
+
+    Most NEURON classes and functions are defined in the n namespace
+    and can be accessed as follows:
+
+    >>> v = n.Vector(10)
+    >>> soma = n.Section("soma")
+    >>> input = n.IClamp(soma(0.5))
+    >>> n.finitialize(-65)
+
+    Each built-in class has its own type, so for the above definitions we have:
+
+    >>> type(v)
+    <class 'hoc.Vector'>
+    >>> type(soma)
+    <class 'nrn.Section'>
+
+    But since ``IClamp`` is defined by a MOD file:
+
+    >>> type(input)
+    <class 'hoc.HocObject'>
+
+    Other submodules of neuron exist, including rxd and units.
+
+    You can see the functions, classes, etc available inside n via dir(n)
+    and can get help on each via the standard Python help system, e.g.,
+
+    >>> help(n.finitialize)
+
+    The full NEURON documentation is available online at
+    https://nrn.readthedocs.io
+    """
     def __repr__(self):
         return "<TopLevelNEURONInterface>"
 
