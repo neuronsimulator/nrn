@@ -205,6 +205,7 @@ class _NEURON_INTERFACE(hoc.HocObject):
     The full NEURON documentation is available online at
     https://nrn.readthedocs.io
     """
+
     def __repr__(self):
         return "<TopLevelNEURONInterface>"
 
