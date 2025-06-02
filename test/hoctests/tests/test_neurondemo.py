@@ -177,7 +177,7 @@ def data_compare(key, data):
 # Run all the demos and compare their results to the reference
 for i in range(1, 8):
     data = neurondemo(prgraphs, input % (i, ""))
-    key = "demo%d" % i
+    key = f"demo{i}"
     data_compare(key, data)
 
 

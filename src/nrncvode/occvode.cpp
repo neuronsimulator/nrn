@@ -295,6 +295,16 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
         }
         nrn_nonvint_block_ode_abstol(z.nvsize_, atv, id);
     }
+    // validate pv_ and pvdot_ pointer elements as non null.
+    for (int id = 0; id < nctd_; ++id) {
+        CvodeThreadData& z = ctd_[id];
+        nrn_assert(std::size_t(z.nonvint_extra_offset_) == z.pv_.size());
+        for (int i = 0; i < z.nonvint_extra_offset_; ++i) {
+            nrn_assert(z.pv_[i]);
+            nrn_assert(z.pvdot_[i]);
+        }
+    }
+
     structure_change_ = false;
 }
 
