@@ -14,8 +14,8 @@ class k3stCell(Cell):
             voltage_values.append(-70 + 10 * i)
         tau1_vector = n.Vector(tau1_values)
         voltage_vector = n.Vector(voltage_values)
-        h.table_tau1_k3st(tau1_vector, voltage_vector)
-        h.table_tau2_k3st(100)
+        n.table_tau1_k3st(tau1_vector, voltage_vector)
+        n.table_tau2_k3st(100)
 
     def record(self):
         tvec = n.Vector()
