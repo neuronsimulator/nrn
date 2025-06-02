@@ -1374,8 +1374,8 @@ Description:
 
 .. method:: ParallelContext.mpi_init
 
+    Removed. Use the following instead:
 
-    Syntax:
         ``n.nrnmpi_init()``
 
 
@@ -1384,7 +1384,7 @@ Description:
 	also be used to intialize MPI.
         Only required if:
 
-        launched python and mpi4py not used and NEURON_INIT_MPI=1
+        launched Python and mpi4py not used and NEURON_INIT_MPI=1
         environment varialble has not been exported.
 
         launched nrniv without -mpi argument.
@@ -1393,8 +1393,8 @@ Description:
         beforehand.
 
         The mpi_init method name was removed from ParallelContext and replaced
-        with the HocTopLevelInterpreter method nrnmpi_init() because MPI
-        must be initialized prior to the first instantiation of ParallelContext.
+        with the TopLevelNEURONInterface method ``nrnmpi_init()`` because MPI
+        must be initialized prior to the first instantiation of ``ParallelContext``.
 
          
 ----
