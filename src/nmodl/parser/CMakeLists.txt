@@ -20,14 +20,14 @@ endif()
 if(NOT NMODL_AS_SUBPROJECT)
   install(
     TARGETS nmodl_parser
-    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}/bin/parser
+    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/parser
     CONFIGURATIONS Debug)
   install(
     TARGETS c_parser
-    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}/bin/parser
+    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/parser
     CONFIGURATIONS Debug)
   install(
     TARGETS units_parser
-    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}/bin/parser
+    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/parser
     CONFIGURATIONS Debug)
 endif()

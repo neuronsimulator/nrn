@@ -231,15 +231,15 @@ endif()
 if(NOT NMODL_AS_SUBPROJECT)
   install(
     TARGETS nmodl_lexer
-    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}/bin/lexer
+    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer
     CONFIGURATIONS Debug)
   install(
     TARGETS c_lexer
-    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}/bin/lexer
+    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer
     CONFIGURATIONS Debug)
   install(
     TARGETS units_lexer
-    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}/bin/lexer
+    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer
     CONFIGURATIONS Debug)
 endif()
 
