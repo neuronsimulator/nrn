@@ -1117,9 +1117,10 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                 result = nb::steal(cpp2refstr(cpp));
                 return result.release().ptr();
             } else if (sym->type != VAR && sym->type != RANGEVAR && sym->type != VARALIAS) {
-                PyErr_Format(PyExc_TypeError,
-                             "Hoc pointer error, %s is not a hoc variable or range variable or strdef",
-                             sym->name);
+                PyErr_Format(
+                    PyExc_TypeError,
+                    "Hoc pointer error, %s is not a hoc variable or range variable or strdef",
+                    sym->name);
                 return NULL;
             } else {
                 isptr = 1;
@@ -1627,10 +1628,10 @@ static int araychk(Arrayinfo* a, PyHocObject* po, int ix) {
         // printf("ix=%d nsub=%d nindex=%d sub[nindex]=%d\n", ix, a->nsub,
         // po->nindex_, a->sub[po->nindex_]);
         PyErr_Format(PyExc_IndexError,
-                "%s%s%s",
-                po->ho_ ? hoc_object_name(po->ho_) : "",
-                (po->ho_ && po->sym_) ? "." : "",
-                po->sym_ ? po->sym_->name : "");
+                     "%s%s%s",
+                     po->ho_ ? hoc_object_name(po->ho_) : "",
+                     (po->ho_ && po->sym_) ? "." : "",
+                     po->sym_ ? po->sym_->name : "");
         return -1;
     }
     return 0;
