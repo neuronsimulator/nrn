@@ -159,9 +159,7 @@ static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
             return nrnpy_ho2po(ob);
         }
     }
-    char e[200];
-    Sprintf(e, "%s[%ld] instance does not exist", sym->name, ix);
-    PyErr_SetString(PyExc_IndexError, e);
+    PyErr_Format(PyExc_IndexError, "%s[%ld] instance does not exist", sym->name, ix);
     return nullptr;
 }
 
@@ -500,9 +498,7 @@ static Symbol* getsym(char* name, Object* ho, int fail) {
         sym = 0;
     }
     if (!sym && fail) {
-        char e[200];
-        Sprintf(e, "'%s' is not a defined hoc variable name.", name);
-        PyErr_SetString(PyExc_LookupError, e);
+        PyErr_Format(PyExc_LookupError, "'%s' is not a defined hoc variable name.", name);
     }
     return sym;
 }
@@ -1121,11 +1117,10 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                 result = nb::steal(cpp2refstr(cpp));
                 return result.release().ptr();
             } else if (sym->type != VAR && sym->type != RANGEVAR && sym->type != VARALIAS) {
-                char buf[200];
-                Sprintf(buf,
-                        "Hoc pointer error, %s is not a hoc variable or range variable or strdef",
-                        sym->name);
-                PyErr_SetString(PyExc_TypeError, buf);
+                PyErr_Format(
+                    PyExc_TypeError,
+                    "Hoc pointer error, %s is not a hoc variable or range variable or strdef",
+                    sym->name);
                 return NULL;
             } else {
                 isptr = 1;
@@ -1491,9 +1486,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname, PyObject* value)
                 }
                 return set_final_from_stk(value);
             } else {
-                char e[200];
-                Sprintf(e, "'%s' requires subscript for assignment", n);
-                PyErr_SetString(PyExc_TypeError, e);
+                PyErr_Format(PyExc_TypeError, "'%s' requires subscript for assignment", n);
                 return -1;
             }
         } else {
@@ -1634,13 +1627,11 @@ static int araychk(Arrayinfo* a, PyHocObject* po, int ix) {
     if (ix < 0 || n <= ix) {
         // printf("ix=%d nsub=%d nindex=%d sub[nindex]=%d\n", ix, a->nsub,
         // po->nindex_, a->sub[po->nindex_]);
-        char e[200];
-        Sprintf(e,
-                "%s%s%s",
-                po->ho_ ? hoc_object_name(po->ho_) : "",
-                (po->ho_ && po->sym_) ? "." : "",
-                po->sym_ ? po->sym_->name : "");
-        PyErr_SetString(PyExc_IndexError, e);
+        PyErr_Format(PyExc_IndexError,
+                     "%s%s%s",
+                     po->ho_ ? hoc_object_name(po->ho_) : "",
+                     (po->ho_ && po->sym_) ? "." : "",
+                     po->sym_ ? po->sym_->name : "");
         return -1;
     }
     return 0;
@@ -1935,9 +1926,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 ix += vector_capacity(hv);
             }
             if (ix < 0 || ix >= vector_capacity(hv)) {
-                char e[200];
-                Sprintf(e, "%s", hoc_object_name(po->ho_));
-                PyErr_SetString(PyExc_IndexError, e);
+                PyErr_Format(PyExc_IndexError, "%s", hoc_object_name(po->ho_));
                 return nullptr;
             } else {
                 return PyFloat_FromDouble(vector_vec(hv)[ix]);
@@ -1948,9 +1937,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 ix += hl->count();
             }
             if (ix < 0 || ix >= hl->count()) {
-                char e[200];
-                Sprintf(e, "%s", hoc_object_name(po->ho_));
-                PyErr_SetString(PyExc_IndexError, e);
+                PyErr_Format(PyExc_IndexError, "%s", hoc_object_name(po->ho_));
                 return nullptr;
             } else {
                 return nrnpy_ho2po(hl->object(ix));
@@ -1974,15 +1961,11 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 return nrnpy_ho2po(ob);
             }
         }
-        char e[200];
-        Sprintf(e, "%s[%ld] instance does not exist", po->sym_->name, ix);
-        PyErr_SetString(PyExc_IndexError, e);
+        PyErr_Format(PyExc_IndexError, "%s[%ld] instance does not exist", po->sym_->name, ix);
         return nullptr;
     }
     if (po->type_ != PyHoc::HocArray && po->type_ != PyHoc::HocArrayIncomplete) {
-        char e[200];
-        Sprintf(e, "unsubscriptable object, type %d\n", po->type_);
-        PyErr_SetString(PyExc_TypeError, e);
+        PyErr_Format(PyExc_TypeError, "unsubscriptable object, type %d\n", po->type_);
         return nullptr;
     }
     Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
