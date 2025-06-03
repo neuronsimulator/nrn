@@ -12,7 +12,7 @@
 #include <cmath>
 #include <cctype>
 #include <cerrno>
-
+#include <string>
 
 #include <InterViews/box.h>
 #include <IV-look/kit.h>
@@ -1246,9 +1246,7 @@ HocMenu::~HocMenu() {
     menu_->unref();
 }
 void HocMenu::write(std::ostream& o) {
-    char buf[200];
-    Sprintf(buf, "xmenu(\"%s\", %d)", getStr(), add2menubar_);
-    o << buf << std::endl;
+    o << "xmenu(\"" << getStr() << "\", " << add2menubar_ << ")" << std::endl;
 }
 
 static Coord xvalue_field_size;
@@ -1346,10 +1344,7 @@ void HocPanel::save(std::ostream& o) {
 
 void HocPanel::write(std::ostream& o) {
     Oc oc;
-    char buf[200];
-    //	o << "xpanel(\"" << getName() << "\")" << std::endl;
-    Sprintf(buf, "xpanel(\"%s\", %d)", getName(), horizontal_);
-    o << buf << std::endl;
+    o << "xpanel(\"" << getName() << "\", " << (int) horizontal_ << ")" << std::endl;
     if (ilist_.size() > 1) {
         for (std::size_t i = 1; i < ilist_.size(); ++i) {
             ilist_[i]->write(o);
@@ -1415,9 +1410,7 @@ HocLabel::HocLabel(const char* s)
     : HocItem(s) {}
 HocLabel::~HocLabel() {}
 void HocLabel::write(std::ostream& o) {
-    char buf[210];
-    Sprintf(buf, "xlabel(\"%s\")", hideQuote(getStr()));
-    o << buf << std::endl;
+    o << "xlabel(\"" << hideQuote(getStr()) << "\")" << std::endl;
 }
 
 #if 0
@@ -1454,9 +1447,7 @@ HocVarLabel::~HocVarLabel() {
 
 void HocVarLabel::write(std::ostream& o) {
     if (!variable_.empty() && cpp_) {
-        char buf[256];
-        Sprintf(buf, "xvarlabel(%s)", variable_.c_str());
-        o << buf << std::endl;
+        o << "xvarlabel(" << variable_ << ")" << std::endl;
     } else {
         o << "xlabel(\"<can't retrieve>\")" << std::endl;
     }
@@ -1906,7 +1897,6 @@ void HocValEditor::print(Printer* p, const Allocation& a) const {
 }
 
 void HocValEditor::set_val(double x) {
-    char buf[200];
     if (pyvar_) {
         neuron::python::methods.guisetval(pyvar_, x);
         return;
@@ -1916,21 +1906,18 @@ void HocValEditor::set_val(double x) {
     if (pval_) {
         *pval_ = hoc_ac_;
     } else if (!variable_.empty()) {
-        Sprintf(buf, "%s = hoc_ac_\n", variable_.c_str());
-        oc.run(buf);
+        oc.run(variable_ + " = hoc_ac_\n");
     }
 }
 
 double HocValEditor::get_val() {
-    char buf[200];
     if (pyvar_) {
         return neuron::python::methods.guigetval(pyvar_);
     } else if (pval_) {
         return *pval_;
     } else if (!variable_.empty()) {
         Oc oc;
-        Sprintf(buf, "hoc_ac_ = %s\n", variable_.c_str());
-        oc.run(buf);
+        oc.run(std::string("hoc_ac_ = ") + variable_ + "\n");
         return hoc_ac_;
     } else {
         return 0.;
@@ -1942,10 +1929,8 @@ double HocValEditor::domain_limits(double val) {
 }
 
 void HocValEditor::evalField() {
-    char buf[200];
     Oc oc;
-    Sprintf(buf, "hoc_ac_ = %s\n", fe_->text()->string());
-    oc.run(buf);
+    oc.run(std::string("hoc_ac_ = ") + fe_->text()->string() + "\n");
     hoc_ac_ = domain_limits(hoc_ac_);
     set_val(hoc_ac_);
     // prompt_->state()->set(TelltaleState::is_active, false);
