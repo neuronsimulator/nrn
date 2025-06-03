@@ -56,7 +56,7 @@ Intracellular regions and regions in Frankenhauser-Hodgkin space
         .. code::
             python
 
-            r = rxd.Region(secs=None, nrn_region=None, geometry=None, dimension=None, dx=None, name=None)
+            r = rxd.Region(secs=None, nrn_region=None, geometry=None, dx=None, name=None)
 
         In NEURON 7.4+, ``secs`` is optional at initial region declaration, but it
         must be specified before the reaction-diffusion model is instantiated.
@@ -67,7 +67,6 @@ Intracellular regions and regions in Frankenhauser-Hodgkin space
         * ``nrn_region`` specifies the classic NEURON region associated with this object and must be either ``"i"`` for the region just inside the plasma membrane, ``"o"`` for the region just outside the plasma membrane or ``None`` for none of the above.
         * ``name`` is the name of the region (e.g. ``cyt`` or ``er``); this has no effect on the simulation results but it is helpful for debugging
         * ``dx`` specifies the 3D voxel edge length. Models in NEURON 9.0+ allow multiple values of dx per model, as long as 3D sections with different ``dx`` values do not connect to each other. If this condition is not true, an exception is raised during simulation. (Prior to NEURON 9.0, behavior of models with multiple values of ``dx`` is undefined, and no error checking was provided.)
-        * ``dimension`` deprecated; do not use
 
     .. property:: rxd.Region.nrn_region
 

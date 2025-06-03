@@ -1,4 +1,5 @@
 include(${PROJECT_SOURCE_DIR}/cmake/nmodl/FlexHelper.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/nmodl/CompilerHelper.cmake)
 include_directories(${NMODL_PROJECT_PLATLIB_SOURCE_DIR} ${NMODL_PROJECT_PLATLIB_BINARY_DIR})
 
 list(APPEND NMODL_EXTRA_CXX_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
@@ -76,6 +77,9 @@ add_custom_target(pyastgen DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ast/ast.cpp)
 # Add extra compile flags to NMODL sources
 # =============================================================================
 add_compile_options(${NMODL_EXTRA_CXX_FLAGS})
+if(NMODL_COMPILER_WARNING_SUPPRESSIONS)
+  add_compile_options(${NMODL_COMPILER_WARNING_SUPPRESSIONS})
+endif()
 add_link_options(${NMODL_EXTRA_CXX_FLAGS})
 
 add_subdirectory(codegen)
@@ -126,6 +130,8 @@ endif()
 # =============================================================================
 # Install executable
 # =============================================================================
+set(NMODL_INSTALL_DIR_SUFFIX ${NRN_INSTALL_DATA_PREFIX})
+
 install(
   TARGETS nmodl
   EXPORT nmodlTargets
@@ -165,6 +171,7 @@ message(STATUS " Build option       | Status")
 message(STATUS "--------------------+--------------------------------------------------------")
 message(STATUS "CXX COMPILER        | ${CMAKE_CXX_COMPILER}")
 message(STATUS "COMPILE FLAGS       | ${COMPILER_FLAGS}")
+message(STATUS "EXTRA FLAGS         | ${NMODL_EXTRA_CXX_FLAGS}")
 message(STATUS "Build Type          | ${CMAKE_BUILD_TYPE}")
 message(STATUS "Python Bindings     | ${NMODL_ENABLE_PYTHON_BINDINGS}")
 message(STATUS "Flex                | ${FLEX_EXECUTABLE}")

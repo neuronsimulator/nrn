@@ -41,7 +41,7 @@ void iv_display_scale(float);
 #include "nrnmpi.h"
 #include "nrnpy.h"
 
-#if defined(IVX11_DYNAM)
+#if defined(HAVE_IV) && defined(IVX11_DYNAM)
 #include <IV-X11/ivx11_dynam.h>
 #endif
 
@@ -448,7 +448,7 @@ nrniv [options] [fileargs]
 
 #endif
 
-#if defined(IVX11_DYNAM)
+#if defined(HAVE_IV) && defined(IVX11_DYNAM)
     if (hoc_usegui && ivx11_dyload()) {
         hoc_usegui = 0;
         hoc_print_first_instance = 0;

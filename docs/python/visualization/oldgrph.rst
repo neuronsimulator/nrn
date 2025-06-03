@@ -6,8 +6,9 @@ Obsolete Plotting
 .. warning::
 
     The functions on this page should be considered obsolete and avoided in new code; use
-    :class:`Graph` instead.
-.fa
+    :class:`Graph` or regular Python graphics (``matplotlib``, ``plotnine``, ``plotly``, ...)
+    instead.
+
 
 
 .. function:: graphmode
@@ -20,19 +21,19 @@ Obsolete Plotting
         ``h.graphmode(1)``
             Executes the list of setup statements. 
             This is also done on the 
-            first call to ``h.graph(t)`` after 
+            first call to :func:`h.graph(t) <graph>` after 
             a new setup statement is added to the list. 
 
         ``h.graphmode(-1)``
             Flushes the stored plots. Subsequent calls to 
-            ``h.graph(t)`` will start new lines. 
-            Should be executed just before a ``h.plt(-1)`` to ensure the entire lines 
+            :func:`h.graph(t) <graph>` will start new lines. 
+            Should be executed just before a :func:`h.plt(-1) <plt>` to ensure the entire lines 
             are plotted. 
 
         ``h.graphmode(2)`` 
             Flushes the stored plots. Subsequent calls to 
-            ``h.graph(t)`` will continue the lines. 
-            Graphs are normally flushed every  50 points. 
+            :func:`h.graph(t) <graph>` will continue the lines. 
+            Graphs are normally flushed every 50 points. 
 
 
 ----
@@ -41,10 +42,7 @@ Obsolete Plotting
 
 .. function:: graph
 
-         
-
-    Name:
-        graph --- multiple line plots (obsolete; use :class:`Graph` instead)
+    obsolete; use :class:`Graph` instead
          
 
     Syntax:
@@ -73,10 +71,10 @@ Obsolete Plotting
 
         ``h.graph(s1, s2)``
             Adds a new plot specification 
-            to the graph list. s1 must be a HOC
-            string which contains an expression, usually a variable. e.g "y". s2 is a HOC
-            string which contains any number of statements used to initialize axes. etc. 
-            E.G "``axis(0,5,1,-1,1,2) axis()``". 
+            to the graph list. s1 must be a
+            string which contains a HOC expression, usually a variable. e.g ``"y"``. s2 is a
+            string which contains any number of HOC statements used to initialize axes. etc. 
+            E.G ``"axis(0,5,1,-1,1,2) axis()"``. 
 
         ``h.graph(t)`` 
             The current value of each 
@@ -91,6 +89,7 @@ Obsolete Plotting
             python
             
             from neuron import h, gui
+            import numpy as np
 
             # define a HOC variable x
             h('x = 0')
@@ -101,17 +100,19 @@ Obsolete Plotting
                 h.axis(0, 15, 3, -1, 1, 2) 
                 h.axis() 
                 h.plot(1) 
-                for i in range(150):
-                    h.x = i * 0.1
+                for h.x in np.arange(0, 15, 0.1):
+                    # using h.x instead of x is essential to allow the sin and
+                    # cos graphs to update
                     h.plot(h.x, h.x / 15.)    # ramp 
                     h.graph(h.x)  # plots graph list if any
-                h.graph(-1) # flush remaining part of graphs, if any 
+                h.graph(-1)  # flush remaining part of graphs, if any 
                 h.plt(-1) 
 
              
             p()    # plots the ramp alone
              
             h.graph() 
+            # x here refers to the variable known to Python as h.x
             h.graph("sin(x)","axis(100, 300, 100, 300) axis()") 
             h.graph("cos(x)", "")  # same axes as previous call to graph
              
@@ -148,7 +149,7 @@ Obsolete Plotting
         before the first graph will appear.
 
     .. seealso::
-        :func:`plot`
+        :func:`plot`, :class:`Graph`
         
 
 ----
@@ -179,18 +180,10 @@ Obsolete Plotting
 
         ``h.axis(xorg, xsize, yorg, ysize)`` 
             Size and location of the plot region. 
-            (Use the h.plt() absolute coordinates.) 
+            (Use the :func:`h.plt() <plt>` absolute coordinates.) 
 
         ``h.axis(xstart, xstop, nticx, ystart, ystop, nticy)`` 
             Determines relative scale and origin. 
-
-         
-        Specification of the precision of axis tic labels is available by 
-        recompiling :file:`hoc/SRC/plot.c` with ``#define Jaslove 1+``. With this definition, 
-        the number of tics specified in the 3rd and 6th arguments of ``axis()`` should 
-        be of the form m.n. m is the number of tic marks, and n is the number of 
-        digits after the decimal point which are printed. This contribution was 
-        made by Stewart Jaslove. 
 
 
     .. seealso::
@@ -225,17 +218,12 @@ Obsolete Plotting
 
 .. function:: plot
 
-         
-
-    Name:
-        plot - plot relative to scale given by :func:`axis`
-         
 
     Syntax:
 
         ``h.plot(mode)``
 
-        ``inrange = h.plot(x,y)``
+        ``inrange = h.plot(x, y)``
 
 
 
@@ -272,14 +260,13 @@ Obsolete Plotting
             python
 
             from neuron import h, gui
-            import math
+            import numpy as np
 
             # plot the sin function from 0 to 10 radians 
-            h.axis(0, 10, 5, -1, 1, 2) #/* setup scale */ 
+            h.axis(0, 10, 5, -1, 1, 2) # setup scale 
             h.plot(1) 
-            for i in range(101):
-                x = i * 0.1
-                h.plot(x, math.sin(x))  # plot the function
+            for x in np.linspace(0, 10, 100):
+                h.plot(x, np.sin(x))  # plot the function
 
             h.axis()
             
@@ -298,10 +285,6 @@ Obsolete Plotting
 
     obsolete.   
 
-    Name:
-        setcolor - low level plot function
-         
-
     Syntax:
 
         ``h.setcolor(colorval)``
@@ -310,22 +293,45 @@ Obsolete Plotting
         
         ``h.setcolor()`` sets the color (or pen number for HP plotter) used for :func:`plt`.
 
-        Argument to \ ``setcolor()`` produces the following screen 
+        Argument to ``h.setcolor()`` produces the following screen 
         colors with an EGA adapter (left), X11 graphics (right): 
 
-        .. code-block::
-            none
+	.. list-table:: Color Mapping Table
+		:header-rows: 1
 
-            0      black  (pen 1 on HP plotter)         black 
-            1      blue                                 white 
-            2      green                                yellow 
-            3      cyan                                 red 
-            4      red                                  green 
-            5      magenta                              blue 
-            6      brown                                violet 
-            7      light gray  (pen 1 on HP plotter)    cyan 
-            ... 
-            15     white                                green    
+		* - Code
+		  - HP Plotter Color
+		  - Alternate Color
+		* - 0
+		  - black (pen 1)
+		  - black
+		* - 1
+		  - blue
+		  - white
+		* - 2
+		  - green
+		  - yellow
+		* - 3
+		  - cyan
+		  - red
+		* - 4
+		  - red
+		  - green
+		* - 5
+		  - magenta
+		  - blue
+		* - 6
+		  - brown
+		  - violet
+		* - 7
+		  - light gray (pen 1)
+		  - cyan
+		* - ...
+		  - ...
+		  - ...
+		* - 15
+		  - white
+		  - green   
 
     .. seealso:
 
@@ -344,11 +350,6 @@ Obsolete Plotting
 
 .. function:: plt
 
-         
-
-    Name:
-        plt - low level plot function
-         
 
     Syntax:
         ``h.plt(mode)``
@@ -372,44 +373,44 @@ Obsolete Plotting
     Options:
 
 
-        \ ``h.plt(-1)`` 
+        ``h.plt(-1)`` 
             Place cursor in home position. 
 
-        \ ``h.plt(-2)`` 
+        ``h.plt(-2)`` 
             Subsequent text printed starting at current coordinate position. 
 
-        \ ``h.plt(-3)`` 
+        ``h.plt(-3)`` 
             Erase screen, cursor in home position. 
 
-        \ ``h.plt(-5)`` 
+        ``h.plt(-5)`` 
             Open HP plotter on PC; the plotter will stay open until another ``h.plt(-5)`` is executed.
 
 
-        \ ``h.plt(0, x, y)`` 
+        ``h.plt(0, x, y)`` 
             Plot point. 
 
-        \ ``h.plt(1, x, y)`` 
+        ``h.plt(1, x, y)`` 
             Move to point without plotting. 
 
-        \ ``h.plt(2, x, y)`` 
-            Draw vector from former position to new position given by (x,y). 
+        ``h.plt(2, x, y)`` 
+            Draw vector from former position to new position given by (x, y). 
             (*mode* can be any number >= 2) 
 
         Several extra options are available for X11 graphics. 
 
 
-        \ ``h.plt(-4, x, y)`` 
+        ``h.plt(-4, x, y)`` 
             Erases area defined by previous plot position and 
             the point, (x, y). 
 
-        \ ``h.plt(-5)`` 
+        ``h.plt(-5)`` 
             Fast mode. By default, the X11 server is flushed on every 
             plot command so one can see the plot as it develops. Fast mode caches plot 
             commands and only flushes on ``plt(-1)`` and ``setcolor()``.  Fast mode is 
             three times faster than the default mode.  It is most useful when 
             plotting is the rate limiting step of the simulation. 
 
-        \ ``h.plt(-6)`` 
+        ``h.plt(-6)`` 
             X11 server flushed on every plot call. 
 
         When the graphic window is resized, NEURON is notified after 
