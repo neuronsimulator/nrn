@@ -258,6 +258,16 @@ jobs:
           PYTHON_MID_NAME: "python${{ env.PY_MID_VERSION }}"
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
 
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{runner.os}}
+          path: |
+            ${{runner.workspace}}/nrn/build/CMakeCache.txt
+            ${{runner.workspace}}/nrn/build/build.ninja
+            ${{runner.workspace}}/nrn/build/cmake_install.cmake
+
       - name: Save compiler cache
         id: save-compiler-cache
         if: always() && steps.restore-compiler-cache.outputs.cache-hit != 'true'
