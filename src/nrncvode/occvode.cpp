@@ -790,7 +790,7 @@ void Cvode::fun_thread_transfer_part2(neuron::model_sorted_token const& sorted_t
     if (auto const vec_sav_rhs = nt->node_sav_rhs_storage(); vec_sav_rhs) {
         auto* const vec_area = nt->node_area_storage();
         for (int i = z.rootnode_begin_index_; i < z.rootnode_end_index_; ++i) {
-            vec_sav_rhs[i] *= vec_area[i] * 0.01;
+            vec_sav_rhs[i] *= vec_area[i] * 0.01;  // 0.01 milliamp/cm2 * um2 is nanoamp
         }
         for (int i = z.vnode_begin_index_; i < z.vnode_end_index_; ++i) {
             vec_sav_rhs[i] *= vec_area[i] * 0.01;
@@ -903,19 +903,18 @@ void Cvode::nocap_v(neuron::model_sorted_token const& sorted_token, NrnThread* _
     auto* const vec_b = _nt->node_b_storage();
     for (auto i: z.no_cap_indices_) {
         vec_rhs[i] += vec_d[i] * vec_v[i];
-        ;
         if (i >= z.rootnode_end_index_) {
-            auto const pi = _nt->_v_parent_index[i];
-            vec_rhs[i] -= vec_b[i] * vec_v[pi];
+            auto const parent_i = _nt->_v_parent_index[i];
+            vec_rhs[i] -= vec_b[i] * vec_v[parent_i];
             vec_d[i] -= vec_b[i];
         }
     }
 
     auto* const vec_a = _nt->node_a_storage();
     for (auto i: z.no_cap_child_indices_) {
-        auto const pi = _nt->_v_parent_index[i];
-        vec_rhs[pi] -= vec_a[i] * vec_v[i];
-        vec_d[pi] -= vec_a[i];
+        auto const parent_i = _nt->_v_parent_index[i];
+        vec_rhs[parent_i] -= vec_a[i] * vec_v[i];
+        vec_d[parent_i] -= vec_a[i];
     }
 
 #if NRNMPI

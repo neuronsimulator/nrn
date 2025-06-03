@@ -53,13 +53,13 @@ void Cvode::rhs(neuron::model_sorted_token const& sorted_token, NrnThread* _nt) 
     auto const vec_a = _nt->node_a_storage();
     auto const vec_b = _nt->node_b_storage();
     auto const vec_v = _nt->node_voltage_storage();
-    auto* const parent_i = _nt->_v_parent_index;
+    auto* const parents = _nt->_v_parent_index;
     for (int i = z.vnode_begin_index_; i < z.vnode_end_index_; ++i) {
-        auto const pi = parent_i[i];
-        auto const dv = vec_v[pi] - vec_v[i];
+        auto const parent_i = parents[i];
+        auto const dv = vec_v[parent_i] - vec_v[i];
         // our connection coefficients are negative so
         vec_rhs[i] -= vec_b[i] * dv;
-        vec_rhs[pi] += vec_a[i] * dv;
+        vec_rhs[parent_i] += vec_a[i] * dv;
     }
 }
 
@@ -145,9 +145,9 @@ void Cvode::triang(NrnThread* _nt) {
     auto* const vec_rhs = _nt->node_rhs_storage();
     for (int i = z.vnode_end_index_ - 1; i >= z.vnode_begin_index_; --i) {
         double const p = vec_a[i] / vec_d[i];
-        auto const pi = _nt->_v_parent_index[i];
-        vec_d[pi] -= p * vec_b[i];
-        vec_rhs[pi] -= p * vec_rhs[i];
+        auto const parent_i = _nt->_v_parent_index[i];
+        vec_d[parent_i] -= p * vec_b[i];
+        vec_rhs[parent_i] -= p * vec_rhs[i];
     }
 }
 
