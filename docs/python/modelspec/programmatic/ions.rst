@@ -22,13 +22,13 @@ Ions
         style chosen automatically on a per section basis should be 
         appropriate to the set of mechanisms inserted in each section. 
          
-        Warning: if other mechanisms are inserted subsequent to a call 
-        of this function, the style will be "promoted" according to 
-        the rules associated with adding the used ions to the style 
-        previously in effect. 
-         
-        The oldstyle value is previous internal setting of 
-        c_style + 4*cinit +  8*e_style + 32*einit + 64*eadvance. 
+        The ``oldstyle`` value is the previous internal setting of 
+        c_style + 4*cinit + 8*e_style + 32*einit + 64*eadvance. 
+        That is, to get the parameter values from ``oldstyle``, use
+        ``c_style = oldstyle % 4``, ``cinit = (oldstyle // 4) % 2``, 
+        ``e_style = (oldstyle // 8) % 4``, ``einit = (oldstyle // 32) % 2``, 
+        ``eadvance = (oldstyle // 64) % 2``
+
          
 
 
@@ -60,7 +60,7 @@ Ions
         WRITE > READ > unused in the USEION statement; so if one mechanism 
         READ's  cai/cao and another mechanism WRITE's them then WRITE takes precedence 
         in the following table. For compactness, the table assumes the ca ion. 
-        Each table entry identifies the equivalent parameters to the ion_style 
+        Each table entry identifies the equivalent parameters to the ``ion_style`` 
         function. 
 
             ==========    =========   =========   =========
@@ -83,7 +83,25 @@ Ions
         before the calculation of ``eca``). 
 
 
+        .. warning::
+        
+            If other mechanisms are inserted subsequent to a call 
+            of this function, the style will be "promoted" according to 
+            the rules associated with adding the used ions to the style 
+            previously in effect. 
+        
+        .. warning::
 
+            If ``section`` is not specified, the style is set for the currently accessed
+            section only (the section returned by :func:`h.cas() <cas>`). In particular,
+            this does not change the style for all sections. If you need to change for all
+            sections, loop over the sections, e.g.,
+
+            .. code-block::
+                python
+
+                for sec in h.allsec():
+                    h.ion_style("ca_ion", 3, 2, 1, 1, 1, sec=sec)
 ----
 
 
@@ -92,15 +110,15 @@ Ions
 
 
     Syntax:
-        ``type = h.ion_register("name", charge)``
+        ``ion_type = h.ion_register("name", charge)``
 
 
     Description:
         Create a new ion type with mechanism name, "name_ion", and associated 
-        variables: iname, nameo, namei, ename, diname_dv. 
+        variables: ``iname``, ``nameo``, ``namei``, ``ename``, ``diname_dv``. 
         If any of these names already 
-        exists and name_ion is not already an ion, the function returns -1, 
-        otherwise it returns the mechanism type index. If name_ion is already 
+        exists and ``name_ion`` is not already an ion, the function returns -1, 
+        otherwise it returns the mechanism type index. If ``name_ion`` is already 
         an ion the charge is ignored but the type index is returned. 
 
 
@@ -117,6 +135,6 @@ Ions
 
     Description:
         Return the charge for the indicated ion mechanism. An error message is 
-        printed if name_ion is not an ion mechanism. 
+        printed if ``name_ion`` is not an ion mechanism. 
 
 
