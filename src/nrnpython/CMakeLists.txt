@@ -57,10 +57,6 @@ endif()
 
 # user has selected dynamic python support (could be multiple versions)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
-  # set(INCLUDE_DIRS . .. ../oc ../nrnoc ../ivoc ../nrniv ../gnu ../nrnmpi
-  # ${PROJECT_BINARY_DIR}/src/nrnpython ${PROJECT_BINARY_DIR}/src/ivos ${PROJECT_BINARY_DIR}/src/oc
-  # ${NRN_OC_GENERATED_SOURCES}) if(NRN_ENABLE_INTERVIEWS) list(APPEND INCLUDE_DIRS
-  # ${IV_INCLUDE_DIR}) else() list(APPEND INCLUDE_DIRS ../ivos) endif()
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
 
     # the NEURON Python library (with nanobind)
