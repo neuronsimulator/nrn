@@ -249,8 +249,8 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
             if (vec_rhs[i] > .5) {
                 z.no_cap_indices_[nocap_index++] = i;
             }
-            auto pi = nt_->_v_parent_index[i];
-            if (vec_rhs[pi] > .5) {
+            auto parent_i = nt_->_v_parent_index[i];
+            if (vec_rhs[parent_i] > .5) {
                 z.no_cap_child_indices_[nocap_child_index++] = i;
             }
         }
@@ -951,16 +951,16 @@ void Cvode::nocap_v_part1(NrnThread* _nt) {
     for (auto i: z.no_cap_indices_) {  // parent axial current
         vec_rhs[i] += vec_d[i] * vec_v[i];
         if (i >= z.rootnode_end_index_) {
-            auto const pi = _nt->_v_parent_index[i];
-            vec_rhs[i] -= vec_b[i] * vec_v[pi];
+            auto const parent_i = _nt->_v_parent_index[i];
+            vec_rhs[i] -= vec_b[i] * vec_v[parent_i];
             vec_d[i] -= vec_b[i];
         }
     }
 
     for (auto i: z.no_cap_child_indices_) {
-        auto const pi = _nt->_v_parent_index[i];
-        vec_rhs[pi] -= vec_a[i] * vec_v[i];
-        vec_d[pi] -= vec_a[i];
+        auto const parent_i = _nt->_v_parent_index[i];
+        vec_rhs[parent_i] -= vec_a[i] * vec_v[i];
+        vec_d[parent_i] -= vec_a[i];
     }
 
     nrn_multisplit_nocap_v_part1(_nt);
