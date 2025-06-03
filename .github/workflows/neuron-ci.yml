@@ -272,18 +272,6 @@ jobs:
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-
 
-      - name: Set env vars
-        run: |
-          # for resources available, see:
-          # https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
-          if [[ "$(uname -s)" == 'Darwin' ]] && [[ "$(uname -m)" == 'arm64' ]]; then
-            echo "CMAKE_BUILD_PARALLEL_LEVEL=3" >> $GITHUB_ENV
-            echo "CTEST_PARALLEL_LEVEL=3" >> $GITHUB_ENV
-          else
-            echo "CMAKE_BUILD_PARALLEL_LEVEL=4" >> $GITHUB_ENV
-            echo "CTEST_PARALLEL_LEVEL=4" >> $GITHUB_ENV
-          fi
-
       - name: Build and Test
         id: build-test
         shell: bash
