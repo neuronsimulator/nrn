@@ -17,14 +17,15 @@ def ecs_example(neuron_instance):
 
     h, rxd, data, save_path = neuron_instance
 
-    def make_model(alpha, lambd):
+    def make_model(alpha, lambd, mech=True):
         # create cell1 where `x` will be created and leak out
         cell1 = h.Section(name="cell1")
         cell1.pt3dclear()
         cell1.pt3dadd(-2, 0, 0, 1)
         cell1.pt3dadd(-1, 0, 0, 1)
         cell1.nseg = 11
-        cell1.insert("pump")
+        if mech:
+            cell1.insert("pump")
 
         # create cell2 where `x` will be pumped in and accumulate
         cell2 = h.Section(name="cell2")
@@ -32,7 +33,8 @@ def ecs_example(neuron_instance):
         cell2.pt3dadd(1, 0, 0, 1)
         cell2.pt3dadd(2, 0, 0, 1)
         cell2.nseg = 11
-        cell2.insert("pump")
+        if mech:
+            cell2.insert("pump")
 
         # Where?
         # the intracellular spaces
@@ -76,7 +78,7 @@ def ecs_example(neuron_instance):
         cyt_org_leak = rxd.MultiCompartmentReaction(
             Xcyt, Xorg, 1e4, 1e4, membrane=cyt_org_membrane
         )
-        model = (
+        model = [
             cell1,
             cell2,
             cyt,
@@ -90,7 +92,24 @@ def ecs_example(neuron_instance):
             cell1_param,
             createX,
             cyt_org_leak,
-        )
+        ]
+        if not mech:
+            e = 1.60217662e-19
+            scale = 1e-14 / e
+            cyt_ecs_membrane = rxd.Region(
+                h.allsec(), name="cell_mem", geometry=rxd.membrane()
+            )
+            Xecs = x[ecs]
+            cyt_ecs_pump = rxd.MultiCompartmentReaction(
+                Xcyt,
+                Xecs,
+                1.0 * scale * Xcyt / (1.0 + Xcyt),
+                1.0 * scale * Xecs / (1.0 + Xecs),
+                mass_action=False,
+                membrane_flux=True,
+                membrane=cyt_ecs_membrane,
+            )
+            model += [cyt_ecs_membrane, Xecs, cyt_ecs_pump]
         return model
 
     yield (neuron_instance, make_model)
@@ -253,6 +272,76 @@ def test_ecs_example_dynamic_alpha(ecs_example):
     ecs.alpha = alpha
     h.continuerun(1000)
 
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
+
+
+def test_ecs_multi_example(ecs_example):
+    """Test ecs_example with multicompartment reactions and fixed step methods"""
+
+    (h, rxd, data, save_path), make_model = ecs_example
+    model = make_model(0.2, 1.6, mech=False)
+    h.finitialize(-65)
+    h.continuerun(1000)
+
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
+
+
+def test_ecs_multi_example_cvode(ecs_example):
+    """Test ecs_example with multicompartment reactions and variable step methods"""
+
+    (h, rxd, data, save_path), make_model = ecs_example
+    model = make_model(0.2, 1.6)
+    h.CVode().active(True)
+    h.CVode().atol(1e-5)
+
+    h.finitialize(-65)
+    h.continuerun(1000)
+
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
+
+
+def test_ecs_example_extracellular_multi(ecs_example):
+    """Test multicompartment reaction with extracellular sources and destinations."""
+    (h, rxd, data, save_path), make_model = ecs_example
+    model = make_model(0.2, 1.6, mech=False)
+    h.finitialize(-65)
+    (
+        cell1,
+        cell2,
+        cyt,
+        org,
+        cyt_org_membrane,
+        ecs,
+        x,
+        Xcyt,
+        Xorg,
+        createX,
+        cell1_param,
+        createX,
+        cyt_org_leak,
+        cyt_ecs_membrane,
+        Xecs,
+        cyt_to_ecs_pump,
+    ) = model
+    y = rxd.State([ecs], name="y", charge=1, initial=100)
+    e = 1.60217662e-19
+    scale = 1e-14 / e
+    ecs_ecs_pump = rxd.MultiCompartmentReaction(
+        y[ecs],
+        Xecs,
+        1 * scale * Xcyt / (1.0 + Xcyt),
+        mass_action=False,
+        membrane_flux=False,
+        membrane=cyt_ecs_membrane,
+    )
+    h.finitialize(-65)
+    h.continuerun(10)
     if not save_path:
         max_err = compare_data(data)
         assert max_err < tol

@@ -9,7 +9,7 @@ Printf (Formatted Output)
     .. warning::
 
         For code written in Python, it is generally more practical to use Python string
-        formatting and file IO.
+        formatting (e.g., f-strings) and file IO.
 
     Name:
         printf, fprint, sprint --- formatted output 
@@ -20,15 +20,17 @@ Printf (Formatted Output)
 
         ``h.fprint(format, ...)``
 
-        ``h.sprint(string, format, ...)``
+        ``h.sprint(strdef, format, ...)``
 
 
 
     Description:
         ``h.printf`` places output on the standard output.  ``h.fprint`` places output 
         on the file opened with the ``h.wopen(filename)`` command (standard 
-        output if no file is opened).  ``h.sprint`` places output in its *string* 
-        argument.  These functions are subsets of their counterparts in 
+        output if no file is opened).  ``h.sprint`` places output in its ``strdef`` 
+        argument. (Note: ``strdef`` must be a NEURON string reference, created via
+        e.g., ``mystr = h.ref("")``, not a regular Python string as the latter is immutable.)
+        These functions are subsets of their counterparts in 
         the C standard library. 
          
         Each of these functions converts, formats, and prints its arguments after 
@@ -42,34 +44,28 @@ Printf (Formatted Output)
         Each conversion specification is introduced by the character '\ ``%``\ '
         and ends with a conversion type specifier.  The type specifiers 
         supported are: 
-         
 
+        .. list-table::
+            :header-rows: 1
 
-        f 
-            signed value of the form -dddd.ddddd 
-
-        e 
-            signed value of the form -d.dddddde-nn 
-
-        g 
-            signed value in either 'e' or 'f' form based on given value 
-            and precision.  Trailing zeros and the decimal point are printed 
-            only if necessary. 
-
-        d 
-            signed value truncated and printed as integer. 
-
-        o 
-            printed as unsigned octal integer. 
-
-        x 
-            printed as unsigned hexadecimal integer 
-
-        c 
-            number treated as ascii code and printed as single character 
-
-        s 
-            string is printed, arg must be a string. 
+            * - Format
+            - Description
+            * - ``f``
+            - Signed value of the form ``-dddd.ddddd``.
+            * - ``e``
+            - Signed value of the form ``-d.dddddde-nn``.
+            * - ``g``
+            - Signed value in either ``e`` or ``f`` form based on given value and precision. Trailing zeros and the decimal point are printed only if necessary.
+            * - ``d``
+            - Signed value truncated and printed as integer.
+            * - ``o``
+            - Printed as unsigned octal integer.
+            * - ``x``
+            - Printed as unsigned hexadecimal integer.
+            * - ``c``
+            - Number treated as ASCII code and printed as single character.
+            * - ``s``
+            - String is printed, argument must be a string.
 
          
         Between ``%`` and the conversion type, optional flags, width, precision 
@@ -79,16 +75,17 @@ Printf (Formatted Output)
          
         Special characters of note are: 
          
+        .. list-table:: Escape Characters
+            :header-rows: 1
 
-
-        ``\n`` 
-            newline 
-
-        ``\t`` 
-            tab 
-
-        ``\r`` 
-            carriage return without the line feed 
+            * - Escape Sequence
+            - Description
+            * - ``\n``
+            - newline
+            * - ``\t``
+            - tab
+            * - ``\r``
+            - carriage return without the line feed
 
          
         ``h.printf`` and ``h.fprint`` return the number of characters printed. 
@@ -108,8 +105,7 @@ Printf (Formatted Output)
 
         .. code::
 
-            import math
-            print(f'\tpi={math.pi:<20.10g} sin(pi)={math.sin(math.pi):f}')
+            print(f'\tpi={h.PI:<20.10g} sin(pi)={h.sin(h.PI):f}')
 
         .. note::
 

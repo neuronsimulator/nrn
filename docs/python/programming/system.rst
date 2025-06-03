@@ -33,23 +33,20 @@ Path Manipulation
 
 .. function:: neuronhome
 
-    Name:
-        neuronhome -- installation path 
-
     Syntax:
         ``h.neuronhome()``
 
     Description:
         Returns the full installation path in unix format or, if it exists, the 
-        NEUROHOME environment variable in unix format. 
+        ``NEURONHOME`` environment variable in unix format. 
          
         Note that for unix, it isn't exactly the installation path 
         but the 
         --prefix/share/nrn directory where --prefix is the 
-        location specified during installation. For the mswin version it is the location 
+        location specified during installation. For the Windows version, it is the location 
         selected during installation and the value is derived from the location 
-        of neuron.exe in neuronhome()/bin/neuron.exe. 
-        For mac it is the folder that contains the neuron 
+        of ``neuron.exe`` in ``neuronhome()/bin/neuron.exe``. 
+        For macOS, it is the folder that contains the neuron 
         executable program. 
          
 
@@ -64,12 +61,20 @@ Machine Identification
 .. function:: machine_name
 
     Syntax:
-        ``h("strdef name")``
-
-        ``h.machine_name(h.name)``
+        ``h.machine_name(strdef)``
 
     Description:
-        returns the hostname of the machine. 
+        Sets the NEURON string (not a Python string) ``strdef`` to the hostname of the machine. 
+        Create a NEURON string via, e.g., ``h.ref('')``.
+    
+    Example:
+        .. code-block::
+            python
+
+            from neuron import h
+            my_machine_name = h.ref('')
+            h.machine_name(my_machine_name)
+            print(f"My hostname is {my_machine_name[0]}")
 
 
 ----
@@ -95,7 +100,7 @@ Machine Identification
             if type == 1:
                 print("This os is unix based")
             elif type == 2:
-                print("This os is mac based")
+                print("This os is classic mac based")
             elif type == 3:
                 print("This os is mswin based")
             elif type == 4:
@@ -178,7 +183,7 @@ Machine Identification
             3 : 93d41fafd
             4 : 2022-12-15
             5 : 8.2.2
-            6 : cmake option default differences: 'NRN_ENABLE_RX3D=OFF' 'NRN_ENABLE_CORENEURON=ON' 'NRN_ENABLE_MODULE_INSTALL=OFF' 'NRN_ENABLE_PYTHON_DYNAMIC=ON' 'NRN_MPI_DYNAMIC=/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include' 'CMAKE_BUILD_TYPE=Release' 'CMAKE_INSTALL_PREFIX=/Users/runner/work/1/s/build/cmake_install' 'CMAKE_C_COMPILER=/Applications/Xcode_13.2.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc' 'CMAKE_CXX_COMPILER=/Applications/Xcode_13.2.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++' 'PYTHON_EXECUTABLE=/Users/runner/work/1/s/nrn_build_venv38_-4745831/bin/python'
+            6 : cmake option default differences: 'NRN_ENABLE_RX3D=OFF' 'NRN_ENABLE_CORENEURON=ON' 'NRN_ENABLE_PYTHON_DYNAMIC=ON' 'NRN_MPI_DYNAMIC=/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include' 'CMAKE_BUILD_TYPE=Release' 'CMAKE_INSTALL_PREFIX=/Users/runner/work/1/s/build/cmake_install' 'CMAKE_C_COMPILER=/Applications/Xcode_13.2.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc' 'CMAKE_CXX_COMPILER=/Applications/Xcode_13.2.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++' 'PYTHON_EXECUTABLE=/Users/runner/work/1/s/nrn_build_venv38_-4745831/bin/python'
             7 : NEURON
             8 : x86_64-Darwin
             9 : 2        
@@ -196,7 +201,8 @@ Execute a Command
         ``h.WinExec("mswin command")``
 
     Description:
-        MSWin version only. 
+        MSWin version only. Use :func:`system` for a more generic solution, or
+        use ``os.system`` or ``subprocess.run`` in Python. 
          
 ----
 
@@ -211,15 +217,15 @@ Execute a Command
         ``exitcode = h.system(cmdstr, stdout_str)``
 
     Description:
-        Executes *cmdstr* as though it had been typed as 
-        command to a unix shell from the terminal.  HOC waits until the command is 
+        Executes ``cmdstr`` as though it had been typed as 
+        command to a unix shell from the terminal. NEURON waits until the command is 
         completed. If the second strdef arg is present, it receives the stdout stream 
         from the command. Only available memory limits the line length and 
         number of lines. 
 
     Example:
 
-        \ ``h.system("ls")`` 
+        ``h.system("ls")`` 
             Prints a directory listing in the console terminal window. 
             will take up where it left off when the user types the \ ``exit`` 
             command 
@@ -238,6 +244,10 @@ Execute a Command
         Redirection of stdout to a file can only be done with the idiom 
         "command > filename". No other redirection is possible except by modifying 
         :file:`nrnsys.sh`. 
+    
+    .. note::
+
+        A pure Python alternative would be to use ``os.system`` or ``subprocess.run``.
          
 
 ----
@@ -282,13 +292,26 @@ Timing
             from neuron import h
             from math import sin
             h.startsw()
-            for i in range(100000):
+            for i in range(100_000):
                 x = sin(0.2)
             print(h.stopsw())
     
     .. note::
 
-        A pure Python alternative would be to use the time module's perf_counter function.
+        A pure Python alternative would be to use the ``time`` module's ``perf_counter`` function.
+
+        .. code-block::
+            python
+
+            from neuron import h
+            from math import sin
+            import time
+
+            start = time.perf_counter()
+            for i in range(100_000):
+                x = sin(0.2)
+            
+            print(time.perf_counter() - start)
 
 
 
@@ -309,8 +332,8 @@ Miscellaneous
         ``h.nrn_load_dll(dll_file_name)``
 
     Description:
-        Loads a dll containing membrane mechanisms. This works for mswin, mac, 
-        and linux. 
+        Loads a dll containing membrane mechanisms (i.e., compiled MOD files).
+        This works for mswin, mac, and linux. 
 
 
 .. function:: show_winio
