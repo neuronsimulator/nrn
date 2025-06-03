@@ -1351,8 +1351,8 @@ void HocPanel::write(std::ostream& o) {
         }
     }
     if (has_window()) {
-        Sprintf(buf, "xpanel(%g,%g)", window()->save_left(), window()->save_bottom());
-        o << buf << std::endl;
+        o << "xpanel" << (float) window()->save_left() << "," << (float) << window()->save_bottom() 
+          << ")" << std::endl;
     } else {
         o << "xpanel()" << std::endl;
     }
@@ -1906,7 +1906,7 @@ void HocValEditor::set_val(double x) {
     if (pval_) {
         *pval_ = hoc_ac_;
     } else if (!variable_.empty()) {
-        oc.run(variable_ + " = hoc_ac_\n");
+        oc.run((variable_ + " = hoc_ac_\n").c_str());
     }
 }
 
