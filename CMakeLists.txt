@@ -1110,7 +1110,18 @@ endif()
 # =============================================================================
 # Install CMake glue
 # =============================================================================
+configure_file(cmake/neuronMechMaker.cmake
+               "${PROJECT_BINARY_DIR}/lib/cmake/neuron/neuronMechMaker.cmake" COPYONLY)
+configure_file(cmake/mod_reg_nrn.cpp.in "${PROJECT_BINARY_DIR}/share/nrn/mod_reg_nrn.cpp.in"
+               COPYONLY)
+configure_file(cmake/mod_reg_corenrn.cpp.in
+               "${PROJECT_BINARY_DIR}/share/nrn/mod_reg_corenrn.cpp.in" COPYONLY)
 install(TARGETS ${NRN_INSTALL_TARGETS} ${CORENRN_INSTALL_TARGETS} EXPORT NeuronTargets)
+export(
+  EXPORT NeuronTargets
+  FILE ${PROJECT_BINARY_DIR}/lib/cmake/neuron/neuronTargets.cmake
+  NAMESPACE neuron::)
+
 install(
   EXPORT NeuronTargets
   FILE neuronTargets.cmake
@@ -1118,7 +1129,7 @@ install(
   DESTINATION lib/cmake/neuron)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/neuronConfig.cmake.in
-               ${CMAKE_CURRENT_BINARY_DIR}/neuronConfig.cmake @ONLY)
+               ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/neuronConfig.cmake @ONLY)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/neuronConfig.cmake DESTINATION lib/cmake/neuron)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/neuronMechMaker.cmake DESTINATION lib/cmake/neuron)
