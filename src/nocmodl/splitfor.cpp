@@ -102,8 +102,8 @@ void splitfor_current() {
         return;
     }
     P("\nstatic void _split_nrn_current(_internalthreadargsprotocomma_ "
-      " int _nodecount){\n"
-      "#define _ZFOR for (int _iml = 0; _iml < _nodecount; ++_iml)\n");
+      " int _split_grp_begin, int _split_grp_end){\n"
+      "#define _ZFOR for (int _iml = _split_grp_begin; _iml < _split_grp_end; ++_iml)\n");
 
     split_printlist(modelfunc);
     P("\n#undef _ZFOR\n"
@@ -119,9 +119,10 @@ void splitfor_cur(int part) {
         return;
     }
     P("#else /*SPLITFOR*/\n");
-    P("#define _ZFOR for (int _iml = 0; _iml < _cntml; ++_iml)\n");
-    P("  {\n");
-
+    P("#define _ZFOR for (int _iml = _split_grp_begin; _iml < _split_grp_end; ++_iml)\n");
+    P("  for (int _split_grp_begin = 0; _split_grp_begin < _cntml; _split_grp_begin += _split_grp_size){\n");
+    P("    int _split_grp_end = _split_grp_begin + _split_grp_size;\n");
+    P("    if (_split_grp_end > _cntml) { _split_grp_end = _cntml; }\n");
     // modified copy of noccout.cpp output between calls to splitfor_cur
     // P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
     // P(" _ppvar = _ml_arg->_pdata[_iml];\n");
@@ -145,20 +146,20 @@ void splitfor_cur(int part) {
         } else {
             P("#undef _DV\n#define _DV + 0.001\n");
             splitfor_ext_vdef();
-            P("    _split_nrn_current(_threadargscomma_ _cntml);\n");
+            P("    _split_nrn_current(_threadargscomma_ _split_grp_begin, _split_grp_end);\n");
 
             std::string s{"    std::vector<double>"};
             for (Item* q = currents->next; q != currents; q = q->next) {
                 s += " _temp_";
                 s += SYM(q)->name;
-                s += "(_cntml)";
+                s += "(_split_grp_size)";
                 s += (q->next == currents) ? ";\n" : ",";
             }
             P(s.c_str());
 
             s = ZF;
             for (Item* q = currents->next; q != currents; q = q->next) {
-                Sprintf(buf, " _temp_%s[_iml] = %s;", SYM(q)->name, SYM(q)->name);
+                Sprintf(buf, " _temp_%s[_iml & _split_grp_mask] = %s;", SYM(q)->name, SYM(q)->name);
                 s += buf;
             }
             s += " }\n";
@@ -169,7 +170,7 @@ void splitfor_cur(int part) {
                 P("    state_discon_flag_ = 1; _split_nrn_current(_threadargscomma_ _cntml);"
                   " state_discon_flag_ = 0;\n");
             } else {
-                P("    _split_nrn_current(_threadargscomma_ _cntml);\n");
+                P("    _split_nrn_current(_threadargscomma_ _split_grp_begin, _split_grp_end);\n");
             }
 
 
@@ -177,7 +178,7 @@ void splitfor_cur(int part) {
 
             s = ZF " _g = (";
             for (Item* q = currents->next; q != currents; q = q->next) {
-                Sprintf(buf, "(_temp_%s[_iml] - %s)", SYM(q)->name, SYM(q)->name);
+                Sprintf(buf, "(_temp_%s[_iml & _split_grp_mask] - %s)", SYM(q)->name, SYM(q)->name);
                 s += buf;
                 s += (q->next == currents) ? ") / 0.001" : " + ";
             }
@@ -190,8 +191,8 @@ void splitfor_cur(int part) {
         } /* end of not conductance */
 
         // store scaled sum of currents
-        P("    std::vector<double> _rhsv(_cntml);\n");
-        std::string s1 = ZF "_rhsv[_iml] = (";
+        P("    std::vector<double> _rhsv(_split_grp_size);\n");
+        std::string s1 = ZF "_rhsv[_iml & _split_grp_mask] = (";
         for (Item* q = currents->next; q != currents; q = q->next) {
             s1 += SYM(q)->name;
             s1 += (q->next == currents) ? ")" : " + ";
@@ -201,20 +202,20 @@ void splitfor_cur(int part) {
         P(s1.c_str());
 
         if (electrode_current) {
-            P(ZF "  _vec_rhs[_ni[_iml]] += _rhsv[_iml];\n");
+            P(ZF "  _vec_rhs[_ni[_iml]] += _rhsv[_iml & _split_grp_mask];\n");
             P("    if (_vec_sav_rhs) {\n");
-            P("        _ZFOR { _vec_sav_rhs[_ni[_iml]] += _rhsv[_iml]; }\n");
+            P("        _ZFOR { _vec_sav_rhs[_ni[_iml]] += _rhsv[_iml & _split_grp_mask]; }\n");
             P("    }\n");
             P("#if EXTRACELLULAR\n");
             P(ZF "\n");
             P("        if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) "
               "{\n");
-            P("            *_extnode->_rhs[0] += _rhsv[_iml];\n");
+            P("            *_extnode->_rhs[0] += _rhsv[_iml & _split_grp_mask];\n");
             P("        }\n");
             P("    }\n");
             P("#endif\n");
         } else {
-            P(ZF " _vec_rhs[_ni[_iml]] -= _rhsv[_iml]; }\n");
+            P(ZF " _vec_rhs[_ni[_iml]] -= _rhsv[_iml & _split_grp_mask]; }\n");
         }
     }
 
@@ -232,8 +233,10 @@ void splitfor_solve(int part) {
         return;
     }
     P("#else /*SPLITFOR*/\n");
-    P("#define _ZFOR for (int _iml = 0; _iml < _cntml; ++_iml)\n");
-    P("  {\n");
+    P("#define _ZFOR for (int _iml = _split_grp_begin; _iml < _split_grp_end; ++_iml)\n");
+    P("  for (int _split_grp_begin = 0; _split_grp_begin < _cntml; _split_grp_begin += _split_grp_size){\n");
+    P("    int _split_grp_end = _split_grp_begin + _split_grp_size;\n");
+    P("    if (_split_grp_end > _cntml) { _split_grp_end = _cntml; }\n");
 
     // modified copy of noccout.cpp output between calls to splitfor_solve
     P("#undef _DV\n#define _DV /**/\n");
@@ -358,7 +361,7 @@ static List* splitfor_end_dion_stmt(const char* strdel) {
         ITERATE(q1, LST(q)) {
             if (SYM(q1)->nrntype & NRNCUROUT) {
                 Sprintf(buf,
-                        ZF " _ion_di%sdv += (_temp_%s[_iml] - %s)/%s",
+                        ZF " _ion_di%sdv += (_temp_%s[_iml & _split_grp_mask] - %s)/%s",
                         strion,
                         SYM(q1)->name,
                         SYM(q1)->name,
