@@ -14,7 +14,7 @@ Strings
 .. function:: sprint
 
     Syntax:
-        ``h.sprint(strdef, "format", args)``
+        ``n.sprint(strdef, "format", args)``
 
     Description:
         Prints to a NEURON (i.e. not Python) string. See :func:`printf` for the description of the format.
@@ -24,10 +24,10 @@ Strings
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            strdef = h.ref('')
-            h.sprint(strdef, 'There are %d %s.', 3, 'dendrites')
+            strdef = n.ref('')
+            n.sprint(strdef, 'There are %d %s.', 3, 'dendrites')
             print(strdef[0])
 
     .. note::
@@ -41,9 +41,9 @@ Strings
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            strdef = h.ref('')
+            strdef = n.ref('')
             num_parts = 3
             part = "dendrites"
             strdef[0] = f'There are {num_parts} {part}.'
@@ -56,7 +56,7 @@ Strings
 .. function:: strcmp
 
     Syntax:
-        ``x = h.strcmp("string1", "string2")``
+        ``x = n.strcmp("string1", "string2")``
 
     Description:
         Returns negative, 0, or positive value 

@@ -9,7 +9,7 @@ StringFunctions (String Manipulation Class)
 
 
     Syntax:
-        ``sf = h.StringFunctions()``
+        ``sf = n.StringFunctions()``
 
 
     Description:
@@ -21,8 +21,8 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
 
-            from neuron import h
-            sf = h.StringFunctions() 
+            from neuron import n
+            sf = n.StringFunctions() 
 
 
          
@@ -46,8 +46,8 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
     
-            from neuron import h
-            sf = h.StringFunctions()
+            from neuron import n
+            sf = n.StringFunctions()
             length = sf.len("hello")
             print(length)
     
@@ -79,10 +79,10 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
 
-            from neuron import h
-            s1 = h.ref("allowed")
-            s2 = h.ref("low")
-            sf = h.StringFunctions()
+            from neuron import n
+            s1 = n.ref("allowed")
+            s2 = n.ref("low")
+            sf = n.StringFunctions()
             index = sf.substr(s1, s2)
     
     .. note::
@@ -112,10 +112,10 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
         
-            from neuron import h
-            s1 = h.ref("hello world")
-            s2 = h.ref("")
-            sf = h.StringFunctions()
+            from neuron import n
+            s1 = n.ref("hello world")
+            s2 = n.ref("")
+            sf = n.StringFunctions()
             index = sf.head(s1, "[e]", s2)
             print(s2[0])
 
@@ -149,10 +149,10 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
         
-            from neuron import h
-            s1 = h.ref("hello world")
-            s2 = h.ref("")
-            sf = h.StringFunctions()
+            from neuron import n
+            s1 = n.ref("hello world")
+            s2 = n.ref("")
+            sf = n.StringFunctions()
             index = sf.tail(s1, "[e]", s2)
             print(s2[0])
 
@@ -177,9 +177,9 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
         
-            from neuron import h
-            s = h.ref("hello")
-            sf = h.StringFunctions()
+            from neuron import n
+            s = n.ref("hello")
+            sf = n.StringFunctions()
             sf.right(s, 3)
             print(s[0])  # prints: "lo"
 
@@ -213,9 +213,9 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
         
-            from neuron import h
-            s = h.ref("hello")
-            sf = h.StringFunctions()
+            from neuron import n
+            s = n.ref("hello")
+            sf = n.StringFunctions()
             sf.left(s, 3)
             print(s[0])  # prints "hel"
     
@@ -249,9 +249,9 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
     
-            from neuron import h
-            s1 = h.ref("hello world")
-            sf = h.StringFunctions()
+            from neuron import n
+            s1 = n.ref("hello world")
+            sf = n.StringFunctions()
             name = sf.is_name(s1)
             print(name)
 
@@ -261,8 +261,8 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
         
-            from neuron import h
-            sf = h.StringFunctions()
+            from neuron import n
+            sf = n.StringFunctions()
             # valid name
             print(sf.is_name("xvalue"))
             # invalid name
@@ -299,12 +299,12 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
 
-            from neuron import h
-            sf = h.StringFunctions()
-            v = h.Vector()
-            sf.alias(v, 't', h._ref_t)
+            from neuron import n
+            sf = n.StringFunctions()
+            v = n.Vector()
+            sf.alias(v, 't', n._ref_t)
             print(f'v.t = {v.t}')
-            h.t = 42
+            n.t = 42
             print(f'v.t = {v.t}')
 
          
@@ -335,10 +335,10 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
     
-            from neuron import h
-            h.load_file('stdrun.hoc')
-            sf = h.StringFunctions()
-            v = h.Vector()
+            from neuron import n
+            n.load_file('stdrun.hoc')
+            sf = n.StringFunctions()
+            v = n.Vector()
             al = sf.alias_list(v)
             print(al)
 
@@ -364,9 +364,9 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
 
-            from neuron import h
-            soma = h.Section('soma')
-            sf = h.StringFunctions()
+            from neuron import n
+            soma = n.Section('soma')
+            sf = n.StringFunctions()
             sf.references(soma)
 
 
@@ -391,16 +391,16 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
 
-            from neuron import h
-            h.load_file('stdrun.hoc')
-            s1 = h.Section('soma')
-            syn = h.ExpSyn(s1(0.5))
-            sf = h.StringFunctions()
+            from neuron import n
+            n.load_file('stdrun.hoc')
+            s1 = n.Section('soma')
+            syn = n.ExpSyn(s1(0.5))
+            sf = n.StringFunctions()
             # not point process
             print(sf.is_point_process(s1))
             # point process
             print(sf.is_point_process(syn))
-            c = h.IntFire1()
+            c = n.IntFire1()
             # point process
             print(ssf.is_point_process(c))
 
@@ -427,13 +427,13 @@ StringFunctions (String Manipulation Class)
         .. code-block::
             python
 
-            from neuron import h
-            h.load_file('stdrun.hoc')
-            s1 = h.Section('soma')
-            syn = h.ExpSyn(s1(0.5))
+            from neuron import n
+            n.load_file('stdrun.hoc')
+            s1 = n.Section('soma')
+            syn = n.ExpSyn(s1(0.5))
             # initiate string function
-            sf = h.StringFunctions()
-            c = h.IntFire1()
+            sf = n.StringFunctions()
+            c = n.IntFire1()
             # artificial 
             print(sf.is_artificial(c))
             # not artificial

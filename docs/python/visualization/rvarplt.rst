@@ -10,11 +10,11 @@ RangeVarPlot
 
 
     Syntax:
-        ``h.RangeVarPlot("rangevar" [, start_segment, stop_segment])``
+        ``n.RangeVarPlot("rangevar" [, start_segment, stop_segment])``
         
-        ``h.RangeVarPlot(py_callable [, start_segment, stop_segment])``
+        ``n.RangeVarPlot(py_callable [, start_segment, stop_segment])``
 
-        ``h.RangeVarPlot(rxd_species [, start_segment, stop_segment])``
+        ``n.RangeVarPlot(rxd_species [, start_segment, stop_segment])``
 
 
     Description:
@@ -40,11 +40,11 @@ RangeVarPlot
         The second form is much slower since the expression 
         must be executed by the interpreter for each point along the path 
         for each plot.  Execution of the expression is equivalent to 
-        \ ``for sec in h.allsec(): for seg in sec: f(seg.x)``
+        \ ``for sec in n.allsec(): for seg in sec: f(seg.x)``
         where the expression is the body of f. All section-dependent NEURON
         functions will default to the correct section for the call; i.e. there is no need
         to say ``sec=`` unless you want to refer to a section that is not the one
-        whose data is being plotted. The current section may be read via ``h.cas()``.
+        whose data is being plotted. The current section may be read via ``n.cas()``.
 
         In NEURON 7.7+, RangeVarPlot's constructor takes optional begin and end arguments.
         In Python, these would typically be segments, but they can also be normalized position 
@@ -59,26 +59,26 @@ RangeVarPlot
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            dend1 = h.Section('dend1')
-            dend2 = h.Section('dend2')
+            dend1 = n.Section('dend1')
+            dend2 = n.Section('dend2')
             dend2.connect(dend1)
 
             for sec in dend1.wholetree():
                 sec.nseg = sec.L = 501
                 sec.diam = 1
 
-            ic = h.IClamp(dend1(0.5))
+            ic = n.IClamp(dend1(0.5))
             ic.amp = 0.5
             ic.delay = 0
             ic.dur = 1
 
-            h.finitialize(-65)
-            h.continuerun(1)
+            n.finitialize(-65)
+            n.continuerun(1)
 
-            rvp = h.RangeVarPlot('v', dend1(0), dend2(1))
-            g = h.Graph()
+            rvp = n.RangeVarPlot('v', dend1(0), dend2(1))
+            g = n.Graph()
             g.addobject(rvp)
             g.size(0, 1002, -70, 50)
 
@@ -90,10 +90,10 @@ RangeVarPlot
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            dend1 = h.Section('dend1')
-            dend2 = h.Section('dend2')
+            dend1 = n.Section('dend1')
+            dend2 = n.Section('dend2')
             dend2.connect(dend1)
 
             for sec in dend1.wholetree():
@@ -101,15 +101,15 @@ RangeVarPlot
                 sec.diam = 1
 
             def my_func(x):
-                sec = h.cas()  # find out which section
+                sec = n.cas()  # find out which section
                 if sec == dend1:
                     y = x ** 2
                 else:
                     y = 1 + x ** 2
                 return y
 
-            rvp = h.RangeVarPlot(my_func, dend1(0), dend2(1))
-            g = h.Graph()
+            rvp = n.RangeVarPlot(my_func, dend1(0), dend2(1))
+            g = n.Graph()
             g.addobject(rvp)
             g.size(0, 1002, 0, 2)
             g.flush()
@@ -121,23 +121,23 @@ RangeVarPlot
         .. code-block::
             python
 
-            imp = h.Impedance()
+            imp = n.Impedance()
 
-            rvp = h.RangeVarPlot(imp.transfer)
+            rvp = n.RangeVarPlot(imp.transfer)
             rvp... #specify range begin and end 
             imp... #specify impedance computation 
-            g = h.Graph() 
+            g = n.Graph() 
             g.addobject(rvp)
 
     Example (plotting a rxd species):
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             from neuron import rxd
             import matplotlib.pyplot as plt
 
-            dend1 = h.Section("dend1")
+            dend1 = n.Section("dend1")
             dend1.nseg = 4  # we stronly recommend always making nseg odd
                             # using an odd nseg means there is a middle point
 
@@ -148,12 +148,12 @@ RangeVarPlot
             ca1.nodes(dend1(0.4))[0].include_flux(-25)
             ca1.nodes(dend1(0.7))[0].include_flux(70)
 
-            h.finitialize(-65)
-            h.dt /= 512
-            h.load_file("stdrun.hoc")
-            h.continuerun(0.025)
+            n.finitialize(-65)
+            n.dt /= 512
+            n.load_file("stdrun.hoc")
+            n.continuerun(0.025)
 
-            a_1 = h.RangeVarPlot(ca1, dend1(0), dend1(1))
+            a_1 = n.RangeVarPlot(ca1, dend1(0), dend1(1))
             a_1.plot(plt)
             plt.show()
 
@@ -184,12 +184,12 @@ RangeVarPlot
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             from matplotlib import pyplot
             import bokeh.plotting as b
             import math
 
-            dend = h.Section('dend')
+            dend = n.Section('dend')
             dend.nseg = 55
             dend.L = 6.28
 
@@ -197,14 +197,14 @@ RangeVarPlot
             for seg in dend.allseg():
                 seg.v = math.sin(dend.L * seg.x)
 
-            r = h.RangeVarPlot('v', dend(0), dend(1))  # Three argument constructor in 7.7+
+            r = n.RangeVarPlot('v', dend(0), dend(1))  # Three argument constructor in 7.7+
 
             #matplotlib 
             graph = pyplot.gca()
             r.plot(graph, linewidth=10, color='r')
 
             #NEURON graph
-            g = h.Graph()
+            g = n.Graph()
             r.plot(g, 2, 3)
             g.exec_menu('View = plot')
 
@@ -236,7 +236,7 @@ RangeVarPlot
     .. note::
     
          Beginning with NEURON 7.7, one can also specify the beginning and ending segments in the
-         RangeVarPlot constructor; e.g. ``rvp = h.RangeVarPlot('v', soma(0), distal(1)``
+         RangeVarPlot constructor; e.g. ``rvp = n.RangeVarPlot('v', soma(0), distal(1)``
          
 
 ----
@@ -259,7 +259,7 @@ RangeVarPlot
     .. note::
     
          Beginning with NEURON 7.7, one can also specify the beginning and ending segments in the
-         RangeVarPlot constructor; e.g. ``rvp = h.RangeVarPlot('v', soma(0), distal(1)``
+         RangeVarPlot constructor; e.g. ``rvp = n.RangeVarPlot('v', soma(0), distal(1)``
 
          
 

@@ -30,39 +30,39 @@ StateTransitionEvent
     .. code-block::
       python
       
-      from neuron import h
-      h.load_file("stdrun.hoc") # use h.run(), h.cvode, etc
+      from neuron import n
+      n.load_file("stdrun.hoc") # use n.run(), n.cvode, etc
       
-      soma = h.Section() # empty model not allowed.
-      ste = h.StateTransitionEvent(1)
+      soma = n.Section("soma")  # empty model not allowed.
+      ste = n.StateTransitionEvent(1)
 
-      tnext = h.ref(1)
+      tnext = n.ref(1)
       
       def fteinit():
         tnext[0] = 1.0 # first transition at 1.0
         ste.state(0)   # initial state
 
-      fih = h.FInitializeHandler(1, fteinit)
+      fih = n.FInitializeHandler(1, fteinit)
 
       def foo(src): # current state is the destination. arg gives the source
-        print h.t, " transition ", src, int(ste.state()), " t-tnext =", h.t-tnext[0]
+        print(n.t, " transition ", src, int(ste.state()), " t-tnext =", n.t-tnext[0])
         tnext[0] += 1.0 # update for next transition
       
-      ste.transition(0, 0, h._ref_t, tnext, (foo, 0))
+      ste.transition(0, 0, n._ref_t, tnext, (foo, 0))
 
-      print "default dt=0.025 fixed step run"
-      h.run()
+      print("default dt=0.025 fixed step run")
+      n.run()
       
-      h.steps_per_ms = 64
-      h.dt = 1.0/h.steps_per_ms
-      print "dt=1/64 fixed step run ", h.dt
-      h.run()
+      n.steps_per_ms = 64
+      n.dt = 1.0/n.steps_per_ms
+      print("dt=1/64 fixed step run ", n.dt)
+      n.run()
 
-      for i in [1,2]:
-        h.cvode.condition_order(i)
-        print "cvode.condition_order() = %d" % int(h.cvode.condition_order())
-        h.cvode_active(1)
-        h.run()
+      for i in [1, 2]:
+        n.cvode.condition_order(i)
+        print("cvode.condition_order() = %d" % int(n.cvode.condition_order()))
+        n.cvode_active(True)
+        n.run()
 
     The results of a run are:
     
@@ -157,9 +157,9 @@ StateTransitionEvent
     with multiple threads or the local variable time step method. All ``triggervar`` for a given ``ste`` need to be
     in the same thread or cell as was specified by the StateTransitionEvent constructor.
    
-    In python, the syntax for a triggervar reference is, for example, h._ref_t or sec(.5)._ref_v . A reference to a
+    In python, the syntax for a triggervar reference is, for example, n._ref_t or sec(.5)._ref_v . A reference to a
     hoc variable is also allowed for a triggerthreash, but if the triggerthresh is a constant, one can declare a python
-    reference with triggerthresh = h.ref(value) and pass that for the ``triggerthresh`` arg.
+    reference with triggerthresh = n.ref(value) and pass that for the ``triggerthresh`` arg.
     One changes its value via the
     triggerthreash[0] = ... syntax. Since the ste object keeps pointers to these values, it is very important that
     triggerthresh not be destroyed unless the ste instance is also destroyed.

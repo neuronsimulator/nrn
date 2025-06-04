@@ -10,9 +10,9 @@ KSChan
 
 
     Syntax:
-        ``kschan = h.KSChan()``
+        ``kschan = n.KSChan()``
         
-        ``kschan = h.KSChan(is_PointProcess)``
+        ``kschan = n.KSChan(is_PointProcess)``
 
 
     Description:
@@ -417,7 +417,7 @@ KSChan
     Description:
         A helper class for :class:`KSChan`. KSChan creates and destroys 
         these objects internally. It cannot be created directly 
-        with h.KSGate. An error message will be printed 
+        with n.KSGate. An error message will be printed 
         if a reference is used after KSChan has destroyed 
         the referenced KSGate. 
 

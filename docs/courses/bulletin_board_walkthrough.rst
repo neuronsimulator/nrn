@@ -182,7 +182,7 @@ The serial program :file:`initbatser.py` has a batchrun(n) that uses this for lo
 
     for run_id in range(n):
         set_params(run_id)
-        h.run()
+        n.run()
         stims.append(stim.amp)
         freqs.append(get_frequency())
         print('Finished %d of %d.' % (run_id + 1, n))
@@ -196,7 +196,7 @@ In :file:`initbatpar.py`, everything that can be offloaded to the workers has be
     def fi(run_id):
         """set params, execute a simulation, analyze and return results"""
         set_params(run_id)
-        h.run()
+        n.run()
         return (run_id, stim.amp, get_frequency(spvec))
 
 Notice that ``fi`` contains the procedures that involve the most computational overhead. Also notice that ``fi`` expects a single numerical argument -- the run_id -- and returns a tuple with the run_id, the value of the stimulus, and the frequency obtained from the simulation. An alternative implementation could have reduced communication by returning only the frequency, unpacking the job index (equal to the run_id), and recomputing the stimulus amplitude. It is important to balance convenience, the aim of keeping the workers busy, and minimizing communication overhead.

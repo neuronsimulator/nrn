@@ -9,7 +9,7 @@ ParallelNetManager
 
 
     Syntax:
-        ``pnm = h.ParallelNetManager(ncell)``
+        ``pnm = n.ParallelNetManager(ncell)``
 
 
     Description:
@@ -61,8 +61,8 @@ ParallelNetManager
 
             .. code::
 
-                from neuron import h
-                h.load_file('stdrun.hoc')
+                from neuron import n
+                n.load_file('stdrun.hoc')
                 tstop = 1000
 
             Yes, I know that this example is foolish since there is no computation 
@@ -74,9 +74,9 @@ ParallelNetManager
 
             .. code::
 
-                h.load_file("netparmpi.hoc") 
+                n.load_file("netparmpi.hoc") 
                 ncell = 128 
-                pnm = h.ParallelNetManager(ncell) 
+                pnm = n.ParallelNetManager(ncell) 
 
             If you know the global number of cells put it in. For the non-MPI 
             implementation of ParallelNetManager, ncell is absolutely necessary 
@@ -137,7 +137,7 @@ ParallelNetManager
 
                 for i in range(ncell):
                     if pnm.gid_exists(i):
-                        pnm.register_cell(i, h.IntFire1())
+                        pnm.register_cell(i, n.IntFire1())
 
             Notice how we don't construct a cell if the gid does not exist. 
             You only HAVE to call 
@@ -197,8 +197,8 @@ ParallelNetManager
 
                 # stimulate
                 if pnm.gid_exists(4):
-                    stim = h.NetStim(0.5)
-                    ncstim = h.NetCon(stim, pnm.pc.gid2obj(4)) 
+                    stim = n.NetStim(0.5)
+                    ncstim = n.NetCon(stim, pnm.pc.gid2obj(4)) 
                     ncstim.weight[0] = 1.1 
                     ncstim.delay = 0 
                     stim.number=1 
@@ -232,7 +232,7 @@ ParallelNetManager
             .. code::
 
                 import time
-                h.stdinit() 
+                n.stdinit() 
                 runtime = time.time() 
                 pnm.psolve(tstop) 
                 runtime = time.time() - runtime 

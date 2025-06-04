@@ -10,7 +10,7 @@ Glyph
 
 
     Syntax:
-        ``g = h.Glyph()``
+        ``g = n.Glyph()``
 
 
     Description:
@@ -30,16 +30,16 @@ Glyph
         .. code-block::
             python
         
-            from neuron import h, gui
+            from neuron import n, gui
             
-            gr = h.Graph()
+            gr = n.Graph()
             
-            gl = h.Glyph()
+            gl = n.Glyph()
             gl.circle(0,0,1)
             gl.fill(3)
             gl.s(2, 3)
             
-            gr.glyph(gl, 150, 100, 30, 60, h.PI/4*h.DEG)
+            gr.glyph(gl, 150, 100, 30, 60, n.PI/4*n.DEG)
 
         .. image:: ../images/glyphcircle.png
                     :align: center
