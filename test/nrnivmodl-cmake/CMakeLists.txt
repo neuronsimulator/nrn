@@ -17,4 +17,5 @@ add_test(
   && \
   ${CMAKE_COMMAND} --build '${TEST_DIR}' -v --parallel \
   && \
+  '${TEST_DIR}/special' -nobanner -nogui -c 'quit()' \
   rm -fr '${TEST_DIR}'")
