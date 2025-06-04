@@ -1,7 +1,7 @@
 """
 Convert rst to a compressed dictionary suitable for NEURON + Python help system.
 Run via:
->>> python3 parse_rst.py ./python/ help_data.dat
+>>> python3 parse_rst.py ./progref/ help_data.dat
 """
 
 import os
