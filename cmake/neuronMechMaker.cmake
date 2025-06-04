@@ -148,6 +148,12 @@ function(create_nrnmech)
     set(ENV_COMMAND)
   endif()
 
+  # nocmodl sometimes does not work due to lack of MODLUNIT, see:
+  # https://github.com/neuronsimulator/nrn/issues/3470
+  if(DEFINED ENV{MODLUNIT})
+    list(APPEND ENV_COMMAND "MODLUNIT=$ENV{MODLUNIT}")
+  endif()
+
   # Override the _target_ name, but not the library name. This is useful when we are using this
   # function for building NEURON components, since we may experience collisions in the target names
   if(NRN_MECH_TARGET_LIBRARY_NAME)
