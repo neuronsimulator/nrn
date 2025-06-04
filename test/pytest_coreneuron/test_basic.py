@@ -457,7 +457,7 @@ def test_help():
     )
     assert h.Vector().__doc__.startswith("class neuron.hoc.HocObject")
     assert h.Vector.__doc__.startswith("class neuron.hoc.HocObject")
-    assert h.finitialize.__doc__.startswith("Syntax:\n    ``h.finiti")
+    assert h.finitialize.__doc__.startswith("Syntax:\n    ``n.finiti")
     assert h.__doc__.startswith("\n\nneuron.h\n====")
 
 

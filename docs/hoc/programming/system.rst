@@ -152,8 +152,8 @@ Machine Identification
           none
 
           $ python 2</dev/null
-          >>> from neuron import h
-          >>> h.nrnversion(9)
+          >>> from neuron import n
+          >>> n.nrnversion(9)
           '2'
 
 

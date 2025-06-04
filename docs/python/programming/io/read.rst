@@ -10,7 +10,7 @@ Read from Terminal and Files
 
 
     Syntax:
-        ``var = h.xred(promptstring, default, min, max)``
+        ``var = n.xred(promptstring, default, min, max)``
 
 
     Description:
@@ -29,9 +29,9 @@ Read from Terminal and Files
 
 
     Syntax:
-        ``h.getstr(strvar)``
+        ``n.getstr(strvar)``
 
-        ``h.getstr(strvar, 1)``
+        ``n.getstr(strvar, 1)``
 
 
     Description:
@@ -52,17 +52,17 @@ Read from Terminal and Files
             ### world                                 #
             ###########################################
             
-            from neuron import h
+            from neuron import n
             
             def r_open(ndat):
-                h.ropen("file.dat")
+                n.ropen("file.dat")
                 string = ""
-                s = h.ref(string)
+                s = n.ref(string)
                 x = []
                 for i in range(ndat):
-                    h.getstr(s, 1)
+                    n.getstr(s, 1)
                     x.append(s[0])
-                h.ropen()
+                n.ropen()
                 return x
 
             # ndat is number of data points
@@ -83,7 +83,7 @@ Read from Terminal and Files
 
 
     Syntax:
-        ``index = h.sred(prompt, defaultchar, charlist)``
+        ``index = n.sred(prompt, defaultchar, charlist)``
 
 
     Description:
@@ -100,7 +100,7 @@ Read from Terminal and Files
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
 
             def response(answer):
                 if (answer == 0):
@@ -110,7 +110,7 @@ Read from Terminal and Files
 
             i = 0 
             while i == 0:
-                i = h.sred("Shall we?", "y", "ny")
+                i = n.sred("Shall we?", "y", "ny")
                 response(i)
     
 
@@ -124,7 +124,7 @@ Read from Terminal and Files
 
 
     Syntax:
-        ``var = h.scan()``
+        ``var = n.scan()``
 
 
     Description:
@@ -153,16 +153,16 @@ Read from Terminal and Files
             ### 12 9                                  #
             ###########################################
 
-            from neuron import h
+            from neuron import n
 
             def r_open(ndat):
-                h.ropen("file.dat")
+                n.ropen("file.dat")
                 x = []
                 y = []
                 for i in range(ndat):
-                    x.append(h.fscan())
-                    y.append(h.fscan())
-                    h.ropen()
+                    x.append(n.fscan())
+                    y.append(n.fscan())
+                    n.ropen()
                 return x, y
 
             # ndat is number of data points

@@ -142,7 +142,7 @@ runs simulations one after another on a single processor, i.e. serially. Paralle
 
     mpiexec -n N nrniv -mpi initbatpar.hoc
 
-launches N processes that carry out the simulations. On a multicore PC or Mac, parallel execution with N equal to the number of cores can reduce total run time to about 1/N of the run time required by initbatser.hoc, serial execution of initbatpar.hoc, or parallel execution of initbatpar.hoc with N = 1.
+launches N processes that carry out the simulations. On a multicore PC or Mac, parallel execution with N equal to the number of cores can reduce total run time to about 1/N of the run time required by initbatser.hoc, serial execution of ``initbatpar.hoc``, or parallel execution of ``initbatpar.hoc`` with N = 1.
 
 **Source**
 

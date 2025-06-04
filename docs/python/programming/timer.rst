@@ -9,7 +9,7 @@ Timer
 
 
     Syntax:
-        ``timer = h.Timer(python_func)``
+        ``timer = n.Timer(python_func)``
 
 
     Description:
@@ -19,7 +19,7 @@ Timer
         :file:`nrn/lib/hoc/movierun.hoc`
 
     .. warning::
-        This code must be run with `nrniv -python` and not directly via `python`.
+        This code must be run with ``nrniv -python`` and not directly via ```python```.
         The better solution is to `use Python's threading module <https://docs.python.org/3/library/threading.html>`_
         which works regardless of how NEURON is launched.
             
@@ -30,12 +30,12 @@ Timer
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             def foo():
                 print('Hello')
 
-            timer = h.Timer(foo)
+            timer = n.Timer(foo)
             timer.seconds(1)
             timer.start()
             # type timer.end() to end timer
