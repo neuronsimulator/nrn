@@ -112,7 +112,7 @@ static constexpr std::string_view embedded_nrnunits =
 // so we write a temporary file
 static FILE* open_embedded_nrnunits_as_file() {
     auto tmp_path = std::string(std::tmpnam(nullptr));
-    auto out = std::ofstream(tmp_path, std::ios::binary);
+    auto out = std::ofstream(tmp_path, std::ios::out);
     out.write(embedded_nrnunits.data(), embedded_nrnunits.size());
     out.close();
 

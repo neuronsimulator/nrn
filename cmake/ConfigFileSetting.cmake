@@ -164,8 +164,8 @@ configure_file("${PROJECT_SOURCE_DIR}/src/sundials/sundials_config.h.in"
                "${PROJECT_BINARY_DIR}/src/sundials/sundials_config.h" @ONLY)
 configure_file("${PROJECT_SOURCE_DIR}/share/lib/nrn.defaults.in"
                "${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults" @ONLY)
-configure_file(${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib ${PROJECT_BINARY_DIR}/share/nrn/lib
-               @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib
+               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib @ONLY)
 
 set(nrnunits_start "R\"qwerty(")
 set(nrnunits_stop ")qwerty\"")
