@@ -2375,8 +2375,8 @@ void Graph::save_phase2(std::ostream& o) {
         o << "save_window_.save_name(\"" << var_name_ << "\")" << std::endl;
     }
     if (x_expr_) {
-        o << "save_window_.xexpr(\"" << x_expr_->name << ", "
-          << (x_pval_ ? 1 : 0) << "\")" << std::endl;
+        o << "save_window_.xexpr(\"" << x_expr_->name << ", " << (x_pval_ ? 1 : 0) << "\")"
+          << std::endl;
     }
     long cnt = count();
     current_save_graph = this;
