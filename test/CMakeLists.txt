@@ -809,7 +809,7 @@ add_test(
           "${PROJECT_SOURCE_DIR}/test/coreneuron/mod files/axial.mod"
   WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
 set_property(TEST modlunit_pattern PROPERTY WILL_FAIL ON)
-
+cpp_cc_configure_sanitizers(TEST nocmodl::no_env)
 set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}")
 cpp_cc_configure_sanitizers(TEST ${TESTS})
 # If profiling is enabled, run ringtest with profiler
