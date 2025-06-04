@@ -10,7 +10,7 @@ PWManager
 
 
     Syntax:
-        ``p = h.PWManager()``
+        ``p = n.PWManager()``
 
 
     Description:
@@ -41,8 +41,8 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
-        p = h.PWManager()
+        from neuron import n, gui
+        p = n.PWManager()
         print(p.count())
 
 
@@ -65,8 +65,8 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
-        p = h.PWManager()
+        from neuron import n, gui
+        p = n.PWManager()
         # not mapped
         print(p.is_mapped(1))
         p.map(1)
@@ -94,8 +94,8 @@ PWManager
     .. code-block::
         python
         
-        from neuron import h, gui
-        p = h.PWManager()
+        from neuron import n, gui
+        p = n.PWManager()
         # mapped
         p.map(1)
 
@@ -119,8 +119,8 @@ PWManager
     .. code-block::
         python
         
-        from neuron import h, gui
-        p = h.PWManager()
+        from neuron import n, gui
+        p = n.PWManager()
         # mapped
         p.map(1)
         print(p.is_mapped(1))
@@ -149,8 +149,8 @@ PWManager
     .. code-block::
         python
         
-        from neuron import h, gui
-        p = h.PWManager()
+        from neuron import n, gui
+        p = n.PWManager()
         p.map(1)
         p.close(1)
 
@@ -174,8 +174,8 @@ PWManager
     .. code-block::
         python
         
-        from neuron import h, gui
-        p = h.PWManager()
+        from neuron import n, gui
+        p = n.PWManager()
         p.map(1)
         p.iconify()
 
@@ -231,8 +231,8 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
-        p = h.PWManager()
+        from neuron import n, gui
+        p = n.PWManager()
         print(p.manager())
 
 
@@ -245,9 +245,9 @@ PWManager
 
 
     Syntax:
-        ``n = p.save("filename", group_object, ["header"])``
+        ``m = p.save("filename", group_object, ["header"])``
 
-        ``n = p.save("filename", selected, ["header"])``
+        ``m = p.save("filename", selected, ["header"])``
 
 
     Description:
@@ -268,11 +268,11 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
-        p = h.PWManager()
+        from neuron import n, gui
+        p = n.PWManager()
         p.map(1)
         selected = 1
-        n = p.save("file", selected, "Header")
+        m = p.save("file", selected, "Header")
 
 
 ----
@@ -297,8 +297,8 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
-        p = h.PWManager()
+        from neuron import n, gui
+        p = n.PWManager()
         g1 = p.group(0)
         g2 = p.group(1, g1)
 
@@ -328,8 +328,8 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
-        p = h.PWManager()
+        from neuron import n, gui
+        p = n.PWManager()
         p.snape("filename")
 
 ----
@@ -355,8 +355,8 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
-        p = h.PWManager()
+        from neuron import n, gui
+        p = n.PWManager()
         p.scale(2)
 ----
 
@@ -377,8 +377,8 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
-        p = h.PWManager()
+        from neuron import n, gui
+        p = n.PWManager()
         print(p.name(0))
 
          
@@ -403,8 +403,8 @@ PWManager
     .. code-block::
         python
 
-        from neuron import h, gui
-        p = h.PWManager()
+        from neuron import n, gui
+        p = n.PWManager()
         p.window_place(0, 1000, 1000)
 
          

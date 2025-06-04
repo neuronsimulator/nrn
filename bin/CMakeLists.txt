@@ -68,9 +68,9 @@ file(REMOVE_RECURSE "${CMAKE_CURRENT_BINARY_DIR}/bin/tmp")
 # Install targets
 # =============================================================================
 install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrngui ${PROJECT_BINARY_DIR}/bin/neurondemo
-                 ${PROJECT_BINARY_DIR}/bin/nrnivmodl DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+                 ${PROJECT_BINARY_DIR}/bin/nrnivmodl DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
 
-install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/sortspike ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe
                  ${PROJECT_BINARY_DIR}/bin/nrnpyenv.sh ${CMAKE_CURRENT_SOURCE_DIR}/set_nrnpyenv.sh
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)

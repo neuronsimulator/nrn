@@ -7,7 +7,7 @@ mcell_ran4
 .. function:: mcell_ran4
 
     Syntax:
-        ``x = h.mcell_ran4(highindex_ptr)``
+        ``x = n.mcell_ran4(highindex_ptr)``
 
 
     Description:
@@ -45,25 +45,25 @@ mcell_ran4
         .. code-block::  
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             class McellRan4Test:
                 def __init__(self):
-                    self.vec = h.Vector(1000)
-                    self.g1 = h.Graph()
-                    self.g2 = h.Graph()
+                    self.vec = n.Vector(1000)
+                    self.g1 = n.Graph()
+                    self.g2 = n.Graph()
                     self.g1.size(0, 1000, 0, 1) 
                     self.g2.size(0, 1, 0, 150) 
                     self.highindex = 1
-                    self.lowindex = h.mcell_ran4_init() 
+                    self.lowindex = n.mcell_ran4_init() 
                     self.mcell_func()
 
                 def mcell_func(self):
                     self.g1.erase() 
                     self.g2.erase()
-                    highindex_ptr = h.ref(self.highindex)
+                    highindex_ptr = n.ref(self.highindex)
                     for i in range(len(self.vec)):            
-                        self.vec[i] = h.mcell_ran4(highindex_ptr) 
+                        self.vec[i] = n.mcell_ran4(highindex_ptr) 
                     # resync the highindex (needed for the GUI)
                     self.highindex = highindex_ptr[0]
                     self.hist = self.vec.histogram(0, 1, 0.1) 
@@ -73,15 +73,15 @@ mcell_ran4
                     self.g2.flush() 
 
                 def mcell_func2(self):
-                    h.mcell_ran4_init(self.lowindex) 
+                    n.mcell_ran4_init(self.lowindex) 
                     self.mcell_func()
  
                 window = McellRan4Test()
-                h.xpanel('mcell_ran4 test') 
-                h.xbutton('Sample', window.mcell_func) 
-                h.xvalue('highindex', (window, 'highindex'), 1, window.mcell_func) 
-                h.xvalue('lowindex', (window, 'lowindex'), 1, window.mcell_func2) 
-                h.xpanel() 
+                n.xpanel('mcell_ran4 test') 
+                n.xbutton('Sample', window.mcell_func) 
+                n.xvalue('highindex', (window, 'highindex'), 1, window.mcell_func) 
+                n.xvalue('lowindex', (window, 'lowindex'), 1, window.mcell_func2) 
+                n.xpanel() 
 
     .. |logo1| image:: ../../images/mcran4-xvalue.png
         :width: 200px
@@ -114,13 +114,13 @@ mcell_ran4
 
 
     Syntax:
-        ``previous = h.use_mcell_ran4(next) # next must be 0 or 1``
+        ``previous = n.use_mcell_ran4(next) # next must be 0 or 1``
 
-        ``boolean = h.use_mcell_ran4()``
+        ``boolean = n.use_mcell_ran4()``
 
 
     Description:
-        h.use_mcell_ran4(1) causes scop_random in model descriptions to use 
+        n.use_mcell_ran4(1) causes scop_random in model descriptions to use 
         the :func:`mcell_ran4` cryptographic quality random generator. Otherwise, the 
         low quality (but faster) linear congruential generator is used. 
          
@@ -142,9 +142,9 @@ mcell_ran4
 
 
     Syntax:
-        ``previous_lowindex = h.mcell_ran4_init(lowindex)``
+        ``previous_lowindex = n.mcell_ran4_init(lowindex)``
 
-        ``lowindex= h.mcell_ran4_init()``
+        ``lowindex= n.mcell_ran4_init()``
 
 
     Description:

@@ -69,7 +69,7 @@ class NetCvode {
     void statistics(int);
     void spike_stat();
     void re_init(double t0 = 0.);
-    int cellindex();
+    // int cellindex(); // never used
     void states();
     void dstates();
     int fun(double t, double* y, double* ydot);

@@ -87,12 +87,12 @@ Optimization
         .. code-block::
             none
 
-            from neuron import h 
-            v = h.Vector(2) 
+            from neuron import n 
+            v = n.Vector(2) 
             def efun(v): 
               return (v.x[0]+v.x[1] - 5)**2 + 5*(v.x[0]-v.x[1] - 15)**2 
-            h.attr_praxis(1e-5, .5, 0) 
-            e = h.fit_praxis(efun, v) 
+            n.attr_praxis(1e-5, .5, 0) 
+            e = n.fit_praxis(efun, v) 
             print "e=%g x=%g y=%g\n"%(e, v.x[0], v.x[1]) 
 
 

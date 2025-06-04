@@ -330,11 +330,11 @@ Using "Continuous Create"
 
 It may come as a surprise, but if you followed the instructions up to this point, no sections will actually exist. You can test this for yourself by executing a couple of simple Python (or HOC) commands.
 
-At the Python interpreter's ``>>>`` prompt, (assuming you already did a ``from neuron import h``) enter
+At the Python interpreter's ``>>>`` prompt, (assuming you already did a ``from neuron import n``) enter
 
 .. code:: python
 
-    h.topology()
+    n.topology()
 
 (If you instead have an ``oc>`` prompt, you're using HOC as your interpreter, and should simply type ``topology()`` instead.)
 
@@ -344,8 +344,8 @@ Now see what happens when you type the Python command
 
 .. code:: python
 
-    for sec in h.allsec():
-        h.psection(sec=sec)
+    for sec in n.allsec():
+        n.psection(sec=sec)
 
 (For HOC, enter ``forall psection()`` instead.)
 
@@ -381,8 +381,8 @@ Here's a concrete example of how to do this.
 
    .. code:: python
 
-      from neuron import h, gui
-      h.load_file("mycell.ses")
+      from neuron import n, gui
+      n.load_file("mycell.ses")
 
 3. Start NEURON and have it read :file:`init.py` by typing ``python -i init.py`` on a terminal.
 4. Use the NEURON Main Menu toolbar to construct a custom graphical user interface that has the following items:
@@ -398,9 +398,9 @@ Here's a concrete example of how to do this.
 
    .. code:: python
 
-      from neuron import h, gui
-      h.load_file("mycell.ses")
-      h.load_file("iclamprig.ses")
+      from neuron import n, gui
+      n.load_file("mycell.ses")
+      n.load_file("iclamprig.ses")
   
 Now when you run ``python -i init.py``, up comes your CellBuilder, which recreates your model cell, and you also get your custom experimental rig, all ready for you to run some current clamp simulations, as shown here :
 
@@ -419,17 +419,17 @@ For instance, you could set up an interface that uses an SEClamp to do voltage c
 
     .. code:: python
 
-       from neuron import h, gui
-       h.load_file("mycell.ses")
-       h.load_file("iclamprig.ses")
+       from neuron import n, gui
+       n.load_file("mycell.ses")
+       n.load_file("iclamprig.ses")
 
   initvclamp.py
 
     .. code:: python
 
-       from neuron import h, gui
-       h.load_file("mycell.ses")
-       h.load_file("vclamprig.ses")
+       from neuron import n, gui
+       n.load_file("mycell.ses")
+       n.load_file("vclamprig.ses")
 
 
 Also note that :file:`iclamprig.ses` and :file:`vclamprig.ses` are reusable with any model that happens to have a default section called soma.

@@ -113,6 +113,7 @@ extern Symlist* hoc_top_level_symlist;
 IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 Object** (*nrnpy_vec_to_python_p_)(void*);
 Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
+double (*nrnpy_call_func)(Object*, double);
 
 static int narg() {
     int i = 0;
@@ -2034,27 +2035,39 @@ static Object** v_setrand(void* v) {
 
 static Object** v_apply(void* v) {
     Vect* x = (Vect*) v;
-    char* func = gargstr(1);
     int top = x->size() - 1;
     int start = 0;
     int end = top;
     Object* ob;
+    if (ifarg(4)) {
+        hoc_execerror("Too many parameters to apply method.", nullptr);
+    }
     if (ifarg(2)) {
         start = int(chkarg(2, 0, top));
         end = int(chkarg(3, start, top));
     }
-    Symbol* s = hoc_lookup(func);
-    ob = hoc_thisobject;
-    if (!s) {
-        ob = NULL;
-        s = hoc_table_lookup(func, hoc_top_level_symlist);
+    if (hoc_is_str_arg(1)) {
+        char* func = gargstr(1);
+        Symbol* s = hoc_lookup(func);
+        ob = hoc_thisobject;
         if (!s) {
-            hoc_execerror(func, " is undefined");
+            ob = NULL;
+            s = hoc_table_lookup(func, hoc_top_level_symlist);
+            if (!s) {
+                hoc_execerror(func, " is undefined");
+            }
         }
-    }
-    for (int i = start; i <= end; i++) {
-        hoc_pushx(x->elem(i));
-        x->elem(i) = hoc_call_objfunc(s, 1, ob);
+        for (int i = start; i <= end; i++) {
+            hoc_pushx(x->elem(i));
+            x->elem(i) = hoc_call_objfunc(s, 1, ob);
+        }
+    } else if (hoc_is_object_arg(1) && nrnpy_call_func) {
+        Object* funcobj = *hoc_objgetarg(1);
+        for (int i = start; i <= end; i++) {
+            x->elem(i) = nrnpy_call_func(funcobj, x->elem(i));
+        }
+    } else {
+        hoc_execerror("apply: first argument must be a HOC string or a Python callable", nullptr);
     }
     return x->temp_objvar();
 }

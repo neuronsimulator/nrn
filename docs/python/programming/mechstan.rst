@@ -14,12 +14,12 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
             
-            ms = h.MechanismStandard(name_str)
-            ms = h.MechanismStandard(name_str, vartype)
+            ms = n.MechanismStandard(name_str)
+            ms = n.MechanismStandard(name_str, vartype)
 
 
     Description:
-        In Python, consider the use of 'sec.psection()' which encapsulates MechanismType and MechanismStandard so as to return a dictionary.
+        In Python, consider the use of ``sec.psection()`` which encapsulates MechanismType and MechanismStandard so as to return a dictionary.
 
         With no vartype or vartype = 1, this provides 
         storage for parameter values of a membrane mechanism or point process. 
@@ -47,15 +47,15 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
             
-            from neuron import h, gui
-            ms1 = h.MechanismStandard('hh')
-            ms2 = h.MechanismStandard('AlphaSynapse')
+            from neuron import n, gui
+            ms1 = n.MechanismStandard('hh')
+            ms2 = n.MechanismStandard('AlphaSynapse')
             ms2.set('gmax', 0.3)
             ms1.panel()
             ms2.panel()
 
-            ms1 = h.MechanismStandard("hh") 
-            ms2 = h.MechanismStandard("AlphaSynapse") 
+            ms1 = n.MechanismStandard("hh") 
+            ms2 = n.MechanismStandard("AlphaSynapse") 
             ms2.set("gmax", .3) 
             ms1.panel() 
             ms2.panel() 
@@ -71,26 +71,26 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            soma = h.Section(name="soma")
+            soma = n.Section("soma")
             def pname(msname):
-                s = h.ref('')
+                s = n.ref('')
                 for i in range(-1, 4):
-                    ms = h.MechanismStandard(msname, i)
+                    ms = n.MechanismStandard(msname, i)
                     print(f'\n{msname}   vartype={i}')
                     for j in range(ms.count()):
                         k = ms.name(s, j)
-                        print('%-5d %-20s size=%d' % (j, s[0], k))
+                        print(f'{j:<5} {s[0]:<20} size={k}')
 
             def ptype():
-                msname = h.ref('')
+                msname = n.ref('')
                 for i in range(2):
-                    mt = h.MechanismType(i)
+                    mt = n.MechanismType(i)
                     for j in range(mt.count()):
                         mt.select(j)
                         mt.selected(msname)
-                        print('\n\n{msname[0]} mechanismtype={j}')
+                        print(f'\n\n{msname[0]} mechanismtype={j}')
                         pname(msname[0])
 
 
@@ -109,11 +109,11 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
              
             def get_mech_globals(mechname):
-                ms = h.MechanismStandard(mechname, -1)
-                name = h.ref('')
+                ms = n.MechanismStandard(mechname, -1)
+                name = n.ref('')
                 mech_globals = []
                 for j in range(ms.count()):
                     ms.name(name, j)
@@ -123,6 +123,22 @@ MechanismStandard (Parameter Control)
             print(get_mech_globals('hh'))
 
 
+    .. warning::
+    
+        MechanismStandard only supports the names of mechanisms as strings, not the mechanism objects.
+        e.g., you can pass ``'hh'`` but not ``n.hh``.
+
+        If you have a density mechanism, e.g., ``mech = n.hh``, beginning with NEURON 9, you can get
+        the name of the mechanism as a string with ``mech.name``. You can then use this string
+        with MechanismStandard. For example:
+        .. code-block::
+            python
+
+            from neuron import n
+
+            mech = n.hh
+            ms = n.MechanismStandard(mech.name)
+            ms.panel()
 
     .. seealso::
         :class:`MechanismType`
@@ -175,36 +191,41 @@ MechanismStandard (Parameter Control)
         The callback is sent three parameters; in order: the MechanismStandard object,
         the index of the changed item in the object, and a third argument indicating
         position in an array (or 0 if the parameter is not an array; this is the usual
-        case). The value is in `h.hoc_ac_` and this value may also be read via
-        ``nameref = h.ref(""); ms.name(nameref, i);  value = ms.get(nameref[0], j)``
+        case). The value is in `n.hoc_ac_` and this value may also be read via
+
+        .. code-block::
+            python
+
+            nameref = n.ref("")
+            ms.name(nameref, i)
+            value = ms.get(nameref[0], j)
 
     Example:
 
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            soma = h.Section(name='soma')
-            axon = h.Section(name='axon')
-            dend = [h.Section(name='dend[%d]' % i) for i in range(3)]
+            soma = n.Section('soma')
+            axon = n.Section('axon')
+            dend = [n.Section(f'dend[{i}]' for i in range(3)]
 
-            axon.insert(h.hh)
-            for sec in dend:
-                sec.insert(h.pas)
+            n.hh.insert(axon)
+            n.pas.insert(dend)  # puts into all dendrites in the list
 
-            h.xpanel("Updated when MechanismStandard is changed")
+            n.xpanel("Updated when MechanismStandard is changed")
             for i, sec in enumerate(dend):
-                h.xvalue("dend[%d](0.5).pas.g" % i, sec(0.5).pas._ref_g)
+                n.xvalue(f"dend[{i}](0.5).pas.g", sec(0.5).pas._ref_g)
 
-            h.xpanel()
+            n.xpanel()
 
             def change_pas(ms, i, j):
-                for sec in h.allsec():
+                for sec in n.allsec():
                     if sec.has_membrane('pas'):
                         ms.out()
 
-            ms = h.MechanismStandard('pas')
+            ms = n.MechanismStandard('pas')
             ms.action(change_pas)
             ms.panel()
 
@@ -257,13 +278,13 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            s = h.Section(name='soma')
-            s.insert(h.hh)
+            s = n.Section('soma')
+            s.insert(n.hh)
             s(0.5).hh.gnabar = 0.5
 
-            ms = h.MechanismStandard('hh')
+            ms = n.MechanismStandard('hh')
             ms.set("gnabar_hh", 0.3)
 
             print(ms.get("gnabar_hh"))
@@ -454,10 +475,10 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
-            ms = h.MechanismStandard('hh')
-            name_strref = h.ref('')
+            ms = n.MechanismStandard('hh')
+            name_strref = n.ref('')
 
             # read the name of the mechanism
             ms.name(name_strref)
