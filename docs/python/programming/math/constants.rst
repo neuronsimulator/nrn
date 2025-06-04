@@ -9,28 +9,28 @@ The following mathematical and physical constants are available through the ``h`
     * - Constant
       - Value
       - Description
-    * - ``h.PI``
+    * - ``n.PI``
       - 3.14159265358979323846
       - 
-    * - ``h.E``
+    * - ``n.E``
       - 2.71828182845904523536
       - 
-    * - ``h.GAMMA``
+    * - ``n.GAMMA``
       - 0.57721566490153286060
       - Euler's constant
-    * - ``h.DEG``
+    * - ``n.DEG``
       - 57.29577951308232087680
       - Degrees per radian
-    * - ``h.PHI``
+    * - ``n.PHI``
       - 1.61803398874989484820
       - Golden ratio
-    * - ``h.FARADAY``
+    * - ``n.FARADAY``
       - 96485.3321233100141
       - Modern value, derived from mole and electron charge
-    * - ``h.R``
+    * - ``n.R``
       - 8.3144626181532395
       - Modern value, derived from Boltzmann constant and mole
-    * - ``h.Avogadro_constant``
+    * - ``n.Avogadro_constant``
       - 6.02214076e23
       - CODATA 2018 value, introduced in version 8.0
 

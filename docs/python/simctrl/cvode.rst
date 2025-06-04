@@ -9,7 +9,7 @@ CVode
 
     Syntax:
 
-        ``cvode = h.CVode()``
+        ``cvode = n.CVode()``
 
 
     Description:
@@ -83,8 +83,8 @@ CVode
 
     .. note::
 
-        A ``from neuron import gui`` or ``h.load_file('stdrun.hoc')`` will create an instance called
-        ``h.cvode``. Although this class is not strictly speaking a singleton, there is only one
+        A ``from neuron import gui`` or ``n.load_file('stdrun.hoc')`` will create an instance called
+        ``n.cvode``. Although this class is not strictly speaking a singleton, there is only one
         integrator and it may be controlled and queried by any instance.\
 
 
@@ -523,7 +523,7 @@ CVode
         .. code-block::
             python
 
-            states_copy = h.Vector()
+            states_copy = n.Vector()
             cvode.states(states_copy)
 
 
@@ -602,7 +602,7 @@ CVode
         .. code-block::
             python
 
-            h.CVode().yscatter(h.Vector(data))
+            n.CVode().yscatter(n.Vector(data))
          
 
 ----
@@ -653,9 +653,9 @@ CVode
         .. code-block::
             python
 
-            h.CVode().active(False) 
-            h.fadvance() 
-            h.CVode().active(True) 
+            n.CVode().active(False) 
+            n.fadvance() 
+            n.CVode().active(True) 
 
         in order to allow the use of the CVode functions assigning state and 
         evaluating states and dstates/dt; use via:
@@ -663,7 +663,7 @@ CVode
         .. code-block::
             python
 
-            h.CVode().fixed_step()
+            n.CVode().fixed_step()
 
     .. warning::
         :meth:`CVode.dstates` are invalid and should be determined by a call to 
@@ -727,13 +727,13 @@ CVode
         .. code-block::
             python
 
-            from neuron import h
-            h.load_file('stdrun.hoc')    # defines h.cvode
+            from neuron import n
+            n.load_file('stdrun.hoc')    # defines n.cvode
 
-            result = h.ref('')
-            soma = h.Section('soma')
-            h.cvode_active(True)
-            h.cvode.statename(0, result)
+            result = n.ref('')
+            soma = n.Section('soma')
+            n.cvode_active(True)
+            n.cvode.statename(0, result)
             print(result[0])         
 
 
@@ -741,7 +741,7 @@ CVode
 
     .. warning::
 
-        ``dest_string`` must be a NEURON string reference (e.g. ``dest_string = h.ref('')``) 
+        ``dest_string`` must be a NEURON string reference (e.g. ``dest_string = n.ref('')``) 
         not a Python string, as those are immutable.
 ----
 
@@ -783,7 +783,7 @@ CVode
         .. code-block::
             python
 
-            for nc in h.CVode().netconlist(precell, '', ''):
+            for nc in n.CVode().netconlist(precell, '', ''):
                 print(nc.postcell())
 
 
@@ -894,16 +894,16 @@ CVode
         .. code-block::
             python
     
-    	    from neuron import h
+    	    from neuron import n
      
     	    def hi():
-    	        print(f'hello from hi, h.t = {h.t}')
+    	        print(f'hello from hi, n.t = {n.t}')
 
-    	    h.finitialize(-65)
+    	    n.finitialize(-65)
 
-    	    h.CVode().event(1.3, hi)
+    	    n.CVode().event(1.3, hi)
 
-    	    h.continuerun(2)
+    	    n.continuerun(2)
 
 ----
 
@@ -1319,20 +1319,20 @@ CVode
 
         .. code:: python
 
-            from neuron import h
-            h.CVode().use_fast_imem(1)
+            from neuron import n
+            n.CVode().use_fast_imem(1)
 
             def assert_whole_model_charge_conservation():
                 # sum over all membrane current
                 total_imem = 0.0
-                for sec in h.allsec():
+                for sec in n.allsec():
                     for seg in sec.allseg(): # also the 0 area nodes at 0 and 1
                         if seg.x == sec.orientation() and sec.parentseg() is not None:
                             continue # skip segment shared with parent
                         total_imem += seg.i_membrane_
 
                 # sum over all ELECTRODE_CURRENT (if only using IClamp)
-                total_iclamp_cur = sum(ic.i for ic in h.List('IClamp'))
+                total_iclamp_cur = sum(ic.i for ic in n.List('IClamp'))
 
                 print(f"total_imem={total_imem} total_iclamp_cur={total_iclamp_cur}")
                 assert(abs(total_imem - total_iclamp_cur) < 1e-12)
@@ -1484,7 +1484,7 @@ CVode
     
          .. code::
          
-             from neuron import h
+             from neuron import n
 
              def hello1(cort_secs):
                  print('hello1')
@@ -1498,22 +1498,22 @@ CVode
              recording_callback = (hello1, cort_secs)
 
              # declaring a function to run with every fadvance
-             h.CVode().extra_scatter_gather(0, recording_callback)
-             h.finitialize(-65)
-             h.fadvance()
-             h.fadvance()
+             n.CVode().extra_scatter_gather(0, recording_callback)
+             n.finitialize(-65)
+             n.fadvance()
+             n.fadvance()
 
              # removing the previous function
-             h.CVode().extra_scatter_gather_remove(recording_callback)
+             n.CVode().extra_scatter_gather_remove(recording_callback)
 
              print('---')
 
              # declaring a new function to run with each fadvance
              recording_callback = (hello2, cort_secs)
-             h.CVode().extra_scatter_gather(0, recording_callback)
-             h.finitialize(-65)
-             h.fadvance()
-             h.fadvance()
+             n.CVode().extra_scatter_gather(0, recording_callback)
+             n.finitialize(-65)
+             n.fadvance()
+             n.fadvance()
 
 
          

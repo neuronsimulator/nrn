@@ -8,7 +8,7 @@ Dialog Boxes
         .. code-block::
             python
             
-            h.boolean_dialog("label", ["accept", "cancel"])
+            n.boolean_dialog("label", ["accept", "cancel"])
 
     Description:
         Pops up a dialog window at the center of the screen and blocks
@@ -20,9 +20,9 @@ Dialog Boxes
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
-            if h.boolean_dialog('Do you prefer to code in Python or HOC?', 'Python', 'HOC'):
+            if n.boolean_dialog('Do you prefer to code in Python or HOC?', 'Python', 'HOC'):
                 print('You prefer Python!')
             else:
                 print('You prefer HOC!')
@@ -42,7 +42,7 @@ Dialog Boxes
         .. code-block::
             python
             
-            h.continue_dialog("message")
+            n.continue_dialog("message")
 
     Description:
         Provides information to the user.
@@ -53,8 +53,8 @@ Dialog Boxes
         .. code-block::
             python
             
-            from neuron import h, gui
-            h.continue_dialog("You are reading a message from a dialog box.")
+            from neuron import n, gui
+            n.continue_dialog("You are reading a message from a dialog box.")
         
         .. image:: ../../images/continue_dialog.png
             :align: center
@@ -67,7 +67,7 @@ Dialog Boxes
         .. code-block::
             python
             
-            h.string_dialog("message", strref)
+            n.string_dialog("message", strref)
         
     Description:
         Prompts the user to enter a string. The initial value of strref is used
@@ -81,10 +81,10 @@ Dialog Boxes
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            my_str = h.ref('')
-            if h.string_dialog('Type a string:', my_str):
+            my_str = n.ref('')
+            if n.string_dialog('Type a string:', my_str):
                 print(f'You typed: {my_str[0]}')
             else:
                 print('You canceled')

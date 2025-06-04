@@ -26,9 +26,9 @@ or from Python via:
 .. code-block:: '
     python
 
-    from neuron import h
-    h.load_file('funfit.hoc')
-    h.makefitter()
+    from neuron import n
+    n.load_file('funfit.hoc')
+    n.makefitter()
 
 Either way, the Parameterized Function Fitter window will appear:
 

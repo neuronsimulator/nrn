@@ -28,7 +28,7 @@ Diagnostics:
     .. code-block::
         none
 
-        >>> h.abs(-42.2)
+        >>> n.abs(-42.2)
         42.2
 
     See :meth:`Vector.abs` for the :class:`Vector` class. 
@@ -44,7 +44,7 @@ Diagnostics:
             42.2
             >>> abs(-3 + 4j)
             5.0
-            >>> v = h.Vector([1, 6, -2, -65])
+            >>> v = n.Vector([1, 6, -2, -65])
             >>> abs(v).printf()
             1       6       2       65
             4
@@ -60,9 +60,9 @@ Diagnostics:
     .. code-block::
         python
 
-        >>> h.int(3.14)
+        >>> n.int(3.14)
         3.0
-        >>> h.int(-3.14)
+        >>> n.int(-3.14)
         -3.0
 
     .. note::
@@ -108,10 +108,10 @@ Diagnostics:
     .. code-block::
         python
 
-        from neuron import h
+        from neuron import n
 
         for i in range(6, 12):
-            print(i, h.exp(i))
+            print(i, n.exp(i))
     
     .. note::
     
@@ -155,10 +155,10 @@ Diagnostics:
         python
 
         import numpy as np
-        from neuron import h
+        from neuron import n
 
-        v = h.Vector([0, h.PI/6, h.PI/4, h.PI/2])
-        v2 = h.Vector(np.cos(v))
+        v = n.Vector([0, n.PI/6, n.PI/4, n.PI/2])
+        v2 = n.Vector(np.cos(v))
         print(list(v2))
 
         # [1.0, 0.8660254037844387, 0.7071067811865476, 6.123233995736766e-17]
@@ -184,10 +184,10 @@ Diagnostics:
         python
 
         import numpy as np
-        from neuron import h
+        from neuron import n
 
-        v = h.Vector([0, h.PI/6, h.PI/4, h.PI/2])
-        v2 = h.Vector(np.sin(v))
+        v = n.Vector([0, n.PI/6, n.PI/4, n.PI/2])
+        v2 = n.Vector(np.sin(v))
         print(list(v2))
 
         # [0.0, 0.49999999999999994, 0.7071067811865475, 1.0]
@@ -214,10 +214,10 @@ Diagnostics:
         python
 
         import numpy as np
-        from neuron import h
+        from neuron import n
 
-        v = h.Vector([0, 1, 2, 3])
-        v2 = h.Vector(np.tanh(v))
+        v = n.Vector([0, 1, 2, 3])
+        v2 = n.Vector(np.tanh(v))
         print(list(v2))
 
         # [0.0, 0.7615941559557649, 0.9640275800758169, 0.9950547536867305]
@@ -259,21 +259,21 @@ Diagnostics:
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            print(h.atan2(0, 0)) 
+            print(n.atan2(0, 0)) 
             for i in range(-1, 2):
-                print(h.atan2(i*1e-6, 10))
+                print(n.atan2(i*1e-6, 10))
             for i in range(-1, 2):
-                print(h.atan2(i*1e-6, -10))
+                print(n.atan2(i*1e-6, -10))
             for i in range(-1, 2):
-                print(h.atan2(10, i*1e-6))
+                print(n.atan2(10, i*1e-6))
             for i in range(-1, 2):
-                print(h.atan2(-10, i*1e-6))
-            print(h.atan2(10, 10)) 
-            print(h.atan2(10, -10)) 
-            print(h.atan2(-10, 10)) 
-            print(h.atan2(-10, -10)) 
+                print(n.atan2(-10, i*1e-6))
+            print(n.atan2(10, 10)) 
+            print(n.atan2(10, -10)) 
+            print(n.atan2(-10, 10)) 
+            print(n.atan2(-10, -10)) 
             
         .. note::
     

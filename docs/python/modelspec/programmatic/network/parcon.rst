@@ -16,9 +16,9 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
 
 
     Syntax:
-        ``pc = h.ParallelContext()``
+        ``pc = n.ParallelContext()``
 
-        ``pc = h.ParallelContext(nhost)``
+        ``pc = n.ParallelContext(nhost)``
 
 
     Description:
@@ -65,12 +65,12 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             
-	    # importing MPI or h.nrnmpi_init() must come before the first instantiation of ParallelContext()
-	    h.nrnmpi_init()
+	    # importing MPI or n.nrnmpi_init() must come before the first instantiation of ParallelContext()
+	    n.nrnmpi_init()
                         
-            pc = h.ParallelContext()
+            pc = n.ParallelContext()
 
             def f(x):
                 """a function with no context that changes except its argument"""
@@ -178,11 +178,11 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
 
             # pretend g is a Vector assigned earlier to conductances to test 
             for i in range(20): 
-                for sec in h.allsec():
+                for sec in n.allsec():
                     sec.gnabar_hh = g[i]
                 for j in range(5):
                     stim.amp = s[j]
-                    h.run()
+                    n.run()
 
         ie we only need to set gnabar_hh 20 times. But the first pass at 
         parallelization would look like: 
@@ -191,10 +191,10 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
             python
 
             def single_run(i, j):
-                for sec in h.allsec():
+                for sec in n.allsec():
                     sec.gnabar_hh = g[i]
                 stim.amp = s[j]
-                h.run()
+                n.run()
 
             for i in range(1, 20):
                for j in range(5):
@@ -207,12 +207,12 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
         and we take the hit of repeated evaluation of gnabar_hh.
         A run must be quite lengthy to amortize this overhead. 
 
-        To run under MPI, be sure to include the ``h.nrnmpi_init()`` and then
+        To run under MPI, be sure to include the ``n.nrnmpi_init()`` and then
         launch your script via, e.g. ``mpiexec -n 4 python myscript.py``. NEURON
         also supports running via the PVM (parallel virtual machine), but the launch
         setup is different. If you do not have mpi4py and you have not exported
         the NEURON_INIT_MPI=1 environment variable then you can use the
-        h.nrnmpi_init() method as long as that is executed prior to the first
+        n.nrnmpi_init() method as long as that is executed prior to the first
         instantiation of ParallelContext.
 
         The exact same Python files should exist in the same relative locations 
@@ -226,14 +226,14 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
         .. code-block::
             python
 
-            from neuron import h
-            h.nrnmpi_init()
+            from neuron import n
+            n.nrnmpi_init()
 
-            pc = h.ParallelContext()
+            pc = n.ParallelContext()
             print (f"I am {pc.id()} of {pc.nhost()}")
 
             pc.barrier()
-            h.quit()            
+            n.quit()            
          
         which gives ( the output lines are in indeterminate order)
 
@@ -887,7 +887,7 @@ summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
 
     .. note::
 
-        ``str`` here is a ``strdef`` not a Python string. One may be created via e.g. ``s = h.ref('')``; the stored string
+        ``str`` here is a ``strdef`` not a Python string. One may be created via e.g. ``s = n.ref('')``; the stored string
         can then be accessed via ``s[0]``.
 
          
@@ -1374,9 +1374,9 @@ Description:
 
 .. method:: ParallelContext.mpi_init
 
+    Removed. Use the following instead:
 
-    Syntax:
-        ``h.nrnmpi_init()``
+        ``n.nrnmpi_init()``
 
 
     Description:
@@ -1384,7 +1384,7 @@ Description:
 	also be used to intialize MPI.
         Only required if:
 
-        launched python and mpi4py not used and NEURON_INIT_MPI=1
+        launched Python and mpi4py not used and NEURON_INIT_MPI=1
         environment varialble has not been exported.
 
         launched nrniv without -mpi argument.
@@ -1393,8 +1393,8 @@ Description:
         beforehand.
 
         The mpi_init method name was removed from ParallelContext and replaced
-        with the HocTopLevelInterpreter method nrnmpi_init() because MPI
-        must be initialized prior to the first instantiation of ParallelContext.
+        with the TopLevelNEURONInterface method ``nrnmpi_init()`` because MPI
+        must be initialized prior to the first instantiation of ``ParallelContext``.
 
          
 ----
@@ -1487,7 +1487,7 @@ Description:
             # host i and for i < j, all the elements of vdest on host i are < 
             # than all the elements on host j. 
             vsrc.sort()
-            cnts = h.Vector(pc.nhost()) 
+            cnts = n.Vector(pc.nhost()) 
             j = 0 
             for i in range(pc.nhost()):
               x = (i + 1) * tvl 
@@ -1538,9 +1538,9 @@ Description:
         .. code-block::
             python
 
-            from neuron import h
-            h.nrnmpi_init()
-            pc = h.ParallelContext()
+            from neuron import n
+            n.nrnmpi_init()
+            pc = n.ParallelContext()
             nhost = pc.nhost()
             rank = pc.id()
 
@@ -1572,7 +1572,7 @@ Description:
 
             pc.runworker()
             pc.done()
-            h.quit()
+            n.quit()
 
         .. code-block::
             none
@@ -1606,7 +1606,7 @@ Description:
         arriving objects into an nhost size list such that the i'th element
         came from the i'th rank.
         The destlist is the same on every rank.
-        The srcitem may be any pickleable Python object including None, Bool, int, h.Vector,
+        The srcitem may be any pickleable Python object including None, Bool, int, n.Vector,
         etc. and will appear in the destination list as that type. This method can
         only be called from the python interpreter and cannot be called from HOC.
         All ranks (or all ranks in a subworld) must participate in this MPI collective.
@@ -1620,8 +1620,8 @@ Description:
         .. code-block::
           python
           
-          from neuron import h
-          pc = h.ParallelContext()
+          from neuron import n
+          pc = n.ParallelContext()
           nhost = pc.nhost()
           rank = pc.id()
           
@@ -1642,7 +1642,7 @@ Description:
           pr("alltoall dest", dest) 
 
           pc.barrier()
-          h.quit()
+          n.quit()
 
        .. code-block::
           none
@@ -1686,7 +1686,7 @@ Description:
         arriving objects into an nhost size list such that the i'th element came from
         the i'th rank.
         The destlist_on_root return value for non-root ranks is None.
-        The srcitem may be any pickleable Python object including None, Bool, int, h.Vector,
+        The srcitem may be any pickleable Python object including None, Bool, int, n.Vector,
         etc. and will appear in the destination list as that type. This method can
         only be called from the python interpreter and cannot be called from HOC.
         All ranks (or all ranks in a subworld) must participate in this MPI collective.
@@ -1701,8 +1701,8 @@ Description:
         .. code-block::
           python
           
-          from neuron import h
-          pc = h.ParallelContext()
+          from neuron import n
+          pc = n.ParallelContext()
           nhost = pc.nhost()
           rank = pc.id()
 
@@ -1724,7 +1724,7 @@ Description:
           pr("alltoall dest", dest)
 
           pc.barrier()
-          h.quit()
+          n.quit()
         
                     
         .. code-block::
@@ -1771,7 +1771,7 @@ Description:
     Description:
         The root rank sends the i'th element in its nhost size list to the i'th rank.
         The srclist must contain nhost pickleable Python objects including None, Bool,
-        int, h.Vector,
+        int, n.Vector,
         etc. and will appear in the destination list as that type. This method can
         only be called from the python interpreter and cannot be called from HOC.
         All ranks (or all ranks in a subworld) must participate in this MPI collective.
@@ -1787,8 +1787,8 @@ Description:
         .. code-block::
           python
           
-          from neuron import h
-          pc = h.ParallelContext()
+          from neuron import n
+          pc = n.ParallelContext()
           nhost = pc.nhost()
           rank = pc.id()
 
@@ -1810,7 +1810,7 @@ Description:
           pr("alltoall dest", dest)
 
           pc.barrier()
-          h.quit()
+          n.quit()
          
          
                     
@@ -1855,7 +1855,7 @@ Description:
     Description:
         The root rank sends the srcitem to every rank.
         The srcitem can be any pickleable Python object including None, Bool,
-        int, h.Vector,
+        int, n.Vector,
         etc. and will be returned as that type. This method can
         only be called from the python interpreter and cannot be called from HOC.
         All ranks (or all ranks in a subworld) must participate in this MPI collective.
@@ -1871,8 +1871,8 @@ Description:
         .. code-block::
           python
           
-          from neuron import h
-          pc = h.ParallelContext()
+          from neuron import n
+          pc = n.ParallelContext()
           nhost = pc.nhost()
           rank = pc.id()
 
@@ -1894,7 +1894,7 @@ Description:
           pr("alltoall dest", dest)
 
           pc.barrier()
-          h.quit()
+          n.quit()
        
                     
         .. code-block::
@@ -2083,17 +2083,17 @@ Description:
                 from mpi4py import MPI
             except:
                 pass
-            from neuron import h
-            h.nrnmpi_init() #does nothing if mpi4py succeeded
+            from neuron import n
+            n.nrnmpi_init() #does nothing if mpi4py succeeded
             import time
 
-            pc = h.ParallelContext() 
+            pc = n.ParallelContext() 
             pc.subworlds(3)
 
             def f(arg):
                 ret = pc.id_world() * 100 + pc.id_bbs() * 10 + pc.id()
                 print( 
-                    f"userid={h.hoc_ac_} arg={arg} ret={ret:3d}"
+                    f"userid={n.hoc_ac_} arg={arg} ret={ret:3d}"
                     f"  world {pc.id_world():d} of {pc.nhost_world():d}"
                     f"  bbs {pc.id_bbs():d} of {pc.nhost_bbs():d}"
                     f"  net {pc.id()} of {pc.nhost()}"
@@ -2101,7 +2101,7 @@ Description:
                 time.sleep(1)
                 return ret
 
-            h.hoc_ac_ = -1 
+            n.hoc_ac_ = -1 
             if (pc.id_world() == 0):
                 print("before runworker")
             f(1)
@@ -2436,7 +2436,7 @@ Description:
         Note that it is an error if the gid does not exist on this machine. The 
         normal idiom is to use a NetCon returned by a call to the cell's 
         connect2target(None, netcon) method or else, if the cell is an unwrapped 
-        artificial cell, use a \ ``netcon = h.NetCon(cell, None)`` statement.
+        artificial cell, use a \ ``netcon = n.NetCon(cell, None)`` statement.
         In either case, after
         ParallelContext.cell() has been called, this NetCon can be
         destroyed to save memory; the spike detection threshold
@@ -2763,7 +2763,7 @@ Description:
     .. note::
 
         The arguments for this function must be NEURON references to numbers; these can be
-        created via, e.g. ``_ref_nsend = h.ref(0)`` and then dereferenced to get their
+        created via, e.g. ``_ref_nsend = n.ref(0)`` and then dereferenced to get their
         values via ``_ref_nsend[0]``.
 
 ----
@@ -3162,7 +3162,7 @@ Parallel Transfer
         .. code-block:: python
 
             from neuron import config, h
-            pc = h.ParallelContext()
+            pc = n.ParallelContext()
             threads_enabled = config.arguments["NRN_ENABLE_THREADS"]
 
             # single threaded mode, no workers
@@ -3484,18 +3484,18 @@ Parallel Transfer
 
         .. code-block:: python
 
-            from neuron import h, gui
-            pc = h. ParallelContext()
+            from neuron import n, gui
+            pc = n.ParallelContext()
             # construct model ...
 
             # run model
             from neuron import coreneuron
             coreneuron.enable = True
-            h.stdinit()
-            pc.psolve(h.tstop)
+            n.stdinit()
+            pc.psolve(n.tstop)
 
         In this case, :func:`psolve`, uses ``nrncore_run`` behind the scenes
-        with the argstr it gets from ``coreneuron.nrncore_arg(h.tstop)``
+        with the argstr it gets from ``coreneuron.nrncore_arg(n.tstop)``
         which is ``" --tstop 5 --cell-permute 1 --verbose 2 --voltage 1000."``
 
         CoreNEURON in online mode does not do the

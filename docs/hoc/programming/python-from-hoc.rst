@@ -29,9 +29,9 @@ For more information about the Python interface to NEURON, see
             python
 
             nrnpython("import sys") 
-            nrnpython("print sys.path") 
+            nrnpython("print(sys.path)")
             nrnpython("a = [1,2,3]") 
-            nrnpython("print a") 
+            nrnpython("print(a)") 
             nrnpython("import hoc") 
             nrnpython("hoc.execute('print PI')") 
             
@@ -75,7 +75,7 @@ For more information about the Python interface to NEURON, see
              
             nrnpython("import hoc")   // back in the Python world 
             nrnpython("h = hoc.HocObject()") // tup is a Python Tuple object 
-            nrnpython("print h.tup")   // prints ('xyz', 2, 3) 
+            nrnpython("print(h.tup)")   // prints ('xyz', 2, 3) 
 
         Note that one needs the '_' method, equivalent to 'this', because trying to 
         get at an element through the built-in python method name via 
