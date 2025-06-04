@@ -120,7 +120,8 @@ void splitfor_cur(int part) {
     }
     P("#else /*SPLITFOR*/\n");
     P("#define _ZFOR for (int _iml = _split_grp_begin; _iml < _split_grp_end; ++_iml)\n");
-    P("  for (int _split_grp_begin = 0; _split_grp_begin < _cntml; _split_grp_begin += _split_grp_size){\n");
+    P("  for (int _split_grp_begin = 0; _split_grp_begin < _cntml; _split_grp_begin += "
+      "_split_grp_size){\n");
     P("    int _split_grp_end = _split_grp_begin + _split_grp_size;\n");
     P("    if (_split_grp_end > _cntml) { _split_grp_end = _cntml; }\n");
     // modified copy of noccout.cpp output between calls to splitfor_cur
@@ -234,7 +235,8 @@ void splitfor_solve(int part) {
     }
     P("#else /*SPLITFOR*/\n");
     P("#define _ZFOR for (int _iml = _split_grp_begin; _iml < _split_grp_end; ++_iml)\n");
-    P("  for (int _split_grp_begin = 0; _split_grp_begin < _cntml; _split_grp_begin += _split_grp_size){\n");
+    P("  for (int _split_grp_begin = 0; _split_grp_begin < _cntml; _split_grp_begin += "
+      "_split_grp_size){\n");
     P("    int _split_grp_end = _split_grp_begin + _split_grp_size;\n");
     P("    if (_split_grp_end > _cntml) { _split_grp_end = _cntml; }\n");
 
