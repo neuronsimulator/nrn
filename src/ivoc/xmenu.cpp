@@ -1351,7 +1351,7 @@ void HocPanel::write(std::ostream& o) {
         }
     }
     if (has_window()) {
-        o << "xpanel" << (float) window()->save_left() << "," << (float) << window()->save_bottom() 
+        o << "xpanel" << float(window()->save_left()) << "," << float(window()->save_bottom()) 
           << ")" << std::endl;
     } else {
         o << "xpanel()" << std::endl;
@@ -1917,7 +1917,7 @@ double HocValEditor::get_val() {
         return *pval_;
     } else if (!variable_.empty()) {
         Oc oc;
-        oc.run(std::string("hoc_ac_ = ") + variable_ + "\n");
+        oc.run((std::string("hoc_ac_ = ") + variable_ + "\n").c_str());
         return hoc_ac_;
     } else {
         return 0.;
@@ -1930,7 +1930,7 @@ double HocValEditor::domain_limits(double val) {
 
 void HocValEditor::evalField() {
     Oc oc;
-    oc.run(std::string("hoc_ac_ = ") + fe_->text()->string() + "\n");
+    oc.run((std::string("hoc_ac_ = ") + fe_->text()->string() + "\n").c_str());
     hoc_ac_ = domain_limits(hoc_ac_);
     set_val(hoc_ac_);
     // prompt_->state()->set(TelltaleState::is_active, false);
