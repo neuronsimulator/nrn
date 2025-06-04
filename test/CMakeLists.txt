@@ -828,6 +828,6 @@ if((NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON) AND NRN_ENABLE_TESTS)
 endif()
 
 # Test nrnivmodl-cmake
-if(NRN_ENABLE_CORENEURON AND NRN_ENABLE_TESTS)
+if(NRN_ENABLE_TESTS)
   add_subdirectory(nrnivmodl-cmake)
 endif()
