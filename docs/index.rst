@@ -40,8 +40,7 @@ and more (use the links on the side or search).
    :hidden:
 
    scripting.rst
-   python/index
-   hoc/index
+   progref/index
    otherscripting.rst
    tutorials/index
    rxd-tutorials/index

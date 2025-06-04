@@ -1,8 +1,7 @@
-.. _python_prog_ref:
+.. _prog_ref:
 
-NEURON Python documentation
-===========================
-(:ref:`Switch to HOC documentation <hoc_prog_ref>`)
+NEURON Programmer's Reference
+=============================
 
 For a basic introduction on how to run Python scripts with NEURON, see
 :ref:`running Python scripts with NEURON <launching_hoc_and_python_scripts>`,
