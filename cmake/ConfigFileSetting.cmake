@@ -167,13 +167,13 @@ configure_file("${PROJECT_SOURCE_DIR}/share/lib/nrn.defaults.in"
 set(nrnunits_start "")
 set(nrnunits_stop "")
 
-configure_file(${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib
+configure_file(${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib.in
                ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib @ONLY)
 
 set(nrnunits_start "R\"qwerty(")
 set(nrnunits_stop ")qwerty\"")
 # Embed nrnunits
-configure_file(${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib
+configure_file(${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib.in
                ${PROJECT_BINARY_DIR}/share/nrn/lib/embedded_nrnunits.lib @ONLY)
 
 if(NRN_MACOS_BUILD)
