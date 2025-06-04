@@ -16,9 +16,9 @@ code-executing
 .. function:: execute
 
     Syntax:
-        ``h.execute("statement")``
+        ``n.execute("statement")``
 
-        ``h.execute("statement", objref)``
+        ``n.execute("statement", objref)``
 
     Description:
         parse and execute the command in the context 
@@ -37,13 +37,13 @@ code-executing
 .. function:: execute1
 
     Syntax:
-        ``err = h.execute1("statement")``
+        ``err = n.execute1("statement")``
 
-        ``err = h.execute1("statement", objref)``
+        ``err = n.execute1("statement", objref)``
 
-        ``err = h.execute1("statement", show_err_mes)``
+        ``err = n.execute1("statement", show_err_mes)``
 
-        ``err = h.execute1("statement", objref, show_err_mes)``
+        ``err = n.execute1("statement", objref, show_err_mes)``
 
     Description:
         Same as :func:`execute` but returns 0 if there was an interpreter error 
@@ -74,9 +74,9 @@ code-executing
         .. code-block::
             python
             
-            h.execute1(f"{obj_name}.var = outside_var")
+            n.execute1(f"{obj_name}.var = outside_var")
 
-        Here, outside_var is unavailable from within the object and so 
+        Here, ``outside_var`` is unavailable from within the object and so 
         a command is constructed which can be executed at the top level where that 
         variable is available and sets the public var in the object. 
 
@@ -87,11 +87,11 @@ code-loading
 .. function:: load_proc
 
     Syntax:
-        ``h.load_proc("name1", ...)``
+        ``n.load_proc("name1", ...)``
 
-        ``h.load_func("name1", ...)``
+        ``n.load_func("name1", ...)``
 
-        ``h.load_template("name1", ..._``
+        ``n.load_template("name1", ..._``
 
     Description:
         Load the file containing a definition. 
@@ -116,7 +116,7 @@ code-loading
         .. code-block::
             python
 
-            h.xopen("$(NEURONHOME)/lib/hoc/noload.hoc") 
+            n.xopen("$(NEURONHOME)/lib/hoc/noload.hoc") 
 
 
 ----
@@ -124,11 +124,11 @@ code-loading
 .. function:: load_file
 
     Syntax:
-        ``h.load_file("filename")``
+        ``n.load_file("filename")``
 
-        ``h.load_file("filename", "name")``
+        ``n.load_file("filename", "name")``
 
-        ``h.load_file(0or1, "filename")``
+        ``n.load_file(0or1, "filename")``
 
     Description:
         Similar to :func:`load_proc` but loads files and so does not have the 
@@ -163,7 +163,7 @@ code-loading
 .. function:: load_func
 
     Syntax:
-        ``h.load_func('name1', ...)``
+        ``n.load_func('name1', ...)``
 
         see :func:`load_proc` 
 
@@ -172,7 +172,7 @@ code-loading
 .. function:: load_template
 
     Syntax:
-        ``h.load_template('name1', ...)``
+        ``n.load_template('name1', ...)``
 
         see :func:`load_proc` 
 

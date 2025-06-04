@@ -86,13 +86,17 @@ neuron.h
 
 neuron.h is the top-level HocObject, allowing interaction between Python and Hoc.
 
-It is callable like a function, and takes Hoc code as an argument to be executed.
+Starting in NEURON 9, neuron.n is also available for constructing NEURON objects
+and for accessing HOC.
+
+neuron.h is callable like a function, and takes Hoc code as an argument to be
+executed.
 
 The top-level Hoc namespace is exposed as attributes to the h object.
 
 Ex:
 
-    >>> h = neuron.h
+    >>> from neuron import h
     >>> h("objref myvec")
     >>> h("myvec = new Vector(10)")
     >>> h.myvec.x[0]=1.0
@@ -104,7 +108,7 @@ Ex:
 NEURON classes are defined in the h namespace and can be constructed as follows:
 
 >>> v = h.Vector(10)
->>> soma = h.Section()
+>>> soma = h.Section("soma")
 >>> input = h.IClamp(soma(0.5))
 
 More help on individual classes defined in Hoc and exposed in Python
@@ -112,7 +116,7 @@ is available using Jupyter's online help feature
 
 In []: ? h.Section
 
-or in standard Python by python help system
+or in standard Python by Python's help system
 
 >>> help(h.Vector)
 
@@ -127,11 +131,11 @@ NOTE: Several Hoc symbols are not useful in Python, and thus raise an exception 
 >>> h.objref
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
-TypeError: Cannot access objref (NEURON type 325) directly.
+TypeError: Cannot access objref (NEURON type 326) directly.
 >>> help(h.objref)
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
-TypeError: Cannot access objref (NEURON type 325) directly.
+TypeError: Cannot access objref (NEURON type 326) directly.
 
 
 """

@@ -9,7 +9,7 @@ Path Manipulation
 .. function:: chdir
 
     Syntax:
-        ``h.chdir("path")``
+        ``n.chdir("path")``
 
     Description:
         Change working directory to the indicated path. Returns 0 if successful 
@@ -21,7 +21,7 @@ Path Manipulation
 .. function:: getcwd
 
     Syntax:
-        ``h.getcwd()``
+        ``n.getcwd()``
 
     Description:
         Returns absolute path of current working directory in unix format. 
@@ -34,7 +34,7 @@ Path Manipulation
 .. function:: neuronhome
 
     Syntax:
-        ``h.neuronhome()``
+        ``n.neuronhome()``
 
     Description:
         Returns the full installation path in unix format or, if it exists, the 
@@ -61,19 +61,19 @@ Machine Identification
 .. function:: machine_name
 
     Syntax:
-        ``h.machine_name(strdef)``
+        ``n.machine_name(strdef)``
 
     Description:
         Sets the NEURON string (not a Python string) ``strdef`` to the hostname of the machine. 
-        Create a NEURON string via, e.g., ``h.ref('')``.
+        Create a NEURON string via, e.g., ``n.ref('')``.
     
     Example:
         .. code-block::
             python
 
-            from neuron import h
-            my_machine_name = h.ref('')
-            h.machine_name(my_machine_name)
+            from neuron import n
+            my_machine_name = n.ref('')
+            n.machine_name(my_machine_name)
             print(f"My hostname is {my_machine_name[0]}")
 
 
@@ -82,7 +82,7 @@ Machine Identification
 .. function:: unix_mac_pc
 
     Syntax:
-        ``h.unix_mac_pc()``
+        ``n.unix_mac_pc()``
 
     Description:
         Return 1 if unix, 2 if (an older) mac, 3 if mswin, or 4 if mac osx darwin 
@@ -94,8 +94,8 @@ Machine Identification
         .. code-block::
             python
 
-            from neuron import h
-            type = h.unix_mac_pc()
+            from neuron import n
+            type = n.unix_mac_pc()
 
             if type == 1:
                 print("This os is unix based")
@@ -115,9 +115,9 @@ Machine Identification
 .. function:: nrnversion
 
     Syntax:
-        ``h.nrnversion()``
+        ``n.nrnversion()``
 
-        ``h.nrnversion(i)``
+        ``n.nrnversion(i)``
 
     Description:
         Returns a string consisting of version information. 
@@ -162,20 +162,20 @@ Machine Identification
           none
 
           $ python 2</dev/null
-          >>> from neuron import h
-          >>> h.nrnversion(9)
+          >>> from neuron import n
+          >>> n.nrnversion(9)
           '2'
 
     Example:
         .. code-block::
             python
 
-            from neuron import h, gui
-            h.nrnversion() 
+            from neuron import n, gui
+            n.nrnversion() 
             'NEURON -- VERSION 8.2.2 HEAD (93d41fafd) 2022-12-15'
 
             for i in range(10): 
-                print(f'{i} : {h.nrnversion(i)}')
+                print(f'{i} : {n.nrnversion(i)}')
             
             0 : 8.2.2
             1 : NEURON -- VERSION 8.2.2 HEAD (93d41fafd) 2022-12-15
@@ -198,7 +198,7 @@ Execute a Command
 .. function:: WinExec
 
     Syntax:
-        ``h.WinExec("mswin command")``
+        ``n.WinExec("mswin command")``
 
     Description:
         MSWin version only. Use :func:`system` for a more generic solution, or
@@ -212,9 +212,9 @@ Execute a Command
         system --- issue a shell command 
 
     Syntax:
-        ``exitcode = h.system(cmdstr)``
+        ``exitcode = n.system(cmdstr)``
 
-        ``exitcode = h.system(cmdstr, stdout_str)``
+        ``exitcode = n.system(cmdstr, stdout_str)``
 
     Description:
         Executes ``cmdstr`` as though it had been typed as 
@@ -225,7 +225,7 @@ Execute a Command
 
     Example:
 
-        ``h.system("ls")`` 
+        ``n.system("ls")`` 
             Prints a directory listing in the console terminal window. 
             will take up where it left off when the user types the \ ``exit`` 
             command 
@@ -258,7 +258,7 @@ Timing
 .. function:: startsw
 
     Syntax:
-        ``h.startsw()``
+        ``n.startsw()``
 
 
         Initializes a stopwatch with a resolution of 0.01 second. See :func:`stopsw`.
@@ -269,7 +269,7 @@ Timing
 .. function:: stopsw
 
     Syntax:
-        ``h.stopsw()``
+        ``n.stopsw()``
 
         Returns the time in seconds since the stopwatch was last initialized with a :func:`startsw` . 
 
@@ -279,8 +279,8 @@ Timing
         .. code-block::
             python
 
-            x = h.startsw() 
-            h.startsw() - x 
+            x = n.startsw() 
+            n.startsw() - x 
 
         should be used since it allows nested timing intervals. 
 
@@ -289,12 +289,12 @@ Timing
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             from math import sin
-            h.startsw()
+            n.startsw()
             for i in range(100_000):
                 x = sin(0.2)
-            print(h.stopsw())
+            print(n.stopsw())
     
     .. note::
 
@@ -303,7 +303,7 @@ Timing
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             from math import sin
             import time
 
@@ -329,7 +329,7 @@ Miscellaneous
 .. function:: nrn_load_dll
 
     Syntax:
-        ``h.nrn_load_dll(dll_file_name)``
+        ``n.nrn_load_dll(dll_file_name)``
 
     Description:
         Loads a dll containing membrane mechanisms (i.e., compiled MOD files).
@@ -339,7 +339,7 @@ Miscellaneous
 .. function:: show_winio
 
     Syntax:
-        ``h.show_winio(0or1)``
+        ``n.show_winio(0or1)``
 
     Description:
 

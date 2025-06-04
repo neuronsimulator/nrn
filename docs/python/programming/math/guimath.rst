@@ -9,7 +9,7 @@ GUIMath
 
 
     Syntax:
-        ``obj = h.GUIMath()``
+        ``obj = n.GUIMath()``
 
 
     Description:
@@ -98,13 +98,13 @@ GUIMath
         .. code::
             python
 
-            from neuron import h
+            from neuron import n
 
-            gm = h.GUIMath()
+            gm = n.GUIMath()
             print(f'default rounding mode {gm.feround()}')
 
             def test_round(mode):
-                gm = h.GUIMath()
+                gm = n.GUIMath()
                 old = gm.feround(mode)
                 x = 0
                 for i in range(1, 1_000_001):

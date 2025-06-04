@@ -10,9 +10,9 @@ List
     List of objects 
 
     Syntax:
-        ``h.List()``
+        ``n.List()``
 
-        ``h.List("templatename")``
+        ``n.List("templatename")``
 
 
     Description:
@@ -32,11 +32,11 @@ List
 
         There are two ways of invoking the constructor:
 
-        ``h.List()`` 
+        ``n.List()`` 
             Create an empty list. Objects added to the list are referenced. 
             Objects removed from the list are unreferenced. 
 
-        ``h.List("templatename")`` 
+        ``n.List("templatename")`` 
             Create a list of all the object instances of the template. 
             These object instances are NOT referenced and therefore the list 
             dynamically changes as objects of template instances are 
@@ -48,14 +48,14 @@ List
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            clamps = h.IClamp(), h.IClamp(), h.IClamp()
+            clamps = n.IClamp(), n.IClamp(), n.IClamp()
 
-            all_iclamps = h.List('IClamp')
+            all_iclamps = n.List('IClamp')
             print(f'There are initially {len(all_iclamps)} IClamp objects.') # 3
 
-            another = h.IClamp()
+            another = n.IClamp()
 
             print(f'There are now {len(all_iclamps)} IClamp objects.')       # 4
 
@@ -213,7 +213,7 @@ List
 
         ``l.browser("title", py_callable)`` 
             Browser labels are computed. For each item, ``py_callable`` is executed 
-            with ``h.hoc_ac_`` set to the index of the item. Some objects 
+            with ``n.hoc_ac_`` set to the index of the item. Some objects 
             notify the List when they change, ie point processes when they change 
             their location notify the list. 
 
@@ -222,14 +222,14 @@ List
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            my_list = h.List()
+            my_list = n.List()
 
             for word in ['Python', 'HOC', 'NEURON', 'NMODL']:
-                my_list.append(h.String(word))
+                my_list.append(n.String(word))
 
-            my_list.browser('title', 's')   # h.String objects have an s attribute that returns the Python string
+            my_list.browser('title', 's')   # n.String objects have an s attribute that returns the Python string
 
 
         .. image:: ../../images/list-browser1.png
@@ -240,14 +240,14 @@ List
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            my_list = h.List()
+            my_list = n.List()
             for word in ['NEURON', 'HOC', 'Python', 'NMODL']:
-                my_list.append(h.String(word))
+                my_list.append(n.String(word))
 
             def label_with_lengths():
-                item_id = h.hoc_ac_
+                item_id = n.hoc_ac_
                 item = my_list[item_id].s
                 return f'{item} ({len(item)})'
 
@@ -261,7 +261,7 @@ List
         .. code-block::
             python
 
-            my_list.append(h.String('Neuroscience'))
+            my_list.append(n.String('Neuroscience'))
 
         .. image:: ../../images/list-browser2b.png
             :align: center
@@ -353,9 +353,9 @@ List
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            my_list = h.List()
+            my_list = n.List()
 
             def on_click():
                 item_id = my_list.selected()
@@ -364,7 +364,7 @@ List
 
 
             for word in ['Python', 'HOC', 'NEURON', 'NMODL']:
-                my_list.append(h.String(word))
+                my_list.append(n.String(word))
 
             my_list.browser('title', 's')
             my_list.select_action(on_click)

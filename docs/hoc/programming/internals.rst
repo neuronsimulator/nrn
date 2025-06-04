@@ -24,8 +24,8 @@ Namespace Related
         current object context. The last form also looks in the top level
         symbol table but is useful in Python to distinguish subtypes of
         variables which appear as doubles in HOC but internally are really
-        not doubles and so cannot be pointed to by double*, eg. h.secondorder
-        which is <type 'int'> or h.nseg which returns either
+        not doubles and so cannot be pointed to by double*, eg. n.secondorder
+        which is <type 'int'> or n.nseg which returns either
         ``TypeError: Section access unspecified`` or
         ``nseg  not a USERPROPERTY that can be pointed to``
          

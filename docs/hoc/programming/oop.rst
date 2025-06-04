@@ -8,7 +8,7 @@ in the reference manual.
 
 .. note::
 
-    Classes defined in HOC may be accessed in Python via ``h.ClassName``.
+    Classes defined in HOC may be accessed in Python via ``n.ClassName``.
 
 .. index:: begintemplate (keyword)
 

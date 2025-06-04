@@ -9,9 +9,9 @@ SectionBrowser
 
 
     Syntax:
-        ``sb = h.SectionBrowser()``
+        ``sb = n.SectionBrowser()``
 
-        ``sb = h.SectionBrowser(SectionList)``
+        ``sb = n.SectionBrowser(SectionList)``
 
 
     Description:
@@ -24,11 +24,11 @@ SectionBrowser
         .. code-block::
             python
 
-            from neuron import h, gui
-            soma = h.Section('soma')
-            dend = h.Section('dend')
-            sl = h.SectionList([soma])  # only the soma will be shown
-            sb = h.SectionBrowser(sl)
+            from neuron import n, gui
+            soma = n.Section('soma')
+            dend = n.Section('dend')
+            sl = n.SectionList([soma])  # only the soma will be shown
+            sb = n.SectionBrowser(sl)
             
     
     .. image:: ../../images/secbrows-sectionList.png
@@ -58,11 +58,11 @@ SectionBrowser
         .. code-block::
             python
 
-            from neuron import h, gui
-            soma = h.Section('soma')
-            axon = h.Section('axon')
+            from neuron import n, gui
+            soma = n.Section('soma')
+            axon = n.Section('axon')
 
-            sb = h.SectionBrowser()
+            sb = n.SectionBrowser()
             sb.select(sec=axon)        
 
     .. image:: ../../images/secbrows-select.png
@@ -91,9 +91,9 @@ SectionBrowser
         .. code-block::
             python
 
-            from neuron import h, gui
-            soma = h.Section('soma')
-            axon = h.Section('axon')
+            from neuron import n, gui
+            soma = n.Section('soma')
+            axon = n.Section('axon')
 
             def select(sec):
                 print(f'select: {sec} {type(sec)}')
@@ -101,7 +101,7 @@ SectionBrowser
             def accept(sec):
                 print(f'accept: {sec}')
 
-            sb = h.SectionBrowser()
+            sb = n.SectionBrowser()
             sb.select_action(select)
             sb.accept_action(accept)
 
@@ -134,9 +134,9 @@ SectionBrowser
         .. code-block::
             python
 
-            from neuron import h, gui
-            soma = h.Section('soma')
-            axon = h.Section('axon')
+            from neuron import n, gui
+            soma = n.Section('soma')
+            axon = n.Section('axon')
 
             def select(sec):
                 print(f'select: {sec} {type(sec)}')
@@ -144,7 +144,7 @@ SectionBrowser
             def accept(sec):
                 print(f'accept: {sec}')
 
-            sb = h.SectionBrowser()
+            sb = n.SectionBrowser()
             sb.select_action(select)
             sb.accept_action(accept)
 

@@ -10,9 +10,9 @@ Graph
 
 
     Syntax:
-        ``g = h.Graph()``
+        ``g = n.Graph()``
 
-        ``g = h.Graph(False)``
+        ``g = n.Graph(False)``
 
 
     Description:
@@ -30,10 +30,10 @@ Graph
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             # Create the graph
-            g = h.Graph()
+            g = n.Graph()
 
             # specify coordinate system for the canvas drawing area
             # numbers are: xmin, xmax, ymin, ymax respectively
@@ -46,7 +46,7 @@ Graph
             # define a sine wave, 0 <= x <= 10
             for i in range(101):
                 x = i * 0.1
-                g.line(x, h.sin(x))
+                g.line(x, n.sin(x))
 
             # actually draw the plot on the graph in the window
             g.flush()
@@ -136,7 +136,7 @@ Graph
          
             It is easiest to control the size of the axes and the scale of 
             the graph through the graphical user interface.  Normally, when a 
-            new graph is declared (eg. ``g = h.Graph()``), the y axis 
+            new graph is declared (eg. ``g = n.Graph()``), the y axis 
             ranges from 20-180 and the x axis ranges from 50-250. 
             With the mouse arrow on the graph window, click on the right button 
             and set the arrow on :guilabel:`View` at the top of the button window 
@@ -207,7 +207,7 @@ Graph
         To automatically plot a variable added to a graph ``g`` with ``addvar`` against
         ``t`` during a ``run()``, ``stdrun.hoc`` must be loaded (this is done automatically
         with a ``from neuron import gui``) and the graph must be
-        added to a graphList, such as by executing ``h.graphList[0].append(g)``.
+        added to a graphList, such as by executing ``n.graphList[0].append(g)``.
 
     Example:
 
@@ -255,22 +255,22 @@ Graph
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
-            g = h.Graph()
+            g = n.Graph()
             g.size(0, 10, -1, 1)
             g.addexpr("sin(x)")
             g.addexpr("cos(x)")
             g.addexpr("exp(-x)")
 
             # have to initialize the variable in HOC
-            h("x = 0")
+            n("x = 0")
 
             g.begin()
 
-            for h.x in np.arange(0, 10.1, 0.1):
-                g.plot(h.x)
+            for n.x in np.arange(0, 10.1, 0.1):
+                g.plot(n.x)
 
             g.flush()
 
@@ -374,14 +374,14 @@ Graph
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             # Assign "g" the role of pointing to a Graph 
             # created from the Graph class, and produces 
             # a graph window with x and y axes on the  
             # screen. 
-            g = h.Graph()
+            g = n.Graph()
 
             # size the window to fit the graph 
             g.size(-4, 4, -4, 4)
@@ -400,9 +400,9 @@ Graph
             g.xexpr('3*cos(t)') 
 
             g.begin()
-            for h.t in np.arange(0, 6.4, 0.1):
-                # h.t ranges from 0 to 6.3 \approx 2 * pi
-                g.plot(h.t)
+            for n.t in np.arange(0, 6.4, 0.1):
+                # n.t ranges from 0 to 6.3 \approx 2 * pi
+                g.plot(n.t)
 
             # actually draws the graph
             g.flush()
@@ -465,9 +465,9 @@ Graph
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0, 4000, -1, 1) 
             
             # plot a bunch of cosine waves of different periods
@@ -477,13 +477,13 @@ Graph
             def pl():
                 g.erase()
                 g.begin()
-                for h.t in range(4_000):
-                    g.plot(h.t) 
-                    if h.t % 10 == 0:
+                for n.t in range(4_000):
+                    g.plot(n.t) 
+                    if n.t % 10 == 0:
                         g.fastflush() 
-                        h.doNotify() 
+                        n.doNotify() 
                 g.flush() 
-                h.doNotify() 
+                n.doNotify() 
 
             pl() 
              
@@ -564,15 +564,15 @@ Graph
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             # x = 0, 0.01, 0.02, ..., 6.28
-            x = h.Vector(np.arange(0., 6.29, 0.01))
-            y = h.Vector(np.sin(x))
+            x = n.Vector(np.arange(0., 6.29, 0.01))
+            y = n.Vector(np.sin(x))
 
             # create the graph
-            g = h.Graph()
+            g = n.Graph()
             g.size(0, 6.28, -1, 1)
             g.vector(num_elements, x._ref_x[0], y._ref_x[0])
             g.flush()
@@ -607,24 +607,24 @@ Graph
         unchanged. Note that thisindex is not necessarily equal to previndex+1. 
 
     Example:
-        To iterate over all the lines in ``h.Graph[0]`` use: 
+        To iterate over all the lines in ``n.Graph[0]`` use: 
 
         .. code-block::
             python
 
             xline = []
             yline = []
-            xvec = h.Vector() 
-            yvec = h.Vector() 
+            xvec = n.Vector() 
+            yvec = n.Vector() 
             j = 0
-            i = h.Graph[0].getline(-i, xvec, yvec)
+            i = n.Graph[0].getline(-i, xvec, yvec)
             while i != -1:
             	# xvec and yvec contain the line with Graph internal index i. 
             	# and can be associated with the sequential index j. 
             	print(j, i, yvec.label)
             	xline.append(xvec.c())
             	yline.append(yvec.cl()) # clone label as well 
-                i = h.Graph[0].getline(i, xvec, yvec)
+                i = n.Graph[0].getline(i, xvec, yvec)
 
          
 
@@ -712,7 +712,7 @@ Graph
             points in the graph in dbl[0],..., dbl[3] respectively. This allows 
             convenient computation of a view size which will display everything on the 
             graph. See :ref:`gui_view_equal_plot`. In the absence of any graphics, it gives 
-            the size as in the .size(1-4) prototype. (e.g. if ``dbl = h.Vector(4)``, then use
+            the size as in the .size(1-4) prototype. (e.g. if ``dbl = n.Vector(4)``, then use
             ``g.size(dbl._ref_x[0])`` to store starting at the beginning.)
 
 
@@ -829,8 +829,8 @@ Graph
         .. code-block::
             python
 
-            from neuron import h, gui
-            g = h.Graph() 
+            from neuron import n, gui
+            g = n.Graph() 
             g.align(0, 0) 
             g.label(.5,.5, "left bottom at (.5,.5)") 
             g.align(0, 1) 
@@ -1034,16 +1034,16 @@ Graph
             python
 
               
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
-            g = h.Graph()
+            g = n.Graph()
             g.size(-1, 1, -1, 1)
 
             g.beginline()   
             dt = 0.1
-            for t in np.arange(0, 2 * h.PI + dt, dt):
-                g.line(h.sin(t), h.cos(t))
+            for t in np.arange(0, 2 * n.PI + dt, dt):
+                g.line(n.sin(t), n.cos(t))
 
             g.flush()
              
@@ -1122,9 +1122,9 @@ Graph
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            g = h.Graph()
+            g = n.Graph()
 
             def crossact(x, y, c):
               '''For g.crosshair_action(crossact)'''
@@ -1138,7 +1138,7 @@ Graph
             g.crosshair_action(crossact_vflag1, 1)
 
             # plot something
-            x = h.Vector(range(50, 101))
+            x = n.Vector(range(50, 101))
             y = x + 50  # needs NEURON 7.7+
             y.line(g, x)
 
@@ -1149,15 +1149,15 @@ Graph
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             # x = 0, 0.01, 0.02, ..., 6.28
-            x = h.Vector(np.arange(0., 6.29, 0.01))
-            y = h.Vector(np.sin(x))
+            x = n.Vector(np.arange(0., 6.29, 0.01))
+            y = n.Vector(np.sin(x))
 
             # create the graph
-            g = h.Graph()
+            g = n.Graph()
             g.size(0, 6.28, -1, 1)
             g.vector(num_elements, x._ref_x[0], y._ref_x[0])
 
@@ -1286,7 +1286,7 @@ Graph
         .. code-block::
             python
 
-            g = h.Graph() 
+            g = n.Graph() 
             g.exec_menu("Keep Lines") 
 
 
@@ -1312,12 +1312,12 @@ Graph
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
             def say_hi():
                 print('Hello world!')
 
-            g = h.Graph()
+            g = n.Graph()
             g.menu_action("Say hello", say_hi)
 
         .. image:: ../images/graph-menuaction.png
@@ -1365,12 +1365,12 @@ Graph
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             def on_event(event_type, x, y, keystate):
                 print(event_type, x, y, keystate)
 
-            g = h.Graph()
+            g = n.Graph()
             g.menu_tool("mouse events", on_event)
 
         In this example, you must first select "mouse events" from the Graph's menu,

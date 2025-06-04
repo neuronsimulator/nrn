@@ -12,11 +12,11 @@ Namespace Related
 .. function:: name_declared
 
     Syntax:
-        ``type = h.name_declared("name")``
+        ``type = n.name_declared("name")``
 
-        ``type = h.name_declared("name", 1)``
+        ``type = n.name_declared("name", 1)``
 
-        ``type = h.name_declared("name", 2)``
+        ``type = n.name_declared("name", 2)``
 
     Description:
         Return 0 if the name is not in the NEURON/HOC symbol table. The first form looks 
@@ -24,8 +24,8 @@ Namespace Related
         current object context. The last form also looks in the top level
         symbol table but is useful in Python to distinguish subtypes of
         variables which appear as doubles in HOC but internally are really
-        not doubles and so cannot be pointed to by ``double*``, e.g., ``h.secondorder``
-        which is ``<type 'int'>`` or ``h._ref_nseg`` which raises either
+        not doubles and so cannot be pointed to by ``double*``, e.g., ``n.secondorder``
+        which is ``<type 'int'>`` or ``n._ref_nseg`` which raises either
         ``TypeError: Section access unspecified`` or
         ``TypeError: Cannot be a reference``
          
@@ -99,7 +99,7 @@ Namespace Related
             python
 
             try:
-                h.soma.squiggle
+                n.soma.squiggle
             except (NameError, AttributeError):
                 print('Name does not exist')
 
@@ -115,7 +115,7 @@ Namespace Related
         symbols --- type the names of HOC functions and variables 
 
     Syntax:
-        ``h.symbols()``
+        ``n.symbols()``
 
     Description:
         Types a list of functions and variable names defined in HOC.  Dimensions 
@@ -135,9 +135,9 @@ Object Related
 .. function:: object_id
 
     Syntax:
-        ``h.object_id(objref)``
+        ``n.object_id(objref)``
 
-        ``h.object_id(objref, 1)``
+        ``n.object_id(objref, 1)``
 
     Description:
         Returns 0 if the object reference does not point to an object instance. 
@@ -152,21 +152,21 @@ Object Related
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            a, b, c = h.List(), h.List(), h.Vector()
+            a, b, c = n.List(), n.List(), n.Vector()
 
-            print(h.object_id(a))       # displays a double; equal to hash(a)
-            print(h.object_id(a, 1))    # 0 since a == h.List[0]
-            print(h.object_id(b, 1))    # 1 since b == h.List[1]
-            print(h.object_id(c, 1))    # 0 since c == h.Vector[0]
+            print(n.object_id(a))       # displays a double; equal to hash(a)
+            print(n.object_id(a, 1))    # 0 since a == n.List[0]
+            print(n.object_id(b, 1))    # 1 since b == n.List[1]
+            print(n.object_id(c, 1))    # 0 since c == n.Vector[0]
 
 ----
 
 .. function:: allobjectvars
 
     Syntax:
-        ``h.allobjectvars()``
+        ``n.allobjectvars()``
 
     Description:
         Prints all the HOC object references (objref variables) that have been 
@@ -179,16 +179,16 @@ Object Related
         .. code-block::
             python
 
-            >>> h('objref foo')
+            >>> n('objref foo')
             1
-            >>> h.foo = h.Vector()
-            >>> h.allobjectvars()
+            >>> n.foo = n.Vector()
+            >>> n.allobjectvars()
             obp hoc_obj_[0] -> NULL
             obp hoc_obj_[1] -> NULL
             obp foo[0] -> Vector[0] with 1 refs.
             0.0
-            >>> banana = h.foo
-            >>> h.allobjectvars()
+            >>> banana = n.foo
+            >>> n.allobjectvars()
             obp hoc_obj_[0] -> NULL
             obp hoc_obj_[1] -> NULL
             obp foo[0] -> Vector[0] with 2 refs.
@@ -199,11 +199,11 @@ Object Related
 .. function:: allobjects
 
     Syntax:
-        ``h.allobjects()``
+        ``n.allobjects()``
 
-        ``h.allobjects("templatename")``
+        ``n.allobjects("templatename")``
 
-        ``nref = h.allobjects(objectref)``
+        ``nref = n.allobjects(objectref)``
 
     Description:
         Prints the internal names of all class instances (objects) available 
@@ -221,16 +221,16 @@ Object Related
         .. code-block::
             python
 
-            >>> v = h.Vector()
-            >>> foo = h.List()
-            >>> h.allobjects()
+            >>> v = n.Vector()
+            >>> foo = n.List()
+            >>> n.allobjects()
             List[0] with 1 refs
             Vector[0] with 1 refs
             0.0
-            >>> h.allobjects('Vector')
+            >>> n.allobjects('Vector')
             Vector[0] with 1 refs
             0.0
-            >>> h.allobjects(foo)
+            >>> n.allobjects(foo)
             2.0
     
     .. seealso::
@@ -243,7 +243,7 @@ Object Related
 .. function:: object_push
 
     Syntax:
-        ``h.object_push(objref)``
+        ``n.object_push(objref)``
 
     Description:
         Enter the context of the object referenced by objref. In this context you 
@@ -258,7 +258,7 @@ Object Related
 .. function:: object_pop
 
     Syntax:
-        ``h.object_pop()``
+        ``n.object_pop()``
 
     Description:
         Pop the last object from an :func:`object_push` . 
@@ -271,7 +271,7 @@ Miscellaneous
 .. function:: hoc_pointer_
 
     Syntax:
-        ``h.hoc_pointer_(&variable)``
+        ``n.hoc_pointer_(&variable)``
 
     Description:
         A function used by C and C++ implementations to request a pointer to 
@@ -286,13 +286,13 @@ Debugging
 .. function:: nrn_digest
 
     Syntax:
-        ``h.nrn_digest()``
+        ``n.nrn_digest()``
 
-        ``h.nrn_digest(tid, i)``
+        ``n.nrn_digest(tid, i)``
 
-        ``h.nrn_digest(tid, i, "abort")``
+        ``n.nrn_digest(tid, i, "abort")``
 
-        ``h.nrn_digest(filename)``
+        ``n.nrn_digest(filename)``
 
     Description:
         Available when configured with the cmake option ``-DNRN_ENABLE_DIGEST=ON``
@@ -366,7 +366,7 @@ Debugging
 .. function:: use_exp_pow_precision
 
     Syntax:
-        ``h.use_exp_pow_precision(istyle)``
+        ``n.use_exp_pow_precision(istyle)``
 
     Description:
         Works when configured with the cmake option
