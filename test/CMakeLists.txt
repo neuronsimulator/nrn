@@ -829,5 +829,5 @@ endif()
 
 # Test nrnivmodl-cmake
 if(NRN_ENABLE_CORENEURON AND NRN_ENABLE_TESTS)
-    add_subdirectory(nrnivmodl-cmake)
+  add_subdirectory(nrnivmodl-cmake)
 endif()
