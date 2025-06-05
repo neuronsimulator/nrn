@@ -1351,7 +1351,7 @@ void HocPanel::write(std::ostream& o) {
         }
     }
     if (has_window()) {
-        o << "xpanel(" << float(window()->save_left()) << "," << float(window()->save_bottom())
+        o << "xpanel(" << double(window()->save_left()) << "," << double(window()->save_bottom())
           << ")" << std::endl;
     } else {
         o << "xpanel()" << std::endl;
@@ -1906,7 +1906,7 @@ void HocValEditor::set_val(double x) {
     if (pval_) {
         *pval_ = hoc_ac_;
     } else if (!variable_.empty()) {
-        oc.run((variable_ + " = hoc_ac_\n").c_str());
+        oc.run(variable_ + " = hoc_ac_\n");
     }
 }
 
@@ -1917,7 +1917,7 @@ double HocValEditor::get_val() {
         return *pval_;
     } else if (!variable_.empty()) {
         Oc oc;
-        oc.run((std::string("hoc_ac_ = ") + variable_ + "\n").c_str());
+        oc.run(std::string("hoc_ac_ = ") + variable_ + "\n");
         return hoc_ac_;
     } else {
         return 0.;
@@ -1930,7 +1930,7 @@ double HocValEditor::domain_limits(double val) {
 
 void HocValEditor::evalField() {
     Oc oc;
-    oc.run((std::string("hoc_ac_ = ") + fe_->text()->string() + "\n").c_str());
+    oc.run(std::string("hoc_ac_ = ") + fe_->text()->string() + "\n");
     hoc_ac_ = domain_limits(hoc_ac_);
     set_val(hoc_ac_);
     // prompt_->state()->set(TelltaleState::is_active, false);

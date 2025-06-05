@@ -2476,7 +2476,7 @@ void Graph::family_label_chooser() {
     }
     while (fsc_->post_for_aligned(XYView::current_pick_view()->canvas()->window(), .5, 1.)) {
         auto buf = std::string("hoc_ac_ = ") + fsc_->selected() + "\n";
-        if (oc.run(buf.c_str()) == 0) {
+        if (oc.run(buf) == 0) {
             family(fsc_->selected().c_str());
             break;
         }
