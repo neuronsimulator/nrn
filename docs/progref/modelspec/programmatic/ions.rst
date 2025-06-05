@@ -190,7 +190,7 @@ Ions
 
                 .. code-block:: C++
 
-                    forall n.ion_style("ca_ion", 3, 2, 1, 1, 1)
+                    forall ion_style("ca_ion", 3, 2, 1, 1, 1)
 
 
     .. tab:: MATLAB
