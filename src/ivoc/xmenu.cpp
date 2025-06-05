@@ -1351,7 +1351,7 @@ void HocPanel::write(std::ostream& o) {
         }
     }
     if (has_window()) {
-        o << "xpanel" << float(window()->save_left()) << "," << float(window()->save_bottom())
+        o << "xpanel(" << float(window()->save_left()) << "," << float(window()->save_bottom())
           << ")" << std::endl;
     } else {
         o << "xpanel()" << std::endl;
