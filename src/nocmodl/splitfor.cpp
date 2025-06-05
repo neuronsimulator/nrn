@@ -19,6 +19,7 @@ static std::vector<Item*> ssi;  // splitfor_solve_info
 static short sym_type(Item*);
 static bool assign_non_range(List* lst);
 static bool not_allowed(List* lst, Symbol** symproc = nullptr);
+static void pr_split_grp_size();
 static void split_printlist(List* lst);
 static void splitfor_conductance_cout();
 static void splitfor_ext_vdef();
@@ -120,8 +121,7 @@ void splitfor_cur(int part) {
     }
     P("#else /*SPLITFOR*/\n");
     P("#define _ZFOR for (int _iml = _split_grp_begin; _iml < _split_grp_end; ++_iml)\n");
-    P("  const int _split_grp_size = 16; // must be power of 2\n");
-    P("  const int _split_grp_mask = _split_grp_size - 1;\n");
+    pr_split_grp_size();
     // Define temporary vectors outside the main loop
     P("  std::vector<double> _rhsv(_split_grp_size);\n");
     if (currents->next != currents && !conductance_) {
@@ -239,8 +239,7 @@ void splitfor_solve(int part) {
     }
     P("#else /*SPLITFOR*/\n");
     P("#define _ZFOR for (int _iml = _split_grp_begin; _iml < _split_grp_end; ++_iml)\n");
-    P("  const int _split_grp_size = 16; // must be power of 2\n");
-    P("  const int _split_grp_mask = _split_grp_size - 1;\n");
+    pr_split_grp_size();
     P("  for (int _split_grp_begin = 0; _split_grp_begin < _cntml; _split_grp_begin += "
       "_split_grp_size){\n");
     P("    int _split_grp_end = _split_grp_begin + _split_grp_size;\n");
@@ -327,6 +326,12 @@ static bool not_allowed(List* lst, Symbol** symproc) {
         }
     }
     return b;
+}
+
+static void pr_split_grp_size() {
+    P("  const int _split_grp_size = (_cntml < MAX_SPLIT_GRP_SIZE) ? "
+      "(1 << (31 - __builtin_clz(_cntml))) : MAX_SPLIT_GRP_SIZE; // must be a power of 2\n");
+    P("  const int _split_grp_mask = _split_grp_size - 1;\n");
 }
 
 static List* splitfor_ion_stmts(List* lst) {

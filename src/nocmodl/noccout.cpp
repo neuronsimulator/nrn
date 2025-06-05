@@ -75,6 +75,7 @@ void c_out() {
 
     if (splitfor()) {
         P("#define SPLITFOR 1\n");
+        P("#define MAX_SPLIT_GRP_SIZE 2048 // must be power of 2\n");
     }
 
     if (vectorize) {
