@@ -120,6 +120,20 @@ void splitfor_cur(int part) {
     }
     P("#else /*SPLITFOR*/\n");
     P("#define _ZFOR for (int _iml = _split_grp_begin; _iml < _split_grp_end; ++_iml)\n");
+    P("  const int _split_grp_size = 16; // must be power of 2\n");
+    P("  const int _split_grp_mask = _split_grp_size - 1;\n");
+    // Define temporary vectors outside the main loop
+    P("  std::vector<double> _rhsv(_split_grp_size);\n");
+    if (currents->next != currents && !conductance_) {
+        std::string s{"  std::vector<double>"};
+        for (Item* q = currents->next; q != currents; q = q->next) {
+            s += " _temp_";
+            s += SYM(q)->name;
+            s += "(_split_grp_size)";
+            s += (q->next == currents) ? ";\n" : ",";
+        }
+        P(s.c_str());
+    }
     P("  for (int _split_grp_begin = 0; _split_grp_begin < _cntml; _split_grp_begin += "
       "_split_grp_size){\n");
     P("    int _split_grp_end = _split_grp_begin + _split_grp_size;\n");
@@ -149,16 +163,7 @@ void splitfor_cur(int part) {
             splitfor_ext_vdef();
             P("    _split_nrn_current(_threadargscomma_ _split_grp_begin, _split_grp_end);\n");
 
-            std::string s{"    std::vector<double>"};
-            for (Item* q = currents->next; q != currents; q = q->next) {
-                s += " _temp_";
-                s += SYM(q)->name;
-                s += "(_split_grp_size)";
-                s += (q->next == currents) ? ";\n" : ",";
-            }
-            P(s.c_str());
-
-            s = ZF;
+            std::string s = ZF;
             for (Item* q = currents->next; q != currents; q = q->next) {
                 Sprintf(buf, " _temp_%s[_iml & _split_grp_mask] = %s;", SYM(q)->name, SYM(q)->name);
                 s += buf;
@@ -192,7 +197,6 @@ void splitfor_cur(int part) {
         } /* end of not conductance */
 
         // store scaled sum of currents
-        P("    std::vector<double> _rhsv(_split_grp_size);\n");
         std::string s1 = ZF "_rhsv[_iml & _split_grp_mask] = (";
         for (Item* q = currents->next; q != currents; q = q->next) {
             s1 += SYM(q)->name;
@@ -235,6 +239,8 @@ void splitfor_solve(int part) {
     }
     P("#else /*SPLITFOR*/\n");
     P("#define _ZFOR for (int _iml = _split_grp_begin; _iml < _split_grp_end; ++_iml)\n");
+    P("  const int _split_grp_size = 16; // must be power of 2\n");
+    P("  const int _split_grp_mask = _split_grp_size - 1;\n");
     P("  for (int _split_grp_begin = 0; _split_grp_begin < _cntml; _split_grp_begin += "
       "_split_grp_size){\n");
     P("    int _split_grp_end = _split_grp_begin + _split_grp_size;\n");

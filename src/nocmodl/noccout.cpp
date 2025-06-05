@@ -75,8 +75,6 @@ void c_out() {
 
     if (splitfor()) {
         P("#define SPLITFOR 1\n");
-        P("const int _split_grp_size = 16; // must be power of 2\n");
-        P("const int _split_grp_mask = _split_grp_size - 1;\n");
     }
 
     if (vectorize) {
