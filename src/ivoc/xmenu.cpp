@@ -1246,7 +1246,7 @@ HocMenu::~HocMenu() {
     menu_->unref();
 }
 void HocMenu::write(std::ostream& o) {
-    o << "xmenu(\"" << getStr() << "\", " << add2menubar_ << ")" << std::endl;
+    o << "xmenu(\"" << getStr() << "\", " << int(add2menubar_) << ")" << std::endl;
 }
 
 static Coord xvalue_field_size;
