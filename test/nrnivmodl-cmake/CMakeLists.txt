@@ -14,11 +14,15 @@ endif()
 add_test(
   NAME "${TEST_NAMESPACE}::modfiles"
   COMMAND
-    sh -c
-    "CMAKE_PREFIX_PATH='${PROJECT_BINARY_DIR}/lib/cmake' \
+    sh -c "CMAKE_PREFIX_PATH='${PROJECT_BINARY_DIR}/lib/cmake' \
     PATH='${PROJECT_BINARY_DIR}/bin:$ENV{PATH}' \
     MODLUNIT='${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib' \
-    ${CMAKE_COMMAND} -S '${CMAKE_CURRENT_SOURCE_DIR}/build_cmake' -B '${TEST_DIR}' -DMOD_FILES='${MOD_FILES}' -DCORENEURON=${CORENEURON} \
+    ${CMAKE_COMMAND} \
+    -S '${CMAKE_CURRENT_SOURCE_DIR}/build_cmake' -B '${TEST_DIR}' \
+    -DMOD_FILES='${MOD_FILES}' \
+    -DCORENEURON=${CORENEURON} \
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
   && \
   ${CMAKE_COMMAND} --build '${TEST_DIR}' -v --parallel \
   && \
