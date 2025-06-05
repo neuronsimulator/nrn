@@ -6,7 +6,9 @@ file(GLOB MOD_FILES "${PROJECT_SOURCE_DIR}/test/coreneuron/mod files/*.mod")
 
 # This is admittedly a bit hacky, but we are launching CMake inside of CMake, and we cannot use any
 # of the set variables, either via CMake itself, or through the env. The only thing that must be
-# available is the NEURON CMake config file, and NMODL must be in PATH at CMake configure time.
+# available is the NEURON CMake config file, and NMODL must be in PATH at CMake configure time. Note
+# that we do not try to use Python abilities of `special`, since those require setting env
+# variables, which the user may not be aware of.
 set(TEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/build_cmake")
 if(NRN_ENABLE_CORENEURON)
   set(CORENEURON CORENEURON)
@@ -20,11 +22,12 @@ add_test(
     ${CMAKE_COMMAND} \
     -S '${CMAKE_CURRENT_SOURCE_DIR}/build_cmake' -B '${TEST_DIR}' \
     -DMOD_FILES='${MOD_FILES}' \
+    -DCMAKE_BUILD_TYPE=Debug \
     -DCORENEURON=${CORENEURON} \
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
   && \
   ${CMAKE_COMMAND} --build '${TEST_DIR}' -v --parallel \
   && \
-  '${TEST_DIR}/special' -nobanner -nogui -c 'quit()' \
+  '${TEST_DIR}/special' -nopython -nobanner -nogui -c 'quit()' \
   rm -fr '${TEST_DIR}'")
