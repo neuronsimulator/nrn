@@ -827,7 +827,8 @@ if((NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON) AND NRN_ENABLE_TESTS)
   endif()
 endif()
 
-# Test nrnivmodl-cmake
-if(NRN_ENABLE_TESTS)
+# Test nrnivmodl-cmake, but only without sanitizers since those cause issues, and end-users won't
+# get builds with sanitizer builds anyway
+if(NRN_ENABLE_TESTS AND NOT NRN_SANITIZERS)
   add_subdirectory(nrnivmodl-cmake)
 endif()
