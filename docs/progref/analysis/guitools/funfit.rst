@@ -12,23 +12,42 @@ This widget may be saved in a session.
 The FunctionFitter starts out with entries for graphing a single exponential 
 with two parameters.  When a parameter value is changed the graph is replotted. 
 
-This widget requires the GUI thread to be running, which can be enabled via:
+This widget requires the GUI thread to be running, which can be enabled programmatically via:
 
-.. code-block:: 
-    python
+.. tab:: Python
 
-    from neuron import gui
+    .. code-block:: python
+
+        from neuron import gui
+
+.. tab:: HOC
+
+    .. code-block:: 
+        c++
+
+        load_file("nrngui.hoc")
+
+MATLAB does not directly support the NEURON GUI, so this and other GUI tools are
+not available when running NEURON from MATLAB.
 
 After that, it can be either opened via
 :menuselection:`NRNMainMenu --> Tools --> Fitting --> Parameterized Function` 
-or from Python via:
+or programmatically via:
 
-.. code-block:: '
-    python
+.. tab:: Python
 
-    from neuron import n
-    n.load_file('funfit.hoc')
-    n.makefitter()
+    .. code-block:: python
+
+        from neuron import n
+        n.load_file('funfit.hoc')
+        n.makefitter()
+
+.. tab:: HOC
+
+    .. code-block:: C++
+
+        load_file("funfit.hoc")
+        makefitter()
 
 Either way, the Parameterized Function Fitter window will appear:
 
