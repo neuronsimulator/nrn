@@ -283,7 +283,7 @@ function(install_list FILE_LIST INSTALL_PREFIX)
   endforeach()
 endfunction()
 
-# replacement for git2nrnversion_h.sh add git information to `target` with scope `scope` (PRIVATE,
+# Replacement for git2nrnversion_h.sh. Add git information to `target` with scope `scope` (PRIVATE,
 # PUBLIC, or INTERFACE)
 function(add_cpp_git_information target scope)
   find_program(GIT git)
