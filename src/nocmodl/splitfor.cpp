@@ -207,12 +207,13 @@ void splitfor_cur(int part) {
         P(s1.c_str());
 
         if (electrode_current) {
-            P(ZF "  _vec_rhs[_ni[_iml]] += _rhsv[_iml & _split_grp_mask];\n");
+            P(ZF "  _vec_rhs[_ni[_iml]] += _rhsv[_iml & _split_grp_mask]; }\n");
             P("    if (_vec_sav_rhs) {\n");
             P("        _ZFOR { _vec_sav_rhs[_ni[_iml]] += _rhsv[_iml & _split_grp_mask]; }\n");
             P("    }\n");
             P("#if EXTRACELLULAR\n");
             P(ZF "\n");
+            P("        auto* _nd = _ml_arg->_nodelist[_iml];\n");
             P("        if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) "
               "{\n");
             P("            *_extnode->_rhs[0] += _rhsv[_iml & _split_grp_mask];\n");
@@ -508,10 +509,10 @@ static void splitfor_ext_vdef() {
         P("        auto* _nd = _ml_arg->_nodelist[_iml];\n");
         P("        if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n");
         P("            v = NODEV(_nd) + _extnode->_v[0] _DV;\n");
-        P("        }else\n");
+        P("        }else{\n");
         P("            v = _vec_v[_ni[_iml]] _DV;\n");
         P("        }\n");
-        P("   }\n");
+        P("    }\n");
         P("#else\n");
         P(ZF "\n");
         P("        v = _vec_v[_ni[_iml]] _DV;\n");
