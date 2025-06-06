@@ -802,8 +802,14 @@ add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/hh.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/stim.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/pattern.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/test/hoctests/rand.mod")
+# Test nocmodl with units
+add_test(
+  NAME nocmodl::no_env
+  COMMAND $<TARGET_FILE:nocmodl> -o "${CMAKE_CURRENT_BINARY_DIR}"
+          "${PROJECT_SOURCE_DIR}/test/coreneuron/mod files/axial.mod"
+  WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
 set_property(TEST modlunit_pattern PROPERTY WILL_FAIL ON)
-
+cpp_cc_configure_sanitizers(TEST nocmodl::no_env)
 set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}")
 cpp_cc_configure_sanitizers(TEST ${TESTS})
 # If profiling is enabled, run ringtest with profiler
