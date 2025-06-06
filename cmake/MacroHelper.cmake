@@ -283,34 +283,31 @@ function(install_list FILE_LIST INSTALL_PREFIX)
   endforeach()
 endfunction()
 
-# replacement for git2nrnversion_h.sh
-# add git information to `target` with scope `scope` (PRIVATE, PUBLIC, or INTERFACE)
+# replacement for git2nrnversion_h.sh add git information to `target` with scope `scope` (PRIVATE,
+# PUBLIC, or INTERFACE)
 function(add_cpp_git_information target scope)
-    find_program(GIT git)
-    if(EXISTS "${PROJECT_SOURCE_DIR}/.git" AND GIT)
+  find_program(GIT git)
+  if(EXISTS "${PROJECT_SOURCE_DIR}/.git" AND GIT)
     execute_process(
       COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" describe
       OUTPUT_VARIABLE GIT_DESCRIBE
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      ERROR_QUIET)
+      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 
     execute_process(
-        COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" rev-parse --abbrev-ref HEAD
+      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" rev-parse --abbrev-ref HEAD
       OUTPUT_VARIABLE GIT_BRANCH
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      ERROR_QUIET)
+      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 
     execute_process(
-        COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" -c log.showSignature=false log --format=%h -n 1
+      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" -c log.showSignature=false log --format=%h -n 1
       OUTPUT_VARIABLE GIT_COMMIT_HASH
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      ERROR_QUIET)
+      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 
     execute_process(
-      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" -c log.showSignature=false log --format=%cd -n 1 --date=short
+      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" -c log.showSignature=false log --format=%cd -n 1
+              --date=short
       OUTPUT_VARIABLE GIT_DATE
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      ERROR_QUIET)
+      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 
     execute_process(
       COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" status -s -uno --porcelain
@@ -337,10 +334,10 @@ function(add_cpp_git_information target scope)
 
   set(git_def_keys GIT_DATE GIT_BRANCH GIT_CHANGESET GIT_DESCRIBE GIT_DESCRIBE_FULL)
 
-set(processed_defs)
-foreach(key IN LISTS git_def_keys)
-  list(APPEND processed_defs "${key}=\"${${key}}\"")
-endforeach()
+  set(processed_defs)
+  foreach(key IN LISTS git_def_keys)
+    list(APPEND processed_defs "${key}=\"${${key}}\"")
+  endforeach()
 
-target_compile_definitions(${target} ${scope} ${processed_defs})
+  target_compile_definitions(${target} ${scope} ${processed_defs})
 endfunction()
