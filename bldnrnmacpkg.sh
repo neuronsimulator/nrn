@@ -151,7 +151,7 @@ for i in $args ; do
   chk $i
 done
 
-describe="`sh $NRN_SRC/nrnversion.sh describe`"
+describe="$(git describe)"
 macos=macos${MACOSX_DEPLOYMENT_TARGET}
 PACKAGE_FULL_NAME=nrn-${describe}-${mac_platform}-${PYVS}.pkg
 PACKAGE_FILE_NAME=$NRN_BLD/src/mac/build/NEURON.pkg
