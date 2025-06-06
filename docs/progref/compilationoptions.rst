@@ -1,7 +1,7 @@
 Rarely Used Compilation Options
 ===============================
 
-The following definitions are found in nrnoc/SRC/options.h and add extra 
+The following definitions are found in `src/nrnoc/options.h <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/options.h>`_ and add extra 
 functionality which not everyone may need. The extras come at the cost 
 of larger memory requirements for node and section structures.
 
