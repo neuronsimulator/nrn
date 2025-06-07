@@ -7,6 +7,7 @@
 #include "section.h"
 #include "nrniv_mf.h"
 #include "multisplit.h"
+#include "runtime_accumulate.h"
 #define nrnoc_fadvance_c
 #include "utils/profile/profiler_interface.h"
 #include "nonvintblock.h"
@@ -170,11 +171,13 @@ int nrn_use_fast_imem;
 #include "profile.h"
 
 void fadvance(void) {
+    ZT_ACCUMULATE_START;
     nrn::Instrumentor::phase p_fadvance("fadvance");
     tstopunset;
 #if CVODE
     if (cvode_active_) {
         cvode_fadvance(-1.);
+        ZT_ACCUMULATE_PAUSE;
         tstopunset;
         hoc_retpushx(1.);
         return;
@@ -190,6 +193,7 @@ void fadvance(void) {
         recalc_diam();
     }
     nrn_fixed_step();
+    ZT_ACCUMULATE_PAUSE;
     tstopunset;
     hoc_retpushx(1.);
 }

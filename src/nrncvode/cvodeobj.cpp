@@ -22,6 +22,7 @@ extern int hoc_return_type_code;
 #include "tqueue.h"
 #include "mymath.h"
 #include "htlist.h"
+#include "runtime_accumulate.h"
 #include <OS/list.h>
 #include <nrnmutdec.h>
 
@@ -29,11 +30,10 @@ extern int hoc_return_type_code;
 static MUTDEC
 #endif
 
-    // Use of the above static mutex was broken by changeset 7ffd95c in 2014
-    // when a MUTDEC was added explicitly to the NetCvode class namespace to
-    // handle interthread send events.
-    static void
-    static_mutex_for_at_time(bool b) {
+// Use of the above static mutex was broken by changeset 7ffd95c in 2014
+// when a MUTDEC was added explicitly to the NetCvode class namespace to
+// handle interthread send events.
+static void static_mutex_for_at_time(bool b) {
     if (b) {
         MUTCONSTRUCT(1)
     } else {
@@ -102,7 +102,9 @@ static double solve(void* v) {
         tstop = *getarg(1);
     }
     tstopunset;
+    ZT_ACCUMULATE_START;
     int i = d->solve(tstop);
+    ZT_ACCUMULATE_PAUSE;
     tstopunset;
     if (i != SUCCESS) {
         hoc_execerror("variable step integrator error", 0);

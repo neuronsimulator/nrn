@@ -21,6 +21,17 @@
 #endif
 #include "../nrniv/backtrace_utils.h"
 
+#include "runtime_accumulate.h"
+int zt_accum_cnt;
+size_t zt_accum_time;
+
+static void zt_runtime_out(int, void*) {
+    double zt = zt_accum_total();
+    if (zt) {
+        printf("ZZZZ runtime %g\n", zt);
+    }
+}
+
 
 /* for eliminating "ignoreing return value" warnings. */
 int nrnignore;
@@ -940,6 +951,7 @@ void hoc_main1_init(const char* pname, const char** envp) {
     setcbrk(0);
 #endif
     hoc_main1_inited_ = 1;
+    on_exit(zt_runtime_out, nullptr);
 }
 
 HocStr* hocstr_create(size_t size) {
