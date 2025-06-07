@@ -195,7 +195,7 @@ HOC-based Mechanisms
     .. tab:: MATLAB
 
         Syntax:
-        
+
         .. code-block:: matlab
 
             n.make_mechanism("suffix", "Template", "parm1 parm2 parm3 ...")
@@ -259,7 +259,7 @@ HOC-based Mechanisms
                 stim.amp = 0.3;
 
                 % declare a mechanism using HOC
-                n.hoc_oc(sprintf([...
+                n(sprintf([...
                     'begintemplate Max\n' ...
                     '    public V\n' ...
                     '    proc initial() {\n' ...
