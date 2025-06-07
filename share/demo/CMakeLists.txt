@@ -1,32 +1,49 @@
-set(NRN_DEMO_HOC_FILES_LIST
-    hh.hoc
-    singhhchan.hoc
-    nomodel.hoc
-    demo.hoc
-    release.hoc
-    cycle.hoc
-    d3init.hoc
-    dend3/control.hoc
-    dend3/syn3.hoc
-    sync/init.hoc
-    sync/demosync.hoc
-    sync/spkplot.hoc
-    sync/cell.hoc
-    sync/synchronize.hoc
-    dynclamp.hoc
-    singhh.hoc
-    reconst.hoc
-    testca.hoc
-    singhh.ses
-    dynchan.ses
-    dynclamp.ses
-    release.ses
-    pyramid.ses
-    dend3.ses
-    demo.ses
-    sync/start.ses
-    hh.ses
-    pyramid.nrn
-    dend3/dend3.nrn)
+include(${PROJECT_SOURCE_DIR}/cmake/NeuronMechVariableHelper.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/neuronMechMaker.cmake)
 
-copy_build_list(NRN_DEMO_HOC_FILES_LIST "${NRN_BUILD_SHARE_DIR}/demo")
+# compile all mod files and install them
+file(GLOB neurondemo_files "${CMAKE_CURRENT_SOURCE_DIR}/release/*.mod")
+create_nrnmech(
+  NEURON
+  SPECIAL
+  MOD_FILES
+  ${neurondemo_files}
+  TARGET_LIBRARY_NAME
+  neurondemo
+  TARGET_EXECUTABLE_NAME
+  neurondemo-special
+  NOCMODL_EXECUTABLE
+  ${PROJECT_BINARY_DIR}/bin/nocmodl
+  EXTRA_ENV
+  ${NRN_RUN_FROM_BUILD_DIR_ENV}
+  ASAN_OPTIONS=detect_leaks=0
+  # TODO it would probably make more sense to use CMAKE_CURRENT_BINARY_DIR here, so either move this
+  # dir to `share/nrn/demo`, or modify scripts to handle `share/demo` instead
+  EXECUTABLE_OUTPUT_DIR
+  "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}"
+  LIBRARY_OUTPUT_DIR
+  "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}")
+target_include_directories(neurondemo PRIVATE "${PROJECT_BINARY_DIR}/include")
+target_include_directories(neurondemo-special PRIVATE "${PROJECT_BINARY_DIR}/include")
+add_dependencies(neurondemo neuron::nocmodl neuron::nrniv nrnivmodl_dependency)
+add_dependencies(neurondemo-special neuron::nocmodl neuron::nrniv nrnivmodl_dependency)
+
+# because nrniv is under `<prefix>/lib`, but the demo files are in
+# `<prefix>/share/nrn/demo/release/<arch>/`
+set_target_properties(neurondemo PROPERTIES INSTALL_RPATH "${LOADER_PATH_FLAG}/../../../../../lib")
+# `special` dynamically links to both `nrniv` and `nrnmech`
+set_target_properties(
+  neurondemo-special PROPERTIES INSTALL_RPATH
+                                "${LOADER_PATH_FLAG};${LOADER_PATH_FLAG}/../../../../../lib")
+
+file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/share/nrn/demo")
+file(TOUCH "${PROJECT_BINARY_DIR}/share/nrn/demo/neuron")
+install(TARGETS neurondemo
+        DESTINATION "${NRN_INSTALL_SHARE_DIR}demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}/")
+install(TARGETS neurondemo-special
+        DESTINATION "${NRN_INSTALL_SHARE_DIR}demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}/")
+# also install all of the source files (except current CMakeLists.txt)
+install(
+  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+  DESTINATION "${NRN_INSTALL_SHARE_DIR}"
+  PATTERN "CMakeLists.txt" EXCLUDE)

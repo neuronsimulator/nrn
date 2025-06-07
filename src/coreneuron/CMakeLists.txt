@@ -415,8 +415,19 @@ endif()
 if(CORENRN_ENABLE_GPU)
   set(coreneuron_cuda_target coreneuron-cuda)
   add_library(coreneuron-cuda ${COMPILE_LIBRARY_TYPE} ${CORENEURON_CUDA_FILES})
+  set_target_properties(coreneuron-cuda PROPERTIES EXPORT_NAME corenrn-cuda)
   target_link_libraries(coreneuron-core PUBLIC coreneuron-cuda)
+  # list() commands don't propagate to parent scope
+  set(CORENRN_INSTALL_TARGETS
+      "coreneuron-core;coreneuron-cuda"
+      PARENT_SCOPE)
+else()
+  set_target_properties(coreneuron-core PROPERTIES EXPORT_NAME corenrn)
+  set(CORENRN_INSTALL_TARGETS
+      coreneuron-core
+      PARENT_SCOPE)
 endif()
+add_library(neuron::corenrn ALIAS coreneuron-core)
 
 foreach(target coreneuron-core ${coreneuron_cuda_target})
   target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/src
@@ -487,13 +498,20 @@ if(NRN_ENABLE_MPI AND NRN_ENABLE_MPI_DYNAMIC)
     PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
                LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
                POSITION_INDEPENDENT_CODE ON)
-  install(TARGETS ${corenrn_mpi_targets} DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
+  install(TARGETS ${corenrn_mpi_targets} DESTINATION ${NRN_INSTALL_DATA_PREFIX}lib)
 endif()
 
 # Suppress some compiler warnings.
 target_compile_options(coreneuron-core PRIVATE ${CORENEURON_CXX_WARNING_SUPPRESSIONS})
 target_link_libraries(coreneuron-core PUBLIC ${sonatareport_LIBRARY} ${CORENRN_CALIPER_LIB}
                                              ${CORENRN_LIKWID_LIB})
+set_target_properties(coreneuron-core PROPERTIES EXPORT_NAME corenrn)
+target_compile_features(coreneuron-core PUBLIC cxx_std_17)
+if(SKBUILD)
+  target_include_directories(coreneuron-core INTERFACE $<INSTALL_INTERFACE:neuron/.data/include>)
+else()
+  target_include_directories(coreneuron-core INTERFACE $<INSTALL_INTERFACE:include>)
+endif()
 
 # TODO: fix adding a dependency of coreneuron-core on CLI11::CLI11 when CLI11 is a submodule. Right
 # now this doesn't work because the CLI11 targets are not exported/installed but coreneuron-core is.
@@ -519,59 +537,6 @@ set_target_properties(
              POSITION_INDEPENDENT_CODE ${CORENRN_ENABLE_SHARED})
 cpp_cc_configure_sanitizers(TARGET coreneuron-core ${coreneuron_cuda_target} ${corenrn_mpi_targets})
 
-# =============================================================================
-# create special-core with inbuilt mode files
-# =============================================================================
-# We have to link things like unit tests against this because some "core" .cpp files refer to
-# symbols in the translated versions of default .mod files
-set(nrniv_core_prefix "${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}")
-set(corenrn_mech_library
-    "${nrniv_core_prefix}/${CMAKE_${COMPILE_LIBRARY_TYPE}_LIBRARY_PREFIX}corenrnmech_internal${CMAKE_${COMPILE_LIBRARY_TYPE}_LIBRARY_SUFFIX}"
-)
-set(output_binaries "${nrniv_core_prefix}/special-core" "${corenrn_mech_library}")
-
-add_custom_command(
-  OUTPUT ${output_binaries}
-  DEPENDS coreneuron-core ${NMODL_TARGET_TO_DEPEND} ${CORENEURON_BUILTIN_MODFILES}
-  COMMAND
-    ${CMAKE_COMMAND} -E env NMODLHOME=${NMODL_PROJECT_PLATLIB_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b ${COMPILE_LIBRARY_TYPE} -m ${CORENRN_NMODL_BINARY} -n
-    "internal" -p 4 "."
-  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-  COMMENT "Running nrnivmodl-core with internal mod files")
-add_custom_target(nrniv-core ALL DEPENDS ${output_binaries})
-
-# Build a target representing the libcorenrnmech_internal.so that is produced under bin/x86_64,
-# which executables such as the unit tests must link against
-add_library(builtin-libcorenrnmech SHARED IMPORTED)
-add_dependencies(builtin-libcorenrnmech nrniv-core)
-set_target_properties(builtin-libcorenrnmech PROPERTIES IMPORTED_LOCATION "${corenrn_mech_library}")
-
-if(CORENRN_ENABLE_GPU)
-  separate_arguments(CORENRN_ACC_FLAGS UNIX_COMMAND "${NVHPC_ACC_COMP_FLAGS}")
-  target_compile_options(coreneuron-core PRIVATE ${CORENRN_ACC_FLAGS})
-endif()
-
-# Create an extra target for use by NEURON when CoreNEURON is being built as a submodule. NEURON
-# tests will depend on this, so it must in turn depend on everything that is needed to run nrnivmodl
-# -coreneuron.
-add_custom_target(coreneuron-for-tests)
-add_dependencies(coreneuron-for-tests coreneuron-core ${NMODL_TARGET_TO_DEPEND})
-# Create an extra target for internal use that unit tests and so on can depend on.
-# ${corenrn_mech_library} is libcorenrnmech_internal.{a,so}, which contains both the compiled
-# default mechanisms and the content of libcoreneuron-core.a.
-add_library(coreneuron-all INTERFACE)
-target_link_libraries(coreneuron-all INTERFACE builtin-libcorenrnmech)
-# Also copy the dependencies of libcoreneuron-core as interface dependencies of this new target
-# (example: ${corenrn_mech_library} will probably depend on MPI, so when the unit tests link against
-# ${corenrn_mech_library} they need to know to link against MPI too).
-get_target_property(coreneuron_core_deps coreneuron-core LINK_LIBRARIES)
-if(coreneuron_core_deps)
-  foreach(dep ${coreneuron_core_deps})
-    target_link_libraries(coreneuron-all INTERFACE ${dep})
-  endforeach()
-endif()
-
 # Make headers avail to build tree
 configure_file(engine.h.in ${CMAKE_BINARY_DIR}/include/coreneuron/engine.h @ONLY)
 
@@ -590,10 +555,84 @@ endforeach()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/utils/profile/profiler_interface.h
                ${CMAKE_BINARY_DIR}/include/coreneuron/nrniv/profiler_interface.h COPYONLY)
 
+# =============================================================================
+# create special-core with inbuilt mode files
+# =============================================================================
+# We have to link things like unit tests against this because some "core" .cpp files refer to
+# symbols in the translated versions of default .mod files
+set(nrniv_core_prefix "${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}")
+
+include(${PROJECT_SOURCE_DIR}/cmake/NeuronMechVariableHelper.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/neuronMechMaker.cmake)
+create_nrnmech(
+  CORENEURON
+  SPECIAL
+  MOD_FILES
+  ${builtin_modfiles}
+  TARGET_LIBRARY_NAME
+  neuron-mod-lib
+  TARGET_EXECUTABLE_NAME
+  neuron-mod-bin
+  LIBRARY_TYPE
+  ${COMPILE_LIBRARY_TYPE}
+  NMODL_EXECUTABLE
+  ${PROJECT_BINARY_DIR}/bin/nmodl
+  EXTRA_ENV
+  ${NRN_RUN_FROM_BUILD_DIR_ENV}
+  ASAN_OPTIONS=detect_leaks=0)
+target_include_directories(coreneuron-mod-lib PRIVATE ${PROJECT_BINARY_DIR}/include)
+target_include_directories(coreneuron-mod-bin PRIVATE ${PROJECT_BINARY_DIR}/include)
+set_target_properties(
+  coreneuron-mod-lib PROPERTIES OUTPUT_NAME "corenrnmech_internal" LIBRARY_OUTPUT_DIRECTORY
+                                                                   ${PROJECT_BINARY_DIR}/lib)
+set_target_properties(
+  coreneuron-mod-bin
+  PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${nrniv_core_prefix}
+             INSTALL_RPATH "${LOADER_PATH_FLAG}/../lib"
+             OUTPUT_NAME "nrniv-core")
+add_dependencies(coreneuron-mod-lib coreneuron-core nmodl::nmodl)
+add_dependencies(coreneuron-mod-bin coreneuron-core nmodl::nmodl)
+
+add_custom_target(nrniv-core ALL DEPENDS coreneuron-mod-lib coreneuron-mod-bin)
+
+# Build a target representing the libcorenrnmech_internal.so that is produced under bin/x86_64,
+# which executables such as the unit tests must link against
+add_library(builtin-libcorenrnmech ALIAS coreneuron-mod-lib)
+install(TARGETS coreneuron-mod-lib DESTINATION "${NRN_INSTALL_DATA_PREFIX}lib")
+install(TARGETS coreneuron-mod-bin DESTINATION "${NRN_INSTALL_DATA_PREFIX}bin")
+
+if(CORENRN_ENABLE_GPU)
+  separate_arguments(CORENRN_ACC_FLAGS UNIX_COMMAND "${NVHPC_ACC_COMP_FLAGS}")
+  target_compile_options(coreneuron-core PRIVATE ${CORENRN_ACC_FLAGS})
+endif()
+
+# Create an extra target for use by NEURON when CoreNEURON is being built as a submodule. NEURON
+# tests will depend on this, so it must in turn depend on everything that is needed to run nrnivmodl
+# -coreneuron.
+add_custom_target(coreneuron-for-tests)
+add_dependencies(coreneuron-for-tests coreneuron-core nmodl::nmodl)
+# Create an extra target for internal use that unit tests and so on can depend on.
+# ${corenrn_mech_library} is libcorenrnmech_internal.{a,so}, which contains both the compiled
+# default mechanisms and the content of libcoreneuron-core.a.
+add_library(coreneuron-all INTERFACE)
+target_link_libraries(coreneuron-all INTERFACE builtin-libcorenrnmech)
+# Also copy the dependencies of libcoreneuron-core as interface dependencies of this new target
+# (example: ${corenrn_mech_library} will probably depend on MPI, so when the unit tests link against
+# ${corenrn_mech_library} they need to know to link against MPI too).
+get_target_property(coreneuron_core_deps coreneuron-core LINK_LIBRARIES)
+if(coreneuron_core_deps)
+  foreach(dep ${coreneuron_core_deps})
+    target_link_libraries(coreneuron-all INTERFACE ${dep})
+  endforeach()
+endif()
+
 # Extract the various compiler option strings to use inside nrnivmodl-core. Sets the global property
 # CORENRN_LIB_LINK_FLAGS, which contains the arguments that must be added to the link line for
 # `special` to link against `libcorenrnmech_internal.{a,so}`
 include(MakefileBuildOptions)
+set(CORENRN_CXX_FLAGS
+    "${CORENRN_CXX_FLAGS}"
+    PARENT_SCOPE)
 
 # =============================================================================
 # CoreNEURON related configuration
@@ -602,17 +641,6 @@ include(MakefileBuildOptions)
 # =============================================================================
 # Copy first into build directory as it will be used for special-core
 # =============================================================================
-configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl_core_makefile.in
-               ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile @ONLY)
-configure_file(${PROJECT_SOURCE_DIR}/bin/nrnivmodl-core.in ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
-               @ONLY)
-# nrnivmodl-core depends on the building of NMODL_TARGET_TO_DEPEND and the configuration of the
-# nrnivmodl-core and nrnivmodl_core_makefile this doesn't imply that whenever there is a change in
-# one of those files then the prebuilt mod files are going to be rebuilt
-add_custom_target(
-  nrnivmodl-core ALL
-  DEPENDS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
-          ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile ${NMODL_TARGET_TO_DEPEND})
 
 if(CORENRN_ENABLE_UNIT_TESTS)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/coreneuron/unit
@@ -627,46 +655,28 @@ endif()
 install(
   TARGETS coreneuron-core ${coreneuron_cuda_target}
   EXPORT coreneuron
-  LIBRARY DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib
-  ARCHIVE DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib
+  LIBRARY DESTINATION ${NRN_INSTALL_DATA_PREFIX}lib
+  ARCHIVE DESTINATION ${NRN_INSTALL_DATA_PREFIX}lib
   INCLUDES
-  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/include)
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}include)
 
 # headers and some standalone code files for nrnivmodl-core
 install(
   DIRECTORY ${CMAKE_BINARY_DIR}/include/coreneuron
-  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/include/
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}include
   FILES_MATCHING
   PATTERN "*.h*"
   PATTERN "*.ipp")
 install(FILES ${MODFUNC_SHELL_SCRIPT} ${ENGINEMECH_CODE_FILE}
-        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/coreneuron)
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}share/coreneuron)
 
 # copy nmodl for nrnivmodl-core
-install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
+install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)
 
-# install nrniv-core app
-install(
-  PROGRAMS ${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR}/special-core
-  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin
-  RENAME nrniv-core)
-install(FILES apps/coreneuron.cpp DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/coreneuron)
-
-# install mechanism library in shared library builds, if we're linking statically then there is no
-# need
-if(CORENRN_ENABLE_SHARED)
-  install(FILES ${corenrn_mech_library} DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
-endif()
+install(FILES apps/coreneuron.cpp DESTINATION ${NRN_INSTALL_DATA_PREFIX}share/coreneuron)
 
 # install mod files
-install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share)
-
-# =============================================================================
-# Install for end users
-# =============================================================================
-install(FILES ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile
-        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/coreneuron)
-install(PROGRAMS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION ${NRN_INSTALL_DATA_PREFIX}share)
 
 # =============================================================================
 # Set flag for NEURON linking

@@ -55,8 +55,15 @@ else()
   list(APPEND INCLUDE_DIRS ../ivos)
 endif()
 
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp" @ONLY)
+
 # user has selected dynamic python support (could be multiple versions)
 if(NRN_ENABLE_PYTHON_DYNAMIC)
+  # set(INCLUDE_DIRS . .. ../oc ../nrnoc ../ivoc ../nrniv ../gnu ../nrnmpi
+  # ${PROJECT_BINARY_DIR}/src/nrnpython ${PROJECT_BINARY_DIR}/src/ivos ${PROJECT_BINARY_DIR}/src/oc
+  # ${NRN_OC_GENERATED_SOURCES}) if(NRN_ENABLE_INTERVIEWS) list(APPEND INCLUDE_DIRS
+  # ${IV_INCLUDE_DIR}) else() list(APPEND INCLUDE_DIRS ../ivos) endif()
   foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
 
     # the NEURON Python library (with nanobind)
@@ -68,7 +75,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     add_library(nrnpython${pyver} SHARED ${NRNPYTHON_FILES_LIST})
     target_include_directories(nrnpython${pyver} BEFORE PUBLIC ${pyinc} ${INCLUDE_DIRS})
     target_link_libraries(nrnpython${pyver} PUBLIC nrniv_lib)
-    target_link_libraries(nrnpython${pyver} PRIVATE ${Readline_LIBRARY} ${nanobind_target})
+    target_link_libraries(nrnpython${pyver} PRIVATE fmt::fmt ${Readline_LIBRARY} ${nanobind_target})
     if(NRN_LINK_AGAINST_PYTHON)
       target_link_libraries(nrnpython${pyver} PUBLIC ${pylib})
     endif()
@@ -87,7 +94,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       LANGUAGE
       "CXX"
       SOURCES
-      ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
+      ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
       INCLUDES
       ${PROJECT_SOURCE_DIR}/src
       ${PROJECT_SOURCE_DIR}/src/oc
@@ -145,7 +152,7 @@ else()
     LANGUAGE
     "CXX"
     SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
     INCLUDES
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/src/oc

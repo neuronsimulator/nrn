@@ -4,7 +4,8 @@ nrn_add_test_group(
   NAME tqperf
   SUBMODULE tests/tqperf
   MODFILE_PATTERNS "mod/*.mod" "modx/*.mod"
-  NRNIVMODL_ARGS -incflags "-I${OPENSSL_INCLUDE_DIR}" -loadflags "${OPENSSL_CRYPTO_LIBRARY}"
+  NRNIVMODL_EXTRA_INCLUDES ${OPENSSL_INCLUDE_DIR}
+  NRNIVMODL_EXTRA_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY}
   SCRIPT_PATTERNS "test1.py" "*.hoc")
 if("tqperf-heavy" IN_LIST NRN_ENABLE_MODEL_TESTS)
   set(tqperf_mpi_ranks 16)

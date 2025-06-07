@@ -8,6 +8,8 @@ if(NMODL_TESTS_COMPILER_WARNING_SUPPRESSIONS)
   add_compile_options(${NMODL_TESTS_COMPILER_WARNING_SUPPRESSIONS})
 endif()
 
+set(test_namespace "nmodl::unit")
+
 add_library(nmodl_test_flags INTERFACE)
 
 target_include_directories(nmodl_test_flags INTERFACE ${PYBIND11_INCLUDE_DIR}
@@ -175,8 +177,8 @@ foreach(
   # (https://github.com/catchorg/Catch2/issues/1810). This means that in builds that enable it, we
   # see errors from the LeakSanitizer during the build. These seem to be harmless because Catch2
   # does not seem to check the exit code.
-  catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
-                       "${_environment_vars_list}")
+  catch_discover_tests(${test_name} TEST_PREFIX "${test_namespace}::${test_name}/" PROPERTIES
+                       ENVIRONMENT "${_environment_vars_list}")
 endforeach()
 
 foreach(test_name testcodegen testvisitor)
@@ -187,8 +189,8 @@ foreach(test_name testcodegen testvisitor)
   set(env ${test_env})
   list(APPEND env ${${test_name}_env})
   string(REPLACE ";" ";ENVIRONMENT;" _environment_vars_list "${env}")
-  catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
-                       "${_environment_vars_list}")
+  catch_discover_tests(${test_name} TEST_PREFIX "${test_namespace}::${test_name}/" PROPERTIES
+                       ENVIRONMENT "${_environment_vars_list}")
 endforeach()
 
 # Generate include files used in test input, see
@@ -207,21 +209,24 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_PYTHON)
   if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NRN_SANITIZERS))
-    add_test(NAME Ode COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/ode)
-    set_tests_properties(Ode PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
-    cpp_cc_configure_sanitizers(TEST Ode PRELOAD)
+    add_test(NAME ${test_namespace}::Ode COMMAND ${PYTHON_EXECUTABLE} -m pytest
+                                                 ${CMAKE_CURRENT_SOURCE_DIR}/ode)
+    set_tests_properties(${test_namespace}::Ode PROPERTIES ENVIRONMENT
+                                                           "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
+    cpp_cc_configure_sanitizers(TEST ${test_namespace}::Ode PRELOAD)
   endif()
 
   if(NMODL_ENABLE_PYTHON_BINDINGS)
     # Apple Clang and ASAN do not play along nicely with NMODL's Python bindings, so we skip these
     # tests
     if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NRN_SANITIZERS))
-      add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest
-                                   ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
+      add_test(NAME ${test_namespace}::Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest
+                                                      ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
       set_tests_properties(
-        Pybind PROPERTIES ENVIRONMENT
-                          "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NMODLHOME=${PROJECT_BINARY_DIR}")
-      cpp_cc_configure_sanitizers(TEST Pybind PRELOAD)
+        ${test_namespace}::Pybind
+        PROPERTIES ENVIRONMENT
+                   "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NMODLHOME=${PROJECT_BINARY_DIR}")
+      cpp_cc_configure_sanitizers(TEST ${test_namespace}::Pybind PRELOAD)
     endif()
   endif()
 endif()
