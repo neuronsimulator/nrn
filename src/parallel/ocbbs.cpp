@@ -10,6 +10,7 @@
 #include "membfunc.h"
 #include "multicore.h"
 #include "nrnpy.h"
+#include "runtime_accumulate.h"
 #include "utils/profile/profiler_interface.h"
 #include "node_order_optim/node_order_optim.h"
 #include <nrnmpi.h>
@@ -637,6 +638,7 @@ static double spike_record(void* v) {
 }
 
 static double psolve(void* v) {
+    ZT_ACCUMULATE_START;
     nrn::Instrumentor::phase_begin("psolve");
     OcBBS* bbs = (OcBBS*) v;
     double tstop = chkarg(1, t, 1e9);
@@ -649,6 +651,7 @@ static double psolve(void* v) {
         bbs->netpar_solve(tstop);
     }
     nrn::Instrumentor::phase_end("psolve");
+    ZT_ACCUMULATE_PAUSE;
     return double(enabled);
 }
 

@@ -23,6 +23,7 @@ extern int hoc_return_type_code;
 #include "nrnpy.h"
 #include "tqueue.hpp"
 #include "mymath.h"
+#include "runtime_accumulate.h"
 #include <nrnmutdec.h>
 
 #if NRN_ENABLE_THREADS
@@ -92,7 +93,9 @@ static double solve(void* v) {
         tstop = *getarg(1);
     }
     tstopunset;
+    ZT_ACCUMULATE_START;
     int i = d->solve(tstop);
+    ZT_ACCUMULATE_PAUSE;
     tstopunset;
     if (i != SUCCESS) {
         hoc_execerror("variable step integrator error", 0);

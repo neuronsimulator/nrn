@@ -9,6 +9,7 @@
 #include "nrniv_mf.h"
 #include "multisplit.h"
 #include "node_order_optim/node_order_optim.h"
+#include "runtime_accumulate.h"
 #define nrnoc_fadvance_c
 #include "utils/profile/profiler_interface.h"
 #include "nonvintblock.h"
@@ -150,10 +151,12 @@ bool nrn_use_fast_imem;
 #include "profile.h"
 
 void fadvance() {
+    ZT_ACCUMULATE_START;
     nrn::Instrumentor::phase p_fadvance("fadvance");
     tstopunset;
     if (cvode_active_) {
         cvode_fadvance(-1.);
+        ZT_ACCUMULATE_PAUSE;
         tstopunset;
         hoc_retpushx(1.);
         return;
@@ -169,6 +172,7 @@ void fadvance() {
     }
     auto const cache_token = nrn_ensure_model_data_are_sorted();
     nrn_fixed_step(cache_token);
+    ZT_ACCUMULATE_PAUSE;
     tstopunset;
     hoc_retpushx(1.);
 }
