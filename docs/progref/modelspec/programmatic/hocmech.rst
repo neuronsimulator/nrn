@@ -145,11 +145,11 @@ HOC-based Mechanisms
             range variable arc position \ ``(0 < x < 1)``. 
             
             INITIAL: \ ``proc initial()`` 
-            Called when :hoc:func:`finitialize` is executed.
+            Called when :func:`finitialize` is executed.
             
             BREAKPOINT {SOLVE ... METHOD after_cvode}: \ ``proc after_step()`` 
             For the standard staggered time step and global variable time step 
-            integration methods, called at every :hoc:func:`fadvance` when t = t+dt.
+            integration methods, called at every :func:`fadvance` when t = t+dt.
             For the local variable step method, the instance is called when 
             the individual cell CVode instance finished its solve step. 
             In any case, it is safe to send an event any time after t-dt. 
