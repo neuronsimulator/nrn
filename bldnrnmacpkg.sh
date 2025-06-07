@@ -78,6 +78,11 @@ NRN_BLD=$NRN_SRC/build
 NSRC=$NRN_SRC
 export NSRC
 
+if [ "$(git -C "${NRN_SRC}" rev-parse --is-shallow-repository)" = 'true' ]; then
+    printf 'ERROR: repository at path %s is shallow, please unshallow it (possibly via `git [pull|fetch] --unshallow`)\n' "${NRN_SRC}"
+    exit 1
+fi
+
 NRN_INSTALL=/Applications/NEURON
 export PATH=$NRN_INSTALL/bin:$PATH
 
