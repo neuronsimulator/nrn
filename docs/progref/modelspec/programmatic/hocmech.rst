@@ -198,8 +198,8 @@ HOC-based Mechanisms
 
         .. code-block:: matlab
 
-            n.make_mechanism("suffix", "Template", "parm1 parm2 parm3 ...")
-            n.make_pointprocess("Template", "parm1 parm2 parm3 ...")
+            n.make_mechanism('suffix', 'Template', 'parm1 parm2 parm3 ...')
+            n.make_pointprocess('Template', 'parm1 parm2 parm3 ...)
 
         Description:
             Installs the HOC (in particular, *not* MATLAB) class called "Template" as a density membrane mechanism 
@@ -247,12 +247,12 @@ HOC-based Mechanisms
                 matlab
 
                 n = neuron.launch();
-                n.load_file("stdrun.hoc");
+                n.load_file('stdrun.hoc');
 
-                soma = n.Section("soma");
+                soma = n.Section('soma');
                 soma.L = sqrt(100 / pi);
                 soma.diam = soma.L;
-                soma.insert("hh");
+                soma.insert('hh');
 
                 stim = n.IClamp(soma(0.5));
                 stim.dur = 0.1;
