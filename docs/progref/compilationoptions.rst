@@ -6,7 +6,7 @@ functionality which not everyone may need. The extras come at the cost
 of larger memory requirements for node and section structures.
 
 .. code-block::
-    none
+    C++
 
     #define VECTORIZE	1	/* hope this speeds up simulations on a Cray */ 
     				/* this is no longer optional */ 
