@@ -15,11 +15,11 @@ The output simulation variable data is stored using the
 :meth:`Vector.record` function, ie values are copied from the variable to the 
 vector at the end of :func:`finitialize` and at the end of :func:`fadvance` whenever 
 t passes the x values of the data.  Fitting parameters are varied using 
-one element vectors registered with :meth:`Vector.play`, ie the value is 
+one element vectors registered with :meth:`Vector.play`, i.e., the value is 
 copied from the vector to the parameter at the beginning of 
 :func:`finitialize`. The notion of a fitting parameter has been extended so 
 that one can call an arbitrary statement so that the fit value can 
-be used to assign values to a collection of hoc variables. Eg. 
+be used to assign values to a collection of hoc variables. E.g., 
 globally setting a range variable. 
  
 Any number of data weight regions can be specified in order to ignore 
@@ -40,19 +40,23 @@ that the widget is executing.
      
     When a parameter is very close to 0, its limited resolution in 
     a field editor may cause problems. In this case define 
-    the parameter to be a scaled version of the actual desired value, eg 
+    the parameter to be a scaled version of the actual desired value, e.g., 
 
     .. code-block::
         none
 
-        g_pas = .0001*$1 
+        g_pas = 0.0001*$1 
 
+
+.. note::
+
+    This scaling rule is a HOC expression, not a Python or MATLAB expression.
+    You must use a HOC expression in this GUI tool, even if you are using
+    a different programming language.
      
-    Only change morphology parameters such as diam and L using a statement 
+    Only change morphology parameters such as ``diam`` and ``L`` using a statement 
     involving $1. Otherwise the system will not be notified that diameter 
     is changing. 
-
-     
 
 ReadData
 ~~~~~~~~
@@ -77,11 +81,13 @@ Variabletofit
 ~~~~~~~~~~~~~
 
 Pops up symbol chooser. The syntax of the variable must be in a form which 
-is a valid argument to a Vector.record(var) function. Practically speaking, 
+is a valid argument to a ``Vector.record(var)`` function. Practically speaking, 
 this means that if the variable happens to be a density range variable then the 
-entry string must contain an explicit section arc length parameter. eg. 
-soma.v(.5) . Point process variables can use either an objref prefix or the 
-internal object name, eg SEClamp[0].i . Navigating to a variable name 
+entry string must contain an explicit section arc length parameter. e.g., 
+``soma.v(.5)`` (Note: No matter what programming language you are using, you
+can only use HOC expressions with the RunFitter tool). 
+Point process variables can use either an objref prefix or the 
+internal object name, e.g., ``SEClamp[0].i`` . Navigating to a variable name 
 with the chooser generally yields a valid name. If more than one variable 
 is to be fit to separate data curves, invoke a slave RunFitter with 
 from the Extras/AnotherVariableToFit menu item. 
@@ -94,12 +100,14 @@ Every time this button is pressed it pops up a symbol chooser for appending
 a variable to the list of parameters to be varied in order to least 
 squares fit the "Variabletofit" to the data. DefaultFieldEditor's for these 
 parameters appear in the top right box of the widget. These parameters must 
-be in a form acceptable to the Vector.play(var) function. ie density 
+be in a form acceptable to the ``Vector.play(var)`` function. ie density 
 range variables must contain an explicit arc length parameter. 
  
 In the case of a simulation consisting of more than one compartment, it 
 is often necessary to identify a parameter with a set of values. In that 
-case one can enter an arbitrary statement involving the parameter "$1", eg 
+case one can enter an arbitrary HOC statement (in general, anything entered
+into GUI fields must be HOC expressions not Python or MATLAB)
+involving the parameter "$1", e.g., 
 
 .. code-block::
     none
@@ -109,7 +117,7 @@ case one can enter an arbitrary statement involving the parameter "$1", eg
  
 .. note::
 
-    This field requires HOC not Python expressions.
+    This field requires HOC not Python or MATLAB expressions.
 
 Each parameter has a checkbox to the left of its name. When checked, 
 the value will be adjusted during a fit to optimize the model to the 
@@ -241,5 +249,3 @@ BeQuiet
 
 Turns off printing by the praxis function and does not flush 
 the graphs after :func:`run` is called. 
- 
-
