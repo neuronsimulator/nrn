@@ -31,12 +31,12 @@ Vector
             A ``Vector`` is itself an iterable and can be used in any context that takes an iterable, e.g.,
 
             .. code-block::
-            python
+                python
 
-            for x in vec: print(x)
-            [x for x in vec]
-            np.array(vec)
-            plt.plot(t_vec, v_vec)
+                for x in vec: print(x)
+                [x for x in vec]
+                np.array(vec)
+                plt.plot(t_vec, v_vec)
 
             A Vector object created with this class can be thought of as 
             containing a  one dimensional x array with elements of type float.
@@ -131,6 +131,177 @@ Vector
 
         .. seealso::
             :data:`Vector.x`, :meth:`Vector.resize`, :meth:`Vector.apply`
+
+    .. tab:: HOC
+
+        This class was implemented by Zach Mainen and Michael Hines.
+            
+        Syntax:
+
+        .. code-block:: C++
+
+            obj = new Vector()
+            obj = new Vector(size)
+            obj = new Vector(size, init)
+
+
+        Description:
+            The ``Vector`` class provides convenient functions for manipulating one-dimensional 
+            arrays of numbers. An object created with this class can be thought of as 
+            containing a ``double x[]`` variable. Individual elements of this array can 
+            be manipulated with the normal :samp:`{objref}.x[{index}]` notation. 
+            Most of the ``Vector`` functions apply their operations to each element of the 
+            x array thus avoiding the often tedious scaffolding required by an otherwise 
+            un-encapsulated double array. 
+            
+            A vector can be created with length *size* and with each element set 
+            to the value of *init*. 
+            
+            Vector methods that modify the elements are generally of the form 
+
+            .. code-block::
+                none
+
+                obj = vsrcdest.method(...) 
+
+            in which the values of vsrcdest on entry to the 
+            method are used as source values by the method to compute values which replace 
+            the old values in vsrcdest and the original vsrcdest object reference is 
+            the return value of the method. For example, v1 = v2 + v3 would be 
+            written, 
+
+            .. code-block::
+                C++
+
+                v1 = v2.add(v3) 
+
+            However, this results in two, often serious, side effects. First, 
+            the v2 elements are changed and so the original values are lost. Furthermore 
+            v1 at the end is a reference to the same Vector object pointed to by v2. 
+            That is, if you subsequently change the elements of v2, the elements 
+            of v1 will change as well since v1 and v2 are in fact labels for the same object. 
+            
+            When these side effects need to be avoided, one uses the Vector.c function 
+            which returns a 
+            reference to a completely new Vector which is an identical copy. ie. 
+
+            .. code-block::
+                C++
+
+                v1 = v2.c.add(v3) 
+
+            leaves v2 unchanged, and v1 points to a completely new Vector. 
+            One can build up elaborate vector expressions in this manner, ie 
+            v1 = v2*s2 + v3*s3 + v4*s4 could be written 
+
+            .. code-block::
+                C++
+
+                v1 = v2.c.mul(s2).add(v3.c.mul(s3)).add(v4.c.mul(s4)) 
+
+            but if the expressions get too complex it is probably clearer to employ 
+            temporary objects to break the process into several separate expressions. 
+            
+
+        Examples:
+
+            .. code-block::
+                C++
+
+                objref vec
+                vec = new Vector(20,5)
+
+            will create a vector with 20 indices, each having the value of 5. 
+
+            .. code-block::
+                C++
+
+                objref vec1
+                vec1 = new Vector()
+
+            will create a vector with 1 index which has value of 0. It is seldom 
+            necessary to specify a size for a new vector since most operations, if necessary, 
+            increase or decrease the number of available elements as needed.             
+
+        .. seealso::
+            :ref:`double <hoc_keyword_double>`,	:hoc:data:`Vector.x`, :hoc:meth:`Vector.resize`,
+            :hoc:meth:`Vector.apply`
+
+    .. tab:: MATLAB
+
+        This class was implemented by Zach Mainen and Michael Hines.
+            
+        Syntax:
+
+        .. code-block:: matlab
+
+            obj = n.Vector()
+            obj = n.Vector(size)
+            obj = n.Vector(size, init)
+            obj = n.Vector(python_iterable)
+
+        Description:
+
+            NEURON's Vector class provides functionality that is similar (and partly interchangeable) with 
+            MATLAB's one-dimensional array of doubles.
+            The reason for the continued use of ``Vector`` is both due to back-compatibility and due to the many faster C-level
+            extensions that have been written as NMODL programs that make use of this class.
+
+            A ``Vector`` can be used in any context that takes an array, e.g.,
+
+            .. code-block::
+                matlab
+
+                plt.plot(t_vec, v_vec)
+
+            A Vector object created with this class can be thought of as 
+            containing a  one dimensional x array with elements of type float.
+            The :samp:`{objref}[{index}]` notation can be used to read and set Vector elements
+            (setting requires NEURON 7.7+).]
+
+            A ``Vector`` can be created with length *size* and with each element set to the value of *init* or can be created using
+            a Python iterable.
+            
+            Vector methods that modify the elements are generally of the form 
+
+            .. code-block::
+                matlab
+
+                obj = vsrcdest.method(...) 
+
+            in which the values of ``vsrcdest`` on entry to the 
+            method are used as source values by the method to compute values which replace 
+            the old values in ``vsrcdest``.  The return value is simply an additional reference to the same Vector.
+
+        Examples:
+
+            .. code-block::
+                matlab
+
+                vec = n.Vector(20, 5)
+
+            will create a vector with 20 indices, each having the value of 5. 
+
+            .. code-block::
+                matlab
+
+                vec1 = n.Vector()
+
+            will create a vector with 0 size.  It is seldom 
+            necessary to specify a size for a Vector since most operations, if necessary, 
+            increase or decrease the number of elements as needed. 
+            
+            .. code-block::
+                matlab
+                
+                v = n.Vector([1, 2, 3])
+            
+            will create a vector of length 3 whose entries are: 1, 2, and 3. The
+            constructor takes a 1D MATLAB array.
+
+        .. seealso::
+            :meth:`Vector.resize`, :meth:`Vector.apply`
+
             
 ----
 
@@ -175,6 +346,62 @@ Vector
             ``vec.x[-1]`` or ``vec[-1]`` return or set the value of the last element of the vector but ``vec._ref_x`` cannot be accessed in
             this way.
 
+    .. tab:: HOC
+
+        Syntax:
+
+        .. code-block:: C++
+
+            vec.x[index]
+
+        Description:
+
+            Elements of a vector can be accessed with ``vec.x[index]`` notation. 
+            Vector indices range from 0 to Vector.size()-1. 
+            This 
+            notation is superior to the older ``vec.get()`` and ``vec.set()`` notations for 
+            three reasons: 
+            
+            1.  It performs the roles of both 
+                ``vec.get`` and ``vec.set`` with a syntax that is consistent with the normal 
+                syntax for a ``double`` array inside of an object. 
+            2.  It can be viewed by a field editor (since it can appear on the left hand 
+                side of an assignment statement). 
+            3.  You can take its  address for functions which require that kind of argument. 
+
+            Example:
+            ``print vec.x[0]`` prints the value of the 0th (first) element. 
+            
+            ``vec.x[i] = 3`` sets the i'th element to 3. 
+            
+
+            .. code-block::
+                none
+
+                xpanel("show a field editor") 
+                xvalue("vec.x[3]") 
+                xpvalue("last element", &vec.x[vec.size() - 1]) 
+                xpanel() 
+
+            Note, however, that there is a potential difficulty with the :hoc:func:`xpvalue` field
+            editor since, if vec is ever resized, then the pointer will be invalid. In 
+            this case, the field editor will display the string, "Free'd". 
+
+            .. warning::
+            ``vec.x[-1]`` returns the value of the first element of the vector, just as 
+            would ``vec.x[0]``. 
+            
+            ``vec.x(i)`` returns the value of index *i* just as does ``vec.x[i]``. 
+
+
+    .. tab:: MATLAB
+
+        ``vec.x(i)`` is not supported in MATLAB. Instead, use ``vec(i)`` to access the i'th element of the vector.
+
+        .. warning::
+
+            ``vec(i)`` is 1-indexed like all MATLAB arrays (i.e., ``vec(1)`` is the first
+            element of the Vector, not ``vec[0]`` as in Python and HOC).
 ----
 
 .. method:: Vector.size
@@ -206,7 +433,8 @@ Vector
             .. code-block::
                 python
 
-                for item in vec: print(item)
+                for item in vec:
+                    print(item)
 
         .. note::
         
@@ -219,6 +447,75 @@ Vector
             
         .. seealso::
             :meth:`Vector.buffer_size`
+
+    .. tab:: HOC
+
+        Syntax:
+            ``size = vec.size()``
+
+
+        Description:
+            Return the number of elements in the ```Vector``. The last element has the index: 
+            ``vec.size() - 1``. Most explicit for loops over a vector can take the form: 
+
+            .. code-block::
+                none
+
+                for i=0, vec.size()-1 {... vec.x[i] ...} 
+
+        .. note::
+            
+            There is a distinction between the size of a vector and the 
+            amount of memory allocated to hold the vector. Generally, memory is only 
+            freed and reallocated if the size needed is greater than the memory storage 
+            previously allocated to the vector. Thus the memory used by vectors 
+            tends to grow but not shrink. To reduce the memory used by a vector, one 
+            can explicitly call :func:`buffer_size`.
+
+        .. seealso::
+            :meth:`Vector.buffer_size`
+
+
+    .. tab:: MATLAB
+
+        Syntax:
+
+        .. code-block:: matlab
+
+            size = vec.size();
+
+        Description:
+
+            Returns the 2D size of the Vector. Since a Vector is a 1D array, the 
+            first dimension will always be 1.
+
+            Valid indices for a ``Vector`` are 1 to ``vec.size()``.
+            
+            .. code-block::
+                matlab
+
+                numel = vec.size();
+                for i = 1:numel(2)
+                    disp(vec(i));
+                end
+
+        .. note::
+
+            If you want a one-dimensional way of seeing how large a ``Vector``
+            is, use ``length(vec)`` instead of ``vec.size()``.
+
+        .. note::
+            
+            There is a distinction between the size of a vector and the 
+            amount of memory allocated to hold the vector. Generally, memory is only 
+            freed and reallocated if the size needed is greater than the memory storage 
+            previously allocated to the vector. Thus the memory used by vectors 
+            tends to grow but not shrink. To reduce the memory used by a vector, one 
+            can explicitly call :func:`buffer_size`.
+
+        .. seealso::
+            :meth:`Vector.buffer_size`
+
 
 ----
 
@@ -237,13 +534,20 @@ Vector
             will be zeroed.  If it is expanded, the new elements will be initialized to 0.0;
             original elements will remain unchanged. 
             
-            Warning: Any function that 
+        .. warning::
+            
+            Any function that 
             resizes the ``Vector`` to a larger size than its available space will reallocate and thereby
             make existing pointers to the elements invalid 
             (see note in :meth:`Vector.size`). 
             For example, resizing Vectors that have been plotted will remove that Vector 
             from the plot list. Other functions may not be so forgiving and result in 
-            a memory error (segmentation violation or unhandled exception). 
+            a memory error (segmentation violation or unhandled exception).
+
+            References created in MATLAB via ``vec.ref(i)`` may continue to be used from
+            MATLAB as they will always point to the correct element even if the ``Vector``
+            is resized, however no guarantee is made for how the rest of NEURON interprets
+            references that they had previously received from MATLAB after a resize.
 
         Example:
 
@@ -255,8 +559,87 @@ Vector
                 vec.printf()
                 vec.resize(10)  # removes the last 20 elements; values of the first 10 elements are unchanged
             
+    .. tab:: HOC
+
+        Syntax:
+
+        .. code-block:: C++
+
+            obj = vsrcdest.resize(new_size)
+
+        Description:
+            Resize the ``Vector``.  If the ``Vector`` is made smaller, then trailing elements 
+            will be zeroed.  If it is expanded, the new elements will be initialized to 0.0;
+            original elements will remain unchanged. 
+            
+        .. warning::
+            
+            Any function that 
+            resizes the ``Vector`` to a larger size than its available space will reallocate and thereby
+            make existing pointers to the elements invalid 
+            (see note in :meth:`Vector.size`). 
+            For example, resizing Vectors that have been plotted will remove that Vector 
+            from the plot list. Other functions may not be so forgiving and result in 
+            a memory error (segmentation violation or unhandled exception).
+
+            References created in MATLAB via ``vec.ref(i)`` may continue to be used from
+            MATLAB as they will always point to the correct element even if the ``Vector``
+            is resized, however no guarantee is made for how the rest of NEURON interprets
+            references that they had previously received from MATLAB after a resize.
+
+        Example:
+
+            .. code-block::
+                C++
+
+                objref vec
+                vec = new Vector(20, 5) 
+                vec.resize(30)  // Appends 10 elements, each having a value of 0
+                vec.printf()
+                vec.resize(10)  // removes the last 20 elements; values of the first 10 elements are unchanged
+
+
         .. seealso::
             :meth:`Vector.buffer_size`
+
+    .. tab:: MATLAB
+
+        Syntax:
+
+        .. code-block:: matlab
+
+            obj = vsrcdest.resize(new_size);
+
+        Description:
+            Resize the ``Vector``.  If the ``Vector`` is made smaller, then trailing elements 
+            will be zeroed.  If it is expanded, the new elements will be initialized to 0.0;
+            original elements will remain unchanged. 
+            
+        .. warning::
+            
+            Any function that 
+            resizes the ``Vector`` to a larger size than its available space will reallocate and thereby
+            make existing pointers to the elements invalid 
+            (see note in :meth:`Vector.size`). 
+            For example, resizing Vectors that have been plotted will remove that Vector 
+            from the plot list. Other functions may not be so forgiving and result in 
+            a memory error (segmentation violation or unhandled exception).
+
+            References created in MATLAB via ``vec.ref(i)`` may continue to be used from
+            MATLAB as they will always point to the correct element even if the ``Vector``
+            is resized, however no guarantee is made for how the rest of NEURON interprets
+            references that they had previously received from MATLAB after a resize.
+
+        Example:
+
+            .. code-block::
+                matlab
+
+                vec = n.Vector(20, 5);
+                vec.resize(30);  # Appends 10 elements, each having a value of 0
+                vec.printf();
+                vec.resize(10);  # removes the last 20 elements; values of the first 10 elements are unchanged
+
 
 ----
 
@@ -282,7 +665,7 @@ Vector
             For vectors that grow continuously, it may be more efficient to 
             allocate enough space at the outset, or else occasionally change the 
             buffer_size by larger chunks. It is not necessary to worry about the 
-            efficiency of growth during a Vector.record since the space available 
+            efficiency of growth during a :meth:`Vector.record`` since the space available 
             automatically increases by doubling. 
 
         Example:
@@ -299,6 +682,83 @@ Vector
                 print(y.buffer_size(100))
                 print(len(y))
 
+    .. tab:: HOC
+
+
+        Syntax:
+
+        .. code-block:: C++
+
+            space = vsrc.buffer_size()
+            space = vsrc.buffer_size(request)
+
+
+        Description:
+            Returns the length of the double precision array memory allocated to hold the 
+            vector. This is NOT the size of the vector. The vector size can efficiently 
+            grow up to this value without reallocating memory. 
+            
+            With an argument, frees the old memory space and allocates new 
+            memory space for the vector, copying old element values to the new elements. 
+            If the request is less than the size, the size is truncated to the request. 
+            For vectors that grow continuously, it may be more efficient to 
+            allocate enough space at the outset, or else occasionally change the 
+            buffer_size by larger chunks. It is not necessary to worry about the 
+            efficiency of growth during a Vector.record since the space available 
+            automatically increases by doubling. 
+
+        Example:
+
+            .. code-block::
+                C++
+
+                objref y 
+                y = new Vector(10) 
+                y.size() 
+                y.buffer_size() 
+                y.resize(5) 
+                y.size 
+                y.buffer_size() 
+                y.buffer_size(100) 
+                y.size() 
+
+    .. tab:: MATLAB
+
+        Syntax:
+
+        .. code-block:: matlab
+
+            space = vsrc.buffer_size();
+            space = vsrc.buffer_size(request);
+
+        Description:
+            Returns the length of the double precision array memory allocated to hold the 
+            vector. This is NOT the size of the vector. The vector size can efficiently 
+            grow up to this value without reallocating memory. 
+            
+            With an argument, frees the old memory space and allocates new 
+            memory space for the vector, copying old element values to the new elements. 
+            If the request is less than the size, the size is truncated to the request. 
+            For vectors that grow continuously, it may be more efficient to 
+            allocate enough space at the outset, or else occasionally change the 
+            buffer_size by larger chunks. It is not necessary to worry about the 
+            efficiency of growth during a :meth:`Vector.record`` since the space available 
+            automatically increases by doubling. 
+
+        Example:
+
+            .. code-block::
+                matlab
+
+                y = n.Vector(10);
+                disp(length(y));
+                disp(y.buffer_size());
+                y.resize(5);
+                disp(length(y));
+                disp(y.buffer_size());
+                disp(y.buffer_size(100));
+                disp(length(y));
+
 ----
 
 .. method:: Vector.get
@@ -312,9 +772,50 @@ Vector
             x = vec.get(index)
 
         Description:
-            Return the value of a vector element index.
+            Return the value of a Vector element index.
 
             It is simpler in Python to write ``x = vec[index]`` instead.
+
+    .. tab:: HOC
+
+        Syntax:
+
+        .. code-block:: C++
+
+            x = vec.get(index)
+
+        Description:
+
+            Return the value of a vector element index.  This function 
+            is superseded by the ``vec.x[]`` notation but is retained for backward 
+            compatibility. 
+
+            That is, the following two lines are equivalent:
+            
+            .. code-block::
+                C++
+
+                value = vec.get(index)
+                value = vec.x[index]
+
+    .. tab:: MATLAB
+
+        Syntax:
+
+        .. code-block:: python
+
+            x = vec.get(index);
+
+        Description:
+            Return the value of a Vector element index.
+
+            It is simpler in MATLAB to write ``x = vec(index + 1)`` instead.
+
+        .. warning::
+
+            MATLAB uses 1-based indexing, so if you want to access the first element of a Vector,
+            you should use ``vec(1)``. ``Vector.get`` however uses 0-based indexing, so if you want to access the first element of a Vector,
+            you should use ``vec.get(0)``.
 
 ----
 
@@ -330,7 +831,42 @@ Vector
 
 
         Description:
-            Set vector element index to value.  Equivalent to ``vec[i] = valu`` notation.
+
+            Set vector element index to value.  Equivalent to ``vec[i] = value`` notation.
+
+    .. tab:: HOC
+
+        Syntax:
+
+        .. code-block:: C++
+
+            obj = vec.set(index, value)
+
+        Description:
+
+            Set vector element index to value.  This function is superseded by 
+            the ``vec.x[i] = expr`` notation but is retained for backward 
+            compatibility. 
+
+    .. tab:: MATLAB
+
+        Syntax:
+
+        .. code-block:: matlab
+
+            obj = vec.set(index, value);
+
+
+        Description:
+
+            Set vector element index to value.  Equivalent to ``vec(index + 1) = value`` notation.
+
+        .. warning::
+
+            MATLAB uses 1-based indexing, so if you want to access the first element of a Vector,
+            you should use ``vec(1)``. ``Vector.get`` however uses 0-based indexing, so if you want to access the first element of a Vector,
+            you should use ``vec.get(0)``.
+
 
 ----
 
@@ -372,6 +908,74 @@ Vector
         .. seealso::
             :meth:`Vector.indgen`, :meth:`Vector.append`
 
+    .. tab:: HOC
+
+
+
+        Syntax:
+
+        .. code-block:: C++
+
+            obj = vsrcdest.fill(value)
+            obj = vsrcdest.fill(value, start, end)
+
+
+        Description:
+            The first form assigns *value* to every element in vsrcdest. 
+            
+            If *start* and 
+            *end* arguments are present, they specify the index range for the assignment. 
+
+        Example:
+
+            .. code-block::
+                C++
+
+                objref vec 
+                vec = new Vector(20,5) 
+                vec.fill(9,2,7) 
+
+            assigns 9 to vec.x[2] through vec.x[7] 
+            (a total of 6 elements) 
+
+        .. seealso::
+            :hoc:meth:`Vector.indgen`, :hoc:meth:`Vector.append`
+
+    .. tab:: MATLAB
+
+        Syntax:
+
+        .. code-block:: matlab
+
+            obj = vsrcdest.fill(value);
+            obj = vsrcdest.fill(value, start, stop);
+
+        Description:
+            The first form assigns *value* to every element in vsrcdest. 
+            
+            If *start* and *stop* arguments are present, they specify the index range for the assignment. 
+
+        Example:
+
+            .. code-block::
+                matlab
+
+                vec = n.Vector(20, 5);
+                vec.fill(9, 2, 7);
+
+            assigns 9 to ``vec(3)`` through ``vec(8)`` 
+            (a total of 6 = 8 - 3 + 1 elements) 
+
+        .. warning::
+
+            While MATLAB normally uses 1-based indexing, including for indexing
+            within a Vector, the `fill` method uses 0-based indexing for the `start` and `stop` arguments.
+
+
+        .. seealso::
+            :meth:`Vector.indgen`, :meth:`Vector.append`
+
+
 ----
 
 .. method:: Vector.label
@@ -386,6 +990,7 @@ Vector
             s = vec.label(str_type)
 
         Description:
+
             Label the vector with a string. 
             The return value is the label, which is an empty string if no label has been set. 
             Labels are printed on a Graph when the :meth:`Graph.plot` method is called. 
@@ -404,6 +1009,68 @@ Vector
 
         .. seealso::
             :meth:`Graph.family`, :meth:`Graph.beginline`
+
+    .. tab:: HOC
+
+        Syntax:
+
+            .. code-block:: C++
+
+                strdef s
+                s = vec.label()
+                s = vec.label(s)
+
+        Description:
+
+            Label the vector with a string. 
+            The return value is the label, which is an empty string if there is no label. 
+            Labels are printed on a Graph when the :hoc:meth:`Graph.plot` method is called.
+
+        Example:
+
+            .. code-block::
+                C++
+
+                objref vec 
+                vec = new Vector() 
+                print vec.label() 
+                vec.label("hello") 
+                print vec.label() 
+
+
+        .. seealso::
+            :meth:`Graph.family`, :meth:`Graph.beginline`
+
+    .. tab:: MATLAB
+
+        Syntax:
+
+        .. code-block:: matlab
+
+            s = vec.label();
+            s = vec.label(str_type);
+
+        Description:
+        
+            Label the vector with a string. 
+            The return value is the label, which is an empty string if no label has been set. 
+            Labels are printed on a Graph when the :meth:`Graph.plot` method is called. 
+
+        Example:
+
+            .. code-block::
+                matlab
+
+                n = neuron.launch();
+                vec = n.Vector();
+                disp(vec.label());
+                vec.label('hello');
+                disp(vec.label());
+
+
+        .. seealso::
+            :meth:`Graph.family`, :meth:`Graph.beginline`
+
 
 ----
 
