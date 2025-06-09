@@ -235,10 +235,10 @@ Vector
 
         .. code-block:: matlab
 
-            obj = n.Vector()
-            obj = n.Vector(size)
-            obj = n.Vector(size, init)
-            obj = n.Vector(python_iterable)
+            obj = n.Vector();
+            obj = n.Vector(size);
+            obj = n.Vector(size, init);
+            obj = n.Vector(python_iterable);
 
         Description:
 
@@ -252,7 +252,7 @@ Vector
             .. code-block::
                 matlab
 
-                plt.plot(t_vec, v_vec)
+                plot(t_vec, v_vec);
 
             A Vector object created with this class can be thought of as 
             containing a  one dimensional x array with elements of type float.
@@ -267,7 +267,7 @@ Vector
             .. code-block::
                 matlab
 
-                obj = vsrcdest.method(...) 
+                obj = vsrcdest.method(...);
 
             in which the values of ``vsrcdest`` on entry to the 
             method are used as source values by the method to compute values which replace 
@@ -278,14 +278,14 @@ Vector
             .. code-block::
                 matlab
 
-                vec = n.Vector(20, 5)
+                vec = n.Vector(20, 5);
 
             will create a vector with 20 indices, each having the value of 5. 
 
             .. code-block::
                 matlab
 
-                vec1 = n.Vector()
+                vec1 = n.Vector();
 
             will create a vector with 0 size.  It is seldom 
             necessary to specify a size for a Vector since most operations, if necessary, 
@@ -294,7 +294,7 @@ Vector
             .. code-block::
                 matlab
                 
-                v = n.Vector([1, 2, 3])
+                v = n.Vector([1, 2, 3]);
             
             will create a vector of length 3 whose entries are: 1, 2, and 3. The
             constructor takes a 1D MATLAB array.
