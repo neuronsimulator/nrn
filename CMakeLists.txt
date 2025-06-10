@@ -238,7 +238,7 @@ set(NMODL_EXTRA_CXX_FLAGS
     ""
     CACHE STRING "Add extra compile flags for NMODL sources")
 separate_arguments(NMODL_EXTRA_CXX_FLAGS)
-option(NMODL_ENABLE_BISON_LINES "Enable line numbers in bison-generated files" ON)
+option(NMODL_ENABLE_FLEX_BISON_LINES "Enable line numbers in flex- and bison-generated files" ON)
 
 # =============================================================================
 # Include cmake modules
