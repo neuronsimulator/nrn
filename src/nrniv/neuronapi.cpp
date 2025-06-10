@@ -436,6 +436,33 @@ Section* SectionListIterator::next(void) {
     }
 }
 
+Section* SectionListIterator::next() {
+    if (!current) return nullptr;
+
+    Section* sec = nullptr;
+
+    while (current != initial) {
+        // Save next pointer before possibly deleting current
+        Item* q = current;
+        current = current->next;
+
+        sec = q->sec;
+
+        // Check if the section is still valid
+        if (!sec || sec->prop == nullptr) {
+            // Unlink and delete invalid section
+            if (q->prev) q->prev->next = q->next;
+            if (q->next) q->next->prev = q->prev;
+            delete q;  // Safe cleanup
+            continue;  // Try next one
+        }
+
+        return sec;  // Valid section
+    }
+
+    return nullptr;
+}
+
 int SectionListIterator::done(void) const {
     if (initial == current) {
         return 1;
