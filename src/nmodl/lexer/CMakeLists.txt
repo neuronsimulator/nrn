@@ -68,7 +68,9 @@ function(compose_flex_command OUT_VAR)
   if(NOT NMODL_ENABLE_FLEX_BISON_LINES)
     list(APPEND FLEX_CMD -L)
   endif()
-  set(${OUT_VAR} "${FLEX_CMD}")
+  set(${OUT_VAR}
+      "${FLEX_CMD}"
+      PARENT_SCOPE)
 endfunction()
 
 if(NMODL_PGI_COMPILER)
