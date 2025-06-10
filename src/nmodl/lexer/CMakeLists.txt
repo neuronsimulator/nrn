@@ -115,11 +115,12 @@ add_custom_command(
 # Command to generate verbatim parser. See comment above about absolute paths.
 file(RELATIVE_PATH VERBATIM_YY_FROM_PARSER_BINARY_DIR "${NMODL_PARSER_BINARY_DIR}"
      "${NMODL_PARSER_SOURCE_DIR}/verbatim.yy")
+compose_bison_command(BISON_CMD)
 add_custom_command(
   OUTPUT "${NMODL_PARSER_BINARY_DIR}/verbatim_parser.cpp"
          "${NMODL_PARSER_BINARY_DIR}/verbatim_parser.hpp"
   WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
-  COMMAND ${BISON_EXECUTABLE} -d -o verbatim_parser.cpp "${VERBATIM_YY_FROM_PARSER_BINARY_DIR}"
+  COMMAND ${BISON_CMD} -d -o verbatim_parser.cpp "${VERBATIM_YY_FROM_PARSER_BINARY_DIR}"
   DEPENDS "${NMODL_PARSER_SOURCE_DIR}/verbatim.yy"
   COMMENT "-- NMODL : GENERATING VERBATIM PARSER WITH BISON! --")
 
