@@ -161,6 +161,11 @@ void nrn_section_unref(Section* sec) {
     section_unref(sec);
 }
 
+Section* nrn_cas(void) {
+    Section* sec = nrn_noerr_access();
+    return sec;
+}
+
 /****************************************
  * Segments
  ****************************************/
