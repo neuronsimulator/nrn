@@ -7,6 +7,7 @@
 #include <cerrno>
 #include <numeric>
 #include <functional>
+#include <string>
 
 #include "fourier.h"
 #include "mymath.h"
@@ -330,9 +331,9 @@ extern char* neuron_home;
 
 void load_ocmatrix() {
     struct DLL* dll = NULL;
-    char buf[256];
-    Sprintf(buf, "%s\\lib\\ocmatrix.dll", neuron_home);
-    dll = dll_load(buf);
+    // using a std::string to avoid buffer issues from long paths
+    auto buf = std::string(neuron_home) + "\\lib\\ocmatrix.dll";
+    dll = dll_load(buf.c_str());
     if (dll) {
         Pfri mreg = (Pfri) dll_lookup(dll, "_Matrix_reg");
         if (mreg) {
