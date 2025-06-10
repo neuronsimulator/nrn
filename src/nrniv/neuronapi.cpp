@@ -369,10 +369,6 @@ char const* nrn_class_name(const Object* obj) {
     return obj->ctemplate->sym->name;
 }
 
-int nrn_object_index(const Object* obj) {
-    return obj->index;
-}
-
 bool nrn_prop_exists(const Object* obj) {
     if (!(ob2pntproc_0(const_cast<Object*>(obj))->prop)) {
         return false;

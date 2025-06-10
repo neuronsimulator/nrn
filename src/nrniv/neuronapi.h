@@ -95,7 +95,6 @@ void nrn_function_call(Symbol* sym, int narg);
 void nrn_object_ref(Object* obj);
 void nrn_object_unref(Object* obj);
 char const* nrn_class_name(const Object* obj);
-int nrn_object_index(const Object* obj);
 bool nrn_prop_exists(const Object* obj);
 
 /****************************************
