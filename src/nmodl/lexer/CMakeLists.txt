@@ -49,10 +49,14 @@ set(LEXER_SOURCE_FILES
 function(compose_bison_command OUT_VAR)
   cmake_parse_arguments(ARG "" "" "PATHS" ${ARGN})
   set(BISON_CMD ${BISON_EXECUTABLE})
-  if(BISON_VERSION VERSION_GREATER_EQUAL "3.7")
-    foreach(path IN LISTS ARG_PATHS)
-      list(APPEND BISON_CMD -M "${path}")
-    endforeach()
+  if(NMODL_ENABLE_BISON_LINES)
+    if(BISON_VERSION VERSION_GREATER_EQUAL "3.7")
+      foreach(path IN LISTS ARG_PATHS)
+        list(APPEND BISON_CMD -M "${path}")
+      endforeach()
+    endif()
+  else()
+    list(APPEND BISON_CMD -l)
   endif()
   set(${OUT_VAR}
       "${BISON_CMD}"
