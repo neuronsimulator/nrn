@@ -267,10 +267,8 @@ endmacro()
 
 # copy a list of files to the build dir
 function(copy_build_list FILE_LIST BUILD_PREFIX)
-  foreach(file IN LISTS ${FILE_LIST})
-    get_filename_component(file_abs "${CMAKE_CURRENT_SOURCE_DIR}/${file}" ABSOLUTE)
-    get_filename_component(file_dir "${file}" DIRECTORY)
-    configure_file("${file_abs}" "${BUILD_PREFIX}/${file_dir}/${file}" COPYONLY)
+  foreach(path IN LISTS ${FILE_LIST})
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/${path}" "${BUILD_PREFIX}/${path}" COPYONLY)
   endforeach()
 endfunction()
 
