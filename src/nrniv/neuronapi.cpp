@@ -412,10 +412,12 @@ SectionListIterator::SectionListIterator(nrn_Item* my_sectionlist)
     , current(my_sectionlist->next) {}
 
 Section* SectionListIterator::next() {
-    if (!current) return nullptr;
+    if (!current) {
+        return nullptr;
+    }
+
     Section* sec = nullptr;
     while (current != initial) {
-
         // Save next pointer before possibly deleting current
         auto* q = current;
         current = current->next;
@@ -424,13 +426,19 @@ Section* SectionListIterator::next() {
         // Check if the section is still valid
         if (!sec || sec->prop == nullptr) {
             // Unlink and delete invalid section
-            if (q->prev) q->prev->next = q->next;
-            if (q->next) q->next->prev = q->prev;
+            if (q->prev) {
+                q->prev->next = q->next;
+            }
+            if (q->next) {
+                q->next->prev = q->prev;
+            }
             delete q;
             continue;  // Try next
         }
+
         return sec;
     }
+
     return nullptr;
 }
 
