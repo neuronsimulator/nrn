@@ -593,7 +593,7 @@ def setup_package():
             'pyreadline3<=3.5.4; sys_platform == "win32"',
         ]
         + maybe_patchelf,
-        tests_require=["flake8", "pytest"],
+        tests_require=["flake8", "pytest<=8.1.1"],
         setup_requires=["wheel"] + maybe_docs + maybe_test_runner + maybe_rxd_reqs,
         dependency_links=[],
     )
