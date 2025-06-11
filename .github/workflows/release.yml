@@ -11,6 +11,21 @@ on:
         description: 'Release version (tag name)'
         default: 'x.y.z'
         required: true
+      python_versions:
+        description: "Comma-separated list of supported Python versions"
+        default: "3.9,3.10,3.11,3.12,3.13"
+        required: true
+        type: string
+      os:
+        description: "Comma-separated list of OSes (for wheels only)"
+        default: "macos-13,macos-14,ubuntu-22.04,ubuntu-22.04-arm"
+        required: true
+        type: string
+      dry_run:
+        description: "Whether to simulate creating a release or not"
+        required: true
+        default: true
+        type: boolean
 
 env:
   GH_REPO: ${{ github.server_url }}/${{ github.repository }}
@@ -18,8 +33,30 @@ env:
   REL_BRANCH: ${{ github.event.inputs.rel_branch }}
 
 jobs:
+  get-latest-wheel-version:
+    name: Get the latest wheel version from PyPI
+    runs-on: ubuntu-latest
+    outputs:
+      latest_version: ${{ steps.latest-wheel-version.outputs.latest_version }}
+    steps:
+      - name: Get the latest wheel version from PyPI
+        id: latest-wheel-version
+        run: |
+          # taken from:
+          # https://safjan.com/how-to-check-latest-version-of-python-package/
+          echo "latest_version=$(curl -s https://pypi.org/pypi/neuron/json | jq -r '.info.version')" >> "$GITHUB_OUTPUT"
+
+  nrn-modeldb-ci:
+    name: Run modelDB CI relative to ${{ needs.get-latest-wheel-version.outputs.latest_version }}
+    needs: get-latest-wheel-version
+    uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@master
+    with:
+      neuron_v1: ${{ needs.get-latest-wheel-version.outputs.latest_version }}
+      neuron_v2: ${{ env.REL_BRANCH }}
+
   tag-n-release:
     runs-on: ubuntu-latest
+    needs: nrn-modeldb-ci
     name: tag-n-release ${{ github.event.inputs.rel_tag }} (${{ github.event.inputs.rel_branch }})
     outputs:
       release_url: ${{ steps.create_release.outputs.upload_url }}
@@ -42,6 +79,7 @@ jobs:
 
       - name: Create Release
         id: create_release
+        if: github.event.inputs.dry_run == 'false'
         uses: ncipollo/release-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -54,34 +92,52 @@ jobs:
     runs-on: ubuntu-latest
     needs: tag-n-release
     steps:
-    - name: Checkout feature-rich code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        fetch-depth: 1
+      - name: Checkout feature-rich code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
 
-    - name: Upload nrn-full-src-package to release
-      run: |
-        filename="nrn-full-src-package-${{ needs.tag-n-release.outputs.rel_tag }}.tar.gz"
-        topdir="nrn-${{ needs.tag-n-release.outputs.rel_tag }}"
-        # taken from:
-        # https://stackoverflow.com/a/67389978
-        git ls-files --recurse-submodules > nrn_files
-        # we also need the .git dir for now
-        find .git >> nrn_files
-        # cannot use --xform as it screws up the symbolic links. So
-        # do a normal tar, untar into topdir, and tar again.
-        mkdir -p tmp/$topdir
-        tar -c -T nrn_files | tar -x -C tmp/$topdir
-        (cd tmp && tar caf ../$filename $topdir)
-        rm -rf tmp
-        gh release upload ${{ needs.tag-n-release.outputs.rel_tag }} ${filename}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create nrn-full-src-package artifact
+        run: |
+          filename="nrn-full-src-package-${{ needs.tag-n-release.outputs.rel_tag }}.tar.gz"
+          echo "filename=$filename" >> $GITHUB_ENV
+          topdir="nrn-${{ needs.tag-n-release.outputs.rel_tag }}"
+          # taken from:
+          # https://stackoverflow.com/a/67389978
+          git ls-files --recurse-submodules > nrn_files
+          # we also need the .git dir for now
+          find .git >> nrn_files
+          # cannot use --xform as it screws up the symbolic links. So
+          # do a normal tar, untar into topdir, and tar again.
+          mkdir -p tmp/$topdir
+          tar -c -T nrn_files | tar -x -C tmp/$topdir
+          (cd tmp && tar caf ../$filename $topdir)
+          rm -rf tmp
+
+      - name: Upload nrn-full-src-package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nrn-full-src-package
+          path: ${{ env.filename }}
+
+      - name: Download nrn-full-src-package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nrn-full-src-package
+
+      - name: Upload to GitHub release
+        if: github.event.inputs.dry_run == 'false'
+        run: gh release upload ${{ needs.tag-n-release.outputs.rel_tag }} nrn-full-src-package-*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   test-full-src-package:
+    name: Build and test the full-src package
     runs-on: ubuntu-latest
-    needs: [nrn-full-src-package, tag-n-release]
+    needs:
+      - nrn-full-src-package
+      - tag-n-release
     steps:
       - name: Install apt packages
         run: |
@@ -97,11 +153,13 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Download nrn-full-src-package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nrn-full-src-package
+
       - name: Build nrn-full-src-package
         run: |
-          topdir="nrn-${{ needs.tag-n-release.outputs.rel_tag }}"
-          gh release download ${{ needs.tag-n-release.outputs.rel_tag }} --pattern 'nrn-full-src-package*' --output nrn.tar.gz
-          tar xf nrn.tar.gz
           python -m pip install -r ${topdir}/nrn_requirements.txt
           # we build a simple configuration to save on CI time
           cmake -B build -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_MPI=OFF -DNMODL_ENABLE_PYTHON_BINDINGS=OFF -DNRN_ENABLE_CORENEURON=OFF -S ${topdir}/
@@ -109,8 +167,99 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  windows-installer:
+  generate-wheel-matrix:
+    name: Generate platform and Python matrix for wheels
+    # wheels should be built once the full source package builds successfully
+    needs: test-full-src-package
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          OS_INPUT="${{ github.event.inputs.os || 'macos-13,macos-14,ubuntu-22.04,ubuntu-22.04-arm' }}"
+          PY_INPUT="${{ github.event.inputs.python_versions || '3.9,3.10,3.11,3.12,3.13' }}"
+          OS_JSON=$(echo "$OS_INPUT" | jq -R 'split(",")')
+          PY_JSON=$(echo "$PY_INPUT" | jq -R 'split(",")')
+          echo "matrix=$(jq -c -n --argjson os "$OS_JSON" --argjson py "$PY_JSON" '{os: $os, python_version: $py}')" >> "$GITHUB_OUTPUT"
+
+  wheels:
+    name: Build and test wheel on ${{ matrix.os }} with Python ${{ matrix.python_version }}
+    needs: generate-wheel-matrix
+    uses: ./.github/workflows/wheels-template.yml
+    with:
+      platform: ${{ matrix.os }}
+      python_version: ${{ matrix.python_version }}
+      optimize_rxd: true
+      commit: ${{ env.REL_BRANCH }}
+      version: ${{ env.REL_TAG }}
+      build_type: 'release'
+
+  merge:
+    name: Merge wheel files to one artifact
+    runs-on: ubuntu-latest
+    needs: wheels
+    outputs:
+      artifacts-url: ${{ steps.merge-artifacts.outputs.artifacts-url }}
+    steps:
+      - name: Merge Artifacts
+        id: merge-artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          delete-merged: true
+          name: wheels
+          pattern: wheels-*
+
+  nrn-build-ci:
+    needs: merge
+    uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@master
+    with:
+      azure_drop_url: ${{ needs.merge.outputs.artifacts-url }}
+      neuron_branch: ${{ env.REL_BRANCH }}
+      repo: 'neuronsimulator/nrn'
+
+  pypi-publish:
+    name: Upload wheels to PyPI
+    if: github.event.inputs.dry_run == 'false'
+    needs: merge
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/neuron
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+    steps:
+      - name: Download wheels from artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels
+          path: dist/
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  build-windows-installer:
+    name: Build Windows installer
     needs: tag-n-release
     uses: neuronsimulator/nrn/.github/workflows/windows.yml@master
     with:
       tag: ${{ needs.tag-n-release.outputs.rel_tag }}
+
+  upload-windows-installer:
+    name: Publish Windows installer
+    if: github.event.inputs.dry_run == 'false'
+    needs: build-windows-installer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Windows installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nrn-nightly-AMD64.exe
+
+      - name: Publish Windows installer
+        run: |
+          # convert "3.9,3.10..." into "39-310-..."
+          py_version_string="$(echo "${{ github.event.inputs.python_version }}" | sed 's/\.//g; s/,/-/g')"
+          cp nrn-nightly-AMD64.exe nrn-${{ needs.tag-n-release.outputs.rel_tag }}.w64-mingw-py-${py_version_string}-setup.exe
+          gh release upload ${{ needs.tag-n-release.outputs.rel_tag }} nrn-${{ needs.tag-n-release.outputs.rel_tag }}.w64-mingw-py-${py_version_string}-setup.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -109,11 +109,3 @@ jobs:
       run: .\ci\win_test_installer.cmd
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn
-
-    - name: Publish Release Installer
-      working-directory: ${{runner.workspace}}\nrn
-      if: inputs.tag != ''
-      run: |
-        gh release upload ${{ inputs.tag }} nrn-nightly-AMD64.exe
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
