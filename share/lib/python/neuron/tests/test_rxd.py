@@ -2,10 +2,10 @@ from neuron import n
 import neuron
 import unittest
 import sys
-import os
 import json
 import platform
 from multiprocessing import Process, Lock
+from pathlib import Path
 
 try:
     import multiprocessing as mp
@@ -15,8 +15,7 @@ except:
     pass
 
 # load the reference data from rxd_data.json
-fdir = os.path.dirname(os.path.abspath(__file__))
-test_data = json.load(open(os.path.join(fdir, "test_rxd.json"), "r"))
+test_data = json.loads((Path(__file__).parent.resolve() / "test_rxd.json").read_text())
 
 
 def scalar_bistable(lock, path=None):
@@ -37,12 +36,12 @@ def scalar_bistable(lock, path=None):
     result = n.Vector(c.nodes.concentration)
     if path is not None:
         lock.acquire()
-        if os.path.exists(path):
-            data = json.load(open(path, "r"))
+        if Path(path).exists():
+            data = json.loads(Path(path).read_text())
         else:
             data = {}
         data["scalar_bistable_data"] = list(result)
-        json.dump(data, open(path, "w"), indent=4)
+        Path(path).write_text(json.dumps(data, indent=4))
         lock.release()
     else:
         cmpV = n.Vector(test_data["scalar_bistable_data"])
@@ -111,14 +110,14 @@ def trivial_ecs(scale, lock, path=None):
 
     if path is not None:
         lock.acquire()
-        if os.path.exists(path):
-            data = json.load(open(path, "r"))
+        if Path(path).exists():
+            data = json.loads(Path(path).read_text())
         else:
             data = {}
         if "trivial_ecs_data" not in data:
             data["trivial_ecs_data"] = {}
         data["trivial_ecs_data"][str(scale)] = list(ecs_vec)
-        json.dump(data, open(path, "w"), indent=4)
+        Path(path).write_text(json.dumps(data, indent=4))
         lock.release()
     else:
         # compare with previous solution
