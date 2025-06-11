@@ -8,7 +8,8 @@ June 23, 2014
 
 def exec_test(the_file, global_var, local_var):
     global_var["__name__"] = the_file
-    exec(compile(open(the_file).read(), the_file, "exec"), global_var, local_var)
+    with open(the_file, "r") as f:
+        exec(compile(f.read(), the_file, "exec"), global_var, local_var)
 
 
 def do_test(test_to_run, results_location, num_record=10):

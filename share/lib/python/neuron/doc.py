@@ -35,6 +35,7 @@ NEURON+Python Online Help System
 
 """
 
+from pathlib import Path
 
 # override basic helper functionality to give proper help on HocObjects
 class NRNPyHelper(pydoc.Helper):
@@ -200,13 +201,11 @@ def get_docstring(objtype, symbol):
     global _help_dict
     if _help_dict is None:
         import neuron
-        import os
         import zlib
         import pickle
 
-        f = open(os.path.join(os.path.split(neuron.__file__)[0], "help_data.dat"), "rb")
-        _help_dict = pickle.loads(zlib.decompress(f.read()))
-        f.close()
+        with open(Path(neuron.__file__).parent / "help_data.dat", "rb") as f:
+            _help_dict = pickle.loads(zlib.decompress(f.read()))
 
     if (objtype, symbol) == ("", ""):
 
