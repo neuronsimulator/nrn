@@ -21,10 +21,10 @@ on:
         default: "macos-13,macos-14,ubuntu-22.04,ubuntu-22.04-arm"
         required: true
         type: string
-      dry_run:
-        description: "Whether to simulate creating a release or not"
+      upload:
+        description: "Whether to actually upload any files (releases, wheels, etc.)"
         required: true
-        default: true
+        default: false
         type: boolean
 
 env:
@@ -68,6 +68,7 @@ jobs:
             ref: ${{ env.REL_BRANCH }}
 
       - name: Create and upload tag ${{ env.REL_TAG }}
+        if: github.event.inputs.upload == 'true'
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
@@ -79,7 +80,7 @@ jobs:
 
       - name: Create Release
         id: create_release
-        if: github.event.inputs.dry_run == 'false'
+        if: github.event.inputs.upload == 'true'
         uses: ncipollo/release-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -89,6 +90,7 @@ jobs:
           prerelease: true
 
   nrn-full-src-package:
+    name: Create the full-src package
     runs-on: ubuntu-latest
     needs: tag-n-release
     steps:
@@ -97,12 +99,14 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 1
+          ref: ${{ env.REL_BRANCH }}
 
       - name: Create nrn-full-src-package artifact
+        id: create-full-src
         run: |
-          filename="nrn-full-src-package-${{ needs.tag-n-release.outputs.rel_tag }}.tar.gz"
-          echo "filename=$filename" >> $GITHUB_ENV
-          topdir="nrn-${{ needs.tag-n-release.outputs.rel_tag }}"
+          filename="nrn-full-src-package-${{ env.REL_TAG }}.tar.gz"
+          echo "filename=$filename" >> "$GITHUB_OUTPUT"
+          topdir="nrn-${{ env.REL_TAG }}"
           # taken from:
           # https://stackoverflow.com/a/67389978
           git ls-files --recurse-submodules > nrn_files
@@ -117,18 +121,19 @@ jobs:
 
       - name: Upload nrn-full-src-package artifact
         uses: actions/upload-artifact@v4
+        id: upload-full-src
         with:
           name: nrn-full-src-package
-          path: ${{ env.filename }}
+          path: ${{ steps.create-full-src.outputs.filename }}
 
       - name: Download nrn-full-src-package artifact
         uses: actions/download-artifact@v4
         with:
-          name: nrn-full-src-package
+          name: ${{ steps.upload-full-src.outputs.artifact-id }}
 
       - name: Upload to GitHub release
-        if: github.event.inputs.dry_run == 'false'
-        run: gh release upload ${{ needs.tag-n-release.outputs.rel_tag }} nrn-full-src-package-*.tar.gz
+        if: github.event.inputs.upload == 'true'
+        run: gh release upload ${{ env.REL_TAG }} ${{ steps.upload-full-src.outputs.artifact-id }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -160,7 +165,12 @@ jobs:
 
       - name: Build nrn-full-src-package
         run: |
-          python -m pip install -r ${topdir}/nrn_requirements.txt
+          if [[ -f "ci/requirements.txt" ]]; then
+            python -m pip install -r ci/uv_requirements.txt
+            uv pip install -r ci/requirements.txt
+          else
+            python -m pip install -r ${topdir}/nrn_requirements.txt
+          fi
           # we build a simple configuration to save on CI time
           cmake -B build -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_MPI=OFF -DNMODL_ENABLE_PYTHON_BINDINGS=OFF -DNRN_ENABLE_CORENEURON=OFF -S ${topdir}/
           cmake --build build --parallel $(nproc)
@@ -183,7 +193,7 @@ jobs:
           PY_JSON=$(echo "$PY_INPUT" | jq -R 'split(",")')
           echo "matrix=$(jq -c -n --argjson os "$OS_JSON" --argjson py "$PY_JSON" '{os: $os, python_version: $py}')" >> "$GITHUB_OUTPUT"
 
-  wheels:
+  build-wheels:
     name: Build and test wheel on ${{ matrix.os }} with Python ${{ matrix.python_version }}
     needs: generate-wheel-matrix
     uses: ./.github/workflows/wheels-template.yml
@@ -195,10 +205,10 @@ jobs:
       version: ${{ env.REL_TAG }}
       build_type: 'release'
 
-  merge:
+  merge-wheels:
     name: Merge wheel files to one artifact
     runs-on: ubuntu-latest
-    needs: wheels
+    needs: build-wheels
     outputs:
       artifacts-url: ${{ steps.merge-artifacts.outputs.artifacts-url }}
     steps:
@@ -211,17 +221,19 @@ jobs:
           pattern: wheels-*
 
   nrn-build-ci:
-    needs: merge
+    needs: merge-wheels
     uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@master
     with:
-      azure_drop_url: ${{ needs.merge.outputs.artifacts-url }}
+      artifact_url: ${{ needs.merge-wheels.outputs.artifacts-url }}
       neuron_branch: ${{ env.REL_BRANCH }}
-      repo: 'neuronsimulator/nrn'
+      repo: 'neuronsimulator/nrn-build-ci'
 
   pypi-publish:
     name: Upload wheels to PyPI
-    if: github.event.inputs.dry_run == 'false'
-    needs: merge
+    if: github.event.inputs.upload == 'true'
+    needs:
+      - merge-wheels
+      - nrn-build-ci
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -242,11 +254,10 @@ jobs:
     needs: tag-n-release
     uses: neuronsimulator/nrn/.github/workflows/windows.yml@master
     with:
-      tag: ${{ needs.tag-n-release.outputs.rel_tag }}
+      tag: ${{ env.REL_TAG }}
 
   upload-windows-installer:
     name: Publish Windows installer
-    if: github.event.inputs.dry_run == 'false'
     needs: build-windows-installer
     runs-on: ubuntu-latest
     steps:
@@ -255,11 +266,19 @@ jobs:
         with:
           name: nrn-nightly-AMD64.exe
 
-      - name: Publish Windows installer
+      - name: Rename Windows installer
+        id: rename
         run: |
           # convert "3.9,3.10..." into "39-310-..."
           py_version_string="$(echo "${{ github.event.inputs.python_version }}" | sed 's/\.//g; s/,/-/g')"
-          cp nrn-nightly-AMD64.exe nrn-${{ needs.tag-n-release.outputs.rel_tag }}.w64-mingw-py-${py_version_string}-setup.exe
-          gh release upload ${{ needs.tag-n-release.outputs.rel_tag }} nrn-${{ needs.tag-n-release.outputs.rel_tag }}.w64-mingw-py-${py_version_string}-setup.exe
+          win_installer_name="nrn-${{ env.REL_TAG }}.w64-mingw-py-${py_version_string}-setup.exe"
+          echo "win_installer_name=${win_installer_name}" >> "$GITHUB_OUTPUT"
+          cp nrn-nightly-AMD64.exe "${win_installer_name}"
+          ls -lha "${win_installer_name}"
+
+      - name: Publish Windows installer
+        if: github.event.inputs.upload == 'true'
+        run: |
+          gh release upload ${{ env.REL_TAG }} ${{ steps.rename.outputs.win_installer_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
