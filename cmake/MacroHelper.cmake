@@ -270,7 +270,7 @@ function(copy_build_list FILE_LIST BUILD_PREFIX)
   foreach(file IN LISTS ${FILE_LIST})
     get_filename_component(file_abs "${CMAKE_CURRENT_SOURCE_DIR}/${file}" ABSOLUTE)
     get_filename_component(file_dir "${file}" DIRECTORY)
-    file(COPY "${file_abs}" DESTINATION "${BUILD_PREFIX}/${file_dir}")
+    configure_file("${file_abs}" "${BUILD_PREFIX}/${file_dir}" COPYONLY)
   endforeach()
 endfunction()
 
