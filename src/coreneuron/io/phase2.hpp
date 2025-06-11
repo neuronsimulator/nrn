@@ -13,6 +13,7 @@
 #include "coreneuron/utils/ivocvect.hpp"
 
 #include <memory>
+#include <cstdint>
 
 namespace coreneuron {
 struct NrnThread;
