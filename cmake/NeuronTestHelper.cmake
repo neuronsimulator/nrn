@@ -156,7 +156,7 @@ function(nrn_add_test_group)
     string(REGEX REPLACE "([][+.*()^])" "\\\\\\1" NRN_RUN_FROM_BUILD_DIR_ENV
                          "${NRN_RUN_FROM_BUILD_DIR_ENV}")
     set(nrnivmodl_command cmake -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
-                          $<TAGET_FILE:nrnivmodl> ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
+                          ${CMAKE_BINARY_DIR}/bin/nrnivmodl ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
     # The user decides whether or not this test group should have its MOD files compiled for
     # CoreNEURON.
     set(nrnivmodl_dependencies)
