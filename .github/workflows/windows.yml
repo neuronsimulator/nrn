@@ -32,7 +32,6 @@ on: [push]
 # component to use cached software.
 env:
     PYTHON_VERSIONS: |
-      3.8
       3.9
       3.10
       3.11
@@ -73,7 +72,8 @@ jobs:
         "allPythons=${allPythons}" | Out-File -FilePath $env:GITHUB_ENV -Append
 
         $pythons | Foreach-Object {
-          & $_ -m pip install -r requirements.txt
+          & $_ -m pip install -r ci/uv_requirements.txt
+          & $_ -m uv pip install -r ci/requirements.txt
         }
 
         $firstCython = Join-Path $(Get-Item $firstPython).DirectoryName -childPath "Scripts" -AdditionalChildPath "cython.exe"
