@@ -3308,7 +3308,7 @@ extern PyObject* nrn_type_from_metaclass(PyTypeObject* meta,
                                          PyType_Spec* spec,
                                          PyObject* bases);
 
-NRN_API PyObject* nrnpy_hoc() {
+extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     PyObject* m;
     PyTypeObject* pto;
     PyType_Spec spec;

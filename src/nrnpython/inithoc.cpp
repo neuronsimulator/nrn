@@ -24,7 +24,7 @@ extern NRN_DLLIMPORT int nrn_main_launch;
 // int nrn_global_argc;
 extern NRN_DLLIMPORT const char** nrn_global_argv;
 extern NRN_DLLIMPORT void (*p_nrnpython_finalize)();
-extern NRN_DLLIMPORT PyObject* nrnpy_hoc();
+extern "C" PyObject* nrnpy_hoc();
 
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
