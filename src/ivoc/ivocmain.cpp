@@ -14,6 +14,7 @@ void hoc_main1_init(const char*, const char**);
 #include <filesystem>
 #include <stdio.h>
 #include <stdlib.h>
+#include <filesystem>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #if !defined(__APPLE__)

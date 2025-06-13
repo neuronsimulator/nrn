@@ -1,7 +1,8 @@
 name: Windows Installer
 
 concurrency:
-  group: ${{ github.workflow }}#${{ github.ref }}
+  # Don't cancel on master, creating a PR when a push workflow is already going will cancel the push workflow in favour of the PR workflow
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 on: [push]
@@ -42,7 +43,7 @@ jobs:
     timeout-minutes: 45
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         ref: ${{ inputs.tag }}
         fetch-depth: 500
