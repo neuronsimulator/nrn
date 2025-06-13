@@ -676,8 +676,8 @@ static double pwman_scale(void* v) {
             nrn_gui_exec(pwman_scale1, (void*) ((intptr_t) 1));
             return scale;
         }
-#endif
         iv_display_scale(scale);
+#endif
     }
 #endif
     return scale;

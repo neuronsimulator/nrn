@@ -1708,7 +1708,7 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
 #else
 #if INTERVIEWS
         if (nrn_fw_eq(hoc_fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
-            run_til_stdin());
+            run_til_stdin();
         }
 #endif  // INTERVIEWS
 #if defined(WIN32)

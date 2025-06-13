@@ -812,7 +812,7 @@ void hoc_Chdir(void) {
 }
 
 NRN_API int nrn_is_python_extension;
-static int (*nrnpy_pr_stdoe_callback)(int, char*);
+int (*nrnpy_pr_stdoe_callback)(int, char*);
 static int (*nrnpy_pass_callback)();
 
 extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {

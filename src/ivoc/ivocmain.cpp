@@ -238,14 +238,6 @@ extern std::string nrnmpi_load();
 void nrnmpi_load_or_exit();
 #endif
 
-// some things are defined in libraries earlier than they are used so...
-#include <nrnisaac.h>
-static void force_load() {
-    if (always_false) {
-        nrnisaac_new();
-    }
-}
-
 #ifdef WIN32
 // see iv/src/OS/directory.cpp
 #include <sys/stat.h>

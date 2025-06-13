@@ -491,16 +491,16 @@ extern void nrniv_bind_call(void);
 #endif
 
 void hoc_notify_iv() {
-    IFGUI
+    if (hoc_usegui) {
 #ifdef WIN32
-    if (!nrn_is_gui_thread()) {
-        // allow gui thread to run
-        nrnpy_pass();
-        hoc_pushx(0.);
-        hoc_ret();
-        return;
-    }
-    nrniv_bind_call();
+        if (!nrn_is_gui_thread()) {
+            // allow gui thread to run
+            nrnpy_pass();
+            hoc_pushx(0.);
+            hoc_ret();
+            return;
+        }
+        nrniv_bind_call();
 #endif
         Resource::flush();
         Oc oc;
