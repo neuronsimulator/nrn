@@ -75,6 +75,7 @@ extern short* nrn_artcell_qindex_;
 int nrn_use_selfqueue_;
 void nrn_pending_selfqueue(double tt, NrnThread*);
 static void all_pending_selfqueue(double tt);
+static void watch_signal_clear(CvMembList*);
 static void* pending_selfqueue(NrnThread*);
 extern int nrn_use_daspk_;
 int linmod_extra_eqn_count();
@@ -1308,6 +1309,7 @@ void NetCvode::del_cv_memb_list(Cvode* cvode) {
             z.psl_th_->clear();
             delete std::exchange(z.psl_th_, nullptr);
         }
+        watch_signal_clear(z.cv_memb_list_);
         if (cvode != gcv_) {
             z.delete_memb_list(std::exchange(z.cv_memb_list_, nullptr));
         } else {
@@ -2478,6 +2480,31 @@ void _nrn_free_watch(Datum* d, int offset, int n) {
             wc->unregister.send(wc);
             delete wc;
             d[i] = nullptr;
+        }
+    }
+}
+
+/* A CvodeThreadData.watch_list_ is about to be freed,
+ * need to avoid the possibility of a WatchCondition sending a signal to it.
+ */
+static void watch_signal_clear(CvMembList* cmlist) {
+    for (auto* cml = cmlist; cml; cml = cml->next) {
+        int type = cml->index;
+        int winfo = nrn_watch_info_[type];
+        if (winfo) {
+            int watch_offset = winfo / 10000;
+            int nwatch = winfo % 10000;
+            for (auto& ml: cml->ml) {
+                size_t cntml = ml.nodecount;
+                for (size_t iml = 0; iml < cntml; ++iml) {
+                    Datum* d = ml.pdata[iml] + watch_offset;
+                    for (int iw = 1; iw <= nwatch; ++iw) {
+                        if (auto* wc = d[iw].get<WatchCondition*>(); wc) {
+                            wc->unregister.clear();
+                        }
+                    }
+                }
+            }
         }
     }
 }

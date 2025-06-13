@@ -163,10 +163,12 @@ int* nrn_prop_dparam_size_;
 int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
 NrnWatchAllocateFunc_t* nrn_watch_allocate_;
+int* nrn_watch_info_;
 std::unordered_map<int, void (*)(Prop*)> nrn_mech_inst_destruct;
 
-void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
+void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf, int offset, int nwatch) {
     nrn_watch_allocate_[type] = waf;
+    nrn_watch_info_[type] = 10000 * offset + nwatch;
 }
 
 bbcore_write_t* nrn_bbcore_write_;
@@ -344,6 +346,7 @@ void hoc_last_init(void) {
     nrn_nmodl_filename_ = (const char**) ecalloc(memb_func_size_, sizeof(const char*));
     nrn_watch_allocate_ = (NrnWatchAllocateFunc_t*) ecalloc(memb_func_size_,
                                                             sizeof(NrnWatchAllocateFunc_t));
+    nrn_watch_info_ = (int*) ecalloc(memb_func_size_, sizeof(int));
 
 #if KEEP_NSEG_PARM
     {
@@ -629,6 +632,7 @@ void reallocate_mech_data(int mechtype) {
         nrn_watch_allocate_ =
             (NrnWatchAllocateFunc_t*) erealloc(nrn_watch_allocate_,
                                                memb_func_size_ * sizeof(NrnWatchAllocateFunc_t));
+        nrn_watch_info_ = (int*) erealloc(nrn_watch_info_, memb_func_size_ * sizeof(int));
         for (int j = memb_func_size_ - 20; j < memb_func_size_; ++j) {
             pnt_map[j] = 0;
             point_process[j] = (Point_process*) 0;
@@ -645,6 +649,7 @@ void reallocate_mech_data(int mechtype) {
             nrn_nmodl_text_[j] = (const char*) 0;
             nrn_nmodl_filename_[j] = (const char*) 0;
             nrn_watch_allocate_[j] = (NrnWatchAllocateFunc_t) 0;
+            nrn_watch_info_[j] = 0;
         }
         nrn_mk_prop_pools(memb_func_size_);
     }
