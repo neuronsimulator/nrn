@@ -1,5 +1,4 @@
-#ifndef xmenu_h
-#define xmenu_h
+#pragma once
 
 #include <InterViews/window.h>
 #include <InterViews/box.h>
@@ -511,6 +510,3 @@ class HocStateMenuItem: public HocUpdateItem, public Observer {
     MenuItem* b_;
     HocAction* action_;
 };
-
-
-#endif

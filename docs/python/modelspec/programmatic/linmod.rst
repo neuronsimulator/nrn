@@ -10,13 +10,13 @@ LinearMechanism
 
 
     Syntax:
-        ``lm = h.LinearMechanism(c, g, y, [y0], b)``
+        ``lm = n.LinearMechanism(c, g, y, [y0], b)``
 
-        ``lm = h.LinearMechanism(c, g, y, [y0], b, x, sec=section)``
+        ``lm = n.LinearMechanism(c, g, y, [y0], b, x, sec=section)``
 
-        ``lm = h.LinearMechanism(c, g, y, [y0], b, sl, xvec, [layervec])``
+        ``lm = n.LinearMechanism(c, g, y, [y0], b, sl, xvec, [layervec])``
 
-        ``lm = h.LinearMechanism(pycallable, c, g, y, ...)``
+        ``lm = n.LinearMechanism(pycallable, c, g, y, ...)``
 
 
     Description:
@@ -85,27 +85,27 @@ LinearMechanism
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
             tstop = 5
             
-            soma = h.Section(name="soma")
-            soma.insert(h.hh)
+            soma = n.Section("soma")
+            soma.insert(n.hh)
             
             # ideal voltage clamp. 
-            c = h.Matrix(2, 2, 2) # sparse - no elements used 
-            g = h.Matrix(2, 2) 
-            y = h.Vector([0, 0])       # y[1] is injected current 
-            b = h.Vector([0, 10])      # b[1] is voltage clamp level 
+            c = n.Matrix(2, 2, 2) # sparse - no elements used 
+            g = n.Matrix(2, 2) 
+            y = n.Vector([0, 0])       # y[1] is injected current 
+            b = n.Vector([0, 10])      # b[1] is voltage clamp level 
             g.setval(0, 1, -1)
             g.setval(1, 0, 1)
              
-            model = h.LinearMechanism(c, g, y, b, 0.5, sec=soma) 
+            model = n.LinearMechanism(c, g, y, b, 0.5, sec=soma) 
             
-            h.finitialize(-65)
-            while h.t < tstop:
-                print('t=%-8g v=%-8g y[1]=%-8g' % (h.t, soma(0.5).v, y[1]))
-                h.fadvance()
+            n.finitialize(-65)
+            while n.t < tstop:
+                print(f't={n.t:<8g} v={soma(0.5).v:<8g} y[1]={y[1]:<8g}')
+                n.fadvance()
 
 
 
@@ -113,7 +113,7 @@ LinearMechanism
     
         Does not work with the CVODE integrator but does work with the
         differential-algebraic solver IDA. Note that if the standard
-        run system is loaded, ``h.cvode_active(True)`` will automatically
+        run system is loaded, ``n.cvode_active(True)`` will automatically
         choose the correct variable step integrator.
 
     .. warning::
@@ -142,40 +142,40 @@ LinearMechanism
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
             from math import sin
 
-            cmat = h.Matrix(2, 2, 2).ident()
+            cmat = n.Matrix(2, 2, 2).ident()
 
-            gmat = h.Matrix(2, 2, 2)
+            gmat = n.Matrix(2, 2, 2)
             gmat.setval(0, 1, -1)
 
-            y = h.Vector(2)
-            y0 = h.Vector(2)
-            b = h.Vector(2)
+            y = n.Vector(2)
+            y0 = n.Vector(2)
+            b = n.Vector(2)
 
             def callback():
               b[1] = -sin(y[0])
 
-            nlm = h.LinearMechanism(callback, cmat, gmat, y, y0, b)
+            nlm = n.LinearMechanism(callback, cmat, gmat, y, y0, b)
 
-            dummy = h.Section(name="dummy")
-            trajec = h.Vector().record(y._ref_x[0])
-            tvec = h.Vector().record(h._ref_t)
+            dummy = n.Section("dummy")
+            trajec = n.Vector().record(y._ref_x[0])
+            tvec = n.Vector().record(n._ref_t)
 
-            graph = h.Graph()
-            h.tstop=50
+            graph = n.Graph()
+            n.tstop=50
 
             def prun(theta0, omega0):
               graph.erase()
               y0[0] = theta0
               y0[1] = omega0
-              h.run()
+              n.run()
               trajec.line(graph, tvec)
 
-            h.dt /= 10
-            h.cvode.atol(1e-5)
-            h.cvode_active(True)
+            n.dt /= 10
+            n.cvode.atol(1e-5)
+            n.cvode_active(True)
             prun(0, 1.9999) # 2.0001 will keep it rotating
             graph.exec_menu("View = plot")
 

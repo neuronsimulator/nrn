@@ -10,7 +10,7 @@ PlotShape
         Class for making a Shape window useful for coloring a shape 
         according to a variable value and creating time and space graphs 
         of a variable. The default variable is *v*. The first arg may be 
-        a SectionList. 
+        a SectionList.  This automatically calls :func:`define_shape`.
 
 ----
 
@@ -22,6 +22,7 @@ PlotShape
         ``ps.plot(graphics_object)``
 
     Description:
+
         In NEURON 7.7+, PlotShape.plot works both with and without Interviews support.
 	Variables, sectionlists, and scale are supported.
         Clicking on a segment displays the value and the segment id.
@@ -32,7 +33,7 @@ PlotShape
 
     .. note::
     
-        If Interviews is enabled, the flag ``False`` must be passed to the ``h.PlotShape``
+        If Interviews is enabled, the flag ``False`` must be passed to the ``n.PlotShape``
 	constructor to avoid additionally displaying a PlotShape using Interviews graphics.
 	See the example:
 
@@ -43,39 +44,123 @@ PlotShape
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             from matplotlib import pyplot 
-            h.load_file('c91662.ses')  # a morphology file
-            for sec in h.allsec():
+            n.load_file('c91662.ses')  # a morphology file
+            for sec in n.allsec():
                 if 'apic' in str(sec):
                     sec.v = 0
-            ps = h.PlotShape(False)  # False tells h.PlotShape not to use NEURON's gui
+            ps = n.PlotShape(False)  # False tells n.PlotShape not to use NEURON's gui
             ps.plot(pyplot)
             pyplot.show()
         
         .. note::
-            In Jupyter, you can use %matplotlib notebook to get interactive PlotShape
-	    or use plotly instead.
+
+            In Jupyter, you can use ``%matplotlib notebook`` to get interactive PlotShape
+	        or use plotly instead.
     
     Example:
+
         You can also pass in a SectionList argument to only plot specific sections
 
 
         .. code-block::   
             python
 
-            from neuron import h
+            from neuron import n
             from matplotlib import pyplot, cm
-            h.load_file('c91662.ses')
-            sl = h.SectionList([sec for sec in h.allsec() if 'apic' in str(sec)])
+            n.load_file('c91662.ses')
+            sl = n.SectionList([sec for sec in n.allsec() if 'apic' in str(sec)])
             for sec in sl:
                 sec.v = 0
-            ps = h.PlotShape(sl, False)
+            ps = n.PlotShape(sl, False)
             ps.scale(-80, 40)
             ps.variable('v')
             ax = ps.plot(pyplot, cmap=cm.jet)
             pyplot.show()    
-            
+
+    Example:
+
+        Line width across the neuron morphology is able to be altered depending on different modes. ``ps.show(0)`` allows for visualizing diameters for each segment across the cell. Additionally, when ``mode = 1`` or ``mode = 2`` , line_width argument can be passed in to specify fixed width across cell.
+
+	For plotting on matplotlib:
+
+        .. code-block::
+            python
+
+            from neuron import n, gui
+            from neuron.units import mV, ms
+            from matplotlib.pyplot import cm
+            from matplotlib import pyplot
+
+            n.load_file("c91662.ses")
+
+            for sec in n.allsec():
+                sec.nseg = int(1 + 2 * (sec.L // 40))
+                sec.insert(n.hh)
+
+            ic = n.IClamp(n.soma(0.5))
+            ic.delay = 1 * ms
+            ic.dur = 1 * ms
+            ic.amp = 10
+
+            n.finitialize(-65 * mV)
+            n.continuerun(2 * ms)
+
+            ps = n.PlotShape(False)
+            ps.variable("v")
+            ps.show(1)
+            ps.plot(pyplot, cmap=cm.magma, line_width=10, color="red")
+            pyplot.show()
+
+        For plotting on plotly:
+
+            .. code-block::
+                python
+
+                import plotly
+                import matplotlib
+                from neuron import n
+                from neuron.units import mV, ms
+
+                n.load_file("c91662.ses")
+                for sec in n.allsec():
+                    sec.nseg = int(1 + 2 * (sec.L // 40))
+                    sec.insert(n.hh)
+
+                ic = n.IClamp(n.soma(0.5))
+                ic.delay = 1 * ms
+                ic.dur = 1 * ms
+                ic.amp = 10
+
+                n.finitialize(-65 * mV)
+                n.continuerun(2 * ms)
+
+                ps = n.PlotShape(False)
+                ps.variable("v")
+                ps.show(1)
+                ps.plot(plotly, width=7, cmap=matplotlib.colormaps["viridis"]).show()
+
+
+    Example:
+        Color argument can also be passed in when consistent color across cell is preferred. When not specified, the morphology will be plotted in color gradient passed as ``cmap`` in accordance with voltage values of each segment after simulation is initiated. To specifiy cmap, 
+
+        .. code-block::   
+            python
+
+            from neuron import n
+            from matplotlib import pyplot, cm
+
+            n.load_file("c91662.ses")
+            sl = n.SectionList([sec for sec in n.allsec() if "apic" in str(sec)])
+            for sec in sl:
+                sec.v = 0
+            ps = n.PlotShape(False)
+            ps.scale(-80, 40)
+            ps.variable("v")
+            ax = ps.plot(pyplot, line_width=3, color="red")
+            pyplot.show()
+
 ----
 
 .. method:: PlotShape.scale
@@ -180,13 +265,13 @@ PlotShape
         .. code-block::
             python
             
-            from neuron import h, rxd
+            from neuron import n, rxd
             from neuron.units import mM, µm, ms, mV
             import plotly
-            h.load_file("stdrun.hoc")
+            n.load_file("stdrun.hoc")
 
-            dend1 = h.Section('dend1')
-            dend2 = h.Section('dend2')
+            dend1 = n.Section('dend1')
+            dend2 = n.Section('dend2')
             dend2.connect(dend1(1))
 
             dend1.nseg = dend1.L = dend2.nseg = dend2.L = 11
@@ -199,10 +284,10 @@ PlotShape
 
             ca.nodes(dend1(0.5))[0].include_flux(1e-13, units="mmol/ms")
 
-            h.finitialize(-65 * mV)
-            h.continuerun(50 * ms)
+            n.finitialize(-65 * mV)
+            n.continuerun(50 * ms)
 
-            ps = h.PlotShape(False)
+            ps = n.PlotShape(False)
 
             ps.variable(ca[cyt])
 
@@ -365,9 +450,9 @@ PlotShape
 .. method:: PlotShape.mark
 
     Syntax:
-        ``ps = h.PlotShape(False)``
+        ``ps = n.PlotShape(False)``
 
-        ``ps.plot(pyplot).mark(h.soma[0](0.5)).mark(h.apical_dendrite[68](1))``
+        ``ps.plot(pyplot).mark(n.soma[0](0.5)).mark(n.apical_dendrite[68](1))``
 
         ``plt.show()``
 
@@ -499,14 +584,14 @@ PlotShape
         .. code-block::
             python
 
-			from neuron import h, gui
+			from neuron import n, gui
 			import time
 
-			soma = h.Section(name="soma")  
+			soma = n.Section("soma")  
 
-			sl = h.SectionList() 
+			sl = n.SectionList() 
  
-			s = h.PlotShape(sl) 
+			s = n.PlotShape(sl) 
 			s.colormap(3) 
 			s.colormap(0, 255, 0, 0) 
 			s.colormap(1, 255, 255, 0) 
@@ -515,7 +600,7 @@ PlotShape
 
 			nx = 30 
 			ny = 30 
-			vec = h.Vector(nx*ny) 
+			vec = n.Vector(nx*ny) 
 			vec.fill(0) 
 
 			for i in range(nx):
@@ -525,16 +610,16 @@ PlotShape
 			s.size(-.5, 1, 0, 1) 
 			s.exec_menu("Shape Plot") 
  
-			r = h.Random() 
+			r = n.Random() 
 			r.poisson(.01) 
  
-			h.doNotify() 
+			n.doNotify() 
  
 			def p():
 				for i in range(1,1001): 
 					vec.setrand(r) 
 					s.fastflush() # faster by up to a factor of 4 
-					h.doNotify() 
+					n.doNotify() 
 
 			start = time.perf_counter()
 			p()

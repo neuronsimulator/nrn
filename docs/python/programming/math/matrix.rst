@@ -10,9 +10,9 @@ Matrix
 
 
     Syntax:
-        ``mobj = h.Matrix(nrow, ncol)``
+        ``mobj = n.Matrix(nrow, ncol)``
 
-        ``mobj = h.Matrix(nrow, ncol, type)``
+        ``mobj = n.Matrix(nrow, ncol, type)``
 
 
     Description:
@@ -53,20 +53,17 @@ Matrix
         By default, a new Matrix is of type MFULL (= 1) and allocates storage for 
         all nrow*ncol elements. Scaffolding is in place for matrices of storage 
         type MSPARSE (=2) and MBAND (=3) but not many methods have been interfaced 
-        to the meschach library at this time. If a method is called on a matrix type 
+        to the eigen library at this time. If a method is called on a matrix type 
         whose method has not been implemented, an error message will be printed. 
         It is intended that implemented methods will be transparent to the user, eg 
         m*x=b (``x = m.solv(b)`` ) will solve the linear system 
         regardless of the type of m and 
         v1 = m*v2 (``v1 = m.mulv(v2)`` ) will perform the vector multiplication. 
          
-        Matrix is implemented using the 
-        `meschach c library by David E. Stewart <http://www.math.uiowa.edu/~dstewart/meschach/meschach.html>`_
-        (discovered at http://www.netlib.org/c/index.html\ ) which contains a large collection 
-        of routines for sparse, banded, and full matrices. Many of the useful 
-        routines  have not 
-        been interfaced with the hoc interpreter but can be easily added on request 
-        or you can add it yourself 
+        Matrix is implemented using the `eigen3 library <https://eigen.tuxfamily.org>`_ 
+        which contains a large collection of routines for sparse, banded, and full matrices. 
+        Many of the useful routines  have not been interfaced with the hoc 
+        interpreter but can be easily added on request or you can add it yourself 
         by analogy with the code in ``nrn/src/ivoc/(matrix.c ocmatrix.[ch])`` 
         At this time the MFULL matrix type is complete enough to do useful work 
         and MSPARSE can be used to multiply a matrix by a vector and solve 
@@ -91,7 +88,7 @@ Matrix
 
 
     Syntax:
-        ``n = m.nrow()``
+        ``num_rows = m.nrow()``
 
 
     Description:
@@ -110,7 +107,7 @@ Matrix
 
 .. method:: Matrix.ncol
 
-        n = m.ncol()
+        num_cols = m.ncol()
 
     Description:
         returns the column dimension of the matrix. Column indices range 
@@ -143,8 +140,8 @@ Matrix
         .. code-block::
             python
             
-            >>> from neuron import h
-            >>> m = h.Matrix(3, 5)
+            >>> from neuron import n
+            >>> m = n.Matrix(3, 5)
             >>> ignore_return = m.printf()
              0        0        0        0        0
              0        0        0        0        0
@@ -221,9 +218,9 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            m = h.Matrix(4,6) 
+            m = n.Matrix(4,6) 
             for i in range(m.nrow()):
                 for j in range(m.ncol()):
                     m.setval(i, j, 1 + 10*i+j) 
@@ -234,7 +231,7 @@ Matrix
             print('')
             m.bcopy(1,2,2,3,2,3).printf() 
             print('')
-            m.bcopy(1,2,2,3,2,3, h.Matrix(8,8)).printf()
+            m.bcopy(1,2,2,3,2,3, n.Matrix(8,8)).printf()
 
 
     .. warning::
@@ -284,7 +281,7 @@ Matrix
 
 
     Syntax:
-        ``n = m.sprowlen(i)``
+        ``num_existing_elements = m.sprowlen(i)``
 
 
     Description:
@@ -320,7 +317,7 @@ Matrix
             python
 
             from __future__ import print_function
-            from neuron import h
+            from neuron import n
 
             def sparse_print(m): 
                 m.printf()
@@ -328,13 +325,13 @@ Matrix
                 for i in range(m.nrow()):    
                     print(f"{i}  ", end='')
                     for jx in range(m.sprowlen(i)):
-                        j = h.ref(0)
+                        j = n.ref(0)
                         x=m.spgetrowval(i, jx, j) 
                         print(f"  {j[0]}:{x}", end='')
                     print()
 
 
-            m = h.Matrix(4, 5, 2) 
+            m = n.Matrix(4, 5, 2) 
             m.setval(0, 2, 1.2) 
             m.setval(0, 4, 2.4) 
             m.setval(1, 1, 3.1) 
@@ -426,11 +423,11 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            f = h.File("filename") 
+            f = n.File("filename") 
             f.ropen() 
-            m = h.Matrix() 
+            m = n.Matrix() 
             m.scanf(f) 
             print(m.nrow(), m.ncol())
 
@@ -465,10 +462,10 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            v1 = h.Vector([1, 2, 3, 4]) 
-            m = h.Matrix(3, 4) 
+            v1 = n.Vector([1, 2, 3, 4]) 
+            m = n.Matrix(3, 4) 
             for i in range(3):
                 for j in range(3):
                     m.setval(i, j, i*10 + j) 
@@ -488,10 +485,10 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            v1 = h.Vector(range(1, 101)) 
-            m = h.Matrix(100, 100, 2) ##sparse matrix 
+            v1 = n.Vector(range(1, 101)) 
+            m = n.Matrix(100, 100, 2) ##sparse matrix 
             ##reverse permutation 
             for i in range(100): 
                 m.setval(i, 99 - i, 1) 
@@ -571,9 +568,9 @@ Matrix
             python
 
             from __future__ import print_function
-            from neuron import h
+            from neuron import n
 
-            m = h.Matrix(4,4) 
+            m = n.Matrix(4,4) 
             for i in range(m.nrow()):
                 for j in range(m.ncol()):
                     m.setval(i, j, 1 + 10*j + 100*i)
@@ -620,11 +617,11 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            b = h.Vector(3) 
+            b = n.Vector(3) 
             b.indgen(1,1) 
-            m = h.Matrix(3, 3) 
+            m = n.Matrix(3, 3) 
             for i in range(m.nrow()):
                 for j in range(m.ncol()):
                     m.setval(i, j, i*j + 1)
@@ -641,11 +638,11 @@ Matrix
         .. code-block::
             python
 
-            m = h.Matrix(1000, 1000, 2) ## sparse type 
+            m = n.Matrix(1000, 1000, 2) ## sparse type 
             m.setdiag(0, 3) 
             m.setdiag(-1, -1) 
             m.setdiag(1, -1) 
-            b = h.Vector(1000) 
+            b = n.Vector(1000) 
             b[500] = 1 
             x = m.solv(b) 
             print()
@@ -677,13 +674,13 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            m = h.Matrix(2,2) 
+            m = n.Matrix(2,2) 
             m.setval(0, 1, 20) 
             m.setval(1, 0, 30) 
             m.printf() 
-            ex = h.ref(0)
+            ex = n.ref(0)
             mant = m.det(ex) 
             print(mant*10**ex[0])
 
@@ -713,9 +710,9 @@ Matrix
     .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            m1 = h.Matrix(6, 6) 
+            m1 = n.Matrix(6, 6) 
             for i in range(-1, 2):
                 if i == 0:
                     m1.setdiag(i, 2) 
@@ -777,7 +774,7 @@ Matrix
         .. code-block::
             python
 
-            m = h.Matrix(4,4) 
+            m = n.Matrix(4,4) 
             m.ident() 
             m.muls(-10) 
             m.printf()
@@ -852,10 +849,10 @@ Matrix
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
 
-            m = h.Matrix(5,7) 
-            v1 = h.Vector(5) 
+            m = n.Matrix(5,7) 
+            v1 = n.Vector(5) 
             for i in range(-4,7): 
                 m.setdiag(i, i) 
             m.printf()
@@ -902,7 +899,7 @@ Matrix
         .. code-block::
             python
 
-            m = h.Matrix(4, 6) 
+            m = n.Matrix(4, 6) 
             m.ident() 
             m.printf() 
 
@@ -928,10 +925,10 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            m = h.Matrix(8,8) 
-            v1 = h.Vector(8) 
+            m = n.Matrix(8,8) 
+            v1 = n.Vector(8) 
             for i in range(-1,2):
                 v1.fill(2 - 3*abs(i)) 
                 m.setdiag(i, v1) 
@@ -966,9 +963,9 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            m = h.Matrix(6, 6) 
+            m = n.Matrix(6, 6) 
             m.ident()
             m.setval(0, 5, 1)
             m.setval(5, 0, 1) 
@@ -1003,10 +1000,10 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            m = h.Matrix(7,7) 
-            v1 = h.Vector(7) 
+            m = n.Matrix(7,7) 
+            v1 = n.Vector(7) 
             for i in range(-1, 2):
                 v1.fill(2 - 3*abs(i))
                 m.setdiag(i, v1)
@@ -1052,13 +1049,13 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
  
             def svdtest(a): 
-                umat = h.Matrix() 
-                vmat = h.Matrix() 
+                umat = n.Matrix() 
+                vmat = n.Matrix() 
                 dvec = a.svd(umat, vmat) 
-                dmat = h.Matrix(a.nrow(), a.ncol()) 
+                dmat = n.Matrix(a.nrow(), a.ncol()) 
                 dmat.setdiag(0, dvec) 
                 print("dvec")
                 dvec.printf()
@@ -1074,18 +1071,18 @@ Matrix
                 umat.transpose().mulm(dmat).mulm(vmat).printf() 
  
 
-            a = h.Matrix(5, 3) 
+            a = n.Matrix(5, 3) 
             a.setdiag(0, a.getdiag(0).indgen().add(1)) 
             svdtest(a) 
  
-            a = h.Matrix(6, 6) 
-            r = h.Random() 
+            a = n.Matrix(6, 6) 
+            r = n.Random() 
             r.discunif(1,10) 
             for i in range(a.nrow()):
                 a.setrow(i, a.getrow(i).setrand(r)) 
             svdtest(a) 
  
-            a = h.Matrix(2,2) 
+            a = n.Matrix(2,2) 
             a.setrow(0, 1) 
             a.setrow(1, 2) 
             svdtest(a) 
@@ -1114,9 +1111,9 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            m = h.Matrix(1,5) 
+            m = n.Matrix(1,5) 
             for i in range(5):
                 m.setval(0, i, i) 
             m.printf()
@@ -1156,15 +1153,15 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h    
+            from neuron import n    
 
-            m = h.Matrix(5,5) 
+            m = n.Matrix(5,5) 
             m.setdiag(0, 2) 
             m.setdiag(-1, -1) 
             m.setdiag(1, -1) 
             m.printf()
  
-            q = h.Matrix(1,1) 
+            q = n.Matrix(1,1) 
             e = m.symmeig(q) 
             print("eigenvectors")
             q.printf()
@@ -1211,9 +1208,9 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            m = h.Matrix(4,5) 
+            m = n.Matrix(4,5) 
             m.from_vector(m.to_vector().indgen()).printf()
 
 
@@ -1245,9 +1242,9 @@ Matrix
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            m = h.Matrix(4,5) 
+            m = n.Matrix(4,5) 
             m.from_vector(m.to_vector().indgen()).printf() 
 
 

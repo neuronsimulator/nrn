@@ -1,6 +1,4 @@
-
-#ifndef hocdec_h
-#define hocdec_h
+#pragma once
 #define INCLUDEHOCH 1
 
 #include "neuron/container/generic_data_handle.hpp"
@@ -85,11 +83,7 @@ typedef char* Upoint;
 #define USERINT      1 /* For subtype */
 #define USERDOUBLE   2
 #define USERPROPERTY 3 /* for newcable non-range variables */
-#define USERFLOAT    4 /* John Miller's NEMO uses floats */
-#if NEMO
-#define NEMONODE 5 /* looks syntactically like vector */
-#define NEMOAREA 6 /* looks like vector */
-#endif
+#define USERFLOAT    4
 #define SYMBOL       7  /* for stack type */
 #define OBJECTTMP    8  /* temporary object on stack */
 #define STKOBJ_UNREF 9  /* already unreffed temporary object on stack */
@@ -138,7 +132,10 @@ struct Symbol { /* symbol table entry */
                     with old nmodl dll's */
     Symbol* next;           /* to link to another */
 };
-#define ISARRAY(arg) (arg->arayinfo != (Arrayinfo*) 0)
+
+inline bool is_array(const Symbol& sym) {
+    return sym.arayinfo != nullptr;
+}
 
 using hoc_List = hoc_Item;
 
@@ -161,7 +158,6 @@ struct cTemplate {
     void* (*constructor)(struct Object*);
     void (*destructor)(void*);
     void (*steer)(void*); /* normally nullptr */
-    int (*checkpoint)(void**);
 };
 
 union Objectdata {
@@ -224,10 +220,6 @@ struct HocParmUnits { /* units for symbol values */
 
 #include "oc_ansi.h"
 
-void* emalloc(size_t n);
-void* ecalloc(size_t n, size_t size);
-void* erealloc(void* ptr, size_t n);
-
 extern Inst *hoc_progp, *hoc_progbase, *hoc_prog, *hoc_prog_parse_recover;
 extern Inst* hoc_pc;
 
@@ -270,7 +262,6 @@ int ilint;
 #define Strncat cplint = strncat
 #define Strcpy  cplint = strcpy
 #define Strncpy cplint = strncpy
-#define Printf  ilint = printf
 #else
 #undef IGNORE
 #define IGNORE(arg) arg
@@ -279,14 +270,13 @@ int ilint;
 #define Strncat strncat
 #define Strcpy  strcpy
 #define Strncpy strncpy
-#define Printf  nrnpy_pr
 #endif
 using neuron::Sprintf;
+using neuron::SprintfAsrt;
 
-#define ERRCHK(c1) c1
-
-#define IFGUI  if (hoc_usegui) {
-#define ENDGUI }
+// No longer used because of clang format difficulty
+// #define IFGUI  if (hoc_usegui) {
+// #define ENDGUI }
 
 extern int hoc_usegui; /* when 0 does not make interviews calls */
 extern int nrn_istty_;
@@ -298,7 +288,4 @@ int num_procs;
 int* tids;
 int node_num;
 int mytid;
-#endif
-
-
 #endif

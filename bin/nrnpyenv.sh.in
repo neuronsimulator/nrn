@@ -426,7 +426,7 @@ def nrnpylib_mswin():
   f = os.popen(cmd)
   nrn_pylib = None
   for line in f:
-    if re.search('ython[a-zA-Z0-9_.]*\.dll', line):
+    if re.search(r'ython[a-zA-Z0-9_.]*\.dll', line):
       nrn_pylib = '/'.join(line.split(os.path.sep)).strip()
       nrnpylib_provenance="cygcheck"
   return nrn_pylib
@@ -474,7 +474,7 @@ def nrnpylib_linux():
       if re.search(r'libpython.*\.so', line):
         print ("# from lsof: %s" % line)
         nrn_pylib = line.strip()
-        nrnpylib_provenance = 'lsof search for libpython.*\.so'
+        nrnpylib_provenance = r'lsof search for libpython.*\.so'
         return nrn_pylib
   else: # figure it out from the os path
     p = os.path.sep.join(os.__file__.split(os.path.sep)[:-1])

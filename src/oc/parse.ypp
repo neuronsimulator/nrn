@@ -1,15 +1,15 @@
 /* /local/src/master/nrn/src/oc/parse.y,v 1.29 1998/11/27 13:11:48 hines Exp */
+%code requires{
+union Inst;
+struct Symbol;
+}
+
 %{
 
 #include <../../nrnconf.h>
 /* changes as of 2-jan-89 */
 /*  version 7.2.1 2-jan-89 short form of the for statement */
 
-#if AIX
-#pragma alloca
-#endif
-
-#include "hoc.h"
 #include "hocdec.h"
 #include "ocmisc.h"
 #include "hocparse.h"
@@ -17,13 +17,15 @@
 #include "equation.h"
 #include "nrnfilewrap.h"
 
+#include "utils/logger.hpp"
+
 void* nrn_parsing_pysec_;
 
 #if LINT
 Inst *inlint;
-#define code	inlint = Code
+#define code	inlint = hoc_Code
 #else
-#define code	Code
+#define code	hoc_Code
 #endif
 
 #define paction(arg) fprintf(stderr, "%s\n", arg)
@@ -64,12 +66,12 @@ if (!(ierr++)){pusherr(&ierr);yyerror(arg);} --yyssp; --yyvsp; YYERROR
 if (!(ierr++)){pusherr(&ierr);yyerror(arg);} YYERROR
 #endif
 
-#define code2(c1,c2)	code(c1); codein(c2)
-#define code3(c1,c2,c3)	code(c1); codesym(c2); code(c3)
+#define code2(c1,c2)	code(c1); hoc_codein(c2)
+#define code3(c1,c2,c3)	code(c1); hoc_codesym(c2); code(c3)
 #define relative(ip1,ip2,offset)	((ip1-ip2) - offset)
 #define CHECK 1	/* check syntactically the consistency of arrays */
 #define NOCHECK 0 /* don't check syntactically. For object components */
-#define PN pushi(NUMBER)	/* for type checking. expressions are usually numbers */
+#define PN hoc_pushi(NUMBER)	/* for type checking. expressions are usually numbers */
 #define TPD hoc_ob_check(NUMBER);
 #define TPDYNAM hoc_ob_check(0);
 
@@ -112,9 +114,9 @@ static void hoc_opasgn_invalid(int op);
 /* NEWCABLE */
 %token	<sym>	SECTIONKEYWORD SECTION CONNECTKEYWORD ACCESSKEYWORD
 %token	<sym>	RANGEVAR MECHANISM INSERTKEYWORD FORALL NRNPNTVAR FORSEC IFSEC
-%token	<sym>	UNINSERTKEYWORD SETPOINTERKEYWORD SECTIONREF
+%token	<sym>	UNINSERTKEYWORD SETPOINTERKEYWORD SECTIONREF RANGEOBJ
 %type	<sym>	sectiondecl sectionname
-%type	<inst>	rangevar rangevar1 section section_or_ob
+%type	<inst>	rangevar rangevar1 section section_or_ob rangeobj rangeobj1
 /* END NEWCABLE */
 
 /* OOP */
@@ -143,17 +145,17 @@ list:	/* nothing */
 	| list '\n' { return '\n';}
 	| list defn '\n' { return '\n';}
 	| list asgn '\n'
-		{ hoc_ob_check(-1); code2(nopop, STOP); return 1; }
+		{ hoc_ob_check(-1); code2(hoc_nopop, STOP); return 1; }
 	| list stmt '\n'
-		{ codein(STOP); return 1; }
+		{ hoc_codein(STOP); return 1; }
 	| list expr '\n'
-		{ TPDYNAM; code2(print, STOP); return 1; }
+		{ TPDYNAM; code2(hoc_print, STOP); return 1; }
 	| list DEBUG '\n'
-		{ debug(); return '\n';}
+		{ hoc_debug(); return '\n';}
 	| list EDIT '\n'
 		{ return 'e';}
 	| list string1 '\n'
-		{code(prstr); code2(hoc_newline, STOP); return 1; }
+		{code(hoc_prstr); code2(hoc_newline, STOP); return 1; }
 
 /* OOP */
 	| list template '\n' { return '\n';}
@@ -174,27 +176,27 @@ goto yynewstate;
 		}
 	;
 asgn:	varname ROP expr
-		{Symbol *s; TPD; s = spop();
+		{Symbol *s; TPD; s = hoc_spop();
 		hoc_obvar_declare(s, VAR, 1);
-		code3(varpush, s, hoc_assign); codei($2); PN;}
+		code3(hoc_varpush, s, hoc_assign); hoc_codei($2); PN;}
 	| ARG ROP expr
-		{  TPD; defnonly("$"); argcode(argassign, $1); codei($2); $$=$3; PN;}
+		{  TPD; hoc_defnonly("$"); argcode(hoc_argassign, $1); hoc_codei($2); $$=$3; PN;}
 	| ARGREF argrefdim ROP expr
-		{ TPD; defnonly("$&"); argrefcode(hoc_argrefasgn, $1, $2); codei($3); $$=$4; PN;}
+		{ TPD; hoc_defnonly("$&"); argrefcode(hoc_argrefasgn, $1, $2); hoc_codei($3); $$=$4; PN;}
 /* NEWCABLE */
 	| rangevar ROP expr
-		{ TPD; code(range_const); codesym(spop()); codei($2); PN;}
+		{ TPD; code(range_const); hoc_codesym(hoc_spop()); hoc_codei($2); PN;}
 /* END NEWCABLE */
 /* OOP */
 	|ob1 ROP NEW anyname '(' arglist ')'
 		{ Inst* p; hoc_opasgn_invalid($2);
-		 code(hoc_newobj); codesym(hoc_which_template($4)); codei($6);
-		 p = (Inst*)spop();
+		 code(hoc_newobj); hoc_codesym(hoc_which_template($4)); hoc_codei($6);
+		 p = (Inst*)hoc_spop();
 		 if (p) { p->i += 2; }
 		}
 	| ob1 ROP expr
-		{Inst* p; TPDYNAM; code(hoc_object_asgn); codei($2);
-		 p = (Inst*)spop();
+		{Inst* p; TPDYNAM; code(hoc_object_asgn); hoc_codei($2);
+		 p = (Inst*)hoc_spop();
 		 if (p) { p->i += 2; }
 		}
 /* END OOP */
@@ -202,42 +204,55 @@ asgn:	varname ROP expr
 	;
 
 /* OOP */
-object:	OBJECTVAR {pushi(OBJECTVAR);pushs($1); pushi(CHECK);} wholearray
-		{$$ = $3; code(hoc_objectvar); spop(); codesym($1);}
+
+rangeobj: rangeobj1
+		{ code(sec_access_push); hoc_codesym((Symbol *)0);}
+	| section '.' rangeobj1
+	;
+rangeobj1: RANGEOBJ {hoc_pushs($1); hoc_pushi(CHECK);} wholearray
+		{ $$ = $3;}
+	;
+
+object:	OBJECTVAR {hoc_pushi(OBJECTVAR);hoc_pushs($1); hoc_pushi(CHECK);} wholearray
+		{$$ = $3; code(hoc_objectvar); hoc_spop(); hoc_codesym($1);}
 	| OBJECTARG
-		{defnonly("$o"); $$ = argcode(hoc_objectarg, $1); pushi(OBJECTVAR);}
+		{hoc_defnonly("$o"); $$ = argcode(hoc_objectarg, $1); hoc_pushi(OBJECTVAR);}
 	| AUTOOBJ
-		{$$ = code(hoc_autoobject); codesym($1); pushi(OBJECTVAR);}
+		{$$ = code(hoc_autoobject); hoc_codesym($1); hoc_pushi(OBJECTVAR);}
 	| TEMPLATE '[' expr ']'
-		{TPD; $$ = $3; code(hoc_constobject); codesym($1); pushi(OBJECTVAR);}
+		{TPD; $$ = $3; code(hoc_constobject); hoc_codesym($1); hoc_pushi(OBJECTVAR);}
 	| OBJECTFUNC begin '(' arglist ')'
-		{ $$ = $2; code(call); codesym($1); codei($4);
-		  code(hoc_known_type); codei(OBJECTVAR); pushi(OBJECTVAR);}
+		{ $$ = $2; code(hoc_call); hoc_codesym($1); hoc_codei($4);
+		  code(hoc_known_type); hoc_codei(OBJECTVAR); hoc_pushi(OBJECTVAR);}
 	| HOCOBJFUNCTION begin '(' arglist ')'
-		{ $$ = $2; code(call); codesym($1); codei($4);
-		  code(hoc_known_type); codei(OBJECTVAR); pushi(OBJECTVAR);}
+		{ $$ = $2; code(hoc_call); hoc_codesym($1); hoc_codei($4);
+		  code(hoc_known_type); hoc_codei(OBJECTVAR); hoc_pushi(OBJECTVAR);}
+	| rangeobj
+		{ code(rangeobjevalmiddle); hoc_codesym(hoc_spop()); hoc_pushi(OBJECTVAR);}
+	| rangeobj '(' expr ')'
+		{TPD; code(rangeobjeval); hoc_codesym(hoc_spop()); hoc_pushi(OBJECTVAR);}
 	;
 
-ob: ob1 { spop(); }
+ob: ob1 { hoc_spop(); }
 	;
 
-ob1:	object { pushs((Symbol*)0); }
-	| ob1 '.' anyname {pushs($3);pushi(NOCHECK);} wholearray func_or_range_array_case
+ob1:	object { hoc_pushs((Symbol*)0); }
+	| ob1 '.' anyname {hoc_pushs($3);hoc_pushi(NOCHECK);} wholearray func_or_range_array_case
 		{int isfunc; Inst* p;
-		 isfunc = ipop();
-		 code(hoc_object_component); codesym(spop()); codei(ipop());
-		 codei($6);
-		 codei(0); codesym(0);
-		 p = codei(isfunc); /* for USE_PYTHON */
-		 spop();
-		 pushs((Symbol*)p); /* in case assigning to a PythonObject we will want to update isfunc to 2 */
+		 isfunc = hoc_ipop();
+		 code(hoc_object_component); hoc_codesym(hoc_spop()); hoc_codei(hoc_ipop());
+		 hoc_codei($6);
+		 hoc_codei(0); hoc_codesym(0);
+		 p = hoc_codei(isfunc); /* for USE_PYTHON */
+		 hoc_spop();
+		 hoc_pushs((Symbol*)p); /* in case assigning to a PythonObject we will want to update isfunc to 2 */
 		}
 	| OBJECTVAR error {myerr("object syntax is o1.o2.o3.");}
 	;
 func_or_range_array_case:	/* nothing */
-		{$$ = 0; pushi(0);}
+		{$$ = 0; hoc_pushi(0);}
 	| '(' arglist ')'
-		{$$ = $2; pushi(1);}
+		{$$ = $2; hoc_pushi(1);}
 	;
 template: BEGINTEMPLATE anyname {hoc_begintemplate($2);}
 	| publiclist
@@ -249,20 +264,20 @@ objvarlist: OBJVARDECL begin objvarlst1
 		{$$ = $2;}
 	;
 objvarlst1: obvarname
-		{code(hoc_objvardecl); codesym($1); codei(0);}
+		{code(hoc_objvardecl); hoc_codesym($1); hoc_codei(0);}
 	| obvarname numdimen
-		{code(hoc_objvardecl); codesym($1); codei($2);}
+		{code(hoc_objvardecl); hoc_codesym($1); hoc_codei($2);}
 	| objvarlst1 ',' obvarname
-		{code(hoc_objvardecl); codesym($3); codei(0);}
+		{code(hoc_objvardecl); hoc_codesym($3); hoc_codei(0);}
 	| objvarlst1 ',' obvarname numdimen
-		{code(hoc_objvardecl); codesym($3); codei($4);}
+		{code(hoc_objvardecl); hoc_codesym($3); hoc_codei($4);}
 	;
 obvarname: anyname
 		{
 		  Symbol* s;
 		  s = hoc_decl($1);
 		  if (s->type != UNDEF && s->type != OBJECTVAR) {
-			acterror(s->name, " already declared");
+			hoc_acterror(s->name, " already declared");
 		  }
 		  $$ = s;
 		}
@@ -280,10 +295,10 @@ externallist: EXTERNALDECL VAR
 /* END OOP */
 
 strnasgn: string2 ROP string1
-		{hoc_opasgn_invalid($2); code(assstr);}
+		{hoc_opasgn_invalid($2); code(hoc_assstr);}
 	| ob1 ROP string1
-		{Inst* p = (Inst*) spop(); pushi(STRING); TPDYNAM; code(hoc_object_asgn);
-		 hoc_opasgn_invalid($2); codei($2); hoc_ob_check(-1); code(nopop);
+		{Inst* p = (Inst*) hoc_spop(); hoc_pushi(STRING); TPDYNAM; code(hoc_object_asgn);
+		 hoc_opasgn_invalid($2); hoc_codei($2); hoc_ob_check(-1); code(hoc_nopop);
 		 if (p) { p->i += 2; }
 		}
 	| string2 ROP ob
@@ -293,15 +308,15 @@ strnasgn: string2 ROP string1
 
 string1: string2
 	| CSTRING
-		{$$ = code(hoc_push_string); codesym($1);}
+		{$$ = code(hoc_push_string); hoc_codesym($1);}
 	| STRINGFUNC begin '(' arglist ')'
-		{ $$ = $2; code(call); codesym($1); codei($4);}
+		{ $$ = $2; code(hoc_call); hoc_codesym($1); hoc_codei($4);}
 ;
 
 string2: STRING
-		{$$ = code(hoc_push_string); codesym($1);}
+		{$$ = code(hoc_push_string); hoc_codesym($1);}
 	| STRINGARG
-		{defnonly("$s"); $$ = argcode(hoc_stringarg, $1);}
+		{hoc_defnonly("$s"); $$ = argcode(hoc_stringarg, $1);}
 	;
 
 strlist: STRDEF begin string
@@ -316,13 +331,13 @@ string:	anyname
 				OPSTR(s) = (char**)emalloc(sizeof(char*));
 				*OPSTR(s) = 0;
 			}else if (s->type != STRING) {
-				acterror(s->name, " already declared");
+				hoc_acterror(s->name, " already declared");
 			}
 			hoc_assign_str(OPSTR(s), "");
 		}
 	;
 stmt:	expr
-		{ code(nopop); hoc_ob_check(-1); /*don't check*/}
+		{ code(hoc_nopop); hoc_ob_check(-1); /*don't check*/}
 	| strlist
 	| doublelist
 /* OOP */
@@ -330,38 +345,38 @@ stmt:	expr
 /* END OOP */
 	| strnasgn
 	| string1
-		{ code(nopop); }
+		{ code(hoc_nopop); }
 	| parseDELETE delsym
 		{ $$ = $2;}
 	| RETURN begin
-		{ defnonly("return"); $$=$2; code(procret); }
+		{ hoc_defnonly("return"); $$=$2; code(hoc_procret); }
 	| RETURN expr
-		{  if (indef == 3) {
+		{  if (hoc_indef == 3) {
 			TPDYNAM; $$ = $2;
 			code(hocobjret);
 		   }else{
-			TPD; defnonly("return"); $$=$2;
-			code(funcret);
+			TPD; hoc_defnonly("return"); $$=$2;
+			code(hoc_funcret);
 		   }
 		}
 	| RETURN NEW anyname '(' arglist ')'
-		{$$ = code(hoc_newobj_ret); codesym(hoc_which_template($3)); codei($5);
+		{$$ = code(hoc_newobj_ret); hoc_codesym(hoc_which_template($3)); hoc_codei($5);
 		 code(hocobjret);
 		}
 	| ITERSTMT begin
-		{ if (indef != 2) {
-acterror("iterator_statement used outside an iterator declaration", 0);
+		{ if (hoc_indef != 2) {
+hoc_acterror("iterator_statement used outside an iterator declaration", 0);
 		  }
 			code(hoc_iterator_stmt);
 		}
 	| BREAK begin
-		{ code(Break); $$ = $2; }
+		{ code(hoc_Break); $$ = $2; }
 	| STOPSTMT begin
-		{ code(Stop); $$ = $2; }
+		{ code(hoc_Stop); $$ = $2; }
 	| CONTINUE begin
-		{ code(Continue); $$ = $2; }
+		{ code(hoc_Continue); $$ = $2; }
 	| PROCEDURE begin '(' arglist ')'
-		{ $$ = $2; code(call); codesym($1); codei($4); code(nopop); }
+		{ $$ = $2; code(hoc_call); hoc_codesym($1); hoc_codei($4); code(hoc_nopop); }
 	| PRINT prlist
 		{ $$ = $2; code(hoc_newline); }
 	| FOR begin iterator stmt end
@@ -380,12 +395,12 @@ if (0){YYERROR;}
 #endif
 			}
 	| FOR varname
-		  { Symbol *s; $<inst>$ = Code(varpush); codesym(s = spop());
+		  { Symbol *s; $<inst>$ = hoc_Code(hoc_varpush); hoc_codesym(s = hoc_spop());
 			hoc_obvar_declare(s, VAR, 1);
 		  }
 		ROP expr ',' expr
 		  {TPD; TPD; hoc_opasgn_invalid($4); 
-		    $<inst>$ = code(shortfor); codei(0); codei(0);}
+		    $<inst>$ = code(hoc_shortfor); hoc_codei(0); hoc_codei(0);}
 		stmt end
 		  { $$ = $2; ($<inst>8)[1].i = relative($9, $<inst>8, 1); /* body */
 			   ($<inst>8)[2].i = relative($10, $<inst>8, 2); /* exit */
@@ -418,7 +433,7 @@ if (0){YYERROR;}
 	| CONNECTKEYWORD section_or_ob ',' section '(' expr ')'
 		{ TPD; $$ = $2; code(simpleconnectsection);}
 	| SETPOINTERKEYWORD rangevar '(' expr ')' ',' pointer
-		{ TPD; $$ = $2; code(connectpointer); codesym(spop());}
+		{ TPD; $$ = $2; code(connectpointer); hoc_codesym(hoc_spop());}
 	| SETPOINTERKEYWORD begin {code(nrn_cppp);} ob ',' pointer
 		{ $$ = $2; code(connect_point_process_pointer);
 			 hoc_ob_check(-1);}
@@ -428,75 +443,75 @@ if (0){YYERROR;}
 		{ $$ = $2; hoc_ob_check(SECTION); code(sec_access_object);}
 	| INSERTKEYWORD anyname
 		{ Symbol* s = $2;
-			$$ = Code(mech_access);
+			$$ = hoc_Code(mech_access);
 			if (s->type != MECHANISM) {
 				s = hoc_table_lookup(s->name, hoc_built_in_symlist);
 				if (!s || s->type != MECHANISM) {
-					acterror($2->name, "is not a MECHANISM");
+					hoc_acterror($2->name, "is not a MECHANISM");
 				}
 			}
-			codesym(s);}
+			hoc_codesym(s);}
 	| UNINSERTKEYWORD MECHANISM
-		{ $$ = Code(mech_uninsert); codesym($2);}
+		{ $$ = hoc_Code(mech_uninsert); hoc_codesym($2);}
 	| section stmt
 		{ code(sec_access_pop);}
 	| ob stmt end
 		{ code(sec_access_pop); hoc_ob_check(-1);
-			insertcode($2, $3, ob_sec_access);}
+			hoc_insertcode($2, $3, ob_sec_access);}
 	| rangevar '(' expr ':' expr ')' ROP expr ':' expr
-		{ TPD; TPD; TPD; TPD; code(range_interpolate); codesym(spop());
-		  codei($7);
+		{ TPD; TPD; TPD; TPD; code(range_interpolate); hoc_codesym(hoc_spop());
+		  hoc_codei($7);
 		}
 	| rangevar '(' expr ')' ROP expr
-		{ TPD; TPD; code(range_interpolate_single); codesym(spop());
-		  codei($5);
+		{ TPD; TPD; code(range_interpolate_single); hoc_codesym(hoc_spop());
+		  hoc_codei($5);
 		}
 	| FOR '(' varname ')' 
-		{Symbol *s; code(varpush); codesym(s = spop());
+		{Symbol *s; code(hoc_varpush); hoc_codesym(s = hoc_spop());
 		 hoc_obvar_declare(s, VAR, 1);
-		 $<inst>$ = code(for_segment); codei(0); codei(0);}
+		 $<inst>$ = code(for_segment); hoc_codei(0); hoc_codei(0);}
 	stmt end
 		{ $$ = $3; ($<inst>5)[1].i = relative($6, $<inst>5, 1); /* body */
 			($<inst>5)[2].i = relative($7, $<inst>5, 2); /* exit */
 		}
 	| FOR '(' varname ','
-		{Symbol *s; code(varpush); codesym(s = spop());
+		{Symbol *s; code(hoc_varpush); hoc_codesym(s = hoc_spop());
 		hoc_obvar_declare(s, VAR, 1);}
 	 expr ')' 
-		{ TPD; $<inst>$ = code(for_segment1); codei(0); codei(0);}
+		{ TPD; $<inst>$ = code(for_segment1); hoc_codei(0); hoc_codei(0);}
 	stmt end
 		{ $$ = $3; ($<inst>8)[1].i = relative($9, $<inst>8, 1); /* body */
 			($<inst>8)[2].i = relative($10, $<inst>8, 2); /* exit */
 		}
 	| FORALL begin
-		{	code(hoc_push_string); codesym((Symbol*)0);
-			$<inst>$ = code(forall_section); codei(0); codei(0);}
+		{	code(hoc_push_string); hoc_codesym((Symbol*)0);
+			$<inst>$ = code(forall_section); hoc_codei(0); hoc_codei(0);}
 	stmt end
 		{ $$ = $2; ($<inst>3)[1].i = relative($4, $<inst>3, 1); /* body */
 			($<inst>3)[2].i = relative($5, $<inst>3, 2); /* exit */
 		}
 	| FORSEC begin string1
-		{ $<inst>$ = code(forall_section); codei(0); codei(0);}
+		{ $<inst>$ = code(forall_section); hoc_codei(0); hoc_codei(0);}
 	stmt end
 		{ $$ = $2; ($<inst>4)[1].i = relative($5, $<inst>4, 1); /* body */
 			($<inst>4)[2].i = relative($6, $<inst>4, 2); /* exit */
 		}
 	| IFSEC begin string1
-		{ $<inst>$ = code(hoc_ifsec); codei(0); codei(0);}
+		{ $<inst>$ = code(hoc_ifsec); hoc_codei(0); hoc_codei(0);}
 	  stmt end
 		{ $$ = $2; ($<inst>4)[1].i = relative($5, $<inst>4, 1); /* body */
 			($<inst>4)[2].i = relative($6, $<inst>4, 2); /* exit */
 		}
 	| FORSEC begin ob
 		{hoc_ob_check(-1);
-		$<inst>$ = code(forall_sectionlist); codei(0); codei(0); }
+		$<inst>$ = code(forall_sectionlist); hoc_codei(0); hoc_codei(0); }
 	stmt end
 		{ $$ = $2; ($<inst>4)[1].i = relative($5, $<inst>4, 1); /* body */
 			($<inst>4)[2].i = relative($6, $<inst>4, 2); /* exit */
 		}
 	| IFSEC begin ob
 		{ hoc_ob_check(-1);
-		 $<inst>$ = code(hoc_ifseclist); codei(0); codei(0);
+		 $<inst>$ = code(hoc_ifseclist); hoc_codei(0); hoc_codei(0);
 		}
 
 	  stmt end
@@ -508,17 +523,17 @@ if (0){YYERROR;}
 
 iterator: ITERATOR '(' arglist ')'
 		{
-		  code(hoc_iterator); codesym($1); codei($3);
-		  $$ = progp; codein(STOP); codein(STOP);
+		  code(hoc_iterator); hoc_codesym($1); hoc_codei($3);
+		  $$ = hoc_progp; hoc_codein(STOP); hoc_codein(STOP);
 		}
 	| {code(hoc_push_current_object);} ob
-		{codei(ITERATOR);
-		  $$ = progp; codein(STOP); codein(STOP);
+		{hoc_codei(ITERATOR);
+		  $$ = hoc_progp; hoc_codein(STOP); hoc_codein(STOP);
 		}
 	;
 /* NEWCABLE */
-section: SECTION {pushs($1); pushi(CHECK);} wholearray
-		{code(sec_access_push); codesym(spop()); $$ = $3;}
+section: SECTION {hoc_pushs($1); hoc_pushi(CHECK);} wholearray
+		{code(sec_access_push); hoc_codesym(hoc_spop()); $$ = $3;}
 	| INTERNALSECTIONNAME
 		{
 		  $$ = code(hoc_sec_internal_push);
@@ -542,44 +557,40 @@ pysec1: PYSECNAME
 ;
 
 section_or_ob: section '(' expr ')' {TPD;}
-	| {$<inst>$ = progp; code(connect_obsec_syntax);} ob
+	| {$<inst>$ = hoc_progp; code(connect_obsec_syntax);} ob
 		{
-#if 0
-		 acterror("Sorry. The \"connect ob.sec...\" syntax ",
-			"is not implemented");
-#endif
 		 hoc_ob_check(SECTION); code(ob_sec_access);
 		}
 	;
 
 sectiondecl: sectionname
-		{ code(add_section); codesym($1); codei(0);}
+		{ code(add_section); hoc_codesym($1); hoc_codei(0);}
 	| sectionname numdimen
-		{ code(add_section); codesym($1); codei($2);}
+		{ code(add_section); hoc_codesym($1); hoc_codei($2);}
 	| sectiondecl ',' sectionname
-		{code(add_section); codesym($3); codei(0);}
+		{code(add_section); hoc_codesym($3); hoc_codei(0);}
 	| sectiondecl ',' sectionname numdimen
-		{ code(add_section); codesym($3); codei($4);}
+		{ code(add_section); hoc_codesym($3); hoc_codei($4);}
 	;
 sectionname:anyname
 		{
 			Symbol* s;
 			s = hoc_decl($1);
 			if (s->type != UNDEF && s->type != SECTION)
-				acterror(s->name, " already declared");
+				hoc_acterror(s->name, " already declared");
 		}
 	;
 rangevar: rangevar1
-		{ code(sec_access_push); codesym((Symbol *)0);}
+		{ code(sec_access_push); hoc_codesym((Symbol *)0);}
 	| section '.' rangevar1
 	;
-rangevar1: RANGEVAR {pushs($1); pushi(CHECK);} wholearray
+rangevar1: RANGEVAR {hoc_pushs($1); hoc_pushi(CHECK);} wholearray
 		{$$ = $3;}
 	;
 pointer: varname /*leave pointer on stack*/
-		{ code3(varpush, spop(), hoc_evalpointer);}
+		{ code3(hoc_varpush, hoc_spop(), hoc_evalpointer);}
 	| rangevar '(' expr ')'
-		{ TPD; code(rangevarevalpointer); codesym(spop());}
+		{ TPD; code(rangevarevalpointer); hoc_codesym(hoc_spop());}
 	| ob
 		{hoc_ipop(); code(hoc_ob_pointer);}
 	| rangevar error {myerr("rangevariable needs explicit arc position,eg. v(.5)");}
@@ -592,41 +603,41 @@ pointer: varname /*leave pointer on stack*/
 for_init: FOR '(' stmt ';'
 		{ $$ = $3;}
 	| FOR '(' ';'
-		{ $$ = progp; }
+		{ $$ = hoc_progp; }
 	;
 for_st:	/* nothing */
-		{ $$ = code(forcode); codei(0); codei(0); codei(0); }
+		{ $$ = code(hoc_forcode); hoc_codei(0); hoc_codei(0); hoc_codei(0); }
 	;
 for_cond: expr
-		{ TPD; $$ = $1; codein(STOP);}
+		{ TPD; $$ = $1; hoc_codein(STOP);}
 	;
 for_inc:  ';' stmt ')'
-		{ $$ = $2; codein(STOP);}
+		{ $$ = $2; hoc_codein(STOP);}
 	| ';' ')'
-		{ $$ = progp; codein(STOP);}
+		{ $$ = hoc_progp; hoc_codein(STOP);}
 	;
 cond:	'(' expr ')'
-		{ TPD; codein(STOP); $$ = $2;}
+		{ TPD; hoc_codein(STOP); $$ = $2;}
 	;
 while:	WHILE for_st
 		{ $$ = $2; }
 	;
 if:	IF
-		{ $$=code(ifcode); codei(0); codei(0); codei(0); }
+		{ $$=code(hoc_ifcode); hoc_codei(0); hoc_codei(0); hoc_codei(0); }
 	;
 begin:	/* nothing */
-		{ $$ = progp; }
+		{ $$ = hoc_progp; }
 	;
 end:	/* nothing */
-		{ codein(STOP); $$ = progp; }
+		{ hoc_codein(STOP); $$ = hoc_progp; }
 	;
 stmtlist: /* nothing */
-		{ $$ = progp; prog_error = $$; }
+		{ $$ = hoc_progp; prog_error = $$; }
 	| stmtlist '\n'
 		{
-			prog_parse_recover = progp;
+			hoc_prog_parse_recover = hoc_progp;
 			prog_error = $$;
-			if (fin && nrn_fw_eq(fin, stdin) && !pipeflag)
+			if (hoc_fin && nrn_fw_eq(hoc_fin, stdin) && !hoc_pipeflag)
 			{	int i;
 				Printf(">");
 				for (i = 0; i < ntab; i++)
@@ -640,20 +651,20 @@ stmtlist: /* nothing */
 	;
 
 expr:	NUMBER
-		{ $$ = code(constpush); codesym($1); PN;}
+		{ $$ = code(hoc_constpush); hoc_codesym($1); PN;}
 	|	NUMZERO
-		{ $$ = code(pushzero); PN;}
+		{ $$ = code(hoc_pushzero); PN;}
 	| varname
-		{ code3(varpush, spop(), eval); PN;}
+		{ code3(hoc_varpush, hoc_spop(), hoc_eval); PN;}
 	| ARG
-		{ defnonly("$"); $$ = argcode(hoc_arg, $1); PN;}
+		{ hoc_defnonly("$"); $$ = argcode(hoc_arg, $1); PN;}
 	| ARGREF argrefdim
-		{ defnonly("$&"); $$ = argrefcode(hoc_argref, $1, $2); PN;}
+		{ hoc_defnonly("$&"); $$ = argrefcode(hoc_argref, $1, $2); PN;}
 /* NEWCABLE */
 	| rangevar
-		{code(rangepoint); codesym(spop()); PN;}
+		{code(rangepoint); hoc_codesym(hoc_spop()); PN;}
 	| rangevar '(' expr ')'
-		{ TPD; code(rangevareval); codesym(spop()); PN;}
+		{ TPD; code(rangevareval); hoc_codesym(hoc_spop()); PN;}
 /* END NEWCABLE */
 /* OOP */
 	| ob
@@ -661,43 +672,43 @@ expr:	NUMBER
 /* END OOP */
 	| asgn
 	| function begin '(' arglist ')'
-		{ $$ = $2; code(call); codesym($1); codei($4); PN;}
+		{ $$ = $2; code(hoc_call); hoc_codesym($1); hoc_codei($4); PN;}
 	| varname '(' arglist ')'	/* error will be flagged at runtime */
-		{ code(call); codesym(spop()); codei($3); PN;}
+		{ code(hoc_call); hoc_codesym(hoc_spop()); hoc_codei($3); PN;}
 	| READ '(' varname ')'
-		{ $$=$3; code(varread); codesym(spop()); PN;}
+		{ $$=$3; code(hoc_varread); hoc_codesym(hoc_spop()); PN;}
 	| BLTIN '(' expr ')'
-		{ TPD; $$ = $3; code(bltin); codesym($1); PN;}
+		{ TPD; $$ = $3; code(hoc_bltin); hoc_codesym($1); PN;}
 	| '(' expr ')'
 		{ $$ = $2; }
 	| '(' error
 		{myerr("syntax error in expression");}
 	| expr '+' expr
-		{ TPD; TPD; code(add); PN; }
+		{ TPD; TPD; code(hoc_add); PN; }
 	| expr '-' expr
 		{ TPD; TPD;code(hoc_sub); PN;}
 	| expr '*' expr
-		{ TPD; TPD; code(mul); PN;}
+		{ TPD; TPD; code(hoc_mul); PN;}
 	| expr '/' expr
 		{ TPD; TPD; code(hoc_div); PN;}
 	| expr '%' expr
 		{ TPD; TPD; code(hoc_cyclic); PN;}
 	| expr '^' expr
-		{ TPD; TPD; code(power); PN;}
+		{ TPD; TPD; code(hoc_power); PN;}
 	| '-' expr %prec UNARYMINUS
 		{ TPD; $$ = $2; code(hoc_negate); PN;}
 	| expr GT expr
-		{ TPD; TPD; code(gt); PN;}
+		{ TPD; TPD; code(hoc_gt); PN;}
 	| expr GE expr
-		{ TPD; TPD; code(ge); PN;}
+		{ TPD; TPD; code(hoc_ge); PN;}
 	| expr LT expr
 		{ TPD; TPD; code(hoc_lt); PN;}
 	| expr LE expr
-		{ TPD; TPD; code(le); PN;}
+		{ TPD; TPD; code(hoc_le); PN;}
 	| expr EQ expr
 		{ hoc_ob_check(-1); hoc_ob_check(-1); code(hoc_eq); PN;}
 	| expr NE expr
-		{ hoc_ob_check(-1); hoc_ob_check(-1); code(ne); PN;}
+		{ hoc_ob_check(-1); hoc_ob_check(-1); code(hoc_ne); PN;}
 	| expr AND expr
 		{ TPD; TPD; code(hoc_and); PN;}
 	| expr OR expr
@@ -711,15 +722,15 @@ function: FUNCTION
 	| STRFUNCTION
 	;
 doublelist: parseDOUBLE begin newarray
-		{Symbol *s; code(varpush); codesym(s=spop()); $$ = $2;
-		code(arayinstal); codei($3); hoc_obvar_declare(s, VAR, 0);}
+		{Symbol *s; code(hoc_varpush); hoc_codesym(s=hoc_spop()); $$ = $2;
+		code(hoc_arayinstal); hoc_codei($3); hoc_obvar_declare(s, VAR, 0);}
 	| doublelist ',' newarray
-		{Symbol *s; code(varpush); codesym(s = spop());
-		code(arayinstal); codei($3); hoc_obvar_declare(s, VAR, 0);}
+		{Symbol *s; code(hoc_varpush); hoc_codesym(s = hoc_spop());
+		code(hoc_arayinstal); hoc_codei($3); hoc_obvar_declare(s, VAR, 0);}
 	;
 
 newarray: newname numdimen
-		{pushs($1); $$ = $2;}
+		{hoc_pushs($1); $$ = $2;}
 	;
 numdimen: '[' expr ']'
 		{  TPD; $$ = 1; }
@@ -730,19 +741,19 @@ newname: ckvar
 	;
 
 varname: AUTO begin
-		{ pushs($1); $$ = $2; }
+		{ hoc_pushs($1); $$ = $2; }
 	| VAR begin
 		{ if ($1->subtype == USERPROPERTY) {
-			code(sec_access_push); codesym((Symbol *)0);
+			code(sec_access_push); hoc_codesym((Symbol *)0);
 		  }
-		pushs($1); pushi(CHECK);
+		hoc_pushs($1); hoc_pushi(CHECK);
 		}
 	wholearray {$$ = $2;}
 	| section '.' VAR
 		{ if ($3->subtype != USERPROPERTY) {
-			acterror($3->name, "not a section variable");
+			hoc_acterror($3->name, "not a section variable");
 		  }
-		$$ = $1; pushs($3);
+		$$ = $1; hoc_pushs($3);
 		}
 	;
 
@@ -754,22 +765,22 @@ wholearray:begin array	/* using execution stack to get Symbol from array */
 	/* numindices, checkflag=1, arraysym -> arraysym */
 	/* numindices, checkflag=0, arraysym -> arraysym numindices*/
 		{
-		int ndim = ipop();
-		int chk = ipop();
-		Symbol* sym = spop();
+		int ndim = hoc_ipop();
+		int chk = hoc_ipop();
+		Symbol* sym = hoc_spop();
    if (chk) {
-	if (!ISARRAY(sym)) {
+	if (!is_array(*sym)) {
 		if (ndim) {
-			acterror(sym->name, "not an array variable");
+			hoc_acterror(sym->name, "not an array variable");
 		}
 	}else{
 		if ( ndim == 0 ) { /*fake index list with all 0's*/
                         ndim = sym->arayinfo->nsub;
 			for (int i=0; i<ndim; i++) {
-				code(pushzero);
+				code(hoc_pushzero);
 			}
 		} else if ( ndim != sym->arayinfo->nsub) {
-			acterror("wrong # of subscripts",sym->name);
+			hoc_acterror("wrong # of subscripts",sym->name);
 		}
 		// Need to dynamically catch error when ndim (now at compile
 		// time) differs from symbol ndim at execution time.
@@ -790,70 +801,70 @@ wholearray:begin array	/* using execution stack to get Symbol from array */
 			code(hoc_chk_sym_has_ndim2);
 		} else { // general case
 			code(hoc_chk_sym_has_ndim);
-			codei(ndim);
+			hoc_codei(ndim);
 		}
-		codesym(sym);
+		hoc_codesym(sym);
 	}
    }else {
-	pushi(ndim); /* must check dynamically */
+	hoc_pushi(ndim); /* must check dynamically */
    }
-		pushs(sym);
+		hoc_pushs(sym);
 		}
 	;
 
 argrefdim: array
 		{
-			$$ = ipop();
+			$$ = hoc_ipop();
 		}
 	;
 
 array:	/* Nothing */
-		{ pushi(0); }
+		{ hoc_pushi(0); }
 	| array '[' expr ']'
-		{  TPD;pushi(ipop() + 1); }
+		{  TPD;hoc_pushi(hoc_ipop() + 1); }
 	;
 
 prlist:	expr
-		{ TPDYNAM; code(prexpr);}
+		{ TPDYNAM; code(hoc_prexpr);}
 	| string1
-		{ code(prstr); }
+		{ code(hoc_prstr); }
 	| prlist ',' expr
-		{ TPDYNAM; code(prexpr);}
+		{ TPDYNAM; code(hoc_prexpr);}
 	| prlist ',' string1
-		{ code(prstr); }
+		{ code(hoc_prstr); }
 	;
 delsym: VAR
-		{ $$ = code(hoc_delete_symbol); codesym($1); }
+		{ $$ = code(hoc_delete_symbol); hoc_codesym($1); }
 	;
 			
 defn:	FUNC procname
-		{$2->type=FUNCTION; indef=1; }
+		{$2->type=FUNCTION; hoc_indef=1; }
 	'(' ')' procstmt
-		{ code(procret); hoc_define($2);
+		{ code(hoc_procret); hoc_define($2);
 		 $2->u.u_proc->nobjauto = $6 - localcnt;
-		 $2->u.u_proc->nauto=$6; indef=0; }
+		 $2->u.u_proc->nauto=$6; hoc_indef=0; }
 	| parsePROC procname
-		{ $2->type=PROCEDURE; indef=1; }
+		{ $2->type=PROCEDURE; hoc_indef=1; }
 	'(' ')' procstmt
-		{ code(procret); hoc_define($2);
+		{ code(hoc_procret); hoc_define($2);
 		 $2->u.u_proc->nobjauto = $6 - localcnt;
-		 $2->u.u_proc->nauto=$6; indef=0; }
+		 $2->u.u_proc->nauto=$6; hoc_indef=0; }
 	| ITERKEYWORD procname
-		{ $2->type = ITERATOR; indef=2; }
+		{ $2->type = ITERATOR; hoc_indef=2; }
 	'(' ')' procstmt
-		{code(procret); hoc_define($2);
+		{code(hoc_procret); hoc_define($2);
 		 $2->u.u_proc->nobjauto = $6 - localcnt;
-		 $2->u.u_proc->nauto = $6; indef = 0; }
+		 $2->u.u_proc->nauto = $6; hoc_indef = 0; }
 	| HOCOBJFUNC procname
-		{ $2->type=HOCOBJFUNCTION; indef=3; }
+		{ $2->type=HOCOBJFUNCTION; hoc_indef=3; }
 	'(' ')' procstmt
-		{ code(procret); hoc_define($2);
+		{ code(hoc_procret); hoc_define($2);
 		 $2->u.u_proc->nobjauto = $6 - localcnt;
-		 $2->u.u_proc->nauto=$6; indef=0; }
+		 $2->u.u_proc->nauto=$6; hoc_indef=0; }
 	;
 procname: ckvar
 		{ Symbol *s; s=yylval.sym;
-		if(s->type != UNDEF) acterror(s->name, "already defined");
+		if(s->type != UNDEF) hoc_acterror(s->name, "already defined");
 		/* avoid valgrind uninitialized variable error for nautoobj */
 		s->u.u_proc = (Proc *)ecalloc(1, sizeof(Proc));
 		s->u.u_proc->defn.in = STOP;
@@ -885,37 +896,37 @@ arglist2: string1
 	| '&' pointer
 	| NEW anyname '(' arglist ')'
 		{
-		 code(hoc_newobj_arg); codesym(hoc_which_template($2)); codei($4);
+		 code(hoc_newobj_arg); hoc_codesym(hoc_which_template($2)); hoc_codei($4);
 		}
 	;
 eqn_list: DEPENDENT dep_list
 		{ $$ = $2; }
 	| EQUATION varname ':'
-		{code3(varpush, spop(), eqn_name);
-		do_equation = 1; }
+		{code3(hoc_varpush, hoc_spop(), hoc_eqn_name);
+		hoc_do_equation = 1; }
 	equation
-		{ $$ = $2; do_equation = 0; }
+		{ $$ = $2; hoc_do_equation = 0; }
 	;
 dep_list: varname
-		{Symbol *s; code3(varpush,s= spop(), dep_make); hoc_obvar_declare(s, VAR, 0);}
+		{Symbol *s; code3(hoc_varpush,s= hoc_spop(), hoc_dep_make); hoc_obvar_declare(s, VAR, 0);}
 	| dep_list ',' varname
-		{Symbol *s; code3(varpush, s=spop(), dep_make); hoc_obvar_declare(s, VAR, 0);}
+		{Symbol *s; code3(hoc_varpush, s=hoc_spop(), hoc_dep_make); hoc_obvar_declare(s, VAR, 0);}
 	;
 equation: lhs EQNEQ
 	| EQNEQ rhs
 	| ':'
-		{ code(eqn_init); }
+		{ code(hoc_eqn_init); }
 	lhs EQNEQ rhs
 	;
 lhs:
-		{ code(eqn_lhs); }
+		{ code(hoc_eqn_lhs); }
 	expr
-		{ codein(STOP); TPD; }
+		{ hoc_codein(STOP); TPD; }
 	;
 rhs:
-		{ code(eqn_rhs); }
+		{ code(hoc_eqn_rhs); }
 	expr
-		{ codein(STOP); TPD; }
+		{ hoc_codein(STOP); TPD; }
 	;
 local:	/* nothing */
 		{ $$ = 0; localcnt = $$;}
@@ -925,17 +936,17 @@ local1:	LOCAL anyname
 		{
 		Symbol *sp;
 		$$ = 1; localcnt = $$;
-		sp = install($2->name, AUTO, 0.0, &p_symlist);
+		sp = hoc_install($2->name, AUTO, 0.0, &hoc_p_symlist);
 		sp->u.u_auto = $$;
 		}
 	| local1 ',' anyname
 		{
 		Symbol *sp;
 		$$ = $1 + 1; localcnt = $$;
-		if (hoc_table_lookup($3->name, p_symlist)) {
-			acterror($3->name, "already declared local");
+		if (hoc_table_lookup($3->name, hoc_p_symlist)) {
+			hoc_acterror($3->name, "already declared local");
 		}
-		sp = install($3->name, AUTO, 0.0, &p_symlist);
+		sp = hoc_install($3->name, AUTO, 0.0, &hoc_p_symlist);
 		sp->u.u_auto = $$;
 		}
 	;
@@ -947,20 +958,20 @@ local2:	LOCALOBJ anyname
 		{
 		Symbol *sp;
 		$$ = 1;
-		if (hoc_table_lookup($2->name, p_symlist)) {
-			acterror($2->name, "already declared local");
+		if (hoc_table_lookup($2->name, hoc_p_symlist)) {
+			hoc_acterror($2->name, "already declared local");
 		}
-		sp = install($2->name, AUTOOBJ, 0.0, &p_symlist);
+		sp = hoc_install($2->name, AUTOOBJ, 0.0, &hoc_p_symlist);
 		sp->u.u_auto = $$ + localcnt;
 		}
 	| local2 ',' anyname
 		{
 		Symbol *sp;
 		$$ = $1 + 1;
-		if (hoc_table_lookup($3->name, p_symlist)) {
-			acterror($3->name, "already declared local");
+		if (hoc_table_lookup($3->name, hoc_p_symlist)) {
+			hoc_acterror($3->name, "already declared local");
 		}
-		sp = install($3->name, AUTOOBJ, 0.0, &p_symlist);
+		sp = hoc_install($3->name, AUTOOBJ, 0.0, &hoc_p_symlist);
 		sp->u.u_auto = $$ + localcnt;
 		}
 	;
@@ -968,32 +979,32 @@ ckvar: VAR
 	{  Symbol* s;
 	   s = hoc_decl($1);
 	   if (s->subtype != NOTUSER)
-		acterror("can't redeclare user variable", s->name);
+		hoc_acterror("can't redeclare user variable", s->name);
 	   $$ = s;
 	}
 	;
 anyname: STRING|VAR|UNDEF|FUNCTION|PROCEDURE|FUN_BLTIN|SECTION|RANGEVAR
 	|NRNPNTVAR|OBJECTVAR|TEMPLATE|OBFUNCTION|AUTO|AUTOOBJ|SECTIONREF
 	|MECHANISM|BLTIN|STRFUNCTION|HOCOBJFUNCTION|ITERATOR|STRINGFUNC
-	|OBJECTFUNC
+	|OBJECTFUNC|RANGEOBJ
 	;
 %%
 	/* end of grammar */
 
 static void yyerror(const char* s)	/* called for yacc syntax error */
 {
-	execerror(s, (char *)0);
+	hoc_execerror(s, (char *)0);
 }
 
-void acterror(const char* s, const char*t)	/* recover from action error while parsing */
+void hoc_acterror(const char* s, const char*t)	/* recover from action error while parsing */
 {
-	execerror(s,t);
+	hoc_execerror(s,t);
 }
 
 static Inst* argrefcode(Pfrv pfrv, int i, int j){
 	Inst* in;
 	in = argcode(pfrv, i);
-	codei(j);
+	hoc_codei(j);
 	return in;
 }
 
@@ -1002,21 +1013,21 @@ static Inst* argcode(Pfrv pfrv, int i) {
 	if (i == 0) {
 		Symbol* si = hoc_lookup("i");
 		if (si->type != AUTO) {
-			acterror("arg index used and i is not a LOCAL variable", 0);
+			hoc_acterror("arg index used and i is not a LOCAL variable", 0);
 		}
-		in = code3(varpush, si, eval);		
-		Code(pfrv);
-		codei(0);
+		in = code3(hoc_varpush, si, hoc_eval);		
+		hoc_Code(pfrv);
+		hoc_codei(0);
 	}else{
-		in = Code(pfrv);
-		codei(i);
+		in = hoc_Code(pfrv);
+		hoc_codei(i);
 	}
 	return in;
 }
 
 static void hoc_opasgn_invalid(int op) {
         if (op) {
-                acterror("Invalid assignment operator.", "Only '=' allowed. ");
+                hoc_acterror("Invalid assignment operator.", "Only '=' allowed. ");
         }
 } 
 

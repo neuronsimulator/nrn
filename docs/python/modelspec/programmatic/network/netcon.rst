@@ -9,9 +9,9 @@ NetCon
 
 
     Syntax:
-        ``netcon = h.NetCon(source_ref_v, target, [threshold, delay, weight], sec=section)``
+        ``netcon = n.NetCon(source_ref_v, target, [threshold, delay, weight], sec=section)``
 
-        ``netcon = h.NetCon(source, target, [threshold, delay, weight])``
+        ``netcon = n.NetCon(source, target, [threshold, delay, weight])``
 
 
     Description:
@@ -73,8 +73,7 @@ NetCon
         the overhead of threshold detection at every time step. 
          
         The source may be ``None``. In this case events can only occur by 
-        calling :func:`event` from Python. (It is also used by NEOSIM to implement 
-        its own delivery system.) 
+        calling :func:`event` from Python. 
          
         A source used by multiple NetCon instances is shared by those instances 
         to allow faster threshold detection (ie on a per source basis instead 
@@ -215,20 +214,20 @@ NetCon
             python
 
             x = netcon.preloc()
-            sec = h.cas()
-            h.pop_section()
+            sec = n.cas()
+            n.pop_section()
 
 
     Description:
         The source section is pushed onto the section stack so that it is 
-        the currently accessed section (``h.cas()``). ``h.pop_section()`` must be called after you are 
+        the currently accessed section (``n.cas()``). ``n.pop_section()`` must be called after you are 
         finished with the section or have saved it as in the syntax block above.
 
     .. warning::
         If the source was an object, the section is not pushed and the return 
         value is -1. 
         If the source is not a membrane potential (or an object) the
-	return value is -2. But the section was pushed and `h.pop_section()
+	return value is -2. But the section was pushed and `n.pop_section()
         needs to be called.
         
 
@@ -267,12 +266,12 @@ NetCon
             python
 
             x = netcon.postloc()
-            sec = h.cas()
-            h.pop_section()
+            sec = n.cas()
+            n.pop_section()
 
     Description:
         The section of the target point process is pushed onto the section stack 
-        so that it is the currently accessed section (``h.cas()``). ``h.pop_section()`` must be called 
+        so that it is the currently accessed section (``n.cas()``). ``n.pop_section()`` must be called 
         after you are finished with the section or have saved it as in the syntax block above.
         The x return value is the 
         relative location of the point process in that section. If there
@@ -620,8 +619,8 @@ NetCon
         .. code-block::
             python
 
-            vec = h.Vector() 
-            netcon = h.NetCon(section(x)._ref_v, None, sec=section) 
+            vec = n.Vector() 
+            netcon = n.NetCon(section(x)._ref_v, None, sec=section) 
             netcon.record(vec) 
 
 
@@ -645,36 +644,37 @@ NetCon
         .. code-block::
             python  
             
-            from neuron import h, gui
+            from neuron import n
+            n.load_file('stdrun.hoc')  # for n.run() and n.cvode
 
-            soma = h.Section(name='soma')
-            soma.insert(h.hh)
+            soma = n.Section('soma')
+            soma.insert(n.hh)
             soma.L = 3.183098861837907
             soma.diam = 10
-            ic = h.IClamp(soma(0.5))
+            ic = n.IClamp(soma(0.5))
             ic.dur = 0.1
             ic.amp = 3
 
-            g = h.Graph()
+            g = n.Graph()
             g.size(0, 5, -80, 40)
             g.addexpr('v(0.5)', 1, 1, 0.8, 0.9, 2, sec=soma)
 
             def handle():
-                print("called handle() at time %g  when soma(0.5).v = %g" % (h.t, soma(0.5).v))
-                h.stoprun = 1 # Will stop but may go one extra step. Also with 
+                print(f"called handle() at time {n.t} when soma(0.5).v = {soma(0.5).v}")
+                n.stoprun = True  # Will stop but may go one extra step. Also with 
                 # local step the cells will be at different times. 
                 # So may wish to do a further... 
-                h.cvode.event(h.t + 1e-6)  
+                n.cvode.event(n.t + 1e-6)  
 
-            nc = h.NetCon(soma(0.5)._ref_v, None, sec=soma) 
+            nc = n.NetCon(soma(0.5)._ref_v, None, sec=soma) 
             nc.threshold = 0 # watch out! only one threshold per presyn location 
             nc.record(handle) 
              
-            h.cvode_active(True) # optional. but fixed step will probably do one extra time step 
-            h.cvode.condition_order(2) # optional. but much more accurate event time evaluation. 
+            n.cvode_active(True) # optional. but fixed step will probably do one extra time step 
+            n.cvode.condition_order(2) # optional. but much more accurate event time evaluation. 
              
-            h.run() 
-            print("after h.run(), t = %g  when soma(0.5).v = %g" % (h.t, soma(0.5).v))
+            n.run() 
+            print(f"after n.run(), t = {n.t} when soma(0.5).v = {soma(0.5).v}")
 
 
 

@@ -1,79 +1,55 @@
 #include <../../nrnconf.h>
 #include "matrixmap.h"
 #include <vector>
-using std::vector;
 
 #include "spmatrix.h"
 
 MatrixMap::MatrixMap(Matrix& mat)
-    : m_(mat)
-    , plen_(0)
-    , ptree_(NULL)
-    , pm_(NULL) {}
+    : m_(mat) {}
 
 MatrixMap::MatrixMap(Matrix* mat)
-    : m_(*mat)
-    , plen_(0)
-    , ptree_(NULL)
-    , pm_(NULL) {}
-
-MatrixMap::~MatrixMap() {
-    mmfree();
-}
+    : m_(*mat) {}
 
 void MatrixMap::mmfree() {
-    // safe to delete NULL pointers
-    delete[] ptree_;
-    delete[] pm_;
-    ptree_ = NULL;
-    pm_ = NULL;
+    pm_.clear();
+    pm_.shrink_to_fit();
+    ptree_.clear();
+    ptree_.shrink_to_fit();
 }
 
 void MatrixMap::add(double fac) {
-    for (int i = 0; i < plen_; ++i) {
-        // printf("i=%d %g += %g * %g\n", i, *ptree_[i], fac, *pm_[i]);
-        *ptree_[i] += fac * (*pm_[i]);
+    for (int i = 0; i < pm_.size(); ++i) {
+        auto [it, jt] = pm_[i];
+        *ptree_[i] += fac * m_(it, jt);
     }
+}
+
+int MatrixMap::compute_index(int i, int start, int nnode, Node** nodes, int* layer) const {
+    int it;
+    if (i < nnode) {
+        it = nodes[i]->eqn_index_ + layer[i];
+        if (layer[i] > 0 && !nodes[i]->extnode) {
+            it = 0;
+        }
+    } else {
+        it = start + i - nnode;
+    }
+    return it;
 }
 
 void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
     NrnThread* _nt = nrn_threads;
     mmfree();
-    // how many elements
-    int nrow = m_.nrow();
-    int ncol = m_.ncol();
-    // printf("MatrixMap::alloc nrow=%d ncol=%d\n", nrow, ncol);
 
-    plen_ = 0;
-    vector<int> nonzero_i, nonzero_j;
-    m_.nonzeros(nonzero_i, nonzero_j);
-    pm_ = new double*[nonzero_i.size()];
-    ptree_ = new double*[nonzero_i.size()];
-    for (int k = 0; k < nonzero_i.size(); k++) {
-        const int i = nonzero_i[k];
-        const int j = nonzero_j[k];
-        int it;
-        if (i < nnode) {
-            it = nodes[i]->eqn_index_ + layer[i];
-            // printf("i=%d it=%d area=%g\n", i, it, nodes[i]->area);
-            if (layer[i] > 0 && !nodes[i]->extnode) {
-                it = 0;
-            }
-        } else {
-            it = start + i - nnode;
+    std::vector<std::pair<int, int>> nzs = m_.nonzeros();
+    pm_.reserve(nzs.size());
+    ptree_.reserve(nzs.size());
+    for (const auto& [i, j]: nzs) {
+        int it = compute_index(i, start, nnode, nodes, layer);
+        int jt = compute_index(j, start, nnode, nodes, layer);
+        if (it != 0 && jt != 0) {
+            pm_.emplace_back(i, j);
+            ptree_.emplace_back(spGetElement(_nt->_sp13mat, it, jt));
         }
-        int jt;
-        pm_[plen_] = m_.mep(i, j);
-        if (j < nnode) {
-            jt = nodes[j]->eqn_index_ + layer[j];
-            if (layer[j] > 0 && !nodes[j]->extnode) {
-                jt = 0;
-            }
-        } else {
-            jt = start + j - nnode;
-        }
-        // printf("MatrixMap::alloc getElement(%d,%d)\n", it, jt);
-        ptree_[plen_] = spGetElement(_nt->_sp13mat, it, jt);
-        ++plen_;
     }
 }

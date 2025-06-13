@@ -17,7 +17,7 @@ class NodeList(list):
 
     def __call__(self, restriction):
         """returns a sub-NodeList consisting of nodes satisfying restriction"""
-        return NodeList([i for i in self if i.satisfies(restriction)])
+        return NodeList([i for i in self if i._safe_satisfies(restriction)])
 
     def __getitem__(self, key):
         if isinstance(key, slice):
@@ -121,7 +121,8 @@ class NodeList(list):
 
     def include_flux(self, *args, **kwargs):
         for node in self:
-            node.include_flux(args, kwargs)
+            # Unpack arguments for each individual call
+            node.include_flux(*args, **kwargs)
 
     def value_to_grid(self):
         """Returns a regular grid with the values of the 3d nodes in the list.

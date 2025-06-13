@@ -83,7 +83,7 @@ Python usage:
 .. code-block::
     python
     
-    p = h.PointProcessManager([xplacement, yplacement], sec=section) 
+    p = n.PointProcessManager([xplacement, yplacement], sec=section) 
     
 p.pp is the point process currently installed in the cell. 
      

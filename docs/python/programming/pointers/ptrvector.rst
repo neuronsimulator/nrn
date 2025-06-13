@@ -4,7 +4,7 @@ PtrVector
 .. class:: PtrVector
 
   Syntax:
-    :samp:`pv = h.PtrVector({size})`
+    :samp:`pv = n.PtrVector({size})`
     
    
   Description:
@@ -25,10 +25,10 @@ PtrVector
     .. code-block::
       python
       
-      from neuron import h
-      a = h.Vector(range(5))
-      b = h.Vector([0] * 5)
-      pv = h.PtrVector(5)
+      from neuron import n
+      a = n.Vector(range(5))
+      b = n.Vector([0] * 5)
+      pv = n.PtrVector(5)
       for i in range(len(a)):
         pv.pset(i, b._ref_x[i])
         
@@ -188,30 +188,30 @@ PtrVector
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
+            import numpy as np
             import time
             
-            g = h.Graph() 
-            g.size(0,10,-1,1) 
-            vec = h.Vector().indgen(0, 10, 0.1) 
-            vec.apply("sin")
+            g = n.Graph() 
+            g.size(0, 10, -1, 1) 
+            vec = n.Vector(np.sin(np.arange(0, 10.1, 0.1))
 
-            pv = h.PtrVector(len(vec))
+            pv = n.PtrVector(len(vec))
             pv.label("PtrVector")
             for i in range(len(vec)):
               pv.pset(i, vec._ref_x[i])
           
-            pv.plot(g, .1) 
+            pv.plot(g, 0.1) 
             def do_run():
                 for i in range(len(vec)):
                     vec.rotate(1)
                     g.flush()
-                    h.doNotify()
+                    n.doNotify()
                     time.sleep(0.01)
 
-            h.xpanel("") 
-            h.xbutton("run", do_run) 
-            h.xpanel() 
+            n.xpanel("") 
+            n.xbutton("run", do_run) 
+            n.xpanel() 
 ----
 
 .. method:: PtrVector.label

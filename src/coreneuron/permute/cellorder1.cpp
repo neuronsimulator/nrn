@@ -12,16 +12,34 @@
 #include <algorithm>
 #include <cstring>
 
+#if CORENRN_BUILD
 #include "coreneuron/utils/nrn_assert.h"
+#else
+#include "oc/nrnassrt.h"
+#endif
+
 #include "coreneuron/permute/cellorder.hpp"
 #include "coreneuron/network/tnode.hpp"
 
 // just for interleave_permute_type
+#if CORENRN_BUILD
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/utils/memory.h"
+#else
+#include "node_order_optim/node_order_optim.h"
+#endif
 
+#if !CORENRN_BUILD && NRN_DEBUG
+#undef CORENRN_DEBUG
+#define CORENRN_DEBUG NRN_DEBUG
+#endif
 
+#if CORENRN_BUILD
 namespace coreneuron {
+#else
+namespace neuron {
+#endif
+
 static size_t groupsize = 32;
 
 /**
@@ -127,7 +145,7 @@ static void quality(VecTNode& nodevec, size_t max = 32) {
         size_t ip = nodevec[i]->parent->nodevec_index;
         // i%max == 0 means that if we start a warp with 8 and then have 32
         // the 32 is broken into 24 and 8. (modify if the arrangement during
-        // gaussian elimination becomes more sophisticated.(
+        // gaussian elimination becomes more sophisticated.)
         if (ip == ip_last + 1 && i % max != 0) {  // contiguous
             qcnt += 1;
         } else {
@@ -297,7 +315,11 @@ static void ident_statistic(VecTNode& nodevec, size_t ncell) {
 }
 #undef MSS
 
+#if CORENRN_BUILD
 int* node_order(int ncell,
+#else
+std::vector<int> node_order(int ncell,
+#endif
                 int nnode,
                 int* parent,
                 int& nwarp,
@@ -339,7 +361,11 @@ int* node_order(int ncell,
     quality(nodevec);
 
     // the permutation
+#if CORENRN_BUILD
     int* nodeorder = new int[nnode];
+#else
+    std::vector<int> nodeorder(nnode);
+#endif
     for (int i = 0; i < nnode; ++i) {
         TNode& nd = *nodevec[i];
         nodeorder[nd.nodeindex] = i;

@@ -1,5 +1,4 @@
-#ifndef hoc_list_h
-#define hoc_list_h
+#pragma once
 
 #if HOC_L_LIST
 #define stralloc    hoc_l_stralloc
@@ -48,8 +47,33 @@ struct hoc_Item {
 };
 using hoc_List = hoc_Item;
 
-#define ITEM0 (hoc_Item*) 0
-#define LIST0 (hoc_List*) 0
+constexpr auto range_sec(hoc_List* iterable) {
+    struct iterator {
+        hoc_Item* iter;
+        bool operator!=(const iterator& other) const {
+            return iter != other.iter;
+        }
+        void operator++() {
+            iter = iter->next;
+        }
+        Section* operator*() const {
+            return iter->element.sec;
+        }
+    };
+    struct iterable_wrapper {
+        hoc_List* iterable;
+        auto begin() {
+            return iterator{iterable->next};
+        }
+        auto end() {
+            return iterator{iterable};
+        }
+    };
+    return iterable_wrapper{iterable};
+}
+
+#define ITEM0 nullptr
+#define LIST0 nullptr
 
 #define ITERATE(itm, lst) for (itm = (lst)->next; itm != (lst); itm = itm->next)
 /*
@@ -107,6 +131,3 @@ extern void hoc_l_replacstr(hoc_Item*, const char*);
 #define Lappenditem lappenditem
 #define Lappendlst  lappendlst
 #define Lappendsec  lappendsec
-
-
-#endif

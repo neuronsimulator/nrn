@@ -27,6 +27,9 @@ from .geometry import (
     MultipleGeometry,
 )
 from .plugins import set_solver
+import neuron
+
+neuron._userrxd = True
 
 # deprecated:
 # from geometry import ConstantArea, ConstantVolume

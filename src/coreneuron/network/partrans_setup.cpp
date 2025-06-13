@@ -160,7 +160,7 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
 
         // Note that src_index points into NrnThread.data, as it has already
         // been transformed using original src_type and src_index via
-        // stdindex2ptr.
+        // legacy_index2pointer.
         // For copying into outsrc_buf from src_gather. This is from
         // NrnThread._data, fixup to "from src_gather" below.
         ttd.gather2outsrc_indices.push_back(si.src_index[setup_info_index]);
@@ -248,13 +248,13 @@ void nrn_partrans::gap_data_indices_setup(NrnThread* n) {
 
     // For copying into src_gather from NrnThread._data
     for (size_t i = 0; i < sti.src_sid.size(); ++i) {
-        double* d = stdindex2ptr(sti.src_type[i], sti.src_index[i], nt);
+        double* d = legacy_index2pointer(sti.src_type[i], sti.src_index[i], nt);
         sti.src_index[i] = int(d - nt._data);
     }
 
     // For copying into NrnThread._data from insrc_buf.
     for (size_t i = 0; i < sti.tar_sid.size(); ++i) {
-        double* d = stdindex2ptr(sti.tar_type[i], sti.tar_index[i], nt);
+        double* d = legacy_index2pointer(sti.tar_type[i], sti.tar_index[i], nt);
         // todo : this should be revisited once nt._data will be broken
         // into mechanism specific data
         sti.tar_index[i] = int(d - nt._data);

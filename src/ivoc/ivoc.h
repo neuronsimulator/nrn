@@ -1,11 +1,11 @@
-#ifndef oc_h
-#define oc_h
+#pragma once
 
 #include <Dispatch/iohandler.h>
 #include <Dispatch/dispatcher.h>
 #include <InterViews/session.h>
 #include <OS/string.h>
 #include <stdio.h>
+#include <string>
 #include "gui-redirect.h"
 extern int nrn_err_dialog_active_;
 
@@ -41,6 +41,7 @@ class Oc {
 
     int run(int argc, const char** argv);
     int run(const char*, bool show_err_mes = true);
+    int run(const std::string&, bool show_err_mes = true);
 
     Symbol* parseExpr(const char*, Symlist** = NULL);
     double runExpr(Symbol*);
@@ -85,5 +86,3 @@ class Oc {
     static Cursor* help_cursor_;
     static Observable* notify_change_;
 };
-
-#endif

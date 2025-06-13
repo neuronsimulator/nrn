@@ -263,7 +263,13 @@ def test_deleted_sec():
             # for valid section first.
             words = str(m).split()
             print("m is " + words[4] + "." + words[2])
-            expect_err("m()")
+            if "name" != words[2]:
+                expect_err("m()")
+
+    # Mere printing of an invalid object is not supposed to be an error.
+    print(s)
+    print(seg)
+    print(mech)
 
     assert str(s) == "<deleted section>"
     assert str(seg) == "<segment of deleted section>"
@@ -451,7 +457,7 @@ def test_help():
     )
     assert h.Vector().__doc__.startswith("class neuron.hoc.HocObject")
     assert h.Vector.__doc__.startswith("class neuron.hoc.HocObject")
-    assert h.finitialize.__doc__.startswith("Syntax:\n    ``h.finiti")
+    assert h.finitialize.__doc__.startswith("Syntax:\n    ``n.finiti")
     assert h.__doc__.startswith("\n\nneuron.h\n====")
 
 

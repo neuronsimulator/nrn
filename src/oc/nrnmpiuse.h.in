@@ -1,22 +1,16 @@
-#ifndef usenrnmpi_h
-#define usenrnmpi_h
+#pragma once
 
 /* define to 1 if you want MPI specific features activated */
-#undef NRNMPI
+#cmakedefine NRNMPI @NRNMPI@
 
 /* define to 1 if you want mpi dynamically loaded instead of linked normally */
-#undef NRNMPI_DYNAMICLOAD
+#cmakedefine NRNMPI_DYNAMICLOAD @NRNMPI_DYNAMICLOAD@
 
 /* define to 1 if you want the MUSIC - MUlti SImulation Coordinator */
-#undef NRN_MUSIC
+#cmakedefine NRN_MUSIC @NRN_MUSIC@
 
 /* define to the dll path if you want to load automatically */
-#undef DLL_DEFAULT_FNAME
+#cmakedefine DLL_DEFAULT_FNAME @DLL_DEFAULT_FNAME@
 
 /* define if needed */
-#undef ALWAYS_CALL_MPI_INIT
-
-/* Number of times to retry a failed open */
-#undef FILE_OPEN_RETRY
-
-#endif
+#cmakedefine ALWAYS_CALL_MPI_INIT @ALWAYS_CALL_MPI_INIT@

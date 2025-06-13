@@ -297,7 +297,8 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
                     if (report.section_type == SectionType::All) {
                         double* variable = report_variable + segment_id;
                         to_report.emplace_back(VarWithMapping(section_id, variable));
-                    } else if (report.section_type == SectionType::Cell) {
+                    } else if (report.section_type == SectionType::Cell ||
+                               report.section_type == SectionType::Soma) {
                         summation_report.gid_segments_[gid].push_back(segment_id);
                     }
                 }
@@ -353,24 +354,6 @@ VarsToReport ReportHandler::get_synapse_vars_to_report(
     return vars_to_report;
 }
 
-void add_clamp_current(const char* clamp,
-                       const NrnThread& nt,
-                       std::unordered_map<size_t, std::vector<std::pair<double*, int>>>& currents,
-                       int gid,
-                       const std::vector<int>& nodes_to_gids) {
-    auto mech_id = nrn_get_mechtype(clamp);
-    Memb_list* ml = nt._ml_list[mech_id];
-    if (ml) {
-        for (int i = 0; i < ml->nodecount; i++) {
-            auto segment_id = ml->nodeindices[i];
-            if ((nodes_to_gids[segment_id] == gid)) {
-                double* var_value = get_var_location_from_var_name(mech_id, "i", ml, i);
-                currents[segment_id].push_back(std::make_pair(var_value, -1));
-            }
-        }
-    }
-}
-
 VarsToReport ReportHandler::get_lfp_vars_to_report(const NrnThread& nt,
                                                    const std::vector<int>& gids_to_report,
                                                    ReportConfiguration& report,
@@ -384,11 +367,8 @@ VarsToReport ReportHandler::get_lfp_vars_to_report(const NrnThread& nt,
     }
     auto& summation_report = nt.summation_report_handler_->summation_reports_[report.output_path];
     VarsToReport vars_to_report;
-    off_t offset_lfp = 0;
+    std::size_t offset_lfp = 0;
     for (const auto& gid: gids_to_report) {
-        // IClamp & SEClamp are needed for the LFP calculation
-        add_clamp_current("IClamp", nt, summation_report.currents_, gid, nodes_to_gids);
-        add_clamp_current("SEClamp", nt, summation_report.currents_, gid, nodes_to_gids);
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
         if (cell_mapping == nullptr) {
             std::cerr << "[LFP] Error : Compartment mapping information is missing for gid " << gid

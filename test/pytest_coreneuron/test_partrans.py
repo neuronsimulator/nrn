@@ -59,6 +59,7 @@ ks.iv_type(0)
 ks.gmax(0)
 ks.erev(0)
 
+
 # Cell with enough nonsense stuff to exercise transfer possibilities.
 class Cell:
     def __init__(self):
@@ -186,7 +187,6 @@ def check_values():
 
 
 def test_partrans():
-
     # no transfer targets or sources.
     mkmodel(4)
     run()
@@ -311,6 +311,9 @@ def test_partrans():
         pc.target_var(cell.hgap[0], cell.hgap[0]._ref_e, 1000)
     pc.setup_transfer()
     imp = h.Impedance()
+    for z in h.List("HGap"):
+        z.gmax = 1.0  # imp.compute converges slowly
+    del z
     h.finitialize(-65)
     if pc.gid_exists(0):
         imp.loc(pc.gid2cell(0).soma(0.5))

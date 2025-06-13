@@ -1,5 +1,4 @@
-#ifndef epsprinter_h
-#define epsprinter_h
+#pragma once
 
 #include <InterViews/printer.h>
 
@@ -13,5 +12,3 @@ class EPSPrinter: public Printer {
                             Coord height,
                             const char* creator = "InterViews");
 };
-
-#endif

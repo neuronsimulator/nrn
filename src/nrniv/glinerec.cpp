@@ -13,7 +13,6 @@
 #undef begin
 #undef add
 
-#include <OS/list.h>
 #include "nrnoc2iv.h"
 #include "vrecitem.h"
 #include "netcvode.h"
@@ -81,7 +80,7 @@ void GLineRecord::fill_pd1() {
             rangevarevalpointer();
             pd = hoc_pxpop();
             hoc_pushx(*pd);
-        } else if (pc1->pf == varpush) {
+        } else if (pc1->pf == hoc_varpush) {
             Symbol* sym = hoc_pc->sym;
             if (strcmp(sym->name, "t") == 0) {
                 saw_t_ = true;

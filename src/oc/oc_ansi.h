@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+
+#include "memory.hpp"
 /**
  * \dir
  * \brief HOC Interpreter
@@ -37,6 +39,7 @@ union Objectdata;
 struct Symbol;
 struct Symlist;
 struct VoidFunc;
+struct Prop;
 
 namespace neuron {
 struct model_sorted_token;
@@ -49,9 +52,6 @@ void ivoc_help(const char*);
 
 Symbol* hoc_lookup(const char*);
 
-void* hoc_Ecalloc(std::size_t nmemb, std::size_t size);
-void* hoc_Emalloc(size_t size);
-void hoc_malchk();
 [[noreturn]] void hoc_execerror(const char*, const char*);
 [[noreturn]] void hoc_execerr_ext(const char* fmt, ...);
 char* hoc_object_name(Object*);
@@ -100,6 +100,7 @@ void install_vector_method(const char*, double (*)(void*));
 int vector_arg_px(int i, double** p);
 
 double hoc_Exp(double);
+extern "C" double hoc_pow(double, double);
 int hoc_is_tempobj_arg(int narg);
 std::FILE* hoc_obj_file_arg(int i);
 void hoc_reg_nmodl_text(int type, const char* txt);
@@ -299,7 +300,7 @@ template <typename T>
 T const& hoc_look_inside_stack(int i);
 Object* hoc_obj_look_inside_stack(int);
 void hoc_stkobj_unref(Object*, int stkindex);
-size_t hoc_total_array_data(Symbol*, Objectdata*);
+size_t hoc_total_array_data(const Symbol*, Objectdata*);
 char* hoc_araystr(Symbol*, int, Objectdata*);
 
 char* hoc_object_pathname(Object*);
@@ -313,6 +314,8 @@ Object** hoc_temp_objvar(Symbol* template_symbol, void* cpp_object);
 Object** hoc_temp_objptr(Object*);
 Object* hoc_new_object(Symbol* symtemp, void* v);
 void hoc_new_object_asgn(Object** obp, Symbol* template_symbol, void* cpp_object);
+Object* nrn_pntproc_nmodlrandom_wrap(void* pnt, Symbol* sym);
+Object* nrn_nmodlrandom_wrap(Prop* prop, Symbol* sym);
 HocSymExtension* hoc_var_extra(const char*);
 double check_domain_limits(float*, double);
 Object* hoc_obj_get(int i);
@@ -320,10 +323,6 @@ void hoc_obj_set(int i, Object*);
 void nrn_hoc_lock();
 void nrn_hoc_unlock();
 
-void* hoc_Erealloc(void* ptr, std::size_t size);
-
-void* nrn_cacheline_alloc(void** memptr, std::size_t size);
-void* nrn_cacheline_calloc(void** memptr, std::size_t nmemb, std::size_t size);
 [[noreturn]] void nrn_exit(int);
 void hoc_free_list(Symlist**);
 int hoc_errno_check();
@@ -347,7 +346,7 @@ void hoc_last_init();
 void hoc_obj_notify(Object*);
 int ivoc_list_count(Object*);
 Object* ivoc_list_item(Object*, int);
-double hoc_func_table(void* functable, int n, double* args);
+double hoc_func_table(void* vpft, int n, double* args);
 void hoc_spec_table(void** pfunctable, int n);
 void* hoc_sec_internal_name2ptr(const char* s, int eflag);
 void* hoc_pysec_name2ptr(const char* s, int eflag);
@@ -363,8 +362,6 @@ int is_vector_arg(int);
 char* vector_get_label(IvocVect*);
 void vector_set_label(IvocVect*, char*);
 
-void hoc_regexp_compile(const char*);
-int hoc_regexp_search(const char*);
 Symbol* hoc_install_var(const char*, double*);
 void hoc_class_registration();
 void hoc_spinit();
@@ -423,8 +420,6 @@ int hoc_pid();
 int hoc_ired(const char*, int, int, int);
 double hoc_xred(const char*, double, double, double);
 int hoc_sred(const char*, char*, char*);
-int nrnpy_pr(const char* fmt, ...);
-int Fprintf(std::FILE*, const char* fmt, ...);
 void nrnpy_pass();
 void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
 int nrn_is_cable();

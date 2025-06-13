@@ -1237,6 +1237,9 @@ proc contour2centroid() {local i, j, imax, imin, ok  localobj mean, pts, d, max,
 	// minor is normal and in xy plane
 	minor = m.getcol(3-tobj.min_ind-tobj.max_ind)
 	minor.x[2] = 0
+	if (minor.mag / (major.mag + 1e-100) < 1e-6) {
+		execerror("Failed to compute soma centroid from contour.")
+	}
 	minor.div(minor.mag)
 	if (g != nil) {
 		g.beginline(4, 3) g.line(mean.x[0], mean.x[1])

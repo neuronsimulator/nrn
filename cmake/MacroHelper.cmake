@@ -63,68 +63,6 @@ macro(nrn_check_type_exists HEADER TYPE DEFAULT_TYPE VARIABLE)
 endmacro()
 
 # =============================================================================
-# Check return type of signal
-# =============================================================================
-macro(nrn_check_signal_return_type VARIABLE)
-  # code template to check signal support
-  string(CONCAT CONFTEST_RETSIGTYPE "#include <sys/types.h>\n" "#include <signal.h>\n"
-                "int main () {\n" "  return *(signal (0, 0)) (0) == 1\;\n" "}\n")
-  file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp ${CONFTEST_RETSIGTYPE})
-  try_compile(MY_RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp)
-  if(MY_RESULT_VAR)
-    set(${VARIABLE} int)
-  else()
-    set(${VARIABLE} void)
-  endif()
-  file(REMOVE "conftest.cpp")
-endmacro()
-
-# =============================================================================
-# Transform PROJECT_SOURCE_DIR/sdir/sfile.in to PROJECT_BINARY_DIR/bdir/bfile
-# =============================================================================
-# ~~~
-# This 4 arg macro transformsPROJECT_SOURCE_DIR/sdir/sfile.in into
-# PROJECT_BINARY_DIR/bdir/bfile .
-# THE shorter two arg form transforms PROJECT_SOURCE_DIR/dir/file.in into
-# PROJECT_BINARY_DIR/dir/file
-# This first copies with some replacement the sfile.in to _cmake_tmp_bfile.in
-# so that the normal cmake configure_file command works to make a proper
-# cmake_file. Then that is compared to a possibly existing bfile and,
-# if different, copies _cmake_tmp_bfile to bfile. This prevents recompilation of
-# .o files that depend on unchanged bfile. The sdir arg is the path relative to
-# PROJECT_SOURCE_DIR, the bdir arg is the path relative to PROJECT_BINARY_DIR.
-# Note that everytime cmake is run, the bfile is compared to a newly created
-# _cmake_tmp_bfile consistent with the current cmake args.
-# Note that the sfile arg does NOT contain the .in suffix.
-# ~~~
-macro(nrn_configure_dest_src bfile bdir sfile sdir)
-  set(infile ${PROJECT_SOURCE_DIR}/${sdir}/${sfile}.in)
-  set(bin_dir ${PROJECT_BINARY_DIR}/${bdir})
-  file(MAKE_DIRECTORY ${bin_dir})
-  execute_process(
-    COMMAND sed "s/\#undef *\\(.*\\)/\#cmakedefine \\1 @\\1@/"
-    INPUT_FILE ${infile}
-    OUTPUT_FILE ${bin_dir}/_cmake_tmp_${bfile}.in)
-  configure_file(${bin_dir}/_cmake_tmp_${bfile}.in ${bin_dir}/_cmake_tmp_${bfile} @ONLY)
-  execute_process(COMMAND cmp -s ${bin_dir}/_cmake_tmp_${bfile} ${bin_dir}/${bfile}
-                  RESULT_VARIABLE result)
-  if(result EQUAL 0)
-    file(REMOVE ${bin_dir}/_cmake_tmp_${bfile})
-  else()
-    file(RENAME ${bin_dir}/_cmake_tmp_${bfile} ${bin_dir}/${bfile})
-  endif()
-  file(REMOVE ${bin_dir}/_cmake_tmp_${bfile}.in)
-  set_property(
-    DIRECTORY
-    APPEND
-    PROPERTY CMAKE_CONFIGURE_DEPENDS ${infile})
-endmacro()
-
-macro(nrn_configure_file file dir)
-  nrn_configure_dest_src(${file} ${dir} ${file} ${dir})
-endmacro()
-
-# =============================================================================
 # Perform check_include_files and add it to NRN_HEADERS_INCLUDE_LIST if exist Passing an optional
 # CXX will call check_include_files_cxx instead.
 # =============================================================================
@@ -206,35 +144,106 @@ endmacro()
 # =============================================================================
 # Run nocmodl to convert NMODL to C
 # =============================================================================
-macro(nocmodl_mod_to_cpp modfile_basename)
+macro(nocmodl_mod_to_cpp modfile_basename modfile_compat)
   set(NOCMODL_SED_EXPR "s/_reg()/_reg_()/")
   if(NOT MSVC)
     set(NOCMODL_SED_EXPR "'${NOCMODL_SED_EXPR}'")
   endif()
+  set(MODFILE_INPUT_PATH "${PROJECT_SOURCE_DIR}/${modfile_basename}.mod")
+  set(MODFILE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/${modfile_basename}.mod")
+
+  # for coreNEURON only
+  if(modfile_compat)
+    file(READ "${MODFILE_INPUT_PATH}" FILE_CONTENT)
+    string(REGEX REPLACE " GLOBAL minf" " RANGE minf" FILE_CONTENT "${FILE_CONTENT}")
+    file(WRITE "${MODFILE_OUTPUT_PATH}" "${FILE_CONTENT}")
+  else()
+    configure_file("${MODFILE_INPUT_PATH}" "${MODFILE_OUTPUT_PATH}" COPYONLY)
+  endif()
+
+  get_filename_component(modfile_output_dir "${MODFILE_OUTPUT_PATH}" DIRECTORY)
+  get_filename_component(modfile_name "${MODFILE_OUTPUT_PATH}" NAME_WE)
+  set(CPPFILE_OUTPUT_PATH "${modfile_output_dir}/${modfile_name}.cpp")
+
   add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
+    OUTPUT ${CPPFILE_OUTPUT_PATH}
     COMMAND
       ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
-      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:nocmodl>
-      ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
-    COMMAND sed ${NOCMODL_SED_EXPR} ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp >
-            ${PROJECT_BINARY_DIR}/${modfile_basename}.cpp
-    COMMAND ${CMAKE_COMMAND} -E rm ${PROJECT_SOURCE_DIR}/${modfile_basename}.cpp
-    DEPENDS nocmodl ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
+      "NMODL_PYLIB=${PYTHON_LIBRARY}" "NMODLHOME=${PROJECT_BINARY_DIR}"
+      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} $<TARGET_FILE:${NRN_CODEGENERATOR_TARGET}>
+      ${MODFILE_OUTPUT_PATH} ${NRN_NMODL_--neuron} -o ${modfile_output_dir}
+    COMMAND sed ${NOCMODL_SED_EXPR} ${CPPFILE_OUTPUT_PATH} > ${CPPFILE_OUTPUT_PATH}.tmp
+    COMMAND ${CMAKE_COMMAND} -E copy ${CPPFILE_OUTPUT_PATH}.tmp ${CPPFILE_OUTPUT_PATH}
+    COMMAND ${CMAKE_COMMAND} -E remove ${CPPFILE_OUTPUT_PATH}.tmp
+    DEPENDS ${NRN_CODEGENERATOR_TARGET} ${MODFILE_INPUT_PATH}
+            ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
+
 endmacro()
 
+# ~~~
 # =============================================================================
-# Create symbolic links
+# Create symbolic links during the install phase
+#
+# Usage: nrn_install_dir_symlink(source_dir symlink_dir)
+#
+# Creates a relative symbolic link at `CMAKE_INSTALL_PREFIX/symlink_dir` pointing
+# to `source_dir`, executed during `ninja install`. The link is relative to the
+# symlink's parent directory (e.g., `x86_64/bin -> ../bin`).
+#
+# Arguments:
+#   source_dir: Path to the target directory (absolute, e.g., `/home/user/bin`,
+#               or relative, e.g., `bin`, `neuron/.data/bin`).
+#   symlink_dir: Path where the symlink is created (absolute or relative, e.g.,
+#                `x86_64/bin`, `neuron/.data/x86_64/bin`).
+#
+# In NEURON, used to create `install/x86_64/bin -> ../bin` and `install/x86_64/lib -> ../lib`
+# for non-wheel builds, or `install/neuron/.data/x86_64/bin -> ../bin` for wheel builds.
+#
+# The macro ensures the symlink's parent directory (e.g., `install/x86_64`) exists
+# and computes the relative path from the symlink's parent to the source directory.
 # =============================================================================
+# ~~~
 macro(nrn_install_dir_symlink source_dir symlink_dir)
-  # make sure to have directory path exist upto parent dir
-  get_filename_component(parent_symlink_dir ${symlink_dir} DIRECTORY)
-  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${parent_symlink_dir})")
-  # create symbolic link
-  install(
-    CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${source_dir} ${symlink_dir})")
-endmacro(nrn_install_dir_symlink)
+  # Create variables for substitution (@arg@ not allowed for CONFIGURE)
+  set(src_dir "${source_dir}")
+  set(link_dir "${symlink_dir}")
+  get_filename_component(parent_symlink_dir "${link_dir}" DIRECTORY)
+
+  # ~~~
+  # Define CODE block with placeholders
+  # @name@ seems to be the only way to get names declared in this macro
+  # to get their proper value during install. ${name} ends up empty.
+  # ~~~
+  set(code
+      [[
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_INSTALL_PREFIX}/@parent_symlink_dir@"
+      COMMAND_ECHO STDOUT
+    )
+    if(IS_ABSOLUTE "@src_dir@")
+      set(abs_source_dir "@src_dir@")
+    else()
+      file(TO_CMAKE_PATH "${CMAKE_INSTALL_PREFIX}/@src_dir@" abs_source_dir)
+    endif()
+    if(IS_ABSOLUTE "@link_dir@")
+      set(abs_symlink_dir "@link_dir@")
+    else()
+      file(TO_CMAKE_PATH "${CMAKE_INSTALL_PREFIX}/@link_dir@" abs_symlink_dir)
+    endif()
+    # Compute relative path from symlink's parent to source
+    get_filename_component(abs_parent_symlink_dir "${abs_symlink_dir}" DIRECTORY)
+    file(RELATIVE_PATH rel_path "${abs_parent_symlink_dir}" "${abs_source_dir}")
+
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E create_symlink "${rel_path}" "${abs_symlink_dir}"
+      COMMAND_ECHO STDOUT
+    )
+  ]])
+
+  string(CONFIGURE "${code}" configured_code @ONLY)
+  install(CODE "${configured_code}")
+endmacro()
 
 # ========================================================================
 # There is an edge case to 'find_package(MPI REQUIRED)' in that we can still build a universal2
@@ -255,3 +264,78 @@ macro(nrn_mpi_find_package)
     find_package(MPI REQUIRED)
   endif()
 endmacro()
+
+# copy a list of files to the build dir
+function(copy_build_list FILE_LIST BUILD_PREFIX)
+  foreach(path IN LISTS ${FILE_LIST})
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/${path}" "${BUILD_PREFIX}/${path}" COPYONLY)
+  endforeach()
+endfunction()
+
+# install a list of files to an install dir
+function(install_list FILE_LIST INSTALL_PREFIX)
+  foreach(file IN LISTS ${FILE_LIST})
+    get_filename_component(file_abs "${CMAKE_CURRENT_SOURCE_DIR}/${file}" ABSOLUTE)
+    get_filename_component(file_dir "${file}" DIRECTORY)
+    install(FILES "${file_abs}" DESTINATION "${INSTALL_PREFIX}/${file_dir}")
+  endforeach()
+endfunction()
+
+# Replacement for git2nrnversion_h.sh. Add git information to `target` with scope `scope` (PRIVATE,
+# PUBLIC, or INTERFACE)
+function(add_cpp_git_information target scope)
+  find_program(GIT git)
+  if(EXISTS "${PROJECT_SOURCE_DIR}/.git" AND GIT)
+    execute_process(
+      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" describe
+      OUTPUT_VARIABLE GIT_DESCRIBE
+      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+
+    execute_process(
+      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" rev-parse --abbrev-ref HEAD
+      OUTPUT_VARIABLE GIT_BRANCH
+      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+
+    execute_process(
+      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" -c log.showSignature=false log --format=%h -n 1
+      OUTPUT_VARIABLE GIT_COMMIT_HASH
+      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+
+    execute_process(
+      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" -c log.showSignature=false log --format=%cd -n 1
+              --date=short
+      OUTPUT_VARIABLE GIT_DATE
+      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+
+    execute_process(
+      COMMAND "${GIT}" -C "${PROJECT_SOURCE_DIR}" status -s -uno --porcelain
+      OUTPUT_VARIABLE GIT_STATUS
+      ERROR_QUIET)
+
+    if(GIT_STATUS)
+      set(GIT_MODIFIED "+")
+    else()
+      set(GIT_MODIFIED "")
+    endif()
+
+    set(GIT_CHANGESET "${GIT_COMMIT_HASH}${GIT_MODIFIED}")
+    set(GIT_DESCRIBE_FULL "${GIT_DESCRIBE}${GIT_MODIFIED}")
+
+  else()
+    string(TIMESTAMP BUILD_TIME "%Y-%m-%d-%H:%M:%S")
+    set(GIT_DATE "Build Time: ${BUILD_TIME}")
+    set(GIT_BRANCH "unknown branch")
+    set(GIT_CHANGESET "unknown commit id")
+    set(GIT_DESCRIBE "${PROJECT_VERSION}.dev0")
+    set(GIT_DESCRIBE_FULL "${GIT_DESCRIBE}")
+  endif()
+
+  set(git_def_keys GIT_DATE GIT_BRANCH GIT_CHANGESET GIT_DESCRIBE GIT_DESCRIBE_FULL)
+
+  set(processed_defs)
+  foreach(key IN LISTS git_def_keys)
+    list(APPEND processed_defs "${key}=\"${${key}}\"")
+  endforeach()
+
+  target_compile_definitions(${target} ${scope} ${processed_defs})
+endfunction()

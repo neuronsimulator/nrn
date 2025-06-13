@@ -103,7 +103,7 @@ int nrnmpi_spike_exchange(int* ovfl,
                           NRNMPI_Spike* spikeout_,
                           NRNMPI_Spike** spikein_,
                           int* icapacity_) {
-    int i, n, novfl, n1;
+    int i, n;
     if (!displs) {
         np = nrnmpi_numprocs;
         displs = (int*) hoc_Emalloc(np * sizeof(int));
@@ -133,7 +133,7 @@ int nrnmpi_spike_exchange(int* ovfl,
     }
 #else
     MPI_Allgather(spbufout_, 1, spikebuf_type, spbufin_, 1, spikebuf_type, nrnmpi_comm);
-    novfl = 0;
+    int novfl = 0;
     n = spbufin_[0].nspike;
     if (n > nrn_spikebuf_size) {
         nin_[0] = n - nrn_spikebuf_size;
@@ -143,7 +143,7 @@ int nrnmpi_spike_exchange(int* ovfl,
     }
     for (i = 1; i < np; ++i) {
         displs[i] = novfl;
-        n1 = spbufin_[i].nspike;
+        int n1 = spbufin_[i].nspike;
         n += n1;
         if (n1 > nrn_spikebuf_size) {
             nin_[i] = n1 - nrn_spikebuf_size;
@@ -159,7 +159,7 @@ int nrnmpi_spike_exchange(int* ovfl,
             *spikein_ = (NRNMPI_Spike*) hoc_Emalloc(*icapacity_ * sizeof(NRNMPI_Spike));
             hoc_malchk();
         }
-        n1 = (*nout_ > nrn_spikebuf_size) ? *nout_ - nrn_spikebuf_size : 0;
+        int n1 = (*nout_ > nrn_spikebuf_size) ? *nout_ - nrn_spikebuf_size : 0;
         MPI_Allgatherv(spikeout_, n1, spike_type, *spikein_, nin_, displs, spike_type, nrnmpi_comm);
     }
     *ovfl = novfl;
@@ -404,7 +404,12 @@ extern void nrnmpi_int_alltoall(int* s, int* r, int n) {
     MPI_Alltoall(s, n, MPI_INT, r, n, MPI_INT, nrnmpi_comm);
 }
 
-extern void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) {
+extern void nrnmpi_int_alltoallv(const int* s,
+                                 const int* scnt,
+                                 const int* sdispl,
+                                 int* r,
+                                 int* rcnt,
+                                 int* rdispl) {
     MPI_Alltoallv(s, scnt, sdispl, MPI_INT, r, rcnt, rdispl, MPI_INT, nrnmpi_comm);
 }
 
@@ -417,9 +422,9 @@ extern void nrnmpi_long_alltoallv(int64_t* s,
     MPI_Alltoallv(s, scnt, sdispl, MPI_INT64_T, r, rcnt, rdispl, MPI_INT64_T, nrnmpi_comm);
 }
 
-extern void nrnmpi_dbl_alltoallv(double* s,
-                                 int* scnt,
-                                 int* sdispl,
+extern void nrnmpi_dbl_alltoallv(const double* s,
+                                 const int* scnt,
+                                 const int* sdispl,
                                  double* r,
                                  int* rcnt,
                                  int* rdispl) {
@@ -687,7 +692,6 @@ void nrnmpi_multisend_comm() {
 void nrnmpi_multisend_multisend(NRNMPI_Spike* spk, int n, int* hosts) {
     int i;
     MPI_Request r;
-    MPI_Status status;
     for (i = 0; i < n; ++i) {
         MPI_Isend(spk, 1, spike_type, hosts[i], 1, bgp_comm, &r);
         MPI_Request_free(&r);
@@ -704,7 +708,6 @@ int nrnmpi_multisend_single_advance(NRNMPI_Spike* spk) {
     return flag;
 }
 
-static int iii;
 int nrnmpi_multisend_conserve(int nsend, int nrecv) {
     int tcnts[2];
     tcnts[0] = nsend - nrecv;

@@ -288,7 +288,7 @@ neuron::container::data_handle<double> point_process_pointer(Point_process* pnt,
 void steer_point_process(void* v) {
     auto* const pnt = static_cast<Point_process*>(v);
     auto* const sym = hoc_spop();
-    auto const index = ISARRAY(sym) ? hoc_araypt(sym, SYMBOL) : 0;
+    auto const index = is_array(*sym) ? hoc_araypt(sym, SYMBOL) : 0;
     hoc_push(point_process_pointer(pnt, sym, index));
 }
 
@@ -327,6 +327,9 @@ static void free_one_point(Point_process* pnt) {
     v_structure_change = 1;
     if (memb_func[p->_type].destructor) {
         memb_func[p->_type].destructor(p);
+    }
+    if (auto got = nrn_mech_inst_destruct.find(p->_type); got != nrn_mech_inst_destruct.end()) {
+        (got->second)(p);
     }
     if (p->dparam) {
         nrn_prop_datum_free(p->_type, p->dparam);

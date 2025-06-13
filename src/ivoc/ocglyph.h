@@ -1,5 +1,4 @@
-#ifndef ocglyph_h
-#define ocglyph_h
+#pragma once
 
 #include <InterViews/monoglyph.h>
 class PrintableWindow;
@@ -56,5 +55,3 @@ class OcGlyphContainer: public OcGlyph {
     OcGlyphContainer* parent_;
     bool recurse_;
 };
-
-#endif

@@ -1,6 +1,5 @@
 #include <../../nrnconf.h>
 
-#include <OS/list.h>
 #if HAVE_IV
 #include "ivoc.h"
 #endif

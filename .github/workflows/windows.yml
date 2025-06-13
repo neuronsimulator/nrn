@@ -113,35 +113,3 @@ jobs:
       working-directory: ${{runner.workspace}}\nrn
       env:
         BUILD_SOURCESDIRECTORY: ${{runner.workspace}}\nrn
-
-    # # This step will set up an SSH connection on tmate.io for live debugging.
-    # # To enable it, you have to:
-    # #   * add 'live-debug-win' to your PR title
-    # #   * push something to your PR branch (note that just re-running the pipeline disregards the title update)
-    # - name: live debug session on failure (manual steps required, check `.github/windows.yml`)
-    #   if: failure() && contains(github.event.pull_request.title, 'live-debug-win')
-    #   uses: mxschmitt/action-tmate@v3
-
-    # - name: Upload build artifact
-    #   uses: actions/upload-artifact@v3
-    #   with:
-    #     name: nrn-nightly-AMD64.exe
-    #     path: ${{runner.workspace}}\nrn\nrn-nightly-AMD64.exe
-
-    # - name: Run installer and launch .hoc associaton test
-    #   run: .\ci\win_install_neuron.cmd
-    #   shell: cmd
-    #   working-directory: ${{runner.workspace}}\nrn
-
-    # - name: Test Installer
-    #   run: .\ci\win_test_installer.cmd
-    #   shell: cmd
-    #   working-directory: ${{runner.workspace}}\nrn
-
-    # - name: Publish Release Installer
-    #   working-directory: ${{runner.workspace}}\nrn
-    #   if: inputs.tag != ''
-    #   run: |
-    #     gh release upload ${{ inputs.tag }} nrn-nightly-AMD64.exe
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

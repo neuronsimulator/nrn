@@ -16,11 +16,6 @@ typedef SSIZE_T ssize_t;
 #include "nrn_pyhocobject.h"
 #include "nrnwrap_Python.h"
 
-#define SAFE_FREE(ptr)     \
-    {                      \
-        if ((ptr) != NULL) \
-            free(ptr);     \
-    }
 #define IDX(x, y, z)    ((z) + (y) *g->size_z + (x) *g->size_z * g->size_y)
 #define INDEX(x, y, z)  ((z) + (y) *grid->size_z + (x) *grid->size_z * grid->size_y)
 #define ALPHA(x, y, z)  (g->get_alpha(g->alpha, IDX(x, y, z)))
@@ -41,7 +36,7 @@ typedef SSIZE_T ssize_t;
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-typedef struct Hybrid_data {
+struct Hybrid_data {
     long num_1d_indices;
     long* indices1d;
     long* num_3d_indices_per_1d_seg;
@@ -49,12 +44,7 @@ typedef struct Hybrid_data {
     double* rates;
     double* volumes1d;
     double* volumes3d;
-} Hybrid_data;
-
-typedef struct Flux_pair {
-    double* flux;    // Value of flux
-    int grid_index;  // Location in grid
-} Flux;
+};
 
 struct Concentration_Pair {
     neuron::container::data_handle<double> destination; /* memory loc to transfer concentration to
@@ -68,19 +58,12 @@ struct Current_Triple {
     double scale_factor;
 };
 
-typedef void (*ReactionRate)(double**,
-                             double**,
-                             double**,
-                             double*,
-                             double*,
-                             double*,
-                             double*,
-                             double**,
-                             double);
-typedef void (*ECSReactionRate)(double*, double*, double*, double*);
-typedef struct Reaction {
-    struct Reaction* next;
-    ECSReactionRate reaction;
+using ReactionRate =
+    void(double**, double**, double**, double*, double*, double*, double*, double**, double);
+using ECSReactionRate = void(double*, double*, double*, double*);
+struct Reaction {
+    Reaction* next;
+    ECSReactionRate* reaction;
     unsigned int num_species_involved;
     unsigned int num_params_involved;
     double** species_states;
@@ -88,18 +71,18 @@ typedef struct Reaction {
     unsigned int region_size;
     uint64_t* mc3d_indices_offsets;
     double** mc3d_mults;
-} Reaction;
+};
 
-typedef struct {
+struct AdiLineData {
     double* copyFrom;
     long copyTo;
-} AdiLineData;
+};
 
-typedef struct {
+struct BoundaryConditions {
     /*TODO: Support for mixed boundaries and by edge (maybe even by voxel)*/
     unsigned char type;
     double value;
-} BoundaryConditions;
+};
 
 class Grid_node {
   public:
@@ -247,7 +230,7 @@ class ECS_Grid_node: public Grid_node {
     double* set_rxd_currents(int, int*, PyHocObject**);
 };
 
-typedef struct ECSAdiDirection {
+struct ECSAdiDirection {
     void (*ecs_dg_adi_dir)(ECS_Grid_node*,
                            const double,
                            const int,
@@ -258,16 +241,16 @@ typedef struct ECSAdiDirection {
     double* states_in;
     double* states_out;
     int line_size;
-} ECSAdiDirection;
+};
 
-typedef struct ECSAdiGridData {
+struct ECSAdiGridData {
     int start, stop;
     double* state;
     ECS_Grid_node* g;
     int sizej;
     ECSAdiDirection* ecs_adi_dir;
     double* scratchpad;
-} ECSAdiGridData;
+};
 
 class ICS_Grid_node: public Grid_node {
   public:
@@ -345,7 +328,7 @@ class ICS_Grid_node: public Grid_node {
     double* set_rxd_currents(int, int*, PyHocObject**);
 };
 
-typedef struct ICSAdiDirection {
+struct ICSAdiDirection {
     void (*ics_dg_adi_dir)(ICS_Grid_node* g,
                            int,
                            int,
@@ -367,10 +350,10 @@ typedef struct ICSAdiDirection {
     double dc;
     double* dcgrid;
     double d;
-} ICSAdiDirection;
+};
 
 
-typedef struct ICSAdiGridData {
+struct ICSAdiGridData {
     // Start and stop node indices for lines
     int line_start, line_stop;
     // Where to start in the ordered_nodes array
@@ -384,7 +367,7 @@ typedef struct ICSAdiGridData {
     double* diag;
     double* u_diag;
     // double* deltas;
-} ICSAdiGridData;
+};
 
 /***** GLOBALS *******************************************************************/
 extern double* dt_ptr;  // Universal ∆t

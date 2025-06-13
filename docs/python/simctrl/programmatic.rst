@@ -18,7 +18,7 @@ Functions
 
 
     Syntax:
-        ``h.initnrn()``
+        ``n.initnrn()``
 
 
     Description:
@@ -30,7 +30,7 @@ Functions
         like *L* and *rallbranch*. Thus ``Ra`` can be different for different 
         sections.  In order to set ``Ra`` to a constant value, use: 
          
-        ``for sec in h.allsec(): sec.Ra=...`` 
+        ``for sec in n.allsec(): sec.Ra=...`` 
 
     .. warning::
         Not very useful. No way to completely restart neuron except to :func:`quit` and 
@@ -45,14 +45,14 @@ Functions
 
 
     Syntax:
-        ``h.fadvance()``
+        ``n.fadvance()``
 
 
     Description:
-        Integrate all section equations over the interval :data:`h.dt` . 
+        Integrate all section equations over the interval :data:`n.dt` . 
         The value of :data:`t` is incremented by dt. 
         The default method is first order implicit but may be changed to 
-        Crank-Nicolson by changing :data:`h.secondorder` = 2.
+        Crank-Nicolson by changing :data:`n.secondorder` = 2.
          
         fadvance integrates the equation over the dt step by 
         calling all the BREAKPOINT blocks of models at t+dt/2 twice with 
@@ -76,9 +76,9 @@ Functions
 
 
     Syntax:
-        ``h.finitialize()``
+        ``n.finitialize()``
 
-        ``h.finitialize(v)``
+        ``n.finitialize(v)``
 
 
     Description:
@@ -86,7 +86,7 @@ Functions
         inserted in the sections. 
         If the optional argument is present then all voltages of all sections 
         are initialized to *v*. 
-        :data:`h.t` is set to 0. 
+        :data:`n.t` is set to 0. 
          
         The order of principal actions during an finitialize call is:
         
@@ -127,7 +127,7 @@ Functions
 
 
     Syntax:
-        ``h.frecord_init()``
+        ``n.frecord_init()``
 
 
     Description:
@@ -149,7 +149,7 @@ Functions
 
 
     Syntax:
-        ``h.fcurrent()``
+        ``n.fcurrent()``
 
 
     Description:
@@ -162,22 +162,22 @@ Functions
         .. code-block::
             python        
 
-            from neuron import h
+            from neuron import n
 
-            soma = h.Section(name="soma")
-            soma.insert(h.hh)
+            soma = n.Section("soma")
+            soma.insert(n.hh)
             print(f"default el_hh = {soma.el_hh}")
 
             # set el_hh so that the steady state is exactly -70 mV 
-            h.finitialize(-70) # sets v to -70 and m,h,n to corresponding steady state values 
+            n.finitialize(-70) # sets v to -70 and m,h,n to corresponding steady state values 
              
-            h.fcurrent()       # set all assigned variables consistent with states 
+            n.fcurrent()       # set all assigned variables consistent with states 
              
             # use current balance: 0 = ina + ik + gl_hh*(v - el_hh)		 
             soma.el_hh = (soma.ina + soma.ik + soma.gl_hh * soma.v) / soma.gl_hh 
              
             print(f"-70 mV steady state el_hh = {soma.el_hh}")
-            h.fcurrent()       # recalculate currents (il_hh) 
+            n.fcurrent()       # recalculate currents (il_hh) 
 
 
          
@@ -190,9 +190,9 @@ Functions
 
 
     Syntax:
-        ``h.fmatrix()``
+        ``n.fmatrix()``
 
-        ``value = h.fmatrix(x, index, sec=section)``
+        ``value = n.fmatrix(x, index, sec=section)``
 
 
     Description:
@@ -218,7 +218,7 @@ Functions
 
 
     Syntax:
-        ``h.secondorder``
+        ``n.secondorder``
 
 
     Description:
@@ -231,14 +231,14 @@ Functions
             are proportional to :data:`dt`. 
 
         =1 
-            crank-nicholson Can give large (but damped) numerical error 
+            crank-nicolson Can give large (but damped) numerical error 
             oscillations. For small :data:`dt` the numerical errors are proportional 
             to ``dt^2``. Cannot be used with voltage clamps. Ionic currents 
             are first order correct. Channel conductances are second order 
             correct when plotted at ``t+dt/2`` 
 
         =2 
-            crank-nicholson like 1 but in addition Ion currents (*ina*, *ik*, 
+            crank-nicolson like 1 but in addition Ion currents (*ina*, *ik*, 
             etc) are fixed up so that they are second order correct when 
             plotted at ``t-dt/2`` 
 
@@ -253,7 +253,7 @@ Functions
 
 
     Syntax:
-        ``h.t``
+        ``n.t``
 
 
     Description:
@@ -269,7 +269,7 @@ Functions
 
 
     Syntax:
-        ``h.dt``
+        ``n.dt``
 
 
     Description:
@@ -296,7 +296,7 @@ Functions
 
 
     Syntax:
-        ``h.clamp_resist``
+        ``n.clamp_resist``
 
 
     Description:
@@ -312,7 +312,7 @@ Functions
 
 
     Syntax:
-        ``h.celsius = 6.3``
+        ``n.celsius = 6.3``
 
 
     Description:
@@ -332,7 +332,7 @@ Functions
 
 
     Syntax:
-        ``h.stoprun``
+        ``n.stoprun``
 
 
     Description:
@@ -347,36 +347,6 @@ Functions
 
 ----
 
-.. function:: checkpoint
-
-    Syntax:
-        :samp:`h.checkpoint("{filename}")`
-
-    Description:
-        saves the current state of the system in a portable file to 
-        allow one to take up where you left off -- possibly on another 
-        machine. Returning to this state is accomplished by running the 
-        program with the checkpoint file as the first argument. 
-        If the checkpoint file is inconsistent with the executable the 
-        program prints an error message and exits. 
-         
-        At this time many portions of the computer state are left out of the 
-        checkpoint file, i.e. it is not as complete as a core dump. 
-        Some things that ARE included are: 
-        all interpreter symbols with definitions and values, 
-        all hoc instructions, 
-        all neuron state/parameters with mechanisms. 
-        Many aspects of the GUI are not included. 
-         
-    .. warning::
-        There is not enough implementation at this time to make this 
-        facility useful. Use the :class:`SaveState` class instead.
-
-
-
-         
-----
-
 .. _finithnd:
 
          
@@ -389,9 +359,9 @@ FInitializeHandler
 
 
     Syntax:
-        ``fih = h.FInitializeHandler(py_callable)``
+        ``fih = n.FInitializeHandler(py_callable)``
 
-        ``fih = h.FInitializeHandler(type, py_callable)``
+        ``fih = n.FInitializeHandler(type, py_callable)``
 
 
     Description:
@@ -421,13 +391,13 @@ FInitializeHandler
             python
 
             # specify an example model 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            a = h.Section(name="a")
-            b = h.Section(name="b")
+            a = n.Section("a")
+            b = n.Section("b")
 
-            for sec in h.allsec():
-                sec.insert(h.hh)
+            for sec in [a, b]:
+                sec.insert(n.hh)
 
             def fi0():
                 print('fi0 called after v set but before INITIAL blocks')
@@ -449,19 +419,19 @@ FInitializeHandler
                 print(f'  a.v={a.v} a.m_hh={a.m_hh}')
                 print(f'  b.v={b.v} b.m_hh={b.m_hh}')
 
-            fih = [h.FInitializeHandler(0, fi0),
-                   h.FInitializeHandler(1, fi1),
-                   h.FInitializeHandler(2, fi2)]
+            fih = [n.FInitializeHandler(0, fi0),
+                   n.FInitializeHandler(1, fi1),
+                   n.FInitializeHandler(2, fi2)]
 
             class Test:
                 def __init__(self):
-                    self.fih = h.FInitializeHandler(self.p)
+                    self.fih = n.FInitializeHandler(self.p)
                 def p(self):
-                    print('inside %r.p()' % self)
+                    print(f'inside {self}.p()')
 
             test = Test() 
 
-            h.stdinit() 
+            n.finitialize(-65)
             fih[0].allprint() 
 
 

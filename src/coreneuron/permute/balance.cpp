@@ -15,12 +15,21 @@
 // few holes in warp filling. I.e., ncycle = ncompart/warpsize
 
 #include <algorithm>
+#include <cstdio>
 
+#if CORENRN_BUILD
 #include "coreneuron/nrnconf.h"
+#endif
+
 #include "coreneuron/network/tnode.hpp"
 #include "coreneuron/utils/lpt.hpp"
 
+#if CORENRN_BUILD
 namespace coreneuron {
+#else
+namespace neuron {
+#endif
+
 int cellorder_nwarp = 0;  // 0 means do not balance
 
 // ordering by warp, then old order

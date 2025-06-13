@@ -128,6 +128,7 @@ extern List* _LST(Item* q, char* file, int line);
 #define LOCL          0400000L
 #define CNVFAC        01000000L
 #define UFACTOR       02000000L
+#define RANGEOBJ      04000000L
 
 #define EXPLICIT_DECL 01 /* usage field, variable occurs in input file */
 
@@ -230,6 +231,7 @@ extern Item* qlint;
 #define IGNORE(arg) arg
 #endif
 using neuron::Sprintf;
+using neuron::SprintfAsrt;
 
 /* model.h,v
  * Revision 1.2  1997/11/24  16:19:13  hines

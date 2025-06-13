@@ -14,7 +14,7 @@ Shape
         If the first arg is a :class:`SectionList` (then a second arg of 0 will 
         prevent default mapping) then only the sections in the list are 
         drawn. Shape is redrawn automatically whenever length or diameter 
-        of a section changes. 
+        of a section changes. This automatically calls :func:`define_shape`.
         
         .. warning::
         
@@ -78,7 +78,8 @@ Shape
 
     Description:
 
-
+        Mode for ``shape.show()`` can be adjusted for different way to display the cell, and can be adjusted as the following example (available from NEURON 9.0:
+        
         mode = 0 
             displays diameters 
 
@@ -88,7 +89,36 @@ Shape
         mode = 2 
             displays schematic. ie line through 1st and last 2d points of each 
             section. 
+        .. code-block::
+            python
 
+            import plotly
+            from neuron import n, gui
+            from neuron.units import mV, ms
+            import matplotlib
+
+            n.load_file("c91662.ses")
+
+            for sec in n.allsec():
+                sec.nseg = int(1 + 2 * (sec.L // 40))
+                sec.insert(n.hh)
+
+            ic = n.IClamp(n.soma(0.5))
+            ic.delay = 1 * ms
+            ic.dur = 1 * ms
+            ic.amp = 10
+
+            n.finitialize(-65 * mV)
+            n.continuerun(2 * ms)
+
+            ps = n.PlotShape(False)
+            ps.variable("v")
+            print(ps.show())  # prints the current mode
+            ps.show(0)  # alters the mode to 0 that displays diameters for each segment
+            print(ps.show())  # should print 0 as the mode set
+            ps.plot(plotly, width=7, cmap=matplotlib.colormaps["viridis"]).show()
+
+        
 
 
 ----
@@ -133,11 +163,11 @@ Shape
         .. code-block::
             python
             
-            from neuron import h
-            sl = h.SectionList()
-            sl.append(h.soma)
-            sl.append(h.dendrite_1[8])
-            h.Shape[0].observe(sl)
+            from neuron import n
+            sl = n.SectionList()
+            sl.append(n.soma)
+            sl.append(n.dendrite_1[8])
+            n.Shape[0].observe(sl)
 
 
 
@@ -466,18 +496,23 @@ Shape
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n, gui
 
-            ss = h.Shape[0]
+            # note: this assumes Shape[0] has already been created
+
+            ss = n.Shape[0]
             def p(type, x, y, keystate):
                 if type == 2:
                     ss.color_all(1)
                     d = ss.nearest(x, y)
-                    arc = ss.push_selected()
-                    if arc >= 0:
+                    # the next line returns normalized position and pushes to
+                    # the section stack if and only if something is selected
+                    a = ss.push_selected()
+                    if a >= 0:
+                        seg = n.cas()(a)
                         ss.select()
-                        print('%g from %s(%g)' % (d, h.secname(), a))
-                    h.pop_section()
+                        print(f'{d} from {seg}')
+                        n.pop_section()
 
             ss.menu_tool('test', p)
             ss.exec_menu('test')
@@ -519,7 +554,7 @@ Shape
             arc = shape.push_selected()
             if arc >= 0:
                 # do something, then end with:
-            h.pop_section()
+            n.pop_section()
 
 
     Description:
@@ -530,7 +565,7 @@ Shape
 
     .. note::
         
-        The pushed section can be read via ``h.cas()``.
+        The pushed section can be read via ``n.cas()``.
 
     .. note::
              

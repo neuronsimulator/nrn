@@ -4,7 +4,6 @@
 #include "nrniv_mf.h"
 #include "netcon.h"
 #include <map>
-#include "OS/list.h"
 #include "neuron.h"
 #include "utils/enumerate.h"
 

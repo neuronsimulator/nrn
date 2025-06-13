@@ -186,36 +186,36 @@ static const char** f_dir(void* v) {
 static double f_chooser(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("File.chooser", file_class_sym_, v);
 #if HAVE_IV
-    IFGUI
-    OcFile* f = (OcFile*) v;
-    f->close();
+    if (hoc_usegui) {
+        OcFile* f = (OcFile*) v;
+        f->close();
 
-    if (!ifarg(1)) {
-        return double(f->file_chooser_popup());
-    }
+        if (!ifarg(1)) {
+            return double(f->file_chooser_popup());
+        }
 
-    char *type, *banner, *filter, *bopen, *cancel;
-    banner = filter = bopen = cancel = NULL;
-    const char* path = ".";
-    type = gargstr(1);
-    if (ifarg(2)) {
-        banner = gargstr(2);
-    }
-    if (ifarg(3)) {
-        filter = gargstr(3);
-    }
-    if (ifarg(4)) {
-        bopen = gargstr(4);
-    }
-    if (ifarg(5)) {
-        cancel = gargstr(5);
-    }
-    if (ifarg(6)) {
-        path = gargstr(6);
-    }
+        char *type, *banner, *filter, *bopen, *cancel;
+        banner = filter = bopen = cancel = NULL;
+        const char* path = ".";
+        type = gargstr(1);
+        if (ifarg(2)) {
+            banner = gargstr(2);
+        }
+        if (ifarg(3)) {
+            filter = gargstr(3);
+        }
+        if (ifarg(4)) {
+            bopen = gargstr(4);
+        }
+        if (ifarg(5)) {
+            cancel = gargstr(5);
+        }
+        if (ifarg(6)) {
+            path = gargstr(6);
+        }
 
-    f->file_chooser_style(type, path, banner, filter, bopen, cancel);
-    ENDGUI
+        f->file_chooser_style(type, path, banner, filter, bopen, cancel);
+    }
 #endif
     return 1.;
 }
@@ -294,12 +294,14 @@ Member_func f_members[] = {{"ropen", f_ropen},
                            {"mktemp", f_mktemp},
                            {"unlink", f_unlink},
                            {"flush", f_flush},
-                           {0, 0}};
+                           {nullptr, nullptr}};
 
-static Member_ret_str_func f_retstr_members[] = {{"getname", f_get_name}, {"dir", f_dir}, {0, 0}};
+static Member_ret_str_func f_retstr_members[] = {{"getname", f_get_name},
+                                                 {"dir", f_dir},
+                                                 {nullptr, nullptr}};
 
 void OcFile_reg() {
-    class2oc("File", f_cons, f_destruct, f_members, NULL, NULL, f_retstr_members);
+    class2oc("File", f_cons, f_destruct, f_members, nullptr, f_retstr_members);
     file_class_sym_ = hoc_lookup("File");
 }
 
@@ -325,14 +327,7 @@ void OcFile::binary_mode() {
  Use File.seek(0) after opening or use a binary style read/write as first\n\
  access to file.");
         }
-#if defined(__MWERKS__)
-        // printf("can't switch to binary mode. No setmode\n");
-        mode_[1] = 'b';
-        mode_[2] = '\0';
-        file_ = freopen(filename_.c_str(), mode_, file());
-#else
         setmode(fileno(file()), O_BINARY);
-#endif
         binary_ = true;
     }
 }
@@ -345,20 +340,6 @@ bool OcFile::open(const char* name, const char* type) {
     strcpy(mode_, type);
 #endif
     file_ = fopen(expand_env_var(name), type);
-#if defined(FILE_OPEN_RETRY) && FILE_OPEN_RETRY > 0
-    int i;
-    for (i = 0; !file_ && i < FILE_OPEN_RETRY; ++i) {
-        // retry occasionally needed on BlueGene
-        file_ = fopen(expand_env_var(name), type);
-    }
-    if (i > 0) {
-        if (file_) {
-            printf("%d opened %s after %d retries\n", nrnmpi_myid_world, name, i);
-        } else {
-            printf("%d open %s failed after %d retries\n", nrnmpi_myid_world, name, i);
-        }
-    }
-#endif
     return is_open();
 }
 

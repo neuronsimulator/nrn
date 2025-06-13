@@ -41,10 +41,7 @@ http://www.deshawresearch.com/resources_random123.html
 
 #include <cmath>
 
-// Some files are compiled with DISABLE_OPENACC, and some builds have no GPU
-// support at all. In these two cases, request that the random123 state is
-// allocated using new/delete instead of CUDA unified memory.
-#if defined(CORENEURON_ENABLE_GPU) && !defined(DISABLE_OPENACC)
+#if defined(CORENEURON_ENABLE_GPU)
 #define CORENRN_RAN123_USE_UNIFIED_MEMORY true
 #else
 #define CORENRN_RAN123_USE_UNIFIED_MEMORY false
@@ -137,6 +134,15 @@ inline double nrnran123_dblpick(nrnran123_State* s) {
     return nrnran123_uint2dbl(nrnran123_ipick(s));
 }
 
+// same as dblpick
+inline double nrnran123_uniform(nrnran123_State* s) {
+    return nrnran123_uint2dbl(nrnran123_ipick(s));
+}
+
+inline double nrnran123_uniform(nrnran123_State* s, double low, double high) {
+    return low + nrnran123_uint2dbl(nrnran123_ipick(s)) * (high - low);
+}
+
 /* this could be called from openacc parallel construct (in INITIAL block) */
 inline void nrnran123_setseq(nrnran123_State* s, uint32_t seq, char which) {
     if (which > 3) {
@@ -146,6 +152,22 @@ inline void nrnran123_setseq(nrnran123_State* s, uint32_t seq, char which) {
     }
     s->c.v[0] = seq;
     s->r = coreneuron_random123_philox4x32_helper(s);
+}
+
+/* this could be called from openacc parallel construct (in INITIAL block) */
+inline void nrnran123_setseq(nrnran123_State* s, double seq34) {
+    if (seq34 < 0.0) {
+        seq34 = 0.0;
+    }
+    if (seq34 > double(0XffffffffffLL)) {
+        seq34 = 0.0;
+    }
+
+    // at least 64 bits even on 32 bit machine (could be more)
+    unsigned long long x = ((unsigned long long) seq34) & 0X3ffffffffLL;
+    char which = x & 0X3;
+    uint32_t seq = x >> 2;
+    nrnran123_setseq(s, seq, which);
 }
 
 // nrnran123_negexp min value is 2.3283064e-10, max is 22.18071, mean 1.0

@@ -1,7 +1,7 @@
 import neuron
 from neuron import h, nrn, hoc, nrn_dll_sym
-from . import region, constants
-from . import rxdsection
+from . import region, constants, species
+from . import rxdsection, rxdmath
 import numpy
 import weakref
 from .rxdException import RxDException
@@ -34,6 +34,8 @@ _point_indices = {}
 # node data types
 _concentration_node = 0
 _molecule_node = 1
+
+_floor = numpy.floor
 
 
 def _get_data():
@@ -71,10 +73,14 @@ def _remove(start, stop):
 
     # remove _node_flux
     newflux = {"index": [], "type": [], "source": [], "scale": [], "region": []}
-    for (i, idx) in enumerate(_node_fluxes["index"]):
-        if idx not in dels:
+    for i, (idx, typ) in enumerate(zip(_node_fluxes["index"], _node_fluxes["type"])):
+        if typ != -1 or idx not in dels:
             for key in _node_fluxes:
                 newflux[key].append(_node_fluxes[key][i])
+    newflux["index"] = [
+        idx - (stop - start) if typ == -1 and idx > start else idx
+        for idx, typ in zip(newflux["index"], newflux["type"])
+    ]
     _node_fluxes = newflux
     _has_node_fluxes = _node_fluxes["index"] != []
 
@@ -108,13 +114,22 @@ def _replace(old_offset, old_nseg, new_offset, new_nseg):
     _states = numpy.delete(_states, list(range(start, stop)))
 
     # update _node_flux index
-    for (i, idx) in enumerate(_node_fluxes["index"]):
-        if idx in dels:
+    for i, (idx, typ) in enumerate(zip(_node_fluxes["index"], _node_fluxes["type"])):
+        if typ == -1 and idx in dels:
             j = int(((idx + 0.5) / new_nseg) * old_nseg)
             _node_fluxes["index"][i] = j
 
 
 _numpy_element_ref = neuron.numpy_element_ref
+
+
+def eval_arith_flux(arith, nregion, node):
+    func, _species = rxdmath._compile(arith, [nregion])
+    c = compile(list(func.values())[0][0], "f", "eval")
+    s = [[None] * region._region_count for _ in range(species._species_count)]
+    for specie in _species:
+        s[specie()._id][nregion._id] = float(specie().nodes(node.segment).value[0])
+    return eval(c, {"species": s})
 
 
 class Node(object):
@@ -136,6 +151,16 @@ class Node(object):
         elif isinstance(condition, region.Extracellular):
             return self.region == condition
         raise RxDException("selector %r not supported for this node type" % condition)
+
+    def _safe_satisfies(self, condition):
+        """Tests if a Node satisfies a given condition.
+
+        Works the same as node.satisfies but replaces RxDException with False
+        """
+        try:
+            return self.satisfies(condition)
+        except RxDException:
+            return False
 
     @property
     def _ref_concentration(self):
@@ -337,7 +362,11 @@ class Node(object):
                     source = f
                     success = True
                 except:
-                    pass
+                    arith = args[0]
+                    if isinstance(arith, rxdmath._Arithmeticed):
+                        source = lambda: eval_arith_flux(arith, self.region, self)
+                        scale = 1 / self.volume
+                        success = True
             if not success:
                 raise RxDException("unsupported flux form")
         _node_fluxes["index"].append(self._index)
@@ -463,6 +492,9 @@ class Node1D(Node):
     @property
     def segment(self):
         return self._sec._sec(self.x)
+
+    def _in_seg(self, segment):
+        return segment == self.segment
 
     @property
     def surface_area(self):
@@ -620,9 +652,9 @@ class Node3D(Node):
             x, y, z = condition
             mesh = self._r._mesh_grid
             return (
-                int((x - mesh["xlo"]) / mesh["dx"]) == self._i
-                and int((y - mesh["ylo"]) / mesh["dy"]) == self._j
-                and int((z - mesh["zlo"]) / mesh["dz"]) == self._k
+                _floor((x - mesh["xlo"]) / mesh["dx"]) == self._i
+                and _floor((y - mesh["ylo"]) / mesh["dy"]) == self._j
+                and _floor((z - mesh["zlo"]) / mesh["dz"]) == self._k
             )
         # check for a position condition so as to provide a more useful error
         checked_for_normalized_position = False
@@ -855,8 +887,8 @@ class NodeExtracellular(Node):
             x, y, z = condition
             r = self._regionref()
             return (
-                int((x - r._xlo) / r._dx[0]) == self._i
-                and int((y - r._ylo) / r._dx[1]) == self._j
-                and int((z - r._zlo) / r._dx[2]) == self._k
+                _floor((x - r._xlo) / r._dx[0]) == self._i
+                and _floor((y - r._ylo) / r._dx[1]) == self._j
+                and _floor((z - r._zlo) / r._dx[2]) == self._k
             )
         raise RxDException(f"unrecognized node condition: {condition}")

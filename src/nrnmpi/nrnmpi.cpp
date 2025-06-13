@@ -50,7 +50,6 @@ extern void nrnmpi_checkbufleak();
 #endif
 
 static int nrnmpi_under_nrncontrol_;
-static int nrnmpi_is_setup_;
 #endif
 
 void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {

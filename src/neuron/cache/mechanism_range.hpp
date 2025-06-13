@@ -15,14 +15,14 @@ namespace neuron::cache {
 template <typename Callable>
 void indices_to_cache(short type, Callable callable) {
     auto const pdata_size = nrn_prop_dparam_size_[type];
-    auto* const dparam_semantics = memb_func[type].dparam_semantics;
+    auto* const dparam_semantics = memb_func[type].dparam_semantics.get();
     for (int field = pdata_size - 1; field >= 0; --field) {
         // Check if the field-th dparam of this mechanism type is an ion variable. See
         // hoc_register_dparam_semantics.
         auto const sem = dparam_semantics[field];
         // See https://github.com/neuronsimulator/nrn/issues/2312 for discussion of possible
         // extensions to caching.
-        if ((sem > 0 && sem < 1000) || sem == -1 /* area */) {
+        if (nrn_semantics_is_ion(sem) || sem == -1 /* area */ || sem == -9 /* diam */) {
             std::invoke(callable, field);
         }
     }
@@ -43,32 +43,46 @@ struct MechanismRange {
     /**
      * @brief Construct a MechanismRange from sorted model data.
      * @param cache_token Token showing the model data are sorted.
-     * @param nt          Thread that this MechanismRange corresponds to.
      * @param ml          Range of mechanisms this MechanismRange refers to.
-     * @param type        The type of this mechanism.
      *
      * This mirrors the signature of the functions (nrn_state, nrn_cur, nrn_init...) that are
      * generated in C++ from MOD files. Typically those generated functions immediately create an
      * instance of MechanismRange using this constructor.
      */
-    MechanismRange(neuron::model_sorted_token const& cache_token,
-                   NrnThread&,
-                   Memb_list& ml,
-                   int type)
-        : MechanismRange{type, ml.get_storage_offset()} {
-        auto const& ptr_cache = mechanism::_get::_pdata_ptr_cache_data(cache_token, type);
+    MechanismRange(neuron::model_sorted_token const& cache_token, Memb_list& ml)
+        : MechanismRange{ml.type(), ml.get_storage_offset()} {
+        auto const& ptr_cache = mechanism::_get::_pdata_ptr_cache_data(cache_token, ml.type());
         m_pdata_ptrs = ptr_cache.data();
         assert(ptr_cache.size() <= NumDatumFields);
     }
 
+    /** Deprecated. */
+    MechanismRange(neuron::model_sorted_token const& cache_token,
+                   NrnThread&,
+                   Memb_list& ml,
+                   int type)
+        : MechanismRange(cache_token, ml) {
+        assert(type == ml.type());
+    }
+
   protected:
     /**
-     * @brief Hidden helper constructor used by MechanismRange and MechanismInstance.
+     * @brief Calls `MechanismRange(mech_type, offset, offset)`.
      */
     MechanismRange(int mech_type, std::size_t offset)
+        : MechanismRange(mech_type, offset, offset) {}
+
+    /**
+     * @brief Sets up the pointers for data (not pdata) and the offsets.
+     *
+     * @param data_offset the offset for data (not pdata).
+     * @param dptr_offset the offset for pdata.
+     */
+    MechanismRange(int mech_type, std::size_t data_offset, std::size_t dptr_offset)
         : m_data_ptrs{mechanism::get_data_ptrs<double>(mech_type)}
         , m_data_array_dims{mechanism::get_array_dims<double>(mech_type)}
-        , m_offset{offset} {
+        , m_data_offset{data_offset}
+        , m_dptr_offset{dptr_offset} {
         assert((mech_type < 0) ||
                (mechanism::get_field_count<double>(mech_type) == NumFloatingPointFields));
     }
@@ -84,7 +98,12 @@ struct MechanismRange {
     [[nodiscard]] double* data_array(std::size_t instance) {
         static_assert(variable < NumFloatingPointFields);
         // assert(array_size == m_data_array_dims[variable]);
-        return std::next(m_data_ptrs[variable], array_size * (m_offset + instance));
+        return std::next(m_data_ptrs[variable], array_size * (m_data_offset + instance));
+    }
+
+    template <int variable, int array_size>
+    [[nodiscard]] double* data_array_ptr() {
+        return data_array<variable, array_size>(0);
     }
 
     /**
@@ -99,6 +118,11 @@ struct MechanismRange {
         return *data_array<variable, 1>(instance);
     }
 
+    template <int variable>
+    [[nodiscard]] double* fpfield_ptr() {
+        return data_array<variable, 1>(0);
+    }
+
     /**
      * @brief Get a RANGE variable value.
      * @param instance Which mechanism instance to access inside this MechanismRange.
@@ -109,7 +133,7 @@ struct MechanismRange {
         // assert(ind.field < NumFloatingPointFields);
         auto const array_dim = m_data_array_dims[ind.field];
         // assert(ind.array_index < array_dim);
-        return m_data_ptrs[ind.field][array_dim * (m_offset + instance) + ind.array_index];
+        return m_data_ptrs[ind.field][array_dim * (m_data_offset + instance) + ind.array_index];
     }
 
     /**
@@ -121,7 +145,13 @@ struct MechanismRange {
     template <int variable>
     [[nodiscard]] double* dptr_field(std::size_t instance) {
         static_assert(variable < NumDatumFields);
-        return m_pdata_ptrs[variable][m_offset + instance];
+        return m_pdata_ptrs[variable][m_dptr_offset + instance];
+    }
+
+    template <int variable>
+    [[nodiscard]] double* const* dptr_field_ptr() {
+        static_assert(variable < NumDatumFields);
+        return m_pdata_ptrs[variable] + m_dptr_offset;
     }
 
   protected:
@@ -157,12 +187,13 @@ struct MechanismRange {
      * mechanism type will be distributed across multiple NrnThread objects and processed by
      * different threads, and the mechanism data will be permuted so that the instances owned by a
      * given thread are contiguous. In that case the MechanismRange for the 0th thread would have an
-     * @c m_offset of zero, and the MechanismRange for the next thread would have an @c m_offset of
-     * the number of instances in the 0th thread.
+     * @c m_data_offset of zero, and the MechanismRange for the next thread would have an @c
+     * m_data_offset of the number of instances in the 0th thread.
      *
      * @see @ref nrn_sort_mech_data.
      */
-    std::size_t m_offset{};
+    std::size_t m_data_offset{};  // Offset into the SoA mechanism data.
+    std::size_t m_dptr_offset{};  // Offset into the dptr data.
 };
 /**
  * @brief Specialised version of MechanismRange for a single instance.
@@ -186,17 +217,18 @@ struct MechanismInstance: MechanismRange<NumFloatingPointFields, NumDatumFields>
      * @param prop Handle to a single mechanism instance.
      */
     MechanismInstance(Prop* prop)
-        : base_type{_nrn_mechanism_get_type(prop), mechanism::_get::_current_row(prop)} {
+        : base_type{_nrn_mechanism_get_type(prop), mechanism::_get::_current_row(prop), 0} {
         if (!prop) {
-            // grrr...see cagkftab test where setdata is not called(?) and extcall_prop is null(?)
+            // see cagkftab test where setdata is not called(?) and extcall_prop is null(?)
             return;
         }
         indices_to_cache(_nrn_mechanism_get_type(prop), [this, prop](auto field) {
             assert(field < NumDatumFields);
             auto& datum = _nrn_mechanism_access_dparam(prop)[field];
             m_dptr_cache[field] = datum.template get<double*>();
-            this->m_dptr_datums[field] = &m_dptr_cache[field];
+            this->m_dptr_datums[field] = &(m_dptr_cache[field]);
         });
+
         this->m_pdata_ptrs = m_dptr_datums.data();
     }
 
@@ -218,7 +250,8 @@ struct MechanismInstance: MechanismRange<NumFloatingPointFields, NumDatumFields>
         if (this != &other) {
             this->m_data_ptrs = other.m_data_ptrs;
             this->m_data_array_dims = other.m_data_array_dims;
-            this->m_offset = other.m_offset;
+            this->m_data_offset = other.m_data_offset;
+            this->m_dptr_offset = other.m_dptr_offset;
             m_dptr_cache = other.m_dptr_cache;
             for (auto i = 0; i < NumDatumFields; ++i) {
                 m_dptr_datums[i] = &m_dptr_cache[i];

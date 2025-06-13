@@ -1,5 +1,4 @@
-#ifndef hocstr_h
-#define hocstr_h
+#pragma once
 #include <stdio.h>
 /* too many time char* buf overruns its storage */
 
@@ -14,6 +13,3 @@ extern HocStr* hocstr_create(size_t);
 extern void hocstr_delete(HocStr*);
 void hocstr_resize(HocStr*, size_t);
 void hocstr_copy(HocStr*, const char*);
-
-
-#endif

@@ -13,27 +13,55 @@
 #include <mymath.h>
 #include <stdint.h>
 
+#include <complex>
 #include <unordered_map>  // Replaces NrnHash for MapSgid2Int
 #include <utility>
 #include <vector>
 
+#if NRNMPI
+#include "have2want.hpp"
+#endif
+
+#include "utils/formatting.hpp"
+
+
 #if NRNLONGSGID
 #if NRNMPI
-static void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl) {
+static void sgid_alltoallv(Data<sgid_t>& s, Data<sgid_t>& r) {
     if (nrn_sparse_partrans > 0) {
-        nrnmpi_long_alltoallv_sparse(s, scnt, sdispl, r, rcnt, rdispl);
+        nrnmpi_long_alltoallv_sparse(s.data.data(),
+                                     s.cnt.data(),
+                                     s.displ.data(),
+                                     r.data.data(),
+                                     r.cnt.data(),
+                                     r.displ.data());
     } else {
-        nrnmpi_long_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
+        nrnmpi_long_alltoallv(s.data.data(),
+                              s.cnt.data(),
+                              s.displ.data(),
+                              r.data.data(),
+                              r.cnt.data(),
+                              r.displ.data());
     }
 }
 #endif  // NRNMPI
 #else   // not NRNLONGSGID
 #if NRNMPI
-static void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl) {
+static void sgid_alltoallv(Data<sgid_t>& s, Data<sgid_t>& r) {
     if (nrn_sparse_partrans > 0) {
-        nrnmpi_int_alltoallv_sparse(s, scnt, sdispl, r, rcnt, rdispl);
+        nrnmpi_int_alltoallv_sparse(s.data.data(),
+                                    s.cnt.data(),
+                                    s.displ.data(),
+                                    r.data.data(),
+                                    r.cnt.data(),
+                                    r.displ.data());
     } else {
-        nrnmpi_int_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
+        nrnmpi_int_alltoallv(s.data.data(),
+                             s.cnt.data(),
+                             s.displ.data(),
+                             r.data.data(),
+                             r.cnt.data(),
+                             r.displ.data());
     }
 }
 #endif  // NRNMPI
@@ -152,8 +180,12 @@ static std::vector<neuron::container::data_handle<double>> poutsrc_;  // prior t
                                                                       // to proper place in
                                                                       // outsrc_buf_
 static int* poutsrc_indices_;                                         // for recalc pointers
-static int insrc_buf_size_, *insrccnt_, *insrcdspl_;
-static int outsrc_buf_size_, *outsrccnt_, *outsrcdspl_;
+static int insrc_buf_size_;
+static std::vector<int> insrccnt_;
+static std::vector<int> insrcdspl_;
+static int outsrc_buf_size_;
+static std::vector<int> outsrccnt_;
+static std::vector<int> outsrcdspl_;
 static MapSgid2Int sid2insrc_;  // received interprocessor sid data is
 // associated with which insrc_buf index. Created by nrnmpi_setup_transfer
 // and used by mk_ttd
@@ -217,10 +249,10 @@ static neuron::container::data_handle<double> non_vsrc_update(Node* nd,
             return p->param_handle(ix);
         }
     }
-    hoc_execerr_ext("partrans update: could not find parameter index (%d, %d) of %s",
-                    ix.field,
-                    ix.array_index,
-                    memb_func[type].sym->name);
+    hoc_execerror_fmt("partrans update: could not find parameter index ({}, {}) of {}",
+                      ix.field,
+                      ix.array_index,
+                      memb_func[type].sym->name);
 }
 
 // Find the Node associated with the voltage.
@@ -522,11 +554,19 @@ static void mpi_transfer() {
     if (nrnmpi_numprocs > 1) {
         double wt = nrnmpi_wtime();
         if (nrn_sparse_partrans > 0) {
-            nrnmpi_dbl_alltoallv_sparse(
-                outsrc_buf_, outsrccnt_, outsrcdspl_, insrc_buf_, insrccnt_, insrcdspl_);
+            nrnmpi_dbl_alltoallv_sparse(outsrc_buf_,
+                                        outsrccnt_.data(),
+                                        outsrcdspl_.data(),
+                                        insrc_buf_,
+                                        insrccnt_.data(),
+                                        insrcdspl_.data());
         } else {
-            nrnmpi_dbl_alltoallv(
-                outsrc_buf_, outsrccnt_, outsrcdspl_, insrc_buf_, insrccnt_, insrcdspl_);
+            nrnmpi_dbl_alltoallv(outsrc_buf_,
+                                 outsrccnt_.data(),
+                                 outsrcdspl_.data(),
+                                 insrc_buf_,
+                                 insrccnt_.data(),
+                                 insrcdspl_.data());
         }
         nrnmpi_transfer_wait_ += nrnmpi_wtime() - wt;
         errno = 0;
@@ -577,15 +617,6 @@ static void thread_transfer(NrnThread* _nt) {
 // "  But this was a mistake as many mpi implementations do not allow overlap
 // of send and receive buffers.
 
-// 22-08-2014  For setup of the All2allv pattern, use the rendezvous rank
-// idiom.
-#define HAVEWANT_t         sgid_t
-#define HAVEWANT_alltoallv sgid_alltoallv
-#define HAVEWANT2Int       MapSgid2Int
-#if NRNMPI
-#include "have2want.cpp"
-#endif
-
 void nrnmpi_setup_transfer() {
 #if !NRNMPI
     if (nrnmpi_numprocs > 1) {
@@ -611,10 +642,14 @@ void nrnmpi_setup_transfer() {
         return;
     }
     if (nrnmpi_numprocs > 1) {
-        delete[] std::exchange(insrccnt_, nullptr);
-        delete[] std::exchange(insrcdspl_, nullptr);
-        delete[] std::exchange(outsrccnt_, nullptr);
-        delete[] std::exchange(outsrcdspl_, nullptr);
+        insrccnt_.clear();
+        insrccnt_.shrink_to_fit();
+        insrcdspl_.clear();
+        insrcdspl_.shrink_to_fit();
+        outsrccnt_.clear();
+        outsrccnt_.shrink_to_fit();
+        outsrcdspl_.clear();
+        outsrcdspl_.shrink_to_fit();
         // This is an old comment prior to using the want_to_have rendezvous
         // rank function in want2have.cpp. The old method did not scale
         // to more sgids than could fit on a single rank, because
@@ -649,78 +684,54 @@ void nrnmpi_setup_transfer() {
         // sids needed by this machine. The 'seen' table values are unused
         // but the keys are all the (unique) sgid needed by this process.
         // At the end seen is in fact what we want for sid2insrc_.
-        int needsrc_cnt = 0;
         int szalloc = targets_.size();
         szalloc = szalloc ? szalloc : 1;
 
         // At the moment sid2insrc_ is serving as 'seen'
         sid2insrc_.clear();
-        sid2insrc_.reserve(szalloc);            // for single counting
-        sgid_t* needsrc = new sgid_t[szalloc];  // more than we need
+        sid2insrc_.reserve(szalloc);  // for single counting
+        std::vector<sgid_t> needsrc{};
         for (size_t i = 0; i < sgid2targets_.size(); ++i) {
             sgid_t sid = sgid2targets_[i];
             auto search = sid2insrc_.find(sid);
             if (search == sid2insrc_.end()) {
                 sid2insrc_[sid] = 0;  // at the moment, value does not matter
-                needsrc[needsrc_cnt++] = sid;
+                needsrc.push_back(sid);
             }
         }
 
         // 1 continued) Create an array of sources this rank owns.
         // This already exists as a vector in the SgidList sgids_ but
         // that is private so go ahead and copy.
-        sgid_t* ownsrc = new sgid_t[sgids_.size() + 1];  // not 0 length if count is 0
-        for (size_t i = 0; i < sgids_.size(); ++i) {
-            ownsrc[i] = sgids_[i];
-        }
+        std::vector<sgid_t> ownsrc = sgids_;
 
         // 2) Call the have_to_want function.
-        sgid_t* send_to_want;
-        int *send_to_want_cnt, *send_to_want_displ;
-        sgid_t* recv_from_have;
-        int *recv_from_have_cnt, *recv_from_have_displ;
-
-        have_to_want(ownsrc,
-                     sgids_.size(),
-                     needsrc,
-                     needsrc_cnt,
-                     send_to_want,
-                     send_to_want_cnt,
-                     send_to_want_displ,
-                     recv_from_have,
-                     recv_from_have_cnt,
-                     recv_from_have_displ,
-                     default_rendezvous);
+        auto [send_to_want, recv_from_have] = have_to_want<sgid_t>(ownsrc, needsrc, sgid_alltoallv);
 
         // sanity check. all the sgids we are asked to send, we actually have
-        int n = send_to_want_displ[nhost];
+        int n = send_to_want.displ[nhost];
         // sanity check. all the sgids we receive, we actually need.
         // also set the sid2insrc_ value to the proper recv_from_have index.
-        n = recv_from_have_displ[nhost];
+        n = recv_from_have.displ[nhost];
         for (int i = 0; i < n; ++i) {
-            sgid_t sgid = recv_from_have[i];
+            sgid_t sgid = recv_from_have.data[i];
             nrn_assert(sid2insrc_.find(sgid) != sid2insrc_.end());
             sid2insrc_[sgid] = i;
         }
-
-        // clean up a little
-        delete[] std::exchange(ownsrc, nullptr);
-        delete[] std::exchange(needsrc, nullptr);
-        delete[] std::exchange(recv_from_have, nullptr);
 
         // 3) First return triple creates the proper outsrc_buf_.
         // Now that we know what machines are interested in our sids...
         // construct outsrc_buf, outsrc_buf_size, outsrccnt_, outsrcdspl_
         // and poutsrc_;
-        outsrccnt_ = send_to_want_cnt;
-        outsrcdspl_ = send_to_want_displ;
+        std::swap(outsrccnt_, send_to_want.cnt);
+        std::swap(outsrcdspl_, send_to_want.displ);
         outsrc_buf_size_ = outsrcdspl_[nrnmpi_numprocs];
         szalloc = std::max(1, outsrc_buf_size_);
         outsrc_buf_ = new double[szalloc];
         poutsrc_.resize(szalloc);
         poutsrc_indices_ = new int[szalloc];
         for (int i = 0; i < outsrc_buf_size_; ++i) {
-            sgid_t sid = send_to_want[i];
+            sgid_t sid = send_to_want.data[i];
             auto search = sgid2srcindex_.find(sid);
             nrn_assert(search != sgid2srcindex_.end());
             Node* nd = visources_[search->second];
@@ -735,12 +746,11 @@ void nrnmpi_setup_transfer() {
             poutsrc_indices_[i] = search->second;
             outsrc_buf_[i] = double(sid);  // see step 5
         }
-        delete[] send_to_want;
 
         // 4) The second triple is creates the insrc_buf_.
         // From the recv_from_have and sid2insrc_ table, construct the insrc...
-        insrccnt_ = recv_from_have_cnt;
-        insrcdspl_ = recv_from_have_displ;
+        std::swap(insrccnt_, recv_from_have.cnt);
+        std::swap(insrcdspl_, recv_from_have.displ);
         insrc_buf_size_ = insrcdspl_[nrnmpi_numprocs];
         szalloc = insrc_buf_size_ ? insrc_buf_size_ : 1;
         insrc_buf_ = new double[szalloc];
@@ -873,47 +883,59 @@ void pargap_jacobi_setup(int mode) {
     }
 }
 
-void pargap_jacobi_rhs(double* b, double* x) {
-    // helper for complex impedance with parallel gap junctions
-    // b = b - R*x  R are the off diagonal gap elements of the jacobian.
-    // we presume 1 thread. First nrn_thread[0].end equations are in node order.
-    if (!nrnthread_v_transfer_) {
-        return;
-    }
+void pargap_jacobi_rhs(std::vector<std::complex<double>>& b,
+                       const std::vector<std::complex<double>>& x) {
+    // First loop for real, second for imag
+    for (int real_imag = 0; real_imag < 2; ++real_imag) {
+        // helper for complex impedance with parallel gap junctions
+        // b = b - R*x  R are the off diagonal gap elements of the jacobian.
+        // we presume 1 thread. First nrn_thread[0].end equations are in node order.
+        if (!nrnthread_v_transfer_) {
+            return;
+        }
 
-    NrnThread* _nt = nrn_threads;
+        NrnThread* _nt = nrn_threads;
 
-    // transfer gap node voltages to gap vpre
-    for (size_t i = 0; i < visources_.size(); ++i) {
-        Node* nd = visources_[i];
-        nd->v() = x[nd->v_node_index];
-    }
-    mpi_transfer();
-    thread_transfer(_nt);
+        // transfer gap node voltages to gap vpre
+        for (size_t i = 0; i < visources_.size(); ++i) {
+            Node* nd = visources_[i];
+            if (real_imag == 0) {
+                nd->v() = x[nd->v_node_index].real();
+            } else {
+                nd->v() = x[nd->v_node_index].imag();
+            }
+        }
+        mpi_transfer();
+        thread_transfer(_nt);
 
-    // set gap node voltages to 0 so we can use nrn_cur to set rhs
-    for (size_t i = 0; i < visources_.size(); ++i) {
-        Node* nd = visources_[i];
-        nd->v() = 0.0;
-    }
-    auto const sorted_token = nrn_ensure_model_data_are_sorted();
-    auto* const vec_rhs = _nt->node_rhs_storage();
-    // Initialize rhs to 0.
-    for (int i = 0; i < _nt->end; ++i) {
-        vec_rhs[i] = 0.0;
-    }
-    for (int k = 0; k < imped_current_type_count_; ++k) {
-        int type = imped_current_type_[k];
-        Memb_list* ml = imped_current_ml_[k];
-        memb_func[type].current(sorted_token, _nt, ml, type);
-    }
+        // set gap node voltages to 0 so we can use nrn_cur to set rhs
+        for (size_t i = 0; i < visources_.size(); ++i) {
+            Node* nd = visources_[i];
+            nd->v() = 0.0;
+        }
+        auto const sorted_token = nrn_ensure_model_data_are_sorted();
+        auto* const vec_rhs = _nt->node_rhs_storage();
+        // Initialize rhs to 0.
+        for (int i = 0; i < _nt->end; ++i) {
+            vec_rhs[i] = 0.0;
+        }
+        for (int k = 0; k < imped_current_type_count_; ++k) {
+            int type = imped_current_type_[k];
+            Memb_list* ml = imped_current_ml_[k];
+            memb_func[type].current(sorted_token, _nt, ml, type);
+        }
 
-    // possibly many gap junctions in same node (and possible even different
-    // types) but rhs is the accumulation of all those instances at each node
-    // so ...  The only thing that can go wrong is if there are intances of
-    // gap junctions that are not being used  (not in the target list).
-    for (int i = 0; i < _nt->end; ++i) {
-        b[i] += vec_rhs[i];
+        // possibly many gap junctions in same node (and possible even different
+        // types) but rhs is the accumulation of all those instances at each node
+        // so ...  The only thing that can go wrong is if there are intances of
+        // gap junctions that are not being used  (not in the target list).
+        for (int i = 0; i < _nt->end; ++i) {
+            if (real_imag == 0) {
+                b[i] += vec_rhs[i];
+            } else {
+                b[i] += std::complex<double>(0, vec_rhs[i]);
+            }
+        }
     }
 }
 
@@ -925,7 +947,7 @@ extern size_t nrnbbcore_gap_write(const char* path, int* group_ids);
   ntar  // number of targets in this thread (vpre)
   nsrc  // number of sources in this thread (v)
 
-  Note: type, index is sufficient for CoreNEURON stdindex2ptr to determine
+  Note: type, index is sufficient for CoreNEURON legacy_index2pointer to determine
     double* in its NrnThread.data array.
 
   src_sid // nsrc of these

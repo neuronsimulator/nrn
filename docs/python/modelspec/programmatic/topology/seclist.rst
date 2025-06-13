@@ -9,9 +9,9 @@ SectionList
 
 
     Syntax:
-        ``sl = h.SectionList()``
+        ``sl = n.SectionList()``
 
-        ``sl = h.SectionList(python_iterable_of_sections)``
+        ``sl = n.SectionList(python_iterable_of_sections)``
 
 
     Description:
@@ -27,9 +27,13 @@ SectionList
         .. code-block::
             python
 
-            sl = h.SectionList()
+            sl = n.SectionList()
             for sec in python_iterable_of_sections:
                 sl.append(sec)
+
+        ``len(sl)`` returns the number of sections in the SectionList.
+
+        ``list(sl)`` and ``[s for s in sl]`` generate equivalent lists.
 
     .. seealso::
         :class:`SectionBrowser`, :class:`Shape`, :meth:`RangeVarPlot.list`
@@ -103,10 +107,10 @@ SectionList
         .. code::
             python
 
-            >>> from neuron import h
-            >>> s = h.Section(name='s')
-            >>> t = h.Section(name='t')
-            >>> u = h.Section(name='u')
+            >>> from neuron import n
+            >>> s = n.Section('s')
+            >>> t = n.Section('t')
+            >>> u = n.Section('u')
             >>> t.connect(s)
             t
             >>> u.connect(s)

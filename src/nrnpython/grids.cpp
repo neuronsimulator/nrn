@@ -25,7 +25,7 @@ extern double* _rxd_induced_currents_ecs;
 extern double* _rxd_induced_currents_scale;
 
 // Set dt, t pointers
-extern "C" void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr) {
+extern "C" NRN_EXPORT void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr) {
     dt_ptr = static_cast<double*>(my_dt_ptr->u.px_);
     t_ptr = static_cast<double*>(my_t_ptr->u.px_);
 }
@@ -194,22 +194,22 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states,
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 /* returns the grid number
    TODO: change this to returning the pointer */
-extern "C" int ECS_insert(int grid_list_index,
-                          PyHocObject* my_states,
-                          int my_num_states_x,
-                          int my_num_states_y,
-                          int my_num_states_z,
-                          double my_dc_x,
-                          double my_dc_y,
-                          double my_dc_z,
-                          double my_dx,
-                          double my_dy,
-                          double my_dz,
-                          PyHocObject* my_alpha,
-                          PyHocObject* my_permeability,
-                          int bc,
-                          double bc_value,
-                          double atolscale) {
+extern "C" NRN_EXPORT int ECS_insert(int grid_list_index,
+                                     PyHocObject* my_states,
+                                     int my_num_states_x,
+                                     int my_num_states_y,
+                                     int my_num_states_z,
+                                     double my_dc_x,
+                                     double my_dc_y,
+                                     double my_dc_z,
+                                     double my_dx,
+                                     double my_dy,
+                                     double my_dz,
+                                     PyHocObject* my_alpha,
+                                     PyHocObject* my_permeability,
+                                     int bc,
+                                     double bc_value,
+                                     double atolscale) {
     ECS_Grid_node* new_Grid = new ECS_Grid_node(my_states,
                                                 my_num_states_x,
                                                 my_num_states_y,
@@ -381,21 +381,21 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states,
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 /* returns the grid number
    TODO: change this to returning the pointer */
-extern "C" int ICS_insert(int grid_list_index,
-                          PyHocObject* my_states,
-                          long num_nodes,
-                          long* neighbors,
-                          long* x_line_defs,
-                          long x_lines_length,
-                          long* y_line_defs,
-                          long y_lines_length,
-                          long* z_line_defs,
-                          long z_lines_length,
-                          double* dcs,
-                          double dx,
-                          bool is_diffusable,
-                          double atolscale,
-                          double* ics_alphas) {
+extern "C" NRN_EXPORT int ICS_insert(int grid_list_index,
+                                     PyHocObject* my_states,
+                                     long num_nodes,
+                                     long* neighbors,
+                                     long* x_line_defs,
+                                     long x_lines_length,
+                                     long* y_line_defs,
+                                     long y_lines_length,
+                                     long* z_line_defs,
+                                     long z_lines_length,
+                                     double* dcs,
+                                     double dx,
+                                     bool is_diffusable,
+                                     double atolscale,
+                                     double* ics_alphas) {
     ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states,
                                                 num_nodes,
                                                 neighbors,
@@ -415,21 +415,21 @@ extern "C" int ICS_insert(int grid_list_index,
     return new_Grid->insert(grid_list_index);
 }
 
-int ICS_insert_inhom(int grid_list_index,
-                     PyHocObject* my_states,
-                     long num_nodes,
-                     long* neighbors,
-                     long* x_line_defs,
-                     long x_lines_length,
-                     long* y_line_defs,
-                     long y_lines_length,
-                     long* z_line_defs,
-                     long z_lines_length,
-                     double* dcs,
-                     double dx,
-                     bool is_diffusable,
-                     double atolscale,
-                     double* ics_alphas) {
+extern "C" NRN_EXPORT int ICS_insert_inhom(int grid_list_index,
+                                           PyHocObject* my_states,
+                                           long num_nodes,
+                                           long* neighbors,
+                                           long* x_line_defs,
+                                           long x_lines_length,
+                                           long* y_line_defs,
+                                           long y_lines_length,
+                                           long* z_line_defs,
+                                           long z_lines_length,
+                                           double* dcs,
+                                           double dx,
+                                           bool is_diffusable,
+                                           double atolscale,
+                                           double* ics_alphas) {
     ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states,
                                                 num_nodes,
                                                 neighbors,
@@ -449,7 +449,7 @@ int ICS_insert_inhom(int grid_list_index,
 }
 
 
-extern "C" int set_diffusion(int grid_list_index, int grid_id, double* dc, int length) {
+extern "C" NRN_EXPORT int set_diffusion(int grid_list_index, int grid_id, double* dc, int length) {
     int id = 0;
     Grid_node* node = Parallel_grids[grid_list_index];
     while (id < grid_id) {
@@ -462,7 +462,9 @@ extern "C" int set_diffusion(int grid_list_index, int grid_id, double* dc, int l
     return 0;
 }
 
-extern "C" int set_tortuosity(int grid_list_index, int grid_id, PyHocObject* my_permeability) {
+extern "C" NRN_EXPORT int set_tortuosity(int grid_list_index,
+                                         int grid_id,
+                                         PyHocObject* my_permeability) {
     int id = 0;
     Grid_node* node = Parallel_grids[grid_list_index];
     while (id < grid_id) {
@@ -513,7 +515,9 @@ void ECS_Grid_node::set_tortuosity(PyHocObject* my_permeability) {
     }
 }
 
-extern "C" int set_volume_fraction(int grid_list_index, int grid_id, PyHocObject* my_alpha) {
+extern "C" NRN_EXPORT int set_volume_fraction(int grid_list_index,
+                                              int grid_id,
+                                              PyHocObject* my_alpha) {
     int id = 0;
     Grid_node* node = Parallel_grids[grid_list_index];
     while (id < grid_id) {
@@ -585,11 +589,11 @@ void ECS_Grid_node::set_diffusion(double* dc, int) {
 }
 
 
-extern "C" void ics_set_grid_concentrations(int grid_list_index,
-                                            int index_in_list,
-                                            int64_t* nodes_per_seg,
-                                            int64_t* nodes_per_seg_start_indices,
-                                            PyObject* neuron_pointers) {
+extern "C" NRN_EXPORT void ics_set_grid_concentrations(int grid_list_index,
+                                                       int index_in_list,
+                                                       int64_t* nodes_per_seg,
+                                                       int64_t* nodes_per_seg_start_indices,
+                                                       PyObject* neuron_pointers) {
     Grid_node* g;
     ssize_t i;
     ssize_t n = (ssize_t) PyList_Size(neuron_pointers);  // number of segments.
@@ -610,10 +614,10 @@ extern "C" void ics_set_grid_concentrations(int grid_list_index,
     }
 }
 
-extern "C" void ics_set_grid_currents(int grid_list_index,
-                                      int index_in_list,
-                                      PyObject* neuron_pointers,
-                                      double* scale_factors) {
+extern "C" NRN_EXPORT void ics_set_grid_currents(int grid_list_index,
+                                                 int index_in_list,
+                                                 PyObject* neuron_pointers,
+                                                 double* scale_factors) {
     Grid_node* g;
     ssize_t i;
     ssize_t n = (ssize_t) PyList_Size(neuron_pointers);
@@ -634,10 +638,10 @@ extern "C" void ics_set_grid_currents(int grid_list_index,
 
 
 /* TODO: make this work with Grid_node ptrs instead of pairs of list indices */
-extern "C" void set_grid_concentrations(int grid_list_index,
-                                        int index_in_list,
-                                        PyObject* grid_indices,
-                                        PyObject* neuron_pointers) {
+extern "C" NRN_EXPORT void set_grid_concentrations(int grid_list_index,
+                                                   int index_in_list,
+                                                   PyObject* grid_indices,
+                                                   PyObject* neuron_pointers) {
     /*
     Preconditions:
 
@@ -675,11 +679,11 @@ extern "C" void set_grid_concentrations(int grid_list_index,
 }
 
 /* TODO: make this work with Grid_node ptrs instead of pairs of list indices */
-extern "C" void set_grid_currents(int grid_list_index,
-                                  int index_in_list,
-                                  PyObject* grid_indices,
-                                  PyObject* neuron_pointers,
-                                  PyObject* scale_factors) {
+extern "C" NRN_EXPORT void set_grid_currents(int grid_list_index,
+                                             int index_in_list,
+                                             PyObject* grid_indices,
+                                             PyObject* neuron_pointers,
+                                             PyObject* scale_factors) {
     /*
     Preconditions:
 
@@ -780,7 +784,7 @@ int remove(Grid_node** head, Grid_node* find) {
     return 1;
 }
 
-extern "C" void delete_by_id(int id) {
+extern "C" NRN_EXPORT void delete_by_id(int id) {
     Grid_node* grid;
     int k;
     for (k = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid->next, k++) {
@@ -1106,7 +1110,6 @@ void ECS_Grid_node::clear_multicompartment_reaction() {
 void ECS_Grid_node::initialize_multicompartment_reaction() {
 #if NRNMPI
     int i, j;
-    int total_react = 0;
     int start_state;
     int* proc_num_init;
     int* all_indices;
@@ -1136,7 +1139,6 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
                 if (i == nrnmpi_myid)
                     start_state = total_reaction_states;
                 proc_num_reactions[i] = total_reaction_states;
-                total_react += proc_num_reactions[i];
                 total_reaction_states += proc_num_reaction_states[i];
             }
 

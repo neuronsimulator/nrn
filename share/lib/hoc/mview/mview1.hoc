@@ -127,10 +127,11 @@ proc init() {local i, n, icdis, ntop
 
 	display.top.append(pdis)
 	
-	if (nrnpython("import neuron.rxd")) {
-	    pyobj.neuron.rxd._model_view(display.top)
+	if (pyobj.neuron._userrxd) {
+		if (nrnpython("import neuron.rxd")) {
+			pyobj.neuron.rxd._model_view(display.top)
+		}
 	}
-	
 	
 	
 	

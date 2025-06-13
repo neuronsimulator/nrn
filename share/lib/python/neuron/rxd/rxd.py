@@ -61,7 +61,7 @@ setup_solver = nrn_dll_sym("setup_solver")
 setup_solver.argtypes = [
     ndpointer(ctypes.c_double),
     ctypes.c_int,
-    numpy.ctypeslib.ndpointer(numpy.int_, flags="contiguous"),
+    numpy.ctypeslib.ndpointer(ctypes.c_long, flags="contiguous"),
     ctypes.c_int,
 ]
 
@@ -291,6 +291,10 @@ def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=No
     domain -- a section or Python iterable of sections"""
 
     global _dimensions_default, _dimensions
+
+    if initializer.is_initialized():
+        raise RxDException("set_solve_type must be called before any access to nodes.")
+
     setting_default = False
     if domain is None:
         domain = h.allsec()
@@ -630,8 +634,8 @@ def _matrix_to_rxd_sparse(m):
     return (
         n,
         len(nonzero_i),
-        numpy.ascontiguousarray(nonzero_i, dtype=numpy.int_),
-        numpy.ascontiguousarray(nonzero_j, dtype=numpy.int_),
+        numpy.ascontiguousarray(nonzero_i, dtype=ctypes.c_long),
+        numpy.ascontiguousarray(nonzero_j, dtype=ctypes.c_long),
         nonzero_values,
     )
 
@@ -709,7 +713,7 @@ def _setup_matrices():
         n = len(_node_get_states())
 
         volumes = node._get_data()[0]
-        zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
+        zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(ctypes.c_long)
         if species._has_1d:
             # TODO: initialization is slow. track down why
             for sr in _species_get_all_species():
@@ -905,6 +909,7 @@ def _setup_matrices():
             num_3d_indices_per_1d_seg = numpy.asarray(
                 num_3d_indices_per_1d_seg, dtype=numpy.int64
             )
+            hybrid_grid_ids.append(-1)
             hybrid_grid_ids = numpy.asarray(hybrid_grid_ids, dtype=numpy.int64)
 
             hybrid_indices3d = numpy.asarray(hybrid_indices3d, dtype=numpy.int64)
@@ -912,18 +917,19 @@ def _setup_matrices():
             volumes1d = numpy.asarray(volumes1d, dtype=float)
             volumes3d = numpy.asarray(volumes3d, dtype=float)
             dxs = numpy.asarray(grids_dx, dtype=float)
-            set_hybrid_data(
-                num_1d_indices_per_grid,
-                num_3d_indices_per_grid,
-                hybrid_indices1d,
-                hybrid_indices3d,
-                num_3d_indices_per_1d_seg,
-                hybrid_grid_ids,
-                rates,
-                volumes1d,
-                volumes3d,
-                dxs,
-            )
+            if hybrid_grid_ids.size > 1:
+                set_hybrid_data(
+                    num_1d_indices_per_grid,
+                    num_3d_indices_per_grid,
+                    hybrid_indices1d,
+                    hybrid_indices3d,
+                    num_3d_indices_per_1d_seg,
+                    hybrid_grid_ids,
+                    rates,
+                    volumes1d,
+                    volumes3d,
+                    dxs,
+                )
 
         # TODO: Replace this this to handle 1d/3d hybrid models
         """
@@ -1894,7 +1900,7 @@ def _init():
     _setup_matrices()
     # if species._has_1d and species._1d_submatrix_n():
     # volumes = node._get_data()[0]
-    # zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
+    # zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(ctypes.c_long)
     # setup_solver(_node_get_states(), len(_node_get_states()), zero_volume_indices, len(zero_volume_indices), h._ref_t, h._ref_dt)
     clear_rates()
     _setup_memb_currents()

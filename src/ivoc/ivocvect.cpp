@@ -1,12 +1,13 @@
 #include <../../nrnconf.h>
 
-//#include <string.h>
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
 #include <cerrno>
 #include <numeric>
 #include <functional>
+#include <string>
 
 #include "fourier.h"
 #include "mymath.h"
@@ -23,15 +24,8 @@
 #include <InterViews/font.h>
 #include <InterViews/background.h>
 #include <InterViews/style.h>
-//#include <OS/string.h>
 
 #include <IV-look/kit.h>
-#else
-#include <OS/list.h>
-#endif
-
-#if defined(SVR4)
-extern void exit(int status);
 #endif
 
 #include "classreg.h"
@@ -43,30 +37,20 @@ extern void exit(int status);
 
 #include "gui-redirect.h"
 
+#include "utils/logger.hpp"
+
 #ifndef PI
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 #define PI M_PI
 #endif
-#define BrainDamaged 0  // The Sun CC compiler but it doesn't hurt to leave it in
-#if BrainDamaged
-#define FWrite(arg1, arg2, arg3, arg4)              \
-    if (fwrite((arg1), arg2, arg3, arg4) != arg3) { \
-        hoc_execerror("fwrite error", 0);           \
-    }
-#define FRead(arg1, arg2, arg3, arg4)              \
-    if (fread((arg1), arg2, arg3, arg4) != arg3) { \
-        hoc_execerror("fread error", 0);           \
-    }
-#else
 #define FWrite(arg1, arg2, arg3, arg4)            \
     if (fwrite(arg1, arg2, arg3, arg4) != arg3) { \
     }
 #define FRead(arg1, arg2, arg3, arg4)            \
     if (fread(arg1, arg2, arg3, arg4) != arg3) { \
     }
-#endif
 
 /**
  * As all parameters are passed from hoc as double, we need
@@ -113,7 +97,7 @@ static double dmaxint_ = 9007199254740992;
 #include "ivocvect.h"
 
 // definition of random numer generator
-#include "random1.h"
+#include "Rand.hpp"
 #include <Uniform.h>
 
 #if HAVE_IV
@@ -130,6 +114,7 @@ extern Symlist* hoc_top_level_symlist;
 IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 Object** (*nrnpy_vec_to_python_p_)(void*);
 Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
+double (*nrnpy_call_func)(Object*, double);
 
 static int narg() {
     int i = 0;
@@ -346,9 +331,9 @@ extern char* neuron_home;
 
 void load_ocmatrix() {
     struct DLL* dll = NULL;
-    char buf[256];
-    Sprintf(buf, "%s\\lib\\ocmatrix.dll", neuron_home);
-    dll = dll_load(buf);
+    // using a std::string to avoid buffer issues from long paths
+    auto buf = std::string(neuron_home) + "\\lib\\ocmatrix.dll";
+    dll = dll_load(buf.c_str());
     if (dll) {
         Pfri mreg = (Pfri) dll_lookup(dll, "_Matrix_reg");
         if (mreg) {
@@ -396,6 +381,16 @@ int is_vector_arg(int i) {
         return 0;
     }
     return 1;
+}
+
+Object** new_vect(Vect* v, ssize_t delta, ssize_t start, ssize_t step) {
+    // Creates a new vector of values delta steps from start
+    std::size_t size{(size_t) delta};
+    auto* y = new Vect(size);
+    for (int i = 0; i < delta; ++i) {
+        y->elem(i) = v->elem(int(i * step + start));
+    }
+    return y->temp_objvar();
 }
 
 int vector_arg_px(int i, double** px) {
@@ -946,66 +941,66 @@ static Object** v_plot(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.plot", svec_, v);
     Vect* vp = (Vect*) v;
 #if HAVE_IV
-    IFGUI
-    int i;
-    double* y = vp->data();
-    auto n = vp->size();
+    if (hoc_usegui) {
+        int i;
+        double* y = vp->data();
+        auto n = vp->size();
 
-    Object* ob1 = *hoc_objgetarg(1);
-    check_obj_type(ob1, "Graph");
-    Graph* g = (Graph*) (ob1->u.this_pointer);
+        Object* ob1 = *hoc_objgetarg(1);
+        check_obj_type(ob1, "Graph");
+        Graph* g = (Graph*) (ob1->u.this_pointer);
 
-    GraphVector* gv = new GraphVector("");
+        GraphVector* gv = new GraphVector("");
 
-    if (ifarg(5)) {
-        hoc_execerror("Vector.line:", "too many arguments");
-    }
-    if (narg() == 3) {
-        gv->color((colors->color(int(*getarg(2)))));
-        gv->brush((brushes->brush(int(*getarg(3)))));
-    } else if (narg() == 4) {
-        gv->color((colors->color(int(*getarg(3)))));
-        gv->brush((brushes->brush(int(*getarg(4)))));
-    }
+        if (ifarg(5)) {
+            hoc_execerror("Vector.line:", "too many arguments");
+        }
+        if (narg() == 3) {
+            gv->color((colors->color(int(*getarg(2)))));
+            gv->brush((brushes->brush(int(*getarg(3)))));
+        } else if (narg() == 4) {
+            gv->color((colors->color(int(*getarg(3)))));
+            gv->brush((brushes->brush(int(*getarg(4)))));
+        }
 
-    if (narg() == 2 || narg() == 4) {
-        // passed a vector or xinterval and possibly line attributes
-        if (hoc_is_object_arg(2)) {
-            // passed a vector
-            Vect* vp2 = vector_arg(2);
-            n = std::min(n, vp2->size());
-            for (i = 0; i < n; ++i) {
-                gv->add(vp2->elem(i),
-                        neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                               y + i});
+        if (narg() == 2 || narg() == 4) {
+            // passed a vector or xinterval and possibly line attributes
+            if (hoc_is_object_arg(2)) {
+                // passed a vector
+                Vect* vp2 = vector_arg(2);
+                n = std::min(n, vp2->size());
+                for (i = 0; i < n; ++i) {
+                    gv->add(vp2->elem(i),
+                            neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                                   y + i});
+                }
+            } else {
+                // passed xinterval
+                double interval = *getarg(2);
+                for (i = 0; i < n; ++i) {
+                    gv->add(i * interval,
+                            neuron::container::data_handle<double>{neuron::container::do_not_search,
+                                                                   y + i});
+                }
             }
         } else {
-            // passed xinterval
-            double interval = *getarg(2);
+            // passed line attributes or nothing
             for (i = 0; i < n; ++i) {
-                gv->add(i * interval,
+                gv->add(i,
                         neuron::container::data_handle<double>{neuron::container::do_not_search,
                                                                y + i});
             }
         }
-    } else {
-        // passed line attributes or nothing
-        for (i = 0; i < n; ++i) {
-            gv->add(i,
-                    neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                           y + i});
+
+        if (vp->label_) {
+            GLabel* glab = g->label(vp->label_);
+            gv->label(glab);
+            ((GraphItem*) g->component(g->glyph_index(glab)))->save(false);
         }
-    }
+        g->append(new GPolyLineItem(gv));
 
-    if (vp->label_) {
-        GLabel* glab = g->label(vp->label_);
-        gv->label(glab);
-        ((GraphItem*) g->component(g->glyph_index(glab)))->save(false);
+        g->flush();
     }
-    g->append(new GPolyLineItem(gv));
-
-    g->flush();
-    ENDGUI
 #endif
     return vp->temp_objvar();
 }
@@ -1014,43 +1009,43 @@ static Object** v_ploterr(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.ploterr", svec_, v);
     Vect* vp = (Vect*) v;
 #if HAVE_IV
-    IFGUI
-    int n = vp->size();
+    if (hoc_usegui) {
+        int n = vp->size();
 
-    Object* ob1 = *hoc_objgetarg(1);
-    check_obj_type(ob1, "Graph");
-    Graph* g = (Graph*) (ob1->u.this_pointer);
+        Object* ob1 = *hoc_objgetarg(1);
+        check_obj_type(ob1, "Graph");
+        Graph* g = (Graph*) (ob1->u.this_pointer);
 
-    char style = '-';
-    double size = 4;
-    if (ifarg(4))
-        size = chkarg(4, 0.1, 100.);
-    const ivColor* color = g->color();
-    const ivBrush* brush = g->brush();
-    if (ifarg(5)) {
-        color = colors->color(int(*getarg(5)));
-        brush = brushes->brush(int(*getarg(6)));
+        char style = '-';
+        double size = 4;
+        if (ifarg(4))
+            size = chkarg(4, 0.1, 100.);
+        const ivColor* color = g->color();
+        const ivBrush* brush = g->brush();
+        if (ifarg(5)) {
+            color = colors->color(int(*getarg(5)));
+            brush = brushes->brush(int(*getarg(6)));
+        }
+
+        Vect* vp2 = vector_arg(2);
+        if (vp2->size() < n)
+            n = vp2->size();
+
+        Vect* vp3 = vector_arg(3);
+        if (vp3->size() < n)
+            n = vp3->size();
+
+        for (int i = 0; i < n; ++i) {
+            g->begin_line();
+
+            g->line(vp2->elem(i), vp->elem(i) - vp3->elem(i));
+            g->line(vp2->elem(i), vp->elem(i) + vp3->elem(i));
+            g->mark(vp2->elem(i), vp->elem(i) - vp3->elem(i), style, size, color, brush);
+            g->mark(vp2->elem(i), vp->elem(i) + vp3->elem(i), style, size, color, brush);
+        }
+
+        g->flush();
     }
-
-    Vect* vp2 = vector_arg(2);
-    if (vp2->size() < n)
-        n = vp2->size();
-
-    Vect* vp3 = vector_arg(3);
-    if (vp3->size() < n)
-        n = vp3->size();
-
-    for (int i = 0; i < n; ++i) {
-        g->begin_line();
-
-        g->line(vp2->elem(i), vp->elem(i) - vp3->elem(i));
-        g->line(vp2->elem(i), vp->elem(i) + vp3->elem(i));
-        g->mark(vp2->elem(i), vp->elem(i) - vp3->elem(i), style, size, color, brush);
-        g->mark(vp2->elem(i), vp->elem(i) + vp3->elem(i), style, size, color, brush);
-    }
-
-    g->flush();
-    ENDGUI
 #endif
     return vp->temp_objvar();
 }
@@ -1059,48 +1054,48 @@ static Object** v_line(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.line", svec_, v);
     Vect* vp = (Vect*) v;
 #if HAVE_IV
-    IFGUI
-    int i;
-    auto n = vp->size();
+    if (hoc_usegui) {
+        int i;
+        auto n = vp->size();
 
-    Object* ob1 = *hoc_objgetarg(1);
-    check_obj_type(ob1, "Graph");
-    Graph* g = (Graph*) (ob1->u.this_pointer);
-    char* s = vp->label_;
+        Object* ob1 = *hoc_objgetarg(1);
+        check_obj_type(ob1, "Graph");
+        Graph* g = (Graph*) (ob1->u.this_pointer);
+        char* s = vp->label_;
 
-    if (ifarg(5)) {
-        hoc_execerror("Vector.line:", "too many arguments");
-    }
-    if (narg() == 3) {
-        g->begin_line(colors->color(int(*getarg(2))), brushes->brush(int(*getarg(3))), s);
-    } else if (narg() == 4) {
-        g->begin_line(colors->color(int(*getarg(3))), brushes->brush(int(*getarg(4))), s);
-    } else {
-        g->begin_line(s);
-    }
-
-    if (narg() == 2 || narg() == 4) {
-        // passed a vector or xinterval and possibly line attributes
-        if (hoc_is_object_arg(2)) {
-            // passed a vector
-            Vect* vp2 = vector_arg(2);
-            n = std::min(n, vp2->size());
-            for (i = 0; i < n; ++i)
-                g->line(vp2->elem(i), vp->elem(i));
-        } else {
-            // passed xinterval
-            double interval = *getarg(2);
-            for (i = 0; i < n; ++i)
-                g->line(i * interval, vp->elem(i));
+        if (ifarg(5)) {
+            hoc_execerror("Vector.line:", "too many arguments");
         }
-    } else {
-        // passed line attributes or nothing
-        for (i = 0; i < n; ++i)
-            g->line(i, vp->elem(i));
-    }
+        if (narg() == 3) {
+            g->begin_line(colors->color(int(*getarg(2))), brushes->brush(int(*getarg(3))), s);
+        } else if (narg() == 4) {
+            g->begin_line(colors->color(int(*getarg(3))), brushes->brush(int(*getarg(4))), s);
+        } else {
+            g->begin_line(s);
+        }
 
-    g->flush();
-    ENDGUI
+        if (narg() == 2 || narg() == 4) {
+            // passed a vector or xinterval and possibly line attributes
+            if (hoc_is_object_arg(2)) {
+                // passed a vector
+                Vect* vp2 = vector_arg(2);
+                n = std::min(n, vp2->size());
+                for (i = 0; i < n; ++i)
+                    g->line(vp2->elem(i), vp->elem(i));
+            } else {
+                // passed xinterval
+                double interval = *getarg(2);
+                for (i = 0; i < n; ++i)
+                    g->line(i * interval, vp->elem(i));
+            }
+        } else {
+            // passed line attributes or nothing
+            for (i = 0; i < n; ++i)
+                g->line(i, vp->elem(i));
+        }
+
+        g->flush();
+    }
 #endif
     return vp->temp_objvar();
 }
@@ -1110,48 +1105,48 @@ static Object** v_mark(void* v) {
     TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ("Vector.mark", svec_, v);
     Vect* vp = (Vect*) v;
 #if HAVE_IV
-    IFGUI
-    int i;
-    int n = vp->size();
+    if (hoc_usegui) {
+        int i;
+        int n = vp->size();
 
-    Object* ob1 = *hoc_objgetarg(1);
-    check_obj_type(ob1, "Graph");
-    Graph* g = (Graph*) (ob1->u.this_pointer);
+        Object* ob1 = *hoc_objgetarg(1);
+        check_obj_type(ob1, "Graph");
+        Graph* g = (Graph*) (ob1->u.this_pointer);
 
-    char style = '+';
-    if (ifarg(3)) {
-        if (hoc_is_str_arg(3)) {
-            style = *gargstr(3);
+        char style = '+';
+        if (ifarg(3)) {
+            if (hoc_is_str_arg(3)) {
+                style = *gargstr(3);
+            } else {
+                style = char(chkarg(3, 0, 10));
+            }
+        }
+        double size = 12;
+        if (ifarg(4))
+            size = chkarg(4, 0.1, 100.);
+        const ivColor* color = g->color();
+        if (ifarg(5))
+            color = colors->color(int(*getarg(5)));
+        const ivBrush* brush = g->brush();
+        if (ifarg(6))
+            brush = brushes->brush(int(*getarg(6)));
+
+        if (hoc_is_object_arg(2)) {
+            // passed a vector
+            Vect* vp2 = vector_arg(2);
+
+            for (i = 0; i < n; ++i) {
+                g->mark(vp2->elem(i), vp->elem(i), style, size, color, brush);
+            }
+
         } else {
-            style = char(chkarg(3, 0, 10));
+            // passed xinterval
+            double interval = *getarg(2);
+            for (i = 0; i < n; ++i) {
+                g->mark(i * interval, vp->elem(i), style, size, color, brush);
+            }
         }
     }
-    double size = 12;
-    if (ifarg(4))
-        size = chkarg(4, 0.1, 100.);
-    const ivColor* color = g->color();
-    if (ifarg(5))
-        color = colors->color(int(*getarg(5)));
-    const ivBrush* brush = g->brush();
-    if (ifarg(6))
-        brush = brushes->brush(int(*getarg(6)));
-
-    if (hoc_is_object_arg(2)) {
-        // passed a vector
-        Vect* vp2 = vector_arg(2);
-
-        for (i = 0; i < n; ++i) {
-            g->mark(vp2->elem(i), vp->elem(i), style, size, color, brush);
-        }
-
-    } else {
-        // passed xinterval
-        double interval = *getarg(2);
-        for (i = 0; i < n; ++i) {
-            g->mark(i * interval, vp->elem(i), style, size, color, brush);
-        }
-    }
-    ENDGUI
 #endif
     return vp->temp_objvar();
 }
@@ -1565,7 +1560,6 @@ static Object** v_copy(void* v) {
     return y->temp_objvar();
 }
 
-
 static Object** v_at(void* v) {
     auto* x = static_cast<Vect*>(v);
     std::size_t start{};
@@ -1576,14 +1570,11 @@ static Object** v_at(void* v) {
     if (ifarg(2)) {
         end = chkarg(2, start, x->size() - 1) + 1.0;
     }
-    std::size_t size{end - start};
-    auto* y = new Vect(size);
-    // ZFM: fixed bug -- i<size, not i<=size
-    for (std::size_t i = 0; i < size; ++i) {
-        y->elem(i) = x->elem(i + start);
-    }
-    return y->temp_objvar();
+    // Creation of a new vector has been moved to new_vect to allow slicing
+    ssize_t delta = end - start;
+    return new_vect(x, delta, start, 1);
 }
+
 
 typedef struct {
     double x;
@@ -1679,7 +1670,6 @@ static Object** v_interpolate(void* v) {
     if (flag) {
         delete ys;
     }
-
     return yd->temp_objvar();
 }
 
@@ -2046,27 +2036,39 @@ static Object** v_setrand(void* v) {
 
 static Object** v_apply(void* v) {
     Vect* x = (Vect*) v;
-    char* func = gargstr(1);
     int top = x->size() - 1;
     int start = 0;
     int end = top;
     Object* ob;
+    if (ifarg(4)) {
+        hoc_execerror("Too many parameters to apply method.", nullptr);
+    }
     if (ifarg(2)) {
         start = int(chkarg(2, 0, top));
         end = int(chkarg(3, start, top));
     }
-    Symbol* s = hoc_lookup(func);
-    ob = hoc_thisobject;
-    if (!s) {
-        ob = NULL;
-        s = hoc_table_lookup(func, hoc_top_level_symlist);
+    if (hoc_is_str_arg(1)) {
+        char* func = gargstr(1);
+        Symbol* s = hoc_lookup(func);
+        ob = hoc_thisobject;
         if (!s) {
-            hoc_execerror(func, " is undefined");
+            ob = NULL;
+            s = hoc_table_lookup(func, hoc_top_level_symlist);
+            if (!s) {
+                hoc_execerror(func, " is undefined");
+            }
         }
-    }
-    for (int i = start; i <= end; i++) {
-        hoc_pushx(x->elem(i));
-        x->elem(i) = hoc_call_objfunc(s, 1, ob);
+        for (int i = start; i <= end; i++) {
+            hoc_pushx(x->elem(i));
+            x->elem(i) = hoc_call_objfunc(s, 1, ob);
+        }
+    } else if (hoc_is_object_arg(1) && nrnpy_call_func) {
+        Object* funcobj = *hoc_objgetarg(1);
+        for (int i = start; i <= end; i++) {
+            x->elem(i) = nrnpy_call_func(funcobj, x->elem(i));
+        }
+    } else {
+        hoc_execerror("apply: first argument must be a HOC string or a Python callable", nullptr);
     }
     return x->temp_objvar();
 }
@@ -2364,7 +2366,11 @@ static Object** v_mul(void* v1) {
 static Object** v_div(void* v1) {
     Vect* x = (Vect*) v1;
     if (hoc_argtype(1) == NUMBER) {
-        std::for_each(x->begin(), x->end(), [](double& d) { d /= *getarg(1); });
+        if (*getarg(1) == 0.0) {
+            hoc_execerror("Vector", "Division by zero");
+        } else {
+            std::for_each(x->begin(), x->end(), [](double& d) { d /= *getarg(1); });
+        }
     }
     if (hoc_is_object_arg(1)) {
         Vect* y = vector_arg(1);
@@ -3745,7 +3751,7 @@ static Member_func v_members[] = {
 
     {"scale", v_scale},
 
-    {0, 0}};
+    {nullptr, nullptr}};
 
 static Member_ret_obj_func v_retobj_members[] = {{"c", v_c},
                                                  {"cl", v_cl},
@@ -3821,11 +3827,11 @@ static Member_ret_obj_func v_retobj_members[] = {{"c", v_c},
                                                  {"to_python", v_to_python},
                                                  {"as_numpy", v_as_numpy},
 
-                                                 {0, 0}};
+                                                 {nullptr, nullptr}};
 
 static Member_ret_str_func v_retstr_members[] = {{"label", v_label},
 
-                                                 {0, 0}};
+                                                 {nullptr, nullptr}};
 
 extern int hoc_araypt(Symbol*, int);
 
@@ -3851,7 +3857,7 @@ static void steer_x(void* v) {
 }
 
 void Vector_reg() {
-    class2oc("Vector", v_cons, v_destruct, v_members, NULL, v_retobj_members, v_retstr_members);
+    class2oc("Vector", v_cons, v_destruct, v_members, v_retobj_members, v_retstr_members);
     svec_ = hoc_lookup("Vector");
     // now make the x variable an actual double
     Symbol* sv = hoc_lookup("Vector");
@@ -3868,198 +3874,9 @@ void Vector_reg() {
 #endif
 }
 
-// hacked version of gsort from ../gnu/d_vec.cpp
-// the transformation is that everything that used to be a double* becomes
-// an int* and cmp(*arg1, *arg2) becomes cmp(vec[*arg1], vec[*arg2])
-// I am not sure what to do about the BYTES_PER_WORD
-
-// An adaptation of Schmidt's new quicksort
-
-static inline void SWAP(int* A, int* B) {
-    int tmp = *A;
-    *A = *B;
-    *B = tmp;
-}
-
-/* This should be replaced by a standard ANSI macro. */
-#define BYTES_PER_WORD 8
-#define BYTES_PER_LONG 4
-
-/* The next 4 #defines implement a very fast in-line stack abstraction. */
-
-#define STACK_SIZE (BYTES_PER_WORD * BYTES_PER_LONG)
-#define PUSH(LOW, HIGH)   \
-    do {                  \
-        top->lo = LOW;    \
-        top++->hi = HIGH; \
-    } while (0)
-#define POP(LOW, HIGH)     \
-    do {                   \
-        LOW = (--top)->lo; \
-        HIGH = top->hi;    \
-    } while (0)
-#define STACK_NOT_EMPTY (stack < top)
-
-/* Discontinue quicksort algorithm when partition gets below this size.
-   This particular magic number was chosen to work best on a Sun 4/260. */
-#define MAX_THRESH 4
-
-
-/* Order size using quicksort.  This implementation incorporates
-   four optimizations discussed in Sedgewick:
-
-   1. Non-recursive, using an explicit stack of pointer that
-      store the next array partition to sort.  To save time, this
-      maximum amount of space required to store an array of
-      MAX_INT is allocated on the stack.  Assuming a 32-bit integer,
-      this needs only 32 * sizeof (stack_node) == 136 bits.  Pretty
-      cheap, actually.
-
-   2. Chose the pivot element using a median-of-three decision tree.
-      This reduces the probability of selecting a bad pivot value and
-      eliminates certain extraneous comparisons.
-
-   3. Only quicksorts TOTAL_ELEMS / MAX_THRESH partitions, leaving
-      insertion sort to order the MAX_THRESH items within each partition.
-      This is a big win, since insertion sort is faster for small, mostly
-      sorted array segements.
-
-   4. The larger of the two sub-partitions is always pushed onto the
-      stack first, with the algorithm then concentrating on the
-      smaller partition.  This *guarantees* no more than log (n)
-      stack size is needed! */
-
 int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, int (*cmp)(double, double)) {
-    /* Stack node declarations used to store unfulfilled partition obligations. */
-    struct stack_node {
-        int* lo;
-        int* hi;
-    };
-    int pivot_buffer;
-    int max_thresh = MAX_THRESH;
-
-    if (total_elems > MAX_THRESH) {
-        int* lo = base_ptr;
-        int* hi = lo + (total_elems - 1);
-        int* left_ptr;
-        int* right_ptr;
-        stack_node stack[STACK_SIZE]; /* Largest size needed for 32-bit int!!! */
-        stack_node* top = stack + 1;
-
-        while (STACK_NOT_EMPTY) {
-            {
-                int* pivot = &pivot_buffer;
-                {
-                    /* Select median value from among LO, MID, and HI. Rearrange
-                       LO and HI so the three values are sorted. This lowers the
-                       probability of picking a pathological pivot value and
-                       skips a comparison for both the LEFT_PTR and RIGHT_PTR. */
-
-                    int* mid = lo + ((hi - lo) >> 1);
-
-                    if (cmp(vec[*mid], vec[*lo]) < 0)
-                        SWAP(mid, lo);
-                    if (cmp(vec[*hi], vec[*mid]) < 0) {
-                        SWAP(mid, hi);
-                        if (cmp(vec[*mid], vec[*lo]) < 0)
-                            SWAP(mid, lo);
-                    }
-                    *pivot = *mid;
-                    pivot = &pivot_buffer;
-                }
-                left_ptr = lo + 1;
-                right_ptr = hi - 1;
-
-                /* Here's the famous ``collapse the walls'' section of quicksort.
-                   Gotta like those tight inner loops!  They are the main reason
-                   that this algorithm runs much faster than others. */
-                do {
-                    while (cmp(vec[*left_ptr], vec[*pivot]) < 0)
-                        left_ptr += 1;
-
-                    while (cmp(vec[*pivot], vec[*right_ptr]) < 0)
-                        right_ptr -= 1;
-
-                    if (left_ptr < right_ptr) {
-                        SWAP(left_ptr, right_ptr);
-                        left_ptr += 1;
-                        right_ptr -= 1;
-                    } else if (left_ptr == right_ptr) {
-                        left_ptr += 1;
-                        right_ptr -= 1;
-                        break;
-                    }
-                } while (left_ptr <= right_ptr);
-            }
-
-            /* Set up pointers for next iteration.  First determine whether
-               left and right partitions are below the threshold size. If so,
-               ignore one or both.  Otherwise, push the larger partition's
-               bounds on the stack and continue sorting the smaller one. */
-
-            if ((right_ptr - lo) <= max_thresh) {
-                if ((hi - left_ptr) <= max_thresh) /* Ignore both small partitions. */
-                    POP(lo, hi);
-                else /* Ignore small left partition. */
-                    lo = left_ptr;
-            } else if ((hi - left_ptr) <= max_thresh) /* Ignore small right partition. */
-                hi = right_ptr;
-            else if ((right_ptr - lo) > (hi - left_ptr)) /* Push larger left partition indices. */
-            {
-                PUSH(lo, right_ptr);
-                lo = left_ptr;
-            } else /* Push larger right partition indices. */
-            {
-                PUSH(left_ptr, hi);
-                hi = right_ptr;
-            }
-        }
-    }
-
-    /* Once the BASE_PTR array is partially sorted by quicksort the rest
-       is completely sorted using insertion sort, since this is efficient
-       for partitions below MAX_THRESH size. BASE_PTR points to the beginning
-       of the array to sort, and END_PTR points at the very last element in
-       the array (*not* one beyond it!). */
-
-
-    {
-        int* end_ptr = base_ptr + 1 * (total_elems - 1);
-        int* run_ptr;
-        int* tmp_ptr = base_ptr;
-        int* thresh = (end_ptr < (base_ptr + max_thresh)) ? end_ptr : (base_ptr + max_thresh);
-
-        /* Find smallest element in first threshold and place it at the
-           array's beginning.  This is the smallest array element,
-           and the operation speeds up insertion sort's inner loop. */
-
-        for (run_ptr = tmp_ptr + 1; run_ptr <= thresh; run_ptr += 1)
-            if (cmp(vec[*run_ptr], vec[*tmp_ptr]) < 0)
-                tmp_ptr = run_ptr;
-
-        if (tmp_ptr != base_ptr)
-            SWAP(tmp_ptr, base_ptr);
-
-        /* Insertion sort, running from left-hand-side up to `right-hand-side.'
-           Pretty much straight out of the original GNU qsort routine. */
-
-        for (run_ptr = base_ptr + 1; (tmp_ptr = run_ptr += 1) <= end_ptr;) {
-            while (cmp(vec[*run_ptr], vec[*(tmp_ptr -= 1)]) < 0)
-                ;
-
-            if ((tmp_ptr += 1) != run_ptr) {
-                int* trav;
-
-                for (trav = run_ptr + 1; --trav >= run_ptr;) {
-                    int c = *trav;
-                    int *hi, *lo;
-
-                    for (hi = lo = trav; (lo -= 1) >= tmp_ptr; hi = lo)
-                        *hi = *lo;
-                    *hi = c;
-                }
-            }
-        }
-    }
+    std::sort(base_ptr, base_ptr + total_elems, [&](int a, int b) {
+        return cmp(vec[a], vec[b]) < 0;
+    });
     return 1;
 }

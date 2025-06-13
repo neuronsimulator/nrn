@@ -34,21 +34,20 @@ OcMatrix* OcMatrix::instance(int nrow, int ncol, int type) {
     }
 }
 
-void OcMatrix::unimp() {
-    hoc_execerror("Matrix method not implemented for this type matrix", 0);
+void OcMatrix::unimp() const {
+    hoc_execerror("Matrix method not implemented for this type matrix", nullptr);
 }
 
-void OcMatrix::nonzeros(std::vector<int>& m, std::vector<int>& n) {
-    m.clear();
-    n.clear();
+std::vector<std::pair<int, int>> OcMatrix::nonzeros() const {
+    std::vector<std::pair<int, int>> nzs;
     for (int i = 0; i < nrow(); i++) {
         for (int j = 0; j < ncol(); j++) {
-            if (getval(i, j) != 0) {
-                m.push_back(i);
-                n.push_back(j);
+            if (getval(i, j) != 0.) {
+                nzs.emplace_back(i, j);
             }
         }
     }
+    return nzs;
 }
 
 OcFullMatrix* OcMatrix::full() {
@@ -65,16 +64,16 @@ OcFullMatrix::OcFullMatrix(int nrow, int ncol)
     m_.setZero();
 }
 
-double* OcFullMatrix::mep(int i, int j) {
-    return &m_(i, j);
-}
-double OcFullMatrix::getval(int i, int j) {
+double& OcFullMatrix::coeff(int i, int j) {
     return m_(i, j);
 }
-int OcFullMatrix::nrow() {
+double OcFullMatrix::getval(int i, int j) const {
+    return m_(i, j);
+}
+int OcFullMatrix::nrow() const {
     return m_.rows();
 }
-int OcFullMatrix::ncol() {
+int OcFullMatrix::ncol() const {
     return m_.cols();
 }
 
@@ -84,29 +83,29 @@ void OcFullMatrix::resize(int i, int j) {
     m_.conservativeResizeLike(v);
 }
 
-void OcFullMatrix::mulv(Vect* vin, Vect* vout) {
+void OcFullMatrix::mulv(Vect* vin, Vect* vout) const {
     auto v1 = Vect2VEC(vin);
     auto v2 = Vect2VEC(vout);
     v2 = m_ * v1;
 }
 
-void OcFullMatrix::mulm(Matrix* in, Matrix* out) {
+void OcFullMatrix::mulm(Matrix* in, Matrix* out) const {
     out->full()->m_ = m_ * in->full()->m_;
 }
 
-void OcFullMatrix::muls(double s, Matrix* out) {
+void OcFullMatrix::muls(double s, Matrix* out) const {
     out->full()->m_ = s * m_;
 }
 
-void OcFullMatrix::add(Matrix* in, Matrix* out) {
+void OcFullMatrix::add(Matrix* in, Matrix* out) const {
     out->full()->m_ = m_ + in->full()->m_;
 }
 
-void OcFullMatrix::copy(Matrix* out) {
+void OcFullMatrix::copy(Matrix* out) const {
     out->full()->m_ = m_;
 }
 
-void OcFullMatrix::bcopy(Matrix* out, int i0, int j0, int n0, int m0, int i1, int j1) {
+void OcFullMatrix::bcopy(Matrix* out, int i0, int j0, int n0, int m0, int i1, int j1) const {
     out->full()->m_.block(i1, j1, n0, m0) = m_.block(i0, j0, n0, m0);
 }
 
@@ -119,16 +118,16 @@ void OcFullMatrix::transpose(Matrix* out) {
 }
 
 // As only symmetric matrix are accepted, eigenvalues are not complex
-void OcFullMatrix::symmeigen(Matrix* mout, Vect* vout) {
+void OcFullMatrix::symmeigen(Matrix* mout, Vect* vout) const {
     auto v1 = Vect2VEC(vout);
     Eigen::EigenSolver<Eigen::MatrixXd> es(m_);
     v1 = es.eigenvalues().real();
     mout->full()->m_ = es.eigenvectors().real();
 }
 
-void OcFullMatrix::svd1(Matrix* u, Matrix* v, Vect* d) {
+void OcFullMatrix::svd1(Matrix* u, Matrix* v, Vect* d) const {
     auto v1 = Vect2VEC(d);
-    Eigen::JacobiSVD<Eigen::MatrixXd, Eigen::ComputeFullU | Eigen::ComputeFullV> svd(m_);
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd(m_, Eigen::ComputeFullU | Eigen::ComputeFullV);
     v1 = svd.singularValues();
     if (u) {
         u->full()->m_ = svd.matrixU().transpose();
@@ -138,17 +137,17 @@ void OcFullMatrix::svd1(Matrix* u, Matrix* v, Vect* d) {
     }
 }
 
-void OcFullMatrix::getrow(int k, Vect* out) {
+void OcFullMatrix::getrow(int k, Vect* out) const {
     auto v1 = Vect2VEC(out);
     v1 = m_.row(k);
 }
 
-void OcFullMatrix::getcol(int k, Vect* out) {
+void OcFullMatrix::getcol(int k, Vect* out) const {
     auto v1 = Vect2VEC(out);
     v1 = m_.col(k);
 }
 
-void OcFullMatrix::getdiag(int k, Vect* out) {
+void OcFullMatrix::getdiag(int k, Vect* out) const {
     auto vout = m_.diagonal(k);
     if (k >= 0) {
         for (int i = 0, j = k; i < nrow() && j < ncol(); ++i, ++j) {
@@ -205,15 +204,15 @@ void OcFullMatrix::ident() {
     m_.setIdentity();
 }
 
-void OcFullMatrix::exp(Matrix* out) {
+void OcFullMatrix::exp(Matrix* out) const {
     out->full()->m_ = m_.exp();
 }
 
-void OcFullMatrix::pow(int i, Matrix* out) {
+void OcFullMatrix::pow(int i, Matrix* out) const {
     out->full()->m_ = m_.pow(i).eval();
 }
 
-void OcFullMatrix::inverse(Matrix* out) {
+void OcFullMatrix::inverse(Matrix* out) const {
     out->full()->m_ = m_.inverse();
 }
 
@@ -226,7 +225,7 @@ void OcFullMatrix::solv(Vect* in, Vect* out, bool use_lu) {
     v2 = lu_->solve(v1);
 }
 
-double OcFullMatrix::det(int* e) {
+double OcFullMatrix::det(int* e) const {
     *e = 0;
     double m = m_.determinant();
     if (m) {
@@ -248,8 +247,8 @@ OcSparseMatrix::OcSparseMatrix(int nrow, int ncol)
     : OcMatrix(MSPARSE)
     , m_(nrow, ncol) {}
 
-double* OcSparseMatrix::mep(int i, int j) {
-    return &m_.coeffRef(i, j);
+double& OcSparseMatrix::coeff(int i, int j) {
+    return m_.coeffRef(i, j);
 }
 
 void OcSparseMatrix::zero() {
@@ -260,19 +259,19 @@ void OcSparseMatrix::zero() {
     }
 }
 
-double OcSparseMatrix::getval(int i, int j) {
+double OcSparseMatrix::getval(int i, int j) const {
     return m_.coeff(i, j);
 }
 
-int OcSparseMatrix::nrow() {
+int OcSparseMatrix::nrow() const {
     return m_.rows();
 }
 
-int OcSparseMatrix::ncol() {
+int OcSparseMatrix::ncol() const {
     return m_.cols();
 }
 
-void OcSparseMatrix::mulv(Vect* vin, Vect* vout) {
+void OcSparseMatrix::mulv(Vect* vin, Vect* vout) const {
     auto v1 = Vect2VEC(vin);
     auto v2 = Vect2VEC(vout);
     v2 = m_ * v1;
@@ -282,8 +281,6 @@ void OcSparseMatrix::solv(Vect* in, Vect* out, bool use_lu) {
     if (!lu_ || !use_lu || lu_->rows() != m_.rows()) {
         m_.makeCompressed();
         lu_ = std::make_unique<Eigen::SparseLU<decltype(m_)>>(m_);
-        lu_->analyzePattern(m_);
-        lu_->factorize(m_);
     }
     auto v1 = Vect2VEC(in);
     auto v2 = Vect2VEC(out);
@@ -332,7 +329,7 @@ void OcSparseMatrix::setcol(int k, double in) {
     }
 }
 
-void OcSparseMatrix::ident(void) {
+void OcSparseMatrix::ident() {
     m_.setIdentity();
 }
 
@@ -350,7 +347,7 @@ void OcSparseMatrix::setdiag(int k, double in) {
     }
 }
 
-int OcSparseMatrix::sprowlen(int i) {
+int OcSparseMatrix::sprowlen(int i) const {
     int acc = 0;
     for (decltype(m_)::InnerIterator it(m_, i); it; ++it) {
         acc += 1;
@@ -358,7 +355,7 @@ int OcSparseMatrix::sprowlen(int i) {
     return acc;
 }
 
-double OcSparseMatrix::spgetrowval(int i, int jindx, int* j) {
+double OcSparseMatrix::spgetrowval(int i, int jindx, int* j) const {
     int acc = 0;
     for (decltype(m_)::InnerIterator it(m_, i); it; ++it) {
         if (acc == jindx) {
@@ -370,13 +367,13 @@ double OcSparseMatrix::spgetrowval(int i, int jindx, int* j) {
     return 0;
 }
 
-void OcSparseMatrix::nonzeros(std::vector<int>& m, std::vector<int>& n) {
-    m.clear();
-    n.clear();
+std::vector<std::pair<int, int>> OcSparseMatrix::nonzeros() const {
+    std::vector<std::pair<int, int>> nzs;
+    nzs.reserve(m_.nonZeros());
     for (int k = 0; k < m_.outerSize(); ++k) {
         for (decltype(m_)::InnerIterator it(m_, k); it; ++it) {
-            m.push_back(it.row());
-            n.push_back(it.col());
+            nzs.emplace_back(it.row(), it.col());
         }
     }
+    return nzs;
 }

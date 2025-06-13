@@ -28,13 +28,13 @@ General
             python
 
             x = pnt.get_loc()
-            sec = h.cas()
-            h.pop_section()
+            sec = n.cas()
+            n.pop_section()
 
 
     Description:
         ``pnt.get_loc()`` pushes the section containing the POINT_PROCESS instance, pnt, 
-        onto the section stack (makes it the currently accessed section, readable via ``h.cas()``), and 
+        onto the section stack (makes it the currently accessed section, readable via ``n.cas()``), and 
         returns the position (ranging from 0 to 1) of the POINT_PROCESS instance. 
         The section stack should be popped when the section is no longer needed. 
 
@@ -71,8 +71,8 @@ General
         .. code-block::
             python
 
-            >>> s = h.Section(name='s')
-            >>> ic = h.IClamp(s(0.5))
+            >>> s = n.Section('s')
+            >>> ic = n.IClamp(s(0.5))
             >>> ic.get_segment()
             s(0.5)
 
@@ -126,7 +126,7 @@ General
 
 
     Syntax:
-        ``stimobj = h.IClamp(section(x))``
+        ``stimobj = n.IClamp(section(x))``
 
         ``delay -- ms``
 
@@ -159,7 +159,7 @@ General
 
 
     Syntax:
-        ``syn = h.AlphaSynapse(section(x))``
+        ``syn = n.AlphaSynapse(section(x))``
 
         ``syn.onset --- ms``
 
@@ -197,7 +197,7 @@ General
 
 
     Syntax:
-        ``vc = h.VClamp(section(x))``
+        ``vc = n.VClamp(section(x))``
 
         ``vc.dur[0]``, ``vc.dur[1]``, ``vc.dur[2]``
 
@@ -276,7 +276,7 @@ General
 
 
     Syntax:
-        ``clampobj = h.SEClamp(section(x))``
+        ``clampobj = n.SEClamp(section(x))``
 
         ``.dur1 .dur2 .dur3 -- ms``
 
@@ -328,20 +328,20 @@ General
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
 
             # setup for three simulations
-            s1 = h.Section(name='s1')
-            s2 = h.Section(name='s2')
-            s3 = h.Section(name='s3')
+            s1 = n.Section('s1')
+            s2 = n.Section('s2')
+            s3 = n.Section('s3')
 
             for sec in [s1, s2, s3]:
-                sec.insert('hh')   # equivalently: sec.insert(h.hh)
+                sec.insert(n.hh)
                 sec.L = sec.diam = 3
 
-            c1 = h.IClamp(s1(0.5))
-            c2 = h.SEClamp(s2(0.5))
-            c3 = h.VClamp(s3(0.5))
+            c1 = n.IClamp(s1(0.5))
+            c2 = n.SEClamp(s2(0.5))
+            c3 = n.VClamp(s3(0.5))
             c1.dur = 0.1
             c1.amp = 0.3
             c2.dur1 = 1
@@ -349,21 +349,21 @@ General
             c3.dur[0] = 1
 
             # record an action potential
-            ap = h.Vector().record(s1(0.5)._ref_v)
-            h.finitialize(-65)
-            while h.t < 1:
-                h.fadvance()
+            ap = n.Vector().record(s1(0.5)._ref_v)
+            n.finitialize(-65)
+            while n.t < 1:
+                n.fadvance()
 
             # do the three cases while playing the recorder ap
             apc = ap.c() # unfortunately, cannot play into two variables, so clone it
             ap.play_remove()
-            ap.play(c2._ref_amp1, h.dt)
-            apc.play(c3._ref_amp[0], h.dt)
-            h.finitialize(-65)
+            ap.play(c2._ref_amp1, n.dt)
+            apc.play(c3._ref_amp[0], n.dt)
+            n.finitialize(-65)
 
-            while h.t < 0.4:
-                h.fadvance()
-                print('%11g %11g %11g %11g %11g %11g' % (s1.v, s2.v, s3.v, c1.i, c2.i, c3.i))
+            while n.t < 0.4:
+                n.fadvance()
+                print(f'{s1.v:11g} {s2.v:11g} {s3.v:11g} {c1.i:11g} {c2.i:11g} {c3.i:11g}')
                         
 
         Output:
@@ -397,7 +397,7 @@ General
 
 
     Syntax:
-        ``apc = h.APCount(section(x))``
+        ``apc = n.APCount(section(x))``
 
         ``apc.thresh ---	mV``
 
@@ -430,7 +430,7 @@ General
 
 
     Syntax:
-        ``syn = h.ExpSyn(section(x))``
+        ``syn = n.ExpSyn(section(x))``
 
         ``syn.tau --- ms decay time constant``
 
@@ -466,7 +466,7 @@ General
 
 
     Syntax:
-        ``syn = h.Exp2Syn(section(x))``
+        ``syn = n.Exp2Syn(section(x))``
 
         ``syn.tau1 --- ms rise time``
 
@@ -527,7 +527,7 @@ General
 
 
     Syntax:
-        ``s = h.NetStim()``
+        ``s = n.NetStim()``
 
         ``s.interval ms (mean) time between spikes``
 
@@ -563,10 +563,10 @@ General
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
 
-            nc = h.NetStim()
-            ns = h.NetCon(nc, target...) 
+            nc = n.NetStim()
+            ns = n.NetCon(nc, target...) 
 
         That is, do not use ``nc._ref_y`` as the source for the netcon. 
          
@@ -577,31 +577,31 @@ General
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             
-            ns = h.NetStim()
+            ns = n.NetStim()
             ns.interval = 2
             ns.number = 5
             ns.start = -1 # NetStim starts in OFF state.
             
             #print spike times coming from ns
             def pr():
-              print (h.t)
-            ncout = h.NetCon(ns, None)
+              print (n.t)
+            ncout = n.NetCon(ns, None)
             ncout.record(pr)
             
             #another NetStim to cause ns to burst every 20 ms, 3 times, starting at 30ms
-            ns2 = h.NetStim()
+            ns2 = n.NetStim()
             ns2.interval = 20
             ns2.number = 3
             ns2.start=30
-            nctrig = h.NetCon(ns2, ns)
+            nctrig = n.NetCon(ns2, ns)
             nctrig.delay = 0.1
             nctrig.weight[0] = 1
             
-            h.tstop=500
-            h.cvode_active(True)
-            h.run()
+            n.tstop=500
+            n.cvode_active(True)
+            n.run()
             
     Output:
         .. code-block::
@@ -640,7 +640,7 @@ General
 .. class:: PatternStim
 
   Syntax:
-    ``s = h.PatternStim()``
+    ``s = n.PatternStim()``
     
     ``s.play(tvec, gidvec)``
     
@@ -666,34 +666,34 @@ General
     .. code-block::
       python
       
-      from neuron import h
-      pc = h.ParallelContext()
+      from neuron import n
+      pc = n.ParallelContext()
 
       #Model
-      cell = h.IntFire1()
+      cell = n.IntFire1()
       cell.refrac = 0 # no limit on spike rate
       pc.set_gid2node(0, pc.id())
-      pc.cell(0, h.NetCon(cell, None)) # generates a spike with gid=0
+      pc.cell(0, n.NetCon(cell, None)) # generates a spike with gid=0
       nclist = [pc.gid_connect(i, cell) for i in range(4)] #note gid=0 recursive connection
       for i, nc in enumerate(nclist):
         nc.weight[0] = 2 # anything above 1 causes immediate firing for IntFire1
         nc.delay = 1 + 0.1*i # incoming (t, gid) generates output (t + 1 + 0.1*gid, 0)
 
       # Record all spikes (cell is the only one generating output spikes)
-      spike_ts = h.Vector()
-      spike_ids = h.Vector()
+      spike_ts = n.Vector()
+      spike_ids = n.Vector()
       pc.spike_record(-1, spike_ts, spike_ids)
 
       #PatternStim
-      tvec = h.Vector(range(10))
-      gidvec = h.Vector(range(10)) # only 0,1,2 go to cell
-      ps = h.PatternStim()
+      tvec = n.Vector(range(10))
+      gidvec = n.Vector(range(10)) # only 0,1,2 go to cell
+      ps = n.PatternStim()
       ps.play(tvec, gidvec)
       del tvec, gidvec # ps retains a copy of the (t, gid) info.
 
       #Run
       pc.set_maxstep(10.)
-      h.finitialize(-65)
+      n.finitialize(-65)
       pc.psolve(7)
 
       for spike_t, spike_cell_id in zip(spike_ts, spike_ids):
@@ -730,7 +730,7 @@ General
 
 
     Syntax:
-        ``c = h.IntFire1()``
+        ``c = n.IntFire1()``
 
         ``c.tau --- ms time constant``
 
@@ -767,36 +767,36 @@ General
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             from neuron.units import ms, mV
             import matplotlib.pyplot as plt
-            h.load_file("stdrun.hoc")
+            n.load_file("stdrun.hoc")
 
-            my_cell = h.IntFire1()
+            my_cell = n.IntFire1()
             my_cell.tau = 4 * ms
             my_cell.refrac = 10 * ms
 
             # stimuli
-            e_stims = h.NetStim()
+            e_stims = n.NetStim()
             e_stims.noise = True
             e_stims.interval = 3 * ms
             e_stims.start = 0 * ms
             e_stims.number = 1e10
-            nc = h.NetCon(e_stims, my_cell)
+            nc = n.NetCon(e_stims, my_cell)
             nc.weight[0] = 0.5
             nc.delay = 0 * ms
 
             # setup recording
-            stim_times = h.Vector()
-            output_times = h.Vector()
-            stim_times_nc = h.NetCon(e_stims, None)
+            stim_times = n.Vector()
+            output_times = n.Vector()
+            stim_times_nc = n.NetCon(e_stims, None)
             stim_times_nc.record(stim_times)
-            output_times_nc = h.NetCon(my_cell, None)
+            output_times_nc = n.NetCon(my_cell, None)
             output_times_nc.record(output_times)
 
             # run the simulation
-            h.finitialize(-65 * mV)
-            h.continuerun(100 * ms)
+            n.finitialize(-65 * mV)
+            n.continuerun(100 * ms)
 
 
             # show a raster plot of the output spikes and the stimulus times
@@ -808,7 +808,7 @@ General
             ax.set_yticks([0, 1])
             ax.set_yticklabels(['excitatory\nstimuli','output\nevents'])
 
-            ax.set_xlim([0, h.t])
+            ax.set_xlim([0, n.t])
             ax.set_xlabel('time (ms)')
             
         `Click here <https://colab.research.google.com/drive/1c02kKjinPAfwdabxMv79fErlqugFVOPo?usp=sharing>`_
@@ -828,7 +828,7 @@ General
 
 
     Syntax:
-        ``c = h.IntFire2()``
+        ``c = n.IntFire2()``
 
         ``c.taum --- ms membrane time constant``
 
@@ -871,7 +871,7 @@ General
 
 
     Syntax:
-        ``c = h.IntFire4()``
+        ``c = n.IntFire4()``
 
         ``c.taue --- ms excitatory input time constant``
 
@@ -945,14 +945,17 @@ Mechanisms
 **setdata**
 
     Syntax:
-        ``h.setdata_suffix(section(x))``
+        ``n.setdata_suffix(section(x))``
 
-
+    Deprecated for Python:
+        In Python one can use the syntax ``section(x).suffix.fname(args)`` to call a FUNCTION
+        or PROCEDURE regardless of whether the function uses RANGE variables.
+        
     Description:
         If a mechanism function is called that uses RANGE variables, then the 
         appropriate data needed by the function must first be indicated via a setdata call. 
         This is unnecessary if the function uses only GLOBAL variables. 
-        The suffix refers to the name of the mechanism. E.g. ``h.setdata_hh(soma(0.5)).`` 
+        The suffix refers to the name of the mechanism. E.g. ``n.setdata_hh(soma(0.5)).`` 
 
     .. warning::
         The THREADSAFE mechanism case is a bit more complicated if the mechanism 
@@ -1006,7 +1009,7 @@ Mechanisms
     Syntax:
         ``section.insert('hh')``
 
-        ``section.insert(h.hh)``
+        ``section.insert(n.hh)``
 
 
     Description:
@@ -1028,7 +1031,7 @@ Mechanisms
             hh.ina	mA/cm2		sodium current through the hh channels 
             hh.ik	mA/cm2		potassium current through the hh channels 
              
-            h.rates_hh(v) computes the global variables [mhn]inf_hh and [mhn]tau_hh 
+            n.rates_hh(v) computes the global variables [mhn]inf_hh and [mhn]tau_hh 
             from the rate functions. usetable_hh defaults to 1. 
 
         This model used the na and k ions to read ena, ek and write ina, ik. 
@@ -1046,7 +1049,7 @@ Mechanisms
     Syntax:
         ``section.insert('pas')``
 
-        ``section.insert(h.pas)``
+        ``section.insert(n.pas)``
 
         ``section(x).pas.g -- mho/cm2	conductance``
 
@@ -1091,11 +1094,11 @@ Mechanisms
 **extracellular**
 
     Syntax:
-        ``section.insert('extracellular')``
+        ``section.insert(n.extracellular)``
 
-        ``nlayer = h.nlayer_extracellular()``
+        ``nlayer = n.nlayer_extracellular()``
 
-        ``nlayer = h.nlayer_extracellular(nlayer)``
+        ``nlayer = n.nlayer_extracellular(nlayer)``
 
         ``.vext[nlayer] -- mV``
 
@@ -1152,7 +1155,7 @@ Mechanisms
             nlayer=1 is sufficient and faster than nlayer=2.
 
         The number of extracellular layers can be changed with the
-        h.nlayer_extracellular(nlayer) function. (Returns the current
+        n.nlayer_extracellular(nlayer) function. (Returns the current
         number extracellular layers with or without the argument). The number
         of layers can be changed only if there are no existing
         extracellular mechanism instances in any section. Array limits

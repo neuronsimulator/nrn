@@ -1,8 +1,9 @@
-#include <../../nmodlconf.h>
+#include <../../nrnconf.h>
 /* /local/src/master/nrn/src/modlunit/io.c,v 1.2 1997/11/24 16:19:09 hines Exp */
 
 /* file.mod input routines */
 #include <stdlib.h>
+#include <cstring>
 #include "model.h"
 #include <ctype.h>
 #undef METHOD

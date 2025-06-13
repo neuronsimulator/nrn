@@ -10,6 +10,12 @@ set(${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS
 include("${CODING_CONV_CMAKE}/sanitizers.cmake")
 include(${CODING_CONV_CMAKE}/build-time-copy.cmake)
 
+# If there is an issue with the automatically determined LD_PRELOAD then force with an environment
+# variable when running cmake.
+if(DEFINED ENV{NRN_OVERRIDE_LD_PRELOAD})
+  set(NRN_SANITIZER_LIBRARY_PATH "$ENV{NRN_OVERRIDE_LD_PRELOAD}")
+endif()
+
 # Propagate the sanitizer flags to the NEURON sources
 list(APPEND NRN_COMPILE_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 list(APPEND NRN_LINK_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
@@ -48,8 +54,8 @@ if(NRN_SANITIZERS)
   # directory
   foreach(sanitizer ${nrn_sanitizers})
     if(EXISTS "${PROJECT_SOURCE_DIR}/.sanitizers/${sanitizer}.supp")
-      cpp_cc_build_time_copy(INPUT "${PROJECT_SOURCE_DIR}/.sanitizers/${sanitizer}.supp"
-                             OUTPUT "${PROJECT_BINARY_DIR}/share/nrn/sanitizers/${sanitizer}.supp")
+      configure_file("${PROJECT_SOURCE_DIR}/.sanitizers/${sanitizer}.supp"
+                     "${PROJECT_BINARY_DIR}/share/nrn/sanitizers/${sanitizer}.supp" COPYONLY)
       install(FILES "${PROJECT_BINARY_DIR}/share/nrn/sanitizers/${sanitizer}.supp"
               DESTINATION "${CMAKE_INSTALL_PREFIX}/share/nrn/sanitizers")
     endif()

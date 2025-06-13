@@ -9,6 +9,7 @@
 #include <cstring>
 
 #include "coreneuron/nrnconf.h"
+#include "nrnoc/ion_semantics.h"
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/membrane_definitions.h"
 #include "coreneuron/mechanism/eion.hpp"
@@ -92,6 +93,7 @@ void alloc_mech(int memb_func_size_) {
     corenrn.get_watch_check().resize(memb_func_size_);
     corenrn.get_is_artificial().resize(memb_func_size_, false);
     corenrn.get_artcell_qindex().resize(memb_func_size_);
+    corenrn.get_array_dims().resize(memb_func_size_);
     corenrn.get_prop_param_size().resize(memb_func_size_);
     corenrn.get_prop_dparam_size().resize(memb_func_size_);
     corenrn.get_mech_data_layout().resize(memb_func_size_, 1);
@@ -211,7 +213,7 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
        xx_ion and #xx_ion which will get
        a semantics value of -1, -2, -3,
        -4, -5, -6, -7, -8, -9, -10,
-       type, and type+1000 respectively
+       2*type, and 2*type+1 respectively
     */
     auto& memb_func = corenrn.get_memb_funcs();
     if (strcmp(name, "area") == 0) {
@@ -234,10 +236,12 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
         memb_func[type].dparam_semantics[ix] = -9;
     } else if (strcmp(name, "fornetcon") == 0) {
         memb_func[type].dparam_semantics[ix] = -10;
+    } else if (strcmp(name, "random") == 0) {
+        memb_func[type].dparam_semantics[ix] = -11;
     } else {
         int i = name[0] == '#' ? 1 : 0;
         int etype = nrn_get_mechtype(name + i);
-        memb_func[type].dparam_semantics[ix] = etype + i * 1000;
+        memb_func[type].dparam_semantics[ix] = nrn_semantics_from_ion(etype, i);
         /* note that if style is needed (i==1), then we are writing a concentration */
         if (i) {
             ion_write_depend(type, etype);
@@ -297,8 +301,8 @@ int nrn_mech_depend(int type, int* dependencies) {
     int idep = 0;
     if (ds)
         for (int i = 0; i < dpsize; ++i) {
-            if (ds[i] > 0 && ds[i] < 1000) {
-                int deptype = ds[i];
+            if (nrn_semantics_is_ion(ds[i])) {
+                int deptype = nrn_semantics_ion_type(ds[i]);
                 int idepnew = depend_append(idep, dependencies, deptype, type);
                 if ((idepnew > idep) && !corenrn.get_ion_write_dependency().empty() &&
                     !corenrn.get_ion_write_dependency()[deptype].empty()) {

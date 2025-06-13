@@ -1,5 +1,4 @@
-#ifndef kssingle_h
-#define kssingle_h
+#pragma once
 
 #include <math.h>
 #include <mymath.h>
@@ -115,5 +114,3 @@ class KSSingleState {
     int ntrans_;
     int* transitions_;
 };
-
-#endif

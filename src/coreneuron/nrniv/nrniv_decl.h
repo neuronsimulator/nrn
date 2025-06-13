@@ -13,7 +13,7 @@
 #include "coreneuron/network/netcon.hpp"
 namespace coreneuron {
 
-/// Mechanism type to be used from stdindex2ptr and nrn_dblpntr2nrncore (in Neuron)
+/// Mechanism type to be used from legacy_index2pointer and nrn_dblpntr2nrncore (in Neuron)
 /// Values of the mechanism types should be negative numbers to avoid any conflict with
 /// mechanism types of Memb_list(>0) or time(0) passed from Neuron
 enum mech_type { voltage = -1, i_membrane_ = -2 };
@@ -37,7 +37,7 @@ extern void mk_mech(const char* path);
 extern void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_value);
 extern void mk_netcvode(void);
 extern void nrn_p_construct(void);
-extern double* stdindex2ptr(int mtype, int index, NrnThread&);
+extern double* legacy_index2pointer(int mtype, int index, NrnThread&);
 extern void delete_trajectory_requests(NrnThread&);
 extern void nrn_cleanup();
 extern void nrn_cleanup_ion_map();
@@ -48,6 +48,7 @@ extern void nrn_set_extra_thread0_vdata(void);
 extern Point_process* nrn_artcell_instantiate(const char* mechname);
 extern int nrnmpi_spike_compress(int nspike, bool gidcompress, int xchng);
 extern bool nrn_use_bin_queue_;
+extern std::vector<int>& nrn_mech_random_indices(int type);
 
 extern void nrn_outputevent(unsigned char, double);
 extern void ncs2nrn_integrate(double tstop);

@@ -1,7 +1,6 @@
 #include <../../nrnconf.h>
 #include <string.h>
 #include <stdlib.h>
-#include <OS/list.h>
 #include <math.h>
 #include "nrnoc2iv.h"
 #include "classreg.h"
@@ -12,10 +11,6 @@
 #include "nrniv_mf.h"
 
 #define NSingleIndex 0
-#if defined(__MWERKS__) && !defined(_MSC_VER)
-#include <extras.h>
-#define strdup _strdup
-#endif
 
 using KSChanList = std::vector<KSChan*>;
 static KSChanList* channels;
@@ -58,6 +53,7 @@ static void check_table_thread_(Memb_list*,
                                 std::size_t,
                                 Datum*,
                                 Datum*,
+                                double*,
                                 NrnThread* vnt,
                                 int type,
                                 neuron::model_sorted_token const&) {
@@ -263,6 +259,7 @@ static double ks_gmax(void* v) {
     KSChan* ks = (KSChan*) v;
     if (ifarg(1)) {
         ks->gmax_deflt_ = chkarg(1, 0., 1e9);
+        ks->parm_default_fill();
     }
     return ks->gmax_deflt_;
 }
@@ -271,6 +268,7 @@ static double ks_erev(void* v) {
     KSChan* ks = (KSChan*) v;
     if (ifarg(1)) {
         ks->erev_deflt_ = chkarg(1, -1e9, 1e9);
+        ks->parm_default_fill();
     }
     return ks->erev_deflt_;
 }
@@ -736,10 +734,6 @@ static Member_func ksg_dmem[] = {{"nstate", ksg_nstate},
                                  {"index", ksg_index},
                                  {nullptr, nullptr}};
 
-static Member_ret_obj_func ksg_omem[] = {{nullptr, nullptr}};
-
-static Member_ret_str_func ksg_smem[] = {{nullptr, nullptr}};
-
 static Member_func kst_dmem[] = {{"set_f", kst_set_f},
                                  {"index", kst_index},
                                  {"type", kst_type},
@@ -801,15 +795,26 @@ static void* kst_cons(Object* o) {
 static void kst_destruct(void*) {}
 
 void KSChan_reg() {
-    class2oc("KSChan", ks_cons, ks_destruct, ks_dmem, NULL, ks_omem, ks_smem);
-    class2oc("KSGate", ksg_cons, ksg_destruct, ksg_dmem, NULL, ksg_omem, ksg_smem);
-    class2oc("KSState", kss_cons, kss_destruct, kss_dmem, NULL, kss_omem, kss_smem);
-    class2oc("KSTrans", kst_cons, kst_destruct, kst_dmem, NULL, kst_omem, kst_smem);
+    class2oc("KSChan", ks_cons, ks_destruct, ks_dmem, ks_omem, ks_smem);
+    class2oc("KSGate", ksg_cons, ksg_destruct, ksg_dmem, nullptr, nullptr);
+    class2oc("KSState", kss_cons, kss_destruct, kss_dmem, kss_omem, kss_smem);
+    class2oc("KSTrans", kst_cons, kst_destruct, kst_dmem, kst_omem, kst_smem);
     ksstate_sym = hoc_lookup("KSState");
     ksgate_sym = hoc_lookup("KSGate");
     kstrans_sym = hoc_lookup("KSTrans");
     KSSingle::vres_ = 0.1;
     KSSingle::idum_ = 0;
+}
+
+void KSChan::parm_default_fill() {
+    parm_default.resize(0);
+    if (is_single()) {
+        parm_default.push_back(1.0);  // NSingleIndex is first
+    }
+    parm_default.push_back(gmax_deflt_);
+    if (!ion_sym_) {
+        parm_default.push_back(erev_deflt_);
+    }
 }
 
 // param is gmax, g, i --- if change then change numbers below
@@ -839,6 +844,11 @@ void KSChan::add_channel(const char** m) {
     hoc_built_in_symlist = hoc_symlist;
     hoc_symlist = sav;
     mechtype_ = nrn_get_mechtype(m[1]);
+    register_data_fields();
+
+    parm_default_fill();
+    hoc_register_parm_default(mechtype_, &parm_default);
+
     // printf("mechanism type is %d\n", mechtype_);
     hoc_register_cvode(mechtype_, ode_count, ode_map, ode_spec, ode_matsol);
     if (!channels) {
@@ -848,7 +858,6 @@ void KSChan::add_channel(const char** m) {
         channels->push_back(nullptr);
     }
     channels->push_back(this);
-    neuron::model().add_mechanism(mechtype_, m[1]);  // no floating point fields
 }
 
 KSChan::KSChan(Object* obj, bool is_p) {
@@ -915,8 +924,7 @@ KSChan::KSChan(Object* obj, bool is_p) {
     m_kschan[7 + aoff] = 0;
     soffset_ = 3 + aoff;  // first state points here in p array
     add_channel(m_kschan);
-    must_allow_size_update(is_single_, ion_sym_ != nullptr, nligand_, nstate_);
-    update_size();
+    err_if_has_instances();
     for (int i = 0; i < 9; ++i)
         if (m_kschan[i]) {
             free((void*) m_kschan[i]);
@@ -934,14 +942,11 @@ KSChan::KSChan(Object* obj, bool is_p) {
 
 void KSChan::setname(const char* s) {
     // printf("KSChan::setname\n");
-    int i;
-    if (strcmp(s, name_.c_str()) == 0) {
-        return;
-    }
+    err_if_has_instances();
     name_ = s;
     if (mechsym_) {
         char old_suffix[100];
-        i = 0;
+        int i = 0;
         while (strcmp(mechsym_->name, name_.c_str()) != 0 && looksym(name_.c_str())) {
             Printf("KSChan::setname %s already in use\n", name_.c_str());
             Sprintf(old_suffix, "%s%d", s, i);
@@ -961,7 +966,7 @@ void KSChan::setname(const char* s) {
         }
 
         Symbol* sp;
-        if (!is_point())
+        if (!is_point()) {
             for (i = 0; i < rlsym_->s_varn; ++i) {
                 sp = rlsym_->u.ppsym[i];
                 char* cp = strstr(sp->name, old_suffix);
@@ -977,8 +982,10 @@ void KSChan::setname(const char* s) {
                     sp->name = s1;
                 }
             }
+        }
         //	printf("%s renamed to %s\n", old_suffix+1, name_.c_str());
     }
+    register_data_fields();
 }
 
 void KSChan::power(KSGateComplex* gc, int p) {
@@ -990,7 +997,6 @@ void KSChan::power(KSGateComplex* gc, int p) {
 
 void KSChan::set_single(bool b, bool update) {
     if (!is_point()) {
-        b = false;
         return;
     }
     if (b && (ngate_ != 1 || gc_[0].power_ != 1 || nhhstate_ > 0 || nksstate_ < 2)) {
@@ -1001,15 +1007,16 @@ void KSChan::set_single(bool b, bool update) {
             0);
     }
     // check before changing structure
-    must_allow_size_update(b, ion_sym_ != nullptr, nligand_, nstate_);
+    err_if_has_instances();
 
     if (is_single()) {
-        memb_func[mechtype_].singchan_ = NULL;
+        memb_func[mechtype_].singchan_ = nullptr;
         delete_schan_node_data();
         delete single_;
-        single_ = NULL;
+        single_ = nullptr;
     }
     is_single_ = b;
+    parm_default_fill();
     if (update) {
         update_prop();
     }
@@ -1018,6 +1025,7 @@ void KSChan::set_single(bool b, bool update) {
         memb_func[mechtype_].singchan_ = singchan;
         alloc_schan_node_data();
     }
+    register_data_fields();
 }
 
 const char* KSChan::state(int i) {
@@ -1025,8 +1033,7 @@ const char* KSChan::state(int i) {
 }
 
 int KSChan::trans_index(int s, int t) {
-    int i;
-    for (i = 0; i < ntrans_; ++i) {
+    for (int i = 0; i < ntrans_; ++i) {
         if (trans_[i].src_ == s && trans_[i].target_ == t) {
             return i;
         }
@@ -1035,8 +1042,7 @@ int KSChan::trans_index(int s, int t) {
 }
 
 int KSChan::gate_index(int is) {
-    int i;
-    for (i = 1; i < ngate_; ++i) {
+    for (int i = 1; i < ngate_; ++i) {
         if (is < gc_[i].sindex_) {
             return i - 1;
         }
@@ -1049,7 +1055,7 @@ void KSChan::update_prop() {
     // prop.dparam for density is [5ion], [2ligands]
     // prop.dparam for point is area, pnt, [singledata], [5ion], [2ligands]
 
-    // before doing anything destructive, see if update_size will succeed.
+    // before doing anything destructive, see if register will succeed.
     auto new_psize = 3;  // prop->param: gmax, g, i
     auto new_dsize = 0;  // prop->dparam: empty
     auto new_ppoff = 0;
@@ -1074,9 +1080,8 @@ void KSChan::update_prop() {
     }
     new_dsize += 2 * nligand_;
     new_psize += nstate_;
-    must_allow_size_update(is_single_, ion_sym_ != nullptr, nligand_, nstate_);
+    err_if_has_instances();
 
-    int i;
     Symbol* searchsym = (is_point() ? mechsym_ : NULL);
 
     // some old sym pointers
@@ -1094,8 +1099,6 @@ void KSChan::update_prop() {
     ppoff_ = new_ppoff;
     soffset_ = new_soffset;
     gmaxoffset_ = new_gmaxoffset;
-
-    update_size();
 
     // range variable names associated with prop->param
     rlsym_->s_varn = psize_;  // problem here
@@ -1146,19 +1149,19 @@ void KSChan::update_prop() {
     rlsym_->u.ppsym = ppsym;
     setcond();
     ion_consist();
+    register_data_fields();
 }
 
 void KSChan::setion(const char* s) {
     // printf("KSChan::setion\n");
-    int i;
     if (strcmp(ion_.c_str(), s) == 0) {
         return;
     }
-    // before doing anything destructive, check if update_size is going to succeed below
+    // before doing anything destructive, check if register is going to succeed below
     std::string new_ion{strlen(s) == 0 ? "NonSpecific" : s};
-    must_allow_size_update(is_single_, new_ion != "NonSpecific", nligand_, nstate_);
+    err_if_has_instances();
 
-    // now we know update_size will succeed, we can start modifying member data
+    // now we know register will succeed, we can start modifying member data
     Symbol* searchsym = (is_point() ? mechsym_ : NULL);
     ion_ = new_ion;
     char buf[100];
@@ -1170,7 +1173,7 @@ void KSChan::setion(const char* s) {
             printf("switch from useion to non-specific\n");
             rlsym_->s_varn += 1;
             Symbol** ppsym = newppsym(rlsym_->s_varn);
-            for (i = 0; i <= io; ++i) {
+            for (int i = 0; i <= io; ++i) {
                 ppsym[i] = rlsym_->u.ppsym[i];
             }
             ion_sym_ = NULL;
@@ -1187,7 +1190,7 @@ void KSChan::setion(const char* s) {
             ppsym[1 + io]->u.rng.type = rlsym_->subtype;
             ppsym[1 + io]->cpublic = 1;
             ppsym[1 + io]->u.rng.index = 1 + io;
-            for (i = 2 + io; i < rlsym_->s_varn; ++i) {
+            for (int i = 2 + io; i < rlsym_->s_varn; ++i) {
                 ppsym[i] = rlsym_->u.ppsym[i - 1];
                 ppsym[i]->u.rng.index += 1;
             }
@@ -1219,11 +1222,11 @@ void KSChan::setion(const char* s) {
             ion_sym_ = sym;
             rlsym_->s_varn -= 1;
             Symbol** ppsym = newppsym(rlsym_->s_varn);
-            for (i = 0; i <= io; ++i) {
+            for (int i = 0; i <= io; ++i) {
                 ppsym[i] = rlsym_->u.ppsym[i];
             }
             freesym(rlsym_->u.ppsym[1 + io], searchsym);
-            for (i = 1 + io; i < rlsym_->s_varn; ++i) {
+            for (int i = 1 + io; i < rlsym_->s_varn; ++i) {
                 ppsym[i] = rlsym_->u.ppsym[i + 1];
                 ppsym[i]->u.rng.index -= 1;
             }
@@ -1234,15 +1237,17 @@ void KSChan::setion(const char* s) {
             ion_consist();
         }
     }
-    update_size();
-    for (i = iligtrans_; i < ntrans_; ++i) {
+    parm_default_fill();
+    for (int i = iligtrans_; i < ntrans_; ++i) {
         trans_[i].lig2pd(pdoff);
     }
+    register_data_fields();
 }
 
 void KSChan::setsname(int i, const char* s) {
     state_[i].name_ = s;
     sname_install();
+    register_data_fields();
 }
 
 void KSChan::free1() {
@@ -1337,6 +1342,7 @@ void KSChan::setcond() {
     if (is_point()) {
         ((KSPPIv*) iv_relation_)->ppoff_ = ppoff_;
     }
+    register_data_fields();
 }
 
 void KSChan::settype(KSTransition* t, int type, const char* lig) {
@@ -1516,7 +1522,7 @@ hoc_object_name(trans_[i].obj_));
 
 KSState* KSChan::add_hhstate(const char* name) {
     int i;
-    must_allow_size_update(false, ion_sym_ != nullptr, nligand_, nstate_ + 1);
+    err_if_has_instances();
     usetable(false);
     // new state, transition, gate, and f
     int is = nhhstate_;
@@ -1537,12 +1543,13 @@ KSState* KSChan::add_hhstate(const char* name) {
     set_single(false);
     check_struct();
     sname_install();
+    register_data_fields();
     setupmat();
     return state_ + is;
 }
 
 KSState* KSChan::add_ksstate(int ig, const char* name) {
-    must_allow_size_update(false, ion_sym_ != nullptr, nligand_, nstate_ + 1);
+    err_if_has_instances();
     // states must be added so that the gate states are in sequence
     int i, is;
     usetable(false);
@@ -1574,13 +1581,14 @@ KSState* KSChan::add_ksstate(int ig, const char* name) {
     check_struct();
     sname_install();
     set_single(false);
+    register_data_fields();
     setupmat();
     return state_ + is;
 }
 
 void KSChan::remove_state(int is) {
     int i;
-    must_allow_size_update(false, ion_sym_ != nullptr, nligand_, nstate_ - 1);
+    err_if_has_instances();
     usetable(false);
     if (is < nhhstate_) {
         state_remove(is);
@@ -1638,12 +1646,13 @@ void KSChan::remove_state(int is) {
     set_single(false);
     check_struct();
     sname_install();
+    register_data_fields();
     setupmat();
 }
 
 KSTransition* KSChan::add_transition(int src, int target) {
     // does not deal here with ligands
-    must_allow_size_update(false, ion_sym_ != nullptr, nligand_, nstate_);
+    err_if_has_instances();
     usetable(false);
     int it = iligtrans_;
     trans_insert(it, src, target);
@@ -1657,7 +1666,7 @@ KSTransition* KSChan::add_transition(int src, int target) {
 
 void KSChan::remove_transition(int it) {
     // might reduce nstate, might reduce nligand.
-    must_allow_size_update(false, ion_sym_ != nullptr, nligand_, nstate_ - 1);
+    err_if_has_instances();
     usetable(false);
     assert(it >= ivkstrans_);
     set_single(false);
@@ -1719,9 +1728,9 @@ void KSChan::check_struct() {
 }
 
 KSState* KSChan::state_insert(int i, const char* n, double d) {
-    // before mutating any state, check if the call to update_size below will succeed
+    // before mutating any state, check if the call to register below will succeed
     auto const new_nstate = nstate_ + 1;
-    must_allow_size_update(is_single_, ion_sym_ != nullptr, nligand_, new_nstate);
+    err_if_has_instances();
     int j;
     usetable(false);
     if (nstate_ >= state_size_) {
@@ -1748,20 +1757,20 @@ KSState* KSChan::state_insert(int i, const char* n, double d) {
     }
     ++nstate_;
     assert(new_nstate == nstate_);
-    update_size();
     for (j = 0; j < nstate_; ++j) {
         state_[j].index_ = j;
         if (state_[j].obj_) {
             state_[j].obj_->u.this_pointer = state_ + j;
         }
     }
+    register_data_fields();
     return state_ + i;
 }
 
 void KSChan::state_remove(int i) {
-    // before mutating any state, check if the call to update_size below will succeed
+    // before mutating any state, check if the call to register below will succeed
     auto const new_nstate = nstate_ - 1;
-    must_allow_size_update(is_single_, ion_sym_ != nullptr, nligand_, new_nstate);
+    err_if_has_instances();
     int j;
     usetable(false);
     unref(state_[i].obj_);
@@ -1778,7 +1787,6 @@ void KSChan::state_remove(int i) {
     }
     --nstate_;
     assert(new_nstate == nstate_);
-    update_size();
     state_[nstate_].obj_ = NULL;
     for (j = 0; j < nstate_; ++j) {
         state_[j].index_ = j;
@@ -1786,6 +1794,7 @@ void KSChan::state_remove(int i) {
             state_[j].obj_->u.this_pointer = state_ + j;
         }
     }
+    register_data_fields();
 }
 
 KSGateComplex* KSChan::gate_insert(int ig, int is, int power) {
@@ -1902,10 +1911,9 @@ void KSChan::trans_remove(int i) {
 }
 
 void KSChan::setstructure(Vect* vec) {
-    // before mutating any state, check if the call to update_size below will succeed
+    // before mutating any state, check if the call to register below will succeed
     int const new_nstate = vec->elem(2);
-    int const new_nligand = vec->elem(5);
-    must_allow_size_update(is_single_, ion_sym_ != nullptr, new_nligand, new_nstate);
+    err_if_has_instances();
     int i, j, ii, idx, ns;
     usetable(false);
     int nstate_old = nstate_;
@@ -1919,7 +1927,6 @@ void KSChan::setstructure(Vect* vec) {
     ngate_ = (int) vec->elem(j++);
     nstate_ = (int) vec->elem(j++);
     assert(new_nstate == nstate_);
-    update_size();
     nhhstate_ = (int) vec->elem(j++);
     nksstate_ = nstate_ - nhhstate_;
     ivkstrans_ = nhhstate_;
@@ -1994,6 +2001,7 @@ void KSChan::setstructure(Vect* vec) {
         sname_install();
         setupmat();
     }
+    register_data_fields();
 }
 
 void KSChan::sname_install() {
@@ -2051,6 +2059,7 @@ void KSChan::sname_install() {
             state_[i].name_ = buf1;
         }
     }
+    register_data_fields();
 }
 
 // check at the top and built-in level, or, if top!= NULL check the template
@@ -2225,71 +2234,70 @@ void KSChan::mulmat(Memb_list* ml,
 }
 
 /**
- * @brief Error if instances exist and number of variables will change.
- *
- * This is intended to allow methods that change the number of variables
- * to check if success is possible before they make structure changes prior
- * to calling update_size.
- * Size changes are disallowed if any of following changes while
- * instances exist: is_single, ion_sym_ NULL or not, nligand_, nstate_.
+ * @brief Error if instances exist
  */
-void KSChan::must_allow_size_update(bool single, bool ion, int nligand, int nstate) const {
+void KSChan::err_if_has_instances() const {
     auto& mech_data = neuron::model().mechanism_data(mechtype_);
-    if (mech_data.empty()) {  // size changes allowed since no existing instances
+    if (mech_data.empty()) {  // (re)-registration allowed since no existing instances
         return;
     }
-    std::string s{""};
-    if (single != is_single_) {
-        s = s + "single channel will change: ";
-    }
-    if (ion != (ion_sym_ != nullptr)) {
-        s = s + "switched beween ion and nonspecific: ";
-    }
-    if (nligand != nligand_) {
-        s = s + "number of ligands will change: ";
-    }
-    if (nstate != nstate_) {
-        s = s + "number of states will change: ";
-    }
-    if (s == "") {
-        return;
-    }
-    throw std::runtime_error(
-        "KSChan:: " + s + "Cannot change the number of mechanism variables while " +
-        std::to_string(neuron::model().mechanism_data(mechtype_).size()) + " instances are active");
+    std::string s = "KSChan:: Cannot change the names or number of mechanism variables while " +
+                    std::to_string(mech_data.size()) + " instances are active";
+    throw std::runtime_error(s);
 }
 
-/** @brief Propagate changes to the number of param and dparam.
- */
-void KSChan::update_size() {
-    auto& mech_data = neuron::model().mechanism_data(mechtype_);
-    std::size_t const new_param_size = soffset_ + 2 * nstate_;
-    std::size_t const new_dparam_size = (is_point_ ? 2 : 0) + (is_single_ ? 1 : 0) +
-                                        (ion_sym_ != nullptr ? 5 : 0) + 2 * nligand_;
-    auto const old_param_size =
-        mech_data.get_tag<neuron::container::Mechanism::field::FloatingPoint>().num_variables();
-    auto const old_dparam_size = nrn_mechanism_prop_datum_count(mechtype_);
-    if (new_param_size == old_param_size && new_dparam_size == old_dparam_size) {
-        // no change
-        return;
+void KSChan::register_data_fields() {  // or re-register
+    // prop.param is [Nsingle], gmax, [e], g, i, states
+    // prop.dparam for density is [5ion], [2ligands]
+    // prop.dparam for point is area, pnt, [singledata], [5ion], [2ligands]
+
+    std::vector<std::pair<std::string, int>> params{};
+    if (is_single()) {
+        params.emplace_back("Nsingle", 1);
     }
-    if (mech_data.size() > 0) {
-        // Should not happen since must_allow_size_update should have been
-        // called earlier.
-        throw std::runtime_error(
-            "KSChan::update_size() internal error: cannot change the number "
-            "of floating point fields from " +
-            std::to_string(old_param_size) + " to " + std::to_string(new_param_size) +
-            " or the number of Datum items from " + std::to_string(old_dparam_size) + " to " +
-            std::to_string(new_dparam_size) + " while " + std::to_string(mech_data.size()) +
-            " instances are active");
+    params.emplace_back("gmax", 1);
+    if (ion_sym_ == nullptr) {
+        params.emplace_back("e", 1);
     }
-    std::vector<neuron::container::Mechanism::Variable> new_param_info;
-    new_param_info.resize(new_param_size, {"kschan_field", 1});
-    std::string mech_name{mech_data.name()};
-    neuron::model().delete_mechanism(mechtype_);
+    params.emplace_back("g", 1);
+    params.emplace_back("i", 1);
+    for (int i = 0; i < nstate_; ++i) {
+        params.emplace_back(state(i), 1);
+    }
+    // Dstate
+    std::string d{"D"};
+    for (int i = 0; i < nstate_; ++i) {
+        params.emplace_back(d + state(i), 1);
+    }
+
+    // Use strings instead of string.c_str() to keep alive and avoid
+    // AddressSanitizer: stack-use-after-scope on address
+    // Storing string.c_str() in param and dparam does not suffice.
+
+    std::vector<std::pair<std::string, std::string>> dparams{};
+    if (is_point()) {
+        dparams.emplace_back("_nd_area", "area");
+        dparams.emplace_back("_pntproc", "pntproc");
+    }
+    if (is_single()) {
+        dparams.emplace_back("singleptr", "pointer");
+    }
+    if (ion_sym_) {
+        std::string name{ion_sym_->name};
+        // the names don't matter
+        dparams.emplace_back(name + "_erev", name);
+        dparams.emplace_back(name + "_icur", name);
+        dparams.emplace_back(name + "_didv", name);
+        dparams.emplace_back(name + "_ci", name);
+        dparams.emplace_back(name + "_co", name);
+    }
+    for (int i = 0; i < nligand_; ++i) {
+        std::string name{ligands_[i]->name};
+        dparams.emplace_back(name + "_ligo", name);
+        dparams.emplace_back(name + "_ligi", name);
+    }
     nrn_delete_mechanism_prop_datum(mechtype_);
-    neuron::model().add_mechanism(mechtype_, std::move(mech_name), std::move(new_param_info));
+    neuron::mechanism::detail::register_data_fields(mechtype_, params, dparams);
 }
 
 void KSChan::alloc(Prop* prop) {
@@ -2303,12 +2311,12 @@ void KSChan::alloc(Prop* prop) {
         // prop->param = nrn_point_prop_->param;
         prop->dparam = nrn_point_prop_->dparam;
     } else {
-        prop->param(gmaxoffset_) = gmax_deflt_;
+        prop->param(gmaxoffset_) = parm_default[gmaxoffset_];  // gmax_deflt_
         if (is_point()) {
-            prop->param(NSingleIndex) = 1.;
+            prop->param(NSingleIndex) = parm_default[NSingleIndex];  // 1.
         }
         if (!ion_sym_) {
-            prop->param(1 + gmaxoffset_) = erev_deflt_;
+            prop->param(1 + gmaxoffset_) = parm_default[1 + gmaxoffset_];  // erev_deflt_;
         }
     }
     int ppsize = ppoff_;
@@ -2393,7 +2401,7 @@ Prop* KSChan::needion(Symbol* s, Node* nd, Prop* pm) {
  *  to the above three indicators and dparam size has not changed.  However,
  *  even though ion_sym != NULL is the same, that does not mean that the
  *  specific ion used has not changed.  And similarly for nligand.
- *  Thus, unless the must_allow_size_update is exended to include a change
+ *  Thus, unless the must_allow_size_update is extended to include a change
  *  in ions used, ion_consist must continue to update the ion usage. But it no
  *  longer needs to realloc p->dparam.
  */

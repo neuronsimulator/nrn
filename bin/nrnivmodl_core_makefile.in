@@ -16,8 +16,10 @@ DESTDIR =
 TARGET_LIB_TYPE = $(BUILD_TYPE)
 
 # required for OSX to execute nrnivmodl-core
-ifeq ($(origin SDKROOT), undefined)
-  export SDKROOT := $(shell xcrun --sdk macosx --show-sdk-path)
+ifeq ($(OS_NAME), Darwin)
+  ifeq ($(origin SDKROOT), undefined)
+    export SDKROOT := $(shell xcrun --sdk macosx --show-sdk-path)
+  endif
 endif
 
 # CoreNEURON installation directories
@@ -57,12 +59,8 @@ endif
 # binary used during build. If they don't exist then simply use python and
 # perl as the name of binaries.
 CORENRN_PYTHONEXE ?= @NRN_DEFAULT_PYTHON_EXECUTABLE@
-CORENRN_PERLEXE ?= @PERL_EXECUTABLE@
 ifeq ($(wildcard $(CORENRN_PYTHONEXE)),)
   CORENRN_PYTHONEXE=python
-endif
-ifeq ($(wildcard $(CORENRN_PERLEXE)),)
-  CORENRN_PERLEXE=perl
 endif
 
 CXXFLAGS = @CORENRN_CXX_FLAGS@
@@ -71,7 +69,7 @@ CXX_LINK_EXE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@
 CXX_SHARED_LIB_CMD = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@
 
 # env variables required for mod2c or nmodl
-NMODL_ENV_VAR = @CORENRN_SANITIZER_ENABLE_ENVIRONMENT_STRING@ PYTHONPATH=@CORENRN_NMODL_PYTHONPATH@:${CORENRN_LIB_DIR}/python MODLUNIT=$(CORENRN_SHARE_NMODL_DIR)/nrnunits.lib
+NMODL_ENV_VAR = @CORENRN_SANITIZER_ENABLE_ENVIRONMENT_STRING@ PYTHONPATH=${PYTHONPATH}:${CORENRN_LIB_DIR}/python MODLUNIT=$(CORENRN_SHARE_NMODL_DIR)/nrnunits.lib
 
 ifeq (@CORENRN_ENABLE_GPU@, ON)
     nmodl_arguments_c=@NMODL_ACC_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
@@ -100,7 +98,6 @@ endif
 # Binary of NMODL depending on CMake option activated
 ifeq (@nmodl_FOUND@, TRUE)
     NMODL_BINARY_PATH = $(if $(NMODL_BINARY),$(NMODL_BINARY), @CORENRN_NMODL_BINARY@)
-    INCLUDES += -I@CORENRN_NMODL_INCLUDE@
 else
     NMODL_BINARY_PATH = $(if $(NMODL_BINARY),$(NMODL_BINARY), $(CORENRN_BIN_DIR)/@nmodl_binary_name@)
 endif
@@ -145,7 +142,7 @@ endif
 
 
 # main target to build binary
-$(SPECIAL_EXE): $(corenrnmech_lib_target)
+$(SPECIAL_EXE): $(corenrnmech_lib_target) $(CORENRN_SHARE_CORENRN_DIR)/coreneuron.cpp
 	@printf " => $(C_GREEN)Binary$(C_RESET) creating $(SPECIAL_EXE)\n"
 	$(CXX_LINK_EXE_CMD) -o $(SPECIAL_EXE) $(CORENRN_SHARE_CORENRN_DIR)/coreneuron.cpp \
 	  -I$(CORENRN_INC_DIR) $(INCFLAGS) \
@@ -189,7 +186,7 @@ $(mod_cpp_files): $(MOD_TO_CPP_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MOD_TO_CPP_DIR
 
 # generate mod registration function. Dont overwrite if it's not changed
 $(MOD_FUNC_CPP): build_always | $(MOD_TO_CPP_DIR)
-	$(CORENRN_PERLEXE) $(CORENRN_SHARE_CORENRN_DIR)/mod_func.c.pl $(mod_files_names) > $(MOD_FUNC_CPP).tmp
+	bash $(CORENRN_SHARE_CORENRN_DIR)/mod_func.c.sh $(mod_files_names) > $(MOD_FUNC_CPP).tmp
 	diff -q $(MOD_FUNC_CPP).tmp $(MOD_FUNC_CPP) || \
 	mv $(MOD_FUNC_CPP).tmp $(MOD_FUNC_CPP)
 
