@@ -811,7 +811,8 @@ extern void nrn_promote(Prop*, int, int);\n\
         Lappendstr(defs_list, buf);
         Lappendstr(defs_list, "\n");
         Lappendstr(defs_list, "static void _watch_alloc(Datum*);\n");
-        Lappendstr(defs_list, "extern void hoc_reg_watch_allocate(int, void(*)(Datum*));");
+        Lappendstr(defs_list,
+                   "extern void hoc_reg_watch_allocate(int, void(*)(Datum*), int, int);");
         Lappendstr(watch_alloc, "}\n\n");
         movelist(watch_alloc->next, watch_alloc->prev, procfunc);
     }
@@ -1306,7 +1307,11 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
         Sprintf(buf, " hoc_register_prop_size(_mechtype, %d, %d);\n", prop_size, ppvar_cnt);
         Lappendstr(defs_list, buf);
         if (watch_seen_) {
-            Lappendstr(defs_list, " hoc_reg_watch_allocate(_mechtype, _watch_alloc);\n");
+            Sprintf(buf,
+                    " hoc_reg_watch_allocate(_mechtype, _watch_alloc, %d, %d);\n",
+                    watch_index,
+                    watch_seen_);
+            Lappendstr(defs_list, buf);
         }
         if (ppvar_semantics_)
             ITERATE(q, ppvar_semantics_) {
