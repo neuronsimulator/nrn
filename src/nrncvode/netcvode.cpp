@@ -2498,7 +2498,7 @@ static void watch_signal_clear(CvMembList* cmlist) {
                 size_t cntml = ml.nodecount;
                 for (size_t iml = 0; iml < cntml; ++iml) {
                     Datum* d = ml.pdata[iml] + watch_offset;
-                    for (int iw = 1; iw <= nwatch; ++iw) {
+                    for (int iw = 1; iw < nwatch; ++iw) {
                         if (auto* wc = d[iw].get<WatchCondition*>(); wc) {
                             wc->unregister.clear();
                         }
