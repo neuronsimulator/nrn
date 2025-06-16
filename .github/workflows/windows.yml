@@ -110,6 +110,9 @@ jobs:
           -DCYTHON_EXECUTABLE="${env:firstCython}" `
           -DPYTHON_EXECUTABLE="${env:firstPython}"
         cmake --build build --config Release -v
+        cd build
+        ctest --output-on-failure -j
+        cd -
       shell: pwsh
       working-directory: ${{runner.workspace}}\nrn
       env:
