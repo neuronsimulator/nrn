@@ -746,7 +746,7 @@ void fpecatch(int /* sig */) /* catch floating point exceptions */
     hoc_execerror("Floating point exception.", (char*) 0);
 }
 
-__attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation violation probably due to
+[[noreturn]] void sigsegvcatch(int /* sig */) /* segmentation violation probably due to
                                                               arg type error */
 {
     Fprintf(stderr, "Segmentation violation\n");
@@ -759,7 +759,7 @@ __attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation viola
 }
 
 #if HAVE_SIGBUS
-__attribute__((noreturn)) void sigbuscatch(int /* sig */) {
+[[noreturn]] void sigbuscatch(int /* sig */) {
     Fprintf(stderr, "Bus error\n");
     print_bt();
     /*ARGSUSED*/
