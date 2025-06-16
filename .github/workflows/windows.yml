@@ -105,15 +105,17 @@ jobs:
           -DNRN_ENABLE_PYTHON=OFF `
           -DNRN_ENABLE_PYTHON_DYNAMIC=OFF `
           -DNRN_ENABLE_RX3D=OFF `
+          -DNRN_ENABLE_TESTS=ON `
           -DNRN_PYTHON_DYNAMIC="${env:allPythons}" `
           -DNRN_RX3D_OPT_LEVEL=2 `
           -DCYTHON_EXECUTABLE="${env:firstCython}" `
           -DPYTHON_EXECUTABLE="${env:firstPython}"
         cmake --build build --config Release -v
-        cd build
-        ctest --output-on-failure -j
-        cd -
       shell: pwsh
       working-directory: ${{runner.workspace}}\nrn
-      env:
-        BUILD_SOURCESDIRECTORY: ${{runner.workspace}}\nrn
+
+    - name: Test Installer
+      run: |
+        ctest --output-on-failure -j
+      shell: pwsh
+      working-directory: ${{runner.workspace}}\nrn\build
