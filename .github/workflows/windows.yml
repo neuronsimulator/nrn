@@ -109,7 +109,7 @@ jobs:
           -DNRN_RX3D_OPT_LEVEL=2 `
           -DCYTHON_EXECUTABLE="${env:firstCython}" `
           -DPYTHON_EXECUTABLE="${env:firstPython}"
-        cmake --build build --config Release
+        cmake --build build --config Release -v
       shell: pwsh
       working-directory: ${{runner.workspace}}\nrn
       env:
