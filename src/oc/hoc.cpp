@@ -1699,12 +1699,12 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
 	ReadConsoleA(GetStdHandle(STD_INPUT_HANDLE), line.data(), line.size(), &n, NULL);
             if (n >= hoc_cbufstr->size - 3) {
                 hocstr_resize(hoc_cbufstr, n + 100);
-                ctp = cbuf = hoc_cbufstr->buf;
+                hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
             }
-            strcpy(cbuf, line.data());
-            cbuf[n] = '\n';
-            cbuf[n + 1] = '\0';
-            hoc_audit_command(cbuf);
+            strcpy(hoc_cbuf, line.data());
+            hoc_cbuf[n] = '\n';
+            hoc_cbuf[n + 1] = '\0';
+            hoc_audit_command(hoc_cbuf);
 #else
 #if INTERVIEWS
         if (nrn_fw_eq(hoc_fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
