@@ -1252,6 +1252,9 @@ CvodeThreadData::~CvodeThreadData() {
         delete_memb_list(no_cap_memb_);
     }
     if (watch_list_) {
+        for (auto* wc: *watch_list_) {
+            wc->unregister.clear();
+        }
         watch_list_->clear();
         delete watch_list_;
     }
