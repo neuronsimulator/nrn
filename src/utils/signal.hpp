@@ -27,6 +27,11 @@ class signal_ {
         }
     }
 
+    void clear() {
+        functors.clear();
+        counter = 0;
+    }
+
   private:
     key_type counter = 0;
     std::unordered_map<key_type, std::function<void(Args...)>> functors;
