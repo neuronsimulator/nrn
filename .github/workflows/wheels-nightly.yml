@@ -25,23 +25,56 @@ on:
 
 jobs:
   fetch-latest-commit:
+    name: Fetch latest NEURON commit
     runs-on: ubuntu-latest
     outputs:
       commit: ${{ steps.save-commit.outputs.commit }}
     steps:
       - name: Save commit ref
         id: save-commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           commit="${{ github.event.inputs.commit }}"
           if [[ -n "${commit}" ]]; then
             echo "commit=${commit}" >> "$GITHUB_OUTPUT"
           else
-            git ls-remote origin refs/heads/master | cut -f1 | xargs -I{} echo "commit={}" >> "$GITHUB_OUTPUT"
+            commit="$(gh browse -R neuronsimulator/nrn -n -c | grep -oE --color=never '[a-f0-9]{40}')"
+            echo "commit=${commit}" >> "$GITHUB_OUTPUT"
+          fi
+
+  check-pypi:
+    name: Check PyPI for existing versions
+    needs: fetch-latest-commit
+    runs-on: ubuntu-latest
+    outputs:
+      version_exists: ${{ steps.check-existing.outputs.version_exists }}
+    steps:
+      - name: Check out code at branch/commit ${{ needs.fetch-latest-commit.outputs.commit }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.fetch-latest-commit.outputs.commit }}
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Check PyPI for an existing version
+        id: check-existing
+        run: |
+          python -m pip install setuptools-scm
+          current_version="$(python -m setuptools_scm)"
+          pypi_version="$(curl -s https://pypi.org/pypi/neuron-nightly/json | jq -r '.info.version')"
+          if [[ "${current_version}" == "${pypi_version}" ]]; then
+            echo "version_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "version_exists=false" >> "$GITHUB_OUTPUT"
           fi
 
   generate-matrix:
     name: Generate platform and Python matrix
     runs-on: ubuntu-latest
+    if: needs.check-pypi.outputs.version_exists == 'false'
+    needs:
+      - check-pypi
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -55,8 +88,12 @@ jobs:
 
   build-test:
     name: Build and test for nightly
-    needs: [fetch-latest-commit, generate-matrix]
+    needs:
+      - fetch-latest-commit
+      - generate-matrix
+      - check-pypi
     uses: ./.github/workflows/wheels-template.yml
+    if: needs.check-pypi.outputs.version_exists == 'false'
     with:
       platform: ${{ matrix.os }}
       python_version: ${{ matrix.python_version }}
