@@ -1,5 +1,7 @@
 #pragma once
 
+#include "nrnconf.h"
+
 namespace neuron {
 
 extern int interleave_permute_type;
@@ -9,7 +11,7 @@ extern int interleave_permute_type;
 ///    0  cell together (Section construction order)
 ///    1  Interleave, identical cells warp adjacent
 ///    2  Depth order, optimize adjacent nodes to have adjacent parents.
-void nrn_optimize_node_order(int type);
+NRN_API void nrn_optimize_node_order(int type);
 
 /// @brief Compute and carry out the permutation for interleave_permute_type
 void nrn_permute_node_order();
