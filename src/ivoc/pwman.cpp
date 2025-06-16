@@ -3349,7 +3349,11 @@ char* ivoc_get_temp_file() {
     }
     close(fd);
 #else
+#if defined(WIN32)
+    _mktemp(tmpfile);
+#else
     mktemp(tmpfile);
+#endif
 #endif
 #if defined(WIN32)
     tmpfile = hoc_back2forward(tmpfile);
