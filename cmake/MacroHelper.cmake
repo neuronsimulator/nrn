@@ -11,23 +11,23 @@ include(CMakeParseArguments)
 
 set(CMAKE_REQUIRED_QUIET TRUE)
 
-include(CheckSourceCompiles)
+include(CheckCSourceCompiles)
 
 # =============================================================================
 # Check if given type exists by compiling code
 # =============================================================================
-macro(nrn_check_type_exists HEADER TYPE DEFAULT_TYPE VARIABLE)
-  set(SOURCE "
-    #include <${HEADER}>
+function(nrn_check_type_exists header type default_type variable)
+  set(source "
+    #include <${header}>
     int main() {
-      (void)sizeof(${TYPE});
+      (void)sizeof(${type});
       return 0;
     }")
-  check_source_compiles(C "${SOURCE}" ${VARIABLE})
-  if(NOT ${VARIABLE})
-    set(${VARIABLE} ${DEFAULT_TYPE})
+  check_c_source_compiles("${source}" _my_internal_result)
+  if(NOT _my_internal_result)
+    set(${variable} ${default_type} PARENT_SCOPE)
   endif()
-endmacro()
+endfunction()
 
 # =============================================================================
 # Perform check_include_files and add it to NRN_HEADERS_INCLUDE_LIST if exist Passing an optional
