@@ -340,7 +340,7 @@ function(create_nrnmech)
       set_target_properties(
         core${TARGET_EXECUTABLE_NAME}
         PROPERTIES OUTPUT_NAME "special-core" RUNTIME_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_DIR}")
-    target_link_options(core${TARGET_EXECUTABLE_NAME} PRIVATE "${_CORENEURON_EXE_LINKER_FLAGS}")
+      target_link_options(core${TARGET_EXECUTABLE_NAME} PRIVATE "${_CORENEURON_EXE_LINKER_FLAGS}")
     endif()
   endif()
 endfunction()

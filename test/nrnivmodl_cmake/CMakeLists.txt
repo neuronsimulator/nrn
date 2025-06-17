@@ -15,11 +15,12 @@ if(NRN_ENABLE_CORENEURON)
 endif()
 # we need to enable CUDA if using NVHPC, otherwise the flags are not propagated properly
 if(CMAKE_CUDA_COMPILER)
-    set(CUDA_STRING "CUDA")
+  set(CUDA_STRING "CUDA")
 endif()
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/build_cmake/CMakeLists.txt" "${CMAKE_CURRENT_BINARY_DIR}/build_cmake/CMakeLists.txt" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/build_cmake/CMakeLists.txt"
+               "${CMAKE_CURRENT_BINARY_DIR}/build_cmake/CMakeLists.txt" @ONLY)
 set(test_command
-"CMAKE_PREFIX_PATH='${PROJECT_BINARY_DIR}/lib/cmake' \
+    "CMAKE_PREFIX_PATH='${PROJECT_BINARY_DIR}/lib/cmake' \
     PATH='${PROJECT_BINARY_DIR}/bin:$ENV{PATH}' \
     MODLUNIT='${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib' \
     ${CMAKE_COMMAND} \
@@ -30,7 +31,7 @@ set(test_command
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
 if(CMAKE_LANGUAGES MATCHES "CUDA")
-    set(test_command "${test_command} -DCMAKE_CUDA_COMPILER=${CMAKE_CUDA_COMPILER}")
+  set(test_command "${test_command} -DCMAKE_CUDA_COMPILER=${CMAKE_CUDA_COMPILER}")
 endif()
 add_test(
   NAME "${TEST_NAMESPACE}::modfiles"
