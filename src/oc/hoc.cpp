@@ -39,7 +39,7 @@
 int zt_accum_cnt;
 size_t zt_accum_time;
 
-static void zt_runtime_out(int, void*) {
+static void zt_runtime_out() {
     double zt = zt_accum_total();
     if (zt) {
         printf("ZZZZ runtime %g\n", zt);
@@ -831,7 +831,7 @@ void hoc_main1_init(const char* pname, const char** envp) {
     hoc_init();
     initplot();
     hoc_main1_inited_ = 1;
-    on_exit(zt_runtime_out, nullptr);
+    atexit(zt_runtime_out);
 }
 
 HocStr* hocstr_create(size_t size) {
