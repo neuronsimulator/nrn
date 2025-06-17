@@ -113,6 +113,9 @@
    `char[]'. */
 #cmakedefine YYTEXT_POINTER @YYTEXT_POINTER@
 
+/* Define to `int' if <sys/types.h> does not define. */
+#cmakedefine pid_t @pid_t@
+
 /* __cplusplus guard still needed because this header is included from C code in
  * mesch (and maybe others)
  */

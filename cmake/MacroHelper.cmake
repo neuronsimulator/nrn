@@ -11,6 +11,24 @@ include(CMakeParseArguments)
 
 set(CMAKE_REQUIRED_QUIET TRUE)
 
+include(CheckSourceCompiles)
+
+# =============================================================================
+# Check if given type exists by compiling code
+# =============================================================================
+macro(nrn_check_type_exists HEADER TYPE DEFAULT_TYPE VARIABLE)
+  set(SOURCE "
+    #include <${HEADER}>
+    int main() {
+      (void)sizeof(${TYPE});
+      return 0;
+    }")
+  check_source_compiles(C "${SOURCE}" ${VARIABLE})
+  if(NOT ${VARIABLE})
+    set(${VARIABLE} ${DEFAULT_TYPE})
+  endif()
+endmacro()
+
 # =============================================================================
 # Perform check_include_files and add it to NRN_HEADERS_INCLUDE_LIST if exist Passing an optional
 # CXX will call check_include_files_cxx instead.
