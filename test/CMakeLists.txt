@@ -832,5 +832,5 @@ endif()
 if(NRN_ENABLE_TESTS
    AND NOT NRN_SANITIZERS
    AND NOT NRN_ENABLE_COVERAGE)
-  add_subdirectory(nrnivmodl-cmake)
+  add_subdirectory(nrnivmodl_cmake)
 endif()
