@@ -4301,7 +4301,7 @@ activity. *Neuroscience* 122:811-829, 2003.
 
 Feng, B., Zhu, Y., La, J.-H., Wills, Z. P. and Gebhart, G. F..
 Experimental and computational evidence for an essential role of
-Nav1.6 in spike initiation at stretch-sensitive colorectal
+NaV1.6 in spike initiation at stretch-sensitive colorectal
 afferent endings. *Journal of Neurophysiology* 113:2618-2634,
 10.1152/jn.00717.2014, 2015.
 
@@ -5470,7 +5470,7 @@ Morley, J. W., Dokos, S. and Lovell, N. H.. Computational models
 and tools for developing sophisticated stimulation strategies for
 retinal neuroprostheses. *IEEE Engineering in Medicine and Biology
 Society. Annual Conference* 2018:2248-2251,
-10.1109/EMBC.2018.8512748, 2018a.
+10.1109/EMBC.2018.8512748, 2018.
 
 Guo, T., Tsai, D., Sovilj, S., Morley, J. W., Suaning, G. J.,
 Lovell, N. H. and Dokos, S.. Influence of active dendrites on
@@ -5670,7 +5670,7 @@ antidepressant-like effects but influence different circuits.
 2014.
 
 Hanemaaijer, N. A. K., Popovic, M. A., Wilders, X., Grasman, S.,
-Pavón Arocas, O. and Kole, M. H. P.. Ca2+ entry through Nav
+Pavón Arocas, O. and Kole, M. H. P.. Ca2+ entry through NaV
 channels generates submillisecond axonal Ca2+ signaling. *eLife*
 910.7554/eLife.54566, 2020.
 
@@ -8543,8 +8543,7 @@ single neuron. *AIMS Neuroscience* 9:76-113,
 Lorenzo, J., Vuillaume, R., Binczak, S. and Jacquir, S..
 Identification of synaptic integration mode in CA3 pyramidal
 neuron model [Online]. *2019 9th International IEEE/EMBS
-Conference on Neural Engineering*, 10.1109/ner.2019.8717136,
-2019.
+Conference on Neural Engineering*, 10.1109/ner.2019.8717136, 2019.
 
 Losavio, B. E., Liang, Y., Santamaria-Pang, A., Kakadiaris, I. A.,
 Colbert, C. M. and Saggau, P.. Live neuron morphology
@@ -9973,7 +9972,7 @@ adult human neocortex. *Cerebral Cortex* 25:4839-4853,
 
 Mohapatra, D. P., Misonou, H., Pan, S. J., Held, J. E., Surmeier,
 D. J. and Trimmer, J. S.. Regulation of intrinsic excitability in
-hippocampal neurons by activity-dependent modulation of the Kv2.1
+hippocampal neurons by activity-dependent modulation of the KV2.1
 potassium channel. *Channels* 3:46-56, 2009.
 
 Mohapatra, N., Tønnesen, J., Vlachos, A., Kuner, T., Deller, T.,
@@ -15436,7 +15435,7 @@ Computational Neuroscience* 17:1105505,
 10.3389/fncom.2023.1105505, 2023.
 
 Ye, M., Yang, J., Tian, C., Zhu, Q., Yin, L., Jiang, S., Yang, M.
-and Shu, Y.. Differential roles of Nav1.2 and Nav1.6 in regulating
+and Shu, Y.. Differential roles of NaV1.2 and NaV1.6 in regulating
 neuronal excitability at febrile temperature and distinct
 contributions to febrile seizures. *Scientific Reports* 8:753,
 10.1038/s41598-017-17344-8, 2018.
@@ -15787,7 +15786,7 @@ Bioelectronics* 92:523-528, 10.1016/j.bios.2016.10.069, 2017a.
 Zhang, W., Fan, B., Agarwal, D., Li, T. and Yu, Y.. Axonal sodium
 and potassium conductance density determines spiking dynamical
 properties of regular- and fast-spiking neurons. *Nonlinear
-Dynamics* 95:1035-1052, 10.1007/s11071-018-4613-3, 2019a.
+Dynamics* 95:1035-1052, 10.1007/s11071-018-4613-3, 2019.
 
 Zhang, X., Coates, K., Dacks, A., Günay, C., Lauritzen, J. S., Li,
 F., Calle-Schuler, S. A., Bock, D. and Gaudry, Q.. Local synaptic
@@ -15815,7 +15814,7 @@ the National Academy of Sciences of the United States of America*
 Zhang, X., Schlögl, A. and Jonas, P.. Selective routing of spatial
 information flow from input to output in hippocampal granule
 cells. *Neuron* 107:1212-1225.e7, 10.1016/j.neuron.2020.07.006,
-2020b.
+2020.
 
 Zhang, X., Schlögl, A., Vandael, D. and Jonas, P.. MOD: a novel
 machine-learning optimal-filtering method for accurate and
