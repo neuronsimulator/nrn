@@ -164,15 +164,22 @@ configure_file("${PROJECT_SOURCE_DIR}/src/sundials/sundials_config.h.in"
                "${PROJECT_BINARY_DIR}/src/sundials/sundials_config.h" @ONLY)
 configure_file("${PROJECT_SOURCE_DIR}/share/lib/nrn.defaults.in"
                "${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults" @ONLY)
+
+# =============================================================================
+# Copy "old" nrnunits.lib to build dir
+# =============================================================================
 set(nrnunits_start "")
 set(nrnunits_stop "")
 
 configure_file(${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib.in
                ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib @ONLY)
 
-set(nrnunits_start "R\"qwerty(")
-set(nrnunits_stop ")qwerty\"")
-# Embed nrnunits
+# =============================================================================
+# use a C++11 string literal to embed nrnunits.lib directly in C++ code, see:
+# https://en.cppreference.com/w/cpp/language/string_literal.html
+# =============================================================================
+set(nrnunits_start "R\"embedded_nrnunits(")
+set(nrnunits_stop ")embedded_nrnunits\"")
 configure_file(${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib.in
                ${PROJECT_BINARY_DIR}/share/nrn/lib/embedded_nrnunits.lib @ONLY)
 
