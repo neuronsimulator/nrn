@@ -455,7 +455,7 @@ Vector
 
 
         Description:
-            Return the number of elements in the ```Vector``. The last element has the index: 
+            Return the number of elements in the ``Vector``. The last element has the index: 
             ``vec.size() - 1``. Most explicit for loops over a vector can take the form: 
 
             .. code-block::
