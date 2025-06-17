@@ -11,29 +11,26 @@ include(CMakeParseArguments)
 
 set(CMAKE_REQUIRED_QUIET TRUE)
 
+include(CheckCSourceCompiles)
+
 # =============================================================================
 # Check if given type exists by compiling code
 # =============================================================================
-macro(nrn_check_type_exists HEADER TYPE DEFAULT_TYPE VARIABLE)
-  # code template to check existence of specific type
-  string(
-    CONCAT CONFTEST_TYPE_TPL
-           "#include <@header@>\n"
-           "int main () {\n"
-           "  if (sizeof (@type@))\n"
-           "    return 0\;\n"
-           "  return 0\;\n"
-           "}\n")
-  string(REPLACE "@header@" ${HEADER} CONFTEST_TYPE "${CONFTEST_TYPE_TPL}")
-  string(REPLACE "@type@" ${TYPE} CONFTEST_TYPE "${CONFTEST_TYPE}")
-  file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp ${CONFTEST_TYPE})
-
-  try_compile(MY_RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp)
-  if(NOT ${MY_RESULT_VAR})
-    set(${VARIABLE} ${DEFAULT_TYPE})
+function(nrn_check_type_exists header type default_type variable)
+  set(source
+      "
+    #include <${header}>
+    int main() {
+      (void)sizeof(${type});
+      return 0;
+    }")
+  check_c_source_compiles("${source}" _my_internal_result)
+  if(NOT _my_internal_result)
+    set(${variable}
+        ${default_type}
+        PARENT_SCOPE)
   endif()
-  file(REMOVE "conftest.cpp")
-endmacro()
+endfunction()
 
 # =============================================================================
 # Perform check_include_files and add it to NRN_HEADERS_INCLUDE_LIST if exist Passing an optional
