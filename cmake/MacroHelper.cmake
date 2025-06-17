@@ -17,7 +17,8 @@ include(CheckCSourceCompiles)
 # Check if given type exists by compiling code
 # =============================================================================
 function(nrn_check_type_exists header type default_type variable)
-  set(source "
+  set(source
+      "
     #include <${header}>
     int main() {
       (void)sizeof(${type});
@@ -25,7 +26,9 @@ function(nrn_check_type_exists header type default_type variable)
     }")
   check_c_source_compiles("${source}" _my_internal_result)
   if(NOT _my_internal_result)
-    set(${variable} ${default_type} PARENT_SCOPE)
+    set(${variable}
+        ${default_type}
+        PARENT_SCOPE)
   endif()
 endfunction()
 
