@@ -203,7 +203,6 @@ int IOHandler::exceptionRaised(int) {
     return 0;
 }
 void IOHandler::timerExpired(long, long) {}
-void IOHandler::childStatus(pid_t, int) {}
 #endif  // MINGW
 
 #ifdef MINGW

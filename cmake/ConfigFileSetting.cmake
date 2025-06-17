@@ -138,15 +138,6 @@ nrn_check_symbol_exists("SIGBUS" "signal.h" HAVE_SIGBUS)
 nrn_check_symbol_exists("stty" "" HAVE_STTY)
 
 # =============================================================================
-# Check data types
-# =============================================================================
-nrn_check_type_exists(sys/types.h gid_t int gid_t)
-nrn_check_type_exists(sys/types.h off_t "long int" off_t)
-nrn_check_type_exists(sys/types.h pid_t int pid_t)
-nrn_check_type_exists(sys/types.h size_t "unsigned int" size_t)
-nrn_check_type_exists(sys/types.h uid_t int uid_t)
-
-# =============================================================================
 # Generate file from file.in template
 # =============================================================================
 set(version_strs ${NRN_PYTHON_VERSIONS})
