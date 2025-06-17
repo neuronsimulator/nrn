@@ -35,7 +35,9 @@ endif()
 add_test(
   NAME "${TEST_NAMESPACE}::modfiles"
   COMMAND
-    sh -c "${test_command} \
+    sh -c "
+    rm -fr ${TEST_DIR} \
+    && ${test_command} \
   && \
   ${CMAKE_COMMAND} --build '${TEST_DIR}' -v --parallel \
   && \
