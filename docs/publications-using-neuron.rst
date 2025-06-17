@@ -2403,7 +2403,7 @@ seizures and hemiplegic migraine. *Epilepsia* 54:927-935,
 10.1111/epi.12123, 2013a.
 
 Cestèle, S., Schiavon, E., Rusconi, R., Franceschetti, S. and
-Mantegazza, M.. Nonfunctional Nav1.1 familial hemiplegic migraine
+Mantegazza, M.. Nonfunctional NaV1.1 familial hemiplegic migraine
 mutant transformed into gain of function by partial rescue of
 folding defects. *Proceedings of the National Academy of Sciences
 of the United States of America* 110:17546-17551,
@@ -8813,8 +8813,8 @@ reach of the local field potential. *PLoS Computational Biology*
 Łęski, S., Pettersen, K. H., Tunstall, B., Einevoll, G. T., Gigg,
 J. and Wójcik, D. K.. Inverse current source density method in two
 dimensions: inferring neural activation from multielectrode
-recordings.Neuroinformatics9:401-425, 10.1007/s12021-011-9111-4,
-2011.
+recordings. *Neuroinformatics* 9:401-425,
+10.1007/s12021-011-9111-4, 2011.
 
 Ma, J. and Lowe, G.. Action potential backpropagation and
 multiglomerular signaling in the rat vomeronasal system. *Journal
