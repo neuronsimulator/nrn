@@ -238,6 +238,7 @@ set(NMODL_EXTRA_CXX_FLAGS
     ""
     CACHE STRING "Add extra compile flags for NMODL sources")
 separate_arguments(NMODL_EXTRA_CXX_FLAGS)
+option(NMODL_ENABLE_FLEX_BISON_LINES "Enable line numbers in flex- and bison-generated files" ON)
 
 # =============================================================================
 # Include cmake modules
@@ -279,7 +280,7 @@ if(NOT PYTHON_EXECUTABLE)
   message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
 endif()
 
-find_package(PythonInterp 3.7 REQUIRED)
+find_package(Python 3.9 REQUIRED)
 
 # Try and emit an intelligent warning if the version number currently set in the CMake project(...)
 # call is inconsistent with the output of git describe.
