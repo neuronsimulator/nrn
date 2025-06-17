@@ -178,8 +178,8 @@ configure_file(${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib.in
 # use a C++11 string literal to embed nrnunits.lib directly in C++ code, see:
 # https://en.cppreference.com/w/cpp/language/string_literal.html
 # =============================================================================
-set(nrnunits_start "R\"embedded_nrnunits(")
-set(nrnunits_stop ")embedded_nrnunits\"")
+set(nrnunits_start "R\"nrnunits(")
+set(nrnunits_stop ")nrnunits\"")
 configure_file(${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib.in
                ${PROJECT_BINARY_DIR}/share/nrn/lib/embedded_nrnunits.lib @ONLY)
 
