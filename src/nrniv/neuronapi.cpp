@@ -161,6 +161,11 @@ void nrn_section_unref(Section* sec) {
     section_unref(sec);
 }
 
+Section* nrn_cas(void) {
+    Section* sec = nrn_noerr_access();
+    return sec;
+}
+
 /****************************************
  * Segments
  ****************************************/
@@ -364,8 +369,8 @@ char const* nrn_class_name(const Object* obj) {
     return obj->ctemplate->sym->name;
 }
 
-int nrn_object_index(const Object* obj) {
-    return obj->index;
+bool nrn_prop_exists(const Object* obj) {
+    return ob2pntproc_0(const_cast<Object*>(obj))->prop;
 }
 
 /****************************************
@@ -406,22 +411,35 @@ SectionListIterator::SectionListIterator(nrn_Item* my_sectionlist)
     : initial(my_sectionlist)
     , current(my_sectionlist->next) {}
 
-Section* SectionListIterator::next(void) {
-    // NOTE: if no next element, returns nullptr
-    while (true) {
-        Section* sec = current->element.sec;
-
-        if (sec->prop) {
-            current = current->next;
-            return sec;
-        }
-        hoc_l_delete(current);
-        section_unref(sec);
-        current = current->next;
-        if (current == initial) {
-            return nullptr;
-        }
+Section* SectionListIterator::next() {
+    if (!current) {
+        return nullptr;
     }
+
+    Section* sec = nullptr;
+    while (current != initial) {
+        // Save next pointer before possibly deleting current
+        auto* q = current;
+        current = current->next;
+        sec = q->element.sec;
+
+        // Check if the section is still valid
+        if (!sec || sec->prop == nullptr) {
+            // Unlink and delete invalid section
+            if (q->prev) {
+                q->prev->next = q->next;
+            }
+            if (q->next) {
+                q->next->prev = q->prev;
+            }
+            delete q;
+            continue;  // Try next
+        }
+
+        return sec;
+    }
+
+    return nullptr;
 }
 
 int SectionListIterator::done(void) const {

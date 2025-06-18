@@ -602,9 +602,7 @@ void ShapePlot::scale(float min, float max) {
 void ShapePlot::save_phase1(std::ostream& o) {
     o << "{" << std::endl;
     save_class(o, "PlotShape");
-    char buf[256];
-    Sprintf(buf, "save_window_.variable(\"%s\")", spi_->sym_->name);
-    o << buf << std::endl;
+    o << "save_window_.variable(\"" << spi_->sym_->name << "\")" << std::endl;
 }
 
 void ShapePlot::shape_plot() {}
