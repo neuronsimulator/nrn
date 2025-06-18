@@ -95,11 +95,6 @@ if(CORENRN_ENABLE_GPU)
   # Use of `-Mautoinline` ensure that the necessary functions like `net_receive_kernel` are inlined
   # for OpenACC code generation.
   set(NVHPC_CXX_INLINE_FLAGS "-Mautoinline")
-  # The cmake version of nrnivmodl needs cuda flags for special-core, which are nested in scopes in
-  # scopes, so we set an internal cache variable instead
-  set(NRNIVMODL_CORENEURON_INTERNAL_EXE_LINK_FLAGS
-      "${CMAKE_EXE_LINKER_FLAGS}"
-      CACHE INTERNAL "CUDA flags for special-core")
 endif()
 
 # =============================================================================

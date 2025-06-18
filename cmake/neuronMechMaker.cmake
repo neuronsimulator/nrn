@@ -103,7 +103,7 @@ function(create_nrnmech)
   if(NRN_MECH_NMODL_EXECUTABLE)
     set(NMODL_EXECUTABLE "${NRN_MECH_NMODL_EXECUTABLE}")
   else()
-    set(NMODL_EXECUTABLE "${NMODL}")
+    set(NMODL_EXECUTABLE $<TARGET_FILE:neuron::nmodl>)
   endif()
 
   if(NRN_MECH_NOCMODL_EXECUTABLE)
@@ -317,8 +317,29 @@ function(create_nrnmech)
     target_compile_options(core${TARGET_LIBRARY_NAME} BEFORE PRIVATE ${_CORENEURON_FLAGS})
     target_link_libraries(core${TARGET_LIBRARY_NAME} PUBLIC neuron::corenrn)
     target_compile_definitions(core${TARGET_LIBRARY_NAME} PUBLIC ADDITIONAL_MECHS)
-    # Random123 does not play nicely with NVHPC
-    target_compile_definitions(core${TARGET_LIBRARY_NAME} PUBLIC R123_USE_INTRIN_H=0)
+
+    if(CMAKE_CUDA_COMPILER)
+      # Find the cuda toolkit and openacc (if not found already)
+      if(NOT CUDAToolkit_FOUND)
+        find_package(CUDAToolkit 9.0 REQUIRED)
+      endif()
+      if(NOT OpenACC_FOUND)
+        find_package(OpenACC REQUIRED)
+      endif()
+      # Random123 does not play nicely with NVHPC
+      target_compile_definitions(core${TARGET_LIBRARY_NAME} PUBLIC R123_USE_INTRIN_H=0)
+      # if using NVHPC, link corenrnmech lib to the CUDA runtime and openacc
+      if("${LIBRARY_TYPE}" STREQUAL "STATIC")
+        target_link_libraries(core${TARGET_LIBRARY_NAME} PUBLIC CUDA::cudart_static
+                                                                OpenACC::OpenACC_CXX)
+      elseif("${LIBRARY_TYPE}" STREQUAL "SHARED")
+        target_link_libraries(core${TARGET_LIBRARY_NAME} PUBLIC CUDA::cudart OpenACC::OpenACC_CXX)
+      else()
+        message(FATAL_ERROR "Unsupported library type for CUDA: ${LIBRARY_TYPE}")
+      endif()
+      # for some reason we need to add `-cuda` to nrnmech (which gets propagated to special-core)
+      target_link_options(core${TARGET_LIBRARY_NAME} PUBLIC "-cuda")
+    endif()
 
     list(JOIN L_CORE_MECH_DECLARE "\n" MECH_DECLARE)
     list(JOIN L_CORE_MECH_PRINT "    \n" MECH_PRINT)
@@ -340,7 +361,6 @@ function(create_nrnmech)
       set_target_properties(
         core${TARGET_EXECUTABLE_NAME}
         PROPERTIES OUTPUT_NAME "special-core" RUNTIME_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_DIR}")
-      target_link_options(core${TARGET_EXECUTABLE_NAME} PRIVATE "${_CORENEURON_EXE_LINKER_FLAGS}")
     endif()
   endif()
 endfunction()

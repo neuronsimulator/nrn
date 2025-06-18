@@ -419,12 +419,12 @@ if(CORENRN_ENABLE_GPU)
   target_link_libraries(coreneuron-core PUBLIC coreneuron-cuda)
   # list() commands don't propagate to parent scope
   set(CORENRN_INSTALL_TARGETS
-      "coreneuron-core;coreneuron-cuda"
+      "coreneuron-core;coreneuron-cuda;nmodl"
       PARENT_SCOPE)
 else()
   set_target_properties(coreneuron-core PROPERTIES EXPORT_NAME corenrn)
   set(CORENRN_INSTALL_TARGETS
-      coreneuron-core
+      "coreneuron-core;nmodl"
       PARENT_SCOPE)
 endif()
 
