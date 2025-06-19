@@ -3,13 +3,10 @@
 Mechanism building with CMake
 =============================
 
-.. note::
-
-   This API is **experimental** and subject to change.
-
-Helper functions for generating (core)NEURON mechanism libraries directly in CMake.
-The basic idea is to replicate all of the previous functionality of the Makefiles,
-but without having to deal with reading Makefiles or having to worry about dependencies.
+This module contains helper functions for generating (core)NEURON mechanism
+libraries directly in CMake. The basic idea is to replicate all of the previous
+functionality of the Makefiles, but without having to deal with their
+maintenance or having to worry about managing dependencies.
 
 Overview
 --------
@@ -31,6 +28,10 @@ In case the ``-coreneuron`` option is given, it additionally does the following:
 
 API reference
 -------------
+
+.. note::
+
+   This API is **experimental** and subject to change.
 
 .. cmake:command:: create_nrnmech
 
@@ -74,6 +75,54 @@ API reference
 
     ``EXTRA_ENV``
         (*optional*, default: None) list of additional environmental variables to pass when building the targets.
+
+
+Examples
+--------
+
+.. note::
+
+    You need to insert the path to ``neuronTargets.cmake`` in ``CMAKE_PREFIX_PATH``.
+    If you installed NEURON via CMake, the usual loaction of it is ``CMAKE_INSTALL_PREFIX/lib/cmake``.
+    If instead you installed NEURON as a Python wheel, the usual location is ``WHEEL_INSTALL_DIR/neuron/.data/lib/make``, where ``WHEEL_INSTALL_DIR`` is listed after ``Location:`` when calling ``pip show neuron``.
+
+To build a mechanism, put this in your ``CMakeLists.txt``:
+
+.. code-block:: cmake
+
+    cmake_minimum_required(VERSION 3.15)
+    project(custom_modfiles LANGUAGES C CXX)
+
+    find_package(neuron REQUIRED)
+
+    create_nrnmech(NEURON CORENEURON SPECIAL MOD_FILES
+      modfile1.mod
+      path/to/modfile2.mod)
+
+.. note::
+
+    If you want to enable coreNEURON's GPU support, you need to first build NEURON itself with ``CORENRN_ENABLE_GPU=ON`` and customize the ``CMAKE_C_COMPILER``, ``CMAKE_CXX_COMPILER``, and ``CMAKE_CUDA_COMPILER`` variables.
+    Currently only NVHPC is supported.
+    You also need to add ``CUDA`` to the ``LANGUAGES`` above.
+
+Then you can configure your mechanisms using:
+
+.. code-block:: sh
+
+    cmake -B build
+
+Any CMake option (such as the compiler, generator, etc.) can be specified.
+To build the mechanisms (i.e. the ``nrnmech`` library and ``special`` executable), run:
+
+.. code-block:: sh
+
+    cmake --build build
+
+The ``nrnmech`` library will then be available under ``build``, and can be loaded in NEURON using:
+
+.. code-block:: sh
+
+    nrniv -dll build/libnrnmech.so
 
 #]=======================================================================]
 
