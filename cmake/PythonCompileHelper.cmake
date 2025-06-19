@@ -124,7 +124,7 @@ function(add_nrn_python_library name)
     set(python_interp "cpython-")
     set(undefined_link_flag "-Wl,-undefined,dynamic_lookup")
   elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-    set(rel_rpath_name "\\\$ORIGIN")
+    set(rel_rpath_name "$ORIGIN")
     # sometimes CMAKE_LIBRARY_ARCHITECTURE is not set, so here we build it manually
     if(NOT CMAKE_LIBRARY_ARCHITECTURE)
       set(arch "${CMAKE_SYSTEM_PROCESSOR}")
