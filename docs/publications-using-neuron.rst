@@ -1,5 +1,5 @@
 .. generated from HTML via
-.. pandoc publications-using-neuron.html -f html -t rst -o publications-using-neuron.rst 
+.. pandoc citedneuron20250111edited.html -f html -t rst --wrap=none | fmt -w 66 > citedneuron20250111edited.rst
 
 .. _publications_using_neuron:
 
@@ -14,7 +14,7 @@ dot edu**
 
 ----
 
-Total of **3097** items verified as of *January 11, 2025*.
+Total of **3098** items verified as of *January 11, 2025*.
 
 ----
 
@@ -3131,6 +3131,13 @@ D'Angelo, E.. The critical role of Golgi cells in regulating
 spatio-temporal integration and plasticity at the cerebellum input
 stage. *Frontiers in Neuroscience* 2:35-46, 2008.
 
+D'Angelo, E., Nieus, T., Bezzi, M., Arleo, A. and Coenen, O.-M.
+D.. Modeling synaptic transmission and quantifying information
+transfer in the granular layer of the cerebellum. In:
+*Computational Intelligence and Bioinspired Systems*, edited by
+Cabestany, J., Prieto, A. and Sandoval, F.. Springer Berlin
+Heidelberg, 2005, pp. 107-114.
+
 D'Angelo, E., Nieus, T., Maffei, A., Armano, S., Rossi, P.,
 Taglietti, V., Fontana, A. and Naldi, G.. Theta-frequency bursting
 and resonance in cerebellar granule cells: experimental evidence
@@ -3938,13 +3945,6 @@ Neurophysiology* 97:1566-1587, 2007.
 Dzubay, J. A. and Jahr, C. E.. The concentration of synaptically
 released glutamate outside of the climbing fiber-Purkinje cell
 synaptic cleft. *Journal of Neuroscience* 19:5265-5274, 1999.
-
-D’Angelo, E., Nieus, T., Bezzi, M., Arleo, A. and Coenen, O.-M.
-D.. Modeling synaptic transmission and quantifying information
-transfer in the granular layer of the cerebellum. In:
-*Computational Intelligence and Bioinspired Systems*, edited by
-Cabestany, J., Prieto, A. and Sandoval, F.. Springer Berlin
-Heidelberg, 2005, pp. 107-114.
 
 Ebner, C., Clopath, C., Jedlicka, P. and Cuntz, H.. Unifying
 long-term plasticity rules for excitatory synapses by modeling
@@ -15666,6 +15666,10 @@ processing in AII amacrine cells: compartmental models and passive
 membrane properties for a gap junction-coupled retinal neuron.
 *Brain Structure and Function* 223:3383-3410,
 10.1007/s00429-018-1696-z, 2018.
+
+Zang, Y. and De Schutter, E.. The cellular electrophysiological
+properties underlying multiplexed coding in Purkinje cells. 
+*Journal of Neuroscience* 10.1523/JNEUROSCI.1719-20.2020, 2021.
 
 Zang, Y., Dieudonné, S. and De Schutter, E.. Voltage- and
 branch-specific climbing fiber responses in Purkinje cells. *Cell
