@@ -24,7 +24,7 @@ The ``nrnivmodl`` executable translates the ``MOD`` files from the ``NMODL`` lan
 
 .. note::
 
-   Have a look at :doc:`nrnivmodl-cmake` for an more modern (experimental!) way of building mechanisms.
+   Have a look at :doc:`nrnivmodl-cmake` for a more modern (experimental!) way of building mechanisms.
 
 Circuit creation
 ^^^^^^^^^^^^^^^^

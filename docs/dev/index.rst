@@ -13,4 +13,3 @@ NEURON Development topics
    ./python/wheels.md
    ./morphology/morphology.md
    hocdomain-sphinx.md
-
