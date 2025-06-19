@@ -4,8 +4,9 @@ Date: 10/28/16
 Description: Defines the functions for implementing and manipulating
 a linked list of Grid_nodes
 ******************************************************************/
-#include <stdio.h>
-#include <assert.h>
+#include <cstdio>
+#include <cassert>
+#include <vector>
 #include "nrnpython.h"
 #include "grids.h"
 #include "rxd.h"
@@ -1307,7 +1308,7 @@ void ICS_Grid_node::divide_x_work(const int nthreads) {
     // To determine which index to put the start node and line length in thread_line_defs
     int* thread_idx_counter = (int*) calloc(nthreads, sizeof(int));
     // To determine which thread array to put the start node and line length in thread_line_defs
-    int line_thread_id[_x_lines_length / 2];
+    auto line_thread_id = std::vector<int>(_x_lines_length / 2);
     // Array of nthreads arrays that hold the line defs for each thread
     int** thread_line_defs = (int**) malloc(nthreads * sizeof(int*));
 
@@ -1402,7 +1403,7 @@ void ICS_Grid_node::divide_y_work(const int nthreads) {
     // To determine which index to put the start node and line length in thread_line_defs
     int* thread_idx_counter = (int*) calloc(nthreads, sizeof(int));
     // To determine which thread array to put the start node and line length in thread_line_defs
-    int line_thread_id[_y_lines_length / 2];
+    auto line_thread_id = std::vector<int>(_y_lines_length / 2);
     // Array of nthreads arrays that hold the line defs for each thread
     int** thread_line_defs = (int**) malloc(nthreads * sizeof(int*));
 
@@ -1499,7 +1500,7 @@ void ICS_Grid_node::divide_z_work(const int nthreads) {
     // To determine which index to put the start node and line length in thread_line_defs
     int* thread_idx_counter = (int*) calloc(nthreads, sizeof(int));
     // To determine which thread array to put the start node and line length in thread_line_defs
-    int line_thread_id[_z_lines_length / 2];
+    auto line_thread_id = std::vector<int>(_z_lines_length / 2);
     // Array of nthreads arrays that hold the line defs for each thread
     int** thread_line_defs = (int**) malloc(nthreads * sizeof(int*));
 
