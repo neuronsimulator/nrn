@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <array>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -29,7 +30,7 @@ namespace coreneuron {
  */
 
 // @todo: remove this static buffer
-const int max_line_length = 1024;
+constexpr int max_line_length = 1024;
 
 class FileHandler {
     std::fstream F;                        //!< File stream associated with reader.
@@ -116,15 +117,21 @@ class FileHandler {
         int nsec, nseg, n_scan;
         size_t total_lfp_factors;
         int num_electrodes;
-        char line_buf[max_line_length], name[max_line_length];
+        std::array<char, max_line_length> line_buf;
+        std::array<char, max_line_length> name;
 
-        F.getline(line_buf, sizeof(line_buf));
-        n_scan = sscanf(
-            line_buf, "%s %d %d %zd %d", name, &nsec, &nseg, &total_lfp_factors, &num_electrodes);
+        F.getline(line_buf.data(), line_buf.size());
+        n_scan = sscanf(line_buf.data(),
+                        "%s %d %d %zd %d",
+                        name.data(),
+                        &nsec,
+                        &nseg,
+                        &total_lfp_factors,
+                        &num_electrodes);
 
         nrn_assert(n_scan == 5);
 
-        mapinfo->name = std::string(name);
+        mapinfo->name = std::string(name.data());
 
         if (nseg) {
             auto sec = read_vector<int>(nseg);

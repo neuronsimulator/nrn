@@ -14,6 +14,7 @@
  */
 
 #include <algorithm>
+#include <array>
 #include <cstdio>
 #include <climits>
 #include <vector>
@@ -25,10 +26,10 @@
 #include "coreneuron/io/output_spikes.hpp"
 #include "coreneuron/apps/corenrn_parameters.hpp"
 namespace coreneuron {
-const int NUM_STATS = 13;
+constexpr int NUM_STATS = 13;
 
 void report_cell_stats() {
-    long stat_array[NUM_STATS] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    auto stat_array = std::array<long, NUM_STATS>({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
 
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         stat_array[0] += nrn_threads[ith].ncell;           // number of cells
@@ -51,15 +52,14 @@ void report_cell_stats() {
     });  // number of non-negative gid spikes
 
 #if NRNMPI
-    long gstat_array[NUM_STATS];
+    std::array<long, NUM_STATS> gstat_array;
     if (corenrn_param.mpi_enable) {
-        nrnmpi_long_allreduce_vec(stat_array, gstat_array, NUM_STATS, 1);
+        nrnmpi_long_allreduce_vec(stat_array.data(), gstat_array.data(), NUM_STATS, 1);
     } else {
-        assert(sizeof(stat_array) == sizeof(gstat_array));
-        std::memcpy(gstat_array, stat_array, sizeof(stat_array));
+        gstat_array = stat_array;
     }
 #else
-    const long(&gstat_array)[NUM_STATS] = stat_array;
+    const auto& gstat_array = stat_array;
 #endif
 
     if (nrnmpi_myid == 0) {

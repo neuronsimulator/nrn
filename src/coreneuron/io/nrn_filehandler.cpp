@@ -6,6 +6,7 @@
 # =============================================================================.
 */
 
+#include <array>
 #include <iostream>
 #include "coreneuron/io/nrn_filehandler.hpp"
 #include "coreneuron/nrnconf.h"
@@ -55,26 +56,26 @@ bool FileHandler::eof() {
 }
 
 int FileHandler::read_int() {
-    char line_buf[max_line_length];
+    std::array<char, max_line_length> line_buf;
 
-    F.getline(line_buf, sizeof(line_buf));
+    F.getline(line_buf.data(), line_buf.size());
     nrn_assert(!F.fail());
 
     int i;
-    int n_scan = sscanf(line_buf, "%d", &i);
+    int n_scan = sscanf(line_buf.data(), "%d", &i);
     nrn_assert(n_scan == 1);
 
     return i;
 }
 
 void FileHandler::read_mapping_count(int* gid, int* nsec, int* nseg, int* nseclist) {
-    char line_buf[max_line_length];
+    std::array<char, max_line_length> line_buf;
 
-    F.getline(line_buf, sizeof(line_buf));
+    F.getline(line_buf.data(), line_buf.size());
     nrn_assert(!F.fail());
 
     /** mapping file has extra strings, ignore those */
-    int n_scan = sscanf(line_buf, "%d %d %d %d", gid, nsec, nseg, nseclist);
+    int n_scan = sscanf(line_buf.data(), "%d %d %d %d", gid, nsec, nseg, nseclist);
     nrn_assert(n_scan == 4);
 }
 
@@ -83,13 +84,13 @@ void FileHandler::read_mapping_cell_count(int* count) {
 }
 
 void FileHandler::read_checkpoint_assert() {
-    char line_buf[max_line_length];
+    std::array<char, max_line_length> line_buf;
 
-    F.getline(line_buf, sizeof(line_buf));
+    F.getline(line_buf.data(), line_buf.size());
     nrn_assert(!F.fail());
 
     int i;
-    int n_scan = sscanf(line_buf, "chkpnt %d\n", &i);
+    int n_scan = sscanf(line_buf.data(), "chkpnt %d\n", &i);
     if (n_scan != 1) {
         fprintf(stderr, "no chkpnt line for %d\n", chkpnt);
     }
