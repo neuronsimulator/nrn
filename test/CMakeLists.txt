@@ -84,34 +84,30 @@ endif()
 # =============================================================================
 # Add ringtest
 # =============================================================================
-set(RINGTEST_DIR ${PROJECT_SOURCE_DIR}/test/ringtest)
+set(RINGTEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/ringtest")
+file(MAKE_DIRECTORY "${RINGTEST_DIR}")
 add_test(
-  ringtest
-  ${CMAKE_COMMAND}
-  -Dexecutable=${CMAKE_BINARY_DIR}/bin/nrniv
-  -Dexec_arg=ring.hoc
-  -Dout_file=out.dat
-  -Dref_file=out.dat.ref
-  -Dwork_dir=${RINGTEST_DIR}
-  -P
-  ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
+  NAME ringtest
+  COMMAND
+    ${CMAKE_COMMAND} -Dhoc_library_path=${CMAKE_CURRENT_SOURCE_DIR}/ringtest
+    -Dexecutable=$<TARGET_FILE:nrniv> -Dexec_arg=${CMAKE_CURRENT_SOURCE_DIR}/ringtest/ring.hoc
+    -Dout_file=out.dat -Dref_file=${CMAKE_CURRENT_SOURCE_DIR}/ringtest/out.dat.ref
+    -Dwork_dir=${RINGTEST_DIR} -P ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
 list(APPEND TESTS ringtest)
 
 # =============================================================================
 # Add small hoc test
 # =============================================================================
-set(HOCTEST_DIR ${PROJECT_SOURCE_DIR}/test/hoc_tests/connect_dend)
-set(REF_FILE cell3soma.dat.ref)
+set(HOCTEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/hoc_tests/connect_dend")
+file(MAKE_DIRECTORY "${HOCTEST_DIR}")
+set(REF_FILE "${CMAKE_CURRENT_SOURCE_DIR}/hoc_tests/connect_dend/cell3soma.dat.ref")
 add_test(
-  connect_dend
-  ${CMAKE_COMMAND}
-  -Dexecutable=${CMAKE_BINARY_DIR}/bin/nrniv
-  -Dexec_arg=connect_dend.hoc
-  -Dout_file=cell3soma.dat
-  -Dref_file=${REF_FILE}
-  -Dwork_dir=${HOCTEST_DIR}
-  -P
-  ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
+  NAME connect_dend
+  COMMAND
+    ${CMAKE_COMMAND} -Dexecutable=$<TARGET_FILE:nrniv>
+    -Dexec_arg=${CMAKE_CURRENT_SOURCE_DIR}/hoc_tests/connect_dend/connect_dend.hoc
+    -Dout_file=cell3soma.dat -Dref_file=${REF_FILE} -Dwork_dir=${HOCTEST_DIR} -P
+    ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
 list(APPEND TESTS connect_dend)
 
 # =============================================================================
@@ -790,7 +786,7 @@ function(add_modlunit_test mod_file)
   get_filename_component(mod_file_basename "${mod_file}" NAME_WE)
   add_test(
     NAME modlunit_${mod_file_basename}
-    COMMAND modlunit "${mod_file}"
+    COMMAND $<TARGET_FILE:modlunit> "${mod_file}"
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
   list(APPEND TESTS modlunit_${mod_file_basename})
   set(TESTS
