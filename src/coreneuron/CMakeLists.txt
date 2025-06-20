@@ -418,15 +418,18 @@ if(CORENRN_ENABLE_GPU)
   set_target_properties(coreneuron-cuda PROPERTIES EXPORT_NAME corenrn-cuda)
   target_link_libraries(coreneuron-core PUBLIC coreneuron-cuda)
   # list() commands don't propagate to parent scope
-  set(CORENRN_INSTALL_TARGETS
-      "coreneuron-core;coreneuron-cuda;nmodl"
+  set(CORENRN_INSTALL_LIB_TARGETS
+      "coreneuron-core;coreneuron-cuda"
       PARENT_SCOPE)
 else()
   set_target_properties(coreneuron-core PROPERTIES EXPORT_NAME corenrn)
-  set(CORENRN_INSTALL_TARGETS
-      "coreneuron-core;nmodl"
+  set(CORENRN_INSTALL_LIB_TARGETS
+      "coreneuron-core"
       PARENT_SCOPE)
 endif()
+set(CORENRN_INSTALL_BIN_TARGETS
+    "nmodl"
+    PARENT_SCOPE)
 
 foreach(target coreneuron-core ${coreneuron_cuda_target})
   target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/src
@@ -506,7 +509,7 @@ target_link_libraries(coreneuron-core PUBLIC ${sonatareport_LIBRARY} ${CORENRN_C
                                              ${CORENRN_LIKWID_LIB})
 set_target_properties(coreneuron-core PROPERTIES EXPORT_NAME corenrn)
 target_compile_features(coreneuron-core PUBLIC cxx_std_17)
-target_include_directories(coreneuron-core INTERFACE $<INSTALL_INTERFACE:include>)
+target_include_directories(coreneuron-core INTERFACE $<INSTALL_INTERFACE:${NRN_INSTALL_DATA_PREFIX}/include>)
 
 # TODO: fix adding a dependency of coreneuron-core on CLI11::CLI11 when CLI11 is a submodule. Right
 # now this doesn't work because the CLI11 targets are not exported/installed but coreneuron-core is.

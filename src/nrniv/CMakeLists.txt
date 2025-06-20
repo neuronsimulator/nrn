@@ -409,7 +409,8 @@ target_include_directories(
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PUBLIC $<BUILD_INTERFACE:${NRN_OC_GEN}>)
-target_include_directories(nrniv_lib INTERFACE $<INSTALL_INTERFACE:include>)
+target_include_directories(nrniv_lib
+                           INTERFACE $<INSTALL_INTERFACE:${NRN_INSTALL_DATA_PREFIX}/include>)
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
   target_link_libraries(nrniv_lib PRIVATE nrnpython)
 endif()
@@ -580,7 +581,14 @@ endif()
 # expected when ctypes looks for dlls
 # ~~~
 install(TARGETS nrniv nocmodl modlunit DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
-install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+install(
+  TARGETS nocmodl
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin
+  EXPORT NeuronTargets)
+install(
+  TARGETS nrniv_lib
+  DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR}
+  EXPORT NeuronTargets)
 if(LIBIVX11DYNAM_NAME)
   install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME}
           DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
