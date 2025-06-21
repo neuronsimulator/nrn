@@ -35,6 +35,27 @@ API reference
 
 .. cmake:command:: create_nrnmech
 
+    .. code-block:: cmake
+
+        create_nrnmech(
+            [NEURON]
+            [CORENEURON]
+            [SPECIAL]
+            [NMODL_NEURON_CODEGEN]
+            [TARGET_LIBRARY_NAME lib_tgt]
+            [TARGET_EXECUTABLE_NAME exe_tgt]
+            [LIBRARY_OUTPUT_DIR lib_outdir]
+            [EXECUTABLE_OUTPUT_DIR exe_outdir]
+            [ARTIFACTS_OUTPUT_DIR art_outdir]
+            [LIBRARY_TYPE type]
+            [NOCMODL_EXECUTABLE path/to/nocmodl]
+            [NMODL_EXECUTABLE path/to/nmodl]
+            [MOD_FILES mod1 mod2 ...]
+            [NMODL_NEURON_EXTRA_ARGS arg1 arg2 ...]
+            [NMODL_CORENEURON_EXTRA_ARGS arg1 arg2 ...]
+            [EXTRA_ENV KEY1=VAL1 KEY2=VAL2 ...]
+        )
+
     **Options**
 
     ``NEURON``
@@ -55,8 +76,17 @@ API reference
     ``TARGET_EXECUTABLE_NAME``
         (*optional*, default: ``special``) the name of the CMake target for the executable. Note that ``-core`` is appended to the coreNEURON target.
 
+    ``LIBRARY_OUTPUT_DIR``
+        (*optional*, default: ``CMAKE_CURRENT_BINARY_DIR``) the path where the library targets will be placed at build-time.
+
+    ``EXECUTABLE_OUTPUT_DIR``
+        (*optional*, default: ``CMAKE_CURRENT_BINARY_DIR``) the path where the executable targets will be placed at build-time.
+
     ``ARTIFACTS_OUTPUT_DIR``
-        (*optional*) the path where the CPP files will be placed at build-time.
+        (*optional*, default: ``CMAKE_CURRENT_BINARY_DIR``) the path where the CPP files will be placed at build-time.
+
+    ``LIBRARY_TYPE``
+        (*optional*, default: ``SHARED``) the type of library to build.
 
     ``NOCMODL_EXECUTABLE``
         (*optional*) the path to the NOCMODL executable. If not specified, attempts to find deduce the location of the executable from the NEURON CMake configuration.
