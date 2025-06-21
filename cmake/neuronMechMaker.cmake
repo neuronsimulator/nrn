@@ -406,9 +406,19 @@ function(create_nrnmech)
       target_include_directories(${TARGET_EXECUTABLE_NAME} BEFORE
                                  PUBLIC ${_NEURON_MAIN_INCLUDE_DIR})
       target_link_libraries(${TARGET_EXECUTABLE_NAME} PUBLIC ${TARGET_LIBRARY_NAME})
-      set_target_properties(
-        ${TARGET_EXECUTABLE_NAME} PROPERTIES OUTPUT_NAME "special" RUNTIME_OUTPUT_DIRECTORY
-                                                                   "${EXECUTABLE_OUTPUT_DIR}")
+      if(NOT _NEURON_WHEEL)
+        set_target_properties(
+          ${TARGET_EXECUTABLE_NAME} PROPERTIES OUTPUT_NAME "special" RUNTIME_OUTPUT_DIRECTORY
+                                                                     "${EXECUTABLE_OUTPUT_DIR}")
+      else()
+        # we use a Python wrapper for `special` so the env is set properly when launched
+        configure_file(${_NEURON_PYTHON_BINWRAPPER} "${ARTIFACTS_OUTPUT_DIR}/special" COPYONLY)
+        add_custom_target(py${TARGET_EXECUTABLE_NAME} ALL DEPENDS "${ARTIFACTS_OUTPUT_DIR}/special")
+
+        set_target_properties(
+          ${TARGET_EXECUTABLE_NAME} PROPERTIES OUTPUT_NAME "special.nrn" RUNTIME_OUTPUT_DIRECTORY
+                                                                         "${EXECUTABLE_OUTPUT_DIR}")
+      endif()
     endif()
 
   endif()
