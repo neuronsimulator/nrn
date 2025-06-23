@@ -7,6 +7,7 @@
 
 import re
 from importlib import import_module
+from keyword import kwlist
 
 import itertools
 import sympy as sp
@@ -31,26 +32,16 @@ if not ((major >= 1) and (minor >= 2)):
 # Some identifiers are protected inside sympy, if user has declared such a function, it will fail
 # because sympy will try to use its own internal one; or error out for invalid variables.
 # Rename it before and after to a unique name.
-forbidden_var = [
-    # Selected Python keywords
-    "is",
-    "as",
-    "count",
-    "del",
-    "elif",
-    "in",
-    "lambda",
-    "pass",
-    # SymPy functions
-    "beta",
-    "gamma",
-    "uppergamma",
-    "lowergamma",
-    "polygamma",
-    "loggamma",
-    "digamma",
-    "trigamma",
-]
+forbidden_var = sorted(
+    {
+        # Python keywords
+        *kwlist,
+        # top-level SymPy functions
+        *import_module("sympy").__all__,
+    }
+)
+
+print(forbidden_var)
 
 
 def search_and_replace_protected_identifiers_to_sympy(eqs, vars, function_calls):
