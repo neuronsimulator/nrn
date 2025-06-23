@@ -5,17 +5,25 @@
 Standard Run Tools
 ------------------
 
+    .. tab:: Python
+        All standard tools are available from the NEURONMainMenu. The fastest 
+        way to load these tools is to execute:
 
-All standard tools are available from the NEURONMainMenu. The fastest 
-way to load these tools is to execute:
+        .. code-block::
+            python
 
-.. code-block::
-    python
+            from neuron import gui
 
-    from neuron import gui
+    .. tab:: HOC
 
+        All standard tools are available from the NEURONMainMenu. The fastest 
+        way to load these tools is to execute 
+
+        .. code-block::
+            none
+
+            load_file("nrngui.hoc") 
  
-
 Brief summaries of the menu options are provided below, for more information on select functions see also:
 
 .. toctree::
@@ -31,28 +39,50 @@ Implementations of the standard tools are in `$NEURONHOME/lib/hoc/*.hoc <https:/
 NEURON Main Menu
 ~~~~~~~~~~~~~~~~
 
+    .. tab:: Python
  
-Main menu for standard control, graphing, menu generation. 
- 
-To pop up the panel execute: 
+        Main menu for standard control, graphing, menu generation. 
+        
+        To pop up the panel execute: 
 
-.. code-block::
-    python
+        .. code-block::
+            python
 
-    from neuron import gui
+            from neuron import gui
 
-.. warning::
+        .. warning::
 
-    In HOC code, you may see ``load_file('nrngui.hoc')`` instead, but that does not work for Python code
-    as it does not start the thread that monitors for GUI events.
- 
-Serious users should peruse the init and run procedures. 
-The run chain that eventually calls :func:`fadvance` is 
+            In HOC code, you may see ``load_file('nrngui.hoc')`` instead, but that does not work for Python code
+            as it does not start the thread that monitors for GUI events.
+        
+        Serious users should peruse the init and run procedures. 
+        The run chain that eventually calls :func:`fadvance` is 
 
-.. code-block::
-    none
+        .. code-block::
+            none
 
-        n.run --> n.continuerun --> n.step --> n.advance --> n.fadvance 
+                n.run --> n.continuerun --> n.step --> n.advance --> n.fadvance 
+
+    .. tab:: HOC
+
+         
+        Main menu for standard control, graphing, menu generation. 
+        
+        To pop up the panel execute: 
+
+        .. code-block::
+            none
+
+                load_file("nrngui.hoc") 
+
+        
+        Serious users should peruse the init and run procedures. 
+        The run chain that eventually calls :hoc:func:`fadvance` is
+
+        .. code-block::
+            none
+
+            run continuerun step advance fadvance
 
 There is often reason to substitute a new step or advance 
 procedure to do intermediate calculations on the fly. 
@@ -61,28 +91,49 @@ make sure you don't take away functionality which is already
 there. See `$NEURONHOME/lib/hoc/stdrun.hoc <https://github.com/neuronsimulator/nrn/blob/master/share/lib/hoc/stdrun.hoc>`_ for the 
 implementations of these procedures.
 
-.. seealso::
+.. note::
 
-    :class:`FInitializeHandler`
+    In new code, consider using :class:`FInitializeHandler` instead. NEURON
+    supports multiple :class:`FInitializeHandler` objects at the same time,
+    and using them avoids the need to modify any "standard" HOC routines while
+    still allowing the graphical tools to do the right thing.
 
 A simple example of overriding init:
 
-.. code-block::
-    python
+.. tab:: Python
 
-    n('proc init() {finitialize(v_init) nrnpython("myinit()")}')
+    .. code-block::
+        python
 
-    def myinit():
-        # new code to happen after initialization here
-        print('initializing...')
-        # only need the following if states have been changed
-        if n.cvode.active():
-            n.cvode.re_init()
-        else:
-            n.fcurrent()
-        n.frecord_init()
+        n('proc init() {finitialize(v_init) nrnpython("myinit()")}')
 
-     
+        def myinit():
+            # new code to happen after initialization here
+            print('initializing...')
+            # only need the following if states have been changed
+            if n.cvode.active():
+                n.cvode.re_init()
+            else:
+                n.fcurrent()
+            n.frecord_init()
+
+.. tab:: HOC
+    
+    .. code-block::
+        C++
+
+        proc init() {
+            finitialize(v_init)
+            // new code to happen after initialization here
+            print "initializing..."
+            // only need the following if states have been changed
+            if (cvode.active()) {
+                cvode.re_init()
+            } else {
+                fcurrent()
+            }
+            frecord_init()
+        }     
      
 
 File
@@ -538,32 +589,60 @@ Vector
 
 Save to File
 """"""""""""
+    .. tab:: Python
+        Menu for saving/retrieving the last Vector selection to a file. eg. 
+        from a :ref:`gui_PickVector` as well as other Vector tools. 
+        
+        The format of the file is:
 
-Menu for saving/retrieving the last Vector selection to a file. eg. 
-from a :ref:`gui_PickVector` as well as other Vector tools. 
- 
-The format of the file is:
+        1)  optional first line with the format 
 
-1)  optional first line with the format 
+            .. code-block::
+                none
 
-    .. code-block::
-        none
+                label:anystring 
 
-        label:anystring 
+        2)  optional line with one number which is the count of points. 
+        3)  a tab separated pair of x, y coordinates 
+            each line. If there is no "count" line, there must be 
+            no empty lines at the end of the file and the last character must 
+            be a newline. 
+        
+        When the file is saved with this menu item, 
+        the label and count are always present in the file. 
+        For long files retrieval is much more efficient if the count is present. 
+        
+        The implementation of these operations is in 
+        `$NEURONHOME/lib/hoc/stdlib.hoc <https://github.com/neuronsimulator/nrn/blob/master/share/lib/hoc/stdlib.hoc>`_
+        vectors and performing simple manipulations on them. 
 
-2)  optional line with one number which is the count of points. 
-3)  a tab separated pair of x, y coordinates 
-    each line. If there is no "count" line, there must be 
-    no empty lines at the end of the file and the last character must 
-    be a newline. 
- 
-When the file is saved with this menu item, 
-the label and count are always present in the file. 
-For long files retrieval is much more efficient if the count is present. 
- 
-The implementation of these operations is in 
-`$NEURONHOME/lib/hoc/stdlib.hoc <https://github.com/neuronsimulator/nrn/blob/master/share/lib/hoc/stdlib.hoc>`_
-vectors and performing simple manipulations on them. 
+    .. tab:: HOC
+
+        Menu for saving/retrieving the last Vector selection to a file. eg. 
+        from a :ref:`hoc_gui_PickVector` as well as other Vector tools.
+        
+        The format of the file is:
+
+        1)  optional first line with the format 
+
+            .. code-block::
+                none
+
+                label:anystring 
+
+        2)  optional line with one number which is the count of points. 
+        3)  a tab separated pair of x, y coordinates 
+            each line. If there is no "count" line, there must be 
+            no empty lines at the end of the file and the last character must 
+            be a newline. 
+        
+        When the file is saved with this menu item, 
+        the label and count are always present in the file. 
+        For long files retrieval is much more efficient if the count is present. 
+        
+        The implementation of these operations is in 
+        `$NEURONHOME/lib/hoc/stdlib.hoc <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/lib/hoc/stdlib.hoc>`_
+        vectors and performing simple manipulations on them. 
 
 .. seealso::
     :data:`hoc_obj_`

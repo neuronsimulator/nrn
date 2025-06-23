@@ -19,41 +19,80 @@ destroyed freely.
 Scene
 ~~~~~
 
-Graphs and Shape windows are instances of views into a scene.
+    .. tab:: Python
 
-.. code-block::
-    python
-    
-    from neuron import n, gui
-    
-    g = n.Graph() 
-    g.label("here is some text") 
-    g.beginline() 
-    g.line(100, 50) 
-    g.line(200, 100) 
-    g.flush() 
+        Graphs and Shape windows are instances of views into a scene.
 
-    #pop up an example of a scene 
+        .. code-block::
+            python
+            
+            from neuron import n, gui
+            
+            g = n.Graph() 
+            g.label("here is some text") 
+            g.beginline() 
+            g.line(100, 50) 
+            g.line(200, 100) 
+            g.flush() 
 
-A scene is defined as the space represented by the model 
-coordinate system. A view is defined as that portion of the scene 
-which is drawn in the window. 
-There can be many views into a scene and each scene has its own 
-menu selections but they can be different for different scenes. 
-Scenes use an openlook style in which the right(menu) mouse button 
-pops up menus from which one either selects an action to be performed 
-immediately, eg. Round or Whole Scene, or else selects a meaning for 
-the left(select) mouse button which will be used when the left mouse 
-button is pressed within any view of that particular scene. This can 
-be thought of as selecting a tool with the right button and wielding 
-that tool with the left button. 
-These menu items are like radio buttons in that only one is active at 
-a time. It is recommended that when you move into a view you quickly 
-pop up the menu so you can be certain of the meaning of the left button. 
-The middle button translates the view around the scene. All 
-scenes have a common View menu as the first menu item 
-with which one can create a new view, zoom in/out, round the view 
-or make the view correspond to the natural size of the scene. 
+            #pop up an example of a scene 
+
+        A scene is defined as the space represented by the model 
+        coordinate system. A view is defined as that portion of the scene 
+        which is drawn in the window. 
+        There can be many views into a scene and each scene has its own 
+        menu selections but they can be different for different scenes. 
+        Scenes use an openlook style in which the right(menu) mouse button 
+        pops up menus from which one either selects an action to be performed 
+        immediately, eg. Round or Whole Scene, or else selects a meaning for 
+        the left(select) mouse button which will be used when the left mouse 
+        button is pressed within any view of that particular scene. This can 
+        be thought of as selecting a tool with the right button and wielding 
+        that tool with the left button. 
+        These menu items are like radio buttons in that only one is active at 
+        a time. It is recommended that when you move into a view you quickly 
+        pop up the menu so you can be certain of the meaning of the left button. 
+        The middle button translates the view around the scene. All 
+        scenes have a common View menu as the first menu item 
+        with which one can create a new view, zoom in/out, round the view 
+        or make the view correspond to the natural size of the scene. 
+
+    .. tab:: HOC
+
+        Graphs and Shape windows are instances of views into a scene.
+
+        .. code-block::
+            none
+            
+            objref g 
+            g = new Graph() 
+            g.label("here is some text") 
+            g.beginline() 
+            g.line(100, 50) 
+            g.line(200, 100) 
+            g.flush() 
+
+            // pop up an example of a scene 
+
+        A scene is defined as the space represented by the model 
+        coordinate system. A view is defined as that portion of the scene 
+        which is drawn in the window. 
+        There can be many views into a scene and each scene has its own 
+        menu selections but they can be different for different scenes. 
+        Scenes use an openlook style in which the right(menu) mouse button 
+        pops up menus from which one either selects an action to be performed 
+        immediately, eg. Round or Whole Scene, or else selects a meaning for 
+        the left(select) mouse button which will be used when the left mouse 
+        button is pressed within any view of that particular scene. This can 
+        be thought of as selecting a tool with the right button and wielding 
+        that tool with the left button. 
+        These menu items are like radio buttons in that only one is active at 
+        a time. It is recommended that when you move into a view you quickly 
+        pop up the menu so you can be certain of the meaning of the left button. 
+        The middle button translates the view around the scene. All 
+        scenes have a common View menu as the first menu item 
+        with which one can create a new view, zoom in/out, round the view 
+        or make the view correspond to the natural size of the scene. 
      
 .. _gui_view_equal_plot:
 
@@ -158,146 +197,251 @@ commands.
 Browser
 ~~~~~~~
 
-Browsers are visible lists.
+    .. tab:: Python
 
-.. code-block::
-    python
-        
-    from neuron import n, gui
+        Browsers are visible lists.
 
-    f = n.File()
-    f.chooser('', 'Example file browser', '*', 'Type file name', 'Cancel')
-    while f.chooser():
-        print(f.getname())
+        .. code-block::
+            python
+                
+            from neuron import n, gui
+
+            f = n.File()
+            f.chooser('', 'Example file browser', '*', 'Type file name', 'Cancel')
+            while f.chooser():
+                print(f.getname())
 
 
 
-.. image:: ../images/filechooser.png
-    :align: center
+        .. image:: ../images/filechooser.png
+            :align: center
+                    
+
+        The list can be scrolled with a scroll bar but 
+        I think it is most convenient to drag the list up and down with the middle 
+        mouse button. Rate scrolling is controlled with the right mouse button. 
+        The left button highlights a selection. Double clicking generally executes 
+        the selection. Browsers are used to select files for printing, 
+        variables for plotting, etc. Sometimes, a browser has a field editor in which 
+        one can directly type an entry. Usually after an item has been selected you 
+        have to press an :guilabel:`Accept` or :guilabel:`Cancel` button to actually execute the selection. 
+        Browsers can be scrolled with :kbd:`d`, :kbd:`u`, :kbd:`j`, :kbd:`k`, :kbd:`n`, :kbd:`p` and others. 
+
+    .. tab:: HOC
+
+        Browsers are visible lists.
+
+        .. code-block::
+            none
             
+            // pop up example of a browser 
+            objref f 
+            strdef tempstr 
+            f = new File() 
+            f.chooser("", "Example file browser", "*", "Type file name", "Exit") 
+            while (f.chooser()) { 
+            f.getname(tempstr) 
+            print tempstr 
+            } 
+            quit() 
 
-The list can be scrolled with a scroll bar but 
-I think it is most convenient to drag the list up and down with the middle 
-mouse button. Rate scrolling is controlled with the right mouse button. 
-The left button highlights a selection. Double clicking generally executes 
-the selection. Browsers are used to select files for printing, 
-variables for plotting, etc. Sometimes, a browser has a field editor in which 
-one can directly type an entry. Usually after an item has been selected you 
-have to press an :guilabel:`Accept` or :guilabel:`Cancel` button to actually execute the selection. 
-Browsers can be scrolled with :kbd:`d`, :kbd:`u`, :kbd:`j`, :kbd:`k`, :kbd:`n`, :kbd:`p` and others. 
- 
 
+        The list can be scrolled with a scroll bar but 
+        I think it is most convenient to drag the list up and down with the middle 
+        mouse button. Rate scrolling is controlled with the right mouse button. 
+        The left button highlights a selection. Double clicking generally executes 
+        the selection. Browsers are used to select files for printing, 
+        variables for plotting, etc. Sometimes, a browser has a field editor in which 
+        one can directly type an entry. Usually after an item has been selected you 
+        have to press an :guilabel:`Accept` or :guilabel:`Cancel` button to actually execute the selection. 
+        Browsers can be scrolled with :kbd:`d`, :kbd:`u`, :kbd:`j`, :kbd:`k`, :kbd:`n`, :kbd:`p` and others. 
+   
+        
 FieldEditor
 ~~~~~~~~~~~
 
-See also :ref:`ValueEditor`, a FieldEditor for floating point numbers. 
-Field editors accept a string entered by the user.  The allowed strings 
-are determined by the context.  In not all cases does typing the return 
-key signal the execution of a selection (if not, press the :guilabel:`accept`
-button).  Field editors have an emacs-like syntax and typing characters 
-inserts them at the cursor.  The left mouse button specifies the cursor 
-location and dragging selects a portion of the string.  After selecting 
-a portion of the string, typing a character will replace that portion 
-with the character. 
+    .. tab:: Python
 
-.. list-table::
-	:header-rows: 1
+        See also :ref:`ValueEditor`, a FieldEditor for floating point numbers. 
+        Field editors accept a string entered by the user.  The allowed strings 
+        are determined by the context.  In not all cases does typing the return 
+        key signal the execution of a selection (if not, press the :guilabel:`accept`
+        button).  Field editors have an emacs-like syntax and typing characters 
+        inserts them at the cursor.  The left mouse button specifies the cursor 
+        location and dragging selects a portion of the string.  After selecting 
+        a portion of the string, typing a character will replace that portion 
+        with the character. 
 
-	* - Key Code
-	  - Effect
-	* - ^A
-	  - beginning of line
-	* - ^E
-	  - end of line
-	* - ^F
-	  - forward one character
-	* - ^B
-	  - backward one character
-	* - ^U
-	  - select whole string
-	* - ^W
-	  - select from cursor to beginning of string
-	* - ^D
-	  - delete next character
-	* - ^H
-	  - delete previous character
-	* - return
-	  - (normally accept)
-	* - escape, ^G
-	  - (normally cancel)
+        .. list-table::
+          :header-rows: 1
 
- 
+          * - Key Code
+            - Effect
+          * - ^A
+            - beginning of line
+          * - ^E
+            - end of line
+          * - ^F
+            - forward one character
+          * - ^B
+            - backward one character
+          * - ^U
+            - select whole string
+          * - ^W
+            - select from cursor to beginning of string
+          * - ^D
+            - delete next character
+          * - ^H
+            - delete previous character
+          * - return
+            - (normally accept)
+          * - escape, ^G
+            - (normally cancel)
 
+    .. tab:: HOC
+
+        See also :ref:`hoc_ValueEditor`, a FieldEditor for floating point numbers.
+        Field editors accept a string entered by the user.  The allowed strings 
+        are determined by the context.  In not all cases does typing the return 
+        key signal the execution of a selection (if not, press the :guilabel:`accept`
+        button).  Field editors have an emacs-like syntax and typing characters 
+        inserts them at the cursor.  The left mouse button specifies the cursor 
+        location and dragging selects a portion of the string.  After selecting 
+        a portion of the string, typing a character will replace that portion 
+        with the character. 
+
+        .. code-block::
+            none
+
+              ^A beginning of line 
+              ^E end of line 
+              ^F forward one character 
+              ^B backward one character 
+              ^U select whole string 
+              ^W select from cursor to beginning of string 
+              ^D delete next character 
+              ^H delete previous character 
+              return (normally accept) 
+              escape, ^G (normally cancel) 
+              and others 
+        
 Panel
 ~~~~~
 
-Panels: windows containing buttons, menus, and value editors. All mouse buttons 
-mean the same thing. 
- 
-If the number of items in a vertically arranged single panel is greater 
-than the number in the ``*panel_scroll:`` resource in the 
-`$(NEURONHOME)/lib/nrn.defaults https://github.com/neuronsimulator/nrn/blob/master/share/lib/nrn.defaults.in>`_ file (default 12) then the panel items 
-are shown in a scroll box so that they do not take up so much screen 
-space. 
- 
-See :func:`xpanel` for NEURON functions to generate panels 
+    .. tab:: Python
 
-.. code-block::
-    python
-    
-    from neuron import n, gui
-    import __main__
+        Panels: windows containing buttons, menus, and value editors. All mouse buttons 
+        mean the same thing. 
+        
+        If the number of items in a vertically arranged single panel is greater 
+        than the number in the ``*panel_scroll:`` resource in the 
+        `$(NEURONHOME)/lib/nrn.defaults https://github.com/neuronsimulator/nrn/blob/master/share/lib/nrn.defaults.in>`_ file (default 12) then the panel items 
+        are shown in a scroll box so that they do not take up so much screen 
+        space. 
+        
+        See :func:`xpanel` for NEURON functions to generate panels 
 
-    # we use refs so NEURON can see these as they change
-    tempstr = n.ref("slider.................")
-    xx = n.ref(0)
-    x = n.ref(0.1)
+        .. code-block::
+            python
+            
+            from neuron import n, gui
+            import __main__
+
+            # we use refs so NEURON can see these as they change
+            tempstr = n.ref("slider.................")
+            xx = n.ref(0)
+            x = n.ref(0.1)
 
 
-    # we can also have NEURON use variable names within __main__
-    y = 0
-    z = 0
+            # we can also have NEURON use variable names within __main__
+            y = 0
+            z = 0
 
-    # GUI callbacks
-    def on_push_button():
-        print("released button")
+            # GUI callbacks
+            def on_push_button():
+                print("released button")
 
-    def on_radio_button(value):
-        print(f"selected radio button {value}")
+            def on_radio_button(value):
+                print(f"selected radio button {value}")
 
-    def on_slide():
-        tempstr[0] = f"slider for xx = {xx[0]}"
+            def on_slide():
+                tempstr[0] = f"slider for xx = {xx[0]}"
 
-    def on_checkbox():
-        print(f"state y is {y}")
+            def on_checkbox():
+                print(f"state y is {y}")
 
-    # pop up example panel 
-    n.xpanel("Example Panel") 
-    n.xbutton("PushButton", on_push_button) 
-    n.xlabel("Following two are for variable x") 
-    n.xvalue("Value Editor", x, 0, lambda: print(x[0])) 
-    n.xvalue("Default Value Editor for variable x", x, 1, lambda: print(x[0]))
-    n.xcheckbox("Checkbox", (__main__, "y"), on_checkbox) 
-    n.xstatebutton("StateButton", (__main__, "z"), lambda: print(f"state z is {z}"))
-    n.xmenu("Example Menu") 
-    n.xbutton("Item 1", lambda: print("selected item 1")) 
-    n.xbutton("Item 2", lambda: print("selected item 2"))
-    n.xcheckbox("Checkbox", (__main__, "y"), on_checkbox) 
-    n.xradiobutton("Radio 1", lambda: on_radio_button(1)) 
-    n.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
-    n.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
-    n.xmenu() 
-    n.xlabel("Following 3 are mutually exclusive") 
-    n.xradiobutton("Radio 1", lambda: on_radio_button(1)) 
-    n.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
-    n.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
-    n.xvarlabel(tempstr)
-    n.xslider(xx, 0, 100, on_slide)
-    n.xpanel()
+            # pop up example panel 
+            n.xpanel("Example Panel") 
+            n.xbutton("PushButton", on_push_button) 
+            n.xlabel("Following two are for variable x") 
+            n.xvalue("Value Editor", x, 0, lambda: print(x[0])) 
+            n.xvalue("Default Value Editor for variable x", x, 1, lambda: print(x[0]))
+            n.xcheckbox("Checkbox", (__main__, "y"), on_checkbox) 
+            n.xstatebutton("StateButton", (__main__, "z"), lambda: print(f"state z is {z}"))
+            n.xmenu("Example Menu") 
+            n.xbutton("Item 1", lambda: print("selected item 1")) 
+            n.xbutton("Item 2", lambda: print("selected item 2"))
+            n.xcheckbox("Checkbox", (__main__, "y"), on_checkbox) 
+            n.xradiobutton("Radio 1", lambda: on_radio_button(1)) 
+            n.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
+            n.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
+            n.xmenu() 
+            n.xlabel("Following 3 are mutually exclusive") 
+            n.xradiobutton("Radio 1", lambda: on_radio_button(1)) 
+            n.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
+            n.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
+            n.xvarlabel(tempstr)
+            n.xslider(xx, 0, 100, on_slide)
+            n.xpanel()
 
-.. image:: ../images/panel.png
-    :align: center
-     
+        .. image:: ../images/panel.png
+            :align: center
+
+    .. tab:: HOC
+
+        Panels: windows containing buttons, menus, and value editors. All mouse buttons 
+        mean the same thing. 
+        
+        If the number of items in a vertically arranged single panel is greater 
+        than the number in the ``*panel_scroll:`` resource in the 
+        `$(NEURONHOME)/lib/nrn.defaults <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/lib/nrn.defaults.in>`_ file (default 12) then the panel items 
+        are shown in a scroll box so that they do not take up so much screen 
+        space. 
+        
+        See :hoc:func:`xpanel` for hoc functions to generate panels
+
+        .. code-block::
+            none
+            
+            // pop up example panel 
+            strdef tempstr 
+            tempstr = "slider................." 
+            x=.1 
+            xx = 0 
+            y=0 
+            z=0 
+            xpanel("Example Panel") 
+            xbutton("PushButton", "print \"released button\"") 
+            xlabel("Following two are for variable x") 
+            xvalue("Value Editor", "x", 0, "print x") 
+            xvalue("Default Value Editor for variable x", "x", 1, "print x") 
+            xcheckbox("Checkbox", &y, "print \"state y is \", y") 
+            xstatebutton("StateButton", &z, "print \"state z is \", z") 
+            xmenu("Example Menu") 
+            xbutton("Item 1", "print \"selected item 1\"") 
+            xbutton("Item 2", "print \"selected item 2\"") 
+            xcheckbox("Checkbox", &y, "print \"state y is \", y") 
+            xradiobutton("Radio 1", "print 1") 
+            xradiobutton("Radio 2", "print 2") 
+            xradiobutton("Radio 3", "print 3") 
+            xmenu() 
+            xlabel("Following 3 are mutually exclusive") 
+            xradiobutton("Radio 1", "print 1") 
+            xradiobutton("Radio 2", "print 2") 
+            xradiobutton("Radio 3", "print 3") 
+            xvarlabel(tempstr) 
+            xslider(&xx, 0, 100, "sprint(tempstr, \"slider for xx = %g\", xx)") 
+            xpanel() 
 
 Button
 ======
@@ -487,14 +631,12 @@ Unlabeled lines are printed at the end of the file with the format
 .. code-block::
     none
 
-    	number unlabeled 
-    	number points in first unlabeled line 
-    	x y pairs of point 
-    	number points in second unlabeled line 
-    	... 
+      number unlabeled 
+      number points in first unlabeled line 
+      x y pairs of point 
+      number points in second unlabeled line 
+      ... 
 
-
- 
 .. seealso:: :ref:`FamilyLabel` 
  
 
