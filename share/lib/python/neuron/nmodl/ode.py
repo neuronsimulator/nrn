@@ -5,11 +5,12 @@
 # Lesser General Public License. See top-level LICENSE file for details.
 # ***********************************************************************
 
+import itertools
 import re
 from importlib import import_module
 from keyword import kwlist
+from typing import Any, Iterable, Optional, Union
 
-import itertools
 import sympy as sp
 
 # import known_functions through low-level mechanism because the ccode
@@ -41,57 +42,28 @@ forbidden_var = sorted(
     }
 )
 
-print(forbidden_var)
 
-
-def search_and_replace_protected_identifiers_to_sympy(eqs, vars, function_calls):
-    eqs = _search_and_replace_protected_functions_to_sympy(eqs, function_calls)
-    eqs, vars = _search_and_replace_protected_variables_to_sympy(eqs, vars)
-
-    return eqs, vars
-
-
-def search_and_replace_protected_identifiers_from_sympy(eqs, function_calls):
-    eqs = _search_and_replace_protected_functions_from_sympy(eqs, function_calls)
-    eqs = _search_and_replace_protected_variables_from_sympy(eqs)
-
-    return eqs
-
-
-def _search_and_replace_protected_variables_to_sympy(eqs, vars):
-    for c in forbidden_var:
-        r = re.compile(r"\b{}\b".format(c))
-        f = f"_sympy_{c}_var"
-        eqs = [re.sub(r, f, x) for x in eqs]
-        vars = [re.sub(r, f, x) for x in vars]
-
-    return eqs, vars
-
-
-def _search_and_replace_protected_variables_from_sympy(eqs):
-    for c in forbidden_var:
-        r = re.compile(r"\b_sympy_{}_var\b".format(c))
-        f = c
+def mangle_protected_identifiers(eqs: Iterable[str]) -> Iterable[str]:
+    """
+    Replace all instances of forbidden variables (Python identifiers, sympy
+    internals, etc.) and return the sanitized version.
+    """
+    for var in forbidden_var:
+        r = re.compile(rf"\b{var}\b")
+        f = f"_sympy_{var}_var"
         eqs = [re.sub(r, f, x) for x in eqs]
 
     return eqs
 
 
-def _search_and_replace_protected_functions_to_sympy(eqs, function_calls):
-    for c in function_calls:
-        if c in forbidden_var:
-            r = re.compile(r"\b{}\b\s*\(".format(c))
-            f = f"_sympy_{c}_fun("
-            eqs = [re.sub(r, f, x) for x in eqs]
-
-    return eqs
-
-
-def _search_and_replace_protected_functions_from_sympy(eqs, function_calls):
-    for c in function_calls:
-        if c in forbidden_var:
-            r = f"_sympy_{c}_fun"
-            eqs = [re.sub(r, f"{c}", x) for x in eqs]
+def demangle_protected_identifiers(eqs: Iterable[str]) -> Iterable[str]:
+    """
+    Restore all sympy variables to their originals.
+    """
+    for var in forbidden_var:
+        r = re.compile(rf"\b_sympy_{var}_var\b")
+        f = var
+        eqs = [re.sub(r, f, x) for x in eqs]
 
     return eqs
 
@@ -244,13 +216,13 @@ def make_symbol(var, /):
 
 
 def solve_lin_system(
-    eq_strings,
-    vars,
-    constants,
-    function_calls,
-    tmp_unique_prefix,
-    small_system=False,
-    do_cse=False,
+    eq_strings: Iterable[str],
+    vars: Iterable[str],
+    constants: Iterable[str],
+    function_calls: Iterable[str],
+    tmp_unique_prefix: str,
+    small_system: bool = False,
+    do_cse: bool = False,
 ):
     """Solve linear system of equations, return solution as C code.
 
@@ -279,9 +251,8 @@ def solve_lin_system(
         vars: list of strings containing new local variables
     """
 
-    eq_strings, vars = search_and_replace_protected_identifiers_to_sympy(
-        eq_strings, vars, function_calls
-    )
+    eq_strings = mangle_protected_identifiers(eq_strings)
+    vars = mangle_protected_identifiers(vars)
 
     eqs, state_vars, sympy_vars = _sympify_eqs(eq_strings, vars, constants)
     custom_fcts = _get_custom_functions(function_calls)
@@ -335,7 +306,7 @@ def solve_lin_system(
         # interweave
         code = _interweave_eqs(vecFcode, vecJcode)
 
-    code = search_and_replace_protected_identifiers_from_sympy(code, function_calls)
+    code = demangle_protected_identifiers(code)
 
     return code, new_local_vars
 
@@ -374,11 +345,20 @@ def transform_matrix_elements(mat, transform):
     )
 
 
-def needs_finite_differences(mat):
+def needs_finite_differences(mat) -> bool:
+    """
+    Return whether a system of equations cannot be solved analytically and
+    requires finite differences.
+    """
     return any(isinstance(expr, sp.Derivative) for expr in sp.preorder_traversal(mat))
 
 
-def solve_non_lin_system(eq_strings, vars, constants, function_calls):
+def solve_non_lin_system(
+    eq_strings: Iterable[str],
+    vars: Iterable[str],
+    constants: Iterable[str],
+    function_calls: Iterable[str],
+):
     """Solve non-linear system of equations, return solution as C code.
 
       - returns a vector F, and its Jacobian J, both in terms of X
@@ -395,9 +375,8 @@ def solve_non_lin_system(eq_strings, vars, constants, function_calls):
         List of strings containing assignment statements
     """
 
-    eq_strings, vars = search_and_replace_protected_identifiers_to_sympy(
-        eq_strings, vars, function_calls
-    )
+    eq_strings = mangle_protected_identifiers(eq_strings)
+    vars = mangle_protected_identifiers(vars)
 
     eqs, state_vars, sympy_vars = _sympify_eqs(eq_strings, vars, constants)
     custom_fcts = _get_custom_functions(function_calls)
@@ -428,12 +407,14 @@ def solve_non_lin_system(eq_strings, vars, constants, function_calls):
 
     # interweave
     code = _interweave_eqs(vecFcode, vecJcode)
-    code = search_and_replace_protected_identifiers_from_sympy(code, function_calls)
+    code = demangle_protected_identifiers(code)
 
     return code
 
 
-def integrate2c(diff_string, dt_var, vars, use_pade_approx=False):
+def integrate2c(
+    diff_string: str, dt_var: str, vars: Iterable[str], use_pade_approx: bool = False
+):
     """Analytically integrate supplied derivative, return solution as C code.
 
     Given a differential equation of the form x' = f(x), the value of
@@ -571,11 +552,11 @@ def forwards_euler2c(diff_string, dt_var, vars, function_calls):
 
 
 def differentiate2c(
-    expression,
-    dependent_var,
-    vars,
-    prev_expressions=None,
-    stepsize=1e-3,
+    expression: str,
+    dependent_var: Union[str, Any],
+    vars: Iterable[Union[str, Any]],
+    prev_expressions: Optional[Iterable] = None,
+    stepsize: float = 1e-3,
 ):
     """Analytically differentiate supplied expression, return solution as C code.
 
@@ -618,6 +599,10 @@ def differentiate2c(
     """
     if stepsize <= 0:
         raise ValueError("arg `stepsize` must be > 0")
+
+    expression = mangle_protected_identifiers([expression])[0]
+    dependent_var = mangle_protected_identifiers([dependent_var])[0]
+
     prev_expressions = prev_expressions or []
     # every symbol (a.k.a variable) that SymPy
     # is going to manipulate needs to be declared
@@ -702,4 +687,6 @@ def differentiate2c(
         pass
 
     # return result as C code in NEURON format
-    return sp.ccode(diff.evalf(), user_functions=custom_fcts)
+    return demangle_protected_identifiers(
+        [sp.ccode(diff.evalf(), user_functions=custom_fcts)]
+    )[0]
