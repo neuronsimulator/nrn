@@ -97,6 +97,7 @@ add_dependencies(generated_source_files nocmodl_generated_files)
 
 add_executable(nocmodl ${NRN_NOCMODL_SRC_FILES} "${NRN_NOCMODL_GEN}/lex.cpp"
                        "${NRN_NOCMODL_GEN}/parse1.cpp" "${NRN_NOCMODL_GEN}/diffeq.cpp")
+add_executable(neuron::nocmodl ALIAS nocmodl)
 target_include_directories(nocmodl PRIVATE "${PROJECT_BINARY_DIR}/share/nrn/lib")
 cpp_cc_configure_sanitizers(TARGET nocmodl)
 add_dependencies(nocmodl nocmodl_generated_files)
@@ -397,6 +398,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+add_library(neuron::nrniv ALIAS nrniv_lib)
 add_dependencies(nrniv_lib generated_source_files)
 add_cpp_git_information(nrniv_lib PRIVATE)
 target_link_libraries(nrniv_lib PRIVATE nrngnu)

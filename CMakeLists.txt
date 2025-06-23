@@ -1009,25 +1009,6 @@ if(NRN_ENABLE_TESTS)
     endif()
   endif()
   add_dependencies(nrniv_lib copy_share_demo_to_build)
-  # Execute neurondemo as part of the build because it lazily calls nrnivmodl. If we don't do this
-  # then test_neurondemo.py will run nrnivmodl in a clean build, and report compilation warnings as
-  # unexpected stderr.
-  set(neurondemo_prefix
-      "${PROJECT_BINARY_DIR}/share/nrn/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}")
-  set(neurondemo_files
-      "${neurondemo_prefix}/special"
-      "${neurondemo_prefix}/${CMAKE_SHARED_LIBRARY_PREFIX}nrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}")
-
-  add_custom_command(
-    OUTPUT ${neurondemo_files}
-    COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
-            ${NRN_SANITIZER_ENABLE_ENVIRONMENT} "${PROJECT_BINARY_DIR}/bin/nrnivmodl"
-    DEPENDS nrnivmodl_dependency
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/share/nrn/demo/release
-    VERBATIM)
-
-  add_custom_target(generate-neurondemo-mechanism-library ALL DEPENDS ${neurondemo_files} nrniv
-                                                                      copy_share_lib_to_build)
   # Initialize the submodule *before* including the test/CMakeLists.txt that uses it. This ensures
   # that the test infrastructure can find the names of the input data files and set up rules to copy
   # them into the test working directories.
@@ -1039,25 +1020,6 @@ if(NRN_ENABLE_TESTS)
 elseif(NOT WIN32)
   # Windows installs the demo separately
   add_subdirectory(share/demo/release)
-
-  # `rm` was added in 3.17, and `remove_directory` was deprecated
-  if(CMAKE_VERSION VERSION_LESS 3.17)
-    set(rm_cmd "remove_directory")
-  else()
-    set(rm_cmd rm -fr --)
-  endif()
-  add_custom_target(
-    neurondemo_release ALL
-    COMMAND ${CMAKE_COMMAND} -E ${rm_cmd}
-            "${NRN_BUILD_SHARE_DIR}/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}"
-    COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
-            ${NRN_SANITIZER_ENABLE_ENVIRONMENT} "${PROJECT_BINARY_DIR}/bin/nrnivmodl"
-    DEPENDS nrnivmodl_dependency nrniv_lib
-    COMMENT "Building mod files for demo release"
-    WORKING_DIRECTORY ${NRN_BUILD_SHARE_DIR}/demo/release
-    VERBATIM)
-  install(DIRECTORY ${NRN_BUILD_SHARE_DIR}/demo/release DESTINATION ${NRN_INSTALL_SHARE_DIR}/demo)
-
 endif()
 # =============================================================================
 # Install targets
@@ -1100,11 +1062,6 @@ add_custom_target(
   DEPENDS ${headers_in_build_dir})
 add_dependencies(nrniv_lib copy_headers_to_build)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include/ DESTINATION "${NRN_INSTALL_DATA_PREFIX}include")
-
-if(NRN_MACOS_BUILD AND NOT SKBUILD)
-  # universal build for neurondemo needs to be after, or at end of, install
-  nrn_macos_after_install()
-endif()
 
 # =============================================================================
 # Install CMake glue
