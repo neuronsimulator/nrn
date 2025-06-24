@@ -77,16 +77,29 @@ the point process is re-installed, those parameters are restored.
  
 If the panel is saved in a session, the MechanismStandard's are 
 saved as well. 
- 
-Python usage:
 
-.. code-block::
-    python
-    
-    p = n.PointProcessManager([xplacement, yplacement], sec=section) 
-    
-p.pp is the point process currently installed in the cell. 
-     
+    .. tab:: Python
+ 
+        Python usage:
+
+        .. code-block::
+            python
+            
+            p = n.PointProcessManager([xplacement, yplacement], sec=section) 
+            
+        p.pp is the point process currently installed in the cell. 
+
+    .. tab:: HOC
+
+        hoc usage:
+
+        .. code-block::
+            none
+            
+            section p = new PointProcessManager([xplacement, yplacement]) 
+            
+        p.pp is the point process currently installed in the cell. 
+            
 
 .. seealso::
     :ref:`mech`
