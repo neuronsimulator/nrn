@@ -99,7 +99,6 @@ bool Cvode::init_global() {
 void Cvode::init_eqn() {
     double vtol;
 
-    NrnThread* _nt;
     CvMembList* cml;
     int i, j, zneq, zneq_v, zneq_cap_v;
     // printf("Cvode::init_eqn\n");
@@ -125,7 +124,7 @@ void Cvode::init_eqn() {
         daspk_init_eqn();
         return;
     }
-    FOR_THREADS(_nt) {
+    for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
         // for lvardt, this body done only once and for ctd_[0]
         CvodeThreadData& z = ctd_[_nt->id];
         // how many ode's are there? First ones are non-zero capacitance
@@ -172,12 +171,22 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
     atolvec_alloc(neq_);
     for (int id = 0; id < nctd_; ++id) {
         CvodeThreadData& z = ctd_[id];
+        // If lvardt, this is a cvode integrating a particular cell in a
+        // particular thread, i.e., nth_. But nctd_ = 1.
+        // If gvardt, this cvode is unique and nctd_ is nrn_nthread and
+        // the relevant thread is nrn_threads + id;
+        NrnThread* nt_;
+        if (nctd_ > 1) {  // definitely gvardt
+            nt_ = nrn_threads + id;
+        } else if (nrn_nthread > 1) {  // definitely lvardt
+            nt_ = nth_;
+        } else {  // either way, certainly thread 0
+            nt_ = nrn_threads;
+        }
         double* atv = n_vector_data(atolnvec_, id);
         zneq_cap_v = 0;
         if (z.cmlcap_) {
             for (auto& ml: z.cmlcap_->ml) {
-                // support `1 x n` and `n x 1` but not `n x m`
-                assert(z.cmlcap_->ml.size() == 1 || ml.nodecount == 1);
                 zneq_cap_v += ml.nodecount;
             }
         }
@@ -202,41 +211,54 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
             atv[i] *= vtol;
         }
 
-        // deal with voltage nodes
-        // only cap nodes for cvode
-        for (i = 0; i < z.v_node_count_; ++i) {
-            // sentinal values for determining no_cap
-            NODERHS(z.v_node_[i]) = 1.;
+        // mark all nodes to help with marking only no_cap nodes
+        auto* const vec_rhs = nt_->node_rhs_storage();
+        for (int i = z.rootnode_begin_index_; i < z.rootnode_end_index_; ++i) {
+            vec_rhs[i] = 1.;
         }
-        for (i = 0; i < zneq_cap_v; ++i) {
-            auto* const node = z.cmlcap_->ml.size() == 1 ? z.cmlcap_->ml[0].nodelist[i]
-                                                         : z.cmlcap_->ml[i].nodelist[0];
-            z.pv_[i] = node->v_handle();
-            z.pvdot_[i] = node->rhs_handle();
-            *z.pvdot_[i] = 0.;  // only ones = 1 are no_cap
+        for (int i = z.vnode_begin_index_; i < z.vnode_end_index_; ++i) {
+            vec_rhs[i] = 1.;
         }
 
-        // the remainder are no_cap nodes
-        if (z.no_cap_node_) {
-            delete[] z.no_cap_node_;
-            delete[] z.no_cap_child_;
-        }
-        z.no_cap_node_ = new Node*[z.v_node_count_ - zneq_cap_v];
-        z.no_cap_child_ = new Node*[z.v_node_count_ - zneq_cap_v];
-        z.no_cap_count_ = 0;
-        j = 0;
-        for (i = 0; i < z.v_node_count_; ++i) {
-            if (NODERHS(z.v_node_[i]) > .5) {
-                z.no_cap_node_[z.no_cap_count_++] = z.v_node_[i];
-            }
-            if (z.v_parent_[i] && NODERHS(z.v_parent_[i]) > .5) {
-                z.no_cap_child_[j++] = z.v_node_[i];
+        i = 0;
+        if (zneq_cap_v) {
+            for (auto& ml: z.cmlcap_->ml) {
+                for (int j = 0; j < ml.nodecount; ++j) {
+                    auto* const node = ml.nodelist[j];
+                    z.pv_[i] = static_cast<double*>(node->v_handle());
+                    z.pvdot_[i] = static_cast<double*>(node->rhs_handle());
+                    *z.pvdot_[i] = 0.;  // only ones = 1 are no_cap
+                    ++i;
+                }
             }
         }
-        z.no_cap_child_count_ = j;
+
+        int n_vnode = (z.vnode_end_index_ - z.vnode_begin_index_) +
+                      (z.rootnode_end_index_ - z.rootnode_begin_index_);
+        z.no_cap_indices_.resize(n_vnode - zneq_cap_v);
+        // possibly a few more than needed.
+        z.no_cap_child_indices_.resize(n_vnode - zneq_cap_v);
+        int nocap_index = 0;
+        int nocap_child_index = 0;
+        for (int i = z.rootnode_begin_index_; i < z.rootnode_end_index_; ++i) {
+            if (vec_rhs[i] > .5) {
+                z.no_cap_indices_[nocap_index++] = i;
+            }
+        }
+        for (int i = z.vnode_begin_index_; i < z.vnode_end_index_; ++i) {
+            if (vec_rhs[i] > .5) {
+                z.no_cap_indices_[nocap_index++] = i;
+            }
+            auto parent_i = nt_->_v_parent_index[i];
+            if (vec_rhs[parent_i] > .5) {
+                z.no_cap_child_indices_[nocap_child_index++] = i;
+            }
+        }
+        z.no_cap_indices_.resize(nocap_index);
+        z.no_cap_child_indices_.resize(nocap_child_index);
 
         // use the sentinal values in NODERHS to construct a new no cap membrane list
-        new_no_cap_memb(z, _nt);
+        new_no_cap_memb(z, nullptr);
 
         // map the membrane mechanism ode state and dstate pointers
         int ieq = zneq_v;
@@ -245,6 +267,11 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
             if (!mf.ode_count) {
                 continue;
             }
+            // rather than change ode_map pv,pvdot args back to double*
+            // from data_handle<double>, use a small (single instance
+            // ode count) temporary data handle vector and do the
+            // static_cast here.
+            std::vector<neuron::container::data_handle<double>> pv, pvdot;
             for (auto& ml: cml->ml) {
                 if (int n; (n = mf.ode_count(cml->index)) > 0) {
                     // Note: if mf.hoc_mech then all cvode related
@@ -253,13 +280,14 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
                     // if it does, hocmech.cpp must follow all the
                     // nrn_ode_..._t prototypes to avoid segfault
                     // with Apple M1.
+                    pv.resize(n);
+                    pvdot.resize(n);
                     for (j = 0; j < ml.nodecount; ++j) {
-                        mf.ode_map(ml.prop[j],
-                                   ieq,
-                                   z.pv_.data() + ieq,
-                                   z.pvdot_.data() + ieq,
-                                   atv + ieq,
-                                   cml->index);
+                        mf.ode_map(ml.prop[j], ieq, pv.data(), pvdot.data(), atv + ieq, cml->index);
+                        for (auto k = 0; k < n; ++k) {
+                            z.pv_[k + ieq] = static_cast<double*>(pv[k]);
+                            z.pvdot_[k + ieq] = static_cast<double*>(pvdot[k]);
+                        }
                         ieq += n;
                     }
                 }
@@ -267,10 +295,20 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
         }
         nrn_nonvint_block_ode_abstol(z.nvsize_, atv, id);
     }
+    // validate pv_ and pvdot_ pointer elements as non null.
+    for (int id = 0; id < nctd_; ++id) {
+        CvodeThreadData& z = ctd_[id];
+        nrn_assert(std::size_t(z.nonvint_extra_offset_) == z.pv_.size());
+        for (int i = 0; i < z.nonvint_extra_offset_; ++i) {
+            nrn_assert(z.pv_[i]);
+            nrn_assert(z.pvdot_[i]);
+        }
+    }
+
     structure_change_ = false;
 }
 
-void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
+void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* /* thread */) {
     z.delete_memb_list(z.no_cap_memb_);
     z.no_cap_memb_ = nullptr;
     CvMembList* ncm{};
@@ -395,15 +433,16 @@ void Cvode::daspk_init_eqn() {
             nd = _nt->_v_node[in];
             nde = nd->extnode;
             i = nd->eqn_index_ - 1;  // the sparse matrix index starts at 1
-            z.pv_[i] = nd->v_handle();
-            z.pvdot_[i] = nd->rhs_handle();
+            z.pv_[i] = static_cast<double*>(nd->v_handle());
+            z.pvdot_[i] = static_cast<double*>(nd->rhs_handle());
             if (nde) {
                 for (ie = 0; ie < nlayer; ++ie) {
                     k = i + ie + 1;
-                    z.pv_[k] = neuron::container::data_handle<double>{nde->v + ie};
-                    z.pvdot_[k] =
+                    z.pv_[k] = static_cast<double*>(
+                        neuron::container::data_handle<double>{nde->v + ie});
+                    z.pvdot_[k] = static_cast<double*>(
                         neuron::container::data_handle<double>{neuron::container::do_not_search,
-                                                               nde->_rhs[ie]};
+                                                               nde->_rhs[ie]});
                 }
             }
         }
@@ -426,15 +465,16 @@ void Cvode::daspk_init_eqn() {
             continue;
         }
         auto const ode_map = mf.ode_map;
+        // ode_map uses data_handle. Do static_cast<double*> here
+        std::vector<neuron::container::data_handle<double>> pv(n), pvdot(n);
         for (auto& ml: cml->ml) {
             for (j = 0; j < ml.nodecount; ++j) {
                 assert(ode_map);
-                ode_map(ml.prop[j],
-                        ieq,
-                        z.pv_.data() + ieq,
-                        z.pvdot_.data() + ieq,
-                        atv + ieq,
-                        cml->index);
+                ode_map(ml.prop[j], ieq, pv.data(), pvdot.data(), atv + ieq, cml->index);
+                for (auto k = 0; k < n; ++k) {
+                    z.pv_[k + ieq] = static_cast<double*>(pv[k]);
+                    z.pvdot_[k + ieq] = static_cast<double*>(pvdot[k]);
+                }
                 ieq += n;
             }
         }
@@ -459,10 +499,7 @@ void Cvode::scatter_y(neuron::model_sorted_token const& sorted_token, double* y,
     CvodeThreadData& z = CTD(tid);
     assert(std::size_t(z.nonvint_extra_offset_) == z.pv_.size());
     for (int i = 0; i < z.nonvint_extra_offset_; ++i) {
-        // TODO: understand why this wasn't needed before
-        if (z.pv_[i]) {
-            *(z.pv_[i]) = y[i];
-        }
+        *(z.pv_[i]) = y[i];
         // printf("%d scatter_y %d %d %g\n", nrnmpi_myid, tid, i,  y[i]);
     }
     for (CvMembList* cml = z.cv_memb_list_; cml; cml = cml->next) {
@@ -497,10 +534,7 @@ void Cvode::gather_y(double* y, int tid) {
     nrn_extra_scatter_gather(1, tid);
     assert(std::size_t(z.nonvint_extra_offset_) == z.pv_.size());
     for (int i = 0; i < z.nonvint_extra_offset_; ++i) {
-        // TODO: understand why this wasn't needed before
-        if (z.pv_[i]) {
-            y[i] = *(z.pv_[i]);
-        }
+        y[i] = *(z.pv_[i]);
         // printf("gather_y %d %d %g\n", tid, i,  y[i]);
     }
 }
@@ -579,8 +613,9 @@ int Cvode::solvex_thread(neuron::model_sorted_token const& sorted_token,
             nrn_mul_capacity(sorted_token, nt, &ml);
         }
     }
-    for (i = 0; i < z.no_cap_count_; ++i) {
-        NODERHS(z.no_cap_node_[i]) = 0.;
+    auto* const vec_rhs = nt->node_rhs_storage();
+    for (auto i: z.no_cap_indices_) {
+        vec_rhs[i] = 0;
     }
     // solve it
 #if NRNMPI
@@ -631,8 +666,9 @@ int Cvode::solvex_thread_part1(double* b, NrnThread* nt) {
         assert(z.cmlcap_->ml.size() == 1);
         nrn_mul_capacity(sorted_token, nt, &z.cmlcap_->ml[0]);
     }
-    for (i = 0; i < z.no_cap_count_; ++i) {
-        NODERHS(z.no_cap_node_[i]) = 0.;
+    auto* const vec_rhs = nt->node_rhs_storage();
+    for (auto i: z.no_cap_indices_) {
+        vec_rhs[i] = 0.;
     }
     // solve it
     nrn_multisplit_triang(nt);
@@ -752,9 +788,12 @@ void Cvode::fun_thread_transfer_part2(neuron::model_sorted_token const& sorted_t
         }
     }
     if (auto const vec_sav_rhs = nt->node_sav_rhs_storage(); vec_sav_rhs) {
-        for (int i = 0; i < z.v_node_count_; ++i) {
-            Node* nd = z.v_node_[i];
-            vec_sav_rhs[nd->v_node_index] *= NODEAREA(nd) * 0.01;
+        auto* const vec_area = nt->node_area_storage();
+        for (int i = z.rootnode_begin_index_; i < z.rootnode_end_index_; ++i) {
+            vec_sav_rhs[i] *= vec_area[i] * 0.01;  // 0.01 milliamp/cm2 * um2 is nanoamp
+        }
+        for (int i = z.vnode_begin_index_; i < z.vnode_end_index_; ++i) {
+            vec_sav_rhs[i] *= vec_area[i] * 0.01;
         }
     }
     gather_ydot(ydot, nt->id);
@@ -849,32 +888,33 @@ void Cvode::nocap_v(neuron::model_sorted_token const& sorted_token, NrnThread* _
     int i;
     CvodeThreadData& z = CTD(_nt->id);
 
-    for (i = 0; i < z.no_cap_count_; ++i) {  // initialize storage
-        Node* nd = z.no_cap_node_[i];
-        NODED(nd) = 0;
-        NODERHS(nd) = 0;
+    auto* const vec_rhs = _nt->node_rhs_storage();
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_v = _nt->node_voltage_storage();
+    for (auto i: z.no_cap_indices_) {
+        vec_rhs[i] = 0.;
+        vec_d[i] = 0.;
     }
+
     // compute the i(vmold) and di/dv
     rhs_memb(sorted_token, z.no_cap_memb_, _nt);
     lhs_memb(sorted_token, z.no_cap_memb_, _nt);
 
-    for (i = 0; i < z.no_cap_count_; ++i) {  // parent axial current
-        Node* nd = z.no_cap_node_[i];
-        // following from global v_parent
-        NODERHS(nd) += NODED(nd) * NODEV(nd);
-        Node* pnd = _nt->_v_parent[nd->v_node_index];
-        if (pnd) {
-            NODERHS(nd) -= NODEB(nd) * NODEV(pnd);
-            NODED(nd) -= NODEB(nd);
+    auto* const vec_b = _nt->node_b_storage();
+    for (auto i: z.no_cap_indices_) {
+        vec_rhs[i] += vec_d[i] * vec_v[i];
+        if (i >= z.rootnode_end_index_) {
+            auto const parent_i = _nt->_v_parent_index[i];
+            vec_rhs[i] -= vec_b[i] * vec_v[parent_i];
+            vec_d[i] -= vec_b[i];
         }
     }
 
-    for (i = 0; i < z.no_cap_child_count_; ++i) {  // child axial current
-        Node* nd = z.no_cap_child_[i];
-        // following from global v_parent
-        Node* pnd = _nt->_v_parent[nd->v_node_index];
-        NODERHS(pnd) -= NODEA(nd) * NODEV(nd);
-        NODED(pnd) -= NODEA(nd);
+    auto* const vec_a = _nt->node_a_storage();
+    for (auto i: z.no_cap_child_indices_) {
+        auto const parent_i = _nt->_v_parent_index[i];
+        vec_rhs[parent_i] -= vec_a[i] * vec_v[i];
+        vec_d[parent_i] -= vec_a[i];
     }
 
 #if NRNMPI
@@ -883,10 +923,8 @@ void Cvode::nocap_v(neuron::model_sorted_token const& sorted_token, NrnThread* _
     }
 #endif
 
-    for (i = 0; i < z.no_cap_count_; ++i) {
-        Node* nd = z.no_cap_node_[i];
-        nd->v() = NODERHS(nd) / NODED(nd);
-        //		printf("%d %d %g v=%g\n", nrnmpi_myid, i, _nt->_t, NODEV(nd));
+    for (auto i: z.no_cap_indices_) {
+        vec_v[i] = vec_rhs[i] / vec_d[i];
     }
     // no_cap v's are now consistent with adjacent v's
 }
@@ -895,34 +933,36 @@ void Cvode::nocap_v_part1(NrnThread* _nt) {
     int i;
     CvodeThreadData& z = ctd_[_nt->id];
 
-    for (i = 0; i < z.no_cap_count_; ++i) {  // initialize storage
-        Node* nd = z.no_cap_node_[i];
-        NODED(nd) = 0;
-        NODERHS(nd) = 0;
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
+    auto* const vec_v = _nt->node_voltage_storage();
+    auto* const vec_b = _nt->node_b_storage();
+    auto* const vec_a = _nt->node_a_storage();
+    for (auto i: z.no_cap_indices_) {
+        vec_d[i] = 0.;
+        vec_rhs[i] = 0.;
     }
+
     // compute the i(vmold) and di/dv
     auto const sorted_token = nrn_ensure_model_data_are_sorted();
     rhs_memb(sorted_token, z.no_cap_memb_, _nt);
     lhs_memb(sorted_token, z.no_cap_memb_, _nt);
 
-    for (i = 0; i < z.no_cap_count_; ++i) {  // parent axial current
-        Node* nd = z.no_cap_node_[i];
-        // following from global v_parent
-        NODERHS(nd) += NODED(nd) * NODEV(nd);
-        Node* pnd = _nt->_v_parent[nd->v_node_index];
-        if (pnd) {
-            NODERHS(nd) -= NODEB(nd) * NODEV(pnd);
-            NODED(nd) -= NODEB(nd);
+    for (auto i: z.no_cap_indices_) {  // parent axial current
+        vec_rhs[i] += vec_d[i] * vec_v[i];
+        if (i >= z.rootnode_end_index_) {
+            auto const parent_i = _nt->_v_parent_index[i];
+            vec_rhs[i] -= vec_b[i] * vec_v[parent_i];
+            vec_d[i] -= vec_b[i];
         }
     }
 
-    for (i = 0; i < z.no_cap_child_count_; ++i) {  // child axial current
-        Node* nd = z.no_cap_child_[i];
-        // following from global v_parent
-        Node* pnd = _nt->_v_parent[nd->v_node_index];
-        NODERHS(pnd) -= NODEA(nd) * NODEV(nd);
-        NODED(pnd) -= NODEA(nd);
+    for (auto i: z.no_cap_child_indices_) {
+        auto const parent_i = _nt->_v_parent_index[i];
+        vec_rhs[parent_i] -= vec_a[i] * vec_v[i];
+        vec_d[parent_i] -= vec_a[i];
     }
+
     nrn_multisplit_nocap_v_part1(_nt);
 }
 void Cvode::nocap_v_part2(NrnThread* _nt) {
@@ -932,10 +972,12 @@ void Cvode::nocap_v_part3(NrnThread* _nt) {
     int i;
     nrn_multisplit_nocap_v_part3(_nt);
     CvodeThreadData& z = ctd_[_nt->id];
-    for (i = 0; i < z.no_cap_count_; ++i) {
-        Node* nd = z.no_cap_node_[i];
-        nd->v() = NODERHS(nd) / NODED(nd);
-        //		printf("%d %d %g v=%g\n", nrnmpi_myid, i, t, NODEV(nd));
+
+    auto* const vec_d = _nt->node_d_storage();
+    auto* const vec_rhs = _nt->node_rhs_storage();
+    auto* const vec_v = _nt->node_voltage_storage();
+    for (auto i: z.no_cap_indices_) {
+        vec_v[i] = vec_rhs[i] / vec_d[i];
     }
     // no_cap v's are now consistent with adjacent v's
 }

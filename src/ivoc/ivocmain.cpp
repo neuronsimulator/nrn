@@ -13,6 +13,7 @@ void hoc_main1_init(const char*, const char**);
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <filesystem>
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #if !defined(__APPLE__)
@@ -21,6 +22,8 @@ extern char** environ;
 #include <crt_externs.h>
 #endif
 #endif
+
+namespace fs = std::filesystem;
 
 #if HAVE_IV
 #ifdef WIN32
@@ -38,7 +41,7 @@ void iv_display_scale(float);
 #include "nrnmpi.h"
 #include "nrnpy.h"
 
-#if defined(IVX11_DYNAM)
+#if defined(HAVE_IV) && defined(IVX11_DYNAM)
 #include <IV-X11/ivx11_dynam.h>
 #endif
 
@@ -234,14 +237,6 @@ extern std::string nrnmpi_load();
 void nrnmpi_load_or_exit();
 #endif
 
-// some things are defined in libraries earlier than they are used so...
-#include <nrnisaac.h>
-static void force_load() {
-    if (always_false) {
-        nrnisaac_new();
-    }
-}
-
 #ifdef MINGW
 // see iv/src/OS/directory.cpp
 #include <sys/stat.h>
@@ -253,15 +248,9 @@ static bool isdir(const char* p) {
 }
 #endif
 
-// in case we are running without IV then get some important args this way
-static bool nrn_optarg_on(const char* opt, int* argc, char** argv);
-static char* nrn_optarg(const char* opt, int* argc, char** argv);
-static int nrn_optargint(const char* opt, int* argc, char** argv, int dflt);
 
 static bool nrn_optarg_on(const char* opt, int* pargc, const char** argv) {
-    char* a;
-    int i;
-    for (i = 0; i < *pargc; ++i) {
+    for (int i = 0; i < *pargc; ++i) {
         if (strcmp(opt, argv[i]) == 0) {
             *pargc -= 1;
             for (; i < *pargc; ++i) {
@@ -275,11 +264,9 @@ static bool nrn_optarg_on(const char* opt, int* pargc, const char** argv) {
 }
 
 static const char* nrn_optarg(const char* opt, int* pargc, const char** argv) {
-    const char* a;
-    int i;
-    for (i = 0; i < *pargc - 1; ++i) {
+    for (int i = 0; i < *pargc - 1; ++i) {
         if (strcmp(opt, argv[i]) == 0) {
-            a = argv[i + 1];
+            const char* a = argv[i + 1];
             *pargc -= 2;
             for (; i < *pargc; ++i) {
                 argv[i] = argv[i + 2];
@@ -292,10 +279,8 @@ static const char* nrn_optarg(const char* opt, int* pargc, const char** argv) {
 }
 
 static int nrn_optargint(const char* opt, int* pargc, const char** argv, int dflt) {
-    const char* a;
-    int i;
-    i = dflt;
-    a = nrn_optarg(opt, pargc, argv);
+    int i = dflt;
+    const char* a = nrn_optarg(opt, pargc, argv);
     if (a) {
         sscanf(a, "%d", &i);
     }
@@ -374,51 +359,50 @@ int ivocmain(int argc, const char** argv, const char** env) {
  * \return 0 on success, otherwise error code.
  */
 int ivocmain_session(int argc, const char** argv, const char** env, int start_session) {
+    constexpr auto nrniv_help = R"(
+nrniv [options] [fileargs]
+  options:
+    -dll filename    dynamically load the linked mod files.
+    -h               print this help message
+    -help            print this help message
+    -isatty          unbuffered stdout, print prompt when waiting for stdin
+    -mpi             launched by mpirun or mpiexec, in parallel environment
+    -mswin_scale float   scales gui on screen
+    -music           launched as a process of the  MUlti SImulator Coordinator
+    -NSTACK integer  size of stack (default 1000)
+    -NFRAME integer  depth of function call nesting (default 200)
+    -nobanner        do not print startup banner
+    -nogui           do not send any gui info to screen
+    -notatty         buffered stdout and no prompt
+    -python          Python is the interpreter
+    -pyexe path      Python to use if python (or python3 fallback) not right.
+    -nopython        Do not initialize Python
+    -Py_NoSiteFlag   Set Py_NoSiteFlag=1 before initializing Python
+    -realtime        For hard real-time simulation for dynamic clamp
+    --version        print version info and all InterViews and X11 options
+  fileargs:          any number of following
+    -                input from stdin til ^D (end of file)
+    -c "statement"   execute next statement
+    filename         execute contents of filename
+)";
+
     nrn::Instrumentor::init_profile();
 
     // third arg should not be used as it might become invalid
     // after putenv or setenv. Instead, if necessary use
     // #include <unistd.h>
     // extern char** environ;
-    int i;
     //	prargs("at beginning", argc, argv);
-    force_load();
     nrn_global_argc = argc;
     // https://en.cppreference.com/w/cpp/language/main_function, note that argv is
     // of length argc + 1 and argv[argc] is null.
     nrn_global_argv = new const char*[argc + 1];
-    for (i = 0; i < argc + 1; ++i) {
+    for (int i = 0; i < argc + 1; ++i) {
         nrn_global_argv[i] = argv[i];
     }
     nrn_assert(nrn_global_argv[nrn_global_argc] == nullptr);
     if (nrn_optarg_on("-help", &argc, argv) || nrn_optarg_on("-h", &argc, argv)) {
-        printf(
-            "nrniv [options] [fileargs]\n\
-  options:\n\
-    -dll filename    dynamically load the linked mod files.\n\
-    -h               print this help message\n\
-    -help            print this help message\n\
-    -isatty          unbuffered stdout, print prompt when waiting for stdin\n\
-    -mpi             launched by mpirun or mpiexec, in parallel environment\n\
-    -mswin_scale float   scales gui on screen\n\
-    -music           launched as a process of the  MUlti SImulator Coordinator\n\
-    -NSTACK integer  size of stack (default 1000)\n\
-    -NFRAME integer  depth of function call nesting (default 200)\n\
-    -nobanner        do not print startup banner\n\
-    -nogui           do not send any gui info to screen\n\
-    -notatty         buffered stdout and no prompt\n\
-    -python          Python is the interpreter\n\
-    -pyexe path      Python to use if python (or python3 fallback) not right.\n\
-    -nopython        Do not initialize Python\n\
-    -Py_NoSiteFlag   Set Py_NoSiteFlag=1 before initializing Python\n\
-    -realtime        For hard real-time simulation for dynamic clamp\n\
-    --version        print version info\n\
-    and all InterViews and X11 options\n\
-  fileargs:          any number of following\n\
-    -                input from stdin til ^D (end of file)\n\
-    -c \"statement\"    execute next statement\n\
-    filename         execute contents of filename\n\
-");
+        printf(nrniv_help);
         exit(0);
     }
     if (nrn_optarg_on("--version", &argc, argv)) {
@@ -452,37 +436,28 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     // check if user is trying to use -mpi or -p4 when it was not
     // enabled at build time.  If so, issue a warning.
 
-    int b;
-    b = 0;
-    for (i = 0; i < argc; ++i) {
-        if (strncmp("-p4", (argv)[i], 3) == 0) {
-            b = 1;
+    for (int i = 0; i < argc; ++i) {
+        if ((strncmp("-p4", (argv)[i], 3) == 0) || (strcmp("-mpi", (argv)[i]) == 0)) {
+            printf(
+                "Warning: detected user attempt to enable MPI, but MPI support was disabled at "
+                "build "
+                "time.\n");
             break;
         }
-        if (strcmp("-mpi", (argv)[i]) == 0) {
-            b = 1;
-            break;
-        }
-    }
-    if (b) {
-        printf(
-            "Warning: detected user attempt to enable MPI, but MPI support was disabled at build "
-            "time.\n");
     }
 
 #endif
 
-#if defined(IVX11_DYNAM)
+#if defined(HAVE_IV) && defined(IVX11_DYNAM)
     if (hoc_usegui && ivx11_dyload()) {
         hoc_usegui = 0;
         hoc_print_first_instance = 0;
     }
 #endif
 
-#if NRN_MUSIC
-    nrn_optarg_on("-music", &argc, argv);
-#else
-    if (nrn_optarg_on("-music", &argc, argv)) {
+    const bool music_enabled = nrn_optarg_on("-music", &argc, argv);
+#if !NRN_MUSIC
+    if (music_enabled) {
         printf("Warning: attempt to enable MUSIC but MUSIC support was disabled at build time.\n");
     }
 #endif
@@ -561,40 +536,33 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
         }
     }
 #endif
-    auto const nrn_props_size = strlen(neuron_home) + 20;
-    char* nrn_props = new char[nrn_props_size];
     if (session) {
-        std::snprintf(nrn_props, nrn_props_size, "%s/%s", neuron_home, "lib/nrn.defaults");
+        const auto nrn_def_path1 = fs::path(neuron_home) / "lib" / "nrn.defaults";
+        const auto nrn_def_path2 = fs::path(neuron_home) / "lib" / "nrn.def";
+        auto file_exists = [](const auto& path) noexcept -> bool {
+            // make sure it doesn't throw
+            std::error_code err;
+            return fs::is_regular_file(path, err);
+        };
 #ifdef WIN32
-        FILE* f;
-        if ((f = fopen(nrn_props, "r")) != (FILE*) 0) {
-            fclose(f);
-            session->style()->load_file(String(nrn_props), -5);
+        if (file_exists(nrn_def_path1)) {
+            session->style()->load_file(String(nrn_def_path1.string().c_str()), -5);
+        } else if (file_exists(nrn_def_path2)) {
+            session->style()->load_file(String(nrn_def_path2.string().c_str()), -5);
         } else {
-#ifdef MINGW
-            std::snprintf(nrn_props, nrn_props_size, "%s/%s", neuron_home, "lib/nrn.def");
-#else
-            std::snprintf(nrn_props, nrn_props_size, "%s\\%s", neuron_home, "lib\\nrn.def");
-#endif
-            if ((f = fopen(nrn_props, "r")) != (FILE*) 0) {
-                fclose(f);
-                session->style()->load_file(String(nrn_props), -5);
-            } else {
-                char buf[256];
-                Sprintf(buf, "Can't load NEURON resources from %s[aults]", nrn_props);
-                printf("%s\n", buf);
-            }
+            fmt::print("Can't load NEURON resources from {}[aults]\n", nrn_def_path1.string());
         }
 #else
-        session->style()->load_file(String(nrn_props), -5);
+        session->style()->load_file(String(nrn_def_path1.string().c_str()), -5);
 #endif
         char* h = getenv("HOME");
         if (h) {
-            std::snprintf(nrn_props, nrn_props_size, "%s/%s", h, ".nrn.defaults");
-            session->style()->load_file(String(nrn_props), -5);
+            const auto nrn_def_path_dot = fs::path(h) / ".nrn.defaults";
+            if (file_exists(nrn_def_path_dot)) {
+                session->style()->load_file(String(nrn_def_path_dot.string().c_str()), -5);
+            }
         }
     }
-    delete[] nrn_props;
 
 #endif /*OCSMALL*/
 

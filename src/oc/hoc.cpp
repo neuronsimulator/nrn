@@ -1,4 +1,7 @@
 #ifndef __INTEL_LLVM_COMPILER
+#ifdef __clang__
+#pragma float_control(precise, on)
+#endif
 #pragma STDC FENV_ACCESS ON
 #endif
 
@@ -27,6 +30,7 @@
 
 #include <cfenv>
 #include <condition_variable>
+#include <filesystem>
 #include <iostream>
 #include <mutex>
 #include <thread>
@@ -168,9 +172,7 @@ static int c = '\n'; /* global for use by warning() */
 void set_intset() {
     hoc_intset++;
 }
-#endif
-#ifdef WIN32
-extern void hoc_win32_cleanup();
+extern void ivoc_win32_cleanup();
 #endif
 
 static int follow(int expect, int ifyes, int ifno); /* look ahead for >=, etc. */
@@ -945,7 +947,6 @@ void inputReadyThread() {
 #endif
 
 void hoc_final_exit(void) {
-    char* buf;
 #if defined(USE_PYTHON)
     if (neuron::python::methods.interpreter_start) {
         neuron::python::methods.interpreter_start(0);
@@ -961,16 +962,14 @@ void hoc_final_exit(void) {
     rl_deprep_terminal();
 #endif
     ivoc_cleanup();
-#ifdef WIN32
-    hoc_win32_cleanup();
-#else
-    std::string cmd{neuron_home};
-    cmd += "/lib/cleanup ";
-    cmd += std::to_string(hoc_pid());
-    if (system(cmd.c_str())) {  // fix warning: ignoring return value
-        return;
-    }
+#if defined(WIN32) && HAVE_IV
+    ivoc_win32_cleanup();
 #endif
+    auto tmp_dir = std::getenv("TEMP");
+    auto path = std::filesystem::path(tmp_dir ? std::string(tmp_dir) : "/tmp") /
+                fmt::format("oc{}.hl", hoc_pid());
+    std::error_code ec;
+    std::filesystem::remove(path, ec);
 }
 
 void hoc_quit(void) {

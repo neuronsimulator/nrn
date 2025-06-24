@@ -1,2 +1,6 @@
-pytest
-setuptools;python_version>='3.12' # From 3.12, no longer installed by default
+pytest<=8.1.1 # potential bug from 8.2.0 due to parallelism?
+# for coverage
+pytest-cov<=6.0.0
+# for RXD test
+plotly<=6.0.0
+anywidget<=0.9.13

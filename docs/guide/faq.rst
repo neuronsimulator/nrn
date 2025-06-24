@@ -17,7 +17,7 @@ To start NEURON from python and bring up the NEURON Main Menu, launch "python" t
 
 .. code:: python
 
-    from neuron import h, gui
+    from neuron import n, gui
 
 To make NEURON read a file called ``foo.hoc`` when it starts :
 

@@ -3,22 +3,29 @@
 Miscellaneous Menus
 -------------------
 
+.. note::
 
+    GUI menus require one to have previously run:
+
+    .. code-block::
+        python
+
+        from neuron import gui
 
 .. function:: nrnglobalmechmenu
 
 
     Syntax:
-        ``h.nrnglobalmechmenu("mechname")``
+        ``n.nrnglobalmechmenu("mechname")``
 
-        ``n = h.nrnglobalmechmenu("mechname", 0)``
+        ``n = n.nrnglobalmechmenu("mechname", 0)``
 
 
     Description:
         pops up panel containing all global variables defined by the 
         mechanism. 
          
-        :samp:`h.nrnglobalmechmenu("{mechname}", 0)` returns the number of global variables 
+        :samp:`n.nrnglobalmechmenu("{mechname}", 0)` returns the number of global variables 
         for this mechanism. Does not pop up a panel. 
          
 
@@ -40,9 +47,9 @@ Miscellaneous Menus
          
 
     Syntax:
-        ``h.nrnpointmenu(PointProcessObject)``
+        ``n.nrnpointmenu(PointProcessObject)``
 
-        ``h.nrnpointmenu(PointProcessObject, labelstyle)``
+        ``n.nrnpointmenu(PointProcessObject, labelstyle)``
 
 
     Description:
@@ -66,7 +73,7 @@ Miscellaneous Menus
 
 
     Syntax:
-        ``h.nrnsecmenu(x, vartype, sec=section)``
+        ``n.nrnsecmenu(x, vartype, sec=section)``
 
 
     Description:

@@ -24,6 +24,7 @@ add_executable(
   unit_tests/container/node.cpp
   unit_tests/node_order_optim/permutations.cpp
   unit_tests/utils/enumerate.cpp
+  unit_tests/utils/Sprintf.cpp
   unit_tests/oc/hoc_interpreter.cpp
   cover/unit_tests/cover.cpp)
 set(catch2_targets testneuron)
@@ -801,8 +802,14 @@ add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/hh.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/stim.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/pattern.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/test/hoctests/rand.mod")
+# Test nocmodl with units
+add_test(
+  NAME nocmodl::no_env
+  COMMAND $<TARGET_FILE:nocmodl> -o "${CMAKE_CURRENT_BINARY_DIR}"
+          "${PROJECT_SOURCE_DIR}/test/coreneuron/mod files/axial.mod"
+  WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
 set_property(TEST modlunit_pattern PROPERTY WILL_FAIL ON)
-
+cpp_cc_configure_sanitizers(TEST nocmodl::no_env)
 set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}")
 cpp_cc_configure_sanitizers(TEST ${TESTS})
 # If profiling is enabled, run ringtest with profiler
@@ -814,3 +821,14 @@ endif()
 
 # Add tests that are configured using external repositories
 add_subdirectory(external)
+
+# ============================================
+# Test NMODL
+# ============================================
+if((NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON) AND NRN_ENABLE_TESTS)
+  add_subdirectory(nmodl/transpiler/unit)
+  add_subdirectory(nmodl/transpiler/integration)
+  if(NRN_ENABLE_PYTHON AND NOT NRN_SANITIZERS)
+    add_subdirectory(nmodl/transpiler/usecases)
+  endif()
+endif()

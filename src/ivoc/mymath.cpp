@@ -1,4 +1,7 @@
 #ifndef __INTEL_LLVM_COMPILER
+#ifdef __clang__
+#pragma float_control(precise, on)
+#endif
 #pragma STDC FENV_ACCESS ON
 #endif
 
@@ -64,7 +67,7 @@ static Member_func members[] = {{"d2line", distance_to_line},
                                 {"d2line_seg", distance_to_line_segment},
                                 {"inside", inside},
                                 {"feround", feround},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 static void* cons(Object*) {
     return NULL;
@@ -73,7 +76,7 @@ static void* cons(Object*) {
 static void destruct(void*) {}
 
 void GUIMath_reg() {
-    class2oc("GUIMath", cons, destruct, members, NULL, NULL);
+    class2oc("GUIMath", cons, destruct, members, nullptr, nullptr);
 }
 
 double MyMath::anint(double x) {

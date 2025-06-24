@@ -25,7 +25,7 @@ while continuing to experience the error, it may be worthwhile to look into
 [LLVM address sanitizer](https://github.com/neuronsimulator/nrn/issues/1213).
 
 #### NaN or Inf values
-Use [h.nrn_feenableexcept(1)](../python/programming/errors.rst#nrn_feenableexcept)
+Use [n.nrn_feenableexcept(1)](../python/programming/errors.rst#nrn_feenableexcept)
 to generate floating point exception for
 DIVBYZERO, INVALID, OVERFLOW, exp(700). [GDB](#GDB) can then be used to show
 where the SIGFPE occurred.
@@ -71,7 +71,7 @@ can be eliminated with `export PYTHONMALLOC=malloc`
 
 ```
 export PYTHONMALLOC=malloc
-valgrind `pyenv which python` -c 'from neuron import h'
+valgrind `pyenv which python` -c 'from neuron import n'
     ==47683== Memcheck, a memory error detector
     ==47683== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
     ==47683== Using Valgrind-3.17.0 and LibVEX; rerun with -h for copyright info
@@ -207,9 +207,8 @@ In addition, there is a macOS-based ASan build using AppleClang, which has the
 advantage that it uses `libc++` instead of `libstdc++`.
 
 NMODL supports the sanitizers in a similar way, but this has to be enabled
-explicitly: `-DNRN_SANITIZERS=undefined` will not compile NMODL code with UBSan
-enabled, you must additionally pass `-DNMODL_SANITIZERS=undefined` to enable
-instrumentation of NMODL code.
+explicitly: `-DNRN_SANITIZERS=undefined` will also compile NMODL code with UBSan
+enabled.
 
 Profiling and performance benchmarking
 --------------------------------------

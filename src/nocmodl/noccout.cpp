@@ -90,6 +90,7 @@ void c_out() {
     P("#include \"section_fwd.hpp\"\n");
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
+    P("#include \"nrnconf.h\"\n");
     P("// clang-format on\n");
     P("#include \"neuron/cache/mechanism_range.hpp\"\n");
     P("#include <vector>\n");
@@ -489,6 +490,7 @@ void c_out_vectorize() {
     P("#include \"section_fwd.hpp\"\n");
     P("#include \"nrniv_mf.h\"\n");
     P("#include \"md2redef.h\"\n");
+    P("#include \"nrnconf.h\"\n");
     P("// clang-format on\n");
     P("#include \"neuron/cache/mechanism_range.hpp\"\n");
     printlist(defs_list);

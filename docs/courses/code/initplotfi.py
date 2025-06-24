@@ -2,15 +2,15 @@
 stdgui.hoc's clipboard_retrieve()
 """
 
-from neuron import h, gui
+from neuron import n, gui
 
-h.clipboard_retrieve()  # user selects file to be read, results in h.hoc_obj_[1] and [0]
-xvec = h.hoc_obj_[1]
-yvec = h.hoc_obj_[0]
+n.clipboard_retrieve()  # user selects file to be read, results in n.hoc_obj_[1] and [0]
+xvec = n.hoc_obj_[1]
+yvec = n.hoc_obj_[0]
 
 if xvec.size() <= 1:
     print("insufficient data")
-    h.quit()
+    n.quit()
 
 # now xvec and yvec contain the xy coords of the points
 

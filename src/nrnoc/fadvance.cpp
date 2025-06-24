@@ -304,7 +304,6 @@ static void daspk_init_step_thread(neuron::model_sorted_token const& cache_token
 }
 
 void nrn_daspk_init_step(double tt, double dteps, int upd) {
-    int i;
     double dtsav = nrn_threads->_dt;
     int so = secondorder;
     dt = dteps;
@@ -323,7 +322,6 @@ void nrn_daspk_init_step(double tt, double dteps, int upd) {
 
 void nrn_fixed_step(neuron::model_sorted_token const& cache_token) {
     nrn::Instrumentor::phase p_timestep("timestep");
-    int i;
 #if ELIMINATE_T_ROUNDOFF
     nrn_chk_ndt();
 #endif
@@ -643,7 +641,6 @@ void nrn_calc_fast_imem_fixedstep_init(NrnThread* _nt) {
 }
 
 void fcurrent(void) {
-    int i;
     if (tree_changed) {
         setup_topology();
     }
@@ -712,11 +709,9 @@ void fmatrix(void) {
         Section* sec;
         int id;
         Node* nd;
-        NrnThread* _nt;
         nrn_seg_or_x_arg(1, &sec, &x);
         id = (int) chkarg(2, 1., 4.);
         nd = node_exact(sec, x);
-        _nt = nd->_nt;
         switch (id) {
         case 1:
             hoc_retpushx(NODEA(nd));
@@ -808,7 +803,6 @@ void verify_structure(void) {
 
 void nrn_finitialize(int setv, double v) {
     int iord, i;
-    NrnThread* _nt;
     extern int _ninits;
     extern short* nrn_is_artificial_;
     ++_ninits;
@@ -838,14 +832,14 @@ void nrn_finitialize(int setv, double v) {
         nrn_deliver_events(nrn_threads + i); /* The play events at t=0 */
     }
     if (setv) {
-        FOR_THREADS(_nt) {
+        for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
             auto const vec_v = _nt->node_voltage_storage();
             std::fill_n(vec_v, _nt->end, v);
         }
     }
 #if 1 || NRNMPI
     if (nrnthread_vi_compute_)
-        FOR_THREADS(_nt) {
+        for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
             (*nrnthread_vi_compute_)(_nt);
         }
     {
@@ -854,7 +848,7 @@ void nrn_finitialize(int setv, double v) {
             (nrnmpi_v_transfer_)();
         }
         if (nrnthread_v_transfer_)
-            FOR_THREADS(_nt) {
+            for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
                 (*nrnthread_v_transfer_)(_nt);
             }
     }

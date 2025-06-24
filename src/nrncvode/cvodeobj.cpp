@@ -23,7 +23,6 @@ extern int hoc_return_type_code;
 #include "nrnpy.h"
 #include "tqueue.hpp"
 #include "mymath.h"
-#include "htlist.h"
 #include <nrnmutdec.h>
 
 #if NRN_ENABLE_THREADS
@@ -653,7 +652,7 @@ static void destruct(void* v) {
 #endif
 }
 void Cvode_reg() {
-    class2oc("CVode", cons, destruct, members, omembers, NULL);
+    class2oc("CVode", cons, destruct, members, omembers, nullptr);
     net_cvode_instance = new NetCvode(1);
     Daspk::dteps_ = 1e-9;  // change with cvode.dae_init_dteps(newval)
 }
@@ -956,14 +955,12 @@ void Cvode::maxstate(bool b, NrnThread* nt) {
 }
 
 void Cvode::maxstate(double* pd) {
-    int i;
-    NrnThread* nt;
     if (maxstate_) {
-        FOR_THREADS(nt) {
+        for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
             double* m = n_vector_data(maxstate_, nt->id);
             int n = ctd_[nt->id].nvsize_;
             int o = ctd_[nt->id].nvoffset_;
-            for (i = 0; i < n; ++i) {
+            for (int i = 0; i < n; ++i) {
                 pd[i + o] = m[i];
             }
         }
@@ -971,14 +968,12 @@ void Cvode::maxstate(double* pd) {
 }
 
 void Cvode::maxacor(double* pd) {
-    int i;
-    NrnThread* nt;
     if (maxacor_) {
-        FOR_THREADS(nt) {
+        for (const NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
             double* m = n_vector_data(maxacor_, nt->id);
             int n = ctd_[nt->id].nvsize_;
             int o = ctd_[nt->id].nvoffset_;
-            for (i = 0; i < n; ++i) {
+            for (int i = 0; i < n; ++i) {
                 pd[i + o] = m[i];
             }
         }
@@ -1055,6 +1050,11 @@ void NetCvode::set_CVRhsFn() {
     }
 }
 
+static Section* cv_rootsec(const Cvode* cv) {
+    NrnThread* nt = cv->nth_ ? cv->nth_ : nrn_threads;
+    return nt->_v_node[cv->ctd_[0].vnode_begin_index_]->sec;
+}
+
 int Cvode::cvode_init(double) {
     int err = SUCCESS;
     // note, a change in stiff_ due to call of stiff() destroys mem_
@@ -1067,7 +1067,7 @@ int Cvode::cvode_init(double) {
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVReInit error %d\n",
                    fmt::ptr(this),
-                   secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+                   secname(cv_rootsec(this)),
                    err);
             return err;
         }
@@ -1083,7 +1083,7 @@ int Cvode::cvode_init(double) {
         if (err != SUCCESS) {
             Printf("Cvode %p %s CVodeMalloc error %d\n",
                    fmt::ptr(this),
-                   secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+                   secname(cv_rootsec(this)),
                    err);
             return err;
         }
@@ -1221,13 +1221,12 @@ int Cvode::init(double tout) {
 }
 
 int Cvode::interpolate(double tout) {
-    NrnThread* _nt;
     if (neq_ == 0) {
         t_ = tout;
         if (nth_) {
             nth_->_t = t_;
         } else {
-            FOR_THREADS(_nt) {
+            for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
                 _nt->_t = t_;
             }
         }
@@ -1241,7 +1240,7 @@ int Cvode::interpolate(double tout) {
         if (nth_) {  // lvardt
             nth_->_t = tout;
         } else {
-            FOR_THREADS(_nt) {
+            for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
                 _nt->_t = tout;  // but leave t_ at the initialization point.
             }
         }
@@ -1323,7 +1322,7 @@ int Cvode::cvode_advance_tn(neuron::model_sorted_token const& sorted_token) {
     if (err < 0) {
         Printf("CVode %p %s advance_tn failed, err=%d.\n",
                fmt::ptr(this),
-               secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+               secname(cv_rootsec(this)),
                err);
         pf_(t_, y_, nullptr, &opaque);
         return err;
@@ -1366,7 +1365,7 @@ int Cvode::cvode_interpolate(double tout) {
     if (err < 0) {
         Printf("CVode %p %s interpolate failed, err=%d.\n",
                fmt::ptr(this),
-               secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+               secname(cv_rootsec(this)),
                err);
         return err;
     }
@@ -1410,7 +1409,7 @@ void Cvode::statistics() {
 #if 1
     Printf("\nCvode instance %p %s statistics : %d %s states\n",
            fmt::ptr(this),
-           secname(ctd_[0].v_node_[ctd_[0].rootnodecount_]->sec),
+           secname(cv_rootsec(this)),
            neq_,
            (use_daspk_ ? "IDA" : "CVode"));
     Printf("   %d advance_tn, %d interpolate, %d init (%d due to at_time)\n",

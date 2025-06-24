@@ -211,7 +211,6 @@ bool BBSClient::look(const char* key) {
 }
 
 void BBSClient::take(const char* key) {  // blocking
-    int bufid;
     get(key, TAKE);
     upkbegin();
 }
@@ -300,9 +299,6 @@ void BBSClient::done() {
 }
 
 void BBSClient::start() {
-    char* client = 0;
-    int tid;
-    int n;
     if (started_) {
         return;
     }

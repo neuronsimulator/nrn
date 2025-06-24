@@ -1,0 +1,163 @@
+# ================================================
+# pyproject.toml configuration for building NEURON
+# ================================================
+
+[build-system]
+build-backend = "scikit_build_core.build"
+
+# Unfortunately, scikit-build-core does not allow for dynamic
+# `build-system.requires` nor `project.dependencies`, so we need to list them
+# here manually. These are all of the dependencies that CMake finds as well.
+requires = [
+  "cython<=3.0.12",
+  "jinja2>=2.9.3,<=3.1.6",
+  "numpy<=2.2.3",
+  "pyyaml>=3.13,<=6.0.2",
+  "scikit-build-core<=0.11.1",
+  "setuptools-scm<=8.1",
+]
+
+[project]
+# We use the `packaging/python/change_name.py` to change the name to `neuron`
+# when making a release since PEP 621 disallows dynamic names.
+# Note that this only affects the name of the _wheel_, not the importable package name,
+# nor the CMake project name.
+name = "neuron-nightly"
+description = "Empirically-based simulator for modeling neurons and networks of neurons"
+readme = { file = "README.md", content-type = "text/markdown" }
+license = { file = "Copyright" }
+# maintainer is the field chosen for docs `contributors`
+maintainers = [ { name = "Michael Hines" } ]
+authors = [
+  { name = "Michael Hines", email = "michael.hines@yale.edu" },
+  { name = "Yale" },
+  { name = "Blue Brain Project" },
+]
+requires-python = ">=3.9"
+classifiers = [
+  "License :: Other/Proprietary License",
+  "Programming Language :: C++",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering",
+]
+dynamic = [ "version" ]
+
+# Python dependencies that the user must have on their system for the NEURON
+# Python wheel to work properly
+dependencies = [
+  "find-libpython<=0.4",
+  "numpy>=1.9.3,<=2.2.3",
+  "packaging<=25.0,>=22.0",
+  "setuptools<=80.8.0",
+  "sympy>=1.3,<=1.13.3",
+]
+
+urls.source = "https://github.com/neuronsimulator/nrn"
+urls.website = "https://neuron.yale.edu/neuron/"
+
+[tool.setuptools_scm]
+# Do not add commit info or state of repo (modified content, etc.).
+# Use `node-and-date` (previous default) if that is needed for development, but
+# it's a huge pain to modify in the CI because we would need to put an extra
+# setup.py in the repo, which does nothing other than obtaining the version.
+local_scheme = "no-local-version"
+
+[tool.scikit-build]
+# delegate installation to CMake
+wheel.packages = [  ]
+metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
+# The default, `strip=true`, results in missing symbols on MacOS. For more
+# details, see: https://github.com/neuronsimulator/nrn/issues/3385
+install.strip = false
+build-dir = "build_wheel"
+
+[tool.scikit-build.cmake.define]
+# When building a redistributable wheel for Linux, we pass the readline and
+# ncurses dirs to CMAKE_PREFIX_PATH. For MacOS, we pass the same + X11 dirs.
+CMAKE_PREFIX_PATH = { env = "CMAKE_PREFIX_PATH" }
+
+NRN_BINARY_DIST_BUILD = { default = "OFF", env = "NRN_BINARY_DIST_BUILD" }
+NRN_WHEEL_STATIC_READLINE = { default = "OFF", env = "NRN_WHEEL_STATIC_READLINE" }
+NRN_LINK_AGAINST_PYTHON = "OFF"
+
+# coreNEURON is enabled for shipped wheels
+NRN_ENABLE_CORENEURON = { default = "OFF", env = "NRN_ENABLE_CORENEURON" }
+
+# RX3D is always enabled
+NRN_ENABLE_RX3D = { default = "ON", env = "NRN_ENABLE_RX3D" }
+NRN_RX3D_OPT_LEVEL = { default = "0", env = "NRN_RX3D_OPT_LEVEL" }
+
+# interviews is always enabled
+NRN_ENABLE_INTERVIEWS = { default = "ON", env = "NRN_ENABLE_INTERVIEWS" }
+IV_ENABLE_X11_DYNAMIC = { default = "ON", env = "IV_ENABLE_X11_DYNAMIC" }
+
+# specific options that are hardcoded
+NRN_ENABLE_PYTHON_DYNAMIC = "ON"
+NRN_ENABLE_REL_RPATH = "ON"
+NRN_ENABLE_TESTS = "OFF"
+NRN_ENABLE_DOCS = "OFF"
+
+# Configuration for MUSIC.
+# Note that when building wheels with MUSIC, one must modify CMAKE_PREFIX_PATH
+# as well to include MUSIC_ROOT
+NRN_ENABLE_MUSIC = { default = "OFF", env = "NRN_ENABLE_MUSIC" }
+MUSIC_ROOT = { default = "", env = "MUSIC_ROOT" }
+
+# Configuration for coreNEURON. For Linux we enable OpenMP.
+CORENRN_ENABLE_OPENMP = { default = "OFF", env = "CORENRN_ENABLE_OPENMP" }
+
+# NMODL bindings are always on for wheels
+NMODL_ENABLE_PYTHON_BINDINGS = "ON"
+
+# MPI options
+NRN_ENABLE_MPI = { default = "ON", env = "NRN_ENABLE_MPI" }
+NRN_ENABLE_MPI_DYNAMIC = { default = "ON", env = "NRN_ENABLE_MPI_DYNAMIC" }
+
+# MPI headers are platform-specific, so we do not set defaults
+NRN_MPI_DYNAMIC = { env = "NRN_MPI_DYNAMIC" }
+
+[tool.cibuildwheel]
+# We can specify a custom Docker image when building NEURON
+manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64"
+manylinux-x86_64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64"
+
+# certain platforms are not supported
+skip = [ "pp*", "*-win32", "*-manylinux_i686", "*-musllinux_i686", "*-musllinux_x86_64", "*-musllinux_aarch64" ]
+
+[tool.cibuildwheel.linux]
+# since the linux build uses containers (either docker or podman), we need to
+# explicitly pass any env vars to the container
+environment-pass = [
+  "CMAKE_PREFIX_PATH",
+  # for the value of NRN_MPI_DYNAMIC passed to the container, see the `build_wheels.bash` script
+  "NRN_MPI_DYNAMIC",
+  "NRN_ENABLE_MPI_DYNAMIC",
+  "NRN_WHEEL_STATIC_READLINE",
+  "NRN_ENABLE_CORENEURON",
+  "CORENRN_ENABLE_OPENMP",
+  "NRN_BINARY_DIST_BUILD",
+  "NRN_RX3D_OPT_LEVEL",
+  # when making a release, we need to override the version
+  "SETUPTOOLS_SCM_PRETEND_VERSION",
+  # in case the user wants to use less resources
+  "CMAKE_BUILD_PARALLEL_LEVEL",
+]
+
+# comment originally from `build_wheels.bash`:
+#   libgomp:  still need work to make sure this robust and usable
+#             currently this will break when coreneuron is used and when
+#             dev environment is not installed. Note that on aarch64 we have
+#             seen issue with libgomp.so and hence we started excluding it.
+#   libnrniv: we ship precompiled version of neurondemo containing libnrnmech.so
+#             which is linked to libnrniv.so. auditwheel manipulate rpaths and
+#             ships an extra copy of libnrniv.so and hence exclude it here.
+repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so'"
+
+[tool.cibuildwheel.macos]
+repair-wheel-command = "delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}"
