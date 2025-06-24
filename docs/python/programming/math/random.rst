@@ -16,11 +16,11 @@ Random Class
 .. class:: Random
 
     Syntax:
-        ``h.Random()``
+        ``n.Random()``
 
-        ``h.Random(seed)``
+        ``n.Random(seed)``
 
-        ``h.Random(seed, size)``
+        ``n.Random(seed, size)``
 
 
     Description:
@@ -33,7 +33,7 @@ Random Class
         from the gnu c++ class library. As of version 5.2, a cryptographic quality 
         RNG class wrapper for :func:`mcell_ran4` was added and is available 
         with the :meth:`Random.MCellRan4` method. The current default random generator 
-        is :meth:`Random.ACG`. 
+        is :meth:`Random.Random123`.
          
         As of version 7.3, a more versatile cryptographic quality generator, 
         Random123, is available with the :meth:`Random.Random123` method. This generator 
@@ -56,9 +56,9 @@ Random Class
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            r = h.Random() 
+            r = n.Random() 
             for i in range(10): 
                 print(r.uniform(30, 50)) # not as efficient as 
 
@@ -67,52 +67,6 @@ Random Class
 
         prints 20 random numbers ranging in value between 30 and 50. 
          
-
-         
-
-----
-
-
-
-.. method:: Random.ACG
-
-
-    Syntax:
-        ``r.ACG()``
-
-        ``r.ACG(seed)``
-
-        ``r.ACG(seed, size)``
-
-
-    Description:
-        Use a variant of the Linear Congruential Generator (algorithm M) 
-        described in Knuth, Art of Computer Programming, Vol. III in 
-        combination with a Fibonacci Additive Congruential Generator.  This is 
-        a "very high quality" random number generator, Default size is 55, 
-        giving a size of 1244 bytes to the structure. Minimum size is 7 (total 
-        100 bytes), maximum size is 98 (total 2440 bytes). 
-
-         
-
-----
-
-
-
-.. method:: Random.MLCG
-
-
-    Syntax:
-        ``r.MLCG()``
-
-        ``r.MLCG(seed1)``
-
-        ``r.MLCG(seed1, seed2)``
-
-
-    Description:
-        Use a Multiplicative Linear Congruential Generator.  Not as high 
-        quality as the ACG.  It uses only 8 bytes. 
 
          
 
@@ -162,14 +116,14 @@ Random Class
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            r = h.Random() 
-            index = h.ref(r.MCellRan4())
+            r = n.Random() 
+            index = n.ref(r.MCellRan4())
             r.uniform(0, 2) 
-            vec = h.Vector(1000) 
-            g1 = h.Graph() 
-            g2 = h.Graph() 
+            vec = n.Vector(1000) 
+            g1 = n.Graph() 
+            g2 = n.Graph() 
             g1.size(0, 1000, 0, 2) 
             g2.size(0, 2, 0, 150) 
 
@@ -189,10 +143,10 @@ Random Class
 
             doit()
 
-            h.xpanel("MCellRan4 test") 
-            h.xbutton("Sample", doit) 
-            h.xvalue("Original index", index, 1, set_index_then_doit) 
-            h.xpanel()
+            n.xpanel("MCellRan4 test") 
+            n.xbutton("Sample", doit) 
+            n.xvalue("Original index", index, 1, set_index_then_doit) 
+            n.xpanel()
 
         .. image:: ../../images/random-mcellran4.png
             :align: center
@@ -275,13 +229,13 @@ Random Class
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            r = h.Random() 
+            r = n.Random() 
 
             r.negexp(1) 
 
-            h.mcell_ran4_init(1) 
+            n.mcell_ran4_init(1) 
             r.MCellRan4(1) 
 
             for i in range(11):
@@ -396,22 +350,22 @@ Random Class
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            r = h.Random() 
+            r = n.Random() 
             # set the distribution
             r.uniform(0, 1)
 
             # create a reference, and have the uniform random variable update it at each time step
-            rv = h.ref(0)
+            rv = n.ref(0)
             r.play(rv)
 
             # print some random numbers
             for i in range(5):
-                h.fadvance()
+                n.fadvance()
                 print(rv[0])
 
-    More practically, this might be used with a fixed time step to set, say, ``h.IClamp[0]._ref_amp`` for a random current injection.
+    More practically, this might be used with a fixed time step to set, say, ``n.IClamp[0]._ref_amp`` for a random current injection.
 
 
 ----
@@ -466,15 +420,15 @@ Random Class
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
-            r = h.Random() 
+            r = n.Random() 
             r.normal(-1, .5) 
              
-            vec = h.Vector() 
+            vec = n.Vector() 
             vec.indgen(-3, 2, .1)	# x-axis for plot 
-            hist = h.Vector(vec.size()) 
-            g = h.Graph() 
+            hist = n.Vector(vec.size()) 
+            g = n.Graph() 
             g.size(-3, 2, 0, 50) 
             hist.plot(g, vec)
             for i in range(500):
@@ -484,7 +438,7 @@ Random Class
             	if j >= 0:
             		hist[j] += 1
             	g.flush() 
-            	h.doNotify() 
+            	n.doNotify() 
 
         .. image:: ../../images/random-normal.png
             :align: center
@@ -512,18 +466,18 @@ Random Class
         .. code-block::
             python
 
-            from neuron import h, gui
-            r = h.Random() 
+            from neuron import n, gui
+            r = n.Random() 
             r.lognormal(5,2) 
-            n=20 
-            xvec = h.Vector(n*3)	# bins look like discrete spikes 
-            for i in range(n): 
+            num=20 
+            xvec = n.Vector(num*3)	# bins look like discrete spikes 
+            for i in range(num): 
             	xvec[3*i] = i - 0.1 
             	xvec[3*i+1] = i 
             	xvec[3*i+2] = i + .1 
             
-            hist = h.Vector(xvec.size()) 
-            g = h.Graph() 
+            hist = n.Vector(xvec.size()) 
+            g = n.Graph() 
             g.size(0, 15, 0, 120) 
             hist.plot(g, xvec) 
             for i in range(500):
@@ -534,7 +488,7 @@ Random Class
             		j = hist.size() - 1
             	hist[j] = hist[j]+1 
             	g.flush() 
-            	h.doNotify() 
+            	n.doNotify() 
             
 
         .. image:: ../../images/random-lognormal.png
@@ -560,20 +514,20 @@ Random Class
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            r = h.Random() 
+            r = n.Random() 
             r.poisson(3) 
              
-            n=20 
-            xvec = h.Vector(n*3) 
-            for i in range(n): 
+            num=20 
+            xvec = n.Vector(n*3) 
+            for i in range(num):
             	xvec[3*i] = i-.1 
             	xvec[3*i+1] = i 
             	xvec[3*i+2] = i+.1 
             
-            hist = h.Vector(xvec.size()) 
-            g = h.Graph() 
+            hist = n.Vector(xvec.size()) 
+            g = n.Graph() 
             g.size(0, 15, 0, 120) 
             hist.plot(g, xvec)
             for i in range(500):
@@ -585,7 +539,7 @@ Random Class
             		j = hist.size() -1 
             	hist[j] = hist[j]+1 
             	g.flush() 
-            	h.doNotify() 
+            	n.doNotify() 
             
         .. image:: ../../images/random-poisson.png
             :align: center
@@ -615,20 +569,20 @@ Random Class
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            r = h.Random() 
+            r = n.Random() 
             r.binomial(20, .5) 
              
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0, 20, 0, 100) 
-            hist = h.Vector(20) 
+            hist = n.Vector(20) 
             hist.plot(g) 
             for i in range(500):
             	j = int(r.repick()) # r.repick() always returns a float even though the binomial always is an integer
             	hist[j] += 1
             	g.flush() 
-            	h.doNotify() 
+            	n.doNotify() 
 
         .. image:: ../../images/random-binomial.png
             :align: center
@@ -656,23 +610,23 @@ Random Class
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
-            r = h.Random() 
+            r = n.Random() 
             r.geometric(.8) 
             hist = new Vector(1000) 
             def sample(): 
-            	hist = h.Vector(1000) 
+            	hist = n.Vector(1000) 
             	hist.setrand(r) 
             	hist = hist.histogram(0,100,1) 
             	hist.plot(g) 
             
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0,40,0,200) 
             sample() 
-            h.xpanel("Resample") 
-            h.xbutton("Resample", sample)
-            h.xpanel() 
+            n.xpanel("Resample") 
+            n.xbutton("Resample", sample)
+            n.xpanel() 
 
         .. image:: ../../images/random-geometric.png
             :align: center
@@ -714,23 +668,23 @@ Random Class
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
-            r = h.Random()  
+            r = n.Random()  
             r.negexp(2.5)  
-            hist = h.Vector(1000) 
+            hist = n.Vector(1000) 
             def sample():
-                    hist = h.Vector(1000) 
+                    hist = n.Vector(1000) 
                     hist.setrand(r) 
                     hist = hist.histogram(0,20,.1) 
                     hist.plot(g, .1) 
             
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0,20,0,50) 
             sample() 
-            h.xpanel("Resample") 
-            h.xbutton("Resample", sample) 
-            h.xpanel() 
+            n.xpanel("Resample") 
+            n.xbutton("Resample", sample) 
+            n.xpanel() 
 
         .. image:: ../../images/random-negexp.png
             :align: center
@@ -851,8 +805,8 @@ NMODLRandom Class
         .. code-block::
             python
 
-            from neuron import h
-            r = h.NMODLRandom()
+            from neuron import n
+            r = n.NMODLRandom()
             print(r.uniform())
 
             NEURON: NMODLRandom wrapped handle is not valid

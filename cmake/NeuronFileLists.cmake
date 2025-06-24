@@ -10,7 +10,6 @@ set(STRUCTURED_HEADER_FILES_TO_INSTALL
     neuron/model_data_fwd.hpp)
 set(HEADER_FILES_TO_INSTALL
     gnu/mcran4.h
-    gnu/nrnisaac.h
     gnu/nrnran123.h
     nrniv/backtrace_utils.h
     nrniv/bbsavestate.h
@@ -21,6 +20,7 @@ set(HEADER_FILES_TO_INSTALL
     nrnoc/md1redef.h
     nrnoc/md2redef.h
     nrnoc/membdef.h
+    nrnoc/ion_semantics.h
     nrnoc/membfunc.h
     nrnoc/multicore.h
     nrnoc/multisplit.h
@@ -35,8 +35,8 @@ set(HEADER_FILES_TO_INSTALL
     nrnoc/options.h
     nrnoc/section_fwd.hpp
     nrnoc/treeset.h
+    oc/classreg.h
     oc/hoc.h
-    oc/hoc_membf.h
     oc/hocassrt.h
     oc/hocdec.h
     oc/hocgetsym.h
@@ -106,7 +106,6 @@ set(OC_FILE_LIST
     plt.cpp
     scoprand.cpp
     symbol.cpp
-    version.cpp
     x.cpp
     xred.cpp)
 
@@ -139,8 +138,6 @@ set(NRNOC_FILE_LIST
     treeset.cpp
     multicore.cpp)
 
-set(NRNOC_GENERATED_FILE_LIST nrnversion.h)
-
 # =============================================================================
 # Files in ivoc directory
 # =============================================================================
@@ -157,7 +154,6 @@ set(IVOC_FILE_LIST
     grglyph.cpp
     grmanip.cpp
     hocmark.cpp
-    htlist.cpp
     idraw.cpp
     ivoc.cpp
     ivocmain.cpp
@@ -382,8 +378,7 @@ set(MODLUNIT_FILES_LIST
     passn.cpp
     symbol.cpp
     units.cpp
-    units1.cpp
-    version.cpp)
+    units1.cpp)
 
 set(NOCMODL_FILES_LIST
     consist.cpp
@@ -400,8 +395,7 @@ set(NOCMODL_FILES_LIST
     netrec_discon.cpp
     simultan.cpp
     solve.cpp
-    symbol.cpp
-    version.cpp)
+    symbol.cpp)
 
 set(IVOS_FILES_LIST observe.cpp resource.cpp)
 
@@ -440,7 +434,7 @@ set(NRN_PARALLEL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/parallel)
 # =============================================================================
 nrn_create_file_list(NRN_OC_SRC_FILES ${NRN_OC_SRC_DIR} ${OC_FILE_LIST})
 nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_SRC_DIR} ${NRNOC_FILE_LIST})
-nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_BUILD_DIR} ${NRNOC_GENERATED_FILE_LIST})
+nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_BUILD_DIR})
 nrn_create_file_list(NRN_IVOC_SRC_FILES ${NRN_IVOC_SRC_DIR} ${IVOC_FILE_LIST})
 nrn_create_file_list(NRN_NODEORDEROPTIM_SRC_FILES ${NRN_NODEORDEROPTIM_SRC_DIR}
                      ${NODEORDEROPTIM_FILE_LIST})
@@ -463,7 +457,7 @@ nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.c
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)
 nrn_create_file_list(NRN_MODLUNIT_SRC_FILES ${NRN_MODLUNIT_SRC_DIR} ${MODLUNIT_FILES_LIST})
 nrn_create_file_list(NRN_NOCMODL_SRC_FILES ${NRN_NOCMODL_SRC_DIR} ${NOCMODL_FILES_LIST})
-nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmpi
+nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_BINARY_DIR}/src/nrnmpi
                      ${MPI_DYNAMIC_INCLUDE})
 nrn_create_file_list(NRN_IVOS_SRC_FILES ${NRN_IVOS_SRC_DIR} ${IVOS_FILES_LIST})
 nrn_create_file_list(NRN_MUSIC_SRC_FILES ${NRN_MUSIC_SRC_DIR} ${NRN_MUSIC_FILES_LIST})

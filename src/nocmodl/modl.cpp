@@ -65,11 +65,6 @@ extern int numlist;
 extern const char* nmodl_version_;
 extern int usederivstatearray;
 
-/*SUPPRESS 763*/
-static const char* pgm_name = "nmodl";
-extern const char* RCS_version;
-extern const char* RCS_date;
-
 static void openfiles(const char* given_filename, const char* output_dir);
 
 int main(int argc, char** argv) {
@@ -157,7 +152,9 @@ int main(int argc, char** argv) {
 #if !defined(NRN_AVOID_ABSOLUTE_PATHS)
         fprintf(fcout, "    const char* nmodl_filename = \"%s\";\n", fs::absolute(finname).c_str());
 #else
-        fprintf(fcout, "    const char* nmodl_filename = \"%s\";\n", finname);
+        fprintf(fcout,
+                "    const char* nmodl_filename = \"%s\";\n",
+                fs::path(finname).filename().c_str());
 #endif
         fprintf(fcout, "    const char* nmodl_file_text = \n");
         ITERATE(q, filetxtlist) {
@@ -212,8 +209,6 @@ int main(int argc, char** argv) {
 }
 
 static void openfiles(const char* given_filename, const char* output_dir) {
-    char s[NRN_BUFSIZE];
-
     char output_filename[NRN_BUFSIZE];
     char input_filename[NRN_BUFSIZE];
     modprefix = strdup(given_filename);  // we want to keep original string to open input file

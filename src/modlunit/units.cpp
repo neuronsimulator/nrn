@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <string>
+#include <string_view>
+#include <fstream>
 
 /* /local/src/master/nrn/src/modlunit/units.c,v 1.5 1997/11/24 16:19:13 hines Exp */
 /* Mostly from Berkeley */
@@ -99,6 +101,23 @@ static int peekc;
 static int dumpflg;
 
 static const char* pc;
+
+static constexpr std::string_view embedded_nrnunits =
+#include "embedded_nrnunits.lib"
+    ;
+
+// cross-platform workaround for:
+// https://github.com/neuronsimulator/nrn/issues/3470
+// the API requires a FILE handle instead of a std::string or similar
+// so we write a temporary file
+static FILE* open_embedded_nrnunits_as_file() {
+    auto tmp_path = std::string(std::tmpnam(nullptr));
+    auto out = std::ofstream(tmp_path, std::ios::out);
+    out.write(embedded_nrnunits.data(), embedded_nrnunits.size());
+    out.close();
+
+    return std::fopen(tmp_path.c_str(), "r");
+}
 
 static int Getc(FILE* inp) {
     if (inp != stdin) {
@@ -507,7 +526,6 @@ void unit_stk_clean() {
 
 // allow the outside world to call either modl_units() or unit_init().
 static void units_alloc() {
-    int i;
     static int units_alloc_called = 0;
     if (!units_alloc_called) {
         units_alloc_called = 1;
@@ -521,7 +539,6 @@ static void units_alloc() {
 extern void unit_init();
 
 void modl_units() {
-    int i;
     static int first = 1;
     unitonflag = 1;
     if (first) {
@@ -566,6 +583,11 @@ void unit_init() {
         }
     }
 #endif
+
+    // try to load the embedded one as a last resort
+    if (!inpfile) {
+        inpfile = open_embedded_nrnunits_as_file();
+    }
 
     if (!inpfile) {
         fprintf(stderr, "Set a MODLUNIT environment variable path to the units table file\n");

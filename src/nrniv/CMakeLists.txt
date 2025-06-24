@@ -44,8 +44,12 @@ add_custom_target(generated_source_files true)
 add_custom_target(modlunit_generated_files DEPENDS "${NRN_MODLUNIT_GEN}/lex.cpp"
                                                    "${NRN_MODLUNIT_GEN}/parse1.cpp")
 add_dependencies(generated_source_files modlunit_generated_files)
+
 add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES} "${NRN_MODLUNIT_GEN}/lex.cpp"
                         "${NRN_MODLUNIT_GEN}/parse1.cpp")
+add_dependencies(modlunit modlunit_generated_files)
+target_include_directories(modlunit PRIVATE "${PROJECT_BINARY_DIR}/share/nrn/lib")
+
 target_compile_definitions(modlunit PRIVATE NRNUNIT=1)
 cpp_cc_configure_sanitizers(TARGET modlunit)
 # Generated .cpp needs to find source-directory .hpp and vice versa.
@@ -82,7 +86,7 @@ add_custom_command(
   COMMAND "${BISON_EXECUTABLE}" ARGS "--defines=${NRN_NOCMODL_GEN_REL}/diffeq.hpp" -o
           "${NRN_NOCMODL_GEN_REL}/diffeq.cpp" "${NRN_NOCMODL_SRC_REL}/diffeq.ypp"
   DEPENDS "${NRN_NOCMODL_SRC_DIR}/diffeq.ypp"
-  COMMENT "[BISON][nocmodlparser] Building parser with bison ${BISON_VERSION}")
+  COMMENT "[BISON][nocmodlparser] Building diffeq with bison ${BISON_VERSION}")
 
 add_custom_target(
   nocmodl_generated_files
@@ -90,9 +94,12 @@ add_custom_target(
           "${NRN_NOCMODL_GEN}/parse1.cpp" "${NRN_NOCMODL_GEN}/diffeq.hpp"
           "${NRN_NOCMODL_GEN}/diffeq.cpp")
 add_dependencies(generated_source_files nocmodl_generated_files)
+
 add_executable(nocmodl ${NRN_NOCMODL_SRC_FILES} "${NRN_NOCMODL_GEN}/lex.cpp"
                        "${NRN_NOCMODL_GEN}/parse1.cpp" "${NRN_NOCMODL_GEN}/diffeq.cpp")
+target_include_directories(nocmodl PRIVATE "${PROJECT_BINARY_DIR}/share/nrn/lib")
 cpp_cc_configure_sanitizers(TARGET nocmodl)
+add_dependencies(nocmodl nocmodl_generated_files)
 target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 CVODE=1)
 # Otherwise the generated code in the binary directory does not find headers in the modlunit source
 # directory and the source files in the source directory do not find generated headers in the binary
@@ -106,11 +113,20 @@ if(NRN_NOCMODL_CXX_FLAGS)
   target_compile_options(nocmodl PRIVATE ${NRN_NOCMODL_CXX_FLAGS})
 endif()
 
+# CLI11-included headers have some warnings on NVHPC
+if(NRN_NOCMODL_COMPILER_WARNING_SUPPRESSIONS)
+  target_compile_options(nocmodl PRIVATE ${NRN_NOCMODL_COMPILER_WARNING_SUPPRESSIONS})
+endif()
+
 # =============================================================================
 # Translate all MOD files to C and mark them generated
 # =============================================================================
 foreach(modfile ${NRN_MODFILE_BASE_NAMES})
-  nocmodl_mod_to_cpp(${modfile})
+  set(modfile_compat OFF)
+  if((NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY) AND modfile MATCHES "hh$")
+    set(modfile_compat ON)
+  endif()
+  nocmodl_mod_to_cpp(${modfile} ${modfile_compat})
   list(APPEND NRN_MODFILE_CPP ${PROJECT_BINARY_DIR}/${modfile}.cpp)
 endforeach()
 set_property(
@@ -199,6 +215,7 @@ set(NRN_INCLUDE_DIRS
     ${NRN_OC_SRC_DIR}
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/src/nrncvode
+    ${PROJECT_BINARY_DIR}/src/nrnmpi
     ${PROJECT_BINARY_DIR}/src/nrnoc
     ${PROJECT_BINARY_DIR}/src/nrnpython
     ${PROJECT_BINARY_DIR}/src/oc
@@ -230,22 +247,6 @@ set(NRN_INCLUDE_DIRS
 # =============================================================================
 # Helper commands : generate various headers
 # =============================================================================
-# ~~~
-# generate version information file
-# nrnversion.h does not depend on another file but on the output of
-# git2version_h.sh and nrnversion.h should only be changed if that output
-# is different from the contents of nrnversion.h
-# ~~~
-add_custom_target(
-  nrnversion_h
-  COMMAND ${CMAKE_COMMAND} -E env PROJECT_VERSION=${PROJECT_VERSION} bash
-          ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} > nrnversion.h.tmp
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp nrnversion.h
-  DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh
-  WORKING_DIRECTORY ${NRN_NRNOC_BUILD_DIR})
-
-add_custom_command(OUTPUT ${NRN_NRNOC_BUILD_DIR}/nrnversion.h DEPENDS nrnversion_h)
-add_dependencies(generated_source_files nrnversion_h)
 
 # avoid error with nvector_serial.cpp for #include <../../../nrnconf.h>
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
@@ -264,9 +265,10 @@ add_dependencies(generated_source_files generate_hocusr_header)
 
 # header for dynamic mpi
 if(NRN_ENABLE_MPI_DYNAMIC)
+  file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/src/nrnmpi")
   add_custom_command(
     OUTPUT ${NRNMPI_DYNAMIC_INCLUDE_FILE}
-    COMMAND sh mkdynam.sh
+    COMMAND sh mkdynam.sh "${PROJECT_BINARY_DIR}/src/nrnmpi"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/nrnmpi
     DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.sh
             ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpidec.h)
@@ -383,14 +385,8 @@ if(NRN_ENABLE_MUSIC)
                               PROPERTIES INCLUDE_DIRECTORIES ${MUSIC_INCDIR})
 endif()
 
-if(NRN_COVERAGE_FILES)
-  foreach(f ${NRN_COVERAGE_FILES})
-    set_property(
-      SOURCE ${PROJECT_SOURCE_DIR}/${f}
-      APPEND
-      PROPERTY COMPILE_FLAGS ${NRN_COVERAGE_FLAGS})
-  endforeach()
-endif()
+# Maybe NRN_COVERAGE_FILES mentions a file compiled by this CMakeLists.txt
+nrn_enable_coverage_files()
 
 # =============================================================================
 # All source directories to include
@@ -401,6 +397,8 @@ include_directories(${NRN_INCLUDE_DIRS})
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+add_dependencies(nrniv_lib generated_source_files)
+add_cpp_git_information(nrniv_lib PRIVATE)
 target_link_libraries(nrniv_lib nrngnu)
 target_link_libraries(nrniv_lib sparse13)
 target_link_libraries(nrniv_lib fmt::fmt)
@@ -414,6 +412,26 @@ endif()
 if(NRN_ENABLE_THREADS)
   target_link_libraries(nrniv_lib Threads::Threads)
 endif()
+
+if(${NRN_ENABLE_DIGEST})
+  if(NRN_MACOS_BUILD)
+    # where to get openssl/sha.h after brew install openssl
+    set_property(
+      SOURCE ${NRN_OC_SRC_DIR}/debug.cpp
+      APPEND
+      PROPERTY INCLUDE_DIRECTORIES /opt/homebrew/Cellar/openssl@3/3.1.0/include)
+    find_library(LIB_CRYPTO crypto PATHS /opt/homebrew/Cellar/openssl@3/3.1.0/lib REQUIRED)
+    target_link_libraries(nrniv_lib ${LIB_CRYPTO})
+  else()
+    target_link_libraries(nrniv_lib crypto)
+  endif()
+endif()
+
+if(${NRN_ENABLE_ARCH_INDEP_EXP_POW})
+  find_library(LIB_MPFR mpfr REQUIRED)
+  target_link_libraries(nrniv_lib ${LIB_MPFR})
+endif()
+
 if(NRN_WINDOWS_BUILD)
   target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
 else()
@@ -527,12 +545,6 @@ else()
   target_link_libraries(nrniv_lib ${X11_LIBRARIES})
 endif()
 
-if(NRN_COVERAGE_FILES)
-  target_link_libraries(nrniv_lib ${NRN_COVERAGE_LIB})
-  target_link_libraries(modlunit ${NRN_COVERAGE_LIB})
-  target_link_libraries(nocmodl ${NRN_COVERAGE_LIB})
-endif()
-
 # =============================================================================
 # Final executable
 # =============================================================================
@@ -562,10 +574,11 @@ endif()
 # For now, we keep this distinction as it reduces the PATH and is
 # expected when ctypes looks for dlls
 # ~~~
-install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
+install(TARGETS nrniv nocmodl modlunit DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 if(LIBIVX11DYNAM_NAME)
-  install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME} DESTINATION lib)
+  install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME}
+          DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
 endif()
 
 # =============================================================================
@@ -593,4 +606,5 @@ add_custom_target(
           ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h ${CMAKE_BINARY_DIR}/include/nrnconf.h)
 
 # For the installation
-install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
+install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn)

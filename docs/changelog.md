@@ -1,5 +1,15 @@
 # NEURON 8.2
 
+## 8.2.7
+_Release Date_ : 25-05-2025
+
+This release allows use of Python 3.13.
+Pins numpy to >=2.
+Includes backports for several fixes.
+
+### Bug Fixes
+- On h.quit(), leave terminal settings in same state as when neuron.hoc was imported.
+
 ## 8.2.6
 _Release Date_ : 24-07-2024
 

@@ -346,15 +346,6 @@ PYTHON_EXECUTABLE:PATH=
 
     -DPYTHON_EXECUTABLE=`which python3.8`
 
-NRN_ENABLE_MODULE_INSTALL:BOOL=ON
----------------------------------
-  Enable installation of the NEURON Python module. 
-  By default, the NEURON module is installed in CMAKE_INSTALL_PREFIX/lib/python.
-
-  Note: When building wheels, this must be set to OFF since the top-level `setup.py`
-  is already building the extensions.
-
-
 NRN_ENABLE_RX3D:BOOL=ON
 -----------------------
   Enable rx3d support
@@ -674,3 +665,23 @@ NRN_ENABLE_MATH_OPT:BOOL=OFF
 
   Note: Compilers like Intel, NVHPC, Cray etc enable such optimisations
   by default.
+
+NRN_ENABLE_DIGEST:BOOL=OFF
+------------------------------
+  Provides \ :func:`nrn_digest` function for debugging cross platform floating
+  result differences.
+
+  Requires libcrypto
+
+NRN_ENABLE_ARCH_INDEP_EXP_POW:BOOL=OFF
+---------------------------------
+  Provides \ :func:`use_exp_pow_precision` function so that exp and pow produce
+  same results on all platforms.
+
+  Requires mpfr (multiple precision floating-point computation). eg.
+  ``sudo apt install libmpfr-dev``
+
+  To get platform independent floating point results with clang,
+  also consider using
+  ``-DCMAKE_C_FLAGS="-ffp-contract=off" -DCMAKE_CXX_FLAGS="-ffp-contract=off"``
+  or, alternatively, ``"-fp-model=strict``

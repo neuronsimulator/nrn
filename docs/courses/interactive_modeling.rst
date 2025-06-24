@@ -28,13 +28,13 @@ We *could* implement this model in Python:
 .. code::
     python
 
-    from neuron import h, gui
+    from neuron import n, gui
 
-    axon = h.Section(name='axon')
+    axon = n.Section(name='axon')
     axon.L = 2e4
     axon.diam = 100
     axon.nseg = 43
-    axon.insert(h.hh)
+    axon.insert(n.hh)
 
 **But** for this exercise, let's instead use the CellBuilder tool to create the model:
 
@@ -50,7 +50,7 @@ Save the model in ``hhaxon.ses`` using :menuselection:`NEURONMainMenu --> File -
 Using the computational model
 +++++++++++++++++++++++++++++
 
-If starting from a fresh launch of python, you can load the saved ses file by loading NEURON and its GUI: ``from neuron import h. gui`` and then selecting :menuselection:`NEURONMainMenu --> File --> loadsession`
+If starting from a fresh launch of python, you can load the saved ses file by loading NEURON and its GUI: ``from neuron import n. gui`` and then selecting :menuselection:`NEURONMainMenu --> File --> loadsession`
 
 Alternatively you can use NEURON to execute ``hhaxon.ses``
 
@@ -61,8 +61,8 @@ Alternatively you can use NEURON to execute ``hhaxon.ses``
 .. code::
     python
 
-    from neuron import h, gui
-    h.load_file('hhaxon.ses')
+    from neuron import n, gui
+    n.load_file('hhaxon.ses')
 
 
 Exercises

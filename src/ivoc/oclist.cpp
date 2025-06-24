@@ -454,7 +454,7 @@ OcList::~OcList() {
 
 void OcList_reg() {
     // printf("Oclist_reg\n");
-    class2oc("List", l_cons, l_destruct, l_members, l_retobj_members, NULL);
+    class2oc("List", l_cons, l_destruct, l_members, l_retobj_members, nullptr);
     list_class_sym_ = hoc_lookup("List");
 }
 

@@ -314,7 +314,6 @@ void whileloop(Item* qsol, long type, int ss) {
     /* executing more that one for loop in a single call to model() is an error
     which is trapped in scop */
     static int called = 0, firstderf = 1;
-    const char* cp = 0;
 
     switch (type) {
     case DERF:
@@ -335,11 +334,6 @@ void whileloop(Item* qsol, long type, int ss) {
             }
             deltaindep = ifnew_parminstall(buf, sval, "", "");
             firstderf = 0;
-        }
-        if (type == DERF) {
-            cp = "dt";
-        } else if (type == DISCRETE) {
-            cp = "0.0";
         }
         if (ss) {
             return;

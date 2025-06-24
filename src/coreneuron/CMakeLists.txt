@@ -242,42 +242,6 @@ if(MINGW)
 endif()
 
 # =============================================================================
-# NMODL specific options
-# =============================================================================
-find_package(nmodl)
-if(NOT "${CORENRN_NMODL_DIR}" STREQUAL "" AND NOT nmodl_FOUND)
-  message(FATAL_ERROR "Cannot find NMODL in ${CORENRN_NMODL_DIR}")
-endif()
-if(nmodl_FOUND)
-  set(CORENRN_NMODL_BINARY ${nmodl_BINARY})
-else()
-  set(NMODL_ENABLE_PYTHON_BINDINGS
-      OFF
-      CACHE BOOL "Enable NMODL python bindings")
-  nrn_add_external_project(nmodl DISABLE_ADD)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/external/nmodl ${CMAKE_BINARY_DIR}/external/nmodl)
-  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
-  set(NMODL_TARGET_TO_DEPEND nmodl)
-  set(NMODL_PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR}/external/nmodl)
-  # install nrnunits.lib and libpywrapper.so from external/nmodl
-  install(
-    FILES ${NMODL_PROJECT_BINARY_DIR}/lib/libpywrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
-    DESTINATION lib
-    COMPONENT pywrapper
-    OPTIONAL)
-  install(
-    FILES ${NMODL_PROJECT_BINARY_DIR}/share/nmodl/nrnunits.lib
-    DESTINATION share/nmodl
-    COMPONENT nrnunits)
-endif()
-set_property(GLOBAL PROPERTY CORENRN_NMODL_BINARY "${CORENRN_NMODL_BINARY}")
-
-# set correct arguments for nmodl for cpu/gpu target
-set(CORENRN_NMODL_FLAGS
-    ""
-    CACHE STRING "Extra NMODL options such as passes")
-
-# =============================================================================
 # Profiler/Instrumentation Options
 # =============================================================================
 if(CORENRN_ENABLE_CALIPER_PROFILING)
@@ -523,7 +487,7 @@ if(NRN_ENABLE_MPI AND NRN_ENABLE_MPI_DYNAMIC)
     PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
                LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
                POSITION_INDEPENDENT_CODE ON)
-  install(TARGETS ${corenrn_mpi_targets} DESTINATION lib)
+  install(TARGETS ${corenrn_mpi_targets} DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
 endif()
 
 # Suppress some compiler warnings.
@@ -570,7 +534,7 @@ add_custom_command(
   OUTPUT ${output_binaries}
   DEPENDS coreneuron-core ${NMODL_TARGET_TO_DEPEND} ${CORENEURON_BUILTIN_MODFILES}
   COMMAND
-    ${CMAKE_COMMAND} -E env NMODLHOME=${NMODL_PROJECT_BINARY_DIR}
+    ${CMAKE_COMMAND} -E env NMODLHOME=${NMODL_PROJECT_PLATLIB_BINARY_DIR}
     ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b ${COMPILE_LIBRARY_TYPE} -m ${CORENRN_NMODL_BINARY} -n
     "internal" -p 4 "."
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
@@ -663,45 +627,46 @@ endif()
 install(
   TARGETS coreneuron-core ${coreneuron_cuda_target}
   EXPORT coreneuron
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib
+  ARCHIVE DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib
   INCLUDES
-  DESTINATION $<INSTALL_INTERFACE:include>)
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/include)
 
 # headers and some standalone code files for nrnivmodl-core
 install(
   DIRECTORY ${CMAKE_BINARY_DIR}/include/coreneuron
-  DESTINATION include/
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/include/
   FILES_MATCHING
   PATTERN "*.h*"
   PATTERN "*.ipp")
-install(FILES ${MODFUNC_SHELL_SCRIPT} ${ENGINEMECH_CODE_FILE} DESTINATION share/coreneuron)
+install(FILES ${MODFUNC_SHELL_SCRIPT} ${ENGINEMECH_CODE_FILE}
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/coreneuron)
 
 # copy nmodl for nrnivmodl-core
-install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION bin)
+install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
 
 # install nrniv-core app
 install(
   PROGRAMS ${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR}/special-core
-  DESTINATION bin
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin
   RENAME nrniv-core)
-install(FILES apps/coreneuron.cpp DESTINATION share/coreneuron)
+install(FILES apps/coreneuron.cpp DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/coreneuron)
 
 # install mechanism library in shared library builds, if we're linking statically then there is no
 # need
 if(CORENRN_ENABLE_SHARED)
-  install(FILES ${corenrn_mech_library} DESTINATION lib)
+  install(FILES ${corenrn_mech_library} DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
 endif()
 
 # install mod files
-install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION share)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share)
 
 # =============================================================================
 # Install for end users
 # =============================================================================
 install(FILES ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile
-        DESTINATION share/coreneuron)
-install(PROGRAMS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core DESTINATION bin)
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/coreneuron)
+install(PROGRAMS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
 
 # =============================================================================
 # Set flag for NEURON linking

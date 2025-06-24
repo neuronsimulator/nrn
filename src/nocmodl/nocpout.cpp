@@ -256,6 +256,10 @@ void parout() {
 \n#if !NRNGPU\
 \n#undef exp\
 \n#define exp hoc_Exp\
+\n#if NRN_ENABLE_ARCH_INDEP_EXP_POW\
+\n#undef pow\
+\n#define pow hoc_pow\
+\n#endif\
 \n#endif\n\
 ");
     if (protect_include_) {
@@ -1423,7 +1427,10 @@ if (auto* const _extnode = _nrn_mechanism_access_extnode(_nd); _extnode) {\n\
                 mechname,
                 fs::absolute(finname).c_str());
 #else
-        Sprintf(buf1, "\tivoc_help(\"help ?1 %s %s\\n\");\n", mechname, finname);
+        Sprintf(buf1,
+                "\tivoc_help(\"help ?1 %s %s\\n\");\n",
+                mechname,
+                fs::path(finname).filename().c_str());
 #endif
         Lappendstr(defs_list, buf1);
     }
@@ -1768,7 +1775,7 @@ void units_reg() {
         if (s->nrntype & NRNGLOBAL) {
             decode_ustr(s, &d1, &d2, u);
             if (u[0]) {
-                Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, suffix, u);
+                SprintfAsrt(buf, "{\"%s%s\", \"%s\"},\n", s->name, suffix, u);
                 lappendstr(defs_list, buf);
             }
         }
@@ -1777,7 +1784,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
+            SprintfAsrt(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }
@@ -1785,7 +1792,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
+            SprintfAsrt(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }
@@ -1793,7 +1800,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
+            SprintfAsrt(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }
@@ -1801,7 +1808,7 @@ void units_reg() {
         s = SYM(q);
         decode_ustr(s, &d1, &d2, u);
         if (u[0]) {
-            Sprintf(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
+            SprintfAsrt(buf, "{\"%s%s\", \"%s\"},\n", s->name, rsuffix, u);
             lappendstr(defs_list, buf);
         }
     }

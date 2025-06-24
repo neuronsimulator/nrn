@@ -207,7 +207,6 @@ extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 extern cTemplate** nrn_pnt_template_;
-extern hoc_Item* net_cvode_instance_psl();
 extern void nrn_netcon_event(NetCon*, double);
 extern double t;
 typedef void (*PFIO)(int, Object*);
@@ -1008,10 +1007,10 @@ static Member_func members[] = {{"save", save},
                                 {"ignore", ppignore},
                                 // allow Vector.play to work
                                 {"vector_play_init", vector_play_init},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 void BBSaveState_reg() {
-    class2oc("BBSaveState", cons, destruct, members, NULL, NULL);
+    class2oc("BBSaveState", cons, destruct, members, nullptr, nullptr);
 }
 
 // from savstate.cpp

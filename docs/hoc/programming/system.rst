@@ -152,8 +152,8 @@ Machine Identification
           none
 
           $ python 2</dev/null
-          >>> from neuron import h
-          >>> h.nrnversion(9)
+          >>> from neuron import n
+          >>> n.nrnversion(9)
           '2'
 
 
@@ -275,6 +275,10 @@ Miscellaneous
         ``show_winio(0or1)``
 
     Description:
-        MSWin and Mac version only. Hides or shows the console window. 
-         
+
+        Does nothing in recent NEURON versions.
+
+        In some older versions, could hide or show the console window
+        in MSWin and Mac.
+
 

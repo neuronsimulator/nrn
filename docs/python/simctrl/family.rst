@@ -10,7 +10,7 @@ Family
 For several values of a variable, execute an action. 
 Basically just a form for specifying a for loop. 
 
-Usage: ``h.makeFamily()`` constructs a Family and maps it to the screen. The Family 
+Usage: ``n.makeFamily()`` constructs a Family and maps it to the screen. The Family 
 instance is destroyed when its window is dismissed. 
 
 .. image:: ../images/makeFamily.png
@@ -73,7 +73,7 @@ ExecCommand
 .. image:: ../images/ExecCommand.png
     :align: center
 
-Usage: ``h.ExecCommand()`` or :menuselection:`Tools --> Miscellaneous --> Family --> Command`
+Usage: ``n.ExecCommand()`` or :menuselection:`Tools --> Miscellaneous --> Family --> Command`
 
 Specify a command and execute it. 
 
@@ -93,9 +93,9 @@ Open with :menuselection:`Vector --> Gather Values` or to open programmatically 
 
 .. code::
 
-    from neuron import h, gui
-    h.load_file('gatherv.hoc')
-    h.makeGatherVec()
+    from neuron import n, gui
+    n.load_file('gatherv.hoc')
+    n.makeGatherVec()
 
 .. image:: ../images/GatherVec.png
     :align: center
@@ -116,9 +116,9 @@ Open with :menuselection:`Vector --> Play` or to open programmatically import GU
 
 .. code::
 
-    from neuron import h, gui
-    h.load_file('vplay.hoc')
-    h.makeVectorPlay()
+    from neuron import n, gui
+    n.load_file('vplay.hoc')
+    n.makeVectorPlay()
 
 .. image:: ../images/VectorPlay.png
     :align: center
@@ -136,9 +136,9 @@ Open with :menuselection:`Vector --> Display` or to open programmatically import
 
 .. code::
 
-    from neuron import h, gui
-    h.load_file('vecwrap.hoc')
-    h.makeVecWrap()
+    from neuron import n, gui
+    n.load_file('vecwrap.hoc')
+    n.makeVecWrap()
 
 .. image:: ../images/VecWrap.png
     :align: center

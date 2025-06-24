@@ -141,44 +141,44 @@ LinearMechanism
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             from math import sin
             
-            h.load_file('nrngui.hoc')
+            n.load_file('nrngui.hoc')
             
-            cmat = h.Matrix(2,2,2).ident()
+            cmat = n.Matrix(2,2,2).ident()
             
-            gmat = h.Matrix(2,2,2)
+            gmat = n.Matrix(2,2,2)
             gmat.setval(0,1, -1)
             
-            y = h.Vector(2)
-            y0 = h.Vector(2)
-            b = h.Vector(2)
+            y = n.Vector(2)
+            y0 = n.Vector(2)
+            b = n.Vector(2)
             
             def callback():
               b.x[1] = -sin(y.x[0])
             
-            nlm = h.LinearMechanism(callback, cmat, gmat, y, y0, b)
+            nlm = n.LinearMechanism(callback, cmat, gmat, y, y0, b)
             
             
-            dummy = h.Section()
-            trajec = h.Vector()
-            tvec = h.Vector()
+            dummy = n.Section()
+            trajec = n.Vector()
+            tvec = n.Vector()
             trajec.record(y._ref_x[0])
-            tvec.record(h._ref_t)
+            tvec.record(n._ref_t)
             
-            graph = h.Graph()
-            h.tstop=50
+            graph = n.Graph()
+            n.tstop=50
             
             def prun(theta0, omega0):
               graph.erase()
               y0.x[0] = theta0
               y0.x[1] = omega0
-              h.run()
+              n.run()
               trajec.line(graph, tvec)
             
-            h.dt /= 10
-            h.cvode.atol(1e-5)
-            h.cvode_active(1)
+            n.dt /= 10
+            n.cvode.atol(1e-5)
+            n.cvode_active(1)
             prun(0, 1.9999) # 2.0001 will keep it rotating
             graph.exec_menu("View = plot")

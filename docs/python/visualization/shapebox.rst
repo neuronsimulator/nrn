@@ -9,7 +9,7 @@ Shape and browser for creating a section panel
 .. index:: MenuExpore (HOC class)
 
 usage:
-    ``ob = h.MenuExplore()``
+    ``ob = n.MenuExplore()``
  
 Pressing the left mouse button on a section in the Shape scene (make 
 sure the :guilabel:`Section` popup menu item is selected) colors the section red and 
@@ -37,7 +37,7 @@ PointProcessLocator
 shape, browser, and menu for a point process 
 
 usage:
-    :samp:`ob = h.PointProcessLocator({pointprocess})` 
+    :samp:`ob = n.PointProcessLocator({pointprocess})` 
  
 In the shape scene there is a blue dot showing the location of the 
 pointprocess.  Press the left mouse button at any point on the neuron to 

@@ -14,7 +14,7 @@ Shape
         If the first arg is a :class:`SectionList` (then a second arg of 0 will 
         prevent default mapping) then only the sections in the list are 
         drawn. Shape is redrawn automatically whenever length or diameter 
-        of a section changes. 
+        of a section changes. This automatically calls :func:`define_shape`.
         
         .. warning::
         
@@ -93,25 +93,25 @@ Shape
             python
 
             import plotly
-            from neuron import h, gui
+            from neuron import n, gui
             from neuron.units import mV, ms
             import matplotlib
 
-            h.load_file("c91662.ses")
+            n.load_file("c91662.ses")
 
-            for sec in h.allsec():
+            for sec in n.allsec():
                 sec.nseg = int(1 + 2 * (sec.L // 40))
-                sec.insert(h.hh)
+                sec.insert(n.hh)
 
-            ic = h.IClamp(h.soma(0.5))
+            ic = n.IClamp(n.soma(0.5))
             ic.delay = 1 * ms
             ic.dur = 1 * ms
             ic.amp = 10
 
-            h.finitialize(-65 * mV)
-            h.continuerun(2 * ms)
+            n.finitialize(-65 * mV)
+            n.continuerun(2 * ms)
 
-            ps = h.PlotShape(False)
+            ps = n.PlotShape(False)
             ps.variable("v")
             print(ps.show())  # prints the current mode
             ps.show(0)  # alters the mode to 0 that displays diameters for each segment
@@ -163,11 +163,11 @@ Shape
         .. code-block::
             python
             
-            from neuron import h
-            sl = h.SectionList()
-            sl.append(h.soma)
-            sl.append(h.dendrite_1[8])
-            h.Shape[0].observe(sl)
+            from neuron import n
+            sl = n.SectionList()
+            sl.append(n.soma)
+            sl.append(n.dendrite_1[8])
+            n.Shape[0].observe(sl)
 
 
 
@@ -496,18 +496,23 @@ Shape
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n, gui
 
-            ss = h.Shape[0]
+            # note: this assumes Shape[0] has already been created
+
+            ss = n.Shape[0]
             def p(type, x, y, keystate):
                 if type == 2:
                     ss.color_all(1)
                     d = ss.nearest(x, y)
-                    arc = ss.push_selected()
-                    if arc >= 0:
+                    # the next line returns normalized position and pushes to
+                    # the section stack if and only if something is selected
+                    a = ss.push_selected()
+                    if a >= 0:
+                        seg = n.cas()(a)
                         ss.select()
-                        print('%g from %s(%g)' % (d, h.secname(), a))
-                    h.pop_section()
+                        print(f'{d} from {seg}')
+                        n.pop_section()
 
             ss.menu_tool('test', p)
             ss.exec_menu('test')
@@ -549,7 +554,7 @@ Shape
             arc = shape.push_selected()
             if arc >= 0:
                 # do something, then end with:
-            h.pop_section()
+            n.pop_section()
 
 
     Description:
@@ -560,7 +565,7 @@ Shape
 
     .. note::
         
-        The pushed section can be read via ``h.cas()``.
+        The pushed section can be read via ``n.cas()``.
 
     .. note::
              

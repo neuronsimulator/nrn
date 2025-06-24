@@ -733,10 +733,6 @@ static Member_func ksg_dmem[] = {{"nstate", ksg_nstate},
                                  {"index", ksg_index},
                                  {nullptr, nullptr}};
 
-static Member_ret_obj_func ksg_omem[] = {{nullptr, nullptr}};
-
-static Member_ret_str_func ksg_smem[] = {{nullptr, nullptr}};
-
 static Member_func kst_dmem[] = {{"set_f", kst_set_f},
                                  {"index", kst_index},
                                  {"type", kst_type},
@@ -799,7 +795,7 @@ static void kst_destruct(void*) {}
 
 void KSChan_reg() {
     class2oc("KSChan", ks_cons, ks_destruct, ks_dmem, ks_omem, ks_smem);
-    class2oc("KSGate", ksg_cons, ksg_destruct, ksg_dmem, ksg_omem, ksg_smem);
+    class2oc("KSGate", ksg_cons, ksg_destruct, ksg_dmem, nullptr, nullptr);
     class2oc("KSState", kss_cons, kss_destruct, kss_dmem, kss_omem, kss_smem);
     class2oc("KSTrans", kst_cons, kst_destruct, kst_dmem, kst_omem, kst_smem);
     ksstate_sym = hoc_lookup("KSState");

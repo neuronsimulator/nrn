@@ -719,7 +719,7 @@ int _cvode_sparse(void** v, int n, IndexArray x, Array p, int (*fun)(), double**
     auto const x_ = [&p, &x](auto arg) -> auto& {
         return p[x[arg]];
     };
-    int i, j, ierr;
+    int i, ierr;
     detail::sparse::SparseObj* so;
 
     if (!*prhs) {
