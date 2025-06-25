@@ -199,7 +199,7 @@ HOC-based Mechanisms
         .. code-block:: matlab
 
             n.make_mechanism('suffix', 'Template', 'parm1 parm2 parm3 ...')
-            n.make_pointprocess('Template', 'parm1 parm2 parm3 ...)
+            n.make_pointprocess('Template', 'parm1 parm2 parm3 ...')
 
         Description:
             Installs the HOC (in particular, *not* MATLAB) class called "Template" as a density membrane mechanism 
