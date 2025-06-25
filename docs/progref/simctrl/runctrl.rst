@@ -32,6 +32,7 @@ Plotting to graphs constructed from the :ref:`NEURONMainMenu` occurs at
 a rate given by the variable set by the :ref:`Plotsms` value editor. 
 It is often convenient to substitute problem specific procedures 
 for the default procedures :func:`init` and :func:`advance`. 
+
 The run call chain is 
 
 .. code-block::
@@ -41,21 +42,46 @@ The run call chain is
 
 The default advance is merely a HOC function that calls :func:`fadvance`. It may be overriden via, e.g.
 
-.. code-block::
-    python
+.. tab:: Python
 
-    n('proc advance() {nrnpython("myadvance()")}')
-    
-    def myadvance():
-        print(f'n.t = {n.t}')
-        n.fadvance()
+    .. code-block::
+        python
+
+        n('proc advance() {nrnpython("myadvance()")}')
+        
+        def myadvance():
+            print(f'n.t = {n.t}')
+            n.fadvance()
+
+.. tab:: HOC
+
+    .. code-block::
+        none
+
+        proc advance() { 
+            print "n.t = ", t 
+            fadvance() 
+        }
+
+The default advance is the simple HOC function:
+
+.. code-block::
+    none
+
+    proc advance() { 
+        fadvance() 
+    } 
+
+and is a good candidate for substitution by a problem specific 
+user routine.
+
 
 
 .. warning:: 
 
     Multiple presses of the this button without waiting 
     for the previous simulation to finish (or pressing Stop) will 
-    execute the run() procedure recursively (probably not what is 
+    execute the ``run()`` procedure recursively (probably not what is 
     desired) Press the Stop button to unwrap these recursions. 
 
 .. _runcontrol_init:
@@ -65,6 +91,8 @@ Init
 
 The default initialize procedure initializes states using 
 :func:`finitialize` (v_init) where v_init is displayed in the value editor. 
+
+
 The init call chain is 
 
 .. code-block::
@@ -74,24 +102,44 @@ The init call chain is
 
 When more complicated initialization is required, use 
 :class:`FInitializeHandler` objects or substitute a 
-new procedure for the default init procedure; e.g.
+new procedure for the default init procedure; e.g.,
 
+.. tab:: Python
 
-.. code-block::
-    python
+    .. code-block::
+        python
 
-    n('proc init() {finitialize(v_init) nrnpython("myinit()")}')
+        n('proc init() {finitialize(v_init) nrnpython("myinit()")}')
 
-    def myinit():
-        # new code to happen after initialization here
-        print('initializing...')
-        # only need the following if states have been changed
-        if n.cvode.active():
-            n.cvode.re_init()
-        else:
-            n.fcurrent()
-        n.frecord_init()
+        def myinit():
+            # new code to happen after initialization here
+            print('initializing...')
+            # only need the following if states have been changed
+            if n.cvode.active():
+                n.cvode.re_init()
+            else:
+                n.fcurrent()
+            n.frecord_init()
+    
+.. tab:: HOC
 
+    .. code-block::
+        none
+
+        proc init() { 
+            finitialize(v_init) 
+            // insert new initialization code here to change states 
+            // If states have been changed then complete 
+            // initialization with 
+            /*	 
+            if (cvode.active()) { 
+                cvode.re_init() 
+            }else{ 
+                fcurrent() 
+            } 
+            frecord_init() 
+            */ 
+        } 
 
 .. seealso::
     :func:`finitialize`, :meth:`CVode.re_init`, :func:`fcurrent`, :func:`frecord_init`, :class:`FInitializeHandler`

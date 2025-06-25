@@ -1,6 +1,6 @@
 .. _lytton_mpi:
 
-% $Id: lyttonmpi.txt,v 1.1 2005/08/23 15:47:59 hines Exp $
+.. % $Id: lyttonmpi.txt,v 1.1 2005/08/23 15:47:59 hines Exp $
 
 * MPICH can be obtained from 
   http://www-unix.mcs.anl.gov/mpi/mpich/downloads/mpich.tar.gz 
@@ -48,26 +48,35 @@ on which you wish to run in parallel
 * Before continuing with the NEURON compilation make sure that the paths
   are set correctly on the machine, ie for bash
 
+  .. code-block:: bash
+
     export MPICH= ...   # eg /home/you/mpich-1.2.7/i686
     export MPICH_PATH="${MPICH}/bin"
     export MPICH_LIB="${MPICH}/lib"
     export PATH="${MPICH_PATH}:${PATH}"
     export LD_LIBRARY_PATH="${MPICH_LIB}:${LD_LIBRARY_PATH}"
 
-* NEURON compilation is done using the --with-mpi flag to configure
-  ./configure --prefix=WHERE_TO --with-iv=WHERE_IS_IV --with-mpi
-  make
-  make install
+* MPI support in NEURON compilation is enabled by default as part of the cmake configuration
+  and may be explicitly selected via ``-DNRN_ENABLE_MPI=ON`
 
+  .. code-block:: bash
+
+    cmake .. -DNRN_ENABLE_MPI=ON
+    make
+    make install
+
+* To test the NEURON MPI installation, you can use the following HOC code
 * to test the parallel NEURON 
 
+  .. code-block:: bash
+
       cd src/parallel
-      mpirun -np 2 /home/billl/nrniv/nrn-5.8.39/x86_64/bin/nrniv test0.hoc
+      mpiexec -n 2 /home/billl/nrniv/nrn-5.8.39/x86_64/bin/nrniv test0.hoc
       
   which should return   
   
       hello from id 0 on YOUR_MACHINE
       
-  hello from id 1 on YOUR_MACHINE
+      hello from id 1 on YOUR_MACHINE
 
 

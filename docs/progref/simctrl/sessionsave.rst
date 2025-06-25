@@ -52,8 +52,8 @@ Session Printing and Saving
         
         
             If there is a third arg equal to 1 then the printed windows are those 
-            selected and arranged on the paper icon of the :ref:`hoc_PWM` and calling this function
-            is equivalent to pressing the :ref:`hoc_PWM_Print` button. Otherwise all
+            selected and arranged on the paper icon of the :ref:`PWM` and calling this function
+            is equivalent to pressing the :ref:`PWM_Print` button. Otherwise all
             printable windows are printed in landscape mode with a size such that 
             the screen fits on the paper. 
         
@@ -95,8 +95,8 @@ Session Printing and Saving
         
         Description:
             Save all the (saveable) windows on the screen to filename. 
-            This is equivalent to pressing the :ref:`hoc_Session_SaveAll` button
-            on the :ref:`hoc_pwm`.
+            This is equivalent to pressing the :ref:`Session_SaveAll` button
+            on the :ref:`pwm`.
             If the header argument exists, it is copied to the beginning of 
             the file. 
         

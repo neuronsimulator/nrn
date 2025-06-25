@@ -5,24 +5,24 @@
 Standard Run Tools
 ------------------
 
-    .. tab:: Python
-        All standard tools are available from the NEURONMainMenu. The fastest 
-        way to load these tools is to execute:
+.. tab:: Python
+    All standard tools are available from the NEURONMainMenu. The fastest 
+    way to load these tools is to execute:
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            from neuron import gui
+        from neuron import gui
 
-    .. tab:: HOC
+.. tab:: HOC
 
-        All standard tools are available from the NEURONMainMenu. The fastest 
-        way to load these tools is to execute 
+    All standard tools are available from the NEURONMainMenu. The fastest 
+    way to load these tools is to execute 
 
-        .. code-block::
-            none
+    .. code-block::
+        none
 
-            load_file("nrngui.hoc") 
+        load_file("nrngui.hoc") 
  
 Brief summaries of the menu options are provided below, for more information on select functions see also:
 
@@ -39,50 +39,50 @@ Implementations of the standard tools are in `$NEURONHOME/lib/hoc/*.hoc <https:/
 NEURON Main Menu
 ~~~~~~~~~~~~~~~~
 
-    .. tab:: Python
- 
-        Main menu for standard control, graphing, menu generation. 
-        
-        To pop up the panel execute: 
+.. tab:: Python
 
-        .. code-block::
-            python
+    Main menu for standard control, graphing, menu generation. 
+    
+    To pop up the panel execute: 
 
-            from neuron import gui
+    .. code-block::
+        python
 
-        .. warning::
+        from neuron import gui
 
-            In HOC code, you may see ``load_file('nrngui.hoc')`` instead, but that does not work for Python code
-            as it does not start the thread that monitors for GUI events.
-        
-        Serious users should peruse the init and run procedures. 
-        The run chain that eventually calls :func:`fadvance` is 
+    .. warning::
 
-        .. code-block::
-            none
+        In HOC code, you may see ``load_file('nrngui.hoc')`` instead, but that does not work for Python code
+        as it does not start the thread that monitors for GUI events.
+    
+    Serious users should peruse the init and run procedures. 
+    The run chain that eventually calls :func:`fadvance` is 
 
-                n.run --> n.continuerun --> n.step --> n.advance --> n.fadvance 
+    .. code-block::
+        none
 
-    .. tab:: HOC
+            n.run --> n.continuerun --> n.step --> n.advance --> n.fadvance 
 
-         
-        Main menu for standard control, graphing, menu generation. 
-        
-        To pop up the panel execute: 
-
-        .. code-block::
-            none
-
-                load_file("nrngui.hoc") 
+.. tab:: HOC
 
         
-        Serious users should peruse the init and run procedures. 
-        The run chain that eventually calls :hoc:func:`fadvance` is
+    Main menu for standard control, graphing, menu generation. 
+    
+    To pop up the panel execute: 
 
-        .. code-block::
-            none
+    .. code-block::
+        none
 
-            run continuerun step advance fadvance
+            load_file("nrngui.hoc") 
+
+    
+    Serious users should peruse the init and run procedures. 
+    The run chain that eventually calls :hoc:func:`fadvance` is
+
+    .. code-block::
+        none
+
+        n.run --> n.continuerun --> n.step --> n.advance --> n.fadvance 
 
 There is often reason to substitute a new step or advance 
 procedure to do intermediate calculations on the fly. 
@@ -589,60 +589,33 @@ Vector
 
 Save to File
 """"""""""""
-    .. tab:: Python
-        Menu for saving/retrieving the last Vector selection to a file. eg. 
-        from a :ref:`gui_PickVector` as well as other Vector tools. 
-        
-        The format of the file is:
 
-        1)  optional first line with the format 
+Menu for saving/retrieving the last Vector selection to a file. eg. 
+from a :ref:`gui_PickVector` as well as other Vector tools. 
 
-            .. code-block::
-                none
+The format of the file is:
 
-                label:anystring 
+1)  optional first line with the format 
 
-        2)  optional line with one number which is the count of points. 
-        3)  a tab separated pair of x, y coordinates 
-            each line. If there is no "count" line, there must be 
-            no empty lines at the end of the file and the last character must 
-            be a newline. 
-        
-        When the file is saved with this menu item, 
-        the label and count are always present in the file. 
-        For long files retrieval is much more efficient if the count is present. 
-        
-        The implementation of these operations is in 
-        `$NEURONHOME/lib/hoc/stdlib.hoc <https://github.com/neuronsimulator/nrn/blob/master/share/lib/hoc/stdlib.hoc>`_
-        vectors and performing simple manipulations on them. 
+    .. code-block::
+        none
 
-    .. tab:: HOC
+        label:anystring 
 
-        Menu for saving/retrieving the last Vector selection to a file. eg. 
-        from a :ref:`hoc_gui_PickVector` as well as other Vector tools.
-        
-        The format of the file is:
+2)  optional line with one number which is the count of points. 
+3)  a tab separated pair of x, y coordinates 
+    each line. If there is no "count" line, there must be 
+    no empty lines at the end of the file and the last character must 
+    be a newline. 
 
-        1)  optional first line with the format 
+When the file is saved with this menu item, 
+the label and count are always present in the file. 
+For long files retrieval is much more efficient if the count is present. 
 
-            .. code-block::
-                none
+The implementation of these operations is in 
+`$NEURONHOME/lib/hoc/stdlib.hoc <https://github.com/neuronsimulator/nrn/blob/master/share/lib/hoc/stdlib.hoc>`_
+vectors and performing simple manipulations on them. 
 
-                label:anystring 
-
-        2)  optional line with one number which is the count of points. 
-        3)  a tab separated pair of x, y coordinates 
-            each line. If there is no "count" line, there must be 
-            no empty lines at the end of the file and the last character must 
-            be a newline. 
-        
-        When the file is saved with this menu item, 
-        the label and count are always present in the file. 
-        For long files retrieval is much more efficient if the count is present. 
-        
-        The implementation of these operations is in 
-        `$NEURONHOME/lib/hoc/stdlib.hoc <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/lib/hoc/stdlib.hoc>`_
-        vectors and performing simple manipulations on them. 
 
 .. seealso::
     :data:`hoc_obj_`
