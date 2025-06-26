@@ -24,7 +24,7 @@ Nonetheless, in isolated situations the following section may be useful:
     `Scripting NEURON Basics <../../tutorials/scripting-neuron-basics.html>`_
 
 .. _python_HocObject_class:
-.. class:: neuron.hoc.HocObject
+.. class:: neuron._NEURON_INTERFACE
 
 
     Syntax:
@@ -34,7 +34,12 @@ Nonetheless, in isolated situations the following section may be useful:
     Description:
         
         Allow access to anything in the Hoc interpreter. 
-        ``n`` is an instance of a ``neuron.hoc.HocObject`` object. Note that
+        ``n`` is an instance of a ``neuron._NEURON_INTERFACE`` object,
+        a subclass of ``neuron.hoc.HocObject``. 
+        It gives access to internal
+        classes (templates) and objects, even if they were just created.
+        
+        Note that
         there is only one Hoc interpreter, no matter how many interface
         objects are created, so there is no advantage to creating another.
 
@@ -687,6 +692,54 @@ Mechanism
 
     .. seealso::
         :func:`nrnpython`
+
+
+Class Hierarchy
+^^^^^^^^^^^^^^^
+
+All NEURON's internal interpreter objects are instances of a global top-level type: `HocObject`.
+Until NEURON 9, they were considered direct instances, without any intermediate hierarchy.
+
+With #1858 Hoc classes are now associated with actual Python types, created dynamically. Such
+change enables type instances to be properly recognized as such, respecting e.g. `isinstance()`
+predicates and subclassing.
+
+.. code-block::
+    python
+
+    >>> isinstance(hoc.Vector, type)
+    True
+    >>> v = n.Vector()
+    >>> isinstance(v, hoc.HocObject)
+    True
+    >>> isinstance(v, hoc.Vector)
+    True
+    >>> type(v) is hoc.Vector  # direct subclass
+    True
+    >>>isinstance(v, hoc.Deck)  # Not instance of other class
+    False
+
+Subclasses are also recognized properly. For creating them please inherit from `HocBaseObject`
+with `hoc_type` given as argument. E.g.:
+
+.. code-block::
+    python
+
+    >>> class MyStim(neuron.HocBaseObject, hoc_type=n.NetStim):
+        pass
+    >>> issubclass(MyStim, hoc.HocObject)
+    True
+    >>> issubclass(MyStim, neuron.HocBaseObject)
+    True
+    >>> MyStim._hoc_type == n.NetStim
+    True
+    >>> stim = MyStim()
+    >>> isinstance(stim, MyStim)
+    True
+    >>> isinstance(stim, n.NetStim)
+    True
+    >>> isinstance(stim, n.HocObject)
+    True
 
 .. _hoc_features_you_should_not_use_from_python:
 Python-specific documentation of discouraged HOC features
