@@ -1,8 +1,8 @@
-name: External CIs
+name: External modelDB CI
 
 concurrency:
-  # Don't cancel when creating multiple labels
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}-${{ github.event.label.name }}
+  # Don't cancel on master, creating a PR when a push workflow is already going will cancel the push workflow in favour of the PR workflow
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 on:
@@ -42,19 +42,3 @@ jobs:
       env:
         ARTIFACTS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         pr_azure_sha: ${{ needs.get-last-azure-url.outputs.pr_azure_sha }}
-
-  get-last-azure-url-build:
-    name: 'Get Azure URL for build CI'
-    uses: ./.github/workflows/get-azure-url-template.yml
-    if: ${{ github.event.label.name == 'nrn-build-ci-nightly' }}
-    with:
-      label: ${{ github.event.label.name }}
-      ci_name: 'NEURON build CI'
-      pr_url: ${{ github.event.pull_request.html_url }}
-
-  nrn-build-ci:
-    needs: get-last-azure-url-build
-    uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@jelic/reusable_workflow
-    with:
-      azure_drop_url: ${{needs.get-last-azure-url-modeldb.outputs.azure_drop_url}}
-      neuron_branch: ${{github.head_ref}}
