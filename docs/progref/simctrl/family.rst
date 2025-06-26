@@ -1,4 +1,4 @@
-.. index:: makeFamily (HOC function)
+.. index:: makeFamily
 
 .. _family:
 
@@ -10,7 +10,8 @@ Family
 For several values of a variable, execute an action. 
 Basically just a form for specifying a for loop. 
 
-Usage: ``n.makeFamily()`` constructs a Family and maps it to the screen. The Family 
+Usage: ``n.makeFamily()`` (Python or MATLAB) or ``makeFamily()`` (HOC)
+constructs a Family and maps it to the screen. The Family 
 instance is destroyed when its window is dismissed. 
 
 .. image:: ../images/makeFamily.png
@@ -56,7 +57,7 @@ Cont:
 
 .. note::
 
-    This is function is defined as part of ``stdrun.hoc`` which is loaded automatically as part of
+    This is function is defined as part of ``stdrun.hoc`` which in Python is loaded automatically as part of
     ``from neuron import gui``, which is required to ensure the GUI is interactive across different
     ways of running NEURON.
 
@@ -73,7 +74,8 @@ ExecCommand
 .. image:: ../images/ExecCommand.png
     :align: center
 
-Usage: ``n.ExecCommand()`` or :menuselection:`Tools --> Miscellaneous --> Family --> Command`
+Usage: ``n.ExecCommand()`` (Python or MATLAB) or ``ExecCommand()`` (HOC)
+or :menuselection:`Tools --> Miscellaneous --> Family --> Command`
 
 Specify a command and execute it. 
 
@@ -91,11 +93,20 @@ GatherVec
 
 Open with :menuselection:`Vector --> Gather Values` or to open programmatically import GUI support, load the library, and then call the function:
 
-.. code::
+.. tab:: Python
 
-    from neuron import n, gui
-    n.load_file('gatherv.hoc')
-    n.makeGatherVec()
+    .. code-block:: python
+
+        from neuron import n, gui
+        n.load_file('gatherv.hoc')
+        n.makeGatherVec()
+
+.. tab:: HOC
+
+    .. code-block:: none
+
+        load_file("gatherv.hoc")
+        makeGatherVec()
 
 .. image:: ../images/GatherVec.png
     :align: center
@@ -114,11 +125,20 @@ VectorPlay
 
 Open with :menuselection:`Vector --> Play` or to open programmatically import GUI support, load the library, and then call the function:
 
-.. code::
+.. tab:: python
 
-    from neuron import n, gui
-    n.load_file('vplay.hoc')
-    n.makeVectorPlay()
+    .. code-block:: python
+
+        from neuron import n, gui
+        n.load_file('vplay.hoc')
+        n.makeVectorPlay()
+
+.. tab:: HOC
+
+    .. code-block:: HOC
+
+        load_file("vplay.hoc")
+        makeVectorPlay()
 
 .. image:: ../images/VectorPlay.png
     :align: center
@@ -134,11 +154,20 @@ VecWrap
 
 Open with :menuselection:`Vector --> Display` or to open programmatically import GUI support, load the library, and then call the function:
 
-.. code::
+.. tab:: Python
 
-    from neuron import n, gui
-    n.load_file('vecwrap.hoc')
-    n.makeVecWrap()
+    .. code-block:: python
+
+        from neuron import n, gui
+        n.load_file('vecwrap.hoc')
+        n.makeVecWrap()
+
+.. tab:: HOC
+
+    .. code-block:: C++
+
+        load_file("vecwrap.hoc")
+        makeVecWrap()
 
 .. image:: ../images/VecWrap.png
     :align: center

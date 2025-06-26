@@ -8,299 +8,515 @@ MechanismStandard (Parameter Control)
 
 .. class:: MechanismStandard
 
-
-    Syntax:
+    .. tab:: Python
     
-        .. code-block::
-            python
+    
+        Syntax:
+    
+            .. code-block::
+                python
             
-            ms = n.MechanismStandard(name_str)
-            ms = n.MechanismStandard(name_str, vartype)
+                ms = n.MechanismStandard(name_str)
+                ms = n.MechanismStandard(name_str, vartype)
 
 
-    Description:
-        In Python, consider the use of ``sec.psection()`` which encapsulates MechanismType and MechanismStandard so as to return a dictionary.
+        Description:
+            In Python, consider the use of ``sec.psection()`` which encapsulates MechanismType and MechanismStandard so as to return a dictionary.
 
-        With no vartype or vartype = 1, this provides 
-        storage for parameter values of a membrane mechanism or point process. 
-        This class is useful in maintaining a default set of parameters and can 
-        be used to specify values for a set of sections. 
+            With no vartype or vartype = 1, this provides 
+            storage for parameter values of a membrane mechanism or point process. 
+            This class is useful in maintaining a default set of parameters and can 
+            be used to specify values for a set of sections. 
          
-        *name_str* is a density mechanism such as ``hh`` or a point process 
-        such as :class:`VClamp`. A ``MechanismStandard`` instance, when created, 
-        contains default values for all parameters associated with the mechanism. 
+            *name_str* is a density mechanism such as ``hh`` or a point process 
+            such as :class:`VClamp`. A ``MechanismStandard`` instance, when created, 
+            contains default values for all parameters associated with the mechanism. 
          
-        In combination with the 
-        :class:`MechanismType` class it is possible to create generic graphical interface 
-        widgets that are independent of the particular mechanism and parameter names. 
+            In combination with the 
+            :class:`MechanismType` class it is possible to create generic graphical interface 
+            widgets that are independent of the particular mechanism and parameter names. 
          
-        If vartype = 1, 2, or 3, the storage is for PARAMETER, ASSIGNED, or STATE 
-        variables respectively. If vartype = 0, the storage is for all three types. 
+            If vartype = 1, 2, or 3, the storage is for PARAMETER, ASSIGNED, or STATE 
+            variables respectively. If vartype = 0, the storage is for all three types. 
          
-        If vartype = -1, the count and names (and array size) 
-        of the GLOBAL variables are accessible, but any other method will 
-        generate an error message. 
+            If vartype = -1, the count and names (and array size) 
+            of the GLOBAL variables are accessible, but any other method will 
+            generate an error message. 
          
 
-    Example:
+        Example:
 
-        .. code-block::
-            python
+            .. code-block::
+                python
             
-            from neuron import n, gui
-            ms1 = n.MechanismStandard('hh')
-            ms2 = n.MechanismStandard('AlphaSynapse')
-            ms2.set('gmax', 0.3)
-            ms1.panel()
-            ms2.panel()
+                from neuron import n, gui
+                ms1 = n.MechanismStandard('hh')
+                ms2 = n.MechanismStandard('AlphaSynapse')
+                ms2.set('gmax', 0.3)
+                ms1.panel()
+                ms2.panel()
 
-            ms1 = n.MechanismStandard("hh") 
-            ms2 = n.MechanismStandard("AlphaSynapse") 
-            ms2.set("gmax", .3) 
-            ms1.panel() 
-            ms2.panel() 
+                ms1 = n.MechanismStandard("hh") 
+                ms2 = n.MechanismStandard("AlphaSynapse") 
+                ms2.set("gmax", .3) 
+                ms1.panel() 
+                ms2.panel() 
 
-        .. image:: ../images/mechanismstandard.png
-            :align: center
+            .. image:: ../images/mechanismstandard.png
+                :align: center
 
-    Example:
+        Example:
 
-        The following example prints all the names associated with POINT_PROCESS 
-        and SUFFIX mechanisms. 
+            The following example prints all the names associated with POINT_PROCESS 
+            and SUFFIX mechanisms. 
 
-        .. code-block::
-            python
+            .. code-block::
+                python
 
-            from neuron import n, gui
+                from neuron import n, gui
 
-            soma = n.Section("soma")
-            def pname(msname):
-                s = n.ref('')
-                for i in range(-1, 4):
-                    ms = n.MechanismStandard(msname, i)
-                    print(f'\n{msname}   vartype={i}')
+                soma = n.Section("soma")
+                def pname(msname):
+                    s = n.ref('')
+                    for i in range(-1, 4):
+                        ms = n.MechanismStandard(msname, i)
+                        print(f'\n{msname}   vartype={i}')
+                        for j in range(ms.count()):
+                            k = ms.name(s, j)
+                            print(f'{j:<5} {s[0]:<20} size={k}')
+
+                def ptype():
+                    msname = n.ref('')
+                    for i in range(2):
+                        mt = n.MechanismType(i)
+                        for j in range(mt.count()):
+                            mt.select(j)
+                            mt.selected(msname)
+                            print(f'\n\n{msname[0]} mechanismtype={j}')
+                            pname(msname[0])
+
+
+                ptype() 
+             
+        Example:
+
+            The following example provides a function ``get_mech_globals`` that returns a
+            list of all of a mechanism's global (or per-thread-global) variables. As running the
+            code shows, there are six such variables (all per-thread-global) for the ``hh``
+            mechanism. These are used to temporarily share limiting values and time constant information
+            between functions in the NMODL file; their per-thread-global nature means that
+            the memory is reused for subsequent locations within a given thread, but that different
+            threads do not interfere with each other.
+
+            .. code-block::
+                python
+
+                from neuron import n
+             
+                def get_mech_globals(mechname):
+                    ms = n.MechanismStandard(mechname, -1)
+                    name = n.ref('')
+                    mech_globals = []
                     for j in range(ms.count()):
-                        k = ms.name(s, j)
-                        print(f'{j:<5} {s[0]:<20} size={k}')
-
-            def ptype():
-                msname = n.ref('')
-                for i in range(2):
-                    mt = n.MechanismType(i)
-                    for j in range(mt.count()):
-                        mt.select(j)
-                        mt.selected(msname)
-                        print(f'\n\n{msname[0]} mechanismtype={j}')
-                        pname(msname[0])
-
-
-            ptype() 
+                        ms.name(name, j)
+                        mech_globals.append(name[0])
+                    return mech_globals
              
-    Example:
-
-        The following example provides a function ``get_mech_globals`` that returns a
-        list of all of a mechanism's global (or per-thread-global) variables. As running the
-        code shows, there are six such variables (all per-thread-global) for the ``hh``
-        mechanism. These are used to temporarily share limiting values and time constant information
-        between functions in the NMODL file; their per-thread-global nature means that
-        the memory is reused for subsequent locations within a given thread, but that different
-        threads do not interfere with each other.
-
-        .. code-block::
-            python
-
-            from neuron import n
-             
-            def get_mech_globals(mechname):
-                ms = n.MechanismStandard(mechname, -1)
-                name = n.ref('')
-                mech_globals = []
-                for j in range(ms.count()):
-                    ms.name(name, j)
-                    mech_globals.append(name[0])
-                return mech_globals
-             
-            print(get_mech_globals('hh'))
+                print(get_mech_globals('hh'))
 
 
-    .. warning::
+        .. warning::
     
-        MechanismStandard only supports the names of mechanisms as strings, not the mechanism objects.
-        e.g., you can pass ``'hh'`` but not ``n.hh``.
+            MechanismStandard only supports the names of mechanisms as strings, not the mechanism objects.
+            e.g., you can pass ``'hh'`` but not ``n.hh``.
 
-        If you have a density mechanism, e.g., ``mech = n.hh``, beginning with NEURON 9, you can get
-        the name of the mechanism as a string with ``mech.name``. You can then use this string
-        with MechanismStandard. For example:
-        .. code-block::
-            python
+            If you have a density mechanism, e.g., ``mech = n.hh``, beginning with NEURON 9, you can get
+            the name of the mechanism as a string with ``mech.name``. You can then use this string
+            with MechanismStandard. For example:
+            
+            .. code-block::
+                python
 
-            from neuron import n
+                from neuron import n
 
-            mech = n.hh
-            ms = n.MechanismStandard(mech.name)
-            ms.panel()
+                mech = n.hh
+                ms = n.MechanismStandard(mech.name)
+                ms.panel()
 
-    .. seealso::
-        :class:`MechanismType`
+        .. seealso::
+            :class:`MechanismType`
 
          
 
+    .. tab:: HOC
+
+
+        Syntax:
+            :samp:`ms = new MechanismStandard("{name}")`
+        
+        
+            :samp:`ms = new MechanismStandard("{name}", {vartype})`
+        
+        
+        Description:
+            With no vartype or vartype = 1, this provides 
+            storage for parameter values of a membrane mechanism or point process. 
+            This class is useful in maintaining a default set of parameters and can 
+            be used to specify values for a set of sections. 
+        
+        
+            *name* is a density mechanism such as ``hh`` or a point process 
+            such as :class:`VClamp`. A ``MechanismStandard`` instance, when created,
+            contains default values for all parameters associated with the mechanism. 
+        
+        
+            In combination with the 
+            :class:`MechanismType` class it is possible to create generic graphical interface
+            widgets that are independent of the particular mechanism and parameter names. 
+        
+        
+            If vartype = 1, 2, or 3, the storage is for PARAMETER, ASSIGNED, or STATE 
+            variables respectively. If vartype = 0, the storage is for all three types. 
+        
+        
+            If vartype = -1, the count and names (and array size) 
+            of the GLOBAL variables are accessible, but any other method will 
+            generate an error message. 
+        
+        
+        Example:
+        
+        
+            .. code-block::
+                none
+        
+        
+                objref ms1, ms2 
+                ms1 = new MechanismStandard("hh") 
+                ms2 = new MechanismStandard("AlphaSynapse") 
+                ms2.set("gmax", .3) 
+                ms1.panel() 
+                ms2.panel() 
+        
+        
+            The following example prints all the names associated with POINT_PROCESS 
+            and SUFFIX mechanisms. 
+        
+        
+            .. code-block::
+                none
+        
+        
+                create soma 
+                access soma 
+        
+        
+                objref ms, mt 
+                strdef s, msname 
+                proc pname() {local i, j, k 
+                    for i=-1,3 { 
+                            ms = new MechanismStandard($s1, i) 
+                            print "\n", $s1, "  vartype=", i 
+                            for j=0, ms.count()-1 { 
+                                    k = ms.name(s, j) 
+                                    print j, s, " size=", k 
+                            } 
+                    } 
+                } 
+        
+        
+                proc ptype() {local i, j 
+                    for i=0,1 { 
+                            mt = new MechanismType(i) 
+                            for j=0, mt.count-1 { 
+                                    mt.select(j) 
+                                    mt.selected(msname) 
+                print "\n\n", msname, " mechanismtype=", j 
+                                    pname(msname) 
+                            } 
+                    } 
+                } 
+        
+        
+                ptype() 
+        
+        
+        .. seealso::
+            :class:`MechanismType`
+        
 ----
 
 
 
 .. method:: MechanismStandard.panel
 
-
-    Syntax:
-        .. code-block::
-            python
+    .. tab:: Python
+    
+    
+        Syntax:
+            .. code-block::
+                python
             
-            ms.panel()
-            ms.panel("string")
+                ms.panel()
+                ms.panel("string")
 
 
-    Description:
-        Popup a panel of parameters for this mechanism. It's a good idea to 
-        set the default values before generating the panel. 
+        Description:
+            Popup a panel of parameters for this mechanism. It's a good idea to 
+            set the default values before generating the panel. 
          
-        With no argument the first item in the panel will be the name of the 
-        mechanism. Otherwise the string is used as the first item label. 
+            With no argument the first item in the panel will be the name of the 
+            mechanism. Otherwise the string is used as the first item label. 
 
-    .. seealso::
-        :func:`nrnglobalmechmenu`, :func:`nrnmechmenu`, :func:`nrnpointmenu`
+        .. seealso::
+            :func:`nrnglobalmechmenu`, :func:`nrnmechmenu`, :func:`nrnpointmenu`
 
          
 
+    .. tab:: HOC
+
+
+        Syntax:
+            ``ms.panel()``
+        
+        
+            ``ms.panel("string")``
+        
+        
+        Description:
+            Popup a panel of parameters for this mechanism. It's a good idea to 
+            set the default values before generating the panel. 
+        
+        
+            With no argument the first item in the panel will be the name of the 
+            mechanism. Otherwise the string is used as the first item label. 
+        
+        
+        .. seealso::
+            :func:`nrnglobalmechmenu`, :func:`nrnmechmenu`, :func:`nrnpointmenu`
+        
 ----
 
 
 
 .. method:: MechanismStandard.action
 
-
-    Syntax:
-        .. code-block::
-            python
+    .. tab:: Python
+    
+    
+        Syntax:
+            .. code-block::
+                python
             
-            ms.action(py_callback)
+                ms.action(py_callback)
 
 
-    Description:
-        `py_callback` is executed when any variable is changed in the panel.
-        The callback is sent three parameters; in order: the MechanismStandard object,
-        the index of the changed item in the object, and a third argument indicating
-        position in an array (or 0 if the parameter is not an array; this is the usual
-        case). The value is in `n.hoc_ac_` and this value may also be read via
+        Description:
+            `py_callback` is executed when any variable is changed in the panel.
+            The callback is sent three parameters; in order: the MechanismStandard object,
+            the index of the changed item in the object, and a third argument indicating
+            position in an array (or 0 if the parameter is not an array; this is the usual
+            case). The value is in `n.hoc_ac_` and this value may also be read via
 
-        .. code-block::
-            python
+            .. code-block::
+                python
 
-            nameref = n.ref("")
-            ms.name(nameref, i)
-            value = ms.get(nameref[0], j)
+                nameref = n.ref("")
+                ms.name(nameref, i)
+                value = ms.get(nameref[0], j)
 
-    Example:
+        Example:
 
-        .. code-block::
-            python
+            .. code-block::
+                python
 
-            from neuron import n, gui
+                from neuron import n, gui
 
-            soma = n.Section('soma')
-            axon = n.Section('axon')
-            dend = [n.Section(f'dend[{i}]' for i in range(3)]
+                soma = n.Section('soma')
+                axon = n.Section('axon')
+                dend = [n.Section(f'dend[{i}]' for i in range(3)]
 
-            n.hh.insert(axon)
-            n.pas.insert(dend)  # puts into all dendrites in the list
+                n.hh.insert(axon)
+                n.pas.insert(dend)  # puts into all dendrites in the list
 
-            n.xpanel("Updated when MechanismStandard is changed")
-            for i, sec in enumerate(dend):
-                n.xvalue(f"dend[{i}](0.5).pas.g", sec(0.5).pas._ref_g)
+                n.xpanel("Updated when MechanismStandard is changed")
+                for i, sec in enumerate(dend):
+                    n.xvalue(f"dend[{i}](0.5).pas.g", sec(0.5).pas._ref_g)
 
-            n.xpanel()
+                n.xpanel()
 
-            def change_pas(ms, i, j):
-                for sec in n.allsec():
-                    if sec.has_membrane('pas'):
-                        ms.out()
+                def change_pas(ms, i, j):
+                    for sec in n.allsec():
+                        if sec.has_membrane('pas'):
+                            ms.out()
 
-            ms = n.MechanismStandard('pas')
-            ms.action(change_pas)
-            ms.panel()
+                ms = n.MechanismStandard('pas')
+                ms.action(change_pas)
+                ms.panel()
 
 
-    .. note::
+        .. note::
 
-        Support for Python callbacks for this method was added in NEURON 7.5.
+            Support for Python callbacks for this method was added in NEURON 7.5.
 
          
 
+    .. tab:: HOC
+
+
+        Syntax:
+            ``ms.action("statement")``
+        
+        
+        Description:
+            action to be executed when any variable is changed in the panel. 
+            The hoc variable :data:`hoc_ac_` is set to the index of the variable (0 to count-1).
+        
+        
+        Example:
+            forall delete_section() 
+        
+        
+            .. code-block::
+                none
+        
+        
+                create soma, axon, dend[3] 
+                forsec "a" insert hh 
+                forsec "d" insert pas 
+                xpanel("Updated when MechanismStandard is changed") 
+                xvalue("dend[0].g_pas") 
+                xvalue("dend[1].g_pas") 
+                xvalue("dend[2].g_pas") 
+                xpanel() 
+                objref ms 
+                ms = new MechanismStandard("pas") 
+                ms.action("change_pas()") 
+                ms.panel() 
+        
+        
+                proc change_pas() { 
+                    forall if(ismembrane("pas")) { 
+                            ms.out() 
+                    } 
+                } 
+        
 ----
 
 
 
 .. method:: MechanismStandard._in
 
-
-    Syntax:
-        .. code-block::
-            python
+    .. tab:: Python
+    
+    
+        Syntax:
+            .. code-block::
+                python
             
-            ms._in(sec=section)
-            ms._in(x, sec=section)
-            ms._in(pointprocess)
-            ms._in(mechanismstandard)
+                ms._in(sec=section)
+                ms._in(x, sec=section)
+                ms._in(pointprocess)
+                ms._in(mechanismstandard)
 
-    Description:
-        copies parameter values into this mechanism standard from ... 
-
-
-        ``ms._in(sec=section)`` 
-            the mechanism located in first segment of ``section`` 
-
-        ``ms._in(x, sec=section)``
-            the mechanism located in the segment ``section(x)``. 
-            (Note that x=0 and 1 are considered to lie in the 
-            0+ and 1- segments respectively. 
-
-        ``ms._in(pointprocess)`` 
-            the point process object 
-
-        ``ms._in(mechanismstandard)`` 
-            another mechanism standard 
-
-        If the source is not the same type as the standard then nothing happens. 
-
-    Example:
+        Description:
+            copies parameter values into this mechanism standard from ... 
 
 
-        .. code-block::
-            python
+            ``ms._in(sec=section)`` 
+                the mechanism located in first segment of ``section`` 
 
-            from neuron import n
+            ``ms._in(x, sec=section)``
+                the mechanism located in the segment ``section(x)``. 
+                (Note that x=0 and 1 are considered to lie in the 
+                0+ and 1- segments respectively. 
 
-            s = n.Section('soma')
-            s.insert(n.hh)
-            s(0.5).hh.gnabar = 0.5
+            ``ms._in(pointprocess)`` 
+                the point process object 
 
-            ms = n.MechanismStandard('hh')
-            ms.set("gnabar_hh", 0.3)
+            ``ms._in(mechanismstandard)`` 
+                another mechanism standard 
 
-            print(ms.get("gnabar_hh"))
-            ms._in(sec=s)
-            print(ms.get("gnabar_hh"))
+            If the source is not the same type as the standard then nothing happens. 
 
+        Example:
 
 
-    .. note::
+            .. code-block::
+                python
 
-        This is the same as the HOC method ``ms.in``, however the name had to be
-        changed for Python due to ``in`` being a keyword in Python.
+                from neuron import n
 
-    .. note::
+                s = n.Section('soma')
+                s.insert(n.hh)
+                s(0.5).hh.gnabar = 0.5
 
-        Python support for this method was added in NEURON 7.5.
+                ms = n.MechanismStandard('hh')
+                ms.set("gnabar_hh", 0.3)
+
+                print(ms.get("gnabar_hh"))
+                ms._in(sec=s)
+                print(ms.get("gnabar_hh"))
+
+
+
+        .. note::
+
+            This is the same as the HOC method ``ms.in``, however the name had to be
+            changed for Python due to ``in`` being a keyword in Python.
+
+        .. note::
+
+            Python support for this method was added in NEURON 7.5.
+
+    .. tab:: HOC
+
+        Not supported. Use :meth:`MechanismStandard.in` instead.
+
+    .. tab:: MATLAB
+
+        Not supported. Use :meth:`MechanismStandard.in` instead.
+
+
+.. method:: MechanismStandard.in
+
+    .. tab:: Python
+    
+        Not supported. Use :meth:`MechanismStandard._in` instead.
+
+    .. tab:: HOC
+
+        Syntax:
+            ``ms.in()``
+
+            :samp:`ms.in({x})`
+
+            :samp:`ms.in({pointprocess})`
+
+            :samp:`ms.in({mechanismstandard})`
+
+
+        Description:
+            copies parameter values into this mechanism standard from ... 
+
+
+            ``ms.in()`` 
+                the mechanism located in first segment of the currently accessed section. 
+
+            :samp:`ms.in({x})` 
+                the mechanism located in the segment containing x of the currently accessed section. 
+                (Note that x=0 and 1 are considered to lie in the 
+                0+ and 1- segments respectively so a proper iteration uses for(x, 0). 
+                See :ref:`for <hoc_keyword_for>`.
+
+            :samp:`ms.in({pointprocess})` 
+                the point process object 
+
+            :samp:`ms.in({mechanismstandard})` 
+                another mechanism standard 
+
+            If the source is not the same type as the standard then nothing happens. 
+
 
 ----
 
@@ -308,141 +524,239 @@ MechanismStandard (Parameter Control)
 
 .. method:: MechanismStandard.out
 
-
-    Syntax:
-        .. code-block::
-            python
+    .. tab:: Python
+    
+    
+        Syntax:
+            .. code-block::
+                python
             
-            ms.out(sec=section)
-            ms.out(x, sec=section)
-            ms.out(pointprocess)
-            ms.out(mechanismstandard)
+                ms.out(sec=section)
+                ms.out(x, sec=section)
+                ms.out(pointprocess)
+                ms.out(mechanismstandard)
 
 
-    Description:
-        copies parameter values from this mechanism standard to ... 
+        Description:
+            copies parameter values from this mechanism standard to ... 
 
 
-        ``ms.out(sec=section)`` 
-            the mechanism located in ``section`` (all segments). 
+            ``ms.out(sec=section)`` 
+                the mechanism located in ``section`` (all segments). 
 
-        ``ms.out(x, sec=section)`` 
-            the mechanism located in ``section`` in the segment 
-            containing x.(Note that x=0 and 1 are considered to lie in the 
-            0+ and 1- segments respectively) 
+            ``ms.out(x, sec=section)`` 
+                the mechanism located in ``section`` in the segment 
+                containing x.(Note that x=0 and 1 are considered to lie in the 
+                0+ and 1- segments respectively) 
 
-        ``ms.out(pointprocess)`` 
-            the point process argument 
+            ``ms.out(pointprocess)`` 
+                the point process argument 
 
-        ``ms.out(mechanismstandard)`` 
-            another mechanism standard 
+            ``ms.out(mechanismstandard)`` 
+                another mechanism standard 
 
-        If the target is not the same type as the standard then nothing happens. 
+            If the target is not the same type as the standard then nothing happens. 
 
          
 
+    .. tab:: HOC
+
+
+        Syntax:
+            ``ms.out()``
+        
+        
+            ``ms.out(x)``
+        
+        
+            ``ms.out(pointprocess)``
+        
+        
+            ``ms.out(mechanismstandard)``
+        
+        
+        Description:
+            copies parameter values from this mechanism standard to ... 
+        
+        
+            ``ms.out()`` 
+                the mechanism located in the currently accessed section (all segments). 
+        
+        
+            ``ms.out(x)`` 
+                the mechanism located in the currently accessed section in the segment 
+                containing x.(Note that x=0 and 1 are considered to lie in the 
+                0+ and 1- segments respectively) 
+        
+        
+            ``ms.out(pointprocess)`` 
+                the point process argument 
+        
+        
+            ``ms.out(mechanismstandard)`` 
+                another mechanism standard 
+        
+        
+            If the target is not the same type as the standard then nothing happens. 
+        
 ----
 
 
 
 .. method:: MechanismStandard.set
 
-
-    Syntax:
-        .. code-block::
-            python
+    .. tab:: Python
+    
+    
+        Syntax:
+            .. code-block::
+                python
             
-            ms.set('varname', val [, arrayindex])
+                ms.set('varname', val [, arrayindex])
 
 
-    Description:
-        sets the parameter in the standard to *val*. If the variable is 
-        an array, then the optional index can be specified. 
+        Description:
+            sets the parameter in the standard to *val*. If the variable is 
+            an array, then the optional index can be specified. 
 
-        ``varname`` follows the HOC form convention of ``name_mech``; e.g. ``gnabar_hh``.
+            ``varname`` follows the HOC form convention of ``name_mech``; e.g. ``gnabar_hh``.
 
-        See :meth:`MechanismStandard.out` for an example.
+            See :meth:`MechanismStandard.out` for an example.
          
 
+    .. tab:: HOC
+
+
+        Syntax:
+            :samp:`ms.set("{varname}", {val} [, {arrayindex}])`
+        
+        
+        Description:
+            sets the parameter in the standard to *val*. If the variable is 
+            an array, then the optional index can be specified. 
+        
 ----
 
 
 
 .. method:: MechanismStandard.get
 
-
-    Syntax:
-        .. code-block::
-            python
+    .. tab:: Python
+    
+    
+        Syntax:
+            .. code-block::
+                python
             
-            val = ms.get('varname' [, arrayindex])
+                val = ms.get('varname' [, arrayindex])
 
 
-    Description:
-        returns the value of the parameter. If the variable is actually 
-        a POINTER and it is nil, then return -1e300. 
+        Description:
+            returns the value of the parameter. If the variable is actually 
+            a POINTER and it is nil, then return -1e300. 
 
-        ``varname`` follows the HOC form convention of ``name_mech``; e.g. ``gnabar_hh``.
+            ``varname`` follows the HOC form convention of ``name_mech``; e.g. ``gnabar_hh``.
 
-        See :meth:`MechanismStandard._in` for an example.
+            See :meth:`MechanismStandard._in` for an example.
 
+    .. tab:: HOC
+
+
+        Syntax:
+            ``val = ms.get("varname" [, arrayindex])``
+        
+        
+        Description:
+            returns the value of the parameter. If the variable is actually 
+            a POINTER and it is nil, then return -1e300. 
+        
 ----
 
 
 
 .. method:: MechanismStandard.save
 
-
-    Syntax:
-        .. code-block::
-            python
+    .. tab:: Python
+    
+    
+        Syntax:
+            .. code-block::
+                python
             
-            ms.save('name')
+                ms.save('name')
 
 
-    Description:
-        For saving the state of a MechanismStandard to a session file. 
-        The name will be the objectvar that the instance gets assigned to 
-        when the session file is read. 
-        See pointman.hoc for an example of usage. 
+        Description:
+            For saving the state of a MechanismStandard to a session file. 
+            The name will be the objectvar that the instance gets assigned to 
+            when the session file is read. 
+            See pointman.hoc for an example of usage. 
 
          
 
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.save("name")``
+        
+        
+        Description:
+            For saving the state of a MechanismStandard to a session file. 
+            The name will be the objectvar that the instance gets assigned to 
+            when the session file is read. 
+            See pointman.hoc for an example of usage. 
+        
 ----
 
 
 
 .. method:: MechanismStandard.count
 
-
-    Syntax:
-        .. code-block::
-            python
+    .. tab:: Python
+    
+    
+        Syntax:
+            .. code-block::
+                python
             
-            cnt = ms.count()
+                cnt = ms.count()
 
 
-    Description:
-        Returns the number of parameter names of the mechanism 
-        represented by the MechanismStandard. 
+        Description:
+            Returns the number of parameter names of the mechanism 
+            represented by the MechanismStandard. 
 
          
 
+    .. tab:: HOC
+
+
+        Syntax:
+            ``cnt = ms.count()``
+        
+        
+        Description:
+            Returns the number of parameter names of the mechanism 
+            represented by the MechanismStandard. 
+        
 ----
 
 
 .. method:: MechanismStandard.is_array
 
-
-    Syntax:
-        .. code-block::
-            python
+    .. tab:: Python
+    
+    
+        Syntax:
+            .. code-block::
+                python
             
-            bool = ms.is_array(index)
+                bool = ms.is_array(index)
 
 
-    Description:
-        Returns True if the variable associated with the index is an array.
+        Description:
+            Returns True if the variable associated with the index is an array.
          
 
 ----
@@ -451,37 +765,57 @@ MechanismStandard (Parameter Control)
 
 .. method:: MechanismStandard.name
 
-
-    Syntax:
-        .. code-block::
-            python
-            
-            ms.name(strref)
-            size = ms.name(strref, i)
-
-
-    Description:
-        The single arg form assigns the name of the mechanism to the strref 
-        variable. 
-         
-        When the i parameter is present (i ranges from 0 to ms.count()-1) the 
-        strref parameter gets assigned the ith name of the mechanism represented 
-        by the MechanismStandard. In addition the return value is the 
-        array size of that parameter (1 for a scalar). 
-
-
-    Example:
+    .. tab:: Python
     
-        .. code-block::
-            python
+    
+        Syntax:
+            .. code-block::
+                python
             
-            from neuron import n, gui
+                ms.name(strref)
+                size = ms.name(strref, i)
 
-            ms = n.MechanismStandard('hh')
-            name_strref = n.ref('')
 
-            # read the name of the mechanism
-            ms.name(name_strref)
+        Description:
+            The single arg form assigns the name of the mechanism to the strref 
+            variable. 
+         
+            When the i parameter is present (i ranges from 0 to ms.count()-1) the 
+            strref parameter gets assigned the ith name of the mechanism represented 
+            by the MechanismStandard. In addition the return value is the 
+            array size of that parameter (1 for a scalar). 
 
-            print(name_strref[0])    # displays: hh
 
+        Example:
+    
+            .. code-block::
+                python
+            
+                from neuron import n, gui
+
+                ms = n.MechanismStandard('hh')
+                name_strref = n.ref('')
+
+                # read the name of the mechanism
+                ms.name(name_strref)
+
+                print(name_strref[0])    # displays: hh
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``ms.name(strdef)``
+        
+        
+            ``size = ms.name(strdef, i)``
+        
+        
+        Description:
+            The single arg form assigns the name of the mechanism to the strdef 
+            variable. 
+        
+            When the i parameter is present (i ranges from 0 to ms.count()-1) the 
+            strdef parameter gets assigned the ith name of the mechanism represented 
+            by the MechanismStandard. In addition the return value is the 
+            array size of that parameter (1 for a scalar). 
