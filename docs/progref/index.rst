@@ -8,6 +8,9 @@ For a basic introduction on how to run Python scripts with NEURON, see
 and you may also like to refer to the `NEURON Python tutorial
 <../tutorials/scripting-neuron-basics.html>`_.
 
+NEURON allows you to build models using multiple programming languages.
+See, for example, :ref:`python_accessing_hoc` and :ref:`hoc_python_accessing_hoc`.
+
 Quick Links
 -----------
 - :ref:`genindex`

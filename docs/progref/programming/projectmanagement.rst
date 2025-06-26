@@ -1,12 +1,18 @@
 .. _project:
 
-
 .. warning::
 
     The commands and methods here are outdated and have thus never been updated
-    to work with Python; consider directly using a modern version control system
-    (e.g. ``git`` or ``hg``) instead. You will likely want to store the version
+    to work with Python or MATLAB; consider directly using a modern version control system
+    (e.g., ``git``) instead. You will likely want to store the version
     identifier with each figure or datafile so you can recreate the data.
+
+    For more on project management, check out:
+
+        Wilson, G., Bryan, J., Cranston, K., Kitzes, J., Nederbragt, L., & Teal, T. K. (2017).
+        Good enough practices in scientific computing. PLoS computational biology, 13(6),
+        e1005510. `doi:10.1371/journal.pcbi.1005510 <https://doi.org/10.1371/journal.pcbi.1005510>`_
+
 
 Project Management
 ------------------

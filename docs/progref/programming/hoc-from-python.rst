@@ -30,13 +30,11 @@ Nonetheless, in isolated situations the following section may be useful:
     Syntax:
         ``from neuron import n``
 
-        ``h = neuron.hoc.HocObject()``
-
 
     Description:
         
         Allow access to anything in the Hoc interpreter. 
-        ``h`` is an instance of a ``neuron.hoc.HocObject`` object. Note that
+        ``n`` is an instance of a ``neuron.hoc.HocObject`` object. Note that
         there is only one Hoc interpreter, no matter how many interface
         objects are created, so there is no advantage to creating another.
 
@@ -65,14 +63,14 @@ Nonetheless, in isolated situations the following section may be useful:
 
             n.x = 25 
             n.s = 'goodbye' 
-            n('print x, s')    #prints 25 goodbye 
+            n('print x, s')    # prints 25 goodbye 
 
-        Note, however, that new Hoc variables cannot be defined from Python except via, e.g.
+        Note, however, that new Hoc variables cannot be defined from Python except via, e.g.,
         ``n('strdef s')``.
 
 
         Any hoc object can be handled in Python, and can use Python idioms for that type of
-        object despite being created in hoc. e.g. in hoc, you would have to use vec.size() to
+        object despite being created in hoc. e.g. in hoc, you would have to use ``vec.size()`` to
         get the Vector's size. This still works in Python, but you can also use the Pythonic
         len(n.vec): 
 
@@ -97,12 +95,12 @@ Nonetheless, in isolated situations the following section may be useful:
         Note that any hoc object method or field may be called, or evaluated/assigned 
         using the normal dot notation which is consistent between hoc and python. 
         However, hoc object methods MUST have the parentheses or else the Python 
-        object is not the return value of the method but a method object. ie. 
+        object is not the return value of the method but a method object. i.e., 
 
         .. code-block::
             python
 
-            x = n.vec.size     # not 5 but a python callable object 
+            x = n.vec.size      # not 5 but a python callable object 
             print(x)            # prints: Vector[0].size() 
             print(x())          # prints 5
 
@@ -362,7 +360,7 @@ Nonetheless, in isolated situations the following section may be useful:
 
         to access the base method. Multiple inheritance involving hoc classes 
         probably does not make sense. 
-        If you override the __init__ procedure when subclassing a Section, 
+        If you override the ``__init__`` procedure when subclassing a Section, 
         be sure to explicitly 
         initialize the Section part of the instance with 
 
@@ -400,7 +398,15 @@ Nonetheless, in isolated situations the following section may be useful:
         .. code-block::
             python
 
-            n.setpointer(_ref_t, 'bar', sec(x).foo) 
+            n.setpointer(n._ref_t, 'bar', sec(x).foo)
+        
+        You can also assign pointers directly in Python; e.g., the above ``setpointer``
+        call is equivalent to:
+
+        .. code-block::
+            python
+
+            sec(x).foo._ref_bar = n._ref_t
 
          
 
@@ -608,8 +614,8 @@ Nonetheless, in isolated situations the following section may be useful:
         range [0 - 1] but will actually be connected to the center of the parent segment
         that contains parentx (or exactly at 0 or 1).
          
-        sec.cell() returns the cell object that 'owns' the section. The return 
-        value is None if no object owns the section (a top level section), the 
+        ``sec.cell()`` returns the cell object that 'owns' the section. The return 
+        value is ``None`` if no object owns the section (a top level section), the 
         instance of the hoc template that created the section, or the python 
         object specified by the named cell parameter 
         when the python section was created. 
@@ -689,7 +695,8 @@ Python-specific documentation of discouraged HOC features
 This section contains versions of the HOC documentation for certain features
 that have been updated to be somewhat Python-specific.
 You may find them useful, but in general Python-native versions are to be
-preferred.
+preferred. :class:`File` remains useful as some NEURON functions only support
+NEURON ``File`` objects and not Python file handles.
 
 .. toctree::
     :maxdepth: 1
