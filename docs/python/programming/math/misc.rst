@@ -5,7 +5,7 @@ Miscellaneous
 
 
     Syntax:
-        ``h.float_epsilon = 1e-11``
+        ``n.float_epsilon = 1e-11``
 
 
     Description:
@@ -13,26 +13,26 @@ Miscellaneous
          
         Allows somewhat safer NEURON logical comparisons and integer truncation for 
         floating point numbers. Most NEURON comparisons are treated as true if they are 
-        within float_epsilon of being true. eg. 
+        within float_epsilon of being true. e.g., 
          
 
         .. code::
 
-            from neuron import h
+            from neuron import n
 
-            h("""
+            n("""
             proc count_to_1() {for (i = 0; i < 1; i += 0.1) $o1.__call__(i)}
             """)
 
             def print_i(i):
                 print(f'{i:3g} {int(10*i)}')
 
-            rv = h.count_to_1(print_i)
+            rv = n.count_to_1(print_i)
 
-            h.float_epsilon = 0
+            n.float_epsilon = 0
 
             # two bugs due to roundoff
-            rv = h.count_to_1(print_i)
+            rv = n.count_to_1(print_i)
 
     .. warning::
 

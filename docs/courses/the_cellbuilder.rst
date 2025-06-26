@@ -61,7 +61,7 @@ Getting started
 .. code::
     python
 
-    from neuron import h, gui
+    from neuron import n, gui
 
 Making the representation of the biological properties
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -133,12 +133,12 @@ In the :menuselection:`course --> cellbuilder directory`, make an init.py file w
 .. code::
     python
 
-    from neuron import h, gui
+    from neuron import n, gui
 
     #load your model specification
-    h.load_file('ballstick.ses')
+    n.load_file('ballstick.ses')
     #your user interface
-    h.load_file("rig.ses")
+    n.load_file("rig.ses")
 
 Also make a rig.ses file that contains the single command
 
@@ -173,7 +173,7 @@ Exercises
 1.
     Establish that the representation in the computer correspeonds to the conceptual model.
     
-    Connectivity? (``h.topology()``)
+    Connectivity? (``n.topology()``)
 
     Are the properties what you expect? Try
 
@@ -182,8 +182,8 @@ Exercises
 
         from pprint import pprint #prettier printing (optional; could use print)
 
-        pprint(h.soma.psection())
-        pprint(h.dend.psection())
+        pprint(n.soma.psection())
+        pprint(n.dend.psection())
 
     Comments:
 
@@ -220,7 +220,7 @@ More Exercises
     .. code::
         python
 
-        h.dend.nseg *=3
+        n.dend.nseg *=3
 
     and run a new simulation. Repeat until you no longer see a significant difference between consecutive runs.
 
@@ -229,12 +229,12 @@ More Exercises
     .. code::
         python
 
-        print(h.dend.nseg)
+        print(n.dend.nseg)
 
     to see how many dendritic segments were required.
 
 5.
-    Is the time step (``h.dt`` in Python) short enough?
+    Is the time step (``n.dt`` in Python) short enough?
 
 6.
     Here's something you should try on your own, perhaps after class tonight: :ref:`using the CellBuilder to manage models "on the fly." <managing_models_on_the_fly>`

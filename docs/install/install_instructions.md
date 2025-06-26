@@ -54,7 +54,7 @@ architecture.
 
   ```
   python
-  from neuron import h
+  from neuron import n
   ```
   and ```nrnivmodl``` will by default create an nmodl mechanism library
   specifically for the architecture you run on.
@@ -67,7 +67,7 @@ architecture.
   program. E.g.
   ```
   arch -arch x86_64 nrniv -python
-  from neuron import h
+  from neuron import n
   ```
   Furthermore, be sure to run nrnivmodl in such a way that it compiles as an
   x86_64 library. e.g.

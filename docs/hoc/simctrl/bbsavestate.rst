@@ -28,11 +28,11 @@ BBSaveState
 
         def prun(tstop, restore=False):
           pc.set_maxstep(10)
-          h.stdinit()
-          bbss = h.BBSaveState()
+          n.stdinit()
+          bbss = n.BBSaveState()
           if restore:
             bbss.restore_test()
-            print('after restore t=%g'%h.t)
+            print(f'after restore t={n.t}')
           else:
             pc.psolve(tstop/2)
             bbss.save_test()

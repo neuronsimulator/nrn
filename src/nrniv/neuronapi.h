@@ -51,6 +51,7 @@ void nrn_mechanism_insert(Section* sec, const Symbol* mechanism);
 nrn_Item* nrn_allsec(void);
 nrn_Item* nrn_sectionlist_data(const Object* obj);
 bool nrn_section_is_active(const Section* sec);
+Section* nrn_cas(void);
 
 /****************************************
  * Segments
@@ -94,7 +95,7 @@ void nrn_function_call(Symbol* sym, int narg);
 void nrn_object_ref(Object* obj);
 void nrn_object_unref(Object* obj);
 char const* nrn_class_name(const Object* obj);
-int nrn_object_index(const Object* obj);
+bool nrn_prop_exists(const Object* obj);
 
 /****************************************
  * Shape Plot

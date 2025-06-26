@@ -93,25 +93,25 @@ Shape
             python
 
             import plotly
-            from neuron import h, gui
+            from neuron import n, gui
             from neuron.units import mV, ms
             import matplotlib
 
-            h.load_file("c91662.ses")
+            n.load_file("c91662.ses")
 
-            for sec in h.allsec():
+            for sec in n.allsec():
                 sec.nseg = int(1 + 2 * (sec.L // 40))
-                sec.insert(h.hh)
+                sec.insert(n.hh)
 
-            ic = h.IClamp(h.soma(0.5))
+            ic = n.IClamp(n.soma(0.5))
             ic.delay = 1 * ms
             ic.dur = 1 * ms
             ic.amp = 10
 
-            h.finitialize(-65 * mV)
-            h.continuerun(2 * ms)
+            n.finitialize(-65 * mV)
+            n.continuerun(2 * ms)
 
-            ps = h.PlotShape(False)
+            ps = n.PlotShape(False)
             ps.variable("v")
             print(ps.show())  # prints the current mode
             ps.show(0)  # alters the mode to 0 that displays diameters for each segment
@@ -163,11 +163,11 @@ Shape
         .. code-block::
             python
             
-            from neuron import h
-            sl = h.SectionList()
-            sl.append(h.soma)
-            sl.append(h.dendrite_1[8])
-            h.Shape[0].observe(sl)
+            from neuron import n
+            sl = n.SectionList()
+            sl.append(n.soma)
+            sl.append(n.dendrite_1[8])
+            n.Shape[0].observe(sl)
 
 
 
@@ -496,11 +496,11 @@ Shape
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             # note: this assumes Shape[0] has already been created
 
-            ss = h.Shape[0]
+            ss = n.Shape[0]
             def p(type, x, y, keystate):
                 if type == 2:
                     ss.color_all(1)
@@ -509,10 +509,10 @@ Shape
                     # the section stack if and only if something is selected
                     a = ss.push_selected()
                     if a >= 0:
-                        seg = h.cas()(a)
+                        seg = n.cas()(a)
                         ss.select()
                         print(f'{d} from {seg}')
-                        h.pop_section()
+                        n.pop_section()
 
             ss.menu_tool('test', p)
             ss.exec_menu('test')
@@ -554,7 +554,7 @@ Shape
             arc = shape.push_selected()
             if arc >= 0:
                 # do something, then end with:
-            h.pop_section()
+            n.pop_section()
 
 
     Description:
@@ -565,7 +565,7 @@ Shape
 
     .. note::
         
-        The pushed section can be read via ``h.cas()``.
+        The pushed section can be read via ``n.cas()``.
 
     .. note::
              

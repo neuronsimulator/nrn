@@ -1231,10 +1231,6 @@ void BAMechList::destruct(BAMechList** first) {
 }
 
 CvodeThreadData::CvodeThreadData() {
-    no_cap_count_ = 0;
-    no_cap_child_count_ = 0;
-    no_cap_node_ = nullptr;
-    no_cap_child_ = nullptr;
     cv_memb_list_ = nullptr;
     cmlcap_ = nullptr;
     cmlext_ = nullptr;
@@ -1242,10 +1238,6 @@ CvodeThreadData::CvodeThreadData() {
     before_breakpoint_ = nullptr;
     after_solve_ = nullptr;
     before_step_ = nullptr;
-    rootnodecount_ = 0;
-    v_node_count_ = 0;
-    v_node_ = nullptr;
-    v_parent_ = nullptr;
     psl_th_ = nullptr;
     watch_list_ = nullptr;
     nvoffset_ = 0;
@@ -1258,10 +1250,6 @@ CvodeThreadData::CvodeThreadData() {
 CvodeThreadData::~CvodeThreadData() {
     if (no_cap_memb_) {
         delete_memb_list(no_cap_memb_);
-    }
-    if (no_cap_node_) {
-        delete[] no_cap_node_;
-        delete[] no_cap_child_;
     }
     if (watch_list_) {
         watch_list_->clear();
@@ -1321,10 +1309,6 @@ void NetCvode::del_cv_memb_list(Cvode* cvode) {
             delete std::exchange(z.psl_th_, nullptr);
         }
         if (cvode != gcv_) {
-            if (z.v_node_) {
-                delete[] std::exchange(z.v_node_, nullptr);
-                delete[] std::exchange(z.v_parent_, nullptr);
-            }
             z.delete_memb_list(std::exchange(z.cv_memb_list_, nullptr));
         } else {
             CvMembList *cml, *cmlnext;
@@ -1486,10 +1470,11 @@ bool NetCvode::init_global() {
         distribute_dinfo(nullptr, 0);
         for (NrnThread* _nt: for_threads(nrn_threads, nrn_nthread)) {
             CvodeThreadData& z = cv.ctd_[_nt->id];
-            z.rootnodecount_ = _nt->ncell;
-            z.v_node_count_ = _nt->end;
-            z.v_node_ = _nt->_v_node;
-            z.v_parent_ = _nt->_v_parent;
+
+            z.rootnode_begin_index_ = 0;
+            z.rootnode_end_index_ = _nt->ncell;
+            z.vnode_begin_index_ = _nt->ncell;
+            z.vnode_end_index_ = _nt->end;
 
             CvMembList* last = 0;
             for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
@@ -1577,26 +1562,23 @@ bool NetCvode::init_global() {
             }
 
             for (i = 0; i < _nt->ncell; ++i) {
-                d.lcv_[i].ctd_[0].v_node_count_ = 0;
+                auto& z = d.lcv_[i].ctd_[0];
+                z.rootnode_begin_index_ = i;
+                z.rootnode_end_index_ = i + 1;
+                // start counting these
+                z.vnode_begin_index_ = 0;
+                z.vnode_end_index_ = 0;
             }
-            for (i = 0; i < _nt->end; ++i) {
-                ++d.lcv_[cellnum[i]].ctd_[0].v_node_count_;
-            }
-            for (i = 0; i < _nt->ncell; ++i) {
-                d.lcv_[cellnum[i]].ctd_[0].v_node_ =
-                    new Node*[d.lcv_[cellnum[i]].ctd_[0].v_node_count_];
-                d.lcv_[cellnum[i]].ctd_[0].v_parent_ =
-                    new Node*[d.lcv_[cellnum[i]].ctd_[0].v_node_count_];
-            }
-            for (i = 0; i < _nt->ncell; ++i) {
-                d.lcv_[i].ctd_[0].v_node_count_ = 0;
-                d.lcv_[i].ctd_[0].rootnodecount_ = 1;
-            }
-            for (i = 0; i < _nt->end; ++i) {
-                d.lcv_[cellnum[i]].ctd_[0].v_node_[d.lcv_[cellnum[i]].ctd_[0].v_node_count_] =
-                    _nt->_v_node[i];
-                d.lcv_[cellnum[i]].ctd_[0].v_parent_[d.lcv_[cellnum[i]].ctd_[0].v_node_count_++] =
-                    _nt->_v_parent[i];
+            for (i = _nt->ncell; i < _nt->end; ++i) {
+                auto& z = d.lcv_[cellnum[i]].ctd_[0];
+                // valid only if cell contiguity (except root) is satisified.
+                if (!z.vnode_begin_index_) {
+                    z.vnode_begin_index_ = i;
+                }
+                if (z.vnode_end_index_ > 0) {  // verify contiguity constraint
+                    assert(z.vnode_end_index_ == i);
+                }
+                z.vnode_end_index_ = i + 1;
             }
             // divide the memb_list info into per cell info
             // count
@@ -1620,12 +1602,11 @@ bool NetCvode::init_global() {
             // The sum of the ml[i].nodecount must equal the mechanism
             // nodecount for the cell and each ml[i] data must be contiguous.
             // Ideally the node permutation would be such that each cell
-            // is contiguous. So only needing a ml[0]. That is sadly not
-            // the case with the default permutation. The cell root nodes are
-            // all at the beginning, and thereafter only Section nodes are
-            // contiguous. It would be easy to permute nodes so that each cell
-            // is contiguous (except root node). This would result in a
-            // CvMembList.ml.size() == 1 almost always with an exception of
+            // is contiguous. So only needing a ml[0]. This is now mostly
+            // the case with the default permutation. The root nodes are
+            // all at the beginning, and thereafter all the cell nodes are
+            // contiguous. This results in a
+            // CvMembList.ml.size() == 1 almost always, with an exception of
             // size() == 2 only for extracellular and for POINT_PROCESSes
             // located both in the root node and other cell nodes.
 
@@ -1674,6 +1655,9 @@ bool NetCvode::init_global() {
                                 // instance to cml->ml
                                 cml->ml.emplace_back(cml->index);
                                 assert(cml->ml.back().nodecount == 0);
+                                // For the default node permutation, cell
+                                // nodes are contiguous except for rootnode.
+                                assert(cml->ml.size() < 3);
                             }
                         }
 
@@ -4158,6 +4142,7 @@ void NetCvode::play_init() {
     }
 }
 
+#if 0  // never used, existed in Version 6.2
 int NetCvode::cellindex() {
     Section* sec = chk_access();
     int i, j, ii;
@@ -4166,7 +4151,9 @@ int NetCvode::cellindex() {
     } else {
         ii = 0;
         lvardtloop(i, j) {
-            if (sec == p[i].lcv_[j].ctd_[0].v_node_[p[i].lcv_[j].ctd_[0].rootnodecount_]->sec) {
+            NrnThread* nt_ = nrn_threads + i;
+            int inode = p[i].lcv_[j].ctd_[0].vnode_begin_index_;
+            if (sec == nt_->_v_node[inode]->sec) {
                 return ii;
             }
             ii++;
@@ -4175,6 +4162,7 @@ int NetCvode::cellindex() {
     hoc_execerror(secname(sec), " is not the root section for any local step cvode instance");
     return 0;
 }
+#endif
 
 void NetCvode::states() {
     Vect* v = vector_arg(1);
@@ -6391,11 +6379,16 @@ void NetCvode::playrec_setup() {
 
 // is a pointer to range variable in this cell
 bool Cvode::is_owner(neuron::container::data_handle<double> const& handle) {
-    int in, it;
-    for (it = 0; it < nrn_nthread; ++it) {
+    for (int it = 0; it < nrn_nthread; ++it) {
         CvodeThreadData& z = CTD(it);
-        for (in = 0; in < z.v_node_count_; ++in) {
-            Node* nd = z.v_node_[in];
+        NrnThread* nt_ = nrn_threads + it;
+        // ugly start but include root in single for loop
+        for (int i = -1; i < z.vnode_end_index_; ++i) {
+            int in = (i == -1) ? z.rootnode_begin_index_ : i;
+            if (i == -1) {
+                i = z.vnode_begin_index_ - 1;  // ready for ++i on next iteration
+            }
+            Node* nd = nt_->_v_node[in];
             if (handle == nd->v_handle()) {
                 return true;
             }

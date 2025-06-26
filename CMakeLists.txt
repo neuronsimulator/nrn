@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 # Note that this needs to happen **before** the call to project(...). This is because CMake reads
 # the CRAYPE_LINK_TYPE environment variable inside the call to project(...) and sets various flags
 # and properties based on its value. Because we are so early in the CMake processing, we have to
@@ -238,6 +238,7 @@ set(NMODL_EXTRA_CXX_FLAGS
     ""
     CACHE STRING "Add extra compile flags for NMODL sources")
 separate_arguments(NMODL_EXTRA_CXX_FLAGS)
+option(NMODL_ENABLE_FLEX_BISON_LINES "Enable line numbers in flex- and bison-generated files" ON)
 
 # =============================================================================
 # Include cmake modules
@@ -279,7 +280,7 @@ if(NOT PYTHON_EXECUTABLE)
   message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
 endif()
 
-find_package(PythonInterp 3.7 REQUIRED)
+find_package(Python 3.9 REQUIRED)
 
 # Try and emit an intelligent warning if the version number currently set in the CMake project(...)
 # call is inconsistent with the output of git describe.
@@ -355,6 +356,17 @@ endif()
 # =============================================================================
 find_package(BISON REQUIRED)
 find_package(FLEX 2.6 REQUIRED)
+
+# lcov >= 2 and bison < 3.7 do not play nicely
+if(NRN_ENABLE_COVERAGE
+   AND BISON_VERSION VERSION_LESS "3.7"
+   AND LCOV_VERSION VERSION_GREATER_EQUAL "2.0")
+  message(
+    WARNING
+      "Bison ${BISON_VERSION} detected;"
+      " Bison 3.7 or above is recommended with NRN_ENABLE_COVERAGE=ON and lcov ${LCOV_VERSION},"
+      " you may experience errors!")
+endif()
 
 # When shipping the wheels we want to link readline libs statically.
 if(NRN_WHEEL_STATIC_READLINE)
@@ -1027,15 +1039,9 @@ elseif(NOT WIN32)
   # Windows installs the demo separately
   add_subdirectory(share/demo/release)
 
-  # `rm` was added in 3.17, and `remove_directory` was deprecated
-  if(CMAKE_VERSION VERSION_LESS 3.17)
-    set(rm_cmd "remove_directory")
-  else()
-    set(rm_cmd rm -fr --)
-  endif()
   add_custom_target(
     neurondemo_release ALL
-    COMMAND ${CMAKE_COMMAND} -E ${rm_cmd}
+    COMMAND ${CMAKE_COMMAND} -E rm -fr --
             "${NRN_BUILD_SHARE_DIR}/demo/release/${CMAKE_HOST_SYSTEM_PROCESSOR}"
     COMMAND ${CMAKE_COMMAND} -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
             ${NRN_SANITIZER_ENABLE_ENVIRONMENT} "${PROJECT_BINARY_DIR}/bin/nrnivmodl"

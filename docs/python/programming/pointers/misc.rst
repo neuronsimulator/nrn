@@ -10,8 +10,8 @@ Obsolete Pointer Functions
         .. code-block::
             python
 
-            h.this_node(x)            
-            h.this_node(x, sec=section)
+            n.this_node(x)            
+            n.this_node(x, sec=section)
 
 
     Description:
@@ -41,7 +41,7 @@ Obsolete Pointer Functions
         .. code-block::
             python
             
-            h.this_section(x)
+            n.this_section(x)
 
 
 
