@@ -24,7 +24,7 @@ jobs:
   nrn-build-ci:
     name: 'Run build CI'
     needs: get-last-azure-url
-    uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@master
+    uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@main
     with:
       azure_drop_url: ${{needs.get-last-azure-url.outputs.azure_drop_url}}
       neuron_branch: ${{github.head_ref}}
