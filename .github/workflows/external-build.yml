@@ -13,18 +13,19 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  get-last-azure-url-build:
-    name: 'Get Azure URL for build CI'
+  get-last-azure-url:
+    name: 'Get Azure URL'
     uses: ./.github/workflows/get-azure-url-template.yml
     if: ${{ github.event.label.name == 'nrn-build-ci-nightly' }}
     with:
       label: ${{ github.event.label.name }}
       ci_name: 'NEURON build CI'
-      pr_url: ${{ github.event.pull_request.html_url }}
+      pr_url: ${{ env.PR_URL }}
 
   nrn-build-ci:
-    needs: get-last-azure-url-build
-    uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@jelic/reusable_workflow
+    name: 'Run build CI'
+    needs: get-last-azure-url
+    uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@master
     with:
-      azure_drop_url: ${{needs.get-last-azure-url-modeldb.outputs.azure_drop_url}}
+      azure_drop_url: ${{needs.get-last-azure-url.outputs.azure_drop_url}}
       neuron_branch: ${{github.head_ref}}
