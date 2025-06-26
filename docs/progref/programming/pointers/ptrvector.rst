@@ -63,21 +63,26 @@ PtrVector
           memory segfaults when internal memory is reallocated.
         
         
-        Python Example:
+        Example:
         
         
           .. code-block::
-            python
+            C++
         
         
-            from neuron import n
-            a = n.Vector(5).indgen()
-            b = n.Vector(5).fill(0)
-            pv = n.PtrVector(5)
-            for i in range(len(a)):
-              pv.pset(i, b._ref_x[i])
-        
-        
+            objref a, b, pv
+            
+            a = new Vector(5)
+            a.indgen()
+            b = new Vector(5)
+            b.fill(0)
+            pv = new PtrVector(5)
+            
+            for i = 0, a.size()-1 {
+              pv.pset(i, &b.x[i])
+            }
+            
+            
             pv.scatter(a)
             b.printf()
             b.mul(10)
