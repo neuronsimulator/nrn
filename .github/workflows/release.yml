@@ -49,7 +49,7 @@ jobs:
   nrn-modeldb-ci:
     name: Run modelDB CI relative to ${{ needs.get-latest-wheel-version.outputs.latest_version }}
     needs: get-latest-wheel-version
-    uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@master
+    uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@jelic/move_infra_to_gha
     with:
       neuron_v1: ${{ needs.get-latest-wheel-version.outputs.latest_version }}
       neuron_v2: ${{ github.event.inputs.rel_branch }}
@@ -222,7 +222,7 @@ jobs:
 
   nrn-build-ci:
     needs: merge-wheels
-    uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@main
+    uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@jelic/move_infra_to_gha
     with:
       artifact_url: ${{ needs.merge-wheels.outputs.artifacts-url }}
       neuron_branch: ${{ github.event.inputs.rel_branch }}
