@@ -266,14 +266,15 @@ jobs:
 
   build-windows-installer:
     name: Build Windows installer
-    needs: tag-n-release
     uses: neuronsimulator/nrn/.github/workflows/windows.yml@master
     with:
       tag: ${{ github.event.inputs.rel_tag }}
 
   upload-windows-installer:
     name: Publish Windows installer
-    needs: build-windows-installer
+    needs:
+      - build-windows-installer
+      - test-full-src-package
     runs-on: ubuntu-latest
     steps:
       - name: Download Windows installer artifact
