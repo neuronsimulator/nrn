@@ -52,7 +52,7 @@ jobs:
     uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@master
     with:
       neuron_v1: ${{ needs.get-latest-wheel-version.outputs.latest_version }}
-      neuron_v2: ${{ env.REL_BRANCH }}
+      neuron_v2: ${{ github.event.inputs.rel_branch }}
 
   tag-n-release:
     runs-on: ubuntu-latest
@@ -65,7 +65,7 @@ jobs:
       - uses: actions/checkout@v4
         name: Checkout branch ${{ env.REL_BRANCH }}
         with:
-            ref: ${{ env.REL_BRANCH }}
+            ref: ${{ github.event.inputs.rel_branch }}
 
       - name: Create and upload tag ${{ env.REL_TAG }}
         if: github.event.inputs.upload == 'true'
@@ -85,8 +85,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag: ${{ env.REL_TAG }}
-          name: Release ${{ env.REL_TAG }}
+          tag: ${{ github.event.inputs.rel_tag }}
+          name: Release ${{ github.event.inputs.rel_tag }}
           prerelease: true
 
   nrn-full-src-package:
@@ -99,7 +99,7 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 1
-          ref: ${{ env.REL_BRANCH }}
+          ref: ${{ github.event.inputs.rel_branch }}
 
       - name: Create nrn-full-src-package artifact
         id: create-full-src
@@ -201,8 +201,8 @@ jobs:
       platform: ${{ matrix.os }}
       python_version: ${{ matrix.python_version }}
       optimize_rxd: true
-      commit: ${{ env.REL_BRANCH }}
-      version: ${{ env.REL_TAG }}
+      commit: ${{ github.event.inputs.rel_branch }}
+      version: ${{ github.event.inputs.rel_tag }}
       build_type: 'release'
 
   merge-wheels:
@@ -222,10 +222,10 @@ jobs:
 
   nrn-build-ci:
     needs: merge-wheels
-    uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@master
+    uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@main
     with:
       artifact_url: ${{ needs.merge-wheels.outputs.artifacts-url }}
-      neuron_branch: ${{ env.REL_BRANCH }}
+      neuron_branch: ${{ github.event.inputs.rel_branch }}
       repo: 'neuronsimulator/nrn-build-ci'
 
   pypi-publish:
@@ -254,7 +254,7 @@ jobs:
     needs: tag-n-release
     uses: neuronsimulator/nrn/.github/workflows/windows.yml@master
     with:
-      tag: ${{ env.REL_TAG }}
+      tag: ${{ github.event.inputs.rel_tag }}
 
   upload-windows-installer:
     name: Publish Windows installer
