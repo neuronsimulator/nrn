@@ -64,13 +64,15 @@ jobs:
   # we need to build wheels _before_ running modelDB CI, since it only works
   # with wheels, and not the CMake installer
   build-wheels:
-    name: Build and test wheel on ${{ needs.generate-wheel-matrix.outputs.matrix.os }} with Python ${{ needs.generate-wheel-matrix.outputs.matrix.python_version }}
+    name: Build and test wheel on ${{ matrix.os }} with Python ${{ matrix.python_version }}
     needs:
       - generate-wheel-matrix
     uses: ./.github/workflows/wheels-template.yml
+    strategy:
+      matrix: ${{ fromJson(needs.generate-wheel-matrix.outputs.matrix) }}
     with:
-      platform: ${{ needs.generate-wheel-matrix.outputs.matrix.os }}
-      python_version: ${{ needs.generate-wheel-matrix.outputs.matrix.python_version }}
+      platform: ${{ matrix.os }}
+      python_version: ${{ matrix.python_version }}
       optimize_rxd: true
       commit: ${{ github.event.inputs.rel_branch }}
       version: ${{ github.event.inputs.rel_tag }}
