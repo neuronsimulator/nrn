@@ -268,7 +268,7 @@ jobs:
     name: Build Windows installer
     uses: neuronsimulator/nrn/.github/workflows/windows.yml@master
     with:
-      tag: ${{ github.event.inputs.rel_tag }}
+      tag: ${{ github.event.inputs.rel_branch }}
 
   upload-windows-installer:
     name: Publish Windows installer
