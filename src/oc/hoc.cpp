@@ -1,4 +1,7 @@
 #ifndef __INTEL_LLVM_COMPILER
+#ifdef __clang__
+#pragma float_control(precise, on)
+#endif
 #pragma STDC FENV_ACCESS ON
 #endif
 
