@@ -53,6 +53,8 @@ jobs:
     with:
       neuron_v1: ${{ needs.get-latest-wheel-version.outputs.latest_version }}
       neuron_v2: ${{ github.event.inputs.rel_branch }}
+      # TODO remove this before merging
+      models_to_run: '64195 22203 156120 51781 97868 22203 97756 97917 105507 136803 138379 138382 146030 244679 251881'
 
   tag-n-release:
     runs-on: ubuntu-latest
