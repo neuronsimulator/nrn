@@ -46,68 +46,68 @@ jobs:
           # https://safjan.com/how-to-check-latest-version-of-python-package/
           echo "latest_version=$(curl -s https://pypi.org/pypi/neuron/json | jq -r '.info.version')" >> "$GITHUB_OUTPUT"
 
-  #generate-wheel-matrix:
-  #  name: Generate platform and Python matrix for wheels
-  #  # wheels should be built once the full source package builds successfully
-  #  runs-on: ubuntu-latest
-  #  outputs:
-  #    matrix: ${{ steps.set-matrix.outputs.matrix }}
-  #  steps:
-  #    - id: set-matrix
-  #      run: |
-  #        OS_INPUT="${{ github.event.inputs.os || 'macos-13,macos-14,ubuntu-22.04,ubuntu-22.04-arm' }}"
-  #        PY_INPUT="${{ github.event.inputs.python_versions || '3.9,3.10,3.11,3.12,3.13' }}"
-  #        OS_JSON=$(echo "$OS_INPUT" | jq -R 'split(",")')
-  #        PY_JSON=$(echo "$PY_INPUT" | jq -R 'split(",")')
-  #        echo "matrix=$(jq -c -n --argjson os "$OS_JSON" --argjson py "$PY_JSON" '{os: $os, python_version: $py}')" >> "$GITHUB_OUTPUT"
+  generate-wheel-matrix:
+    name: Generate platform and Python matrix for wheels
+    # wheels should be built once the full source package builds successfully
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          OS_INPUT="${{ github.event.inputs.os || 'macos-13,macos-14,ubuntu-22.04,ubuntu-22.04-arm' }}"
+          PY_INPUT="${{ github.event.inputs.python_versions || '3.9,3.10,3.11,3.12,3.13' }}"
+          OS_JSON=$(echo "$OS_INPUT" | jq -R 'split(",")')
+          PY_JSON=$(echo "$PY_INPUT" | jq -R 'split(",")')
+          echo "matrix=$(jq -c -n --argjson os "$OS_JSON" --argjson py "$PY_JSON" '{os: $os, python_version: $py}')" >> "$GITHUB_OUTPUT"
 
   # we need to build wheels _before_ running modelDB CI, since it only works
   # with wheels, and not the CMake installer
-  #build-wheels:
-  #  name: Build and test wheel on ${{ matrix.os }} with Python ${{ matrix.python_version }}
-  #  needs:
-  #    - generate-wheel-matrix
-  #  uses: ./.github/workflows/wheels-template.yml
-  #  strategy:
-  #    matrix: ${{ fromJson(needs.generate-wheel-matrix.outputs.matrix) }}
-  #  with:
-  #    platform: ${{ matrix.os }}
-  #    python_version: ${{ matrix.python_version }}
-  #    optimize_rxd: true
-  #    commit: ${{ github.event.inputs.rel_branch }}
-  #    version: ${{ github.event.inputs.rel_tag }}
-  #    build_type: 'release'
+  build-wheels:
+    name: Build and test wheel on ${{ matrix.os }} with Python ${{ matrix.python_version }}
+    needs:
+      - generate-wheel-matrix
+    uses: ./.github/workflows/wheels-template.yml
+    strategy:
+      matrix: ${{ fromJson(needs.generate-wheel-matrix.outputs.matrix) }}
+    with:
+      platform: ${{ matrix.os }}
+      python_version: ${{ matrix.python_version }}
+      optimize_rxd: true
+      commit: ${{ github.event.inputs.rel_branch }}
+      version: ${{ github.event.inputs.rel_tag }}
+      build_type: 'release'
 
-  #merge-wheels:
-  #  name: Merge wheel files to one artifact
-  #  runs-on: ubuntu-latest
-  #  needs:
-  #    - build-wheels
-  #  outputs:
-  #    artifacts-url: ${{ steps.merge-artifacts.outputs.artifacts-url }}
-  #  steps:
-  #    - name: Merge Artifacts
-  #      id: merge-artifacts
-  #      uses: actions/upload-artifact/merge@v4
-  #      with:
-  #        delete-merged: true
-  #        name: wheels
-  #        pattern: wheels-*
+  merge-wheels:
+    name: Merge wheel files to one artifact
+    runs-on: ubuntu-latest
+    needs:
+      - build-wheels
+    outputs:
+      artifacts-url: ${{ steps.merge-artifacts.outputs.artifacts-url }}
+    steps:
+      - name: Merge Artifacts
+        id: merge-artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          delete-merged: true
+          name: wheels
+          pattern: wheels-*
 
-  #nrn-modeldb-ci:
-  #  name: Run modelDB CI relative to ${{ needs.get-latest-wheel-version.outputs.latest_version }}
-  #  needs:
-  #    - get-latest-wheel-version
-  #    - merge-wheels
-  #  # TODO change this to `master` before merging
-  #  uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@jelic/move_infra_to_gha
-  #  with:
-  #    # v1 is the latest stable wheel, while v2 is the currently-built wheel.
-  #    # Note that v2 needs to at least contain an x86_64 Linux wheel since that is the platform that modelDB CI uses
-  #    neuron_v1: neuron==${{ needs.get-latest-wheel-version.outputs.latest_version }}
-  #    neuron_v2: ${{ needs.merge-wheels.outputs.artifacts-url }}
-  #    # TODO remove this before merging
-  #    models_to_run: '64195 22203 156120 51781 97868 22203 97756 97917 105507 136803 138379 138382 146030 244679 251881'
+  nrn-modeldb-ci:
+    name: Run modelDB CI relative to ${{ needs.get-latest-wheel-version.outputs.latest_version }}
+    needs:
+      - get-latest-wheel-version
+      - merge-wheels
+    # TODO change this to `master` before merging
+    uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@jelic/move_infra_to_gha
+    with:
+      # v1 is the latest stable wheel, while v2 is the currently-built wheel.
+      # Note that v2 needs to at least contain an x86_64 Linux wheel since that is the platform that modelDB CI uses
+      neuron_v1: neuron==${{ needs.get-latest-wheel-version.outputs.latest_version }}
+      neuron_v2: ${{ needs.merge-wheels.outputs.artifacts-url }}
+      # TODO remove this before merging
+      models_to_run: '64195 22203 156120 51781 97868 22203 97756 97917 105507 136803 138379 138382 146030 244679 251881'
 
   nrn-full-src-package:
     name: Create the full-src package
@@ -195,37 +195,37 @@ jobs:
           filename: ${{ needs.nrn-full-src-package.outputs.filename }}
           venv_dir: venv_${{ steps.setup-python.outputs.python-version }}
 
-  #nrn-build-ci:
-  #  name: Run build CI
-  #  needs:
-  #    - merge-wheels
-  #  # TODO change this to `main` before merging
-  #  uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@jelic/move_infra_to_gha
-  #  with:
-  #    artifact_url: ${{ needs.merge-wheels.outputs.artifacts-url }}
-  #    neuron_branch: ${{ github.event.inputs.rel_branch }}
-  #    repo: 'neuronsimulator/nrn-build-ci'
+  nrn-build-ci:
+    name: Run build CI
+    needs:
+      - merge-wheels
+    # TODO change this to `main` before merging
+    uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@jelic/move_infra_to_gha
+    with:
+      artifact_url: ${{ needs.merge-wheels.outputs.artifacts-url }}
+      neuron_branch: ${{ github.event.inputs.rel_branch }}
+      repo: 'neuronsimulator/nrn-build-ci'
 
-  #pypi-publish:
-  #  name: Upload wheels to PyPI
-  #  if: github.event.inputs.upload == 'true'
-  #  needs:
-  #    - merge-wheels
-  #    - nrn-build-ci
-  #  runs-on: ubuntu-latest
-  #  environment:
-  #    name: pypi
-  #    url: https://pypi.org/p/neuron
-  #  permissions:
-  #    id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
-  #  steps:
-  #    - name: Download wheels from artifact
-  #      uses: actions/download-artifact@v4
-  #      with:
-  #        name: wheels
-  #        path: dist/
-  #    - name: Publish package distributions to PyPI
-  #      uses: pypa/gh-action-pypi-publish@release/v1
+  pypi-publish:
+    name: Upload wheels to PyPI
+    if: github.event.inputs.upload == 'true'
+    needs:
+      - merge-wheels
+      - nrn-build-ci
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/neuron
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+    steps:
+      - name: Download wheels from artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels
+          path: dist/
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
 
   # actually creates a git tag and a release on GitHub
   tag-n-release:
@@ -279,40 +279,39 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  build-windows-installer:
+    name: Build Windows installer
+    # TODO change this to `master` before merging
+    uses: neuronsimulator/nrn/.github/workflows/windows.yml@jelic/refactor_release
+    with:
+      tag: ${{ github.event.inputs.rel_branch }}
+      artifact: nrn-nightly-AMD64.exe
 
-  #build-windows-installer:
-  #  name: Build Windows installer
-  #  # TODO change this to `master` before merging
-  #  uses: neuronsimulator/nrn/.github/workflows/windows.yml@jelic/refactor_release
-  #  with:
-  #    tag: ${{ github.event.inputs.rel_branch }}
-  #    artifact: nrn-nightly-AMD64.exe
+  upload-windows-installer:
+    name: Publish Windows installer
+    if: github.event.inputs.upload == 'true'
+    needs:
+      - build-windows-installer
+      - tag-n-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Windows installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nrn-nightly-AMD64.exe
 
-  #upload-windows-installer:
-  #  name: Publish Windows installer
-  #  if: github.event.inputs.upload == 'true'
-  #  needs:
-  #    - build-windows-installer
-  #    - tag-n-release
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - name: Download Windows installer artifact
-  #      uses: actions/download-artifact@v4
-  #      with:
-  #        name: nrn-nightly-AMD64.exe
+      - name: Rename Windows installer
+        id: rename
+        run: |
+          # convert "3.9,3.10..." into "39-310-..."
+          py_version_string="$(echo "${{ github.event.inputs.python_version }}" | sed 's/\.//g; s/,/-/g')"
+          win_installer_name="nrn-${{ env.REL_TAG }}.w64-mingw-py-${py_version_string}-setup.exe"
+          echo "win_installer_name=${win_installer_name}" >> "$GITHUB_OUTPUT"
+          cp nrn-nightly-AMD64.exe "${win_installer_name}"
+          ls -lha "${win_installer_name}"
 
-  #    - name: Rename Windows installer
-  #      id: rename
-  #      run: |
-  #        # convert "3.9,3.10..." into "39-310-..."
-  #        py_version_string="$(echo "${{ github.event.inputs.python_version }}" | sed 's/\.//g; s/,/-/g')"
-  #        win_installer_name="nrn-${{ env.REL_TAG }}.w64-mingw-py-${py_version_string}-setup.exe"
-  #        echo "win_installer_name=${win_installer_name}" >> "$GITHUB_OUTPUT"
-  #        cp nrn-nightly-AMD64.exe "${win_installer_name}"
-  #        ls -lha "${win_installer_name}"
-
-  #    - name: Publish Windows installer
-  #      run: |
-  #        gh release upload ${{ env.REL_TAG }} ${{ steps.rename.outputs.win_installer_name }}
-  #      env:
-  #        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish Windows installer
+        run: |
+          gh release upload ${{ env.REL_TAG }} ${{ steps.rename.outputs.win_installer_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
