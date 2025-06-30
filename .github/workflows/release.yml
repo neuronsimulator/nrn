@@ -108,47 +108,11 @@ jobs:
       # TODO remove this before merging
       models_to_run: '64195 22203 156120 51781 97868 22203 97756 97917 105507 136803 138379 138382 146030 244679 251881'
 
-  tag-n-release:
-    runs-on: ubuntu-latest
-    needs:
-      - nrn-modeldb-ci
-    name: tag-n-release ${{ github.event.inputs.rel_tag }} (${{ github.event.inputs.rel_branch }})
-    outputs:
-      release_url: ${{ steps.create_release.outputs.upload_url }}
-      rel_tag: ${{ env.REL_TAG }}
-    steps:
-      - uses: actions/checkout@v4
-        name: Checkout branch ${{ env.REL_BRANCH }}
-        with:
-            ref: ${{ github.event.inputs.rel_branch }}
-
-      - name: Create and upload tag ${{ env.REL_TAG }}
-        if: github.event.inputs.upload == 'true'
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git tag -a $REL_TAG -m "${REL_TAG}"
-          git push origin $REL_TAG
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        working-directory: ${{runner.workspace}}/nrn
-
-      - name: Create Release
-        id: create_release
-        if: github.event.inputs.upload == 'true'
-        uses: ncipollo/release-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag: ${{ github.event.inputs.rel_tag }}
-          name: Release ${{ github.event.inputs.rel_tag }}
-          prerelease: true
-
   nrn-full-src-package:
     name: Create the full-src package
     runs-on: ubuntu-latest
-    needs:
-      - tag-n-release
+    outputs:
+      topdir: ${{ steps.create-full-src.outputs.topdir }}
     steps:
       - name: Checkout feature-rich code
         uses: actions/checkout@v4
@@ -163,6 +127,7 @@ jobs:
           filename="nrn-full-src-package-${{ env.REL_TAG }}.tar.gz"
           echo "filename=$filename" >> "$GITHUB_OUTPUT"
           topdir="nrn-${{ env.REL_TAG }}"
+          echo "topdir=${topdir}" >> "$GITHUB_OUTPUT"
           # taken from:
           # https://stackoverflow.com/a/67389978
           git ls-files --recurse-submodules > nrn_files
@@ -198,7 +163,6 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - nrn-full-src-package
-      - tag-n-release
     steps:
       - name: Install apt packages
         run: |
@@ -221,9 +185,9 @@ jobs:
 
       - name: Build nrn-full-src-package
         run: |
-          if [[ -f "ci/requirements.txt" ]]; then
-            python -m pip install -r ci/uv_requirements.txt
-            uv pip install -r ci/requirements.txt
+          if [[ -f "${topdir}/ci/requirements.txt" ]]; then
+            python -m pip install -r ${topdir}/ci/uv_requirements.txt
+            uv pip install -r ${topdir}/ci/requirements.txt
           else
             python -m pip install -r ${topdir}/nrn_requirements.txt
           fi
@@ -232,6 +196,7 @@ jobs:
           cmake --build build --parallel $(nproc)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          topdir: ${{ needs.nrn-full-src-package.topdir }}
 
   nrn-build-ci:
     name: Run build CI
@@ -269,6 +234,7 @@ jobs:
     uses: neuronsimulator/nrn/.github/workflows/windows.yml@master
     with:
       tag: ${{ github.event.inputs.rel_branch }}
+      artifact: nrn-nightly-AMD64.exe
 
   upload-windows-installer:
     name: Publish Windows installer
@@ -298,3 +264,38 @@ jobs:
           gh release upload ${{ env.REL_TAG }} ${{ steps.rename.outputs.win_installer_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # actually creates a git tag and a release on GitHub
+  tag-n-release:
+    runs-on: ubuntu-latest
+    name: tag-n-release ${{ github.event.inputs.rel_tag }} (${{ github.event.inputs.rel_branch }})
+    outputs:
+      release_url: ${{ steps.create_release.outputs.upload_url }}
+      rel_tag: ${{ env.REL_TAG }}
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout branch ${{ env.REL_BRANCH }}
+        with:
+          ref: ${{ github.event.inputs.rel_branch }}
+
+      - name: Create and upload tag ${{ env.REL_TAG }}
+        if: github.event.inputs.upload == 'true'
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git tag -a $REL_TAG -m "${REL_TAG}"
+          git push origin $REL_TAG
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: ${{runner.workspace}}/nrn
+
+      - name: Create Release
+        id: create_release
+        if: github.event.inputs.upload == 'true'
+        uses: ncipollo/release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag: ${{ github.event.inputs.rel_tag }}
+          name: Release ${{ github.event.inputs.rel_tag }}
+          prerelease: true

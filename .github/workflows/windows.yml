@@ -10,8 +10,13 @@ on:
   workflow_call:
     inputs:
       tag:
-        description: 'Release version (tag name)'
+        description: 'The branch/commit of NEURON to checkout'
         default: ''
+        required: true
+        type: string
+      artifact:
+        description: 'The name of the artifact'
+        default: 'nrn-nightly-AMD64.exe'
         required: true
         type: string
   push:
@@ -32,6 +37,7 @@ env:
 
 jobs:
   WindowsInstaller:
+    name: Windows installer
     runs-on: windows-latest
     timeout-minutes: 45
 
@@ -97,8 +103,8 @@ jobs:
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: nrn-nightly-AMD64.exe
-        path: ${{runner.workspace}}\nrn\nrn-nightly-AMD64.exe
+        name: ${{ inputs.artifact }}
+        path: ${{runner.workspace}}\nrn\${{ inputs.artifact }}
 
     - name: Run installer and launch .hoc associaton test
       run: .\ci\win_install_neuron.cmd
@@ -109,11 +115,3 @@ jobs:
       run: .\ci\win_test_installer.cmd
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn
-
-    - name: Publish Release Installer
-      working-directory: ${{runner.workspace}}\nrn
-      if: inputs.tag != ''
-      run: |
-        gh release upload ${{ inputs.tag }} nrn-nightly-AMD64.exe
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
