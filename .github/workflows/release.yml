@@ -176,6 +176,7 @@ jobs:
 
       - name: Build nrn-full-src-package
         run: |
+          tree
           tar xf nrn-full-src-package/${filename}
           if [[ -f "${topdir}/ci/requirements.txt" ]]; then
             python -m pip install -r ${topdir}/ci/uv_requirements.txt
