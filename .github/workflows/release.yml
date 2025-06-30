@@ -99,6 +99,7 @@ jobs:
     needs:
       - get-latest-wheel-version
       - merge-wheels
+    # TODO change this to `master` before merging
     uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@jelic/move_infra_to_gha
     with:
       # v1 is the latest stable wheel, while v2 is the currently-built wheel.
@@ -202,6 +203,7 @@ jobs:
     name: Run build CI
     needs:
       - merge-wheels
+    # TODO change this to `main` before merging
     uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@jelic/move_infra_to_gha
     with:
       artifact_url: ${{ needs.merge-wheels.outputs.artifacts-url }}
@@ -231,7 +233,8 @@ jobs:
 
   build-windows-installer:
     name: Build Windows installer
-    uses: neuronsimulator/nrn/.github/workflows/windows.yml@master
+    # TODO change this to `master` before merging
+    uses: neuronsimulator/nrn/.github/workflows/windows.yml@jelic/refactor_release
     with:
       tag: ${{ github.event.inputs.rel_branch }}
       artifact: nrn-nightly-AMD64.exe
@@ -240,7 +243,6 @@ jobs:
     name: Publish Windows installer
     needs:
       - build-windows-installer
-      - test-full-src-package
     runs-on: ubuntu-latest
     steps:
       - name: Download Windows installer artifact
