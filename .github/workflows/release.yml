@@ -155,9 +155,9 @@ jobs:
     needs:
       - nrn-full-src-package
     steps:
-      - name: Install apt packages
-        run: |
-          sudo apt-get install -y bison flex libreadline-dev libfl-dev libmpich-dev
+      #- name: Install apt packages
+      #  run: |
+      #    sudo apt-get install -y bison flex libreadline-dev libfl-dev libmpich-dev
 
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
