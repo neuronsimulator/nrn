@@ -115,6 +115,7 @@ jobs:
     outputs:
       topdir: ${{ steps.create-full-src.outputs.topdir }}
       artifact: ${{ steps.upload-full-src.outputs.artifact-name }}
+      filename: ${{ steps.create-full-src.outputs.filename }}
     steps:
       - name: Checkout feature-rich code
         uses: actions/checkout@v4
@@ -172,11 +173,11 @@ jobs:
       - name: Download nrn-full-src-package artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ needs.nrn-full-src-package.outputs.artifact-name }}
+          name: ${{ needs.nrn-full-src-package.outputs.artifact }}
 
       - name: Build nrn-full-src-package
         run: |
-          tree
+          tar xf ${artifact}/${filename}
           if [[ -f "${topdir}/ci/requirements.txt" ]]; then
             python -m pip install -r ${topdir}/ci/uv_requirements.txt
             uv pip install -r ${topdir}/ci/requirements.txt
@@ -189,6 +190,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           topdir: ${{ needs.nrn-full-src-package.outputs.topdir }}
+          artifact: ${{ needs.nrn-full-src-package.outputs.artifact }}
+          filename: ${{ needs.nrn-full-src-package.outputs.filename }}
 
   #nrn-build-ci:
   #  name: Run build CI
