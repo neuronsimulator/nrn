@@ -179,7 +179,7 @@ jobs:
         run: |
           tar xf ${filename}
           python -m venv ${venv_dir}
-          source ${venv_dir}
+          source ${venv_dir}/bin/activate
           if [[ -f "${topdir}/ci/requirements.txt" ]]; then
             python -m pip install -r ${topdir}/ci/uv_requirements.txt
             uv pip install -r ${topdir}/ci/requirements.txt
