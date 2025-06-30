@@ -165,6 +165,7 @@ jobs:
           cmake-version : '3.18'
 
       - name: Set up Python
+        id: setup-python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -176,8 +177,9 @@ jobs:
 
       - name: Build nrn-full-src-package
         run: |
-          tree
           tar xf ${filename}
+          python -m venv ${venv_dir}
+          source ${venv_dir}
           if [[ -f "${topdir}/ci/requirements.txt" ]]; then
             python -m pip install -r ${topdir}/ci/uv_requirements.txt
             uv pip install -r ${topdir}/ci/requirements.txt
@@ -191,6 +193,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           topdir: ${{ needs.nrn-full-src-package.outputs.topdir }}
           filename: ${{ needs.nrn-full-src-package.outputs.filename }}
+          venv_dir: venv_${{ steps.setup-python.outputs.python-version }}
 
   #nrn-build-ci:
   #  name: Run build CI
