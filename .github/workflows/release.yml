@@ -114,6 +114,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       topdir: ${{ steps.create-full-src.outputs.topdir }}
+      artifact: ${{ steps.artifact-name.outputs.artifact }}
     steps:
       - name: Checkout feature-rich code
         uses: actions/checkout@v4
@@ -148,17 +149,10 @@ jobs:
           name: nrn-full-src-package
           path: ${{ steps.create-full-src.outputs.filename }}
 
-      - name: Download nrn-full-src-package artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ steps.upload-full-src.outputs.artifact-name }}
-
-      - name: Upload to GitHub release
-        if: github.event.inputs.upload == 'true'
+      - name: Put artifact name to output
+        id: artifact-name
         run: |
-          gh release upload ${{ env.REL_TAG }} ${{ steps.upload-full-src.outputs.artifact-name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "artifact=${{ steps.upload-full-src.outputs.artifact-name}}" >> "$GITHUB_OUTPUT"
 
   test-full-src-package:
     name: Build and test the full-src package
@@ -232,6 +226,58 @@ jobs:
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
 
+  # actually creates a git tag and a release on GitHub
+  tag-n-release:
+    runs-on: ubuntu-latest
+    name: tag-n-release ${{ github.event.inputs.rel_tag }} (${{ github.event.inputs.rel_branch }})
+    if: github.event.inputs.upload == 'true'
+    outputs:
+      release_url: ${{ steps.create_release.outputs.upload_url }}
+      rel_tag: ${{ env.REL_TAG }}
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout branch ${{ env.REL_BRANCH }}
+        with:
+          ref: ${{ github.event.inputs.rel_branch }}
+
+      - name: Create and upload tag ${{ env.REL_TAG }}
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git tag -a $REL_TAG -m "${REL_TAG}"
+          git push origin $REL_TAG
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: ${{runner.workspace}}/nrn
+
+      - name: Create Release
+        id: create_release
+        uses: ncipollo/release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag: ${{ github.event.inputs.rel_tag }}
+          name: Release ${{ github.event.inputs.rel_tag }}
+          prerelease: true
+
+  upload-src-package:
+    name: Publish full-src package
+    if: github.event.inputs.upload == 'true'
+    needs:
+      - nrn-full-src-package
+    steps:
+      - name: Download nrn-full-src-package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.nrn-full-src-package.outputs.artifact }}
+
+      - name: Upload to GitHub release
+        run: |
+          gh release upload ${{ env.REL_TAG }} ${{ needs.nrn-full-src-package.outputs.artifact }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
   build-windows-installer:
     name: Build Windows installer
     # TODO change this to `master` before merging
@@ -242,8 +288,10 @@ jobs:
 
   upload-windows-installer:
     name: Publish Windows installer
+    if: github.event.inputs.upload == 'true'
     needs:
       - build-windows-installer
+      - tag-n-release
     runs-on: ubuntu-latest
     steps:
       - name: Download Windows installer artifact
@@ -262,43 +310,9 @@ jobs:
           ls -lha "${win_installer_name}"
 
       - name: Publish Windows installer
-        if: github.event.inputs.upload == 'true'
         run: |
           gh release upload ${{ env.REL_TAG }} ${{ steps.rename.outputs.win_installer_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # actually creates a git tag and a release on GitHub
-  tag-n-release:
-    runs-on: ubuntu-latest
-    name: tag-n-release ${{ github.event.inputs.rel_tag }} (${{ github.event.inputs.rel_branch }})
-    outputs:
-      release_url: ${{ steps.create_release.outputs.upload_url }}
-      rel_tag: ${{ env.REL_TAG }}
-    steps:
-      - uses: actions/checkout@v4
-        name: Checkout branch ${{ env.REL_BRANCH }}
-        with:
-          ref: ${{ github.event.inputs.rel_branch }}
 
-      - name: Create and upload tag ${{ env.REL_TAG }}
-        if: github.event.inputs.upload == 'true'
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git tag -a $REL_TAG -m "${REL_TAG}"
-          git push origin $REL_TAG
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        working-directory: ${{runner.workspace}}/nrn
-
-      - name: Create Release
-        id: create_release
-        if: github.event.inputs.upload == 'true'
-        uses: ncipollo/release-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag: ${{ github.event.inputs.rel_tag }}
-          name: Release ${{ github.event.inputs.rel_tag }}
-          prerelease: true
