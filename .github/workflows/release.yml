@@ -262,6 +262,7 @@ jobs:
 
   upload-src-package:
     name: Publish full-src package
+    runs-on: ubuntu-latest
     if: github.event.inputs.upload == 'true'
     needs:
       - nrn-full-src-package
