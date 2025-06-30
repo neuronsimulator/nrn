@@ -114,7 +114,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       topdir: ${{ steps.create-full-src.outputs.topdir }}
-      artifact: ${{ steps.artifact-name.outputs.artifact }}
+      artifact: ${{ steps.upload-full-src.outputs.artifact-name }}
     steps:
       - name: Checkout feature-rich code
         uses: actions/checkout@v4
@@ -148,11 +148,6 @@ jobs:
         with:
           name: nrn-full-src-package
           path: ${{ steps.create-full-src.outputs.filename }}
-
-      - name: Put artifact name to output
-        id: artifact-name
-        run: |
-          echo "artifact=${{ steps.upload-full-src.outputs.artifact-name}}" >> "$GITHUB_OUTPUT"
 
   test-full-src-package:
     name: Build and test the full-src package
@@ -192,7 +187,7 @@ jobs:
           cmake --build build --parallel $(nproc)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          topdir: ${{ needs.nrn-full-src-package.topdir }}
+          topdir: ${{ needs.nrn-full-src-package.outputs.topdir }}
 
   nrn-build-ci:
     name: Run build CI
