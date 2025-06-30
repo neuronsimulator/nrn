@@ -114,7 +114,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       topdir: ${{ steps.create-full-src.outputs.topdir }}
-      artifact: ${{ steps.upload-full-src.outputs.artifact-name }}
       filename: ${{ steps.create-full-src.outputs.filename }}
     steps:
       - name: Checkout feature-rich code
@@ -173,11 +172,11 @@ jobs:
       - name: Download nrn-full-src-package artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ needs.nrn-full-src-package.outputs.artifact }}
+          name: nrn-full-src-package
 
       - name: Build nrn-full-src-package
         run: |
-          tar xf ${artifact}/${filename}
+          tar xf nrn-full-src-package/${filename}
           if [[ -f "${topdir}/ci/requirements.txt" ]]; then
             python -m pip install -r ${topdir}/ci/uv_requirements.txt
             uv pip install -r ${topdir}/ci/requirements.txt
@@ -190,7 +189,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           topdir: ${{ needs.nrn-full-src-package.outputs.topdir }}
-          artifact: ${{ needs.nrn-full-src-package.outputs.artifact }}
           filename: ${{ needs.nrn-full-src-package.outputs.filename }}
 
   #nrn-build-ci:
@@ -269,11 +267,11 @@ jobs:
       - name: Download nrn-full-src-package artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ needs.nrn-full-src-package.outputs.artifact-name }}
+          name: nrn-full-src-package
 
       - name: Upload to GitHub release
         run: |
-          gh release upload ${{ env.REL_TAG }} ${{ needs.nrn-full-src-package.outputs.artifact-name }}
+          gh release upload ${{ env.REL_TAG }} nrn-full-src-package
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
