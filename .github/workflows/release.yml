@@ -151,11 +151,12 @@ jobs:
       - name: Download nrn-full-src-package artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ steps.upload-full-src.outputs.artifact-id }}
+          name: ${{ steps.upload-full-src.outputs.artifact-name }}
 
       - name: Upload to GitHub release
         if: github.event.inputs.upload == 'true'
-        run: gh release upload ${{ env.REL_TAG }} ${{ steps.upload-full-src.outputs.artifact-id }}
+        run: |
+          gh release upload ${{ env.REL_TAG }} ${{ steps.upload-full-src.outputs.artifact-name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
