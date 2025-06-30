@@ -103,7 +103,7 @@ jobs:
     uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@jelic/move_infra_to_gha
     with:
       # v1 is the latest stable wheel, while v2 is the currently-built wheel.
-      # Note that v2 needs to at least contain an x86_64 Linux wheel since that is the platform that modelDB CI uses
+      # Note that v2 needs to at least contain an x86_64 Linux Python 3.9 wheel since that is the platform that modelDB CI uses
       neuron_v1: neuron==${{ needs.get-latest-wheel-version.outputs.latest_version }}
       neuron_v2: ${{ needs.merge-wheels.outputs.artifacts-url }}
       # TODO remove this before merging
