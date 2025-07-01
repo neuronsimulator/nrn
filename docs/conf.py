@@ -125,16 +125,11 @@ if os.environ.get("READTHEDOCS"):
     subprocess.run(
         [
             "cmake",
-            "-S",
-            Path(__file__).parent.parent,
             "--build",
-            "--preset",
-            "docs",
+            Path(__file__).parent.parent / "build" / "docs",
             "--target",
             "doxygen",
             "notebooks",
-            "--parallel",
-            f"{os.cpu_count()}",
         ],
         check=True,
     )
