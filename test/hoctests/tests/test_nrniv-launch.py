@@ -7,7 +7,6 @@ import pytest
 
 
 def nrniv(args, input):
-    print(args, input)
     # nrniv is a NEURON executable, so it will be linked against any sanitizer
     # runtimes that are required => LD_PRELOAD is not needed. Delete LD_PRELOAD
     # if it is present, because if dynamic Python is enabled then nrniv will

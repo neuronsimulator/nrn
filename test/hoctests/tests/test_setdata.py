@@ -46,7 +46,6 @@ def test_setdata(sfx):  #  "" or "ts"
     assert fc(2) == 1000 * 0.5
 
     del s, setdata, seg, mech, x
-    locals()
 
 
 # what happens if the _extcall_prop becomes invalid
@@ -87,7 +86,6 @@ def test_prop_invalid(sfx):  #  "" or "ts"
     assert fk(5) == 15.0
 
     del s, setdata, seg, mech, carray, fk
-    locals()
 
 
 if __name__ == "__main__":

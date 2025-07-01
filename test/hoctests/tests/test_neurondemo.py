@@ -1,9 +1,16 @@
+import io
 import os
-import pytest
-from neuron import config
+import sys
 
-from neuron.tests.utils.checkresult import Chk
+
+from math import isclose
+from platform import machine
 from subprocess import Popen, PIPE
+
+import pytest
+
+from neuron import config, h, load_mechanisms
+from neuron.tests.utils.checkresult import Chk
 
 
 @pytest.mark.skipif(
@@ -141,7 +148,6 @@ def test_neurondemo():
             except AssertionError:
                 err = 1
             if err:
-                from math import isclose
 
                 reltol = 1e-5
                 std = chk.d[key]
@@ -207,11 +213,6 @@ def test_neurondemo():
     # the neurondemo mod file shared library which will create the ca ion
     # along with several mechanisms that write to cai.
 
-    from neuron import h, load_mechanisms
-    from platform import machine
-    import sys
-    import io
-
     # return True if name exists in h
     def exists(name):
         try:
@@ -238,7 +239,6 @@ def test_neurondemo():
     # Following Aborts prior to PR#3055 with
     # eion.cpp:431: void nrn_check_conc_write(Prop*, Prop*, int): Assertion `k < sizeof(long) * 8' failed.
     nrnmechlibpath = "%s/demo/release" % h.neuronhome()
-    print(nrnmechlibpath)
     assert load_mechanisms(nrnmechlibpath)
 
     # ca_ion now exists and has a mechanism index > nion

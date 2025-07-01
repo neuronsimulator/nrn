@@ -110,17 +110,11 @@ endtemplate Foo
     h.make_mechanism("foo", "Foo", "x")
 
     ms = h.MechanismStandard("foo")
-    print(ms.get("x_foo"))
 
-    print("calling mkmodel")
     s = mkmodel(["foo"])
-    print("return from mkmodel")
-    print(s(0.5).x_foo)
     ms._in(s(0.5))
-    print(ms.get("x_foo"))
     ms.set("x_foo", 6)
     ms.out(s(0.5))
-    print(s(0.5).foo.x)
     ms2 = h.MechanismStandard("foo")
     ms2._in(ms)
     assert ms2.get("x_foo") == ms.get("x_foo")
@@ -153,9 +147,7 @@ def test_mechstd5():
     pp = h.SData(model(0.5))
     pp.a = 5
     ms2 = h.MechanismStandard("SData")
-    print(pp.a)
     ms2._in(pp)
-    print(ms2.get("a"))
     h.save_session("tmp.ses")
     b.unmap()
 

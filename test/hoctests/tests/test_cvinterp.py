@@ -5,10 +5,9 @@
 # the average of the voltages at the beginning and end of the time step.
 # Prior to this PR, IDA failed this test
 
-from neuron import h
-
-h.load_file("stdrun.hoc")
 import math
+
+from neuron import h
 
 
 def model():
@@ -32,6 +31,7 @@ def points(vecs):
 
 
 def test():
+    h.load_file("stdrun.hoc")
     m = model()
     vref = m[0](0.5)._ref_v
     freerun = [h.Vector().record(h._ref_t), h.Vector().record(vref)]

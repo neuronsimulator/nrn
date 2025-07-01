@@ -1,9 +1,19 @@
+import os
+
 from neuron import h
 from neuron.tests.utils.checkresult import Chk
-import os
 
 # Default Node order for simulation given a particular construction order
 # is the order of section creation.
+# Create a helper for managing reference results
+dir_path = os.path.dirname(os.path.realpath(__file__))
+chk = Chk(os.path.join(dir_path, "test_optim_node_order.json"))
+
+
+pr = False
+
+
+pc = h.ParallelContext()
 
 
 class Cell:
@@ -23,6 +33,8 @@ class Cell:
     def __str__(self):
         return "Cell_%d" % self.id
 
+
+cells = [Cell(id) for id in range(1, 4)]
 
 # Iteration order (sec,seg) is associated with construction order
 # (provided nseg set after each section construction?)
@@ -44,16 +56,6 @@ def p():
 
 
 def test_optim_node_order():
-    # Create a helper for managing reference results
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    chk = Chk(os.path.join(dir_path, "test_optim_node_order.json"))
-
-    pc = h.ParallelContext()
-
-    cells = [Cell(id) for id in range(1, 4)]
-
-    pr = False
-
     def printv():
         s = {}  # associate root sections with thread id.
         for i in range(pc.nthread()):

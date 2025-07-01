@@ -31,7 +31,6 @@ def model():  # 3 cables each with nseg=3
 
 
 def test1():
-    print("test1")
     s = h.Section()  # so we can delete later and verify mechs is still ok
     s.nseg = 10
     mechs = model()
@@ -58,7 +57,6 @@ def test1():
         expect_err("mechs[i].A(0, 0, 0)")
 
     del mechs, sec, i
-    locals()
 
 
 def refs(mech):
@@ -79,11 +77,9 @@ def mech_expect_invalid(mech, Af, aref):
     ]
     expect_err("print(mech.name())")
     del mech, Af, aref
-    locals()
 
 
 def test2():
-    print("test2")
     mechs = model()
     sec, seg, mech, Af, aref = refs(mechs[-1])
     assert Af.name() == "sdatats.A"  # covers NPyMechObj_name
@@ -95,11 +91,9 @@ def test2():
     mechs[-1].segment().sec.uninsert(mechs[-1].name())
     mech_expect_invalid(mech, Af, aref)
     del mechs, sec, seg, mech, Af, aref
-    locals()
 
 
 def test3():
-    print("test3")
     mechs = model()
     sec, seg, mech, Af, aref = refs(mechs[-1])
     # internal segment destroyed, should invalidate mechs[-1]
@@ -110,22 +104,18 @@ def test3():
     assert seg.x == 5.0 / 6.0
     assert str(seg) == "cable2(0.833333)"
     del mechs, sec, seg, mech, Af, aref
-    locals()
 
 
 def test4():
-    print("test4")
     mechs = model()
     sec, seg, mech, Af, aref = refs(mechs[-1])
     # section deleted, should invalidate mechs[-1]
     h.delete_section(sec=mechs[-1].segment().sec)
     mech_expect_invalid(mech, Af, aref)
     del mechs, sec, seg, mech, Af, aref
-    locals()
 
 
 def test5():
-    print("test5")
     mechs = model()
     for sec in h.allsec():
         for seg in sec:
@@ -137,7 +127,6 @@ def test5():
 
 
 def test6():
-    print("test6")
     mechs = model()
     m = mechs[0]
     expect_err("m.ft(1)")
@@ -154,7 +143,6 @@ def test6():
     assert isclose(m.bar(), 2 * m.a)
 
     del mechs, m
-    locals()
 
 
 if __name__ == "__main__":
