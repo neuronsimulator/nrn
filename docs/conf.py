@@ -127,7 +127,7 @@ if os.environ.get("READTHEDOCS"):
             "cmake",
             "--build",
             "--preset",
-            "docs"
+            "docs",
             "--target",
             "doxygen",
             "notebooks",
@@ -137,4 +137,6 @@ if os.environ.get("READTHEDOCS"):
         check=True,
     )
     # since we're not building a wheel, we need to let RTD know where to load the NEURON Python module from
-    sys.path.insert(0, str(Path(__file__).parent.parent / "build" / "docs" / "lib" / "python"))
+    sys.path.insert(
+        0, str(Path(__file__).parent.parent / "build" / "docs" / "lib" / "python")
+    )
