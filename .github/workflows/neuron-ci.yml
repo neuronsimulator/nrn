@@ -36,8 +36,8 @@ jobs:
       SDK_ROOT: $(xcrun --sdk macosx --show-sdk-path)
       SKIP_WHEELHOUSE_REPAIR: true
       BUILD_TYPE: Release
-      DESIRED_CMAKE_VERSION: 3.18
-      DYNAMIC_PYTHON_CMAKE_VERSION: 3.18
+      DESIRED_CMAKE_VERSION: '3.20'
+      DYNAMIC_PYTHON_CMAKE_VERSION: '3.20'
       PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.9' }}
       PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.13' }}
       MUSIC_INSTALL_DIR: /opt/MUSIC

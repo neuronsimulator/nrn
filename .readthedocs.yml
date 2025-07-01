@@ -20,6 +20,8 @@ build:
     - flex
     - libfl-dev
     - libreadline-dev
+    - ccache
+    - ninja-build
 
 submodules:
   recursive: true
