@@ -125,6 +125,8 @@ if os.environ.get("READTHEDOCS"):
     subprocess.run(
         [
             "cmake",
+            "-S",
+            Path(__file__).parent.parent,
             "--build",
             "--preset",
             "docs",
