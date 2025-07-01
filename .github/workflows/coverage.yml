@@ -208,38 +208,15 @@ jobs:
           # Update all submodules with depth 1
           git submodule update --init --recursive --depth 1
 
-          mkdir build && cd build;
+          cmake --preset coverage
 
-          # CMake options & flags
-          cmake_args=(-G Ninja \
-                      -DCMAKE_BUILD_TYPE=Debug \
-                      -DCMAKE_C_COMPILER="$CC" \
-                      -DCMAKE_CXX_COMPILER="$CXX" \
-                      -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-                      -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-                      -DNRN_ENABLE_BACKTRACE=ON \
-                      -DNRN_ENABLE_CORENEURON=ON \
-                      -DNRN_ENABLE_COVERAGE=ON \
-                      -DNRN_ENABLE_INTERVIEWS=ON \
-                      -DNRN_ENABLE_MPI=ON \
-                      -DNRN_ENABLE_PERFORMANCE_TESTS=OFF \
-                      -DNRN_ENABLE_PROFILING=ON \
-                      -DNRN_ENABLE_PYTHON=ON \
-                      -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
-                      -DNRN_PYTHON_DYNAMIC="${PYTHON_MIN};${PYTHON_MAX}" \
-                      -DNRN_PYTHON_EXTRA_FOR_TESTS=${PYTHON_MID} \
-                      -DNRN_ENABLE_TESTS=ON \
-                      -DNRN_ENABLE_MUSIC=ON \
-                      -DCMAKE_PREFIX_PATH="${MUSIC_INSTALL_DIR}" \
-                      -DMUSIC_ROOT="${MUSIC_INSTALL_DIR}")
-          cmake .. "${cmake_args[@]}"
           # Coverage
           ccache -z
           ccache -s -v || ccache -s
-          cmake --build .
+          cmake --build --preset coverage
           ccache -s -v || ccache -s
-          cmake --build . --target cover_baseline
-          xvfb-run ctest --rerun-failed --output-on-failure
+          cmake --build --preset coverage --target cover_baseline
+          xvfb-run ctest --preset coverage --rerun-failed --output-on-failure
           for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
           do
             echo "Using ${python}"
@@ -250,8 +227,8 @@ jobs:
               DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
               "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd();"
           done
-          cmake --build . --target cover_collect
-          cmake --build . --target cover_combine
+          cmake --build --preset coverage --target cover_collect
+          cmake --build --preset coverage --target cover_combine
         env:
           MATRIX_EVAL: "CC=gcc CXX=g++"
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
