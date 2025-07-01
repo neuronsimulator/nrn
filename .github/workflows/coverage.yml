@@ -220,11 +220,12 @@ jobs:
           for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
           do
             echo "Using ${python}"
-            NEURONHOME="${PWD}/share/nrn" \
-              PYTHONPATH="${PWD}/lib/python:${PYTHONPATH}" \
-              PATH="${PWD}/bin:${PATH}" \
-              LD_LIBRARY_PATH="${PWD}/lib:${LD_LIBRARY_PATH}" \
-              DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
+            BUILD_DIR="${PWD}/build/coverage"
+            NEURONHOME="${BUILD_DIR}/share/nrn" \
+              PYTHONPATH="${BUILD_DIR}/lib/python:${PYTHONPATH}" \
+              PATH="${BUILD_DIR}/bin:${PATH}" \
+              LD_LIBRARY_PATH="${BUILD_DIR}/lib:${LD_LIBRARY_PATH}" \
+              DYLD_LIBRARY_PATH="${BUILD_DIR}/lib:${DYLD_LIBRARY_PATH}" \
               "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd();"
           done
           cmake --build --preset coverage --target cover_collect
@@ -241,9 +242,9 @@ jobs:
         with:
           name: coverage-${{runner.os}}
           path: |
-            ${{runner.workspace}}/nrn/build/CMakeCache.txt
-            ${{runner.workspace}}/nrn/build/build.ninja
-            ${{runner.workspace}}/nrn/build/cmake_install.cmake
+            ${{runner.workspace}}/nrn/build/coverage/CMakeCache.txt
+            ${{runner.workspace}}/nrn/build/coverage/build.ninja
+            ${{runner.workspace}}/nrn/build/coverage/cmake_install.cmake
 
       - name: Save compiler cache
         id: save-compiler-cache
@@ -263,7 +264,7 @@ jobs:
 
       - uses: codecov/codecov-action@v4
         with:
-          directory: ./build
+          directory: ./build/coverage
           fail_ci_if_error: true
           verbose: true
           token: ${{ secrets.CODECOV_TOKEN }}
