@@ -181,6 +181,8 @@ def watchrange2():
         h.run()
 
     def series():
+        # the extra (0, 0) tests transition from fixed step 4 threads
+        # to fixed step 1 thread.
         for method in [(0, 0), (0, 0), (1, 0), (1, 1)]:
             for nthread in [1, 4]:
                 run(method, nthread)

@@ -7,6 +7,7 @@
 #include "membfunc.h"
 #include "netcon.h"
 #include "tqitem.hpp"
+#include "htlist.h"
 
 class NetCvode;
 class Daspk;

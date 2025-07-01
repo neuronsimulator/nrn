@@ -5931,7 +5931,7 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
 
     for (auto* wl: wl_list_[nt->id]) {
         for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
-            WatchCondition* wc = (WatchCondition*) item;
+            WatchCondition* wc = static_cast<WatchCondition*>(item);
             wc->check(nt, nt->_t);
         }
     }
@@ -5949,7 +5949,7 @@ void nrn2core_transfer_WATCH(void (*cb)(int, int, int, int, int)) {
     for (auto& htlists_of_thread: net_cvode_instance->wl_list_) {
         for (HTList* wl: htlists_of_thread) {
             for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
-                WatchCondition* wc = (WatchCondition*) item;
+                WatchCondition* wc = static_cast<WatchCondition*>(item);
                 nrn2core_transfer_WatchCondition(wc, cb);
             }
         }
