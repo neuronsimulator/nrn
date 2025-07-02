@@ -266,6 +266,7 @@ jobs:
     if: github.event.inputs.upload == 'true'
     needs:
       - nrn-full-src-package
+      - tag-n-release
     steps:
       - name: Download nrn-full-src-package artifact
         uses: actions/download-artifact@v4
