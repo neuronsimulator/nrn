@@ -285,7 +285,6 @@ jobs:
     uses: neuronsimulator/nrn/.github/workflows/windows.yml@jelic/refactor_release
     with:
       tag: ${{ github.event.inputs.rel_branch }}
-      artifact: nrn-nightly-AMD64.exe
 
   upload-windows-installer:
     name: Publish Windows installer

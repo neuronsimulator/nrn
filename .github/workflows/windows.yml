@@ -14,11 +14,6 @@ on:
         default: ''
         required: true
         type: string
-      artifact:
-        description: 'The name of the artifact'
-        default: 'nrn-nightly-AMD64.exe'
-        required: true
-        type: string
   push:
     branches:
       - master
@@ -103,8 +98,8 @@ jobs:
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ inputs.artifact }}
-        path: ${{runner.workspace}}\nrn\${{ inputs.artifact }}
+        name: nrn-nightly-AMD64.exe
+        path: ${{runner.workspace}}\nrn\nrn-nightly-AMD64.exe
 
     - name: Run installer and launch .hoc associaton test
       run: .\ci\win_install_neuron.cmd
