@@ -211,7 +211,6 @@ jobs:
     if: github.event.inputs.upload == 'true'
     needs:
       - merge-wheels
-      - nrn-build-ci
     runs-on: ubuntu-latest
     environment:
       name: pypi
