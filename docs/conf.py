@@ -42,6 +42,7 @@ extensions = [
     "nbsphinx",
     "sphinx_design",
     "sphinx_inline_tabs",
+    "sphinxcontrib.mermaid",
 ]
 
 source_suffix = {
