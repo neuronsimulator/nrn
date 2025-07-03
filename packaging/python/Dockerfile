@@ -83,6 +83,17 @@ RUN curl -L -o Python-3.10.0.tar.gz https://www.python.org/ftp/python/3.10.0/Pyt
 RUN yum -y install epel-release libX11-devel libXcomposite-devel vim-enhanced && yum -y clean all && rm -rf /var/cache
 RUN yum -y remove ncurses-devel
 
+# install ccache for speeding-up builds
+RUN export ccache_version='4.11.3' \
+    && ccache_srcdir="ccache-${ccache_version}" \
+    && ccache_builddir="ccache-build" \
+    && wget "https://github.com/ccache/ccache/releases/download/v${ccache_version}/ccache-${ccache_version}.tar.gz" \
+    && tar xf "ccache-${ccache_version}.tar.gz" \
+    && cmake -B "${ccache_builddir}" -S "${ccache_srcdir}" \
+    && cmake --build "${ccache_builddir}" --parallel \
+    && cmake --install "${ccache_builddir}" \
+    && rm -fr "ccache-${ccache_version}.tar.gz" "${ccache_srcdir}" "${ccache_builddir}"
+
 # build wheels from there
 WORKDIR /root
 

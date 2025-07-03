@@ -122,10 +122,17 @@ NRN_ENABLE_MPI_DYNAMIC = { default = "ON", env = "NRN_ENABLE_MPI_DYNAMIC" }
 # MPI headers are platform-specific, so we do not set defaults
 NRN_MPI_DYNAMIC = { env = "NRN_MPI_DYNAMIC" }
 
+# in case we want to speed-up builds
+CMAKE_C_COMPILER_LAUNCHER = { env = "CMAKE_C_COMPILER_LAUNCHER" }
+CMAKE_CXX_COMPILER_LAUNCHER = { env = "CMAKE_CXX_COMPILER_LAUNCHER" }
+
+# we do not need NMODL line numbers
+NMODL_ENABLE_FLEX_BISON_LINES = "OFF"
+
 [tool.cibuildwheel]
 # We can specify a custom Docker image when building NEURON
-manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64"
-manylinux-x86_64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64"
+manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64_ccache"
+manylinux-x86_64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64_ccache"
 
 # certain platforms are not supported
 skip = [ "pp*", "*-win32", "*-manylinux_i686", "*-musllinux_i686", "*-musllinux_x86_64", "*-musllinux_aarch64" ]
@@ -143,10 +150,15 @@ environment-pass = [
   "CORENRN_ENABLE_OPENMP",
   "NRN_BINARY_DIST_BUILD",
   "NRN_RX3D_OPT_LEVEL",
+  "CCACHE_DEBUG",
+  "CCACHE_NODIRECT",
   # when making a release, we need to override the version
   "SETUPTOOLS_SCM_PRETEND_VERSION",
   # in case the user wants to use less resources
   "CMAKE_BUILD_PARALLEL_LEVEL",
+  "CMAKE_C_COMPILER_LAUNCHER",
+  "CMAKE_CXX_COMPILER_LAUNCHER",
+  "CCACHE_DIR",
 ]
 
 # comment originally from `build_wheels.bash`:
@@ -157,7 +169,7 @@ environment-pass = [
 #   libnrniv: we ship precompiled version of neurondemo containing libnrnmech.so
 #             which is linked to libnrniv.so. auditwheel manipulate rpaths and
 #             ships an extra copy of libnrniv.so and hence exclude it here.
-repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so'"
+repair-wheel-command = "auditwheel -v repair -w {dest_dir} {wheel} --exclude 'libgomp.so.1' --exclude 'libnrniv.so' >& /dev/null"
 
 [tool.cibuildwheel.macos]
 repair-wheel-command = "delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}"
