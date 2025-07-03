@@ -215,7 +215,7 @@ def test_savestate_basic(neuron_nosave_instance):
         return vecs, vecs_std_save
 
     # run the test
-    return test_savestate_rxd()
+    test_savestate_rxd()
 
 
 if __name__ == "__main__":
