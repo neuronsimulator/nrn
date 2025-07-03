@@ -47,17 +47,12 @@ def test_empty():
     expect_err("print(h.alp_cagkftab(-50., 1e-2))")
 
 
-test_empty()
-
-
 def test_const():
     h.table_alp_cagkftab(5.1)
     h.table_tst_cagkftab(6.2)
     assert h.alp_cagkftab(-50.0, 1e-2) == 5.1
     assert h.tst1_cagkftab(3) == 6.2
 
-
-test_const()
 
 # HOC matrix and 2-d double memory order is irow*ncol + jcol
 def memorder():
@@ -76,9 +71,6 @@ def memorder():
         assert ra[i] == float(i)
 
 
-memorder()
-
-
 def vecrange(min, max, step):
     return h.Vector().indgen(min, max, step)
 
@@ -94,10 +86,7 @@ def test_errs():
     expect_err("h.table_tst_cagkftab(f._ref_x[0], len(x), x.x[len(x)-1], x.x[0])")
 
 
-test_errs()
-
-
-def test_1d_tst(f, domain):  # test_1d helper when different arg styles
+def _test_1d_tst(f, domain):  # test_1d helper when different arg styles
     assert h.tst_cagkftab(-1000.0) == f.x[0]
     assert h.tst_cagkftab(1000.0) == f.x[domain.size() - 1]
     for x in domain:  # exactly at the domain points
@@ -110,15 +99,11 @@ def test_1d():
     x = vecrange(-80, 50, 0.1)
     f = h.Vector([tst(v) for v in x])
     h.table_tst_cagkftab(f._ref_x[0], len(x), x.x[0], x.x[len(x) - 1])
-    test_1d_tst(f, x)
+    _test_1d_tst(f, x)
     h.table_tst_cagkftab(f._ref_x[0], len(x), x._ref_x[0])
-    test_1d_tst(f, x)
+    _test_1d_tst(f, x)
     h.table_tst_cagkftab(f, x)
-    test_1d_tst(f, x)
-    return f, x
-
-
-test_1d_vecs = test_1d()  # keep in existence in case of later use
+    _test_1d_tst(f, x)
 
 
 def assert_isclose(a, b, abs_tol):
@@ -162,9 +147,6 @@ def setup_tables():
     return malp, mbet, vsteps, casteps
 
 
-tabs = setup_tables()
-
-
 def cmp(v, lnca):
     print(v, lnca, h.alp_cagk(v, exp(lnca)), h.alp_cagkftab(v, lnca))
 
@@ -181,9 +163,6 @@ def compare_exact():
             )
 
 
-compare_exact()
-
-
 def compare():
     for cai in [1e-3, 1e-2, 1e-1]:
         for v in range(-80, 50):
@@ -192,9 +171,6 @@ def compare():
             h.rate_cagkftab(v, cai)
             oftab = h.oinf_cagkftab
             assert isclose(o, oftab, abs_tol=1e-4)
-
-
-compare()
 
 
 def ik_vs_t():
@@ -239,4 +215,16 @@ def ik_vs_t():
     return g, tvec, ikvecs
 
 
-p = ik_vs_t()
+if __name__ == "__main__":
+    test_empty()
+
+    test_const()
+
+    memorder()
+
+    test_errs()
+    test_1d_vecs = test_1d()  # keep in existence in case of later use
+    tabs = setup_tables()
+    compare_exact()
+    compare()
+    p = ik_vs_t()

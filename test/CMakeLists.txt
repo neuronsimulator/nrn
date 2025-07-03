@@ -271,7 +271,7 @@ if(NRN_ENABLE_PYTHON)
     NAME example_nmodl
     MODFILE_PATTERNS *.mod *.inc
     SIM_DIRECTORY share/examples/nrniv/nmodl)
-  set(py_exe ${NRN_DEFAULT_PYTHON_EXECUTABLE})
+  set(py_exe ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest})
   set(py_preload PRELOAD_SANITIZER)
   set(hoc_exe special)
   foreach(ext hoc py)
@@ -774,7 +774,7 @@ if(NRN_ENABLE_PYTHON)
       GROUP nrnmusic
       NAME music_tests
       PROCESSORS 2
-      COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} test/music_tests/runtests.py
+      COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} test/music_tests/runtests.py
       SCRIPT_PATTERNS test/music_tests/*.music test/music_tests/*.py)
   endif()
 endif()

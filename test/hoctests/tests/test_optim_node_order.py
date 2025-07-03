@@ -1,15 +1,19 @@
-from neuron import h
-from neuron.tests.utils.checkresult import Chk
 import os
 
+from neuron import h
+from neuron.tests.utils.checkresult import Chk
+
+# Default Node order for simulation given a particular construction order
+# is the order of section creation.
 # Create a helper for managing reference results
 dir_path = os.path.dirname(os.path.realpath(__file__))
 chk = Chk(os.path.join(dir_path, "test_optim_node_order.json"))
 
-pc = h.ParallelContext()
 
-# Default Node order for simulation given a particular construction order
-# is the order of section creation.
+pr = False
+
+
+pc = h.ParallelContext()
 
 
 class Cell:
@@ -32,43 +36,6 @@ class Cell:
 
 cells = [Cell(id) for id in range(1, 4)]
 
-pr = False
-
-
-def printv():
-    s = {}  # associate root sections with thread id.
-    for i in range(pc.nthread()):
-        for sec in pc.get_partition(i):
-            s[sec] = i
-    if pr:
-        print(s)
-    ns = 0
-    for sec in h.allsec():
-        for seg in sec.allseg():
-            if pr:
-                print(
-                    seg,
-                    seg.v,
-                    seg.node_index(),
-                    seg._ref_v,
-                    str(s[sec] if sec in s else ""),
-                )
-            ns += 1
-
-    names = [None for i in range(ns)]
-    for sec in h.allsec():
-        for seg in sec.allseg():
-            ix = int(str(seg._ref_v).split()[1][4:].split("/")[0])
-            names[ix] = seg.v
-    for i, seg in enumerate(names):
-        if pr:
-            print(i, seg)
-    tag = "node order %d   nthread %d" % (pc.optimize_node_order(), pc.nthread())
-    chk(tag, names)
-
-
-# printv()
-
 # Iteration order (sec,seg) is associated with construction order
 # (provided nseg set after each section construction?)
 # and the only difference in simulation order is that all root nodes are at the beginning.
@@ -88,8 +55,42 @@ def p():
         pvmes(i)
 
 
-p()
-pc.nthread(2)
-p()
+def test_optim_node_order():
+    def printv():
+        s = {}  # associate root sections with thread id.
+        for i in range(pc.nthread()):
+            for sec in pc.get_partition(i):
+                s[sec] = i
+        if pr:
+            print(s)
+        ns = 0
+        for sec in h.allsec():
+            for seg in sec.allseg():
+                if pr:
+                    print(
+                        seg,
+                        seg.v,
+                        seg.node_index(),
+                        seg._ref_v,
+                        str(s[sec] if sec in s else ""),
+                    )
+                ns += 1
 
-chk.save()
+        names = [None for i in range(ns)]
+        for sec in h.allsec():
+            for seg in sec.allseg():
+                ix = int(str(seg._ref_v).split()[1][4:].split("/")[0])
+                names[ix] = seg.v
+        for i, seg in enumerate(names):
+            if pr:
+                print(i, seg)
+        tag = "node order %d   nthread %d" % (pc.optimize_node_order(), pc.nthread())
+        chk(tag, names)
+
+    # printv()
+
+    p()
+    pc.nthread(2)
+    p()
+
+    chk.save()

@@ -20,7 +20,6 @@ class Cell:
 
 
 def prroots():
-    print("prroots")
     sr = h.SectionList()
     sr.allroots()
     for s in sr:
@@ -67,7 +66,7 @@ def test_default():
     assertpart("default")
 
 
-def test_parts():
+def test_parts(debug: bool = False):
     cells = [Cell(i) for i in range(10)]
     r = h.Random()
     r.Random123(1, 0, 0)
@@ -88,9 +87,10 @@ def test_parts():
         pc.psolve(tstop)
 
     run(20)
-    print("ith ncell thread_ctime")
-    for ith in range(pc.nthread()):
-        print(ith, len([1 for _ in parts[ith]]), pc.thread_ctime(ith))
+    if debug:
+        print("ith ncell thread_ctime")
+        for ith in range(pc.nthread()):
+            print(ith, len([1 for _ in parts[ith]]), pc.thread_ctime(ith))
 
 
 if __name__ == "__main__":

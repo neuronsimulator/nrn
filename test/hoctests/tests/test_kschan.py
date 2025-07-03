@@ -10,41 +10,9 @@ expect_hocerr.quiet = False
 from neuron.tests.utils.capture_stdout import capture_stdout
 from neuron.tests.utils.checkresult import Chk
 
-# Avoid needing different results depending on NRN_ENABLE_CORENEURON
-if hasattr(h, "usetable_hh"):
-    h.usetable_hh = False
-
-# Create a helper for managing reference results
-dir_path = os.path.dirname(os.path.realpath(__file__))
-chk = Chk(os.path.join(dir_path, "test_kschan.json"))
-
-if sys.argv[0].split("/")[-1] == "nrniv":
-
-    def chkstdout(key, capture):
-        print(key, " not checked")
-
-else:
-
-    def chkstdout(key, capture):
-        chk(key, capture)
-
 
 def chkpr(key):
     chkstdout(key, capture_stdout("h.ks.pr()", True))
-
-
-# Cover KSChan::state_consist(int shift) in nrniv/kschan.cpp
-h.load_file("chanbild.hoc")
-
-# For checking if a run is doing something useful
-# To activate graphics, comment the "return" statement in
-# hrun below. Need to press the "Continue" button after each pause.
-# If the graph seems incorrect or unexpected, you can stop by hitting
-# (ctrl)C in the terminal window and then pressing the "Continue" button
-# From the exception you can determine which hrun you are stopping at.
-trec = h.Vector()
-vrec = h.Vector()
-grph = h.Graph()
 
 
 def hrun(name, t_tol=0.0, v_tol=0.0, v_tol_per_time=0.0):
@@ -120,6 +88,39 @@ def cell():
     trec.record(h._ref_t, sec=s)
     vrec.record(s(0.5)._ref_v, sec=s)
     return s, ic
+
+
+# Avoid needing different results depending on NRN_ENABLE_CORENEURON
+if hasattr(h, "usetable_hh"):
+    h.usetable_hh = False
+
+# Create a helper for managing reference results
+dir_path = os.path.dirname(os.path.realpath(__file__))
+chk = Chk(os.path.join(dir_path, "test_kschan.json"))
+
+if sys.argv[0].split("/")[-1] == "nrniv":
+
+    def chkstdout(key, capture):
+        print(key, " not checked")
+
+else:
+
+    def chkstdout(key, capture):
+        chk(key, capture)
+
+
+# Cover KSChan::state_consist(int shift) in nrniv/kschan.cpp
+h.load_file("chanbild.hoc")
+
+# For checking if a run is doing something useful
+# To activate graphics, comment the "return" statement in
+# hrun below. Need to press the "Continue" button after each pause.
+# If the graph seems incorrect or unexpected, you can stop by hitting
+# (ctrl)C in the terminal window and then pressing the "Continue" button
+# From the exception you can determine which hrun you are stopping at.
+trec = h.Vector()
+vrec = h.Vector()
+grph = h.Graph()
 
 
 def test_1():
@@ -237,7 +238,6 @@ def test_1():
     hrun("KSChanTable limits", v_tol=2e-12)
 
     del cb, s, kss, ic, std
-    locals()
 
 
 def mk_khh(chan_name, is_pnt=1):
@@ -318,7 +318,6 @@ objref ks, ksvec, ksgate, ksstates, kstransitions, tobj
 
 
 def test_2():
-    print("test_2")
     mk_khh("khh0")
     s, ic = cell()
     kchan = h.khh0(s(0.5))
@@ -328,7 +327,6 @@ def test_2():
     expect_err("h.ks.single(0)")
     chkstdout("kchan failed to turn off single", capture_stdout("h.psection()", True))
     del kchan
-    locals()
     h.ks.single(0)
     kchan = h.khh0(s(0.5))
     s.gkbar_hh = 0
@@ -367,11 +365,9 @@ def test_2():
     assert h.ks.rseed(10) == 10
 
     del s, ic
-    locals()
 
 
 def test_3():
-    print("test_3")
     # ligand tests (mostly for coverage) start with fresh channel.
     mk_khh("khh2")
     h.ion_register("ca", 2)
@@ -417,7 +413,6 @@ def test_3():
                 "KSTrans cvode={} single={}".format(bool(cvon), bool(singleon)), **tols
             )
             del kchan
-            locals()
 
     h.ks.trans(h.ks.state(2), h.ks.state(3)).type(3, "cai")
     h.ks.trans(h.ks.state(2), h.ks.state(3)).type(0)
@@ -430,11 +425,9 @@ def test_3():
     chkpr("bug? 4 ligands (cl_ion, 2 u238_ion, ca_ion), none in use")
 
     del s, ic
-    locals()
 
 
 def test_4():
-    print("test_4")
     # KSChan.iv_type tests, mostly for coverage
     mk_khh("khh3")
     kpnt = h.ks
@@ -463,10 +456,8 @@ def test_4():
             hrun("khh4 ivtype={} ion={}".format(ivtype, ion), v_tol=2e-7)
             s.uninsert("khh4")
             del kchan
-            locals()
 
     del s, ic
-    locals()
 
 
 if __name__ == "__main__":
@@ -476,4 +467,3 @@ if __name__ == "__main__":
     test_4()
 
     chk.save()
-    print("DONE")

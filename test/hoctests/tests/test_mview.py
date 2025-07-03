@@ -3,6 +3,8 @@
 
 from neuron import h, gui
 
-h.load_file(h.neuronhome() + "/demo/dynclamp.hoc")
-h.load_file("mview.hoc")
-h.mview()
+
+def test_mview():
+    h.load_file(h.neuronhome() + "/demo/dynclamp.hoc")
+    h.load_file("mview.hoc")
+    h.mview()

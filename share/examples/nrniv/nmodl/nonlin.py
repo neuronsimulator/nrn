@@ -3,17 +3,6 @@
 
 from neuron import h, gui
 
-pc = h.ParallelContext()
-
-ncell = 10000
-csize = 40.0
-
-cells = [h.NonLinTest() for i in range(ncell)]
-
-r = h.Random()
-r.Random123(1, 2, 3)
-r.uniform(-csize, csize)
-
 
 def dif(tol):
     for cell in cells:
@@ -39,9 +28,6 @@ def solve(a, b, c):
     dif(1e-13)
 
 
-solve(5, 10, 15)
-
-
 def rnd(x):
     return round(x, 10)
 
@@ -59,4 +45,18 @@ def distinct():
         print(i)
 
 
-distinct()
+def test_nonlin():
+    pc = h.ParallelContext()
+
+    ncell = 10000
+    csize = 40.0
+
+    cells = [h.NonLinTest() for i in range(ncell)]
+
+    r = h.Random()
+    r.Random123(1, 2, 3)
+    r.uniform(-csize, csize)
+
+    solve(5, 10, 15)
+
+    distinct()

@@ -2,16 +2,6 @@ from neuron import h
 import neuron
 import re
 
-h(
-    """
-begintemplate A
-proc init() {
-  x = 2
-}
-endtemplate A
-"""
-)
-
 
 def extract_index(s):
     match = re.search(r"\[(\d+)\]", s)
@@ -41,6 +31,16 @@ def test1():
 
 
 def test2():
+    h(
+        """
+    begintemplate A
+    proc init() {
+      x = 2
+    }
+    endtemplate A
+    """
+    )
+
     a = h.A()
     assert h.A[0] == a
 
