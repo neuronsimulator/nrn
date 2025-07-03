@@ -421,7 +421,7 @@ and the functions defined below.
     with certain ion channel models, including Hodgkin-Huxley.
     For an example of this in use, see the
     `Hodgkin-Huxley using rxd <https://neuron.yale.edu/neuron/docs/hodgkin-huxley-using-rxd>`_
-    tutorial (as opposed to using ``h.hh``) .
+    tutorial (as opposed to using ``n.hh``) .
 
     Syntax:
 

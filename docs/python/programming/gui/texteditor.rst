@@ -10,11 +10,11 @@ TextEditor
 
 
     Syntax:
-        ``e = h.TextEditor()``
+        ``e = n.TextEditor()``
 
-        ``e = h.TextEditor(string)``
+        ``e = n.TextEditor(string)``
 
-        ``e = h.TextEditor(string, rows, columns)``
+        ``e = n.TextEditor(string, rows, columns)``
 
 
     Description:

@@ -9,11 +9,11 @@ SymChooser
 
 
     Syntax:
-        ``h.SymChooser()``
+        ``n.SymChooser()``
 
-        ``h.SymChooser(caption)``
+        ``n.SymChooser(caption)``
 
-        ``h.SymChooser("caption", "varname")``
+        ``n.SymChooser("caption", "varname")``
 
 
     Description:
@@ -36,7 +36,7 @@ SymChooser
 
         .. code::
 
-            scobj = h.SymChooser() 
+            scobj = n.SymChooser() 
             scobj.run() 
 
         puts the symbol chooser on the screen, giving you access to all existing variables, 
@@ -84,16 +84,16 @@ SymChooser
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            h('create soma')
-            h.soma.insert(h.hh)
+            n('create soma')
+            n.soma.insert(n.hh)
 
-            scobj = h.SymChooser()
+            scobj = n.SymChooser()
             scobj.run()
 
             # read the result
-            resultPtr = h.ref('')
+            resultPtr = n.ref('')
             scobj.text(resultPtr)
             print(f'You selected: {resultPtr[0]}')
 

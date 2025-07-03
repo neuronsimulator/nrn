@@ -887,15 +887,13 @@ void MechanismStandard::out(MechanismStandard* ms) {
 void MechanismStandard::save(const char* obref, std::ostream* po) {
     mschk("save");
     std::ostream& o = *po;
-    char buf[256];
-    Sprintf(buf, "%s = new MechanismStandard(\"%s\")", obref, np_->name());
-    o << buf << std::endl;
+    o << obref << " = new MechanismStandard(\"" << np_->name() << "\")" << std::endl;
     for (Symbol* sym = np_->first_var(); np_->more_var(); sym = np_->next_var()) {
         if (vartype_ == 0 || nrn_vartype(sym) == vartype_) {
             int i, cnt = hoc_total_array_data(sym, 0);
             for (i = 0; i < cnt; ++i) {
-                Sprintf(buf, "%s.set(\"%s\", %g, %d)", obref, sym->name, *np_->pval(sym, i), i);
-                o << buf << std::endl;
+                o << obref << ".set(\"" << sym->name << "\", " << *np_->pval(sym, i) << ", " << i
+                  << ")" << std::endl;
             }
         }
     }

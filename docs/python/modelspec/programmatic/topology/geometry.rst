@@ -112,10 +112,10 @@ truncated cones as long as the diameter does not change too much.
 .. code-block::
     python
 
-    from neuron import h
+    from neuron import n
     import numpy as np
 
-    sec = h.Section('sec')
+    sec = n.Section('sec')
     sec.nseg = 11
     sec.Ra = 100
     sec.L = 1000
@@ -125,8 +125,8 @@ truncated cones as long as the diameter does not change too much.
 
     for seg in sec.allseg():
         print(seg.x, seg.diam, seg.area(),
-              h.PI * seg.diam * sec.L / sec.nseg, seg.ri(),
-              0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2))
+              n.PI * seg.diam * sec.L / sec.nseg, seg.ri(),
+              0.01 * sec.Ra * sec.L / 2 / sec.nseg / (n.PI * (seg.diam / 2) ** 2))
 
 Output:
 
@@ -181,10 +181,10 @@ Example:
     .. code-block::
         python
         
-        from neuron import h, gui
+        from neuron import n, gui
         import numpy as np
 
-        a, b, c, d, e = [h.Section(n) for n in ['a', 'b', 'c', 'd', 'e']]
+        a, b, c, d, e = [n.Section(name) for name in ['a', 'b', 'c', 'd', 'e']]
         b.connect(a)
         c.connect(b(1), 1) # connect the 1 end of c to the 1 end of b
         d.connect(b)
@@ -195,11 +195,11 @@ Example:
             for seg in sec:
                 seg.diam = np.interp(seg.x, [0, 1], [10, 40])
 
-        s = h.Shape()
+        s = n.Shape()
         s.show(False)
         s.color(2, sec=a) # color section "a" red
-        h.topology()
-        h.finitialize(-65)
+        n.topology()
+        n.finitialize(-65)
         for sec in a.wholetree():
             print(sec)
             for i in range(sec.n3d()):
@@ -235,13 +235,13 @@ Example:
     .. code-block::
         python
         
-        from neuron import h, gui
+        from neuron import n, gui
 
         def pr(nseg):
             sec.pt3dclear()
             sec.nseg = nseg
             setup_diam()
-            h.define_shape()
+            n.define_shape()
             print_stats()
 
         def setup_diam():
@@ -252,20 +252,20 @@ Example:
             for seg in sec.allseg():
                 print(seg.x * sec.L, seg.diam, seg.area(), seg.ri())
 
-        h.xpanel("change nseg")
-        h.xradiobutton("nseg = 3", (pr, 3))
-        h.xradiobutton("nseg = 11", (pr, 11))
-        h.xradiobutton("nseg = 101", (pr, 101))
-        h.xpanel()
+        n.xpanel("change nseg")
+        n.xradiobutton("nseg = 3", (pr, 3))
+        n.xradiobutton("nseg = 11", (pr, 11))
+        n.xradiobutton("nseg = 101", (pr, 101))
+        n.xpanel()
 
-        sec = h.Section('sec')
+        sec = n.Section('sec')
         sec.Ra = 100
         sec.L = 100
         sec.nseg = 3
         setup_diam()
         print_stats()
 
-        s = h.Shape()
+        s = n.Shape()
         s.show(False)
 
         for i in range(sec.n3d()):
@@ -334,25 +334,25 @@ Example:
     .. code-block::
         python
 
-        from neuron import h, gui
+        from neuron import n, gui
         from math import sin, cos
 
-        sec = h.Section('sec')
+        sec = n.Section('sec')
         sec.Ra=100 
         sec.nseg = 11 
         sec.pt3dclear() 
         for i in range(31): 
-            x = h.PI * i / 30.
+            x = n.PI * i / 30.
             sec.pt3dadd(200 * sin(x), 200 * cos(x), 0, 100 * sin(4 * x)) 
 
-        s = h.Shape() 
+        s = n.Shape() 
         s.show(0) 
         print(sec.L)
         for seg in sec.allseg():
             print(
-                seg.x, seg.diam, seg.area(), h.PI * seg.diam * sec.L / sec.nseg,
+                seg.x, seg.diam, seg.area(), n.PI * seg.diam * sec.L / sec.nseg,
                 seg.ri(),
-                0.01 * sec.Ra * sec.L / 2 / sec.nseg / (h.PI * (seg.diam / 2) ** 2))
+                0.01 * sec.Ra * sec.L / 2 / sec.nseg / (n.PI * (seg.diam / 2) ** 2))
 
     .. image:: ../../../images/geometry3.png
         :align: center
@@ -373,23 +373,23 @@ Example:
     .. code-block::
         python
         
-        from neuron import h, gui
+        from neuron import n, gui
         import __main__
 
-        h.xopen("$(NEURONHOME)/demo/pyramid.nrn") 
+        n.xopen("$(NEURONHOME)/demo/pyramid.nrn") 
         mode = 1
-        h.pt3dconst(mode) # uses default section from pyramid.nrn
-        s = h.Shape() 
-        s.action(lambda: s.select(sec=h.dendrite_1[8]))
-        s.color(2, sec=h.dendrite_1[8])
+        n.pt3dconst(mode) # uses default section from pyramid.nrn
+        s = n.Shape() 
+        s.action(lambda: s.select(sec=n.dendrite_1[8]))
+        s.color(2, sec=n.dendrite_1[8])
 
-        h.xpanel("Change Length") 
-        h.xvalue("dendrite_1[8].L", "dendrite_1[8].L", 1) # using HOC syntax
+        n.xpanel("Change Length") 
+        n.xvalue("dendrite_1[8].L", "dendrite_1[8].L", 1) # using HOC syntax
                                                           # to directly access
                                                           # the length
-        h.xcheckbox("Can't change length", (__main__, 'mode'),
-                    lambda: h.pt3dconst(mode, sec=h.dendrite_1[8]))
-        h.xpanel() 
+        n.xcheckbox("Can't change length", (__main__, 'mode'),
+                    lambda: n.pt3dconst(mode, sec=n.dendrite_1[8]))
+        n.xpanel() 
 
     .. image:: ../../../images/geometry4.png
         :align: center
@@ -424,9 +424,9 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``buffersize =  h.pt3dclear(sec=section)``
+        ``buffersize =  n.pt3dclear(sec=section)``
 
-        ``buffersize =  h.pt3dclear(buffersize, sec=section)``
+        ``buffersize =  n.pt3dclear(buffersize, sec=section)``
 
 
     Description:
@@ -448,9 +448,9 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``h.pt3dadd(x, y, z, d, sec=section)``
+        ``n.pt3dadd(x, y, z, d, sec=section)``
 
-        ``h.pt3dadd(xvec, yvec, zvec, dvec, sec=section)``
+        ``n.pt3dadd(xvec, yvec, zvec, dvec, sec=section)``
 
     Description:
          
@@ -458,9 +458,9 @@ Defining the 3D Shape
         at the end of the current pt3d 
         list. Assume that successive additions increase the arc length 
         monotonically. When pt3d points exist in ``section`` they are used 
-        to compute *diam* and *L*. When *diam* or *L* are changed and \ ``h.pt3dconst(sec=section)==0`` 
+        to compute *diam* and *L*. When *diam* or *L* are changed and \ ``n.pt3dconst(sec=section)==0`` 
         the 3-d info is changed to be consistent with the new values of 
-        *L* and *diam*. (Note: When *L* is changed, \ ``h.define_shape()`` should be executed 
+        *L* and *diam*. (Note: When *L* is changed, \ ``n.define_shape()`` should be executed 
         to adjust the 3-d info so that branches appear connected.) 
         The existence of a spine at this point is signaled 
         by a negative value for *d*. 
@@ -473,20 +473,20 @@ Defining the 3D Shape
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             # compute vectors defining a geometry
             theta = np.linspace(0, 6.28, 63)
-            xvec = h.Vector(4 * np.cos(theta))
-            yvec = h.Vector(4 * np.sin(theta))
-            zvec = h.Vector(theta)
-            dvec = h.Vector([1] * len(theta))
+            xvec = n.Vector(4 * np.cos(theta))
+            yvec = n.Vector(4 * np.sin(theta))
+            zvec = n.Vector(theta)
+            dvec = n.Vector([1] * len(theta))
 
-            dend = h.Section('dend')
-            h.pt3dadd(xvec, yvec, zvec, dvec, sec=dend)
+            dend = n.Section('dend')
+            n.pt3dadd(xvec, yvec, zvec, dvec, sec=dend)
 
-            s = h.Shape()
+            s = n.Shape()
             s.show(0)
 
 
@@ -510,9 +510,9 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``h.pt3dconst(0, sec=section)``
+        ``n.pt3dconst(0, sec=section)``
 
-        ``h.pt3dconst(1, sec=section)``
+        ``n.pt3dconst(1, sec=section)``
 
 
     Description:
@@ -526,7 +526,7 @@ Defining the 3D Shape
         shape will appear as a string of uniform diameter cylinders each of 
         length L/nseg. ie. after transfer \ ``sec.diam3d(i) == sec(sec.arc3d(i)/sec.L).diam``. 
         Then, after a call to an internal function such as \ ``area()`` or 
-        \ ``h.finitialize(-65)``, the 3d point info will be used to determine the values 
+        \ ``n.finitialize(-65)``, the 3d point info will be used to determine the values 
         of the segment diameters. 
          
         Because of the three separate interpolations: 
@@ -536,7 +536,7 @@ Defining the 3D Shape
          
         Because of the surprises noted above, when using 3d points 
         consider treating them as the authoritative diameter info and set 
-        \ ``h.pt3dconst(1, sec=section)``. 
+        \ ``n.pt3dconst(1, sec=section)``. 
          
         3d points are automatically generated when one uses 
         the NEURON Shape class. Experiment with ``sec.nseg`` and 
@@ -555,20 +555,20 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``style = h.pt3dstyle(sec=section)``
+        ``style = n.pt3dstyle(sec=section)``
 
-        ``style = h.pt3dstyle(0, sec=section)``
+        ``style = n.pt3dstyle(0, sec=section)``
 
-        ``style = h.pt3dstyle(1, x, y, z, sec=section)``
+        ``style = n.pt3dstyle(1, x, y, z, sec=section)``
 
-        ``style = h.pt3dstyle(1, _ref_x, _ref_y, _ref_z, sec=section)``
+        ``style = n.pt3dstyle(1, _ref_x, _ref_y, _ref_z, sec=section)``
 
 
     Description:
         With no args besides the ``sec=`` keyword, returns 1 if using a logical connection point. 
          
         With a first arg of 0, then style is NO logical connection point 
-        and (with :func:`pt3dconst` == 0 and ``h.define_shape()`` is executed) 
+        and (with :func:`pt3dconst` == 0 and ``n.define_shape()`` is executed) 
         the 3-d location info is translated so the first 3-d point coincides with 
         the parent connection location. This is the classical and default behavior. 
          
@@ -604,7 +604,7 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``h.pt3dinsert(i, x, y, z, diam, sec=section)``
+        ``n.pt3dinsert(i, x, y, z, diam, sec=section)``
 
 
     Description:
@@ -624,7 +624,7 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``h.pt3dremove(i, sec=section)``
+        ``n.pt3dremove(i, sec=section)``
 
 
     Description:
@@ -640,9 +640,9 @@ Defining the 3D Shape
 
 
     Syntax:
-        ``h.pt3dchange(i, x, y, z, diam, sec=section)``
+        ``n.pt3dchange(i, x, y, z, diam, sec=section)``
 
-        ``h.pt3dchange(i, diam, sec=section)``
+        ``n.pt3dchange(i, diam, sec=section)``
 
 
     Description:
@@ -652,8 +652,8 @@ Defining the 3D Shape
         .. code-block::
             python
 
-            h.pt3dchange(5, section.x3d(5), section.y3d(5), section.z3d(5),
-                         section.diam3d(5) if not h.spine3d(sec=section) else -section.diam3d(5),
+            n.pt3dchange(5, section.x3d(5), section.y3d(5), section.z3d(5),
+                         section.diam3d(5) if not n.spine3d(sec=section) else -section.diam3d(5),
                          sec=section) 
 
         leaves the pt3d info unchanged. 
@@ -675,14 +675,14 @@ Reading 3D Data from NEURON
     Syntax:
         ``section.n3d()``
 
-        ``h.n3d(sec=section)``
+        ``n.n3d(sec=section)``
 
 
     Description:
         Return the number of 3d locations stored in the ``section``. The ``section.n3d()`` syntax returns an
-        integer and is generally clearer than the ``h.n3d(sec=section)`` which returns a float and therefore
+        integer and is generally clearer than the ``n.n3d(sec=section)`` which returns a float and therefore
         has to be cast to an int to use with ``range``. The latter form is, however, slightly more efficient
-        when used with ``section.push()`` and ``h.pop_section()`` to set a default section used for many
+        when used with ``section.push()`` and ``n.pop_section()`` to set a default section used for many
         morphology queries (in which case the sec= would be omitted).
 
          
@@ -697,7 +697,7 @@ Reading 3D Data from NEURON
     Syntax:
         ``section.x3d(i)``
 
-        ``h.x3d(i, sec=section)``
+        ``n.x3d(i, sec=section)``
 
 
     Description:
@@ -722,7 +722,7 @@ Reading 3D Data from NEURON
     Syntax:
         ``section.y3d(i)``
 
-        ``h.y3d(i, sec=section)``
+        ``.y3d(i, sec=section)``
 
 
     .. seealso::
@@ -739,7 +739,7 @@ Reading 3D Data from NEURON
     Syntax:
         ``section.z3d(i)``
 
-        ``h.z3d(i, sec=section)``
+        ``n.z3d(i, sec=section)``
 
 
     .. seealso::
@@ -757,7 +757,7 @@ Reading 3D Data from NEURON
     Syntax:
         ``section.diam3d(i)``
 
-        ``h.x3d(diam, sec=section)``
+        ``n.x3d(diam, sec=section)``
 
 
     Description:
@@ -780,7 +780,7 @@ Reading 3D Data from NEURON
     Syntax:
         ``section.arc3d(i)``
 
-        ``h.arc3d(i, sec=section)``
+        ``n.arc3d(i, sec=section)``
 
 
     Description:
@@ -797,7 +797,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.spine3d(i, sec=section)``
+        ``n.spine3d(i, sec=section)``
 
 
     Description:
@@ -813,7 +813,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.setSpineArea(area)``
+        ``n.setSpineArea(area)``
 
 
     Description:
@@ -834,7 +834,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.getSpineArea()``
+        ``n.getSpineArea()``
 
 
     Description:
@@ -851,7 +851,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.define_shape()``
+        ``n.define_shape()``
 
 
     Description:
@@ -889,7 +889,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.area(x, sec=section)``
+        ``n.area(x, sec=section)``
 
         ``section(x).area()``
 
@@ -909,7 +909,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.ri(x, sec=section)``
+        ``n.ri(x, sec=section)``
 
         ``section(x).ri()``
 
@@ -943,11 +943,11 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.distance(sec=section)`` or ``h.distance(0, x, sec=section)`` or ``h.distance(0, section(x))``
+        ``n.distance(sec=section)`` or ``n.distance(0, x, sec=section)`` or ``n.distance(0, section(x))``
 
-        ``length = h.distance(x, sec=section)`` or ``length = h.distance(1, x, sec=section)``
+        ``length = n.distance(x, sec=section)`` or ``length = n.distance(1, x, sec=section)``
 
-        ``length = h.distance(segment1, segment2)``
+        ``length = n.distance(segment1, segment2)``
 
     Description:
 
@@ -956,18 +956,18 @@ Reading 3D Data from NEURON
          
 
 
-        ``h.distance(sec=section)``
+        ``n.distance(sec=section)``
             specifies the origin as location 0 
             of ``section``
 
-        ``h.distance(x, sec=section)`` or ``h.distance(section(x))`` for 0 <= x <= 1
+        ``n.distance(x, sec=section)`` or ``n.distance(section(x))`` for 0 <= x <= 1
             returns the distance (in microns) from the origin to 
             ``section(x)``.
 
          
         To overcome the 
-        old initialization restriction, ``h.distance(0, x, sec=section)``
-        or the shorter ``h.distance(0, section(x))`` can be used to set the 
+        old initialization restriction, ``n.distance(0, x, sec=section)``
+        or the shorter ``n.distance(0, section(x))`` can be used to set the 
         origin. Note that distance is measured from the centers of 
         segments. 
 
@@ -976,16 +976,16 @@ Reading 3D Data from NEURON
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            soma = h.Section('soma')
-            dend = h.Section('dend')
+            soma = n.Section('soma')
+            dend = n.Section('dend')
             dend.connect(soma(0.5))       
             
             soma.L = 10
             dend.L = 50
 
-            length = h.distance(soma(0.5), dend(1))
+            length = n.distance(soma(0.5), dend(1))
             
     .. warning::
         When subtrees are connected by :meth:`ParallelContext.multisplit` , the 
@@ -1011,7 +1011,7 @@ Reading 3D Data from NEURON
 
 
     Syntax:
-        ``h.diam_changed = 1``
+        ``n.diam_changed = 1``
 
 
     Description:
@@ -1029,30 +1029,30 @@ Reading 3D Data from NEURON
         so reading it may not always produce the result you expect.
 
         If it is important to monitor changes to the diameter, look at the internal variable
-        ``diam_change_cnt`` which increments every time ``h.diam_changed`` is automatically reset to 0:
+        ``diam_change_cnt`` which increments every time ``n.diam_changed`` is automatically reset to 0:
 
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             import neuron
             import ctypes
             import time
 
             diam_change_cnt = neuron.nrn_dll_sym('diam_change_cnt', ctypes.c_int)
-            print(h.diam_changed, diam_change_cnt.value)    # 1 0
+            print(n.diam_changed, diam_change_cnt.value)    # 1 0
 
-            s = h.Section('s')
-            print(h.diam_changed, diam_change_cnt.value)    # 1 0
+            s = n.Section('s')
+            print(n.diam_changed, diam_change_cnt.value)    # 1 0
 
             time.sleep(0.2)
-            print(h.diam_changed, diam_change_cnt.value)    # 0 1
+            print(n.diam_changed, diam_change_cnt.value)    # 0 1
 
             s.diam = 42
-            print(h.diam_changed, diam_change_cnt.value)    # 1 1
+            print(n.diam_changed, diam_change_cnt.value)    # 1 1
 
             time.sleep(0.2)
-            print(h.diam_changed, diam_change_cnt.value)    # 1 2
+            print(n.diam_changed, diam_change_cnt.value)    # 1 2
 
          
          
@@ -1094,7 +1094,7 @@ Reading 3D Data from NEURON
         Axial resistivity in ohm-cm. This used to be a global variable 
         so that it was the same for all sections. Now, it is a section 
         variable and must be set individually for each section. A simple 
-        way to set its value is ``for sec in h.allsec(): sec.Ra = 35.4``
+        way to set its value is ``for sec in n.allsec(): sec.Ra = 35.4``
          
         Prior to 1/6/95 the default value for Ra was 34.5. Presently it is 
         35.4. 

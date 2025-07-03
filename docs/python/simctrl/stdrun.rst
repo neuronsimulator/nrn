@@ -52,7 +52,7 @@ The run chain that eventually calls :func:`fadvance` is
 .. code-block::
     none
 
-        h.run --> h.continuerun --> h.step --> h.advance --> h.fadvance 
+        n.run --> n.continuerun --> n.step --> n.advance --> n.fadvance 
 
 There is often reason to substitute a new step or advance 
 procedure to do intermediate calculations on the fly. 
@@ -61,22 +61,26 @@ make sure you don't take away functionality which is already
 there. See `$NEURONHOME/lib/hoc/stdrun.hoc <https://github.com/neuronsimulator/nrn/blob/master/share/lib/hoc/stdrun.hoc>`_ for the 
 implementations of these procedures.
 
+.. seealso::
+
+    :class:`FInitializeHandler`
+
 A simple example of overriding init:
 
 .. code-block::
     python
 
-    h('proc init() {finitialize(v_init) nrnpython("myinit()")}')
+    n('proc init() {finitialize(v_init) nrnpython("myinit()")}')
 
     def myinit():
         # new code to happen after initialization here
         print('initializing...')
         # only need the following if states have been changed
-        if h.cvode.active():
-            h.cvode.re_init()
+        if n.cvode.active():
+            n.cvode.re_init()
         else:
-            h.fcurrent()
-        h.frecord_init()
+            n.fcurrent()
+        n.frecord_init()
 
      
      
@@ -101,7 +105,7 @@ LoadDLL
 """""""
 
 Pop up a File chooser for dynamically loading a dll containing 
-compiled and linked model descriptions. This is available only under mac os 
+compiled and linked model descriptions. This is available only under macOS 
 and mswin. 
 
 savesession
@@ -138,9 +142,6 @@ Quit
 Exits NEURON. 
  
 
-
-Edit
-====
 
 
 Build

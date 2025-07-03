@@ -4,7 +4,7 @@ NEURON Python Classes and Objects
 NEURON exposes its internal objects and hoc templates as Python objects via an automatic
 conversion layer, effectively making all entities from the HOC stack available to a Python program.
 
-There are basically two main objects which expose most Neuron entities. The first is `hoc` which
+There are basically two main objects which expose most NEURON entities. The first is `hoc` which
 exposes a number of internal established classes and functions.
 
 .. code-block::
@@ -18,22 +18,22 @@ exposes a number of internal established classes and functions.
     hoc.Vector(
         ...
 
-However, for *dynamic* entities NEURON provides the `h` gateway object. It gives access to internal
+However, for *dynamic* entities NEURON provides the `n` gateway object. It gives access to internal
 classes (templates) and objects, even if they were just created. E.g.:
 
 .. code-block::
     python
 
-    >>> from neuron import h
+    >>> from neuron import n
     >>> # Create objects in the hoc stack
-    >>> h("objref vec")
-    >>> h("vec = new Vector(5, 1)")
+    >>> n("objref vec")
+    >>> n("vec = new Vector(5, 1)")
     >>> # Access to objects
-    >>> h.vec.as_numpy()
+    >>> n.vec.as_numpy()
     array([1., 1., 1., 1., 1.])
     >>>
     >>> # Access to exposed types
-    >>> vv = h.Vector(5, 2)
+    >>> vv = n.Vector(5, 2)
     >>> vv.as_numpy()
     array([1., 1., 1., 1., 1.])
 
@@ -54,7 +54,7 @@ predicates and subclassing.
 
     >>> isinstance(hoc.Vector, type)
     True
-    >>> v = h.Vector()
+    >>> v = n.Vector()
     >>> isinstance(v, hoc.HocObject)
     True
     >>> isinstance(v, hoc.Vector)
@@ -70,18 +70,18 @@ with `hoc_type` given as argument. E.g.:
 .. code-block::
     python
 
-    >>> class MyStim(neuron.HocBaseObject, hoc_type=h.NetStim):
+    >>> class MyStim(neuron.HocBaseObject, hoc_type=n.NetStim):
         pass
     >>> issubclass(MyStim, hoc.HocObject)
     True
     >>> issubclass(MyStim, neuron.HocBaseObject)
     True
-    >>> MyStim._hoc_type == h.NetStim
+    >>> MyStim._hoc_type == n.NetStim
     True
     >>> stim = MyStim()
     >>> isinstance(stim, MyStim)
     True
-    >>> isinstance(stim, h.NetStim)
+    >>> isinstance(stim, n.NetStim)
     True
-    >>> isinstance(stim, h.HocObject)
+    >>> isinstance(stim, n.HocObject)
     True

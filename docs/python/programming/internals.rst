@@ -12,11 +12,11 @@ Namespace Related
 .. function:: name_declared
 
     Syntax:
-        ``type = h.name_declared("name")``
+        ``type = n.name_declared("name")``
 
-        ``type = h.name_declared("name", 1)``
+        ``type = n.name_declared("name", 1)``
 
-        ``type = h.name_declared("name", 2)``
+        ``type = n.name_declared("name", 2)``
 
     Description:
         Return 0 if the name is not in the NEURON/HOC symbol table. The first form looks 
@@ -24,32 +24,44 @@ Namespace Related
         current object context. The last form also looks in the top level
         symbol table but is useful in Python to distinguish subtypes of
         variables which appear as doubles in HOC but internally are really
-        not doubles and so cannot be pointed to by double*, eg. h.secondorder
-        which is <type 'int'> or h.nseg which returns either
+        not doubles and so cannot be pointed to by ``double*``, e.g., ``n.secondorder``
+        which is ``<type 'int'>`` or ``n._ref_nseg`` which raises either
         ``TypeError: Section access unspecified`` or
-        ``nseg  not a USERPROPERTY that can be pointed to``
+        ``TypeError: Cannot be a reference``
          
-        If the name exists return 
-         
-        2 if an objref
-         
-        3 if a Section 
-         
-        4 if a :ref:`strdef <keyword_strdef>` 
-         
-        5 if a scalar or :ref:`double <keyword_double>` variable. (if second arg is not 2)
+        If the name exists return:
 
-          if second arg is 2
+        .. list-table::
+          :header-rows: 1
 
-          5 if a scalar double
+          * - Return Value
+            - Description
+          * - 2
+            - If an objref
+          * - 3
+            - If a Section
+          * - 4
+            - If a :ref:`strdef <keyword_strdef>`
+          * - 5
+            - If a scalar or :ref:`double <keyword_double>` variable (if second arg is not 2)
 
-          6 if a double array
+        If the second argument is 2:
 
-          7 if an integer
+        .. list-table::
+          :header-rows: 1
 
-          8 if a section property
-         	         
-        1 otherwise 
+          * - Return Value
+            - Description
+          * - 5
+            - If a scalar double
+          * - 6
+            - If a double array
+          * - 7
+            - If an integer
+          * - 8
+            - If a Section property
+
+        If none of the above apply, return 1.
 
         .. ::
 
@@ -81,13 +93,13 @@ Namespace Related
 
         Checking against ``globals()`` and ``dir()`` are also often useful.
 
-        If the name is known in advance, use a ``try``/``except`` block and catch NameError and AttributeError:
+        If the name is known in advance, use a ``try``/``except`` block and catch ``NameError`` and ``AttributeError``:
 
         .. code-block::
             python
 
             try:
-                h.soma.squiggle
+                n.soma.squiggle
             except (NameError, AttributeError):
                 print('Name does not exist')
 
@@ -103,7 +115,7 @@ Namespace Related
         symbols --- type the names of HOC functions and variables 
 
     Syntax:
-        ``h.symbols()``
+        ``n.symbols()``
 
     Description:
         Types a list of functions and variable names defined in HOC.  Dimensions 
@@ -123,9 +135,9 @@ Object Related
 .. function:: object_id
 
     Syntax:
-        ``h.object_id(objref)``
+        ``n.object_id(objref)``
 
-        ``h.object_id(objref, 1)``
+        ``n.object_id(objref, 1)``
 
     Description:
         Returns 0 if the object reference does not point to an object instance. 
@@ -133,50 +145,50 @@ Object Related
         except that this is equal to the value returned by Python's ``hash`` function.) 
          
         If the second argument is 1, it returns the index of the object name. Returns 
-        -1 if the object is the NULLObject. 
+        -1 if the object is the ``NULLObject``. 
 
     Example:
 
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            a, b, c = h.List(), h.List(), h.Vector()
+            a, b, c = n.List(), n.List(), n.Vector()
 
-            print(h.object_id(a))       # displays a double; equal to hash(a)
-            print(h.object_id(a, 1))    # 0 since a == h.List[0]
-            print(h.object_id(b, 1))    # 1 since b == h.List[1]
-            print(h.object_id(c, 1))    # 0 since c == h.Vector[0]
+            print(n.object_id(a))       # displays a double; equal to hash(a)
+            print(n.object_id(a, 1))    # 0 since a == n.List[0]
+            print(n.object_id(b, 1))    # 1 since b == n.List[1]
+            print(n.object_id(c, 1))    # 0 since c == n.Vector[0]
 
 ----
 
 .. function:: allobjectvars
 
     Syntax:
-        ``h.allobjectvars()``
+        ``n.allobjectvars()``
 
     Description:
         Prints all the HOC object references (objref variables) that have been 
         declared along with the class type of the object they reference and the 
         number of references. Objects created via Python and not assigned to a 
-        HOC objref
+        HOC objref will not appear.
 
     Example:
 
         .. code-block::
             python
 
-            >>> h('objref foo')
+            >>> n('objref foo')
             1
-            >>> h.foo = h.Vector()
-            >>> h.allobjectvars()
+            >>> n.foo = n.Vector()
+            >>> n.allobjectvars()
             obp hoc_obj_[0] -> NULL
             obp hoc_obj_[1] -> NULL
             obp foo[0] -> Vector[0] with 1 refs.
             0.0
-            >>> banana = h.foo
-            >>> h.allobjectvars()
+            >>> banana = n.foo
+            >>> n.allobjectvars()
             obp hoc_obj_[0] -> NULL
             obp hoc_obj_[1] -> NULL
             obp foo[0] -> Vector[0] with 2 refs.
@@ -187,11 +199,11 @@ Object Related
 .. function:: allobjects
 
     Syntax:
-        ``h.allobjects()``
+        ``n.allobjects()``
 
-        ``h.allobjects("templatename")``
+        ``n.allobjects("templatename")``
 
-        ``nref = h.allobjects(objectref)``
+        ``nref = n.allobjects(objectref)``
 
     Description:
         Prints the internal names of all class instances (objects) available 
@@ -209,24 +221,29 @@ Object Related
         .. code-block::
             python
 
-            >>> v = h.Vector()
-            >>> foo = h.List()
-            >>> h.allobjects()
+            >>> v = n.Vector()
+            >>> foo = n.List()
+            >>> n.allobjects()
             List[0] with 1 refs
             Vector[0] with 1 refs
             0.0
-            >>> h.allobjects('Vector')
+            >>> n.allobjects('Vector')
             Vector[0] with 1 refs
             0.0
-            >>> h.allobjects(foo)
+            >>> n.allobjects(foo)
             2.0
+    
+    .. seealso::
+
+        Use a :class:`List` to programmatically loop over all instances of a
+        template.
 
 ----
 
 .. function:: object_push
 
     Syntax:
-        ``h.object_push(objref)``
+        ``n.object_push(objref)``
 
     Description:
         Enter the context of the object referenced by objref. In this context you 
@@ -241,7 +258,7 @@ Object Related
 .. function:: object_pop
 
     Syntax:
-        ``h.object_pop()``
+        ``n.object_pop()``
 
     Description:
         Pop the last object from an :func:`object_push` . 
@@ -254,10 +271,10 @@ Miscellaneous
 .. function:: hoc_pointer_
 
     Syntax:
-        ``h.hoc_pointer_(&variable)``
+        ``n.hoc_pointer_(&variable)``
 
     Description:
-        A function used by c and c++ implementations to request a pointer to 
+        A function used by C and C++ implementations to request a pointer to 
         the variable from its interpreter name. Not needed by or useful for the user; returns 1.0 on
         success.
 
@@ -269,13 +286,13 @@ Debugging
 .. function:: nrn_digest
 
     Syntax:
-        ``h.nrn_digest()``
+        ``n.nrn_digest()``
 
-        ``h.nrn_digest(tid, i)``
+        ``n.nrn_digest(tid, i)``
 
-        ``h.nrn_digest(tid, i, "abort")``
+        ``n.nrn_digest(tid, i, "abort")``
 
-        ``h.nrn_digest(filename)``
+        ``n.nrn_digest(filename)``
 
     Description:
         Available when configured with the cmake option ``-DNRN_ENABLE_DIGEST=ON``
@@ -349,7 +366,7 @@ Debugging
 .. function:: use_exp_pow_precision
 
     Syntax:
-        ``h.use_exp_pow_precision(istyle)``
+        ``n.use_exp_pow_precision(istyle)``
 
     Description:
         Works when configured with the cmake option

@@ -7,7 +7,7 @@
 #include "nrnneosm.h"
 #include "pool.hpp"
 #include "tqitem.hpp"
-#include "utils/signal.hpp"
+#include "htlist.h"
 
 #include <InterViews/observe.h>
 
@@ -212,7 +212,7 @@ class ConditionEvent: public DiscreteEvent {
     static unsigned long deliver_qthresh_;
 };
 
-class WatchCondition: public ConditionEvent {
+class WatchCondition: public ConditionEvent, public HTList {
   public:
     WatchCondition(Point_process*, double (*)(Point_process*));
     virtual ~WatchCondition();
@@ -242,8 +242,6 @@ class WatchCondition: public ConditionEvent {
 
     static unsigned long watch_send_;
     static unsigned long watch_deliver_;
-
-    signal_<WatchCondition*> unregister;
 };
 
 class STECondition: public WatchCondition {

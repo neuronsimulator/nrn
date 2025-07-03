@@ -138,8 +138,6 @@ set(NRNOC_FILE_LIST
     treeset.cpp
     multicore.cpp)
 
-set(NRNOC_GENERATED_FILE_LIST nrnversion.h)
-
 # =============================================================================
 # Files in ivoc directory
 # =============================================================================
@@ -261,6 +259,7 @@ set(NRNCVODE_FILE_LIST
     cvodeobj.cpp
     cvodestb.cpp
     cvtrset.cpp
+    htlist.cpp
     netcvode.cpp
     nrndaspk.cpp
     occvode.cpp
@@ -436,7 +435,7 @@ set(NRN_PARALLEL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/parallel)
 # =============================================================================
 nrn_create_file_list(NRN_OC_SRC_FILES ${NRN_OC_SRC_DIR} ${OC_FILE_LIST})
 nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_SRC_DIR} ${NRNOC_FILE_LIST})
-nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_BUILD_DIR} ${NRNOC_GENERATED_FILE_LIST})
+nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_BUILD_DIR})
 nrn_create_file_list(NRN_IVOC_SRC_FILES ${NRN_IVOC_SRC_DIR} ${IVOC_FILE_LIST})
 nrn_create_file_list(NRN_NODEORDEROPTIM_SRC_FILES ${NRN_NODEORDEROPTIM_SRC_DIR}
                      ${NODEORDEROPTIM_FILE_LIST})
