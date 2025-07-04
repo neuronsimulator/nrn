@@ -8,6 +8,7 @@ def inspect(v):
     for i in dir(v):
         print(i)
 
+
 class Cell:
     def __init__(self, gid):
         self.gid = gid
@@ -35,46 +36,46 @@ class Cell:
 
 # function to register section-segment mapping with bbcore write
 def setup_nrnbbcore_register_mapping(gid):
-    
     def record_var(recordlist, var, name):
         v = h.Vector()
         v.record(var)
         v.label("soma %s %d %d" % (name, isec, seg.node_index()))
         recordlist.append(v)
-    #for recording
+
+    # for recording
     recordlist = []
 
     pc = h.ParallelContext()
 
-    #vector for soma sections and segment
+    # vector for soma sections and segment
     somasec = h.Vector()
     somaseg = h.Vector()
 
-    #vector for dendrite sections and segment
+    # vector for dendrite sections and segment
     densec = h.Vector()
     denseg = h.Vector()
 
-    #if gid exist on rank
-    if (pc.gid_exists(gid)):
+    # if gid exist on rank
+    if pc.gid_exists(gid):
 
-        #get cell instance
+        # get cell instance
         cell = pc.gid2cell(gid)
         isec = 0
 
-        #soma section, only pne
+        # soma section, only pne
         for sec in [cell.soma]:
             for seg in sec:
-                #get section and segment index
+                # get section and segment index
                 somasec.append(isec)
                 somaseg.append(seg.node_index())
 
-                #vector for recording
+                # vector for recording
                 record_var(recordlist, seg._ref_v, "v")
                 record_var(recordlist, seg._ref_i_membrane_, "i_membrane")
                 record_var(recordlist, seg.pas._ref_i, "i_pas")
         isec += 1
 
-        #register soma section list
+        # register soma section list
         pc.nrnbbcore_register_mapping(gid, "soma", somasec, somaseg)
 
     return recordlist
@@ -128,8 +129,13 @@ def write_report_config(
         fp.write(struct.pack(f"{num_gids}i", *gids))
         fp.write(b"\n")
 
-def write_spike_config(output_file: str, spike_filename: str,
-                       population_names: List[str], population_offsets: List[int]):
+
+def write_spike_config(
+    output_file: str,
+    spike_filename: str,
+    population_names: List[str],
+    population_offsets: List[int],
+):
     report_conf = Path(output_file)
     num_population = len(population_names)
     with report_conf.open("a") as fp:
@@ -137,6 +143,7 @@ def write_spike_config(output_file: str, spike_filename: str,
         for pop_name, offset in zip(population_names, population_offsets):
             fp.write(f"{pop_name} {offset}\n")
         fp.write(f"{spike_filename}\n")
+
 
 def write_sim_config(output_file, coredata_dir, report_conf, tstop):
     sim_conf = Path(output_file)
@@ -149,12 +156,14 @@ def write_sim_config(output_file, coredata_dir, report_conf, tstop):
         fp.write(f"report-conf='{report_conf}'\n")
         fp.write("mpi=true\n")
 
+
 def spike_record():
     global tvec, idvec
     pc = h.ParallelContext()
     tvec = h.Vector(1000000)
     idvec = h.Vector(1000000)
     pc.spike_record(-1, tvec, idvec)
+
 
 def test_coreneuron_report():
     # model setup
@@ -176,13 +185,25 @@ def test_coreneuron_report():
         sim_conf_file = "sim.conf"
         if report_conf_file.exists():
             report_conf_file.unlink()
-        write_report_config(report_conf_file, "soma_v.h5", "Mosaic", "compartment", "v",
-                    "mV", "SONATA", 2, 1, 0, h.tstop, [c.gid])
+        write_report_config(
+            report_conf_file,
+            "soma_v.h5",
+            "Mosaic",
+            "compartment",
+            "v",
+            "mV",
+            "SONATA",
+            2,
+            1,
+            0,
+            h.tstop,
+            [c.gid],
+        )
         # write_report_config(report_conf_file, "soma_i_membrane.h5", "Mosaic", "compartment", "i_membrane",
         #             "nA", "SONATA", 2, 1, 0, h.tstop, [c.gid])
         write_spike_config(report_conf_file, "spikes.h5", ["default"], [c.gid])
         write_sim_config(sim_conf_file, "corenrn_data", report_conf_file, h.tstop)
-    coreneuron.sim_config=sim_conf_file
+    coreneuron.sim_config = sim_conf_file
 
     spike_record()
 
@@ -191,16 +212,9 @@ def test_coreneuron_report():
     h.stdinit()
     pc.psolve(h.tstop)
 
-
-
     # assert False
 
 
-    
-
-
-    
-    
 #     assert False
 
 # from neuron import h, gui
@@ -337,7 +351,7 @@ def test_coreneuron_report():
 #     pc = h.ParallelContext()
 #     for i in range(10):
 #         print(pc.gid_exists(i))
-    
+
 #     assert False
 
 # # from neuron.tests.utils.strtobool import strtobool
@@ -348,7 +362,6 @@ def test_coreneuron_report():
 
 # # from neuron import h, gui, coreneuron
 # # from neuron.units import ms, mV, µm
-
 
 
 # # def write_report_config(output_file, report_name, target_name, report_type, report_variable,
@@ -440,8 +453,8 @@ def test_coreneuron_report():
 # #     sim_conf_file = "sim.conf"
 
 
-# #     write_report_config(output_file=report_conf_file, 
-# #                         report_name="soma.h5", 
+# #     write_report_config(output_file=report_conf_file,
+# #                         report_name="soma.h5",
 # #                         target_name="Mosaic",
 # #                         report_type="compartment",
 # #                         report_variable="v",
@@ -463,15 +476,13 @@ def test_coreneuron_report():
 # #         self.ic.delay = 0.5
 # #         self.ic.dur = 0.1
 # #         self.ic.amp = 0.3
-# #         self.soma.insert("pas")  
+# #         self.soma.insert("pas")
 # #         h.cvode.use_fast_imem(1)
 
 # # def get_cell():
 # #     c = Ball(0)
 # #     return c
-    
 
-    
 
 # # #     v = h.Vector()
 # # #     v.record(h.soma(0.5)._ref_v, sec=h.soma)
@@ -481,7 +492,6 @@ def test_coreneuron_report():
 # # #     i_pas.record(h.soma(0.5).pas._ref_i, sec=h.soma)
 
 # # #     pc = h.ParallelContext()
-
 
 
 # # def run():
@@ -504,6 +514,3 @@ def test_coreneuron_report():
 # #     c = get_cell()
 # #     set_reports(c)
 # #     run()
-
-
-

@@ -564,7 +564,7 @@ if(NRN_ENABLE_PYTHON)
         ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                     COVERAGE_FILE=.coverage.coreneuron_report_py
         COMMAND ${modtests_launch_py} test/coreneuron/test_report.py)
-    endif()      
+    endif()
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME direct_hoc_${processor}
