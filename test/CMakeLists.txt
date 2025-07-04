@@ -643,6 +643,14 @@ if(NRN_ENABLE_PYTHON)
       COMMAND ${modtests_launch_py} test/coreneuron/test_ba.py)
     nrn_add_test(
       GROUP coreneuron_modtests
+      NAME test_report_py_${processor}
+      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+      SCRIPT_PATTERNS test/coreneuron/test_report.py
+      ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+                  COVERAGE_FILE=.coverage.coreneuron_test_report_py
+      COMMAND ${modtests_launch_py} test/coreneuron/test_report.py)
+    nrn_add_test(
+      GROUP coreneuron_modtests
       NAME test_nmodlrandom_py_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/coreneuron/test_nmodlrandom.py
