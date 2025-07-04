@@ -27,15 +27,20 @@ class Cell:
         pc = h.ParallelContext()
         # set netcon to soma
         nc = h.NetCon(self.soma(0.5)._ref_v, None, sec=self.soma)
-        # assign gid to this rank
+        # # assign gid to this rank
         pc.set_gid2node(self.gid, pc.id())
-        # associate gid to the netcon
-        pc.cell(self.gid, nc, 0)
+        # # associate gid to the netcon
+        pc.cell(self.gid, nc)
 
 
 # function to register section-segment mapping with bbcore write
 def setup_nrnbbcore_register_mapping(gid):
-
+    
+    def record_var(recordlist, var, name):
+        v = h.Vector()
+        v.record(var)
+        v.label("soma %s %d %d" % (name, isec, seg.node_index()))
+        recordlist.append(v)
     #for recording
     recordlist = []
 
@@ -64,10 +69,9 @@ def setup_nrnbbcore_register_mapping(gid):
                 somaseg.append(seg.node_index())
 
                 #vector for recording
-                v = h.Vector()
-                v.record(seg._ref_v)
-                v.label("soma %d %d" % (isec, seg.node_index()))
-                recordlist.append(v)
+                record_var(recordlist, seg._ref_v, "v")
+                record_var(recordlist, seg._ref_i_membrane_, "i_membrane")
+                record_var(recordlist, seg.pas._ref_i, "i_pas")
         isec += 1
 
         #register soma section list
@@ -75,33 +79,54 @@ def setup_nrnbbcore_register_mapping(gid):
 
     return recordlist
 
-def write_report_config(output_file, report_name, target_name, report_type, report_variable,
-                        unit, report_format, target_type, dt, start_time, end_time, gids,
-                        buffer_size=8):
+
+def write_report_config(
+    output_file,
+    report_name,
+    target_name,
+    report_type,
+    report_variable,
+    unit,
+    report_format,
+    target_type,
+    dt,
+    start_time,
+    end_time,
+    gids,
+    buffer_size=8,
+):
+    """Here we append just one report entry to report.conf. We are not writing the full file as
+    this is done incrementally in Node.enable_reports
+    """
     import struct
+
     num_gids = len(gids)
     report_conf = Path(output_file)
     report_conf.parent.mkdir(parents=True, exist_ok=True)
-    with report_conf.open("wb") as fp:
+    with report_conf.open("ab") as fp:
         # Write the formatted string to the file
-        fp.write(b"1\n")
-        fp.write(("%s %s %s %s %s %s %d %lf %lf %lf %d %d\n" % (
-            report_name,
-            target_name,
-            report_type,
-            report_variable,
-            unit,
-            report_format,
-            target_type,
-            dt,
-            start_time,
-            end_time,
-            num_gids,
-            buffer_size
-        )).encode())
+        fp.write(
+            (
+                "%s %s %s %s %s %s %d %lf %lf %lf %d %d\n"  # noqa: UP031
+                % (
+                    report_name,
+                    target_name,
+                    report_type,
+                    report_variable,
+                    unit,
+                    report_format,
+                    target_type,
+                    dt,
+                    start_time,
+                    end_time,
+                    num_gids,
+                    buffer_size,
+                )
+            ).encode()
+        )
         # Write the array of integers to the file in binary format
-        fp.write(struct.pack(f'{num_gids}i', *gids))
-        fp.write(b'\n')
+        fp.write(struct.pack(f"{num_gids}i", *gids))
+        fp.write(b"\n")
 
 def write_spike_config(output_file: str, spike_filename: str,
                        population_names: List[str], population_offsets: List[int]):
@@ -147,11 +172,15 @@ def test_coreneuron_report():
     # register reports
     if pc.id() == 0:
         setup_nrnbbcore_register_mapping(c.gid)
-        report_conf_file = "report.conf"
+        report_conf_file = Path("report.conf")
         sim_conf_file = "sim.conf"
+        if report_conf_file.exists():
+            report_conf_file.unlink()
         write_report_config(report_conf_file, "soma_v.h5", "Mosaic", "compartment", "v",
                     "mV", "SONATA", 2, 1, 0, h.tstop, [c.gid])
-        write_spike_config(report_conf_file, "spikes.h5", ["default"], [0])
+        # write_report_config(report_conf_file, "soma_i_membrane.h5", "Mosaic", "compartment", "i_membrane",
+        #             "nA", "SONATA", 2, 1, 0, h.tstop, [c.gid])
+        write_spike_config(report_conf_file, "spikes.h5", ["default"], [c.gid])
         write_sim_config(sim_conf_file, "corenrn_data", report_conf_file, h.tstop)
     coreneuron.sim_config=sim_conf_file
 
