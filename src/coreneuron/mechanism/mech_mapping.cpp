@@ -55,6 +55,7 @@ double* get_var_location_from_var_name(int mech_id,
     return &(ml->data[ix]);
 }
 
+
 void register_all_variables_offsets(int mech_id, SerializedNames variable_names) {
     int idx = 0;
     int nb_parsed_variables = 0;
