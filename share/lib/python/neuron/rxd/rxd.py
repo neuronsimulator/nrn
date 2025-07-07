@@ -1101,7 +1101,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
             and _point_indices[region][point] not in indices3d
         ):
             indices3d.append(_point_indices[region][point])
-            vols3d.append(surf[point][0] if point in surf else region.dx ** 3)
+            vols3d.append(surf[point][0] if point in surf else region.dx**3)
             # print 'found node %d with coordinates (%g, %g, %g)' % (node._index, node.x3d, node.y3d, node.z3d)
     # discard duplicates...
     # TODO: really, need to figure out all the 3d nodes connecting to a given 1d endpoint, then unique that
@@ -1916,9 +1916,10 @@ def _include_flux(force=False):
         source1D = []
         scale1D = []
         grids = dict()
-        for idx, t, src, sc, rptr in zip(
+        for idx, t, sbv, src, sc, rptr in zip(
             _node_fluxes["index"],
             _node_fluxes["type"],
+            _node_fluxes["scale_by_volume"],
             _node_fluxes["source"],
             _node_fluxes["scale"],
             _node_fluxes["region"],
@@ -1926,14 +1927,22 @@ def _include_flux(force=False):
             if t == -1:
                 index1D.append(idx)
                 source1D.append(src)
-                scale1D.append(sc * node._volumes[idx])
+                if sbv:
+                    final_sc = sc * node._volumes[idx]
+                else:
+                    final_sc = sc
+                scale1D.append(final_sc)
             else:
                 gid = t
                 if gid not in grids:
                     grids[gid] = {"index": [], "source": [], "scale": []}
                 grids[gid]["index"].append(idx)
                 grids[gid]["source"].append(src)
-                grids[gid]["scale"].append(sc * rptr().volume(idx))
+                if sbv:
+                    final_sc = sc * rptr().volume(idx)
+                else:
+                    final_sc = sc
+                grids[gid]["scale"].append(sc)
         counts3D = []
         grids3D = sorted(grids.keys())
         index3D = []

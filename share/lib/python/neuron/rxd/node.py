@@ -26,7 +26,14 @@ _volumes = numpy.array([])
 _surface_area = numpy.array([])
 _diffs = numpy.array([])
 _states = numpy.array([])
-_node_fluxes = {"index": [], "type": [], "source": [], "scale": [], "region": []}
+_node_fluxes = {
+    "index": [],
+    "type": [],
+    "scale_by_volume": [],
+    "source": [],
+    "scale": [],
+    "region": [],
+}
 _has_node_fluxes = False
 
 _point_indices = {}
@@ -85,7 +92,7 @@ def _remove(start, stop):
     _has_node_fluxes = _node_fluxes["index"] != []
 
     # remove _node_flux
-    for (i, idx) in enumerate(_node_fluxes["index"]):
+    for i, idx in enumerate(_node_fluxes["index"]):
         if idx in dels:
             for lst in _node_fluxes.values():
                 del lst[i]
@@ -292,6 +299,7 @@ class Node(object):
             node.include_flux(mglur, 'ip3flux')           # default units: molecule/ms
             node.include_flux(mglur, 'ip3flux', units='mol/ms') # units: moles/ms
             node.include_flux(mglur._ref_ip3flux, units='molecule/ms')
+            node.include_flux(sec(0.5)._ref_cai, scale=0.1)  # specify units or scale
             node.include_flux(lambda: mglur.ip3flux)
             node.include_flux(lambda: math.sin(h.t))
             node.include_flux(47)
@@ -306,8 +314,25 @@ class Node(object):
         global _has_node_fluxes, _node_fluxes
         if len(args) not in (1, 2):
             raise RxDException("node.include_flux takes only one or two arguments")
+        scale_by_volume = True
         if "units" in kwargs:
+            if "scale" in kwargs:
+                raise RxDException(
+                    "node.include_flux can specify units or scale but not both"
+                )
             units = kwargs.pop("units")
+            if units == "custom":
+                raise RxDException("unknown unit: %r" % units)
+        elif "scale" in kwargs:
+            scale_by_volume = False
+            scale = kwargs.pop("scale")
+            units = "custom"
+            try:
+                scale = float(scale)
+            except:
+                raise RxDException(
+                    "node.include_flux scale should be convertible to a float"
+                )
         else:
             units = "molecule/ms"
         if len(kwargs):
@@ -329,7 +354,7 @@ class Node(object):
             #    * 1e+15
             #    / 1e-15
             scale = 1e-15
-        else:
+        elif units != "custom":
             raise RxDException("unknown unit: %r" % units)
 
         if len(args) == 1 and isinstance(args[0], hoc.HocObject):
@@ -370,6 +395,7 @@ class Node(object):
             if not success:
                 raise RxDException("unsupported flux form")
         _node_fluxes["index"].append(self._index)
+        _node_fluxes["scale_by_volume"].append(scale_by_volume)
         if isinstance(self, Node1D):
             _node_fluxes["type"].append(-1)
         else:
