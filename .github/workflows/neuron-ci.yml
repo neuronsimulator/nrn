@@ -65,6 +65,14 @@ jobs:
           - os: ubuntu-22.04
             config:
               build_mode: cmake
+              cmake_option: -DCORENRN_ENABLE_REPORTING=ON -DNRN_ENABLE_CORENEURON=ON
+                -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=undefined
+              flag_warnings: ON
+              sanitizer: undefined
+              coreneuron_report: ON
+          - os: ubuntu-22.04
+            config:
+              build_mode: cmake
               # TODO: CoreNEURON is only LeakSanitizer-clean if we disable MPI
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
                 -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=address
@@ -80,7 +88,6 @@ jobs:
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_MPI=OFF
                 -DCORENRN_ENABLE_OPENMP=OFF -DNRN_ENABLE_RX3D=OFF
               sanitizer: thread
-              coreneuron_report: ON
           - os: macOS-13
             config:
               build_mode: cmake
