@@ -65,14 +65,6 @@ jobs:
           - os: ubuntu-22.04
             config:
               build_mode: cmake
-              cmake_option: -DCORENRN_ENABLE_REPORTING=ON -DNRN_ENABLE_CORENEURON=ON
-                -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=undefined
-              flag_warnings: ON
-              sanitizer: undefined
-              coreneuron_report: ON
-          - os: ubuntu-22.04
-            config:
-              build_mode: cmake
               # TODO: CoreNEURON is only LeakSanitizer-clean if we disable MPI
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
                 -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=address
@@ -235,12 +227,6 @@ jobs:
           automake --version
         working-directory: ${{runner.temp}}
 
-      - name: Install libsonata
-        if: matrix.config.coreneuron_report == 'ON'
-        run: |
-          echo "TESTTEST"
-        working-directory: ${{runner.temp}}
-
       - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
         if: matrix.config.music == 'ON'
         run: |
@@ -322,8 +308,6 @@ jobs:
             # The following solution is generic and relies on `matplotlib.__file__` to know where to append backend setup.
             $PYTHON -c "import os,matplotlib; f =open(os.path.join(os.path.dirname(matplotlib.__file__), 'mpl-data/matplotlibrc'),'a'); f.write('backend: TkAgg');f.close();"
           fi;
-
-
 
           # Some logging
           echo $LANG
