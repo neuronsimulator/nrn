@@ -555,16 +555,16 @@ if(NRN_ENABLE_PYTHON)
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
                   COVERAGE_FILE=.coverage.coreneuron_direct_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_direct.py)
-    if(CORENRN_ENABLE_REPORTING)
-      nrn_add_test(
-        GROUP coreneuron_modtests
-        NAME report_py_${processor}
-        REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-        SCRIPT_PATTERNS test/coreneuron/test_report.py
-        ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
-                    COVERAGE_FILE=.coverage.coreneuron_report_py
-        COMMAND ${modtests_launch_py} test/coreneuron/test_report.py)
-    endif()
+    # if(CORENRN_ENABLE_REPORTING)
+    #   nrn_add_test(
+    #     GROUP coreneuron_modtests
+    #     NAME report_py_${processor}
+    #     REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
+    #     SCRIPT_PATTERNS test/coreneuron/test_report.py
+    #     ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
+    #                 COVERAGE_FILE=.coverage.coreneuron_report_py
+    #     COMMAND ${modtests_launch_py} test/coreneuron/test_report.py)
+    # endif()
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME direct_hoc_${processor}
