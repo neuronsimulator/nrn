@@ -173,14 +173,13 @@ build_wheel_portable() {
         CCACHE_STATS_COMMAND="ccache -svv"
         CCACHE_ZERO_COMMAND="ccache -z"
     else
-        CCACHE_STATS_COMMAND=""
-        CCACHE_ZERO_COMMAND=""
+        CCACHE_STATS_COMMAND=":"
+        CCACHE_ZERO_COMMAND=":"
     fi
 
     set_cibw_environment "${platform}"
 
-    export CIBW_DEBUG_KEEP_CONTAINER=TRUE
-    export CIBW_TEST_COMMAND="${CCACHE_STATS_COMMAND} && yes >& /dev/null"
+    export CIBW_TEST_COMMAND="${CCACHE_STATS_COMMAND}"
     export CIBW_BEFORE_BUILD="${CCACHE_ZERO_COMMAND} && ${CCACHE_STATS_COMMAND}"
     export CIBW_BUILD_VERBOSITY=1
     python -m cibuildwheel --debug-traceback --platform "${platform}" --output-dir wheelhouse
