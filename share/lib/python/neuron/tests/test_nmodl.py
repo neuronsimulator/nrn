@@ -3,18 +3,25 @@ import unittest
 from neuron import h
 
 
-def _test_nmodl_ast():
+class NmodlTestCase(unittest.TestCase):
     """
-    Test for https://github.com/neuronsimulator/nrn/issues/3517
+    Tests for NMODL
     """
-    assert h.hh.ast
+
+    def test_nmodl_ast(self):
+        """
+        Test for https://github.com/neuronsimulator/nrn/issues/3517
+        """
+        assert h.hh.ast
+
+
+def suite():
+    return unittest.defaultTestLoader.loadTestsFromTestCase(NmodlTestCase)
 
 
 def test_nmodl():
-    """
-    Controller for all NMODL tests
-    """
-    _test_nmodl_ast()
+    runner = unittest.TextTestRunner(verbosity=2)
+    runner.run(suite())
 
 
 if __name__ == "__main__":
