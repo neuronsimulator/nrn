@@ -99,15 +99,14 @@ jobs:
     needs:
       - get-latest-wheel-version
       - merge-wheels
-    # TODO change this to `master` before merging
-    uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@jelic/move_infra_to_gha
+    uses: neuronsimulator/nrn-modeldb-ci/.github/workflows/nrn-modeldb-ci.yaml@master
     with:
       # v1 is the latest stable wheel, while v2 is the currently-built wheel.
       # Note that v2 needs to at least contain an x86_64 Linux Python 3.9 wheel since that is the platform that modelDB CI uses
       neuron_v1: neuron==${{ needs.get-latest-wheel-version.outputs.latest_version }}
       neuron_v2: ${{ needs.merge-wheels.outputs.artifacts-url }}
       # TODO remove this before merging
-      models_to_run: '64195 22203 156120 51781 97868 22203 97756 97917 105507 136803 138379 138382 146030 244679 251881'
+      models_to_run: '64195 22203 156120 51781 97868 22203 97756 97917 105507 136803 138379 138382 244679 251881'
 
   nrn-full-src-package:
     name: Create the full-src package
@@ -199,8 +198,7 @@ jobs:
     name: Run build CI
     needs:
       - merge-wheels
-    # TODO change this to `main` before merging
-    uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@jelic/move_infra_to_gha
+    uses: neuronsimulator/nrn-build-ci/.github/workflows/build-neuron-template.yml@main
     with:
       artifact_url: ${{ needs.merge-wheels.outputs.artifacts-url }}
       neuron_branch: ${{ github.event.inputs.rel_branch }}
