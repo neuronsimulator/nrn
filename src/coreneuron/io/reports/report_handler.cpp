@@ -46,14 +46,14 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
     for (const auto& mech: report_config.mech_names) {
         report_config.mech_ids.emplace_back(nrn_get_mechtype(mech.data()));
     }
-    if (report_config.type == SynapseReport && report_config.mech_ids.empty()) {
+    if (report_config.type == Synapse && report_config.mech_ids.empty()) {
         std::cerr << "[ERROR] mechanism to report: " << report_config.mech_names[0]
                   << " is not mapped in this simulation, cannot report on it \n";
         nrn_abort(1);
     }
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         NrnThread& nt = nrn_threads[ith];
-        double* report_variable = nt._actual_v;
+        
         if (!nt.ncell) {
             continue;
         }
@@ -63,35 +63,47 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
         VarsToReport vars_to_report;
         bool is_soma_target;
         switch (report_config.type) {
-        case IMembraneReport:
-            report_variable = nt.nrn_fast_imem->nrn_sav_rhs;
-        case SectionReport:
-            vars_to_report = get_section_vars_to_report(nt,
-                                                        gids_to_report,
-                                                        report_variable,
-                                                        report_config.section_type,
-                                                        report_config.section_all_compartments);
-            is_soma_target = report_config.section_type == SectionType::Soma ||
-                             report_config.section_type == SectionType::Cell;
-            register_section_report(nt, report_config, vars_to_report, is_soma_target);
-            break;
-        case SummationReport:
-            vars_to_report =
-                get_summation_vars_to_report(nt, gids_to_report, report_config, nodes_to_gid);
-            register_custom_report(nt, report_config, vars_to_report);
-            break;
-        case LFPReport:
-            mapinfo->prepare_lfp();
-            vars_to_report = get_lfp_vars_to_report(
-                nt, gids_to_report, report_config, mapinfo->_lfp.data(), nodes_to_gid);
-            is_soma_target = report_config.section_type == SectionType::Soma ||
-                             report_config.section_type == SectionType::Cell;
-            register_section_report(nt, report_config, vars_to_report, is_soma_target);
-            break;
-        default:
-            vars_to_report =
-                get_synapse_vars_to_report(nt, gids_to_report, report_config, nodes_to_gid);
-            register_custom_report(nt, report_config, vars_to_report);
+            case Compartment: {
+                const auto& mech_name = report_config.mech_names[0];
+                double* report_variable;
+                if (mech_name == "v") {
+                    report_variable = nt._actual_v;
+                } else if (mech_name == "i_membrane") {
+                    report_variable = nt.nrn_fast_imem->nrn_sav_rhs;
+                } else {
+                    std::cerr << "The variable name '" << mech_name << "' is not currently supported by compartment reports.\n";
+                    nrn_abort(1);
+                }
+                vars_to_report = get_section_vars_to_report(nt,
+                                                            gids_to_report,
+                                                            report_variable,
+                                                            report_config.section_type,
+                                                            report_config.section_all_compartments);
+                is_soma_target = report_config.section_type == SectionType::Soma ||
+                                report_config.section_type == SectionType::Cell;
+                register_section_report(nt, report_config, vars_to_report, is_soma_target);
+                break;
+            }
+            case Summation: {
+                vars_to_report =
+                    get_summation_vars_to_report(nt, gids_to_report, report_config, nodes_to_gid);
+                register_custom_report(nt, report_config, vars_to_report);
+                break;
+            }
+            case LFP: {
+                mapinfo->prepare_lfp();
+                vars_to_report = get_lfp_vars_to_report(
+                    nt, gids_to_report, report_config, mapinfo->_lfp.data(), nodes_to_gid);
+                is_soma_target = report_config.section_type == SectionType::Soma ||
+                                report_config.section_type == SectionType::Cell;
+                register_section_report(nt, report_config, vars_to_report, is_soma_target);
+                break;
+            }
+            default: {
+                vars_to_report =
+                    get_synapse_vars_to_report(nt, gids_to_report, report_config, nodes_to_gid);
+                register_custom_report(nt, report_config, vars_to_report);
+            }
         }
         if (!vars_to_report.empty()) {
             auto report_event = std::make_unique<ReportEvent>(dt,
