@@ -61,7 +61,7 @@ static void* constructor(Object* ho) {
 
 static void destructor(void* v) {
     Item* q;
-    List* sl = (List*) v;
+    List* sl = static_cast<List*>(v);
     ITERATE(q, sl) {
         section_unref(q->element.sec);
     }
@@ -95,10 +95,8 @@ static void children1(List* sl, Section* sec) {
 }
 
 static double children(void* v) {
-    Section* sec;
-    List* sl;
-    sec = nrn_secarg(1);
-    sl = (List*) v;
+    Section* sec = nrn_secarg(1);
+    List* sl = static_cast<List*>(v);
     children1(sl, sec);
     return 1.;
 }
@@ -119,17 +117,15 @@ static void subtree1(List* sl, Section* sec) {
 }
 
 static double subtree(void* v) {
-    Section* sec;
-    List* sl;
-    sec = nrn_secarg(1);
-    sl = (List*) v;
+    Section* sec = nrn_secarg(1);
+    List* sl = static_cast<List*>(v);
     subtree1(sl, sec);
     return 1.;
 }
 
 static double wholetree(void* v) {
     Section* sec = nrn_secarg(1);
-    List* sl = (List*) v;
+    List* sl = static_cast<List*>(v);
     /*find root*/
     Section* s = nullptr;
     for (s = sec; s->parentsec; s = s->parentsec) {
@@ -140,10 +136,8 @@ static double wholetree(void* v) {
 }
 
 static double allroots(void* v) {
-    List* sl;
+    List* sl = static_cast<List*>(v);
     Item* qsec;
-    sl = (List*) v;
-    // ForAllSections(sec)
     ITERATE(qsec, section_list) {
         Section* sec = hocSEC(qsec);
         if (!sec->parentsec) {
@@ -156,7 +150,7 @@ static double allroots(void* v) {
 }
 
 static double seclist_remove(void* v) {
-    List* sl = (List*) v;
+    List* sl = static_cast<List*>(v);
     int i = 0;
 #if USE_PYTHON
     if (!ifarg(1) || (*hoc_objgetarg(1))->ctemplate->sym == nrnpy_pyobj_sym_) {
@@ -180,9 +174,9 @@ static double seclist_remove(void* v) {
         o = *hoc_objgetarg(1);
         check_obj_type(o, "SectionList");
         seclist_iterate_remove(sl, [](Section* s) { s->volatile_mark = 0; });
-        sl = (List*) o->u.this_pointer;
+        sl = static_cast<List*>(o->u.this_pointer);
         seclist_iterate_remove(sl, [](Section* s) { s->volatile_mark = 1; });
-        sl = (List*) v;
+        sl = static_cast<List*>(v);
         Item* q1;
         for (Item* q = sl->next; q != sl; q = q1) {
             q1 = q->next;
@@ -198,8 +192,8 @@ static double seclist_remove(void* v) {
 }
 
 static double unique(void* v) {
-    Item* q1;
-    List* sl = (List*) v;
+    Item* q1 = nullptr;
+    List* sl = static_cast<List*>(v);
     hoc_return_type_code = 1; /* integer */
     seclist_iterate_remove(sl, [](Section* s) { s->volatile_mark = 0; });
     int i = 0; /* number deleted */
@@ -216,7 +210,7 @@ static double unique(void* v) {
 }
 
 static double contains(void* v) {
-    List* sl = (List*) v;
+    List* sl = static_cast<List*>(v);
     hoc_return_type_code = 2; /* boolean */
     Section* s = nrn_secarg(1);
     return seclist_iterate_remove_until(
@@ -226,7 +220,7 @@ static double contains(void* v) {
 }
 
 static double printnames(void* v) {
-    List* sl = (List*) v;
+    List* sl = static_cast<List*>(v);
     seclist_iterate_remove(sl, [](Section* s) {
         if (s->prop) {
             Printf("%s\n", secname(s));
@@ -237,7 +231,7 @@ static double printnames(void* v) {
 
 double seclist_size(void* v) {
     double count = 0.;
-    List* sl = (List*) v;
+    List* sl = static_cast<List*>(v);
     for (Item* q1 = sl->next; q1 != sl; q1 = q1->next) {
         count++;
     }
@@ -274,27 +268,23 @@ static void check(Object* ob) {
 }
 
 void forall_sectionlist() {
-    Inst* savepc = pc;
-    Item *q, *q1;
-    Section* sec;
-    List* sl;
-    Object* ob;
-    Object** obp;
-    int istk;
-
     /* if arg is a string use forall_section */
     if (hoc_stacktype() == STRING) {
         forall_section();
         return;
     }
-    obp = hoc_objpop();
-    ob = *obp;
+
+    Inst* savepc = pc;
+    Object** obp = hoc_objpop();
+    Object* ob = *obp;
     check(ob);
-    sl = (List*) (ob->u.this_pointer);
-    istk = nrn_isecstack();
-    for (q = sl->next; q != sl; q = q1) {
+    List* sl = static_cast<List*>(ob->u.this_pointer);
+    int istk = nrn_isecstack();
+
+    Item* q1;
+    for (Item* q = sl->next; q != sl; q = q1) {
         q1 = q->next;
-        sec = q->element.sec;
+        Section* sec = q->element.sec;
         if (!sec->prop) {
             hoc_l_delete(q);
             section_unref(sec);
@@ -322,18 +312,18 @@ void forall_sectionlist() {
 }
 
 void hoc_ifseclist() {
-    Inst* savepc = pc;
-    Section* sec = chk_access();
-
     /* if arg is a string use forall_section */
     if (hoc_stacktype() == STRING) {
         hoc_ifsec();
         return;
     }
+
+    Inst* savepc = pc;
+    Section* sec = chk_access();
     Object** obp = hoc_objpop();
     Object* ob = *obp;
     check(ob);
-    List* sl = (List*) (ob->u.this_pointer);
+    List* sl = static_cast<List*>(ob->u.this_pointer);
     if (seclist_iterate_remove_until(
             sl,
             [&](Item*) {
