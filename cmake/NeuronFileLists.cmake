@@ -260,6 +260,7 @@ set(NRNCVODE_FILE_LIST
     cvodeobj.cpp
     cvodestb.cpp
     cvtrset.cpp
+    htlist.cpp
     netcvode.cpp
     nrndaspk.cpp
     occvode.cpp

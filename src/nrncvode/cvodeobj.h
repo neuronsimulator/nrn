@@ -1,7 +1,5 @@
 #pragma once
 
-#include <list>
-
 #include "nrnmpi.h"
 #include "nrnneosm.h"
 //#include "shared/nvector_serial.h"
@@ -9,6 +7,7 @@
 #include "membfunc.h"
 #include "netcon.h"
 #include "tqitem.hpp"
+#include "htlist.h"
 
 class NetCvode;
 class Daspk;
@@ -82,7 +81,7 @@ class CvodeThreadData {
     int vnode_end_index_;
 
     PreSynList* psl_th_;  // with a threshold
-    std::list<WatchCondition*>* watch_list_;
+    HTList* watch_list_;
     // since scatter/gather are hot loops, don't want to use data_handle
     // std::vector<neuron::container::data_handle<double>> pv_, pvdot_;
     std::vector<double*> pv_, pvdot_;
