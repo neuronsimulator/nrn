@@ -1,7 +1,5 @@
 #include <../../nrnconf.h>
 
-#include <functional>
-
 #define HOC_L_LIST 1
 #include "section.h"
 #include "neuron.h"
@@ -237,6 +235,15 @@ static double printnames(void* v) {
     return 1.;
 }
 
+double seclist_size(void* v) {
+    double count = 0.;
+    List* sl = (List*) v;
+    for (Item* q1 = sl->next; q1 != sl; q1 = q1->next) {
+        count++;
+    }
+    return count;
+}
+
 static Member_func members[] = {{"append", append},
                                 {"remove", seclist_remove},
                                 {"wholetree", wholetree},
@@ -246,6 +253,7 @@ static Member_func members[] = {{"append", append},
                                 {"printnames", printnames},
                                 {"contains", contains},
                                 {"allroots", allroots},
+                                {"size", seclist_size},
                                 {nullptr, nullptr}};
 
 void SectionList_reg(void) {
@@ -265,7 +273,7 @@ static void check(Object* ob) {
     }
 }
 
-void forall_sectionlist(void) {
+void forall_sectionlist() {
     Inst* savepc = pc;
     Item *q, *q1;
     Section* sec;
@@ -313,7 +321,7 @@ void forall_sectionlist(void) {
     }
 }
 
-void hoc_ifseclist(void) {
+void hoc_ifseclist() {
     Inst* savepc = pc;
     Section* sec = chk_access();
 
