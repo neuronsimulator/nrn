@@ -70,12 +70,7 @@ enum class TargetType {
 };
 
 // enumerate that defines the type of target report requested
-enum ReportType {
-    Compartment,
-    Summation,
-    Synapse,
-    LFP
-};
+enum ReportType { Compartment, Summation, Synapse, LFP };
 
 // enumerate that defines the section type for a Section report
 enum SectionType { Cell, Soma, Axon, Dendrite, Apical, All };

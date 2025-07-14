@@ -147,8 +147,9 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
         // checks
         if (report.type == Compartment) {
             if (report.mech_names.size() != 1) {
-                std::cerr << "Report error: Compartment report requires exactly one variable name, but got "
-                        << report.mech_names.size() << std::endl;
+                std::cerr << "Report error: Compartment report requires exactly one variable name, "
+                             "but got "
+                          << report.mech_names.size() << std::endl;
                 nrn_abort(1);
             }
             if (report.mech_names[0] == "i_membrane") {
