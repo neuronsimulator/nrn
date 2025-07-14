@@ -25,6 +25,7 @@ on:
 
 jobs:
   fetch-latest-commit:
+    name: 'Fetch the latest commit of NEURON nightly branch'
     runs-on: ubuntu-latest
     outputs:
       commit: ${{ steps.save-commit.outputs.commit }}

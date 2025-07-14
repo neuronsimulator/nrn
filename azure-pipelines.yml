@@ -67,12 +67,23 @@ stages:
         condition: and(in(variables['Build.Reason'], 'Manual'), eq(variables['NRN_RELEASE_UPLOAD'], 'true'))
         displayName: 'Change name of package for release'
 
+      # Restore ccache
+      - task: Cache@2
+        displayName: 'Restore ccache'
+        inputs:
+          key: 'ccache | "$(Agent.OS)" | "$(python.nodot)" | "$(Build.SourceVersion)"'
+          restoreKeys: |
+            ccache | "$(Agent.OS)" | "$(python.nodot)"
+            ccache | "$(Agent.OS)"
+          path: '$(Pipeline.Workspace)/.ccache'
+
       # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
       # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
       - script: |
           if [ "$BUILD_REASON" = "Manual" ] || [ "$BUILD_REASON" = "Schedule" ]; then
             export NRN_RX3D_OPT_LEVEL=1
           fi
+          export CCACHE_DIR=$(Pipeline.Workspace)/.ccache
           sudo mkdir -p /opt/nrnwheel/mpt
           sudo tar -zxf $(mpt_headersSF.secureFilePath) --directory /opt/nrnwheel/mpt
           packaging/python/build_wheels.bash linux $(python.nodot)
@@ -130,7 +141,7 @@ stages:
 
       - script: |
           brew install --cask xquartz
-          brew install flex bison mpich
+          brew install flex bison mpich ccache
           brew unlink mpich && brew install openmpi
           cmake --version
           # the version of bash used by Azure (which is the default one
@@ -164,12 +175,23 @@ stages:
         condition: and(in(variables['Build.Reason'], 'Manual'), eq(variables['NRN_RELEASE_UPLOAD'], 'true'))
         displayName: 'Change name of package for release'
 
+      # Restore ccache
+      - task: Cache@2
+        displayName: 'Restore ccache'
+        inputs:
+          key: 'ccache | "$(Agent.OS)" | "$(python.nodot)" | "$(Build.SourceVersion)"'
+          restoreKeys: |
+            ccache | "$(Agent.OS)" | "$(python.nodot)"
+            ccache | "$(Agent.OS)"
+          path: '$(Pipeline.Workspace)/.ccache'
+
       - script: |
           export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
           if [ "$BUILD_REASON" = "Manual" ] || [ "$BUILD_REASON" = "Schedule" ]; then
             export NRN_RX3D_OPT_LEVEL=1
           fi
+          export CCACHE_DIR=$(Pipeline.Workspace)/.ccache
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/$(uname -m)
           packaging/python/build_wheels.bash osx $(python.nodot)

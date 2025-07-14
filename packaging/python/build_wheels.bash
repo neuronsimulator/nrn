@@ -99,6 +99,9 @@ set_cibw_environment() {
             # seems that 10.15 is actually needed for std::filesystem::path.
             # 11.0 is required on ARM machines
             [MACOSX_DEPLOYMENT_TARGET]="10.15"
+            [CMAKE_C_COMPILER_LAUNCHER]=""
+            [CMAKE_CXX_COMPILER_LAUNCHER]=""
+            [CCACHE_DIR]=""
         )
     elif [ "${platform}" = 'linux' ]; then
         declare -A defaults=(
@@ -110,6 +113,9 @@ set_cibw_environment() {
             [CORENRN_ENABLE_OPENMP]="ON"
             [NRN_BINARY_DIST_BUILD]="ON"
             [NRN_RX3D_OPT_LEVEL]="0"
+            [CMAKE_C_COMPILER_LAUNCHER]=""
+            [CMAKE_CXX_COMPILER_LAUNCHER]=""
+            [CCACHE_DIR]=""
         )
     fi
 
@@ -152,9 +158,31 @@ build_wheel_portable() {
         fi
     fi
 
+    # use ccache if it is available (it's always available for Linux builds)
+    if [ "${platform}" = 'linux' ] || ([ "${platform}" = 'macos' ] && command -v ccache >& /dev/null); then
+        export CCACHE_DEBUG=1
+        export CMAKE_C_COMPILER_LAUNCHER=ccache
+        export CMAKE_CXX_COMPILER_LAUNCHER=ccache
+        if [ "${platform}" = 'linux' ]; then
+            # the host filesystem is available in the container at `/host`
+            export CCACHE_DIR="${CCACHE_DIR:-/host/tmp/ccache}"
+            export CCACHE_NODIRECT=
+        elif [ "${platform}" = 'macos' ]; then
+            export CCACHE_DIR="${CCACHE_DIR:-/tmp/ccache}"
+        fi
+        CCACHE_STATS_COMMAND="ccache -svv"
+        CCACHE_ZERO_COMMAND="ccache -z"
+    else
+        CCACHE_STATS_COMMAND=":"
+        CCACHE_ZERO_COMMAND=":"
+    fi
+
     set_cibw_environment "${platform}"
 
-    CIBW_BUILD_VERBOSITY=1 python -m cibuildwheel --debug-traceback --platform "${platform}" --output-dir wheelhouse
+    export CIBW_TEST_COMMAND="${CCACHE_STATS_COMMAND}"
+    export CIBW_BEFORE_BUILD="${CCACHE_ZERO_COMMAND} && ${CCACHE_STATS_COMMAND}"
+    export CIBW_BUILD_VERBOSITY=1
+    python -m cibuildwheel --debug-traceback --platform "${platform}" --output-dir wheelhouse
 
     deactivate
 }
