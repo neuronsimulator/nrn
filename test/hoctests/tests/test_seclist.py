@@ -2,6 +2,10 @@ from neuron import h
 
 
 def test_sectionlist_len_size():
+    """Check to make sure len(sectionlist) and SectionList::size() handle deleted sections
+
+    See: https://github.com/neuronsimulator/nrn/issues/3522
+    """
     soma = h.Section("soma")
     dend = h.Section("dend")
 
@@ -13,7 +17,9 @@ def test_sectionlist_len_size():
 
     soma = None
     assert len(sl) == 1
+    assert isinstance(len(sl), int)
     assert sl.size() == 1
+    assert isinstance(sl.size(), int)
 
 
 secs = [h.Section() for _ in range(10)]
@@ -31,4 +37,6 @@ def test():
     return sl
 
 
-sl = test()
+if __name__ == "__main__":
+    test_sectionlist_len_size()
+    sl = test()
