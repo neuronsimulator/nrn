@@ -6,6 +6,7 @@
 # =============================================================================
 */
 
+#include <sstream>
 #include "report_handler.hpp"
 #include "coreneuron/io/nrnsection_mapping.hpp"
 #include "coreneuron/mechanism/mech_mapping.hpp"
@@ -61,7 +62,8 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
         const std::vector<int>& nodes_to_gid = map_gids(nt);
         const std::vector<int> gids_to_report = intersection_gids(nt, report_config.target);
         VarsToReport vars_to_report;
-        bool is_soma_target;
+        const bool is_soma_target = report_config.section_type == SectionType::Soma ||
+                            report_config.section_type == SectionType::Cell;
         switch (report_config.type) {
         case Compartment: {
             const auto& mech_name = report_config.mech_names[0];
@@ -71,17 +73,16 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
             } else if (mech_name == "i_membrane") {
                 report_variable = nt.nrn_fast_imem->nrn_sav_rhs;
             } else {
-                std::cerr << "The variable name '" << mech_name
+                std::ostringstream s;
+                s << "The variable name '" << mech_name
                           << "' is not currently supported by compartment reports.\n";
-                nrn_abort(1);
+                throw std::invalid_argument(s.str());
             }
             vars_to_report = get_section_vars_to_report(nt,
                                                         gids_to_report,
                                                         report_variable,
                                                         report_config.section_type,
                                                         report_config.section_all_compartments);
-            is_soma_target = report_config.section_type == SectionType::Soma ||
-                             report_config.section_type == SectionType::Cell;
             register_section_report(nt, report_config, vars_to_report, is_soma_target);
             break;
         }
@@ -95,8 +96,6 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
             mapinfo->prepare_lfp();
             vars_to_report = get_lfp_vars_to_report(
                 nt, gids_to_report, report_config, mapinfo->_lfp.data(), nodes_to_gid);
-            is_soma_target = report_config.section_type == SectionType::Soma ||
-                             report_config.section_type == SectionType::Cell;
             register_section_report(nt, report_config, vars_to_report, is_soma_target);
             break;
         }
@@ -246,33 +245,39 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
 
     for (const auto& gid: gids_to_report) {
         bool has_imembrane = false;
+        bool has_v = false;
         // In case we need convertion of units
         int scale = 1;
         for (auto i = 0; i < report.mech_ids.size(); ++i) {
             auto mech_id = report.mech_ids[i];
             auto var_name = report.var_names[i];
             auto mech_name = report.mech_names[i];
-            if (mech_name != "i_membrane") {
-                // need special handling for Clamp processes to flip the current value
-                if (mech_name == "IClamp" || mech_name == "SEClamp") {
-                    scale = -1;
-                }
-                Memb_list* ml = nt._ml_list[mech_id];
-                if (!ml) {
-                    continue;
-                }
-
-                for (int j = 0; j < ml->nodecount; j++) {
-                    auto segment_id = ml->nodeindices[j];
-                    if ((nodes_to_gids[ml->nodeindices[j]] == gid)) {
-                        double* var_value =
-                            get_var_location_from_var_name(mech_id, var_name.data(), ml, j);
-                        summation_report.currents_[segment_id].push_back(
-                            std::make_pair(var_value, scale));
-                    }
-                }
-            } else {
+            // skip i_membrane and v. We add them later
+            if (mech_name == "i_membrane") { 
                 has_imembrane = true;
+                continue;
+            }
+            if (mech_name == "v") { 
+                has_v = true;
+                continue;
+            }
+            // need special handling for Clamp processes to flip the current value
+            if (mech_name == "IClamp" || mech_name == "SEClamp") {
+                scale = -1;
+            }
+            Memb_list* ml = nt._ml_list[mech_id];
+            if (!ml) {
+                continue;
+            }
+
+            for (int j = 0; j < ml->nodecount; j++) {
+                auto segment_id = ml->nodeindices[j];
+                if ((nodes_to_gids[ml->nodeindices[j]] == gid)) {
+                    double* var_value =
+                        get_var_location_from_var_name(mech_id, var_name.data(), ml, j);
+                    summation_report.currents_[segment_id].push_back(
+                        std::make_pair(var_value, scale));
+                }
             }
         }
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
@@ -302,10 +307,15 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
                 int section_id = section.first;
                 auto& segment_ids = section.second;
                 for (const auto& segment_id: segment_ids) {
-                    // corresponding voltage in coreneuron voltage array
+                    // corresponding i_membrane in coreneuron voltage array
                     if (has_imembrane) {
                         summation_report.currents_[segment_id].push_back(
                             std::make_pair(nt.nrn_fast_imem->nrn_sav_rhs + segment_id, 1));
+                    }
+                    // corresponding voltage in coreneuron voltage array
+                    if (has_v) {
+                        summation_report.currents_[segment_id].push_back(
+                            std::make_pair(nt._actual_v + segment_id, 1));
                     }
                     if (report.section_type == SectionType::All) {
                         double* variable = report_variable + segment_id;

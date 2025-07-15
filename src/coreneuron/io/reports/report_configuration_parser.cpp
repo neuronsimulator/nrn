@@ -156,6 +156,7 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
                 nrn_use_fast_imem = true;
             }
         }
+        // gids
         if (report.num_gids) {
             report.target.resize(report.num_gids);
             report_conf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
