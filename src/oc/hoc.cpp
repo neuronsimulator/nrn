@@ -749,7 +749,7 @@ void fpecatch(int /* sig */) /* catch floating point exceptions */
     hoc_execerror("Floating point exception.", (char*) 0);
 }
 
-__attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation violation probably due to
+[[noreturn]] void sigsegvcatch(int /* sig */) /* segmentation violation probably due to
                                                               arg type error */
 {
     Fprintf(stderr, "Segmentation violation\n");
@@ -762,7 +762,7 @@ __attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation viola
 }
 
 #if HAVE_SIGBUS
-__attribute__((noreturn)) void sigbuscatch(int /* sig */) {
+[[noreturn]] void sigbuscatch(int /* sig */) {
     Fprintf(stderr, "Bus error\n");
     print_bt();
     /*ARGSUSED*/
@@ -1702,12 +1702,12 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
 	ReadConsoleA(GetStdHandle(STD_INPUT_HANDLE), line.data(), line.size(), &n, NULL);
             if (n >= hoc_cbufstr->size - 3) {
                 hocstr_resize(hoc_cbufstr, n + 100);
-                ctp = cbuf = hoc_cbufstr->buf;
+                hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
             }
-            strcpy(cbuf, line.data());
-            cbuf[n] = '\n';
-            cbuf[n + 1] = '\0';
-            hoc_audit_command(cbuf);
+            strcpy(hoc_cbuf, line.data());
+            hoc_cbuf[n] = '\n';
+            hoc_cbuf[n + 1] = '\0';
+            hoc_audit_command(hoc_cbuf);
 #else
 #if INTERVIEWS
         if (nrn_fw_eq(hoc_fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
