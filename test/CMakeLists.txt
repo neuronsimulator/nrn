@@ -222,7 +222,7 @@ if(NRN_ENABLE_PYTHON)
 
   nrn_add_test(
     GROUP unit_tests
-    NAME shipped_tests
+    NAME wheel_tests
     COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest}
             ${PROJECT_BINARY_DIR}/lib/python/neuron/tests)
 
