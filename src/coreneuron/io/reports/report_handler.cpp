@@ -280,12 +280,38 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
                 }
             }
         }
+
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
         if (cell_mapping == nullptr) {
             std::cerr << "[SUMMATION] Error : Compartment mapping information is missing for gid "
                       << gid << '\n';
             nrn_abort(1);
         }
+
+        // add i_membrane and v
+        const auto& section_mapping = cell_mapping->secmapvec;
+        if (has_imembrane || has_v) {
+            for (const auto& sections: section_mapping) {
+                for (auto& section: sections->secmap) {
+                    // compartment_id
+                    int section_id = section.first;
+                    const auto& segment_ids = section.second;
+                    for (const auto& segment_id: segment_ids) {
+                        // corresponding i_membrane in coreneuron voltage array
+                        if (has_imembrane) {
+                            summation_report.currents_[segment_id].push_back(
+                                std::make_pair(nt.nrn_fast_imem->nrn_sav_rhs + segment_id, 1));
+                        }
+                        // corresponding voltage in coreneuron voltage array
+                        if (has_v) {
+                            summation_report.currents_[segment_id].push_back(
+                                std::make_pair(nt._actual_v + segment_id, 1));
+                        }
+                    }
+                }
+            }
+        }
+
         std::vector<VarWithMapping> to_report;
         to_report.reserve(cell_mapping->size());
         summation_report.summation_.resize(nt.end);
@@ -300,23 +326,13 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
                                             report.section_all_compartments);
             }
         }
-        const auto& section_mapping = cell_mapping->secmapvec;
+        
         for (const auto& sections: section_mapping) {
             for (auto& section: sections->secmap) {
                 // compartment_id
                 int section_id = section.first;
                 auto& segment_ids = section.second;
                 for (const auto& segment_id: segment_ids) {
-                    // corresponding i_membrane in coreneuron voltage array
-                    if (has_imembrane) {
-                        summation_report.currents_[segment_id].push_back(
-                            std::make_pair(nt.nrn_fast_imem->nrn_sav_rhs + segment_id, 1));
-                    }
-                    // corresponding voltage in coreneuron voltage array
-                    if (has_v) {
-                        summation_report.currents_[segment_id].push_back(
-                            std::make_pair(nt._actual_v + segment_id, 1));
-                    }
                     if (report.section_type == SectionType::All) {
                         double* variable = report_variable + segment_id;
                         to_report.emplace_back(VarWithMapping(section_id, variable));
