@@ -220,6 +220,12 @@ if(NRN_ENABLE_PYTHON)
     PRELOAD_SANITIZER
     SCRIPT_PATTERNS "test/unit_tests/hoc_python/*.py")
 
+  nrn_add_test(
+    GROUP unit_tests
+    NAME shipped_tests
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest}
+            ${PROJECT_BINARY_DIR}/lib/python/neuron/tests)
+
   # In brief:
   #
   # * tests and mod files under pytest/ are only compatible with NEURON
