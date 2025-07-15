@@ -33,6 +33,7 @@ set(HEADER_FILES_TO_INSTALL
     nrnoc/nrnredef.h
     nrnoc/nrnversionmacros.h
     nrnoc/options.h
+    nrnoc/seclist.h
     nrnoc/section_fwd.hpp
     nrnoc/treeset.h
     oc/classreg.h
@@ -259,6 +260,7 @@ set(NRNCVODE_FILE_LIST
     cvodeobj.cpp
     cvodestb.cpp
     cvtrset.cpp
+    htlist.cpp
     netcvode.cpp
     nrndaspk.cpp
     occvode.cpp

@@ -53,6 +53,7 @@ add_dependencies(generated_source_files modlunit_generated_files)
 add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES} "${NRN_MODLUNIT_GEN}/lex.cpp"
                         "${NRN_MODLUNIT_GEN}/parse1.cpp")
 add_dependencies(modlunit modlunit_generated_files)
+target_include_directories(modlunit PRIVATE "${PROJECT_BINARY_DIR}/share/nrn/lib")
 
 target_compile_definitions(modlunit PRIVATE NRNUNIT=1)
 cpp_cc_configure_sanitizers(TARGET modlunit)
@@ -101,6 +102,7 @@ add_dependencies(generated_source_files nocmodl_generated_files)
 
 add_executable(nocmodl ${NRN_NOCMODL_SRC_FILES} "${NRN_NOCMODL_GEN}/lex.cpp"
                        "${NRN_NOCMODL_GEN}/parse1.cpp" "${NRN_NOCMODL_GEN}/diffeq.cpp")
+target_include_directories(nocmodl PRIVATE "${PROJECT_BINARY_DIR}/share/nrn/lib")
 cpp_cc_configure_sanitizers(TARGET nocmodl)
 add_dependencies(nocmodl nocmodl_generated_files)
 target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 CVODE=1)

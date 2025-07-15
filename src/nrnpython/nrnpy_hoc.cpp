@@ -15,6 +15,7 @@
 #include "ocjump.h"
 #include "oclist.h"
 #include "shapeplt.h"
+#include "seclist.h"  // lvappendsec_and_ref, seclist_size
 
 #include <cstdint>
 #include <vector>
@@ -34,7 +35,6 @@ extern void (*nrnpy_restore_savestate)(int64_t, char*);
 extern void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size);
 extern void (*nrnpy_decref)(void* pyobj);
 extern double (*nrnpy_call_func)(Object*, double);
-extern void lvappendsec_and_ref(void* sl, Section* sec);
 extern void hoc_pushs(Symbol*);
 extern void hoc_evalpointer();
 extern double cable_prop_eval(Symbol* sym);
@@ -1639,12 +1639,7 @@ static int araychk(Arrayinfo* a, PyHocObject* po, int ix) {
 
 static Py_ssize_t seclist_count(Object* ho) {
     assert(ho->ctemplate == hoc_sectionlist_template_);
-    hoc_List* sl = (hoc_List*) (ho->u.this_pointer);
-    Py_ssize_t n = 0;
-    for (hoc_Item* q1 = sl->next; q1 != sl; q1 = q1->next) {
-        n++;
-    }
-    return n;
+    return static_cast<Py_ssize_t>(seclist_size(static_cast<hoc_List*>(ho->u.this_pointer)));
 }
 
 static Py_ssize_t hocobj_len(PyObject* self) {
