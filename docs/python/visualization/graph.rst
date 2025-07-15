@@ -10,16 +10,16 @@ Graph
 
 
     Syntax:
-        ``g = h.Graph()``
+        ``g = n.Graph()``
 
-        ``g = h.Graph(0)``
+        ``g = n.Graph(False)``
 
 
     Description:
          
-        An instance of the Graph class  manages a window on which  x-y plots can 
+        An instance of the ``Graph`` class manages a window on which x-y plots can 
         be drawn by calling various member functions. 
-        The first form immediately maps the window to the screen. With a 0 argument 
+        The first form immediately maps the window to the screen. With a ``False`` (or 0) argument 
         the window is not mapped but can be sized and placed with the :func:`view` function. 
          
 
@@ -30,11 +30,10 @@ Graph
         .. code-block::
             python
 
-            from neuron import h, gui
-            import math
+            from neuron import n, gui
 
             # Create the graph
-            g = h.Graph()
+            g = n.Graph()
 
             # specify coordinate system for the canvas drawing area
             # numbers are: xmin, xmax, ymin, ymax respectively
@@ -47,7 +46,7 @@ Graph
             # define a sine wave, 0 <= x <= 10
             for i in range(101):
                 x = i * 0.1
-                g.line(x, math.sin(x))
+                g.line(x, n.sin(x))
 
             # actually draw the plot on the graph in the window
             g.flush()
@@ -100,20 +99,20 @@ Graph
         The single mode argument draws both x and y axes (no arg == mode 0). 
 
 
-        mode = 0 
-            view axes (axes in each view drawn dynamically) 
-            when graph is created these axes are the default 
+    .. list-table:: Mode Action
+        :widths: 20 80
+        :header-rows: 1
 
-        mode = 1 
-            fixed axes as in long form but start and stop chosen 
-            according to first view size. 
-
-        mode = 2 
-            view box (box axes drawn dynamically) 
-
-        mode = 3 
-            erase axes 
-
+        * - Mode
+            - Action
+        * - 0
+            - View axes (axes in each view drawn dynamically). When the graph is created, these axes are the default.
+        * - 1
+            - Fixed axes as in long form, but start and stop chosen according to the first view size.
+        * - 2
+            - View box (box axes drawn dynamically).
+        * - 3
+            - Erase axes.
 
 
         Arguments which specify the numbers on the axis are rounded, 
@@ -122,63 +121,63 @@ Graph
 
         The *xpos* argument gives the location of the yaxis on the xaxis (default 0). 
 
-        Without the *ntic* argument (or *ntic*\ =-1), 
+        Without the *ntic* argument (or *ntic* =-1), 
             the number of tics will be chosen for you. 
 
         *nminor* is the number 
             of minor tic marks. 
 
-        *shownumbers*\ =0 will not draw the axis labels. 
+        *shownumbers* = 0 will not draw the axis labels. 
 
-        *invert*\ =1 will invert the axes. 
+        *invert* = 1 will invert the axes. 
 
          
-        Note: 
+        .. note:: 
          
-        It is easiest to control the size of the axes and the scale of 
-        the graph through the graphical user interface.  Normally, when a 
-        new graph is declared (eg. ``g = h.Graph()``), the y axis 
-        ranges from 20-180 and the x axis ranges from 50-250. 
-        With the mouse arrow on the graph window, click on the right button 
-        and set the arrow on :guilabel:`View` at the top of the button window 
-        column.  A second button 
-        window will appear to the right of the first, and from this button window 
-        you can select several options.  Two of the most common are: 
+            It is easiest to control the size of the axes and the scale of 
+            the graph through the graphical user interface.  Normally, when a 
+            new graph is declared (eg. ``g = n.Graph()``), the y axis 
+            ranges from 20-180 and the x axis ranges from 50-250. 
+            With the mouse arrow on the graph window, click on the right button 
+            and set the arrow on :guilabel:`View` at the top of the button window 
+            column.  A second button 
+            window will appear to the right of the first, and from this button window 
+            you can select several options.  Two of the most common are: 
 
 
-        1)  view=plot
-                Size the window to best-fit the plot which it contains. 
+            1)  view=plot
+                    Size the window to best-fit the plot which it contains. 
 
-        2)  Zoom in/out 
-                Allows you to click on the left mouse button and perform the following 
-                tasks: 
-                
-                move arrow to the right 
-                    scale down the x axis (eg. 50 - 250 becomes 100 - 110) 
+            2)  Zoom in/out 
+                    Allows you to click on the left mouse button and perform the following 
+                    tasks: 
+                    
+                    move arrow to the right 
+                        scale down the x axis (eg. 50 - 250 becomes 100 - 110) 
 
-                "shift" + move arrow to the right 
-                    view parts of the axis which are to the left of the original window 
+                    "shift" + move arrow to the right 
+                        view parts of the axis which are to the left of the original window 
 
-                move arrow to the left 
-                    scale up the x axis (eg. 50 - 250 becomes -100 - 500) 
+                    move arrow to the left 
+                        scale up the x axis (eg. 50 - 250 becomes -100 - 500) 
 
-                "shift" + move arrow to the left 
-                    view parts of the axis which are to the right of the original window 
+                    "shift" + move arrow to the left 
+                        view parts of the axis which are to the right of the original window 
 
-                move arrow up 
-                    scale down the y axis (eg. 20 - 180 becomes 57.5 - 62) 
+                    move arrow up 
+                        scale down the y axis (eg. 20 - 180 becomes 57.5 - 62) 
 
-                "shift" + move arrow up 
-                    view parts of the axis which are below the original window 
+                    "shift" + move arrow up 
+                        view parts of the axis which are below the original window 
 
-                move arrow down 
-                    scale up the y axis (eg. 20 - 180 becomes -10,000 - 5,000) 
+                    move arrow down 
+                        scale up the y axis (eg. 20 - 180 becomes -10,000 - 5,000) 
 
-                "shift" + move arrow down 
-                    view parts of the axis which are above the original window 
+                    "shift" + move arrow down 
+                        view parts of the axis which are above the original window 
 
 
-        You can also use the size command to determine the size of what you view in the 
+        You can also use the :meth:`Graph.size` method to determine the size of what you view in the 
         graph window.  Eg. ``g.size(-1,1,-1,1)`` makes both axes go from -1 to 1. 
 
          
@@ -205,10 +204,10 @@ Graph
     
     .. note::
     
-        To automatically plot a variable added to a graph ``g`` with addvar against
+        To automatically plot a variable added to a graph ``g`` with ``addvar`` against
         ``t`` during a ``run()``, ``stdrun.hoc`` must be loaded (this is done automatically
         with a ``from neuron import gui``) and the graph must be
-        added to a graphList, such as by executing ``graphList[0].append(g)``.
+        added to a graphList, such as by executing ``n.graphList[0].append(g)``.
 
     Example:
 
@@ -256,22 +255,22 @@ Graph
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
+            import numpy as np
 
-            g = h.Graph()
+            g = n.Graph()
             g.size(0, 10, -1, 1)
             g.addexpr("sin(x)")
             g.addexpr("cos(x)")
             g.addexpr("exp(-x)")
 
             # have to initialize the variable in HOC
-            h("x = 0")
+            n("x = 0")
 
             g.begin()
 
-            for i in range(101):
-                h.x = i * 0.1
-                g.plot(h.x)
+            for n.x in np.arange(0, 10.1, 0.1):
+                g.plot(n.x)
 
             g.flush()
 
@@ -341,7 +340,7 @@ Graph
         The abscissa value for each item in the list of graph lines. Usually 
         used in a ``for`` loop. 
 
-        See :meth:`Graph.plot` for an example.
+        See :meth:`Graph.addexpr` for an example.
 
 
          
@@ -369,19 +368,20 @@ Graph
         declared by ``.addexpr`` will calculate the y value when ``.plot`` is called. 
         This can be used for phase plane plots, etc. Note that the normal argument to 
         ``.plot`` is ignored when such an expression is invoked. When ``usepointer`` 
-        is 1 the expression must be a variable name and its address is used. 
+        is True (or 1) the expression must be a variable name and its address is used. 
 
     Example:
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
+            import numpy as np
 
             # Assign "g" the role of pointing to a Graph 
             # created from the Graph class, and produces 
             # a graph window with x and y axes on the  
             # screen. 
-            g = h.Graph()
+            g = n.Graph()
 
             # size the window to fit the graph 
             g.size(-4, 4, -4, 4)
@@ -400,10 +400,9 @@ Graph
             g.xexpr('3*cos(t)') 
 
             g.begin()
-            for i in range(64):
-                # h.t ranges from 0 to 6.3 \approx 2 * pi
-                h.t = i * 0.1
-                g.plot(h.t)
+            for n.t in np.arange(0, 6.4, 0.1):
+                # n.t ranges from 0 to 6.3 \approx 2 * pi
+                g.plot(n.t)
 
             # actually draws the graph
             g.flush()
@@ -453,7 +452,7 @@ Graph
 
 
     Description:
-        Flushes only the :func:`plot` (x) points since the last :func:`flush` 
+        Flushes only the :meth:`g.plot(x) <Graph.plot>` points since the last :meth:`Graph.flush` 
         (or ``fastflush``). 
         This is useful for seeing the progress of :func:`addvar` plots during long 
         computations in which the graphlines contain many thousands of points. 
@@ -466,28 +465,25 @@ Graph
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0, 4000, -1, 1) 
-             
-            g.addexpr("cos(t/100)") 
-            g.addexpr("cos(t/150)") 
-            g.addexpr("cos(t/200)") 
-            g.addexpr("cos(t/250)") 
-            g.addexpr("cos(t/300)") 
-            g.addexpr("cos(t/450)") 
+            
+            # plot a bunch of cosine waves of different periods
+            for val in [100, 150, 200, 250, 300, 450]:
+                g.addexpr(f"cos(t/{val})")
              
             def pl():
                 g.erase()
                 g.begin()
-                for h.t in range(4000):
-                    g.plot(h.t) 
-                    if h.t % 10 == 0:
+                for n.t in range(4_000):
+                    g.plot(n.t) 
+                    if n.t % 10 == 0:
                         g.fastflush() 
-                        h.doNotify() 
+                        n.doNotify() 
                 g.flush() 
-                h.doNotify() 
+                n.doNotify() 
 
             pl() 
              
@@ -515,11 +511,11 @@ Graph
         graphical user interface. 
 
 
-        ``True`` 
+        ``True`` (or 1)
             equivalent to the sequence ---Erase lines; Keep Lines toggled on; 
             use current graph color and brush when plotting the lines. 
 
-        ``False`` 
+        ``False`` (or 0)
             Turn off family mode. Original color restored to plot expressions; 
             Keep Lines toggled off. 
 
@@ -543,7 +539,7 @@ Graph
 
 
     Syntax:
-        ``.vector(n, _ref_x, _ref_y)``
+        ``g.vector(n, _ref_x, _ref_y)``
 
 
     Description:
@@ -561,22 +557,22 @@ Graph
     .. note::
 
         A segmentation violation will result if 
-        n is greater than the vector size. 
+        n is greater than the Vector size. 
 
 
     Example:
 
         .. code::
 
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             # x = 0, 0.01, 0.02, ..., 6.28
-            x = h.Vector(np.arange(0., 6.29, 0.01))
-            y = h.Vector(np.sin(x))
+            x = n.Vector(np.arange(0., 6.29, 0.01))
+            y = n.Vector(np.sin(x))
 
             # create the graph
-            g = h.Graph()
+            g = n.Graph()
             g.size(0, 6.28, -1, 1)
             g.vector(num_elements, x._ref_x[0], y._ref_x[0])
             g.flush()
@@ -611,24 +607,24 @@ Graph
         unchanged. Note that thisindex is not necessarily equal to previndex+1. 
 
     Example:
-        To iterate over all the lines in ``h.Graph[0]`` use: 
+        To iterate over all the lines in ``n.Graph[0]`` use: 
 
         .. code-block::
             python
 
             xline = []
             yline = []
-            xvec = h.Vector() 
-            yvec = h.Vector() 
+            xvec = n.Vector() 
+            yvec = n.Vector() 
             j = 0
-            i = h.Graph[0].getline(-i, xvec, yvec)
+            i = n.Graph[0].getline(-i, xvec, yvec)
             while i != -1:
             	# xvec and yvec contain the line with Graph internal index i. 
             	# and can be associated with the sequential index j. 
             	print(j, i, yvec.label)
             	xline.append(xvec.c())
             	yline.append(yvec.cl()) # clone label as well 
-                i = h.Graph[0].getline(i, xvec, yvec)
+                i = n.Graph[0].getline(i, xvec, yvec)
 
          
 
@@ -647,7 +643,7 @@ Graph
         For the next line after the internal index, previndex, copy the label into the :class:`Vector`
         ``vector`` as well as colorindex, brushindex, label x location, label y location, 
         and label style and return the index of the line. If the argument is the 
-        index of the last line then -1 is returned and Vector is unchanged. 
+        index of the last line then -1 is returned and ``vector`` is unchanged. 
         Note that an argument of -1 will always return the line info for the first 
         polyline in the graph. 
 
@@ -703,20 +699,20 @@ Graph
     Description:
 
 
-        .size(*xstart*, *xstop*, *ystart*, *ystop*) 
+        ``g.size(xstart, xstop, ystart, ystop)`` 
             The natural size of the scene in model coordinates. The "Whole Scene" 
             menu item in the graphical user interface will change the view to this size. 
             Default axes are this size. 
 
-        .size(1-4) 
+        ``g.size(1-4)`` 
             Returns left, right, bottom or top of first view of the scene. Useful for programming. 
 
-        .size(_ref_dbl) 
+        ``g.size(_ref_dbl)`` 
             Returns the xmin, xmax, ymin, ymax values of all marks and lines of more than two 
             points in the graph in dbl[0],..., dbl[3] respectively. This allows 
             convenient computation of a view size which will display everything on the 
             graph. See :ref:`gui_view_equal_plot`. In the absence of any graphics, it gives 
-            the size as in the .size(1-4) prototype. (e.g. if ``dbl = h.Vector(4)``, then use
+            the size as in the .size(1-4) prototype. (e.g. if ``dbl = n.Vector(4)``, then use
             ``g.size(dbl._ref_x[0])`` to store starting at the beginning.)
 
 
@@ -730,25 +726,25 @@ Graph
 
 
     Syntax:
-        ``.label(x, y, "label")``
+        ``g.label(x, y, "label")``
 
-        ``.label(x, y)``
+        ``g.label(x, y)``
 
-        ``.label("label")``
+        ``g.label("label")``
 
-        ``.label(x, y, "string", fixtype, scale, x_align, y_align, color)``
+        ``g.label(x, y, "string", fixtype, scale, x_align, y_align, color)``
 
 
     Description:
 
 
-        ``.label(x, y, "label")`` 
+        ``g.label(x, y, "label")`` 
             Draw a label at indicated position with current color. 
 
-        ``.label("label")`` 
+        ``g.label("label")`` 
             Add a label one line below the previous label 
 
-        ``.label(x, y)`` 
+        ``g.label(x, y)`` 
             Next ``label("string")`` will be printed at this location 
 
          
@@ -765,7 +761,7 @@ Graph
 
 
     Syntax:
-        ``.fixed(scale)``
+        ``g.fixed(scale)``
 
 
     Description:
@@ -782,7 +778,7 @@ Graph
 
 
     Syntax:
-        ``.vfixed(scale)``
+        ``g.vfixed(scale)``
 
 
     Description:
@@ -802,7 +798,7 @@ Graph
 
 
     Syntax:
-        ``.relative(scale)``
+        ``g.relative(scale)``
 
 
     Description:
@@ -820,7 +816,7 @@ Graph
 
 
     Syntax:
-        ``.align([x_align], [y_align])``
+        ``g.align([x_align], [y_align])``
 
 
     Description:
@@ -833,8 +829,8 @@ Graph
         .. code-block::
             python
 
-            from neuron import h, gui
-            g = h.Graph() 
+            from neuron import n, gui
+            g = n.Graph() 
             g.align(0, 0) 
             g.label(.5,.5, "left bottom at (.5,.5)") 
             g.align(0, 1) 
@@ -858,32 +854,42 @@ Graph
 
 
     Syntax:
-        ``.color(index)``
+        ``g.color(index)``
 
-        ``.color(index, "colorname")``
+        ``g.color(index, "colorname")``
 
 
     Description:
         Set the default color (starts at 1 == black). The default color palette 
         is: 
 
-        .. code-block::
-            none
+        .. list-table:: Color Codes
+            :header-rows: 1
 
-            0 white 
-            1 black 
-            2 red 
-            3 blue 
-            4 green 
-            5 orange 
-            6 brown 
-            7 violet 
-            8 yellow 
-            9 gray 
+            * - Code
+                - Color
+            * - 0
+                - White
+            * - 1
+                - Black
+            * - 2
+                - Red
+            * - 3
+                - Blue
+            * - 4
+                - Green
+            * - 5
+                - Orange
+            * - 6
+                - Brown
+            * - 7
+                - Violet
+            * - 8
+                - Yellow
+            * - 9
+                - Gray
 
-
-
-        ``.color(index, "colorname")`` 
+        ``g.color(index, "colorname")`` 
             Install a color in the Color Palette to be accessed with that index. 
             The possible indices are 0-100. 
 
@@ -900,25 +906,25 @@ Graph
 
 
     Syntax:
-        ``.brush(index)``
+        ``g.brush(index)``
 
-        ``.brush(index, pattern, width)``
+        ``g.brush(index, pattern, width)``
 
 
     Description:
 
 
-        ``.brush(index)`` 
+        ``g.brush(index)`` 
             Set the default brush. 0 is the thinnest line possible, 1-4 are 
             thickness in pixel. Higher indices cycle through these line 
             thicknesses with different brush patterns. 
 
-        ``.brush(index, pattern, width)`` 
+        ``g.brush(index, pattern, width)`` 
             Install a brush in the Brush Palette to be accessed with the index. 
             The width is in pixel coords (< 1000). The pattern is a 31 bit pattern 
             of 1's and 0's which is used to make dash patterns. Fractional widths 
             work with postscript but not idraw. Axes are drawn with the 
-            nrn.defaults property ``*default_brush: 0.0`` 
+            ``nrn.defaults`` property ``*default_brush: 0.0`` 
 
         The user may also use the :ref:`gui_changecolor_brush` button in the graphical user interface, which 
         is called by placing the mouse arrow in the graph window and pressing the right button. 
@@ -933,9 +939,9 @@ Graph
 
 
     Syntax:
-        ``.view(mleft, mbottom, mwidth, mheight, wleft, wtop, wwidth, wheight)``
+        ``g.view(mleft, mbottom, mwidth, mheight, wleft, wtop, wwidth, wheight)``
 
-        ``.view(2)``
+        ``g.view(2)``
 
 
     Description:
@@ -959,9 +965,9 @@ Graph
 
 
     Syntax:
-        ``.save_name("objectvar")``
+        ``g.save_name("objectvar")``
 
-        ``.save_name("objectvar", 1)``
+        ``g.save_name("objectvar", 1)``
 
 
     Description:
@@ -981,20 +987,20 @@ Graph
 
 
     Syntax:
-        ``.beginline()``
+        ``g.beginline()``
 
-        ``.beginline(color_index, brush_index)``
+        ``g.beginline(color_index, brush_index)``
 
-        ``.beginline("label")``
+        ``g.beginline("label")``
 
-        ``.beginline("label", color, brush)``
+        ``g.beginline("label", color, brush)``
 
 
     Description:
         State that the next ``g.line(x)`` 
         is the first point of the next line to be graphed. 
-        This is a less general command than ``.begin()`` which prepares a graph for 
-        the ``.plot()`` command. 
+        This is a less general command than ``g.begin()`` which prepares a graph for 
+        the ``g.plot()`` command. 
         The optional label argument labels the line. 
 
          
@@ -1009,17 +1015,17 @@ Graph
 
 
     Syntax:
-        ``.line(x, y)``
+        ``g.line(x, y)``
 
 
     Description:
         Draw a line from the previous point to this point. This command is normally 
-        used inside of a ``for`` loop.  It is analogous to ``.plot()`` and the commands which 
+        used inside of a ``for`` loop.  It is analogous to :meth:`Graph.plot` and the commands which 
         go along with it but avoids the need to use HOC expressions, since it plots one line at
         a time.
          
-        This command takes arguments for both x and y values, so it can serve the same purpose of 
-        the ``.plot`` command in conjunction with an ``.addexpr()`` command and an ``.xexpr()`` 
+        This method takes arguments for both x and y values, so it can serve the same purpose of 
+        the :meth:`Graph.plot` method in conjunction with an :meth:`Graph.addexpr` command and an ``.xexpr()`` 
         command. 
 
     Example:
@@ -1028,19 +1034,16 @@ Graph
             python
 
               
-            from neuron import h, gui
-            import math
+            from neuron import n, gui
+            import numpy as np
 
-            g = h.Graph()
+            g = n.Graph()
             g.size(-1, 1, -1, 1)
 
             g.beginline()   
-            t = i = 0
             dt = 0.1
-            while t <= 2 * math.pi + dt:
-                t = i * dt
-                g.line(math.sin(t), math.cos(t))
-                i += 1
+            for t in np.arange(0, 2 * n.PI + dt, dt):
+                g.line(n.sin(t), n.cos(t))
 
             g.flush()
              
@@ -1057,13 +1060,13 @@ Graph
 
 
     Syntax:
-        ``.mark(x, y)``
+        ``g.mark(x, y)``
 
-        ``.mark(x, y, "style")``
+        ``g.mark(x, y, "style")``
 
-        ``.mark(x, y, "style", size)``
+        ``g.mark(x, y, "style", size)``
 
-        ``.mark(x, y, "style", size, color, brush)``
+        ``g.mark(x, y, "style", size, color, brush)``
 
 
     Description:
@@ -1084,11 +1087,11 @@ Graph
 
 
     Syntax:
-        ``.crosshair_action(py_callable)``
+        ``g.crosshair_action(py_callable)``
 
-        ``.crosshair_action(py_callable, vectorflag=0)``
+        ``g.crosshair_action(py_callable, vectorflag=0)``
 
-        ``.crosshair_action("")``
+        ``g.crosshair_action("")``
 
 
     Description:
@@ -1106,9 +1109,9 @@ Graph
         ``procedure_name(i, c, xvec, yvec)`` 
         where ``i`` is the index of the crosshair into the Vector. 
          
-        If you wish the Vector data to persist then you can assign to 
+        If you wish the :class:`Vector` data to persist then you can assign to 
         another objectvar before returning from the ``py_callable``. 
-        Note that one can copy any line to a Vector with this method whereas 
+        Note that one can copy any line to a :class:`Vector` with this method whereas 
         the interpreter controlled ``Graph.dump("expr", y_objectref)`` is 
         limited to the current graphline of an ``addvar`` or ``addexpr``. 
          
@@ -1119,9 +1122,9 @@ Graph
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            g = h.Graph()
+            g = n.Graph()
 
             def crossact(x, y, c):
               '''For g.crosshair_action(crossact)'''
@@ -1135,8 +1138,8 @@ Graph
             g.crosshair_action(crossact_vflag1, 1)
 
             # plot something
-            x = h.Vector(range(50, 101))
-            y = x + 50 # needs NEURON 7.7+
+            x = n.Vector(range(50, 101))
+            y = x + 50  # needs NEURON 7.7+
             y.line(g, x)
 
             # now click/drag on the plotted line and occasionally press a key
@@ -1146,15 +1149,15 @@ Graph
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             # x = 0, 0.01, 0.02, ..., 6.28
-            x = h.Vector(np.arange(0., 6.29, 0.01))
-            y = h.Vector(np.sin(x))
+            x = n.Vector(np.arange(0., 6.29, 0.01))
+            y = n.Vector(np.sin(x))
 
             # create the graph
-            g = h.Graph()
+            g = n.Graph()
             g.size(0, 6.28, -1, 1)
             g.vector(num_elements, x._ref_x[0], y._ref_x[0])
 
@@ -1192,11 +1195,11 @@ Graph
 
 
     Syntax:
-        ``.view_count()``
+        ``g.view_count()``
 
 
     Description:
-        Returns number of views into this scene. (stdrun.hoc removes 
+        Returns number of views into this scene. (``stdrun.hoc`` removes 
         scenes from the ``flush_list`` and ``graphList[]`` when this goes to 
         0. If no other ``objectvar`` points to the scene, it will be 
         freed.) 
@@ -1211,13 +1214,13 @@ Graph
 
 
     Syntax:
-        ``.unmap()``
+        ``g.unmap()``
 
 
     Description:
         Dismiss all windows that are a direct view into this scene. 
         (does not unmap boxes containing scenes.) ``.unmap`` is called 
-        automatically when no hoc object variable references the Graph. 
+        automatically when no object variable references the ``Graph``. 
 
          
 
@@ -1229,7 +1232,7 @@ Graph
 
 
     Syntax:
-        ``.printfile("filename")``
+        ``g.printfile("filename")``
 
 
     Description:
@@ -1250,7 +1253,7 @@ Graph
 
 
     Description:
-        Removes the named menu item from the Graph instance. 
+        Removes the named menu item from the :class:`Graph` instance. 
 
          
 
@@ -1283,7 +1286,7 @@ Graph
         .. code-block::
             python
 
-            g = h.Graph() 
+            g = n.Graph() 
             g.exec_menu("Keep Lines") 
 
 
@@ -1297,7 +1300,7 @@ Graph
 
 
     Syntax:
-        ``.menu_action("label", py_callable)``
+        ``g.menu_action("label", py_callable)``
 
 
     Description:
@@ -1309,12 +1312,12 @@ Graph
         .. code-block::
             python
             
-            from neuron import h, gui
+            from neuron import n, gui
 
             def say_hi():
                 print('Hello world!')
 
-            g = h.Graph()
+            g = n.Graph()
             g.menu_action("Say hello", say_hi)
 
         .. image:: ../images/graph-menuaction.png
@@ -1329,9 +1332,9 @@ Graph
 
 
     Syntax:
-        ``.menu_tool("label", "procedure_name")``
+        ``g.menu_tool("label", "procedure_name")``
 
-        ``.menu_tool("label", "procedure_name", "select_action")``
+        ``g.menu_tool("label", "procedure_name", "select_action")``
 
 
     Description:
@@ -1341,14 +1344,14 @@ Graph
         or in a panel, are in the same telltalegroup, so selecting one deselects the 
         previous selection.) 
          
-        If the third arg exists, the select_action will be executed when 
+        If the third arg exists, the ``select_action`` will be executed when 
         the radioitem is pressed (if it is not already selected). 
          
         When selected, the item will be marked and the label will appear on 
         the window title bar (but not if the Graph is enclosed in a :func:`VBox` ). 
         When this tool is selected, pressing the left mouse 
         button, dragging the mouse, and releasing the left button, will cause 
-        procedure_name to be called with four arguments: type, x, y, keystate. 
+        ``procedure_name`` to be called with four arguments: type, x, y, keystate. 
         x and y are the scene (model) coordinates of the mouse pointer, and type is 
         2 for press, 1 for dragging, and 3 for release. Keystate reflects the 
         state of control (bit 1), shift (bit 2), and meta (bit 3) keys, ie control 
@@ -1362,12 +1365,12 @@ Graph
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
             def on_event(event_type, x, y, keystate):
                 print(event_type, x, y, keystate)
 
-            g = h.Graph()
+            g = n.Graph()
             g.menu_tool("mouse events", on_event)
 
         In this example, you must first select "mouse events" from the Graph's menu,
@@ -1458,30 +1461,51 @@ Graph
         saved for handling the other mouse events. Note that the two arg cases 
         are generally constant between a mouse down and up event. 
          
+        .. list-table:: Case Codes
+            :header-rows: 1
 
-        .. code-block::
-            none
+            * - Case
+                - Description
+            * - 1
+                - Width
+            * - 2
+                - Height
+            * - 3
+                - Point width
+            * - 4
+                - Point height
+            * - 5
+                - Left
+            * - 6
+                - Right
+            * - 7
+                - Bottom
+            * - 8
+                - Top
+            * - 9
+                - Model x distance for one point
+            * - 10
+                - Model y distance for one point
 
-            	case 1: // width 
-            	case 2: // height 
-            	case 3: // point width 
-            	case 4: // point height 
-            	case 5: // left 
-            	case 6: // right 
-            	case 7: // bottom 
-            	case 8: // top 
-            	case 9: // model x distance for one point 
-            	case 10: // model y distance for one point 
+
             The following cases (11 - 14) require a third argument 
             relative location means (0,0) is lower left and (1,1) is upper right. 
-            	case 11: // relative x location (from x model coord) 
-            	case 12: // relative y location (from y model coord) 
-            	case 13: // points from left (from x model coord) 
-            	case 14: // points from top (from y model coord) 
-            		Note: this last is from the top, not from the bottom. 
-            	case 15: // height of font in points 
+        .. list-table:: Case Codes
+            :header-rows: 1
 
-         
+            * - Case
+                - Description
+            * - 11
+                - Relative x location (from x model coord)
+            * - 12
+                - Relative y location (from y model coord)
+            * - 13
+                - Points from left (from x model coord)
+            * - 14
+                - Points from top (from y model coord) 
+                - Note: this last is from the top, not from the bottom.
+            * - 15
+                - Height of font in points         
 
          
 
@@ -1514,7 +1538,7 @@ Graph
 
 
     Description:
-        Add the :func:`Glyph` object to the graph at indicated coordinates (the origin 
+        Add the :class:`Glyph` object to the graph at indicated coordinates (the origin 
         of the Glyph will appear at x,y) first scaling the Glyph and then 
         rotating by the indicated angle in degrees. The last four arguments 
         are optional and have defaults of 1,1,0,0 respectively. Fixtype 
@@ -1538,7 +1562,9 @@ Graph
     Description:
         Adds all the :meth:`Graph.addvar` lines to a list managed by :class:`CVode` which 
         allows the local variable time step method to properly graph the lines. 
-        See the implementation in share/lib/hoc/stdrun.hoc for usage. 
+        See the implementation in 
+        `share/lib/hoc/stdrun.hoc <https://github.com/neuronsimulator/nrn/blob/master/share/lib/hoc/stdrun.hoc>`_
+         for usage. 
 
          
 

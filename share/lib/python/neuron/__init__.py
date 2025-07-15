@@ -109,7 +109,11 @@ embedded = "hoc" in sys.modules
 
 # First, check that the compiled extension (neuron.hoc) was built for this version of
 # Python. If not, fail early and helpfully.
-from ._config_params import supported_python_versions
+from ._config_params import (
+    supported_python_versions,
+    mechanism_prefix,
+    mechanism_suffix,
+)
 
 current_version = "{}.{}".format(*sys.version_info[:2])
 if current_version not in supported_python_versions:
@@ -161,6 +165,47 @@ h = hoc.HocObject()
 
 
 class _NEURON_INTERFACE(hoc.HocObject):
+    """
+    neuron.n
+    ========
+
+    neuron.n is the top-level NEURON inteface, starting in NEURON 9.
+
+    >>> from neuron import n
+    >>> n
+    <TopLevelNEURONInterface>
+
+    Most NEURON classes and functions are defined in the n namespace
+    and can be accessed as follows:
+
+    >>> v = n.Vector(10)
+    >>> soma = n.Section("soma")
+    >>> input = n.IClamp(soma(0.5))
+    >>> n.finitialize(-65)
+
+    Each built-in class has its own type, so for the above definitions we have:
+
+    >>> type(v)
+    <class 'hoc.Vector'>
+    >>> type(soma)
+    <class 'nrn.Section'>
+
+    But since ``IClamp`` is defined by a MOD file:
+
+    >>> type(input)
+    <class 'hoc.HocObject'>
+
+    Other submodules of neuron exist, including rxd and units.
+
+    You can see the functions, classes, etc available inside n via dir(n)
+    and can get help on each via the standard Python help system, e.g.,
+
+    >>> help(n.finitialize)
+
+    The full NEURON documentation is available online at
+    https://nrn.readthedocs.io
+    """
+
     def __repr__(self):
         return "<TopLevelNEURONInterface>"
 
@@ -334,18 +379,16 @@ def load_mechanisms(path, warn_if_already_loaded=True):
     # in case NEURON is assuming a different architecture to Python,
     # we try multiple possibilities
 
-    libname = "libnrnmech.so"
-    libsubdir = ".libs"
+    libname = f"{mechanism_prefix}nrnmech{mechanism_suffix}"
     arch_list = [platform.machine(), "i686", "x86_64", "powerpc", "umac"]
 
     # windows loads nrnmech.dll
     if n.unix_mac_pc() == 3:
         libname = "nrnmech.dll"
-        libsubdir = ""
         arch_list = [""]
 
     for arch in arch_list:
-        lib_path = os.path.join(path, arch, libsubdir, libname)
+        lib_path = os.path.join(path, arch, libname)
         if os.path.exists(lib_path):
             n.nrn_load_dll(lib_path)
             nrn_dll_loaded.append(path)
@@ -437,160 +480,6 @@ def new_hoc_class(name, doc=None):
 
     someclass.__name__ = name
     return someclass
-
-
-# ------------------------------------------------------------------------------
-# Python equivalents to Hoc functions
-# ------------------------------------------------------------------------------
-
-
-def xopen(*args, **kwargs):
-    """
-    Syntax:
-        ``neuron.xopen("hocfile")``
-
-
-        ``neuron.xopen("hocfile", "RCSrevision")``
-
-
-    Description:
-        ``n.xopen()`` executes the commands in ``hocfile``.  This is a convenient way
-        to define user functions and procedures.
-        An optional second argument is the RCS revision number in the form of a
-        string. The RCS file with that revision number is checked out into a
-        temporary file and executed. The temporary file is then removed.  A file
-        of the same primary name is unaffected.
-
-    This function is deprecated and will be removed in a future release.
-    Use ``n.xopen`` instead.
-    """
-    warnings.warn(
-        "neuron.xopen is deprecated; use n.xopen instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return n.xopen(*args, **kwargs)
-
-
-def quit(*args, **kwargs):
-    """
-    Exits the program. Can be used as the action of a button. If edit buffers
-    are open you will be asked if you wish to save them before the final exit.
-
-    This function is deprecated and will be removed in a future release.
-    Use ``n.quit()`` or ``sys.exit()`` instead. (Note: sys.exit will not prompt
-    for saving edit buffers.)
-    """
-    warnings.warn(
-        "neuron.quit() is deprecated; use n.quit() or sys.exit() instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return n.quit(*args, **kwargs)
-
-
-def psection(section):
-    """
-    function psection(section):
-
-    Print info about section in a hoc format which is executable.
-    (length, parent, diameter, membrane information)
-
-    Use section.psection() instead to get a data structure that
-    contains the same information and more.
-
-    This function is deprecated and will be removed in a future
-    release.
-
-    See:
-
-    https://nrn.readthedocs.io/en/latest/python/modelspec/programmatic/topology.html#psection
-    """
-    warnings.warn(
-        "neuron.psection() is deprecated; use print(sec.psection()) instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    n.psection(sec=section)
-
-
-def init():
-    """
-    function init():
-
-    Initialize the simulation kernel.  This should be called before a run(tstop) call.
-
-    ** This function exists for historical purposes. Use in new code is not recommended. **
-
-    Use n.finitialize() instead, which allows you to specify the membrane potential
-    to initialize to; via e.g. n.finitialize(-65)
-
-    This function is deprecated and will be removed in a future
-    release.
-
-    By default, the units used by n.finitialize are in mV, but you can be explicit using
-    NEURON's unit's library, e.g.
-
-    .. code-block:: python
-
-        from neuron.units import mV
-        n.finitialize(-65 * mV)
-
-    https://nrn.readthedocs.io/en/latest/python/simctrl/programmatic.html#finitialize
-
-    """
-    warnings.warn(
-        "neuron.init() is deprecated; use n.init() instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    n.finitialize()
-
-
-def run(tstop):
-    """
-    function run(tstop)
-
-    Run the simulation (advance the solver) until tstop [ms]
-
-    `n.run()` and `n.continuerun(tstop)` are more powerful solutions defined in the `stdrun.hoc` library.
-
-    ** This function exists for historical purposes. Use in new code is not recommended. **
-
-    This function is deprecated and will be removed in a future
-    release.
-
-    For running a simulation, consider doing the following instead:
-
-    Begin your code with
-
-    .. code-block:: python
-
-        from neuron import n
-        from neuron.units import ms, mV
-        n.load_file('stdrun.hoc')
-
-    Then when it is time to initialize and run the simulation:
-
-    .. code-block:: python
-
-        n.finitialize(-65 * mV)
-        n.continuerun(100 * ms)
-
-    where the initial membrane potential and the simulation run time are adjusted as appropriate
-    for your model.
-
-    """
-    warnings.warn(
-        "neuron.run(tstop) is deprecated; use n.stdinit() and n.continuerun(tstop) instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    n("tstop = %g" % tstop)
-    n("while (t < tstop) { fadvance() }")
-    # what about pc.psolve(tstop)?
 
 
 _nrn_dll = None
@@ -1415,6 +1304,10 @@ class DensityMechanism:
     def file(self):
         """source file path"""
         return self.__mt.file()
+
+    @property
+    def name(self):
+        return self.__name
 
     def insert(self, secs):
         """insert this mechanism into a section or iterable of sections"""

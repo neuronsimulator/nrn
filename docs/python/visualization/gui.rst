@@ -13,14 +13,7 @@ as described in the PrintWindowManager section.
  
 This interface is profligate in its use of windows. In the course 
 of a simulation it is expected that windows will be created and 
-destroyed freely. In OpenLook one dismisses a window merely by 
-pressing the right(menu) button in the window header area and 
-selecting dismiss. If your window manager does not support easy 
-dismissing of windows then you *MUST* invoke nrniv with the 
-automatic dismiss button feature. The default widget style is 
-MOTIF but openlook style can be selected. The relevant options are 
- 
-``nrniv -dismissbutton -openlook ...``
+destroyed freely.
      
 
 Scene
@@ -31,9 +24,9 @@ Graphs and Shape windows are instances of views into a scene.
 .. code-block::
     python
     
-    from neuron import h
+    from neuron import n, gui
     
-    g = h.Graph() 
+    g = n.Graph() 
     g.label("here is some text") 
     g.beginline() 
     g.line(100, 50) 
@@ -132,7 +125,7 @@ WholeScene
 ~~~~~~~~~~
 
 Whole Scene: Adjusts the zoom and translation so the view is of the 
-entire scene with a  10% border. 
+entire scene with a 10% border. 
  
 
 SetView
@@ -170,9 +163,9 @@ Browsers are visible lists.
 .. code-block::
     python
         
-    from neuron import h, gui
+    from neuron import n, gui
 
-    f = h.File()
+    f = n.File()
     f.chooser('', 'Example file browser', '*', 'Type file name', 'Cancel')
     while f.chooser():
         print(f.getname())
@@ -207,20 +200,31 @@ location and dragging selects a portion of the string.  After selecting
 a portion of the string, typing a character will replace that portion 
 with the character. 
 
-.. code-block::
-    none
+.. list-table::
+	:header-rows: 1
 
-    	^A beginning of line 
-    	^E end of line 
-    	^F forward one character 
-    	^B backward one character 
-    	^U select whole string 
-    	^W select from cursor to beginning of string 
-    	^D delete next character 
-    	^H delete previous character 
-    	return (normally accept) 
-    	escape, ^G (normally cancel) 
-    	and others 
+	* - Key Code
+	  - Effect
+	* - ^A
+	  - beginning of line
+	* - ^E
+	  - end of line
+	* - ^F
+	  - forward one character
+	* - ^B
+	  - backward one character
+	* - ^U
+	  - select whole string
+	* - ^W
+	  - select from cursor to beginning of string
+	* - ^D
+	  - delete next character
+	* - ^H
+	  - delete previous character
+	* - return
+	  - (normally accept)
+	* - escape, ^G
+	  - (normally cancel)
 
  
 
@@ -241,13 +245,13 @@ See :func:`xpanel` for NEURON functions to generate panels
 .. code-block::
     python
     
-    from neuron import h, gui
+    from neuron import n, gui
     import __main__
 
     # we use refs so NEURON can see these as they change
-    tempstr = h.ref("slider.................")
-    xx = h.ref(0)
-    x = h.ref(0.1)
+    tempstr = n.ref("slider.................")
+    xx = n.ref(0)
+    x = n.ref(0.1)
 
 
     # we can also have NEURON use variable names within __main__
@@ -268,28 +272,28 @@ See :func:`xpanel` for NEURON functions to generate panels
         print(f"state y is {y}")
 
     # pop up example panel 
-    h.xpanel("Example Panel") 
-    h.xbutton("PushButton", on_push_button) 
-    h.xlabel("Following two are for variable x") 
-    h.xvalue("Value Editor", x, 0, lambda: print(x[0])) 
-    h.xvalue("Default Value Editor for variable x", x, 1, lambda: print(x[0]))
-    h.xcheckbox("Checkbox", (__main__, "y"), on_checkbox) 
-    h.xstatebutton("StateButton", (__main__, "z"), lambda: print(f"state z is {z}"))
-    h.xmenu("Example Menu") 
-    h.xbutton("Item 1", lambda: print("selected item 1")) 
-    h.xbutton("Item 2", lambda: print("selected item 2"))
-    h.xcheckbox("Checkbox", (__main__, "y"), on_checkbox) 
-    h.xradiobutton("Radio 1", lambda: on_radio_button(1)) 
-    h.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
-    h.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
-    h.xmenu() 
-    h.xlabel("Following 3 are mutually exclusive") 
-    h.xradiobutton("Radio 1", lambda: on_radio_button(1)) 
-    h.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
-    h.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
-    h.xvarlabel(tempstr)
-    h.xslider(xx, 0, 100, on_slide)
-    h.xpanel()
+    n.xpanel("Example Panel") 
+    n.xbutton("PushButton", on_push_button) 
+    n.xlabel("Following two are for variable x") 
+    n.xvalue("Value Editor", x, 0, lambda: print(x[0])) 
+    n.xvalue("Default Value Editor for variable x", x, 1, lambda: print(x[0]))
+    n.xcheckbox("Checkbox", (__main__, "y"), on_checkbox) 
+    n.xstatebutton("StateButton", (__main__, "z"), lambda: print(f"state z is {z}"))
+    n.xmenu("Example Menu") 
+    n.xbutton("Item 1", lambda: print("selected item 1")) 
+    n.xbutton("Item 2", lambda: print("selected item 2"))
+    n.xcheckbox("Checkbox", (__main__, "y"), on_checkbox) 
+    n.xradiobutton("Radio 1", lambda: on_radio_button(1)) 
+    n.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
+    n.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
+    n.xmenu() 
+    n.xlabel("Following 3 are mutually exclusive") 
+    n.xradiobutton("Radio 1", lambda: on_radio_button(1)) 
+    n.xradiobutton("Radio 2", lambda: on_radio_button(2)) 
+    n.xradiobutton("Radio 3", lambda: on_radio_button(3)) 
+    n.xvarlabel(tempstr)
+    n.xslider(xx, 0, 100, on_slide)
+    n.xpanel()
 
 .. image:: ../images/panel.png
     :align: center
@@ -510,7 +514,7 @@ SaveSelected
 
 SaveSelected: Saves size, location, and values of the panels, graphs, 
 and shapes (but not browsers) appearing on the paper icon in the 
-indicated file.	A .ses suffix is recommended. This is usually more 
+indicated file.	A ``.ses`` suffix is recommended. This is usually more 
 useful than saving all items on the screen since it is normally 
 the case that most of the user effort goes into specifying the 
 graphs and most of the other windows are generated by the interpreter. 
@@ -633,7 +637,7 @@ See :meth:`Graph.crosshair_action`.
 If no crosshair action has been installed, any keypress will print 
 the x,y coordinates of the crosshair in the terminal window. 
  
-Note that a crosshair_action can obtain all the x,y coordinate data 
+Note that a crosshair_action can obtain all the x, y coordinate data 
 for a line. Also the global variables :data:`hoc_cross_x_` and 
 :data:`hoc_cross_y_` contain the last value of the crosshair coordinates. 
  
@@ -662,6 +666,12 @@ allow plotting of variables which may otherwise not be accessible
 to the interpreter because there is no objectvar that references 
 them. However, unfortunately, such graph lines cannot be saved in 
 a session. 
+
+.. note::
+
+    To see Sections created in Python via PlotWhat?, you must select
+    :menuselection:`Show --> Python Sections`
+
  
 If a variable in the browser contains the word [all] in place of 
 an explicit index then the Graph will plot it as a function of 
@@ -678,7 +688,7 @@ a graphed line will copy the y and x coordinates of the line
 into two new :class:`Vector`'s which are referenced by :data:`hoc_obj_`\ [0] and 
 :data:`hoc_obj_`\ [1] respectively. The vectors may be saved to a file by selecting 
 the :ref:`Vector_SavetoFile` item from the Vector menu of the 
-NEURONMainMenu 
+NEURONMainMenu. 
  
 
 PlotRange

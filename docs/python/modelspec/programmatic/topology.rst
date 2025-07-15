@@ -23,10 +23,10 @@ This document describes the construction and manipulation of a stylized topology
     Syntax:
         .. code::
 
-            dend = h.Section()
-            dend = h.Section('dend')
-            dend = h.Section(cell=mycell)
-            dend = h.Section('dend', cell=mycell)
+            dend = n.Section()
+            dend = n.Section('dend')
+            dend = n.Section(cell=mycell)
+            dend = n.Section('dend', cell=mycell)
 
     Description:
         Creates a new section. If no cell argument is specified, the name argument (optional) will be returned via ``str(s)`` or ``s.hname()``; if no name is provided, one will be automatically generated.
@@ -36,10 +36,10 @@ This document describes the construction and manipulation of a stylized topology
 
         .. code::
 
-            soma = h.Section('soma')
-            axon = h.Section('axon')
-            dend = [h.Section(f'dend[{i}]') for i in range(3)]
-            for sec in h.allsec():
+            soma = n.Section('soma')
+            axon = n.Section('axon')
+            dend = [n.Section(f'dend[{i}]') for i in range(3)]
+            for sec in n.allsec():
                 print(sec)
 
 
@@ -67,15 +67,15 @@ This document describes the construction and manipulation of a stylized topology
                 def __init__(self):
                     self.id = self._ids.next()
                     # create the morphology and connect it
-                    self.soma = h.Section('soma', cell=self)
-                    self.dend = h.Section('dend', cell=self)
+                    self.soma = n.Section('soma', cell=self)
+                    self.dend = n.Section('dend', cell=self)
                     self.dend.connect(self.soma(0.5))
 
             # create two cells
             my_cells = [MyCell(), MyCell()]
 
             # print the topology
-            h.topology()
+            n.topology()
             
         Displays:
 
@@ -126,15 +126,15 @@ This document describes the construction and manipulation of a stylized topology
 
         .. code::
 
-            from neuron import h, gui
-            soma = h.Section('soma')
-            axon = h.Section('axon')
-            dend = [h.Section(f'dend[{i}]') for i in range(3)]
+            from neuron import n, gui
+            soma = n.Section('soma')
+            axon = n.Section('axon')
+            dend = [n.Section(f'dend[{i}]') for i in range(3)]
             for sec in dend:
                 sec.connect(soma(1), 0)
 
-            h.topology()
-            s = h.Shape()
+            n.topology()
+            s = n.Shape()
 
         .. image:: ../../images/section-connection.png
             :align: center
@@ -156,20 +156,20 @@ This document describes the construction and manipulation of a stylized topology
 
         .. code::
 
-            from neuron import h
-            sl = [h.Section(f"s_{i}") for i in range(4)]
+            from neuron import n
+            sl = [n.Section(f"s_{i}") for i in range(4)]
             for i, sec in enumerate(sl[1:]):
                 sec.connect(sl[i](1))
 
-            h.topology()
+            n.topology()
             sl[2].disconnect()
-            h.topology()
+            n.topology()
             sl[2].connect(sl[0](.5), 1)
-            h.topology()
+            n.topology()
             sl[2].disconnect()
-            h.topology()
+            n.topology()
             sl[2].connect(sl[0](.5))
-            h.topology()
+            n.topology()
 
 ----
 
@@ -222,10 +222,10 @@ This document describes the construction and manipulation of a stylized topology
         .. code::
 
             run() # sim1 
-            for sec in h.allsec():
+            for sec in n.allsec():
                 sec.nseg *= oddfactor
             run() # sim2 
-            for sec in h.allsec():
+            for sec in n.allsec():
                 sec.nseg /= oddfactor
             run() # sim3 
 
@@ -308,13 +308,13 @@ This document describes the construction and manipulation of a stylized topology
         .. code-block::
             python
 
-            >>> from neuron import h
-            >>> soma = h.Section('soma')
-            >>> dend1 = h.Section('dend1')
-            >>> dend2 = h.Section('dend2')
-            >>> dend3 = h.Section('dend3')
-            >>> dend4 = h.Section('dend4')
-            >>> dend5 = h.Section('dend5')
+            >>> from neuron import n
+            >>> soma = n.Section('soma')
+            >>> dend1 = n.Section('dend1')
+            >>> dend2 = n.Section('dend2')
+            >>> dend3 = n.Section('dend3')
+            >>> dend4 = n.Section('dend4')
+            >>> dend5 = n.Section('dend5')
             >>> dend2.connect(soma)
             dend2
             >>> dend1.connect(soma)
@@ -325,7 +325,7 @@ This document describes the construction and manipulation of a stylized topology
             dend4
             >>> dend5.connect(dend4)
             dend5
-            >>> h.topology()
+            >>> n.topology()
 
             |-|       soma(0-1)
                `|       dend2(0-1)
@@ -337,7 +337,7 @@ This document describes the construction and manipulation of a stylized topology
             1.0
             >>> dend2.subtree()
             [dend2, dend4, dend5, dend3]
-            >>> dend7 = h.Section('dend7')
+            >>> dend7 = n.Section('dend7')
             >>> dend7.subtree()
             [dend7]
             >>> dend1.subtree()
@@ -361,13 +361,13 @@ This document describes the construction and manipulation of a stylized topology
         .. code-block::
             python
 
-            >>> from neuron import h
-            >>> soma = h.Section('soma')
-            >>> dend1 = h.Section('dend1')
-            >>> dend2 = h.Section('dend2')
-            >>> dend3 = h.Section('dend3')
-            >>> dend4 = h.Section('dend4')
-            >>> dend5 = h.Section('dend5')
+            >>> from neuron import n
+            >>> soma = n.Section('soma')
+            >>> dend1 = n.Section('dend1')
+            >>> dend2 = n.Section('dend2')
+            >>> dend3 = n.Section('dend3')
+            >>> dend4 = n.Section('dend4')
+            >>> dend5 = n.Section('dend5')
             >>> dend2.connect(soma)
             dend2
             >>> dend1.connect(soma)
@@ -378,7 +378,7 @@ This document describes the construction and manipulation of a stylized topology
             dend4
             >>> dend5.connect(dend4)
             dend5
-            >>> h.topology()
+            >>> n.topology()
 
             |-|       soma(0-1)
                `|       dend2(0-1)
@@ -390,7 +390,7 @@ This document describes the construction and manipulation of a stylized topology
             1.0
             >>> dend2.wholetree()
             [soma, dend1, dend2, dend4, dend5, dend3]
-            >>> dend7 = h.Section('dend7')
+            >>> dend7 = n.Section('dend7')
             >>> dend7.wholetree()
             [dend7]
             >>> soma.wholetree()
@@ -403,7 +403,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``h.topology()``
+        ``n.topology()``
 
 
     Description:
@@ -420,7 +420,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``h.delete_section(sec=sec)``
+        ``n.delete_section(sec=sec)``
 
 
     Description:
@@ -429,8 +429,8 @@ This document describes the construction and manipulation of a stylized topology
 
         .. code::
 
-            for sec in h.allsec():
-                h.delete_section(sec=sec)
+            for sec in n.allsec():
+                n.delete_section(sec=sec)
  
         will remove all sections. 
          
@@ -457,7 +457,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``boolean = h.section_exists("name", [index], [object])``
+        ``boolean = n.section_exists("name", [index], [object])``
 
 
     Description:
@@ -482,7 +482,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``h.section_owner(sec=section)``
+        ``n.section_owner(sec=section)``
 
 
     Description:
@@ -501,7 +501,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``h.disconnect(sec=section)``
+        ``n.disconnect(sec=section)``
 
 
     Description:
@@ -521,7 +521,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``h.issection("regular expression", sec=section)``
+        ``n.issection("regular expression", sec=section)``
 
 
     Description:
@@ -546,20 +546,20 @@ This document describes the construction and manipulation of a stylized topology
 
         .. code::
 
-            from neuron import h, gui
-            soma = h.Section('soma')
-            axon = h.Section('axon')
-            dend = [h.Section(f'dend[{i}]') for i in range(3)]
-            for section in h.allsec():
-                if h.issection('s.*', sec=section):
+            from neuron import n, gui
+            soma = n.Section('soma')
+            axon = n.Section('axon')
+            dend = [n.Section(f'dend[{i}]') for i in range(3)]
+            for section in n.allsec():
+                if n.issection('s.*', sec=section):
                     print(section)
 
         will print ``soma`` 
 
         .. code::
 
-            for section in h.allsec():
-                if h.issection('d.*2]', sec=section):
+            for section in n.allsec():
+                if n.issection('d.*2]', sec=section):
                     print(section)
 
         will print ``dend[2]`` 
@@ -567,8 +567,8 @@ This document describes the construction and manipulation of a stylized topology
         .. code-block::
             none
 
-            for section in h.allsec():
-                if h.issection(".*a.*", sec=section):
+            for section in n.allsec():
+                if n.issection(".*a.*", sec=section):
                     print(section)
 
         will print all names which contain the letter "a" 
@@ -597,7 +597,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``h.ismembrane("mechanism", sec=section)``
+        ``n.ismembrane("mechanism", sec=section)``
 
 
     Description:
@@ -611,8 +611,8 @@ This document describes the construction and manipulation of a stylized topology
         .. code::
 
 
-            for sec in h.allsec():
-                if h.ismembrane('hh', sec=sec) and h.ismembrane('ca_ion', sec=sec):
+            for sec in n.allsec():
+                if n.ismembrane('hh', sec=sec) and n.ismembrane('ca_ion', sec=sec):
                     print(sec)
 
         will print the names of all the sections which contain both Hodgkin-Huxley and Calcium ions. 
@@ -631,12 +631,12 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``h.sectionname(strvar, sec=section)``
+        ``n.sectionname(strvar, sec=section)``
 
 
     Description:
         The name of ``section`` is placed in *strvar*, a HOC string reference.
-        Such a string reference may be created by: ``strvar = h.ref('')``; it's value is ``strvar[0]``.
+        Such a string reference may be created by: ``strvar = n.ref('')``; it's value is ``strvar[0]``.
          
         This function is superseded by the easier to use, ``str(section)``.
         
@@ -649,33 +649,33 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``h.secname(sec=section)``
+        ``n.secname(sec=section)``
 
 
     Description:
         This function is superseded by the easier to use, ``str(section)``. The below examples
-        can be more cleanly written as: ``s = str(soma)``, ``print(soma)``, and ``for sec in h.allsec(): for seg in sec: print(seg)``.
+        can be more cleanly written as: ``s = str(soma)``, ``print(soma)``, and ``for sec in n.allsec(): for seg in sec: print(seg)``.
 
         Returns the name of ``section``. Usage is 
 
         .. code::
 
-            s = h.secname(sec=soma)
+            s = n.secname(sec=soma)
 
         or 
 
         .. code::
 
-            print(h.secname(sec=soma))
+            print(n.secname(sec=soma))
 
         or 
 
         .. code::
 
 
-            for sec in h.allsec():
+            for sec in n.allsec():
                 for seg in sec:
-                    print(f'{h.secname(sec=sec)}({seg.x})')  # same as print(seg)
+                    print(f'{n.secname(sec=sec)}({seg.x})')  # same as print(seg)
 
          
 
@@ -687,7 +687,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``h.psection(sec=section)``
+        ``n.psection(sec=section)``
 
 
     Description:
@@ -697,7 +697,7 @@ This document describes the construction and manipulation of a stylized topology
     .. note::
 
         Beginning in NEURON 7.6, ``section.psection()`` returns a Python dictionary
-        with all the information displayed by h.psection and more (e.g.
+        with all the information displayed by n.psection and more (e.g.
         sec.psection() returns information about reaction-diffusion kinetics).
          
 
@@ -710,7 +710,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``h.parent_section(x, sec=section)``
+        ``n.parent_section(x, sec=section)``
 
 
     Description:
@@ -731,7 +731,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``h.parent_node(x, sec=section)``
+        ``n.parent_node(x, sec=section)``
 
 
     Description:
@@ -750,7 +750,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``y = h.parent_connection(sec=child)``
+        ``y = n.parent_connection(sec=child)``
 
 
     Description:
@@ -778,7 +778,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``y = h.section_orientation(sec=child)``
+        ``y = n.section_orientation(sec=child)``
 
     Description:
         Return the end (0 or 1) which connects to the parent. This is the 

@@ -10,24 +10,33 @@ List
     List of objects 
 
     Syntax:
-        ``h.List()``
+        ``n.List()``
 
-        ``h.List("templatename")``
+        ``n.List("templatename")``
 
 
     Description:
-        The List class provides useful tools for creating and manipulating lists of objects. 
-        For example, if you have 
-        a network of cells connected at synapses and each synapse is a separate object, you may want to use 
-        lists to help organize the network.  You could create one list of all pre-synaptic connections and 
-        another of post-synaptic connections, as well as a list of all the connecting cells. 
+        The ``List`` class provides useful tools for creating and manipulating lists of objects. 
+        In many cases, e.g., if you have a network of cells connected at synapses and each synapse 
+        is a separate object, you might want to store such information (pre-syns, post-syns, cells)
+        using regular Python lists.
+
+        Besides interacting with legacy code, the NEURON ``List`` class provides two key features
+        not available in Python lists:
+
+        1. The ability to create a dynamic ``List`` of all the object instances of a template (e.g.,
+           all instances of an ``"IClamp"`` or of a cell class.)
+        2. The ability to create a GUI browser for the list, which can be used to select and interact
+           with the objects in the list.
 
 
-        ``h.List()`` 
+        There are two ways of invoking the constructor:
+
+        ``n.List()`` 
             Create an empty list. Objects added to the list are referenced. 
             Objects removed from the list are unreferenced. 
 
-        ``h.List("templatename")`` 
+        ``n.List("templatename")`` 
             Create a list of all the object instances of the template. 
             These object instances are NOT referenced and therefore the list 
             dynamically changes as objects of template instances are 
@@ -39,14 +48,14 @@ List
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
 
-            clamps = h.IClamp(), h.IClamp(), h.IClamp()
+            clamps = n.IClamp(), n.IClamp(), n.IClamp()
 
-            all_iclamps = h.List('IClamp')
+            all_iclamps = n.List('IClamp')
             print(f'There are initially {len(all_iclamps)} IClamp objects.') # 3
 
-            another = h.IClamp()
+            another = n.IClamp()
 
             print(f'There are now {len(all_iclamps)} IClamp objects.')       # 4
 
@@ -60,7 +69,7 @@ List
 
 
     Syntax:
-        ``.append(object)``
+        ``l.append(object)``
 
 
     Description:
@@ -76,7 +85,7 @@ List
 
 
     Syntax:
-        ``.prepend(object)``
+        ``l.prepend(object)``
 
 
     Description:
@@ -94,7 +103,7 @@ List
 
 
     Syntax:
-        ``.insrt(i, object)``
+        ``l.insrt(i, object)``
 
 
     Description:
@@ -114,7 +123,7 @@ List
 
 
     Syntax:
-        ``.remove(i)``
+        ``l.remove(i)``
 
 
     Description:
@@ -132,7 +141,7 @@ List
 
 
     Syntax:
-        ``.remove_all()``
+        ``l.remove_all()``
 
 
     Description:
@@ -148,13 +157,16 @@ List
 
 
     Syntax:
-        ``.index(object)``
+        ``l.index(object)``
 
 
     Description:
-        Return the index of the object in the list. Return a -1 if the 
-        object is not in the list. 
+        Return the index of the object in the ``List``. Return a -1 if the 
+        object is not in the ``List``.
 
+        This is approximately analogous to the Python list method ``.index()``,
+        except that the method for Python lists raises a ``ValueError`` if the
+        object is not in the list.
          
 
 ----
@@ -165,7 +177,7 @@ List
 
 
     Syntax:
-        ``.count()``
+        ``l.count()``
 
 
     Description:
@@ -183,25 +195,25 @@ List
 
 
     Syntax:
-        ``.browser()``
+        ``l.browser()``
 
-        ``.browser("title", "strname")``
+        ``l.browser("title", "strname")``
 
-        ``.browser("title", py_callable)``
+        ``l.browser("title", py_callable)``
 
 
     Description:
 
 
-        ``.browser(["title"], ["strname"])`` 
+        ``l.browser(["title"], ["strname"])`` 
             Make the list visible on the screen. 
             The items are normally the object names but if the second arg is 
             present and is the name of a string symbol that is defined 
             in the object's	template, then that string is displayed in the list. 
 
-        ``.browser("title", py_callable)`` 
+        ``l.browser("title", py_callable)`` 
             Browser labels are computed. For each item, ``py_callable`` is executed 
-            with ``h.hoc_ac_`` set to the index of the item. Some objects 
+            with ``n.hoc_ac_`` set to the index of the item. Some objects 
             notify the List when they change, ie point processes when they change 
             their location notify the list. 
 
@@ -210,14 +222,14 @@ List
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            my_list = h.List()
+            my_list = n.List()
 
             for word in ['Python', 'HOC', 'NEURON', 'NMODL']:
-                my_list.append(h.String(word))
+                my_list.append(n.String(word))
 
-            my_list.browser('title', 's')   # h.String objects have an s attribute that returns the Python string
+            my_list.browser('title', 's')   # n.String objects have an s attribute that returns the Python string
 
 
         .. image:: ../../images/list-browser1.png
@@ -228,14 +240,14 @@ List
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            my_list = h.List()
+            my_list = n.List()
             for word in ['NEURON', 'HOC', 'Python', 'NMODL']:
-                my_list.append(h.String(word))
+                my_list.append(n.String(word))
 
             def label_with_lengths():
-                item_id = h.hoc_ac_
+                item_id = n.hoc_ac_
                 item = my_list[item_id].s
                 return f'{item} ({len(item)})'
 
@@ -249,7 +261,7 @@ List
         .. code-block::
             python
 
-            my_list.append(h.String('Neuroscience'))
+            my_list.append(n.String('Neuroscience'))
 
         .. image:: ../../images/list-browser2b.png
             :align: center
@@ -262,7 +274,7 @@ List
 
 
     Syntax:
-        ``.selected()``
+        ``l.selected()``
 
 
     Description:
@@ -281,7 +293,7 @@ List
 
 
     Syntax:
-        ``.select(i)``
+        ``l.select(i)``
 
 
     Description:
@@ -323,16 +335,16 @@ List
 
 
     Syntax:
-        ``list.select_action(command)``
+        ``l.select_action(command)``
 
-        ``list.select_action(command, 0or1)``
+        ``l.select_action(command, False or True)``
 
 
     Description:
         Execute a command (a Python funciton handle) when an item in the 
         list :meth:`List.browser` is selected by single clicking the mouse. 
          
-        If the second arg exists and is 1 (or True) then the action is only called on 
+        If the second arg exists and is True (or 1) then the action is only called on 
         the mouse button release. If nothing is selected at that time then 
         :data:`hoc_ac_` = -1 
 
@@ -341,9 +353,9 @@ List
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            my_list = h.List()
+            my_list = n.List()
 
             def on_click():
                 item_id = my_list.selected()
@@ -352,7 +364,7 @@ List
 
 
             for word in ['Python', 'HOC', 'NEURON', 'NMODL']:
-                my_list.append(h.String(word))
+                my_list.append(n.String(word))
 
             my_list.browser('title', 's')
             my_list.select_action(on_click)
@@ -371,7 +383,7 @@ List
 
 
     Syntax:
-        ``list.accept_action(command)``
+        ``l.accept_action(command)``
 
 
     Description:
@@ -391,9 +403,9 @@ List
 
 
     Syntax:
-        ``.object(i)``
+        ``l.object(i)``
 
-        ``.o(i)``
+        ``l.o(i)``
 
 
     Description:
@@ -411,9 +423,9 @@ List
 
 
     Syntax:
-        ``.object(i)``
+        ``l.object(i)``
 
-        ``.o(i)``
+        ``l.o(i)``
 
 
     Description:

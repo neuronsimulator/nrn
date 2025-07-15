@@ -9,39 +9,33 @@ Vector
 .. class:: Vector
 
          
-    This class was implemented by 
-
-    .. code-block::
-        none
-
-        ----------------------------- 
-        Zach Mainen and Michael Hines
-        -----------------------------
+    This class was implemented by Zach Mainen and Michael Hines.
          
     Syntax:
-        ``obj = h.Vector()``
+        ``obj = n.Vector()``
 
-        ``obj = h.Vector(size)``
+        ``obj = n.Vector(size)``
 
-        ``obj = h.Vector(size, init)``
+        ``obj = n.Vector(size, init)``
         
-        ``obj = h.Vector(python_iterable)``
+        ``obj = n.Vector(python_iterable)``
 
     Description:
 
-        NEURON's Vector class provides functionality that is similar (and partly interchangeable) with a numpy
+        NEURON's Vector class provides functionality that is similar (and partly interchangeable) with a ``numpy``
         one-dimensional array of doubles.  
-        The reason for the continued use of Vector is both due to back-compatibility and due to the many faster C-level
-        extensions that have been written as NMOD programs that make use of this class.
+        The reason for the continued use of ``Vector`` is both due to back-compatibility and due to the many faster C-level
+        extensions that have been written as NMODL programs that make use of this class.
 
-        A Vector is itself an iterable and can be used in any context that takes an iterable, e.g.,
+        A ``Vector`` is itself an iterable and can be used in any context that takes an iterable, e.g.,
 
         .. code-block::
            python
 
            for x in vec: print(x)
            [x for x in vec]
-           numpy.array(vec)
+           np.array(vec)
+           plt.plot(t_vec, v_vec)
 
         A Vector object created with this class can be thought of as 
         containing a  one dimensional x array with elements of type float.
@@ -54,10 +48,10 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector([0, 1, 2, 3, 4, 5, 6, 7, 8])
+            vec = n.Vector([0, 1, 2, 3, 4, 5, 6, 7, 8])
             new_vec = v[2:6]
 
-        will assign new_vec as a vector containing the values [2, 3, 4, 5]
+        will assign ``new_vec`` to be a ``Vector`` containing the values [2, 3, 4, 5]
 
         .. code-block::
             python
@@ -66,7 +60,7 @@ Vector
 
         will update the values at indices 5,6 resulting in ``vec = [0, 1, 2, 3, 4, 1, 2, 7, 8]``
 
-        A vector can be created with length *size* and with each element set to the value of *init* or can be created using
+        A ``Vector`` can be created with length *size* and with each element set to the value of *init* or can be created using
         a Python iterable.
          
         Vector methods that modify the elements are generally of the form 
@@ -98,16 +92,16 @@ Vector
     Examples:
 
         .. code-block::
-            none
+            python
 
-            vec = h.Vector(20,5)
+            vec = n.Vector(20, 5)
 
         will create a vector with 20 indices, each having the value of 5. 
 
         .. code-block::
             python
 
-            vec1 = h.Vector()
+            vec1 = n.Vector()
 
         will create a vector with 0 size.  It is seldom 
         necessary to specify a size for a Vector since most operations, if necessary, 
@@ -116,7 +110,7 @@ Vector
         .. code-block::
             python
             
-            v = h.Vector([1, 2, 3])
+            v = n.Vector([1, 2, 3])
         
         will create a vector of length 3 whose entries are: 1, 2, and 3. The
         constructor takes any Python iterable. In particular, it also works
@@ -125,10 +119,10 @@ Vector
         .. code-block::
             python
             
-            import numpy
+            import numpy as np
             
-            x = numpy.linspace(0, 2 * numpy.pi, 50)
-            y = h.Vector(numpy.sin(x))
+            x = np.linspace(0, 2 * np.pi, 50)
+            y = n.Vector(np.sin(x))
         
         produces a vector ``y`` of length 50 corresponding to the sine of evenly
         spaced points between 0 and 2 pi, inclusive.
@@ -164,12 +158,12 @@ Vector
         .. code-block::
             python
 
-            h.xpanel("show a field editor") 
-            h.xpvalue("last element", vec._ref_x[len(vec)-1]) 
-            h.xpanel() 
+            n.xpanel("show a field editor") 
+            n.xpvalue("last element", vec._ref_x[len(vec)-1]) 
+            n.xpanel() 
 
         Note, however, that there is a potential difficulty with the :func:`xpvalue` field 
-        editor since, if vec is resized to be larger than vec.buffer_size() a reallocation of the
+        editor since, if vec is resized to be larger than :meth:`Vector.buffer_size` a reallocation of the
         memory will cause the pointer to be invalid. In this case, the field editor will display the string, "Free'd". 
 
     .. warning::
@@ -186,7 +180,7 @@ Vector
 
 
     Description:
-        Deprecated in favor of len(vec); note that ``len(vec) == vec.size()``
+        Deprecated in favor of ``len(vec)``; note that ``len(vec) == vec.size()``
         Return the number of elements in the vector. The last element has the index: 
         ``vec.size() - 1`` which can be abbreviated using -1 as above.
 
@@ -212,7 +206,7 @@ Vector
         freed and reallocated if the size needed is greater than the memory storage 
         previously allocated to the vector. Thus the memory used by vectors 
         tends to grow but not shrink. To reduce the memory used by a vector, one 
-        can explicitly call :func:`buffer_size` . 
+        can explicitly call :meth:`Vector.buffer_size` . 
          
     .. seealso::
         :meth:`Vector.buffer_size`
@@ -225,15 +219,15 @@ Vector
         ``obj = vsrcdest.resize(new_size)``
 
     Description:
-        Resize the vector.  If the vector is made smaller, then trailing elements 
+        Resize the ``Vector``.  If the ``Vector`` is made smaller, then trailing elements 
         will be zeroed.  If it is expanded, the new elements will be initialized to 0.0;
         original elements will remain unchanged. 
          
         Warning: Any function that 
-        resizes the vector to a larger size than its available space will reallocate and thereby
+        resizes the ``Vector`` to a larger size than its available space will reallocate and thereby
         make existing pointers to the elements invalid 
         (see note in :meth:`Vector.size`). 
-        For example, resizing vectors that have been plotted will remove that vector 
+        For example, resizing Vectors that have been plotted will remove that Vector 
         from the plot list. Other functions may not be so forgiving and result in 
         a memory error (segmentation violation or unhandled exception). 
 
@@ -242,10 +236,10 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(20,5) 
-            vec.resize(30) # Appends 10 elements, each having a value of 0
+            vec = n.Vector(20, 5) 
+            vec.resize(30)  # Appends 10 elements, each having a value of 0
             vec.printf()
-            vec.resize(10) # removes the last 20 elements; values of the first 10 elements are unchanged
+            vec.resize(10)  # removes the last 20 elements; values of the first 10 elements are unchanged
         
     .. seealso::
         :meth:`Vector.buffer_size`
@@ -278,7 +272,7 @@ Vector
         .. code-block::
             python
 
-            y = h.Vector(10) 
+            y = n.Vector(10) 
             print(len(y))
             print(y.buffer_size())
             y.resize(5) 
@@ -298,17 +292,19 @@ Vector
     Description:
         Return the value of a vector element index.
 
+        It is simpler in Python to write ``x = vec[index]`` instead.
+
 ----
 
 .. method:: Vector.set
 
 
     Syntax:
-        ``obj = vsrcdest.set(index,value)``
+        ``obj = vec.set(index, value)``
 
 
     Description:
-        Set vector element index to value.  Equivalent to ``vec[i] = expr`` notation.
+        Set vector element index to value.  Equivalent to ``vec[i] = valu`` notation.
 
 ----
 
@@ -329,11 +325,19 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(20,5) 
-            vec.fill(9,2,7) 
+            vec = n.Vector(20, 5) 
+            vec.fill(9, 2, 7) 
 
-        assigns 9 to vec[2] through vec[7] 
-        (a total of 6 elements) 
+        assigns 9 to ``vec[2]`` through ``vec[7]`` 
+        (a total of 6 = 7 - 2 + 1 elements) 
+
+        An alternative to the last line using regular Python syntax would be to use slicing:
+        .. code-block::
+            python
+
+            vec[2:8] = [9] * 6
+        
+        (The slice index is 2:8 because the beginning is included but the end is not.)
 
     .. seealso::
         :meth:`Vector.indgen`, :meth:`Vector.append`
@@ -357,8 +361,8 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
-            vec = h.Vector() 
+            from neuron import n
+            vec = n.Vector() 
             print(vec.label())
             vec.label("hello") 
             print(vec.label())
@@ -382,17 +386,18 @@ Vector
 
 
     Description:
-        Save the stream of values of "*var*" during a simulation into the vdest vector. 
-        Previous record and play specifications of this Vector (if any) are destroyed. 
+        Save the stream of values of "*var*" during a simulation into the ``vdest`` vector. 
+        Previous record and play specifications of this :class:`Vector` (if any) are destroyed. 
          
         Details: 
-        NEURON pointers in python are handled using the _ref_ syntax.  e.g., soma(0.5)._ref_v
+
+        NEURON pointers in python are handled using the ``_ref_`` syntax.  e.g., ``soma(0.5)._ref_v``
     To save a scalar from NEURON that scalar must exist in NEURON's scope.
     
 
-        Transfers take place on exit from ``finitialize()`` and on exit from ``fadvance()``. 
-        At the end of ``finitialize()``, ``v[0] = var``. At the end of ``fadvance``, 
-        *var* will be saved if ``t`` (after being incremented by ``fadvance``) 
+        Transfers take place on exit from :func:`finitialize` and on exit from :func:`fadvance`. 
+        At the end of :func:`finitialize`, ``v[0] = var``. At the end of :func:`fadvance`, 
+        *var* will be saved if ``t`` (after being incremented by :func:`fadvance`) 
         is equal or greater than the associated time of the 
         next index. The system maintains a set of record vectors and the vector will 
         be removed from the list if the vector or var is destroyed. 
@@ -423,7 +428,7 @@ Vector
         local step method but will use it for multiple threads. It is therefore 
         a good idea to supply it if possible. 
 
-        Prior to version 7.7, the record methode returned 1.0 .
+        Prior to version 7.7, the record method returned 1.0 .
 
     .. warning::
         record/play behavior is reasonable but surprising if :data:`dt` is greater than 
@@ -439,8 +444,8 @@ Vector
         .. code-block::
             python
 
-            dv = h.Vector().record(terminal(0.5)._ref_v) 
-            h.run() 
+            dv = n.Vector().record(terminal(0.5)._ref_v) 
+            n.run() 
 
         Note that the next "run" will overwrite the previous time course stored 
         in the vector as it automatically performs an "init" before running a simulation.
@@ -448,15 +453,15 @@ Vector
         To remove 
         dv from the list of record vectors, the easiest method is to destroy the instance 
         with 
-        ``dv = h.Vector()`` 
+        ``dv = n.Vector()`` 
 
         Any of the following makes NEURON load its standard run library:
 
         - starting NEURON by executing `nrngui -python`
         - executing any of the following statements:
           - from neuron import gui    # also brings up the NEURON Main Menu
-          - h.load_file("noload.hoc") # does not bring up the NEURON Main Menu
-          - h.load_file("stdrun.hoc") # does not bring up the NEURON Main Menu
+          - n.load_file("noload.hoc") # does not bring up the NEURON Main Menu
+          - n.load_file("stdrun.hoc") # does not bring up the NEURON Main Menu
 
 
     .. seealso::
@@ -540,8 +545,8 @@ Vector
         have different t values (if the last two values are at the same time, 
         the constant average will be returned). 
          
-        The indices_of_discontinuities_vector argument is used to 
-        specifying the indices in tvec of the times at which discrete events should 
+        The ``indices_of_discontinuities_vector`` argument is used to 
+        specify the indices in tvec of the times at which discrete events should 
         be used to notify that a discontinuity in the function, or any derivative 
         of the function, occurs. Presently, linear interpolation is used to 
         determine var(t) in the interval between these discontinuities (instead of 
@@ -567,25 +572,25 @@ Vector
     Example of playing into an Iclamp for varying current:
 
         .. code-block::
-                  python
-        
-                  from neuron import h
-                  import pylab as plt, numpy as np
-                  h.load_file('stdrun.hoc')
-                  sec = h.Section('sec')
-                  sec.insert(h.pas)
-                  inp = np.zeros(500)
-                  inp[50:250] = 1
-                  pvec = h.Vector().from_python(inp)
-                  stim = h.IClamp(sec(0.5))
-                  stim.dur = 1e9
-                  pvec.play(stim, stim._ref_amp, True)
-                  rd = {k:h.Vector().record(v) for k,v in zip(['t', 'v', 'stim_i', 'amp'],
-                                                              [h._ref_t, sec(0.5)._ref_v, stim._ref_i, stim._ref_amp])}
-                  h.v_init, h.tstop= -70, 500
-                  h.run()
-                  plt.plot(rd['t'], rd['v'])
-                  plt.show()
+            python
+
+            from neuron import n
+            import pylab as plt, numpy as np
+            n.load_file('stdrun.hoc')
+            sec = n.Section('sec')
+            sec.insert(n.pas)
+            inp = np.zeros(500)
+            inp[50:250] = 1
+            pvec = n.Vector().from_python(inp)
+            stim = n.IClamp(sec(0.5))
+            stim.dur = 1e9
+            pvec.play(stim, stim._ref_amp, True)
+            rd = {k:n.Vector().record(v) for k,v in zip(['t', 'v', 'stim_i', 'amp'],
+                                                        [n._ref_t, sec(0.5)._ref_v, stim._ref_i, stim._ref_amp])}
+            n.v_init, n.tstop= -70, 500
+            n.run()
+            plt.plot(rd['t'], rd['v'])
+            plt.show()
 
             
     Example of playing into a segment's ina:
@@ -593,18 +598,18 @@ Vector
         .. code-block::
             python
         
-            from neuron import h, gui
+            from neuron import n, gui
             import numpy as np
 
             # create a geometry
-            soma = h.Section('soma')
+            soma = n.Section('soma')
 
             # insert variables for sodium ions
-            soma.insert(h.na_ion)
+            soma.insert(n.na_ion)
 
             # driving stimulus
-            t = h.Vector(np.linspace(0, 2 * np.pi, 50))
-            y = h.Vector(np.sin(t))
+            t = n.Vector(np.linspace(0, 2 * np.pi, 50))
+            y = n.Vector(np.sin(t))
 
             # play the stimulus into soma(0.5)'s ina
             # the last True means to interpolate; it's not the default, but unless
@@ -612,14 +617,14 @@ Vector
             y.play(soma(0.5)._ref_ina, t, True)
 
             # setup a graph
-            g = h.Graph()
+            g = n.Graph()
             g.addvar("ina", soma(0.5)._ref_ina)
             g.size(0, 6.28, -1, 1)
-            h.graphList[0].append(g)
+            n.graphList[0].append(g)
 
             # run the simulation
-            h.finitialize(-65)
-            h.continuerun(6.28)
+            n.finitialize(-65)
+            n.continuerun(6.28)
 
 
     A runnable example of using this method for a time-varying current clamp is available
@@ -676,7 +681,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(100) 
+            vec = n.Vector(100) 
             vec.indgen(5) 
 
         creates a vector with 100 elements going from 0 to 495 in increments of 5. 
@@ -694,6 +699,18 @@ Vector
             vec.indgen(90, 1000, 30) 
 
         expands the vector to 31 elements going from 90 to 990 in increments of 30. 
+        This is roughly equivalent to the Python code:
+
+        .. code-block::
+            python
+
+            vec = n.Vector(range(90, 1000, 30))
+
+        In this case, ``range`` returns a generator and is very memory-efficient.
+        By contrast, if we used ``np.arange``, that would create a ``numpy`` array
+        which would then be copied over to a new :class:`Vector` object. In most
+        cases, readability is a bigger concern than memory and time efficiency,
+        but you must decide for yourself which is more important.
 
     .. seealso::
         :meth:`Vector.fill`, :meth:`Vector.append`
@@ -715,11 +732,11 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(10,4) 
-            vec1 = h.Vector(10,5) 
-            vec2 = h.Vector(10,6) 
+            vec = n.Vector(10,4) 
+            vec1 = n.Vector(10,5) 
+            vec2 = n.Vector(10,6) 
             vec.append(vec1, vec2, 7, 8, 9) 
-            vec.append(h.Vector([4,1,2,7]))
+            vec.append(n.Vector([4,1,2,7]))
 
         turns ``vec`` into a 37 element vector, whose first ten elements = 4, whose 
         second ten elements = 5, whose third ten elements = 6, and whose 31st, 32nd, 
@@ -773,10 +790,10 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(range(0, 49, 5)) 
+            vec = n.Vector(range(0, 49, 5)) 
             vec.contains(30) 
 
-        returns True, meaning the vector does contain an element whose value is 30. 
+        returns True, meaning the ``Vector`` does contain an element whose value is 30. 
 
         .. code-block::
             python
@@ -787,8 +804,8 @@ Vector
 
     .. note::
     
-        An h.Vector is a Python iterable, so you can also use Python's ``in``
-        keyword: ``5 in h.Vector([1, 5])`` returns True.
+        An n.Vector is a Python iterable, so you can also use Python's ``in``
+        keyword: ``5 in n.Vector([1, 5])`` returns ``True``.
     
         
          
@@ -817,31 +834,34 @@ Vector
 
 
     Description:
-        Copies some or all of *vsrc* into *vdest*. 
-        If the dest_start argument is present (an integer index), 
-        source elements (beginning at *src*``[0]``) 
-        are copied to  *vdest* beginning at *dest*``[dest_start]``, 
-        *Src_start* and *src_end* here refer to indices of *vsrcx*, 
-        not *vdest*.  If *vdest* is too small for the size required by *vsrc* and the 
+        Copies some or all of ``vsrc`` into ``vdest``. 
+        This function can be slightly more efficient than slicing or :meth:`Vector.c` since 
+        if vdest contains enough space, memory will not have to 
+        be allocated for it. Also it is convenient for those cases 
+        in which ``vdest`` is being plotted and therefore reallocation 
+        of memory (with consequent removal of vdest from the Graph) 
+        is to be explicitly avoided. 
+
+
+        If the ``dest_start`` argument is present (an integer index), 
+        source elements (beginning at ``src[0]``) 
+        are copied to ``vdest`` beginning at ``dest[dest_start]``, 
+        ``src_start`` and ``src_end`` here refer to indices of ``vsrc``, 
+        not ``vdest``. If ``vdest`` is too small for the size required by ``vsrc`` and the 
         arguments, then it is resized to hold the data. 
-        If the *dest* is larger than required AND there is more than one 
-        argument the *dest* is NOT resized. 
+        If the ``dest`` is larger than required AND there is more than one 
+        argument the ``dest`` is NOT resized. 
         One may use -1 for the 
         src_end argument to specify the entire size (instead of the tedious ``len(src)-1``) 
          
-        If the second (and third) argument is a vector, 
-        the elements of that vector are the 
-        indices of the vsrc to be copied to the same indices of the vdest. 
-        In this case the vdest is not resized and any indices that are out of 
-        range of either vsrc or vdest are ignored. This function allows mapping 
+        If the second (and third) argument is a :class:`Vector`, 
+        the elements of that ``Vector`` are the 
+        indices of the ``vsrc`` to be copied to the same indices of the ``vdest``. 
+        In this case, the ``vdest`` is not resized and any indices that are out of 
+        range of either ``vsrc`` or ``vdest`` are ignored. This function allows mapping 
         of a subset of a source vector into the subset of a destination vector. 
          
-        This function can be slightly more efficient than :func:`c` since 
-        if vdest contains enough space, memory will not have to 
-        be allocated for it. Also it is convenient for those cases 
-        in which vdest is being plotted and therefore reallocation 
-        of memory (with consequent removal of vdest from the Graph) 
-        is to be explicitly avoided. 
+
 
     Example:
         To copy the odd elements use:
@@ -850,10 +870,10 @@ Vector
             python
         
  
-            v1 = h.Vector(range(30))
+            v1 = n.Vector(range(30))
             v1.printf() 
             
-            v2 = h.Vector() 
+            v2 = n.Vector() 
             v2.copy(v1, 0, 1, -1, 1, 2) 
             v2.printf() 
 
@@ -862,14 +882,12 @@ Vector
         .. code-block::
             python
             
-            v1 = h.Vector(15) 
-            v1.indgen() 
+            v1 = n.Vector(range(15)) 
             v1.printf() 
-            v2 = h.Vector(15) 
-            v2.indgen(10) 
+            v2 = n.Vector(range(0, 150, 10)) 
             v2.printf() 
             
-            v3 = h.Vector() 
+            v3 = n.Vector() 
             v3.copy(v1, 0, 0, -1, 2, 1) 
             v3.copy(v2, 1, 0, -1, 2, 1) 
             v3.printf()
@@ -880,9 +898,8 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(100,10) 
-            vec1 = h.Vector() 
-            vec1.indgen(5,105,10) 
+            vec = n.Vector(100, 10) 
+            vec1 = n.Vector(range(5, 110, 10)) 
             vec.copy(vec1, 50, 3, 6) 
 
         turns ``vec`` from a 100 element into a 54 element vector. 
@@ -895,7 +912,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(range(20))
+            vec = n.Vector(range(20))
             vec.copy(vec, 10) 
 
         produces  a 30 element vector cycling three times from 0 to 9. However 
@@ -920,14 +937,22 @@ Vector
 
 
     Description:
-        Return a h.Vector which is a copy of the vsrc Vector, but does not copy 
+        Return a new ``n.Vector`` which is a copy of the ``vsrc`` Vector, but does not copy 
         the label. For a complete copy including the label use :meth:`Vector.cl`. 
         (Identical to the :meth:`Vector.at` function but has a short name that suggests 
         copy or clone). Useful in the construction of filter chains. 
 
         In versions of NEURON before 7.7, this was often used in building Vectors
         from other Vectors, e.g. ``vec2 = vec1.c().add(1)``; in new code, it is
-        recommended to use the shorter equivalent ``vec2 = vec1 + 1``.         
+        recommended to use the shorter equivalent ``vec2 = vec1 + 1``.
+
+        The three syntaxes shown above are equivalent to the following slices:
+        * ``newvec = vsrc[:]``
+        * ``newvec = vsrc[srcstart:]``
+        * ``newvec = vsrc[srcstart:srcend + 1]``
+
+        In particular, slices are copies (not views) into a :class:`Vector` and the 
+        ``srcend`` argument is included when using the ``.c`` method.
 
          
 
@@ -947,11 +972,10 @@ Vector
 
 
     Description:
-        Return a h.Vector which is a copy, including the label, of the vsrc vector. 
+        Return a n.Vector which is a copy, including the label, of the vsrc vector. 
         (Similar to the :meth:`Vector.c` function which does not copy the label) 
-        Useful in the construction of filter chains. 
-        Note that with no arguments, it is not necessary to type the 
-        parentheses. 
+        Useful in the construction of filter chains.
+        ``srcend``, if specified, is included.
 
          
 
@@ -967,22 +991,22 @@ Vector
 
         ``newvec = vsrc.at(start)``
 
-        ``newvec = vsrc.at(start,end)``
+        ``newvec = vsrc.at(start, end)``
 
 
     Description:
-        Return a h.Vector consisting of all or part of another. 
+        Return a :class:`Vector` consisting of all or part of another. 
          
         This function predates the introduction of the vsrc.c, "clone", function 
         which is synonymous but is retained for backward compatibility. 
          
-        It merely avoids the necessity of a ``vdest = h.Vector()`` command and 
+        It merely avoids the necessity of a ``vdest = n.Vector()`` command and 
         is equivalent to 
 
         .. code-block::
             python
 
-            vdest = h.Vector() 
+            vdest = n.Vector() 
             vdest.copy(vsrc, start, end) 
 
 
@@ -991,8 +1015,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector() 
-            vec.indgen(10,50,2) 
+            vec = n.Vector(range(10, 51, 2)) 
             vec1 = vec.at(2, 10) 
 
         creates ``vec1`` with 9 elements which correspond to the values at indices 
@@ -1013,7 +1036,7 @@ Vector
 
 
     Description:
-        Resizes the vector to size n and copies the values from the double array 
+        Resizes the :class:`Vector` to size ``n`` and copies the values from the double array 
         to the vector.
         
     Examples:
@@ -1023,15 +1046,15 @@ Vector
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
             
             # create and populate a HOC array
-            h('double px[5]')
-            h.px[0] = 5
-            h.px[3] = 2
+            n('double px[5]')
+            n.px[0] = 5
+            n.px[3] = 2
             
             # transfer the data
-            v.from_double(5, h._ref_px[0])
+            v.from_double(5, n._ref_px[0])
             
             # print out the vector
             v.printf()
@@ -1041,13 +1064,13 @@ Vector
         .. code-block::
             python
             
-            from neuron import h
+            from neuron import n
             import neuron
             import numpy as np
 
             # the 'd' here indicates that this is an array of doubles
             a = np.array([5, 1, 6], 'd')
-            v = h.Vector()
+            v = n.Vector()
 
             v.from_double(3, neuron.numpy_element_ref(a, 0))
 
@@ -1060,7 +1083,7 @@ Vector
     
         To create         
         a new vector from a numpy array just use
-        ``v = h.Vector(python_iterable)``.
+        ``v = n.Vector(python_iterable)``.
             
 
 ----
@@ -1089,6 +1112,10 @@ Vector
 
         Op2string requires two numbers defining open/closed ranges and matches one 
         of these: ``"[]"``, ``"[)"``, ``"(]"``, ``"()"``
+
+        Sometimes, it is advantageous to avoid reallocating memory for ``vdest``, however
+        in practice, it may often be more convenient to create a new :class:`Vector`,
+        store the results into there, and save the return (see the first example below).
          
 
     Example:
@@ -1096,9 +1123,8 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(range(0, 245, 10))
-            vec1 = h.Vector() 
-            vec1.where(vec, ">=", 50) 
+            vec = n.Vector(range(0, 245, 10))
+            vec1 = n.Vector().where(vec, ">=", 50) 
 
         creates ``vec1`` with 20 elements ranging in value from 50 to 240 in 
         increments of 10. 
@@ -1106,16 +1132,17 @@ Vector
         .. code-block::
             python
 
-            r = h.Random() 
-            vec = h.Vector(25) 
-            vec1 = h.Vector() 
-            r.uniform(10,20) 
-            vec.fill(r) 
+            import random
+            vec = n.Vector([random.uniform(10, 20) for _ in range(25)])
+            vec1 = n.Vector() 
             vec1.where(vec, ">", 15) 
 
         creates ``vec1`` with random elements gotten from ``vec`` which have values 
-        greater than 15.  The h.elements in vec1 will be ordered 
+        greater than 15.  The elements in ``vec1`` will be ordered 
         according to the order of their appearance in ``vec``. 
+
+        A similar effect could be obtained by creating a new :class:`Vector` from the
+        results of a list comprehension 
 
     .. seealso::
         :meth:`Vector.indvwhere`, :meth:`Vector.indwhere`
@@ -1146,18 +1173,13 @@ Vector
 
         ``i = vsrc.indwhere(op2string, low, high)``
 
+        ``obj = vsrcdest.indvwhere(opstring, value)``
 
-        ``obj = vsrcdest.indvwhere(opstring,value)``
-
-        ``obj = vsrcdest.indvwhere(opstring,value)``
-
-        ``obj = vdest.indvwhere(vsource,op2string,low, high)``
-
-        ``obj = vdest.indvwhere(vsource,op2string,low, high)``
+        ``obj = vdest.indvwhere(vsource, op2string, low, high)``
 
 
     Description:
-        The  i = vsrc form returns the index of the first element of v matching 
+        The  ``i = vsrc`` form returns the index of the first element of v matching 
         the criterion given by the opstring. If there is no match, the return value 
         is -1. 
          
@@ -1178,19 +1200,22 @@ Vector
         .. code-block::
             python
 
-            vs = h.Vector() 
-             
-            vs.indgen(0, .9, .1) 
-            vs.printf()
+            import numpy as np
+            vs = n.Vector(np.arange(0, 0.95, 0.1))
+            print(list(vs)) 
              
             print(vs.indwhere(">", .3))
             print(f"note roundoff error, vs[3] - 0.3 = {vs[3] - 0.3}")
             print(vs.indwhere("==", .5))
              
-            vd = vs.c().indvwhere(vs, "[)", .3, .7) 
-            vd.printf()
+            vd = n.Vector().indvwhere(vs, "[)", .3, .7) 
+            print(list(vd))
 
+    .. warning::
 
+        :class:`Vector` objects only store doubles, so the values in `vd` are all
+        doubles (Python floats) and thus need to be cast to an integer with ``int`` before
+        using them with `[]` to get :class:`Vector` elements.
          
 
     .. seealso::
@@ -1206,9 +1231,9 @@ Vector
 
 
     Syntax:
-        ``n = vsrc.fwrite(fileobj)``
+        ``n_written = vsrc.fwrite(fileobj)``
 
-        ``n = vsrc.fwrite(fileobj, start, end)``
+        ``n_written = vsrc.fwrite(fileobj, start, end)``
 
 
     Description:
@@ -1225,7 +1250,11 @@ Vector
         Return value is the number of items. (0 if error) 
          
         :func:`fread` is used to read a file containing numbers stored by ``fwrite`` but 
-        must have the same size. 
+        must have the same size.
+
+        :class:`Vector` objects can also be saved and loaded via Python's ``pickle`` module,
+        saved as ``numpy`` objects with ``np.save`` and converted to lists and then saved
+        with the ``json`` module.
 
          
 
@@ -1237,20 +1266,22 @@ Vector
 
 
     Syntax:
-        ``n = vdest.fread(fileobj)``
+        ``always_one = vdest.fread(fileobj)``
 
-        ``n = vdest.fread(fileobj, n)``
+        ``always_one = vdest.fread(fileobj, new_size)``
 
-        ``n = vdest.fread(fileobj, n, precision)``
+        ``always_one = vdest.fread(fileobj, new_size, precision)``
 
 
     Description:
-        Read the elements of a vector from the file in binary as written by ``fwrite.`` 
-        If *n* is present, the vector is resized before reading. Note that 
-        files created with fwrite cannot be fread on a machine with different 
-        byte ordering. E.g. spark and intel cpus have different byte ordering. 
+        Read the elements of a vector from the file in binary as written by :meth:`~Vector.fwrite`. 
+        If the argument *new_size* is present, the ``Vector`` is resized before reading. Note that 
+        files created with :meth:`~Vector.fwrite` cannot be :meth:`~Vector.fread` on a machine with different 
+        byte ordering. For example, Spark and Intel CPUs have different byte ordering. 
+        (Intel- and arm-based macs are both little-endian, so you can move files between them.)
          
-        It is almost always better to use ``vwrite`` in combination with ``vread``. 
+        It is almost always better to use :meth:`~Vector.vwrite` in combination with :meth:`~Vector.vread`
+        since the corresponding vread will take care of machine-dependent binary byte ordering differences. 
         See vwrite for the meaning of the *precision* argment. 
          
         Return value is 1 (no error checking). 
@@ -1265,20 +1296,20 @@ Vector
 
 
     Syntax:
-        ``n = vec.vwrite(fileobj)``
+        ``status = vec.vwrite(fileobj)``
 
-        ``n = vec.vwrite(fileobj, precision)``
+        ``status = vec.vwrite(fileobj, precision)``
 
 
     Description:
         Write the vector in binary format 
-        to an already opened for writing * fileobj* of type 
+        to an already opened for writing *fileobj* of type 
         :class:`File`. 
-        :meth:`~Vector.vwrite` is easier to use than ``fwrite()`` 
+        :meth:`~Vector.vwrite` is easier to use than :meth:`~Vector.fwrite`
         since it stores the size of the vector and type information 
         for a more 
         automated read/write. The file data can also be vread on a machine with 
-        different byte ordering. e.g. you can vwrite with an intel cpu and vread 
+        different byte ordering. e.g. you can vwrite with an Intel or ARM CPU and vread 
         on a sparc. 
         Precision formats 1 and 2 employ a simple automatic 
         compression which is uncompressed automatically by vread.  Formats 3 and 4 
@@ -1288,21 +1319,42 @@ Vector
         used for numbers in oc and therefore requires no conversion or 
         compression 
 
-        .. code-block::
-            python
+        .. list-table::
+            :header-rows: 1
 
-            *  1 : char            shortest    8  bits    
-            *  2 : short                       16 bits 
-               3 : float                       32 bits 
-               4 : double          longest     64 bits    
-               5 : int                         sizeof(int) bytes 
+            * - Value
+              - Type
+              - Description
+              - Size
+            * - 1
+              - char
+              - shortest
+              - 8 bits
+            * - 2
+              - short
+              - 
+              - 16 bits
+            * - 3
+              - float
+              - 
+              - 32 bits
+            * - 4
+              - double
+              - longest
+              - 64 bits
+            * - 5
+              - int
+              - 
+              - sizeof(int) bytes
 
-         
         .. warning::
         
             These are useful primarily for storage of data: exact 
             values will not necessarily be maintained due to the conversion 
             process.
+
+            For type 5, these are stored as C-style integers. Unlike Python
+            integers, C-style integers have a fixed size and a fixed range.
          
         Return value is 1. Only if the type field is invalid will the return 
         value be 0. 
@@ -1317,15 +1369,14 @@ Vector
 
 
     Syntax:
-        ``n = vec.vread(fileobj)``
+        ``always_one = vec.vread(fileobj)``
 
 
     Description:
-        Read vector from binary format file written with ``vwrite()``. 
+        Read vector from binary format file written with :meth:`~Vector.vwrite`. 
         Size and data type have 
-        been stored by ``vwrite()`` to allow correct retrieval syntax, byte ordering, and 
+        been stored by :meth:`~Vector.vwrite` to allow correct retrieval syntax, byte ordering, and 
         decompression (where necessary).  The vector is automatically resized. 
-         
         Return value is 1. (No error checking.) 
 
     Example:
@@ -1333,13 +1384,13 @@ Vector
         .. code-block::
             python
 
-            v1 = h.Vector(range(20, 31, 2))
+            v1 = n.Vector(range(20, 31, 2))
             v1.printf() 
-            f = h.File() 
+            f = n.File() 
             f.wopen("temp.tmp") 
             v1.vwrite(f) 
              
-            v2 = h.Vector() 
+            v2 = n.Vector() 
             f.ropen("temp.tmp") 
             v2.vread(f) 
             v2.printf() 
@@ -1355,22 +1406,22 @@ Vector
 
 
     Syntax:
-        ``n = vec.printf()``
+        ``num_printed = vec.printf()``
 
-        ``n = vec.printf(format_string)``
+        ``num_printed = vec.printf(format_string)``
 
-        ``n = vec.printf(format_string, start, end)``
+        ``num_printed = vec.printf(format_string, start, end)``
 
-        ``n = vec.printf(fileobj)``
+        ``num_printed = vec.printf(fileobj)``
 
-        ``n = vec.printf(fileobj, format_string)``
+        ``num_printed = vec.printf(fileobj, format_string)``
 
-        ``n = vec.printf(fileobj, format_string, start, end)``
+        ``num_printed = vec.printf(fileobj, format_string, start, end)``
 
 
     Description:
-        Print the values of the vector in ascii either to the screen or a File instance 
-        (if ``fileobj`` is present).  *Start* and *end* enable you to specify 
+        Print the values of the Vector in ASCII either to the screen or a :class:`File` instance 
+        (if ``fileobj`` is present).  *start* and *end* enable you to specify 
         which particular set of indexed values to print. 
         Use ``format_string`` for formatting the output of each element. 
         This string must contain exactly one ``%f``, ``%g``, or ``%e``, 
@@ -1383,13 +1434,13 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector() 
-            vec.indgen(0, 1, 0.1) 
+            import numpy as np
+            vec = n.Vector(np.arange(0, 0.95, 0.1)) 
             vec.printf("%8.4f\n") 
 
         prints the numbers 0.0000 through 0.9000 in increments of 0.1.  Each number will 
         take up a total of eight spaces, will have four decimal places 
-        and will be printed on a h.line. 
+        and will be printed on its own line. 
 
     .. warning::
         No error checking is done on the format string and invalid formats can cause 
@@ -1405,13 +1456,13 @@ Vector
 
 
     Syntax:
-        ``n = vec.scanf(fileobj)``
+        ``num_read = vec.scanf(fileobj)``
 
-        ``n = vec.scanf(fileobj, n)``
+        ``num_read = vec.scanf(fileobj, n)``
 
-        ``n = vec.scanf(fileobj, c, nc)``
+        ``num_read = vec.scanf(fileobj, c, nc)``
 
-        ``n = vec.scanf(fileobj, n, c, nc)``
+        ``num_read = vec.scanf(fileobj, n, c, nc)``
 
 
     Description:
@@ -1427,9 +1478,9 @@ Vector
         memory reallocation when scanning very long vectors (e.g. > 50000 elements) 
         it is a good idea to presize the vector to a larger value than the 
         expected number of elements to be scanned. 
-        Note that although the vector is resized to 
+        Note that although the Vector is resized to 
         the actual number of elements scanned, the space allocated to the 
-        vector remains available for growth. See :meth:`Vector.buffer_size` . 
+        Vector remains available for growth. See :meth:`Vector.buffer_size` . 
          
         Read from 
         column *c* of *nc* columns when data is in column format.  It numbers 
@@ -1452,15 +1503,15 @@ Vector
 
 
     Syntax:
-        ``n = vec.scantil(fileobj, sentinel)``
+        ``num_read = vec.scantil(fileobj, sentinel)``
 
-        ``n = vec.scantil(fileobj, sentinel, c, nc)``
+        ``num_read = vec.scantil(fileobj, sentinel, c, nc)``
 
 
     Description:
-        Like :meth:`Vector.scanf` but scans til it reads a value equal to the 
-        sentinel. e.g. -1e15 is a possible sentinel value in many situations. 
-        The vector does not include the sentinel value. The file pointer is 
+        Like :meth:`Vector.scanf` but scans until it reads a value equal to the 
+        sentinel. e.g., -1e15 is a possible sentinel value in many situations. 
+        The Vector does not include the sentinel value. The file pointer is 
         left at the character following the sentinel. 
          
         Read from 
@@ -1471,6 +1522,9 @@ Vector
         character following the sentinel. 
          
         The scan takes place at the current position of the file. 
+
+        *fileobj* here is an instance of :class:`File` that has been opened for reading;
+        it is not a Python file object.
          
         Return value is number of items read. 
 
@@ -1517,13 +1571,13 @@ Vector
         in order to display further changes to the vector.  In this way it 
         is possible to produce rather rapid line animation. 
          
-        If the vector :meth:`Graph.label` is not empty it will be used as the label for 
+        If the Vector label is not empty it will be used as the label for 
         the line on the Graph. 
          
-        Resizing a vector that has been plotted will remove it from the Graph. 
+        Resizing a Vector that has been plotted will remove it from the Graph. 
          
         The number of points plotted is the minimum of vec.size and x_vec.size 
-        at the time vec.plot is called. x_vec is assumed to be an unchanging 
+        at the time ``vec.plot`` is called. x_vec is assumed to be an unchanging 
         Vector. 
          
 
@@ -1532,25 +1586,24 @@ Vector
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
             import time
+            import numpy as np
             
-            g = h.Graph() 
-            g.size(0,10,-1,1) 
-            vec = h.Vector() 
-            vec.indgen(0,10, .1) 
-            vec.apply("sin") 
-            vec.plot(g, .1) 
+            g = n.Graph() 
+            g.size(0, 10, -1, 1) 
+            vec = n.Vector(np.sin(np.arange(0, 10, 0.1))) 
+            vec.plot(g, 0.1) 
             def do_run():
                 for i in range(len(vec)):
                     vec.rotate(1)
                     g.flush()
-                    h.doNotify()
+                    n.doNotify()
                     time.sleep(0.01)
 
-            h.xpanel("") 
-            h.xbutton("run", do_run) 
-            h.xpanel() 
+            n.xpanel("") 
+            n.xbutton("run", do_run) 
+            n.xpanel() 
 
 
         .. image:: ../../images/vector-plot.png
@@ -1591,7 +1644,7 @@ Vector
          
         The line on a graph is given the :meth:`Graph.label` if the label is not empty. 
          
-        The number of point plotted is the minimum of vec.size and x_vec.size . 
+        The number of point plotted is the minimum of ``len(vec)`` and ``len(x_vec)``. 
          
 
     Example:
@@ -1599,12 +1652,12 @@ Vector
         .. code-block::
             python
 
-            from neuron import h, gui
-            g = h.Graph() 
-            g.size(0,10,-1,1) 
-            vec = h.Vector() 
-            vec.indgen(0,10, .1) 
-            vec.apply("sin")
+            from neuron import n, gui
+            import numpy as np
+            
+            g = n.Graph() 
+            g.size(0, 10, -1, 1) 
+            vec = n.Vector(np.sin(np.arange(0, 10, 0.1))) 
             for i in range(4):
                 vec.line(g, 0.1)
                 vec.rotate(10)
@@ -1649,14 +1702,12 @@ Vector
         .. code-block::
             python
 
-            g = h.Graph() 
-            g.size(0,100, 0,250) 
-            vec = h.Vector() 
-            xvec = h.Vector() 
-            errvec = h.Vector() 
+            g = n.Graph() 
+            g.size(0, 100, 0, 250) 
+            vec = n.Vector(range(0, 201, 20)) 
+            xvec = n.Vector(range(0, 101, 10)) 
+            errvec = n.Vector() 
              
-            vec.indgen(0,200,20) 
-            xvec.indgen(0,100,10) 
             errvec.copy(xvec) 
             errvec.apply("sqrt") 
             vec.ploterr(g, xvec, errvec, 10) 
@@ -1726,7 +1777,7 @@ Vector
         the range is not binned. 
          
         This function returns a vector that contains the counts in each bin, so while it is 
-        to execute ``newvect = h.Vector()``. 
+        to execute ``newvect = n.Vector()``. 
          
         The first element of ``newvect`` is 0 (``newvect[0] = 0``). 
         For ``ii > 0``, ``newvect[ii]`` equals the number of 
@@ -1746,23 +1797,23 @@ Vector
             python
 
              
-            rand = h.Random() 
+            rand = n.Random() 
             rand.negexp(1) 
              
-            interval = h.Vector(100) 
+            interval = n.Vector(100) 
             interval.setrand(rand) # random intervals 
              
-            hist = interval.histogram(0, 10, .1) 
+            hist = interval.histogram(0, 10, 0.1) 
              
             # and for a manhattan style plot ... 
-            g = h.Graph() 
-            g.size(0,10,0,30) 
+            g = n.Graph() 
+            g.size(0, 10, 0, 30) 
             # create an index vector with 0,0, 1,1, 2,2, 3,3, ... 
-            v2 = h.Vector(2*len(hist))
-            v2.indgen(.5)  
-            v2.apply("int")  
-            #  
-            v3 = h.Vector(1)  
+            v2 = n.Vector(2*len(hist))
+            v2.indgen(0.5)  
+            v2.apply(int)  
+              
+            v3 = n.Vector(1)  
             v3.index(hist, v2)  
             v3.rotate(-1)            # so different y's within each pair 
             v3[0] = 0  
@@ -1790,7 +1841,7 @@ Vector
 
 
     Description:
-        Similar to :func:`histogram` (but notice the different argument meanings. 
+        Similar to :meth:`~Vector.histogram` (but notice the different argument meanings. 
         Put a histogram in *vdest* by binning 
         the data in *vsrc*. 
         Bins run from *low* to ``low + size * width`` 
@@ -1826,7 +1877,7 @@ Vector
         for them all to have areas of 1 unit). 
          
         This function returns a vector, so while it is 
-        to declare *vectobj* as a ``h.Vector()``. 
+        to declare *vectobj* as a ``n.Vector()``. 
          
         To plot, use ``v.indgen(low,high,width)`` for the x-vector argument. 
 
@@ -1836,17 +1887,17 @@ Vector
             python
 
              
-            r = h.Random() 
+            r = n.Random() 
             r.normal(1, 2) 
              
-            data = h.Vector(100) 
+            data = n.Vector(100) 
             data.setrand(r) 
              
-            hist = data.sumgauss(-4, 6, .5, 1) 
-            x = h.Vector(len(hist))
-            x.indgen(-4, 6, .5) 
+            hist = data.sumgauss(-4, 6, 0.5, 1) 
+            x = n.Vector(len(hist))
+            x.indgen(-4, 6, 0.5) 
              
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(-4, 6, 0, 30) 
             hist.plot(g, x) 
 
@@ -1889,7 +1940,7 @@ Vector
 
 
     Description:
-        Return a h.Vector consisting of the elements of ``vsrc`` whose indices are given 
+        Return a :class:`Vector` consisting of the elements of ``vsrc`` whose indices are given 
         by the elements of ``vindex``. 
          
 
@@ -1898,14 +1949,20 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(100) 
-            vec2 = h.Vector() 
-            vec.indgen(5) 
-            vec2.indgen(49, 59, 1) 
+            vec = n.Vector(range(0, 500, 5)) 
+            vec2 = n.Vector(range(49, 60))
             vec1 = vec.ind(vec2) 
 
-        creates ``vec1`` to contain the fiftieth through the sixtieth elements of ``vec2`` 
+        creates ``vec1`` to contain the fiftieth through the sixtieth elements
+        (recall Vectors like Python lists are 0 indexed and range does not include the
+        end point) of ``vec2`` 
         which would have the values 245 through 295 in increments of 5. 
+    
+    .. note::
+
+        If, as in the example, the indices are in order and separated by
+        a constant amount, one could equivalently use slicing, e.g., 
+        ``vec1 = vec[49:60]``. (Requires NEURON 9+).
          
 
          
@@ -1932,13 +1989,13 @@ Vector
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            vec = h.Vector(50) 
-            g = h.Graph() 
+            vec = n.Vector(50) 
+            g = n.Graph() 
             g.size(0,50,0,100) 
-            r = h.Random() 
-            r.poisson(.2) 
+            r = n.Random() 
+            r.poisson(0.2) 
             vec.plot(g)
 
             def race():
@@ -1946,7 +2003,7 @@ Vector
                 for i in range(300):
                     vec.addrand(r)
                     g.flush()
-                    h.doNotify()
+                    n.doNotify()
 
             race()  
 
@@ -1967,7 +2024,41 @@ Vector
         Sets random values for the elements of the vector by sampling from the 
         same distribution as last picked in *randobj*. 
 
-         
+        *randobj* is an instance of :class:`Random` not a Python random object.
+
+        Note that both the *start* and *end* indices are included in the randomization.
+
+    Example:
+
+        .. code-block::
+            python
+
+            from neuron import n
+            import matplotlib.pyplot as plt
+
+            vec = n.Vector(10_000)
+            r = n.Random()
+            r.normal(0, 1)  # sets the distribution we want
+            vec.setrand(r)
+            plt.hist(vec, bins=50)
+            plt.show() 
+
+        .. image:: ../../images/vector-setrand.png
+            :align: center
+    
+    .. note::
+
+        To do something approximately equivalent in Python with a Python
+        random number generator, in NEURON 9+ assign to a slice of the Vector, e.g.,
+
+        .. code-block::
+            python
+
+            import random
+            vec[40:60] = [random.normalvariate(0, 1) for _ in range(40, 60)]
+
+        Remember that this assigns to indivies 40 - 59, not 40 - 60 (i.e., the end
+        of a slice is not included.)
 
 ----
 
@@ -1996,17 +2087,57 @@ Vector
 
 
     Syntax:
-        ``obj = vsrcdest.apply("func")``
 
-        ``obj = vsrcdest.apply("func", start, end)``
+        ``obj = vsrcdest.apply(pyfunction)``
+
+        ``obj = vsrcdest.apply(pyfunction, start, end)``
+
+        ``obj = vsrcdest.apply("hocfunc")``
+
+        ``obj = vsrcdest.apply("hocfunc", start, end)``
 
 
     Description:
-        Apply a hoc function to each of the elements in the vector. 
-        The function can be any function that is accessible in oc.  It 
+        Apply a function to each of the elements in the vector. It
         must take only one scalar argument and return a scalar. 
-        Note that the function name must be in quotes and that the parentheses 
-        are omitted. 
+        The result is stored in the Vector; it does not create a new vector.
+        The return value is the Vector itself; ths allows chaining multiple
+        calls to ``apply``.
+
+        If a string is supplied, the string is assumed to refer to the name
+        of some function defined known to HOC (in particular, do not pass
+        the name of a Python function as a string). For this format, provide
+        only the function name as a string, not the parentheses.
+
+    Example:
+
+        .. code-block::
+            python
+
+            vec = n.Vector([1, 2, 20])
+            def my_function(x):
+                if x > 13:
+                    return x * x + 7
+                else:
+                    return x - 2
+
+            vec.apply(my_function) 
+
+            print(list(vec))  # [-1.0, 0.0, 407.0]
+
+        applies the Python function ``my_function`` to all elements of the vector ``vec``.
+    
+    Example:
+
+        This example demonstrates chaining. For each value in ``vec``, we take the sine.
+        We then apply the ReLU function. Thus we end up with a Vector that has the sine
+        of the original values where that sine is positive, and 0 otherwise.
+
+        .. code-block::
+            python
+
+            relu = lambda x: x if x > 0 else 0
+            vec.apply(n.sin).apply(relu)
 
     Example:
 
@@ -2015,7 +2146,17 @@ Vector
 
             vec.apply("sin", 0, 9) 
 
-        applies the sin function to the first ten elements of the vector ``vec``. 
+        applies the HOC sin function to the first ten elements of the Vector ``vec``. 
+
+    .. note::
+
+        Support for Python functions was added in NEURON 9.
+
+        Prior to NEURON 9, extra arguments in the call to ``apply`` were ignored;
+        beginning in NEURON 9, calling ``apply`` with extra arguments will raise an
+        error.
+
+
 
          
 
@@ -2045,9 +2186,9 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
-            vec = h.Vector(range(0, 10, 2))
-            h("func sq(){return $1*$1}")
+            from neuron import n
+            vec = n.Vector(range(0, 10, 2))
+            n("func sq(){return $1*$1}")
             print(vec.reduce("sq", 100))
 
         displays the value 320. 
@@ -2074,13 +2215,23 @@ Vector
 
 
     Syntax:
-        ``vec.floor()``
+        ``vec = vec.floor()``
 
 
     Description:
         Rounds toward negative infinity. Note that :data:`float_epsilon` is not 
-        used in this calculation. 
+        used in this calculation. The Vector is modified in place and the return
+        value is the Vector itself, to allow for chaining.
 
+        This is a slightly faster equivalent to:
+
+        .. code-block::
+            python
+
+            import math
+            vec.apply(math.floor)
+
+        Calling ``np.floor(vec)`` is similar, but would return a numpy array, not a Vector.
          
          
 
@@ -2100,9 +2251,11 @@ Vector
 
 
     Description:
-        Copy the vector elements from the hoc vector to a pythonlist or 
+        Copy the vector elements from the NEURON vector to a pythonlist or 
         1-d numpyarray. If the arg exists the pythonobject must have the same 
-        size as the hoc vector. 
+        size as the NEURON vector. 
+
+        The first form is equivalent to ``pythonlist = list(vec)``.
 
          
 
@@ -2120,10 +2273,10 @@ Vector
 
 
     Description:
-        Copy the python list elements into the hoc vector. The elements must be 
-        numbers that are convertable to doubles. 
-        Copy the numpy 1-d array elements into the hoc vector. 
-        The hoc vector is resized. 
+        Copy the python list elements into the NEURON vector. The elements must be 
+        numbers that are convertible to doubles. 
+        Copy the numpy 1-d array elements into the NEURON vector. 
+        The Vector is resized. 
 
 
 ----
@@ -2138,7 +2291,7 @@ Vector
 
     Description:
     
-        The numpyarray points into the data of the Hoc Vector, i.e. does not
+        The numpyarray points into the data of the NEURON Vector, i.e. does not
         copy the data. Do not
         use the numpyarray if the Vector is destroyed.
 
@@ -2148,14 +2301,14 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
-            v = h.Vector(range(5))
-            n = v.as_numpy()
-            print(n) #[0.  1.  2.  3.  4.]
+            from neuron import n
+            v = n.Vector(range(5))
+            np_vec = v.as_numpy()
+            print(np_vec) #[0.  1.  2.  3.  4.]
             v[1] += 10
-            n[2] += 20
-            print(n) #[  0.  11.  22.   3.   4.]
-            v.printf() #0	11	22	3	4
+            np_vec[2] += 20
+            print(np_vec)  # [  0.  11.  22.   3.   4.]
+            v.printf()  # 0	11	22	3	4
 
 
 ----
@@ -2239,9 +2392,9 @@ Vector
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0, 3, 0, 3) 
              
             def fun(a, x, y):
@@ -2251,12 +2404,12 @@ Vector
                     print(a, x, y)
                 return (x - 1) ** 2 + (y - 0.5) ** 2
 
-            dvec = h.Vector(2) 
-            fvec = h.Vector([1, 1]) 
-            ivec = h.Vector(range(2))
+            dvec = n.Vector(2) 
+            fvec = n.Vector([1, 1]) 
+            ivec = n.Vector(range(2))
              
-            a = h.ref(2)
-            b = h.ref(1) 
+            a = n.ref(2)
+            b = n.ref(1) 
             g.beginline() 
             error = dvec.fit(fvec, fun, ivec, a, b) 
             print(a[0], b[0], error)
@@ -2293,21 +2446,21 @@ Vector
         .. code-block::
             python
                 
-            g = h.Graph() 
+            g = n.Graph() 
             g.size(0,10,0,100) 
 
             #... 
-            xs = h.Vector(range(10))
+            xs = n.Vector(range(10))
             ys = xs * xs
             ys.line(g, xs, 1, 0) # black reference line 
              
-            xd = h.Vector() 
+            xd = n.Vector() 
              
-            xd.indgen(-.5, 10.5, .1) 
+            xd.indgen(-0.5, 10.5, 0.1) 
             yd = ys.c().interpolate(xd, xs) 
             yd.line(g, xd, 3, 0) # blue more points than reference 
              
-            xd.indgen(-.5, 13, 3) 
+            xd.indgen(-0.5, 13, 3) 
             yd = ys.c().interpolate(xd, xs) 
             yd.line(g, xd, 2, 0) # red fewer points than reference 
 
@@ -2369,10 +2522,10 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
-            vec = h.Vector(range(6)) 
+            from neuron import n
+            vec = n.Vector(range(6)) 
             vec = vec * vec
-            vec1 = h.Vector()
+            vec1 = n.Vector()
             vec1.deriv(vec, 0.1) 
 
         creates ``vec1`` with elements: 
@@ -2460,9 +2613,9 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
-            vec = h.Vector([0, 1, 4, 9, 16, 25]) 
-            vec1 = h.Vector() 
+            from neuron import n
+            vec = n.Vector([0, 1, 4, 9, 16, 25]) 
+            vec1 = n.Vector() 
             vec1.integral(vec, 1)	# Euler integral of vec elements approximating 
                                     # an x-squared function, dx = 0.1 
             vec1.printf() 
@@ -2481,14 +2634,14 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             import numpy as np
 
             # set vec to the squares of 51 values from 0 to 5
-            vec = h.Vector(np.linspace(0, 5, 51))
+            vec = n.Vector(np.linspace(0, 5, 51))
             vec.pow(2)
 
-            vec1 = h.Vector()
+            vec1 = n.Vector()
             vec1.integral(vec, 0.1) # Euler integral of vec elements approximating
                                     # an x-squared function, dx = 0.1
 
@@ -2596,7 +2749,7 @@ Vector
 
 
     Description:
-        Return a h.Vector of indices which sort the vsrc elements in numerical 
+        Return a n.Vector of indices which sort the vsrc elements in numerical 
         order. That is vsrc.index(vsrc.sortindex) is equivalent to vsrc.sort(). 
         If vdest is present, use that as the destination vector for the indices. 
         This, if it is large enough, avoids the destruct/construct of vdest. 
@@ -2606,11 +2759,11 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
             
-            r = h.Random() 
+            r = n.Random() 
             r.uniform(0, 100) 
-            a = h.Vector(10) 
+            a = n.Vector(10) 
             a.setrand(r) 
             a.printf() 
              
@@ -2692,7 +2845,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector(range(1, 6)) 
+            vec = n.Vector(range(1, 6)) 
             vec.printf()
             vec.c().rotate(2).printf()
             vec.c().rotate(2, 0).printf() 
@@ -2868,8 +3021,7 @@ Vector
         .. code-block::
             python
 
-            v1 = h.Vector() 
-            v1.indgen(-.5, .5, .1) 
+            v = n.Vector(i * 0.1 for i in range(-5, 6))
             v1.printf() 
             v1.abs().printf() 
 
@@ -2900,16 +3052,16 @@ Vector
         .. code-block::
             python
 
-            from neuron import h
+            from neuron import n
+            import numpy as np
 
-            vec = h.Vector() 
-            vec1 = h.Vector() 
-            vec2 = h.Vector() 
-            vec3 = h.Vector(6) 
-            vec.indgen(0, 5.1, 0.1)	# vec will have 51 values from 0 to 5, with increment=0.1 
+            # vec will have 51 values from 0 to 5, with increment=0.1
+            vec = n.Vector(np.arange(0, 5.1, 0.1)) 
+            vec1 = n.Vector() 
+            vec2 = n.Vector(range(0, 51, 10)) 
+            vec3 = n.Vector(6) 
             vec1.integral(vec, 0.1)	# Euler integral of vec elements approximating 
                                     # an x-squared function, dx = 0.1 
-            vec2.indgen(0, 50, 10) 
             vec3.index(vec1, vec2)  # put the value of every 10th index in vec2 
 
 
@@ -2933,6 +3085,8 @@ Vector
 
     Description:
         Return the minimum value. 
+        
+        This is a slightly faster equivalent to ``min(vec)`` and ``min(vec[start:end + 1])``.
 
          
 
@@ -2970,6 +3124,7 @@ Vector
     Description:
         Return the maximum value. 
 
+        This is a slightly faster equivalent to ``max(vec)`` and ``max(vec[start:end + 1])``.
          
 
 ----
@@ -2993,7 +3148,7 @@ Vector
         .. code::
             python
 
-            v = h.Vector([4, 2, 61, 17, 13])
+            v = n.Vector([4, 2, 61, 17, 13])
             print(v.max_ind())      # 2
             print(v.max_ind(1, 2))  # 2
             print(v.max_ind(3, 4))  # 3
@@ -3004,7 +3159,7 @@ Vector
         Some older versions of NEURON reported erroneous values for `max_ind`
         when `start` and `end` are specified. Test for this with the example 
         above. All released versions _newer_ than 8.2.2 work correctly, as 
-        does the current develoopment version.
+        does the current development version.
 
 ----
 
@@ -3020,7 +3175,10 @@ Vector
 
 
     Description:
-        Return the sum of element values. 
+        Return the sum of element values. Positions ``start`` and ``end`` are inclusive.
+
+        This is a slightly faster equivalent to ``x = sum(vec)`` and 
+        ``x = sum(vec[start:end + 1])``
 
          
 
@@ -3126,7 +3284,9 @@ Vector
 
 
     Description:
-        Return the dot (inner) product of ``vec`` and *vec1*. 
+        Return the dot (inner) product of *vec* and *vec1*. 
+
+        Equivalent to ``np.dot(vec, vec1)``.
 
          
 
@@ -3164,6 +3324,14 @@ Vector
         elements of *vec1* to the elements of ``vsrcdest``. 
         ``vsrcdest`` and *vec1* must have the same size. 
 
+        The Vector *vsrcdest* is modified. The return value is the Vector itself,
+        to allow for chaining.
+
+        If you want to keep the original Vector unchanged and create a new one, 
+        use the regular arithmetic operators; e.g., ``v2 = v1 + 1`` or 
+        ``v3 = v1 + v2``.
+
+
          
 
 ----
@@ -3181,9 +3349,15 @@ Vector
 
     Description:
         Subtract either a scalar from each element of the vector or subtract the 
-        corresponding elements of *vec1* from the elements of ``vsrcdest``. 
-        ``vsrcdest`` and *vec1* must have the same size. 
+        corresponding elements of *vec1* from the elements of *vsrcdest*. 
+        *vsrcdest* and *vec1* must have the same size. 
 
+        The Vector *vsrcdest* is modified. The return value is the Vector itself,
+        to allow for chaining.
+
+        If you want to keep the original Vector unchanged and create a new one, 
+        use the regular arithmetic operators; e.g., ``v2 = v1 - 1`` or 
+        ``v3 = v1 - v2``.
          
 
 ----
@@ -3336,9 +3510,9 @@ Refer to this source for further information.
         .. code-block::
             python
 
-            v1 = h.Vector(16) 
-            v2 = h.Vector(16) 
-            v3 = h.Vector() 
+            v1 = n.Vector(16) 
+            v2 = n.Vector(16) 
+            v3 = n.Vector() 
             v1[5] = v1[6] = 1 
             v2[3] = v2[4] = 3 
             v3.convlv(v1, v2) 
@@ -3428,7 +3602,7 @@ Refer to this source for further information.
         .. code-block::
             python
          
-            from neuron import h, gui
+            from neuron import n, gui
 
             N = 16    # should be a power of 2
 
@@ -3436,16 +3610,16 @@ Refer to this source for further information.
                 def __init__(self):
                     self.c = 1
                     self.f = 1 # waves per domain, max is N/2
-                    self.box = h.VBox()
+                    self.box = n.VBox()
                     self.box.intercept(1)
-                    h.xpanel('', 1)
-                    h.xradiobutton('sin   ', lambda: self.p(0))
-                    h.xradiobutton('cos   ', lambda: self.p(1), 1)
-                    h.xvalue('freq (waves/domain)', (self, 'f'), 1, lambda: self.p(self.c))
-                    h.xpanel()
-                    self.g1 = h.Graph()
-                    self.g2 = h.Graph()
-                    self.g3 = h.Graph()
+                    n.xpanel('', 1)
+                    n.xradiobutton('sin   ', lambda: self.p(0))
+                    n.xradiobutton('cos   ', lambda: self.p(1), 1)
+                    n.xvalue('freq (waves/domain)', (self, 'f'), 1, lambda: self.p(self.c))
+                    n.xpanel()
+                    self.g1 = n.Graph()
+                    self.g2 = n.Graph()
+                    self.g3 = n.Graph()
                     self.box.intercept(0)
                     self.box.map()
                     self.g1.size(0, N, -1, 1)
@@ -3454,15 +3628,15 @@ Refer to this source for further information.
                     self.p(self.c)
                 
                 def p(self, c):
-                    self.v1 = h.Vector(N)
-                    self.v1.sin(self.f, c * h.PI / 2, 1000. / N)
+                    self.v1 = n.Vector(N)
+                    self.v1.sin(self.f, c * n.PI / 2, 1000. / N)
                     self.v1.plot(self.g1)
                     
-                    self.v2 = h.Vector()
+                    self.v2 = n.Vector()
                     self.v2.fft(self.v1, 1)     # forward
                     self.v2.plot(self.g2)
                     
-                    self.v3 = h.Vector()
+                    self.v3 = n.Vector()
                     self.v3.fft(self.v2, -1)    # inverse
                     self.v3.plot(self.g3)       # amplitude N/2 times the original
 
@@ -3503,7 +3677,7 @@ Refer to this source for further information.
             FFT(-1, vt_dest, vfr_src, vfi_src)
          
         The forward transform (first arg = 1) requires 
-        a time domain source vector with a length of N = 2^n where n is some positive 
+        a time domain source vector with a length of N = 2^m where m is some positive 
         integer. The resultant real (cosine amplitudes) and imaginary (sine amplitudes) 
         frequency components are stored in the N/2 + 1 
         locations of the vfr_dest and vfi_dest vectors respectively (Note: 
@@ -3518,7 +3692,7 @@ Refer to this source for further information.
         vector will have a size of N. 
          
         If the source vectors are not a power of 2, then the vectors are padded 
-        with 0's til vtsrc is 2^n or vfr_src is 2^n + 1. The destination vectors 
+        with 0's til vtsrc is 2^m or vfr_src is 2^m + 1. The destination vectors 
         are resized if necessary. 
          
         This function has the property that the sequence 
@@ -3540,22 +3714,22 @@ Refer to this source for further information.
             def FFT(direction, vt, vfr, vfi):
                 if direction == 1:   # forward
                     vfr.fft(vt, 1) 
-                    n = len(vfr)
-                    vfr.div(n/2) 
+                    m = len(vfr)
+                    vfr.div(m/2) 
                     vfr[0] /= 2	# makes the spectrum appear discontinuous 
                     vfr[1] /= 2	# but the amplitudes are intuitive 
                     vfi.copy(vfr, 0, 1, -1, 1, 2)   # odd elements 
                     vfr.copy(vfr, 0, 0, -1, 1, 2)   # even elements 
-                    vfr.resize(n/2+1) 
-                    vfi.resize(n/2+1) 
-                    vfr[n/2] = vfi[0]           #highest cos started in vfr[1]
-                    vfi[0] = vfi[n/2] = 0       # weights for sin(0*i)and sin(PI*i) 
+                    vfr.resize(m/2+1) 
+                    vfi.resize(m/2+1) 
+                    vfr[m/2] = vfi[0]           #highest cos started in vfr[1]
+                    vfi[0] = vfi[m/2] = 0       # weights for sin(0*i)and sin(PI*i) 
                 else:                # inverse
                     # shuffle vfr and vfi into vt
-                    n = len(vfr)
-                    vt.copy(vfr, 0, 0, n-2, 2, 1) 
-                    vt[1] = vfr[n-1] 
-                    vt.copy(vfi, 3, 1, n-2, 2, 1) 
+                    m = len(vfr)
+                    vt.copy(vfr, 0, 0, m-2, 2, 1) 
+                    vt[1] = vfr[m-1] 
+                    vt.copy(vfi, 3, 1, m-2, 2, 1) 
                     vt[0] *= 2 
                     vt[1] *= 2  
                     vt.fft(vt, -1) 
@@ -3568,7 +3742,7 @@ Refer to this source for further information.
         .. code-block::
             python
  
-            from neuron import h, gui
+            from neuron import n, gui
 
             N = 128
 
@@ -3576,20 +3750,20 @@ Refer to this source for further information.
                 def __init__(self):
                     self.delay = 0
                     self.duration = N / 2
-                    self.box = h.VBox()
+                    self.box = n.VBox()
                     self.box.intercept(1)
-                    h.xpanel('')
-                    h.xvalue('delay (points)', (self, 'delay'), 1, self.p)
-                    h.xvalue('duration (points)', (self, 'duration'), 1, self.p)
-                    h.xpanel()
-                    self.g1 = h.Graph()
-                    self.b1 = h.HBox()
+                    n.xpanel('')
+                    n.xvalue('delay (points)', (self, 'delay'), 1, self.p)
+                    n.xvalue('duration (points)', (self, 'duration'), 1, self.p)
+                    n.xpanel()
+                    self.g1 = n.Graph()
+                    self.b1 = n.HBox()
                     self.b1.intercept(1)
-                    self.g2 = h.Graph()
-                    self.g3 = h.Graph()
+                    self.g2 = n.Graph()
+                    self.g3 = n.Graph()
                     self.b1.intercept(0)
                     self.b1.map()
-                    self.g4 = h.Graph()
+                    self.g4 = n.Graph()
                     self.box.intercept(0)
                     self.box.map()
                     self.g1.size(0, N, -1, 1)
@@ -3599,16 +3773,16 @@ Refer to this source for further information.
                     self.p()
                     
                 def p(self):
-                    self.v1 = h.Vector(N)
+                    self.v1 = n.Vector(N)
                     self.v1.fill(1, self.delay, self.delay + self.duration - 1)
                     self.v1.plot(self.g1)
                     
-                    self.v2 = h.Vector()
-                    self.v3 = h.Vector()
+                    self.v2 = n.Vector()
+                    self.v3 = n.Vector()
                     FFT(1, self.v1, self.v2, self.v3)
                     self.v2.plot(self.g2)
                     self.v3.plot(self.g3)
-                    self.v4 = h.Vector()
+                    self.v4 = n.Vector()
                     FFT(-1, self.v4, self.v2, self.v3)
                     self.v4.plot(self.g4)
 
@@ -3719,13 +3893,13 @@ Refer to this source for further information.
         .. code-block::
             python
 
-            from neuron import h, gui
+            from neuron import n, gui
 
-            b = h.VBox() 
+            b = n.VBox() 
             b.intercept(1) 
-            g1 = h.Graph() 
+            g1 = n.Graph() 
             g1.size(0,200,0,10) 
-            g2 = h.Graph() 
+            g2 = n.Graph() 
             g2.size(0,200,0,10) 
             b.intercept(0) 
             b.map("psth and mean freq") 
@@ -3735,16 +3909,16 @@ Refer to this source for further information.
             DT = 1000	# ms per bin of v1 (vsrchist) 
             TRIALS = 1 
 
-            v1 = h.Vector(VECSIZE) 
+            v1 = n.Vector(VECSIZE) 
 
-            r = h.Random() 
+            r = n.Random() 
                     
             for ii in range(VECSIZE):
                 v1[ii] = int(r.uniform(0, 10))
 
             v1.plot(g1) 
 
-            v2 = h.Vector() 
+            v2 = n.Vector() 
             v2.psth(v1, DT, TRIALS, MINSUM) 
             v2.plot(g2) 
 

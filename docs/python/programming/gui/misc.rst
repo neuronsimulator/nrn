@@ -4,7 +4,7 @@ Style Settings
 .. function:: ivoc_style
 
     Syntax:
-        ``h.ivoc_style("name", "attribute")``
+        ``n.ivoc_style("name", "attribute")``
 
     Description:
         Gives the style attribute to name. Any property listed in the file 
@@ -18,11 +18,11 @@ Style Settings
             python
 
             # 7 decimal places in value field editors. Must be done prior to any panel. 
-            h.ivoc_style("*xvalue_format", "%.7g") 
+            n.ivoc_style("*xvalue_format", "%.7g") 
             # large fonts in unix. Takes effect on next panel. 
-            h.ivoc_style("*font", "*helvetica-medium-r-normal*--24*") 
-            h.ivoc_style("*MenuBar*font", "*helvetica-medium-r-normal*--24*") 
-            h.ivoc_style("*MenuItem*font", "*helvetica-medium-r-normal*--24*") 
+            n.ivoc_style("*font", "*helvetica-medium-r-normal*--24*") 
+            n.ivoc_style("*MenuBar*font", "*helvetica-medium-r-normal*--24*") 
+            n.ivoc_style("*MenuItem*font", "*helvetica-medium-r-normal*--24*") 
 
 
 ----
@@ -33,7 +33,7 @@ Domain Restrictions for Fields
 .. function:: variable_domain
 
     Syntax:
-        ``h.variable_domain("varname", lower_limit, upper_limit)``
+        ``n.variable_domain("varname", lower_limit, upper_limit)``
 
     Description:
         Define the domain limits for NEURON variables. Important NEURON 
@@ -55,8 +55,8 @@ Domain Restrictions for Fields
 
     .. note::
 
-        ``varname`` here would be things like ``t`` or ``diam`` not ``h.t`` or ``h.diam``; i.e.
-        omit the ``h.`` prefix.
+        ``varname`` here would be things like ``t`` or ``diam`` not ``n.t`` or ``n.diam``; i.e.
+        omit the ``n.`` prefix.
 
 ----
 
@@ -66,9 +66,9 @@ PrintWindowManager Placement
 .. function:: pwman_place
 
     Syntax:
-        ``h.pwman_place(left, top)``
+        ``n.pwman_place(left, top)``
 
-        ``h.pwman_place(left, top, 0)``
+        ``n.pwman_place(left, top, 0)``
 
     Description:
         moves the PrintWindowManager to the indicated location in pixel 

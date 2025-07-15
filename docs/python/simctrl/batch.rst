@@ -1,6 +1,16 @@
 Running and Saving Batch Jobs
 -----------------------------
 
+.. note::
+
+    These functions are about running one simulation and saving state variables at
+    regular intervals. While this can be done manually with a series of calls to
+    e.g., ``n.continuerun()`` and then saving data to a file, these functions
+    avoid the overhead of returning back to the Python interpreter.
+
+    If you are instead looking to run a collection of simulations together using MPI,
+    look at e.g., :meth:`ParallelContext.runworker` and :meth:`ParallelContext.submit`.
+
 .. function:: batch_run
 
 
@@ -9,8 +19,8 @@ Running and Saving Batch Jobs
         .. code-block::
             python
             
-            h.batch_run(tstop, tstep, 'filename')
-            h.batch_run(tstop, tstep, 'filename', 'comment')
+            n.batch_run(tstop, tstep, 'filename')
+            n.batch_run(tstop, tstep, 'filename', 'comment')
 
 
     Description:
@@ -19,9 +29,9 @@ Running and Saving Batch Jobs
         .. code-block::
             python
             
-            while h.t < tstop:
+            while n.t < tstop:
                 for i in range(int(tstep / dt)):
-                    h.fadvance()
+                    n.fadvance()
                 # print results to filename
 
         and produces the most efficient run on any given neuron model.  This 
@@ -44,29 +54,29 @@ Running and Saving Batch Jobs
         .. code-block::
             python
                      
-            from neuron import h
+            from neuron import n
 
             # define a geometry
-            soma = h.Section("soma")
+            soma = n.Section("soma")
             soma.L = 10
             soma.diam = 10
 
             # biophysics: Hodgkin-Huxley channels
-            soma.insert(h.hh)
+            soma.insert(n.hh)
 
             # add a stimulus
-            iclamp = h.IClamp(soma(0.5))
+            iclamp = n.IClamp(soma(0.5))
             iclamp.dur = 0.2
             iclamp.delay = 0.3
             iclamp.amp = 0.5
 
             # define variables to be stored (time and the soma's membrane potential)
-            h.batch_save()
-            h.batch_save(h._ref_t, soma(0.5)._ref_v)
+            n.batch_save()
+            n.batch_save(n._ref_t, soma(0.5)._ref_v)
 
             # initialize, run, and save
-            h.finitialize(-65)
-            h.batch_run(2, 0.1, 'hhsim.dat', 'My HH sim')
+            n.finitialize(-65)
+            n.batch_run(2, 0.1, 'hhsim.dat', 'My HH sim')
 
         The output (the time series of an action potential) is stored in the :file:`hhsim.dat`:
          
@@ -113,17 +123,17 @@ Running and Saving Batch Jobs
         .. code-block::
             python
             
-            h.batch_save()
-            h.batch_save(varref1, varref2, ...)
+            n.batch_save()
+            n.batch_save(varref1, varref2, ...)
 
 
     Description:
 
 
-        ``h.batch_save()`` 
+        ``n.batch_save()`` 
             starts a new list of variables to save in a :func:`batch_run` . 
 
-        ``h.batch_save(varref1, varref2, ...)`` 
+        ``n.batch_save(varref1, varref2, ...)`` 
             adds pointers to the list of variables to be saved in a ``batch_run``. 
          
 
@@ -132,11 +142,11 @@ Running and Saving Batch Jobs
         .. code-block::
             python
 
-            h.batch_save()    # This clears whatever list existed and starts a new 
+            n.batch_save()    # This clears whatever list existed and starts a new 
             		          # list of variables to be saved. 
-            h.batch_save(soma(0.5)._ref_v, axon(1)._ref_v)
+            n.batch_save(soma(0.5)._ref_v, axon(1)._ref_v)
             for i in range(3):
-                h.batch_save(dend[i](0.3)._ref_v)
+                n.batch_save(dend[i](0.3)._ref_v)
 
         specifies five quantities to be saved from each :func:`batch_run`. 
 

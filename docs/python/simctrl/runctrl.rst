@@ -37,18 +37,18 @@ The run call chain is
 .. code-block::
     none
 
-        h.run --> h.continuerun --> h.step --> h.advance --> h.fadvance 
+        n.run --> n.continuerun --> n.step --> n.advance --> n.fadvance 
 
 The default advance is merely a HOC function that calls :func:`fadvance`. It may be overriden via, e.g.
 
 .. code-block::
     python
 
-    h('proc advance() {nrnpython("myadvance()")}')
+    n('proc advance() {nrnpython("myadvance()")}')
     
     def myadvance():
-        print(f'h.t = {h.t}')
-        h.fadvance()
+        print(f'n.t = {n.t}')
+        n.fadvance()
 
 
 .. warning:: 
@@ -70,7 +70,7 @@ The init call chain is
 .. code-block::
     none
 
-        h.stdinit --> h.init --> (h.finitialize, h.fcurrent) 
+        n.stdinit --> n.init --> (n.finitialize, n.fcurrent) 
 
 When more complicated initialization is required, use 
 :class:`FInitializeHandler` objects or substitute a 
@@ -80,17 +80,17 @@ new procedure for the default init procedure; e.g.
 .. code-block::
     python
 
-    h('proc init() {finitialize(v_init) nrnpython("myinit()")}')
+    n('proc init() {finitialize(v_init) nrnpython("myinit()")}')
 
     def myinit():
         # new code to happen after initialization here
         print('initializing...')
         # only need the following if states have been changed
-        if h.cvode.active():
-            h.cvode.re_init()
+        if n.cvode.active():
+            n.cvode.re_init()
         else:
-            h.fcurrent()
-        h.frecord_init()
+            n.fcurrent()
+        n.frecord_init()
 
 
 .. seealso::

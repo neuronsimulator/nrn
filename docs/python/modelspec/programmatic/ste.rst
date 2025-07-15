@@ -6,7 +6,7 @@ StateTransitionEvent
 .. class:: StateTransitionEvent
 
   Syntax:
-    ``ste = h.StateTransitionEvent(nstate, [pointprocess])``
+    ``ste = n.StateTransitionEvent(nstate, [pointprocess])``
 
   Description:
     A StateTransitionEvent describes a finite state machine which is computed during a simulation run and moves
@@ -29,39 +29,39 @@ StateTransitionEvent
     .. code-block::
       python
       
-      from neuron import h
-      h.load_file("stdrun.hoc") # use h.run(), h.cvode, etc
+      from neuron import n
+      n.load_file("stdrun.hoc") # use n.run(), n.cvode, etc
       
-      soma = h.Section("soma") # empty model not allowed.
-      ste = h.StateTransitionEvent(1)
+      soma = n.Section("soma") # empty model not allowed.
+      ste = n.StateTransitionEvent(1)
 
-      tnext = h.ref(1)
+      tnext = n.ref(1)
       
       def fteinit():
         tnext[0] = 1.0 # first transition at 1.0
         ste.state(0)   # initial state
 
-      fih = h.FInitializeHandler(1, fteinit)
+      fih = n.FInitializeHandler(1, fteinit)
 
       def foo(src): # current state is the destination. arg gives the source
-        print(f'{h.t} transition {src} {int(ste.state())} t-tnext = {h.t-tnext[0]}')
+        print(f'{n.t} transition {src} {int(ste.state())} t-tnext = {n.t-tnext[0]}')
         tnext[0] += 1.0 # update for next transition
       
-      ste.transition(0, 0, h._ref_t, tnext, (foo, 0))
+      ste.transition(0, 0, n._ref_t, tnext, (foo, 0))
 
       print("default dt=0.025 fixed step run")
-      h.run()
+      n.run()
       
-      h.steps_per_ms = 64
-      h.dt = 1.0/h.steps_per_ms
-      print(f"dt=1/64 fixed step run {h.dt}")
-      h.run()
+      n.steps_per_ms = 64
+      n.dt = 1.0/n.steps_per_ms
+      print(f"dt=1/64 fixed step run {n.dt}")
+      n.run()
 
       for i in [1,2]:
-        h.cvode.condition_order(i)
-        print(f"cvode.condition_order() = {h.cvode.condition_order()}")
-        h.cvode_active(True)
-        h.run()
+        n.cvode.condition_order(i)
+        print(f"cvode.condition_order() = {n.cvode.condition_order()}")
+        n.cvode_active(True)
+        n.run()
 
     The results of a run are:
     
@@ -150,7 +150,7 @@ StateTransitionEvent
     the earliest crossing will be the one actually taken.
 
     The ``triggervar`` may be the NEURON time variable t
-    (in this case, pass ``h._ref_t`` for the ``_ref_triggervar`` argument.
+    (in this case, pass ``n._ref_t`` for the ``_ref_triggervar`` argument.
     This will work properly with threads and local variable time steps
     as the system will point to the correct thread/cvode instance time. NEURON time as a ``triggerthresh``
     will work correctly
@@ -160,9 +160,9 @@ StateTransitionEvent
     
     The direction sense of threshold crossing can be reversed by reversing the order of the ``_ref_triggervar`` and ``_ref_triggerthresh`` args.
    
-    In Python, the syntax for a triggervar reference is, for example, h._ref_t or sec(.5)._ref_v . A reference to a
+    In Python, the syntax for a triggervar reference is, for example, n._ref_t or sec(.5)._ref_v . A reference to a
     hoc variable is also allowed for a triggerthreash, but if the triggerthresh is a constant, one can declare a Python
-    reference with triggerthresh = h.ref(value) and pass that for the ``triggerthresh`` arg.
+    reference with triggerthresh = n.ref(value) and pass that for the ``triggerthresh`` arg.
     One changes its value via the
     ``triggerthresh[0] = ...`` syntax. Since the ste object keeps pointers to these values, it is very important that
     triggerthresh not be destroyed unless the ste instance is also destroyed.

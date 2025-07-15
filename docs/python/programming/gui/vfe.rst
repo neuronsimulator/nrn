@@ -9,7 +9,7 @@ ValueFieldEditor
 
 
     Syntax:
-        ``vfe = h.ValueFieldEditor(...)``
+        ``vfe = n.ValueFieldEditor(...)``
 
 
     Description:

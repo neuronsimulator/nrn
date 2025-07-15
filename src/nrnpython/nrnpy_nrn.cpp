@@ -2361,9 +2361,7 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
     } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
         sym = ((NPyRangeVar*) rv)->sym_;
         if (is_array(*sym)) {
-            char s[200];
-            Sprintf(s, "%s needs an index for assignment", sym->name);
-            PyErr_SetString(PyExc_IndexError, s);
+            PyErr_Format(PyExc_IndexError, "%s needs an index for assignment", sym->name);
             return -1;
         } else {
             int errp;
