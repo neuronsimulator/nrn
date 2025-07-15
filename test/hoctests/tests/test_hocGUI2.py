@@ -1,19 +1,8 @@
 # tests of GUI with hoc variables that go out of scope or move
+import os
 
 from neuron import config, h, gui
 from neuron.expect_hocerr import expect_err, set_quiet
-import os
-
-set_quiet(False)
-
-h(
-    """
-var1 = 0.0
-proc act1() { print "hoc var1 = ", var1 }
-proc actvec() { print "hoc vec.x[0] = ", $o1.x[0] }
-proc actcell() {forall {print secname(), "  ", g_pas(.5)}}
-"""
-)
 
 
 class Cell:
@@ -99,7 +88,20 @@ def test1():  # statebutton, checkbox, slider
     gui.vec = None
     gui.cell = None
     # sliders do not get grayed out
-    return gui
+    assert gui
+
+
+def test_hocGUI2():
+    set_quiet(False)
+
+    h(
+        """
+    var1 = 0.0
+    proc act1() { print "hoc var1 = ", var1 }
+    proc actvec() { print "hoc vec.x[0] = ", $o1.x[0] }
+    proc actcell() {forall {print secname(), "  ", g_pas(.5)}}
+    """
+    )
 
 
 def test2():  # Graph.xexpr
@@ -119,7 +121,7 @@ def test2():  # Graph.xexpr
     h.graphItem.exec_menu("View = plot")
     cells = cells[3]  # moves cell[3] to beginning of soa by deleting all others
     h.run()
-    return cells
+    assert cells
 
 
 def test_Hinton():  # PlotShape.hinton
@@ -146,10 +148,10 @@ def test_Hinton():  # PlotShape.hinton
 
     rval = pnet(net[1])
 
-    return rval  # net[1] is only remaining Net (in rval)
+    assert rval  # net[1] is only remaining Net (in rval)
 
 
 if __name__ == "__main__":
-    gui = test1()
-    cells = test2()
-    net = test_Hinton()
+    test1()
+    test2()
+    test_Hinton()

@@ -4,8 +4,6 @@
 
 from neuron import h, gui
 
-pc = h.ParallelContext()
-
 
 class Cell:
     def __init__(self, id):
@@ -24,40 +22,42 @@ class Cell:
         return "Cell_" + str(self.id)
 
 
-cells = [Cell(i) for i in range(5)]
-trajectories = []
-for i, cell in enumerate(cells):
-    cell.soma.gkbar_hh = 0.036 + 0.003 * i  # distinct AP trajectories
-    cell.lag.dur = 1.0 + i
-    trajectories.append(
-        (h.Vector().record(cell.soma(0.5)._ref_v), h.Vector().record(cell.lag._ref_vl))
-    )
+def test_vlag():
+    pc = h.ParallelContext()
 
-tvec = h.Vector()
-tvec.record(h._ref_t, sec=cells[0].soma)
-
-
-def run(tstop):
-    pc.set_maxstep(10)
-    h.finitialize(-65.0)
-    pc.psolve(tstop)
-
-
-run(10)
-g = h.Graph()
-for trajec in trajectories:
-    for v in trajec:
-        v.line(g, tvec)
-g.exec_menu("View = plot")
-
-
-def chk(cells, trajectories):
+    cells = [Cell(i) for i in range(5)]
+    trajectories = []
     for i, cell in enumerate(cells):
-        trajec = trajectories[i]
-        start = cell.lag.dur / h.dt
-        end = 4 / h.dt
-        err = trajec[0].c(0, end).sub(trajec[1].c(start, start + end)).abs().sum()
-        assert err < 1e-9
+        cell.soma.gkbar_hh = 0.036 + 0.003 * i  # distinct AP trajectories
+        cell.lag.dur = 1.0 + i
+        trajectories.append(
+            (
+                h.Vector().record(cell.soma(0.5)._ref_v),
+                h.Vector().record(cell.lag._ref_vl),
+            )
+        )
 
+    tvec = h.Vector()
+    tvec.record(h._ref_t, sec=cells[0].soma)
 
-chk(cells, trajectories)
+    def run(tstop):
+        pc.set_maxstep(10)
+        h.finitialize(-65.0)
+        pc.psolve(tstop)
+
+    run(10)
+    g = h.Graph()
+    for trajec in trajectories:
+        for v in trajec:
+            v.line(g, tvec)
+    g.exec_menu("View = plot")
+
+    def chk(cells, trajectories):
+        for i, cell in enumerate(cells):
+            trajec = trajectories[i]
+            start = cell.lag.dur / h.dt
+            end = 4 / h.dt
+            err = trajec[0].c(0, end).sub(trajec[1].c(start, start + end)).abs().sum()
+            assert err < 1e-9
+
+    chk(cells, trajectories)

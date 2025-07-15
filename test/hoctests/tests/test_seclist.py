@@ -1,9 +1,8 @@
 from neuron import h
 
-secs = [h.Section() for _ in range(10)]
 
-
-def test():
+def test_seclist():
+    secs = [h.Section() for _ in range(10)]
     sl = h.SectionList()
     sl.allroots()
     assert len(sl) == len(list(sl))
@@ -12,7 +11,7 @@ def test():
     for i in range(n):
         for j in range(n):
             assert b[i * n + j][0] == b[i + j * n][1]
-    return sl
 
 
-sl = test()
+if __name__ == "__main__":
+    test_seclist()
