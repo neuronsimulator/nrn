@@ -107,8 +107,12 @@ void pr_profile(void) {}
 #define READLINE 0
 #endif
 
-#ifndef READLINE
+#if !defined(READLINE)
+#if !defined(_WIN32)
 #define READLINE 1
+#else
+#define READLINE 0
+#endif
 #endif
 
 #if READLINE
