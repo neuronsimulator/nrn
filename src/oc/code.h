@@ -1,5 +1,11 @@
 #pragma once
+enum HocReturnType {
+    hoc_float = 0,
+    integer = 1,
+    boolean = 2,
 
+};
+extern HocReturnType hoc_return_type_code;
 
 extern void hoc_nopop(void);
 extern void edit(void);

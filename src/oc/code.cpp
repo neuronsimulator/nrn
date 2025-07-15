@@ -39,8 +39,7 @@ extern void bbs_handle();
 int nrn_isecstack();
 
 extern void debugzz(Inst*);
-int hoc_return_type_code = 0; /* flag for allowing integers (1) and booleans (2) to be recognized as
-                                 such */
+HocReturnType hoc_return_type_code = HocReturnType::hoc_float;
 
 // array indices on the stack have their own type to help with determining when
 // a compiled fragment of HOC code is processing a variable whose number of

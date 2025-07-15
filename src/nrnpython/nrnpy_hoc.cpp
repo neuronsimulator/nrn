@@ -1,4 +1,5 @@
 #include "cabcode.h"
+#include "code.h"
 #include "ivocvect.h"
 #include "neuron/container/data_handle.hpp"
 #include "neuron/unique_cstr.hpp"
@@ -36,7 +37,6 @@ extern void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size)
 extern void (*nrnpy_decref)(void* pyobj);
 extern double (*nrnpy_call_func)(Object*, double);
 extern void hoc_pushs(Symbol*);
-extern double* hoc_evalpointer();
 extern double cable_prop_eval(Symbol* sym);
 extern Symlist* hoc_top_level_symlist;
 extern Symlist* hoc_built_in_symlist;
@@ -80,7 +80,6 @@ extern PyObject* pmech_types;  // Python map for name to Mechanism
 extern PyObject* rangevars_;   // Python map for name to Symbol
 
 extern int hoc_max_builtin_class_id;
-extern int hoc_return_type_code;
 
 static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
@@ -509,7 +508,7 @@ static Symbol* getsym(char* name, Object* ho, int fail) {
 static int component(PyHocObject* po) {
     Inst fc[6];
     int var_type = 0;
-    hoc_return_type_code = 0;
+    hoc_return_type_code = HocReturnType::hoc_float;
     fc[0].sym = po->sym_;
     fc[1].i = 0;
     fc[2].i = 0;
@@ -534,7 +533,7 @@ static int component(PyHocObject* po) {
     if (po->ho_->ctemplate->id <= hoc_max_builtin_class_id) {
         var_type = hoc_return_type_code;
     }
-    hoc_return_type_code = 0;
+    hoc_return_type_code = HocReturnType::hoc_float;
     return (var_type);
 }
 
