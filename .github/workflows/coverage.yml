@@ -248,7 +248,11 @@ jobs:
               PATH="${PWD}/bin:${PATH}" \
               LD_LIBRARY_PATH="${PWD}/lib:${LD_LIBRARY_PATH}" \
               DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
-              "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd();"
+              "${python}" -m pytest \
+              --capture=tee-sys \
+              --cov-report=xml \
+              --cov=neuron \
+              lib/python/tests
           done
           cmake --build . --target cover_collect
           cmake --build . --target cover_combine
