@@ -252,6 +252,11 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
             auto mech_id = report.mech_ids[i];
             auto var_name = report.var_names[i];
             auto mech_name = report.mech_names[i];
+
+            std::cout << "AAA " << mech_id << ' ' << var_name << ' ' << mech_name << std::endl;
+            std::cout << "is ml_list empty? " << ((bool) nt._ml_list[mech_id]) << std::endl;
+
+
             // skip i_membrane and v. We add them later
             if (mech_name == "i_membrane") {
                 has_imembrane = true;
@@ -273,12 +278,16 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
             for (int j = 0; j < ml->nodecount; j++) {
                 auto segment_id = ml->nodeindices[j];
                 if ((nodes_to_gids[ml->nodeindices[j]] == gid)) {
+                    std::cout << "var_value " << var_name << std::endl;
                     double* var_value =
                         get_var_location_from_var_name(mech_id, var_name.data(), ml, j);
+
+                    std::cout << *var_value << std::endl;
                     summation_report.currents_[segment_id].push_back(
                         std::make_pair(var_value, scale));
                 }
             }
+            // throw std::runtime_error("we stop here");
         }
 
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);

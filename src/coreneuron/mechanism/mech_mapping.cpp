@@ -40,17 +40,20 @@ double* get_var_location_from_var_name(int mech_id,
                                        const char* variable_name,
                                        Memb_list* ml,
                                        int node_index) {
-    if (mechNamesMapping.find(mech_id) == mechNamesMapping.end()) {
+    const auto mech_it = mechNamesMapping.find(mech_id);
+    if (mech_it == mechNamesMapping.end()) {
         std::cerr << "ERROR : no variable name mapping exist for mechanism id: " << mech_id
                   << std::endl;
         abort();
     }
-    if (mechNamesMapping.at(mech_id).find(variable_name) == mechNamesMapping.at(mech_id).end()) {
-        std::cerr << "ERROR : no value associtated to variable name: " << variable_name
-                  << std::endl;
+    const auto& mech = mech_it->second;
+    auto variable_rank_it = mech.find(variable_name);
+    if (variable_rank_it == mech.end()) {
+        std::cerr << "ERROR : no value associtated to variable name: `" << variable_name << "`\n";
         abort();
     }
-    int variable_rank = mechNamesMapping.at(mech_id).at(variable_name);
+
+    int variable_rank = variable_rank_it->second;
     int ix = get_data_index(node_index, variable_rank, mech_id, ml);
     return &(ml->data[ix]);
 }
