@@ -63,7 +63,7 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
         const std::vector<int> gids_to_report = intersection_gids(nt, report_config.target);
         VarsToReport vars_to_report;
         const bool is_soma_target = report_config.section_type == SectionType::Soma ||
-                            report_config.section_type == SectionType::Cell;
+                                    report_config.section_type == SectionType::Cell;
         switch (report_config.type) {
         case Compartment: {
             const auto& mech_name = report_config.mech_names[0];
@@ -75,7 +75,7 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
             } else {
                 std::ostringstream s;
                 s << "The variable name '" << mech_name
-                          << "' is not currently supported by compartment reports.\n";
+                  << "' is not currently supported by compartment reports.\n";
                 throw std::invalid_argument(s.str());
             }
             vars_to_report = get_section_vars_to_report(nt,
@@ -253,11 +253,11 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
             auto var_name = report.var_names[i];
             auto mech_name = report.mech_names[i];
             // skip i_membrane and v. We add them later
-            if (mech_name == "i_membrane") { 
+            if (mech_name == "i_membrane") {
                 has_imembrane = true;
                 continue;
             }
-            if (mech_name == "v") { 
+            if (mech_name == "v") {
                 has_v = true;
                 continue;
             }
@@ -305,7 +305,7 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
                                             report.section_all_compartments);
             }
         }
-        
+
         for (const auto& sections: section_mapping) {
             for (auto& section: sections->secmap) {
                 // compartment_id
