@@ -232,9 +232,16 @@ static double printnames(void* v) {
 double seclist_size(void* v) {
     double count = 0.;
     List* sl = static_cast<List*>(v);
-    for (Item* q1 = sl->next; q1 != sl; q1 = q1->next) {
+    Item* q2 = nullptr;
+    for (Item* q1 = sl->next; q1 != sl; q1 = q2) {
+        q2 = q1->next;
+        if (q1->element.sec->prop == nullptr) {
+            hoc_l_delete(q1);
+            continue;
+        }
         count++;
     }
+    hoc_return_type_code = 1;  // integer
     return count;
 }
 

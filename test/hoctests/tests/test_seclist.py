@@ -1,5 +1,21 @@
 from neuron import h
 
+
+def test_sectionlist_len_size():
+    soma = h.Section("soma")
+    dend = h.Section("dend")
+
+    sl = h.SectionList()
+    sl.append(soma)
+    sl.append(dend)
+    assert len(sl) == 2
+    assert sl.size() == 2
+
+    soma = None
+    assert len(sl) == 1
+    assert sl.size() == 1
+
+
 secs = [h.Section() for _ in range(10)]
 
 
