@@ -51,8 +51,10 @@ void ReportEvent::summation_alu(NrnThread* nt) {
             int scale = value.second;
             sum += current_value * scale;
         }
+
         summation_report.summation_[segment_id] = sum;
     }
+
     // Add all currents in the soma
     // Only when type summation and soma target
     if (!summation_report.gid_segments_.empty()) {
@@ -104,7 +106,7 @@ void ReportEvent::deliver(double t, NetCvode* nc, NrnThread* nt) {
 #pragma omp critical
     {
         // Sum currents and calculate lfp only on reporting steps
-        if (step > 0 && (static_cast<int>(step) % reporting_period) == 0) {
+        if ((static_cast<int>(step) % reporting_period) == 0) {
             if (report_type == ReportType::Summation) {
                 summation_alu(nt);
             } else if (report_type == ReportType::LFP) {
