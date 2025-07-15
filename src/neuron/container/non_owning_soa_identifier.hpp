@@ -6,6 +6,10 @@
 #include <ostream>
 #include <vector>
 
+#ifdef max
+#undef max
+#endif
+
 namespace neuron::container {
 /**
  * @brief Struct used to index SoAoS data, such as array range variables.

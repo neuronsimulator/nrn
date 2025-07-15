@@ -36,7 +36,7 @@ extern void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size)
 extern void (*nrnpy_decref)(void* pyobj);
 extern double (*nrnpy_call_func)(Object*, double);
 extern void hoc_pushs(Symbol*);
-extern double* hoc_evalpointer();
+extern void hoc_evalpointer();
 extern double cable_prop_eval(Symbol* sym);
 extern Symlist* hoc_top_level_symlist;
 extern Symlist* hoc_built_in_symlist;
@@ -299,7 +299,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
         PyDict_DelItemString(kwds, "hocbase");
     }
 
-    if (hbase and hbase->type_ == PyHoc::HocFunction && hbase->sym_->type == TEMPLATE) {
+    if (hbase && hbase->type_ == PyHoc::HocFunction && hbase->sym_->type == TEMPLATE) {
         // printf("hocobj_new base %s\n", hbase->sym_->name);
         // remove the hocbase keyword since hocobj_call only allows
         // the "sec" keyword argument
@@ -3066,12 +3066,12 @@ static void add2topdict(PyObject* dict) {
 
 static PyObject* nrnpy_vec_math = NULL;
 
-extern "C" NRN_EXPORT int nrnpy_vec_math_register(PyObject* callback) {
+extern "C" NRN_DLLEXPORT int nrnpy_vec_math_register(PyObject* callback) {
     nrnpy_vec_math = callback;
     return 0;
 }
 
-extern "C" NRN_EXPORT int nrnpy_rvp_pyobj_callback_register(PyObject* callback) {
+extern "C" NRN_DLLEXPORT int nrnpy_rvp_pyobj_callback_register(PyObject* callback) {
     nrnpy_rvp_pyobj_callback = callback;
     return 0;
 }
@@ -3288,8 +3288,7 @@ static char* nrncore_arg(double tstop) {
     return nullptr;
 }
 
-
-static PyType_Spec obj_spec_from_name(const char* name) {
+PyType_Spec obj_spec_from_name(const char* name) {
     return {
         name,
         sizeof(PyHocObject),

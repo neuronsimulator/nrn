@@ -19,7 +19,6 @@ char* hoc_dos2unixpath(const char* d) {
     size_t i = 0;
     int j = 0;
     if (d[0] && d[1] == ':') {
-        strcpy(u, "/cygdrive/");
         i = strlen(u);
         u[i++] = d[0];
         j += 2;
