@@ -220,11 +220,14 @@ if(NRN_ENABLE_PYTHON)
     PRELOAD_SANITIZER
     SCRIPT_PATTERNS "test/unit_tests/hoc_python/*.py")
 
-  nrn_add_test(
-    GROUP unit_tests
-    NAME wheel_tests
-    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest}
-            ${PROJECT_BINARY_DIR}/lib/python/neuron/tests)
+  # we only test the files in `share/lib/python/neuron` for coverage
+  if(NRN_ENABLE_COVERAGE)
+    nrn_add_test(
+      GROUP unit_tests
+      NAME wheel_tests
+      COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest}
+              ${PROJECT_BINARY_DIR}/lib/python/neuron/tests)
+  endif()
 
   # In brief:
   #

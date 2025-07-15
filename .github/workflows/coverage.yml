@@ -252,7 +252,7 @@ jobs:
               --capture=tee-sys \
               --cov-report=xml \
               --cov=neuron \
-              lib/python/tests
+              lib/python/neuron/tests
           done
           cmake --build . --target cover_collect
           cmake --build . --target cover_combine
