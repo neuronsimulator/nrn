@@ -108,7 +108,7 @@ void pr_profile(void) {}
 #endif
 
 #ifndef READLINE
-// #define READLINE 1
+#define READLINE 1
 #endif
 
 #if READLINE
