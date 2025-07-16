@@ -33,6 +33,7 @@ using MechNamesMapping = std::map<MechId, std::map<VariableName, Offset, cmp_str
 static MechNamesMapping mechNamesMapping;
 
 double* get_var_location_from_var_name(int mech_id,
+                                        const std::string_view mech_name,
                                        const char* variable_name,
                                        Memb_list* ml,
                                        int node_index) {
