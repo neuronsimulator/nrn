@@ -507,8 +507,8 @@ static Symbol* getsym(char* name, Object* ho, int fail) {
 // returns hoc_return_is_int if called on a builtin (i.e. 2 if bool, 1 if int, 0 otherwise)
 static HocReturnType component(PyHocObject* po) {
     Inst fc[6];
-    HocReturnType var_type = HocReturnType::unknown;
-    hoc_return_type_code = HocReturnType::unknown;
+    HocReturnType var_type = HocReturnType::floating;
+    hoc_return_type_code = HocReturnType::floating;
     fc[0].sym = po->sym_;
     fc[1].i = 0;
     fc[2].i = 0;
@@ -533,7 +533,7 @@ static HocReturnType component(PyHocObject* po) {
     if (po->ho_->ctemplate->id <= hoc_max_builtin_class_id) {
         var_type = hoc_return_type_code;
     }
-    hoc_return_type_code = HocReturnType::unknown;
+    hoc_return_type_code = HocReturnType::floating;
     return var_type;
 }
 

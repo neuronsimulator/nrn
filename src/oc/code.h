@@ -1,6 +1,6 @@
 #pragma once
-enum HocReturnType {
-    unknown = 0,
+enum class HocReturnType {
+    floating = 0,
     integer = 1,
     boolean = 2,
 
