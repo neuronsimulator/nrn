@@ -249,9 +249,9 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
         // In case we need convertion of units
         int scale = 1;
         for (auto i = 0; i < report.mech_ids.size(); ++i) {
-            auto mech_id = report.mech_ids[i];
-            auto var_name = report.var_names[i];
-            auto mech_name = report.mech_names[i];
+            const auto& mech_id = report.mech_ids[i];
+            const auto& var_name = report.var_names[i];
+            const auto& mech_name = report.mech_names[i];
 
             std::cout << "AAA " << mech_id << ' ' << var_name << ' ' << mech_name << std::endl;
             std::cout << "is ml_list empty? " << ((bool) nt._ml_list[mech_id]) << std::endl;
@@ -280,7 +280,7 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
                 if ((nodes_to_gids[ml->nodeindices[j]] == gid)) {
                     std::cout << "var_value " << var_name << std::endl;
                     double* var_value =
-                        get_var_location_from_var_name(mech_id, mech_name, var_name.data(), ml, j);
+                        get_var_location_from_var_name(mech_id, mech_name, var_name, ml, j);
 
                     std::cout << *var_value << std::endl;
                     summation_report.currents_[segment_id].push_back(
@@ -379,7 +379,7 @@ VarsToReport ReportHandler::get_synapse_vars_to_report(
                 report_variable = *is_selected != 0.;
             }
             if ((nodes_to_gids[ml->nodeindices[j]] == gid) && report_variable) {
-                double* var_value = get_var_location_from_var_name(mech_id, mech_name, var_name.data(), ml, j);
+                double* var_value = get_var_location_from_var_name(mech_id, mech_name, var_name, ml, j);
                 double* synapse_id =
                     get_var_location_from_var_name(mech_id, mech_name, SYNAPSE_ID_MOD_NAME, ml, j);
                 nrn_assert(synapse_id && var_value);

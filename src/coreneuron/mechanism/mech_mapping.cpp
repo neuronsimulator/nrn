@@ -18,23 +18,18 @@
 namespace coreneuron {
 using Offset = size_t;
 using MechId = int;
-using VariableName = const char*;
+using VariableName = const std::string_view;
 
-struct cmp_str {
-    bool operator()(char const* a, char const* b) const {
-        return std::strcmp(a, b) < 0;
-    }
-};
 
 /*
  * Structure that map variable names of mechanisms to their value's location (offset) in memory
  */
-using MechNamesMapping = std::map<MechId, std::map<VariableName, Offset, cmp_str>>;
+using MechNamesMapping = std::map<MechId, std::map<VariableName, Offset>>;
 static MechNamesMapping mechNamesMapping;
 
 double* get_var_location_from_var_name(int mech_id,
                                         const std::string_view mech_name,
-                                       const char* variable_name,
+                                       const std::string_view variable_name,
                                        Memb_list* ml,
                                        int node_index) {
     const auto mech_it = mechNamesMapping.find(mech_id);
@@ -55,7 +50,7 @@ double* get_var_location_from_var_name(int mech_id,
         for (const auto& var_kv : mech) {
             std::cerr << "  variable_name: '" << var_kv.first << "', offset: " << var_kv.second << "\n";
         }
-        throw std::runtime_error(std::string("No value associated to variable name: '") + variable_name + "'");
+        throw std::runtime_error(std::string("No value associated to variable name: '") + std::string(variable_name) + "'");
     }
 
     const int ix = get_data_index(node_index, offset_it->second, mech_id, ml);

@@ -35,7 +35,7 @@ using SerializedNames = const char**;
 // return pointer to value of a variable's mechanism, or nullptr if not found
 extern double* get_var_location_from_var_name(int mech_id,
     const std::string_view mech_name,
-                                              const char* variable_name,
+                                              const std::string_view variable_name,
                                               Memb_list* ml,
                                               int local_index);
 
