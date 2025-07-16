@@ -39,7 +39,7 @@ extern void bbs_handle();
 int nrn_isecstack();
 
 extern void debugzz(Inst*);
-HocReturnType hoc_return_type_code = HocReturnType::hoc_float;
+HocReturnType hoc_return_type_code = HocReturnType::unknown;
 
 // array indices on the stack have their own type to help with determining when
 // a compiled fragment of HOC code is processing a variable whose number of

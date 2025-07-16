@@ -1,5 +1,5 @@
 #include "cabcode.h"
-#include "code.h"
+#include "../oc/code.h"
 #include "ivocvect.h"
 #include "neuron/container/data_handle.hpp"
 #include "neuron/unique_cstr.hpp"
@@ -505,10 +505,10 @@ static Symbol* getsym(char* name, Object* ho, int fail) {
 // on entry the stack order is indices, args, object
 // on exit all that is popped and the result is on the stack
 // returns hoc_return_is_int if called on a builtin (i.e. 2 if bool, 1 if int, 0 otherwise)
-static int component(PyHocObject* po) {
+static HocReturnType component(PyHocObject* po) {
     Inst fc[6];
-    int var_type = 0;
-    hoc_return_type_code = HocReturnType::hoc_float;
+    HocReturnType var_type = HocReturnType::unknown;
+    hoc_return_type_code = HocReturnType::unknown;
     fc[0].sym = po->sym_;
     fc[1].i = 0;
     fc[2].i = 0;
@@ -533,8 +533,8 @@ static int component(PyHocObject* po) {
     if (po->ho_->ctemplate->id <= hoc_max_builtin_class_id) {
         var_type = hoc_return_type_code;
     }
-    hoc_return_type_code = HocReturnType::hoc_float;
-    return (var_type);
+    hoc_return_type_code = HocReturnType::unknown;
+    return var_type;
 }
 
 int nrnpy_numbercheck(PyObject* po) {
@@ -720,14 +720,13 @@ static void* fcall(void* vself, void* vargs) {
 
     std::vector<neuron::unique_cstr> strings_to_free;
     int narg = hocobj_pushargs((PyObject*) vargs, strings_to_free);
-    int var_type;
     if (self->ho_) {
         self->nindex_ = narg;
-        var_type = component(self);
+        HocReturnType var_type = component(self);
         switch (var_type) {
-        case 2:
+        case HocReturnType::boolean:
             return nrnpy_hoc_bool_pop();
-        case 1:
+        case HocReturnType::integer:
             return nrnpy_hoc_int_pop();
         default:
             // No callable hoc function returns a data handle.
