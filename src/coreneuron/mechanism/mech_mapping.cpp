@@ -32,31 +32,53 @@ struct cmp_str {
 using MechNamesMapping = std::map<MechId, std::map<VariableName, Offset, cmp_str>>;
 static MechNamesMapping mechNamesMapping;
 
-static void set_an_offset(int mech_id, const char* variable_name, int offset) {
-    mechNamesMapping[mech_id][variable_name] = offset;
-}
-
 double* get_var_location_from_var_name(int mech_id,
                                        const char* variable_name,
                                        Memb_list* ml,
                                        int node_index) {
     const auto mech_it = mechNamesMapping.find(mech_id);
     if (mech_it == mechNamesMapping.end()) {
-        std::cerr << "ERROR : no variable name mapping exist for mechanism id: " << mech_id
-                  << std::endl;
-        abort();
-    }
-    const auto& mech = mech_it->second;
-    auto variable_rank_it = mech.find(variable_name);
-    if (variable_rank_it == mech.end()) {
-        std::cerr << "ERROR : no value associtated to variable name: `" << variable_name << "`\n";
-        abort();
+        std::cerr << "DEBUG: mech_id " << mech_id << " not found.\n";
+        std::cerr << "DEBUG: Current MechNamesMapping keys:\n";
+        for (const auto& kv : mechNamesMapping) {
+            std::cerr << "  mech_id: " << kv.first << "\n";
+        }
+        throw std::runtime_error("No variable name mapping exists for mechanism id: " + std::to_string(mech_id));
     }
 
-    int variable_rank = variable_rank_it->second;
-    int ix = get_data_index(node_index, variable_rank, mech_id, ml);
+    const auto& mech = mech_it->second;
+    auto offset_it = mech.find(variable_name);
+    if (offset_it == mech.end()) {
+        std::cerr << "DEBUG: variable_name '" << variable_name << "' not found for mech_id " << mech_id << ".\n";
+        std::cerr << "DEBUG: Available variable names for mech_id " << mech_id << ":\n";
+        for (const auto& var_kv : mech) {
+            std::cerr << "  variable_name: '" << var_kv.first << "', offset: " << var_kv.second << "\n";
+        }
+        throw std::runtime_error(std::string("No value associated to variable name: '") + variable_name + "'");
+    }
+
+    const int ix = get_data_index(node_index, offset_it->second, mech_id, ml);
     return &(ml->data[ix]);
 }
+
+// double* get_var_location_from_var_name(int mech_id,
+//                                        const char* variable_name,
+//                                        Memb_list* ml,
+//                                        int node_index) {
+//     const auto mech_it = mechNamesMapping.find(mech_id);
+//     if (mech_it == mechNamesMapping.end()) {
+//         throw std::runtime_error("No variable name mapping exists for mechanism id: " + std::to_string(mech_id));
+//     }
+//     const auto& mech = mech_it->second;
+//     auto offset_it = mech.find(variable_name);
+//     if (offset_it == mech.end()) {
+//         throw std::runtime_error(std::string("No value associated to variable name: '") +
+//                             variable_name + "'");
+//     }
+
+//     const int ix = get_data_index(node_index, offset_it->second, mech_id, ml);
+//     return &(ml->data[ix]);
+// }
 
 
 void register_all_variables_offsets(int mech_id, SerializedNames variable_names) {
@@ -65,7 +87,7 @@ void register_all_variables_offsets(int mech_id, SerializedNames variable_names)
     int current_categorie = 1;
     while (current_categorie < NB_MECH_VAR_CATEGORIES) {
         if (variable_names[idx]) {
-            set_an_offset(mech_id, variable_names[idx], nb_parsed_variables);
+                        mechNamesMapping[mech_id][variable_names[idx]] = nb_parsed_variables;
             nb_parsed_variables++;
         } else {
             current_categorie++;

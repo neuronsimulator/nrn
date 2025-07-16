@@ -152,9 +152,6 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
                           << report.mech_names.size() << std::endl;
                 nrn_abort(1);
             }
-            if (report.mech_names[0] == "i_membrane") {
-                nrn_use_fast_imem = true;
-            }
         }
         // gids
         if (report.num_gids) {
