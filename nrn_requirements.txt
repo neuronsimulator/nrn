@@ -1,5 +1,4 @@
 matplotlib<=3.10.0
-ipython<=8.32.0
 mpi4py<=4.0.3
 find_libpython<=0.4.0
 packaging<=25.0,>=22.0
