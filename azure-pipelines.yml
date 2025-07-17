@@ -49,6 +49,9 @@ stages:
           Python313:
             python.version: '3.13'
             python.nodot: '313'
+          Python313t:
+            python.version: '3.13t'
+            python.nodot: '313t'
 
       steps:
 
@@ -75,7 +78,7 @@ stages:
           fi
           sudo mkdir -p /opt/nrnwheel/mpt
           sudo tar -zxf $(mpt_headersSF.secureFilePath) --directory /opt/nrnwheel/mpt
-          packaging/python/build_wheels.bash linux $(python.nodot)
+          CIBW_ENABLE=cpython-freethreading packaging/python/build_wheels.bash linux $(python.nodot)
         displayName: 'Building ManyLinux Wheel'
 
       - script: |
@@ -118,6 +121,11 @@ stages:
             python.nodot: '313'
             python.org.version: '3.13.0'
             python.installer.name: 'macos11.pkg'
+          Python313t:
+            python.version: '3.13t'
+            python.nodot: '313t'
+            python.org.version: '3.13.0'
+            python.installer.name: 'macos11.pkg'
 
       steps:
 
@@ -125,7 +133,31 @@ stages:
           installer=python-$(python.org.version)-$(python.installer.name)
           url=https://www.python.org/ftp/python/$(python.org.version)/$installer
           curl $url -o $installer
-          sudo installer -pkg $installer -target /
+          if [[ "$(python.version)" =~ .*t$ ]]; then
+            version=$(python.version)"
+            version="${version%%t}"
+            # taken from:
+            # https://docs.python.org/3.13/using/mac.html#installing-using-the-command-line
+            cat > ./choicechanges.plist <<EOF
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <array>
+                    <dict>
+                            <key>attributeSetting</key>
+                            <integer>1</integer>
+                            <key>choiceAttribute</key>
+                            <string>selected</string>
+                            <key>choiceIdentifier</key>
+                            <string>org.python.Python.PythonTFramework-${version}</string>
+                    </dict>
+            </array>
+            </plist>
+            EOF
+            sudo installer -pkg $installer_filename -applyChoiceChangesXML ./choicechanges.plist -target /
+          else
+            sudo installer -pkg $installer_filename -target /
+          fi
         displayName: 'Install Python from python.org'
 
       - script: |
@@ -172,7 +204,7 @@ stages:
           fi
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/$(uname -m)
-          packaging/python/build_wheels.bash osx $(python.nodot)
+          CIBW_ENABLE=cpython-freethreading packaging/python/build_wheels.bash osx $(python.nodot)
         displayName: 'Build MacOS Wheel'
 
       - template: ci/azure-wheel-test-upload.yml
