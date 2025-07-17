@@ -155,7 +155,7 @@ stages:
                     </dict>
             </array>
             </plist>
-            PLIST_END
+PLIST_END
             sudo installer -pkg $installer_filename -applyChoiceChangesXML ./choicechanges.plist -target /
           else
             sudo installer -pkg $installer_filename -target /
