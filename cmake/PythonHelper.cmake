@@ -52,6 +52,7 @@ endif()
 # * nrnpy_INCLUDES
 # * nrnpy_LIBRARIES
 # * nrnpy_VERSION
+# * nrnpy_HAS_FREE_THREADING
 #
 # If NRN_ENABLE_PYTHON is *not* set then only nrnpy_EXECUTABLE will be set. There is some special
 # handling on macOS when sanitizers are enabled:
@@ -146,8 +147,9 @@ function(nrn_find_python)
         "HAS_FREE_THREADING"
         PARENT_SCOPE)
   else()
+    # we can't use an empty string because CMake does not have native support for lists
     set("${opt_PREFIX}_HAS_FREE_THREADING"
-        ""
+        " "
         PARENT_SCOPE)
   endif()
 
