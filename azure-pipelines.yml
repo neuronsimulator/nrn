@@ -136,7 +136,7 @@ stages:
           url=https://www.python.org/ftp/python/$(python.org.version)/$installer
           curl $url -o $installer
           if [[ "$(python.version)" =~ .*t$ ]]; then
-            sudo installer -pkg $installer_filename -applyChoiceChangesXML packaging/python/macos_installer_patch_$(python.version).plist -target /
+            sudo installer -pkg $installer_filename -applyChoiceChangesXML packaging/python/macos_installer_patch$(python.version).plist -target /
           else
             sudo installer -pkg $installer_filename -target /
           fi
