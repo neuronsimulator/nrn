@@ -34,18 +34,19 @@ stages:
         vmImage: 'ubuntu-22.04'
       strategy:
         matrix:
-          Python39:
-            python.version: '3.9'
-            python.nodot: '39'
-          Python310:
-            python.version: '3.10'
-            python.nodot: '310'
-          Python311:
-            python.version: '3.11'
-            python.nodot: '311'
-          Python312:
-            python.version: '3.12'
-            python.nodot: '312'
+          # TODO put this back before merging
+          #Python39:
+          #  python.version: '3.9'
+          #  python.nodot: '39'
+          #Python310:
+          #  python.version: '3.10'
+          #  python.nodot: '310'
+          #Python311:
+          #  python.version: '3.11'
+          #  python.nodot: '311'
+          #Python312:
+          #  python.version: '3.12'
+          #  python.nodot: '312'
           Python313:
             python.version: '3.13'
             python.nodot: '313'
@@ -96,26 +97,27 @@ stages:
         vmImage: 'macOS-13'
       strategy:
         matrix:
-          Python39:
-            python.version: '3.9'
-            python.nodot: '39'
-            python.org.version: '3.9.13'
-            python.installer.name: 'macos11.pkg'
-          Python310:
-            python.version: '3.10'
-            python.nodot: '310'
-            python.org.version: '3.10.11'
-            python.installer.name: 'macos11.pkg'
-          Python311:
-            python.version: '3.11'
-            python.nodot: '311'
-            python.org.version: '3.11.7'
-            python.installer.name: 'macos11.pkg'
-          Python312:
-            python.version: '3.12'
-            python.nodot: '312'
-            python.org.version: '3.12.0'
-            python.installer.name: 'macos11.pkg'
+          # TODO put this back before merging
+          #Python39:
+          #  python.version: '3.9'
+          #  python.nodot: '39'
+          #  python.org.version: '3.9.13'
+          #  python.installer.name: 'macos11.pkg'
+          #Python310:
+          #  python.version: '3.10'
+          #  python.nodot: '310'
+          #  python.org.version: '3.10.11'
+          #  python.installer.name: 'macos11.pkg'
+          #Python311:
+          #  python.version: '3.11'
+          #  python.nodot: '311'
+          #  python.org.version: '3.11.7'
+          #  python.installer.name: 'macos11.pkg'
+          #Python312:
+          #  python.version: '3.12'
+          #  python.nodot: '312'
+          #  python.org.version: '3.12.0'
+          #  python.installer.name: 'macos11.pkg'
           Python313:
             python.version: '3.13'
             python.nodot: '313'
