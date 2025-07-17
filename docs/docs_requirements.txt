@@ -1,13 +1,10 @@
 sphinx
 # do not check import of next line
 sphinx_rtd_theme
-jupyter
 nbconvert
 myst_parser
 matplotlib
 bokeh
-# do not check import of next line
-ipython
 plotnine
 numpy
 plotly

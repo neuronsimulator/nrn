@@ -9,7 +9,7 @@ build-backend = "scikit_build_core.build"
 # `build-system.requires` nor `project.dependencies`, so we need to list them
 # here manually. These are all of the dependencies that CMake finds as well.
 requires = [
-  "cython<=3.0.12",
+  "cython<=3.1.2,>=3.1",
   "jinja2>=2.9.3,<=3.1.6",
   "numpy<=2.2.3",
   "pyyaml>=3.13,<=6.0.2",
