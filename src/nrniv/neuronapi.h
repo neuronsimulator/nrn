@@ -132,6 +132,14 @@ Symlist* nrn_global_symbol_table(void);
 Symlist* nrn_top_level_symbol_table(void);
 int nrn_symbol_array_length(const Symbol* sym);
 void nrn_register_function(void (*proc)(), const char* func_name, int type);
+/****************************************
+ * Parameter-reading functions
+ ****************************************/
+Object** nrn_objgetarg(int arg);
+char* nrn_gargstr(int arg);
+double* nrn_getarg(int arg);
+IvocVect* nrn_vector_arg(int arg);
+std::FILE* nrn_obj_file_arg(int i);
 
 #ifdef __cplusplus
 }
