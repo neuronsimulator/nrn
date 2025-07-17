@@ -63,6 +63,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
     list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
+    list(GET NRN_PYTHON_HAS_FREE_THREADING ${val} pyhasthreading)
     set(nanobind_target "nanobind_py${pyver}")
     make_nanobind_target(${nanobind_target} ${pyinc})
     add_library(nrnpython${pyver} SHARED ${NRNPYTHON_FILES_LIST})
@@ -80,6 +81,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     set(hoc_module_name hoc${pyver})
     add_nrn_python_library(
       hoc
+      ${pyhasthreading}
       TARGET
       ${hoc_module_name}
       PYTHON_VERSION
@@ -138,6 +140,7 @@ else()
   set(hoc_module_name "hoc_module")
   add_nrn_python_library(
     hoc
+    ${NRN_DEFAULT_PYTHON_HAS_FREE_THREADING}
     TARGET
     ${hoc_module_name}
     PYTHON_VERSION
