@@ -136,11 +136,11 @@ stages:
           url=https://www.python.org/ftp/python/$(python.org.version)/$installer
           curl $url -o $installer
           if [[ "$(python.version)" =~ .*t$ ]]; then
-            version=$(python.version)"
+            version="$(python.version)"
             version="${version%%t}"
             # taken from:
             # https://docs.python.org/3.13/using/mac.html#installing-using-the-command-line
-            cat > ./choicechanges.plist <<EOF
+            cat > ./choicechanges.plist <<'PLIST_END'
             <?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
             <plist version="1.0">
@@ -155,7 +155,7 @@ stages:
                     </dict>
             </array>
             </plist>
-            EOF
+            PLIST_END
             sudo installer -pkg $installer_filename -applyChoiceChangesXML ./choicechanges.plist -target /
           else
             sudo installer -pkg $installer_filename -target /

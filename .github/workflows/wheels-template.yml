@@ -69,7 +69,7 @@ jobs:
           if [[ "${formal_version}" =~ .*t$ ]]; then
             # taken from:
             # https://docs.python.org/3.13/using/mac.html#installing-using-the-command-line
-            cat > ./choicechanges.plist <<EOF
+            cat > ./choicechanges.plist <<'PLIST_END'
             <?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
             <plist version="1.0">
@@ -84,7 +84,7 @@ jobs:
                     </dict>
             </array>
             </plist>
-            EOF
+            PLIST_END
             sudo installer -pkg $installer_filename -applyChoiceChangesXML ./choicechanges.plist -target /
           else
             sudo installer -pkg $installer_filename -target /
