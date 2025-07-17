@@ -1,14 +1,14 @@
 #include <../../nrnconf.h>
 
 #include <cstring>
-#include <string>
 #include <cstdio>
 #include <cmath>
 #include <assert.h>
 
-extern int hoc_return_type_code;
+#include "code.h"
 
 #if HAVE_IV
+#include <string>
 #include <InterViews/glyph.h>
 #include <InterViews/hit.h>
 #include <InterViews/event.h>
@@ -1064,7 +1064,7 @@ double ivoc_gr_mark(void* v) {
 }
 
 static double gr_view_count(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.view_count", v);
 #if HAVE_IV
     int n = 0;

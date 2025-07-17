@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
 #include "classreg.h"
+#include "code.h"
 
 
 #include <vector>
@@ -19,7 +20,6 @@
 extern int nrn_multisplit_active_;
 extern int hoc_execerror_messages;
 extern int nrn_shape_changed_;
-extern int hoc_return_type_code;
 Object* (*nrnpy_rvp_rxd_to_callable)(Object*) = 0;
 
 class SecPos {
@@ -161,7 +161,7 @@ static double s_list(void* v) {
 
 static double s_color(void* v) {
     RangeVarPlot* me = (RangeVarPlot*) v;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     int old_color = me->get_color();
     if (ifarg(1)) {
         me->set_color((int) chkarg(1, 0, 100));

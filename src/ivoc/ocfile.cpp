@@ -6,8 +6,6 @@
 #include <unistd.h>
 #endif
 
-extern int hoc_return_type_code;
-
 #ifdef WIN32
 #include <errno.h>
 #include <io.h>
@@ -23,6 +21,7 @@ extern int hoc_return_type_code;
 #endif
 #include "nrnmpi.h"
 #include "oc2iv.h"
+#include "code.h"
 #include "classreg.h"
 #include "ocfile.h"
 #include "nrnfilewrap.h"
@@ -260,7 +259,7 @@ static double f_seek(void* v) {
 
 static double f_tell(void* v) {
     OcFile* f = (OcFile*) v;
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     BinaryMode(f) return (double) ftell(f->file());
 }
 

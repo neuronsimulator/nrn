@@ -2,6 +2,7 @@
 #include <InterViews/resource.h>
 
 #include "classreg.h"
+#include "code.h"
 #include "ivocvect.h"
 #include "hoclist.h"
 #include "bbs.h"
@@ -17,8 +18,6 @@
 
 #undef MD
 #define MD 2147483647.
-
-extern int hoc_return_type_code;
 
 extern int vector_arg_px(int, double**);
 Symbol* hoc_which_template(Symbol*);
@@ -181,7 +180,7 @@ static double working(void* v) {
     OcBBS* bbs = (OcBBS*) v;
     int id;
     bool b = bbs->working(id, bbs->retval_, bbs->userid_);
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     if (b) {
         return double(id);
     } else {
@@ -200,32 +199,32 @@ static double userid(void* v) {
 }
 
 static double nhost(void* v) {
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return nrnmpi_numprocs;
 }
 
 static double nrn_rank(void* v) {
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return nrnmpi_myid;
 }
 
 static double nhost_world(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return nrnmpi_numprocs_world;
 }
 
 static double rank_world(void* v) {
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return nrnmpi_myid_world;
 }
 
 static double nhost_bbs(void* v) {
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return nrnmpi_numprocs_bbs;
 }
 
 static double rank_bbs(void* v) {
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return nrnmpi_myid_bbs;
 }
 
@@ -423,7 +422,7 @@ static double take(void* v) {
 
 static double look(void* v) {
     OcBBS* bbs = (OcBBS*) v;
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (bbs->look(key_help())) {
         unpack_help(2, bbs);
         return 1.;
@@ -433,7 +432,7 @@ static double look(void* v) {
 
 static double look_take(void* v) {
     OcBBS* bbs = (OcBBS*) v;
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (bbs->look_take(key_help())) {
         unpack_help(2, bbs);
         return 1.;
@@ -534,7 +533,7 @@ static double set_gid2node(void* v) {
 
 static double gid_exists(void* v) {
     OcBBS* bbs = (OcBBS*) v;
-    hoc_return_type_code = 1;  // NOTE: possible returns are integers 0 - 3
+    hoc_return_type_code = HocReturnType::integer;
     return int(bbs->gid_exists(int(chkarg(1, 0, MD))));
 }
 
@@ -660,7 +659,7 @@ static double set_maxstep(void* v) {
 static double spike_stat(void* v) {
     OcBBS* bbs = (OcBBS*) v;
     int nsend, nsendmax, nrecv, nrecv_useful;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     nsend = nsendmax = nrecv = nrecv_useful = 0;
     bbs->netpar_spanning_statistics(&nsend, &nsendmax, &nrecv, &nrecv_useful);
     if (ifarg(1)) {
@@ -868,7 +867,7 @@ static double broadcast(void*) {
 
 static double nthrd(void*) {
     bool ip{true};
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     if (ifarg(1)) {
         if (ifarg(2)) {
             ip = bool(chkarg(2, 0, 1));
@@ -879,7 +878,7 @@ static double nthrd(void*) {
 }
 
 static double number_of_worker_threads(void*) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return nof_worker_threads();
 }
 
@@ -919,13 +918,13 @@ static double thread_busywait(void*) {
 }
 
 static double thread_how_many_proc(void*) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     int i = nrn_how_many_processors();
     return double(i);
 }
 
 static double optimize_node_order(void*) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     if (ifarg(1)) {
         neuron::nrn_optimize_node_order(int(chkarg(1, 0, 2)));
     }
@@ -933,7 +932,7 @@ static double optimize_node_order(void*) {
 }
 
 static double sec_in_thread(void*) {
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     Section* sec = chk_access();
     return double(sec->pnode[0]->_nt->id);
 }

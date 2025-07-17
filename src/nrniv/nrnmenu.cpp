@@ -9,6 +9,7 @@
 #include "ivoc.h"
 #endif
 #include "cabcode.h"
+#include "code.h"
 #include "nrniv_mf.h"
 #include "nrnoc2iv.h"
 #include "nrnpy.h"
@@ -16,7 +17,6 @@
 #include "classreg.h"
 #include "gui-redirect.h"
 
-extern int hoc_return_type_code;
 // from nrnoc
 #include "membfunc.h"
 #include "parse.hpp"
@@ -607,12 +607,12 @@ static double ms_get(void* v) {
     return ((MechanismStandard*) v)->get(gargstr(1), i);
 }
 static double ms_count(void* v) {
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return ((MechanismStandard*) v)->count();
 }
 static double ms_is_array(void* v) {
     auto* ms = static_cast<MechanismStandard*>(v);
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     return ms->is_array((int) chkarg(1, 0, ms->count() - 1));
 }
 static double ms_name(void* v) {
@@ -625,7 +625,7 @@ static double ms_name(void* v) {
         n = ms->name();
     }
     hoc_assign_str(hoc_pgargstr(1), n);
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return double(rval);
 }
 
@@ -989,7 +989,7 @@ static double mt_selected(void* v) {
     if (ifarg(1)) {
         hoc_assign_str(hoc_pgargstr(1), mt->selected());
     }
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return double(i);
 }
 static double mt_internal_type(void* v) {
@@ -1012,7 +1012,7 @@ static double mt_remove(void* v) {
 }
 static double mt_count(void* v) {
     MechanismType* mt = (MechanismType*) v;
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return double(mt->count());
 }
 static double mt_menu(void* v) {
@@ -1036,22 +1036,22 @@ static double mt_action(void* v) {
 }
 static double mt_is_target(void* v) {
     MechanismType* mt = (MechanismType*) v;
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     return double(mt->is_netcon_target(int(chkarg(1, 0, mt->count()))));
 }
 static double mt_has_net_event(void* v) {
     MechanismType* mt = (MechanismType*) v;
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     return double(mt->has_net_event(int(chkarg(1, 0, mt->count()))));
 }
 static double mt_is_artificial(void* v) {
     MechanismType* mt = (MechanismType*) v;
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     return double(mt->is_artificial(int(chkarg(1, 0, mt->count()))));
 }
 static double mt_is_ion(void* v) {
     auto* mt = static_cast<MechanismType*>(v);
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     return double(mt->is_ion());
 }
 
