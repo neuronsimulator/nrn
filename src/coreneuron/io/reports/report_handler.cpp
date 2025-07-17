@@ -60,6 +60,8 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
         }
         auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
         const std::vector<int>& nodes_to_gid = map_gids(nt);
+
+
         const std::vector<int> gids_to_report = intersection_gids(nt, report_config.target);
         VarsToReport vars_to_report;
         const bool is_soma_target = report_config.section_type == SectionType::Soma ||
@@ -160,10 +162,11 @@ std::string getSectionTypeStr(SectionType type) {
     }
 }
 
-void register_sections_to_report(const SecMapping* sections,
-                                 std::vector<VarWithMapping>& to_report,
-                                 double* report_variable,
-                                 bool all_compartments) {
+// fill to_report with (int section_id, double* variable)
+void append_sections_to_to_report(const SecMapping* sections,
+                                  std::vector<VarWithMapping>& to_report,
+                                  double* report_variable,
+                                  bool all_compartments) {
     for (const auto& section: sections->secmap) {
         // compartment_id
         int section_id = section.first;
@@ -214,19 +217,27 @@ VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
         if (section_type_str == "All") {
             const auto& section_mapping = cell_mapping->secmapvec;
             for (const auto& sections: section_mapping) {
-                register_sections_to_report(sections, to_report, report_variable, all_compartments);
+                append_sections_to_to_report(sections,
+                                             to_report,
+                                             report_variable,
+                                             all_compartments);
             }
         } else {
             /** get section list mapping for the type, if available */
             if (cell_mapping->get_seclist_section_count(section_type_str) > 0) {
                 const auto& sections = cell_mapping->get_seclist_mapping(section_type_str);
-                register_sections_to_report(sections, to_report, report_variable, all_compartments);
+                append_sections_to_to_report(sections,
+                                             to_report,
+                                             report_variable,
+                                             all_compartments);
             }
         }
+        to_report.shrink_to_fit();
         vars_to_report[gid] = to_report;
     }
     return vars_to_report;
 }
+
 
 VarsToReport ReportHandler::get_summation_vars_to_report(
     const NrnThread& nt,
@@ -243,44 +254,78 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
     }
 
     for (const auto& gid: gids_to_report) {
-        bool has_imembrane = false;
-        bool has_v = false;
-        // In case we need convertion of units
-        int scale = 1;
-        for (auto i = 0; i < report.mech_ids.size(); ++i) {
-            const auto& mech_id = report.mech_ids[i];
-            const auto& var_name = report.var_names[i];
-            const auto& mech_name = report.mech_names[i];
+        {
+            const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
+            if (cell_mapping == nullptr) {
+                std::cerr
+                    << "[SUMMATION] Error : Compartment mapping information is missing for gid "
+                    << gid << '\n';
+                nrn_abort(1);
+            }
+            // In case we need convertion of units
+            int scale = 1;
+            for (auto i = 0; i < report.mech_ids.size(); ++i) {
+                const auto& mech_id = report.mech_ids[i];
+                const auto& var_name = report.var_names[i];
+                const auto& mech_name = report.mech_names[i];
+                // in case of v or i_membrane
+                double* var_value_base = nullptr;
+                bool is_var_value_base = false;
 
-            // skip i_membrane and v. We add them later
-            if (mech_name == "i_membrane") {
-                has_imembrane = true;
-                continue;
-            }
-            if (mech_name == "v") {
-                has_v = true;
-                continue;
-            }
-            // need special handling for Clamp processes to flip the current value
-            if (mech_name == "IClamp" || mech_name == "SEClamp") {
-                scale = -1;
-            }
-            Memb_list* ml = nt._ml_list[mech_id];
-            if (!ml) {
-                continue;
-            }
+                // skip i_membrane and v. We add them later
+                if (mech_name == "i_membrane") {
+                    var_value_base = nt.nrn_fast_imem->nrn_sav_rhs;
+                    is_var_value_base = true;
+                } else if (mech_name == "v") {
+                    var_value_base = nt._actual_v;
+                    is_var_value_base = true;
+                }
+                // need special handling for Clamp processes to flip the current value
+                if (mech_name == "IClamp" || mech_name == "SEClamp") {
+                    scale = -1;
+                }
+                Memb_list* ml = nt._ml_list[mech_id];
+                if (!ml && !is_var_value_base) {
+                    continue;
+                }
 
-            for (int j = 0; j < ml->nodecount; j++) {
-                auto segment_id = ml->nodeindices[j];
-                if ((nodes_to_gids[ml->nodeindices[j]] == gid)) {
-                    double* var_value =
-                        get_var_location_from_var_name(mech_id, mech_name, var_name, ml, j);
+                std::unordered_map<int, int> segment_id_2_node_id;
 
-                    summation_report.currents_[segment_id].push_back(
-                        std::make_pair(var_value, scale));
+                if (ml && !is_var_value_base) {
+                    for (int j = 0; j < ml->nodecount; j++) {
+                        const int segment_id = ml->nodeindices[j];
+
+                        auto result = segment_id_2_node_id.insert({segment_id, j});
+
+                        if (!result.second) {
+                            std::cerr << "ERROR: Duplicate segment_id detected: " << segment_id
+                                      << std::endl;
+                            nrn_abort(1);
+                        }
+                    }
+                }
+
+
+                const auto& section_mapping = cell_mapping->secmapvec;
+                for (const auto& sections: section_mapping) {
+                    for (auto& section: sections->secmap) {
+                        int section_id = section.first;
+                        auto& segment_ids = section.second;
+                        for (const auto& segment_id: segment_ids) {
+                            double* var_value = nullptr;
+                            if (is_var_value_base) {
+                                var_value = var_value_base + segment_id;
+                            } else {
+                                const int j = segment_id_2_node_id[segment_id];
+                                var_value = get_var_location_from_var_name(
+                                    mech_id, mech_name, var_name, ml, j);
+                            }
+                            summation_report.currents_[segment_id].push_back(
+                                std::make_pair(var_value, scale));
+                        }
+                    }
                 }
             }
-            // throw std::runtime_error("we stop here");
         }
 
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
@@ -290,9 +335,6 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
             nrn_abort(1);
         }
 
-        // add i_membrane and v
-        const auto& section_mapping = cell_mapping->secmapvec;
-
         std::vector<VarWithMapping> to_report;
         to_report.reserve(cell_mapping->size());
         summation_report.summation_.resize(nt.end);
@@ -301,30 +343,20 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
         if (report.section_type != SectionType::All) {
             if (cell_mapping->get_seclist_section_count(section_type_str) > 0) {
                 const auto& sections = cell_mapping->get_seclist_mapping(section_type_str);
-                register_sections_to_report(sections,
-                                            to_report,
-                                            report_variable,
-                                            report.section_all_compartments);
+                append_sections_to_to_report(sections,
+                                             to_report,
+                                             report_variable,
+                                             report.section_all_compartments);
             }
         }
 
+        const auto& section_mapping = cell_mapping->secmapvec;
         for (const auto& sections: section_mapping) {
             for (auto& section: sections->secmap) {
                 // compartment_id
                 int section_id = section.first;
                 auto& segment_ids = section.second;
                 for (const auto& segment_id: segment_ids) {
-                    // corresponding i_membrane in coreneuron voltage array
-                    if (has_imembrane) {
-                        summation_report.currents_[segment_id].push_back(
-                            std::make_pair(nt.nrn_fast_imem->nrn_sav_rhs + segment_id, 1));
-                    }
-                    // corresponding voltage in coreneuron voltage array
-                    if (has_v) {
-                        summation_report.currents_[segment_id].push_back(
-                            std::make_pair(nt._actual_v + segment_id, 1));
-                    }
-
                     if (report.section_type == SectionType::All) {
                         double* variable = report_variable + segment_id;
                         to_report.emplace_back(VarWithMapping(section_id, variable));
@@ -441,7 +473,7 @@ std::vector<int> ReportHandler::map_gids(const NrnThread& nt) const {
     }
     // forward sweep: setting all compartements nodes to the GID of its root
     //  already sets on above loop. This is working only because compartments are stored in order
-    //  parents follow by childrens
+    //  parents followed by children
     for (int i = nt.ncell + 1; i < nt.end; i++) {
         nodes_gid[i] = nodes_gid[nt._v_parent_index[i]];
     }
