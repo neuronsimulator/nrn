@@ -3330,6 +3330,9 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     }
     m = PyModule_Create(&hocmodule);
     assert(m);
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
 
     Symbol* s = NULL;
     spec = obj_spec_from_name("hoc.HocObject");

@@ -3013,7 +3013,7 @@ PyObject* nrnpy_nrn(void) {
     psection_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_SectionType_spec);
     psection_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(psection_type) < 0)
-        goto fail;
+        return nullptr;
     Py_INCREF(psection_type);
 
     pallseg_of_sec_iter_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_AllSegOfSecIterType_spec);
@@ -3021,20 +3021,20 @@ PyObject* nrnpy_nrn(void) {
     pallseg_of_sec_iter_type->tp_new = PyType_GenericNew;
     pseg_of_sec_iter_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(pallseg_of_sec_iter_type) < 0)
-        goto fail;
+        return nullptr;
     if (PyType_Ready(pseg_of_sec_iter_type) < 0)
-        goto fail;
+        return nullptr;
     Py_INCREF(pallseg_of_sec_iter_type);
     Py_INCREF(pseg_of_sec_iter_type);
 
     psegment_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_SegmentType_spec);
     psegment_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(psegment_type) < 0)
-        goto fail;
+        return nullptr;
     if (PyType_Ready(pallseg_of_sec_iter_type) < 0)
-        goto fail;
+        return nullptr;
     if (PyType_Ready(pseg_of_sec_iter_type) < 0)
-        goto fail;
+        return nullptr;
     Py_INCREF(psegment_type);
     Py_INCREF(pallseg_of_sec_iter_type);
     Py_INCREF(pseg_of_sec_iter_type);
@@ -3042,13 +3042,13 @@ PyObject* nrnpy_nrn(void) {
     range_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_RangeType_spec);
     range_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(range_type) < 0)
-        goto fail;
+        return nullptr;
     Py_INCREF(range_type);
 
     opaque_pointer_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_OpaquePointerType_spec);
     opaque_pointer_type->tp_new = PyType_GenericNew;
     if (PyType_Ready(opaque_pointer_type) < 0)
-        goto fail;
+        return nullptr;
     Py_INCREF(opaque_pointer_type);
 
     m = nb::steal(PyModule_Create(&nrnsectionmodule));  // like nrn but namespace will not include
@@ -3072,14 +3072,11 @@ PyObject* nrnpy_nrn(void) {
     pmechfunc_generic_type->tp_new = PyType_GenericNew;
     pmech_of_seg_iter_generic_type->tp_new = PyType_GenericNew;
     pvar_of_mech_iter_generic_type->tp_new = PyType_GenericNew;
-    if (PyType_Ready(pmech_generic_type) < 0)
-        goto fail;
-    if (PyType_Ready(pmechfunc_generic_type) < 0)
-        goto fail;
-    if (PyType_Ready(pmech_of_seg_iter_generic_type) < 0)
-        goto fail;
-    if (PyType_Ready(pvar_of_mech_iter_generic_type) < 0)
-        goto fail;
+    if (PyType_Ready(pmech_generic_type) < 0 || PyType_Ready(pmechfunc_generic_type) < 0 ||
+        PyType_Ready(pmech_of_seg_iter_generic_type) < 0 ||
+        PyType_Ready(pvar_of_mech_iter_generic_type) < 0) {
+        return nullptr;
+    }
     Py_INCREF(pmech_generic_type);
     Py_INCREF(pmechfunc_generic_type);
     Py_INCREF(pmech_of_seg_iter_generic_type);
@@ -3101,13 +3098,13 @@ PyObject* nrnpy_nrn(void) {
 
     err = PyDict_SetItemString(modules, "nrn", m.ptr());
     assert(err == 0);
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m.ptr(), Py_MOD_GIL_NOT_USED);
+#endif
     return m.ptr();
-fail:
-    return NULL;
 }
 
 void remake_pmech_types() {
-    int i;
     Py_XDECREF(pmech_types);
     Py_XDECREF(rangevars_);
     pmech_types = PyDict_New();
@@ -3117,7 +3114,7 @@ void remake_pmech_types() {
     rangevars_add(hoc_table_lookup("v", hoc_built_in_symlist));
     rangevars_add(hoc_table_lookup("i_cap", hoc_built_in_symlist));
     rangevars_add(hoc_table_lookup("i_membrane_", hoc_built_in_symlist));
-    for (i = 4; i < n_memb_func; ++i) {  // start at pas
+    for (auto i = 4; i < n_memb_func; ++i) {  // start at pas
         nrnpy_reg_mech(i);
     }
 }
