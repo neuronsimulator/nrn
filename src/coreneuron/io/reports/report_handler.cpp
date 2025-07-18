@@ -47,7 +47,7 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
     for (const auto& mech: report_config.mech_names) {
         report_config.mech_ids.emplace_back(nrn_get_mechtype(mech.data()));
     }
-    if (report_config.type == Synapse && report_config.mech_ids.empty()) {
+    if (report_config.type == ReportType::Synapse && report_config.mech_ids.empty()) {
         std::cerr << "[ERROR] mechanism to report: " << report_config.mech_names[0]
                   << " is not mapped in this simulation, cannot report on it \n";
         nrn_abort(1);
@@ -67,7 +67,7 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
         const bool is_soma_target = report_config.section_type == SectionType::Soma ||
                                     report_config.section_type == SectionType::Cell;
         switch (report_config.type) {
-        case Compartment: {
+        case ReportType::Compartment: {
             const auto& mech_name = report_config.mech_names[0];
             double* report_variable;
             if (mech_name == "v") {
@@ -87,13 +87,13 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
             register_section_report(nt, report_config, vars_to_report, is_soma_target);
             break;
         }
-        case Summation: {
+        case ReportType::Summation: {
             vars_to_report =
                 get_summation_vars_to_report(nt, gids_to_report, report_config, nodes_to_gid);
             register_custom_report(nt, report_config, vars_to_report);
             break;
         }
-        case LFP: {
+        case ReportType::LFP: {
             mapinfo->prepare_lfp();
             vars_to_report = get_lfp_vars_to_report(
                 nt, gids_to_report, report_config, mapinfo->_lfp.data(), nodes_to_gid);

@@ -70,7 +70,9 @@ enum class TargetType {
 };
 
 // enumerate that defines the type of target report requested
-enum ReportType { Compartment, Summation, Synapse, LFP };
+enum class ReportType { Compartment, Summation, Synapse, LFP };
+ReportType report_type_from_string(const std::string& str);
+std::string to_string(ReportType t);
 
 // enumerate that defines the section type for a Section report
 enum SectionType { Cell, Soma, Axon, Dendrite, Apical, All };

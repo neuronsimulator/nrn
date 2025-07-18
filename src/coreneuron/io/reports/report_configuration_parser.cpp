@@ -128,26 +128,17 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
                        report.type_str.begin(),
                        [](unsigned char c) { return std::tolower(c); });
         report.output_path = output_dir + "/" + report.name;
-        ReportType report_type;
-        if (report.type_str == "compartment") {
-            report_type = Compartment;
-        } else if (report.type_str == "synapse") {
-            report_type = Synapse;
-        } else if (report.type_str == "summation") {
-            report_type = Summation;
-        } else if (report.type_str == "lfp") {
+        ReportType report_type = report_type_from_string(report.type_str);
+        if (report_type == ReportType::LFP) {
             nrn_use_fast_imem = true;
-            report_type = LFP;
-        } else {
-            std::cerr << "Report error: unsupported type " << report.type_str << std::endl;
-            nrn_abort(1);
         }
         register_target_type(report, report_type);
-        if (report.type == Synapse || report.type == Summation || report.type == Compartment) {
+        if (report.type == ReportType::Synapse || report.type == ReportType::Summation ||
+            report.type == ReportType::Compartment) {
             parse_filter_string(report_on, report);
         }
         // checks
-        if (report.type == Compartment) {
+        if (report.type == ReportType::Compartment) {
             if (report.mech_names.size() != 1) {
                 std::cerr << "Report error: Compartment report requires exactly one variable name, "
                              "but got "

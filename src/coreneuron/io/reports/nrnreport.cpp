@@ -31,6 +31,32 @@ namespace coreneuron {
 // Size in MB of the report buffer
 static int size_report_buffer = 4;
 
+ReportType report_type_from_string(const std::string& str) {
+    if (str == "compartment")
+        return ReportType::Compartment;
+    if (str == "summation")
+        return ReportType::Summation;
+    if (str == "synapse")
+        return ReportType::Synapse;
+    if (str == "LFP")
+        return ReportType::LFP;
+    std::cerr << "[Error] Invalid string for ReportType enum: " << str << "\n";
+    nrn_abort(1);
+}
+
+std::string to_string(ReportType t) {
+    if (t == ReportType::Compartment)
+        return "compartment";
+    if (t == ReportType::Summation)
+        return "summation";
+    if (t == ReportType::Synapse)
+        return "synapse";
+    if (t == ReportType::LFP)
+        return "LFP";
+    std::cerr << "[Error] Invalid ReportType enum value: " << static_cast<int>(t) << "\n";
+    nrn_abort(1);
+}
+
 Scaling scaling_from_string(const std::string& str) {
     if (str == "None")
         return Scaling::None;

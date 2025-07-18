@@ -176,7 +176,7 @@ TEST_CASE("LFP_ReportEvent") {
     const double tstart = 0.0;
     const double report_dt = 0.1;
 
-    ReportEvent event(dt, tstart, vars_to_report, report_name.data(), report_dt, LFP);
+    ReportEvent event(dt, tstart, vars_to_report, report_name.data(), report_dt, ReportType::LFP);
     event.lfp_calc(&nt);
 
     REQUIRE_THAT(mapinfo->_lfp[0], Catch::Matchers::WithinAbs(5.5, 1.0));
