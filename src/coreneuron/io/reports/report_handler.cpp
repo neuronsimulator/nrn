@@ -143,25 +143,6 @@ void ReportHandler::register_custom_report(const NrnThread& nt,
     }
 }
 
-std::string getSectionTypeStr(SectionType type) {
-    switch (type) {
-    case All:
-        return "All";
-    case Cell:
-    case Soma:
-        return "soma";
-    case Axon:
-        return "axon";
-    case Dendrite:
-        return "dend";
-    case Apical:
-        return "apic";
-    default:
-        std::cerr << "SectionType not handled in getSectionTypeStr" << std::endl;
-        nrn_abort(1);
-    }
-}
-
 // fill to_report with (int section_id, double* variable)
 void append_sections_to_to_report(const SecMapping* sections,
                                   std::vector<VarWithMapping>& to_report,
@@ -195,7 +176,6 @@ VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
                                                        SectionType section_type,
                                                        bool all_compartments) const {
     VarsToReport vars_to_report;
-    const auto& section_type_str = getSectionTypeStr(section_type);
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     if (!mapinfo) {
         std::cerr << "[COMPARTMENTS] Error : mapping information is missing for a Cell group "
@@ -212,9 +192,10 @@ VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
             nrn_abort(1);
         }
         std::vector<VarWithMapping> to_report;
+        const std::string section_type_str = to_string(section_type);
         to_report.reserve(cell_mapping->size());
 
-        if (section_type_str == "All") {
+        if (section_type == SectionType::All) {
             const auto& section_mapping = cell_mapping->secmapvec;
             for (const auto& sections: section_mapping) {
                 append_sections_to_to_report(sections,
@@ -339,7 +320,7 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
         to_report.reserve(cell_mapping->size());
         summation_report.summation_.resize(nt.end);
         double* report_variable = summation_report.summation_.data();
-        const auto& section_type_str = getSectionTypeStr(report.section_type);
+        const auto& section_type_str = to_string(report.section_type);
         if (report.section_type != SectionType::All) {
             if (cell_mapping->get_seclist_section_count(section_type_str) > 0) {
                 const auto& sections = cell_mapping->get_seclist_mapping(section_type_str);

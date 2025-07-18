@@ -75,7 +75,9 @@ ReportType report_type_from_string(const std::string& str);
 std::string to_string(ReportType t);
 
 // enumerate that defines the section type for a Section report
-enum SectionType { Cell, Soma, Axon, Dendrite, Apical, All };
+enum class SectionType { Cell, Soma, Axon, Dendrite, Apical, All };
+SectionType section_type_from_string(const std::string& str);
+std::string to_string(SectionType t);
 
 enum class Scaling { None, Area };
 Scaling scaling_from_string(const std::string& str);
