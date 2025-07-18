@@ -21,6 +21,7 @@
 #include "coreneuron/io/nrnsection_mapping.hpp"
 #include "coreneuron/mechanism/mech_mapping.hpp"
 #include "coreneuron/mechanism/membfunc.hpp"
+#include "coreneuron/utils/utils.hpp"
 #ifdef ENABLE_SONATA_REPORTS
 #include "bbp/sonata/reports.h"
 #endif
@@ -29,6 +30,85 @@ namespace coreneuron {
 
 // Size in MB of the report buffer
 static int size_report_buffer = 4;
+
+ReportType report_type_from_string(const std::string& str) {
+    if (str == "compartment")
+        return ReportType::Compartment;
+    if (str == "summation")
+        return ReportType::Summation;
+    if (str == "synapse")
+        return ReportType::Synapse;
+    if (str == "LFP")
+        return ReportType::LFP;
+    std::cerr << "[Error] Invalid string for ReportType enum: " << str << "\n";
+    nrn_abort(1);
+}
+
+std::string to_string(ReportType t) {
+    if (t == ReportType::Compartment)
+        return "compartment";
+    if (t == ReportType::Summation)
+        return "summation";
+    if (t == ReportType::Synapse)
+        return "synapse";
+    if (t == ReportType::LFP)
+        return "LFP";
+    std::cerr << "[Error] Invalid ReportType enum value: " << static_cast<int>(t) << "\n";
+    nrn_abort(1);
+}
+
+SectionType section_type_from_string(const std::string& str) {
+    if (str == "cell")
+        return SectionType::Cell;
+    if (str == "soma")
+        return SectionType::Soma;
+    if (str == "axon")
+        return SectionType::Axon;
+    if (str == "dend")
+        return SectionType::Dendrite;
+    if (str == "apic")
+        return SectionType::Apical;
+    if (str == "all")
+        return SectionType::All;
+    std::cerr << "[Error] Invalid string for SectionType enum: " << str << "\n";
+    nrn_abort(1);
+}
+
+std::string to_string(SectionType t) {
+    if (t == SectionType::Cell)
+        return "cell";
+    if (t == SectionType::Soma)
+        return "soma";
+    if (t == SectionType::Axon)
+        return "axon";
+    if (t == SectionType::Dendrite)
+        return "dend";
+    if (t == SectionType::Apical)
+        return "apic";
+    if (t == SectionType::All)
+        return "all";
+    std::cerr << "[Error] Invalid SectionType enum value: " << static_cast<int>(t) << "\n";
+    nrn_abort(1);
+}
+
+
+Scaling scaling_from_string(const std::string& str) {
+    if (str == "None")
+        return Scaling::None;
+    if (str == "Area")
+        return Scaling::Area;
+    std::cerr << "[Error] Invalid string for Scaling enum: " << str << "\n";
+    nrn_abort(1);
+}
+
+std::string to_string(Scaling s) {
+    if (s == Scaling::None)
+        return "None";
+    if (s == Scaling::Area)
+        return "Area";
+    std::cerr << "[Error] Invalid Scaling enum value: " << static_cast<int>(s) << "\n";
+    nrn_abort(1);
+}
 
 void nrn_flush_reports(double t) {
     // flush before buffer is full

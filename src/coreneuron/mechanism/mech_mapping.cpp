@@ -14,44 +14,46 @@
 #include "coreneuron/mechanism/mech_mapping.hpp"
 #include "coreneuron/mechanism/mechanism.hpp"
 #include "coreneuron/permute/data_layout.hpp"
+#include "coreneuron/utils/utils.hpp"
 
 namespace coreneuron {
 using Offset = size_t;
 using MechId = int;
-using VariableName = const char*;
+using VariableName = const std::string_view;
 
-struct cmp_str {
-    bool operator()(char const* a, char const* b) const {
-        return std::strcmp(a, b) < 0;
-    }
-};
 
 /*
  * Structure that map variable names of mechanisms to their value's location (offset) in memory
  */
-using MechNamesMapping = std::map<MechId, std::map<VariableName, Offset, cmp_str>>;
+using MechNamesMapping = std::map<MechId, std::map<VariableName, Offset>>;
 static MechNamesMapping mechNamesMapping;
 
-static void set_an_offset(int mech_id, const char* variable_name, int offset) {
-    mechNamesMapping[mech_id][variable_name] = offset;
-}
-
 double* get_var_location_from_var_name(int mech_id,
-                                       const char* variable_name,
+                                       const std::string_view mech_name,
+                                       const std::string_view variable_name,
                                        Memb_list* ml,
                                        int node_index) {
-    if (mechNamesMapping.find(mech_id) == mechNamesMapping.end()) {
-        std::cerr << "ERROR : no variable name mapping exist for mechanism id: " << mech_id
-                  << std::endl;
-        abort();
+    const auto mech_it = mechNamesMapping.find(mech_id);
+    if (mech_it == mechNamesMapping.end()) {
+        std::cerr << "No variable name mapping exists for mechanism id: " << mech_id << std::endl;
+        nrn_abort(1);
     }
-    if (mechNamesMapping.at(mech_id).find(variable_name) == mechNamesMapping.at(mech_id).end()) {
-        std::cerr << "ERROR : no value associtated to variable name: " << variable_name
-                  << std::endl;
-        abort();
+
+    const auto& mech = mech_it->second;
+    auto offset_it = mech.find(variable_name);
+    if (offset_it == mech.end()) {
+        // Try fallback with variable_name + "_" + mech_name. Used necessary for i_pas
+        std::string fallback_name = std::string(variable_name) + "_" + std::string(mech_name);
+        offset_it = mech.find(fallback_name);
+
+        if (offset_it == mech.end()) {
+            std::cerr << "No value associated to variable name: '" << variable_name
+                      << "' or fallback '" << fallback_name << "'";
+            nrn_abort(1);
+        }
     }
-    int variable_rank = mechNamesMapping.at(mech_id).at(variable_name);
-    int ix = get_data_index(node_index, variable_rank, mech_id, ml);
+
+    const int ix = get_data_index(node_index, offset_it->second, mech_id, ml);
     return &(ml->data[ix]);
 }
 
@@ -61,7 +63,7 @@ void register_all_variables_offsets(int mech_id, SerializedNames variable_names)
     int current_categorie = 1;
     while (current_categorie < NB_MECH_VAR_CATEGORIES) {
         if (variable_names[idx]) {
-            set_an_offset(mech_id, variable_names[idx], nb_parsed_variables);
+            mechNamesMapping[mech_id][variable_names[idx]] = nb_parsed_variables;
             nb_parsed_variables++;
         } else {
             current_categorie++;
