@@ -116,10 +116,12 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
     for (auto& report: reports) {
         report.buffer_size = 4;  // default size to 4 Mb
 
+        std::string scaling;
         report_conf >> report.name >> report.target_name >> report.type_str >> report_on >>
             report.unit >> report.format >> target >> report.report_dt >> report.start >>
-            report.stop >> report.num_gids >> report.buffer_size;
+            report.stop >> report.num_gids >> report.buffer_size >> scaling;
 
+        report.scaling = scaling_from_string(scaling);
         report.target_type = static_cast<TargetType>(target);
         std::transform(report.type_str.begin(),
                        report.type_str.end(),

@@ -75,6 +75,10 @@ enum ReportType { Compartment, Summation, Synapse, LFP };
 // enumerate that defines the section type for a Section report
 enum SectionType { Cell, Soma, Axon, Dendrite, Apical, All };
 
+enum class Scaling { None, Area };
+Scaling scaling_from_string(const std::string& str);
+std::string to_string(Scaling s);
+
 struct ReportConfiguration {
     std::string name;                     // name of the report
     std::string output_path;              // full path of the report
@@ -95,6 +99,7 @@ struct ReportConfiguration {
     int num_gids;                         // total number of gids
     int buffer_size;                      // hint on buffer size used for this report
     std::vector<int> target;              // list of gids for this report
+    Scaling scaling;
 };
 
 void setup_report_engine(double dt_report, double mindelay);
