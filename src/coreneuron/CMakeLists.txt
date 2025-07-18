@@ -87,34 +87,9 @@ if(CORENRN_ENABLE_GPU)
   # Enable CUDA language support.
   enable_language(CUDA)
 
-  # Prefer shared libcudart.so
-  if(${CMAKE_VERSION} VERSION_LESS 3.17)
-    # Ugly workaround from https://gitlab.kitware.com/cmake/cmake/-/issues/17559, remove when
-    # possible
-    if(CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES)
-      list(REMOVE_ITEM CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES "cudart_static")
-      list(REMOVE_ITEM CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES "cudadevrt")
-      list(APPEND CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES "cudart")
-    endif()
-    if(CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES)
-      list(REMOVE_ITEM CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES "cudart_static")
-      list(REMOVE_ITEM CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES "cudadevrt")
-      list(APPEND CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES "cudart")
-    endif()
-  else()
-    # nvc++ -cuda implicitly links dynamically to libcudart.so. Setting this makes sure that CMake
-    # does not add -lcudart_static and trigger errors due to mixed dynamic/static linkage.
-    set(CMAKE_CUDA_RUNTIME_LIBRARY Shared)
-  endif()
-
-  # Patch CUDA_ARCHITECTURES support into older CMake versions
-  if(${CMAKE_VERSION} VERSION_LESS 3.18)
-    foreach(cuda_arch ${CMAKE_CUDA_ARCHITECTURES})
-      string(
-        APPEND CMAKE_CUDA_FLAGS
-        " --generate-code=arch=compute_${cuda_arch},code=[compute_${cuda_arch},sm_${cuda_arch}]")
-    endforeach()
-  endif()
+  # nvc++ -cuda implicitly links dynamically to libcudart.so. Setting this makes sure that CMake
+  # does not add -lcudart_static and trigger errors due to mixed dynamic/static linkage.
+  set(CMAKE_CUDA_RUNTIME_LIBRARY Shared)
 
   # ~~~
   # Needed for the Eigen GPU support Warning suppression (Eigen GPU-related):
