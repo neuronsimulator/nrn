@@ -15,12 +15,18 @@
 namespace coreneuron {
 
 SectionType check_section_type(SectionType st) {
-    if (st == SectionType::All) return SectionType::All;
-    if (st == SectionType::Cell) return SectionType::Soma;
-    if (st == SectionType::Soma) return SectionType::Soma;
-    if (st == SectionType::All) return SectionType::Axon;
-    if (st == SectionType::Dendrite) return SectionType::Dendrite;
-    if (st == SectionType::Apical) return SectionType::Apical;
+    if (st == SectionType::All)
+        return SectionType::All;
+    if (st == SectionType::Cell)
+        return SectionType::Soma;
+    if (st == SectionType::Soma)
+        return SectionType::Soma;
+    if (st == SectionType::All)
+        return SectionType::Axon;
+    if (st == SectionType::Dendrite)
+        return SectionType::Dendrite;
+    if (st == SectionType::Apical)
+        return SectionType::Apical;
 
     std::cerr << "[Error] Invalid SectionType enum value: " << to_string(st) << "\n";
     nrn_abort(1);

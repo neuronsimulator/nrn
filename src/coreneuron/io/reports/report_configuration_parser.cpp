@@ -62,7 +62,7 @@ void register_target_type(ReportConfiguration& report, ReportType report_type) {
         report.section_all_compartments = true;
         break;
     case TargetType::Cell:
-        report.section_type =SectionType:: Cell;
+        report.section_type = SectionType::Cell;
         report.section_all_compartments = false;
         break;
     case TargetType::SectionSoma:
