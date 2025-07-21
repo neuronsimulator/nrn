@@ -132,7 +132,7 @@ Here ``cons`` is the constructor, which must take an ``Object*`` and return a ``
 ``members`` is a null-terminated array of ``Member_func`` of methods that in Python could return float, 
 integer, or bool. In HOC, these all return doubles.
 - To specify the return type as seen by Python, set ``hoc_return_type_code``.
-  Set it to the appropriate `HocReturnType`
+  Set it to the appropriate ``HocReturnType``.
 - Each of these methods must take a ``void*`` and return a double.
 
 ``retobj_methods`` is a null-terminated array of ``Member_ret_obj_func`` of methods that return objects.
