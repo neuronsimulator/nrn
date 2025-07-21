@@ -1,6 +1,7 @@
 # =============================================================================
 # pybind targets
 # =============================================================================
+include(${PROJECT_SOURCE_DIR}/cmake/PythonCompileHelper.cmake)
 set_source_files_properties(${PYBIND_GENERATED_SOURCES} PROPERTIES GENERATED TRUE)
 
 # Set -fno-var-tracking-assignments on pyast.cpp with GCC to avoid a warning + double compilation
@@ -69,23 +70,65 @@ if(NMODL_ENABLE_PYTHON_BINDINGS)
   # Note that LTO causes link time errors with GCC 8. To avoid this, we disable LTO
   # for pybind using NO_EXTRAS. See #266.
   # ~~~
-  pybind11_add_module(
-    _nmodl NO_EXTRAS ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/ast/ast_common.hpp
-    ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pybind_utils.hpp
-    ${NMODL_PROJECT_PLATLIB_SOURCE_DIR}/pybind/pynmodl.cpp ${PYBIND_GENERATED_SOURCES})
-  add_dependencies(_nmodl lexer pyastgen util)
-  target_link_libraries(_nmodl PRIVATE printer symtab visitor pyembed)
-  set_target_properties(_nmodl PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG
-                                          ${NMODL_PROJECT_PURELIB_BINARY_DIR})
-
-  if(MSVC)
-    target_compile_options(_nmodl PRIVATE /bigobj)
+  set(NMODL_PYTHON_TARGETS)
+  if(NRN_ENABLE_PYTHON_DYNAMIC)
+    foreach(val RANGE ${NRN_PYTHON_ITERATION_LIMIT})
+      list(GET NRN_PYTHON_VERSIONS ${val} pyver)
+      list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
+      list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
+      list(APPEND NMODL_PYTHON_TARGETS _nmodl${pyver})
+      list(GET NMODL_PYTHON_TARGETS ${val} nmodl_python_target)
+      add_nrn_python_library(
+        _nmodl
+        TARGET
+        ${nmodl_python_target}
+        PYTHON_VERSION
+        ${pyver}
+        LANGUAGE
+        CXX
+        SOURCES
+        pynmodl.cpp
+        ${PYBIND_GENERATED_SOURCES}
+        INCLUDES
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${PROJECT_SOURCE_DIR}/external/pybind11/include
+        ${pyinc}
+        OUTPUT_DIR
+        ${PROJECT_BINARY_DIR}/${NRN_INSTALL_PYTHON_PREFIX}/nmodl)
+    endforeach()
+  else()
+    list(APPEND NMODL_PYTHON_TARGETS _nmodl)
+    add_nrn_python_library(
+      _nmodl
+      PYTHON_VERSION
+      ${NRN_DEFAULT_PYTHON_VERSION}
+      LANGUAGE
+      CXX
+      SOURCES
+      pynmodl.cpp
+      ${PYBIND_GENERATED_SOURCES}
+      INCLUDES
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${PROJECT_SOURCE_DIR}/external/pybind11/include
+      ${NRN_DEFAULT_PYTHON_INCLUDES}
+      OUTPUT_DIR
+      ${PROJECT_BINARY_DIR}/${NRN_INSTALL_PYTHON_PREFIX}/nmodl)
   endif()
+  foreach(nmodl_python_target ${NMODL_PYTHON_TARGETS})
+    add_dependencies(${nmodl_python_target} lexer pyastgen util)
+    target_link_libraries(${nmodl_python_target} PRIVATE printer symtab visitor pyembed)
+    set_target_properties(${nmodl_python_target} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG
+                                                            ${NMODL_PROJECT_PURELIB_BINARY_DIR})
 
-  # in case of wheel, python module shouldn't link to wrapper library
-  if(NRN_LINK_AGAINST_PYTHON)
-    target_link_libraries(_nmodl PRIVATE pywrapper)
-  endif()
+    if(MSVC)
+      target_compile_options(${nmodl_python_target} PRIVATE /bigobj)
+    endif()
+
+    # in case of wheel, python module shouldn't link to wrapper library
+    if(NRN_LINK_AGAINST_PYTHON)
+      target_link_libraries(${nmodl_python_target} PRIVATE pywrapper)
+    endif()
+  endforeach()
 endif()
 
 # =============================================================================
@@ -112,7 +155,9 @@ file(COPY ${NMODL_PROJECT_PURELIB_SOURCE_DIR}/ext DESTINATION ${NMODL_PROJECT_PU
 if(NOT NRN_LINK_AGAINST_PYTHON)
   install(TARGETS pywrapper DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
   if(NMODL_ENABLE_PYTHON_BINDINGS)
-    install(TARGETS _nmodl DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/nmodl)
+    foreach(nmodl_python_target ${NMODL_PYTHON_TARGETS})
+      install(TARGETS ${nmodl_python_target} DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/nmodl)
+    endforeach()
   endif()
 else()
   install(
