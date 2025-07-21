@@ -96,7 +96,7 @@ Get the value of an argument
 ----------------------------
 
 Relevant functions include:
-- ``hoc_obj_getarg(n)``
+- ``hoc_objgetarg(n)`` -- returns a ``Object**``
 
    May want to combine this with ``nrnpy_ho2po`` if you know the argument is a ``PyObject``; e.g.
    
@@ -104,9 +104,9 @@ Relevant functions include:
    
        PyObject* obj = nrnpy_ho2po(*hoc_objgetarg(n))
 
-- ``vector_arg(n)`` -- returns a ``Vect*``
+- ``vector_arg(n)`` -- returns a ``IvocVect*``
 - ``hoc_pgetarg(n)`` -- returns a ``double**``
-- ``gargstr(n)``
+- ``gargstr(n)`` -- returns a ``char*``
 - ``getarg(n)`` -- returns a ``double*``. Python bools, ints, and floats are all valid inputs.
 
 Note: attempting to get the wrong type of an argument displays a "bad stack access" message and
