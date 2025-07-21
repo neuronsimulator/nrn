@@ -16,6 +16,8 @@
 #include <iostream>
 #include <unordered_map>
 
+#include "coreneuron/io/reports/nrnreport.hpp"
+
 namespace coreneuron {
 
 /** type to store every section and associated segments */
@@ -33,15 +35,15 @@ using secseg_it_type = secseg_map_type::iterator;
  */
 struct SecMapping {
     /** name of section list */
-    std::string name;
+    SectionType type;
 
     /** map of section and associated segments */
     secseg_map_type secmap;
 
     SecMapping() = default;
 
-    explicit SecMapping(std::string s)
-        : name(std::move(s)) {}
+    explicit SecMapping(SectionType t)
+        : type(t) {}
 
     /** @brief return total number of sections in section list */
     size_t num_sections() const noexcept {
@@ -119,30 +121,30 @@ struct CellMapping {
         secmapvec.push_back(s);
     }
 
-    /** @brief return section list mapping with given name */
-    SecMapping* get_seclist_mapping(const std::string& name) const {
+    /** @brief return section list mapping with given type */
+    SecMapping* get_seclist_mapping(const SectionType type) const {
         for (auto& secmap: secmapvec) {
-            if (name == secmap->name) {
+            if (type == secmap->type) {
                 return secmap;
             }
         }
 
-        std::cout << "Warning: Section mapping list " << name << " doesn't exist! \n";
+        std::cout << "Warning: Section mapping list " << to_string(type) << " doesn't exist! \n";
         return nullptr;
     }
 
-    /** @brief return segment count for specific section list with given name */
-    size_t get_seclist_segment_count(const std::string& name) const {
-        SecMapping* s = get_seclist_mapping(name);
+    /** @brief return segment count for specific section list with given type */
+    size_t get_seclist_segment_count(const SectionType type) const {
+        SecMapping* s = get_seclist_mapping(type);
         size_t count = 0;
         if (s) {
             count = s->num_segments();
         }
         return count;
     }
-    /** @brief return segment count for specific section list with given name */
-    size_t get_seclist_section_count(const std::string& name) const {
-        SecMapping* s = get_seclist_mapping(name);
+    /** @brief return segment count for specific section list with given type */
+    size_t get_seclist_section_count(const SectionType type) const {
+        SecMapping* s = get_seclist_mapping(type);
         size_t count = 0;
         if (s) {
             count = s->num_sections();

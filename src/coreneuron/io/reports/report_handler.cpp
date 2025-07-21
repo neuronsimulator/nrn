@@ -14,6 +14,18 @@
 
 namespace coreneuron {
 
+SectionType check_section_type(SectionType st) {
+    if (st == SectionType::All) return SectionType::All;
+    if (st == SectionType::Cell) return SectionType::Soma;
+    if (st == SectionType::Soma) return SectionType::Soma;
+    if (st == SectionType::All) return SectionType::Axon;
+    if (st == SectionType::Dendrite) return SectionType::Dendrite;
+    if (st == SectionType::Apical) return SectionType::Apical;
+
+    std::cerr << "[Error] Invalid SectionType enum value: " << to_string(st) << "\n";
+    nrn_abort(1);
+}
+
 template <typename T>
 std::vector<T> intersection_gids(const NrnThread& nt, std::vector<T>& target_gids) {
     std::vector<int> thread_gids;
@@ -176,6 +188,7 @@ VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
                                                        SectionType section_type,
                                                        bool all_compartments) const {
     VarsToReport vars_to_report;
+    section_type = check_section_type(section_type);
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     if (!mapinfo) {
         std::cerr << "[COMPARTMENTS] Error : mapping information is missing for a Cell group "
@@ -192,7 +205,6 @@ VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
             nrn_abort(1);
         }
         std::vector<VarWithMapping> to_report;
-        const std::string section_type_str = to_string(section_type);
         to_report.reserve(cell_mapping->size());
 
         if (section_type == SectionType::All) {
@@ -205,8 +217,8 @@ VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
             }
         } else {
             /** get section list mapping for the type, if available */
-            if (cell_mapping->get_seclist_section_count(section_type_str) > 0) {
-                const auto& sections = cell_mapping->get_seclist_mapping(section_type_str);
+            if (cell_mapping->get_seclist_section_count(section_type) > 0) {
+                const auto& sections = cell_mapping->get_seclist_mapping(section_type);
                 append_sections_to_to_report(sections,
                                              to_report,
                                              report_variable,
@@ -320,10 +332,10 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
         to_report.reserve(cell_mapping->size());
         summation_report.summation_.resize(nt.end);
         double* report_variable = summation_report.summation_.data();
-        const auto& section_type_str = to_string(report.section_type);
-        if (report.section_type != SectionType::All) {
-            if (cell_mapping->get_seclist_section_count(section_type_str) > 0) {
-                const auto& sections = cell_mapping->get_seclist_mapping(section_type_str);
+        SectionType section_type = check_section_type(report.section_type);
+        if (section_type != SectionType::All) {
+            if (cell_mapping->get_seclist_section_count(section_type) > 0) {
+                const auto& sections = cell_mapping->get_seclist_mapping(section_type);
                 append_sections_to_to_report(sections,
                                              to_report,
                                              report_variable,

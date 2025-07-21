@@ -124,7 +124,7 @@ class FileHandler {
 
         nrn_assert(n_scan == 5);
 
-        mapinfo->name = std::string(name);
+        mapinfo->type = section_type_from_string(name);
 
         if (nseg) {
             auto sec = read_vector<int>(nseg);

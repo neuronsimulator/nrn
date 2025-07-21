@@ -76,7 +76,7 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping) {
                                           data_seg,
                                           data_lfp);
             auto smap = new SecMapping();
-            smap->name = sclname;
+            smap->type = section_type_from_string(sclname);
             for (int i_seg = 0; i_seg < n_seg; i_seg++) {
                 smap->add_segment(data_sec[i_seg], data_seg[i_seg]);
                 ntmapping->add_segment_id(data_seg[i_seg]);

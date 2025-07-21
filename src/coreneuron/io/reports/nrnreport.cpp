@@ -68,7 +68,7 @@ SectionType section_type_from_string(const std::string& str) {
         return SectionType::Dendrite;
     if (str == "apic")
         return SectionType::Apical;
-    if (str == "all")
+    if (str == "all" || str == "All")
         return SectionType::All;
     std::cerr << "[Error] Invalid string for SectionType enum: " << str << "\n";
     nrn_abort(1);
