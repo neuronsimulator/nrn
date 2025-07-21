@@ -124,7 +124,9 @@ add_executable(nmodl::nmodl ALIAS nmodl)
 add_dependencies(nmodl pywrapper)
 
 if(NMODL_ENABLE_PYTHON_BINDINGS)
-  add_dependencies(nmodl _nmodl)
+  foreach(nmodl_python_target ${NMODL_PYTHON_TARGETS})
+    add_dependencies(nmodl ${nmodl_python_target})
+  endforeach()
 endif()
 
 # =============================================================================
