@@ -165,3 +165,12 @@ SectionList
         ``forsec sectionlist {statement}``
 
 
+.. hoc:method:: SectionList.size
+
+
+    Syntax:
+        ``.size()``
+
+
+    Description:
+        Returns the number of sections in the list.
