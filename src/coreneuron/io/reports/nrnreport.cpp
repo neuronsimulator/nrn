@@ -70,8 +70,7 @@ SectionType section_type_from_string(const std::string& str) {
         return SectionType::Apical;
     if (str == "all" || str == "All")
         return SectionType::All;
-    std::cerr << "[Error] Invalid string for SectionType enum: " << str << "\n";
-    nrn_abort(1);
+    return SectionType::Custom;
 }
 
 std::string to_string(SectionType t) {
@@ -85,6 +84,8 @@ std::string to_string(SectionType t) {
         return "dend";
     if (t == SectionType::Apical)
         return "apic";
+    if (t == SectionType::Custom)
+        return "custom";
     if (t == SectionType::All)
         return "all";
     std::cerr << "[Error] Invalid SectionType enum value: " << static_cast<int>(t) << "\n";
@@ -97,7 +98,7 @@ Scaling scaling_from_string(const std::string& str) {
         return Scaling::None;
     if (str == "Area")
         return Scaling::Area;
-    std::cerr << "[Error] Invalid string for Scaling enum: " << str << "\n";
+    std::cerr << "[Error] Invalid string for Scaling enum: `" << str << "`\n";
     nrn_abort(1);
 }
 
