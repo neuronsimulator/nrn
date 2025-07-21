@@ -237,6 +237,63 @@ VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
     return vars_to_report;
 }
 
+/**
+ * @brief Retrieves a pointer to a variable associated with a mechanism or state variable.
+ *
+ * This function returns a pointer to the memory location of a variable specified by
+ * its mechanism name and variable name for a given segment in the neuron thread.
+ *
+ * Special cases:
+ * - If `mech_name` is "i_membrane", returns the pointer to the membrane current (`nrn_sav_rhs`)
+ *   at the specified `segment_id`.
+ * - If `mech_name` is "v", returns the pointer to the membrane voltage (`_actual_v`)
+ *   at the specified `segment_id`.
+ *
+ * For other mechanisms:
+ * - Retrieves the `Memb_list` corresponding to `mech_id` from the neuron thread.
+ * - Uses `segment_id_2_node_id` as a cache mapping segment IDs to node indices.
+ *   If the cache is empty, it populates it by iterating over all nodes in `ml`.
+ * - Returns the pointer to the variable obtained via `get_var_location_from_var_name`.
+ *
+ * @param nt Reference to the NrnThread containing mechanism data.
+ * @param mech_id Mechanism type ID.
+ * @param var_name Name of the variable to retrieve within the mechanism.
+ * @param mech_name Name of the mechanism (e.g., "i_membrane", "v", or other mechanisms).
+ * @param segment_id ID of the segment for which to retrieve the variable.
+ * @param segment_id_2_node_id Cache mapping segment IDs to node indices; populated if empty.
+ * @return Pointer to the requested variable's memory location, or nullptr if mechanism not found.
+ */
+double* get_var(const NrnThread& nt,
+                const int mech_id,
+                const std::string& var_name,
+                const std::string& mech_name,
+                const int segment_id,
+                std::unordered_map<int, int>& segment_id_2_node_id) {
+    if (mech_name == "i_membrane") {
+        return nt.nrn_fast_imem->nrn_sav_rhs + segment_id;
+    }
+    if (mech_name == "v") {
+        return nt._actual_v + segment_id;
+    }
+
+    Memb_list* ml = nt._ml_list[mech_id];
+    if (!ml) {
+        return nullptr;
+    }
+
+    // lazy cache
+    if (segment_id_2_node_id.empty()) {
+        for (int j = 0; j < ml->nodecount; j++) {
+            const int segment_id = ml->nodeindices[j];
+
+            auto result = segment_id_2_node_id.insert({segment_id, j});
+            nrn_assert(result.second && "Duplicate segment_id detected");
+        }
+    }
+
+    const int node_id = segment_id_2_node_id[segment_id];
+    return get_var_location_from_var_name(mech_id, mech_name, var_name, ml, node_id);
+}
 
 VarsToReport ReportHandler::get_summation_vars_to_report(
     const NrnThread& nt,
@@ -262,48 +319,17 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
                 nrn_abort(1);
             }
             // In case we need convertion of units
-            int scale = 1;
             for (auto i = 0; i < report.mech_ids.size(); ++i) {
                 const auto& mech_id = report.mech_ids[i];
                 const auto& var_name = report.var_names[i];
                 const auto& mech_name = report.mech_names[i];
-                // in case of v or i_membrane
-                double* var_value_base = nullptr;
-                bool is_var_value_base = false;
-
-                // skip i_membrane and v. We add them later
-                if (mech_name == "i_membrane") {
-                    var_value_base = nt.nrn_fast_imem->nrn_sav_rhs;
-                    is_var_value_base = true;
-                } else if (mech_name == "v") {
-                    var_value_base = nt._actual_v;
-                    is_var_value_base = true;
-                }
-                // need special handling for Clamp processes to flip the current value
-                if (mech_name == "IClamp" || mech_name == "SEClamp") {
-                    scale = -1;
-                }
-                Memb_list* ml = nt._ml_list[mech_id];
-                if (!ml && !is_var_value_base) {
-                    continue;
-                }
-
                 std::unordered_map<int, int> segment_id_2_node_id;
 
-                if (ml && !is_var_value_base) {
-                    for (int j = 0; j < ml->nodecount; j++) {
-                        const int segment_id = ml->nodeindices[j];
-
-                        auto result = segment_id_2_node_id.insert({segment_id, j});
-
-                        if (!result.second) {
-                            std::cerr << "ERROR: Duplicate segment_id detected: " << segment_id
-                                      << std::endl;
-                            nrn_abort(1);
-                        }
-                    }
+                // todo proper scaling routine
+                double scale = 1.0;
+                if (mech_name == "IClamp" || mech_name == "SEClamp") {
+                    scale = -1.0;
                 }
-
 
                 const auto& section_mapping = cell_mapping->secmapvec;
                 for (const auto& sections: section_mapping) {
@@ -311,16 +337,12 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
                         int section_id = section.first;
                         auto& segment_ids = section.second;
                         for (const auto& segment_id: segment_ids) {
-                            double* var_value = nullptr;
-                            if (is_var_value_base) {
-                                var_value = var_value_base + segment_id;
-                            } else {
-                                const int j = segment_id_2_node_id[segment_id];
-                                var_value = get_var_location_from_var_name(
-                                    mech_id, mech_name, var_name, ml, j);
+                            double* var_ptr = get_var(
+                                nt, mech_id, var_name, mech_name, segment_id, segment_id_2_node_id);
+                            if (var_ptr != nullptr) {
+                                summation_report.currents_[segment_id].push_back(
+                                    std::make_pair(var_ptr, scale));
                             }
-                            summation_report.currents_[segment_id].push_back(
-                                std::make_pair(var_value, scale));
                         }
                     }
                 }
