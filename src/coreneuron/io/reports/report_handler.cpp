@@ -295,6 +295,23 @@ double* get_var(const NrnThread& nt,
     return get_var_location_from_var_name(mech_id, mech_name, var_name, ml, node_id);
 }
 
+double get_scaling_factor(const std::string& mech_name,
+                          Scaling scaling,
+                          const NrnThread& nt,
+                          const int segment_id) {
+    // Scaling factors for specific mechanisms
+    if (mech_name == "IClamp" || mech_name == "SEClamp") {
+        return -1.0;  // Invert current for these mechanisms
+    }
+
+
+    if (mech_name != "i_membrane" && scaling == Scaling::Area) {
+        return *(nt._actual_area + segment_id) / 100.0;
+    }
+
+    return 1.0;  // Default scaling factor
+}
+
 VarsToReport ReportHandler::get_summation_vars_to_report(
     const NrnThread& nt,
     const std::vector<int>& gids_to_report,
@@ -325,12 +342,6 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
                 const auto& mech_name = report.mech_names[i];
                 std::unordered_map<int, int> segment_id_2_node_id;
 
-                // todo proper scaling routine
-                double scale = 1.0;
-                if (mech_name == "IClamp" || mech_name == "SEClamp") {
-                    scale = -1.0;
-                }
-
                 const auto& section_mapping = cell_mapping->secmapvec;
                 for (const auto& sections: section_mapping) {
                     for (auto& section: sections->secmap) {
@@ -340,8 +351,10 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
                             double* var_ptr = get_var(
                                 nt, mech_id, var_name, mech_name, segment_id, segment_id_2_node_id);
                             if (var_ptr != nullptr) {
+                                const double scaling_factor =
+                                    get_scaling_factor(mech_name, report.scaling, nt, segment_id);
                                 summation_report.currents_[segment_id].push_back(
-                                    std::make_pair(var_ptr, scale));
+                                    std::make_pair(var_ptr, scaling_factor));
                             }
                         }
                     }

@@ -94,9 +94,9 @@ std::string to_string(SectionType t) {
 
 
 Scaling scaling_from_string(const std::string& str) {
-    if (str == "None")
+    if (str == "None" || str == "none")
         return Scaling::None;
-    if (str == "Area")
+    if (str == "Area" || str == "area")
         return Scaling::Area;
     std::cerr << "[Error] Invalid string for Scaling enum: `" << str << "`\n";
     nrn_abort(1);
@@ -104,9 +104,9 @@ Scaling scaling_from_string(const std::string& str) {
 
 std::string to_string(Scaling s) {
     if (s == Scaling::None)
-        return "None";
+        return "none";
     if (s == Scaling::Area)
-        return "Area";
+        return "area";
     std::cerr << "[Error] Invalid Scaling enum value: " << static_cast<int>(s) << "\n";
     nrn_abort(1);
 }
