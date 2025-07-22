@@ -127,17 +127,18 @@ TEST_CASE("LFP_ReportEvent") {
     auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     // Generate mapinfo CellMapping
     for (const auto& gid: gids) {
-        mapinfo->mappingvec.push_back(new CellMapping(gid));
+        auto cmap = std::make_shared<CellMapping>(gid);
+        mapinfo->add_cell_mapping(cmap);
         for (const auto& segment: segment_ids) {
             std::vector<double> lfp_factors{segment + 1.0, segment + 2.0};
-            mapinfo->mappingvec.back()->add_segment_lfp_factor(segment, lfp_factors);
+            cmap->add_segment_lfp_factor(segment, lfp_factors);
         }
     }
     mapinfo->prepare_lfp();
     // Total number of electrodes 2 gids * 2 factors
 
-    CellMapping* c42 = mapinfo->mappingvec[0];
-    CellMapping* c134 = mapinfo->mappingvec[1];
+    auto c42 = mapinfo->get_cell_mapping(42);
+    auto c134 = mapinfo->get_cell_mapping(134);
     REQUIRE(c42->lfp_factors.size() == 5);
     REQUIRE(c134->num_electrodes() == 2);
 

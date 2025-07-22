@@ -17,6 +17,7 @@
 #include <unordered_map>
 
 #include "coreneuron/io/reports/nrnreport.hpp"
+#include "coreneuron/utils/utils.hpp"
 
 namespace coreneuron {
 
@@ -171,7 +172,7 @@ struct CellMapping {
  */
 struct NrnThreadMappingInfo {
     /** list of cells mapping */
-    std::vector<CellMapping*> mappingvec;
+    std::unordered_map<int, std::shared_ptr<CellMapping>> cell_mappings;
 
     /** list of segment ids */
     std::vector<int> segment_ids;
@@ -180,31 +181,27 @@ struct NrnThreadMappingInfo {
 
     /** @brief number of cells */
     size_t size() const {
-        return mappingvec.size();
-    }
-
-    /** @brief memory cleanup */
-    ~NrnThreadMappingInfo() {
-        for (size_t i = 0; i < mappingvec.size(); i++) {
-            delete mappingvec[i];
-        }
+        return cell_mappings.size();
     }
 
     /** @brief get cell mapping information for given gid
      *	if exist otherwise return nullptr.
      */
-    CellMapping* get_cell_mapping(int gid) const {
-        for (const auto& mapping: mappingvec) {
-            if (mapping->gid == gid) {
-                return mapping;
-            }
+    std::shared_ptr<CellMapping> get_cell_mapping(int gid) const {
+        auto it = cell_mappings.find(gid);
+        if (it != cell_mappings.end()) {
+            return it->second;
         }
         return nullptr;
     }
 
     /** @brief add mapping information of new cell */
-    void add_cell_mapping(CellMapping* c) {
-        mappingvec.push_back(c);
+    void add_cell_mapping(std::shared_ptr<CellMapping> c) {
+        auto [it, inserted] = cell_mappings.insert({c->gid, c});
+        if (!inserted) {
+            std::cerr << "CellMapping for gid " << std::to_string(c->gid) << " already exists!\n";
+            nrn_abort(1);
+        }
     }
 
     /** @brief add a new segment */
@@ -214,11 +211,11 @@ struct NrnThreadMappingInfo {
 
     /** @brief Resize the lfp vector */
     void prepare_lfp() {
-        size_t lfp_size = std::accumulate(mappingvec.begin(),
-                                          mappingvec.end(),
+        size_t lfp_size = std::accumulate(cell_mappings.begin(),
+                                          cell_mappings.end(),
                                           0,
                                           [](size_t total, const auto& mapping) {
-                                              return total + mapping->num_electrodes();
+                                              return total + mapping.second->num_electrodes();
                                           });
         _lfp.resize(lfp_size);
     }

@@ -112,7 +112,9 @@ class FileHandler {
      * Read count no of mappings for section to segment
      */
     template <typename T>
-    int read_mapping_info(T* mapinfo, NrnThreadMappingInfo* ntmapping, CellMapping* cmap) {
+    int read_mapping_info(T* mapinfo,
+                          NrnThreadMappingInfo* ntmapping,
+                          std::shared_ptr<CellMapping> cmap) {
         int nsec, nseg, n_scan;
         size_t total_lfp_factors;
         int num_electrodes;
