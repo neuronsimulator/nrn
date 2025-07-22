@@ -9,6 +9,7 @@
 #pragma once
 
 #include <numeric>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -21,25 +22,20 @@
 
 namespace coreneuron {
 
-/** type to store every section and associated segments */
-using segvec_type = std::vector<int>;
-using secseg_map_type = std::map<int, segvec_type>;
-using secseg_it_type = secseg_map_type::iterator;
-
 /** @brief Section to segment mapping
  *
  *  For a section list (of a particulat type), store mapping
- *  of section to segments
- *  a section is a arbitrary user classification to recognize some segments (ex: api, soma, dend,
- * axon)
+ *  of section to compartments
+ *  a section is a arbitrary user classification to recognize some compartments (ex: api, soma,
+ * dend, axon)
  *
  */
 struct SecMapping {
     /** name of section list */
     SectionType type;
 
-    /** map of section and associated segments */
-    secseg_map_type secmap;
+    /** map of section and associated compartments */
+    std::unordered_map<int, std::vector<int>> secmap;
 
     SecMapping() = default;
 
@@ -51,8 +47,8 @@ struct SecMapping {
         return secmap.size();
     }
 
-    /** @brief return number of segments in section list */
-    size_t num_segments() const {
+    /** @brief return number of compartments in section list */
+    size_t num_compartments() const {
         return std::accumulate(secmap.begin(), secmap.end(), 0, [](int psum, const auto& item) {
             return psum + item.second.size();
         });
@@ -93,13 +89,13 @@ struct CellMapping {
                                });
     }
 
-    /** @brief return number of segments in a cell */
-    int num_segments() const {
+    /** @brief return number of compartments in a cell */
+    int num_compartments() const {
         return std::accumulate(sec_mappings.begin(),
                                sec_mappings.end(),
                                0,
                                [](int psum, const auto& secmap) {
-                                   return psum + secmap->num_segments();
+                                   return psum + secmap->num_compartments();
                                });
     }
 
@@ -137,20 +133,18 @@ struct CellMapping {
     /** @brief return segment count for specific section list with given type */
     size_t get_seclist_segment_count(const SectionType type) const {
         auto s = get_seclist_mapping(type);
-        size_t count = 0;
-        if (s) {
-            count = s->num_segments();
+        if (!s) {
+            return 0;
         }
-        return count;
+        return s->num_compartments();
     }
     /** @brief return segment count for specific section list with given type */
     size_t get_seclist_section_count(const SectionType type) const {
         auto s = get_seclist_mapping(type);
-        size_t count = 0;
-        if (s) {
-            count = s->num_sections();
+        if (!s) {
+            return 0;
         }
-        return count;
+        return s->num_sections();
     }
 
     /** @brief add the lfp electrode factors of a segment_id */
