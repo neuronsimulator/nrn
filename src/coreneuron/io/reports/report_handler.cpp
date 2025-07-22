@@ -162,7 +162,7 @@ void ReportHandler::register_custom_report(const NrnThread& nt,
 }
 
 // fill to_report with (int section_id, double* variable)
-void append_sections_to_to_report(const SecMapping* sections,
+void append_sections_to_to_report(const std::shared_ptr<SecMapping>& sections,
                                   std::vector<VarWithMapping>& to_report,
                                   double* report_variable,
                                   bool all_compartments) {
@@ -214,7 +214,7 @@ VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
         to_report.reserve(cell_mapping->size());
 
         if (section_type == SectionType::All) {
-            const auto& section_mapping = cell_mapping->secmapvec;
+            const auto& section_mapping = cell_mapping->sec_mappings;
             for (const auto& sections: section_mapping) {
                 append_sections_to_to_report(sections,
                                              to_report,
@@ -341,7 +341,7 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
                 const auto& mech_name = report.mech_names[i];
                 std::unordered_map<int, int> segment_id_2_node_id;
 
-                const auto& section_mapping = cell_mapping->secmapvec;
+                const auto& section_mapping = cell_mapping->sec_mappings;
                 for (const auto& sections: section_mapping) {
                     for (auto& section: sections->secmap) {
                         int section_id = section.first;
@@ -386,7 +386,7 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
             }
         }
 
-        const auto& section_mapping = cell_mapping->secmapvec;
+        const auto& section_mapping = cell_mapping->sec_mappings;
         for (const auto& sections: section_mapping) {
             for (auto& section: sections->secmap) {
                 // compartment_id

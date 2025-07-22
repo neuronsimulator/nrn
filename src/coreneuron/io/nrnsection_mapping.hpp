@@ -75,7 +75,7 @@ struct CellMapping {
     int gid;
 
     /** list of section lists (like soma, axon, apic) */
-    std::vector<SecMapping*> secmapvec;
+    std::vector<std::shared_ptr<SecMapping>> sec_mappings;
 
     /** map containing segment ids an its respective lfp factors */
     std::unordered_map<int, std::vector<double>> lfp_factors;
@@ -85,8 +85,8 @@ struct CellMapping {
 
     /** @brief total number of sections in a cell */
     int num_sections() const {
-        return std::accumulate(secmapvec.begin(),
-                               secmapvec.end(),
+        return std::accumulate(sec_mappings.begin(),
+                               sec_mappings.end(),
                                0,
                                [](int psum, const auto& secmap) {
                                    return psum + secmap->num_sections();
@@ -95,8 +95,8 @@ struct CellMapping {
 
     /** @brief return number of segments in a cell */
     int num_segments() const {
-        return std::accumulate(secmapvec.begin(),
-                               secmapvec.end(),
+        return std::accumulate(sec_mappings.begin(),
+                               sec_mappings.end(),
                                0,
                                [](int psum, const auto& secmap) {
                                    return psum + secmap->num_segments();
@@ -114,17 +114,17 @@ struct CellMapping {
 
     /** @brief number of section lists */
     size_t size() const noexcept {
-        return secmapvec.size();
+        return sec_mappings.size();
     }
 
     /** @brief add new SecMapping */
-    void add_sec_map(SecMapping* s) {
-        secmapvec.push_back(s);
+    void add_sec_map(std::shared_ptr<SecMapping> s) {
+        sec_mappings.push_back(s);
     }
 
     /** @brief return section list mapping with given type */
-    SecMapping* get_seclist_mapping(const SectionType type) const {
-        for (auto& secmap: secmapvec) {
+    std::shared_ptr<SecMapping> get_seclist_mapping(const SectionType type) const {
+        for (auto& secmap: sec_mappings) {
             if (type == secmap->type) {
                 return secmap;
             }
@@ -136,7 +136,7 @@ struct CellMapping {
 
     /** @brief return segment count for specific section list with given type */
     size_t get_seclist_segment_count(const SectionType type) const {
-        SecMapping* s = get_seclist_mapping(type);
+        auto s = get_seclist_mapping(type);
         size_t count = 0;
         if (s) {
             count = s->num_segments();
@@ -145,7 +145,7 @@ struct CellMapping {
     }
     /** @brief return segment count for specific section list with given type */
     size_t get_seclist_section_count(const SectionType type) const {
-        SecMapping* s = get_seclist_mapping(type);
+        auto s = get_seclist_mapping(type);
         size_t count = 0;
         if (s) {
             count = s->num_sections();
@@ -156,12 +156,6 @@ struct CellMapping {
     /** @brief add the lfp electrode factors of a segment_id */
     void add_segment_lfp_factor(const int segment_id, std::vector<double>& factors) {
         lfp_factors.insert({segment_id, factors});
-    }
-
-    ~CellMapping() {
-        for (size_t i = 0; i < secmapvec.size(); i++) {
-            delete secmapvec[i];
-        }
     }
 };
 
