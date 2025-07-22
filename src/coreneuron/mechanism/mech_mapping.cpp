@@ -19,13 +19,20 @@
 namespace coreneuron {
 using Offset = size_t;
 using MechId = int;
-using VariableName = const std::string_view;
+// we use char* because it works with nullptrs and we do not need copies of the keys
+using VariableName = const char*;
 
+// comparator for MechNamesMapping
+struct cmp_str {
+    bool operator()(char const* a, char const* b) const {
+        return std::strcmp(a, b) < 0;
+    }
+};
 
 /*
  * Structure that map variable names of mechanisms to their value's location (offset) in memory
  */
-using MechNamesMapping = std::map<MechId, std::map<VariableName, Offset>>;
+using MechNamesMapping = std::map<MechId, std::map<VariableName, Offset, cmp_str>>;
 static MechNamesMapping mechNamesMapping;
 
 double* get_var_location_from_var_name(int mech_id,
@@ -40,11 +47,11 @@ double* get_var_location_from_var_name(int mech_id,
     }
 
     const auto& mech = mech_it->second;
-    auto offset_it = mech.find(variable_name);
+    auto offset_it = mech.find(variable_name.data());
     if (offset_it == mech.end()) {
         // Try fallback with variable_name + "_" + mech_name. Used necessary for i_pas
         std::string fallback_name = std::string(variable_name) + "_" + std::string(mech_name);
-        offset_it = mech.find(fallback_name);
+        offset_it = mech.find(fallback_name.data());
 
         if (offset_it == mech.end()) {
             std::cerr << "No value associated to variable name: '" << variable_name
