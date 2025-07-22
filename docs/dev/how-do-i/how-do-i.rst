@@ -9,7 +9,7 @@ The CPython API is only to be invoked directly from within :file:`src/nrnpython`
 
 The way to support using Python from outside this folder without introducing a dependency on Python is to declare a function
 pointer outside the folder, then have that function pointer be set by something inside e.g. :file:`src/nrnpython/nrnpy_hoc.cpp`.
-All uses outside the folder must first check to see if the funciton pointer is not NULL; if it is NULL then Python is not
+All uses outside the folder must first check to see if the function pointer is not NULL; if it is NULL then Python is not
 available. This is done for a number of functions in the ``nrnpy_hoc()`` function in :file:`src/nrnpython/nrnpy_hoc.cpp`.
 
 
@@ -131,8 +131,8 @@ Here ``cons`` is the constructor, which must take an ``Object*`` and return a ``
 
 ``members`` is a null-terminated array of ``Member_func`` of methods that in Python could return float, 
 integer, or bool. In HOC, these all return doubles.
-- To specify the return type as seen by Python, set ``hoc_return_type_code``. A value of 0 indicates
-  the function is returning a float; 1 indicates an integer; a value of 2 indicates a bool.
+- To specify the return type as seen by Python, set ``hoc_return_type_code``.
+  Set it to the appropriate ``HocReturnType``.
 - Each of these methods must take a ``void*`` and return a double.
 
 ``retobj_methods`` is a null-terminated array of ``Member_ret_obj_func`` of methods that return objects.

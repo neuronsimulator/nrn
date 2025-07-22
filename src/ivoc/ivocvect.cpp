@@ -1,5 +1,7 @@
 #include <../../nrnconf.h>
 
+#include "code.h"
+
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -137,8 +139,6 @@ int cmpfcn(double a, double b) {
 }
 
 extern int vector_arg_px(int, double**);
-
-extern int hoc_return_type_code;
 
 IvocVect::IvocVect(Object* o) {
     obj_ = o;
@@ -423,7 +423,7 @@ static double v_fwrite(void* v) {
     int x_max = vp->size() - 1;
     int start = 0;
     int end = x_max;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     if (ifarg(2)) {
         start = int(chkarg(2, 0, x_max));
         end = int(chkarg(3, start, x_max));
@@ -798,7 +798,7 @@ static double v_printf(void* v) {
             Printf("\n");
         }
     }
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return double(end - start + 1);
 }
 
@@ -813,7 +813,7 @@ static double v_scanf(void* v) {
     check_obj_type(ob, "File");
     OcFile* f = (OcFile*) (ob->u.this_pointer);
 
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
 
     if (ifarg(4)) {
         n = int(*getarg(2));
@@ -881,7 +881,7 @@ static double v_scantil(void* v) {
         x->resize(0);
     }
 
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     til = *getarg(2);
     if (ifarg(4)) {
         c = int(*getarg(3));
@@ -1350,7 +1350,7 @@ static Object** v_ind(void* v) {
 
 static double v_size(void* v) {
     Vect* x = (Vect*) v;
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return double(x->size());
 }
 
@@ -1360,7 +1360,7 @@ static double v_buffer_size(void* v) {
         int n = (int) chkarg(1, (double) x->size(), dmaxint_);
         x->buffer_size(n);
     }
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return x->buffer_size();
 }
 
@@ -1470,7 +1470,7 @@ static Object** v_remove(void* v) {
 static double v_contains(void* v) {
     Vect* x = (Vect*) v;
     double g = *getarg(1);
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     for (int i = 0; i < x->size(); i++) {
         if (MyMath::eq(x->elem(i), g, hoc_epsilon))
             return 1.;
@@ -1782,7 +1782,7 @@ static double v_indwhere(void* v) {
     int i, iarg, m = 0;
     char* op;
     double value, value2;
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     op = gargstr(1);
     value = *getarg(2);
     iarg = 3;
@@ -2119,7 +2119,7 @@ static double v_min_ind(void* v) {
         return -1.0;
     }
     int x_max = x->size() - 1;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     if (ifarg(1)) {
         int start = int(chkarg(1, 0, x_max));
         int end = int(chkarg(2, start, x_max));
@@ -2150,7 +2150,7 @@ static double v_max_ind(void* v) {
         return -1.0;
     }
     int x_max = x->size() - 1;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     if (ifarg(1)) {
         int start = int(chkarg(1, 0, x_max));
         int end = int(chkarg(2, start, x_max));
