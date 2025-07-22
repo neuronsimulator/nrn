@@ -54,6 +54,8 @@ void ReportEvent::summation_alu(NrnThread* nt) {
                                      current_pairs.end(),
                                      0.0,
                                      [](double acc, const auto& pair) {
+                                            // pair.first is a pointer to the current value,
+                                            // pair.second is the scaling factor
                                          return acc + (*pair.first) * pair.second;
                                      });
 
