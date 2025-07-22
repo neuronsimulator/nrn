@@ -40,30 +40,37 @@ ReportEvent::ReportEvent(double dt,
     std::sort(gids_to_report.begin(), gids_to_report.end());
 }
 
+// Compute and store the weighted sum of currents for each segment,
+// then compute the soma total as the sum of its segments' currents.
+// This function assumes that nt->summation_report_handler_ and vars_to_report are properly
+// populated.
+
 void ReportEvent::summation_alu(NrnThread* nt) {
     auto& summation_report = nt->summation_report_handler_->summation_reports_[report_path];
-    // Add currents of all variables in each segment
-    for (const auto& kv: summation_report.currents_) {
-        double sum = 0.0;
-        int segment_id = kv.first;
-        for (const auto& value: kv.second) {
-            double current_value = *value.first;
-            int scale = value.second;
-            sum += current_value * scale;
-        }
+
+    // Calculate weighted sum of currents for each segment using std::accumulate
+    for (const auto& [segment_id, current_pairs]: summation_report.currents_) {
+        double sum = std::accumulate(current_pairs.begin(),
+                                     current_pairs.end(),
+                                     0.0,
+                                     [](double acc, const auto& pair) {
+                                         return acc + (*pair.first) * pair.second;
+                                     });
 
         summation_report.summation_[segment_id] = sum;
     }
 
-    // Add all currents in the soma
-    // Only when type summation and soma target
+    // Calculate the soma total current by summing over its segments using std::accumulate
     if (!summation_report.gid_segments_.empty()) {
-        for (const auto& kv: summation_report.gid_segments_) {
-            double sum_soma = 0.0;
-            int gid = kv.first;
-            for (const auto& segment_id: kv.second) {
-                sum_soma += summation_report.summation_[segment_id];
-            }
+        for (const auto& [gid, segment_ids]: summation_report.gid_segments_) {
+            double sum_soma = std::accumulate(segment_ids.begin(),
+                                              segment_ids.end(),
+                                              0.0,
+                                              [&summation_report](double acc, int segment_id) {
+                                                  return acc +
+                                                         summation_report.summation_[segment_id];
+                                              });
+
             *(vars_to_report[gid].front().var_value) = sum_soma;
         }
     }

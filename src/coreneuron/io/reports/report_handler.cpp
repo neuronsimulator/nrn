@@ -304,9 +304,8 @@ double get_scaling_factor(const std::string& mech_name,
         return -1.0;  // Invert current for these mechanisms
     }
 
-
     if (mech_name != "i_membrane" && scaling == Scaling::Area) {
-        return *(nt._actual_area + segment_id) / 100.0;
+        return (*(nt._actual_area + segment_id)) / 100.0;
     }
 
     return 1.0;  // Default scaling factor
@@ -351,10 +350,13 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
                             double* var_ptr = get_var(
                                 nt, mech_id, var_name, mech_name, segment_id, segment_id_2_node_id);
                             if (var_ptr != nullptr) {
-                                const double scaling_factor =
+                                double scaling_factor =
                                     get_scaling_factor(mech_name, report.scaling, nt, segment_id);
-                                summation_report.currents_[segment_id].push_back(
-                                    std::make_pair(var_ptr, scaling_factor));
+
+                                if (scaling_factor != 0.0) {
+                                    summation_report.currents_[segment_id].push_back(
+                                        std::make_pair(var_ptr, scaling_factor));
+                                }
                             }
                         }
                     }

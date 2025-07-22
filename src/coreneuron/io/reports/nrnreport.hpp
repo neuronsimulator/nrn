@@ -29,7 +29,7 @@ struct SummationReport {
     // Contains the values of the summation with index == segment_id
     std::vector<double> summation_ = {};
     // Map containing the pointers of the currents and its scaling factor for every segment_id
-    std::unordered_map<size_t, std::vector<std::pair<double*, int>>> currents_;
+    std::unordered_map<size_t, std::vector<std::pair<double*, double>>> currents_;
     // Map containing the list of segment_ids per gid
     std::unordered_map<int, std::vector<size_t>> gid_segments_;
 };
