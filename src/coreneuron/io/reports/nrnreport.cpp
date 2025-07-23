@@ -31,14 +31,22 @@ namespace coreneuron {
 // Size in MB of the report buffer
 static int size_report_buffer = 4;
 
+bool equals_case_insensitive(std::string_view a, std::string_view b) {
+    if (a.size() != b.size())
+        return false;
+    return std::equal(a.begin(), a.end(), b.begin(), [](unsigned char c1, unsigned char c2) {
+        return std::tolower(c1) == std::tolower(c2);
+    });
+}
+
 ReportType report_type_from_string(const std::string& str) {
-    if (str == "compartment")
+    if (equals_case_insensitive(str, "compartment"))
         return ReportType::Compartment;
-    if (str == "summation")
+    if (equals_case_insensitive(str, "summation"))
         return ReportType::Summation;
-    if (str == "synapse")
+    if (equals_case_insensitive(str, "synapse"))
         return ReportType::Synapse;
-    if (str == "LFP")
+    if (equals_case_insensitive(str, "LFP"))
         return ReportType::LFP;
     std::cerr << "[Error] Invalid string for ReportType enum: " << str << "\n";
     nrn_abort(1);
@@ -58,17 +66,17 @@ std::string to_string(ReportType t) {
 }
 
 SectionType section_type_from_string(const std::string& str) {
-    if (str == "cell")
+    if (equals_case_insensitive(str, "cell"))
         return SectionType::Cell;
-    if (str == "soma")
+    if (equals_case_insensitive(str, "soma"))
         return SectionType::Soma;
-    if (str == "axon")
+    if (equals_case_insensitive(str, "axon"))
         return SectionType::Axon;
-    if (str == "dend")
+    if (equals_case_insensitive(str, "dend"))
         return SectionType::Dendrite;
-    if (str == "apic")
+    if (equals_case_insensitive(str, "apic"))
         return SectionType::Apical;
-    if (str == "all" || str == "All")
+    if (equals_case_insensitive(str, "all"))
         return SectionType::All;
     return SectionType::Custom;
 }
@@ -94,9 +102,9 @@ std::string to_string(SectionType t) {
 
 
 Scaling scaling_from_string(const std::string& str) {
-    if (str == "None" || str == "none")
+    if (equals_case_insensitive(str, "None"))
         return Scaling::None;
-    if (str == "Area" || str == "area")
+    if (equals_case_insensitive(str, "Area"))
         return Scaling::Area;
     std::cerr << "[Error] Invalid string for Scaling enum: `" << str << "`\n";
     nrn_abort(1);
