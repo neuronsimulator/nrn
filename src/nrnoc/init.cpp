@@ -20,6 +20,10 @@
 #include "membdef.h"
 #include "multicore.h"
 #include "nrnmpi.h"
+#ifdef _MSC_VER
+#include <direct.h>  // _getcwd
+#include "../mswin/dlfcn.h"
+#endif
 
 #include <vector>
 #include <unordered_map>
@@ -33,12 +37,12 @@ static char banner[] =
     "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2022\n\
 See http://neuron.yale.edu/neuron/credits\n";
 
-#if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
+#if defined(_WIN32) || defined(NRNMECH_DLL_STYLE)
 extern const char* nrn_mech_dll;      /* declared in hoc_init.cpp so ivocmain.cpp can see it */
 extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.cpp */
 #endif                                // WIN32 or NRNMEHC_DLL_STYLE
 
-#if defined(WIN32)
+#if defined(_WIN32)
 #undef DLL_DEFAULT_FNAME
 #define DLL_DEFAULT_FNAME "nrnmech.dll"
 #endif  // WIN32
