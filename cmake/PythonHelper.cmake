@@ -85,56 +85,54 @@ function(nrn_find_python)
     endif()
     set(opt_NAME "${${opt_NAME}_full}")
   endif()
-  # Only bother finding version/include/library information if NRN_ENABLE_PYTHON is set.
-  if(NRN_ENABLE_PYTHON)
-    # Run find_package(Python ...) in a subprocess, so there is no pollution of CMakeCache.txt and
-    # so on. Our desire to include multiple Python versions in one build means we have to handle
-    # lists of versions/libraries/... manually. Unfortunately one cannot safely use find_package in
-    # CMake script mode, so we configure an extra project.
-    string(SHA1 pyexe_hash "${opt_NAME}")
-    string(SUBSTRING "${pyexe_hash}" 0 6 pyexe_hash)
-    # Which attributes we're trying to learn about this Python
-    set(python_vars Python_INCLUDE_DIRS Python_VERSION)
-    if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_LINK_AGAINST_PYTHON)
-      # Do not link against Python, so we don't need the library -- just as well, it's not available
-      # in manylinux
-      set(dev_component "Development.Module")
-      set(Python_LIBRARIES "do-not-link-against-libpython-in-dynamic-python-builds")
-    else()
-      set(dev_component "Development")
-      list(APPEND python_vars Python_LIBRARIES)
-    endif()
-    execute_process(
-      COMMAND
-        ${CMAKE_COMMAND} "-DPython_EXECUTABLE:STRING=${opt_NAME}"
-        "-DPython_COMPONENTS=${dev_component};Interpreter" -S
-        ${CMAKE_SOURCE_DIR}/cmake/ExecuteFindPython -B
-        ${CMAKE_BINARY_DIR}/ExecuteFindPython_${pyexe_hash}
-      RESULT_VARIABLE result
-      OUTPUT_VARIABLE stdout
-      ERROR_VARIABLE stderr)
-    if(NOT result EQUAL 0)
-      message(FATAL_ERROR "find_package could not discover information about ${opt_NAME}\n"
-                          "status=${result}\n" "stdout:\n${stdout}\n" "stderr:\n${stderr}\n")
-    endif()
-    # Parse out the variables printed by ExecuteFindPython.cmake
-    foreach(var ${python_vars})
-      string(REGEX MATCH "-- ${var}=([^\n]*)\n" _junk "${stdout}")
-      if(NOT _junk OR NOT CMAKE_MATCH_1)
-        message(FATAL_ERROR "Could not extract ${var} from\n===\n${stdout}\n===")
-      endif()
-      set(${var} "${CMAKE_MATCH_1}")
-    endforeach()
-    set("${opt_PREFIX}_INCLUDES"
-        "${Python_INCLUDE_DIRS}"
-        PARENT_SCOPE)
-    set("${opt_PREFIX}_LIBRARIES"
-        "${Python_LIBRARIES}"
-        PARENT_SCOPE)
-    set("${opt_PREFIX}_VERSION"
-        "${Python_VERSION}"
-        PARENT_SCOPE)
+  # Always try to find includes and version info because embedding the interpreter in NMODL requires
+  # it. Run find_package(Python ...) in a subprocess, so there is no pollution of CMakeCache.txt and
+  # so on. Our desire to include multiple Python versions in one build means we have to handle lists
+  # of versions/libraries/... manually. Unfortunately one cannot safely use find_package in CMake
+  # script mode, so we configure an extra project.
+  string(SHA1 pyexe_hash "${opt_NAME}")
+  string(SUBSTRING "${pyexe_hash}" 0 6 pyexe_hash)
+  # Which attributes we're trying to learn about this Python
+  set(python_vars Python_INCLUDE_DIRS Python_VERSION)
+  if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_LINK_AGAINST_PYTHON)
+    # Do not link against Python, so we don't need the library -- just as well, it's not available
+    # in manylinux
+    set(dev_component "Development.Module")
+    set(Python_LIBRARIES "do-not-link-against-libpython-in-dynamic-python-builds")
+  else()
+    set(dev_component "Development")
+    list(APPEND python_vars Python_LIBRARIES)
   endif()
+  execute_process(
+    COMMAND
+      ${CMAKE_COMMAND} "-DPython_EXECUTABLE:STRING=${opt_NAME}"
+      "-DPython_COMPONENTS=${dev_component};Interpreter" -S
+      ${CMAKE_SOURCE_DIR}/cmake/ExecuteFindPython -B
+      ${CMAKE_BINARY_DIR}/ExecuteFindPython_${pyexe_hash}
+    RESULT_VARIABLE result
+    OUTPUT_VARIABLE stdout
+    ERROR_VARIABLE stderr)
+  if(NOT result EQUAL 0)
+    message(FATAL_ERROR "find_package could not discover information about ${opt_NAME}\n"
+                        "status=${result}\n" "stdout:\n${stdout}\n" "stderr:\n${stderr}\n")
+  endif()
+  # Parse out the variables printed by ExecuteFindPython.cmake
+  foreach(var ${python_vars})
+    string(REGEX MATCH "-- ${var}=([^\n]*)\n" _junk "${stdout}")
+    if(NOT _junk OR NOT CMAKE_MATCH_1)
+      message(FATAL_ERROR "Could not extract ${var} from\n===\n${stdout}\n===")
+    endif()
+    set(${var} "${CMAKE_MATCH_1}")
+  endforeach()
+  set("${opt_PREFIX}_INCLUDES"
+      "${Python_INCLUDE_DIRS}"
+      PARENT_SCOPE)
+  set("${opt_PREFIX}_LIBRARIES"
+      "${Python_LIBRARIES}"
+      PARENT_SCOPE)
+  set("${opt_PREFIX}_VERSION"
+      "${Python_VERSION}"
+      PARENT_SCOPE)
   # Finally do our special treatment for macOS + sanitizers
   if(APPLE AND NRN_SANITIZERS)
     # Detect if the binary we have in opt_NAME points to a virtual environment.
@@ -211,18 +209,18 @@ foreach(pyexe ${python_executables})
       # We cannot build against multiple copies of the same pythonX.Y version.
       message(FATAL_ERROR "Got duplicate version ${nrnpy_VERSION} from ${pyexe}")
     endif()
-    list(APPEND NRN_PYTHON_VERSIONS "${nrnpy_VERSION}")
-    list(APPEND NRN_PYTHON_INCLUDES "${nrnpy_INCLUDES}")
     list(APPEND NRN_PYTHON_LIBRARIES "${nrnpy_LIBRARIES}")
   endif()
   list(APPEND NRN_PYTHON_EXECUTABLES "${nrnpy_EXECUTABLE}")
+  list(APPEND NRN_PYTHON_VERSIONS "${nrnpy_VERSION}")
+  list(APPEND NRN_PYTHON_INCLUDES "${nrnpy_INCLUDES}")
 endforeach()
 # In any case, the default (NRN_DEFAULT_PYTHON_EXECUTABLE) should always be the zeroth entry in the
 # list of Pythons, and we need to set it even if NRN_ENABLE_PYTHON=OFF -- for use in build scripts.
 list(GET NRN_PYTHON_EXECUTABLES 0 NRN_DEFAULT_PYTHON_EXECUTABLE)
 list(GET NRN_PYTHON_VERSIONS 0 NRN_DEFAULT_PYTHON_VERSION)
+list(GET NRN_PYTHON_INCLUDES 0 NRN_DEFAULT_PYTHON_INCLUDES)
 if(NRN_ENABLE_PYTHON)
-  list(GET NRN_PYTHON_INCLUDES 0 NRN_DEFAULT_PYTHON_INCLUDES)
   list(GET NRN_PYTHON_LIBRARIES 0 NRN_DEFAULT_PYTHON_LIBRARIES)
   list(LENGTH NRN_PYTHON_EXECUTABLES NRN_PYTHON_COUNT)
   math(EXPR NRN_PYTHON_ITERATION_LIMIT "${NRN_PYTHON_COUNT} - 1")
