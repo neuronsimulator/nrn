@@ -1,0 +1,226 @@
+{load_file("nrngui.hoc")}
+objectvar save_window_, rvp_
+objectvar scene_vector_[6]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+
+//Begin ChannelBuild[0] managed KSChan[0]
+{
+load_file("chanbild.hoc", "ChannelBuild")
+}
+{ion_register("k", 1)}
+{ocbox_ = new ChannelBuild(0)}
+{object_push(ocbox_)}
+{genprop.set_data("mykhhst", 0, 1, 6, "k")}
+{genprop.set_defstr(0.02979, 0)}
+tobj = new ChannelBuildKSGate(this)
+{gatelist.append(tobj)}
+{tobj.begin_restore(1)}
+{tobj.set_state("C1", 0, 60, 130)}
+{tobj.set_state("C2", 0, 90, 130)}
+{tobj.set_state("O", 1, 120, 130)}
+{tobj.set_trans(0, 1, 1)}
+{tobj.transitions.object(0).settype(1, "")}
+{tobj1 = new Vector(3)  for (i=0; i < 3; i += 1) tobj1.x[i] = fscan() }
+1
+-0.164
+-48.8
+{tobj.transitions.object(0).set_f(0, 4, tobj1)}
+{tobj1 = new Vector(3)  for (i=0; i < 3; i += 1) tobj1.x[i] = fscan() }
+4.4
+-0.025
+-65
+{tobj.transitions.object(0).set_f(1, 2, tobj1)}
+{tobj.set_trans(1, 2, 1)}
+{tobj.transitions.object(1).settype(1, "")}
+{tobj1 = new Vector(3)  for (i=0; i < 3; i += 1) tobj1.x[i] = fscan() }
+1
+-0.036
+-22
+{tobj.transitions.object(1).set_f(0, 4, tobj1)}
+{tobj1 = new Vector(3)  for (i=0; i < 3; i += 1) tobj1.x[i] = fscan() }
+2.6
+-0.007
+-65
+{tobj.transitions.object(1).set_f(1, 2, tobj1)}
+{tobj.end_restore()}
+end_restore()
+{genprop.set_single(1)}
+{set_alias(0)}
+{usetable(0)}
+{object_pop()}
+{
+ocbox_.map("ChannelBuild[0] managed KSChan[0]", 78, 596, 271.68, 224.64)
+}
+objref ocbox_
+//End ChannelBuild[0] managed KSChan[0]
+
+
+//Begin SingleCompartment
+{
+load_file("single.hoc")
+}
+ocbox_ = new SingleCompartment(0)
+ocbox_.inserter = new Inserter(0)
+{object_push(ocbox_.inserter)}
+{
+mt.select("hh") i = mt.selected()
+ms[i] = new MechanismStandard("hh")
+ms[i].set("gnabar_hh", 0.12, 0)
+ms[i].set("gkbar_hh", 0.036, 0)
+ms[i].set("gl_hh", 0.0003, 0)
+ms[i].set("el_hh", -54.3, 0)
+mstate[i]= 1
+maction(i)
+}
+{object_pop() doNotify()}
+{object_push(ocbox_)}
+{inserter.v1.map()}
+{endbox()}
+{object_pop() doNotify()}
+{
+ocbox_ = ocbox_.vbox
+ocbox_.map("SingleCompartment", 260, 108, 100.8, 96)
+}
+objref ocbox_
+//End SingleCompartment
+
+
+//Begin PointProcessManager
+{
+load_file("pointman.hoc")
+}
+{
+soma ocbox_ = new PointProcessManager(0)
+}
+{object_push(ocbox_)}
+{
+mt.select("IClamp") i = mt.selected()
+ms[i] = new MechanismStandard("IClamp")
+ms[i].set("del", 5, 0)
+ms[i].set("dur", 0.1, 0)
+ms[i].set("amp", 0.1, 0)
+mt.select("IClamp") i = mt.selected() maction(i)
+hoc_ac_ = 0.5
+sec.sec move() d1.flip_to(0)
+}
+{object_pop() doNotify()}
+{
+ocbox_ = ocbox_.v1
+ocbox_.map("PointProcessManager", 667, 578, 211.2, 261.12)
+}
+objref ocbox_
+//End PointProcessManager
+
+
+//Begin PointProcessManager
+{
+load_file("pointman.hoc")
+}
+{
+soma ocbox_ = new PointProcessManager(0)
+}
+{object_push(ocbox_)}
+{
+mt.select("mykhhst") i = mt.selected()
+ms[i] = new MechanismStandard("mykhhst")
+ms[i].set("Nsingle", 1, 0)
+ms[i].set("gmax", 0.02979, 0)
+mt.select("mykhhst") i = mt.selected() maction(i)
+hoc_ac_ = 0.5
+sec.sec move() d1.flip_to(0)
+}
+{object_pop() doNotify()}
+{
+ocbox_ = ocbox_.v1
+ocbox_.map("PointProcessManager", 372, 593, 215.04, 343.68)
+}
+objref ocbox_
+//End PointProcessManager
+
+{
+xpanel("soma(0 - 1) (Parameters)", 0)
+xlabel("soma(0 - 1) (Parameters)")
+xlabel("nseg = 1")
+soma.L = 3.1831
+xvalue("L","soma.L", 1,"define_shape()", 0, 0 )
+soma.diam = 10
+xvalue("diam","soma.diam", 1,"", 0, 0 )
+soma.cm = 1
+xvalue("cm","soma.cm", 1,"", 0, 0 )
+soma.gnabar_hh = 0.12
+xvalue("gnabar_hh","soma.gnabar_hh", 1,"", 0, 0 )
+soma.gkbar_hh = 0.036
+xvalue("gkbar_hh","soma.gkbar_hh", 1,"", 0, 0 )
+soma.gl_hh = 0.0003
+xvalue("gl_hh","soma.gl_hh", 1,"", 0, 0 )
+soma.el_hh = -54.3
+xvalue("el_hh","soma.el_hh", 1,"", 0, 0 )
+soma.ena = 50
+xvalue("ena","soma.ena", 1,"", 0, 0 )
+soma.ek = -77
+xvalue("ek","soma.ek", 1,"", 0, 0 )
+xpanel(86,235)
+}
+{
+xpanel("RunControl", 0)
+v_init = -65
+xvalue("Init","v_init", 1,"stdinit()", 1, 1 )
+xbutton("Init & Run","run()")
+xbutton("Stop","stoprun=1")
+runStopAt = 5
+xvalue("Continue til","runStopAt", 1,"{continuerun(runStopAt) stoprun=1}", 1, 1 )
+runStopIn = 1
+xvalue("Continue for","runStopIn", 1,"{continuerun(t + runStopIn) stoprun=1}", 1, 1 )
+xbutton("Single Step","steprun()")
+t = 0
+xvalue("t","t", 2 )
+tstop = 15
+xvalue("Tstop","tstop", 1,"tstop_changed()", 0, 1 )
+dt = 0.025
+xvalue("dt","dt", 1,"setdt()", 0, 1 )
+steps_per_ms = 40
+xvalue("Points plotted/ms","steps_per_ms", 1,"setdt()", 0, 1 )
+screen_update_invl = 0.05
+xvalue("Scrn update invl","screen_update_invl", 1,"", 0, 1 )
+realtime = 0
+xvalue("Real Time","realtime", 0,"", 0, 1 )
+xpanel(374,46)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,15,-80,40)
+scene_vector_[4] = save_window_
+{save_window_.view(0, -80, 15, 120, 666, 45, 300.48, 201.28)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addexpr("v(.5)", 1, 1, 0.8, 0.9, 2)
+}
+
+//Begin VariableTimeStep
+{
+ocbox_ = NumericalMethodPanel[0]
+}
+{object_push(ocbox_)}
+{
+atol_ = 0.001  CVode[0].atol(atol_)
+restore(1, 1)
+}
+{object_pop()}
+{
+ocbox_.map("VariableTimeStep", 372, 448, 272.64, 111.36)
+}
+objref ocbox_
+//End VariableTimeStep
+
+{
+save_window_ = new Graph(0)
+save_window_.size(0,15,0,1)
+scene_vector_[5] = save_window_
+{save_window_.view(0, 0, 15, 1, 668, 311, 300.48, 201.28)}
+graphList[2].append(save_window_)
+save_window_.save_name("graphList[2].")
+save_window_.addexpr("mykhhst[0].O", 1, 1, 0.723323, 0.904769, 2)
+}
+objectvar scene_vector_[1]
+{doNotify()}
