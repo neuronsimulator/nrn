@@ -6,6 +6,7 @@
 #include <nrnmpi.h>
 #include "cabcode.h"
 #include "classreg.h"
+#include "code.h"
 #include "parse.hpp"
 #include "cvodeobj.h"
 #include "hoclist.h"
@@ -106,8 +107,6 @@ bool nrn_trajectory_request_per_time_step_ = false;
 #if NRN_MUSIC
 #include "nrnmusicapi.h"
 #endif
-
-extern int hoc_return_type_code;
 
 extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_index_;
@@ -652,7 +651,7 @@ static double nc_setpost(void* v) {
 
 static double nc_valid(void* v) {
     NetCon* d = (NetCon*) v;
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     if (d->src_ && d->target_) {
         return 1.;
     }
@@ -665,7 +664,7 @@ static double nc_active(void* v) {
     if (d->target_ && ifarg(1)) {
         d->active_ = bool(chkarg(1, 0, 1));
     }
-    hoc_return_type_code = 2;
+    hoc_return_type_code = HocReturnType::boolean;
     return double(a);
 }
 
@@ -722,7 +721,7 @@ static double nc_record(void* v) {
 
 static double nc_srcgid(void* v) {
     NetCon* d = (NetCon*) v;
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     if (d->src_) {
         return (double) d->src_->gid_;
     }

@@ -39,7 +39,6 @@ void seclist_iterate_remove(List* sl, F fun) {
     }
 }
 
-extern int hoc_return_type_code;
 Section* (*nrnpy_o2sec_p_)(Object* o);
 
 void (*nrnpy_sectionlist_helper_)(void*, Object*) = 0;
@@ -194,7 +193,7 @@ static double seclist_remove(void* v) {
 static double unique(void* v) {
     Item* q1 = nullptr;
     List* sl = static_cast<List*>(v);
-    hoc_return_type_code = 1; /* integer */
+    hoc_return_type_code = HocReturnType::integer;
     seclist_iterate_remove(sl, [](Section* s) { s->volatile_mark = 0; });
     int i = 0; /* number deleted */
     for (Item* q = sl->next; q != sl; q = q1) {
@@ -211,7 +210,7 @@ static double unique(void* v) {
 
 static double contains(void* v) {
     List* sl = static_cast<List*>(v);
-    hoc_return_type_code = 2; /* boolean */
+    hoc_return_type_code = HocReturnType::boolean;
     Section* s = nrn_secarg(1);
     return seclist_iterate_remove_until(
                sl, [](Item*) {}, s)
@@ -232,9 +231,16 @@ static double printnames(void* v) {
 double seclist_size(void* v) {
     double count = 0.;
     List* sl = static_cast<List*>(v);
-    for (Item* q1 = sl->next; q1 != sl; q1 = q1->next) {
+    Item* q2 = nullptr;
+    for (Item* q1 = sl->next; q1 != sl; q1 = q2) {
+        q2 = q1->next;
+        if (q1->element.sec->prop == nullptr) {
+            hoc_l_delete(q1);
+            continue;
+        }
         count++;
     }
+    hoc_return_type_code = HocReturnType::integer;
     return count;
 }
 
