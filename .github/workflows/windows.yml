@@ -10,7 +10,7 @@ on:
   workflow_call:
     inputs:
       tag:
-        description: 'Release version (tag name)'
+        description: 'The branch/commit of NEURON to checkout'
         default: ''
         required: true
         type: string
@@ -32,6 +32,7 @@ env:
 
 jobs:
   WindowsInstaller:
+    name: Windows installer
     runs-on: windows-latest
     timeout-minutes: 45
 
@@ -109,11 +110,3 @@ jobs:
       run: .\ci\win_test_installer.cmd
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn
-
-    - name: Publish Release Installer
-      working-directory: ${{runner.workspace}}\nrn
-      if: inputs.tag != ''
-      run: |
-        gh release upload ${{ inputs.tag }} nrn-nightly-AMD64.exe
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
