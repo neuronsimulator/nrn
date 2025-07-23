@@ -219,8 +219,11 @@ if(NRN_ENABLE_PYTHON)
       add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest
                                    ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
       set_tests_properties(
-        Pybind PROPERTIES ENVIRONMENT
-                          "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NMODLHOME=${PROJECT_BINARY_DIR}")
+        Pybind
+        PROPERTIES
+          ENVIRONMENT
+          "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NMODLHOME=${PROJECT_BINARY_DIR};NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
+      )
       cpp_cc_configure_sanitizers(TEST Pybind PRELOAD)
     endif()
   endif()
