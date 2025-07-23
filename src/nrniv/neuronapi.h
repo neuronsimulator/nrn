@@ -3,7 +3,10 @@
 #include <stdbool.h>
 
 #ifdef __cplusplus
+#include <cstdio>
 extern "C" {
+#else 
+#include <stdio.h>
 #endif
 
 // forward declarations (c++) and opaque c types

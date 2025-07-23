@@ -1,7 +1,5 @@
 #include "neuronapi.h"
 
-#include <cstdio>
-
 #include "../../nrnconf.h"
 #include "hocdec.h"
 #include "cabcode.h"
