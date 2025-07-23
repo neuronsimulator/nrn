@@ -141,7 +141,6 @@ void nrn_register_function(void (*proc)(), const char* func_name, int type);
 Object** nrn_objgetarg(int arg);
 char* nrn_gargstr(int arg);
 double* nrn_getarg(int arg);
-IvocVect* nrn_vector_arg(int arg);
 std::FILE* nrn_obj_file_arg(int i);
 
 #ifdef __cplusplus

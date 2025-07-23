@@ -637,10 +637,6 @@ double* nrn_getarg(int arg) {
     return hoc_getarg(arg);
 }
 
-IvocVect* nrn_vector_arg(int arg) {
-    return vector_arg(arg);
-}
-
 std::FILE* nrn_obj_file_arg(int i) {
     return hoc_obj_file_arg(i);
 }
