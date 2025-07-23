@@ -31,8 +31,16 @@ endif()
 
 target_link_libraries(pywrapper PRIVATE fmt::fmt)
 
-target_include_directories(pyembed PRIVATE ${PYBIND11_INCLUDE_DIR} ${NRN_DEFAULT_PYTHON_INCLUDES})
-target_include_directories(pywrapper PRIVATE ${PYBIND11_INCLUDE_DIR} ${NRN_DEFAULT_PYTHON_INCLUDES}
+# TODO handle the case where NRN_ENABLE_PYTHON_DYNAMIC has multiple entries
+if(NRN_ENABLE_PYTHON_DYNAMIC)
+  set(python_includes "${PYTHON_INCLUDE_DIRS}")
+  set(python_library "${PYTHON_LIBRARY}")
+else()
+  set(python_includes "${NRN_DEFAULT_PYTHON_INCLUDES}")
+  set(python_library "${NRN_DEFAULT_PYTHON_LIBRARIES}")
+endif()
+target_include_directories(pyembed PRIVATE ${PYBIND11_INCLUDE_DIR} ${python_includes})
+target_include_directories(pywrapper PRIVATE ${PYBIND11_INCLUDE_DIR} ${python_includes}
                                              ${CMAKE_CURRENT_BINARY_DIR})
 # ~~~
 # pybind11::embed adds PYTHON_LIBRARIES to target_link_libraries. To avoid link to
@@ -42,7 +50,7 @@ target_link_libraries(pyembed PRIVATE ${CMAKE_DL_LIBS})
 if(NOT NRN_LINK_AGAINST_PYTHON)
   target_link_libraries(pywrapper PRIVATE pybind11::module)
 else()
-  target_link_libraries(pyembed PRIVATE ${NRN_DEFAULT_PYTHON_LIBRARIES} pywrapper)
+  target_link_libraries(pyembed PRIVATE ${python_library} pywrapper)
   target_link_libraries(pywrapper PRIVATE pybind11::embed)
 endif()
 

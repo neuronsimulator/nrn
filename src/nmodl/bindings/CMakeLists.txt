@@ -23,6 +23,15 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
   endforeach()
 endif()
 
+# TODO handle case where NRN_ENABLE_PYTHON_DYNAMIC has multiple entries
+if(NRN_ENABLE_PYTHON_DYNAMIC)
+  set(python_includes "${PYTHON_INCLUDE_DIRS}")
+  set(python_library "${PYTHON_LIBRARY}")
+else()
+  set(python_includes "${NRN_DEFAULT_PYTHON_INCLUDES}")
+  set(python_library "${NRN_DEFAULT_PYTHON_LIBRARIES}")
+endif()
+
 add_nrn_python_library(
   _nmodl
   TARGET
@@ -37,7 +46,7 @@ add_nrn_python_library(
   INCLUDES
   ${CMAKE_CURRENT_SOURCE_DIR}/../pybind
   ${PYBIND11_INCLUDE_DIR}
-  ${NRN_DEFAULT_PYTHON_INCLUDES}
+  ${python_includes}
   OUTPUT_DIR
   ${PROJECT_BINARY_DIR}/${NRN_INSTALL_PYTHON_PREFIX}/nmodl)
 add_dependencies(${nmodl_default_python_target} lexer pyastgen util)
