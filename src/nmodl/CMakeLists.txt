@@ -92,7 +92,6 @@ add_subdirectory(utils)
 add_subdirectory(visitors)
 add_subdirectory(pybind)
 add_subdirectory(solver)
-add_subdirectory(bindings)
 
 # =============================================================================
 # NMODL sources
@@ -113,7 +112,7 @@ target_link_libraries(
   util
   lexer
   ${NMODL_WRAPPER_LIBS})
-add_dependencies(nmodl nmodl_copy_python_files nmodl_copy_solver_files)
+add_dependencies(nmodl nmodl_copy_solver_files)
 cpp_cc_configure_sanitizers(TARGET nmodl)
 
 add_executable(nmodl::nmodl ALIAS nmodl)
@@ -124,7 +123,8 @@ add_executable(nmodl::nmodl ALIAS nmodl)
 add_dependencies(nmodl pywrapper)
 
 if(NMODL_ENABLE_PYTHON_BINDINGS)
-  add_dependencies(nmodl ${NMODL_PYTHON_TARGETS})
+  add_subdirectory(bindings)
+  add_dependencies(nmodl nmodl_copy_python_files ${NMODL_PYTHON_TARGETS})
 endif()
 
 # =============================================================================
