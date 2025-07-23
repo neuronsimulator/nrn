@@ -5,8 +5,8 @@ include_directories(${NMODL_PROJECT_PLATLIB_SOURCE_DIR} ${NMODL_PROJECT_PLATLIB_
 list(APPEND NMODL_EXTRA_CXX_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 
 # =============================================================================
-# In case NRN_ENABLE_PYTHON=OFF, we cannot build Python bindings, so we
-# unconditionally disable those
+# In case NRN_ENABLE_PYTHON=OFF, we cannot build Python bindings, so we unconditionally disable
+# those
 # =============================================================================
 if(NOT NRN_ENABLE_PYTHON)
   set(NMODL_ENABLE_PYTHON_BINDINGS
