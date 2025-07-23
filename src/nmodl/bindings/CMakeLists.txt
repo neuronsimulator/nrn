@@ -44,6 +44,7 @@ add_dependencies(${nmodl_default_python_target} lexer pyastgen util)
 target_link_libraries(${nmodl_default_python_target} PRIVATE printer symtab visitor pyembed)
 set_target_properties(${nmodl_default_python_target} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG
                                                                 ${NMODL_PROJECT_PURELIB_BINARY_DIR})
+set_target_properties(${nmodl_default_python_target} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 if(MSVC)
   target_compile_options(${nmodl_default_python_target} PRIVATE /bigobj)
