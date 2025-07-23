@@ -8,4 +8,4 @@ Model Specification GUI Tools
     guitools/showmech.rst
     guitools/cellbuilder.rst
     guitools/pointman.rst
-    
+    channelbuilder/main.rst
