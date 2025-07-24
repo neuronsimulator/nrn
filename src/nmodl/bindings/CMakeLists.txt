@@ -26,7 +26,7 @@ endif()
 # TODO handle case where NRN_ENABLE_PYTHON_DYNAMIC has multiple entries
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   set(python_includes "${PYTHON_INCLUDE_DIRS}")
-  set(python_version "${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}")
+  set(python_version "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
 else()
   set(python_includes "${NRN_DEFAULT_PYTHON_INCLUDES}")
   set(python_version "${NRN_DEFAULT_PYTHON_VERSION}")
