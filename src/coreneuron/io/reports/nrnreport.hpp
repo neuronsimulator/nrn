@@ -51,37 +51,23 @@ struct SpikesInfo {
 /// name of the variable in mod file used for setting synapse id
 #define SYNAPSE_ID_MOD_NAME "synapseID"
 
-/*
- * Defines the type of target, as per the following syntax:
- *   0=Compartment, 1=Cell/Soma, Section { 2=Axon, 3=Dendrite, 4=Apical }
- * The "Comp" variations are compartment-based (all segments, not middle only)
- */
-enum class TargetType {
-    Compartment = 0,
-    Cell = 1,
-    SectionSoma = 2,
-    SectionAxon = 3,
-    SectionDendrite = 4,
-    SectionApical = 5,
-    SectionSomaAll = 6,
-    SectionAxonAll = 7,
-    SectionDendriteAll = 8,
-    SectionApicalAll = 9,
-};
-
 // enumerate that defines the type of target report requested
 enum class ReportType { Compartment, Summation, Synapse, LFP };
 ReportType report_type_from_string(const std::string& str);
 std::string to_string(ReportType t);
 
 // enumerate that defines the section type for a Section report
-enum class SectionType { Cell, Soma, Axon, Dendrite, Apical, Custom, All };
+enum class SectionType { All, Soma, Axon, Dend, Apic, Invalid };
 SectionType section_type_from_string(const std::string& str);
 std::string to_string(SectionType t);
 
-enum class Scaling { None, Area };
+enum class Scaling { None, Area, Invalid };
 Scaling scaling_from_string(const std::string& str);
 std::string to_string(Scaling s);
+
+enum class Compartments { All, Center, Invalid };
+Compartments compartments_from_string(const std::string& str);
+std::string to_string(Compartments c);
 
 struct ReportConfiguration {
     std::string name;                     // name of the report
@@ -92,11 +78,9 @@ struct ReportConfiguration {
     std::vector<int> mech_ids;            // mechanisms
     std::string unit;                     // unit of the report
     std::string format;                   // format of the report (SONATA)
-    std::string type_str;                 // type of report string
-    TargetType target_type;               // type of the target
     ReportType type;                      // type of the report
-    SectionType section_type;             // type of section report
-    bool section_all_compartments;        // flag for section report (all values)
+    SectionType sections;                 // type of section report
+    Compartments compartments;            // flag for section report (all values)
     double report_dt;                     // reporting timestep
     double start;                         // start time of report
     double stop;                          // stop time of report

@@ -66,48 +66,43 @@ std::string to_string(ReportType t) {
 }
 
 SectionType section_type_from_string(const std::string& str) {
-    if (equals_case_insensitive(str, "cell"))
-        return SectionType::Cell;
+    if (equals_case_insensitive(str, "all"))
+        return SectionType::All;
     if (equals_case_insensitive(str, "soma"))
         return SectionType::Soma;
     if (equals_case_insensitive(str, "axon"))
         return SectionType::Axon;
     if (equals_case_insensitive(str, "dend"))
-        return SectionType::Dendrite;
+        return SectionType::Dend;
     if (equals_case_insensitive(str, "apic"))
-        return SectionType::Apical;
-    if (equals_case_insensitive(str, "all"))
-        return SectionType::All;
-    return SectionType::Custom;
+        return SectionType::Apic;
+    return SectionType::Invalid;
 }
 
 std::string to_string(SectionType t) {
-    if (t == SectionType::Cell)
-        return "cell";
+    if (t == SectionType::All)
+        return "all";
     if (t == SectionType::Soma)
         return "soma";
     if (t == SectionType::Axon)
         return "axon";
-    if (t == SectionType::Dendrite)
+    if (t == SectionType::Dend)
         return "dend";
-    if (t == SectionType::Apical)
+    if (t == SectionType::Apic)
         return "apic";
-    if (t == SectionType::Custom)
-        return "custom";
-    if (t == SectionType::All)
-        return "all";
+    if (t == SectionType::Invalid)
+        return "invalid";
     std::cerr << "[Error] Invalid SectionType enum value: " << static_cast<int>(t) << "\n";
     nrn_abort(1);
 }
 
 
 Scaling scaling_from_string(const std::string& str) {
-    if (equals_case_insensitive(str, "None"))
+    if (equals_case_insensitive(str, "none"))
         return Scaling::None;
-    if (equals_case_insensitive(str, "Area"))
+    if (equals_case_insensitive(str, "area"))
         return Scaling::Area;
-    std::cerr << "[Error] Invalid string for Scaling enum: `" << str << "`\n";
-    nrn_abort(1);
+    return Scaling::Invalid;
 }
 
 std::string to_string(Scaling s) {
@@ -115,7 +110,28 @@ std::string to_string(Scaling s) {
         return "none";
     if (s == Scaling::Area)
         return "area";
+    if (s == Scaling::Invalid)
+        return "invalid";
     std::cerr << "[Error] Invalid Scaling enum value: " << static_cast<int>(s) << "\n";
+    nrn_abort(1);
+}
+
+Compartments compartments_from_string(const std::string& str) {
+    if (equals_case_insensitive(str, "all"))
+        return Compartments::All;
+    if (equals_case_insensitive(str, "center"))
+        return Compartments::Center;
+    return Compartments::Invalid;
+}
+
+std::string to_string(Compartments c) {
+    if (c == Compartments::All)
+        return "all";
+    if (c == Compartments::Center)
+        return "center";
+    if (c == Compartments::Invalid)
+        return "invalid";
+    std::cerr << "[Error] Invalid Compartments enum value: " << static_cast<int>(c) << "\n";
     nrn_abort(1);
 }
 
