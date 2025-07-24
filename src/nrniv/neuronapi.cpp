@@ -640,3 +640,27 @@ double* nrn_getarg(int arg) {
 std::FILE* nrn_obj_file_arg(int i) {
     return hoc_obj_file_arg(i);
 }
+
+int nrn_ifarg(int arg) {
+   return ifarg(arg);
+}
+
+
+int nrn_is_object_arg(int arg) {
+   return hoc_is_object_arg(arg);
+}
+
+
+int nrn_is_str_arg(int arg) {
+   return hoc_is_str_arg(arg);
+}
+
+
+int nrn_is_double_arg(int arg) {
+   return hoc_is_double_arg(arg);
+}
+
+
+int nrn_is_pdouble_arg(int arg) {
+   return hoc_is_pdouble_arg(arg);
+}

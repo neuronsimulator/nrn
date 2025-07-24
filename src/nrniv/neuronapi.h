@@ -143,6 +143,11 @@ Object** nrn_objgetarg(int arg);
 char* nrn_gargstr(int arg);
 double* nrn_getarg(int arg);
 FILE* nrn_obj_file_arg(int i);
+int nrn_ifarg(int arg);
+int nrn_is_object_arg(int arg);
+int nrn_is_str_arg(int arg);
+int nrn_is_double_arg(int arg);
+int nrn_is_pdouble_arg(int arg);
 
 #ifdef __cplusplus
 }
