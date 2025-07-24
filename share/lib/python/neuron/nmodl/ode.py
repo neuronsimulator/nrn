@@ -42,26 +42,61 @@ forbidden_var = sorted(
     }
 )
 
+MANGLE_PREFIX = "_mangled_nmodl_identifier"
 
-def mangle_protected_identifiers(eqs: Iterable[str]) -> Iterable[str]:
+
+def mangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
     """
-    Replace all instances of forbidden variables (Python identifiers, sympy
-    internals, etc.) and return the sanitized version.
+    Mangle NMODL identifiers.
+
+    Replace all instances of identifiers which are only valid in NMODL, but not
+    elsewhere (Python identifiers, sympy internals, etc.) and return the
+    sanitized version.
+
+    Arguments
+    ---------
+    eqs : Iterable[str]
+        The iterable of strings (standalone variables, expressions, equations, etc.) to mangle.
+
+    Returns
+    -------
+    list[str]
+        The list of strings containing mangled identifiers.
+
+    See Also
+    --------
+    demangle_protected_identifiers : The inverse of this function.
     """
     for var in forbidden_var:
         r = re.compile(rf"\b{var}\b")
-        f = f"_sympy_{var}_var"
+        f = f"{MANGLE_PREFIX}{var}"
         eqs = [re.sub(r, f, x) for x in eqs]
 
     return eqs
 
 
-def demangle_protected_identifiers(eqs: Iterable[str]) -> Iterable[str]:
+def demangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
     """
-    Restore all sympy variables to their originals.
+    Demangle NMODL identifiers.
+
+    Restore all instances of identifiers which are only valid in NMODL.
+
+    Arguments
+    ---------
+    eqs : Iterable[str]
+        The iterable of strings (standalone variables, expressions, equations, etc.) to demangle.
+
+    Returns
+    -------
+    list[str]
+        The list of strings containing demangled identifiers.
+
+    See Also
+    --------
+    mangle_protected_identifiers : The inverse of this function.
     """
     for var in forbidden_var:
-        r = re.compile(rf"\b_sympy_{var}_var\b")
+        r = re.compile(rf"\b{MANGLE_PREFIX}{var}\b")
         f = var
         eqs = [re.sub(r, f, x) for x in eqs]
 
@@ -72,7 +107,7 @@ def _get_custom_functions(fcts):
     custom_functions = {}
     for f in fcts:
         if f in forbidden_var:
-            custom_functions[f"_sympy_{f}_fun"] = f"_sympy_{f}_fun"
+            custom_functions[f"{MANGLE_PREFIX}{f}"] = f"{MANGLE_PREFIX}{f}"
         elif not f in known_functions.keys():
             custom_functions[f] = f
     return custom_functions
@@ -96,9 +131,9 @@ def _var_to_sympy(var_str):
         var_len = int(var_str.split("[", 1)[1].split("]", 1)[0].strip())
         # SymPy equivalent of an array is IndexedBase:
         return var_name, sp.IndexedBase(var_name, shape=(var_len,), real=True)
-    else:
-        # otherwise can use a standard SymPy symbol:
-        return var_str, sp.symbols(var_str, real=True)
+
+    # otherwise can use a standard SymPy symbol:
+    return var_str, sp.symbols(var_str, real=True)
 
 
 def _sympify_diff_eq(diff_string, vars):
