@@ -53,8 +53,8 @@ endif()
 # * nrnpy_LIBRARIES
 # * nrnpy_VERSION
 #
-# If NRN_ENABLE_PYTHON is *not* set then only nrnpy_EXECUTABLE will be set. There is some special
-# handling on macOS when sanitizers are enabled:
+# If NRN_ENABLE_PYTHON, NRN_ENABLE_CORENEURON, and NRN_ENABLE_NMODL are *not* set then only
+# nrnpy_EXECUTABLE will be set. There is some special handling on macOS when sanitizers are enabled:
 #
 # * if the Python executable does *not* belong to a virtual environment but *is* a shim (as is often
 #   the case with binaries like /usr/bin/python on macOS) then nrnpy_EXECUTABLE will be set to the
@@ -85,8 +85,12 @@ function(nrn_find_python)
     endif()
     set(opt_NAME "${${opt_NAME}_full}")
   endif()
-  # Only bother finding version/include/library information if NRN_ENABLE_PYTHON is set.
-  if(NRN_ENABLE_PYTHON)
+  # Only bother finding version/include/library information if NRN_ENABLE_PYTHON,
+  # NRN_ENABLE_CORENEURON, or NRN_ENABLE_NMODL are set (the latter two are due to NMODL requiring
+  # the embedded interpreter)
+  if(NRN_ENABLE_PYTHON
+     OR NRN_ENABLE_CORENEURON
+     OR NRN_ENABLE_NMODL)
     # Run find_package(Python ...) in a subprocess, so there is no pollution of CMakeCache.txt and
     # so on. Our desire to include multiple Python versions in one build means we have to handle
     # lists of versions/libraries/... manually. Unfortunately one cannot safely use find_package in
@@ -192,7 +196,9 @@ set(NRN_PYTHON_LIBRARIES)
 foreach(pyexe ${python_executables})
   message(STATUS "Checking if ${pyexe} is a working python")
   nrn_find_python(NAME "${pyexe}" PREFIX nrnpy)
-  if(NRN_ENABLE_PYTHON)
+  if(NRN_ENABLE_PYTHON
+     OR NRN_ENABLE_CORENEURON
+     OR NRN_ENABLE_NMODL)
     # If NRN_ENABLE_PYTHON=OFF then we're only using Python to run build scripts etc.
     if(${nrnpy_VERSION} VERSION_LESS NRN_MINIMUM_PYTHON_VERSION)
       message(FATAL_ERROR "${pyexe} too old (${nrnpy_VERSION} < ${NRN_MINIMUM_PYTHON_VERSION})")
@@ -221,7 +227,9 @@ endforeach()
 # list of Pythons, and we need to set it even if NRN_ENABLE_PYTHON=OFF -- for use in build scripts.
 list(GET NRN_PYTHON_EXECUTABLES 0 NRN_DEFAULT_PYTHON_EXECUTABLE)
 list(GET NRN_PYTHON_VERSIONS 0 NRN_DEFAULT_PYTHON_VERSION)
-if(NRN_ENABLE_PYTHON)
+if(NRN_ENABLE_PYTHON
+   OR NRN_ENABLE_CORENEURON
+   OR NRN_ENABLE_NMODL)
   list(GET NRN_PYTHON_INCLUDES 0 NRN_DEFAULT_PYTHON_INCLUDES)
   list(GET NRN_PYTHON_LIBRARIES 0 NRN_DEFAULT_PYTHON_LIBRARIES)
   list(LENGTH NRN_PYTHON_EXECUTABLES NRN_PYTHON_COUNT)
