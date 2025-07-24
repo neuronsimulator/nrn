@@ -55,6 +55,7 @@ void parse_filter_string(const std::string& filter, ReportConfiguration& config)
 }
 
 void register_target_type(ReportConfiguration& report, ReportType report_type) {
+    
     report.type = report_type;
     switch (report.target_type) {
     case TargetType::Compartment:
