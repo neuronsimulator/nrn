@@ -1,4 +1,5 @@
 #include "cabcode.h"
+#include "../oc/code.h"
 #include "ivocvect.h"
 #include "neuron/container/data_handle.hpp"
 #include "neuron/unique_cstr.hpp"
@@ -15,6 +16,7 @@
 #include "ocjump.h"
 #include "oclist.h"
 #include "shapeplt.h"
+#include "seclist.h"  // lvappendsec_and_ref, seclist_size
 
 #include <cstdint>
 #include <vector>
@@ -34,9 +36,7 @@ extern void (*nrnpy_restore_savestate)(int64_t, char*);
 extern void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size);
 extern void (*nrnpy_decref)(void* pyobj);
 extern double (*nrnpy_call_func)(Object*, double);
-extern void lvappendsec_and_ref(void* sl, Section* sec);
 extern void hoc_pushs(Symbol*);
-extern double* hoc_evalpointer();
 extern double cable_prop_eval(Symbol* sym);
 extern Symlist* hoc_top_level_symlist;
 extern Symlist* hoc_built_in_symlist;
@@ -80,7 +80,6 @@ extern PyObject* pmech_types;  // Python map for name to Mechanism
 extern PyObject* rangevars_;   // Python map for name to Symbol
 
 extern int hoc_max_builtin_class_id;
-extern int hoc_return_type_code;
 
 static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
@@ -506,10 +505,10 @@ static Symbol* getsym(char* name, Object* ho, int fail) {
 // on entry the stack order is indices, args, object
 // on exit all that is popped and the result is on the stack
 // returns hoc_return_is_int if called on a builtin (i.e. 2 if bool, 1 if int, 0 otherwise)
-static int component(PyHocObject* po) {
+static HocReturnType component(PyHocObject* po) {
     Inst fc[6];
-    int var_type = 0;
-    hoc_return_type_code = 0;
+    HocReturnType var_type = HocReturnType::floating;
+    hoc_return_type_code = HocReturnType::floating;
     fc[0].sym = po->sym_;
     fc[1].i = 0;
     fc[2].i = 0;
@@ -534,8 +533,8 @@ static int component(PyHocObject* po) {
     if (po->ho_->ctemplate->id <= hoc_max_builtin_class_id) {
         var_type = hoc_return_type_code;
     }
-    hoc_return_type_code = 0;
-    return (var_type);
+    hoc_return_type_code = HocReturnType::floating;
+    return var_type;
 }
 
 int nrnpy_numbercheck(PyObject* po) {
@@ -721,14 +720,13 @@ static void* fcall(void* vself, void* vargs) {
 
     std::vector<neuron::unique_cstr> strings_to_free;
     int narg = hocobj_pushargs((PyObject*) vargs, strings_to_free);
-    int var_type;
     if (self->ho_) {
         self->nindex_ = narg;
-        var_type = component(self);
+        HocReturnType var_type = component(self);
         switch (var_type) {
-        case 2:
+        case HocReturnType::boolean:
             return nrnpy_hoc_bool_pop();
-        case 1:
+        case HocReturnType::integer:
             return nrnpy_hoc_int_pop();
         default:
             // No callable hoc function returns a data handle.
@@ -1639,12 +1637,7 @@ static int araychk(Arrayinfo* a, PyHocObject* po, int ix) {
 
 static Py_ssize_t seclist_count(Object* ho) {
     assert(ho->ctemplate == hoc_sectionlist_template_);
-    hoc_List* sl = (hoc_List*) (ho->u.this_pointer);
-    Py_ssize_t n = 0;
-    for (hoc_Item* q1 = sl->next; q1 != sl; q1 = q1->next) {
-        n++;
-    }
-    return n;
+    return static_cast<Py_ssize_t>(seclist_size(static_cast<hoc_List*>(ho->u.this_pointer)));
 }
 
 static Py_ssize_t hocobj_len(PyObject* self) {
