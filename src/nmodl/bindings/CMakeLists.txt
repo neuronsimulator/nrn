@@ -26,10 +26,10 @@ endif()
 # TODO handle case where NRN_ENABLE_PYTHON_DYNAMIC has multiple entries
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   set(python_includes "${PYTHON_INCLUDE_DIRS}")
-  set(python_library "${PYTHON_LIBRARY}")
+  set(python_version "${Python_VERSION}")
 else()
   set(python_includes "${NRN_DEFAULT_PYTHON_INCLUDES}")
-  set(python_library "${NRN_DEFAULT_PYTHON_LIBRARIES}")
+  set(python_version "${NRN_DEFAULT_PYTHON_VERSION}")
 endif()
 
 add_nrn_python_library(
@@ -37,7 +37,7 @@ add_nrn_python_library(
   TARGET
   ${nmodl_default_python_target}
   PYTHON_VERSION
-  ${NRN_DEFAULT_PYTHON_VERSION}
+  ${python_version}
   LANGUAGE
   CXX
   SOURCES
