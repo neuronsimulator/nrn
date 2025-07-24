@@ -33,12 +33,31 @@ if not ((major >= 1) and (minor >= 2)):
 # Some identifiers are protected inside sympy, if user has declared such a function, it will fail
 # because sympy will try to use its own internal one; or error out for invalid variables.
 # Rename it before and after to a unique name.
+_sympy_forbidden = set(import_module("sympy").__all__)
+
+# Annoyingly, some identifiers in NMODL _do_ have the same meaning, such as
+# sin, cos...and we need to remove those from the list since sympy cannot do
+# any analitical simplifications otherwise. To see a complete list, have a look
+# at hoc_init.cpp
+_nmodl_same_identifiers = {
+    "sin",
+    "cos",
+    "atan",
+    "tanh",
+    "log",
+    "exp",
+    "sqrt",
+    "erf",
+    "erfc",
+    "atan2",
+}
+
 forbidden_var = sorted(
     {
         # Python keywords
         *kwlist,
-        # top-level SymPy functions
-        *import_module("sympy").__all__,
+        # top-level SymPy functions (without some NMODL builtins)
+        *set(_sympy_forbidden - _nmodl_same_identifiers),
     }
 )
 
@@ -636,7 +655,10 @@ def differentiate2c(
         raise ValueError("arg `stepsize` must be > 0")
 
     expression = mangle_protected_identifiers([expression])[0]
-    dependent_var = mangle_protected_identifiers([dependent_var])[0]
+
+    # if dependent_var is anything other than a string, sympy can safely manipulate it
+    if isinstance(dependent_var, str):
+        dependent_var = mangle_protected_identifiers([dependent_var])[0]
 
     prev_expressions = prev_expressions or []
     # every symbol (a.k.a variable) that SymPy
