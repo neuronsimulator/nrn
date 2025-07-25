@@ -130,8 +130,8 @@ struct CellMapping {
         return nullptr;
     }
 
-    /** @brief return segment count for specific section list with given type */
-    size_t get_seclist_segment_count(const SectionType type) const {
+    /** @brief return compartment count for specific section list with given type */
+    size_t get_seclist_compartment_count(const SectionType type) const {
         auto s = get_seclist_mapping(type);
         if (!s) {
             return 0;

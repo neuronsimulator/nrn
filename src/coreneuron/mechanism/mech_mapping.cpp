@@ -6,21 +6,32 @@
 # =============================================================================
 */
 
+
 #include <cstring>
 #include <cstdlib>
 #include <iostream>
 #include <map>
 
+#include "coreneuron/coreneuron.hpp"
+#include "coreneuron/permute/data_layout.hpp"
 #include "coreneuron/mechanism/mech_mapping.hpp"
 #include "coreneuron/mechanism/mechanism.hpp"
-#include "coreneuron/permute/data_layout.hpp"
 #include "coreneuron/utils/utils.hpp"
-
 namespace coreneuron {
 using Offset = size_t;
 using MechId = int;
 // we use char* because it works with nullptrs and we do not need copies of the keys
 using VariableName = const char*;
+
+
+/*
+ * Return the index to mechanism variable based Original input files are organized in AoS
+ */
+int get_data_index(int node_index, int variable_index, int mtype, Memb_list* ml) {
+    int layout = corenrn.get_mech_data_layout()[mtype];
+    nrn_assert(layout == SOA_LAYOUT);
+    return variable_index * ml->_nodecount_padded + node_index;
+}
 
 // comparator for MechNamesMapping
 struct cmp_str {
@@ -67,17 +78,17 @@ double* get_var_location_from_var_name(int mech_id,
 void register_all_variables_offsets(int mech_id, SerializedNames variable_names) {
     int idx = 0;
     int nb_parsed_variables = 0;
-    int current_categorie = 1;
-    while (current_categorie < NB_MECH_VAR_CATEGORIES) {
+    // I do not know why we loop over only 3 categories
+    int current_category = 1;
+    while (current_category < NB_MECH_VAR_CATEGORIES) {
         if (variable_names[idx]) {
             mechNamesMapping[mech_id][variable_names[idx]] = nb_parsed_variables;
             nb_parsed_variables++;
         } else {
-            current_categorie++;
+            current_category++;
         }
         idx++;
     }
-    idx++;
 }
 
 }  // namespace coreneuron
