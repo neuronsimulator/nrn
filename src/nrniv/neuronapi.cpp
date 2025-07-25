@@ -616,7 +616,6 @@ void nrn_register_function(void (*proc)(), const char* func_name, int type) {
     sym->u.u_proc->nauto = 0;
     sym->u.u_proc->nobjauto = 0;
 }
-}
 
 void nrn_hoc_ret() {
     hoc_ret();
@@ -663,4 +662,5 @@ int nrn_is_double_arg(int arg) {
 
 int nrn_is_pdouble_arg(int arg) {
     return hoc_is_pdouble_arg(arg);
+}
 }
