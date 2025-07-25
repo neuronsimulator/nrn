@@ -209,7 +209,10 @@ if(NRN_ENABLE_PYTHON)
   if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NRN_SANITIZERS))
     add_test(NAME Ode COMMAND ${PYTHON_EXECUTABLE} ${NRN_PYTEST_LAUNCHER}
                               ${CMAKE_CURRENT_SOURCE_DIR}/ode)
-    set_tests_properties(Ode PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
+    set_tests_properties(
+      Ode
+      PROPERTIES ENVIRONMENT
+                 "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn")
     cpp_cc_configure_sanitizers(TEST Ode PRELOAD)
   endif()
 
@@ -220,8 +223,11 @@ if(NRN_ENABLE_PYTHON)
       add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest
                                    ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
       set_tests_properties(
-        Pybind PROPERTIES ENVIRONMENT
-                          "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NMODLHOME=${PROJECT_BINARY_DIR}")
+        Pybind
+        PROPERTIES
+          ENVIRONMENT
+          "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NMODLHOME=${PROJECT_BINARY_DIR};NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn"
+      )
       cpp_cc_configure_sanitizers(TEST Pybind PRELOAD)
     endif()
   endif()
