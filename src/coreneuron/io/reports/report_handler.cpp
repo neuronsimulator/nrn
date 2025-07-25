@@ -14,24 +14,6 @@
 
 namespace coreneuron {
 
-SectionType check_section_type(SectionType st) {
-    if (st == SectionType::All)
-        return SectionType::All;
-    if (st == SectionType::Cell)
-        return SectionType::Soma;
-    if (st == SectionType::Soma)
-        return SectionType::Soma;
-    if (st == SectionType::All)
-        return SectionType::Axon;
-    if (st == SectionType::Dendrite)
-        return SectionType::Dendrite;
-    if (st == SectionType::Apical)
-        return SectionType::Apical;
-
-    std::cerr << "[Error] Invalid SectionType enum value: " << to_string(st) << "\n";
-    nrn_abort(1);
-}
-
 /**
  * @brief Retrieves a pointer to a variable associated with a mechanism or state variable.
  *
@@ -156,8 +138,7 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
 
         const std::vector<int> gids_to_report = intersection_gids(nt, report_config.target);
         VarsToReport vars_to_report;
-        const bool is_soma_target = report_config.section_type == SectionType::Soma ||
-                                    report_config.section_type == SectionType::Cell;
+        const bool is_soma_target = report_config.sections == SectionType::Soma;
         switch (report_config.type) {
         case ReportType::Compartment: {
             vars_to_report = get_section_vars_to_report(nt, gids_to_report, report_config);
@@ -223,7 +204,7 @@ void ReportHandler::register_custom_report(const NrnThread& nt,
 static void append_sections_to_to_report_auto_variable(
     const std::shared_ptr<SecMapping>& sections,
     std::vector<VarWithMapping>& to_report,
-    const ReportConfiguration& report,
+    const ReportConfiguration& report_conf,
     const NrnThread& nt,
     std::unordered_map<int, int>& segment_id_2_node_id) {
     for (const auto& section: sections->secmap) {
@@ -232,29 +213,34 @@ static void append_sections_to_to_report_auto_variable(
         const auto& segment_ids = section.second;
 
         // get all compartment values (otherwise, just middle point)
-        if (report.section_all_compartments) {
+        if (report_conf.compartments == Compartments::All) {
             for (const auto& segment_id: segment_ids) {
                 double* variable = get_var(nt,
-                                           report.mech_ids[0],
-                                           report.var_names[0],
-                                           report.mech_names[0],
+                                           report_conf.mech_ids[0],
+                                           report_conf.var_names[0],
+                                           report_conf.mech_names[0],
                                            segment_id,
                                            segment_id_2_node_id);
                 to_report.emplace_back(VarWithMapping(section_id, variable));
             }
-        } else {
+        } else if (report_conf.compartments == Compartments::Center) {
             nrn_assert(segment_ids.size() % 2 &&
                        "Section with an even number of compartments. I cannot pick the middle one. "
                        "This was not expected");
             // corresponding voltage in coreneuron voltage array
             const auto segment_id = segment_ids[segment_ids.size() / 2];
             double* variable = get_var(nt,
-                                       report.mech_ids[0],
-                                       report.var_names[0],
-                                       report.mech_names[0],
+                                       report_conf.mech_ids[0],
+                                       report_conf.var_names[0],
+                                       report_conf.mech_names[0],
                                        segment_id,
                                        segment_id_2_node_id);
             to_report.emplace_back(VarWithMapping(section_id, variable));
+        } else {
+            std::cerr << "[ERROR] Invalid compartments type: "
+                      << to_string(report_conf.compartments) << " in report: " << report_conf.name
+                      << std::endl;
+            nrn_abort(1);
         }
     }
 }
@@ -263,27 +249,32 @@ static void append_sections_to_to_report_auto_variable(
 void append_sections_to_to_report(const std::shared_ptr<SecMapping>& sections,
                                   std::vector<VarWithMapping>& to_report,
                                   double* report_variable,
-                                  bool all_compartments) {
+                                  const ReportConfiguration& report_conf) {
     for (const auto& section: sections->secmap) {
         // compartment_id
         int section_id = section.first;
         const auto& segment_ids = section.second;
 
         // get all compartment values (otherwise, just middle point)
-        if (all_compartments) {
+        if (report_conf.compartments == Compartments::All) {
             for (const auto& segment_id: segment_ids) {
                 // corresponding voltage in coreneuron voltage array
                 double* variable = report_variable + segment_id;
                 to_report.emplace_back(VarWithMapping(section_id, variable));
             }
-        } else {
+        } else if (report_conf.compartments == Compartments::Center) {
             nrn_assert(segment_ids.size() % 2 &&
-                       "Section with an even number of compartments. I cannot pick the middle one. "
-                       "This was not expected");
+            "Section with an even number of compartments. I cannot pick the middle one. "
+            "This was not expected");
             // corresponding voltage in coreneuron voltage array
             const auto segment_id = segment_ids[segment_ids.size() / 2];
             double* variable = report_variable + segment_id;
             to_report.emplace_back(VarWithMapping(section_id, variable));
+        } else {
+            std::cerr << "[ERROR] Invalid compartments type: "
+                      << to_string(report_conf.compartments) << " in report: " << report_conf.name
+                      << std::endl;
+            nrn_abort(1);
         }
     }
 }
@@ -295,8 +286,11 @@ VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
                report.mech_names.size() == 1 &&
                "ReportHandler::get_section_vars_to_report: "
                "mech_ids, var_names and mech_names should have size 1");
+    nrn_assert(report.sections != SectionType::Invalid &&
+               "ReportHandler::get_section_vars_to_report: sections should not be Invalid");
+    nrn_assert(report.compartments != Compartments::Invalid &&
+               "ReportHandler::get_section_vars_to_report: compartments should not be Invalid");
     VarsToReport vars_to_report;
-    const SectionType section_type = check_section_type(report.section_type);
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     if (!mapinfo) {
         std::cerr << "[COMPARTMENTS] Error : mapping information is missing for a Cell group "
@@ -316,7 +310,7 @@ VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
         std::vector<VarWithMapping> to_report;
         to_report.reserve(cell_mapping->size());
 
-        if (section_type == SectionType::All) {
+        if (report.sections == SectionType::All) {
             const auto& section_mapping = cell_mapping->sec_mappings;
             for (const auto& sections: section_mapping) {
                 append_sections_to_to_report_auto_variable(
@@ -324,8 +318,8 @@ VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
             }
         } else {
             /** get section list mapping for the type, if available */
-            if (cell_mapping->get_seclist_section_count(section_type) > 0) {
-                const auto& sections = cell_mapping->get_seclist_mapping(section_type);
+            if (cell_mapping->get_seclist_section_count(report.sections) > 0) {
+                const auto& sections = cell_mapping->get_seclist_mapping(report.sections);
                 append_sections_to_to_report_auto_variable(
                     sections, to_report, report, nt, segment_id_2_node_id);
             }
@@ -404,14 +398,13 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
         to_report.reserve(cell_mapping->size());
         summation_report.summation_.resize(nt.end);
         double* report_variable = summation_report.summation_.data();
-        SectionType section_type = check_section_type(report.section_type);
-        if (section_type != SectionType::All) {
-            if (cell_mapping->get_seclist_section_count(section_type) > 0) {
-                const auto& sections = cell_mapping->get_seclist_mapping(section_type);
-                append_sections_to_to_report(sections,
-                                             to_report,
-                                             report_variable,
-                                             report.section_all_compartments);
+        nrn_assert(report.sections != SectionType::Invalid &&
+                   "ReportHandler::get_summation_vars_to_report: sections should not be Invalid");
+
+        if (report.sections != SectionType::All) {
+            if (cell_mapping->get_seclist_section_count(report.sections) > 0) {
+                const auto& sections = cell_mapping->get_seclist_mapping(report.sections);
+                append_sections_to_to_report(sections, to_report, report_variable, report);
             }
         }
 
@@ -422,11 +415,10 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
                 int section_id = section.first;
                 auto& segment_ids = section.second;
                 for (const auto& segment_id: segment_ids) {
-                    if (report.section_type == SectionType::All) {
+                    if (report.sections == SectionType::All) {
                         double* variable = report_variable + segment_id;
                         to_report.emplace_back(VarWithMapping(section_id, variable));
-                    } else if (report.section_type == SectionType::Cell ||
-                               report.section_type == SectionType::Soma) {
+                    } else if (report.sections == SectionType::Soma) {
                         summation_report.gid_segments_[gid].push_back(segment_id);
                     }
                 }
