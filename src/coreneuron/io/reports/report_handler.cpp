@@ -220,7 +220,7 @@ void ReportHandler::register_custom_report(const NrnThread& nt,
     }
 }
 
-void append_sections_to_to_report_auto_variable(
+static void append_sections_to_to_report_auto_variable(
     const std::shared_ptr<SecMapping>& sections,
     std::vector<VarWithMapping>& to_report,
     const ReportConfiguration& report,
@@ -243,7 +243,9 @@ void append_sections_to_to_report_auto_variable(
                 to_report.emplace_back(VarWithMapping(section_id, variable));
             }
         } else {
-            nrn_assert(segment_ids.size() % 2);
+            nrn_assert(segment_ids.size() % 2 &&
+                       "Section with an even number of compartments. I cannot pick the middle one. "
+                       "This was not expected");
             // corresponding voltage in coreneuron voltage array
             const auto segment_id = segment_ids[segment_ids.size() / 2];
             double* variable = get_var(nt,
@@ -275,7 +277,9 @@ void append_sections_to_to_report(const std::shared_ptr<SecMapping>& sections,
                 to_report.emplace_back(VarWithMapping(section_id, variable));
             }
         } else {
-            nrn_assert(segment_ids.size() % 2);
+            nrn_assert(segment_ids.size() % 2 &&
+                       "Section with an even number of compartments. I cannot pick the middle one. "
+                       "This was not expected");
             // corresponding voltage in coreneuron voltage array
             const auto segment_id = segment_ids[segment_ids.size() / 2];
             double* variable = report_variable + segment_id;
@@ -374,6 +378,10 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
                                 double scaling_factor =
                                     get_scaling_factor(mech_name, report.scaling, nt, segment_id);
 
+                                // I know that comparing a double to 0.0 is not the best practice,
+                                // but they told me to never round this number and to follow how
+                                // it is done in neurodamus + neuron. In any case it is innoquous,
+                                // it is just to save some computational time. (Katta)
                                 if (scaling_factor != 0.0) {
                                     summation_report.currents_[segment_id].push_back(
                                         std::make_pair(var_ptr, scaling_factor));
