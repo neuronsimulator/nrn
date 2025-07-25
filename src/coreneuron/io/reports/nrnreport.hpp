@@ -29,7 +29,7 @@ struct SummationReport {
     // Contains the values of the summation with index == segment_id
     std::vector<double> summation_ = {};
     // Map containing the pointers of the currents and its scaling factor for every segment_id
-    std::unordered_map<size_t, std::vector<std::pair<double*, int>>> currents_;
+    std::unordered_map<size_t, std::vector<std::pair<double*, double>>> currents_;
     // Map containing the list of segment_ids per gid
     std::unordered_map<int, std::vector<size_t>> gid_segments_;
 };
@@ -70,18 +70,18 @@ enum class TargetType {
 };
 
 // enumerate that defines the type of target report requested
-enum ReportType {
-    SomaReport,
-    CompartmentReport,
-    SynapseReport,
-    IMembraneReport,
-    SectionReport,
-    SummationReport,
-    LFPReport
-};
+enum class ReportType { Compartment, Summation, Synapse, LFP };
+ReportType report_type_from_string(const std::string& str);
+std::string to_string(ReportType t);
 
 // enumerate that defines the section type for a Section report
-enum SectionType { Cell, Soma, Axon, Dendrite, Apical, All };
+enum class SectionType { Cell, Soma, Axon, Dendrite, Apical, Custom, All };
+SectionType section_type_from_string(const std::string& str);
+std::string to_string(SectionType t);
+
+enum class Scaling { None, Area };
+Scaling scaling_from_string(const std::string& str);
+std::string to_string(Scaling s);
 
 struct ReportConfiguration {
     std::string name;                     // name of the report
@@ -103,6 +103,7 @@ struct ReportConfiguration {
     int num_gids;                         // total number of gids
     int buffer_size;                      // hint on buffer size used for this report
     std::vector<int> target;              // list of gids for this report
+    Scaling scaling;
 };
 
 void setup_report_engine(double dt_report, double mindelay);

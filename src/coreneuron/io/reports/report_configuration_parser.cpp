@@ -58,43 +58,43 @@ void register_target_type(ReportConfiguration& report, ReportType report_type) {
     report.type = report_type;
     switch (report.target_type) {
     case TargetType::Compartment:
-        report.section_type = All;
+        report.section_type = SectionType::All;
         report.section_all_compartments = true;
         break;
     case TargetType::Cell:
-        report.section_type = Cell;
+        report.section_type = SectionType::Cell;
         report.section_all_compartments = false;
         break;
     case TargetType::SectionSoma:
-        report.section_type = Soma;
+        report.section_type = SectionType::Soma;
         report.section_all_compartments = false;
         break;
     case TargetType::SectionSomaAll:
-        report.section_type = Soma;
+        report.section_type = SectionType::Soma;
         report.section_all_compartments = true;
         break;
     case TargetType::SectionAxon:
-        report.section_type = Axon;
+        report.section_type = SectionType::Axon;
         report.section_all_compartments = false;
         break;
     case TargetType::SectionAxonAll:
-        report.section_type = Axon;
+        report.section_type = SectionType::Axon;
         report.section_all_compartments = true;
         break;
     case TargetType::SectionDendrite:
-        report.section_type = Dendrite;
+        report.section_type = SectionType::Dendrite;
         report.section_all_compartments = false;
         break;
     case TargetType::SectionDendriteAll:
-        report.section_type = Dendrite;
+        report.section_type = SectionType::Dendrite;
         report.section_all_compartments = true;
         break;
     case TargetType::SectionApical:
-        report.section_type = Apical;
+        report.section_type = SectionType::Apical;
         report.section_all_compartments = false;
         break;
     case TargetType::SectionApicalAll:
-        report.section_type = Apical;
+        report.section_type = SectionType::Apical;
         report.section_all_compartments = true;
         break;
     default:
@@ -116,38 +116,37 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
     for (auto& report: reports) {
         report.buffer_size = 4;  // default size to 4 Mb
 
+        std::string scaling;
         report_conf >> report.name >> report.target_name >> report.type_str >> report_on >>
             report.unit >> report.format >> target >> report.report_dt >> report.start >>
-            report.stop >> report.num_gids >> report.buffer_size;
+            report.stop >> report.num_gids >> report.buffer_size >> scaling;
 
+        report.scaling = scaling_from_string(scaling);
         report.target_type = static_cast<TargetType>(target);
         std::transform(report.type_str.begin(),
                        report.type_str.end(),
                        report.type_str.begin(),
                        [](unsigned char c) { return std::tolower(c); });
         report.output_path = output_dir + "/" + report.name;
-        ReportType report_type;
-        if (report.type_str == "compartment") {
-            report_type = SectionReport;
-            if (report_on == "i_membrane") {
-                nrn_use_fast_imem = true;
-                report_type = IMembraneReport;
-            }
-        } else if (report.type_str == "synapse") {
-            report_type = SynapseReport;
-        } else if (report.type_str == "summation") {
-            report_type = SummationReport;
-        } else if (report.type_str == "lfp") {
+        ReportType report_type = report_type_from_string(report.type_str);
+        if (report_type == ReportType::LFP) {
             nrn_use_fast_imem = true;
-            report_type = LFPReport;
-        } else {
-            std::cerr << "Report error: unsupported type " << report.type_str << std::endl;
-            nrn_abort(1);
         }
         register_target_type(report, report_type);
-        if (report.type == SynapseReport || report.type == SummationReport) {
+        if (report.type == ReportType::Synapse || report.type == ReportType::Summation ||
+            report.type == ReportType::Compartment) {
             parse_filter_string(report_on, report);
         }
+        // checks
+        if (report.type == ReportType::Compartment) {
+            if (report.mech_names.size() != 1) {
+                std::cerr << "Report error: Compartment report requires exactly one variable name, "
+                             "but got "
+                          << report.mech_names.size() << std::endl;
+                nrn_abort(1);
+            }
+        }
+        // gids
         if (report.num_gids) {
             report.target.resize(report.num_gids);
             report_conf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
