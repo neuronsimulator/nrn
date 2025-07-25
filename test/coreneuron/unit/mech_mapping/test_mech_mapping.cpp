@@ -13,6 +13,7 @@
 
 using namespace coreneuron;
 
+// Note: Catch2 does not natively support death tests. I cannot test malformed mechanisms (Katta)
 TEST_CASE("register_all_variables_offsets and get_var_location_from_var_name") {
     // Ensure mech_data_layout has enough entries
     corenrn.get_mech_data_layout().resize(43, SOA_LAYOUT);
@@ -52,26 +53,6 @@ TEST_CASE("register_all_variables_offsets and get_var_location_from_var_name") {
         int expected_ix = 3 * ml._nodecount_padded + 1;
         REQUIRE(val == &ml.data[expected_ix]);
         REQUIRE(*val == 100 + expected_ix);
-    }
-
-    SECTION("fallback fails for unregistered var0_wrong") {
-        // Should trigger nrn_abort; requires death test or exception wrapping to fully test.
-        // Here we document expected behavior.
-        try {
-            double* val = get_var_location_from_var_name(mech_id, mech_name, "var0_wrong", &ml, 0);
-            FAIL("Expected nrn_abort or exception for unregistered fallback var0_wrong");
-        } catch (...) {
-            SUCCEED();
-        }
-    }
-
-    SECTION("failure with unknown mech_id") {
-        try {
-            double* val = get_var_location_from_var_name(999, mech_name, "var0", &ml, 0);
-            FAIL("Expected nrn_abort or exception for unknown mech_id 999");
-        } catch (...) {
-            SUCCEED();
-        }
     }
 
     delete[] ml.data;
