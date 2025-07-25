@@ -616,4 +616,51 @@ void nrn_register_function(void (*proc)(), const char* func_name, int type) {
     sym->u.u_proc->nauto = 0;
     sym->u.u_proc->nobjauto = 0;
 }
+
+void nrn_hoc_ret() {
+    hoc_ret();
+}
+
+/****************************************
+ * Parameter-reading functions
+ ****************************************/
+Object** nrn_objgetarg(int arg) {
+    return hoc_objgetarg(arg);
+}
+
+char* nrn_gargstr(int arg) {
+    return hoc_gargstr(arg);
+}
+
+double* nrn_getarg(int arg) {
+    return hoc_getarg(arg);
+}
+
+std::FILE* nrn_obj_file_arg(int i) {
+    return hoc_obj_file_arg(i);
+}
+
+bool nrn_ifarg(int arg) {
+    return ifarg(arg);
+}
+
+
+bool nrn_is_object_arg(int arg) {
+    return hoc_is_object_arg(arg);
+}
+
+
+bool nrn_is_str_arg(int arg) {
+    return hoc_is_str_arg(arg);
+}
+
+
+bool nrn_is_double_arg(int arg) {
+    return hoc_is_double_arg(arg);
+}
+
+
+bool nrn_is_pdouble_arg(int arg) {
+    return hoc_is_pdouble_arg(arg);
+}
 }
