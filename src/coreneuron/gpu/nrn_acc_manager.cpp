@@ -17,7 +17,6 @@
 #include "coreneuron/utils/vrecitem.h"
 #include "coreneuron/utils/profile/profiler_interface.h"
 #include "coreneuron/permute/cellorder.hpp"
-#include "coreneuron/permute/data_layout.hpp"
 #include "coreneuron/sim/scopmath/newton_struct.h"
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
