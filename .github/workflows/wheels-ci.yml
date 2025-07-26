@@ -19,7 +19,9 @@ jobs:
     strategy:
       matrix:
         os: ['macos-14', 'ubuntu-22.04-arm']
-        python_version: ['3.9', '3.13']
+        # TODO put this back before merging
+        #python_version: ['3.9', '3.13']
+        python_version: ['3.13t']
 
   merge:
     name: Merge artifacts and post artifacts URL

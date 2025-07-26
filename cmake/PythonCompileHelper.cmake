@@ -56,6 +56,8 @@ endfunction()
 # ~~~
 # add_nrn_python_library(
 # <name>
+# [NO_EXTENSION]
+# [HAS_FREE_THREADING]
 # [TARGET target_name]
 # [PYTHON_VERSION python_version]
 # [LANGUAGE link_language]
@@ -67,23 +69,24 @@ endfunction()
 #
 # Create a target that links to nrnpython.
 #
-# <name>            - the actual name of the library being built
-# NO_EXTENSION      - (optional, default unset) in case one wants to create a
-#                     library without any platform-specific naming (so `hoc.so` instead of
-#                     `hoc.cpython39-darwin.so` or similar). Note that no prefix is added.
-# TARGET            - (optional, defaults to <name>) the name of the CMake
-#                     target. Can be anything, but may not conflict with existing targets.
-# PYTHON_VERSION    - the version of Python to create the library for (for example, 3.9).
-# LANGUAGE          - the language used for linking the library. See also the LINKER_LANGUAGE CMake variable.
-# OUTPUT_DIR        - the path to the directory where the library will be placed afer building.
-# SOURCES           - the list of source files used for compiling the library.
-# INCLUDES          - (optional) the list of include directories.
-# LIBRARIES         - (optional) the list of libraries we are linking with.
-# INSTALL_REL_RPATH - (optional) the list of RPATHs to use when installing the target.
-# BUILD_REL_RPATH   - (optional) the list of RPATHs to use when building the target.
+# <name>             - the actual name of the library being built
+# NO_EXTENSION       - (optional, default unset) in case one wants to create a
+#                      library without any platform-specific naming (so `hoc.so` instead of
+#                      `hoc.cpython39-darwin.so` or similar). Note that no prefix is added.
+# HAS_FREE_THREADING - (optional, default unset) whether the build of Python is free threaded
+# TARGET             - (optional, defaults to <name>) the name of the CMake
+#                      target. Can be anything, but may not conflict with existing targets.
+# PYTHON_VERSION     - the version of Python to create the library for (for example, 3.9).
+# LANGUAGE           - the language used for linking the library. See also the LINKER_LANGUAGE CMake variable.
+# OUTPUT_DIR         - the path to the directory where the library will be placed afer building.
+# SOURCES            - the list of source files used for compiling the library.
+# INCLUDES           - (optional) the list of include directories.
+# LIBRARIES          - (optional) the list of libraries we are linking with.
+# INSTALL_REL_RPATH  - (optional) the list of RPATHs to use when installing the target.
+# BUILD_REL_RPATH    - (optional) the list of RPATHs to use when building the target.
 # ~~~
 function(add_nrn_python_library name)
-  set(options NO_EXTENSION)
+  set(options NO_EXTENSION HAS_FREE_THREADING)
   set(oneValueArgs TARGET PYTHON_VERSION LANGUAGE OUTPUT_DIR)
   set(multiValueArgs SOURCES INCLUDES LIBRARIES INSTALL_REL_RPATH BUILD_REL_RPATH)
   cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -190,6 +193,10 @@ function(add_nrn_python_library name)
   if(ARG_NO_EXTENSION)
     set(output_name "${name}")
   else()
+    if(ARG_HAS_FREE_THREADING)
+      # the free-threaded build needs an additional `t` after the Python version
+      set(pyver_nodot "${pyver_nodot}t")
+    endif()
     set(output_name "${name}.${python_interp}${pyver_nodot}-${os_string}")
   endif()
 
