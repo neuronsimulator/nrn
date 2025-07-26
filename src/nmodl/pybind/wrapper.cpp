@@ -4,26 +4,66 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include "wrapper.hpp"
-
-#include "codegen/codegen_naming.hpp"
-#include "pybind/pyembed.hpp"
-#include <fmt/format.h>
+#include <filesystem>
 #include <optional>
-#include <pybind11/embed.h>
-#include <pybind11/stl.h>
-
 #include <set>
 #include <vector>
 
-#include "ode_py.hpp"
+// 3rd party headers
+#include <fmt/format.h>
+#include <pybind11/embed.h>
+#include <pybind11/stl.h>
 
+// NMODL headers
+#include "codegen/codegen_naming.hpp"
+#include "pybind/ode_py.hpp"
+#include "pybind/wrapper.hpp"
+#include "pybind/pyembed.hpp"
+#include "utils/common_utils.hpp"
+
+
+namespace fs = std::filesystem;
 namespace py = pybind11;
 using namespace py::literals;
 
 namespace nmodl {
 namespace pybind_wrappers {
+
+// This wrapper is used for obtaining better coverage in `ode.py`.
+// Since we embed the `ode.py` as a string, there is no way to check what was covered via running
+// pytest or similar. Instead, we use the coverage.py API directly.
+static void run_python_script(const std::string& script, const py::dict& locals) {
+#ifdef NRN_ENABLE_COVERAGE
+    py::exec(fmt::format(R"(
+import coverage
+cov = coverage.Coverage()
+cov.start()
+)"),
+             locals);
+    const auto& code_with_mapping = std::string("exec(compile(r'''" + ode_py + script + "''', '" +
+                                                ode_py_path + "', 'exec'))");
+    py::exec(code_with_mapping, locals);
+#else
+    py::exec(ode_py + script, locals);
+#endif
+
+#ifdef NRN_ENABLE_COVERAGE
+    // to prevent race conditions during testing, we generate a random suffix
+    const auto& suffix =
+        nmodl::utils::generate_random_string(20, nmodl::utils::UseNumbersInString::WithoutNumbers);
+    const auto& path = fs::current_path() / fmt::format("coverage_{}.xml", suffix);
+    py::exec(fmt::format(R"(
+cov.stop()
+cov.save()
+# Check if we have any coverage data
+data = cov.get_data()
+if data.measured_files():
+    cov.xml_report(outfile='{}')
+)",
+                         path.string()),
+             locals);
+#endif
+}
 
 std::tuple<std::vector<std::string>, std::vector<std::string>, std::string>
 call_solve_linear_system(const std::vector<std::string>& eq_system,
@@ -57,8 +97,7 @@ except Exception as e:
     new_local_vars = [""]
     exception_message = traceback.format_exc()
 )";
-
-    py::exec(nmodl::pybind_wrappers::ode_py + script, locals);
+    run_python_script(script, locals);
     // returns a vector of solutions, i.e. new statements to add to block:
     auto solutions = locals["solutions"].cast<std::vector<std::string>>();
     // and a vector of new local variables that need to be declared in the block:
@@ -93,7 +132,7 @@ except Exception as e:
     exception_message = traceback.format_exc()
 )";
 
-    py::exec(nmodl::pybind_wrappers::ode_py + script, locals);
+    run_python_script(script, locals);
     // returns a vector of solutions, i.e. new statements to add to block:
     auto solutions = locals["solutions"].cast<std::vector<std::string>>();
     // may also return a python exception message:
@@ -130,7 +169,7 @@ except Exception as e:
     exception_message = traceback.format_exc()
 )";
 
-        py::exec(nmodl::pybind_wrappers::ode_py + script, locals);
+        run_python_script(script, locals);
     } else if (method == codegen::naming::CNEXP_METHOD) {
         // replace x' = f(x) differential equation
         // with analytic solution for x(t+dt) in terms of x(t)
@@ -147,7 +186,7 @@ except Exception as e:
     exception_message = traceback.format_exc()
 )";
 
-        py::exec(nmodl::pybind_wrappers::ode_py + script, locals);
+        run_python_script(script, locals);
     } else {
         // nothing to do, but the caller should know.
         return {};
@@ -179,7 +218,7 @@ except Exception as e:
     exception_message = traceback.format_exc()
 )";
 
-    py::exec(nmodl::pybind_wrappers::ode_py + script, locals);
+    run_python_script(script, locals);
 
     auto solution = locals["solution"].cast<std::string>();
     auto exception_message = locals["exception_message"].cast<std::string>();
@@ -223,7 +262,7 @@ except Exception as e:
                     statements,
                     property.has_value() ? fmt::format("{}[{}]", name, property.value()) : name);
 
-    py::exec(nmodl::pybind_wrappers::ode_py + script, locals);
+    run_python_script(script, locals);
 
     auto solution = locals["solution"].cast<std::string>();
     auto exception_message = locals["exception_message"].cast<std::string>();
