@@ -182,14 +182,13 @@ for i in "${files[@]}" ; do
   esac
   base_name="$(basename "$f")"
   dir_name="$(dirname "$f")"
-  actual_name="$(readlink -f "${f}")"
   # Note: indentation for shell lines in make rules must be a tab
   f=${f// /\\ }
   f=${f//:/\\:}
   echo "\
 ${base_name// /\\ }.cpp: ${f}.mod \$(NOCMODL)
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
-	@NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"${actual_name}.mod\" @NRN_NMODL_--neuron@ -o \"$mdir\" $UserNMODLFLAGS
+	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" @NRN_NMODL_--neuron@ -o \"$mdir\" $UserNMODLFLAGS)
 
 ./${base_name// /\\ }.o: ${base_name// /\\ }.cpp
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) ${PWD}/\$<\\\n\"
