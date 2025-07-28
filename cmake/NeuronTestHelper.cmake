@@ -571,3 +571,32 @@ function(nrn_add_test_group_comparison)
   set_tests_properties(${comparison_name} PROPERTIES ENVIRONMENT
                                                      "PATH=${CMAKE_BINARY_DIR}/bin:$ENV{PATH}")
 endfunction()
+
+# Collect pytest tests and return a variable with a list of those.
+function(nrn_pytest_collect)
+  set(options)
+  set(oneValueArgs PATH NAME)
+  set(multiValueArgs ENVIRONMENT)
+  cmake_parse_arguments(NRN_PYTEST_COLLECT "${options}" "${oneValueArgs}" "${multiValueArgs}"
+                        ${ARGN})
+  # ~~~
+  # There is a "fun" problem in that pytest needs to actually execute the whole
+  # file during the collection phase, but the NEURON Python module is not built
+  # yet. To get around this, we basically use a pytest fixture that imports
+  # NEURON for all tests. This allows us to collect all of the tests at
+  # configure time.
+  # ~~~
+  execute_process(
+    COMMAND
+      ${CMAKE_COMMAND} -E env "NRN_TEST_COLLECT_ONLY=1" "${NRN_PYTEST_COLLECT_ENVIRONMENT}"
+      "${NRN_DEFAULT_PYTHON_EXECUTABLE}" -m pytest --collect-only -q --import-mode=importlib
+      "${NRN_PYTEST_COLLECT_PATH}"
+    COMMAND head -n -2
+    OUTPUT_VARIABLE pytest_output
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  # Convert the string to a list by splitting on newlines
+  separate_arguments(pytest_output UNIX_COMMAND "${pytest_output}")
+  set("${NRN_PYTEST_COLLECT_NAME}"
+      "${pytest_output}"
+      PARENT_SCOPE)
+endfunction()

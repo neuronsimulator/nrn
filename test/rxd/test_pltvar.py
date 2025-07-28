@@ -1,7 +1,12 @@
+import os
+
 import pytest
 import plotly
-from neuron import units
+
 from matplotlib import pyplot
+
+if not os.environ.get("NRN_TEST_COLLECT_ONLY"):
+    from neuron import units
 
 
 def test_plt_variable(neuron_instance):

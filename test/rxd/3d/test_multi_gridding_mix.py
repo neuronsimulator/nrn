@@ -1,10 +1,12 @@
+import os
 import platform
 import sys
 
 import pytest
 from packaging.version import Version
 
-from neuron.units import µm, mM, ms, mV
+if not os.environ.get("NRN_TEST_COLLECT_ONLY"):
+    from neuron.units import µm, mM, ms, mV
 
 sys.path.append("..")
 from testutils import compare_data, tol

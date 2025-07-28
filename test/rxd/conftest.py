@@ -1,8 +1,10 @@
-import os.path as osp
-import numpy
 import ctypes
-import pytest
 import gc
+import os
+import os.path as osp
+
+import numpy
+import pytest
 
 from .testutils import collect_data
 
@@ -15,6 +17,8 @@ def pytest_addoption(parser):
 @pytest.fixture(scope="session")
 def neuron_import(request):
     """Provides an instance of neuron h and rxd for tests"""
+    if os.environ.get("NRN_TEST_COLLECT_ONLY"):
+        pytest.skip("Collection mode - skipping actual imports")
 
     # to use NEURON with MPI, mpi4py must be imported first.
     if request.config.getoption("--mpi"):

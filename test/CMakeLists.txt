@@ -324,12 +324,21 @@ if(NRN_ENABLE_PYTHON)
     elseif(NRN_HAVE_NVHPC_COMPILER)
       set(change_test_tolerance NRN_RXD_TEST_TOLERANCE=1e-4)
     endif()
-    nrn_add_test(
-      GROUP rxdmod_tests
-      NAME rxd_tests
-      PRELOAD_SANITIZER
-      ENVIRONMENT COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance}
-      COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/rxd)
+    nrn_pytest_collect(PATH "${PROJECT_SOURCE_DIR}/test/rxd" NAME rxd_tests ENVIRONMENT
+                       "PYTHONPATH=${PROJECT_SOURCE_DIR}/test/rxd:${PROJECT_SOURCE_DIR}/test")
+    foreach(rxd_test ${rxd_tests})
+      string(REPLACE "/" "_" rxd_test_cleaned "${rxd_test}")
+      string(REPLACE "." "_" rxd_test_cleaned "${rxd_test_cleaned}")
+      string(REPLACE ":" "_" rxd_test_cleaned "${rxd_test_cleaned}")
+      string(REPLACE "[" "_" rxd_test_cleaned "${rxd_test_cleaned}")
+      string(REPLACE "]" "_" rxd_test_cleaned "${rxd_test_cleaned}")
+      nrn_add_test(
+        GROUP rxdmod_tests
+        NAME rxd_tests_${rxd_test_cleaned}
+        PRELOAD_SANITIZER
+        ENVIRONMENT COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance}
+        COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} "${rxd_test}" ./test/rxd)
+    endforeach()
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(MODULE mpi4py)
       if(mpi4py_FOUND)

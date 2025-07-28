@@ -1,4 +1,7 @@
-from neuron.expect_hocerr import expect_hocerr
+import os
+
+if not os.environ.get("NRN_TEST_COLLECT_ONLY"):
+    from neuron.expect_hocerr import expect_hocerr
 
 
 def should_not_work(h, rxd):
