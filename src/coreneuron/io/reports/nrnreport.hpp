@@ -14,11 +14,15 @@
 #ifndef _H_NRN_REPORT_
 #define _H_NRN_REPORT_
 
-#include <string>
-#include <vector>
-#include <set>
-#include <unordered_map>
+#include <algorithm>
 #include <cstdint>
+#include <iostream>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+#include "coreneuron/utils/utils.hpp"
 
 #define REPORT_MAX_NAME_LEN     256
 #define REPORT_MAX_FILEPATH_LEN 4096
@@ -51,19 +55,100 @@ struct SpikesInfo {
 /// name of the variable in mod file used for setting synapse id
 #define SYNAPSE_ID_MOD_NAME "synapseID"
 
-// enumerate that defines the type of target report requested
+template <typename EnumT, std::size_t N>
+std::string to_string(EnumT e,
+                      const std::array<std::pair<EnumT, std::string_view>, N>& mapping,
+                      const std::string_view enum_name) {
+    auto it = std::find_if(mapping.begin(), mapping.end(), [e](const auto& pair) {
+        return pair.first == e;
+    });
+    if (it != mapping.end()) {
+        return std::string(it->second);
+    }
+
+    std::cerr << "Unknown value for " << enum_name << ": " << static_cast<int>(e) << std::endl;
+    nrn_abort(1);
+}
+
+inline bool equals_case_insensitive(std::string_view a, std::string_view b) {
+    if (a.size() != b.size())
+        return false;
+    return std::equal(a.begin(), a.end(), b.begin(), [](unsigned char c1, unsigned char c2) {
+        return std::tolower(c1) == std::tolower(c2);
+    });
+}
+
+template <typename EnumT, std::size_t N>
+EnumT from_string(std::string_view str,
+                  const std::array<std::pair<EnumT, std::string_view>, N>& mapping,
+                  const std::string_view enum_name) {
+    auto it = std::find_if(mapping.begin(), mapping.end(), [&str](const auto& pair) {
+        return equals_case_insensitive(str, pair.second);
+    });
+    if (it != mapping.end()) {
+        return it->first;
+    }
+
+    std::cerr << "Unknown string for " << enum_name << ": " << str << std::endl;
+    nrn_abort(1);
+}
+
+// ReportType
 enum class ReportType { Compartment, Summation, Synapse, LFP };
-ReportType report_type_from_string(const std::string& str);
-std::string to_string(ReportType t);
+constexpr std::array<std::pair<ReportType, std::string_view>, 4> report_type_map{
+    {{ReportType::Compartment, "Compartment"},
+     {ReportType::Summation, "Summation"},
+     {ReportType::Synapse, "Synapse"},
+     {ReportType::LFP, "LFP"}}};
+inline std::string to_string(ReportType t) {
+    return to_string(t, report_type_map, "ReportType");
+}
+inline ReportType report_type_from_string(const std::string& s) {
+    return from_string<ReportType>(s, report_type_map, "ReportType");
+}
 
-// enumerate that defines the section type for a Section report
-enum class SectionType { All, Soma, Axon, Dend, Apic, Invalid };
-SectionType section_type_from_string(const std::string& str);
-std::string to_string(SectionType t);
+// SectionType
+enum class SectionType { Cell, Soma, Axon, Dendrite, Apical, Custom, All };
 
-enum class Scaling { None, Area, Invalid };
-Scaling scaling_from_string(const std::string& str);
-std::string to_string(Scaling s);
+constexpr std::array<std::pair<SectionType, std::string_view>, 7> section_type_map{{
+    {SectionType::Cell, "Cell"},
+    {SectionType::Soma, "Soma"},
+    {SectionType::Axon, "Axon"},
+    {SectionType::Dendrite, "Dendrite"},
+    {SectionType::Apical, "Apical"},
+    {SectionType::Custom, "Custom"},
+    {SectionType::All, "All"},
+}};
+
+inline std::string to_string(SectionType t) {
+    return to_string(t, section_type_map, "SectionType");
+}
+inline SectionType section_type_from_string(std::string_view str) {
+    auto it =
+        std::find_if(section_type_map.begin(), section_type_map.end(), [&str](const auto& pair) {
+            return equals_case_insensitive(str, pair.second);
+        });
+
+    if (it != section_type_map.end()) {
+        return it->first;
+    }
+
+    // Default to Custom instead of aborting
+    return SectionType::Custom;
+}
+
+// Scaling
+enum class Scaling { None, Area };
+
+constexpr std::array<std::pair<Scaling, std::string_view>, 2> scaling_map{
+    {{Scaling::None, "None"}, {Scaling::Area, "Area"}}};
+
+inline std::string to_string(Scaling s) {
+    return to_string(s, scaling_map, "Scaling");
+}
+inline Scaling scaling_from_string(const std::string& str) {
+    return from_string<Scaling>(str, scaling_map, "Scaling");
+}
 
 enum class Compartments { All, Center, Invalid };
 Compartments compartments_from_string(const std::string& str);
