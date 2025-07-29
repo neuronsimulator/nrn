@@ -136,6 +136,8 @@ Symlist* nrn_global_symbol_table(void);
 Symlist* nrn_top_level_symbol_table(void);
 int nrn_symbol_array_length(const Symbol* sym);
 void nrn_register_function(void (*proc)(), const char* func_name, int type);
+void nrn_hoc_ret(void);
+
 /****************************************
  * Parameter-reading functions
  ****************************************/
