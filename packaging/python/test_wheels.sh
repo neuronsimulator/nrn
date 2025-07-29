@@ -105,6 +105,7 @@ run_serial_test () {
 
     # Test 3: run coreneuron binary shipped inside wheel
     if [[ "$has_coreneuron" == "true" ]]; then
+        $python_exe -c "from neuron.tests import test_nmodl; test_nmodl.test_nmodl()"
         HOC_LIBRARY_PATH=${PWD}/test/ringtest nrniv test/ringtest/ring.hoc
         mv out.dat out.nrn.dat
         nrniv-core --datpath .
