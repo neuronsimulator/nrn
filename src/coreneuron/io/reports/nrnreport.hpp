@@ -110,7 +110,7 @@ inline ReportType report_type_from_string(const std::string& s) {
 // SectionType
 enum class SectionType { Cell, Soma, Axon, Dendrite, Apical, Custom, All, Invalid };
 
-constexpr std::array<std::pair<SectionType, std::string_view>, 7> section_type_map{{
+constexpr std::array<std::pair<SectionType, std::string_view>, 8> section_type_map{{
     {SectionType::Cell, "Cell"},
     {SectionType::Soma, "Soma"},
     {SectionType::Axon, "Axon"},
@@ -118,7 +118,7 @@ constexpr std::array<std::pair<SectionType, std::string_view>, 7> section_type_m
     {SectionType::Apical, "Apical"},
     {SectionType::Custom, "Custom"},
     {SectionType::All, "All"},
-    {SectionType::Invalid, "Invalid"},
+    {SectionType::Invalid, "Invalid"}
 }};
 
 inline std::string to_string(SectionType t) {
