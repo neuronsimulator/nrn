@@ -14,6 +14,7 @@
 #ifndef _H_NRN_REPORT_
 #define _H_NRN_REPORT_
 
+#include <algorithm>
 #include <cstdint>
 #include <iostream>
 #include <set>
