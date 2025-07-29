@@ -13,7 +13,8 @@
 
 using namespace coreneuron;
 
-// Note: Catch2 does not natively support death tests. I cannot test malformed mechanisms (Katta)
+// Note: Catch2 does not natively support death tests. I cannot test malformed report configurations
+// (Katta)
 TEST_CASE("register_all_variables_offsets and get_var_location_from_var_name") {
     // Ensure mech_data_layout has enough entries
     corenrn.get_mech_data_layout().resize(43, SOA_LAYOUT);

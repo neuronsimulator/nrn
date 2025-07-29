@@ -8,14 +8,14 @@
 
 #pragma once
 
-#include <numeric>
+#include <iostream>
+#include <map>
 #include <memory>
+#include <numeric>
 #include <string>
 #include <utility>
-#include <vector>
-#include <map>
-#include <iostream>
 #include <unordered_map>
+#include <vector>
 
 #include "coreneuron/io/reports/nrnreport.hpp"
 #include "coreneuron/utils/utils.hpp"
