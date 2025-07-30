@@ -107,51 +107,18 @@ inline ReportType report_type_from_string(const std::string& s) {
     return from_string<ReportType>(s, report_type_map, "ReportType");
 }
 
-// TargetType
-enum class TargetType {
-    Compartment = 0,
-    Cell = 1,
-    SectionSoma = 2,
-    SectionAxon = 3,
-    SectionDendrite = 4,
-    SectionApical = 5,
-    SectionSomaAll = 6,
-    SectionAxonAll = 7,
-    SectionDendriteAll = 8,
-    SectionApicalAll = 9,
-};
-
-constexpr std::array<std::pair<TargetType, std::string_view>, 10> target_type_map{
-    {{TargetType::Compartment, "Compartment"},
-     {TargetType::Cell, "Cell"},
-     {TargetType::SectionSoma, "SectionSoma"},
-     {TargetType::SectionAxon, "SectionAxon"},
-     {TargetType::SectionDendrite, "SectionDendrite"},
-     {TargetType::SectionApical, "SectionApical"},
-     {TargetType::SectionSomaAll, "SectionSomaAll"},
-     {TargetType::SectionAxonAll, "SectionAxonAll"},
-     {TargetType::SectionDendriteAll, "SectionDendriteAll"},
-     {TargetType::SectionApicalAll, "SectionApicalAll"}}};
-
-inline std::string to_string(TargetType t) {
-    return to_string(t, target_type_map, "TargetType");
-}
-inline TargetType target_type_from_string(const std::string& s) {
-    return from_string<TargetType>(s, target_type_map, "TargetType");
-}
-
 // SectionType
-enum class SectionType { Cell, Soma, Axon, Dendrite, Apical, Custom, All };
+enum class SectionType { Cell, Soma, Axon, Dendrite, Apical, Custom, All, Invalid };
 
-constexpr std::array<std::pair<SectionType, std::string_view>, 7> section_type_map{{
-    {SectionType::Cell, "Cell"},
-    {SectionType::Soma, "Soma"},
-    {SectionType::Axon, "Axon"},
-    {SectionType::Dendrite, "Dendrite"},
-    {SectionType::Apical, "Apical"},
-    {SectionType::Custom, "Custom"},
-    {SectionType::All, "All"},
-}};
+constexpr std::array<std::pair<SectionType, std::string_view>, 8> section_type_map{
+    {{SectionType::Cell, "Cell"},
+     {SectionType::Soma, "Soma"},
+     {SectionType::Axon, "Axon"},
+     {SectionType::Dendrite, "Dendrite"},
+     {SectionType::Apical, "Apical"},
+     {SectionType::Custom, "Custom"},
+     {SectionType::All, "All"},
+     {SectionType::Invalid, "Invalid"}}};
 
 inline std::string to_string(SectionType t) {
     return to_string(t, section_type_map, "SectionType");
@@ -183,6 +150,10 @@ inline Scaling scaling_from_string(const std::string& str) {
     return from_string<Scaling>(str, scaling_map, "Scaling");
 }
 
+enum class Compartments { All, Center, Invalid };
+Compartments compartments_from_string(const std::string& str);
+std::string to_string(Compartments c);
+
 struct ReportConfiguration {
     std::string name;                     // name of the report
     std::string output_path;              // full path of the report
@@ -192,11 +163,9 @@ struct ReportConfiguration {
     std::vector<int> mech_ids;            // mechanisms
     std::string unit;                     // unit of the report
     std::string format;                   // format of the report (SONATA)
-    std::string type_str;                 // type of report string
-    TargetType target_type;               // type of the target
     ReportType type;                      // type of the report
-    SectionType section_type;             // type of section report
-    bool section_all_compartments;        // flag for section report (all values)
+    SectionType sections;                 // type of section report
+    Compartments compartments;            // flag for section report (all values)
     double report_dt;                     // reporting timestep
     double start;                         // start time of report
     double stop;                          // stop time of report
