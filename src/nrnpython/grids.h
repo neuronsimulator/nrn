@@ -8,6 +8,11 @@ and Flux_pair structs and their respective functions
 #include <assert.h>
 #include <nrnmpi.h>
 
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
 #include "nrn_pyhocobject.h"
 #include "nrnwrap_Python.h"
 

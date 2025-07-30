@@ -47,7 +47,7 @@ class FieldSEditorAction: public Resource {
     virtual void cancel(FieldSEditor*);
 };
 
-#if defined(__STDC__) || defined(__ANSI_CPP__)
+#if defined(__STDC__) || defined(__ANSI_CPP__) || defined(_MSC_VER)
 #define __FieldSEditorCallback(T)       T##_FieldSEditorCallback
 #define FieldSEditorCallback(T)         __FieldSEditorCallback(T)
 #define __FieldSEditorMemberFunction(T) T##_FieldSEditorMemberFunction

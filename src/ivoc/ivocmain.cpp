@@ -11,6 +11,7 @@ int hoc_main1(int, const char**, const char**);
 void hoc_main1_init(const char*, const char**);
 #endif
 
+#include <filesystem>
 #include <stdio.h>
 #include <stdlib.h>
 #include <filesystem>
@@ -46,6 +47,7 @@ void iv_display_scale(float);
 #endif
 
 #include "utils/logger.hpp"
+namespace fs = std::filesystem;
 
 #if 1
 void pr_profile();
@@ -64,7 +66,7 @@ static PropertyData properties[] = {{"*gui", "sgimotif"},
                                     {"*brush_width", "0"},
                                     {"*double_buffered", "on"},
                                     {"*flat", "#aaaaaa"},
-#ifdef MINGW
+#ifdef WIN32
                                     {"*font", "*Arial*bold*--12*"},
                                     {"*MenuBar*font", "*Arial*bold*--12*"},
                                     {"*MenuItem*font", "*Arial*bold*--12*"},
@@ -174,14 +176,14 @@ extern HWND hCurrWnd;
 
 
 extern void setneuronhome(const char*);
-extern const char* neuron_home;
+extern char* neuron_home;
 int hoc_xopen1(const char* filename, const char* rcs);
 extern int units_on_flag_;
 extern double hoc_default_dll_loaded_;
 extern int hoc_print_first_instance;
 int nrnpy_nositeflag;
 
-#if !defined(MINGW)
+#if !defined(WIN32)
 extern void setneuronhome(const char*) {
     neuron_home = getenv("NEURONHOME");
 }
@@ -224,7 +226,7 @@ const char* path_prefix_to_libnrniv() {
 }
 #endif  // DARWIN || defined(__linux__)
 
-int ivocmain(int, const char**, const char**);
+NRN_API int ivocmain(int, const char**, const char**);
 int ivocmain_session(int, const char**, const char**, int start_session);
 extern int nrn_global_argc;
 extern const char** nrn_global_argv;
@@ -237,9 +239,12 @@ extern std::string nrnmpi_load();
 void nrnmpi_load_or_exit();
 #endif
 
-#ifdef MINGW
+#ifdef WIN32
 // see iv/src/OS/directory.cpp
 #include <sys/stat.h>
+#ifndef S_ISDIR
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#endif
 static bool isdir(const char* p) {
     struct stat st;
     bool b = stat(p, &st) == 0 && S_ISDIR(st.st_mode);
@@ -470,7 +475,7 @@ nrniv [options] [fileargs]
     const char** our_argv = argv;
     int exit_status = 0;
     Session* session = NULL;
-#if !defined(MINGW)
+#if !defined(WIN32)
     // Gary Holt's first pass at this was:
     //
     // Set the NEURONHOME environment variable.  This should override any setting
@@ -497,7 +502,7 @@ nrniv [options] [fileargs]
         setneuronhome((argc > 0) ? argv[0] : 0);
     }
     if (!neuron_home) {
-#if defined(WIN32) && HAVE_IV
+#if defined(_WIN32) && HAVE_IV
         MessageBox(0,
                    "No NEURONHOME environment variable.",
                    "NEURON Incomplete Installation",

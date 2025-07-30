@@ -48,7 +48,7 @@ static char* argstr(int argc, char** argv) {
         // the latter will be converted back to space in src/oc/hoc.c
         // cygwin 7 need to convert x: and x:/ and x:\ to
         // /cygdrive/x/
-        u = hoc_dos2unixpath(argv[i]);
+        u = argv[i]; // hoc_dos2unixpath(argv[i]);
         for (a = u; *a; ++a) {
             if (*a == ' ') {
                 s[j++] = '@';
@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
     int err;
     char* args;
 
-#ifndef MINGW
+#ifndef WIN32
     ShowWindow(GetConsoleWindow(), SW_HIDE);
 #endif
     setneuronhome();

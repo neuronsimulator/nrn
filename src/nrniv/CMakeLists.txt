@@ -13,6 +13,11 @@ if(NRN_AVOID_ABSOLUTE_PATHS)
   add_compile_definitions(NRN_AVOID_ABSOLUTE_PATHS)
 endif()
 
+set(FLEX_COMPATIBILITY_FLAGS "")
+if(MSVC)
+  set(FLEX_COMPATIBILITY_FLAGS "--wincompat")
+endif()
+
 # =============================================================================
 # Build modlunit : Mod file units checker
 # =============================================================================
@@ -28,7 +33,7 @@ file(RELATIVE_PATH NRN_MODLUNIT_SRC_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_MODLU
 add_custom_command(
   OUTPUT "${NRN_MODLUNIT_GEN}/lex.cpp"
   WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
-  COMMAND "${FLEX_EXECUTABLE}" ARGS -o "${NRN_MODLUNIT_GEN_REL}/lex.cpp"
+  COMMAND "${FLEX_EXECUTABLE}" ${FLEX_COMPATIBILITY_FLAGS} -o "${NRN_MODLUNIT_GEN_REL}/lex.cpp"
           "${NRN_MODLUNIT_SRC_REL}/lex.lpp"
   DEPENDS "${NRN_MODLUNIT_SRC_DIR}/lex.lpp"
   COMMENT "[FLEX][modlunitlexer] Building scanner with flex ${FLEX_VERSION}")
@@ -69,7 +74,7 @@ file(RELATIVE_PATH NRN_NOCMODL_SRC_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_NOCMOD
 add_custom_command(
   OUTPUT "${NRN_NOCMODL_GEN}/lex.cpp"
   WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
-  COMMAND "${FLEX_EXECUTABLE}" ARGS -o "${NRN_NOCMODL_GEN_REL}/lex.cpp"
+  COMMAND "${FLEX_EXECUTABLE}" ${FLEX_COMPATIBILITY_FLAGS} -o "${NRN_NOCMODL_GEN_REL}/lex.cpp"
           "${NRN_NOCMODL_SRC_REL}/lex.lpp"
   DEPENDS "${NRN_NOCMODL_SRC_DIR}/lex.lpp"
   COMMENT "[FLEX][nocmodllexer] Building scanner with flex ${FLEX_VERSION}")
@@ -184,7 +189,7 @@ else()
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNMPI_SRC_FILES})
 endif()
 
-if(MINGW)
+if(MINGW OR MSVC)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/dlfcn.c)
 endif()
 
@@ -397,6 +402,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+target_compile_definitions(nrniv_lib PUBLIC NRN_DLL PRIVATE NRN_DLL_EXPORTS)
 add_dependencies(nrniv_lib generated_source_files)
 add_cpp_git_information(nrniv_lib PRIVATE)
 target_link_libraries(nrniv_lib nrngnu)
@@ -432,13 +438,13 @@ if(${NRN_ENABLE_ARCH_INDEP_EXP_POW})
   target_link_libraries(nrniv_lib ${LIB_MPFR})
 endif()
 
-if(NRN_WINDOWS_BUILD)
+if(NRN_WINDOWS_BUILD AND READLINE_FOUND)
   target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
 else()
   if(READLINE_FOUND)
     target_link_libraries(nrniv_lib ${Readline_LIBRARY})
-  else()
-    target_link_libraries(nrniv_lib readline)
+  # else()
+  #  target_link_libraries(nrniv_lib readline)
   endif()
 
   if(CURSES_FOUND)

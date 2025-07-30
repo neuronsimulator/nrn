@@ -1,6 +1,13 @@
 /* /local/src/master/nrn/src/modlunit/model.h,v 1.2 1997/11/24 16:19:13 hines Exp */
 #include "wrap_sprintf.h"
 #include <stdio.h>
+#if 1
+#if defined(STDC_HEADERS) || defined(SYSV) || defined(WIN32)
+#include <string.h>
+#else
+#include <strings.h>
+#endif
+#endif
 #include <assert.h>
 
 #define NRN_BUFSIZE 8192

@@ -7,6 +7,25 @@
 /* 53 bit double precision of exp and pow from mpfr */
 #cmakedefine01 NRN_ENABLE_ARCH_INDEP_EXP_POW
 
+#if defined(_WIN32)
+#define NRN_DLLEXPORT __declspec(dllexport)
+#define NRN_DLLIMPORT __declspec(dllimport)
+#else
+#define NRN_DLLEXPORT __attribute__((visibility("default")))
+#define NRN_DLLIMPORT
+#endif
+
+#if defined(NRN_DLL)
+#if defined(NRN_DLL_EXPORTS)
+#define NRN_API NRN_DLLEXPORT
+#else
+#define NRN_API NRN_DLLIMPORT
+#endif
+#else
+#define NRN_API
+#endif
+
+
 /* Define if building universal (internal helper macro) */
 #cmakedefine AC_APPLE_UNIVERSAL_BUILD @AC_APPLE_UNIVERSAL_BUILD@
 

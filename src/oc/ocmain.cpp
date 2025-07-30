@@ -7,13 +7,13 @@
 
 extern const char* neuron_home;
 
-#if defined(WIN32)
+#if defined(_WIN32)
 void* cvode_pmem;
 extern void setneuronhome(const char*);
 #endif
 
 static void setnrnhome(const char* arg) {
-#ifndef WIN32
+#ifndef _WIN32
     /*
      Gary Holt's first pass at this was:
 
@@ -67,7 +67,7 @@ int run_til_stdin() {
 }
 void hoc_notify_value() {}
 
-#ifdef WIN32
+#ifdef _WIN32
 void ivcleanup() {}
 void ivoc_win32_cleanup() {}
 int bad_install_ok;

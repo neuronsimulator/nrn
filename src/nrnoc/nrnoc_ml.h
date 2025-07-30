@@ -3,6 +3,12 @@
 #include <limits>   // std::numeric_limits
 #include <vector>   // std::vector
 
+#ifdef _MSC_VER
+#define PURE_ATTRIBUTE __declspec(noalias)
+#else
+#define PURE_ATTRIBUTE __attribute__((pure))
+#endif
+
 struct Node;
 struct Prop;
 
@@ -111,7 +117,7 @@ struct Memb_list {
      * Defined in .cpp to hide neuron::container::Mechanism::storage layout from translated MOD file
      * code.
      */
-    [[nodiscard]] __attribute__((pure)) double& data(std::size_t instance,
+    [[nodiscard]] PURE_ATTRIBUTE double& data(std::size_t instance,
                                                      int variable,
                                                      int array_index = 0);
 
@@ -120,7 +126,7 @@ struct Memb_list {
      *
      * Defined in .cpp to hide the full definition of Datum from translated MOD file code.
      */
-    [[nodiscard]] __attribute__((pure)) double* dptr_field(std::size_t instance, int variable);
+    [[nodiscard]] PURE_ATTRIBUTE double* dptr_field(std::size_t instance, int variable);
 
     /**
      * @brief Get the `variable`-th floating point value in `instance` of the mechanism.
@@ -128,7 +134,7 @@ struct Memb_list {
      * Defined in .cpp to hide neuron::container::Mechanism::storage layout from translated MOD file
      * code.
      */
-    [[nodiscard]] __attribute__((pure)) double const& data(std::size_t instance,
+    [[nodiscard]] PURE_ATTRIBUTE double const& data(std::size_t instance,
                                                            int variable,
                                                            int array_index = 0) const;
 

@@ -1,100 +1,74 @@
-# Windows build
+# Windows Build
 
 ## Pre-requisites
 
 You need to install the following:
 
-*  Git: [https://git-scm.com/](https://git-scm.com/)
 *  Chocolatey: [https://chocolatey.org/](https://chocolatey.org/)
-*  Visual Studio with C++: [https://visualstudio.microsoft.com/vs/features/cplusplus/](https://visualstudio.microsoft.com/vs/features/cplusplus/)
 *  `pwsh` (grab the latest PowerShell release on GitHub: [https://github.com/PowerShell/PowerShell/releases/latest](https://github.com/PowerShell/PowerShell/releases/latest))
+*  Microsoft MPI: https://learn.microsoft.com/en-us/message-passing-interface/microsoft-mpi
+*  NSIS (to create the installer): https://nsis.sourceforge.io/Main_Page
 
-## Build Environment installation
+## Build Environment Installation
 
-You can follow the lines of the scripts from the `ci` folder. The scripts can also be launched as-is for local installation. Perform a git clone of the `nrn` repository.
+You can follow the outline of the [GitHub CI Workflow](.github/workflow/windows.yml),
+replacing some of the steps with manual installations.
 
-From a powershell with **administrator** priviledges, run:
+### MPI
+
+Follow the above link to download and install MPI.  You should set the following
+environment variables for it (please adjust paths if required):
 ```powershell
-PS C:\workspace\nrn> .\ci\win_download_deps.cmd
+$env:MSMPI_BIN="C:\Program Files\Microsoft MPI\Bin\"
+$env:MSMPI_INC="C:\Program Files (x86)\Microsoft SDKs\MPI\Include\"
+$env:MSMPI_LIB32="C:\Program Files (x86)\Microsoft SDKs\MPI\Lib\x86\"
+$env:MSMPI_LIB64="C:\Program Files (x86)\Microsoft SDKs\MPI\Lib\x64\"
 ```
-This will download all required installers and corresponding versions(`Python`, `MPI`, `nsis`)
 
-Then launch the installation script:
+### Visual Studio and C++ Build Dependencies
+
+These commands should set you up with the basic dependencies for a windows build:
 ```powershell
-PS C:\workspace\nrn> .\ci\win_install_deps.cmd
+choco install -y cmake
+choco install -y git
+choco install -y sed
+choco install -y visualstudio2022community
+choco install -y winflexbison3
 ```
-in order to:
 
-* install all downloaded Python versions and for each:
-  * fix MSVCC version
-  * fix MSVC runtime library
-  * install numpy 
-* install `nsis` and required plugin
-* install MPI
-* install MSYS2 (via `Chocolatey`) and then MinGW toolchain and required build pacakages
+### Python
 
-## Setting up Visual Studio Code
-
-It is highly recommended to use Visual Studio Code for development. You can install it from [https://code.visualstudio.com/](https://code.visualstudio.com/). 
-
-During the development process, you will be using PowerShell, cmd and moreover MSYS2 MINGW64 shell. In order to be able to launch any of these in the IDE, add the following to `.vscode/setting.json` file in the root of the `nrn` repository:
-
-```json
-{
-    "cmake.configureOnOpen": false,
-    "terminal.integrated.profiles.windows": {
-    "PowerShell": {
-      "source": "PowerShell",
-      "icon": "terminal-powershell"
-    },
-    "Command Prompt": {
-      "path": [
-        "${env:windir}\\Sysnative\\cmd.exe",
-        "${env:windir}\\System32\\cmd.exe"
-      ],
-      "args": [],
-      "icon": "terminal-cmd"
-    },
-    "MSYS2": {
-      "path": "C:\\msys64\\usr\\bin\\bash.exe",
-      "args": [
-        "--login",
-        "-i"
-      ],
-      "env": {
-        "MSYSTEM": "MINGW64",
-        "CHERE_INVOKING": "1"
-      }
-    }
-  },
-}
+If you wish to install multiple Python versions, please execute the following commands
+repeatedly, and adjust as needed:
+```powershell
+choco install python311
+C:\Python311\python.exe -mpip install -r requirements.txt
 ```
 
 ## How to build NEURON
 
-For a complete `build/install/create setup.exe`, in a `MinGW64` shell you can run:
-```bash
-$ bash ci/win_build_cmake.sh
+To build NEURON, please remember to check that the environment variables for MPI are set
+correctly, and make note of the Python versions you installed. Configure the build with:
+```powershell
+cmake -B build -S . `
+    -DCMAKE_BUILD_TYPE=Release `
+    -DNRN_ENABLE_INTERVIEWS=ON `
+    -DNRN_ENABLE_MPI_DYNAMIC=ON `
+    -DNRN_ENABLE_MPI=ON `
+    -DNRN_ENABLE_PYTHON_DYNAMIC=ON `
+    -DNRN_ENABLE_PYTHON=ON `
+    -DNRN_ENABLE_RX3D=ON `
+    -DNRN_PYTHON_DYNAMIC="c:/Python38/python.exe;c:/Python39/python.exe;c:/Python310/python.exe;c:/Python311/python.exe" `
+    -DNRN_RX3D_OPT_LEVEL=2 `
+    -DCYTHON_EXECUTABLE="c:/Python38/Scripts/cython.exe"
+    -DPYTHON_EXECUTABLE="c:/Python38/python.exe"
 ```
-As you can see in the script, a typical configuration would be:
-```bash
-/mingw64/bin/cmake .. \
-	-G 'Unix Makefiles'  \
-	-DNRN_ENABLE_MPI_DYNAMIC=ON  \
-	-DNRN_ENABLE_MPI=ON  \
-	-DCMAKE_PREFIX_PATH='/c/msmpi'  \
-	-DNRN_ENABLE_INTERVIEWS=ON  \
-	-DNRN_ENABLE_PYTHON=ON  \
-	-DNRN_ENABLE_RX3D=ON  \
-	-DNRN_RX3D_OPT_LEVEL=2 \
-	-DPYTHON_EXECUTABLE=/c/Python39/python.exe \
-	-DNRN_ENABLE_PYTHON_DYNAMIC=ON  \
-	-DNRN_PYTHON_DYNAMIC='c:/Python39/python.exe;c:/Python310/python.exe;c:/Python311/python.exe'  \
-	-DCMAKE_INSTALL_PREFIX='/c/nrn-install' \
-	-DMPI_CXX_LIB_NAMES:STRING=msmpi \
-	-DMPI_C_LIB_NAMES:STRING=msmpi \
-	-DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib
+And then build, using the `Release` configuration:
 ```
+cmake --build build --config Release
+```
+Note that while there is a `Debug` configuration, it will require debug Python builds.
+
 To create the Windows installer, you need to run:
 ```bash
 make install
@@ -132,21 +106,6 @@ Points of interest:
 	libstdc++.dll.a
 	'
 	```
-
-### Windows CI has a new build failure without any code change
-
-GitHub/Azure runners are regularly updated. MSYS2 is already installed on the system with a specfic `pacman` cache at the time the runner images are built. As a consequence, some packages may not play well with the new environment.
-
-First line of attack is to compare successful and failed builds to see what changed. If the issue is related to a new package, one approach is to update the MSYS2 cache in `ci/win_install_deps.cmd` by uncommenting the following line:
-```powershell
-:: update pacman cache (sometimes required when new GH/Azure runner images are deployed)
-:: %MSYS2_ROOT%\usr\bin\pacman -Syy
-```
-
-Downsides:
-* slower CIs (more time to install new things from cache gradually over time)
-* hit issues sooner rather than later (but then we can disable the cache update)
-
 
 ### association.hoc test failed
 

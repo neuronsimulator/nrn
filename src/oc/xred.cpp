@@ -69,7 +69,7 @@ double hoc_xred(const char* prompt, double defalt, double min, double max) {
     for (;;) {
         IGNORE(fprintf(stderr, "%s (%-.5g)", prompt, defalt));
 #ifdef WIN32
-        if (gets(istr) != NULL) {
+        if (gets_s(istr, 80) != NULL) {
             strcat(istr, "\n");
 #else
         if (fgets(istr, 79, stdin) != NULL) {
@@ -136,7 +136,7 @@ int hoc_sred(const char* prompt, char* defalt, char* charlist) {
     for (;;) {                                              /* cycle until done */
         IGNORE(fprintf(stderr, "%s (%s)", prompt, defalt)); /* print prompt */
 #ifdef WIN32
-        if (gets(istr) != NULL) {
+        if (gets_s(istr, 80) != NULL) {
             strcat(istr, "\n");
 #else
         if (fgets(istr, 79, stdin) != NULL) { /* read input */

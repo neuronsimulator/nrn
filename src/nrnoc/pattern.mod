@@ -149,8 +149,8 @@ VERBATIM
 static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargsproto_){}
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_){}
 
-Info* nrn_patternstim_info_ref(Datum* _ppvar) {
+void* nrn_patternstim_info_ref(Datum* _ppvar) {
     // CoreNEURON PatternStim will use this Info*
-    return static_cast<Info*>(_p_ptr);
+    return static_cast<void*>(_p_ptr);
 }
 ENDVERBATIM

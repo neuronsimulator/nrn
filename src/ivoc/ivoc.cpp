@@ -172,7 +172,7 @@ char* cxx_char_alloc(size_t sz) {
 }
 
 
-#ifndef MINGW  // actual implementation in ivocwin.cpp
+#ifndef WIN32  // actual implementation in ivocwin.cpp
 void nrniv_bind_thread() {
     hoc_pushx(1.);
     hoc_ret();
@@ -258,7 +258,7 @@ if (WidgetKit::instance()->style()->find_attribute(gargstr(1)+1, s)) {
     hoc_pushx(1.);
 }
 
-#if !defined(MINGW)
+#if !defined(WIN32)
 /*static*/ class ReqErr1: public ReqErr {
   public:
     ReqErr1();
@@ -293,7 +293,7 @@ void ReqErr1::Error() {
 static ReqErr1* reqerr1;
 #endif
 
-#ifdef MINGW
+#ifdef WIN32
 static HandleStdin* hsd_;
 void winio_key_press() {
     hsd_->inputReady(1);
@@ -322,7 +322,7 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
         reqerr1 = new ReqErr1;
         reqerr1->Install();
 #endif
-#if defined(MINGW)
+#if defined(WIN32)
         hsd_ = handleStdin_ = new HandleStdin;
 #else
         handleStdin_ = new HandleStdin;
@@ -346,7 +346,7 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
 Oc::~Oc() {
     MUTLOCK
     if (--refcnt_ == 0) {
-#if !defined(MINGW)
+#if !defined(WIN32)
         if (reqerr1 && reqerr1->count()) {
             fprintf(stderr, "total X Errors: %d\n", reqerr1->count());
         }
@@ -486,13 +486,13 @@ void single_event_run() {
     WinDismiss::dismiss_defer();  // in case window was dismissed
 }
 
-#ifdef MINGW
+#ifdef WIN32
 extern void nrniv_bind_call(void);
 #endif
 
 void hoc_notify_iv() {
     if (hoc_usegui) {
-#ifdef MINGW
+#ifdef WIN32
         if (!nrn_is_gui_thread()) {
             // allow gui thread to run
             nrnpy_pass();
