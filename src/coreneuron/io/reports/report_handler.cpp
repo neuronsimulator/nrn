@@ -264,8 +264,8 @@ void append_sections_to_to_report(const std::shared_ptr<SecMapping>& sections,
             }
         } else if (report_conf.compartments == Compartments::Center) {
             nrn_assert(segment_ids.size() % 2 &&
-            "Section with an even number of compartments. I cannot pick the middle one. "
-            "This was not expected");
+                       "Section with an even number of compartments. I cannot pick the middle one. "
+                       "This was not expected");
             // corresponding voltage in coreneuron voltage array
             const auto segment_id = segment_ids[segment_ids.size() / 2];
             double* variable = report_variable + segment_id;
