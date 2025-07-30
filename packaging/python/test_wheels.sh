@@ -105,6 +105,7 @@ run_serial_test () {
 
     # Test 3: run coreneuron binary shipped inside wheel
     if [[ "$has_coreneuron" == "true" ]]; then
+        $python_exe -c "from neuron.tests import test_nmodl; test_nmodl.test_nmodl()"
         HOC_LIBRARY_PATH=${PWD}/test/ringtest nrniv test/ringtest/ring.hoc
         mv out.dat out.nrn.dat
         nrniv-core --datpath .
@@ -190,7 +191,7 @@ run_parallel_test() {
       run_mpi_test "mpirun.mpich" "MPICH" ""
       # choose openmpi
       sudo update-alternatives --set mpi-${ARCH_DIR}-linux-gnu /usr/lib/${ARCH_DIR}-linux-gnu/openmpi/include
-      run_mpi_test "mpirun.openmpi" "OpenMPI" ""
+      run_mpi_test "mpirun.openmpi --oversubscribe" "OpenMPI" ""
 
     # linux desktop or docker container used for wheel
     else
