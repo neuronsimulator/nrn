@@ -17,17 +17,7 @@ if pc.id_world() == 0:
     print("id_world nhost_world id_bbs nhost_bbs ibbs nbbs  id  nhost")
 
 print(
-    "%5d %9d %8d %8d %7d %3d %5d %4d"
-    % (
-        pc.id_world(),
-        pc.nhost_world(),
-        pc.id_bbs(),
-        pc.nhost_bbs(),
-        ibbs,
-        nbbs + x,
-        pc.id(),
-        pc.nhost(),
-    )
+    f"{pc.id_world():5d} {pc.nhost_world():9d} {pc.id_bbs():8d} {pc.nhost_bbs():8d} {ibbs:7d} {nbbs + x:3d} {pc.id():5d} {pc.nhost():4d}"
 )
 
 assert pc.nhost() == (subsize if ibbs < nbbs else (pc.nhost_world() - subsize * nbbs))
@@ -39,7 +29,7 @@ assert pc.id_bbs() == (ibbs if pc.id() == 0 else -1)
 
 
 def f(arg):
-    print("f(%s) id_world=%d id=%d" % (str(arg), pc.id_world(), pc.id()))
+    print(f"f({str(arg)}) id_world={pc.id_world():d} id={pc.id():d}")
     return (arg, pc.id_world(), pc.id())
 
 
@@ -54,7 +44,7 @@ def gcntxt(arg):
 
 def gtest(arg):
     if x != int(arg):
-        h.execerror("gtest %d != %d" % (x, int(arg)))
+        h.execerror(f"gtest {x:d} != {int(arg):d}")
         pass
     # print("gtest x=%d id_world=%d" % (x, pc.id_world()))
 
@@ -62,11 +52,11 @@ def gtest(arg):
 pc.runworker()
 
 for i in range(5):
-    pc.submit(f, "submit %d" % i)
+    pc.submit(f, f"submit {i:d}")
 hs = h.ref("")
 while pc.working():
     pc.upkstr(hs)
-    print("working returned %s (submit passed %s)" % (str(pc.pyret()), hs[0]))
+    print(f"working returned {str(pc.pyret())} (submit passed {hs[0]})")
 
 pc.context(gcntxt, 6)
 

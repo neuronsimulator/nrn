@@ -251,20 +251,9 @@ class Reaction(GeneralizedReaction):
             regions_short = (
                 "[" + ", ".join(r._short_repr() for r in self._regions) + "]"
             )
-            return "Reaction(%s, %s, rate_b=%s, regions=%s, custom_dynamics=%r)" % (
-                self._scheme,
-                short_f,
-                short_b,
-                regions_short,
-                self._custom_dynamics,
-            )
+            return f"Reaction({self._scheme}, {short_f}, rate_b={short_b}, regions={regions_short}, custom_dynamics={self._custom_dynamics!r})"
         else:
-            return "Reaction(%s, %s, rate_b=%s, custom_dynamics=%r)" % (
-                self._scheme,
-                short_f,
-                short_b,
-                self._custom_dynamics,
-            )
+            return f"Reaction({self._scheme}, {short_f}, rate_b={short_b}, custom_dynamics={self._custom_dynamics!r})"
 
     def _do_memb_scales(self):
         # nothing to do since NEVER a membrane flux

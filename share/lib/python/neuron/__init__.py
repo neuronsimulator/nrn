@@ -373,7 +373,7 @@ def load_mechanisms(path, warn_if_already_loaded=True):
     global nrn_dll_loaded
     if path in nrn_dll_loaded:
         if warn_if_already_loaded:
-            print("Mechanisms already loaded from path: %s.  Aborting." % path)
+            print(f"Mechanisms already loaded from path: {path}.  Aborting.")
         return True
 
     # in case NEURON is assuming a different architecture to Python,
@@ -393,16 +393,16 @@ def load_mechanisms(path, warn_if_already_loaded=True):
             n.nrn_load_dll(lib_path)
             nrn_dll_loaded.append(path)
             return True
-    print("NEURON mechanisms not found in %s." % path)
+    print(f"NEURON mechanisms not found in {path}.")
     return False
 
 
 if "NRN_NMODL_PATH" in os.environ:
     nrn_nmodl_path = os.environ["NRN_NMODL_PATH"].split(":")
     print("Auto-loading mechanisms:")
-    print("NRN_NMODL_PATH=%s" % os.environ["NRN_NMODL_PATH"])
+    print(f"NRN_NMODL_PATH={os.environ['NRN_NMODL_PATH']}")
     for x in nrn_nmodl_path:
-        # print "from path %s:" % x
+        # print f"from path {x}:"
         load_mechanisms(x)
         # print "\n"
     print("Done.\n")
@@ -444,7 +444,7 @@ def new_point_process(name, doc=None):
 
     doc - specify a docstring for the new pointprocess class
     """
-    h("obfunc new_%s() { return new %s($1) }" % (name, name))
+    h(f"obfunc new_{name}() {{ return new {name}($1) }}")
 
     class someclass(Wrapper):
         __doc__ = doc
@@ -452,7 +452,7 @@ def new_point_process(name, doc=None):
         def __init__(self, section, position=0.5):
             assert 0 <= position <= 1
             section.push()
-            self.__dict__["hoc_obj"] = getattr(n, "new_%s" % name)(
+            self.__dict__["hoc_obj"] = getattr(n, f"new_{name}")(
                 position
             )  # have to put directly in __dict__ to avoid infinite recursion with __getattr__
             n.pop_section()
@@ -468,13 +468,13 @@ def new_hoc_class(name, doc=None):
 
     doc - specify a docstring for the new hoc class
     """
-    h("obfunc new_%s() { return new %s() }" % (name, name))
+    h(f"obfunc new_{name}() {{ return new {name}() }}")
 
     class someclass(Wrapper):
         __doc__ = doc
 
         def __init__(self, **kwargs):
-            self.__dict__["hoc_obj"] = getattr(h, "new_%s" % name)()
+            self.__dict__["hoc_obj"] = getattr(h, f"new_{name}")()
             for k, v in list(kwargs.items()):
                 setattr(self.hoc_obj, k, v)
 
@@ -595,7 +595,7 @@ def nrn_dll(printpath=False):
     try:
         # extended? if there is a __file__, then use that
         if printpath:
-            print("hoc.__file__ %s" % _original_hoc_file)
+            print(f"hoc.__file__ {_original_hoc_file}")
         the_dll = ctypes.pydll[_original_hoc_file]
         return the_dll
     except:
@@ -603,7 +603,7 @@ def nrn_dll(printpath=False):
 
     success = False
     if sys.platform == "msys" or sys.platform == "win32":
-        p = "hoc%d%d" % (sys.version_info[0], sys.version_info[1])
+        p = f"hoc{sys.version_info[0]}{sys.version_info[1]}"
     else:
         p = "hoc"
 
@@ -691,7 +691,7 @@ def _create_sections_in_obj(obj, name, numsecs):
     setattr(
         obj,
         name,
-        [n.Section(name="%s[%d]" % (name, i), cell=obj) for i in range(int(numsecs))],
+        [n.Section(name=f"{name}[{i}]", cell=obj) for i in range(int(numsecs))],
     )
 
 
@@ -987,7 +987,7 @@ class _PlotShapePlot(_WrapperPlot):
                                 val = _get_variable_seg(seg, variable)
                                 vals.append(val)
                                 if val is not None:
-                                    lines[line] = "%s at %s" % (val, seg)
+                                    lines[line] = f"{val} at {seg}"
                                 else:
                                     lines[line] = str(seg)
                             else:
@@ -1205,7 +1205,7 @@ class _PlotShapePlot(_WrapperPlot):
                         val = _get_variable_seg(seg, variable)
                         hover_template = str(seg)
                         if val is not None:
-                            hover_template += "<br>" + ("%.3f" % val)
+                            hover_template += "<br>" + f"{val:.3f}"
                         if color is None:
                             col = _get_color(variable, val, cmap, lo, hi, val_range)
                         else:
@@ -1272,7 +1272,7 @@ class DensityMechanism:
             pass
 
     def __repr__(self):
-        return "neuron.DensityMechanism(%r)" % self.__name
+        return f"neuron.DensityMechanism({self.__name!r})"
 
     def __dir__(self):
         my_dir = ["code", "file", "insert", "uninsert", "__repr__", "__str__"]
