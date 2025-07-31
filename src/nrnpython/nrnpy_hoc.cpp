@@ -1035,14 +1035,14 @@ static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname) {
                 // Fallback
                 docobj = nb::make_tuple("", "");
             }
-            
+
             nb::object result = nb::steal(PyObject_CallObject(pfunc_get_docstring, docobj.ptr()));
             return result.release().ptr();
         } else {
             return NULL;
         }
     }
-    
+
     // Fall back to the base type's getattro
     return PyType_Type.tp_getattro(self, pyname);
 }
