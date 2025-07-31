@@ -100,6 +100,7 @@ void nrn_object_ref(Object* obj);
 void nrn_object_unref(Object* obj);
 char const* nrn_class_name(const Object* obj);
 bool nrn_prop_exists(const Object* obj);
+double nrn_distance(Section* sec0, double x0, Section* sec1, double x1);
 
 /****************************************
  * Shape Plot

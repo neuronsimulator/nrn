@@ -373,6 +373,14 @@ bool nrn_prop_exists(const Object* obj) {
     return ob2pntproc_0(const_cast<Object*>(obj))->prop;
 }
 
+double nrn_distance(Section* sec0, double x0, Section* sec1, double x1) {
+    Node* node0 = node_exact(sec0, x0);
+    Node* node1 = node_exact(sec1, x1);
+    Section* dummy_sec = nullptr;
+    Node* dummy_node = nullptr;
+    return topol_distance(sec0, node0, sec1, node1, &dummy_sec, &dummy_node);
+}
+
 /****************************************
  * Plot Shape
  ****************************************/
