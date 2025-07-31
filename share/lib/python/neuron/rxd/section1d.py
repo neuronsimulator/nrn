@@ -154,10 +154,7 @@ class Section1D(rxdsection.RxDSection):
         self._region = r
         # NOTE: you must do _init_diffusion_rates after assigning parents
         self._rxd_sec_lookup = _SectionLookup()
-        if sec in self._rxd_sec_lookup:
-            self._rxd_sec_lookup[sec].append(self)
-        else:
-            self._rxd_sec_lookup[sec] = [self]
+        self._rxd_sec_lookup.setdefault(sec, []).append(self)
 
     @property
     def _sec(self):
