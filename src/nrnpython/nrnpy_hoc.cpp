@@ -130,6 +130,7 @@ static PyObject* nrnpy_rvp_pyobj_callback = NULL;
 PyTypeObject* hocobject_type;
 
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds);
+static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname);
 
 struct hocclass {
     PyTypeObject head;
@@ -167,6 +168,7 @@ static PyObject* hocclass_getitem(PyObject* self, Py_ssize_t ix) {
 static PyType_Slot hocclass_slots[] = {{Py_tp_base, nullptr},  // &PyType_Type : not obvious why it
                                                                // must be set at runtime
                                        {Py_tp_init, (void*) hocclass_init},
+                                       {Py_tp_getattro, (void*) hocclass_getattro},
                                        {Py_sq_item, (void*) hocclass_getitem},
                                        {0, NULL}};
 
@@ -1011,6 +1013,38 @@ static int setup_doc_system() {
         return 0;
     }
     return 1;
+}
+
+// Returns a new reference.
+static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname) {
+    hocclass* hclass = (hocclass*) self;
+    auto name = Py2NRNString::as_ascii(pyname);
+    char* n = name.c_str();
+    if (!n) {
+        Py2NRNString::set_pyerr(PyExc_TypeError, "attribute name must be a string");
+        return nullptr;
+    }
+
+    if (strcmp(n, "__doc__") == 0) {
+        if (setup_doc_system()) {
+            nb::object docobj;
+            if (hclass->sym) {
+                // For class types, pass the class name and empty string for symbol
+                docobj = nb::make_tuple("", hclass->sym->name);
+            } else {
+                // Fallback
+                docobj = nb::make_tuple("", "");
+            }
+            
+            nb::object result = nb::steal(PyObject_CallObject(pfunc_get_docstring, docobj.ptr()));
+            return result.release().ptr();
+        } else {
+            return NULL;
+        }
+    }
+    
+    // Fall back to the base type's getattro
+    return PyType_Type.tp_getattro(self, pyname);
 }
 
 // Most likely returns a new reference.
