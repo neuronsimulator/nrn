@@ -45,7 +45,8 @@ add_custom_command(
   DEPENDS "${NRN_MODLUNIT_SRC_DIR}/parse1.ypp"
   COMMENT "[BISON][modlunitparser] Building parser with bison ${BISON_VERSION}")
 
-add_custom_target(generated_source_files true)
+# Use echo "" as cross-platform noop for custom target.
+add_custom_target(generated_source_files echo "")
 add_custom_target(modlunit_generated_files DEPENDS "${NRN_MODLUNIT_GEN}/lex.cpp"
                                                    "${NRN_MODLUNIT_GEN}/parse1.cpp")
 add_dependencies(generated_source_files modlunit_generated_files)
@@ -402,7 +403,10 @@ include_directories(${NRN_INCLUDE_DIRS})
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
-target_compile_definitions(nrniv_lib PUBLIC NRN_DLL PRIVATE NRN_DLL_EXPORTS)
+target_compile_definitions(
+  nrniv_lib
+  PUBLIC NRN_DLL
+  PRIVATE NRN_DLL_EXPORTS)
 add_dependencies(nrniv_lib generated_source_files)
 add_cpp_git_information(nrniv_lib PRIVATE)
 target_link_libraries(nrniv_lib nrngnu)
@@ -443,8 +447,7 @@ if(NRN_WINDOWS_BUILD AND READLINE_FOUND)
 else()
   if(READLINE_FOUND)
     target_link_libraries(nrniv_lib ${Readline_LIBRARY})
-  # else()
-  #  target_link_libraries(nrniv_lib readline)
+    # else() target_link_libraries(nrniv_lib readline)
   endif()
 
   if(CURSES_FOUND)

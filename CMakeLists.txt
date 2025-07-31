@@ -383,6 +383,8 @@ endif()
 
 if(NOT MSVC)
   find_package(Readline REQUIRED)
+else()
+  add_compile_options("/bigobj")
 endif()
 if(READLINE_FOUND)
   # MAC libedit.3.dylib does not have rl_event_hook Readline_LIBRARY may be a binary lib or (on the
