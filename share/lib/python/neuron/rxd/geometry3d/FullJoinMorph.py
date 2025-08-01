@@ -49,7 +49,6 @@ def sort_spheres_last(item):
 
 
 def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
-
     """Input: object source; arguments to pass to ctng
     Output: all voxels with SA and volume associated, categorized by segment"""
     source = list(source)
@@ -67,8 +66,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
         grid = mesh_grid
         if grid["dx"] != dx or grid["dy"] != dx or grid["dz"] != dx:
             raise RxDException(
-                "Error: Inconsistent vocalization. Mesh grid voxels (%g, %g, %g) differs from requested dx (%g, %g %g),",
-                (grid["dx"], grid["dy"], grid["dz"], dx, dx, dx),
+                f"Error: Inconsistent vocalization. Mesh grid voxels ({grid['dx']:g}, {grid['dy']:g}, {grid['dz']:g}) differs from requested dx ({dx:g}, {dx:g}, {dx:g}),"
             )
     else:
 

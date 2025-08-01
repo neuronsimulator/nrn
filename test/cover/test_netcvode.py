@@ -83,7 +83,7 @@ def node():
     ]
 
     def ev(*arg):
-        print("ev t=%g v=%g x=%g nc.x=%g" % (h.t, s(0.5).v, src.x, nc.x))
+        print(f"ev t={h.t:g} v={s(0.5).v:g} x={src.x:g} nc.x={nc.x:g}")
         ref_t, ref_x = results[arg[0]][arg[1]]
         assert math.isclose(h.t, ref_t, rel_tol=1e-15)
         assert math.isclose(src.x, ref_x, rel_tol=1e-13)
@@ -96,7 +96,7 @@ def node():
         )
         method = 0 if cv.active() == 0 else 2 if cv.use_local_dt() else 1
         if cv.active():
-            type += " condition_order %d" % cv.condition_order()
+            type += f" condition_order {cv.condition_order()}"
             order = 0 if cv.condition_order() == 1 else 1
         nc.record((ev, (order, method)))
         print("\n" + type, "  thresh ", nc.threshold)
@@ -554,10 +554,10 @@ def integrator_properties():
 
     cv.rtol(1e-3)
     cv.atol(0)
-    run1("rtol=%g atol=%g" % (cv.rtol(), cv.atol()))
+    run1(f"rtol={cv.rtol():g} atol={cv.atol():g}")
     cv.rtol(0)
     cv.atol(1e-3)
-    run1("rtol=%g atol=%g" % (cv.rtol(), cv.atol()))
+    run1(f"rtol={cv.rtol():g} atol={cv.atol():g}")
     del s
 
     net = Net(2)
@@ -579,7 +579,7 @@ def integrator_properties():
     cv.use_local_dt(0)
     for stiff in range(3):
         cv.stiff(stiff)
-        run2("stiff=%d" % (cv.stiff(),))
+        run2(f"stiff={cv.stiff()}")
 
     # maxorder, minstep, maxstep
     for lvardt in [1, 0]:
