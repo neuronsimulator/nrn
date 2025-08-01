@@ -623,23 +623,6 @@ def _update_node_data(force=False, newspecies=False):
                 _setup_memb_currents()
 
 
-def _matrix_to_rxd_sparse(m):
-    """precondition: assumes m a numpy array"""
-    nonzero_i, nonzero_j = list(zip(*list(m.keys())))
-    nonzero_values = numpy.ascontiguousarray(list(m.values()), dtype=float)
-
-    # number of rows
-    n = m.shape[1]
-
-    return (
-        n,
-        len(nonzero_i),
-        numpy.ascontiguousarray(nonzero_i, dtype=ctypes.c_long),
-        numpy.ascontiguousarray(nonzero_j, dtype=ctypes.c_long),
-        nonzero_values,
-    )
-
-
 def _get_root(sec):
     while sec is not None:
         last_sec = sec
