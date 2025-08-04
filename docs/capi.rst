@@ -64,13 +64,13 @@ Sections
 
 .. c:function:: Section* nrn_section_new(const char* name)
 
-    Create a new section with the given name. Sections are the fundamental building blocks
+    Create a new Section with the given name. Sections are the fundamental building blocks
     of NEURON morphologies, representing cable segments of neurons. HOC functions can
     see the Section name but they cannot be referred to directly in HOC like a Section created
     in HOC (i.e., they do not occupy the HOC namespace). The returned Section pointer is used
-    in subsequent operations to reference the section.
+    in subsequent operations to reference the Section.
 
-    :param name: Name of the new section (must be unique within the model).
+    :param name: Name of the new Section (must be unique within the model).
     :returns: Pointer to the newly created Section object.
 
     **C Usage:**
@@ -90,15 +90,15 @@ Sections
 
 .. c:function:: void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x)
 
-    Connect a child section to a parent section at specified locations. This defines
+    Connect a child Section to a parent Section at specified locations. This defines
     the topological structure of the neuron. Typically, dendrites and axons
     are connected to the soma, and further branches are connected to primary dendrites.
     That is, the 0 end of the child is usually connected to the 1 end of the parent.
 
-    :param child_sec: Pointer to the child section to be connected.
-    :param child_x: Connection point on child section (must be either 0 or 1, but typically 0).
-    :param parent_sec: Pointer to the parent section.
-    :param parent_x: Connection point on parent section (any value between 0 and 1, but typically 1).
+    :param child_sec: Pointer to the child Section to be connected.
+    :param child_x: Connection point on child Section (must be either 0 or 1, but typically 0).
+    :param parent_sec: Pointer to the parent Section.
+    :param parent_x: Connection point on parent Section (any value between 0 and 1, but typically 1).
 
 
     **C Usage:**
@@ -117,9 +117,9 @@ Sections
 
 .. c:function:: void nrn_section_length_set(Section* sec, double length)
 
-    Set the length of a section in microns.
+    Set the length of a Section in microns.
 
-    :param sec: Pointer to the section.
+    :param sec: Pointer to the Section.
     :param length: Length in microns.
 
     **C Usage:**
@@ -138,10 +138,10 @@ Sections
 
 .. c:function:: double nrn_section_length_get(Section* sec)
 
-    Get the length of a section in microns.
+    Get the length of a Section in microns.
 
-    :param sec: Pointer to the section.
-    :returns: Length of the section in microns.
+    :param sec: Pointer to the Section.
+    :returns: Length of the Section in microns.
 
     **C Usage:**
     
@@ -157,11 +157,11 @@ Sections
 
 .. c:function:: double nrn_section_Ra_get(Section* sec)
 
-    Get the axial resistance (Ra) of a section in ohm⋅cm.
-    Ra represents the resistance of the cytoplasm along the length of the section.
+    Get the axial resistance (Ra) of a Section in ohm⋅cm.
+    Ra represents the resistance of the cytoplasm along the length of the Section.
     Lower values indicate better electrical connectivity.
 
-    :param sec: Pointer to the section.
+    :param sec: Pointer to the Section.
     :returns: Axial resistance in ohm⋅cm.
 
     **C Usage:**
@@ -177,9 +177,9 @@ Sections
 
 .. c:function:: void nrn_section_Ra_set(Section* sec, double val)
 
-    Set the axial resistance (Ra) of a section in ohm⋅cm.
+    Set the axial resistance (Ra) of a Section in ohm⋅cm.
 
-    :param sec: Pointer to the section.
+    :param sec: Pointer to the Section.
     :param val: Axial resistance value in ohm⋅cm.
 
     **C Usage:**
@@ -196,9 +196,9 @@ Sections
 
 .. c:function:: double nrn_section_rallbranch_get(const Section* sec)
 
-    Get the Rallbranch value of a section. This is used in models with branching corrections.
+    Get the Rallbranch value of a Section. This is used in models with branching corrections.
 
-    :param sec: Pointer to the section.
+    :param sec: Pointer to the Section.
     :returns: Rallbranch value.
 
     .. note:: 
@@ -208,23 +208,23 @@ Sections
 
 .. c:function:: void nrn_section_rallbranch_set(Section* sec, double val)
 
-    Set the Rallbranch value of a section.
+    Set the Rallbranch value of a Section.
 
-    :param sec: Pointer to the section.
+    :param sec: Pointer to the Section.
     :param val: Rallbranch value to set.
 
 .. c:function:: char const* nrn_secname(Section* sec)
 
-    Get the name of a section.
+    Get the name of a Section.
 
-    :param sec: Pointer to the section.
-    :returns: Null-terminated string containing the section name.
+    :param sec: Pointer to the Section.
+    :returns: Null-terminated string containing the Section name.
 
     **Usage Pattern:**
 
-    Used for debugging, logging, or displaying section information.
+    Used for debugging, logging, or displaying Section information.
     Inside of a loop, this is sometimes used to identify the Section category
-    (e.g., does the section name start with ``dend``? If so, maybe we have a special
+    (e.g., does the Section name start with ``dend``? If so, maybe we have a special
     rule for how to handle dendrites), but that effect could also be obtained by
     using a SectionList.
 
@@ -244,18 +244,18 @@ Sections
 
 .. c:function:: void nrn_section_push(Section* sec)
 
-    Push a section onto the section stack, making it the currently accessed section.
-    Many NEURON operations work on the currently accessed section.
+    Push a Section onto the Section stack, making it the currently accessed Section.
+    Many NEURON operations work on the currently accessed Section.
 
-    :param sec: Pointer to the section to push.
+    :param sec: Pointer to the Section to push.
 
     **Usage Pattern:**
 
-    Used when you need to perform operations that require a section to be "currently accessed."
+    Used when you need to perform operations that require a Section to be "currently accessed."
     Always pair with ``nrn_section_pop()`` to restore the previous state.
 
-    A call to a NEURON function from Python with a ``sec=`` effectively pushes the section,
-    runs the function, and then pops the section.
+    A call to a NEURON function from Python with a ``sec=`` effectively pushes the Section,
+    runs the function, and then pops the Section.
 
     **C Usage:**
     
@@ -263,7 +263,7 @@ Sections
     
         nrn_section_push(soma);           // Make soma current
         // Perform operations on the soma
-        nrn_section_pop();                // Restore previous section
+        nrn_section_pop();                // Restore previous Section
 
     .. seealso::
     
@@ -271,11 +271,11 @@ Sections
 
 .. c:function:: void nrn_section_pop(void)
 
-    Pop the top section from the section stack, restoring the previously accessed section.
+    Pop the top Section from the Section stack, restoring the previously accessed Section.
 
     **Usage Pattern:**
 
-    Always used after ``nrn_section_push()`` to restore the section stack state.
+    Always used after ``nrn_section_push()`` to restore the Section stack state.
 
     .. seealso::
     
@@ -283,15 +283,15 @@ Sections
 
 .. c:function:: void nrn_mechanism_insert(Section* sec, const Symbol* mechanism)
 
-    Insert a density mechanism into a section. 
+    Insert a density mechanism into a Section. 
 
-    :param sec: Pointer to the target section.
+    :param sec: Pointer to the target Section.
     :param mechanism: Symbol representing the mechanism to insert.
 
     **Usage Pattern:**
-    Used to add biophysical properties to sections. 
-    Density mechanisms are present at all locations within the section, but their
-    properties (when specified as RANGE) may vary within the section.
+    Used to add biophysical properties to Sections. 
+    Density mechanisms are present at all locations within the Section, but their
+    properties (when specified as RANGE) may vary within the Section.
     Built-in mechanisms include 'pas' (passive) and 'hh' (Hodgkin-Huxley). 
     Others are available from many sources, including `ModelDB <https://modeldb.science>`_ 
     and `Channelpedia <https://channelpedia.epfl.ch>`_.
@@ -319,18 +319,18 @@ Sections
 
 .. c:function:: nrn_Item* nrn_allsec(void)
 
-    Get all sections in the current model.
+    Get all Sections in the current model.
 
-    :returns: Pointer to a ``nrn_Item`` containing the list of all sections.
+    :returns: Pointer to a ``nrn_Item`` containing the list of all Sections.
 
     **Usage Pattern:**
 
-    Used with :c:func:`nrn_sectionlist_iterator_new` to iterate over all sections
+    Used with :c:func:`nrn_sectionlist_iterator_new` to iterate over all Sections
     in the model, often for applying operations globally or for analysis purposes.
     This is equivalent to using ``n.allsec()`` in Python and shares the same caveats.
-    In particular, future versions of the model may introduce new sections whose
+    In particular, future versions of the model may introduce new Sections whose
     properties would be different, so consider using specifically chosen SectionLists
-    instead of looping over all sections.
+    instead of looping over all Sections.
 
     **C Usage:**
     
@@ -341,7 +341,7 @@ Sections
         SectionListIterator* iter = nrn_sectionlist_iterator_new(all_sections);
         while (!nrn_sectionlist_iterator_done(iter)) {
             Section* sec = nrn_sectionlist_iterator_next(iter);
-            // Process section
+            // Process Section
         }
         nrn_sectionlist_iterator_free(iter);
 
@@ -350,13 +350,13 @@ Sections
     .. code-block:: python
     
         for sec in n.allsec():
-            # Process section
+            # Process Section
             pass
 
 .. c:function:: nrn_Item* nrn_sectionlist_data(const Object* obj)
 
     Given a NEURON ``SectionList`` object, return a ``nrn_Item*`` that can be used to
-    loop over the sections.
+    loop over the Sections.
 
     :param obj: Pointer to a SectionList object.
     :returns: ``nrn_Item*`` suitable for iteration.
@@ -366,42 +366,42 @@ Sections
 
 .. c:function:: bool nrn_section_is_active(const Section* sec)
 
-    Check if a section is active (exists and is valid).
+    Check if a Section is active (exists and is valid).
 
-    :param sec: Pointer to the section to check.
-    :returns: ``true`` if the section is active, ``false`` otherwise.
+    :param sec: Pointer to the Section to check.
+    :returns: ``true`` if the Section is active, ``false`` otherwise.
 
     **Usage Pattern:**
 
-    Used for validation before performing operations on sections, especially
-    when sections might have been deleted or are from external sources.
-    Inactive sections might arise if the section has been explicitly deleted
+    Used for validation before performing operations on Sections, especially
+    when Sections might have been deleted or are from external sources.
+    Inactive Sections might arise if the Section has been explicitly deleted
     but is referenced in a SectionList. Each iteration over a SectionList
-    checks for inactive sections and removes them (they are not returned).
+    checks for inactive Sections and removes them (they are not returned).
     Only after there are no references to a deleted Section will its memory be freed.
 
 .. c:function:: Section* nrn_cas(void)
 
-    Get the currently accessed section (top of the section stack).
+    Get the currently accessed Section (top of the Section stack).
 
-    :returns: Pointer to the currently accessed section, or NULL if stack is empty.
+    :returns: Pointer to the currently accessed Section, or NULL if stack is empty.
 
     **Usage Pattern:**
 
-    Used to determine which section is currently active for operations that
-    depend on the section stack state.
+    Used to determine which Section is currently active for operations that
+    depend on the Section stack state.
 
     **C Usage:**
     
     .. code-block:: c
     
-        Section* current_sec = nrn_cas();  // Get currently accessed section
+        Section* current_sec = nrn_cas();  // Get currently accessed Section
 
     **Python Equivalent:**
     
     .. code-block:: python
     
-        current_sec = n.cas()  # Get currently accessed section
+        current_sec = n.cas()  # Get currently accessed Section
 
 
 Segments
@@ -409,11 +409,11 @@ Segments
 
 .. c:function:: int nrn_nseg_get(const Section* sec)
 
-    Get the number of segments in a section. Segments are computational compartments
-    within a section used for numerical integration.
+    Get the number of segments in a Section. Segments are computational compartments
+    within a Section used for numerical integration.
 
-    :param sec: Pointer to the section.
-    :returns: Number of segments in the section.
+    :param sec: Pointer to the Section.
+    :returns: Number of segments in the Section.
 
     **Usage Pattern:**
 
@@ -435,17 +435,17 @@ Segments
 
 .. c:function:: void nrn_nseg_set(Section* sec, int nseg)
 
-    Set the number of segments in a section.
+    Set the number of segments in a Section.
 
-    :param sec: Pointer to the section.
+    :param sec: Pointer to the Section.
     :param nseg: Number of segments to set (must be ≥ 1).
 
     **Usage Pattern:**
 
     Typically set based on the d-lambda rule or manual specification for accuracy.
-    Common values are 1, 3, 5, etc. (We recommend using odd numbers for nseg so
-    that there is always a node centered around the section center. With an even number of segments,
-    the center node would be at the border between two segments.))
+    Common values are 1, 3, 5, etc. (We recommend using odd numbers for nseg, so
+    that there is always a node centered around the Section center. With an even number of segments,
+    the center node would be at the border between two segments.)
 
     **C Usage:**
     
@@ -463,16 +463,16 @@ Segments
 
 .. c:function:: void nrn_segment_diam_set(Section* sec, double x, double diam)
 
-    Set the diameter of a segment (specified as normalized position x along the section).
+    Set the diameter of a segment (specified as normalized position x along the Section).
 
-    :param sec: Pointer to the section.
-    :param x: Normalized position along section (0.0 to 1.0).
+    :param sec: Pointer to the Section.
+    :param x: Normalized position along Section (0.0 to 1.0).
     :param diam: Diameter in microns.
 
     **Usage Pattern:**
 
-    Used to define the morphological shape of sections. The diameter can vary
-    along the length of a section to model tapering dendrites or axons.
+    Used to define the morphological shape of Sections. The diameter can vary
+    along the length of a Section to model tapering dendrites or axons.
 
     **C Usage:**
     
@@ -481,7 +481,7 @@ Segments
         // Set at specific location
         nrn_segment_diam_set(soma, 0.5, 25.0);  // Set diameter at middle to 25 μm
 
-        // set diameter for all of dend uniformly
+        // Set diameter for all of dend uniformly
         int nseg = nrn_nseg_get(dend);
         for (int i = 0; i < nseg; i++) {
             double x = (i + 0.5) / nseg;
@@ -493,7 +493,7 @@ Segments
     .. code-block:: python
     
         # Set at specific location
-        soma(0.5).diam = 25   # Set diameter at middle of section
+        soma(0.5).diam = 25   # Set diameter at middle of Section
 
         # Set diameter everywhere
         dend.diam = 10
@@ -506,10 +506,10 @@ Segments
 
 .. c:function:: double nrn_segment_diam_get(Section* sec, double x)
 
-    Get the diameter of a segment at normalized position x along the section.
+    Get the diameter of a segment at normalized position x along the Section.
 
-    :param sec: Pointer to the section.
-    :param x: Normalized position along section (0.0 to 1.0).
+    :param sec: Pointer to the Section.
+    :param x: Normalized position along Section (0.0 to 1.0).
     :returns: Diameter in microns at the specified position.
 
     **C Usage:**
@@ -522,16 +522,16 @@ Segments
     
     .. code-block:: python
     
-        diameter = soma(0.5).diam  # Get diameter at middle of section
+        diameter = soma(0.5).diam  # Get diameter at middle of Section
 
 .. c:function:: void nrn_rangevar_push(Symbol* sym, Section* sec, double x)
 
-    Push a range variable for a section at position x onto the NEURON stack.
-    Range variables are properties that can vary along the length of a section.
+    Push a range variable for a Section at position x onto the NEURON stack.
+    Range variables are properties that can vary along the length of a Section.
 
     :param sym: Symbol representing the range variable.
-    :param sec: Pointer to the section.
-    :param x: Normalized position along section (0.0 to 1.0).
+    :param sec: Pointer to the Section.
+    :param x: Normalized position along Section (0.0 to 1.0).
 
     **Usage Pattern:**
 
@@ -543,7 +543,7 @@ Segments
     .. code-block:: c
     
         // Push the range variable for soma(0.5).v onto the stack
-        // assumes soma is a Section* and we wish to record the voltage at 0.5 over time
+        // Assumes soma is a Section* and we wish to record the voltage at 0.5 over time
         Symbol* sym = nrn_symbol("v");
         nrn_rangevar_push(sym, soma, 0.5);
 
@@ -553,11 +553,11 @@ Segments
 
 .. c:function:: double nrn_rangevar_get(Symbol* sym, Section* sec, double x)
 
-    Get the value of a range variable at position x in a section.
+    Get the value of a range variable at position x in a Section.
 
     :param sym: Symbol representing the range variable.
-    :param sec: Pointer to the section.
-    :param x: Normalized position along section (0.0 to 1.0).
+    :param sec: Pointer to the Section.
+    :param x: Normalized position along Section (0.0 to 1.0).
     :returns: Value of the range variable at the specified position.
 
     **Usage Pattern:**
@@ -584,16 +584,16 @@ Segments
 
 .. c:function:: void nrn_rangevar_set(Symbol* sym, Section* sec, double x, double value)
 
-    Set the value of a range variable at position x in a section.
+    Set the value of a range variable at position x in a Section.
 
     :param sym: Symbol representing the range variable.
-    :param sec: Pointer to the section.
-    :param x: Normalized position along section (0.0 to 1.0).
+    :param sec: Pointer to the Section.
+    :param x: Normalized position along Section (0.0 to 1.0).
     :param value: Value to set for the range variable.
 
     **Usage Pattern:**
 
-    Used to configure biophysical properties of sections, such as:
+    Used to configure biophysical properties of Sections, such as:
     - Setting channel densities
     - Configuring passive properties
     - Initializing membrane voltages
@@ -606,7 +606,7 @@ Segments
         Symbol* v_sym = nrn_symbol("v");
         nrn_rangevar_set(v_sym, soma, 0.5, -65.0);  // mV
 
-        // set passive conductance at all segments of dend
+        // Set passive conductance at all segments of dend
         Symbol* g_pas_sym = nrn_symbol("g_pas");
         int nseg = nrn_nseg_get(dend);
         for (int i = 0; i < nseg; i++) {
@@ -622,7 +622,7 @@ Segments
         # Set initial voltage at the center of the soma
         soma(0.5).v = -65  # mV
 
-        # set passive conductance at all segments of dend
+        # Set passive conductance at all segments of dend
         for seg in dend:
             seg.g_pas = 0.001  # S/cm²
 
@@ -660,15 +660,14 @@ Functions, objects, and the stack
     .. code-block:: python
     
         # Access built-in NEURON functions
-        h.finitialize(-65)  # Initialize membrane voltage
-        h.fadvance()        # Advance simulation by one time step
+        n.finitialize(-65)  # Initialize membrane voltage
+        n.fadvance()        # Advance simulation by one time step
 
 .. c:function:: void nrn_symbol_push(Symbol* sym)
 
     Push a symbol onto the HOC execution stack.
 
     :param sym: Pointer to the symbol to push.
-
 
 .. c:function:: int nrn_symbol_type(const Symbol* sym)
 
@@ -782,9 +781,9 @@ Functions, objects, and the stack
     .. code-block:: python
     
         # Load stdrun.hoc using the NEURON API (Python version)
-        h.load_file("stdrun.hoc")
+        n.load_file("stdrun.hoc")
 
-.. c:function:: char** nrn_pop_str(void)
+.. c:function:: char** nrn_str_pop(void)
 
     Pop a string from the stack.
 
@@ -841,7 +840,6 @@ Functions, objects, and the stack
     before popping, or use the type of the function/method to know the expected return type in
     advance.
 
-
 .. c:function:: nrn_stack_types_t nrn_stack_type(void)
 
     Get the type of the value on top of the stack without removing it.
@@ -859,7 +857,7 @@ Functions, objects, and the stack
         :c:func:`nrn_double_ptr_pop`,
         :c:func:`nrn_int_pop`,
         :c:func:`nrn_object_pop`,
-        :c:func:`nrn_pop_str`
+        :c:func:`nrn_str_pop`
 
 .. c:function:: char const* nrn_stack_type_name(nrn_stack_types_t id)
 
@@ -902,8 +900,8 @@ Functions, objects, and the stack
     .. code-block:: python
     
         # Create NEURON objects
-        vec = h.Vector(100)           # Vector with 100 elements
-        iclamp = h.IClamp(soma(0))    # Current clamp at soma
+        vec = n.Vector(100)           # Vector with 100 elements
+        iclamp = n.IClamp(soma(0))    # Current clamp at soma
 
 .. c:function:: Symbol* nrn_method_symbol(const Object* obj, const char* name)
 
@@ -991,8 +989,8 @@ Functions, objects, and the stack
 
     .. code-block:: python
 
-        h.finitialize(-65)  # Initialize membrane voltage
-        h.fadvance()         # Advance simulation by one time step
+        n.finitialize(-65)  # Initialize membrane voltage
+        n.fadvance()        # Advance simulation by one time step
 
 .. c:function:: void nrn_object_ref(Object* obj)
 
@@ -1074,10 +1072,10 @@ Functions, objects, and the stack
     Compute the distance between two points in potentially different sections along the neuron.
     This calculates the path length through the dendritic tree between the specified points.
 
-    :param sec0: Pointer to the first section.
-    :param x0: Normalized position in first section (0.0 to 1.0).
-    :param sec1: Pointer to the second section.
-    :param x1: Normalized position in second section (0.0 to 1.0).
+    :param sec0: Pointer to the first Section.
+    :param x0: Normalized position in first Section (0.0 to 1.0).
+    :param sec1: Pointer to the second Section.
+    :param x1: Normalized position in second Section (0.0 to 1.0).
     :returns: Distance in microns along the morphological path.
 
     **Usage Pattern:**
@@ -1144,16 +1142,16 @@ Shape Plot
     
     .. code-block:: python
     
-        ps = h.PlotShape(False)
+        ps = n.PlotShape(False)
         ps.variable('v')     # Set variable to plot
         # Data extraction would need custom implementation
 
 .. c:function:: Object* nrn_get_plotshape_section_list(ShapePlotInterface* spi)
 
-    Get the section list from a shape plot interface.
+    Get the Section list from a shape plot interface.
 
     :param spi: Pointer to the ShapePlotInterface.
-    :returns: Pointer to the Object representing the section list.
+    :returns: Pointer to the Object representing the Section list.
 
     .. seealso::
 
@@ -1208,9 +1206,9 @@ Miscellaneous
     
     .. code-block:: python
     
-        h('topology()')           # Display topology
-        h('forall psection()')    # Print all sections
-        h.celsius = 37            # Set temperature
+        n('topology()')           # Display topology
+        n('forall psection()')    # Print all sections
+        n.celsius = 37            # Set temperature
 
     .. note::
 
@@ -1220,9 +1218,9 @@ Miscellaneous
 
 .. c:function:: SectionListIterator* nrn_sectionlist_iterator_new(nrn_Item* my_sectionlist)
 
-    Create a new section list iterator for traversing a list of sections.
+    Create a new Section list iterator for traversing a list of sections.
 
-    :param my_sectionlist: Pointer to the section list data.
+    :param my_sectionlist: Pointer to the Section list data.
     :returns: Pointer to the new SectionListIterator.
 
     **Usage Pattern:**
@@ -1234,37 +1232,35 @@ Miscellaneous
 
 .. c:function:: void nrn_sectionlist_iterator_free(SectionListIterator* sl)
 
-    Free a section list iterator and release associated resources.
+    Free a Section list iterator and release associated resources.
 
     :param sl: Pointer to the SectionListIterator to free.
 
     **Usage Pattern:**
 
-    Always call after finishing section list iteration to prevent memory leaks.
+    Always call after finishing Section list iteration to prevent memory leaks.
 
     See :c:func:`nrn_allsec` for an example of iterating over all sections.
 
-
 .. c:function:: Section* nrn_sectionlist_iterator_next(SectionListIterator* sl)
 
-    Get the next section from a section list iterator.
+    Get the next Section from a Section list iterator.
 
     :param sl: Pointer to the SectionListIterator.
     :returns: Pointer to the next Section.
 
     **Usage Pattern:**
 
-    Used in loops to process each section in a list sequentially.
+    Used in loops to process each Section in a list sequentially.
 
     Before calling, check with :c:func:`nrn_sectionlist_iterator_done` to ensure
     there are more sections to process.
 
     See :c:func:`nrn_allsec` for an example of iterating over all sections.
 
-
 .. c:function:: int nrn_sectionlist_iterator_done(SectionListIterator* sl)
 
-    Check if the section list iterator has finished iterating.
+    Check if the Section list iterator has finished iterating.
 
     :param sl: Pointer to the SectionListIterator.
     :returns: Non-zero if iteration is complete, 0 otherwise.
@@ -1280,7 +1276,7 @@ Miscellaneous
         SectionListIterator* iter = nrn_sectionlist_iterator_new(section_list);
         while (!nrn_sectionlist_iterator_done(iter)) {
             Section* sec = nrn_sectionlist_iterator_next(iter);
-            // Process section
+            // Process Section
         }
         nrn_sectionlist_iterator_free(iter);
 
@@ -1364,7 +1360,6 @@ Miscellaneous
     :returns: Non-zero if iteration is complete, 0 otherwise.
 
     See :c:func:`nrn_symbol_table_iterator_new` for example usage.
-
 
 .. c:function:: int nrn_vector_capacity(const Object* vec)
 
@@ -1541,7 +1536,6 @@ Miscellaneous
     See :c:func:`nrn_symbol_table_iterator_new` for an example of iterating over the
     global symbol table.
 
-
 .. c:function:: Symlist* nrn_top_level_symbol_table(void)
 
     Get the top-level symbol table containing user-defined symbols.
@@ -1613,8 +1607,6 @@ Parameter-reading functions
             // Use the object
         }
 
-
-
 .. c:function:: char* nrn_gargstr(int arg)
 
     Get a string argument from the NEURON stack during function execution.
@@ -1656,7 +1648,6 @@ Parameter-reading functions
 
     If the type of the argument is not known in advance, use
     :c:func:`nrn_is_double_arg` to check before calling this function.
-
 
     **Example:**
     
