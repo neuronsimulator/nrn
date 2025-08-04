@@ -402,7 +402,7 @@ if "NRN_NMODL_PATH" in os.environ:
     print("Auto-loading mechanisms:")
     print(f"NRN_NMODL_PATH={os.environ['NRN_NMODL_PATH']}")
     for x in nrn_nmodl_path:
-        # print f"from path {x}:"
+        # print(f"from path {x}:")
         load_mechanisms(x)
         # print "\n"
     print("Done.\n")
