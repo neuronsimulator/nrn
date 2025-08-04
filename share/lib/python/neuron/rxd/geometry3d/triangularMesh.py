@@ -11,10 +11,7 @@ from . import surfaces
 
 def _register_on_neighbor_map(the_map, pt, neighbor):
     # does not assume neighbor relations are bidirectional
-    if pt in the_map:
-        the_map[pt].append(neighbor)
-    else:
-        the_map[pt] = [neighbor]
+    the_map.setdefault(pt, []).append(neighbor)
 
 
 class TriangularMesh:

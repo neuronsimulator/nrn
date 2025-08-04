@@ -51,6 +51,7 @@ endif()
 
 if(NRN_ENABLE_COVERAGE)
   target_compile_definitions(pywrapper PRIVATE NRN_ENABLE_COVERAGE)
+  target_link_libraries(pywrapper PRIVATE util)
 endif()
 
 target_link_libraries(pywrapper PRIVATE fmt::fmt)

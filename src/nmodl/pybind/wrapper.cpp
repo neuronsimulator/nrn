@@ -4,21 +4,23 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include "wrapper.hpp"
-
-#include "codegen/codegen_naming.hpp"
-#include "pybind/pyembed.hpp"
-#include <fmt/format.h>
 #include <filesystem>
 #include <optional>
-#include <pybind11/embed.h>
-#include <pybind11/stl.h>
-
 #include <set>
 #include <vector>
 
-#include "ode_py.hpp"
+// 3rd party headers
+#include <fmt/format.h>
+#include <pybind11/embed.h>
+#include <pybind11/stl.h>
+
+// NMODL headers
+#include "codegen/codegen_naming.hpp"
+#include "pybind/ode_py.hpp"
+#include "pybind/wrapper.hpp"
+#include "pybind/pyembed.hpp"
+#include "utils/common_utils.hpp"
+
 
 namespace fs = std::filesystem;
 namespace py = pybind11;
@@ -39,6 +41,18 @@ cov.start()
 )"),
              locals);
     const auto& code_with_mapping = std::string("exec(compile('''" + ode_py + script + "''', '" +
+    // to prevent race conditions during testing, we generate a random suffix
+    const auto& suffix =
+        nmodl::utils::generate_random_string(20, nmodl::utils::UseNumbersInString::WithoutNumbers);
+
+    py::exec(fmt::format(R"(
+import coverage
+cov = coverage.Coverage(data_suffix='{}')
+cov.start()
+)",
+                         suffix),
+             locals);
+    const auto& code_with_mapping = std::string("exec(compile(r'''" + ode_py + script + "''', '" +
                                                 ode_py_path + "', 'exec'))");
     py::exec(code_with_mapping, locals);
 #else
@@ -46,6 +60,7 @@ cov.start()
 #endif
 
 #ifdef NRN_ENABLE_COVERAGE
+    const auto& path = fs::current_path() / fmt::format("coverage_{}.xml", suffix);
     py::exec(fmt::format(R"(
 cov.stop()
 cov.save()
@@ -54,7 +69,7 @@ data = cov.get_data()
 if data.measured_files():
     cov.xml_report(outfile='{}')
 )",
-                         (fs::current_path() / "coverage.xml").string()),
+                         path.string()),
              locals);
 #endif
 }
