@@ -1250,10 +1250,7 @@ def _compile_reactions():
             for reg in react_regions:
                 if isinstance(reg, region.Extracellular):
                     continue
-                if reg in regions_inv:
-                    regions_inv[reg].append(rptr)
-                else:
-                    regions_inv[reg] = [rptr]
+                regions_inv.setdefault(reg, []).append(rptr)
                 if reg in species_by_region:
                     species_by_region[reg] = species_by_region[reg].union(
                         species_involved
@@ -1290,10 +1287,7 @@ def _compile_reactions():
                 for reg in react_regions:
                     if not isinstance(reg, region.Extracellular):
                         continue
-                    if reg in ecs_regions_inv:
-                        ecs_regions_inv[reg].append(rptr)
-                    else:
-                        ecs_regions_inv[reg] = [rptr]
+                    ecs_regions_inv.setdefault(reg, []).append(rptr)
                     if reg in ecs_species_by_region:
                         ecs_species_by_region[reg] = ecs_species_by_region[reg].union(
                             ecs_species_involved
