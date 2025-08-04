@@ -22,7 +22,7 @@ Initialization
     This function is called at the beginning of a NEURON session. 
     The arguments are passed to the NEURON simulator as if it was launched with that argv.
     The first argument is typically the program name (e.g., "NEURON").
-    In the MATLAB interface, this is called when ``neuron.launch()`` is executed.
+    Some error messages may include the program name.
 
     **Example:**
     
