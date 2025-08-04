@@ -207,8 +207,22 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_PYTHON)
   if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NRN_SANITIZERS))
-    add_test(NAME Ode COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/ode)
-    set_tests_properties(Ode PROPERTIES ENVIRONMENT "PYTHONPATH=${NMODL_TEST_PYTHONPATH}")
+    # Most of the Python tests added by `add_nrn_test` run in their own directories. Unfortunately,
+    # pytest-cov does not seem to have an option to specify the output file (it _always_ outputs to
+    # `coverage.xml`), which means that the various tests here may clobber each other's coverage
+    # reports. The way out of this is to a) either specify `WORKING_DIRECTORY` of each test, or b)
+    # use a coverage config file (see
+    # https://coverage.readthedocs.io/en/latest/config.html#xml-output); the latter requires far
+    # more work than the former, so we use option a) in the below.
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ode)
+    add_test(
+      NAME Ode
+      COMMAND ${PYTHON_EXECUTABLE} ${NRN_PYTEST_LAUNCHER} ${CMAKE_CURRENT_SOURCE_DIR}/ode
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/ode)
+    set_tests_properties(
+      Ode
+      PROPERTIES ENVIRONMENT
+                 "PYTHONPATH=${NMODL_TEST_PYTHONPATH};NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn")
     cpp_cc_configure_sanitizers(TEST Ode PRELOAD)
   endif()
 
@@ -216,8 +230,11 @@ if(NRN_ENABLE_PYTHON)
     # Apple Clang and ASAN do not play along nicely with NMODL's Python bindings, so we skip these
     # tests
     if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND NRN_SANITIZERS))
-      add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest
-                                   ${CMAKE_CURRENT_SOURCE_DIR}/pybind)
+      file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/pybind)
+      add_test(
+        NAME Pybind
+        COMMAND ${PYTHON_EXECUTABLE} ${NRN_PYTEST_LAUNCHER} ${CMAKE_CURRENT_SOURCE_DIR}/pybind
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/pybind)
       set_tests_properties(
         Pybind
         PROPERTIES

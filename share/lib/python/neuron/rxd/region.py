@@ -77,10 +77,7 @@ class _c_region:
             self._overlap = h.SectionList(
                 [sec for sec in r._secs1d if sec in self._overlap]
             )
-            if r in _c_region_lookup:
-                _c_region_lookup[rptr].append(self)
-            else:
-                _c_region_lookup[rptr] = [self]
+            _c_region_lookup.setdefault(rptr, []).append(self)
 
     def add_reaction(self, rptr, region):
         # for multicompartment reaction -- check all regions are present
