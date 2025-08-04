@@ -1483,7 +1483,6 @@ void hoc_call_func_result_on_stack(Symbol* s, int narg) {
     /* call the symbol as a function, The args better be pushed on the stack
     first arg first. */
     if (s->type == BLTIN) {
-        hoc_pushx(*(s->u.ptr)(xpop()));
         hoc_pushx((*(s->u.ptr))(xpop()));
     } else {
         Inst* pcsav;
