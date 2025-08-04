@@ -273,7 +273,7 @@ void nrn_str_push(char** str) {
     hoc_pushstr(str);
 }
 
-char** nrn_pop_str(void) {
+char** nrn_str_pop(void) {
     return hoc_strpop();
 }
 

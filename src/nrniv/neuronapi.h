@@ -82,7 +82,7 @@ double nrn_double_pop(void);
 void nrn_double_ptr_push(double* addr);
 double* nrn_double_ptr_pop(void);
 void nrn_str_push(char** str);
-char** nrn_pop_str(void);
+char** nrn_str_pop(void);
 void nrn_int_push(int i);
 int nrn_int_pop(void);
 void nrn_object_push(Object* obj);
