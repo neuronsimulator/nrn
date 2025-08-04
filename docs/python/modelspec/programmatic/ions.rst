@@ -28,10 +28,17 @@ Ions
         present and set (not setable by user) only if the section has mechanisms that USEION
         WRITE the internal or external ion concentration, e.g. nai or nao.
         That is, to get the parameter values from ``oldstyle``, use
-        ``c_style = oldstyle % 4``, ``cinit = (oldstyle // 4) % 2``, 
-        ``e_style = (oldstyle // 8) % 4``, ``einit = (oldstyle // 32) % 2``, 
-        ``eadvance = (oldstyle // 64) % 2``, ``ci_is_written = ((oldstyle & 128) != 0)``,
-        ``co_is_written = ((oldsytle & 256) != 0)``
+
+        .. code-block::
+            python
+
+            c_style = oldstyle % 4
+            cinit = (oldstyle // 4) % 2
+            e_style = (oldstyle // 8) % 4
+            einit = (oldstyle // 32) % 2
+            eadvance = (oldstyle // 64) % 2
+            ci_is_written = (oldstyle // 128) % 2
+            co_is_written = (oldsytle // 256) % 2
 
          
         c_style: 0, 1, 2, 3. 
