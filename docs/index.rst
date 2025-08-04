@@ -62,6 +62,7 @@ and more (use the links on the side or search).
 
    scm/index
    dev/index
+   capi
    doxygen
 
 .. toctree::
