@@ -228,6 +228,14 @@ add_custom_command(
 
 add_library(lexer STATIC ${LEXER_SOURCE_FILES} ${BISON_GENERATED_SOURCE_FILES}
                          ${AST_GENERATED_SOURCES} ${UNIT_SOURCE_FILES})
+if(NRN_MACOS_BUILD)
+  # ~~~
+  # bug with NMODL lexer, see:
+  # https://github.com/neuronsimulator/nrn/issues/3517
+  # should not have an effect on performance
+  # ~~~
+  target_compile_options(lexer BEFORE PRIVATE "-O0")
+endif()
 set_property(TARGET lexer PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(lexer PRIVATE util)
 

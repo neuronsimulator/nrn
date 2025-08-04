@@ -373,6 +373,14 @@ bool nrn_prop_exists(const Object* obj) {
     return ob2pntproc_0(const_cast<Object*>(obj))->prop;
 }
 
+double nrn_distance(Section* sec0, double x0, Section* sec1, double x1) {
+    Node* node0 = node_exact(sec0, x0);
+    Node* node1 = node_exact(sec1, x1);
+    Section* dummy_sec = nullptr;
+    Node* dummy_node = nullptr;
+    return topol_distance(sec0, node0, sec1, node1, &dummy_sec, &dummy_node);
+}
+
 /****************************************
  * Plot Shape
  ****************************************/
@@ -615,5 +623,52 @@ void nrn_register_function(void (*proc)(), const char* func_name, int type) {
     sym->u.u_proc->defn.pf = proc;
     sym->u.u_proc->nauto = 0;
     sym->u.u_proc->nobjauto = 0;
+}
+
+void nrn_hoc_ret() {
+    hoc_ret();
+}
+
+/****************************************
+ * Parameter-reading functions
+ ****************************************/
+Object** nrn_objgetarg(int arg) {
+    return hoc_objgetarg(arg);
+}
+
+char* nrn_gargstr(int arg) {
+    return hoc_gargstr(arg);
+}
+
+double* nrn_getarg(int arg) {
+    return hoc_getarg(arg);
+}
+
+std::FILE* nrn_obj_file_arg(int i) {
+    return hoc_obj_file_arg(i);
+}
+
+bool nrn_ifarg(int arg) {
+    return ifarg(arg);
+}
+
+
+bool nrn_is_object_arg(int arg) {
+    return hoc_is_object_arg(arg);
+}
+
+
+bool nrn_is_str_arg(int arg) {
+    return hoc_is_str_arg(arg);
+}
+
+
+bool nrn_is_double_arg(int arg) {
+    return hoc_is_double_arg(arg);
+}
+
+
+bool nrn_is_pdouble_arg(int arg) {
+    return hoc_is_pdouble_arg(arg);
 }
 }
