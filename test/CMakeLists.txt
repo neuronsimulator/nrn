@@ -271,7 +271,7 @@ if(NRN_ENABLE_PYTHON)
     NAME example_nmodl
     MODFILE_PATTERNS *.mod *.inc
     SIM_DIRECTORY share/examples/nrniv/nmodl)
-  set(py_exe ${NRN_DEFAULT_PYTHON_EXECUTABLE})
+  set(py_exe ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest})
   set(py_preload PRELOAD_SANITIZER)
   set(hoc_exe special)
   foreach(ext hoc py)
@@ -290,6 +290,7 @@ if(NRN_ENABLE_PYTHON)
   endforeach()
 
   # independent run of each hoc and python file in test/hoc/* folders
+  set(py_exe ${NRN_DEFAULT_PYTHON_EXECUTABLE})
   nrn_add_test_group(
     NAME hoctests
     MODFILE_PATTERNS *.mod *.inc
