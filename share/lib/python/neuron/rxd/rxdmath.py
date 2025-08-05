@@ -49,9 +49,9 @@ def _neg(objs):
 
 def analyze_reaction(r):
     if not isinstance(r, _Reaction):
-        print((f"{r!r} is not a reaction"))
+        print(f"{r!r} is not a reaction")
     else:
-        print((f"{r!r} is a reaction:"))
+        print(f"{r!r} is a reaction:")
         print(
             (
                 "   lhs: ",
