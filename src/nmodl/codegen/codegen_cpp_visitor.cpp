@@ -1773,5 +1773,40 @@ void CodegenCppVisitor::print_rename_state_vars() const {
         }
     }
 }
+
+
+std::string CodegenCppVisitor::get_register_type_for_ba_block(const ast::Block* block) {
+    std::string register_type{};
+    BAType ba_type{};
+    /// before block have value 10 and after block 20
+    if (block->is_before_block()) {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+        register_type = "BAType::Before";
+        ba_type =
+            dynamic_cast<const ast::BeforeBlock*>(block)->get_bablock()->get_type()->get_value();
+    } else {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+        register_type = "BAType::After";
+        ba_type =
+            dynamic_cast<const ast::AfterBlock*>(block)->get_bablock()->get_type()->get_value();
+    }
+
+    /// associated blocks have different values (1 to 4) based on type.
+    /// These values are based on neuron/coreneuron implementation details.
+    if (ba_type == BATYPE_BREAKPOINT) {
+        register_type += " + BAType::Breakpoint";
+    } else if (ba_type == BATYPE_SOLVE) {
+        register_type += " + BAType::Solve";
+    } else if (ba_type == BATYPE_INITIAL) {
+        register_type += " + BAType::Initial";
+    } else if (ba_type == BATYPE_STEP) {
+        register_type += " + BAType::Step";
+    } else {
+        throw std::runtime_error("Unhandled Before/After type encountered during code generation");
+    }
+    return register_type;
+}
+
+
 }  // namespace codegen
 }  // namespace nmodl

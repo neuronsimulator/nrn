@@ -1539,6 +1539,19 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
                                         {CppObjectSpecifier::Static, CppObjectSpecifier::Inline});
 
     void print_rename_state_vars() const;
+
+    /**
+     * Return registration type for a given BEFORE/AFTER block
+     * /param block A BEFORE/AFTER block being registered
+     *
+     * Depending on a block type i.e. BEFORE or AFTER and also type
+     * of it's associated block i.e. BREAKPOINT, INITIAL, SOLVE and
+     * STEP, the registration type (as an integer) is calculated.
+     * These values are then interpreted by CoreNEURON internally.
+     */
+    std::string get_register_type_for_ba_block(const ast::Block* block);
+
+    virtual void print_before_after_block(const ast::Block* block, size_t block_id) = 0;
 };
 
 template <typename T>

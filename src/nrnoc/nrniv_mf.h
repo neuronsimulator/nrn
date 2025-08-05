@@ -105,3 +105,9 @@ void* nrn_pool_alloc(void* pool);
 void* nrn_pool_create(long count, int itemsize);
 void nrn_pool_delete(void* pool);
 void nrn_pool_freeall(void* pool);
+
+// Blocks associated with BEFORE and AFTER have different values based on type.
+// There values are based on neuron/coreneuron implementation details.
+struct BAType {
+    enum { Breakpoint = 1, Solve = 2, Initial = 3, Step = 4, Before = 10, After = 20 };
+};

@@ -1199,48 +1199,6 @@ void CodegenCoreneuronCppVisitor::print_global_variables_for_hoc() {
 
 
 /**
- * Return registration type for a given BEFORE/AFTER block
- * /param block A BEFORE/AFTER block being registered
- *
- * Depending on a block type i.e. BEFORE or AFTER and also type
- * of it's associated block i.e. BREAKPOINT, INITIAL, SOLVE and
- * STEP, the registration type (as an integer) is calculated.
- * These values are then interpreted by CoreNEURON internally.
- */
-static std::string get_register_type_for_ba_block(const ast::Block* block) {
-    std::string register_type{};
-    BAType ba_type{};
-    /// before block have value 10 and after block 20
-    if (block->is_before_block()) {
-        // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-        register_type = "BAType::Before";
-        ba_type =
-            dynamic_cast<const ast::BeforeBlock*>(block)->get_bablock()->get_type()->get_value();
-    } else {
-        // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-        register_type = "BAType::After";
-        ba_type =
-            dynamic_cast<const ast::AfterBlock*>(block)->get_bablock()->get_type()->get_value();
-    }
-
-    /// associated blocks have different values (1 to 4) based on type.
-    /// These values are based on neuron/coreneuron implementation details.
-    if (ba_type == BATYPE_BREAKPOINT) {
-        register_type += " + BAType::Breakpoint";
-    } else if (ba_type == BATYPE_SOLVE) {
-        register_type += " + BAType::Solve";
-    } else if (ba_type == BATYPE_INITIAL) {
-        register_type += " + BAType::Initial";
-    } else if (ba_type == BATYPE_STEP) {
-        register_type += " + BAType::Step";
-    } else {
-        throw std::runtime_error("Unhandled Before/After type encountered during code generation");
-    }
-    return register_type;
-}
-
-
-/**
  * \details Every mod file has register function to connect with the simulator.
  * Various information about mechanism and callbacks get registered with
  * the simulator using suffix_reg() function.

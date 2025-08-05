@@ -1650,6 +1650,15 @@ void CodegenNeuronCppVisitor::print_mechanism_register_regular() {
                           info.semantics[i].name);
     }
 
+    /// register all before/after blocks
+    for (size_t i = 0; i < info.before_after_blocks.size(); i++) {
+        // register type and associated function name for the block
+        const auto& block = info.before_after_blocks[i];
+        std::string register_type = get_register_type_for_ba_block(block);
+        std::string function_name = method_name(fmt::format("nrn_before_after_{}", i));
+        printer->fmt_line("hoc_reg_ba(mech_type, {}, {});", function_name, register_type);
+    }
+
     if (!info.longitudinal_diffusion_info.empty()) {
         printer->fmt_line("hoc_register_ldifus1(_apply_diffusion_function);");
     }
@@ -2661,6 +2670,9 @@ void CodegenNeuronCppVisitor::print_compute_functions() {
     print_nrn_jacob();
     print_net_receive();
     print_net_init();
+    for (size_t i = 0; i < info.before_after_blocks.size(); i++) {
+        print_before_after_block(info.before_after_blocks[i], i);
+    }
 }
 
 void CodegenNeuronCppVisitor::print_codegen_routines_regular() {
@@ -3070,6 +3082,57 @@ void CodegenNeuronCppVisitor::visit_protect_statement(const ast::ProtectStatemen
     node.get_expression()->accept(*this);
     printer->add_text(";");
     printer->add_line("_NMODLMUTEXUNLOCK");
+}
+
+void CodegenNeuronCppVisitor::print_before_after_block(const ast::Block* node, size_t block_id) {
+    std::string ba_type;
+    std::shared_ptr<ast::BABlock> ba_block;
+
+    if (node->is_before_block()) {
+        ba_block = dynamic_cast<const ast::BeforeBlock*>(node)->get_bablock();
+        ba_type = "BEFORE";
+    } else {
+        ba_block = dynamic_cast<const ast::AfterBlock*>(node)->get_bablock();
+        ba_type = "AFTER";
+    }
+
+    std::string ba_block_type = ba_block->get_type()->eval();
+
+    /// name of the before/after function
+    std::string function_name = method_name(fmt::format("nrn_before_after_{}", block_id));
+
+    /// print common function code like init/state/current
+    printer->add_newline(2);
+    printer->fmt_line("/** {} of block type {} # {} */", ba_type, ba_block_type, block_id);
+    print_global_function_common_code(BlockType::BeforeAfter, function_name);
+
+    printer->push_block("for (int id = 0; id < nodecount; id++)");
+
+    printer->add_line("int node_id = node_data.nodeindices[id];");
+    printer->add_line("double v = node_data.node_voltages[node_id];");
+    print_v_unused();
+
+    // read ion statements
+    const auto& read_statements = ion_read_statements(BlockType::Equation);
+    for (auto& statement: read_statements) {
+        printer->add_line(statement);
+    }
+
+    /// print main body
+    printer->add_indent();
+    print_statement_block(*ba_block->get_statement_block());
+    printer->add_newline();
+
+    // write ion statements
+    const auto& write_statements = ion_write_statements(BlockType::Equation);
+    for (auto& statement: write_statements) {
+        auto text = process_shadow_update_statement(statement, BlockType::Equation);
+        printer->add_line(text);
+    }
+
+    /// loop end
+    printer->pop_block();
+    printer->pop_block();
 }
 
 

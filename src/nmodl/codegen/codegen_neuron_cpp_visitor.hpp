@@ -841,6 +841,8 @@ class CodegenNeuronCppVisitor: public CodegenCppVisitor {
     void visit_lon_diffuse(const ast::LonDiffuse& node) override;
     void visit_protect_statement(const ast::ProtectStatement& node) override;
 
+    void print_before_after_block(const ast::Block*, size_t) override;
+
   public:
     /****************************************************************************************/
     /*          Public printing routines for code generation for use in unit tests          */

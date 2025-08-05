@@ -650,7 +650,7 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
      * \param node AST node of type before/after type being printed
      * \param block_id Index of the before/after block
      */
-    virtual void print_before_after_block(const ast::Block* node, size_t block_id);
+    void print_before_after_block(const ast::Block* node, size_t block_id) override;
 
 
     /**
