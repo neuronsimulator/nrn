@@ -34,13 +34,6 @@ namespace pybind_wrappers {
 // pytest or similar. Instead, we use the coverage.py API directly.
 static void run_python_script(const std::string& script, const py::dict& locals) {
 #ifdef NRN_ENABLE_COVERAGE
-    py::exec(fmt::format(R"(
-import coverage
-cov = coverage.Coverage()
-cov.start()
-)"),
-             locals);
-    const auto& code_with_mapping = std::string("exec(compile('''" + ode_py + script + "''', '" +
     // to prevent race conditions during testing, we generate a random suffix
     const auto& suffix =
         nmodl::utils::generate_random_string(20, nmodl::utils::UseNumbersInString::WithoutNumbers);
