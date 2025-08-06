@@ -60,7 +60,7 @@ fi
 # The first argument passed to this script is the value of nrniv -pyexe
 pyexe_arg="$1"
 
-WHICH=which
+WHICH="command -v"
 
 function trypy {
   a=`ls "$1" |grep "$2"`
@@ -205,7 +205,7 @@ if [ -z "${PYTHON}" -a "${OS}" = "Windows_NT" -a -n "${APPDATA}" ]; then
       PYTHON=python
     fi
   fi
-  if [ -n "${PYTHON}" -a -z "${PYTHON_VERSION}"]; then
+  if [ -n "${PYTHON}" -a -z "${PYTHON_VERSION}" ]; then
     # In case one of the last-resort Windows hacks worked
     PYTHON_VERSION=$("${PYTHON}" -c "import sys; print(\"{}.{}\".format(*sys.version_info[:2]))")
   fi
