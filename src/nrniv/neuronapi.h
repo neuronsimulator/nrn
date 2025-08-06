@@ -55,6 +55,8 @@ void nrn_mechanism_insert(Section* sec, const Symbol* mechanism);
 nrn_Item* nrn_allsec(void);
 nrn_Item* nrn_sectionlist_data(const Object* obj);
 bool nrn_section_is_active(const Section* sec);
+void nrn_section_ref(Section* sec);
+void nrn_section_unref(Section* sec);
 Section* nrn_cas(void);
 
 /****************************************
