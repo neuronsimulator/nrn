@@ -54,6 +54,13 @@ void parse_filter_string(const std::string& filter, ReportConfiguration& config)
     }
 }
 
+void fill_vec_int(std::ifstream& ss, std::vector<int>& v, const int n) {
+    v.resize(n);
+    ss.read(reinterpret_cast<char*>(v.data()), n * sizeof(int));
+    // extra new line: skip
+    ss.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+}
+
 std::vector<ReportConfiguration> create_report_configurations(const std::string& conf_file,
                                                               const std::string& output_dir,
                                                               SpikesInfo& spikes_info) {
@@ -73,7 +80,7 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
         // report_on
         report_conf >> token;
         if (report.type == ReportType::Synapse || report.type == ReportType::Summation ||
-            report.type == ReportType::Compartment) {
+            report.type == ReportType::Compartment || report.type == ReportType::CompartmentSet) {
             parse_filter_string(token, report);
         }
         report_conf >> report.unit >> report.format;
@@ -96,19 +103,20 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
         }
 
         // checks
-        if (report.type == ReportType::Compartment) {
+        if (report.type == ReportType::Compartment || report.type == ReportType::CompartmentSet) {
             nrn_assert(report.mech_ids.empty());
             nrn_assert(report.mech_names.size() == 1);
             nrn_assert(report.var_names.size() == 1);
         }
+
+        report_conf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         // gids
         if (report.num_gids) {
-            report.target.resize(report.num_gids);
-            report_conf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            report_conf.read(reinterpret_cast<char*>(report.target.data()),
-                             report.num_gids * sizeof(int));
-            // extra new line: skip
-            report_conf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            fill_vec_int(report_conf, report.target, report.num_gids);
+            if (report.type == ReportType::CompartmentSet) {
+                fill_vec_int(report_conf, report.point_section_ids, report.num_gids);
+                fill_vec_int(report_conf, report.point_compartment_ids, report.num_gids);
+            }
         }
     }
     // read population information for spike report

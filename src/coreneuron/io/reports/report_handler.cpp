@@ -14,6 +14,24 @@
 
 namespace coreneuron {
 
+
+void fill_segment_id_2_node_id(Memb_list* ml, std::unordered_map<int, int>& segment_id_2_node_id) {
+    nrn_assert(ml && "Memb_list is a nullptr!");
+
+    // do not fill if not empty. We already did this. Be lazy
+    if (!segment_id_2_node_id.empty()) {
+        return;
+    }
+
+    for (int j = 0; j < ml->nodecount; j++) {
+        const int segment_id = ml->nodeindices[j];
+
+        auto result = segment_id_2_node_id.insert({segment_id, j});
+
+        nrn_assert(result.second && "Duplicate segment_id detected");
+    }
+}
+
 /**
  * @brief Retrieves a pointer to a variable associated with a mechanism or state variable.
  *
@@ -53,20 +71,18 @@ double* get_var(const NrnThread& nt,
         return nt._actual_v + segment_id;
     }
 
+    if (mech_id < 0) {
+        return nullptr;
+    }
+
     Memb_list* ml = nt._ml_list[mech_id];
+
     if (!ml) {
         return nullptr;
     }
 
     // lazy cache
-    if (segment_id_2_node_id.empty()) {
-        for (int j = 0; j < ml->nodecount; j++) {
-            const int segment_id = ml->nodeindices[j];
-
-            auto result = segment_id_2_node_id.insert({segment_id, j});
-            nrn_assert(result.second && "Duplicate segment_id detected");
-        }
-    }
+    fill_segment_id_2_node_id(ml, segment_id_2_node_id);
 
     const int node_id = segment_id_2_node_id[segment_id];
     return get_var_location_from_var_name(mech_id, mech_name, var_name, ml, node_id);
