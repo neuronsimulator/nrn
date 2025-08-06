@@ -380,6 +380,20 @@ Sections
     checks for inactive Sections and removes them (they are not returned).
     Only after there are no references to a deleted Section will its memory be freed.
 
+.. c:function:: void nrn_section_ref(Section* sec)
+
+    Increase the Section's reference count. Sections with active references will
+    not be free'd from memory.
+
+    :param sec: Pointer to the Section to reference.
+
+.. c:function:: void nrn_section_unref(Section* sec)
+
+    Decrease the Section's reference count. Sections with active references will
+    not be free'd from memory.
+
+    :param sec: Pointer to the Section to unreference.
+
 .. c:function:: Section* nrn_cas(void)
 
     Get the currently accessed Section (top of the Section stack).
