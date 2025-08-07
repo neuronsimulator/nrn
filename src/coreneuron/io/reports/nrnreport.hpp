@@ -55,6 +55,18 @@ struct SpikesInfo {
 /// name of the variable in mod file used for setting synapse id
 #define SYNAPSE_ID_MOD_NAME "synapseID"
 
+/**
+ * @brief Converts an enum value to its corresponding string representation.
+ *
+ * @tparam EnumT Enum type.
+ * @tparam N Size of the mapping array.
+ * @param e Enum value to convert.
+ * @param mapping A fixed-size array mapping enum values to string views.
+ * @param enum_name Name of the enum type, used for error reporting.
+ * @return The corresponding string representation of the enum value.
+ *
+ * @note Aborts the program if the enum value is not found in the mapping.
+ */
 template <typename EnumT, std::size_t N>
 std::string to_string(EnumT e,
                       const std::array<std::pair<EnumT, std::string_view>, N>& mapping,
@@ -70,6 +82,13 @@ std::string to_string(EnumT e,
     nrn_abort(1);
 }
 
+/**
+ * @brief Compares two strings for equality, ignoring case.
+ *
+ * @param a First string.
+ * @param b Second string.
+ * @return true if both strings are equal ignoring case, false otherwise.
+ */
 inline bool equals_case_insensitive(std::string_view a, std::string_view b) {
     if (a.size() != b.size())
         return false;
@@ -78,6 +97,18 @@ inline bool equals_case_insensitive(std::string_view a, std::string_view b) {
     });
 }
 
+/**
+ * @brief Converts a string to its corresponding enum value, case-insensitively.
+ *
+ * @tparam EnumT Enum type.
+ * @tparam N Size of the mapping array.
+ * @param str Input string to convert.
+ * @param mapping A fixed-size array mapping enum values to string views.
+ * @param enum_name Name of the enum type, used for error reporting.
+ * @return The corresponding enum value for the input string.
+ *
+ * @note Aborts the program if the string does not match any entry in the mapping.
+ */
 template <typename EnumT, std::size_t N>
 EnumT from_string(std::string_view str,
                   const std::array<std::pair<EnumT, std::string_view>, N>& mapping,
