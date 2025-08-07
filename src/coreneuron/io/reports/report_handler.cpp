@@ -126,6 +126,54 @@ std::vector<int> get_intersection_ids(const NrnThread& nt, std::vector<int>& tar
     return intersection_ids;
 }
 
+/// loop over the points of a compartment set and to return VarsToReport
+VarsToReport get_compartment_set_vars_to_report(const NrnThread& nt,
+                                                       const std::vector<int>& intersection_ids,
+                                                       const ReportConfiguration& report) {
+    nrn_assert(report.mech_ids.size() == 1);
+    nrn_assert(report.var_names.size() == 1);
+    nrn_assert(report.mech_names.size() == 1);
+    nrn_assert(report.sections == SectionType::Invalid &&
+               "[ERROR] : Compartment report `sections` should be Invalid");
+    nrn_assert(report.compartments == Compartments::Invalid &&
+               "[ERROR] : Compartment report `compartments` should be Invalid");
+
+    nrn_assert(report.target.size() == report.point_compartment_ids.size());
+    nrn_assert(report.target.size() == report.point_section_ids.size());
+
+    VarsToReport vars_to_report;
+    const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
+    if (!mapinfo) {
+        std::cerr << "[ERROR] : Compartment report mapping information is missing for a Cell group "
+                  << nt.ncell << '\n';
+        nrn_abort(1);
+    }
+
+    int old_gid = -1;
+    std::unordered_map<int, int> segment_id_2_node_id;
+    for (const auto& intersection_id: intersection_ids) {
+        const auto gid = report.target[intersection_id];
+        const auto section_id = report.point_section_ids[intersection_id];
+        const auto compartment_id = report.point_compartment_ids[intersection_id];
+        if (old_gid != gid) {
+            // clear cache for new gid. We know they are strictly ordered
+            segment_id_2_node_id.clear();
+        }
+
+        double* variable = get_var(nt,
+                                    report.mech_ids[0],
+                                    report.var_names[0],
+                                    report.mech_names[0],
+                                    compartment_id,
+                                    segment_id_2_node_id);
+        // automatically calls an empty constructor if key is not present
+        vars_to_report[gid].emplace_back(section_id, variable);
+        old_gid = gid;
+    }
+    return vars_to_report;
+}
+
+
 void ReportHandler::create_report(ReportConfiguration& report_config,
                                   double dt,
                                   double tstop,
@@ -164,11 +212,8 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
             break;
         }
         case ReportType::CompartmentSet: {
-
-            std::cerr << "[ERROR] : TODO CompartmentSet\n";
-            nrn_abort(1);
-            // vars_to_report = get_section_vars_to_report(nt, intersection_ids, report_config);
-            // register_section_report(nt, report_config, vars_to_report, is_soma_target);
+            vars_to_report = get_compartment_set_vars_to_report(nt, intersection_ids, report_config);
+            register_section_report(nt, report_config, vars_to_report, is_soma_target);
             break;
         }
         case ReportType::Summation: {
@@ -312,14 +357,13 @@ void append_sections_to_to_report(const std::shared_ptr<SecMapping>& sections,
 VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
                                                        const std::vector<int>& intersection_ids,
                                                        const ReportConfiguration& report) const {
-    nrn_assert(report.mech_ids.size() == 1 && report.var_names.size() == 1 &&
-               report.mech_names.size() == 1 &&
-               "ReportHandler::get_section_vars_to_report: "
-               "mech_ids, var_names and mech_names should have size 1");
+    nrn_assert(report.mech_ids.size() == 1);
+    nrn_assert(report.var_names.size() == 1);
+    nrn_assert(report.mech_names.size() == 1);
     nrn_assert(report.sections != SectionType::Invalid &&
-               "ReportHandler::get_section_vars_to_report: sections should not be Invalid");
+               "[ERROR] : Compartment report `sections` should not be Invalid");
     nrn_assert(report.compartments != Compartments::Invalid &&
-               "ReportHandler::get_section_vars_to_report: compartments should not be Invalid");
+               "[ERROR] : Compartment report `compartments` should not be Invalid");
     VarsToReport vars_to_report;
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     if (!mapinfo) {
