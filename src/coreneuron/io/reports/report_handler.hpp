@@ -32,9 +32,7 @@ class ReportHandler {
                                         const VarsToReport& vars_to_report);
     VarsToReport get_section_vars_to_report(const NrnThread& nt,
                                             const std::vector<int>& gids_to_report,
-                                            double* report_variable,
-                                            SectionType section_type,
-                                            bool all_compartments) const;
+                                            const ReportConfiguration& report) const;
     VarsToReport get_summation_vars_to_report(const NrnThread& nt,
                                               const std::vector<int>& gids_to_report,
                                               const ReportConfiguration& report,
