@@ -392,7 +392,7 @@ int nrn_function_call_nothrow(Symbol* sym, int narg, char* error_msg, size_t err
     if (error_msg && error_msg_size > 0) {
         error_msg[0] = '\0';
     }
- 
+
     try {
         OcJump::execute_throw_on_exception(sym, narg);
         return 0;  // Success
