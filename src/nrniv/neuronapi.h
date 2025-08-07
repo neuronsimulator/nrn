@@ -4,10 +4,12 @@
 
 #ifdef __cplusplus
 #include <cstdio>
+#include <cstddef>
 using std::FILE;
 extern "C" {
 #else
 #include <stdio.h>
+#include <stddef.h>
 #endif
 
 // forward declarations (c++) and opaque c types
@@ -98,6 +100,10 @@ Symbol* nrn_method_symbol(const Object* obj, const char* name);
 //       classic behavior of OcJump)
 void nrn_method_call(Object* obj, Symbol* method_sym, int narg);
 void nrn_function_call(Symbol* sym, int narg);
+int nrn_method_call_nothrow(Object* obj, Symbol* method_sym, int narg, 
+                            char* error_msg, size_t error_msg_size);
+int nrn_function_call_nothrow(Symbol* sym, int narg, 
+                              char* error_msg, size_t error_msg_size);
 void nrn_object_ref(Object* obj);
 void nrn_object_unref(Object* obj);
 char const* nrn_class_name(const Object* obj);
