@@ -7,6 +7,7 @@
 */
 
 #include <sstream>
+#include <unordered_set>
 #include "report_handler.hpp"
 #include "coreneuron/io/nrnsection_mapping.hpp"
 #include "coreneuron/mechanism/mech_mapping.hpp"
@@ -104,24 +105,25 @@ double get_scaling_factor(const std::string& mech_name,
     return 1.0;  // Default scaling factor
 }
 
-template <typename T>
-std::vector<T> intersection_gids(const NrnThread& nt, std::vector<T>& target_gids) {
-    std::vector<int> thread_gids;
+
+/// @brief create an vector of ids in target_gids that are on this thread
+std::vector<int> get_intersection_ids(const NrnThread& nt, std::vector<int>& target_gids) {
+    std::unordered_set<int> thread_gids;
     for (int i = 0; i < nt.ncell; i++) {
-        thread_gids.push_back(nt.presyns[i].gid_);
+        thread_gids.insert(nt.presyns[i].gid_);
     }
-    std::vector<T> intersection;
+    std::vector<int> intersection_ids;
+    intersection_ids.reserve(target_gids.size());
 
-    std::sort(thread_gids.begin(), thread_gids.end());
-    std::sort(target_gids.begin(), target_gids.end());
+    for (auto i = 0; i < target_gids.size(); ++i) {
+        const auto gid = target_gids[i];
+        if (thread_gids.find(gid) != thread_gids.end()) {
+            intersection_ids.push_back(i);
+        }
+    }
 
-    std::set_intersection(thread_gids.begin(),
-                          thread_gids.end(),
-                          target_gids.begin(),
-                          target_gids.end(),
-                          back_inserter(intersection));
-
-    return intersection;
+    intersection_ids.shrink_to_fit();
+    return intersection_ids;
 }
 
 void ReportHandler::create_report(ReportConfiguration& report_config,
@@ -138,7 +140,7 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
         report_config.mech_ids.emplace_back(nrn_get_mechtype(mech.data()));
     }
     if (report_config.type == ReportType::Synapse && report_config.mech_ids.empty()) {
-        std::cerr << "[ERROR] mechanism to report: " << report_config.mech_names[0]
+        std::cerr << "[ERROR] Synapse report mechanism to report: " << report_config.mech_names[0]
                   << " is not mapped in this simulation, cannot report on it \n";
         nrn_abort(1);
     }
@@ -152,32 +154,44 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
         const std::vector<int>& nodes_to_gid = map_gids(nt);
 
 
-        const std::vector<int> gids_to_report = intersection_gids(nt, report_config.target);
+        const std::vector<int> intersection_ids = get_intersection_ids(nt, report_config.target);
         VarsToReport vars_to_report;
         const bool is_soma_target = report_config.sections == SectionType::Soma;
         switch (report_config.type) {
         case ReportType::Compartment: {
-            vars_to_report = get_section_vars_to_report(nt, gids_to_report, report_config);
+            vars_to_report = get_section_vars_to_report(nt, intersection_ids, report_config);
             register_section_report(nt, report_config, vars_to_report, is_soma_target);
+            break;
+        }
+        case ReportType::CompartmentSet: {
+
+            std::cerr << "[ERROR] : TODO CompartmentSet\n";
+            nrn_abort(1);
+            // vars_to_report = get_section_vars_to_report(nt, intersection_ids, report_config);
+            // register_section_report(nt, report_config, vars_to_report, is_soma_target);
             break;
         }
         case ReportType::Summation: {
             vars_to_report =
-                get_summation_vars_to_report(nt, gids_to_report, report_config, nodes_to_gid);
+                get_summation_vars_to_report(nt, intersection_ids, report_config, nodes_to_gid);
             register_custom_report(nt, report_config, vars_to_report);
             break;
         }
         case ReportType::LFP: {
             mapinfo->prepare_lfp();
             vars_to_report = get_lfp_vars_to_report(
-                nt, gids_to_report, report_config, mapinfo->_lfp.data(), nodes_to_gid);
+                nt, intersection_ids, report_config, mapinfo->_lfp.data(), nodes_to_gid);
             register_section_report(nt, report_config, vars_to_report, is_soma_target);
             break;
         }
-        default: {
+        case ReportType::Synapse: {
             vars_to_report =
-                get_synapse_vars_to_report(nt, gids_to_report, report_config, nodes_to_gid);
+                get_synapse_vars_to_report(nt, intersection_ids, report_config, nodes_to_gid);
             register_custom_report(nt, report_config, vars_to_report);
+        }
+        default: {
+            std::cerr << "[ERROR] Unknown report type: " << to_string(report_config.type) << '\n';
+            nrn_abort(1);
         }
         }
         if (!vars_to_report.empty()) {
@@ -296,7 +310,7 @@ void append_sections_to_to_report(const std::shared_ptr<SecMapping>& sections,
 }
 
 VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
-                                                       const std::vector<int>& gids_to_report,
+                                                       const std::vector<int>& intersection_ids,
                                                        const ReportConfiguration& report) const {
     nrn_assert(report.mech_ids.size() == 1 && report.var_names.size() == 1 &&
                report.mech_names.size() == 1 &&
@@ -309,17 +323,18 @@ VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
     VarsToReport vars_to_report;
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     if (!mapinfo) {
-        std::cerr << "[COMPARTMENTS] Error : mapping information is missing for a Cell group "
+        std::cerr << "[ERROR] : Compartment report mapping information is missing for a Cell group "
                   << nt.ncell << '\n';
         nrn_abort(1);
     }
 
-    for (const auto& gid: gids_to_report) {
+    for (const auto& intersection_id: intersection_ids) {
+        const auto gid = report.target[intersection_id];
         std::unordered_map<int, int> segment_id_2_node_id;
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
         if (cell_mapping == nullptr) {
             std::cerr
-                << "[COMPARTMENTS] Error : Compartment mapping information is missing for gid "
+                << "[ERROR] : Compartment report mapping information is missing for gid "
                 << gid << '\n';
             nrn_abort(1);
         }
@@ -348,24 +363,25 @@ VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
 
 VarsToReport ReportHandler::get_summation_vars_to_report(
     const NrnThread& nt,
-    const std::vector<int>& gids_to_report,
+    const std::vector<int>& intersection_ids,
     const ReportConfiguration& report,
     const std::vector<int>& nodes_to_gids) const {
     VarsToReport vars_to_report;
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     auto& summation_report = nt.summation_report_handler_->summation_reports_[report.output_path];
     if (!mapinfo) {
-        std::cerr << "[COMPARTMENTS] Error : mapping information is missing for a Cell group "
+        std::cerr << "[ERROR] : Compartment report mapping information is missing for a Cell group "
                   << nt.ncell << '\n';
         nrn_abort(1);
     }
 
-    for (const auto& gid: gids_to_report) {
+    for (const auto& intersection_id: intersection_ids) {
+        const auto gid = report.target[intersection_id];
         {
             const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
             if (cell_mapping == nullptr) {
                 std::cerr
-                    << "[SUMMATION] Error : Compartment mapping information is missing for gid "
+                    << "[ERROR] : Summation report mapping information is missing for gid "
                     << gid << '\n';
                 nrn_abort(1);
             }
@@ -405,7 +421,7 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
 
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
         if (cell_mapping == nullptr) {
-            std::cerr << "[SUMMATION] Error : Compartment mapping information is missing for gid "
+            std::cerr << "[ERROR] : Summation report mapping information is missing for gid "
                       << gid << '\n';
             nrn_abort(1);
         }
@@ -447,11 +463,12 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
 
 VarsToReport ReportHandler::get_synapse_vars_to_report(
     const NrnThread& nt,
-    const std::vector<int>& gids_to_report,
+    const std::vector<int>& intersection_ids,
     const ReportConfiguration& report,
     const std::vector<int>& nodes_to_gids) const {
     VarsToReport vars_to_report;
-    for (const auto& gid: gids_to_report) {
+    for (const auto& intersection_id: intersection_ids) {
+        const auto gid = report.target[intersection_id];
         // There can only be 1 mechanism
         nrn_assert(report.mech_ids.size() == 1);
         const auto& mech_id = report.mech_ids[0];
@@ -493,23 +510,24 @@ VarsToReport ReportHandler::get_synapse_vars_to_report(
 }
 
 VarsToReport ReportHandler::get_lfp_vars_to_report(const NrnThread& nt,
-                                                   const std::vector<int>& gids_to_report,
+                                                   const std::vector<int>& intersection_ids,
                                                    ReportConfiguration& report,
                                                    double* report_variable,
                                                    const std::vector<int>& nodes_to_gids) const {
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     if (!mapinfo) {
-        std::cerr << "[LFP] Error : mapping information is missing for a Cell group " << nt.ncell
+        std::cerr << "[ERROR] : LFP report mapping information is missing for a Cell group " << nt.ncell
                   << '\n';
         nrn_abort(1);
     }
     auto& summation_report = nt.summation_report_handler_->summation_reports_[report.output_path];
     VarsToReport vars_to_report;
     std::size_t offset_lfp = 0;
-    for (const auto& gid: gids_to_report) {
+    for (const auto& intersection_id: intersection_ids) {
+        const auto gid = report.target[intersection_id];
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
         if (cell_mapping == nullptr) {
-            std::cerr << "[LFP] Error : Compartment mapping information is missing for gid " << gid
+            std::cerr << "[ERROR] : LFP report mapping information is missing for gid " << gid
                       << '\n';
             nrn_abort(1);
         }

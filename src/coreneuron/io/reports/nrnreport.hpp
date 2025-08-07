@@ -96,10 +96,10 @@ EnumT from_string(std::string_view str,
 // ReportType
 enum class ReportType { Compartment, CompartmentSet, Summation, Synapse, LFP };
 constexpr std::array<std::pair<ReportType, std::string_view>, 5> report_type_map{
-    {{ReportType::Compartment, "Compartment"},
-     {ReportType::CompartmentSet, "CompartmentSet"},
-     {ReportType::Summation, "Summation"},
-     {ReportType::Synapse, "Synapse"},
+    {{ReportType::Compartment, "compartment"},
+     {ReportType::CompartmentSet, "compartment_set"},
+     {ReportType::Summation, "summation"},
+     {ReportType::Synapse, "synapse"},
      {ReportType::LFP, "LFP"}}};
 inline std::string to_string(ReportType t) {
     return to_string(t, report_type_map, "ReportType");
