@@ -9,7 +9,7 @@ build-backend = "scikit_build_core.build"
 # `build-system.requires` nor `project.dependencies`, so we need to list them
 # here manually. These are all of the dependencies that CMake finds as well.
 requires = [
-  "cython<=3.0.12",
+  "cython<=3.1.2,>=3.1",
   "jinja2>=2.9.3,<=3.1.6",
   "numpy<=2.2.3",
   "pyyaml>=3.13,<=6.0.2",
@@ -124,8 +124,9 @@ NRN_MPI_DYNAMIC = { env = "NRN_MPI_DYNAMIC" }
 
 [tool.cibuildwheel]
 # We can specify a custom Docker image when building NEURON
-manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64"
-manylinux-x86_64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64"
+# TODO remove the `_freethreaded` suffix from the images
+manylinux-aarch64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_aarch64_freethreaded"
+manylinux-x86_64-image = "docker.io/neuronsimulator/neuron_wheel:manylinux_2_28_x86_64_freethreaded"
 
 # certain platforms are not supported
 skip = [ "pp*", "*-win32", "*-manylinux_i686", "*-musllinux_i686", "*-musllinux_x86_64", "*-musllinux_aarch64" ]

@@ -51,20 +51,26 @@ jobs:
           # I would've preferred the versions to be in their own YAML file for
           # readability, but alas, GitHub Actions does not support expanding
           # nested expressions, so we do this the brute-force way with Bash
-          case "${{ inputs.python_version }}" in
+          formal_version=${{ inputs.python_version }}
+          case ${formal_version} in
             3.9) version="3.9.13" ;;
             3.10) version="3.10.11" ;;
             3.11) version="3.11.7" ;;
             3.12) version="3.12.0" ;;
             3.13) version="3.13.0" ;;
-            *) echo "Unknown Python version"; exit 1 ;;
+            3.13t) version="3.13.0" ;;
+            *) echo "Unknown Python version: ${formal_version}"; exit 1 ;;
           esac
 
           installer_name="macos11.pkg"
           installer_filename="python-${version}-${installer_name}"
           url="https://www.python.org/ftp/python/${version}/${installer_filename}"
           curl $url -o $installer_filename
-          sudo installer -pkg $installer_filename -target /
+          if [[ "${formal_version}" =~ .*t$ ]]; then
+            sudo installer -pkg $installer_filename -applyChoiceChangesXML packaging/python/macos_installer_patch${formal_version}.plist -target /
+          else
+            sudo installer -pkg $installer_filename -target /
+          fi
 
       - name: Install system dependencies
         if: runner.os == 'macOS'
@@ -105,7 +111,7 @@ jobs:
 
       - name: Build wheel
         run: |
-          bash packaging/python/build_wheels.bash $(uname -s) ${{ inputs.python_version }}
+          CIBW_ENABLE=cpython-freethreading bash packaging/python/build_wheels.bash $(uname -s) ${{ inputs.python_version }}
 
       - name: Upload wheel files
         uses: actions/upload-artifact@v4
