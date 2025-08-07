@@ -3,7 +3,11 @@
 #include <stdbool.h>
 
 #ifdef __cplusplus
+#include <cstdio>
+using std::FILE;
 extern "C" {
+#else
+#include <stdio.h>
 #endif
 
 // forward declarations (c++) and opaque c types
@@ -51,6 +55,8 @@ void nrn_mechanism_insert(Section* sec, const Symbol* mechanism);
 nrn_Item* nrn_allsec(void);
 nrn_Item* nrn_sectionlist_data(const Object* obj);
 bool nrn_section_is_active(const Section* sec);
+void nrn_section_ref(Section* sec);
+void nrn_section_unref(Section* sec);
 Section* nrn_cas(void);
 
 /****************************************
@@ -78,7 +84,7 @@ double nrn_double_pop(void);
 void nrn_double_ptr_push(double* addr);
 double* nrn_double_ptr_pop(void);
 void nrn_str_push(char** str);
-char** nrn_pop_str(void);
+char** nrn_str_pop(void);
 void nrn_int_push(int i);
 int nrn_int_pop(void);
 void nrn_object_push(Object* obj);
@@ -96,6 +102,7 @@ void nrn_object_ref(Object* obj);
 void nrn_object_unref(Object* obj);
 char const* nrn_class_name(const Object* obj);
 bool nrn_prop_exists(const Object* obj);
+double nrn_distance(Section* sec0, double x0, Section* sec1, double x1);
 
 /****************************************
  * Shape Plot
@@ -132,6 +139,20 @@ Symlist* nrn_global_symbol_table(void);
 Symlist* nrn_top_level_symbol_table(void);
 int nrn_symbol_array_length(const Symbol* sym);
 void nrn_register_function(void (*proc)(), const char* func_name, int type);
+void nrn_hoc_ret(void);
+
+/****************************************
+ * Parameter-reading functions
+ ****************************************/
+Object** nrn_objgetarg(int arg);
+char* nrn_gargstr(int arg);
+double* nrn_getarg(int arg);
+FILE* nrn_obj_file_arg(int i);
+bool nrn_ifarg(int arg);
+bool nrn_is_object_arg(int arg);
+bool nrn_is_str_arg(int arg);
+bool nrn_is_double_arg(int arg);
+bool nrn_is_pdouble_arg(int arg);
 
 #ifdef __cplusplus
 }

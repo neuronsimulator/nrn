@@ -191,7 +191,7 @@ run_parallel_test() {
       run_mpi_test "mpirun.mpich" "MPICH" ""
       # choose openmpi
       sudo update-alternatives --set mpi-${ARCH_DIR}-linux-gnu /usr/lib/${ARCH_DIR}-linux-gnu/openmpi/include
-      run_mpi_test "mpirun.openmpi" "OpenMPI" ""
+      run_mpi_test "mpirun.openmpi --oversubscribe" "OpenMPI" ""
 
     # linux desktop or docker container used for wheel
     else

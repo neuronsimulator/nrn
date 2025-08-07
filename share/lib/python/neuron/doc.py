@@ -26,6 +26,7 @@ a feature whose implementation is based on the neuron.doc module.
 """
 
 import pydoc, sys, io, inspect
+from pydoc import ErrorDuringImport
 from neuron import h
 
 
@@ -48,7 +49,7 @@ class NRNPyHelper(pydoc.Helper):
 help = NRNPyHelper(sys.stdin, sys.stdout)
 
 
-def doc_asstring(thing, title="Python Library Documentation: %s", forceload=0):
+def doc_asstring(thing, title="Python Library Documentation: {}", forceload=0):
     """return text documentation as a string, given an object or a path to an object."""
     try:
         object, name = pydoc.resolve(thing, forceload)
@@ -70,7 +71,7 @@ def doc_asstring(thing, title="Python Library Documentation: %s", forceload=0):
             # document its available methods instead of its value.
             object = type(object)
             desc += " object"
-        return title % desc + "\n\n" + pydoc.text.document(object, name)
+        return title.format(desc) + "\n\n" + pydoc.text.document(object, name)
     except (ImportError, ErrorDuringImport) as value:
         print(value)
 
@@ -158,7 +159,7 @@ https://nrn.readthedocs.org/
 
 
 default_member_doc_template = """
-No docstring available for the class member '%s.%s'
+No docstring available for the class member '{}.{}'
 
 Try checking the online documentation at:
 https://nrn.readthedocs.org/
@@ -181,7 +182,7 @@ def _get_class_from_help_dict(name):
     methods = dir(h.__getattribute__(name))
     for m in methods:
         if f"{name}.{m}" in _help_dict:
-            result += "\n\n\n%s.%s:\n\n%s" % (name, m, _help_dict[f"{name}.{m}"])
+            result += f"\n\n\n{name}.{m}:\n\n{_help_dict[f'{name}.{m}']}"
     return result
 
 
@@ -209,7 +210,6 @@ def get_docstring(objtype, symbol):
         f.close()
 
     if (objtype, symbol) == ("", ""):
-
         return doc_h
 
     # are we asking for help on a class, e.g. h.Vector
@@ -231,8 +231,7 @@ def get_docstring(objtype, symbol):
     if full_name in _help_dict:
         return _get_from_help_dict(full_name)
     else:
-
-        return default_member_doc_template % (
+        return default_member_doc_template.format(
             objtype,
             symbol,
             get_docstring(objtype, ""),
