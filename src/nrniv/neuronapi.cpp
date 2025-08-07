@@ -359,13 +359,16 @@ void nrn_function_call(Symbol* sym, int narg) {
     OcJump::execute_throw_on_exception(sym, narg);
 }
 
-int nrn_method_call_nothrow(Object* obj, Symbol* method_sym, int narg, 
-                            char* error_msg, size_t error_msg_size) {
+int nrn_method_call_nothrow(Object* obj,
+                            Symbol* method_sym,
+                            int narg,
+                            char* error_msg,
+                            size_t error_msg_size) {
     // Initialize error message buffer
     if (error_msg && error_msg_size > 0) {
         error_msg[0] = '\0';
     }
-    
+
     try {
         OcJump::execute_throw_on_exception(obj, method_sym, narg);
         return 0;  // Success
@@ -384,13 +387,12 @@ int nrn_method_call_nothrow(Object* obj, Symbol* method_sym, int narg,
     }
 }
 
-int nrn_function_call_nothrow(Symbol* sym, int narg, 
-                              char* error_msg, size_t error_msg_size) {
+int nrn_function_call_nothrow(Symbol* sym, int narg, char* error_msg, size_t error_msg_size) {
     // Initialize error message buffer
     if (error_msg && error_msg_size > 0) {
         error_msg[0] = '\0';
     }
-    
+ 
     try {
         OcJump::execute_throw_on_exception(sym, narg);
         return 0;  // Success
