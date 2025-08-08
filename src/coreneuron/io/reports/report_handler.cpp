@@ -34,7 +34,7 @@ void ReportHandler::register_custom_report(const NrnThread& nt,
     }
 }
 
-void fill_segment_id_2_node_id(Memb_list* ml, std::unordered_map<int, int>& segment_id_2_node_id) {
+static void fill_segment_id_2_node_id(Memb_list* ml, std::unordered_map<int, int>& segment_id_2_node_id) {
     nrn_assert(ml && "Memb_list is a nullptr!");
 
     // do not fill if not empty. We already did this. Be lazy
@@ -52,7 +52,7 @@ void fill_segment_id_2_node_id(Memb_list* ml, std::unordered_map<int, int>& segm
 }
 
 // map GIDs of every compartment, it consist in a backward sweep then forward sweep algorithm
-std::vector<int> map_gids(const NrnThread& nt) {
+static std::vector<int> map_gids(const NrnThread& nt) {
     std::vector<int> nodes_gid(nt.end, -1);
     // backward sweep: from presyn compartment propagate back GID to parent
     for (int i = 0; i < nt.n_presyn; i++) {
@@ -104,7 +104,7 @@ std::vector<int> map_gids(const NrnThread& nt) {
  * @param segment_id_2_node_id Cache mapping segment IDs to node indices; populated if empty.
  * @return Pointer to the requested variable's memory location, or nullptr if mechanism not found.
  */
-double* get_var(const NrnThread& nt,
+static double* get_var(const NrnThread& nt,
                 const int mech_id,
                 const std::string& var_name,
                 const std::string& mech_name,
@@ -134,7 +134,7 @@ double* get_var(const NrnThread& nt,
     return get_var_location_from_var_name(mech_id, mech_name, var_name, ml, node_id);
 }
 
-double get_scaling_factor(const std::string& mech_name,
+static double get_scaling_factor(const std::string& mech_name,
                           Scaling scaling,
                           const NrnThread& nt,
                           const int segment_id) {
@@ -196,7 +196,7 @@ static void append_sections_to_to_report_auto_variable(
 
 
 // fill to_report with (int section_id, double* variable)
-void append_sections_to_to_report(const std::shared_ptr<SecMapping>& sections,
+static void append_sections_to_to_report(const std::shared_ptr<SecMapping>& sections,
                                   std::vector<VarWithMapping>& to_report,
                                   double* report_variable,
                                   const ReportConfiguration& report_conf) {
@@ -231,7 +231,7 @@ void append_sections_to_to_report(const std::shared_ptr<SecMapping>& sections,
 
 
 /// @brief create an vector of ids in target_gids that are on this thread
-std::vector<int> get_intersection_ids(const NrnThread& nt, std::vector<int>& target_gids) {
+static std::vector<int> get_intersection_ids(const NrnThread& nt, std::vector<int>& target_gids) {
     std::unordered_set<int> thread_gids;
     for (int i = 0; i < nt.ncell; i++) {
         thread_gids.insert(nt.presyns[i].gid_);
@@ -251,7 +251,7 @@ std::vector<int> get_intersection_ids(const NrnThread& nt, std::vector<int>& tar
 }
 
 /// loop over the points of a compartment set and to return VarsToReport
-VarsToReport get_compartment_set_vars_to_report(const NrnThread& nt,
+static VarsToReport get_compartment_set_vars_to_report(const NrnThread& nt,
                                                 const std::vector<int>& intersection_ids,
                                                 const ReportConfiguration& report) {
     nrn_assert(report.mech_ids.size() == 1);
@@ -298,7 +298,7 @@ VarsToReport get_compartment_set_vars_to_report(const NrnThread& nt,
 }
 
 
-VarsToReport get_section_vars_to_report(const NrnThread& nt,
+static VarsToReport get_section_vars_to_report(const NrnThread& nt,
                                         const std::vector<int>& intersection_ids,
                                         const ReportConfiguration& report) {
     nrn_assert(report.mech_ids.size() == 1);
@@ -348,10 +348,9 @@ VarsToReport get_section_vars_to_report(const NrnThread& nt,
     return vars_to_report;
 }
 
-VarsToReport get_summation_vars_to_report(const NrnThread& nt,
+static VarsToReport get_summation_vars_to_report(const NrnThread& nt,
                                           const std::vector<int>& intersection_ids,
-                                          const ReportConfiguration& report,
-                                          const std::vector<int>& nodes_to_gids) {
+                                          const ReportConfiguration& report) {
     VarsToReport vars_to_report;
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     auto& summation_report = nt.summation_report_handler_->summation_reports_[report.output_path];
@@ -446,7 +445,7 @@ VarsToReport get_summation_vars_to_report(const NrnThread& nt,
     return vars_to_report;
 }
 
-VarsToReport get_synapse_vars_to_report(const NrnThread& nt,
+static VarsToReport get_synapse_vars_to_report(const NrnThread& nt,
                                         const std::vector<int>& intersection_ids,
                                         const ReportConfiguration& report,
                                         const std::vector<int>& nodes_to_gids) {
@@ -493,11 +492,10 @@ VarsToReport get_synapse_vars_to_report(const NrnThread& nt,
     return vars_to_report;
 }
 
-VarsToReport get_lfp_vars_to_report(const NrnThread& nt,
+static VarsToReport get_lfp_vars_to_report(const NrnThread& nt,
                                     const std::vector<int>& intersection_ids,
                                     ReportConfiguration& report,
-                                    double* report_variable,
-                                    const std::vector<int>& nodes_to_gids) {
+                                    double* report_variable) {
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     if (!mapinfo) {
         std::cerr << "[ERROR] : LFP report mapping information is missing for a Cell group "
@@ -575,14 +573,14 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
         }
         case ReportType::Summation: {
             vars_to_report =
-                get_summation_vars_to_report(nt, intersection_ids, report_config, nodes_to_gid);
+                get_summation_vars_to_report(nt, intersection_ids, report_config);
             register_custom_report(nt, report_config, vars_to_report);
             break;
         }
         case ReportType::LFP: {
             mapinfo->prepare_lfp();
             vars_to_report = get_lfp_vars_to_report(
-                nt, intersection_ids, report_config, mapinfo->_lfp.data(), nodes_to_gid);
+                nt, intersection_ids, report_config, mapinfo->_lfp.data());
             register_section_report(nt, report_config, vars_to_report, is_soma_target);
             break;
         }
