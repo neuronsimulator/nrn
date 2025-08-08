@@ -125,11 +125,12 @@ EnumT from_string(std::string_view str,
 }
 
 // ReportType
-enum class ReportType { Compartment, Summation, Synapse, LFP };
-constexpr std::array<std::pair<ReportType, std::string_view>, 4> report_type_map{
-    {{ReportType::Compartment, "Compartment"},
-     {ReportType::Summation, "Summation"},
-     {ReportType::Synapse, "Synapse"},
+enum class ReportType { Compartment, CompartmentSet, Summation, Synapse, LFP };
+constexpr std::array<std::pair<ReportType, std::string_view>, 5> report_type_map{
+    {{ReportType::Compartment, "compartment"},
+     {ReportType::CompartmentSet, "compartment_set"},
+     {ReportType::Summation, "summation"},
+     {ReportType::Synapse, "synapse"},
      {ReportType::LFP, "LFP"}}};
 inline std::string to_string(ReportType t) {
     return to_string(t, report_type_map, "ReportType");
@@ -138,67 +139,26 @@ inline ReportType report_type_from_string(const std::string& s) {
     return from_string<ReportType>(s, report_type_map, "ReportType");
 }
 
-// TargetType
-enum class TargetType {
-    Compartment = 0,
-    Cell = 1,
-    SectionSoma = 2,
-    SectionAxon = 3,
-    SectionDendrite = 4,
-    SectionApical = 5,
-    SectionSomaAll = 6,
-    SectionAxonAll = 7,
-    SectionDendriteAll = 8,
-    SectionApicalAll = 9,
-};
-
-constexpr std::array<std::pair<TargetType, std::string_view>, 10> target_type_map{
-    {{TargetType::Compartment, "Compartment"},
-     {TargetType::Cell, "Cell"},
-     {TargetType::SectionSoma, "SectionSoma"},
-     {TargetType::SectionAxon, "SectionAxon"},
-     {TargetType::SectionDendrite, "SectionDendrite"},
-     {TargetType::SectionApical, "SectionApical"},
-     {TargetType::SectionSomaAll, "SectionSomaAll"},
-     {TargetType::SectionAxonAll, "SectionAxonAll"},
-     {TargetType::SectionDendriteAll, "SectionDendriteAll"},
-     {TargetType::SectionApicalAll, "SectionApicalAll"}}};
-
-inline std::string to_string(TargetType t) {
-    return to_string(t, target_type_map, "TargetType");
-}
-inline TargetType target_type_from_string(const std::string& s) {
-    return from_string<TargetType>(s, target_type_map, "TargetType");
-}
-
 // SectionType
-enum class SectionType { Cell, Soma, Axon, Dendrite, Apical, Custom, All };
+enum class SectionType { Cell, Soma, Axon, Dendrite, Apical, Ais, Node, Myelin, All, Invalid };
 
-constexpr std::array<std::pair<SectionType, std::string_view>, 7> section_type_map{{
-    {SectionType::Cell, "Cell"},
-    {SectionType::Soma, "Soma"},
-    {SectionType::Axon, "Axon"},
-    {SectionType::Dendrite, "Dendrite"},
-    {SectionType::Apical, "Apical"},
-    {SectionType::Custom, "Custom"},
-    {SectionType::All, "All"},
-}};
+constexpr std::array<std::pair<SectionType, std::string_view>, 11> section_type_map{
+    {{SectionType::Cell, "Cell"},
+     {SectionType::Soma, "Soma"},
+     {SectionType::Axon, "Axon"},
+     {SectionType::Dendrite, "Dend"},
+     {SectionType::Apical, "Apic"},
+     {SectionType::Ais, "Ais"},
+     {SectionType::Node, "Node"},
+     {SectionType::Myelin, "Myelin"},
+     {SectionType::All, "All"},
+     {SectionType::Invalid, "Invalid"}}};
 
 inline std::string to_string(SectionType t) {
     return to_string(t, section_type_map, "SectionType");
 }
 inline SectionType section_type_from_string(std::string_view str) {
-    auto it =
-        std::find_if(section_type_map.begin(), section_type_map.end(), [&str](const auto& pair) {
-            return equals_case_insensitive(str, pair.second);
-        });
-
-    if (it != section_type_map.end()) {
-        return it->first;
-    }
-
-    // Default to Custom instead of aborting
-    return SectionType::Custom;
+    return from_string<SectionType>(str, section_type_map, "SectionType");
 }
 
 // Scaling
@@ -214,26 +174,41 @@ inline Scaling scaling_from_string(const std::string& str) {
     return from_string<Scaling>(str, scaling_map, "Scaling");
 }
 
+enum class Compartments { All, Center, Invalid };
+constexpr std::array<std::pair<Compartments, std::string_view>, 3> compartments_map{
+    {{Compartments::All, "All"},
+     {Compartments::Center, "Center"},
+     {Compartments::Invalid, "Invalid"}}};
+
+inline std::string to_string(Compartments s) {
+    return to_string(s, compartments_map, "Compartments");
+}
+inline Compartments compartments_from_string(const std::string& str) {
+    return from_string<Compartments>(str, compartments_map, "Compartments");
+}
+
 struct ReportConfiguration {
-    std::string name;                     // name of the report
-    std::string output_path;              // full path of the report
-    std::string target_name;              // target of the report
-    std::vector<std::string> mech_names;  // mechanism names
-    std::vector<std::string> var_names;   // variable names
-    std::vector<int> mech_ids;            // mechanisms
-    std::string unit;                     // unit of the report
-    std::string format;                   // format of the report (SONATA)
-    std::string type_str;                 // type of report string
-    TargetType target_type;               // type of the target
-    ReportType type;                      // type of the report
-    SectionType section_type;             // type of section report
-    bool section_all_compartments;        // flag for section report (all values)
-    double report_dt;                     // reporting timestep
-    double start;                         // start time of report
-    double stop;                          // stop time of report
-    int num_gids;                         // total number of gids
-    int buffer_size;                      // hint on buffer size used for this report
-    std::vector<int> target;              // list of gids for this report
+    std::string name;                        // name of the report
+    std::string output_path;                 // full path of the report
+    std::string target_name;                 // target of the report
+    std::vector<std::string> mech_names;     // mechanism names
+    std::vector<std::string> var_names;      // variable names
+    std::vector<int> mech_ids;               // mechanisms
+    std::string unit;                        // unit of the report
+    std::string format;                      // format of the report (SONATA)
+    ReportType type;                         // type of the report
+    SectionType sections;                    // type of section report
+    Compartments compartments;               // flag for section report (all values)
+    double report_dt;                        // reporting timestep
+    double start;                            // start time of report
+    double stop;                             // stop time of report
+    int num_gids;                            // total number of gids
+    int buffer_size;                         // hint on buffer size used for this report
+    std::vector<int> target;                 // list of gids for this report
+    std::vector<int> point_section_ids;      // list of section_ids for this compartment set report
+                                             // (empty otherwise)
+    std::vector<int> point_compartment_ids;  // list of compartment_ids for this compartment set
+                                             // report (empty otherwise)
     Scaling scaling;
 };
 
