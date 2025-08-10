@@ -518,7 +518,7 @@ cdef void _process_left_join(neighbor_left, cone, x0, y0, z0, r0, x1, y1, z1, r1
 
         # count the corners that are inside the other cone (for both ways)
         # CTNG:outsidecorners
-        corner_pts = [pt1 + r1 * radial_vec, pt1 - r1 * radial_vec, pt1 + r1 * nradial_vec, pt1 - r1 * nradial_vec]
+        corner_pts = numpy.array([pt1 + r1 * radial_vec, pt1 - r1 * radial_vec, pt1 + r1 * nradial_vec, pt1 - r1 * nradial_vec])
         my_corner_count = count_outside(neighbor_left, [corner_pts[0], corner_pts[1]], 0)
         corner_count = my_corner_count + count_outside(cone, [corner_pts[2], corner_pts[3]], 0)
 
