@@ -1,4 +1,3 @@
-#cython: language_level=2
 # this contains cone, spherecone, and cylinder code translated and modified from Barbier and
 # Galin 2004's example code
 # see /u/ramcd/spatial/experiments/one_time_tests/2012-06-28/cone.cpp
