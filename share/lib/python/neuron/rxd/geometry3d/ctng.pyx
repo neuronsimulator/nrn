@@ -59,11 +59,11 @@ cdef tuple extreme_pts(list pts):
             dx = x1 - pt2[0]
             dy = y1 - pt2[1]
             dz = z1 - pt2[2]
-                d2 = dx * dx + dy * dy + dz * dz
-                if d2 > max_dist2:
-                    best_p1 = pts[i]
-                    best_p2 = pt2
-                    max_dist2 = d2
+            d2 = dx * dx + dy * dy + dz * dz
+            if d2 > max_dist2:
+                best_p1 = pts[i]
+                best_p2 = pt2
+                max_dist2 = d2
     return best_p1, best_p2
 
 # helper function for maintaing the points-cones database
