@@ -27,28 +27,43 @@ cdef tuple seg_line_intersection(double x1, double y1, double x2, double y2, dou
     return (x1 + u * (x2 - x1), y1 + u * (y2 - y1))
 
 cdef tuple closest_pt(pt, list pts, z2):
-    dist = float('inf')
-    closest = None
+    cdef double dist2 = float('inf')
+    cdef object closest = None
+    cdef double x0, y0
+    cdef double d2, dx, dy, dz2
+    x0 = pt[0]
+    y0 = pt[1]
+    dz2 = (pt[2] - z2) ** 2
     for p in pts:
         x, y = p
-        d = linalg.norm(numpy.array(pt) - numpy.array((x, y, z2)))
-        if d < dist:
-            dist = d
+        dx = x0 - x
+        dy = y0 - y
+        d2 = dx * dx + dy * dy + dz2
+        if d2 < dist2:
+            dist2 = d2
             closest = p
     return tuple(closest)
 
 cdef tuple extreme_pts(list pts):
-    if len(pts) < 2: raise RxDException('extreme points computation failed')
-    cdef double max_dist, d
-    cdef tuple pt1, pt2, best_p1, best_p2
-    max_dist = -1
-
-    for pt1, pt2 in itertools.combinations(pts, 2):
-        d = linalg.norm(numpy.array(pt1) - numpy.array(pt2))
-        if d > max_dist:
-            best_p1 = pt1
-            best_p2 = pt2
-            max_dist = d
+    if len(pts) < 2:
+        raise RxDException('extreme points computation failed')
+    cdef double max_dist2 = -1
+    cdef double d2, dx, dy, dz
+    cdef tuple best_p1, best_p2
+    cdef double x1, y1, z1
+    cdef tuple pt2
+    for i in range(len(pts)):
+        x1, y1, z1 = pts[i]
+        for j in range(i + 1, len(pts)):
+            pt2 = pts[j]
+            dx = x1 - pt2[0]
+            dy = y1 - pt2[1]
+            dz = z1 - pt2[2]
+                d2 = dx * dx + dy * dy + dz * dz
+                if d2 > max_dist2:
+                    best_p1 = pts[i]
+                    best_p2 = pt2
+                    max_dist2 = d2
     return best_p1, best_p2
 
 # helper function for maintaing the points-cones database
