@@ -545,3 +545,19 @@ cpdef double _tri_area(numpy.ndarray[numpy.float_t, ndim=1] triangles, int lo, i
         if numpy.isnan(local_area):
             print('tri_area exception: ', ', '.join([str(v) for v in triangles[i : i + 9]]))
     return doublearea * 0.5
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef double tri_volume(numpy.ndarray[numpy.float_t, ndim=1] triangles):
+    cdef double sixtimesvolume = 0., local_vol
+    cdef int i
+    for i in range(0, len(triangles), 9):
+        local_vol = llpipedfromoriginvolume(&triangles[i], &triangles[3 + i], &triangles[6 + i])
+        sixtimesvolume += local_vol
+        if numpy.isnan(local_vol):
+            print('tri_volume exception:')
+            for j in range(i, i + 9):
+                print(triangles[j], end=' ')
+            print()  # newline
+                
+    return abs(sixtimesvolume / 6.)
