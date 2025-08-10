@@ -43,7 +43,6 @@ class TriangularMesh:
         """A list of the triangles, described as lists of the indices of three points."""
         return [(i, i + 1, i + 2) for i in range(0, len(self.data) / 3, 3)]
 
-
     def has_unmatched_edge(self, precision=3):
         """Checks for edges that belong to only one triangle. True if they exist; else False.
 
