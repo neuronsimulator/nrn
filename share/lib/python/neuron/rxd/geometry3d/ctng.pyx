@@ -17,7 +17,6 @@ cdef extern from "math.h":
     double sqrt(double)
     double fabs(double)
 
-from .graphicsPrimitives import Sphere, Cone, Cylinder, SkewCone, Plane, Union, Intersection, SphereCone
 
 cdef tuple seg_line_intersection(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4, bint clip):
     # returns None if parallel (so None if 0 or infinitely many intersections)
@@ -73,6 +72,7 @@ cdef int count_outside(region, list pts, double err):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef tuple get_infinite_cones(double x0, double y0, double z0, double r0, double x1, double y1, double z1, double r1, double x2, double y2, double z2, double r2):
+    from .graphicsPrimitives import Cone
     cdef double deltar, deltanr
     cdef numpy.ndarray[numpy.float_t, ndim=1] axis, naxis
 
@@ -107,6 +107,7 @@ cdef tuple get_infinite_cones(double x0, double y0, double z0, double r0, double
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef list join_outside(double x0, double y0, double z0, double r0, double x1, double y1, double z1, double r1, double x2, double y2, double z2, double r2, double dx):
+    from .graphicsPrimitives import Sphere, Intersection, Plane, Cone
     cdef numpy.ndarray[numpy.float_t, ndim=1] pt1, radial_vec, nradial_vec, axis, naxis
 
     c0, c1 = get_infinite_cones(x0, y0, z0, r0, x1, y1, z1, r1, x2, y2, z2, r2)
@@ -166,6 +167,7 @@ cdef list join_outside(double x0, double y0, double z0, double r0, double x1, do
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def soma_objects(x, y, z, sec, double x0, double y0, double z0, int n_soma_step):
+    from .graphicsPrimitives import SkewCone
     cdef double diam1, diam2, somax, somay, somaz
     cdef list objects = []
     cdef list f_pts
@@ -429,6 +431,7 @@ cdef void _connect_to_soma(x, y, z, d, psec, soma_secs, branch, potential_soma_c
             potential_soma_cones[branch] = []
 
 cdef void _create_cone_objects(x, y, z, d, diam_corrections, all_cones, pts_cones_db, diam_db, branch, potential_soma_cones):
+    from .graphicsPrimitives import Cone, Cylinder
     """Create cone or cylinder objects from coordinates."""
     cdef double x0, y0, z0, x1, y1, z1, d0, d1
     cdef double axisx, axisy, axisz, deltad, axislength
@@ -479,6 +482,7 @@ cdef dict _check_diameter_corrections(diam_db, bint nouniform):
     return diam_corrections
 
 cdef void _process_left_join(neighbor_left, cone, x0, y0, z0, r0, x1, y1, z1, r1, x2, y2, z2, r2, 
+    from .graphicsPrimitives import Sphere, Intersection, Plane, Union, Cylinder, Cone
                             axis, pt0, pt1, naxis, objects, joingroup, obj_pts_dict, clips, double dx):
     """Process join on the left side."""
     cdef bint sharp_turn
@@ -519,7 +523,7 @@ cdef void _process_left_join(neighbor_left, cone, x0, y0, z0, r0, x1, y1, z1, r1
 
         # count the corners that are inside the other cone (for both ways)
         # CTNG:outsidecorners
-        corner_pts = numpy.array([pt1 + r1 * radial_vec, pt1 - r1 * radial_vec, pt1 + r1 * nradial_vec, pt1 - r1 * nradial_vec])
+        corner_pts = [pt1 + r1 * radial_vec, pt1 - r1 * radial_vec, pt1 + r1 * nradial_vec, pt1 - r1 * nradial_vec]
         my_corner_count = count_outside(neighbor_left, [corner_pts[0], corner_pts[1]], 0)
         corner_count = my_corner_count + count_outside(cone, [corner_pts[2], corner_pts[3]], 0)
 
@@ -589,6 +593,7 @@ cdef void _process_left_join(neighbor_left, cone, x0, y0, z0, r0, x1, y1, z1, r1
                     Plane(x0, y0, z0, axis[0], axis[1], axis[2])]))
 
 cdef void _process_right_join(neighbor_right, cone, x2, y2, z2, r2, x3, y3, z3, r3, axis, pt2, pt3, naxis, clips):
+    from .graphicsPrimitives import Cylinder, Cone, Plane, Union
     """Process join on the right side."""
     cdef bint sharp_turn
     cdef numpy.ndarray[numpy.float_t, ndim=1] plane_normal, radial_vec, nradial_vec
@@ -633,6 +638,7 @@ cdef void _process_right_join(neighbor_right, cone, x2, y2, z2, r2, x3, y3, z3, 
                         neighbor_copy]))
 
 cdef void _process_join_clipping(all_cones, pts_cones_db, objects, join_groups, obj_pts_dict, double dx):
+    from .graphicsPrimitives import Intersection, Union, Cylinder, Cone, Plane
     """Process join creation and clipping for all cones."""
     cdef dict cone_clip_db = {cone: [] for cone in all_cones}
     cdef bint sharp_turn

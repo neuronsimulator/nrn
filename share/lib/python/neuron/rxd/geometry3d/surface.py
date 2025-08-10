@@ -1,6 +1,3 @@
-from . import ctng
-from . import surfaces
-from . import triangularMesh
 import numpy
 from numpy import sqrt, fabs
 
@@ -56,6 +53,9 @@ def surface(source, dx=0.25, internal_membranes=False, n_soma_step=100):
         because the former preserves the soma outline information while
         the later does not. Up to one soma outline is currently supported.
     """
+    from . import ctng
+    from . import surfaces
+    from . import triangularMesh
     objects = ctng.constructive_neuronal_geometry(source, n_soma_step, dx)
 
     xlo = min(obj.xlo for obj in objects)
