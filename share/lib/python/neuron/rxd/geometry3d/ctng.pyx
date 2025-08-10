@@ -67,7 +67,7 @@ cdef tuple extreme_pts(list pts):
     return best_p1, best_p2
 
 # helper function for maintaing the points-cones database
-cdef register(dict pts_cones_db, tuple pt, cone):
+cdef void register(dict pts_cones_db, tuple pt, object cone):
     if pt not in pts_cones_db:
         pts_cones_db[pt] = []
     pts_cones_db[pt].append(cone)
@@ -291,11 +291,11 @@ def soma_objects(x, y, z, sec, double x0, double y0, double z0, int n_soma_step)
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef tuple _process_import3d_source(source, int n_soma_step, soma_secs, soma_segment_dict):
+cdef tuple _process_import3d_source(object source, int n_soma_step, dict soma_secs, dict soma_segment_dict):
     """Process Import3D type source."""
     cdef int no_parent_count = 0
-    branches = []
-    parent_sec_name = []
+    cdef list branches = []
+    cdef list parent_sec_name = []
     
     cell = source
     # probably an Import3D type
@@ -326,11 +326,11 @@ cdef tuple _process_import3d_source(source, int n_soma_step, soma_secs, soma_seg
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef tuple _process_regular_source(source, double dx, soma_secs, soma_segment_dict, int n_soma_step):
+cdef tuple _process_regular_source(object source, double dx, dict soma_secs, dict soma_segment_dict, int n_soma_step):
     """Process regular source (list of sections)."""
     h.define_shape()
-    branches = []
-    parent_sec_name = []
+    cdef list branches = []
+    cdef list parent_sec_name = []
     
     for sec in source:
         # TODO: make this more general (support for 3D contour outline)
@@ -367,7 +367,7 @@ cdef tuple _process_regular_source(source, double dx, soma_secs, soma_segment_di
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef tuple _extract_branch_coordinates(branch, int k, bint source_is_import3d, relevant_pts, cone_segment_dict):
+cdef tuple _extract_branch_coordinates(object branch, int k, bint source_is_import3d, object relevant_pts, dict cone_segment_dict):
     """Extract coordinates and diameters from a branch."""
     if source_is_import3d:
         x, y, z = [numpy.array(branch.raw.getrow(i).to_python()) for i in range(3)]
@@ -423,7 +423,7 @@ cdef tuple _extract_branch_coordinates(branch, int k, bint source_is_import3d, r
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef void _connect_to_soma(x, y, z, d, psec, soma_secs, branch, potential_soma_cones):
+cdef void _connect_to_soma(object x, object y, object z, object d, object psec, dict soma_secs, object branch, dict potential_soma_cones):
     """Connect branch to soma if applicable."""
     if psec in soma_secs:
         f_pts, somaz = soma_secs[psec]
@@ -438,11 +438,12 @@ cdef void _connect_to_soma(x, y, z, d, psec, soma_secs, branch, potential_soma_c
         if branch not in potential_soma_cones:
             potential_soma_cones[branch] = []
 
-cdef void _create_cone_objects(x, y, z, d, diam_corrections, all_cones, pts_cones_db, diam_db, branch, potential_soma_cones):
+cdef void _create_cone_objects(object x, object y, object z, object d, dict diam_corrections, list all_cones, dict pts_cones_db, dict diam_db, object branch, dict potential_soma_cones):
     from .graphicsPrimitives import Cone, Cylinder
     """Create cone or cylinder objects from coordinates."""
     cdef double x0, y0, z0, x1, y1, z1, d0, d1
     cdef double axisx, axisy, axisz, deltad, axislength
+    cdef Py_ssize_t i
     
     for i in range(len(x) - 1):
         d0, d1 = d[i : i + 2]
@@ -478,7 +479,7 @@ cdef void _create_cone_objects(x, y, z, d, diam_corrections, all_cones, pts_cone
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef dict _check_diameter_corrections(diam_db, bint nouniform):
+cdef dict _check_diameter_corrections(dict diam_db, bint nouniform):
     """Check if diameter corrections are needed."""
     cdef dict diam_corrections = {}
     if not nouniform:
@@ -493,8 +494,8 @@ cdef dict _check_diameter_corrections(diam_db, bint nouniform):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef void _process_left_join(neighbor_left, cone, x0, y0, z0, r0, x1, y1, z1, r1, x2, y2, z2, r2, 
-                             axis, pt0, pt1, naxis, objects, joingroup, obj_pts_dict, clips, double dx):
+cdef void _process_left_join(object neighbor_left, object cone, double x0, double y0, double z0, double r0, double x1, double y1, double z1, double r1, double x2, double y2, double z2, double r2, 
+                             object axis, object pt0, object pt1, object naxis, list objects, list joingroup, dict obj_pts_dict, list clips, double dx):
     """Process join on the left side."""
     cdef bint sharp_turn
     cdef numpy.ndarray[numpy.float_t, ndim=1] plane_normal, radial_vec, nradial_vec
@@ -607,7 +608,7 @@ cdef void _process_left_join(neighbor_left, cone, x0, y0, z0, r0, x1, y1, z1, r1
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef void _process_right_join(neighbor_right, cone, x2, y2, z2, r2, x3, y3, z3, r3, axis, pt2, pt3, naxis, clips):
+cdef void _process_right_join(object neighbor_right, object cone, double x2, double y2, double z2, double r2, double x3, double y3, double z3, double r3, object axis, object pt2, object pt3, object naxis, list clips):
     from .graphicsPrimitives import Cylinder, Cone, Plane, Union
     """Process join on the right side."""
     cdef bint sharp_turn
@@ -654,7 +655,7 @@ cdef void _process_right_join(neighbor_right, cone, x2, y2, z2, r2, x3, y3, z3, 
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef void _process_join_clipping(all_cones, pts_cones_db, objects, join_groups, obj_pts_dict, double dx):
+cdef void _process_join_clipping(list all_cones, dict pts_cones_db, list objects, list join_groups, dict obj_pts_dict, double dx):
     from .graphicsPrimitives import Intersection, Union, Cylinder, Cone, Plane
     """Process join creation and clipping for all cones."""
     cdef dict cone_clip_db = {cone: [] for cone in all_cones}
@@ -721,7 +722,7 @@ cdef void _process_join_clipping(all_cones, pts_cones_db, objects, join_groups, 
         if clip:
             cone.set_clip([Union(clip)])
 
-cdef void _finalize_cone_segments(potential_soma_cones, cone_segment_dict):
+cdef void _finalize_cone_segments(dict potential_soma_cones, dict cone_segment_dict):
     """Finalize cone segment assignments."""
     for sec,cones in potential_soma_cones.items():
         for cone in cones:
@@ -729,7 +730,7 @@ cdef void _finalize_cone_segments(potential_soma_cones, cone_segment_dict):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform=False, relevant_pts=None):
+def constructive_neuronal_geometry(object source, int n_soma_step, double dx, bint nouniform=False, object relevant_pts=None):
     # Initialize variables
     cdef list objects = []
     cdef dict cone_segment_dict = {}
@@ -742,9 +743,9 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
     cdef dict potential_soma_cones = {}
 
     # Determine source type and process accordingly
-    source_is_import3d = False
-    branches = []
-    parent_sec_name = []
+    cdef bint source_is_import3d = False
+    cdef list branches = []
+    cdef list parent_sec_name = []
     
     # TODO: come up with a better way of checking type
     if hasattr(source, 'sections'):
@@ -759,6 +760,8 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
     #
     #####################################################################
     cdef dict diam_corrections = {None: None}
+    cdef Py_ssize_t k
+    cdef object branch, psec
 
     while diam_corrections:
         all_cones = []
