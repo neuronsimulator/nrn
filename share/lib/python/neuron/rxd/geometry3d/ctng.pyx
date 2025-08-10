@@ -45,21 +45,21 @@ cdef tuple closest_pt(pt, list pts, z2):
     return tuple(closest)
 
 cdef tuple extreme_pts(list pts):
+    # Note: this assumes 2D points
     if len(pts) < 2:
         raise RxDException('extreme points computation failed')
     cdef double max_dist2 = -1
     cdef double d2, dx, dy, dz
     cdef tuple best_p1, best_p2
-    cdef double x1, y1, z1
+    cdef double x1, y1
     cdef tuple pt2
     for i in range(len(pts)):
-        x1, y1, z1 = pts[i]
+        x1, y1 = pts[i]
         for j in range(i + 1, len(pts)):
             pt2 = pts[j]
             dx = x1 - pt2[0]
             dy = y1 - pt2[1]
-            dz = z1 - pt2[2]
-            d2 = dx * dx + dy * dy + dz * dz
+            d2 = dx * dx + dy * dy
             if d2 > max_dist2:
                 best_p1 = pts[i]
                 best_p2 = pt2
