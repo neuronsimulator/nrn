@@ -482,15 +482,16 @@ cdef dict _check_diameter_corrections(diam_db, bint nouniform):
     return diam_corrections
 
 cdef void _process_left_join(neighbor_left, cone, x0, y0, z0, r0, x1, y1, z1, r1, x2, y2, z2, r2, 
-    from .graphicsPrimitives import Sphere, Intersection, Plane, Union, Cylinder, Cone
-                            axis, pt0, pt1, naxis, objects, joingroup, obj_pts_dict, clips, double dx):
+                             axis, pt0, pt1, naxis, objects, joingroup, obj_pts_dict, clips, double dx):
     """Process join on the left side."""
     cdef bint sharp_turn
     cdef numpy.ndarray[numpy.float_t, ndim=1] plane_normal, radial_vec, nradial_vec
     cdef list corner_pts
     cdef int my_corner_count, corner_count
     cdef object sp, c0, c1, neighbor_copy
-    
+
+    from .graphicsPrimitives import Sphere, Intersection, Plane, Union, Cylinder, Cone
+
     # no need to clip if the cones are perfectly aligned
     if all(axis == naxis):
         #parallel
