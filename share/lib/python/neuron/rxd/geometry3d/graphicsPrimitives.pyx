@@ -8,7 +8,7 @@ import bisect
 cimport cython
 
 """
-The graphicsPrimitive module
+The graphicsPrimitives module
 """
 
 cdef extern from "math.h":

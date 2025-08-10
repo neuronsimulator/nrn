@@ -17,7 +17,7 @@ cdef extern from "math.h":
     double sqrt(double)
     double fabs(double)
 
-from graphicsPrimitives import Sphere, Cone, Cylinder, SkewCone, Plane, Union, Intersection, SphereCone
+from .graphicsPrimitives import Sphere, Cone, Cylinder, SkewCone, Plane, Union, Intersection, SphereCone
 
 cdef tuple seg_line_intersection(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4, bint clip):
     # returns None if parallel (so None if 0 or infinitely many intersections)
@@ -482,7 +482,8 @@ cdef void _process_left_join(neighbor_left, cone, x0, y0, z0, r0, x1, y1, z1, r1
                             axis, pt0, pt1, naxis, objects, joingroup, obj_pts_dict, clips, double dx):
     """Process join on the left side."""
     cdef bint sharp_turn
-    cdef numpy.ndarray[numpy.float_t, ndim=1] plane_normal, radial_vec, nradial_vec, corner_pts
+    cdef numpy.ndarray[numpy.float_t, ndim=1] plane_normal, radial_vec, nradial_vec
+    cdef list corner_pts
     cdef int my_corner_count, corner_count
     cdef object sp, c0, c1, neighbor_copy
     

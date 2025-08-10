@@ -5,7 +5,7 @@ import itertools
 import bisect
 cimport cython
 
-from neuron.rxd.geometry3d import graphicsPrimitives
+from . import graphicsPrimitives
 
 """
 The surfaces module

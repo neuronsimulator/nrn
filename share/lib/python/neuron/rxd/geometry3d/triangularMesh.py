@@ -3,11 +3,6 @@ import os
 import numpy
 import numpy.linalg
 
-# from mayavi import mlab
-
-# TODO: remove circular dependency
-from . import surfaces
-
 
 def _register_on_neighbor_map(the_map, pt, neighbor):
     # does not assume neighbor relations are bidirectional
@@ -48,10 +43,6 @@ class TriangularMesh:
         """A list of the triangles, described as lists of the indices of three points."""
         return [(i, i + 1, i + 2) for i in range(0, len(self.data) / 3, 3)]
 
-    @property
-    def area(self):
-        """The sum of the areas of the constituent triangles."""
-        return surfaces.tri_area(triangles)
 
     def has_unmatched_edge(self, precision=3):
         """Checks for edges that belong to only one triangle. True if they exist; else False.
