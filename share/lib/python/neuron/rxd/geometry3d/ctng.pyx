@@ -49,7 +49,7 @@ cdef tuple extreme_pts(list pts):
     if len(pts) < 2:
         raise RxDException('extreme points computation failed')
     cdef double max_dist2 = -1
-    cdef double d2, dx, dy, dz
+    cdef double d2, dx, dy
     cdef tuple best_p1, best_p2
     cdef double x1, y1
     cdef tuple pt2
