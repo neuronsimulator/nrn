@@ -275,20 +275,8 @@ def soma_objects(x, y, z, sec, double x0, double y0, double z0, int n_soma_step)
                 break;
     return seg_dict, f_pts
 
-cdef tuple _initialize_geometry_variables():
-    """Initialize variables for constructive neuronal geometry."""
-    cdef list objects = []
-    cdef dict cone_segment_dict = {}
-    cdef dict soma_segment_dict = {}
-    cdef list join_groups = []
-    cdef dict obj_pts_dict = {}         # for returning corner points of join objects
-    cdef list obj_sections = []
-    cdef list cone_sections = []
-    cdef dict soma_secs = {}
-    cdef dict potential_soma_cones = {}
-    return (objects, cone_segment_dict, soma_segment_dict, join_groups, obj_pts_dict, 
-            obj_sections, cone_sections, soma_secs, potential_soma_cones)
-
+@cython.wraparound(False)
+@cython.boundscheck(False)
 cdef tuple _process_import3d_source(source, int n_soma_step, soma_secs, soma_segment_dict):
     """Process Import3D type source."""
     cdef int no_parent_count = 0
@@ -322,6 +310,8 @@ cdef tuple _process_import3d_source(source, int n_soma_step, soma_secs, soma_seg
     
     return branches, parent_sec_name
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 cdef tuple _process_regular_source(source, double dx, soma_secs, soma_segment_dict, int n_soma_step):
     """Process regular source (list of sections)."""
     h.define_shape()
@@ -361,6 +351,8 @@ cdef tuple _process_regular_source(source, double dx, soma_secs, soma_segment_di
     
     return branches, parent_sec_name
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 cdef tuple _extract_branch_coordinates(branch, int k, bint source_is_import3d, relevant_pts, cone_segment_dict):
     """Extract coordinates and diameters from a branch."""
     if source_is_import3d:
@@ -415,6 +407,8 @@ cdef tuple _extract_branch_coordinates(branch, int k, bint source_is_import3d, r
     
     return x, y, z, d
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 cdef void _connect_to_soma(x, y, z, d, psec, soma_secs, branch, potential_soma_cones):
     """Connect branch to soma if applicable."""
     if psec in soma_secs:
@@ -468,6 +462,8 @@ cdef void _create_cone_objects(x, y, z, d, diam_corrections, all_cones, pts_cone
             register(diam_db, (x0, y0, z0), d0)
             register(diam_db, (x1, y1, z1), d1)
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 cdef dict _check_diameter_corrections(diam_db, bint nouniform):
     """Check if diameter corrections are needed."""
     cdef dict diam_corrections = {}
@@ -481,6 +477,8 @@ cdef dict _check_diameter_corrections(diam_db, bint nouniform):
                 diam_corrections[pt] = max(vals)
     return diam_corrections
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 cdef void _process_left_join(neighbor_left, cone, x0, y0, z0, r0, x1, y1, z1, r1, x2, y2, z2, r2, 
                              axis, pt0, pt1, naxis, objects, joingroup, obj_pts_dict, clips, double dx):
     """Process join on the left side."""
@@ -593,6 +591,8 @@ cdef void _process_left_join(neighbor_left, cone, x0, y0, z0, r0, x1, y1, z1, r1
                     Plane(x1, y1, z1, -naxis[0], -naxis[1], -naxis[2]),
                     Plane(x0, y0, z0, axis[0], axis[1], axis[2])]))
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 cdef void _process_right_join(neighbor_right, cone, x2, y2, z2, r2, x3, y3, z3, r3, axis, pt2, pt3, naxis, clips):
     from .graphicsPrimitives import Cylinder, Cone, Plane, Union
     """Process join on the right side."""
@@ -638,6 +638,8 @@ cdef void _process_right_join(neighbor_right, cone, x2, y2, z2, r2, x3, y3, z3, 
                         Plane(x2, y2, z2, naxis[0], naxis[1], naxis[2]),
                         neighbor_copy]))
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 cdef void _process_join_clipping(all_cones, pts_cones_db, objects, join_groups, obj_pts_dict, double dx):
     from .graphicsPrimitives import Intersection, Union, Cylinder, Cone, Plane
     """Process join creation and clipping for all cones."""
@@ -709,15 +711,21 @@ cdef void _finalize_cone_segments(potential_soma_cones, cone_segment_dict):
     """Finalize cone segment assignments."""
     for sec,cones in potential_soma_cones.items():
         for cone in cones:
-            if (cone._x0, cone._y0, cone._z0, cone._x1, cone._y1, cone._z1) not in cone_segment_dict:
-                cone_segment_dict[(cone._x0, cone._y0, cone._z0, cone._x1, cone._y1, cone._z1)] = sec.trueparentseg()
+            cone_segment_dict.setdefault((cone._x0, cone._y0, cone._z0, cone._x1, cone._y1, cone._z1), sec.trueparentseg())
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform=False, relevant_pts=None):
     # Initialize variables
-    (objects, cone_segment_dict, soma_segment_dict, join_groups, obj_pts_dict, 
-     obj_sections, cone_sections, soma_secs, potential_soma_cones) = _initialize_geometry_variables()
+    cdef list objects = []
+    cdef dict cone_segment_dict = {}
+    cdef dict soma_segment_dict = {}
+    cdef list join_groups = []
+    cdef dict obj_pts_dict = {}         # for returning corner points of join objects
+    cdef list obj_sections = []
+    cdef list cone_sections = []
+    cdef dict soma_secs = {}
+    cdef dict potential_soma_cones = {}
 
     # Determine source type and process accordingly
     source_is_import3d = False
