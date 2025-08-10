@@ -1,7 +1,6 @@
 from neuron import h
 import numpy
 import itertools
-import bisect
 cimport numpy
 from numpy import linalg
 cimport cython
