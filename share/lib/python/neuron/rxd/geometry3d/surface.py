@@ -56,6 +56,7 @@ def surface(source, dx=0.25, internal_membranes=False, n_soma_step=100):
     from . import ctng
     from . import surfaces
     from . import triangularMesh
+
     objects = ctng.constructive_neuronal_geometry(source, n_soma_step, dx)
 
     xlo = min(obj.xlo for obj in objects)
