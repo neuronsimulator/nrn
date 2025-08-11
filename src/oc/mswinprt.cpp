@@ -37,7 +37,8 @@ void setneuronhome(const char* p) {
     // NEURONHOME
     const auto executable = std::filesystem::path(p);
     // Windows defaults to wchar for paths: go through std::string
-    neuron_home = strdup((executable.parent_path().parent_path() / "share" / "nrn").string().c_str());
+    neuron_home = strdup(
+        (executable.parent_path().parent_path() / "share" / "nrn").string().c_str());
 }
 void HandleOutput(char* s) {
     printf("%s", s);

@@ -1005,7 +1005,7 @@ static double nrnbbcore_register_mapping(void*) {
     // FIXME this is declared as void nrnbbcore...!!!!!!
     // return double(nrnbbcore_register_mapping());
     nrnbbcore_register_mapping();  // this does something in HOC
-    return 13.37;  // hand-picked
+    return 13.37;                  // hand-picked
 }
 
 static Object** gid2obj(void* v) {

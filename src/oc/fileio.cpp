@@ -3,7 +3,7 @@
 
 #ifdef _MSC_VER
 #include <direct.h>  // getcwd, chdir
-#include <io.h>  // dup, dup2, close
+#include <io.h>      // dup, dup2, close
 #endif
 #include <stdio.h>
 #include <stdlib.h>

@@ -118,8 +118,8 @@ struct Memb_list {
      * code.
      */
     [[nodiscard]] PURE_ATTRIBUTE double& data(std::size_t instance,
-                                                     int variable,
-                                                     int array_index = 0);
+                                              int variable,
+                                              int array_index = 0);
 
     /**
      * @brief Get the `variable`-th pointer-to-double in `instance` of the mechanism.
@@ -135,8 +135,8 @@ struct Memb_list {
      * code.
      */
     [[nodiscard]] PURE_ATTRIBUTE double const& data(std::size_t instance,
-                                                           int variable,
-                                                           int array_index = 0) const;
+                                                    int variable,
+                                                    int array_index = 0) const;
 
 
     /**

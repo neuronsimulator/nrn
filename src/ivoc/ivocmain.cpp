@@ -243,7 +243,7 @@ void nrnmpi_load_or_exit();
 // see iv/src/OS/directory.cpp
 #include <sys/stat.h>
 #ifndef S_ISDIR
-#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#define S_ISDIR(m) (((m) &S_IFMT) == S_IFDIR)
 #endif
 static bool isdir(const char* p) {
     struct stat st;

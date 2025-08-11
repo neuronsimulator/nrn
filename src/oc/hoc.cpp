@@ -1700,18 +1700,19 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
         }
 #else  // READLINE
 #if _MSC_VER
-	WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), hoc_promptstr, strlen(hoc_promptstr), NULL, NULL);
-	DWORD n;
-	std::vector<char> line(8192);
-	ReadConsoleA(GetStdHandle(STD_INPUT_HANDLE), line.data(), line.size(), &n, NULL);
-            if (n >= hoc_cbufstr->size - 3) {
-                hocstr_resize(hoc_cbufstr, n + 100);
-                hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
-            }
-            strcpy(hoc_cbuf, line.data());
-            hoc_cbuf[n] = '\n';
-            hoc_cbuf[n + 1] = '\0';
-            hoc_audit_command(hoc_cbuf);
+        WriteConsoleA(
+            GetStdHandle(STD_OUTPUT_HANDLE), hoc_promptstr, strlen(hoc_promptstr), NULL, NULL);
+        DWORD n;
+        std::vector<char> line(8192);
+        ReadConsoleA(GetStdHandle(STD_INPUT_HANDLE), line.data(), line.size(), &n, NULL);
+        if (n >= hoc_cbufstr->size - 3) {
+            hocstr_resize(hoc_cbufstr, n + 100);
+            hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
+        }
+        strcpy(hoc_cbuf, line.data());
+        hoc_cbuf[n] = '\n';
+        hoc_cbuf[n + 1] = '\0';
+        hoc_audit_command(hoc_cbuf);
 #else
 #if INTERVIEWS
         if (nrn_fw_eq(hoc_fin, stdin) && hoc_interviews && !hoc_in_yyparse) {

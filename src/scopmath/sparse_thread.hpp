@@ -73,7 +73,9 @@ create_coef_list makes a list for fast setup, does minimum ordering and
 ensures all elements needed are present */
 /* this could easily be made recursive but it isn't right now */
 
-[[gnu::always_inline, clang::always_inline]] inline void subrow(SparseObj* so, Elm* pivot, Elm* rowsub) {
+[[gnu::always_inline, clang::always_inline]] inline void subrow(SparseObj* so,
+                                                                Elm* pivot,
+                                                                Elm* rowsub) {
     double r;
     Elm* el;
 
@@ -239,9 +241,9 @@ saves much time allocating and freeing during the solve phase
 
 /* return pointer to row col element maintaining order in rows */
 [[gnu::always_inline, clang::always_inline]] inline Elm* getelm(SparseObj* so,
-                                                  unsigned row,
-                                                  unsigned col,
-                                                  Elm* newElm) {
+                                                                unsigned row,
+                                                                unsigned col,
+                                                                Elm* newElm) {
     Elm *el, *elnext;
     unsigned vrow, vcol;
 
@@ -733,7 +735,9 @@ int _cvode_sparse_thread(void** v, int n, IndexArray x, Array p, Callable fun, A
     return SUCCESS;
 }
 
-[[gnu::always_inline, clang::always_inline]] inline double* _nrn_thread_getelm(SparseObj* so, int row, int col) {
+[[gnu::always_inline, clang::always_inline]] inline double* _nrn_thread_getelm(SparseObj* so,
+                                                                               int row,
+                                                                               int col) {
     detail::sparse_thread::Elm* el;
     if (!so->phase) {
         return so->coef_list[so->ngetcall++];
