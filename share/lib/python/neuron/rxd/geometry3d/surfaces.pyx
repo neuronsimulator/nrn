@@ -94,20 +94,18 @@ def process_cell(int i, int j, int k, list objects, double[:] xs, double[:] ys, 
     cdef double min_dist
     cdef int p
     cdef object objdist
+    cdef double values[8]  # Use C array for direct indexing
     
-    # Calculate values using direct loops instead of list comprehensions
+    # Calculate values using direct loops and C array
     for p in range(8):
         min_dist = 1e100
         for objdist in objects:
             min_dist = min(min_dist, objdist(position[p][0], position[p][1], position[p][2]))
-        if p == 0: value0 = min_dist
-        elif p == 1: value1 = min_dist
-        elif p == 2: value2 = min_dist
-        elif p == 3: value3 = min_dist
-        elif p == 4: value4 = min_dist
-        elif p == 5: value5 = min_dist
-        elif p == 6: value6 = min_dist
-        elif p == 7: value7 = min_dist
+        values[p] = min_dist
+    
+    # Assign to individual variables for the external C function
+    value0, value1, value2, value3 = values[0], values[1], values[2], values[3]
+    value4, value5, value6, value7 = values[4], values[5], values[6], values[7]
 
     if print_values:
         print('(x, y, z) = (%7f, %7f, %7f); (x1, y1, z1) = (%7f, %7f, %7f)' % (x, y, z, x1, y1, z1))
@@ -122,13 +120,6 @@ def process_cell(int i, int j, int k, list objects, double[:] xs, double[:] ys, 
     if store_areas and areas is not None:
         areas[i, j, k] = _tri_area_memview(tridata, start, new_index)
     return new_index
-
-# a matrix whose values are unambiguously outside the object
-big_number_matrix = numpy.zeros([4, 4, 4])
-for i in range(4):
-    for j in range(4):
-        for k in range(4):
-            big_number_matrix[i, j, k] = 9999 + i * 16 + j * 4 + k
 
 
 cdef void append_with_deltas(list cell_list, int i, int j, int k):
@@ -230,7 +221,6 @@ cdef list _find_boundary_locations(list objects, object xs, object ys, object zs
     """Find boundary locations for each object."""
     cdef set cur_processed
     cdef int brute_force_count = 0
-    cdef list clip_objs
     cdef tuple cell_id
     cdef bint reject_if_outside
     cdef int numcompartments
@@ -242,7 +232,6 @@ cdef list _find_boundary_locations(list objects, object xs, object ys, object zs
         # TODO: remove all the stuff about reject_if_outside when have true SkewCone distances
         reject_if_outside = not(isinstance(obj, graphicsPrimitives.SkewCone))
         objdist = obj.distance
-        clip_objs = sum([clipper.primitives for clipper in obj.get_clip()], [])
         cell_list = []
         cur_processed = set()
         
