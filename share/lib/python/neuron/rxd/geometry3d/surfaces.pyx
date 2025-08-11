@@ -96,7 +96,6 @@ def process_cell(int i, int j, int k, list objects, double[:] xs, double[:] ys, 
     cdef object objdist
     
     # Calculate values using direct loops instead of list comprehensions
-    value0 = value1 = value2 = value3 = value4 = value5 = value6 = value7 = 1e100
     for p in range(8):
         min_dist = 1e100
         for objdist in objects:
