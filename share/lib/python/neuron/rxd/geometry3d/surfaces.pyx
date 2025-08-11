@@ -21,15 +21,7 @@ cdef extern from "math.h":
 
 
 
-def _register_on_neighbor_map(the_map, pt, neighbor):
-    # does not assume neighbor relations are bidirectional
-    if pt in the_map:
-        the_map[pt].append(neighbor)
-    else:
-        the_map[pt] = [neighbor]
-
-
-max_chunks = 10000000
+cdef int max_chunks = 10_000_000
 
 cdef int total_surface_tests = 0
 cdef int corner_tests = 0
@@ -37,10 +29,10 @@ cdef int corner_tests = 0
 @cython.boundscheck(False)
 @cython.wraparound(False)
 #cdef bint contains_surface(int i, int j, int k, objdist, numpy.ndarray[numpy.float_t, ndim=1] xs, numpy.ndarray[numpy.float_t, ndim=1] ys, numpy.ndarray[numpy.float_t, ndim=1] zs, double dx, double r_inner, double r_outer, bint reject_if_outside, bint print_reject_reason=False):
-def contains_surface(i, j, k, objdist, xs, ys, zs, dx, r_inner, r_outer, reject_if_outside, bint print_reject_reason=False):
+def contains_surface(int i, int j, int k, object objdist, object xs, object ys, object zs, double dx, double r_inner, double r_outer, bint reject_if_outside, bint print_reject_reason=False):
     cdef bint has_neg = False
     cdef bint has_pos = False
-    cdef double x, y, z
+    cdef double x, y, z, d
 
     global total_surface_tests, corner_tests
     total_surface_tests += 1
@@ -132,7 +124,7 @@ def volume_inside_cell(int i, int j, int k, list objects, numpy.ndarray[numpy.fl
     cdef numpy.ndarray[numpy.float_t, ndim=1] local_zs = numpy.array([z0 - dz, z0, z1, z0 + 2 * dz])
     # big numbers unambiguously outside, no two of which are the same so (probably) no risk of dividing by zero?
     cdef numpy.ndarray[numpy.float_t, ndim=3] data = numpy.array(big_number_matrix)
-    cdef double x, y, z
+    cdef double x, y, z, value0, value1, value2, value3, value4, value5, value6, value7
     cdef int i1, j1, k1
     if not objects:
         print('grr... it thinks there is surface when no nearby objects.')
@@ -168,7 +160,7 @@ def volume_inside_cell(int i, int j, int k, list objects, numpy.ndarray[numpy.fl
     return tri_volume(tridata)
 
 
-cdef append_with_deltas(list cell_list, int i, int j, int k):
+cdef void append_with_deltas(list cell_list, int i, int j, int k):
     cdef int im1 = i - 1, jm1 = j - 1, km1 = k - 1, ip1 = i + 1, jp1 = j + 1, kp1 = k + 1
     cell_list += [(im1, jm1, km1), (im1, jm1, k), (im1, jm1, kp1), (im1, j, km1),
                   (im1, j, k), (im1, j, kp1), (im1, jp1, km1), (im1, jp1, k),
@@ -189,7 +181,7 @@ cdef append_with_deltas(list cell_list, int i, int j, int k):
 # TODO: move this someplace else. also useful for voxelize
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef chunkify(objects, xs, ys, zs, int chunk_size, double dx):
+cpdef tuple chunkify(list objects, object xs, object ys, object zs, int chunk_size, double dx):
 
     cdef int almost = chunk_size - 1
     cdef int nx = (len(xs) + almost) // chunk_size
@@ -212,6 +204,8 @@ cpdef chunkify(objects, xs, ys, zs, int chunk_size, double dx):
     cdef int lenz = len(zs), robj = 0
     cdef double xlo, xhi, ylo, yhi, zlo, zhi
     cdef double bufferdx = 3 * dx
+    cdef object obj, objdist, chunk_objsi
+    cdef bint is_skew_cone
 
     # TODO: the is_skew_cone business is here because distances are not the real distances in that case;
     #       remove it when I fix this (and will get better performance)
@@ -247,7 +241,7 @@ cpdef chunkify(objects, xs, ys, zs, int chunk_size, double dx):
 # CTNG:constructivecubes
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef triangulate_surface(list objects, xs, ys, zs, internal_membranes):
+cpdef list triangulate_surface(list objects, object xs, object ys, object zs, bint internal_membranes):
     # use chunks no smaller than 10 voxels across, but aim for max_chunks chunks
     cdef int chunk_size = max(10, int((len(xs) * len(ys) * len(zs) / max_chunks) ** (1 / 3.)))
     cdef double grid_dx = xs[1] - xs[0], grid_dy = ys[1] - ys[0], grid_dz = zs[1] - zs[0]
@@ -258,7 +252,7 @@ cpdef triangulate_surface(list objects, xs, ys, zs, internal_membranes):
     chunk_objs, nx, ny, nz = chunkify(objects, xs, ys, zs, chunk_size, dx)
     return _triangulate_surface_given_chunks(objects, xs, ys, zs, internal_membranes, chunk_size, chunk_objs, nx, ny, nz, False, None)
 
-cdef tuple _initialize_triangulation_variables(xs, ys, zs, int nx, int ny, int nz):
+cdef tuple _initialize_triangulation_variables(object xs, object ys, object zs, int nx, int ny, int nz):
     """Initialize variables for surface triangulation."""
     cdef double grid_dx = xs[1] - xs[0], grid_dy = ys[1] - ys[0], grid_dz = zs[1] - zs[0]
     cdef double r_inner = grid_dx / 2., r_outer = r_inner * sqrt(3)
@@ -280,10 +274,10 @@ cdef tuple _initialize_triangulation_variables(xs, ys, zs, int nx, int ny, int n
             cell_count, dup_count, last_starti, cell_list2, triangles, 
             triangles_i, surf_count, chunk_pts)
 
-cdef list _find_boundary_locations(list objects, xs, ys, zs, double dx, double r_inner, double r_outer, 
+cdef list _find_boundary_locations(list objects, object xs, object ys, object zs, double dx, double r_inner, double r_outer, 
                                   dict to_process, bint internal_membranes, 
                                   numpy.ndarray[numpy.float_t, ndim=1] triangles, int triangles_i, 
-                                  bint store_areas, areas):
+                                  bint store_areas, object areas):
     """Find boundary locations for each object."""
     cdef dict cur_processed
     cdef int brute_force_count = 0
@@ -293,6 +287,7 @@ cdef list _find_boundary_locations(list objects, xs, ys, zs, double dx, double r
     cdef int numcompartments
     cdef int i, j, k, di, dj, dk, m
     cdef list cell_list
+    cdef object obj, objdist
     
     for m, obj in enumerate(objects):
         # TODO: remove all the stuff about reject_if_outside when have true SkewCone distances
@@ -357,11 +352,12 @@ cdef void _populate_chunk_points(dict to_process, list chunk_pts, int chunk_size
 
 cdef int _process_chunks(list chunk_objs, list chunk_pts, int nx, int ny, int nz, 
                         numpy.ndarray[numpy.float_t, ndim=1] triangles, int starti,
-                        xs, ys, zs, bint store_areas, areas):
+                        object xs, object ys, object zs, bint store_areas, object areas):
     """Process chunks to generate triangulated surface."""
     cdef int a, b, c, i, j, k
     cdef int last_starti, start_i, missing_objs = 0
     cdef list objs, cells
+    cdef object chunk_objsa, chunk_ptsa
     
     # handle a chunk at a time
     for a in range(nx):
@@ -399,11 +395,11 @@ cdef dict _build_neighbor_map(numpy.ndarray[numpy.float_t, ndim=1] triangles, in
             for j in range(3):
                 for k in range(3):
                     if j != k:
-                        _register_on_neighbor_map(pt_neighbor_map, pts_list[j], pts_list[k])
+                        pt_neighbor_map.setdefault(pts_list[j], []).append(pts_list[k])
     
     return pt_neighbor_map
 
-cdef dict _find_missing_surfaces(dict pt_neighbor_map, xs, ys, zs, double dx, dict to_process):
+cdef dict _find_missing_surfaces(dict pt_neighbor_map, object xs, object ys, object zs, double dx, dict to_process):
     """Find missing surfaces by analyzing neighbor map for holes."""
     cdef dict process2 = {}
     cdef dict count
@@ -411,16 +407,17 @@ cdef dict _find_missing_surfaces(dict pt_neighbor_map, xs, ys, zs, double dx, di
     cdef tuple cell_id, pt, neighbor
     cdef double xlo = xs[0], ylo = ys[0], zlo = zs[0]
     cdef int ncount
+    cdef list neighbor_list
     
     # if no holes, each point should have each neighbor listed more than once
-    for pt, neighbor_list in zip(pt_neighbor_map.keys(), pt_neighbor_map.values()):
+    for pt, neighbor_list in pt_neighbor_map.items():
         count = {}
         for neighbor in neighbor_list:
             if neighbor not in count:
                 count[neighbor] = 1
             else:
                 count[neighbor] += 1
-        for neighbor, ncount in zip(count.keys(), count.values()):
+        for neighbor, ncount in count.items():
             if ncount <= 1:
                 # Note: this assumes (as we stated above) that dx = dy = dz
                 for point in (pt, neighbor):
@@ -437,8 +434,8 @@ cdef dict _find_missing_surfaces(dict pt_neighbor_map, xs, ys, zs, double dx, di
 
 cdef int _process_missing_surfaces(dict process2, dict to_process, list chunk_objs, int chunk_size,
                                   numpy.ndarray[numpy.float_t, ndim=1] triangles, int starti,
-                                  xs, ys, zs, double dx, double r_inner, double r_outer,
-                                  bint store_areas, areas, list objects):
+                                  object xs, object ys, object zs, double dx, double r_inner, double r_outer,
+                                  bint store_areas, object areas, list objects):
     """Process missing surfaces found in the neighbor analysis."""
     cdef list still_to_process = list(process2.keys())
     cdef tuple cell_id
@@ -471,14 +468,14 @@ cdef int _process_missing_surfaces(dict process2, dict to_process, list chunk_ob
     
     return starti
 
-cpdef _triangulate_surface_given_chunks(list objects, xs, ys, zs, internal_membranes, int chunk_size, list chunk_objs, int nx, int ny, int nz, bint store_areas, areas):
+cpdef list _triangulate_surface_given_chunks(list objects, object xs, object ys, object zs, bint internal_membranes, int chunk_size, list chunk_objs, int nx, int ny, int nz, bint store_areas, object areas):
     # Initialize variables
     (grid_dx, grid_dy, grid_dz, r_inner, r_outer, dx, to_process, 
      cell_count, dup_count, last_starti, cell_list2, triangles, 
      triangles_i, surf_count, chunk_pts) = _initialize_triangulation_variables(xs, ys, zs, nx, ny, nz)
 
     # locate all the potential boundary locations
-    result = _find_boundary_locations(objects, xs, ys, zs, dx, r_inner, r_outer, 
+    cdef list result = _find_boundary_locations(objects, xs, ys, zs, dx, r_inner, r_outer, 
                                      to_process, internal_membranes, 
                                      triangles, triangles_i, store_areas, areas)
     triangles = result[0]
@@ -488,12 +485,12 @@ cpdef _triangulate_surface_given_chunks(list objects, xs, ys, zs, internal_membr
         triangles.resize(triangles_i, refcheck=False)
         return triangles
 
-    cur_processed = None
+    cdef object cur_processed = None
 
     # identify chunk_pts
     _populate_chunk_points(to_process, chunk_pts, chunk_size)
 
-    cdef int num_keys = len(to_process.keys())
+    cdef int num_keys = len(to_process)
     cdef int missing_objs = 0
 
     triangles = numpy.zeros(45 * num_keys)
@@ -509,15 +506,15 @@ cpdef _triangulate_surface_given_chunks(list objects, xs, ys, zs, internal_membr
     # to find, we look for holes in the surface and flood from them, checking against every object
     # TODO: could be smarter about this: at least check (enlarged) bounding boxes first
 
-    last_starti = 0
+    cdef int last_starti = 0
 
     # append to the pt_neighbor_map
-    pt_neighbor_map = _build_neighbor_map(triangles, last_starti, starti)
+    cdef dict pt_neighbor_map = _build_neighbor_map(triangles, last_starti, starti)
 
     last_starti = starti
 
     # Find missing surfaces
-    process2 = _find_missing_surfaces(pt_neighbor_map, xs, ys, zs, dx, to_process)
+    cdef dict process2 = _find_missing_surfaces(pt_neighbor_map, xs, ys, zs, dx, to_process)
 
     # Process missing surfaces
     starti = _process_missing_surfaces(process2, to_process, chunk_objs, chunk_size,
