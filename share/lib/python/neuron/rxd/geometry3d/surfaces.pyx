@@ -28,7 +28,7 @@ cdef int corner_tests = 0
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def contains_surface(int i, int j, int k, object objdist, numpy.ndarray[numpy.float_t, ndim=1] xs, numpy.ndarray[numpy.float_t, ndim=1] ys, numpy.ndarray[numpy.float_t, ndim=1] zs, double dx, double r_inner, double r_outer, bint reject_if_outside, bint print_reject_reason=False):
+def contains_surface(int i, int j, int k, object objdist, double[:] xs, double[:] ys, double[:] zs, double dx, double r_inner, double r_outer, bint reject_if_outside, bint print_reject_reason=False):
     cdef bint has_neg = False
     cdef bint has_pos = False
     cdef double x, y, z, d
@@ -54,9 +54,13 @@ def contains_surface(int i, int j, int k, object objdist, numpy.ndarray[numpy.fl
     # indeterminant from spheres; check corners
     corner_tests += 1
     #print('corner_tests = %d out of total_surface_tests = %d' % (corner_tests, total_surface_tests))
-    for x in xs[i : i + 2]:
-        for y in ys[j : j + 2]:
-            for z in zs[k : k + 2]:
+    cdef int xi, yi, zi
+    for xi in range(2):
+        x = xs[i + xi]
+        for yi in range(2):
+            y = ys[j + yi]
+            for zi in range(2):
+                z = zs[k + zi]
                 d = objdist(x, y, z)
                 if print_reject_reason:
                     print('at (%g, %g, %g): d = %g' % (x, y, z, d))
@@ -204,7 +208,9 @@ cpdef tuple chunkify(list objects, numpy.ndarray[numpy.float_t, ndim=1] xs, nump
 @cython.wraparound(False)
 cpdef list triangulate_surface(list objects, numpy.ndarray[numpy.float_t, ndim=1] xs, numpy.ndarray[numpy.float_t, ndim=1] ys, numpy.ndarray[numpy.float_t, ndim=1] zs, bint internal_membranes):
     # use chunks no smaller than 10 voxels across, but aim for max_chunks chunks
-    cdef int chunk_size = max(10, int((len(xs) * len(ys) * len(zs) / max_chunks) ** (1 / 3.)))
+    cdef int chunk_size = int((len(xs) * len(ys) * len(zs) / max_chunks) ** (1 / 3.))
+    if chunk_size < 10:
+        chunk_size = 10
     cdef double grid_dx = xs[1] - xs[0], grid_dy = ys[1] - ys[0], grid_dz = zs[1] - zs[0]
     cdef double dx = grid_dx
 
