@@ -478,7 +478,7 @@ cdef double _tri_area_memview(double[:] triangles, int lo, int hi):
     cdef int i
     for i in range(lo, hi, 9):
         doublearea += llgramarea(&triangles[i], &triangles[3 + i], &triangles[6 + i])
-        if isnan(double_area):
+        if isnan(doublearea):
             print('tri_area exception: ', ', '.join([str(triangles[i + j]) for j in range(9)]))
     return doublearea * 0.5
 
