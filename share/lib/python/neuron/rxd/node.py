@@ -85,7 +85,7 @@ def _remove(start, stop):
     _has_node_fluxes = _node_fluxes["index"] != []
 
     # remove _node_flux
-    for (i, idx) in enumerate(_node_fluxes["index"]):
+    for i, idx in enumerate(_node_fluxes["index"]):
         if idx in dels:
             for lst in _node_fluxes.values():
                 del lst[i]
@@ -150,7 +150,7 @@ class Node(object):
             return self.segment == condition
         elif isinstance(condition, region.Extracellular):
             return self.region == condition
-        raise RxDException("selector %r not supported for this node type" % condition)
+        raise RxDException(f"selector {condition!r} not supported for this node type")
 
     def _safe_satisfies(self, condition):
         """Tests if a Node satisfies a given condition.
@@ -311,7 +311,7 @@ class Node(object):
         else:
             units = "molecule/ms"
         if len(kwargs):
-            raise RxDException("Unknown keyword arguments: %r" % list(kwargs.keys()))
+            raise RxDException(f"Unknown keyword arguments: {list(kwargs.keys())!r}")
         # take the value, divide by scale to get mM um^3
         # once this is done, we need to divide by volume to get mM
         # TODO: is division still slower than multiplication? Switch to mult.
@@ -330,7 +330,7 @@ class Node(object):
             #    / 1e-15
             scale = 1e-15
         else:
-            raise RxDException("unknown unit: %r" % units)
+            raise RxDException(f"unknown unit: {units!r}")
 
         if len(args) == 1 and isinstance(args[0], hoc.HocObject):
             source = args[0]
@@ -353,7 +353,7 @@ class Node(object):
             # TODO: figure out a units checking solution that works
             # source_units = h.units(source)
             # if source_units and source_units != units:
-            #    warnings.warn('Possible units conflict. NEURON says %r, but specified as %r.' % (source_units, units))
+            #    warnings.warn(f'Possible units conflict. NEURON says {source_units!r}, but specified as {units!r}.')
         else:
             success = False
             if len(args) == 1:
@@ -456,7 +456,7 @@ class Node1D(Node):
 
         except:
             pass
-        raise RxDException("unrecognized node condition: %r" % condition)
+        raise RxDException(f"unrecognized node condition: {condition!r}")
 
     @property
     def x3d(self):
@@ -671,7 +671,7 @@ class Node3D(Node):
             raise RxDException(
                 "selecting nodes by normalized position not yet supported for 3D nodes; see comments in source about how to fix this"
             )
-        raise RxDException("unrecognized node condition: %r" % condition)
+        raise RxDException(f"unrecognized node condition: {condition!r}")
 
     @property
     def x3d(self):

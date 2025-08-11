@@ -1,3 +1,6 @@
+CMake Build Options
+~~~~~~~~~~~~~~~~~~~
+
 Introduction
 ============
 The NEURON build system now uses CMake as of version 7.8 circa Nov 2019.

@@ -33,7 +33,6 @@ def nrniv(args, input):
     reason="Cannot get subprocess.run to feed stdin to nrniv",
 )
 def test_nrniv():
-
     r = nrniv(
         args=["-isatty", "-nobanner", "-nogui", "-c", "a=5", "-"],
         input=r"""
