@@ -28,7 +28,7 @@ cdef int corner_tests = 0
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def contains_surface(int i, int j, int k, object objdist, object xs, object ys, object zs, double dx, double r_inner, double r_outer, bint reject_if_outside, bint print_reject_reason=False):
+def contains_surface(int i, int j, int k, object objdist, numpy.ndarray[numpy.float_t, ndim=1] xs, numpy.ndarray[numpy.float_t, ndim=1] ys, numpy.ndarray[numpy.float_t, ndim=1] zs, double dx, double r_inner, double r_outer, bint reject_if_outside, bint print_reject_reason=False):
     cdef bint has_neg = False
     cdef bint has_pos = False
     cdef double x, y, z, d
@@ -102,8 +102,8 @@ def process_cell(int i, int j, int k, list objects, double[:] xs, double[:] ys, 
         for objdist in objects:
             min_dist = min(min_dist, objdist(position[p][0], position[p][1], position[p][2]))
         values[p] = min_dist
-    
-    # Assign to individual variables for the external C function
+
+    # Assign individual values for the external C function
     value0, value1, value2, value3 = values[0], values[1], values[2], values[3]
     value4, value5, value6, value7 = values[4], values[5], values[6], values[7]
 
@@ -143,7 +143,7 @@ cdef void append_with_deltas(list cell_list, int i, int j, int k):
 # TODO: move this someplace else. also useful for voxelize
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef tuple chunkify(list objects, object xs, object ys, object zs, int chunk_size, double dx):
+cpdef tuple chunkify(list objects, numpy.ndarray[numpy.float_t, ndim=1] xs, numpy.ndarray[numpy.float_t, ndim=1] ys, numpy.ndarray[numpy.float_t, ndim=1] zs, int chunk_size, double dx):
 
     cdef int almost = chunk_size - 1
     cdef int nx = (len(xs) + almost) // chunk_size
@@ -202,7 +202,7 @@ cpdef tuple chunkify(list objects, object xs, object ys, object zs, int chunk_si
 # CTNG:constructivecubes
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef list triangulate_surface(list objects, object xs, object ys, object zs, bint internal_membranes):
+cpdef list triangulate_surface(list objects, numpy.ndarray[numpy.float_t, ndim=1] xs, numpy.ndarray[numpy.float_t, ndim=1] ys, numpy.ndarray[numpy.float_t, ndim=1] zs, bint internal_membranes):
     # use chunks no smaller than 10 voxels across, but aim for max_chunks chunks
     cdef int chunk_size = max(10, int((len(xs) * len(ys) * len(zs) / max_chunks) ** (1 / 3.)))
     cdef double grid_dx = xs[1] - xs[0], grid_dy = ys[1] - ys[0], grid_dz = zs[1] - zs[0]
@@ -214,7 +214,7 @@ cpdef list triangulate_surface(list objects, object xs, object ys, object zs, bi
     return _triangulate_surface_given_chunks(objects, xs, ys, zs, internal_membranes, chunk_size, chunk_objs, nx, ny, nz, False, None)
 
 
-cdef list _find_boundary_locations(list objects, object xs, object ys, object zs, double dx, double r_inner, double r_outer, 
+cdef list _find_boundary_locations(list objects, numpy.ndarray[numpy.float_t, ndim=1] xs, numpy.ndarray[numpy.float_t, ndim=1] ys, numpy.ndarray[numpy.float_t, ndim=1] zs, double dx, double r_inner, double r_outer, 
                                   dict to_process, bint internal_membranes, 
                                   numpy.ndarray[numpy.float_t, ndim=1] triangles, int triangles_i, 
                                   bint store_areas, object areas):
@@ -292,7 +292,7 @@ cdef void _populate_chunk_points(dict to_process, list chunk_pts, int chunk_size
 
 cdef int _process_chunks(list chunk_objs, list chunk_pts, int nx, int ny, int nz, 
                         double[:] triangles, int starti,
-                        object xs, object ys, object zs, bint store_areas, object areas):
+                        double[:] xs, double[:] ys, double[:] zs, bint store_areas, object areas):
     """Process chunks to generate triangulated surface."""
     cdef int a, b, c, i, j, k
     cdef int last_starti, start_i, missing_objs = 0
@@ -339,7 +339,7 @@ cdef dict _build_neighbor_map(double[:] triangles, int last_starti, int starti):
 
     return pt_neighbor_map
 
-cdef set _find_missing_surfaces(dict pt_neighbor_map, object xs, object ys, object zs, double dx, dict to_process):
+cdef set _find_missing_surfaces(dict pt_neighbor_map, numpy.ndarray[numpy.float_t, ndim=1] xs, numpy.ndarray[numpy.float_t, ndim=1] ys, numpy.ndarray[numpy.float_t, ndim=1] zs, double dx, dict to_process):
     """Find missing surfaces by analyzing neighbor map for holes."""
     from collections import Counter
     cdef set process2 = set()
@@ -368,7 +368,7 @@ cdef set _find_missing_surfaces(dict pt_neighbor_map, object xs, object ys, obje
 
 cdef int _process_missing_surfaces(set process2, dict to_process, list chunk_objs, int chunk_size,
                                   double[:] triangles, int starti,
-                                  object xs, object ys, object zs, double dx, double r_inner, double r_outer,
+                                  numpy.ndarray[numpy.float_t, ndim=1] xs, numpy.ndarray[numpy.float_t, ndim=1] ys, numpy.ndarray[numpy.float_t, ndim=1] zs, double dx, double r_inner, double r_outer,
                                   bint store_areas, object areas, list objects):
     """Process missing surfaces found in the neighbor analysis."""
     cdef list still_to_process = list(process2)
@@ -402,7 +402,7 @@ cdef int _process_missing_surfaces(set process2, dict to_process, list chunk_obj
     
     return starti
 
-cpdef list _triangulate_surface_given_chunks(list objects, object xs, object ys, object zs, bint internal_membranes, int chunk_size, list chunk_objs, int nx, int ny, int nz, bint store_areas, object areas):
+cpdef list _triangulate_surface_given_chunks(list objects, numpy.ndarray[numpy.float_t, ndim=1] xs, numpy.ndarray[numpy.float_t, ndim=1] ys, numpy.ndarray[numpy.float_t, ndim=1] zs, bint internal_membranes, int chunk_size, list chunk_objs, int nx, int ny, int nz, bint store_areas, object areas):
     # Initialize variables
     cdef double grid_dx = xs[1] - xs[0], grid_dy = ys[1] - ys[0], grid_dz = zs[1] - zs[0]
     cdef double r_inner = grid_dx / 2., r_outer = r_inner * sqrt(3)
@@ -470,21 +470,15 @@ cpdef list _triangulate_surface_given_chunks(list objects, object xs, object ys,
     return triangles
 
 
-cpdef double tri_area(numpy.ndarray[numpy.float_t, ndim=1] triangles):
-    return _tri_area_memview(triangles, 0, len(triangles))
-
-
 # CTNG:surfacearea
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double _tri_area_memview(double[:] triangles, int lo, int hi):
-    """Memory view version of _tri_area for internal use."""
-    cdef double doublearea = 0., local_area
+    cdef double doublearea = 0.
     cdef int i
     for i in range(lo, hi, 9):
-        local_area = llgramarea(&triangles[i], &triangles[3 + i], &triangles[6 + i])
-        doublearea += local_area
-        if isnan(local_area):
+        doublearea += llgramarea(&triangles[i], &triangles[3 + i], &triangles[6 + i])
+        if isnan(double_area):
             print('tri_area exception: ', ', '.join([str(triangles[i + j]) for j in range(9)]))
     return doublearea * 0.5
 
