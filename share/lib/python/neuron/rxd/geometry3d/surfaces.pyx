@@ -482,19 +482,3 @@ cdef double _tri_area_memview(double[:] triangles, int lo, int hi):
             print('tri_area exception: ', ', '.join([str(triangles[i + j]) for j in range(9)]))
     return doublearea * 0.5
 
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cpdef double tri_volume(double[:] triangles):
-    cdef double sixtimesvolume = 0., local_vol
-    cdef int i
-    for i in range(0, len(triangles), 9):
-        local_vol = llpipedfromoriginvolume(&triangles[i], &triangles[3 + i], &triangles[6 + i])
-        sixtimesvolume += local_vol
-        if isnan(local_vol):
-            print('tri_volume exception:')
-            for j in range(i, i + 9):
-                print(triangles[j], end=' ')
-            print()  # newline
-                
-    return abs(sixtimesvolume / 6.)
