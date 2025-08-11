@@ -152,8 +152,8 @@ cdef list join_outside(double x0, double y0, double z0, double r0, double x1, do
     pt1 = numpy.array([x1, y1, z1])
     cdef int left_corner_count = 2 - count_outside(sp, [pt1 + r1 * nradial_vec, pt1 - r1 * nradial_vec], dx * 0.5)
     cdef int corner_count = 2 - count_outside(sp, [pt1 + r1 * radial_vec, pt1 - r1 * radial_vec], dx * 0.5)
-    #print('for join (%g, %g, %g; %g) - (%g, %g, %g; %g) - (%g, %g, %g; %g):' % (x0, y0, z0, r0, x1, y1, z1, r1, x2, y2, z2, r2))
-    #print('   left_corner_count = %g; corner_count = %g' % (left_corner_count, corner_count))
+    #print(f"for join ({x0:g}, {y0:g}, {z0:g}; {r0:g}) - ({x1:g}, {y1:g}, {z1:g}; {r1:g}) - ({x2:g}, {y2:g}, {z2:g}; {r2:g}):")
+    #print(f"   left_corner_count = {left_corner_count:g}; corner_count = {corner_count:g}")
     if left_corner_count == corner_count == 2:
         sp.set_clip([Intersection([c0, c1,
             Plane(x1, y1, z1, axis[0], axis[1], axis[2]),

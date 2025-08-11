@@ -97,7 +97,7 @@ cdef class Plane:
     property primitives:
         def __get__(self): return []
     def __repr__(self):
-        return 'Plane(%g, %g, %g, %g, %g, %g)' % (self.px, self.py, self.pz, self.nx, self.ny, self.nz)
+        return f"Plane({self.px:g}, {self.py:g}, {self.pz:g}, {self.nx:g}, {self.ny:g}, {self.nz:g})"
     cpdef double distance(self, double x, double y, double z):
         return (self.nx * x + self.ny * y + self.nz * z + self.d) * self.mul
     cpdef list starting_points(self, xs, ys, zs):
@@ -119,9 +119,9 @@ cdef class Sphere:
         self.clips = []
     def __repr__(self):
         if self.clips:
-            return 'Sphere(%g, %g, %g, %g; clips=%r)' % (self._x, self._y, self._z, self._r, self.clips)
+            return f"Sphere({self._x:g}, {self._y:g}, {self._z:g}, {self._r:g}; clips={self.clips!r})"
         else:
-            return 'Sphere(%g, %g, %g, %g)' % (self._x, self._y, self._z, self._r)
+            return f"Sphere({self._x:g}, {self._y:g}, {self._z:g}, {self._r:g})"
     property x:
         def __get__(self): return self._x
     property y:
@@ -170,9 +170,9 @@ cdef class Cylinder:
     cdef list neighbors, clips, neighbor_regions
     def __repr__(self):
         if self.clips:
-            return 'Cylinder(%g, %g, %g, %g, %g, %g, %g; clips=%r)' % (self.x0, self.y0, self.z0, self.x1, self.y1, self.z1, self.r, self.clips)
+            return f"Cylinder({self.x0:g}, {self.y0:g}, {self.z0:g}, {self.x1:g}, {self.y1:g}, {self.z1:g}, {self.r:g}; clips={self.clips!r})"
         else:
-            return 'Cylinder(%g, %g, %g, %g, %g, %g, %g)' % (self.x0, self.y0, self.z0, self.x1, self.y1, self.z1, self.r)
+            return f"Cylinder({self.x0:g}, {self.y0:g}, {self.z0:g}, {self.x1:g}, {self.y1:g}, {self.z1:g}, {self.r:g})"
     property xlo:
         def __get__(self): return self._xlo
     property xhi:
@@ -318,7 +318,7 @@ cdef class SphereCone:
         def __get__(self): return [self]
 
     def __repr__(self):
-        return 'SphereCone(%g, %g, %g, %g, %g, %g, %g, %g)' % (self.x0, self.y0, self.z0, self.r0, self.x1, self.y1, self.z1, self.r1)
+        return f"SphereCone({self.x0:g}, {self.y0:g}, {self.z0:g}, {self.r0:g}, {self.x1:g}, {self.y1:g}, {self.z1:g}, {self.r1:g})"
 
     def set_clip(self, clips):
         self.clips = clips

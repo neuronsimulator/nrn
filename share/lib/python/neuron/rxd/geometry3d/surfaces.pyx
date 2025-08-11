@@ -45,7 +45,7 @@ def contains_surface(int i, int j, int k, object objdist, double[:] xs, double[:
     if d <= r_inner: return True
     if d >= r_outer and reject_if_outside:
         if print_reject_reason:
-            print('would normally reject because at (%g, %g, %g): d = %g, r_outer = %g     (dx = %g)' % (xbar, ybar, zbar, d, r_outer, dx))
+            print(f"would normally reject because at ({xbar:g}, {ybar:g}, {zbar:g}): d = {d:g}, r_outer = {r_outer:g}     (dx = {dx:g})")
         else:
             return False
 
@@ -53,7 +53,7 @@ def contains_surface(int i, int j, int k, object objdist, double[:] xs, double[:
 
     # indeterminant from spheres; check corners
     corner_tests += 1
-    #print('corner_tests = %d out of total_surface_tests = %d' % (corner_tests, total_surface_tests))
+    #print(f"corner_tests = {corner_tests} out of total_surface_tests = {total_surface_tests}")
     cdef int xi, yi, zi
     for xi in range(2):
         x = xs[i + xi]
@@ -63,7 +63,7 @@ def contains_surface(int i, int j, int k, object objdist, double[:] xs, double[:
                 z = zs[k + zi]
                 d = objdist(x, y, z)
                 if print_reject_reason:
-                    print('at (%g, %g, %g): d = %g' % (x, y, z, d))
+                    print(f"at ({x:g}, {y:g}, {z:g}): d = {d:g}")
                 if d <= 0:
                     has_neg = True
                 if d >= 0:
@@ -112,13 +112,13 @@ def process_cell(int i, int j, int k, list objects, double[:] xs, double[:] ys, 
     value4, value5, value6, value7 = values[4], values[5], values[6], values[7]
 
     if print_values:
-        print('(x, y, z) = (%7f, %7f, %7f); (x1, y1, z1) = (%7f, %7f, %7f)' % (x, y, z, x1, y1, z1))
-        print('%7f %7f %7f %7f %7f %7f %7f %7f' % (value0, value1, value2, value3, value4, value5, value6, value7))
-        print('last obj distance to position[4]: ', objects[len(objects)-1](position[4][0], position[4][1], position[4][2]))
-        print('distance to position[4] with everything but the last object:', min([objdist(position[4][0], position[4][1], position[4][2]) for objdist in objects[:len(objects)-1]]))
-        print('distance to position[4] with everything:', min([objdist(position[4][0], position[4][1], position[4][2]) for objdist in objects[:]]))
-        print('last object:', objects[len(objects) - 1])
-        print('position[4]:', (position[4][0], position[4][1], position[4][2]))
+        print(f"(x, y, z) = ({x:7f}, {y:7f}, {z:7f}); (x1, y1, z1) = ({x1:7f}, {y1:7f}, {z1:7f})")
+        print(f"{value0:7f} {value1:7f} {value2:7f} {value3:7f} {value4:7f} {value5:7f} {value6:7f} {value7:7f}")
+        print(f"last obj distance to position[4]: {objects[len(objects)-1](position[4][0], position[4][1], position[4][2])}")
+        print(f"distance to position[4] with everything but the last object: {min([objdist(position[4][0], position[4][1], position[4][2]) for objdist in objects[:len(objects)-1]])}")
+        print(f"distance to position[4] with everything: {min([objdist(position[4][0], position[4][1], position[4][2]) for objdist in objects[:]])}")
+        print(f"last object: {objects[len(objects) - 1]}")
+        print(f"position[4]: {position[4][0], position[4][1], position[4][2]}")
 
     new_index = start + 9 * find_triangles(value0, value1, value2, value3, value4, value5, value6, value7, x, x1, y, y1, z, z1, &tridata[start])
     if store_areas and areas is not None:
@@ -394,10 +394,10 @@ cdef int _process_missing_surfaces(set process2, dict to_process, list chunk_obj
             if local_objs:
                 for m, objdist in enumerate(local_objs):
                     if contains_surface(i, j, k, objdist, xs, ys, zs, dx, r_inner, r_outer, False):
-                        print('item %d in grid(%d, %d, %d) contains previously undetected surface' % (m, i, j, k))
+                        print(f"item {m} in grid({i}, {j}, {k}) contains previously undetected surface")
                         for n, obj in enumerate(objects):
                             if obj.distance == objdist:
-                                print('    (i.e. global item %d: %r)' % (n, obj))
+                                print(f"    (i.e. global item {n}: {obj!r})")
                                 break
                 starti = process_cell(i, j, k, local_objs, xs, ys, zs, triangles, starti, store_areas=store_areas, areas=areas)
 
