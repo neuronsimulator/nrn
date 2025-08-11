@@ -972,6 +972,12 @@ Functions, objects, and the stack
         vec.fill(0)         # Fill vector with zeros
         length = vec.size() # Get vector size
 
+    .. warning::
+
+        This function raises a C++ exception on error which cannot be
+        caught in pure C. An exception-free variant for use in C is
+        :func:`nrn_method_call_nothrow`.
+
 .. c:function:: void nrn_function_call(Symbol* sym, int narg)
 
     Call a function by symbol.
@@ -998,6 +1004,127 @@ Functions, objects, and the stack
         // Call fadvance()
         Symbol* fadvance_sym = nrn_symbol("fadvance");
         nrn_function_call(fadvance_sym, 0);
+
+    **Python Equivalent:**
+
+    .. code-block:: python
+
+        n.finitialize(-65)  # Initialize membrane voltage
+        n.fadvance()        # Advance simulation by one time step
+    
+    .. warning::
+
+        This function raises a C++ exception on error which cannot be
+        caught in pure C. An exception-free variant for use in C is
+        :func:`nrn_function_call_nothrow`.
+
+.. c:function:: int nrn_method_call_nothrow(Object* obj, Symbol* method_sym, int narg, char* error_msg, size_t error_msg_size)
+
+    Call a method on a NEURON object without throwing exceptions.
+
+    :param obj: Pointer to the object.
+    :param method_sym: Symbol representing the method to call.
+    :param narg: Number of arguments on the stack.
+    :param error_msg: Buffer to store error message if call fails.
+    :param error_msg_size: Size of the error message buffer.
+    :returns: 0 on success, non-zero on error.
+
+    **Usage Pattern:**
+
+    Used to invoke object methods with error handling. Arguments must be pushed onto the stack
+    before calling. Return values (if any) are left on the stack. Unlike :c:func:`nrn_method_call`,
+    this function returns an error code instead of throwing exceptions, making it suitable for
+    use in pure C code or via ``ctypes``.
+
+    **C Usage:**
+    
+    .. code-block:: c
+    
+        char error_buffer[256];
+        
+        // Resize vector to 200 elements
+        Symbol* resize_method = nrn_method_symbol(vec, "resize");
+        nrn_double_push(200);
+        int result = nrn_method_call_nothrow(vec, resize_method, 1, 
+                                             error_buffer, sizeof(error_buffer));
+        if (result != 0) {
+            fprintf(stderr, "Resize failed: %s\n", error_buffer);
+            return -1;
+        }
+        Object* returned_obj = nrn_object_pop();
+        
+        // Fill vector with zeros
+        Symbol* fill_method = nrn_method_symbol(vec, "fill");
+        nrn_double_push(0.0);
+        result = nrn_method_call_nothrow(vec, fill_method, 1, 
+                                         error_buffer, sizeof(error_buffer));
+        if (result != 0) {
+            fprintf(stderr, "Fill failed: %s\n", error_buffer);
+            return -1;
+        }
+        Object* returned_obj2 = nrn_object_pop();
+        
+        // Get vector size
+        Symbol* size_method = nrn_method_symbol(vec, "size");
+        result = nrn_method_call_nothrow(vec, size_method, 0, 
+                                         error_buffer, sizeof(error_buffer));
+        if (result != 0) {
+            fprintf(stderr, "Size method failed: %s\n", error_buffer);
+            return -1;
+        }
+        double length = nrn_double_pop();
+
+    **Python Equivalent:**
+    
+    .. code-block:: python
+    
+        vec.resize(200)     # Resize vector to 200 elements
+        vec.fill(0)         # Fill vector with zeros
+        length = vec.size() # Get vector size
+
+.. c:function:: int nrn_function_call_nothrow(Symbol* sym, int narg, char* error_msg, size_t error_msg_size)
+
+    Call a function by symbol without throwing exceptions.
+
+    :param sym: Symbol representing the function to call.
+    :param narg: Number of arguments on the stack.
+    :param error_msg: Buffer to store error message if call fails.
+    :param error_msg_size: Size of the error message buffer.
+    :returns: 0 on success, non-zero on error.
+
+    **Usage Pattern:**
+
+    Used to call global functions and built-in NEURON functions with error handling.
+    Arguments must be prepared on the stack before calling. Unlike :c:func:`nrn_function_call`,
+    this function returns an error code instead of throwing exceptions, making it suitable for
+    use in pure C code or via ``ctypes``.
+
+    **C Usage:**
+
+    .. code-block:: c
+
+        char error_buffer[256];
+        
+        // Call finitialize(-65)
+        Symbol* finitialize_sym = nrn_symbol("finitialize");
+        nrn_double_push(-65.0);  // Push argument
+        int result = nrn_function_call_nothrow(finitialize_sym, 1, 
+                                               error_buffer, sizeof(error_buffer));
+        if (result != 0) {
+            fprintf(stderr, "finitialize failed: %s\n", error_buffer);
+            return -1;
+        }
+
+    .. code-block:: c
+
+        // Call fadvance()
+        Symbol* fadvance_sym = nrn_symbol("fadvance");
+        result = nrn_function_call_nothrow(fadvance_sym, 0, 
+                                           error_buffer, sizeof(error_buffer));
+        if (result != 0) {
+            fprintf(stderr, "fadvance failed: %s\n", error_buffer);
+            return -1;
+        }
 
     **Python Equivalent:**
 
