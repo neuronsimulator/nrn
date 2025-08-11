@@ -26,6 +26,11 @@
 #include <windows.h>
 #endif
 
+#ifndef _WIN32
+#include <unistd.h>
+#include <fcntl.h>
+#endif
+
 int unitonflag = 1;
 static int UnitsOn = 0;
 extern "C" {
@@ -110,13 +115,47 @@ static constexpr std::string_view embedded_nrnunits =
 // https://github.com/neuronsimulator/nrn/issues/3470
 // the API requires a FILE handle instead of a std::string or similar
 // so we write a temporary file
+// Note: with posix we experience
+// warning: 'tmpnam' is deprecated: This function is provided for
+// compatibility reasons only.  Due to security concerns inherent in the
+// design of tmpnam(3), it is highly recommended that you use mkstemp(3) instead
+// [-Wdeprecated-declarations]
 static FILE* open_embedded_nrnunits_as_file() {
-    auto tmp_path = std::string(std::tmpnam(nullptr));
-    auto out = std::ofstream(tmp_path, std::ios::out);
+#ifdef _WIN32
+    // Windows: Use GetTempPath and CreateFile for a secure temp file
+    char temp_path[MAX_PATH];
+    GetTempPath(MAX_PATH, temp_path);
+    char temp_file[MAX_PATH];
+    GetTempFileName(temp_path, "nrn", 0, temp_file);
+
+    // Write embedded_nrnunits to the temp file
+    std::ofstream out(temp_file, std::ios::out | std::ios::binary);
     out.write(embedded_nrnunits.data(), embedded_nrnunits.size());
     out.close();
 
-    return std::fopen(tmp_path.c_str(), "r");
+    // Open the temp file for reading
+    return fopen(temp_file, "r");
+#else
+    // POSIX: Use mkstemp for a secure temp file
+    char temp_file[] = "/tmp/nrnunitsXXXXXX";
+    int fd = mkstemp(temp_file);
+    if (fd == -1) {
+        return nullptr;  // Handle error appropriately
+    }
+
+    // Write embedded_nrnunits to the temp file
+    std::ofstream out(temp_file, std::ios::out | std::ios::binary);
+    out.write(embedded_nrnunits.data(), embedded_nrnunits.size());
+    out.close();
+
+    // Open the temp file for reading
+    FILE* file = fdopen(fd, "r");
+    if (!file) {
+        close(fd);
+        unlink(temp_file);  // Clean up
+    }
+    return file;
+#endif
 }
 
 static int Getc(FILE* inp) {

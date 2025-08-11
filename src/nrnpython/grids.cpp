@@ -6,6 +6,7 @@ a linked list of Grid_nodes
 ******************************************************************/
 #include <stdio.h>
 #include <assert.h>
+#include <vector>
 #include "nrnpython.h"
 #include "grids.h"
 #include "rxd.h"
@@ -1307,6 +1308,8 @@ void ICS_Grid_node::divide_x_work(const int nthreads) {
     // To determine which index to put the start node and line length in thread_line_defs
     int* thread_idx_counter = (int*) calloc(nthreads, sizeof(int));
     // To determine which thread array to put the start node and line length in thread_line_defs
+    // warning: variable length arrays in C++ are a Clang extension [-Wvla-cxx-extension]
+    // int line_thread_id[_x_lines_length / 2];
     std::vector<int> line_thread_id(_x_lines_length / 2);
     // Array of nthreads arrays that hold the line defs for each thread
     int** thread_line_defs = (int**) malloc(nthreads * sizeof(int*));
