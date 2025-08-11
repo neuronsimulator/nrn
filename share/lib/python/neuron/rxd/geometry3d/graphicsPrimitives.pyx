@@ -28,7 +28,7 @@ cdef class Complement:
     def __init__(self, obj):
         self.obj = obj
     def __repr__(self):
-        return 'Complement(%r)' % self.obj
+        return f"Complement({self.obj!r})"
     def distance(self, px, py, pz):
         return -self.obj.distance(px, py, pz)
     def starting_points(self, xs, ys, zs):
@@ -42,7 +42,7 @@ cdef class Union:
     def __init__(self, list objects):
         self.objects = objects
     def __repr__(self):
-        return 'Union(%r)' % self.objects
+        return f"Union({self.objects!r})"
     @cython.boundscheck(False)
     @cython.wraparound(False)
     cpdef double distance(self, px, py, pz):
@@ -64,7 +64,7 @@ cdef class Intersection:
     def __init__(self, list objects):
         self.objects = objects
     def __repr__(self):
-        return 'Intersection(%r)' % self.objects
+        return f"Intersection({self.objects!r})"
     @cython.boundscheck(False)
     @cython.wraparound(False)
     cpdef double distance(self, px, py, pz):
@@ -440,9 +440,11 @@ cdef class Cone:
         else:
             order = [self.x0, self.y0, self.z0, self.r0, self.x1, self.y1, self.z1, self.r1]
         if self.clips:
-            return 'Cone(%g, %g, %g, %g, %g, %g, %g, %g; clips=%r)' % tuple(order + [self.clips])
+            return (f"Cone({order[0]:g}, {order[1]:g}, {order[2]:g}, {order[3]:g}, "
+                    f"{order[4]:g}, {order[5]:g}, {order[6]:g}, {order[7]:g}; clips={self.clips!r})")
         else:
-            return 'Cone(%g, %g, %g, %g, %g, %g, %g, %g)' % tuple(order)
+            return (f"Cone({order[0]:g}, {order[1]:g}, {order[2]:g}, {order[3]:g}, "
+                    f"{order[4]:g}, {order[5]:g}, {order[6]:g}, {order[7]:g})")
 
     property _x0:
         def __get__(self):
