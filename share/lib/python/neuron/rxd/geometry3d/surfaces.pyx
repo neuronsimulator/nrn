@@ -76,7 +76,7 @@ def contains_surface(int i, int j, int k, object objdist, object xs, object ys, 
 def process_cell(int i, int j, int k, list objects, double[:] xs, double[:] ys, double[:] zs, double[:] tridata, int start, bint store_areas=False, double[:,:,:] areas=None, bint print_values=False):
     cdef int new_index
     cdef double x, y, z, x1, y1, z1
-    cdef double position[8][3]  # Use C array instead of Python list
+    cdef double position[8][3]
     x, y, z = xs[i], ys[j], zs[k]
     x1, y1, z1 = xs[i + 1], ys[j + 1], zs[k + 1]
 
