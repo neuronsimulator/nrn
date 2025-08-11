@@ -158,7 +158,6 @@ cpdef tuple chunkify(list objects, object xs, object ys, object zs, int chunk_si
     cdef int nx = (len(xs) + almost) // chunk_size
     cdef int ny = (len(ys) + almost) // chunk_size
     cdef int nz = (len(zs) + almost) // chunk_size
-    cdef list objects_distances = [obj.distance for obj in objects]
     cdef int m, i, j, k
 
     # this is bigger than sqrt(3) * dx / 2 \approx 0.866, the distance from center of cube to corner
