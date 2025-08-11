@@ -18,7 +18,7 @@ cdef extern double llpipedfromoriginvolume(double* p0, double* p1, double* p2)
 cdef extern from "math.h":
     double sqrt(double)
     double fabs(double)
-
+    bint isnan(double)
 
 
 cdef int max_chunks = 10_000_000
@@ -484,7 +484,7 @@ cdef double _tri_area_memview(double[:] triangles, int lo, int hi):
     for i in range(lo, hi, 9):
         local_area = llgramarea(&triangles[i], &triangles[3 + i], &triangles[6 + i])
         doublearea += local_area
-        if numpy.isnan(local_area):
+        if isnan(local_area):
             print('tri_area exception: ', ', '.join([str(triangles[i + j]) for j in range(9)]))
     return doublearea * 0.5
 
@@ -497,7 +497,7 @@ cpdef double tri_volume(double[:] triangles):
     for i in range(0, len(triangles), 9):
         local_vol = llpipedfromoriginvolume(&triangles[i], &triangles[3 + i], &triangles[6 + i])
         sixtimesvolume += local_vol
-        if numpy.isnan(local_vol):
+        if isnan(local_vol):
             print('tri_volume exception:')
             for j in range(i, i + 9):
                 print(triangles[j], end=' ')
