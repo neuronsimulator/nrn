@@ -25,8 +25,7 @@ a feature whose implementation is based on the neuron.doc module.
 
 """
 
-import pydoc, sys, io, inspect
-from neuron import h
+import pydoc, sys, inspect
 
 
 header = """
@@ -39,8 +38,13 @@ NEURON+Python Online Help System
 # override basic helper functionality to give proper help on HocObjects
 class NRNPyHelper(pydoc.Helper):
     def __call__(self, request=None):
-        if type(request) == type(h):
+        from . import h, hoc
+
+        if isinstance(request, type(h)) or isinstance(request, hoc.HocClass):
             pydoc.pager(header + request.__doc__)
+        elif isinstance(type(request), hoc.HocClass):
+            # this is when we have an instance of a NEURON class
+            pydoc.pager(header + type(request).__doc__)
         else:
             pydoc.Helper.__call__(self, request)
 
@@ -71,7 +75,7 @@ def doc_asstring(thing, title="Python Library Documentation: %s", forceload=0):
             object = type(object)
             desc += " object"
         return title % desc + "\n\n" + pydoc.text.document(object, name)
-    except (ImportError, ErrorDuringImport) as value:
+    except (ImportError, pydoc.ErrorDuringImport) as value:
         print(value)
 
 
@@ -175,10 +179,12 @@ def _get_from_help_dict(name):
 
 
 def _get_class_from_help_dict(name):
+    from . import n
+
     result = _get_from_help_dict(name)
     if not result:
         return ""
-    methods = dir(h.__getattribute__(name))
+    methods = dir(getattr(n, name))
     for m in methods:
         if f"{name}.{m}" in _help_dict:
             result += "\n\n\n%s.%s:\n\n%s" % (name, m, _help_dict[f"{name}.{m}"])
