@@ -17,8 +17,8 @@ In []: neuron ?
 
 From there, you can get help on the various objects in the hoc world:
 
-In []: fom neuron import h
-In []: v = h.Vector()
+In []: fom neuron import n
+In []: v = n.Vector()
 In []: ? v.to_python
 
 a feature whose implementation is based on the neuron.doc module.
@@ -38,10 +38,10 @@ NEURON+Python Online Help System
 # override basic helper functionality to give proper help on HocObjects
 class NRNPyHelper(pydoc.Helper):
     def __call__(self, request=None):
-        from . import h, hoc
+        from . import n, hoc
 
         if (
-            isinstance(request, type(h))
+            isinstance(request, type(n))
             or isinstance(request, hoc.HocClass)
             or isinstance(type(request), hoc.HocClass)
         ):
@@ -76,7 +76,7 @@ def doc_asstring(thing, title="Python Library Documentation: {}", forceload=0):
             object = type(object)
             desc += " object"
         return title.format(desc) + "\n\n" + pydoc.text.document(object, name)
-    except (ImportError, ErrorDuringImport) as value:
+    except (ImportError, pydoc.ErrorDuringImport) as value:
         print(value)
 
 
