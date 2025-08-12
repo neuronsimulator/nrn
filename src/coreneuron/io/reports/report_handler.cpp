@@ -62,7 +62,13 @@ static std::vector<int> map_gids(const NrnThread& nt) {
     return nodes_gid;
 }
 
-
+/**
+ * @brief Map each segment_id to a single node index in the given Memb_list.
+ *
+ * Lazily populates the map only if empty. Aborts if a segment_id appears more than once,
+ * which is invalid for compartment reports expecting exactly one variable per segment.
+ * Differs from the vector variant by enforcing uniqueness and aborting on duplicates.
+ */
 static void fill_segment_id_2_node_id(Memb_list* ml,
                                       std::unordered_map<int, int>& segment_id_2_node_id) {
     nrn_assert(ml && "Memb_list is a nullptr!");
@@ -91,6 +97,13 @@ static void fill_segment_id_2_node_id(Memb_list* ml,
     }
 }
 
+/**
+ * @brief Map each segment_id to all corresponding node indices in the given Memb_list.
+ *
+ * Lazily populates the map only if empty. Allows multiple node indices per segment_id
+ * and stores them in a vector. Differs from the single-index variant by permitting
+ * duplicates and not performing any error checks.
+ */
 static void fill_segment_id_2_node_id(
     Memb_list* ml,
     std::unordered_map<int, std::vector<int>>& segment_id_2_node_id) {
@@ -107,6 +120,15 @@ static void fill_segment_id_2_node_id(
     }
 }
 
+/**
+ * @brief Retrieve a pointer to a single mechanism/state variable for a specific segment.
+ *
+ * For "i_membrane" and "v", returns a direct pointer to the relevant thread array.
+ * Otherwise, looks up the mechanism in the thread, maps the segment to its node,
+ * and retrieves the variable pointer. Aborts if the mechanism or variable is missing.
+ * Differs from get_vars() in that it returns a single variable pointer and performs
+ * strict error handling with aborts on failure.
+ */
 static double* get_one_var(const NrnThread& nt,
                            const int mech_id,
                            const std::string& var_name,
@@ -168,6 +190,15 @@ static double* get_one_var(const NrnThread& nt,
     return ans;
 }
 
+/**
+ * @brief Retrieve pointers to a mechanism/state variable for all nodes in a segment.
+ *
+ * For "i_membrane" and "v", returns a vector containing a single direct pointer.
+ * Otherwise, looks up the mechanism in the thread, maps the segment to its nodes,
+ * and retrieves pointers for each node. Returns an empty vector on any failure.
+ * Differs from get_one_var() in that it returns multiple pointers (vector) and
+ * fails gracefully without aborting.
+ */
 static std::vector<double*> get_vars(
     const NrnThread& nt,
     const int mech_id,
@@ -214,6 +245,12 @@ static std::vector<double*> get_vars(
     return ans;
 }
 
+/**
+ * @brief Compute a scaling factor for a mechanism variable.
+ *
+ * Inverts current for "IClamp" and "SEClamp". For area scaling (except "i_membrane"),
+ * uses the segment area in µm² divided by 100. Returns 1.0 otherwise.
+ */
 static double get_scaling_factor(const std::string& mech_name,
                                  Scaling scaling,
                                  const NrnThread& nt,
@@ -664,6 +701,7 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
             vars_to_report =
                 get_synapse_vars_to_report(nt, intersection_ids, report_config, nodes_to_gid);
             register_custom_report(nt, report_config, vars_to_report);
+            break;
         }
         default: {
             std::cerr << "[ERROR] Unknown report type: " << to_string(report_config.type) << '\n';
