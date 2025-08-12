@@ -1435,7 +1435,7 @@ static PyObject* hocobj_getattro(PyObject* subself, PyObject* name) {
             return hocobj_getattr(subself, name);
         }
     }
-    
+
     if ((PyTypeObject*) PyObject_Type(subself) != hocobject_type) {
         // printf("try generic %s\n", PyString_AsString(name));
         nb::object result = nb::steal(PyObject_GenericGetAttr(subself, name));
