@@ -34,23 +34,6 @@ void ReportHandler::register_custom_report(const NrnThread& nt,
     }
 }
 
-static void fill_segment_id_2_node_id(Memb_list* ml,
-                                      std::unordered_map<int, int>& segment_id_2_node_id) {
-    nrn_assert(ml && "Memb_list is a nullptr!");
-
-    // do not fill if not empty. We already did this. Be lazy
-    if (!segment_id_2_node_id.empty()) {
-        return;
-    }
-
-    for (int j = 0; j < ml->nodecount; j++) {
-        const int segment_id = ml->nodeindices[j];
-
-        auto result = segment_id_2_node_id.insert({segment_id, j});
-
-        nrn_assert(result.second && "Duplicate segment_id detected");
-    }
-}
 
 // map GIDs of every compartment, it consist in a backward sweep then forward sweep algorithm
 static std::vector<int> map_gids(const NrnThread& nt) {
@@ -79,38 +62,58 @@ static std::vector<int> map_gids(const NrnThread& nt) {
     return nodes_gid;
 }
 
-/**
- * @brief Retrieves a pointer to a variable associated with a mechanism or state variable.
- *
- * This function returns a pointer to the memory location of a variable specified by
- * its mechanism name and variable name for a given segment in the neuron thread.
- *
- * Special cases:
- * - If `mech_name` is "i_membrane", returns the pointer to the membrane current (`nrn_sav_rhs`)
- *   at the specified `segment_id`.
- * - If `mech_name` is "v", returns the pointer to the membrane voltage (`_actual_v`)
- *   at the specified `segment_id`.
- *
- * For other mechanisms:
- * - Retrieves the `Memb_list` corresponding to `mech_id` from the neuron thread.
- * - Uses `segment_id_2_node_id` as a cache mapping segment IDs to node indices.
- *   If the cache is empty, it populates it by iterating over all nodes in `ml`.
- * - Returns the pointer to the variable obtained via `get_var_location_from_var_name`.
- *
- * @param nt Reference to the NrnThread containing mechanism data.
- * @param mech_id Mechanism type ID.
- * @param var_name Name of the variable to retrieve within the mechanism.
- * @param mech_name Name of the mechanism (e.g., "i_membrane", "v", or other mechanisms).
- * @param segment_id ID of the segment for which to retrieve the variable.
- * @param segment_id_2_node_id Cache mapping segment IDs to node indices; populated if empty.
- * @return Pointer to the requested variable's memory location, or nullptr if mechanism not found.
- */
-static double* get_var(const NrnThread& nt,
-                       const int mech_id,
-                       const std::string& var_name,
-                       const std::string& mech_name,
-                       const int segment_id,
-                       std::unordered_map<int, int>& segment_id_2_node_id) {
+
+static void fill_segment_id_2_node_id(Memb_list* ml,
+                                      std::unordered_map<int, int>& segment_id_2_node_id) {
+    nrn_assert(ml && "Memb_list is a nullptr!");
+
+    // do not fill if not empty. We already did this. Be lazy
+    if (!segment_id_2_node_id.empty()) {
+        return;
+    }
+
+    for (int j = 0; j < ml->nodecount; j++) {
+        const int segment_id = ml->nodeindices[j];
+        auto result = segment_id_2_node_id.insert({segment_id, j});
+        if (!result.second) {
+            std::cerr << "Found duplicate in nodeindices: " << segment_id << " index: " << j
+                      << std::endl;
+            std::cerr << "The nodeindices (size: " << ml->nodecount << ") are:\n[";
+            for (int j = 0; j < ml->nodecount; j++) {
+                std::cerr << ml->nodeindices[j] << ", ";
+            }
+            std::cerr << "]\n";
+            std::cerr << "Probably you asked for a compartment report for a synapse variable and "
+                         "there are many synapses attached to the soma.\nThis is not allowed since "
+                         "compartment reports require 1 and only 1 variable on every segment.\n";
+            nrn_abort(1);
+        }
+    }
+}
+
+static void fill_segment_id_2_node_id(
+    Memb_list* ml,
+    std::unordered_map<int, std::vector<int>>& segment_id_2_node_id) {
+    nrn_assert(ml && "Memb_list is a nullptr!");
+
+    // do not fill if not empty. We already did this. Be lazy
+    if (!segment_id_2_node_id.empty()) {
+        return;
+    }
+
+    for (int j = 0; j < ml->nodecount; j++) {
+        const int segment_id = ml->nodeindices[j];
+        segment_id_2_node_id[segment_id].push_back(j);
+    }
+}
+
+static double* get_one_var(const NrnThread& nt,
+                           const int mech_id,
+                           const std::string& var_name,
+                           const std::string& mech_name,
+                           const int segment_id,
+                           std::unordered_map<int, int> segment_id_2_node_id,
+                           int gid) {
     if (mech_name == "i_membrane") {
         return nt.nrn_fast_imem->nrn_sav_rhs + segment_id;
     }
@@ -119,20 +122,96 @@ static double* get_var(const NrnThread& nt,
     }
 
     if (mech_id < 0) {
-        return nullptr;
+        std::cerr << "Mechanism (" << mech_id << ", " << var_name << ", " << mech_name
+                  << ") not found\n";
+        std::cerr << "Negative mech_id\n";
+        nrn_abort(1);
     }
 
     Memb_list* ml = nt._ml_list[mech_id];
 
     if (!ml) {
-        return nullptr;
+        std::cerr << "Mechanism (" << mech_id << ", " << var_name << ", " << mech_name
+                  << ") not found\n";
+        std::cerr << "NULL Memb_list\n";
+        nrn_abort(1);
     }
 
     // lazy cache
     fill_segment_id_2_node_id(ml, segment_id_2_node_id);
 
-    const int node_id = segment_id_2_node_id[segment_id];
-    return get_var_location_from_var_name(mech_id, mech_name, var_name, ml, node_id);
+    const auto it = segment_id_2_node_id.find(segment_id);
+    // there is no mechanism at this segment. Notice that segment_id_2_node_id
+    // is a segment_id -> node_id that changes with mech_id and gid
+    if (it == segment_id_2_node_id.end()) {
+        std::cerr << "Mechanism (" << mech_id << ", " << var_name << ", " << mech_name
+                  << ") not found at gid: " << gid << " segment: " << segment_id << std::endl;
+        std::cerr << "The nodeindices (size: " << ml->nodecount << ") are:\n[";
+        for (int j = 0; j < ml->nodecount; j++) {
+            std::cerr << ml->nodeindices[j] << ", ";
+        }
+        std::cerr << "]\n";
+        nrn_abort(1);
+    }
+
+    const int node_id = it->second;
+
+
+    const auto ans = get_var_location_from_var_name(mech_id, mech_name, var_name, ml, node_id);
+    if (ans == nullptr) {
+        std::cerr
+            << "get_var_location_from_var_name failed to retrieve a valid pointer for mechanism ("
+            << mech_id << ", " << var_name << ", " << mech_name << ") at gid: " << gid
+            << " segment: " << segment_id << std::endl;
+        nrn_abort(1);
+    }
+    return ans;
+}
+
+static std::vector<double*> get_vars(
+    const NrnThread& nt,
+    const int mech_id,
+    const std::string& var_name,
+    const std::string& mech_name,
+    const int segment_id,
+    std::unordered_map<int, std::vector<int>>& segment_id_2_node_ids) {
+    if (mech_name == "i_membrane") {
+        return {nt.nrn_fast_imem->nrn_sav_rhs + segment_id};
+    }
+    if (mech_name == "v") {
+        return {nt._actual_v + segment_id};
+    }
+
+    if (mech_id < 0) {
+        return {};
+    }
+
+    Memb_list* ml = nt._ml_list[mech_id];
+
+    if (!ml) {
+        return {};
+    }
+
+    // lazy cache
+    fill_segment_id_2_node_id(ml, segment_id_2_node_ids);
+
+    const auto it = segment_id_2_node_ids.find(segment_id);
+    // there is no mechanism at this segment. Notice that segment_id_2_node_id
+    // is a segment_id -> node_id that changes with mech_id and gid
+    if (it == segment_id_2_node_ids.end()) {
+        return {};
+    }
+
+    const std::vector<int>& node_ids = it->second;
+
+    std::vector<double*> ans;
+    for (auto node_id: node_ids) {
+        const auto var = get_var_location_from_var_name(mech_id, mech_name, var_name, ml, node_id);
+        if (var) {
+            ans.push_back(var);
+        }
+    }
+    return ans;
 }
 
 static double get_scaling_factor(const std::string& mech_name,
@@ -156,7 +235,15 @@ static void append_sections_to_to_report_auto_variable(
     std::vector<VarWithMapping>& to_report,
     const ReportConfiguration& report_conf,
     const NrnThread& nt,
-    std::unordered_map<int, int>& segment_id_2_node_id) {
+    std::unordered_map<int, int>& segment_id_2_node_id,
+    int gid) {
+    nrn_assert(report_conf.mech_ids.size() == 1);
+    nrn_assert(report_conf.var_names.size() == 1);
+    nrn_assert(report_conf.mech_names.size() == 1);
+
+    const auto& mech_id = report_conf.mech_ids[0];
+    const auto& var_name = report_conf.var_names[0];
+    const auto& mech_name = report_conf.mech_names[0];
     for (const auto& section: sections->secmap) {
         // compartment_id
         int section_id = section.first;
@@ -165,12 +252,8 @@ static void append_sections_to_to_report_auto_variable(
         // get all compartment values (otherwise, just middle point)
         if (report_conf.compartments == Compartments::All) {
             for (const auto& segment_id: segment_ids) {
-                double* variable = get_var(nt,
-                                           report_conf.mech_ids[0],
-                                           report_conf.var_names[0],
-                                           report_conf.mech_names[0],
-                                           segment_id,
-                                           segment_id_2_node_id);
+                double* variable = get_one_var(
+                    nt, mech_id, var_name, mech_name, segment_id, segment_id_2_node_id, gid);
                 to_report.emplace_back(VarWithMapping(section_id, variable));
             }
         } else if (report_conf.compartments == Compartments::Center) {
@@ -179,12 +262,8 @@ static void append_sections_to_to_report_auto_variable(
                        "This was not expected");
             // corresponding voltage in coreneuron voltage array
             const auto segment_id = segment_ids[segment_ids.size() / 2];
-            double* variable = get_var(nt,
-                                       report_conf.mech_ids[0],
-                                       report_conf.var_names[0],
-                                       report_conf.mech_names[0],
-                                       segment_id,
-                                       segment_id_2_node_id);
+            double* variable = get_one_var(
+                nt, mech_id, var_name, mech_name, segment_id, segment_id_2_node_id, gid);
             to_report.emplace_back(VarWithMapping(section_id, variable));
         } else {
             std::cerr << "[ERROR] Invalid compartments type: "
@@ -266,6 +345,10 @@ static VarsToReport get_compartment_set_vars_to_report(const NrnThread& nt,
     nrn_assert(report.target.size() == report.point_compartment_ids.size());
     nrn_assert(report.target.size() == report.point_section_ids.size());
 
+    const auto& mech_id = report.mech_ids[0];
+    const auto& var_name = report.var_names[0];
+    const auto& mech_name = report.mech_names[0];
+
     VarsToReport vars_to_report;
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     if (!mapinfo) {
@@ -285,12 +368,8 @@ static VarsToReport get_compartment_set_vars_to_report(const NrnThread& nt,
             segment_id_2_node_id.clear();
         }
 
-        double* variable = get_var(nt,
-                                   report.mech_ids[0],
-                                   report.var_names[0],
-                                   report.mech_names[0],
-                                   compartment_id,
-                                   segment_id_2_node_id);
+        double* variable = get_one_var(
+            nt, mech_id, var_name, mech_name, compartment_id, segment_id_2_node_id, gid);
         // automatically calls an empty constructor if key is not present
         vars_to_report[gid].emplace_back(section_id, variable);
         old_gid = gid;
@@ -302,9 +381,6 @@ static VarsToReport get_compartment_set_vars_to_report(const NrnThread& nt,
 static VarsToReport get_section_vars_to_report(const NrnThread& nt,
                                                const std::vector<int>& intersection_ids,
                                                const ReportConfiguration& report) {
-    nrn_assert(report.mech_ids.size() == 1);
-    nrn_assert(report.var_names.size() == 1);
-    nrn_assert(report.mech_names.size() == 1);
     nrn_assert(report.sections != SectionType::Invalid &&
                "[ERROR] : Compartment report `sections` should not be Invalid");
     nrn_assert(report.compartments != Compartments::Invalid &&
@@ -333,14 +409,14 @@ static VarsToReport get_section_vars_to_report(const NrnThread& nt,
             const auto& section_mapping = cell_mapping->sec_mappings;
             for (const auto& sections: section_mapping) {
                 append_sections_to_to_report_auto_variable(
-                    sections, to_report, report, nt, segment_id_2_node_id);
+                    sections, to_report, report, nt, segment_id_2_node_id, gid);
             }
         } else {
             /** get section list mapping for the type, if available */
             if (cell_mapping->get_seclist_section_count(report.sections) > 0) {
                 const auto& sections = cell_mapping->get_seclist_mapping(report.sections);
                 append_sections_to_to_report_auto_variable(
-                    sections, to_report, report, nt, segment_id_2_node_id);
+                    sections, to_report, report, nt, segment_id_2_node_id, gid);
             }
         }
         to_report.shrink_to_fit();
@@ -349,12 +425,14 @@ static VarsToReport get_section_vars_to_report(const NrnThread& nt,
     return vars_to_report;
 }
 
+
 static VarsToReport get_summation_vars_to_report(const NrnThread& nt,
                                                  const std::vector<int>& intersection_ids,
                                                  const ReportConfiguration& report) {
     VarsToReport vars_to_report;
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     auto& summation_report = nt.summation_report_handler_->summation_reports_[report.output_path];
+
     if (!mapinfo) {
         std::cerr << "[ERROR] : Compartment report mapping information is missing for a Cell group "
                   << nt.ncell << '\n';
@@ -363,52 +441,47 @@ static VarsToReport get_summation_vars_to_report(const NrnThread& nt,
 
     for (const auto& intersection_id: intersection_ids) {
         const auto gid = report.target[intersection_id];
-        {
-            const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
-            if (cell_mapping == nullptr) {
-                std::cerr << "[ERROR] : Summation report mapping information is missing for gid "
-                          << gid << '\n';
-                nrn_abort(1);
-            }
-            // In case we need convertion of units
-            for (auto i = 0; i < report.mech_ids.size(); ++i) {
-                const auto& mech_id = report.mech_ids[i];
-                const auto& var_name = report.var_names[i];
-                const auto& mech_name = report.mech_names[i];
-                std::unordered_map<int, int> segment_id_2_node_id;
-
-                const auto& section_mapping = cell_mapping->sec_mappings;
-                for (const auto& sections: section_mapping) {
-                    for (auto& section: sections->secmap) {
-                        int section_id = section.first;
-                        auto& segment_ids = section.second;
-                        for (const auto& segment_id: segment_ids) {
-                            double* var_ptr = get_var(
-                                nt, mech_id, var_name, mech_name, segment_id, segment_id_2_node_id);
-                            if (var_ptr != nullptr) {
-                                double scaling_factor =
-                                    get_scaling_factor(mech_name, report.scaling, nt, segment_id);
-
-                                // I know that comparing a double to 0.0 is not the best practice,
-                                // but they told me to never round this number and to follow how
-                                // it is done in neurodamus + neuron. In any case it is innoquous,
-                                // it is just to save some computational time. (Katta)
-                                if (scaling_factor != 0.0) {
-                                    summation_report.currents_[segment_id].push_back(
-                                        std::make_pair(var_ptr, scaling_factor));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
 
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
         if (cell_mapping == nullptr) {
             std::cerr << "[ERROR] : Summation report mapping information is missing for gid " << gid
                       << '\n';
             nrn_abort(1);
+        }
+
+        // In case we need convertion of units
+        for (auto i = 0; i < report.mech_ids.size(); ++i) {
+            const auto& mech_id = report.mech_ids[i];
+            const auto& var_name = report.var_names[i];
+            const auto& mech_name = report.mech_names[i];
+            std::unordered_map<int, std::vector<int>> segment_id_2_node_ids;
+
+            const auto& section_mapping = cell_mapping->sec_mappings;
+            for (const auto& sections: section_mapping) {
+                for (auto& section: sections->secmap) {
+                    int section_id = section.first;
+                    auto& segment_ids = section.second;
+
+                    for (const auto& segment_id: segment_ids) {
+                        double scaling_factor =
+                            get_scaling_factor(mech_name, report.scaling, nt, segment_id);
+                        // I know that comparing a double to 0.0 is not the best practice,
+                        // but they told me to never round this number and to follow how
+                        // it is done in neurodamus + neuron. In any case it is innoquous,
+                        // it is just to save some computational time. (Katta)
+                        if (scaling_factor == 0.0) {
+                            continue;
+                        }
+
+                        const std::vector<double*> var_ptrs = get_vars(
+                            nt, mech_id, var_name, mech_name, segment_id, segment_id_2_node_ids);
+                        for (auto var_ptr: var_ptrs) {
+                            summation_report.currents_[segment_id].push_back(
+                                std::make_pair(var_ptr, scaling_factor));
+                        }
+                    }
+                }
+            }
         }
 
         std::vector<VarWithMapping> to_report;
@@ -443,6 +516,7 @@ static VarsToReport get_summation_vars_to_report(const NrnThread& nt,
         }
         vars_to_report[gid] = to_report;
     }
+
     return vars_to_report;
 }
 
@@ -450,14 +524,16 @@ static VarsToReport get_synapse_vars_to_report(const NrnThread& nt,
                                                const std::vector<int>& intersection_ids,
                                                const ReportConfiguration& report,
                                                const std::vector<int>& nodes_to_gids) {
+    nrn_assert(report.mech_ids.size() == 1);
+    nrn_assert(report.var_names.size() == 1);
+    nrn_assert(report.mech_names.size() == 1);
+    const auto& mech_id = report.mech_ids[0];
+    const auto& mech_name = report.mech_names[0];
+    const auto& var_name = report.var_names[0];
     VarsToReport vars_to_report;
     for (const auto& intersection_id: intersection_ids) {
         const auto gid = report.target[intersection_id];
-        // There can only be 1 mechanism
-        nrn_assert(report.mech_ids.size() == 1);
-        const auto& mech_id = report.mech_ids[0];
-        const auto& mech_name = report.mech_names[0];
-        const auto& var_name = report.var_names[0];
+
         Memb_list* ml = nt._ml_list[mech_id];
         if (!ml) {
             continue;

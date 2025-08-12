@@ -38,6 +38,43 @@ struct SummationReport {
     std::unordered_map<int, std::vector<size_t>> gid_segments_;
 };
 
+inline std::ostream& operator<<(std::ostream& os, const SummationReport& report) {
+    os << "SummationReport:\n";
+
+    os << "summation_ (" << report.summation_.size() << "): [";
+    for (size_t i = 0; i < report.summation_.size(); ++i) {
+        os << report.summation_[i];
+        if (i + 1 < report.summation_.size())
+            os << ", ";
+    }
+    os << "]\n";
+
+    os << "currents_ (" << report.currents_.size() << "):\n";
+    for (const auto& [seg_id, vec]: report.currents_) {
+        os << "  " << seg_id << ": [";
+        for (size_t i = 0; i < vec.size(); ++i) {
+            const auto& [ptr, scale] = vec[i];
+            os << "(ptr=" << ptr << ", val=" << (ptr ? *ptr : 0.0) << ", scale=" << scale << ")";
+            if (i + 1 < vec.size())
+                os << ", ";
+        }
+        os << "]\n";
+    }
+
+    os << "gid_segments_ (" << report.gid_segments_.size() << "):\n";
+    for (const auto& [gid, segs]: report.gid_segments_) {
+        os << "  " << gid << ": [";
+        for (size_t i = 0; i < segs.size(); ++i) {
+            os << segs[i];
+            if (i + 1 < segs.size())
+                os << ", ";
+        }
+        os << "]\n";
+    }
+
+    return os;
+}
+
 struct SummationReportMapping {
     // Map containing a SummationReport object per report
     std::unordered_map<std::string, SummationReport> summation_reports_;
