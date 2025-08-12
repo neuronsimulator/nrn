@@ -34,34 +34,6 @@ void ReportHandler::register_custom_report(const NrnThread& nt,
     }
 }
 
-
-// map GIDs of every compartment, it consist in a backward sweep then forward sweep algorithm
-static std::vector<int> map_gids(const NrnThread& nt) {
-    std::vector<int> nodes_gid(nt.end, -1);
-    // backward sweep: from presyn compartment propagate back GID to parent
-    for (int i = 0; i < nt.n_presyn; i++) {
-        const int gid = nt.presyns[i].gid_;
-        const int thvar_index = nt.presyns[i].thvar_index_;
-        // only for non artificial cells
-        if (thvar_index >= 0) {
-            // setting all roots gids of the presyns nodes,
-            // index 0 have parent set to 0, so we must stop at j > 0
-            // also 0 is the parent of all, so it is an error to attribute a GID to it.
-            nodes_gid[thvar_index] = gid;
-            for (int j = thvar_index; j > 0; j = nt._v_parent_index[j]) {
-                nodes_gid[nt._v_parent_index[j]] = gid;
-            }
-        }
-    }
-    // forward sweep: setting all compartements nodes to the GID of its root
-    //  already sets on above loop. This is working only because compartments are stored in order
-    //  parents followed by children
-    for (int i = nt.ncell + 1; i < nt.end; i++) {
-        nodes_gid[i] = nodes_gid[nt._v_parent_index[i]];
-    }
-    return nodes_gid;
-}
-
 /**
  * @brief Map each segment_id to a single node index in the given Memb_list.
  *
@@ -559,8 +531,7 @@ static VarsToReport get_summation_vars_to_report(const NrnThread& nt,
 
 static VarsToReport get_synapse_vars_to_report(const NrnThread& nt,
                                                const std::vector<int>& intersection_ids,
-                                               const ReportConfiguration& report,
-                                               const std::vector<int>& nodes_to_gids) {
+                                               const ReportConfiguration& report) {
     nrn_assert(report.mech_ids.size() == 1);
     nrn_assert(report.var_names.size() == 1);
     nrn_assert(report.mech_names.size() == 1);
@@ -568,39 +539,46 @@ static VarsToReport get_synapse_vars_to_report(const NrnThread& nt,
     const auto& mech_name = report.mech_names[0];
     const auto& var_name = report.var_names[0];
     VarsToReport vars_to_report;
+
+    const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     for (const auto& intersection_id: intersection_ids) {
         const auto gid = report.target[intersection_id];
 
-        Memb_list* ml = nt._ml_list[mech_id];
-        if (!ml) {
-            continue;
+        const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
+        if (cell_mapping == nullptr) {
+            std::cerr << "[ERROR] : Synapse report mapping information is missing for gid " << gid
+                      << '\n';
+            nrn_abort(1);
         }
-        std::vector<VarWithMapping> to_report;
-        to_report.reserve(ml->nodecount);
 
-        for (int j = 0; j < ml->nodecount; j++) {
-            double* is_selected =
-                get_var_location_from_var_name(mech_id, mech_name, SELECTED_VAR_MOD_NAME, ml, j);
-            bool report_variable = false;
+        for (auto i = 0; i < report.mech_ids.size(); ++i) {
+            std::unordered_map<int, std::vector<int>> segment_id_2_node_ids;
 
-            /// if there is no variable in mod file then report on every compartment
-            /// otherwise check the flag set in mod file
-            if (is_selected == nullptr) {
-                report_variable = true;
-            } else {
-                report_variable = *is_selected != 0.;
+            const auto& section_mapping = cell_mapping->sec_mappings;
+            for (const auto& sections: section_mapping) {
+                for (auto& section: sections->secmap) {
+                    int section_id = section.first;
+                    auto& segment_ids = section.second;
+                    for (const auto& segment_id: segment_ids) {
+
+                        const std::vector<double*> selected_vars = get_vars(
+                            nt, mech_id, "selected_for_report", mech_name, segment_id, segment_id_2_node_ids);
+                        const std::vector<double*> var_ptrs = get_vars(
+                            nt, mech_id, var_name, mech_name, segment_id, segment_id_2_node_ids);
+                        const std::vector<double*> synapseIDs = get_vars(
+                            nt, mech_id, "synapseID", mech_name, segment_id, segment_id_2_node_ids);
+                        
+                        nrn_assert(var_ptrs.size() == synapseIDs.size());
+                        nrn_assert(selected_vars.empty() || selected_vars.size() == var_ptrs.size());
+
+                        for (auto i = 0; i < var_ptrs.size(); ++i) {
+                            if (selected_vars.empty() || static_cast<bool>(selected_vars[i])) {
+                                vars_to_report[gid].push_back({static_cast<int>(*synapseIDs[i]), var_ptrs[i]});
+                            }
+                        }
+                    }
+                }
             }
-            if ((nodes_to_gids[ml->nodeindices[j]] == gid) && report_variable) {
-                double* var_value =
-                    get_var_location_from_var_name(mech_id, mech_name, var_name, ml, j);
-                double* synapse_id =
-                    get_var_location_from_var_name(mech_id, mech_name, SYNAPSE_ID_MOD_NAME, ml, j);
-                nrn_assert(synapse_id && var_value);
-                to_report.emplace_back(static_cast<int>(*synapse_id), var_value);
-            }
-        }
-        if (!to_report.empty()) {
-            vars_to_report[gid] = to_report;
         }
     }
     return vars_to_report;
@@ -667,8 +645,6 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
             continue;
         }
         auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
-        const std::vector<int>& nodes_to_gid = map_gids(nt);
-
 
         const std::vector<int> intersection_ids = get_intersection_ids(nt, report_config.target);
         VarsToReport vars_to_report;
@@ -699,7 +675,7 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
         }
         case ReportType::Synapse: {
             vars_to_report =
-                get_synapse_vars_to_report(nt, intersection_ids, report_config, nodes_to_gid);
+                get_synapse_vars_to_report(nt, intersection_ids, report_config);
             register_custom_report(nt, report_config, vars_to_report);
             break;
         }

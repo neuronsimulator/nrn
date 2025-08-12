@@ -85,13 +85,6 @@ struct SpikesInfo {
     std::vector<std::pair<std::string, int>> population_info;
 };
 
-// name of the variable in mod file that is used to indicate which synapse
-// is enabled or disable for reporting
-#define SELECTED_VAR_MOD_NAME "selected_for_report"
-
-/// name of the variable in mod file used for setting synapse id
-#define SYNAPSE_ID_MOD_NAME "synapseID"
-
 /**
  * @brief Converts an enum value to its corresponding string representation.
  *
