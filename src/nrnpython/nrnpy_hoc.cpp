@@ -1421,10 +1421,19 @@ static PyObject* hocobj_baseattr_safe(PyObject* subself, PyObject* args) {
 
 static int refuse_to_look;
 static PyObject* hocobj_getattro(PyObject* subself, PyObject* name) {
-    // Check for __doc__ attribute first for all HocObject types (including subclasses)
+    // Check for __doc__ attribute - handle Python subclasses with custom __doc__
     auto name_str = Py2NRNString::as_ascii(name);
     if (name_str.c_str() && strcmp(name_str.c_str(), "__doc__") == 0) {
-        return hocobj_getattr(subself, name);
+        // Try generic attribute lookup first in case the Python object has its own __doc__
+        nb::object result = nb::steal(PyObject_GenericGetAttr(subself, name));
+        if (result && result.ptr() != Py_None) {
+            // Python object has a non-None __doc__ attribute, use it
+            return result.release().ptr();
+        } else {
+            PyErr_Clear();
+            // Fall back to HOC documentation system
+            return hocobj_getattr(subself, name);
+        }
     }
     
     if ((PyTypeObject*) PyObject_Type(subself) != hocobject_type) {

@@ -456,6 +456,7 @@ def test_help():
         "Syntax:\n    ``pythonlist = vec.to_python()"
     )
     assert h.Vector().__doc__.startswith("This class was imple")
+    assert h.Vector().size.__doc__.startswith("Syntax:\n    ``size =")
     assert h.Vector.__doc__.startswith("This class was imple")
     assert h.finitialize.__doc__.startswith("Syntax:\n    ``n.finiti")
     assert h.__doc__.startswith("\n\nneuron.h\n====")

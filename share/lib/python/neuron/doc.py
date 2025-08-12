@@ -215,6 +215,8 @@ def get_docstring(objtype, symbol):
         _help_dict = pickle.loads(zlib.decompress(f.read()))
         f.close()
 
+    print(f"{objtype = }")
+    print(f"{symbol = }")
     if (objtype, symbol) == ("", ""):
         return doc_h
 
@@ -230,7 +232,7 @@ def get_docstring(objtype, symbol):
         if objtype in _help_dict:
             return _get_class_from_help_dict(objtype)
         else:
-            return default_object_doc_template % symbol
+            return default_object_doc_template % objtype
 
     # are we asking for help on a member of an object, e.g. h.Vector.size
     full_name = f"{objtype}.{symbol}"
