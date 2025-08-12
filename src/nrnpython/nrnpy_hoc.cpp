@@ -1421,7 +1421,13 @@ static PyObject* hocobj_baseattr_safe(PyObject* subself, PyObject* args) {
 
 static int refuse_to_look;
 static PyObject* hocobj_getattro(PyObject* subself, PyObject* name) {
-    if (!PyObject_TypeCheck(subself, hocobject_type)) {
+    // Check for __doc__ attribute first for all HocObject types (including subclasses)
+    auto name_str = Py2NRNString::as_ascii(name);
+    if (name_str.c_str() && strcmp(name_str.c_str(), "__doc__") == 0) {
+        return hocobj_getattr(subself, name);
+    }
+    
+    if ((PyTypeObject*) PyObject_Type(subself) != hocobject_type) {
         // printf("try generic %s\n", PyString_AsString(name));
         nb::object result = nb::steal(PyObject_GenericGetAttr(subself, name));
         if (result) {
@@ -1431,7 +1437,6 @@ static PyObject* hocobj_getattro(PyObject* subself, PyObject* name) {
             PyErr_Clear();
         }
     }
-
     if (!refuse_to_look) {
         return hocobj_getattr(subself, name);
     }
