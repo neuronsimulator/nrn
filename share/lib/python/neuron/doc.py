@@ -215,8 +215,6 @@ def get_docstring(objtype, symbol):
         _help_dict = pickle.loads(zlib.decompress(f.read()))
         f.close()
 
-    print(f"{objtype = }")
-    print(f"{symbol = }")
     if (objtype, symbol) == ("", ""):
         return doc_h
 
