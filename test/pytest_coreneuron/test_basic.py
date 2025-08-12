@@ -455,8 +455,8 @@ def test_help():
     assert h.Vector().to_python.__doc__.startswith(
         "Syntax:\n    ``pythonlist = vec.to_python()"
     )
-    assert h.Vector().__doc__.startswith("class neuron.hoc.HocObject")
-    assert h.Vector.__doc__.startswith("class neuron.hoc.HocObject")
+    assert h.Vector().__doc__.startswith("This class was imple")
+    assert h.Vector.__doc__.startswith("This class was imple")
     assert h.finitialize.__doc__.startswith("Syntax:\n    ``n.finiti")
     assert h.__doc__.startswith("\n\nneuron.h\n====")
 

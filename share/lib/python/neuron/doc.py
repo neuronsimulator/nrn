@@ -40,11 +40,12 @@ class NRNPyHelper(pydoc.Helper):
     def __call__(self, request=None):
         from . import h, hoc
 
-        if isinstance(request, type(h)) or isinstance(request, hoc.HocClass):
+        if (
+            isinstance(request, type(h))
+            or isinstance(request, hoc.HocClass)
+            or isinstance(type(request), hoc.HocClass)
+        ):
             pydoc.pager(header + request.__doc__)
-        elif isinstance(type(request), hoc.HocClass):
-            # this is when we have an instance of a NEURON class
-            pydoc.pager(header + type(request).__doc__)
         else:
             pydoc.Helper.__call__(self, request)
 
