@@ -2,21 +2,22 @@ from . import ctng
 from . import scalarField
 import numpy
 from .surfaces import chunkify
+from typing import Optional, Union, List
 
 _max_chunks = 10000000
 
 
 def voxelize(
-    source,
-    dx=0.25,
-    xlo=None,
-    xhi=None,
-    ylo=None,
-    yhi=None,
-    zlo=None,
-    zhi=None,
-    n_soma_step=100,
-):
+    source: object,
+    dx: float = 0.25,
+    xlo: Optional[float] = None,
+    xhi: Optional[float] = None,
+    ylo: Optional[float] = None,
+    yhi: Optional[float] = None,
+    zlo: Optional[float] = None,
+    zhi: Optional[float] = None,
+    n_soma_step: int = 100,
+) -> scalarField.ScalarField:
     """
     Generates a cartesian mesh of the volume of a neuron.
 
@@ -142,5 +143,5 @@ def voxelize(
 
 
 # inside the neuron if inside of any of its parts
-def is_inside(x, y, z, active_objs):
+def is_inside(x: float, y: float, z: float, active_objs: list) -> bool:
     return 1 if any(obj(x, y, z) <= 0 for obj in active_objs) else 0
