@@ -17,7 +17,7 @@ In []: neuron ?
 
 From there, you can get help on the various objects in the hoc world:
 
-In []: fom neuron import n
+In []: from neuron import n
 In []: v = n.Vector()
 In []: ? v.to_python
 
