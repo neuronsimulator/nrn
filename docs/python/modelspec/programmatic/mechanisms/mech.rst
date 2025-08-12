@@ -803,13 +803,15 @@ General
             fig, ax = plt.subplots(figsize=(8, 2))
 
             for c, (color, data) in enumerate([("red", stim_times), ("black", output_times)]):
-                ax.vlines(data, c - 0.4, c + 0.4, colors=color)
+                ax.vlines(data.as_numpy(), c - 0.4, c + 0.4, colors=color)
 
             ax.set_yticks([0, 1])
             ax.set_yticklabels(['excitatory\nstimuli','output\nevents'])
 
             ax.set_xlim([0, n.t])
             ax.set_xlabel('time (ms)')
+
+            plt.show()
             
         `Click here <https://colab.research.google.com/drive/1c02kKjinPAfwdabxMv79fErlqugFVOPo?usp=sharing>`_
         for a runnable version of this example. 
