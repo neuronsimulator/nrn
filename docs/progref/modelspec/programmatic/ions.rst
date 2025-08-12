@@ -286,7 +286,7 @@ Ions
                 .. code-block:: matlab
 
                     for sec = n.allsec()
-                        n.ion_style("ca_ion", 3, 2, 1, 1, 1, sec{1});
+                        n.ion_style("ca_ion", 3, 2, 1, 1, 1, sec);
                     end
 
 ----

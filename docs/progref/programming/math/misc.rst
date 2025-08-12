@@ -100,7 +100,7 @@ Miscellaneous
             
             Allows somewhat safer NEURON logical comparisons and integer truncation for 
             floating point numbers. Most NEURON comparisons are treated as true if they are 
-            within float_epsilon of being true. e.g., 
+            within `float_epsilon` of being true. e.g., 
 
             .. code-block:: matlab
 
@@ -118,4 +118,4 @@ Miscellaneous
         .. warning::
             We certainly haven't gotten every floating comparison in the program to use 
             ``float_epsilon`` but NEURON has most of them including all HOC interpreter logical 
-            operations, int, array indices, and Vector logic methods. 
+            operations, int, array indices, and :class:`Vector` logic methods. 

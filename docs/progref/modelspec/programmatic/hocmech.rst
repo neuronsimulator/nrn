@@ -192,89 +192,89 @@ HOC-based Mechanisms
                 run() 
                 print "V_max=", soma.V_max(.5) 
 
-    .. tab:: MATLAB
+    ..
+        .. tab:: MATLAB
 
-        Syntax:
+            Syntax:
 
-        .. code-block:: matlab
+            .. code-block:: matlab
 
-            n.make_mechanism('suffix', 'Template', 'parm1 parm2 parm3 ...')
-            n.make_pointprocess('Template', 'parm1 parm2 parm3 ...')
+                n.make_mechanism('suffix', 'Template', 'parm1 parm2 parm3 ...')
+                n.make_pointprocess('Template', 'parm1 parm2 parm3 ...')
 
-        Description:
-            Installs the HOC (in particular, *not* MATLAB) class called "Template" as a density membrane mechanism 
-            called "suffix" or a POINT_PROCESS called "Template". If the last argument exists it must be a space 
-            separated list of public variables in the Template which are to be 
-            treated as PARAMETERs. Public variables not in this list are treated as 
-            ASSIGNED variables. The new mechanism is used in exactly the same 
-            way as "hh" or mechanism defined by NMODL. Thus, instances are created 
-            in each segment with ``section.insert(suffix)`` and after insertion 
-            the public names are accessible via the normal range variable notation 
-            as in: ``section(x).name_suffix`` (e.g., the ``m`` state variable of the
-            ``hh`` mechanism is accessed via ``section(x).m_hh``.
-            
-            At this time the functionality of such interpreter defined membrane 
-            mechanisms is a small subset of the functionality of mechanisms described 
-            by the model description language. Furthermore, being interpreted, they 
-            are much ( more than 100 times) slower than compiled model descriptions. 
-            However, it is a very powerful way to 
-            watch variables, specify events for delivery as specific times, 
-            receive events, and discontinuously (or continuously) modify parameters 
-            during a simulation. And it works in the context of all the integration 
-            methods, including local variable time steps. The following procedure 
-            names within a template, if they exist, are analogous to the 
-            indicated block in the model description language. In each case 
-            the currently accessed section is set to the location of this instance 
-            of the Template and one argument is passed, x, which is the 
-            range variable arc position \ ``(0 < x < 1)``. 
-            
-            INITIAL: \ ``proc initial()`` 
-            Called when :func:`finitialize` is executed. 
-            
-            BREAKPOINT {SOLVE ... METHOD after_cvode}: \ ``proc after_step()`` 
-            For the standard staggered time step and global variable time step 
-            integration methods, called at every :func:`fadvance` when t = t+dt. 
-            For the local variable step method, the instance is called when 
-            the individual cell CVode instance finished its solve step. 
-            In any case, it is safe to send an event any time after t-dt. 
-            
+            Description:
+                Installs the HOC (in particular, *not* MATLAB) class called "Template" as a density membrane mechanism 
+                called "suffix" or a POINT_PROCESS called "Template". If the last argument exists it must be a space 
+                separated list of public variables in the Template which are to be 
+                treated as PARAMETERs. Public variables not in this list are treated as 
+                ASSIGNED variables. The new mechanism is used in exactly the same 
+                way as "hh" or mechanism defined by NMODL. Thus, instances are created 
+                in each segment with ``section.insert(suffix)`` and after insertion 
+                the public names are accessible via the normal range variable notation 
+                as in: ``section(x).name_suffix`` (e.g., the ``m`` state variable of the
+                ``hh`` mechanism is accessed via ``section(x).m_hh``.
+                
+                At this time the functionality of such interpreter defined membrane 
+                mechanisms is a small subset of the functionality of mechanisms described 
+                by the model description language. Furthermore, being interpreted, they 
+                are much ( more than 100 times) slower than compiled model descriptions. 
+                However, it is a very powerful way to 
+                watch variables, specify events for delivery as specific times, 
+                receive events, and discontinuously (or continuously) modify parameters 
+                during a simulation. And it works in the context of all the integration 
+                methods, including local variable time steps. The following procedure 
+                names within a template, if they exist, are analogous to the 
+                indicated block in the model description language. In each case 
+                the currently accessed section is set to the location of this instance 
+                of the Template and one argument is passed, x, which is the 
+                range variable arc position \ ``(0 < x < 1)``. 
+                
+                INITIAL: \ ``proc initial()`` 
+                Called when :func:`finitialize` is executed. 
+                
+                BREAKPOINT {SOLVE ... METHOD after_cvode}: \ ``proc after_step()`` 
+                For the standard staggered time step and global variable time step 
+                integration methods, called at every :func:`fadvance` when t = t+dt. 
+                For the local variable step method, the instance is called when 
+                the individual cell CVode instance finished its solve step. 
+                In any case, it is safe to send an event any time after t-dt. 
+                
 
-        Example:
-            The following example creates and installs a mechanism that watches 
-            the membrane potential and keeps track of its maximum value. 
+            Example:
+                The following example creates and installs a mechanism that watches 
+                the membrane potential and keeps track of its maximum value. 
 
-            .. code-block::
-                matlab
+                .. code-block::
+                    matlab
 
-                n = neuron.launch();
-                n.load_file('stdrun.hoc');
+                    n = neuron.launch();
+                    n.load_file('stdrun.hoc');
 
-                soma = n.Section('soma');
-                soma.L = sqrt(100 / pi);
-                soma.diam = soma.L;
-                soma.insert('hh');
+                    soma = n.Section('soma');
+                    soma.L = sqrt(100 / pi);
+                    soma.diam = soma.L;
+                    soma.insert('hh');
 
-                stim = n.IClamp(soma(0.5));
-                stim.dur = 0.1;
-                stim.amp = 0.3;
+                    stim = n.IClamp(soma(0.5));
+                    stim.dur = 0.1;
+                    stim.amp = 0.3;
 
-                % declare a mechanism using HOC
-                n(sprintf([...
-                    'begintemplate Max\n' ...
-                    '    public V\n' ...
-                    '    proc initial() {\n' ...
-                    '        V = v($1)\n' ...
-                    '    }\n' ...
-                    '    proc after_step() {\n' ...
-                    '        if (V < v($1)) {\n' ...
-                    '            V = v($1)\n' ...
-                    '        }\n' ...
-                    '    }\n' ...
-                    'endtemplate Max\n']));
+                    % declare a mechanism using HOC
+                    n(sprintf([...
+                        'begintemplate Max\n' ...
+                        '    public V\n' ...
+                        '    proc initial() {\n' ...
+                        '        V = v($1)\n' ...
+                        '    }\n' ...
+                        '    proc after_step() {\n' ...
+                        '        if (V < v($1)) {\n' ...
+                        '            V = v($1)\n' ...
+                        '        }\n' ...
+                        '    }\n' ...
+                        'endtemplate Max\n']));
 
-                n.make_mechanism('max', 'Max');
-                soma.insert('max');
-                n.run();
+                    n.make_mechanism('max', 'Max');
+                    soma.insert('max');
+                    n.run();
 
-                fprintf('V_max = %g\n', soma(0.5).V_max);
-         
+                    fprintf('V_max = %g\n', soma(0.5).V_max);

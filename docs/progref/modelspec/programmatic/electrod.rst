@@ -39,13 +39,13 @@ Electrode
         current section which can be switched between current and voltage 
         clamp modes and can do simple voltage clamp families. 
         
-        usage: :samp:`{e} = n.Electrode([{xplacement}, {yplacement}], sec=section)`
+        usage: :samp:`{e} = n.Electrode([{xplacement}, {yplacement}], section)`
         e.stim and e.vc can used to set parameters programmatically. 
-     
-        Electrode can be saved in a .session file and is best used 
+
+        Electrode can be saved in a `.session` file and is best used 
         anonymously so that it is dismissed and point processes deleted 
         when the graphic is dismissed. 
-        
+
 ----
 
 

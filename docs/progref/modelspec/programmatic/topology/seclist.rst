@@ -87,15 +87,13 @@ SectionList
             sl = n.SectionList();
             soma = n.Section('soma');
             dend = n.Section('dend');
-            sections = {soma, dend};
+            sections = [soma, dend];
             
-            for i = 1:numel(sections)
-                sl.append(sections{i});
+            for sec = sections
+                sl.append(sec);
             end
 
-            sl_secs = n.allsec(sl);
-            for i = 1:numel(sl_secs)
-                sec = sl_secs{i};
+            for sec = sl.allsec()
                 disp(sec.name);
             end
 
@@ -397,8 +395,8 @@ SectionList
                 sl.wholetree(soma);
 
                 % the following prints both soma and dend
-                for sec = n.allsec(sl)
-                    disp(sec{1}.name);
+                for sec = sl.allsec()
+                    disp(sec.name);
                 end
 
 ----
@@ -549,9 +547,8 @@ SectionList
             .. code-block::
                 matlab
 
-                secs = n.allsec(sl);
-                for i = 1:numel(secs)
-                    disp(secs{i}.name);
+                for sec = sl.allsec()
+                    disp(sec.name);
                 end
 
 

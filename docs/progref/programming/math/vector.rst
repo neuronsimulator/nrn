@@ -809,13 +809,12 @@ Vector
         Description:
             Return the value of a Vector element index.
 
-            It is simpler in MATLAB to write ``x = vec(index + 1)`` instead.
+            It is simpler in MATLAB to write ``x = vec(index)`` instead.
 
-        .. warning::
+        .. note::
 
-            MATLAB uses 1-based indexing, so if you want to access the first element of a Vector,
-            you should use ``vec(1)``. ``Vector.get`` however uses 0-based indexing, so if you want to access the first element of a Vector,
-            you should use ``vec.get(0)``.
+            ``Vector.get`` is 1-based in MATLAB, but 0-based in Python and HOC. That is, if
+            translating code from Python or HOC to MATLAB, remember to add 1 to the index.
 
 ----
 
@@ -859,13 +858,13 @@ Vector
 
         Description:
 
-            Set vector element index to value.  Equivalent to ``vec(index + 1) = value`` notation.
+            Set vector element index to value.  Equivalent to ``vec(index) = value`` notation.
 
-        .. warning::
+        .. note::
 
-            MATLAB uses 1-based indexing, so if you want to access the first element of a Vector,
-            you should use ``vec(1)``. ``Vector.get`` however uses 0-based indexing, so if you want to access the first element of a Vector,
-            you should use ``vec.get(0)``.
+            ``Vector.set`` is 1-based in MATLAB, but 0-based in Python and HOC. That is, if
+            translating code from Python or HOC to MATLAB, remember to add 1 to the index.
+
 
 
 ----
@@ -961,15 +960,15 @@ Vector
                 matlab
 
                 vec = n.Vector(20, 5);
-                vec.fill(9, 2, 7);
+                vec.fill(9, 3, 8);
 
             assigns 9 to ``vec(3)`` through ``vec(8)`` 
             (a total of 6 = 8 - 3 + 1 elements) 
 
-        .. warning::
+        .. note::
 
-            While MATLAB normally uses 1-based indexing, including for indexing
-            within a Vector, the `fill` method uses 0-based indexing for the `start` and `stop` arguments.
+            ``Vector.fill`` is 1-based in MATLAB, but 0-based in Python and HOC. That is, if
+            translating code from Python or HOC to MATLAB, remember to add 1 to the index.
 
 
         .. seealso::
@@ -6075,19 +6074,20 @@ Vector
         Description:
             Return the minimum value. 
     
-    .. tab:: MATLAB
+    ..
+        .. tab:: MATLAB
 
-        Syntax:
+            Syntax:
 
-        .. code-block:: matlab
+            .. code-block:: matlab
 
-            x = vec.min();
-            x = vec.min(start, stop);
+                x = vec.min();
+                x = vec.min(start, stop);
 
 
-        Description:
-            Return the minimum value. The first version is equivalent
-            to ``min(vec)``.
+            Description:
+                Return the minimum value. The first version is equivalent
+                to ``min(vec)``.
 
 ----
 
@@ -6156,19 +6156,20 @@ Vector
         Description:
             Return the maximum value.
 
-    .. tab:: MATLAB
+    ..
+        .. tab:: MATLAB
 
-        Syntax:
+            Syntax:
 
-        .. code-block:: matlab
+            .. code-block:: matlab
 
-            x = vec.max();
-            x = vec.max(start, stop);
+                x = vec.max();
+                x = vec.max(start, stop);
 
 
-        Description:
-            Return the maximum value. The first version is equivalent
-            to ``max(vec)``.
+            Description:
+                Return the maximum value. The first version is equivalent
+                to ``max(vec)``.
 
 
 ----
@@ -6335,6 +6336,12 @@ Vector
 
         Description:
             Return the mean of element values. 
+
+        .. note::
+
+            ``Vector.mean`` is 1-based in MATLAB, but 0-based in Python and HOC. That is, if
+            translating code from Python or HOC to MATLAB, remember to add 1 to the index.
+
 ----
 
 
@@ -6378,6 +6385,12 @@ Vector
 
         Description:
             Return the variance of element values. 
+
+        .. note::
+
+            ``Vector.var`` is 1-based in MATLAB, but 0-based in Python and HOC. That is, if
+            translating code from Python or HOC to MATLAB, remember to add 1 to the index.
+
 ----
 
 
@@ -6423,6 +6436,11 @@ Vector
         Description:
             Return the standard deviation of the element values. 
 
+        .. note::
+
+            ``Vector.stdev`` is 1-based in MATLAB, but 0-based in Python and HOC. That is, if
+            translating code from Python or HOC to MATLAB, remember to add 1 to the index.
+
 ----
 
 
@@ -6467,6 +6485,11 @@ Vector
 
         Description:
             Return the standard error of the mean (SEM) of the element values. 
+
+        .. note::
+
+            ``Vector.stderr`` is 1-based in MATLAB, but 0-based in Python and HOC. That is, if
+            translating code from Python or HOC to MATLAB, remember to add 1 to the index.
 
 ----
 
