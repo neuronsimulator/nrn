@@ -11,10 +11,7 @@ from . import surfaces
 
 def _register_on_neighbor_map(the_map, pt, neighbor):
     # does not assume neighbor relations are bidirectional
-    if pt in the_map:
-        the_map[pt].append(neighbor)
-    else:
-        the_map[pt] = [neighbor]
+    the_map.setdefault(pt, []).append(neighbor)
 
 
 class TriangularMesh:
@@ -111,10 +108,7 @@ class TriangularMesh:
                             bad_pts.append(neighbor)
                         # TODO: remove this; should never get here anyways
                         print(
-                            (
-                                "exposed edge: (%g, %g, %g) to (%g, %g, %g)"
-                                % (pt + neighbor)
-                            )
+                            f"exposed edge: ({pt[0]:g}, {pt[1]:g}, {pt[2]:g}) to ({neighbor[0]:g}, {neighbor[1]:g}, {neighbor[2]:g})"
                         )
 
         if edge_count:
