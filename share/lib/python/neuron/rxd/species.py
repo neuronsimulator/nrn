@@ -624,27 +624,6 @@ class SpeciesOnRegion(_SpeciesMathable):
         return self._species()._id
 
 
-# 3d matrix stuff
-def _setup_matrices_process_neighbors(
-    pt1, pt2, indices, euler_matrix, index, diffs, vol, areal, arear, dx
-):
-    # TODO: validate this before release! is ignoring reflective boundaries the right thing to do?
-    #       (make sure that any changes here also work with boundaries that aren't really reflective, but have a 1d section attached)
-    d = diffs[index]
-    if pt1 in indices:
-        ileft = indices[pt1]
-        dleft = (d + diffs[ileft]) * 0.5
-        left = dleft * areal / (vol * dx)
-        euler_matrix[index, ileft] += left
-        euler_matrix[index, index] -= left
-    if pt2 in indices:
-        iright = indices[pt2]
-        dright = (d + diffs[iright]) * 0.5
-        right = dright * arear / (vol * dx)
-        euler_matrix[index, iright] += right
-        euler_matrix[index, index] -= right
-
-
 def _xyz(seg):
     """Return the (x, y, z) coordinate of the center of the segment."""
     # TODO: this is very inefficient, especially since we're calling this for each segment not for each section; fix
@@ -1511,7 +1490,6 @@ class _ExtracellularSpecies(_SpeciesMathable):
                     self._states[i] = getattr(seg, stateo)
 
     def _semi_compile(self, reg, instruction):
-
         self._isalive()
         if self._species:
             sp = _defined_species[self._species][self._region]()
@@ -2285,7 +2263,8 @@ class Species(_SpeciesMathable):
     def nodes(self):
         """A NodeList of all the nodes corresponding to the species.
 
-        This can then be further restricted using the callable property of NodeList objects."""
+        This can then be further restricted using the callable property of NodeList objects.
+        """
 
         from . import rxd
 

@@ -39,8 +39,7 @@ extern void bbs_handle();
 int nrn_isecstack();
 
 extern void debugzz(Inst*);
-int hoc_return_type_code = 0; /* flag for allowing integers (1) and booleans (2) to be recognized as
-                                 such */
+HocReturnType hoc_return_type_code = HocReturnType::floating;
 
 // array indices on the stack have their own type to help with determining when
 // a compiled fragment of HOC code is processing a variable whose number of
@@ -1476,10 +1475,15 @@ void hoc_fake_call(Symbol* s) {
 }
 
 double hoc_call_func(Symbol* s, int narg) {
+    hoc_call_func_result_on_stack(s, narg);
+    return hoc_xpop();
+}
+
+void hoc_call_func_result_on_stack(Symbol* s, int narg) {
     /* call the symbol as a function, The args better be pushed on the stack
     first arg first. */
     if (s->type == BLTIN) {
-        return (*(s->u.ptr))(xpop());
+        hoc_pushx((*(s->u.ptr))(xpop()));
     } else {
         Inst* pcsav;
         Inst fc[4];
@@ -1491,7 +1495,6 @@ double hoc_call_func(Symbol* s, int narg) {
         pcsav = hoc_pc;
         hoc_execute(fc);
         hoc_pc = pcsav;
-        return hoc_xpop();
     }
 }
 

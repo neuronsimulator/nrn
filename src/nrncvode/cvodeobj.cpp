@@ -6,11 +6,10 @@
 void cvode_finitialize();
 extern void (*nrn_multisplit_setup_)();
 
-extern int hoc_return_type_code;
-
 #include <cmath>
 #include <cstdlib>
 #include "classreg.h"
+#include "code.h"
 #include "nrnoc2iv.h"
 #include "datapath.h"
 #include "cvodeobj.h"
@@ -116,7 +115,7 @@ static double spikestat(void* v) {
     return 0;
 }
 static double queue_mode(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     if (ifarg(1)) {
         nrn_use_bin_queue_ = chkarg(1, 0, 1) ? true : false;
     }
@@ -197,7 +196,7 @@ static double active(void* v) {
             static_cast<NetCvode*>(v)->re_init(nt_t);
         }
     }
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     return cvode_active_;
 }
 static double stiff(void* v) {
@@ -205,7 +204,7 @@ static double stiff(void* v) {
     if (ifarg(1)) {
         d->stiff((int) chkarg(1, 0, 2));
     }
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return double(d->stiff());
 }
 static double maxorder(void* v) {
@@ -213,13 +212,13 @@ static double maxorder(void* v) {
     if (ifarg(1)) {
         d->maxorder((int) chkarg(1, 0, 5));
     }
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return d->maxorder();
 }
 static double order(void* v) {
     NetCvode* d = (NetCvode*) v;
     int i = 0;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     if (ifarg(1)) {
         // only thread 0
         i = int(chkarg(1, 0, d->p->nlcv_ - 1));
@@ -248,7 +247,7 @@ static double jacobian(void* v) {
     if (ifarg(1)) {
         d->jacobian((int) chkarg(1, 0, 2));
     }
-    hoc_return_type_code = 1;  // int
+    hoc_return_type_code = HocReturnType::integer;
     return double(d->jacobian());
 }
 
@@ -294,7 +293,7 @@ static double statename(void* v) {
 
 static double use_local_dt(void* v) {
     NetCvode* d = (NetCvode*) v;
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         d->localstep(i);
@@ -304,7 +303,7 @@ static double use_local_dt(void* v) {
 
 static double use_daspk(void* v) {
     NetCvode* d = (NetCvode*) v;
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         if ((i != 0) != d->use_daspk()) {
@@ -325,7 +324,7 @@ static double dae_init_dteps(void* v) {
 }
 
 static double use_mxb(void* v) {
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         if (use_sparse13 != i) {
@@ -339,13 +338,13 @@ static double use_mxb(void* v) {
 static double cache_efficient(void* v) {
     // Perhaps a warning on cache_efficient(True) and an error on cache_efficient(False) would be
     // justified.
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     return 1.0;
 }
 
 static double use_long_double(void* v) {
     NetCvode* d = (NetCvode*) v;
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         d->use_long_double_ = i;
@@ -360,7 +359,7 @@ static double condition_order(void* v) {
         int i = (int) chkarg(1, 1, 2);
         d->condition_order(i);
     }
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return (double) d->condition_order();
 }
 
@@ -370,7 +369,7 @@ static double debug_event(void* v) {
         int i = (int) chkarg(1, 0, 10);
         d->print_event_ = i;
     }
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return (double) d->print_event_;
 }
 
@@ -432,7 +431,7 @@ static double tstop_event(void* v) {
 
 static double current_method(void* v) {
     NetCvode* d = (NetCvode*) v;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     int modeltype = nrn_modeltype();
     int methodtype = secondorder;  // 0, 1, or 2
     int localtype = 0;
@@ -492,12 +491,12 @@ static double use_parallel(void* v) {
 }
 
 static double nrn_structure_change_count(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return double(structure_change_cnt);
 }
 
 static double nrn_diam_change_count(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return double(diam_change_cnt);
 }
 
@@ -552,7 +551,7 @@ static double extra_scatter_gather_remove(void* v) {
 
 static double use_fast_imem(void* v) {
     auto i = nrn_use_fast_imem;
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     if (ifarg(1)) {
         nrn_use_fast_imem = chkarg(1, 0., 1.);
         nrn_fast_imem_alloc();

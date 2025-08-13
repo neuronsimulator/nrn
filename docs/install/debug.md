@@ -62,6 +62,38 @@ has proven effective.
 mpirun -np 4 xterm -e gdb `pyenv which python`
 ```
 
+#### The rr debugger
+
+As a complement to GDB, one can use the [rr debugger](https://rr-project.org/)
+to enhance the debugging experience. Running is as simple as:
+
+```
+rr record <executable> <args>
+```
+
+This should record a snapshot, which `rr` reports:
+
+```
+...
+rr: Saving execution to trace directory `<path>/.local/share/rr/nrniv-2'.
+...
+```
+
+which can later be replayed deterministically using:
+
+```
+rr replay <path to trace directory>
+```
+
+You can also bundle all of the dependencies of the executable using:
+
+```
+rr pack <path to trace directory>
+```
+
+after which you can send that directory (for instance, as a compressed archive)
+to other developers for portable and reliable debugging.
+
 #### Valgrind
 Extremely useful in debugging memory errors and memory leaks.
 

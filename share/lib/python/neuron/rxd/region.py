@@ -77,10 +77,7 @@ class _c_region:
             self._overlap = h.SectionList(
                 [sec for sec in r._secs1d if sec in self._overlap]
             )
-            if r in _c_region_lookup:
-                _c_region_lookup[rptr].append(self)
-            else:
-                _c_region_lookup[rptr] = [self]
+            _c_region_lookup.setdefault(rptr, []).append(self)
 
     def add_reaction(self, rptr, region):
         # for multicompartment reaction -- check all regions are present
@@ -296,8 +293,7 @@ class Extracellular:
             self._dx = dx
         else:
             raise RxDException(
-                "Extracellular region dx=%s is invalid, dx should be a number or a tuple (dx,dy,dz) for the length, width and height of the voxels"
-                % repr(dx)
+                f"Extracellular region dx={dx!r} is invalid, dx should be a number or a tuple (dx,dy,dz) for the length, width and height of the voxels"
             )
 
         self._nx = int(math.ceil(float(xhi - xlo) / self._dx[0]))
@@ -328,19 +324,7 @@ class Extracellular:
             )
 
     def __repr__(self):
-        return (
-            "Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)"
-            % (
-                self._xlo,
-                self._ylo,
-                self._zlo,
-                self._xhi,
-                self._yhi,
-                self._zhi,
-                self.tortuosity,
-                self.alpha,
-            )
-        )
+        return f"Extracellular(xlo={self._xlo!r}, ylo={self._ylo!r}, zlo={self._zlo!r}, xhi={self._xhi!r}, yhi={self._yhi!r}, zhi={self._zhi!r}, tortuosity={self.tortuosity!r}, volume_fraction={self.alpha!r})"
 
     def _short_repr(self):
         return "Extracellular"
@@ -452,7 +436,6 @@ class Extracellular:
         return parsed_value, ecs_permeability
 
     def _parse_volume_fraction(self, volume_fraction):
-
         if numpy.isscalar(volume_fraction):
             alpha = float(volume_fraction)
             alpha = alpha
@@ -610,12 +593,7 @@ class Region(object):
     """
 
     def __repr__(self):
-        return "Region(..., nrn_region=%r, geometry=%r, dx=%r, name=%r)" % (
-            self.nrn_region,
-            self._geometry,
-            self.dx,
-            self._name,
-        )
+        return f"Region(..., nrn_region={self.nrn_region!r}, geometry={self._geometry!r}, dx={self.dx!r}, name={self._name!r})"
 
     def __contains__(self, item):
         try:
@@ -796,8 +774,7 @@ class Region(object):
             raise RxDException("should never get here")
         if nx == 0 and ny == 0 and nz == 0:
             raise RxDException(
-                "The 3D/1D join on section %r cannot be calculated from identical 3d points %g, %g, %g"
-                % (sec, x, y, z)
+                f"The 3D/1D join on section {sec!r} cannot be calculated from identical 3d points {x:g}, {y:g}, {z:g}"
             )
         # dn = (nx**2 + ny**2 + nz**2)**0.5
         # nx, ny, nz = nx/dn, ny/dn, nz/dn

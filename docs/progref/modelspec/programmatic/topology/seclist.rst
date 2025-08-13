@@ -552,3 +552,45 @@ SectionList
                 end
 
 
+----
+
+.. method:: SectionList.size
+
+    .. tab:: Python
+
+        Syntax:
+
+        .. code-block::
+            python
+
+            sl.size()
+
+
+        Description:
+            Returns the number of sections in the list.
+
+    .. tab:: HOC
+
+        Syntax:
+
+        .. code-block::
+            c++
+
+            sl.size()
+
+
+        Description:
+            Returns the number of sections in the list.
+
+    .. tab:: MATLAB
+
+        Syntax:
+
+        .. code-block::
+            matlab
+
+            sl.size()
+
+
+        Description:
+            Returns the number of sections in the list.

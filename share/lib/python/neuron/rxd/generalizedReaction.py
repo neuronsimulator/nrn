@@ -55,7 +55,7 @@ def get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(args, kwargs):
         # because of the missing <>
         scheme = args[0]
         if not isinstance(scheme, rxdmath._Reaction):
-            raise RxDException("%r not a recognized reaction scheme" % scheme)
+            raise RxDException(f"{scheme!r} not a recognized reaction scheme")
         rate1 = args[1]
         rate2 = None
     else:

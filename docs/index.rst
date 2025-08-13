@@ -17,7 +17,7 @@ and more (use the links on the side or search).
    :hidden:
 
    install/install
-   cmake_doc/index
+   cmake_doc/options.rst
    install/developer
 
 .. toctree::
@@ -61,6 +61,7 @@ and more (use the links on the side or search).
 
    scm/index
    dev/index
+   capi
    doxygen
 
 .. toctree::
