@@ -37,7 +37,8 @@ class ReportEvent: public DiscreteEvent {
                 const VarsToReport& filtered_gids,
                 const char* name,
                 double report_dt,
-                ReportType type);
+                ReportType type,
+                int report_index);
 
     /** on deliver, call libsonata and setup next event */
     void deliver(double t, NetCvode* nc, NrnThread* nt) override;
@@ -58,6 +59,7 @@ class ReportEvent: public DiscreteEvent {
     double tstart;
     VarsToReport vars_to_report;
     ReportType report_type;
+    double report_t_shift_;
 };
 #endif
 

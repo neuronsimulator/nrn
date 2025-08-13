@@ -99,7 +99,8 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
                                                               vars_to_report,
                                                               report_config.output_path.data(),
                                                               report_config.report_dt,
-                                                              report_config.type);
+                                                              report_config.type,
+                                                              report_config.report_index);
             report_event->send(t, net_cvode_instance, &nt);
             m_report_events.push_back(std::move(report_event));
         }
