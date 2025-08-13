@@ -551,6 +551,7 @@ static VarsToReport get_synapse_vars_to_report(const NrnThread& nt,
             nrn_abort(1);
         }
 
+
         for (auto i = 0; i < report.mech_ids.size(); ++i) {
             std::unordered_map<int, std::vector<int>> segment_id_2_node_ids;
 
@@ -560,20 +561,25 @@ static VarsToReport get_synapse_vars_to_report(const NrnThread& nt,
                     int section_id = section.first;
                     auto& segment_ids = section.second;
                     for (const auto& segment_id: segment_ids) {
-
-                        const std::vector<double*> selected_vars = get_vars(
-                            nt, mech_id, "selected_for_report", mech_name, segment_id, segment_id_2_node_ids);
+                        const std::vector<double*> selected_vars = get_vars(nt,
+                                                                            mech_id,
+                                                                            "selected_for_report",
+                                                                            mech_name,
+                                                                            segment_id,
+                                                                            segment_id_2_node_ids);
                         const std::vector<double*> var_ptrs = get_vars(
                             nt, mech_id, var_name, mech_name, segment_id, segment_id_2_node_ids);
                         const std::vector<double*> synapseIDs = get_vars(
                             nt, mech_id, "synapseID", mech_name, segment_id, segment_id_2_node_ids);
-                        
+
                         nrn_assert(var_ptrs.size() == synapseIDs.size());
-                        nrn_assert(selected_vars.empty() || selected_vars.size() == var_ptrs.size());
+                        nrn_assert(selected_vars.empty() ||
+                                   selected_vars.size() == var_ptrs.size());
 
                         for (auto i = 0; i < var_ptrs.size(); ++i) {
                             if (selected_vars.empty() || static_cast<bool>(selected_vars[i])) {
-                                vars_to_report[gid].push_back({static_cast<int>(*synapseIDs[i]), var_ptrs[i]});
+                                vars_to_report[gid].push_back(
+                                    {static_cast<int>(*synapseIDs[i]), var_ptrs[i]});
                             }
                         }
                     }
@@ -674,8 +680,7 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
             break;
         }
         case ReportType::Synapse: {
-            vars_to_report =
-                get_synapse_vars_to_report(nt, intersection_ids, report_config);
+            vars_to_report = get_synapse_vars_to_report(nt, intersection_ids, report_config);
             register_custom_report(nt, report_config, vars_to_report);
             break;
         }
