@@ -41,7 +41,6 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
     if (report_config.start < t) {
         report_config.start = t;
     }
-    report_config.stop = std::min(report_config.stop, tstop);
 
     for (const auto& mech: report_config.mech_names) {
         report_config.mech_ids.emplace_back(nrn_get_mechtype(mech.data()));
