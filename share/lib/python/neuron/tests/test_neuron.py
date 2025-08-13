@@ -19,6 +19,12 @@ class NeuronTestCase(unittest.TestCase):
         from ._subclass import A1
 
         a = A1(5)
+        assert a.__doc__ == "A1 docs"
+        assert (
+            n.A(5)
+            .__doc__.strip()
+            .startswith("No docstring available for object type 'A'")
+        )
         assert a.x == 5.0
         assert a.p() == 6.0
         b = A1(4)
