@@ -55,10 +55,7 @@ def _volumes1d(sec):
             diam0, diam1 = diams[i : i + 2]
             pt0, pt1 = pts[i : i + 2]
             volume += (
-                numpy.pi
-                * (pt1 - pt0)
-                / 12.0
-                * (diam0**2 + diam0 * diam1 + diam1**2)
+                numpy.pi * (pt1 - pt0) / 12.0 * (diam0**2 + diam0 * diam1 + diam1**2)
             )
         vols[iseg] = volume
 

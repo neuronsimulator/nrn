@@ -2,9 +2,12 @@ from . import graphicsPrimitives as graphics
 from .. import options
 import math
 import random
+from typing import List, Tuple, Dict, Any
 
 
-def get_verts(voxel, g):
+def get_verts(
+    voxel: Tuple[int, int, int], g: Dict[str, float]
+) -> List[Tuple[float, float, float]]:
     """return list (len=8) of point coordinates (x,y,z) that are vertices of the voxel (i,j,k)"""
     (i, j, k) = voxel
     dx, dy, dz = g["dx"], g["dy"], g["dz"]
@@ -22,7 +25,9 @@ def get_verts(voxel, g):
     return vertices
 
 
-def get_subverts(voxel, g, step):
+def get_subverts(
+    voxel: Tuple[int, int, int], g: Dict[str, float], step: List[float]
+) -> List[Tuple[float, float, float]]:
     """return list (len=8) of point coordinates (x,y,z) that are vertices of the voxel (i,j,k)"""
     (i, j, k) = voxel
     dx, dy, dz = g["dx"], g["dy"], g["dz"]
@@ -41,7 +46,7 @@ def get_subverts(voxel, g, step):
     return vertices
 
 
-def add_res(flist, voxel, verts_in, res, g):
+def add_res(flist: list, voxel: tuple, verts_in: list, res: float, g: dict) -> float:
     dx, dy, dz = g["dx"], g["dy"], g["dz"]
     Sx, Sy, Sz = dx / res, dy / res, dz / res
     bit = Sx * Sy * Sz
@@ -79,7 +84,9 @@ def add_res(flist, voxel, verts_in, res, g):
     return bit / 8
 
 
-def Put(flist, voxel, v0, verts_in, res, g):
+def Put(
+    flist: list, voxel: tuple, v0: float, verts_in: list, res: float, g: dict
+) -> None:
     """add voxel key with partial volume value to dict of surface voxels"""
     # v0 is the start coordinates of voxel (verts[0] feed in)
     # res is resolution of sampling points (only works for even values of res!)
@@ -102,7 +109,7 @@ def Put(flist, voxel, v0, verts_in, res, g):
     return add_res(flist, voxel, verts_in, 2 * res, g)
 
 
-def simplevolume(flist, distances, voxel, g):
+def simplevolume(flist: list, distances: list, voxel: tuple, g: dict) -> None:
     """estimate the volume by the fraction of interior points"""
     res = options.ics_partial_volume_resolution
     distance_threshold = options.ics_distance_threshold

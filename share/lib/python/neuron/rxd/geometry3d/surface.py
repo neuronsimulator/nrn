@@ -3,9 +3,15 @@ from . import surfaces
 from . import triangularMesh
 import numpy
 from numpy import sqrt, fabs
+from typing import Union, List
 
 
-def surface(source, dx=0.25, internal_membranes=False, n_soma_step=100):
+def surface(
+    source: object,
+    dx: float = 0.25,
+    internal_membranes: bool = False,
+    n_soma_step: int = 100,
+) -> triangularMesh.TriangularMesh:
     """
     Generates a triangularized mesh of the surface of a neuron.
 

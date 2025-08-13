@@ -22,15 +22,15 @@ fixed_step_factor = 1
 
 
 class _OverrideLockouts:
-    def __init__(self):
-        self._extracellular = True
+    def __init__(self) -> None:
+        self._extracellular: bool = True
 
     @property
-    def extracellular(self):
+    def extracellular(self) -> bool:
         return self._extracellular
 
     @extracellular.setter
-    def extracellular(self, val):
+    def extracellular(self, val: bool) -> None:
         self._extracellular = val
 
 

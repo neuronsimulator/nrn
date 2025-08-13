@@ -1,3 +1,4 @@
+from typing import Optional
 from neuron import h, nrn, nrn_dll_sym
 from . import species, node, section1d, region, generalizedReaction, constants
 from .node import _point_indices
@@ -200,35 +201,35 @@ double vtrap(const double, const double);
 """
 
 
-def _list_to_cint_array(data):
+def _list_to_cint_array(data: list) -> Optional[ctypes.Array[ctypes.c_int]]:
     if data is None or len(data) == 0:
         return None
     else:
         return (ctypes.c_int * len(data))(*tuple(data))
 
 
-def _list_to_cdouble_array(data):
+def _list_to_cdouble_array(data: list) -> Optional[ctypes.Array[ctypes.c_double]]:
     if data is None or len(data) == 0:
         return None
     else:
         return (ctypes.c_double * len(data))(*tuple(data))
 
 
-def _list_to_clong_array(data):
+def _list_to_clong_array(data: list) -> Optional[ctypes.Array[ctypes.c_long]]:
     if data is None or len(data) == 0:
         return None
     else:
         return (ctypes.c_long * len(data))(*tuple(data))
 
 
-def _list_to_pyobject_array(data):
+def _list_to_pyobject_array(data: list) -> Optional[ctypes.Array[ctypes.py_object]]:
     if data is None or len(data) == 0:
         return None
     else:
         return (ctypes.py_object * len(data))(*tuple(data))
 
 
-def byeworld():
+def byeworld() -> None:
     # do not call __del__ that rearrange memory for states
     species.Species.__del__ = lambda x: None
     species._ExtracellularSpecies.__del__ = lambda x: None
@@ -654,7 +655,7 @@ def _do_section_groups_border(groups):
     return False
 
 
-def _check_multigridding_supported_3d():
+def _check_multigridding_supported_3d() -> bool:
     # if there are no 3D sections, then all is well
     if not species._has_3d:
         return True
@@ -1081,7 +1082,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
             and _point_indices[region][point] not in indices3d
         ):
             indices3d.append(_point_indices[region][point])
-            vols3d.append(surf[point][0] if point in surf else region.dx ** 3)
+            vols3d.append(surf[point][0] if point in surf else region.dx**3)
             # print f'found node {node._index} with coordinates ({node.x3d:g}, {node.y3d:g}, {node.z3d:g})'
     # discard duplicates...
     # TODO: really, need to figure out all the 3d nodes connecting to a given 1d endpoint, then unique that

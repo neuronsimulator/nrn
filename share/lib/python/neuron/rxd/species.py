@@ -15,6 +15,7 @@ from collections.abc import Callable
 import ctypes
 import re
 
+
 # Now set in rxd.py
 # set_nonvint_block = neuron.nrn_dll_sym('set_nonvint_block')
 
@@ -145,7 +146,7 @@ _all_defined_species = []
 _defined_species_by_gid = []
 
 
-def _get_all_species():
+def _get_all_species() -> list:
     return _all_defined_species
 
 
@@ -158,7 +159,7 @@ _has_1d = False
 _has_3d = False
 
 
-def _update_tortuosity(region):
+def _update_tortuosity(region) -> None:
     """Update tortuosity for all species on region"""
 
     for s, r in _extracellular_diffusion_objects.items():
@@ -174,7 +175,7 @@ def _update_tortuosity(region):
                 _set_tortuosity(0, s._grid_id, region._permeability_vector)
 
 
-def _update_volume_fraction(region):
+def _update_volume_fraction(region) -> None:
     """Update volume fractions for all species on region"""
 
     for s, r in _extracellular_diffusion_objects.items():
@@ -192,7 +193,7 @@ def _update_volume_fraction(region):
                 _set_volume_fraction(0, s._grid_id, region._volume_fraction_vector)
 
 
-def _1d_submatrix_n():
+def _1d_submatrix_n() -> int:
     if not _has_1d:
         return 0
     else:

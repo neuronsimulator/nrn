@@ -1,5 +1,5 @@
-import neuron
 import numpy
+from typing import Optional
 
 
 class ScalarField:
@@ -7,7 +7,17 @@ class ScalarField:
     A scalar field.
     """
 
-    def __init__(self, xlo, xhi, ylo, yhi, zlo, zhi, dx, dtype=None):
+    def __init__(
+        self,
+        xlo: float,
+        xhi: float,
+        ylo: float,
+        yhi: float,
+        zlo: float,
+        zhi: float,
+        dx: float,
+        dtype: Optional[str] = None,
+    ) -> None:
         """
         Parameters
         ----------
@@ -56,7 +66,7 @@ class ScalarField:
         )
 
     @property
-    def shape(self):
+    def shape(self) -> tuple:
         """The shape of the scalar field.
 
         This is a convenience property and is equal to self._values.shape."""
@@ -84,26 +94,26 @@ class ScalarField:
         return self._values(*args)
 
     @property
-    def dx(self):
+    def dx(self) -> float:
         """Discretization size of the grid."""
         return self._dx
 
     @property
-    def xs(self):
+    def xs(self) -> numpy.ndarray:
         """The x coordinates of the centers of the voxels."""
         return self._xs
 
     @property
-    def ys(self):
+    def ys(self) -> numpy.ndarray:
         """The y coordinates of the centers of the voxels."""
         return self._ys
 
     @property
-    def zs(self):
+    def zs(self) -> numpy.ndarray:
         """The z coordinates of the centers of the voxels."""
         return self._zs
 
     @property
-    def values(self):
+    def values(self) -> numpy.ndarray:
         """State values."""
         return self._values

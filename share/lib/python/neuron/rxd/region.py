@@ -22,7 +22,7 @@ _c_region_lookup = (
 )
 
 
-def _sort_secs(secs):
+def _sort_secs(secs) -> list:
     # sort the sections
     root_secs = h.SectionList()
     root_secs.allroots()
@@ -163,14 +163,18 @@ class _c_region:
         )
 
         self._ecs_react_species.sort(
-            key=lambda sp: sp()._extracellular()._grid_id
-            if isinstance(sp(), species.SpeciesOnExtracellular)
-            else sp()._grid_id
+            key=lambda sp: (
+                sp()._extracellular()._grid_id
+                if isinstance(sp(), species.SpeciesOnExtracellular)
+                else sp()._grid_id
+            )
         )
         self._ecs_react_params.sort(
-            key=lambda sp: sp()._extracellular()._grid_id
-            if isinstance(sp(), species.ParameterOnExtracellular)
-            else sp()._grid_id
+            key=lambda sp: (
+                sp()._extracellular()._grid_id
+                if isinstance(sp(), species.ParameterOnExtracellular)
+                else sp()._grid_id
+            )
         )
 
         # Set the local ids of the regions and species involved in the reactions
@@ -206,14 +210,14 @@ class _c_region:
         self._params_ids = {}
         self._region_ids = {}
         self._react_species.sort(
-            key=lambda sp: sp()._species()._id
-            if isinstance(sp(), SpeciesOnRegion)
-            else sp()._id
+            key=lambda sp: (
+                sp()._species()._id if isinstance(sp(), SpeciesOnRegion) else sp()._id
+            )
         )
         self._react_params.sort(
-            key=lambda sp: sp()._species()._id
-            if isinstance(sp(), ParameterOnRegion)
-            else sp()._id
+            key=lambda sp: (
+                sp()._species()._id if isinstance(sp(), ParameterOnRegion) else sp()._id
+            )
         )
 
         self._regions.sort(key=lambda rp: rp()._id)
