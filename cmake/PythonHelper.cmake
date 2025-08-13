@@ -52,6 +52,7 @@ endif()
 # * nrnpy_INCLUDES
 # * nrnpy_LIBRARIES
 # * nrnpy_VERSION
+# * nrnpy_HAS_FREE_THREADING
 #
 # If NRN_ENABLE_PYTHON is *not* set then only nrnpy_EXECUTABLE will be set. There is some special
 # handling on macOS when sanitizers are enabled:
@@ -135,6 +136,23 @@ function(nrn_find_python)
         "${Python_VERSION}"
         PARENT_SCOPE)
   endif()
+
+  # Check if the build is free-threaded
+  execute_process(
+    COMMAND "${opt_NAME}" -c "import sysconfig; print(sysconfig.get_config_var('Py_GIL_DISABLED'))"
+    OUTPUT_VARIABLE has_free_threading
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(has_free_threading EQUAL 1)
+    set("${opt_PREFIX}_HAS_FREE_THREADING"
+        "HAS_FREE_THREADING"
+        PARENT_SCOPE)
+  else()
+    # we can't use an empty string because CMake does not have native support for lists
+    set("${opt_PREFIX}_HAS_FREE_THREADING"
+        " "
+        PARENT_SCOPE)
+  endif()
+
   # Finally do our special treatment for macOS + sanitizers
   if(APPLE AND NRN_SANITIZERS)
     # Detect if the binary we have in opt_NAME points to a virtual environment.
@@ -189,6 +207,7 @@ set(NRN_PYTHON_EXECUTABLES)
 set(NRN_PYTHON_VERSIONS)
 set(NRN_PYTHON_INCLUDES)
 set(NRN_PYTHON_LIBRARIES)
+set(NRN_PYTHON_HAS_FREE_THREADING)
 foreach(pyexe ${python_executables})
   message(STATUS "Checking if ${pyexe} is a working python")
   nrn_find_python(NAME "${pyexe}" PREFIX nrnpy)
@@ -214,6 +233,7 @@ foreach(pyexe ${python_executables})
     list(APPEND NRN_PYTHON_VERSIONS "${nrnpy_VERSION}")
     list(APPEND NRN_PYTHON_INCLUDES "${nrnpy_INCLUDES}")
     list(APPEND NRN_PYTHON_LIBRARIES "${nrnpy_LIBRARIES}")
+    list(APPEND NRN_PYTHON_HAS_FREE_THREADING "${nrnpy_HAS_FREE_THREADING}")
   endif()
   list(APPEND NRN_PYTHON_EXECUTABLES "${nrnpy_EXECUTABLE}")
 endforeach()
@@ -224,6 +244,7 @@ list(GET NRN_PYTHON_VERSIONS 0 NRN_DEFAULT_PYTHON_VERSION)
 if(NRN_ENABLE_PYTHON)
   list(GET NRN_PYTHON_INCLUDES 0 NRN_DEFAULT_PYTHON_INCLUDES)
   list(GET NRN_PYTHON_LIBRARIES 0 NRN_DEFAULT_PYTHON_LIBRARIES)
+  list(GET NRN_PYTHON_HAS_FREE_THREADING 0 NRN_DEFAULT_PYTHON_HAS_FREE_THREADING)
   list(LENGTH NRN_PYTHON_EXECUTABLES NRN_PYTHON_COUNT)
   math(EXPR NRN_PYTHON_ITERATION_LIMIT "${NRN_PYTHON_COUNT} - 1")
 endif()

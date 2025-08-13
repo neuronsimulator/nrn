@@ -43,9 +43,11 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
     list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
+    list(GET NRN_PYTHON_HAS_FREE_THREADING ${val} pyhasthreading)
     foreach(source ${rxd_sources})
       add_nrn_python_library(
         ${source}
+        ${pyhasthreading}
         TARGET
         ${source}${pyver}
         PYTHON_VERSION
@@ -84,6 +86,7 @@ else(NRN_ENABLE_PYTHON_DYNAMIC)
   foreach(source ${rxd_sources})
     add_nrn_python_library(
       ${source}
+      ${NRN_DEFAULT_PYTHON_HAS_FREE_THREADING}
       TARGET
       ${source}
       PYTHON_VERSION

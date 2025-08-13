@@ -136,7 +136,7 @@ void init_visitor_module(py::module& m);
 void init_ast_module(py::module& m);
 void init_symtab_module(py::module& m);
 
-PYBIND11_MODULE(_nmodl, m_nmodl) {
+PYBIND11_MODULE(_nmodl, m_nmodl, py::mod_gil_not_used()) {
     m_nmodl.doc() = "NMODL : Source-to-Source Code Generation Framework";
     m_nmodl.attr("__version__") = nmodl::Version::NMODL_VERSION;
 

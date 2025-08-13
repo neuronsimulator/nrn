@@ -34,21 +34,25 @@ stages:
         vmImage: 'ubuntu-22.04'
       strategy:
         matrix:
-          Python39:
-            python.version: '3.9'
-            python.nodot: '39'
-          Python310:
-            python.version: '3.10'
-            python.nodot: '310'
-          Python311:
-            python.version: '3.11'
-            python.nodot: '311'
-          Python312:
-            python.version: '3.12'
-            python.nodot: '312'
+          # TODO put this back before merging
+          #Python39:
+          #  python.version: '3.9'
+          #  python.nodot: '39'
+          #Python310:
+          #  python.version: '3.10'
+          #  python.nodot: '310'
+          #Python311:
+          #  python.version: '3.11'
+          #  python.nodot: '311'
+          #Python312:
+          #  python.version: '3.12'
+          #  python.nodot: '312'
           Python313:
             python.version: '3.13'
             python.nodot: '313'
+          Python313t:
+            python.version: '3.13t'
+            python.nodot: '313t'
 
       steps:
 
@@ -75,7 +79,7 @@ stages:
           fi
           sudo mkdir -p /opt/nrnwheel/mpt
           sudo tar -zxf $(mpt_headersSF.secureFilePath) --directory /opt/nrnwheel/mpt
-          packaging/python/build_wheels.bash linux $(python.nodot)
+          CIBW_ENABLE=cpython-freethreading packaging/python/build_wheels.bash linux $(python.nodot)
         displayName: 'Building ManyLinux Wheel'
 
       - script: |
@@ -93,29 +97,35 @@ stages:
         vmImage: 'macOS-13'
       strategy:
         matrix:
-          Python39:
-            python.version: '3.9'
-            python.nodot: '39'
-            python.org.version: '3.9.13'
-            python.installer.name: 'macos11.pkg'
-          Python310:
-            python.version: '3.10'
-            python.nodot: '310'
-            python.org.version: '3.10.11'
-            python.installer.name: 'macos11.pkg'
-          Python311:
-            python.version: '3.11'
-            python.nodot: '311'
-            python.org.version: '3.11.7'
-            python.installer.name: 'macos11.pkg'
-          Python312:
-            python.version: '3.12'
-            python.nodot: '312'
-            python.org.version: '3.12.0'
-            python.installer.name: 'macos11.pkg'
+          # TODO put this back before merging
+          #Python39:
+          #  python.version: '3.9'
+          #  python.nodot: '39'
+          #  python.org.version: '3.9.13'
+          #  python.installer.name: 'macos11.pkg'
+          #Python310:
+          #  python.version: '3.10'
+          #  python.nodot: '310'
+          #  python.org.version: '3.10.11'
+          #  python.installer.name: 'macos11.pkg'
+          #Python311:
+          #  python.version: '3.11'
+          #  python.nodot: '311'
+          #  python.org.version: '3.11.7'
+          #  python.installer.name: 'macos11.pkg'
+          #Python312:
+          #  python.version: '3.12'
+          #  python.nodot: '312'
+          #  python.org.version: '3.12.0'
+          #  python.installer.name: 'macos11.pkg'
           Python313:
             python.version: '3.13'
             python.nodot: '313'
+            python.org.version: '3.13.0'
+            python.installer.name: 'macos11.pkg'
+          Python313t:
+            python.version: '3.13t'
+            python.nodot: '313t'
             python.org.version: '3.13.0'
             python.installer.name: 'macos11.pkg'
 
@@ -125,7 +135,11 @@ stages:
           installer=python-$(python.org.version)-$(python.installer.name)
           url=https://www.python.org/ftp/python/$(python.org.version)/$installer
           curl $url -o $installer
-          sudo installer -pkg $installer -target /
+          if [[ "$(python.version)" =~ .*t$ ]]; then
+            sudo installer -pkg $installer_filename -applyChoiceChangesXML packaging/python/macos_installer_patch$(python.version).plist -target /
+          else
+            sudo installer -pkg $installer_filename -target /
+          fi
         displayName: 'Install Python from python.org'
 
       - script: |
@@ -172,7 +186,7 @@ stages:
           fi
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/$(uname -m)
-          packaging/python/build_wheels.bash osx $(python.nodot)
+          CIBW_ENABLE=cpython-freethreading packaging/python/build_wheels.bash osx $(python.nodot)
         displayName: 'Build MacOS Wheel'
 
       - template: ci/azure-wheel-test-upload.yml
