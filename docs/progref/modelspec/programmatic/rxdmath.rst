@@ -9,10 +9,26 @@ through Python's ``math`` module but support :class:`rxd.Species` objects.
 
 To use any of these, first do:
 
-    .. code::
-        python
+    .. tab:: Python
 
-        from neuron.rxd import rxdmath
+        .. code::
+            python
+
+            from neuron.rxd import rxdmath
+
+    .. tab:: HOC
+
+        .. code::
+            hoc
+
+            objref pyobj, rxdmath
+            {
+                nrnpython("from neuron.rxd import rxdmath")
+                pyobj = new PythonObject()
+                rxdmath = pyobj.rxdmath
+            }
+
+
 
 Example:
 

@@ -6,15 +6,101 @@ Basic Reaction-Diffusion
 Overview
 --------
 NEURON provides the ``rxd`` submodule to simplify and standardize the specification of
-models incorporating reaction-diffusion dynamics, including ion accumulation. To load
-this module, use:
+models incorporating reaction-diffusion dynamics, including ion accumulation. 
+The interface is implemented using Python, however as long as Python is available to
+NEURON, reaction-diffusion dynamics mayalso be specified using HOC.
 
-.. code::
-    python
+We can access the ``rxd`` module via:
 
-    from neuron import rxd
+.. tab:: Python
 
-Note: In older code, you may find ``from neuron import crxd as rxd`` but this is equivalent to the above as ``crxd`` has been an alias for ``rxd`` for several years.
+    .. code::
+        python
+
+        from neuron import rxd
+
+
+.. tab:: HOC
+
+    .. code::
+        hoc
+
+        objref pyobj, h, rxd
+
+        {
+            // load reaction-diffusion support and get convenient handles
+            nrnpython("from neuron import n, rxd")
+            pyobj = new PythonObject()
+            rxd = pyobj.rxd
+            n = pyobj.n
+        }
+
+    The above additionally provides access to an object called ``n`` which is traditionally
+    how Python accesses core NEURON functionality (e.g. in Python one would use n. :class:`Vector`
+    instead of :class:`Vector`). You might not need to use ``n`` since when working in HOC,
+    but it does provide certain convenient functions like :func:`n.allsec`, which returns
+    an iterable of all sections usable with ``rxd`` without  having to explicitly construct
+    a :class:`SectionList`.
+
+    The main gotchas of using rxd in HOC is that (1) ``rxd`` in Python uses operator overloading to 
+    specify reactants and products; in HOC, one must use ``__add__``, etc instead.
+    (2) rxd in Python is usually used with keyword arguments; in HOC, everything must be 
+    specified using positional notation.
+
+    Here's a full working example that simulates a calcium buffering reaction: 
+    ``Ca + Buf <> CaBuf``:
+
+    .. code::
+        hoc
+
+        objref pyobj, h, rxd, cyt, ca, buf, cabuf, buffering, g
+
+        {
+            // load reaction-diffusion support and get convenient handles
+            nrnpython("from neuron import n, rxd")
+            pyobj = new PythonObject()
+            rxd = pyobj.rxd
+            h = pyobj.h
+        }
+
+        {
+            // define the domain and the dynamics
+            create soma
+            
+            cyt = rxd.Region(n.allsec(), "i")
+            ca = rxd.Species(cyt, 0, "ca", 2, 1)
+            buf = rxd.Species(cyt, 0, "buf", 0, 1)
+            cabuf = rxd.Species(cyt, 0, "cabuf", 0, 0)
+
+            buffering = rxd.Reaction(ca.__add__(buf), cabuf, 1, 0.1)
+        }
+
+        {
+            // if launched with nrniv, we need this to get graph to update automatically
+            // and to use run()
+            load_file("stdrun.hoc")
+        }
+
+        {
+            // define the graph
+            g = new Graph()
+            g.addvar("ca", &soma.cai(0.5), 1, 1)
+            g.addvar("cabuf", &soma.cabufi(0.5), 2, 1)
+            g.size(0, 10, 0, 1)
+            graphList[0].append(g)
+        }
+
+        {
+            // run the simulation
+            tstop = 20
+            run()
+        }
+
+    In particular, note that instead of ``ca + buf`` one must write
+    ``ca.__add__(buf)``.
+
+
+Note: In older Python code, you may find ``from neuron import crxd as rxd`` but this is equivalent to the above as ``crxd`` has been an alias for ``rxd`` for several years.
 
 In general, a reaction-diffusion model specification involves answering three conceptual questions:
 
@@ -53,20 +139,45 @@ Intracellular regions and regions in Frankenhauser-Hodgkin space
 
     Syntax:
 
-        .. code::
-            python
+        .. tab:: Python
 
-            r = rxd.Region(secs=None, nrn_region=None, geometry=None, dx=None, name=None)
+            .. code::
+                python
 
-        In NEURON 7.4+, ``secs`` is optional at initial region declaration, but it
-        must be specified before the reaction-diffusion model is instantiated.
-        
-        Here:
+                r = rxd.Region(secs=None, nrn_region=None, geometry=None, dx=None, name=None)
 
-        * ``secs`` is any Python iterable of sections (e.g. ``soma.wholetree()`` or ``[soma, apical, basal]`` or ``n.allsec()``)
-        * ``nrn_region`` specifies the classic NEURON region associated with this object and must be either ``"i"`` for the region just inside the plasma membrane, ``"o"`` for the region just outside the plasma membrane or ``None`` for none of the above.
-        * ``name`` is the name of the region (e.g. ``cyt`` or ``er``); this has no effect on the simulation results but it is helpful for debugging
-        * ``dx`` specifies the 3D voxel edge length. Models in NEURON 9.0+ allow multiple values of dx per model, as long as 3D sections with different ``dx`` values do not connect to each other. If this condition is not true, an exception is raised during simulation. (Prior to NEURON 9.0, behavior of models with multiple values of ``dx`` is undefined, and no error checking was provided.)
+            In NEURON 7.4+, ``secs`` is optional at initial region declaration, but it
+            must be specified before the reaction-diffusion model is instantiated.
+            
+            Here:
+
+            * ``secs`` is any Python iterable of sections (e.g. ``soma.wholetree()`` or ``[soma, apical, basal]`` or ``n.allsec()``)
+            * ``nrn_region`` specifies the classic NEURON region associated with this object and must be either ``"i"`` for the region just inside the plasma membrane, ``"o"`` for the region just outside the plasma membrane or ``None`` for none of the above.
+            * ``name`` is the name of the region (e.g. ``cyt`` or ``er``); this has no effect on the simulation results but it is helpful for debugging
+            * ``dx`` specifies the 3D voxel edge length. Models in NEURON 9.0+ allow multiple values of dx per model, as long as 3D sections with different ``dx`` values do not connect to each other. If this condition is not true, an exception is raised during simulation. (Prior to NEURON 9.0, behavior of models with multiple values of ``dx`` is undefined, and no error checking was provided.)
+
+        .. tab:: HOC
+
+            .. code::
+                hoc
+
+                r = rxd.Region(secs, nrn_region, geometry, dimension, dx, name)
+
+            In NEURON 7.4+, ``secs`` is optional at initial region declaration, but it
+            must be specified before the reaction-diffusion model is instantiated.
+
+            All arguments are optional, but all prior arguments must be specified.
+            To use the default values for the prior arguments, specify their values as
+            ``pyobj.None``.
+            
+            Here:
+
+            * ``secs`` is a :class:`SectionList` or any Python iterable of sections (e.g. ``n.allsec()``)
+            * ``nrn_region`` specifies the classic NEURON region associated with this object and must be either ``"i"`` for the region just inside the plasma membrane, ``"o"`` for the region just outside the plasma membrane or ``pyobj.None`` for none of the above.
+            * ``name`` is the name of the region (e.g. ``cyt`` or ``er``); this has no effect on the simulation results but it is helpful for debugging
+            * ``dx`` deprecated; when specifying ``name`` pass in ``pyobj.None`` here
+            * ``dimension`` deprecated; when specifying ``name`` pass in ``pyobj.None`` here
+
 
     .. property:: rxd.Region.nrn_region
 
@@ -74,9 +185,9 @@ Intracellular regions and regions in Frankenhauser-Hodgkin space
             
         There are three possible values:
 
-            * ``'i'`` -- just inside the plasma membrane
-            * ``'o'`` -- just outside the plasma membrane
-            * ``None`` -- none of the above
+            * ``"i"`` -- just inside the plasma membrane
+            * ``"o"`` -- just outside the plasma membrane
+            * ``None`` -- none of the above (in HOC, use ``pyobj.None``)
         
         *Setting requires NEURON 7.4+, and then only before the reaction-diffusion model is instantiated.*
 
@@ -116,104 +227,132 @@ be defined by deriving from ``neuron.rxd.geometry.RxDGeometry``.
 
 .. attribute:: rxd.inside
 
-    The entire region inside the cytosol. This is the default. Use via e.g.
+    .. tab:: Python
 
-    .. code::
-        python
+        The entire region inside the cytosol. This is the default. Use via e.g.
+        
+        .. code::
+            python
 
-        cyt = rxd.Region(n.allsec(), name="cyt", nrn_region="i", geometry=rxd.inside)
+            cyt = rxd.Region(n.allsec(), name="cyt", nrn_region="i", geometry=rxd.inside)
 
 .. attribute:: rxd.membrane
 
-    The entire plasma membrane.
+    .. tab:: Python
+        
+        The entire plasma membrane.
 
-    .. code::
-        python
+        .. code::
+            python
 
-        cyt = rxd.Region(n.allsec(), name="cyt", nrn_region="i", geometry=rxd.membrane)
+            cyt = rxd.Region(n.allsec(), name="cyt", nrn_region="i", geometry=rxd.membrane)
 
 
 .. class:: rxd.DistributedBoundary
 
-    Boundary that scales with area.
-    
-    .. code::
-        python
+    .. tab:: Python
 
-        b = rxd.DistributedBoundary(area_per_vol, perim_per_area=0)
-    
-    area_per_vol is the area of the boundary as a function of the volume
-    containing it. e.g.    
-    
-    ``g = rxd.DistributedBoundary(2)`` defines a geometry with 2 um^2 of area per
-    every um^3 of volume.
-    
-    perim_per_area is the perimeter (in µm) per 1 µm^2 cross section of the
-    volume. For use in reaction-diffusion problems, it may be safely omitted
-    if and only if no species in the corresponding region diffuses.
-    
-    This is often useful for separating :class:`rxd.FractionalVolume` objects.
-    
-    It is assumed that the area is always strictly on the interior.
+        Boundary that scales with area.
+        
+        .. code::
+            python
+
+            b = rxd.DistributedBoundary(area_per_vol, perim_per_area=0)
+        
+        area_per_vol is the area of the boundary as a function of the volume
+        containing it. e.g.    
+        
+        ``g = rxd.DistributedBoundary(2)`` defines a geometry with 2 um^2 of area per
+        every um^3 of volume.
+        
+        ``perim_per_area`` is the perimeter (in µm) per 1 µm^2 cross section of the
+        volume. For use in reaction-diffusion problems, it may be safely omitted
+        if and only if no species in the corresponding region diffuses.
+        
+        This is often useful for separating :class:`rxd.FractionalVolume` objects.
+        
+        It is assumed that the area is always strictly on the interior.
 
 .. class:: rxd.FractionalVolume
 
-    Defines a geometry occupying a set fraction of the cross-sectional area.
-    e.g. perhaps the cytosol would occupy 0.83 of the cross-section (and all the surface)
-    but the ER would only occupy 0.17 of the cross-section and none of the surface.
+    .. tab:: Python
 
-    Syntax:
+        Defines a geometry occupying a set fraction of the cross-sectional area.
+        e.g. perhaps the cytosol would occupy 0.83 of the cross-section (and all the surface)
+        but the ER would only occupy 0.17 of the cross-section and none of the surface.
 
-        .. code::
-            python
+        Syntax:
 
-            r = rxd.FractionalVolume(volume_fraction=1, surface_fraction=0, neighbor_areas_fraction=None)
+            .. code::
+                python
+
+                r = rxd.FractionalVolume(volume_fraction=1, surface_fraction=0, neighbor_areas_fraction=None)
 
 .. class:: rxd.Shell
 
-    Defines a radial shell inside or outside of the plasma membrane. This is sometimes used to simulate
-    a 2D-style diffusion where molecules move both longitudinally and into/out of the center of the dendrite.
-    Consider using 3D simulation instead, which is better able to represent branch point dynamics.
+    .. tab:: Python
 
-    Syntax:
+        Defines a radial shell inside or outside of the plasma membrane. This is sometimes used to simulate
+        a 2D-style diffusion where molecules move both longitudinally and into/out of the center of the dendrite.
+        Consider using 3D simulation instead, which is better able to represent branch point dynamics.
 
-        .. code::
-            python
+        Syntax:
 
-            r = rxd.Shell(lo=None, hi=None)
-    
-    Example:
+            .. code::
+                python
 
-        See the `radial diffusion <https://neuron.yale.edu/neuron/docs/radial-diffusion>`_ tutorial.
+                r = rxd.Shell(lo=None, hi=None)
+        
+        Example:
+
+            See the `radial diffusion <https://neuron.yale.edu/neuron/docs/radial-diffusion>`_ tutorial.
 
 .. class:: rxd.FixedCrossSection
 
-    Syntax:
+    .. tab:: Python
 
-        .. code::
-            python
+        Syntax:
 
-            r = rxd.FixedCrossSection(cross_area, surface_area=0)
+            .. code::
+                python
+
+                r = rxd.FixedCrossSection(cross_area, surface_area=0)
+
+    .. tab:: HOC
+
+        Syntax:
+
+            .. code::
+                hoc
+
+                r = rxd.FixedCrossSection(cross_area)
+                r = rxd.FixedCrossSection(cross_area, surface_area)
     
+        If surface area is not specified, it defaults to 0.
+
 .. class:: rxd.FixedPerimeter
 
-    Syntax:
+    .. tab:: Python
 
-        .. code::
-            python
+        Syntax:
 
-            r = rxd.FixedPerimeter(perimeter, on_cell_surface=False)
+            .. code::
+                python
+
+                r = rxd.FixedPerimeter(perimeter, on_cell_surface=False)
     
 .. class:: rxd.ScalableBorder
 
-    A membrane that scales proportionally with the diameter
-    
-    Example use:
-    
-    - the boundary between radial shells
-    
-    Sometimes useful for the boundary between :class:`rxd.FractionalVolume` objects, but
-    see also :class:`rxd.DistributedBoundary` which scales with area.
+    .. tab:: Python
+
+        A membrane that scales proportionally with the diameter
+        
+        Example use:
+        
+        - the boundary between radial shells
+        
+        Sometimes useful for the boundary between :class:`rxd.FractionalVolume` objects, but
+        see also :class:`rxd.DistributedBoundary` which scales with area.
 
 
 
@@ -222,28 +361,30 @@ Extracellular regions
 
 .. class:: rxd.Extracellular
 
-    Declare a extracellular region to be simulated in 3D; 
-    unlike :class:`rxd.Region`, this *always* describes the extracellular region.
+    .. tab:: Python
 
-    Syntax:
+        Declare a extracellular region to be simulated in 3D; 
+        unlike :class:`rxd.Region`, this *always* describes the extracellular region.
 
-        .. code::
-            python
+        Syntax:
 
-            r = rxd.Extracellular(xlo, ylo, zlo, xhi, yhi, zhi, dx, 
-                                  volume_fraction=1, tortuosity=None, permeability=None)
+            .. code::
+                python
 
-        Here:
+                r = rxd.Extracellular(xlo, ylo, zlo, xhi, yhi, zhi, dx, 
+                                    volume_fraction=1, tortuosity=None, permeability=None)
 
-            * ``xlo``, ..., ``zhi`` -- define the bounding box of the domain; it should typically contain the entire morphology... by default NEURON assumes reflective (Neumann) boundary conditions, so you may want the box to extend well beyond the cell morphology depending on your use case
-            * ``dx`` -- voxel edge size in µm
-            * ``tortuosity`` -- increase factor in path length due to obstacles, effective diffusion coefficient d/tortuosity^2; either a single value for the whole region or a Vector giving a value for each voxel. Default is 1 (no change).
-            * ``volume_fraction`` -- the free fraction of extracellular space; a volume_fraction of 1 assumes no cells; lower values are probably warranted for most simulations
-    
-    Example:
+            Here:
 
-        A tutorial demonstrating extracellular diffusion
-        is available `here <../../../rxd-tutorials/extracellular.html>`_.
+                * ``xlo``, ..., ``zhi`` -- define the bounding box of the domain; it should typically contain the entire morphology... by default NEURON assumes reflective (Neumann) boundary conditions, so you may want the box to extend well beyond the cell morphology depending on your use case
+                * ``dx`` -- voxel edge size in µm
+                * ``tortuosity`` -- increase factor in path length due to obstacles, effective diffusion coefficient d/tortuosity^2; either a single value for the whole region or a Vector giving a value for each voxel. Default is 1 (no change).
+                * ``volume_fraction`` -- the free fraction of extracellular space; a volume_fraction of 1 assumes no cells; lower values are probably warranted for most simulations
+        
+        Example:
+
+            A tutorial demonstrating extracellular diffusion
+            is available `here <../../../rxd-tutorials/extracellular.html>`_.
 
 ----
 
@@ -259,43 +400,45 @@ they are just fixed values.
 
 .. class:: rxd.Species
 
-    Declare an ion/protein/etc that can react and diffuse.
+    .. tab:: Python
 
-    Syntax:
+        Declare an ion/protein/etc that can react and diffuse.
 
-        .. code::
-            python
+        Syntax:
 
-            s = rxd.Species(regions=None,
-                            d=0,
-                            name=None,
-                            charge=0,
-                            initial=None,
-                            atolscale=1,
-                            ecs_boundary_conditions=None,
-                            represents=None
-            )
+            .. code::
+                python
 
-        Parameters:
+                s = rxd.Species(regions=None,
+                                d=0,
+                                name=None,
+                                charge=0,
+                                initial=None,
+                                atolscale=1,
+                                ecs_boundary_conditions=None,
+                                represents=None
+                )
 
-            * ``regions`` -- a Region or list of Region objects containing the species
-            * ``d`` -- the diffusion constant of the species (optional; default is 0, i.e. non-diffusing)
-            * ``name`` -- the name of the Species; used for syncing with NMODL and HOC (optional; default is none)
-            * ``charge`` -- the charge of the Species (optional; default is 0)
-            * ``initial`` -- the initial concentration or None (if None, then imports from HOC if the species is defined at finitialize, else 0); can be specified as a constant or as a function of an :class:`rxd.Node`
-            * ``atolscale`` -- scale factor for absolute tolerance in variable step integrations
-            * ``ecs_boundary_conditions`` -- if Extracellular rxd is used ecs_boundary_conditions=None for zero flux boundaries or if ecs_boundary_conditions=the concentration at the boundary.
-            * ``represents`` -- optionally provide CURIE (Compact URI) to annotate what the species represents e.g. CHEBI:29101 for sodium(1+)
+            Parameters:
 
-    .. note::
+                * ``regions`` -- a Region or list of Region objects containing the species
+                * ``d`` -- the diffusion constant of the species (optional; default is 0, i.e. non-diffusing)
+                * ``name`` -- the name of the Species; used for syncing with NMODL and HOC (optional; default is none)
+                * ``charge`` -- the charge of the Species (optional; default is 0)
+                * ``initial`` -- the initial concentration or None (if None, then imports from HOC if the species is defined at finitialize, else 0); can be specified as a constant or as a function of an :class:`rxd.Node`
+                * ``atolscale`` -- scale factor for absolute tolerance in variable step integrations
+                * ``ecs_boundary_conditions`` -- if Extracellular rxd is used ecs_boundary_conditions=None for zero flux boundaries or if ecs_boundary_conditions=the concentration at the boundary.
+                * ``represents`` -- optionally provide CURIE (Compact URI) to annotate what the species represents e.g. CHEBI:29101 for sodium(1+)
 
-        Charge must match the charges specified in NMODL files for the same ion, if any. Common species charges include: sodium (+1), potassium (+1), calcium (+2), magnesium (+2), chloride (-1).
+        .. note::
 
-        You probably want to adjust atolscale for species present at low concentrations (e.g. calcium).
+            Charge must match the charges specified in NMODL files for the same ion, if any. Common species charges include: sodium (+1), potassium (+1), calcium (+2), magnesium (+2), chloride (-1).
 
-        NEURON does not require any specific ontology for identifiers, however CHEBI contains identifiers for many substances of interest in reaction-diffusion modeling. A number of ontology search providers are available on the internet, including `BioPortal <https://bioportal.bioontology.org/search>`_.
+            You probably want to adjust atolscale for species present at low concentrations (e.g. calcium).
 
-        To refer to a given Species restricted to a certain region, specify the region in square brackets. e.g. ``er_calcium = ca[er]``.
+            NEURON does not require any specific ontology for identifiers, however CHEBI contains identifiers for many substances of interest in reaction-diffusion modeling. A number of ontology search providers are available on the internet, including `BioPortal <https://bioportal.bioontology.org/search>`_.
+
+            To refer to a given Species restricted to a certain region, specify the region in square brackets. e.g. ``er_calcium = ca[er]``.
     
     .. property:: rxd.Species.nodes
 
