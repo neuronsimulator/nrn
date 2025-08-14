@@ -1,4 +1,3 @@
-from .surface import surface
 from .triangularMesh import TriangularMesh
 
 from .scalarField import ScalarField

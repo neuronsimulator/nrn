@@ -91,7 +91,6 @@ set(NRN_PYTHON_RX3D_FILES_LIST
     rxd/geometry3d/__init__.py
     rxd/geometry3d/surface_a.py
     rxd/geometry3d/triangularMesh.py
-    rxd/geometry3d/surface.py
     rxd/gui.py
     rxd/reaction.py)
 
