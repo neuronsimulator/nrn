@@ -215,8 +215,7 @@ it might be that the automatically determined `LD_PRELOAD` is insufficient.
 (It happened to me with ubuntu 24.04 + gcc 13.2.0). In this case you
 can temporarily set the `NRN_OVERRIDE_LD_PRELOAD` environment variable before
 running cmake. In my case,
-`NRN_OVERRIDE_LD_PRELOAD="$(realpath "$(gcc -print-file-name=libasan.so)"):$realpath
-"$(gcc -print-file-name=libstdc++.so)")" cmake ...` sufficed.
+`NRN_OVERRIDE_LD_PRELOAD="$(realpath "$(gcc -print-file-name=libasan.so)"):$(realpath "$(gcc -print-file-name=libstdc++.so)")" cmake ...` sufficed.
 
 LSan, TSan and UBSan support suppression files, which can be used to prevent
 tests failing due to known issues.
