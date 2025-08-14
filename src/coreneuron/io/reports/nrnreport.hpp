@@ -161,7 +161,7 @@ constexpr std::array<std::pair<ReportType, std::string_view>, 5> report_type_map
      {ReportType::CompartmentSet, "compartment_set"},
      {ReportType::Summation, "summation"},
      {ReportType::Synapse, "synapse"},
-     {ReportType::LFP, "LFP"}}};
+     {ReportType::LFP, "lfp"}}};
 inline std::string to_string(ReportType t) {
     return to_string(t, report_type_map, "ReportType");
 }
