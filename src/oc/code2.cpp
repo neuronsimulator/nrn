@@ -189,7 +189,7 @@ void hoc_Symbol_units(void) {
 char* hoc_back2forward(char*);
 char* neuronhome_forward(void) {
     extern char* neuron_home;
-#ifdef WIN32
+#ifdef _WIN32
     static char* buf;
     extern void hoc_forward2back();
     if (!buf) {
@@ -207,7 +207,7 @@ char* neuron_home_dos;
 extern void setneuronhome(const char*);
 void hoc_neuronhome(void) {
     extern char* neuron_home;
-#ifdef WIN32
+#ifdef _WIN32
     if (ifarg(1) && (int) chkarg(1, 0., 1.) == 1) {
         if (!neuron_home_dos) {
             setneuronhome(NULL);
@@ -483,7 +483,11 @@ void hoc_System(void) {
         extern HocStr* hoc_tmpbuf;
         HocStr* line;
         int i;
+#ifdef _MSC_VER
+        fp = _popen(gargstr(1), "r");
+#else
         fp = popen(gargstr(1), "r");
+#endif
         if (!fp) {
             hoc_execerror("could not popen the command:", gargstr(1));
         }
@@ -499,7 +503,11 @@ void hoc_System(void) {
             strcat(hoc_tmpbuf->buf, line->buf);
         }
         hocstr_delete(line);
+#ifdef _MSC_VER
+        d = (double) _pclose(fp);
+#else
         d = (double) pclose(fp);
+#endif
         nrn_fw_delete(fpw);
         hoc_assign_str(hoc_pgargstr(2), hoc_tmpbuf->buf);
     } else {
