@@ -4,11 +4,6 @@ import numpy
 import numpy.linalg
 
 
-def _register_on_neighbor_map(the_map, pt, neighbor):
-    # does not assume neighbor relations are bidirectional
-    the_map.setdefault(pt, []).append(neighbor)
-
-
 class TriangularMesh:
     """
     A triangular mesh, typically of a surface.
@@ -71,7 +66,7 @@ class TriangularMesh:
                 for j in range(3):
                     for k in range(3):
                         if j != k:
-                            _register_on_neighbor_map(pt_neighbor_map, pts[j], pts[k])
+                            pt_neighbor_map.setdefault(pts[j], []).append(pts[k])
             # else:
             #    print '** discarded zero-area triangle **'
         edge_count = 0
