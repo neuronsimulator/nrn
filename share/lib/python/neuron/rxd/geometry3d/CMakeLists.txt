@@ -15,9 +15,6 @@ endforeach(source)
 
 set(graphicsPrimitives_sources ${CMAKE_CURRENT_BINARY_DIR}/graphicsPrimitives.cpp)
 set(ctng_sources ${CMAKE_CURRENT_BINARY_DIR}/ctng.cpp)
-set(surfaces_sources
-    ${PROJECT_SOURCE_DIR}/src/nrnpython/rxd_marching_cubes.cpp
-    ${PROJECT_SOURCE_DIR}/src/nrnpython/rxd_llgramarea.cpp)
 
 if(NOT SKBUILD)
   set(rel_rpath "/../../")
@@ -110,7 +107,7 @@ else(NRN_ENABLE_PYTHON_DYNAMIC)
     endif()
 
   endforeach()
-  install(TARGETS graphicsPrimitives ctng
-          DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d)
+  install(TARGETS graphicsPrimitives ctng DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d)
+
 
 endif(NRN_ENABLE_PYTHON_DYNAMIC)
