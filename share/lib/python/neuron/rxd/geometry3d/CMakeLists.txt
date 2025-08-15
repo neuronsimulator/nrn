@@ -109,5 +109,4 @@ else(NRN_ENABLE_PYTHON_DYNAMIC)
   endforeach()
   install(TARGETS graphicsPrimitives ctng DESTINATION ${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d)
 
-
 endif(NRN_ENABLE_PYTHON_DYNAMIC)
