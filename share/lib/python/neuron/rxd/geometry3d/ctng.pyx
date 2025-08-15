@@ -660,7 +660,6 @@ cdef void _process_join_clipping(list all_cones, dict pts_cones_db, list objects
     """Process join creation and clipping for all cones."""
     cdef dict cone_clip_db = {cone: [] for cone in all_cones}
     cdef bint sharp_turn
-    cdef list join_items_needing_clipped = []
     cdef double x0, y0, z0, r0, x1, y1, z1, r1, x2, y2, z2, r2, x3, y3, z3, r3
     cdef numpy.ndarray[numpy.float_t, ndim=1] pt0, pt1, pt2, pt3, axis, naxis
     cdef list left_neighbors, right_neighbors, clips, joingroup
@@ -737,8 +736,6 @@ def constructive_neuronal_geometry(object source, int n_soma_step, double dx, bi
     cdef dict soma_segment_dict = {}
     cdef list join_groups = []
     cdef dict obj_pts_dict = {}         # for returning corner points of join objects
-    cdef list obj_sections = []
-    cdef list cone_sections = []
     cdef dict soma_secs = {}
     cdef dict potential_soma_cones = {}
 
