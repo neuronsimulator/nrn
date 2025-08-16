@@ -149,6 +149,7 @@ const static std::map<std::string, MethodInfo> methods = {{"runge", MethodInfo(D
                                                           {"simeq", MethodInfo(LINF, 0)},
                                                           {"_advance", MethodInfo(KINF, 0)},
                                                           {"sparse", MethodInfo(KINF, 0)},
+                                                          {"matexp", MethodInfo(KINF, 0)},
                                                           {"derivimplicit", MethodInfo(DERF, 0)},
                                                           {"cnexp", MethodInfo(DERF, 0)},
                                                           {"after_cvode", MethodInfo(0, 0)},
