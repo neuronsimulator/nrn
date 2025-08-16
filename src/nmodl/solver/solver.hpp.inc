@@ -16,5 +16,8 @@ const std::string newton_hpp = R"jiowi(
 @NMODL_CROUT_HPP@
 @NMODL_NEWTON_HPP@
 )jiowi";
+const std::string matexp_h = R"jiowi(
+@NMODL_MATEXP_H@
+)jiowi";
 
 }
