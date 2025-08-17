@@ -6,6 +6,7 @@ Run via:
 
 import sys
 from pathlib import Path
+import re
 
 
 class ParseRst(object):
@@ -48,7 +49,7 @@ class ParseRst(object):
                     else:
                         break
                 else:
-                    if not body or body[-1] != "\n":
+                    if body and body[-1] != "\n":
                         body.append("\n")
             
             # Check if body contains ".. tab:: Python" and extract only Python content
@@ -68,7 +69,29 @@ class ParseRst(object):
                     elif in_python_tab:
                         python_body.append(line)
                 
-                cls.help_dictionary[name] = "\n".join(python_body)
+                # Remove leading 4-space indentation repeatedly
+                while True:
+                    # Check if all non-empty lines begin with 4 spaces
+                    can_remove_spaces = True
+                    has_non_empty_lines = False
+                    for line in python_body:
+                        if line.strip():  # Only check non-empty lines
+                            has_non_empty_lines = True
+                            if not line.startswith("    "):
+                                can_remove_spaces = False
+                                break
+                    
+                    if can_remove_spaces and python_body and has_non_empty_lines:
+                        # Remove 4 spaces from the beginning of each line
+                        python_body = [line[4:] if line.startswith("    ") else line for line in python_body]
+                    else:
+                        break
+                
+                # Clean up consecutive newlines in the final result
+                result = "\n".join(python_body).strip("\n")
+                result = re.sub(r'\n[ \t]+\n', '\n\n', result)
+                result = re.sub(r'\n{3,}', '\n\n', result)
+                cls.help_dictionary[name] = result
             else:
                 cls.help_dictionary[name] = "\n".join(body)
 

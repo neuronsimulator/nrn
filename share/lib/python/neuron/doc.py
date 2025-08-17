@@ -44,6 +44,7 @@ class NRNPyHelper(pydoc.Helper):
             isinstance(request, type(n))
             or isinstance(request, hoc.HocClass)
             or isinstance(type(request), hoc.HocClass)
+            or isinstance(request, hoc.HocObject)
         ):
             pydoc.pager(header + request.__doc__)
         else:
