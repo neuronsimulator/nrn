@@ -1100,7 +1100,7 @@ Creating and connecting sections
         Description:
             Return the pointer to the section parent of the segment containing *x*. 
             Because a 64 bit pointer cannot safely be represented as a 
-            double this function is deprecated in favor of :hoc:meth:`SectionRef.parent`.
+            double this function is deprecated in favor of :meth:`SectionRef.parent`.
 
 
 ----
