@@ -144,6 +144,9 @@ def replace(rmsec, offset, nseg):
 
 
 class Section1D(rxdsection.RxDSection):
+    __slots__ = ('_species', '_diff', '_secref', '_concentration_ptrs', '_offset', 
+                 '_nseg', '_region', '_rxd_sec_lookup', '_neighbor_areas', '_parent')
+    
     def __init__(self, species, sec, diff, r):
         self._species = weakref.ref(species)
         self._diff = diff

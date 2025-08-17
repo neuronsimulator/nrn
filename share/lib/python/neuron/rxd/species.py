@@ -209,6 +209,7 @@ _ontology_id = re.compile(
 
 
 class _SpeciesMathable(object):
+    __slots__ = ()
     # support arithmeticing
     def __neg__(self):
         return -1 * _Arithmeticed(self)

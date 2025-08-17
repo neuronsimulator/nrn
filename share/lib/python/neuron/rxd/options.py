@@ -22,6 +22,8 @@ fixed_step_factor = 1
 
 
 class _OverrideLockouts:
+    __slots__ = ('_extracellular',)
+    
     def __init__(self):
         self._extracellular = True
 
