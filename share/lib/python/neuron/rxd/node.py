@@ -134,7 +134,7 @@ def eval_arith_flux(arith, nregion, node):
 
 class Node(object):
     __slots__ = ()
-    
+
     def satisfies(self, condition):
         """Tests if a Node satisfies a given condition.
 
@@ -393,8 +393,8 @@ class Node(object):
 
 
 class Node1D(Node):
-    __slots__ = ('_sec', '_location', '_index', '_loc3d', '_data_type')
-    
+    __slots__ = ("_sec", "_location", "_index", "_loc3d", "_data_type")
+
     def __init__(self, sec, i, location, data_type=_concentration_node):
         """n = Node1D(sec, i, location)
         Description:
@@ -543,10 +543,25 @@ class Node1D(Node):
 
 
 class Node3D(Node):
-    __slots__ = ('_index', '_i', '_j', '_k', '_neighbors', '_r', '_sec', '_x', 
-                 '_speciesref', '_data_type', '_pos_x_neighbor', '_neg_x_neighbor',
-                 '_pos_y_neighbor', '_neg_y_neighbor', '_pos_z_neighbor', '_neg_z_neighbor')
-    
+    __slots__ = (
+        "_index",
+        "_i",
+        "_j",
+        "_k",
+        "_neighbors",
+        "_r",
+        "_sec",
+        "_x",
+        "_speciesref",
+        "_data_type",
+        "_pos_x_neighbor",
+        "_neg_x_neighbor",
+        "_pos_y_neighbor",
+        "_neg_y_neighbor",
+        "_pos_z_neighbor",
+        "_neg_z_neighbor",
+    )
+
     def __init__(
         self, index, i, j, k, r, d, seg, speciesref, data_type=_concentration_node
     ):
@@ -771,8 +786,8 @@ class Node3D(Node):
 
 
 class NodeExtracellular(Node):
-    __slots__ = ('_index', '_i', '_j', '_k', '_speciesref', '_regionref', '_data_type')
-    
+    __slots__ = ("_index", "_i", "_j", "_k", "_speciesref", "_regionref", "_data_type")
+
     def __init__(self, index, i, j, k, speciesref, regionref):
         """
         Parameters

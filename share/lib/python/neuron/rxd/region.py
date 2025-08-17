@@ -50,11 +50,28 @@ class _c_region:
     The overlapping regions that are used to parse the relevant indices for JIT C reactions.
     regions - a set of regions that occur in the same sections
     """
-    __slots__ = ('_regions', '_overlap', 'num_regions', 'num_species', 'num_params',
-                 'num_ecs_species', 'num_ecs_params', '_ecs_react_species', '_ecs_react_params',
-                 '_react_species', '_react_params', '_react_regions', '_initialized',
-                 'location_index', 'ecs_location_index', '_ecs_species_ids', '_ecs_params_ids',
-                 '_voltage_dependent', '_vptrs')
+
+    __slots__ = (
+        "_regions",
+        "_overlap",
+        "num_regions",
+        "num_species",
+        "num_params",
+        "num_ecs_species",
+        "num_ecs_params",
+        "_ecs_react_species",
+        "_ecs_react_params",
+        "_react_species",
+        "_react_params",
+        "_react_regions",
+        "_initialized",
+        "location_index",
+        "ecs_location_index",
+        "_ecs_species_ids",
+        "_ecs_params_ids",
+        "_voltage_dependent",
+        "_vptrs",
+    )
 
     def __init__(self, regions):
         global _c_region_lookup
