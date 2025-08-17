@@ -1331,7 +1331,7 @@ Graph
 
 
         Syntax:
-            ``thisindex = g.line_info(previndex, Vector(5))``
+            ``thisindex = g.line_info(previndex, vector)``
         
         
         Description:
