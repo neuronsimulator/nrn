@@ -77,7 +77,7 @@ NEURON Main Menu
 
     
     Serious users should peruse the init and run procedures. 
-    The run chain that eventually calls :hoc:func:`fadvance` is
+    The run chain that eventually calls :func:`fadvance` is
 
     .. code-block::
         none

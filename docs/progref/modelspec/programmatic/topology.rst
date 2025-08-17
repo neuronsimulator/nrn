@@ -384,7 +384,7 @@ Creating and connecting sections
             and, if PARAMETER range variables are 
             constant, that all the new segments have the proper PARAMETER values. 
             (It generally doesn't matter that ASSIGNED and STATE values do not get 
-            interpolated since those values are computed with :hoc:func:`fadvance`).
+            interpolated since those values are computed with :func:`fadvance`).
             If range variables are not constant then the hoc expressions used to 
             set them should be re-executed. 
             
@@ -839,7 +839,7 @@ Creating and connecting sections
         Description:
             The name of the currently accessed section is placed in *strvar*. 
             
-            This function is superseded by the easier to use, :hoc:func:`secname`.
+            This function is superseded by the easier to use, :func:`secname`.
 ----
 
 

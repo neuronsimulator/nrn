@@ -2025,13 +2025,13 @@ Mechanisms
             potential boundary condition computed by some external program, leaky
             patch clamps, incomplete seals in the myelin sheath along with current
             flow in the space between the myelin and the axon. It is required
-            when connecting :hoc:class:`LinearMechanism` (e.g. a circuit built with
+            when connecting :class:`LinearMechanism` (e.g. a circuit built with
             the :menuselection:`NEURON Main Menu --> Build --> Linear Circuit`) to extracellular nodes.
     
             i_membrane correctly does not include contributions from ELECTRODE_CURRENT
             point processes.
     
-            See i_membrane\_ at :hoc:meth:`CVode.use_fast_imem`.
+            See i_membrane\_ at :meth:`CVode.use_fast_imem`.
     
             The figure illustrates the form the electrical equivalent circuit
             when this mechanism is present. Note that previous documentation
@@ -2101,7 +2101,7 @@ Mechanisms
     
         .. warning::
             xcaxial is also defined but is not implemented. If you need those
-            then add them with the :hoc:class:`LinearMechanism` .
+            then add them with the :class:`LinearMechanism` .
     
             Prior versions of this document indicated that
             e_extracellular is in series with the parallel (xc,xg)

@@ -165,7 +165,7 @@ Namespace Related
             Note that names can be (re)declared only if they do not already 
             exist or are already of the same type. 
             This is too useful to require the user to waste an objref in creating a 
-            :hoc:class:`StringFunctions` class to use :hoc:meth:`~StringFunctions.is_name`.
+            :class:`StringFunctions` class to use :meth:`~StringFunctions.is_name`.
 
             .. code-block::
                 none
@@ -207,7 +207,7 @@ Namespace Related
             of arrays are also indicated. 
 
         .. warning::
-            No longer works. The nearest replacement is :hoc:func:`SymChooser` .
+            No longer works. The nearest replacement is :func:`SymChooser` .
 
 Object Related
 ~~~~~~~~~~~~~~

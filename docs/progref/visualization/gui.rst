@@ -408,7 +408,7 @@ Panel
         are shown in a scroll box so that they do not take up so much screen 
         space. 
         
-        See :hoc:func:`xpanel` for hoc functions to generate panels
+        See :func:`xpanel` for hoc functions to generate panels
 
         .. code-block::
             none

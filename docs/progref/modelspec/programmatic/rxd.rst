@@ -1564,7 +1564,7 @@ Numerical options
 
             where:
 
-                - ``domain`` -- a :hoc:class:`SectionList` or other iterable of sections. Pass ``pyobj.None`` to apply the specification to the entire model.
+                - ``domain`` -- a :class:`SectionList` or other iterable of sections. Pass ``pyobj.None`` to apply the specification to the entire model.
                 - ``dimension`` -- 1 or 3
         
         This function may be called multiple times; the last setting for dimension for a given section will apply.
@@ -1674,4 +1674,4 @@ raise a :class:`rxd.RxDException`.
         to get access to these objects inside HOC, but they might be passed to HOC
         via a function called in Python.
 
-        The text message of an :hoc:class:`rxd.RxDException` ``e`` may be read in HOC as ``e.__str__()``.
+        The text message of an :class:`rxd.RxDException` ``e`` may be read in HOC as ``e.__str__()``.

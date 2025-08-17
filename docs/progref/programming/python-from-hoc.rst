@@ -48,7 +48,7 @@ This section describes how one can interact with Python from HOC code.
 
 
     Description:
-        Accesses any python object. Almost equivalent to :hoc:class:`~neuron.hoc.HocObject` in the
+        Accesses any python object. Almost equivalent to :class:`~neuron.hoc.HocObject` in the
         python world but because of some hoc syntax limitations, ie. hoc does not 
         allow an object to be a callable function, and top level indices have 
         different semantics, we sometimes need to use a special idiom, ie. the '_' 

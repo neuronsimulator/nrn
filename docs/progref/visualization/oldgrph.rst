@@ -810,7 +810,7 @@ Obsolete Plotting
             
 
         .. seealso::
-            :hoc:func:`plot`, :hoc:func:`axis`, :hoc:func:`lw`
+            :func:`plot`, :func:`axis`, :func:`lw`
             
 
         .. warning::
