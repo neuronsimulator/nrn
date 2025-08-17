@@ -179,6 +179,171 @@ Creating and connecting sections
                 sl[2].connect(sl[0](.5))
                 n.topology()
 
+    .. method:: Section.orientation
+
+        Syntax:
+            ``y = section.orientation()``
+
+        Description:
+            Return the end (0 or 1) which connects to the parent. This is the 
+            value, y, used in 
+            
+            .. code::
+
+                child.connect(parent(x), y)
+
+    ----
+
+    .. method:: Section.parentseg
+
+        Syntax:
+            ``seg = child.parentseg()``
+
+        Description:
+            Return the parent segment of the ``child`` section. This is ``parent(x)`` in:
+
+            .. code::
+
+                child.connect(parent(x), y)
+
+            To get the x value, use ``seg.x``.
+
+    ----
+
+    .. method:: Section.cell
+
+        Syntax:
+            ``section.cell()``
+
+        Description:
+            Returns the value of the cell keyword argument provided when the Section was created.
+
+    ----
+
+    .. method:: Section.hname
+
+        Syntax:
+            ``section.hname()``
+
+        Description:
+            Returns the value of the name keyword argument provided when the Section was created.
+            If no name was provided, the internally provided name is returned instead.
+
+    ----
+
+    .. method:: Section.name
+
+        Syntax:
+            ``section.name()``
+
+        Description:
+            Same as :meth:`Section.hname`
+
+    ----
+
+    .. method:: Section.subtree()
+
+        Syntax:
+            ``section.subtree()``
+
+        Description:
+            Returns a Python list of the sub-tree of the Section
+
+        Example:
+            .. code-block::
+                python
+
+                >>> from neuron import n
+                >>> soma = n.Section('soma')
+                >>> dend1 = n.Section('dend1')
+                >>> dend2 = n.Section('dend2')
+                >>> dend3 = n.Section('dend3')
+                >>> dend4 = n.Section('dend4')
+                >>> dend5 = n.Section('dend5')
+                >>> dend2.connect(soma)
+                dend2
+                >>> dend1.connect(soma)
+                dend1
+                >>> dend3.connect(dend2)
+                dend3
+                >>> dend4.connect(dend2)
+                dend4
+                >>> dend5.connect(dend4)
+                dend5
+                >>> n.topology()
+
+                |-|       soma(0-1)
+                `|       dend2(0-1)
+                    `|       dend3(0-1)
+                    `|       dend4(0-1)
+                    `|       dend5(0-1)
+                    `|       dend1(0-1)
+
+                1.0
+                >>> dend2.subtree()
+                [dend2, dend4, dend5, dend3]
+                >>> dend7 = n.Section('dend7')
+                >>> dend7.subtree()
+                [dend7]
+                >>> dend1.subtree()
+                [dend1]
+                >>> dend4.subtree()
+                [dend4, dend5]
+                >>> soma.subtree()
+                [soma, dend1, dend2, dend4, dend5, dend3]
+
+    ----
+
+    .. method:: Section.wholetree()
+
+        Syntax:
+            ``section.wholetree()``
+
+        Description:
+            Returns a Python list of the whole tree of the Section
+
+        Example:
+            .. code-block::
+                python
+
+                >>> from neuron import n
+                >>> soma = n.Section('soma')
+                >>> dend1 = n.Section('dend1')
+                >>> dend2 = n.Section('dend2')
+                >>> dend3 = n.Section('dend3')
+                >>> dend4 = n.Section('dend4')
+                >>> dend5 = n.Section('dend5')
+                >>> dend2.connect(soma)
+                dend2
+                >>> dend1.connect(soma)
+                dend1
+                >>> dend3.connect(dend2)
+                dend3
+                >>> dend4.connect(dend2)
+                dend4
+                >>> dend5.connect(dend4)
+                dend5
+                >>> n.topology()
+
+                |-|       soma(0-1)
+                `|       dend2(0-1)
+                    `|       dend3(0-1)
+                    `|       dend4(0-1)
+                    `|       dend5(0-1)
+                `|       dend1(0-1)
+
+                1.0
+                >>> dend2.wholetree()
+                [soma, dend1, dend2, dend4, dend5, dend3]
+                >>> dend7 = n.Section('dend7')
+                >>> dend7.wholetree()
+                [dend7]
+                >>> soma.wholetree()
+                [soma, dend1, dend2, dend4, dend5, dend3]
+                >>> dend3.wholetree()
+                [soma, dend1, dend2, dend4, dend5, dend3]
+
+
 .. tab:: HOC
 
     .. index::  create (keyword)
@@ -412,182 +577,25 @@ Creating and connecting sections
 
 ----
 
-.. method:: Section.orientation
-
-    Syntax:
-        ``y = section.orientation()``
-
-    Description:
-        Return the end (0 or 1) which connects to the parent. This is the 
-        value, y, used in 
-         
-        .. code::
-
-            child.connect(parent(x), y)
-
-----
-
-.. method:: Section.parentseg
-
-    Syntax:
-        ``seg = child.parentseg()``
-
-    Description:
-        Return the parent segment of the ``child`` section. This is ``parent(x)`` in:
-
-        .. code::
-
-            child.connect(parent(x), y)
-
-        To get the x value, use ``seg.x``.
-
-----
-
-.. method:: Section.cell
-
-    Syntax:
-        ``section.cell()``
-
-    Description:
-        Returns the value of the cell keyword argument provided when the Section was created.
-
-----
-
-.. method:: Section.hname
-
-    Syntax:
-        ``section.hname()``
-
-    Description:
-        Returns the value of the name keyword argument provided when the Section was created.
-        If no name was provided, the internally provided name is returned instead.
-
-----
-
-.. method:: Section.name
-
-    Syntax:
-        ``section.name()``
-
-    Description:
-        Same as :meth:`Section.hname`
-
-----
-
-.. method:: Section.subtree()
-
-    Syntax:
-        ``section.subtree()``
-
-    Description:
-        Returns a Python list of the sub-tree of the Section
-
-    Example:
-        .. code-block::
-            python
-
-            >>> from neuron import n
-            >>> soma = n.Section('soma')
-            >>> dend1 = n.Section('dend1')
-            >>> dend2 = n.Section('dend2')
-            >>> dend3 = n.Section('dend3')
-            >>> dend4 = n.Section('dend4')
-            >>> dend5 = n.Section('dend5')
-            >>> dend2.connect(soma)
-            dend2
-            >>> dend1.connect(soma)
-            dend1
-            >>> dend3.connect(dend2)
-            dend3
-            >>> dend4.connect(dend2)
-            dend4
-            >>> dend5.connect(dend4)
-            dend5
-            >>> n.topology()
-
-            |-|       soma(0-1)
-               `|       dend2(0-1)
-                 `|       dend3(0-1)
-                 `|       dend4(0-1)
-                   `|       dend5(0-1)
-                `|       dend1(0-1)
-
-            1.0
-            >>> dend2.subtree()
-            [dend2, dend4, dend5, dend3]
-            >>> dend7 = n.Section('dend7')
-            >>> dend7.subtree()
-            [dend7]
-            >>> dend1.subtree()
-            [dend1]
-            >>> dend4.subtree()
-            [dend4, dend5]
-            >>> soma.subtree()
-            [soma, dend1, dend2, dend4, dend5, dend3]
-
-----
-
-.. method:: Section.wholetree()
-
-    Syntax:
-        ``section.wholetree()``
-
-    Description:
-        Returns a Python list of the whole tree of the Section
-
-    Example:
-        .. code-block::
-            python
-
-            >>> from neuron import n
-            >>> soma = n.Section('soma')
-            >>> dend1 = n.Section('dend1')
-            >>> dend2 = n.Section('dend2')
-            >>> dend3 = n.Section('dend3')
-            >>> dend4 = n.Section('dend4')
-            >>> dend5 = n.Section('dend5')
-            >>> dend2.connect(soma)
-            dend2
-            >>> dend1.connect(soma)
-            dend1
-            >>> dend3.connect(dend2)
-            dend3
-            >>> dend4.connect(dend2)
-            dend4
-            >>> dend5.connect(dend4)
-            dend5
-            >>> n.topology()
-
-            |-|       soma(0-1)
-               `|       dend2(0-1)
-                 `|       dend3(0-1)
-                 `|       dend4(0-1)
-                   `|       dend5(0-1)
-               `|       dend1(0-1)
-
-            1.0
-            >>> dend2.wholetree()
-            [soma, dend1, dend2, dend4, dend5, dend3]
-            >>> dend7 = n.Section('dend7')
-            >>> dend7.wholetree()
-            [dend7]
-            >>> soma.wholetree()
-            [soma, dend1, dend2, dend4, dend5, dend3]
-            >>> dend3.wholetree()
-            [soma, dend1, dend2, dend4, dend5, dend3]
-----
-
 .. function:: topology
 
+    .. tab:: Python
 
-    Syntax:
-        ``n.topology()``
+        Syntax:
+            ``n.topology()``
 
 
-    Description:
-        Print the topology of how the sections are connected together. 
+        Description:
+            Print the topology of how the sections are connected together. 
 
-         
+    .. tab:: HOC
+
+        Syntax:
+            ``topology()``
+
+
+        Description:
+            Print the topology of how the sections are connected together. 
          
 
 ----
@@ -633,24 +641,40 @@ Creating and connecting sections
 
 .. function:: section_exists
 
+    .. tab:: Python
 
-    Syntax:
-        ``boolean = n.section_exists("name", [index], [object])``
+        Syntax:
+            ``boolean = n.section_exists("name", [index], [object])``
 
 
-    Description:
-        Returns 1.0 if the section defined by the args exists and can be used 
-        as a currently accessed section. Otherwise, returns 0.0.
-        The index is optional and if nonzero, can be incorporated into the name as 
-        a literal value such as dend[25]. If the optional object arg is present, that 
-        is the context, otherwise the context is the top level. "name" should 
-        not contain the object prefix. Even if a section is multiply dimensioned, use 
-        a single index value. 
+        Description:
+            Returns 1.0 if the section defined by the args exists and can be used 
+            as a currently accessed section. Otherwise, returns 0.0.
+            The index is optional and if nonzero, can be incorporated into the name as 
+            a literal value such as dend[25]. If the optional object arg is present, that 
+            is the context, otherwise the context is the top level. "name" should 
+            not contain the object prefix. Even if a section is multiply dimensioned, use 
+            a single index value. 
 
-    .. warning::
+        .. warning::
 
-        This function does not work with Sections created in Python.
+            This function does not work with Sections created in Python.
          
+    .. tab:: HOC
+
+        Syntax:
+            ``boolean = section_exists("name", [index], [object])``
+
+
+        Description:
+            Returns 1 if the section defined by the args exists and can be used 
+            as a currently accessed section. Otherwise, returns 0. 
+            The index is optional and if nonzero, can be incorporated into the name as 
+            a literal value such as dend[25]. If the optional object arg is present, that 
+            is the context, otherwise the context is the top level. "name" should 
+            not contain the object prefix. Even if a section is multiply dimensioned, use 
+            a single index value. 
+
 
 ----
 
@@ -658,18 +682,34 @@ Creating and connecting sections
 
 .. function:: section_owner
 
+    .. tab:: Python
 
-    Syntax:
-        ``n.section_owner(sec=section)``
+        Syntax:
+            ``n.section_owner(sec=section)``
 
 
-    Description:
-        
-        If ``section`` was created in Python, returns the ``cell`` keyword argument or
-        None. This is accessible directly from the Section object via :meth:`Section.cell`.
-        If the section was created in HOC, returns the object that created the section, or
-        None if created at the top level.
+        Description:
+            
+            If ``section`` was created in Python, returns the ``cell`` keyword argument or
+            None. This is accessible directly from the Section object via :meth:`Section.cell`.
+            If the section was created in HOC, returns the object that created the section, or
+            None if created at the top level.
          
+    .. tab:: HOC
+
+
+        Syntax:
+            ``section_owner()``
+
+
+        Description:
+            Return the object that created the currently accessed section. If the 
+            section was created from the top level, The NULLobject is returned. 
+            If the section was created as a Python section and the first constructor 
+            arg is a Python object or the keyword argument, cell = ..., is used, a 
+            PythonObject wrapper is returned. I.e. in the Python world, it is the Python 
+            cell object. 
+
 
 ----
 
@@ -708,75 +748,139 @@ Creating and connecting sections
 
 .. function:: issection
 
+    .. tab:: Python
 
-    Syntax:
-        ``n.issection("regular expression", sec=section)``
-
-
-    Description:
-        Return 1.0 if the name of ``section`` matches the regular expression. 
-        Return 0.0 otherwise. 
-         
-        Regular expressions are like those of grep except {n1-n2} denotes
-	an integer range and [] is literal instead of denoting a character
-	range. For character ranges use <>. For example <a-z> or <abz45> denotes
-	any character from a to z or to any of the characters abz45.
-        Thus a[{8-15}] matches sections a[8] through a[15]. 
-        A match always begins from the beginning of a section name. If you 
-        don't want to require a match at the beginning use the dot. 
-         
-        (Note, 
-        that ``.`` matches any character and ``*`` matches 0 or more occurrences 
-        of the previous character). The interpreter always closes each string with 
-        an implicit ``$`` to require a match at the end of the string. If you 
-        don't require a match at the end use "``.*``". 
-
-    Example:
-
-        .. code::
-
-            from neuron import n, gui
-            soma = n.Section('soma')
-            axon = n.Section('axon')
-            dend = [n.Section(f'dend[{i}]') for i in range(3)]
-            for section in n.allsec():
-                if n.issection('s.*', sec=section):
-                    print(section)
-
-        will print ``soma`` 
-
-        .. code::
-
-            for section in n.allsec():
-                if n.issection('d.*2]', sec=section):
-                    print(section)
-
-        will print ``dend[2]`` 
-
-        .. code-block::
-            none
-
-            for section in n.allsec():
-                if n.issection(".*a.*", sec=section):
-                    print(section)
-
-        will print all names which contain the letter "a" 
-
-        .. code-block::
-            none
-
-            soma 
-            axon 
+        Syntax:
+            ``n.issection("regular expression", sec=section)``
 
 
-    .. note::
+        Description:
+            Return 1.0 if the name of ``section`` matches the regular expression. 
+            Return 0.0 otherwise. 
+            
+            Regular expressions are like those of grep except {n1-n2} denotes
+        an integer range and [] is literal instead of denoting a character
+        range. For character ranges use <>. For example <a-z> or <abz45> denotes
+        any character from a to z or to any of the characters abz45.
+            Thus a[{8-15}] matches sections a[8] through a[15]. 
+            A match always begins from the beginning of a section name. If you 
+            don't want to require a match at the beginning use the dot. 
+            
+            (Note, 
+            that ``.`` matches any character and ``*`` matches 0 or more occurrences 
+            of the previous character). The interpreter always closes each string with 
+            an implicit ``$`` to require a match at the end of the string. If you 
+            don't require a match at the end use "``.*``". 
 
-        This can also be done using Python's ``re`` module and testing ``str(sec)`` 
+        Example:
 
-    .. warning::
+            .. code::
 
-        If the ``sec`` keyword argument is omitted, this will operate on the currently accessed section.
-         
+                from neuron import n, gui
+                soma = n.Section('soma')
+                axon = n.Section('axon')
+                dend = [n.Section(f'dend[{i}]') for i in range(3)]
+                for section in n.allsec():
+                    if n.issection('s.*', sec=section):
+                        print(section)
+
+            will print ``soma`` 
+
+            .. code::
+
+                for section in n.allsec():
+                    if n.issection('d.*2]', sec=section):
+                        print(section)
+
+            will print ``dend[2]`` 
+
+            .. code-block::
+                none
+
+                for section in n.allsec():
+                    if n.issection(".*a.*", sec=section):
+                        print(section)
+
+            will print all names which contain the letter "a" 
+
+            .. code-block::
+                none
+
+                soma 
+                axon 
+
+
+        .. note::
+
+            This can also be done using Python's ``re`` module and testing ``str(sec)`` 
+
+        .. warning::
+
+            If the ``sec`` keyword argument is omitted, this will operate on the currently accessed section.
+
+    .. tab:: HOC
+
+        Syntax:
+            ``issection("regular expression")``
+
+
+        Description:
+            Return 1 if the currently accessed section matches the regular expression. 
+            Return 0 if otherwise. 
+            
+            Regular expressions are like those of grep except {n1-n2} denotes
+            an integer range and [] is literal instead of denoting a character
+            range. For character ranges use <>. For example <a-z> or <abz45> denotes
+            any character from a to z or to any of the characters abz45.
+            Thus a[{8-15}] matches sections a[8] through a[15]. 
+            A match always begins from the beginning of a section name. If you 
+            don't want to require a match at the beginning use the dot. 
+            
+            (Note, 
+            that ``.`` matches any character and ``*`` matches 0 or more occurrences 
+            of the previous character). The interpreter always closes each string with 
+            an implicit ``$`` to require a match at the end of the string. If you 
+            don't require a match at the end use "``.*``". 
+
+        Example:
+
+            .. code-block::
+                none
+
+                create soma, axon, dendrite[3] 
+                forall if (issection("s.*")) { 
+                    print secname() 
+                } 
+
+            will print ``soma`` 
+
+            .. code-block::
+                none
+
+                forall if (issection("d.*2]")) { 
+                    print secname() 
+                } 
+
+            will print ``dendrite[2]`` 
+
+            .. code-block::
+                none
+
+                forall if (issection(".*a.*")) { 
+                    print secname() 
+                } 
+
+            will print all names which contain the letter "a" 
+
+            .. code-block::
+                none
+
+                soma 
+                axon 
+
+
+        .. seealso::
+            :ref:`ifsec <hoc_keyword_ifsec>`, :ref:`forsec <hoc_keyword_forsec>`
 
 ----
 
@@ -784,33 +888,58 @@ Creating and connecting sections
 
 .. function:: ismembrane
 
+    .. tab:: Python
 
-    Syntax:
-        ``n.ismembrane("mechanism", sec=section)``
-
-
-    Description:
-        This function returns a 1.0 if the membrane of ``section`` contains this 
-        (density) mechanism.  This is not for point 
-        processes. 
-         
-
-    Example:
-
-        .. code::
+        Syntax:
+            ``n.ismembrane("mechanism", sec=section)``
 
 
-            for sec in n.allsec():
-                if n.ismembrane('hh', sec=sec) and n.ismembrane('ca_ion', sec=sec):
-                    print(sec)
+        Description:
+            This function returns a 1.0 if the membrane of ``section`` contains this 
+            (density) mechanism.  This is not for point 
+            processes. 
+            
 
-        will print the names of all the sections which contain both Hodgkin-Huxley and Calcium ions. 
+        Example:
 
-         
-     .. warning::
+            .. code::
 
-        If the ``sec`` keyword argument is omitted, returns a result based on the currently accessed
-        section.
+
+                for sec in n.allsec():
+                    if n.ismembrane('hh', sec=sec) and n.ismembrane('ca_ion', sec=sec):
+                        print(sec)
+
+            will print the names of all the sections which contain both Hodgkin-Huxley and Calcium ions. 
+
+            
+        .. warning::
+
+            If the ``sec`` keyword argument is omitted, returns a result based on the currently accessed
+            section.
+
+    .. tab:: HOC
+
+        Syntax:
+            ``ismembrane("mechanism")``
+
+
+        Description:
+            This function returns a 1 if the current membrane contains this 
+            (density) mechanism.  This is not for point 
+            processes. 
+            
+
+        Example:
+
+            .. code-block::
+                none
+
+                forall if (ismembrane("hh") && ismembrane("ca_ion")) { 
+                    print secname() 
+                } 
+
+            will print the names of all the sections which contain both Hodgkin-Huxley and Calcium ions. 
+
 
 ----
 
@@ -947,20 +1076,32 @@ Creating and connecting sections
 
 .. function:: parent_section
 
+    .. tab:: Python
 
-    Syntax:
-        ``n.parent_section(x, sec=section)``
+        Syntax:
+            ``n.parent_section(x, sec=section)``
 
 
-    Description:
-        Return the pointer to the section parent of the segment ``section(x)``. 
-        Because a 64 bit pointer cannot safely be represented as a 
-        double this function is deprecated in favor of :meth:`SectionRef.parent`. 
+        Description:
+            Return the pointer to the section parent of the segment ``section(x)``. 
+            Because a 64 bit pointer cannot safely be represented as a 
+            double this function is deprecated in favor of :meth:`SectionRef.parent`. 
 
-    .. seealso::
+        .. seealso::
 
-        :meth:`Section.parentseg`
+            :meth:`Section.parentseg`
          
+    .. tab:: HOC
+
+        Syntax:
+            ``parent_section(x)``
+
+
+        Description:
+            Return the pointer to the section parent of the segment containing *x*. 
+            Because a 64 bit pointer cannot safely be represented as a 
+            double this function is deprecated in favor of :hoc:meth:`SectionRef.parent`.
+
 
 ----
 
@@ -999,24 +1140,40 @@ Creating and connecting sections
 
 .. function:: parent_connection
 
+    .. tab:: Python
+            
+        Syntax:
+            ``y = n.parent_connection(sec=child)``
 
-    Syntax:
-        ``y = n.parent_connection(sec=child)``
+
+        Description:
+            Return location on parent that ``child`` is 
+            connected to. (0 <= x <= 1). This is the value, y, used in 
+
+            .. code::
+
+                child.connect(parent(x), y)
+
+            This information is also available via: ``child.parentseg().x``
+
+        .. seealso::
+
+            :meth:`Section.parentseg`
+
+    .. tab:: HOC
+
+        Syntax:
+            ``y = parent_connection()``
 
 
-    Description:
-        Return location on parent that ``child`` is 
-        connected to. (0 <= x <= 1). This is the value, y, used in 
+        Description:
+            Return location on parent that currently accessed section is 
+            connected to. (0 <= x <= 1). This is the value, y, used in 
 
-        .. code::
+            .. code-block::
+                none
 
-            child.connect(parent(x), y)
-
-        This information is also available via: ``child.parentseg().x``
-
-    .. seealso::
-
-        :meth:`Section.parentseg`
+                        connect child(x), parent(y) 
 
 
          
@@ -1027,18 +1184,37 @@ Creating and connecting sections
 
 .. function:: section_orientation
 
+    .. tab:: Python
 
-    Syntax:
-        ``y = n.section_orientation(sec=child)``
+        Syntax:
+            ``y = n.section_orientation(sec=child)``
 
-    Description:
-        Return the end (0 or 1) which connects to the parent. This is the 
-        value, y, used in 
-         
-        .. code::
+        Description:
+            Return the end (0 or 1) which connects to the parent. This is the 
+            value, y, used in 
+            
+            .. code::
 
-            child.connect(parent(x), y)
+                child.connect(parent(x), y)
 
-    .. note::
+        .. note::
 
-        It is cleaner to use the equivalent section method: :meth:`Section.orientation`.
+            It is cleaner to use the equivalent section method: :meth:`Section.orientation`.
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``y = section_orientation()``
+
+
+        Description:
+            Return the end (0 or 1) which connects to the parent. This is the 
+            value, x, used in 
+            
+
+            .. code-block::
+                none
+
+                        connect child(x), parent(y) 
+
