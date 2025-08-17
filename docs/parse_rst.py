@@ -4,7 +4,6 @@ Run via:
 >>> python3 parse_rst.py ./progref/ help_data.dat
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -23,12 +22,9 @@ class ParseRst(object):
         identifier = ".. %s::" % identifier
         line = lines[i]
         start = line.find(identifier)
-        # print line, identifier, start
-        # print identifier
         if start >= 0:
             name = line[start + len(identifier) :].strip()
 
-            # print('%s -- %s' % (name, identifier))
 
             indent_line = lines[i + 1]
             while not indent_line.strip():
@@ -40,7 +36,6 @@ class ParseRst(object):
                     break
                 start += 1
 
-            # TODO: store the body text
             body = []
             while i < len(lines) - 1:
                 i += 1
@@ -55,7 +50,27 @@ class ParseRst(object):
                 else:
                     if not body or body[-1] != "\n":
                         body.append("\n")
-            cls.help_dictionary[name] = "\n".join(body)
+            
+            # Check if body contains ".. tab:: Python" and extract only Python content
+            python_tab_found = any(".. tab:: Python" in line for line in body)
+            
+            if python_tab_found:
+                python_body = []
+                in_python_tab = False
+                
+                for line in body:
+                    if ".. tab:: Python" in line:
+                        in_python_tab = True
+                        continue
+                    elif line.strip().startswith(".. tab::") and in_python_tab:
+                        # Found another tab, stop collecting Python content
+                        break
+                    elif in_python_tab:
+                        python_body.append(line)
+                
+                cls.help_dictionary[name] = "\n".join(python_body)
+            else:
+                cls.help_dictionary[name] = "\n".join(body)
 
     def parse(self):
         for filename in self._filenames:
