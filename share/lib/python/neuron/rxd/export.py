@@ -223,6 +223,7 @@ class middle_man:
 def sbml(segment, filename=None, model_name=None, pretty=True):
     from neuron import rxd
     from neuron.rxd.rxdException import RxDException
+
     rxd.initializer._do_init()
     section = segment.sec
     if model_name is not None:
@@ -449,6 +450,7 @@ function_names = {
 def recursive_search(arth_obj, kineticLaw, parameters, compartment_name):
     from neuron import rxd
     from neuron.rxd.rxdException import RxDException
+
     items = []
     counts = []
     node = ET.SubElement(kineticLaw, "apply")
@@ -499,6 +501,7 @@ def recursive_search(arth_obj, kineticLaw, parameters, compartment_name):
 def determine_type(obj, parameters, comp_name):
     from neuron import rxd
     from neuron.rxd.rxdException import RxDException
+
     tree = ET.Element("apply")
     if isinstance(obj, rxd.rxdmath._Product):
         ET.SubElement(tree, "times")
