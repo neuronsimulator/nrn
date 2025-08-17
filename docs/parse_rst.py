@@ -26,7 +26,6 @@ class ParseRst(object):
         if start >= 0:
             name = line[start + len(identifier) :].strip()
 
-
             indent_line = lines[i + 1]
             while not indent_line.strip():
                 i += 1
@@ -51,14 +50,14 @@ class ParseRst(object):
                 else:
                     if body and body[-1] != "\n":
                         body.append("\n")
-            
+
             # Check if body contains ".. tab:: Python" and extract only Python content
             python_tab_found = any(".. tab:: Python" in line for line in body)
-            
+
             if python_tab_found:
                 python_body = []
                 in_python_tab = False
-                
+
                 for line in body:
                     if ".. tab:: Python" in line:
                         in_python_tab = True
@@ -68,7 +67,7 @@ class ParseRst(object):
                         break
                     elif in_python_tab:
                         python_body.append(line)
-                
+
                 # Remove leading 4-space indentation repeatedly
                 while True:
                     # Check if all non-empty lines begin with 4 spaces
@@ -80,17 +79,20 @@ class ParseRst(object):
                             if not line.startswith("    "):
                                 can_remove_spaces = False
                                 break
-                    
+
                     if can_remove_spaces and python_body and has_non_empty_lines:
                         # Remove 4 spaces from the beginning of each line
-                        python_body = [line[4:] if line.startswith("    ") else line for line in python_body]
+                        python_body = [
+                            line[4:] if line.startswith("    ") else line
+                            for line in python_body
+                        ]
                     else:
                         break
-                
+
                 # Clean up consecutive newlines in the final result
                 result = "\n".join(python_body).strip("\n")
-                result = re.sub(r'\n[ \t]+\n', '\n\n', result)
-                result = re.sub(r'\n{3,}', '\n\n', result)
+                result = re.sub(r"\n[ \t]+\n", "\n\n", result)
+                result = re.sub(r"\n{3,}", "\n\n", result)
                 cls.help_dictionary[name] = result
             else:
                 cls.help_dictionary[name] = "\n".join(body)
