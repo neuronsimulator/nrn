@@ -1,3 +1,9 @@
+from typing import TYPE_CHECKING, Optional, Any
+
+if TYPE_CHECKING:
+    from .species import Species
+    from .region import Region
+    from .rxdsection import RxDSection
 import weakref
 from neuron import h, nrn
 from . import node, rxdsection, nodelist
@@ -14,17 +20,17 @@ _last_c_ptr_length = None
 
 class _SectionLookup:
     class Lookup:
-        def __init__(self):
-            self.rxd_sec_list = {}
+        def __init__(self) -> None:
+            self.rxd_sec_list: dict = {}
             self.nrn_sec_list = h.SectionList()
 
-    _instance = None
+    _instance: Optional["_SectionLookup"] = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         if _SectionLookup._instance is None:
             _SectionLookup._instance = _SectionLookup.Lookup()
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Any) -> Any:
         if (
             key in _SectionLookup._instance.nrn_sec_list
             and key.hoc_internal_name() in _SectionLookup._instance.rxd_sec_list
@@ -32,11 +38,11 @@ class _SectionLookup:
             return _SectionLookup._instance.rxd_sec_list[key.hoc_internal_name()]
         return []
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: Any, value: Any) -> None:
         _SectionLookup._instance.nrn_sec_list.append(key)
         _SectionLookup._instance.rxd_sec_list[key.hoc_internal_name()] = value
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: Any) -> None:
         _SectionLookup._instance.nrn_sec_list.remove(key)
         if key.hoc_internal_name() in _SectionLookup._instance.rxd_sec_list:
             del _SectionLookup._instance.rxd_sec_list[key.hoc_internal_name()]
@@ -44,22 +50,22 @@ class _SectionLookup:
     def __iter__(self):
         return iter(_SectionLookup._instance.nrn_sec_list)
 
-    def values(self):
+    def values(self) -> Any:
         return _SectionLookup._instance.rxd_sec_list.values()
 
-    def items(self):
+    def items(self) -> dict:
         res = {}
         for sec in _SectionLookup._instance.nrn_sec_list:
             res[sec] = _SectionLookup._instance.rxd_sec_list[sec.hoc_internal_name()]
         return res.items()
 
-    def remove(self, rxdsec):
+    def remove(self, rxdsec: Any) -> None:
         for key, val in _SectionLookup._instance.rxd_sec_list.items():
             if val == rxdsec:
                 del _SectionLookup._instance.rxd_sec_list[key]
 
 
-def add_values(mat, i, js, vals):
+def add_values(mat: list, i: int, js: list, vals: list) -> None:
     mat_i = mat[i]
     for j, val in zip(js, vals):
         if val == 0:
@@ -72,7 +78,7 @@ def add_values(mat, i, js, vals):
             mat_i[j] = val
 
 
-def _parent(sec):
+def _parent(sec: nrn.Section) -> Optional[nrn.Segment]:
     """Return the parent of seg or None if sec is a root"""
     if sec:
         seg = sec.trueparentseg()
@@ -93,7 +99,7 @@ def _parent(sec):
     return None
 
 
-def _purge_cptrs():
+def _purge_cptrs() -> None:
     """purges all cptr information"""
 
     global _all_cptrs, _all_cindices, _c_ptr_vector, _last_c_ptr_length
@@ -106,7 +112,7 @@ def _purge_cptrs():
     _last_c_ptr_length = None
 
 
-def _transfer_to_legacy():
+def _transfer_to_legacy() -> None:
     global _c_ptr_vector, _c_ptr_vector_storage, _c_ptr_vector_storage_nrn
     global _last_c_ptr_length
 
@@ -126,7 +132,7 @@ def _transfer_to_legacy():
         _c_ptr_vector.scatter(_c_ptr_vector_storage_nrn)
 
 
-def replace(rmsec, offset, nseg):
+def replace(rmsec: "Section1D", offset: int, nseg: int) -> None:
     """Replace the section (rmsec) in node data lists and update the offsets"""
     # remove entries from node global variables and update the states
     node._replace(rmsec._offset, rmsec._nseg, offset, nseg)
@@ -144,7 +150,7 @@ def replace(rmsec, offset, nseg):
 
 
 class Section1D(rxdsection.RxDSection):
-    def __init__(self, species, sec, diff, r):
+    def __init__(self, species: "Species", sec: Any, diff: float, r: "Region") -> None:
         self._species = weakref.ref(species)
         self._diff = diff
         self._secref = h.SectionList([sec])

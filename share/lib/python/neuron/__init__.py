@@ -225,7 +225,7 @@ from neuron import config
 config._parse_arguments(h)
 
 
-def _check_for_intel_openmp():
+def _check_for_intel_openmp() -> None:
     """Check if Intel's OpenMP runtime has already been loaded.
 
     This does not interact well with the NVIDIA OpenMP runtime in CoreNEURON GPU
@@ -302,7 +302,7 @@ else:
 # define a dummy help function which imports doc,
 # calls the real help function, and reassigns neuron.help to doc.help
 # (thus replacing the dummy)
-def help(request=None):
+def help(request: object = None) -> None:
     global help
     from neuron import doc
 
@@ -320,7 +320,7 @@ except:
 # Global test-suite function
 
 
-def test(exitOnError=True):
+def test(exitOnError: bool = True) -> bool:
     """Runs a global battery of unit tests on the neuron module."""
     import neuron.tests
     import unittest
@@ -332,7 +332,7 @@ def test(exitOnError=True):
     return result
 
 
-def test_rxd(exitOnError=True):
+def test_rxd(exitOnError: bool = True) -> bool:
     """Runs a tests on the rxd and crxd modules."""
     import neuron.tests
     import unittest
@@ -356,7 +356,7 @@ from neuron.hclass3 import HocBaseObject, hclass
 nrn_dll_loaded = []
 
 
-def load_mechanisms(path, warn_if_already_loaded=True):
+def load_mechanisms(path: str, warn_if_already_loaded: bool = True) -> None:
     """
     load_mechanisms(path)
 
@@ -437,7 +437,7 @@ class Wrapper(object):
             object.__setattr__(self, name, value)
 
 
-def new_point_process(name, doc=None):
+def new_point_process(name: str, doc: str = None) -> type:
     """
     Returns a Python-wrapped hoc class where the object needs to be associated
     with a section.
