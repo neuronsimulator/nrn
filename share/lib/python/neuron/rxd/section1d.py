@@ -149,6 +149,7 @@ class Section1D(rxdsection.RxDSection):
         "_diff",
         "_secref",
         "_concentration_ptrs",
+        "_num_roots",
         "_offset",
         "_nseg",
         "_region",

@@ -59,6 +59,7 @@ class _c_region:
         "num_params",
         "num_ecs_species",
         "num_ecs_params",
+        "num_segments",
         "_ecs_react_species",
         "_ecs_react_params",
         "_react_species",
@@ -69,6 +70,9 @@ class _c_region:
         "ecs_location_index",
         "_ecs_species_ids",
         "_ecs_params_ids",
+        "_species_ids",
+        "_params_ids",
+        "_region_ids",
         "_voltage_dependent",
         "_vptrs",
     )
@@ -137,7 +141,7 @@ class _c_region:
                 self._react_species.append(weakref.ref(s))
         self.num_params = len(self._react_params)
         self.num_species = len(self._react_species)
-        self._initilized = False
+        self._initialized = False
 
     def add_ecs_species(self, species_set):
         from .species import ParameterOnExtracellular
