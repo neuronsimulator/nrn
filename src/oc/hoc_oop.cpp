@@ -42,6 +42,9 @@ int hoc_max_builtin_class_id = -1;
 
 static Symbol* hoc_obj_;
 
+int (*nrnpy_call_obj_method)(Object* obj, const char* method, Object* obj2) = nullptr;
+
+
 void hoc_install_hoc_obj(void) {
     /* see void hoc_objvardecl(void) */
     Object** pobj;
@@ -2138,6 +2141,12 @@ void hoc_object_add() {
         hoc_execerror("Object arithmetic: first operand is null", nullptr);
     }
 
+    // Try Python first if available
+    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__add__", obj2) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
+    }
+
     // Look up the __add__ method
     Symbol* method_sym = nrn_method_symbol(obj1, "__add__");
     if (!method_sym) {
@@ -2164,6 +2173,13 @@ void hoc_object_sub() {
     if (!obj1) {
         hoc_execerror("Object arithmetic: first operand is null", nullptr);
     }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__sub__", obj2) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
+    }
+
 
     Symbol* method_sym = nrn_method_symbol(obj1, "__sub__");
     if (!method_sym) {
@@ -2192,6 +2208,13 @@ void hoc_object_mul() {
                           obj1->ctemplate->sym->name);
     }
 
+    // Try Python first if available
+    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__mul__", obj2) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
+    }
+
+
     hoc_pushobj(obj2_ptr);
     nrn_method_call(obj1, method_sym, 1);
 }
@@ -2206,6 +2229,13 @@ void hoc_object_div() {
     if (!obj1) {
         hoc_execerror("Object arithmetic: first operand is null", nullptr);
     }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__div__", obj2) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
+    }
+
 
     Symbol* method_sym = nrn_method_symbol(obj1, "__div__");
     if (!method_sym) {
@@ -2226,6 +2256,12 @@ void hoc_object_pow() {
 
     if (!obj1) {
         hoc_execerror("Object arithmetic: first operand is null", nullptr);
+    }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__pow__", obj2) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
     }
 
     Symbol* method_sym = nrn_method_symbol(obj1, "__pow__");
@@ -2252,6 +2288,13 @@ void hoc_object_eq() {
         hoc_pushx(result);
         return;
     }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__eq__", obj2) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
+    }
+
 
     // Look up the __eq__ method
     Symbol* method_sym = nrn_method_symbol(obj1, "__eq__");
@@ -2285,6 +2328,13 @@ void hoc_object_ne() {
         hoc_pushx(result);
         return;
     }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__ne__", obj2) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
+    }
+
 
     // Look up the __ne__ method first
     Symbol* method_sym = nrn_method_symbol(obj1, "__ne__");

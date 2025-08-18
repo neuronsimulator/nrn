@@ -36,6 +36,7 @@ extern void (*nrnpy_restore_savestate)(int64_t, char*);
 extern void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size);
 extern void (*nrnpy_decref)(void* pyobj);
 extern double (*nrnpy_call_func)(Object*, double);
+extern int (*nrnpy_call_obj_method)(Object* obj, const char* method, Object* obj2);
 extern void hoc_pushs(Symbol*);
 extern double cable_prop_eval(Symbol* sym);
 extern Symlist* hoc_top_level_symlist;
@@ -67,6 +68,7 @@ extern Symbol* nrn_child_sym;
 extern int nrn_secref_nchild(Section*);
 static void pyobject_in_objptr(Object**, PyObject*);
 static double nrnpy_call_func_(Object*, double);
+static int nrnpy_call_obj_method_(Object* obj, const char* method, Object* obj2);
 extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
 extern Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
@@ -3361,6 +3363,7 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     nrnpy_sectionlist_helper_ = sectionlist_helper_;
     nrnpy_get_pyobj = nrnpy_get_pyobj_;
     nrnpy_call_func = nrnpy_call_func_;
+    nrnpy_call_obj_method = nrnpy_call_obj_method_;
     nrnpy_decref = nrnpy_decref_;
     nrnpy_nrncore_arg_p_ = nrncore_arg;
     nrnpy_nrncore_enable_value_p_ = nrncore_enable_value;
@@ -3516,4 +3519,86 @@ static double nrnpy_call_func_(Object* obj, double x) {
         hoc_execerror("Failed to convert result to float", nullptr);
     }
     return value;
+}
+
+static int nrnpy_call_obj_method_(Object* obj, const char* method, Object* obj2) {
+    // Check if obj is a Python object
+    if (!obj || obj->ctemplate->sym != nrnpy_pyobj_sym_) {
+        return 0;
+    }
+    
+    // Convert obj to PyObject
+    PyObject* py_obj = nrnpy_hoc2pyobject(obj);
+    if (!py_obj) {
+        return 0;
+    }
+    
+    // Check if method exists and is callable
+    if (!PyObject_HasAttrString(py_obj, method)) {
+        return 0;
+    }
+    
+    PyObject* py_method = PyObject_GetAttrString(py_obj, method);
+    if (!py_method) {
+        PyErr_Clear();
+        return 0;
+    }
+    
+    if (!PyCallable_Check(py_method)) {
+        Py_DECREF(py_method);
+        return 0;
+    }
+    
+    // Convert obj2 to PyObject
+    PyObject* py_arg = nullptr;
+    if (obj2) {
+        if (obj2->ctemplate->sym == nrnpy_pyobj_sym_) {
+            py_arg = nrnpy_hoc2pyobject(obj2);
+        } else {
+            // Convert HOC object to Python object
+            py_arg = nrnpy_ho2po(obj2);
+        }
+    } else {
+        py_arg = Py_None;
+        Py_INCREF(py_arg);
+    }
+    
+    if (!py_arg) {
+        Py_DECREF(py_method);
+        return 0;
+    }
+    
+    // Call the method
+    auto result = nb::steal(PyObject_CallFunctionObjArgs(py_method, py_arg, nullptr));
+    Py_DECREF(py_method);
+    if (py_arg != Py_None) {
+        Py_DECREF(py_arg);
+    } else {
+        Py_DECREF(py_arg);
+    }
+    
+    if (!result) {
+        PyErr_Clear();
+        return 0;
+    }
+    
+    // Check return type and push to stack
+    if (PyNumber_Check(result.ptr())) {
+        // Push number to stack
+        double value = PyFloat_AsDouble(result.ptr());
+        if (PyErr_Occurred()) {
+            PyErr_Clear();
+            return 0;
+        }
+        hoc_pushx(value);
+    } else {
+        // Push object to stack
+        Object* result_obj = nrnpy_po2ho(result.ptr());
+        hoc_push_object(result_obj);
+        if (result_obj) {
+            hoc_obj_unref(result_obj);
+        }
+    }
+    
+    return 1;
 }
