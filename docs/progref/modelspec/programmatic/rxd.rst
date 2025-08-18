@@ -25,7 +25,7 @@ We can access the ``rxd`` module via:
     .. code::
         hoc
 
-        objref pyobj, h, rxd
+        objref pyobj, n, rxd
 
         {
             // load reaction-diffusion support and get convenient handles
@@ -53,14 +53,14 @@ We can access the ``rxd`` module via:
     .. code::
         hoc
 
-        objref pyobj, h, rxd, cyt, ca, buf, cabuf, buffering, g
+        objref pyobj, n, rxd, cyt, ca, buf, cabuf, buffering, g
 
         {
             // load reaction-diffusion support and get convenient handles
             nrnpython("from neuron import n, rxd")
             pyobj = new PythonObject()
             rxd = pyobj.rxd
-            h = pyobj.h
+            n = pyobj.n
         }
 
         {
