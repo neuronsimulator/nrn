@@ -1,0 +1,115 @@
+// Test object arithmetic and equality operations
+
+// Test utility function
+proc assert() {
+    if ($1 == 0) {
+        execerror("assert failed", "")
+    }
+}
+
+print "Testing object arithmetic and equality operations..."
+
+// Define a test class with magic methods
+begintemplate MathClass
+public value, __add__, __sub__, __mul__, __div__, __pow__, __eq__
+
+proc init() {
+    value = $1
+}
+
+func __add__() {
+    return value + $o1.value
+}
+
+func __sub__() {
+    return value - $o1.value
+}
+
+func __mul__() {
+    return value * $o1.value
+}
+
+func __div__() {
+    return value / $o1.value
+}
+
+func __pow__() {
+    return value ^ $o1.value
+}
+
+func __eq__() {
+    return value == $o1.value
+}
+endtemplate MathClass
+
+// Define a class with both __eq__ and __ne__ methods
+begintemplate CompareClass
+public value, __eq__, __ne__
+
+proc init() {
+    value = $1
+}
+
+func __eq__() {
+    print "__eq__ called for CompareClass"
+    return value == $o1.value
+}
+
+func __ne__() {
+    print "__ne__ called for CompareClass"
+    return value != $o1.value
+}
+endtemplate CompareClass
+
+// Test arithmetic operations
+objref a, b, c
+a = new MathClass(6)
+b = new MathClass(3)
+c = new MathClass(6)
+
+// Test arithmetic
+assert((a + b) == 9)     // 6 + 3 = 9
+assert((a - b) == 3)     // 6 - 3 = 3
+assert((a * b) == 18)    // 6 * 3 = 18
+assert((a / b) == 2)     // 6 / 3 = 2
+assert((a ^ b) == 216)   // 6^3 = 216
+
+// Test equality with custom __eq__
+assert(a == a)           // same object
+assert(a == c)           // same value (6 == 6)
+assert(!(a != c))        // test != using __eq__ negation
+assert(!(a == b))        // different values (6 != 3)
+assert(a != b)           // test != using __eq__ negation
+
+// Test class with explicit __ne__ method
+objref d, e, f
+d = new CompareClass(10)
+e = new CompareClass(10)
+f = new CompareClass(20)
+
+print "Testing __ne__ method explicitly:"
+assert(d == e)           // should call __eq__ method
+assert(!(d != e))        // should call __ne__ method
+assert(d != f)           // should call __ne__ method
+assert(!(d == f))        // should call __eq__ method
+
+// Test objects without magic methods (fallback to pointer equality)
+objref v1, v2, v3
+v1 = new Vector(5)
+v2 = new Vector(5)
+v3 = v1
+
+assert(v1 == v1)         // same object
+assert(!(v1 == v2))      // different objects, same contents
+assert(!(v1 != v1))
+assert(v1 == v3)         // same reference
+
+// Test null object handling
+objref nullobj
+assert(!(v1 == nullobj)) // object vs null
+assert(nullobj == nullobj)
+assert(v1 != nullobj)
+
+print "All object operation tests passed!"
+
+quit()

@@ -6,6 +6,7 @@
 
 
 #include "classreg.h"
+#include "neuronapi.h"
 
 #include "hocstr.h"
 #include "parse.hpp"
@@ -2122,4 +2123,194 @@ void* nrn_opaque_obj2pyobj(Object* ho) {
         return neuron::python::methods.opaque_obj2pyobj(ho);
     }
     return nullptr;
+}
+
+// Object arithmetic functions that call HOC object methods
+void hoc_object_add() {
+    // Pop two objects from the stack properly
+    Object** obj2_ptr = hoc_objpop();  // Second operand
+    Object** obj1_ptr = hoc_objpop();  // First operand (the one that has the method)
+
+    Object* obj1 = *obj1_ptr;
+    Object* obj2 = *obj2_ptr;
+
+    if (!obj1) {
+        hoc_execerror("Object arithmetic: first operand is null", nullptr);
+    }
+
+    // Look up the __add__ method
+    Symbol* method_sym = nrn_method_symbol(obj1, "__add__");
+    if (!method_sym) {
+        hoc_execerror_fmt("Object arithmetic: method '__add__' not found in object '{}'",
+                          obj1->ctemplate->sym->name);
+    }
+
+    // Push the second object as argument for the method call
+    hoc_pushobj(obj2_ptr);
+
+    // Call the method: obj1.__add__(obj2)
+    nrn_method_call(obj1, method_sym, 1);
+
+    // The result should now be on the stack
+}
+
+void hoc_object_sub() {
+    Object** obj2_ptr = hoc_objpop();
+    Object** obj1_ptr = hoc_objpop();
+
+    Object* obj1 = *obj1_ptr;
+    Object* obj2 = *obj2_ptr;
+
+    if (!obj1) {
+        hoc_execerror("Object arithmetic: first operand is null", nullptr);
+    }
+
+    Symbol* method_sym = nrn_method_symbol(obj1, "__sub__");
+    if (!method_sym) {
+        hoc_execerror_fmt("Object arithmetic: method '__sub__' not found in object '{}'",
+                          obj1->ctemplate->sym->name);
+    }
+
+    hoc_pushobj(obj2_ptr);
+    nrn_method_call(obj1, method_sym, 1);
+}
+
+void hoc_object_mul() {
+    Object** obj2_ptr = hoc_objpop();
+    Object** obj1_ptr = hoc_objpop();
+
+    Object* obj1 = *obj1_ptr;
+    Object* obj2 = *obj2_ptr;
+
+    if (!obj1) {
+        hoc_execerror("Object arithmetic: first operand is null", nullptr);
+    }
+
+    Symbol* method_sym = nrn_method_symbol(obj1, "__mul__");
+    if (!method_sym) {
+        hoc_execerror_fmt("Object arithmetic: method '__mul__' not found in object '{}'",
+                          obj1->ctemplate->sym->name);
+    }
+
+    hoc_pushobj(obj2_ptr);
+    nrn_method_call(obj1, method_sym, 1);
+}
+
+void hoc_object_div() {
+    Object** obj2_ptr = hoc_objpop();
+    Object** obj1_ptr = hoc_objpop();
+
+    Object* obj1 = *obj1_ptr;
+    Object* obj2 = *obj2_ptr;
+
+    if (!obj1) {
+        hoc_execerror("Object arithmetic: first operand is null", nullptr);
+    }
+
+    Symbol* method_sym = nrn_method_symbol(obj1, "__div__");
+    if (!method_sym) {
+        hoc_execerror_fmt("Object arithmetic: method '__div__' not found in object '{}'",
+                          obj1->ctemplate->sym->name);
+    }
+
+    hoc_pushobj(obj2_ptr);
+    nrn_method_call(obj1, method_sym, 1);
+}
+
+void hoc_object_pow() {
+    Object** obj2_ptr = hoc_objpop();
+    Object** obj1_ptr = hoc_objpop();
+
+    Object* obj1 = *obj1_ptr;
+    Object* obj2 = *obj2_ptr;
+
+    if (!obj1) {
+        hoc_execerror("Object arithmetic: first operand is null", nullptr);
+    }
+
+    Symbol* method_sym = nrn_method_symbol(obj1, "__pow__");
+    if (!method_sym) {
+        hoc_execerror_fmt("Object arithmetic: method '__pow__' not found in object '{}'",
+                          obj1->ctemplate->sym->name);
+    }
+
+    hoc_pushobj(obj2_ptr);
+    nrn_method_call(obj1, method_sym, 1);
+}
+
+void hoc_object_eq() {
+    // Pop two objects from the stack properly
+    Object** obj2_ptr = hoc_objpop();  // Second operand
+    Object** obj1_ptr = hoc_objpop();  // First operand (the one that has the method)
+
+    Object* obj1 = *obj1_ptr;
+    Object* obj2 = *obj2_ptr;
+
+    // Handle null object cases with pointer equality fallback
+    if (!obj1 || !obj2) {
+        double result = (*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0;
+        hoc_pushx(result);
+        return;
+    }
+
+    // Look up the __eq__ method
+    Symbol* method_sym = nrn_method_symbol(obj1, "__eq__");
+    if (!method_sym) {
+        // No __eq__ method found, fall back to pointer equality
+        double result = (*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0;
+        hoc_pushx(result);
+        return;
+    }
+
+    // Push the second object as argument for the method call
+    hoc_pushobj(obj2_ptr);
+
+    // Call the method: obj1.__eq__(obj2)
+    nrn_method_call(obj1, method_sym, 1);
+
+    // The result should now be on the stack
+}
+
+void hoc_object_ne() {
+    // Pop two objects from the stack properly
+    Object** obj2_ptr = hoc_objpop();  // Second operand
+    Object** obj1_ptr = hoc_objpop();  // First operand (the one that has the method)
+
+    Object* obj1 = *obj1_ptr;
+    Object* obj2 = *obj2_ptr;
+
+    // Handle null object cases with pointer equality fallback
+    if (!obj1 || !obj2) {
+        double result = (*obj1_ptr != *obj2_ptr) ? 1.0 : 0.0;
+        hoc_pushx(result);
+        return;
+    }
+
+    // Look up the __ne__ method first
+    Symbol* method_sym = nrn_method_symbol(obj1, "__ne__");
+    if (method_sym) {
+        // Push the second object as argument for the method call
+        hoc_pushobj(obj2_ptr);
+        // Call the method: obj1.__ne__(obj2)
+        nrn_method_call(obj1, method_sym, 1);
+        // The result should now be on the stack
+        return;
+    }
+
+    // No __ne__ method, try __eq__ method and negate result
+    method_sym = nrn_method_symbol(obj1, "__eq__");
+    if (method_sym) {
+        // Push the second object as argument for the method call
+        hoc_pushobj(obj2_ptr);
+        // Call the method: obj1.__eq__(obj2)
+        nrn_method_call(obj1, method_sym, 1);
+        // Negate the result
+        double eq_result = hoc_xpop();
+        hoc_pushx(eq_result ? 0.0 : 1.0);
+        return;
+    }
+
+    // No magic methods found, fall back to pointer inequality
+    double result = (*obj1_ptr != *obj2_ptr) ? 1.0 : 0.0;
+    hoc_pushx(result);
 }
