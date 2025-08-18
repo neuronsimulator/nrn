@@ -2318,46 +2318,46 @@ void hoc_object_ne() {
 // Mixed-type arithmetic functions (object with number)
 void hoc_object_add_number() {
     // object + number: call obj.__add__(number)
-    double d = hoc_xpop();        // Second operand (number)
-    Object** obj_ptr = hoc_objpop(); // First operand (object)
-    
+    double d = hoc_xpop();            // Second operand (number)
+    Object** obj_ptr = hoc_objpop();  // First operand (object)
+
     Object* obj = *obj_ptr;
     if (!obj) {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
-    
+
     Symbol* method_sym = nrn_method_symbol(obj, "__add__");
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '__add__' not found in object '{}'",
                           obj->ctemplate->sym->name);
     }
-    
+
     // Push the number as argument for the method call
     hoc_pushx(d);
-    
+
     // Call the method: obj.__add__(number)
     nrn_method_call(obj, method_sym, 1);
 }
 
 void hoc_number_add_object() {
     // number + object: call obj.__radd__(number)
-    Object** obj_ptr = hoc_objpop(); // Second operand (object)
-    double d = hoc_xpop();        // First operand (number)
-    
+    Object** obj_ptr = hoc_objpop();  // Second operand (object)
+    double d = hoc_xpop();            // First operand (number)
+
     Object* obj = *obj_ptr;
     if (!obj) {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
-    
+
     Symbol* method_sym = nrn_method_symbol(obj, "__radd__");
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '__radd__' not found in object '{}'",
                           obj->ctemplate->sym->name);
     }
-    
+
     // Push the number as argument for the method call
     hoc_pushx(d);
-    
+
     // Call the method: obj.__radd__(number)
     nrn_method_call(obj, method_sym, 1);
 }
@@ -2366,18 +2366,18 @@ void hoc_object_sub_number() {
     // object - number: call obj.__sub__(number)
     double d = hoc_xpop();
     Object** obj_ptr = hoc_objpop();
-    
+
     Object* obj = *obj_ptr;
     if (!obj) {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
-    
+
     Symbol* method_sym = nrn_method_symbol(obj, "__sub__");
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '__sub__' not found in object '{}'",
                           obj->ctemplate->sym->name);
     }
-    
+
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
 }
@@ -2386,18 +2386,18 @@ void hoc_number_sub_object() {
     // number - object: call obj.__rsub__(number)
     Object** obj_ptr = hoc_objpop();
     double d = hoc_xpop();
-    
+
     Object* obj = *obj_ptr;
     if (!obj) {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
-    
+
     Symbol* method_sym = nrn_method_symbol(obj, "__rsub__");
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '__rsub__' not found in object '{}'",
                           obj->ctemplate->sym->name);
     }
-    
+
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
 }
@@ -2406,18 +2406,18 @@ void hoc_object_mul_number() {
     // object * number: call obj.__mul__(number)
     double d = hoc_xpop();
     Object** obj_ptr = hoc_objpop();
-    
+
     Object* obj = *obj_ptr;
     if (!obj) {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
-    
+
     Symbol* method_sym = nrn_method_symbol(obj, "__mul__");
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '__mul__' not found in object '{}'",
                           obj->ctemplate->sym->name);
     }
-    
+
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
 }
@@ -2426,18 +2426,18 @@ void hoc_number_mul_object() {
     // number * object: call obj.__rmul__(number)
     Object** obj_ptr = hoc_objpop();
     double d = hoc_xpop();
-    
+
     Object* obj = *obj_ptr;
     if (!obj) {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
-    
+
     Symbol* method_sym = nrn_method_symbol(obj, "__rmul__");
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '__rmul__' not found in object '{}'",
                           obj->ctemplate->sym->name);
     }
-    
+
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
 }
@@ -2446,18 +2446,18 @@ void hoc_object_div_number() {
     // object / number: call obj.__div__(number)
     double d = hoc_xpop();
     Object** obj_ptr = hoc_objpop();
-    
+
     Object* obj = *obj_ptr;
     if (!obj) {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
-    
+
     Symbol* method_sym = nrn_method_symbol(obj, "__div__");
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '__div__' not found in object '{}'",
                           obj->ctemplate->sym->name);
     }
-    
+
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
 }
@@ -2466,18 +2466,18 @@ void hoc_number_div_object() {
     // number / object: call obj.__rdiv__(number)
     Object** obj_ptr = hoc_objpop();
     double d = hoc_xpop();
-    
+
     Object* obj = *obj_ptr;
     if (!obj) {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
-    
+
     Symbol* method_sym = nrn_method_symbol(obj, "__rdiv__");
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '__rdiv__' not found in object '{}'",
                           obj->ctemplate->sym->name);
     }
-    
+
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
 }
@@ -2486,18 +2486,18 @@ void hoc_object_pow_number() {
     // object ^ number: call obj.__pow__(number)
     double d = hoc_xpop();
     Object** obj_ptr = hoc_objpop();
-    
+
     Object* obj = *obj_ptr;
     if (!obj) {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
-    
+
     Symbol* method_sym = nrn_method_symbol(obj, "__pow__");
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '__pow__' not found in object '{}'",
                           obj->ctemplate->sym->name);
     }
-    
+
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
 }
@@ -2506,18 +2506,18 @@ void hoc_number_pow_object() {
     // number ^ object: call obj.__rpow__(number)
     Object** obj_ptr = hoc_objpop();
     double d = hoc_xpop();
-    
+
     Object* obj = *obj_ptr;
     if (!obj) {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
-    
+
     Symbol* method_sym = nrn_method_symbol(obj, "__rpow__");
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '__rpow__' not found in object '{}'",
                           obj->ctemplate->sym->name);
     }
-    
+
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
 }

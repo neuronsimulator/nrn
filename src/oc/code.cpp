@@ -1979,13 +1979,11 @@ void hoc_add(void) /* add top two elems on stack */
         // Both operands are objects, call object addition
         hoc_object_add();
         return;
-    } else if (stack_type_1 == NUMBER && 
-               (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+    } else if (stack_type_1 == NUMBER && (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
         // object + number (first operand=object, second operand=number)
         hoc_object_add_number();
         return;
-    } else if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) && 
-               stack_type_2 == NUMBER) {
+    } else if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) && stack_type_2 == NUMBER) {
         // number + object (first operand=number, second operand=object)
         hoc_number_add_object();
         return;
@@ -2012,13 +2010,11 @@ void hoc_sub(void) /* subtract top two elems on stack */
         // Both operands are objects, call object subtraction
         hoc_object_sub();
         return;
-    } else if (stack_type_1 == NUMBER && 
-               (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+    } else if (stack_type_1 == NUMBER && (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
         // object - number (first operand=object, second operand=number)
         hoc_object_sub_number();
         return;
-    } else if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) && 
-               stack_type_2 == NUMBER) {
+    } else if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) && stack_type_2 == NUMBER) {
         // number - object (first operand=number, second operand=object)
         hoc_number_sub_object();
         return;
@@ -2044,13 +2040,11 @@ void hoc_mul(void) /* multiply top two elems on stack */
         // Both operands are objects, call object multiplication
         hoc_object_mul();
         return;
-    } else if (stack_type_1 == NUMBER && 
-               (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+    } else if (stack_type_1 == NUMBER && (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
         // object * number (first operand=object, second operand=number)
         hoc_object_mul_number();
         return;
-    } else if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) && 
-               stack_type_2 == NUMBER) {
+    } else if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) && stack_type_2 == NUMBER) {
         // number * object (first operand=number, second operand=object)
         hoc_number_mul_object();
         return;
@@ -2076,13 +2070,11 @@ void hoc_div(void) /* divide top two elems on stack */
         // Both operands are objects, call object division
         hoc_object_div();
         return;
-    } else if (stack_type_1 == NUMBER && 
-               (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+    } else if (stack_type_1 == NUMBER && (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
         // object / number (first operand=object, second operand=number)
         hoc_object_div_number();
         return;
-    } else if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) && 
-               stack_type_2 == NUMBER) {
+    } else if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) && stack_type_2 == NUMBER) {
         // number / object (first operand=number, second operand=object)
         hoc_number_div_object();
         return;
@@ -2167,7 +2159,7 @@ void hoc_eq() {
     auto const& entry2 = get_stack_entry_variant(1);
     auto stack_type_1 = get_legacy_int_type(entry1);
     auto stack_type_2 = get_legacy_int_type(entry2);
-    
+
     if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) &&
         (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
         // Both operands are objects, call object equality
@@ -2263,13 +2255,11 @@ void hoc_power() {
         // Both operands are objects, call object power
         hoc_object_pow();
         return;
-    } else if (stack_type_1 == NUMBER && 
-               (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
+    } else if (stack_type_1 == NUMBER && (stack_type_2 == OBJECTVAR || stack_type_2 == OBJECTTMP)) {
         // object ^ number (first operand=object, second operand=number)
         hoc_object_pow_number();
         return;
-    } else if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) && 
-               stack_type_2 == NUMBER) {
+    } else if ((stack_type_1 == OBJECTVAR || stack_type_1 == OBJECTTMP) && stack_type_2 == NUMBER) {
         // number ^ object (first operand=number, second operand=object)
         hoc_number_pow_object();
         return;
