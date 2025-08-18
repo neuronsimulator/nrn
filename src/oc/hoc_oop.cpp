@@ -43,6 +43,7 @@ int hoc_max_builtin_class_id = -1;
 static Symbol* hoc_obj_;
 
 int (*nrnpy_call_obj_method)(Object* obj, const char* method, Object* obj2) = nullptr;
+int (*nrnpy_call_obj_method_double)(Object* obj, const char* method, double value) = nullptr;
 
 
 void hoc_install_hoc_obj(void) {
@@ -2376,6 +2377,12 @@ void hoc_object_add_number() {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
 
+    // Try Python first if available
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__add__", d) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
+    }
+
     Symbol* method_sym = nrn_method_symbol(obj, "__add__");
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '__add__' not found in object '{}'",
@@ -2398,6 +2405,13 @@ void hoc_number_add_object() {
     if (!obj) {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__radd__", d) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
+    }
+
 
     Symbol* method_sym = nrn_method_symbol(obj, "__radd__");
     if (!method_sym) {
@@ -2422,6 +2436,12 @@ void hoc_object_sub_number() {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
 
+    // Try Python first if available
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__sub__", d) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
+    }
+
     Symbol* method_sym = nrn_method_symbol(obj, "__sub__");
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '__sub__' not found in object '{}'",
@@ -2440,6 +2460,12 @@ void hoc_number_sub_object() {
     Object* obj = *obj_ptr;
     if (!obj) {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
+    }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__rsub__", d) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
     }
 
     Symbol* method_sym = nrn_method_symbol(obj, "__rsub__");
@@ -2462,6 +2488,13 @@ void hoc_object_mul_number() {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
 
+    // Try Python first if available
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__mul__", d) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
+    }
+
+
     Symbol* method_sym = nrn_method_symbol(obj, "__mul__");
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '__mul__' not found in object '{}'",
@@ -2480,6 +2513,12 @@ void hoc_number_mul_object() {
     Object* obj = *obj_ptr;
     if (!obj) {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
+    }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__rmul__", d) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
     }
 
     Symbol* method_sym = nrn_method_symbol(obj, "__rmul__");
@@ -2502,6 +2541,12 @@ void hoc_object_div_number() {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
 
+    // Try Python first if available
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__div__", d) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
+    }
+
     Symbol* method_sym = nrn_method_symbol(obj, "__div__");
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '__div__' not found in object '{}'",
@@ -2520,6 +2565,12 @@ void hoc_number_div_object() {
     Object* obj = *obj_ptr;
     if (!obj) {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
+    }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__rdiv__", d) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
     }
 
     Symbol* method_sym = nrn_method_symbol(obj, "__rdiv__");
@@ -2542,6 +2593,13 @@ void hoc_object_pow_number() {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
 
+    // Try Python first if available
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__pow__", d) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
+    }
+
+
     Symbol* method_sym = nrn_method_symbol(obj, "__pow__");
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '__pow__' not found in object '{}'",
@@ -2560,6 +2618,12 @@ void hoc_number_pow_object() {
     Object* obj = *obj_ptr;
     if (!obj) {
         hoc_execerror("Object arithmetic: object operand is null", nullptr);
+    }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__rpow__", d) != 0) {
+        // Python handled the operation, result is on the stack
+        return;
     }
 
     Symbol* method_sym = nrn_method_symbol(obj, "__rpow__");

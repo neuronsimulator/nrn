@@ -37,6 +37,7 @@ extern void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size)
 extern void (*nrnpy_decref)(void* pyobj);
 extern double (*nrnpy_call_func)(Object*, double);
 extern int (*nrnpy_call_obj_method)(Object* obj, const char* method, Object* obj2);
+extern int (*nrnpy_call_obj_method_double)(Object* obj, const char* method, double value);
 extern void hoc_pushs(Symbol*);
 extern double cable_prop_eval(Symbol* sym);
 extern Symlist* hoc_top_level_symlist;
@@ -68,7 +69,8 @@ extern Symbol* nrn_child_sym;
 extern int nrn_secref_nchild(Section*);
 static void pyobject_in_objptr(Object**, PyObject*);
 static double nrnpy_call_func_(Object*, double);
-static int nrnpy_call_obj_method_(Object* obj, const char* method, Object* obj2);
+static int nrnpy_call_obj_method_(Object*, const char*, Object*);
+static int nrnpy_call_obj_method_double_(Object*, const char*, double);
 extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
 extern Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
@@ -3364,6 +3366,7 @@ extern "C" NRN_EXPORT PyObject* nrnpy_hoc() {
     nrnpy_get_pyobj = nrnpy_get_pyobj_;
     nrnpy_call_func = nrnpy_call_func_;
     nrnpy_call_obj_method = nrnpy_call_obj_method_;
+    nrnpy_call_obj_method_double = nrnpy_call_obj_method_double_;
     nrnpy_decref = nrnpy_decref_;
     nrnpy_nrncore_arg_p_ = nrncore_arg;
     nrnpy_nrncore_enable_value_p_ = nrncore_enable_value;
@@ -3521,7 +3524,8 @@ static double nrnpy_call_func_(Object* obj, double x) {
     return value;
 }
 
-static int nrnpy_call_obj_method_(Object* obj, const char* method, Object* obj2) {
+// Helper function to call a Python method with a single argument
+static int nrnpy_call_obj_method_helper_(Object* obj, const char* method, PyObject* py_arg) {
     // Check if obj is a Python object
     if (!obj || obj->ctemplate->sym != nrnpy_pyobj_sym_) {
         return 0;
@@ -3549,33 +3553,9 @@ static int nrnpy_call_obj_method_(Object* obj, const char* method, Object* obj2)
         return 0;
     }
     
-    // Convert obj2 to PyObject
-    PyObject* py_arg = nullptr;
-    if (obj2) {
-        if (obj2->ctemplate->sym == nrnpy_pyobj_sym_) {
-            py_arg = nrnpy_hoc2pyobject(obj2);
-        } else {
-            // Convert HOC object to Python object
-            py_arg = nrnpy_ho2po(obj2);
-        }
-    } else {
-        py_arg = Py_None;
-        Py_INCREF(py_arg);
-    }
-    
-    if (!py_arg) {
-        Py_DECREF(py_method);
-        return 0;
-    }
-    
     // Call the method
     auto result = nb::steal(PyObject_CallFunctionObjArgs(py_method, py_arg, nullptr));
     Py_DECREF(py_method);
-    if (py_arg != Py_None) {
-        Py_DECREF(py_arg);
-    } else {
-        Py_DECREF(py_arg);
-    }
     
     if (!result) {
         PyErr_Clear();
@@ -3601,4 +3581,42 @@ static int nrnpy_call_obj_method_(Object* obj, const char* method, Object* obj2)
     }
     
     return 1;
+}
+
+static int nrnpy_call_obj_method_(Object* obj, const char* method, Object* obj2) {
+    // Convert obj2 to PyObject
+    PyObject* py_arg = nullptr;
+    if (obj2) {
+        if (obj2->ctemplate->sym == nrnpy_pyobj_sym_) {
+            py_arg = nrnpy_hoc2pyobject(obj2);
+            Py_INCREF(py_arg);  // Get a new reference for consistent cleanup
+        } else {
+            // Convert HOC object to Python object
+            py_arg = nrnpy_ho2po(obj2);
+        }
+    } else {
+        py_arg = Py_None;
+        Py_INCREF(py_arg);
+    }
+    
+    if (!py_arg) {
+        return 0;
+    }
+    
+    int result = nrnpy_call_obj_method_helper_(obj, method, py_arg);
+    Py_DECREF(py_arg);
+    return result;
+}
+
+static int nrnpy_call_obj_method_double_(Object* obj, const char* method, double value) {
+    // Convert double to PyObject
+    PyObject* py_arg = PyFloat_FromDouble(value);
+    if (!py_arg) {
+        PyErr_Clear();
+        return 0;
+    }
+    
+    int result = nrnpy_call_obj_method_helper_(obj, method, py_arg);
+    Py_DECREF(py_arg);
+    return result;
 }
