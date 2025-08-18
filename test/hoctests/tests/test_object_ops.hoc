@@ -110,6 +110,155 @@ assert(!(v1 == nullobj)) // object vs null
 assert(nullobj == nullobj)
 assert(v1 != nullobj)
 
+// ===== MIXED-TYPE ARITHMETIC TESTS (Object + Number) =====
+print "Testing mixed-type arithmetic operations (returning objects)..."
+
+// Define a class that supports mixed-type operations returning objects
+begintemplate MixedMathClass
+public value, __add__, __radd__, __sub__, __rsub__, __mul__, __rmul__, __div__, __rdiv__, __pow__, __rpow__
+
+proc init() {
+    value = $1
+}
+
+// Addition operations
+obfunc __add__() {
+    if (numarg() == 1) {
+        // obj + number
+        return new MixedMathClass(value + $1)
+    } else {
+        // obj + obj (shouldn't happen in mixed-type, but for completeness)
+        return new MixedMathClass(value + $o1.value)
+    }
+}
+
+obfunc __radd__() {
+    // number + obj
+    return new MixedMathClass($1 + value)
+}
+
+// Subtraction operations  
+obfunc __sub__() {
+    if (numarg() == 1) {
+        // obj - number
+        return new MixedMathClass(value - $1)
+    } else {
+        // obj - obj
+        return new MixedMathClass(value - $o1.value)
+    }
+}
+
+obfunc __rsub__() {
+    // number - obj
+    return new MixedMathClass($1 - value)
+}
+
+// Multiplication operations
+obfunc __mul__() {
+    if (numarg() == 1) {
+        // obj * number
+        return new MixedMathClass(value * $1)
+    } else {
+        // obj * obj
+        return new MixedMathClass(value * $o1.value)
+    }
+}
+
+obfunc __rmul__() {
+    // number * obj
+    return new MixedMathClass($1 * value)
+}
+
+// Division operations
+obfunc __div__() {
+    if (numarg() == 1) {
+        // obj / number
+        return new MixedMathClass(value / $1)
+    } else {
+        // obj / obj
+        return new MixedMathClass(value / $o1.value)
+    }
+}
+
+obfunc __rdiv__() {
+    // number / obj
+    return new MixedMathClass($1 / value)
+}
+
+// Power operations
+obfunc __pow__() {
+    if (numarg() == 1) {
+        // obj ^ number
+        return new MixedMathClass(value ^ $1)
+    } else {
+        // obj ^ obj
+        return new MixedMathClass(value ^ $o1.value)
+    }
+}
+
+obfunc __rpow__() {
+    // number ^ obj
+    return new MixedMathClass($1 ^ value)
+}
+
+endtemplate MixedMathClass
+
+// Create test objects for mixed-type operations
+objref mix1, result_obj
+mix1 = new MixedMathClass(10)
+
+print "Testing object + number operations (both orders):"
+
+// Test addition: obj + num and num + obj
+result_obj = mix1 + 5
+assert(result_obj.value == 15)  // 10 + 5
+print "  obj + 5 = ", result_obj.value
+
+result_obj = 7 + mix1
+assert(result_obj.value == 17)  // 7 + 10
+print "  7 + obj = ", result_obj.value
+
+// Test subtraction: obj - num and num - obj
+result_obj = mix1 - 3
+assert(result_obj.value == 7)   // 10 - 3
+print "  obj - 3 = ", result_obj.value
+
+result_obj = 15 - mix1
+assert(result_obj.value == 5)   // 15 - 10
+print "  15 - obj = ", result_obj.value
+
+// Test multiplication: obj * num and num * obj
+result_obj = mix1 * 4
+assert(result_obj.value == 40)  // 10 * 4
+print "  obj * 4 = ", result_obj.value
+
+result_obj = 6 * mix1
+assert(result_obj.value == 60)  // 6 * 10
+print "  6 * obj = ", result_obj.value
+
+// Test division: obj / num and num / obj
+result_obj = mix1 / 2
+assert(result_obj.value == 5)   // 10 / 2
+print "  obj / 2 = ", result_obj.value
+
+result_obj = 50 / mix1
+assert(result_obj.value == 5)   // 50 / 10
+print "  50 / obj = ", result_obj.value
+
+// Test power: obj ^ num and num ^ obj  
+result_obj = mix1 ^ 2
+assert(result_obj.value == 100) // 10 ^ 2
+print "  obj ^ 2 = ", result_obj.value
+
+// Create object with smaller value for reasonable power test
+objref mix2
+mix2 = new MixedMathClass(3)
+result_obj = 2 ^ mix2
+assert(result_obj.value == 8)   // 2 ^ 3
+print "  2 ^ obj(3) = ", result_obj.value
+
+print "All mixed-type arithmetic tests passed!"
+
 print "All object operation tests passed!"
 
 quit()
