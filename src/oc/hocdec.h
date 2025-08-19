@@ -245,8 +245,8 @@ extern Objectdata* hoc_objectdata_restore(Objectdata*);
         if (arg)    \
             ;       \
     } /* so fprintf doesn't give lint */
-#undef IGNORE
-#define IGNORE(arg) \
+#undef NRN_IGNORE
+#define NRN_IGNORE(arg) \
     {               \
         if (arg)    \
             ;       \
@@ -263,8 +263,8 @@ int ilint;
 #define Strcpy  cplint = strcpy
 #define Strncpy cplint = strncpy
 #else
-#undef IGNORE
-#define IGNORE(arg) arg
+#undef NRN_IGNORE
+#define NRN_IGNORE(arg) arg
 #define LINTUSE(arg)
 #define Strcat  strcat
 #define Strncat strncat

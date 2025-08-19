@@ -6,15 +6,15 @@
 #include "utils/logger.hpp"
 
 /*LINTLIBRARY*/
-#undef IGNORE
+#undef NRN_IGNORE
 #if LINT
-#define IGNORE(arg) \
+#define NRN_IGNORE(arg) \
     {               \
         if (arg)    \
             ;       \
     }
 #else
-#define IGNORE(arg) arg
+#define NRN_IGNORE(arg) arg
 #endif
 
 #if defined(__linux__)
@@ -98,7 +98,7 @@ void hoc_plprint(const char* s) {
     char buf[128];
 
     if (text && s[strlen(s) - 1] == '\n') {
-        IGNORE(strcpy(buf, s));
+        NRN_IGNORE(strcpy(buf, s));
         s = buf;
         buf[strlen(s) - 1] = '\0';
     }
@@ -110,8 +110,8 @@ void hoc_plprint(const char* s) {
 #if NRNOC_X11
         x11_put_text(s);
 #else
-        IGNORE(fprintf(cdev, "%s", s));
-        IGNORE(fflush(cdev));
+        NRN_IGNORE(fprintf(cdev, "%s", s));
+        NRN_IGNORE(fflush(cdev));
 #endif
 #endif
 
@@ -120,8 +120,8 @@ void hoc_plprint(const char* s) {
     }
     if (hardplot && hpdev && text && strlen(s)) {
         hard_text_preamble();
-        IGNORE(fprintf(hpdev, "%s", s));
-        IGNORE(fflush(hpdev));
+        NRN_IGNORE(fprintf(hpdev, "%s", s));
+        NRN_IGNORE(fflush(hpdev));
     }
     if (text && s == buf) {
         hoc_plt(1, xlast, ylast - 20);
@@ -161,7 +161,7 @@ void initplot(void) {
     if (graphdev == SSUN) {
 /*
     if (graphdev == SSUN &&(cdev = fopen("/dev/ttyp4", "w")) == (FILE *)0) {
-        IGNORE(fprintf(stderr, "Can't open /dev/ttyp4 for TEK\n"));
+        NRN_IGNORE(fprintf(stderr, "Can't open /dev/ttyp4 for TEK\n"));
         cdev = stdout;
 */
 #endif /*NRNOC_X11*/
@@ -233,10 +233,10 @@ void hoc_plt(int mode, double x, double y) {
         Codraw_plt(mode, x, y);
     }
     if (hardplot && hpdev) {
-        IGNORE(fflush(hpdev));
+        NRN_IGNORE(fflush(hpdev));
     }
     if (console && cdev) {
-        IGNORE(fflush(cdev));
+        NRN_IGNORE(fflush(cdev));
     }
 }
 
@@ -248,8 +248,8 @@ static void tplot(int mode, double x, double y) {
     int hx, hy, ly, lx;
 
     if (graphdev == SEL) {
-        IGNORE(putc(ESC, cdev));
-        IGNORE(putc('1', cdev));
+        NRN_IGNORE(putc(ESC, cdev));
+        NRN_IGNORE(putc('1', cdev));
     }
     if (mode < 0) {
         switch (mode) {
@@ -257,41 +257,41 @@ static void tplot(int mode, double x, double y) {
         case -1: /* home cursor */
             switch (graphdev) {
             case ADM: /* to adm3a alpha mode */
-                IGNORE(putc(US, cdev));
-                IGNORE(putc(CAN, cdev));
+                NRN_IGNORE(putc(US, cdev));
+                NRN_IGNORE(putc(CAN, cdev));
                 break;
             case TEK4014:
             default:
-                IGNORE(putc(GS, cdev));
+                NRN_IGNORE(putc(GS, cdev));
                 hy = (((YHOME & 01777) >> 5) + 32);
                 ly = ((YHOME & 037) + 96);
                 hx = (((XHOME & 01777) >> 5) + 32);
                 lx = ((XHOME & 037) + 64);
-                IGNORE(fprintf(cdev, "%c%c%c%c", hy, ly, hx, lx));
-                IGNORE(putc(US, cdev));
+                NRN_IGNORE(fprintf(cdev, "%c%c%c%c", hy, ly, hx, lx));
+                NRN_IGNORE(putc(US, cdev));
                 break;
             }
             text = 0;
             return;
 
         case -2: /* to 4010 alpha mode */
-            IGNORE(putc(GS, cdev));
-            IGNORE(putc(US, cdev));
+            NRN_IGNORE(putc(GS, cdev));
+            NRN_IGNORE(putc(US, cdev));
             text = 1;
             return;
 
         case -3: /* erase, and go to alpha on ADM */
             switch (graphdev) {
             case ADM:
-                IGNORE(putc(GS, cdev));
-                IGNORE(putc(EM, cdev));
-                IGNORE(putc(US, cdev));
-                IGNORE(putc(CAN, cdev));
+                NRN_IGNORE(putc(GS, cdev));
+                NRN_IGNORE(putc(EM, cdev));
+                NRN_IGNORE(putc(US, cdev));
+                NRN_IGNORE(putc(CAN, cdev));
                 break;
             case TEK4014:
             default:
-                IGNORE(putc(ESC, cdev));
-                IGNORE(putc(014, cdev));
+                NRN_IGNORE(putc(ESC, cdev));
+                NRN_IGNORE(putc(014, cdev));
                 break;
             }
             text = 0;
@@ -300,10 +300,10 @@ static void tplot(int mode, double x, double y) {
     }
     switch (mode) {
     case 0: /* enter point mode */
-        /*IGNORE(putc(FS, cdev));
+        /*NRN_IGNORE(putc(FS, cdev));
         break;*/ /* no point mode on pure 4014 so plot vector of 0 length*/
     case 1: /* enter vector mode */
-        IGNORE(putc(GS, cdev));
+        NRN_IGNORE(putc(GS, cdev));
         break;
     }
     iy = y;
@@ -312,9 +312,9 @@ static void tplot(int mode, double x, double y) {
     ly = ((iy & 037) + 96);
     hx = (((ix & 01777) >> 5) + 32);
     lx = ((ix & 037) + 64);
-    IGNORE(fprintf(cdev, "%c%c%c%c", hy, ly, hx, lx));
+    NRN_IGNORE(fprintf(cdev, "%c%c%c%c", hy, ly, hx, lx));
     if (mode == 0) {
-        IGNORE(fprintf(cdev, "%c%c%c%c", hy, ly, hx, lx));
+        NRN_IGNORE(fprintf(cdev, "%c%c%c%c", hy, ly, hx, lx));
     }
     return;
 }
@@ -323,7 +323,7 @@ static char hardplot_filename[100];
 
 static void hardplot_file(const char* s) {
     if (hpdev) {
-        IGNORE(fclose(hpdev));
+        NRN_IGNORE(fclose(hpdev));
     }
     hpdev = (FILE*) 0;
     hpflag = 0;
@@ -336,7 +336,7 @@ static void hardplot_file(const char* s) {
             hpflag = 1;
             gdev = hpdev;
         } else {
-            IGNORE(fprintf(stderr, "Can't open %s for hardplot output\n", s));
+            NRN_IGNORE(fprintf(stderr, "Can't open %s for hardplot output\n", s));
         }
     } else {
         hardplot_filename[0] = '\0';
@@ -361,7 +361,7 @@ static char fig_text_preamble[100];
 
 static void hard_text_preamble(void) {
     if (hardplot == 2) {
-        IGNORE(fprintf(hpdev, "%s", fig_text_preamble));
+        NRN_IGNORE(fprintf(hpdev, "%s", fig_text_preamble));
         fig_text_preamble[0] = '\0';
     }
 }
@@ -371,7 +371,7 @@ static void Fig_preamble(void) {
 
     if (!hpdev)
         return;
-    IGNORE(fprintf(hpdev, "%s", fig_preamble));
+    NRN_IGNORE(fprintf(hpdev, "%s", fig_preamble));
 }
 
 void Fig_plt(int mode, double x, double y) {
@@ -394,7 +394,7 @@ void Fig_plt(int mode, double x, double y) {
 
     if (state == TEXT) {
         if (!fig_text_preamble[0]) {
-            IGNORE(fprintf(hpdev, "%s", text_postamble));
+            NRN_IGNORE(fprintf(hpdev, "%s", text_postamble));
         }
         state = 0;
         text = 0;
@@ -402,12 +402,12 @@ void Fig_plt(int mode, double x, double y) {
 
     if (mode < 0) {
         if (state == LINE2) {
-            IGNORE(fprintf(hpdev, "%s", line_postamble));
+            NRN_IGNORE(fprintf(hpdev, "%s", line_postamble));
         }
         text = 0;
         state = 0;
         if (mode == -2) {
-            IGNORE(Sprintf(fig_text_preamble, "%s %d %d ", text_preamble, SCX(oldx), SCY(oldy)));
+            NRN_IGNORE(Sprintf(fig_text_preamble, "%s %d %d ", text_preamble, SCX(oldx), SCY(oldy)));
             state = TEXT;
             text = 1;
             return;
@@ -421,16 +421,16 @@ void Fig_plt(int mode, double x, double y) {
             break;
         case 1:
             if (state == LINE2) {
-                IGNORE(fprintf(hpdev, "%s", line_postamble));
+                NRN_IGNORE(fprintf(hpdev, "%s", line_postamble));
             }
             state = LINE1;
             break;
         default:
             if (state == LINE1) {
-                IGNORE(fprintf(hpdev, "%s %.1f %.1f\n", line_preamble, SCXD(oldx), SCYD(oldy)));
+                NRN_IGNORE(fprintf(hpdev, "%s %.1f %.1f\n", line_preamble, SCXD(oldx), SCYD(oldy)));
                 state = LINE2;
             }
-            IGNORE(fprintf(hpdev, " %.1f %.1f\n", SCXD(x), SCYD(y)));
+            NRN_IGNORE(fprintf(hpdev, " %.1f %.1f\n", SCXD(x), SCYD(y)));
             break;
         }
         oldx = x;
@@ -446,18 +446,18 @@ void hplot(int mode, double x, double y) {
         return;
     if (hpflag == 0) {
         hpflag = 1;
-        IGNORE(fprintf(hpdev, "%c.Y%c.I81;;17:%c.N;19:SC 0,1023,0,780;SP 1;", ESC, ESC, ESC));
+        NRN_IGNORE(fprintf(hpdev, "%c.Y%c.I81;;17:%c.N;19:SC 0,1023,0,780;SP 1;", ESC, ESC, ESC));
     }
 
     if (txt == 1) {
-        IGNORE(fprintf(hpdev, "%c;", ETX));
+        NRN_IGNORE(fprintf(hpdev, "%c;", ETX));
         txt = 0;
         text = 0;
     }
     if (mode < 0)
         switch (mode) {
         case -2:
-            IGNORE(fprintf(hpdev, "LB"));
+            NRN_IGNORE(fprintf(hpdev, "LB"));
             txt = 1;
             text = 1;
             return;
@@ -466,10 +466,10 @@ void hplot(int mode, double x, double y) {
             txt = 0;
             text = 0;
             hpflag = 0;
-            IGNORE(fseek(hpdev, 0L, 0));
+            NRN_IGNORE(fseek(hpdev, 0L, 0));
             return;
         default:
-            IGNORE(fprintf(hpdev, "PU;SP;%c.Z", ESC));
+            NRN_IGNORE(fprintf(hpdev, "PU;SP;%c.Z", ESC));
             txt = 0;
             text = 0;
             hpflag = 0;
@@ -477,13 +477,13 @@ void hplot(int mode, double x, double y) {
         }
     switch (mode) {
     case 0:
-        IGNORE(fprintf(hpdev, "PU %8.2f,%8.2f;PD;", x, y));
+        NRN_IGNORE(fprintf(hpdev, "PU %8.2f,%8.2f;PD;", x, y));
         return;
     case 1:
-        IGNORE(fprintf(hpdev, "PU %8.2f,%8.2f;", x, y));
+        NRN_IGNORE(fprintf(hpdev, "PU %8.2f,%8.2f;", x, y));
         return;
     default:
-        IGNORE(fprintf(hpdev, "PD %8.2f,%8.2f;", x, y));
+        NRN_IGNORE(fprintf(hpdev, "PD %8.2f,%8.2f;", x, y));
         return;
     }
 }
@@ -495,53 +495,53 @@ void vtplot(int mode, double x, double y) {
     int vtx, vty;
 
     if (mode < 0) {
-        IGNORE(fprintf(gdev, "%c\\%c", ESC, ESC));
+        NRN_IGNORE(fprintf(gdev, "%c\\%c", ESC, ESC));
         switch (mode) {
         default:
         case -1: /* vt125 alpha mode */
             break;
 
         case -2: /* graphics text mode */
-            IGNORE(fprintf(gdev, "P1pt\'"));
+            NRN_IGNORE(fprintf(gdev, "P1pt\'"));
             vtgrph = 2;
             return;
 
         case -3: /* erase graphics */
-            IGNORE(fprintf(gdev, "P1pS(E)"));
+            NRN_IGNORE(fprintf(gdev, "P1pS(E)"));
             break;
 
         case -4: /* erase text */
-            IGNORE(fprintf(gdev, "[2J"));
+            NRN_IGNORE(fprintf(gdev, "[2J"));
             break;
 
         case -5:                                          /* switch to HP plotter */
-            IGNORE(fprintf(gdev, "%c\\%c[5i", ESC, ESC)); /* esc and open port */
+            NRN_IGNORE(fprintf(gdev, "%c\\%c[5i", ESC, ESC)); /* esc and open port */
             vtgrph = 0;
             hplot(-5, 0., 0.);
             return;
         }
-        IGNORE(fprintf(gdev, "%c\\", ESC));
+        NRN_IGNORE(fprintf(gdev, "%c\\", ESC));
         vtgrph = 0;
         return;
     }
 
     if (vtgrph == 2) {
-        IGNORE(fprintf(gdev, "%c\\", ESC));
+        NRN_IGNORE(fprintf(gdev, "%c\\", ESC));
         vtgrph = 0;
     }
     if (vtgrph == 0) {
-        IGNORE(fprintf(gdev, "%cP1p", ESC));
+        NRN_IGNORE(fprintf(gdev, "%cP1p", ESC));
         vtgrph = 1;
     }
     vtx = (int) ((767. / 1023.) * x);
     vty = (int) (479. - (479 / 779.) * y);
     if (mode >= 2) {
-        IGNORE(fprintf(gdev, "v[%d,%d]", vtx, vty));
+        NRN_IGNORE(fprintf(gdev, "v[%d,%d]", vtx, vty));
         return;
     }
-    IGNORE(fprintf(gdev, "p[%d,%d]", vtx, vty));
+    NRN_IGNORE(fprintf(gdev, "p[%d,%d]", vtx, vty));
     if (mode == 0)
-        IGNORE(fprintf(gdev, "v[]"));
+        NRN_IGNORE(fprintf(gdev, "v[]"));
     return;
 }
 #endif /*VT*/
@@ -575,7 +575,7 @@ TL(1);TV(4);TA(0);TH(0.2);\n";
 
     if (!hpdev)
         return;
-    IGNORE(fprintf(hpdev, "%s", codraw_preamble));
+    NRN_IGNORE(fprintf(hpdev, "%s", codraw_preamble));
     codraw_npoint = 0;
     if (!codraw_pointy) {
         codraw_pointx = (float*) hoc_Emalloc(CODRAW_MAXPOINT * sizeof(float));
@@ -602,7 +602,7 @@ void Codraw_plt(int mode, double x, double y) {
         return;
 
     if (state == TEXT) {
-        IGNORE(fprintf(hpdev, "');\n"));
+        NRN_IGNORE(fprintf(hpdev, "');\n"));
         state = 0;
         text = 0;
     }
@@ -614,13 +614,13 @@ void Codraw_plt(int mode, double x, double y) {
         text = 0;
         state = 0;
         if (mode == -2) {
-            IGNORE(fprintf(hpdev, "TT(%.2f,%.2f,'", SCXD(oldx), SCYD(oldy)));
+            NRN_IGNORE(fprintf(hpdev, "TT(%.2f,%.2f,'", SCXD(oldx), SCYD(oldy)));
             state = TEXT;
             text = 1;
             return;
         }
         if (mode == -3) {
-            IGNORE(fseek(hpdev, 0L, 0));
+            NRN_IGNORE(fseek(hpdev, 0L, 0));
             Codraw_preamble();
         }
     } else {
@@ -659,14 +659,14 @@ static void codraw_line() {
         codraw_npoint = 0;
         return;
     }
-    IGNORE(fprintf(hpdev, "LL(%d", codraw_npoint));
+    NRN_IGNORE(fprintf(hpdev, "LL(%d", codraw_npoint));
     for (i = 0; i < codraw_npoint; i++) {
         if (((i + 1) % 8) == 0) {
-            IGNORE(fprintf(hpdev, "\n"));
+            NRN_IGNORE(fprintf(hpdev, "\n"));
         }
-        IGNORE(fprintf(hpdev, ",%.2f,%.2f", SCXD(codraw_pointx[i]), SCYD(codraw_pointy[i])));
+        NRN_IGNORE(fprintf(hpdev, ",%.2f,%.2f", SCXD(codraw_pointx[i]), SCYD(codraw_pointy[i])));
     }
-    IGNORE(fprintf(hpdev, ");\n"));
+    NRN_IGNORE(fprintf(hpdev, ");\n"));
     if (codraw_npoint == CODRAW_MAXPOINT) {
         codraw_npoint = 1;
         codraw_pointx[0] = codraw_pointx[CODRAW_MAXPOINT - 1];

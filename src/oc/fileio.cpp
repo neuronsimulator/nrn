@@ -72,7 +72,7 @@ void hoc_ropen(void) /* open file for reading */
         fname = "";
     d = 1.;
     if (!nrn_fw_eq(hoc_frin, stdin))
-        IGNORE(nrn_fw_fclose(hoc_frin));
+        NRN_IGNORE(nrn_fw_fclose(hoc_frin));
     hoc_frin = nrn_fw_set_stdin();
     if (fname[0] != 0) {
         if ((hoc_frin = nrn_fw_fopen(fname, "r")) == (NrnFILEWrap*) 0) {
@@ -100,7 +100,7 @@ void hoc_wopen(void) /* open file for writing */
         fname = "";
     d = 1.;
     if (hoc_fout != stdout) {
-        IGNORE(fclose(hoc_fout));
+        NRN_IGNORE(fclose(hoc_fout));
     }
     hoc_fout = stdout;
     if (fname[0] != 0) {
@@ -217,10 +217,10 @@ int hoc_xopen1(const char* name, const char* rcs) {
     strcpy(hoc_xopen_file_, fname.c_str());
     if (hoc_fin) {
         hoc_audit_from_xopen1(fname.c_str(), rcs);
-        IGNORE(hoc_xopen_run((Symbol*) 0, (char*) 0));
+        NRN_IGNORE(hoc_xopen_run((Symbol*) 0, (char*) 0));
     }
     if (hoc_fin && !nrn_fw_eq(hoc_fin, stdin)) {
-        IGNORE(nrn_fw_fclose(hoc_fin));
+        NRN_IGNORE(nrn_fw_fclose(hoc_fin));
     }
     hoc_fin = savfin;
     hoc_pipeflag = savpipflag;

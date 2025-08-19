@@ -100,7 +100,7 @@ void nrn_possible_mismatched_arch(const char* libname) {
 
 #define CHECK(name)                            \
     if (hoc_lookup(name) != (Symbol*) 0) {     \
-        IGNORE(fprintf(stderr, CHKmes, name)); \
+        NRN_IGNORE(fprintf(stderr, CHKmes, name)); \
         nrn_exit(1);                           \
     }
 
@@ -321,7 +321,7 @@ void hoc_last_init(void) {
         if (nrn_nobanner_ == 0) {
             Fprintf(stderr, "%s\n", nrn_version(1));
             Fprintf(stderr, "%s\n", banner);
-            IGNORE(fflush(stderr));
+            NRN_IGNORE(fflush(stderr));
         }
     memb_func_size_ = 30;  // initial allocation size
     memb_list.reserve(memb_func_size_);
@@ -550,7 +550,7 @@ void register_mech_vars(const char** var_buffers,
                 varname.erase(subscript);
             }
             if ((var_symbol = hoc_lookup(varname.c_str()))) {
-                IGNORE(fprintf(stderr, CHKmes, varname.c_str()));
+                NRN_IGNORE(fprintf(stderr, CHKmes, varname.c_str()));
             } else {
                 var_symbol = hoc_install(varname.c_str(), RANGEVAR, 0.0, &hoc_symlist);
                 var_symbol->subtype = modltype;

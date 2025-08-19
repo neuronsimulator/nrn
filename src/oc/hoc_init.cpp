@@ -254,7 +254,7 @@ void hoc_init(void) /* install constants and built-ins table */
     extern void hoc_init_space(void);
     hoc_init_space();
     for (i = 0; keywords[i].name; i++)
-        IGNORE(hoc_install(keywords[i].name, keywords[i].kval, 0.0, &hoc_symlist));
+        NRN_IGNORE(hoc_install(keywords[i].name, keywords[i].kval, 0.0, &hoc_symlist));
     for (i = 0; consts[i].name; i++) {
         s = hoc_install(consts[i].name, UNDEF, consts[i].cval, &hoc_symlist);
         s->type = VAR;
