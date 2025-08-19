@@ -98,10 +98,10 @@ void nrn_possible_mismatched_arch(const char* libname) {
 
 #include "nrnwrap_dlfcn.h"
 
-#define CHECK(name)                            \
-    if (hoc_lookup(name) != (Symbol*) 0) {     \
+#define CHECK(name)                                \
+    if (hoc_lookup(name) != (Symbol*) 0) {         \
         NRN_IGNORE(fprintf(stderr, CHKmes, name)); \
-        nrn_exit(1);                           \
+        nrn_exit(1);                               \
     }
 
 static char CHKmes[] = "The user defined name, %s, already exists\n";

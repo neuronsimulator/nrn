@@ -133,7 +133,7 @@ void hoc_Sred(void) {
 int hoc_sred(const char* prompt, char* defalt, char* charlist) {
     char istr[80], c[2], instring[40], *result;
 
-    for (;;) {                                              /* cycle until done */
+    for (;;) {                                                  /* cycle until done */
         NRN_IGNORE(fprintf(stderr, "%s (%s)", prompt, defalt)); /* print prompt */
 #ifdef WIN32
         if (gets_s(istr, 80) != NULL) {
