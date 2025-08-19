@@ -355,7 +355,7 @@ endif()
 # Find required packages
 # =============================================================================
 find_package(BISON REQUIRED)
-find_package(FLEX 2.6 REQUIRED)
+find_package(FLEX 2.6)
 
 # FIXME CMake 3.18 introduced a REQUIRED parameter
 find_program(BASH_EXECUTABLE NAMES bash bash.exe)
