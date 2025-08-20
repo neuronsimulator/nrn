@@ -99,7 +99,7 @@ static char array_interface_typestr[5] = "|f8";
 
 // static pointer to neurons.doc.get_docstring function initialized at import
 // time
-static PyObject* pfunc_get_docstring = nullptr;
+static nb::callable pfunc_get_docstring;
 
 // Methods unique to the HocTopLevelInterpreter type of HocObject
 // follow the add_methods implementation of python3.6.2 in typeobject.c
@@ -279,9 +279,9 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
 
     // if subtype is a subclass of some NEURON class, then one of its
     // tp_mro's is in sym_to_type_map
-    for (Py_ssize_t i = 0; i < PyTuple_Size(subtype->tp_mro); i++) {
-        PyObject* item = PyTuple_GetItem(subtype->tp_mro, i);
-        auto symbol_result = type_to_sym_map.find((PyTypeObject*) item);
+    auto mro_tuple = nb::borrow(subtype->tp_mro);
+    for (auto item: mro_tuple) {
+        auto symbol_result = type_to_sym_map.find((PyTypeObject*) item.ptr());
         if (symbol_result != type_to_sym_map.end()) {
             hbase = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
             hbase->type_ = PyHoc::HocFunction;
@@ -623,7 +623,7 @@ PyObject* nrnpy_hoc_pop(const char* mes) {
     Object** d;
     switch (hoc_stack_type()) {
     case STRING:
-        result = nb::steal(Py_BuildValue("s", *hoc_strpop()));
+        result = nb::cast(*hoc_strpop());
         break;
     case VAR: {
         // remove mes arg when test coverage development completed
@@ -632,11 +632,11 @@ PyObject* nrnpy_hoc_pop(const char* mes) {
         if (nrn_chk_data_handle(px)) {
             // unfortunately, this is nonsense if NMODL POINTER is pointing
             // to something other than a double.
-            result = nb::steal(Py_BuildValue("d", *px));
+            result = nb::cast(*px);
         }
     } break;
     case NUMBER:
-        result = nb::steal(Py_BuildValue("d", hoc_xpop()));
+        result = nb::cast(hoc_xpop());
         break;
     case OBJECTVAR:
     case OBJECTTMP:
@@ -980,7 +980,7 @@ int nrn_is_hocobj_ptr(PyObject* po, neuron::container::data_handle<double>& pd) 
 }
 
 static void symlist2dict(Symlist* sl, PyObject* dict) {
-    auto nn = nb::steal(Py_BuildValue(""));
+    auto nn = nb::cast(nb::tuple());
     for (Symbol* s = sl->first; s; s = s->next) {
         if (s->type == UNDEF) {
             continue;
@@ -996,23 +996,19 @@ static void symlist2dict(Symlist* sl, PyObject* dict) {
 }
 
 static int setup_doc_system() {
-    PyObject* pdoc;
-    if (pfunc_get_docstring) {
+    if (pfunc_get_docstring.is_valid()) {
         return 1;
     }
-    pdoc = PyImport_ImportModule("neuron.doc");
-    if (!pdoc) {
-        PyErr_SetString(PyExc_ImportError, "Failed to import neuron.doc documentation module.");
+    try {
+        nb::module_ doc_module = nb::module_::import_("neuron.doc");
+        pfunc_get_docstring = doc_module.attr("get_docstring");
+        return 1;
+    } catch (const std::exception&) {
+        PyErr_SetString(
+            PyExc_ImportError,
+            "Failed to import neuron.doc documentation module or get_docstring attribute.");
         return 0;
     }
-    pfunc_get_docstring = PyObject_GetAttrString(pdoc, "get_docstring");
-
-    if (!pfunc_get_docstring) {
-        PyErr_SetString(PyExc_AttributeError,
-                        "neuron.doc module does not have attribute 'get_docstring'!");
-        return 0;
-    }
-    return 1;
 }
 
 // Returns a new reference.
@@ -1036,7 +1032,7 @@ static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname) {
                 docobj = nb::make_tuple("", "");
             }
 
-            nb::object result = nb::steal(PyObject_CallObject(pfunc_get_docstring, docobj.ptr()));
+            nb::object result = pfunc_get_docstring(*docobj);
             return result.release().ptr();
         } else {
             return nullptr;
@@ -1193,7 +1189,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                     docobj = nb::make_tuple("", "");
                 }
 
-                result = nb::steal(PyObject_CallObject(pfunc_get_docstring, docobj.ptr()));
+                result = pfunc_get_docstring(*docobj);
                 return result.release().ptr();
             } else {
                 return nullptr;
@@ -1299,7 +1295,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
     case VAR:  // double*
         if (!is_array(*sym)) {
             if (sym->subtype == USERINT) {
-                result = nb::steal(Py_BuildValue("i", *(sym->u.pvalint)));
+                result = nb::cast(*(sym->u.pvalint));
                 break;
             }
             if (sym->subtype == USERPROPERTY) {
@@ -1309,9 +1305,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                 }
                 if (!isptr) {
                     if (sym->u.rng.type == CABLESECTION) {
-                        result = nb::steal(Py_BuildValue("d", cable_prop_eval(sym)));
+                        result = nb::cast(cable_prop_eval(sym));
                     } else {
-                        result = nb::steal(Py_BuildValue("i", int(cable_prop_eval(sym))));
+                        result = nb::cast(int(cable_prop_eval(sym)));
                     }
                     break;
                 } else if (sym->u.rng.type != CABLESECTION) {
@@ -1324,7 +1320,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             if (isptr) {
                 result = nb::steal(nrn_hocobj_ptr(hoc_pxpop()));
             } else {
-                result = nb::steal(Py_BuildValue("d", *hoc_pxpop()));
+                result = nb::cast(*hoc_pxpop());
             }
         } else {
             result = nb::steal((PyObject*) intermediate(self, sym, -1));
@@ -1341,7 +1337,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         pcsav = save_pc(&fc);
         hoc_push_string();
         hoc_pc = pcsav;
-        result = nb::steal(Py_BuildValue("s", *hoc_strpop()));
+        result = nb::cast(*hoc_strpop());
     } break;
     case OBJECTVAR:  // Object*
         if (!is_array(*sym)) {
@@ -1943,7 +1939,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
             try {
                 auto const h = po->u.px_.next_array_element(ix);
                 if (nrn_chk_data_handle(h)) {
-                    result = nb::steal(Py_BuildValue("d", *h));
+                    result = nb::cast(*h);
                 }
             } catch (std::exception const& e) {
                 // next_array_element throws if ix is invalid
@@ -1951,11 +1947,11 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                 return nullptr;
             }
         } else if (po->type_ == PyHoc::HocRefNum) {
-            result = nb::steal(Py_BuildValue("d", po->u.x_));
+            result = nb::cast(po->u.x_);
         } else if (po->type_ == PyHoc::HocRefStr) {
-            result = nb::steal(Py_BuildValue("s", po->u.s_));
+            result = nb::cast(po->u.s_);
         } else if (po->type_ == PyHoc::HocRefPStr) {
-            result = nb::steal(Py_BuildValue("s", *po->u.pstr_));
+            result = nb::cast(*po->u.pstr_);
         } else {
             result = nb::steal(nrnpy_ho2po(po->u.ho_));
         }
@@ -2047,7 +2043,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
                     assert(!po->u.px_);
                     result = nb::steal(nrn_hocobj_ptr(hoc_pxpop()));
                 } else {
-                    result = nb::steal(Py_BuildValue("d", *hoc_pxpop()));
+                    result = nb::cast(*hoc_pxpop());
                 }
                 break;
             case OBJECTVAR:
@@ -2273,7 +2269,7 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
         if (nrnpy_numbercheck(pa)) {
             result->type_ = PyHoc::HocRefNum;
             auto pn = nb::steal(PyNumber_Float(pa));
-            result->u.x_ = PyFloat_AsDouble(pn.ptr());
+            result->u.x_ = nb::cast<double>(pn);
         } else if (is_python_string(pa)) {
             result->type_ = PyHoc::HocRefStr;
             result->u.s_ = 0;
@@ -2377,7 +2373,7 @@ static PyObject* hocobj_vptr(PyObject* pself, PyObject* args) {
     Object* ho = ((PyHocObject*) pself)->ho_;
     PyObject* po = nullptr;
     if (ho) {
-        po = Py_BuildValue("O", PyLong_FromVoidPtr(ho));
+        po = PyLong_FromVoidPtr(ho);
     }
     if (!po) {
         PyErr_SetString(PyExc_TypeError, "HocObject does not wrap a Hoc Object");
@@ -2507,25 +2503,23 @@ static PyObject* hocobj_same_safe(PyHocObject* pself, PyObject* args) {
 static char* double_array_interface(PyObject* po, long& stride) {
     void* data = 0;
     if (PyObject_HasAttrString(po, "__array_interface__")) {
-        auto ai = nb::steal(PyObject_GetAttrString(po, "__array_interface__"));
-        auto typestr = Py2NRNString::as_ascii(PyDict_GetItemString(ai.ptr(), "typestr"));
+        auto ai = nb::borrow(po).attr("__array_interface__");
+        auto typestr = Py2NRNString::as_ascii(ai["typestr"].ptr());
         if (strcmp(typestr.c_str(), array_interface_typestr) == 0) {
-            data = PyLong_AsVoidPtr(PyTuple_GetItem(PyDict_GetItemString(ai.ptr(), "data"), 0));
+            auto data_tuple = ai["data"];
+            data = PyLong_AsVoidPtr(PyTuple_GetItem(data_tuple.ptr(), 0));
             // printf("double_array_interface idata = %ld\n", idata);
             if (PyErr_Occurred()) {
                 data = 0;
             }
-            PyObject* pstride = PyDict_GetItemString(ai.ptr(), "strides");
-            if (pstride == Py_None) {
+            auto pstride = ai["strides"];
+            if (pstride.is_none()) {
                 stride = 8;
-            } else if (PyTuple_Check(pstride)) {
-                if (PyTuple_Size(pstride) == 1) {
-                    PyObject* psize = PyTuple_GetItem(pstride, 0);
-                    if (PyLong_Check(psize)) {
-                        stride = PyLong_AsLong(psize);
-                    } else if (PyInt_Check(psize)) {
-                        stride = PyInt_AS_LONG(psize);
-
+            } else if (PyTuple_Check(pstride.ptr())) {
+                if (PyTuple_Size(pstride.ptr()) == 1) {
+                    nb::object psize = pstride[0];
+                    if (nb::isinstance<nb::int_>(psize)) {
+                        stride = nb::cast<long>(psize);
                     } else {
                         PyErr_SetString(PyExc_TypeError,
                                         "array_interface stride element of invalid type.");
@@ -2544,13 +2538,14 @@ static char* double_array_interface(PyObject* po, long& stride) {
 }
 
 
-inline double pyobj_to_double_or_fail(PyObject* obj, long obj_id) {
-    if (!PyNumber_Check(obj)) {
-        char buf[50];
-        Sprintf(buf, "item %d is not a valid number", obj_id);
-        hoc_execerror(buf, 0);
+inline double pyobj_to_double_or_fail(const nb::object& obj, long obj_id) {
+    try {
+        return nb::cast<double>(obj);
+    } catch (const nb::cast_error&) {
+        std::string buf = "item " + std::to_string(obj_id) + " is not a valid number";
+        hoc_execerror(buf.c_str(), nullptr);
+        return 0.0;
     }
-    return PyFloat_AsDouble(obj);
 }
 
 static IvocVect* nrnpy_vec_from_python(void* v) {
@@ -2571,7 +2566,7 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
         }
         long i = 0;
         for (nb::handle item: po) {
-            hv->push_back(pyobj_to_double_or_fail(item.ptr(), i));
+            hv->push_back(pyobj_to_double_or_fail(nb::borrow(item), i));
             i++;
         }
         return hv;
@@ -2595,11 +2590,11 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
     if (PyList_Check(po.ptr())) {
         nb::list list_obj{std::move(po)};
         for (long i = 0; i < size; ++i) {
-            x[i] = pyobj_to_double_or_fail(list_obj[i].ptr(), i);
+            x[i] = pyobj_to_double_or_fail(list_obj[i], i);
         }
     } else {
         for (long i = 0; i < size; ++i) {
-            x[i] = pyobj_to_double_or_fail(po[i].ptr(), i);
+            x[i] = pyobj_to_double_or_fail(po[i], i);
         }
     }
     return hv;
@@ -2674,7 +2669,7 @@ extern "C" NRN_EXPORT int nrnpy_set_gui_callback(PyObject* new_gui_callback) {
 
 static double object_to_double_(Object* obj) {
     auto pyobj = nb::steal(nrnpy_ho2po(obj));
-    return PyFloat_AsDouble(pyobj.ptr());
+    return nb::cast<double>(pyobj);
 }
 
 // Returns a new reference.
@@ -2700,7 +2695,7 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
     }
     narg--;
     auto args = nb::steal(PyTuple_New(narg + 3));
-    auto pyname = nb::steal(PyString_FromString(name));
+    auto pyname = nb::cast(name);
     PyTuple_SetItem(args.ptr(), 0, pyname.release().ptr());
     for (int iarg = 0; iarg < narg; iarg++) {
         const int iiarg = iarg + 1;
@@ -2721,11 +2716,11 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
                 Py_INCREF(py_ptr);
                 PyTuple_SetItem(args.ptr(), iarg + 3, py_ptr);
             } else {
-                auto py_str = nb::steal(PyString_FromString(gargstr(iiarg)));
+                auto py_str = nb::cast(gargstr(iiarg));
                 PyTuple_SetItem(args.ptr(), iarg + 3, py_str.release().ptr());
             }
         } else if (hoc_is_double_arg(iiarg)) {
-            auto py_double = nb::steal(PyFloat_FromDouble(*getarg(iiarg)));
+            auto py_double = nb::cast(*getarg(iiarg));
             PyTuple_SetItem(args.ptr(), iarg + 3, py_double.release().ptr());
         }
     }
@@ -2753,7 +2748,7 @@ static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_
         // if there was an error, display it and return 0.
         // It's not a great solution, but it beats segfaulting
         PyErr_Print();
-        po = nb::steal(PyLong_FromLong(0));
+        po = nb::cast(0L);
     }
     return po.release().ptr();
 }
@@ -2843,7 +2838,7 @@ static Object** nrnpy_vec_to_python(void* v) {
         }
     } else if (PyList_Check(po.ptr())) {  // PySequence_SetItem does DECREF of old items
         for (int i = 0; i < size; ++i) {
-            auto pn = nb::steal(PyFloat_FromDouble(x[i]));
+            auto pn = nb::cast(x[i]);
             if (!pn || PyList_SetItem(po.ptr(), i, pn.release().ptr()) == -1) {
                 char buf[50];
                 Sprintf(buf, "%d of %d", i, size);
@@ -2852,7 +2847,7 @@ static Object** nrnpy_vec_to_python(void* v) {
         }
     } else {  // assume PySequence_SetItem works
         for (int i = 0; i < size; ++i) {
-            auto pn = nb::steal(PyFloat_FromDouble(x[i]));
+            auto pn = nb::cast(x[i]);
             if (!pn || PySequence_SetItem(po.ptr(), i, pn.ptr()) == -1) {
                 char buf[50];
                 Sprintf(buf, "%d of %d", i, size);
@@ -3100,7 +3095,7 @@ static PyMethodDef toplevel_methods[] = {
 static void add2topdict(PyObject* dict) {
     for (PyMethodDef* meth = toplevel_methods; meth->ml_name; meth++) {
         int err;
-        auto nn = nb::steal(Py_BuildValue("s", meth->ml_doc));
+        auto nn = nb::cast(meth->ml_doc);
         if (!nn) {
             return;
         }
@@ -3197,29 +3192,29 @@ static PyObject* py_hocobj_div(PyObject* obj1, PyObject* obj2) {
 char get_endian_character() {
     char endian_character = 0;
 
-    auto psys = nb::steal(PyImport_ImportModule("sys"));
+    auto psys = nb::module_::import_("sys");
     if (!psys) {
         PyErr_SetString(PyExc_ImportError, "Failed to import sys to determine system byteorder.");
         return 0;
     }
 
-    auto pbo = nb::steal(PyObject_GetAttrString(psys.ptr(), "byteorder"));
-    if (!pbo) {
-        PyErr_SetString(PyExc_AttributeError, "sys module does not have attribute 'byteorder'!");
-        return 0;
-    }
+    try {
+        auto pbo = psys.attr("byteorder");
+        auto byteorder = Py2NRNString::as_ascii(pbo.ptr());
+        if (!byteorder.is_valid()) {
+            return 0;
+        }
 
-    auto byteorder = Py2NRNString::as_ascii(pbo.ptr());
-    if (!byteorder.is_valid()) {
-        return 0;
-    }
-
-    if (strcmp(byteorder.c_str(), "little") == 0) {
-        endian_character = '<';
-    } else if (strcmp(byteorder.c_str(), "big") == 0) {
-        endian_character = '>';
-    } else {
-        PyErr_SetString(PyExc_RuntimeError, "Unknown system native byteorder.");
+        if (strcmp(byteorder.c_str(), "little") == 0) {
+            endian_character = '<';
+        } else if (strcmp(byteorder.c_str(), "big") == 0) {
+            endian_character = '>';
+        } else {
+            PyErr_SetString(PyExc_RuntimeError, "Unknown system native byteorder.");
+            return 0;
+        }
+    } catch (const nb::python_error&) {
+        PyErr_SetString(PyExc_AttributeError, "sys module does not have attribute byteorder");
         return 0;
     }
     return endian_character;
@@ -3273,7 +3268,7 @@ static int get_nrncore_opt_value(const char* option) {
         if (module) {
             auto val = nb::steal(PyObject_GetAttrString(module, option));
             if (val) {
-                long enable = PyLong_AsLong(val.ptr());
+                long enable = nb::cast<long>(val);
                 if (enable != -1) {
                     return enable;
                 }
@@ -3308,24 +3303,22 @@ static char* nrncore_arg(double tstop) {
     if (modules) {
         PyObject* module = PyDict_GetItemString(modules, "neuron.coreneuron");
         if (module) {
-            auto callable = nb::steal(PyObject_GetAttrString(module, "nrncore_arg"));
-            if (callable) {
-                auto ts = nb::steal(Py_BuildValue("(d)", tstop));
-                if (ts) {
-                    auto arg = nb::steal(PyObject_CallObject(callable.ptr(), ts.ptr()));
-                    if (arg) {
-                        auto str = Py2NRNString::as_ascii(arg.ptr());
-                        if (!str.is_valid()) {
-                            Py2NRNString::set_pyerr(
-                                PyExc_TypeError,
-                                "neuron.coreneuron.nrncore_arg() must return an ascii string");
-                            return nullptr;
-                        }
-                        if (strlen(str.c_str()) > 0) {
-                            return strdup(str.c_str());
-                        }
-                    }
+            try {
+                auto callable = nb::borrow(module).attr("nrncore_arg");
+                auto ts = nb::cast(nb::make_tuple(tstop));
+                auto arg = callable(*ts);
+                auto str = Py2NRNString::as_ascii(arg.ptr());
+                if (!str.is_valid()) {
+                    Py2NRNString::set_pyerr(
+                        PyExc_TypeError,
+                        "neuron.coreneuron.nrncore_arg() must return an ascii string");
+                    return nullptr;
                 }
+                if (strlen(str.c_str()) > 0) {
+                    return strdup(str.c_str());
+                }
+            } catch (const std::exception&) {
+                // ignore errors and fall through to return nullptr
             }
         }
     }
@@ -3511,7 +3504,7 @@ static double nrnpy_call_func_(Object* obj, double x) {
     if (!PyNumber_Check(result.ptr())) {
         hoc_execerror("Expected a numeric result from Python function", nullptr);
     }
-    double value = PyFloat_AsDouble(result.ptr());
+    double value = nb::cast<double>(result);
     if (PyErr_Occurred()) {
         hoc_execerror("Failed to convert result to float", nullptr);
     }
