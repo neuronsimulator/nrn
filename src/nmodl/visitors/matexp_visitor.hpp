@@ -2,7 +2,7 @@
  * Copyright 2025 David McDougall
  * See the top-level LICENSE file for details.
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #pragma once
@@ -12,7 +12,6 @@
  * \brief \copybrief nmodl::visitor::MatexpVisitor
  */
 
-#include "ast/ast.hpp"
 #include "symtab/symbol.hpp"
 #include "visitors/ast_visitor.hpp"
 

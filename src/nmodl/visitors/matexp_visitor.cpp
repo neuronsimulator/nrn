@@ -2,16 +2,15 @@
  * Copyright 2025 David McDougall
  * See the top-level LICENSE file for details.
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "visitors/matexp_visitor.hpp"
 
+#include "ast/all.hpp"
 #include "codegen/codegen_naming.hpp"
-#include "lexer/token_mapping.hpp"
 #include "utils/logger.hpp"
 #include "visitors/visitor_utils.hpp"
-#include "solver/solver.hpp"
 
 namespace nmodl {
 namespace visitor {
@@ -52,11 +51,11 @@ void MatexpVisitor::visit_program(ast::Program& node) {
     for (const auto& block: solved_blocks) {
         node.emplace_back_node(block);
     }
-    // For the sake of portability, inline the matrix exponential function
+    // Include the matrix exponential function
     const auto& blocks = node.get_blocks();
-    const auto& matexp = std::make_shared<ast::Verbatim>(
-        std::make_shared<ast::String>(nmodl::solvers::matexp_h));
-    node.insert_node(blocks.begin(), matexp);
+    const auto& matexp_impl = std::make_shared<ast::Verbatim>(std::make_shared<ast::String>(
+        "#undef g \n #undef F \n #undef t \n #include <unsupported/Eigen/MatrixFunctions>\n"));
+    node.insert_node(blocks.begin(), matexp_impl);
     // Remove solved KINETIC blocks
     for (auto iter = blocks.begin(); iter != blocks.end(); iter++) {
         if ((*iter)->is_kinetic_block()) {
@@ -174,7 +173,7 @@ void MatexpVisitor::solve_kinetic_block(const ast::KineticBlock& node, bool stea
         }
     }
     if (conserve_statements.size() > 1) {
-        logger->error("MatexpVisitor :: Error: multiple CONSERVE statements unsupported");
+        logger->error("MatexpVisitor :: Error : multiple CONSERVE statements unsupported");
     }
     //
     std::string conserve_cpp = "";
@@ -279,21 +278,20 @@ void MatexpVisitor::visit_reaction_statement(ast::ReactionStatement& node) {
     const std::string jb_dst = "nmodl_eigen_j[" + std::to_string(jb_dst_idx) + "]";
     const std::string kf_nmodl = "(" + to_nmodl(kf) + ")";
     const std::string kb_nmodl = "(" + to_nmodl(kb) + ")";
-    // Create two new statements assigning to the Jacobian matrix.
+    // Create four new statements assigning to the Jacobian matrix.
     const auto& jf_n = create_statement(jf_src + " = " + jf_src + " - " + kf_nmodl + " * " + dt);
     const auto& jf_p = create_statement(jf_dst + " = " + jf_dst + " + " + kf_nmodl + " * " + dt);
     const auto& jb_n = create_statement(jb_src + " = " + jb_src + " - " + kb_nmodl + " * " + dt);
     const auto& jb_p = create_statement(jb_dst + " = " + jb_dst + " + " + kb_nmodl + " * " + dt);
-    // Replace this statement with the two new statements.
+    // Replace this statement with the four new statements.
     const auto& statement_block = node.get_parent()->get_parent()->get_statement_block();
     const auto& statements = statement_block->get_statements();
     for (int index = 0; index < statements.size(); index++) {
         if (statements[index].get() == &node) {
             statement_block->erase_statement(std::begin(statements) + index);
-            statement_block->insert_statement(std::begin(statements) + index++, jf_n);
-            statement_block->insert_statement(std::begin(statements) + index++, jf_p);
-            statement_block->insert_statement(std::begin(statements) + index++, jb_n);
-            statement_block->insert_statement(std::begin(statements) + index++, jb_p);
+            for (const auto& stmt: {jf_n, jf_p, jb_n, jb_p}) {
+                statement_block->insert_statement(std::begin(statements) + index++, stmt);
+            }
             return;
         }
     }
