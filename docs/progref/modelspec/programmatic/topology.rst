@@ -1107,37 +1107,6 @@ Creating and connecting sections
 
 
 
-.. function:: parent_node
-
-    .. tab:: Python
-
-        Syntax:
-            ``n.parent_node(x, sec=section)``
-
-
-        Description:
-            Return the pointer of the parent of the segment ``section(x)``. 
-
-        .. warning::
-            This function is useless and currently returns an error. 
-
-    .. tab:: HOC
-
-        Syntax:
-            ``parent_node(x)``
-
-
-        Description:
-            Return the pointer of the parent of the segment containing *x*. 
-
-        .. warning::
-            This function is useless and currently returns an error. 
-
-
-----
-
-
-
 .. function:: parent_connection
 
     .. tab:: Python
