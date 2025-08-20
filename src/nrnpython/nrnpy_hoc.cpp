@@ -279,9 +279,9 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
 
     // if subtype is a subclass of some NEURON class, then one of its
     // tp_mro's is in sym_to_type_map
-    for (Py_ssize_t i = 0; i < PyTuple_Size(subtype->tp_mro); i++) {
-        PyObject* item = PyTuple_GetItem(subtype->tp_mro, i);
-        auto symbol_result = type_to_sym_map.find((PyTypeObject*) item);
+    auto mro_tuple = nb::borrow(subtype->tp_mro);
+    for (auto item: mro_tuple) {
+        auto symbol_result = type_to_sym_map.find((PyTypeObject*) item.ptr());
         if (symbol_result != type_to_sym_map.end()) {
             hbase = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
             hbase->type_ = PyHoc::HocFunction;
@@ -2373,7 +2373,7 @@ static PyObject* hocobj_vptr(PyObject* pself, PyObject* args) {
     Object* ho = ((PyHocObject*) pself)->ho_;
     PyObject* po = nullptr;
     if (ho) {
-        po = Py_BuildValue("O", PyLong_FromVoidPtr(ho));
+        po = PyLong_FromVoidPtr(ho);
     }
     if (!po) {
         PyErr_SetString(PyExc_TypeError, "HocObject does not wrap a Hoc Object");
@@ -2504,24 +2504,22 @@ static char* double_array_interface(PyObject* po, long& stride) {
     void* data = 0;
     if (PyObject_HasAttrString(po, "__array_interface__")) {
         auto ai = nb::borrow(po).attr("__array_interface__");
-        auto typestr = Py2NRNString::as_ascii(PyDict_GetItemString(ai.ptr(), "typestr"));
+        auto typestr = Py2NRNString::as_ascii(ai["typestr"].ptr());
         if (strcmp(typestr.c_str(), array_interface_typestr) == 0) {
-            data = PyLong_AsVoidPtr(PyTuple_GetItem(PyDict_GetItemString(ai.ptr(), "data"), 0));
+            auto data_tuple = ai["data"];
+            data = PyLong_AsVoidPtr(PyTuple_GetItem(data_tuple.ptr(), 0));
             // printf("double_array_interface idata = %ld\n", idata);
             if (PyErr_Occurred()) {
                 data = 0;
             }
-            PyObject* pstride = PyDict_GetItemString(ai.ptr(), "strides");
-            if (pstride == Py_None) {
+            auto pstride = ai["strides"];
+            if (pstride.is_none()) {
                 stride = 8;
-            } else if (PyTuple_Check(pstride)) {
-                if (PyTuple_Size(pstride) == 1) {
-                    PyObject* psize = PyTuple_GetItem(pstride, 0);
-                    if (PyLong_Check(psize)) {
-                        stride = PyLong_AsLong(psize);
-                    } else if (PyInt_Check(psize)) {
-                        stride = PyInt_AS_LONG(psize);
-
+            } else if (PyTuple_Check(pstride.ptr())) {
+                if (PyTuple_Size(pstride.ptr()) == 1) {
+                    nb::object psize = pstride[0];
+                    if (nb::isinstance<nb::int_>(psize)) {
+                        stride = nb::cast<long>(psize);
                     } else {
                         PyErr_SetString(PyExc_TypeError,
                                         "array_interface stride element of invalid type.");
@@ -2540,13 +2538,14 @@ static char* double_array_interface(PyObject* po, long& stride) {
 }
 
 
-inline double pyobj_to_double_or_fail(PyObject* obj, long obj_id) {
-    if (!PyNumber_Check(obj)) {
-        char buf[50];
-        Sprintf(buf, "item %d is not a valid number", obj_id);
-        hoc_execerror(buf, 0);
+inline double pyobj_to_double_or_fail(const nb::object& obj, long obj_id) {
+    try {
+        return nb::cast<double>(obj);
+    } catch (const nb::cast_error&) {
+        std::string buf = "item " + std::to_string(obj_id) + " is not a valid number";
+        hoc_execerror(buf.c_str(), nullptr);
+        return 0.0;
     }
-    return PyFloat_AsDouble(obj);
 }
 
 static IvocVect* nrnpy_vec_from_python(void* v) {
@@ -2567,7 +2566,7 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
         }
         long i = 0;
         for (nb::handle item: po) {
-            hv->push_back(pyobj_to_double_or_fail(item.ptr(), i));
+            hv->push_back(pyobj_to_double_or_fail(nb::borrow(item), i));
             i++;
         }
         return hv;
@@ -2591,11 +2590,11 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
     if (PyList_Check(po.ptr())) {
         nb::list list_obj{std::move(po)};
         for (long i = 0; i < size; ++i) {
-            x[i] = pyobj_to_double_or_fail(list_obj[i].ptr(), i);
+            x[i] = pyobj_to_double_or_fail(list_obj[i], i);
         }
     } else {
         for (long i = 0; i < size; ++i) {
-            x[i] = pyobj_to_double_or_fail(po[i].ptr(), i);
+            x[i] = pyobj_to_double_or_fail(po[i], i);
         }
     }
     return hv;
@@ -3206,9 +3205,9 @@ char get_endian_character() {
             return 0;
         }
 
-        if (byteorder == "little") {
+        if (strcmp(byteorder.c_str(), "little") == 0) {
             endian_character = '<';
-        } else if (byteorder == "big") {
+        } else if (strcmp(byteorder.c_str(), "big") == 0) {
             endian_character = '>';
         } else {
             PyErr_SetString(PyExc_RuntimeError, "Unknown system native byteorder.");
