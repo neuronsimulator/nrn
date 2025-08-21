@@ -60,9 +60,9 @@ loads the cell's source code
 Instrumentation
 >>>>>>>>>>>>>>>
 
-stimulus--attaches an :hoc:class:`IClamp` to ``soma(0.5)``
+stimulus--attaches an :class:`IClamp` to ``soma(0.5)``
 
-data recording and analysis--uses a :hoc:class:`NetCon` to record the times at which spikes reach ``dend(1)``
+data recording and analysis--uses a :class:`NetCon` to record the times at which spikes reach ``dend(1)``
 
 get_frequency(spvec) verifies that enough spikes have occurred, then calculates freq from the last NINVL=10 recorded ISIs.
 
