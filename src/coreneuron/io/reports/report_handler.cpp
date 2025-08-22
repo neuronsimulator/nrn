@@ -626,6 +626,8 @@ static VarsToReport get_lfp_vars_to_report(const NrnThread& nt,
 
 
 #endif
+
+
 void ReportHandler::create_report(ReportConfiguration& report_config,
                                   double dt,
                                   double tstop,
@@ -701,10 +703,11 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
             m_report_events.push_back(std::move(report_event));
         }
     }
-}
+
 #else
     if (nrnmpi_myid == 0) {
         std::cerr << "[WARNING] : Reporting is disabled. Please recompile with libsonata.\n";
     }
 #endif
+}
 }  // Namespace coreneuron
