@@ -655,41 +655,41 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
         const std::vector<int> intersection_ids = get_intersection_ids(nt, report_config.target);
         VarsToReport vars_to_report;
         const bool is_soma_target = report_config.sections == SectionType::Soma;
-            switch (report_config.type) {
-            case ReportType::Compartment: {
-                vars_to_report = get_section_vars_to_report(nt, intersection_ids, report_config);
-                register_section_report(nt, report_config, vars_to_report, is_soma_target);
-                break;
-            }
-            case ReportType::CompartmentSet: {
-                vars_to_report =
-                    get_compartment_set_vars_to_report(nt, intersection_ids, report_config);
-                register_section_report(nt, report_config, vars_to_report, is_soma_target);
-                break;
-            }
-            case ReportType::Summation: {
-                vars_to_report = get_summation_vars_to_report(nt, intersection_ids, report_config);
-                register_custom_report(nt, report_config, vars_to_report);
-                break;
-            }
-            case ReportType::LFP: {
-                mapinfo->prepare_lfp();
-                vars_to_report =
-                    get_lfp_vars_to_report(nt, intersection_ids, report_config, mapinfo->_lfp.data());
-                register_section_report(nt, report_config, vars_to_report, is_soma_target);
-                break;
-            }
-            case ReportType::Synapse: {
-                vars_to_report = get_synapse_vars_to_report(nt, intersection_ids, report_config);
-                register_custom_report(nt, report_config, vars_to_report);
-                break;
-            }
-            default: {
-                std::cerr << "[ERROR] Unknown report type: " << to_string(report_config.type) << '\n';
-                nrn_abort(1);
-            }
-            }
-            
+        switch (report_config.type) {
+        case ReportType::Compartment: {
+            vars_to_report = get_section_vars_to_report(nt, intersection_ids, report_config);
+            register_section_report(nt, report_config, vars_to_report, is_soma_target);
+            break;
+        }
+        case ReportType::CompartmentSet: {
+            vars_to_report =
+                get_compartment_set_vars_to_report(nt, intersection_ids, report_config);
+            register_section_report(nt, report_config, vars_to_report, is_soma_target);
+            break;
+        }
+        case ReportType::Summation: {
+            vars_to_report = get_summation_vars_to_report(nt, intersection_ids, report_config);
+            register_custom_report(nt, report_config, vars_to_report);
+            break;
+        }
+        case ReportType::LFP: {
+            mapinfo->prepare_lfp();
+            vars_to_report =
+                get_lfp_vars_to_report(nt, intersection_ids, report_config, mapinfo->_lfp.data());
+            register_section_report(nt, report_config, vars_to_report, is_soma_target);
+            break;
+        }
+        case ReportType::Synapse: {
+            vars_to_report = get_synapse_vars_to_report(nt, intersection_ids, report_config);
+            register_custom_report(nt, report_config, vars_to_report);
+            break;
+        }
+        default: {
+            std::cerr << "[ERROR] Unknown report type: " << to_string(report_config.type) << '\n';
+            nrn_abort(1);
+        }
+        }
+
         if (!vars_to_report.empty()) {
             auto report_event = std::make_unique<ReportEvent>(dt,
                                                               t,
@@ -701,7 +701,7 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
             m_report_events.push_back(std::move(report_event));
         }
     }
-    }
+}
 #else
     if (nrnmpi_myid == 0) {
         std::cerr << "[WARNING] : Reporting is disabled. Please recompile with libsonata.\n";
