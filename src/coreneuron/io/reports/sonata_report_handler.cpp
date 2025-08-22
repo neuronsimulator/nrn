@@ -17,28 +17,28 @@
 
 namespace coreneuron {
 
-void SonataReportHandler::create_report(ReportConfiguration& config,
+void SonataReportHandler::create_report(ReportConfiguration& report_conf,
                                         double dt,
                                         double tstop,
                                         double delay) {
 #ifdef ENABLE_SONATA_REPORTS
     sonata_set_atomic_step(dt);
 #endif  // ENABLE_SONATA_REPORTS
-    ReportHandler::create_report(config, dt, tstop, delay);
+    ReportHandler::create_report(report_conf, dt, tstop, delay);
 }
 
 #ifdef ENABLE_SONATA_REPORTS
 void SonataReportHandler::register_section_report(const NrnThread& nt,
-                                                  const ReportConfiguration& config,
+                                                  const ReportConfiguration& report_conf,
                                                   const VarsToReport& vars_to_report,
                                                   bool is_soma_target) {
-    register_report(nt, config, vars_to_report);
+    register_report(nt, report_conf, vars_to_report);
 }
 
 void SonataReportHandler::register_custom_report(const NrnThread& nt,
-                                                 const ReportConfiguration& config,
+                                                 const ReportConfiguration& report_conf,
                                                  const VarsToReport& vars_to_report) {
-    register_report(nt, config, vars_to_report);
+    register_report(nt, report_conf, vars_to_report);
 }
 
 std::pair<std::string, int> SonataReportHandler::get_population_info(int gid) {
@@ -58,15 +58,16 @@ std::pair<std::string, int> SonataReportHandler::get_population_info(int gid) {
 }
 
 void SonataReportHandler::register_report(const NrnThread& nt,
-                                          const ReportConfiguration& config,
+                                          const ReportConfiguration& report_conf,
                                           const VarsToReport& vars_to_report) {
-    sonata_create_report(config.output_path.data(),
-                         config.start,
-                         config.stop,
-                         config.report_dt,
-                         config.unit.data(),
-                         config.type_str.data());
-    sonata_set_report_max_buffer_size_hint(config.output_path.data(), config.buffer_size);
+    const auto type_str = to_string(report_conf.type);
+    sonata_create_report(report_conf.output_path.data(),
+                         report_conf.start,
+                         report_conf.stop,
+                         report_conf.report_dt,
+                         report_conf.unit.data(),
+                         type_str.data());
+    sonata_set_report_max_buffer_size_hint(report_conf.output_path.data(), report_conf.buffer_size);
 
     for (const auto& kv: vars_to_report) {
         uint64_t gid = kv.first;
@@ -77,10 +78,14 @@ void SonataReportHandler::register_report(const NrnThread& nt,
         const auto& pop_info = get_population_info(gid);
         std::string population_name = pop_info.first;
         int population_offset = pop_info.second;
-        sonata_add_node(config.output_path.data(), population_name.data(), population_offset, gid);
-        sonata_set_report_max_buffer_size_hint(config.output_path.data(), config.buffer_size);
+        sonata_add_node(report_conf.output_path.data(),
+                        population_name.data(),
+                        population_offset,
+                        gid);
+        sonata_set_report_max_buffer_size_hint(report_conf.output_path.data(),
+                                               report_conf.buffer_size);
         for (const auto& variable: vars) {
-            sonata_add_element(config.output_path.data(),
+            sonata_add_element(report_conf.output_path.data(),
                                population_name.data(),
                                gid,
                                variable.id,
