@@ -54,59 +54,17 @@ void parse_filter_string(const std::string& filter, ReportConfiguration& config)
     }
 }
 
-void register_target_type(ReportConfiguration& report, ReportType report_type) {
-    report.type = report_type;
-    switch (report.target_type) {
-    case TargetType::Compartment:
-        report.section_type = SectionType::All;
-        report.section_all_compartments = true;
-        break;
-    case TargetType::Cell:
-        report.section_type = SectionType::Cell;
-        report.section_all_compartments = false;
-        break;
-    case TargetType::SectionSoma:
-        report.section_type = SectionType::Soma;
-        report.section_all_compartments = false;
-        break;
-    case TargetType::SectionSomaAll:
-        report.section_type = SectionType::Soma;
-        report.section_all_compartments = true;
-        break;
-    case TargetType::SectionAxon:
-        report.section_type = SectionType::Axon;
-        report.section_all_compartments = false;
-        break;
-    case TargetType::SectionAxonAll:
-        report.section_type = SectionType::Axon;
-        report.section_all_compartments = true;
-        break;
-    case TargetType::SectionDendrite:
-        report.section_type = SectionType::Dendrite;
-        report.section_all_compartments = false;
-        break;
-    case TargetType::SectionDendriteAll:
-        report.section_type = SectionType::Dendrite;
-        report.section_all_compartments = true;
-        break;
-    case TargetType::SectionApical:
-        report.section_type = SectionType::Apical;
-        report.section_all_compartments = false;
-        break;
-    case TargetType::SectionApicalAll:
-        report.section_type = SectionType::Apical;
-        report.section_all_compartments = true;
-        break;
-    default:
-        std::cerr << "Report error: unsupported target type" << std::endl;
-        nrn_abort(1);
-    }
+void fill_vec_int(std::ifstream& ss, std::vector<int>& v, const int n) {
+    v.resize(n);
+    ss.read(reinterpret_cast<char*>(v.data()), n * sizeof(int));
+    // extra new line: skip
+    ss.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
 std::vector<ReportConfiguration> create_report_configurations(const std::string& conf_file,
                                                               const std::string& output_dir,
                                                               SpikesInfo& spikes_info) {
-    std::string report_on;
+    std::string token;
     int target;
     std::ifstream report_conf(conf_file);
 
@@ -114,46 +72,51 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
     report_conf >> num_reports;
     std::vector<ReportConfiguration> reports(num_reports);
     for (auto& report: reports) {
-        report.buffer_size = 4;  // default size to 4 Mb
-
-        std::string scaling;
-        report_conf >> report.name >> report.target_name >> report.type_str >> report_on >>
-            report.unit >> report.format >> target >> report.report_dt >> report.start >>
-            report.stop >> report.num_gids >> report.buffer_size >> scaling;
-
-        report.scaling = scaling_from_string(scaling);
-        report.target_type = static_cast<TargetType>(target);
-        std::transform(report.type_str.begin(),
-                       report.type_str.end(),
-                       report.type_str.begin(),
-                       [](unsigned char c) { return std::tolower(c); });
+        report_conf >> report.name >> report.target_name;
         report.output_path = output_dir + "/" + report.name;
-        ReportType report_type = report_type_from_string(report.type_str);
-        if (report_type == ReportType::LFP) {
+        // type
+        report_conf >> token;
+        report.type = report_type_from_string(token);
+        // report_on
+        report_conf >> token;
+        if (report.type == ReportType::Synapse || report.type == ReportType::Summation ||
+            report.type == ReportType::Compartment || report.type == ReportType::CompartmentSet) {
+            parse_filter_string(token, report);
+        }
+        report_conf >> report.unit >> report.format;
+        // sections
+        report_conf >> token;
+        report.sections = section_type_from_string(token);
+        // compartments
+        report_conf >> token;
+        report.compartments = compartments_from_string(token);
+
+        // doubles
+        report_conf >> report.report_dt >> report.start >> report.stop >> report.num_gids >>
+            report.buffer_size;
+        // scaling
+        report_conf >> token;
+        report.scaling = scaling_from_string(token);
+
+        if (report.type == ReportType::LFP) {
             nrn_use_fast_imem = true;
         }
-        register_target_type(report, report_type);
-        if (report.type == ReportType::Synapse || report.type == ReportType::Summation ||
-            report.type == ReportType::Compartment) {
-            parse_filter_string(report_on, report);
-        }
+
         // checks
-        if (report.type == ReportType::Compartment) {
-            if (report.mech_names.size() != 1) {
-                std::cerr << "Report error: Compartment report requires exactly one variable name, "
-                             "but got "
-                          << report.mech_names.size() << std::endl;
-                nrn_abort(1);
-            }
+        if (report.type == ReportType::Compartment || report.type == ReportType::CompartmentSet) {
+            nrn_assert(report.mech_ids.empty());
+            nrn_assert(report.mech_names.size() == 1);
+            nrn_assert(report.var_names.size() == 1);
         }
+
+        report_conf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         // gids
         if (report.num_gids) {
-            report.target.resize(report.num_gids);
-            report_conf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            report_conf.read(reinterpret_cast<char*>(report.target.data()),
-                             report.num_gids * sizeof(int));
-            // extra new line: skip
-            report_conf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            fill_vec_int(report_conf, report.target, report.num_gids);
+            if (report.type == ReportType::CompartmentSet) {
+                fill_vec_int(report_conf, report.point_section_ids, report.num_gids);
+                fill_vec_int(report_conf, report.point_compartment_ids, report.num_gids);
+            }
         }
     }
     // read population information for spike report
