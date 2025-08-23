@@ -5,30 +5,36 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
-on:
-  merge_group:
-  workflow_call:
-    inputs:
-      tag:
-        description: 'Release version (tag name)'
-        default: ''
-        required: true
-        type: string
-  push:
-    branches:
-      - master
-      - release/**
-  pull_request:
-    branches:
-      - master
-      - release/**
+on: [push]
+  # merge_group:
+  # workflow_call:
+  #   inputs:
+  #     tag:
+  #       description: 'Release version (tag name)'
+  #       default: ''
+  #       required: true
+  #       type: string
+  # push:
+  #   branches:
+  #     - master
+  #     - release/**
+  # pull_request:
+  #   branches:
+  #     - master
+  #     - release/**
 # TODO : https://github.com/neuronsimulator/nrn/issues/1063
 #    paths-ignore:
 #      - '**.md'
 #      - '**.rst'
 #      - 'docs/**'
+
+# The Github runner image contains the latest patch versions. Drop the last version
+# component to use cached software.
 env:
-  MSYS2_ROOT: C:\msys64
+    PYTHON_VERSIONS: |
+      3.9
+      3.10
+      3.11
 
 jobs:
   WindowsInstaller:
@@ -39,81 +45,77 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ inputs.tag }}
-        submodules: recursive
+        fetch-depth: 500
+
+    - uses: mpi4py/setup-mpi@v1
+
+    # The cache setting will chache installed Python packages, and will be refreshed if
+    # requirements.txt changes.
+    - uses: actions/setup-python@v4
+      id: cpy
+      with:
+        python-version: ${{ env.PYTHON_VERSIONS }}
+        cache: 'pip'
+        update-environment: false
+
+    - name: Install Python dependencies (will be cached)
+      run: |
+        $pythons = $env:PYTHON_VERSIONS -Split "\s+" | Foreach-Object {
+          If ($_ -ne "") {
+            Get-Item "C:\hostedtoolcache\windows\Python\$_*\x64\python.exe"
+          }
+        } | Foreach-Object { "$_" }
+
+        $firstPython = $pythons[0]
+        "firstPython=${firstPython}" | Out-File -FilePath $env:GITHUB_ENV -Append
+        $allPythons = $pythons -Join ";"
+        "allPythons=${allPythons}" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+        $pythons | Foreach-Object {
+          & $_ -m pip install -r ci/uv_requirements.txt
+          & $_ -m uv pip install -r ci/requirements.txt
+        }
+
+        $firstCython = Join-Path $(Get-Item $firstPython).DirectoryName -childPath "Scripts" -AdditionalChildPath "cython.exe"
+        "firstCython=${firstCython}" | Out-File -FilePath $env:GITHUB_ENV -Append
+      shell: pwsh
+      working-directory: ${{runner.workspace}}\nrn
 
     - name: Retrieve rxd test data
       run: |
         git submodule update --init test/rxd/testdata
-      shell: powershell
+      shell: pwsh
       working-directory: ${{runner.workspace}}\nrn
 
-    - name: Set up Python3
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-
-    - name: Download Dependencies
+    - name: Install Build Dependencies
       run: |
-        .\nrn\ci\win_download_deps.cmd
-      shell: powershell
-      working-directory: ${{runner.workspace}}
-
-    - name: Install Dependencies
-      run: .\nrn\ci\win_install_deps.cmd
-      shell: powershell
+        choco install --no-progress sed winflexbison3
+      shell: pwsh
       working-directory: ${{runner.workspace}}
 
     - name: Build and Create Installer
       run: |
-        rm.exe C:\WINDOWS\system32\bash.EXE
-        %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/ci/win_build_cmake.sh"
-        # create a manifest of the files in the build directory
-        %MSYS2_ROOT%\usr\bin\bash -lc "find ${BUILD_SOURCESDIRECTORY}/build > ${BUILD_SOURCESDIRECTORY}/build/build_files.txt 2>/dev/null"
-      shell: cmd
-      working-directory: ${{runner.workspace}}\nrn
-      env:
-        BUILD_SOURCESDIRECTORY: ${{runner.workspace}}\nrn
-
-    - name: Upload build files for diagnostics and debugging
-      if: ${{ always() }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: build_files
-        path: |
-          ${{runner.workspace}}/nrn/build/CMakeCache.txt
-          ${{runner.workspace}}/nrn/build/build.ninja
-          ${{runner.workspace}}/nrn/build/cmake_install.cmake
-          ${{runner.workspace}}/nrn/build/install_manifest.txt
-          ${{runner.workspace}}/nrn/build/build_files.txt
-
-    # This step will set up an SSH connection on tmate.io for live debugging.
-    # To enable it, you have to:
-    #   * add 'live-debug-win' to your PR title
-    #   * push something to your PR branch (note that just re-running the pipeline disregards the title update)
-    - name: live debug session on failure (manual steps required, check `.github/windows.yml`)
-      if: failure() && contains(github.event.pull_request.title, 'live-debug-win')
-      uses: mxschmitt/action-tmate@v3
-
-    - name: Upload build artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: nrn-nightly-AMD64.exe
-        path: ${{runner.workspace}}\nrn\nrn-nightly-AMD64.exe
-
-    - name: Run installer and launch .hoc associaton test
-      run: .\ci\win_install_neuron.cmd
-      shell: cmd
+        git fetch --tags
+        cmake `
+          -B build -S . `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DNRN_ENABLE_INTERVIEWS=ON `
+          -DNRN_ENABLE_MPI=OFF `
+          -DNRN_ENABLE_MPI_DYNAMIC=OFF `
+          -DNRN_ENABLE_PYTHON=OFF `
+          -DNRN_ENABLE_PYTHON_DYNAMIC=OFF `
+          -DNRN_ENABLE_RX3D=OFF `
+          -DNRN_ENABLE_TESTS=ON `
+          -DNRN_PYTHON_DYNAMIC="${env:allPythons}" `
+          -DNRN_RX3D_OPT_LEVEL=2 `
+          -DCYTHON_EXECUTABLE="${env:firstCython}" `
+          -DPYTHON_EXECUTABLE="${env:firstPython}"
+        cmake --build build --config Release -v
+      shell: pwsh
       working-directory: ${{runner.workspace}}\nrn
 
     - name: Test Installer
-      run: .\ci\win_test_installer.cmd
-      shell: cmd
-      working-directory: ${{runner.workspace}}\nrn
-
-    - name: Publish Release Installer
-      working-directory: ${{runner.workspace}}\nrn
-      if: inputs.tag != ''
       run: |
-        gh release upload ${{ inputs.tag }} nrn-nightly-AMD64.exe
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ctest --output-on-failure -j
+      shell: pwsh
+      working-directory: ${{runner.workspace}}\nrn\build

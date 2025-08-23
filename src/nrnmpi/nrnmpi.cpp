@@ -52,7 +52,7 @@ extern void nrnmpi_checkbufleak();
 static int nrnmpi_under_nrncontrol_;
 #endif
 
-extern "C" void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
+void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
 #if NRNMPI
     int i, b, flag;
     if (nrnmpi_use) {

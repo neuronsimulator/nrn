@@ -27,6 +27,9 @@
 #include "../nrniv/backtrace_utils.h"
 
 #include "../utils/profile/profiler_interface.h"
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
 
 #include <cfenv>
 #include <condition_variable>
@@ -38,16 +41,18 @@
 
 #include "utils/logger.hpp"
 
+#define NRN_IGNORE(arg) arg
+
 /* for eliminating "ignoreing return value" warnings. */
 int nrnignore;
 
 /* only set  in ivoc */
 int nrn_global_argc;
-char** nrn_global_argv;
+NRN_API const char** nrn_global_argv;
 
 #if defined(USE_PYTHON)
 int use_python_interpreter = 0;
-void (*p_nrnpython_finalize)();
+NRN_API void (*p_nrnpython_finalize)();
 #endif
 int nrn_inpython_;
 int (*p_nrnpy_pyrun)(const char* fname);
@@ -104,8 +109,12 @@ void pr_profile(void) {}
 #define READLINE 0
 #endif
 
-#ifndef READLINE
+#if !defined(READLINE)
+#if !defined(_WIN32)
 #define READLINE 1
+#else
+#define READLINE 0
+#endif
 #endif
 
 #if READLINE
@@ -116,7 +125,7 @@ extern void add_history(const char*);
 }
 #endif
 
-int nrn_nobanner_;
+NRN_API int nrn_nobanner_;
 int hoc_pipeflag;
 int hoc_usegui;
 #if 1
@@ -168,7 +177,7 @@ const char** gargv; /* global argument list */
 int gargc;
 static int c = '\n'; /* global for use by warning() */
 
-#if defined(WIN32)
+#if defined(_WIN32)
 void set_intset() {
     hoc_intset++;
 }
@@ -181,14 +190,14 @@ static void unGetc(int c, NrnFILEWrap* fp);
 static int backslash(int c);
 
 [[noreturn]] void nrn_exit(int i) {
-#if defined(WIN32)
+#if defined(_WIN32)
     printf("NEURON exiting abnormally, press return to quit\n");
     fgetc(stdin);
 #endif
     exit(i);
 }
 
-#if defined(WIN32)
+#if defined(_WIN32)
 #define HAS_SIGPIPE 0
 #else
 #define HAS_SIGPIPE 1
@@ -281,7 +290,7 @@ restart: /* when no token in between comments */
     {
         char* npt;
         double d;
-        IGNORE(unGetc(c, hoc_fin));
+        NRN_IGNORE(unGetc(c, hoc_fin));
         npt = (char*) hoc_ctp;
         /*EMPTY*/
         while (isdigit(c = Getc(hoc_fin))) {
@@ -294,7 +303,7 @@ restart: /* when no token in between comments */
             }
         }
         if (*npt == '.' && !isdigit(npt[1])) {
-            IGNORE(unGetc(c, hoc_fin));
+            NRN_IGNORE(unGetc(c, hoc_fin));
             return (int) (*npt);
         }
         if (c == 'E' || c == 'e') {
@@ -305,8 +314,8 @@ restart: /* when no token in between comments */
                 }
             }
         }
-        IGNORE(unGetc(c, hoc_fin));
-        IGNORE(sscanf(npt, "%lf", &d));
+        NRN_IGNORE(unGetc(c, hoc_fin));
+        NRN_IGNORE(sscanf(npt, "%lf", &d));
         if (d == 0.)
             return NUMZERO;
         yylval.sym = hoc_install("", NUMBER, d, &hoc_p_symlist);
@@ -322,7 +331,7 @@ restart: /* when no token in between comments */
             }
             *p++ = c;
         } while ((c = Getc(hoc_fin)) != EOF && (isalnum(c) || c == '_'));
-        IGNORE(unGetc(c, hoc_fin));
+        NRN_IGNORE(unGetc(c, hoc_fin));
         *p = '\0';
         if (strncmp(sbuf, "__nrnsec_0x", 11) == 0) {
             yylval.ptr = hoc_sec_internal_name2ptr(sbuf, 1);
@@ -387,7 +396,7 @@ restart: /* when no token in between comments */
         }
         while (isdigit(c = Getc(hoc_fin)))
             n = 10 * n + c - '0';
-        IGNORE(unGetc(c, hoc_fin));
+        NRN_IGNORE(unGetc(c, hoc_fin));
         if (n == 0)
             hoc_acterror("strange $...", (char*) 0);
         yylval.narg = n;
@@ -501,7 +510,7 @@ static int follow(int expect, int ifyes, int ifno) /* look ahead for >=, etc. */
 
     if (c == expect)
         return ifyes;
-    IGNORE(unGetc(c, hoc_fin));
+    NRN_IGNORE(unGetc(c, hoc_fin));
     return ifno;
 }
 
@@ -628,7 +637,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
 #endif
     hoc_execerror_messages = 1;
     if (hoc_fin && hoc_pipeflag == 0 && (!nrn_fw_eq(hoc_fin, stdin) || !nrn_istty_)) {
-        IGNORE(nrn_fw_fseek(hoc_fin, 0L, 2)); /* flush rest of file */
+        NRN_IGNORE(nrn_fw_fseek(hoc_fin, 0L, 2)); /* flush rest of file */
     }
 
     // If the exception is due to a multiple ^C interrupt, then onintr
@@ -666,7 +675,7 @@ void onintr(int /* sig */) /* catch interrupt */
     stoprun = 1;
     if (hoc_intset++)
         hoc_execerror("interrupted", (char*) 0);
-    IGNORE(signal(SIGINT, onintr));
+    NRN_IGNORE(signal(SIGINT, onintr));
 }
 
 static int coredump;
@@ -746,7 +755,7 @@ void fpecatch(int /* sig */) /* catch floating point exceptions */
     hoc_execerror("Floating point exception.", (char*) 0);
 }
 
-__attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation violation probably due to
+[[noreturn]] void sigsegvcatch(int /* sig */) /* segmentation violation probably due to
                                                               arg type error */
 {
     Fprintf(stderr, "Segmentation violation\n");
@@ -759,7 +768,7 @@ __attribute__((noreturn)) void sigsegvcatch(int /* sig */) /* segmentation viola
 }
 
 #if HAVE_SIGBUS
-__attribute__((noreturn)) void sigbuscatch(int /* sig */) {
+[[noreturn]] void sigbuscatch(int /* sig */) {
     Fprintf(stderr, "Bus error\n");
     print_bt();
     /*ARGSUSED*/
@@ -857,7 +866,7 @@ void hocstr_copy(HocStr* hs, const char* buf) {
     strcpy(hs->buf, buf);
 }
 
-#ifdef MINGW
+#ifdef _WIN32
 static int cygonce; /* does not need the '-' after a list of hoc files */
 #endif
 
@@ -866,7 +875,7 @@ static int hoc_run1();
 // hoc6
 int hoc_main1(int argc, const char** argv, const char** envp) {
     int exit_status = EXIT_SUCCESS;
-#ifdef WIN32
+#ifdef _WIN32
     extern void hoc_set_unhandled_exception_filter();
     hoc_set_unhandled_exception_filter();
 #endif
@@ -895,7 +904,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) {
         {
             static const char* stdinonly[] = {"-"};
 
-#ifdef MINGW
+#ifdef _WIN32
             cygonce = 1;
 #endif
             gargv = stdinonly;
@@ -958,7 +967,7 @@ void hoc_final_exit(void) {
     /* Don't close the plots for the sub-processes when they finish,
        by default they are then closed when the master process ends */
     hoc_close_plot();
-#if READLINE && !defined(MINGW)
+#if READLINE && !defined(_WIN32)
     rl_deprep_terminal();
 #endif
     ivoc_cleanup();
@@ -1024,7 +1033,7 @@ int hoc_moreinput() {
         hoc_pipeflag = 0;
         return 1;
     }
-#if defined(WIN32)
+#if defined(_WIN32)
     /* like mswin, do not need a '-' after hoc files, but ^D works */
     if (gargc == 0 && cygonce == 0) {
         cygonce = 1;
@@ -1039,7 +1048,7 @@ int hoc_moreinput() {
     }
 #endif  // WIN32
     if (hoc_fin && !nrn_fw_eq(hoc_fin, stdin)) {
-        IGNORE(nrn_fw_fclose(hoc_fin));
+        NRN_IGNORE(nrn_fw_fclose(hoc_fin));
     }
     hoc_fin = nrn_fw_set_stdin();
     infile = 0;
@@ -1048,7 +1057,7 @@ int hoc_moreinput() {
         return 0;
     }
     infile = *gargv++;
-#if defined(WIN32)
+#if defined(_WIN32)
     if (infile[0] == '"') {
         char* cp = strdup(infile + 1);
         for (++cp; *cp; ++cp) {
@@ -1469,7 +1478,7 @@ int hoc_yyparse(void) {
     return i;
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 #define INTERVIEWS 1
 #endif
 
@@ -1692,9 +1701,24 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
             }
         }
 #else  // READLINE
+#if _MSC_VER
+        WriteConsoleA(
+            GetStdHandle(STD_OUTPUT_HANDLE), hoc_promptstr, strlen(hoc_promptstr), NULL, NULL);
+        DWORD n;
+        std::vector<char> line(8192);
+        ReadConsoleA(GetStdHandle(STD_INPUT_HANDLE), line.data(), line.size(), &n, NULL);
+        if (n >= hoc_cbufstr->size - 3) {
+            hocstr_resize(hoc_cbufstr, n + 100);
+            hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
+        }
+        strcpy(hoc_cbuf, line.data());
+        hoc_cbuf[n] = '\n';
+        hoc_cbuf[n + 1] = '\0';
+        hoc_audit_command(hoc_cbuf);
+#else
 #if INTERVIEWS
         if (nrn_fw_eq(hoc_fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
-            run_til_stdin());
+            run_til_stdin();
         }
 #endif  // INTERVIEWS
 #if defined(WIN32)
@@ -1705,12 +1729,13 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
             }
             strcat(hoc_cbuf, "\n");
         } else
-#endif  // WIN32
+#endif  // _WIN32
         {
             if (hoc_fgets_unlimited(hoc_cbufstr, hoc_fin) == (char*) 0) {
                 return EOF;
             }
         }
+#endif  // _MSC_VER
 #endif  // READLINE
     }
     errno = 0;
