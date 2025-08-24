@@ -34,10 +34,10 @@ void Phase3::read_file(FileHandler& F, NrnThreadMappingInfo* ntmapping) {
         int gid, nsec, nseg, nseclist;
         // read counts
         F.read_mapping_count(&gid, &nsec, &nseg, &nseclist);
-        CellMapping* cmap = new CellMapping(gid);
+        auto cmap = std::make_shared<CellMapping>(gid);
         // read section-segment mapping for every section list
         for (int j = 0; j < nseclist; j++) {
-            SecMapping* smap = new SecMapping();
+            auto smap = std::make_shared<SecMapping>();
             F.read_mapping_info(smap, ntmapping, cmap);
             cmap->add_sec_map(smap);
         }
@@ -55,7 +55,7 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping) {
         int t_seg;
         int nseclist;
         nrn2core_get_dat3_cellmapping_(i, gid, t_sec, t_seg, nseclist);
-        auto cmap = new CellMapping(gid);
+        auto cmap = std::make_shared<CellMapping>(gid);
         for (int j = 0; j < nseclist; j++) {
             std::string sclname;
             int n_sec;
@@ -75,8 +75,8 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping) {
                                           data_sec,
                                           data_seg,
                                           data_lfp);
-            auto smap = new SecMapping();
-            smap->name = sclname;
+            auto smap = std::make_shared<SecMapping>();
+            smap->type = section_type_from_string(sclname);
             for (int i_seg = 0; i_seg < n_seg; i_seg++) {
                 smap->add_segment(data_sec[i_seg], data_seg[i_seg]);
                 ntmapping->add_segment_id(data_seg[i_seg]);

@@ -6,112 +6,16 @@
 # =============================================================================
 */
 
+#include <sstream>
+#include <unordered_set>
 #include "report_handler.hpp"
 #include "coreneuron/io/nrnsection_mapping.hpp"
 #include "coreneuron/mechanism/mech_mapping.hpp"
 #include "coreneuron/utils/utils.hpp"
 
 namespace coreneuron {
-
-template <typename T>
-std::vector<T> intersection_gids(const NrnThread& nt, std::vector<T>& target_gids) {
-    std::vector<int> thread_gids;
-    for (int i = 0; i < nt.ncell; i++) {
-        thread_gids.push_back(nt.presyns[i].gid_);
-    }
-    std::vector<T> intersection;
-
-    std::sort(thread_gids.begin(), thread_gids.end());
-    std::sort(target_gids.begin(), target_gids.end());
-
-    std::set_intersection(thread_gids.begin(),
-                          thread_gids.end(),
-                          target_gids.begin(),
-                          target_gids.end(),
-                          back_inserter(intersection));
-
-    return intersection;
-}
-
-void ReportHandler::create_report(ReportConfiguration& report_config,
-                                  double dt,
-                                  double tstop,
-                                  double delay) {
 #ifdef ENABLE_SONATA_REPORTS
-    if (report_config.start < t) {
-        report_config.start = t;
-    }
-    report_config.stop = std::min(report_config.stop, tstop);
 
-    for (const auto& mech: report_config.mech_names) {
-        report_config.mech_ids.emplace_back(nrn_get_mechtype(mech.data()));
-    }
-    if (report_config.type == SynapseReport && report_config.mech_ids.empty()) {
-        std::cerr << "[ERROR] mechanism to report: " << report_config.mech_names[0]
-                  << " is not mapped in this simulation, cannot report on it \n";
-        nrn_abort(1);
-    }
-    for (int ith = 0; ith < nrn_nthread; ++ith) {
-        NrnThread& nt = nrn_threads[ith];
-        double* report_variable = nt._actual_v;
-        if (!nt.ncell) {
-            continue;
-        }
-        auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
-        const std::vector<int>& nodes_to_gid = map_gids(nt);
-        const std::vector<int> gids_to_report = intersection_gids(nt, report_config.target);
-        VarsToReport vars_to_report;
-        bool is_soma_target;
-        switch (report_config.type) {
-        case IMembraneReport:
-            report_variable = nt.nrn_fast_imem->nrn_sav_rhs;
-        case SectionReport:
-            vars_to_report = get_section_vars_to_report(nt,
-                                                        gids_to_report,
-                                                        report_variable,
-                                                        report_config.section_type,
-                                                        report_config.section_all_compartments);
-            is_soma_target = report_config.section_type == SectionType::Soma ||
-                             report_config.section_type == SectionType::Cell;
-            register_section_report(nt, report_config, vars_to_report, is_soma_target);
-            break;
-        case SummationReport:
-            vars_to_report =
-                get_summation_vars_to_report(nt, gids_to_report, report_config, nodes_to_gid);
-            register_custom_report(nt, report_config, vars_to_report);
-            break;
-        case LFPReport:
-            mapinfo->prepare_lfp();
-            vars_to_report = get_lfp_vars_to_report(
-                nt, gids_to_report, report_config, mapinfo->_lfp.data(), nodes_to_gid);
-            is_soma_target = report_config.section_type == SectionType::Soma ||
-                             report_config.section_type == SectionType::Cell;
-            register_section_report(nt, report_config, vars_to_report, is_soma_target);
-            break;
-        default:
-            vars_to_report =
-                get_synapse_vars_to_report(nt, gids_to_report, report_config, nodes_to_gid);
-            register_custom_report(nt, report_config, vars_to_report);
-        }
-        if (!vars_to_report.empty()) {
-            auto report_event = std::make_unique<ReportEvent>(dt,
-                                                              t,
-                                                              vars_to_report,
-                                                              report_config.output_path.data(),
-                                                              report_config.report_dt,
-                                                              report_config.type);
-            report_event->send(t, net_cvode_instance, &nt);
-            m_report_events.push_back(std::move(report_event));
-        }
-    }
-#else
-    if (nrnmpi_myid == 0) {
-        std::cerr << "[WARNING] : Reporting is disabled. Please recompile with libsonata.\n";
-    }
-#endif
-}
-
-#ifdef ENABLE_SONATA_REPORTS
 void ReportHandler::register_section_report(const NrnThread& nt,
                                             const ReportConfiguration& config,
                                             const VarsToReport& vars_to_report,
@@ -130,175 +34,490 @@ void ReportHandler::register_custom_report(const NrnThread& nt,
     }
 }
 
-std::string getSectionTypeStr(SectionType type) {
-    switch (type) {
-    case All:
-        return "All";
-    case Cell:
-    case Soma:
-        return "soma";
-    case Axon:
-        return "axon";
-    case Dendrite:
-        return "dend";
-    case Apical:
-        return "apic";
-    default:
-        std::cerr << "SectionType not handled in getSectionTypeStr" << std::endl;
-        nrn_abort(1);
+/**
+ * @brief Map each segment_id to a single node index in the given Memb_list.
+ *
+ * Lazily populates the map only if empty. Aborts if a segment_id appears more than once,
+ * which is invalid for compartment reports expecting exactly one variable per segment.
+ * Differs from the vector variant by enforcing uniqueness and aborting on duplicates.
+ */
+static void fill_segment_id_2_node_id(Memb_list* ml,
+                                      std::unordered_map<int, int>& segment_id_2_node_id) {
+    nrn_assert(ml && "Memb_list is a nullptr!");
+
+    // do not fill if not empty. We already did this. Be lazy
+    if (!segment_id_2_node_id.empty()) {
+        return;
+    }
+
+    for (int j = 0; j < ml->nodecount; j++) {
+        const int segment_id = ml->nodeindices[j];
+        auto result = segment_id_2_node_id.insert({segment_id, j});
+        if (!result.second) {
+            std::cerr << "Found duplicate in nodeindices: " << segment_id << " index: " << j
+                      << std::endl;
+            std::cerr << "The nodeindices (size: " << ml->nodecount << ") are:\n[";
+            for (int j = 0; j < ml->nodecount; j++) {
+                std::cerr << ml->nodeindices[j] << ", ";
+            }
+            std::cerr << "]\n";
+            std::cerr << "Probably you asked for a compartment report for a synapse variable and "
+                         "there are many synapses attached to the soma.\nThis is not allowed since "
+                         "compartment reports require 1 and only 1 variable on every segment.\n";
+            nrn_abort(1);
+        }
     }
 }
 
-void register_sections_to_report(const SecMapping* sections,
-                                 std::vector<VarWithMapping>& to_report,
-                                 double* report_variable,
-                                 bool all_compartments) {
+/**
+ * @brief Map each segment_id to all corresponding node indices in the given Memb_list.
+ *
+ * Lazily populates the map only if empty. Allows multiple node indices per segment_id
+ * and stores them in a vector. Differs from the single-index variant by permitting
+ * duplicates and not performing any error checks.
+ */
+static void fill_segment_id_2_node_id(
+    Memb_list* ml,
+    std::unordered_map<int, std::vector<int>>& segment_id_2_node_id) {
+    nrn_assert(ml && "Memb_list is a nullptr!");
+
+    // do not fill if not empty. We already did this. Be lazy
+    if (!segment_id_2_node_id.empty()) {
+        return;
+    }
+
+    for (int j = 0; j < ml->nodecount; j++) {
+        const int segment_id = ml->nodeindices[j];
+        segment_id_2_node_id[segment_id].push_back(j);
+    }
+}
+
+/**
+ * @brief Retrieve a pointer to a single mechanism/state variable for a specific segment.
+ *
+ * For "i_membrane" and "v", returns a direct pointer to the relevant thread array.
+ * Otherwise, looks up the mechanism in the thread, maps the segment to its node,
+ * and retrieves the variable pointer. Aborts if the mechanism or variable is missing.
+ * Differs from get_vars() in that it returns a single variable pointer and performs
+ * strict error handling with aborts on failure.
+ */
+static double* get_one_var(const NrnThread& nt,
+                           const int mech_id,
+                           const std::string& var_name,
+                           const std::string& mech_name,
+                           const int segment_id,
+                           std::unordered_map<int, int> segment_id_2_node_id,
+                           int gid) {
+    if (mech_name == "i_membrane") {
+        return nt.nrn_fast_imem->nrn_sav_rhs + segment_id;
+    }
+    if (mech_name == "v") {
+        return nt._actual_v + segment_id;
+    }
+
+    if (mech_id < 0) {
+        std::cerr << "Mechanism (" << mech_id << ", " << var_name << ", " << mech_name
+                  << ") not found\n";
+        std::cerr << "Negative mech_id\n";
+        nrn_abort(1);
+    }
+
+    Memb_list* ml = nt._ml_list[mech_id];
+
+    if (!ml) {
+        std::cerr << "Mechanism (" << mech_id << ", " << var_name << ", " << mech_name
+                  << ") not found\n";
+        std::cerr << "NULL Memb_list\n";
+        nrn_abort(1);
+    }
+
+    // lazy cache
+    fill_segment_id_2_node_id(ml, segment_id_2_node_id);
+
+    const auto it = segment_id_2_node_id.find(segment_id);
+    // there is no mechanism at this segment. Notice that segment_id_2_node_id
+    // is a segment_id -> node_id that changes with mech_id and gid
+    if (it == segment_id_2_node_id.end()) {
+        std::cerr << "Mechanism (" << mech_id << ", " << var_name << ", " << mech_name
+                  << ") not found at gid: " << gid << " segment: " << segment_id << std::endl;
+        std::cerr << "The nodeindices (size: " << ml->nodecount << ") are:\n[";
+        for (int j = 0; j < ml->nodecount; j++) {
+            std::cerr << ml->nodeindices[j] << ", ";
+        }
+        std::cerr << "]\n";
+        nrn_abort(1);
+    }
+
+    const int node_id = it->second;
+
+
+    const auto ans = get_var_location_from_var_name(mech_id, mech_name, var_name, ml, node_id);
+    if (ans == nullptr) {
+        std::cerr
+            << "get_var_location_from_var_name failed to retrieve a valid pointer for mechanism ("
+            << mech_id << ", " << var_name << ", " << mech_name << ") at gid: " << gid
+            << " segment: " << segment_id << std::endl;
+        nrn_abort(1);
+    }
+    return ans;
+}
+
+/**
+ * @brief Retrieve pointers to a mechanism/state variable for all nodes in a segment.
+ *
+ * For "i_membrane" and "v", returns a vector containing a single direct pointer.
+ * Otherwise, looks up the mechanism in the thread, maps the segment to its nodes,
+ * and retrieves pointers for each node. Returns an empty vector on any failure.
+ * Differs from get_one_var() in that it returns multiple pointers (vector) and
+ * fails gracefully without aborting.
+ */
+static std::vector<double*> get_vars(
+    const NrnThread& nt,
+    const int mech_id,
+    const std::string& var_name,
+    const std::string& mech_name,
+    const int segment_id,
+    std::unordered_map<int, std::vector<int>>& segment_id_2_node_ids) {
+    if (mech_name == "i_membrane") {
+        return {nt.nrn_fast_imem->nrn_sav_rhs + segment_id};
+    }
+    if (mech_name == "v") {
+        return {nt._actual_v + segment_id};
+    }
+
+    if (mech_id < 0) {
+        return {};
+    }
+
+    Memb_list* ml = nt._ml_list[mech_id];
+
+    if (!ml) {
+        return {};
+    }
+
+    // lazy cache
+    fill_segment_id_2_node_id(ml, segment_id_2_node_ids);
+
+    const auto it = segment_id_2_node_ids.find(segment_id);
+    // there is no mechanism at this segment. Notice that segment_id_2_node_id
+    // is a segment_id -> node_id that changes with mech_id and gid
+    if (it == segment_id_2_node_ids.end()) {
+        return {};
+    }
+
+    const std::vector<int>& node_ids = it->second;
+
+    std::vector<double*> ans;
+    for (auto node_id: node_ids) {
+        const auto var = get_var_location_from_var_name(mech_id, mech_name, var_name, ml, node_id);
+        if (var) {
+            ans.push_back(var);
+        }
+    }
+    return ans;
+}
+
+/**
+ * @brief Compute a scaling factor for a mechanism variable.
+ *
+ * Inverts current for "IClamp" and "SEClamp". For area scaling (except "i_membrane"),
+ * uses the segment area in µm² divided by 100. Returns 1.0 otherwise.
+ */
+static double get_scaling_factor(const std::string& mech_name,
+                                 Scaling scaling,
+                                 const NrnThread& nt,
+                                 const int segment_id) {
+    // Scaling factors for specific mechanisms
+    if (mech_name == "IClamp" || mech_name == "SEClamp") {
+        return -1.0;  // Invert current for these mechanisms
+    }
+
+    if (mech_name != "i_membrane" && scaling == Scaling::Area) {
+        return (*(nt._actual_area + segment_id)) / 100.0;
+    }
+
+    return 1.0;  // Default scaling factor
+}
+
+static void append_sections_to_to_report_auto_variable(
+    const std::shared_ptr<SecMapping>& sections,
+    std::vector<VarWithMapping>& to_report,
+    const ReportConfiguration& report_conf,
+    const NrnThread& nt,
+    std::unordered_map<int, int>& segment_id_2_node_id,
+    int gid) {
+    nrn_assert(report_conf.mech_ids.size() == 1);
+    nrn_assert(report_conf.var_names.size() == 1);
+    nrn_assert(report_conf.mech_names.size() == 1);
+
+    const auto& mech_id = report_conf.mech_ids[0];
+    const auto& var_name = report_conf.var_names[0];
+    const auto& mech_name = report_conf.mech_names[0];
     for (const auto& section: sections->secmap) {
         // compartment_id
         int section_id = section.first;
         const auto& segment_ids = section.second;
 
         // get all compartment values (otherwise, just middle point)
-        if (all_compartments) {
+        if (report_conf.compartments == Compartments::All) {
+            for (const auto& segment_id: segment_ids) {
+                double* variable = get_one_var(
+                    nt, mech_id, var_name, mech_name, segment_id, segment_id_2_node_id, gid);
+                to_report.emplace_back(VarWithMapping(section_id, variable));
+            }
+        } else if (report_conf.compartments == Compartments::Center) {
+            nrn_assert(segment_ids.size() % 2 &&
+                       "Section with an even number of compartments. I cannot pick the middle one. "
+                       "This was not expected");
+            // corresponding voltage in coreneuron voltage array
+            const auto segment_id = segment_ids[segment_ids.size() / 2];
+            double* variable = get_one_var(
+                nt, mech_id, var_name, mech_name, segment_id, segment_id_2_node_id, gid);
+            to_report.emplace_back(VarWithMapping(section_id, variable));
+        } else {
+            std::cerr << "[ERROR] Invalid compartments type: "
+                      << to_string(report_conf.compartments) << " in report: " << report_conf.name
+                      << std::endl;
+            nrn_abort(1);
+        }
+    }
+}
+
+
+// fill to_report with (int section_id, double* variable)
+static void append_sections_to_to_report(const std::shared_ptr<SecMapping>& sections,
+                                         std::vector<VarWithMapping>& to_report,
+                                         double* report_variable,
+                                         const ReportConfiguration& report_conf) {
+    for (const auto& section: sections->secmap) {
+        // compartment_id
+        int section_id = section.first;
+        const auto& segment_ids = section.second;
+
+        // get all compartment values (otherwise, just middle point)
+        if (report_conf.compartments == Compartments::All) {
             for (const auto& segment_id: segment_ids) {
                 // corresponding voltage in coreneuron voltage array
                 double* variable = report_variable + segment_id;
                 to_report.emplace_back(VarWithMapping(section_id, variable));
             }
-        } else {
-            nrn_assert(segment_ids.size() % 2);
+        } else if (report_conf.compartments == Compartments::Center) {
+            nrn_assert(segment_ids.size() % 2 &&
+                       "Section with an even number of compartments. I cannot pick the middle one. "
+                       "This was not expected");
             // corresponding voltage in coreneuron voltage array
             const auto segment_id = segment_ids[segment_ids.size() / 2];
             double* variable = report_variable + segment_id;
             to_report.emplace_back(VarWithMapping(section_id, variable));
+        } else {
+            std::cerr << "[ERROR] Invalid compartments type: "
+                      << to_string(report_conf.compartments) << " in report: " << report_conf.name
+                      << std::endl;
+            nrn_abort(1);
         }
     }
 }
 
-VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
-                                                       const std::vector<int>& gids_to_report,
-                                                       double* report_variable,
-                                                       SectionType section_type,
-                                                       bool all_compartments) const {
+
+/// @brief create an vector of ids in target_gids that are on this thread
+static std::vector<int> get_intersection_ids(const NrnThread& nt, std::vector<int>& target_gids) {
+    std::unordered_set<int> thread_gids;
+    for (int i = 0; i < nt.ncell; i++) {
+        thread_gids.insert(nt.presyns[i].gid_);
+    }
+    std::vector<int> intersection_ids;
+    intersection_ids.reserve(target_gids.size());
+
+    for (auto i = 0; i < target_gids.size(); ++i) {
+        const auto gid = target_gids[i];
+        if (thread_gids.find(gid) != thread_gids.end()) {
+            intersection_ids.push_back(i);
+        }
+    }
+
+    intersection_ids.shrink_to_fit();
+    return intersection_ids;
+}
+
+/// loop over the points of a compartment set and to return VarsToReport
+static VarsToReport get_compartment_set_vars_to_report(const NrnThread& nt,
+                                                       const std::vector<int>& intersection_ids,
+                                                       const ReportConfiguration& report) {
+    nrn_assert(report.mech_ids.size() == 1);
+    nrn_assert(report.var_names.size() == 1);
+    nrn_assert(report.mech_names.size() == 1);
+    nrn_assert(report.sections == SectionType::Invalid &&
+               "[ERROR] : Compartment report `sections` should be Invalid");
+    nrn_assert(report.compartments == Compartments::Invalid &&
+               "[ERROR] : Compartment report `compartments` should be Invalid");
+
+    nrn_assert(report.target.size() == report.point_compartment_ids.size());
+    nrn_assert(report.target.size() == report.point_section_ids.size());
+
+    const auto& mech_id = report.mech_ids[0];
+    const auto& var_name = report.var_names[0];
+    const auto& mech_name = report.mech_names[0];
+
     VarsToReport vars_to_report;
-    const auto& section_type_str = getSectionTypeStr(section_type);
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     if (!mapinfo) {
-        std::cerr << "[COMPARTMENTS] Error : mapping information is missing for a Cell group "
+        std::cerr << "[ERROR] : Compartment report mapping information is missing for a Cell group "
                   << nt.ncell << '\n';
         nrn_abort(1);
     }
 
-    for (const auto& gid: gids_to_report) {
-        const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
-        if (cell_mapping == nullptr) {
-            std::cerr
-                << "[COMPARTMENTS] Error : Compartment mapping information is missing for gid "
-                << gid << '\n';
-            nrn_abort(1);
+    int old_gid = -1;
+    std::unordered_map<int, int> segment_id_2_node_id;
+    for (const auto& intersection_id: intersection_ids) {
+        const auto gid = report.target[intersection_id];
+        const auto section_id = report.point_section_ids[intersection_id];
+        const auto compartment_id = report.point_compartment_ids[intersection_id];
+        if (old_gid != gid) {
+            // clear cache for new gid. We know they are strictly ordered
+            segment_id_2_node_id.clear();
         }
-        std::vector<VarWithMapping> to_report;
-        to_report.reserve(cell_mapping->size());
 
-        if (section_type_str == "All") {
-            const auto& section_mapping = cell_mapping->secmapvec;
-            for (const auto& sections: section_mapping) {
-                register_sections_to_report(sections, to_report, report_variable, all_compartments);
-            }
-        } else {
-            /** get section list mapping for the type, if available */
-            if (cell_mapping->get_seclist_section_count(section_type_str) > 0) {
-                const auto& sections = cell_mapping->get_seclist_mapping(section_type_str);
-                register_sections_to_report(sections, to_report, report_variable, all_compartments);
-            }
-        }
-        vars_to_report[gid] = to_report;
+        double* variable = get_one_var(
+            nt, mech_id, var_name, mech_name, compartment_id, segment_id_2_node_id, gid);
+        // automatically calls an empty constructor if key is not present
+        vars_to_report[gid].emplace_back(section_id, variable);
+        old_gid = gid;
     }
     return vars_to_report;
 }
 
-VarsToReport ReportHandler::get_summation_vars_to_report(
-    const NrnThread& nt,
-    const std::vector<int>& gids_to_report,
-    const ReportConfiguration& report,
-    const std::vector<int>& nodes_to_gids) const {
+
+static VarsToReport get_section_vars_to_report(const NrnThread& nt,
+                                               const std::vector<int>& intersection_ids,
+                                               const ReportConfiguration& report) {
+    nrn_assert(report.sections != SectionType::Invalid &&
+               "[ERROR] : Compartment report `sections` should not be Invalid");
+    nrn_assert(report.compartments != Compartments::Invalid &&
+               "[ERROR] : Compartment report `compartments` should not be Invalid");
     VarsToReport vars_to_report;
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
-    auto& summation_report = nt.summation_report_handler_->summation_reports_[report.output_path];
     if (!mapinfo) {
-        std::cerr << "[COMPARTMENTS] Error : mapping information is missing for a Cell group "
+        std::cerr << "[ERROR] : Compartment report mapping information is missing for a Cell group "
                   << nt.ncell << '\n';
         nrn_abort(1);
     }
 
-    for (const auto& gid: gids_to_report) {
-        bool has_imembrane = false;
-        // In case we need convertion of units
-        int scale = 1;
-        for (auto i = 0; i < report.mech_ids.size(); ++i) {
-            auto mech_id = report.mech_ids[i];
-            auto var_name = report.var_names[i];
-            auto mech_name = report.mech_names[i];
-            if (mech_name != "i_membrane") {
-                // need special handling for Clamp processes to flip the current value
-                if (mech_name == "IClamp" || mech_name == "SEClamp") {
-                    scale = -1;
-                }
-                Memb_list* ml = nt._ml_list[mech_id];
-                if (!ml) {
-                    continue;
-                }
-
-                for (int j = 0; j < ml->nodecount; j++) {
-                    auto segment_id = ml->nodeindices[j];
-                    if ((nodes_to_gids[ml->nodeindices[j]] == gid)) {
-                        double* var_value =
-                            get_var_location_from_var_name(mech_id, var_name.data(), ml, j);
-                        summation_report.currents_[segment_id].push_back(
-                            std::make_pair(var_value, scale));
-                    }
-                }
-            } else {
-                has_imembrane = true;
-            }
-        }
+    for (const auto& intersection_id: intersection_ids) {
+        const auto gid = report.target[intersection_id];
+        std::unordered_map<int, int> segment_id_2_node_id;
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
         if (cell_mapping == nullptr) {
-            std::cerr << "[SUMMATION] Error : Compartment mapping information is missing for gid "
+            std::cerr << "[ERROR] : Compartment report mapping information is missing for gid "
                       << gid << '\n';
             nrn_abort(1);
         }
         std::vector<VarWithMapping> to_report;
         to_report.reserve(cell_mapping->size());
-        summation_report.summation_.resize(nt.end);
-        double* report_variable = summation_report.summation_.data();
-        const auto& section_type_str = getSectionTypeStr(report.section_type);
-        if (report.section_type != SectionType::All) {
-            if (cell_mapping->get_seclist_section_count(section_type_str) > 0) {
-                const auto& sections = cell_mapping->get_seclist_mapping(section_type_str);
-                register_sections_to_report(sections,
-                                            to_report,
-                                            report_variable,
-                                            report.section_all_compartments);
+
+        if (report.sections == SectionType::All) {
+            const auto& section_mapping = cell_mapping->sec_mappings;
+            for (const auto& sections: section_mapping) {
+                append_sections_to_to_report_auto_variable(
+                    sections, to_report, report, nt, segment_id_2_node_id, gid);
+            }
+        } else {
+            /** get section list mapping for the type, if available */
+            if (cell_mapping->get_seclist_section_count(report.sections) > 0) {
+                const auto& sections = cell_mapping->get_seclist_mapping(report.sections);
+                append_sections_to_to_report_auto_variable(
+                    sections, to_report, report, nt, segment_id_2_node_id, gid);
             }
         }
-        const auto& section_mapping = cell_mapping->secmapvec;
+        to_report.shrink_to_fit();
+        vars_to_report[gid] = to_report;
+    }
+    return vars_to_report;
+}
+
+
+static VarsToReport get_summation_vars_to_report(const NrnThread& nt,
+                                                 const std::vector<int>& intersection_ids,
+                                                 const ReportConfiguration& report) {
+    VarsToReport vars_to_report;
+    const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
+    auto& summation_report = nt.summation_report_handler_->summation_reports_[report.output_path];
+
+    if (!mapinfo) {
+        std::cerr << "[ERROR] : Compartment report mapping information is missing for a Cell group "
+                  << nt.ncell << '\n';
+        nrn_abort(1);
+    }
+
+    for (const auto& intersection_id: intersection_ids) {
+        const auto gid = report.target[intersection_id];
+
+        const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
+        if (cell_mapping == nullptr) {
+            std::cerr << "[ERROR] : Summation report mapping information is missing for gid " << gid
+                      << '\n';
+            nrn_abort(1);
+        }
+
+        // In case we need convertion of units
+        for (auto i = 0; i < report.mech_ids.size(); ++i) {
+            const auto& mech_id = report.mech_ids[i];
+            const auto& var_name = report.var_names[i];
+            const auto& mech_name = report.mech_names[i];
+            std::unordered_map<int, std::vector<int>> segment_id_2_node_ids;
+
+            const auto& section_mapping = cell_mapping->sec_mappings;
+            for (const auto& sections: section_mapping) {
+                for (auto& section: sections->secmap) {
+                    int section_id = section.first;
+                    auto& segment_ids = section.second;
+
+                    for (const auto& segment_id: segment_ids) {
+                        double scaling_factor =
+                            get_scaling_factor(mech_name, report.scaling, nt, segment_id);
+                        // I know that comparing a double to 0.0 is not the best practice,
+                        // but they told me to never round this number and to follow how
+                        // it is done in neurodamus + neuron. In any case it is innoquous,
+                        // it is just to save some computational time. (Katta)
+                        if (scaling_factor == 0.0) {
+                            continue;
+                        }
+
+                        const std::vector<double*> var_ptrs = get_vars(
+                            nt, mech_id, var_name, mech_name, segment_id, segment_id_2_node_ids);
+                        for (auto var_ptr: var_ptrs) {
+                            summation_report.currents_[segment_id].push_back(
+                                std::make_pair(var_ptr, scaling_factor));
+                        }
+                    }
+                }
+            }
+        }
+
+        std::vector<VarWithMapping> to_report;
+        to_report.reserve(cell_mapping->size());
+        summation_report.summation_.resize(nt.end);
+        double* report_variable = summation_report.summation_.data();
+        nrn_assert(report.sections != SectionType::Invalid &&
+                   "ReportHandler::get_summation_vars_to_report: sections should not be Invalid");
+
+        if (report.sections != SectionType::All) {
+            if (cell_mapping->get_seclist_section_count(report.sections) > 0) {
+                const auto& sections = cell_mapping->get_seclist_mapping(report.sections);
+                append_sections_to_to_report(sections, to_report, report_variable, report);
+            }
+        }
+
+        const auto& section_mapping = cell_mapping->sec_mappings;
         for (const auto& sections: section_mapping) {
             for (auto& section: sections->secmap) {
                 // compartment_id
                 int section_id = section.first;
                 auto& segment_ids = section.second;
                 for (const auto& segment_id: segment_ids) {
-                    // corresponding voltage in coreneuron voltage array
-                    if (has_imembrane) {
-                        summation_report.currents_[segment_id].push_back(
-                            std::make_pair(nt.nrn_fast_imem->nrn_sav_rhs + segment_id, 1));
-                    }
-                    if (report.section_type == SectionType::All) {
+                    if (report.sections == SectionType::All) {
                         double* variable = report_variable + segment_id;
                         to_report.emplace_back(VarWithMapping(section_id, variable));
-                    } else if (report.section_type == SectionType::Cell ||
-                               report.section_type == SectionType::Soma) {
+                    } else if (report.sections == SectionType::Soma) {
                         summation_report.gid_segments_[gid].push_back(segment_id);
                     }
                 }
@@ -306,72 +525,89 @@ VarsToReport ReportHandler::get_summation_vars_to_report(
         }
         vars_to_report[gid] = to_report;
     }
+
     return vars_to_report;
 }
 
-VarsToReport ReportHandler::get_synapse_vars_to_report(
-    const NrnThread& nt,
-    const std::vector<int>& gids_to_report,
-    const ReportConfiguration& report,
-    const std::vector<int>& nodes_to_gids) const {
+static VarsToReport get_synapse_vars_to_report(const NrnThread& nt,
+                                               const std::vector<int>& intersection_ids,
+                                               const ReportConfiguration& report) {
+    nrn_assert(report.mech_ids.size() == 1);
+    nrn_assert(report.var_names.size() == 1);
+    nrn_assert(report.mech_names.size() == 1);
+    const auto& mech_id = report.mech_ids[0];
+    const auto& mech_name = report.mech_names[0];
+    const auto& var_name = report.var_names[0];
     VarsToReport vars_to_report;
-    for (const auto& gid: gids_to_report) {
-        // There can only be 1 mechanism
-        nrn_assert(report.mech_ids.size() == 1);
-        auto mech_id = report.mech_ids[0];
-        auto var_name = report.var_names[0];
-        Memb_list* ml = nt._ml_list[mech_id];
-        if (!ml) {
-            continue;
-        }
-        std::vector<VarWithMapping> to_report;
-        to_report.reserve(ml->nodecount);
 
-        for (int j = 0; j < ml->nodecount; j++) {
-            double* is_selected =
-                get_var_location_from_var_name(mech_id, SELECTED_VAR_MOD_NAME, ml, j);
-            bool report_variable = false;
+    const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
+    for (const auto& intersection_id: intersection_ids) {
+        const auto gid = report.target[intersection_id];
 
-            /// if there is no variable in mod file then report on every compartment
-            /// otherwise check the flag set in mod file
-            if (is_selected == nullptr) {
-                report_variable = true;
-            } else {
-                report_variable = *is_selected != 0.;
-            }
-            if ((nodes_to_gids[ml->nodeindices[j]] == gid) && report_variable) {
-                double* var_value = get_var_location_from_var_name(mech_id, var_name.data(), ml, j);
-                double* synapse_id =
-                    get_var_location_from_var_name(mech_id, SYNAPSE_ID_MOD_NAME, ml, j);
-                nrn_assert(synapse_id && var_value);
-                to_report.emplace_back(static_cast<int>(*synapse_id), var_value);
-            }
+        const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
+        if (cell_mapping == nullptr) {
+            std::cerr << "[ERROR] : Synapse report mapping information is missing for gid " << gid
+                      << '\n';
+            nrn_abort(1);
         }
-        if (!to_report.empty()) {
-            vars_to_report[gid] = to_report;
+
+
+        for (auto i = 0; i < report.mech_ids.size(); ++i) {
+            std::unordered_map<int, std::vector<int>> segment_id_2_node_ids;
+
+            const auto& section_mapping = cell_mapping->sec_mappings;
+            for (const auto& sections: section_mapping) {
+                for (auto& section: sections->secmap) {
+                    int section_id = section.first;
+                    auto& segment_ids = section.second;
+                    for (const auto& segment_id: segment_ids) {
+                        const std::vector<double*> selected_vars = get_vars(nt,
+                                                                            mech_id,
+                                                                            "selected_for_report",
+                                                                            mech_name,
+                                                                            segment_id,
+                                                                            segment_id_2_node_ids);
+                        const std::vector<double*> var_ptrs = get_vars(
+                            nt, mech_id, var_name, mech_name, segment_id, segment_id_2_node_ids);
+                        const std::vector<double*> synapseIDs = get_vars(
+                            nt, mech_id, "synapseID", mech_name, segment_id, segment_id_2_node_ids);
+
+                        nrn_assert(var_ptrs.size() == synapseIDs.size());
+                        nrn_assert(selected_vars.empty() ||
+                                   selected_vars.size() == var_ptrs.size());
+
+                        for (auto i = 0; i < var_ptrs.size(); ++i) {
+                            if (selected_vars.empty() || static_cast<bool>(selected_vars[i])) {
+                                vars_to_report[gid].push_back(
+                                    {static_cast<int>(*synapseIDs[i]), var_ptrs[i]});
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     return vars_to_report;
 }
 
-VarsToReport ReportHandler::get_lfp_vars_to_report(const NrnThread& nt,
-                                                   const std::vector<int>& gids_to_report,
-                                                   ReportConfiguration& report,
-                                                   double* report_variable,
-                                                   const std::vector<int>& nodes_to_gids) const {
+static VarsToReport get_lfp_vars_to_report(const NrnThread& nt,
+                                           const std::vector<int>& intersection_ids,
+                                           ReportConfiguration& report,
+                                           double* report_variable) {
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     if (!mapinfo) {
-        std::cerr << "[LFP] Error : mapping information is missing for a Cell group " << nt.ncell
-                  << '\n';
+        std::cerr << "[ERROR] : LFP report mapping information is missing for a Cell group "
+                  << nt.ncell << '\n';
         nrn_abort(1);
     }
     auto& summation_report = nt.summation_report_handler_->summation_reports_[report.output_path];
     VarsToReport vars_to_report;
     std::size_t offset_lfp = 0;
-    for (const auto& gid: gids_to_report) {
+    for (const auto& intersection_id: intersection_ids) {
+        const auto gid = report.target[intersection_id];
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
         if (cell_mapping == nullptr) {
-            std::cerr << "[LFP] Error : Compartment mapping information is missing for gid " << gid
+            std::cerr << "[ERROR] : LFP report mapping information is missing for gid " << gid
                       << '\n';
             nrn_abort(1);
         }
@@ -388,32 +624,90 @@ VarsToReport ReportHandler::get_lfp_vars_to_report(const NrnThread& nt,
     return vars_to_report;
 }
 
-// map GIDs of every compartment, it consist in a backward sweep then forward sweep algorithm
-std::vector<int> ReportHandler::map_gids(const NrnThread& nt) const {
-    std::vector<int> nodes_gid(nt.end, -1);
-    // backward sweep: from presyn compartment propagate back GID to parent
-    for (int i = 0; i < nt.n_presyn; i++) {
-        const int gid = nt.presyns[i].gid_;
-        const int thvar_index = nt.presyns[i].thvar_index_;
-        // only for non artificial cells
-        if (thvar_index >= 0) {
-            // setting all roots gids of the presyns nodes,
-            // index 0 have parent set to 0, so we must stop at j > 0
-            // also 0 is the parent of all, so it is an error to attribute a GID to it.
-            nodes_gid[thvar_index] = gid;
-            for (int j = thvar_index; j > 0; j = nt._v_parent_index[j]) {
-                nodes_gid[nt._v_parent_index[j]] = gid;
-            }
-        }
-    }
-    // forward sweep: setting all compartements nodes to the GID of its root
-    //  already sets on above loop. This is working only because compartments are stored in order
-    //  parents follow by childrens
-    for (int i = nt.ncell + 1; i < nt.end; i++) {
-        nodes_gid[i] = nodes_gid[nt._v_parent_index[i]];
-    }
-    return nodes_gid;
-}
+
 #endif
 
+
+void ReportHandler::create_report(ReportConfiguration& report_config,
+                                  double dt,
+                                  double tstop,
+                                  double delay) {
+#ifdef ENABLE_SONATA_REPORTS
+    if (report_config.start < t) {
+        report_config.start = t;
+    }
+    report_config.stop = std::min(report_config.stop, tstop);
+
+    for (const auto& mech: report_config.mech_names) {
+        report_config.mech_ids.emplace_back(nrn_get_mechtype(mech.data()));
+    }
+    if (report_config.type == ReportType::Synapse && report_config.mech_ids.empty()) {
+        std::cerr << "[ERROR] Synapse report mechanism to report: " << report_config.mech_names[0]
+                  << " is not mapped in this simulation, cannot report on it \n";
+        nrn_abort(1);
+    }
+    for (int ith = 0; ith < nrn_nthread; ++ith) {
+        NrnThread& nt = nrn_threads[ith];
+
+        if (!nt.ncell) {
+            continue;
+        }
+        auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
+
+        const std::vector<int> intersection_ids = get_intersection_ids(nt, report_config.target);
+        VarsToReport vars_to_report;
+        const bool is_soma_target = report_config.sections == SectionType::Soma;
+        switch (report_config.type) {
+        case ReportType::Compartment: {
+            vars_to_report = get_section_vars_to_report(nt, intersection_ids, report_config);
+            register_section_report(nt, report_config, vars_to_report, is_soma_target);
+            break;
+        }
+        case ReportType::CompartmentSet: {
+            vars_to_report =
+                get_compartment_set_vars_to_report(nt, intersection_ids, report_config);
+            register_section_report(nt, report_config, vars_to_report, is_soma_target);
+            break;
+        }
+        case ReportType::Summation: {
+            vars_to_report = get_summation_vars_to_report(nt, intersection_ids, report_config);
+            register_custom_report(nt, report_config, vars_to_report);
+            break;
+        }
+        case ReportType::LFP: {
+            mapinfo->prepare_lfp();
+            vars_to_report =
+                get_lfp_vars_to_report(nt, intersection_ids, report_config, mapinfo->_lfp.data());
+            register_section_report(nt, report_config, vars_to_report, is_soma_target);
+            break;
+        }
+        case ReportType::Synapse: {
+            vars_to_report = get_synapse_vars_to_report(nt, intersection_ids, report_config);
+            register_custom_report(nt, report_config, vars_to_report);
+            break;
+        }
+        default: {
+            std::cerr << "[ERROR] Unknown report type: " << to_string(report_config.type) << '\n';
+            nrn_abort(1);
+        }
+        }
+
+        if (!vars_to_report.empty()) {
+            auto report_event = std::make_unique<ReportEvent>(dt,
+                                                              t,
+                                                              vars_to_report,
+                                                              report_config.output_path.data(),
+                                                              report_config.report_dt,
+                                                              report_config.type);
+            report_event->send(t, net_cvode_instance, &nt);
+            m_report_events.push_back(std::move(report_event));
+        }
+    }
+
+#else
+    if (nrnmpi_myid == 0) {
+        std::cerr << "[WARNING] : Reporting is disabled. Please recompile with libsonata.\n";
+    }
+#endif
+}
 }  // Namespace coreneuron

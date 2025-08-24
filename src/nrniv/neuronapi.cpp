@@ -11,6 +11,8 @@
 #include "parse.hpp"
 #include "section.h"
 #include "shapeplt.h"
+#include <cstring>
+#include <exception>
 
 /// A public face of hoc_Item
 struct nrn_Item: public hoc_Item {};
@@ -355,6 +357,58 @@ void nrn_function_call(Symbol* sym, int narg) {
     // NOTE: this differs from hoc_call_func in that the response remains on the
     // stack
     OcJump::execute_throw_on_exception(sym, narg);
+}
+
+int nrn_method_call_nothrow(Object* obj,
+                            Symbol* method_sym,
+                            int narg,
+                            char* error_msg,
+                            size_t error_msg_size) {
+    // Initialize error message buffer
+    if (error_msg && error_msg_size > 0) {
+        error_msg[0] = '\0';
+    }
+
+    try {
+        OcJump::execute_throw_on_exception(obj, method_sym, narg);
+        return 0;  // Success
+    } catch (const std::exception& e) {
+        if (error_msg && error_msg_size > 0) {
+            strncpy(error_msg, e.what(), error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;  // Error
+    } catch (...) {
+        if (error_msg && error_msg_size > 0) {
+            strncpy(error_msg, "Unknown exception occurred", error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;  // Error
+    }
+}
+
+int nrn_function_call_nothrow(Symbol* sym, int narg, char* error_msg, size_t error_msg_size) {
+    // Initialize error message buffer
+    if (error_msg && error_msg_size > 0) {
+        error_msg[0] = '\0';
+    }
+
+    try {
+        OcJump::execute_throw_on_exception(sym, narg);
+        return 0;  // Success
+    } catch (const std::exception& e) {
+        if (error_msg && error_msg_size > 0) {
+            strncpy(error_msg, e.what(), error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;  // Error
+    } catch (...) {
+        if (error_msg && error_msg_size > 0) {
+            strncpy(error_msg, "Unknown exception occurred", error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;  // Error
+    }
 }
 
 void nrn_object_ref(Object* obj) {
