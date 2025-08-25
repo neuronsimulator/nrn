@@ -112,7 +112,9 @@ class FileHandler {
      * Read count no of mappings for section to segment
      */
     template <typename T>
-    int read_mapping_info(T* mapinfo, NrnThreadMappingInfo* ntmapping, CellMapping* cmap) {
+    int read_mapping_info(T mapinfo,
+                          NrnThreadMappingInfo* ntmapping,
+                          std::shared_ptr<CellMapping> cmap) {
         int nsec, nseg, n_scan;
         size_t total_lfp_factors;
         int num_electrodes;
@@ -124,7 +126,7 @@ class FileHandler {
 
         nrn_assert(n_scan == 5);
 
-        mapinfo->name = std::string(name);
+        mapinfo->type = section_type_from_string(name);
 
         if (nseg) {
             auto sec = read_vector<int>(nseg);
