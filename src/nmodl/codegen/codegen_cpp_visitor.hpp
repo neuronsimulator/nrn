@@ -850,7 +850,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     /**
      * Print code for NMODL's \c state_discontinuity call
      */
-    virtual void print_nrn_state_disc(const ast::FunctionCall& node);
+    virtual void print_nrn_state_disc(const ast::FunctionCall& node) = 0;
 
 
     /**

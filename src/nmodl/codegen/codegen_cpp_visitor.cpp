@@ -571,17 +571,6 @@ void CodegenCppVisitor::print_nrn_pointing(const ast::FunctionCall& node) {
     printer->add_text(")");
 }
 
-void CodegenCppVisitor::print_nrn_state_disc(const ast::FunctionCall& node) {
-    printer->push_block("if (nrn_netrec_state_adjust && !cvode_active_)");
-    printer->add_line("// TODO");
-    printer->pop_block();
-    printer->push_block("else");
-    print_vector_elements(node.get_arguments(), " = ");
-    printer->add_text(";");
-    printer->add_newline();
-    printer->pop_block();
-}
-
 void CodegenCppVisitor::print_procedure(const ast::ProcedureBlock& node) {
     print_function_procedure_helper(node);
 }
