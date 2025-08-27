@@ -1097,6 +1097,24 @@ void CodegenCppVisitor::visit_statement_block(const StatementBlock& node) {
 
 
 void CodegenCppVisitor::visit_function_call(const FunctionCall& node) {
+    // state_discontinuity is special so we treat it separately
+    const auto& name = node.get_node_name();
+    if (name == codegen::naming::NRN_STATE_DISC_METHOD) {
+        printer->push_block("if (nrn_netrec_state_adjust && !cvode_active_)");
+        printer->add_line("// TODO");
+        printer->pop_block();
+        printer->push_block("else");
+        auto& args = node.get_arguments();
+        const auto& first = args[0];
+        const auto& second = args[1];
+        first->accept(*this);
+        printer->add_text(" = ");
+        second->accept(*this);
+        printer->add_text(";");
+        printer->add_newline();
+        printer->pop_block();
+        return;
+    }
     print_function_call(node);
 }
 

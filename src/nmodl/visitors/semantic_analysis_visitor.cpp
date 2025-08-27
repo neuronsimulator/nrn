@@ -290,6 +290,16 @@ void SemanticAnalysisVisitor::visit_function_call(const ast::FunctionCall& node)
         }
     }
 
+    // check that a call to `state_discontinuity` has exactly 2 arguments
+    if (is_nrn_state_disc(fname)) {
+        if (size_t args_size = node.get_arguments().size(); args_size != 2) {
+            logger->critical(
+                fmt::format("state_discontinuity accepts exactly two arguments, got: {}",
+                            args_size));
+            check_fail = true;
+        }
+    }
+
     node.visit_children(*this);
     /// -->
 }
