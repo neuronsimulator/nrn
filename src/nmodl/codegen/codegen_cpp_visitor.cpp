@@ -577,11 +577,7 @@ void CodegenCppVisitor::print_nrn_state_disc(const ast::FunctionCall& node) {
     printer->pop_block();
     printer->push_block("else");
     auto& args = node.get_arguments();
-    const auto& first = args[0];
-    const auto& second = args[1];
-    first->accept(*this);
-    printer->add_text(" = ");
-    second->accept(*this);
+    print_vector_elements(node.get_arguments(), " = ");
     printer->add_text(";");
     printer->add_newline();
     printer->pop_block();
