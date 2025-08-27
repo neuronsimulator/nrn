@@ -525,6 +525,11 @@ void CodegenCppVisitor::print_function_call(const FunctionCall& node) {
         return;
     }
 
+    if (is_nrn_state_disc(name)) {
+        print_nrn_state_disc(node);
+        return;
+    }
+
     if (is_net_send(name)) {
         print_net_send_call(node);
         return;
@@ -564,6 +569,22 @@ void CodegenCppVisitor::print_nrn_pointing(const ast::FunctionCall& node) {
     printer->add_text("nrn_pointing(&");
     print_vector_elements(node.get_arguments(), ", ");
     printer->add_text(")");
+}
+
+void CodegenCppVisitor::print_nrn_state_disc(const ast::FunctionCall& node) {
+    printer->push_block("if (nrn_netrec_state_adjust && !cvode_active_)");
+    printer->add_line("// TODO");
+    printer->pop_block();
+    printer->push_block("else");
+    auto& args = node.get_arguments();
+    const auto& first = args[0];
+    const auto& second = args[1];
+    first->accept(*this);
+    printer->add_text(" = ");
+    second->accept(*this);
+    printer->add_text(";");
+    printer->add_newline();
+    printer->pop_block();
 }
 
 void CodegenCppVisitor::print_procedure(const ast::ProcedureBlock& node) {
@@ -1097,24 +1118,6 @@ void CodegenCppVisitor::visit_statement_block(const StatementBlock& node) {
 
 
 void CodegenCppVisitor::visit_function_call(const FunctionCall& node) {
-    // state_discontinuity is special so we treat it separately
-    const auto& name = node.get_node_name();
-    if (name == codegen::naming::NRN_STATE_DISC_METHOD) {
-        printer->push_block("if (nrn_netrec_state_adjust && !cvode_active_)");
-        printer->add_line("// TODO");
-        printer->pop_block();
-        printer->push_block("else");
-        auto& args = node.get_arguments();
-        const auto& first = args[0];
-        const auto& second = args[1];
-        first->accept(*this);
-        printer->add_text(" = ");
-        second->accept(*this);
-        printer->add_text(";");
-        printer->add_newline();
-        printer->pop_block();
-        return;
-    }
     print_function_call(node);
 }
 
