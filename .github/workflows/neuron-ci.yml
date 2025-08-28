@@ -122,6 +122,7 @@ jobs:
           brew install openmpi
           brew install --cask xquartz
           if [[ "${{matrix.os}}" == "macOS-14" ]]; then
+            brew uninstall cmake || echo "CMake was not pre-installed"
             brew install cmake
             echo "$(brew --prefix)/opt/cmake/bin" >> $GITHUB_PATH
           fi
