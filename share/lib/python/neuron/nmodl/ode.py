@@ -521,6 +521,10 @@ def integrate2c(
         "1st_linear_Integral",
     }
 
+    diff_string = mangle_protected_identifiers([diff_string])[0]
+    dt_var = mangle_protected_identifiers([dt_var])[0]
+    vars = mangle_protected_identifiers(vars)
+
     x, dxdt = _sympify_diff_eq(diff_string, vars)
     # set up differential equation d(x(t))/dt = ...
     # where the function x_t = x(t) is substituted for the symbol x
@@ -579,7 +583,9 @@ def integrate2c(
     # return result as C code in NEURON format:
     #   - in the lhs x_0 refers to the state var at time (t+dt)
     #   - in the rhs x_0 refers to the state var at time t
-    return f"{sp.ccode(x)} = {sp.ccode(solution.evalf(), user_functions=custom_fcts)}"
+    return demangle_protected_identifiers(
+        [f"{sp.ccode(x)} = {sp.ccode(solution.evalf(), user_functions=custom_fcts)}"]
+    )[0]
 
 
 def forwards_euler2c(diff_string, dt_var, vars, function_calls):
