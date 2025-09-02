@@ -540,6 +540,11 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock& node) {
     //  - otherwise, each equation is added to eq_system
     node.visit_children(*this);
 
+    // if there are changes after visiting the children, register them here to be consistent
+    if (solve_method != derivative_block_solve_method[node.get_node_name()]) {
+        derivative_block_solve_method[node.get_node_name()] = solve_method;
+    }
+
     if (eq_system_is_valid && !eq_system.empty()) {
         // solve system of ODEs in eq_system
         logger->debug("SympySolverVisitor :: Solving {} system of ODEs", solve_method);
@@ -719,6 +724,22 @@ void SympySolverVisitor::visit_program(ast::Program& node) {
     }
 
     node.visit_children(*this);
+
+    // register any changes here for consistency
+    for (const auto& block: solve_block_nodes) {
+        if (auto block_ptr = std::dynamic_pointer_cast<ast::SolveBlock>(block)) {
+            const auto& block_name = block_ptr->get_block_name()->get_value()->eval();
+            if (block_ptr->get_method()) {
+                // Note: solve method name is an optional parameter
+                // LINEAR and NONLINEAR blocks do not have solve method specified
+                const auto& solve_method = block_ptr->get_method()->get_value()->eval();
+                if (solve_method != derivative_block_solve_method[block_name]) {
+                    block_ptr->set_method(std::make_shared<ast::Name>(
+                        std::make_shared<ast::String>(derivative_block_solve_method[block_name])));
+                }
+            }
+        }
+    }
 }
 
 }  // namespace visitor
