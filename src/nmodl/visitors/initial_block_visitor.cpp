@@ -30,7 +30,7 @@ void MergeInitialBlocksVisitor::visit_program(ast::Program& node) {
     for (auto& block: blocks) {
         if (block->is_initial_block()) {
             auto statement_block =
-                std::static_pointer_cast<ast::StatementBlock>(block)->get_statement_block();
+                std::static_pointer_cast<ast::InitialBlock>(block)->get_statement_block();
             // if block is not empty, copy statements into vector
             if (statement_block) {
                 for (const auto& statement: statement_block->get_statements()) {
