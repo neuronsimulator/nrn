@@ -31,7 +31,9 @@ auto run_state_discontinuity_visitor(const std::string& text) {
     NmodlDriver driver;
     const auto& ast = driver.parse_string(text);
     SymtabVisitor().visit_program(*ast);
-    SemanticAnalysisVisitor{}.check(*ast);
+    if (SemanticAnalysisVisitor{}.check(*ast)) {
+        throw std::runtime_error("Semantic analysis failed");
+    }
     StateDiscontinuityVisitor().visit_program(*ast);
 
     return to_nmodl(*ast);
@@ -67,6 +69,49 @@ SCENARIO("State discontinuity outside of a NET_RECEIVE block", "[visitor][state_
         THEN("Leave it as-is") {
             const auto& actual = run_state_discontinuity_visitor(nmodl_text);
             REQUIRE(reindent_text(nmodl_text) == reindent_text(actual));
+        }
+    }
+}
+
+SCENARIO("State discontinuity call contains invalid arguments", "[visitor][state_discontinuity]") {
+    GIVEN("A call to state_discontinuity with no args") {
+        const std::string nmodl_text = R"(
+            NET_RECEIVE (w) {
+                state_discontinuity()
+            }
+        )";
+        THEN("Raise an error") {
+            REQUIRE_THROWS(run_state_discontinuity_visitor(nmodl_text));
+        }
+    }
+    GIVEN("A call to state_discontinuity with 1 arg") {
+        const std::string nmodl_text = R"(
+            NET_RECEIVE (w) {
+                state_discontinuity(A)
+            }
+        )";
+        THEN("Raise an error") {
+            REQUIRE_THROWS(run_state_discontinuity_visitor(nmodl_text));
+        }
+    }
+    GIVEN("A call to state_discontinuity with 3 args") {
+        const std::string nmodl_text = R"(
+            NET_RECEIVE (w) {
+                state_discontinuity(A, B, C)
+            }
+        )";
+        THEN("Raise an error") {
+            REQUIRE_THROWS(run_state_discontinuity_visitor(nmodl_text));
+        }
+    }
+    GIVEN("A call to state_discontinuity with first arg a compound expression") {
+        const std::string nmodl_text = R"(
+            NET_RECEIVE (w) {
+                state_discontinuity(A + 1, B)
+            }
+        )";
+        THEN("Raise an error") {
+            REQUIRE_THROWS(run_state_discontinuity_visitor(nmodl_text));
         }
     }
 }
