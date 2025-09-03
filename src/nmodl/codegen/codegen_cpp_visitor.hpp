@@ -637,6 +637,11 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
         return name == codegen::naming::NET_SEND_METHOD;
     }
 
+    bool is_nrn_pointing(const std::string& name) const noexcept {
+        return name == codegen::naming::NRN_POINTING_METHOD;
+    }
+
+
     /**
      * Checks if given function name is \c net_move
      * \param name The function name to check
