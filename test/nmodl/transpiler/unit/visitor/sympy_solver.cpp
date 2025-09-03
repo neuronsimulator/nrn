@@ -1949,6 +1949,9 @@ SCENARIO("Replace unimplementable cnexp solution with derivimplicit solution",
          "[visitor][sympy][cnexp][derivimplicit]") {
     GIVEN("Derivative block that has a LambertW analytic solution") {
         std::string nmodl_text = R"(
+            STATE {
+                a
+            }
             BREAKPOINT  {
                 SOLVE states METHOD cnexp
             }
