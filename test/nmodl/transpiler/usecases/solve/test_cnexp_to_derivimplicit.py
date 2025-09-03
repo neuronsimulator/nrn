@@ -33,9 +33,18 @@ def test_cnexp_to_derivimplicit(
     x = np.array(x_hoc.as_numpy())
     t = np.array(t_hoc.as_numpy())
 
+    # solution to:
+    # x'(t) = - x / (x + 1)
+    # with x(t=0) = C1 is:
+    # x(t) = lambertw(C1 * exp(-t) * exp(C1))
     x_exact = lambertw(42 * np.exp(-t) * np.exp(42))
     np.testing.assert_allclose(x, x_exact, rtol=rtol)
 
 
 if __name__ == "__main__":
-    test_cnexp_to_derivimplicit("cnexp_to_derivimplicit", rtol=1.1e-6)
+    test_cnexp_to_derivimplicit(
+        "cnexp_to_derivimplicit",
+        # by trial and error, the derivimplicit solver seems to be accurate
+        # down to almost 1e-6, but not quite, hence the seemingly magic number
+        rtol=1.1e-6,
+    )
