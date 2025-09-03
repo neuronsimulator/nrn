@@ -703,8 +703,6 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
      */
     void print_net_send_call(const ast::FunctionCall& node) override;
 
-    void print_nrn_state_disc(const ast::FunctionCall& node) override {}
-
 
     /**
      * Print call to net\_move

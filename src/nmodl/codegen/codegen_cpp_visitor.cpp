@@ -525,11 +525,6 @@ void CodegenCppVisitor::print_function_call(const FunctionCall& node) {
         return;
     }
 
-    if (is_nrn_state_disc(name)) {
-        print_nrn_state_disc(node);
-        return;
-    }
-
     if (is_net_send(name)) {
         print_net_send_call(node);
         return;

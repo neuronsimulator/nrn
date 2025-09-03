@@ -2764,44 +2764,6 @@ void CodegenNeuronCppVisitor::print_net_event_call(const ast::FunctionCall& /* n
     printer->fmt_text("net_event({}, t)", point_process);
 }
 
-void CodegenNeuronCppVisitor::print_nrn_state_disc(const ast::FunctionCall& node) {
-    printer->push_block("if (nrn_netrec_state_adjust && !cvode_active_)");
-    printer->add_text("double state = ");
-    const auto& args = node.get_arguments();
-    const auto& first = args[0];
-    const auto& second = args[1];
-    first->accept(*this);
-    printer->add_text(";");
-    printer->add_newline();
-    printer->add_text("double primary_delta = (");
-    second->accept(*this);
-    printer->add_text(") - state;");
-    printer->add_newline();
-    printer->add_line("double dtsav = nt->_dt;");
-    printer->fmt_push_block("for(auto i = 0; i < {}(0); ++i)",
-                            method_name(naming::CVODE_COUNT_NAME));
-    printer->add_line("// TODO: add setting stuff to zero");
-    printer->pop_block();
-    printer->add_line("// TODO: add setting first element");
-    printer->add_line("nt->_dt *= 0.5;");
-    printer->add_line("// TODO: add v");
-    printer->fmt_line("{}({});",
-                      method_name(naming::CVODE_UPDATE_STIFF_NAME),
-                      get_arg_str(cvode_update_parameters()));
-    printer->add_line("nt->_dt = dtsav;");
-    printer->fmt_push_block("for(auto i = 0; i < {}(0); ++i)",
-                            method_name(naming::CVODE_COUNT_NAME));
-    printer->add_line("// TODO: add updating of data");
-    printer->pop_block();
-    printer->pop_block();
-    printer->push_block("else");
-    print_vector_elements(args, " = ");
-    printer->add_text(";");
-    printer->add_newline();
-    printer->pop_block();
-}
-
-
 void CodegenNeuronCppVisitor::print_function_table_call(const FunctionCall& node) {
     auto name = node.get_node_name();
     const auto& arguments = node.get_arguments();
