@@ -24,7 +24,7 @@ using namespace test_utils;
 using nmodl::parser::NmodlDriver;
 
 //=============================================================================
-// Procedure/Function inlining tests
+// State discontinuity tests
 //=============================================================================
 
 auto run_state_discontinuity_visitor(const std::string& text) {
