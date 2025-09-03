@@ -540,7 +540,7 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock& node) {
     //  - otherwise, each equation is added to eq_system
     node.visit_children(*this);
 
-    // if there are changes after visiting the children, register them here to be consistent
+    // if there are changes to the solver method, register them to be consistent
     if (solve_method != derivative_block_solve_method[node.get_node_name()]) {
         derivative_block_solve_method[node.get_node_name()] = solve_method;
     }
@@ -725,7 +725,7 @@ void SympySolverVisitor::visit_program(ast::Program& node) {
 
     node.visit_children(*this);
 
-    // register any changes here for consistency
+    // if the solver method changed, also change the AST to be consistent
     for (const auto& block: solve_block_nodes) {
         if (auto block_ptr = std::dynamic_pointer_cast<ast::SolveBlock>(block)) {
             const auto& block_name = block_ptr->get_block_name()->get_value()->eval();
