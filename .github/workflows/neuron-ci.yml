@@ -129,7 +129,7 @@ jobs:
           # workaround for fmt 11.1 (see https://github.com/gabime/spdlog/pull/3312)
           brew unlink fmt
           echo "$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
-          # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+          # Core https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories
           echo CMAKE_BUILD_PARALLEL_LEVEL=3 >> $GITHUB_ENV
           echo CTEST_PARALLEL_LEVEL=3 >> $GITHUB_ENV
           echo CI_OS_NAME=osx >> $GITHUB_ENV
