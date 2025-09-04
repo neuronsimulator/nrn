@@ -24,7 +24,7 @@ void MergeInitialBlocksVisitor::visit_program(ast::Program& node) {
     // collect all blocks in the program
     const auto& blocks = node.get_blocks();
 
-    // collect all statements from INITIAL blocks, and INITIAL blocks themselves
+    // collect all statements from top-level INITIAL blocks, and the blocks themselves
     ast::StatementVector statements;
     std::unordered_set<ast::Node*> blocks_to_delete;
     for (auto& block: blocks) {
@@ -41,12 +41,12 @@ void MergeInitialBlocksVisitor::visit_program(ast::Program& node) {
         }
     }
 
-    // insert new INITIAL block which has the above statements
+    // insert new top-level INITIAL block which has the above statements
     auto new_block = ast::StatementBlock(statements);
     auto new_initial_block = ast::InitialBlock(new_block.clone());
     node.emplace_back_node(new_initial_block.clone());
 
-    // delete all of the previously-found INITIAL blocks
+    // delete all of the previously-found top-level INITIAL blocks
     node.erase_node(blocks_to_delete);
 }
 }  // namespace visitor
