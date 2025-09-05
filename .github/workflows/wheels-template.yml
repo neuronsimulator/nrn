@@ -52,12 +52,11 @@ jobs:
           # readability, but alas, GitHub Actions does not support expanding
           # nested expressions, so we do this the brute-force way with Bash
           case "${{ inputs.python_version }}" in
-            3.9) version="3.9.13" ;;
             3.10) version="3.10.11" ;;
             3.11) version="3.11.7" ;;
             3.12) version="3.12.0" ;;
             3.13) version="3.13.0" ;;
-            *) echo "Unknown Python version"; exit 1 ;;
+            *) echo "Unsupported Python version: ${{ inputs.python_version }}"; exit 1 ;;
           esac
 
           installer_name="macos11.pkg"

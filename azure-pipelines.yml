@@ -34,9 +34,6 @@ stages:
         vmImage: 'ubuntu-22.04'
       strategy:
         matrix:
-          Python39:
-            python.version: '3.9'
-            python.nodot: '39'
           Python310:
             python.version: '3.10'
             python.nodot: '310'
@@ -93,11 +90,6 @@ stages:
         vmImage: 'macOS-13'
       strategy:
         matrix:
-          Python39:
-            python.version: '3.9'
-            python.nodot: '39'
-            python.org.version: '3.9.13'
-            python.installer.name: 'macos11.pkg'
           Python310:
             python.version: '3.10'
             python.nodot: '310'

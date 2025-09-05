@@ -22,8 +22,8 @@ on:
 #      - 'docs/**'
 
 env:
-  PY_MIN_VERSION: '3.9'
-  PY_MID_VERSION: '3.10'
+  PY_MIN_VERSION: '3.10'
+  PY_MID_VERSION: '3.11'
   PY_MAX_VERSION: '3.13'
   # The Linux runners have 4 cores:
   # https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories

@@ -33,13 +33,12 @@ authors = [
   { name = "Yale" },
   { name = "Blue Brain Project" },
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
   "License :: Other/Proprietary License",
   "Programming Language :: C++",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",

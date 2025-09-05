@@ -3,25 +3,21 @@
 :: install all dependencies
 
 :: install python
-python-3.9.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python39 || goto :error
 python-3.10.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python310 || goto :error
 python-3.11.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python311 || goto :error
 python-3.12.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python312 || goto :error
 python-3.13.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python313 || goto :error
 
 :: fix msvcc version for all python3
-pwsh -command "(Get-Content C:\Python39\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1927'':' | Out-File C:\Python39\Lib\distutils\cygwinccompiler.py"
 pwsh -command "(Get-Content C:\Python310\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1929'':' | Out-File C:\Python310\Lib\distutils\cygwinccompiler.py"
 pwsh -command "(Get-Content C:\Python311\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1934'':' | Out-File C:\Python311\Lib\distutils\cygwinccompiler.py"
 
 
 :: fix msvc runtime library for all python
-pwsh -command "(Get-Content C:\Python39\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python39\Lib\distutils\cygwinccompiler.py"
 pwsh -command "(Get-Content C:\Python310\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python310\Lib\distutils\cygwinccompiler.py"
 pwsh -command "(Get-Content C:\Python311\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python311\Lib\distutils\cygwinccompiler.py"
 
 :: install numpy
-C:\Python39\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
 C:\Python310\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
 C:\Python311\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
 C:\Python312\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
