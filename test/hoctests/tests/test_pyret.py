@@ -1,3 +1,13 @@
+# See PR #3563
+# HOC PythonObject memory leak due to refcount not going to 0 for
+# upkpyobj, pyret, and wrapped PyObject args when a submit job was executed
+# during working. Basically anything that used pickle2po.  Since one of these 4
+# cases involved subworlds, test/parallel_tests/test_subworld.py was
+# also modified to cover a code fragment in subworld_worker_execute.
+# The substantive assertion is that the count of PythonObject hoc
+# objects is 0 after all submit jobs have been executed and results returned
+# to rank 0.
+
 from neuron import h
 
 pc = h.ParallelContext()

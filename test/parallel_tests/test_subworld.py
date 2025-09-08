@@ -1,3 +1,8 @@
+# Modified to help verify PR #3563 PythonObject memory leak fix by
+# passing a PyObject as one of the submit args and asserting that there
+# are no hoc PythonObjects in existence after all submit job return values
+# have been processed.
+
 from neuron import h
 import sys
 
