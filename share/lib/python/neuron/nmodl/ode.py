@@ -5,6 +5,11 @@
 # Lesser General Public License. See top-level LICENSE file for details.
 # ***********************************************************************
 
+# NOTE: because we are testing this via `exec` for the purposes of obtaining
+# the correct coverage, do NOT use triple single quotation marks anywhere in
+# the below because the code will break (should also be enforced by the
+# formatter, but better safe than sorry)!
+
 import re
 from importlib import import_module
 
