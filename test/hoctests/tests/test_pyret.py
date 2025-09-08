@@ -26,15 +26,9 @@ def f(a, b, c):
     return x
 
 
-pc.runworker()
-
-
 def submit(num):
     for i in range(num):
         pc.submit(f, i, str(i), [j for j in range(i)])
-
-
-submit(10)
 
 
 def comp():
@@ -49,11 +43,15 @@ def comp():
         print(f"job id {id}  memory ", h.nrn_mallinfo(0))
 
 
-comp()
+def test_pyobjleak():
+    pc.runworker()
+    submit(10)
+    comp()
+    pc.done()
+    print(f"{pyobjcnt()} PythonObjects")
+    assert pyobjcnt() == 0
 
-pc.done()
 
-print(f"{pyobjcnt()} PythonObjects")
-assert pyobjcnt() == 0
-
-h.quit()
+if __name__ == "__main__":
+    test_pyobjleak()
+    h.quit()
