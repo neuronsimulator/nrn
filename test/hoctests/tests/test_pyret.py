@@ -3,10 +3,16 @@ from neuron import h
 pc = h.ParallelContext()
 
 
+def pyobjcnt():
+    return h.List("PythonObject").count()
+
+
 def f(a, b, c):
-    print(f"f a={a} b={b} c={c} pc.id={pc.id()}")
+    id = h.hoc_ac_
+    print(f"f a={a} b={b} c={c} id={id} pc.id={pc.id()}")
     x = {}
     x[a] = h.Vector(100000 // 8)
+    pc.post(id, [a, b, c])
     return x
 
 
@@ -27,6 +33,9 @@ def comp():
         if id == 0:
             break
         r = pc.pyret()
+        pc.take(id)
+        bb = pc.upkpyobj()
+        print(f"key {id}: {bb}")
         print(f"job id {id}  memory ", h.nrn_mallinfo(0))
 
 
@@ -34,7 +43,7 @@ comp()
 
 pc.done()
 
-z = h.List("PythonObject")
-print(f"{z.count()} PythonObjects")
+print(f"{pyobjcnt()} PythonObjects")
+assert pyobjcnt() == 0
 
 h.quit()
