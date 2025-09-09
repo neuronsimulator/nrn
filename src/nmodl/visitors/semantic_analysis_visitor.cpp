@@ -290,6 +290,24 @@ void SemanticAnalysisVisitor::visit_function_call(const ast::FunctionCall& node)
         }
     }
 
+    if (is_nrn_state_disc(fname)) {
+        // check that a call to `state_discontinuity` has exactly 2 arguments
+        if (size_t args_size = node.get_arguments().size(); args_size != 2) {
+            logger->critical("state_discontinuity accepts exactly two arguments, got: {}",
+                             args_size);
+            check_fail = true;
+            return;
+        }
+        // check that the first arg is a variable
+        const auto& first = node.get_arguments()[0];
+        if (!first->is_var_name()) {
+            logger->critical(
+                "state_discontinuity first arg must be a variable, not a compound expression");
+            check_fail = true;
+            return;
+        }
+    }
+
     node.visit_children(*this);
     /// -->
 }
