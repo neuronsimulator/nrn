@@ -26,7 +26,7 @@ void (*nrn2core_get_dat3_secmapping_)(int i_c,
                                       std::vector<double>& data_lfp);
 
 namespace coreneuron {
-void Phase3::read_file(FileHandler& F, NrnThreadMappingInfo* ntmapping) {
+void Phase3::read_file(FileHandler& F, NrnThreadMappingInfo* ntmapping, const NrnThread& nt) {
     int count = 0;
     F.read_mapping_cell_count(&count);
     /** for every neuron */
@@ -38,14 +38,14 @@ void Phase3::read_file(FileHandler& F, NrnThreadMappingInfo* ntmapping) {
         // read section-segment mapping for every section list
         for (int j = 0; j < nseclist; j++) {
             auto smap = std::make_shared<SecMapping>();
-            F.read_mapping_info(smap, ntmapping, cmap);
+            F.read_mapping_info(smap, ntmapping, cmap, nt);
             cmap->add_sec_map(smap);
         }
         ntmapping->add_cell_mapping(cmap);
     }
 }
 
-void Phase3::read_direct(NrnThreadMappingInfo* ntmapping) {
+void Phase3::read_direct(NrnThreadMappingInfo* ntmapping, const NrnThread& nt) {
     int count;
     nrn2core_get_dat3_cell_count_(count);
     /** for every neuron */
@@ -75,6 +75,9 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping) {
                                           data_sec,
                                           data_seg,
                                           data_lfp);
+            if (nt._permute) {
+                node_permute(data_seg.data(), data_seg.size(), nt._permute);
+            }
             auto smap = std::make_shared<SecMapping>();
             smap->type = section_type_from_string(sclname);
             for (int i_seg = 0; i_seg < n_seg; i_seg++) {
