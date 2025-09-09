@@ -50,7 +50,7 @@ def gcntxt(arg):
     global x
     x = int(arg)
     # print("gcntxt(%s) id_world=%d" % (str(int(arg)), pc.id_world()))
-    print(f"{pyobjcnt()} PythonObject on pc.id_world {pc.id_world()}, pc.id {pc.id()}")
+    # print(f"{pyobjcnt()} PythonObject on pc.id_world {pc.id_world()}, pc.id {pc.id()}")
     assert pyobjcnt() == 0
 
 
