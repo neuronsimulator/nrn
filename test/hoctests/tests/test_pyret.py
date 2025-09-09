@@ -19,7 +19,8 @@ def pyobjcnt():
 
 def f(a, b, c):
     id = h.hoc_ac_
-    print(f"f a={a} b={b} c={c} id={id} pc.id={pc.id()}")
+    # print(f"f a={a} b={b} c={c} id={id} pc.id={pc.id()}")
+    assert int(b) == len(c)
     x = {}
     x[a] = h.Vector(100000 // 8)
     pc.post(id, [a, b, c])
@@ -39,8 +40,9 @@ def comp():
         r = pc.pyret()
         pc.take(id)
         bb = pc.upkpyobj()
-        print(f"key {id}: {bb}")
-        print(f"job id {id}  memory ", h.nrn_mallinfo(0))
+        assert int(bb[0]) == len(bb[2])
+        # print(f"key {id}: {bb}")
+        # print(f"job id {id}  memory ", h.nrn_mallinfo(0))
 
 
 def test_pyobjleak():
@@ -48,7 +50,7 @@ def test_pyobjleak():
     submit(10)
     comp()
     pc.done()
-    print(f"{pyobjcnt()} PythonObjects")
+    # print(f"{pyobjcnt()} PythonObjects")
     assert pyobjcnt() == 0
 
 
