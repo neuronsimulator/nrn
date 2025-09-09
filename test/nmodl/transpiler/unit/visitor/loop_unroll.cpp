@@ -162,4 +162,63 @@ SCENARIO("Perform loop unrolling of FROM construct", "[visitor][unroll]") {
             REQUIRE(reindent_text(output_nmodl) == reindent_text(result));
         }
     }
+
+    GIVEN("A loop with a standalone loop variable") {
+        std::string input_nmodl = R"(
+            DEFINE N 2
+            PROCEDURE rates() {
+                LOCAL x[N]
+                FROM i=0 TO N {
+                    x[i] = x[i] + 11
+                    if(i == 0) {
+                        x[i] = i
+                    }
+                }
+                FROM i=(0+(0+1)) TO (N+2-1) {
+                    x[(i+0)] = x[i+1] + 11
+                }
+            }
+            KINETIC state {
+                FROM i=1 TO N+1 {
+                    ~ ca[i] <-> ca[i+1] (DFree*frat[i+1]*1(um), DFree*frat[i+1]*1(um))
+                }
+            }
+        )";
+        std::string output_nmodl = R"(
+            PROCEDURE rates() {
+                LOCAL x[N]
+                {
+                    x[0] = x[0]+11
+                    IF (0 == 0) {
+                        x[0] = 0
+                    }
+                    x[1] = x[1]+11
+                    IF (1 == 0) {
+                        x[1] = 1
+                    }
+                    x[2] = x[2]+11
+                    IF (2 == 0) {
+                        x[2] = 2
+                    }
+                }
+                {
+                    x[1] = x[2]+11
+                    x[2] = x[3]+11
+                    x[3] = x[4]+11
+                }
+            }
+
+            KINETIC state {
+                {
+                    ~ ca[1] <-> ca[2] (DFree*frat[2]*1(um), DFree*frat[2]*1(um))
+                    ~ ca[2] <-> ca[3] (DFree*frat[3]*1(um), DFree*frat[3]*1(um))
+                    ~ ca[3] <-> ca[4] (DFree*frat[4]*1(um), DFree*frat[4]*1(um))
+                }
+            }
+        )";
+        THEN("Loop body gets correctly unrolled") {
+            auto result = run_loop_unroll_visitor(input_nmodl);
+            REQUIRE(reindent_text(output_nmodl) == reindent_text(result));
+        }
+    }
 }

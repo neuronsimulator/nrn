@@ -126,9 +126,9 @@ LocalVar* add_local_variable(StatementBlock& node, const std::string& varname, i
  */
 std::shared_ptr<Statement> create_statement(const std::string& code_statement) {
     nmodl::parser::NmodlDriver driver;
-    auto nmodl_text = "PROCEDURE dummy() { " + code_statement + " }";
+    auto nmodl_text = "KINETIC dummy { " + code_statement + " }";
     auto ast = driver.parse_string(nmodl_text);
-    auto procedure = std::dynamic_pointer_cast<ProcedureBlock>(ast->get_blocks().front());
+    auto procedure = std::dynamic_pointer_cast<KineticBlock>(ast->get_blocks().front());
     auto statement = std::shared_ptr<Statement>(
         procedure->get_statement_block()->get_statements()[0]->clone());
     return statement;
