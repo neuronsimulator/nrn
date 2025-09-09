@@ -59,7 +59,7 @@ jobs:
             config:
               build_mode: cmake
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
-                -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=undefined
+                -DNRN_ENABLE_INTERVIEWS=OFF
               flag_warnings: ON
               sanitizer: undefined
           - os: ubuntu-22.04
@@ -67,7 +67,7 @@ jobs:
               build_mode: cmake
               # TODO: CoreNEURON is only LeakSanitizer-clean if we disable MPI
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
-                -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=address
+                -DNRN_ENABLE_INTERVIEWS=OFF
               # TODO: address-leak is the dream, but there are many problems,
               # including external ones from the MPI implementations
               sanitizer: address
@@ -85,14 +85,14 @@ jobs:
               build_mode: cmake
               # TODO: investigate rxd test timeouts in this build and re-enable them
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
-                -DNRN_ENABLE_RX3D=OFF -DNMODL_SANITIZERS=address
+                -DNRN_ENABLE_RX3D=OFF
               sanitizer: address
           - os: macOS-14
             config:
               build_mode: cmake
               # TODO: investigate rxd test timeouts in this build and re-enable them
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
-                -DNRN_ENABLE_RX3D=OFF -DNMODL_SANITIZERS=address
+                -DNRN_ENABLE_RX3D=OFF
               sanitizer: thread
       fail-fast: false
 
@@ -122,6 +122,7 @@ jobs:
           brew install openmpi
           brew install --cask xquartz
           if [[ "${{matrix.os}}" == "macOS-14" ]]; then
+            brew uninstall cmake || echo "CMake was not pre-installed"
             brew install cmake
             echo "$(brew --prefix)/opt/cmake/bin" >> $GITHUB_PATH
           fi

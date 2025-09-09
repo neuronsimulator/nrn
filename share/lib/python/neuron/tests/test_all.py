@@ -13,7 +13,6 @@ import unittest
 
 
 def suite():
-
     suite = unittest.TestSuite()
     suite.addTest(test_vector.suite())
     suite.addTest(test_neuron.suite())
@@ -22,7 +21,6 @@ def suite():
 
 
 if __name__ == "__main__":
-
     # unittest.main()
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite())

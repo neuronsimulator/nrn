@@ -17,16 +17,15 @@ In []: neuron ?
 
 From there, you can get help on the various objects in the hoc world:
 
-In []: fom neuron import h
-In []: v = h.Vector()
+In []: from neuron import n
+In []: v = n.Vector()
 In []: ? v.to_python
 
 a feature whose implementation is based on the neuron.doc module.
 
 """
 
-import pydoc, sys, io, inspect
-from neuron import h
+import pydoc, sys, inspect
 
 
 header = """
@@ -39,7 +38,14 @@ NEURON+Python Online Help System
 # override basic helper functionality to give proper help on HocObjects
 class NRNPyHelper(pydoc.Helper):
     def __call__(self, request=None):
-        if type(request) == type(h):
+        from . import n, hoc
+
+        if (
+            isinstance(request, type(n))
+            or isinstance(request, hoc.HocClass)
+            or isinstance(type(request), hoc.HocClass)
+            or isinstance(request, hoc.HocObject)
+        ):
             pydoc.pager(header + request.__doc__)
         else:
             pydoc.Helper.__call__(self, request)
@@ -48,7 +54,7 @@ class NRNPyHelper(pydoc.Helper):
 help = NRNPyHelper(sys.stdin, sys.stdout)
 
 
-def doc_asstring(thing, title="Python Library Documentation: %s", forceload=0):
+def doc_asstring(thing, title="Python Library Documentation: {}", forceload=0):
     """return text documentation as a string, given an object or a path to an object."""
     try:
         object, name = pydoc.resolve(thing, forceload)
@@ -70,8 +76,8 @@ def doc_asstring(thing, title="Python Library Documentation: %s", forceload=0):
             # document its available methods instead of its value.
             object = type(object)
             desc += " object"
-        return title % desc + "\n\n" + pydoc.text.document(object, name)
-    except (ImportError, ErrorDuringImport) as value:
+        return title.format(desc) + "\n\n" + pydoc.text.document(object, name)
+    except (ImportError, pydoc.ErrorDuringImport) as value:
         print(value)
 
 
@@ -158,7 +164,7 @@ https://nrn.readthedocs.org/
 
 
 default_member_doc_template = """
-No docstring available for the class member '%s.%s'
+No docstring available for the class member '{}.{}'
 
 Try checking the online documentation at:
 https://nrn.readthedocs.org/
@@ -175,13 +181,15 @@ def _get_from_help_dict(name):
 
 
 def _get_class_from_help_dict(name):
+    from . import n
+
     result = _get_from_help_dict(name)
     if not result:
         return ""
-    methods = dir(h.__getattribute__(name))
+    methods = dir(getattr(n, name))
     for m in methods:
         if f"{name}.{m}" in _help_dict:
-            result += "\n\n\n%s.%s:\n\n%s" % (name, m, _help_dict[f"{name}.{m}"])
+            result += f"\n\n\n{name}.{m}:\n\n{_help_dict[f'{name}.{m}']}"
     return result
 
 
@@ -209,7 +217,6 @@ def get_docstring(objtype, symbol):
         f.close()
 
     if (objtype, symbol) == ("", ""):
-
         return doc_h
 
     # are we asking for help on a class, e.g. h.Vector
@@ -224,15 +231,14 @@ def get_docstring(objtype, symbol):
         if objtype in _help_dict:
             return _get_class_from_help_dict(objtype)
         else:
-            return default_object_doc_template % symbol
+            return default_object_doc_template % objtype
 
     # are we asking for help on a member of an object, e.g. h.Vector.size
     full_name = f"{objtype}.{symbol}"
     if full_name in _help_dict:
         return _get_from_help_dict(full_name)
     else:
-
-        return default_member_doc_template % (
+        return default_member_doc_template.format(
             objtype,
             symbol,
             get_docstring(objtype, ""),

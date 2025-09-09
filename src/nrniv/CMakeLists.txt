@@ -580,7 +580,7 @@ endif()
 # For now, we keep this distinction as it reduces the PATH and is
 # expected when ctypes looks for dlls
 # ~~~
-install(TARGETS nrniv nocmodl modlunit DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)
+install(TARGETS nrniv modlunit RUNTIME DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)
 install(
   TARGETS nocmodl
   DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin
@@ -589,6 +589,7 @@ install(
   TARGETS nrniv_lib
   DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR}
   EXPORT NeuronTargets)
+
 if(LIBIVX11DYNAM_NAME)
   install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME}
           DESTINATION ${NRN_INSTALL_DATA_PREFIX}lib)

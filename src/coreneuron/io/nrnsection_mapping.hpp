@@ -8,48 +8,47 @@
 
 #pragma once
 
+#include <iostream>
+#include <map>
+#include <memory>
 #include <numeric>
 #include <string>
 #include <utility>
-#include <vector>
-#include <map>
-#include <iostream>
 #include <unordered_map>
+#include <vector>
+
+#include "coreneuron/io/reports/nrnreport.hpp"
+#include "coreneuron/utils/utils.hpp"
 
 namespace coreneuron {
-
-/** type to store every section and associated segments */
-using segvec_type = std::vector<int>;
-using secseg_map_type = std::map<int, segvec_type>;
-using secseg_it_type = secseg_map_type::iterator;
 
 /** @brief Section to segment mapping
  *
  *  For a section list (of a particulat type), store mapping
- *  of section to segments
- *  a section is a arbitrary user classification to recognize some segments (ex: api, soma, dend,
- * axon)
+ *  of section to compartments
+ *  a section is a arbitrary user classification to recognize some compartments (ex: api, soma,
+ * dend, axon)
  *
  */
 struct SecMapping {
     /** name of section list */
-    std::string name;
+    SectionType type;
 
-    /** map of section and associated segments */
-    secseg_map_type secmap;
+    /** map of section and associated compartments */
+    std::unordered_map<int, std::vector<int>> secmap;
 
     SecMapping() = default;
 
-    explicit SecMapping(std::string s)
-        : name(std::move(s)) {}
+    explicit SecMapping(SectionType t)
+        : type(t) {}
 
     /** @brief return total number of sections in section list */
     size_t num_sections() const noexcept {
         return secmap.size();
     }
 
-    /** @brief return number of segments in section list */
-    size_t num_segments() const {
+    /** @brief return number of compartments in section list */
+    size_t num_compartments() const {
         return std::accumulate(secmap.begin(), secmap.end(), 0, [](int psum, const auto& item) {
             return psum + item.second.size();
         });
@@ -72,7 +71,7 @@ struct CellMapping {
     int gid;
 
     /** list of section lists (like soma, axon, apic) */
-    std::vector<SecMapping*> secmapvec;
+    std::vector<std::shared_ptr<SecMapping>> sec_mappings;
 
     /** map containing segment ids an its respective lfp factors */
     std::unordered_map<int, std::vector<double>> lfp_factors;
@@ -82,21 +81,21 @@ struct CellMapping {
 
     /** @brief total number of sections in a cell */
     int num_sections() const {
-        return std::accumulate(secmapvec.begin(),
-                               secmapvec.end(),
+        return std::accumulate(sec_mappings.begin(),
+                               sec_mappings.end(),
                                0,
                                [](int psum, const auto& secmap) {
                                    return psum + secmap->num_sections();
                                });
     }
 
-    /** @brief return number of segments in a cell */
-    int num_segments() const {
-        return std::accumulate(secmapvec.begin(),
-                               secmapvec.end(),
+    /** @brief return number of compartments in a cell */
+    int num_compartments() const {
+        return std::accumulate(sec_mappings.begin(),
+                               sec_mappings.end(),
                                0,
                                [](int psum, const auto& secmap) {
-                                   return psum + secmap->num_segments();
+                                   return psum + secmap->num_compartments();
                                });
     }
 
@@ -111,54 +110,46 @@ struct CellMapping {
 
     /** @brief number of section lists */
     size_t size() const noexcept {
-        return secmapvec.size();
+        return sec_mappings.size();
     }
 
     /** @brief add new SecMapping */
-    void add_sec_map(SecMapping* s) {
-        secmapvec.push_back(s);
+    void add_sec_map(std::shared_ptr<SecMapping> s) {
+        sec_mappings.push_back(s);
     }
 
-    /** @brief return section list mapping with given name */
-    SecMapping* get_seclist_mapping(const std::string& name) const {
-        for (auto& secmap: secmapvec) {
-            if (name == secmap->name) {
+    /** @brief return section list mapping with given type */
+    std::shared_ptr<SecMapping> get_seclist_mapping(const SectionType type) const {
+        for (auto& secmap: sec_mappings) {
+            if (type == secmap->type) {
                 return secmap;
             }
         }
 
-        std::cout << "Warning: Section mapping list " << name << " doesn't exist! \n";
+        std::cout << "Warning: Section mapping list " << to_string(type) << " doesn't exist! \n";
         return nullptr;
     }
 
-    /** @brief return segment count for specific section list with given name */
-    size_t get_seclist_segment_count(const std::string& name) const {
-        SecMapping* s = get_seclist_mapping(name);
-        size_t count = 0;
-        if (s) {
-            count = s->num_segments();
+    /** @brief return compartment count for specific section list with given type */
+    size_t get_seclist_compartment_count(const SectionType type) const {
+        auto s = get_seclist_mapping(type);
+        if (!s) {
+            return 0;
         }
-        return count;
+        return s->num_compartments();
     }
-    /** @brief return segment count for specific section list with given name */
-    size_t get_seclist_section_count(const std::string& name) const {
-        SecMapping* s = get_seclist_mapping(name);
-        size_t count = 0;
-        if (s) {
-            count = s->num_sections();
+    /** @brief return segment count for specific section list with given type */
+    size_t get_seclist_section_count(const SectionType type) const {
+        auto s = get_seclist_mapping(type);
+        if (!s) {
+            return 0;
         }
-        return count;
+        return s->num_sections();
     }
 
     /** @brief add the lfp electrode factors of a segment_id */
     void add_segment_lfp_factor(const int segment_id, std::vector<double>& factors) {
         lfp_factors.insert({segment_id, factors});
-    }
-
-    ~CellMapping() {
-        for (size_t i = 0; i < secmapvec.size(); i++) {
-            delete secmapvec[i];
-        }
     }
 };
 
@@ -169,7 +160,7 @@ struct CellMapping {
  */
 struct NrnThreadMappingInfo {
     /** list of cells mapping */
-    std::vector<CellMapping*> mappingvec;
+    std::unordered_map<int, std::shared_ptr<CellMapping>> cell_mappings;
 
     /** list of segment ids */
     std::vector<int> segment_ids;
@@ -178,31 +169,27 @@ struct NrnThreadMappingInfo {
 
     /** @brief number of cells */
     size_t size() const {
-        return mappingvec.size();
-    }
-
-    /** @brief memory cleanup */
-    ~NrnThreadMappingInfo() {
-        for (size_t i = 0; i < mappingvec.size(); i++) {
-            delete mappingvec[i];
-        }
+        return cell_mappings.size();
     }
 
     /** @brief get cell mapping information for given gid
      *	if exist otherwise return nullptr.
      */
-    CellMapping* get_cell_mapping(int gid) const {
-        for (const auto& mapping: mappingvec) {
-            if (mapping->gid == gid) {
-                return mapping;
-            }
+    std::shared_ptr<CellMapping> get_cell_mapping(int gid) const {
+        auto it = cell_mappings.find(gid);
+        if (it != cell_mappings.end()) {
+            return it->second;
         }
         return nullptr;
     }
 
     /** @brief add mapping information of new cell */
-    void add_cell_mapping(CellMapping* c) {
-        mappingvec.push_back(c);
+    void add_cell_mapping(std::shared_ptr<CellMapping> c) {
+        auto [it, inserted] = cell_mappings.insert({c->gid, c});
+        if (!inserted) {
+            std::cerr << "CellMapping for gid " << std::to_string(c->gid) << " already exists!\n";
+            nrn_abort(1);
+        }
     }
 
     /** @brief add a new segment */
@@ -212,11 +199,11 @@ struct NrnThreadMappingInfo {
 
     /** @brief Resize the lfp vector */
     void prepare_lfp() {
-        size_t lfp_size = std::accumulate(mappingvec.begin(),
-                                          mappingvec.end(),
+        size_t lfp_size = std::accumulate(cell_mappings.begin(),
+                                          cell_mappings.end(),
                                           0,
                                           [](size_t total, const auto& mapping) {
-                                              return total + mapping->num_electrodes();
+                                              return total + mapping.second->num_electrodes();
                                           });
         _lfp.resize(lfp_size);
     }
