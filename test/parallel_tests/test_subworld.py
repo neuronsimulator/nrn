@@ -1,5 +1,15 @@
+# Modified to help verify PR #3563 PythonObject memory leak fix by
+# passing a PyObject as one of the submit args and asserting that there
+# are no hoc PythonObjects in existence after all submit job return values
+# have been processed.
+
 from neuron import h
 import sys
+
+
+def pyobjcnt():
+    return h.List("PythonObject").count()
+
 
 h.nrnmpi_init()
 pc = h.ParallelContext()
@@ -28,9 +38,9 @@ assert pc.nhost_bbs() == ((nbbs + x) if pc.id() == 0 else -1)
 assert pc.id_bbs() == (ibbs if pc.id() == 0 else -1)
 
 
-def f(arg):
+def f(arg, lst):
     print(f"f({str(arg)}) id_world={pc.id_world():d} id={pc.id():d}")
-    return (arg, pc.id_world(), pc.id())
+    return (arg, lst, pc.id_world(), pc.id())
 
 
 x = 0
@@ -40,6 +50,8 @@ def gcntxt(arg):
     global x
     x = int(arg)
     # print("gcntxt(%s) id_world=%d" % (str(int(arg)), pc.id_world()))
+    # print(f"{pyobjcnt()} PythonObject on pc.id_world {pc.id_world()}, pc.id {pc.id()}")
+    assert pyobjcnt() == 0
 
 
 def gtest(arg):
@@ -52,19 +64,19 @@ def gtest(arg):
 pc.runworker()
 
 for i in range(5):
-    pc.submit(f, f"submit {i:d}")
+    pc.submit(f, f"submit {i:d}", [i])
 hs = h.ref("")
 while pc.working():
     pc.upkstr(hs)
-    print(f"working returned {str(pc.pyret())} (submit passed {hs[0]})")
+    ilst = pc.upkpyobj()
+    print(f"working returned {str(pc.pyret())} (submit passed {hs[0]}, {ilst})")
 
 pc.context(gcntxt, 6)
+gcntxt(6)
 
 for i in range(3 * pc.nhost_world()):
     pc.submit(gtest, 6)
 
-
-x = 6
 while pc.working():
     pass
 
