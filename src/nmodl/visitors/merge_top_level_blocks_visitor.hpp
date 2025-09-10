@@ -40,7 +40,6 @@ class MergeTopLevelBlocksVisitor: public AstVisitor {
 
         // collect all top-level blocks in the program
         const auto& blocks = node.get_blocks();
-        logger->info("Collecting blocks of type {}", typeid(ast_class).name());
 
         // collect all statements from top-level blocks, and the blocks themselves
         ast::StatementVector statements;
