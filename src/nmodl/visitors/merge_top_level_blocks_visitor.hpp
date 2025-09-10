@@ -28,7 +28,11 @@ namespace visitor {
  * \class MergeTopLevelBlocksVisitor
  * \brief Visitor which merges given top-level blocks into one
  */
-template <typename ast_class, ast::AstNodeType ast_type>
+template <typename ast_class,
+          ast::AstNodeType ast_type,
+          // only enable it for descendents of `ast::Block`, and only if it's not an abstract class
+          typename = std::enable_if_t<std::is_base_of_v<ast::Block, ast_class> &&
+                                      !std::is_abstract_v<ast_class>>>
 class MergeTopLevelBlocksVisitor: public AstVisitor {
   public:
     MergeTopLevelBlocksVisitor() = default;
