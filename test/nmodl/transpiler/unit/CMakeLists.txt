@@ -48,7 +48,6 @@ add_executable(
   visitor/global_to_range.cpp
   visitor/implicit_argument.cpp
   visitor/inline.cpp
-  visitor/initial_block.cpp
   visitor/json.cpp
   visitor/kinetic_block.cpp
   visitor/localize.cpp
@@ -57,6 +56,7 @@ add_executable(
   visitor/local_to_assigned.cpp
   visitor/lookup.cpp
   visitor/loop_unroll.cpp
+  visitor/merge_top_level_blocks.cpp
   visitor/misc.cpp
   visitor/neuron_solve.cpp
   visitor/nmodl.cpp
