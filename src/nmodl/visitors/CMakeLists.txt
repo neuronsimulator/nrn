@@ -16,6 +16,7 @@ add_library(
   function_callpath_visitor.cpp
   global_var_visitor.cpp
   implicit_argument_visitor.cpp
+  implicit_method_visitor.cpp
   indexedname_visitor.cpp
   index_remover.cpp
   inline_visitor.cpp

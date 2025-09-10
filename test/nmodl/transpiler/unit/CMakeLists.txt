@@ -47,6 +47,7 @@ add_executable(
   visitor/defuse_analyze.cpp
   visitor/global_to_range.cpp
   visitor/implicit_argument.cpp
+  visitor/implicit_method.cpp
   visitor/inline.cpp
   visitor/initial_block.cpp
   visitor/json.cpp

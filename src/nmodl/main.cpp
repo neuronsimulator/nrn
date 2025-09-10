@@ -30,6 +30,7 @@
 #include "visitors/global_var_visitor.hpp"
 #include "visitors/initial_block_visitor.hpp"
 #include "visitors/implicit_argument_visitor.hpp"
+#include "visitors/implicit_method_visitor.hpp"
 #include "visitors/indexedname_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/json_visitor.hpp"
@@ -453,6 +454,12 @@ int run_nmodl(int argc, const char* argv[]) {
             SymtabVisitor(update_symtab).visit_program(*ast);
         }
 
+        /// insert an explicit method to SOLVE blocks (if required)
+        {
+            logger->info("Running implicit method for SOLVE block visitor");
+            ImplicitMethodVisitor().visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("implicit_solve_method"));
+        }
 
         /// note that we can not symtab visitor in update mode as we
         /// replace kinetic block with derivative block of same name
