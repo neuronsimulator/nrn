@@ -67,21 +67,33 @@ SCENARIO("Perform loop unrolling of FROM construct", "[visitor][unroll]") {
             PROCEDURE rates() {
                 LOCAL x[N]
                 {
+                    LOCAL i
+                    i = 0
                     x[0] = x[0]+11
+                    i = 1
                     x[1] = x[1]+11
+                    i = 2
                     x[2] = x[2]+11
                 }
                 {
+                    LOCAL i
+                    i = 1
                     x[1] = x[2]+11
+                    i = 2
                     x[2] = x[3]+11
+                    i = 3
                     x[3] = x[4]+11
                 }
             }
 
             KINETIC state {
                 {
+                    LOCAL i
+                    i = 1
                     ~ ca[1] <-> ca[2] (DFree*frat[2]*1(um), DFree*frat[2]*1(um))
+                    i = 2
                     ~ ca[2] <-> ca[3] (DFree*frat[3]*1(um), DFree*frat[3]*1(um))
+                    i = 3
                     ~ ca[3] <-> ca[4] (DFree*frat[4]*1(um), DFree*frat[4]*1(um))
                 }
             }
@@ -108,12 +120,21 @@ SCENARIO("Perform loop unrolling of FROM construct", "[visitor][unroll]") {
             PROCEDURE rates() {
                 LOCAL x[N]
                 {
+                    LOCAL i
+                    i = 0
                     {
+                        LOCAL j
+                        j = 1
                         x[0] = x[1]+1
+                        j = 2
                         x[0] = x[2]+1
                     }
+                    i = 1
                     {
+                        LOCAL j
+                        j = 1
                         x[1] = x[2]+1
+                        j = 2
                         x[1] = x[3]+1
                     }
                 }
@@ -145,9 +166,12 @@ SCENARIO("Perform loop unrolling of FROM construct", "[visitor][unroll]") {
             PROCEDURE rates() {
                 LOCAL x[N]
                 {
+                    LOCAL i
+                    i = 0
                     FROM j = 1 TO k {
                         x[0] = x[0+k]+1
                     }
+                    i = 1
                     FROM j = 1 TO k {
                         x[1] = x[1+k]+1
                     }
@@ -189,33 +213,41 @@ SCENARIO("Perform loop unrolling of FROM construct", "[visitor][unroll]") {
                 LOCAL x[N]
                 {
                     LOCAL i
-                    x[0] = x[0]+11
                     i = 0
+                    x[0] = x[0]+11
                     IF (i == 0) {
                         x[0] = i
                     }
-                    x[1] = x[1]+11
                     i = 1
+                    x[1] = x[1]+11
                     IF (i == 0) {
                         x[1] = i
                     }
-                    x[2] = x[2]+11
                     i = 2
+                    x[2] = x[2]+11
                     IF (i == 0) {
                         x[2] = i
                     }
                 }
                 {
+                    LOCAL i
+                    i = 1
                     x[1] = x[2]+11
+                    i = 2
                     x[2] = x[3]+11
+                    i = 3
                     x[3] = x[4]+11
                 }
             }
 
             KINETIC state {
                 {
+                    LOCAL i
+                    i = 1
                     ~ ca[1] <-> ca[2] (DFree*frat[2]*1(um), DFree*frat[2]*1(um))
+                    i = 2
                     ~ ca[2] <-> ca[3] (DFree*frat[3]*1(um), DFree*frat[3]*1(um))
+                    i = 3
                     ~ ca[3] <-> ca[4] (DFree*frat[4]*1(um), DFree*frat[4]*1(um))
                 }
             }
