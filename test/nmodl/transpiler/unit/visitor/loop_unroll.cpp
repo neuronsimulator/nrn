@@ -188,17 +188,21 @@ SCENARIO("Perform loop unrolling of FROM construct", "[visitor][unroll]") {
             PROCEDURE rates() {
                 LOCAL x[N]
                 {
+                    LOCAL i
                     x[0] = x[0]+11
-                    IF (0 == 0) {
-                        x[0] = 0
+                    i = 0
+                    IF (i == 0) {
+                        x[0] = i
                     }
                     x[1] = x[1]+11
-                    IF (1 == 0) {
-                        x[1] = 1
+                    i = 1
+                    IF (i == 0) {
+                        x[1] = i
                     }
                     x[2] = x[2]+11
-                    IF (2 == 0) {
-                        x[2] = 2
+                    i = 2
+                    IF (i == 0) {
+                        x[2] = i
                     }
                 }
                 {
