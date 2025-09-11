@@ -44,7 +44,7 @@ SCENARIO("Check insertion of explicit arguments to SOLVE block", "[codegen][impl
                 SOLVE states
             }
 
-            ASSIGNED {
+            STATE {
                 n
             }
 
@@ -61,7 +61,7 @@ SCENARIO("Check insertion of explicit arguments to SOLVE block", "[codegen][impl
                 SOLVE states METHOD derivimplicit
             }
 
-            ASSIGNED {
+            STATE {
                 n
             }
 
@@ -70,8 +70,54 @@ SCENARIO("Check insertion of explicit arguments to SOLVE block", "[codegen][impl
             }
         )";
         auto const actual_text = generate_mod_after_implicit_method_visitor(nmodl_text);
-        THEN("at_time should have nt as its first argument") {
+        THEN("The two mod files should match") {
             REQUIRE(reindent_text(actual_text) == reindent_text(expected_text));
+        }
+    }
+    GIVEN("A mod file that has a SOLVE block of a derivative with an explicit METHOD") {
+        auto const nmodl_text = R"(
+            NEURON {
+                SUFFIX ImplicitMethodTest
+            }
+
+            BREAKPOINT {
+                SOLVE states METHOD cnexp
+            }
+
+            STATE {
+                n
+            }
+
+            DERIVATIVE states {
+                n' = -n
+            }
+        )";
+        auto const actual_text = generate_mod_after_implicit_method_visitor(nmodl_text);
+        THEN("The mod file should remain as-is") {
+            REQUIRE(reindent_text(actual_text) == reindent_text(nmodl_text));
+        }
+    }
+    GIVEN("A mod file that has a SOLVE block of a LINEAR block without an explicit METHOD") {
+        auto const nmodl_text = R"(
+            NEURON {
+                SUFFIX ImplicitMethodTest
+            }
+
+            BREAKPOINT {
+                SOLVE states
+            }
+
+            STATE {
+                x
+            }
+
+            LINEAR lin {
+                ~ 2*a*x = 1
+            }
+        )";
+        auto const actual_text = generate_mod_after_implicit_method_visitor(nmodl_text);
+        THEN("The mod file should remain as-is") {
+            REQUIRE(reindent_text(actual_text) == reindent_text(nmodl_text));
         }
     }
 }
