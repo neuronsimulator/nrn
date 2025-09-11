@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Blue Brain Project, EPFL.
+ * Copyright 2025, EPFL.
  * See the top-level LICENSE file for details.
  *
  * SPDX-License-Identifier: Apache-2.0
