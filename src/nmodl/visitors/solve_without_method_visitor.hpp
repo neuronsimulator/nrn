@@ -9,7 +9,7 @@
 
 /**
  * \file
- * \brief \copybrief nmodl::visitor::ImplicitMethodVisitor
+ * \brief \copybrief nmodl::visitor::SolveWithoutMethodVisitor
  */
 
 #include "visitors/ast_visitor.hpp"
@@ -27,10 +27,10 @@ namespace visitor {
  */
 
 /**
- * \class ImplicitMethodVisitor
- * \brief %Visitor for adding implicit method to SOLVE blocks
+ * \class SolveWithoutMethodVisitor
+ * \brief %Visitor for adding an explicit method to a SOLVE block which has an implicit one
  */
-class ImplicitMethodVisitor: public AstVisitor {
+class SolveWithoutMethodVisitor: public AstVisitor {
   private:
     std::unordered_set<std::string> derivative_block_names;
 

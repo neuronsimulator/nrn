@@ -16,7 +16,6 @@ add_library(
   function_callpath_visitor.cpp
   global_var_visitor.cpp
   implicit_argument_visitor.cpp
-  implicit_method_visitor.cpp
   indexedname_visitor.cpp
   index_remover.cpp
   inline_visitor.cpp
@@ -33,6 +32,7 @@ add_library(
   rename_function_arguments.cpp
   semantic_analysis_visitor.cpp
   solve_block_visitor.cpp
+  solve_without_method_visitor.cpp
   steadystate_visitor.cpp
   sympy_conductance_visitor.cpp
   sympy_replace_solutions_visitor.cpp

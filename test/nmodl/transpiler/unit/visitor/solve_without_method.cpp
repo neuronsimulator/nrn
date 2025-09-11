@@ -8,8 +8,8 @@
 #include "ast/program.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "utils/test_utils.hpp"
-#include "visitors/implicit_method_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
+#include "visitors/solve_without_method_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
@@ -19,21 +19,19 @@
 using namespace nmodl;
 using nmodl::test_utils::reindent_text;
 
-using Catch::Matchers::ContainsSubstring;  // ContainsSubstring in newer Catch2
-
 //=============================================================================
-// Implicit visitor tests
+// Solve without method visitor tests
 //=============================================================================
 
-std::string generate_mod_after_implicit_method_visitor(std::string const& text) {
+std::string generate_mod_after_solve_without_method_visitor(std::string const& text) {
     parser::NmodlDriver driver{};
     auto const ast = driver.parse_string(text);
     visitor::SymtabVisitor{}.visit_program(*ast);
-    visitor::ImplicitMethodVisitor{}.visit_program(*ast);
+    visitor::SolveWithoutMethodVisitor{}.visit_program(*ast);
     return to_nmodl(*ast);
 }
 
-SCENARIO("Check insertion of explicit arguments to SOLVE block", "[codegen][implicit_methods]") {
+SCENARIO("Check insertion of explicit METHOD to SOLVE block", "[visitor][solve_without_method]") {
     GIVEN("A mod file that has a SOLVE block of a derivative without an explicit METHOD") {
         auto const nmodl_text = R"(
             NEURON {
@@ -69,7 +67,7 @@ SCENARIO("Check insertion of explicit arguments to SOLVE block", "[codegen][impl
                 n' = -n
             }
         )";
-        auto const actual_text = generate_mod_after_implicit_method_visitor(nmodl_text);
+        auto const actual_text = generate_mod_after_solve_without_method_visitor(nmodl_text);
         THEN("The two mod files should match") {
             REQUIRE(reindent_text(actual_text) == reindent_text(expected_text));
         }
@@ -92,7 +90,7 @@ SCENARIO("Check insertion of explicit arguments to SOLVE block", "[codegen][impl
                 n' = -n
             }
         )";
-        auto const actual_text = generate_mod_after_implicit_method_visitor(nmodl_text);
+        auto const actual_text = generate_mod_after_solve_without_method_visitor(nmodl_text);
         THEN("The mod file should remain as-is") {
             REQUIRE(reindent_text(actual_text) == reindent_text(nmodl_text));
         }
@@ -115,7 +113,7 @@ SCENARIO("Check insertion of explicit arguments to SOLVE block", "[codegen][impl
                 ~ 2*a*x = 1
             }
         )";
-        auto const actual_text = generate_mod_after_implicit_method_visitor(nmodl_text);
+        auto const actual_text = generate_mod_after_solve_without_method_visitor(nmodl_text);
         THEN("The mod file should remain as-is") {
             REQUIRE(reindent_text(actual_text) == reindent_text(nmodl_text));
         }
