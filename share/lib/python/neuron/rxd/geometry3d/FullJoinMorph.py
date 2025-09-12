@@ -49,7 +49,6 @@ def sort_spheres_last(item):
 
 
 def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
-
     """Input: object source; arguments to pass to ctng
     Output: all voxels with SA and volume associated, categorized by segment"""
     source = list(source)
@@ -67,8 +66,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
         grid = mesh_grid
         if grid["dx"] != dx or grid["dy"] != dx or grid["dz"] != dx:
             raise RxDException(
-                "Error: Inconsistent vocalization. Mesh grid voxels (%g, %g, %g) differs from requested dx (%g, %g %g),",
-                (grid["dx"], grid["dy"], grid["dz"], dx, dx, dx),
+                f"Error: Inconsistent vocalization. Mesh grid voxels ({grid['dx']:g}, {grid['dy']:g}, {grid['dz']:g}) differs from requested dx ({dx:g}, {dx:g}, {dx:g}),"
             )
     else:
 
@@ -141,10 +139,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
     # soma: modified when ctng properly assigns soma obj to segments
     if soma_objects:
         for item, seg in soma_objects.items():
-            if seg in final_seg_dict:
-                final_seg_dict[seg].append(item)
-            else:
-                final_seg_dict[seg] = [item]
+            final_seg_dict.setdefault(seg, []).append(item)
 
     # assign join objects
     for jg in join_groups:
@@ -154,18 +149,12 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
             if (not (isinstance(item, Cone) or isinstance(item, Cylinder))) or (
                 item in join_objects
             ):
-                if seg in final_seg_dict.keys():
-                    final_seg_dict[seg].append(item)
-                else:
-                    final_seg_dict[seg] = [item]
+                final_seg_dict.setdefault(seg, []).append(item)
 
     # complete final segment dictionary
     for cone in cones:
         seg = segment_dict[(cone._x0, cone._y0, cone._z0, cone._x1, cone._y1, cone._z1)]
-        if seg in final_seg_dict.keys():
-            final_seg_dict[seg].append(cone)
-        else:
-            final_seg_dict[seg] = [cone]
+        final_seg_dict.setdefault(seg, []).append(cone)
 
     # voxelize all the objects and assign voxels
     # output dictionaries of internal and surface voxels

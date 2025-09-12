@@ -245,12 +245,9 @@ class DistributedBoundary(RxDGeometry):
 
     def __repr__(self):
         if self._perim_per_area == 0:
-            return "DistributedBoundary(%g)" % (self._area_per_vol)
+            return f"DistributedBoundary({self._area_per_vol:g})"
         else:
-            return "DistributedBoundary(%g, perim_per_area=%g)" % (
-                self._area_per_vol,
-                self._perim_per_area,
-            )
+            return f"DistributedBoundary({self._area_per_vol:g}, perim_per_area={self._perim_per_area:g})"
 
 
 class FractionalVolume(RxDGeometry):
@@ -310,14 +307,7 @@ class FractionalVolume(RxDGeometry):
         return internal_voxels, surface_voxels, mesh_grid
 
     def __repr__(self):
-        return (
-            "FractionalVolume(volume_fraction=%r, surface_fraction=%r, neighbor_areas_fraction=%r)"
-            % (
-                self._volume_fraction,
-                self._surface_fraction,
-                self._neighbor_areas_fraction,
-            )
-        )
+        return f"FractionalVolume(volume_fraction={self._volume_fraction!r}, surface_fraction={self._surface_fraction!r}, neighbor_areas_fraction={self._neighbor_areas_fraction!r})"
 
 
 # TODO: eliminate this class and replace with FixedCrossSection?
@@ -343,10 +333,7 @@ class FixedCrossSection(RxDGeometry):
         self._surface_area = surface_area
 
     def __repr__(self):
-        return "FixedCrossSection(%r, surface_area=%r)" % (
-            self._cross_area,
-            self._surface_area,
-        )
+        return f"FixedCrossSection({self._cross_area!r}, surface_area={self._surface_area!r})"
 
 
 class FixedPerimeter(RxDGeometry):
@@ -362,10 +349,7 @@ class FixedPerimeter(RxDGeometry):
         return [self._perim] * (sec.nseg + 1)
 
     def __repr__(self):
-        return "FixedPerimeter(%r, on_cell_surface=%r)" % (
-            self._perim,
-            self._on_surface,
-        )
+        return f"FixedPerimeter({self._perim!r}, on_cell_surface={self._on_surface!r})"
 
 
 class ScalableBorder(RxDGeometry):
@@ -417,10 +401,7 @@ class ScalableBorder(RxDGeometry):
         self._on_surface = on_cell_surface
 
     def __repr__(self):
-        return "ScalableBorder(%r, on_cell_surface=%r)" % (
-            self._scale,
-            self._on_surface,
-        )
+        return f"ScalableBorder({self._scale!r}, on_cell_surface={self._on_surface!r})"
 
 
 # TODO: remove this, use FixedPerimeter instead?
@@ -465,7 +446,7 @@ class Shell(RxDGeometry):
             self.surface_areas1d = _always_0
 
     def __repr__(self):
-        return "Shell(lo=%r, hi=%r)" % (self._lo, self._hi)
+        return f"Shell(lo={self._lo!r}, hi={self._hi!r})"
 
     def neighbor_areas1d(self, sec):
         if not isinstance(sec, nrn.Section):
@@ -575,7 +556,7 @@ class MultipleGeometry(RxDGeometry):
     def __repr__(self):
         secs = [[s for s in sl] for sl in self._secs]
         geos = [self._secs[sl] for sl in self._secs]
-        return "MultipleGeometry(secs=%r, geos=%r)" % (secs, geos)
+        return f"MultipleGeometry(secs={secs!r}, geos={geos!r})"
 
     def _get_geo(self, sec):
         if not isinstance(sec, nrn.Section):
@@ -589,7 +570,7 @@ class MultipleGeometry(RxDGeometry):
                 geo = self._default
             else:
                 raise RxDException(
-                    "MultipleGeometry is not defined on section %r" % sec
+                    f"MultipleGeometry is not defined on section {sec!r}"
                 )
         return geo
 

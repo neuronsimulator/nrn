@@ -143,6 +143,7 @@ environment-pass = [
   "CORENRN_ENABLE_OPENMP",
   "NRN_BINARY_DIST_BUILD",
   "NRN_RX3D_OPT_LEVEL",
+  "NRN_ENABLE_INTERVIEWS",
   # when making a release, we need to override the version
   "SETUPTOOLS_SCM_PRETEND_VERSION",
   # in case the user wants to use less resources
