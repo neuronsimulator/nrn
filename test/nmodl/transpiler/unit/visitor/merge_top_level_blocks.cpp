@@ -5,10 +5,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "ast/breakpoint_block.hpp"
+#include "ast/initial_block.hpp"
 #include "ast/program.hpp"
+#include "ast/statement_block.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "utils/test_utils.hpp"
-#include "visitors/initial_block_visitor.hpp"
+#include "visitors/merge_top_level_blocks_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
@@ -23,17 +26,19 @@ using nmodl::test_utils::reindent_text;
 using Catch::Matchers::ContainsSubstring;  // ContainsSubstring in newer Catch2
 
 //=============================================================================
-// MergeInitialBlocks visitor tests
+// MergeToplevelBlocks visitor tests
 //=============================================================================
 
-auto generate_mod_after_merge_initial_blocks_visitor(std::string const& text) {
+template <typename block_type, ast::AstNodeType node_type>
+auto generate_mod_after_merge_top_level_blocks_visitor(std::string const& text) {
     parser::NmodlDriver driver{};
     auto ast = driver.parse_string(text);
-    visitor::MergeInitialBlocksVisitor{}.visit_program(*ast);
+    visitor::MergeTopLevelBlocksVisitor<block_type, node_type>{}.visit_program(*ast);
     return to_nmodl(*ast);
 }
 
-SCENARIO("Check multiple INITIAL blocks are handled properly", "[visitor][merge_initial_blocks]") {
+SCENARIO("Check multiple INITIAL blocks are handled properly",
+         "[visitor][merge_top_level_blocks]") {
     GIVEN("A mod file with multiple INITIAL blocks") {
         const auto nmodl_text_before = R"(
             NEURON {
@@ -60,8 +65,10 @@ SCENARIO("Check multiple INITIAL blocks are handled properly", "[visitor][merge_
         parser::NmodlDriver driver{};
         auto ast_expected = driver.parse_string(nmodl_text_after);
         const auto program_expected = to_nmodl(ast_expected);
-        const auto program_actual = generate_mod_after_merge_initial_blocks_visitor(
-            nmodl_text_before);
+        const auto program_actual =
+            generate_mod_after_merge_top_level_blocks_visitor<ast::InitialBlock,
+                                                              ast::AstNodeType::INITIAL_BLOCK>(
+                nmodl_text_before);
         THEN("expected and actual should be identical at the level of the AST") {
             // TODO the AST class lacks an overload for `operator==` so here we compare it at the
             // string level
@@ -81,8 +88,10 @@ SCENARIO("Check multiple INITIAL blocks are handled properly", "[visitor][merge_
                 }
             }
         )";
-        const auto program_actual = generate_mod_after_merge_initial_blocks_visitor(
-            nmodl_text_before);
+        const auto program_actual =
+            generate_mod_after_merge_top_level_blocks_visitor<ast::InitialBlock,
+                                                              ast::AstNodeType::INITIAL_BLOCK>(
+                nmodl_text_before);
         THEN("leave the mod file as-is") {
             REQUIRE(reindent_text(program_actual) == reindent_text(nmodl_text_before));
         }
@@ -109,10 +118,52 @@ SCENARIO("Check multiple INITIAL blocks are handled properly", "[visitor][merge_
                 bar = 2
             }
         )";
-        const auto program_actual = generate_mod_after_merge_initial_blocks_visitor(
-            nmodl_text_before);
+        const auto program_actual =
+            generate_mod_after_merge_top_level_blocks_visitor<ast::InitialBlock,
+                                                              ast::AstNodeType::INITIAL_BLOCK>(
+                nmodl_text_before);
         THEN("leave the mod file as-is") {
             REQUIRE(reindent_text(program_actual) == reindent_text(nmodl_text_before));
+        }
+    }
+}
+
+SCENARIO("Check multiple BREAKPOINT blocks are handled properly",
+         "[visitor][merge_top_level_blocks]") {
+    GIVEN("A mod file with multiple BREAKPOINT blocks") {
+        const auto nmodl_text_before = R"(
+            NEURON {
+                SUFFIX BreakpointBlockTest
+                RANGE foo, bar
+            }
+            BREAKPOINT {
+                foo = 1
+            }
+            BREAKPOINT {
+                bar = 2
+            }
+        )";
+        const auto nmodl_text_after = R"(
+            NEURON {
+              SUFFIX BreakpointBlockTest
+              RANGE foo, bar
+            }
+            BREAKPOINT {
+              foo = 1
+              bar = 2
+            }
+        )";
+        parser::NmodlDriver driver{};
+        auto ast_expected = driver.parse_string(nmodl_text_after);
+        const auto program_expected = to_nmodl(ast_expected);
+        const auto program_actual =
+            generate_mod_after_merge_top_level_blocks_visitor<ast::BreakpointBlock,
+                                                              ast::AstNodeType::BREAKPOINT_BLOCK>(
+                nmodl_text_before);
+        THEN("expected and actual should be identical at the level of the AST") {
+            // TODO the AST class lacks an overload for `operator==` so here we compare it at the
+            // string level
+            REQUIRE(reindent_text(program_actual) == reindent_text(program_expected));
         }
     }
 }
