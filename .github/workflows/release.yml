@@ -105,8 +105,6 @@ jobs:
       # Note that v2 needs to at least contain an x86_64 Linux Python 3.9 wheel since that is the platform that modelDB CI uses
       neuron_v1: neuron==${{ needs.get-latest-wheel-version.outputs.latest_version }}
       neuron_v2: ${{ needs.merge-wheels.outputs.artifacts-url }}
-      # TODO remove this before merging
-      models_to_run: '64195 22203 156120 51781 97868 22203 97756 97917 105507 136803 138379 138382 244679 251881'
 
   nrn-full-src-package:
     name: Create the full-src package
@@ -279,8 +277,7 @@ jobs:
 
   build-windows-installer:
     name: Build Windows installer
-    # TODO change this to `master` before merging
-    uses: neuronsimulator/nrn/.github/workflows/windows.yml@jelic/refactor_release
+    uses: neuronsimulator/nrn/.github/workflows/windows.yml@master
     with:
       tag: ${{ github.event.inputs.rel_branch }}
 
