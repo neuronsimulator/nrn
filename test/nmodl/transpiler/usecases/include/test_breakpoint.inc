@@ -1,5 +1,2 @@
 BREAKPOINT {
 }
-
-INITIAL {
-}
