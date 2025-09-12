@@ -45,6 +45,7 @@
 #include "visitors/rename_function_arguments.hpp"
 #include "visitors/semantic_analysis_visitor.hpp"
 #include "visitors/solve_block_visitor.hpp"
+#include "visitors/solve_without_method_visitor.hpp"
 #include "visitors/steadystate_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
@@ -462,6 +463,12 @@ int run_nmodl(int argc, const char* argv[]) {
             SymtabVisitor(update_symtab).visit_program(*ast);
         }
 
+        /// insert an explicit method to SOLVE blocks (if required)
+        {
+            logger->info("Running SOLVE without METHOD visitor");
+            SolveWithoutMethodVisitor().visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("solve_without_method"));
+        }
 
         /// note that we can not symtab visitor in update mode as we
         /// replace kinetic block with derivative block of same name
