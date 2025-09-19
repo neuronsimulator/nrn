@@ -26,6 +26,7 @@
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
+#include "visitors/matexp_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 
 #pragma clang diagnostic push
@@ -81,6 +82,10 @@ static const char* sympy_conductance_visitor_class = R"(
 
 static const char* sympy_solver_visitor_class = R"(
     SympySolverVisitor class
+)";
+
+static const char* matexp_visitor_class = R"(
+    MatexpVisitor class
 )";
 
 }  // namespace docstring
@@ -243,6 +248,10 @@ void init_visitor_module(py::module& m) {
     py::class_<SympySolverVisitor, AstVisitor> sympy_solver_visitor(m_visitor, "SympySolverVisitor", docstring::sympy_solver_visitor_class);
     sympy_solver_visitor.def(py::init<bool>(), py::arg("use_pade_approx")=false)
         .def("visit_program", &SympySolverVisitor::visit_program);
+
+    py::class_<MatexpVisitor, AstVisitor> matexp_visitor(m_visitor, "MatexpVisitor", docstring::matexp_visitor_class);
+    matexp_visitor.def(py::init<>())
+        .def("visit_program", &MatexpVisitor::visit_program);
     // clang-format on
 }
 

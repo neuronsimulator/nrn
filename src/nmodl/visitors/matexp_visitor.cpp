@@ -22,6 +22,12 @@ std::shared_ptr<ast::Name> mangle_name(const std::string& block_name, bool stead
 }
 
 
+void nonlinear_reaction_error() {
+    logger->error("MatexpVisitor :: Error : Non-linear equation detected");
+    throw std::invalid_argument("Non-linear equation detected");
+}
+
+
 template <typename T>
 bool vector_contains(const std::vector<T>& vec, const T& value) {
     return std::find(vec.begin(), vec.end(), value) != vec.end();
@@ -54,7 +60,7 @@ void MatexpVisitor::visit_program(ast::Program& node) {
     // Include the matrix exponential function
     const auto& blocks = node.get_blocks();
     const auto& matexp_impl = std::make_shared<ast::Verbatim>(std::make_shared<ast::String>(
-        "#undef g \n #undef F \n #undef t \n #include <unsupported/Eigen/MatrixFunctions>\n"));
+        "\n#undef g \n #undef F \n #undef t \n #include <unsupported/Eigen/MatrixFunctions>\n"));
     node.insert_node(blocks.begin(), matexp_impl);
     // Remove solved KINETIC blocks
     for (auto iter = blocks.begin(); iter != blocks.end(); iter++) {
@@ -107,11 +113,11 @@ void MatexpVisitor::visit_kinetic_block(ast::KineticBlock& node) {
     const bool solve = vector_contains(solve_blocks, block_name);
     const bool steadystate = vector_contains(steadystate_blocks, block_name);
     //
-    if (solve) {
-        solve_kinetic_block(node, false);
-    }
     if (steadystate) {
         solve_kinetic_block(node, true);
+    }
+    if (solve) {
+        solve_kinetic_block(node, false);
     }
 }
 
@@ -223,14 +229,17 @@ void MatexpVisitor::visit_statement_block(ast::StatementBlock& node) {
 }
 
 
-bool is_single_state_var(const std::shared_ptr<ast::Ast>& node) {
-    if (node->is_react_var_name()) {
-        auto value = std::dynamic_pointer_cast<ast::ReactVarName>(node)->get_value();
-        if (value && (value->eval() != 1)) {
-            return false;
-        }
+// Argument node is a reactant or product expression
+std::string get_state_var_name(const std::shared_ptr<ast::Ast>& node) {
+    const auto reaction_var_name = std::dynamic_pointer_cast<ast::ReactVarName>(node);
+    if (!reaction_var_name) {
+        nonlinear_reaction_error();
     }
-    return true;
+    const auto coefficient = reaction_var_name->get_value();
+    if (coefficient && coefficient->eval() != 1) {
+        nonlinear_reaction_error();
+    }
+    return reaction_var_name->get_node_name();
 }
 
 
@@ -254,18 +263,15 @@ void MatexpVisitor::visit_reaction_statement(ast::ReactionStatement& node) {
     const auto& rhs = node.get_reaction2();
     const auto& kf = node.get_expression1();  // forwards reaction rate
     const auto& kb = node.get_expression2();  // backwards reaction rate
-    // Check for invalid kinetic models (linear & time-invariant)
+    // Check for invalid kinetic models
     if (op != ast::ReactionOp::LTMINUSGT) {
-        logger->error("MatexpVisitor :: Error : Non-Linear equation detected");
-        return;
-    }
-    if (!is_single_state_var(lhs) || !is_single_state_var(rhs)) {
-        logger->error("MatexpVisitor :: Error : Non-Linear equation detected");
-        return;
+        nonlinear_reaction_error();
     }
     // Find the state vector indices
-    const auto& lhs_idx = get_state_index(to_nmodl(lhs));
-    const auto& rhs_idx = get_state_index(to_nmodl(rhs));
+    const auto lhs_name = get_state_var_name(lhs);
+    const auto rhs_name = get_state_var_name(rhs);
+    const auto lhs_idx = get_state_index(lhs_name);
+    const auto rhs_idx = get_state_index(rhs_name);
     // Calculate the Jacobian matrix indices
     const int jf_src_idx = lhs_idx + states.size() * lhs_idx;
     const int jf_dst_idx = lhs_idx * states.size() + rhs_idx;
