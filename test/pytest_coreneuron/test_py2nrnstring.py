@@ -1,10 +1,6 @@
-import os
-import sys
-
-import pytest
-
 from neuron import h
 from neuron.expect_hocerr import expect_hocerr, expect_err, set_quiet
+import sys
 
 quiet = True
 
@@ -24,11 +20,6 @@ class Foo:  # for testing section name errors when full cell.section name has un
         return self.name
 
 
-def get_compiler() -> str:
-    return os.environ.get("CC", "")
-
-
-@pytest.mark.skipif(get_compiler().endswith("nvc"), reason="Crashes with NVHPC in CI")
 def test_py2nrnstring():
     print(uni)
 
