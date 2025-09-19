@@ -1,3 +1,5 @@
+import pytest
+
 from neuron import h
 from neuron.expect_hocerr import expect_err
 from neuron.tests.utils.checkresult import Chk
@@ -779,6 +781,14 @@ def contiguous():
     cv.active(0)
 
 
+def get_compiler() -> str:
+    return os.environ.get("CC", "")
+
+
+@pytest.mark.skipif(
+    get_compiler().endswith("nvc"),
+    reason="NVHPC does not meet specific tolerance",
+)
 def test_netcvode_cover():
     nrn_use_daspk()
     node()

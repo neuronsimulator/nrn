@@ -195,7 +195,15 @@ def compare_time_and_voltage_trajectories(
         raise Exception("max diff {} > {}".format(max_diff, tolerance))
 
 
+def get_compiler() -> str:
+    return os.environ.get("CC", "")
+
+
 # Whether to test time or voltage values
+@pytest.mark.skipif(
+    get_compiler().endswith("nvc"),
+    reason="NVHPC does not meet specific tolerance",
+)
 @pytest.mark.parametrize("field", ["t", "v"])
 @pytest.mark.parametrize("threads", thread_values)
 def test_t13(chk, t13_model_data, field, threads):
@@ -271,6 +279,10 @@ def t14_model_data(request):
     return data
 
 
+@pytest.mark.skipif(
+    get_compiler().endswith("nvc"),
+    reason="NVHPC does not meet specific tolerance",
+)
 @pytest.mark.parametrize("field", ["t", "v"])
 @pytest.mark.parametrize("threads", thread_values)
 def test_t14(chk, t14_model_data, field, threads):

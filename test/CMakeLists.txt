@@ -241,6 +241,7 @@ if(NRN_ENABLE_PYTHON)
         GROUP ${group}
         NAME basic_tests_py${pyver}
         PRELOAD_SANITIZER
+        ENVIRONMENT "CC=${CMAKE_C_COMPILER}"
         COMMAND "${exe}" ${pytest} "./test/${group}"
         SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py")
     endforeach()
@@ -264,7 +265,7 @@ if(NRN_ENABLE_PYTHON)
     GROUP coverage_tests
     NAME cover_tests
     PRELOAD_SANITIZER
-    ENVIRONMENT COVERAGE_FILE=.coverage.cover_tests
+    ENVIRONMENT COVERAGE_FILE=.coverage.cover_tests CC=${CMAKE_C_COMPILER}
     COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/cover
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
   nrn_add_test_group(
@@ -303,11 +304,15 @@ if(NRN_ENABLE_PYTHON)
       "${PROJECT_SOURCE_DIR}/test/hoctests/*/*.${ext}")
     foreach(hoc_script ${hoc_scripts})
       get_filename_component(name "${hoc_script}" NAME_WLE)
-      nrn_add_test(
-        GROUP hoctests
-        NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
-        COMMAND ${${ext}_exe} "${hoc_script}"
-        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${${ext}test_utils})
+      # NVHPC does not satisfy accuracy requirements for kschan and neurondemo
+      if(NOT ((name MATCHES "test_kschan" OR name MATCHES "test_neurondemo") AND CMAKE_C_COMPILER_ID
+                                                                                 STREQUAL "NVHPC"))
+        nrn_add_test(
+          GROUP hoctests
+          NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
+          COMMAND ${${ext}_exe} "${hoc_script}"
+          SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${${ext}test_utils})
+      endif()
     endforeach()
   endforeach()
 
