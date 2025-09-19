@@ -1,0 +1,24 @@
+name: NEURON NVHPC CI
+
+concurrency:
+  # Don't cancel on master, creating a PR when a push workflow is already going will cancel the push workflow in favour of the PR workflow
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+on:
+  merge_group:
+  push:
+    branches:
+      - master
+      - release/**
+  pull_request:
+    branches:
+      - master
+      - release/**
+
+jobs:
+  ci:
+    name: NVHPC CI
+    uses: neuronsimulator/nrn-nvhpc-ci/.github/workflows/ci.yml@master
+    with:
+      branch: ${{ github.sha }}
