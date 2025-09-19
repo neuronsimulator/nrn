@@ -364,6 +364,10 @@ int Oc::run(int argc, const char** argv) {
     return hoc_main1(argc, argv, 0);
 }
 
+int Oc::run(const std::string& buf, bool show_err_mes) {
+    return run(buf.c_str(), show_err_mes);
+}
+
 int Oc::run(const char* buf, bool show_err_mes) {
     int hem = hoc_execerror_messages;
     hoc_execerror_messages = show_err_mes;

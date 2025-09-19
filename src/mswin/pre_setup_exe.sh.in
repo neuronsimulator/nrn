@@ -70,6 +70,7 @@ cp_dlls $N/bin
   export N
   export MODLUNIT=$N/lib/nrnunits.lib
   export PATH=$nx/bin:$nx/mingw/usr/bin:$nx/mingw/mingw64/bin:$PATH
+  mkdir -p $N/demo/release
   cd $N/demo/release
   # wrapper for mknrndl2.sh is needed because child bash has almost empty environment
   $srcdir/src/mswin/lib/mknrndl2a.sh "$N" "$PATH" "$MODLUNIT"

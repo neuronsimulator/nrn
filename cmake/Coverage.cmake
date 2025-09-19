@@ -25,11 +25,26 @@
 #   All created files (folders) are relative to PROJECT_BINARY_DIR.
 # ~~~
 
+# find the version of lcov
+function(extract_version var)
+  execute_process(
+    COMMAND ${LCOV} --version
+    OUTPUT_VARIABLE LCOV_VERSION_OUTPUT
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  string(REGEX MATCH "([0-9]+\\.[0-9]+(\\.[0-9]+)?)" _ "${LCOV_VERSION_OUTPUT}")
+  set(${var}
+      "${CMAKE_MATCH_1}"
+      PARENT_SCOPE)
+endfunction()
+
 if(NRN_ENABLE_COVERAGE)
   find_program(LCOV lcov)
   if(LCOV STREQUAL "LCOV-NOTFOUND")
     message(ERROR "lcov is required with NRN_ENABLE_COVERAGE=ON and it was not found.")
   endif()
+
+  extract_version(LCOV_VERSION)
+
   string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE_UPPER)
   if(NOT BUILD_TYPE_UPPER STREQUAL "DEBUG")
     message(WARNING "Using CMAKE_BUILD_TYPE=Debug is recommended with NRN_ENABLE_COVERAGE")
@@ -46,6 +61,8 @@ if(NRN_ENABLE_COVERAGE)
     # they are compiled and linked in src/nrnpython/CMakeLists.txt.
     # I.e. successful with
     # -DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"
+    # Used to work but now files compiled in other CMakeLists.txt need the
+    # coverage flags set there.
     # ~~~
     if(NRN_ADDED_COVERAGE_FLAGS)
       message(
@@ -75,6 +92,26 @@ else()
     )
   endif()
 endif()
+
+# Macro to apply coverage flags to source files Use this macro in any CMakeLists.txt file that might
+# compile a file mentioned in NRN_COVERAGE_FILES
+macro(nrn_enable_coverage_files)
+  if(NRN_COVERAGE_FILES)
+    foreach(f ${NRN_COVERAGE_FILES})
+      get_property(
+        current_flags
+        SOURCE ${PROJECT_SOURCE_DIR}/${f}
+        PROPERTY COMPILE_FLAGS)
+      string(FIND "${current_flags}" "${NRN_COVERAGE_FLAGS}" found_pos)
+      if(found_pos EQUAL -1) # -1 means not found
+        set_property(
+          SOURCE ${PROJECT_SOURCE_DIR}/${f}
+          APPEND
+          PROPERTY COMPILE_FLAGS ${NRN_COVERAGE_FLAGS})
+      endif()
+    endforeach()
+  endif()
+endmacro()
 
 if(NRN_ENABLE_COVERAGE)
   set(cover_clean_command find "${PROJECT_BINARY_DIR}" "-name" "*.gcda" "-type" "f" "-delete")

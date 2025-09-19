@@ -29,7 +29,7 @@ struct error_value_impl<
 
 template <class F, class... Args>
 struct convert_cxx_exceptions_trait {
-    using return_type = typename std::result_of<F(Args...)>::type;
+    using return_type = std::invoke_result_t<F, Args...>;
 
     static return_type error_value() {
         return detail::error_value_impl<return_type>::value();

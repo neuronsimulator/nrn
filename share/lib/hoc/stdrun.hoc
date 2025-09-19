@@ -239,7 +239,7 @@ proc nrnmainmenu() {
 proc helpmenu() {
     xmenu("Help", 1)
     if (nrnpython("import webbrowser")) {
-	    xbutton("Programmer's Reference", "nrnpython(\"webbrowser.open('https://nrn.readthedocs.io/en/latest/python/index.html')\")")
+	    xbutton("Programmer's Reference", "nrnpython(\"webbrowser.open('https://nrn.readthedocs.io/en/latest/progref/index.html')\")")
 	    xbutton("Tutorials", "nrnpython(\"webbrowser.open('https://nrn.readthedocs.io/en/latest/tutorials/index.html')\")")
 	    xbutton("NEURON Forum", "nrnpython(\"webbrowser.open('https://neuron.yale.edu/phpBB/')\")")
 	    xbutton("NEURON Models on ModelDB", "nrnpython(\"webbrowser.open('https://modeldb.science/ModelList?id=1882')\")")

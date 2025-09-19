@@ -2,7 +2,6 @@
 #include "nrn_ansi.h"
 #include "nrnassrt.h"
 #include "nrnconfigargs.h"
-#include "nrnversion.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -28,8 +27,6 @@ static char configargs[] = NRN_CONFIG_ARGS;
 char* nrn_version(int i) {
     char buf[1024];
     char head[1024];
-    char* cp;
-    int b;
     buf[0] = '\0';
     if (strncmp(GIT_BRANCH, "Release", 7) == 0) {
         Sprintf(head, "%s (%s)", GIT_BRANCH, GIT_CHANGESET);
@@ -49,7 +46,7 @@ char* nrn_version(int i) {
     } else if (i == 6) {
         return configargs;
     } else if (i == 7) {
-        int j, size;
+        int j;
         if (!sarg) {
             char* c;
             int size = 0;

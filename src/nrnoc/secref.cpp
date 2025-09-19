@@ -18,10 +18,9 @@ access s1.sec	// soma becomes the default section
 #include <stdlib.h>
 #include "section.h"
 #include "parse.hpp"
-#include "hoc_membf.h"
+#include "classreg.h"
+#include "code.h"
 #include "oc_ansi.h"
-
-extern int hoc_return_type_code;
 
 Symbol *nrn_sec_sym, *nrn_parent_sym, *nrn_root_sym, *nrn_child_sym;
 Symbol* nrn_trueparent_sym;
@@ -244,13 +243,13 @@ int nrn_secref_nchild(Section* sec) {
 }
 
 static double s_nchild(void* v) {
-    hoc_return_type_code = 1; /* integer */
+    hoc_return_type_code = HocReturnType::integer;
     return (double) nrn_secref_nchild((Section*) v);
 }
 
 static double s_has_parent(void* v) {
     Section* sec = (Section*) v;
-    hoc_return_type_code = 2; /* boolean */
+    hoc_return_type_code = HocReturnType::boolean;
     if (!sec->prop) {
         hoc_execerror("Section was deleted", (char*) 0);
     }
@@ -259,7 +258,7 @@ static double s_has_parent(void* v) {
 
 static double s_has_trueparent(void* v) {
     Section* sec = (Section*) v;
-    hoc_return_type_code = 2; /* boolean */
+    hoc_return_type_code = HocReturnType::boolean;
     if (!sec->prop) {
         hoc_execerror("Section was deleted", (char*) 0);
     }
@@ -267,7 +266,7 @@ static double s_has_trueparent(void* v) {
 }
 
 static double s_exists(void* v) {
-    hoc_return_type_code = 2; /* boolean */
+    hoc_return_type_code = HocReturnType::boolean;
     Section* sec = (Section*) v;
     return (double) (sec->prop != (Prop*) 0);
 }
@@ -275,7 +274,7 @@ static double s_exists(void* v) {
 static double s_cas(void* v) { /* return 1 if currently accessed section */
     Section* sec = (Section*) v;
     Section* cas = chk_access();
-    hoc_return_type_code = 2; /* boolean */
+    hoc_return_type_code = HocReturnType::boolean;
     if (!sec->prop) {
         hoc_execerror("Section was deleted", (char*) 0);
     }
@@ -297,7 +296,7 @@ static Member_func members[] = {{"sec", s_rename}, /* will actually become a SEC
                                 {"rename", s_rename},
                                 {"unname", s_unname},
                                 {"is_cas", s_cas},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex) {
     Section* s = 0;
@@ -360,15 +359,6 @@ Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex) {
     }
     return s;
 }
-
-
-extern void class2oc(const char*,
-                     void* (*cons)(Object*),
-                     void (*destruct)(void*),
-                     Member_func*,
-                     Member_ret_obj_func*,
-                     Member_ret_str_func*);
-
 
 void SectionRef_reg(void) {
     Symbol *s, *sr;

@@ -64,7 +64,6 @@ void nrn_capacity_current(neuron::model_sorted_token const& sorted_token,
     neuron::cache::MechanismRange<nparm, ndparm> ml_cache{sorted_token, *_nt, *ml, ml->type()};
     auto* const vec_rhs = _nt->node_rhs_storage();
     int count = ml->nodecount;
-    Node** vnode = ml->nodelist;
     double cfac = .001 * _nt->cj;
     /* since rhs is dvm for a full or half implicit step */
     /* (nrn_update_2d() replaces dvi by dvi-dvx) */

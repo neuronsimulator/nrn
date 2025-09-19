@@ -1,9 +1,29 @@
 version: 2
 
+sphinx:
+  configuration: docs/conf.py
+
 build:
   os: "ubuntu-22.04"
   tools:
-    python: "mambaforge-22.9"
+    python: "3.12"
+  apt_packages:
+    - build-essential
+    - libx11-dev
+    - libxcomposite-dev
+    - libmpich-dev
+    - ffmpeg
+    - doxygen
+    - pandoc
+    - cmake
+    - bison
+    - flex
+    - libfl-dev
+    - libreadline-dev
 
-conda:
-  environment: docs/conda_environment.yml
+submodules:
+  recursive: true
+
+python:
+  install:
+    - requirements: ci/requirements.txt

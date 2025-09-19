@@ -61,7 +61,7 @@ class _SectionLookup:
 
 def add_values(mat, i, js, vals):
     mat_i = mat[i]
-    for (j, val) in zip(js, vals):
+    for j, val in zip(js, vals):
         if val == 0:
             continue
         if j in mat_i:
@@ -144,6 +144,20 @@ def replace(rmsec, offset, nseg):
 
 
 class Section1D(rxdsection.RxDSection):
+    __slots__ = (
+        "_species",
+        "_diff",
+        "_secref",
+        "_concentration_ptrs",
+        "_num_roots",
+        "_offset",
+        "_nseg",
+        "_region",
+        "_rxd_sec_lookup",
+        "_neighbor_areas",
+        "_parent",
+    )
+
     def __init__(self, species, sec, diff, r):
         self._species = weakref.ref(species)
         self._diff = diff
@@ -352,7 +366,7 @@ class Section1D(rxdsection.RxDSection):
             #    g[io, io + 1] -= rate_r
             #    g[io, il] -= rate_l
             # except IndexError:
-            #    print(('indexerror: g.shape = %r, io = %r, il = %r, len(node._states) = %r' % (g.shape, io, il, len(node._states))))
+            #    print(f'indexerror: g.shape = {g.shape!r}, io = {io!r}, il = {il!r}, len(node._states) = {len(node._states)!r}')
             #    raise
             add_values(mat, io, [il, io, io + 1], [-rate_l, rate_r + rate_l, -rate_r])
 

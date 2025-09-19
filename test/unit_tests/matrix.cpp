@@ -96,7 +96,7 @@ SCENARIO("A Matrix", "[neuron_ivoc][OcMatrix]") {
         }
         {
             std::vector<std::pair<int, int>> nzs = m.nonzeros();
-            std::vector<std::pair<int, int>> res = {{0, 0}, {1, 1} , {2, 2}, {3, 0}, {3, 1}, {3, 2}};
+            std::vector<std::pair<int, int>> res = {{0, 0}, {1, 1}, {2, 2}, {3, 0}, {3, 1}, {3, 2}};
             REQUIRE(nzs == res);
         }
         {

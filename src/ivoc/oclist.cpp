@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include "classreg.h"
+#include "code.h"
 #include "oclist.h"
 #include "oc2iv.h"
 #include "hoclist.h"
@@ -22,8 +23,6 @@
 extern Object** hoc_temp_objptr(Object*);
 extern Symlist* hoc_top_level_symlist;
 int ivoc_list_count(Object*);
-
-extern int hoc_return_type_code;
 
 void handle_old_focus();
 
@@ -170,7 +169,7 @@ void OcList::insert(long i, Object* ob) {
 
 static double l_count(void* v) {
     OcList* o = (OcList*) v;
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     return o->count();
 }
 long OcList::count() {
@@ -200,7 +199,7 @@ void OcList::remove(long i) {
 static double l_index(void* v) {
     OcList* o = (OcList*) v;
     Object* ob = *hoc_objgetarg(1);
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return o->index(ob);
 }
 long OcList::index(Object* ob) {
@@ -303,7 +302,7 @@ static double l_select_action(void* v) {
     return 1.;
 }
 static double l_selected(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("List.selected", list_class_sym_, v);
 #if HAVE_IV
     long i = -1;
@@ -454,7 +453,7 @@ OcList::~OcList() {
 
 void OcList_reg() {
     // printf("Oclist_reg\n");
-    class2oc("List", l_cons, l_destruct, l_members, l_retobj_members, NULL);
+    class2oc("List", l_cons, l_destruct, l_members, l_retobj_members, nullptr);
     list_class_sym_ = hoc_lookup("List");
 }
 

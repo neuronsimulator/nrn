@@ -35,9 +35,7 @@ typedef struct Spline {
 #define SP0 (Spline*) 0
 
 static Spline* splist = SP0;     /* list of splines */
-static Spline* steplist = SP0;   /* list of steps */
 static Spline* lastspline = SP0; /* the spline used on previous call */
-static Spline* laststep = SP0;   /* the step list used on previous call */
 
 extern int DEFLT;
 

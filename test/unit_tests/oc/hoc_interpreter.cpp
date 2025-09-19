@@ -5,7 +5,7 @@
 #include "classreg.h"
 #include "code.h"
 #include "hocdec.h"
-#include "hoc_membf.h"
+#include "classreg.h"
 #include "ocfunc.h"
 
 #include <sstream>

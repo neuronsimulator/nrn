@@ -1,5 +1,8 @@
 #include "oc_ansi.h"
 #ifndef __INTEL_LLVM_COMPILER
+#ifdef __clang__
+#pragma float_control(precise, on)
+#endif
 #pragma STDC FENV_ACCESS ON
 #endif
 
@@ -16,7 +19,7 @@
 #include <cerrno>
 #include <cstdio>
 
-#if NRN_ARCH_INDEP_EXP_POW
+#if NRN_ENABLE_ARCH_INDEP_EXP_POW
 #include <mpfr.h>
 #endif
 
@@ -65,7 +68,7 @@ double hoc_Log10(double x) {
     return errcheck(log10(x), "log10");
 }
 
-#if NRN_ARCH_INDEP_EXP_POW
+#if NRN_ENABLE_ARCH_INDEP_EXP_POW
 
 static double accuracy32(double val) {
     int ex;
@@ -140,18 +143,18 @@ int nrn_use_exp_pow_precision(int style) {
     return style;
 }
 
-#endif  // NRN_ARCH_INDEP_EXP_POW
+#endif  // NRN_ENABLE_ARCH_INDEP_EXP_POW
 
 void hoc_use_exp_pow_precision() {
     int style = 0;
     if (ifarg(1)) {
         style = chkarg(1, 0.0, 2.0);
     }
-#if NRN_ARCH_INDEP_EXP_POW
+#if NRN_ENABLE_ARCH_INDEP_EXP_POW
     style = nrn_use_exp_pow_precision(style);
 #else
     style = 0;
-#endif  // NRN_ARCH_INDEP_EXP_POW
+#endif  // NRN_ENABLE_ARCH_INDEP_EXP_POW
     hoc_ret();
     hoc_pushx(double(style));
 }
@@ -161,7 +164,7 @@ void hoc_use_exp_pow_precision() {
 // hopefully arch independent mpfr for exp and pow.
 
 double hoc_pow(double x, double y) {
-#if NRN_ARCH_INDEP_EXP_POW
+#if NRN_ENABLE_ARCH_INDEP_EXP_POW
     return (*pow_ptr)(x, y);
 #else
     return pow(x, y);
@@ -186,7 +189,7 @@ double hoc_Exp(double x) {
         return exp(700.);
     }
 
-#if NRN_ARCH_INDEP_EXP_POW
+#if NRN_ENABLE_ARCH_INDEP_EXP_POW
     return (*exp_ptr)(x);
 #else
     return exp(x);

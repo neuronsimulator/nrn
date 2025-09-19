@@ -6,8 +6,6 @@
 #include <unistd.h>
 #endif
 
-extern int hoc_return_type_code;
-
 #ifdef WIN32
 #include <errno.h>
 #include <io.h>
@@ -23,6 +21,7 @@ extern int hoc_return_type_code;
 #endif
 #include "nrnmpi.h"
 #include "oc2iv.h"
+#include "code.h"
 #include "classreg.h"
 #include "ocfile.h"
 #include "nrnfilewrap.h"
@@ -260,7 +259,7 @@ static double f_seek(void* v) {
 
 static double f_tell(void* v) {
     OcFile* f = (OcFile*) v;
-    hoc_return_type_code = 1;
+    hoc_return_type_code = HocReturnType::integer;
     BinaryMode(f) return (double) ftell(f->file());
 }
 
@@ -294,12 +293,14 @@ Member_func f_members[] = {{"ropen", f_ropen},
                            {"mktemp", f_mktemp},
                            {"unlink", f_unlink},
                            {"flush", f_flush},
-                           {0, 0}};
+                           {nullptr, nullptr}};
 
-static Member_ret_str_func f_retstr_members[] = {{"getname", f_get_name}, {"dir", f_dir}, {0, 0}};
+static Member_ret_str_func f_retstr_members[] = {{"getname", f_get_name},
+                                                 {"dir", f_dir},
+                                                 {nullptr, nullptr}};
 
 void OcFile_reg() {
-    class2oc("File", f_cons, f_destruct, f_members, NULL, f_retstr_members);
+    class2oc("File", f_cons, f_destruct, f_members, nullptr, f_retstr_members);
     file_class_sym_ = hoc_lookup("File");
 }
 

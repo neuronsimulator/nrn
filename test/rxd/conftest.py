@@ -44,6 +44,8 @@ def neuron_nosave_instance(neuron_import):
     # out of scope after neuron_instance is torn down.
     # Here we assert that no section left alive. If the assertion fails it is
     # due to a problem with the previous test, not the test which failed.
+    for sec in h.allsec():
+        h.delete_section(sec=sec)
     gc.collect()
     for sec in h.allsec():
         assert False
@@ -91,7 +93,13 @@ def neuron_instance(neuron_nosave_instance):
     """Sets/Resets the rxd test environment.
     Provides 'data', a dictionary used to store voltages and rxd node
     values for comparisons with the 'correct_data'.
+    Just like a Vector.record, data is accumulated at the beginning of
+    every time step via the beforestep_callback instance that is created
+    at the beginning of an finitialize and destroyed when this function
+    returns.
     """
+
+    bsc = None  # set by the setcall callback below
 
     h, rxd, save_path = neuron_nosave_instance
     data = {"record_count": 0, "data": []}
@@ -99,9 +107,16 @@ def neuron_instance(neuron_nosave_instance):
     def gather():
         return collect_data(h, rxd, data, save_path)
 
-    cvode = h.CVode()
-    cvode.extra_scatter_gather(0, gather)
+    def setcall():
+        nonlocal bsc
+        bsc = None
+        a = list(h.allsec())
+        if len(a):
+            bsc = h.beforestep_callback(a[0](0.5))
+            bsc.set_callback(gather)
+
+    fih = h.FInitializeHandler(3, setcall)
 
     yield (h, rxd, data, save_path)
 
-    cvode.extra_scatter_gather_remove(gather)
+    # both fih and bsc are destroyed on return

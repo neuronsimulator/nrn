@@ -5,6 +5,7 @@ NEURON SCM and Release
    :maxdepth: 4
 
    ./guidelines/SCMGuidelines.md
+   ./guidelines/release_workflow.rst
    ./guide/SCMGuide.md
    ./policies/policies.md
 

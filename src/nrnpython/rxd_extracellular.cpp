@@ -57,7 +57,6 @@ void set_num_threads_3D(const int n) {
 /*Removal all reactions*/
 void clear_rates_ecs(void) {
     Reaction *r, *tmp;
-    Grid_node* grid;
     ECS_Grid_node* g;
 
     for (r = ecs_reactions; r != NULL; r = tmp) {
@@ -382,8 +381,7 @@ void* ecs_do_reactions(void* dataptr) {
                                 for (k = j + 1; k < react->num_species_involved; k++) {
                                     ge_value = jacobian(k, j) / jacobian(j, j);
                                     for (n = 0; n < react->num_species_involved; n++) {
-                                        val_to_set = jacobian(k, n) -
-                                                     ge_value * jacobian(j, n);
+                                        val_to_set = jacobian(k, n) - ge_value * jacobian(j, n);
                                         jacobian(k, n) = val_to_set;
                                     }
                                     b[k] = b[k] - ge_value * b[j];
@@ -503,8 +501,7 @@ void* ecs_do_reactions(void* dataptr) {
                                 for (k = j + 1; k < react->num_species_involved; k++) {
                                     ge_value = jacobian(k, j) / jacobian(j, j);
                                     for (n = 0; n < react->num_species_involved; n++) {
-                                        val_to_set = jacobian(k, n) -
-                                                     ge_value * jacobian(j, n);
+                                        val_to_set = jacobian(k, n) - ge_value * jacobian(j, n);
                                         jacobian(k, n) = val_to_set;
                                     }
                                     b[k] = b[k] - ge_value * b[j];

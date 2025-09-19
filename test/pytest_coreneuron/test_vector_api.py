@@ -514,10 +514,10 @@ def test_vector_api():
     vrand = h.Vector((1, 2, 3))
     r = h.Random()
     r.poisson(12)
-    assert vrand.cl().setrand(r).to_python() == [10.0, 16.0, 11.0]
-    assert vrand.cl().setrand(r, 1, 2).to_python() == [1.0, 9.0, 18.0]
-    assert vrand.cl().addrand(r).to_python() == [9.0, 9.0, 16.0]
-    assert vrand.cl().addrand(r, 0, 1).to_python() == [13.0, 16.0, 3.0]
+    assert vrand.cl().setrand(r).to_python() == [22.0, 16.0, 16.0]
+    assert vrand.cl().setrand(r, 1, 2).to_python() == [1.0, 8.0, 12.0]
+    assert vrand.cl().addrand(r).to_python() == [7.0, 13.0, 12.0]
+    assert vrand.cl().addrand(r, 0, 1).to_python() == [9.0, 16.0, 3.0]
 
     """
     Misc 

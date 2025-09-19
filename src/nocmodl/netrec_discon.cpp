@@ -165,7 +165,6 @@ void netrec_discon() {
 static void general_discon_adjust(Item* varname, Item* equal, Item* expr, Item* lastok) {
     int listnum = netrec_state_count % 10;
     int neq = netrec_state_count / 10;
-    int i;
     Symbol* sym = SYM(varname);
     int sindex;
     if (cvode_not_allowed) {

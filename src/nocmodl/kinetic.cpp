@@ -82,12 +82,6 @@ void genmatterms(Reaction* r, int fn);
 #define MAXKINBLK 20
 static int nstate_[MAXKINBLK];
 
-static int sparse_declared_[10];
-static int sparsedeclared(int i) {
-    assert(i < 10);
-    return sparse_declared_[i]++;
-}
-
 char* qconcat(Item* q1, Item* q2) /* return names as single string */
 {
     char *cp, *ovrfl, *cs, *n;
@@ -208,7 +202,6 @@ void flux(Item* qREACTION, Item* qdir, Item* qlast) {
         reactlist->krate[1] = qconcat(qdir->next->next, qlast);
         if (ldifuslist) { /* function of current ? */
             Item* q;
-            int isfunc;
             for (q = qdir->next->next; q != qlast; q = q->next) {
                 Symbol* s;
                 if (q->itemtype == SYMBOL) {
@@ -652,7 +645,7 @@ void kinetic_implicit(Symbol* fun, const char* dt, const char* mname) {
     Item* qv;
     Reaction* r1;
     Rlist *rlst, *clst;
-    int i, nstate, flag, sparsedec, firsttrans, firsttrans1;
+    int i, nstate, flag, firsttrans, firsttrans1;
 
     firsttrans = 0; /* general declarations done only for NOT_CVODE_FLAG */
     firsttrans1 = 0;
@@ -952,7 +945,6 @@ void massageconserve(Item* q1, Item* q3, Item* q5) /* CONSERVE react '=' expr */
 {
     /* the list of states is in rterm at this time with the first at the end */
     Reaction* r1;
-    Item* qv;
 
     r1 = conslist;
     conslist = (Reaction*) emalloc(sizeof(Reaction));
@@ -963,7 +955,7 @@ void massageconserve(Item* q1, Item* q3, Item* q5) /* CONSERVE react '=' expr */
     conslist->krate[1] = (char*) 0;
     /*SUPPRESS 440*/
     replacstr(q1, "/*");
-    qv = insertstr(q1, "");
+    insertstr(q1, "");
     /*SUPPRESS 440*/
     Insertstr(q5->next, "*/\n");
     /*SUPPRESS 440*/
@@ -995,7 +987,7 @@ int genconservterms(int eqnum, Reaction* r, int fn, Rlist* rlst) {
         Sprintf(eqstr, "%d(%d", fn, eqnum);
         eqnum++;
     }
-    Sprintf(buf, "_RHS%s) = %s;\n", eqstr, r->krate[0]);
+    SprintfAsrt(buf, "_RHS%s) = %s;\n", eqstr, r->krate[0]);
     Insertstr(q, buf);
     for (rt = r->rterm[0]; rt; rt = rt->rnext) {
         char buf1[NRN_BUFSIZE];
@@ -1012,19 +1004,19 @@ int genconservterms(int eqnum, Reaction* r, int fn, Rlist* rlst) {
                 Sprintf(buf, "_i = %s;\n", rt->str);
                 Insertstr(q, buf);
             }
-            Sprintf(buf,
-                    "_MATELM%s, %d + %s) = %d%s;\n",
-                    eqstr,
-                    rt->sym->varnum,
-                    rt->str,
-                    rt->num,
-                    buf1);
+            SprintfAsrt(buf,
+                        "_MATELM%s, %d + %s) = %d%s;\n",
+                        eqstr,
+                        rt->sym->varnum,
+                        rt->str,
+                        rt->num,
+                        buf1);
             Insertstr(q, buf);
-            Sprintf(buf, "_RHS%s) -= %s[%s]%s", eqstr, rt->sym->name, rt->str, buf1);
+            SprintfAsrt(buf, "_RHS%s) -= %s[%s]%s", eqstr, rt->sym->name, rt->str, buf1);
         } else {
-            Sprintf(buf, "_MATELM%s, %d) = %d%s;\n", eqstr, rt->sym->varnum, rt->num, buf1);
+            SprintfAsrt(buf, "_MATELM%s, %d) = %d%s;\n", eqstr, rt->sym->varnum, rt->num, buf1);
             Insertstr(q, buf);
-            Sprintf(buf, "_RHS%s) -= %s%s", eqstr, rt->sym->name, buf1);
+            SprintfAsrt(buf, "_RHS%s) -= %s%s", eqstr, rt->sym->name, buf1);
         }
         Insertstr(q, buf);
         if (rt->num != 1) {
@@ -1075,7 +1067,6 @@ int number_states(Symbol* fun, Rlist** prlst, Rlist** pclst) {
 void kinlist(Symbol* fun, Rlist* rlst) {
     int i;
     Symbol* s;
-    Item* qv;
 
     if (rlst->slist_decl) {
         return;
@@ -1093,15 +1084,15 @@ void kinlist(Symbol* fun, Rlist* rlst) {
                     fun->u.i,
                     s->varnum,
                     s->name);
-            qv = lappendstr(initlist, buf);
+            lappendstr(initlist, buf);
             Sprintf(
                 buf, " _dlist%d[%d+_i] = {D%s_columnindex, _i};}\n", fun->u.i, s->varnum, s->name);
-            qv = lappendstr(initlist, buf);
+            lappendstr(initlist, buf);
         } else {
             Sprintf(buf, "_slist%d[%d] = {%s_columnindex, 0};", fun->u.i, s->varnum, s->name);
-            qv = lappendstr(initlist, buf);
+            lappendstr(initlist, buf);
             Sprintf(buf, " _dlist%d[%d] = {D%s_columnindex, 0};\n", fun->u.i, s->varnum, s->name);
-            qv = lappendstr(initlist, buf);
+            lappendstr(initlist, buf);
         }
         s->used = 0;
     }

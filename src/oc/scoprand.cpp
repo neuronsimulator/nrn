@@ -18,10 +18,6 @@ other in nrnmech.dll.
  *
  ******************************************************************************/
 
-#ifndef LINT
-static char RCSid[] = "random.cpp,v 1.4 1999/01/04 12:46:49 hines Exp";
-#endif
-
 #include <math.h>
 #include "oc_mcran4.hpp"
 #include "mcran4.h"

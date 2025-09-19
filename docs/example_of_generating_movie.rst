@@ -30,7 +30,7 @@ Setup the model
 .. code::
     python
 
-    from neuron import h
+    from neuron import n
     import matplotlib.pyplot as plt
     import tqdm
     from IPython.display import HTML
@@ -38,8 +38,8 @@ Setup the model
     from neuron.units import ms, mV
 
     plt.rcParams["figure.figsize"] = (6, 6)
-    h.load_file("stdrun.hoc")
-    h.load_file("n275.hoc")
+    n.load_file("stdrun.hoc")
+    n.load_file("n275.hoc")
 
 .. code::
     python
@@ -50,10 +50,10 @@ Setup the model
 .. code::
     python
 
-    for sec in h.allsec():
+    for sec in n.allsec():
       sec.nseg = 21
       if 'dend' not in sec.name():
-        sec.insert(h.hh)
+        sec.insert(n.hh)
 
 .. code::
     python
@@ -62,7 +62,7 @@ Setup the model
     fire_times = [0 * ms, 15 * ms, 23 * ms, 31 * ms]
     iclamps = []
     for time in fire_times:
-        iclamp = h.IClamp(h.soma[0](0.5))
+        iclamp = n.IClamp(n.soma[0](0.5))
         iclamp.delay = time
         iclamp.amp = 2
         iclamp.dur = 0.5 * ms
@@ -76,7 +76,7 @@ Simulation control and image saving
 
     def neuron_images():
     # rotation
-    ps = h.PlotShape(False)
+    ps = n.PlotShape(False)
     ps.plot(plt)
     for theta in range(0, 360, 9):
       plt.gca().view_init(0, theta, vertical_axis="y")
@@ -85,9 +85,9 @@ Simulation control and image saving
     ps.variable("v")
     ps.scale(-80, 50)
     # now let's run the sim, plt on a new figure every SAVE_EVERY, then yield
-    h.finitialize(-65 * mV)
+    n.finitialize(-65 * mV)
     for i in range(200):
-      h.continuerun(i * SAVE_EVERY)
+      n.continuerun(i * SAVE_EVERY)
       ps.plot(plt)
       if i < 40:
          theta = 9 * i

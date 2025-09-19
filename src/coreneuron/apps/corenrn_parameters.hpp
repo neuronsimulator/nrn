@@ -45,6 +45,7 @@ struct corenrn_parameters_data {
     };
 
     static constexpr int report_buff_size_default = 4;
+    static constexpr char const* default_dat_filename = "files.dat";
 
     unsigned spikebuf = 100'000;           /// Internal buffer used on every rank for spikes
     int prcellgid = -1;                    /// Gid of cell for prcellstate
@@ -83,12 +84,12 @@ struct corenrn_parameters_data {
     double mindelay = 10.;     /// Maximum integration interval (likely reduced by minimum NetCon
                                /// delay).
 
-    std::string patternstim;             /// Apply patternstim using the specified spike file.
-    std::string datpath = ".";           /// Directory path where .dat files
-    std::string outpath = ".";           /// Directory where spikes will be written
-    std::string filesdat = "files.dat";  /// Name of file containing list of gids dat files read in
-    std::string restorepath;             /// Restore simulation from provided checkpoint directory.
-    std::string reportfilepath;          /// Reports configuration file.
+    std::string patternstim;     /// Apply patternstim using the specified spike file.
+    std::string datpath = ".";   /// Directory path where .dat files
+    std::string outpath = ".";   /// Directory where spikes will be written
+    std::string filesdat{};      /// Name of file containing list of gids dat files read in
+    std::string restorepath;     /// Restore simulation from provided checkpoint directory.
+    std::string reportfilepath;  /// Reports configuration file.
     std::string checkpointpath;  /// Enable checkpoint and specify directory to store related files.
     std::string writeParametersFilepath;  /// Write parameters to this file
     std::string mpi_lib;                  /// Name of CoreNEURON MPI library to load dynamically.

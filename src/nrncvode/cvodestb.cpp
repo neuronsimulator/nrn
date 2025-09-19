@@ -31,11 +31,9 @@ void nrn_record_init();
 void nrn_play_init();
 void fixed_play_continuous(NrnThread* nt);
 void nrn_solver_prepare();
-static void check_thresh(NrnThread*);
 
 // for fixed step thread
 void deliver_net_events(NrnThread* nt) {
-    int i;
     if (net_cvode_instance) {
         net_cvode_instance->check_thresh(nt);
         net_cvode_instance->deliver_net_events(nt);

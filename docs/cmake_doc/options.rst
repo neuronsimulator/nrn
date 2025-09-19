@@ -1,3 +1,6 @@
+CMake Build Options
+~~~~~~~~~~~~~~~~~~~
+
 Introduction
 ============
 The NEURON build system now uses CMake as of version 7.8 circa Nov 2019.
@@ -345,15 +348,6 @@ PYTHON_EXECUTABLE:PATH=
   .. code-block:: shell
 
     -DPYTHON_EXECUTABLE=`which python3.8`
-
-NRN_ENABLE_MODULE_INSTALL:BOOL=ON
----------------------------------
-  Enable installation of the NEURON Python module. 
-  By default, the NEURON module is installed in CMAKE_INSTALL_PREFIX/lib/python.
-
-  Note: When building wheels, this must be set to OFF since the top-level `setup.py`
-  is already building the extensions.
-
 
 NRN_ENABLE_RX3D:BOOL=ON
 -----------------------
