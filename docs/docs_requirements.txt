@@ -18,4 +18,5 @@ sphinx-inline-tabs
 packaging<=24.2,>=22.0
 tenacity<8.4
 anywidget
+sphinxcontrib-mermaid<=1.0.0
 sphinxcontrib-moderncmakedomain<=3.29.0
