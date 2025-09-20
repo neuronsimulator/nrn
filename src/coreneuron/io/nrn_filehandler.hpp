@@ -14,8 +14,10 @@
 #include <cmath>
 #include <sys/stat.h>
 
-#include "coreneuron/utils/nrn_assert.h"
 #include "coreneuron/io/nrnsection_mapping.hpp"
+#include "coreneuron/permute/node_permute.h"
+#include "coreneuron/sim/multicore.hpp"
+#include "coreneuron/utils/nrn_assert.h"
 
 namespace coreneuron {
 /** Encapsulate low-level reading of coreneuron input data files.
@@ -114,7 +116,8 @@ class FileHandler {
     template <typename T>
     int read_mapping_info(T mapinfo,
                           NrnThreadMappingInfo* ntmapping,
-                          std::shared_ptr<CellMapping> cmap) {
+                          std::shared_ptr<CellMapping> cmap,
+                          const NrnThread& nt) {
         int nsec, nseg, n_scan;
         size_t total_lfp_factors;
         int num_electrodes;
@@ -131,6 +134,10 @@ class FileHandler {
         if (nseg) {
             auto sec = read_vector<int>(nseg);
             auto seg = read_vector<int>(nseg);
+
+            if (nt._permute) {
+                node_permute(seg.data(), seg.size(), nt._permute);
+            }
 
             std::vector<double> lfp_factors;
             if (total_lfp_factors > 0) {
