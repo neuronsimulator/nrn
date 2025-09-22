@@ -392,7 +392,7 @@ if(NRN_ENABLE_PYTHON)
     NAME nrntest_fast
     PROCESSORS 2
     REQUIRES mpi
-    ENVIRONMENT "NRN_PYTEST_ARGS=${pytest_arg_string}"
+    ENVIRONMENT "NRN_PYTEST_ARGS=${pytest_arg_string}" "CC=${CMAKE_C_COMPILER}"
     SCRIPT_PATTERNS
       test/pytest_coreneuron/run_pytest.py test/pytest_coreneuron/test_nrntest_fast.json
       test/pytest_coreneuron/test_nrntest_fast.py
