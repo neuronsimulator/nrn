@@ -38,8 +38,6 @@ jobs:
     name: "Run NVHPC CI on custom runner"
     runs-on: "self-hosted"
     timeout-minutes: 60
-    needs:
-      - check-org
     steps:
       - name: "Verify NVHPC is available"
         env:
