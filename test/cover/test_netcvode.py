@@ -1,10 +1,22 @@
+import io
+import math
+import os
+import re
+import sys
+
 import pytest
 
 from neuron import h
 from neuron.expect_hocerr import expect_err
 from neuron.tests.utils.checkresult import Chk
 
-import io, math, os, re, sys
+
+def get_c_compiler() -> str:
+    """
+    Get the path to the C compiler from the environment
+    """
+    return os.environ.get("CC", "")
+
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 chk = Chk(os.path.join(dir_path, "test_netcvode.json"))
@@ -418,7 +430,9 @@ def cvode_meth():
     cv.error_weights(vec)
     chk("cv.error_weights", vec)
     cv.acor(vec)
-    chk("cv.acor", vec, tol=1e-7)
+    # NVHPC has a different tolerance threshold
+    tol = 2.5e-7 if get_c_compiler().endswith("nvc") else 1e-7
+    chk("cv.acor", vec, tol=tol)
     std = (h.t, s.to_python(), ds.to_python())
     ds.fill(0)
     cv.f(1.0, s, ds)
@@ -781,14 +795,6 @@ def contiguous():
     cv.active(0)
 
 
-def get_compiler() -> str:
-    return os.environ.get("CC", "")
-
-
-@pytest.mark.skipif(
-    get_compiler().endswith("nvc"),
-    reason="NVHPC does not meet specific tolerance",
-)
 def test_netcvode_cover():
     nrn_use_daspk()
     node()

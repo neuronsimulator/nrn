@@ -2,10 +2,12 @@
 Tests that used to live in the fast/ subdirectory of the
 https://github.com/neuronsimulator/nrntest repository
 """
-import math
-import numpy as np
 import os
+import math
+
+import numpy as np
 import pytest
+
 from neuron import h
 from neuron.tests.utils import (
     cvode_enabled,
@@ -18,6 +20,13 @@ from neuron.tests.utils import (
 from neuron.tests.utils.checkresult import Chk
 
 h.load_file("stdrun.hoc")
+
+
+def get_c_compiler() -> str:
+    """
+    Get the path to the C compiler from the environment
+    """
+    return os.environ.get("CC", "")
 
 
 @pytest.fixture(scope="module")
@@ -195,15 +204,7 @@ def compare_time_and_voltage_trajectories(
         raise Exception("max diff {} > {}".format(max_diff, tolerance))
 
 
-def get_compiler() -> str:
-    return os.environ.get("CC", "")
-
-
 # Whether to test time or voltage values
-@pytest.mark.skipif(
-    get_compiler().endswith("nvc"),
-    reason="NVHPC does not meet specific tolerance",
-)
 @pytest.mark.parametrize("field", ["t", "v"])
 @pytest.mark.parametrize("threads", thread_values)
 def test_t13(chk, t13_model_data, field, threads):
@@ -224,8 +225,14 @@ def test_t13(chk, t13_model_data, field, threads):
     elif method.startswith("cvode"):
         if field == "t":
             tolerance = 5e-8
+            # NVHPC has a different tolerance threshold
+            if get_c_compiler().endswith("nvc"):
+                tolerance = 6.1e-8
         elif field == "v":
             tolerance = 6e-7
+            # NVHPC has a different tolerance threshold
+            if get_c_compiler().endswith("nvc"):
+                tolerance = 7.5e-7
 
     compare_time_and_voltage_trajectories(
         chk, t13_model_data, field, threads, "t13", tolerance
@@ -279,10 +286,6 @@ def t14_model_data(request):
     return data
 
 
-@pytest.mark.skipif(
-    get_compiler().endswith("nvc"),
-    reason="NVHPC does not meet specific tolerance",
-)
 @pytest.mark.parametrize("field", ["t", "v"])
 @pytest.mark.parametrize("threads", thread_values)
 def test_t14(chk, t14_model_data, field, threads):
@@ -300,6 +303,9 @@ def test_t14(chk, t14_model_data, field, threads):
         if field == "t":
             if threads == 1:
                 tolerance = 8e-10
+                # NVHPC has a different tolerance threshold
+                if get_c_compiler().endswith("nvc"):
+                    tolerance = 1e-9
             else:
                 if "long_double" in method:
                     tolerance = 2e-10
@@ -311,6 +317,9 @@ def test_t14(chk, t14_model_data, field, threads):
             else:
                 if "long_double" in method:
                     tolerance = 4e-10
+                    # NVHPC has a different tolerance threshold
+                    if get_c_compiler().endswith("nvc"):
+                        tolerance = 6e-10
                 else:
                     tolerance = 2e-9
 
