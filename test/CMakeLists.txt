@@ -304,15 +304,12 @@ if(NRN_ENABLE_PYTHON)
       "${PROJECT_SOURCE_DIR}/test/hoctests/*/*.${ext}")
     foreach(hoc_script ${hoc_scripts})
       get_filename_component(name "${hoc_script}" NAME_WLE)
-      # NVHPC does not satisfy accuracy requirements for kschan and neurondemo
-      if(NOT ((name MATCHES "test_kschan" OR name MATCHES "test_neurondemo") AND CMAKE_C_COMPILER_ID
-                                                                                 STREQUAL "NVHPC"))
-        nrn_add_test(
-          GROUP hoctests
-          NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
-          COMMAND ${${ext}_exe} "${hoc_script}"
-          SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${${ext}test_utils})
-      endif()
+      nrn_add_test(
+        GROUP hoctests
+        NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
+        ENVIRONMENT CC=${CMAKE_C_COMPILER}
+        COMMAND ${${ext}_exe} "${hoc_script}"
+        SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${${ext}test_utils})
     endforeach()
   endforeach()
 

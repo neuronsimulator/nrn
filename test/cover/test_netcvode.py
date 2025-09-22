@@ -4,18 +4,10 @@ import os
 import re
 import sys
 
-import pytest
-
 from neuron import h
 from neuron.expect_hocerr import expect_err
 from neuron.tests.utils.checkresult import Chk
-
-
-def get_c_compiler() -> str:
-    """
-    Get the path to the C compiler from the environment
-    """
-    return os.environ.get("CC", "")
+from neuron.tests.utils import get_c_compiler
 
 
 dir_path = os.path.dirname(os.path.realpath(__file__))

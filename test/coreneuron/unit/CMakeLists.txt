@@ -27,7 +27,7 @@ if(CORENRN_ENABLE_UNIT_TESTS)
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/mech_mapping)
   # lfp test uses nrnmpi_* wrappers but does not load the dynamic MPI library TODO: re-enable after
   # NEURON and CoreNEURON dynamic MPI are merged
-  if(NOT NRN_ENABLE_MPI_DYNAMIC AND NOT CMAKE_C_COMPILER_ID STREQUAL "NVHPC")
+  if(NOT NRN_ENABLE_MPI_DYNAMIC)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lfp)
   endif()
 endif()

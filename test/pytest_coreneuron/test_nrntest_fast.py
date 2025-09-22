@@ -13,6 +13,7 @@ from neuron.tests.utils import (
     cvode_enabled,
     cvode_use_global_timestep,
     cvode_use_long_double,
+    get_c_compiler,
     hh_table_disabled,
     num_threads,
     parallel_context,
@@ -20,13 +21,6 @@ from neuron.tests.utils import (
 from neuron.tests.utils.checkresult import Chk
 
 h.load_file("stdrun.hoc")
-
-
-def get_c_compiler() -> str:
-    """
-    Get the path to the C compiler from the environment
-    """
-    return os.environ.get("CC", "")
 
 
 @pytest.fixture(scope="module")
