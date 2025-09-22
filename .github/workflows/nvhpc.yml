@@ -54,7 +54,7 @@ jobs:
       - name: "Checkout repo"
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch || 'master' }}
+          ref: ${{ inputs.branch || github.sha ||  'master' }}
           fetch-depth: 1
           submodules: recursive
 
