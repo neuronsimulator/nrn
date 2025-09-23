@@ -253,6 +253,17 @@ int MatexpVisitor::get_state_index(const std::string& state_name) {
 }
 
 
+int find_node(const nmodl::ast::StatementVector& statements, const nmodl::ast::Statement* node) {
+    for (int index = 0; index < statements.size(); index++) {
+        const nmodl::ast::Statement* cursor = statements[index].get();
+        if (cursor == node) {
+            return index;
+        }
+    }
+    throw std::runtime_error("broken ast");
+}
+
+
 void MatexpVisitor::visit_reaction_statement(ast::ReactionStatement& node) {
     if (!in_kinetic_block) {
         return;
@@ -263,45 +274,58 @@ void MatexpVisitor::visit_reaction_statement(ast::ReactionStatement& node) {
     const auto& rhs = node.get_reaction2();
     const auto& kf = node.get_expression1();  // forwards reaction rate
     const auto& kb = node.get_expression2();  // backwards reaction rate
-    // Check for invalid kinetic models
-    if (op != ast::ReactionOp::LTMINUSGT) {
-        nonlinear_reaction_error();
-    }
-    // Find the state vector indices
-    const auto lhs_name = get_state_var_name(lhs);
-    const auto rhs_name = get_state_var_name(rhs);
-    const auto lhs_idx = get_state_index(lhs_name);
-    const auto rhs_idx = get_state_index(rhs_name);
-    // Calculate the Jacobian matrix indices
-    const int jf_src_idx = lhs_idx + states.size() * lhs_idx;
-    const int jf_dst_idx = lhs_idx * states.size() + rhs_idx;
-    const int jb_src_idx = rhs_idx * states.size() + rhs_idx;
-    const int jb_dst_idx = lhs_idx + states.size() * rhs_idx;
-    // Get ready to write NMODL code
-    const std::string jf_src = "nmodl_eigen_j[" + std::to_string(jf_src_idx) + "]";
-    const std::string jf_dst = "nmodl_eigen_j[" + std::to_string(jf_dst_idx) + "]";
-    const std::string jb_src = "nmodl_eigen_j[" + std::to_string(jb_src_idx) + "]";
-    const std::string jb_dst = "nmodl_eigen_j[" + std::to_string(jb_dst_idx) + "]";
-    const std::string kf_nmodl = "(" + to_nmodl(kf) + ")";
-    const std::string kb_nmodl = "(" + to_nmodl(kb) + ")";
-    // Create four new statements assigning to the Jacobian matrix.
-    const auto& jf_n = create_statement(jf_src + " = " + jf_src + " - " + kf_nmodl + " * " + dt);
-    const auto& jf_p = create_statement(jf_dst + " = " + jf_dst + " + " + kf_nmodl + " * " + dt);
-    const auto& jb_n = create_statement(jb_src + " = " + jb_src + " - " + kb_nmodl + " * " + dt);
-    const auto& jb_p = create_statement(jb_dst + " = " + jb_dst + " + " + kb_nmodl + " * " + dt);
-    // Replace this statement with the four new statements.
+    // Find and remove this reaction statement
     const auto& statement_block = node.get_parent()->get_parent()->get_statement_block();
     const auto& statements = statement_block->get_statements();
-    for (int index = 0; index < statements.size(); index++) {
-        if (statements[index].get() == &node) {
-            statement_block->erase_statement(std::begin(statements) + index);
-            for (const auto& stmt: {jf_n, jf_p, jb_n, jb_p}) {
-                statement_block->insert_statement(std::begin(statements) + index++, stmt);
-            }
-            return;
+    int statement_index = find_node(statements, &node);
+    statement_block->erase_statement(std::begin(statements) + statement_index);
+    // Check for invalid kinetic models
+    if (op == ast::ReactionOp::LTLT) {
+        nonlinear_reaction_error();
+    } else if (op == ast::ReactionOp::MINUSGT) {
+        // Find the state vector indices
+        const auto lhs_name = get_state_var_name(lhs);
+        const auto lhs_idx = get_state_index(lhs_name);
+        // Calculate the Jacobian matrix indices
+        const int jf_src_idx = lhs_idx + states.size() * lhs_idx;
+        // Write NMODL to assign to the Jacobian matrix
+        const std::string jf_src = "nmodl_eigen_j[" + std::to_string(jf_src_idx) + "]";
+        const std::string kf_nmodl = "(" + to_nmodl(kf) + ")";
+        const std::string jf_n_string = jf_src + " = " + jf_src + " - " + kf_nmodl + " * " + dt;
+        const auto& jf_n = create_statement(jf_n_string);
+        // Replace the reaction statement with an assignment to the Jaconbian
+        statement_block->insert_statement(std::begin(statements) + statement_index, jf_n);
+    } else if (op == ast::ReactionOp::LTMINUSGT) {
+        // Find the state vector indices
+        const auto lhs_name = get_state_var_name(lhs);
+        const auto rhs_name = get_state_var_name(rhs);
+        const auto lhs_idx = get_state_index(lhs_name);
+        const auto rhs_idx = get_state_index(rhs_name);
+        // Calculate the Jacobian matrix indices
+        const int jf_src_idx = lhs_idx + states.size() * lhs_idx;
+        const int jf_dst_idx = lhs_idx * states.size() + rhs_idx;
+        const int jb_src_idx = rhs_idx * states.size() + rhs_idx;
+        const int jb_dst_idx = lhs_idx + states.size() * rhs_idx;
+        // Create four new statements assigning to the Jacobian matrix
+        const std::string jf_src = "nmodl_eigen_j[" + std::to_string(jf_src_idx) + "]";
+        const std::string jf_dst = "nmodl_eigen_j[" + std::to_string(jf_dst_idx) + "]";
+        const std::string jb_src = "nmodl_eigen_j[" + std::to_string(jb_src_idx) + "]";
+        const std::string jb_dst = "nmodl_eigen_j[" + std::to_string(jb_dst_idx) + "]";
+        const std::string kf_nmodl = "(" + to_nmodl(kf) + ")";
+        const std::string kb_nmodl = "(" + to_nmodl(kb) + ")";
+        const std::string jf_n_string = jf_src + " = " + jf_src + " - " + kf_nmodl + " * " + dt;
+        const std::string jf_p_string = jf_dst + " = " + jf_dst + " + " + kf_nmodl + " * " + dt;
+        const std::string jb_n_string = jb_src + " = " + jb_src + " - " + kb_nmodl + " * " + dt;
+        const std::string jb_p_string = jb_dst + " = " + jb_dst + " + " + kb_nmodl + " * " + dt;
+        const auto& jf_n = create_statement(jf_n_string);
+        const auto& jf_p = create_statement(jf_p_string);
+        const auto& jb_n = create_statement(jb_n_string);
+        const auto& jb_p = create_statement(jb_p_string);
+        // Replace the reaction statement with the four new statements
+        for (const auto& stmt: {jf_n, jf_p, jb_n, jb_p}) {
+            statement_block->insert_statement(std::begin(statements) + statement_index++, stmt);
         }
     }
-    throw std::runtime_error("broken ast");
 }
 
 }  // namespace visitor

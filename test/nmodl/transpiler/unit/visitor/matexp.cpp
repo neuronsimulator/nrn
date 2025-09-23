@@ -19,7 +19,6 @@
 //=============================================================================
 
 std::string run_matexp_visitor(const std::string& text, bool verbatim) {
-
     using namespace nmodl;
     using namespace visitor;
     using nmodl::ast::AstNodeType;
@@ -35,8 +34,7 @@ std::string run_matexp_visitor(const std::string& text, bool verbatim) {
     std::string nmodl;
     if (verbatim) {
         nmodl = to_nmodl(ast);
-    }
-    else {
+    } else {
         nmodl = to_nmodl(ast, {AstNodeType::VERBATIM});
     }
 
@@ -44,7 +42,6 @@ std::string run_matexp_visitor(const std::string& text, bool verbatim) {
 }
 
 std::string trim_text(std::string text) {
-
     // Remote leading whitespace
     text = std::regex_replace(text, std::regex("^[ \t\n\r\f\v]+"), "");
 
@@ -61,7 +58,6 @@ std::string trim_text(std::string text) {
 }
 
 SCENARIO("Solve a KINETIC block using the matexp method", "[visitor][matexp]") {
-
     GIVEN("KINETIC block, to be solved in initial and breakpoint blocks") {
         std::string input_nmodl = R"(
         INITIAL {
@@ -156,8 +152,7 @@ SCENARIO("Solve a KINETIC block using the matexp method", "[visitor][matexp]") {
     }
 }
 
-SCENARIO("Mix solver methods", "[visitor][matexp]") {
-
+SCENARIO("Mix matexp and sparse solver methods", "[visitor][matexp]") {
     GIVEN("KINETIC block, to be solved by multiple methods") {
         std::string input_nmodl = R"(
         BREAKPOINT {
@@ -172,6 +167,12 @@ SCENARIO("Mix solver methods", "[visitor][matexp]") {
             ~ x <-> y (a, b)
         })";
         std::string expect_output = R"(
+        VERBATIM
+            #undef g
+            #undef F
+            #undef t
+            #include <unsupported/Eigen/MatrixFunctions>
+        ENDVERBATIM
         BREAKPOINT {
             SOLVE test_kin METHOD sparse
             SOLVE test_kin_matexp
@@ -205,7 +206,9 @@ SCENARIO("Mix solver methods", "[visitor][matexp]") {
             x = nmodl_eigen_y[0]
             y = nmodl_eigen_y[1]
         })";
-        THEN("The original KINETIC block is kept unchanged, its solution is inserted into a new PROCEDURE block") {
+        THEN(
+            "The original KINETIC block is kept unchanged,"
+            "its solution is inserted into a new PROCEDURE block") {
             auto result = run_matexp_visitor(input_nmodl, true);
             REQUIRE(trim_text(expect_output) == trim_text(result));
         }
@@ -287,6 +290,21 @@ SCENARIO("Give non-linear equations to the matexp solver", "[visitor][matexp]") 
         }
         KINETIC test_kin {
             ~ x -> (123)
+        })";
+        THEN("Equation is valid, do not raise exception") {
+            REQUIRE_NOTHROW(run_matexp_visitor(input_nmodl, true));
+        }
+    }
+    GIVEN("KINETIC block with invalid state variable") {
+        std::string input_nmodl = R"(
+        BREAKPOINT {
+            SOLVE test_kin METHOD matexp
+        }
+        STATE {
+            x
+        }
+        KINETIC test_kin {
+            ~ y -> (123)
         })";
         THEN("Raise an exception") {
             REQUIRE_THROWS_AS(run_matexp_visitor(input_nmodl, true), std::invalid_argument);
