@@ -4,7 +4,7 @@ How to make NEURON compilable in Windows.
  
 ## Pre-requisites
 
-You need to follow the steps:
+You need to follow these steps:
 
 ### Step 1: (If installing NEURON on a Windows Virtual Machine) 
 
@@ -29,7 +29,7 @@ Note: Do not use: `winget install --id Git.Git -e --source winget`
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1')) 
 ```
-This should be run in powershell or pwsh; in particular, it will not work in cmd.
+This should be run in PowerShell or pwsh; in particular, it will not work in cmd.
 
 Ensuring Chocolatey commands are on the path 
 
@@ -51,7 +51,7 @@ We will use `pwsh` command - correspond to PowerShell 7. The PowerShell 5 use `p
  
 #### Step 5.A: See PowerShell Version Currently Running: 
 
-This must be run inside whatever PowerShell you want to test.
+This must be run inside whichever PowerShell environment you want to test.
 
 `$PSVersionTable` or `get-host|Select-Object`  
  
@@ -67,7 +67,7 @@ or
  
 #### Step 5.D: Ensure you are working with PowerShell 7
 
-Note: Find path file to version 7 (`C:\Program Files\PowerShell\7` or `C:\Program Files\PowerShell\7-preview`) and create a shortcut for this powershell 7
+Note: Find path file to version 7 (`C:\Program Files\PowerShell\7` or `C:\Program Files\PowerShell\7-preview`) and create a shortcut for this PowerShell 7
 Windows will continue to use 5 version if we try open "PowerShell" 
 
 PS: A shortcut is one option. You could also add it to your path. 
@@ -84,7 +84,7 @@ At PowerShell 7, go to
 mkdir Neuron
 ```
 
-Inside the "Neuron” folder do: 
+Inside the "Neuron” folder, do: 
 
 ```
 git clone https://github.com/neuronsimulator/nrn
@@ -92,7 +92,7 @@ git clone https://github.com/neuronsimulator/nrn
 
  
 Note: `PS C:\Users\User\Neuron> git clone git@github.com:neuronsimulator/nrn nrn` may be an option
- (or may end up in a no permission issue).  
+ (or it may end up in a no permission issue).  
   
 ------------------------------------------------------------ 
 
@@ -103,7 +103,7 @@ As **administrator** from PowerShell 7 (right button and “Run as Administrator
 .\win_download_deps.cmd
 ```
  
-Note: You will get a number of messages of the form below; they do not indicate errors.
+Note: You will receive a number of messages in the form below; they do not indicate errors.
 
 ```
 "C:\Users\User\Neuron\nrn>pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.8.exe https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe   || goto :error" 
@@ -122,7 +122,9 @@ This command will take a while to complete.
   
 ------------------------------------------------------------ 
 
-### Step 9: Install Windows Subsystem for Linux:  wsl.exe --update  
+### Step 9: (If your Windows doesn't have a Windows Subsystem for Linux)
+
+Install Windows Subsystem for Linux:  wsl.exe --update  
 
 `wsl.exe --list --online` shows you your options and 
 `wsl.exe --install Ubuntu-24.04` (or any other) selects an option.
@@ -354,7 +356,11 @@ C:\msys64\home\User\Neuron\nrn\build\bin
 
 ## Common problems:
 
- 
+Errors in **Step 8**:
+
+The error installing dependencies may be related to hidden errors in step 7, "Downloading Dependencies". Verify that the .exe file related to the error was downloaded correctly. Double-click it and start the installation manually to check it corrupted file is the issue. If the downloaded file is corrupt, download it manually.
+
+----------------------------------------------------- 
 
 Do **Step 10** if you face something like:
 
