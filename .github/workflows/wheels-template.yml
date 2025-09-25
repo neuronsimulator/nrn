@@ -91,6 +91,8 @@ jobs:
       - name: Change name of package for release
         if: inputs.build_type == 'release'
         run: |
+          python3 -m venv venv
+          source venv/bin/activate
           python3 -m pip install tomli tomli-w
           python3 packaging/python/change_name.py ./pyproject.toml neuron
 
