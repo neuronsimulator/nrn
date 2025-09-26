@@ -114,7 +114,7 @@ the start of the 9.0a tag on 17-07-2023
 - No limit on number of ion mechanisms that can be used (#3089)  
 - Added Jupyter support for ModelView (#1907)  
 - Make notebooks work with `bokeh>=3` (#3061)  
-- Added new mmethod `ParallelContext.get_partition()` (#2351)  
+- Added new method `ParallelContext.get_partition()` (#2351)  
 - Unified docs: one file for all languages (#3466)
 - Improve rxd memory usage with __slots__ (#3572) 
 - nrn_function_call now works with non-double returns (#3559)
@@ -352,7 +352,7 @@ _Release Date_ : 25-03-2022
 
 ### Bug Fixes
 * Can use ParallelContext.mpiabort_on_error(0) to say do not call to MPI_Abort on error (#1567)
-* OpenMPI initialisation crash: argv[argc] should be null. (#1682)
+* OpenMPI initialization crash: argv[argc] should be null. (#1682)
 * Avoid segfault if error during construction of POINT_PROCESS (#1627)
 * Fixes a 1D/3D voxelization problem where frusta are outside the 3D grid. (#1227)
 * Allow for two point (single section) SWC somas (#1144)
