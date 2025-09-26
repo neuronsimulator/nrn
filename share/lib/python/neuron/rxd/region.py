@@ -14,6 +14,23 @@ from .geometry import FractionalVolume
 import warnings
 import math
 import ctypes
+from .rxdmath import _ast_config
+
+if _ast_config["nmodl_support"]:
+    try:
+        from nmodl.ast import (
+            Name,
+            String,
+            DerivativeBlock,
+            StatementBlock,
+            KineticBlock,
+            StateBlock,
+            AssignedDefinition,
+            Program,
+        )
+    except ModuleNotFoundError as e:
+        _ast_config["nmodl_support"] = False
+        _ast_config["exception"] = e
 
 _all_regions = []
 _region_count = 0
@@ -189,14 +206,18 @@ class _c_region:
         )
 
         self._ecs_react_species.sort(
-            key=lambda sp: sp()._extracellular()._grid_id
-            if isinstance(sp(), species.SpeciesOnExtracellular)
-            else sp()._grid_id
+            key=lambda sp: (
+                sp()._extracellular()._grid_id
+                if isinstance(sp(), species.SpeciesOnExtracellular)
+                else sp()._grid_id
+            )
         )
         self._ecs_react_params.sort(
-            key=lambda sp: sp()._extracellular()._grid_id
-            if isinstance(sp(), species.ParameterOnExtracellular)
-            else sp()._grid_id
+            key=lambda sp: (
+                sp()._extracellular()._grid_id
+                if isinstance(sp(), species.ParameterOnExtracellular)
+                else sp()._grid_id
+            )
         )
 
         # Set the local ids of the regions and species involved in the reactions
@@ -232,14 +253,14 @@ class _c_region:
         self._params_ids = {}
         self._region_ids = {}
         self._react_species.sort(
-            key=lambda sp: sp()._species()._id
-            if isinstance(sp(), SpeciesOnRegion)
-            else sp()._id
+            key=lambda sp: (
+                sp()._species()._id if isinstance(sp(), SpeciesOnRegion) else sp()._id
+            )
         )
         self._react_params.sort(
-            key=lambda sp: sp()._species()._id
-            if isinstance(sp(), ParameterOnRegion)
-            else sp()._id
+            key=lambda sp: (
+                sp()._species()._id if isinstance(sp(), ParameterOnRegion) else sp()._id
+            )
         )
 
         self._regions.sort(key=lambda rp: rp()._id)
@@ -278,6 +299,47 @@ class _c_region:
         if self.num_ecs_species + self.num_ecs_params > 0:
             self._ecs_initalize()
         self._initialized = True
+
+    def ast(self):
+        """Return AST for the set of reactions"""
+        if not _ast_config["nmodl_support"]:
+            return
+        from . import Rate, rxd
+
+        species = []
+        blocks = []
+        reactions = []
+        rates = []
+        states = []
+        for rptr, rlst in self._react_regions.items():
+            rast, sp = rptr().ast(rlst)
+            species += sp
+            rast = rast if hasattr(rast, "__len__") else [rast]
+            if (
+                isinstance(rptr(), Rate)
+                or rxd._ast_kinetic_block == "off"
+                or (rxd._ast_kinetic_block == "mass_action" and rptr()._custom_dynamics)
+            ):
+                rates += rast
+            else:
+                reactions += rast
+
+        for name in set(species):
+            states.append(
+                AssignedDefinition(
+                    Name(String(name)), None, None, None, None, None, None
+                )
+            )
+        if states != []:
+            blocks.append(StateBlock(states))
+        if reactions != []:
+            blocks.append(
+                KineticBlock(Name(String("reactions")), [], StatementBlock(reactions))
+            )
+        if rates != []:
+            blocks.append(DerivativeBlock(Name(String("rates")), StatementBlock(rates)))
+
+        return Program(blocks)
 
 
 class Extracellular:
