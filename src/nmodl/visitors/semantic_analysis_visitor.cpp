@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "fmt/ranges.h"
+
 #include "visitors/semantic_analysis_visitor.hpp"
 #include "ast/breakpoint_block.hpp"
 #include "ast/function_block.hpp"
@@ -124,7 +126,11 @@ bool SemanticAnalysisVisitor::check_name_conflict(const ast::Program& node) {
                           range_vars.begin(),
                           range_vars.end(),
                           std::back_inserter(result));
-    return !result.empty();
+    const auto& ret_value = !result.empty();
+    if (ret_value) {
+        logger->critical("Duplicate name(s) found: {}", fmt::join(result, ", "));
+    }
+    return ret_value;
 }
 
 bool SemanticAnalysisVisitor::check(const ast::Program& node) {
