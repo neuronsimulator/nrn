@@ -32,7 +32,7 @@ the start of the 9.0a tag on 17-07-2023
 - Requires C++17 compiler and `flex >= 2.6` (#1893)  
 - CoreNEURON repository is merged into NEURON (#2055)  
 - CoreNEURON report extensions (#3507, #3542)
-- Modern implementation of NMODL (eventually to replace the nocmodl MOD file translator) is merged into NEURON. (#3333)
+- Modern implementation of NMODL (eventually to replace the nocmodl MOD file translator) is merged into NEURON (#3333)
 - Support for `numpy>=2` added (#3040)  
 - Replace legacy Meschach source copy with Eigen library (#2470)  
 
@@ -47,7 +47,7 @@ the start of the 9.0a tag on 17-07-2023
 
 ### Removal / Deprecation
 
-- Removed HOC function parent_node.(Issue 3571) (#3576)
+- Removed HOC function parent_node (Issue 3571) (#3576)
 - Removed usage of legacy OS X carbon libraries (#1869)  
 - Removed legacy LINDA code and Java bindings (#1919, #1937)  
 - Removed unused NMODL methods: `adams`, `heun`, `clsoda`, `seidel`, `simplex`, `gear` (#2032)  
@@ -58,7 +58,7 @@ the start of the 9.0a tag on 17-07-2023
 - Removed legacy `Random.MLCG` and `Random.ACG` random number generators (#3189, #3190)  
 - Removed support for mod2c transpiler for CoreNEURON (#2247)  
 - Removed unused NMODL constructs: `PUTQ`, `GETQ`, `RESET`, `MATCH`, `TERMINAL`, `SECTION`,  
-  `IFERROR`, `MODEL_LEVEL`, `PLOT`, `SENS`, etc. (#1956, #1974, #1975, #2001, #2004, #2005)  
+  `IFERROR`, `MODEL_LEVEL`, `PLOT`, `SENS`, etc (#1956, #1974, #1975, #2001, #2004, #2005)
 - Removed `__MWERKS__` (CodeWarrior compiler) related code (#2655)  
 - Removed obsolete uxnrnbbs code (#2203)  
 - Removed old tqueue implementations (#2225, #2740)  
@@ -84,15 +84,14 @@ the start of the 9.0a tag on 17-07-2023
 - Fix lexer for ONTOLOGY parsing (#3091)
 - Fix issue while using Anaconda Python on MacOS (#3088)
 - Fix ParallelContext bbs memory leaks (#3563)
-- Fix RxD indexing bug? (#3337)
+- Fix RxD indexing bug (#3337)
 - Fix handling of `hh.mod` when using CoreNEURON (#3301)
-- On `h.quit()`, terminal settings are same as when neuron.hoc was imported. (#3259)
-- `int` replaced by `floor` to accept negative coordinates. (#3264)
-- Fix thread sanitizer leak when launching Python 3.13 and using from
-- Fix sanitizer leak involving `neuron import h, gui`. (#3243)
-- Fix leaks in `get_endian_character`. (#3257)
-- Fix leak in `pysec_children` and `pysec_subtree`. (#3255)
-- Python 3.13.1 broke `[s for s in sl]` where `sl` is a `SectionList`. (#3276)
+- On `h.quit()`, terminal settings are same as when neuron.hoc was imported (#3259)
+- `int` replaced by `floor` to accept negative coordinates (#3264)
+- Fix sanitizer leak involving `neuron import h, gui` (#3243)
+- Fix leaks in `get_endian_character` (#3257)
+- Fix leak in `pysec_children` and `pysec_subtree` (#3255)
+- Python 3.13.1 broke `[s for s in sl]` where `sl` is a `SectionList` (#3276)
 
 
 ### Other Improvements and Changes
@@ -120,16 +119,16 @@ the start of the 9.0a tag on 17-07-2023
 - nrn_function_call now works with non-double returns (#3559)
 - Replaced `%` string formatting with f-strings (#3552)
 - `SectionList.size()` and `len(sectionlist)` skip deleted sections (#3524)
-- Add `.size()` to the SectionList object, returns the number of sections
+- Add `.size()` to the `SectionList` object, returns the number of sections
   in the list (#3520)
 - CVode no_cap uses direct backing store instead of `Node*` (#3314)
 - Documentation updated to use `from neuron import n` (#3459)
-- Default node order is cell contiguous (except for thread rootnodes). (#3300)
-- Support multicompartment reactions with source & destination in the ecs. (#3296)
-- Update `rxd.MultipleGeometry` to support 3D and hybrid models. (#3389)
+- Default node order is cell contiguous (except for thread rootnodes) (#3300)
+- Support multicompartment reactions with source & destination in the ecs (#3296)
+- Update `rxd.MultipleGeometry` to support 3D and hybrid models (#3389)
 - Add NMODL warning if a `FUNCTION` does not have a return statement  (#3404)
-- Update species on region exception message. (#3351)
-- Updated rxd reactions to allow pure backward reactions. (#3273)
+- Update species on region exception message (#3351)
+- Updated rxd reactions to allow pure backward reactions (#3273)
 - `Vector.apply` for Python functions (#3362)
 - Allow python callbacks for `xstatebutton` and `xcheckbox` (#3355)
 
