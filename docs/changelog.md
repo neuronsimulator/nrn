@@ -101,7 +101,7 @@ the start of the 9.0a tag on 17-07-2023
 - Fix various memory leaks and related improvements (#3255, #3257, #3243, #2456)  
 - Support for reading reporting related information with in-memory mode (#2555)  
 - NMODL language documentation update (#2152, #2771, #2885)  
-- Documentation improvements including transfer from nrn.yale.edu to nrn.readthedocs.io (#1901, #2922, #2971, #3106, #3187)  
+- Documentation improvements including transfer from <https://neuron.yale.edu> to <https://nrn.readthedocs.io> (#1901, #2922, #2971, #3106, #3187)
 - Various test, CI, and build infrastructure improvements (#1991, #2260, #2474)  
 - Migrate many C code parts to C++ (#2083, #2305)  
 - Support online LFP calculation in CoreNEURON (via SONATA reports for BBP use cases) (#2118, #2360)  
