@@ -5,6 +5,7 @@ if(SKBUILD)
       modlunit
       neurondemo
       nmodl
+      nocmodl
       nrngui
       nrniv
       nrniv-core
