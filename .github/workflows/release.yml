@@ -271,7 +271,7 @@ jobs:
 
       - name: Upload to GitHub release
         run: |
-          gh release upload ${{ env.REL_TAG }} nrn-full-src-package
+          gh release upload ${{ env.REL_TAG }} ${{ needs.nrn-full-src-package.outputs.filename }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
