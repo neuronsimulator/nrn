@@ -13,6 +13,7 @@
 #include "ast/function_call.hpp"
 #include "ast/function_table_block.hpp"
 #include "ast/independent_block.hpp"
+#include "ast/net_receive_block.hpp"
 #include "ast/procedure_block.hpp"
 #include "ast/program.hpp"
 #include "ast/range_var.hpp"
@@ -312,6 +313,10 @@ void SemanticAnalysisVisitor::visit_function_call(const ast::FunctionCall& node)
             check_fail = true;
             return;
         }
+        if (!in_net_receive_block) {
+            logger->warn(
+                "Use of state_discontinuity is not thread safe except in a NET_RECEIVE block");
+        }
     }
 
     node.visit_children(*this);
@@ -397,6 +402,12 @@ void SemanticAnalysisVisitor::visit_mutex_lock(const ast::MutexLock& /* node */)
     }
     in_mutex = true;
     /// -->
+}
+
+void SemanticAnalysisVisitor::visit_net_receive_block(const ast::NetReceiveBlock& node) {
+    in_net_receive_block = true;
+    node.visit_children(*this);
+    in_net_receive_block = false;
 }
 
 void SemanticAnalysisVisitor::visit_mutex_unlock(const ast::MutexUnlock& /* node */) {
