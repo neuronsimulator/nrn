@@ -28,6 +28,7 @@ add_library(
   neuron_solve_visitor.cpp
   perf_visitor.cpp
   rename_visitor.cpp
+  initial_block_visitor.cpp
   rename_function_arguments.cpp
   semantic_analysis_visitor.cpp
   solve_block_visitor.cpp

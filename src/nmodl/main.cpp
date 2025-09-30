@@ -28,6 +28,7 @@
 #include "visitors/cvode_visitor.hpp"
 #include "visitors/function_callpath_visitor.hpp"
 #include "visitors/global_var_visitor.hpp"
+#include "visitors/initial_block_visitor.hpp"
 #include "visitors/implicit_argument_visitor.hpp"
 #include "visitors/indexedname_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
@@ -342,6 +343,13 @@ int run_nmodl(int argc, const char* argv[]) {
         {
             logger->info("Running argument renaming visitor");
             RenameFunctionArgumentsVisitor().visit_program(*ast);
+        }
+
+        /// merge all INITIAL blocks into one (this needs to run before SymtabVisitor)
+        {
+            logger->info("Running INITIAL block merge visitor");
+            MergeInitialBlocksVisitor().visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("merge_initial_block"));
         }
 
         /// construct symbol table
