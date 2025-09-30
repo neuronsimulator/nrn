@@ -717,6 +717,14 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
      */
     void print_net_event_call(const ast::FunctionCall& node) override;
 
+
+    /**
+     * Print call to net\_event
+     * \param node The AST node representing the function call
+     */
+    void print_state_discontinuity_call(const ast::FunctionCall& node) override{};
+
+
     void print_function_table_call(const ast::FunctionCall& node) override;
 
 
