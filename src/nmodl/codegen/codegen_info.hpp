@@ -538,6 +538,9 @@ struct CodegenInfo {
     /// note that if tqitem doesn't exist then the default value should be 0
     int tqitem_index = 0;
 
+    /// whether there are bare calls to `state_discontinuity` (usually inside of a BREAKPOINT block)
+    bool state_discontinuity_used = false;
+
     /// updated dt to use with steadystate solver (in initial block)
     /// empty string means no change in dt
     std::string changed_dt;

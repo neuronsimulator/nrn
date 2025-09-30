@@ -392,6 +392,12 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     int current_watch_statement = 0;
 
 
+    /**
+     * Index of state_discontinuity call being printed
+     */
+    int current_state_discontinuity_call = 0;
+
+
     /****************************************************************************************/
     /*                              Generic information getters                             */
     /****************************************************************************************/
