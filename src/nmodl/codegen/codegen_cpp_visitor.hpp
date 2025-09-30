@@ -877,6 +877,13 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
 
 
     /**
+     * Print call to state\_discontinuity
+     * \param node The AST node representing the function call
+     */
+    virtual void print_state_discontinuity_call(const ast::FunctionCall& node) = 0;
+
+
+    /**
      * Print nmodl function or procedure (common code)
      * \param node the AST node representing the function or procedure in NMODL
      * \param name the name of the function or procedure

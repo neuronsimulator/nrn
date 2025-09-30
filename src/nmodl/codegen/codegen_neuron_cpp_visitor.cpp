@@ -2764,6 +2764,18 @@ void CodegenNeuronCppVisitor::print_net_event_call(const ast::FunctionCall& /* n
     printer->fmt_text("net_event({}, t)", point_process);
 }
 
+void CodegenNeuronCppVisitor::print_state_discontinuity_call(const ast::FunctionCall& node) {
+    const auto& args = node.get_arguments();
+    const auto& first = args[0];
+    const auto& second = args[1];
+    printer->fmt_text("{}(0, &(", naming::NRN_STATE_DISC_METHOD);
+    first->accept(*this);
+    printer->add_text("), ");
+    second->accept(*this);
+    printer->add_text(")");
+}
+
+
 void CodegenNeuronCppVisitor::print_function_table_call(const FunctionCall& node) {
     auto name = node.get_node_name();
     const auto& arguments = node.get_arguments();

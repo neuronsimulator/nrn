@@ -1,8 +1,14 @@
+import io
+import math
+import os
+import re
+import sys
+
 from neuron import h
 from neuron.expect_hocerr import expect_err
 from neuron.tests.utils.checkresult import Chk
+from neuron.tests.utils import get_c_compiler
 
-import io, math, os, re, sys
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 chk = Chk(os.path.join(dir_path, "test_netcvode.json"))
@@ -416,7 +422,9 @@ def cvode_meth():
     cv.error_weights(vec)
     chk("cv.error_weights", vec)
     cv.acor(vec)
-    chk("cv.acor", vec, tol=1e-7)
+    # NVHPC has a different tolerance threshold
+    tol = 2.5e-7 if get_c_compiler().endswith("nvc") else 1e-7
+    chk("cv.acor", vec, tol=tol)
     std = (h.t, s.to_python(), ds.to_python())
     ds.fill(0)
     cv.f(1.0, s, ds)
