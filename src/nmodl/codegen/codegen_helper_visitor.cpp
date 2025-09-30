@@ -688,6 +688,9 @@ void CodegenHelperVisitor::visit_function_call(const FunctionCall& node) {
     if (name == naming::NET_EVENT_METHOD) {
         info.net_event_used = true;
     }
+    if (name == naming::NRN_STATE_DISC_METHOD) {
+        info.state_discontinuity_used = true;
+    }
 }
 
 
