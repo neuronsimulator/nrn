@@ -75,7 +75,7 @@ jobs:
       platform: ${{ matrix.os }}
       python_version: ${{ matrix.python_version }}
       optimize_rxd: true
-      commit: ${{ needs.tag-n-release.outputs.ref }} # Uses tag (if upload=true) or branch
+      commit: ${{ needs.tag-n-release.outputs.ref }}  # Uses tag (if upload=true) or branch
       version: ${{ github.event.inputs.rel_tag }}
       build_type: 'release'
 
