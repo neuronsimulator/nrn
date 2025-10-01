@@ -105,6 +105,8 @@ jobs:
         if: inputs.version != ''
         run: |
           echo SETUPTOOLS_SCM_PRETEND_VERSION=${{ inputs.version }} >> $GITHUB_ENV
+          # force `git describe` to pick up on the version (even if it doesn't exist remotely)
+          git tag --force ${{ inputs.version }}
 
       - name: Build wheel
         run: |
