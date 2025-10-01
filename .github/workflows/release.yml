@@ -271,7 +271,7 @@ jobs:
 
       - name: Upload to GitHub release
         run: |
-          gh release upload ${{ env.REL_TAG }} nrn-full-src-package
+          gh release upload ${{ env.REL_TAG }} ${{ needs.nrn-full-src-package.outputs.filename }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -298,7 +298,7 @@ jobs:
         id: rename
         run: |
           # convert "3.9,3.10..." into "39-310-..."
-          py_version_string="$(echo "${{ github.event.inputs.python_version }}" | sed 's/\.//g; s/,/-/g')"
+          py_version_string="$(echo "${{ github.event.inputs.python_versions }}" | sed 's/\.//g; s/,/-/g')"
           win_installer_name="nrn-${{ env.REL_TAG }}.w64-mingw-py-${py_version_string}-setup.exe"
           echo "win_installer_name=${win_installer_name}" >> "$GITHUB_OUTPUT"
           cp nrn-nightly-AMD64.exe "${win_installer_name}"
