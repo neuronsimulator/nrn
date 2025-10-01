@@ -78,7 +78,7 @@ jobs:
       version: ${{ github.event.inputs.rel_tag }}
       build_type: 'release'
       # so `git describe` provides the correct information
-      depth: 0
+      clone_depth: 0
 
   merge-wheels:
     name: Merge wheel files to one artifact
