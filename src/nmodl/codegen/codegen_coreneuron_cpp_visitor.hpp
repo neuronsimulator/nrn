@@ -719,8 +719,11 @@ class CodegenCoreneuronCppVisitor: public CodegenCppVisitor {
 
 
     /**
-     * Print call to net\_event
+     * Print call to state\_discontinuity
      * \param node The AST node representing the function call
+     *
+     * \todo
+     * Figure out if coreNEURON needs this
      */
     void print_state_discontinuity_call(const ast::FunctionCall& node) override{};
 
