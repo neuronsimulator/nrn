@@ -41,6 +41,7 @@ jobs:
       with:
         ref: ${{ inputs.tag }}
         submodules: recursive
+        fetch-tags:true  # Ensures tags are available for git describe
 
     - name: Retrieve rxd test data
       run: |

@@ -67,6 +67,7 @@ jobs:
     name: Build and test wheel on ${{ matrix.os }} with Python ${{ matrix.python_version }}
     needs:
       - generate-wheel-matrix
+      - tag-n-release
     uses: ./.github/workflows/wheels-template.yml
     strategy:
       matrix: ${{ fromJson(needs.generate-wheel-matrix.outputs.matrix) }}
@@ -74,7 +75,7 @@ jobs:
       platform: ${{ matrix.os }}
       python_version: ${{ matrix.python_version }}
       optimize_rxd: true
-      commit: ${{ github.event.inputs.rel_branch }}
+      commit: ${{ needs.tag-n-release.outputs.ref }}  # Uses tag (if upload=true) or branch
       version: ${{ github.event.inputs.rel_tag }}
       build_type: 'release'
 
@@ -226,17 +227,28 @@ jobs:
   tag-n-release:
     runs-on: ubuntu-latest
     name: tag-n-release ${{ github.event.inputs.rel_tag }} (${{ github.event.inputs.rel_branch }})
-    if: github.event.inputs.upload == 'true'
     outputs:
       release_url: ${{ steps.create_release.outputs.upload_url }}
       rel_tag: ${{ env.REL_TAG }}
+      ref: ${{ steps.build-ref.outputs.ref }}  # Conditional ref for builds
     steps:
       - uses: actions/checkout@v4
         name: Checkout branch ${{ env.REL_BRANCH }}
         with:
           ref: ${{ github.event.inputs.rel_branch }}
 
+      - name: Determine build ref  # Sets ref to tag (if upload=true) or branch
+        id: build-ref
+        run: |
+          if [[ "${{ github.event.inputs.upload }}" == 'true' ]]; then
+            echo "ref=${{ env.REL_TAG }}" >> $GITHUB_OUTPUT
+          else
+            echo "ref=${{ github.event.inputs.rel_branch }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create and upload tag ${{ env.REL_TAG }}
+        # Moved the earlier `if` to here so the build items can succeed with upload false
+        if: github.event.inputs.upload == 'true'
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
@@ -247,6 +259,7 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
 
       - name: Create Release
+        if: github.event.inputs.upload == 'true'  # Skip on dry runs
         id: create_release
         uses: ncipollo/release-action@v1
         env:
@@ -277,16 +290,17 @@ jobs:
 
   build-windows-installer:
     name: Build Windows installer
+    needs:
+      - tag-n-release
     uses: neuronsimulator/nrn/.github/workflows/windows.yml@master
     with:
-      tag: ${{ github.event.inputs.rel_branch }}
+      tag: ${{ needs.tag-n-release.outputs.ref }}
 
   upload-windows-installer:
     name: Publish Windows installer
     if: github.event.inputs.upload == 'true'
     needs:
       - build-windows-installer
-      - tag-n-release
     runs-on: ubuntu-latest
     steps:
       - name: Download Windows installer artifact
