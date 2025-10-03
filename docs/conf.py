@@ -43,6 +43,7 @@ extensions = [
     "sphinx_design",
     "sphinx_inline_tabs",
     "sphinxcontrib.mermaid",
+    "sphinxcontrib.moderncmakedomain",
 ]
 
 source_suffix = {
