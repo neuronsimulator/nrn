@@ -119,12 +119,18 @@ def demangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
     --------
     mangle_protected_identifiers : The inverse of this function.
     """
-    for var in forbidden_var:
-        r = re.compile(rf"\b{MANGLE_PREFIX}{var}\b")
-        f = var
-        eqs = [re.sub(r, f, x) for x in eqs]
+    # Build single regex with all variables
+    escaped_vars = "|".join(re.escape(f"{MANGLE_PREFIX}{var}") for var in forbidden_var)
+    pattern = re.compile(rf"\b({escaped_vars})\b")
 
-    return eqs
+    # Create replacement mapping
+    replacements = {f"{MANGLE_PREFIX}{var}": var for var in forbidden_var}
+
+    # Single pass replacement
+    def replace_func(match):
+        return replacements[match.group(0)]
+
+    return [pattern.sub(replace_func, x) for x in eqs]
 
 
 def _get_custom_functions(fcts):
