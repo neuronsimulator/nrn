@@ -5,23 +5,23 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
-on: [push]
-  # merge_group:
-  # workflow_call:
-  #   inputs:
-  #     tag:
-  #       description: 'Release version (tag name)'
-  #       default: ''
-  #       required: true
-  #       type: string
-  # push:
-  #   branches:
-  #     - master
-  #     - release/**
-  # pull_request:
-  #   branches:
-  #     - master
-  #     - release/**
+on:
+  merge_group:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'The branch/commit of NEURON to checkout'
+        default: ''
+        required: true
+        type: string
+  push:
+    branches:
+      - master
+      - release/**
+  pull_request:
+    branches:
+      - master
+      - release/**
 # TODO : https://github.com/neuronsimulator/nrn/issues/1063
 #    paths-ignore:
 #      - '**.md'
@@ -38,6 +38,7 @@ env:
 
 jobs:
   WindowsInstaller:
+    name: Windows installer
     runs-on: windows-latest
     timeout-minutes: 45
 
@@ -45,41 +46,8 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ inputs.tag }}
-        fetch-depth: 500
-
-    - uses: mpi4py/setup-mpi@v1
-
-    # The cache setting will chache installed Python packages, and will be refreshed if
-    # requirements.txt changes.
-    - uses: actions/setup-python@v4
-      id: cpy
-      with:
-        python-version: ${{ env.PYTHON_VERSIONS }}
-        cache: 'pip'
-        update-environment: false
-
-    - name: Install Python dependencies (will be cached)
-      run: |
-        $pythons = $env:PYTHON_VERSIONS -Split "\s+" | Foreach-Object {
-          If ($_ -ne "") {
-            Get-Item "C:\hostedtoolcache\windows\Python\$_*\x64\python.exe"
-          }
-        } | Foreach-Object { "$_" }
-
-        $firstPython = $pythons[0]
-        "firstPython=${firstPython}" | Out-File -FilePath $env:GITHUB_ENV -Append
-        $allPythons = $pythons -Join ";"
-        "allPythons=${allPythons}" | Out-File -FilePath $env:GITHUB_ENV -Append
-
-        $pythons | Foreach-Object {
-          & $_ -m pip install -r ci/uv_requirements.txt
-          & $_ -m uv pip install -r ci/requirements.txt
-        }
-
-        $firstCython = Join-Path $(Get-Item $firstPython).DirectoryName -childPath "Scripts" -AdditionalChildPath "cython.exe"
-        "firstCython=${firstCython}" | Out-File -FilePath $env:GITHUB_ENV -Append
-      shell: pwsh
-      working-directory: ${{runner.workspace}}\nrn
+        submodules: recursive
+        fetch-tags: true  # Ensures tags are available for git describe
 
     - name: Retrieve rxd test data
       run: |

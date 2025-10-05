@@ -357,6 +357,7 @@ static Object** upkpyobj(void* v) {
     std::vector<char> s = bbs->upkpickle();
     assert(neuron::python::methods.pickle2po);
     Object* po = neuron::python::methods.pickle2po(s);
+    --po->refcount;
     return hoc_temp_objptr(po);
 }
 
@@ -368,6 +369,7 @@ Object** BBS::pyret() {
     assert(neuron::python::methods.pickle2po);
     Object* po = neuron::python::methods.pickle2po(impl_->pickle_ret_);
     impl_->pickle_ret_.clear();
+    --po->refcount;
     return hoc_temp_objptr(po);
 }
 
@@ -1290,6 +1292,7 @@ std::vector<char> BBSImpl::execute_helper(int id, bool exec) {
                 }
                 assert(neuron::python::methods.pickle2po);
                 Object* po = neuron::python::methods.pickle2po(s);
+                --po->refcount;
                 hoc_pushobj(hoc_temp_objptr(po));
             }
         }
@@ -1403,6 +1406,7 @@ void BBSImpl::subworld_worker_execute() {
             std::vector<char> s(n);
             nrnmpi_char_broadcast(s.data(), n, 0);
             Object* po = neuron::python::methods.pickle2po(s);
+            --po->refcount;
             hoc_pushobj(hoc_temp_objptr(po));
         }
     }

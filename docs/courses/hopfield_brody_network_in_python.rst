@@ -9,7 +9,7 @@ Although this is a minimal model, learning the ropes is still difficult. Therefo
 
 As you know, NEURON is optimized to handle the complex channel and compartment simulations that have been omitted from this exercise. The interested student might wish to convert this network into a network of spiking cells with realistic inhibitory interactions or a hybrid network with both realistic and artificial cells. Such an extended exercise would more clearly demonstrate NEURON's advantages for performing network simulations.
 
-Standard intfire implementation (eg :hoc:class:`IntFire1` from ``intfire1.mod``))
+Standard intfire implementation (eg :class:`IntFire1` from ``intfire1.mod``))
 ---------------------
 
 Individual units are integrate-and-fire neurons.

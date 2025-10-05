@@ -355,7 +355,9 @@ void hoc_Getstr(void) /* read a line (or word) from input file */
     }
     if (word) {
         buf = hoc_tmpbuf->buf;
-        if (nrn_fw_fscanf(fi, "%s", buf) != 1) {
+        char format[32];
+        snprintf(format, sizeof(format), "%%%zus", hoc_tmpbuf->size - 1);
+        if (nrn_fw_fscanf(fi, format, buf) != 1) {
             hoc_execerror("EOF in getstr", (char*) 0);
         }
     } else {

@@ -820,9 +820,9 @@ jupyter-server-terminals==0.5.3 \
     --hash=sha256:41ee0d7dc0ebf2809c668e0fc726dfaf258fcd3e769568996ca731b6194ae9aa \
     --hash=sha256:5ae0295167220e9ace0edcfdb212afd2b01ee8d179fe6f23c899590e9b8a5269
     # via jupyter-server
-jupyterlab==4.4.2 \
-    --hash=sha256:857111a50bed68542bf55dca784522fe728f9f88b4fe69e8c585db5c50900419 \
-    --hash=sha256:afa9caf28c0cb966488be18e5e8daba9f018a1c4273a406b7d5006344cbc6d16
+jupyterlab==4.4.8 \
+    --hash=sha256:81b56f33f35be15150e7ccd43440963a93d2b115ffa614a06d38b91e4d650f92 \
+    --hash=sha256:a89e5a2e9f9295ae039356fc5247e5bfac64936126ab805e3ff8e47f385b0c7e
     # via
     #   jupyter
     #   notebook
@@ -1828,6 +1828,7 @@ pyyaml==6.0.2 \
     #   bokeh
     #   jupyter-events
     #   myst-parser
+    #   sphinxcontrib-mermaid
 pyzmq==26.4.0 \
     --hash=sha256:0329bdf83e170ac133f44a233fc651f6ed66ef8e66693b5af7d54f45d1ef5918 \
     --hash=sha256:056a97aab4064f526ecb32f4343917a4022a5d9efb6b9df990ff72e1879e40be \
@@ -2204,6 +2205,7 @@ sphinx==7.3.7 \
     #   sphinx-inline-tabs
     #   sphinx-rtd-theme
     #   sphinxcontrib-jquery
+    #   sphinxcontrib-mermaid
 sphinx-design==0.6.1 \
     --hash=sha256:b11f37db1a802a183d61b159d9a202314d4d2fe29c163437001324fe2f19549c \
     --hash=sha256:b44eea3719386d04d765c1a8257caca2b3e6f8421d7b3a5e742c0fd45f84e632
@@ -2242,6 +2244,10 @@ sphinxcontrib-jsmath==1.0.1 \
     --hash=sha256:2ec2eaebfb78f3f2078e73666b1415417a116cc848b72e5172e596c871103178 \
     --hash=sha256:a9925e4a4587247ed2191a22df5f6970656cb8ca2bd6284309578f2153e0c4b8
     # via sphinx
+sphinxcontrib-mermaid==1.0.0 \
+    --hash=sha256:2e8ab67d3e1e2816663f9347d026a8dee4a858acdd4ad32dd1c808893db88146 \
+    --hash=sha256:60b72710ea02087f212028feb09711225fbc2e343a10d34822fe787510e1caa3
+    # via -r docs/docs_requirements.txt
 sphinxcontrib-qthelp==2.0.0 \
     --hash=sha256:4fe7d0ac8fc171045be623aba3e2a8f613f8682731f9153bb2e40ece16b9bbab \
     --hash=sha256:b18a828cdba941ccd6ee8445dbe72ffa3ef8cbe7505d8cd1fa0d42d3f2d5f3eb

@@ -1,12 +1,12 @@
 """
 Convert rst to a compressed dictionary suitable for NEURON + Python help system.
 Run via:
->>> python3 parse_rst.py ./python/ help_data.dat
+>>> python3 parse_rst.py ./progref/ help_data.dat
 """
 
-import os
 import sys
 from pathlib import Path
+import re
 
 
 class ParseRst(object):
@@ -23,12 +23,8 @@ class ParseRst(object):
         identifier = ".. %s::" % identifier
         line = lines[i]
         start = line.find(identifier)
-        # print line, identifier, start
-        # print identifier
         if start >= 0:
             name = line[start + len(identifier) :].strip()
-
-            # print('%s -- %s' % (name, identifier))
 
             indent_line = lines[i + 1]
             while not indent_line.strip():
@@ -40,7 +36,6 @@ class ParseRst(object):
                     break
                 start += 1
 
-            # TODO: store the body text
             body = []
             while i < len(lines) - 1:
                 i += 1
@@ -53,9 +48,54 @@ class ParseRst(object):
                     else:
                         break
                 else:
-                    if not body or body[-1] != "\n":
+                    if body and body[-1] != "\n":
                         body.append("\n")
-            cls.help_dictionary[name] = "\n".join(body)
+
+            # Check if body contains ".. tab:: Python" and extract only Python content
+            python_tab_found = any(".. tab:: Python" in line for line in body)
+
+            if python_tab_found:
+                python_body = []
+                in_python_tab = False
+
+                for line in body:
+                    if ".. tab:: Python" in line:
+                        in_python_tab = True
+                        continue
+                    elif line.strip().startswith(".. tab::") and in_python_tab:
+                        # Found another tab, stop collecting Python content
+                        break
+                    elif in_python_tab:
+                        python_body.append(line)
+
+                # Remove leading 4-space indentation repeatedly
+                while True:
+                    # Check if all non-empty lines begin with 4 spaces
+                    can_remove_spaces = True
+                    has_non_empty_lines = False
+                    for line in python_body:
+                        if line.strip():  # Only check non-empty lines
+                            has_non_empty_lines = True
+                            if not line.startswith("    "):
+                                can_remove_spaces = False
+                                break
+
+                    if can_remove_spaces and python_body and has_non_empty_lines:
+                        # Remove 4 spaces from the beginning of each line
+                        python_body = [
+                            line[4:] if line.startswith("    ") else line
+                            for line in python_body
+                        ]
+                    else:
+                        break
+
+                # Clean up consecutive newlines in the final result
+                result = "\n".join(python_body).strip("\n")
+                result = re.sub(r"\n[ \t]+\n", "\n\n", result)
+                result = re.sub(r"\n{3,}", "\n\n", result)
+                cls.help_dictionary[name] = result
+            else:
+                cls.help_dictionary[name] = "\n".join(body)
 
     def parse(self):
         for filename in self._filenames:
