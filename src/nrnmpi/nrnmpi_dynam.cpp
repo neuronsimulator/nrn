@@ -159,7 +159,7 @@ std::string nrnmpi_load() {
         return pmes;
     }
 
-#if !defined(DARWIN) && !defined(MINGW)  && !defined (_MSC_VER)
+#if !defined(DARWIN) && !defined(MINGW) && !defined(_MSC_VER)
     // Linux-specific hack; with CMake the problem of Python launch on Linux not
     // resolving variables from already loaded shared libraries has returned.
     {
