@@ -54,7 +54,7 @@ if(SKBUILD)
   set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/bin")
 else()
   set(NRN_INSTALL_PYTHON_PREFIX "lib/python/neuron/")
-  set(NRN_INSTALL_DATA_PREFIX)
+  set(NRN_INSTALL_DATA_PREFIX ".")
 endif()
 
 # =============================================================================
