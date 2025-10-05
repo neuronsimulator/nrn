@@ -29,7 +29,7 @@
 #include "../utils/profile/profiler_interface.h"
 #ifdef _MSC_VER
 #include <windows.h>
-#include <io.h> // for _isatty
+#include <io.h>  // for _isatty
 #endif
 
 #include <cfenv>
@@ -1577,6 +1577,7 @@ static int event_hook(void) {
    read on any machine
 */
 
+#if 0 && _MSC_VER
 void set_raw_mode() {
     HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
     DWORD mode;
@@ -1592,13 +1593,14 @@ void restore_cooked_mode() {
     mode |= (ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT); // Restore line buffering and echo
     SetConsoleMode(hStdin, mode);
 }
+#endif
 
 CHAR* hoc_fgets_unlimited(HocStr* bufstr, NrnFILEWrap* f) {
-    //set_raw_mode();
-    //setvbuf(stdin, NULL, _IONBF, 0); // Unbuffered for interactive input
+    // set_raw_mode();
+    // setvbuf(stdin, NULL, _IONBF, 0); // Unbuffered for interactive input
     CHAR* c = fgets_unlimited_nltrans(bufstr, f, 1);
-    //setvbuf(stdin, NULL, _IOLBF, 0); // Restore line buffering
-    //restore_cooked_mode();
+    // setvbuf(stdin, NULL, _IOLBF, 0); // Restore line buffering
+    // restore_cooked_mode();
     return c;
 }
 
@@ -1636,7 +1638,7 @@ static CHAR* fgets_unlimited_nltrans(HocStr* bufstr, NrnFILEWrap* f, int nltrans
             hocstr_resize(bufstr, bufstr->size * 2);
         }
         bufstr->buf[i] = c;
-        //if (nrn_fw_eq(f, stdin) && nrn_istty_ && c) {
+        // if (nrn_fw_eq(f, stdin) && nrn_istty_ && c) {
         //    WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), &c, 1, NULL, NULL); // Manual echo
         //}
         if (c == '\n') {
@@ -1743,7 +1745,7 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
         // hoc_cbuf[n] = '\n';
         // hoc_cbuf[n + 1] = '\0';
         hoc_audit_command(hoc_cbuf);
-#else // not _MSC_VER
+#else  // not _MSC_VER
 #if INTERVIEWS
         if (nrn_fw_eq(hoc_fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
             run_til_stdin();
@@ -1760,7 +1762,7 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
 #endif  // _WIN32
         {
             if (nrn_fw_eq(hoc_fin, stdin) && nrn_istty_) {
-				printf("%s", hoc_promptstr);
+                printf("%s", hoc_promptstr);
             }
             if (hoc_fgets_unlimited(hoc_cbufstr, hoc_fin) == (char*) 0) {
                 return EOF;
