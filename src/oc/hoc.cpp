@@ -29,6 +29,7 @@
 #include "../utils/profile/profiler_interface.h"
 #ifdef _MSC_VER
 #include <windows.h>
+#include <io.h> // for _isatty
 #endif
 
 #include <cfenv>
@@ -810,6 +811,8 @@ void hoc_main1_init(const char* pname, const char** envp) {
     if (nrn_istty_ == 0) { /* if not set then */
 #ifdef HAVE_ISATTY
         nrn_istty_ = isatty(0);
+#elif _MSC_VER
+        nrn_istty_ = _isatty(0);
 #else
         /* if we do not know, then assume so */
         nrn_istty_ = 1;
@@ -1573,8 +1576,30 @@ static int event_hook(void) {
    for unix and mac this allows files created on any machine to be
    read on any machine
 */
+
+void set_raw_mode() {
+    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD mode;
+    GetConsoleMode(hStdin, &mode);
+    mode &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT); // Disable line buffering and echo
+    SetConsoleMode(hStdin, mode);
+}
+
+void restore_cooked_mode() {
+    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD mode;
+    GetConsoleMode(hStdin, &mode);
+    mode |= (ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT); // Restore line buffering and echo
+    SetConsoleMode(hStdin, mode);
+}
+
 CHAR* hoc_fgets_unlimited(HocStr* bufstr, NrnFILEWrap* f) {
-    return fgets_unlimited_nltrans(bufstr, f, 1);
+    //set_raw_mode();
+    //setvbuf(stdin, NULL, _IONBF, 0); // Unbuffered for interactive input
+    CHAR* c = fgets_unlimited_nltrans(bufstr, f, 1);
+    //setvbuf(stdin, NULL, _IOLBF, 0); // Restore line buffering
+    //restore_cooked_mode();
+    return c;
 }
 
 static CHAR* fgets_unlimited_nltrans(HocStr* bufstr, NrnFILEWrap* f, int nltrans) {
@@ -1611,6 +1636,9 @@ static CHAR* fgets_unlimited_nltrans(HocStr* bufstr, NrnFILEWrap* f, int nltrans
             hocstr_resize(bufstr, bufstr->size * 2);
         }
         bufstr->buf[i] = c;
+        //if (nrn_fw_eq(f, stdin) && nrn_istty_ && c) {
+        //    WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), &c, 1, NULL, NULL); // Manual echo
+        //}
         if (c == '\n') {
             bufstr->buf[i + 1] = '\0';
             return bufstr->buf;
@@ -1700,8 +1728,8 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
                 return EOF;
             }
         }
-#else  // READLINE
-#if _MSC_VER
+#else  // not READLINE
+#if 0 && _MSC_VER
         WriteConsoleA(
             GetStdHandle(STD_OUTPUT_HANDLE), hoc_promptstr, strlen(hoc_promptstr), NULL, NULL);
         DWORD n;
@@ -1712,16 +1740,16 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
             hoc_ctp = hoc_cbuf = hoc_cbufstr->buf;
         }
         strcpy(hoc_cbuf, line.data());
-        hoc_cbuf[n] = '\n';
-        hoc_cbuf[n + 1] = '\0';
+        // hoc_cbuf[n] = '\n';
+        // hoc_cbuf[n + 1] = '\0';
         hoc_audit_command(hoc_cbuf);
-#else
+#else // not _MSC_VER
 #if INTERVIEWS
         if (nrn_fw_eq(hoc_fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
             run_til_stdin();
         }
 #endif  // INTERVIEWS
-#if defined(WIN32)
+#if 0 && defined(WIN32)
         if (nrn_fw_eq(hoc_fin, stdin)) {
             if (gets(hoc_cbuf) == (char*) 0) {
                 /*DebugMessage("gets returned NULL\n");*/
@@ -1731,12 +1759,15 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
         } else
 #endif  // _WIN32
         {
+            if (nrn_fw_eq(hoc_fin, stdin) && nrn_istty_) {
+				printf("%s", hoc_promptstr);
+            }
             if (hoc_fgets_unlimited(hoc_cbufstr, hoc_fin) == (char*) 0) {
                 return EOF;
             }
         }
-#endif  // _MSC_VER
-#endif  // READLINE
+#endif  // not _MSC_VER
+#endif  // not READLINE
     }
     errno = 0;
     hoc_lineno++;

@@ -123,7 +123,7 @@ std::string nrnmpi_load() {
         std::array libmpi_names {
 #if defined(DARWIN)
             "libmpi.dylib", const_char_ptr{std::getenv("MPI_LIB_NRN_PATH")},
-#elif defined(MINGW) || defined(_MSVC)
+#elif defined(MINGW) || defined(_MSC_VER)
             "msmpi.dll"
 #else  // Linux
        // libmpi.so is not standard but used by most of the implemenntation
@@ -159,7 +159,7 @@ std::string nrnmpi_load() {
         return pmes;
     }
 
-#if !defined(DARWIN) && !defined(MINGW)
+#if !defined(DARWIN) && !defined(MINGW)  && !defined (_MSC_VER)
     // Linux-specific hack; with CMake the problem of Python launch on Linux not
     // resolving variables from already loaded shared libraries has returned.
     {
@@ -182,7 +182,7 @@ std::string nrnmpi_load() {
     // MPI implementation that actually is
     assert(handle);
     auto const mpi_implementation = [handle] {
-#ifdef MINGW
+#if defined(MINGW) || defined(_MSC_VER)
         return "msmpi";
 #else
         if (dlsym(handle, "ompi_mpi_init")) {
@@ -208,7 +208,7 @@ std::string nrnmpi_load() {
     // looked for in the same directory as libnrniv.so, which will be incorrect
     // if CoreNEURON is built externally with dynamic MPI enabled.
     auto const libnrnmpi_prefix = []() -> std::string {
-#ifdef MINGW
+#if defined(MINGW) || defined(_MSC_VER)
         // Preserve old behaviour on Windows
         return {};
 #else

@@ -6,3 +6,4 @@ extern int hoc_errno_count;
 extern int hoc_pipeflag;
 extern int hoc_in_yyparse;
 extern int hoc_intset;
+NRN_API double nrn_timeus();

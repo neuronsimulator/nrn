@@ -1,5 +1,5 @@
+#include "nrnconf.h"
 #include "oc_ansi.h"
-
 #include <chrono>
 
 static double start_time = 0.;
@@ -24,7 +24,7 @@ void hoc_stopsw() {
     start_time = now;
 }
 
-double nrn_timeus() {
+NRN_API double nrn_timeus() {
     const auto now = std::chrono::time_point_cast<std::chrono::duration<double>>(
         std::chrono::system_clock::now());
     return now.time_since_epoch().count();

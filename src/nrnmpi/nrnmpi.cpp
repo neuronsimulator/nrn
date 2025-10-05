@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "ocmisc.h" // for nrn_timeus
 
 /* do not want the redef in the dynamic load case */
 #include <nrnmpiuse.h>
@@ -20,9 +21,8 @@
 #include "nrnmpi_def_cinc"
 #endif
 
-extern double nrn_timeus();
-
 #if NRNMPI
+#include <cstdint>
 #include <mpi.h>
 #define nrn_mpi_assert(arg) nrn_assert(arg == MPI_SUCCESS)
 
