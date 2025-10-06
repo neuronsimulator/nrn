@@ -888,6 +888,10 @@ if(NRN_ENABLE_DOCS)
       COMMENT "Generating documentation with Sphinx")
   endfunction()
 
+  include(cmake/FetchLatestRelease.cmake)
+  fetch_latest_release()
+  configure_file("${PROJECT_SOURCE_DIR}/docs/index.rst.in" "${PROJECT_SOURCE_DIR}/docs/index.rst")
+
   add_sphinx_target(sphinx)
 
   if(NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
