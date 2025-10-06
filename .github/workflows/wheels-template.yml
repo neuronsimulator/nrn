@@ -44,6 +44,7 @@ jobs:
           ref: ${{ inputs.commit }}
           submodules: recursive
           fetch-depth: ${{ inputs.clone_depth }}
+          fetch-tags: true  # Ensures tags are available for git describe
 
       - name: Install Python from python.org
         if: runner.os == 'macOS'
