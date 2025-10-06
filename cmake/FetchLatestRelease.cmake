@@ -1,6 +1,6 @@
 # =============================================================================
 # Fetch the latest release JSON from GitHub API, and put the information into the variables
-# `NRN_WINDOWS_INSTALLER_LINK` and `NRN_MACOS_INSTALLER_LINK`. Note that, according to the GitHub
+# `NRN_WINDOWS_INSTALLER_URL` and `NRN_MACOS_INSTALLER_URL`. Note that, according to the GitHub
 # API docs:
 #
 # > The latest release is the most recent non-prerelease, non-draft release, sorted by the
@@ -13,7 +13,7 @@
 # released the latest, the API will fetch that one.
 # =============================================================================
 function(fetch_latest_release)
-  set(GITHUB_USER "neuronsimulator/nrn")
+  set(GITHUB_USER "neuronsimulator")
   set(GITHUB_REPO "nrn")
   set(API_URL "https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases/latest")
   set(JSON_FILE "${CMAKE_CURRENT_BINARY_DIR}/latest_release.json")
@@ -96,10 +96,10 @@ function(fetch_latest_release)
     message(WARNING "macOS installer not found in latest release")
   endif()
 
-  set(NRN_WINDOWS_INSTALLER_LINK
+  set(NRN_WINDOWS_INSTALLER_URL
       "${WINDOWS_INSTALLER_URL}"
       PARENT_SCOPE)
-  set(NRN_MACOS_INSTALLER_LINK
+  set(NRN_MACOS_INSTALLER_URL
       "${MACOS_INSTALLER_URL}"
       PARENT_SCOPE)
 endfunction()
