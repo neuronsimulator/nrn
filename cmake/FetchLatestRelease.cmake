@@ -13,9 +13,6 @@
 # released the latest, the API will fetch that one.
 # =============================================================================
 function(fetch_latest_release)
-  if(CMAKE_VERSION VERSION_LESS "3.19")
-    message(FATAL_ERROR "CMake 3.19 or above is required for building the docs")
-  endif()
   set(GITHUB_USER "neuronsimulator")
   set(GITHUB_REPO "nrn")
   set(GITHUB_API_VERSION "2022-11-28")
