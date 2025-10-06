@@ -52,6 +52,11 @@ if(SKBUILD)
   set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
   set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
   set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/bin")
+
+elseif(CMAKE_GENERATOR MATCHES "Visual Studio")
+  set(NRN_INSTALL_PYTHON_PREFIX "lib/python/neuron/")
+  set(NRN_INSTALL_DATA_PREFIX ".")
+
 else()
   set(NRN_INSTALL_PYTHON_PREFIX "lib/python/neuron/")
   set(NRN_INSTALL_DATA_PREFIX)
@@ -354,8 +359,13 @@ endif()
 # Find required packages
 # =============================================================================
 find_package(BISON REQUIRED)
-find_package(FLEX 2.6 REQUIRED)
+find_package(FLEX 2.6)
 
+# FIXME CMake 3.18 introduced a REQUIRED parameter
+find_program(BASH_EXECUTABLE NAMES bash bash.exe)
+if(NOT BASH_EXECUTABLE)
+  message(FATAL_ERROR "Could not find Bash")
+endif()
 # lcov >= 2 and bison < 3.7 do not play nicely
 if(NRN_ENABLE_COVERAGE
    AND BISON_VERSION VERSION_LESS "3.7"
@@ -375,7 +385,11 @@ if(NRN_WHEEL_STATIC_READLINE)
   set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 endif()
 
-find_package(Readline REQUIRED)
+if(NOT MSVC)
+  find_package(Readline REQUIRED)
+else()
+  add_compile_options("/bigobj")
+endif()
 if(READLINE_FOUND)
   # MAC libedit.3.dylib does not have rl_event_hook Readline_LIBRARY may be a binary lib or (on the
   # MAC) a tbd file that points to the library and mentions all its definitions. this part has to be
@@ -718,8 +732,8 @@ include(ConfigFileSetting)
 # by ctypes in the neuron module.) So for now we keep that distinction as
 # well. Setting these here as setup.py.in needs it.
 # ~~~
-if(MINGW)
-  set(NRN_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX})
+if(MINGW OR MSVC)
+  set(NRN_INSTALL_SHARE_DIR ${NRN_INSTALL_DATA_PREFIX})
   set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR})
   set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/bin)
 else()
