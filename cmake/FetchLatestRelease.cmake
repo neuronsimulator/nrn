@@ -18,6 +18,7 @@ function(fetch_latest_release)
   endif()
   set(GITHUB_USER "neuronsimulator")
   set(GITHUB_REPO "nrn")
+  set(GITHUB_API_VERSION "2022-11-28")
   set(API_URL "https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases/latest")
   set(JSON_FILE "${CMAKE_CURRENT_BINARY_DIR}/latest_release.json")
   set(WINDOWS_INSTALLER_PATTERN ".*\\.w64-mingw.*setup\\.exe$")
@@ -27,19 +28,16 @@ function(fetch_latest_release)
   file(
     DOWNLOAD "${API_URL}" "${JSON_FILE}"
     STATUS DOWNLOAD_STATUS
-    HTTPHEADER "X-GitHub-Api-Version: 2022-11-28"
+    HTTPHEADER "X-GitHub-Api-Version: ${GITHUB_API_VERSION}"
     TIMEOUT 10)
 
-  # Check if download was successful
   list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
   if(NOT STATUS_CODE EQUAL 0)
     message(FATAL_ERROR "Failed to download release information")
   endif()
 
-  # Read the JSON file
   file(READ "${JSON_FILE}" JSON_CONTENT)
 
-  # Extract the number of assets
   string(JSON ASSETS_LENGTH ERROR_VARIABLE JSON_ERROR LENGTH "${JSON_CONTENT}" "assets")
   if(JSON_ERROR)
     message(FATAL_ERROR "Failed to parse JSON: ${JSON_ERROR}")
@@ -47,14 +45,11 @@ function(fetch_latest_release)
 
   message(DEBUG "Found ${ASSETS_LENGTH} assets in latest release")
 
-  # Initialize variables for installer URLs
   set(WINDOWS_INSTALLER_URL "")
   set(MACOS_INSTALLER_URL "")
 
-  # Iterate through assets to find installers
   math(EXPR LAST_INDEX "${ASSETS_LENGTH} - 1")
   foreach(INDEX RANGE 0 ${LAST_INDEX})
-    # Get asset name
     string(
       JSON
       ASSET_NAME
@@ -64,7 +59,6 @@ function(fetch_latest_release)
       ${INDEX}
       "name")
 
-    # Get browser download URL
     string(
       JSON
       ASSET_URL
