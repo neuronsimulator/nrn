@@ -52,9 +52,14 @@ if(SKBUILD)
   set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
   set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
   set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/bin")
-else()
+  
+elseif(CMAKE_GENERATOR MATCHES "Visual Studio")
   set(NRN_INSTALL_PYTHON_PREFIX "lib/python/neuron/")
   set(NRN_INSTALL_DATA_PREFIX ".")
+
+else()
+  set(NRN_INSTALL_PYTHON_PREFIX "lib/python/neuron/")
+  set(NRN_INSTALL_DATA_PREFIX )
 endif()
 
 # =============================================================================
