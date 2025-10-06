@@ -1,7 +1,7 @@
 # =============================================================================
 # Fetch the latest release JSON from GitHub API, and put the information into the variables
-# `NRN_WINDOWS_INSTALLER_URL` and `NRN_MACOS_INSTALLER_URL`. Note that, according to the GitHub
-# API docs:
+# `NRN_WINDOWS_INSTALLER_URL` and `NRN_MACOS_INSTALLER_URL`. Note that, according to the GitHub API
+# docs:
 #
 # > The latest release is the most recent non-prerelease, non-draft release, sorted by the
 # created_at attribute. The created_at attribute is the date of the commit used for the release, and
@@ -13,6 +13,9 @@
 # released the latest, the API will fetch that one.
 # =============================================================================
 function(fetch_latest_release)
+  if(CMAKE_VERSION VERSION_LESS "3.19")
+    message(FATAL_ERROR "CMake 3.19 or above is required for building the docs")
+  endif()
   set(GITHUB_USER "neuronsimulator")
   set(GITHUB_REPO "nrn")
   set(API_URL "https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases/latest")
@@ -24,6 +27,7 @@ function(fetch_latest_release)
   file(
     DOWNLOAD "${API_URL}" "${JSON_FILE}"
     STATUS DOWNLOAD_STATUS
+    HTTPHEADER "X-GitHub-Api-Version: 2022-11-28"
     TIMEOUT 10)
 
   # Check if download was successful
