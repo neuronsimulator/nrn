@@ -1,6 +1,6 @@
 # Windows build
 
-How to make NEURON compilable in Windows.  
+How to compile NEURON in Windows.  
  
 ## Pre-requisites
 
@@ -26,12 +26,14 @@ Note: Do not use: `winget install --id Git.Git -e --source winget`
 ### Step 3: Install Chocolatey [https://chocolatey.org/](https://chocolatey.org/) by command line: 
 
 
+Run the following in PowerShell (or pwsh):
+
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1')) 
 ```
-This should be run in PowerShell or pwsh; in particular, it will not work in cmd.
+It will not work in cmd.
 
-Ensuring Chocolatey commands are on the path 
+Ensure Chocolatey commands are on the path 
 
 Ensuring chocolatey.nupkg is in the lib folder 
  
@@ -68,7 +70,7 @@ or
 #### Step 5.D: Ensure you are working with PowerShell 7
 
 Note: Find path file to version 7 (`C:\Program Files\PowerShell\7` or `C:\Program Files\PowerShell\7-preview`) and create a shortcut for this PowerShell 7
-Windows will continue to use 5 version if we try open "PowerShell" 
+Windows will continue to use version 5 if we try to open "PowerShell" 
 
 PS: A shortcut is one option. You could also add it to your path. 
 
@@ -84,7 +86,7 @@ At PowerShell 7, go to
 mkdir Neuron
 ```
 
-Inside the "Neuron” folder, do: 
+Inside the "Neuron” folder, run: 
 
 ```
 git clone https://github.com/neuronsimulator/nrn
@@ -98,7 +100,7 @@ Note: `PS C:\Users\User\Neuron> git clone git@github.com:neuronsimulator/nrn nrn
 
 ### Step 7: Downloading Dependencies
 
-As **administrator** from PowerShell 7 (right button and “Run as Administrator”) at `C:\Users\User\Neuron\nrn\ci` run: 
+As **administrator** from PowerShell 7 (right click the icon and select “Run as Administrator”) at `C:\Users\User\Neuron\nrn\ci` run: 
 ```
 .\win_download_deps.cmd
 ```
@@ -133,7 +135,7 @@ Install Windows Subsystem for Linux:  wsl.exe --update
 
 ### Step 10: (If you are installing NEURON in a Virtual Machine) 
 
-Turn off your VM and at your computer as **administrator** put in PowerShell 7: 
+Turn off your VM and at the host computer (your computer) as **administrator** put in PowerShell 7: 
 
 `
 Set-VMProcessor -VMName "NameOfYourVM" -ExposeVirtualizationExtensions $true
@@ -150,11 +152,11 @@ Set-VMProcessor -VMName "Windows 11 dev environment" -ExposeVirtualizationExtens
 
  
 ### Step 11: We need execute the “mingw64.exe” 
-So, look for "msys64", go to folder “msys64” and execute `mingw64.exe`.
+Look for "msys64", go to folder “msys64” and execute `mingw64.exe`.
 
-Via folder: open folder `C:\msys64` (probably) and double click in the executable `mingw64` 
+Via folder: open folder `C:\msys64` (probably) and double click the executable `mingw64` 
 
-Via terminal: go to the location of the execuable `./mingw64.exe` (`C:\msys64` probably or `\\wsl.localhost\Ubuntu-24.04\mnt\c\msys64`) and execute it 
+Via terminal: go to the location of  `mingw64.exe` (`C:\msys64` probably or `\\wsl.localhost\Ubuntu-24.04\mnt\c\msys64`) and execute it 
 
 ```
 ./mingw64.exe
@@ -307,7 +309,7 @@ ninja
 
 ### Step 16: Dependencies
 
-Python will not have all dependencies, so you can install them doing:  
+Python will not have all dependencies, so you can install them via:  
 
 ```
 python -m pip install plotly 
@@ -317,7 +319,7 @@ python -m pip install pandas
 
 
 ## Creating a new environment for NEURON development 
-It my be useful maintain the original version of NEURON installed (at `C:\home\User\Neuron\nrn` for example) and have a new version that you can do your changes in code. We will set up this new environment and version.
+It may be useful to maintain the original version of NEURON installed (at `C:\home\User\Neuron\nrn` for example) and have a new version that you can use for development. We will set up this new environment and version.
 
 ### Step 17: Clone NEURON-git inside `msys64`
 We create a new folder inside the `msys64`:  `C:\msys64\home\User\Neuron\nrn`
@@ -330,12 +332,12 @@ git clone https://github.com/neuronsimulator/nrn
 
 Get inside `Neuron\nrn\build` file (example: `C:\Users\User\Neuron\nrn\build` or `C:\msys64\home\User\Neuron\nrn\build` if you copy a version here) and do:  
 ```
-cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=install -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_ENABLE_MPI_DYNAMIC=ON 
+cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=install -DNRN_ENABLE_RX3D=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_ENABLE_MPI_DYNAMIC=ON 
 ```
 
 Another configuration that can be useful is:
 ```
-cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=install -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_ENABLE_MPI_DYNAMIC=ON -DPYTHON_EXECUTABLE=/c/Python312/python.exe -DCMAKE_BUILD_TYPE=FastDebug 
+cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=install -DNRN_ENABLE_RX3D=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_ENABLE_MPI_DYNAMIC=ON -DPYTHON_EXECUTABLE=/c/Python312/python.exe -DCMAKE_BUILD_TYPE=FastDebug 
 ```
  
 ### Step 19: Compiling  
