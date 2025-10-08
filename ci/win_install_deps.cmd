@@ -8,6 +8,7 @@ python-3.10.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustF
 python-3.11.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python311 || goto :error
 python-3.12.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python312 || goto :error
 python-3.13.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python313 || goto :error
+python-3.14.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python314 || goto :error
 
 :: fix msvcc version for all python3
 pwsh -command "(Get-Content C:\Python39\Lib\distutils\cygwinccompiler.py) -replace 'elif msc_ver == ''1600'':', 'elif msc_ver == ''1927'':' | Out-File C:\Python39\Lib\distutils\cygwinccompiler.py"
@@ -28,6 +29,7 @@ C:\Python312\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :
 C:\Python313\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
 C:\Python312\python.exe -m pip install "setuptools<=80.8.0" || goto :error
 C:\Python313\python.exe -m pip install "setuptools<=80.8.0" || goto :error
+C:\Python314\python.exe -m pip install "setuptools<=80.8.0" || goto :error
 
 :: install nsis
 nsis-3.05-setup.exe /S || goto :error
