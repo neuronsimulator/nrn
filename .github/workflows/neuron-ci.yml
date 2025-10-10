@@ -43,7 +43,6 @@ jobs:
       MUSIC_INSTALL_DIR: /opt/MUSIC
       # hash of commit containing mpi4py 4 fix
       MUSIC_VERSION: '13f312338dcccebfe74d391b1b24f1b6d816ac6c'
-      PYO3_USE_ABI3_FORWARD_COMPATIBILITY: 1
 
     strategy:
       matrix:

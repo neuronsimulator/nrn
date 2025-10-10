@@ -104,7 +104,6 @@ set_cibw_environment() {
     elif [ "${platform}" = 'linux' ]; then
         declare -A defaults=(
             [CMAKE_PREFIX_PATH]="/nrnwheel/ncurses;/nrnwheel/readline"
-            [PYO3_USE_ABI3_FORWARD_COMPATIBILITY]="1"
             [NRN_ENABLE_MPI_DYNAMIC]="ON"
             [NRN_MPI_DYNAMIC]="/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)"
             [NRN_WHEEL_STATIC_READLINE]="ON"
