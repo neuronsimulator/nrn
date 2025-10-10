@@ -87,34 +87,9 @@ if(CORENRN_ENABLE_GPU)
   # Enable CUDA language support.
   enable_language(CUDA)
 
-  # Prefer shared libcudart.so
-  if(${CMAKE_VERSION} VERSION_LESS 3.17)
-    # Ugly workaround from https://gitlab.kitware.com/cmake/cmake/-/issues/17559, remove when
-    # possible
-    if(CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES)
-      list(REMOVE_ITEM CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES "cudart_static")
-      list(REMOVE_ITEM CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES "cudadevrt")
-      list(APPEND CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES "cudart")
-    endif()
-    if(CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES)
-      list(REMOVE_ITEM CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES "cudart_static")
-      list(REMOVE_ITEM CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES "cudadevrt")
-      list(APPEND CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES "cudart")
-    endif()
-  else()
-    # nvc++ -cuda implicitly links dynamically to libcudart.so. Setting this makes sure that CMake
-    # does not add -lcudart_static and trigger errors due to mixed dynamic/static linkage.
-    set(CMAKE_CUDA_RUNTIME_LIBRARY Shared)
-  endif()
-
-  # Patch CUDA_ARCHITECTURES support into older CMake versions
-  if(${CMAKE_VERSION} VERSION_LESS 3.18)
-    foreach(cuda_arch ${CMAKE_CUDA_ARCHITECTURES})
-      string(
-        APPEND CMAKE_CUDA_FLAGS
-        " --generate-code=arch=compute_${cuda_arch},code=[compute_${cuda_arch},sm_${cuda_arch}]")
-    endforeach()
-  endif()
+  # nvc++ -cuda implicitly links dynamically to libcudart.so. Setting this makes sure that CMake
+  # does not add -lcudart_static and trigger errors due to mixed dynamic/static linkage.
+  set(CMAKE_CUDA_RUNTIME_LIBRARY Shared)
 
   # ~~~
   # Needed for the Eigen GPU support Warning suppression (Eigen GPU-related):
@@ -487,7 +462,7 @@ if(NRN_ENABLE_MPI AND NRN_ENABLE_MPI_DYNAMIC)
     PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
                LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
                POSITION_INDEPENDENT_CODE ON)
-  install(TARGETS ${corenrn_mpi_targets} DESTINATION lib)
+  install(TARGETS ${corenrn_mpi_targets} DESTINATION ${NRN_INSTALL_DATA_PREFIX}lib)
 endif()
 
 # Suppress some compiler warnings.
@@ -534,7 +509,7 @@ add_custom_command(
   OUTPUT ${output_binaries}
   DEPENDS coreneuron-core ${NMODL_TARGET_TO_DEPEND} ${CORENEURON_BUILTIN_MODFILES}
   COMMAND
-    ${CMAKE_COMMAND} -E env NMODLHOME=${NMODL_PROJECT_BINARY_DIR}
+    ${CMAKE_COMMAND} -E env NMODLHOME=${NMODL_PROJECT_PLATLIB_BINARY_DIR}
     ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b ${COMPILE_LIBRARY_TYPE} -m ${CORENRN_NMODL_BINARY} -n
     "internal" -p 4 "."
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
@@ -627,45 +602,46 @@ endif()
 install(
   TARGETS coreneuron-core ${coreneuron_cuda_target}
   EXPORT coreneuron
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION ${NRN_INSTALL_DATA_PREFIX}lib
+  ARCHIVE DESTINATION ${NRN_INSTALL_DATA_PREFIX}lib
   INCLUDES
-  DESTINATION $<INSTALL_INTERFACE:include>)
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}include)
 
 # headers and some standalone code files for nrnivmodl-core
 install(
   DIRECTORY ${CMAKE_BINARY_DIR}/include/coreneuron
-  DESTINATION include/
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}include/
   FILES_MATCHING
   PATTERN "*.h*"
   PATTERN "*.ipp")
-install(FILES ${MODFUNC_SHELL_SCRIPT} ${ENGINEMECH_CODE_FILE} DESTINATION share/coreneuron)
+install(FILES ${MODFUNC_SHELL_SCRIPT} ${ENGINEMECH_CODE_FILE}
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}share/coreneuron)
 
 # copy nmodl for nrnivmodl-core
-install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION bin)
+install(PROGRAMS ${CORENRN_NMODL_BINARY} DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)
 
 # install nrniv-core app
 install(
   PROGRAMS ${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR}/special-core
-  DESTINATION bin
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin
   RENAME nrniv-core)
-install(FILES apps/coreneuron.cpp DESTINATION share/coreneuron)
+install(FILES apps/coreneuron.cpp DESTINATION ${NRN_INSTALL_DATA_PREFIX}share/coreneuron)
 
 # install mechanism library in shared library builds, if we're linking statically then there is no
 # need
 if(CORENRN_ENABLE_SHARED)
-  install(FILES ${corenrn_mech_library} DESTINATION lib)
+  install(FILES ${corenrn_mech_library} DESTINATION ${NRN_INSTALL_DATA_PREFIX}lib)
 endif()
 
 # install mod files
-install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION share)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION ${NRN_INSTALL_DATA_PREFIX}share)
 
 # =============================================================================
 # Install for end users
 # =============================================================================
 install(FILES ${CMAKE_BINARY_DIR}/share/coreneuron/nrnivmodl_core_makefile
-        DESTINATION share/coreneuron)
-install(PROGRAMS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core DESTINATION bin)
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}share/coreneuron)
+install(PROGRAMS ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)
 
 # =============================================================================
 # Set flag for NEURON linking

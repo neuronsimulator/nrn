@@ -6,9 +6,9 @@ The NEURON Simulator
 
 NEURON is a simulator for neurons and networks of neurons that runs efficiently on your local machine, in the cloud, or on an HPC.
 Build and simulate models using Python, HOC, and/or NEURON's graphical interface. From this page you can watch :ref:`recorded NEURON classes <training_videos>`,
-read the :ref:`Python <python_prog_ref>` or :ref:`HOC <hoc_prog_ref>` programmer's references,
+read the :ref:`Programmer's reference <prog_ref>`,
 `browse the NEURON forum <https://www.neuron.yale.edu/phpBB/>`_,
-explore the `source code for over 800 NEURON models on ModelDB <https://modeldb.science/modellist/1882?all_simu=true>`_,
+explore the `source code for over 850 NEURON models on ModelDB <https://modeldb.science/modellist/1882?all_simu=true>`_,
 and more (use the links on the side or search).
 
 .. toctree::
@@ -17,7 +17,7 @@ and more (use the links on the side or search).
    :hidden:
 
    install/install
-   cmake_doc/index
+   cmake_doc/options.rst
    install/developer
 
 .. toctree::
@@ -40,8 +40,7 @@ and more (use the links on the side or search).
    :hidden:
 
    scripting.rst
-   python/index
-   hoc/index
+   progref/index
    otherscripting.rst
    tutorials/index
    rxd-tutorials/index
@@ -49,10 +48,11 @@ and more (use the links on the side or search).
 
 .. toctree::
    :maxdepth: 2
-   :caption: NMODLanguage:
+   :caption: NMOD Language:
    :hidden:
 
-   nmodl/language
+   nmodl/language.rst
+   nmodl/transpiler/index.rst
 
 .. toctree::
    :maxdepth: 2
@@ -61,6 +61,7 @@ and more (use the links on the side or search).
 
    scm/index
    dev/index
+   capi
    doxygen
 
 .. toctree::
@@ -98,7 +99,7 @@ Installation
 
          pip3 install neuron
 
-      Alternatively, you can use the `PKG installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.6/nrn-8.2.6-macosx-10.9-universal2-py-38-39-310-311-312.pkg>`_.
+      Alternatively, you can use the `PKG installer <https://github.com/neuronsimulator/nrn/releases/download/9.0.0/nrn-9.0.0-macosx-10.15-universal2-py-39-310-311-312-313.pkg>`_.
 
       For troubleshooting, see the `detailed installation instructions <install/install_instructions.md>`_.
 
@@ -115,7 +116,7 @@ Installation
 
    .. tab-item:: Windows
 
-      `Download the Windows Installer <https://github.com/neuronsimulator/nrn/releases/download/8.2.6/nrn-8.2.6.w64-mingw-py-38-39-310-311-312-setup.exe>`_.
+      `Download the Windows Installer <https://github.com/neuronsimulator/nrn/releases/download/9.0.0/nrn-9.0.0.w64-mingw-py-39-310-311-312-313-setup.exe>`_.
 
       You can also install the Linux wheel via the Windows Subsystem for Linux (WSL). See `instructions <install/install_instructions.html#windows-subsystem-for-linux-wsl-python-wheel>`_.
 

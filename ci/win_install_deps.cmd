@@ -21,14 +21,13 @@ pwsh -command "(Get-Content C:\Python310\Lib\distutils\cygwinccompiler.py) -repl
 pwsh -command "(Get-Content C:\Python311\Lib\distutils\cygwinccompiler.py) -replace 'msvcr100', 'msvcrt' | Out-File C:\Python311\Lib\distutils\cygwinccompiler.py"
 
 :: install numpy
-C:\Python39\python.exe -m pip install  numpy cython || goto :error
-C:\Python310\python.exe -m pip install numpy cython || goto :error
-C:\Python311\python.exe -m pip install numpy cython || goto :error
-C:\Python312\python.exe -m pip install numpy cython || goto :error
-C:\Python313\python.exe -m pip install numpy cython || goto :error
-:: setuptools 70.2 leads to an error
-C:\Python312\python.exe -m pip install setuptools==70.1.1 || goto :error
-C:\Python313\python.exe -m pip install setuptools==70.1.1 || goto :error
+C:\Python39\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
+C:\Python310\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
+C:\Python311\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
+C:\Python312\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
+C:\Python313\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
+C:\Python312\python.exe -m pip install "setuptools<=80.8.0" || goto :error
+C:\Python313\python.exe -m pip install "setuptools<=80.8.0" || goto :error
 
 :: install nsis
 nsis-3.05-setup.exe /S || goto :error

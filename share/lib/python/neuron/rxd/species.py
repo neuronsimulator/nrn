@@ -209,6 +209,7 @@ _ontology_id = re.compile(
 
 
 class _SpeciesMathable(object):
+    __slots__ = ()
     # support arithmeticing
     def __neg__(self):
         return -1 * _Arithmeticed(self)
@@ -429,9 +430,10 @@ class SpeciesOnExtracellular(_SpeciesMathable):
             if ecs == s:
                 e = s._region
                 index += (i * e._ny + j) * e._nz + k
+                break
             else:
                 e = ecs._region
-                index += e._nz * e._ny * e._nz
+                index += e._nx * e._ny * e._nz
         return self._species()._extracellular_nodes[index]
 
     @property
@@ -537,7 +539,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         """
         if r == self._region():
             return self
-        raise RxDException("no such region")
+        raise RxDException(f"{self!r} is not defined on region {r!r}")
 
     @property
     def states(self):
@@ -621,27 +623,6 @@ class SpeciesOnRegion(_SpeciesMathable):
     @property
     def _id(self):
         return self._species()._id
-
-
-# 3d matrix stuff
-def _setup_matrices_process_neighbors(
-    pt1, pt2, indices, euler_matrix, index, diffs, vol, areal, arear, dx
-):
-    # TODO: validate this before release! is ignoring reflective boundaries the right thing to do?
-    #       (make sure that any changes here also work with boundaries that aren't really reflective, but have a 1d section attached)
-    d = diffs[index]
-    if pt1 in indices:
-        ileft = indices[pt1]
-        dleft = (d + diffs[ileft]) * 0.5
-        left = dleft * areal / (vol * dx)
-        euler_matrix[index, ileft] += left
-        euler_matrix[index, index] -= left
-    if pt2 in indices:
-        iright = indices[pt2]
-        dright = (d + diffs[iright]) * 0.5
-        right = dright * arear / (vol * dx)
-        euler_matrix[index, iright] += right
-        euler_matrix[index, index] -= right
 
 
 def _xyz(seg):
@@ -1510,7 +1491,6 @@ class _ExtracellularSpecies(_SpeciesMathable):
                     self._states[i] = getattr(seg, stateo)
 
     def _semi_compile(self, reg, instruction):
-
         self._isalive()
         if self._species:
             sp = _defined_species[self._species][self._region]()
@@ -1983,7 +1963,7 @@ class Species(_SpeciesMathable):
                         self, self._extracellular_instances[r]
                     )
                 return self._species_on_region[r]
-        raise RxDException("no such region")
+        raise RxDException(f"{self!r} is not defined on region {r!r}")
 
     def _update_node_data(self):
         nsegs_changed = 0
@@ -2284,7 +2264,8 @@ class Species(_SpeciesMathable):
     def nodes(self):
         """A NodeList of all the nodes corresponding to the species.
 
-        This can then be further restricted using the callable property of NodeList objects."""
+        This can then be further restricted using the callable property of NodeList objects.
+        """
 
         from . import rxd
 
@@ -2473,7 +2454,7 @@ class Parameter(Species):
                         self, self._extracellular_instances[r]
                     )
                 return self._species_on_region[r]
-        raise RxDException("no such region")
+        raise RxDException(f"{self!r} is not defined on region {r!r}")
 
 
 class ParameterOnRegion(SpeciesOnRegion):

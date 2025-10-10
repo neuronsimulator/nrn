@@ -52,7 +52,7 @@ def verts_in(f, voxel, surf, g):
     verts = get_verts(voxel, g)
     ins = 0
     distlist = []
-    for (x, y, z) in verts:
+    for x, y, z in verts:
         if (
             g["xlo"] <= x <= g["xhi"]
             and g["ylo"] <= y <= g["yhi"]
@@ -173,7 +173,8 @@ def find_endpoints(f, surf, include_ga, row, guesses, g):
 
 def voxelize(grid, Object, corners=None, include_ga=False):
     """return a list of all voxels (i,j,k) that contain part of the object
-    Other returned elements: set of surface voxels, possibly_missed for error handling"""
+    Other returned elements: set of surface voxels, possibly_missed for error handling
+    """
     # include_ga is whether to include grid-adjacent voxels in the surface, even if entirely within the surface
 
     yes_voxels = set()

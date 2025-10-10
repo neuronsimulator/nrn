@@ -701,10 +701,9 @@ static int NPyRangeVar_init_safe(NPyRangeVar* self, PyObject* args, PyObject* kw
     return nrn::convert_cxx_exceptions(NPyRangeVar_init, self, args, kwds);
 }
 
+// Returns a new reference.
 static PyObject* NPySecObj_name(NPySecObj* self) {
-    PyObject* result;
-    result = PyString_FromString(secname(self->sec_));
-    return result;
+    return PyString_FromString(secname(self->sec_));
 }
 
 static PyObject* NPySecObj_name_safe(NPySecObj* self) {
@@ -949,8 +948,8 @@ static PyObject* NPySecObj_diam3d_safe(NPySecObj* self, PyObject* args) {
 // returns True/False depending on if spine present
 static PyObject* NPySecObj_spine3d(NPySecObj* self, PyObject* args) {
     Pt3d* pt3d = get_pt3d_from_python_args(self, args);
-    if (pt3d == NULL) {
-        return NULL;
+    if (pt3d == nullptr) {
+        return nullptr;
     }
     return PyBool_FromLong(pt3d->d < 0);
 }
@@ -971,16 +970,13 @@ static PyObject* pysec_repr_safe(PyObject* p) {
     return nrn::convert_cxx_exceptions(pysec_repr, p);
 }
 
+// Returns a new reference.
 static PyObject* pyseg_repr(PyObject* p) {
     NPySegObj* pyseg = (NPySegObj*) p;
     if (pyseg->pysec_->sec_ && pyseg->pysec_->sec_->prop) {
         const char* sname = secname(pyseg->pysec_->sec_);
-        auto const name_size = strlen(sname) + 100;
-        char* name = new char[name_size];
-        std::snprintf(name, name_size, "%s(%g)", sname, pyseg->x_);
-        PyObject* result = PyString_FromString(name);
-        delete[] name;
-        return result;
+        std::string name = fmt::format("{}({:g})", sname, pyseg->x_);
+        return PyString_FromString(name.c_str());
     }
     return PyString_FromString("<segment of deleted section>");
 }
@@ -989,12 +985,10 @@ static PyObject* pyseg_repr_safe(PyObject* p) {
     return nrn::convert_cxx_exceptions(pyseg_repr, p);
 }
 
+// Returns a new reference.
 static PyObject* hoc_internal_name(NPySecObj* self) {
-    PyObject* result;
-    char buf[256];
-    Sprintf(buf, "__nrnsec_%p", self->sec_);
-    result = PyString_FromString(buf);
-    return result;
+    auto buf = fmt::format("__nrnsec_{:p}", (void*) self->sec_);
+    return PyString_FromString(buf.c_str());
 }
 
 static PyObject* hoc_internal_name_safe(NPySecObj* self) {
@@ -1347,9 +1341,10 @@ static PyObject* NPyMechFunc_name_safe(NPyMechFunc* self) {
     return nrn::convert_cxx_exceptions(NPyMechFunc_name, self);
 }
 
+// Returns a new reference.
 static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
     CHECK_PROP_INVALID(self->pymech_->prop_id_);
-    PyObject* result = NULL;
+    nb::object result;
     auto& f = self->f_->func;
 
     // patterning after fcall
@@ -1360,7 +1355,7 @@ static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
     hoc_push_frame(&sym, narg);  // get_argument uses the current frame
     try {
         double x = (f) (self->pymech_->prop_);
-        result = Py_BuildValue("d", x);
+        result = nb::steal(Py_BuildValue("d", x));
     } catch (std::exception const& e) {
         std::ostringstream oss;
         oss << "mechanism.function call error: " << e.what();
@@ -1368,7 +1363,7 @@ static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
     }
     hoc_pop_frame();
 
-    return result;
+    return result.release().ptr();
 }
 
 static PyObject* NPyMechFunc_call_safe(NPyMechFunc* self, PyObject* args) {
@@ -1723,18 +1718,19 @@ static PyObject* seg_point_processes_safe(NPySegObj* self) {
     return nrn::convert_cxx_exceptions(seg_point_processes, self);
 }
 
+// Returns a new reference.
 static PyObject* node_index1(NPySegObj* self) {
     Section* sec = self->pysec_->sec_;
     CHECK_SEC_INVALID(sec);
     Node* nd = node_exact(sec, self->x_);
-    PyObject* result = Py_BuildValue("i", nd->v_node_index);
-    return result;
+    return Py_BuildValue("i", nd->v_node_index);
 }
 
 static PyObject* node_index1_safe(NPySegObj* self) {
     return nrn::convert_cxx_exceptions(node_index1, self);
 }
 
+// Returns a new reference.
 static PyObject* seg_area(NPySegObj* self) {
     Section* sec = self->pysec_->sec_;
     CHECK_SEC_INVALID(sec);
@@ -1747,8 +1743,7 @@ static PyObject* seg_area(NPySegObj* self) {
         Node* nd = node_exact(sec, x);
         a = NODEAREA(nd);
     }
-    PyObject* result = Py_BuildValue("d", a);
-    return result;
+    return Py_BuildValue("d", a);
 }
 
 static PyObject* seg_area_safe(NPySegObj* self) {
@@ -1787,6 +1782,7 @@ static int arg_bisect_arc3d(Section* sec, int npt3d, double x) {
     return left;
 }
 
+// Returns a new reference.
 static PyObject* seg_volume(NPySegObj* self) {
     Section* sec = self->pysec_->sec_;
     CHECK_SEC_INVALID(sec);
@@ -1838,14 +1834,14 @@ static PyObject* seg_volume(NPySegObj* self) {
             }
         }
     }
-    PyObject* result = Py_BuildValue("d", a);
-    return result;
+    return Py_BuildValue("d", a);
 }
 
 static PyObject* seg_volume_safe(NPySegObj* self) {
     return nrn::convert_cxx_exceptions(seg_volume, self);
 }
 
+// Returns a new reference.
 static PyObject* seg_ri(NPySegObj* self) {
     Section* sec = self->pysec_->sec_;
     CHECK_SEC_INVALID(sec);
@@ -1857,8 +1853,7 @@ static PyObject* seg_ri(NPySegObj* self) {
     if (NODERINV(nd)) {
         ri = 1. / NODERINV(nd);
     }
-    PyObject* result = Py_BuildValue("d", ri);
-    return result;
+    return Py_BuildValue("d", ri);
 }
 
 static PyObject* seg_ri_safe(NPySegObj* self) {
@@ -1941,10 +1936,11 @@ static void rv_noexist(Section* sec, const char* n, double x, int err) {
     PyErr_SetString(PyExc_AttributeError, buf);
 }
 
+// Returns a (casted) new reference.
 static NPyRangeVar* rvnew(Symbol* sym, NPySecObj* sec, double x) {
     NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
     if (!r) {
-        return NULL;
+        return nullptr;
     }
     r->pymech_ = new_pymechobj();
     r->pymech_->pyseg_ = PyObject_New(NPySegObj, psegment_type);
@@ -1992,18 +1988,17 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
         return nullptr;
     }
     // printf("section_getattr %s\n", n);
-    PyObject* result = nullptr;
+    nb::object result;
     if (strcmp(n, "L") == 0) {
-        result = Py_BuildValue("d", section_length(sec));
+        result = nb::steal(Py_BuildValue("d", section_length(sec)));
     } else if (strcmp(n, "Ra") == 0) {
-        result = Py_BuildValue("d", nrn_ra(sec));
+        result = nb::steal(Py_BuildValue("d", nrn_ra(sec)));
     } else if (strcmp(n, "nseg") == 0) {
-        result = Py_BuildValue("i", sec->nnode - 1);
+        result = nb::steal(Py_BuildValue("i", sec->nnode - 1));
     } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
         Symbol* sym = ((NPyRangeVar*) rv)->sym_;
         if (is_array(*sym)) {
-            NPyRangeVar* r = rvnew(sym, self, 0.5);
-            result = (PyObject*) r;
+            result = nb::steal((PyObject*) rvnew(sym, self, 0.5));
         } else {
             int err;
             auto const d = nrnpy_rangepointer(sec, sym, 0.5, &err, 0 /* idx */);
@@ -2014,22 +2009,22 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
                 if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
                     nrn_area_ri(sec);
                 }
-                result = build_python_value(d);
+                result = nb::steal(build_python_value(d));
             }
         }
     } else if (strcmp(n, "rallbranch") == 0) {
-        result = Py_BuildValue("d", sec->prop->dparam[4].get<double>());
+        result = nb::steal(Py_BuildValue("d", sec->prop->dparam[4].get<double>()));
     } else if (strcmp(n, "__dict__") == 0) {
         nb::dict out_dict{};
         out_dict["L"] = nb::none();
         out_dict["Ra"] = nb::none();
         out_dict["nseg"] = nb::none();
         out_dict["rallbranch"] = nb::none();
-        result = out_dict.release().ptr();
+        result = std::move(out_dict);
     } else {
-        result = PyObject_GenericGetAttr((PyObject*) self, pyname);
+        result = nb::steal(PyObject_GenericGetAttr((PyObject*) self, pyname));
     }
-    return result;
+    return result.release().ptr();
 }
 
 static PyObject* section_getattro_safe(NPySecObj* self, PyObject* pyname) {
@@ -2366,9 +2361,7 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
     } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
         sym = ((NPyRangeVar*) rv)->sym_;
         if (is_array(*sym)) {
-            char s[200];
-            Sprintf(s, "%s needs an index for assignment", sym->name);
-            PyErr_SetString(PyExc_IndexError, s);
+            PyErr_Format(PyExc_IndexError, "%s needs an index for assignment", sym->name);
             return -1;
         } else {
             int errp;
@@ -2505,13 +2498,13 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
     char* mname = mechsym->name;
     int mnamelen = strlen(mname);
     int bufsz = strlen(n) + mnamelen + 2;
-    char* buf = new char[bufsz];
+    std::vector<char> buf(bufsz);
     if (nrn_is_ion(self->prop_->_type)) {
-        strcpy(buf, isptr ? n + 5 : n);
+        strcpy(buf.data(), isptr ? n + 5 : n);
     } else {
-        std::snprintf(buf, bufsz, "%s_%s", isptr ? n + 5 : n, mname);
+        std::snprintf(buf.data(), bufsz, "%s_%s", isptr ? n + 5 : n, mname);
     }
-    Symbol* sym = var_find_in_mech(mechsym, buf);
+    Symbol* sym = var_find_in_mech(mechsym, buf.data());
     if (sym && sym->type == RANGEVAR) {
         // printf("mech_getattro sym %s\n", sym->name);
         if (is_array(*sym)) {
@@ -2541,10 +2534,10 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
         int cnt = mechsym->s_varn;
         for (int i = 0; i < cnt; ++i) {
             Symbol* s = mechsym->u.ppsym[i];
-            if (!striptrail(buf, bufsz, s->name, mname)) {
-                strcpy(buf, s->name);
+            if (!striptrail(buf.data(), bufsz, s->name, mname)) {
+                strcpy(buf.data(), s->name);
             }
-            out_dict[buf] = nb::none();
+            out_dict[buf.data()] = nb::none();
         }
         // FUNCTION and PROCEDURE
         for (auto& it: nrn_mech2funcs_map[self->prop_->_type]) {
@@ -2569,7 +2562,6 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
             result = nb::steal(PyObject_GenericGetAttr((PyObject*) self, pyname));
         }
     }
-    delete[] buf;
     return result.release().ptr();
 }
 
@@ -2598,14 +2590,13 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
     char* mname = mechsym->name;
     int mnamelen = strlen(mname);
     int bufsz = strlen(n) + mnamelen + 2;
-    char* buf = new char[bufsz];
+    std::vector<char> buf(bufsz);
     if (nrn_is_ion(self->prop_->_type)) {
-        strcpy(buf, isptr ? n + 5 : n);
+        strcpy(buf.data(), isptr ? n + 5 : n);
     } else {
-        std::snprintf(buf, bufsz, "%s_%s", isptr ? n + 5 : n, mname);
+        std::snprintf(buf.data(), bufsz, "%s_%s", isptr ? n + 5 : n, mname);
     }
-    Symbol* sym = var_find_in_mech(mechsym, buf);
-    delete[] buf;
+    Symbol* sym = var_find_in_mech(mechsym, buf.data());
     if (sym) {
         if (isptr) {
             err = nrn_pointer_assign(self->prop_, sym, value);
@@ -2678,15 +2669,15 @@ static Py_ssize_t rv_len_safe(PyObject* self) {
     return nrn::convert_cxx_exceptions(rv_len, self);
 }
 
+// Returns a new reference.
 static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
     NPyRangeVar* r = (NPyRangeVar*) self;
     Section* sec = r->pymech_->pyseg_->pysec_->sec_;
     CHECK_SEC_INVALID(sec)
 
-    PyObject* result = NULL;
     if (ix < 0 || ix >= rv_len(self)) {
         PyErr_SetString(PyExc_IndexError, r->sym_->name);
-        return NULL;
+        return nullptr;
     }
     if (is_array(*r->sym_)) {
         assert(r->sym_->arayinfo->nsub == 1);
@@ -2703,14 +2694,13 @@ static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
     auto const d = nrnpy_rangepointer(sec, r->sym_, r->pymech_->pyseg_->x_, &err, ix);
     if (d.is_invalid_handle()) {
         rv_noexist(sec, r->sym_->name, r->pymech_->pyseg_->x_, err);
-        return NULL;
+        return nullptr;
     }
     if (r->isptr_) {
-        result = nrn_hocobj_handle(neuron::container::data_handle<double>(d));
+        return nrn_hocobj_handle(neuron::container::data_handle<double>(d));
     } else {
-        result = build_python_value(d);
+        return build_python_value(d);
     }
-    return result;
 }
 
 static PyObject* rv_getitem_safe(PyObject* self, Py_ssize_t ix) {

@@ -33,6 +33,7 @@ set(HEADER_FILES_TO_INSTALL
     nrnoc/nrnredef.h
     nrnoc/nrnversionmacros.h
     nrnoc/options.h
+    nrnoc/seclist.h
     nrnoc/section_fwd.hpp
     nrnoc/treeset.h
     oc/classreg.h
@@ -137,8 +138,6 @@ set(NRNOC_FILE_LIST
     synapse.cpp
     treeset.cpp
     multicore.cpp)
-
-set(NRNOC_GENERATED_FILE_LIST nrnversion.h)
 
 # =============================================================================
 # Files in ivoc directory
@@ -261,6 +260,7 @@ set(NRNCVODE_FILE_LIST
     cvodeobj.cpp
     cvodestb.cpp
     cvtrset.cpp
+    htlist.cpp
     netcvode.cpp
     nrndaspk.cpp
     occvode.cpp
@@ -436,7 +436,7 @@ set(NRN_PARALLEL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/parallel)
 # =============================================================================
 nrn_create_file_list(NRN_OC_SRC_FILES ${NRN_OC_SRC_DIR} ${OC_FILE_LIST})
 nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_SRC_DIR} ${NRNOC_FILE_LIST})
-nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_BUILD_DIR} ${NRNOC_GENERATED_FILE_LIST})
+nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_BUILD_DIR})
 nrn_create_file_list(NRN_IVOC_SRC_FILES ${NRN_IVOC_SRC_DIR} ${IVOC_FILE_LIST})
 nrn_create_file_list(NRN_NODEORDEROPTIM_SRC_FILES ${NRN_NODEORDEROPTIM_SRC_DIR}
                      ${NODEORDEROPTIM_FILE_LIST})
@@ -459,7 +459,7 @@ nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.c
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)
 nrn_create_file_list(NRN_MODLUNIT_SRC_FILES ${NRN_MODLUNIT_SRC_DIR} ${MODLUNIT_FILES_LIST})
 nrn_create_file_list(NRN_NOCMODL_SRC_FILES ${NRN_NOCMODL_SRC_DIR} ${NOCMODL_FILES_LIST})
-nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmpi
+nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_BINARY_DIR}/src/nrnmpi
                      ${MPI_DYNAMIC_INCLUDE})
 nrn_create_file_list(NRN_IVOS_SRC_FILES ${NRN_IVOS_SRC_DIR} ${IVOS_FILES_LIST})
 nrn_create_file_list(NRN_MUSIC_SRC_FILES ${NRN_MUSIC_SRC_DIR} ${NRN_MUSIC_FILES_LIST})

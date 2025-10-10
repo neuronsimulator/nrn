@@ -6,13 +6,13 @@ save i & corresponding f to a file
 optionally plot fi curve
 """
 
-from neuron import h, gui
+from neuron import n, gui
 import time
 
 # Simulation parameters
 
 PLOTRESULTS = True  # if True, generates a graph that shows f-i curve
-h.tstop = 500  # ms, more than long enough for 15 spikes at ISI = 25 ms
+n.tstop = 500  # ms, more than long enough for 15 spikes at ISI = 25 ms
 AMP0 = 0.1  # nA -- minimum stimulus
 D_AMP = 0.02  # nA -- stim increment between runs
 NRUNS = 30
@@ -25,7 +25,7 @@ cell = Cell()
 # instrumentation
 
 # experimental manipulations
-stim = h.IClamp(cell.soma(0.5))
+stim = n.IClamp(cell.soma(0.5))
 stim.delay = 1  # ms
 stim.dur = 1e9
 stim.amp = 0.1  # nA
@@ -44,9 +44,9 @@ def set_params(run_id):
 # data recording and analysis
 
 # count only those spikes that get to distal end of dend
-nc = h.NetCon(cell.dend(1)._ref_v, None, sec=cell.dend)
+nc = n.NetCon(cell.dend(1)._ref_v, None, sec=cell.dend)
 nc.threshold = -10  # mV
-spvec = h.Vector()
+spvec = n.Vector()
 nc.record(spvec)
 
 NSETTLE = 5  # ignore the first NSETTLE ISI (allow freq to stablize)
@@ -77,7 +77,7 @@ def batchrun(n):
     freqs = []
     for run_id in range(n):
         set_params(run_id)
-        h.run()
+        n.run()
         stims.append(stim.amp)
         freqs.append(get_frequency(spvec))
         print("Finished %d of %d." % (run_id + 1, n))

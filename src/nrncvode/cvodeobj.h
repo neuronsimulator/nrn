@@ -1,7 +1,5 @@
 #pragma once
 
-#include <list>
-
 #include "nrnmpi.h"
 #include "nrnneosm.h"
 //#include "shared/nvector_serial.h"
@@ -9,6 +7,7 @@
 #include "membfunc.h"
 #include "netcon.h"
 #include "tqitem.hpp"
+#include "htlist.h"
 
 class NetCvode;
 class Daspk;
@@ -30,7 +29,8 @@ struct model_sorted_token;
  *   contiguous
  * - with ml.size() >= 1 and ml[i].nodecount == 1 when non-contiguous instances need to be processed
  *
- * generic configurations with ml.size() and ml[i].nodecount both larger than one are not supported.
+ * generic configurations with ml.size() and ml[i].nodecount both larger than one are only
+ * supported for the local variable time step method.
  */
 struct CvMembList {
     CvMembList(int type)
@@ -57,10 +57,8 @@ class CvodeThreadData {
     virtual ~CvodeThreadData();
     void delete_memb_list(CvMembList*);
 
-    int no_cap_count_;  // number of nodes with no capacitance
-    int no_cap_child_count_;
-    Node** no_cap_node_;
-    Node** no_cap_child_;  // connected to nodes that have no capacitance
+    std::vector<int> no_cap_indices_;
+    std::vector<int> no_cap_child_indices_;
     CvMembList* cv_memb_list_;
     CvMembList* cmlcap_;
     CvMembList* cmlext_;       // used only by daspk
@@ -68,13 +66,25 @@ class CvodeThreadData {
     BAMechList* before_breakpoint_;
     BAMechList* after_solve_;
     BAMechList* before_step_;
-    int rootnodecount_;
-    int v_node_count_;
-    Node** v_node_;
-    Node** v_parent_;
+
+    // Analogous to NrnThread ncell and end to allow similar SoA container
+    // indexing as in fixed step triang and bksub in nrnoc/solve.cpp.
+    // The v, rhs, d, a, b, parent storage containers are assumed to be
+    // sorted for cell contiguity (when lvardt is used) though roots are
+    // all at the beginning of each thread. The following 4 indices are
+    // used to directly access regions of those containers for tree setup
+    // and solving. This eliminates the use of low performance
+    // Node** v_node_, v_parent_ to access the containers.
+    int rootnode_begin_index_;
+    int rootnode_end_index_;
+    int vnode_begin_index_;
+    int vnode_end_index_;
+
     PreSynList* psl_th_;  // with a threshold
-    std::list<WatchCondition*>* watch_list_;
-    std::vector<neuron::container::data_handle<double>> pv_, pvdot_;
+    HTList* watch_list_;
+    // since scatter/gather are hot loops, don't want to use data_handle
+    // std::vector<neuron::container::data_handle<double>> pv_, pvdot_;
+    std::vector<double*> pv_, pvdot_;
     int nvoffset_;              // beginning of this threads states
     int nvsize_;                // total number of states for this thread
     int neq_v_;                 // for daspk, number of voltage states for this thread

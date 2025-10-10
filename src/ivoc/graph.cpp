@@ -1,13 +1,14 @@
 #include <../../nrnconf.h>
 
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
+#include <cstring>
+#include <cstdio>
+#include <cmath>
 #include <assert.h>
 
-extern int hoc_return_type_code;
+#include "code.h"
 
 #if HAVE_IV
+#include <string>
 #include <InterViews/glyph.h>
 #include <InterViews/hit.h>
 #include <InterViews/event.h>
@@ -279,13 +280,11 @@ static double gr_save_name(void* v) {
         Graph* g = (Graph*) v;
         g->name(gargstr(1));
         if (ifarg(2) && (chkarg(2, 0, 1) == 1.) && Oc::save_stream) {
-            char buf[80];
             *Oc::save_stream << "{\nsave_window_=" << gargstr(1) << std::endl;
             *Oc::save_stream << "save_window_.size(" << g->x1() << "," << g->x2() << "," << g->y1()
                              << "," << g->y2() << ")\n";
             long i = Scene::scene_list_index(g);
-            Sprintf(buf, "scene_vector_[%ld] = save_window_", i);
-            *Oc::save_stream << buf << std::endl;
+            *Oc::save_stream << "scene_vector_[" << i << "] = save_window_" << std::endl;
             g->save_phase2(*Oc::save_stream);
             g->Scene::mark(true);
         }
@@ -1065,7 +1064,7 @@ double ivoc_gr_mark(void* v) {
 }
 
 static double gr_view_count(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.view_count", v);
 #if HAVE_IV
     int n = 0;
@@ -2364,8 +2363,7 @@ static Graph* current_save_graph;
 void Graph::save_phase2(std::ostream& o) {
     char buf[256];
     if (family_label_) {
-        Sprintf(buf, "save_window_.family(\"%s\")", family_label_->text());
-        o << buf << std::endl;
+        o << "save_window_.family(\"" << family_label_->text() << "\")" << std::endl;
     }
     if (!var_name_.empty()) {
         if (var_name_.back() == '.') {
@@ -2374,12 +2372,11 @@ void Graph::save_phase2(std::ostream& o) {
             Sprintf(buf, "%s = save_window_", var_name_.c_str());
         }
         o << buf << std::endl;
-        Sprintf(buf, "save_window_.save_name(\"%s\")", var_name_.c_str());
-        o << buf << std::endl;
+        o << "save_window_.save_name(\"" << var_name_ << "\")" << std::endl;
     }
     if (x_expr_) {
-        Sprintf(buf, "save_window_.xexpr(\"%s\", %d)", x_expr_->name, x_pval_ ? 1 : 0);
-        o << buf << std::endl;
+        o << "save_window_.xexpr(\"" << x_expr_->name << "\", " << (x_pval_ ? 1 : 0) << ")"
+          << std::endl;
     }
     long cnt = count();
     current_save_graph = this;
@@ -2478,8 +2475,7 @@ void Graph::family_label_chooser() {
         fsc_->ref();
     }
     while (fsc_->post_for_aligned(XYView::current_pick_view()->canvas()->window(), .5, 1.)) {
-        char buf[256];
-        Sprintf(buf, "hoc_ac_ = %s\n", fsc_->selected().c_str());
+        auto buf = std::string("hoc_ac_ = ") + fsc_->selected() + "\n";
         if (oc.run(buf) == 0) {
             family(fsc_->selected().c_str());
             break;

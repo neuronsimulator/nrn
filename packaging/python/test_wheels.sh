@@ -7,13 +7,13 @@ set -xe
 # on uname -m. Note that this is just wheel testing script.
 ARCH_DIR="$(uname -m)"
 
-if [ ! -f setup.py ]; then
+if [ ! -f pyproject.toml ]; then
     echo "Error: Please launch $0 from the root dir"
     exit 1
 fi
 
 if [ "$#" -lt 2 ]; then
-    echo "Usage: $(basename $0) python_exe python_wheel [use_virtual_env]"
+    echo "Usage: $(basename "$0") python_exe python_wheel [use_virtual_env]"
     exit 1
 fi
 
@@ -105,6 +105,7 @@ run_serial_test () {
 
     # Test 3: run coreneuron binary shipped inside wheel
     if [[ "$has_coreneuron" == "true" ]]; then
+        $python_exe -c "from neuron.tests import test_nmodl; test_nmodl.test_nmodl()"
         HOC_LIBRARY_PATH=${PWD}/test/ringtest nrniv test/ringtest/ring.hoc
         mv out.dat out.nrn.dat
         nrniv-core --datpath .
@@ -190,7 +191,7 @@ run_parallel_test() {
       run_mpi_test "mpirun.mpich" "MPICH" ""
       # choose openmpi
       sudo update-alternatives --set mpi-${ARCH_DIR}-linux-gnu /usr/lib/${ARCH_DIR}-linux-gnu/openmpi/include
-      run_mpi_test "mpirun.openmpi" "OpenMPI" ""
+      run_mpi_test "mpirun.openmpi --oversubscribe" "OpenMPI" ""
 
     # linux desktop or docker container used for wheel
     else
@@ -248,12 +249,12 @@ fi
 
 
 # gpu wheel needs updated pip
-$python_exe -m pip install --upgrade pip
+$python_exe -m pip install --upgrade 'pip<=25.0.1'
 
 
 # install test requirements
 $python_exe -m pip install -r packaging/python/test_requirements.txt
-$python_exe -m pip install $python_wheel
+$python_exe -m pip install --force-reinstall $python_wheel
 $python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
 
 

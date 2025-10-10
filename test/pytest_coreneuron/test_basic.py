@@ -453,11 +453,14 @@ def test_help():
     # a little fragile in the event we change the docs, but easily fixed
     # checks the main paths for generating docstrings
     assert h.Vector().to_python.__doc__.startswith(
-        "Syntax:\n    ``pythonlist = vec.to_python()"
+        "Syntax:\n\n.. code-block:: python\n\n    pythonlist = "
     )
-    assert h.Vector().__doc__.startswith("class neuron.hoc.HocObject")
-    assert h.Vector.__doc__.startswith("class neuron.hoc.HocObject")
-    assert h.finitialize.__doc__.startswith("Syntax:\n    ``h.finiti")
+    assert h.Vector().__doc__.startswith("This class was imple")
+    assert h.Vector().size.__doc__.startswith(
+        "Syntax:\n\n.. code-block:: python\n\n    size = vec.size"
+    )
+    assert h.Vector.__doc__.startswith("This class was imple")
+    assert h.finitialize.__doc__.startswith("Syntax:\n    ``n.finiti")
     assert h.__doc__.startswith("\n\nneuron.h\n====")
 
 

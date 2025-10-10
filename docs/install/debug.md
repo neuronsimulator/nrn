@@ -25,7 +25,7 @@ while continuing to experience the error, it may be worthwhile to look into
 [LLVM address sanitizer](https://github.com/neuronsimulator/nrn/issues/1213).
 
 #### NaN or Inf values
-Use [h.nrn_feenableexcept(1)](../python/programming/errors.rst#nrn_feenableexcept)
+Use [n.nrn_feenableexcept(1)](../python/programming/errors.rst#nrn_feenableexcept)
 to generate floating point exception for
 DIVBYZERO, INVALID, OVERFLOW, exp(700). [GDB](#GDB) can then be used to show
 where the SIGFPE occurred.
@@ -62,6 +62,38 @@ has proven effective.
 mpirun -np 4 xterm -e gdb `pyenv which python`
 ```
 
+#### The rr debugger
+
+As a complement to GDB, one can use the [rr debugger](https://rr-project.org/)
+to enhance the debugging experience. Running is as simple as:
+
+```
+rr record <executable> <args>
+```
+
+This should record a snapshot, which `rr` reports:
+
+```
+...
+rr: Saving execution to trace directory `<path>/.local/share/rr/nrniv-2'.
+...
+```
+
+which can later be replayed deterministically using:
+
+```
+rr replay <path to trace directory>
+```
+
+You can also bundle all of the dependencies of the executable using:
+
+```
+rr pack <path to trace directory>
+```
+
+after which you can send that directory (for instance, as a compressed archive)
+to other developers for portable and reliable debugging.
+
 #### Valgrind
 Extremely useful in debugging memory errors and memory leaks.
 
@@ -71,7 +103,7 @@ can be eliminated with `export PYTHONMALLOC=malloc`
 
 ```
 export PYTHONMALLOC=malloc
-valgrind `pyenv which python` -c 'from neuron import h'
+valgrind `pyenv which python` -c 'from neuron import n'
     ==47683== Memcheck, a memory error detector
     ==47683== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
     ==47683== Using Valgrind-3.17.0 and LibVEX; rerun with -h for copyright info
@@ -183,8 +215,7 @@ it might be that the automatically determined `LD_PRELOAD` is insufficient.
 (It happened to me with ubuntu 24.04 + gcc 13.2.0). In this case you
 can temporarily set the `NRN_OVERRIDE_LD_PRELOAD` environment variable before
 running cmake. In my case,
-`NRN_OVERRIDE_LD_PRELOAD="$(realpath "$(gcc -print-file-name=libasan.so)"):$realpath
-"$(gcc -print-file-name=libstdc++.so)")" cmake ...` sufficed.
+`NRN_OVERRIDE_LD_PRELOAD="$(realpath "$(gcc -print-file-name=libasan.so)"):$(realpath "$(gcc -print-file-name=libstdc++.so)")" cmake ...` sufficed.
 
 LSan, TSan and UBSan support suppression files, which can be used to prevent
 tests failing due to known issues.
@@ -207,9 +238,8 @@ In addition, there is a macOS-based ASan build using AppleClang, which has the
 advantage that it uses `libc++` instead of `libstdc++`.
 
 NMODL supports the sanitizers in a similar way, but this has to be enabled
-explicitly: `-DNRN_SANITIZERS=undefined` will not compile NMODL code with UBSan
-enabled, you must additionally pass `-DNMODL_SANITIZERS=undefined` to enable
-instrumentation of NMODL code.
+explicitly: `-DNRN_SANITIZERS=undefined` will also compile NMODL code with UBSan
+enabled.
 
 Profiling and performance benchmarking
 --------------------------------------

@@ -25,6 +25,11 @@ env:
   PY_MIN_VERSION: '3.9'
   PY_MID_VERSION: '3.10'
   PY_MAX_VERSION: '3.13'
+  # The Linux runners have 4 cores:
+  # https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+  CMAKE_BUILD_PARALLEL_LEVEL: '4'
+  CTEST_PARALLEL_LEVEL: '4'
+  CCACHE_DIR: ${{ github.workspace }}/ccache
 
 jobs:
   coverage:
@@ -47,27 +52,25 @@ jobs:
           sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin gpg ninja-build flex bison libfl-dev
         shell: bash
 
+      - name: Install a new ccache
+        run: |
+          # versions older than 4.10 do not support -fprofile-update=atomic
+          wget 'https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3-linux-x86_64.tar.xz'
+          tar xf ccache-4.11.3-linux-x86_64.tar.xz
+          sudo cp -a ccache-4.11.3-linux-x86_64/ccache /usr/bin/ccache
+        working-directory: ${{runner.temp}}
+
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version : '3.18'
+
       - name: Setup Caliper profiler
         run: |
-          git clone https://github.com/LLNL/Caliper.git
+          git clone --branch v2.12.1 --depth 1 --recurse-submodules --shallow-submodules https://github.com/LLNL/Caliper.git
           cd Caliper
-          mkdir build && cd build
-          cmake ..
-          make && sudo make install
-
-      - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
-        run: |
-          python3 -m venv music-venv
-          source music-venv/bin/activate
-          python3 -m pip install mpi4py cython numpy setuptools
-          sudo mkdir -p $MUSIC_INSTALL_DIR
-          sudo chown -R $USER $MUSIC_INSTALL_DIR
-          curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/${MUSIC_VERSION}.zip
-          unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
-          ./autogen.sh
-          ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
-          make -j install
-          deactivate
+          cmake -B build -G Ninja .
+          sudo cmake --build build --target install
         working-directory: ${{runner.temp}}
 
       - name: Setup Xvfb
@@ -79,10 +82,13 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Clone nmodl
-        working-directory: ${{runner.workspace}}/nrn
-        run: |
-            git submodule update --init --recursive --force --depth 1 -- external/nmodl
+      # Restore (and later save) dependencies for min version of Python
+      - name: Restore Python@${{ env.PY_MIN_VERSION }} dependencies
+        id: cache-python-min-packages-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ github.workspace }}/pip_cache${{ env.PY_MIN_VERSION }}
+          key: cache-${{ env.PY_MIN_VERSION }}-${{ hashFiles('ci/requirements.txt') }}
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         uses: actions/setup-python@v5
@@ -92,14 +98,51 @@ jobs:
       - name: Install Python@${{ env.PY_MIN_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install --upgrade -r external/nmodl/requirements.txt
-          python -m pip install --upgrade -r ci_requirements.txt
-          python -m pip install --upgrade pip -r nrn_requirements.txt
+          python -m pip install -r ci/uv_requirements.txt
+          python -m uv pip install -r ci/requirements.txt --cache-dir ${{ github.workspace }}/pip_cache${{ env.PY_MIN_VERSION }}
+
+      - name: Save Python@${{ env.PY_MIN_VERSION }} dependencies
+        id: cache-python-min-packages-save
+        if: always() && steps.cache-python-min-packages-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.cache-python-min-packages-restore.outputs.cache-primary-key }}
+          path: ${{ github.workspace }}/pip_cache${{ env.PY_MIN_VERSION }}
+
+      # Restore (and later save) dependencies for mid version of Python
+      - name: Restore Python@${{ env.PY_MID_VERSION }} dependencies
+        id: cache-python-mid-packages-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ github.workspace }}/pip_cache${{ env.PY_MID_VERSION }}
+          key: cache-${{ env.PY_MID_VERSION }}-${{ hashFiles('ci/requirements.txt') }}
 
       - name: Set up Python@${{ env.PY_MID_VERSION }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PY_MID_VERSION }}
+
+      - name: Install Python@${{ env.PY_MID_VERSION }} dependencies
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+          python -m pip install -r ci/uv_requirements.txt
+          python -m uv pip install -r ci/requirements.txt --cache-dir ${{ github.workspace }}/pip_cache${{ env.PY_MID_VERSION }}
+
+      - name: Save Python@${{ env.PY_MID_VERSION }} dependencies
+        id: cache-python-mid-packages-save
+        if: always() && steps.cache-python-mid-packages-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.cache-python-mid-packages-restore.outputs.cache-primary-key }}
+          path: ${{ github.workspace }}/pip_cache${{ env.PY_MID_VERSION }}
+
+      # Restore (and later save) dependencies for max version of Python
+      - name: Restore Python@${{ env.PY_MAX_VERSION }} dependencies
+        id: cache-python-max-packages-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ github.workspace }}/pip_cache${{ env.PY_MAX_VERSION }}
+          key: cache-${{ env.PY_MAX_VERSION }}-${{ hashFiles('ci/requirements.txt') }}
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
         uses: actions/setup-python@v5
@@ -109,10 +152,42 @@ jobs:
       - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install --upgrade -r external/nmodl/requirements.txt
-          python -m pip install --upgrade -r ci_requirements.txt
-          python -m pip install --upgrade pip -r nrn_requirements.txt
+          python -m pip install -r ci/uv_requirements.txt
+          python -m uv pip install -r ci/requirements.txt --cache-dir ${{ github.workspace }}/pip_cache${{ env.PY_MAX_VERSION }}
 
+      - name: Save Python@${{ env.PY_MAX_VERSION }} dependencies
+        id: cache-python-max-packages-save
+        if: always() && steps.cache-python-max-packages-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.cache-python-max-packages-restore.outputs.cache-primary-key }}
+          path: ${{ github.workspace }}/pip_cache${{ env.PY_MAX_VERSION }}
+
+      - name: Setup MUSIC@${{ env.MUSIC_VERSION }}
+        run: |
+          python -m venv music-venv
+          source music-venv/bin/activate
+          python -m pip install -r ${{ github.workspace }}/ci/uv_requirements.txt
+          python -m uv pip install -r ${{ github.workspace }}/ci/requirements.txt --cache-dir ${{ github.workspace }}/pip_cache${{ env.PY_MAX_VERSION }}
+          sudo mkdir -p $MUSIC_INSTALL_DIR
+          sudo chown -R $USER $MUSIC_INSTALL_DIR
+          curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/${MUSIC_VERSION}.zip
+          unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
+          ./autogen.sh
+          ./configure --with-python-sys-prefix --prefix=$MUSIC_INSTALL_DIR --disable-anysource
+          make -j install
+          deactivate
+        working-directory: ${{runner.temp}}
+
+      # Restore (and later save) ccache
+      - name: Restore compiler cache
+        id: restore-compiler-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ github.workspace }}/ccache
+          key: ccache-coverage-${{runner.os}}-${{github.ref_name}}
+          restore-keys: |
+            ccache-coverage-${{runner.os}}-master
 
       - name: Build & Test
         id: build-test
@@ -130,6 +205,9 @@ jobs:
           export PYTHON_MID=$(which $PYTHON_MID_NAME);
           export PYTHON_MAX=$(which $PYTHON_MAX_NAME);
 
+          # Update all submodules with depth 1
+          git submodule update --init --recursive --depth 1
+
           mkdir build && cd build;
 
           # CMake options & flags
@@ -137,6 +215,8 @@ jobs:
                       -DCMAKE_BUILD_TYPE=Debug \
                       -DCMAKE_C_COMPILER="$CC" \
                       -DCMAKE_CXX_COMPILER="$CXX" \
+                      -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+                      -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
                       -DNRN_ENABLE_BACKTRACE=ON \
                       -DNRN_ENABLE_CORENEURON=ON \
                       -DNRN_ENABLE_COVERAGE=ON \
@@ -154,12 +234,12 @@ jobs:
                       -DMUSIC_ROOT="${MUSIC_INSTALL_DIR}")
           cmake .. "${cmake_args[@]}"
           # Coverage
-          # The Linux runners apparently have 2 cores, but jobs were being killed when we did not specify this explicitly.
-          # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
-          # By default we get a modern version of CMake that understands --parallel.
-          cmake --build . --parallel 2
+          ccache -z
+          ccache -s -v || ccache -s
+          cmake --build .
+          ccache -s -v || ccache -s
           cmake --build . --target cover_baseline
-          xvfb-run ctest --rerun-failed --output-on-failure;
+          xvfb-run ctest --rerun-failed --output-on-failure
           for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
           do
             echo "Using ${python}"
@@ -168,7 +248,7 @@ jobs:
               PATH="${PWD}/bin:${PATH}" \
               LD_LIBRARY_PATH="${PWD}/lib:${LD_LIBRARY_PATH}" \
               DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
-              "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd();"
+              "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd(); from neuron.tests import test_nmodl; test_nmodl.test_nmodl()"
           done
           cmake --build . --target cover_collect
           cmake --build . --target cover_combine
@@ -177,6 +257,24 @@ jobs:
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
           PYTHON_MID_NAME: "python${{ env.PY_MID_VERSION }}"
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{runner.os}}
+          path: |
+            ${{runner.workspace}}/nrn/build/CMakeCache.txt
+            ${{runner.workspace}}/nrn/build/build.ninja
+            ${{runner.workspace}}/nrn/build/cmake_install.cmake
+
+      - name: Save compiler cache
+        id: save-compiler-cache
+        if: always() && steps.restore-compiler-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.restore-compiler-cache.outputs.cache-primary-key }}
+          path: ${{ github.workspace }}/ccache
 
       # This step will set up an SSH connection on tmate.io for live debugging.
       # To enable it, you have to:

@@ -48,6 +48,7 @@ add_dependencies(generated_source_files modlunit_generated_files)
 add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES} "${NRN_MODLUNIT_GEN}/lex.cpp"
                         "${NRN_MODLUNIT_GEN}/parse1.cpp")
 add_dependencies(modlunit modlunit_generated_files)
+target_include_directories(modlunit PRIVATE "${PROJECT_BINARY_DIR}/share/nrn/lib")
 
 target_compile_definitions(modlunit PRIVATE NRNUNIT=1)
 cpp_cc_configure_sanitizers(TARGET modlunit)
@@ -96,6 +97,7 @@ add_dependencies(generated_source_files nocmodl_generated_files)
 
 add_executable(nocmodl ${NRN_NOCMODL_SRC_FILES} "${NRN_NOCMODL_GEN}/lex.cpp"
                        "${NRN_NOCMODL_GEN}/parse1.cpp" "${NRN_NOCMODL_GEN}/diffeq.cpp")
+target_include_directories(nocmodl PRIVATE "${PROJECT_BINARY_DIR}/share/nrn/lib")
 cpp_cc_configure_sanitizers(TARGET nocmodl)
 add_dependencies(nocmodl nocmodl_generated_files)
 target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 CVODE=1)
@@ -109,6 +111,11 @@ target_include_directories(nocmodl PRIVATE "${NRN_NOCMODL_GEN}" "${NRN_NOCMODL_S
                                            "${CLI11_HEADER_DIRECTORY}")
 if(NRN_NOCMODL_CXX_FLAGS)
   target_compile_options(nocmodl PRIVATE ${NRN_NOCMODL_CXX_FLAGS})
+endif()
+
+# CLI11-included headers have some warnings on NVHPC
+if(NRN_NOCMODL_COMPILER_WARNING_SUPPRESSIONS)
+  target_compile_options(nocmodl PRIVATE ${NRN_NOCMODL_COMPILER_WARNING_SUPPRESSIONS})
 endif()
 
 # =============================================================================
@@ -240,22 +247,6 @@ set(NRN_INCLUDE_DIRS
 # =============================================================================
 # Helper commands : generate various headers
 # =============================================================================
-# ~~~
-# generate version information file
-# nrnversion.h does not depend on another file but on the output of
-# git2version_h.sh and nrnversion.h should only be changed if that output
-# is different from the contents of nrnversion.h
-# ~~~
-add_custom_target(
-  nrnversion_h
-  COMMAND ${CMAKE_COMMAND} -E env PROJECT_VERSION=${PROJECT_VERSION} bash
-          ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} > nrnversion.h.tmp
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp nrnversion.h
-  DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh
-  WORKING_DIRECTORY ${NRN_NRNOC_BUILD_DIR})
-
-add_custom_command(OUTPUT ${NRN_NRNOC_BUILD_DIR}/nrnversion.h DEPENDS nrnversion_h)
-add_dependencies(generated_source_files nrnversion_h)
 
 # avoid error with nvector_serial.cpp for #include <../../../nrnconf.h>
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
@@ -394,14 +385,8 @@ if(NRN_ENABLE_MUSIC)
                               PROPERTIES INCLUDE_DIRECTORIES ${MUSIC_INCDIR})
 endif()
 
-if(NRN_COVERAGE_FILES)
-  foreach(f ${NRN_COVERAGE_FILES})
-    set_property(
-      SOURCE ${PROJECT_SOURCE_DIR}/${f}
-      APPEND
-      PROPERTY COMPILE_FLAGS ${NRN_COVERAGE_FLAGS})
-  endforeach()
-endif()
+# Maybe NRN_COVERAGE_FILES mentions a file compiled by this CMakeLists.txt
+nrn_enable_coverage_files()
 
 # =============================================================================
 # All source directories to include
@@ -413,6 +398,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 add_dependencies(nrniv_lib generated_source_files)
+add_cpp_git_information(nrniv_lib PRIVATE)
 target_link_libraries(nrniv_lib nrngnu)
 target_link_libraries(nrniv_lib sparse13)
 target_link_libraries(nrniv_lib fmt::fmt)
@@ -559,12 +545,6 @@ else()
   target_link_libraries(nrniv_lib ${X11_LIBRARIES})
 endif()
 
-if(NRN_COVERAGE_FILES)
-  target_link_libraries(nrniv_lib ${NRN_COVERAGE_LIB})
-  target_link_libraries(modlunit ${NRN_COVERAGE_LIB})
-  target_link_libraries(nocmodl ${NRN_COVERAGE_LIB})
-endif()
-
 # =============================================================================
 # Final executable
 # =============================================================================
@@ -594,10 +574,11 @@ endif()
 # For now, we keep this distinction as it reduces the PATH and is
 # expected when ctypes looks for dlls
 # ~~~
-install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
+install(TARGETS nrniv nocmodl modlunit RUNTIME DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 if(LIBIVX11DYNAM_NAME)
-  install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME} DESTINATION lib)
+  install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME}
+          DESTINATION ${NRN_INSTALL_DATA_PREFIX}lib)
 endif()
 
 # =============================================================================
@@ -625,4 +606,5 @@ add_custom_target(
           ${CMAKE_BINARY_DIR}/include/nrncvode/nrnneosm.h ${CMAKE_BINARY_DIR}/include/nrnconf.h)
 
 # For the installation
-install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
+install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}share/nrn)

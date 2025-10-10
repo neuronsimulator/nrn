@@ -15,6 +15,7 @@ nbsphinx
 jinja2
 sphinx-design
 sphinx-inline-tabs
-packaging==21.3
+packaging<=24.2,>=22.0
 tenacity<8.4
 anywidget
+sphinxcontrib-mermaid<=1.0.0
