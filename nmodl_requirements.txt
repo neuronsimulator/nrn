@@ -10,12 +10,12 @@ pytest<=8.4.0
 pytest-cov
 numpy>=1.9.3,<=2.2.3
 scipy<1.16;python_version<"3.14"
-scipy>=1.16;python_version=="3.14"
+scipy>=1.16,<=1.16.2;python_version=="3.14"
 # dependencies for docs
 jupyter-client
 jupyter
 myst_parser<=4.0.1
-pyzmq>=27.0.1;python_version=="3.14"
+pyzmq>=27.0.1,<=27.1.0;python_version=="3.14"
 mistune<=3.1.3
 nbconvert
 rpds-py>=0.25,<0.27.1;python_version=="3.14"
