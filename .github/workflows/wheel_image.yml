@@ -26,9 +26,9 @@ on:
           - 'ghcr.io'
           - 'docker.io'
 
-      tag:
-        description: 'The tag for the final Docker image'
-        default: 'latest-'
+      prefix:
+        description: 'The tag prefix for the final Docker image'
+        default: ''
         required: true
 
 jobs:
@@ -41,6 +41,7 @@ jobs:
           - platform: 'linux/amd64'
             arch: 'x86_64'
             base_image: 'ubuntu-22.04'
+
           - platform: 'linux/arm64'
             arch: 'aarch64'
             base_image: 'ubuntu-22.04-arm'
@@ -67,6 +68,6 @@ jobs:
           context: "{{defaultContext}}:packaging/python"
           platforms: ${{ matrix.platform }}
           push: ${{ github.event.inputs.upload }}
-          tags: ${{ github.event.inputs.container_registry }}/neuronsimulator/neuron_wheel:${{ github.event.inputs.tag }}${{ github.event.inputs.base_image }}_${{ matrix.arch }}
+          tags: ${{ github.event.inputs.container_registry }}/neuronsimulator/neuron_wheel:${{ github.event.inputs.prefix }}${{ github.event.inputs.base_image }}_${{ matrix.arch }}
           build-args: |
             MANYLINUX_IMAGE=${{ github.event.inputs.base_image }}_${{ matrix.arch }}
