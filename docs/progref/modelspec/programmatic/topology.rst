@@ -37,6 +37,12 @@ Creating and connecting sections
             Creates a new section. If no cell argument is specified, the name argument (optional) will be returned via ``str(s)`` or ``s.hname()``; if no name is provided, one will be automatically generated.
             If a cell argument is passed, its repr will be combined with the name to form ``str(s)``.
 
+        .. note::
+
+                The default diameter, specific membrane capacitance (cm), and axial resistivity (Ra) of a newly
+                created Section object in NEURON are modeled after the squid giant axon.
+
+
         Example 1:
 
             .. code::
@@ -363,6 +369,11 @@ Creating and connecting sections
             the same names are destroyed and recreated.  The create statement may 
             occur within procedures, but the names must have been previously declared with 
             a create statement at the command level. 
+
+        .. note::
+
+                The default diameter, specific membrane capacitance (cm), and axial resistivity (Ra) 
+                of a newly created Section object in NEURON are modeled after the squid giant axon.
             
 
         Example:

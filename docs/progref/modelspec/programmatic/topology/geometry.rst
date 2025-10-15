@@ -639,6 +639,11 @@ Defining the 3D Shape
             The existence of a spine at this point is signaled 
             by a negative value for *d*. 
 
+            The `pt3dadd` method adds 3D points sequentially to define the geometry of an *unbranched* section,
+            connecting each new point to the previous one in order, but it does not handle branching or
+            connectivity between sections. To model bifurcations or branching topology, multiple sections must
+            be created and connected explicitly using `connect` statements.
+
             The vectorized form is more efficient than looping over
             lists in Python.
 
@@ -695,6 +700,12 @@ Defining the 3D Shape
 
             The vectorized form is more efficient than looping over
             lists in HOC.
+
+            The `pt3dadd` method adds 3D points sequentially to define the geometry of an *unbranched* section,
+            connecting each new point to the previous one in order, but it does not handle branching or
+            connectivity between sections. To model bifurcations or branching topology, multiple sections must
+            be created and connected explicitly using `connect` statements.
+
 
 
 
@@ -1346,7 +1357,38 @@ Reading 3D Data from NEURON
          
             ``section(0).area()`` and ``section(1).area()`` = 0 
 
-         
+        .. note::
+
+            When a section is defined with 3D points, the ``area()`` method computes
+            the surface area of the segment by summing the lateral areas of truncated 
+            cones (frusta) between adjacent 3D points, accounting for tapering and 
+            local diameter changes rather than using a simple cylinder formula based 
+            on length and midpoint diameter. Consequently, ``sec(0.5).area()`` returns 
+            the accurate surface area that NEURON uses for transmembrane current 
+            calculations, which may differ from ``sec.L * sec.diam * π`` when the section
+            geometry is tapered.
+
+            .. code-block:: python
+
+                from neuron import n
+                import math
+
+                sec1 = n.Section("sec1")
+                sec1.pt3dadd(0.0, 0.0, 0.0, 60.0)
+                sec1.pt3dadd(7.0, 0.0, 0.0, 10.0)
+                print('sec1 L: ', sec1.L)
+                print('sec1 diam: ', sec1.diam)
+                print('sec1 cylinder area: ', sec1.L * sec1.diam * math.pi)
+                print('sec1 neuron area: ', sec1(0.5).area())
+
+                sec2 = n.Section("sec2")
+                sec2.L = 7.0
+                sec2.diam = 35.0
+                print('sec2 L: ', sec2.L)
+                print('sec2 diam: ', sec2.diam)
+                print('sec2 cylinder area: ', sec2.L * sec2.diam * math.pi)
+                print('sec2 neuron area: ', sec2(0.5).area())
+
 
     .. tab:: HOC
 
@@ -1358,9 +1400,21 @@ Reading 3D Data from NEURON
         Description:
             Return the area (in square microns) of the segment which contains *x*. 
         
-        
-            \ ``area(0)`` and \ ``area(1)`` = 0 
-        
+            For all sections, ``area(0)`` and ``area(1)`` = 0.
+
+        .. note::
+
+            When a section is defined with 3D points, the ``area()`` method computes
+            the surface area of the segment by summing the lateral areas of truncated 
+            cones (frusta) between adjacent 3D points, accounting for tapering and 
+            local diameter changes rather than using a simple cylinder formula based 
+            on length and midpoint diameter. Consequently, ``sec(0.5).area()`` returns 
+            the accurate surface area that NEURON uses for transmembrane current 
+            calculations, which may differ from ``sec.L * sec.diam * π`` when the section
+            geometry is tapered.
+ 
+
+
 ----
 
 
