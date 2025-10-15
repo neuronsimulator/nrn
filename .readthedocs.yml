@@ -3,6 +3,10 @@ version: 2
 sphinx:
   configuration: docs/conf.py
 
+search:
+  ranking:
+    '*/doxygen/*': -10
+
 build:
   os: "ubuntu-22.04"
   tools:
