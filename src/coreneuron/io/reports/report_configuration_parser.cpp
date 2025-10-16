@@ -25,16 +25,18 @@
 
 namespace coreneuron {
 
-void check_version(const std::string& raw, const int expected_major, const int expected_minor, const std::string& file_name) {
+void check_version(const std::string& raw,
+                   const int expected_major,
+                   const int expected_minor,
+                   const std::string& file_name) {
     // Must start with 'v'
     if (raw.empty() || raw[0] != 'v') {
-        throw std::runtime_error(
-            "Invalid major version in: \"" + raw + "\". \"" + file_name + "\" may be missing a version line. "
-            "Expected format: v<major>[.<minor>], e.g., v1.3 or v2"
-        );
+        throw std::runtime_error("Invalid major version in: \"" + raw + "\". \"" + file_name +
+                                 "\" may be missing a version line. "
+                                 "Expected format: v<major>[.<minor>], e.g., v1.3 or v2");
     }
 
-    std::string s = raw.substr(1); // strip 'v'
+    std::string s = raw.substr(1);  // strip 'v'
     int major = 0;
     int minor = 0;
 
@@ -46,18 +48,16 @@ void check_version(const std::string& raw, const int expected_major, const int e
     try {
         major = std::stoi(major_str);
     } catch (...) {
-        throw std::runtime_error(
-            "Invalid major version in: \"" + raw + "\". \"" + file_name + "\" may be missing a version line. "
-            "Expected format: v<major>[.<minor>], e.g., v1.3 or v2"
-        );
+        throw std::runtime_error("Invalid major version in: \"" + raw + "\". \"" + file_name +
+                                 "\" may be missing a version line. "
+                                 "Expected format: v<major>[.<minor>], e.g., v1.3 or v2");
     }
 
     // Major check
     if (major != expected_major) {
-        throw std::runtime_error(
-            "Expected version \"v" + std::to_string(expected_major) +
-            "\", got \"" + raw + "\". Probably a version mismatch between neurodamus and neuron."
-        );
+        throw std::runtime_error("Expected version \"v" + std::to_string(expected_major) +
+                                 "\", got \"" + raw +
+                                 "\". Probably a version mismatch between neurodamus and neuron.");
     }
 
     // Parse minor if present
@@ -69,14 +69,13 @@ void check_version(const std::string& raw, const int expected_major, const int e
         }
 
         if (minor > expected_minor) {
-            std::cerr << "Warning: version minor " << minor
-                      << " is above expected " << expected_minor
-                      << ". Continuing.\n";
+            std::cerr << "Warning: version minor " << minor << " is above expected "
+                      << expected_minor << ". Continuing.\n";
         } else if (minor < expected_minor) {
             throw std::runtime_error(
-                "Minor version below expected: probably a version mismatch between neurodamus and neuron. Got \"" +
-                raw + "\""
-            );
+                "Minor version below expected: probably a version mismatch between neurodamus and "
+                "neuron. Got \"" +
+                raw + "\"");
         }
     }
 }
@@ -127,7 +126,7 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
     report_conf >> version;
 
     // coreneuron is compatible with: report.conf v1.x or v1
-    check_version(version, 1, 0, "report.conf"); 
+    check_version(version, 1, 0, "report.conf");
 
     int num_reports = 0;
     report_conf >> num_reports;
