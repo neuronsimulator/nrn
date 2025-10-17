@@ -143,7 +143,8 @@ inline bool equals_case_insensitive(std::string_view a, std::string_view b) {
 template <typename EnumT, std::size_t N>
 EnumT from_string(const std::string_view str,
                   const std::array<std::pair<EnumT, std::string_view>, N>& mapping,
-                  const std::string_view enum_name, const std::string_view file_path) {
+                  const std::string_view enum_name,
+                  const std::string_view file_path) {
     auto it = std::find_if(mapping.begin(), mapping.end(), [&str](const auto& pair) {
         return equals_case_insensitive(str, pair.second);
     });
@@ -169,7 +170,8 @@ constexpr std::array<std::pair<ReportType, std::string_view>, 5> report_type_map
 inline std::string to_string(ReportType t) {
     return to_string(t, report_type_map, "ReportType");
 }
-inline ReportType report_type_from_string(const std::string_view str, const std::string_view file_path) {
+inline ReportType report_type_from_string(const std::string_view str,
+                                          const std::string_view file_path) {
     return from_string<ReportType>(str, report_type_map, "ReportType", file_path);
 }
 
@@ -191,7 +193,8 @@ constexpr std::array<std::pair<SectionType, std::string_view>, 11> section_type_
 inline std::string to_string(SectionType t) {
     return to_string(t, section_type_map, "SectionType");
 }
-inline SectionType section_type_from_string(std::string_view str, const std::string_view file_path) {
+inline SectionType section_type_from_string(std::string_view str,
+                                            const std::string_view file_path) {
     return from_string<SectionType>(str, section_type_map, "SectionType", file_path);
 }
 
@@ -217,7 +220,8 @@ constexpr std::array<std::pair<Compartments, std::string_view>, 3> compartments_
 inline std::string to_string(Compartments s) {
     return to_string(s, compartments_map, "Compartments");
 }
-inline Compartments compartments_from_string(const std::string_view str, const std::string_view file_path) {
+inline Compartments compartments_from_string(const std::string_view str,
+                                             const std::string_view file_path) {
     return from_string<Compartments>(str, compartments_map, "Compartments", file_path);
 }
 
