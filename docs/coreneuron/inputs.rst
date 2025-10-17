@@ -75,8 +75,8 @@ Example ``sim.conf``:
 - ``voltage``: Initial membrane voltage in mV.
 - ``cell-permute``: Index controlling the permutation of cells:
   - 0 — No permutation
-  - 1 — Optimize node adjacency
-  - 2 — Optimize parent adjacency
+  - 1 — Optimize node adjacency (CPU, GPU)
+  - 2 — Optimize parent adjacency (GPU)
 - ``mpi``: Number of MPI ranks (if using parallel execution).
 - ``seed``: Random seed for reproducibility.
 - ``report-conf``: Path to ``report.conf`` file for simulation reports.
