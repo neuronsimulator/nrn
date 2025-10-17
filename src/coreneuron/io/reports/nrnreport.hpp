@@ -171,7 +171,7 @@ inline std::string to_string(ReportType t) {
     return to_string(t, report_type_map, "ReportType");
 }
 inline ReportType report_type_from_string(const std::string_view str,
-                                          const std::string_view file_path) {
+                                          const std::string_view file_path = "") {
     return from_string<ReportType>(str, report_type_map, "ReportType", file_path);
 }
 
@@ -194,7 +194,7 @@ inline std::string to_string(SectionType t) {
     return to_string(t, section_type_map, "SectionType");
 }
 inline SectionType section_type_from_string(std::string_view str,
-                                            const std::string_view file_path) {
+                                            const std::string_view file_path = "") {
     return from_string<SectionType>(str, section_type_map, "SectionType", file_path);
 }
 
@@ -207,7 +207,8 @@ constexpr std::array<std::pair<Scaling, std::string_view>, 2> scaling_map{
 inline std::string to_string(Scaling s) {
     return to_string(s, scaling_map, "Scaling");
 }
-inline Scaling scaling_from_string(const std::string_view str, const std::string_view file_path) {
+inline Scaling scaling_from_string(const std::string_view str,
+                                   const std::string_view file_path = "") {
     return from_string<Scaling>(str, scaling_map, "Scaling", file_path);
 }
 
@@ -221,7 +222,7 @@ inline std::string to_string(Compartments s) {
     return to_string(s, compartments_map, "Compartments");
 }
 inline Compartments compartments_from_string(const std::string_view str,
-                                             const std::string_view file_path) {
+                                             const std::string_view file_path = "") {
     return from_string<Compartments>(str, compartments_map, "Compartments", file_path);
 }
 
