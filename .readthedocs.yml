@@ -6,6 +6,9 @@ sphinx:
 search:
   ignore:
     - '*/doxygen/*'
+    - 'doxygen/*'
+    - '*/doxygen/*.html'
+    - '*/doxygen/*html'
 
 build:
   os: "ubuntu-22.04"
