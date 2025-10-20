@@ -53,6 +53,43 @@ Both HOC and Python use a section stack, but they work differently:
 can specify `sec=` in function calls to NEURON to specify sections to work on; this temporarily
 puts the specified section at the top of the stack for the function call and pops it off after.
 
+
+.. tab:: Python
+
+    In Python, you typically use dot notation for section properties or the ``sec=`` keyword argument
+    for functions. The section stack can be manipulated explicitly with ``n.push_section()`` and 
+    ``n.pop_section()``, but this is rarely necessary and not recommended except as a last resort.
+
+    The current top of the section stack can be queried with ``n.cas()``, but unlike HOC,
+    this doesn't automatically apply to range variables - you must be explicit about which
+    section you're referencing.
+     
+    There is no explicit notion of a section object in HOC but a similar
+    effect can be obtained with the :class:`SectionRef` class.
+
+    Many NEURON functions refer to a specific Section. In recent versions of NEURON,
+    most of these either are available as section methods or take a section or segment
+    directly. For older code or for the remaining exceptions, the active section may
+    be specified using a ``sec=`` keyword argument.
+
+    For example:
+
+    .. code-block::
+        python
+
+        my_iclamp = n.IClamp(0.25, sec=soma)   # better to use n.IClamp(soma(0.25)) though
+        num_pts_3d = n.n3d(sec=apical)         # could get the same value as an int via apical.n3d()
+    
+    In Python, if no ``sec=`` keyword argument is specified, functions will use NEURON's
+    default Section (sometimes called the *currently accessed section*),
+    which can be identified via ``n.cas()``.
+    The default Section is controlled by the section stack; it is initially
+    the first Section created but entries may be pushed onto or popped off of the
+    stack by :func:`push_section` and :func:`pop_section`. *Use this only as a last resort.*
+
+    However, unlike HOC, range variables in Python do not automatically use the section
+    stack - you must always be explicit about which section you're referencing.
+    
 .. tab:: HOC
 
     The syntax 
@@ -135,44 +172,6 @@ puts the specified section at the top of the stack for the function call and pop
                     print secname() 
             } // because the stack has more than one section, c is popped off 
             print secname()	// and the second "access" was not permanent! 
-
-
-.. tab:: Python
-
-    In Python, you typically use dot notation for section properties or the ``sec=`` keyword argument
-    for functions. The section stack can be manipulated explicitly with ``n.push_section()`` and 
-    ``n.pop_section()``, but this is rarely necessary and not recommended except as a last resort.
-
-    The current top of the section stack can be queried with ``n.cas()``, but unlike HOC,
-    this doesn't automatically apply to range variables - you must be explicit about which
-    section you're referencing.
-     
-    There is no explicit notion of a section object in HOC but a similar
-    effect can be obtained with the :class:`SectionRef` class.
-
-    Many NEURON functions refer to a specific Section. In recent versions of NEURON,
-    most of these either are available as section methods or take a section or segment
-    directly. For older code or for the remaining exceptions, the active section may
-    be specified using a ``sec=`` keyword argument.
-
-    For example:
-
-    .. code-block::
-        python
-
-        my_iclamp = n.IClamp(0.25, sec=soma)   # better to use n.IClamp(soma(0.25)) though
-        num_pts_3d = n.n3d(sec=apical)         # could get the same value as an int via apical.n3d()
-    
-    In Python, if no ``sec=`` keyword argument is specified, functions will use NEURON's
-    default Section (sometimes called the *currently accessed section*),
-    which can be identified via ``n.cas()``.
-    The default Section is controlled by the section stack; it is initially
-    the first Section created but entries may be pushed onto or popped off of the
-    stack by :func:`push_section` and :func:`pop_section`. *Use this only as a last resort.*
-
-    However, unlike HOC, range variables in Python do not automatically use the section
-    stack - you must always be explicit about which section you're referencing.
-    
 
 
 
