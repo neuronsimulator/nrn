@@ -13,7 +13,7 @@ on:
       os:
         description: "Comma-separated list of OSes"
         required: false
-        default: "macos-14,ubuntu-22.04-arm"
+        default: "macos-14,ubuntu-24.04-arm"
       python_versions:
         description: "Comma-separated list of Python versions"
         required: false
@@ -47,7 +47,7 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          OS_INPUT="${{ github.event.inputs.os || 'macos-14,ubuntu-22.04-arm' }}"
+          OS_INPUT="${{ github.event.inputs.os || 'macos-14,ubuntu-24.04-arm' }}"
           PY_INPUT="${{ github.event.inputs.python_versions || '3.9,3.10,3.11,3.12,3.13,3.14' }}"
           OS_JSON=$(echo "$OS_INPUT" | jq -R 'split(",")')
           PY_JSON=$(echo "$PY_INPUT" | jq -R 'split(",")')
