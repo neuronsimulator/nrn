@@ -31,7 +31,7 @@ stages:
     - job: 'ManyLinuxWheels'
       timeoutInMinutes: 45
       pool:
-        vmImage: 'ubuntu-22.04'
+        vmImage: 'ubuntu-24.04'
       strategy:
         matrix:
           Python39:
