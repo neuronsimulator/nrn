@@ -197,7 +197,7 @@ void nrn_init_and_load_data(int argc,
 
     // Default path of files.dat is relative to datpath
     if (corenrn_param.filesdat.empty()) {
-        corenrn_param.filesdat = corenrn_param.datpath + "/" + corenrn_param.default_dat_filename;
+        corenrn_param.filesdat = corenrn_param.datpath + "/" + corenrn_parameters::default_dat_filename;
     }
 
     // read the global variable names and set their values from globals.dat
