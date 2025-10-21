@@ -155,6 +155,12 @@ EnumT from_string(const std::string_view str,
     }
 
     std::cerr << "Unknown string for " << enum_name << ": \"" << str << "\".\n";
+    std::cerr << "Valid options are: ";
+    for (std::size_t i = 0; i < mapping.size(); ++i) {
+        std::cerr << "\"" << mapping[i].second << "\"";
+        if (i + 1 != mapping.size()) std::cerr << ", ";
+    }
+    std::cerr << ".\n";
     if (file_path.size()) {
         std::cerr << "Probably neuron is not compatible with \"" << file_path << "\".\n";
     }
