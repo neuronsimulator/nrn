@@ -136,9 +136,9 @@ Field descriptions:
    - ``synapse``  
    - ``lfp``  
 
-4. ``report_variable`` — Variable being reported (e.g., ``v``, ``i_membrane``, ``pas``)  
+4. ``report_variable`` — Variable being reported (e.g., ``v``, ``i_membrane``, ``pas``. Any point process or mechanism variable is eligible)  
 5. ``unit`` — Physical unit of the reported variable (e.g., ``mV``, ``nS``)  
-6. ``report_format`` — Format of the report (currently ``SONATA``)  
+6. ``report_format`` — Format of the report (currently only ``SONATA`` remains)  
 7. ``sections`` — Target sections of the cells:  
 
    - ``Cell``, ``Soma``, ``Axon``, ``Dend`` (Dendrite), ``Apic`` (Apical),  
@@ -164,7 +164,7 @@ Field descriptions:
 
   - GIDs (all reports)  
   - Section IDs and compartment IDs (for ``compartment_set`` reports only)  
-  
+
 - All binary lines have length ``num_gids``.  
 - The order of the fields in the metadata line corresponds exactly to the order above.
 
