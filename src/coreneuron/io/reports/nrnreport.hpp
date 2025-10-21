@@ -136,6 +136,8 @@ inline bool equals_case_insensitive(std::string_view a, std::string_view b) {
  * @param str Input string to convert.
  * @param mapping A fixed-size array mapping enum values to string views.
  * @param enum_name Name of the enum type, used for error reporting.
+ * @param file_path Optional path to the source file providing the string value.
+ *        Used to give additional context when reporting errors.
  * @return The corresponding enum value for the input string.
  *
  * @note Aborts the program if the string does not match any entry in the mapping.
