@@ -85,7 +85,28 @@ def test_py2nrnstring():
     expect_err("soma(.5).hh.à = 1")
 
 
+def test_getstr_word():
+    import tempfile
+
+    words = "a space separated   series of words \n\n goodbye"
+    wordlist = words.split()
+    with tempfile.NamedTemporaryFile(mode="w", delete=True, suffix=".txt") as temp_file:
+        temp_file.write(words)
+        temp_file.flush()
+        # print(f"temp_file {temp_file.name}")
+
+        h.ropen(temp_file.name)
+        word = h.ref("")
+        for i in range(100):
+            h.getstr(word, 1)
+            assert word[0] == wordlist[i]
+            if word[0] == "goodbye":
+                break
+        h.ropen()
+
+
 if __name__ == "__main__":
     set_quiet(False)
     quiet = False
     test_py2nrnstring()
+    test_getstr_word()
