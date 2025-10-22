@@ -135,6 +135,7 @@ jobs:
           # https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
           # This is fixed in version 4.2.0-5.1, but this version has not been
           # backported, so as a workaround, we install that version manually
+          sudo apt install -y mpich
           wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/mpich_4.2.0-5.1_amd64.deb'
           wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/libmpich12_4.2.0-5.1_amd64.deb'
           sudo dpkg --install mpich_4.2.0-5.1_amd64.deb libmpich12_4.2.0-5.1_amd64.deb
