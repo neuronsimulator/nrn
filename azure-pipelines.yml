@@ -67,6 +67,23 @@ stages:
         condition: and(in(variables['Build.Reason'], 'Manual'), eq(variables['NRN_RELEASE_UPLOAD'], 'true'))
         displayName: 'Change name of package for release'
 
+      - script: |
+          # mpich is fundamentally broken on Ubuntu 24.04 LTS, for more details see:
+          # https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
+          # This is fixed in version 4.2.0-5.1, but this version has not been
+          # backported, so as a workaround, we install that version manually
+          source /etc/os-release
+          if [[ "$ID" == "ubuntu" && "$VERSION_ID" == "24.04" ]]; then
+            # mpich is fundamentally broken on Ubuntu 24.04 LTS, for more details see:
+            # https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
+            # This is fixed in version 4.2.0-5.1, but this version has not been
+            # backported, so as a workaround, we install that version manually
+            wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/mpich_4.2.0-5.1_amd64.deb'
+            wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/libmpich12_4.2.0-5.1_amd64.deb'
+            sudo dpkg --install mpich_4.2.0-5.1_amd64.deb libmpich12_4.2.0-5.1_amd64.deb
+          fi
+        displayName: "Apply MPICH fix (Ubuntu 24.04 only)"
+
       # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
       # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
       - script: |
