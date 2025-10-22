@@ -54,6 +54,15 @@ static void* load_mpi(const char* name, std::string& mes) {
         mes.append("successful");
     }
     mes.append(1, '\n');
+#if defined(__linux__)
+    void* symbol = dlsym(handle, "MPI_Init");
+    if (symbol) {
+        Dl_info info;
+        if (dladdr(symbol, &info) != 0) {
+            fprintf(stderr, "ZZZ Full path of %s: %s\n", name, info.dli_fname);
+        }
+    }
+#endif
     return handle;
 }
 
@@ -201,6 +210,9 @@ std::string nrnmpi_load() {
         }
 #endif
     }();
+#if defined(__linux__)
+    fprintf(stderr, "ZZZ mpi_implementation: %s\n", mpi_implementation);
+#endif
 
     // Figure out where to find lib[core]nrnmpi{...} libraries. Older versions
     // of this code used @loader_path on macOS, which caused problems in now that the code that
