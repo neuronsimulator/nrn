@@ -90,7 +90,7 @@ stages:
     - job: 'MacOSWheels'
       timeoutInMinutes: 60
       pool:
-        vmImage: 'macOS-14'
+        vmImage: 'macOS-15-intel'
       strategy:
         matrix:
           Python39:
