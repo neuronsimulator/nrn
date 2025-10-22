@@ -129,6 +129,8 @@ jobs:
           sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
 
       - name: Test wheel with ${{ inputs.python_version }}
+        env:
+          CI_OS_NAME: linux
         run: |
           minor_version="$(python${{ inputs.python_version }} -c 'import sys;print(sys.version_info.minor)')"
           bash packaging/python/test_wheels.sh $(command -v python${{ inputs.python_version }}) wheelhouse/*cp3${minor_version}*.whl
