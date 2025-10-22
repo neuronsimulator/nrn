@@ -27,7 +27,6 @@ C:\Python310\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :
 C:\Python311\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
 C:\Python312\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
 C:\Python313\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
-C:\Python313\python.exe -m pip install "numpy<=2.2.3" "cython<=3.0.12" || goto :error
 C:\Python314\python.exe -m pip install "numpy>=2.3.2,<=2.3.3" "cython<=3.0.12" || goto :error
 C:\Python312\python.exe -m pip install "setuptools<=80.8.0" || goto :error
 C:\Python313\python.exe -m pip install "setuptools<=80.8.0" || goto :error
