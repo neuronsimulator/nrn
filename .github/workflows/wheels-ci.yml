@@ -1,5 +1,10 @@
 name: Build NEURON Python wheels for CI
 
+concurrency:
+  # Don't cancel on master, creating a PR when a push workflow is already going will cancel the push workflow in favour of the PR workflow
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
@@ -18,8 +23,8 @@ jobs:
       commit: ${{ github.sha }}
     strategy:
       matrix:
-        os: ['macos-14', 'ubuntu-22.04-arm']
-        python_version: ['3.9', '3.13']
+        os: ['macos-13', 'ubuntu-22.04']
+        python_version: ['3.9', '3.10', '3.11', '3.12', '3.13']
 
   merge:
     name: Merge artifacts and post artifacts URL

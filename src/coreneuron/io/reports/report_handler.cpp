@@ -11,6 +11,7 @@
 #include "report_handler.hpp"
 #include "coreneuron/io/nrnsection_mapping.hpp"
 #include "coreneuron/mechanism/mech_mapping.hpp"
+#include "coreneuron/permute/node_permute.h"
 #include "coreneuron/utils/utils.hpp"
 
 namespace coreneuron {
@@ -371,7 +372,11 @@ static VarsToReport get_compartment_set_vars_to_report(const NrnThread& nt,
     for (const auto& intersection_id: intersection_ids) {
         const auto gid = report.target[intersection_id];
         const auto section_id = report.point_section_ids[intersection_id];
-        const auto compartment_id = report.point_compartment_ids[intersection_id];
+        auto compartment_id = report.point_compartment_ids[intersection_id];
+        if (nt._permute) {
+            node_permute(&compartment_id, 1, nt._permute);
+        }
+
         if (old_gid != gid) {
             // clear cache for new gid. We know they are strictly ordered
             segment_id_2_node_id.clear();
