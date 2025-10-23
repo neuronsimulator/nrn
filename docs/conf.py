@@ -25,7 +25,7 @@ import hocdomain  # Sphinx HOC domain (hacked from the Python domain via docs/ge
 # -- Project information -----------------------------------------------------
 
 project = "NEURON"
-copyright = "2022, Duke, Yale and the Blue Brain Project"
+copyright = "2025, Duke, Yale and the Blue Brain Project"
 author = "Michael Hines"
 
 # -- General configuration ---------------------------------------------------
@@ -42,6 +42,7 @@ extensions = [
     "nbsphinx",
     "sphinx_design",
     "sphinx_inline_tabs",
+    "sphinxcontrib.mermaid",
 ]
 
 source_suffix = {

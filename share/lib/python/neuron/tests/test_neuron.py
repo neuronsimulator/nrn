@@ -19,6 +19,12 @@ class NeuronTestCase(unittest.TestCase):
         from ._subclass import A1
 
         a = A1(5)
+        assert a.__doc__ == "A1 docs"
+        assert (
+            n.A(5)
+            .__doc__.strip()
+            .startswith("No docstring available for object type 'A'")
+        )
         assert a.x == 5.0
         assert a.p() == 6.0
         b = A1(4)
@@ -77,7 +83,7 @@ class NeuronTestCase(unittest.TestCase):
     def testIterators(self):
         """Test section, segment, mechanism, rangevar iterators."""
         # setup model
-        sections = [n.Section(name="s%d" % i) for i in range(3)]
+        sections = [n.Section(name=f"s{i}") for i in range(3)]
         iclamps = [n.IClamp(sec(0.5)) for sec in sections]
         for i, sec in enumerate(sections):
             sec.nseg = 3
@@ -91,13 +97,7 @@ class NeuronTestCase(unittest.TestCase):
             for seg in sec:
                 for mech in seg:
                     for var in mech:
-                        txt = "%s(%g).%s.%s=%g" % (
-                            sec.name(),
-                            seg.x,
-                            mech.name(),
-                            var.name(),
-                            var[0],
-                        )
+                        txt = f"{sec.name()}({seg.x:g}).{mech.name()}.{var.name()}={var[0]:g}"
                         sha.update(txt.encode("utf-8"))
         d = sha.hexdigest()
         d1 = "ac49344c054bc9e56e165fa75423d8bcb7cce96c4527f259362b527ee05103d8"
@@ -140,7 +140,7 @@ class NeuronTestCase(unittest.TestCase):
         # longstanding behavior
         soma = n.Section(name="soma")
         soma.push()
-        sections = [n.Section(name="s%d" % i) for i in range(3)]
+        sections = [n.Section(name=f"s{i}") for i in range(3)]
         assert len([s for s in n.allsec()]) == 4
         sl = n.SectionList(sections)
         # Iteration over s SectionList does not change the currently accessed section
@@ -298,7 +298,6 @@ def suite():
 
 
 if __name__ == "__main__":
-
     # unittest.main()
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite())

@@ -63,7 +63,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version : '3.20'
+          cmake-version : '3.19'
 
       - name: Setup Caliper profiler
         run: |
@@ -220,13 +220,12 @@ jobs:
           for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
           do
             echo "Using ${python}"
-            BUILD_DIR="${PWD}/build/coverage"
-            NEURONHOME="${BUILD_DIR}/share/nrn" \
-              PYTHONPATH="${BUILD_DIR}/lib/python:${PYTHONPATH}" \
-              PATH="${BUILD_DIR}/bin:${PATH}" \
-              LD_LIBRARY_PATH="${BUILD_DIR}/lib:${LD_LIBRARY_PATH}" \
-              DYLD_LIBRARY_PATH="${BUILD_DIR}/lib:${DYLD_LIBRARY_PATH}" \
-              "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd();"
+            NEURONHOME="${PWD}/share/nrn" \
+              PYTHONPATH="${PWD}/lib/python:${PYTHONPATH}" \
+              PATH="${PWD}/bin:${PATH}" \
+              LD_LIBRARY_PATH="${PWD}/lib:${LD_LIBRARY_PATH}" \
+              DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
+              "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd(); from neuron.tests import test_nmodl; test_nmodl.test_nmodl()"
           done
           cmake --build --preset coverage --target cover_collect
           cmake --build --preset coverage --target cover_combine
