@@ -39,7 +39,75 @@ auto generate_mod_after_merge_top_level_blocks_visitor(std::string const& text) 
 
 SCENARIO("Check multiple INITIAL blocks are handled properly",
          "[visitor][merge_top_level_blocks]") {
-    GIVEN("A mod file with multiple INITIAL blocks") {
+    GIVEN("A mod file with multiple empty top-level INITIAL blocks") {
+        const auto nmodl_text_before = R"(
+            NEURON {
+                SUFFIX InitialBlockTest
+                RANGE foo, bar
+            }
+            INITIAL {
+            }
+            INITIAL {
+            }
+            INITIAL {
+            }
+        )";
+        const auto nmodl_text_after = R"(
+            NEURON {
+              SUFFIX InitialBlockTest
+              RANGE foo, bar
+            }
+            INITIAL {
+            }
+        )";
+        parser::NmodlDriver driver{};
+        auto ast_expected = driver.parse_string(nmodl_text_after);
+        const auto program_expected = to_nmodl(ast_expected);
+        const auto program_actual =
+            generate_mod_after_merge_top_level_blocks_visitor<ast::InitialBlock,
+                                                              ast::AstNodeType::INITIAL_BLOCK>(
+                nmodl_text_before);
+        THEN("expected and actual should be identical at the level of the AST") {
+            // TODO the AST class lacks an overload for `operator==` so here we compare it at the
+            // string level
+            REQUIRE(reindent_text(program_actual) == reindent_text(program_expected));
+        }
+    }
+    GIVEN("A mod file with an empty and a non-empty top-level INITIAL block") {
+        const auto nmodl_text_before = R"(
+            NEURON {
+                SUFFIX InitialBlockTest
+                RANGE foo, bar
+            }
+            INITIAL {
+            }
+            INITIAL {
+                foo = 1
+            }
+        )";
+        const auto nmodl_text_after = R"(
+            NEURON {
+              SUFFIX InitialBlockTest
+              RANGE foo, bar
+            }
+            INITIAL {
+                foo = 1
+            }
+        )";
+        parser::NmodlDriver driver{};
+        auto ast_expected = driver.parse_string(nmodl_text_after);
+        const auto program_expected = to_nmodl(ast_expected);
+        const auto program_actual =
+            generate_mod_after_merge_top_level_blocks_visitor<ast::InitialBlock,
+                                                              ast::AstNodeType::INITIAL_BLOCK>(
+                nmodl_text_before);
+        THEN("expected and actual should be identical at the level of the AST") {
+            // TODO the AST class lacks an overload for `operator==` so here we compare it at the
+            // string level
+            REQUIRE(reindent_text(program_actual) == reindent_text(program_expected));
+        }
+    }
+    GIVEN("A mod file with multiple non-empty INITIAL blocks") {
         const auto nmodl_text_before = R"(
             NEURON {
                 SUFFIX InitialBlockTest
