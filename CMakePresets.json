@@ -172,6 +172,10 @@
         {
             "name": "windows",
             "configurePreset": "windows"
+        },
+        {
+            "name": "debug-ccache-nvhpc-tests",
+            "configurePreset": "debug-ccache-nvhpc-tests"
         }
     ]
 }

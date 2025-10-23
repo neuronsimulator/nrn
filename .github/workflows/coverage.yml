@@ -217,14 +217,15 @@ jobs:
           ccache -s -v || ccache -s
           cmake --build --preset coverage --target cover_baseline
           xvfb-run ctest --preset coverage --rerun-failed --output-on-failure
+          build_dir="$(bash ci/extract_cmakepresets_build_dir.sh CMakePresets.json coverage)"
           for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
           do
             echo "Using ${python}"
-            NEURONHOME="${PWD}/share/nrn" \
-              PYTHONPATH="${PWD}/lib/python:${PYTHONPATH}" \
-              PATH="${PWD}/bin:${PATH}" \
-              LD_LIBRARY_PATH="${PWD}/lib:${LD_LIBRARY_PATH}" \
-              DYLD_LIBRARY_PATH="${PWD}/lib:${DYLD_LIBRARY_PATH}" \
+            NEURONHOME="${PWD}/${build_dir}/share/nrn" \
+              PYTHONPATH="${PWD}/${build_dir}/lib/python:${PYTHONPATH}" \
+              PATH="${PWD}/${build_dir}/bin:${PATH}" \
+              LD_LIBRARY_PATH="${PWD}/${build_dir}/lib:${LD_LIBRARY_PATH}" \
+              DYLD_LIBRARY_PATH="${PWD}/${build_dir}/lib:${DYLD_LIBRARY_PATH}" \
               "${python}" -c "from neuron import h; import neuron; neuron.test();neuron.test_rxd(); from neuron.tests import test_nmodl; test_nmodl.test_nmodl()"
           done
           cmake --build --preset coverage --target cover_collect
