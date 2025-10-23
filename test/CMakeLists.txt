@@ -241,6 +241,7 @@ if(NRN_ENABLE_PYTHON)
         GROUP ${group}
         NAME basic_tests_py${pyver}
         PRELOAD_SANITIZER
+        ENVIRONMENT "CC=${CMAKE_C_COMPILER}"
         COMMAND "${exe}" ${pytest} "./test/${group}"
         SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py")
     endforeach()
@@ -264,7 +265,7 @@ if(NRN_ENABLE_PYTHON)
     GROUP coverage_tests
     NAME cover_tests
     PRELOAD_SANITIZER
-    ENVIRONMENT COVERAGE_FILE=.coverage.cover_tests
+    ENVIRONMENT COVERAGE_FILE=.coverage.cover_tests CC=${CMAKE_C_COMPILER}
     COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/cover
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
   nrn_add_test_group(
@@ -306,6 +307,7 @@ if(NRN_ENABLE_PYTHON)
       nrn_add_test(
         GROUP hoctests
         NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
+        ENVIRONMENT CC=${CMAKE_C_COMPILER}
         COMMAND ${${ext}_exe} "${hoc_script}"
         SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${${ext}test_utils})
     endforeach()
@@ -387,7 +389,7 @@ if(NRN_ENABLE_PYTHON)
     NAME nrntest_fast
     PROCESSORS 2
     REQUIRES mpi
-    ENVIRONMENT "NRN_PYTEST_ARGS=${pytest_arg_string}"
+    ENVIRONMENT "NRN_PYTEST_ARGS=${pytest_arg_string}" "CC=${CMAKE_C_COMPILER}"
     SCRIPT_PATTERNS
       test/pytest_coreneuron/run_pytest.py test/pytest_coreneuron/test_nrntest_fast.json
       test/pytest_coreneuron/test_nrntest_fast.py
