@@ -116,12 +116,8 @@ if os.environ.get("READTHEDOCS"):
     subprocess.run(
         [
             "cmake",
-            "-DNRN_ENABLE_INTERVIEWS=OFF",
-            "-DNRN_ENABLE_MPI=ON",
-            "-DNRN_ENABLE_DOCS=ON",
-            "-DNMODL_ENABLE_PYTHON_BINDINGS=ON",
-            "-B",
-            Path(__file__).parent.parent / "build",
+            "--preset",
+            "docs",
             "-S",
             Path(__file__).parent.parent,
         ],
@@ -131,7 +127,7 @@ if os.environ.get("READTHEDOCS"):
         [
             "cmake",
             "--build",
-            Path(__file__).parent.parent / "build",
+            Path(__file__).parent.parent / "build" / "docs",
             "--target",
             "doxygen",
             "notebooks",
@@ -141,4 +137,6 @@ if os.environ.get("READTHEDOCS"):
         check=True,
     )
     # since we're not building a wheel, we need to let RTD know where to load the NEURON Python module from
-    sys.path.insert(0, str(Path(__file__).parent.parent / "build" / "lib" / "python"))
+    sys.path.insert(
+        0, str(Path(__file__).parent.parent / "build" / "docs" / "lib" / "python")
+    )

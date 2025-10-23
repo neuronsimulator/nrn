@@ -29,6 +29,7 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run: |
           external/coding-conventions/bin/format
+          python -m json.tool CMakePresets.json CMakePresets.json
 
           modified_files=$(git diff --name-only)
           if [ -n "$modified_files" ]; then
@@ -39,5 +40,3 @@ jobs:
               git --no-pager diff
               exit 1
           fi
-
-
