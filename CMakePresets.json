@@ -2,7 +2,7 @@
     "version": 2,
     "cmakeMinimumRequired": {
         "major": 3,
-        "minor": 18,
+        "minor": 20,
         "patch": 0
     },
     "configurePresets": [
@@ -65,14 +65,12 @@
         {
             "name": "docs",
             "displayName": "Build NEURON docs",
-            "inherits": [
-                "debug-ccache"
-            ],
+            "generator": "Ninja",
             "binaryDir": "${sourceDir}/build/docs",
             "cacheVariables": {
-                "NRN_ENABLE_DOCS": "ON",
                 "NRN_ENABLE_INTERVIEWS": "OFF",
                 "NRN_ENABLE_MPI": "ON",
+                "NRN_ENABLE_DOCS": "ON",
                 "NMODL_ENABLE_PYTHON_BINDINGS": "ON"
             }
         },

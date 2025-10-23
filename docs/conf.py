@@ -131,6 +131,8 @@ if os.environ.get("READTHEDOCS"):
             "--target",
             "doxygen",
             "notebooks",
+            "--parallel",
+            f"{os.cpu_count()}",
         ],
         check=True,
     )
