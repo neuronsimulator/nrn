@@ -20,7 +20,6 @@ Releasing
 ---
 - [ ] Update semantic version in `CMakeLists.txt`
 - [ ] Update changelog below and agree on it with everyone; then commit it to `docs/changelog` (copy structure as-is)
-- [ ] Update `docs/index.rst` accordingly with the new `.pkg` and `.exe` links for `PKG installer` and `Windows Installer`
 - [ ] Run the ReadTheDocs build again for `release/x.y`, make sure the build passes and inspect the Changelog page.
 - [ ] Create, test and upload manual artifacts
   - [ ] MacOS package installer (manual task, ask Michael)
@@ -37,7 +36,7 @@ Post-release
 - [ ] Deactivate ReadTheDocs build for `release/x.y`
 - [ ] Go to [ReadTheDocs advanced settings](https://readthedocs.org/dashboard/nrn/advanced/) and set `Default version` to `x.y.z`
 - [ ] Let people know :rocket:
-- [ ] Cherrypick changelog and installer links to `master`
+- [ ] Cherrypick changelog to `master`
 - [ ] Update the changelog for the release on GitHub
 - [ ] Update `codemeta.json` (`master` branch only) with the new version, changelog, date, and links
 
