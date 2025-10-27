@@ -38,9 +38,9 @@ static double l_len(void*) {
     return double(strlen(gargstr(1)));
 }
 
-static std::string imitate_multiline(const std::string& text)
-{  // Clean the text so we keep only the first line
-   // Imitation of std::multiline in our case
+static std::string imitate_multiline(const std::string& text) {  // Clean the text so we keep only
+                                                                 // the first line Imitation of
+                                                                 // std::multiline in our case
     static const std::regex r(R"(^(.*)(\n|$))");
     std::smatch sm;
     std::regex_search(text, sm, r);
