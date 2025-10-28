@@ -3,7 +3,7 @@ from neuron import h
 
 def test_swc_loader(tmp_path, capsys):
     """Test for regression noted in:
-    https://github.com/neuronsimulator/nrn/issues/%20#issuecomment-3451674614
+    https://github.com/neuronsimulator/nrn/issues/3647
     """
     swc = """\
 # index     type         X            Y            Z       radius       parent
