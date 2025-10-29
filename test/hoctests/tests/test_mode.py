@@ -24,7 +24,8 @@ except RuntimeError:
 def test_filedir():
     f = h.File()
     f.chooser("d", "Directory", "", "Make nrnmech.dll", "Cancel", h.getcwd())
-    print(h.getcwd())
+    print(f"|{h.getcwd()}|")
+    print(f"|{f.dir()}|")
     assert f.dir() == h.getcwd()
 
 
