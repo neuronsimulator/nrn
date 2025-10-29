@@ -314,7 +314,7 @@ void OcFile::close() {
 }
 void OcFile::set_name(const char* s) {
     close();
-    if (filename_.compare(s) != 0) {
+    if (s != filename_.c_str()) {
         filename_ = s;
     }
 }
