@@ -227,6 +227,16 @@ void CodegenHelperVisitor::check_cvode_codegen(const ast::Program& node) {
     }
 }
 
+// check that a given AST node `node`, which can be casted to `T`, has a node name which matches
+// `match`
+template <typename T>
+static bool node_name_matches(const std::shared_ptr<const ast::Ast>& node,
+                              const std::string& match) {
+    const auto& cast_node = std::dynamic_pointer_cast<const T>(node);
+    return cast_node && cast_node->get_node_name() == match;
+};
+
+
 /**
  * Find non-range variables i.e. ones that are not belong to per instance allocation
  *
@@ -356,11 +366,26 @@ void CodegenHelperVisitor::find_non_range_variables(const ast::Program& node) {
     info.random_variables = psymtab->get_variables_with_properties(properties);
 
     // find special variables like diam, area
-    const auto& special_variables = collect_nodes(node, {ast::AstNodeType::VAR_NAME});
-    const auto& predicate = [](const auto& var, const std::string& match) {
-        const auto& cast_var = std::dynamic_pointer_cast<const ast::VarName>(var);
-        return var->get_node_name() == match;
+    const auto& special_variables = collect_nodes(node,
+                                                  {ast::AstNodeType::VAR_NAME,
+                                                   ast::AstNodeType::ASSIGNED_DEFINITION,
+                                                   ast::AstNodeType::PARAM_ASSIGN});
+    auto predicate = [](const auto& var, const auto& name) {
+        // If the variable is actually used, it should show up somewhere as a VarName.
+        // Note that it can appear in VERBATIM, in which case we generate initialization code only
+        // if it has been set as ASSIGNED or PARAMETER.
+        const auto is_actually_used = node_name_matches<ast::VarName>(var, name);
+        const auto is_declared = node_name_matches<ast::AssignedDefinition>(var, name) ||
+                                 node_name_matches<ast::ParamAssign>(var, name);
+        if (!is_actually_used && is_declared) {
+            logger->warn(
+                "Variable {} not used anywhere (except possibly VERBATIM block), but declared in a "
+                "PARAMETER or ASSIGNED block; will generate initialization code for it anyway",
+                name);
+        }
+        return is_actually_used || is_declared;
     };
+
     if (std::any_of(special_variables.begin(),
                     special_variables.end(),
                     [&predicate](const auto& var) {
