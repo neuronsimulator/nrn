@@ -227,6 +227,16 @@ void CodegenHelperVisitor::check_cvode_codegen(const ast::Program& node) {
     }
 }
 
+// check that a given AST node `node`, which can be casted to `T`, has a node name which matches
+// `match`
+template <typename T>
+static bool node_name_matches(const std::shared_ptr<const ast::Ast>& node,
+                              const std::string& match) {
+    const auto& cast_node = std::dynamic_pointer_cast<const T>(node);
+    return cast_node && cast_node->get_node_name() == match;
+};
+
+
 /**
  * Find non-range variables i.e. ones that are not belong to per instance allocation
  *
@@ -234,7 +244,7 @@ void CodegenHelperVisitor::check_cvode_codegen(const ast::Program& node) {
  * instance variables. NEURON apply certain rules to determine which variables become
  * thread, static or global variables. Here we construct those variables.
  */
-void CodegenHelperVisitor::find_non_range_variables() {
+void CodegenHelperVisitor::find_non_range_variables(const ast::Program& node) {
     /**
      * Top local variables are local variables appear in global scope. All local
      * variables in program symbol table are in global scope.
@@ -356,15 +366,39 @@ void CodegenHelperVisitor::find_non_range_variables() {
     info.random_variables = psymtab->get_variables_with_properties(properties);
 
     // find special variables like diam, area
-    properties = NmodlType::assigned_definition | NmodlType::param_assign;
-    vars = psymtab->get_variables_with_properties(properties);
-    for (auto& var: vars) {
-        if (var->get_name() == naming::AREA_VARIABLE) {
-            info.area_used = true;
+    const auto& special_variables = collect_nodes(node,
+                                                  {ast::AstNodeType::VAR_NAME,
+                                                   ast::AstNodeType::ASSIGNED_DEFINITION,
+                                                   ast::AstNodeType::PARAM_ASSIGN});
+    auto predicate = [](const auto& var, const auto& name) {
+        // If the variable is actually used, it should show up somewhere as a VarName.
+        // Note that it can appear in VERBATIM, in which case we generate initialization code only
+        // if it has been set as ASSIGNED or PARAMETER.
+        const auto is_actually_used = node_name_matches<ast::VarName>(var, name);
+        const auto is_declared = node_name_matches<ast::AssignedDefinition>(var, name) ||
+                                 node_name_matches<ast::ParamAssign>(var, name);
+        if (!is_actually_used && is_declared) {
+            logger->warn(
+                "Variable {} not used anywhere (except possibly VERBATIM block), but declared in a "
+                "PARAMETER or ASSIGNED block; will generate initialization code for it anyway",
+                name);
         }
-        if (var->get_name() == naming::DIAM_VARIABLE) {
-            info.diam_used = true;
-        }
+        return is_actually_used || is_declared;
+    };
+
+    if (std::any_of(special_variables.begin(),
+                    special_variables.end(),
+                    [&predicate](const auto& var) {
+                        return predicate(var, naming::DIAM_VARIABLE);
+                    })) {
+        info.diam_used = true;
+    }
+    if (std::any_of(special_variables.begin(),
+                    special_variables.end(),
+                    [&predicate](const auto& var) {
+                        return predicate(var, naming::AREA_VARIABLE);
+                    })) {
+        info.area_used = true;
     }
 }
 
@@ -811,7 +845,7 @@ void CodegenHelperVisitor::visit_program(const ast::Program& node) {
     node.visit_children(*this);
     find_ion_variables(node);  // Keep this before find_*_range_variables()
     find_range_variables();
-    find_non_range_variables();
+    find_non_range_variables(node);
     find_table_variables();
     find_neuron_global_variables();
     check_cvode_codegen(node);
