@@ -131,11 +131,27 @@ set_cibw_environment() {
 build_wheel_portable() {
     platform="${1}"
     echo "[BUILD WHEEL] Building with cibuildwheel for ${platform}"
-    local skip=
-    setup_venv "$(command -v python3)"
-    (( skip )) && return 0
 
-    python -m pip install cibuildwheel
+    # cibuildwheel >=3 requires that the underlying Python version be at least 3.11
+    # NOTE: bump this when a new Python version is released
+    supported_versions=(3.11 3.12 3.12 3.14)
+    path_to_interpreter=""
+    for version in "${supported_versions[@]}"; do
+        if command -v "python${version}"; then
+            path_to_interpreter="$(command -v "python${version}")"
+            break
+        fi
+    done
+
+    if [ -z "${path_to_interpreter}" ]; then
+        echo "ERROR: Python 3.11 or above is required for building with cibuildwheel"
+        exit 1
+    fi
+
+    setup_venv "${path_to_interpreter}"
+
+    # earliest version of cibuildwheel that supports Python 3.14
+    python -m pip install 'cibuildwheel>=3.2.1'
     echo " - Building..."
     rm -rf "${build_dir}"
 
