@@ -209,6 +209,8 @@ run_parallel_test() {
 test_wheel () {
     # sample mod file for nrnivmodl check
     mkdir -p tmp_mod
+    # delete tmp_mod and arch dir on EXIT or SIGINT
+    trap "rm -fr tmp_mod ${ARCH_DIR}" EXIT SIGINT
     cp share/examples/nrniv/nmodl/cacum.mod tmp_mod/
 
     # check gcc and python versions
@@ -220,9 +222,6 @@ test_wheel () {
 
     echo "=========== MPI TESTS ============"
     run_parallel_test
-
-    #clean-up
-    rm -rf tmp_mod $ARCH_DIR
 }
 
 
@@ -242,24 +241,24 @@ if [[ "$use_venv" != "false" ]]; then
   venv_name="nrn_test_venv_${python_ver}"
   $python_exe -m venv $venv_name
   . $venv_name/bin/activate
-  python_exe=`which python`
+  python_exe="$(command -v python)"
+  # delete venv on EXIT or SIGINT
+  trap "rm -fr ${venv_name}" EXIT SIGINT
 else
   echo " == Using global install == "
 fi
 
 
-# gpu wheel needs updated pip
-$python_exe -m pip install --upgrade 'pip<=25.0.1'
-
+$python_exe -m pip install -r ci/uv_requirements.txt
 
 # install test requirements
-$python_exe -m pip install -r packaging/python/test_requirements.txt
-$python_exe -m pip install --force-reinstall $python_wheel
-$python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
+$python_exe -m uv pip install -r packaging/python/test_requirements.txt
+$python_exe -m uv pip install --force-reinstall $python_wheel
+$python_exe -m uv pip show neuron || $python_exe -m uv pip show neuron-nightly
 
 
 # check the existence of coreneuron support
-compile_options=`nrniv -nobanner -nogui -c 'nrnversion(6)'`
+compile_options="$(nrniv -nobanner -nogui -c 'nrnversion(6)')"
 if echo $compile_options | grep "NRN_ENABLE_CORENEURON=ON" > /dev/null ; then
   has_coreneuron=true
 fi
@@ -270,13 +269,5 @@ test_wheel
 
 # run basic python tests with oldest supported NumPy
 echo " == Running basic python tests with oldest supported NumPy == "
-$python_exe -m pip install -r packaging/python/oldest_numpy_requirements.txt
+$python_exe -m uv pip install -r packaging/python/oldest_numpy_requirements.txt
 test_wheel_basic_python
-
-# cleanup
-if [[ "$use_venv" != "false" ]]; then
-  deactivate
-fi
-
-#rm -rf $venv_name
-echo "Removed $venv_name"
