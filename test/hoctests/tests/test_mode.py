@@ -17,3 +17,15 @@ try:
 except RuntimeError:
     # RuntimeError is expected because ps.show(3) should fail
     ...
+
+""" Test File.dir() # issue 3652 """
+
+
+def test_filedir():
+    f = h.File()
+    f.chooser("d", "Directory", "", "Make nrnmech.dll", "Cancel", h.getcwd())
+    print(h.getcwd())
+    assert f.dir() == h.getcwd()
+
+
+test_filedir()
