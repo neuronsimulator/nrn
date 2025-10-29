@@ -314,7 +314,7 @@ void OcFile::close() {
 }
 void OcFile::set_name(const char* s) {
     close();
-    if (s != filename_.c_str()) {
+    if (filename_.compare(s) != 0) {
         filename_ = s;
     }
 }
@@ -453,7 +453,7 @@ void OcFile::file_chooser_style(const char* type,
 const char* OcFile::dir() {
 #if HAVE_IV
     if (fc_) {
-        dirname_ = *fc_->dir()->string();
+        dirname_ = fc_->dir()->string();
     } else
 #endif
     {
