@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include "classreg.h"
 #include "code.h"
@@ -39,15 +38,19 @@ static double l_len(void*) {
     return double(strlen(gargstr(1)));
 }
 
+
+// Clean the text so we keep only the first line Imitation of std::multiline in our case
+
+static std::string imitate_multiline(const std::string& text) {
+    static const std::regex r(R"(^(.*)(\n|$))");
+    std::smatch sm;
+    std::regex_search(text, sm, r);
+    return sm[1];
+}
+
+
 static double l_head(void*) {
-    std::string text(gargstr(1));
-    {  // Clean the text so we keep only the first line
-       // Imitation of std::multiline in our case
-        std::regex r("^(.*)(\n|$)");
-        std::smatch sm;
-        std::regex_search(text, sm, r);
-        text = sm[1];
-    }
+    std::string text = imitate_multiline(gargstr(1));
     int i = -1;
     std::string result{};
     try {
@@ -66,14 +69,7 @@ static double l_head(void*) {
 }
 
 static double l_tail(void*) {
-    std::string text(gargstr(1));
-    {  // Clean the text so we keep only the first line
-       // Imitation of std::multiline in our case
-        std::regex r("^(.*)(\n|$)");
-        std::smatch sm;
-        std::regex_search(text, sm, r);
-        text = sm[1];
-    }
+    std::string text = imitate_multiline(gargstr(1));
     int i = -1;
     std::string result{};
     try {
