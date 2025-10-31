@@ -65,6 +65,7 @@ add_executable(
   visitor/rename_function_arguments.cpp
   visitor/semantic_analysis.cpp
   visitor/solve_block.cpp
+  visitor/solve_without_method.cpp
   visitor/steadystate.cpp
   visitor/sympy_conductance.cpp
   visitor/sympy_solver.cpp
