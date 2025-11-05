@@ -384,14 +384,20 @@ void CodegenHelperVisitor::find_non_range_variables(const ast::Program& node) {
     std::unordered_map<std::string, bool&> special_variables = {
         {naming::DIAM_VARIABLE, info.diam_used}, {naming::AREA_VARIABLE, info.area_used}};
     for (auto& [name, value]: special_variables) {
-        const auto& used = std::any_of(special_variables_usage.begin(),
-                                       special_variables_usage.end(),
-                                       [&predicate_used, &name](const auto& var) {
-                                           return predicate_used(var, name);
-                                       });
+        const auto& used = std::any_of(
+            special_variables_usage.begin(),
+            special_variables_usage.end(),
+            // According to C++17, we cannot pass just `name` because:
+            // "If a lambda-expression explicitly captures an entity that is not odr-usable or
+            // captures a structured binding (explicitly or implicitly), the program is ill-formed."
+            // This means we need to use an "init-capture", i.e. the form `<internal>=<external>`,
+            // where `<internal>` is the variable visible inside the lambda, and `<external>` is the
+            // variable outside of it. Note that just passing `name` is valid C++20, but there is a
+            // bug in some versions of Clang which prevents even that.
+            [&predicate_used, name = name](const auto& var) { return predicate_used(var, name); });
         const auto& declared = std::any_of(special_variables_declaration.begin(),
                                            special_variables_declaration.end(),
-                                           [&predicate_declared, &name](const auto& var) {
+                                           [&predicate_declared, name = name](const auto& var) {
                                                return predicate_declared(var, name);
                                            });
         if (declared && !used) {
