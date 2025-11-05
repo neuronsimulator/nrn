@@ -366,39 +366,41 @@ void CodegenHelperVisitor::find_non_range_variables(const ast::Program& node) {
     info.random_variables = psymtab->get_variables_with_properties(properties);
 
     // find special variables like diam, area
-    const auto& special_variables = collect_nodes(node,
-                                                  {ast::AstNodeType::VAR_NAME,
-                                                   ast::AstNodeType::ASSIGNED_DEFINITION,
-                                                   ast::AstNodeType::PARAM_ASSIGN});
-    auto predicate = [](const auto& var, const auto& name) {
-        // If the variable is actually used, it should show up somewhere as a VarName.
-        // Note that it can appear in VERBATIM, in which case we generate initialization code only
-        // if it has been set as ASSIGNED or PARAMETER.
-        const auto is_actually_used = node_name_matches<ast::VarName>(var, name);
-        const auto is_declared = node_name_matches<ast::AssignedDefinition>(var, name) ||
-                                 node_name_matches<ast::ParamAssign>(var, name);
-        if (!is_actually_used && is_declared) {
+    const auto& special_variables_usage = collect_nodes(node, {ast::AstNodeType::VAR_NAME});
+    const auto& special_variables_declaration =
+        collect_nodes(node,
+                      {ast::AstNodeType::ASSIGNED_DEFINITION, ast::AstNodeType::PARAM_ASSIGN});
+    // If the special variable is actually used, it should show up somewhere as a VarName.
+    // Note that it can appear in VERBATIM, in which case we generate initialization code only
+    // if it has been set as ASSIGNED or PARAMETER.
+    auto predicate_used = [](const auto& var, const auto& name) {
+        return node_name_matches<ast::VarName>(var, name);
+    };
+    auto predicate_declared = [](const auto& var, const auto& name) {
+        return node_name_matches<ast::AssignedDefinition>(var, name) ||
+               node_name_matches<ast::ParamAssign>(var, name);
+    };
+    // map between the name of the variable and whether or not it's used (by ref so changes persist)
+    std::unordered_map<std::string, bool&> special_variables = {
+        {naming::DIAM_VARIABLE, info.diam_used}, {naming::AREA_VARIABLE, info.area_used}};
+    for (auto& [name, value]: special_variables) {
+        const auto& used = std::any_of(special_variables_usage.begin(),
+                                       special_variables_usage.end(),
+                                       [&predicate_used, &name](const auto& var) {
+                                           return predicate_used(var, name);
+                                       });
+        const auto& declared = std::any_of(special_variables_declaration.begin(),
+                                           special_variables_declaration.end(),
+                                           [&predicate_declared, &name](const auto& var) {
+                                               return predicate_declared(var, name);
+                                           });
+        if (declared && !used) {
             logger->warn(
                 "Variable {} not used anywhere (except possibly VERBATIM block), but declared in a "
                 "PARAMETER or ASSIGNED block; will generate initialization code for it anyway",
                 name);
         }
-        return is_actually_used || is_declared;
-    };
-
-    if (std::any_of(special_variables.begin(),
-                    special_variables.end(),
-                    [&predicate](const auto& var) {
-                        return predicate(var, naming::DIAM_VARIABLE);
-                    })) {
-        info.diam_used = true;
-    }
-    if (std::any_of(special_variables.begin(),
-                    special_variables.end(),
-                    [&predicate](const auto& var) {
-                        return predicate(var, naming::AREA_VARIABLE);
-                    })) {
-        info.area_used = true;
+        value = declared || used;
     }
 }
 
