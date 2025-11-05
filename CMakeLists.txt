@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
 # Note that this needs to happen **before** the call to project(...). This is because CMake reads
 # the CRAYPE_LINK_TYPE environment variable inside the call to project(...) and sets various flags
 # and properties based on its value. Because we are so early in the CMake processing, we have to
@@ -39,9 +39,18 @@ if(POLICY CMP0177)
   cmake_policy(SET CMP0177 NEW)
 endif()
 
+# customizable install path to Python components. Mostly useful for Spack builds
+set(NRN_INSTALL_PYTHON_PREFIX
+    "lib/python/neuron/"
+    CACHE STRING
+          "Path where NEURON Python components will be installed (relative to CMAKE_INSTALL_PREFIX)"
+)
+
 # if we're building a wheel, we have a different layout of files
 if(SKBUILD)
-  set(NRN_INSTALL_PYTHON_PREFIX "neuron/")
+  set(NRN_INSTALL_PYTHON_PREFIX
+      "neuron/"
+      CACHE STRING "" FORCE)
   set(NRN_INSTALL_DATA_PREFIX "neuron/.data/")
   # need to force fmtlib install prefixes
   set(FMT_LIB_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
@@ -53,7 +62,6 @@ if(SKBUILD)
   set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
   set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/bin")
 else()
-  set(NRN_INSTALL_PYTHON_PREFIX "lib/python/neuron/")
   set(NRN_INSTALL_DATA_PREFIX)
 endif()
 
@@ -888,6 +896,10 @@ if(NRN_ENABLE_DOCS)
       COMMENT "Generating documentation with Sphinx")
   endfunction()
 
+  include(cmake/FetchLatestRelease.cmake)
+  fetch_latest_release()
+  configure_file("${PROJECT_SOURCE_DIR}/docs/index.rst.in" "${PROJECT_SOURCE_DIR}/docs/index.rst")
+
   add_sphinx_target(sphinx)
 
   if(NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
@@ -1214,6 +1226,7 @@ if(NRN_ENABLE_PYTHON)
     message(STATUS "  INC         | ${pyinc}")
     message(STATUS "  LIB         | ${pylib}")
   endforeach()
+  message(STATUS "  PREFIX      | ${NRN_INSTALL_PYTHON_PREFIX}")
 endif()
 if(READLINE_FOUND)
   message(STATUS "Readline      | ${Readline_LIBRARY}")
