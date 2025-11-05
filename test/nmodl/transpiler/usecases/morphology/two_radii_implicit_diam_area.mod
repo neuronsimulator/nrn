@@ -1,5 +1,5 @@
 NEURON {
-    SUFFIX two_radii
+    SUFFIX two_radii_implicit_diam_area
     NONSPECIFIC_CURRENT il
     RANGE inv
 }
@@ -7,8 +7,6 @@ NEURON {
 ASSIGNED {
     il
     inv
-    diam
-    area
 }
 
 INITIAL {

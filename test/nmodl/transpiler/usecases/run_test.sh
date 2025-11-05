@@ -27,6 +27,9 @@ output_dir="$(uname -m)"
 usecase_dir="$2"
 
 
+trap "rm -fr ${output_dir}" EXIT SIGINT
+
+
 # NRN + nocmodl
 echo "-- Running NRN+nocmodl ------"
 rm -r "${output_dir}" tmp || true
