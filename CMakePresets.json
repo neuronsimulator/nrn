@@ -120,6 +120,11 @@
                 "NRN_ENABLE_PYTHON_DYNAMIC": "ON",
                 "NRN_PYTHON_DYNAMIC": "c:/Python39/python.exe;c:/Python310/python.exe;c:/Python311/python.exe;c:/Python312/python.exe;c:/Python313/python.exe;c:/Python314/python.exe",
                 "CMAKE_INSTALL_PREFIX": "/c/nrn-install",
+                "MPI_HOME": "c:/msmpi",
+                "MPI_C_HEADER_DIR": "c:/msmpi/include",
+                "MPI_CXX_HEADER_DIR": "c:/msmpi/include",
+                "MPI_C_LIBRARIES": "c:/msmpi/lib/x64/msmpi.lib",
+                "MPI_CXX_LIBRARIES": "c:/msmpi/lib/x64/msmpi.lib",
                 "MPI_CXX_LIB_NAMES": {
                     "type": "STRING",
                     "value": "msmpi"
