@@ -2041,4 +2041,7 @@ via:
 
 This displays the following image:
 
-![Hodgkin-Huxley simulation driven by a current clamp at 1ms showing an action potential](progref/images/hh_sim_cpp.png)
+.. image:: progref/images/hh_sim_cpp.png
+   :alt: Hodgkin-Huxley simulation driven by a current clamp at 1ms showing an action potential
+   :width: 75%
+   :align: center
