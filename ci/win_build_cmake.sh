@@ -25,7 +25,7 @@ if [ -z "${BUILD_SOURCESDIRECTORY:-}" ]; then
     export BUILD_SOURCESDIRECTORY
 fi
 
-export BUILD_BUILDDIRECTORY="${BUILD_SOURCESDIRECTORY}/build/windows"
+export BUILD_BUILDDIRECTORY="${BUILD_SOURCESDIRECTORY}/build"
 export CMAKE_COMMAND=/mingw64/bin/cmake
 
 # build and create installer
