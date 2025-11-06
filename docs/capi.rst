@@ -1922,7 +1922,6 @@ Here we stimulate the cell with a :class:`IClamp` at time 1 ms.
 .. code-block:: c++
 
     #include "neuronapi.h"
-    #include <dlfcn.h>
 
     #include <array>
     #include <cstdlib>
