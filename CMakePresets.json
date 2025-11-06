@@ -105,6 +105,7 @@
         {
             "name": "windows",
             "displayName": "Build for Windows",
+            "binaryDir": "${sourceDir}/build/windows",
             "generator": "Ninja",
             "cacheVariables": {
                 "NRN_ENABLE_MPI_DYNAMIC": "ON",
