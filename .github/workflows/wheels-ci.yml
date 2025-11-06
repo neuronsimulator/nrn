@@ -23,7 +23,7 @@ jobs:
       commit: ${{ github.sha }}
     strategy:
       matrix:
-        os: ['macos-13', 'ubuntu-24.04']
+        os: ['macos-15-intel', 'ubuntu-24.04']
         python_version: ['3.9', '3.14']
 
   merge:
