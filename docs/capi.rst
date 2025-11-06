@@ -2019,6 +2019,9 @@ some other way, this may need modification.
     export MYNEURONHOME=$(python3 -c "import neuron, os; print(os.path.dirname(neuron.__file__) + '/')")
     export NEURONHOME=$MYNEURONHOME/.data/share/nrn
 
+(While ``NEURONHOME`` is not explicitly used below, it is implicitly used by NEURON to locate its
+library functions; in this case, we need it to find the file :file:`stdrun.hoc`.)
+
 Now to compile, assuming the above code was saved as a file called ``hh_sim.cpp``:
 
 .. code-block:: bash
