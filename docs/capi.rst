@@ -2007,7 +2007,7 @@ Here we stimulate the cell with a :class:`IClamp` at time 1 ms.
         return 0;
     }
 
-To compile in macOS or linux
+To compile on macOS or Linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Define a couple of environment variables to indicate where the libraries, include files, etc are.
