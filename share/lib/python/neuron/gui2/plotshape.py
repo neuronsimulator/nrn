@@ -55,7 +55,7 @@ def _do_reset_geometry():
     geo = []
     for sec in secs:
         geo += _segment_3d_pts(sec)
-    javascript_embedder(("set_neuron_section_data(%s);" % json.dumps(geo)))
+    javascript_embedder(f"set_neuron_section_data({json.dumps(geo)});")
     for sp in _shape_plot_list:
         sp = sp()
         if sp is not None:
@@ -221,8 +221,7 @@ class PlotShape(GUIWidget):
         with self._graph_div:
             display(
                 HTML(
-                    '<div id="%s" style="width:400px; height:400px; border: 1px solid black"></div>'
-                    % self._uuid
+                    f'<div id="{self._uuid}" style="width:400px; height:400px; border: 1px solid black"></div>'
                 )
             )
 
@@ -236,10 +235,7 @@ class PlotShape(GUIWidget):
         self._old_selection = None
 
         display(
-            HTML(
-                '<script>sp%s = new ShapePlot("%s");</script>'
-                % (self._uuid, self._uuid)
-            )
+            HTML(f'<script>sp{self._uuid} = new ShapePlot("{self._uuid}");</script>')
         )
         _shape_plot_list.append(weakref.ref(self))
         self._min = -100
@@ -251,20 +247,18 @@ class PlotShape(GUIWidget):
     def camera_position(self, x, y, z):
         """set the camera position"""
         javascript_embedder(
-            "sp%s.tc.camera.position.set(%g, %g, %g)" % (self._uuid, x, y, z)
+            f"sp{self._uuid}.tc.camera.position.set({x:g}, {y:g}, {z:g})"
         )
 
     def _reload_morphology(self):
-        javascript_embedder(("sp%s.update()" % self._uuid))
+        javascript_embedder(f"sp{self._uuid}.update()")
 
     def scale(self, low, high):
         """Sets blue (low) and red (high) values for the color scale."""
         javascript_embedder(
-            "sp%s.vmin = %g; sp%s.vmax = %g;" % (self._uuid, low, self._uuid, high)
+            f"sp{self._uuid}.vmin = {low:g}; sp{self._uuid}.vmax = {high:g};"
         )
-        javascript_embedder(
-            "sp%s.update_colors(%s)" % (self._uuid, json.dumps(self._val))
-        )
+        javascript_embedder(f"sp{self._uuid}.update_colors({json.dumps(self._val)})")
 
     def _do_rangevar_update(self):
         rangevars = rangevars_present(list(h.allsec()))
@@ -308,7 +302,7 @@ class PlotShape(GUIWidget):
             self._reload_morphology()
         if self._update_colors or self._force_redraw:
             javascript_embedder(
-                ("sp%s.update_colors(%s)" % (self._uuid, json.dumps(self._val)))
+                f"sp{self._uuid}.update_colors({json.dumps(self._val)})"
             )
             self._update_colors = min(20, max(0, self._update_colors - 1))
         self._force_redraw = False
@@ -333,11 +327,9 @@ class PlotShape(GUIWidget):
         """
         if m not in (0, 1):
             raise Exception("view mode must be 0 or 1")
-        javascript_embedder(
-            ("sp%s.mode=%g; sp%s.update()" % (self._uuid, m, self._uuid))
-        )
+        javascript_embedder(f"sp{self._uuid}.mode={m:g}; sp{self._uuid}.update()")
         h.diam_changed = 1
 
     def set_constant_diameter(self, diam):
         """sets the diameter used for mode == 1 (i.e. constant diameter/centroid view)"""
-        javascript_embedder(("sp%s.set_default_diameter(%g)" % (self._uuid, diam)))
+        javascript_embedder(f"sp{self._uuid}.set_default_diameter({diam:g})")

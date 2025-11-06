@@ -117,7 +117,9 @@ static double f_scanstr(void* v) {
     OcFile* f = (OcFile*) v;
     char** pbuf = hoc_pgargstr(1);
     char* buf = hoc_tmpbuf->buf;
-    int i = fscanf(f->file(), "%s", buf);
+    char format[32];
+    snprintf(format, sizeof(format), "%%%zus", hoc_tmpbuf->size - 1);
+    int i = fscanf(f->file(), format, buf);
     if (i == 1) {
         hoc_assign_str(pbuf, buf);
         return double(strlen(buf));
@@ -451,7 +453,7 @@ void OcFile::file_chooser_style(const char* type,
 const char* OcFile::dir() {
 #if HAVE_IV
     if (fc_) {
-        dirname_ = *fc_->dir()->string();
+        dirname_ = fc_->dir()->string();
     } else
 #endif
     {

@@ -44,6 +44,7 @@ jobs:
           ref: ${{ inputs.commit }}
           submodules: recursive
           fetch-depth: ${{ inputs.clone_depth }}
+          fetch-tags: true  # Ensures tags are available for git describe
 
       - name: Install Python from python.org
         if: runner.os == 'macOS'
@@ -57,6 +58,7 @@ jobs:
             3.11) version="3.11.7" ;;
             3.12) version="3.12.0" ;;
             3.13) version="3.13.0" ;;
+            3.14) version="3.14.0" ;;
             *) echo "Unknown Python version"; exit 1 ;;
           esac
 
@@ -70,6 +72,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install --cask xquartz
+          brew uninstall cmake || echo "CMake was not pre-installed"
           brew install flex bison cmake mpich
           brew unlink mpich && brew install openmpi
           # Install newer version of Bash on MacOS
@@ -90,6 +93,8 @@ jobs:
       - name: Change name of package for release
         if: inputs.build_type == 'release'
         run: |
+          python3 -m venv venv
+          source venv/bin/activate
           python3 -m pip install tomli tomli-w
           python3 packaging/python/change_name.py ./pyproject.toml neuron
 
@@ -123,6 +128,18 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
+
+      - name: "Apply workaround for MPICH on Ubuntu 24.04"
+        if: inputs.platform == 'ubuntu-24.04'
+        run: |
+          # mpich is fundamentally broken on Ubuntu 24.04 LTS, for more details see:
+          # https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
+          # This is fixed in version 4.2.0-5.1, but this version has not been
+          # backported, so as a workaround, we install that version manually
+          sudo apt install -y mpich
+          wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/mpich_4.2.0-5.1_amd64.deb'
+          wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/libmpich12_4.2.0-5.1_amd64.deb'
+          sudo dpkg --install mpich_4.2.0-5.1_amd64.deb libmpich12_4.2.0-5.1_amd64.deb
 
       - name: Test wheel with ${{ inputs.python_version }}
         run: |
