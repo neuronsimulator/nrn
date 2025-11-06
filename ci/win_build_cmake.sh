@@ -29,11 +29,10 @@ export BUILD_BUILDDIRECTORY="${BUILD_SOURCESDIRECTORY}/build/windows"
 export CMAKE_COMMAND=/mingw64/bin/cmake
 
 # build and create installer
-${CMAKE_COMMAND} --preset windows \
-    -S "${BUILD_SOURCESDIRECTORY}"
-${CMAKE_COMMAND} --build --preset windows --target install
-ctest --preset windows --output-on-failure --parallel
-${CMAKE_COMMAND} --build --preset windows --target setup_exe
+${CMAKE_COMMAND} --preset windows -S "${BUILD_SOURCESDIRECTORY}" -B "${BUILD_BUILDDIRECTORY}"
+${CMAKE_COMMAND} --build "${BUILD_BUILDDIRECTORY}" --target install
+ctest --test-dir "${BUILD_BUILDDIRECTORY}" --output-on-failure --parallel
+${CMAKE_COMMAND} --build "${BUILD_BUILDDIRECTORY}" --target setup_exe
 
 # copy installer with fixed name for nightly upload
 cp "${BUILD_BUILDDIRECTORY}/src/mswin/"nrn*AMD64.exe "${BUILD_SOURCESDIRECTORY}/nrn-nightly-AMD64.exe"
