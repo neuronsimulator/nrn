@@ -2027,9 +2027,10 @@ Now to compile, assuming the above code was saved as a file called ``hh_sim.cpp`
         -I$MYNEURONHOME/.data/include \
         -L$MYNEURONHOME/.data/lib \
         -Wl,-rpath,$MYNEURONHOME/.data/lib \
-        -lnrniv
+        -lnrniv \
+        -o hh_sim
 
-Now if you run ``./a.out``, you'll get a CSV file printed to stdout of a time series corresponding to
+Now if you run ``./hh_sim``, you'll get a CSV file printed to stdout of a time series corresponding to
 the action potential.
 
 If you have ``pandas`` and ``matplotlib`` installed, you can have the computer plot the action potential
@@ -2037,7 +2038,7 @@ via:
 
 .. code-block:: bash
 
-    ./a.out | python3 -c "import sys, pandas as pd, matplotlib.pyplot as plt; pd.read_csv(sys.stdin).plot(x=0,y=1); plt.show()" 
+    ./hh_sim | python3 -c "import sys, pandas as pd, matplotlib.pyplot as plt; pd.read_csv(sys.stdin).plot(x=0,y=1); plt.show()" 
 
 This displays the following image:
 
