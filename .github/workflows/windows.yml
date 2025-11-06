@@ -54,26 +54,14 @@ jobs:
       with:
         python-version: '3.12'
 
-    - name: Cache Windows dependencies
-      uses: actions/cache@v4
-      with:
-        path: ${{ runner.workspace }}/nrn/ci/deps
-        key: windows-deps-master
-        restore-keys: |
-          windows-deps-
-
     - name: Download Dependencies
       run: |
-        mkdir -Force nrn/ci/deps
-        cd nrn/ci/deps
-        ..\win_download_deps.cmd
+        .\nrn\ci\win_download_deps.cmd
       shell: powershell
       working-directory: ${{runner.workspace}}
 
     - name: Install Dependencies
-      run: |
-        cd nrn/ci/deps
-        ..\win_install_deps.cmd
+      run: .\nrn\ci\win_install_deps.cmd
       shell: powershell
       working-directory: ${{runner.workspace}}
 
