@@ -1927,11 +1927,9 @@ Here we stimulate the cell with a :class:`IClamp` at time 1 ms.
     #include <cstdlib>
     #include <cstring>
     #include <iostream>
-    #include <fstream>
 
     using std::cout;
     using std::endl;
-    using std::ofstream;
     using std::pair;
 
     extern "C" void modl_reg(){/* No modl_reg */};
