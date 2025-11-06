@@ -29,10 +29,7 @@ export BUILD_BUILDDIRECTORY="${BUILD_SOURCESDIRECTORY}/build/windows"
 export CMAKE_COMMAND=/mingw64/bin/cmake
 
 # build and create installer
-${CMAKE_COMMAND} \
-    -S "${BUILD_SOURCESDIRECTORY}" \
-    -B "${BUILD_BUILDDIRECTORY}" \
-    --preset windows
+${CMAKE_COMMAND} --preset windows
 ${CMAKE_COMMAND} --build --preset windows --target install
 ctest --preset windows --output-on-failure --parallel
 ${CMAKE_COMMAND} --build --preset windows --target setup_exe
