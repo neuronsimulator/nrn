@@ -2033,7 +2033,10 @@ Now to compile, assuming the above code was saved as a file called ``hh_sim.cpp`
 Now if you run ``./hh_sim``, you'll get a CSV file printed to stdout of a time series corresponding to
 the action potential.
 
-If you have ``pandas`` and ``matplotlib`` installed, you can have the computer plot the action potential
+You could redirect stdout to a file and then open that output in a spreadsheet program or other tool for plotting
+via e.g., ``./hh_sim > data.csv``.
+
+Alternatively, if you have ``pandas`` and ``matplotlib`` installed, you can have the computer plot the action potential
 via:
 
 .. code-block:: bash
