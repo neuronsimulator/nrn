@@ -91,12 +91,18 @@ def mangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
     --------
     demangle_protected_identifiers : The inverse of this function.
     """
-    for var in forbidden_var:
-        r = re.compile(rf"\b{var}\b")
-        f = f"{MANGLE_PREFIX}{var}"
-        eqs = [re.sub(r, f, x) for x in eqs]
+    # Build single regex with all variables
+    escaped_vars = "|".join(re.escape(f"{MANGLE_PREFIX}{var}") for var in forbidden_var)
+    pattern = re.compile(rf"\b({escaped_vars})\b")
 
-    return eqs
+    # Create replacement mapping
+    replacements = {f"{MANGLE_PREFIX}{var}": var for var in forbidden_var}
+
+    # Single pass replacement
+    def replace_func(match):
+        return replacements[match.group(0)]
+
+    return [pattern.sub(replace_func, x) for x in eqs]
 
 
 def demangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
@@ -458,7 +464,7 @@ def solve_non_lin_system(
 
     vecFcode = []
     for i, eq in enumerate(eqs):
-        expr = eq.simplify().subs(X_vec_map).evalf()
+        expr = eq.simplify().xreplace(X_vec_map).evalf()
         rhs = sp.ccode(expr, user_functions=custom_fcts)
         vecFcode.append(f"F[{i}] = {rhs}")
 
@@ -466,7 +472,7 @@ def solve_non_lin_system(
     for i, j in itertools.product(range(jacobian.rows), range(jacobian.cols)):
         flat_index = i + jacobian.rows * j
 
-        Jij = jacobian[i, j].simplify().subs({**X_vec_map, **dX_vec_map}).evalf()
+        Jij = jacobian[i, j].simplify().xreplace({**X_vec_map, **dX_vec_map}).evalf()
         rhs = sp.ccode(Jij, user_functions=custom_fcts)
         vecJcode.append(f"J[{flat_index}] = {rhs}")
 
