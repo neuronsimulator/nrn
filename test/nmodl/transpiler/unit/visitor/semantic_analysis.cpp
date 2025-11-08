@@ -353,22 +353,3 @@ SCENARIO("Duplicate names in a MOD file should throw an error", "[visitor][seman
         }
     }
 }
-
-SCENARIO("Call to state_discontinuity outside of NET_RECEIVE block",
-         "[visitor][semantic_analysis]") {
-    GIVEN("A mod file with a FUNCTION that does not return anything") {
-        std::string nmodl_text = R"(
-            BREAKPOINT {
-                state_discontinuity(a, b)
-            }
-        )";
-        THEN("Semantic analysis should raise a warning") {
-            auto capture = test_utils::LoggerCapture();
-            run_semantic_analysis_visitor(nmodl_text);
-            REQUIRE_THAT(
-                capture.output(),
-                Catch::Matchers::ContainsSubstring(
-                    "Use of state_discontinuity is not thread safe except in a NET_RECEIVE block"));
-        }
-    }
-}

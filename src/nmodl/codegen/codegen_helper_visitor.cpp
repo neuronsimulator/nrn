@@ -234,7 +234,7 @@ void CodegenHelperVisitor::check_cvode_codegen(const ast::Program& node) {
  * instance variables. NEURON apply certain rules to determine which variables become
  * thread, static or global variables. Here we construct those variables.
  */
-void CodegenHelperVisitor::find_non_range_variables(const ast::Program& node) {
+void CodegenHelperVisitor::find_non_range_variables() {
     /**
      * Top local variables are local variables appear in global scope. All local
      * variables in program symbol table are in global scope.
@@ -356,24 +356,15 @@ void CodegenHelperVisitor::find_non_range_variables(const ast::Program& node) {
     info.random_variables = psymtab->get_variables_with_properties(properties);
 
     // find special variables like diam, area
-    const auto& special_variables = collect_nodes(node, {ast::AstNodeType::VAR_NAME});
-    const auto& predicate = [](const auto& var, const std::string& match) {
-        const auto& cast_var = std::dynamic_pointer_cast<const ast::VarName>(var);
-        return var->get_node_name() == match;
-    };
-    if (std::any_of(special_variables.begin(),
-                    special_variables.end(),
-                    [&predicate](const auto& var) {
-                        return predicate(var, naming::DIAM_VARIABLE);
-                    })) {
-        info.diam_used = true;
-    }
-    if (std::any_of(special_variables.begin(),
-                    special_variables.end(),
-                    [&predicate](const auto& var) {
-                        return predicate(var, naming::AREA_VARIABLE);
-                    })) {
-        info.area_used = true;
+    properties = NmodlType::assigned_definition | NmodlType::param_assign;
+    vars = psymtab->get_variables_with_properties(properties);
+    for (auto& var: vars) {
+        if (var->get_name() == naming::AREA_VARIABLE) {
+            info.area_used = true;
+        }
+        if (var->get_name() == naming::DIAM_VARIABLE) {
+            info.diam_used = true;
+        }
     }
 }
 
@@ -697,9 +688,6 @@ void CodegenHelperVisitor::visit_function_call(const FunctionCall& node) {
     if (name == naming::NET_EVENT_METHOD) {
         info.net_event_used = true;
     }
-    if (name == naming::NRN_STATE_DISC_METHOD) {
-        info.state_discontinuity_used = true;
-    }
 }
 
 
@@ -823,7 +811,7 @@ void CodegenHelperVisitor::visit_program(const ast::Program& node) {
     node.visit_children(*this);
     find_ion_variables(node);  // Keep this before find_*_range_variables()
     find_range_variables();
-    find_non_range_variables(node);
+    find_non_range_variables();
     find_table_variables();
     find_neuron_global_variables();
     check_cvode_codegen(node);

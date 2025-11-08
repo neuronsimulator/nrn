@@ -9,14 +9,10 @@
 
 /**
  * \file
- * \brief \copybrief nmodl::visitor::SolveWithoutMethodVisitor
+ * \brief \copybrief nmodl::visitor::MergeInitialBlocksVisitor
  */
 
 #include "visitors/ast_visitor.hpp"
-
-#include <string>
-#include <unordered_set>
-
 
 namespace nmodl {
 namespace visitor {
@@ -27,16 +23,12 @@ namespace visitor {
  */
 
 /**
- * \class SolveWithoutMethodVisitor
- * \brief %Visitor for adding an explicit method to a SOLVE block which has an implicit one
+ * \class MergeInitialBlocksVisitor
+ * \brief Visitor which merges all INITIAL blocks into one
  */
-class SolveWithoutMethodVisitor: public AstVisitor {
-  private:
-    std::unordered_set<std::string> derivative_block_names;
-
+class MergeInitialBlocksVisitor: public AstVisitor {
   public:
     void visit_program(ast::Program& node) override;
-    void visit_solve_block(ast::SolveBlock& node) override;
 };
 
 /** \} */  // end of visitor_classes

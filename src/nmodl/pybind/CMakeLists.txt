@@ -29,9 +29,6 @@ if(WIN32)
   # https://developercommunity.visualstudio.com/t/c-string-literal-max-length-much-shorter-than-docu/758957
   string(REGEX REPLACE "\n\n" "\n)jiowi\" R\"jiowi(\n" NMODL_ODE_PY "${NMODL_ODE_PY}")
 endif()
-if(NRN_ENABLE_COVERAGE)
-  set(NMODL_ODE_PY_PATH "${NMODL_PROJECT_PURELIB_SOURCE_DIR}/ode.py")
-endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ode_py.hpp.inc ${CMAKE_CURRENT_BINARY_DIR}/ode_py.hpp
                @ONLY)
 
@@ -47,11 +44,6 @@ else()
   add_library(pywrapper ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
   set_property(TARGET pywrapper PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_compile_definitions(pyembed PRIVATE NMODL_STATIC_PYWRAPPER=1)
-endif()
-
-if(NRN_ENABLE_COVERAGE)
-  target_compile_definitions(pywrapper PRIVATE NRN_ENABLE_COVERAGE)
-  target_link_libraries(pywrapper PRIVATE util)
 endif()
 
 target_link_libraries(pywrapper PRIVATE fmt::fmt)

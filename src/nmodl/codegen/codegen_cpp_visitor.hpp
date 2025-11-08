@@ -392,12 +392,6 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     int current_watch_statement = 0;
 
 
-    /**
-     * Index of state_discontinuity call being printed
-     */
-    int current_state_discontinuity_call = 0;
-
-
     /****************************************************************************************/
     /*                              Generic information getters                             */
     /****************************************************************************************/
@@ -880,13 +874,6 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * Print function and procedures prototype declaration
      */
     virtual void print_function_prototypes() = 0;
-
-
-    /**
-     * Print call to state\_discontinuity
-     * \param node The AST node representing the function call
-     */
-    virtual void print_state_discontinuity_call(const ast::FunctionCall& node) = 0;
 
 
     /**

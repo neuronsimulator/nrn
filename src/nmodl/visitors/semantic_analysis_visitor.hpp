@@ -59,8 +59,6 @@ class SemanticAnalysisVisitor: public ConstAstVisitor {
     bool is_point_process = false;
     /// true if we are inside a mutex locked part
     bool in_mutex = false;
-    /// true if we are inside of a NET_RECEIVE block
-    bool in_net_receive_block = false;
 
     /// Check number of DERIVATIVE blocks
     void visit_program(const ast::Program& node) override;
@@ -104,8 +102,6 @@ class SemanticAnalysisVisitor: public ConstAstVisitor {
 
     /// Check functions have return statements, log warning otherwise
     void check_functions_have_return_statements(const ast::Program& node);
-
-    void visit_net_receive_block(const ast::NetReceiveBlock& node) override;
 
   public:
     SemanticAnalysisVisitor(bool accel_backend = false)

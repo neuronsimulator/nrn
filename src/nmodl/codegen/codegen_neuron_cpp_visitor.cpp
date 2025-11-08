@@ -1179,10 +1179,6 @@ void CodegenNeuronCppVisitor::print_mechanism_global_var_structure(bool print_in
         printer->pop_block(";");
     }
 
-    if (info.state_discontinuity_used) {
-        printer->add_line("static int state_discon_flag_;");
-    }
-
     printer->add_line("static int mech_type;");
 
     if (info.point_process) {
@@ -2430,18 +2426,8 @@ void CodegenNeuronCppVisitor::print_nrn_cur_non_conductance_kernel() {
             }
         }
     }
-    printer->fmt_line("double I0 = 0;");
-
-    if (info.state_discontinuity_used) {
-        printer->add_line("state_discon_flag_ = 1;");
-    }
-
-    printer->fmt_line("I0 = nrn_current_{}({});", info.mod_suffix, nrn_current_arguments());
+    printer->fmt_line("double I0 = nrn_current_{}({});", info.mod_suffix, nrn_current_arguments());
     printer->add_line("double rhs = I0;");
-
-    if (info.state_discontinuity_used) {
-        printer->add_line("state_discon_flag_ = 0;");
-    }
 
     printer->add_line("double g = (I1-I0)/0.001;");
     for (auto& ion: info.ions) {
@@ -2777,22 +2763,6 @@ void CodegenNeuronCppVisitor::print_net_event_call(const ast::FunctionCall& /* n
                                                   /* use_instance */ false);
     printer->fmt_text("net_event({}, t)", point_process);
 }
-
-void CodegenNeuronCppVisitor::print_state_discontinuity_call(const ast::FunctionCall& node) {
-    const auto& args = node.get_arguments();
-    const auto& first = args[0];
-    const auto& second = args[1];
-    printer->fmt_text("{}(_ppvar[{}].literal_value<int>() + {}, &(",
-                      naming::NRN_STATE_DISC_METHOD,
-                      int_variables_size(),
-                      current_state_discontinuity_call);
-    first->accept(*this);
-    printer->add_text("), ");
-    second->accept(*this);
-    printer->add_text(")");
-    ++current_state_discontinuity_call;
-}
-
 
 void CodegenNeuronCppVisitor::print_function_table_call(const FunctionCall& node) {
     auto name = node.get_node_name();

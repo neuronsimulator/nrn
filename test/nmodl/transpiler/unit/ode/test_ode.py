@@ -3,14 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from neuron.nmodl.ode import (
-    differentiate2c,
-    integrate2c,
-    make_symbol,
-    mangle_protected_identifiers,
-    transform_expression,
-    discretize_derivative,
-)
+from neuron.nmodl.ode import differentiate2c, integrate2c, make_symbol
+from neuron.nmodl.ode import transform_expression, discretize_derivative
 import pytest
 
 import sympy as sp
@@ -34,8 +28,6 @@ def _equivalent(
     Returns:
         True if expressions are equivalent, False if they are not
     """
-    lhs = mangle_protected_identifiers([lhs])[0]
-    rhs = mangle_protected_identifiers([rhs])[0]
     lhs = lhs.replace("pow(", "Pow(")
     rhs = rhs.replace("pow(", "Pow(")
     sympy_vars = {str(var): make_symbol(var) for var in vars}
@@ -178,8 +170,6 @@ def test_integrate2c():
         ("a*x+b", "(-b + (a*x + b)*exp(a*dt))/a"),
         # assume custom_function is defined in mod file
         ("custom_function(a)*x", "x*exp(custom_function(a)*dt)"),
-        # name clashes with sympy
-        ("beta(a)*x", "x*exp(beta(a)*dt)"),
     ]
     for eq, sol in test_cases:
         assert _equivalent(

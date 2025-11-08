@@ -75,7 +75,7 @@ class CodegenHelperVisitor: public visitor::ConstAstVisitor {
     void find_ion_variables(const ast::Program& node);
     void find_table_variables();
     void find_range_variables();
-    void find_non_range_variables(const ast::Program& node);
+    void find_non_range_variables();
     void find_neuron_global_variables();
     static void sort_with_mod2c_symbol_order(std::vector<SymbolType>& symbols);
     void check_cvode_codegen(const ast::Program& node);

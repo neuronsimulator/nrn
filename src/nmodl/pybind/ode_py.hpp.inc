@@ -15,7 +15,5 @@ namespace nmodl::pybind_wrappers {
 const std::string ode_py = R"jiowi(
 @NMODL_ODE_PY@
 )jiowi";
-#ifdef NRN_ENABLE_COVERAGE
-const std::string ode_py_path = "@NMODL_ODE_PY_PATH@";
-#endif
+
 }

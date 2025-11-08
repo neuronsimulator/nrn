@@ -545,11 +545,6 @@ void CodegenCppVisitor::print_function_call(const FunctionCall& node) {
         return;
     }
 
-    if (is_nrn_state_disc(name)) {
-        print_state_discontinuity_call(node);
-        return;
-    }
-
     const auto& arguments = node.get_arguments();
     printer->add_text(function_name, '(');
 

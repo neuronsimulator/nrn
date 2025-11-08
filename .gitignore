@@ -23,5 +23,3 @@ virtualenv
 docs/_build
 docs/_generated
 .vscode
-.coverage*
-coverage*.xml

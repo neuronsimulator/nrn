@@ -7,6 +7,8 @@ NEURON {
 ASSIGNED {
     il
     inv
+    diam
+    area
 }
 
 INITIAL {

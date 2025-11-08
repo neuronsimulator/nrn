@@ -147,11 +147,4 @@ bool is_random_construct_function(const std::string& name);
 /// Is given name `nrn_pointing`.
 bool is_nrn_pointing(const std::string& name);
 
-/**
- * Checks if given function name is \c state_discontinuity
- * \param name The function name to check
- * \return     \c true if the function is state_discontinuity
- */
-bool is_nrn_state_disc(const std::string& name);
-
 }  // namespace nmodl

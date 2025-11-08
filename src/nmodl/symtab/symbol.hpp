@@ -365,7 +365,6 @@ class Symbol {
                has_any_property(syminfo::NmodlType::write_ion_var) ||
                has_any_property(syminfo::NmodlType::assigned_definition) ||
                has_any_property(syminfo::NmodlType::state_var) ||
-               has_any_property(syminfo::NmodlType::param_assign) ||
                has_any_property(syminfo::NmodlType::read_ion_var);
     }
 };

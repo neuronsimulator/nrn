@@ -28,6 +28,7 @@
 #include "visitors/cvode_visitor.hpp"
 #include "visitors/function_callpath_visitor.hpp"
 #include "visitors/global_var_visitor.hpp"
+#include "visitors/initial_block_visitor.hpp"
 #include "visitors/implicit_argument_visitor.hpp"
 #include "visitors/indexedname_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
@@ -38,18 +39,15 @@
 #include "visitors/localize_visitor.hpp"
 #include "visitors/longitudinal_diffusion_visitor.hpp"
 #include "visitors/loop_unroll_visitor.hpp"
-#include "visitors/merge_top_level_blocks_visitor.hpp"
 #include "visitors/neuron_solve_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
 #include "visitors/rename_function_arguments.hpp"
 #include "visitors/semantic_analysis_visitor.hpp"
 #include "visitors/solve_block_visitor.hpp"
-#include "visitors/solve_without_method_visitor.hpp"
 #include "visitors/steadystate_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
-#include "visitors/state_discontinuity_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 #include "visitors/units_visitor.hpp"
 #include "visitors/verbatim_var_rename_visitor.hpp"
@@ -349,17 +347,8 @@ int run_nmodl(int argc, const char* argv[]) {
         /// merge all INITIAL blocks into one (this needs to run before SymtabVisitor)
         {
             logger->info("Running INITIAL block merge visitor");
-            MergeTopLevelBlocksVisitor<ast::InitialBlock, ast::AstNodeType::INITIAL_BLOCK>()
-                .visit_program(*ast);
+            MergeInitialBlocksVisitor().visit_program(*ast);
             ast_to_nmodl(*ast, filepath("merge_initial_block"));
-        }
-
-        /// merge all BREAKPOINT blocks into one (this needs to run before SymtabVisitor)
-        {
-            logger->info("Running BREAKPOINT block merge visitor");
-            MergeTopLevelBlocksVisitor<ast::BreakpointBlock, ast::AstNodeType::BREAKPOINT_BLOCK>()
-                .visit_program(*ast);
-            ast_to_nmodl(*ast, filepath("merge_breakpoint_block"));
         }
 
         /// construct symbol table
@@ -375,14 +364,6 @@ int run_nmodl(int argc, const char* argv[]) {
                 return 1;
             }
         }
-
-        /// convert calls to `state_discontinuity(A, B)` in NET_RECEIVE blocks to `A = B`
-        {
-            logger->info("Running state discontinuity visitor");
-            StateDiscontinuityVisitor().visit_program(*ast);
-            ast_to_nmodl(*ast, filepath("state_discontinuity"));
-        }
-
 
         /// use cnexp instead of after_cvode solve method
         if (codegen_cvode) {
@@ -472,12 +453,6 @@ int run_nmodl(int argc, const char* argv[]) {
             SymtabVisitor(update_symtab).visit_program(*ast);
         }
 
-        /// insert an explicit method to SOLVE blocks (if required)
-        {
-            logger->info("Running SOLVE without METHOD visitor");
-            SolveWithoutMethodVisitor().visit_program(*ast);
-            ast_to_nmodl(*ast, filepath("solve_without_method"));
-        }
 
         /// note that we can not symtab visitor in update mode as we
         /// replace kinetic block with derivative block of same name
