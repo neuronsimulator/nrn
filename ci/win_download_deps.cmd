@@ -15,7 +15,11 @@ pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile msmpisetup.exe htt
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile msmpisdk.msi https://download.microsoft.com/download/a/5/2/a5207ca5-1203-491a-8fb8-906fd68ae623/msmpisdk.msi || goto :error
 
 :: nsis + plugin
-pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile nsis-3.05-setup.exe https://prdownloads.sourceforge.net/nsis/nsis-3.05-setup.exe || goto :error
+:: we do not use SourceForge anymore
+choco download nsis --version=3.05 --output-directory=. || goto :error
+Expand-Archive nsis.3.05.nupkg -DestinationPath nsis-extracted || goto :error
+:: The actual installer is inside the nupkg
+Copy-Item nsis-extracted\tools\nsis-3.05-setup.exe . || goto :error
 pwsh -command "Get-FileHash nsis-3.05-setup.exe -Algorithm SHA256 | Format-List" || goto :error
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile EnVar_pugin.zip https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip || goto :error
 
