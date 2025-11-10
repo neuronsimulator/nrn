@@ -16,10 +16,8 @@ pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile msmpisdk.msi https
 
 :: nsis + plugin
 :: we do not use SourceForge anymore
-choco download nsis --version=3.05 --output-directory=. || goto :error
-Expand-Archive nsis.3.05.nupkg -DestinationPath nsis-extracted || goto :error
-:: The actual installer is inside the nupkg
-Copy-Item nsis-extracted\tools\nsis-3.05-setup.exe . || goto :error
+pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile nsis.3.05.nupkg https://community.chocolatey.org/api/v2/package/nsis/3.05 || goto :error
+pwsh -command "Expand-Archive nsis.3.05.nupkg -DestinationPath nsis-temp; Copy-Item nsis-temp\tools\nsis-*-setup.exe nsis-3.05-setup.exe" || goto :error
 pwsh -command "Get-FileHash nsis-3.05-setup.exe -Algorithm SHA256 | Format-List" || goto :error
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile EnVar_pugin.zip https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip || goto :error
 
