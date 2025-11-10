@@ -16,6 +16,7 @@ pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile msmpisdk.msi https
 
 :: nsis + plugin
 curl -LO --retry 4 http://prdownloads.sourceforge.net/nsis/nsis-3.05-setup.exe || goto :error
+pwsh -command "Get-FileHash nsis-3.05-setup.exe -Algorithm SHA256 | Format-List" || goto :error
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile EnVar_pugin.zip https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip || goto :error
 
 :: if all goes well, go to end
