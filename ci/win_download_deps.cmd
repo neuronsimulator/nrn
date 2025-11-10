@@ -14,11 +14,7 @@ pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.14.exe ht
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile msmpisetup.exe https://download.microsoft.com/download/a/5/2/a5207ca5-1203-491a-8fb8-906fd68ae623/msmpisetup.exe || goto :error
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile msmpisdk.msi https://download.microsoft.com/download/a/5/2/a5207ca5-1203-491a-8fb8-906fd68ae623/msmpisdk.msi || goto :error
 
-:: nsis + plugin
-:: we do not use SourceForge anymore
-pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile nsis.3.05.nupkg https://community.chocolatey.org/api/v2/package/nsis/3.05 || goto :error
-pwsh -command "Expand-Archive nsis.3.05.nupkg -DestinationPath nsis-temp; Copy-Item nsis-temp\tools\nsis-*-setup.exe nsis-3.05-setup.exe" || goto :error
-pwsh -command "Get-FileHash nsis-3.05-setup.exe -Algorithm SHA256 | Format-List" || goto :error
+:: nsis plugin
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile EnVar_pugin.zip https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip || goto :error
 
 :: if all goes well, go to end
