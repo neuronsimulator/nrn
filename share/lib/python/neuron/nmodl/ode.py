@@ -5,17 +5,10 @@
 # Lesser General Public License. See top-level LICENSE file for details.
 # ***********************************************************************
 
-# NOTE: because we are testing this via `exec` for the purposes of obtaining
-# the correct coverage, do NOT use triple single quotation marks anywhere in
-# the below because the code will break (should also be enforced by the
-# formatter, but better safe than sorry)!
-
-import itertools
 import re
 from importlib import import_module
-from keyword import kwlist
-from typing import Any, Iterable, Optional, Union
 
+import itertools
 import sympy as sp
 
 # import known_functions through low-level mechanism because the ccode
@@ -38,112 +31,85 @@ if not ((major >= 1) and (minor >= 2)):
 # Some identifiers are protected inside sympy, if user has declared such a function, it will fail
 # because sympy will try to use its own internal one; or error out for invalid variables.
 # Rename it before and after to a unique name.
-_sympy_forbidden = set(import_module("sympy").__all__)
-
-# Annoyingly, some identifiers in NMODL _do_ have the same meaning, such as
-# sin, cos...and we need to remove those from the list since sympy cannot do
-# any analitical simplifications otherwise. To see a complete list, have a look
-# at hoc_init.cpp
-_nmodl_same_identifiers = {
-    "sin",
-    "cos",
-    "atan",
-    "tanh",
-    "log",
-    "exp",
-    "sqrt",
-    "erf",
-    "erfc",
-    "atan2",
-}
-
-forbidden_var = sorted(
-    {
-        # Python keywords
-        *kwlist,
-        # top-level SymPy functions (without some NMODL builtins)
-        *set(_sympy_forbidden - _nmodl_same_identifiers),
-    }
-)
-
-MANGLE_PREFIX = "_mangled_nmodl_identifier"
+forbidden_var = [
+    # Selected Python keywords
+    "is",
+    "as",
+    "count",
+    "del",
+    "elif",
+    "in",
+    "lambda",
+    "pass",
+    # SymPy functions
+    "beta",
+    "gamma",
+    "uppergamma",
+    "lowergamma",
+    "polygamma",
+    "loggamma",
+    "digamma",
+    "trigamma",
+]
 
 
-def mangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
-    """
-    Mangle NMODL identifiers.
+def search_and_replace_protected_identifiers_to_sympy(eqs, vars, function_calls):
+    eqs = _search_and_replace_protected_functions_to_sympy(eqs, function_calls)
+    eqs, vars = _search_and_replace_protected_variables_to_sympy(eqs, vars)
 
-    Replace all instances of identifiers which are only valid in NMODL, but not
-    elsewhere (Python identifiers, sympy internals, etc.) and return the
-    sanitized version.
-
-    Arguments
-    ---------
-    eqs : Iterable[str]
-        The iterable of strings (standalone variables, expressions, equations, etc.) to mangle.
-
-    Returns
-    -------
-    list[str]
-        The list of strings containing mangled identifiers.
-
-    See Also
-    --------
-    demangle_protected_identifiers : The inverse of this function.
-    """
-    # Build single regex with all variables
-    escaped_vars = "|".join(re.escape(f"{MANGLE_PREFIX}{var}") for var in forbidden_var)
-    pattern = re.compile(rf"\b({escaped_vars})\b")
-
-    # Create replacement mapping
-    replacements = {f"{MANGLE_PREFIX}{var}": var for var in forbidden_var}
-
-    # Single pass replacement
-    def replace_func(match):
-        return replacements[match.group(0)]
-
-    return [pattern.sub(replace_func, x) for x in eqs]
+    return eqs, vars
 
 
-def demangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
-    """
-    Demangle NMODL identifiers.
+def search_and_replace_protected_identifiers_from_sympy(eqs, function_calls):
+    eqs = _search_and_replace_protected_functions_from_sympy(eqs, function_calls)
+    eqs = _search_and_replace_protected_variables_from_sympy(eqs)
 
-    Restore all instances of identifiers which are only valid in NMODL.
+    return eqs
 
-    Arguments
-    ---------
-    eqs : Iterable[str]
-        The iterable of strings (standalone variables, expressions, equations, etc.) to demangle.
 
-    Returns
-    -------
-    list[str]
-        The list of strings containing demangled identifiers.
+def _search_and_replace_protected_variables_to_sympy(eqs, vars):
+    for c in forbidden_var:
+        r = re.compile(r"\b{}\b".format(c))
+        f = f"_sympy_{c}_var"
+        eqs = [re.sub(r, f, x) for x in eqs]
+        vars = [re.sub(r, f, x) for x in vars]
 
-    See Also
-    --------
-    mangle_protected_identifiers : The inverse of this function.
-    """
-    # Build single regex with all variables
-    escaped_vars = "|".join(re.escape(f"{MANGLE_PREFIX}{var}") for var in forbidden_var)
-    pattern = re.compile(rf"\b({escaped_vars})\b")
+    return eqs, vars
 
-    # Create replacement mapping
-    replacements = {f"{MANGLE_PREFIX}{var}": var for var in forbidden_var}
 
-    # Single pass replacement
-    def replace_func(match):
-        return replacements[match.group(0)]
+def _search_and_replace_protected_variables_from_sympy(eqs):
+    for c in forbidden_var:
+        r = re.compile(r"\b_sympy_{}_var\b".format(c))
+        f = c
+        eqs = [re.sub(r, f, x) for x in eqs]
 
-    return [pattern.sub(replace_func, x) for x in eqs]
+    return eqs
+
+
+def _search_and_replace_protected_functions_to_sympy(eqs, function_calls):
+    for c in function_calls:
+        if c in forbidden_var:
+            r = re.compile(r"\b{}\b\s*\(".format(c))
+            f = f"_sympy_{c}_fun("
+            eqs = [re.sub(r, f, x) for x in eqs]
+
+    return eqs
+
+
+def _search_and_replace_protected_functions_from_sympy(eqs, function_calls):
+    for c in function_calls:
+        if c in forbidden_var:
+            r = f"_sympy_{c}_fun"
+            eqs = [re.sub(r, f"{c}", x) for x in eqs]
+
+    return eqs
 
 
 def _get_custom_functions(fcts):
     custom_functions = {}
     for f in fcts:
         if f in forbidden_var:
-            custom_functions[f"{MANGLE_PREFIX}{f}"] = f"{MANGLE_PREFIX}{f}"
+            custom_functions[f"_sympy_{f}_fun"] = f"_sympy_{f}_fun"
         elif not f in known_functions.keys():
             custom_functions[f] = f
     return custom_functions
@@ -167,9 +133,9 @@ def _var_to_sympy(var_str):
         var_len = int(var_str.split("[", 1)[1].split("]", 1)[0].strip())
         # SymPy equivalent of an array is IndexedBase:
         return var_name, sp.IndexedBase(var_name, shape=(var_len,), real=True)
-
-    # otherwise can use a standard SymPy symbol:
-    return var_str, sp.symbols(var_str, real=True)
+    else:
+        # otherwise can use a standard SymPy symbol:
+        return var_str, sp.symbols(var_str, real=True)
 
 
 def _sympify_diff_eq(diff_string, vars):
@@ -287,13 +253,13 @@ def make_symbol(var, /):
 
 
 def solve_lin_system(
-    eq_strings: Iterable[str],
-    vars: Iterable[str],
-    constants: Iterable[str],
-    function_calls: Iterable[str],
-    tmp_unique_prefix: str,
-    small_system: bool = False,
-    do_cse: bool = False,
+    eq_strings,
+    vars,
+    constants,
+    function_calls,
+    tmp_unique_prefix,
+    small_system=False,
+    do_cse=False,
 ):
     """Solve linear system of equations, return solution as C code.
 
@@ -322,8 +288,9 @@ def solve_lin_system(
         vars: list of strings containing new local variables
     """
 
-    eq_strings = mangle_protected_identifiers(eq_strings)
-    vars = mangle_protected_identifiers(vars)
+    eq_strings, vars = search_and_replace_protected_identifiers_to_sympy(
+        eq_strings, vars, function_calls
+    )
 
     eqs, state_vars, sympy_vars = _sympify_eqs(eq_strings, vars, constants)
     custom_fcts = _get_custom_functions(function_calls)
@@ -377,7 +344,7 @@ def solve_lin_system(
         # interweave
         code = _interweave_eqs(vecFcode, vecJcode)
 
-    code = demangle_protected_identifiers(code)
+    code = search_and_replace_protected_identifiers_from_sympy(code, function_calls)
 
     return code, new_local_vars
 
@@ -416,20 +383,11 @@ def transform_matrix_elements(mat, transform):
     )
 
 
-def needs_finite_differences(mat) -> bool:
-    """
-    Return whether a system of equations cannot be solved analytically and
-    requires finite differences.
-    """
+def needs_finite_differences(mat):
     return any(isinstance(expr, sp.Derivative) for expr in sp.preorder_traversal(mat))
 
 
-def solve_non_lin_system(
-    eq_strings: Iterable[str],
-    vars: Iterable[str],
-    constants: Iterable[str],
-    function_calls: Iterable[str],
-):
+def solve_non_lin_system(eq_strings, vars, constants, function_calls):
     """Solve non-linear system of equations, return solution as C code.
 
       - returns a vector F, and its Jacobian J, both in terms of X
@@ -446,8 +404,9 @@ def solve_non_lin_system(
         List of strings containing assignment statements
     """
 
-    eq_strings = mangle_protected_identifiers(eq_strings)
-    vars = mangle_protected_identifiers(vars)
+    eq_strings, vars = search_and_replace_protected_identifiers_to_sympy(
+        eq_strings, vars, function_calls
+    )
 
     eqs, state_vars, sympy_vars = _sympify_eqs(eq_strings, vars, constants)
     custom_fcts = _get_custom_functions(function_calls)
@@ -464,7 +423,7 @@ def solve_non_lin_system(
 
     vecFcode = []
     for i, eq in enumerate(eqs):
-        expr = eq.simplify().xreplace(X_vec_map).evalf()
+        expr = eq.simplify().subs(X_vec_map).evalf()
         rhs = sp.ccode(expr, user_functions=custom_fcts)
         vecFcode.append(f"F[{i}] = {rhs}")
 
@@ -472,20 +431,18 @@ def solve_non_lin_system(
     for i, j in itertools.product(range(jacobian.rows), range(jacobian.cols)):
         flat_index = i + jacobian.rows * j
 
-        Jij = jacobian[i, j].simplify().xreplace({**X_vec_map, **dX_vec_map}).evalf()
+        Jij = jacobian[i, j].simplify().subs({**X_vec_map, **dX_vec_map}).evalf()
         rhs = sp.ccode(Jij, user_functions=custom_fcts)
         vecJcode.append(f"J[{flat_index}] = {rhs}")
 
     # interweave
     code = _interweave_eqs(vecFcode, vecJcode)
-    code = demangle_protected_identifiers(code)
+    code = search_and_replace_protected_identifiers_from_sympy(code, function_calls)
 
     return code
 
 
-def integrate2c(
-    diff_string: str, dt_var: str, vars: Iterable[str], use_pade_approx: bool = False
-):
+def integrate2c(diff_string, dt_var, vars, use_pade_approx=False):
     """Analytically integrate supplied derivative, return solution as C code.
 
     Given a differential equation of the form x' = f(x), the value of
@@ -532,10 +489,6 @@ def integrate2c(
         "1st_exact_Integral",
         "1st_linear_Integral",
     }
-
-    diff_string = mangle_protected_identifiers([diff_string])[0]
-    dt_var = mangle_protected_identifiers([dt_var])[0]
-    vars = mangle_protected_identifiers(vars)
 
     x, dxdt = _sympify_diff_eq(diff_string, vars)
     # set up differential equation d(x(t))/dt = ...
@@ -595,9 +548,7 @@ def integrate2c(
     # return result as C code in NEURON format:
     #   - in the lhs x_0 refers to the state var at time (t+dt)
     #   - in the rhs x_0 refers to the state var at time t
-    return demangle_protected_identifiers(
-        [f"{sp.ccode(x)} = {sp.ccode(solution.evalf(), user_functions=custom_fcts)}"]
-    )[0]
+    return f"{sp.ccode(x)} = {sp.ccode(solution.evalf(), user_functions=custom_fcts)}"
 
 
 def forwards_euler2c(diff_string, dt_var, vars, function_calls):
@@ -629,11 +580,11 @@ def forwards_euler2c(diff_string, dt_var, vars, function_calls):
 
 
 def differentiate2c(
-    expression: str,
-    dependent_var: Union[str, Any],
-    vars: Iterable[Union[str, Any]],
-    prev_expressions: Optional[Iterable] = None,
-    stepsize: float = 1e-3,
+    expression,
+    dependent_var,
+    vars,
+    prev_expressions=None,
+    stepsize=1e-3,
 ):
     """Analytically differentiate supplied expression, return solution as C code.
 
@@ -676,13 +627,6 @@ def differentiate2c(
     """
     if stepsize <= 0:
         raise ValueError("arg `stepsize` must be > 0")
-
-    expression = mangle_protected_identifiers([expression])[0]
-
-    # if dependent_var is anything other than a string, sympy can safely manipulate it
-    if isinstance(dependent_var, str):
-        dependent_var = mangle_protected_identifiers([dependent_var])[0]
-
     prev_expressions = prev_expressions or []
     # every symbol (a.k.a variable) that SymPy
     # is going to manipulate needs to be declared
@@ -767,6 +711,4 @@ def differentiate2c(
         pass
 
     # return result as C code in NEURON format
-    return demangle_protected_identifiers(
-        [sp.ccode(diff.evalf(), user_functions=custom_fcts)]
-    )[0]
+    return sp.ccode(diff.evalf(), user_functions=custom_fcts)
