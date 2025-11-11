@@ -111,10 +111,10 @@ def generate_dynam_cinc(header_content: str, names: list[str]) -> str:
     return "\n".join(lines)
 
 
-def main():
+def main() -> int:
     if len(sys.argv) != 2:
         print(f"Usage: {sys.argv[0]} OUTPUT_PATH", file=sys.stderr)
-        sys.exit(1)
+        return 1
 
     output_path = Path(sys.argv[1])
     output_path.mkdir(parents=True, exist_ok=True)
@@ -123,9 +123,9 @@ def main():
     header_file = Path("nrnmpidec.h")
     if not header_file.exists():
         print(f"Error: {header_file} not found", file=sys.stderr)
-        sys.exit(1)
+        return 1
 
-    header_content = header_file.read_text()
+    header_content = header_file.read_text(encoding="utf-8")
 
     # Extract function names
     names = extract_function_names(header_content)
@@ -145,6 +145,8 @@ def main():
 
     print(f"Generated files in {output_path}/")
 
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
