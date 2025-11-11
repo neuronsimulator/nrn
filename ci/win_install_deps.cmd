@@ -33,7 +33,7 @@ C:\Python313\python.exe -m pip install "setuptools<=80.8.0" || goto :error
 C:\Python314\python.exe -m pip install "setuptools<=80.8.0" || goto :error
 
 :: install nsis
-choco install nsis.portable -y || goto :error
+nsis-3.05-setup.exe /S || goto :error
 pwsh -command Expand-Archive EnVar_pugin.zip -DestinationPath "${env:ProgramFiles(x86)}\NSIS" || goto :error
 
 :: install mpi
