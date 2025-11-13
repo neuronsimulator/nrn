@@ -32,15 +32,17 @@ int main(int argc, const char* argv[]) {
 
     bool convert_verbatim = false;
 
-    app.add_option("file", mod_files, "One or more NMODL files")->check(CLI::ExistingFile);
+    app.add_option("file", mod_files, "One or more NMODL files")
+        ->required()
+        ->check(CLI::ExistingFile);
 
-    app.add_option("--global",
-                   convert_globals,
-                   "Automatically mark threadsafe despite the use of GLOBAL");
+    app.add_flag("--global",
+                 convert_globals,
+                 "Automatically mark threadsafe despite the use of GLOBAL");
 
-    app.add_option("--verbatim",
-                   convert_verbatim,
-                   "Automatically mark threadsafe despite the use of VERBATIM");
+    app.add_flag("--verbatim",
+                 convert_verbatim,
+                 "Automatically mark threadsafe despite the use of VERBATIM");
 
     CLI11_PARSE(app, argc, argv);
 
