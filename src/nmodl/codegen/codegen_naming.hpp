@@ -53,6 +53,9 @@ static constexpr char NET_SEND_METHOD[] = "net_send";
 /// nrn_pointing function in nmodl
 static constexpr char NRN_POINTING_METHOD[] = "nrn_pointing";
 
+/// state_discontinuity function in nmodl
+static constexpr char NRN_STATE_DISC_METHOD[] = "state_discontinuity";
+
 /// artificial cell keyword in nmodl
 static constexpr char ARTIFICIAL_CELL[] = "ARTIFICIAL_CELL";
 
