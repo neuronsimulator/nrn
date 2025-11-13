@@ -107,7 +107,8 @@ void ThreadsafeVisitor::visit_program(ast::Program& node) {
     logger->info("Will insert THREADSAFE block");
     const auto& converted = std::dynamic_pointer_cast<ast::NeuronBlock>(neuron_block[0]);
     const auto& statement_block = converted->get_statement_block();
-    auto expr_statement = std::make_shared<ast::ExpressionStatement>(new ast::Name(new ast::String("THREADSAFE")));
+    auto expr_statement = std::make_shared<ast::ExpressionStatement>(
+        std::make_shared<ast::Name>(std::make_shared<ast::String>("THREADSAFE")));
     statement_block->emplace_back_statement(expr_statement);
 }
 

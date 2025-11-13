@@ -14,7 +14,6 @@
 #include "parser/nmodl_driver.hpp"
 #include "utils/logger.hpp"
 #include "visitors/nmodl_visitor.hpp"
-#include "visitors/json_visitor.hpp"
 #include "visitors/threadsafe_visitor.hpp"
 
 /**
@@ -52,13 +51,8 @@ int main(int argc, const char* argv[]) {
 
         logger->info("Running Threadsafe visitor on file {}", f);
         visitor::ThreadsafeVisitor(convert_globals, convert_verbatim).visit_program(*ast);
-        auto file = std::filesystem::path(".");
-        file /= f + ".ast.json";
-        logger->info("Writing AST into {}", file.string());
-        visitor::JSONVisitor(file.string()).write(*ast);
-
+        logger->info("Writing AST to NMODL transformation to {}", f);
         visitor::NmodlPrintVisitor(f).visit_program(*ast);
-        logger->info("AST to NMODL transformation written to {}", f);
     }
 
     return 0;
