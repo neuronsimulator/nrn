@@ -92,6 +92,7 @@ add_subdirectory(utils)
 add_subdirectory(visitors)
 add_subdirectory(pybind)
 add_subdirectory(solver)
+add_subdirectory(mkthreadsafe)
 
 # =============================================================================
 # NMODL sources
