@@ -20,7 +20,7 @@ project(
   VERSION 9.0.1
   LANGUAGES C CXX
   HOMEPAGE_URL "https://www.neuron.yale.edu/neuron/")
-
+message(FATAL_ERROR "This fails")
 # =============================================================================
 # CMake common project settings
 # =============================================================================
