@@ -69,7 +69,11 @@ jobs:
     - name: Build and Create Installer
       run: |
         $srcWin = $env:BUILD_SOURCESDIRECTORY
-        $srcMsys = $srcWin -replace '\\','/' -replace '^([A-Za-z]):','/\L$1'
+        # Convert windows path -> msys path
+        $drive = $srcWin.Substring(0,1).ToLower()
+        $rest  = $srcWin.Substring(2) -replace '\\','/'
+        $srcMsys = "/$drive$rest"
+        # Build
         & "$env:MSYS2_ROOT\usr\bin\bash" -lc "$srcMsys/ci/win_build_cmake.sh"
         # create a manifest of the files in the build directory
         & "$env:MSYS2_ROOT\usr\bin\bash" -lc "find $srcMsys/build > $srcMsys/build/build_files.txt 2>/dev/null"
