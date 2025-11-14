@@ -65,12 +65,14 @@ jobs:
       shell: powershell
       working-directory: ${{runner.workspace}}
 
+
     - name: Build and Create Installer
       run: |
-        & "$env:MSYS2_ROOT\usr\bin\bash" -lc "$env:BUILD_SOURCESDIRECTORY/ci/win_build_cmake.sh"
+        $srcWin = $env:BUILD_SOURCESDIRECTORY
+        $srcMsys = $srcWin -replace '\\','/' -replace '^([A-Za-z]):','/\L$1'
+        & "$env:MSYS2_ROOT\usr\bin\bash" -lc "$srcMsys/ci/win_build_cmake.sh"
         # create a manifest of the files in the build directory
-        $build = $env:BUILD_SOURCESDIRECTORY
-        & "$env:MSYS2_ROOT\usr\bin\bash" -lc "find $build/build > $build/build/build_files.txt 2>/dev/null"
+        & "$env:MSYS2_ROOT\usr\bin\bash" -lc "find $srcMsys/build > $srcMsys/build/build_files.txt 2>/dev/null"
       shell: pwsh
       working-directory: ${{runner.workspace}}\nrn
       env:
