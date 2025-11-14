@@ -65,19 +65,11 @@ jobs:
       shell: powershell
       working-directory: ${{runner.workspace}}
 
-
     - name: Build and Create Installer
       run: |
-        $ErrorActionPreference = "Stop"
-        $srcWin = $env:BUILD_SOURCESDIRECTORY
-        # Convert windows path -> msys path
-        $drive = $srcWin.Substring(0,1).ToLower()
-        $rest  = $srcWin.Substring(2) -replace '\\','/'
-        $srcMsys = "/$drive$rest"
-        # Build
-        & "$env:MSYS2_ROOT\usr\bin\bash" -lc "set -e; $srcMsys/ci/win_build_cmake.sh"
+        %MSYS2_ROOT%\usr\bin\bash "$BUILD_SOURCESDIRECTORY/ci/win_build_cmake.sh"
         # create a manifest of the files in the build directory
-        & "$env:MSYS2_ROOT\usr\bin\bash" -lc "find $srcMsys/build > $srcMsys/build/build_files.txt 2>/dev/null"
+        %MSYS2_ROOT%\usr\bin\bash "find ${BUILD_SOURCESDIRECTORY}/build > ${BUILD_SOURCESDIRECTORY}/build/build_files.txt 2>/dev/null"
       shell: pwsh
       working-directory: ${{runner.workspace}}\nrn
       env:
