@@ -328,6 +328,8 @@ file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/Random123/include/Random123"
      DESTINATION "${CMAKE_BINARY_DIR}/include/")
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/eigen/Eigen"
      DESTINATION "${CMAKE_BINARY_DIR}/include/")
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/eigen/unsupported"
+     DESTINATION "${CMAKE_BINARY_DIR}/include/")
 
 # =================================================================================================
 # Enable sanitizer support if the NRN_SANITIZERS variable is set. Comes befores PythonHelper.cmake.
