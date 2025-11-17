@@ -155,13 +155,13 @@ void MatexpVisitor::solve_kinetic_block(const ast::KineticBlock& node, bool stea
     in_kinetic_block = false;
     // Find the conserved sum, if specified
     std::string conserve = "";
-    const auto conserve_statements = collect_nodes(node, {ast::AstNodeType::CONSERVE});
+    const auto conserve_statements = collect_nodes(node, {ast::AstNodeType::CONSERVE,});
     if (conserve_statements.size() > 0) {
         // Check that the conserve statement is the sum of state variables
         const auto stmt = std::dynamic_pointer_cast<const ast::Conserve>(conserve_statements[0]);
         const auto react = stmt->get_react();
-        const auto vars = collect_nodes(*react, {ast::AstNodeType::NAME});
-        const bool primes = node_exists(*react, {ast::AstNodeType::PRIME_NAME});
+        const auto vars = collect_nodes(*react, {ast::AstNodeType::NAME,});
+        const bool primes = node_exists(*react, {ast::AstNodeType::PRIME_NAME,});
         std::vector<std::string> var_names;
         std::vector<std::string> state_names;
         for (const auto& var: vars) {
