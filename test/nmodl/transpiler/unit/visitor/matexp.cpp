@@ -234,8 +234,11 @@ SCENARIO("Mix matexp and sparse solver methods", "[visitor][matexp]") {
     GIVEN("KINETIC block, to be solved by multiple methods") {
         std::string input_nmodl = R"(
         BREAKPOINT {
-            SOLVE test_kin METHOD sparse
-            SOLVE test_kin METHOD matexp
+            IF (t<1000) {
+                SOLVE test_kin METHOD sparse
+            } ELSE {
+                SOLVE test_kin METHOD matexp
+            }
         }
         STATE {
             x
@@ -252,8 +255,11 @@ SCENARIO("Mix matexp and sparse solver methods", "[visitor][matexp]") {
             #include <unsupported/Eigen/MatrixFunctions>
         ENDVERBATIM
         BREAKPOINT {
-            SOLVE test_kin METHOD sparse
-            SOLVE test_kin_matexp
+            IF (t<1000) {
+                SOLVE test_kin METHOD sparse
+            } ELSE {
+                SOLVE test_kin_matexp
+            }
         }
         STATE {
             x

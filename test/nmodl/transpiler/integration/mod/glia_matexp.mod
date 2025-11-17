@@ -19,6 +19,10 @@ STATE {
     C2
 }
 
+INITIAL {
+    SOLVE kstates STEADYSTATE matexp
+}
+
 BREAKPOINT {
     SOLVE kstates METHOD matexp
 }
@@ -33,5 +37,6 @@ FUNCTION beta(v(mV)) {
 
 KINETIC kstates {
     ~ C1 <-> C2 (n1*alfa(v),n4*beta(v))
+    CONSERVE C1 + C2 = 1
 }
 
