@@ -24,6 +24,8 @@
 #include <string_view>
 #include <utility>
 
+#include "config/config.h"
+
 #include "codegen/codegen_info.hpp"
 #include "codegen/codegen_naming.hpp"
 #include "printer/code_printer.hpp"
@@ -401,7 +403,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
      * \return A version
      */
     std::string nmodl_version() const noexcept {
-        return codegen::naming::NMODL_VERSION;
+        return nmodl::Version::NMODL_VERSION;
     }
 
 
