@@ -16,10 +16,6 @@ namespace codegen {
 /// different variable names used in code generation
 namespace naming {
 
-/// nmodl language version
-/// @todo : should be moved from codegen to global scope
-static constexpr char NMODL_VERSION[] = "7.7.0";
-
 /// derivimplicit method in nmodl
 static constexpr char DERIVIMPLICIT_METHOD[] = "derivimplicit";
 
