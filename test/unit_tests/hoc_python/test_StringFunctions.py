@@ -1,21 +1,26 @@
+import pytest
+
 from neuron import h
 from neuron.expect_hocerr import expect_err
 
-sf = h.StringFunctions()
+
+@pytest.fixture
+def sf():
+    return h.StringFunctions()
 
 
-def test_substr():
+def test_substr(sf):
     assert sf.substr("foobarfoo", "bar") == 3
     assert sf.substr("foobarfoo", "abc") == -1
     assert sf.substr("foobarfoo", "foo") == 0
 
 
-def test_len():
+def test_len(sf):
     assert sf.len("foobarfoo") == 9
     assert sf.len("") == 0
 
 
-def test_head():
+def test_head(sf):
     pattern = "f.o"
     text = "foobarshi"
     head = h.ref("")
@@ -35,7 +40,7 @@ def test_head():
     assert head[0] == ""
 
 
-def test_tail():
+def test_tail(sf):
     pattern = "s.i$"
     text = "foobarshi"
     tail = h.ref("")
@@ -55,7 +60,7 @@ def test_tail():
     assert tail[0] == ""
 
 
-def text_rtrim():
+def test_rtrim(sf):
     text = "bar\t; \t\n"
     out = h.ref("")
     sf.rtrim(text, out)
@@ -65,7 +70,7 @@ def text_rtrim():
     assert out[0] == "bar"
 
 
-def test_ltrim():
+def test_ltrim(sf):
     text = "  \t \n# foo"
     out = h.ref("")
     sf.ltrim(text, out)
@@ -75,7 +80,7 @@ def test_ltrim():
     assert out[0] == "foo"
 
 
-def test_right():
+def test_right(sf):
     s = h.ref("foobarshi")
     sf.right(s, 6)
     assert s[0] == "shi"
@@ -88,7 +93,7 @@ def test_right():
     # assert(s[0] == "foobarshi")
 
 
-def test_left():
+def test_left(sf):
     s = h.ref("foobarshi")
     sf.left(s, 3)
     assert s[0] == "foo"
@@ -101,12 +106,12 @@ def test_left():
     # assert(s[0] == "foo")
 
 
-def test_is_name():
+def test_is_name(sf):
     assert sf.is_name("xvalue")
     assert not sf.is_name("xfoo")
 
 
-def test_alias():
+def test_alias(sf):
     v = h.Vector()
     sf.alias(v, "xv", h.xvalue)
     assert v.xv == h.xvalue
@@ -116,7 +121,7 @@ def test_alias():
     assert h.x[0] == v.xy
 
 
-def test_alias_list():
+def test_alias_list(sf):
     v = h.Vector()
     expect_err("sf.alias_list(v)")  # no hoc String template
     # after an expect error, must manually delete
@@ -136,7 +141,7 @@ def test_alias_list():
     assert len(sf.alias_list(v)) == 0
 
 
-def test_references():
+def test_references(sf):
     # This function prints the number of references
     sf.references(None)
     v = h.Vector()
@@ -167,7 +172,7 @@ endtemplate Foo
     box.ref(None)  # without this, then assert error when box is destroyed
 
 
-def test_is_point_process():
+def test_is_point_process(sf):
     sf = h.StringFunctions()  # no destructor (removed a non-coverable line)
     s = h.Section()
     assert not sf.is_artificial(h.List())
@@ -175,7 +180,7 @@ def test_is_point_process():
     assert sf.is_point_process(h.NetStim())
 
 
-def test_is_artificial():
+def test_is_artificial(sf):
     s = h.Section()
     assert not sf.is_artificial(h.List())
     assert not sf.is_artificial(h.IClamp(s(0.5)))
