@@ -126,7 +126,7 @@ def test_alias_list(sf):
     expect_err("sf.alias_list(v)")  # no hoc String template
     # after an expect error, must manually delete
     del v
-    assert len(locals()) == 0  #  sonarcloud says return value must be used
+    assert len(locals()) == 1  #  sonarcloud says return value must be used
 
     v = h.Vector()
     h.load_file("stdrun.hoc")
