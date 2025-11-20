@@ -65,6 +65,7 @@ function(pytest_add_test)
         -m
         pytest)
   endif()
+  get_filename_component(filename "${ARG_SOURCE}" NAME)
   if(replace_missing_imports)
     string(SHA256 suffix_dir "${ARG_SOURCE}")
     set(temp_dir "$ENV{TMPDIR}")
@@ -78,7 +79,6 @@ function(pytest_add_test)
     if(NOT EXISTS "${temp_dir}")
       file(MAKE_DIRECTORY "${temp_dir}")
     endif()
-    get_filename_component(filename "${ARG_SOURCE}" NAME)
     set(temp_file "${temp_dir}/${filename}")
     execute_process(
       COMMAND ${pyexe} "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/transform_ast.py" -o "${temp_file}"
@@ -113,20 +113,21 @@ function(pytest_add_test)
     )
   endif()
   if(replace_missing_imports)
-    # remove the temp dir once we run Pytest on the file
+    # remove the temp dir once we run Pytest on the file (and it succeeded)
     file(REMOVE_RECURSE "${temp_dir}")
   endif()
-  # we need to remove the last 2 lines because pytest is overly verbose
-  string(REGEX REPLACE "\n[^\n]*\n[^\n]*$" "" pytest_tests "${pytest_tests}")
   # Split into list by newlines
   string(REPLACE "\n" ";" pytest_tests "${pytest_tests}")
   # Pytest outputs each test on a single line, with the format: <filename>::<test> We need to remove
-  # the <filename> and the first 2 colons.
+  # the <filename> and the first 2 colons. We also need to remove any lines not matching the
+  # filename (because Pytest is overly verbose)
   set(cleaned_tests)
   foreach(test_line IN LISTS pytest_tests)
-    # Remove everything up to and including the first ::
-    string(REGEX REPLACE "^[^:]+::" "" test_name "${test_line}")
-    list(APPEND cleaned_tests "${test_name}")
+    if(test_line AND test_line MATCHES "${filename}")
+      # Remove everything up to and including the first ::
+      string(REGEX REPLACE "^[^:]+::" "" test_name "${test_line}")
+      list(APPEND cleaned_tests "${test_name}")
+    endif()
   endforeach()
   set(pytest_tests "${cleaned_tests}")
   # Now we actually add the test. Note that the file may not exist at configure-time, but it must
