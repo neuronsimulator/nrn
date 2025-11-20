@@ -7,7 +7,7 @@ function(pytest_add_test)
   set(multiValueArgs MODULES PYTEST_ARGS)
   cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   if(NOT ARG_SOURCE)
-    message(FATAL_ERROR "You must provide the `SOURCE` parameter to `pytest_add_test`")
+    message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}: You must provide the `SOURCE` parameter")
   endif()
   if(NOT ARG_DESTINATION)
     # if no destination, assume it is the current file
@@ -22,7 +22,8 @@ function(pytest_add_test)
     # check it's actually a directory
     if(NOT IS_DIRECTORY "${ARG_WORKING_DIRECTORY}")
       message(
-        FATAL_ERROR "The `WORKING_DIRECTORY` parameter to `pytest_add_test` must be a directory")
+        FATAL_ERROR
+          "${CMAKE_CURRENT_FUNCTION}: The `WORKING_DIRECTORY` parameter must be a directory")
     endif()
     set(working_directory "${ARG_WORKING_DIRECTORY}")
   endif()
@@ -32,7 +33,7 @@ function(pytest_add_test)
     if(NOT ARG_MODULES)
       message(
         FATAL_ERROR
-          "With `REPLACE_MISSING_IMPORTS`, you must provide at least one module to the `MODULES` parameter to `pyest_add_test`"
+          "${CMAKE_CURRENT_FUNCTION}: With `REPLACE_MISSING_IMPORTS`, you must provide at least one module to the `MODULES` parameter"
       )
     endif()
     set(replace_missing_imports ON)
@@ -40,11 +41,17 @@ function(pytest_add_test)
   if(NOT ARG_PYTHON_EXECUTABLE)
     # inform the user we are guessing
     message(
-      WARNING "No value for `PYTHON_EXECUTABLE` in `pytest_add_test`; using `find_package` naively")
+      WARNING
+        "${CMAKE_CURRENT_FUNCTION}: No value for `PYTHON_EXECUTABLE`; using `find_package` naively")
     find_package(Python 3.9 REQUIRED)
     set(pyexe "${PYTHON_EXECUTABLE}")
   else()
     set(pyexe "${ARG_PYTHON_EXECUTABLE}")
+  endif()
+  # check Pytest is available
+  execute_process(COMMAND ${pyexe} -m pytest --help RESULT_VARIABLE pytest_found)
+  if(NOT pytest_found EQUAL 0)
+    message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}: pytest not found for executable ${pyexe}")
   endif()
   if(replace_missing_imports)
     string(SHA256 suffix_dir "${ARG_SOURCE}")
@@ -76,7 +83,9 @@ function(pytest_add_test)
     ERROR_VARIABLE pytest_errorlog)
   if(NOT pytest_success EQUAL 0)
     message(
-      FATAL_ERROR "Pytest collection failed for ${ARG_SOURCE}; error log is:\n${pytest_errorlog}")
+      FATAL_ERROR
+        "${CMAKE_CURRENT_FUNCTION}: Pytest collection failed for ${ARG_SOURCE}; error log is:\n${pytest_errorlog}"
+    )
   endif()
   # we need to remove the last 2 lines because pytest is overly verbose
   string(REGEX REPLACE "\n[^\n]*\n[^\n]*$" "" pytest_tests "${pytest_tests}")
