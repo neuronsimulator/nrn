@@ -237,13 +237,12 @@ if(NRN_ENABLE_PYTHON)
     list(GET NRN_PYTHON_EXECUTABLES ${val} exe)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     foreach(group pytest pytest_coreneuron)
-      nrn_add_test(
-        GROUP ${group}
-        NAME basic_tests_py${pyver}
-        PRELOAD_SANITIZER
-        ENVIRONMENT "CC=${CMAKE_C_COMPILER}"
-        COMMAND "${exe}" ${pytest} "./test/${group}"
-        SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py")
+      file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/test/${group}/*.py")
+      foreach(file IN LISTS files)
+        pytest_add_test(
+          TARGET ${group}::basic_tests_py${pyver} ENVIRONMENT "CC=${CMAKE_C_COMPILER}"
+          WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/${group}")
+      endforeach()
     endforeach()
   endforeach()
 
