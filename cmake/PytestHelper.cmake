@@ -19,12 +19,7 @@ function(pytest_add_test)
     # wherever will the current file be at runtime
     get_filename_component(working_directory "${destination}" DIRECTORY)
   else()
-    # check it's actually a directory
-    if(NOT IS_DIRECTORY "${ARG_WORKING_DIRECTORY}")
-      message(
-        FATAL_ERROR
-          "${CMAKE_CURRENT_FUNCTION}: The `WORKING_DIRECTORY` parameter must be a directory")
-    endif()
+    # we do not check it's actually a directory, because it may only exist at runtime
     set(working_directory "${ARG_WORKING_DIRECTORY}")
   endif()
   if(NOT ARG_REPLACE_MISSING_IMPORTS)
@@ -51,7 +46,10 @@ function(pytest_add_test)
     set(pyexe "${ARG_PYTHON_EXECUTABLE}")
   endif()
   # check Pytest is available
-  execute_process(COMMAND ${pyexe} -m pytest --help RESULT_VARIABLE pytest_found)
+  execute_process(
+    COMMAND ${pyexe} -m pytest --help
+    RESULT_VARIABLE pytest_found
+    OUTPUT_QUIET ERROR_QUIET)
   if(NOT pytest_found EQUAL 0)
     message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}: pytest not found for executable ${pyexe}")
   endif()
@@ -83,7 +81,7 @@ function(pytest_add_test)
     get_filename_component(filename "${ARG_SOURCE}" NAME)
     set(temp_file "${temp_dir}/${filename}")
     execute_process(
-      COMMAND ${pyexe} "${CMAKE_CURRENT_LIST_DIR}/transform_ast.py" -o "${temp_file}"
+      COMMAND ${pyexe} "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/transform_ast.py" -o "${temp_file}"
               "${ARG_SOURCE}" ${ARG_MODULES}
       RESULT_VARIABLE transform_success
       ERROR_VARIABLE transform_errorlog)
@@ -104,15 +102,19 @@ function(pytest_add_test)
     RESULT_VARIABLE pytest_success
     OUTPUT_VARIABLE pytest_tests
     ERROR_VARIABLE pytest_errorlog)
+  # edge case: pytest collected no tests for the file, so we just output a warning
+  if(pytest_success EQUAL 5)
+    message(WARNING "No pytest tests were found in ${ARG_SOURCE}, skipping it...")
+    return()
+  elseif(NOT pytest_success EQUAL 0)
+    message(
+      FATAL_ERROR
+        "${CMAKE_CURRENT_FUNCTION}: Pytest collection failed for ${ARG_SOURCE}; stdout is:\n${pytest_tests}\nerror log is:\n${pytest_errorlog}"
+    )
+  endif()
   if(replace_missing_imports)
     # remove the temp dir once we run Pytest on the file
     file(REMOVE_RECURSE "${temp_dir}")
-  endif()
-  if(NOT pytest_success EQUAL 0)
-    message(
-      FATAL_ERROR
-        "${CMAKE_CURRENT_FUNCTION}: Pytest collection failed for ${ARG_SOURCE}; error log is:\n${pytest_errorlog}"
-    )
   endif()
   # we need to remove the last 2 lines because pytest is overly verbose
   string(REGEX REPLACE "\n[^\n]*\n[^\n]*$" "" pytest_tests "${pytest_tests}")
@@ -130,8 +132,10 @@ function(pytest_add_test)
   # Now we actually add the test. Note that the file may not exist at configure-time, but it must
   # exist at runtime of the test.
   foreach(test IN LISTS pytest_tests)
+    set(test_name "${ARG_TARGET}::${test}")
+    message(STATUS "Adding test ${test_name}")
     add_test(
-      NAME "${ARG_TARGET}::${test}"
+      NAME "${test_name}"
       COMMAND ${command} ${ARG_PYTEST_ARGS} -k "${test}" "${destination}"
       WORKING_DIRECTORY "${working_directory}")
   endforeach()
