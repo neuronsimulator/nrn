@@ -1,8 +1,20 @@
 # arrange for InputPreSyn to be on queue after finitialize
 
+import pytest
+
 from neuron import h
 
-pc = h.ParallelContext()
+
+@pytest.fixture(scope="module", autouse=True)
+def setup():
+    global pc
+    pc = h.ParallelContext()
+
+    yield
+
+    if pc.nhost() > 1:
+        pc.barrier()
+        h.quit()
 
 
 def sortspikes(spiketime, gidvec):
@@ -71,8 +83,4 @@ def test_inputpresyn():
 
 
 if __name__ == "__main__":
-    test_inputpresyn()
-
-    if pc.nhost() > 1:
-        pc.barrier()
-        h.quit()
+    pytest.main([__file__])

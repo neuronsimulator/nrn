@@ -3,13 +3,19 @@
 from neuron.tests.utils.strtobool import strtobool
 import os
 
+import pytest
+
 from neuron import h
 
-h.load_file("stdrun.hoc")
 
-pc = h.ParallelContext()
-h.dt = 1.0 / 4
-h.steps_per_ms = 4
+@pytest.fixture(scope="module", autouse=True)
+def setup():
+    h.load_file("stdrun.hoc")
+
+    global pc
+    pc = h.ParallelContext()
+    h.dt = 1.0 / 4
+    h.steps_per_ms = 4
 
 
 class Cell:

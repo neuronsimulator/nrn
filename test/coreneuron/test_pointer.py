@@ -9,8 +9,13 @@ import pytest
 from neuron.tests.utils.strtobool import strtobool
 from neuron import h
 
-pc = h.ParallelContext()
-cvode = h.CVode()
+
+@pytest.fixture(scope="module", autouse=True)
+def setup():
+    global pc
+    global cvode
+    pc = h.ParallelContext()
+    cvode = h.CVode()
 
 
 def sortspikes(spiketime, gidvec):

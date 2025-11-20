@@ -4,12 +4,18 @@
 from neuron.tests.utils.strtobool import strtobool
 import os
 
+import pytest
+
 from neuron import h
 
-h.load_file("stdrun.hoc")
 
-pc = h.ParallelContext()
-h.dt = 1.0 / 32
+@pytest.fixture(scope="module", autouse=True)
+def setup():
+    global pc
+    h.load_file("stdrun.hoc")
+
+    pc = h.ParallelContext()
+    h.dt = 1.0 / 32
 
 
 class Cell:

@@ -1,6 +1,12 @@
+import pytest
+
 from neuron import h, coreneuron
 
-pc = h.ParallelContext()
+
+@pytest.fixture(scope="module", autouse=True)
+def setup():
+    global pc
+    pc = h.ParallelContext()
 
 
 def model():

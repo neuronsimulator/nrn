@@ -1,28 +1,37 @@
 import itertools
 import os
 
+import pytest
 import numpy as np
 
 from neuron import h, gui
 from neuron import coreneuron
 from neuron.tests.utils.strtobool import strtobool
 
-enable_coreneuron_option = bool(
-    strtobool(os.environ.get("NRN_TEST_ENABLE_CORENEURON", "true"))
-)
-enable_gpu_option = bool(strtobool(os.environ.get("CORENEURON_ENABLE_GPU", "false")))
-file_mode_option = bool(strtobool(os.environ.get("NRN_TEST_FILE_MODE", "false")))
-run_mode_option = os.environ.get("NRN_TEST_RUN_MODE", 2)
-create_plots_option = bool(strtobool(os.environ.get("NRN_TEST_CREATE_PLOTS", "false")))
+
+@pytest.fixture(scope="module", autouse=True)
+def setup():
+    return dict(
+        enable_coreneuron_option=bool(
+            strtobool(os.environ.get("NRN_TEST_ENABLE_CORENEURON", "true"))
+        ),
+        enable_gpu_option=bool(
+            strtobool(os.environ.get("CORENEURON_ENABLE_GPU", "false"))
+        ),
+        file_mode_option=bool(strtobool(os.environ.get("NRN_TEST_FILE_MODE", "false"))),
+        run_mode_option=os.environ.get("NRN_TEST_RUN_MODE", 2),
+        create_plots_option=bool(
+            strtobool(os.environ.get("NRN_TEST_CREATE_PLOTS", "false"))
+        ),
+    )
 
 
-def test_array_variable_transfer(
-    enable_coreneuron=enable_coreneuron_option,
-    enable_gpu=enable_gpu_option,
-    run_mode=run_mode_option,
-    file_mode=file_mode_option,
-    create_plots=create_plots_option,
-):
+def test_array_variable_transfer(setup):
+    enable_coreneuron = setup["enable_coreneuron_option"]
+    enable_gpu = setup["enable_gpu_option"]
+    run_mode = setup["run_mode_option"]
+    file_mode = setup["file_mode_option"]
+    create_plots = setup["create_plots_option"]
     h("""create soma""")
     h.soma.L = 5.6419
     h.soma.diam = 5.6419

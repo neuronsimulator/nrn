@@ -2,9 +2,14 @@
 from neuron.tests.utils.strtobool import strtobool
 import os
 
+import pytest
+
 from neuron import h, coreneuron
 
-pc = h.ParallelContext()
+@pytest.fixture(scope="module", autouse=True)
+def setup():
+    global pc
+    pc = h.ParallelContext()
 
 
 class Cell:

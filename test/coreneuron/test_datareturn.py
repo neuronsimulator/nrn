@@ -3,11 +3,18 @@ from neuron.tests.utils.strtobool import strtobool
 import itertools
 import os
 
+import pytest
+
 from neuron import h, gui
 
-pc = h.ParallelContext()
-h.dt = 1.0 / 32
-cvode = h.CVode()
+
+@pytest.fixture(scope="module", autouse=True)
+def setup():
+    global pc
+    global cvode
+    pc = h.ParallelContext()
+    h.dt = 1.0 / 32
+    cvode = h.CVode()
 
 
 class Cell:
