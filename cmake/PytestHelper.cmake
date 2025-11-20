@@ -16,8 +16,8 @@ function(pytest_add_test)
     set(destination "${ARG_DESTINATION}")
   endif()
   if(NOT ARG_WORKING_DIRECTORY)
-    # wherever is the current source file
-    get_filename_component(working_directory "${ARG_SOURCE}" DIRECTORY)
+    # wherever will the current file be at runtime
+    get_filename_component(working_directory "${destination}" DIRECTORY)
   else()
     # check it's actually a directory
     if(NOT IS_DIRECTORY "${ARG_WORKING_DIRECTORY}")
@@ -46,7 +46,7 @@ function(pytest_add_test)
         "${CMAKE_CURRENT_FUNCTION}: No value for `PYTHON_EXECUTABLE`; using `find_package` naively with min version ${python_min_version}"
     )
     find_package(Python "${python_min_version}" REQUIRED)
-    set(pyexe "${PYTHON_EXECUTABLE}")
+    set(pyexe "${Python_EXECUTABLE}")
   else()
     set(pyexe "${ARG_PYTHON_EXECUTABLE}")
   endif()
@@ -58,7 +58,14 @@ function(pytest_add_test)
   if(NOT ARG_ENVIRONMENT)
     set(command ${pyexe} -m pytest)
   else()
-    set(command ${CMAKE_COMMAND} -E "${ARG_ENVIRONMENT}" ${pyexe} -m pytest)
+    set(command
+        ${CMAKE_COMMAND}
+        -E
+        env
+        ${ARG_ENVIRONMENT}
+        ${pyexe}
+        -m
+        pytest)
   endif()
   if(replace_missing_imports)
     string(SHA256 suffix_dir "${ARG_SOURCE}")
@@ -75,8 +82,17 @@ function(pytest_add_test)
     endif()
     get_filename_component(filename "${ARG_SOURCE}" NAME)
     set(temp_file "${temp_dir}/${filename}")
-    execute_process(COMMAND ${pyexe} "${CMAKE_CURRENT_SOURCE_DIR}/transform_ast.py" -o
-                            "${temp_file}" "${ARG_SOURCE}" "${ARG_MODULES}")
+    execute_process(
+      COMMAND ${pyexe} "${CMAKE_CURRENT_LIST_DIR}/transform_ast.py" -o "${temp_file}"
+              "${ARG_SOURCE}" ${ARG_MODULES}
+      RESULT_VARIABLE transform_success
+      ERROR_VARIABLE transform_errorlog)
+    if(NOT transform_success EQUAL 0)
+      message(
+        FATAL_ERROR
+          "${CMAKE_CURRENT_FUNCTION}: AST transformation failed, the log is:\n${transform_errorlog}"
+      )
+    endif()
     set(file_to_check "${temp_file}")
   else()
     set(file_to_check "${ARG_SOURCE}")
@@ -88,6 +104,10 @@ function(pytest_add_test)
     RESULT_VARIABLE pytest_success
     OUTPUT_VARIABLE pytest_tests
     ERROR_VARIABLE pytest_errorlog)
+  if(replace_missing_imports)
+    # remove the temp dir once we run Pytest on the file
+    file(REMOVE_RECURSE "${temp_dir}")
+  endif()
   if(NOT pytest_success EQUAL 0)
     message(
       FATAL_ERROR
