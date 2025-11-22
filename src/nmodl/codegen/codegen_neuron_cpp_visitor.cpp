@@ -1095,6 +1095,9 @@ void CodegenNeuronCppVisitor::print_standard_includes() {
     if (info.eigen_newton_solver_exist) {
         printer->add_multi_line(nmodl::solvers::newton_hpp);
     }
+    if (info.matexp_solver_exist) {
+        printer->add_line("#include <unsupported/Eigen/MatrixFunctions>");
+    }
 }
 
 

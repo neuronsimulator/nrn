@@ -1484,6 +1484,7 @@ class CodegenCppVisitor: public visitor::ConstAstVisitor {
     void visit_solution_expression(const ast::SolutionExpression& node) override;
     void visit_eigen_newton_solver_block(const ast::EigenNewtonSolverBlock& node) override;
     void visit_eigen_linear_solver_block(const ast::EigenLinearSolverBlock& node) override;
+    void visit_matexp_block(const ast::MatexpBlock& node) override;
 
     std::string compute_method_name(BlockType type) const;
 

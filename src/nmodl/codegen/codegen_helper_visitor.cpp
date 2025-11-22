@@ -680,6 +680,11 @@ void CodegenHelperVisitor::visit_eigen_linear_solver_block(
     node.visit_children(*this);
 }
 
+void CodegenHelperVisitor::visit_matexp_block(const ast::MatexpBlock& node) {
+    info.matexp_solver_exist = true;
+    node.visit_children(*this);
+}
+
 void CodegenHelperVisitor::visit_function_call(const FunctionCall& node) {
     auto name = node.get_node_name();
     if (name == naming::NET_SEND_METHOD) {

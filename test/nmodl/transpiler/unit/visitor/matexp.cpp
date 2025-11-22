@@ -79,17 +79,21 @@ SCENARIO("Solve a KINETIC block using the matexp method", "[visitor][matexp]") {
             CONSERVE x + y = 3.14159
         })";
         std::string expect_output = R"(
-        VERBATIM
-            #undef g
-            #undef F
-            #undef t
-            #include <unsupported/Eigen/MatrixFunctions>
-        ENDVERBATIM
         INITIAL {
-            SOLVE test_kin_steadystate
+            MATEXP_SOLVE (1) {
+                nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
+                nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
+                nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*dt
+                nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*dt
+            } CONSERVE = 3.14159
         }
         BREAKPOINT {
-            SOLVE test_kin_matexp
+            MATEXP_SOLVE (0) {
+                nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
+                nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
+                nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*dt
+                nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*dt
+            } CONSERVE = 3.14159
         }
         PARAMETER {
             a = 0.654
@@ -99,52 +103,7 @@ SCENARIO("Solve a KINETIC block using the matexp method", "[visitor][matexp]") {
             x
             y
         }
-        PROCEDURE test_kin_steadystate() (){
-            VERBATIM
-                Eigen::Matrix<double, 2, 2> nmodl_eigen_jm = Eigen::Matrix<double, 2, 2>::Zero();
-                double* nmodl_eigen_j = nmodl_eigen_jm.data();
-            ENDVERBATIM
-            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*1000000000
-            nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*1000000000
-            nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*1000000000
-            nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*1000000000
-            VERBATIM
-                Eigen::Matrix<double, 2, 1> nmodl_eigen_xm;
-                double* nmodl_eigen_x = nmodl_eigen_xm.data();
-            ENDVERBATIM
-            nmodl_eigen_x[0] = (3.14159)/2
-            nmodl_eigen_x[1] = (3.14159)/2
-            VERBATIM
-                Eigen::Matrix<double, 2, 1> nmodl_eigen_ym = nmodl_eigen_jm.exp() * nmodl_eigen_xm;
-                nmodl_eigen_ym *= (3.14159) / nmodl_eigen_ym.sum();
-                double* nmodl_eigen_y = nmodl_eigen_ym.data();
-            ENDVERBATIM
-            x = nmodl_eigen_y[0]
-            y = nmodl_eigen_y[1]
-        }
-        PROCEDURE test_kin_matexp() (){
-            VERBATIM
-                Eigen::Matrix<double, 2, 2> nmodl_eigen_jm = Eigen::Matrix<double, 2, 2>::Zero();
-                double* nmodl_eigen_j = nmodl_eigen_jm.data();
-            ENDVERBATIM
-            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
-            nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
-            nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*dt
-            nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*dt
-            VERBATIM
-                Eigen::Matrix<double, 2, 1> nmodl_eigen_xm;
-                double* nmodl_eigen_x = nmodl_eigen_xm.data();
-            ENDVERBATIM
-            nmodl_eigen_x[0] = x
-            nmodl_eigen_x[1] = y
-            VERBATIM
-                Eigen::Matrix<double, 2, 1> nmodl_eigen_ym = nmodl_eigen_jm.exp() * nmodl_eigen_xm;
-                nmodl_eigen_ym *= (3.14159) / nmodl_eigen_ym.sum();
-                double* nmodl_eigen_y = nmodl_eigen_ym.data();
-            ENDVERBATIM
-            x = nmodl_eigen_y[0]
-            y = nmodl_eigen_y[1]
-        })";
+        )";
         THEN("Replace the kinetic block with its solution in a procedure") {
             auto result = run_matexp_visitor(input_nmodl, true);
             REQUIRE(trim_text(expect_output) == trim_text(result));
@@ -171,17 +130,15 @@ SCENARIO("Test exponential decay using the matexp method", "[visitor][matexp]") 
             ~ x -> (a)
         })";
         std::string expect_output = R"(
-        VERBATIM
-            #undef g
-            #undef F
-            #undef t
-            #include <unsupported/Eigen/MatrixFunctions>
-        ENDVERBATIM
         INITIAL {
-            SOLVE test_kin_steadystate
+            MATEXP_SOLVE (1) {
+                nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
+            }
         }
         BREAKPOINT {
-            SOLVE test_kin_matexp
+            MATEXP_SOLVE (0) {
+                nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
+            }
         }
         PARAMETER {
             a = 0.129
@@ -189,40 +146,7 @@ SCENARIO("Test exponential decay using the matexp method", "[visitor][matexp]") 
         STATE {
             x
         }
-        PROCEDURE test_kin_steadystate() (){
-            VERBATIM
-                Eigen::Matrix<double, 1, 1> nmodl_eigen_jm = Eigen::Matrix<double, 1, 1>::Zero();
-                double* nmodl_eigen_j = nmodl_eigen_jm.data();
-            ENDVERBATIM
-            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*1000000000
-            VERBATIM
-                Eigen::Matrix<double, 1, 1> nmodl_eigen_xm;
-                double* nmodl_eigen_x = nmodl_eigen_xm.data();
-            ENDVERBATIM
-            nmodl_eigen_x[0] = x
-            VERBATIM
-                Eigen::Matrix<double, 1, 1> nmodl_eigen_ym = nmodl_eigen_jm.exp() * nmodl_eigen_xm;
-                double* nmodl_eigen_y = nmodl_eigen_ym.data();
-            ENDVERBATIM
-            x = nmodl_eigen_y[0]
-        }
-        PROCEDURE test_kin_matexp() (){
-            VERBATIM
-                Eigen::Matrix<double, 1, 1> nmodl_eigen_jm = Eigen::Matrix<double, 1, 1>::Zero();
-                double* nmodl_eigen_j = nmodl_eigen_jm.data();
-            ENDVERBATIM
-            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
-            VERBATIM
-                Eigen::Matrix<double, 1, 1> nmodl_eigen_xm;
-                double* nmodl_eigen_x = nmodl_eigen_xm.data();
-            ENDVERBATIM
-            nmodl_eigen_x[0] = x
-            VERBATIM
-                Eigen::Matrix<double, 1, 1> nmodl_eigen_ym = nmodl_eigen_jm.exp() * nmodl_eigen_xm;
-                double* nmodl_eigen_y = nmodl_eigen_ym.data();
-            ENDVERBATIM
-            x = nmodl_eigen_y[0]
-        })";
+        )";
         THEN("Replace the kinetic block with its solution in a procedure") {
             auto result = run_matexp_visitor(input_nmodl, true);
             REQUIRE(trim_text(expect_output) == trim_text(result));
@@ -248,17 +172,16 @@ SCENARIO("Mix matexp and sparse solver methods", "[visitor][matexp]") {
             ~ x <-> y (a, b)
         })";
         std::string expect_output = R"(
-        VERBATIM
-            #undef g
-            #undef F
-            #undef t
-            #include <unsupported/Eigen/MatrixFunctions>
-        ENDVERBATIM
         BREAKPOINT {
             IF (t<1000) {
                 SOLVE test_kin METHOD sparse
             } ELSE {
-                SOLVE test_kin_matexp
+                MATEXP_SOLVE (0) {
+                    nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
+                    nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
+                    nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*dt
+                    nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*dt
+                }
             }
         }
         STATE {
@@ -268,28 +191,7 @@ SCENARIO("Mix matexp and sparse solver methods", "[visitor][matexp]") {
         KINETIC test_kin {
             ~ x <-> y (a, b)
         }
-        PROCEDURE test_kin_matexp() (){
-            VERBATIM
-                Eigen::Matrix<double, 2, 2> nmodl_eigen_jm = Eigen::Matrix<double, 2, 2>::Zero();
-                double* nmodl_eigen_j = nmodl_eigen_jm.data();
-            ENDVERBATIM
-            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
-            nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
-            nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*dt
-            nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*dt
-            VERBATIM
-                Eigen::Matrix<double, 2, 1> nmodl_eigen_xm;
-                double* nmodl_eigen_x = nmodl_eigen_xm.data();
-            ENDVERBATIM
-            nmodl_eigen_x[0] = x
-            nmodl_eigen_x[1] = y
-            VERBATIM
-                Eigen::Matrix<double, 2, 1> nmodl_eigen_ym = nmodl_eigen_jm.exp() * nmodl_eigen_xm;
-                double* nmodl_eigen_y = nmodl_eigen_ym.data();
-            ENDVERBATIM
-            x = nmodl_eigen_y[0]
-            y = nmodl_eigen_y[1]
-        })";
+        )";
         THEN(
             "The original KINETIC block is kept unchanged,"
             "its solution is inserted into a new PROCEDURE block") {
