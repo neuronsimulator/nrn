@@ -43,7 +43,8 @@ class MatexpVisitor: public AstVisitor {
 
     ast::KineticBlock* find_kinetic_block(const std::string& block_name);
 
-    std::shared_ptr<ast::MatexpBlock> solve_kinetic_block(const ast::KineticBlock& node, bool steadystate);
+    std::shared_ptr<ast::MatexpBlock> solve_kinetic_block(const ast::KineticBlock& node,
+                                                          bool steadystate);
 
     void replace_solve_block(const ast::SolveBlock& node, bool steadystate);
 

@@ -23,16 +23,15 @@ bool vector_contains(const std::vector<T>& vec, const T& value) {
 
 
 void MatexpVisitor::visit_program(ast::Program& node) {
-
     node.visit_children(*this);
 
     states = node.get_symbol_table()->get_variables(symtab::syminfo::NmodlType::state_var);
 
-    for (const auto & node: steadystate_blocks) {
+    for (const auto& node: steadystate_blocks) {
         replace_solve_block(*node, true);
     }
 
-    for (const auto & node: solve_blocks) {
+    for (const auto& node: solve_blocks) {
         replace_solve_block(*node, false);
     }
 
@@ -65,11 +64,9 @@ void MatexpVisitor::visit_solve_block(ast::SolveBlock& node) {
     // Save the block for later reference
     if (solve) {
         solve_blocks.push_back(&node);
-    }
-    else if (steadystate) {
+    } else if (steadystate) {
         steadystate_blocks.push_back(&node);
-    }
-    else {
+    } else {
         keep_blocks.push_back(node.get_block_name()->get_node_name());
     }
 }
@@ -149,7 +146,7 @@ void MatexpVisitor::replace_solve_block(const ast::SolveBlock& node, bool steady
 
 
 ast::KineticBlock* MatexpVisitor::find_kinetic_block(const std::string& block_name) {
-    for (const auto& block:kinetic_blocks ) {
+    for (const auto& block: kinetic_blocks) {
         if (block->get_node_name() == block_name) {
             return block;
         }
@@ -158,7 +155,8 @@ ast::KineticBlock* MatexpVisitor::find_kinetic_block(const std::string& block_na
 }
 
 
-std::shared_ptr<ast::MatexpBlock> MatexpVisitor::solve_kinetic_block(const ast::KineticBlock& node, bool steadystate) {
+std::shared_ptr<ast::MatexpBlock> MatexpVisitor::solve_kinetic_block(const ast::KineticBlock& node,
+                                                                     bool steadystate) {
     // Make a copy of the statement block, do not modify original.
     const auto& jacobian_block = std::make_shared<ast::StatementBlock>(*node.get_statement_block());
     // Convert the reaction statements into assignments to the Jacobian matrix
@@ -169,10 +167,9 @@ std::shared_ptr<ast::MatexpBlock> MatexpVisitor::solve_kinetic_block(const ast::
     ExtractConserveVisitor conserve_visitor(states);
     conserve_visitor.visit_statement_block(*jacobian_block);
 
-    return std::make_shared<ast::MatexpBlock>(
-        std::make_shared<ast::Boolean>(steadystate),
-        jacobian_block,
-        conserve_visitor.conserve_sum);
+    return std::make_shared<ast::MatexpBlock>(std::make_shared<ast::Boolean>(steadystate),
+                                              jacobian_block,
+                                              conserve_visitor.conserve_sum);
 }
 
 
