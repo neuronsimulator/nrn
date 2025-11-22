@@ -1185,16 +1185,17 @@ void CodegenCppVisitor::visit_eigen_linear_solver_block(const ast::EigenLinearSo
 
 
 void CodegenCppVisitor::visit_matexp_block(const ast::MatexpBlock& node) {
-    const auto &states = info.state_vars;
+    const auto& states = info.state_vars;
     const std::string float_type = default_float_data_type();
     const std::string n_states = std::to_string(states.size());
     const std::string vector_type = "Eigen::Matrix<" + float_type + ", " + n_states + ", 1>";
-    const std::string matrix_type = "Eigen::Matrix<" + float_type + ", " + n_states + ", " + n_states + ">";
+    const std::string matrix_type = "Eigen::Matrix<" + float_type + ", " + n_states + ", " +
+                                    n_states + ">";
     // Setup the Jacobian matrix
     printer->add_newline();
     printer->fmt_line("{} nmodl_eigen_jm = {}::Zero();", matrix_type, matrix_type);
     printer->fmt_line("{}* nmodl_eigen_j = nmodl_eigen_jm.data();", float_type);
-    // 
+    //
     print_statement_block(*node.get_jacobian_block(), false, false);
     // Create the state vector
     printer->fmt_line("{} nmodl_eigen_xm;", vector_type);
@@ -1208,8 +1209,7 @@ void CodegenCppVisitor::visit_matexp_block(const ast::MatexpBlock& node) {
             printer->fmt_text(") / {};", n_states);
             printer->add_newline();
         }
-    }
-    else {
+    } else {
         for (int i = 0; i < states.size(); i++) {
             printer->add_indent();
             printer->fmt_text("nmodl_eigen_x[{}] = ", i);
@@ -1225,8 +1225,7 @@ void CodegenCppVisitor::visit_matexp_block(const ast::MatexpBlock& node) {
     if (node.get_conserve()) {
         if (to_nmodl(node.get_conserve()) == "1") {
             printer->add_line("nmodl_eigen_ym /= nmodl_eigen_ym.sum();");
-        }
-        else {
+        } else {
             printer->add_indent();
             printer->add_text("nmodl_eigen_ym *= (");
             node.get_conserve()->accept(*this);
