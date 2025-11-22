@@ -12,6 +12,8 @@
 #include "utils/logger.hpp"
 #include "visitors/visitor_utils.hpp"
 
+#include <algorithm>
+
 namespace nmodl {
 namespace visitor {
 
@@ -27,12 +29,12 @@ void MatexpVisitor::visit_program(ast::Program& node) {
 
     states = node.get_symbol_table()->get_variables(symtab::syminfo::NmodlType::state_var);
 
-    for (const auto& node: steadystate_blocks) {
-        replace_solve_block(*node, true);
+    for (const auto& solve_block: steadystate_blocks) {
+        replace_solve_block(*solve_block, true);
     }
 
-    for (const auto& node: solve_blocks) {
-        replace_solve_block(*node, false);
+    for (const auto& solve_block: solve_blocks) {
+        replace_solve_block(*solve_block, false);
     }
 
     // Remove solved KINETIC blocks
@@ -83,7 +85,7 @@ class ExtractConserveVisitor: public AstVisitor {
     std::shared_ptr<ast::Expression> conserve_sum;
     std::vector<std::shared_ptr<symtab::Symbol>> states;
 
-    ExtractConserveVisitor(std::vector<std::shared_ptr<symtab::Symbol>>& states) {
+    explicit ExtractConserveVisitor(std::vector<std::shared_ptr<symtab::Symbol>>& states) {
         this->states = states;
         this->conserve_sum = nullptr;
     }
