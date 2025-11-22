@@ -29,30 +29,31 @@ namespace visitor {
  */
 class MatexpVisitor: public AstVisitor {
   private:
+    /// blocks to be solved
+    std::vector<ast::SolveBlock*> steadystate_blocks;
+
+    /// blocks to be solved
+    std::vector<ast::SolveBlock*> solve_blocks;
+
+    /// blocks to be solved by a different solver method
+    std::vector<std::string> keep_blocks;
+
+    /// all kinetic blocks in the program
+    std::vector<ast::KineticBlock*> kinetic_blocks;
+
+    ast::KineticBlock* find_kinetic_block(const std::string& block_name);
+
+    std::shared_ptr<ast::MatexpBlock> solve_kinetic_block(const ast::KineticBlock& node, bool steadystate);
+
+    void replace_solve_block(const ast::SolveBlock& node, bool steadystate);
+
     /// ordered list of state variables
     std::vector<std::shared_ptr<symtab::Symbol>> states;
 
-    /// blocks to be solved
-    std::vector<std::string> steadystate_blocks;
-
-    /// blocks to be solved
-    std::vector<std::string> solve_blocks;
-
-    /// blocks to be kept unchanged and solved by a different method
-    std::vector<std::string> keep_blocks;
-
-    /// visiting kinetic block that is being solved
-    bool in_kinetic_block = false;
-
-    /// switch for solve/steadystate, either "dt" or "1000000000"
-    std::string dt;
-
-    /// blocks having been solved, waiting to be appended to the program
-    std::vector<std::shared_ptr<ast::ProcedureBlock>> solved_blocks;
-
-    void solve_kinetic_block(const ast::KineticBlock& node, bool steadystate);
-
     int get_state_index(const std::string& state_name);
+
+    /// currently visiting kinetic block that is being solved
+    bool in_jacobian_block = false;
 
   public:
     MatexpVisitor() = default;
