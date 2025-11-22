@@ -1186,7 +1186,6 @@ void CodegenCppVisitor::visit_eigen_linear_solver_block(const ast::EigenLinearSo
 
 void CodegenCppVisitor::visit_matexp_block(const ast::MatexpBlock& node) {
     const auto& states = info.state_vars;
-    const std::string float_type = default_float_data_type();
     const std::string n_states = std::to_string(states.size());
     const std::string vector_type = "Eigen::Matrix<" + float_type + ", " + n_states + ", 1>";
     const std::string matrix_type = "Eigen::Matrix<" + float_type + ", " + n_states + ", " +
