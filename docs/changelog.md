@@ -1,5 +1,29 @@
 # NEURON 9.0
 
+
+## 9.0.1
+_Release Date_ : 17-11-2025
+
+This release fixes several bugs and adds support for Python 3.14.
+
+### What's New
+- Add Python 3.14 support (#3635)
+- Remove doxygen from search results on readthedocs (#3664)
+- Add example with compilation for C API (#3658)
+
+### Bug Fixes
+- Use `[:blank:]` character class for SWC parser (#3651)
+- Fix HOC File.dir() on Windows (#3653)
+- NET_RECEIVE INITIAL not vectorized translation needs set_globals_from_prop (#3640)
+
+### Improvements /  Other Changes
+- Make `NRN_INSTALL_PYTHON_PREFIX` configurable (#3654)
+- Improve error message when Python lib is not found (#3650)
+- Use `command -v` instead of `which` in nrnpyenv.sh (#3516)
+- Better errors for `report.conf` (#3641)
+- Bump min required CMake version to 3.19
+
+
 ## 9.0.0
 _Release Date_ : 30-09-2025
 

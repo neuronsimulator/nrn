@@ -17,7 +17,7 @@ if(DEFINED ENV{CRAYPE_VERSION})
 endif()
 project(
   NEURON
-  VERSION 9.0.0
+  VERSION 9.0.1
   LANGUAGES C CXX
   HOMEPAGE_URL "https://www.neuron.yale.edu/neuron/")
 
@@ -39,9 +39,18 @@ if(POLICY CMP0177)
   cmake_policy(SET CMP0177 NEW)
 endif()
 
+# customizable install path to Python components. Mostly useful for Spack builds
+set(NRN_INSTALL_PYTHON_PREFIX
+    "lib/python/neuron/"
+    CACHE STRING
+          "Path where NEURON Python components will be installed (relative to CMAKE_INSTALL_PREFIX)"
+)
+
 # if we're building a wheel, we have a different layout of files
 if(SKBUILD)
-  set(NRN_INSTALL_PYTHON_PREFIX "neuron/")
+  set(NRN_INSTALL_PYTHON_PREFIX
+      "neuron/"
+      CACHE STRING "" FORCE)
   set(NRN_INSTALL_DATA_PREFIX "neuron/.data/")
   # need to force fmtlib install prefixes
   set(FMT_LIB_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
@@ -53,7 +62,6 @@ if(SKBUILD)
   set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
   set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/bin")
 else()
-  set(NRN_INSTALL_PYTHON_PREFIX "lib/python/neuron/")
   set(NRN_INSTALL_DATA_PREFIX)
 endif()
 
@@ -1255,6 +1263,7 @@ if(NRN_ENABLE_PYTHON)
     message(STATUS "  INC         | ${pyinc}")
     message(STATUS "  LIB         | ${pylib}")
   endforeach()
+  message(STATUS "  PREFIX      | ${NRN_INSTALL_PYTHON_PREFIX}")
 endif()
 if(READLINE_FOUND)
   message(STATUS "Readline      | ${Readline_LIBRARY}")

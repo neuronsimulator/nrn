@@ -9,7 +9,9 @@ include(${PROJECT_SOURCE_DIR}/cmake/PythonCompileHelper.cmake)
 # Some modules should be placed in the `neuron` Python directory (as they are directly importable),
 # while others should be placed in `neuron/.data/lib` (as they are not directly importable).
 if(NOT SKBUILD)
-  set(libraries_rpath "/../../")
+  file(RELATIVE_PATH rel_path "${CMAKE_INSTALL_PREFIX}/${NRN_INSTALL_PYTHON_PREFIX}"
+       "${CMAKE_INSTALL_PREFIX}/${NRN_INSTALL_DATA_PREFIX}/lib")
+  set(libraries_rpath "/${rel_path}")
 else()
   set(libraries_rpath "/.data/lib/")
 endif()
