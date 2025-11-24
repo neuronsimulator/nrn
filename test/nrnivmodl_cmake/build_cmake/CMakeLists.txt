@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION @CMAKE_MINIMUM_REQUIRED_VERSION@)
 project(modfile_test LANGUAGES C CXX @CUDA_STRING@)
 
 find_package(neuron REQUIRED)
