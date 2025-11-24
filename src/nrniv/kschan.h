@@ -5,7 +5,7 @@
 #include "ivocvect.h"
 #include "nrnunits.h"
 
-#include "spmatrix.h"
+#include <Eigen/Sparse>
 
 // extern double dt;
 extern double celsius;
@@ -468,7 +468,8 @@ class KSChan {
     int cvode_ieq_;
     Symbol* mechsym_;  // the top level symbol (insert sym or new sym)
     Symbol* rlsym_;    // symbol with the range list (= mechsym_ when  density)
-    char* mat_;
+    Eigen::SparseMatrix<double> mat_{};
+    Eigen::SparseLU<Eigen::SparseMatrix<double>> lu_{};
     double** elms_;
     double** diag_;
     int dsize_;       // size of prop->dparam
