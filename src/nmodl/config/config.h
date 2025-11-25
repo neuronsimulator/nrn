@@ -83,12 +83,6 @@ struct NrnUnitsLib {
                 return path;
             }
         }
-        std::ostringstream err_msg;
-        err_msg << "Could not find nrnunits.lib in any of:\n";
-        for (const auto& path: NRNUNITSLIB_PATH) {
-            err_msg << path << "\n";
-        }
-        err_msg << "Falling back to embedded nrnunits.lib\n";
         return "";
     }
 };
