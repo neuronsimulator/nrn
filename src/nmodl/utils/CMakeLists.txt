@@ -12,7 +12,6 @@ add_library(
   table_data.cpp
   ${PROJECT_BINARY_DIR}/src/nmodl/config/config.cpp)
 
-target_include_directories(util PUBLIC "${PROJECT_BINARY_DIR}/share/nmodl")
 set_property(TARGET util PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(util PUBLIC fmt::fmt nlohmann_json::nlohmann_json spdlog::spdlog)
 
