@@ -30,6 +30,7 @@ target_link_libraries(test_util PUBLIC spdlog::spdlog nmodl_test_flags)
 # =============================================================================
 add_library(config STATIC ${PROJECT_BINARY_DIR}/src/nmodl/config/config.cpp)
 target_link_libraries(config PUBLIC nmodl_test_flags)
+target_include_directories(config PUBLIC "${PROJECT_BINARY_DIR}/share/nmodl")
 
 # =============================================================================
 # Test executables

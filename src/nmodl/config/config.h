@@ -16,6 +16,7 @@
  */
 
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -24,6 +25,7 @@
 #include "utils/common_utils.hpp"
 
 namespace nmodl {
+namespace fs = std::filesystem;
 
 /**
  * \brief Project version information
@@ -48,6 +50,22 @@ struct NrnUnitsLib {
     /// paths where nrnunits.lib can be found
     static std::vector<std::string> NRNUNITSLIB_PATH;
 
+    static const std::string_view embedded_nrnunits;
+
+    /**
+     * Return content of units database file
+     */
+    static std::string get_content(const std::string& path) {
+        if (not path.size()) {
+            return std::string(embedded_nrnunits);
+        }
+        auto f = std::ifstream(path.c_str());
+        auto size = std::filesystem::file_size(path);
+        auto content = std::string(size, '\0');
+        f.read(content.data(), size);
+        return content;
+    }
+
     /**
      * Return path of units database file
      */
@@ -70,7 +88,8 @@ struct NrnUnitsLib {
         for (const auto& path: NRNUNITSLIB_PATH) {
             err_msg << path << "\n";
         }
-        throw std::runtime_error(err_msg.str());
+        err_msg << "Falling back to embedded nrnunits.lib\n";
+        return "";
     }
 };
 
