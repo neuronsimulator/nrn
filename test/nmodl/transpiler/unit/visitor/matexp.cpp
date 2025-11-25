@@ -42,13 +42,13 @@ std::string run_matexp_visitor(const std::string& text, bool verbatim) {
 }
 
 std::string trim_text(std::string text) {
-    // Remote leading whitespace
+    // Remove leading whitespace
     text = std::regex_replace(text, std::regex("^[ \t\n\r\f\v]+"), "");
 
-    // Remote trailing whitespace
+    // Remove trailing whitespace
     text = std::regex_replace(text, std::regex("[ \t\n\r\f\v]+$"), "");
 
-    // Remote whitespace around newlines
+    // Remove whitespace around newlines
     text = std::regex_replace(text, std::regex("[ \t\r\f\v]*\n[ \t\r\f\v]*"), "\n");
 
     // Remove duplicate newlines
@@ -88,12 +88,7 @@ SCENARIO("Solve a KINETIC block using the matexp method", "[visitor][matexp]") {
             } CONSERVE = 3.14159
         }
         BREAKPOINT {
-            MATEXP_SOLVE (0) {
-                nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
-                nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
-                nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*dt
-                nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*dt
-            } CONSERVE = 3.14159
+            0
         }
         PARAMETER {
             a = 0.654
@@ -103,6 +98,12 @@ SCENARIO("Solve a KINETIC block using the matexp method", "[visitor][matexp]") {
             x
             y
         }
+        MATEXP_SOLVE (0) {
+            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
+            nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
+            nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*dt
+            nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*dt
+        } CONSERVE = 3.14159
         )";
         THEN("Replace the kinetic block with its solution in a procedure") {
             auto result = run_matexp_visitor(input_nmodl, true);
@@ -136,15 +137,16 @@ SCENARIO("Test exponential decay using the matexp method", "[visitor][matexp]") 
             }
         }
         BREAKPOINT {
-            MATEXP_SOLVE (0) {
-                nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
-            }
+            0
         }
         PARAMETER {
             a = 0.129
         }
         STATE {
             x
+        }
+        MATEXP_SOLVE (0) {
+            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
         }
         )";
         THEN("Replace the kinetic block with its solution in a procedure") {
@@ -157,12 +159,11 @@ SCENARIO("Test exponential decay using the matexp method", "[visitor][matexp]") 
 SCENARIO("Mix matexp and sparse solver methods", "[visitor][matexp]") {
     GIVEN("KINETIC block, to be solved by multiple methods") {
         std::string input_nmodl = R"(
+        INITIAL {
+            SOLVE test_kin STEADYSTATE sparse
+        }
         BREAKPOINT {
-            IF (t<1000) {
-                SOLVE test_kin METHOD sparse
-            } ELSE {
-                SOLVE test_kin METHOD matexp
-            }
+            SOLVE test_kin METHOD matexp
         }
         STATE {
             x
@@ -172,17 +173,11 @@ SCENARIO("Mix matexp and sparse solver methods", "[visitor][matexp]") {
             ~ x <-> y (a, b)
         })";
         std::string expect_output = R"(
+        INITIAL {
+            SOLVE test_kin STEADYSTATE sparse
+        }
         BREAKPOINT {
-            IF (t<1000) {
-                SOLVE test_kin METHOD sparse
-            } ELSE {
-                MATEXP_SOLVE (0) {
-                    nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
-                    nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
-                    nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*dt
-                    nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*dt
-                }
-            }
+            0
         }
         STATE {
             x
@@ -190,6 +185,12 @@ SCENARIO("Mix matexp and sparse solver methods", "[visitor][matexp]") {
         }
         KINETIC test_kin {
             ~ x <-> y (a, b)
+        }
+        MATEXP_SOLVE (0) {
+            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
+            nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
+            nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*dt
+            nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*dt
         }
         )";
         THEN(
