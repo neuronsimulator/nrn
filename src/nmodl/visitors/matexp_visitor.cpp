@@ -149,7 +149,8 @@ void MatexpVisitor::replace_solve_block(const ast::SolveBlock& node, bool steady
 
 
 /// Remove the solve statement and return the matexp solver block
-std::shared_ptr<ast::MatexpBlock> MatexpVisitor::remove_solve_block(const ast::SolveBlock& node, bool steadystate) {
+std::shared_ptr<ast::MatexpBlock> MatexpVisitor::remove_solve_block(const ast::SolveBlock& node,
+                                                                    bool steadystate) {
     const auto& name = node.get_block_name()->get_node_name();
     const auto& block = find_kinetic_block(name);
     const auto& solution = solve_kinetic_block(*block, steadystate);
