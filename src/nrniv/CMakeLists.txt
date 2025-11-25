@@ -268,9 +268,9 @@ if(NRN_ENABLE_MPI_DYNAMIC)
   file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/src/nrnmpi")
   add_custom_command(
     OUTPUT ${NRNMPI_DYNAMIC_INCLUDE_FILE}
-    COMMAND ${PYTHON_EXECUTABLE} mkdynam.py "${PROJECT_BINARY_DIR}/src/nrnmpi"
+    COMMAND sh mkdynam.sh "${PROJECT_BINARY_DIR}/src/nrnmpi"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/nrnmpi
-    DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.py
+    DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.sh
             ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpidec.h)
 endif()
 
