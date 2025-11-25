@@ -681,7 +681,7 @@ void CodegenHelperVisitor::visit_eigen_linear_solver_block(
 }
 
 void CodegenHelperVisitor::visit_matexp_block(const ast::MatexpBlock& node) {
-    info.matexp_solver_exist = true;
+    info.matexp_blocks.push_back(&node);
     node.visit_children(*this);
 }
 

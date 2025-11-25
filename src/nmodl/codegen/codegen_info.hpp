@@ -604,8 +604,8 @@ struct CodegenInfo {
     /// true if eigen linear solver is used
     bool eigen_linear_solver_exist = false;
 
-    /// true if matexp solver is used
-    bool matexp_solver_exist = false;
+    /// all matexp solver blocks
+    std::vector<const ast::MatexpBlock*> matexp_blocks;
 
     /// if any ion has write variable
     bool ion_has_write_variable() const noexcept;

@@ -34,7 +34,7 @@ void MatexpVisitor::visit_program(ast::Program& node) {
     }
 
     for (const auto& solve_block: solve_blocks) {
-        replace_solve_block(*solve_block, false);
+        node.emplace_back_node(remove_solve_block(*solve_block, false));
     }
 
     // Remove solved KINETIC blocks
@@ -135,6 +135,7 @@ class ExtractConserveVisitor: public AstVisitor {
 };
 
 
+/// Replace the solve statement with the matexp solver block
 void MatexpVisitor::replace_solve_block(const ast::SolveBlock& node, bool steadystate) {
     const auto& name = node.get_block_name()->get_node_name();
     const auto& block = find_kinetic_block(name);
@@ -144,6 +145,20 @@ void MatexpVisitor::replace_solve_block(const ast::SolveBlock& node, bool steady
         throw std::runtime_error("broken ast");
     }
     ((ast::ExpressionStatement*) parent)->set_expression(solution);
+}
+
+
+/// Remove the solve statement and return the matexp solver block
+std::shared_ptr<ast::MatexpBlock> MatexpVisitor::remove_solve_block(const ast::SolveBlock& node, bool steadystate) {
+    const auto& name = node.get_block_name()->get_node_name();
+    const auto& block = find_kinetic_block(name);
+    const auto& solution = solve_kinetic_block(*block, steadystate);
+    ast::Ast* parent = node.get_parent();
+    if (!parent->is_expression_statement()) {
+        throw std::runtime_error("broken ast");
+    }
+    ((ast::ExpressionStatement*) parent)->set_expression(std::make_shared<ast::Double>("0"));
+    return solution;
 }
 
 
@@ -255,8 +270,8 @@ void MatexpVisitor::visit_reaction_statement(ast::ReactionStatement& node) {
         const int jf_src_idx = lhs_idx + states.size() * lhs_idx;
         // Write NMODL to assign to the Jacobian matrix
         const std::string jf_src = "nmodl_eigen_j[" + std::to_string(jf_src_idx) + "]";
-        const std::string kf_nmodl = "(" + to_nmodl(kf) + ")";
-        const std::string jf_n_string = jf_src + " = " + jf_src + " - " + kf_nmodl + " * dt";
+        const std::string kf_nmodl = to_nmodl(kf);
+        const std::string jf_n_string = jf_src + " = " + jf_src + " - (" + kf_nmodl + ") * dt";
         const auto& jf_n = create_statement(jf_n_string);
         // Replace the reaction statement with an assignment to the Jaconbian
         statement_block->insert_statement(std::begin(statements) + statement_index, jf_n);
@@ -276,12 +291,12 @@ void MatexpVisitor::visit_reaction_statement(ast::ReactionStatement& node) {
         const std::string jf_dst = "nmodl_eigen_j[" + std::to_string(jf_dst_idx) + "]";
         const std::string jb_src = "nmodl_eigen_j[" + std::to_string(jb_src_idx) + "]";
         const std::string jb_dst = "nmodl_eigen_j[" + std::to_string(jb_dst_idx) + "]";
-        const std::string kf_nmodl = "(" + to_nmodl(kf) + ")";
-        const std::string kb_nmodl = "(" + to_nmodl(kb) + ")";
-        const std::string jf_n_string = jf_src + " = " + jf_src + " - " + kf_nmodl + " * dt";
-        const std::string jf_p_string = jf_dst + " = " + jf_dst + " + " + kf_nmodl + " * dt";
-        const std::string jb_n_string = jb_src + " = " + jb_src + " - " + kb_nmodl + " * dt";
-        const std::string jb_p_string = jb_dst + " = " + jb_dst + " + " + kb_nmodl + " * dt";
+        const std::string kf_nmodl = to_nmodl(kf);
+        const std::string kb_nmodl = to_nmodl(kb);
+        const std::string jf_n_string = jf_src + " = " + jf_src + " - (" + kf_nmodl + ") * dt";
+        const std::string jf_p_string = jf_dst + " = " + jf_dst + " + (" + kf_nmodl + ") * dt";
+        const std::string jb_n_string = jb_src + " = " + jb_src + " - (" + kb_nmodl + ") * dt";
+        const std::string jb_p_string = jb_dst + " = " + jb_dst + " + (" + kb_nmodl + ") * dt";
         const auto& jf_n = create_statement(jf_n_string);
         const auto& jf_p = create_statement(jf_p_string);
         const auto& jb_n = create_statement(jb_n_string);
