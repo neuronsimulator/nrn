@@ -148,9 +148,9 @@ jobs:
           echo CMAKE_GENERATOR=Ninja >> $GITHUB_ENV
 
       - name: Set env vars for testing (MacOS)
-        if: startsWith(inputs.platform, "macOS")
+        if: startsWith(runner.os, "macOS")
         run: |
-          if [[ "${{inputs.platform}}" == "macOS-15-intel" ]]; then
+          if [[ "${{runner.os}}" == "macOS-15-intel" ]]; then
             echo CMAKE_BUILD_PARALLEL_LEVEL=4 >> $GITHUB_ENV
           else
             echo CMAKE_BUILD_PARALLEL_LEVEL=3 >> $GITHUB_ENV
