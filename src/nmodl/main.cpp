@@ -39,6 +39,7 @@
 #include "visitors/localize_visitor.hpp"
 #include "visitors/longitudinal_diffusion_visitor.hpp"
 #include "visitors/loop_unroll_visitor.hpp"
+#include "visitors/matexp_visitor.hpp"
 #include "visitors/neuron_solve_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
@@ -453,6 +454,13 @@ int run_nmodl(int argc, const char* argv[]) {
             SymtabVisitor(update_symtab).visit_program(*ast);
         }
 
+
+        if (solver_exists(*ast, "matexp")) {
+            logger->info("Running matexp solver visitor");
+            MatexpVisitor().visit_program(*ast);
+            SymtabVisitor(update_symtab).visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("matexp"));
+        }
 
         /// note that we can not symtab visitor in update mode as we
         /// replace kinetic block with derivative block of same name
