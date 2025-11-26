@@ -1152,6 +1152,12 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_nrn.cpp.in
               ${CMAKE_CURRENT_SOURCE_DIR}/cmake/mod_reg_corenrn.cpp.in
         DESTINATION "${NRN_INSTALL_DATA_PREFIX}share/nrn")
 
+# configuration and installation of nrnivmodl
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/nrnivmodl.cmake
+               ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/nrnivmodl/CMakeLists.txt @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/cmake/neuron/nrnivmodl/CMakeLists.txt
+        DESTINATION "${NRN_INSTALL_DATA_PREFIX}lib/cmake/neuron/nrnivmodl")
+
 # =============================================================================
 # Copy bash executable for windows
 # =============================================================================
