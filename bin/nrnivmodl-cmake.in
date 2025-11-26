@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+
+# =============================================================================
+# Simple wrapper for CMake that builds mechanisms from mod files
+# =============================================================================
+
+set -eu
+
+# Where the output files will be placed
+bindir="$(uname -m)"
+
+# The name of the current program
+program_name="$(basename "${0}")"
+
+# Where the `*.cmake` files are located
+NRN_CMAKE_PREFIX_PATH_DEFAULT="$(readlink -f "$(dirname "${0}")/../lib/cmake/")"
+if [ -n "${CMAKE_PREFIX_PATH:-}" ]; then
+    CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}:${NRN_CMAKE_PREFIX_PATH_DEFAULT}"
+else
+    CMAKE_PREFIX_PATH="${NRN_CMAKE_PREFIX_PATH_DEFAULT}"
+fi
+export CMAKE_PREFIX_PATH
+
+# On MacOS we need to set the deployment target to be equal to the one of NEURON
+if command -v xcrun >& /dev/null; then
+    @NRN_OSX_BUILD_TRUE@export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
+    @NRN_OSX_BUILD_TRUE@export MACOSX_DEPLOYMENT_TARGET="@CMAKE_OSX_DEPLOYMENT_TARGET@"
+    if [ -z "${MACOSX_DEPLOYMENT_TARGET}" ]; then
+        unset MACOSX_DEPLOYMENT_TARGET
+    fi
+fi
+
+# We use the CMakeLists.txt from the NEURON installation directory to not have
+# to deal with any pre-existing CMakeLists.txt in the current directory
+srcdir="${NRN_CMAKE_PREFIX_PATH_DEFAULT}/neuron/nrnivmodl/"
+
+# In case of no files, default to using the files in the current dir
+if [ $# -lt 1 ]; then
+    set -- ./*.mod
+# In case of a single input, check if it's a directory; if it is, collect all mod files in it
+elif [ $# -eq 1 ] && [ -d "${1}" ]; then
+    printf "[%s] Collecting mod files under %s\n" "${program_name}" "$(readlink -f "${1}")"
+    set -- "${1}"/*.mod
+fi
+
+# After collecting the mod files, check each mod file actually exists
+for mod_file in "$@"; do
+    if [ ! -e "${mod_file}" ]; then
+        printf "[%s] ERROR: Mod file %s does not exist!\n" "${program_name}" "${mod_file}" >&2
+        exit 4
+    fi
+done
+
+# Convert all mod file paths to absolute paths because the source dir is in the NEURON install
+args=()
+for f in "$@"; do
+  resolved=$(readlink -f "$f") || exit 1
+  args+=("$resolved")
+done
+set -- "${args[@]}"
+
+# TODO what if the mod filenames contain semicolons?
+modfiles=$(IFS=";"; echo "$*")
+
+# Configure the mod files
+cmake \
+    -S "${srcdir}" \
+    -B "${bindir}" \
+    -DNRNIVMODL_MOD_FILES="${modfiles}" \
+    -DNRNIVMODL_NEURON=@NRNIVMODL_NEURON@ \
+    -DNRNIVMODL_CORENEURON=@NRNIVMODL_CORENEURON@
+
+# Actually build them
+cmake --build "${bindir}"
