@@ -8,8 +8,9 @@ steps:
   - script: |
       brew install python
       export SKIP_EMBEDED_PYTHON_TEST=true
+      export CMAKE_BUILD_PARALLEL_LEVEL=4
       packaging/python/test_wheels.sh /usr/local/bin/python3 wheelhouse/*.whl
-    condition: and(eq(variables['agent.os'], 'Darwin'), eq(variables['python.version'], '3.8'))
+    condition: and(eq(variables['agent.os'], 'Darwin'), eq(variables['python.version'], '3.9'))
     displayName: 'Test with brew Python'
 
   - task: UsePythonVersion@0
@@ -18,6 +19,7 @@ steps:
 
   - script: |
       export SKIP_EMBEDED_PYTHON_TEST=true
+      export CMAKE_BUILD_PARALLEL_LEVEL=4
       packaging/python/test_wheels.sh $(which python) $(ls -t wheelhouse/*.whl)
     displayName: 'Test with System Python'
 
