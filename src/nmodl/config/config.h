@@ -56,10 +56,10 @@ struct NrnUnitsLib {
      * Return content of units database file
      */
     static std::string get_content(const std::string& path) {
-        if (not path.size()) {
+        if (!path.size()) {
             return std::string(embedded_nrnunits);
         }
-        auto f = std::ifstream(path.c_str());
+        auto f = std::ifstream(path);
         auto size = std::filesystem::file_size(path);
         auto content = std::string(size, '\0');
         f.read(content.data(), size);
