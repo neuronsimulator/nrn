@@ -73,7 +73,7 @@ jobs:
         run: |
           brew install --cask xquartz
           brew uninstall cmake || echo "CMake was not pre-installed"
-          brew install flex bison cmake mpich
+          brew install flex bison cmake mpich ninja
           brew unlink mpich && brew install openmpi
           # Install newer version of Bash on MacOS
           brew install bash
@@ -127,7 +127,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt update
-          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
+          sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev ninja-build
 
       - name: "Apply workaround for MPICH on Ubuntu 24.04"
         if: inputs.platform == 'ubuntu-24.04'
@@ -140,6 +140,22 @@ jobs:
           wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/mpich_4.2.0-5.1_amd64.deb'
           wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/libmpich12_4.2.0-5.1_amd64.deb'
           sudo dpkg --install mpich_4.2.0-5.1_amd64.deb libmpich12_4.2.0-5.1_amd64.deb
+
+      - name: Set env vars for testing (Linux)
+        if: startsWith(inputs.platform, "ubuntu")
+        run: |
+          echo CMAKE_BUILD_PARALLEL_LEVEL=4 >> $GITHUB_ENV
+          echo CMAKE_GENERATOR=Ninja >> $GITHUB_ENV
+
+      - name: Set env vars for testing (MacOS)
+        if: startsWith(inputs.platform, "macOS")
+        run: |
+          if [[ "${{inputs.platform}}" == "macOS-15-intel" ]]; then
+            echo CMAKE_BUILD_PARALLEL_LEVEL=4 >> $GITHUB_ENV
+          else
+            echo CMAKE_BUILD_PARALLEL_LEVEL=3 >> $GITHUB_ENV
+          fi
+          echo CMAKE_GENERATOR=Ninja >> $GITHUB_ENV
 
       - name: Test wheel with ${{ inputs.python_version }}
         run: |
