@@ -12,8 +12,6 @@ set(NRN_ENABLE_CORENEURON @NRN_ENABLE_CORENEURON@)
 set(_NEURON_MAIN "${_prefix}/share/nrn/nrnmain.cpp")
 set(_NEURON_MAIN_INCLUDE_DIR "${_prefix}/include/nrncvode" "${_prefix}/include")
 set(_NEURON_MECH_REG "${_prefix}/share/nrn/mod_reg_nrn.cpp.in")
-set(_NEURON_WHEEL @SKBUILD@)
-set(_NEURON_PYTHON_BINWRAPPER "${_prefix}/share/nrn/binwrapper.py")
 
 set(_CORENEURON_BASE_MOD "${_prefix}/share/modfile")
 set(_CORENEURON_MAIN "${_prefix}/share/coreneuron/coreneuron.cpp")
