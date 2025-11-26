@@ -462,6 +462,7 @@ void CodegenCppVisitor::print_backend_info() {
     printer->add_line("/*********************************************************");
     printer->add_line("Model Name      : ", info.mod_suffix);
     printer->add_line("Filename        : ", info.mod_file, ".mod");
+    printer->add_line("NMODL Version   : ", nmodl_version());
     printer->fmt_line("Vectorized      : {}", info.vectorize);
     printer->fmt_line("Threadsafe      : {}", info.thread_safe);
     printer->add_line("Simulator       : ", simulator_name());
