@@ -58,11 +58,15 @@ static std::shared_ptr<ast::ExpressionStatement> unroll_for_loop(
 
     ast::StatementVector statements;
     std::string index_var = node->get_node_name();
+    /// add the index var as a local one
+    statements.push_back(create_statement(fmt::format("LOCAL {}", index_var)));
     for (int i = start; i <= end; i += step) {
         /// duplicate loop body and copy all statements to new vector
+        statements.push_back(create_statement(fmt::format("{} = {}", index_var, i)));
         const auto new_block = std::unique_ptr<ast::StatementBlock>(
             node->get_statement_block()->clone());
         IndexRemover(index_var, i).visit_statement_block(*new_block);
+
         statements.insert(statements.end(),
                           new_block->get_statements().begin(),
                           new_block->get_statements().end());
