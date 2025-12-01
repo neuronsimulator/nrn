@@ -72,7 +72,6 @@ mingw-w64-x86_64-python ^
 mingw-w64-x86_64-python-setuptools ^
 mingw-w64-x86_64-python-packaging ^
 mingw-w64-x86_64-python-pip ^
-mingw64/mingw-w64-x86_64-dlfcn ^
 mingw-w64-x86_64-toolchain || goto :error
 
 :: if all goes well, go to end
