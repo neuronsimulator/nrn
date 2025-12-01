@@ -3,6 +3,13 @@ version: 2
 sphinx:
   configuration: docs/conf.py
 
+search:
+  ignore:
+    - '*/doxygen/*'
+    - 'doxygen/*'
+    - '*/doxygen/*.html'
+    - '*/doxygen/*html'
+
 build:
   os: "ubuntu-22.04"
   tools:

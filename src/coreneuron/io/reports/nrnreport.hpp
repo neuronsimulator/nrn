@@ -136,14 +136,17 @@ inline bool equals_case_insensitive(std::string_view a, std::string_view b) {
  * @param str Input string to convert.
  * @param mapping A fixed-size array mapping enum values to string views.
  * @param enum_name Name of the enum type, used for error reporting.
+ * @param file_path Optional path to the source file providing the string value.
+ *        Used to give additional context when reporting errors.
  * @return The corresponding enum value for the input string.
  *
  * @note Aborts the program if the string does not match any entry in the mapping.
  */
 template <typename EnumT, std::size_t N>
-EnumT from_string(std::string_view str,
+EnumT from_string(const std::string_view str,
                   const std::array<std::pair<EnumT, std::string_view>, N>& mapping,
-                  const std::string_view enum_name) {
+                  const std::string_view enum_name,
+                  const std::string_view file_path) {
     auto it = std::find_if(mapping.begin(), mapping.end(), [&str](const auto& pair) {
         return equals_case_insensitive(str, pair.second);
     });
@@ -151,7 +154,17 @@ EnumT from_string(std::string_view str,
         return it->first;
     }
 
-    std::cerr << "Unknown string for " << enum_name << ": " << str << std::endl;
+    std::cerr << "Unknown string for " << enum_name << ": \"" << str << "\".\n";
+    std::cerr << "Valid options are: ";
+    for (std::size_t i = 0; i < mapping.size(); ++i) {
+        std::cerr << "\"" << mapping[i].second << "\"";
+        if (i + 1 != mapping.size())
+            std::cerr << ", ";
+    }
+    std::cerr << ".\n";
+    if (file_path.size()) {
+        std::cerr << "Probably neuron is not compatible with \"" << file_path << "\".\n";
+    }
     nrn_abort(1);
 }
 
@@ -166,8 +179,9 @@ constexpr std::array<std::pair<ReportType, std::string_view>, 5> report_type_map
 inline std::string to_string(ReportType t) {
     return to_string(t, report_type_map, "ReportType");
 }
-inline ReportType report_type_from_string(const std::string& s) {
-    return from_string<ReportType>(s, report_type_map, "ReportType");
+inline ReportType report_type_from_string(const std::string_view str,
+                                          const std::string_view file_path = "") {
+    return from_string<ReportType>(str, report_type_map, "ReportType", file_path);
 }
 
 // SectionType
@@ -188,8 +202,9 @@ constexpr std::array<std::pair<SectionType, std::string_view>, 11> section_type_
 inline std::string to_string(SectionType t) {
     return to_string(t, section_type_map, "SectionType");
 }
-inline SectionType section_type_from_string(std::string_view str) {
-    return from_string<SectionType>(str, section_type_map, "SectionType");
+inline SectionType section_type_from_string(std::string_view str,
+                                            const std::string_view file_path = "") {
+    return from_string<SectionType>(str, section_type_map, "SectionType", file_path);
 }
 
 // Scaling
@@ -201,8 +216,9 @@ constexpr std::array<std::pair<Scaling, std::string_view>, 2> scaling_map{
 inline std::string to_string(Scaling s) {
     return to_string(s, scaling_map, "Scaling");
 }
-inline Scaling scaling_from_string(const std::string& str) {
-    return from_string<Scaling>(str, scaling_map, "Scaling");
+inline Scaling scaling_from_string(const std::string_view str,
+                                   const std::string_view file_path = "") {
+    return from_string<Scaling>(str, scaling_map, "Scaling", file_path);
 }
 
 enum class Compartments { All, Center, Invalid };
@@ -214,8 +230,9 @@ constexpr std::array<std::pair<Compartments, std::string_view>, 3> compartments_
 inline std::string to_string(Compartments s) {
     return to_string(s, compartments_map, "Compartments");
 }
-inline Compartments compartments_from_string(const std::string& str) {
-    return from_string<Compartments>(str, compartments_map, "Compartments");
+inline Compartments compartments_from_string(const std::string_view str,
+                                             const std::string_view file_path = "") {
+    return from_string<Compartments>(str, compartments_map, "Compartments", file_path);
 }
 
 struct ReportConfiguration {
