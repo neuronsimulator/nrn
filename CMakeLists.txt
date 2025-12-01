@@ -801,6 +801,7 @@ if(NRN_MACOS_BUILD)
 endif()
 
 if(MINGW)
+  cpp_cc_git_submodule(dlfcn-win32 BUILD PACKAGE dlfcn-win32 REQUIRED)
   add_subdirectory(src/mswin)
 endif()
 

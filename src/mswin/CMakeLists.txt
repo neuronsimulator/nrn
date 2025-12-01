@@ -34,7 +34,7 @@ if(MINGW)
   add_executable(neuron ${mswinsrc}/extra/neuron.cpp ${mswinsrc}/extra/d2upath.cpp nrnicon.res)
   add_executable(mos2nrn ${mswinsrc}/extra/mos2nrn.cpp ${mswinsrc}/extra/d2upath.cpp)
   add_executable(nrnbinstr ${mswinsrc}/extra/nrnbinstr.cpp)
-  set(INCDIRS ${PROJECT_SOURCE_DIR}/src/oc)
+  set(INCDIRS ${PROJECT_SOURCE_DIR}/src/oc ${PROJECT_SOURCE_DIR}/external/dlfcn-win32)
   target_include_directories(mos2nrn PUBLIC ${INCDIRS})
 
   # ~~~

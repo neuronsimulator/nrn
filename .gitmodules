@@ -37,3 +37,6 @@
 [submodule "external/spdlog"]
 	path = external/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "external/dlfcn-win32"]
+	path = external/dlfcn-win32
+	url = https://github.com/dlfcn-win32/dlfcn-win32
