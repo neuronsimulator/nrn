@@ -394,7 +394,7 @@ include_directories(${NRN_INCLUDE_DIRS})
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 if(MINGW)
-  target_link_libraries(nrniv_lib dlfcn-win32::dlfcn-win32-targets)
+  target_link_libraries(nrniv_lib dlfcn-win32::dl)
 endif()
 add_dependencies(nrniv_lib generated_source_files)
 add_cpp_git_information(nrniv_lib PRIVATE)
