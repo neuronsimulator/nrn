@@ -801,6 +801,7 @@ if(NRN_MACOS_BUILD)
 endif()
 
 if(MINGW)
+  add_subdirectory(external/dlfcn-win32)
   add_subdirectory(src/mswin)
 endif()
 

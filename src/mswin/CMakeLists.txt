@@ -23,7 +23,6 @@
 # ~~~
 
 if(MINGW)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/external/dlfcn-win32)
   set(mswinsrc ${CMAKE_CURRENT_SOURCE_DIR})
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/nrnicon.rc "id ICON \"${mswinsrc}/nrniv10.ico\"\n")
   add_custom_command(
