@@ -1,8 +1,8 @@
 /*
- * Copyright 2025 David McDougall.
+ * Copyright 2025 David McDougall
  * See the top-level LICENSE file for details.
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include <catch2/catch_test_macros.hpp>
@@ -88,7 +88,6 @@ SCENARIO("Solve a KINETIC block using the matexp method", "[visitor][matexp]") {
             } CONSERVE = 3.14159
         }
         BREAKPOINT {
-            0
         }
         PARAMETER {
             a = 0.654
@@ -137,7 +136,6 @@ SCENARIO("Test exponential decay using the matexp method", "[visitor][matexp]") 
             }
         }
         BREAKPOINT {
-            0
         }
         PARAMETER {
             a = 0.129
@@ -177,7 +175,6 @@ SCENARIO("Mix matexp and sparse solver methods", "[visitor][matexp]") {
             SOLVE test_kin STEADYSTATE sparse
         }
         BREAKPOINT {
-            0
         }
         STATE {
             x

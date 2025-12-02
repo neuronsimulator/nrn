@@ -158,8 +158,19 @@ std::shared_ptr<ast::MatexpBlock> MatexpVisitor::remove_solve_block(const ast::S
     if (!parent->is_expression_statement()) {
         throw std::runtime_error("broken ast");
     }
-    ((ast::ExpressionStatement*) parent)->set_expression(std::make_shared<ast::Double>("0"));
-    return solution;
+    if (!parent->get_parent()->is_statement_block()) {
+        throw std::runtime_error("broken ast");
+    }
+    const auto statement_block = (ast::StatementBlock*) parent->get_parent();
+    auto statements = statement_block->get_statements();
+    for (auto iter = statements.begin(); iter != statements.end(); iter++) {
+        if (iter->get() == parent) {
+            statements.erase(iter--);
+            statement_block->set_statements(statements);
+            return solution;
+        }
+    }
+    throw std::runtime_error("broken ast");
 }
 
 
