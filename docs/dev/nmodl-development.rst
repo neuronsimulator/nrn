@@ -1,17 +1,21 @@
-NMODL development tutorial
-====
+NMODL development
+=================
 
-This is a tutorial for making changes to the NMODL codebase.
+This is an introduction for making changes to the NMODL codebase.
 
 
 NMODL components
-=======
+----------------
 
-To translate a mod file into a C++ source file, NMODL employs several stages that we will go through in varying degrees of detail.
+To translate a mod file into a C++ source file, NMODL employs several stages that we will go through in varying degrees of detail. The relevant stages of translation are:
+
+* lexer and parser
+* visitors
+* codegen
 
 
 Lexer and parser
----
+^^^^^^^^^^^^^^^^
 
 .. note::
 
@@ -29,23 +33,24 @@ The content of a given mod file is initially converted to a list of tokens using
 
 .. note::
 
-   The code above may look like it creates an immutable AST, but due to the use of smart pointers, the tree itself actually _can_ be modified! More on that later.
+   The code above may look like it creates an immutable AST, but due to the use of smart pointers, the tree itself can actually be modified using various visitors. More on that later.
 
 As a result, we will get an AST which can be traversed and modified using various visitors.
 
 
 The visitors
----
+^^^^^^^^^^^^
 
-NMODL employs the `visitor pattern <https://en.wikipedia.org/wiki/Visitor_pattern>__` to traverse the AST and perform operations on its nodes. The basic operations that can be performed on the AST are:
+NMODL employs the `visitor pattern <https://en.wikipedia.org/wiki/Visitor_pattern>`_ to traverse the AST and perform operations on its nodes. The basic operations that can be performed on the AST are:
 
 * insertion of a new node
 * modification of an existing node
 * deletion of a node
 
-Before we get into the details of the visitors, it is helpful to understand which types of nodes are there, and which properties they have. All of the various types of nodes are actually generated from a single YAML file, ``src/nmodl/language/nmodl.yaml``. For instance, this is the definition of a ``FUNCTION`` block in the YAML file:
+Before we get into the details of the visitors, it is helpful to understand which types of nodes are there, and which properties they have. All of the various types of NMODL nodes are actually generated from a single YAML file, ``src/nmodl/language/nmodl.yaml``. For instance, this is the definition of a ``FUNCTION`` block in the YAML file:
 
 .. code:: yaml
+
     - FunctionBlock:
         nmodl: "FUNCTION "
         members:
@@ -80,10 +85,10 @@ The above provides us with the following information:
 * the function must always contain a statement block (even if the statement block itself is empty)
 
 
-Visiting a block
----
+Visiting a node
+^^^^^^^^^^^^^^^
 
-Assuming that we want to visit a function definition, and maybe do some manipulation of its children, how can we accomplish this? NMODL provides us with the ``nmodl::ast::AstVisitor`` class, which we can override to visit a particular node:
+Assuming that we want to visit a function definition (or any other node for that matter), and maybe do some manipulation of its children, how can we accomplish this? NMODL provides us with the ``nmodl::ast::AstVisitor`` class, which we can override to visit a particular node:
 
 .. code:: cpp
 
@@ -125,7 +130,7 @@ In general, the naming convention is ``snake_case`` for the methods and header f
 
 
 Visiting nested nodes
----
+^^^^^^^^^^^^^^^^^^^^^
 
 Sometimes you may want to visit multiple nested nodes; for instance, if your node can appear globally, i.e. anywhere, but has a special meaning inside of a ``FUNCTION`` block. NMODL provides the ``visit_children`` method for this, that performs the recursive descent into the children, which should be called as:
 
@@ -155,14 +160,15 @@ You can also override the ``accept`` method, which allows you to visit the curre
 
    It may seem tempting to add C++ code directly to the AST by inserting VERBATIM blocks; this mixes implementation details (C++ code) with the overall abstraction (the AST), so it should only be done sparsely.
 
-Calling the visitor
----
+Performing the transformation with the visitor
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To actually perform any transformations you implemented, you need to call the visitor:
+To actually perform any transformations you implemented, you need to create an instance of the class, and then call ``visit_program``:
 
 .. code:: cpp
 
-   MyFunctionVisitor().visit_program(*ast);
+   const auto& my_visitor = MyFunctionVisitor();
+   my_visitor.visit_program(*ast);
 
 .. tip::
 
@@ -174,9 +180,9 @@ To actually perform any transformations you implemented, you need to call the vi
 
 
 Adding a new node type
----
+^^^^^^^^^^^^^^^^^^^^^^
 
-On certain occasions, it may be necessary to add new nodes to NMODL; this is usually due to some internal requirements for codegen, and the right place to add it is in ``src/nmodl/language/codegen.yaml``. For example, the following node type aws added for keeping track of the information required for CVODE codegen:
+On certain occasions, it may be necessary to add new nodes to NMODL; this is usually due to some internal requirements for codegen, and the right place to add it is in ``src/nmodl/language/codegen.yaml``, i.e. as a codegen node type. For example, the following node type was added for keeping track of the information required for CVODE codegen:
 
 .. code:: yaml
 
@@ -213,10 +219,48 @@ If a mod file can use CVODE time integration method, the above will be used to g
     }
 
 
-Adding code generation
----
+Helper functions
+^^^^^^^^^^^^^^^^
 
-After performing any manipulations to the AST, it is time to generate actual code that a given compiler can use. NMODL has 3 code backends:
+Some helper functions that are frequently used when manipulating the AST are listed below (for a full list, consult the ``src/nmodl/visitor/visitor_utils.hpp`` file):
+
+* ``nmodl::collect_nodes(node, types)``: starting from a given node, collect given node type(s), and return the result as a vector of smart pointers
+* ``nmodl::to_nmodl(node)``: convert a given node to a string representing the NMODL statement associated with that node
+* ``nmodl::visitor::create_statement(statement)``: convert a given NMODL string to an AST node, and return a smart pointer to it
+
+.. warning::
+
+   The ``create_statement`` is a convenience function, but does not always work properly because it wraps the string into a ``PROCEDURE`` block (so anything that is not a valid statement in a ``PROCEDURE`` block will fail). The "proper" way of creating a given statement is via calling the various AST node constructors manually.
+
+
+Special visitors
+^^^^^^^^^^^^^^^^
+
+Below we will list some "special" visitors.
+
+Visitors requiring Python
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are several visitors which make use of Python, i.e. they require executing Python code itself. While there is nothing inherently special about them, they do require some additional setup:
+
+* the Python interpreter must be initialized first; this is achieved with the ``initialize_interpreter`` function
+* after any visitors requiring Python have completed their work, the interpreter must be finalized; this is achieved with the ``finalize_interpreter`` function
+
+Visitors that perform I/O
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Some of the visitors perform I/O, notably:
+
+* ``NmodlPrintVisitor(filename)``: output the current AST to a file in NMODL format to ``filename``
+* ``JSONVisitor(filename)``: output the current AST to a file in JSON format to ``filename``
+* ``PerfVisitor(filename)``: output the performance of NMODL (i.e. how many times NMODL itself visited a given node) in JSON format to ``filename``
+* ``Codegen*Visitor``: various visitors which output C++ code
+
+
+Code generation
+^^^^^^^^^^^^^^^
+
+After performing any manipulations on the AST, it is time to generate actual code that a given compiler can use. NMODL has 3 code backends:
 
 * the NEURON code backend for generating C++ code compatible with NEURON (``codegen_neuron_cpp_visitor.cpp``)
 * the coreNEURON code backend for generating C++ code compatible with coreNEURON using CPUs (``codegen_coreneuron_cpp_visitor.cpp``)
@@ -224,8 +268,71 @@ After performing any manipulations to the AST, it is time to generate actual cod
 
 We will not go into the details of the last two, but will instead focus on the NEURON code backend.
 
-This backend 
+NEURON backend
+~~~~~~~~~~~~~~
+
+
+Debugging issues
+^^^^^^^^^^^^^^^^
+
+Now that we implemented our changes, and the code compiles, it is possible that our changes do not work quite as intended. Possible scenarios include, but are not limited to:
+
+# segfaults or errors when running NMODL on an input file
+# modifications via visitors not being applied to the AST
+# the modifications result in the AST being malformed
+# the resulting C++ file does not compile
+# the resulting C++ file compiles, but the mechanism segfaults at runtime
+
+To aid in debugging the first 3 issues without having to resort to using a debugger (yet!), the NMODL CLI comes with several features that can aid in debugging it. They can also be useful for figuring out what visitor methods need to be implemented.
+
+The option ``passes --nmodl-ast`` writes the intermediate AST to a file (in NMODL format) after a visitor performs its pass. This is implemented in the main code as:
+
+.. code:: cpp
+
+    SomeVisitor().visit_program(*ast);
+    ast_to_nmodl(*ast, filepath("some"));
+
+Almost all visitors output NMODL files after they visit the AST using the above pattern, and the output filename is ``<modfile>.<number>.<suffix>.mod``, where ``<number>`` is the current ordinal number of the visitor, and ``<suffix>`` is the argument to ``filepath`` above.
+
+.. tip::
+
+   When writing a new visitor, this pattern is very useful to verify that your changes work as intended.
 
 .. warning::
 
-   The codegen 
+   The resulting intermediate NMODL file should not be re-used for input to NMODL, because it may contain invalid NMODL blocks (such as those used for conveying codegen information).
+
+The option ``passes --json-ast`` writes an AST to a file (in JSON format). Note that the resulting AST is not *exactly* equivalent to the input AST (because some minor visitors run beforehand), but it provides a good starting point for figuring out which visitors need to be implemented, and how they should handle the nodes.
+
+The option ``--verbose [info,debug,trace]`` provides varying degrees of debugging information that is stored in the logger. This can be useful for quickly diagnosing where a segfault could be occurring, or where the code gets stuck, without resorting to a full-blown debugger.
+
+
+Writing tests
+^^^^^^^^^^^^^
+
+There are several kinds of tests to ensure correctness in NMODL:
+
+* unit tests, where we test that a given NMODL feature (such as a visitor, or the parser) works as intended (located in ``test/nmodl/transpiler/unit``)
+* integration tests, where we test that NMODL can translate a given mod file to a C++ file (located in ``test/nmodl/transpiler/integration``)
+* usecase (more commonly known as end-to-end) tests, where we test that NMODL can translate, and NEURON can compile and link, the resulting C++ file, and that the resulting outputs from running a simulation under NEURON are correct (located in ``test/nmodl/transpiler/usecase``)
+
+Unit tests
+~~~~~~~~~~
+
+Most of the NMODL unit tests are written in `Catch2 <https://github.com/catchorg/Catch2>`_, a C++ testing framework. While describing all of Catch2 is outside the scope of this document, the workflow for writing a new unit test is roughly as follows:
+
+* write a minimum working example (MWE) of an NMODL file that is affected by your changes
+* run the parser on the input to obtain the AST
+* run any visitors on the AST
+* use Catch2 to compare the resulting AST to the expected AST
+* add the new test to the CMake build code
+
+.. note::
+
+   The AST classes currently do not have ``operator==`` implemented, which means that a direct comparison will not work due to compiler errors. The workaround for this is to convert the AST to NMODL again using ``to_nmodl``, and applying ``nmodl::test_utils::reindent_text`` on the output, which standardizes the indentation, and can then be compared with the expected NMODL result.
+
+
+Usecase tests
+~~~~~~~~~~~~~
+
+The usecase tests check that 
