@@ -122,7 +122,7 @@ In general, the naming convention is ``snake_case`` for the methods and header f
 
 .. note::
 
-   When overriding a given method, the const-ness of the method signature corresponds to whether or not the visitor it inherits from is `AstVisitor` or `ConstAstVisitor`. In the above example, if we inherited from `ConstAstVisitor`, then the signature of `visit_function_block` would be `const ast::FunctionBlock&`.
+   When overriding a given method, the const-ness of the method signature corresponds to whether or not the visitor it inherits from is ``AstVisitor`` or ``ConstAstVisitor``. In the above example, if we inherited from ``ConstAstVisitor``, then the signature of ``visit_function_block`` would be ``const ast::FunctionBlock&``.
 
 .. warning::
 
