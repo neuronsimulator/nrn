@@ -17,7 +17,7 @@ set_property(TARGET util PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(util PUBLIC fmt::fmt nlohmann_json::nlohmann_json spdlog::spdlog)
 
 if(NRN_ENABLE_BACKTRACE)
-  target_link_libraries(util PRIVATE Backward::Backward)
+  target_link_libraries(util PRIVATE backward)
   target_include_directories(util PRIVATE ${PROJECT_SOURCE_DIR}/external/backward)
   target_compile_definitions(util PUBLIC NRN_USE_BACKWARD=1)
 endif()
