@@ -306,6 +306,50 @@ The option ``passes --json-ast`` writes an AST to a file (in JSON format). Note 
 
 The option ``--verbose [info,debug,trace]`` provides varying degrees of debugging information that is stored in the logger. This can be useful for quickly diagnosing where a segfault could be occurring, or where the code gets stuck, without resorting to a full-blown debugger.
 
+The option ``blame --line <number>`` is used for creating a backtrace of how a given line in the C++ file ended up there. For instance, the output of ``nmodl --neuron src/nrnoc/hh.mod blame --line 511`` could be something like:
+
+.. code::
+
+    Source: "/nrn/src/nmodl/codegen/codegen_cpp_visitor.cpp", line 711, in print_statement_block
+       710:              !statement->is_mutex_unlock() && !statement->is_protect_statement()) {
+    >  711:              printer->add_indent();
+       712:          }
+    Source: "/nrn/src/nmodl/codegen/codegen_cpp_visitor.cpp", line 963, in visit_var_name
+       962:      const auto& index = node.get_index();
+    >  963:      name->accept(*this);
+       964:      if (at_index) {
+    Source: "/nrn/src/nmodl/codegen/codegen_cpp_visitor.cpp", line 713, in print_statement_block
+       712:          }
+    >  713:          statement->accept(*this);
+       714:          if (need_semicolon(*statement)) {
+    Source: "/nrn/src/nmodl/codegen/codegen_cpp_visitor.cpp", line 963, in visit_var_name
+       962:      const auto& index = node.get_index();
+    >  963:      name->accept(*this);
+       964:      if (at_index) {
+    Source: "/nrn/src/nmodl/codegen/codegen_cpp_visitor.cpp", line 1070, in visit_binary_expression
+      1069:          printer->add_text(" " + op + " ");
+    > 1070:          rhs->accept(*this);
+      1071:      }
+    Source: "/nrn/src/nmodl/codegen/codegen_cpp_visitor.cpp", line 963, in visit_var_name
+       962:      const auto& index = node.get_index();
+    >  963:      name->accept(*this);
+       964:      if (at_index) {
+    Source: "/nrn/src/nmodl/codegen/codegen_neuron_cpp_visitor.cpp", line 267, in print_function_or_procedure
+    >  267:      print_statement_block(*node.get_statement_block(), false, false);
+       268:      printer->fmt_line("return ret_{};", name);
+    Source: "/nrn/src/nmodl/codegen/codegen_cpp_visitor.cpp", line 718, in print_statement_block
+       717:          if (!statement->is_mutex_lock() && !statement->is_mutex_unlock()) {
+    >  718:              printer->add_newline();
+       719:          }
+
+For an even larger backtrace, you can also add the ``--detailed`` flag.
+
+Note that the ``blame`` option is only available if NEURON is compiled with the ``NRN_ENABLE_BACKTRACE=ON`` CMake option.
+
+.. note::
+
+   NMODL uses ``backward-cpp`` for printing the backtrace; however, other libraries are in charge of a) walking the stack, and b) retrieving the debugging information from the executable. This complicates things quite a bit, and so far this only works reliably on Linux. The ``libdwarf-devel``, ``elfutils-devel``, and ``libunwind-devel`` DNF packages have been shown to work on Fedora 42.
+
 
 Writing tests
 ^^^^^^^^^^^^^
