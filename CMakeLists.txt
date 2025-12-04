@@ -477,8 +477,10 @@ endif()
 # Enable backward
 # =============================================================================
 if(NRN_ENABLE_BACKTRACE)
+  list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/backward/backward-cpp)
   set(NRN_USE_BACKWARD 1)
-  cpp_cc_git_submodule(backward BUILD PACKAGE backward REQUIRED)
+  nrn_add_external_project(backward)
+  find_package(Backward REQUIRED)
 else()
   set(NRN_USE_BACKWARD 0)
 endif()
