@@ -384,3 +384,4 @@ The usecase tests check that NMODL can translate mod files to C++ files, and tha
 * add a new directory in ``test/nmodl/transpiler/usecases``
 * add any mod files that should be compiled there
 * add any Python files in the same directory that run NEURON simulations. Note that the Python files must be called either ``simulate.py``, or start with the ``test_`` prefix (this is due to legacy reasons and the file naming requirement may be removed in a future refactoring).
+* add the new directory to the ``NMODL_USECASE_DIRS`` list in ``test/nmodl/transpiler/usecases/CMakeLists.txt``
