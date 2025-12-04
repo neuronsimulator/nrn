@@ -277,11 +277,11 @@ Debugging issues
 
 Now that we implemented our changes, and the code compiles, it is possible that our changes do not work quite as intended. Possible scenarios include, but are not limited to:
 
-# segfaults or errors when running NMODL on an input file
-# modifications via visitors not being applied to the AST
-# the modifications result in the AST being malformed
-# the resulting C++ file does not compile
-# the resulting C++ file compiles, but the mechanism segfaults at runtime
+#. segfaults or errors when running NMODL on an input file
+#. modifications via visitors not being applied to the AST
+#. the modifications result in the AST being malformed
+#. the resulting C++ file does not compile
+#. the resulting C++ file compiles, but the mechanism segfaults at runtime
 
 To aid in debugging the first 3 issues without having to resort to using a debugger (yet!), the NMODL CLI comes with several features that can aid in debugging it. They can also be useful for figuring out what visitor methods need to be implemented.
 
@@ -342,13 +342,13 @@ The option ``blame --line <number>`` is used for creating a backtrace of how a g
     >  718:              printer->add_newline();
        719:          }
 
-For an even larger backtrace, you can also add the ``--detailed`` flag.
+For an even larger backtrace, you can also add the ``--detailed`` flag (output omitted for brevity from this document).
 
 Note that the ``blame`` option is only available if NEURON is compiled with the ``NRN_ENABLE_BACKTRACE=ON`` CMake option.
 
 .. note::
 
-   NMODL uses ``backward-cpp`` for printing the backtrace; however, other libraries are in charge of a) walking the stack, and b) retrieving the debugging information from the executable. This complicates things quite a bit, and so far this only works reliably on Linux. The ``libdwarf-devel``, ``elfutils-devel``, and ``libunwind-devel`` DNF packages have been shown to work on Fedora 42.
+   NMODL uses ``backward-cpp`` for printing the backtrace; however, other libraries are in charge of a) walking the stack, and b) retrieving the debugging information from the executable. This complicates things quite a bit, and so far this only works reliably on Linux. The ``libdwarf-devel``, ``elfutils-devel``, and ``libunwind-devel`` DNF packages have been shown to work on Fedora 42, and ``libdw-dev`` and ``binutils-dev`` APT packages have been shown to work on Ubuntu 24.04 LTS. If NEURON is adapted to work with C++23, there is the possibility of using the `stacktrace <https://en.cppreference.com/w/cpp/utility/basic_stacktrace.html>`_ from the STL as an alternative, which should not require any external dependencies.
 
 
 Writing tests
@@ -366,9 +366,9 @@ Unit tests
 Most of the NMODL unit tests are written in `Catch2 <https://github.com/catchorg/Catch2>`_, a C++ testing framework. While describing all of Catch2 is outside the scope of this document, the workflow for writing a new unit test is roughly as follows:
 
 * write a minimum working example (MWE) of an NMODL file that is affected by your changes
-* run the parser on the input to obtain the AST
+* run the parser on the input string to obtain the AST
 * run any visitors on the AST
-* use Catch2 to compare the resulting AST to the expected AST
+* use Catch2 functionality to compare the resulting AST to the expected AST
 * add the new test to the CMake build code
 
 .. note::
@@ -379,4 +379,8 @@ Most of the NMODL unit tests are written in `Catch2 <https://github.com/catchorg
 Usecase tests
 ~~~~~~~~~~~~~
 
-The usecase tests check that 
+The usecase tests check that NMODL can translate mod files to C++ files, and that the resulting files can be compiled and linked to NEURON, as well as that the resulting mechanisms have correct results. The usecase tests are specific to the NEURON codegen backend, and are used to verify matching behavior between the old NMODL compiler (``nocmodl``) and the new one (``nmodl``). To create a new usecase test:
+
+* add a new directory in ``test/nmodl/transpiler/usecases``
+* add any mod files that should be compiled there
+* add any Python files in the same directory that run NEURON simulations. Note that the Python files must be called either ``simulate.py``, or start with the ``test_`` prefix (this is due to legacy reasons and the file naming requirement may be removed in a future refactoring).
