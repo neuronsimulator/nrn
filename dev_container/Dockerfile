@@ -1,5 +1,8 @@
 FROM docker.io/fedora:42
 
+# NOTE: Fedora 42 comes with GCC 15 by default, which is not supported by CUDA
+# 12.9 or below, so we install GCC 14 instead.
+ENV CUDA_SUPPORTED_GCC_PACKAGE=gcc14-c++
 RUN dnf -y install \
     sudo \
     git \
@@ -16,6 +19,7 @@ RUN dnf -y install \
     bison \
     autoconf \
     automake \
+    patchelf \
     openssh-server \
     python-devel \
     libdwarf-devel \
@@ -28,6 +32,7 @@ RUN dnf -y install \
     libXext-devel \
     ccache \
     gcc-c++ \
+    ${CUDA_SUPPORTED_GCC_PACKAGE} \
     gdb \
     valgrind \
     rr \
@@ -47,8 +52,8 @@ RUN dnf -y install \
 ENV PATH="/usr/lib64/openmpi/bin:$PATH"
 
 # caching both Python (uv) packages and ccache
-ENV UV_CACHE_DIR=/opt/python
-ENV CCACHE_DIR=/opt/ccache
+ENV UV_CACHE_DIR=/opt/cache/python
+ENV CCACHE_DIR=/opt/cache/ccache
 ENV CMAKE_GENERATOR=Ninja
 ENV CMAKE_C_COMPILER_LAUNCHER=ccache
 ENV CMAKE_CXX_COMPILER_LAUNCHER=ccache
@@ -82,6 +87,7 @@ RUN cmake -B caliper_build -G Ninja caliper
 RUN sudo cmake --build caliper_build --target install --parallel
 
 # install likwid
+# NOTE: the default configuration of likwid does not support NVHPC
 ENV LIKWID_VERSION=v5.5.0
 ENV LIKWID_SOURCE=https://github.com/RRZE-HPC/likwid.git
 RUN git clone --branch ${LIKWID_VERSION} --depth 1 --recurse-submodules --shallow-submodules ${LIKWID_SOURCE} likwid
@@ -99,3 +105,11 @@ ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
 
 WORKDIR /nrn
+
+# add automatic NVHPC detection
+RUN echo 'for dir in /opt/nvidia/hpc_sdk/Linux_*/*/compilers/bin; do \
+  if [ -d "${dir}" ]; then \
+    export PATH="${dir}:${PATH}"; \
+    break; \
+  fi \
+done' >> /etc/bashrc
