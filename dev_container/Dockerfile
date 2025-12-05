@@ -110,6 +110,7 @@ WORKDIR /nrn
 RUN echo 'for dir in /opt/nvidia/hpc_sdk/Linux_*/*/compilers/bin; do \
   if [ -d "${dir}" ]; then \
     export PATH="${dir}:${PATH}"; \
+    export CMAKE_CUDA_COMPILER_LAUNCHER=ccache; \
     break; \
   fi \
 done' >> /etc/bashrc
