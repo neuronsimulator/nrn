@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # one time script for creating a docker volume that has the NVHPC SDK installed
-# default volume name: nvhpc_volume
+# default volume name: neuron_volume_nvhpc
 
 set -eu
 
@@ -20,7 +20,7 @@ else
 fi
 
 NVHPC_TARBALL="$1"
-VOLUME_NAME="${2:-nvhpc_volume}"
+VOLUME_NAME="${2:-neuron_volume_nvhpc}"
 
 current_dir="$(cd "$(dirname "$0")"; pwd -P)"
 

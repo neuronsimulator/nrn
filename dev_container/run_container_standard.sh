@@ -18,7 +18,7 @@ fi
 
 
 ${container_engine} run \
-    -v cache_volume:/opt/cache:rw \
+    -v neuron_volume_cache:/opt/cache:rw \
     -v "${root_dir}":/nrn \
     --security-opt=label=disable \
     --cap-add=SYS_PTRACE \

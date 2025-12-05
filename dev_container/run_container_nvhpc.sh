@@ -17,8 +17,8 @@ else
 fi
 
 ${container_engine} run \
-    -v cache_volume:/opt/cache:rw \
-    -v nvhpc_volume:/opt/nvidia:ro \
+    -v neuron_volume_cache:/opt/cache:rw \
+    -v neuron_volume_nvhpc:/opt/nvidia:ro \
     -v "${root_dir}":/nrn \
     --device nvidia.com/gpu=all \
     --security-opt=label=disable \

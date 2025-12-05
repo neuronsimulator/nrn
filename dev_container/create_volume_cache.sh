@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # one time script for creating a docker volume that hosts the Python and compiler cache
-# default volume name: cache_volume
+# default volume name: neuron_volume_cache
 
 
 set -eu
@@ -15,7 +15,7 @@ else
     exit 2
 fi
 
-VOLUME_NAME="${1:-cache_volume}"
+VOLUME_NAME="${1:-neuron_volume_cache}"
 
 # Create image volume if it doesn't exist
 ${container_engine} volume inspect "${VOLUME_NAME}" >/dev/null 2>&1 || docker volume create "${VOLUME_NAME}"
