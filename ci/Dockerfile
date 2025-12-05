@@ -86,12 +86,14 @@ ENV LIKWID_VERSION=v5.5.0
 ENV LIKWID_SOURCE=https://github.com/RRZE-HPC/likwid.git
 RUN git clone --branch ${LIKWID_VERSION} --depth 1 --recurse-submodules --shallow-submodules ${LIKWID_SOURCE} likwid
 WORKDIR /scratch/likwid
+# likwid does not autodetect the architecture, so we need to manually specify the compiler
+RUN if [ "$(uname -m)" = "aarch64" ]; then sed -i 's/^COMPILER = .*/COMPILER = GCCARMv8/' config.mk; fi
 RUN make -j
 RUN make install
 WORKDIR /scratch
 
-# MPI complains about running as root, and suggests a CLI option; we are in a
-# container already, nothing can happen
+# by default, MPI complains about running as root; as we are in a container
+# already, we can safely run it
 ENV OMPI_ALLOW_RUN_AS_ROOT=1
 ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
