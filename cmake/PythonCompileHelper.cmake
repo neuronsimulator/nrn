@@ -125,22 +125,7 @@ function(add_nrn_python_library name)
     set(undefined_link_flag "-Wl,-undefined,dynamic_lookup")
   elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
     set(rel_rpath_name "$ORIGIN")
-    # sometimes CMAKE_LIBRARY_ARCHITECTURE is not set, so here we build it manually
-    if(NOT CMAKE_LIBRARY_ARCHITECTURE)
-      set(arch "${CMAKE_SYSTEM_PROCESSOR}")
-      string(TOLOWER "${CMAKE_SYSTEM_NAME}" os)
-
-      if(arch STREQUAL "x86_64" OR arch STREQUAL "aarch64")
-        set(lib_arch "${arch}-linux-gnu")
-      else()
-        set(lib_arch "${arch}-${os}")
-      endif()
-
-      set(CMAKE_LIBRARY_ARCHITECTURE
-          "${lib_arch}"
-          CACHE INTERNAL "Guessed library architecture")
-    endif()
-    set(os_string "${CMAKE_LIBRARY_ARCHITECTURE}")
+    set(os_string "${CMAKE_SYSTEM_PROCESSOR}-linux-gnu")
     set(lib_suffix "${CMAKE_SHARED_MODULE_SUFFIX}")
     set(python_interp "cpython-")
     set(undefined_link_flag "-Wl,--unresolved-symbols=ignore-all")
