@@ -47,6 +47,7 @@ set(HEADER_FILES_TO_INSTALL
     oc/memory.hpp
     oc/nrnapi.h
     oc/nrnassrt.h
+    oc/nrndlldef.h
     oc/nrnmpi.h
     oc/nrnrandom.h
     oc/oc_ansi.h
