@@ -32,7 +32,7 @@ TMP_CNAME="nvhpc-install-$(date +%s%N)"
 ${container_engine} build -t "${IMAGE_TAG}" -f "${current_dir}/Dockerfile_nvhpc" "${current_dir}"
 
 # Create image volume if it doesn't exist
-${container_engine} volume inspect "${VOLUME_NAME}" >/dev/null 2>&1 || docker volume create "${VOLUME_NAME}"
+${container_engine} volume inspect "${VOLUME_NAME}" >/dev/null 2>&1 || ${container_engine} volume create "${VOLUME_NAME}"
 
 # One-shot installation
 ${container_engine} run --name "${TMP_CNAME}" --rm \

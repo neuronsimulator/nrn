@@ -18,6 +18,6 @@ fi
 VOLUME_NAME="${1:-neuron_volume_cache}"
 
 # Create image volume if it doesn't exist
-${container_engine} volume inspect "${VOLUME_NAME}" >/dev/null 2>&1 || docker volume create "${VOLUME_NAME}"
+${container_engine} volume inspect "${VOLUME_NAME}" >/dev/null 2>&1 || ${container_engine} volume create "${VOLUME_NAME}"
 
 echo "Created ${container_engine} volume: ${VOLUME_NAME}"
