@@ -91,7 +91,7 @@ static double f_aopen(void* v) {
         f->set_name(gargstr(1));
     }
     int err = f->open(f->get_name(), "a");
-#ifdef MINGW
+#ifdef WIN32
     /* ignore illegal seek */
     if (err && errno == 29) {
         errno = 0;

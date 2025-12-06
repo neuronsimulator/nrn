@@ -62,7 +62,11 @@ static std::string nrnpy_pylib{}, nrnpy_pyversion{};
  * Throws std::runtime_error if the command does not execute cleanly.
  */
 static std::string check_output(std::string command) {
+#ifdef _MSC_VER
+    std::FILE* const p = _popen(command.c_str(), "r");
+#else
     std::FILE* const p = popen(command.c_str(), "r");
+#endif
     if (!p) {
         throw std::runtime_error("popen(" + command + ", \"r\") failed");
     }
@@ -71,7 +75,11 @@ static std::string check_output(std::string command) {
     while (std::fgets(buffer.data(), buffer.size() - 1, p)) {
         output += buffer.data();
     }
+#ifdef _MSC_VER
+    if (auto const code = _pclose(p)) {
+#else
     if (auto const code = pclose(p)) {
+#endif
         std::ostringstream err;
         err << "'" << command << "' did not terminate cleanly, pclose returned non-zero (" << code
             << ") after the following output had been read:\n"

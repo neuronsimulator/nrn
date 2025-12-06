@@ -870,7 +870,7 @@ void mech_insert1(Section* sec, int type) {
     m = nrn_mechanism(type, nd);
     if (!m) { /* all nodes get the property */
         for (i = n - 1; i >= 0; i--) {
-            IGNORE(prop_alloc(&(pnd[i]->prop), type, pnd[i]));
+            NRN_IGNORE(prop_alloc(&(pnd[i]->prop), type, pnd[i]));
         }
 #if EXTRACELLULAR
         if (type == EXTRACELL) {
@@ -1503,8 +1503,8 @@ void nrn_change_nseg(Section* sec, int n) {
         if (!keep_nseg_parm_ || nold == 0)
 #endif
             for (i = 0; i < n; i++) {
-                IGNORE(prop_alloc(&(pnd[i]->prop), MORPHOLOGY, pnd[i]));
-                IGNORE(prop_alloc(&(pnd[i]->prop), CAP, pnd[i]));
+                NRN_IGNORE(prop_alloc(&(pnd[i]->prop), MORPHOLOGY, pnd[i]));
+                NRN_IGNORE(prop_alloc(&(pnd[i]->prop), CAP, pnd[i]));
             }
     }
 }

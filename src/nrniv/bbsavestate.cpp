@@ -183,6 +183,10 @@ callback to bbss_early when needed.
 #include <unordered_map>
 #include <unordered_set>
 
+#ifdef _MSC_VER
+#include <direct.h>  // _mkdir
+#endif
+
 #include "netcon.h"
 #include "nrniv_mf.h"
 #include "tqueue.hpp"
@@ -673,8 +677,10 @@ static double save_test(void* v) {
     BBSaveState* ss = (BBSaveState*) v;
     usebin_ = 0;
     if (nrnmpi_myid == 0) {  // save global time
-#ifdef MINGW
+#if defined(MINGW)
         mkdir("bbss_out");
+#elif defined(_MSC_VER)
+        _mkdir("bbss_out");
 #else
         mkdir("bbss_out", 0770);
 #endif

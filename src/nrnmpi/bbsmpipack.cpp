@@ -9,6 +9,7 @@
 #include <nrnmpi_dynam.h>
 #endif
 
+#include <cstdint>
 #include <nrnmpi.h>
 
 #if NRNMPI

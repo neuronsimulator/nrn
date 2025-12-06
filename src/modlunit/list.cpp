@@ -288,7 +288,7 @@ Item* makelist(int narg, ...) {
 
 void append(Item* ql, Item* q) {
     assert(ql->itemtype == LIST);
-    IGNORE(insertitem((Item*) (LST(ql)), q));
+    NRN_IGNORE(insertitem((Item*) (LST(ql)), q));
 }
 
 Item* prepend(Item* ql, Item* q) {
@@ -296,7 +296,7 @@ Item* prepend(Item* ql, Item* q) {
 
     assert(ql->itemtype == LIST);
     l = LST(ql);
-    IGNORE(insertitem((Item*) l->next, q));
+    NRN_IGNORE(insertitem((Item*) l->next, q));
     return ql;
 }
 

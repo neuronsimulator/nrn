@@ -9,7 +9,7 @@
 
 
 extern int nrn_global_argc;
-extern char** nrn_global_argv;
+extern const char** nrn_global_argv;
 
 extern int nrn_main_launch; /* 1 if nrniv, 2 if python, 0 if unknownn */
 
