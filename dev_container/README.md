@@ -1,8 +1,9 @@
 # NEURON dev containers
 
-_"It works on my machine." "Then we'll ship your machine!"_
+> *"It works on my machine."*
+> *"Then we'll ship your machine!"*
 
-This is a best-effort attempt at making NEURON development easier by using [containers](https://en.wikipedia.org/wiki/Containerization_(computing)). The point is to ship all the necessary (or as much of it possible) software that can be used in the NEURON development process.
+This is a best-effort attempt at creating a standard NEURON development environment by using [containers](https://en.wikipedia.org/wiki/Containerization_(computing)). The point is to ship all the necessary (or as much of it possible) software that can be used in the NEURON development process. The idea for this feature was inspired by [dev containers](https://containers.dev/).
 
 
 ## Basic workflow
