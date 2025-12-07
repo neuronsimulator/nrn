@@ -147,8 +147,15 @@ install(
   EXPORT nmodlTargets
   RUNTIME DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin)
 
-configure_file(${PROJECT_SOURCE_DIR}/share/nmodl/nrnunits.lib
-               ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib COPYONLY)
+set(nrnunits_start "")
+set(nrnunits_stop "")
+configure_file(${PROJECT_SOURCE_DIR}/share/nmodl/nrnunits.lib.in
+               ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib @ONLY)
+set(nrnunits_start "R\"nrnunits(")
+set(nrnunits_stop ")nrnunits\"")
+configure_file(${PROJECT_SOURCE_DIR}/share/nmodl/nrnunits.lib.in
+               ${PROJECT_BINARY_DIR}/share/nmodl/embedded_nrnunits.lib @ONLY)
+
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/share/nmodl/nrnunits.lib
         DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}share/nmodl)
 

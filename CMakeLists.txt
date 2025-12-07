@@ -17,7 +17,7 @@ if(DEFINED ENV{CRAYPE_VERSION})
 endif()
 project(
   NEURON
-  VERSION 9.0.0
+  VERSION 9.0.1
   LANGUAGES C CXX
   HOMEPAGE_URL "https://www.neuron.yale.edu/neuron/")
 
@@ -479,6 +479,8 @@ endif()
 if(NRN_ENABLE_BACKTRACE)
   set(NRN_USE_BACKWARD 1)
   nrn_add_external_project(backward)
+  list(APPEND CMAKE_PREFIX_PATH ${PROJECT_SOURCE_DIR}/external/backward)
+  find_package(Backward REQUIRED)
 else()
   set(NRN_USE_BACKWARD 0)
 endif()
