@@ -1,5 +1,10 @@
 FROM docker.io/fedora:42
 
+# the list of Pythons we will use for NEURON
+ENV PYTHON_DEFAULT=python3.13
+ENV PYTHON_MIN=python3.10
+ENV PYTHON_MAX=python3.14
+
 # NOTE: Fedora 42 comes with GCC 15 by default, which is not supported by CUDA
 # 12.9 or below, so we install GCC 14 instead.
 ENV CUDA_SUPPORTED_GCC_PACKAGE=gcc14-c++
@@ -21,7 +26,9 @@ RUN dnf -y install \
     automake \
     patchelf \
     openssh-server \
-    python-devel \
+    ${PYTHON_DEFAULT}-devel \
+    ${PYTHON_MIN}-devel \
+    ${PYTHON_MAX}-devel \
     libdwarf-devel \
     elfutils-devel \
     libunwind-devel \
@@ -60,15 +67,21 @@ ENV CMAKE_CXX_COMPILER_LAUNCHER=ccache
 # TODO: change this every time Python is updated
 ENV NMODL_PYLIB=/usr/lib64/libpython3.13.so.1.0
 
-# setup venv
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+# setup venvs
+RUN ${PYTHON_MIN} -m venv /opt/venv_${PYTHON_MIN}
+RUN ${PYTHON_MAX} -m venv /opt/venv_${PYTHON_MAX}
+RUN ${PYTHON_DEFAULT} -m venv /opt/venv_${PYTHON_DEFAULT}
+ENV PATH="/opt/venv_${PYTHON_DEFAULT}/bin:/opt/venv_${PYTHON_MIN}/bin:/opt/venv_${PYTHON_MAX}/bin:$PATH"
 
 WORKDIR /scratch
 
 # install MUSIC
-RUN python -m pip install 'uv==0.9.15'
-RUN python -m uv pip install 'mpi4py' 'cython' 'setuptools'
+RUN ${PYTHON_DEFAULT} -m pip install 'uv==0.9.15'
+RUN ${PYTHON_MIN} -m pip install 'uv==0.9.15'
+RUN ${PYTHON_MAX} -m pip install 'uv==0.9.15'
+RUN ${PYTHON_DEFAULT} -m uv pip install 'mpi4py' 'cython' 'setuptools'
+RUN ${PYTHON_MIN} -m uv pip install 'mpi4py' 'cython' 'setuptools'
+RUN ${PYTHON_MAX} -m uv pip install 'mpi4py' 'cython' 'setuptools'
 
 ENV MUSIC_VERSION=13f312338dcccebfe74d391b1b24f1b6d816ac6c
 RUN curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/${MUSIC_VERSION}.zip
