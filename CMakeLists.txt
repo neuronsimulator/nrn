@@ -912,9 +912,10 @@ if(NRN_ENABLE_DOCS)
     # a normal build, this means we need to schedule the documentation targets sufficiently late in
     # the build.
     foreach(notebook ${all_notebooks})
-      add_dependencies(${notebook} _nmodl hoc_module rxdmath nrnivmodl_dependency)
+      add_dependencies(${notebook} ${NMODL_DEFAULT_PYTHON_TARGET} hoc_module rxdmath
+                       nrnivmodl_dependency)
     endforeach()
-    add_dependencies(sphinx _nmodl hoc_module rxdmath)
+    add_dependencies(sphinx ${NMODL_DEFAULT_PYTHON_TARGET} hoc_module rxdmath)
     add_dependencies(doxygen nmodl_gen_sources)
   endif()
 
@@ -1018,6 +1019,11 @@ if(NRN_ENABLE_TESTS)
     nrn_find_python_module(MODULE pytest_cov ALL)
     if(NOT PYTEST_COV_FOUND)
       message(STATUS "pytest-cov package not installed. Python coverage will not be generated.")
+    endif()
+    set(NRN_PYTEST_LAUNCHER -m pytest --capture=tee-sys)
+    # pytest-cov runs extremely slowly under AddressSanitizer
+    if(PYTEST_COV_FOUND AND NOT "address" IN_LIST NRN_SANITIZERS_LIST)
+      list(APPEND NRN_PYTEST_LAUNCHER --cov-report=xml --cov=neuron)
     endif()
   endif()
   add_dependencies(nrniv_lib copy_share_demo_to_build)

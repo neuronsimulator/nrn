@@ -5,6 +5,16 @@ include_directories(${NMODL_PROJECT_PLATLIB_SOURCE_DIR} ${NMODL_PROJECT_PLATLIB_
 list(APPEND NMODL_EXTRA_CXX_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 
 # =============================================================================
+# In case NRN_ENABLE_PYTHON=OFF, we cannot build Python bindings, so we unconditionally disable
+# those
+# =============================================================================
+if(NOT NRN_ENABLE_PYTHON)
+  set(NMODL_ENABLE_PYTHON_BINDINGS
+      OFF
+      CACHE BOOL "" FORCE)
+endif()
+
+# =============================================================================
 # Create some random files.
 # =============================================================================
 
@@ -57,7 +67,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/language/code_generator_opts.in
 
 add_custom_command(
   OUTPUT ${NMODL_GENERATED_SOURCES}
-  COMMAND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/language/code_generator.py
+  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/language/code_generator.py
           ${CODE_GENERATOR_OPTS} --base-dir ${CMAKE_CURRENT_BINARY_DIR}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/language
   DEPENDS ${CODE_GENERATOR_PY_FILES}
@@ -112,10 +122,9 @@ target_link_libraries(
   util
   lexer
   ${NMODL_WRAPPER_LIBS})
-add_dependencies(nmodl nmodl_copy_python_files nmodl_copy_solver_files)
+add_dependencies(nmodl nmodl_copy_solver_files)
 cpp_cc_configure_sanitizers(TARGET nmodl)
 
-# set(nmodl_BINARY bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
 add_executable(nmodl::nmodl ALIAS nmodl)
 
 # =============================================================================
@@ -124,7 +133,8 @@ add_executable(nmodl::nmodl ALIAS nmodl)
 add_dependencies(nmodl pywrapper)
 
 if(NMODL_ENABLE_PYTHON_BINDINGS)
-  add_dependencies(nmodl _nmodl)
+  add_subdirectory(bindings)
+  add_dependencies(nmodl nmodl_copy_python_files ${NMODL_PYTHON_TARGETS})
 endif()
 
 # =============================================================================
