@@ -27,7 +27,7 @@ In addition, you will also need to download one of the NVHPC Linux releases from
 ## Basic workflow
 
 1. install Docker or Podman
-2. build an image by running the ``create_image.sh`` script. You can specify the name of the image by passing an argument to the script; the default image name is ``neuron_container``
+2. build an image by running the ``create_image.sh`` script. Unless you make modifications to the ``Dockerfile``, you only need to run this once. You can specify the name of the image by passing an argument to the script; the default image name is ``neuron_container``
 3. create a persistent Docker volume which will be used for storing the various caches (currently Python packages and the compiler) by running the ``create_volue_cache.sh`` script. This only needs to be done once. You can specify the name of the volume by passing an argument to the script; the default volume name is ``neuron_volume_cache``
 4. (*required if using GPU capabilities*) create a persistent Docker volume which will be used for storing the NVHPC SDK by running the ``create_volume_nvhpc.sh`` script. This only needs to be done once. You must specify the location of the downloaded NVIDIA Linux ``.tar.gz`` file as the first argument to the script. You can specify the name of the volume by passing a second argument to the script; the default volume name is ``neuron_volume_nvhpc``
 5. start the container by running the ``run_container_standard.sh`` script. Alternatively, run the ``run_container_nvhpc.sh`` script if you want to use GPU capabilities. The rest of the instructions will assume you are now inside of the container, in the ``/nrn`` path
