@@ -275,15 +275,15 @@ NEURON backend
 Debugging issues
 ^^^^^^^^^^^^^^^^
 
-Now that we implemented our changes, and the code compiles, it is possible that our changes do not work quite as intended. Possible scenarios include, but are not limited to:
+Now that we implemented our changes, and the code compiles, it is possible that they do not work quite as intended. Possible scenarios include, but are not limited to:
 
-#. segfaults or errors when running NMODL on an input file
-#. modifications via visitors not being applied to the AST
-#. the modifications result in the AST being malformed
-#. the resulting C++ file does not compile
-#. the resulting C++ file compiles, but the mechanism segfaults at runtime
+* segfaults or errors when running NMODL on an input file
+* modifications via visitors not being applied to the AST
+* the modifications result in an invalid AST
+* the resulting C++ file does not compile
+* the resulting C++ file compiles, but the mechanism segfaults at runtime
 
-To aid in debugging the first 3 issues without having to resort to using a debugger (yet!), the NMODL CLI comes with several features that can aid in debugging it. They can also be useful for figuring out what visitor methods need to be implemented.
+To aid in debugging the above without having to resort to using a debugger (yet!), the NMODL CLI comes with several useful features. They can also be useful for figuring out what visitor methods need to be implemented.
 
 The option ``passes --nmodl-ast`` writes the intermediate AST to a file (in NMODL format) after a visitor performs its pass. This is implemented in the main code as:
 
