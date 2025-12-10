@@ -1019,6 +1019,11 @@ if(NRN_ENABLE_TESTS)
     if(NOT PYTEST_COV_FOUND)
       message(STATUS "pytest-cov package not installed. Python coverage will not be generated.")
     endif()
+    set(NRN_PYTEST_LAUNCHER -m pytest --capture=tee-sys)
+    # pytest-cov runs extremely slowly under AddressSanitizer
+    if(PYTEST_COV_FOUND AND NOT "address" IN_LIST NRN_SANITIZERS_LIST)
+      list(APPEND NRN_PYTEST_LAUNCHER --cov-report=xml --cov=neuron)
+    endif()
   endif()
   add_dependencies(nrniv_lib copy_share_demo_to_build)
   # Execute neurondemo as part of the build because it lazily calls nrnivmodl. If we don't do this
