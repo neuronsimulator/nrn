@@ -6,13 +6,15 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
-#include <regex>
 
 #include "ast/all.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "visitors/matexp_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
+#include "utils/test_utils.hpp"
+
+using nmodl::test_utils::reindent_text;
 
 //=============================================================================
 // Tests for solver method "matexp"
@@ -41,39 +43,27 @@ std::string run_matexp_visitor(const std::string& text, bool verbatim) {
     return nmodl;
 }
 
-std::string trim_text(std::string text) {
-    // Remove leading whitespace
-    text = std::regex_replace(text, std::regex("^[ \t\n\r\f\v]+"), "");
-
-    // Remove trailing whitespace
-    text = std::regex_replace(text, std::regex("[ \t\n\r\f\v]+$"), "");
-
-    // Remove whitespace around newlines
-    text = std::regex_replace(text, std::regex("[ \t\r\f\v]*\n[ \t\r\f\v]*"), "\n");
-
-    // Remove duplicate newlines
-    text = std::regex_replace(text, std::regex("\n+"), "\n");
-
-    return text;
-}
-
 SCENARIO("Solve a KINETIC block using the matexp method", "[visitor][matexp]") {
     GIVEN("KINETIC block, to be solved in initial and breakpoint blocks") {
         std::string input_nmodl = R"(
         INITIAL {
             SOLVE test_kin STEADYSTATE matexp
         }
+
         BREAKPOINT {
             SOLVE test_kin METHOD matexp
         }
+
         PARAMETER {
             a = 0.654
             b = 0.129
         }
+
         STATE {
             x
             y
         }
+
         KINETIC test_kin {
             ~ x <-> y (a, b)
             CONSERVE x + y = 3.14159
@@ -87,16 +77,20 @@ SCENARIO("Solve a KINETIC block using the matexp method", "[visitor][matexp]") {
                 nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*dt
             } CONSERVE = 3.14159
         }
+
         BREAKPOINT {
         }
+
         PARAMETER {
             a = 0.654
             b = 0.129
         }
+
         STATE {
             x
             y
         }
+
         MATEXP_SOLVE (0) {
             nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
             nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
@@ -106,7 +100,7 @@ SCENARIO("Solve a KINETIC block using the matexp method", "[visitor][matexp]") {
         )";
         THEN("Replace the kinetic block with its solution in a procedure") {
             auto result = run_matexp_visitor(input_nmodl, true);
-            REQUIRE(trim_text(expect_output) == trim_text(result));
+            REQUIRE(reindent_text(expect_output) == reindent_text(result));
         }
     }
 }
@@ -117,15 +111,19 @@ SCENARIO("Test exponential decay using the matexp method", "[visitor][matexp]") 
         INITIAL {
             SOLVE test_kin STEADYSTATE matexp
         }
+
         BREAKPOINT {
             SOLVE test_kin METHOD matexp
         }
+
         PARAMETER {
             a = 0.129
         }
+
         STATE {
             x
         }
+
         KINETIC test_kin {
             ~ x -> (a)
         })";
@@ -135,21 +133,25 @@ SCENARIO("Test exponential decay using the matexp method", "[visitor][matexp]") 
                 nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
             }
         }
+
         BREAKPOINT {
         }
+
         PARAMETER {
             a = 0.129
         }
+
         STATE {
             x
         }
+
         MATEXP_SOLVE (0) {
             nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
         }
         )";
         THEN("Replace the kinetic block with its solution in a procedure") {
             auto result = run_matexp_visitor(input_nmodl, true);
-            REQUIRE(trim_text(expect_output) == trim_text(result));
+            REQUIRE(reindent_text(expect_output) == reindent_text(result));
         }
     }
 }
@@ -160,13 +162,16 @@ SCENARIO("Mix matexp and sparse solver methods", "[visitor][matexp]") {
         INITIAL {
             SOLVE test_kin STEADYSTATE sparse
         }
+
         BREAKPOINT {
             SOLVE test_kin METHOD matexp
         }
+
         STATE {
             x
             y
         }
+
         KINETIC test_kin {
             ~ x <-> y (a, b)
         })";
@@ -174,15 +179,19 @@ SCENARIO("Mix matexp and sparse solver methods", "[visitor][matexp]") {
         INITIAL {
             SOLVE test_kin STEADYSTATE sparse
         }
+
         BREAKPOINT {
         }
+
         STATE {
             x
             y
         }
+
         KINETIC test_kin {
             ~ x <-> y (a, b)
         }
+
         MATEXP_SOLVE (0) {
             nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
             nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
@@ -194,7 +203,7 @@ SCENARIO("Mix matexp and sparse solver methods", "[visitor][matexp]") {
             "The original KINETIC block is kept unchanged,"
             "its solution is inserted into a new PROCEDURE block") {
             auto result = run_matexp_visitor(input_nmodl, true);
-            REQUIRE(trim_text(expect_output) == trim_text(result));
+            REQUIRE(reindent_text(expect_output) == reindent_text(result));
         }
     }
 }
