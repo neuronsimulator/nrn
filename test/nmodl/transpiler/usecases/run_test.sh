@@ -29,7 +29,7 @@ usecase_name="$(basename "$usecase_dir")"
 
 
 # NRN + nocmodl
-if [[ "matexp" != *"$usecase_name"* ]]; then
+if [[ "matexp" != *"$usecase_name"* ]]; then # Skip matexp, not implemented in nocmodl
   echo "-- Running NRN+nocmodl ------"
   rm -r "${output_dir}" tmp || true
   nrnivmodl "${usecase_dir}"

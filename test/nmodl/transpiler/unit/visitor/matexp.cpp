@@ -208,6 +208,80 @@ SCENARIO("Mix matexp and sparse solver methods", "[visitor][matexp]") {
     }
 }
 
+SCENARIO("Solve multiple blocks with matexp", "[visitor][matexp]") {
+    GIVEN("Mutliple KINETIC block to be solved") {
+        std::string input_nmodl = R"(
+        INITIAL {
+            SOLVE test_kin_1 STEADYSTATE matexp
+            SOLVE test_kin_2 STEADYSTATE matexp
+        }
+
+        BREAKPOINT {
+            SOLVE test_kin_1 METHOD matexp
+            SOLVE test_kin_2 METHOD matexp
+        }
+
+        STATE {
+            a
+            b
+            x
+            y
+        }
+
+        KINETIC test_kin_1 {
+            ~ a <-> b (1.1, 2.2)
+        }
+
+        KINETIC test_kin_2 {
+            ~ x <-> y (3.3, 4.4)
+        })";
+        std::string expect_output = R"(
+        INITIAL {
+            MATEXP_SOLVE (1) {
+                nmodl_eigen_j[0] = nmodl_eigen_j[0]-(1.1)*dt
+                nmodl_eigen_j[1] = nmodl_eigen_j[1]+(1.1)*dt
+                nmodl_eigen_j[5] = nmodl_eigen_j[5]-(2.2)*dt
+                nmodl_eigen_j[4] = nmodl_eigen_j[4]+(2.2)*dt
+            }
+            MATEXP_SOLVE (1) {
+                nmodl_eigen_j[10] = nmodl_eigen_j[10]-(3.3)*dt
+                nmodl_eigen_j[11] = nmodl_eigen_j[11]+(3.3)*dt
+                nmodl_eigen_j[15] = nmodl_eigen_j[15]-(4.4)*dt
+                nmodl_eigen_j[14] = nmodl_eigen_j[14]+(4.4)*dt
+            }
+        }
+
+        BREAKPOINT {
+        }
+
+        STATE {
+            a
+            b
+            x
+            y
+        }
+
+        MATEXP_SOLVE (0) {
+            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(1.1)*dt
+            nmodl_eigen_j[1] = nmodl_eigen_j[1]+(1.1)*dt
+            nmodl_eigen_j[5] = nmodl_eigen_j[5]-(2.2)*dt
+            nmodl_eigen_j[4] = nmodl_eigen_j[4]+(2.2)*dt
+        }
+
+        MATEXP_SOLVE (0) {
+            nmodl_eigen_j[10] = nmodl_eigen_j[10]-(3.3)*dt
+            nmodl_eigen_j[11] = nmodl_eigen_j[11]+(3.3)*dt
+            nmodl_eigen_j[15] = nmodl_eigen_j[15]-(4.4)*dt
+            nmodl_eigen_j[14] = nmodl_eigen_j[14]+(4.4)*dt
+        }
+        )";
+        THEN("All KINETIC block are solved") {
+            auto result = run_matexp_visitor(input_nmodl, true);
+            REQUIRE(reindent_text(expect_output) == reindent_text(result));
+        }
+    }
+}
+
 SCENARIO("Give non-linear equations to the matexp solver", "[visitor][matexp]") {
     GIVEN("KINETIC block with x + y <-> z reaction statement") {
         std::string input_nmodl = R"(

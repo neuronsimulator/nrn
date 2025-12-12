@@ -19,20 +19,24 @@ namespace visitor {
 
 
 template <typename T>
-bool vector_contains(const std::vector<T>& vec, const T& value) {
+static bool vector_contains(const std::vector<T>& vec, const T& value) {
     return std::find(vec.begin(), vec.end(), value) != vec.end();
 }
 
 
 void MatexpVisitor::visit_program(ast::Program& node) {
+    // Make lists of all KineticBlock's and SolveBlock's in the program
     node.visit_children(*this);
 
     states = node.get_symbol_table()->get_variables(symtab::syminfo::NmodlType::state_var);
 
+    // Replace solve-steadystate-matexp statements with their MatexpBlock solution
     for (const auto& solve_block: steadystate_blocks) {
         replace_solve_block(*solve_block, true);
     }
 
+    // Remove solve-method-matexp statements and append their MatexpBlock
+    // solution to the end of the file.
     for (const auto& solve_block: solve_blocks) {
         node.emplace_back_node(remove_solve_block(*solve_block, false));
     }
@@ -53,6 +57,7 @@ void MatexpVisitor::visit_program(ast::Program& node) {
 }
 
 
+/// Populate the lists of solve-block statements in the program
 void MatexpVisitor::visit_solve_block(ast::SolveBlock& node) {
     // Find solve statements that use the matexp solver method
     const auto& solve_method = node.get_method();
@@ -74,6 +79,7 @@ void MatexpVisitor::visit_solve_block(ast::SolveBlock& node) {
 }
 
 
+/// Populate the list of kinetic blocks in the program
 void MatexpVisitor::visit_kinetic_block(ast::KineticBlock& node) {
     kinetic_blocks.push_back(&node);
 }
@@ -135,7 +141,7 @@ class ExtractConserveVisitor: public AstVisitor {
 };
 
 
-/// Replace the solve statement with the matexp solver block
+// Replace the given solve statement with a MatexpBlock
 void MatexpVisitor::replace_solve_block(const ast::SolveBlock& node, bool steadystate) {
     const auto& name = node.get_block_name()->get_node_name();
     const auto& block = find_kinetic_block(name);
@@ -148,7 +154,7 @@ void MatexpVisitor::replace_solve_block(const ast::SolveBlock& node, bool steady
 }
 
 
-/// Remove the solve statement and return the matexp solver block
+// Remove the given solve-block statement and return the MatexpBlock solution
 std::shared_ptr<ast::MatexpBlock> MatexpVisitor::remove_solve_block(const ast::SolveBlock& node,
                                                                     bool steadystate) {
     const auto& name = node.get_block_name()->get_node_name();
@@ -174,6 +180,7 @@ std::shared_ptr<ast::MatexpBlock> MatexpVisitor::remove_solve_block(const ast::S
 }
 
 
+// Search the kinetic_blocks vector for the given block
 ast::KineticBlock* MatexpVisitor::find_kinetic_block(const std::string& block_name) {
     for (const auto& block: kinetic_blocks) {
         if (block->get_node_name() == block_name) {
@@ -184,6 +191,7 @@ ast::KineticBlock* MatexpVisitor::find_kinetic_block(const std::string& block_na
 }
 
 
+// Convert a KineticBlock into a MatexpBlock
 std::shared_ptr<ast::MatexpBlock> MatexpVisitor::solve_kinetic_block(const ast::KineticBlock& node,
                                                                      bool steadystate) {
     // Make a copy of the statement block, do not modify original.
@@ -211,14 +219,14 @@ void MatexpVisitor::visit_statement_block(ast::StatementBlock& node) {
 }
 
 
-void nonlinear_reaction_error() {
+static void nonlinear_reaction_error() {
     logger->error("MatexpVisitor :: Error : Non-linear equation detected");
     throw std::invalid_argument("Non-linear equation detected");
 }
 
 
 // Argument node is a reactant or product expression
-std::string get_state_var_name(const std::shared_ptr<ast::Ast>& node) {
+static std::string get_state_var_name(const std::shared_ptr<ast::Ast>& node) {
     const auto reaction_var_name = std::dynamic_pointer_cast<ast::ReactVarName>(node);
     if (!reaction_var_name) {
         nonlinear_reaction_error();
@@ -231,6 +239,7 @@ std::string get_state_var_name(const std::shared_ptr<ast::Ast>& node) {
 }
 
 
+// Returns an index into the "state" vector
 int MatexpVisitor::get_state_index(const std::string& state_name) {
     for (int index = 0; index < states.size(); index++) {
         if (state_name == states[index]->get_name()) {
@@ -241,7 +250,8 @@ int MatexpVisitor::get_state_index(const std::string& state_name) {
 }
 
 
-int find_node(const nmodl::ast::StatementVector& statements, const nmodl::ast::Node* node) {
+// Get the index of a statement in a statement-vector
+static int find_node(const nmodl::ast::StatementVector& statements, const nmodl::ast::Node* node) {
     for (int index = 0; index < statements.size(); index++) {
         const nmodl::ast::Node* cursor = statements[index].get();
         if (cursor == node) {
@@ -252,6 +262,57 @@ int find_node(const nmodl::ast::StatementVector& statements, const nmodl::ast::N
 }
 
 
+// Convert a decay reaction statement "->" into equivalent assignments to the Jacobian matrix
+std::shared_ptr<ast::Statement> MatexpVisitor::transform_decay_statement(
+    std::shared_ptr<ast::Expression> lhs,
+    std::shared_ptr<ast::Expression> kf) {
+    const auto lhs_name = get_state_var_name(lhs);
+    const auto lhs_idx = get_state_index(lhs_name);
+    // Calculate the Jacobian matrix indices
+    const int jf_src_idx = lhs_idx + states.size() * lhs_idx;
+    // Write NMODL to assign to the Jacobian matrix
+    const std::string jf_src = "nmodl_eigen_j[" + std::to_string(jf_src_idx) + "]";
+    const std::string kf_nmodl = to_nmodl(kf);
+    return create_statement(jf_src + " = " + jf_src + " - (" + kf_nmodl + ") * dt");
+}
+
+
+// Convert a reaction statement "<->" into equivalent assignments to the Jacobian matrix
+std::vector<std::shared_ptr<ast::Statement>> MatexpVisitor::transform_reaction_statement(
+    std::shared_ptr<ast::Expression> lhs,
+    std::shared_ptr<ast::Expression> rhs,
+    std::shared_ptr<ast::Expression> kf,
+    std::shared_ptr<ast::Expression> kb) {
+    // Find the state vector indices
+    const auto lhs_name = get_state_var_name(lhs);
+    const auto rhs_name = get_state_var_name(rhs);
+    const auto lhs_idx = get_state_index(lhs_name);
+    const auto rhs_idx = get_state_index(rhs_name);
+    // Calculate the Jacobian matrix indices
+    const int jf_src_idx = lhs_idx + states.size() * lhs_idx;
+    const int jf_dst_idx = lhs_idx * states.size() + rhs_idx;
+    const int jb_src_idx = rhs_idx * states.size() + rhs_idx;
+    const int jb_dst_idx = lhs_idx + states.size() * rhs_idx;
+    // Create four new statements assigning to the Jacobian matrix
+    const std::string jf_src = "nmodl_eigen_j[" + std::to_string(jf_src_idx) + "]";
+    const std::string jf_dst = "nmodl_eigen_j[" + std::to_string(jf_dst_idx) + "]";
+    const std::string jb_src = "nmodl_eigen_j[" + std::to_string(jb_src_idx) + "]";
+    const std::string jb_dst = "nmodl_eigen_j[" + std::to_string(jb_dst_idx) + "]";
+    const std::string kf_nmodl = to_nmodl(kf);
+    const std::string kb_nmodl = to_nmodl(kb);
+    const std::string jf_n_string = jf_src + " = " + jf_src + " - (" + kf_nmodl + ") * dt";
+    const std::string jf_p_string = jf_dst + " = " + jf_dst + " + (" + kf_nmodl + ") * dt";
+    const std::string jb_n_string = jb_src + " = " + jb_src + " - (" + kb_nmodl + ") * dt";
+    const std::string jb_p_string = jb_dst + " = " + jb_dst + " + (" + kb_nmodl + ") * dt";
+    const auto& jf_n = create_statement(jf_n_string);
+    const auto& jf_p = create_statement(jf_p_string);
+    const auto& jb_n = create_statement(jb_n_string);
+    const auto& jb_p = create_statement(jb_p_string);
+    return {jf_n, jf_p, jb_n, jb_p};
+}
+
+
+// Visit reaction statements inside of kinetic blocks which we are actively solving
 void MatexpVisitor::visit_reaction_statement(ast::ReactionStatement& node) {
     if (!in_jacobian_block) {
         return;
@@ -274,47 +335,13 @@ void MatexpVisitor::visit_reaction_statement(ast::ReactionStatement& node) {
     // Check for invalid kinetic models
     if (op == ast::ReactionOp::LTLT) {
         nonlinear_reaction_error();
-    } else if (op == ast::ReactionOp::MINUSGT) {
-        // Find the state vector indices
-        const auto lhs_name = get_state_var_name(lhs);
-        const auto lhs_idx = get_state_index(lhs_name);
-        // Calculate the Jacobian matrix indices
-        const int jf_src_idx = lhs_idx + states.size() * lhs_idx;
-        // Write NMODL to assign to the Jacobian matrix
-        const std::string jf_src = "nmodl_eigen_j[" + std::to_string(jf_src_idx) + "]";
-        const std::string kf_nmodl = to_nmodl(kf);
-        const std::string jf_n_string = jf_src + " = " + jf_src + " - (" + kf_nmodl + ") * dt";
-        const auto& jf_n = create_statement(jf_n_string);
-        // Replace the reaction statement with an assignment to the Jaconbian
+    }
+    // Replace reaction statements with assignments to the Jaconbian
+    else if (op == ast::ReactionOp::MINUSGT) {
+        const auto jf_n = transform_decay_statement(lhs, kf);
         statement_block->insert_statement(std::begin(statements) + statement_index, jf_n);
     } else if (op == ast::ReactionOp::LTMINUSGT) {
-        // Find the state vector indices
-        const auto lhs_name = get_state_var_name(lhs);
-        const auto rhs_name = get_state_var_name(rhs);
-        const auto lhs_idx = get_state_index(lhs_name);
-        const auto rhs_idx = get_state_index(rhs_name);
-        // Calculate the Jacobian matrix indices
-        const int jf_src_idx = lhs_idx + states.size() * lhs_idx;
-        const int jf_dst_idx = lhs_idx * states.size() + rhs_idx;
-        const int jb_src_idx = rhs_idx * states.size() + rhs_idx;
-        const int jb_dst_idx = lhs_idx + states.size() * rhs_idx;
-        // Create four new statements assigning to the Jacobian matrix
-        const std::string jf_src = "nmodl_eigen_j[" + std::to_string(jf_src_idx) + "]";
-        const std::string jf_dst = "nmodl_eigen_j[" + std::to_string(jf_dst_idx) + "]";
-        const std::string jb_src = "nmodl_eigen_j[" + std::to_string(jb_src_idx) + "]";
-        const std::string jb_dst = "nmodl_eigen_j[" + std::to_string(jb_dst_idx) + "]";
-        const std::string kf_nmodl = to_nmodl(kf);
-        const std::string kb_nmodl = to_nmodl(kb);
-        const std::string jf_n_string = jf_src + " = " + jf_src + " - (" + kf_nmodl + ") * dt";
-        const std::string jf_p_string = jf_dst + " = " + jf_dst + " + (" + kf_nmodl + ") * dt";
-        const std::string jb_n_string = jb_src + " = " + jb_src + " - (" + kb_nmodl + ") * dt";
-        const std::string jb_p_string = jb_dst + " = " + jb_dst + " + (" + kb_nmodl + ") * dt";
-        const auto& jf_n = create_statement(jf_n_string);
-        const auto& jf_p = create_statement(jf_p_string);
-        const auto& jb_n = create_statement(jb_n_string);
-        const auto& jb_p = create_statement(jb_p_string);
-        // Replace the reaction statement with the four new statements
-        for (const auto& stmt: {jf_n, jf_p, jb_n, jb_p}) {
+        for (const auto& stmt: transform_reaction_statement(lhs, rhs, kf, kb)) {
             statement_block->insert_statement(std::begin(statements) + statement_index++, stmt);
         }
     }

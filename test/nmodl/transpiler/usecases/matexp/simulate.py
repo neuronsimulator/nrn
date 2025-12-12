@@ -1,3 +1,11 @@
+"""
+Tests that the CNEXP and MATEXP solvers yield identical results.
+
+This simulates two formulations of the same Hodgkin-Huxley model.
+* A standard HH model solved by CNEXP
+* A modified HH model solved by MATEXP, where each gate (M, H, N) is replaced by
+  an equivalent two state Markov model.
+"""
 import numpy as np
 
 from neuron import gui, h
