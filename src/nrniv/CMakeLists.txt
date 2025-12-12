@@ -269,14 +269,15 @@ add_custom_command(
 add_custom_target(generate_hocusr_header DEPENDS "${PROJECT_BINARY_DIR}/src/oc/hocusr.h")
 add_dependencies(generated_source_files generate_hocusr_header)
 
-# header for dynamic mpi
+# header for dynamic mpi.
+# Creates nrnmpi_dynam_cinc  nrnmpi_dynam.h  nrnmpi_dynam_wrappers.inc
 if(NRN_ENABLE_MPI_DYNAMIC)
   file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/src/nrnmpi")
   add_custom_command(
     OUTPUT ${NRNMPI_DYNAMIC_INCLUDE_FILE}
-    COMMAND sh mkdynam.sh "${PROJECT_BINARY_DIR}/src/nrnmpi"
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} mkdynam.py "${PROJECT_BINARY_DIR}/src/nrnmpi"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/nrnmpi
-    DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.sh
+    DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.py
             ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpidec.h)
 endif()
 
