@@ -53,21 +53,21 @@ if(SKBUILD)
       CACHE STRING "" FORCE)
   set(NRN_INSTALL_DATA_PREFIX "neuron/.data/")
   # need to force fmtlib install prefixes
-  set(FMT_LIB_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
-  set(FMT_INC_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
-  set(FMT_PKGCONFIG_DIR "${NRN_INSTALL_DATA_PREFIX}/lib/pkgconfig")
-  set(FMT_CMAKE_DIR "${NRN_INSTALL_DATA_PREFIX}/lib/cmake/fmt")
+  set(FMT_LIB_DIR "${NRN_INSTALL_DATA_PREFIX}lib")
+  set(FMT_INC_DIR "${NRN_INSTALL_DATA_PREFIX}include")
+  set(FMT_PKGCONFIG_DIR "${NRN_INSTALL_DATA_PREFIX}lib/pkgconfig")
+  set(FMT_CMAKE_DIR "${NRN_INSTALL_DATA_PREFIX}lib/cmake/fmt")
   # need to force IV install prefixes
-  set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/lib")
-  set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/include")
-  set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/bin")
+  set(IV_LIB_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}lib")
+  set(IV_HEADERS_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}include")
+  set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}bin")
 
 elseif(CMAKE_GENERATOR MATCHES "Visual Studio")
   set(NRN_INSTALL_PYTHON_PREFIX "lib/python/neuron/")
-  set(NRN_INSTALL_DATA_PREFIX ".")
+  set(NRN_INSTALL_DATA_PREFIX "./")
 
 else()
-  set(NRN_INSTALL_DATA_PREFIX)
+  set(NRN_INSTALL_DATA_PREFIX "./")
 endif()
 
 # =============================================================================
