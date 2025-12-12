@@ -93,7 +93,7 @@ static void* load_nrnmpi(const char* name, std::string& mes) {
     return handle;
 }
 
-std::string nrnmpi_load() {
+NRN_API std::string nrnmpi_load() {
     std::string pmes;
     void* handle = nullptr;
     // If libmpi already in memory, find name and dlopen that.

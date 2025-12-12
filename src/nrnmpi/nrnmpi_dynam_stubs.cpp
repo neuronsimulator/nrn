@@ -19,7 +19,7 @@ static int stub_nrnmpi_int_allmax(int x) {
 }
 static void stub_nrnmpi_barrier() {}
 
-void nrnmpi_stubs() {
+NRN_API void nrnmpi_stubs() {
     p_nrnmpi_init = stub_nrnmpi_init;
     p_nrnmpi_terminate = stub_nrnmpi_terminate;
     p_nrnmpi_wtime = nrn_timeus;
