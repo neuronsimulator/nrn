@@ -29,27 +29,9 @@ export BUILD_BUILDDIRECTORY="${BUILD_SOURCESDIRECTORY}/build"
 export CMAKE_COMMAND=/mingw64/bin/cmake
 
 # build and create installer
-${CMAKE_COMMAND} \
-    -S "${BUILD_SOURCESDIRECTORY}" \
-    -B "${BUILD_BUILDDIRECTORY}" \
-    -G Ninja  \
-    -DNRN_ENABLE_MPI_DYNAMIC=ON  \
-    -DNRN_ENABLE_MPI=ON  \
-    -DCMAKE_PREFIX_PATH='/c/msmpi'  \
-    -DNRN_ENABLE_INTERVIEWS=ON  \
-    -DNRN_ENABLE_PYTHON=ON  \
-    -DNRN_ENABLE_RX3D=ON  \
-    -DNRN_RX3D_OPT_LEVEL=2 \
-    -DNRN_BINARY_DIST_BUILD=ON \
-    -DPYTHON_EXECUTABLE=/c/Python39/python.exe \
-    -DNRN_ENABLE_PYTHON_DYNAMIC=ON  \
-    -DNRN_PYTHON_DYNAMIC='c:/Python39/python.exe;c:/Python310/python.exe;c:/Python311/python.exe;c:/Python312/python.exe;c:/Python313/python.exe;c:/Python314/python.exe'  \
-    -DCMAKE_INSTALL_PREFIX='/c/nrn-install' \
-    -DMPI_CXX_LIB_NAMES:STRING=msmpi \
-    -DMPI_C_LIB_NAMES:STRING=msmpi \
-    -DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib
+${CMAKE_COMMAND} --preset windows -S "${BUILD_SOURCESDIRECTORY}" -B "${BUILD_BUILDDIRECTORY}"
 ${CMAKE_COMMAND} --build "${BUILD_BUILDDIRECTORY}" --target install
-cd "${BUILD_BUILDDIRECTORY}" && ctest -VV || cd -
+ctest --test-dir "${BUILD_BUILDDIRECTORY}" --output-on-failure --parallel
 ${CMAKE_COMMAND} --build "${BUILD_BUILDDIRECTORY}" --target setup_exe
 
 # copy installer with fixed name for nightly upload

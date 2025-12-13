@@ -27,6 +27,7 @@ build:
     - flex
     - libfl-dev
     - libreadline-dev
+    - ninja-build
 
 submodules:
   recursive: true
