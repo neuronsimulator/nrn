@@ -20,6 +20,10 @@
 #include "membdef.h"
 #include "multicore.h"
 #include "nrnmpi.h"
+#ifdef _MSC_VER
+#include <direct.h>  // _getcwd
+#include "../mswin/dlfcn.h"
+#endif
 
 #include <vector>
 #include <unordered_map>
@@ -33,12 +37,12 @@ static char banner[] =
     "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2022\n\
 See http://neuron.yale.edu/neuron/credits\n";
 
-#if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
+#if defined(_WIN32) || defined(NRNMECH_DLL_STYLE)
 extern const char* nrn_mech_dll;      /* declared in hoc_init.cpp so ivocmain.cpp can see it */
 extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.cpp */
 #endif                                // WIN32 or NRNMEHC_DLL_STYLE
 
-#if defined(WIN32)
+#if defined(_WIN32)
 #undef DLL_DEFAULT_FNAME
 #define DLL_DEFAULT_FNAME "nrnmech.dll"
 #endif  // WIN32
@@ -94,10 +98,10 @@ void nrn_possible_mismatched_arch(const char* libname) {
 
 #include "nrnwrap_dlfcn.h"
 
-#define CHECK(name)                            \
-    if (hoc_lookup(name) != (Symbol*) 0) {     \
-        IGNORE(fprintf(stderr, CHKmes, name)); \
-        nrn_exit(1);                           \
+#define CHECK(name)                                \
+    if (hoc_lookup(name) != (Symbol*) 0) {         \
+        NRN_IGNORE(fprintf(stderr, CHKmes, name)); \
+        nrn_exit(1);                               \
     }
 
 static char CHKmes[] = "The user defined name, %s, already exists\n";
@@ -317,7 +321,7 @@ void hoc_last_init(void) {
         if (nrn_nobanner_ == 0) {
             Fprintf(stderr, "%s\n", nrn_version(1));
             Fprintf(stderr, "%s\n", banner);
-            IGNORE(fflush(stderr));
+            NRN_IGNORE(fflush(stderr));
         }
     memb_func_size_ = 30;  // initial allocation size
     memb_list.reserve(memb_func_size_);
@@ -546,7 +550,7 @@ void register_mech_vars(const char** var_buffers,
                 varname.erase(subscript);
             }
             if ((var_symbol = hoc_lookup(varname.c_str()))) {
-                IGNORE(fprintf(stderr, CHKmes, varname.c_str()));
+                NRN_IGNORE(fprintf(stderr, CHKmes, varname.c_str()));
             } else {
                 var_symbol = hoc_install(varname.c_str(), RANGEVAR, 0.0, &hoc_symlist);
                 var_symbol->subtype = modltype;

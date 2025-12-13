@@ -12,6 +12,8 @@ using longdbl = long double;
 #include <stdlib.h>
 #include <string>
 
+#include "nrndlldef.h"
+
 /* from bbsmpipack.cpp */
 typedef struct bbsmpibuf {
     char* buf;
@@ -62,8 +64,8 @@ extern int nrnmpi_bbsrecv(int source, bbsmpibuf* r);
 extern int nrnmpi_bbssendrecv(int dest, int tag, bbsmpibuf* s, bbsmpibuf* r);
 
 /* from nrnmpi.cpp */
-extern void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
-extern int nrnmpi_wrap_mpi_init(int* flag);
+extern NRN_API void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
+extern NRN_API int nrnmpi_wrap_mpi_init(int* flag);
 extern double nrnmpi_wtime();
 extern void nrnmpi_terminate();
 extern void nrnmpi_abort(int errcode);

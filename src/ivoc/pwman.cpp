@@ -34,7 +34,7 @@ extern char* ivoc_get_temp_file();
 void single_event_run();
 extern char** hoc_strpop();
 
-#ifdef MINGW
+#if defined(WIN32)
 #include <IV-Win/mprinter.h>
 void iv_display_scale(float);
 void iv_display_scale(Coord, Coord);  // Make if fit into the screen
@@ -419,7 +419,7 @@ void PWMDismiss::execute() {
 }
 
 #else  //! HAVE_IV
-#ifdef MINGW
+#if defined(WIN32)
 char* hoc_back2forward(char*);
 #endif
 #endif  // HAVE_IV
@@ -524,7 +524,7 @@ static double pwman_close(void* v) {
 #endif
     return 0.;
 }
-#ifdef MINGW
+#if defined(WIN32)
 static void pwman_iconify1(void* v) {
 #if HAVE_IV
     if (hoc_usegui) {
@@ -539,7 +539,7 @@ static double pwman_iconify(void* v) {
 #if HAVE_IV
     if (hoc_usegui) {
         PrintableWindow* pw = PrintableWindow::leader();
-#ifdef MINGW
+#if defined(WIN32)
         if (!nrn_is_gui_thread()) {
             nrn_gui_exec(pwman_iconify1, pw);
             return 0.;
@@ -654,7 +654,7 @@ static double pwman_snap(void* v) {
     return 0;
 }
 
-#ifdef MINGW
+#if defined(WIN32)
 static double scale_;
 static void pwman_scale1(void*) {
 #if HAVE_IV
@@ -671,13 +671,11 @@ static double pwman_scale(void* v) {
 #if HAVE_IV
     if (hoc_usegui) {
 #if defined(WIN32)
-#ifdef MINGW
         if (!nrn_is_gui_thread()) {
             scale_ = scale;
             nrn_gui_exec(pwman_scale1, (void*) ((intptr_t) 1));
             return scale;
         }
-#endif
         iv_display_scale(scale);
 #endif
     }
@@ -3330,10 +3328,16 @@ Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include "oc2iv.h"
 
 #endif  // HAVE_IV
+
+#if defined(WIN32)
+#include <io.h>
+#endif
 
 char* ivoc_get_temp_file() {
     char* tmpfile;
@@ -3351,7 +3355,11 @@ char* ivoc_get_temp_file() {
     }
     close(fd);
 #else
+#if defined(WIN32)
+    _mktemp(tmpfile);
+#else
     mktemp(tmpfile);
+#endif
 #endif
 #if defined(WIN32)
     tmpfile = hoc_back2forward(tmpfile);

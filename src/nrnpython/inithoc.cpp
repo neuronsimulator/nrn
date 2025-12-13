@@ -15,15 +15,15 @@
 #include <iostream>
 #include <string>
 
-extern int nrn_is_python_extension;
-extern int nrn_nobanner_;
-extern int ivocmain(int, const char**, const char**);
-extern int nrn_main_launch;
+extern NRN_DLLIMPORT int nrn_is_python_extension;
+extern NRN_DLLIMPORT int nrn_nobanner_;
+extern NRN_DLLIMPORT int ivocmain(int, const char**, const char**);
+extern NRN_DLLIMPORT int nrn_main_launch;
 
 
 // int nrn_global_argc;
-extern char** nrn_global_argv;
-extern void (*p_nrnpython_finalize)();
+extern NRN_DLLIMPORT const char** nrn_global_argv;
+extern NRN_DLLIMPORT void (*p_nrnpython_finalize)();
 extern "C" PyObject* nrnpy_hoc();
 
 #if NRNMPI_DYNAMICLOAD

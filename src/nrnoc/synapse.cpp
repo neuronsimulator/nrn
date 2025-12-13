@@ -119,7 +119,7 @@ void fsyng(void) {
     double g = 0.0;
 
     i = chkarg(1, 0., (double) (maxstim - 1));
-    IGNORE(stimulus(i));
+    NRN_IGNORE(stimulus(i));
     g = pstim[i].g;
     if (g != 0.) {
         g *= pstim[i].mag / pstim[i].mag_seg;
