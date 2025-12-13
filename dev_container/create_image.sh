@@ -16,7 +16,7 @@ else
     exit 2
 fi
 
-IMAGE_NAME="${1:-neuron_container}"
+IMAGE_NAME="${1:-localhost/neuron_container}"
 
 ${container_engine} build -t "${IMAGE_NAME}" -f "${current_dir}/Dockerfile" "${current_dir}"
 
