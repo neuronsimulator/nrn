@@ -25,8 +25,9 @@ VOLUME_NAME="${2:-neuron_volume_nvhpc}"
 current_dir="$(cd "$(dirname "$0")"; pwd -P)"
 
 # Unique image tag and container name
-IMAGE_TAG="nvhpc-installer-$(date +%s%N)"
-TMP_CNAME="nvhpc-install-$(date +%s%N)"
+unique_string="$(date +%s%N)"
+IMAGE_TAG="nvhpc-installer-${unique_string}"
+TMP_CNAME="nvhpc-install-${unique_string}"
 
 # Build installer image
 ${container_engine} build -t "${IMAGE_TAG}" -f "${current_dir}/Dockerfile_nvhpc" "${current_dir}"

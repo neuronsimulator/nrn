@@ -9,11 +9,13 @@ FROM ${BASE_IMAGE}
 # NOTE: the last command (patchelf) must be run due to this bug:
 # https://forums.developer.nvidia.com/t/nvhpc-25-3-libaccdevaux-so-fails-to-dlopen-on-glibc-2-41-cannot-enable-executable-stack-invalid-argument/331308
 
-CMD bash -c '\
-    cd /tmp && \
-    tar -xzf nvhpc.tar.gz && \
-    TOPDIR="$(tar -tf nvhpc.tar.gz | head -1 | cut -d/ -f1)" && \
-    cd "${TOPDIR}" && \
-    ./install --prefix /opt/nvidia --silent && \
-    find /opt/nvidia -name libaccdevaux.so -exec patchelf --clear-execstack {} \; \
-'
+CMD [ \
+  "/bin/bash", \
+  "-c", \
+  "cd /tmp && \
+   tar -xzf nvhpc.tar.gz && \
+   TOPDIR=\"$(tar -tf nvhpc.tar.gz | head -1 | cut -d/ -f1)\" && \
+   cd \"${TOPDIR}\" && \
+   ./install --prefix /opt/nvidia --silent && \
+   find /opt/nvidia -name libaccdevaux.so -exec patchelf --clear-execstack {} \\;" \
+]
