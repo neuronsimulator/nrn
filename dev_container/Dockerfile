@@ -1,9 +1,9 @@
 FROM docker.io/fedora:42
 
 # the list of Pythons we will use for NEURON
-ENV PYTHON_DEFAULT=python3.13
-ENV PYTHON_MIN=python3.10
-ENV PYTHON_MAX=python3.14
+ENV NRN_PYTHON_DEFAULT=python3.13
+ENV NRN_PYTHON_MIN=python3.10
+ENV NRN_PYTHON_MAX=python3.14
 
 # NOTE: Fedora 42 comes with GCC 15 by default, which is not supported by CUDA
 # 12.9 or below, so we install GCC 14 instead.
@@ -26,9 +26,9 @@ RUN dnf -y install \
     automake \
     patchelf \
     openssh-server \
-    ${PYTHON_DEFAULT}-devel \
-    ${PYTHON_MIN}-devel \
-    ${PYTHON_MAX}-devel \
+    ${NRN_PYTHON_DEFAULT}-devel \
+    ${NRN_PYTHON_MIN}-devel \
+    ${NRN_PYTHON_MAX}-devel \
     libdwarf-devel \
     elfutils-devel \
     libunwind-devel \
@@ -68,20 +68,20 @@ ENV CMAKE_CXX_COMPILER_LAUNCHER=ccache
 ENV NMODL_PYLIB=/usr/lib64/libpython3.13.so.1.0
 
 # setup venvs
-RUN ${PYTHON_MIN} -m venv /opt/venv_${PYTHON_MIN}
-RUN ${PYTHON_MAX} -m venv /opt/venv_${PYTHON_MAX}
-RUN ${PYTHON_DEFAULT} -m venv /opt/venv_${PYTHON_DEFAULT}
-ENV PATH="/opt/venv_${PYTHON_DEFAULT}/bin:/opt/venv_${PYTHON_MIN}/bin:/opt/venv_${PYTHON_MAX}/bin:$PATH"
+RUN ${NRN_PYTHON_MIN} -m venv /opt/venv_${NRN_PYTHON_MIN}
+RUN ${NRN_PYTHON_MAX} -m venv /opt/venv_${NRN_PYTHON_MAX}
+RUN ${NRN_PYTHON_DEFAULT} -m venv /opt/venv_${NRN_PYTHON_DEFAULT}
+ENV PATH="/opt/venv_${NRN_PYTHON_DEFAULT}/bin:/opt/venv_${NRN_PYTHON_MIN}/bin:/opt/venv_${NRN_PYTHON_MAX}/bin:$PATH"
 
 WORKDIR /scratch
 
 # install MUSIC
-RUN ${PYTHON_DEFAULT} -m pip install 'uv==0.9.15'
-RUN ${PYTHON_MIN} -m pip install 'uv==0.9.15'
-RUN ${PYTHON_MAX} -m pip install 'uv==0.9.15'
-RUN ${PYTHON_DEFAULT} -m uv pip install 'mpi4py' 'cython' 'setuptools'
-RUN ${PYTHON_MIN} -m uv pip install 'mpi4py' 'cython' 'setuptools'
-RUN ${PYTHON_MAX} -m uv pip install 'mpi4py' 'cython' 'setuptools'
+RUN ${NRN_PYTHON_DEFAULT} -m pip install 'uv==0.9.15'
+RUN ${NRN_PYTHON_MIN} -m pip install 'uv==0.9.15'
+RUN ${NRN_PYTHON_MAX} -m pip install 'uv==0.9.15'
+RUN ${NRN_PYTHON_DEFAULT} -m uv pip install 'mpi4py' 'cython' 'setuptools'
+RUN ${NRN_PYTHON_MIN} -m uv pip install 'mpi4py' 'cython' 'setuptools'
+RUN ${NRN_PYTHON_MAX} -m uv pip install 'mpi4py' 'cython' 'setuptools'
 
 ENV MUSIC_VERSION=13f312338dcccebfe74d391b1b24f1b6d816ac6c
 RUN curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/${MUSIC_VERSION}.zip
@@ -120,10 +120,9 @@ ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 WORKDIR /nrn
 
 # add automatic NVHPC detection
-RUN echo 'for dir in /opt/nvidia/hpc_sdk/Linux_*/*/compilers/bin; do \
+RUN echo 'for dir in /opt/nvidia/hpc_sdk/Linux_*/*/compilers/bin /opt/nvidia/hpc_sdk/Linux_*/*/comm_libs/mpi/bin; do \
   if [ -d "${dir}" ]; then \
     export PATH="${dir}:${PATH}"; \
     export CMAKE_CUDA_COMPILER_LAUNCHER=ccache; \
-    break; \
   fi \
 done' >> /etc/bashrc
