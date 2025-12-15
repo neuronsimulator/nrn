@@ -32,8 +32,6 @@ on:
 # component to use cached software.
 env:
     PYTHON_VERSIONS: |
-      3.9
-      3.10
       3.11
 
 jobs:
@@ -67,6 +65,7 @@ jobs:
         cmake `
           -B build -S . `
           -DCMAKE_BUILD_TYPE=Release `
+          -DBASH_EXECUTABLE="C:\Program Files\Git\bin\bash.exe" `
           -DNRN_ENABLE_INTERVIEWS=ON `
           -DNRN_ENABLE_MPI=OFF `
           -DNRN_ENABLE_MPI_DYNAMIC=OFF `
