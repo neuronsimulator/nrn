@@ -269,8 +269,7 @@ add_custom_command(
 add_custom_target(generate_hocusr_header DEPENDS "${PROJECT_BINARY_DIR}/src/oc/hocusr.h")
 add_dependencies(generated_source_files generate_hocusr_header)
 
-# header for dynamic mpi.
-# Creates nrnmpi_dynam_cinc  nrnmpi_dynam.h  nrnmpi_dynam_wrappers.inc
+# header for dynamic mpi. Creates nrnmpi_dynam_cinc  nrnmpi_dynam.h  nrnmpi_dynam_wrappers.inc
 if(NRN_ENABLE_MPI_DYNAMIC)
   file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/src/nrnmpi")
   add_custom_command(
