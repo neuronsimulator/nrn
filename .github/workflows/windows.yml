@@ -62,6 +62,10 @@ jobs:
     - name: Build and Create Installer
       run: |
         git fetch --tags
+        cmake --version
+        sed --version
+        echo $env:PATH
+        & "C:\Program Files\Git\bin\bash.exe" --version
         cmake `
           -B build -S . `
           -DCMAKE_BUILD_TYPE=Release `
