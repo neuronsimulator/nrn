@@ -61,15 +61,15 @@ jobs:
 
     - name: Build and Create Installer
       run: |
+        $env:PATH = "C:\Program Files\Git\usr\bin;" + $env:PATH
         git fetch --tags
         cmake --version
         sed --version
+        bash --version
         echo $env:PATH
-        & "C:\Program Files\Git\bin\bash.exe" --version
         cmake `
           -B build -S . `
           -DCMAKE_BUILD_TYPE=Release `
-          -DBASH_EXECUTABLE="C:\Program Files\Git\bin\bash.exe" `
           -DNRN_ENABLE_INTERVIEWS=ON `
           -DNRN_ENABLE_MPI=OFF `
           -DNRN_ENABLE_MPI_DYNAMIC=OFF `
@@ -81,6 +81,7 @@ jobs:
           -DNRN_RX3D_OPT_LEVEL=2 `
           -DCYTHON_EXECUTABLE="${env:firstCython}" `
           -DPYTHON_EXECUTABLE="${env:firstPython}"
+        cat build/CMakeCache.txt
         cmake --build build --config Release -v
       shell: pwsh
       working-directory: ${{runner.workspace}}\nrn
