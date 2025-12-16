@@ -147,9 +147,7 @@ void MatexpVisitor::replace_solve_block(const ast::SolveBlock& node, bool steady
     const auto& block = find_kinetic_block(name);
     const auto& solution = solve_kinetic_block(*block, steadystate);
     ast::Ast* parent = node.get_parent();
-    if (!parent->is_expression_statement()) {
-        throw std::runtime_error("broken ast");
-    }
+    assert(parent->is_expression_statement());
     ((ast::ExpressionStatement*) parent)->set_expression(solution);
 }
 
@@ -161,12 +159,8 @@ std::shared_ptr<ast::MatexpBlock> MatexpVisitor::remove_solve_block(const ast::S
     const auto& block = find_kinetic_block(name);
     const auto& solution = solve_kinetic_block(*block, steadystate);
     ast::Ast* parent = node.get_parent();
-    if (!parent->is_expression_statement()) {
-        throw std::runtime_error("broken ast");
-    }
-    if (!parent->get_parent()->is_statement_block()) {
-        throw std::runtime_error("broken ast");
-    }
+    assert(parent->is_expression_statement());
+    assert(parent->get_parent()->is_statement_block());
     const auto statement_block = (ast::StatementBlock*) parent->get_parent();
     auto statements = statement_block->get_statements();
     for (auto iter = statements.begin(); iter != statements.end(); iter++) {
@@ -176,7 +170,7 @@ std::shared_ptr<ast::MatexpBlock> MatexpVisitor::remove_solve_block(const ast::S
             return solution;
         }
     }
-    throw std::runtime_error("broken ast");
+    assert(false);  // unreachable
 }
 
 
@@ -258,7 +252,7 @@ static int find_node(const nmodl::ast::StatementVector& statements, const nmodl:
             return index;
         }
     }
-    throw std::runtime_error("broken ast");
+    assert(false);  // unreachable
 }
 
 
@@ -324,9 +318,7 @@ void MatexpVisitor::visit_reaction_statement(ast::ReactionStatement& node) {
     const auto& kf = node.get_expression1();  // forwards reaction rate
     const auto& kb = node.get_expression2();  // backwards reaction rate
     // Get the parent statement block
-    if (!node.get_parent()->is_statement_block()) {
-        throw std::runtime_error("broken ast");
-    }
+    assert(node.get_parent()->is_statement_block());
     const auto statement_block = (ast::StatementBlock*) node.get_parent();
     const auto& statements = statement_block->get_statements();
     // Find and remove this reaction statement
