@@ -120,9 +120,18 @@ ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 WORKDIR /nrn
 
 # add automatic NVHPC detection
-RUN echo 'for dir in /opt/nvidia/hpc_sdk/Linux_*/*/compilers/bin /opt/nvidia/hpc_sdk/Linux_*/*/comm_libs/mpi/bin; do \
+RUN echo 'for dir in /opt/nvidia/hpc_sdk/Linux_*/*/compilers/bin; do \
   if [ -d "${dir}" ]; then \
     export PATH="${dir}:${PATH}"; \
     export CMAKE_CUDA_COMPILER_LAUNCHER=ccache; \
+    break; \
+  fi \
+done' >> /etc/bashrc
+
+# add support for MPI in NVHPC
+RUN echo 'for dir in /opt/nvidia/hpc_sdk/Linux_*/*/comm_libs/mpi/bin; do \
+  if [ -d "${dir}" ]; then \
+    export PATH="${dir}:${PATH}"; \
+    break; \
   fi \
 done' >> /etc/bashrc
