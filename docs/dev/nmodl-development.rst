@@ -266,11 +266,19 @@ After performing any manipulations on the AST, it is time to generate actual cod
 * the coreNEURON code backend for generating C++ code compatible with coreNEURON using CPUs (``codegen_coreneuron_cpp_visitor.cpp``)
 * the coreNEURON code backend for generating C++ code compatible with coreNEURON using GPUs (``codegen_acc_visitor.cpp``)
 
-We will not go into the details of the last two, but will instead focus on the NEURON code backend.
+The above all inherit from ``CodegenCppVisitor`` ( ``codegen_cpp_visitor.cpp``), which overrides many ``visit_*`` methods with a custom implementation, and use the ``print_*`` methods to output any code. A common pattern used is:
 
-NEURON backend
-~~~~~~~~~~~~~~
+.. code:: cpp
 
+    void print_something(const ast::SomeType& node) {
+        // actual code to output
+    }
+
+    void visit_something(const ast::SomeType& node) {
+        print_something(node);
+    }
+
+Note that ``print_something`` methods are often declared with the ``virtual`` specifier since the code emitted is highly dependent on the backend (coreNEURON or NEURON).
 
 Debugging issues
 ^^^^^^^^^^^^^^^^
