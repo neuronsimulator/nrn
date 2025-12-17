@@ -59,6 +59,17 @@ jobs:
       shell: pwsh
       working-directory: ${{runner.workspace}}
 
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Set Python Environment Variables
+      run: |
+        $env:firstPython = (Get-Command python.exe).Source
+        echo "firstPython=$env:firstPython" >> $GITHUB_ENV
+      shell: pwsh
+
     - name: Build and Create Installer
       run: |
         $env:PATH = "C:\Program Files\Git\usr\bin;" + $env:PATH
@@ -79,9 +90,8 @@ jobs:
           -DNRN_ENABLE_TESTS=ON `
           -DNRN_PYTHON_DYNAMIC="${env:allPythons}" `
           -DNRN_RX3D_OPT_LEVEL=2 `
-          -DCYTHON_EXECUTABLE="${env:firstCython}" `
-          -DPYTHON_EXECUTABLE="${env:firstPython}"
-        cat build/CMakeCache.txt
+          -DCYTHON_EXECUTABLE="$env:firstCython" `
+          -DPYTHON_EXECUTABLE="$env:firstPython"
         cmake --build build --config Release -v
       shell: pwsh
       working-directory: ${{runner.workspace}}\nrn
@@ -91,3 +101,4 @@ jobs:
         ctest --output-on-failure -j
       shell: pwsh
       working-directory: ${{runner.workspace}}\nrn\build
+

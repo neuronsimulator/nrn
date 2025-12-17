@@ -263,7 +263,6 @@ add_custom_command(
   COMMAND echo "hello"
   COMMAND echo $PATH
   COMMAND bash -c "echo $PATH"
-  COMMAND which sed
   COMMAND sed --version
   COMMAND bash --version
   COMMAND ${CMAKE_C_COMPILER} -E -I${NRN_NRNOC_SRC_DIR} -I${NRN_OC_SRC_DIR}
