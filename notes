@@ -1,0 +1,36 @@
+
+cmake -B build -S . -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE=C:\Python312\python.exe -DBISON_EXECUTABLE=C:\ProgramData\chocolatey\bin\win_bison.exe -DFLEX_EXECUTABLE=C:\ProgramData\chocolatey\bin\win_flex.exe -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_MPI_DYNAMIC=ON -DCMAKE_PREFIX_PATH='c:/msmpi' -DMPI_CXX_LIB_NAMES:STRING=msmpi -DMPI_C_LIB_NAMES:STRING=msmpi -DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib -DNRN_ENABLE_PYTHON_DYNAMIC=ON
+
+cmake -B build -S . -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE=C:\Python312\python.exe -DBISON_EXECUTABLE=C:\ProgramData\chocolatey\bin\win_bison.exe -DFLEX_EXECUTABLE=C:\ProgramData\chocolatey\bin\win_flex.exe -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_MPI_DYNAMIC=ON -DNRN_MPI_DYNAMIC="c:/msmpi/include" -DCMAKE_PREFIX_PATH='c:/msmpi'
+
+custom install python3.12.7: Download debugging symbols and Download debug binaries
+
+cmake -G "Visual Studio 17 2022" -A x64 -B build -S . -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE=C:\Python312\python.exe -DPython_DEBUG_LIBRARIES=C:\Python312\libs\python312_d.lib -DBISON_EXECUTABLE=C:\ProgramData\chocolatey\bin\win_bison.exe -DFLEX_EXECUTABLE=C:\ProgramData\chocolatey\bin\win_flex.exe -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_MPI_DYNAMIC=ON -DNRN_MPI_DYNAMIC="c:/msmpi/include" -DCMAKE_PREFIX_PATH='c:/msmpi' -DNRN_ENABLE_PYTHON_DYNAMIC=ON
+
+cmake --build build
+
+installed Python3.12.10 in c:\Python312 (checked add to environment variables)
+
+cmake -G "Visual Studio 17 2022" -A x64 -B build -S . -DCMAKE_INSTALL_PREFIX=build/install -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=C:\Python312\python.exe -DBISON_EXECUTABLE=C:\ProgramData\chocolatey\bin\win_bison.exe -DFLEX_EXECUTABLE=C:\ProgramData\chocolatey\bin\win_flex.exe -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_MPI=ON -DNRN_ENABLE_MPI_DYNAMIC=OFF -DNRN_ENABLE_PYTHON_DYNAMIC=OFF -DCMAKE_PREFIX_PATH='c:/msmpi' -DMPI_INCLUDE_PATH=c:/msmpi/include -DMPI_LIBRARY=c:/msmpi/lib/x64/msmpi.lib
+
+$env:PATH = "C:\Program Files\Git\usr\bin;" + $env:PATH
+Clean re-gen: rmdir /s build
+cmake -G "Visual Studio 17 2022" -A x64 -B build -S . -DCMAKE_INSTALL_PREFIX=build/install -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=C:/Python312/python.exe  -DBASH_EXECUTABLE="C:\Program Files\Git\usr\bin\bash.exe" -DBISON_EXECUTABLE=C:/ProgramData/chocolatey/bin/win_bison.exe -DFLEX_EXECUTABLE=C:/ProgramData/chocolatey/bin/win_flex.exe -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_MPI=ON -DNRN_ENABLE_MPI_DYNAMIC=OFF -DNRN_ENABLE_PYTHON_DYNAMIC=OFF -DCMAKE_PREFIX_PATH=C:/msmpi -DMPI_INCLUDE_PATH=C:/msmpi/include -DMPI_LIBRARY=C:/msmpi/lib/x64/msmpi.lib
+cmake --build build --config Release
+cmake --install build --config Release
+consider --target name  and --verbose and --parallel 8
+
+export NEURONHOME=`pwd`/build/install
+export PATH=`pwd`/build/install/bin:$PATH
+export PYTHONPATH=`pwd`/build/install/lib/python
+export MODLUNIT=$NEURONHOME/lib/nrnunits.lib
+
+After uninstalling NEURON 8.2.7, there is no more bash except for git bash.
+Grok suggested a .bashrc which supplies `load_msenv` to load the
+visual studio envirnment into the bash session. There is an nmake but
+not a make.
+
+stdout/stdin pipe to file: > out.txt 2>&1
+find: findstr /i "string" file > outfile
+find build -name hocusr.h --- dir build -r -fi hocusr.h
+cmake --build build --config Release --target generate_hocusr_header

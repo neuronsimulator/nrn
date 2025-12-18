@@ -27,12 +27,8 @@ on:
 #      - '**.md'
 #      - '**.rst'
 #      - 'docs/**'
-
-# The Github runner image contains the latest patch versions. Drop the last version
-# component to use cached software.
 env:
-    PYTHON_VERSIONS: |
-      3.11
+  MSYS2_ROOT: C:\msys64
 
 jobs:
   WindowsInstaller:
@@ -50,55 +46,68 @@ jobs:
     - name: Retrieve rxd test data
       run: |
         git submodule update --init test/rxd/testdata
-      shell: pwsh
+      shell: powershell
       working-directory: ${{runner.workspace}}\nrn
 
-    - name: Install Build Dependencies
-      run: |
-        choco install --no-progress sed winflexbison3
-      shell: pwsh
-      working-directory: ${{runner.workspace}}
-
-    - name: Set up Python
+    - name: Set up Python3
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.12'
 
-    - name: Set Python Environment Variables
+    - name: Download Dependencies
       run: |
-        $env:firstPython = (Get-Command python.exe).Source
-        echo "firstPython=$env:firstPython" >> $GITHUB_ENV
-      shell: pwsh
+        .\nrn\ci\win_download_deps.cmd
+      shell: powershell
+      working-directory: ${{runner.workspace}}
+
+    - name: Install Dependencies
+      run: .\nrn\ci\win_install_deps.cmd
+      shell: powershell
+      working-directory: ${{runner.workspace}}
 
     - name: Build and Create Installer
       run: |
-        $env:PATH = "C:\Program Files\Git\usr\bin;" + $env:PATH
-        git fetch --tags
-        cmake --version
-        sed --version
-        bash --version
-        echo $env:PATH
-        cmake `
-          -B build -S . `
-          -DCMAKE_BUILD_TYPE=Release `
-          -DNRN_ENABLE_INTERVIEWS=ON `
-          -DNRN_ENABLE_MPI=OFF `
-          -DNRN_ENABLE_MPI_DYNAMIC=OFF `
-          -DNRN_ENABLE_PYTHON=OFF `
-          -DNRN_ENABLE_PYTHON_DYNAMIC=OFF `
-          -DNRN_ENABLE_RX3D=OFF `
-          -DNRN_ENABLE_TESTS=ON `
-          -DNRN_PYTHON_DYNAMIC="${env:allPythons}" `
-          -DNRN_RX3D_OPT_LEVEL=2 `
-          -DCYTHON_EXECUTABLE="$env:firstCython" `
-          -DPYTHON_EXECUTABLE="$env:firstPython"
-        cmake --build build --config Release -v
-      shell: pwsh
+        rm.exe C:\WINDOWS\system32\bash.EXE
+        %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/ci/win_build_cmake.sh"
+        # create a manifest of the files in the build directory
+        %MSYS2_ROOT%\usr\bin\bash -lc "find ${BUILD_SOURCESDIRECTORY}/build > ${BUILD_SOURCESDIRECTORY}/build/build_files.txt 2>/dev/null"
+      shell: cmd
+      working-directory: ${{runner.workspace}}\nrn
+      env:
+        BUILD_SOURCESDIRECTORY: ${{runner.workspace}}\nrn
+
+    - name: Upload build files for diagnostics and debugging
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: build_files
+        path: |
+          ${{runner.workspace}}/nrn/build/CMakeCache.txt
+          ${{runner.workspace}}/nrn/build/build.ninja
+          ${{runner.workspace}}/nrn/build/cmake_install.cmake
+          ${{runner.workspace}}/nrn/build/install_manifest.txt
+          ${{runner.workspace}}/nrn/build/build_files.txt
+
+    # This step will set up an SSH connection on tmate.io for live debugging.
+    # To enable it, you have to:
+    #   * add 'live-debug-win' to your PR title
+    #   * push something to your PR branch (note that just re-running the pipeline disregards the title update)
+    - name: live debug session on failure (manual steps required, check `.github/windows.yml`)
+      if: failure() && contains(github.event.pull_request.title, 'live-debug-win')
+      uses: mxschmitt/action-tmate@v3
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: nrn-nightly-AMD64.exe
+        path: ${{runner.workspace}}\nrn\nrn-nightly-AMD64.exe
+
+    - name: Run installer and launch .hoc associaton test
+      run: .\ci\win_install_neuron.cmd
+      shell: cmd
       working-directory: ${{runner.workspace}}\nrn
 
     - name: Test Installer
-      run: |
-        ctest --output-on-failure -j
-      shell: pwsh
-      working-directory: ${{runner.workspace}}\nrn\build
-
+      run: .\ci\win_test_installer.cmd
+      shell: cmd
+      working-directory: ${{runner.workspace}}\nrn
