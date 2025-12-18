@@ -268,7 +268,7 @@ add_custom_command(
   COMMAND ${CMAKE_C_COMPILER} -E -I${NRN_NRNOC_SRC_DIR} -I${NRN_OC_SRC_DIR}
           ${NRN_NRNOC_SRC_DIR}/neuron.h > neuron.tmp1
   COMMAND echo ZZZ
-  COMMAND bash -c "sed '/^#/d' neuron.tmp1 > neuron.tmp2"
+  COMMAND sed "/^#/d" neuron.tmp1 > neuron.tmp2
   COMMAND echo ZZZ
   COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 >
           ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
