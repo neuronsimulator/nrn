@@ -2,9 +2,9 @@ version: 2
 
 sphinx:
   configuration: docs/conf.py
-  formats:
-    - pdf
 
+formats:
+  - pdf
 search:
   ignore:
     - '*/doxygen/*'
