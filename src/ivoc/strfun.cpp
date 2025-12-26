@@ -369,14 +369,16 @@ IvocAliases::~IvocAliases() {
         free(sym);
     }
 }
+
 Symbol* IvocAliases::lookup(const char* name) {
-    String s(name);
+    std::string s(name);
     const auto& it = symtab_.find(s);
     if (it != symtab_.end()) {
         return it->second;
     }
     return nullptr;
 }
+
 Symbol* IvocAliases::install(const char* name) {
     Symbol* sp;
     sp = (Symbol*) emalloc(sizeof(Symbol));
@@ -386,13 +388,14 @@ Symbol* IvocAliases::install(const char* name) {
     sp->cpublic = 0;  // cannot be 2 or cannot be freed
     sp->extra = 0;
     sp->arayinfo = 0;
-    String s(sp->name);
+    std::string s(sp->name);
     symtab_.emplace(s, sp);
     return sp;
 }
+
 void IvocAliases::remove(Symbol* sym) {
     hoc_free_symspace(sym);
-    String s(sym->name);
+    std::string s(sym->name);
     auto it = symtab_.find(s);
     symtab_.erase(it);
     free(sym->name);

@@ -4,6 +4,7 @@
 #include <InterViews/resource.h>
 #include <map>
 #include <OS/string.h>
+#include <string>
 
 struct Object;
 class SymDirectoryImpl;
@@ -20,7 +21,7 @@ class IvocAliases {
     Symbol* symbol(int);
 
     Object* ob_;  // not referenced
-    std::map<String, Symbol*> symtab_;
+    std::map<std::string, Symbol*> symtab_;
 };
 
 /* List of Symbols considered as a directory */
