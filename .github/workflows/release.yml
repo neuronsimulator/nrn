@@ -13,12 +13,12 @@ on:
         required: true
       python_versions:
         description: "Comma-separated list of supported Python versions"
-        default: "3.9,3.10,3.11,3.12,3.13"
+        default: "3.9,3.10,3.11,3.12,3.13,3.14"
         required: true
         type: string
       os:
         description: "Comma-separated list of OSes (for wheels only)"
-        default: "macos-13,macos-14,ubuntu-22.04,ubuntu-22.04-arm"
+        default: "macos-15-intel,macos-14,ubuntu-24.04,ubuntu-24.04-arm"
         required: true
         type: string
       upload:
@@ -55,8 +55,8 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          OS_INPUT="${{ github.event.inputs.os || 'macos-13,macos-14,ubuntu-22.04,ubuntu-22.04-arm' }}"
-          PY_INPUT="${{ github.event.inputs.python_versions || '3.9,3.10,3.11,3.12,3.13' }}"
+          OS_INPUT="${{ github.event.inputs.os || 'macos-15-intel,macos-14,ubuntu-24.04,ubuntu-24.04-arm' }}"
+          PY_INPUT="${{ github.event.inputs.python_versions || '3.9,3.10,3.11,3.12,3.13,3.14' }}"
           OS_JSON=$(echo "$OS_INPUT" | jq -R 'split(",")')
           PY_JSON=$(echo "$PY_INPUT" | jq -R 'split(",")')
           echo "matrix=$(jq -c -n --argjson os "$OS_JSON" --argjson py "$PY_JSON" '{os: $os, python_version: $py}')" >> "$GITHUB_OUTPUT"
@@ -160,7 +160,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version : '3.18'
+          cmake-version : '3.19'
 
       - name: Set up Python
         id: setup-python
