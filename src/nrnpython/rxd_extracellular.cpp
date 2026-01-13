@@ -1110,11 +1110,11 @@ static void ecs_dg_adi_x(ECS_Grid_node* g,
                           (state[IDX(0, y, zp)] - 2. * state[IDX(0, y, z)] + state[IDX(0, y, zm)]) /
                           div_z);
         if (g->size_x > 1) {
-            RHS[0] += dt * (g->dc_x / SQ(g->dx)) * (state[IDX(1, y, z)] - state[IDX(0, y, z)]);
+            RHS[0] += dt * (g->dc_x / SQ(g->dx)) *  (state[IDX(1, y, z)] - state[IDX(0, y, z)]) / 2.0;
             x = g->size_x - 1;
             RHS[x] =
                 state[IDX(x, y, z)] + g->states_cur[IDX(x, y, z)] +
-                dt * ((g->dc_x / SQ(g->dx)) * (state[IDX(x - 1, y, z)] - state[IDX(x, y, z)]) +
+                dt * ((g->dc_x / SQ(g->dx)) * (state[IDX(x - 1, y, z)] - state[IDX(x, y, z)]) / 2.0 +
                       (g->dc_y / SQ(g->dy)) *
                           (state[IDX(x, yp, z)] - 2. * state[IDX(x, y, z)] + state[IDX(x, ym, z)]) /
                           div_y +
