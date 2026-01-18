@@ -84,9 +84,9 @@ bokeh==3.4.3 ; python_full_version < '3.10' \
     --hash=sha256:b7c22fb0f7004b04f12e1b7b26ee0269a26737a08ded848fb58f6a34ec1eb155 \
     --hash=sha256:c6f33817f866fc67fbeb5df79cd13a8bb592c05c591f3fd7f4f22b824f7afa01
     # via -r docs/docs_requirements.txt
-bokeh==3.7.2 ; python_full_version >= '3.10' \
-    --hash=sha256:80c21885cec276431acd4db92f831c71eb999ea995470ce777e0c577b0cfc1d8 \
-    --hash=sha256:efd9172a90cc233c1c21ef4813d58a8a6f97ee63c8e2f1b4f2389a64fcef0722
+bokeh==3.8.2 ; python_full_version >= '3.10' \
+    --hash=sha256:5e2c0d84f75acb25d60efb9e4d2f434a791c4639b47d685534194c4e07bd0111 \
+    --hash=sha256:8e7dcacc21d53905581b54328ad2705954f72f2997f99fc332c1de8da53aa3cc
     # via -r docs/docs_requirements.txt
 certifi==2025.4.26 \
     --hash=sha256:0a816057ea3cdefcef70270d2c515e4506bbc954f417fa5ade2021213bb8f0c6 \
