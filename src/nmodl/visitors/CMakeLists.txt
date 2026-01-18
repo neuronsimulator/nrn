@@ -33,6 +33,7 @@ add_library(
   semantic_analysis_visitor.cpp
   solve_block_visitor.cpp
   steadystate_visitor.cpp
+  state_discontinuity_visitor.cpp
   sympy_conductance_visitor.cpp
   sympy_replace_solutions_visitor.cpp
   sympy_solver_visitor.cpp

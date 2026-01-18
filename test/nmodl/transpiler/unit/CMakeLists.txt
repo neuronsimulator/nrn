@@ -71,6 +71,7 @@ add_executable(
   visitor/units.cpp
   visitor/var_usage.cpp
   visitor/verbatim.cpp
+  visitor/state_discontinuity.cpp
   visitor/node_index.cpp)
 add_executable(testprinter printer/printer.cpp)
 add_executable(testsymtab symtab/symbol_table.cpp)
