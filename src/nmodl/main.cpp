@@ -48,6 +48,7 @@
 #include "visitors/steadystate_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
+#include "visitors/state_discontinuity_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 #include "visitors/units_visitor.hpp"
 #include "visitors/verbatim_var_rename_visitor.hpp"
@@ -365,6 +366,14 @@ int run_nmodl(int argc, const char* argv[]) {
             }
         }
 
+        /// convert calls to `state_discontinuity(A, B)` in NET_RECEIVE blocks to `A = B`
+        {
+            logger->info("Running state discontinuity visitor");
+            StateDiscontinuityVisitor().visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("state_discontinuity"));
+        }
+
+
         /// use cnexp instead of after_cvode solve method
         if (codegen_cvode) {
             logger->info("Running CVode to cnexp visitor");
@@ -482,7 +491,7 @@ int run_nmodl(int argc, const char* argv[]) {
         /// Parsing units fron "nrnunits.lib" and mod files
         {
             logger->info("Parsing Units");
-            UnitsVisitor(units_dir).visit_program(*ast);
+            UnitsVisitor(NrnUnitsLib::get_content(units_dir)).visit_program(*ast);
         }
 
         /// once we start modifying (especially removing) older constructs

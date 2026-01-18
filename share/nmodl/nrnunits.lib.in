@@ -1,4 +1,4 @@
-/ from gnu units distribution
+@nrnunits_start@/ from gnu units distribution
 / Nov, 2017 updated faraday, R, e, planck, hbar, mole, k according to
 / https://physics.nist.gov/cuu/Constants/index.html
 
@@ -620,3 +620,4 @@ linenyarncount		900 ft/pound
 worstedyarncount	1680 ft/pound
 metricyarncount		meter/gram
 jewlerspoint		2 milligram
+@nrnunits_stop@
