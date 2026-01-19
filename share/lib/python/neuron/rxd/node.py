@@ -888,8 +888,12 @@ class NodeExtracellular(Node):
         ecs = self._regionref()
         if numpy.isscalar(ecs.alpha):
             return numpy.prod(ecs._dx) * ecs.alpha
-        else:
+        elif hasattr(ecs.alpha, "__len__"):
             return numpy.prod(ecs._dx) * ecs.alpha[self._i, self._j, self._k]
+        else:
+            return (
+                numpy.prod(ecs._dx) * ecs.alpha[ecs].states3d[self._i, self._j, self._k]
+            )
 
     @property
     def _grid_id(self):
