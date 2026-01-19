@@ -41,7 +41,6 @@ def _equivalent(
 
 
 def test_differentiate2c():
-
     # simple examples, no prev_expressions
     assert _equivalent(differentiate2c("0", "x", ""), "0")
     assert _equivalent(differentiate2c("x", "x", ""), "1")
@@ -159,7 +158,6 @@ def test_differentiate2c():
 
 
 def test_integrate2c():
-
     # list of variables used for integrate2c
     var_list = ["x", "a", "b"]
     # pairs of (f(x), g(x))

@@ -28,6 +28,7 @@
 #include "visitors/cvode_visitor.hpp"
 #include "visitors/function_callpath_visitor.hpp"
 #include "visitors/global_var_visitor.hpp"
+#include "visitors/initial_block_visitor.hpp"
 #include "visitors/implicit_argument_visitor.hpp"
 #include "visitors/indexedname_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
@@ -47,6 +48,7 @@
 #include "visitors/steadystate_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
+#include "visitors/state_discontinuity_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 #include "visitors/units_visitor.hpp"
 #include "visitors/verbatim_var_rename_visitor.hpp"
@@ -343,6 +345,13 @@ int run_nmodl(int argc, const char* argv[]) {
             RenameFunctionArgumentsVisitor().visit_program(*ast);
         }
 
+        /// merge all INITIAL blocks into one (this needs to run before SymtabVisitor)
+        {
+            logger->info("Running INITIAL block merge visitor");
+            MergeInitialBlocksVisitor().visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("merge_initial_block"));
+        }
+
         /// construct symbol table
         {
             logger->info("Running symtab visitor");
@@ -356,6 +365,14 @@ int run_nmodl(int argc, const char* argv[]) {
                 return 1;
             }
         }
+
+        /// convert calls to `state_discontinuity(A, B)` in NET_RECEIVE blocks to `A = B`
+        {
+            logger->info("Running state discontinuity visitor");
+            StateDiscontinuityVisitor().visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("state_discontinuity"));
+        }
+
 
         /// use cnexp instead of after_cvode solve method
         if (codegen_cvode) {
@@ -474,7 +491,7 @@ int run_nmodl(int argc, const char* argv[]) {
         /// Parsing units fron "nrnunits.lib" and mod files
         {
             logger->info("Parsing Units");
-            UnitsVisitor(units_dir).visit_program(*ast);
+            UnitsVisitor(NrnUnitsLib::get_content(units_dir)).visit_program(*ast);
         }
 
         /// once we start modifying (especially removing) older constructs

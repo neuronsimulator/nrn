@@ -462,7 +462,8 @@ set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 # Link with backward-cpp if enabled
 # =============================================================================
 if(NRN_USE_BACKWARD)
-  add_backward(nrniv_lib)
+  target_link_libraries(nrniv_lib Backward::Backward)
+  target_include_directories(nrniv_lib PRIVATE ${PROJECT_SOURCE_DIR}/external/backward)
 endif()
 
 # =============================================================================
@@ -574,11 +575,11 @@ endif()
 # For now, we keep this distinction as it reduces the PATH and is
 # expected when ctypes looks for dlls
 # ~~~
-install(TARGETS nrniv nocmodl modlunit DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
+install(TARGETS nrniv nocmodl modlunit RUNTIME DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 if(LIBIVX11DYNAM_NAME)
   install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME}
-          DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
+          DESTINATION ${NRN_INSTALL_DATA_PREFIX}lib)
 endif()
 
 # =============================================================================
@@ -607,4 +608,4 @@ add_custom_target(
 
 # For the installation
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
-        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn)
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}share/nrn)

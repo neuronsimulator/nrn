@@ -24,7 +24,7 @@ on:
 env:
   PY_MIN_VERSION: '3.9'
   PY_MID_VERSION: '3.10'
-  PY_MAX_VERSION: '3.13'
+  PY_MAX_VERSION: '3.14'
   # The Linux runners have 4 cores:
   # https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
   CMAKE_BUILD_PARALLEL_LEVEL: '4'
@@ -49,8 +49,11 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin gpg ninja-build flex bison libfl-dev
+          sudo apt-get update
+          sudo apt-get install -y xfonts-100dpi build-essential doxygen lcov libboost-all-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin gpg ninja-build flex bison libfl-dev libdw-dev binutils-dev
         shell: bash
+        env:
+          DEBIAN_FRONTEND: noninteractive
 
       - name: Install a new ccache
         run: |
@@ -63,7 +66,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version : '3.18'
+          cmake-version : '3.19'
 
       - name: Setup Caliper profiler
         run: |

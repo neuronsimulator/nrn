@@ -94,6 +94,7 @@ set_cibw_environment() {
             [NRN_ENABLE_CORENEURON]="ON"
             [NRN_BINARY_DIST_BUILD]="ON"
             [NRN_RX3D_OPT_LEVEL]="0"
+            [NRN_ENABLE_INTERVIEWS]="ON"
             # 10.14 is required for full C++17 support according to
             # https://cibuildwheel.readthedocs.io/en/stable/cpp_standards, but it
             # seems that 10.15 is actually needed for std::filesystem::path.
@@ -110,6 +111,7 @@ set_cibw_environment() {
             [CORENRN_ENABLE_OPENMP]="ON"
             [NRN_BINARY_DIST_BUILD]="ON"
             [NRN_RX3D_OPT_LEVEL]="0"
+            [NRN_ENABLE_INTERVIEWS]="ON"
         )
     fi
 
@@ -129,16 +131,39 @@ set_cibw_environment() {
 build_wheel_portable() {
     platform="${1}"
     echo "[BUILD WHEEL] Building with cibuildwheel for ${platform}"
-    local skip=
-    setup_venv "$(command -v python3)"
-    (( skip )) && return 0
 
-    python -m pip install cibuildwheel
+    # cibuildwheel >=3 requires that the underlying Python version be at least 3.11
+    # NOTE: bump this when a new Python version is released
+    supported_versions=(3.11 3.12 3.12 3.14)
+    path_to_interpreter=""
+    for version in "${supported_versions[@]}"; do
+        if command -v "python${version}"; then
+            path_to_interpreter="$(command -v "python${version}")"
+            break
+        fi
+    done
+
+    if [ -z "${path_to_interpreter}" ]; then
+        echo "ERROR: Python 3.11 or above is required for building with cibuildwheel"
+        exit 1
+    fi
+
+    setup_venv "${path_to_interpreter}"
+
+    # earliest version of cibuildwheel that supports Python 3.14
+    python -m pip install 'cibuildwheel>=3.2.1'
     echo " - Building..."
     rm -rf "${build_dir}"
 
     if [ "${platform}" = 'linux' ]; then
-        NRN_MPI_DYNAMIC="/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)"
+        # detect whether we are cross compiling, see:
+        # https://github.com/neuronsimulator/nrn/issues/3535
+        if [ "$(uname -s)" = 'Darwin' ] && [ "$(uname -m)" = 'arm64' ]; then
+            NRN_MPI_DYNAMIC="${NRN_MPI_DYNAMIC:-/usr/include/openmpi-aarch64;/usr/include/mpich-aarch64}"
+        else
+            NRN_MPI_DYNAMIC="${NRN_MPI_DYNAMIC:-/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)}"
+        fi
+
         # if we are building on Azure, we can use the MPT headers as well
         if [ -n "${TF_BUILD:-}" ]; then
             NRN_MPI_DYNAMIC="${NRN_MPI_DYNAMIC};/host/opt/nrnwheel/mpt/include"
@@ -148,7 +173,7 @@ build_wheel_portable() {
 
     if [ "${platform}" = 'macos' ]; then
         if [ "$(uname -m)" = 'arm64' ]; then
-            export MACOSX_DEPLOYMENT_TARGET='11.0'
+            export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-11.0}"
         fi
     fi
 

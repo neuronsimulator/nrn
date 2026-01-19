@@ -5,11 +5,10 @@
 #include <nrnoc2iv.h>
 #include <nrniv_mf.h>
 #include <classreg.h>
+#include <code.h>
 #include <objcmd.h>
 #include <nrnste.h>
 #include <netcon.h>
-
-extern int hoc_return_type_code;
 
 static double ste_transition(void* v) {
     auto* const ste = static_cast<StateTransitionEvent*>(v);
@@ -38,7 +37,7 @@ static double ste_transition(void* v) {
 
 static double ste_state(void* v) {
     StateTransitionEvent* ste = (StateTransitionEvent*) v;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     int state = ste->state();
     if (ifarg(1)) {
         ste->state((int) chkarg(1, 0, ste->nstate() - 1));

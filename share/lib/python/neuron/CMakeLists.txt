@@ -46,6 +46,7 @@ set(NRN_PYTHON_FILES_LIST
     tests/test_rxd.json)
 
 set(NRN_PYTHON_NMODL_FILES_LIST
+    tests/test_nmodl.py
     nmodl/dsl.py
     nmodl/symtab.py
     nmodl/ext/example/passive.mod

@@ -15,6 +15,11 @@ const std::string nmodl::Version::NMODL_VERSION = "@PROJECT_VERSION@";
 
 const std::string nmodl::CMakeInfo::SHARED_LIBRARY_SUFFIX = "@CMAKE_SHARED_LIBRARY_SUFFIX@";
 
+/// If none of the paths below work, we use the embedded version
+const std::string_view nmodl::NrnUnitsLib::embedded_nrnunits =
+#include "embedded_nrnunits.lib"
+;
+
 /**
  * \brief Path of nrnutils.lib file
  *

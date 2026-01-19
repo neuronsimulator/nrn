@@ -1,6 +1,8 @@
 """
 Utilities for writing tests
 """
+
+import os
 from contextlib import contextmanager
 
 
@@ -152,3 +154,10 @@ def parallel_context():
         yield pc
     finally:
         pc.gid_clear()
+
+
+def get_c_compiler() -> str:
+    """
+    Get the path to the C compiler from the environment
+    """
+    return os.environ.get("CC", "")
