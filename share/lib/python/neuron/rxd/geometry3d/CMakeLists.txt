@@ -21,7 +21,9 @@ set(surfaces_sources
     ${PROJECT_SOURCE_DIR}/src/nrnpython/rxd_llgramarea.cpp)
 
 if(NOT SKBUILD)
-  set(rel_rpath "/../../")
+  file(RELATIVE_PATH rel_path "${CMAKE_INSTALL_PREFIX}/${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d"
+       "${CMAKE_INSTALL_PREFIX}/${NRN_INSTALL_DATA_PREFIX}/lib")
+  set(rel_rpath "/${rel_path}")
 else()
   set(rel_rpath "/../../.data/lib")
 endif()

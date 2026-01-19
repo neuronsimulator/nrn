@@ -1908,3 +1908,147 @@ Memory Management:
    
    // When done with object
    nrn_object_unref(obj);  // Decrement reference count
+
+
+
+Runnable example with compilation instructions
+----------------------------------------------
+
+A Hodgkin-Huxley NEURON simulation in C++17
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Here we stimulate the cell with a :class:`IClamp` at time 1 ms.
+
+.. code-block:: c++
+
+    #include "neuronapi.h"
+
+    #include <array>
+    #include <cstdlib>
+    #include <cstring>
+    #include <iostream>
+
+    using std::cout;
+    using std::endl;
+    using std::pair;
+
+    extern "C" void modl_reg(){/* No modl_reg */};
+
+    int main(void) {
+        static std::array<const char*, 4> argv = {"hh_sim", "-nogui", "-nopython", nullptr};
+        nrn_init(3, argv.data());
+
+        // load the stdrun library
+        char* temp_str = strdup("stdrun.hoc");
+        nrn_str_push(&temp_str);
+        nrn_function_call(nrn_symbol("load_file"), 1);
+        nrn_double_pop();
+        free(temp_str);
+
+        // topology
+        Section* soma = nrn_section_new("soma");
+        nrn_nseg_set(soma, 3);
+
+        // define soma morphology with two 3d points
+        nrn_section_push(soma);
+        for (double x: {0, 0, 0, 10}) {
+            nrn_double_push(x);
+        }
+        nrn_function_call(nrn_symbol("pt3dadd"), 4);
+        nrn_double_pop();  // pt3dadd returns a number
+        for (double x: {10, 0, 0, 10}) {
+            nrn_double_push(x);
+        }
+        nrn_function_call(nrn_symbol("pt3dadd"), 4);
+        nrn_double_pop();  // pt3dadd returns a number
+
+        // ion channels
+        nrn_mechanism_insert(soma, nrn_symbol("hh"));
+
+        // current clamp at soma(0.5)
+        nrn_double_push(0.5);
+        Object* iclamp = nrn_object_new(nrn_symbol("IClamp"), 1);
+        for (const auto& [property, value] : {pair{"amp", 0.3}, pair{"del", 1.0}, pair{"dur", 0.1}}) {
+            nrn_property_set(iclamp, property, value);
+        }
+
+        // setup recording
+        Object* v = nrn_object_new(nrn_symbol("Vector"), 0);
+        nrn_rangevar_push(nrn_symbol("v"), soma, 0.5);
+        nrn_method_call(v, nrn_method_symbol(v, "record"), 1);
+        nrn_object_unref(nrn_object_pop());  // record returns the vector
+
+        Object* t = nrn_object_new(nrn_symbol("Vector"), 0);
+        nrn_double_ptr_push(nrn_symbol_dataptr(nrn_symbol("t")));
+        nrn_method_call(t, nrn_method_symbol(t, "record"), 1);
+        nrn_object_unref(nrn_object_pop());  // record returns the vector
+
+
+        // finitialize(-65)
+        nrn_double_push(-65);
+        nrn_function_call(nrn_symbol("finitialize"), 1);
+        nrn_double_pop();
+
+        // continuerun(5)
+        nrn_double_push(5);
+        nrn_function_call(nrn_symbol("continuerun"), 1);
+        nrn_double_pop();
+
+        // Print CSV output: time, voltage
+        int n_points = nrn_vector_capacity(t);
+        double* t_data = nrn_vector_data(t);
+        double* v_data = nrn_vector_data(v);
+        
+        cout << "time,voltage" << endl;
+        for (int i = 0; i < n_points; i++) {
+            cout << t_data[i] << "," << v_data[i] << endl;
+        }
+        
+        return 0;
+    }
+
+To compile on macOS or Linux
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Define a couple of environment variables to indicate where the libraries, include files, etc are.
+The following assumes that NEURON was installed via ``pip install neuron``. If you installed NEURON
+some other way, this may need modification.
+
+.. code-block:: bash
+
+    export MYNEURONHOME=$(python3 -c "import neuron, os; print(os.path.dirname(neuron.__file__) + '/')")
+    export NEURONHOME=$MYNEURONHOME/.data/share/nrn
+
+(While ``NEURONHOME`` is not explicitly used below, it is implicitly used by NEURON to locate its
+library functions; in this case, we need it to find the file :file:`stdrun.hoc`.)
+
+Now to compile, assuming the above code was saved as a file called ``hh_sim.cpp``:
+
+.. code-block:: bash
+
+    g++ -std=c++17 hh_sim.cpp \
+        -I$MYNEURONHOME/.data/include \
+        -L$MYNEURONHOME/.data/lib \
+        -Wl,-rpath,$MYNEURONHOME/.data/lib \
+        -lnrniv \
+        -o hh_sim
+
+Now if you run ``./hh_sim``, you'll get a CSV file printed to stdout of a time series corresponding to
+the action potential.
+
+You could redirect stdout to a file and then open that output in a spreadsheet program or other tool for plotting
+via e.g., ``./hh_sim > data.csv``.
+
+Alternatively, if you have ``pandas`` and ``matplotlib`` installed, you can have the computer plot the action potential
+via:
+
+.. code-block:: bash
+
+    ./hh_sim | python3 -c "import sys, pandas as pd, matplotlib.pyplot as plt; pd.read_csv(sys.stdin).plot(x=0,y=1); plt.show()" 
+
+This displays the following image:
+
+.. image:: progref/images/hh_sim_cpp.png
+   :alt: Hodgkin-Huxley simulation driven by a current clamp at 1ms showing an action potential
+   :width: 75%
+   :align: center

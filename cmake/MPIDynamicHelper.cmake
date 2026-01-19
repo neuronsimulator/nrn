@@ -46,8 +46,10 @@ if(NRN_ENABLE_MPI)
       # ~~~
       # Know about openmpi, mpich, ms-mpi, and a few others.
       # ~~~
-      execute_process(COMMAND grep -q "define OPEN_MPI  *1" ${idir}/mpi.h RESULT_VARIABLE result)
-      if(result EQUAL 0)
+      file(READ ${idir}/mpi.h mpi_header_content)
+
+      string(REGEX MATCH "define[ \t]+OPEN_MPI[ \t]+1" match_result "${mpi_header_content}")
+      if(match_result)
         set(type "ompi")
       else()
         # ~~~
@@ -55,18 +57,17 @@ if(NRN_ENABLE_MPI)
         # only defines MPT_VERSION. So first check for the existence of SGIABI to decide if a
         # a given library is MPT and then check MPT_VERSION to define it as MPICH.
         # ~~~
-        execute_process(COMMAND grep -q "define SGIABI" ${idir}/mpi.h RESULT_VARIABLE result)
-        if(result EQUAL 0)
+        string(REGEX MATCH "define[ \t]+SGIABI" match_result "${mpi_header_content}")
+        if(match_result)
           set(type "mpt")
         else()
-          execute_process(COMMAND grep -q -e "define MPICH  *1" -e "define MPT_VERSION"
-                                  ${idir}/mpi.h RESULT_VARIABLE result)
-          if(result EQUAL 0)
+          string(REGEX MATCH "define[ \t]+MPICH[ \t]+1|define[ \t]+MPT_VERSION" match_result
+                       "${mpi_header_content}")
+          if(match_result)
             set(type "mpich")
           else()
-            execute_process(COMMAND grep -q "define MSMPI_VER " ${idir}/mpi.h
-                            RESULT_VARIABLE result)
-            if(result EQUAL 0)
+            string(REGEX MATCH "define[ \t]+MSMPI_VER[ \t]" match_result "${mpi_header_content}")
+            if(match_result)
               set(type "msmpi")
             else()
               # Perhaps rather set the type to "unknown" and check for no duplicates?
