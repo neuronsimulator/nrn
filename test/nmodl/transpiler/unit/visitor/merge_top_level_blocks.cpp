@@ -68,8 +68,6 @@ SCENARIO("Check multiple INITIAL blocks are handled properly",
                                                               ast::AstNodeType::INITIAL_BLOCK>(
                 nmodl_text_before);
         THEN("expected and actual should be identical at the level of the AST") {
-            // TODO the AST class lacks an overload for `operator==` so here we compare it at the
-            // string level
             REQUIRE(reindent_text(program_actual) == reindent_text(program_expected));
         }
     }
@@ -91,7 +89,9 @@ SCENARIO("Check multiple INITIAL blocks are handled properly",
               RANGE foo, bar
             }
             INITIAL {
-                foo = 1
+                {
+                    foo = 1
+                }
             }
         )";
         parser::NmodlDriver driver{};
@@ -102,8 +102,6 @@ SCENARIO("Check multiple INITIAL blocks are handled properly",
                                                               ast::AstNodeType::INITIAL_BLOCK>(
                 nmodl_text_before);
         THEN("expected and actual should be identical at the level of the AST") {
-            // TODO the AST class lacks an overload for `operator==` so here we compare it at the
-            // string level
             REQUIRE(reindent_text(program_actual) == reindent_text(program_expected));
         }
     }
@@ -126,8 +124,12 @@ SCENARIO("Check multiple INITIAL blocks are handled properly",
               RANGE foo, bar
             }
             INITIAL {
-              foo = 1
-              bar = 2
+                {
+                    foo = 1
+                }
+                {
+                    bar = 2
+                }
             }
         )";
         parser::NmodlDriver driver{};
@@ -138,8 +140,6 @@ SCENARIO("Check multiple INITIAL blocks are handled properly",
                                                               ast::AstNodeType::INITIAL_BLOCK>(
                 nmodl_text_before);
         THEN("expected and actual should be identical at the level of the AST") {
-            // TODO the AST class lacks an overload for `operator==` so here we compare it at the
-            // string level
             REQUIRE(reindent_text(program_actual) == reindent_text(program_expected));
         }
     }
@@ -186,12 +186,33 @@ SCENARIO("Check multiple INITIAL blocks are handled properly",
                 bar = 2
             }
         )";
+        const auto nmodl_text_after = R"(
+            NEURON {
+                SUFFIX test
+                RANGE foo, bar
+            }
+
+            NET_RECEIVE (w) {
+                INITIAL {
+                    foo = 1
+                }
+            }
+
+            INITIAL {
+                {
+                    bar = 2
+                }
+            }
+        )";
+        parser::NmodlDriver driver{};
+        auto ast_expected = driver.parse_string(nmodl_text_after);
+        const auto program_expected = to_nmodl(ast_expected);
         const auto program_actual =
             generate_mod_after_merge_top_level_blocks_visitor<ast::InitialBlock,
                                                               ast::AstNodeType::INITIAL_BLOCK>(
                 nmodl_text_before);
         THEN("leave the mod file as-is") {
-            REQUIRE(reindent_text(program_actual) == reindent_text(nmodl_text_before));
+            REQUIRE(reindent_text(program_actual) == reindent_text(program_expected));
         }
     }
 }
@@ -217,8 +238,12 @@ SCENARIO("Check multiple BREAKPOINT blocks are handled properly",
               RANGE foo, bar
             }
             BREAKPOINT {
-              foo = 1
-              bar = 2
+                {
+                    foo = 1
+                }
+                {
+                    bar = 2
+                }
             }
         )";
         parser::NmodlDriver driver{};
@@ -229,8 +254,6 @@ SCENARIO("Check multiple BREAKPOINT blocks are handled properly",
                                                               ast::AstNodeType::BREAKPOINT_BLOCK>(
                 nmodl_text_before);
         THEN("expected and actual should be identical at the level of the AST") {
-            // TODO the AST class lacks an overload for `operator==` so here we compare it at the
-            // string level
             REQUIRE(reindent_text(program_actual) == reindent_text(program_expected));
         }
     }

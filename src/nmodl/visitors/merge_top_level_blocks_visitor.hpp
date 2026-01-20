@@ -13,8 +13,8 @@
  */
 
 #include "visitors/ast_visitor.hpp"
-
 #include "visitors/visitor_utils.hpp"
+#include "ast/all.hpp"
 
 namespace nmodl {
 namespace visitor {
@@ -27,6 +27,13 @@ namespace visitor {
 /**
  * \class MergeTopLevelBlocksVisitor
  * \brief Visitor which merges given top-level blocks into one
+ * 
+ * This template takes two arguments which both describe the type of top-level
+ * block. The arguments must match and refer to the same type of block!
+ * 
+ * The first argument is a subclass of nmodl::ast::Ast
+ * 
+ * The second argument is an instance of nmodl::ast::AstNodeType
  */
 template <typename ast_class,
           ast::AstNodeType ast_type,
@@ -59,9 +66,9 @@ class MergeTopLevelBlocksVisitor: public AstVisitor {
                                        include_blocks_to_keep);
 
         // insert new top-level block which has all the collected statements
-        auto new_block = ast::StatementBlock(statements);
-        auto new_initial_block = ast_class(new_block.clone());
-        node.emplace_back_node(new_initial_block.clone());
+        auto statement_block = ast::StatementBlock(statements);
+        auto toplevel_block = ast_class(statement_block.clone());
+        node.emplace_back_node(toplevel_block.clone());
 
         // delete all of the previously-found top-level blocks
         node.erase_node(blocks_to_delete);
@@ -107,11 +114,9 @@ class MergeTopLevelBlocksVisitor: public AstVisitor {
                 // check if it's the correct type
                 if (temp_block) {
                     auto statement_block = temp_block->get_statement_block();
-                    // if block is not empty, copy statements into vector
-                    if (statement_block) {
-                        for (const auto& statement: statement_block->get_statements()) {
-                            statements.push_back(statement);
-                        }
+                    // if block is not empty, copy statement-block into vector
+                    if (statement_block && !statement_block->get_statements().empty()) {
+                        statements.push_back(std::make_shared<ast::ExpressionStatement>(statement_block));
                     }
                     blocks_to_delete.insert(block.get());
                 }
