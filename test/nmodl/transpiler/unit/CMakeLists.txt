@@ -30,6 +30,7 @@ target_link_libraries(test_util PUBLIC spdlog::spdlog nmodl_test_flags)
 # =============================================================================
 add_library(config STATIC ${PROJECT_BINARY_DIR}/src/nmodl/config/config.cpp)
 target_link_libraries(config PUBLIC nmodl_test_flags)
+target_include_directories(config PUBLIC "${PROJECT_BINARY_DIR}/share/nmodl")
 
 # =============================================================================
 # Test executables
@@ -65,12 +66,14 @@ add_executable(
   visitor/rename_function_arguments.cpp
   visitor/semantic_analysis.cpp
   visitor/solve_block.cpp
+  visitor/solve_without_method.cpp
   visitor/steadystate.cpp
   visitor/sympy_conductance.cpp
   visitor/sympy_solver.cpp
   visitor/units.cpp
   visitor/var_usage.cpp
   visitor/verbatim.cpp
+  visitor/state_discontinuity.cpp
   visitor/node_index.cpp)
 add_executable(testprinter printer/printer.cpp)
 add_executable(testsymtab symtab/symbol_table.cpp)
