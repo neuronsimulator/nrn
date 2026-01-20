@@ -18,7 +18,7 @@
 
 #include <cstring>
 
-#ifdef MINGW
+#if defined(MINGW) || defined(WIN32)
 #include "../mswin/extra/d2upath.h"
 #endif
 

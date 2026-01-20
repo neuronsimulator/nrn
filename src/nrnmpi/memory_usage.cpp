@@ -8,6 +8,7 @@
 #include <nrnmpi.h>
 
 #if NRNMPI
+#include <cstdint>
 #include <mpi.h>
 #include <nrnmpidec.h>
 #include "nrnmpi_impl.h"

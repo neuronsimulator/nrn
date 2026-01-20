@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <assert.h>
+#include <cstdint>
 
 /* do not want the redef in the dynamic load case */
 #include <nrnmpiuse.h>

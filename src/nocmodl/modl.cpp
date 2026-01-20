@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
     std::strcpy(finname, inputfile.c_str());
     openfiles(inputfile.c_str(),
               output_dir.empty() ? nullptr : output_dir.c_str()); /* .mrg else .mod,  .var, .c */
-    IGNORE(yyparse());
+    NRN_IGNORE(yyparse());
     /*
      * At this point all blocks are fully processed except the kinetic
      * block and the solve statements. Even in these cases the
@@ -180,7 +180,7 @@ int main(int argc, char** argv) {
     }
 #endif
 
-    IGNORE(fclose(fcout));
+    NRN_IGNORE(fclose(fcout));
 
     if (vectorize) {
         Fprintf(stderr, "Thread Safe\n");
@@ -196,10 +196,10 @@ int main(int argc, char** argv) {
     { /* for lex */
         extern int yytchar, yylineno;
         extern FILE* yyin;
-        IGNORE(yyin);
-        IGNORE(yytchar);
-        IGNORE(yylineno);
-        IGNORE(yyinput());
+        NRN_IGNORE(yyin);
+        NRN_IGNORE(yytchar);
+        NRN_IGNORE(yylineno);
+        NRN_IGNORE(yyinput());
         yyunput(ilint);
         yyoutput(ilint);
     }

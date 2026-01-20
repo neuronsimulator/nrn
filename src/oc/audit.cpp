@@ -46,7 +46,11 @@ static void hoc_audit_init(void) {
         retrieve_audit.mode = 0;
         retrieve_audit.id = 0;
         if (retrieve_audit.pipe) {
+#ifdef _MSC_VER
+            _pclose(retrieve_audit.pipe);
+#else
             pclose(retrieve_audit.pipe);
+#endif
             retrieve_audit.pipe = (FILE*) 0;
         }
     }
@@ -80,7 +84,11 @@ void hoc_audit_from_hoc_main1(int argc, const char** argv, const char** envp) {
     Sprintf(buf, "mkdir %s/%d", AUDIT_DIR, hoc_pid());
     nrn_assert(system(buf) >= 0);
     Sprintf(buf, "%s/hocaudit.sh %d %s", AUDIT_SCRIPT_DIR, hoc_pid(), AUDIT_DIR);
+#ifdef _MSC_VER
+    if ((audit_pipe = _popen(buf, "w")) == (FILE*) 0) {
+#else
     if ((audit_pipe = popen(buf, "w")) == (FILE*) 0) {
+#endif
         hoc_warning("Could not connect to hocaudit.sh via pipe:", buf);
         doaudit = 0;
         return;
@@ -142,7 +150,11 @@ void hoc_audit_from_final_exit(void) {
         faudit = 0;
     }
     if (audit_pipe) {
+#ifdef _MSC_VER
+        _pclose(audit_pipe);
+#else
         pclose(audit_pipe);
+#endif
         audit_pipe = 0;
     }
     doaudit = 0;
@@ -232,7 +244,11 @@ int hoc_retrieve_audit(int id) {
     retrieve_audit.id = id;
 
     Sprintf(buf, "%s/retrieve.sh %d %s", AUDIT_SCRIPT_DIR, id, AUDIT_DIR);
+#ifdef _MSC_VER
+    if ((retrieve_audit.pipe = _popen(buf, "r")) == (FILE*) 0) {
+#else
     if ((retrieve_audit.pipe = popen(buf, "r")) == (FILE*) 0) {
+#endif
         hoc_execerror("Could not connect via pipe:", buf);
     }
     nrn_assert(fgets(retdir, 200, retrieve_audit.pipe));

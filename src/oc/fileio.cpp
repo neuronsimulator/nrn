@@ -1,6 +1,10 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/fileio.cpp,v 1.34 1999/09/14 13:11:46 hines Exp */
 
+#ifdef _MSC_VER
+#include <direct.h>  // getcwd, chdir
+#include <io.h>      // dup, dup2, close
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstdarg>
@@ -68,7 +72,7 @@ void hoc_ropen(void) /* open file for reading */
         fname = "";
     d = 1.;
     if (!nrn_fw_eq(hoc_frin, stdin))
-        IGNORE(nrn_fw_fclose(hoc_frin));
+        NRN_IGNORE(nrn_fw_fclose(hoc_frin));
     hoc_frin = nrn_fw_set_stdin();
     if (fname[0] != 0) {
         if ((hoc_frin = nrn_fw_fopen(fname, "r")) == (NrnFILEWrap*) 0) {
@@ -96,7 +100,7 @@ void hoc_wopen(void) /* open file for writing */
         fname = "";
     d = 1.;
     if (hoc_fout != stdout) {
-        IGNORE(fclose(hoc_fout));
+        NRN_IGNORE(fclose(hoc_fout));
     }
     hoc_fout = stdout;
     if (fname[0] != 0) {
@@ -213,10 +217,10 @@ int hoc_xopen1(const char* name, const char* rcs) {
     strcpy(hoc_xopen_file_, fname.c_str());
     if (hoc_fin) {
         hoc_audit_from_xopen1(fname.c_str(), rcs);
-        IGNORE(hoc_xopen_run((Symbol*) 0, (char*) 0));
+        NRN_IGNORE(hoc_xopen_run((Symbol*) 0, (char*) 0));
     }
     if (hoc_fin && !nrn_fw_eq(hoc_fin, stdin)) {
-        IGNORE(nrn_fw_fclose(hoc_fin));
+        NRN_IGNORE(nrn_fw_fclose(hoc_fin));
     }
     hoc_fin = savfin;
     hoc_pipeflag = savpipflag;
@@ -809,11 +813,11 @@ void hoc_Chdir(void) {
     hoc_pushx((double) i);
 }
 
-int nrn_is_python_extension;
+NRN_API int nrn_is_python_extension;
 int (*nrnpy_pr_stdoe_callback)(int, char*);
 static int (*nrnpy_pass_callback)();
 
-extern "C" void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {
+extern "C" NRN_API void nrnpy_set_pr_etal(int (*cbpr_stdoe)(int, char*), int (*cbpass)()) {
     nrnpy_pr_stdoe_callback = cbpr_stdoe;
     nrnpy_pass_callback = cbpass;
 }

@@ -17,7 +17,6 @@ extern void hoc_nrnmpi_init();
 #if PVM
 extern int numprocs(), myproc(), psync();
 #endif
-
 #if defined(WIN32)
 extern void hoc_winio_show(int b);
 #endif
@@ -255,7 +254,7 @@ void hoc_init(void) /* install constants and built-ins table */
     extern void hoc_init_space(void);
     hoc_init_space();
     for (i = 0; keywords[i].name; i++)
-        IGNORE(hoc_install(keywords[i].name, keywords[i].kval, 0.0, &hoc_symlist));
+        NRN_IGNORE(hoc_install(keywords[i].name, keywords[i].kval, 0.0, &hoc_symlist));
     for (i = 0; consts[i].name; i++) {
         s = hoc_install(consts[i].name, UNDEF, consts[i].cval, &hoc_symlist);
         s->type = VAR;
@@ -314,7 +313,7 @@ void hoc_unix_mac_pc(void) {
 #if defined(DARWIN)
     hoc_pushx(4.);
 #else
-#if defined(WIN32)
+#if defined(_WIN32)
     hoc_pushx(3.);
 #else
     hoc_pushx(1.);
@@ -330,7 +329,7 @@ void hoc_show_winio(void) {
     hoc_pushx(0.);
 }
 
-int nrn_main_launch;
+NRN_API int nrn_main_launch;
 
 void hoc_nrnversion(void) {
     char** p = hoc_temp_charptr();

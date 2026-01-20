@@ -32,7 +32,7 @@ extern const char* path_prefix_to_libnrniv();
 #endif
 static char* nrnpython_getline(FILE*, FILE*, const char*);
 extern int nrn_global_argc;
-extern char** nrn_global_argv;
+extern const char** nrn_global_argv;
 int nrnpy_pyrun(const char*);
 extern int (*p_nrnpy_pyrun)(const char*);
 
@@ -258,7 +258,7 @@ static int nrnpython_start(int b) {
         // remove the NEURON-specific arguments and pass whatever is left to Python?
         config->parse_argv = 0;
         check("Could not set PyConfig.argv",
-              PyConfig_SetBytesArgv(config, nrn_global_argc, nrn_global_argv));
+              PyConfig_SetBytesArgv(config, nrn_global_argc, (char**) nrn_global_argv));
         // Initialise Python
         check("Could not initialise Python", Py_InitializeFromConfig(config));
         // Manipulate sys.path, starting from the default values
@@ -311,7 +311,6 @@ static int nrnpython_start(int b) {
         // There used to be a call to PySys_SetArgv here, which dates back to
         // e48d933e03b5c25a454e294deea55e399f8ba1b1 and a comment about sys.argv not being set with
         // nrniv -python. Today, it seems like this is not needed any more.
-
         // Used to crash with MINGW when assocated with a python gui thread e.g
         // from neuron import h, gui
         // g = h.Graph()
@@ -330,7 +329,7 @@ static int nrnpython_start(int b) {
         // Is there a -c "command" or file.py arg.
         bool python_error_encountered{false}, have_reset_sys_path{false};
         for (int i = 1; i < nrn_global_argc; ++i) {
-            char* arg = nrn_global_argv[i];
+            const char* arg = nrn_global_argv[i];
             if (strcmp(arg, "-c") == 0 && i + 1 < nrn_global_argc) {
                 // sys.path[0] should be an empty string for -c
                 reset_sys_path("");
@@ -357,7 +356,7 @@ static int nrnpython_start(int b) {
                 // it.
                 reset_sys_path("");
             }
-#if !defined(MINGW)
+#if !defined(WIN32)
             PyRun_InteractiveLoop(hoc_fin, "stdin");
 #else
             // mingw FILE incompatible with windows11 Python FILE.

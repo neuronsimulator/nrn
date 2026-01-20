@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include <string>
+
 #include <InterViews/dialog.h>
 #include <InterViews/resource.h>
 

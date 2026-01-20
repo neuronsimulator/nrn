@@ -15,7 +15,7 @@
 
 #undef MOVE
 #undef DELETE
-#undef IGNORE
+#undef NRN_IGNORE
 #define MOVE   mlhmove
 #define DELETE mlhdelete
 #include <Dispatch/dispatcher.h>
@@ -35,7 +35,7 @@
 #include <condition_variable>
 #include <mutex>
 
-#ifdef MINGW
+#ifdef WIN32
 // the link step needs liboc after libivoc but liboc refers to some
 // things in libivoc that wouldn't normally be linked because nothing
 // refers to them while libivoc is linking. So force them to link here
@@ -80,7 +80,7 @@ void Oc::cleanup() {
     }
 }
 
-#ifdef MINGW
+#ifdef WIN32
 static void hidewindow(void* v) {
     HWND w = (HWND) v;
     ShowWindow(w, SW_HIDE);
@@ -99,7 +99,7 @@ void PrintableWindow::hide() {
     if (is_mapped()) {
         HWND hwnd = Window::rep()->msWindow();
 // printf("hide %p\n", this);
-#ifdef MINGW
+#ifdef WIN32
         if (!nrn_is_gui_thread()) {
             nrn_gui_exec(hidewindow, hwnd);
             return;
@@ -110,7 +110,7 @@ void PrintableWindow::hide() {
 }
 
 void PrintableWindow::xmove(int x, int y) {
-#ifdef MINGW
+#ifdef WIN32
     if (!nrn_is_gui_thread()) {
         gui_thread_xmove_x = x;
         gui_thread_xmove_y = y;
@@ -190,7 +190,7 @@ double* ivoc_vector_ptr(Object*, int) {return 0;}
 int ivoc_vector_size(Object*) {return 0;}
 #endif
 
-#ifdef MINGW
+#ifdef WIN32
 IOHandler::IOHandler() {}
 IOHandler::~IOHandler() {}
 int IOHandler::inputReady(int) {
@@ -204,9 +204,6 @@ int IOHandler::exceptionRaised(int) {
 }
 void IOHandler::timerExpired(long, long) {}
 void IOHandler::childStatus(pid_t, int) {}
-#endif  // MINGW
-
-#ifdef MINGW
 
 #include <nrnmutdec.h>
 static int bind_tid_;
@@ -267,7 +264,7 @@ void nrniv_bind_call() {
 }
 
 
-#endif  // MINGW
+#endif  // WIN32
 
 #endif  // HAVE_IV
 

@@ -9,5 +9,6 @@
 #ifndef PY_SSIZE_T_CLEAN
 #define PY_SSIZE_T_CLEAN
 #endif
+#undef pid_t
 #include <Python.h>
 #undef snprintf

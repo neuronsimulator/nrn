@@ -13,6 +13,11 @@ if(NRN_AVOID_ABSOLUTE_PATHS)
   add_compile_definitions(NRN_AVOID_ABSOLUTE_PATHS)
 endif()
 
+set(FLEX_COMPATIBILITY_FLAGS "")
+if(MSVC)
+  set(FLEX_COMPATIBILITY_FLAGS "--wincompat")
+endif()
+
 # =============================================================================
 # Build modlunit : Mod file units checker
 # =============================================================================
@@ -28,7 +33,7 @@ file(RELATIVE_PATH NRN_MODLUNIT_SRC_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_MODLU
 add_custom_command(
   OUTPUT "${NRN_MODLUNIT_GEN}/lex.cpp"
   WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
-  COMMAND "${FLEX_EXECUTABLE}" ARGS -o "${NRN_MODLUNIT_GEN_REL}/lex.cpp"
+  COMMAND "${FLEX_EXECUTABLE}" ${FLEX_COMPATIBILITY_FLAGS} -o "${NRN_MODLUNIT_GEN_REL}/lex.cpp"
           "${NRN_MODLUNIT_SRC_REL}/lex.lpp"
   DEPENDS "${NRN_MODLUNIT_SRC_DIR}/lex.lpp"
   COMMENT "[FLEX][modlunitlexer] Building scanner with flex ${FLEX_VERSION}")
@@ -40,7 +45,8 @@ add_custom_command(
   DEPENDS "${NRN_MODLUNIT_SRC_DIR}/parse1.ypp"
   COMMENT "[BISON][modlunitparser] Building parser with bison ${BISON_VERSION}")
 
-add_custom_target(generated_source_files true)
+# Use echo "" as cross-platform noop for custom target.
+add_custom_target(generated_source_files echo "")
 add_custom_target(modlunit_generated_files DEPENDS "${NRN_MODLUNIT_GEN}/lex.cpp"
                                                    "${NRN_MODLUNIT_GEN}/parse1.cpp")
 add_dependencies(generated_source_files modlunit_generated_files)
@@ -69,7 +75,7 @@ file(RELATIVE_PATH NRN_NOCMODL_SRC_REL "${BISON_FLEX_WORKING_DIR}" "${NRN_NOCMOD
 add_custom_command(
   OUTPUT "${NRN_NOCMODL_GEN}/lex.cpp"
   WORKING_DIRECTORY "${BISON_FLEX_WORKING_DIR}"
-  COMMAND "${FLEX_EXECUTABLE}" ARGS -o "${NRN_NOCMODL_GEN_REL}/lex.cpp"
+  COMMAND "${FLEX_EXECUTABLE}" ${FLEX_COMPATIBILITY_FLAGS} -o "${NRN_NOCMODL_GEN_REL}/lex.cpp"
           "${NRN_NOCMODL_SRC_REL}/lex.lpp"
   DEPENDS "${NRN_NOCMODL_SRC_DIR}/lex.lpp"
   COMMENT "[FLEX][nocmodllexer] Building scanner with flex ${FLEX_VERSION}")
@@ -184,7 +190,7 @@ else()
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNMPI_SRC_FILES})
 endif()
 
-if(MINGW)
+if(MINGW OR MSVC)
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/dlfcn.c)
 endif()
 
@@ -254,23 +260,31 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 # generate hocusr.h
 add_custom_command(
   OUTPUT ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
+  COMMAND echo "hello"
+  COMMAND echo $PATH
+  COMMAND bash -c "echo $PATH"
+  COMMAND sed --version
+  COMMAND bash --version
   COMMAND ${CMAKE_C_COMPILER} -E -I${NRN_NRNOC_SRC_DIR} -I${NRN_OC_SRC_DIR}
           ${NRN_NRNOC_SRC_DIR}/neuron.h > neuron.tmp1
-  COMMAND sed "/^#/d" neuron.tmp1 > neuron.tmp2
+  COMMAND echo ZZZ
+  COMMAND bash -c "sed '/^#/d' neuron.tmp1 > neuron.tmp2"
+  COMMAND echo ZZZ
   COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 >
           ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
+  COMMAND echo ZZZ
   DEPENDS ${NRN_NRNOC_SRC_DIR}/neuron.h ${NRN_OC_SRC_DIR}/mk_hocusr_h.py)
 add_custom_target(generate_hocusr_header DEPENDS "${PROJECT_BINARY_DIR}/src/oc/hocusr.h")
 add_dependencies(generated_source_files generate_hocusr_header)
 
-# header for dynamic mpi
+# header for dynamic mpi. Creates nrnmpi_dynam_cinc  nrnmpi_dynam.h  nrnmpi_dynam_wrappers.inc
 if(NRN_ENABLE_MPI_DYNAMIC)
   file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/src/nrnmpi")
   add_custom_command(
     OUTPUT ${NRNMPI_DYNAMIC_INCLUDE_FILE}
-    COMMAND sh mkdynam.sh "${PROJECT_BINARY_DIR}/src/nrnmpi"
+    COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} mkdynam.py "${PROJECT_BINARY_DIR}/src/nrnmpi"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/nrnmpi
-    DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.sh
+    DEPENDS ${PROJECT_SOURCE_DIR}/src/nrnmpi/mkdynam.py
             ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpidec.h)
 endif()
 
@@ -397,6 +411,10 @@ include_directories(${NRN_INCLUDE_DIRS})
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+target_compile_definitions(
+  nrniv_lib
+  PUBLIC NRN_DLL
+  PRIVATE NRN_DLL_EXPORTS)
 add_dependencies(nrniv_lib generated_source_files)
 add_cpp_git_information(nrniv_lib PRIVATE)
 target_link_libraries(nrniv_lib nrngnu)
@@ -432,13 +450,12 @@ if(${NRN_ENABLE_ARCH_INDEP_EXP_POW})
   target_link_libraries(nrniv_lib ${LIB_MPFR})
 endif()
 
-if(NRN_WINDOWS_BUILD)
+if(NRN_WINDOWS_BUILD AND READLINE_FOUND)
   target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
 else()
   if(READLINE_FOUND)
     target_link_libraries(nrniv_lib ${Readline_LIBRARY})
-  else()
-    target_link_libraries(nrniv_lib readline)
+    # else() target_link_libraries(nrniv_lib readline)
   endif()
 
   if(CURSES_FOUND)

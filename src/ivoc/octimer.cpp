@@ -10,12 +10,12 @@
 #endif /* HAVE_IV */
 #include "classreg.h"
 
-#ifdef MINGW
+#ifdef WIN32
 #include <windows.h>
 #endif
 
 #if HAVE_IV
-#if defined(MINGW)
+#if defined(WIN32)
 class OcTimer {
 #else
 class OcTimer: public IOHandler {
@@ -34,13 +34,13 @@ class OcTimer: public IOHandler {
   private:
     double seconds_;
     HocCommand* hc_;
-#ifdef MINGW
+#ifdef WIN32
     HANDLE wtimer_;
 #endif
     bool stopped_;
 };
 
-#ifdef MINGW
+#ifdef WIN32
 static void CALLBACK callback(PVOID lpParameter, BOOLEAN TimerOrWaitFired) {
     ((OcTimer*) lpParameter)->timerExpired(0, 0);
 }
@@ -108,7 +108,7 @@ void OcTimer_reg() {
 OcTimer::OcTimer(const char* cmd) {
     hc_ = new HocCommand(cmd);
     seconds_ = .5;
-#ifdef MINGW
+#ifdef WIN32
     wtimer_ = NULL;
 #endif
     stopped_ = true;
@@ -116,7 +116,7 @@ OcTimer::OcTimer(const char* cmd) {
 OcTimer::OcTimer(Object* cmd) {
     hc_ = new HocCommand(cmd);
     seconds_ = .5;
-#ifdef MINGW
+#ifdef WIN32
     wtimer_ = NULL;
 #endif
     stopped_ = true;
@@ -126,7 +126,7 @@ OcTimer::~OcTimer() {
     delete hc_;
 }
 void OcTimer::start() {
-#ifdef MINGW
+#ifdef WIN32
     stopped_ = false;
     LARGE_INTEGER nsec100;
     nsec100.QuadPart = (long long) (-seconds_ * 10000000.);
@@ -147,12 +147,12 @@ void OcTimer::start() {
 }
 void OcTimer::stop() {
     stopped_ = true;
-#ifndef MINGW
+#ifndef WIN32
     Dispatcher::instance().stopTimer(this);
 #endif
 }
 void OcTimer::timerExpired(long, long) {
-#ifndef MINGW
+#ifndef WIN32
     if (!stopped_) {
         this->start();
     }
