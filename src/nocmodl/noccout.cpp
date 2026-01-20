@@ -4,6 +4,7 @@
 #include "modl.h"
 #include "parse1.hpp"
 #include "symbol.h"
+#include "splitfor.h"
 
 extern const char* nmodl_version_;
 
@@ -71,6 +72,11 @@ void c_out() {
 
     Fprintf(fcout, "/* Created by Language version: %s */\n", nmodl_version_);
     Fflush(fcout);
+
+    if (splitfor()) {
+        P("#define SPLITFOR 1\n");
+        P("#define MAX_SPLIT_GRP_SIZE 2048 // must be power of 2\n");
+    }
 
     if (vectorize) {
         vectorize_do_substitute();
@@ -381,19 +387,21 @@ void printitem(Item* q) {
         verbatim_adjust(STR(q));
     } else if (q->itemtype == ITEM) {
         printitem(ITM(q));
-    } else {
+    } else if (q->itemtype == STRING) {
         Fprintf(fcout, " %s", STR(q));
     }
 }
 
 void debugprintitem(Item* q) {
     if (q->itemtype == SYMBOL) {
-        printf("SYM %s\n", SYM(q)->name);
+        printf("SYM %s type=%d subtype=%lo\n", SYM(q)->name, SYM(q)->type, SYM(q)->subtype);
     } else if (q->itemtype == VERBATIM) {
         printf("VERB %s\n", STR(q));
     } else if (q->itemtype == ITEM) {
         printf("ITM ");
         debugprintitem(ITM(q));
+    } else if (q->itemtype == LIST) {
+        printf("LIST\n");
     } else {
         printf("STR %s\n", STR(q));
     }
@@ -481,6 +489,14 @@ void c_out_vectorize() {
     /* things which must go first and most declarations */
     P("/* VECTORIZED */\n#define NRN_VECTORIZED 1\n");
     P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
+    fprintf(fcout,
+            "#define NRN_TRACE 0\n"
+            "#if NRN_TRACE\n"
+            "#include \"nrn_trace.h\"\n"
+            "#else\n"
+            "#define NRN_TRACE_START(name) /**/\n"
+            "#define NRN_TRACE_END(name) /**/\n"
+            "#endif\n");
     P("#undef PI\n");
     P("#define nil 0\n");
     P("#define _pval pval\n");  // due to some old models using _pval
@@ -584,6 +600,7 @@ void c_out_vectorize() {
             P(buf);
         }
         P("\n} return _current;\n}\n");
+        splitfor_current();
     }
 
     /* For the classic BREAKPOINT block, the neuron current also has to compute the dcurrent/dv as
@@ -592,6 +609,7 @@ void c_out_vectorize() {
     if (brkpnt_exists) {
         P("\nstatic void nrn_cur(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
           "Memb_list* _ml_arg, int _type) {\n");
+        fprintf(fcout, "  NRN_TRACE_START(\"nrn_cur_%s\");\n", mechname);
         P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
         P("auto const _vec_rhs = _nt->node_rhs_storage();\n");
         P("auto const _vec_sav_rhs = _nt->node_sav_rhs_storage();\n");
@@ -604,6 +622,7 @@ void c_out_vectorize() {
         P("_thread = _ml_arg->_thread;\n");
         P("double* _globals = nullptr;\n");
         P("if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n");
+        splitfor_cur(1);
         P("for (_iml = 0; _iml < _cntml; ++_iml) {\n");
         P(" _ppvar = _ml_arg->_pdata[_iml];\n");
         ext_vdef();
@@ -655,12 +674,15 @@ void c_out_vectorize() {
                 P("	 _vec_rhs[_ni[_iml]] -= _rhs;\n");
             }
         }
-        P(" \n}\n");
-        P(" \n}\n");
+        P("\n}\n");
+        splitfor_cur(2);
+        fprintf(fcout, "  NRN_TRACE_END(\"nrn_cur_%s\");\n", mechname);
+        P("\n}\n");
         /* for the classic breakpoint block, nrn_cur computed the conductance, _g,
            and now the jacobian calculation merely returns that */
         P("\nstatic void nrn_jacob(_nrn_model_sorted_token const& _sorted_token, NrnThread* "
           "_nt, Memb_list* _ml_arg, int _type) {\n");
+        fprintf(fcout, "  NRN_TRACE_START(\"nrn_jacob_%s\");\n", mechname);
         P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
         P("auto const _vec_d = _nt->node_d_storage();\n");
         P("auto const _vec_sav_d = _nt->node_sav_d_storage();\n");
@@ -688,6 +710,7 @@ void c_out_vectorize() {
             P("  _vec_d[_ni[_iml]] += _g;\n");
         }
         P(" \n}\n");
+        fprintf(fcout, "  NRN_TRACE_END(\"nrn_jacob_%s\");\n", mechname);
         P(" \n}\n");
     }
 
@@ -695,6 +718,7 @@ void c_out_vectorize() {
        advances states by dt */
     P("\nstatic void nrn_state(_nrn_model_sorted_token const& _sorted_token, NrnThread* _nt, "
       "Memb_list* _ml_arg, int _type) {\n");
+    fprintf(fcout, "  NRN_TRACE_START(\"nrn_state_%s\");\n", mechname);
     P("_nrn_mechanism_cache_range _lmr{_sorted_token, *_nt, *_ml_arg, _type};\n");
     P("auto* const _vec_v = _nt->node_voltage_storage();\n");
     P("auto* const _ml = &_lmr;\n");
@@ -710,6 +734,7 @@ void c_out_vectorize() {
         P("_thread = _ml_arg->_thread;\n");
         P("double* _globals = nullptr;\n");
         P("if (gind != 0 && _thread != nullptr) { _globals = _thread[_gth].get<double*>(); }\n");
+        splitfor_solve(1);
         P("for (size_t _iml = 0; _iml < _cntml; ++_iml) {\n");
         P(" _ppvar = _ml_arg->_pdata[_iml];\n");
         P(" _nd = _ml_arg->_nodelist[_iml];\n");
@@ -724,10 +749,12 @@ void c_out_vectorize() {
         }
         printlist(set_ion_variables(1));
         P("}}\n");
+        splitfor_solve(2);
         if (dtsav_for_nrn_state && nrnstate) {
             P(" dt = _dtsav;");
         }
     }
+    fprintf(fcout, "  NRN_TRACE_END(\"nrn_state_%s\");\n", mechname);
     P("\n}\n");
 
     P("\nstatic void terminal(){}\n");
