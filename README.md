@@ -4,6 +4,8 @@
 NEURON is a simulator for models of neurons and networks of neuron. See [http://neuron.yale.edu](http://neuron.yale.edu) for installers, source code, documentation, tutorials, announcements of
 courses and conferences, and a discussion forum.
 
+This comment represents a dummy commit to introduce a tag.
+
 ## Installing NEURON
 
 NEURON provides binary installers for Linux, Mac and Windows platforms. You can find the latest
