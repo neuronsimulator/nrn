@@ -2,6 +2,19 @@ from neuron import h, nrn
 import gc
 import sys
 
+version_info = sys.version_info
+major_minor = version_info.major * 100 + version_info.minor
+
+
+def version_dependent_refcount(rcnt: int) -> int:
+    """
+    Refcounting has changed in Python 3.14 so we need to modify what NEURON expects.
+
+    For more details, see:
+    https://docs.python.org/3.14/whatsnew/3.14.html#whatsnew314-refcount
+    """
+    return rcnt if major_minor < 314 else rcnt - 1
+
 
 def test_seg_from_sec_x_ref_python():
     """
@@ -12,11 +25,11 @@ def test_seg_from_sec_x_ref_python():
     seg1 = nc1.preseg()
     del soma1
 
-    assert sys.getrefcount(seg1) == 2
+    assert sys.getrefcount(seg1) == version_dependent_refcount(2)
     # It is unclear why we get 3 ref-counts when we use plain python. With nrniv we get 2.
     # At least it is consistent with the test below and we assert that the section
     # really gets deleted (in hoc)
-    assert sys.getrefcount(seg1.sec) == 3  # seg->pysec_ + 1
+    assert sys.getrefcount(seg1.sec) == version_dependent_refcount(3)  # seg->pysec_ + 1
 
     del seg1  # NOTE: section fully destroyed together with segment
     gc.collect()
@@ -42,8 +55,8 @@ def test_seg_from_sec_x_ref_hocpy():
     nc = h.nc
     seg = nc.preseg()  # uses `seg_from_sec_x`
 
-    assert sys.getrefcount(seg) == 2
-    assert sys.getrefcount(seg.sec) == 3  # seg->pysec_ + 1
+    assert sys.getrefcount(seg) == version_dependent_refcount(2)
+    assert sys.getrefcount(seg.sec) == version_dependent_refcount(3)  # seg->pysec_ + 1
 
     del seg  # NOTE: section py wrapper destroyed with segment, hoc-level section kept
     gc.collect()
