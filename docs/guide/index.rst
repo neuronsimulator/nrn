@@ -24,4 +24,8 @@ Guides
 
    randomness
    porting_mechanisms_to_cpp
+   
+.. toctree::
+   :maxdepth: 1
+
    faq
