@@ -104,7 +104,7 @@ static nb::object nrnpy_pyCallObject(nb::callable callable, nb::object args) {
     // at the top level
     auto interp = HocTopContextManager();
     nb::tuple tup(args);
-    nb::object p = nb::steal(PyObject_CallObject(callable.ptr(), tup.ptr()));
+    nb::object p = callable(*tup);
 #if 0
 printf("PyObject_CallObject callable\n");
 PyObject_Print(callable, stdout, 0);
@@ -251,9 +251,9 @@ static void hpoasgn(Object* o, int type) {
     Symbol* sym;
     nb::object poright;
     if (type == NUMBER) {
-        poright = nb::steal(PyFloat_FromDouble(hoc_xpop()));
+        poright = nb::cast(hoc_xpop());
     } else if (type == STRING) {
-        poright = nb::steal(Py_BuildValue("s", *hoc_strpop()));
+        poright = nb::cast(*hoc_strpop());
     } else if (type == OBJECTVAR || type == OBJECTTMP) {
         Object** po2 = hoc_objpop();
         poright = nb::steal(nrnpy_ho2po(*po2));
@@ -272,12 +272,12 @@ static void hpoasgn(Object* o, int type) {
     } else if (nindex == 1) {
         int ndim = hoc_pop_ndim();
         assert(ndim == 1);
-        auto key = nb::steal(PyLong_FromDouble(hoc_xpop()));
+        auto key = nb::cast(static_cast<long>(hoc_xpop()));
         nb::object a;
         if (strcmp(sym->name, "_") == 0) {
             a = nb::borrow(poleft);
         } else {
-            a = nb::steal(PyObject_GetAttrString(poleft.ptr(), sym->name));
+            a = poleft.attr(sym->name);
         }
         if (a) {
             err = PyObject_SetItem(a.ptr(), key.ptr(), poright.ptr());
@@ -320,7 +320,7 @@ static double praxis_efun(Object* ho, Object* v) {
 
     auto pc = nb::steal(nrnpy_ho2po(ho));
     auto pv = nb::steal(nrnpy_ho2po(v));
-    auto po = nb::steal(Py_BuildValue("(OO)", pc.ptr(), pv.ptr()));
+    auto po = nb::make_tuple(pc, pv);
     nb::object r = hoccommand_exec_help1(po);
     if (!r.is_valid()) {
         auto mes = nrnpyerr_str();
@@ -398,20 +398,17 @@ static Object* callable_with_args(Object* ho, int narg) {
     auto po = nb::borrow(((Py2Nrn*) ho->u.this_pointer)->po_);
     nanobind::gil_scoped_acquire lock{};
 
-    auto args = nb::steal(PyTuple_New((Py_ssize_t) narg));
-    if (!args) {
-        hoc_execerror("PyTuple_New failed", 0);
-    }
+    nb::list args_list{};
     for (int i = 0; i < narg; ++i) {
         // not used with datahandle args.
         auto item = nb::steal(nrnpy_hoc_pop("callable_with_args"));
         if (!item) {
             hoc_execerror("nrnpy_hoc_pop failed", 0);
         }
-        if (PyTuple_SetItem(args.ptr(), (Py_ssize_t) (narg - i - 1), item.release().ptr()) != 0) {
-            hoc_execerror("PyTuple_SetItem failed", 0);
-        }
+        args_list.append(item);
     }
+    args_list.reverse();  // because we popped in reverse order
+    nb::tuple args = nb::tuple(args_list);
 
     nb::tuple r = nb::make_tuple(po, args);
 
@@ -763,8 +760,9 @@ static Object* py_alltoall_type(int size, int type) {
             if (type == 4) {  // broadcast is just the PyObject
                 pdest = psrc;
             } else {  // allgather and gather must wrap psrc in list
-                pdest = nb::steal(PyList_New(1));
-                PyList_SetItem(pdest.ptr(), 0, psrc.release().ptr());
+                nb::list pdest_list{};
+                pdest_list.append(psrc);
+                pdest = pdest_list;
             }
             Object* ho = nrnpy_po2ho(pdest.ptr());
             if (ho) {

@@ -1019,7 +1019,7 @@ static PyObject* nrnpy_set_psection_safe(PyObject* self, PyObject* args) {
 static PyObject* NPySecObj_psection(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
     if (nrnpy_psection) {
-        auto arglist = nb::steal(Py_BuildValue("(O)", self));
+        auto arglist = nb::cast(nb::make_tuple(self));
         return PyObject_CallObject(nrnpy_psection, arglist.ptr());
     }
     Py_RETURN_NONE;
@@ -1355,7 +1355,7 @@ static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
     hoc_push_frame(&sym, narg);  // get_argument uses the current frame
     try {
         double x = (f) (self->pymech_->prop_);
-        result = nb::steal(Py_BuildValue("d", x));
+        result = nb::cast(x);
     } catch (std::exception const& e) {
         std::ostringstream oss;
         oss << "mechanism.function call error: " << e.what();
@@ -1990,11 +1990,11 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
     // printf("section_getattr %s\n", n);
     nb::object result;
     if (strcmp(n, "L") == 0) {
-        result = nb::steal(Py_BuildValue("d", section_length(sec)));
+        result = nb::cast(section_length(sec));
     } else if (strcmp(n, "Ra") == 0) {
-        result = nb::steal(Py_BuildValue("d", nrn_ra(sec)));
+        result = nb::cast(nrn_ra(sec));
     } else if (strcmp(n, "nseg") == 0) {
-        result = nb::steal(Py_BuildValue("i", sec->nnode - 1));
+        result = nb::cast(sec->nnode - 1);
     } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
         Symbol* sym = ((NPyRangeVar*) rv)->sym_;
         if (is_array(*sym)) {
@@ -2013,7 +2013,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
             }
         }
     } else if (strcmp(n, "rallbranch") == 0) {
-        result = nb::steal(Py_BuildValue("d", sec->prop->dparam[4].get<double>()));
+        result = nb::cast(sec->prop->dparam[4].get<double>());
     } else if (strcmp(n, "__dict__") == 0) {
         nb::dict out_dict{};
         out_dict["L"] = nb::none();
@@ -2206,7 +2206,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
     PyObject* rv = NULL;
     if (strcmp(n, "v") == 0) {
         Node* nd = node_exact(sec, self->x_);
-        result = nb::steal(Py_BuildValue("d", NODEV(nd)));
+        result = nb::cast(NODEV(nd));
     } else if ((otype = PyDict_GetItemString(pmech_types, n)) != NULL) {
         int type = PyInt_AsLong(otype);
         // printf("segment_getattr type=%d\n", type);
@@ -2647,7 +2647,7 @@ static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
     CHECK_SEC_INVALID(self->sec_);
     double x = 0.5;
     PyArg_ParseTuple(args, "|d", &x);
-    auto segargs = nb::steal(Py_BuildValue("(O,d)", self, x));
+    auto segargs = nb::cast(nb::make_tuple(self, x));
     return NPySegObj_new(psegment_type, segargs.ptr(), nullptr);
 }
 
