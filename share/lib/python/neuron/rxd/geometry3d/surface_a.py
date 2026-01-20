@@ -60,7 +60,7 @@ def sub_surface_area(v0, v1, v2, v3, v4, v5, v6, v7, x0, x1, y0, y1, z0, z1):
     ):
         return 0
 
-    results = numpy.array([0.0] * 48)
+    results = numpy.zeros(48)
 
     find_triangles = nrn_dll_sym("find_triangles")
     find_triangles.argtypes = [
@@ -107,9 +107,9 @@ def sub_surface_area(v0, v1, v2, v3, v4, v5, v6, v7, x0, x1, y0, y1, z0, z1):
         results_ptr,
     )
 
-    pt0 = numpy.array([0.0] * 3)
-    pt1 = numpy.array([0.0] * 3)
-    pt2 = numpy.array([0.0] * 3)
+    pt0 = numpy.zeros(3)
+    pt1 = numpy.zeros(3)
+    pt2 = numpy.zeros(3)
 
     pt0_ptr = pt0.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
     pt1_ptr = pt1.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
