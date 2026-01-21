@@ -9,6 +9,20 @@ from .constants import molecules_per_mM_um3
 from neuron import h
 import itertools
 from .rxdException import RxDException
+from .rxdmath import _ast_config
+
+if _ast_config["nmodl_support"]:
+    try:
+        from nmodl.ast import (
+            ExpressionStatement,
+            DiffEqExpression,
+            BinaryExpression,
+            BinaryOperator,
+            BinaryOp,
+        )
+    except ModuleNotFoundError as e:
+        _ast_config["nmodl_support"] = False
+        _ast_config["exception"] = e
 
 
 def _ref_list_with_mult(obj):
@@ -223,6 +237,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         #        regs.append(sptr()._extracellular()._region)
         #    else:
         #        regs.append(sptr()._region())
+        self._arithmetic_rate = rxdmath._ensure_arithmeticed(rate)
         self._rate, self._involved_species = rxdmath._compile(rate, regs)
 
     @property
@@ -401,3 +416,106 @@ class MultiCompartmentReaction(GeneralizedReaction):
                 self._cur_ptrs.append(tuple(local_ptrs))
                 self._cur_mapped.append(tuple(local_mapped))
                 self._cur_mapped_ecs.append(local_mapped_ecs)
+
+    def ast(self, regions=None):
+        """Provide an AST representation of the mutlicompartment reactions.
+
+        Args:
+            regions (optional): argument for compatability -- it is ignored
+            the regions are specified when defining the multicompartment reaction.
+
+        Depending on rxd._ast_config["kinetic_block"] if 'off' (default) or
+        if rxd._ast_config["kinetic_block"] if 'mass_action' and the reaction has
+        custom dynamics then the reaction will be represented as as list of
+        DiffEqExpression each wrapped in ExpressionStatement.
+        If rxd._ast_config["kinetic_block"] if 'on' or
+        if rxd._ast_config["kinetic_block"] if 'mass_action' and the reaction
+        has mass action kinetics then the reaction will be represent as a
+        ReactionStatement.
+
+
+        Returns:
+            List[nmodl.ast]: A list of ExpressionStatement or single ReactionStatement
+            List[str]:  A list of the species (AST state names)
+        """
+        from .species import Parameter, ParameterOnRegion, ParameterOnExtracellular
+
+        if not _ast_config["nmodl_support"]:
+            if "exception" in _ast_config:
+                raise _ast_config["exception"]
+            else:
+                raise RxDException(
+                    'NMODL AST are disabled set rxd._ast_config["nmodl_support"] to True'
+                )
+        if not initializer.is_initialized():
+            initializer._do_init()
+
+        kinetic_block = _ast_config["kinetic_block"]
+
+        # assume all source share the same region
+        src = self._sources[0]()
+        # assume all dests share the same region
+        dst = self._dests[0]()
+
+        lreg = (
+            src._region() if hasattr(src, "_region") else src._extracellular()._region
+        )
+        rreg = (
+            dst._region() if hasattr(dst, "_region") else dst._extracellular()._region
+        )
+
+        species = []
+        for sp in self._sources + self._dests:
+            if (
+                not isinstance(sp, Parameter)
+                and not isinstance(sp, ParameterOnRegion)
+                and not isinstance(sp, ParameterOnExtracellular)
+            ):
+                species.append(sp().ast().get_node_name())
+
+        if kinetic_block == "off" or (
+            kinetic_block == "mass_action" and self._custom_dynamics
+        ):
+            # represent the reaction in a derivative block
+            rates = []
+
+            for idx, sptr in enumerate(self._sources + self._dests):
+                sp = sptr()
+                if (
+                    isinstance(sp, Parameter)
+                    or isinstance(sp, ParameterOnRegion)
+                    or isinstance(sp, ParameterOnExtracellular)
+                ):
+                    continue
+                dx = sptr().ast(prime=True)
+                if idx < len(self._sources):
+                    rast = self._arithmetic_rate.ast([lreg, rreg])
+                else:
+                    rast = (self._arithmetic_rate).ast([rreg, lreg])
+                rates.append(
+                    ExpressionStatement(
+                        DiffEqExpression(
+                            (
+                                BinaryExpression(
+                                    dx, BinaryOperator(BinaryOp.BOP_ASSIGN), rast
+                                )
+                            )
+                        )
+                    )
+                )
+            return rates, species
+        else:
+            # represent the reaction in a kinetic block
+            rast = self._scheme.ast()
+
+            # fill in the correct rates
+            if ">" in self._dir:
+                rast.expression1 = rxdmath._ensure_arithmeticed(self.f_rate).ast(
+                    [lreg, rreg]
+                )
+            if "<" in self._dir:
+                rast.expression2 = rxdmath._ensure_arithmeticed(self.b_rate).ast(
+                    [rreg, lreg]
+                )
+
+        return rast, species
