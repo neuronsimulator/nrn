@@ -105,7 +105,7 @@ void nrnbbcore_register_mapping() {
     int nlfp = vector_capacity(lfp);
 
     if (nsec != nseg) {
-        std::cout << "Error: Section and Segment mapping vectors should have same size!\n";
+        Printf("Error: Section and Segment mapping vectors should have same size!\n");
         abort();
     }
 
@@ -220,7 +220,7 @@ void* get_coreneuron_handle() {
                                       .append("corenrnmech")
                                       .append(neuron::config::shared_library_suffix);
 
-    // first check if coreneuron specific library exist in <arch>/.libs
+    // first check if coreneuron specific library exist in <arch>
     // note that we need to get full path especially for OSX
     {
         auto const corenrn_lib_path = std::filesystem::current_path() /

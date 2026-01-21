@@ -1,5 +1,6 @@
 from neuron import h
 
+
 # model - membrane action potential
 def model():
     s = h.Section()

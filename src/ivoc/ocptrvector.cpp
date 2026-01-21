@@ -10,6 +10,7 @@
     p.gather(Vector)
 */
 #include "classreg.h"
+#include "code.h"
 #include "oc2iv.h"
 #include "ocptrvector.h"
 #include "objcmd.h"
@@ -18,8 +19,6 @@
 #include "graph.h"
 #endif
 #include "gui-redirect.h"
-
-extern int hoc_return_type_code;
 
 static double dummy;
 
@@ -85,13 +84,13 @@ static const char** ptr_label(void* v) {
 }
 
 static double resize(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     ((OcPtrVector*) v)->resize((int(chkarg(1, 1., 2e9))));
     return double(((OcPtrVector*) v)->size());
 }
 
 static double get_size(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     return ((OcPtrVector*) v)->size();
 }
 
@@ -206,9 +205,9 @@ static Member_func members[] = {{"size", get_size},
                                 {"scatter", scatter},
                                 {"gather", gather},
                                 {"plot", ptr_plot},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
-static Member_ret_str_func retstr_members[] = {{"label", ptr_label}, {0, 0}};
+static Member_ret_str_func retstr_members[] = {{"label", ptr_label}, {nullptr, nullptr}};
 
 static void* cons(Object*) {
     int sz;
@@ -222,6 +221,6 @@ static void destruct(void* v) {
 }
 
 void OcPtrVector_reg() {
-    class2oc("PtrVector", cons, destruct, members, 0, 0, retstr_members);
+    class2oc("PtrVector", cons, destruct, members, nullptr, retstr_members);
     pv_class_sym_ = hoc_lookup("PtrVector");
 }

@@ -18,8 +18,9 @@ else
 fi
 
 if [ -z ${CORENRNHOME+x} ] ; then
-  # CORENRNHOME wasn't set, use the install prefix
-  cnrn_prefix=@cnrn_prefix@
+  # CORENRNHOME wasn't set, use the directory with the current script (they
+  # are shipped together)
+  cnrn_prefix="$(dirname "${0}")/../"
 else
   cnrn_prefix="${CORENRNHOME}"
 fi
@@ -187,7 +188,7 @@ for i in "${files[@]}" ; do
   echo "\
 ${base_name// /\\ }.cpp: ${f}.mod \$(NOCMODL)
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
-	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\" $UserNMODLFLAGS)
+	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" @NRN_NMODL_--neuron@ -o \"$mdir\" $UserNMODLFLAGS)
 
 ./${base_name// /\\ }.o: ${base_name// /\\ }.cpp
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) ${PWD}/\$<\\\n\"
@@ -274,5 +275,19 @@ if [ "$LinkCoreNEURON" = true ] ; then
   fi
 fi
 
-make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" "UserNMODLBIN=$UserNMODLBIN" "UserNMODLFLAGS=$UserNMODLFLAGS" special &&
-echo "Successfully created $MODSUBDIR/special"
+set +e
+
+make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" "UserNMODLBIN=$UserNMODLBIN" "UserNMODLFLAGS=$UserNMODLFLAGS" special
+
+ MAKE_STATUS=$?
+
+ set -e
+
+ if [ $MAKE_STATUS -eq 0 ]; then
+     echo "Successfully created $MODSUBDIR/special"
+ else
+     printf "\nNOTE: If you are encountering MOD file compilation errors only with NEURON version 9.0 or later\n"
+     printf "refer to the C++ migration guide at https://nrn.readthedocs.io/en/9.0.0/guide/porting_mechanisms_to_cpp.html\n\n"
+ fi
+
+exit $MAKE_STATUS

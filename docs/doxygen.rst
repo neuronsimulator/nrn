@@ -1,5 +1,5 @@
-C/C++ API
-===========
+Internal C/C++ documentation
+============================
 
 Link to  `Doxygen`_
 

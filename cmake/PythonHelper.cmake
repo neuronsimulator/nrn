@@ -98,12 +98,6 @@ function(nrn_find_python)
     if(NRN_ENABLE_PYTHON_DYNAMIC AND NOT NRN_LINK_AGAINST_PYTHON)
       # Do not link against Python, so we don't need the library -- just as well, it's not available
       # in manylinux
-      if(${CMAKE_VERSION} VERSION_LESS 3.18)
-        message(
-          FATAL_ERROR
-            "NRN_ENABLE_PYTHON_DYNAMIC=ON and NRN_LINK_AGAINST_PYTHON=OFF requires CMake >= 3.18 for the Development.Module component in FindPython"
-        )
-      endif()
       set(dev_component "Development.Module")
       set(Python_LIBRARIES "do-not-link-against-libpython-in-dynamic-python-builds")
     else()
@@ -178,8 +172,17 @@ function(nrn_find_python)
       PARENT_SCOPE)
 endfunction()
 
+# Check if Python from Conda is being used on MacOS
+if(NRN_MACOS_BUILD)
+  string(FIND "${PYTHON_EXECUTABLE}" "/anaconda" anaconda_found)
+  string(FIND "${PYTHON_EXECUTABLE}" "/miniconda" miniconda_found)
+  if(anaconda_found GREATER -1 OR miniconda_found GREATER -1)
+    set(NRN_WITH_MACOS_CONDA_PYTHON TRUE)
+  endif()
+endif()
+
 # For each Python in NRN_PYTHON_EXECUTABLES, find its version number, its include directory, and its
-# library path. Store those in the new lists NRN_PYTHON_VERSIONS, NRN_PYTHON_INCLUDES and
+# library path. Store those in the new lists NRN_PYTHON_VERSIONS, NRN_PYTHON_INCLUDES, and
 # NRN_PYTHON_LIBRARIES. Set NRN_PYTHON_COUNT to be the length of those lists, and
 # NRN_PYTHON_ITERATION_LIMIT to be NRN_PYTHON_COUNT - 1.
 set(NRN_PYTHON_EXECUTABLES)

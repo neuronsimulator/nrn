@@ -24,6 +24,7 @@ add_executable(
   unit_tests/container/node.cpp
   unit_tests/node_order_optim/permutations.cpp
   unit_tests/utils/enumerate.cpp
+  unit_tests/utils/Sprintf.cpp
   unit_tests/oc/hoc_interpreter.cpp
   cover/unit_tests/cover.cpp)
 set(catch2_targets testneuron)
@@ -83,38 +84,30 @@ endif()
 # =============================================================================
 # Add ringtest
 # =============================================================================
-set(RINGTEST_DIR ${PROJECT_SOURCE_DIR}/test/ringtest)
+set(RINGTEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/ringtest")
+file(MAKE_DIRECTORY "${RINGTEST_DIR}")
 add_test(
-  ringtest
-  ${CMAKE_COMMAND}
-  -Dexecutable=${CMAKE_BINARY_DIR}/bin/nrniv
-  -Dexec_arg=ring.hoc
-  -Dout_file=out.dat
-  -Dref_file=out.dat.ref
-  -Dwork_dir=${RINGTEST_DIR}
-  -P
-  ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
+  NAME ringtest
+  COMMAND
+    ${CMAKE_COMMAND} -Dhoc_library_path=${CMAKE_CURRENT_SOURCE_DIR}/ringtest
+    -Dexecutable=$<TARGET_FILE:nrniv> -Dexec_arg=${CMAKE_CURRENT_SOURCE_DIR}/ringtest/ring.hoc
+    -Dout_file=out.dat -Dref_file=${CMAKE_CURRENT_SOURCE_DIR}/ringtest/out.dat.ref
+    -Dwork_dir=${RINGTEST_DIR} -P ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
 list(APPEND TESTS ringtest)
 
 # =============================================================================
 # Add small hoc test
 # =============================================================================
-set(HOCTEST_DIR ${PROJECT_SOURCE_DIR}/test/hoc_tests/connect_dend)
-if(NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY)
-  set(REF_FILE cell3soma.core.dat.ref)
-else()
-  set(REF_FILE cell3soma.dat.ref)
-endif()
+set(HOCTEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/hoc_tests/connect_dend")
+file(MAKE_DIRECTORY "${HOCTEST_DIR}")
+set(REF_FILE "${CMAKE_CURRENT_SOURCE_DIR}/hoc_tests/connect_dend/cell3soma.dat.ref")
 add_test(
-  connect_dend
-  ${CMAKE_COMMAND}
-  -Dexecutable=${CMAKE_BINARY_DIR}/bin/nrniv
-  -Dexec_arg=connect_dend.hoc
-  -Dout_file=cell3soma.dat
-  -Dref_file=${REF_FILE}
-  -Dwork_dir=${HOCTEST_DIR}
-  -P
-  ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
+  NAME connect_dend
+  COMMAND
+    ${CMAKE_COMMAND} -Dexecutable=$<TARGET_FILE:nrniv>
+    -Dexec_arg=${CMAKE_CURRENT_SOURCE_DIR}/hoc_tests/connect_dend/connect_dend.hoc
+    -Dout_file=cell3soma.dat -Dref_file=${REF_FILE} -Dwork_dir=${HOCTEST_DIR} -P
+    ${PROJECT_SOURCE_DIR}/cmake/RunHOCTest.cmake)
 list(APPEND TESTS connect_dend)
 
 # =============================================================================
@@ -248,6 +241,7 @@ if(NRN_ENABLE_PYTHON)
         GROUP ${group}
         NAME basic_tests_py${pyver}
         PRELOAD_SANITIZER
+        ENVIRONMENT "CC=${CMAKE_C_COMPILER}"
         COMMAND "${exe}" ${pytest} "./test/${group}"
         SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py")
     endforeach()
@@ -271,14 +265,14 @@ if(NRN_ENABLE_PYTHON)
     GROUP coverage_tests
     NAME cover_tests
     PRELOAD_SANITIZER
-    ENVIRONMENT COVERAGE_FILE=.coverage.cover_tests
+    ENVIRONMENT COVERAGE_FILE=.coverage.cover_tests CC=${CMAKE_C_COMPILER}
     COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/cover
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
   nrn_add_test_group(
     NAME example_nmodl
     MODFILE_PATTERNS *.mod *.inc
     SIM_DIRECTORY share/examples/nrniv/nmodl)
-  set(py_exe ${NRN_DEFAULT_PYTHON_EXECUTABLE})
+  set(py_exe ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest})
   set(py_preload PRELOAD_SANITIZER)
   set(hoc_exe special)
   foreach(ext hoc py)
@@ -297,6 +291,7 @@ if(NRN_ENABLE_PYTHON)
   endforeach()
 
   # independent run of each hoc and python file in test/hoc/* folders
+  set(py_exe ${NRN_DEFAULT_PYTHON_EXECUTABLE})
   nrn_add_test_group(
     NAME hoctests
     MODFILE_PATTERNS *.mod *.inc
@@ -312,6 +307,7 @@ if(NRN_ENABLE_PYTHON)
       nrn_add_test(
         GROUP hoctests
         NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
+        ENVIRONMENT CC=${CMAKE_C_COMPILER}
         COMMAND ${${ext}_exe} "${hoc_script}"
         SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${${ext}test_utils})
     endforeach()
@@ -393,7 +389,7 @@ if(NRN_ENABLE_PYTHON)
     NAME nrntest_fast
     PROCESSORS 2
     REQUIRES mpi
-    ENVIRONMENT "NRN_PYTEST_ARGS=${pytest_arg_string}"
+    ENVIRONMENT "NRN_PYTEST_ARGS=${pytest_arg_string}" "CC=${CMAKE_C_COMPILER}"
     SCRIPT_PATTERNS
       test/pytest_coreneuron/run_pytest.py test/pytest_coreneuron/test_nrntest_fast.json
       test/pytest_coreneuron/test_nrntest_fast.py
@@ -489,13 +485,6 @@ if(NRN_ENABLE_PYTHON)
     SCRIPT_PATTERNS test/nmodl/test_table.py
     ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
     COMMAND ${modtests_launch_py} test/nmodl/test_table.py)
-  nrn_add_test(
-    GROUP nmodl_tests
-    NAME test_disc
-    REQUIRES ${modtests_preload_sanitizer}
-    SCRIPT_PATTERNS test/nmodl/test_disc.py
-    ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env}
-    COMMAND ${modtests_launch_py} test/nmodl/test_disc.py)
   nrn_add_test(
     GROUP nmodl_tests
     NAME test_function_table
@@ -761,13 +750,6 @@ if(NRN_ENABLE_PYTHON)
       COMMAND ${modtests_launch_py} test/nmodl/test_table.py)
     nrn_add_test(
       GROUP nmodl_tests_coreneuron
-      NAME test_disc_coreneuron_${processor}
-      REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
-      SCRIPT_PATTERNS test/nmodl/test_disc.py
-      ENVIRONMENT ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${processor_env}
-      COMMAND ${modtests_launch_py} test/nmodl/test_disc.py)
-    nrn_add_test(
-      GROUP nmodl_tests_coreneuron
       NAME test_function_table_coreneuron_${processor}
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/nmodl/test_function_table.py
@@ -807,7 +789,7 @@ function(add_modlunit_test mod_file)
   get_filename_component(mod_file_basename "${mod_file}" NAME_WE)
   add_test(
     NAME modlunit_${mod_file_basename}
-    COMMAND modlunit "${mod_file}"
+    COMMAND $<TARGET_FILE:modlunit> "${mod_file}"
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
   list(APPEND TESTS modlunit_${mod_file_basename})
   set(TESTS
@@ -819,8 +801,14 @@ add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/hh.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/stim.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/pattern.mod")
 add_modlunit_test("${PROJECT_SOURCE_DIR}/test/hoctests/rand.mod")
+# Test nocmodl with units
+add_test(
+  NAME nocmodl::no_env
+  COMMAND $<TARGET_FILE:nocmodl> -o "${CMAKE_CURRENT_BINARY_DIR}"
+          "${PROJECT_SOURCE_DIR}/test/coreneuron/mod files/axial.mod"
+  WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
 set_property(TEST modlunit_pattern PROPERTY WILL_FAIL ON)
-
+cpp_cc_configure_sanitizers(TEST nocmodl::no_env)
 set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}")
 cpp_cc_configure_sanitizers(TEST ${TESTS})
 # If profiling is enabled, run ringtest with profiler
@@ -832,3 +820,14 @@ endif()
 
 # Add tests that are configured using external repositories
 add_subdirectory(external)
+
+# ============================================
+# Test NMODL
+# ============================================
+if((NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON) AND NRN_ENABLE_TESTS)
+  add_subdirectory(nmodl/transpiler/unit)
+  add_subdirectory(nmodl/transpiler/integration)
+  if(NRN_ENABLE_PYTHON AND NOT NRN_SANITIZERS)
+    add_subdirectory(nmodl/transpiler/usecases)
+  endif()
+endif()

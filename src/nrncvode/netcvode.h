@@ -70,7 +70,7 @@ class NetCvode {
     void statistics(int);
     void spike_stat();
     void re_init(double t0 = 0.);
-    int cellindex();
+    // int cellindex(); // never used
     void states();
     void dstates();
     int fun(double t, double* y, double* ydot);
@@ -243,7 +243,7 @@ class NetCvode {
     Cvode* gcv_;
     void set_CVRhsFn();
     bool use_partrans();
-    hoc_Item* psl_;       // actually a hoc_List
+    std::vector<PreSyn*>* psl_;
     HTListList wl_list_;  // nrn_nthread of these for faster deliver_net_events when many cvode
     int pcnt_;
     NetCvodeThreadData* p;

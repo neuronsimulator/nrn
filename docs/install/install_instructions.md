@@ -54,7 +54,7 @@ architecture.
 
   ```
   python
-  from neuron import h
+  from neuron import n
   ```
   and ```nrnivmodl``` will by default create an nmodl mechanism library
   specifically for the architecture you run on.
@@ -67,7 +67,7 @@ architecture.
   program. E.g.
   ```
   arch -arch x86_64 nrniv -python
-  from neuron import h
+  from neuron import n
   ```
   Furthermore, be sure to run nrnivmodl in such a way that it compiles as an
   x86_64 library. e.g.
@@ -107,7 +107,7 @@ architecture.
 
 #### Linux
 
-Like Mac OS, since 7.8.1 release python wheels are provided and you can use `pip` to install NEURON by opening a terminal and typing:
+Like Mac OS, since 7.8.1 release Python wheels are provided and you can use `pip` to install NEURON by opening a terminal and typing:
 
 ```
 pip3 install neuron
@@ -115,6 +115,15 @@ pip3 install neuron
 
 Note that Python2 wheels are provided for the 8.0.x release series exclusively. Also, we are not providing .rpm or .deb
 installers for recent releases.
+
+**Note**: as of NEURON major version 9, the minimum system requirements for using NEURON Python wheels on Linux are:
+
+* Debian 10 or higher
+* Ubuntu 18.10 or higher
+* Fedora 29 or higher
+* CentOS/RHEL 8 or higher
+
+Furthermore, GCC >= 10 is required (older versions of GCC may work, but are not recommended).
 
 #### Windows
 
@@ -242,6 +251,8 @@ Finally, if you are building NEURON with the Python interface, you need to insta
 pip3 install --user --upgrade pip
 pip3 install --user -r nrn_requirements.txt
 ```
+
+**NOTE**: to minimize the possibility of Python dependencies causing issues (conflicting requirements, etc.), you may install the same set of dependencies that the developers and the CI use via `pip3 install --user -r ci/requirements.txt`.
 
 <a name="Apple-M1-Build-Dependencies"></a>
 #### Mac OS - Apple M1
@@ -482,7 +493,7 @@ share/lib/python/neuron/rxd/geometry3d/surfaces.cpp:14605:41: error: no member n
 ```
 often there's something related to NumPy nearby, e.g. `npy`.
 
-The issue is that certain versions of NEURON (9.0 and earlier) are not
+The issue is that certain versions of NEURON (below 9.0) are not
 compatible with `numpy>=2`. Check the numpy version, e.g.,
 ```
 python -c "import numpy; print(numpy.__version__)"
@@ -493,3 +504,13 @@ If it prints `2.0` or higher, try installing an older version:
 pip install "numpy<2"
 ```
 (mind the quotes.) Then delete the build directory, reconfigure and compile. If the error persists, carefully check which version of Python NEURON picked up by checking the output of the CMake configure command and make sure that that exact version of Python doesn't pick up an incompatible version of Numpy.
+
+
+* **NEURON segfaults when using the Anaconda Python distribution. What can I do?**
+
+Some Anaconda distributions (e.g., macOS) ship Python binaries with `libpython` statically linked,
+which has caused issues in NEURON and other packages (see discussion [here](https://github.com/neuronsimulator/nrn/issues/2358)).
+
+On the macOS platform, NEURON attempts to detect the use of Anaconda Python by checking for the `/anaconda`
+prefix in the Python binary path. An alternative solution is to build NEURON with the dynamic Python
+option enabled, using the CMake flag `-DNRN_ENABLE_PYTHON_DYNAMIC=ON`.

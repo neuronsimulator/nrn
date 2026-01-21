@@ -3,15 +3,16 @@
 
 #include <stdio.h>
 #include <math.h>
+#include "code.h"
 #include "ocmatrix.h"
 #include "oc2iv.h"
 #include "parse.hpp"
 #include "ivocvect.h"
 
+#include "utils/logger.hpp"
+
 #define EPS hoc_epsilon
 Symbol* nrn_matrix_sym;  // also used in oc/hoc_oop.cpp
-
-extern int hoc_return_type_code;
 
 extern double hoc_scan(FILE*);
 extern Object** hoc_temp_objptr(Object*);
@@ -49,26 +50,23 @@ static Object** temp_objvar(Matrix* m) {
 }
 
 static double m_nrow(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     Matrix* m = (Matrix*) v;
     return (double) m->nrow();
 }
 
 static double m_ncol(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     Matrix* m = (Matrix*) v;
     return (double) m->ncol();
 }
 
 static double m_setval(void* v) {
     Matrix* m = (Matrix*) v;
-    int i, j;
-    double val, *pval;
-    i = (int) chkarg(1, 0, m->nrow() - 1);
-    j = (int) chkarg(2, 0, m->ncol() - 1);
-    val = *getarg(3);
-    pval = m->mep(i, j);
-    *pval = val;
+    int i = (int) chkarg(1, 0, m->nrow() - 1);
+    int j = (int) chkarg(2, 0, m->ncol() - 1);
+    double val = *getarg(3);
+    m->coeff(i, j) = val;
     return val;
 }
 
@@ -83,7 +81,7 @@ static double m_getval(void* v) {
 static double m_sprowlen(void* v) {
     Matrix* m = (Matrix*) v;
     int i;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     i = (int) chkarg(1, 0, m->nrow() - 1);
     return double(m->sprowlen(i));
 }
@@ -169,7 +167,7 @@ static double m_scanf(void* v) {
     m->resize(nrow, ncol);
     for (i = 0; i < nrow; ++i)
         for (j = 0; j < ncol; ++j) {
-            *(m->mep(i, j)) = hoc_scan(f);
+            m->coeff(i, j) = hoc_scan(f);
         }
     return 0.;
 }
@@ -600,7 +598,7 @@ static Object** m_set(void* v) {
     int k;
     for (k = 0, i = 0; i < nrow; ++i) {
         for (j = 0; j < ncol; ++j) {
-            *(m->mep(i, j)) = *getarg(++k);
+            m->coeff(i, j) = *getarg(++k);
         }
     }
     return temp_objvar(m);
@@ -639,7 +637,7 @@ static Object** m_from_vector(void* v) {
     double* ve = vector_vec(vout);
     for (j = 0; j < ncol; ++j)
         for (i = 0; i < nrow; ++i) {
-            *(m->mep(i, j)) = ve[k++];
+            m->coeff(i, j) = ve[k++];
         }
     return temp_objvar(m);
 }
@@ -658,7 +656,7 @@ static Member_func m_members[] = {
     {"printf", m_printf},
     {"fprint", m_fprint},
     {"scanf", m_scanf},
-    {0, 0}};
+    {nullptr, nullptr}};
 
 static Member_ret_obj_func m_retobj_members[] = {
     // returns Vector
@@ -688,7 +686,7 @@ static Member_ret_obj_func m_retobj_members[] = {
     {"set", m_set},
     {"to_vector", m_to_vector},
     {"from_vector", m_from_vector},
-    {0, 0}};
+    {nullptr, nullptr}};
 
 static void* m_cons(Object* o) {
     int i = 1, j = 1, storage_type = Matrix::MFULL;
@@ -730,7 +728,7 @@ void Matrix_reg();
 #endif
 
 void Matrix_reg() {
-    class2oc("Matrix", m_cons, m_destruct, m_members, NULL, m_retobj_members, NULL);
+    class2oc("Matrix", m_cons, m_destruct, m_members, m_retobj_members, nullptr);
     nrn_matrix_sym = hoc_lookup("Matrix");
     // now make the x variable an actual double
     Symbol* sx = hoc_table_lookup("x", nrn_matrix_sym->u.ctemplate->symtable);

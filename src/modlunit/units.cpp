@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <string>
+#include <string_view>
+#include <fstream>
 
 /* /local/src/master/nrn/src/modlunit/units.c,v 1.5 1997/11/24 16:19:13 hines Exp */
 /* Mostly from Berkeley */
@@ -22,6 +24,11 @@
 
 #if defined(WIN32)
 #include <windows.h>
+#endif
+
+#ifndef _WIN32
+#include <unistd.h>
+#include <fcntl.h>
 #endif
 
 int unitonflag = 1;
@@ -99,6 +106,57 @@ static int peekc;
 static int dumpflg;
 
 static const char* pc;
+
+static constexpr std::string_view embedded_nrnunits =
+#include "embedded_nrnunits.lib"
+    ;
+
+// cross-platform workaround for:
+// https://github.com/neuronsimulator/nrn/issues/3470
+// the API requires a FILE handle instead of a std::string or similar
+// so we write a temporary file
+// Note: with posix we experience
+// warning: 'tmpnam' is deprecated: This function is provided for
+// compatibility reasons only.  Due to security concerns inherent in the
+// design of tmpnam(3), it is highly recommended that you use mkstemp(3) instead
+// [-Wdeprecated-declarations]
+static FILE* open_embedded_nrnunits_as_file() {
+#ifdef _WIN32
+    // Windows: Use GetTempPath and CreateFile for a secure temp file
+    char temp_path[MAX_PATH];
+    GetTempPath(MAX_PATH, temp_path);
+    char temp_file[MAX_PATH];
+    GetTempFileName(temp_path, "nrn", 0, temp_file);
+
+    // Write embedded_nrnunits to the temp file
+    std::ofstream out(temp_file, std::ios::out | std::ios::binary);
+    out.write(embedded_nrnunits.data(), embedded_nrnunits.size());
+    out.close();
+
+    // Open the temp file for reading
+    return fopen(temp_file, "r");
+#else
+    // POSIX: Use mkstemp for a secure temp file
+    char temp_file[] = "/tmp/nrnunitsXXXXXX";
+    int fd = mkstemp(temp_file);
+    if (fd == -1) {
+        return nullptr;  // Handle error appropriately
+    }
+
+    // Write embedded_nrnunits to the temp file
+    std::ofstream out(temp_file, std::ios::out | std::ios::binary);
+    out.write(embedded_nrnunits.data(), embedded_nrnunits.size());
+    out.close();
+
+    // Open the temp file for reading
+    FILE* file = fdopen(fd, "r");
+    if (!file) {
+        close(fd);
+        unlink(temp_file);  // Clean up
+    }
+    return file;
+#endif
+}
 
 static int Getc(FILE* inp) {
     if (inp != stdin) {
@@ -507,7 +565,6 @@ void unit_stk_clean() {
 
 // allow the outside world to call either modl_units() or unit_init().
 static void units_alloc() {
-    int i;
     static int units_alloc_called = 0;
     if (!units_alloc_called) {
         units_alloc_called = 1;
@@ -521,7 +578,6 @@ static void units_alloc() {
 extern void unit_init();
 
 void modl_units() {
-    int i;
     static int first = 1;
     unitonflag = 1;
     if (first) {
@@ -566,6 +622,11 @@ void unit_init() {
         }
     }
 #endif
+
+    // try to load the embedded one as a last resort
+    if (!inpfile) {
+        inpfile = open_embedded_nrnunits_as_file();
+    }
 
     if (!inpfile) {
         fprintf(stderr, "Set a MODLUNIT environment variable path to the units table file\n");

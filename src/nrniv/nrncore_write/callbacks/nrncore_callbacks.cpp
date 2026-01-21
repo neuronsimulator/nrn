@@ -670,10 +670,10 @@ int* datum2int(int type,
                 }
             } else if (etype == -9) {
                 pdata[jj] = eindex;
-            } else if (etype > 0 && etype < 1000) {  // ion pointer
+            } else if (nrn_semantics_is_ion(etype)) {  // ion pointer
                 pdata[jj] = eindex;
-            } else if (etype > 1000 && etype < 2000) {  // ionstyle can be explicit instead of
-                                                        // pointer to int*
+            } else if (nrn_semantics_is_ionstyle(etype)) {
+                // ionstyle can be explicit instead of pointer to int*
                 pdata[jj] = eindex;
             } else if (etype == -2) {  // an ion and this is the iontype
                 pdata[jj] = eindex;
@@ -1018,7 +1018,6 @@ static void set_info(TQItem* tqi,
         Fprintf(stderr,
                 "WARNING: CVode.event(...) for delivery at time step nearest %g discarded. "
                 "CoreNEURON cannot presently handle interpreter events (rank %d, thread %d).\n",
-                nrnmpi_myid,
                 tdeliver,
                 nrnmpi_myid,
                 tid);

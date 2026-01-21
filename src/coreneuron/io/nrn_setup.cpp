@@ -216,6 +216,12 @@ void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
 
         nrn_assert(fscanf(fp, "%d\n", &iFile) == 1);
         if ((iNum % nrnmpi_numprocs) == nrnmpi_myid) {
+            // A "-1" entry means that this rank should not be assigned further gid groups.
+            // It is a way to create files.dat files which deterministically assign gid groups to
+            // ranks, particularly useful for very large simulations which required load balancing.
+            if (iFile == -1) {
+                break;
+            }
             grp[ngrp] = iFile;
             ngrp++;
         }
@@ -938,11 +944,11 @@ void read_phase3(NrnThread& nt, UserParams& userParams) {
 
     Phase3 p3;
     if (corenrn_embedded && !corenrn_file_mode) {
-        p3.read_direct(ntmapping);
+        p3.read_direct(ntmapping, nt);
     } else {
         auto& F = userParams.file_reader[nt.id];
         F.restore_checkpoint();
-        p3.read_file(F, ntmapping);
+        p3.read_file(F, ntmapping, nt);
     }
 
     // make number #cells match with mapping size

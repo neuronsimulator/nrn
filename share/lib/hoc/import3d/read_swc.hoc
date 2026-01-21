@@ -87,9 +87,9 @@ proc parse() {local i, n
 		iline.append($1) // for error messages
 		hoc_sf_.left($s2, hoc_sf_.len($s2)-1)
 		lines.append(new String($s2))
-	} else if (hoc_sf_.head($s2, "[ \t\n]*#", tstr) == 0) { // comment
+	} else if (hoc_sf_.head($s2, "[[:blank:]]*#", tstr) == 0) { // comment
 		header.append(new String($s2))
-	} else if (hoc_sf_.len($s2) == hoc_sf_.tail($s2, "[ \t\n]+", tstr)) {
+	} else if (hoc_sf_.len($s2) == hoc_sf_.tail($s2, "[[:blank:]]+", tstr)) {
 		// ignore blank lines
 	} else {
 		err = 1

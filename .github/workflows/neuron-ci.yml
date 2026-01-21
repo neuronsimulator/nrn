@@ -36,29 +36,30 @@ jobs:
       SDK_ROOT: $(xcrun --sdk macosx --show-sdk-path)
       SKIP_WHEELHOUSE_REPAIR: true
       BUILD_TYPE: Release
-      DESIRED_CMAKE_VERSION: 3.17
-      DYNAMIC_PYTHON_CMAKE_VERSION: 3.18
-      PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.8' }}
-      PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.12' }}
+      DESIRED_CMAKE_VERSION: 3.19
+      DYNAMIC_PYTHON_CMAKE_VERSION: 3.19
+      PY_MIN_VERSION: ${{ matrix.config.python_min_version || '3.9' }}
+      PY_MAX_VERSION: ${{ matrix.config.python_max_version || '3.14' }}
       MUSIC_INSTALL_DIR: /opt/MUSIC
-      MUSIC_VERSION: 1.2.1
+      # hash of commit containing mpi4py 4 fix
+      MUSIC_VERSION: '13f312338dcccebfe74d391b1b24f1b6d816ac6c'
 
     strategy:
       matrix:
-        os: [ macOS-12, ubuntu-20.04]
+        os: [macOS-15-intel, ubuntu-22.04]
         config:
-          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "setuptools"}
-          - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", music: ON}
-          - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", python_dynamic: ON}
-          - { matrix_eval : "CC=gcc-9 CXX=g++-9" ,  build_mode: "cmake", cmake_option: "-DNRN_ENABLE_CORENEURON=ON"}
-          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake", cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"}
-          - { matrix_eval : "CC=gcc-10 CXX=g++-10", build_mode: "cmake", cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"}
+          - { matrix_eval : "CC=gcc-10 CXX=g++-10",   build_mode: "python"}
+          - { matrix_eval : "CC=gcc-12 CXX=g++-12", build_mode: "cmake", music: ON}
+          - { matrix_eval : "CC=gcc-12 CXX=g++-12", build_mode: "cmake", python_dynamic: ON}
+          - { matrix_eval : "CC=gcc-10 CXX=g++-10" ,  build_mode: "cmake", cmake_option: "-DNRN_ENABLE_CORENEURON=ON"}
+          - { matrix_eval : "CC=gcc-10 CXX=g++-10",   build_mode: "cmake", cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"}
+          - { matrix_eval : "CC=gcc-12 CXX=g++-12", build_mode: "cmake", cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"}
         include:
           - os: ubuntu-22.04
             config:
               build_mode: cmake
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
-                -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=undefined
+                -DNRN_ENABLE_INTERVIEWS=OFF
               flag_warnings: ON
               sanitizer: undefined
           - os: ubuntu-22.04
@@ -66,7 +67,7 @@ jobs:
               build_mode: cmake
               # TODO: CoreNEURON is only LeakSanitizer-clean if we disable MPI
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
-                -DNRN_ENABLE_INTERVIEWS=OFF -DNMODL_SANITIZERS=address
+                -DNRN_ENABLE_INTERVIEWS=OFF
               # TODO: address-leak is the dream, but there are many problems,
               # including external ones from the MPI implementations
               sanitizer: address
@@ -79,19 +80,19 @@ jobs:
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_MPI=OFF
                 -DCORENRN_ENABLE_OPENMP=OFF -DNRN_ENABLE_RX3D=OFF
               sanitizer: thread
-          - os: macOS-13
+          - os: macOS-15-intel
             config:
               build_mode: cmake
               # TODO: investigate rxd test timeouts in this build and re-enable them
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
-                -DNRN_ENABLE_RX3D=OFF -DNMODL_SANITIZERS=address
+                -DNRN_ENABLE_RX3D=OFF
               sanitizer: address
           - os: macOS-14
             config:
               build_mode: cmake
               # TODO: investigate rxd test timeouts in this build and re-enable them
               cmake_option: -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF
-                -DNRN_ENABLE_RX3D=OFF -DNMODL_SANITIZERS=address
+                -DNRN_ENABLE_RX3D=OFF
               sanitizer: thread
       fail-fast: false
 
@@ -107,7 +108,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version : ${{(matrix.config.python_dynamic || matrix.config.build_mode == 'setuptools') && env.DYNAMIC_PYTHON_CMAKE_VERSION || env.DESIRED_CMAKE_VERSION}}
+          cmake-version : ${{(matrix.config.python_dynamic || matrix.config.build_mode == 'python') && env.DYNAMIC_PYTHON_CMAKE_VERSION || env.DESIRED_CMAKE_VERSION}}
 
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
@@ -121,12 +122,15 @@ jobs:
           brew install openmpi
           brew install --cask xquartz
           if [[ "${{matrix.os}}" == "macOS-14" ]]; then
+            brew uninstall cmake || echo "CMake was not pre-installed"
             brew install cmake
             echo "$(brew --prefix)/opt/cmake/bin" >> $GITHUB_PATH
           fi
+          # workaround for fmt 11.1 (see https://github.com/gabime/spdlog/pull/3312)
+          brew unlink fmt
           echo "$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
-          if [[ "${{matrix.os}}" == "macOS-13" ]]; then
+          if [[ "${{matrix.os}}" == "macOS-15-intel" ]]; then
             echo CMAKE_BUILD_PARALLEL_LEVEL=4 >> $GITHUB_ENV
             echo CTEST_PARALLEL_LEVEL=4 >> $GITHUB_ENV
           else
@@ -142,10 +146,6 @@ jobs:
           sudo apt-get install build-essential ccache libopenmpi-dev \
             libmpich-dev libx11-dev libxcomposite-dev mpich ninja-build \
             openmpi-bin flex libfl-dev bison libreadline-dev
-          # The sanitizer builds use ubuntu 22.04
-          if [[ "${{matrix.os}}" == "ubuntu-20.04" ]]; then
-            sudo apt-get install g++-7 g++-8
-          fi
           # Core https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
           echo CMAKE_BUILD_PARALLEL_LEVEL=4 >> $GITHUB_ENV
           echo CTEST_PARALLEL_LEVEL=4 >> $GITHUB_ENV
@@ -156,10 +156,14 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Clone nmodl
-        working-directory: ${{runner.workspace}}/nrn
-        run: |
-            git submodule update --init --recursive --force --depth 1 -- external/nmodl
+      # Restore (and later save) dependencies for min version of Python
+      - name: Restore Python@${{ env.PY_MIN_VERSION }} dependencies
+        if: ${{matrix.config.python_dynamic == 'ON'}}
+        id: cache-python-min-packages-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ github.workspace }}/pip_cache${{ matrix.config.python_min_version || '3.9' }}
+          key: cache-${{ matrix.os }}-${{ env.PY_MIN_VERSION }}-${{ hashFiles('ci/requirements.txt') }}
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         if: ${{matrix.config.python_dynamic == 'ON'}}
@@ -171,9 +175,24 @@ jobs:
         if: ${{ matrix.config.python_dynamic == 'ON' }}
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install --upgrade -r external/nmodl/requirements.txt
-          python -m pip install --upgrade -r ci_requirements.txt
-          python -m pip install --upgrade pip -r nrn_requirements.txt
+          python -m pip install -r ci/uv_requirements.txt
+          python -m uv pip install -r ci/requirements.txt --cache-dir ${{ github.workspace }}/pip_cache${{ matrix.config.python_min_version || '3.9' }}
+
+      - name: Save Python@${{ env.PY_MIN_VERSION }} dependencies
+        if: ${{matrix.config.python_dynamic == 'ON'}} && steps.cache-python-min-packages-restore.outputs.cache-hit != 'true'
+        id: cache-python-min-packages-save
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.cache-python-min-packages-restore.outputs.cache-primary-key }}
+          path: ${{ github.workspace }}/pip_cache${{ matrix.config.python_min_version || '3.9' }}
+
+      # Restore (and later save) dependencies for max version of Python
+      - name: Restore Python@${{ env.PY_MAX_VERSION }} dependencies
+        id: cache-python-max-packages-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ github.workspace }}/pip_cache${{ matrix.config.python_max_version || '3.14' }}
+          key: cache-${{ matrix.os }}-${{ env.PY_MAX_VERSION }}-${{ hashFiles('ci/requirements.txt') }}
 
       - name: Set up Python@${{ env.PY_MAX_VERSION }}
         uses: actions/setup-python@v5
@@ -183,17 +202,24 @@ jobs:
       - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
         working-directory: ${{runner.workspace}}/nrn
         run: |
-          python -m pip install --upgrade -r external/nmodl/requirements.txt
-          python -m pip install --upgrade -r ci_requirements.txt
-          python -m pip install --upgrade pip -r nrn_requirements.txt
+          python -m pip install -r ci/uv_requirements.txt
+          python -m uv pip install -r ci/requirements.txt --cache-dir ${{ github.workspace }}/pip_cache${{ matrix.config.python_max_version || '3.14' }}
+
+      - name: Save Python@${{ env.PY_MAX_VERSION }} dependencies
+        id: cache-python-max-packages-save
+        if: always() && steps.cache-python-max-packages-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.cache-python-max-packages-restore.outputs.cache-primary-key }}
+          path: ${{ github.workspace }}/pip_cache${{ matrix.config.python_max_version || '3.14' }}
 
       - name: Install a new automake
-        # A new automake is needed for python 3.12 because it generate a python script
+        # A automake >= 1.16.5 is needed for python 3.12 because it generates a python script
         # called py-compile and the original one is not supporting this version of python
         # Once ubuntu got a newer version of automake we can remove this part.
         if: matrix.config.music == 'ON' && startsWith(matrix.os, 'ubuntu')
         run: |
-          curl -L -o automake.tar.xz https://ftp.gnu.org/gnu/automake/automake-1.16.5.tar.xz
+          curl -L -o automake.tar.xz https://ftpmirror.gnu.org/gnu/automake/automake-1.16.5.tar.xz
           tar -xf automake.tar.xz
           cd automake-1.16.5/
           ./configure --prefix=/usr/
@@ -207,10 +233,11 @@ jobs:
         run: |
           python3 -m venv music-venv
           source music-venv/bin/activate
-          python3 -m pip install 'mpi4py<4' "cython" 'numpy<2' setuptools
+          python3 -m pip install -r ${{ github.workspace }}/ci/uv_requirements.txt
+          python3 -m uv pip install -r ${{ github.workspace }}/ci/requirements.txt --cache-dir ${{ github.workspace }}/pip_cache${{ matrix.config.python_max_version || '3.14' }}
           sudo mkdir -p $MUSIC_INSTALL_DIR
           sudo chown -R $USER $MUSIC_INSTALL_DIR
-          curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/refs/tags/${MUSIC_VERSION}.zip
+          curl -L -o MUSIC.zip https://github.com/INCF/MUSIC/archive/${MUSIC_VERSION}.zip
           unzip MUSIC.zip && mv MUSIC-* MUSIC && cd MUSIC
           ./autogen.sh
           # on some systems MPI library detection fails, provide exact flags/compilers
@@ -237,10 +264,10 @@ jobs:
           echo -----
 
       - name: Restore compiler cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
+        id: restore-compiler-cache
         with:
           path: ${{runner.workspace}}/ccache
-          save-always: true
           key: ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-${{github.sha}}
           restore-keys: |
             ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
@@ -359,14 +386,9 @@ jobs:
               fi
               ccache -z
               # Older versions don't support -v (verbose)
-              ccache -vs 2>/dev/null || ccache -s
-              cmake --build . --parallel
-              ccache -vs 2>/dev/null || ccache -s
-              if [ "$RUNNER_OS" == "macOS" ]
-              then
-                mkdir -p src/nrnpython
-                echo $'[install]\nprefix='>src/nrnpython/setup.cfg;
-              fi
+              ccache -vvs 2>/dev/null || ccache -s
+              cmake --build .
+              ccache -vvs 2>/dev/null || ccache -s
               if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
                 echo "--RUNNING BASIC TESTS FROM BUILD DIR--"
                 for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
@@ -392,8 +414,8 @@ jobs:
               else
                 echo nrn-enable-sanitizer not found, not using it
               fi
-          elif [[ "$BUILD_MODE" == "setuptools" ]]; then
-            ./packaging/python/build_wheels.bash CI;
+          elif [[ "$BUILD_MODE" == "python" ]]; then
+            ./packaging/python/build_wheels.bash CI "${PYTHON_MAX}";
           fi;
           if [[ -z "${nrn_enable_sanitizer_preload_python}" ]]; then
             nrn_enable_sanitizer_preload_python="${PYTHON}"
@@ -405,7 +427,7 @@ jobs:
           fi;
 
           # test neurondemo with cmake
-          if [[ "$BUILD_MODE" != "setuptools" ]]; then
+          if [[ "$BUILD_MODE" != "python" ]]; then
             ${nrn_enable_sanitizer} neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
           fi;
 
@@ -423,8 +445,8 @@ jobs:
             ${nrn_enable_sanitizer_preload_python} ../share/lib/python/neuron/rxdtests/run_all.py
           fi;
 
-          if [ "$BUILD_MODE" == "setuptools" ]; then
-            neuron_wheel=wheelhouse/NEURON*.whl;
+          if [ "$BUILD_MODE" == "python" ]; then
+            neuron_wheel=wheelhouse/*.whl;
             # test with virtual environment
             ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel
             # test with global installation
@@ -440,6 +462,26 @@ jobs:
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
           INSTALL_DIR : ${{ runner.workspace }}/install
           MATRIX_EVAL: ${{ matrix.config.matrix_eval }}
+          SKBUILD_BUILD_DIR: ${{runner.workspace}}/nrn/build
+
+      - name: Save compiler cache
+        uses: actions/cache/save@v4
+        if: always() && steps.restore-compiler-cache.outputs.cache-hit != 'true'
+        with:
+          path: ${{runner.workspace}}/ccache
+          key: |
+            ${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.ref}}-
+            ${{matrix.os}}-${{hashfiles('matrix.json')}}-
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build_files-${{matrix.os}}-${{hashfiles('matrix.json')}}-${{github.sha}}
+          path: |
+            ${{runner.workspace}}/nrn/build/CMakeCache.txt
+            ${{runner.workspace}}/nrn/build/build.ninja
+            ${{runner.workspace}}/nrn/build/cmake_install.cmake
 
       # This step will set up an SSH connection on tmate.io for live debugging.
       # To enable it, you have to:

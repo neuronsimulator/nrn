@@ -14,10 +14,15 @@ Linux and Mac you can install the official Python 3 wheel with:
 pip3 install neuron
 ```
 
-If you want to build the latest version from source, we support **CMake** as build system. **Autotools** build system has been removed after 8.0 release.
+If you want to build the latest version from source, we support **CMake** as build system.
 See detailed installation instructions: [docs/install/install_instructions.md](docs/install/install_instructions.md).
 
 It is possible to install the Linux Python wheels on Windows via the Windows Subsystem for Linux (WSL) - check the installation instructions above.
+
+> [!NOTE]
+> **About NEURON >= 9.0**: If you are experiencing compilation errors while using
+> `nrnivmodl` with NEURON >=9.0, but not with previous 8.x releases, see
+> [Adapting MOD files for C++ with NEURON >= 9.0](docs/guide/porting_mechanisms_to_cpp.rst).
 
 ## Documentation
 
@@ -35,7 +40,10 @@ Refer to [NEURON contribution guidelines](CONTRIBUTING.md)
 
 ## Funding
 
-NEURON development is supported by NIH grant R01NS11613 (PI M.L. Hines at Yale University).
+NEURON development is supported by NIH grant R01NS11613 (PIs R.A. McDougal and M.L. Hines at Yale University).
 
-Collaboration is provided by the Blue Brain Project, a research center of the École polytechnique fédérale de Lausanne (EPFL) with funding from the Swiss government's ETH Board of the Swiss Federal Institutes of Technology. Additional funding from the European Union Seventh Framework Program (FP7/20072013) under grant agreement no. 604102 (HBP) and the European Union's Horizon 2020 Framework Programme for Research and Innovation under Specific Grant Agreement no. 720270 (Human Brain Project SGA1), no. 785907 (Human Brain Project SGA2) and no. 945539 (Human Brain Project SGA3).
+Collaboration is provided by the Laboratory of Neural Microcircuitry (LNMC), a research center of the École polytechnique fédérale de Lausanne (EPFL), with funding from European Union's Horizon Europe Grant no. 101147319 (EBRAINS 2.0: A Research Infrastructure to Advance Neuroscience and Brain Health).
 
+## Past funding
+
+Until 2025, collaboration was provided by the Blue Brain Project, a research center of the École polytechnique fédérale de Lausanne (EPFL) with funding from the Swiss government's ETH Board of the Swiss Federal Institutes of Technology. Additional funding from the European Union Seventh Framework Program (FP7/20072013) under grant agreement no. 604102 (HBP), the European Union's Horizon 2020 Framework Programme for Research and Innovation under Specific Grant Agreement no. 720270 (Human Brain Project SGA1), no. 785907 (Human Brain Project SGA2), and no. 945539 (Human Brain Project SGA3).

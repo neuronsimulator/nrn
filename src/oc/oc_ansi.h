@@ -100,6 +100,7 @@ void install_vector_method(const char*, double (*)(void*));
 int vector_arg_px(int i, double** p);
 
 double hoc_Exp(double);
+extern "C" double hoc_pow(double, double);
 int hoc_is_tempobj_arg(int narg);
 std::FILE* hoc_obj_file_arg(int i);
 void hoc_reg_nmodl_text(int type, const char* txt);
@@ -155,6 +156,7 @@ double chkarg(int, double low, double high);
 // push first arg first. Warning: if the function is inside an object make sure
 // you know what you are doing.
 double hoc_call_func(Symbol*, int narg);
+void hoc_call_func_result_on_stack(Symbol* s, int narg);
 // call a fuction within the context of an object.
 double hoc_call_objfunc(Symbol*, int narg, Object*);
 extern double hoc_ac_;
@@ -345,7 +347,7 @@ void hoc_last_init();
 void hoc_obj_notify(Object*);
 int ivoc_list_count(Object*);
 Object* ivoc_list_item(Object*, int);
-double hoc_func_table(void* functable, int n, double* args);
+double hoc_func_table(void* vpft, int n, double* args);
 void hoc_spec_table(void** pfunctable, int n);
 void* hoc_sec_internal_name2ptr(const char* s, int eflag);
 void* hoc_pysec_name2ptr(const char* s, int eflag);
@@ -419,8 +421,6 @@ int hoc_pid();
 int hoc_ired(const char*, int, int, int);
 double hoc_xred(const char*, double, double, double);
 int hoc_sred(const char*, char*, char*);
-int nrnpy_pr(const char* fmt, ...);
-int Fprintf(std::FILE*, const char* fmt, ...);
 void nrnpy_pass();
 void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
 int nrn_is_cable();

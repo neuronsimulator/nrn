@@ -1,17 +1,19 @@
 #ifndef __INTEL_LLVM_COMPILER
+#ifdef __clang__
+#pragma float_control(precise, on)
+#endif
 #pragma STDC FENV_ACCESS ON
 #endif
 
 #include <../../nrnconf.h>
 #include <InterViews/geometry.h>
 #include "mymath.h"
+#include "code.h"
 #include "classreg.h"
 #include "oc2iv.h"
 #include <cmath>
 #include <cstdio>
 #include <cfenv>
-
-extern int hoc_return_type_code;
 
 static double distance_to_line(void*) {
     return MyMath::distance_to_line(
@@ -24,7 +26,7 @@ static double distance_to_line_segment(void*) {
 }
 
 static double inside(void*) {
-    hoc_return_type_code = 2;  // boolean
+    hoc_return_type_code = HocReturnType::boolean;
     return MyMath::inside(*getarg(1), *getarg(2), *getarg(3), *getarg(4), *getarg(5), *getarg(6));
 }
 
@@ -53,7 +55,7 @@ int nrn_feround(int mode) {
 
 static double feround(void*) {
     int arg = 0;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     if (ifarg(1)) {
         arg = (int) chkarg(1, 0, 4);
     }
@@ -64,7 +66,7 @@ static Member_func members[] = {{"d2line", distance_to_line},
                                 {"d2line_seg", distance_to_line_segment},
                                 {"inside", inside},
                                 {"feround", feround},
-                                {0, 0}};
+                                {nullptr, nullptr}};
 
 static void* cons(Object*) {
     return NULL;
@@ -73,7 +75,7 @@ static void* cons(Object*) {
 static void destruct(void*) {}
 
 void GUIMath_reg() {
-    class2oc("GUIMath", cons, destruct, members, NULL, NULL, NULL);
+    class2oc("GUIMath", cons, destruct, members, nullptr, nullptr);
 }
 
 double MyMath::anint(double x) {

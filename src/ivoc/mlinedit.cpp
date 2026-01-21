@@ -1,15 +1,15 @@
 #include <../../nrnconf.h>
 
-extern int hoc_return_type_code;
-
 #include <stdio.h>
 
 #if HAVE_IV
+
 #include <InterViews/iv3text.h>
 #include <InterViews/layout.h>
 #include <InterViews/background.h>
 #include <InterViews/event.h>
 #include <IV-look/kit.h>
+#include "code.h"
 #include "ocglyph.h"
 #endif
 
@@ -71,7 +71,7 @@ static double readonly(void* v) {
 #if HAVE_IV
     if (hoc_usegui) {
         OcMLineEditor* e = (OcMLineEditor*) v;
-        hoc_return_type_code = 2;  // boolean
+        hoc_return_type_code = HocReturnType::boolean;
         if (ifarg(1)) {
             e->txt_->readOnly(int(chkarg(1, 0, 1)));
         }
@@ -101,9 +101,9 @@ static const char** v_text(void* v) {
 }
 
 
-static Member_func members[] = {{"readonly", readonly}, {"map", map}, {0, 0}};
+static Member_func members[] = {{"readonly", readonly}, {"map", map}, {nullptr, nullptr}};
 
-static Member_ret_str_func retstr_members[] = {{"text", v_text}, {0, 0}};
+static Member_ret_str_func retstr_members[] = {{"text", v_text}, {nullptr, nullptr}};
 
 static void* cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("TextEditor", NULL);
@@ -141,7 +141,7 @@ static void destruct(void* v) {
 }
 
 void TextEditor_reg() {
-    class2oc("TextEditor", cons, destruct, members, NULL, NULL, retstr_members);
+    class2oc("TextEditor", cons, destruct, members, NULL, retstr_members);
 }
 
 #if HAVE_IV

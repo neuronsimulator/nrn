@@ -35,6 +35,8 @@ _point_indices = {}
 _concentration_node = 0
 _molecule_node = 1
 
+_floor = numpy.floor
+
 
 def _get_data():
     return (_volumes, _surface_area, _diffs)
@@ -83,7 +85,7 @@ def _remove(start, stop):
     _has_node_fluxes = _node_fluxes["index"] != []
 
     # remove _node_flux
-    for (i, idx) in enumerate(_node_fluxes["index"]):
+    for i, idx in enumerate(_node_fluxes["index"]):
         if idx in dels:
             for lst in _node_fluxes.values():
                 del lst[i]
@@ -131,6 +133,8 @@ def eval_arith_flux(arith, nregion, node):
 
 
 class Node(object):
+    __slots__ = ()
+
     def satisfies(self, condition):
         """Tests if a Node satisfies a given condition.
 
@@ -148,7 +152,7 @@ class Node(object):
             return self.segment == condition
         elif isinstance(condition, region.Extracellular):
             return self.region == condition
-        raise RxDException("selector %r not supported for this node type" % condition)
+        raise RxDException(f"selector {condition!r} not supported for this node type")
 
     def _safe_satisfies(self, condition):
         """Tests if a Node satisfies a given condition.
@@ -309,7 +313,7 @@ class Node(object):
         else:
             units = "molecule/ms"
         if len(kwargs):
-            raise RxDException("Unknown keyword arguments: %r" % list(kwargs.keys()))
+            raise RxDException(f"Unknown keyword arguments: {list(kwargs.keys())!r}")
         # take the value, divide by scale to get mM um^3
         # once this is done, we need to divide by volume to get mM
         # TODO: is division still slower than multiplication? Switch to mult.
@@ -328,7 +332,7 @@ class Node(object):
             #    / 1e-15
             scale = 1e-15
         else:
-            raise RxDException("unknown unit: %r" % units)
+            raise RxDException(f"unknown unit: {units!r}")
 
         if len(args) == 1 and isinstance(args[0], hoc.HocObject):
             source = args[0]
@@ -351,7 +355,7 @@ class Node(object):
             # TODO: figure out a units checking solution that works
             # source_units = h.units(source)
             # if source_units and source_units != units:
-            #    warnings.warn('Possible units conflict. NEURON says %r, but specified as %r.' % (source_units, units))
+            #    warnings.warn(f'Possible units conflict. NEURON says {source_units!r}, but specified as {units!r}.')
         else:
             success = False
             if len(args) == 1:
@@ -389,6 +393,8 @@ class Node(object):
 
 
 class Node1D(Node):
+    __slots__ = ("_sec", "_location", "_index", "_loc3d", "_data_type")
+
     def __init__(self, sec, i, location, data_type=_concentration_node):
         """n = Node1D(sec, i, location)
         Description:
@@ -454,7 +460,7 @@ class Node1D(Node):
 
         except:
             pass
-        raise RxDException("unrecognized node condition: %r" % condition)
+        raise RxDException(f"unrecognized node condition: {condition!r}")
 
     @property
     def x3d(self):
@@ -537,6 +543,25 @@ class Node1D(Node):
 
 
 class Node3D(Node):
+    __slots__ = (
+        "_index",
+        "_i",
+        "_j",
+        "_k",
+        "_neighbors",
+        "_r",
+        "_sec",
+        "_x",
+        "_speciesref",
+        "_data_type",
+        "_pos_x_neighbor",
+        "_neg_x_neighbor",
+        "_pos_y_neighbor",
+        "_neg_y_neighbor",
+        "_pos_z_neighbor",
+        "_neg_z_neighbor",
+    )
+
     def __init__(
         self, index, i, j, k, r, d, seg, speciesref, data_type=_concentration_node
     ):
@@ -650,9 +675,9 @@ class Node3D(Node):
             x, y, z = condition
             mesh = self._r._mesh_grid
             return (
-                int((x - mesh["xlo"]) / mesh["dx"]) == self._i
-                and int((y - mesh["ylo"]) / mesh["dy"]) == self._j
-                and int((z - mesh["zlo"]) / mesh["dz"]) == self._k
+                _floor((x - mesh["xlo"]) / mesh["dx"]) == self._i
+                and _floor((y - mesh["ylo"]) / mesh["dy"]) == self._j
+                and _floor((z - mesh["zlo"]) / mesh["dz"]) == self._k
             )
         # check for a position condition so as to provide a more useful error
         checked_for_normalized_position = False
@@ -669,7 +694,7 @@ class Node3D(Node):
             raise RxDException(
                 "selecting nodes by normalized position not yet supported for 3D nodes; see comments in source about how to fix this"
             )
-        raise RxDException("unrecognized node condition: %r" % condition)
+        raise RxDException(f"unrecognized node condition: {condition!r}")
 
     @property
     def x3d(self):
@@ -761,6 +786,8 @@ class Node3D(Node):
 
 
 class NodeExtracellular(Node):
+    __slots__ = ("_index", "_i", "_j", "_k", "_speciesref", "_regionref", "_data_type")
+
     def __init__(self, index, i, j, k, speciesref, regionref):
         """
         Parameters
@@ -861,8 +888,12 @@ class NodeExtracellular(Node):
         ecs = self._regionref()
         if numpy.isscalar(ecs.alpha):
             return numpy.prod(ecs._dx) * ecs.alpha
-        else:
+        elif hasattr(ecs.alpha, "__len__"):
             return numpy.prod(ecs._dx) * ecs.alpha[self._i, self._j, self._k]
+        else:
+            return (
+                numpy.prod(ecs._dx) * ecs.alpha[ecs].states3d[self._i, self._j, self._k]
+            )
 
     @property
     def _grid_id(self):
@@ -885,8 +916,8 @@ class NodeExtracellular(Node):
             x, y, z = condition
             r = self._regionref()
             return (
-                int((x - r._xlo) / r._dx[0]) == self._i
-                and int((y - r._ylo) / r._dx[1]) == self._j
-                and int((z - r._zlo) / r._dx[2]) == self._k
+                _floor((x - r._xlo) / r._dx[0]) == self._i
+                and _floor((y - r._ylo) / r._dx[1]) == self._j
+                and _floor((z - r._zlo) / r._dx[2]) == self._k
             )
         raise RxDException(f"unrecognized node condition: {condition}")

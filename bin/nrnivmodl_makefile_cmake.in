@@ -71,7 +71,7 @@ CXX_LINK_EXE = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@ @NRN_LINK_FLAGS_STRIN
 CXX_LINK_SHARED = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@ @NRN_LINK_FLAGS_STRING@
 
 ifeq ($(UserNMODLBIN), )
-NOCMODL = $(bindir)/nocmodl
+NOCMODL = $(bindir)/@NRN_CODEGENERATOR_NAME@
 else
 NOCMODL = $(UserNMODLBIN)
 endif
@@ -130,9 +130,11 @@ $(mech_lib): $(mech_lib_type)
 
 mech_lib_shared: mod_func.o $(mod_objs) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) shared library \"${PWD}/$(mech_lib)\"\n"
-	$(CXX_LINK_SHARED) -I $(incdir) -o ${mech_lib} ${_SONAME} \
-	  $(mod_func_o) $(mod_objs) $(NRNLIB_FLAGS) $(NRNLIB_RPATH_FLAGS) $(LDFLAGS)
-	rm -f $(OBJS_DIR)/.libs/libnrnmech.so ; mkdir -p $(OBJS_DIR)/.libs ; cp $(mech_lib) $(OBJS_DIR)/.libs/libnrnmech.so
+	# .tmp output avoids nvc++ error: input file 'libnrnmech.so' is the same as output file
+	$(CXX_LINK_SHARED) -I $(incdir) -o ${mech_lib}.tmp ${_SONAME} \
+	  $(mod_func_o) $(mod_objs) $(NRNLIB_FLAGS) $(NRNLIB_RPATH_FLAGS) $(LDFLAGS) \
+	  && mv ${mech_lib}.tmp ${mech_lib}
+ 
 
 mech_lib_static: mod_func.o $(mod_objs) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) static library \"${PWD}/$(mech_lib)\"\n"

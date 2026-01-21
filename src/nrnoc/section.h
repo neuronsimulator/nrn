@@ -23,6 +23,7 @@
    d and rhs is calculated from the property list.
 */
 #include "hoclist.h"
+#include "cabcode.h"
 #include "membfunc.h"
 #include "neuron/container/mechanism_data.hpp"
 #include "neuron/container/node_data.hpp"
@@ -225,17 +226,20 @@ struct Node {
 #include "hocdec.h" /* Prop needs Datum and Datum needs Symbol */
 #endif
 
+
 #define PROP_PY_INDEX 10
 struct Prop {
     // Working assumption is that we can safely equate "Prop" with "instance
     // of a mechanism" apart from a few special cases like CABLESECTION
-    Prop(short type)
-        : _type{type} {
+    Prop(Node* node, short type)
+        : node(node)
+        , _type{type} {
         if (type != CABLESECTION) {
             m_mech_handle = neuron::container::Mechanism::owning_handle{
                 neuron::model().mechanism_data(type)};
         }
     }
+    Node* node;      /* The node this property belongs to. */
     Prop* next;      /* linked list of properties */
     short _type;     /* type of membrane, e.g. passive, HH, etc. */
     int dparam_size; /* for notifying hoc_free_val_array */
@@ -446,7 +450,6 @@ extern hoc_List* section_list; /* Where the Sections live */
 
 extern Section* sec_alloc();             /* Allocates a single section */
 extern void node_alloc(Section*, short); /* Allocates node vectors in a section*/
-extern double section_length(Section*), nrn_diameter(Node*);
 extern Node* nrn_parent_node(Node*);
 extern Section* nrn_section_alloc();
 extern void nrn_section_free(Section*);

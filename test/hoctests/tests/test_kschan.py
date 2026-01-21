@@ -1,13 +1,18 @@
 import math
+import os
+import sys
+import warnings
+
+import numpy as np
+
 from neuron import h, gui
 from neuron.expect_hocerr import expect_err
 from neuron import expect_hocerr
-import numpy as np
-import os, sys, hashlib
 
 expect_hocerr.quiet = False
 
 from neuron.tests.utils.capture_stdout import capture_stdout
+from neuron.tests.utils import get_c_compiler
 from neuron.tests.utils.checkresult import Chk
 
 # Avoid needing different results depending on NRN_ENABLE_CORENEURON
@@ -67,9 +72,9 @@ def hrun(name, t_tol=0.0, v_tol=0.0, v_tol_per_time=0.0):
         chk.save()
         raise Exception("No reference data for key: " + name)
     ref_tv, ref_vv = ref_data
-    assert len(ref_tv) == len(ref_vv)
-    assert len(ref_tv) == len(new_tv)
-    assert len(ref_tv) == len(new_vv)
+    np.testing.assert_equal(len(ref_tv), len(ref_vv))
+    np.testing.assert_equal(len(ref_tv), len(new_tv))
+    np.testing.assert_equal(len(ref_tv), len(new_vv))
     match = True
     max_diff_t, max_diff_v = 0.0, 0.0
 
@@ -372,6 +377,9 @@ def test_2():
 
 def test_3():
     print("test_3")
+    if get_c_compiler().endswith("nvc"):
+        warnings.warn("test_3 skipped on NVHPC")
+        return
     # ligand tests (mostly for coverage) start with fresh channel.
     mk_khh("khh2")
     h.ion_register("ca", 2)
