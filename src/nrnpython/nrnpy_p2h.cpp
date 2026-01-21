@@ -613,6 +613,7 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
         nb::object arg = nb::steal(nrnpy_hoc_pop("call_picklef"));
         args.append(arg);
     }
+    args.reverse();  // since top of hoc stack was last arg before the for loop.
     nb::object result = callable(*args);
     if (!result) {
         auto mes = nrnpyerr_str();

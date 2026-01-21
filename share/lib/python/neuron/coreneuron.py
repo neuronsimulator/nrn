@@ -293,29 +293,31 @@ class coreneuron(object):
         if self._gpu:
             arg += " --gpu"
             if self._num_gpus:
-                arg += " --num-gpus %d" % self._num_gpus
+                arg += f" --num-gpus {self._num_gpus}"
         if self._file_mode:
             if self._model_path is not None:
-                arg += " --datpath %s" % self._model_path
+                arg += f" --datpath {self._model_path}"
             else:
-                arg += " --datpath %s" % CORENRN_DATA_DIR
+                arg += f" --datpath {CORENRN_DATA_DIR}"
             if self._skip_write_model_to_disk:
                 arg += " --skip-write-model-to-disk"
-        arg += " --tstop %g" % tstop
-        arg += " --cell-permute %d" % self.cell_permute
+        arg += f" --tstop {tstop:g}"
+        # set parameters only if explicitly set. These override sim_config
+        if self._cell_permute is not None:
+            arg += f" --cell-permute {self.cell_permute}"
         if self._warp_balance > 0:
-            arg += " --nwarp %d" % self.warp_balance
+            arg += f" --nwarp {self.warp_balance}"
         if self._prcellstate >= 0:
-            arg += " --prcellgid %d" % self.prcellstate
-        arg += " --verbose %d" % self.verbose
+            arg += f" --prcellgid {self.prcellstate}"
+        arg += f" --verbose {self.verbose}"
         if self._model_stats:
             arg += " --model-stats"
         if self._save_path:
-            arg += " --checkpoint %s" % self._save_path
+            arg += f" --checkpoint {self._save_path}"
         if self._restore_path:
-            arg += " --restore %s" % self._restore_path
+            arg += f" --restore {self._restore_path}"
         if self._sim_config:
-            arg += " --read-config %s" % self._sim_config
+            arg += f" --read-config {self._sim_config}"
 
         # args derived from current NEURON settings.
         pc = h.ParallelContext()
@@ -327,7 +329,7 @@ class coreneuron(object):
             arg += " --binqueue"
         spkcompress = int(pc.spike_compress(-1))
         if spkcompress:
-            arg += " --spkcompress %g" % spkcompress
+            arg += f" --spkcompress {spkcompress:g}"
 
         # since multisend is undocumented in NEURON, perhaps it would be best
         # to make the next three arg set from user properties here
@@ -335,9 +337,9 @@ class coreneuron(object):
         if (multisend & 1) == 1:
             arg += " --multisend"
             interval = 2 if multisend & 4 else 1
-            arg += " --ms-subintervals %d" % interval
+            arg += f" --ms-subintervals {interval}"
             phases = 2 if multisend & 8 else 1
-            arg += " --ms-phases %d" % phases
+            arg += f" --ms-phases {phases}"
 
         return arg
 
