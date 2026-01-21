@@ -28,7 +28,6 @@
 #include "visitors/cvode_visitor.hpp"
 #include "visitors/function_callpath_visitor.hpp"
 #include "visitors/global_var_visitor.hpp"
-#include "visitors/initial_block_visitor.hpp"
 #include "visitors/implicit_argument_visitor.hpp"
 #include "visitors/indexedname_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
@@ -39,6 +38,7 @@
 #include "visitors/localize_visitor.hpp"
 #include "visitors/longitudinal_diffusion_visitor.hpp"
 #include "visitors/loop_unroll_visitor.hpp"
+#include "visitors/merge_top_level_blocks_visitor.hpp"
 #include "visitors/neuron_solve_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
@@ -349,8 +349,17 @@ int run_nmodl(int argc, const char* argv[]) {
         /// merge all INITIAL blocks into one (this needs to run before SymtabVisitor)
         {
             logger->info("Running INITIAL block merge visitor");
-            MergeInitialBlocksVisitor().visit_program(*ast);
+            MergeTopLevelBlocksVisitor<ast::InitialBlock, ast::AstNodeType::INITIAL_BLOCK>()
+                .visit_program(*ast);
             ast_to_nmodl(*ast, filepath("merge_initial_block"));
+        }
+
+        /// merge all BREAKPOINT blocks into one (this needs to run before SymtabVisitor)
+        {
+            logger->info("Running BREAKPOINT block merge visitor");
+            MergeTopLevelBlocksVisitor<ast::BreakpointBlock, ast::AstNodeType::BREAKPOINT_BLOCK>()
+                .visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("merge_breakpoint_block"));
         }
 
         /// construct symbol table
