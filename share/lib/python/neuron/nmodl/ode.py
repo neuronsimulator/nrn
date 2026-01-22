@@ -91,6 +91,8 @@ def mangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
     --------
     demangle_protected_identifiers : The inverse of this function.
     """
+    if isinstance(eqs, str):
+        return mangle_protected_identifiers([eqs])[0]
     for var in forbidden_var:
         r = re.compile(rf"\b{var}\b")
         f = f"{MANGLE_PREFIX}{var}"
@@ -119,6 +121,8 @@ def demangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
     --------
     mangle_protected_identifiers : The inverse of this function.
     """
+    if isinstance(eqs, str):
+        return demangle_protected_identifiers([eqs])[0]
     for var in forbidden_var:
         r = re.compile(rf"\b{MANGLE_PREFIX}{var}\b")
         f = var
@@ -521,8 +525,8 @@ def integrate2c(
         "1st_linear_Integral",
     }
 
-    diff_string = mangle_protected_identifiers([diff_string])[0]
-    dt_var = mangle_protected_identifiers([dt_var])[0]
+    diff_string = mangle_protected_identifiers(diff_string)
+    dt_var = mangle_protected_identifiers(dt_var)
     vars = mangle_protected_identifiers(vars)
 
     x, dxdt = _sympify_diff_eq(diff_string, vars)
@@ -584,8 +588,8 @@ def integrate2c(
     #   - in the lhs x_0 refers to the state var at time (t+dt)
     #   - in the rhs x_0 refers to the state var at time t
     return demangle_protected_identifiers(
-        [f"{sp.ccode(x)} = {sp.ccode(solution.evalf(), user_functions=custom_fcts)}"]
-    )[0]
+        f"{sp.ccode(x)} = {sp.ccode(solution.evalf(), user_functions=custom_fcts)}"
+    )
 
 
 def forwards_euler2c(diff_string, dt_var, vars, function_calls):
@@ -665,11 +669,11 @@ def differentiate2c(
     if stepsize <= 0:
         raise ValueError("arg `stepsize` must be > 0")
 
-    expression = mangle_protected_identifiers([expression])[0]
+    expression = mangle_protected_identifiers(expression)
 
     # if dependent_var is anything other than a string, sympy can safely manipulate it
     if isinstance(dependent_var, str):
-        dependent_var = mangle_protected_identifiers([dependent_var])[0]
+        dependent_var = mangle_protected_identifiers(dependent_var)
 
     prev_expressions = prev_expressions or []
     # every symbol (a.k.a variable) that SymPy
@@ -756,5 +760,5 @@ def differentiate2c(
 
     # return result as C code in NEURON format
     return demangle_protected_identifiers(
-        [sp.ccode(diff.evalf(), user_functions=custom_fcts)]
-    )[0]
+        sp.ccode(diff.evalf(), user_functions=custom_fcts)
+    )

@@ -8,12 +8,28 @@ from neuron.nmodl.ode import (
     integrate2c,
     make_symbol,
     mangle_protected_identifiers,
+    demangle_protected_identifiers,
     transform_expression,
     discretize_derivative,
 )
 import pytest
 
 import sympy as sp
+
+
+def test_mangle():
+    test_cases = [
+        [],
+        ["foo", "bar"],  # no conflict
+        ["exp"],  # nmodl name conflict
+        ["pi", "Symbol"],  # sympy name conflict
+        "",
+        "exp",
+    ]
+    for eqs in test_cases:
+        mangled = mangle_protected_identifiers(eqs)
+        demangled = demangle_protected_identifiers(mangled)
+        assert demangled == eqs
 
 
 def _equivalent(
@@ -34,8 +50,8 @@ def _equivalent(
     Returns:
         True if expressions are equivalent, False if they are not
     """
-    lhs = mangle_protected_identifiers([lhs])[0]
-    rhs = mangle_protected_identifiers([rhs])[0]
+    lhs = mangle_protected_identifiers(lhs)
+    rhs = mangle_protected_identifiers(rhs)
     lhs = lhs.replace("pow(", "Pow(")
     rhs = rhs.replace("pow(", "Pow(")
     sympy_vars = {str(var): make_symbol(var) for var in vars}
