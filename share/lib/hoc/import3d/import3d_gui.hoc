@@ -1041,7 +1041,7 @@ func set_nameindex() {local i, min  localobj sec
   * @param $2 (optional) If set to 1, will keep a public reference to a list of strings that were executed by this method (commands).
   */
 
-proc instantiate() {local i, j, min, haspy, ispycontext, keepCommands  localobj sec, xx, yy, zz, dd, pyobj, allpyobjs
+proc instantiate() {local i, j, min, haspy, ispycontext, keepCommands  localobj sec, psec, xx, yy, zz, dd, pyobj, allpyobjs
 	commands = new List()
 	chk_valid()
 	haspy = nrnpython("import neuron")
@@ -1077,6 +1077,7 @@ proc instantiate() {local i, j, min, haspy, ispycontext, keepCommands  localobj 
 	// connect
 	for i = 0, swc.sections.count-1 {
 		sec = swc.sections.object(i)
+		psec = sec.parentsec
 		if (sec.is_subsidiary) { continue }
 		name(sec, tstr)
 		if (i == 0 && !ispycontext) {
@@ -1086,25 +1087,33 @@ proc instantiate() {local i, j, min, haspy, ispycontext, keepCommands  localobj 
 				execute(tstr1, $o1)
 			}
 		}
-		if (sec.parentsec != nil) {
-			name(sec.parentsec, tstr1)
+		if (psec != nil) {
+			name(psec, tstr1)
 			if (!ispycontext) {
 			    sprint(tstr1, "%s connect %s(0), %g\n", tstr1, tstr, sec.parentx)
 			    commands.append(new String(tstr1))
 				execute(tstr1, $o1)
-		    } else {
-		        pyobj.neuron._connect_sections_in_obj($o1, tstr, 0, tstr1, sec.parentx)
-		    }
+			} else {
+		            pyobj.neuron._connect_sections_in_obj($o1, tstr, 0, tstr1, sec.parentx)
+			}
 		}
 		// 3-d point info
 		if (sec.first == 1) {
+                    // if psec is contour, update logical connection
+		    if (psec != nil) {
+		        if (psec.iscontour_) {
+		            for j = 0, 2 {
+			        sec.raw.x[j][0] = psec.processed_contour_center.x[j]
+		            }
+		        }
+		    }
 		    if (ispycontext) {
 		        pyobj.neuron._pt3dstyle_in_obj($o1, tstr, sec.raw.x[0][0], sec.raw.x[1][0], sec.raw.x[2][0])
 		    } else {
 			    sprint(tstr1, "%s { pt3dstyle(1, %.8g, %.8g, %.8g) }\n", tstr, sec.raw.x[0][0], sec.raw.x[1][0], sec.raw.x[2][0])
 			    commands.append(new String(tstr1))
 				execute(tstr1, $o1)
-            }
+                    }
 		}
 		j = sec.first
 		xx = sec.raw.getrow(0).c(j)
@@ -1199,12 +1208,13 @@ proc mksubset() {
 	execute(tstr1, $o1)
 }
 
-proc contour2centroid() {local i, j, imax, imin, ok  localobj mean, pts, d, max, min, tobj, rad, rad2, side2, pt, major, m, minor
+proc contour2centroid() {local i, j, imax, imin, ok  localobj sec, mean, pts, d, max, min, tobj, rad, rad2, side2, pt, major, m, minor
 	if (object_id($o5.contour_list)) {
 		contourstack2centroid($o1, $o2, $o3, $o4, $o5)
 		return
 	}
-	mean = swc.sections.object(0).contourcenter($o1, $o2, $o3)
+	sec = swc.sections.object(0)
+	mean = sec.contourcenter($o1, $o2, $o3)
     if (g != nil) {
 	g.beginline(6,1)
 	for i=0, $o1.size-1 {
@@ -1307,6 +1317,14 @@ if (g != nil) g.line(tobj.x[0], tobj.x[1]) g.flush
 	for i=1,3 { $oi = pts.getrow(i-1) }
 //	print d  d.printf  print rad rad.printf
 //	print side2 side2.printf  print rad2  rad2.printf
+
+	// store the center of the processed contour for later
+	// updating of child logical connection to center of section
+	j = $o1.size-1
+	for i = 1, 3 {
+		mean.x[i-1] = ($oi.x[0] + $oi.x[j])/2
+	}
+        sec.processed_contour_center = mean.c()
 }
 
 proc contourstack2centroid() {local i, j, area, d  localobj c
