@@ -21,18 +21,40 @@ def test_mangle():
     # These inputs should be mangled
     test_cases = [
         # python keywords
-        ["and", "break", "class", "continue", "def", "del", "from", "in", "is", "lambda",
-        "pass", "yield"],
+        [
+            "and",
+            "break",
+            "class",
+            "continue",
+            "def",
+            "del",
+            "from",
+            "in",
+            "is",
+            "lambda",
+            "pass",
+            "yield",
+        ],
         # sympy keywords
         "Symbol",
-        ["beta", "gamma", "uppergamma", "lowergamma", "polygamma", "loggamma", "digamma",
-        "trigamma", "gamma"],
+        [
+            "beta",
+            "gamma",
+            "uppergamma",
+            "lowergamma",
+            "polygamma",
+            "loggamma",
+            "digamma",
+            "trigamma",
+            "gamma",
+        ],
     ]
     for eqs in test_cases:
         mangled = mangle_protected_identifiers(eqs)
         assert eqs != mangled  # name-mangling was applied
         if isinstance(eqs, list):
-            assert all(a != b for a, b in zip(eqs, mangled))  # name-mangling was applied
+            # check that name-mangling was applied to each element in the list
+            assert all(a != b for a, b in zip(eqs, mangled))
         sp.sympify(mangled)
         demangled = demangle_protected_identifiers(mangled)
         assert demangled == eqs  # restored to original state
