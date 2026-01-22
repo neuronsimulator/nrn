@@ -6100,10 +6100,11 @@ void PlayRecord::pr() {
     Printf("PlayRecord\n");
 }
 
-TvecRecord::TvecRecord(Section* sec, IvocVect* t, Object* ppobj)
-    : PlayRecord(sec->pnode[0]->v_handle(), ppobj) {
+TvecRecord::TvecRecord(Section* sec, IvocVect* tvec, Object* ppobj)
+    : PlayRecord(sec ? sec->pnode[0]->v_handle() : neuron::container::data_handle<double>{&t},
+                 ppobj) {
     // printf("TvecRecord\n");
-    t_ = t;
+    t_ = tvec;
     ObjObservable::Attach(t_->obj_, this);
 }
 

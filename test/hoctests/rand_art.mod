@@ -15,6 +15,7 @@ INITIAL {
     random_setseq(ran2, 5)
     x1 = random_uniform(ran1)
     net_send(mean*negexp0(), 1)
+    x2 = 0
 }
 
 NET_RECEIVE(w){
