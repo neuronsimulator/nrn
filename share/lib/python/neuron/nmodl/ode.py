@@ -12,24 +12,24 @@
 
 import itertools
 import re
+import keyword
 from importlib import import_module
-from keyword import kwlist
 from typing import Any, Iterable, Optional, Union
 
 import sympy as sp
 
-# import known_functions through low-level mechanism because the ccode
+# import _known_functions through low-level mechanism because the ccode
 # module is overwritten in sympy and contents of that submodule cannot be
 # accessed through regular imports
 major, minor = (int(v) for v in sp.__version__.split(".")[:2])
 if major >= 1 and minor >= 7:
-    known_functions = import_module("sympy.printing.c").known_functions_C99
+    _known_functions = import_module("sympy.printing.c").known_functions_C99
 else:
-    known_functions = import_module("sympy.printing.ccode").known_functions_C99
+    _known_functions = import_module("sympy.printing.ccode").known_functions_C99
 
-if "Abs" in known_functions:
-    known_functions.pop("Abs")
-    known_functions["abs"] = "fabs"
+if "Abs" in _known_functions:
+    _known_functions.pop("Abs")
+    _known_functions["abs"] = "fabs"
 
 
 if not ((major >= 1) and (minor >= 2)):
@@ -56,16 +56,16 @@ _nmodl_identifiers = {
     "state_discontinuity", "step", "stepforce", "tan", "tanh", "threshold",
 }
 
-forbidden_var = sorted(
+_forbidden_var = sorted(
     {
         # Python keywords
-        *kwlist,
+        *keyword.kwlist,
         # top-level SymPy functions (without the NMODL builtins)
         *(_sympy_identifiers - _nmodl_identifiers),
     }
 )
 
-MANGLE_PREFIX = "_mangled_nmodl_identifier"
+_MANGLE_PREFIX = "_mangled_nmodl_identifier"
 
 
 def mangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
@@ -92,9 +92,9 @@ def mangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
     """
     if isinstance(eqs, str):
         return mangle_protected_identifiers([eqs])[0]
-    for var in forbidden_var:
+    for var in _forbidden_var:
         r = re.compile(rf"\b{var}\b")
-        f = f"{MANGLE_PREFIX}{var}"
+        f = f"{_MANGLE_PREFIX}{var}"
         eqs = [re.sub(r, f, x) for x in eqs]
 
     return eqs
@@ -122,8 +122,8 @@ def demangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
     """
     if isinstance(eqs, str):
         return demangle_protected_identifiers([eqs])[0]
-    for var in forbidden_var:
-        r = re.compile(rf"\b{MANGLE_PREFIX}{var}\b")
+    for var in _forbidden_var:
+        r = re.compile(rf"\b{_MANGLE_PREFIX}{var}\b")
         f = var
         eqs = [re.sub(r, f, x) for x in eqs]
 
@@ -133,9 +133,9 @@ def demangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
 def _get_custom_functions(fcts):
     custom_functions = {}
     for f in fcts:
-        if f in forbidden_var:
-            custom_functions[f"{MANGLE_PREFIX}{f}"] = f"{MANGLE_PREFIX}{f}"
-        elif not f in known_functions.keys():
+        if f in _forbidden_var:
+            custom_functions[f"{_MANGLE_PREFIX}{f}"] = f"{_MANGLE_PREFIX}{f}"
+        elif not f in _known_functions.keys():
             custom_functions[f] = f
     return custom_functions
 
