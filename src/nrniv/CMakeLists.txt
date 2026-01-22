@@ -468,7 +468,8 @@ target_compile_features(nrniv_lib PUBLIC cxx_std_17)
 # Link with backward-cpp if enabled
 # =============================================================================
 if(NRN_USE_BACKWARD)
-  add_backward(nrniv_lib)
+  target_link_libraries(nrniv_lib Backward::Backward)
+  target_include_directories(nrniv_lib PRIVATE ${PROJECT_SOURCE_DIR}/external/backward)
 endif()
 
 # =============================================================================
