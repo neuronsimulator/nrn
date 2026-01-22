@@ -35,34 +35,33 @@ if "Abs" in known_functions:
 if not ((major >= 1) and (minor >= 2)):
     raise ImportError(f"Requires SympPy version >= 1.2, found {major}.{minor}")
 
-# Some identifiers are protected inside sympy, if user has declared such a function, it will fail
-# because sympy will try to use its own internal one; or error out for invalid variables.
-# Rename it before and after to a unique name.
-_sympy_forbidden = set(import_module("sympy").__all__)
+# Some identifiers have special meanings, in both SymPy and NMODL, for example
+# the "sin" and "exp" functions. However, SymPy defines more special symbols
+# than NMODL. If the user declares an NMODL function with a name that has a
+# special meaning in SymPy, then SymPy will use its built-in definition instead
+# of the user's definition. The solution is to temporarily rename the conflicting symbols.
+_sympy_identifiers = set(import_module("sympy").__all__)
 
-# Annoyingly, some identifiers in NMODL _do_ have the same meaning, such as
-# sin, cos...and we need to remove those from the list since sympy cannot do
-# any analitical simplifications otherwise. To see a complete list, have a look
-# at hoc_init.cpp
-_nmodl_same_identifiers = {
-    "sin",
-    "cos",
-    "atan",
-    "tanh",
-    "log",
-    "exp",
-    "sqrt",
-    "erf",
-    "erfc",
-    "atan2",
+# These are all of the identifiers with special meanings in NMODL.
+# Source: "src/nocmodl/extdef.h"
+_nmodl_identifiers = {
+    "acos", "asin", "at_time", "atan", "atan2", "b_flux", "boundary", "ceil", "cos",
+    "cosh", "deflate", "derivs", "erf", "error", "exp", "expfit", "exprand", "f_flux",
+    "fabs", "factorial", "first_time", "floor", "fmod", "force", "gauss", "harmonic",
+    "hyperbol", "invert", "legendre", "log", "log10", "net_event", "net_move", "net_send",
+    "normrand", "nrn_ghk", "nrn_pointing", "nrn_random_play", "perpulse", "perstep",
+    "poisrand", "poisson", "pow", "printf", "prterr", "pulse", "ramp", "revhyperbol",
+    "revsawtooth", "revsigmoid", "romberg", "sawtooth", "schedule", "scop_random",
+    "set_seed", "setseed", "sigmoid", "sin", "sinh", "spline", "sqrt", "squarewave",
+    "state_discontinuity", "step", "stepforce", "tan", "tanh", "threshold",
 }
 
 forbidden_var = sorted(
     {
         # Python keywords
         *kwlist,
-        # top-level SymPy functions (without some NMODL builtins)
-        *set(_sympy_forbidden - _nmodl_same_identifiers),
+        # top-level SymPy functions (without the NMODL builtins)
+        *(_sympy_identifiers - _nmodl_identifiers),
     }
 )
 
