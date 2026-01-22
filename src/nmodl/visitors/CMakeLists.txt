@@ -37,6 +37,7 @@ add_library(
   sympy_conductance_visitor.cpp
   sympy_replace_solutions_visitor.cpp
   sympy_solver_visitor.cpp
+  threadsafe_visitor.cpp
   units_visitor.cpp
   var_usage_visitor.cpp
   verbatim_var_rename_visitor.cpp
