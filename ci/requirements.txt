@@ -2708,6 +2708,7 @@ sphinx==7.3.7 \
     #   sphinx-rtd-theme
     #   sphinxcontrib-jquery
     #   sphinxcontrib-mermaid
+    #   sphinxcontrib-moderncmakedomain
 sphinx-design==0.6.1 \
     --hash=sha256:b11f37db1a802a183d61b159d9a202314d4d2fe29c163437001324fe2f19549c \
     --hash=sha256:b44eea3719386d04d765c1a8257caca2b3e6f8421d7b3a5e742c0fd45f84e632
@@ -2749,6 +2750,10 @@ sphinxcontrib-jsmath==1.0.1 \
 sphinxcontrib-mermaid==1.0.0 \
     --hash=sha256:2e8ab67d3e1e2816663f9347d026a8dee4a858acdd4ad32dd1c808893db88146 \
     --hash=sha256:60b72710ea02087f212028feb09711225fbc2e343a10d34822fe787510e1caa3
+    # via -r docs/docs_requirements.txt
+sphinxcontrib-moderncmakedomain==3.29.0 \
+    --hash=sha256:22385d9956e9565311eca41a09f26688312e4997a7366cb965fa610d1fd1436c \
+    --hash=sha256:3587def241ff2577d0bbef11810a082e9dec1b78a3d4b4a066240b5f3dc1b5b2
     # via -r docs/docs_requirements.txt
 sphinxcontrib-qthelp==2.0.0 \
     --hash=sha256:4fe7d0ac8fc171045be623aba3e2a8f613f8682731f9153bb2e40ece16b9bbab \
