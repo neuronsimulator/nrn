@@ -12,61 +12,119 @@
 
 import itertools
 import re
+import keyword
 from importlib import import_module
-from keyword import kwlist
 from typing import Any, Iterable, Optional, Union
 
 import sympy as sp
 
-# import known_functions through low-level mechanism because the ccode
+# import _known_functions through low-level mechanism because the ccode
 # module is overwritten in sympy and contents of that submodule cannot be
 # accessed through regular imports
 major, minor = (int(v) for v in sp.__version__.split(".")[:2])
 if major >= 1 and minor >= 7:
-    known_functions = import_module("sympy.printing.c").known_functions_C99
+    _known_functions = import_module("sympy.printing.c").known_functions_C99
 else:
-    known_functions = import_module("sympy.printing.ccode").known_functions_C99
+    _known_functions = import_module("sympy.printing.ccode").known_functions_C99
 
-if "Abs" in known_functions:
-    known_functions.pop("Abs")
-    known_functions["abs"] = "fabs"
+if "Abs" in _known_functions:
+    _known_functions.pop("Abs")
+    _known_functions["abs"] = "fabs"
 
 
 if not ((major >= 1) and (minor >= 2)):
     raise ImportError(f"Requires SympPy version >= 1.2, found {major}.{minor}")
 
-# Some identifiers are protected inside sympy, if user has declared such a function, it will fail
-# because sympy will try to use its own internal one; or error out for invalid variables.
-# Rename it before and after to a unique name.
-_sympy_forbidden = set(import_module("sympy").__all__)
+# Some identifiers have special meanings, in both SymPy and NMODL, for example
+# the "sin" and "exp" functions. However, SymPy defines more special symbols
+# than NMODL. If the user declares an NMODL function with a name that has a
+# special meaning in SymPy, then SymPy will use its built-in definition instead
+# of the user's definition. The solution is to temporarily rename the conflicting symbols.
+_sympy_identifiers = set(import_module("sympy").__all__)
 
-# Annoyingly, some identifiers in NMODL _do_ have the same meaning, such as
-# sin, cos...and we need to remove those from the list since sympy cannot do
-# any analitical simplifications otherwise. To see a complete list, have a look
-# at hoc_init.cpp
-_nmodl_same_identifiers = {
-    "sin",
-    "cos",
+# These are all of the identifiers with special meanings in NMODL.
+# Source: "src/nocmodl/extdef.h"
+_nmodl_identifiers = {
+    "acos",
+    "asin",
+    "at_time",
     "atan",
-    "tanh",
-    "log",
-    "exp",
-    "sqrt",
-    "erf",
-    "erfc",
     "atan2",
+    "b_flux",
+    "boundary",
+    "ceil",
+    "cos",
+    "cosh",
+    "deflate",
+    "derivs",
+    "erf",
+    "error",
+    "exp",
+    "expfit",
+    "exprand",
+    "f_flux",
+    "fabs",
+    "factorial",
+    "first_time",
+    "floor",
+    "fmod",
+    "force",
+    "gauss",
+    "harmonic",
+    "hyperbol",
+    "invert",
+    "legendre",
+    "log",
+    "log10",
+    "net_event",
+    "net_move",
+    "net_send",
+    "normrand",
+    "nrn_ghk",
+    "nrn_pointing",
+    "nrn_random_play",
+    "perpulse",
+    "perstep",
+    "poisrand",
+    "poisson",
+    "pow",
+    "printf",
+    "prterr",
+    "pulse",
+    "ramp",
+    "revhyperbol",
+    "revsawtooth",
+    "revsigmoid",
+    "romberg",
+    "sawtooth",
+    "schedule",
+    "scop_random",
+    "set_seed",
+    "setseed",
+    "sigmoid",
+    "sin",
+    "sinh",
+    "spline",
+    "sqrt",
+    "squarewave",
+    "state_discontinuity",
+    "step",
+    "stepforce",
+    "tan",
+    "tanh",
+    "threshold",
 }
 
-forbidden_var = sorted(
+_forbidden_var = sorted(
     {
         # Python keywords
-        *kwlist,
-        # top-level SymPy functions (without some NMODL builtins)
-        *set(_sympy_forbidden - _nmodl_same_identifiers),
+        *keyword.kwlist,
+        # top-level SymPy functions (without the NMODL builtins)
+        *(_sympy_identifiers - _nmodl_identifiers),
     }
 )
 
-MANGLE_PREFIX = "_mangled_nmodl_identifier"
+_MANGLE_PREFIX = "_mangled_nmodl_identifier"
 
 
 def mangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
@@ -91,9 +149,11 @@ def mangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
     --------
     demangle_protected_identifiers : The inverse of this function.
     """
-    for var in forbidden_var:
+    if isinstance(eqs, str):
+        return mangle_protected_identifiers([eqs])[0]
+    for var in _forbidden_var:
         r = re.compile(rf"\b{var}\b")
-        f = f"{MANGLE_PREFIX}{var}"
+        f = f"{_MANGLE_PREFIX}{var}"
         eqs = [re.sub(r, f, x) for x in eqs]
 
     return eqs
@@ -119,8 +179,10 @@ def demangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
     --------
     mangle_protected_identifiers : The inverse of this function.
     """
-    for var in forbidden_var:
-        r = re.compile(rf"\b{MANGLE_PREFIX}{var}\b")
+    if isinstance(eqs, str):
+        return demangle_protected_identifiers([eqs])[0]
+    for var in _forbidden_var:
+        r = re.compile(rf"\b{_MANGLE_PREFIX}{var}\b")
         f = var
         eqs = [re.sub(r, f, x) for x in eqs]
 
@@ -130,9 +192,9 @@ def demangle_protected_identifiers(eqs: Iterable[str]) -> list[str]:
 def _get_custom_functions(fcts):
     custom_functions = {}
     for f in fcts:
-        if f in forbidden_var:
-            custom_functions[f"{MANGLE_PREFIX}{f}"] = f"{MANGLE_PREFIX}{f}"
-        elif not f in known_functions.keys():
+        if f in _forbidden_var:
+            custom_functions[f"{_MANGLE_PREFIX}{f}"] = f"{_MANGLE_PREFIX}{f}"
+        elif not f in _known_functions.keys():
             custom_functions[f] = f
     return custom_functions
 
@@ -521,8 +583,8 @@ def integrate2c(
         "1st_linear_Integral",
     }
 
-    diff_string = mangle_protected_identifiers([diff_string])[0]
-    dt_var = mangle_protected_identifiers([dt_var])[0]
+    diff_string = mangle_protected_identifiers(diff_string)
+    dt_var = mangle_protected_identifiers(dt_var)
     vars = mangle_protected_identifiers(vars)
 
     x, dxdt = _sympify_diff_eq(diff_string, vars)
@@ -584,8 +646,8 @@ def integrate2c(
     #   - in the lhs x_0 refers to the state var at time (t+dt)
     #   - in the rhs x_0 refers to the state var at time t
     return demangle_protected_identifiers(
-        [f"{sp.ccode(x)} = {sp.ccode(solution.evalf(), user_functions=custom_fcts)}"]
-    )[0]
+        f"{sp.ccode(x)} = {sp.ccode(solution.evalf(), user_functions=custom_fcts)}"
+    )
 
 
 def forwards_euler2c(diff_string, dt_var, vars, function_calls):
@@ -665,11 +727,11 @@ def differentiate2c(
     if stepsize <= 0:
         raise ValueError("arg `stepsize` must be > 0")
 
-    expression = mangle_protected_identifiers([expression])[0]
+    expression = mangle_protected_identifiers(expression)
 
     # if dependent_var is anything other than a string, sympy can safely manipulate it
     if isinstance(dependent_var, str):
-        dependent_var = mangle_protected_identifiers([dependent_var])[0]
+        dependent_var = mangle_protected_identifiers(dependent_var)
 
     prev_expressions = prev_expressions or []
     # every symbol (a.k.a variable) that SymPy
@@ -756,5 +818,5 @@ def differentiate2c(
 
     # return result as C code in NEURON format
     return demangle_protected_identifiers(
-        [sp.ccode(diff.evalf(), user_functions=custom_fcts)]
-    )[0]
+        sp.ccode(diff.evalf(), user_functions=custom_fcts)
+    )
