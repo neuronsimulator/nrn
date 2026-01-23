@@ -160,7 +160,7 @@ jobs:
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version : '3.19'
+          cmake-version : '3.20'
 
       - name: Set up Python
         id: setup-python
