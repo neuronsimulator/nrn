@@ -88,6 +88,24 @@
                               - finalize_block:
                                   brief: "Statement block to be executed after calling linear solver"
                                   type: StatementBlock
+                        - MatexpBlock:
+                            brief: "Represent matexp solver solution block based on Eigen"
+                            nmodl: "MATEXP_SOLVE"
+                            members:
+                              - steadystate:
+                                  brief: "If true then find steadystate solution, else advance by dt"
+                                  type: Boolean
+                                  prefix: {value: " ("}
+                                  suffix: {value: ") "}
+                              - jacobian_block:
+                                  brief: "Block of statements that assign to the Jacobian matrix"
+                                  type: StatementBlock
+                              - conserve:
+                                  brief: "The states always add up to this value"
+                                  type: Expression
+                                  optional: true
+                                  prefix: {value: " CONSERVE = "}
+                                  suffix: {value: ""}
                         - CvodeBlock:
                             nmodl: "CVODE_BLOCK "
                             members:

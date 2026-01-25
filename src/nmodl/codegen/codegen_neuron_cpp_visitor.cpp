@@ -1095,6 +1095,9 @@ void CodegenNeuronCppVisitor::print_standard_includes() {
     if (info.eigen_newton_solver_exist) {
         printer->add_multi_line(nmodl::solvers::newton_hpp);
     }
+    if (!info.matexp_blocks.empty()) {
+        printer->add_line("#include <unsupported/Eigen/MatrixFunctions>");
+    }
 }
 
 
@@ -2308,6 +2311,12 @@ void CodegenNeuronCppVisitor::print_nrn_state() {
 
     if (info.nrn_state_block) {
         info.nrn_state_block->visit_children(*this);
+    }
+
+    for (auto& block: info.matexp_blocks) {
+        if (!block->get_steadystate().get()->eval()) {
+            block->accept(*this);
+        }
     }
 
     if (info.currents.empty() && info.breakpoint_node != nullptr) {

@@ -57,6 +57,7 @@ add_executable(
   visitor/local_to_assigned.cpp
   visitor/lookup.cpp
   visitor/loop_unroll.cpp
+  visitor/matexp.cpp
   visitor/merge_top_level_blocks.cpp
   visitor/misc.cpp
   visitor/neuron_solve.cpp
