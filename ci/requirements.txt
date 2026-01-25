@@ -84,9 +84,9 @@ bokeh==3.4.3 ; python_full_version < '3.10' \
     --hash=sha256:b7c22fb0f7004b04f12e1b7b26ee0269a26737a08ded848fb58f6a34ec1eb155 \
     --hash=sha256:c6f33817f866fc67fbeb5df79cd13a8bb592c05c591f3fd7f4f22b824f7afa01
     # via -r docs/docs_requirements.txt
-bokeh==3.7.2 ; python_full_version >= '3.10' \
-    --hash=sha256:80c21885cec276431acd4db92f831c71eb999ea995470ce777e0c577b0cfc1d8 \
-    --hash=sha256:efd9172a90cc233c1c21ef4813d58a8a6f97ee63c8e2f1b4f2389a64fcef0722
+bokeh==3.8.2 ; python_full_version >= '3.10' \
+    --hash=sha256:5e2c0d84f75acb25d60efb9e4d2f434a791c4639b47d685534194c4e07bd0111 \
+    --hash=sha256:8e7dcacc21d53905581b54328ad2705954f72f2997f99fc332c1de8da53aa3cc
     # via -r docs/docs_requirements.txt
 certifi==2025.4.26 \
     --hash=sha256:0a816057ea3cdefcef70270d2c515e4506bbc954f417fa5ade2021213bb8f0c6 \
@@ -2708,6 +2708,7 @@ sphinx==7.3.7 \
     #   sphinx-rtd-theme
     #   sphinxcontrib-jquery
     #   sphinxcontrib-mermaid
+    #   sphinxcontrib-moderncmakedomain
 sphinx-design==0.6.1 \
     --hash=sha256:b11f37db1a802a183d61b159d9a202314d4d2fe29c163437001324fe2f19549c \
     --hash=sha256:b44eea3719386d04d765c1a8257caca2b3e6f8421d7b3a5e742c0fd45f84e632
@@ -2749,6 +2750,10 @@ sphinxcontrib-jsmath==1.0.1 \
 sphinxcontrib-mermaid==1.0.0 \
     --hash=sha256:2e8ab67d3e1e2816663f9347d026a8dee4a858acdd4ad32dd1c808893db88146 \
     --hash=sha256:60b72710ea02087f212028feb09711225fbc2e343a10d34822fe787510e1caa3
+    # via -r docs/docs_requirements.txt
+sphinxcontrib-moderncmakedomain==3.29.0 \
+    --hash=sha256:22385d9956e9565311eca41a09f26688312e4997a7366cb965fa610d1fd1436c \
+    --hash=sha256:3587def241ff2577d0bbef11810a082e9dec1b78a3d4b4a066240b5f3dc1b5b2
     # via -r docs/docs_requirements.txt
 sphinxcontrib-qthelp==2.0.0 \
     --hash=sha256:4fe7d0ac8fc171045be623aba3e2a8f613f8682731f9153bb2e40ece16b9bbab \
@@ -2958,9 +2963,9 @@ uri-template==1.3.0 \
     --hash=sha256:0e00f8eb65e18c7de20d595a14336e9f337ead580c70934141624b6d1ffdacc7 \
     --hash=sha256:a44a133ea12d44a0c0f06d7d42a52d71282e77e2f937d8abd5655b8d56fc1363
     # via jsonschema
-urllib3==2.6.0 \
-    --hash=sha256:c90f7a39f716c572c4e3e58509581ebd83f9b59cced005b7db7ad2d22b0db99f \
-    --hash=sha256:cb9bcef5a4b345d5da5d145dc3e30834f58e8018828cbc724d30b4cb7d4d49f1
+urllib3==2.6.3 \
+    --hash=sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed \
+    --hash=sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4
     # via requests
 wcwidth==0.2.13 \
     --hash=sha256:3da69048e4540d84af32131829ff948f1e022c1c6bdb8d6102117aac784f6859 \

@@ -35,7 +35,7 @@ if(NRN_ENABLE_THREADS)
 endif()
 foreach(target ${catch2_targets})
   cpp_cc_configure_sanitizers(TARGET ${target})
-  target_link_libraries(${target} Catch2::Catch2 nrniv_lib)
+  target_link_libraries(${target} Catch2::Catch2 fmt::fmt nrniv_lib)
   if(NOT MINGW)
     target_link_libraries(${target} ${CMAKE_DL_LIBS})
   endif()
@@ -830,4 +830,12 @@ if((NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON) AND NRN_ENABLE_TESTS)
   if(NRN_ENABLE_PYTHON AND NOT NRN_SANITIZERS)
     add_subdirectory(nmodl/transpiler/usecases)
   endif()
+endif()
+
+# Test nrnivmodl-cmake, but only without sanitizers since those cause issues, and end-users won't
+# get builds with sanitizer builds anyway. The same reasoning applies to coverage.
+if(NRN_ENABLE_TESTS
+   AND NOT NRN_SANITIZERS
+   AND NOT NRN_ENABLE_COVERAGE)
+  add_subdirectory(nrnivmodl_cmake)
 endif()
