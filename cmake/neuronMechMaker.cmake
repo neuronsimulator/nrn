@@ -263,6 +263,11 @@ function(create_nrnmech)
   # nmodl by default generates code for coreNEURON, so we toggle this via an option
   if(NRN_MECH_NMODL_NEURON_CODEGEN)
     set(NEURON_TRANSPILER_LAUNCHER ${NMODL_EXECUTABLE} --neuron)
+
+    find_package(Python 3.9 REQUIRED COMPONENTS Development.Embed)
+    if(NOT Python_Development.Embed_FOUND)
+      message("FATAL_ERROR" "Embedded python not found")
+    endif()
   else()
     set(NEURON_TRANSPILER_LAUNCHER ${NOCMODL_EXECUTABLE})
   endif()
@@ -396,7 +401,8 @@ function(create_nrnmech)
       list(APPEND L_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
       add_custom_command(
-        COMMAND ${ENV_COMMAND} ${NEURON_TRANSPILER_LAUNCHER} -o "${ARTIFACTS_OUTPUT_DIR}/cpp"
+        COMMAND ${ENV_COMMAND} NMODL_PYLIB=${Python_LIBRARIES}
+                ${NEURON_TRANSPILER_LAUNCHER} -o "${ARTIFACTS_OUTPUT_DIR}/cpp"
                 "${MOD_ABSPATH}" ${NRN_MECH_NMODL_NEURON_EXTRA_ARGS}
         OUTPUT "${ARTIFACTS_OUTPUT_DIR}/${CPP_FILE}"
         COMMENT "Converting ${MOD_ABSPATH} to ${ARTIFACTS_OUTPUT_DIR}/${CPP_FILE}"
@@ -468,7 +474,8 @@ function(create_nrnmech)
       list(APPEND L_CORE_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
       add_custom_command(
-        COMMAND ${ENV_COMMAND} ${NMODL_EXECUTABLE} -o "${ARTIFACTS_OUTPUT_DIR}/cpp_core"
+        COMMAND ${ENV_COMMAND} NMODL_PYLIB=${Python_LIBRARIES}
+                ${NMODL_EXECUTABLE} -o "${ARTIFACTS_OUTPUT_DIR}/cpp_core"
                 "${MOD_ABSPATH}" ${NRN_MECH_NMODL_CORENEURON_EXTRA_ARGS}
         OUTPUT "${ARTIFACTS_OUTPUT_DIR}/${CPP_FILE}"
         COMMENT "Converting ${MOD_ABSPATH} to ${ARTIFACTS_OUTPUT_DIR}/${CPP_FILE}"
