@@ -1,0 +1,75 @@
+#!/usr/bin/python
+
+"""
+Simple wrapper for CMake that builds mechanisms from mod files
+"""
+
+from pathlib import Path
+from subprocess import run
+from argparse import ArgumentParser
+import os
+import platform
+import shutil
+import sys
+
+parser = ArgumentParser()
+parser.add_argument("MOD_FILES", nargs="*", help="")
+parser.add_argument("--CMAKE_PREFIX_PATH", type=Path, default=None, help="")
+args = parser.parse_args()
+
+env = os.environ.copy()
+
+# Where the output files will be placed
+bin_dir = platform.machine()
+
+# The name of the current program
+program_name = Path(sys.argv[0]).name
+
+# Where the `*.cmake` files are located
+cmake_prefix = Path(sys.argv[0]).resolve().parent.parent.joinpath("lib").joinpath("cmake")
+env["CMAKE_PREFIX_PATH"] = cmake_prefix
+
+# On MacOS we need to set the deployment target to be equal to the one of NEURON
+if shutil.which("xcrun") is not None:
+    @NRN_OSX_BUILD_TRUE@ env["SDKROOT"] = "$(xcrun --sdk macosx --show-sdk-path)"
+    @NRN_OSX_BUILD_TRUE@ env["MACOSX_DEPLOYMENT_TARGET"] = "@CMAKE_OSX_DEPLOYMENT_TARGET@"
+    if not "@CMAKE_OSX_DEPLOYMENT_TARGET@":
+        del env["MACOSX_DEPLOYMENT_TARGET"]
+
+# We use the CMakeLists.txt from the NEURON installation directory to not have
+# to deal with any pre-existing CMakeLists.txt in the current directory
+src_dir = cmake_prefix.joinpath("neuron").joinpath("nrnivmodl")
+
+mod_files = [Path(path) for path in args.MOD_FILES]
+
+# In case of no files, default to using the files in the current dir
+if not mod_files:
+    mod_files = list(Path.cwd().glob("*.mod"))
+
+# In case of a single input, check if it's a directory; if it is, collect all mod files in it
+elif len(mod_files) == 1 and mod_files[0].is_dir():
+    mod_files = list(mod_files[0].glob("*.mod"))
+
+# Convert all mod file paths to absolute paths because the source dir is in the NEURON install
+mod_files = [path.resolve() for path in mod_files]
+
+# After collecting the mod files, check each mod file actually exists
+for path in mod_files:
+    if not path.exists():
+        print(f"[{program_name}] ERROR: Mod file {path} does not exist!", file=sys.stderr)
+        exit(1)
+
+# print(f"[{program_name}] Collecting mod files under %s\n" "$(readlink -f "${1}")")
+
+mod_files_str = ";".join(str(path) for path in mod_files)
+
+# Configure the mod files
+run(["cmake", "-S", str(src_dir), "-B", str(bin_dir),
+    "-DNRNIVMODL_MOD_FILES=" + mod_files_str,
+    "-DNRNIVMODL_NEURON=@NRNIVMODL_NEURON@",
+    "-DNRNIVMODL_CORENEURON=@NRNIVMODL_CORENEURON@"],
+    env=env, check=True)
+
+# Actually build them
+env["NMODLHOME"] = "@CMAKE_INSTALL_PREFIX@"
+run(["cmake", "--build", str(bin_dir)], env=env, check=True)

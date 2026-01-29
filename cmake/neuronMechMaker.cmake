@@ -41,14 +41,12 @@ API reference
             [NEURON]
             [CORENEURON]
             [SPECIAL]
-            [NMODL_NEURON_CODEGEN]
             [TARGET_LIBRARY_NAME lib_tgt]
             [TARGET_EXECUTABLE_NAME exe_tgt]
             [LIBRARY_OUTPUT_DIR lib_outdir]
             [EXECUTABLE_OUTPUT_DIR exe_outdir]
             [ARTIFACTS_OUTPUT_DIR art_outdir]
             [LIBRARY_TYPE type]
-            [NOCMODL_EXECUTABLE path/to/nocmodl]
             [NMODL_EXECUTABLE path/to/nmodl]
             [MOD_FILES mod1 mod2 ...]
             [NMODL_NEURON_EXTRA_ARGS arg1 arg2 ...]
@@ -67,9 +65,6 @@ API reference
     ``SPECIAL``
         (*optional*) whether a ``special`` (or ``special-core`` in case of coreNEURON) executable should be created.
 
-    ``NMODL_NEURON_CODEGEN``
-        (*optional*) whether to use NMODL to generate files compatible with NEURON.
-
     ``TARGET_LIBRARY_NAME``
         (*optional*, default: ``nrnmech``) the name of the CMake target for the library. Note that ``core`` is prepended to the coreNEURON target.
 
@@ -87,9 +82,6 @@ API reference
 
     ``LIBRARY_TYPE``
         (*optional*, default: ``SHARED``) the type of library to build.
-
-    ``NOCMODL_EXECUTABLE``
-        (*optional*) the path to the NOCMODL executable. If not specified, attempts to find deduce the location of the executable from the NEURON CMake configuration.
 
     ``NMODL_EXECUTABLE``
         (*optional*) the path to the NMODL executable. If not specified, attempts to find deduce the location of the executable from the NEURON CMake configuration.
@@ -157,7 +149,7 @@ The ``nrnmech`` library will then be available under ``build``, and can be loade
 #]=======================================================================]
 
 function(create_nrnmech)
-  set(options NEURON CORENEURON SPECIAL NMODL_NEURON_CODEGEN)
+  set(options NEURON CORENEURON SPECIAL)
   set(oneValueArgs
       MECHANISM_NAME
       TARGET_LIBRARY_NAME
@@ -166,7 +158,6 @@ function(create_nrnmech)
       EXECUTABLE_OUTPUT_DIR
       ARTIFACTS_OUTPUT_DIR
       LIBRARY_TYPE
-      NOCMODL_EXECUTABLE
       NMODL_EXECUTABLE)
   set(multiValueArgs MOD_FILES NMODL_NEURON_EXTRA_ARGS NMODL_CORENEURON_EXTRA_ARGS EXTRA_ENV)
   cmake_parse_arguments(NRN_MECH "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -232,7 +223,7 @@ function(create_nrnmech)
 
   message("${MESSAGE_PRIORITY}" "MECHANISM_NAME | ${MECHANISM_NAME}")
 
-  # the `nmodl` and `nocmodl` executables are usually found through `find_program` on the user's
+  # the `nmodl` executable is usually found through `find_program` on the user's
   # system, but we allow overrides (for testing purposes only)
   if(NRN_MECH_NMODL_EXECUTABLE)
     set(NMODL_EXECUTABLE "${NRN_MECH_NMODL_EXECUTABLE}")
@@ -241,14 +232,6 @@ function(create_nrnmech)
   endif()
 
   message("${MESSAGE_PRIORITY}" "NMODL_EXECUTABLE | ${NMODL_EXECUTABLE}")
-
-  if(NRN_MECH_NOCMODL_EXECUTABLE)
-    set(NOCMODL_EXECUTABLE "${NRN_MECH_NOCMODL_EXECUTABLE}")
-  else()
-    set(NOCMODL_EXECUTABLE $<TARGET_FILE:neuron::nocmodl>)
-  endif()
-
-  message("${MESSAGE_PRIORITY}" "NOCMODL_EXECUTABLE | ${NOCMODL_EXECUTABLE}")
 
   # the option `CORENRN_ENABLE_SHARED` toggles the kind of library we want to build, so we respect
   # it here
@@ -260,24 +243,11 @@ function(create_nrnmech)
 
   message("${MESSAGE_PRIORITY}" "LIBRARY_TYPE | ${LIBRARY_TYPE}")
 
-  # nmodl by default generates code for coreNEURON, so we toggle this via an option
-  if(NRN_MECH_NMODL_NEURON_CODEGEN)
-    set(NEURON_TRANSPILER_LAUNCHER ${NMODL_EXECUTABLE} --neuron)
-  else()
-    set(NEURON_TRANSPILER_LAUNCHER ${NOCMODL_EXECUTABLE})
-  endif()
+  set(NEURON_TRANSPILER_LAUNCHER ${NMODL_EXECUTABLE} --neuron)
 
-  # raise warning that NMODL extra args will be ignored if we use NEURON codegen with NOCMODL
-  if(NRN_MECH_NEURON
-     AND NOT NRN_MECH_NMODL_NEURON_CODEGEN
-     AND NRN_MECH_NMODL_NEURON_EXTRA_ARGS)
-    message(
-      WARNING
-        "${CMAKE_CURRENT_FUNCTION}: requested NEURON library with NOCMODL codegen, but NMODL_NEURON_EXTRA_ARGS is not empty; "
-        "will ignore NMODL_NEURON_EXTRA_ARGS when building NEURON library.\n"
-        "Hint: if you want to use NMODL for codegen for NEURON, add the NMODL_NEURON_CODEGEN option when calling this function."
-    )
-    set(NRN_MECH_NMODL_NEURON_EXTRA_ARGS)
+  find_package(Python 3.9 REQUIRED COMPONENTS Development.Embed)
+  if(NOT Python_Development.Embed_FOUND)
+    message("FATAL_ERROR" "Embedded python not found")
   endif()
 
   list(JOIN NRN_MECH_NMODL_NEURON_EXTRA_ARGS "" NMODL_NEURON_EXTRA_ARGS_SPACES)
@@ -396,7 +366,8 @@ function(create_nrnmech)
       list(APPEND L_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
       add_custom_command(
-        COMMAND ${ENV_COMMAND} ${NEURON_TRANSPILER_LAUNCHER} -o "${ARTIFACTS_OUTPUT_DIR}/cpp"
+        COMMAND ${ENV_COMMAND} NMODL_PYLIB=${Python_LIBRARIES}
+                ${NEURON_TRANSPILER_LAUNCHER} -o "${ARTIFACTS_OUTPUT_DIR}/cpp"
                 "${MOD_ABSPATH}" ${NRN_MECH_NMODL_NEURON_EXTRA_ARGS}
         OUTPUT "${ARTIFACTS_OUTPUT_DIR}/${CPP_FILE}"
         COMMENT "Converting ${MOD_ABSPATH} to ${ARTIFACTS_OUTPUT_DIR}/${CPP_FILE}"
@@ -468,7 +439,8 @@ function(create_nrnmech)
       list(APPEND L_CORE_MECH_REGISTRE "_${MOD_STUB}_reg()\;")
 
       add_custom_command(
-        COMMAND ${ENV_COMMAND} ${NMODL_EXECUTABLE} -o "${ARTIFACTS_OUTPUT_DIR}/cpp_core"
+        COMMAND ${ENV_COMMAND} NMODL_PYLIB=${Python_LIBRARIES}
+                ${NMODL_EXECUTABLE} -o "${ARTIFACTS_OUTPUT_DIR}/cpp_core"
                 "${MOD_ABSPATH}" ${NRN_MECH_NMODL_CORENEURON_EXTRA_ARGS}
         OUTPUT "${ARTIFACTS_OUTPUT_DIR}/${CPP_FILE}"
         COMMENT "Converting ${MOD_ABSPATH} to ${ARTIFACTS_OUTPUT_DIR}/${CPP_FILE}"

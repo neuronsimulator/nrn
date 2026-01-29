@@ -48,7 +48,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh.in ${PROJECT_BINARY_DIR}/
 # prepare test files. This can be done more elegantly in newer CMake versions; v3.19+ have
 # file(CHMOD ...) and v3.20+ support setting permissions directly in configure_file(...).
 set(NRNIVMODL_NEURON ON)
-set(NRN_CONFIG_EXE_FILES "nrnivmodl" "neurondemo" "nrnivmodl-cmake")
+set(NRN_CONFIG_EXE_FILES "nrnivmodl" "neurondemo" "nrnivmodl-cmake" "nrnivmodl.py")
 foreach(NRN_CONFIG_EXE_FILE ${NRN_CONFIG_EXE_FILES})
   configure_file("${NRN_CONFIG_EXE_FILE}.in" "tmp/${NRN_CONFIG_EXE_FILE}" @ONLY)
   file(
@@ -91,6 +91,7 @@ file(REMOVE_RECURSE "${CMAKE_CURRENT_BINARY_DIR}/bin/tmp")
 # =============================================================================
 install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrngui ${PROJECT_BINARY_DIR}/bin/neurondemo
                  ${PROJECT_BINARY_DIR}/bin/nrnivmodl ${PROJECT_BINARY_DIR}/bin/nrnivmodl-cmake
+                 ${PROJECT_BINARY_DIR}/bin/nrnivmodl.py
         DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)
 if(NRN_ENABLE_CORENEURON)
   install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrnivmodl-all-cmake

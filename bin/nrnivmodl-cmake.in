@@ -71,4 +71,4 @@ cmake \
     -DNRNIVMODL_CORENEURON=@NRNIVMODL_CORENEURON@
 
 # Actually build them
-cmake --build "${bindir}"
+NMODLHOME=@CMAKE_INSTALL_PREFIX@ cmake --build "${bindir}"
