@@ -12,6 +12,14 @@ bindir="$(uname -m)"
 # The name of the current program
 program_name="$(basename "${0}")"
 
+# The root of the neuron and NMODL installation
+NMODLHOME="$(readlink -f "$(dirname "${0}")/../")"
+export NMODLHOME
+
+# Search for libpython.so/dll, for the NMODL transpiler to embed
+NMODL_PYLIB="$(find_libpython)"
+export NMODL_PYLIB
+
 # Where the `*.cmake` files are located
 NRN_CMAKE_PREFIX_PATH_DEFAULT="$(readlink -f "$(dirname "${0}")/../lib/cmake/")"
 if [ -n "${CMAKE_PREFIX_PATH:-}" ]; then
