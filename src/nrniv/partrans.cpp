@@ -200,9 +200,9 @@ static NodePList visources_;        // list of source Node*, (multiples possible
 static SgidList sgids_;             // source gids
 static MapSgid2Int sgid2srcindex_;  // sgid2srcindex[sgids[i]] == i
 
-// source ssid -> (type,parray_index)
-static std::unordered_map<sgid_t, std::pair<int, neuron::container::field_index>>
-    non_vsrc_update_info_;
+// source ssid -> data_handle for direct access to mechanism parameter
+static std::unordered_map<sgid_t, neuron::container::data_handle<double>>
+    non_vsrc_handles_;
 
 static int max_targets_;
 static bool is_setup_;
@@ -223,8 +223,7 @@ static void delete_imped_info() {
 
 // pv2node extended to any range variable in the section
 // This helper searches over all the mechanisms in the node.
-// If h refers to a RANGE variable inside a mechanism in the Node, store the mechanism type, the
-// index of the RANGE variable, and the array index into that RANGE variable.
+// If h refers to a RANGE variable inside a mechanism in the Node, store the data_handle directly.
 static bool non_vsrc_setinfo(sgid_t ssid,
                              Node* nd,
                              neuron::container::data_handle<double> const& h) {
@@ -232,7 +231,7 @@ static bool non_vsrc_setinfo(sgid_t ssid,
         for (auto i = 0; i < p->param_num_vars(); ++i) {
             for (auto j = 0; j < p->param_array_dimension(i); ++j) {
                 if (h == p->param_handle(i, j)) {
-                    non_vsrc_update_info_[ssid] = {p->_type, {i, j}};
+                    non_vsrc_handles_[ssid] = h;  // Store the handle directly
                     return true;
                 }
             }
@@ -241,25 +240,10 @@ static bool non_vsrc_setinfo(sgid_t ssid,
     return false;
 }
 
-static neuron::container::data_handle<double> non_vsrc_update(Node* nd,
-                                                              int type,
-                                                              neuron::container::field_index ix) {
-    for (Prop* p = nd->prop; p; p = p->next) {
-        if (type == p->_type) {
-            return p->param_handle(ix);
-        }
-    }
-    hoc_execerror_fmt("partrans update: could not find parameter index ({}, {}) of {}",
-                      ix.field,
-                      ix.array_index,
-                      memb_func[type].sym->name);
-}
-
 // Find the Node associated with the voltage.
 // Easy if v in the currently accessed section.
 // Extended to any pointer to range variable in the section.
-// If not a voltage save pv associated with mechtype, p_array_index
-// in non_vsrc_update_info_
+// If not a voltage, save the data_handle directly in non_vsrc_handles_
 static Node* pv2node(sgid_t ssid, neuron::container::data_handle<double> const& v) {
     Section* const sec = chk_access();
     if (auto* const nd = sec->parentnode; nd) {
@@ -367,8 +351,8 @@ static std::unordered_map<Node*, double*> mk_svibuf() {
     // count
     for (size_t i = 0; i < visources_.size(); ++i) {
         Node* nd = visources_[i];
-        auto const it = non_vsrc_update_info_.find(sgids_[i]);
-        if (nd->extnode && it == non_vsrc_update_info_.end()) {
+        auto const it = non_vsrc_handles_.find(sgids_[i]);
+        if (nd->extnode && it == non_vsrc_handles_.end()) {
             assert(nd->_nt >= nrn_threads && nd->_nt < (nrn_threads + nrn_nthread));
             ++source_vi_buf_[nd->_nt->id].cnt;
         }
@@ -383,8 +367,8 @@ static std::unordered_map<Node*, double*> mk_svibuf() {
     // fill
     for (size_t i = 0; i < visources_.size(); ++i) {
         Node* nd = visources_[i];
-        auto const it = non_vsrc_update_info_.find(sgids_[i]);
-        if (nd->extnode && it == non_vsrc_update_info_.end()) {
+        auto const it = non_vsrc_handles_.find(sgids_[i]);
+        if (nd->extnode && it == non_vsrc_handles_.end()) {
             int tid = nd->_nt->id;
             SourceViBuf& svib = source_vi_buf_[tid];
             svib.nd[svib.cnt++] = nd;
@@ -411,8 +395,8 @@ static std::unordered_map<Node*, double*> mk_svibuf() {
     for (int i = 0; i < outsrc_buf_size_; ++i) {
         int isrc = poutsrc_indices_[i];
         Node* nd = visources_[isrc];
-        auto const it = non_vsrc_update_info_.find(sgids_[isrc]);
-        if (nd->extnode && it == non_vsrc_update_info_.end()) {
+        auto const it = non_vsrc_handles_.find(sgids_[isrc]);
+        if (nd->extnode && it == non_vsrc_handles_.end()) {
             auto const search = ndvi2pd.find(nd);
             nrn_assert(search != ndvi2pd.end());
             // olupton 2022-11-28: looks like search->second is always a pointer to a private vector
@@ -499,9 +483,9 @@ static void mk_ttd() {
         if (search != sgid2srcindex_.end()) {
             err = false;
             Node* nd = visources_[search->second];
-            auto it = non_vsrc_update_info_.find(sid);
-            if (it != non_vsrc_update_info_.end()) {
-                ttd.sv[j] = non_vsrc_update(nd, it->second.first, it->second.second);
+            auto it = non_vsrc_handles_.find(sid);
+            if (it != non_vsrc_handles_.end()) {
+                ttd.sv[j] = it->second;  // Use handle directly
             } else if (nd->extnode) {
                 auto search = ndvi2pd.find(nd);
                 nrn_assert(search != ndvi2pd.end());
@@ -735,9 +719,9 @@ void nrnmpi_setup_transfer() {
             auto search = sgid2srcindex_.find(sid);
             nrn_assert(search != sgid2srcindex_.end());
             Node* nd = visources_[search->second];
-            auto const it = non_vsrc_update_info_.find(sid);
-            if (it != non_vsrc_update_info_.end()) {
-                poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
+            auto const it = non_vsrc_handles_.find(sid);
+            if (it != non_vsrc_handles_.end()) {
+                poutsrc_[i] = it->second;  // Use handle directly
             } else if (!nd->extnode) {
                 poutsrc_[i] = nd->v_handle();
             } else {
@@ -784,7 +768,7 @@ void nrn_partrans_clear() {
     sid2insrc_.clear();
     poutsrc_.clear();
     delete[] std::exchange(poutsrc_indices_, nullptr);
-    non_vsrc_update_info_.clear();
+    non_vsrc_handles_.clear();
     nrn_mk_transfer_thread_data_ = nullptr;
 }
 
@@ -1066,16 +1050,31 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
             int tid = nd->_nt ? nd->_nt->id : 0;
             int type = -1;  // default voltage
             int ix = 0;     // fill below
-            auto const it = non_vsrc_update_info_.find(sid);
-            if (it != non_vsrc_update_info_.end()) {  // not a voltage source
-                type = it->second.first;
-                // this entire context needs to be reworked. If the source is a
-                // point process, then if more than one in this nd, it is an error.
-                auto d = non_vsrc_update(nd, type, it->second.second);
-                NrnThread* nt = nd->_nt ? nd->_nt : nrn_threads;
-                Memb_list& ml = *nt->_ml_list[type];
-                ix = ml.legacy_index(d);
-                assert(ix >= 0);
+            auto const it = non_vsrc_handles_.find(sid);
+            if (it != non_vsrc_handles_.end()) {  // not a voltage source
+                // Need to find which mechanism owns this handle
+                auto handle = it->second;
+                bool found = false;
+                for (Prop* p = nd->prop; p && !found; p = p->next) {
+                    for (auto field = 0; field < p->param_num_vars() && !found; ++field) {
+                        for (auto arr_idx = 0; arr_idx < p->param_array_dimension(field); ++arr_idx) {
+                            if (handle == p->param_handle(field, arr_idx)) {
+                                type = p->_type;
+                                NrnThread* nt = nd->_nt ? nd->_nt : nrn_threads;
+                                Memb_list& ml = *nt->_ml_list[type];
+                                ix = ml.legacy_index(handle);
+                                assert(ix >= 0);
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!found) {
+                    hoc_execerror_fmt(
+                        "Could not find mechanism for handle in gap junction serialization, sid={}",
+                        sid);
+                }
             } else {  // is a voltage source
                 // Calculate the offset of the Node voltage in the section of
                 // the underlying storage vector that is dedicated to NrnThread
