@@ -127,8 +127,8 @@ Furthermore, GCC >= 10 is required (older versions of GCC may work, but are not 
 
 #### Windows
 
-On Windows, the only recommended way to install NEURON is using the binary installer. You can download alpha
-or recent releases from:
+On Windows, the only recommended way to install NEURON is using the binary installer. You can download
+releases from:
 
 * [https://github.com/neuronsimulator/nrn/releases](https://github.com/neuronsimulator/nrn/releases)
 
