@@ -669,7 +669,7 @@ nrniv [options] [fileargs]
 #endif
 #if defined(USE_PYTHON)
 #if HAVE_IV
-        if (session && session->style()->value_is_on("python")) {
+    if (session && session->style()->value_is_on("python")) {
         use_python_interpreter = 1;
     }
 #endif
