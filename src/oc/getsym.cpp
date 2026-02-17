@@ -2,9 +2,6 @@
 /* /local/src/master/nrn/src/oc/getsym.cpp,v 1.2 1996/02/16 16:19:26 hines Exp */
 /*
 getsym.cpp,v
- * Revision 1.2  1996/02/16  16:19:26  hines
- * OCSMALL used to throw out things not needed by teaching programs
- *
  * Revision 1.1.1.1  1994/10/12  17:22:08  hines
  * NEURON 3.0 distribution
  *
@@ -59,9 +56,6 @@ getsym.cpp,v
 
    hoc_execstr(char *s) compiles and executes the string
 */
-#if OCSMALL
-#else
-
 #include "hocgetsym.h"
 #include "parse.hpp"
 #include "hocparse.h"
@@ -172,4 +166,3 @@ void hoc_execstr(const char* cp) {
     hoc_pc = pcsav;
     hoc_free_list(&symlist);
 }
-#endif /*OCSMALL*/
