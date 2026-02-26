@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 Compile mechanisms for NEURON
 
@@ -43,9 +43,6 @@ parser.add_argument("--coreneuron_args", type=str,
 
 parser.add_argument("--library_type", choices=["static", "shared"], default="shared",
     help="default: shared")
-
-parser.add_argument("--env", type=str,
-    help="additional environmental variables for NMODL")
 
 parser.add_argument("FILES", nargs="*",
     help="mod files or a directory of mod files. Defaults to the current working directory")
@@ -185,8 +182,6 @@ if args.nmodl_args:
     config_command.append(f'-DNRNBUILD_NMODL_ARGS={args.nmodl_args}')
 if args.coreneuron_args:
     config_command.append(f'-DNRNBUILD_CORENEURON_ARGS={args.coreneuron_args}')
-if args.env:
-    config_command.append(f'-DNRNBUILD_ENV={args.env}')
 if args.verbose:
     config_command.append("--log-level=VERBOSE")
     print(' '.join(config_command))
