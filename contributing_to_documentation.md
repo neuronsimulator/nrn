@@ -54,7 +54,7 @@ If your notebook downloads external data or depends on MOD files, include all re
 
 ---
 
-##mContributing Videos
+## Contributing Videos
 
 The [videos section of the NEURON documentation](https://nrn.readthedocs.io/en/latest/videos/) is primarily a curated list of recorded courses and lectures, many hosted externally on YouTube or similar platforms. Contributing a video is therefore a two-step process: creating the video itself, and then adding a reference to it in the documentation.
 
