@@ -104,7 +104,7 @@ API reference
         (*optional*, default: ``passes --inline host --c`` if CUDA disabled, ``passes --inline host --c acc --oacc`` if CUDA enabled) list of additional arguments to pass to NMODL for coreNEURON codegen.
 
     ``EXTRA_ENV``
-        (*optional*, default: None) list of additional environmental variables to pass when building the targets.
+        (*optional*, default: None) list of additional environmental variables to pass to NMODL when building the targets.
 
 
 Examples
