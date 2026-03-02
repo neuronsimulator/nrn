@@ -1474,9 +1474,9 @@ nbclient==0.10.2 \
     --hash=sha256:4ffee11e788b4a27fabeb7955547e4318a5298f34342a4bfd01f2e1faaeadc3d \
     --hash=sha256:90b7fc6b810630db87a6d0c2250b1f0ab4cf4d3c27a299b0cde78a4ed3fd9193
     # via nbconvert
-nbconvert==7.16.6 \
-    --hash=sha256:1375a7b67e0c2883678c48e506dc320febb57685e5ee67faa51b18a90f3a712b \
-    --hash=sha256:576a7e37c6480da7b8465eefa66c17844243816ce1ccc372633c6b71c3c0f582
+nbconvert==7.17.0 \
+    --hash=sha256:1b2696f1b5be12309f6c7d707c24af604b87dfaf6d950794c7b07acab96dda78 \
+    --hash=sha256:4f99a63b337b9a23504347afdab24a11faa7d86b405e5c8f9881cd313336d518
     # via
     #   -r docs/docs_requirements.txt
     #   -r nmodl_requirements.txt
