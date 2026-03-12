@@ -20,6 +20,10 @@ Description:
 General
 ~~~~~~~
 
+The following methods are supported by all point processes, built-in or otherwise.
+That is, in e.g., ``pnt.get_segment()``, ``pnt`` could be an :class:`ExpSyn`, 
+:class:`IClamp`, :class:`SEClamp`, ...
+
 .. method:: pnt.get_loc
 
     .. tab:: Python
@@ -49,7 +53,25 @@ General
             Due to the manipulation of NEURON's section stack, this function is best
             avoided in new Python code; use :meth:`get_segment` instead.
 
-         
+        .. note::
+
+            The position reported by ``pnt.get_loc()`` for a synapse or other point process
+            is affected by the section's number of segments (`nseg`); increasing `nseg` improves 
+            spatial resolution and places the synapse closer to its intended location along the 
+            section. A practical approach to ensure exact placement at a desired offset is to 
+            split the neurite into multiple sections connected in series at the target location, 
+            allowing smaller `nseg` values for accurate spatial discretization.
+
+            .. code-block:: python
+
+                from neuron import n
+                dend = n.Section('dend')
+                dend.L = 200
+                dend.nseg = 5  # Increase number of segments for better position accuracy
+                syn = n.ExpSyn(dend(0.77))
+                print(syn.get_loc())  # prints 0.7, the center of the segment containing 0.77
+                n.pop_section()  # cleanup the section stack
+
 
     .. tab:: HOC
 
@@ -66,11 +88,35 @@ General
             Note that the braces are necessary if the statement is typed at the top 
             level since the section stack is automatically popped when waiting for 
             user input. 
-        
-        
+
+        .. note::
+
+            The position reported by ``pnt.get_loc()`` for a synapse or other point process
+            is affected by the section's number of segments (`nseg`); increasing `nseg` improves 
+            spatial resolution and places the synapse closer to its intended location along the 
+            section. A practical approach to ensure exact placement at a desired offset is to 
+            split the neurite into multiple sections connected in series at the target location, 
+            allowing smaller `nseg` values for accurate spatial discretization.
+
+
+            .. code-block:: c++
+
+                create dend
+                dend {
+                    L = 200
+                    nseg = 5
+                }
+                objref syn
+                syn = new ExpSyn(dend(0.77))
+                print syn.get_loc()
+                // prints 0.7, the center of the segment containing 0.77
+                pop_section()
+
+
         .. seealso::
             :func:`pop_section`,
             :meth:`get_segment`
+
         
 ----
 
@@ -103,9 +149,27 @@ General
 
 
         .. warning::
+
             Segment objects become invalid if nseg changes. Discard them as soon as 
             possible and do not keep them around. 
 
+        .. note::
+
+            The position reported by ``pnt.get_segment().x`` for a synapse or other point process
+            is affected by the section's number of segments (`nseg`); increasing `nseg` improves 
+            spatial resolution and places the synapse closer to its intended location along the 
+            section. A practical approach to ensure exact placement at a desired offset is to 
+            split the neurite into multiple sections connected in series at the target location, 
+            allowing smaller `nseg` values for accurate spatial discretization.
+
+            .. code-block:: python
+
+                from neuron import n
+                dend = n.Section('dend')
+                dend.L = 200
+                dend.nseg = 5  # Increase number of segments for better position accuracy
+                syn = n.ExpSyn(dend(0.77))
+                print(syn.get_segment().x)  # prints 0.7, the center of the segment containing 0.77
          
 
     .. tab:: HOC
@@ -123,9 +187,31 @@ General
         
         
         .. warning::
+
             Segment objects become invalid if nseg changes. Discard them as soon as 
             possible and do not keep them around. 
-        
+
+        .. note::
+
+            The position reported by ``pnt.get_segment().x`` for a synapse or other point process
+            is affected by the section's number of segments (`nseg`); increasing `nseg` improves 
+            spatial resolution and places the synapse closer to its intended location along the 
+            section. A practical approach to ensure exact placement at a desired offset is to 
+            split the neurite into multiple sections connected in series at the target location, 
+            allowing smaller `nseg` values for accurate spatial discretization.
+
+            .. code-block:: c++
+
+                create dend
+                dend {
+                    L = 200
+                    nseg = 5
+                }
+                objref syn
+                syn = new ExpSyn(dend(0.77))
+                print syn.get_segment().x
+                // prints 0.7, the center of the segment containing 0.77
+
 ----
 
 
@@ -222,21 +308,36 @@ General
             In HOC, ``delay`` was known as ``del``, but this had to be renamed for Python as ``del``
             is a Python keyword.
 
+        .. note::
+
+            IClamp objects in NEURON cause the variable time step integrator (:class:`CVode`) to 
+            re-initialize at the start and end of the stimulus pulse, even if the amplitude 
+            (amp) is set to zero, resulting in small but potentially noticeable perturbations 
+            in the simulation. To minimize this effect, either use fixed time step integration, 
+            reduce the absolute error tolerance with :meth:`CVode.atol`, or use :meth:`CVode.atolscale`; 
+            alternatively, generate and compare phase response curves with different 
+            integration methods to understand the impact on your results.
+
+            .. code-block:: python
+
+                # Example: disable adaptive integration or reduce atol to mitigate perturbations
+                n.CVode().active(False)  # switch off variable time step integration
+                # or
+                n.CVode().active(True)
+                n.CVode().atol(1e-5)  // reduce absolute error tolerance for adaptive integrator
+
+
     .. tab:: HOC
 
 
         Syntax:
             ``stimobj = new IClamp(x)``
         
-        
             ``del -- ms``
-        
         
             ``dur -- ms``
         
-        
             ``amp -- nA``
-        
         
             ``i -- nA``
         
@@ -250,7 +351,31 @@ General
             the closed interval del to del+dur. Time varying current stimuli can 
             be simulated by setting del=0, dur=1e9 and playing a vector into amp 
             with the :meth:`~Vector.play` :class:`Vector` method.
-        
+
+        .. note::
+
+
+            IClamp objects in NEURON cause the variable time step integrator (cvode) to 
+            re-initialize at the start and end of the stimulus pulse, even if the amplitude 
+            (amp) is set to zero, resulting in small but potentially noticeable perturbations 
+            in the simulation. To minimize this effect, either use fixed time step integration, 
+            reduce the absolute error tolerance with cvode.atol(), or use cvode.atolscale(); 
+            alternatively, generate and compare phase response curves with different 
+            integration methods to understand the impact on your results.
+
+            .. code-block:: c++
+
+                // Example: disable adaptive integration or reduce atol to mitigate perturbations
+                cvode.active(0)  // switch off variable time step integration
+                // or
+                cvode.active(1)
+                cvode.atol(1e-5)  // reduce absolute error tolerance for adaptive integrator
+
+                objref stim
+                stim = new IClamp(soma(0.5))
+                stim.amp = 0
+                stim.del = 10
+                stim.dur = 5
 ----
 
 
