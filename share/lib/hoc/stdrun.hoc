@@ -241,7 +241,7 @@ proc helpmenu() {
     if (nrnpython("import webbrowser")) {
 	    xbutton("Programmer's Reference", "nrnpython(\"webbrowser.open('https://nrn.readthedocs.io/en/latest/progref/index.html')\")")
 	    xbutton("Tutorials", "nrnpython(\"webbrowser.open('https://nrn.readthedocs.io/en/latest/tutorials/index.html')\")")
-	    xbutton("NEURON Forum", "nrnpython(\"webbrowser.open('https://neuron.yale.edu/phpBB/')\")")
+	    xbutton("NEURON Discussion Board", "nrnpython(\"webbrowser.open('https://github.com/neuronsimulator/nrn/discussions')\")")
 	    xbutton("NEURON Models on ModelDB", "nrnpython(\"webbrowser.open('https://modeldb.science/ModelList?id=1882')\")")
     }
     sprint(tstr, "continue_dialog(\"This is %s on %s.\")", nrnversion(1), nrnversion(8))

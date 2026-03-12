@@ -526,5 +526,5 @@ See the list of contributors on respective GitHub projects:
 # Feedback / Help
 
 - Software related issues should be reported on GitHub : [https://github.com/neuronsimulator/nrn/issues/new/choose](https://github.com/neuronsimulator/nrn/issues/new/choose)
-- For developing models and any scientific questions, see NEURON forum : [https://www.neuron.yale.edu/phpBB/](https://www.neuron.yale.edu/phpBB/)
+- For developing models and any scientific questions, see the NEURON Discussion Board: [https://github.com/neuronsimulator/nrn/discussions](https://github.com/neuronsimulator/nrn/discussions)
 - If you want to participate / contribute to the development of NEURON, you can join monthly developers meeting : [https://github.com/neuronsimulator/nrn/wiki](https://github.com/neuronsimulator/nrn/wiki)

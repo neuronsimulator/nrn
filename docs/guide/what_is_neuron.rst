@@ -113,7 +113,7 @@ Complex models often require custom initialization and/or simulation flow contro
 Large user base
 ---------------
 
-As of February 2021, we know of `more than 2400 scientific articles and books have reported work that was done with NEURON <https://neuron.yale.edu/neuron/publications/neuron-bibliography>`_. The NEURON mailing list has about 500 subscribers, and `The NEURON Forum <https://www.neuron.yale.edu/phpBB/>`_, which was started in May 2005 and is gradually supplanting the old mailing list, has more than 1600 registered users and over 17,000 posted messages in greater than 4000 discussion threads.
+As of March 2026, we know of more than 3,000 scientific articles and books have reported work that was done with NEURON <https://nrn.readthedocs.io/en/9.0.1/publications-using-neuron.html>`_.
 
 Development, support, and documentation
 ---------------------------------------
