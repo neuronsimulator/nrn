@@ -474,7 +474,6 @@ def needs_finite_differences(mat) -> bool:
     return any(isinstance(expr, sp.Derivative) for expr in sp.preorder_traversal(mat))
 
 
-<<<<<<< HEAD
 def optimize_odes(
     rhs_strings, var_names, constants, function_calls, rhs_ids=None, do_cse=True
 ):
@@ -536,15 +535,12 @@ def optimize_odes(
     return code, local_vars
 
 
-def solve_non_lin_system(eq_strings, vars, constants, function_calls):
-=======
 def solve_non_lin_system(
     eq_strings: Iterable[str],
     vars: Iterable[str],
     constants: Iterable[str],
     function_calls: Iterable[str],
 ):
->>>>>>> 8bc8d00d6e10b73186934bd56ecc189046a2f1bf
     """Solve non-linear system of equations, return solution as C code.
 
       - returns a vector F, and its Jacobian J, both in terms of X
