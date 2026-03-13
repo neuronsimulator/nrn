@@ -18,16 +18,30 @@ from .rxdmath import _ast_config
 
 if _ast_config["nmodl_support"]:
     try:
-        from nmodl.ast import (
+        from neuron.nmodl.ast import (
             Name,
             String,
+            Integer,
+            Double,
             DerivativeBlock,
             StatementBlock,
             KineticBlock,
             StateBlock,
             AssignedDefinition,
             Program,
+            ExpressionStatement,
+            DiffEqExpression,
+            ParenExpression,
+            BinaryExpression,
+            BinaryOperator,
+            BinaryOp,
+            AstNodeType,
         )
+
+        # used for optimization
+        from neuron.nmodl.visitor import AstLookupVisitor
+        from neuron.nmodl import dsl as nmodl_dsl
+        from neuron.nmodl.ode import optimize_odes
     except ModuleNotFoundError as e:
         _ast_config["nmodl_support"] = False
         _ast_config["exception"] = e
@@ -210,7 +224,7 @@ class _c_region:
             seg_idx = 0
             for sec in self._overlap:
                 for seg in sec:
-                    (x, y, z) = species._xyz(seg)
+                    x, y, z = species._xyz(seg)
                     self.ecs_location_index[sid][seg_idx] = s().index_from_xyz(x, y, z)
                     seg_idx += 1
         self.ecs_location_index = self.ecs_location_index.transpose()
@@ -281,21 +295,93 @@ class _c_region:
         """Return AST for the set of reactions"""
         if not _ast_config["nmodl_support"]:
             return
-        from . import Rate, rxd
+        from . import Rate, rxd, MultiCompartmentReaction
+        from .species import (
+            SpeciesOnRegion,
+            ParameterOnRegion,
+            SpeciesOnExtracellular,
+            ParameterOnExtracellular,
+        )
+
+        # if not self._initialized:
+        #    self._initalize()
+
+        # Build mapping: AST flat name -> ("species"|"params", local_id, region_id)
+        self._name_to_index = {}
+        for sptr in self._react_species:
+            s = sptr()
+            sid = self._species_ids[s._id]
+            for r in s._regions:
+                rid = self._region_ids[r._id]
+                flat_name = s.ast(r).get_node_name()
+                self._name_to_index[flat_name] = ("species", sid, rid)
+        for sptr in self._react_params:
+            s = sptr()
+            sid = self._params_ids[s._id]
+            for r in s._regions:
+                rid = self._region_ids[r._id]
+                flat_name = s.ast(r).get_node_name()
+                self._name_to_index[flat_name] = ("params", sid, rid)
+
+        # ECS species/params name mapping
+        if self.num_ecs_species + self.num_ecs_params > 0:
+            from .species import _all_species as _asp
+
+            # Build reverse lookup: _ExtracellularSpecies id -> (parent Species, ecs region)
+            _ecs_to_parent = {}
+            for sp_ref in _asp:
+                sp = sp_ref()
+                if sp is not None and hasattr(sp, "_extracellular_instances"):
+                    for ecs_region, ecs_obj in sp._extracellular_instances.items():
+                        _ecs_to_parent[id(ecs_obj)] = (sp, ecs_region)
+
+            for sptr in self._ecs_react_species:
+                ecs_inst = sptr()
+                ecs_sid = self._ecs_species_ids[ecs_inst._grid_id]
+                if id(ecs_inst) in _ecs_to_parent:
+                    parent_sp, ecs_reg = _ecs_to_parent[id(ecs_inst)]
+                    flat_name = parent_sp[ecs_reg].ast().get_node_name()
+                    self._name_to_index[flat_name] = ("species_3d", ecs_sid)
+
+            for sptr in self._ecs_react_params:
+                ecs_inst = sptr()
+                ecs_sid = self._ecs_params_ids[ecs_inst._grid_id]
+                if id(ecs_inst) in _ecs_to_parent:
+                    parent_sp, ecs_reg = _ecs_to_parent[id(ecs_inst)]
+                    flat_name = parent_sp[ecs_reg].ast().get_node_name()
+                    self._name_to_index[flat_name] = ("params_3d", ecs_sid)
 
         species = []
         blocks = []
         reactions = []
         rates = []
+        multicompartmentReactions = []
         states = []
+        mc_flux = []
         for rptr, rlst in self._react_regions.items():
-            rast, sp = rptr().ast(rlst)
+            r = rptr()
+            rast, sp = r.ast(rlst)
             species += sp
             rast = rast if hasattr(rast, "__len__") else [rast]
-            if (
+            if isinstance(r, MultiCompartmentReaction):
+                multicompartmentReactions += rast
+                flux = []
+                for i, sp in enumerate(r._sources + r._dests):
+                    s = sp()
+                    if r._membrane_flux and isinstance(s, SpeciesOnRegion):
+                        sid = self._species_ids[s._id]
+                        rid = self._region_ids[s._region()._id]
+                        flux.append((sid, rid, r._cur_charges[i]))
+                    else:
+                        flux.append(None)
+                mc_flux += flux
+            elif (
                 isinstance(rptr(), Rate)
-                or rxd._ast_kinetic_block == "off"
-                or (rxd._ast_kinetic_block == "mass_action" and rptr()._custom_dynamics)
+                or _ast_config["kinetic_block"] == "off"
+                or (
+                    _ast_config["kinetic_block"] == "mass_action"
+                    and rptr()._custom_dynamics
+                )
             ):
                 rates += rast
             else:
@@ -313,8 +399,130 @@ class _c_region:
             blocks.append(
                 KineticBlock(Name(String("reactions")), [], StatementBlock(reactions))
             )
-        if rates != []:
-            blocks.append(DerivativeBlock(Name(String("rates")), StatementBlock(rates)))
+        lookup = AstLookupVisitor()
+        # Merge rates for common species or states
+        if rates != [] or multicompartmentReactions != []:
+            merged = {}
+            constants = set()
+            mult_id = 0
+            for rid, stmt in enumerate(rates + multicompartmentReactions):
+                diffeq = stmt.expression
+                binexpr = diffeq.expression
+                var_name = binexpr.lhs.get_node_name()
+                rhs = ParenExpression(binexpr.rhs)
+                if rid >= len(rates):
+                    # MCR have to be multiplied by mult[]
+                    mult = Name(String(f"_mult_{mult_id}"))
+                    if mc_flux[mult_id] is not None:
+                        sid, rid, charge = mc_flux[mult_id]
+                        flx = f"_flux_{sid}_{rid}_"
+                        fast = Name(String(flx))
+                        cast = (
+                            Integer(charge, Name(String(str(charge))))
+                            if isinstance(charge, int)
+                            else Double(str(charge))
+                        )
+                        if charge == 1:
+                            frhs = rhs
+                        else:
+                            frhs = BinaryExpression(
+                                cast,
+                                BinaryOperator(BinaryOp.BOP_MULTIPLICATION),
+                                rhs,
+                            )
+                        if flx in merged:
+                            merged[flx] = (
+                                fast,
+                                BinaryExpression(
+                                    merged[flx][1],
+                                    BinaryOperator(BinaryOp.BOP_ADDITION),
+                                    frhs,
+                                ),
+                            )
+                        else:
+                            merged[flx] = (fast, frhs)
+                        constants.add(flx)
+                    # multiple by a constant to scale units
+                    rhs = BinaryExpression(
+                        mult,
+                        BinaryOperator(BinaryOp.BOP_MULTIPLICATION),
+                        rhs,
+                    )
+                    constants.add(f"_mult_{mult_id}")
+                    mult_id += 1
+                if var_name in merged:
+                    merged[var_name] = (
+                        binexpr.lhs,
+                        BinaryExpression(
+                            merged[var_name][1],
+                            BinaryOperator(BinaryOp.BOP_ADDITION),
+                            rhs,
+                        ),
+                    )
+                else:
+                    merged[var_name] = (binexpr.lhs, rhs)
+
+            # Collect RHS strings, constants, and function calls
+            # and use CSE can eliminate common subexpressions
+            all_rhs_strings = []
+            function_calls = set()
+            group_stmts_list = []
+
+            stmts = []
+            for _, (lhs, rhs) in merged.items():
+                stmts.append(
+                    ExpressionStatement(
+                        DiffEqExpression(
+                            BinaryExpression(
+                                lhs,
+                                BinaryOperator(BinaryOp.BOP_ASSIGN),
+                                rhs,
+                            )
+                        )
+                    )
+                )
+                all_rhs_strings.append(nmodl_dsl.to_nmodl(rhs))
+                for ref in lookup.lookup(rhs, AstNodeType.VAR_NAME):
+                    ref_name = ref.get_node_name()
+                    if ref_name not in merged:
+                        constants.add(ref_name)
+                for fc in lookup.lookup(rhs, AstNodeType.FUNCTION_CALL):
+                    function_calls.add(fc.get_node_name())
+
+            rhs_ids = []
+            for vname in merged:
+                if "_flux_" in vname:
+                    _, _, sid, rid, _ = vname.split("_")
+                    rhs_ids.append(f"flux[{sid}][{rid}]")
+                else:
+                    spids = self._name_to_index[vname]
+                    if len(spids) == 2:
+                        _, sid = spids
+                        rhs_ids.append(f"rhs_3d[{sid}]")
+                    else:
+                        _, sid, rid = spids
+                        rhs_ids.append(f"rhs[{sid}][{rid}]")
+            # Run CSE + simplification globally across all groups
+            code, tmp_vars = optimize_odes(
+                all_rhs_strings,
+                list(merged.keys()),
+                list(constants),
+                function_calls,
+                rhs_ids=rhs_ids,
+            )
+
+            self._optimized_rates = {
+                "var_names": list(merged.keys()),
+                "code": code,
+                "tmp_vars": tmp_vars,
+            }
+
+            blocks.append(
+                DerivativeBlock(
+                    Name(String("rates")),
+                    StatementBlock(stmts),
+                )
+            )
 
         return Program(blocks)
 

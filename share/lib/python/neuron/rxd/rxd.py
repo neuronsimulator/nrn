@@ -554,7 +554,7 @@ def _cxx_compile(formula):
         ctypes.POINTER(ctypes.c_double),
     ]
     reaction.restype = ctypes.c_double
-    os.remove(f"{filename}.cpp")
+    # os.remove(f"{filename}.cpp")
     if sys.platform.lower().startswith("win"):
         # cannot remove dll that are in use
         _windows_dll.append(weakref.ref(dll))
@@ -562,6 +562,96 @@ def _cxx_compile(formula):
     else:
         os.remove(f"{filename}.so")
     return reaction
+
+
+def _compile_reactions_from_ast(creg):
+    """Build and compile the reaction callback using AST-optimized rates.
+
+    Uses creg._optimized_rates (CSE'd C code) and creg._name_to_index
+    (AST name -> array index mapping) populated by creg.ast().
+
+    Returns (compiled_fn, mc_mult_count, mc_mult_list) or None if the AST
+    path is not available.
+    """
+    from .rxdmath import _ast_config
+
+    if not _ast_config.get("nmodl_support"):
+        return None
+
+    creg.ast()
+
+    has_rates = hasattr(creg, "_optimized_rates") and creg._optimized_rates
+    has_mcr = hasattr(creg, "_mcr_rates") and creg._mcr_rates
+    if not has_rates and not has_mcr:
+        return None
+
+    name_to_index = creg._name_to_index
+
+    # Sort names longest-first to avoid partial matches
+    sorted_names = sorted(name_to_index.keys(), key=len, reverse=True)
+
+    def substitute_names(line):
+        """Replace AST variable names with array access expressions.
+        And _mult_id with mult[id] for multicompartment reactions.
+        ICS entries (3-tuple): species[sid][rid] or params[sid][rid]
+        ECS entries (2-tuple): species_3d[ecs_sid] or params_3d[ecs_sid]
+        """
+        result = re.sub(r"_mult_(\d+)", r"mult[\1]", line)
+        for name in sorted_names:
+            entry = name_to_index[name]
+            if len(entry) == 3:
+                kind, sid, rid = entry
+                replacement = f"{kind}[{sid}][{rid}]"
+            else:
+                kind, sid = entry
+                replacement = f"{kind}[{sid}]"
+            result = re.sub(
+                r"\b" + re.escape(name) + r"\b",
+                replacement,
+                result,
+            )
+        return result
+
+    # Build mc_mult_list for MultiCompartmentReactions in this c_region
+    from . import multiCompartmentReaction
+
+    mc_mult_count = 0
+    mc_mult_list = []
+    for rptr in creg._react_regions:
+        r = rptr()
+        if isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
+            mc_mult_count += len(r._sources) + len(r._dests)
+            mc_mult_list.extend(r._mult.flatten())
+
+    fxn_string = _c_headers
+    fxn_string += (
+        "void reaction(double** species, double** params, double** rhs, "
+        "double* mult, double* species_3d, double* params_3d, "
+        "double* rhs_3d, double** flux, double v)\n{"
+    )
+
+    tmps = creg._optimized_rates["tmp_vars"]
+    if tmps:
+        fxn_string += "\n\tdouble " + ", ".join(tmps) + ";"
+
+    # create optimized code function string
+    flux_lines = []
+    for line in creg._optimized_rates["code"]:
+        # Replace symbolic variable names with array access
+        c_line = substitute_names(line)
+        if c_line.startswith("flux["):
+            flux_lines.append(c_line)
+        else:
+            fxn_string += f"\n\t{c_line};"
+
+    # group of membrane fluxes
+    if flux_lines:
+        fxn_string += "\n\tif (flux)\n\t{"
+        for line in flux_lines:
+            fxn_string += f"\n\t\t{line};"
+        fxn_string += "\n\t}"
+    fxn_string += "\n}\n}\n"
+    return _cxx_compile(fxn_string), mc_mult_count, mc_mult_list
 
 
 _h_ptrvector = h.PtrVector
@@ -1101,7 +1191,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
             and _point_indices[region][point] not in indices3d
         ):
             indices3d.append(_point_indices[region][point])
-            vols3d.append(surf[point][0] if point in surf else region.dx ** 3)
+            vols3d.append(surf[point][0] if point in surf else region.dx**3)
             # print 'found node %d with coordinates (%g, %g, %g)' % (node._index, node.x3d, node.y3d, node.z3d)
     # discard duplicates...
     # TODO: really, need to figure out all the 3d nodes connecting to a given 1d endpoint, then unique that
@@ -1419,6 +1509,27 @@ def _compile_reactions():
             if not creg._react_regions:
                 continue
             creg._initalize()
+
+            # Try AST-optimized compile
+            ast_result = _compile_reactions_from_ast(creg)
+            if ast_result is not None:
+                ast_compiled, mc_mult_count, mc_mult_list = ast_result
+                register_rate(
+                    creg.num_species,
+                    creg.num_params,
+                    creg.num_regions,
+                    creg.num_segments,
+                    creg.get_state_index(),
+                    creg.num_ecs_species,
+                    creg.num_ecs_params,
+                    creg.get_ecs_species_ids(),
+                    creg.get_ecs_index(),
+                    mc_mult_count,
+                    numpy.array(mc_mult_list, dtype=ctypes.c_double),
+                    _list_to_pyobject_array(creg._vptrs),
+                    ast_compiled,
+                )
+                continue
             mc_mult_count = 0
             mc_mult_list = []
             species_ids_used = numpy.zeros((creg.num_species, creg.num_regions), bool)

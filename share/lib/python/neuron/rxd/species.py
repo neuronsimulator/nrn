@@ -14,7 +14,7 @@ from .rxdmath import _ast_config
 
 if _ast_config["nmodl_support"]:
     try:
-        from nmodl.ast import PrimeName, VarName, Name, String, Integer
+        from neuron.nmodl.ast import PrimeName, VarName, Name, String, Integer
     except ModuleNotFoundError as e:
         _ast_config["nmodl_support"] = False
         _ast_config["exception"] = e
@@ -547,14 +547,19 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         # strip charactered used to give the region and region id
         name = name.replace("@", "").replace("[", "").replace("]", "")
 
+        # make a SymPy-compatible name -- with the index so it can also be used in Prime
+        region_name = str(self._extracellular()._region._short_repr())
+        flat_name = f"{name}_{region_name}_{rint.eval()}"
+
         # Unlike VarName , PrimeName  does not support an index -- so the index has been added to the name
         if prime:
-            return PrimeName(
-                String(f"{VarName(Name(String(name)),rint, None)}[{rint.eval()}]"),
-                Integer(1, None),
+            return VarName(
+                PrimeName(String(flat_name), Integer(1, None)),
+                None,
+                None,
             )
         return VarName(
-            Name(String(f"{VarName(Name(String(name)),rint, None)}[{rint.eval()}]")),
+            Name(String(flat_name)),
             None,
             None,
         )
@@ -745,8 +750,12 @@ class SpeciesOnRegion(_SpeciesMathable):
             else f"{self._species().__class__.__name__}_{self._species()._id}"
         )
 
-        # strip charactered used to give the region and region id
+        # strip characters used to give the region and region id
         name = name.replace("@", "").replace("[", "").replace("]", "")
+
+        # Build a SymPy-compatible name
+        region_name = str(self._region().name)
+        flat_name = f"{name}_{region_name}_{rint.eval()}"
 
         # avoid using 'v' -- used for rxdmath.v:
         # if name == 'v':
@@ -754,12 +763,13 @@ class SpeciesOnRegion(_SpeciesMathable):
 
         # PrimeName take a String argument, so unlike VarName they cannot be indexed -- index added to the name.
         if prime:
-            return PrimeName(
-                String(f"{VarName(Name(String(name)),rint, None)}[{rint.eval()}]"),
-                Integer(1, None),
+            return VarName(
+                PrimeName(String(flat_name), Integer(1, None)),
+                None,
+                None,
             )
         return VarName(
-            Name(String(f"{VarName(Name(String(name)),rint, None)}[{rint.eval()}]")),
+            Name(String(flat_name)),
             None,
             None,
         )

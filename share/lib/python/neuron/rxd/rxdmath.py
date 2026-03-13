@@ -18,7 +18,7 @@ _ast_config = {"nmodl_support": True, "kinetic_block": "off"}
 
 if _ast_config["nmodl_support"]:
     try:
-        from nmodl.ast import (
+        from neuron.nmodl.ast import (
             Name,
             String,
             ReactionStatement,
@@ -27,15 +27,48 @@ if _ast_config["nmodl_support"]:
             BinaryOperator,
             BinaryOp,
             BinaryExpression,
+            UnaryOperator,
+            UnaryOp,
+            UnaryExpression,
             ReactionOperator,
             FunctionCall,
             Double,
             LocalVar,
-            WrappedExpression,
+            ParenExpression,
         )
     except ModuleNotFoundError as e:
         _ast_config["nmodl_support"] = False
         _ast_config["exception"] = e
+
+    OpPrecedence = {
+        BinaryOp.BOP_ADDITION: 1,
+        BinaryOp.BOP_SUBTRACTION: 1,
+        BinaryOp.BOP_MULTIPLICATION: 2,
+        BinaryOp.BOP_DIVISION: 2,
+        BinaryOp.BOP_POWER: 3,
+    }
+
+    def needBrackets(parent, child):
+        if OpPrecedence[child] < OpPrecedence[parent]:
+            return True
+        if (
+            parent in (BinaryOp.BOP_DIVISION, BinaryOp.BOP_SUBTRACTION)
+            and OpPrecedence[child] == OpPrecedence[parent]
+        ):
+            return True
+        return False
+
+    def ParenBinaryExpression(lhs, op, rhs):
+        """Add parenthesis to a BinaryExpression if needed"""
+
+        if lhs.is_binary_expression():
+            if needBrackets(op, lhs.op.value):
+                lhs = ParenExpression(lhs)
+
+        if rhs.is_binary_expression():
+            if needBrackets(op, rhs.op.value):
+                rhs = ParenExpression(rhs)
+        return BinaryExpression(lhs, BinaryOperator(op), rhs)
 
 
 def _vectorized(f, objs):
@@ -605,9 +638,7 @@ class _Product:
                 rhs = self._b.ast(region)
             else:
                 rhs = Name(String(self._b))
-            return BinaryExpression(
-                lhs, BinaryOperator(BinaryOp.BOP_MULTIPLICATION), rhs
-            )
+            return ParenBinaryExpression(lhs, BinaryOp.BOP_MULTIPLICATION, rhs)
 
 
 class _Quotient:
@@ -617,6 +648,18 @@ class _Quotient:
 
     def __repr__(self):
         return "(%r)/(%r)" % (self._a, self._b)
+
+    def ast(self, region=None):
+        if _ast_config["nmodl_support"]:
+            if hasattr(self._a, "ast"):
+                lhs = self._a.ast(region)
+            else:
+                lhs = Name(String(self._a))
+            if hasattr(self._b, "ast"):
+                rhs = self._b.ast(region)
+            else:
+                rhs = Name(String(self._b))
+            return ParenBinaryExpression(lhs, BinaryOp.BOP_DIVISION, rhs)
 
     # Change any Species to _ExtracellularSpecies so _semi_compile gives the
     # _grid_id and not the species _id
@@ -676,7 +719,7 @@ class _Quotient:
                 rhs = self._b.ast(region)
             else:
                 rhs = Name(String(self._b))
-            return BinaryExpression(lhs, BinaryOperator(BinaryOp.BOP_DIVISION), rhs)
+            return ParenBinaryExpression(lhs, BinaryOp.BOP_DIVISION, rhs)
 
 
 class _Reaction:
@@ -852,32 +895,41 @@ class _Arithmeticed:
             ):
                 if hasattr(item, "ast"):
                     item_node = item.ast(region)
-                elif isinstance(item, int) or isinstance(item, float):
+                elif isinstance(item, int):
+                    item_node = Integer(item, Name(String(str(item))))
+                elif isinstance(item, float):
                     item_node = Double(str(item))
                 else:
                     item_node = LocalVar(Name(String(item)))
 
                 if count == 1:
                     term_node = item_node
-                # elif count == -1:
-                # TODO: Get UnaryOperator working
+                elif count == -1:
+                    if len(self._items) == 1:
+                        term_node = UnaryExpression(
+                            UnaryOperator(UnaryOp.UOP_NEGATION), item_node
+                        )
+                    else:
+                        term_node = item_node
                 else:
-                    term_node = BinaryExpression(
-                        Integer(count, Name(String(str(count)))),
-                        BinaryOperator(BinaryOp.BOP_MULTIPLICATION),
+                    x = count if len(self._items) == 1 else abs(count)
+                    term_node = ParenBinaryExpression(
+                        Integer(x, Name(String(str(x)))),
+                        BinaryOp.BOP_MULTIPLICATION,
                         item_node,
                     )
 
                 if nodes is None:
                     nodes = term_node
                 else:
-                    nodes = WrappedExpression(
-                        (
-                            BinaryExpression(
-                                nodes, BinaryOperator(BinaryOp.BOP_ADDITION), item_node
-                            )
+                    if count < 0:
+                        nodes = ParenBinaryExpression(
+                            nodes, BinaryOp.BOP_SUBTRACTION, term_node
                         )
-                    )
+                    else:
+                        nodes = ParenBinaryExpression(
+                            nodes, BinaryOp.BOP_ADDITION, term_node
+                        )
             return nodes
 
     @property

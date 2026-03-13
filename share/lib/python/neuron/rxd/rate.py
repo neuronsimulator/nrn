@@ -9,7 +9,7 @@ from .rxdmath import _ast_config
 
 if _ast_config["nmodl_support"]:
     try:
-        from nmodl.ast import (
+        from neuron.nmodl.ast import (
             BinaryOp,
             BinaryOperator,
             BinaryExpression,

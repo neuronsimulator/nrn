@@ -9,7 +9,7 @@ from .rxdmath import _ast_config
 
 if _ast_config["nmodl_support"]:
     try:
-        from nmodl.ast import (
+        from neuron.nmodl.ast import (
             Double,
             ExpressionStatement,
             DiffEqExpression,
@@ -326,8 +326,8 @@ class Reaction(GeneralizedReaction):
                 kinetic_block == "non_mass_action" and self._custom_dynamics
             ):
                 rate = self._rate_arithmeticed
-                frate = rate.ast(region)
-                brate = (-rate).ast(region)
+                frate = (-rate).ast(region)
+                brate = (rate).ast(region)
                 diff, species = [], []
                 for idx, sref in enumerate(self._sources + self._dests):
                     sp = sref()

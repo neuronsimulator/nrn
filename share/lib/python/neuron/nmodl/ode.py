@@ -387,6 +387,67 @@ def needs_finite_differences(mat):
     return any(isinstance(expr, sp.Derivative) for expr in sp.preorder_traversal(mat))
 
 
+def optimize_odes(
+    rhs_strings, var_names, constants, function_calls, rhs_ids=None, do_cse=True
+):
+    """Apply SymPy optimizations to ODE rate expressions.
+
+    Unlike solve_non_lin_system, this does not perform any time integration.
+    It takes the RHS of rate expressions f(x) from x' = f(x) and returns
+    optimised C code, suitable for operator-split solvers that handle
+    time-stepping externally. Used by the rxd module.
+
+    Args:
+        rhs_strings: list of RHS expression strings,
+                     e.g. ["-0.005*ca*cam + 0.01*cacam", ...]
+        var_names: list of all variable names (state vars + constants),
+                   e.g. ["ca", "cam", "cacam", "kf", "kb"]
+        constants: set of any other symbolic names used
+        function_calls: set of function call names used in the ODEs
+        do_cse: if True (default), apply Common Subexpression Elimination
+
+    Returns:
+        Tuple of (code, new_local_vars) where:
+        - code: list of C assignment strings,
+                e.g. ["tmp_0 = ca*cam", "rhs[0] = -0.005*tmp_0 + ..."]
+        - new_local_vars: list of new temporary variable name strings from CSE
+    """
+    custom_fcts = _get_custom_functions(function_calls)
+
+    # Build sympy symbols the variables
+    sympy_vars = {}
+    for var in set(var_names + constants):
+        sympy_vars[var] = sp.Symbol(var, real=True)
+
+    # Parse and simplify each RHS expression
+    rhs_exprs = [sp.sympify(rhs, locals=sympy_vars).simplify() for rhs in rhs_strings]
+
+    code = []
+    local_vars = []
+
+    if do_cse:
+        my_symbols = sp.utilities.iterables.numbered_symbols(prefix="tmp_")
+        sub_exprs, reduced = sp.cse(
+            rhs_exprs,
+            symbols=my_symbols,
+            optimizations="basic",
+            order="canonical",
+        )
+        for var, expr in sub_exprs:
+            local_vars.append(sp.ccode(var))
+            code.append(f"{var} = {sp.ccode(expr.evalf(), user_functions=custom_fcts)}")
+        rhs_exprs = reduced
+
+    for i, expr in enumerate(rhs_exprs):
+        rhs = sp.ccode(expr.evalf(), user_functions=custom_fcts)
+        if rhs_ids:
+            code.append(f"{rhs_ids[i]} = {rhs}")
+        else:
+            code.append(f"rhs[{i}] = {rhs}")
+
+    return code, local_vars
+
+
 def solve_non_lin_system(eq_strings, vars, constants, function_calls):
     """Solve non-linear system of equations, return solution as C code.
 

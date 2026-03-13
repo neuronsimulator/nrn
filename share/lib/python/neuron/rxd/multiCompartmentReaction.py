@@ -13,7 +13,7 @@ from .rxdmath import _ast_config
 
 if _ast_config["nmodl_support"]:
     try:
-        from nmodl.ast import (
+        from neuron.nmodl.ast import (
             ExpressionStatement,
             DiffEqExpression,
             BinaryExpression,
@@ -215,9 +215,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
             msg = (
                 "sources and destinations"
                 if sources and dests
-                else "sources"
-                if sources
-                else "destinations"
+                else "sources" if sources else "destinations"
             )
             raise RxDException(
                 "Multicompartment reactions the membrane and %s must share common sections. %r"
