@@ -1,2 +1,5 @@
 # Needed in pure Python so that neuron/__init__.py can give a good error...
 supported_python_versions = [@NRN_DYNAMIC_PYTHON_LIST_OF_VERSION_STRINGS@]
+# Needed so we can figure out the prefix and suffix of nrnmech at runtime
+mechanism_prefix = "@CMAKE_SHARED_LIBRARY_PREFIX@"
+mechanism_suffix = "@CMAKE_SHARED_LIBRARY_SUFFIX@"

@@ -11,6 +11,7 @@
 #include <unistd.h>
 #endif
 #include "section.h"
+#include "seclist.h"  // SectionList_reg
 #include "parse.hpp"
 #include "nrniv_mf.h"
 #include "cabvars.h"

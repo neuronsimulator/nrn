@@ -31,7 +31,7 @@ stages:
     - job: 'ManyLinuxWheels'
       timeoutInMinutes: 45
       pool:
-        vmImage: 'ubuntu-22.04'
+        vmImage: 'ubuntu-24.04'
       strategy:
         matrix:
           Python39:
@@ -49,6 +49,9 @@ stages:
           Python313:
             python.version: '3.13'
             python.nodot: '313'
+          Python314:
+            python.version: '3.14'
+            python.nodot: '314'
 
       steps:
 
@@ -70,6 +73,9 @@ stages:
       # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
       # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
       - script: |
+          if [ "$BUILD_REASON" = "Manual" ] || [ "$BUILD_REASON" = "Schedule" ]; then
+            export NRN_RX3D_OPT_LEVEL=1
+          fi
           sudo mkdir -p /opt/nrnwheel/mpt
           sudo tar -zxf $(mpt_headersSF.secureFilePath) --directory /opt/nrnwheel/mpt
           packaging/python/build_wheels.bash linux $(python.nodot)
@@ -78,6 +84,21 @@ stages:
       - script: |
           sudo apt update
           sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
+          # mpich is fundamentally broken on Ubuntu 24.04 LTS, for more details see:
+          # https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
+          # This is fixed in version 4.2.0-5.1, but this version has not been
+          # backported, so as a workaround, we install that version manually
+          source /etc/os-release
+          if [[ "$ID" == "ubuntu" && "$VERSION_ID" == "24.04" ]]; then
+            # mpich is fundamentally broken on Ubuntu 24.04 LTS, for more details see:
+            # https://bugs.launchpad.net/ubuntu/+source/mpich/+bug/2072338
+            # This is fixed in version 4.2.0-5.1, but this version has not been
+            # backported, so as a workaround, we install that version manually
+            sudo apt install -y mpich
+            wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/mpich_4.2.0-5.1_amd64.deb'
+            wget 'https://launchpad.net/ubuntu/+source/mpich/4.2.0-5.1/+build/28285882/+files/libmpich12_4.2.0-5.1_amd64.deb'
+            sudo dpkg --install mpich_4.2.0-5.1_amd64.deb libmpich12_4.2.0-5.1_amd64.deb
+          fi
         displayName: 'Install Test System Dependencies'
 
       - template: ci/azure-wheel-test-upload.yml
@@ -87,7 +108,7 @@ stages:
     - job: 'MacOSWheels'
       timeoutInMinutes: 60
       pool:
-        vmImage: 'macOS-13'
+        vmImage: 'macOS-15'
       strategy:
         matrix:
           Python39:
@@ -115,6 +136,11 @@ stages:
             python.nodot: '313'
             python.org.version: '3.13.0'
             python.installer.name: 'macos11.pkg'
+          Python314:
+            python.version: '3.14'
+            python.nodot: '314'
+            python.org.version: '3.14.0'
+            python.installer.name: 'macos11.pkg'
 
       steps:
 
@@ -130,6 +156,14 @@ stages:
           brew install flex bison mpich
           brew unlink mpich && brew install openmpi
           cmake --version
+          # the version of bash used by Azure (which is the default one
+          # provided by Apple) is too old and does not support associative
+          # arrays. This is because newer versions of bash have switched their
+          # license from GNU GPL v2 to GNU GPL v3, and Apple refuses to add any
+          # GNU GPL v3-licenced software in their stack, so we need to install
+          # the homebrew one
+          brew install bash
+          bash --version
           # see https://github.com/BlueBrain/CoreNeuron/issues/817, uninstall libomp until we fix this
           # as we are building wheels, we shouldn't enable OpenMP here anyway
           brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
@@ -153,14 +187,12 @@ stages:
         condition: and(in(variables['Build.Reason'], 'Manual'), eq(variables['NRN_RELEASE_UPLOAD'], 'true'))
         displayName: 'Change name of package for release'
 
-      # 10.14 is required for full C++17 support according to
-      # https://cibuildwheel.readthedocs.io/en/stable/cpp_standards, but it
-      # seems that 10.15 is actually needed for std::filesystem::path.
       - script: |
-          export MACOSX_DEPLOYMENT_TARGET=10.15
           export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-          export NRN_BUILD_FOR_UPLOAD=1
+          if [ "$BUILD_REASON" = "Manual" ] || [ "$BUILD_REASON" = "Schedule" ]; then
+            export NRN_RX3D_OPT_LEVEL=1
+          fi
           sudo mkdir -p /opt/nrnwheel/$(uname -m)
           sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/$(uname -m)
           packaging/python/build_wheels.bash osx $(python.nodot)

@@ -16,12 +16,12 @@ NEURON has four built-in point process classes which can be used to construct ar
     `NetStim <https://nrn.readthedocs.io/en/latest/python/modelspec/programmatic/mechanisms/mech.html?highlight=netstim#NetStim>`_ produces a user-specified train of one or more output events, and can also be triggered by input events
 
 2.
-    :hoc:class:`IntFire1`, which acts like a leaky integrator driven by delta function inputs. That is, the state variable m decays exponentially toward 0. 
+    :class:`IntFire1`, which acts like a leaky integrator driven by delta function inputs. That is, the state variable m decays exponentially toward 0. 
     Arrival of an event with weight w causes an abrupt change in m. 
     If m exceeds 1, an output event is generated and the cell enters a refractory period during which it ignores further inputs. At the end of the refractory period, m is reset to 0 and the cell becomes responsive to new inputs.
 
 3.
-    :hoc:class:`IntFire2`, a leaky integrator with time constant taum driven by a total current that is the sum of
+    :class:`IntFire2`, a leaky integrator with time constant taum driven by a total current that is the sum of
 
         { a user-settable constant "bias" current }
     
@@ -31,7 +31,7 @@ NEURON has four built-in point process classes which can be used to construct ar
 
     Net synaptic current decays toward 0 with time constant taus, where taus > taum (synaptic current decays slowly compared to the rate at which "membrane potential" m equilibrates). When an input event with weight w arrives, the net synaptic current changes abruptly by the amount w.
 
-4. :hoc:class:`IntFire4`, with fast excitation current (rises abruptly, decays exponentially) and slower alpha function like inhibition current that is integrated by even slower membrane.
+4. :class:`IntFire4`, with fast excitation current (rises abruptly, decays exponentially) and slower alpha function like inhibition current that is integrated by even slower membrane.
 
 NEURON requires that all point processes be located in a section. To meet this (in this context, conceptually irrelevant) requirement, the Network Builder tool locates each point process of its instantiated artificial cells in the dummy section called ``acell_home_``
 

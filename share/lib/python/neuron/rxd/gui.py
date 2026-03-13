@@ -31,57 +31,37 @@ def _instantiate_regions(regions):
         elif seclist == "All Sections":
             seclist = "h.allsec()"
         elif seclist in seclist_map:
-            seclist = "h.SectionList[%d]" % seclist_map[seclist]
+            seclist = f"h.SectionList[{seclist_map[seclist]}]"
         else:
-            raise RxDException("Invalid region: %r" % data)
+            raise RxDException(f"Invalid region: {data!r}")
         geo = data.get("geometry", None)
         # TODO: do this without if statements in a way that lets geometries register themselves
         if geo is None:
-            raise RxDException("Missing geometry for region %r" % data)
+            raise RxDException(f"Missing geometry for region {data!r}")
         if geo == "Inside":
             geo = "inside"
         elif geo == "Fractional Volume":
-            geo = (
-                "FractionalVolume(volume_fraction=%g, surface_fraction=%g, neighbor_areas_fraction=%g)"
-                % (data.get("vf", 1), data.get("sf", 0), data.get("nf", 1))
-            )
+            geo = f"FractionalVolume(volume_fraction={data.get('vf', 1):g}, surface_fraction={data.get('sf', 0):g}, neighbor_areas_fraction={data.get('nf', 1):g})"
         elif geo == "Constant 2D Area/Length":
-            geo = "FixedPerimeter(%g, on_cell_surface=%r)" % (
-                data.get("perim", 1),
-                data.get("onsurf", False),
-            )
+            geo = f"FixedPerimeter({data.get('perim', 1):g}, on_cell_surface={data.get('onsurf', False)!r})"
         elif geo == "Constant 3D Vol/Length":
-            geo = "FixedCrossSection(%g, surface_area=%g)" % (
-                data.get("carea", 1),
-                data.get("csurf", 0),
-            )
+            geo = f"FixedCrossSection({data.get('carea', 1):g}, surface_area={data.get('csurf', 0):g})"
         elif geo == "Membrane":
             geo = "membrane"
         elif geo == "Shell":
-            geo = "Shell(lo=%g, hi=%g)" % (data.get("lo", 0), data.get("hi", 1))
+            geo = f"Shell(lo={data.get('lo', 0):g}, hi={data.get('hi', 1):g})"
         else:
-            raise RxDException("Unrecognized geometry: %s" % geo)
+            raise RxDException(f"Unrecognized geometry: {geo}")
         nrn_region = data.get("nrn_region", None)
-        command = "%s = rxd.Region(%s, geometry=rxd.%s, nrn_region=%r)" % (
-            name,
-            seclist,
-            geo,
-            nrn_region,
-        )
+        command = f"{name} = rxd.Region({seclist}, geometry=rxd.{geo}, nrn_region={nrn_region!r})"
         exec(command, globals())
 
 
 def _instantiate_species(species):
     for name, data in zip(list(species.keys()), list(species.values())):
         regions = data.get("regions", [])
-        regions = "[%s]" % ",".join(regions)
-        command = '%s = rxd.Species(%s, d=%g, name="%s", charge=%g)' % (
-            name,
-            regions,
-            data.get("d", 0),
-            name,
-            data.get("charge", 0),
-        )
+        regions = f"[{','.join(regions)}]"
+        command = f'{name} = rxd.Species({regions}, d={data.get("d", 0):g}, name="{name}", charge={data.get("charge", 0):g})'
         exec(command, globals())
 
 
@@ -91,7 +71,7 @@ def _construct_side(items):
         if multiplicity == 1:
             result.append(term)
         elif multiplicity != 0:
-            result.append("%g * %s" % (multiplicity, term))
+            result.append(f"{multiplicity:g} * {term}")
     return " + ".join(result)
 
 
@@ -103,32 +83,16 @@ def _instantiate_reactions(reactions):
     for name, data in zip(list(reactions.keys()), list(reactions.values())):
         reaction_spec = ""
         if "type" not in data:
-            raise RxDException("No reaction type for: %r" % data)
+            raise RxDException(f"No reaction type for: {data!r}")
         if "active" not in data or not data["active"]:
             continue
         kind = data["type"].lower()
         if kind == "rate":
-            reaction_spec = "Rate(%s, %s)" % (data["species"], data["kf"])
+            reaction_spec = f"Rate({data['species']}, {data['kf']})"
         elif kind == "multicompartmentreaction":
-            reaction_spec = (
-                "MultiCompartmentReaction(%s, %s, %s, membrane=%s, custom_dynamics=%r, membrane_flux=%r, scale_by_area=%r)"
-                % (
-                    _construct_schema(data["lhs"], data["rhs"]),
-                    data.get("kf", 0),
-                    data.get("kb", 0),
-                    data["membrane"],
-                    not data.get("massaction", True),
-                    data.get("membrane_current", False),
-                    data.get("scale_with_area", True),
-                )
-            )
+            reaction_spec = f"MultiCompartmentReaction({_construct_schema(data['lhs'], data['rhs'])}, {data.get('kf', 0)}, {data.get('kb', 0)}, membrane={data['membrane']}, custom_dynamics={not data.get('massaction', True)!r}, membrane_flux={data.get('membrane_current', False)!r}, scale_by_area={data.get('scale_with_area', True)!r})"
         elif kind == "reaction":
-            reaction_spec = "Reaction(%s, %s, %s, custom_dynamics=%r)" % (
-                _construct_schema(data["lhs"], data["rhs"]),
-                data.get("kf", 0),
-                data.get("kb", 0),
-                not data.get("massaction", True),
-            )
+            reaction_spec = f"Reaction({_construct_schema(data['lhs'], data['rhs'])}, {data.get('kf', 0)}, {data.get('kb', 0)}, custom_dynamics={not data.get('massaction', True)!r})"
         command = f"{name} = rxd.{reaction_spec}"
         exec(command, globals())
 
@@ -563,7 +527,7 @@ class RegionPane:
         self.update()
 
     def info(self):
-        h.xpanel("Information on %s" % self.geoselector.text[self.geoselector.option])
+        h.xpanel(f"Information on {self.geoselector.text[self.geoselector.option]}")
         option_panel = self.option_panels[self.geoselector.option - 1]
         for line in option_panel.info.split("\n"):
             h.xlabel(line)
@@ -710,14 +674,14 @@ class _RxDBuilder:
 
     def save(self):
         self.vbox.save('nrnpython("import neuron.rxd.gui")')
-        self.vbox.save('nrnpython("neuron.rxd.gui.regions = %r")' % regions)
-        self.vbox.save('nrnpython("neuron.rxd.gui.species = %r")' % species)
-        self.vbox.save('nrnpython("neuron.rxd.gui.all_reactions = %r")' % all_reactions)
+        self.vbox.save(f'nrnpython("neuron.rxd.gui.regions = {regions!r}")')
+        self.vbox.save(f'nrnpython("neuron.rxd.gui.species = {species!r}")')
+        self.vbox.save(f'nrnpython("neuron.rxd.gui.all_reactions = {all_reactions!r}")')
         self.vbox.save(
-            'nrnpython("neuron.rxd.gui.rxd_builder_tab = %r")' % rxd_builder_tab
+            f'nrnpython("neuron.rxd.gui.rxd_builder_tab = {rxd_builder_tab!r}")'
         )
         self.vbox.save(
-            'nrnpython("neuron.rxd.gui.has_instantiated = %r")' % has_instantiated
+            f'nrnpython("neuron.rxd.gui.has_instantiated = {has_instantiated!r}")'
         )
         self.vbox.save('nrnpython("from neuron import h")')
         self.vbox.save(
@@ -1196,6 +1160,7 @@ class _SpeciesEditor:
 
 _the_species_editor = _SpeciesEditor()
 
+
 # this is a way of faking the Singleton pattern
 def SpeciesEditor():
     if not _the_species_editor.is_mapped:
@@ -1240,6 +1205,7 @@ class _SpeciesPane:
 
 
 _the_species_pane = _SpeciesPane()
+
 
 # this is a way of faking the Singleton pattern
 def SpeciesPane():
@@ -1328,7 +1294,7 @@ class LRHSSelector(_PartialSelector):
         if mult == int(mult):
             mult = int(mult)
         self.mults.append(mult)
-        self.names.append("%g * %s" % (mult, name))
+        self.names.append(f"{mult:g} * {name}")
         self._update_list()
 
     def _add(self):
@@ -1662,13 +1628,13 @@ class _ReactionPane(object):
         )
         for i, name in enumerate(self.reaction_names):
             self.__setattr__(
-                "include_list%d" % i, 1 if all_reactions[name]["active"] else 0
+                f"include_list{i}", 1 if all_reactions[name]["active"] else 0
             )
         h.xpanel("")
         if self.reaction_names:
             for i, name in enumerate(self.reaction_names):
                 h.xcheckbox(
-                    name, (self, "include_list%d" % i), self._update_active_reactions
+                    name, (self, f"include_list{i}"), self._update_active_reactions
                 )
         else:
             h.xlabel("*** No reactions defined yet ***")
@@ -1679,7 +1645,7 @@ class _ReactionPane(object):
     def _update_active_reactions(self):
         for i, name in enumerate(self.reaction_names):
             all_reactions[name]["active"] = (
-                True if getattr(self, "include_list%d" % i) else False
+                True if getattr(self, f"include_list{i}") else False
             )
 
     @property
@@ -1691,6 +1657,7 @@ class _ReactionPane(object):
 
 
 _the_reaction_pane = _ReactionPane()
+
 
 # this is a way of faking the Singleton pattern
 def ReactionPane():

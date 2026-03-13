@@ -57,42 +57,48 @@ run_mpi_test () {
       rm -rf *.dat
   fi
 
-  # build new special
-  rm -rf $ARCH_DIR
-  nrnivmodl tmp_mod
+  compilers=("nrnivmodl" "nrnivmodl-cmake")
+  core_compilers=("nrnivmodl -coreneuron" "nrnivmodl-all-cmake")
+  for index in "${!compilers[@]}"; do
+      nrnivmodl="${compilers[$index]}"
+      nrnivmodl_core="${core_compilers[$index]}"
+      # build new special
+      rm -rf $ARCH_DIR
+      ${nrnivmodl} tmp_mod
 
-  # run python test via nrniv and special (except on azure pipelines)
-  if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-    $mpi_launcher -n 2 ./$ARCH_DIR/special -python src/parallel/test0.py -mpi --expected-hosts 2
-    $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
-  fi
+      # run python test via nrniv and special (except on azure pipelines)
+      if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
+        $mpi_launcher -n 2 ./$ARCH_DIR/special -python src/parallel/test0.py -mpi --expected-hosts 2
+        $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
+      fi
 
-  # coreneuron execution via neuron
-  if [[ "$has_coreneuron" == "true" ]]; then
-    rm -rf $ARCH_DIR
-    TEMP_DIR="${TMPDIR:-/tmp}/test/coreneuron/mod files/"
-    if [ ! -d "${TEMP_DIR}" ]; then
-        mkdir -p "${TEMP_DIR}"
-    fi
-    cp "test/coreneuron/mod files/"* "${TEMP_DIR}/"
-    # also copy one MOD file containing sparse solver
-    cp share/examples/nrniv/nmodl/capmp.mod "${TEMP_DIR}"
-    nrnivmodl -coreneuron "${TEMP_DIR}"
+      # coreneuron execution via neuron
+      if [[ "$has_coreneuron" == "true" ]]; then
+        rm -rf $ARCH_DIR
+        TEMP_DIR="${TMPDIR:-/tmp}/test/coreneuron/mod files/"
+        if [ ! -d "${TEMP_DIR}" ]; then
+            mkdir -p "${TEMP_DIR}"
+        fi
+        cp "test/coreneuron/mod files/"* "${TEMP_DIR}/"
+        # also copy one MOD file containing sparse solver
+        cp share/examples/nrniv/nmodl/capmp.mod "${TEMP_DIR}"
+        ${nrnivmodl_core} "${TEMP_DIR}"
 
-    $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
+        $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
 
-    # using -python doesn't work on Azure CI
-    if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-      $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
-      NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=0 $mpi_launcher -n 2 ./$ARCH_DIR/special -python -mpi test/coreneuron/test_direct.py
-    fi
-  fi
+        # using -python doesn't work on Azure CI
+        if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
+          $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
+          NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=0 $mpi_launcher -n 2 ./$ARCH_DIR/special -python -mpi test/coreneuron/test_direct.py
+        fi
+      fi
 
-  if [ -n "$mpi_module" ]; then
-     echo "Unloading module $mpi_module"
-     module unload $mpi_module
-  fi
-  echo -e "----------------------\n\n"
+      if [ -n "$mpi_module" ]; then
+         echo "Unloading module $mpi_module"
+         module unload $mpi_module
+      fi
+      echo -e "----------------------\n\n"
+  done
 }
 
 
@@ -105,6 +111,7 @@ run_serial_test () {
 
     # Test 3: run coreneuron binary shipped inside wheel
     if [[ "$has_coreneuron" == "true" ]]; then
+        $python_exe -c "from neuron.tests import test_nmodl; test_nmodl.test_nmodl()"
         HOC_LIBRARY_PATH=${PWD}/test/ringtest nrniv test/ringtest/ring.hoc
         mv out.dat out.nrn.dat
         nrniv-core --datpath .
@@ -112,47 +119,53 @@ run_serial_test () {
         rm -rf *.dat
     fi
 
-    # Test 4: execute nrnivmodl
-    rm -rf $ARCH_DIR
-    nrnivmodl tmp_mod
+    # Test 4: execute nrnivmodl and friends
+    compilers=("nrnivmodl" "nrnivmodl-cmake")
+    for compiler in "${compilers[@]}"; do
+        rm -rf $ARCH_DIR
+        ${compiler} tmp_mod
 
-    # Test 5: execute special hoc interpreter
-    ./$ARCH_DIR/special -c "print \"hello\""
+        # Test 5: execute special hoc interpreter
+        ./$ARCH_DIR/special -c "print \"hello\""
 
-    # Test 6: run basic tests via python while loading shared library
-    $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+        # Test 6: run basic tests via python while loading shared library
+        $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
 
-    # Test 7: run basic test to use compiled mod file
-    $python_exe -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()"
+        # Test 7: run basic test to use compiled mod file
+        $python_exe -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()"
 
-    # Test 8: run basic tests via special : azure pipelines get stuck with their
-    # own python from hosted cache (most likely security settings).
-    if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-      ./$ARCH_DIR/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-      nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-    else
-      $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-    fi
+        # Test 8: run basic tests via special : azure pipelines get stuck with their
+        # own python from hosted cache (most likely security settings).
+        if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
+          ./$ARCH_DIR/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+          nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+        else
+          $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+        fi
+    done
 
     # Test 9: coreneuron execution via neuron
     if [[ "$has_coreneuron" == "true" ]]; then
-      rm -rf $ARCH_DIR
+      compilers=("nrnivmodl -coreneuron" "nrnivmodl-all-cmake")
+      for compiler in "${compilers[@]}"; do
+          rm -rf $ARCH_DIR
 
-      # first test vanialla coreneuron support, without nrnivmodl
-      $python_exe test/coreneuron/test_psolve.py
+          # first test vanialla coreneuron support, without nrnivmodl
+          $python_exe test/coreneuron/test_psolve.py
 
-      nrnivmodl -coreneuron "test/coreneuron/mod files/"
+          ${compiler} "test/coreneuron/mod files/"
 
-      # coreneuron+gpu can be used via python but special only
-      $python_exe test/coreneuron/test_direct.py
+          # coreneuron+gpu can be used via python but special only
+          $python_exe test/coreneuron/test_direct.py
 
-      # using -python doesn't work on Azure CI
-      if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-        ./$ARCH_DIR/special -python test/coreneuron/test_direct.py
-        nrniv -python test/coreneuron/test_direct.py
-      fi
+          # using -python doesn't work on Azure CI
+          if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
+            ./$ARCH_DIR/special -python test/coreneuron/test_direct.py
+            nrniv -python test/coreneuron/test_direct.py
+          fi
 
-      rm -rf $ARCH_DIR
+          rm -rf $ARCH_DIR
+      done
     fi
 
 
@@ -190,7 +203,7 @@ run_parallel_test() {
       run_mpi_test "mpirun.mpich" "MPICH" ""
       # choose openmpi
       sudo update-alternatives --set mpi-${ARCH_DIR}-linux-gnu /usr/lib/${ARCH_DIR}-linux-gnu/openmpi/include
-      run_mpi_test "mpirun.openmpi" "OpenMPI" ""
+      run_mpi_test "mpirun.openmpi --oversubscribe" "OpenMPI" ""
 
     # linux desktop or docker container used for wheel
     else
@@ -208,6 +221,8 @@ run_parallel_test() {
 test_wheel () {
     # sample mod file for nrnivmodl check
     mkdir -p tmp_mod
+    # delete tmp_mod and arch dir on EXIT or SIGINT
+    trap "rm -fr tmp_mod ${ARCH_DIR}" EXIT SIGINT
     cp share/examples/nrniv/nmodl/cacum.mod tmp_mod/
 
     # check gcc and python versions
@@ -219,9 +234,6 @@ test_wheel () {
 
     echo "=========== MPI TESTS ============"
     run_parallel_test
-
-    #clean-up
-    rm -rf tmp_mod $ARCH_DIR
 }
 
 
@@ -241,24 +253,24 @@ if [[ "$use_venv" != "false" ]]; then
   venv_name="nrn_test_venv_${python_ver}"
   $python_exe -m venv $venv_name
   . $venv_name/bin/activate
-  python_exe=`which python`
+  python_exe="$(command -v python)"
+  # delete venv on EXIT or SIGINT
+  trap "rm -fr ${venv_name}" EXIT SIGINT
 else
   echo " == Using global install == "
 fi
 
 
-# gpu wheel needs updated pip
-$python_exe -m pip install --upgrade 'pip<=25.0.1'
-
+$python_exe -m pip install -r ci/uv_requirements.txt
 
 # install test requirements
-$python_exe -m pip install -r packaging/python/test_requirements.txt
-$python_exe -m pip install --force-reinstall $python_wheel
-$python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
+$python_exe -m uv pip install -r packaging/python/test_requirements.txt
+$python_exe -m uv pip install --force-reinstall $python_wheel
+$python_exe -m uv pip show neuron || $python_exe -m uv pip show neuron-nightly
 
 
 # check the existence of coreneuron support
-compile_options=`nrniv -nobanner -nogui -c 'nrnversion(6)'`
+compile_options="$(nrniv -nobanner -nogui -c 'nrnversion(6)')"
 if echo $compile_options | grep "NRN_ENABLE_CORENEURON=ON" > /dev/null ; then
   has_coreneuron=true
 fi
@@ -269,13 +281,5 @@ test_wheel
 
 # run basic python tests with oldest supported NumPy
 echo " == Running basic python tests with oldest supported NumPy == "
-$python_exe -m pip install -r packaging/python/oldest_numpy_requirements.txt
+$python_exe -m uv pip install -r packaging/python/oldest_numpy_requirements.txt
 test_wheel_basic_python
-
-# cleanup
-if [[ "$use_venv" != "false" ]]; then
-  deactivate
-fi
-
-#rm -rf $venv_name
-echo "Removed $venv_name"

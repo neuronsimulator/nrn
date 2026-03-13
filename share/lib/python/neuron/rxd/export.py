@@ -1,5 +1,3 @@
-from neuron import rxd
-from neuron.rxd.rxdException import RxDException
 from xml.etree import ElementTree as ET
 import xml.dom.minidom
 
@@ -66,9 +64,9 @@ class middle_man:
 
     # The parts that are required for a species are name and compartment, and optionally initial amount
     def add_species(self, name, compartment, initial_amount=0):
-        if type(name) != str or len(name) < 1:
+        if not isinstance(name, str) or not name:
             return 1
-        elif type(compartment) != str or len(compartment) < 1:
+        if not isinstance(compartment, str) or not compartment:
             return 2
 
         temp_species = species(name, compartment, initial_amount)
@@ -77,7 +75,7 @@ class middle_man:
 
     # add compartment to structure
     def add_compartment(self, name, size):
-        if type(name) != str or len(name) < 1:
+        if not isinstance(name, str) or not name:
             return 1
         if size is None:
             size = 0.1
@@ -116,7 +114,7 @@ class middle_man:
             xmlns="http://www.sbml.org/sbml/level2/version3",
         )
         model = ET.SubElement(sbml, "model", name=self.name)
-        if len(self.unit_defs) > 0:
+        if self.unit_defs:
             unitdefinitions = ET.SubElement(model, "listOfUnitDefinitions")
         for key, value in self.unit_defs.items():
             unitDefinition = ET.SubElement(
@@ -128,7 +126,7 @@ class middle_man:
                     listOfUnits, "unit", kind=j[0], exponent=str(j[1]), scale=str(j[2])
                 )
 
-        if len(self.compartments) > 0:
+        if self.compartments:
             listOfCompartments = ET.SubElement(model, "listOfCompartments")
         for key, value in self.compartments.items():
             ET.SubElement(
@@ -139,7 +137,7 @@ class middle_man:
                 size=str(value.size),
             )
 
-        if len(self.species) > 0:
+        if self.species:
             listOfSpecies = ET.SubElement(model, "listOfSpecies")
         for key, value in self.species.items():
             ET.SubElement(
@@ -151,14 +149,14 @@ class middle_man:
                 initialConcentration=value.initial_amount,
             )
 
-        if len(self.parameters) > 0:
+        if self.parameters:
             listOfParameters = ET.SubElement(model, "listOfParameters")
         for para, value in self.parameters.items():
             ET.SubElement(
                 listOfParameters, "parameter", id=para, value=str(value.value)
             )
 
-        if len(self.reactions) > 0:
+        if self.reactions:
             listOfReactions = ET.SubElement(model, "listOfReactions")
         for react in self.reactions:
             current_reaction = ET.SubElement(
@@ -223,6 +221,9 @@ class middle_man:
 
 
 def sbml(segment, filename=None, model_name=None, pretty=True):
+    from neuron import rxd
+    from neuron.rxd.rxdException import RxDException
+
     rxd.initializer._do_init()
     section = segment.sec
     if model_name is not None:
@@ -447,6 +448,9 @@ function_names = {
 
 
 def recursive_search(arth_obj, kineticLaw, parameters, compartment_name):
+    from neuron import rxd
+    from neuron.rxd.rxdException import RxDException
+
     items = []
     counts = []
     node = ET.SubElement(kineticLaw, "apply")
@@ -495,6 +499,9 @@ def recursive_search(arth_obj, kineticLaw, parameters, compartment_name):
 
 
 def determine_type(obj, parameters, comp_name):
+    from neuron import rxd
+    from neuron.rxd.rxdException import RxDException
+
     tree = ET.Element("apply")
     if isinstance(obj, rxd.rxdmath._Product):
         ET.SubElement(tree, "times")

@@ -227,6 +227,16 @@ void CodegenHelperVisitor::check_cvode_codegen(const ast::Program& node) {
     }
 }
 
+// check that a given AST node `node`, which can be casted to `T`, has a node name which matches
+// `match`
+template <typename T>
+static bool node_name_matches(const std::shared_ptr<const ast::Ast>& node,
+                              const std::string& match) {
+    const auto& cast_node = std::dynamic_pointer_cast<const T>(node);
+    return cast_node && cast_node->get_node_name() == match;
+};
+
+
 /**
  * Find non-range variables i.e. ones that are not belong to per instance allocation
  *
@@ -234,7 +244,7 @@ void CodegenHelperVisitor::check_cvode_codegen(const ast::Program& node) {
  * instance variables. NEURON apply certain rules to determine which variables become
  * thread, static or global variables. Here we construct those variables.
  */
-void CodegenHelperVisitor::find_non_range_variables() {
+void CodegenHelperVisitor::find_non_range_variables(const ast::Program& node) {
     /**
      * Top local variables are local variables appear in global scope. All local
      * variables in program symbol table are in global scope.
@@ -356,15 +366,47 @@ void CodegenHelperVisitor::find_non_range_variables() {
     info.random_variables = psymtab->get_variables_with_properties(properties);
 
     // find special variables like diam, area
-    properties = NmodlType::assigned_definition | NmodlType::param_assign;
-    vars = psymtab->get_variables_with_properties(properties);
-    for (auto& var: vars) {
-        if (var->get_name() == naming::AREA_VARIABLE) {
-            info.area_used = true;
+    const auto& special_variables_usage = collect_nodes(node, {ast::AstNodeType::VAR_NAME});
+    const auto& special_variables_declaration =
+        collect_nodes(node,
+                      {ast::AstNodeType::ASSIGNED_DEFINITION, ast::AstNodeType::PARAM_ASSIGN});
+    // If the special variable is actually used, it should show up somewhere as a VarName.
+    // Note that it can appear in VERBATIM, in which case we generate initialization code only
+    // if it has been set as ASSIGNED or PARAMETER.
+    auto predicate_used = [](const auto& var, const auto& name) {
+        return node_name_matches<ast::VarName>(var, name);
+    };
+    auto predicate_declared = [](const auto& var, const auto& name) {
+        return node_name_matches<ast::AssignedDefinition>(var, name) ||
+               node_name_matches<ast::ParamAssign>(var, name);
+    };
+    // map between the name of the variable and whether or not it's used (by ref so changes persist)
+    std::unordered_map<std::string, bool&> special_variables = {
+        {naming::DIAM_VARIABLE, info.diam_used}, {naming::AREA_VARIABLE, info.area_used}};
+    for (auto& [name, value]: special_variables) {
+        const auto& used = std::any_of(
+            special_variables_usage.begin(),
+            special_variables_usage.end(),
+            // According to C++17, we cannot pass just `name` because:
+            // "If a lambda-expression explicitly captures an entity that is not odr-usable or
+            // captures a structured binding (explicitly or implicitly), the program is ill-formed."
+            // This means we need to use an "init-capture", i.e. the form `<internal>=<external>`,
+            // where `<internal>` is the variable visible inside the lambda, and `<external>` is the
+            // variable outside of it. Note that just passing `name` is valid C++20, but there is a
+            // bug in some versions of Clang which prevents even that.
+            [&predicate_used, name = name](const auto& var) { return predicate_used(var, name); });
+        const auto& declared = std::any_of(special_variables_declaration.begin(),
+                                           special_variables_declaration.end(),
+                                           [&predicate_declared, name = name](const auto& var) {
+                                               return predicate_declared(var, name);
+                                           });
+        if (declared && !used) {
+            logger->warn(
+                "Variable {} not used anywhere (except possibly VERBATIM block), but declared in a "
+                "PARAMETER or ASSIGNED block; will generate initialization code for it anyway",
+                name);
         }
-        if (var->get_name() == naming::DIAM_VARIABLE) {
-            info.diam_used = true;
-        }
+        value = declared || used;
     }
 }
 
@@ -811,7 +853,7 @@ void CodegenHelperVisitor::visit_program(const ast::Program& node) {
     node.visit_children(*this);
     find_ion_variables(node);  // Keep this before find_*_range_variables()
     find_range_variables();
-    find_non_range_variables();
+    find_non_range_variables(node);
     find_table_variables();
     find_neuron_global_variables();
     check_cvode_codegen(node);

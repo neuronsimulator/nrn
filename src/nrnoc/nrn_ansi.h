@@ -3,6 +3,7 @@
 #include "membfunc.h"  // nrn_bamech_t
 #include "cabcode.h"
 #include "neuron/container/data_handle.hpp"
+#include "seclist.h"
 #include "neuron/container/generic_data_handle.hpp"
 #include <memory>
 
@@ -82,7 +83,6 @@ void long_difus_solve(neuron::model_sorted_token const&, int method, NrnThread& 
 extern void nrn_fihexec(int);
 extern int special_pnt_call(Object*, Symbol*, int);
 extern void nrn_mk_prop_pools(int);
-extern void SectionList_reg(void);
 extern void SectionRef_reg(void);
 
 extern void hoc_symbol_tolerance(Symbol*, double);
@@ -129,7 +129,6 @@ extern void recalc_diam(void);
 extern bool nrn_use_fast_imem;
 void nrn_fast_imem_alloc();
 extern void nrn_calc_fast_imem(NrnThread*);
-extern Section* nrn_secarg(int iarg);
 extern void nrn_seg_or_x_arg(int iarg, Section** psec, double* px);
 extern void nrn_seg_or_x_arg2(int iarg, Section** psec, double* px);
 extern Section* nrnpy_pysecname2sec(const char*);

@@ -61,9 +61,7 @@ def mkcells(pc, ngids):
     assert nranks <= ngids
 
     for gid in range(ngids):
-
         if gid % nranks == myrank:
-
             cell = MyCell()
             nc = h.NetCon(cell.soma(0.5)._ref_v, None, sec=cell.soma)
             pc.set_gid2node(gid, myrank)
@@ -101,7 +99,6 @@ def mkgjs(pc, ngids):
 
     ggid = 2e6  ## gap junction id range is intended to not overlap with gid range
     for gid in range(0, ngids, 2):
-
         # source gid: all even gids
         src = gid
         # destination gid: all odd gids
@@ -128,7 +125,6 @@ def mkgjs(pc, ngids):
 
 
 def main():
-
     parser = argparse.ArgumentParser(description="Parallel transfer test.")
     parser.add_argument(
         "--sparse-partrans",

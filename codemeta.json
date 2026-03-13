@@ -16,9 +16,9 @@
         }
     ],
     "codeRepository": "git+https://github.com/neuronsimulator/nrn.git",
-    "dateModified": "2024-07-24",
+    "dateModified": "2025-11-17",
     "description": "Empirically-based simulator for modeling neurons and networks of neurons",
-    "downloadUrl": "https://github.com/neuronsimulator/nrn/releases/tag/8.2.6",
+    "downloadUrl": "https://github.com/neuronsimulator/nrn/releases/tag/9.0.1",
     "funder": {
         "type": "Organization",
         "name": "Yale University"
@@ -35,14 +35,14 @@
         "Python 3"
     ],
     "relatedLink": "https://nrn.readthedocs.io/",
-    "schema:releaseNotes": "This release pins numpy to <2 and includes backports for several fixes.\n\n### Bug Fixes\n- Informative error when cannot import hoc module\n- ParallelContext: hoc_ac_ encodes global id of submitted process.\n- Python 3.12 compatibility with Windows installer (#2963)\n- Windows 11 fix for nrniv -python (#2946)\n- Fix for dynamic ECS diffusion characteristics.\n- python38 is back. For testing can use rx3doptlevel=0 bash bldnrnmacpkgcmake.sh\n- Fix cvode.use_fast_imem(1) error with electrode time varying conductance.\n- Apple M1 cmake failure in cloning subrepository. See #2326.\n- Update iv",
+    "schema:releaseNotes": "This release fixes several bugs and adds support for Python 3.14.\n\n### What's New\n- Add Python 3.14 support (#3635)\n- Remove doxygen from search results on readthedocs (#3664)\n- Add example with compilation for C API (#3658)\n\n### Bug Fixes\n- Use `[:blank:]` character class for SWC parser (#3651)\n- Fix HOC File.dir() on Windows (#3653)\n- NET_RECEIVE INITIAL not vectorized translation needs set_globals_from_prop (#3640)\n\n### Improvements /  Other Changes\n- Make `NRN_INSTALL_PYTHON_PREFIX` configurable (#3654)\n- Improve error message when Python lib is not found (#3650)\n- Use `command -v` instead of `which` in nrnpyenv.sh (#3516)\n- Better errors for `report.conf` (#3641)\n- Bump min required CMake version to 3.19\n",
     "softwareRequirements": [
         "Bison",
         "Flex",
         "C/C++ compiler",
-        "CMake >= 3.15.0"
+        "CMake >= 3.19.0"
     ],
-    "version": "8.2.6",
+    "version": "9.0.1",
     "developmentStatus": "active",
     "funding": "R01NS11613",
     "issueTracker": "https://github.com/neuronsimulator/nrn/issues"

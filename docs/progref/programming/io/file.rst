@@ -1,0 +1,978 @@
+.. _file:
+
+.. note::
+
+    Python and MATLAB provide native support for manipulating files. 
+    Use that whenever possible
+    to ensure your code is understandable by the greatest number of people.
+    However some NEURON functionality requires the use of NEURON File objects.
+
+
+File Access (objected-oriented via NEURON)
+------------------------------------------
+
+
+.. class:: File
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``fobj = n.File()``
+
+            ``fobj = n.File("filename")``
+
+
+        Description:
+            This class allows you to open several files at once, whereas the top level 
+            functions, :func:`ropen` and :func:`wopen` , 
+            allow you to deal only with one file at a time. 
+         
+            The functionality of :func:`xopen` is not implemented in this class so use 
+
+            .. code-block::
+                python
+
+                n.xopen(fobj.getname())
+
+            to execute a sequence of interpreter commands in a file. 
+         
+
+        Example:
+
+            .. code-block::
+                python
+ 
+                from neuron import n
+                f1 = n.File()               //state that f1, f2, and f3 are pointers to the File class 
+                f2 = n.File() 
+                f3 = n.File() 
+                f1.ropen("file1")   //open file1 for reading 
+                f2.wopen("file2")   //open file2 for writing 
+                f3.aopen("file3")   //open file3 for appending to the end of the file 
+
+            opens file1, file2, and file3 for reading, writing, and appending (respectively). 
+         
+
+        .. warning::
+            The mswindows/dos version must deal with the difference between 
+            binary and text mode files. The difference is transparent to the 
+            user except for one limitation. If you mix text and binary data 
+            and you write text first to the file, then you need to do a 
+            File.seek(0) to explicitly switch to binary mode just after opening the file 
+            and prior to the first File.printf. 
+            An error message will occur if you 
+            read/write text to a file in text mode and then try to read/write a binary 
+            vector.  This issue does not arise with the unix version. 
+
+        .. seealso::
+            :ref:`printf_doc`, :func:`ropen`, :func:`xopen`, :func:`wopen`
+
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``fobj = new File()``
+        
+        
+            ``fobj = new File("filename")``
+        
+        
+        Description:
+            This class allows you to open several files at once, whereas the top level 
+            functions, :func:`ropen` and :func:`wopen` ,
+            allow you to deal only with one file at a time. 
+        
+        
+            The functionality of :func:`xopen` is not implemented in this class so use
+        
+        
+            .. code-block::
+                none
+        
+        
+                    strdef tstr 
+                    fobj.getname(tstr) 
+                    xopen(tstr) 
+        
+        
+            to execute a sequence of interpreter commands in a file. 
+        
+        
+        Example:
+        
+        
+            .. code-block::
+                none
+        
+        
+                objref f1, f2, f3   //declare object references 
+                f1 = new File()             //state that f1, f2, and f3 are pointers to the File class 
+                f2 = new File() 
+                f3 = new File() 
+                f1.ropen("file1")   //open file1 for reading 
+                f2.wopen("file2")   //open file2 for writing 
+                f3.aopen("file3")   //open file3 for appending to the end of the file 
+        
+        
+            opens file1, file2, and file3 for reading, writing, and appending (respectively). 
+        
+        
+        .. warning::
+            The mswindows/dos version must deal with the difference between 
+            binary and text mode files. The difference is transparent to the 
+            user except for one limitation. If you mix text and binary data 
+            and you write text first to the file, then you need to do a 
+            File.seek(0) to explicitly switch to binary mode just after opening the file 
+            and prior to the first File.printf. 
+            An error message will occur if you 
+            read/write text to a file in text mode and then try to read/write a binary 
+            vector.  This issue does not arise with the unix version. 
+        
+        
+        .. seealso::
+            :ref:`hoc_printf_doc`, :func:`ropen`, :func:`xopen`, :func:`wopen`
+        
+----
+
+
+
+.. method:: File.ropen
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``.ropen()``
+
+            ``.ropen("name")``
+
+
+        Description:
+            Open the file for reading. If the argument is 
+            not present it opens (for reading) the last specified file. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.ropen()``
+        
+        
+            ``.ropen("name")``
+        
+        
+        Description:
+            Open the file for reading. If the argument is 
+            not present it opens (for reading) the last specified file. 
+        
+----
+
+
+
+.. method:: File.wopen
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``.wopen()``
+
+            ``.wopen("name")``
+
+
+        Description:
+            Open the file for writing.  If the argument is 
+            not present it opens the last specified file. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.wopen()``
+        
+        
+            ``.wopen("name")``
+        
+        
+        Description:
+            Open the file for writing.  If the argument is 
+            not present it opens the last specified file. 
+        
+----
+
+
+
+.. method:: File.aopen
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``.aopen()``
+
+            ``.aopen("name")``
+
+
+        Description:
+            Open the file for appending to the end of the file. If the argument is 
+            not present it opens the last specified file. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.aopen()``
+        
+        
+            ``.aopen("name")``
+        
+        
+        Description:
+            Open the file for appending to the end of the file. If the argument is 
+            not present it opens the last specified file. 
+        
+----
+
+
+
+.. method:: File.xopen
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``.xopen()``
+
+            ``.xopen("name")``
+
+
+        Description:
+            Open the file and execute it. (**not implemented**) 
+         
+            Note: if instead of a "*name*", the number 0,1,or 2 is specified then 
+            the stdin, stdout, or stderr is opened. (**not implemented**) 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.xopen()``
+        
+        
+            ``.xopen("name")``
+        
+        
+        Description:
+            Open the file and execute it. (not implemented) 
+        
+        
+            Note: if instead of a "*name*", the number 0,1,or 2 is specified then 
+            the stdin, stdout, or stderr is opened. (not implemented) 
+        
+----
+
+
+
+.. method:: File.close
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``.close()``
+
+
+        Description:
+            Flush and close the file. This occurs automatically 
+            whenever opening another file or destroying the object. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.close()``
+        
+        
+        Description:
+            Flush and close the file. This occurs automatically 
+            whenever opening another file or destroying the object. 
+        
+----
+
+
+
+.. method:: File.mktemp
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``success = f.mktemp()``
+
+
+        Description:
+            Sets the name to a temporary filename in the /tmp directory (or other 
+            writable path for mswin and mac). Success returns 1. 
+
+        Example of creating a temporary file:
+
+            .. code-block::
+                python
+
+                f = n.File()
+                if f.mktemp() != 1:
+                    raise Exception('Unable to create temporary file')
+                # create a tempoary file, get its name
+                temp_file_name = f.getname()
+
+                # do stuff, possibly using regular Python File IO instead
+
+                # dispose of the temporary file
+                f.unlink()
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``boolean = f.mktemp()``
+        
+        
+        Description:
+            Sets the name to a temporary filename in the /tmp directory (or other 
+            writable path for mswin and mac). Success returns 1. 
+        
+----
+
+
+
+.. method:: File.unlink
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``success = f.unlink()``
+
+
+        Description:
+            Remove the file specified by the current name. A return value of 
+            1 means the file was removed (or at least it's link count was reduced by 
+            one and the filename no longer exists). 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``boolean = f.unlink()``
+        
+        
+        Description:
+            Remove the file specified by the current name. A return value of 
+            1 means the file was removed (or at least it's link count was reduced by 
+            one and the filename no longer exists). 
+        
+----
+
+
+
+.. method:: File.printf
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``.printf("format", args, ...)``
+
+
+        Description:
+            As in standard C \ ``printf`` and the normal 
+            NEURON :func:`printf` . 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.printf("format", args, ...)``
+        
+        
+        Description:
+            As in standard C \ ``printf`` and the normal 
+            hoc :func:`printf` .
+        
+----
+
+
+
+.. method:: File.scanvar
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``.scanvar()``
+
+
+        Description:
+            Reads the next number as in the function ``fscan()`` and 
+            returns its value. 
+         
+            Note: in order that .eof will return 
+            true after the last number, the last digit of that number 
+            should either be the last character in the file or 
+            be followed by a newline which is the last character in the file. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.scanvar()``
+        
+        
+        Description:
+            Reads the next number as in the hoc function \ ``fscan()`` and 
+            returns its value. 
+        
+        
+            Note: in order that .eof will return 
+            true after the last number, the last digit of that number 
+            should either be the last character in the file or 
+            be followed by a newline which is the last character in the file. 
+        
+----
+
+
+
+.. method:: File.scanstr
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``.scanstr(strptr)``
+
+
+        Description:
+            Read the next string (delimited by whitespace) into 
+            \ ``strptr`` (must be a pointer to a NEURON string *not* a Python string).
+            Returns the length of a string (if failure then returns 
+            -1 and the string pointed to by ``strptr`` is unchanged). 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.scanstr(strdef)``
+        
+        
+        Description:
+            Read the next string (delimited by whitespace) into 
+            \ ``strdef``. Returns the length of a string (if failure then returns 
+            -1 and \ ``strdef`` is unchanged). 
+        
+----
+
+
+
+.. method:: File.gets
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``.gets(_ref_str)``
+
+
+        Description:
+            Read up to and including end of line. Returns length of string. 
+            If at the end of file, returns -1 and does not change the argument. 
+
+            ``_ref_str`` is a reference to a NEURON string (e.g. one created via
+            ``_ref_str = n.ref('')``); it is not a Python string.
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.gets(strdef)``
+        
+        
+        Description:
+            Read up to and including end of line. Returns length of string. 
+            If at the end of file, returns -1 and does not change the argument. 
+        
+----
+
+
+
+.. method:: File.getname
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``name = fobj.getname()``
+
+            ``name = fobj.getname(strptr)``
+
+
+        Description:
+            Return the name of the last specified file as a string. 
+            For backward compatibility, if the arg is present (must a pointer to a NEURON string) also copy it to that. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``strdef = file.getname()``
+        
+        
+            ``strdef = file.getname(strdef)``
+        
+        
+        Description:
+            Return the name of the last specified file as a strdef. 
+            For backward compatibility, if the arg is present also copy it to that. 
+        
+----
+
+
+
+.. method:: File.dir
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``dirname = file.dir()``
+
+
+        Description:
+            Return the pathname of the last directory moved to in the chooser. 
+            If the :meth:`File.chooser` has not been created, return the empty string. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``strdef = file.dir()``
+        
+        
+        Description:
+            Return the pathname of the last directory moved to in the chooser. 
+            If the :meth:`File.chooser` has not been created, return the empty string.
+        
+----
+
+
+
+.. method:: File.eof
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``fobj.eof()``
+
+
+        Description:
+            Return true if at end of ropen'd file. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.eof()``
+        
+        
+        Description:
+            Return true if at end of ropen'd file. 
+        
+----
+
+
+
+.. method:: File.flush
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``fobj.flush()``
+
+
+        Description:
+            Flush pending output to the file. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.flush()``
+        
+        
+        Description:
+            Flush pending output to the file. 
+        
+----
+
+
+
+.. method:: File.isopen
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``fobj.isopen()``
+
+
+        Description:
+            Return ``True`` if a file is open. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.isopen()``
+        
+        
+        Description:
+            Return true if a file is open. 
+        
+----
+
+
+
+.. method:: File.chooser
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``.chooser()``
+
+            ``.chooser("w,r,a,x,d or nothing")``
+
+            ``.chooser("w,r,a,x,d or nothing", "Banner", "filter", "accept", "cancel", "path")``
+
+
+
+        Description:
+            File chooser interface for writing , reading, appending, or 
+            just specifying a directory or filename without opening. The banner is 
+            optional. The filter, eg. \ ``"*.dat"`` specifies the files shown 
+            in the browser part of the chooser. 
+            The "path" arg specifies the file or directory to use when the 
+            browser first pops up. 
+            The form with args sets the style of the chooser but 
+            does not pop it up. With no args, the browser pops up and can 
+            be called several times. Each time starting where it left 
+            off previously. 
+         
+            The "d" style is used for selecting a directory (in 
+            contrast to a file). 
+            With the "d" style, three buttons are placed beneath the 
+            browser area with :guilabel:`Open` centered beneath the :guilabel:`Show`, :guilabel:`Cancel` button pair. 
+            The :guilabel:`Open` button must be pressed for the 
+            dialog to return the name of the directory. The :guilabel:`Show` button merely 
+            selects the highlighted browser entry and shows the relevant directory 
+            contents. A returned directory 
+            string always has a final "/". 
+         
+            The "*x*" style is unimplemented. Use 
+
+            .. code-block::
+                python
+
+                f.chooser("", "Execute a hoc file", "*.hoc", "Execute") 
+                if f.chooser():
+                    n.xopen(f.getname()) 
+
+            Example:
+
+            .. code-block::
+                python
+                
+                from neuron import n, gui
+
+                f = n.File()
+                f.chooser('', 'Example file browser', '*', 'Type file name', 'Cancel')
+                while f.chooser():
+                    print(f.getname())
+
+            .. image:: ../../images/filechooser.png
+                :align: center
+
+            The above example is approximately equivalent to the following pure Python solution, except
+            the graphics library is different. On most systems, the pure Python solution will have a
+            look-and-feel more consistent with the rest of the system.:
+
+            .. code-block::
+                python
+
+                import tkinter as tk
+                from tkinter import filedialog
+
+                root = tk.Tk()
+                root.withdraw()  # Hide the root window
+
+                file_path = filedialog.askopenfilename(title="Example file browser", filetypes=[("All files", "*")])
+                if not file_path:
+                    print("No file selected")
+                else:
+                    print(file_path)
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.chooser()``
+        
+        
+            ``.chooser("w,r,a,x,d or nothing")``
+        
+        
+            ``.chooser("w,r,a,x,d or nothing", "Banner", "filter", "accept", "cancel", "path")``
+        
+        
+        Description:
+            File chooser interface for writing , reading, appending, or 
+            just specifying a directory or filename without opening. The banner is 
+            optional. The filter, eg. \ ``"*.dat"`` specifies the files shown 
+            in the browser part of the chooser. 
+            The "path" arg specifies the file or directory to use when the 
+            browser first pops up. 
+            The form with args sets the style of the chooser but 
+            does not pop it up. With no args, the browser pops up and can 
+            be called several times. Each time starting where it left 
+            off previously. 
+        
+        
+            The "d" style is used for selecting a directory (in 
+            contrast to a file). 
+            With the "d" style, three buttons are placed beneath the 
+            browser area with :guilabel:`Open` centered beneath the :guilabel:`Show`, :guilabel:`Cancel` button pair. 
+            The :guilabel:`Open` button must be pressed for the 
+            dialog to return the name of the directory. The :guilabel:`Show` button merely 
+            selects the highlighted browser entry and shows the relevant directory 
+            contents. A returned directory 
+            string always has a final "/". 
+        
+        
+            The "*x*" style is unimplemented. Use 
+        
+        
+            .. code-block::
+                none
+        
+        
+                            f.chooser("", "Execute a hoc file", "*.hoc", "Execute") 
+                            if (f.chooser()) { 
+                                    f.getname(*str*) 
+                                    xopen(*str*) 
+                            } 
+        
+        
+            The following comes courtesy of Zach Mainen, ``zach@helmholtz.sdsc.edu``. 
+        
+----
+
+The following comes courtesy of Zach Mainen, ``zach@helmholtz.sdsc.edu``:
+
+----
+
+
+.. method:: File.vwrite
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``.vwrite(_ref_x)``
+
+            ``.vwrite(n, _ref_x)``
+
+
+        Description:
+            Write binary doubles to a file from an array or variable 
+            using \ ``fwrite()``. The form with two arguments specifies the 
+            number of elements to write and the address from which to 
+            begin writing.  With one argument, *n* is assumed to be 1. 
+            Must be careful that  *x*\ [] has at least *n* 
+            elements after its passed address. 
+
+            i.e. If ``x = n.Vector(10)`` and ``f`` is an instance of a :class:`File`
+            opened for writing, then one might call ``f.vwrite(5, x._ref_x[0]`` to write
+            the first five values to a file.)
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.vwrite(&x)``
+        
+        
+            ``.vwrite(n, &x)``
+        
+        
+        Description:
+            Write binary doubles to a file from an array or variable 
+            using \ ``fwrite()``. The form with two arguments specifies the 
+            number of elements to write and the address from which to 
+            begin writing.  With one argument, *n* is assumed to be 1. 
+            Must be careful that  *x*\ [] has at least *n* 
+            elements after its passed address. 
+        
+----
+
+
+
+.. method:: File.vread
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``.vread(_ref_x)``
+
+            ``.vread(n, _ref_x)``
+
+
+        Description:
+            Read binary doubles from a file into a pre-existing :class:`Vector` 
+            or variable using \ ``fread()``. 
+
+        .. seealso::
+            :func:`vwrite`
+        
+
+         
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.vread(&x)``
+        
+        
+            ``.vread(n, &x)``
+        
+        
+        Description:
+            Read binary doubles from a file into a pre-existing array 
+            or variable using \ ``fread()``. 
+        
+        
+        .. seealso::
+            :func:`vwrite`
+        
+----
+
+
+
+.. method:: File.seek
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``.seek()``
+
+            ``.seek(offset)``
+
+            ``.seek(offset,origin)``
+
+
+        Description:
+            Set the file position.  Any subsequent file access will access 
+            data beginning at the new position.  Without arguments, goes to 
+            the beginning of file.  Offset is in characters and is measured 
+            from the beginning of the file unless origin is 1 (measures from 
+            the current position) or 2 (from the end of the file).  Returns 
+            0 if successful, non-zero on error.  Used with :meth:`tell`. 
+
+         
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.seek()``
+        
+        
+            ``.seek(offset)``
+        
+        
+            ``.seek(offset,origin)``
+        
+        
+        Description:
+            Set the file position.  Any subsequent file access will access 
+            data beginning at the new position.  Without arguments, goes to 
+            the beginning of file.  Offset is in characters and is measured 
+            from the beginning of the file unless origin is 1 (measures from 
+            the current position) or 2 (from the end of the file).  Returns 
+            0 if successful, non-zero on error.  Used with :meth:`tell`.
+        
+----
+
+
+
+.. method:: File.tell
+
+    .. tab:: Python
+    
+    
+        Syntax:
+            ``.tell()``
+
+
+        Description:
+            Return the current file position or -1 on error.  Used with :meth:`seek`. 
+
+    .. tab:: HOC
+
+
+        Syntax:
+            ``.tell()``
+        
+        
+        Description:
+            Return the current file position or -1 on error.  Used with :meth:`seek`.
+        

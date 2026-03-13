@@ -76,22 +76,94 @@ collect_dirs_macos() {
 }
 
 
+# cibuildwheel does not pass any environmental variables to the container
+# unless explicitly specified. Unfortunately, some of them should be set
+# dynamically, so we can't put them in pyproject.toml, and hence we set them
+# here. All of them can be overridden using its corresponding environmental
+# variable. Note that on Linux the variables must also be present in
+# pyproject.toml's `[tool.cibuildwheel.linux.environment-pass]` section, or set
+# as the `CIBW_ENVIRONMENT_PASS_LINUX` env variable.
+set_cibw_environment() {
+    platform="${1}"
+    if [ "${platform}" = 'macos' ]; then
+        declare -A defaults=(
+            [CMAKE_PREFIX_PATH]="/opt/nrnwheel/$(uname -m)/ncurses;/opt/nrnwheel/$(uname -m)/readline;/usr/x11"
+            [NRN_ENABLE_MPI_DYNAMIC]="ON"
+            [NRN_MPI_DYNAMIC]="$(brew --prefix)/opt/openmpi/include;$(brew --prefix)/opt/mpich/include"
+            [NRN_WHEEL_STATIC_READLINE]="ON"
+            [NRN_ENABLE_CORENEURON]="ON"
+            [NRN_BINARY_DIST_BUILD]="ON"
+            [NRN_RX3D_OPT_LEVEL]="0"
+            [NRN_ENABLE_INTERVIEWS]="ON"
+            # 10.14 is required for full C++17 support according to
+            # https://cibuildwheel.readthedocs.io/en/stable/cpp_standards, but it
+            # seems that 10.15 is actually needed for std::filesystem::path.
+            # 11.0 is required on ARM machines
+            [MACOSX_DEPLOYMENT_TARGET]="10.15"
+        )
+    elif [ "${platform}" = 'linux' ]; then
+        declare -A defaults=(
+            [CMAKE_PREFIX_PATH]="/nrnwheel/ncurses;/nrnwheel/readline"
+            [NRN_ENABLE_MPI_DYNAMIC]="ON"
+            [NRN_MPI_DYNAMIC]="/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)"
+            [NRN_WHEEL_STATIC_READLINE]="ON"
+            [NRN_ENABLE_CORENEURON]="ON"
+            [CORENRN_ENABLE_OPENMP]="ON"
+            [NRN_BINARY_DIST_BUILD]="ON"
+            [NRN_RX3D_OPT_LEVEL]="0"
+            [NRN_ENABLE_INTERVIEWS]="ON"
+        )
+    fi
+
+    local env_string=""
+    for var in "${!defaults[@]}"; do
+        local val="${!var:-${defaults[$var]}}"
+        env_string+="${var}='${val}' "
+    done
+
+    export CIBW_ENVIRONMENT="${env_string}"
+}
+
+
 # for building portable wheels
 # if building a Linux portable wheel, docker or podman must be installed
 # the preferred container engine can be set using the env variable `CIBW_CONTAINER_ENGINE`
 build_wheel_portable() {
     platform="${1}"
     echo "[BUILD WHEEL] Building with cibuildwheel for ${platform}"
-    local skip=
-    setup_venv "$(command -v python3)"
-    (( skip )) && return 0
 
-    python -m pip install cibuildwheel
+    # cibuildwheel >=3 requires that the underlying Python version be at least 3.11
+    # NOTE: bump this when a new Python version is released
+    supported_versions=(3.11 3.12 3.12 3.14)
+    path_to_interpreter=""
+    for version in "${supported_versions[@]}"; do
+        if command -v "python${version}"; then
+            path_to_interpreter="$(command -v "python${version}")"
+            break
+        fi
+    done
+
+    if [ -z "${path_to_interpreter}" ]; then
+        echo "ERROR: Python 3.11 or above is required for building with cibuildwheel"
+        exit 1
+    fi
+
+    setup_venv "${path_to_interpreter}"
+
+    # earliest version of cibuildwheel that supports Python 3.14
+    python -m pip install 'cibuildwheel>=3.2.1'
     echo " - Building..."
     rm -rf "${build_dir}"
 
     if [ "${platform}" = 'linux' ]; then
-        NRN_MPI_DYNAMIC="/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)"
+        # detect whether we are cross compiling, see:
+        # https://github.com/neuronsimulator/nrn/issues/3535
+        if [ "$(uname -s)" = 'Darwin' ] && [ "$(uname -m)" = 'arm64' ]; then
+            NRN_MPI_DYNAMIC="${NRN_MPI_DYNAMIC:-/usr/include/openmpi-aarch64;/usr/include/mpich-aarch64}"
+        else
+            NRN_MPI_DYNAMIC="${NRN_MPI_DYNAMIC:-/usr/include/openmpi-$(uname -m);/usr/include/mpich-$(uname -m)}"
+        fi
+
         # if we are building on Azure, we can use the MPT headers as well
         if [ -n "${TF_BUILD:-}" ]; then
             NRN_MPI_DYNAMIC="${NRN_MPI_DYNAMIC};/host/opt/nrnwheel/mpt/include"
@@ -99,11 +171,13 @@ build_wheel_portable() {
         export NRN_MPI_DYNAMIC
     fi
 
-    if [ "${platform}" = 'macos' ] && [ "$(uname -m)" = 'x86_64' ]; then
-        export MACOSX_DEPLOYMENT_TARGET='10.15'
-    else
-        export MACOSX_DEPLOYMENT_TARGET='11.0'
+    if [ "${platform}" = 'macos' ]; then
+        if [ "$(uname -m)" = 'arm64' ]; then
+            export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-11.0}"
+        fi
     fi
+
+    set_cibw_environment "${platform}"
 
     CIBW_BUILD_VERBOSITY=1 python -m cibuildwheel --debug-traceback --platform "${platform}" --output-dir wheelhouse
 
@@ -166,6 +240,8 @@ python_version_or_interpreter="${2}"
 if [[ "${platform}" != 'CI' ]]; then
     CIBW_BUILD=""
     for ver in ${python_version_or_interpreter}; do
+        # remove any dots since various CI actions require it, and it's easier to do it here
+        ver="${ver//./}"
         # we only build cpython-compatible wheels for now
         CIBW_BUILD="${CIBW_BUILD} cp${ver}*"
     done

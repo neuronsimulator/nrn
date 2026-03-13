@@ -729,7 +729,7 @@ Description:
         .. code-block::
             python
 
-            h.setdata_mechname(x) 
+            n.setdata_mechname(x) 
 
     .. tab:: HOC
 
@@ -745,7 +745,7 @@ Description:
         .. note::
             For range variables one must of course pass in a ``sec=section`` argument
             (otherwise the so-called currently accessed section, 
-            discoverable via h.cas(), is used).
+            discoverable via n.cas(), is used).
 
     .. tab:: HOC
 

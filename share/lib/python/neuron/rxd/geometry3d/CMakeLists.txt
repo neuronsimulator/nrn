@@ -21,9 +21,22 @@ set(surfaces_sources
     ${PROJECT_SOURCE_DIR}/src/nrnpython/rxd_llgramarea.cpp)
 
 if(NOT SKBUILD)
-  set(rel_rpath "/../../")
+  file(RELATIVE_PATH rel_path "${CMAKE_INSTALL_PREFIX}/${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d"
+       "${CMAKE_INSTALL_PREFIX}/${NRN_INSTALL_DATA_PREFIX}/lib")
+  set(rel_rpath "/${rel_path}")
 else()
   set(rel_rpath "/../../.data/lib")
+endif()
+
+# find numpy includes of the default Python install
+execute_process(
+  COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} -c "import numpy;print(numpy.get_include())"
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  RESULT_VARIABLE STATUS_CODE
+  OUTPUT_VARIABLE NUMPY_INCLUDE_DIR)
+
+if(NOT "${STATUS_CODE}" STREQUAL "0")
+  message(FATAL_ERROR "Could not find NumPy headers for ${NRN_DEFAULT_PYTHON_EXECUTABLE}")
 endif()
 
 # case of dynamic Python
@@ -32,8 +45,6 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     list(GET NRN_PYTHON_VERSIONS ${val} pyver)
     list(GET NRN_PYTHON_INCLUDES ${val} pyinc)
     list(GET NRN_PYTHON_LIBRARIES ${val} pylib)
-    list(GET NRN_PYTHON_NUMPY_INCLUDES ${val} npinc)
-
     foreach(source ${rxd_sources})
       add_nrn_python_library(
         ${source}
@@ -48,7 +59,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
         INCLUDES
         # on Linux, if numpy is installed via the system package manager, CMake would use those
         # instead, so we place the numpy headers before the Python ones
-        "${npinc}"
+        "${NUMPY_INCLUDE_DIR}"
         "${pyinc}"
         LIBRARIES
         nrniv_lib
@@ -86,7 +97,7 @@ else(NRN_ENABLE_PYTHON_DYNAMIC)
       INCLUDES
       # on Linux, if numpy is installed via the system package manager, CMake would use those
       # instead, so we place the numpy headers before the Python ones
-      "${NRN_DEFAULT_PYTHON_NUMPY_INCLUDES}"
+      "${NUMPY_INCLUDE_DIR}"
       "${NRN_DEFAULT_PYTHON_INCLUDES}"
       LIBRARIES
       nrniv_lib

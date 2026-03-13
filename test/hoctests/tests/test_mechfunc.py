@@ -16,7 +16,7 @@ def varref(name, m):  # variable reference
 
 
 def model():  # 3 cables each with nseg=3
-    cables = [h.Section(name="cable%d" % i) for i in range(3)]
+    cables = [h.Section(name=f"cable{i}") for i in range(3)]
     mechs = []
     for c in cables:
         c.nseg = 3

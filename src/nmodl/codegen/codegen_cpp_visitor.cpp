@@ -457,9 +457,6 @@ int CodegenCppVisitor::get_int_variable_index(const std::string& var_name) {
 
 
 void CodegenCppVisitor::print_backend_info() {
-    time_t current_time{};
-    time(&current_time);
-    std::string data_time_str{std::ctime(&current_time)};
     auto version = nmodl::Version::NMODL_VERSION + " [" + nmodl::Version::GIT_REVISION + "]";
 
     printer->add_line("/*********************************************************");
@@ -468,7 +465,6 @@ void CodegenCppVisitor::print_backend_info() {
     printer->add_line("NMODL Version   : ", nmodl_version());
     printer->fmt_line("Vectorized      : {}", info.vectorize);
     printer->fmt_line("Threadsafe      : {}", info.thread_safe);
-    printer->add_line("Created         : ", stringutils::trim(data_time_str));
     printer->add_line("Simulator       : ", simulator_name());
     printer->add_line("Backend         : ", backend_name());
     printer->add_line("NMODL Compiler  : ", version);

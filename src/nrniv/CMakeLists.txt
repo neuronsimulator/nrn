@@ -48,6 +48,7 @@ add_dependencies(generated_source_files modlunit_generated_files)
 add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES} "${NRN_MODLUNIT_GEN}/lex.cpp"
                         "${NRN_MODLUNIT_GEN}/parse1.cpp")
 add_dependencies(modlunit modlunit_generated_files)
+target_include_directories(modlunit PRIVATE "${PROJECT_BINARY_DIR}/share/nrn/lib")
 
 target_compile_definitions(modlunit PRIVATE NRNUNIT=1)
 cpp_cc_configure_sanitizers(TARGET modlunit)
@@ -96,6 +97,7 @@ add_dependencies(generated_source_files nocmodl_generated_files)
 
 add_executable(nocmodl ${NRN_NOCMODL_SRC_FILES} "${NRN_NOCMODL_GEN}/lex.cpp"
                        "${NRN_NOCMODL_GEN}/parse1.cpp" "${NRN_NOCMODL_GEN}/diffeq.cpp")
+target_include_directories(nocmodl PRIVATE "${PROJECT_BINARY_DIR}/share/nrn/lib")
 cpp_cc_configure_sanitizers(TARGET nocmodl)
 add_dependencies(nocmodl nocmodl_generated_files)
 target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 CVODE=1)
@@ -109,6 +111,11 @@ target_include_directories(nocmodl PRIVATE "${NRN_NOCMODL_GEN}" "${NRN_NOCMODL_S
                                            "${CLI11_HEADER_DIRECTORY}")
 if(NRN_NOCMODL_CXX_FLAGS)
   target_compile_options(nocmodl PRIVATE ${NRN_NOCMODL_CXX_FLAGS})
+endif()
+
+# CLI11-included headers have some warnings on NVHPC
+if(NRN_NOCMODL_COMPILER_WARNING_SUPPRESSIONS)
+  target_compile_options(nocmodl PRIVATE ${NRN_NOCMODL_COMPILER_WARNING_SUPPRESSIONS})
 endif()
 
 # =============================================================================
@@ -240,22 +247,6 @@ set(NRN_INCLUDE_DIRS
 # =============================================================================
 # Helper commands : generate various headers
 # =============================================================================
-# ~~~
-# generate version information file
-# nrnversion.h does not depend on another file but on the output of
-# git2version_h.sh and nrnversion.h should only be changed if that output
-# is different from the contents of nrnversion.h
-# ~~~
-add_custom_target(
-  nrnversion_h
-  COMMAND ${CMAKE_COMMAND} -E env PROJECT_VERSION=${PROJECT_VERSION} bash
-          ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} > nrnversion.h.tmp
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp nrnversion.h
-  DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh
-  WORKING_DIRECTORY ${NRN_NRNOC_BUILD_DIR})
-
-add_custom_command(OUTPUT ${NRN_NRNOC_BUILD_DIR}/nrnversion.h DEPENDS nrnversion_h)
-add_dependencies(generated_source_files nrnversion_h)
 
 # avoid error with nvector_serial.cpp for #include <../../../nrnconf.h>
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
@@ -407,18 +398,24 @@ include_directories(${NRN_INCLUDE_DIRS})
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 add_dependencies(nrniv_lib generated_source_files)
-target_link_libraries(nrniv_lib nrngnu)
-target_link_libraries(nrniv_lib sparse13)
-target_link_libraries(nrniv_lib fmt::fmt)
-target_include_directories(nrniv_lib SYSTEM PUBLIC ${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen)
+add_cpp_git_information(nrniv_lib PRIVATE)
+target_link_libraries(nrniv_lib PRIVATE nrngnu)
+target_link_libraries(nrniv_lib PRIVATE sparse13)
+target_link_libraries(nrniv_lib PRIVATE fmt::fmt)
+# We feel at liberty to include across various subdirectories without clear interfaces, thus this
+# should be public at _build_ time, but not at install time.
+target_include_directories(
+  nrniv_lib SYSTEM PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/eigen>)
 cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
-target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")
+target_include_directories(nrniv_lib PUBLIC $<BUILD_INTERFACE:${NRN_OC_GEN}>)
+target_include_directories(nrniv_lib
+                           INTERFACE $<INSTALL_INTERFACE:${NRN_INSTALL_DATA_PREFIX}include>)
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  target_link_libraries(nrniv_lib nrnpython)
+  target_link_libraries(nrniv_lib PRIVATE nrnpython)
 endif()
 if(NRN_ENABLE_THREADS)
-  target_link_libraries(nrniv_lib Threads::Threads)
+  target_link_libraries(nrniv_lib PUBLIC Threads::Threads)
 endif()
 
 if(${NRN_ENABLE_DIGEST})
@@ -429,48 +426,50 @@ if(${NRN_ENABLE_DIGEST})
       APPEND
       PROPERTY INCLUDE_DIRECTORIES /opt/homebrew/Cellar/openssl@3/3.1.0/include)
     find_library(LIB_CRYPTO crypto PATHS /opt/homebrew/Cellar/openssl@3/3.1.0/lib REQUIRED)
-    target_link_libraries(nrniv_lib ${LIB_CRYPTO})
+    target_link_libraries(nrniv_lib PRIVATE ${LIB_CRYPTO})
   else()
-    target_link_libraries(nrniv_lib crypto)
+    target_link_libraries(nrniv_lib PRIVATE crypto)
   endif()
 endif()
 
 if(${NRN_ENABLE_ARCH_INDEP_EXP_POW})
   find_library(LIB_MPFR mpfr REQUIRED)
-  target_link_libraries(nrniv_lib ${LIB_MPFR})
+  target_link_libraries(nrniv_lib PRIVATE ${LIB_MPFR})
 endif()
 
 if(NRN_WINDOWS_BUILD)
-  target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
+  target_link_libraries(nrniv_lib PUBLIC ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
 else()
   if(READLINE_FOUND)
-    target_link_libraries(nrniv_lib ${Readline_LIBRARY})
+    target_link_libraries(nrniv_lib PRIVATE ${Readline_LIBRARY})
   else()
-    target_link_libraries(nrniv_lib readline)
+    target_link_libraries(nrniv_lib PRIVATE readline)
   endif()
 
   if(CURSES_FOUND)
-    target_link_libraries(nrniv_lib ${CURSES_LIBRARIES})
+    target_link_libraries(nrniv_lib PUBLIC ${CURSES_LIBRARIES})
   elseif(TERMCAP_FOUND)
-    target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES})
+    target_link_libraries(nrniv_lib PUBLIC ${TERMCAP_LIBRARIES})
   endif()
 endif()
 
 if(NRN_ENABLE_MUSIC AND NOT NRN_ENABLE_MPI_DYNAMIC)
-  target_link_libraries(nrniv_lib ${MUSIC_LIBRARY})
+  target_link_libraries(nrniv_lib PUBLIC ${MUSIC_LIBRARY})
 endif()
 
 if(NRN_ENABLE_PROFILING)
-  target_link_libraries(nrniv_lib ${likwid_LIBRARIES} ${CALIPER_LIB} ${LIKWID_LIB})
+  target_link_libraries(nrniv_lib PRIVATE ${likwid_LIBRARIES} ${CALIPER_LIB} ${LIKWID_LIB})
 endif()
 
-set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
+set_target_properties(nrniv_lib PROPERTIES EXPORT_NAME nrniv OUTPUT_NAME nrniv)
+target_compile_features(nrniv_lib PUBLIC cxx_std_17)
 
 # =============================================================================
 # Link with backward-cpp if enabled
 # =============================================================================
 if(NRN_USE_BACKWARD)
-  add_backward(nrniv_lib)
+  target_link_libraries(nrniv_lib PRIVATE Backward::Backward)
+  target_include_directories(nrniv_lib PRIVATE ${PROJECT_SOURCE_DIR}/external/backward)
 endif()
 
 # =============================================================================
@@ -485,13 +484,13 @@ if(NRN_ENABLE_MPI)
       list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
 
       add_library(${libname}_lib SHARED ${NRN_NRNMPI_SRC_FILES})
-      target_link_libraries(${libname}_lib fmt::fmt)
+      target_link_libraries(${libname}_lib PRIVATE fmt::fmt)
       target_include_directories(${libname}_lib BEFORE PUBLIC ${include})
       # Note that we do not link here to libmpi. That is dlopen first.
       if(MINGW) # type msmpi only
         add_dependencies(${libname}_lib nrniv_lib)
-        target_link_libraries(${libname}_lib ${MPI_C_LIBRARIES})
-        target_link_libraries(${libname}_lib nrniv_lib)
+        target_link_libraries(${libname}_lib PUBLIC ${MPI_C_LIBRARIES})
+        target_link_libraries(${libname}_lib PUBLIC nrniv_lib)
       endif()
       set_property(TARGET ${libname}_lib PROPERTY OUTPUT_NAME ${libname})
       install(TARGETS ${libname}_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
@@ -505,21 +504,21 @@ if(NRN_ENABLE_MPI)
       add_library(${libnrnmusic}_lib SHARED ${NRN_MUSIC_SRC_FILES})
       target_include_directories(${libnrnmusic}_lib BEFORE PUBLIC ${include})
       add_dependencies(${libnrnmusic}_lib nrniv_lib ${libname}_lib)
-      target_link_libraries(${libnrnmusic}_lib nrniv_lib ${libname}_lib)
+      target_link_libraries(${libnrnmusic}_lib PUBLIC nrniv_lib ${libname}_lib)
       set_property(TARGET ${libnrnmusic}_lib PROPERTY OUTPUT_NAME ${libnrnmusic})
       install(TARGETS ${libnrnmusic}_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
     endif()
   else()
-    target_link_libraries(nrniv_lib ${MPI_C_LIBRARIES})
+    target_link_libraries(nrniv_lib PUBLIC ${MPI_C_LIBRARIES})
     target_include_directories(nrniv_lib PUBLIC ${MPI_INCLUDE_PATH})
   endif()
 endif()
 
 if(NRN_ENABLE_INTERVIEWS)
   include_directories(${IV_INCLUDE_DIR})
-  target_link_libraries(nrniv_lib interviews)
+  target_link_libraries(nrniv_lib PRIVATE interviews)
 else()
-  target_include_directories(nrniv_lib PUBLIC ${NRN_IVOS_SRC_DIR})
+  target_include_directories(nrniv_lib PUBLIC $<BUILD_INTERFACE:${NRN_IVOS_SRC_DIR}>)
 endif()
 
 if(IV_ENABLE_X11_DYNAMIC)
@@ -550,7 +549,7 @@ if(IV_ENABLE_X11_DYNAMIC)
               ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME})
   endif()
 else()
-  target_link_libraries(nrniv_lib ${X11_LIBRARIES})
+  target_link_libraries(nrniv_lib PRIVATE ${X11_LIBRARIES})
 endif()
 
 # =============================================================================
@@ -561,17 +560,17 @@ cpp_cc_configure_sanitizers(TARGET nrniv)
 if(NOT "${NRN_LINK_FLAGS_FOR_ENTRY_POINTS}" STREQUAL "")
   target_link_options(nrniv PUBLIC ${NRN_LINK_FLAGS_FOR_ENTRY_POINTS})
 endif()
-target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_DL_LIBS})
+target_link_libraries(nrniv PRIVATE nrniv_lib ${INTERNAL_READLINE} ${CMAKE_DL_LIBS})
 if(NRN_ENABLE_THREADS)
-  target_link_libraries(nrniv Threads::Threads)
+  target_link_libraries(nrniv PRIVATE Threads::Threads)
 endif()
 if(NOT MINGW)
-  target_link_libraries(nrniv_lib ${CMAKE_DL_LIBS})
+  target_link_libraries(nrniv_lib PUBLIC ${CMAKE_DL_LIBS})
 endif()
 
 # TODO: unset in top level CMake is not working
 if(NOT NRN_MACOS_BUILD AND READLINE_FOUND)
-  target_link_libraries(nrniv ${Readline_LIBRARY})
+  target_link_libraries(nrniv PRIVATE ${Readline_LIBRARY})
 endif()
 
 # =============================================================================
@@ -582,11 +581,19 @@ endif()
 # For now, we keep this distinction as it reduces the PATH and is
 # expected when ctypes looks for dlls
 # ~~~
-install(TARGETS nrniv nocmodl modlunit DESTINATION ${NRN_INSTALL_DATA_PREFIX}/bin)
-install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+install(TARGETS nrniv modlunit RUNTIME DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin)
+install(
+  TARGETS nocmodl
+  DESTINATION ${NRN_INSTALL_DATA_PREFIX}bin
+  EXPORT NeuronTargets)
+install(
+  TARGETS nrniv_lib
+  DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR}
+  EXPORT NeuronTargets)
+
 if(LIBIVX11DYNAM_NAME)
   install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME}
-          DESTINATION ${NRN_INSTALL_DATA_PREFIX}/lib)
+          DESTINATION ${NRN_INSTALL_DATA_PREFIX}lib)
 endif()
 
 # =============================================================================
@@ -615,4 +622,4 @@ add_custom_target(
 
 # For the installation
 install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp
-        DESTINATION ${NRN_INSTALL_DATA_PREFIX}/share/nrn)
+        DESTINATION ${NRN_INSTALL_DATA_PREFIX}share/nrn)

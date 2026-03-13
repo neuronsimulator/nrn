@@ -163,7 +163,7 @@ Use the "Weights" button to pop up a NetEdgeGUI panel and enter the following we
 Simulation 
 ++++++++++
 
-In the NetGUI window, press the "Create" button. The :hoc:func:`topology()` statement should produce
+In the NetGUI window, press the "Create" button. The :func:`topology()` statement should produce
 
 .. code::
 
