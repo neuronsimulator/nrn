@@ -29,6 +29,7 @@ and more (use the links on the side or search).
    guide/index
    courses/exercises2018
    NEURON Discussion Board <https://github.com/neuronsimulator/nrn/discussions>
+   NEURON Forum (legacy) <https://neuron.yale.edu/phpBB>
    publications
    publications-using-neuron
 
@@ -187,4 +188,4 @@ Installation
    We have provide comprehensive instructions for adapting legacy MOD files that include `VERBATIM` blocks,
    or you might find already updated MOD files in the ModelDB GitHub repositories.
 
-See also the NEURON documentation `index <genindex.html>`_ and the `NEURON forum <https://www.neuron.yale.edu/phpbb/>`_.
+See also the NEURON documentation `index <genindex.html>`_ and the `NEURON Discussion Board <https://github.com/neuronsimulator/nrn/discussions>`_.
