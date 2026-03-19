@@ -5,7 +5,7 @@ set -eux
 #
 # Note: It should be invoked from nrn directory
 #
-# PREREQUESITES:
+# PREREQUISITES:
 #  - cmake (>=3.15.0)
 #  - flex
 #  - bison
@@ -172,6 +172,21 @@ build_wheel_portable() {
     fi
 
     if [ "${platform}" = 'macos' ]; then
+
+        # Force use of system Apple clang/clang++ on macOS runners to avoid
+        # linking against Homebrew LLVM (which bundles newer libunwind requiring
+        # macOS 14+). Apple's clang uses system libunwind (no separate dylib).
+        # This should prevent delocate from bundling libunwind.1.0.dylib at all.
+        if command -v /usr/bin/clang >/dev/null 2>&1; then
+            export CC=/usr/bin/clang
+            export CXX=/usr/bin/clang++
+            echo "Forcing system clang: CC=$CC CXX=$CXX"
+            # Prioritize /usr/bin over any Homebrew paths
+            export PATH="/usr/bin:$PATH"
+        else
+            echo "Warning: /usr/bin/clang not found; using default compiler"
+        fi
++
         if [ "$(uname -m)" = 'arm64' ]; then
             export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-11.0}"
         fi
