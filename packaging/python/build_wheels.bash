@@ -174,6 +174,28 @@ build_wheel_portable() {
     if [ "${platform}" = 'macos' ]; then
         if [ "$(uname -m)" = 'arm64' ]; then
             export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-11.0}"
+        else
+            # On Intel (x86_64) runners, especially newer ones like macos-15-intel,
+            # the toolchain (Xcode 16+) often links libraries (e.g. libunwind) with
+            # a minimum deployment target of 14.0 or higher. This causes delocate
+            # to fail when the wheel declares a lower target (e.g. 10.15).
+            #
+            # Detect runner macOS version and raise the target accordingly.
+            # - macOS 15.x (Sequoia) runners --> force 14.0 (or 15.0 if stricter needed)
+            # - macOS 14.x --> 14.0 is safe and consistent
+            # - Older runners --> keep existing fallback (10.15)
+            if command -v sw_vers >/dev/null 2>&1; then
+                os_ver=$(sw_vers -productVersion | cut -d. -f1)
+                if [[ "$os_ver" -ge 15 ]]; then
+                    export MACOSX_DEPLOYMENT_TARGET=14.0
+                    echo "macOS 15+ runner detected: forcing MACOSX_DEPLOYMENT_TARGET=14.0 to match toolchain libs"
+                elif [[ "$os_ver" -eq 14 ]]; then
+                    export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-14.0}"
+                    echo "macOS 14 runner: setting MACOSX_DEPLOYMENT_TARGET=14.0 (or existing value)"
+                fi
+            else
+                echo "Warning: sw_vers not found; MACOSX_DEPLOYMENT_TARGET unchanged"
+            fi
         fi
     fi
 
