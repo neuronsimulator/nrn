@@ -186,7 +186,7 @@ build_wheel_portable() {
         else
             echo "Warning: /usr/bin/clang not found; using default compiler"
         fi
-+
+
         if [ "$(uname -m)" = 'arm64' ]; then
             export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-11.0}"
         fi
