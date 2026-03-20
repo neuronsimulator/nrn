@@ -69,14 +69,6 @@ NEURON is uniquely designed for neuroscientists, not just engineers. You can:
    - **Actively developed** — new releases ~twice per year
    - **Well documented** — programmer's reference, tutorials, videos, and *The NEURON Book*
 
-.. admonition:: Key Strengths
-   :class: tip
-
-   - **Free and open source** — runs on Windows, macOS, Linux, and HPC
-   - **Widely used** — over 3,000 publications as of 2026
-   - **Actively developed** — new releases ~twice per year
-   - **Well documented** — programmer's reference, tutorials, videos, and *The NEURON Book*
-
 ----
 
 Core Concepts
@@ -100,8 +92,8 @@ Each section is continuous and can be connected to other sections to form a bran
 
    from neuron import n
 
-   soma = n.Section(name="soma")
-   dend = n.Section(name="dend")
+   soma = n.Section("soma")
+   dend = n.Section("dend")
    dend.connect(soma(1))  # Connect dend to the distal end (1) of soma
 
 **Segments (Compartments)** are the actual units of simulation.  NEURON automatically
@@ -133,7 +125,7 @@ This is done by **inserting mechanisms** into sections.
 .. code-block:: python
 
    soma.insert(n.hh)  # Hodgkin–Huxley Na+ and K+ channels
-   soma.gnabar_hh = 0.12  # Set sodium conductance
+   soma.hh.gnabar = 0.12  # Set sodium conductance
 
 Built-in mechanisms include ``hh`` (Hodgkin–Huxley), ``pas`` (passive leak), and many
 others. You can also define custom channels using **NMODL** (see below).
@@ -222,7 +214,7 @@ This is often the most confusing part for newcomers. NEURON uses **three languag
    .. code-block:: python
 
       from neuron import n, gui
-      soma = n.Section(name="soma")
+      soma = n.Section("soma")
       soma.L = 20  # µm
       soma.diam = 20
 
