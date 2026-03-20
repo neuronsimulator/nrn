@@ -335,11 +335,6 @@ Advanced Features
 
 Advantages over General-Purpose Simulators
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Advanced Features
------------------
-
-Advantages over General-Purpose Simulators
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 NEURON was born in John W. Moore's lab at Duke University in the 1980s. Unlike general-purpose
 simulators, NEURON's algorithms are **optimized for the structure of neuronal cable equations**,
