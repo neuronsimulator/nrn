@@ -169,14 +169,14 @@ For each segment, NEURON solves:
 
 .. math::
 
-   c_m \frac{\partial V}{\partial t} + I_{\text{ion}} = \frac{a}{2R_i} \frac{\partial^2 V}{\partial x^2}
+   c_m \frac{\partial v}{\partial t} + I_{\text{ion}} = \frac{a}{2R_i} \frac{\partial^2 v}{\partial x^2}
 
 Where:
-  - $c_m$ = membrane capacitance (typically 1 µF/cm²)
-  - $V$ = membrane potential (mV)
-  - $I_{\text{ion}}$ = sum of ionic currents from all mechanisms (mA/cm²)
-  - $a$ = radius of the cable (µm)
-  - $R_i$ = cytoplasmic (axial) resistivity (Ω·cm)
+  - :math:`c_m` = membrane capacitance (typically 1 µF/cm²)
+  - :math:`v` = membrane potential (mV)
+  - :math:`I_{\text{ion}}` = sum of ionic currents from all mechanisms (mA/cm²)
+  - :math:`a` = radius of the cable (µm)
+  - :math:`R_i` = cytoplasmic (axial) resistivity (Ω·cm)
 
 You don't need to be a calculus wizard to use NEURON, but understanding that the software
 is numerically integrating this equation helps you appreciate why:
