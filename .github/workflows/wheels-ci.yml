@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - master
+      - hines/explore
   pull_request:
     branches:
       - master
