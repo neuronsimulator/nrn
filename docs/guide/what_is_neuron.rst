@@ -226,7 +226,7 @@ This is often the most confusing part for newcomers. NEURON uses **three languag
       soma.L = 20  # µm
       soma.diam = 20
 
-2. **HOC** (High-Order Calculator, pronounced "hook")
+2. **HOC** (High-Order Calculator, pronounced "h-oak")
    
    The legacy proprietary language. You'll encounter it in older models and GUI-generated code.
    Still fully supported but not recommended for new projects.
