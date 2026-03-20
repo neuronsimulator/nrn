@@ -1,90 +1,151 @@
-.. NEURON documentation master file, created by
-   sphinx-quickstart on Fri Nov 15 09:46:09 2019.
+.. NEURON documentation master file
 
 The NEURON Simulator
 ====================
 
-NEURON is a simulator for neurons and networks of neurons that runs efficiently on your local machine, in the cloud, or on an HPC.
-Build and simulate models using Python, HOC, and/or NEURON's graphical interface. From this page you can watch :ref:`recorded NEURON classes <training_videos>`,
-read the :ref:`Programmer's reference <prog_ref>`,
-`browse the NEURON Discussion Board <https://github.com/neuronsimulator/nrn/discussions>`_,
-explore the `source code for over 850 NEURON models on ModelDB <https://modeldb.science/modellist/1882?all_simu=true>`_,
-and more (use the links on the side or search).
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Building:
-   :hidden:
-
-   install/install
-   cmake_doc/options.rst
-   install/developer
-
-.. toctree::
-   :maxdepth: 2
-   :caption: User documentation:
-   :hidden:
-
-   videos/index
-   guide/index
-   courses/exercises2018
-   NEURON Discussion Board <https://github.com/neuronsimulator/nrn/discussions>
-   NEURON Forum (legacy) <https://neuron.yale.edu/phpBB>
-   publications
-   publications-using-neuron
-
-
-
-.. toctree::
-   :maxdepth: 2
-   :caption: NEURON scripting:
-   :hidden:
-
-   scripting.rst
-   progref/index
-   otherscripting.rst
-   tutorials/index
-   rxd-tutorials/index
-   coreneuron/index
-
-.. toctree::
-   :maxdepth: 2
-   :caption: NMOD Language:
-   :hidden:
-
-   nmodl/language.rst
-   nmodl/transpiler/index.rst
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Developer documentation:
-   :hidden:
-
-   scm/index
-   dev/index
-   capi
-   doxygen
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Removed Features
-   :hidden:
-
-   removed_features.rst
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Changelog
-   :hidden:
-
-   changelog.md
-
+**NEURON** is the world's most widely used simulator for biophysically detailed models of
+neurons and networks. It runs efficiently on your laptop, in the cloud, or on HPC clusters
+with GPU acceleration. Build and simulate models using **Python**, **HOC**, or NEURON's
+graphical interface.
 
 .. image:: neuron-overview.jpg
    :width: 75%
    :align: center
    :alt: NEURON image with ShapePlot, code, and cortical column
 
+|
+
+.. grid:: 1 1 2 4
+   :gutter: 3
+
+   .. grid-item-card:: :octicon:`mortar-board` Learn
+      :link: tutorials/index
+      :link-type: doc
+
+      Work through hands-on Python tutorials that build from a single cell
+      to a complete network model.
+
+   .. grid-item-card:: :octicon:`book` Guides
+      :link: guide/index
+      :link-type: doc
+
+      Conceptual guides on cells, biophysics, units, networks, randomness,
+      and the GUI tools.
+
+   .. grid-item-card:: :octicon:`code` Reference
+      :link: progref/index
+      :link-type: doc
+
+      Complete programmer's reference for Python and HOC: classes, functions,
+      simulation control, and more.
+
+   .. grid-item-card:: :octicon:`comment-discussion` Community
+      :link: https://github.com/neuronsimulator/nrn/discussions
+      :link-type: url
+
+      Ask questions, share models, and connect with the NEURON community
+      on the Discussion Board.
+
+----
+
+.. _quick_start:
+
+Quick Start
+-----------
+
+.. code-block:: python
+
+   from neuron import n
+   from neuron.units import mV, ms
+
+   # Create a cell
+   soma = n.Section(name="soma")
+   soma.L = soma.diam = 20    # µm
+   soma.insert(n.hh)          # Hodgkin–Huxley channels
+
+   # Stimulate
+   stim = n.IClamp(soma(0.5))
+   stim.delay, stim.dur, stim.amp = 2 * ms, 0.1 * ms, 0.9  # nA
+
+   # Record
+   v = n.Vector().record(soma(0.5)._ref_v)
+   t = n.Vector().record(n._ref_t)
+
+   # Run
+   n.load_file("stdrun.hoc")
+   n.finitialize(-65 * mV)
+   n.continuerun(10 * ms)
+
+   # Plot (requires matplotlib)
+   import matplotlib.pyplot as plt
+   plt.plot(t, v)
+   plt.xlabel("Time (ms)")
+   plt.ylabel("Voltage (mV)")
+   plt.show()
+
+For a step-by-step walkthrough, start with the
+`Ball-and-Stick tutorial <tutorials/ball-and-stick-1.html>`_.
+
+----
+
+Key Concepts
+------------
+
+If you are new to NEURON, the following concepts will help you get oriented:
+
+.. grid:: 1 1 2 2
+   :gutter: 3
+
+   .. grid-item-card:: Sections & Segments
+      :link: progref/modelspec/programmatic/topology
+      :link-type: doc
+
+      NEURON models neurons as branching cable structures.
+      A **Section** is an unbranched length of cable (e.g. a soma, dendrite, or
+      axon segment). Each Section is divided into **segments** for numerical
+      accuracy.
+
+   .. grid-item-card:: Mechanisms & Channels
+      :link: progref/modelspec/programmatic/mechanisms
+      :link-type: doc
+
+      Biophysics are added to sections via **mechanisms** --- either built-in
+      (``hh``, ``pas``) or user-defined via NMODL. Mechanisms set conductances,
+      ion channel kinetics, and pumps.
+
+   .. grid-item-card:: Stimulation & Recording
+      :link: progref/simctrl/programmatic
+      :link-type: doc
+
+      Inject current with ``IClamp``, apply voltage clamps with ``SEClamp``,
+      or drive synapses with ``NetStim``. Record any variable with
+      ``Vector.record()``.
+
+   .. grid-item-card:: Networks & Connections
+      :link: progref/modelspec/programmatic/network
+      :link-type: doc
+
+      Connect cells with ``NetCon`` objects that link a source (e.g. spike
+      threshold crossing) to a target synapse with a weight and delay.
+      Use ``ParallelContext`` for distributed simulation.
+
+   .. grid-item-card:: Reaction-Diffusion (rxd)
+      :link: rxd-tutorials/index
+      :link-type: doc
+
+      Model intracellular and extracellular chemistry --- calcium dynamics,
+      IP3 signaling, buffering, and more --- using NEURON's built-in
+      reaction-diffusion framework.
+
+   .. grid-item-card:: Units
+      :link: guide/units
+      :link-type: doc
+
+      NEURON uses specific default units: time in **ms**, voltage in **mV**,
+      current in **nA**, length in **µm**, and conductance in **S/cm²**.
+      The ``neuron.units`` module makes unit conversions explicit.
+
+----
 
 Installation
 ------------
@@ -112,6 +173,7 @@ Installation
       .. code::
 
          pip3 install neuron
+
       For troubleshooting, see the `detailed installation instructions <install/install_instructions.md>`_.
 
 
@@ -179,13 +241,160 @@ Installation
 
    </script>
 
-|
+----
+
+Learning Resources
+------------------
+
+.. grid:: 1 1 2 3
+   :gutter: 3
+
+   .. grid-item-card:: :octicon:`video` Training Videos
+      :link: training_videos
+      :link-type: ref
+
+      Watch recorded NEURON courses covering everything from the basics to
+      advanced network modeling and parallel simulation.
+
+   .. grid-item-card:: :octicon:`pencil` Course Exercises
+      :link: exercises2018
+      :link-type: ref
+
+      Hands-on exercises from the NEURON summer course: GUI tools,
+      morphometric data, scripting, and more.
+
+   .. grid-item-card:: :octicon:`beaker` RXD Tutorials
+      :link: rxd-tutorials/index
+      :link-type: doc
+
+      Learn to model intracellular signaling, calcium waves, and
+      extracellular diffusion with reaction-diffusion.
+
+   .. grid-item-card:: :octicon:`globe` ModelDB
+      :link: https://modeldb.science/modellist/1882?all_simu=true
+      :link-type: url
+
+      Explore the source code for over 850 published NEURON models across
+      a wide range of neuroscience topics.
+
+   .. grid-item-card:: :octicon:`rocket` CoreNEURON
+      :link: coreneuron/index
+      :link-type: doc
+
+      Optimized compute engine for large-scale network simulations on
+      modern CPU and GPU architectures.
+
+   .. grid-item-card:: :octicon:`file-code` NMODL
+      :link: nmodl/language
+      :link-type: doc
+
+      Extend NEURON with custom ion channels, synapses, and other
+      mechanisms using the NMODL description language.
+
+----
+
 .. admonition:: About NEURON >= 9.0
    :class: tip
 
-   If you are experiencing compilation errors while using `nrnivmodl` with NEURON >=9.0,
+   If you are experiencing compilation errors while using ``nrnivmodl`` with NEURON >= 9.0,
    but not with previous 8.x releases, please see :ref:`porting-mechanisms-to-cpp`.
-   We have provide comprehensive instructions for adapting legacy MOD files that include `VERBATIM` blocks,
+   We have provided comprehensive instructions for adapting legacy MOD files that include ``VERBATIM`` blocks,
    or you might find already updated MOD files in the ModelDB GitHub repositories.
 
-See also the NEURON documentation `index <genindex.html>`_ and the `NEURON Discussion Board <https://github.com/neuronsimulator/nrn/discussions>`_.
+----
+
+.. grid:: 1 1 2 3
+   :gutter: 2
+
+   .. grid-item::
+
+      **Explore**
+
+      - `Source Code <https://github.com/neuronsimulator/nrn>`_
+      - `Documentation Index <genindex.html>`_
+      - :doc:`publications`
+      - :doc:`publications-using-neuron`
+
+   .. grid-item::
+
+      **Get Help**
+
+      - `Discussion Board <https://github.com/neuronsimulator/nrn/discussions>`_
+      - `Legacy Forum <https://neuron.yale.edu/phpBB>`_
+      - :ref:`FAQ <faq>`
+      - :ref:`Bio FAQ <bio_faq>`
+
+   .. grid-item::
+
+      **Develop**
+
+      - :doc:`dev/index`
+      - :doc:`scm/index`
+      - :doc:`capi`
+      - :doc:`doxygen`
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Building
+   :hidden:
+
+   install/install
+   cmake_doc/options.rst
+   install/developer
+
+.. toctree::
+   :maxdepth: 2
+   :caption: User Documentation
+   :hidden:
+
+   videos/index
+   guide/index
+   courses/exercises2018
+   NEURON Discussion Board <https://github.com/neuronsimulator/nrn/discussions>
+   NEURON Forum (legacy) <https://neuron.yale.edu/phpBB>
+   publications
+   publications-using-neuron
+
+.. toctree::
+   :maxdepth: 2
+   :caption: NEURON Scripting
+   :hidden:
+
+   scripting.rst
+   progref/index
+   otherscripting.rst
+   tutorials/index
+   rxd-tutorials/index
+   coreneuron/index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: NMOD Language
+   :hidden:
+
+   nmodl/language.rst
+   nmodl/transpiler/index.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Developer Documentation
+   :hidden:
+
+   scm/index
+   dev/index
+   capi
+   doxygen
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Removed Features
+   :hidden:
+
+   removed_features.rst
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Changelog
+   :hidden:
+
+   changelog.md
