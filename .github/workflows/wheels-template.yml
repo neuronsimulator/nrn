@@ -80,9 +80,21 @@ jobs:
           # For debugging
           bash --version
           cmake --version
-          # Uninstall libomp for compatibility with issue #817
-          brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
-          echo "$(brew --prefix)/opt/cmake/bin:$(brew --prefix)/opt/flex/bin:$(brew --prefix)/opt/bison/bin" >> $GITHUB_PATH
+
+          # Handle libomp: ensure it's installed (no longer pre-installed on recent macos-15 runners)
+          if ! brew list --versions libomp >/dev/null 2>&1; then
+            echo "libomp not found --> installing"
+            brew install libomp
+          else
+            echo "libomp already installed"
+          fi
+          brew link --force libomp || true
+
+          # Export paths so later build steps (cibuildwheel, compilers) can find libomp
+          LIBOMP_PREFIX=$(brew --prefix libomp)
+          echo "LDFLAGS=-L${LIBOMP_PREFIX}/lib ${LDFLAGS:-}" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I${LIBOMP_PREFIX}/include ${CPPFLAGS:-}" >> $GITHUB_ENV
+          echo "DYLD_LIBRARY_PATH=${LIBOMP_PREFIX}/lib:${DYLD_LIBRARY_PATH:-}" >> $GITHUB_ENV
 
       - name: Install readline
         if: runner.os == 'macOS'
