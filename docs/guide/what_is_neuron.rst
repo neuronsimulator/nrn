@@ -33,7 +33,7 @@ between knowing "what a brain cell is" and "how to turn a brain cell into math."
 
       :octicon:`code` **Programming**
 
-      `Jump to Languages ↓ <#the-two-language-system>`_
+      `Jump to Languages ↓ <#the-three-language-system>`_
 
    .. grid-item::
 
@@ -202,8 +202,8 @@ See also: `CVode <../../progref/simctrl/cvode.html>`_ in the Programmer's Refere
 
 ----
 
-The Two-Language System
-~~~~~~~~~~~~~~~~~~~~~~~~
+The Three-Language System
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is often the most confusing part for newcomers. NEURON uses **three languages**:
 
@@ -228,7 +228,7 @@ This is often the most confusing part for newcomers. NEURON uses **three languag
       create soma
       soma { L = 20  diam = 20 }
 
-   Python can call HOC and vice versa via ``n.hoc_execute()`` and ``nrnpython()``.
+   Python can call HOC and vice versa via dot notation, ``n("hoc_string")`` and ``nrnpython()``.
 
 3. **NMODL** (NEURON MODel Language)
    
