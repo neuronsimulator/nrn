@@ -41,14 +41,15 @@ The most commonly needed classes and topics, organized by task:
 
       Insert ion channels, set conductances, and define custom mechanisms.
 
-      - :ref:`mech` --- ``insert()``, range variables
+      - :ref:`mech`
+      - ``insert()``, range variables
       - `MechanismType <modelspec/programmatic/mechtype.html>`_ ---
         enumerate available mechanisms
       - `MechanismStandard <programming/mechstan.html>`_ ---
         inspect mechanism parameters
       - `KSChan <modelspec/programmatic/kschan.html>`_ ---
         kinetic scheme channels
-      - :ref:`nmodl` / :ref:`nmodl2` --- the NMODL language
+      - :ref:`nmodl` --- the NMODL language
 
    .. grid-item-card:: Stimulate & Record
       :class-title: sd-fs-5
