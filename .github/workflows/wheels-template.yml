@@ -80,6 +80,8 @@ jobs:
           # For debugging
           bash --version
           cmake --version
+          bison --version
+          flex --version
 
           # Handle libomp: ensure it's installed (no longer pre-installed on recent macos-15 runners)
           if ! brew list --versions libomp >/dev/null 2>&1; then
