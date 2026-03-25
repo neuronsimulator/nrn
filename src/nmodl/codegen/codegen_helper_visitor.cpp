@@ -593,7 +593,8 @@ void CodegenHelperVisitor::find_neuron_global_variables() {
                                    pair{"secondorder", "int"},
                                    pair{"pi", "double"}}) {
         auto sym = psymtab->lookup(var);
-        if (sym && (sym->get_read_count() || sym->get_write_count())) {
+        if (sym && (sym->get_read_count() || sym->get_write_count()
+            || info.variables_in_verbatim.find(var) != info.variables_in_verbatim.end())) {
             info.neuron_global_variables.emplace_back(std::move(sym), type);
         }
     }
