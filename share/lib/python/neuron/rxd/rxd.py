@@ -536,12 +536,20 @@ def _cxx_compile(formula):
         my_path = os.getenv("PATH")
         os.putenv(
             "PATH",
-            my_path + ";" + os.path.join(h.neuronhome(), "mingw", "mingw64", "bin"),
+            os.path.join(h.neuronhome(), "mingw", "mingw64", "bin")
+            + ";"
+            + os.path.join(h.neuronhome(), "bin")
+            + ";"
+            + my_path,
         )
-        os.system(gcc_cmd)
+        rflag = os.system(gcc_cmd)
         os.putenv("PATH", my_path)
     else:
-        os.system(gcc_cmd)
+        rflag = os.system(gcc_cmd)
+    if rflag != 0:
+        raise RxDException(
+            "Unable to compile reaction. Please check your environmental variables."
+        )
     # the rxdmath_dll appears necessary for using librxdmath under certain gcc/OS pairs
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
     dll = ctypes.cdll[f"{os.path.abspath(filename)}.so"]
