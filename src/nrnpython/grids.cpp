@@ -1126,6 +1126,7 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
                 break;
 
         if (i != nrnmpi_numprocs) {
+            total_reaction_states = 0;
             // number of offsets (Reaction) stored in each process
             proc_num_reactions = (int*) calloc(nrnmpi_numprocs, sizeof(int));
             proc_num_reactions[nrnmpi_myid] = react_offset_count;
@@ -1143,11 +1144,6 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
                 total_reaction_states += proc_num_reaction_states[i];
             }
 
-            // Move the offsets for each reaction so they reference the
-            // corresponding indices in the all_reaction_indices array
-            for (j = 0; j < react_offset_count; j++)
-                react_offsets[j] += start_state;
-
             all_reaction_indices = (int*) malloc(total_reaction_states * sizeof(int));
             all_reaction_states = (double*) calloc(total_reaction_states, sizeof(double));
 
@@ -1157,8 +1153,7 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
             nrnmpi_int_allgatherv_inplace(all_reaction_indices,
                                           proc_num_reaction_states,
                                           proc_num_reactions);
-            free(reaction_indices);
-            reaction_indices = NULL;
+
             multicompartment_inititalized = TRUE;
 
             // Handle currents induced by multicompartment reactions.
@@ -1237,7 +1232,7 @@ void ECS_Grid_node::do_multicompartment_reactions(double* result) {
         for (i = 0; i < total_reaction_states; i++)
             result[all_reaction_indices[i]] += all_reaction_states[i];
     }
-    memset(all_reaction_states, 0, total_reaction_states * sizeof(int));
+    memset(all_reaction_states, 0, total_reaction_states * sizeof(double));
 }
 
 // TODO: Implement this
@@ -1261,8 +1256,11 @@ ECS_Grid_node::~ECS_Grid_node() {
         free(proc_num_fluxes);
         free(proc_num_reaction_states);
         free(proc_num_reactions);
+        free(reaction_indices);
     }
 #endif
+    free(all_reaction_indices);
+    reaction_indices = NULL;
     free(all_currents);
     free(ecs_adi_dir_x);
     free(ecs_adi_dir_y);
