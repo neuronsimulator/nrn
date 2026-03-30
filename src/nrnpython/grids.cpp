@@ -1094,10 +1094,15 @@ int ECS_Grid_node::add_multicompartment_reaction(int nstates, int* indices, int 
 void ECS_Grid_node::clear_multicompartment_reaction() {
     free(all_reaction_states);
     free(react_offsets);
-    if (multicompartment_inititalized)
+    if (multicompartment_inititalized) {
         free(all_reaction_indices);
-    else
+#if NRNMPI
+        if (nrnmpi_use)
+            free(reaction_indices);
+#endif
+    } else {
         free(reaction_indices);
+    }
     all_reaction_indices = NULL;
     all_reaction_states = NULL;
     reaction_indices = NULL;
@@ -1128,11 +1133,9 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
         if (i != nrnmpi_numprocs) {
             total_reaction_states = 0;
             // number of offsets (Reaction) stored in each process
-            proc_num_reactions = (int*) calloc(nrnmpi_numprocs, sizeof(int));
             proc_num_reactions[nrnmpi_myid] = react_offset_count;
 
             // number of states/indices stored in each process
-            proc_num_reaction_states = (int*) calloc(nrnmpi_numprocs, sizeof(int));
             proc_num_reaction_states[nrnmpi_myid] = react_offsets[react_offset_count - 1];
             nrnmpi_int_allgather_inplace(proc_num_reactions, 1);
             nrnmpi_int_allgather_inplace(proc_num_reaction_states, 1);
@@ -1143,10 +1146,11 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
                 proc_num_reactions[i] = total_reaction_states;
                 total_reaction_states += proc_num_reaction_states[i];
             }
+            free(all_reaction_indices);
+            free(all_reaction_states);
 
             all_reaction_indices = (int*) malloc(total_reaction_states * sizeof(int));
             all_reaction_states = (double*) calloc(total_reaction_states, sizeof(double));
-
             memcpy(&all_reaction_indices[start_state],
                    reaction_indices,
                    proc_num_reaction_states[nrnmpi_myid] * sizeof(int));
@@ -1157,15 +1161,16 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
             multicompartment_inititalized = TRUE;
 
             // Handle currents induced by multicompartment reactions.
+            int local_induced_current_count = induced_current_count;
             proc_induced_current_count[nrnmpi_myid] = induced_current_count;
             nrnmpi_int_allgather_inplace(proc_induced_current_count, 1);
+
             proc_induced_current_offset[0] = 0;
             for (i = 1; i < nrnmpi_numprocs; i++)
                 proc_induced_current_offset[i] = proc_induced_current_offset[i - 1] +
                                                  proc_induced_current_count[i - 1];
             induced_current_count = proc_induced_current_offset[nrnmpi_numprocs - 1] +
                                     proc_induced_current_count[nrnmpi_numprocs - 1];
-
             all_scales = (double*) malloc(induced_current_count * sizeof(double));
             all_indices = (int*) malloc(induced_current_count * sizeof(int));
             memcpy(&all_scales[proc_induced_current_offset[nrnmpi_myid]],
@@ -1188,8 +1193,10 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
             free(induced_currents);
             induced_currents_scale = all_scales;
             induced_currents_index = all_indices;
-            induced_currents = (double*) malloc(induced_current_count * sizeof(double));
+            induced_currents = (double*) calloc(induced_current_count, sizeof(double));
             local_induced_currents = &induced_currents[proc_induced_current_offset[nrnmpi_myid]];
+            // set to local count to avoid accumulation with repeated calls
+            induced_current_count = local_induced_current_count;
         }
     } else {
         if (!multicompartment_inititalized) {
@@ -1197,7 +1204,7 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
             all_reaction_indices = reaction_indices;
             all_reaction_states = (double*) calloc(total_reaction_states, sizeof(double));
             multicompartment_inititalized = TRUE;
-            induced_currents = (double*) malloc(induced_current_count * sizeof(double));
+            induced_currents = (double*) calloc(induced_current_count, sizeof(double));
             local_induced_currents = induced_currents;
         }
     }
@@ -1207,7 +1214,7 @@ void ECS_Grid_node::initialize_multicompartment_reaction() {
         all_reaction_indices = reaction_indices;
         all_reaction_states = (double*) calloc(total_reaction_states, sizeof(double));
         multicompartment_inititalized = TRUE;
-        induced_currents = (double*) malloc(induced_current_count * sizeof(double));
+        induced_currents = (double*) calloc(induced_current_count, sizeof(double));
         local_induced_currents = induced_currents;
     }
 #endif

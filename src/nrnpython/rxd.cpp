@@ -991,8 +991,6 @@ extern "C" NRN_EXPORT void register_rate(int nspecies,
     react->params_for_reaction = (double**) malloc(react->num_params * sizeof(double*));
     for (i = 0; i < react->num_params; i++)
         react->params_for_reaction[i] = (double*) malloc(react->num_regions * sizeof(double));
-    if (react->num_mult > 0)
-        react->mc_mult = (double*) malloc(react->num_mult * sizeof(double));
 
     if (_reactions == NULL) {
         _reactions = react;
@@ -1026,14 +1024,18 @@ extern "C" NRN_EXPORT void clear_rates() {
                 free(react->ecs_state[i]);
             }
         }
+        if (react->num_ecs_species + react->num_ecs_params > 0) {
+            free(react->ecs_index);
+            free(react->ecs_state);
+            free(react->state_idx);
+            free(react->ecs_offset_index);
+        }
         if (react->num_mult > 0) {
             for (i = 0; i < react->num_mult; i++)
                 free(react->mc_multiplier[i]);
             free(react->mc_multiplier);
         }
 
-        free(react->state_idx);
-        free(react->ecs_state);
         prev = react;
 
         if (react->num_mult > 0)
@@ -1052,10 +1054,15 @@ extern "C" NRN_EXPORT void clear_rates() {
         }
         for (i = 0; i < react->num_species; i++) {
             free(react->states_for_reaction[i]);
+            free(react->states_for_reaction_dx[i]);
             free(react->result_array[i]);
+            free(react->result_array_dx[i]);
         }
         free(react->states_for_reaction);
+        free(react->states_for_reaction_dx);
+
         free(react->result_array);
+        free(react->result_array_dx);
         for (i = 0; i < react->num_params; i++) {
             free(react->params_for_reaction[i]);
         }
