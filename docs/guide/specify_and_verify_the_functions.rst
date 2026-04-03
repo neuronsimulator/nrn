@@ -18,7 +18,7 @@ Under apicals_x, we select gnabar_hh
 
 . . . and the right lower corner of the CellBuilder shows us that the default function is a Boltzmann function.
 
-Our model isn't smart enough for a Boltzmann function. We just want a plain, dumb, linear ramp.
+Our model doesn't require a Boltzmann function. We just want a plain, simple, linear ramp.
 
 That's easy enough--we click on f(p) in the right panel and scroll down to Ramp . . .
 
