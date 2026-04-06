@@ -6,7 +6,7 @@ How to get started with NEURON
 To learn the basics about using NEURON:
 -------------
 
-Don't forget to join `The NEURON Forum <https://www.neuron.yale.edu/phpBB/index.php>`_.
+You'll likely have questions. Ask and answer questions at the `NEURON Discussion Board <https://github.com/neuronsimulator/nrn/discussions>`_
 
 Then
 
