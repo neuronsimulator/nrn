@@ -608,8 +608,10 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock& node) {
         if (solve_method == codegen::naming::SPARSE_METHOD ||
             solve_method == codegen::naming::DERIVIMPLICIT_METHOD) {
             solve_non_linear_system(node, pre_solve_statements);
+        } else if (solve_method.empty()) {
+            // This derivative block has no solver method, do nothing.
         } else {
-            logger->error("SympySolverVisitor :: Solve method {} not supported", solve_method);
+            logger->error("SympySolverVisitor :: Solve method \"{}\" not supported", solve_method);
         }
     }
 }
