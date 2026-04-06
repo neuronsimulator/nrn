@@ -744,7 +744,9 @@ std::vector<std::string> CodegenNeuronCppVisitor::print_verbatim_setup(
         print_macro(fmt::format("_l{}", mod_name), get_variable_name(current_name));
     }
 
+    print_macro("v", get_variable_name("v"));
     print_macro(naming::NTHREAD_T_VARIABLE, "nt->_t");
+    print_macro(naming::NTHREAD_DT_VARIABLE, "nt->_dt");
     print_macro("_nt", "nt");
     print_macro("_tqitem", "tqitem");
 
