@@ -1180,9 +1180,8 @@ void CodegenCppVisitor::visit_eigen_linear_solver_block(const ast::EigenLinearSo
 }
 
 
-std::vector<int> get_conserve_variable_indices(
-        const ast::Conserve& conserve, const std::vector<std::string> states)
-{
+std::vector<int> get_conserve_variable_indices(const ast::Conserve& conserve,
+                                               const std::vector<std::string> states) {
     const auto vars = collect_nodes(*conserve.get_react(),
                                     {
                                         ast::AstNodeType::NAME,
@@ -1222,12 +1221,15 @@ void CodegenCppVisitor::visit_matexp_block(const ast::MatexpBlock& node) {
     const auto& conserve_statements = node.get_conserve();
     if (node.get_steadystate()->eval() && !conserve_statements.empty()) {
         for (int i = 0; i < states.size(); i++) {
-            printer->fmt_line("nmodl_eigen_x[{}] = 0;"); // First zero everything
+            printer->fmt_line("nmodl_eigen_x[{}] = 0;");  // First zero everything
         }
         for (int i = 0; i < conserve_statements.size(); i++) {
             const auto var_indices = get_conserve_variable_indices(*conserve_statements[i], states);
             printer->add_indent();
-            printer->fmt_text("const {} nmodl_conserve_steadystate_{} = {}(", float_type, i, float_type);
+            printer->fmt_text("const {} nmodl_conserve_steadystate_{} = {}(",
+                              float_type,
+                              i,
+                              float_type);
             conserve_statements[i]->get_expr()->accept(*this);
             printer->fmt_text(") / {}.0;", var_indices.size());
             printer->add_newline();
