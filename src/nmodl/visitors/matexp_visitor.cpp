@@ -261,7 +261,7 @@ std::shared_ptr<ast::Statement> MatexpVisitor::transform_decay_statement(
     // Write NMODL to assign to the Jacobian matrix
     const std::string jf_src = "nmodl_eigen_j[" + std::to_string(jf_src_idx) + "]";
     const std::string kf_nmodl = to_nmodl(kf);
-    return create_statement(jf_src + " = " + jf_src + " - (" + kf_nmodl + ") * dt");
+    return create_statement(jf_src + " = " + jf_src + " - (" + kf_nmodl + ") * nmodl_dt");
 }
 
 
@@ -288,10 +288,10 @@ std::vector<std::shared_ptr<ast::Statement>> MatexpVisitor::transform_reaction_s
     const std::string jb_dst = "nmodl_eigen_j[" + std::to_string(jb_dst_idx) + "]";
     const std::string kf_nmodl = to_nmodl(kf);
     const std::string kb_nmodl = to_nmodl(kb);
-    const std::string jf_n_string = jf_src + " = " + jf_src + " - (" + kf_nmodl + ") * dt";
-    const std::string jf_p_string = jf_dst + " = " + jf_dst + " + (" + kf_nmodl + ") * dt";
-    const std::string jb_n_string = jb_src + " = " + jb_src + " - (" + kb_nmodl + ") * dt";
-    const std::string jb_p_string = jb_dst + " = " + jb_dst + " + (" + kb_nmodl + ") * dt";
+    const std::string jf_n_string = jf_src + " = " + jf_src + " - (" + kf_nmodl + ") * nmodl_dt";
+    const std::string jf_p_string = jf_dst + " = " + jf_dst + " + (" + kf_nmodl + ") * nmodl_dt";
+    const std::string jb_n_string = jb_src + " = " + jb_src + " - (" + kb_nmodl + ") * nmodl_dt";
+    const std::string jb_p_string = jb_dst + " = " + jb_dst + " + (" + kb_nmodl + ") * nmodl_dt";
     const auto& jf_n = create_statement(jf_n_string);
     const auto& jf_p = create_statement(jf_p_string);
     const auto& jb_n = create_statement(jb_n_string);

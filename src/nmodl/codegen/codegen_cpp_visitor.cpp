@@ -1210,6 +1210,17 @@ void CodegenCppVisitor::visit_matexp_block(const ast::MatexpBlock& node) {
     const std::string vector_type = "Eigen::Matrix<" + float_type + ", " + n_states + ", 1>";
     const std::string matrix_type = "Eigen::Matrix<" + float_type + ", " + n_states + ", " +
                                     n_states + ">";
+    // Setup the solver's instance of dt
+    if (node.get_steadystate()->eval()) {
+        printer->fmt_line("{} nmodl_dt = 24.0 * 60.0 * 60.0 * 1000.0;", float_type);
+    } else {
+        printer->add_indent();
+        printer->fmt_text("{} nmodl_dt = ", float_type);
+        auto dt_var = ast::Name(std::make_shared<ast::String>("dt"));
+        dt_var.accept(*this);
+        printer->add_text(";");
+        printer->add_newline();
+    }
     // Setup the Jacobian matrix
     printer->add_newline();
     printer->fmt_line("{} nmodl_eigen_jm = {}::Zero();", matrix_type, matrix_type);

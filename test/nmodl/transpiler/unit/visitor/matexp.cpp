@@ -71,10 +71,10 @@ SCENARIO("Solve a KINETIC block using the matexp method", "[visitor][matexp]") {
         std::string expect_output = R"(
         INITIAL {
             MATEXP_SOLVE (1) {
-                nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
-                nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
-                nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*dt
-                nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*dt
+                nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*nmodl_dt
+                nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*nmodl_dt
+                nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*nmodl_dt
+                nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*nmodl_dt
             } CONSERVE(CONSERVE x+y = 3.14159)
         }
 
@@ -92,10 +92,10 @@ SCENARIO("Solve a KINETIC block using the matexp method", "[visitor][matexp]") {
         }
 
         MATEXP_SOLVE (0) {
-            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
-            nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
-            nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*dt
-            nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*dt
+            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*nmodl_dt
+            nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*nmodl_dt
+            nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*nmodl_dt
+            nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*nmodl_dt
         } CONSERVE(CONSERVE x+y = 3.14159)
         )";
         THEN("Replace the kinetic block with its solution in a procedure") {
@@ -176,7 +176,7 @@ SCENARIO("Test exponential decay using the matexp method", "[visitor][matexp]") 
         std::string expect_output = R"(
         INITIAL {
             MATEXP_SOLVE (1) {
-                nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
+                nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*nmodl_dt
             }
         }
 
@@ -192,7 +192,7 @@ SCENARIO("Test exponential decay using the matexp method", "[visitor][matexp]") 
         }
 
         MATEXP_SOLVE (0) {
-            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
+            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*nmodl_dt
         }
         )";
         THEN("Replace the kinetic block with its solution in a procedure") {
@@ -239,10 +239,10 @@ SCENARIO("Mix matexp and sparse solver methods", "[visitor][matexp]") {
         }
 
         MATEXP_SOLVE (0) {
-            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*dt
-            nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
-            nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*dt
-            nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*dt
+            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(a)*nmodl_dt
+            nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*nmodl_dt
+            nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*nmodl_dt
+            nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*nmodl_dt
         }
         )";
         THEN(
@@ -284,16 +284,16 @@ SCENARIO("Solve multiple blocks with matexp", "[visitor][matexp]") {
         std::string expect_output = R"(
         INITIAL {
             MATEXP_SOLVE (1) {
-                nmodl_eigen_j[0] = nmodl_eigen_j[0]-(1.1)*dt
-                nmodl_eigen_j[1] = nmodl_eigen_j[1]+(1.1)*dt
-                nmodl_eigen_j[5] = nmodl_eigen_j[5]-(2.2)*dt
-                nmodl_eigen_j[4] = nmodl_eigen_j[4]+(2.2)*dt
+                nmodl_eigen_j[0] = nmodl_eigen_j[0]-(1.1)*nmodl_dt
+                nmodl_eigen_j[1] = nmodl_eigen_j[1]+(1.1)*nmodl_dt
+                nmodl_eigen_j[5] = nmodl_eigen_j[5]-(2.2)*nmodl_dt
+                nmodl_eigen_j[4] = nmodl_eigen_j[4]+(2.2)*nmodl_dt
             }
             MATEXP_SOLVE (1) {
-                nmodl_eigen_j[10] = nmodl_eigen_j[10]-(3.3)*dt
-                nmodl_eigen_j[11] = nmodl_eigen_j[11]+(3.3)*dt
-                nmodl_eigen_j[15] = nmodl_eigen_j[15]-(4.4)*dt
-                nmodl_eigen_j[14] = nmodl_eigen_j[14]+(4.4)*dt
+                nmodl_eigen_j[10] = nmodl_eigen_j[10]-(3.3)*nmodl_dt
+                nmodl_eigen_j[11] = nmodl_eigen_j[11]+(3.3)*nmodl_dt
+                nmodl_eigen_j[15] = nmodl_eigen_j[15]-(4.4)*nmodl_dt
+                nmodl_eigen_j[14] = nmodl_eigen_j[14]+(4.4)*nmodl_dt
             }
         }
 
@@ -308,17 +308,17 @@ SCENARIO("Solve multiple blocks with matexp", "[visitor][matexp]") {
         }
 
         MATEXP_SOLVE (0) {
-            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(1.1)*dt
-            nmodl_eigen_j[1] = nmodl_eigen_j[1]+(1.1)*dt
-            nmodl_eigen_j[5] = nmodl_eigen_j[5]-(2.2)*dt
-            nmodl_eigen_j[4] = nmodl_eigen_j[4]+(2.2)*dt
+            nmodl_eigen_j[0] = nmodl_eigen_j[0]-(1.1)*nmodl_dt
+            nmodl_eigen_j[1] = nmodl_eigen_j[1]+(1.1)*nmodl_dt
+            nmodl_eigen_j[5] = nmodl_eigen_j[5]-(2.2)*nmodl_dt
+            nmodl_eigen_j[4] = nmodl_eigen_j[4]+(2.2)*nmodl_dt
         }
 
         MATEXP_SOLVE (0) {
-            nmodl_eigen_j[10] = nmodl_eigen_j[10]-(3.3)*dt
-            nmodl_eigen_j[11] = nmodl_eigen_j[11]+(3.3)*dt
-            nmodl_eigen_j[15] = nmodl_eigen_j[15]-(4.4)*dt
-            nmodl_eigen_j[14] = nmodl_eigen_j[14]+(4.4)*dt
+            nmodl_eigen_j[10] = nmodl_eigen_j[10]-(3.3)*nmodl_dt
+            nmodl_eigen_j[11] = nmodl_eigen_j[11]+(3.3)*nmodl_dt
+            nmodl_eigen_j[15] = nmodl_eigen_j[15]-(4.4)*nmodl_dt
+            nmodl_eigen_j[14] = nmodl_eigen_j[14]+(4.4)*nmodl_dt
         }
         )";
         THEN("All KINETIC block are solved") {

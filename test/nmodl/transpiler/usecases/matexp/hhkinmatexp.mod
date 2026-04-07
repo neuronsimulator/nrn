@@ -79,7 +79,7 @@ BREAKPOINT {
  
 INITIAL {
     rates(v)
-    SOLVE states STEADYSTATE sparse
+    SOLVE states STEADYSTATE matexp
 }
 
 ? states
