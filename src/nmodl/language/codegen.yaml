@@ -101,11 +101,11 @@
                                   brief: "Block of statements that assign to the Jacobian matrix"
                                   type: StatementBlock
                               - conserve:
-                                  brief: "The states always add up to this value"
-                                  type: Expression
-                                  optional: true
-                                  prefix: {value: " CONSERVE = "}
-                                  suffix: {value: ""}
+                                  brief: "Conserve statements found in jacobian block"
+                                  type: Conserve
+                                  vector: true
+                                  prefix: {value: " CONSERVE("}
+                                  suffix: {value: ")"}
                         - CvodeBlock:
                             nmodl: "CVODE_BLOCK "
                             members:

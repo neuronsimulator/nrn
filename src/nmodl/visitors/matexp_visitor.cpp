@@ -85,15 +85,13 @@ void MatexpVisitor::visit_kinetic_block(ast::KineticBlock& node) {
 }
 
 
-// Helper class for finding, processing, and removing CONSERVE statements
-class ExtractConserveVisitor: public AstVisitor {
+// Helper class for finding, checking, and removing CONSERVE statements
+class CollectConserveVisitor: public AstVisitor {
   public:
-    std::shared_ptr<ast::Expression> conserve_sum;
-    std::vector<std::shared_ptr<symtab::Symbol>> states;
+    std::vector<std::shared_ptr<ast::Conserve>> conserve_statements;
 
-    explicit ExtractConserveVisitor(std::vector<std::shared_ptr<symtab::Symbol>>& states) {
-        this->states = states;
-        this->conserve_sum = nullptr;
+    explicit CollectConserveVisitor() {
+        this->conserve_statements.clear();
     }
     void visit_statement_block(ast::StatementBlock& node) override {
         node.visit_children(*this);
@@ -105,38 +103,34 @@ class ExtractConserveVisitor: public AstVisitor {
         }
     }
     void visit_conserve(ast::Conserve& node) override {
-        if (conserve_sum) {
-            logger->error("MatexpVisitor :: Error : multiple CONSERVE statements unsupported");
-            return;
-        }
-        // Make a sorted list of state names
-        std::vector<std::string> state_names;
-        for (const auto& state: states) {
-            state_names.push_back(state->get_name());
-        }
-        std::sort(state_names.begin(), state_names.end());
         // Unpack the conserve statement
         const auto expr = node.get_expr();
         const auto react = node.get_react();
-        const auto vars = collect_nodes(*react,
-                                        {
-                                            ast::AstNodeType::NAME,
-                                        });
+        // Check the CONSERVE statement is usable.
         const bool primes = node_exists(*react,
                                         {
                                             ast::AstNodeType::PRIME_NAME,
                                         });
-        // Check that the conserved value is the sum of the state variables
+        if (primes) {
+            logger->error("MatexpVisitor :: Error : CONSERVE statement uses derivative");
+            return;
+        }
+        const auto vars = collect_nodes(*react,
+                                        {
+                                            ast::AstNodeType::NAME,
+                                        });
+        const auto num_vars = vars.size();
         std::vector<std::string> var_names;
         for (const auto& var: vars) {
             var_names.push_back(to_nmodl(var));
         }
         std::sort(var_names.begin(), var_names.end());
-        if (var_names != state_names || primes) {
-            logger->error("MatexpVisitor :: Error : Ignoring irregular CONSERVE statement");
+        std::unique(var_names.begin(), var_names.end());
+        if (var_names.size() != num_vars) {
+            logger->error("MatexpVisitor :: Error : CONSERVE statement is non-linear");
             return;
         }
-        conserve_sum = expr;
+        conserve_statements.push_back(std::make_shared<ast::Conserve>(node));
     }
 };
 
@@ -195,12 +189,12 @@ std::shared_ptr<ast::MatexpBlock> MatexpVisitor::solve_kinetic_block(const ast::
     this->visit_statement_block(*jacobian_block);
     in_jacobian_block = false;
 
-    ExtractConserveVisitor conserve_visitor(states);
+    CollectConserveVisitor conserve_visitor;
     conserve_visitor.visit_statement_block(*jacobian_block);
 
     return std::make_shared<ast::MatexpBlock>(std::make_shared<ast::Boolean>(steadystate),
                                               jacobian_block,
-                                              conserve_visitor.conserve_sum);
+                                              conserve_visitor.conserve_statements);
 }
 
 
