@@ -1180,6 +1180,8 @@ void CodegenCppVisitor::visit_eigen_linear_solver_block(const ast::EigenLinearSo
 }
 
 
+/// Read the names of the state variable being conserved,
+/// and return their indices into the given list of states.
 std::vector<int> get_conserve_variable_indices(const ast::Conserve& conserve,
                                                const std::vector<std::string> states) {
     const auto vars = collect_nodes(*conserve.get_react(),
@@ -1221,7 +1223,7 @@ void CodegenCppVisitor::visit_matexp_block(const ast::MatexpBlock& node) {
     const auto& conserve_statements = node.get_conserve();
     if (node.get_steadystate()->eval() && !conserve_statements.empty()) {
         for (int i = 0; i < states.size(); i++) {
-            printer->fmt_line("nmodl_eigen_x[{}] = 0;");  // First zero everything
+            printer->fmt_line("nmodl_eigen_x[{}] = 0;", i);  // First zero everything
         }
         for (int i = 0; i < conserve_statements.size(); i++) {
             const auto var_indices = get_conserve_variable_indices(*conserve_statements[i], states);
@@ -1234,7 +1236,9 @@ void CodegenCppVisitor::visit_matexp_block(const ast::MatexpBlock& node) {
             printer->fmt_text(") / {}.0;", var_indices.size());
             printer->add_newline();
             for (const auto& state_index: var_indices) {
-                printer->fmt_line("nmodl_eigen_x[{}] = nmodl_conserve_steadystate_{};", i);
+                printer->fmt_line("nmodl_eigen_x[{}] = nmodl_conserve_steadystate_{};",
+                                  state_index,
+                                  i);
             }
         }
     } else {
@@ -1261,7 +1265,7 @@ void CodegenCppVisitor::visit_matexp_block(const ast::MatexpBlock& node) {
         printer->add_text(") / (");
         for (int var_index = 0; var_index < var_indices.size(); var_index++) {
             const auto& state_index = var_indices[var_index];
-            printer->fmt_text("{}", states[state_index]);
+            printer->fmt_text("nmodl_eigen_y[{}]", state_index);
             if (var_index < var_indices.size() - 1) {
                 printer->add_text(" + ");
             }

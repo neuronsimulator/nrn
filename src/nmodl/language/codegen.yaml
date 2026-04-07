@@ -106,6 +106,7 @@
                                   vector: true
                                   prefix: {value: " CONSERVE("}
                                   suffix: {value: ")"}
+                                  separator: ", "
                         - CvodeBlock:
                             nmodl: "CVODE_BLOCK "
                             members:

@@ -75,7 +75,7 @@ SCENARIO("Solve a KINETIC block using the matexp method", "[visitor][matexp]") {
                 nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
                 nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*dt
                 nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*dt
-            } CONSERVE = 3.14159
+            } CONSERVE(CONSERVE x+y = 3.14159)
         }
 
         BREAKPOINT {
@@ -96,9 +96,55 @@ SCENARIO("Solve a KINETIC block using the matexp method", "[visitor][matexp]") {
             nmodl_eigen_j[1] = nmodl_eigen_j[1]+(a)*dt
             nmodl_eigen_j[3] = nmodl_eigen_j[3]-(b)*dt
             nmodl_eigen_j[2] = nmodl_eigen_j[2]+(b)*dt
-        } CONSERVE = 3.14159
+        } CONSERVE(CONSERVE x+y = 3.14159)
         )";
         THEN("Replace the kinetic block with its solution in a procedure") {
+            auto result = run_matexp_visitor(input_nmodl, true);
+            REQUIRE(reindent_text(expect_output) == reindent_text(result));
+        }
+    }
+}
+
+SCENARIO("Solve multiple CONSERVE using the matexp method", "[visitor][matexp]") {
+    GIVEN("KINETIC block with multiple CONSERVE statements") {
+        std::string input_nmodl = R"(
+        INITIAL {
+            SOLVE test_kin STEADYSTATE matexp
+        }
+
+        BREAKPOINT {
+            SOLVE test_kin METHOD matexp
+        }
+
+        STATE {
+            x
+            y
+            z
+        }
+
+        KINETIC test_kin {
+            CONSERVE x + y = 3.14159
+            CONSERVE z = 42
+        })";
+        std::string expect_output = R"(
+        INITIAL {
+            MATEXP_SOLVE (1) {
+            } CONSERVE(CONSERVE x+y = 3.14159, CONSERVE z = 42)
+        }
+
+        BREAKPOINT {
+        }
+
+        STATE {
+            x
+            y
+            z
+        }
+
+        MATEXP_SOLVE (0) {
+        } CONSERVE(CONSERVE x+y = 3.14159, CONSERVE z = 42)
+        )";
+        THEN("Accept multiple CONSERVE statements as valid") {
             auto result = run_matexp_visitor(input_nmodl, true);
             REQUIRE(reindent_text(expect_output) == reindent_text(result));
         }
