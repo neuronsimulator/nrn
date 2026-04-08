@@ -5,16 +5,34 @@
 
 namespace neuron {
 /**
- * @brief Redirect sprintf to snprintf if the buffer size can be deduced.
+ * @brief Type-safe sprintf replacement using snprintf with automatic buffer size deduction
  *
- * This is useful to avoid deprecation warnings for sprintf. In general it works if the buffer is
- * something like char buf[512] in the calling scope, but not if it is char* or char buf[].
+ * Wraps std::snprintf and deduces the buffer size when the destination is a fixed-size
+ * array (e.g. `char buf[512]`). Prevents buffer overflows and avoids deprecation warnings
+ * from using plain `sprintf`.
+ *
+ * When no format arguments are provided, uses a diagnostic pragma to suppress the common
+ * -Wformat-security warning that would otherwise trigger on non-literal format strings
+ * (even though string literals are overwhelmingly the typical use case here).
+ *
+ * @note Does **not** work with pointers (`char*`) or runtime-sized arrays (`char buf[]`).
+ *       In those cases, call `snprintf` directly with an explicit size.
+ *
+ * @tparam N     Automatically deduced buffer size
+ * @param  buf   Fixed-size character array to write into
+ * @param  fmt   Format string (typically a string literal)
+ * @param  args  Optional format arguments
+ * @return       Number of characters written (excluding null terminator), or negative on error
  */
 template <std::size_t N, typename... Args>
 int Sprintf(char (&buf)[N], const char* fmt, Args&&... args) {
     if constexpr (sizeof...(Args) == 0) {
-        // try and work around a false positive from -Wformat-security when there are no arguments
-        return std::snprintf(buf, N, "%s", fmt);
+        // work around a false positive from -Wformat-security when there are no arguments
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-security"
+        auto i = std::snprintf(buf, N, fmt);
+#pragma GCC diagnostic pop
+        return i;
     } else {
         return std::snprintf(buf, N, fmt, std::forward<Args>(args)...);
     }

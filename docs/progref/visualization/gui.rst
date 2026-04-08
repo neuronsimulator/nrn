@@ -404,7 +404,7 @@ Panel
         
         If the number of items in a vertically arranged single panel is greater 
         than the number in the ``*panel_scroll:`` resource in the 
-        `$(NEURONHOME)/lib/nrn.defaults <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/lib/nrn.defaults.in>`_ file (default 12) then the panel items 
+        `$(NEURONHOME)/lib/nrn.defaults <https://github.com/neuronsimulator/nrn/blob/master/share/lib/nrn.defaults.in>`_ file (default 12) then the panel items 
         are shown in a scroll box so that they do not take up so much screen 
         space. 
         

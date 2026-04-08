@@ -19,7 +19,7 @@ project(
   NEURON
   VERSION 9.0.1
   LANGUAGES C CXX
-  HOMEPAGE_URL "https://www.neuron.yale.edu/neuron/")
+  HOMEPAGE_URL "https://nrn.readthedocs.io/")
 
 # =============================================================================
 # CMake common project settings
