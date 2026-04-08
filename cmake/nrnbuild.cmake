@@ -1,9 +1,9 @@
 # ==============================================================
 # CMake wrapper for generating mechanisms for (core)NEURON
 #
-# At configuration-time this file is renamed to CMakeLists.txt.
-# The at run-time this file calls create_nrnmech which configures cmake to build
-# the mechanism files. This file provides a command line interface for create_nrnmech.
+# At configuration-time this file is renamed to CMakeLists.txt. The at run-time this file calls
+# create_nrnmech which configures cmake to build the mechanism files. This file provides a command
+# line interface for create_nrnmech.
 #
 # ==============================================================
 
@@ -57,8 +57,6 @@ endif()
 separate_arguments(NRNBUILD_NMODL_ARGS_LIST NATIVE_COMMAND ${NRNBUILD_NMODL_ARGS})
 separate_arguments(NRNBUILD_CORENEURON_ARGS_LIST NATIVE_COMMAND ${NRNBUILD_CORENEURON_ARGS})
 separate_arguments(NRNBUILD_ENV_LIST NATIVE_COMMAND ${NRNBUILD_ENV})
-
-message(STATUS "Received mod files: ${NRNBUILD_MOD_FILES}")
 
 create_nrnmech(
   ${NRNBUILD_ARGS}

@@ -2,9 +2,9 @@
 """
 Compile mechanisms for NEURON
 
-This program accepts .mod files, translates them into C++, compiles them into
-binaries, and links them with NEURON. The resulting libraries and executables
-are placed in the current working directly.
+First .mod files are translated into C++ using either nocmodl or the
+nmodl-transpiler. Then they are compiled and linked, and the resulting
+library and executable are written to the current working directory.
 """
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from find_libpython import find_libpython
@@ -44,8 +44,9 @@ parser.add_argument("--coreneuron_args", type=str,
 parser.add_argument("--library_type", choices=["static", "shared"], default="shared",
     help="default: shared")
 
-parser.add_argument("FILES", nargs="*",
-    help="mod files or a directory of mod files. Defaults to the current working directory")
+parser.add_argument("input_paths", nargs="*",
+    metavar="MOD_FILES_AND_DIRECTORIES",
+    help="default: current working directory")
 
 args = parser.parse_args()
 env = os.environ.copy()
@@ -59,6 +60,9 @@ program_root = program_dir.parent # root (aka prefix) of installation
 
 def print(text):
     __builtins__.print(f"[{program_name}] {text}", flush=True)
+
+def warning(text):
+    __builtins__.print(f"[{program_name}] WARNING: {text}", file=sys.stderr, flush=True)
 
 def error(text, code):
     __builtins__.print(f"[{program_name}] ERROR: {text}", file=sys.stderr, flush=True)
@@ -133,38 +137,44 @@ if args.clean and bin_dir.exists():
     shutil.rmtree(bin_dir)
 
 # Collect up the nmodl files.
-mod_files = [Path(path) for path in args.FILES]
+input_paths = [Path(path) for path in args.input_paths]
+
+# Convert all paths to absolute to avoid the user's current working directory.
+for i in range(len(input_paths)):
+    input_paths[i] = path = input_paths[i].resolve()
+    # Check all paths exist.
+    if not path.exists():
+        error(f"No such file or directory: \"{path}\"", 1)
 
 # In case of no files, default to using the files in the current dir
-if not mod_files:
+if not input_paths:
     print(f"Collecting mod files from current directory: {Path.cwd()}")
-    mod_files = list(Path.cwd().glob("*.mod"))
+    mod_files = sorted(Path.cwd().glob("*.mod"))
 
-# In case of a single input, check if it's a directory; if it is, collect all mod files in it
-elif len(mod_files) == 1 and mod_files[0].is_dir():
-    print(f"Collecting mod files in directory: {mod_files[0]}")
-    mod_files = list(mod_files[0].glob("*.mod"))
-
-# Otherwise assume all arguments are mod files.
 else:
-    mod_files_str = ' '.join(str(path) for path in mod_files)
-    print(f"Collecting mod files: {mod_files_str}")
+    mod_files = []
+    for path in input_paths:
+        # Check for directories
+        if path.is_dir():
+            print(f"Collecting mod files from directory: {path}")
+            mod_files.extend(sorted(path.glob("*.mod")))
 
-# Convert all mod file paths to absolute paths to avoid the user's current working directory
-mod_files = [path.resolve() for path in mod_files]
+        elif path.suffix == '.mod':
+            mod_files.append(path)
 
-# After collecting the mod files, check each mod file actually exists
-for path in mod_files:
-    if not path.exists():
-        error(f"File does not exist \"{path}\"", 1)
-    if path.is_dir():
-        error(f"Expected file, found directory: \"{path}\"", 1)
+        else:
+            error(f"not a .mod file: \"{path}\"", 2)
 
-mod_files_str = ";".join(str(path) for path in mod_files)
+if not mod_files:
+    warning("No .mod files found, exiting")
+    exit(0)
+
+print("Found mod files: " + ' '.join(str(path.name) for path in mod_files))
 
 # Configure the cmake project
 def cmake_bool(arg):
     return "ON" if arg else "OFF"
+mod_files_str = ";".join(str(path) for path in mod_files)
 config_command = [
     "cmake",
     "-S",
