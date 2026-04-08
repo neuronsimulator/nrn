@@ -35,10 +35,9 @@ void MatexpVisitor::visit_program(ast::Program& node) {
         replace_solve_block(*solve_block, true);
     }
 
-    // Remove solve-method-matexp statements and append their MatexpBlock
-    // solution to the end of the file.
+    // Get the MatexpBlock solutions and append them to the end of the file.
     for (const auto& solve_block: solve_blocks) {
-        node.emplace_back_node(remove_solve_block(*solve_block, false));
+        node.emplace_back_node(get_solve_block(*solve_block, false));
     }
 
     // Remove solved KINETIC blocks
@@ -146,25 +145,13 @@ void MatexpVisitor::replace_solve_block(const ast::SolveBlock& node, bool steady
 }
 
 
-// Remove the given solve-block statement and return the MatexpBlock solution
-std::shared_ptr<ast::MatexpBlock> MatexpVisitor::remove_solve_block(const ast::SolveBlock& node,
-                                                                    bool steadystate) {
+// Return the MatexpBlock solution for the given solve-block statement
+std::shared_ptr<ast::MatexpBlock> MatexpVisitor::get_solve_block(const ast::SolveBlock& node,
+                                                                 bool steadystate) {
     const auto& name = node.get_block_name()->get_node_name();
     const auto& block = find_kinetic_block(name);
     const auto& solution = solve_kinetic_block(*block, steadystate);
-    ast::Ast* parent = node.get_parent();
-    assert(parent->is_expression_statement());
-    assert(parent->get_parent()->is_statement_block());
-    const auto statement_block = (ast::StatementBlock*) parent->get_parent();
-    auto statements = statement_block->get_statements();
-    for (auto iter = statements.begin(); iter != statements.end(); iter++) {
-        if (iter->get() == parent) {
-            statements.erase(iter--);
-            statement_block->set_statements(statements);
-            return solution;
-        }
-    }
-    assert(false);  // unreachable
+    return solution;
 }
 
 

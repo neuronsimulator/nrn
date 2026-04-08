@@ -51,9 +51,9 @@ class MatexpVisitor: public AstVisitor {
     /// replace the given solve-block statement with a MatexpBlock
     void replace_solve_block(const ast::SolveBlock& node, bool steadystate);
 
-    /// remove the given solve-block statement and return the MatexpBlock solution
-    std::shared_ptr<ast::MatexpBlock> remove_solve_block(const ast::SolveBlock& node,
-                                                         bool steadystate);
+    /// return the MatexpBlock solution for the given solve-block statement
+    std::shared_ptr<ast::MatexpBlock> get_solve_block(const ast::SolveBlock& node,
+                                                      bool steadystate);
 
     /// ordered list of state variables
     std::vector<std::shared_ptr<symtab::Symbol>> states;
