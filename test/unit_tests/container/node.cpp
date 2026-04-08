@@ -548,7 +548,7 @@ TEST_CASE("Deleting a row from a frozen SoA container causes a fatal error",
           "[.][tests_that_abort]") {
     auto& node_data = neuron::model().node_data();  // SoA data store
     std::optional<::Node> node{std::in_place};      // take ownership of a row in node_data
-    REQUIRE(node_data.size() == 1);                 // quick sanity check
+    REQUIRE(node_data.size() == 1);                 // quick consistency check
     auto const frozen_token = node_data.issue_frozen_token();  // mark node_data frozen
     node.reset();  // Node destructor will trigger a call to std::terminate.
 }

@@ -374,7 +374,7 @@ cpdef _triangulate_surface_given_chunks(list objects, xs, ys, zs, internal_membr
                 objs = chunk_objsa[b][c]
                 cells = chunk_ptsa[b][c]
                 if cells and not objs:
-                    # we should never get here; this is just a sanity check
+                    # we should never get here; this is just a consistency check
                     missing_objs += 1
                     continue
                 for i, j, k in cells:
