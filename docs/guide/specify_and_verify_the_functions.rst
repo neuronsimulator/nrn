@@ -18,7 +18,7 @@ Under apicals_x, we select gnabar_hh
 
 . . . and the right lower corner of the CellBuilder shows us that the default function is a Boltzmann function.
 
-Our model doesn't require a Boltzmann function. We just want a plain, simple, linear ramp.
+In this case, suppose that our model requires that the parameter vary linearly over the chosen spatial domain.
 
 That's easy enough--we click on f(p) in the right panel and scroll down to Ramp . . .
 
