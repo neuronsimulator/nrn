@@ -13,32 +13,32 @@ project(nrnbuild)
 find_package(neuron REQUIRED)
 
 set(NRNBUILD_MOD_FILES
-  ""
-  CACHE STRING "List of mod files to convert to mechanisms")
+    ""
+    CACHE STRING "List of mod files to convert to mechanisms")
 set(NRNBUILD_NEURON
-  ON
-  CACHE BOOL "Whether to generate mechanisms for NEURON")
+    ON
+    CACHE BOOL "Whether to generate mechanisms for NEURON")
 set(NRNBUILD_CORENEURON
-  OFF
-  CACHE BOOL "Whether to generate mechanisms for coreNEURON")
+    OFF
+    CACHE BOOL "Whether to generate mechanisms for coreNEURON")
 set(NRNBUILD_SPECIAL
-  ON
-  CACHE BOOL "Whether to generate the `special` executable")
+    ON
+    CACHE BOOL "Whether to generate the `special` executable")
 set(NRNBUILD_NMODL
-  ON
-  CACHE BOOL "Whether to use NMODL with NEURON")
+    ON
+    CACHE BOOL "Whether to use NMODL with NEURON")
 set(NRNBUILD_LIBRARY_TYPE
-  SHARED
-  CACHE STRING "Either STATIC or SHARED")
+    SHARED
+    CACHE STRING "Either STATIC or SHARED")
 set(NRNBUILD_NMODL_ARGS
-  ""
-  CACHE STRING "extra arguments to pass to NMODL for NEURON codegen")
+    ""
+    CACHE STRING "extra arguments to pass to NMODL for NEURON codegen")
 set(NRNBUILD_CORENEURON_ARGS
-  ""
-  CACHE STRING "extra arguments to pass to NMODL for CoreNEURON codegen")
+    ""
+    CACHE STRING "extra arguments to pass to NMODL for CoreNEURON codegen")
 set(NRNBUILD_ENV
-  ""
-  CACHE STRING "extra environment variables for NMODL")
+    ""
+    CACHE STRING "extra environment variables for NMODL")
 
 set(NRNBUILD_ARGS)
 if(NRNBUILD_NEURON)
