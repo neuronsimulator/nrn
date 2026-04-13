@@ -111,8 +111,8 @@ class CollectConserveVisitor: public AstVisitor {
                                             ast::AstNodeType::PRIME_NAME,
                                         });
         if (primes) {
-            logger->error("MatexpVisitor :: Error : CONSERVE statement uses derivative");
-            return;
+            logger->error("MatexpVisitor :: Error : CONSERVE uses derivative");
+            throw std::invalid_argument("CONSERVE uses derivative");
         }
         const auto vars = collect_nodes(*react,
                                         {
@@ -124,10 +124,10 @@ class CollectConserveVisitor: public AstVisitor {
             var_names.push_back(to_nmodl(var));
         }
         std::sort(var_names.begin(), var_names.end());
-        std::unique(var_names.begin(), var_names.end());
-        if (var_names.size() != num_vars) {
-            logger->error("MatexpVisitor :: Error : CONSERVE statement is non-linear");
-            return;
+        const int num_unqiue = std::unique(var_names.begin(), var_names.end()) - var_names.begin();
+        if (num_vars != num_unqiue) {
+            logger->error("MatexpVisitor :: Error : CONSERVE is non-linear");
+            throw std::invalid_argument("CONSERVE is non-linear");
         }
         conserve_statements.push_back(std::make_shared<ast::Conserve>(node));
     }
@@ -195,8 +195,8 @@ void MatexpVisitor::visit_statement_block(ast::StatementBlock& node) {
 
 
 static void nonlinear_reaction_error() {
-    logger->error("MatexpVisitor :: Error : Non-linear equation detected");
-    throw std::invalid_argument("Non-linear equation detected");
+    logger->error("MatexpVisitor :: Error : Reaction equation is non-linear");
+    throw std::invalid_argument("Reaction equation is non-linear");
 }
 
 
@@ -221,7 +221,10 @@ int MatexpVisitor::get_state_index(const std::string& state_name) {
             return index;
         }
     }
-    throw std::invalid_argument("no such state");
+    logger->error(
+        "MatexpVisitor :: Error : Reaction equation contains invalid state variable: \"{}\"",
+        state_name);
+    throw std::invalid_argument("Reaction equation contains invalid state variable");
 }
 
 

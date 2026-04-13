@@ -429,4 +429,34 @@ SCENARIO("Give non-linear equations to the matexp solver", "[visitor][matexp]") 
             REQUIRE_THROWS_AS(run_matexp_visitor(input_nmodl, true), std::invalid_argument);
         }
     }
+    GIVEN("non-linear CONSERVE statement") {
+        std::string input_nmodl = R"(
+        BREAKPOINT {
+            SOLVE test_kin METHOD matexp
+        }
+        STATE {
+            x
+        }
+        KINETIC test_kin {
+            CONSERVE x + x = 1
+        })";
+        THEN("Raise an exception") {
+            REQUIRE_THROWS_AS(run_matexp_visitor(input_nmodl, true), std::invalid_argument);
+        }
+    }
+    GIVEN("CONSERVE statement with derivatives") {
+        std::string input_nmodl = R"(
+        BREAKPOINT {
+            SOLVE test_kin METHOD matexp
+        }
+        STATE {
+            x
+        }
+        KINETIC test_kin {
+            CONSERVE x' + y' = 0
+        })";
+        THEN("Raise an exception") {
+            REQUIRE_THROWS_AS(run_matexp_visitor(input_nmodl, true), std::invalid_argument);
+        }
+    }
 }
