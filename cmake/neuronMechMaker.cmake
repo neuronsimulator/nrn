@@ -389,7 +389,7 @@ function(create_nrnmech)
         list(APPEND MOD_DIRECTORIES "${MOD_DIRECTORY}")
       endif()
       set(CPP_FILE "cpp/${MOD_STUB}.cpp")
-      file(RELATIVE_PATH MOD_SHORT "${CMAKE_SOURCE_DIR}" "${MOD_ABSPATH}")
+      get_filename_component(MOD_SHORT "${MOD_ABSPATH}" NAME)
 
       list(APPEND L_MECH_DECLARE "extern \"C\" void _${MOD_STUB}_reg(void)\;")
       list(APPEND L_MECH_PRINT "fprintf(stderr, \" \\\"${MOD_SHORT}\\\"\")\;")
@@ -461,7 +461,7 @@ function(create_nrnmech)
       # nmodl _may_ have trouble with symlinks, so we always use the real path
       get_filename_component(MOD_ABSPATH "${MOD_FILE}" REALPATH)
       set(CPP_FILE "cpp_core/${MOD_STUB}.cpp")
-      file(RELATIVE_PATH MOD_SHORT "${CMAKE_SOURCE_DIR}" "${MOD_ABSPATH}")
+      get_filename_component(MOD_SHORT "${MOD_ABSPATH}" NAME)
 
       list(APPEND L_CORE_MECH_DECLARE "extern int _${MOD_STUB}_reg(void)\;")
       list(APPEND L_CORE_MECH_PRINT "fprintf(stderr, \" \\\"${MOD_SHORT}\\\"\")\;")
