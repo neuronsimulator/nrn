@@ -79,6 +79,7 @@ SCENARIO("Solve a KINETIC block using the matexp method", "[visitor][matexp]") {
         }
 
         BREAKPOINT {
+            SOLVE test_kin METHOD matexp
         }
 
         PARAMETER {
@@ -133,6 +134,7 @@ SCENARIO("Solve multiple CONSERVE using the matexp method", "[visitor][matexp]")
         }
 
         BREAKPOINT {
+            SOLVE test_kin METHOD matexp
         }
 
         STATE {
@@ -181,6 +183,7 @@ SCENARIO("Test exponential decay using the matexp method", "[visitor][matexp]") 
         }
 
         BREAKPOINT {
+            SOLVE test_kin METHOD matexp
         }
 
         PARAMETER {
@@ -227,6 +230,7 @@ SCENARIO("Mix matexp and sparse solver methods", "[visitor][matexp]") {
         }
 
         BREAKPOINT {
+            SOLVE test_kin METHOD matexp
         }
 
         STATE {
@@ -298,6 +302,8 @@ SCENARIO("Solve multiple blocks with matexp", "[visitor][matexp]") {
         }
 
         BREAKPOINT {
+            SOLVE test_kin_1 METHOD matexp
+            SOLVE test_kin_2 METHOD matexp
         }
 
         STATE {
