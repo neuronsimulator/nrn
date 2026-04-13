@@ -321,7 +321,7 @@ proc multisplit_divide() {local i, x \
 //printf("%d %s pc.multisplit(%g, %d, 2)\n", pc.id, secname(), px.x[i], sids.x[i])
 				pc.multisplit(px.x[i], sids.x[i], 2)
 				v(px.x[i]) = sids.x[i]
-			}else if (v(px.x[i]) != sids.x[i]) { // sanity check
+			}else if (v(px.x[i]) != sids.x[i]) { // consistency check
 printf("i=%d px.x[i]=%d v=%g sids.x[i]=%g\n", i, px.x[i], v(px.x[i]), sids.x[i])
 				execerror("Subtrees at same parent with different sid", "")
 			}
