@@ -551,7 +551,7 @@ def _cxx_compile(formula):
         ctypes.POINTER(ctypes.c_double),
     ]
     reaction.restype = ctypes.c_double
-    # os.remove(f"{filename}.cpp")
+    os.remove(f"{filename}.cpp")
     if sys.platform.lower().startswith("win"):
         # cannot remove dll that are in use
         _windows_dll.append(weakref.ref(dll))
@@ -575,6 +575,8 @@ def _compile_reactions_from_ast(creg):
     if not _ast_config.get("nmodl_support"):
         return None
 
+    if not initializer.is_initialized():
+        initializer._do_init()
     creg.ast()
 
     has_rates = hasattr(creg, "_optimized_rates") and creg._optimized_rates

@@ -31,6 +31,7 @@ if _ast_config["nmodl_support"]:
             UnaryOp,
             UnaryExpression,
             ReactionOperator,
+            ReactVarName,
             FunctionCall,
             Double,
             LocalVar,
@@ -267,7 +268,7 @@ class _Function:
         except AttributeError:
             return False
 
-    def ast(self, region=None):
+    def ast(self, region=None, use_react_var=False):
         if _ast_config["nmodl_support"]:
             if hasattr(self._obj, "ast"):
                 obj = self._obj.ast(region)
@@ -323,7 +324,7 @@ class _Function2:
                 pass
         return False
 
-    def ast(self, region=None):
+    def ast(self, region=None, use_react_var=False):
         if _ast_config["nmodl_support"]:
             if hasattr(self._obj1, "ast"):
                 obj1 = self._obj1.ast(region)
@@ -619,7 +620,7 @@ class _Product:
         self._a._involved_species(the_dict)
         self._b._involved_species(the_dict)
 
-    def ast(self, region=None):
+    def ast(self, region=None, use_react_var=False):
         if _ast_config["nmodl_support"]:
             if hasattr(self._a, "ast"):
                 lhs = self._a.ast(region)
@@ -640,7 +641,7 @@ class _Quotient:
     def __repr__(self):
         return f"({self._a!r})/({self._b!r})"
 
-    def ast(self, region=None):
+    def ast(self, region=None, use_react_var=False):
         if _ast_config["nmodl_support"]:
             if hasattr(self._a, "ast"):
                 lhs = self._a.ast(region)
@@ -697,7 +698,7 @@ class _Quotient:
         self._a._involved_species(the_dict)
         self._b._involved_species(the_dict)
 
-    def ast(self, region=None):
+    def ast(self, region=None, use_react_var=False):
         if _ast_config["nmodl_support"]:
             if hasattr(self._a, "ast"):
                 lhs = self._a.ast(region)
@@ -732,10 +733,10 @@ class _Reaction:
                 pass
         return False
 
-    def ast(self, region=None):
+    def ast(self, region=None, use_react_var=False):
         if _ast_config["nmodl_support"]:
-            lhs = self._lhs.ast(region)
-            rhs = self._rhs.ast(region)
+            lhs = self._lhs.ast(region, use_react_var)
+            rhs = self._rhs.ast(region, use_react_var)
             # TODO: Placeholder rates should be replaced by in rxd.Reaction
             if region:
                 rid = region._id
@@ -872,7 +873,7 @@ class _Arithmeticed:
             result = "0"
         return result
 
-    def ast(self, region=None):
+    def ast(self, region=None, use_react_var=False):
         if _ast_config["nmodl_support"]:
             from . import species
 
@@ -890,7 +891,12 @@ class _Arithmeticed:
                     item_node = LocalVar(Name(String(item)))
 
                 if count == 1:
-                    term_node = item_node
+                    if use_react_var and item_node.is_var_name():
+                        term_node = ReactVarName(
+                            Integer(1, Name(String("1"))), item_node
+                        )
+                    else:
+                        term_node = item_node
                 elif count == -1:
                     if len(self._items) == 1:
                         term_node = UnaryExpression(
@@ -900,11 +906,16 @@ class _Arithmeticed:
                         term_node = item_node
                 else:
                     x = count if len(self._items) == 1 else abs(count)
-                    term_node = ParenBinaryExpression(
-                        Integer(x, Name(String(str(x)))),
-                        BinaryOp.BOP_MULTIPLICATION,
-                        item_node,
-                    )
+                    if use_react_var and item_node.is_var_name():
+                        term_node = ReactVarName(
+                            Integer(x, Name(String(str(x)))), item_node
+                        )
+                    else:
+                        term_node = ParenBinaryExpression(
+                            Integer(x, Name(String(str(x)))),
+                            BinaryOp.BOP_MULTIPLICATION,
+                            item_node,
+                        )
 
                 if nodes is None:
                     nodes = term_node
@@ -1067,7 +1078,7 @@ class Vm(_Arithmeticed, object):
         def _voltage_dependent(self):
             return True
 
-        def ast(self, region=None):
+        def ast(self, region=None, use_react_var=False):
             if _ast_config["nmodl_support"]:
                 return VarName(Name(String("v")), None, None)
 

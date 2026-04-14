@@ -29,6 +29,8 @@ if _ast_config["nmodl_support"]:
             StateBlock,
             AssignedDefinition,
             Program,
+            NeuronBlock,
+            Suffix,
             ExpressionStatement,
             DiffEqExpression,
             ParenExpression,
@@ -36,11 +38,13 @@ if _ast_config["nmodl_support"]:
             BinaryOperator,
             BinaryOp,
             AstNodeType,
+            LocalListStatement,
+            ReactionStatement,
         )
 
         # used for optimization
         from neuron.nmodl.visitor import AstLookupVisitor
-        from neuron.nmodl import dsl as nmodl_dsl
+        from neuron.nmodl import dsl
         from neuron.nmodl.ode import optimize_odes
     except ModuleNotFoundError as e:
         _ast_config["nmodl_support"] = False
@@ -106,6 +110,8 @@ class _c_region:
         "_region_ids",
         "_voltage_dependent",
         "_vptrs",
+        "_name_to_index",
+        "_optimized_rates",
     )
 
     def __init__(self, regions):
@@ -129,6 +135,8 @@ class _c_region:
         self._ecs_params_ids = None
         self._voltage_dependent = False
         self._vptrs = None
+        self._name_to_index = None
+        self._optimized_rates = None
         for rptr in self._regions:
             r = rptr()
             self._overlap = h.SectionList(
@@ -329,6 +337,31 @@ class _c_region:
         # if not self._initialized:
         #    self._initalize()
 
+        def parse_kinetic_block(reactions, blocks):
+            rate_stmts = []
+            local_consts = {}
+            lookup = AstLookupVisitor()
+            kinetic_blocks = [
+                KineticBlock(Name(String("reactions")), [], StatementBlock(reactions))
+            ]
+            tmp_ast = Program(blocks + kinetic_blocks)
+            dsl.symtab.SymtabVisitor().visit_program(tmp_ast)
+            dsl.visitor.KineticBlockVisitor().visit_program(tmp_ast)
+            stmts = lookup.lookup(tmp_ast, AstNodeType.DERIVATIVE_BLOCK)
+            for stmt in stmts:
+                for sb in stmt.statement_block.statements:
+                    if isinstance(sb, LocalListStatement):
+                        for nnode in sb.variables:
+                            local_consts[nnode.get_node_name()] = None
+                    elif hasattr(sb, "expression"):
+                        ex = sb.expression
+                        if isinstance(ex, BinaryExpression):
+                            local_consts[ex.lhs.get_node_name()] = dsl.to_nmodl(ex.rhs)
+
+                        else:
+                            rate_stmts.append(sb)
+            return rate_stmts, local_consts
+
         # Build mapping: AST flat name -> ("species"|"params", local_id, region_id)
         self._name_to_index = {}
         for sptr in self._react_species:
@@ -381,13 +414,21 @@ class _c_region:
         multicompartmentReactions = []
         states = []
         mc_flux = []
+        mc_kinetic_blocks = []
+        local_consts = {}
         for rptr, rlst in self._react_regions.items():
             r = rptr()
             rast, sp = r.ast(rlst)
             species += sp
             rast = rast if hasattr(rast, "__len__") else [rast]
+            mc_rates_ast = []
             if isinstance(r, MultiCompartmentReaction):
-                multicompartmentReactions += rast
+                for react in rast:
+                    if isinstance(react, ReactionStatement):
+                        mc_kinetic_blocks.append(react)
+                    else:
+                        mc_rates_ast.append(react)
+                multicompartmentReactions += mc_rates_ast
                 flux = []
                 for i, sp in enumerate(r._sources + r._dests):
                     s = sp()
@@ -418,13 +459,19 @@ class _c_region:
             )
         if states != []:
             blocks.append(StateBlock(states))
+
+        # convert KineticBlock to DerivativeBlock to compile
         if reactions != []:
-            blocks.append(
-                KineticBlock(Name(String("reactions")), [], StatementBlock(reactions))
-            )
-        lookup = AstLookupVisitor()
+            rast, lc = parse_kinetic_block(reactions, blocks)
+            rates += rast
+            local_consts |= lc
+        if mc_kinetic_blocks != []:
+            rast, lc = parse_kinetic_block(mc_kinetic_blocks, blocks)
+            multicompartmentReactions += rast
+            local_consts |= lc
         # Merge rates for common species or states
         if rates != [] or multicompartmentReactions != []:
+            lookup = AstLookupVisitor()
             merged = {}
             constants = set()
             mult_id = 0
@@ -504,7 +551,7 @@ class _c_region:
                         )
                     )
                 )
-                all_rhs_strings.append(nmodl_dsl.to_nmodl(rhs))
+                all_rhs_strings.append(dsl.to_nmodl(rhs))
                 for ref in lookup.lookup(rhs, AstNodeType.VAR_NAME):
                     ref_name = ref.get_node_name()
                     if ref_name not in merged:
@@ -530,6 +577,7 @@ class _c_region:
                 all_rhs_strings,
                 list(merged.keys()),
                 list(constants),
+                local_consts,
                 function_calls,
                 rhs_ids=rhs_ids,
             )
@@ -547,7 +595,16 @@ class _c_region:
                 )
             )
 
-        return Program(blocks)
+        return Program(
+            [
+                NeuronBlock(
+                    StatementBlock(
+                        [Suffix(Name(String("SUFFIX")), Name(String("rxd")))]
+                    )
+                )
+            ]
+            + blocks
+        )
 
 
 class Extracellular:

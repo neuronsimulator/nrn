@@ -14,7 +14,14 @@ from .rxdmath import _ast_config
 
 if _ast_config["nmodl_support"]:
     try:
-        from neuron.nmodl.ast import PrimeName, VarName, Name, String, Integer
+        from neuron.nmodl.ast import (
+            PrimeName,
+            ReactVarName,
+            VarName,
+            Name,
+            String,
+            Integer,
+        )
     except ModuleNotFoundError as e:
         _ast_config["nmodl_support"] = False
         _ast_config["exception"] = e
@@ -218,6 +225,7 @@ _ontology_id = re.compile(
 
 class _SpeciesMathable(object):
     __slots__ = ()
+
     # support arithmeticing
     def __neg__(self):
         return -1 * _Arithmeticed(self)

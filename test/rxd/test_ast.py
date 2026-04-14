@@ -2,7 +2,7 @@ import pytest
 import json
 
 try:
-    from nmodl import to_json
+    from neuron.nmodl import to_json
 
     skip = False
 except:
@@ -26,7 +26,7 @@ def test_species_ast(setup_section):
     ca = rxd.Species(cyt, name="ca", charge=2)
     # Convert to AST and then to JSON
     node = json.loads(to_json(ca.ast(cyt)))
-    ast = {"VarName": [{"Name": [{"String": [{"name": "ca@cyt[0]"}]}]}]}
+    ast = {"VarName": [{"Name": [{"String": [{"name": "ca_cyt_0"}]}]}]}
     assert node == ast
 
 
@@ -49,9 +49,13 @@ def test_rate_ast(setup_section):
                     {
                         "BinaryExpression": [
                             {
-                                "PrimeName": [
-                                    {"String": [{"name": "ca@cyt[0]"}]},
-                                    {"Integer": [{"name": "1"}]},
+                                "VarName": [
+                                    {
+                                        "PrimeName": [
+                                            {"String": [{"name": "ca_cyt_0"}]},
+                                            {"Integer": [{"name": "1"}]},
+                                        ]
+                                    }
                                 ]
                             },
                             {"BinaryOperator": [{"name": "="}]},
@@ -61,7 +65,7 @@ def test_rate_ast(setup_section):
                                         "VarName": [
                                             {
                                                 "Name": [
-                                                    {"String": [{"name": "ca@cyt[0]"}]}
+                                                    {"String": [{"name": "ca_cyt_0"}]}
                                                 ]
                                             }
                                         ]
@@ -76,7 +80,6 @@ def test_rate_ast(setup_section):
             }
         ]
     }
-
     assert ast == node
     assert ca[cyt].ast().get_node_name() in species
 
@@ -92,52 +95,69 @@ def test_reaction_ast(setup_section):
 
     reaction = rxd.Reaction(ca + buf, cabuf, 0.1, 0.05)
 
-    rxd._ast_config["kinetic_block"] = "mass_action"
+    rxd.rxdmath._ast_config["kinetic_block"] = "mass_action"
+    h.finitialize(-70)
     react, species = reaction.ast()
     node = json.loads(to_json(react[0]))
     ast = {
         "ReactionStatement": [
             {
-                "WrappedExpression": [
+                "BinaryExpression": [
                     {
-                        "BinaryExpression": [
+                        "ReactVarName": [
+                            {"Integer": [{"Name": [{"String": [{"name": "1"}]}]}]},
                             {
                                 "VarName": [
-                                    {"Name": [{"String": [{"name": "ca@cyt[0]"}]}]}
-                                ]
-                            },
-                            {"BinaryOperator": [{"name": "+"}]},
-                            {
-                                "VarName": [
-                                    {"Name": [{"String": [{"name": "buf@cyt[0]"}]}]}
+                                    {"Name": [{"String": [{"name": "ca_cyt_0"}]}]}
                                 ]
                             },
                         ]
-                    }
+                    },
+                    {"BinaryOperator": [{"name": "+"}]},
+                    {
+                        "ReactVarName": [
+                            {"Integer": [{"Name": [{"String": [{"name": "1"}]}]}]},
+                            {
+                                "VarName": [
+                                    {"Name": [{"String": [{"name": "buf_cyt_0"}]}]}
+                                ]
+                            },
+                        ]
+                    },
                 ]
             },
             {"ReactionOperator": [{"name": "<->"}]},
-            {"VarName": [{"Name": [{"String": [{"name": "cabuf@cyt[0]"}]}]}]},
+            {
+                "ReactVarName": [
+                    {"Integer": [{"Name": [{"String": [{"name": "1"}]}]}]},
+                    {"VarName": [{"Name": [{"String": [{"name": "cabuf_cyt_0"}]}]}]},
+                ]
+            },
             {"Double": [{"name": "0.1"}]},
             {"Double": [{"name": "0.05"}]},
         ]
     }
+
     assert node == ast
+
     myspecies = [ca[cyt].ast(), cabuf.ast(cyt)]
     for sp in myspecies:
         assert sp.get_node_name() in species
+
     # should not include parameters
     assert buf[cyt].ast().get_node_name() not in species
 
-    rxd._ast_config["kinetic_block"] = "on"
+    rxd.rxdmath._ast_config["kinetic_block"] = "on"
     react, species = reaction.ast()
     node = json.loads(to_json(react[0]))
     assert node == ast
 
-    rxd._ast_config["kinetic_block"] = "off"  # default with correct volume scaling
+    rxd.rxdmath._ast_config["kinetic_block"] = (
+        "off"  # default with correct volume scaling
+    )
 
     rates, species = reaction.ast()
-
+    node = json.loads(to_json(rates[0]))
     ast = {
         "ExpressionStatement": [
             {
@@ -145,14 +165,19 @@ def test_reaction_ast(setup_section):
                     {
                         "BinaryExpression": [
                             {
-                                "PrimeName": [
-                                    {"String": [{"name": "ca@cyt[0]"}]},
-                                    {"Integer": [{"name": "1"}]},
+                                "VarName": [
+                                    {
+                                        "PrimeName": [
+                                            {"String": [{"name": "ca_cyt_0"}]},
+                                            {"Integer": [{"name": "1"}]},
+                                        ]
+                                    }
                                 ]
                             },
                             {"BinaryOperator": [{"name": "="}]},
                             {
-                                "WrappedExpression": [
+                                "FunctionCall": [
+                                    {"Name": [{"String": [{"name": "-"}]}]},
                                     {
                                         "BinaryExpression": [
                                             {
@@ -176,7 +201,7 @@ def test_reaction_ast(setup_section):
                                                                             {
                                                                                 "String": [
                                                                                     {
-                                                                                        "name": "ca@cyt[0]"
+                                                                                        "name": "ca_cyt_0"
                                                                                     }
                                                                                 ]
                                                                             }
@@ -194,7 +219,7 @@ def test_reaction_ast(setup_section):
                                                                     {
                                                                         "String": [
                                                                             {
-                                                                                "name": "buf@cyt[0]"
+                                                                                "name": "buf_cyt_0"
                                                                             }
                                                                         ]
                                                                     }
@@ -204,7 +229,7 @@ def test_reaction_ast(setup_section):
                                                     },
                                                 ]
                                             },
-                                            {"BinaryOperator": [{"name": "+"}]},
+                                            {"BinaryOperator": [{"name": "-"}]},
                                             {
                                                 "BinaryExpression": [
                                                     {"Double": [{"name": "0.05"}]},
@@ -216,7 +241,7 @@ def test_reaction_ast(setup_section):
                                                                     {
                                                                         "String": [
                                                                             {
-                                                                                "name": "cabuf@cyt[0]"
+                                                                                "name": "cabuf_cyt_0"
                                                                             }
                                                                         ]
                                                                     }
@@ -227,7 +252,7 @@ def test_reaction_ast(setup_section):
                                                 ]
                                             },
                                         ]
-                                    }
+                                    },
                                 ]
                             },
                         ]
@@ -236,12 +261,8 @@ def test_reaction_ast(setup_section):
             }
         ]
     }
-    for rate in rates:
-        node = json.loads(to_json(rate))
-        if node == ast:
-            break
-    else:
-        assert False  # given ast is not in rates
+
+    assert node == ast
 
 
 @pytest.mark.skipif(skip, reason="nmodl not installed")
@@ -256,15 +277,15 @@ def test_multicompartment_reaction_ast(setup_section):
 
     reaction = rxd.MultiCompartmentReaction(ca[cyt], ca[er], 0.1, 0.05, membrane=mem)
 
-    rxd._ast_config["kinetic_block"] = "mass_action"
+    rxd.rxdmath._ast_config["kinetic_block"] = "mass_action"
     react, species = reaction.ast()
     node = json.loads(to_json(react))
 
     ast = {
         "ReactionStatement": [
-            {"VarName": [{"Name": [{"String": [{"name": "ca@cyt[0]"}]}]}]},
+            {"VarName": [{"Name": [{"String": [{"name": "ca_cyt_0"}]}]}]},
             {"ReactionOperator": [{"name": "<->"}]},
-            {"VarName": [{"Name": [{"String": [{"name": "ca@er[2]"}]}]}]},
+            {"VarName": [{"Name": [{"String": [{"name": "ca_er_2"}]}]}]},
             {"Double": [{"name": "0.1"}]},
             {"Double": [{"name": "0.05"}]},
         ]
@@ -274,9 +295,9 @@ def test_multicompartment_reaction_ast(setup_section):
     for sp in [ca[cyt], ca[er]]:
         assert sp.ast().get_node_name() in species
 
-    rxd._ast_config["kinetic_block"] = "off"  # defualt
+    rxd.rxdmath._ast_config["kinetic_block"] = "off"  # defualt
     rates, species = reaction.ast()
-
+    node = json.loads(to_json(rates[0]))
     ast = {
         "ExpressionStatement": [
             {
@@ -284,61 +305,57 @@ def test_multicompartment_reaction_ast(setup_section):
                     {
                         "BinaryExpression": [
                             {
-                                "PrimeName": [
-                                    {"String": [{"name": "ca@cyt[0]"}]},
-                                    {"Integer": [{"name": "1"}]},
+                                "VarName": [
+                                    {
+                                        "PrimeName": [
+                                            {"String": [{"name": "ca_cyt_0"}]},
+                                            {"Integer": [{"name": "1"}]},
+                                        ]
+                                    }
                                 ]
                             },
                             {"BinaryOperator": [{"name": "="}]},
                             {
-                                "WrappedExpression": [
+                                "BinaryExpression": [
                                     {
                                         "BinaryExpression": [
                                             {
-                                                "BinaryExpression": [
+                                                "VarName": [
                                                     {
-                                                        "VarName": [
+                                                        "Name": [
                                                             {
-                                                                "Name": [
-                                                                    {
-                                                                        "String": [
-                                                                            {
-                                                                                "name": "ca@cyt[0]"
-                                                                            }
-                                                                        ]
-                                                                    }
+                                                                "String": [
+                                                                    {"name": "ca_cyt_0"}
                                                                 ]
                                                             }
                                                         ]
-                                                    },
-                                                    {"BinaryOperator": [{"name": "*"}]},
-                                                    {"Double": [{"name": "0.1"}]},
+                                                    }
                                                 ]
                                             },
-                                            {"BinaryOperator": [{"name": "+"}]},
-                                            {
-                                                "BinaryExpression": [
-                                                    {
-                                                        "VarName": [
-                                                            {
-                                                                "Name": [
-                                                                    {
-                                                                        "String": [
-                                                                            {
-                                                                                "name": "ca@er[2]"
-                                                                            }
-                                                                        ]
-                                                                    }
-                                                                ]
-                                                            }
-                                                        ]
-                                                    },
-                                                    {"BinaryOperator": [{"name": "*"}]},
-                                                    {"Double": [{"name": "0.05"}]},
-                                                ]
-                                            },
+                                            {"BinaryOperator": [{"name": "*"}]},
+                                            {"Double": [{"name": "0.1"}]},
                                         ]
-                                    }
+                                    },
+                                    {"BinaryOperator": [{"name": "-"}]},
+                                    {
+                                        "BinaryExpression": [
+                                            {
+                                                "VarName": [
+                                                    {
+                                                        "Name": [
+                                                            {
+                                                                "String": [
+                                                                    {"name": "ca_er_2"}
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            {"BinaryOperator": [{"name": "*"}]},
+                                            {"Double": [{"name": "0.05"}]},
+                                        ]
+                                    },
                                 ]
                             },
                         ]
@@ -347,11 +364,6 @@ def test_multicompartment_reaction_ast(setup_section):
             }
         ]
     }
-    for rate in rates:
-        node = json.loads(to_json(rate))
-        if node == ast:
-            break
-    else:
-        assert False  # given ast is not in rates
+    assert node == ast
     for sp in [ca[cyt], ca[er]]:
         assert sp.ast().get_node_name() in species

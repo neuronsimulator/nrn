@@ -475,7 +475,13 @@ def needs_finite_differences(mat) -> bool:
 
 
 def optimize_odes(
-    rhs_strings, var_names, constants, function_calls, rhs_ids=None, do_cse=True
+    rhs_strings,
+    var_names,
+    constants,
+    local_consts,
+    function_calls,
+    rhs_ids=None,
+    do_cse=True,
 ):
     """Apply SymPy optimizations to ODE rate expressions.
 
@@ -490,6 +496,7 @@ def optimize_odes(
         var_names: list of all variable names (state vars + constants),
                    e.g. ["ca", "cam", "cacam", "kf", "kb"]
         constants: set of any other symbolic names used
+        local_consts: dictionary of values to substitute in in place of variable names
         function_calls: set of function call names used in the ODEs
         do_cse: if True (default), apply Common Subexpression Elimination
 
@@ -503,11 +510,14 @@ def optimize_odes(
 
     # Build sympy symbols the variables
     sympy_vars = {}
-    for var in set(var_names + constants):
+    for var in set(var_names + constants + list(local_consts)):
         sympy_vars[var] = sp.Symbol(var, real=True)
+    local_consts = {sympy_vars[var]: value for var, value in local_consts.items()}
+    # Parse each RHS expression
+    rhs_exprs = [sp.sympify(rhs, locals=sympy_vars) for rhs in rhs_strings]
 
-    # Parse and simplify each RHS expression
-    rhs_exprs = [sp.sympify(rhs, locals=sympy_vars).simplify() for rhs in rhs_strings]
+    # Don't apply sympy simplifications, they don't seem to improve performance
+    # and they can hang or crash for more complex reactions.
 
     code = []
     local_vars = []
@@ -522,11 +532,13 @@ def optimize_odes(
         )
         for var, expr in sub_exprs:
             local_vars.append(sp.ccode(var))
-            code.append(f"{var} = {sp.ccode(expr.evalf(), user_functions=custom_fcts)}")
+            code.append(
+                f"{var} = {sp.ccode(expr.subs(local_consts).evalf(), user_functions=custom_fcts)}"
+            )
         rhs_exprs = reduced
 
     for i, expr in enumerate(rhs_exprs):
-        rhs = sp.ccode(expr.evalf(), user_functions=custom_fcts)
+        rhs = sp.ccode(expr.subs(local_consts).evalf(), user_functions=custom_fcts)
         if rhs_ids:
             code.append(f"{rhs_ids[i]} = {rhs}")
         else:

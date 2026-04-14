@@ -11,11 +11,14 @@ if _ast_config["nmodl_support"]:
     try:
         from neuron.nmodl.ast import (
             Double,
+            Compartment,
             ExpressionStatement,
             DiffEqExpression,
             BinaryExpression,
             BinaryOperator,
             BinaryOp,
+            Name,
+            String,
         )
     except ModuleNotFoundError as e:
         _ast_config["nmodl_support"] = False
@@ -295,6 +298,7 @@ class Reaction(GeneralizedReaction):
         Returns:
             List[nmodl.ast]: A list of ExpressionStatement or ReactionStatement
             List[str]:  A list of the species (AST state names)
+            List[nmodl.ast]: A list of Compartment if using ReactionStatement otherwise empty
         """
         from .species import Parameter, ParameterOnRegion, ParameterOnExtracellular
 
@@ -312,7 +316,7 @@ class Reaction(GeneralizedReaction):
 
         def get_ast(region):
             if kinetic_block == "off" or (
-                kinetic_block == "non_mass_action" and self._custom_dynamics
+                kinetic_block == "mass_action" and self._custom_dynamics
             ):
                 rate = self._rate_arithmeticed
                 frate = (-rate).ast(region)
@@ -349,7 +353,7 @@ class Reaction(GeneralizedReaction):
                     species.append(name)
                 return diff, species
             else:
-                react = self._scheme.ast(region)
+                react = self._scheme.ast(region, use_react_var=True)
                 # replace placeholder rates
                 if hasattr(self.f_rate, "ast"):
                     kf = self.f_rate.ast(region)
