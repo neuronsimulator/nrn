@@ -271,11 +271,11 @@ SectionEnd
  ; modifies no other variables.
  ;
  ; Usage:
- ;   Push "this is a long ass string"
- ;   Push "ass"
+ ;   Push "this is a long example string"
+ ;   Push "example"
  ;   Call StrStr
  ;   Pop $R0
- ;  ($R0 at this point is "ass string")
+ ;  ($R0 at this point is "example string")
 
  Function StrStr
  Exch $R1 ; st=haystack,old$R1, $R1=needle
