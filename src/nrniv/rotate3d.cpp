@@ -58,13 +58,10 @@ std::array<float, 2> Rotation3d::z_axis() const {
     return {mat(0, 2), mat(2, 1)};
 }
 
-Rotate3Band::Rotate3Band(Rotation3d* r3, RubberAction* ra, Canvas* c)
-    : Rubberband(ra, c) {
-    if (r3) {
-        rot_ = r3;
-    } else {
-        rot_ = new Rotation3d();
-    }
+Rotate3Band::Rotate3Band(RubberAction* ra, Canvas* c)
+    : Rubberband(ra, c)
+    , rot_(new Rotation3d{})
+{
     Resource::ref(rot_);
 }
 
@@ -168,7 +165,6 @@ void Rotate3Band::drag(Event&) {
 void Rotate3Band::draw(Coord, Coord) {
     Canvas* c = canvas();
     const Font* f = WidgetKit::instance()->font();
-    float x, y;
     float x0, y0;
 
     c->push_transform();

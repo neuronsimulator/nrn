@@ -879,7 +879,7 @@ ShapeScene::ShapeScene(SectionList* sl)
     sg_ = new PolyGlyph();
     sg_->ref();
     shape_changed_ = NULL;  // observe not ready for it yet
-    r3b_ = new Rotate3Band(NULL, new RubberCallback(ShapeScene)(this, &ShapeScene::transform3d));
+    r3b_ = new Rotate3Band(new RubberCallback(ShapeScene)(this, &ShapeScene::transform3d));
     r3b_->ref();
     observe(sl);
     wk.style()->find_attribute("shape_beveljoin", beveljoin_);
