@@ -1,0 +1,183 @@
+{
+    "version": 2,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 20,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "debug-ccache",
+            "displayName": "Debug with ccache",
+            "description": "Use ccache for C and C++ compilers with Debug build type",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/debug-ccache",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER_LAUNCHER": "ccache",
+                "CMAKE_CXX_COMPILER_LAUNCHER": "ccache"
+            }
+        },
+        {
+            "name": "debug-ccache-tests",
+            "displayName": "Debug with ccache and tests",
+            "description": "Use ccache for C and C++ compilers with Debug build type",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/debug-ccache-tests",
+            "inherits": [
+                "debug-ccache"
+            ],
+            "cacheVariables": {
+                "NRN_ENABLE_TESTS": "ON"
+            }
+        },
+        {
+            "name": "debug-ccache-nvhpc",
+            "displayName": "Debug NVHPC with ccache",
+            "inherits": [
+                "debug-ccache"
+            ],
+            "description": "Use ccache for C, C++, and CUDA compilers with Debug build type",
+            "binaryDir": "${sourceDir}/build/debug-ccache-nvhpc",
+            "cacheVariables": {
+                "CMAKE_CUDA_COMPILER_LAUNCHER": "ccache",
+                "NRN_ENABLE_CORENEURON": "ON",
+                "NRN_ENABLE_MPI": "OFF",
+                "NMODL_ENABLE_FLEX_BISON_LINES": "OFF",
+                "CORENRN_ENABLE_GPU": "ON",
+                "CMAKE_C_COMPILER": "nvc",
+                "CMAKE_CXX_COMPILER": "nvc++",
+                "CMAKE_CUDA_COMPILER": "nvcc"
+            }
+        },
+        {
+            "name": "debug-ccache-nvhpc-tests",
+            "displayName": "Debug NVHPC with ccache and tests",
+            "inherits": [
+                "debug-ccache-nvhpc"
+            ],
+            "description": "Use ccache for C, C++, and CUDA compilers with Debug build type",
+            "binaryDir": "${sourceDir}/build/debug-ccache-nvhpc-tests",
+            "cacheVariables": {
+                "NRN_ENABLE_TESTS": "ON"
+            }
+        },
+        {
+            "name": "docs",
+            "displayName": "Build NEURON docs",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/docs",
+            "cacheVariables": {
+                "NRN_ENABLE_INTERVIEWS": "OFF",
+                "NRN_ENABLE_MPI": "ON",
+                "NRN_ENABLE_DOCS": "ON",
+                "NMODL_ENABLE_PYTHON_BINDINGS": "ON"
+            }
+        },
+        {
+            "name": "coverage",
+            "displayName": "Coverage",
+            "description": "Configuration for coverage",
+            "inherits": [
+                "debug-ccache"
+            ],
+            "binaryDir": "${sourceDir}/build/coverage",
+            "cacheVariables": {
+                "NRN_ENABLE_BACKTRACE": "ON",
+                "NRN_ENABLE_CORENEURON": "ON",
+                "NRN_ENABLE_COVERAGE": "ON",
+                "NRN_ENABLE_INTERVIEWS": "ON",
+                "NRN_ENABLE_MPI": "ON",
+                "NRN_ENABLE_PERFORMANCE_TESTS": "OFF",
+                "NRN_ENABLE_PROFILING": "ON",
+                "NRN_ENABLE_PYTHON": "ON",
+                "NRN_ENABLE_PYTHON_DYNAMIC": "ON",
+                "NRN_PYTHON_DYNAMIC": "$env{PYTHON_MIN};$env{PYTHON_MAX}",
+                "NRN_PYTHON_EXTRA_FOR_TESTS": "$env{PYTHON_MID}",
+                "NRN_ENABLE_TESTS": "ON",
+                "NRN_ENABLE_MUSIC": "ON",
+                "CMAKE_PREFIX_PATH": "$env{MUSIC_INSTALL_DIR}",
+                "MUSIC_ROOT": "$env{MUSIC_INSTALL_DIR}",
+                "CMAKE_C_COMPILER": "$env{CC}",
+                "CMAKE_CXX_COMPILER": "$env{CXX}"
+            }
+        },
+        {
+            "name": "windows",
+            "displayName": "Build for Windows",
+            "binaryDir": "${sourceDir}/build/windows",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "NRN_ENABLE_MPI_DYNAMIC": "ON",
+                "NRN_ENABLE_MPI": "ON",
+                "CMAKE_PREFIX_PATH": "C:/msmpi",
+                "NRN_ENABLE_INTERVIEWS": "ON",
+                "NRN_ENABLE_PYTHON": "ON",
+                "NRN_ENABLE_RX3D": "ON",
+                "NRN_RX3D_OPT_LEVEL": "2",
+                "NRN_BINARY_DIST_BUILD": "ON",
+                "PYTHON_EXECUTABLE": "C:/Python39/python.exe",
+                "NRN_ENABLE_PYTHON_DYNAMIC": "ON",
+                "NRN_PYTHON_DYNAMIC": "c:/Python39/python.exe;c:/Python310/python.exe;c:/Python311/python.exe;c:/Python312/python.exe;c:/Python313/python.exe;c:/Python314/python.exe",
+                "CMAKE_INSTALL_PREFIX": "C:/nrn-install",
+                "MPI_C_HEADER_DIR": "c:/msmpi/include",
+                "MPI_CXX_HEADER_DIR": "c:/msmpi/include",
+                "MPI_CXX_LIB_NAMES": {
+                    "type": "STRING",
+                    "value": "msmpi"
+                },
+                "MPI_C_LIB_NAMES": {
+                    "type": "STRING",
+                    "value": "msmpi"
+                },
+                "MPI_msmpi_LIBRARY": {
+                    "type": "FILEPATH",
+                    "value": "c:/msmpi/lib/x64/msmpi.lib"
+                }
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug-ccache",
+            "configurePreset": "debug-ccache"
+        },
+        {
+            "name": "debug-ccache-tests",
+            "configurePreset": "debug-ccache-tests"
+        },
+        {
+            "name": "debug-ccache-nvhpc-tests",
+            "configurePreset": "debug-ccache-nvhpc-tests"
+        },
+        {
+            "name": "docs",
+            "configurePreset": "docs",
+            "targets": [
+                "docs"
+            ]
+        },
+        {
+            "name": "coverage",
+            "configurePreset": "coverage"
+        },
+        {
+            "name": "windows",
+            "configurePreset": "windows"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "coverage",
+            "configurePreset": "coverage"
+        },
+        {
+            "name": "windows",
+            "configurePreset": "windows"
+        },
+        {
+            "name": "debug-ccache-nvhpc-tests",
+            "configurePreset": "debug-ccache-nvhpc-tests"
+        }
+    ]
+}
