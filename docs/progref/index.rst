@@ -36,7 +36,7 @@ Quick Links
     `StateTransitionEvent <modelspec/programmatic/ste.html>`_
 
     :ref:`panel`, :ref:`funfit`, :ref:`geometry`, :ref:`printf_doc`, :ref:`math`,
-    :ref:`nmodl2`, :ref:`nmodl`, :ref:`mech`, :ref:`standardruntools`,
+    :ref:`nmodl`, :ref:`mech`, :ref:`standardruntools`,
     :ref:`topology`
     
     :ref:`neuron_rxd`
