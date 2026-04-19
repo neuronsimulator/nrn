@@ -306,6 +306,20 @@ NRN_ENABLE_PYTHON:BOOL=ON
   Enable Python interpreter support
   (default python, fallback to python3, but see PYTHON_EXECUTABLE below)
 
+NRN_INSTALL_PYTHON_PREFIX:STRING="lib/python/neuron/"
+-----------------------------------------------------
+  Path where NEURON Python components will be installed
+
+  Must be relative to CMAKE_INSTALL_PREFIX
+
+  Environment variable PYTHONPATH must contain the real path to NRN_INSTALL_PYTHON_PREFIX in order for python to find neuron.
+
+  To find python's default install directory for user packages, run the command:
+
+  .. code-block:: shell
+
+    python -m site --user-site
+
 .. _cmake_nrn_enable_python_dynamic:
 NRN_ENABLE_PYTHON_DYNAMIC:BOOL=OFF
 ----------------------------------
@@ -544,7 +558,7 @@ NRN_ENABLE_TESTS:BOOL=OFF
     python3 -m pytest test_currents.py
 
 NRN_ENABLE_COVERAGE:BOOL=OFF
----------------------------
+----------------------------
   Enable code coverage
 
   Requires ``lcov`` (e.g. ``sudo apt install lcov``).
@@ -677,7 +691,7 @@ NRN_ENABLE_DIGEST:BOOL=OFF
   Requires libcrypto
 
 NRN_ENABLE_ARCH_INDEP_EXP_POW:BOOL=OFF
----------------------------------
+--------------------------------------
   Provides \ :func:`use_exp_pow_precision` function so that exp and pow produce
   same results on all platforms.
 
