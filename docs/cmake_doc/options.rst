@@ -322,6 +322,8 @@ NRN_INSTALL_PYTHON_PREFIX:STRING="lib/python/neuron/"
 
     python -m site --user-site
 
+  Note: Non-standard installations (such as python virtual environments) have non-standard install paths.
+
 .. _cmake_nrn_enable_python_dynamic:
 NRN_ENABLE_PYTHON_DYNAMIC:BOOL=OFF
 ----------------------------------
