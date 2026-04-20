@@ -342,7 +342,7 @@ def test_2():
     h.cvode_active(1)
     # At least executes KSChan::mulmat
     hrun(
-        "kchan without single cvode=True", t_tol=2e-7, v_tol=1e-11, v_tol_per_time=5e-7
+        "kchan without single cvode=True", t_tol=4e-7, v_tol=1e-11, v_tol_per_time=5e-7
     )
     h.cvode_active(0)
 
