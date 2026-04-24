@@ -14,6 +14,7 @@ set(NMODL_USECASE_DIRS
     kinetic
     linear
     longitudinal_diffusion
+    matexp
     morphology
     net_event
     net_move
