@@ -1180,6 +1180,125 @@ void CodegenCppVisitor::visit_eigen_linear_solver_block(const ast::EigenLinearSo
 }
 
 
+/// Read the names of the state variable being conserved,
+/// and return their indices into the given list of states.
+std::vector<int> get_conserve_variable_indices(const ast::Conserve& conserve,
+                                               const std::vector<std::string> states) {
+    const auto vars = collect_nodes(*conserve.get_react(),
+                                    {
+                                        ast::AstNodeType::NAME,
+                                    });
+    std::vector<int> var_indices;
+    for (const auto& var: vars) {
+        for (int state_index = 0; state_index < states.size(); state_index++) {
+            if (states[state_index] == var->get_node_name()) {
+                var_indices.push_back(state_index);
+            }
+        }
+    }
+    return var_indices;
+}
+
+
+void CodegenCppVisitor::visit_matexp_block(const ast::MatexpBlock& node) {
+    const auto& state_symbols = info.state_vars;
+    std::vector<std::string> states;
+    for (const auto& sym: state_symbols) {
+        states.push_back(sym->get_name());
+    }
+    const std::string n_states = std::to_string(states.size());
+    const std::string vector_type = "Eigen::Matrix<" + float_type + ", " + n_states + ", 1>";
+    const std::string matrix_type = "Eigen::Matrix<" + float_type + ", " + n_states + ", " +
+                                    n_states + ">";
+    // Setup the solver's instance of dt
+    if (node.get_steadystate()->eval()) {
+        printer->fmt_line("{} nmodl_dt = 24.0 * 60.0 * 60.0 * 1000.0;", float_type);
+    } else {
+        printer->add_indent();
+        printer->fmt_text("{} nmodl_dt = ", float_type);
+        auto dt_var = ast::Name(std::make_shared<ast::String>("dt"));
+        dt_var.accept(*this);
+        printer->add_text(";");
+        printer->add_newline();
+    }
+    // Setup the Jacobian matrix
+    printer->add_newline();
+    printer->fmt_line("{} nmodl_eigen_jm = {}::Zero();", matrix_type, matrix_type);
+    printer->fmt_line("{}* nmodl_eigen_j = nmodl_eigen_jm.data();", float_type);
+    //
+    print_statement_block(*node.get_jacobian_block(), false, false);
+    // Create the state vector
+    printer->fmt_line("{} nmodl_eigen_xm;", vector_type);
+    printer->fmt_line("{}* nmodl_eigen_x = nmodl_eigen_xm.data();", float_type);
+    // Initialize the state for the first time
+    const auto& conserve_statements = node.get_conserve();
+    if (node.get_steadystate()->eval() && !conserve_statements.empty()) {
+        for (int i = 0; i < states.size(); i++) {
+            printer->fmt_line("nmodl_eigen_x[{}] = 0;", i);  // First zero everything
+        }
+        for (int i = 0; i < conserve_statements.size(); i++) {
+            const auto var_indices = get_conserve_variable_indices(*conserve_statements[i], states);
+            printer->add_indent();
+            printer->fmt_text("const {} nmodl_conserve_steadystate_{} = {}(",
+                              float_type,
+                              i,
+                              float_type);
+            conserve_statements[i]->get_expr()->accept(*this);
+            printer->fmt_text(") / {}.0;", var_indices.size());
+            printer->add_newline();
+            for (const auto& state_index: var_indices) {
+                printer->fmt_line("nmodl_eigen_x[{}] = nmodl_conserve_steadystate_{};",
+                                  state_index,
+                                  i);
+            }
+        }
+    } else {
+        // Load the state vector from memory
+        for (int i = 0; i < states.size(); i++) {
+            printer->add_indent();
+            printer->fmt_text("nmodl_eigen_x[{}] = ", i);
+            auto state_var = ast::Name(std::make_shared<ast::String>(states[i]));
+            state_var.accept(*this);
+            printer->add_text(";");
+            printer->add_newline();
+        }
+    }
+    // Run the solver
+    printer->fmt_line("{} nmodl_eigen_ym = nmodl_eigen_jm.exp() * nmodl_eigen_xm;", vector_type);
+    printer->fmt_line("{}* nmodl_eigen_y = nmodl_eigen_ym.data();", float_type);
+    // Unpack the CONSERVE statements
+    for (int i = 0; i < conserve_statements.size(); i++) {
+        const auto var_indices = get_conserve_variable_indices(*conserve_statements[i], states);
+        // Calculate the adjustment factor for the CONSERVE statement
+        printer->add_indent();
+        printer->fmt_text("const {} nmodl_conserve_{} = (", float_type, i);
+        conserve_statements[i]->get_expr()->accept(*this);
+        printer->add_text(") / (");
+        for (int var_index = 0; var_index < var_indices.size(); var_index++) {
+            const auto& state_index = var_indices[var_index];
+            printer->fmt_text("nmodl_eigen_y[{}]", state_index);
+            if (var_index < var_indices.size() - 1) {
+                printer->add_text(" + ");
+            }
+        }
+        printer->add_text(");");
+        printer->add_newline();
+        // Apply CONSERVE statement
+        for (const auto& state_index: var_indices) {
+            printer->fmt_line("nmodl_eigen_ym[{}] *= nmodl_conserve_{};", state_index, i);
+        }
+    }
+    // Save the results
+    for (int i = 0; i < states.size(); i++) {
+        printer->add_indent();
+        auto state_var = ast::Name(std::make_shared<ast::String>(states[i]));
+        state_var.accept(*this);
+        printer->fmt_text(" = nmodl_eigen_y[{}];", i);
+        printer->add_newline();
+    }
+}
+
+
 /**
  * \details Once variables are populated, update index semantics to register with coreneuron
  */
