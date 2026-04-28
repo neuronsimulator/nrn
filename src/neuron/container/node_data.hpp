@@ -13,6 +13,7 @@ struct storage: soa<storage,
                     field::Diagonal,
                     field::FastIMemSavD,
                     field::FastIMemSavRHS,
+                    field::ParentContrib,
                     field::RHS,
                     field::Voltage> {
     [[nodiscard]] std::string_view name() const {
