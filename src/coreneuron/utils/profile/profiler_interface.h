@@ -12,6 +12,7 @@
 #include <initializer_list>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <unordered_set>
 
@@ -48,6 +49,11 @@ namespace detail {
  */
 template <class... TProfilerImpl>
 struct Instrumentor {
+    // Compile-time check: do we have any real profilers, or only NullInstrumentor?
+    static constexpr bool has_real_profiler = 
+        sizeof...(TProfilerImpl) > 1 || 
+        !std::is_same_v<std::tuple_element_t<0, std::tuple<TProfilerImpl...>>, NullInstrumentor>;
+
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-value"
@@ -71,6 +77,30 @@ struct Instrumentor {
         }
     }
 
+    /*! \fn phase_begin (two-argument version)
+     *  \brief Activate profiling with concatenated region name.
+     *
+     *  This overload takes a prefix and name separately. Uses compile-time checking
+     *  to completely eliminate string construction when only NullInstrumentor is present
+     *  (the default when no profiler is compiled in).
+     *
+     *  When real profilers are enabled, constructs the concatenated name once and uses
+     *  it for both filtering and profiling.
+     *
+     *  @param prefix the prefix string (e.g., "cur-", "state-")
+     *  @param name the mechanism or region name
+     */
+    inline static void phase_begin(const char* prefix, const char* name) {
+        if constexpr (has_real_profiler) {
+            // Construct string once, use for both checking and profiling
+            std::string fullname = std::string(prefix) + name;
+            if (is_region_to_track(fullname.c_str())) {
+                std::initializer_list<int>{(TProfilerImpl::phase_begin(fullname.c_str()), 0)...};
+            }
+        }
+        // else: entire function body is empty, completely optimized away at compile time
+    }
+
     /*! \fn phase_end
      *  \brief Deactivate the collection of profiling data within a code region.
      *
@@ -88,6 +118,30 @@ struct Instrumentor {
         if (is_region_to_track(name)) {
             std::initializer_list<int>{(TProfilerImpl::phase_end(name), 0)...};
         }
+    }
+
+    /*! \fn phase_end (two-argument version)
+     *  \brief Deactivate profiling with concatenated region name.
+     *
+     *  This overload takes a prefix and name separately. Uses compile-time checking
+     *  to completely eliminate string construction when only NullInstrumentor is present
+     *  (the default when no profiler is compiled in).
+     *
+     *  When real profilers are enabled, constructs the concatenated name once and uses
+     *  it for both filtering and profiling.
+     *
+     *  @param prefix the prefix string (e.g., "cur-", "state-")
+     *  @param name the mechanism or region name
+     */
+    inline static void phase_end(const char* prefix, const char* name) {
+        if constexpr (has_real_profiler) {
+            // Construct string once, use for both checking and profiling
+            std::string fullname = std::string(prefix) + name;
+            if (is_region_to_track(fullname.c_str())) {
+                std::initializer_list<int>{(TProfilerImpl::phase_end(fullname.c_str()), 0)...};
+            }
+        }
+        // else: entire function body is empty, completely optimized away at compile time
     }
 
     /*! \fn start_profile
@@ -373,8 +427,16 @@ inline static void phase_begin(const char* name) {
     detail::InstrumentorImpl::phase_begin(name);
 }
 
+inline static void phase_begin(const char* prefix, const char* name) {
+    detail::InstrumentorImpl::phase_begin(prefix, name);
+}
+
 inline static void phase_end(const char* name) {
     detail::InstrumentorImpl::phase_end(name);
+}
+
+inline static void phase_end(const char* prefix, const char* name) {
+    detail::InstrumentorImpl::phase_end(prefix, name);
 }
 
 inline static void init_profile() {
