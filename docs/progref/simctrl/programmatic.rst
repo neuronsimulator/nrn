@@ -516,11 +516,11 @@ Functions
          
             When using the default implicit integration method (:data:`secondorder` = 0) 
             there is no upper limit on dt for numerical stability and in fact for 
-            passive models it is often convenient to use dt=1.9 to obtain the 
+            passive models it is often convenient to use dt=1e9 to obtain the 
             steady state in a single time step. 
          
-            dt can be changed by the user at any time during a simulation. However, 
-            some inserted mechanisms may use tables which depend on the value of dt 
+            n.dt can be changed by the user at any time during a simulation. However, 
+            some inserted mechanisms may use tables which depend on the value of n.dt 
             which will be automatically recomputed. In this situation, the tables 
             are not useful and should be bypassed by setting the appropriate 
             usetable_suffix global variables to 0. 
@@ -540,7 +540,7 @@ Functions
         
             When using the default implicit integration method (:data:`secondorder` = 0)
             there is no upper limit on dt for numerical stability and in fact for 
-            passive models it is often convenient to use dt=1.9 to obtain the 
+            passive models it is often convenient to use dt=1e9 to obtain the 
             steady state in a single time step. 
         
         
