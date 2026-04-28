@@ -37,39 +37,40 @@ if _ast_config["nmodl_support"]:
             LocalVar,
             ParenExpression,
         )
+
+        OpPrecedence = {
+            BinaryOp.BOP_ADDITION: 1,
+            BinaryOp.BOP_SUBTRACTION: 1,
+            BinaryOp.BOP_MULTIPLICATION: 2,
+            BinaryOp.BOP_DIVISION: 2,
+            BinaryOp.BOP_POWER: 3,
+        }
+
+        def needBrackets(parent, child):
+            if OpPrecedence[child] < OpPrecedence[parent]:
+                return True
+            if (
+                parent in (BinaryOp.BOP_DIVISION, BinaryOp.BOP_SUBTRACTION)
+                and OpPrecedence[child] == OpPrecedence[parent]
+            ):
+                return True
+            return False
+
+        def ParenBinaryExpression(lhs, op, rhs):
+            """Add parenthesis to a BinaryExpression if needed"""
+
+            if lhs.is_binary_expression():
+                if needBrackets(op, lhs.op.value):
+                    lhs = ParenExpression(lhs)
+
+            if rhs.is_binary_expression():
+                if needBrackets(op, rhs.op.value):
+                    rhs = ParenExpression(rhs)
+            return BinaryExpression(lhs, BinaryOperator(op), rhs)
+
     except ModuleNotFoundError as e:
         _ast_config["nmodl_support"] = False
         _ast_config["exception"] = e
-
-    OpPrecedence = {
-        BinaryOp.BOP_ADDITION: 1,
-        BinaryOp.BOP_SUBTRACTION: 1,
-        BinaryOp.BOP_MULTIPLICATION: 2,
-        BinaryOp.BOP_DIVISION: 2,
-        BinaryOp.BOP_POWER: 3,
-    }
-
-    def needBrackets(parent, child):
-        if OpPrecedence[child] < OpPrecedence[parent]:
-            return True
-        if (
-            parent in (BinaryOp.BOP_DIVISION, BinaryOp.BOP_SUBTRACTION)
-            and OpPrecedence[child] == OpPrecedence[parent]
-        ):
-            return True
-        return False
-
-    def ParenBinaryExpression(lhs, op, rhs):
-        """Add parenthesis to a BinaryExpression if needed"""
-
-        if lhs.is_binary_expression():
-            if needBrackets(op, lhs.op.value):
-                lhs = ParenExpression(lhs)
-
-        if rhs.is_binary_expression():
-            if needBrackets(op, rhs.op.value):
-                rhs = ParenExpression(rhs)
-        return BinaryExpression(lhs, BinaryOperator(op), rhs)
 
 
 def _vectorized(f, objs):
