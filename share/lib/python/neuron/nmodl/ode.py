@@ -506,6 +506,7 @@ def optimize_odes(
                 e.g. ["tmp_0 = ca*cam", "rhs[0] = -0.005*tmp_0 + ..."]
         - new_local_vars: list of new temporary variable name strings from CSE
     """
+    from sympy.codegen.rewriting import create_expand_pow_optimization
     custom_fcts = _get_custom_functions(function_calls)
 
     # Build sympy symbols the variables
@@ -514,8 +515,8 @@ def optimize_odes(
         sympy_vars[var] = sp.Symbol(var, real=True)
     local_consts = {sympy_vars[var]: value for var, value in local_consts.items()}
     # Parse each RHS expression
+    expand_pow = create_expand_pow_optimization(10)
     rhs_exprs = [sp.sympify(rhs, locals=sympy_vars) for rhs in rhs_strings]
-
     # Don't apply sympy simplifications, they don't seem to improve performance
     # and they can hang or crash for more complex reactions.
 
@@ -533,12 +534,12 @@ def optimize_odes(
         for var, expr in sub_exprs:
             local_vars.append(sp.ccode(var))
             code.append(
-                f"{var} = {sp.ccode(expr.subs(local_consts).evalf(), user_functions=custom_fcts)}"
+                f"{var} = {sp.ccode(expand_pow(expr).subs(local_consts).evalf(), user_functions=custom_fcts)}"
             )
         rhs_exprs = reduced
 
     for i, expr in enumerate(rhs_exprs):
-        rhs = sp.ccode(expr.subs(local_consts).evalf(), user_functions=custom_fcts)
+        rhs = sp.ccode(expand_pow(expr).subs(local_consts).evalf(), user_functions=custom_fcts)
         if rhs_ids:
             code.append(f"{rhs_ids[i]} = {rhs}")
         else:
