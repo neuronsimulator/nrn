@@ -40,7 +40,6 @@ namespace coreneuron {
 
 namespace detail {
 
-// Forward declaration needed for has_real_profiler check
 struct NullInstrumentor;
 
 /*! \class Instrumentor
