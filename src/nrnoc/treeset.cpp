@@ -463,17 +463,30 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     /* now the internal axial currents.
     The extracellular mechanism contribution is already done.
         rhs += ai_j*(vi_j - vi)
+    Two-pass approach for SIMD vectorization:
+    Pass 1: vectorizable child updates + compute parent contributions
+    Pass 2: scalar accumulation of parent contributions
     */
     auto* const vec_a = nt.node_a_storage();
     auto* const vec_b = nt.node_b_storage();
     auto* const vec_v = nt.node_voltage_storage();
     auto* const parent_i = nt._v_parent_index;
+    auto* const parent_contrib = nt.node_parent_contrib_storage();
+
+    // Pass 1: Child updates (VECTORIZABLE with SIMD)
+    // Both vec_rhs[i] and parent_contrib[i] use direct indexing
+#pragma omp simd
     for (i = i2; i < i3; ++i) {
-        auto const pi = parent_i[i];
-        auto const dv = vec_v[pi] - vec_v[i];
+        auto const dv = vec_v[parent_i[i]] - vec_v[i];
         // our connection coefficients are negative so
         vec_rhs[i] -= vec_b[i] * dv;
-        vec_rhs[pi] += vec_a[i] * dv;
+        parent_contrib[i] = vec_a[i] * dv;
+    }
+
+    // Pass 2: Accumulate parent contributions (scalar reduction)
+    // This loop handles the unavoidable reduction at branch points
+    for (i = i2; i < i3; ++i) {
+        vec_rhs[parent_i[i]] += parent_contrib[i];
     }
 }
 
@@ -588,9 +601,20 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     } else {
         auto* const vec_a = _nt->node_a_storage();
         auto* const vec_b = _nt->node_b_storage();
+        auto* const parent_contrib = _nt->node_parent_contrib_storage();
+        auto* const parent_i = _nt->_v_parent_index;
+
+        // Pass 1: Child diagonal updates (VECTORIZABLE with SIMD)
+        // Direct indexing enables SIMD vectorization
+#pragma omp simd
         for (i = i2; i < i3; ++i) {
             vec_d[i] -= vec_b[i];
-            vec_d[_nt->_v_parent_index[i]] -= vec_a[i];
+            parent_contrib[i] = vec_a[i];
+        }
+
+        // Pass 2: Accumulate parent diagonal contributions (scalar reduction)
+        for (i = i2; i < i3; ++i) {
+            vec_d[parent_i[i]] -= parent_contrib[i];
         }
     }
 }
