@@ -1,10 +1,16 @@
+Reaction-Diffusion (RXD) Tutorials
+===================================
 
-Python RXD tutorials
-=========
+NEURON's **rxd** module lets you model intracellular and extracellular
+chemistry --- calcium dynamics, IP\ :sub:`3` signaling, buffering, gene
+regulation, and more --- alongside electrophysiology. Start with the
+main tutorial, then explore the examples below.
+
+See also: :ref:`neuron_rxd` in the Programmer's Reference.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Reaction-diffusion
+   :caption: Core Tutorials
 
    Reaction-Diffusion tutorial
    basic-initialization
@@ -16,7 +22,7 @@ Python RXD tutorials
 
 .. toctree::
    :maxdepth: 1
-   :caption: Examples
+   :caption: Application Examples
 
    degradable_buffer
    circadian

@@ -1,159 +1,495 @@
-What is NEURON
-==============
+What is NEURON?
+===============
 
-NEURON:
+**NEURON** is the gold standard for **biophysically realistic** modeling of neurons
+and networks. Unlike point-neuron simulators, NEURON treats cells as complex, branching
+3D structures, solving the cable equation at high spatial resolution. It's the bridge
+between knowing "what a brain cell is" and "how to turn a brain cell into math."
 
-* is a flexible and powerful simulator of neurons and networks
-* has important advantages over general-purpose simulators
-* helps users focus on important biological issues rather than purely computational concerns
-* has a convenient user interface
-* has a user-extendable library of biophysical mechanisms
-* has many enhancements for efficient network modeling
-* offers customizable initialization and simulation flow control
-* is widely used in neuroscience research by experimentalists and theoreticians
-* is well-documented and actively supported
-* is free, open source, and runs on (almost) everything
+----
 
-A flexible and powerful simulator of neurons and networks
----------------------------------------------------------
+.. grid:: 1 1 2 3
+   :gutter: 2
 
-NEURON is a simulation environment for modeling individual neurons and networks of neurons. It provides tools for conveniently building, managing, and using models in a way that is numerically sound and computationally efficient. It is particularly well-suited to problems that are closely linked to experimental data, especially those that involve cells with complex anatomical and biophysical properties.
+   .. grid-item::
 
-Advantages over general-purpose simulators
-------------------------------------------
-NEURON had its beginnings in the laboratory of John W. Moore at Duke University, where he and Michael Hines started their collaboration to develop simulation software for neuroscience research. It has benefited from judicious revision and selective enhancement, guided by feedback from the growing number of neuroscientists who have used it to incorporate empirically-based modeling into their research strategies.
+      :octicon:`cpu` **Anatomy & Morphology**
 
-NEURON's computational engine employs special algorithms that achieve high efficiency by exploiting the structure of the equations that describe neuronal properties. It has functions that are tailored for conveniently controlling simulations, and presenting the results of real neurophysiological problems graphically in ways that are quickly and intuitively grasped. Instead of forcing users to reformulate their conceptual models to fit the requirements of a general purpose simulator, NEURON is designed to let them deal directly with familiar neuroscience concepts. Consequently, users can think in terms of the biophysical properties of membrane and cytoplasm, the branched architecture of neurons, and the effects of synaptic communication between cells.
+      `Jump to Sections & Segments ↓ <#sections-and-segments-the-building-blocks>`_
 
-Separates biology from purely computational concerns
-----------------------------------------------------
+   .. grid-item::
 
-From its inception, one of NEURON's design goals has been to help modelers address high-level neuroscience research questions without being distracted by low-level mathematical or computational issues. Here are some of the strategies that help it approach this goal.
+      :octicon:`zap` **Biophysics**
 
-Working with familiar idioms
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      `Jump to Mechanisms ↓ <#biophysical-mechanisms-the-stuff-inside>`_
 
-The most important strategy is to offer users what might be called "natural syntax," which allows them to specify model properties in familiar idioms, rather than having to cast kinetic schemes or differential equations in the form of statements in C or some other generic programming language. Perhaps the most prominent example of natural syntax in NEURON is the notion of a section, which is a continuous unbranched cable (directly analogous to an unbranched neurite). Sections can be connected together to form branched trees, and are endowed with properties that can vary continuously with position along their lengths. Sections let investigators represent neuronal anatomy without having to wrestle with the cable equation. They also easily lend themselves to manipulation by graphical tools, such as the CellBuilder, for building and managing models. Other examples of natural syntax are seen in the NMODL programming language, and in the Linear Circuit Builder and Channel Builder (see User-extendable library of biophysical mechanisms below).
+   .. grid-item::
 
-Integrator-independent model specification
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      :octicon:`pencil` **The Math**
 
-NEURON offers several different, user-selectable numerical integration methods.
+      `Jump to Cable Theory ↓ <#the-underlying-math-cable-theory>`_
 
-* The default integration method is implicit Euler, which provides robust stability and first order accuracy in time (sufficient for most applications).
-* There is also a Crank-Nicolson method that provides second order accuracy at little additional computational cost. However, this is prone to numerical oscillations if dt is too long, voltage clamps are present, or system states are described by algebraic equations.
-* Increased accuracy, faster run times, and sometimes both, may be achieved by choosing adaptive integration, which adjusts integration order and time step as necessary to satisfy a local error criterion. For historical reasons, the adaptive integrators are genericallly called "CVODE" in NEURON; the actual method is either IDA (Hindmarsh and Taylor, 1999) or CVODES (Hindmarsh and Serban, 2002), a decision that is made automatically (i.e. without requiring user judgement) depending on whether or not a model involves states that are described by algebraic equations.
+   .. grid-item::
 
-Users can switch between these integration methods without having to rewrite the model specification because NEURON avoids computation-specific representations of biological properties. This convenience is essential because deciding which method is best in any particular situation is often an empirical question. Further details about numeric integration in NEURON are provided in chapter 4 of The NEURON Book (Carnevale and Hines, 2006).
+      :octicon:`code` **Programming**
 
-Efficient and painless spatial and temporal discretization
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      `Jump to Languages ↓ <#the-three-language-system>`_
 
-Another important strategy is to allow users to defer or avoid the explicit specification of spatial and temporal discretization. NEURON's approach to spatial discretization, which sets it apart from other modeling tools, eliminates preoccupation with compartments. This approach has two components:
+   .. grid-item::
 
-1. Each section has its own discretization parameter nseg, which governs the number of internal points at which the discretized form of the cable equation is integrated, and can be changed after the anatomical and biophysical properties of the model have been specified.
-2. Parameters and variables that are spatially nonuniform are described in terms of normalized distance from one end of the section, e.g. soma.v(0.5) means the membrane potential midway between the 0 and 1 ends of the soma section.
+      :octicon:`database` **ModelDB**
 
-In addition, NEURON provides tools that can automatically take care of discretization. Numerical simulation of models of biological neurons can pose a special challenge because such models tend to include mechanisms that span a wide range of spatial and temporal scales, with state variables that involve a wide range of magnitudes. With the CellBuilder, users may apply the d_lambda rule (Hines and Carnevale 2001; p. 122 et seq. in Carnevale and Hines 2006), to automatically assign values of nseg based on the model's anatomical and biophysical properties. The d_lambda rule can also be applied via hoc code. Similarly, the error tolerances that govern time step size (and integration order) during adaptive integration can be adjusted automatically by the GUI's Absolute Tolerance Scale Tool, which is part of the VariableTimeStep tool.
+      `Jump to Ecosystem ↓ <#the-ecosystem-modeldb>`_
 
-Convenient user interface
--------------------------
+   .. grid-item::
 
-The interpreters
+      :octicon:`telescope` **GUI & Tools**
+
+      `Jump to Visualization ↓ <#gui-vs-coding>`_
+
+----
+
+Why NEURON?
+-----------
+
+NEURON is uniquely designed for neuroscientists, not just engineers. You can:
+
+- **Model realistic anatomy:** Import morphometric data from Neurolucida, SWC, or draw cells by hand
+- **Insert biophysics:** Add ion channels, synapses, pumps, and diffusion with simple commands
+- **Leverage 40 years of development:** Battle-tested algorithms for numerical stability and speed
+- **Access 850+ published models:** Start from `ModelDB <https://modeldb.science>`_ rather than from scratch
+- **Scale seamlessly:** From a single compartment on your laptop to millions of cells on HPC clusters with GPU support
+- **Stay close to experimental data:** Units, concepts, and tools mirror what you'd use in the lab
+
+.. admonition:: Key Strengths
+   :class: tip
+
+   - **Free and open source** — runs on Windows, macOS, Linux, and HPC
+   - **Widely used** — over 3,000 publications as of 2026
+   - **Actively developed** — new releases ~twice per year
+   - **Well documented** — programmer's reference, tutorials, videos, and *The NEURON Book*
+
+----
+
+Core Concepts
+-------------
+
+Sections and Segments: The Building Blocks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NEURON views a cell as a collection of connected cables, not a single point. This is what
+makes it **spatially realistic**.
+
+**Sections** represent unbranched pieces of the neuron:
+
+- **Soma** — the cell body
+- **Dendrites** — branching input structures
+- **Axon** — the output cable
+
+Each section is continuous and can be connected to other sections to form a branched tree.
+
+.. code-block:: python
+
+   from neuron import n
+
+   soma = n.Section("soma")
+   dend = n.Section("dend")
+   dend.connect(soma(1))  # Connect dend to the distal end (1) of soma
+
+**Segments (Compartments)** are the actual units of simulation.  NEURON automatically
+divides each section into discrete segments where the cable equation is solved.
+
+- **The more segments, the higher the spatial resolution** — but also the slower the simulation
+- NEURON can automatically set the number of segments using the **d_lambda rule** based on the electrical length of the section
+- You control segment count with ``nseg``: ``soma.nseg = 5``
+
+.. admonition:: Why This Matters
+   :class: note
+
+   With sections and segments, you can model phenomena that require spatial resolution:
+   attenuation of synaptic inputs along a dendrite, the back-propagation of action
+   potentials, or differences in channel density across the cell.
+
+See also: :ref:`topology` and :ref:`geometry` in the Programmer's Reference.
+
+----
+
+Biophysical Mechanisms: The "Stuff" Inside
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once you have the shape (morphology), you must tell NEURON how that shape behaves.
+This is done by **inserting mechanisms** into sections.
+
+**Ion Channels** control the flow of ions across the membrane:
+
+.. code-block:: python
+
+   soma.insert(n.hh)  # Hodgkin–Huxley Na+ and K+ channels
+   soma.hh.gnabar = 0.12  # Set sodium conductance
+
+Built-in mechanisms include ``hh`` (Hodgkin–Huxley), ``pas`` (passive leak), and many
+others. You can also define custom channels using **NMODL** (see below).
+
+**Point Processes** represent localized phenomena:
+
+- **Synapses:** ``ExpSyn``, ``Exp2Syn`` (AMPA, GABA, etc.)
+- **Electrodes:** ``IClamp`` (current injection), ``SEClamp`` (voltage clamp)
+- **Artificial spiking cells:** ``IntFire1``, ``IntFire2``
+
+.. code-block:: python
+
+   stim = n.IClamp(soma(0.5))  # Electrode at the midpoint
+   stim.delay = 5  # ms
+   stim.dur = 1    # ms
+   stim.amp = 0.5  # nA
+
+**User-Defined Mechanisms:** Write your own ion channels, pumps, or diffusion processes in
+**NMODL**, a high-level language for expressing kinetic schemes and differential equations.
+Alternatively, use the **ChannelBuilder** GUI tool for voltage- and ligand-gated channels.
+
+.. admonition:: Where to Find Mechanisms
+   :class: tip
+
+   Don't reinvent the wheel. Most ion channels have already been implemented. Check
+   `ModelDB <https://modeldb.science>`_ or the
+   `NEURON mod file repository <https://github.com/neuronsimulator/nrn/tree/master/share/examples/nrniv/nmodl>`_.
+
+See also: :ref:`mech` in the Programmer's Reference.
+
+----
+
+The Underlying Math: Cable Theory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NEURON exists to solve the **cable equation** — a partial differential equation that
+describes how voltage changes over time and space in a cylindrical conductor (like a
+dendrite or axon).
+
+For each segment, NEURON solves:
+
+.. math::
+
+   c_m \frac{\partial v}{\partial t} + I_{\text{ion}} = \frac{a}{2R_i} \frac{\partial^2 v}{\partial x^2}
+
+Where:
+  - :math:`c_m` = membrane capacitance (typically 1 µF/cm²)
+  - :math:`v` = membrane potential (mV)
+  - :math:`I_{\text{ion}}` = sum of ionic currents from all mechanisms (mA/cm²)
+  - :math:`a` = radius of the cable (µm)
+  - :math:`R_i` = cytoplasmic (axial) resistivity (Ω·cm)
+
+You don't need to be a calculus wizard to use NEURON, but understanding that the software
+is numerically integrating this equation helps you appreciate why:
+
+- **Spatial discretization matters:** Too few segments → inaccurate voltage gradients
+- **Time step matters:** Too large ``dt`` → numerical instability
+- **NEURON is fast:** It uses optimized algorithms that exploit the structure of branching cables
+
+**Integration Methods:**
+
+- **Implicit Euler** (default) — robust and stable
+- **Crank-Nicolson** — second-order accuracy, but can oscillate if ``dt`` is too large
+- **CVODE (adaptive)** — automatically adjusts time step and integration order for accuracy
+
+You can switch between methods without rewriting your model:
+
+.. code-block:: python
+
+   cvode = n.CVode()
+   cvode.active(True)  # Enable adaptive integration
+
+See also: `CVode <../../progref/simctrl/cvode.html>`_ in the Programmer's Reference.
+
+----
+
+The Three-Language System
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is often the most confusing part for newcomers. NEURON uses **three languages**:
+
+1. **Python** (Recommended for New Users)
+   
+   Modern, widely used, great for data analysis and plotting. Most tutorials now use Python.
+
+   .. code-block:: python
+
+      from neuron import n, gui
+      soma = n.Section("soma")
+      soma.L = 20  # µm
+      soma.diam = 20
+
+2. **HOC** (High-Order Calculator, pronounced "h-oak")
+   
+   The legacy proprietary language. You'll encounter it in older models and GUI-generated code.
+   Still fully supported but not recommended for new projects.
+
+   .. code-block:: none
+
+      create soma
+      soma { L = 20  diam = 20 }
+
+   Python can call HOC and vice versa via dot notation, ``n("hoc_string")`` and ``nrnpython()``.
+
+3. **NMODL** (NEURON MODel Language)
+   
+   A specialized language for defining **new biophysical mechanisms** (ion channels, pumps, synapses).
+   You write ``.mod`` files, then compile them with ``nrnivmodl``.
+
+   .. code-block:: none
+
+      NEURON {
+        SUFFIX myChannel
+        USEION na WRITE ina
+      }
+      STATE { m h }
+
+.. admonition:: Bottom Line
+   :class: tip
+
+   - **Start with Python** for scripting and model building.
+   - **Know HOC exists** so you can read older code.
+   - **Use NMODL only when** you need custom mechanisms not in `ModelDB <https://modeldb.science>`_.
+
+See also: :ref:`python_accessing_hoc` and `NMODL language <../../nmodl/language.html>`_.
+
+----
+
+The Ecosystem: ModelDB
+~~~~~~~~~~~~~~~~~~~~~~
+
+You're not starting from scratch. `ModelDB <https://modeldb.science>`_ is a massive
+repository of published models — over 1,900 computational neuroscience models, many
+written in NEURON.
+
+**How to use ModelDB:**
+
+1. Search by author, cell type, brain region, ion channel, or publication
+2. Download the source code (often includes data and scripts)
+3. Run it to see if it does what the paper claims
+4. **Adapt it** — most researchers find a model "close enough" and modify it
+
+.. admonition:: ModelDB is Your Starting Point
+   :class: note
+
+   Very few researchers write a model from scratch. Instead, they find a similar model,
+   verify it works, then adapt the morphology, ion channels, or network connectivity
+   for their own research question.
+
+----
+
+GUI vs. Coding
+~~~~~~~~~~~~~~
+
+NEURON's **Graphical User Interface (GUI)** is incredibly powerful for:
+
+- Visualizing cell morphology in 3D
+- Watching voltage plots update in real time
+- Quickly injecting current or applying voltage clamps
+- Building cells with the **CellBuilder**
+- Importing morphometric data with **Import3D**
+- Creating networks with the **Network Builder**
+
+.. code-block:: python
+
+   from neuron import n, gui  # Launch the GUI
+
+.. admonition:: When to Use the GUI
+   :class: tip
+
+   - **Learning:** Use the GUI to *understand* NEURON's concepts and explore parameter space.
+   - **Quick tests:** Inject current, watch a spike, adjust a conductance — all with sliders.
+   - **Import morphology:** The Import3D tool is easier than writing code to parse SWC files.
+
+   **But for reproducibility and automation**, write Python scripts. The GUI is great for
+   exploration; code is essential for publishable, reproducible science.
+
+**Key GUI Tools:**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Tool
+     - Purpose
+   * - **CellBuilder**
+     - Create or modify cell models without code
+   * - **Import3D**
+     - Load morphometric data (Neurolucida, SWC, Eutectic formats)
+   * - **ChannelBuilder**
+     - Design ion channels with kinetic schemes or ODEs
+   * - **Network Builder**
+     - Prototype small networks graphically
+   * - **RunControl**
+     - Start/stop simulations, set ``dt`` and duration
+   * - **Graph**
+     - Plot voltage, current, or any variable vs. time
+   * - **Shape Plot**
+     - Visualize cell morphology and spatial voltage
+
+See also: :doc:`cellbuilder`, :doc:`import3d`, and :doc:`network_builder_tutorials`.
+
+----
+
+Advanced Features
+-----------------
+
+Advantages over General-Purpose Simulators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NEURON was born in John W. Moore's lab at Duke University in the 1980s. Unlike general-purpose
+simulators, NEURON's algorithms are **optimized for the structure of neuronal cable equations**,
+making it orders of magnitude faster for biophysically detailed models.
+
+**Key advantages:**
+
+- **Natural syntax:** Specify models using neuroscience concepts (sections, ion channels, synapses) instead of generic differential equations
+- **Integration-independent model specification:** Switch between Euler, Crank-Nicolson, or CVODE without rewriting your model
+- **Automatic spatial discretization:** NEURON can apply the **d_lambda rule** to set segment counts automatically based on electrical length
+- **Optimized for neurons:** Special algorithms exploit the branching cable structure for speed
+
+Network Modeling
 ~~~~~~~~~~~~~~~~
 
-NEURON offers users a choice of programming languages. Most programming has been done done with hoc, an interpreted language with C-like syntax (Kernighan and Pike, 1984) that has been extended to include functions specific to the domain of modeling neurons, implementing a graphical interface, and object-oriented programming. More recently, Python was adopted as an alternative interpreter. All hoc variables, procedures, and functions can be accessed from Python, and vice-versa. This provides a tremendous degree of flexibility for setting up the anatomical and biophysical properties of models, defining the appearance of the graphical interface, controlling simulations, and plotting results.
+Although NEURON started with single-cell models, it now excels at **large-scale networks**:
 
-Users can take advantage of multiprocessors or workstation clusters in order to accelerate embarrassingly parallel problems, such as optimization and parameter space exploration. Furthermore, network models, and complex models of a single neuron, can be distributed over multiple processors to achieve nearly linear speedup.
+- **Event-driven synapses:** Efficient spike delivery system with ``NetCon`` objects
+- **Artificial cells:** Fast integrate-and-fire neurons (``IntFire1``, ``IntFire2``) can be mixed with biophysical cells
+- **Parallel simulation:** Distribute networks across CPU cores or HPC clusters with ``ParallelContext``
+- **Synaptic plasticity:** Stream-specific STDP, depression, facilitation
 
-The graphical user interface
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code-block:: python
 
-The default graphical user interface can be used to create and exercise models that have a wide range of complexity. With the GUI, it is possible to generate publication-quality results without having to write any program code at all. However, the most flexible and powerful strategy is to combine hoc programming and the GUI in order to exploit the strengths of both approaches.
+   # Connect two cells with a synapse
+   syn = n.ExpSyn(target_cell.soma(0.5))
+   nc = n.NetCon(source_cell.soma(0.5)._ref_v, syn, sec=source_cell.soma)
+   nc.weight[0] = 0.01  # µS
+   nc.delay = 1         # ms
 
-Many GUI tools are designed to be analogous to biology and lab instrumentation, and are very convenient for initial exploratory simulations, setting parameters, common control of voltage and current stimuli, and graphing variables as functions of time and position. Perhaps the most noteworthy model specification tools are
+See also: `NetCon <../../progref/modelspec/programmatic/network/netcon.html>`_
+and `ParallelContext <../../progref/modelspec/programmatic/network/parcon.html>`_.
 
-* The Channel Builder, which is discussed below (see User-extendable library of biophysical mechanisms).
-* The CellBuilder, which can be used to create new models of cells from scratch and modify existing models without writing any code. Biophysical properties may be constant over the length of each section, or governed by user-specified functions of position according to radial distance from a point, path distance from a reference location in the cell, or distance along an axis in the xy plane.
-* The Import3D tool, which can convert morphometric data from Eutectic, Neurolucida, and SWC formats into model cells. It fixes many common errors automatically, and helps pinpoint complex problems that require judgment.
-* The Linear Circuit Builder, a tool for setting up models that involve gap junctions, ephaptic interactions, dual-electrode voltage clamps, dynamic clamps, or other combinations of neurons and electrical circuit elements. For example, this model of a dynamic clamp was implemented with the Linear Circuit Builder.
-* The Network Builder, which can be used to prototype small networks that can be mined later for reusable code in order to create large-scale networks.
+Reaction-Diffusion (rxd)
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are also powerful tools for model analysis and optimization.
+Model intracellular and extracellular chemistry alongside electrophysiology:
 
-* The ModelView tool automatically discovers model properties and presents them in a browsable textual and graphical form. This can be very helpful for code development and maintenance. It is growing increasingly important as code sharing becomes more common, not only because it helps users understand each others' models, but also because it can emit and import model specifications in XML, thereby facilitating interoperability with other simulators.
-* The Impedance tools perform electrotonic analyses of a model cell, including input and transfer impedance, voltage transfer ratios, and the electrotonic transformation, and presents the results in easily understood graphs.
-* The Multiple Run Fitter facilitates setting up and managing optimization protocols for automated tuning of model parameters that are constrained by data from one or more experimental protocols.
+- Calcium dynamics, buffering, and pumps
+- IP₃ signaling and calcium waves
+- Neurotransmitter diffusion in the extracellular space
+- Gene regulation and metabolism
 
-For some examples of how NEURON can be used, be sure to see Demonstrations and examples.
+.. code-block:: python
 
-User-extendable library of biophysical mechanisms
--------------------------------------------------
+   from neuron import n, rxd
+   cyt = rxd.Region(n.allsec(), name="cyt", nrn_region="i")
+   ca = rxd.Species(cyt, name="ca", charge=2, initial=50e-6)  # 50 nM
 
-User-defined mechanisms such as voltage- and ligand-gated ion channels, diffusion, buffering, active transport, etc., can be added by writing model descriptions in NMODL, a high-level programming language that has a simple syntax for expressing kinetic schemes and sets of simultaneous algebraic and/or differential equations. NMODL can also be used to write model descriptions for new classes of artificial spiking cells. These model descriptions are compiled so that membrane voltage and states can be computed efficiently using integration methods that have been optimized for branched structures. A large number of mechanisms written in NMODL have been made available on the WWW by the authors of published models; many of these have been entered into `ModelDB <https://modeldb.science>`_ which makes it easy for users to find and retrieve model source code according to search criteria such as author, type of model (e.g. cell or network), ionic currents, etc..
+See also: :ref:`neuron_rxd` and the `RXD Tutorials <../../rxd-tutorials/index.html>`_.
 
-As mentioned above, NEURON also has a GUI tool called the ChannelBuilder that makes it easy to specify voltage- and ligand-gated ion channels in terms of ODEs (HH-style, including Borg-Graham formulation) and/or kinetic schemes. ChannelBuilder channels actually execute faster than identical mechanisms specified with NMODL. Their states and total conductance can be simulated as deterministic (continuous in time), or stochastic (countably many channels with independent state transitions, producing random, abrupt conductance changes).
+----
 
-Enhancements for modeling networks
-----------------------------------
+Support and Resources
+---------------------
 
-Although NEURON began in the domain of single-cell models, since the early 1990s it has been applied to network models that contain large numbers of cells and connections. Its suitability for network models has been enhanced by the introduction of features that include
+NEURON is Actively Developed
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* an event delivery system that manages delivery of spike events to synaptic targets, and has enabled the implementation of artificial spiking cells that are several orders of magnitude faster than biophysical model cells and can be used in network models that may also include biophysical model cells
-* a Network Connection object class, which has greatly simplified the construction and management of networks
-* generalized synapses which facilitate computationally efficient implementation of synaptic convergence, while allowing stream-specific synaptic plasticity governed by user-specified rules (e.g. use-dependent and/or spike-timing-dependent plasticity)
-* global and local variable-order, variable-stepsize integration methods, which can substantially shorten runtimes for some models
-* ability to implement network models that are distributed across processors in a parallel computational architecture (Migliore et al, 2006). Properly written code will work on a single processor standalone PC, or on parallel hardware, without modification.
+- **New releases** appear ~twice per year, with bug fixes as needed
+- **GitHub repository:** `github.com/neuronsimulator/nrn <https://github.com/neuronsimulator/nrn>`_
+- **Discussion Board:** Ask questions at `github.com/neuronsimulator/nrn/discussions <https://github.com/neuronsimulator/nrn/discussions>`_
+- **Legacy Forum:** Browse archived discussions at `neuron.yale.edu/phpBB <https://neuron.yale.edu/phpBB>`_
 
-Customizable initialization and simulation flow control
--------------------------------------------------------
+Documentation and Training
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Complex models often require custom initialization and/or simulation flow control. Simulation control in NEURON employs a standard run system that is designed for convenient customization.
+- **The NEURON Book** (Carnevale and Hines, 2006) — the authoritative reference
+- **Online tutorials:** Python Ball-and-Stick series, RXD tutorials
+- **Training videos:** Recorded courses from 2021-2022 on YouTube
+- **One-day SfN workshops** and **five-day summer courses** (UCSD and other locations)
+- **Programmer's Reference:** :ref:`Complete API documentation <prog_ref>`
 
-Large user base
----------------
+.. admonition:: Over 3,000 Publications
+   :class: note
 
-As of March 2026, we know of more than 3,000 scientific articles and books have reported work that was done with NEURON <https://nrn.readthedocs.io/en/9.0.1/publications-using-neuron.html>`_.
+   As of March 2026, over 3,000 scientific articles and books have reported work done
+   with NEURON. See :doc:`../publications-using-neuron` for a partial list.
 
-Development, support, and documentation
----------------------------------------
+----
 
-NEURON is actively developed and supported, with new standard releases appearing about twice a year, supplemented by bug fixes as needed. Alpha versions that contain "the very latest features" are made available at shorter intervals.
+System Requirements
+-------------------
 
- 
+NEURON is **free, open source**, and runs on:
 
-Support is available by email, telephone, and consultation. Users can also post questions and share information with other members of the NEURON community through a mailing list and the NEURON Forum. In addition to being a browsable and searchable venue for discussions on specific questions, the Forum contains a growing list of tips, how-tos, and hacks of interest to users at all levels of expertise.
+- **Windows** (10, 11)
+- **macOS** (Intel and Apple Silicon)
+- **Linux** (all major distributions)
+- **HPC clusters** (Beowulf, IBM Blue Gene, Cray, NVIDIA GPU support via CoreNEURON)
 
-Extensive documentation is available, including an on-line programmer's reference, FAQ list, tutorials, and preprints of key articles about NEURON. The authoritative book about NEURON is The NEURON Book (Carnevale and Hines, 2006). Four other books have made extensive use of NEURON (Destexhe and Sejnowski, 2001; Johnston and Wu, 1995; Lytton, 2002; Moore and Stuart, 2000), and several of these include source code or have made it available online.
+**Installation:**
 
-One day courses on NEURON are presented as a satellite to the annual meetings of the Society for Neuroscience, and intensive five day hands-on summer courses are given at the University of California in San Diego and other locations; `click here for announcements of future courses <https://neuron.yale.edu/neuron/courses>`_. Special seminars and tutorials are presented at The NEURON Simulator Meeting, an episodic gathering of neuroscience investigators and educators who are interested in using computational modeling in their work. Instruction and consultation on NEURON are also provided at the european Advanced Course in Computational Neuroscience.
+For macOS, Linux, and most cloud compute environments:
 
-Availability and system requirements
-------------------------------------
+.. code-block:: bash
 
-NEURON is distributed free of charge from `neuron.yale.edu <https://neuron.yale.edu>`_. It runs on all popular hardware platforms under MSWin (98 or later), UNIX, Linux, and OS X, and on parallel hardware including Beowulf clusters, the IBM Blue Gene, and the Cray XT3.
+   pip install neuron
 
-References
+or (Windows) download binary installers from `www.neuronsimulator.org <https://www.neuronsimulator.org>`_.
+
+See :doc:`../install/install` for detailed instructions.
+
+----
+
+References and Further Reading
+-------------------------------
+
+**Key Publications:**
+
+- Carnevale, N.T. and Hines, M.L. (2006). *The NEURON Book.* Cambridge University Press.
+- Hines, M.L. and Carnevale, N.T. (2001). NEURON: a tool for neuroscientists. *The Neuroscientist* 7:123-135.
+- Migliore, M., Cannia, C., Lytton, W.W., Markram, H., and Hines, M.L. (2006). Parallel network simulations with NEURON. *Journal of Computational Neuroscience* 21:110-119.
+
+**Other Books Using NEURON:**
+
+- Destexhe, A. and Sejnowski, T.J. (2001). *Thalamocortical Assemblies.* Oxford University Press.
+- Johnston, D. and Wu, S.M.-S. (1995). *Foundations of Cellular Neurophysiology.* MIT Press.
+- Lytton, W.W. (2002). *From Computer to Brain.* Springer-Verlag.
+- Moore, J.W. and Stuart, A.E. (2000). *Neurons in Action: Computer Simulations with NeuroLab.* Sinauer Associates.
+
+**Numerical Methods:**
+
+- Hindmarsh, A.C. and Serban, R. (2002). User documentation for CVODES. Lawrence Livermore National Laboratory. (`SUNDIALS <https://computation.llnl.gov/projects/sundials>`_)
+- Hindmarsh, A.C. and Taylor, A.G. (1999). User documentation for IDA. Lawrence Livermore National Laboratory.
+
+----
+
+Next Steps
 ----------
-Carnevale, N.T. and Hines, M.L. The NEURON Book. Cambridge, UK: Cambridge University Press, 2006.
 
-Destexhe, A. and Sejnowski, T.J. Thalamocortical Assemblies. New York: Oxford University Press, 2001.
+.. grid:: 1 1 2 2
+   :gutter: 3
 
-Hindmarsh, A.C. and Serban, R. User documentation for CVODES, an ODE solver with sensitivity analysis capabilities. Lawrence Livermore National Laboratory, 2002.
+   .. grid-item-card:: :octicon:`rocket` Get Started
+      :link: how_to_get_started
+      :link-type: doc
 
-Hindmarsh, A.C. and Taylor, A.G. User documentation for IDA, a differential-algebraic solver for sequential and parallel computers. Lawrence Livermore National Laboratory, 1999.
+      Installation, first steps, and where to find help.
 
-Hines, M.L. and Carnevale, N.T. NEURON: a tool for neuroscientists. The Neuroscientist 7:123-135, 2001.
+   .. grid-item-card:: :octicon:`mortar-board` Tutorials
+      :link: ../tutorials/index
+      :link-type: doc
 
-Johnston, D. and Wu, S.M.-S. Foundations of Cellular Neurophysiology. Cambridge,MA: MIT Press, 1995.
+      Work through the Ball-and-Stick series to build your first model.
 
-Kernighan, B.W. and Pike, R. Appendix 2: Hoc manual. In: The Unix Programming Environment. Englewood Cliffs, NJ: Prentice-Hall, 1984.
+   .. grid-item-card:: :octicon:`code` Programmer's Reference
+      :link: ../progref/index
+      :link-type: doc
 
-Lytton, W.W. From Computer to Brain. New York: Springer-Verlag, 2002.
+      Complete API documentation for all classes and functions.
 
-Migliore, M., Cannia, C., Lytton, W.W., Markram, H. and Hines, M.L. Parallel network simulations with NEURON. Journal of Computational Neuroscience 21:110-119, 2006.
+   .. grid-item-card:: :octicon:`database` ModelDB
+      :link: https://modeldb.science
+      :link-type: url
 
-Moore, J.W. and Stuart, A.E. Neurons in Action: Computer Simulations with NeuroLab. Sunderland, MA: Sinauer Associates, 2000.
-
-SUNDIALS is available from https://computation.llnl.gov/projects/sundials 
+      Browse and download published NEURON models.
 

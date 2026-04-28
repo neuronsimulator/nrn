@@ -1,10 +1,10 @@
 .. _training_videos:
 
-Training videos
+Training Videos
 ===============
 
-We have a `YouTube channel <https://www.youtube.com/channel/UCs9ujTJiXhLYDQfCJIk0XpQ>`_ 
-with NEURON videos.
+Recorded lectures and tutorials from NEURON courses and conferences.
+Watch on our `YouTube channel <https://www.youtube.com/channel/UCs9ujTJiXhLYDQfCJIk0XpQ>`_.
 
 .. toctree::
    :maxdepth: 2

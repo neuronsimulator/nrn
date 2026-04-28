@@ -10,3 +10,25 @@
 .fixed-table td {
     white-space: normal !important;
 }
+
+/* Card styling for sphinx-design grid cards */
+.sd-card {
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.sd-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Horizontal rule styling */
+hr {
+    border: none;
+    border-top: 1px solid #e0e0e0;
+    margin: 2rem 0;
+}
+
+/* Quick start code block on landing page */
+.highlight-python .highlight {
+    border-radius: 4px;
+}
