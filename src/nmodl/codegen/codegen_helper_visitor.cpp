@@ -593,7 +593,8 @@ void CodegenHelperVisitor::find_neuron_global_variables() {
                                    pair{"secondorder", "int"},
                                    pair{"pi", "double"}}) {
         auto sym = psymtab->lookup(var);
-        if (sym && (sym->get_read_count() || sym->get_write_count())) {
+        if (sym && (sym->get_read_count() || sym->get_write_count() ||
+                    info.variables_in_verbatim.find(var) != info.variables_in_verbatim.end())) {
             info.neuron_global_variables.emplace_back(std::move(sym), type);
         }
     }
@@ -719,6 +720,11 @@ void CodegenHelperVisitor::visit_eigen_newton_solver_block(
 void CodegenHelperVisitor::visit_eigen_linear_solver_block(
     const ast::EigenLinearSolverBlock& node) {
     info.eigen_linear_solver_exist = true;
+    node.visit_children(*this);
+}
+
+void CodegenHelperVisitor::visit_matexp_block(const ast::MatexpBlock& node) {
+    info.matexp_blocks.push_back(&node);
     node.visit_children(*this);
 }
 

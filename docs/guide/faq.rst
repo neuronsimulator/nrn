@@ -71,7 +71,7 @@ The classical approach to using NEURON is to specify all three components by wri
 
 A more recent approach is to use the NEURON Main Menu toolbar's dropdown menus, which allow you to quickly create a wide range of models without having to write any code at all. You can save the GUI's windows and panels to session files that you can use later to recreate what you built (see the FAQ "What is a ses (session) file?").
 
-The most flexible and productive way to work with NEURON is to combine hoc and the GUI in ways that exploit their respective strengths. Don't be afraid of the GUI--noone will accuse you of being a "girly man" if you take advantange of its powerful tools for model specification, instrumentation, and control. In fact, many of the GUI's most useful tools would be extremely difficult and time consuming to try to duplicate by writing your own hoc code.
+The most flexible and productive way to work with NEURON is to combine hoc and the GUI in ways that exploit their respective strengths. The GUI provides powerful interactive tools for model specification, instrumentation, and control. In fact, many of the GUI's most useful tools would be extremely difficult and time consuming to try to duplicate by writing your own hoc code.
 
 Be sure to read the FAQ "Help! I'm having a hard time implementing models!"
 

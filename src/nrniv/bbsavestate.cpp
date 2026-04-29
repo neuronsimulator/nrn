@@ -1272,7 +1272,7 @@ static void tqcallback(const TQItem* tq, int i) {
                     // all spikes from a PreSyn were delivered before that PreSyn fired
                     // again. The assumption did not hold for existing Blue Brain models.
                     // Therefore we extend the algorithm to any number of spikes with
-                    // different initiation times from the same PreSyn. For sanity we
+                    // different initiation times from the same PreSyn. For simplicity we
                     // assume Presyns do not fire more than once every 0.1 ms.
                     // Unfortunately this possibility makes mpi exchange much more
                     // difficult as the number of doubles exchanged can be greater than
