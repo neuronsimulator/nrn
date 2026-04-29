@@ -3,6 +3,75 @@ import numpy
 from .rxdException import RxDException
 from . import initializer
 
+# _ast_config used for two flags
+# nmodl_support default to True -- will be set to False if nmodl is not
+# installed of install without python bindings
+
+# "kinetic_block" determines how to handle reactions
+# set to "off" for ast to only use DERIVATIVE blocks
+# set to "on" for reactions to be KINETIC blocks
+# set to "mass_action" for mass action reaction to be KINETIC blocks while
+#         non-mass action reactions and rates are DERIVATIVE blocks
+
+_ast_config = {"nmodl_support": True, "kinetic_block": "off"}
+
+
+if _ast_config["nmodl_support"]:
+    try:
+        from neuron.nmodl.ast import (
+            Name,
+            String,
+            ReactionStatement,
+            VarName,
+            Integer,
+            BinaryOperator,
+            BinaryOp,
+            BinaryExpression,
+            UnaryOperator,
+            UnaryOp,
+            UnaryExpression,
+            ReactionOperator,
+            ReactVarName,
+            FunctionCall,
+            Double,
+            LocalVar,
+            ParenExpression,
+        )
+
+        OpPrecedence = {
+            BinaryOp.BOP_ADDITION: 1,
+            BinaryOp.BOP_SUBTRACTION: 1,
+            BinaryOp.BOP_MULTIPLICATION: 2,
+            BinaryOp.BOP_DIVISION: 2,
+            BinaryOp.BOP_POWER: 3,
+        }
+
+        def needBrackets(parent, child):
+            if OpPrecedence[child] < OpPrecedence[parent]:
+                return True
+            if (
+                parent in (BinaryOp.BOP_DIVISION, BinaryOp.BOP_SUBTRACTION)
+                and OpPrecedence[child] == OpPrecedence[parent]
+            ):
+                return True
+            return False
+
+        def ParenBinaryExpression(lhs, op, rhs):
+            """Add parenthesis to a BinaryExpression if needed"""
+
+            if lhs.is_binary_expression():
+                if needBrackets(op, lhs.op.value):
+                    lhs = ParenExpression(lhs)
+
+            if rhs.is_binary_expression():
+                if needBrackets(op, rhs.op.value):
+                    rhs = ParenExpression(rhs)
+            return BinaryExpression(lhs, BinaryOperator(op), rhs)
+
+    except ModuleNotFoundError as e:
+        _ast_config["nmodl_support"] = False
+        _ast_config["exception"] = e
+
 
 def _vectorized(f, objs):
     if hasattr(objs, "__len__"):
@@ -200,6 +269,15 @@ class _Function:
         except AttributeError:
             return False
 
+    def ast(self, region=None, use_react_var=False):
+        if _ast_config["nmodl_support"]:
+            if hasattr(self._obj, "ast"):
+                obj = self._obj.ast(region)
+            else:
+                obj = Name(String(self._obj))
+            fun = Name(String(self._fname))
+            return FunctionCall(fun, [obj])
+
 
 class _Function2:
     def __init__(self, obj1, obj2, f, fname):
@@ -246,6 +324,20 @@ class _Function2:
             except AttributeError:
                 pass
         return False
+
+    def ast(self, region=None, use_react_var=False):
+        if _ast_config["nmodl_support"]:
+            if hasattr(self._obj1, "ast"):
+                obj1 = self._obj1.ast(region)
+            else:
+                obj1 = Name(String(self._obj1))
+            if hasattr(self._obj2, "ast"):
+                obj2 = self._obj2.ast(region)
+            else:
+                obj2 = Name(String(self._obj2))
+
+            fun = Name(String(self._fname))
+            return FunctionCall(fun, [obj1, obj2])
 
 
 # wrappers for the functions in module math from python 2.7
@@ -529,6 +621,18 @@ class _Product:
         self._a._involved_species(the_dict)
         self._b._involved_species(the_dict)
 
+    def ast(self, region=None, use_react_var=False):
+        if _ast_config["nmodl_support"]:
+            if hasattr(self._a, "ast"):
+                lhs = self._a.ast(region)
+            else:
+                lhs = Name(String(self._a))
+            if hasattr(self._b, "ast"):
+                rhs = self._b.ast(region)
+            else:
+                rhs = Name(String(self._b))
+            return ParenBinaryExpression(lhs, BinaryOp.BOP_MULTIPLICATION, rhs)
+
 
 class _Quotient:
     def __init__(self, a, b):
@@ -537,6 +641,18 @@ class _Quotient:
 
     def __repr__(self):
         return f"({self._a!r})/({self._b!r})"
+
+    def ast(self, region=None, use_react_var=False):
+        if _ast_config["nmodl_support"]:
+            if hasattr(self._a, "ast"):
+                lhs = self._a.ast(region)
+            else:
+                lhs = Name(String(self._a))
+            if hasattr(self._b, "ast"):
+                rhs = self._b.ast(region)
+            else:
+                rhs = Name(String(self._b))
+            return ParenBinaryExpression(lhs, BinaryOp.BOP_DIVISION, rhs)
 
     # Change any Species to _ExtracellularSpecies so _semi_compile gives the
     # _grid_id and not the species _id
@@ -583,6 +699,18 @@ class _Quotient:
         self._a._involved_species(the_dict)
         self._b._involved_species(the_dict)
 
+    def ast(self, region=None, use_react_var=False):
+        if _ast_config["nmodl_support"]:
+            if hasattr(self._a, "ast"):
+                lhs = self._a.ast(region)
+            else:
+                lhs = Name(String(self._a))
+            if hasattr(self._b, "ast"):
+                rhs = self._b.ast(region)
+            else:
+                rhs = Name(String(self._b))
+            return ParenBinaryExpression(lhs, BinaryOp.BOP_DIVISION, rhs)
+
 
 class _Reaction:
     def __init__(self, lhs, rhs, direction):
@@ -605,6 +733,23 @@ class _Reaction:
             except AttributeError:
                 pass
         return False
+
+    def ast(self, region=None, use_react_var=False):
+        if _ast_config["nmodl_support"]:
+            lhs = self._lhs.ast(region, use_react_var)
+            rhs = self._rhs.ast(region, use_react_var)
+            # TODO: Placeholder rates should be replaced by in rxd.Reaction
+            if region:
+                rid = region._id
+                rname = region.name if region.name else ""
+                rint = Integer(rid, Name(String(rname)))
+            else:
+                rint = Integer(0, Name(String("unassigned")))
+
+            # should be replaced by rxd.Reaction with the actual values
+            kf = Double("0.0")
+            kb = Double("0.0")
+            return ReactionStatement(lhs, ReactionOperator(), rhs, kf, kb)
 
 
 class _Arithmeticed:
@@ -728,6 +873,63 @@ class _Arithmeticed:
         if not result:
             result = "0"
         return result
+
+    def ast(self, region=None, use_react_var=False):
+        if _ast_config["nmodl_support"]:
+            from . import species
+
+            nodes = None
+            for item, count in zip(
+                list(self._items.keys()), list(self._items.values())
+            ):
+                if hasattr(item, "ast"):
+                    item_node = item.ast(region)
+                elif isinstance(item, int):
+                    item_node = Integer(item, Name(String(str(item))))
+                elif isinstance(item, float):
+                    item_node = Double(str(item))
+                else:
+                    item_node = LocalVar(Name(String(item)))
+
+                if count == 1:
+                    if use_react_var and item_node.is_var_name():
+                        term_node = ReactVarName(
+                            Integer(1, Name(String("1"))), item_node
+                        )
+                    else:
+                        term_node = item_node
+                elif count == -1:
+                    if len(self._items) == 1:
+                        term_node = UnaryExpression(
+                            UnaryOperator(UnaryOp.UOP_NEGATION), item_node
+                        )
+                    else:
+                        term_node = item_node
+                else:
+                    x = count if len(self._items) == 1 else abs(count)
+                    if use_react_var and item_node.is_var_name():
+                        term_node = ReactVarName(
+                            Integer(x, Name(String(str(x)))), item_node
+                        )
+                    else:
+                        term_node = ParenBinaryExpression(
+                            Integer(x, Name(String(str(x)))),
+                            BinaryOp.BOP_MULTIPLICATION,
+                            item_node,
+                        )
+
+                if nodes is None:
+                    nodes = term_node
+                else:
+                    if count < 0:
+                        nodes = ParenBinaryExpression(
+                            nodes, BinaryOp.BOP_SUBTRACTION, term_node
+                        )
+                    else:
+                        nodes = ParenBinaryExpression(
+                            nodes, BinaryOp.BOP_ADDITION, term_node
+                        )
+            return nodes
 
     @property
     def _voltage_dependent(self):
@@ -876,6 +1078,10 @@ class Vm(_Arithmeticed, object):
         @property
         def _voltage_dependent(self):
             return True
+
+        def ast(self, region=None, use_react_var=False):
+            if _ast_config["nmodl_support"]:
+                return VarName(Name(String("v")), None, None)
 
     def __init__(self):
         super(Vm, self).__init__(Vm._Vm(), valid_reaction_term=True)

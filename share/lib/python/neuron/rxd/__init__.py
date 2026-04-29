@@ -7,8 +7,8 @@ from .rate import Rate
 from .reaction import Reaction
 from . import geometry
 from .multiCompartmentReaction import MultiCompartmentReaction
-from .rxd import re_init, set_solve_type, nthread
-from .rxdmath import v
+from .rxd import re_init, set_solve_type, nthread, ast
+from .rxdmath import v, _ast_config
 
 try:
     from . import dimension3
