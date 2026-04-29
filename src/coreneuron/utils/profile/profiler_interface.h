@@ -52,8 +52,8 @@ struct NullInstrumentor;
 template <class... TProfilerImpl>
 struct Instrumentor {
     // Compile-time check: do we have any real profilers, or only NullInstrumentor?
-    static constexpr bool has_real_profiler = 
-        sizeof...(TProfilerImpl) > 1 || 
+    static constexpr bool has_real_profiler =
+        sizeof...(TProfilerImpl) > 1 ||
         !std::is_same_v<std::tuple_element_t<0, std::tuple<TProfilerImpl...>>, NullInstrumentor>;
 
 #ifdef __clang__
