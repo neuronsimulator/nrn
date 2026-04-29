@@ -417,14 +417,12 @@ void nrn_rhs(neuron::model_sorted_token const& cache_token, NrnThread& nt) {
     /* note that CAP has no current */
     for (tml = _nt->tml; tml; tml = tml->next)
         if (auto const current = memb_func[tml->index].current; current) {
-            std::string mechname("cur-");
-            mechname += memb_func[tml->index].sym->name;
             if (measure) {
                 w = nrnmpi_wtime();
             }
-            nrn::Instrumentor::phase_begin(mechname.c_str());
+            nrn::Instrumentor::phase_begin("cur-", memb_func[tml->index].sym->name);
             current(cache_token, _nt, tml->ml, tml->index);
-            nrn::Instrumentor::phase_end(mechname.c_str());
+            nrn::Instrumentor::phase_end("cur-", memb_func[tml->index].sym->name);
             if (measure) {
                 nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w;
             }
@@ -519,11 +517,9 @@ void nrn_lhs(neuron::model_sorted_token const& sorted_token, NrnThread& nt) {
     /* note that CAP has no jacob */
     for (tml = _nt->tml; tml; tml = tml->next)
         if (auto const jacob = memb_func[tml->index].jacob; jacob) {
-            std::string mechname("cur-");
-            mechname += memb_func[tml->index].sym->name;
-            nrn::Instrumentor::phase_begin(mechname.c_str());
+            nrn::Instrumentor::phase_begin("cur-", memb_func[tml->index].sym->name);
             jacob(sorted_token, _nt, tml->ml, tml->index);
-            nrn::Instrumentor::phase_end(mechname.c_str());
+            nrn::Instrumentor::phase_end("cur-", memb_func[tml->index].sym->name);
             if (errno) {
                 if (nrn_errno_check(tml->index)) {
                     hoc_warning("errno set during calculation of jacobian", (char*) 0);
