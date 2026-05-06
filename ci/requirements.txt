@@ -904,9 +904,9 @@ jupyter-lsp==2.2.5 \
     --hash=sha256:45fbddbd505f3fbfb0b6cb2f1bc5e15e83ab7c79cd6e89416b248cb3c00c11da \
     --hash=sha256:793147a05ad446f809fd53ef1cd19a9f5256fd0a2d6b7ce943a982cb4f545001
     # via jupyterlab
-jupyter-server==2.13.0 \
-    --hash=sha256:77b2b49c3831fbbfbdb5048cef4350d12946191f833a24e5f83e5f8f4803e97b \
-    --hash=sha256:c80bfb049ea20053c3d9641c2add4848b38073bf79f1729cea1faed32fc1c78e
+jupyter-server==2.18.0 \
+    --hash=sha256:568b27bce4320a53c3eebf1bdcbee9acf48a8ab7f66ec83d900ca9909d4fb770 \
+    --hash=sha256:69a5397a039d689da81a45955f9b23e95ee167f6d8a8d64372fb616f2aac650a
     # via
     #   jupyter-lsp
     #   jupyterlab
