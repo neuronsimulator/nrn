@@ -163,6 +163,13 @@ import _neuron_section
 # we keep the old h as before with the old repr and type
 h = hoc.HocObject()
 
+# work around linefeed with no return when print from a gui callback.
+try:
+    sys.stdout.reconfigure(newline="\r\n")
+    sys.stderr.reconfigure(newline="\r\n")
+except:
+    pass
+
 
 class _NEURON_INTERFACE(hoc.HocObject):
     """
