@@ -32,6 +32,11 @@ jobs:
       - name: Save commit ref
         id: save-commit
         run: |
+
+          # === TEMPORARY: build hines/nrn-PIE-idraw-fix ===
+          echo "commit=hines/nrn-PIE-idraw-fix" >> "$GITHUB_OUTPUT"
+          # ===============================================
+
           commit="${{ github.event.inputs.commit }}"
           if [[ -n "${commit}" ]]; then
             echo "commit=${commit}" >> "$GITHUB_OUTPUT"
