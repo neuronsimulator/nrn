@@ -25,16 +25,21 @@ project(
 # Fixes for Linux wheels
 # =============================================================================
 
-# Force PIE for all executables (idraw, nrniv, etc.)
-# This was the root cause of the original "invalid ELF header: RTLD_GLOBAL" error.
+# Force PIE for all executables (idraw, nrniv, etc.) This was the root cause of the original
+# "invalid ELF header: RTLD_GLOBAL" error.
 cmake_policy(SET CMP0083 NEW)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Force PIE for NEURON + InterViews" FORCE)
+set(CMAKE_POSITION_INDEPENDENT_CODE
+    ON
+    CACHE BOOL "Force PIE for NEURON + InterViews" FORCE)
 
-# Disable fragile dynamic X11 loading *only* for Linux wheels.
-# This was triggering the (null) RTLD_GLOBAL error.
-# macOS wheels and normal/local Linux builds keep the original default (ON).
-if(SKBUILD AND UNIX AND NOT APPLE)
-  set(IV_ENABLE_X11_DYNAMIC OFF CACHE BOOL "Disable on Linux wheels" FORCE)
+# Disable fragile dynamic X11 loading *only* for Linux wheels. This was triggering the (null)
+# RTLD_GLOBAL error. macOS wheels and normal/local Linux builds keep the original default (ON).
+if(SKBUILD
+   AND UNIX
+   AND NOT APPLE)
+  set(IV_ENABLE_X11_DYNAMIC
+      OFF
+      CACHE BOOL "Disable on Linux wheels" FORCE)
 endif()
 
 # =============================================================================
