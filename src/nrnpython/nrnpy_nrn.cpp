@@ -1019,7 +1019,7 @@ static PyObject* nrnpy_set_psection_safe(PyObject* self, PyObject* args) {
 static PyObject* NPySecObj_psection(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
     if (nrnpy_psection) {
-        auto arglist = nb::cast(nb::make_tuple(self));
+        auto arglist = nb::make_tuple(self);
         return PyObject_CallObject(nrnpy_psection, arglist.ptr());
     }
     Py_RETURN_NONE;
@@ -2647,7 +2647,7 @@ static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
     CHECK_SEC_INVALID(self->sec_);
     double x = 0.5;
     PyArg_ParseTuple(args, "|d", &x);
-    auto segargs = nb::cast(nb::make_tuple(self, x));
+    auto segargs = nb::make_tuple(self, x);
     return NPySegObj_new(psegment_type, segargs.ptr(), nullptr);
 }
 

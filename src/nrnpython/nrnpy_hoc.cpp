@@ -1032,7 +1032,7 @@ static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname) {
                 docobj = nb::make_tuple("", "");
             }
 
-            nb::object result = pfunc_get_docstring(*docobj);
+            nb::object result = nb::steal(PyObject_CallObject(pfunc_get_docstring.ptr(), docobj.ptr()));
             return result.release().ptr();
         } else {
             return nullptr;
@@ -1189,7 +1189,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                     docobj = nb::make_tuple("", "");
                 }
 
-                result = pfunc_get_docstring(*docobj);
+                result = nb::steal(PyObject_CallObject(pfunc_get_docstring.ptr(), docobj.ptr()));
                 return result.release().ptr();
             } else {
                 return nullptr;
@@ -3305,8 +3305,7 @@ static char* nrncore_arg(double tstop) {
         if (module) {
             try {
                 auto callable = nb::borrow(module).attr("nrncore_arg");
-                auto ts = nb::cast(nb::make_tuple(tstop));
-                auto arg = callable(*ts);
+                auto arg = callable(tstop);
                 auto str = Py2NRNString::as_ascii(arg.ptr());
                 if (!str.is_valid()) {
                     Py2NRNString::set_pyerr(

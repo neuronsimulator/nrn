@@ -104,7 +104,7 @@ static nb::object nrnpy_pyCallObject(nb::callable callable, nb::object args) {
     // at the top level
     auto interp = HocTopContextManager();
     nb::tuple tup(args);
-    nb::object p = callable(*tup);
+    nb::object p = nb::steal(PyObject_CallObject(callable.ptr(), tup.ptr()));
 #if 0
 printf("PyObject_CallObject callable\n");
 PyObject_Print(callable, stdout, 0);
@@ -398,17 +398,20 @@ static Object* callable_with_args(Object* ho, int narg) {
     auto po = nb::borrow(((Py2Nrn*) ho->u.this_pointer)->po_);
     nanobind::gil_scoped_acquire lock{};
 
-    nb::list args_list{};
+    auto args = nb::steal(PyTuple_New((Py_ssize_t) narg));
+    if (!args) {
+        hoc_execerror("PyTuple_New failed", 0);
+    }
     for (int i = 0; i < narg; ++i) {
         // not used with datahandle args.
         auto item = nb::steal(nrnpy_hoc_pop("callable_with_args"));
         if (!item) {
             hoc_execerror("nrnpy_hoc_pop failed", 0);
         }
-        args_list.append(item);
+        if (PyTuple_SetItem(args.ptr(), (Py_ssize_t) (narg - i - 1), item.release().ptr()) != 0) {
+            hoc_execerror("PyTuple_SetItem failed", 0);
+        }
     }
-    args_list.reverse();  // because we popped in reverse order
-    nb::tuple args = nb::tuple(args_list);
 
     nb::tuple r = nb::make_tuple(po, args);
 
@@ -610,6 +613,7 @@ std::vector<char> call_picklef(const std::vector<char>& fname, int narg) {
         nb::object arg = nb::steal(nrnpy_hoc_pop("call_picklef"));
         args.append(arg);
     }
+    args.reverse();  // since top of hoc stack was last arg before the for loop.
     nb::object result = callable(*args);
     if (!result) {
         auto mes = nrnpyerr_str();
@@ -759,9 +763,8 @@ static Object* py_alltoall_type(int size, int type) {
             if (type == 4) {  // broadcast is just the PyObject
                 pdest = psrc;
             } else {  // allgather and gather must wrap psrc in list
-                nb::list pdest_list{};
-                pdest_list.append(psrc);
-                pdest = pdest_list;
+                pdest = nb::steal(PyList_New(1));
+                PyList_SetItem(pdest.ptr(), 0, psrc.release().ptr());
             }
             Object* ho = nrnpy_po2ho(pdest.ptr());
             if (ho) {
