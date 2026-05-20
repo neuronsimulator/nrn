@@ -207,7 +207,7 @@ static PyObject* nrnexec(PyObject* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "s", &cmd)) {
         return nullptr;
     }
-    bool b = hoc_valid_stmt(cmd, 0);
+    bool b = hoc_valid_stmt(cmd, nullptr);
     return PyBool_FromLong(b);
 }
 
@@ -481,7 +481,7 @@ int hocobj_pushargs(PyObject* args, std::vector<neuron::unique_cstr>& s2free) {
 }
 
 static Symbol* getsym(char* name, Object* ho, int fail) {
-    Symbol* sym = 0;
+    Symbol* sym = nullptr;
     if (ho) {
         sym = hoc_table_lookup(name, ho->ctemplate->symtable);
         if (!sym && strcmp(name, "delay") == 0) {
@@ -496,7 +496,7 @@ static Symbol* getsym(char* name, Object* ho, int fail) {
         }
     }
     if (sym && sym->type == UNDEF) {
-        sym = 0;
+        sym = nullptr;
     }
     if (!sym && fail) {
         PyErr_Format(PyExc_LookupError, "'%s' is not a defined hoc variable name.", name);
@@ -562,7 +562,6 @@ int nrnpy_numbercheck(PyObject* po) {
     return rval;
 }
 
-// Returns a new reference.
 PyObject* nrnpy_ho2po(Object* o) {
     // o may be NULLobject, or encapsulate a Python object (via
     // the PythonObject class in hoc (see Py2Nrn in nrnpy_p2h.cpp),
@@ -588,7 +587,6 @@ PyObject* nrnpy_ho2po(Object* o) {
     return po.release().ptr();
 }
 
-// not static because it's used in nrnpy_nrn.cpp
 Object* nrnpy_po2ho(PyObject* po) {
     // po may be None, or encapsulate a hoc object (via the
     // PyHocObject, or be a native Python instance such as [1,2,3]
@@ -623,7 +621,7 @@ PyObject* nrnpy_hoc_pop(const char* mes) {
     Object** d;
     switch (hoc_stack_type()) {
     case STRING:
-        result = nb::steal(Py_BuildValue("s", *hoc_strpop()));
+        result = nb::cast(*hoc_strpop());
         break;
     case VAR: {
         // remove mes arg when test coverage development completed
@@ -632,11 +630,11 @@ PyObject* nrnpy_hoc_pop(const char* mes) {
         if (nrn_chk_data_handle(px)) {
             // unfortunately, this is nonsense if NMODL POINTER is pointing
             // to something other than a double.
-            result = nb::steal(Py_BuildValue("d", *px));
+            result = nb::cast(*px);
         }
     } break;
     case NUMBER:
-        result = nb::steal(Py_BuildValue("d", hoc_xpop()));
+        result = nb::cast(hoc_xpop());
         break;
     case OBJECTVAR:
     case OBJECTTMP:
@@ -705,7 +703,7 @@ static int set_final_from_stk(PyObject* po) {
 
 // Returns a new reference.
 static void* nrnpy_hoc_int_pop() {
-    return (void*) Py_BuildValue("i", (long) hoc_xpop());
+    return (void*) PyLong_FromLong((long) hoc_xpop());
 }
 
 // Returns a new reference.
@@ -743,7 +741,7 @@ static void* fcall(void* vself, void* vargs) {
         hoc_pushx(d);
     } else if (self->sym_->type == TEMPLATE) {
         Object* ho = hoc_newobj1(self->sym_, narg);
-        auto result = nb::steal(hocobj_new(hocobject_type, 0, 0));
+        auto result = nb::steal(hocobj_new(hocobject_type, nullptr, nullptr));
         auto* pho = (PyHocObject*) result.ptr();
         pho->ho_ = ho;
         pho->type_ = PyHoc::HocObject;
@@ -1200,7 +1198,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             }
         } else if (self->type_ == PyHoc::HocTopLevelInterpreter &&
                    strncmp(n, "__nrnsec_0x", 11) == 0) {
-            Section* sec = (Section*) hoc_sec_internal_name2ptr(n, 0);
+            Section* sec = (Section*) hoc_sec_internal_name2ptr(n, nullptr);
             if (!sec) {
                 PyErr_SetString(PyExc_NameError, n);
             } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
@@ -1247,7 +1245,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
     if (self->ho_) {  // use the component fork.
         // We use the convention that `ret_ho_` own the Python object,
         // and `po` is just a (casted) pointer/view.
-        auto ret_ho_ = nb::steal(hocobj_new(hocobject_type, 0, 0));
+        auto ret_ho_ = nb::steal(hocobj_new(hocobject_type, nullptr, nullptr));
         PyHocObject* po = (PyHocObject*) ret_ho_.ptr();
         po->ho_ = self->ho_;
         hoc_obj_ref(po->ho_);
@@ -1299,7 +1297,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
     case VAR:  // double*
         if (!is_array(*sym)) {
             if (sym->subtype == USERINT) {
-                result = nb::steal(Py_BuildValue("i", *(sym->u.pvalint)));
+                result = nb::cast(*(sym->u.pvalint));
                 break;
             }
             if (sym->subtype == USERPROPERTY) {
@@ -1309,9 +1307,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
                 }
                 if (!isptr) {
                     if (sym->u.rng.type == CABLESECTION) {
-                        result = nb::steal(Py_BuildValue("d", cable_prop_eval(sym)));
+                        result = nb::cast(cable_prop_eval(sym));
                     } else {
-                        result = nb::steal(Py_BuildValue("i", int(cable_prop_eval(sym))));
+                        result = nb::cast(int(cable_prop_eval(sym)));
                     }
                     break;
                 } else if (sym->u.rng.type != CABLESECTION) {
@@ -1324,7 +1322,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             if (isptr) {
                 result = nb::steal(nrn_hocobj_ptr(hoc_pxpop()));
             } else {
-                result = nb::steal(Py_BuildValue("d", *hoc_pxpop()));
+                result = nb::cast(*hoc_pxpop());
             }
         } else {
             result = nb::steal((PyObject*) intermediate(self, sym, -1));
@@ -1341,7 +1339,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         pcsav = save_pc(&fc);
         hoc_push_string();
         hoc_pc = pcsav;
-        result = nb::steal(Py_BuildValue("s", *hoc_strpop()));
+        result = nb::cast(*hoc_strpop());
     } break;
     case OBJECTVAR:  // Object*
         if (!is_array(*sym)) {
