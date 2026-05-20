@@ -1032,7 +1032,8 @@ static PyObject* hocclass_getattro(PyObject* self, PyObject* pyname) {
                 docobj = nb::make_tuple("", "");
             }
 
-            nb::object result = nb::steal(PyObject_CallObject(pfunc_get_docstring.ptr(), docobj.ptr()));
+            nb::object result = nb::steal(
+                PyObject_CallObject(pfunc_get_docstring.ptr(), docobj.ptr()));
             return result.release().ptr();
         } else {
             return nullptr;
