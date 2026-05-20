@@ -1,13 +1,22 @@
 import os
+import sys
+import warnings
+
 from neuron import config
+
+from neuron.tests.utils.checkresult import Chk
+from neuron.tests.utils import get_c_compiler
+from subprocess import Popen, PIPE
 
 # skip test if no InterViews GUI
 if not config.arguments["NRN_ENABLE_INTERVIEWS"] or os.getenv("DISPLAY") is None:
-    print("No GUI for running neurondemo. Skip this test.")
-    quit()
+    warnings.warn("No GUI for running neurondemo. Skip this test.")
+    sys.exit(0)
 
-from neuron.tests.utils.checkresult import Chk
-from subprocess import Popen, PIPE
+# skip on NVHPC
+if get_c_compiler().endswith("nvc"):
+    warnings.warn("Skipping neurondemo test on NVHPC")
+    sys.exit(0)
 
 # Create a helper for managing reference results
 dir_path = os.path.dirname(os.path.realpath(__file__))

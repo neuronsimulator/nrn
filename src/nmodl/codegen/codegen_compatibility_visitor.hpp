@@ -37,7 +37,7 @@ using namespace ast;
  * \brief %Visitor for printing compatibility issues of the mod file
  *
  * INDEPENDENT_BLOCK is ignored (no error raised) as stated in:
- * https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/mechanisms/nmodl.html
+ * https://nrn.readthedocs.io/en/latest/nmodl/language/nmodl.html#independent
  */
 class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     /// Typedef for defining FunctionPointer that points to the
@@ -55,6 +55,7 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
                                                               codegen::naming::EULER_METHOD,
                                                               codegen::naming::DERIVIMPLICIT_METHOD,
                                                               codegen::naming::SPARSE_METHOD,
+                                                              codegen::naming::MATEXP_METHOD,
                                                               codegen::naming::AFTER_CVODE_METHOD};
 
     const std::string simulator = "coreneuron";

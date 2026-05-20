@@ -3162,7 +3162,9 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend) {
 void net_init(Item* qinit, Item* qp2) {
     /* qinit=INITIAL { stmtlist qp2=} */
     replacstr(qinit, "\nstatic void _net_init(Point_process* _pnt, double* _args, double _lflag)");
-    Sprintf(buf, "    _ppvar = _nrn_mechanism_access_dparam(_pnt->_prop);\n");
+    Sprintf(buf,
+            "    neuron::legacy::set_globals_from_prop(_pnt->_prop, _ml_real, _ml, _iml);\n"
+            "    _ppvar = _nrn_mechanism_access_dparam(_pnt->_prop);\n");
     vectorize_substitute(insertstr(qinit->next->next, buf),
                          "  _nrn_mechanism_cache_instance _ml_real{_pnt->_prop};\n"
                          "  auto* const _ml = &_ml_real;\n"

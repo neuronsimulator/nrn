@@ -82,13 +82,20 @@ def _config_exe(exe_name):
     os.environ["CORENRNHOME"] = NRN_PREFIX
     os.environ["NRN_PYTHONEXE"] = sys.executable
     os.environ["CORENRN_PYTHONEXE"] = sys.executable
-    os.environ["CORENRN_PERLEXE"] = shutil.which("perl")
     os.environ["NRNBIN"] = os.path.dirname(__file__)
 
     if "NMODLHOME" not in os.environ:
         os.environ["NMODLHOME"] = NRN_PREFIX
     if "NMODL_PYLIB" not in os.environ:
-        os.environ["NMODL_PYLIB"] = find_libpython()
+        result = find_libpython()
+        if not result:
+            raise ValueError(
+                "unable to locate the Python shared library; "
+                "please make sure it is installed, "
+                "or set the environmental variable `NMODL_PYLIB` "
+                "manually to the path to the Python shared library"
+            )
+        os.environ["NMODL_PYLIB"] = result
 
     # nmodl module is inside <prefix>/lib directory
     sys.path.insert(0, os.path.join(NRN_PREFIX, "lib"))

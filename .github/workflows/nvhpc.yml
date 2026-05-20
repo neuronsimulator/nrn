@@ -1,0 +1,121 @@
+name: NEURON NVHPC CI
+
+
+concurrency:
+  # Don't cancel on master, creating a PR when a push workflow is already going will cancel the push workflow in favour of the PR workflow
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_id || github.event.number && github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+
+# NOTE: if using a self-hosted runner, NEVER add a `on: workflow_call` entry.
+# The reason is that anyone could then run the workflow on our self-hosted
+# machine, which is a security concern and would consume our resources.
+on:
+  push:
+    branches:
+      - master
+      - release/**
+
+  pull_request:
+    branches:
+      - master
+      - release/**
+
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Name of the NEURON branch to test"
+        type: string
+        required: true
+
+
+env:
+  NRN_BUILD_DIR: ${{ github.workspace }}/build
+
+
+jobs:
+  nvhpc:
+    name: "Run NVHPC CI on custom runner"
+    runs-on: "self-hosted"
+    timeout-minutes: 60
+    steps:
+      - name: "Verify NVHPC is available"
+        env:
+          # set this to the path (in the container!) where NVHPC makes
+          # its executables available
+          NVHPC_PATH: "/opt/nvidia/hpc_sdk/Linux_x86_64/25.3/compilers/bin/"
+        run: |
+          if [[ ! -d "${NVHPC_PATH}" ]]; then
+            echo "ERROR: path ${NVHPC_PATH} does not exist, please verify it exists"
+            exit 1
+          fi
+          echo "${NVHPC_PATH}" >> $GITHUB_PATH
+
+      - name: "Checkout repo"
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || github.sha ||  'master' }}
+          fetch-depth: 1
+          submodules: recursive
+
+      - name: "Install Python dependencies"
+        env:
+          # use a cache to speed things up
+          PYTHON_CACHE: /opt/cache/python
+        run: |
+          PY_EXECUTABLE="${PY_EXECUTABLE:-$(command -v python3)}"
+          PY_MAJOR="$("${PY_EXECUTABLE}" -c 'import sys;print(sys.version_info[0])')"
+          PY_MINOR="$("${PY_EXECUTABLE}" -c 'import sys;print(sys.version_info[1])')"
+          VENV_DIR="venv_${PY_MAJOR}.${PY_MINOR}"
+          "${PY_EXECUTABLE}" -m venv "${VENV_DIR}"
+          source "${VENV_DIR}/bin/activate"
+          python -m pip install -r ci/uv_requirements.txt
+          uv pip install -r ci/requirements.txt --cache-dir ${PYTHON_CACHE}
+          echo "VENV_DIR=${VENV_DIR}" >> $GITHUB_ENV
+
+      - name: "Configure NEURON"
+        env:
+          NRN_INSTALL_DIR: /tmp/nrn-install
+        run: |
+          rm -fr ${NRN_INSTALL_DIR}
+          source "${VENV_DIR}/bin/activate"
+          export NRN_CONFIG=(-DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_MPI=ON -DCORENRN_ENABLE_GPU=ON -DCMAKE_CXX_COMPILER=nvc++ -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_DOCS=OFF -DNRN_ENABLE_TESTS=ON -DCMAKE_C_COMPILER=nvc -DCMAKE_CUDA_COMPILER=nvcc -DCMAKE_INSTALL_PREFIX="${NRN_INSTALL_DIR}" -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DNMODL_ENABLE_FLEX_BISON_LINES=OFF -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -G Ninja -DCMAKE_BUILD_TYPE=Debug)
+          cmake -B ${NRN_BUILD_DIR} "${NRN_CONFIG[@]}"
+
+      - name: "Build NEURON"
+        env:
+          # use ccache to speed things up
+          CCACHE_DIR: /opt/cache/ccache
+          # set this to how many CPUs are available
+          CMAKE_BUILD_PARALLEL_LEVEL: 20
+        run: |
+          source "${VENV_DIR}/bin/activate"
+          # display some ccache stats
+          ccache -z
+          ccache -svv
+          cmake --build ${NRN_BUILD_DIR}
+          ccache -svv
+
+      - name: "Test NEURON"
+        env:
+          # set this to how many CPUs are available
+          CTEST_PARALLEL_LEVEL: 20
+        run: |
+          source "${VENV_DIR}/bin/activate"
+          ctest --output-on-failure --test-dir ${NRN_BUILD_DIR}
+
+      - name: "Install NEURON"
+        run: |
+          source "${VENV_DIR}/bin/activate"
+          cmake --install ${NRN_BUILD_DIR}
+
+      - name: "Upload build artifacts"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build_files
+          path: |
+            ${{ github.workspace }}/build/CMakeCache.txt
+            ${{ github.workspace }}/build/build.ninja
+            ${{ github.workspace }}/build/cmake_install.cmake
+            ${{ github.workspace }}/build/install_manifest.txt

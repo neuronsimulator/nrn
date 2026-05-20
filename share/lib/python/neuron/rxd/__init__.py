@@ -1,6 +1,6 @@
 from .rxdException import RxDException
 
-from . import rxd, constants
+from . import rxd, constants, export
 from .species import Species, Parameter, State
 from .region import Region, Extracellular
 from .rate import Rate

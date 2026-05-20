@@ -17,7 +17,9 @@ set(graphicsPrimitives_sources ${CMAKE_CURRENT_BINARY_DIR}/graphicsPrimitives.cp
 set(ctng_sources ${CMAKE_CURRENT_BINARY_DIR}/ctng.cpp)
 
 if(NOT SKBUILD)
-  set(rel_rpath "/../../")
+  file(RELATIVE_PATH rel_path "${CMAKE_INSTALL_PREFIX}/${NRN_INSTALL_PYTHON_PREFIX}/rxd/geometry3d"
+       "${CMAKE_INSTALL_PREFIX}/${NRN_INSTALL_DATA_PREFIX}/lib")
+  set(rel_rpath "/${rel_path}")
 else()
   set(rel_rpath "/../../.data/lib")
 endif()

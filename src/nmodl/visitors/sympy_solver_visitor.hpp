@@ -164,6 +164,9 @@ class SympySolverVisitor: public AstVisitor {
     /// max number of state vars allowed for small system linear solver
     int SMALL_LINEAR_SYSTEM_MAX_STATES;
 
+    /// collect ODEs for numerical solving
+    void collect_odes(ast::DiffEqExpression& node);
+
   public:
     explicit SympySolverVisitor(bool use_pade_approx = false,
                                 bool elimination = true,

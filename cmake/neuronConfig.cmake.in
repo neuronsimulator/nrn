@@ -1,0 +1,25 @@
+include(CMakeFindDependencyMacro)
+
+find_dependency(Threads)
+
+include("${CMAKE_CURRENT_LIST_DIR}/neuronTargets.cmake")
+
+get_filename_component(_dir "${CMAKE_CURRENT_LIST_FILE}" PATH)
+get_filename_component(_prefix "${_dir}/../../.." ABSOLUTE)
+
+set(NRN_ENABLE_CORENEURON @NRN_ENABLE_CORENEURON@)
+
+set(_NEURON_MAIN "${_prefix}/share/nrn/nrnmain.cpp")
+set(_NEURON_MAIN_INCLUDE_DIR "${_prefix}/include/nrncvode" "${_prefix}/include")
+set(_NEURON_MECH_REG "${_prefix}/share/nrn/mod_reg_nrn.cpp.in")
+
+set(_CORENEURON_BASE_MOD "${_prefix}/share/modfile")
+set(_CORENEURON_MAIN "${_prefix}/share/coreneuron/coreneuron.cpp")
+set(_CORENEURON_MECH_REG "${_prefix}/share/nrn/mod_reg_corenrn.cpp.in")
+set(_CORENEURON_MECH_ENG "${_prefix}/share/coreneuron/enginemech.cpp")
+set(_CORENEURON_RANDOM_INCLUDE "${_prefix}/include/coreneuron/utils/randoms" "${_prefix}/include")
+set(_CORENEURON_FLAGS @CORENRN_CXX_FLAGS@)
+
+set(_CORENEURON_MIN_CUDA_TOOLKIT_VERSION @CORENRN_CUDA_VERSION_SHORT@)
+
+include("${CMAKE_CURRENT_LIST_DIR}/neuronMechMaker.cmake")

@@ -302,7 +302,9 @@ class coreneuron(object):
             if self._skip_write_model_to_disk:
                 arg += " --skip-write-model-to-disk"
         arg += f" --tstop {tstop:g}"
-        arg += f" --cell-permute {self.cell_permute}"
+        # set parameters only if explicitly set. These override sim_config
+        if self._cell_permute is not None:
+            arg += f" --cell-permute {self.cell_permute}"
         if self._warp_balance > 0:
             arg += f" --nwarp {self.warp_balance}"
         if self._prcellstate >= 0:
