@@ -2145,6 +2145,8 @@ void hoc_object_add() {
     // Try Python first if available
     if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__add__", obj2) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
         return;
     }
 
@@ -2161,7 +2163,9 @@ void hoc_object_add() {
     // Call the method: obj1.__add__(obj2)
     nrn_method_call(obj1, method_sym, 1);
 
-    // The result should now be on the stack
+    // Clean up temporary object references
+    hoc_tobj_unref(obj1_ptr);
+    hoc_tobj_unref(obj2_ptr);
 }
 
 void hoc_object_sub() {
@@ -2178,6 +2182,8 @@ void hoc_object_sub() {
     // Try Python first if available
     if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__sub__", obj2) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
         return;
     }
 
@@ -2190,6 +2196,8 @@ void hoc_object_sub() {
 
     hoc_pushobj(obj2_ptr);
     nrn_method_call(obj1, method_sym, 1);
+    hoc_tobj_unref(obj1_ptr);
+    hoc_tobj_unref(obj2_ptr);
 }
 
 void hoc_object_mul() {
@@ -2212,12 +2220,16 @@ void hoc_object_mul() {
     // Try Python first if available
     if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__mul__", obj2) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
         return;
     }
 
 
     hoc_pushobj(obj2_ptr);
     nrn_method_call(obj1, method_sym, 1);
+    hoc_tobj_unref(obj1_ptr);
+    hoc_tobj_unref(obj2_ptr);
 }
 
 void hoc_object_div() {
@@ -2234,6 +2246,8 @@ void hoc_object_div() {
     // Try Python first if available
     if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__div__", obj2) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
         return;
     }
 
@@ -2246,6 +2260,8 @@ void hoc_object_div() {
 
     hoc_pushobj(obj2_ptr);
     nrn_method_call(obj1, method_sym, 1);
+    hoc_tobj_unref(obj1_ptr);
+    hoc_tobj_unref(obj2_ptr);
 }
 
 void hoc_object_pow() {
@@ -2262,6 +2278,8 @@ void hoc_object_pow() {
     // Try Python first if available
     if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__pow__", obj2) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
         return;
     }
 
@@ -2273,6 +2291,8 @@ void hoc_object_pow() {
 
     hoc_pushobj(obj2_ptr);
     nrn_method_call(obj1, method_sym, 1);
+    hoc_tobj_unref(obj1_ptr);
+    hoc_tobj_unref(obj2_ptr);
 }
 
 void hoc_object_eq() {
@@ -2286,6 +2306,8 @@ void hoc_object_eq() {
     // Handle null object cases with pointer equality fallback
     if (!obj1 || !obj2) {
         double result = (*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0;
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
         hoc_pushx(result);
         return;
     }
@@ -2293,6 +2315,8 @@ void hoc_object_eq() {
     // Try Python first if available
     if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__eq__", obj2) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
         return;
     }
 
@@ -2302,6 +2326,8 @@ void hoc_object_eq() {
     if (!method_sym) {
         // No __eq__ method found, fall back to pointer equality
         double result = (*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0;
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
         hoc_pushx(result);
         return;
     }
@@ -2312,7 +2338,9 @@ void hoc_object_eq() {
     // Call the method: obj1.__eq__(obj2)
     nrn_method_call(obj1, method_sym, 1);
 
-    // The result should now be on the stack
+    // Clean up temporary object references
+    hoc_tobj_unref(obj1_ptr);
+    hoc_tobj_unref(obj2_ptr);
 }
 
 void hoc_object_ne() {
@@ -2326,6 +2354,8 @@ void hoc_object_ne() {
     // Handle null object cases with pointer equality fallback
     if (!obj1 || !obj2) {
         double result = (*obj1_ptr != *obj2_ptr) ? 1.0 : 0.0;
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
         hoc_pushx(result);
         return;
     }
@@ -2333,6 +2363,8 @@ void hoc_object_ne() {
     // Try Python first if available
     if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__ne__", obj2) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
         return;
     }
 
@@ -2344,7 +2376,9 @@ void hoc_object_ne() {
         hoc_pushobj(obj2_ptr);
         // Call the method: obj1.__ne__(obj2)
         nrn_method_call(obj1, method_sym, 1);
-        // The result should now be on the stack
+        // Clean up temporary object references
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
         return;
     }
 
@@ -2357,12 +2391,16 @@ void hoc_object_ne() {
         nrn_method_call(obj1, method_sym, 1);
         // Negate the result
         double eq_result = hoc_xpop();
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
         hoc_pushx(eq_result ? 0.0 : 1.0);
         return;
     }
 
     // No magic methods found, fall back to pointer inequality
     double result = (*obj1_ptr != *obj2_ptr) ? 1.0 : 0.0;
+    hoc_tobj_unref(obj1_ptr);
+    hoc_tobj_unref(obj2_ptr);
     hoc_pushx(result);
 }
 
@@ -2380,6 +2418,7 @@ void hoc_object_add_number() {
     // Try Python first if available
     if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__add__", d) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj_ptr);
         return;
     }
 
@@ -2394,6 +2433,7 @@ void hoc_object_add_number() {
 
     // Call the method: obj.__add__(number)
     nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
 }
 
 void hoc_number_add_object() {
@@ -2409,6 +2449,7 @@ void hoc_number_add_object() {
     // Try Python first if available
     if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__radd__", d) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj_ptr);
         return;
     }
 
@@ -2424,6 +2465,7 @@ void hoc_number_add_object() {
 
     // Call the method: obj.__radd__(number)
     nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
 }
 
 void hoc_object_sub_number() {
@@ -2439,6 +2481,7 @@ void hoc_object_sub_number() {
     // Try Python first if available
     if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__sub__", d) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj_ptr);
         return;
     }
 
@@ -2450,6 +2493,7 @@ void hoc_object_sub_number() {
 
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
 }
 
 void hoc_number_sub_object() {
@@ -2465,6 +2509,7 @@ void hoc_number_sub_object() {
     // Try Python first if available
     if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__rsub__", d) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj_ptr);
         return;
     }
 
@@ -2476,6 +2521,7 @@ void hoc_number_sub_object() {
 
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
 }
 
 void hoc_object_mul_number() {
@@ -2491,6 +2537,7 @@ void hoc_object_mul_number() {
     // Try Python first if available
     if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__mul__", d) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj_ptr);
         return;
     }
 
@@ -2503,6 +2550,7 @@ void hoc_object_mul_number() {
 
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
 }
 
 void hoc_number_mul_object() {
@@ -2518,6 +2566,7 @@ void hoc_number_mul_object() {
     // Try Python first if available
     if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__rmul__", d) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj_ptr);
         return;
     }
 
@@ -2529,6 +2578,7 @@ void hoc_number_mul_object() {
 
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
 }
 
 void hoc_object_div_number() {
@@ -2544,6 +2594,7 @@ void hoc_object_div_number() {
     // Try Python first if available
     if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__div__", d) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj_ptr);
         return;
     }
 
@@ -2555,6 +2606,7 @@ void hoc_object_div_number() {
 
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
 }
 
 void hoc_number_div_object() {
@@ -2570,6 +2622,7 @@ void hoc_number_div_object() {
     // Try Python first if available
     if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__rdiv__", d) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj_ptr);
         return;
     }
 
@@ -2581,6 +2634,7 @@ void hoc_number_div_object() {
 
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
 }
 
 void hoc_object_pow_number() {
@@ -2596,6 +2650,7 @@ void hoc_object_pow_number() {
     // Try Python first if available
     if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__pow__", d) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj_ptr);
         return;
     }
 
@@ -2608,6 +2663,7 @@ void hoc_object_pow_number() {
 
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
 }
 
 void hoc_number_pow_object() {
@@ -2623,6 +2679,7 @@ void hoc_number_pow_object() {
     // Try Python first if available
     if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__rpow__", d) != 0) {
         // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj_ptr);
         return;
     }
 
@@ -2634,4 +2691,5 @@ void hoc_number_pow_object() {
 
     hoc_pushx(d);
     nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
 }
