@@ -7,8 +7,10 @@ _h_ptrvector = h.PtrVector
 
 
 class RangeVar:
+    __slots__ = ("_name", "_ptr_vector", "_locs", "_pv")
+
     def __init__(self, name: str) -> None:
-        self._name: str = name
+        self._name = name
         self._ptr_vector = None
 
     def _init_ptr_vectors(self, nodes) -> None:

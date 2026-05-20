@@ -9,7 +9,9 @@ from neuron import h
 class RxDSection:
     """parent class of all Section types"""
 
-    def name(self) -> str:
+    __slots__ = ()
+
+    def name(self):
         """The name of the section, as defined by HOC."""
         return self._sec.name()
 

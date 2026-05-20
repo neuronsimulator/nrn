@@ -210,6 +210,7 @@ _ontology_id = re.compile(
 
 
 class _SpeciesMathable(object):
+    __slots__ = ()
     # support arithmeticing
     def __neg__(self):
         return -1 * _Arithmeticed(self)
@@ -1409,7 +1410,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         jk = index - nynz * i
         j = int(jk / self._nz)
         k = jk % self._nz
-        # sanity check
+        # consistency check
         assert index == self._nodes_by_location(i, j, k)
         return i, j, k
 

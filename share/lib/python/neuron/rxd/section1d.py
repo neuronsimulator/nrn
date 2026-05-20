@@ -150,6 +150,20 @@ def replace(rmsec: "Section1D", offset: int, nseg: int) -> None:
 
 
 class Section1D(rxdsection.RxDSection):
+    __slots__ = (
+        "_species",
+        "_diff",
+        "_secref",
+        "_concentration_ptrs",
+        "_num_roots",
+        "_offset",
+        "_nseg",
+        "_region",
+        "_rxd_sec_lookup",
+        "_neighbor_areas",
+        "_parent",
+    )
+
     def __init__(self, species: "Species", sec: Any, diff: float, r: "Region") -> None:
         self._species = weakref.ref(species)
         self._diff = diff

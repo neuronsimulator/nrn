@@ -8,8 +8,9 @@ NEURON Development topics
    ./how-do-i/how-do-i.rst
    data-structures.rst
    gpu-testing.rst
+   nmodl-development.rst
    workflow-code-paths.rst
+   nrnivmodl-cmake.rst
    ./python/wheels.md
    ./morphology/morphology.md
    hocdomain-sphinx.md
-

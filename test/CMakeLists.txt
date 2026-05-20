@@ -35,7 +35,7 @@ if(NRN_ENABLE_THREADS)
 endif()
 foreach(target ${catch2_targets})
   cpp_cc_configure_sanitizers(TARGET ${target})
-  target_link_libraries(${target} Catch2::Catch2 nrniv_lib)
+  target_link_libraries(${target} Catch2::Catch2 fmt::fmt nrniv_lib)
   if(NOT MINGW)
     target_link_libraries(${target} ${CMAKE_DL_LIBS})
   endif()
@@ -241,6 +241,7 @@ if(NRN_ENABLE_PYTHON)
         GROUP ${group}
         NAME basic_tests_py${pyver}
         PRELOAD_SANITIZER
+        ENVIRONMENT "CC=${CMAKE_C_COMPILER}"
         COMMAND "${exe}" ${pytest} "./test/${group}"
         SCRIPT_PATTERNS "test/${group}/*.json" "test/${group}/*.py")
     endforeach()
@@ -264,7 +265,7 @@ if(NRN_ENABLE_PYTHON)
     GROUP coverage_tests
     NAME cover_tests
     PRELOAD_SANITIZER
-    ENVIRONMENT COVERAGE_FILE=.coverage.cover_tests
+    ENVIRONMENT COVERAGE_FILE=.coverage.cover_tests CC=${CMAKE_C_COMPILER}
     COMMAND ${NRN_DEFAULT_PYTHON_EXECUTABLE} ${pytest} ./test/cover
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
   nrn_add_test_group(
@@ -306,6 +307,7 @@ if(NRN_ENABLE_PYTHON)
       nrn_add_test(
         GROUP hoctests
         NAME ${name}_${ext} ${${ext}_preload} # PRELOAD_SANITIZER for Python
+        ENVIRONMENT CC=${CMAKE_C_COMPILER}
         COMMAND ${${ext}_exe} "${hoc_script}"
         SCRIPT_PATTERNS "${hoc_script}" "tests/${name}.json" ${${ext}test_utils})
     endforeach()
@@ -387,7 +389,7 @@ if(NRN_ENABLE_PYTHON)
     NAME nrntest_fast
     PROCESSORS 2
     REQUIRES mpi
-    ENVIRONMENT "NRN_PYTEST_ARGS=${pytest_arg_string}"
+    ENVIRONMENT "NRN_PYTEST_ARGS=${pytest_arg_string}" "CC=${CMAKE_C_COMPILER}"
     SCRIPT_PATTERNS
       test/pytest_coreneuron/run_pytest.py test/pytest_coreneuron/test_nrntest_fast.json
       test/pytest_coreneuron/test_nrntest_fast.py
@@ -828,4 +830,12 @@ if((NRN_ENABLE_NMODL OR NRN_ENABLE_CORENEURON) AND NRN_ENABLE_TESTS)
   if(NRN_ENABLE_PYTHON AND NOT NRN_SANITIZERS)
     add_subdirectory(nmodl/transpiler/usecases)
   endif()
+endif()
+
+# Test nrnivmodl-cmake, but only without sanitizers since those cause issues, and end-users won't
+# get builds with sanitizer builds anyway. The same reasoning applies to coverage.
+if(NRN_ENABLE_TESTS
+   AND NOT NRN_SANITIZERS
+   AND NOT NRN_ENABLE_COVERAGE)
+  add_subdirectory(nrnivmodl_cmake)
 endif()

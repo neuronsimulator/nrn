@@ -151,7 +151,7 @@ void nrnthreads_all_weights_return(std::vector<double*>& weights) {
  *  i_membrane_, or time. See coreneuron/io/nrn_setup.cpp:legacy_index2pointer.
  *  We allow coreneuron to copy to NEURON's AoS data as CoreNEURON knows
  *  how its data is arranged (SoA and possibly permuted).
- *  This function figures out the size (just for sanity check)
+ *  This function figures out the size (for validation)
  *  and data pointer to be returned based on type and thread id.
  *  The ARTIFICIAL_CELL type case is special as there is no thread specific
  *  Memb_list for those.
@@ -618,7 +618,7 @@ int core2nrn_nmodlrandom(int tid,
         assert(ml);
     }
 
-    auto& nrnindices = nrn_mech_random_indices(type);  // for sanity checking
+    auto& nrnindices = nrn_mech_random_indices(type);  // for validation
     assert(nrnindices == indices);
     assert(nmodlrandom.size() == indices.size() * ml->nodecount);
 

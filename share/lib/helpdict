@@ -574,7 +574,6 @@ ParameterRanges Extras RunFitter StandardRunTools GUI Reference 449 neuron/stdru
 Parameterstovary RunFitter StandardRunTools GUI Reference 448 neuron/stdrun/runfit.html#Parameterstovary
 parent SectionRef classes neuron neuron.exe Reference 320 neuron/neuron/classes/secref.html#parent
 parent_connection functions neuron neuron.exe Reference 375 neuron/neuron/nrnoc.html#parent_connection
-parent_node functions neuron neuron.exe Reference 375 neuron/neuron/nrnoc.html#parent_node
 parent_section functions neuron neuron.exe Reference 374 neuron/neuron/nrnoc.html#parent_section
 pas mechanisms neuron neuron.exe Reference 358 neuron/neuron/mech.html#pas
 Path Impedance Tools NEURONMainMenu GUI Reference 424 neuron/stdrun/0stdrun.html#Path

@@ -127,11 +127,10 @@ Furthermore, GCC >= 10 is required (older versions of GCC may work, but are not 
 
 #### Windows
 
-On Windows, the only recommended way to install NEURON is using the binary installer. You can download alpha
-or recent releases from:
+On Windows, the only recommended way to install NEURON is using the binary installer. You can download
+releases from:
 
-* [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
-* [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
+* [https://github.com/neuronsimulator/nrn/releases](https://github.com/neuronsimulator/nrn/releases)
 
 The naming convention for Windows installers is `nrn-<version-id>-mingw-py-38-39-310-311-setup.exe`.
 The `py-38-39-310-311` string in the installer name indicates that the given installer is compatible

@@ -9,7 +9,7 @@ Although this is a minimal model, learning the ropes is still difficult. Therefo
 
 As you know, NEURON is optimized to handle the complex channel and compartment simulations that have been omitted from this exercise. The interested student might wish to convert this network into a network of spiking cells with realistic inhibitory interactions or a hybrid network with both realistic and artificial cells. Such an extended exercise would more clearly demonstrate NEURON's advantages for performing network simulations.
 
-Standard intfire implementation (eg :hoc:class:`IntFire1` from ``intfire1.mod``))
+Standard intfire implementation (eg :class:`IntFire1` from ``intfire1.mod``))
 ---------------------
 
 Individual units are integrate-and-fire neurons.
@@ -53,7 +53,7 @@ How it works
 
 The synchronization mechanism requires that all of the cells fire spontaneously at similar frequencies. It is obvious that if all cells are started at the same time, they will still be roughly synchronous after one cycle (since they have similar intrinsic cycle periods). After two cycles, they will have drifted further apart. After many cycles, differences in period will be magnified, leading to no temporal relationship of firing.
 
-The key observation utilized here is that firing is fairly synchronized one cycle after onset. The trick is to reset the cells after each cycle so that they start together again. They then fire with temporal differences equal to the differences in their intrinsic periods. This resetting can be provided by an inhibitory input which pushes state variable *m* down far from threshold (hyperpolarized, as it were). This could be accomplished through an external pacemaker that reset all the cells, thereby imposing an external frequency onto the network. The interesting observation in this network is that pacemaking can also be imposed from within, though an intrinsic connectivity that enslaves all members to the will of the masses.
+The key observation utilized here is that firing is fairly synchronized one cycle after onset. The trick is to reset the cells after each cycle so that they start together again. They then fire with temporal differences equal to the differences in their intrinsic periods. This resetting can be provided by an inhibitory input which pushes state variable *m* down far from threshold (hyperpolarized, as it were). This could be accomplished through an external pacemaker that reset all the cells, thereby imposing an external frequency onto the network. The interesting observation in this network is that pacemaking can also be imposed from within, through an intrinsic connectivity that synchronizes all members via collective dynamics.
 
 Exercises to gain familiarity with the model
 ----------

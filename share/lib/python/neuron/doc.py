@@ -17,17 +17,15 @@ In []: neuron ?
 
 From there, you can get help on the various objects in the hoc world:
 
-In []: fom neuron import h
-In []: v = h.Vector()
+In []: from neuron import n
+In []: v = n.Vector()
 In []: ? v.to_python
 
 a feature whose implementation is based on the neuron.doc module.
 
 """
 
-import pydoc, sys, io, inspect
-from pydoc import ErrorDuringImport
-from neuron import h
+import pydoc, sys, inspect
 
 
 header = """
@@ -40,7 +38,14 @@ NEURON+Python Online Help System
 # override basic helper functionality to give proper help on HocObjects
 class NRNPyHelper(pydoc.Helper):
     def __call__(self, request=None):
-        if type(request) == type(h):
+        from . import n, hoc
+
+        if (
+            isinstance(request, type(n))
+            or isinstance(request, hoc.HocClass)
+            or isinstance(type(request), hoc.HocClass)
+            or isinstance(request, hoc.HocObject)
+        ):
             pydoc.pager(header + request.__doc__)
         else:
             pydoc.Helper.__call__(self, request)
@@ -72,7 +77,7 @@ def doc_asstring(thing, title="Python Library Documentation: {}", forceload=0):
             object = type(object)
             desc += " object"
         return title.format(desc) + "\n\n" + pydoc.text.document(object, name)
-    except (ImportError, ErrorDuringImport) as value:
+    except (ImportError, pydoc.ErrorDuringImport) as value:
         print(value)
 
 
@@ -176,10 +181,12 @@ def _get_from_help_dict(name):
 
 
 def _get_class_from_help_dict(name):
+    from . import n
+
     result = _get_from_help_dict(name)
     if not result:
         return ""
-    methods = dir(h.__getattribute__(name))
+    methods = dir(getattr(n, name))
     for m in methods:
         if f"{name}.{m}" in _help_dict:
             result += f"\n\n\n{name}.{m}:\n\n{_help_dict[f'{name}.{m}']}"
@@ -224,7 +231,7 @@ def get_docstring(objtype, symbol):
         if objtype in _help_dict:
             return _get_class_from_help_dict(objtype)
         else:
-            return default_object_doc_template % symbol
+            return default_object_doc_template % objtype
 
     # are we asking for help on a member of an object, e.g. h.Vector.size
     full_name = f"{objtype}.{symbol}"

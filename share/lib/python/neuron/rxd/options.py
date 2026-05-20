@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 # TODO: This option is not currently observed
 use_reaction_contribution_to_jacobian = True
 
@@ -21,17 +23,9 @@ ics_partial_surface_resolution = 1
 fixed_step_factor = 1
 
 
+@dataclass
 class _OverrideLockouts:
-    def __init__(self) -> None:
-        self._extracellular: bool = True
-
-    @property
-    def extracellular(self) -> bool:
-        return self._extracellular
-
-    @extracellular.setter
-    def extracellular(self, val: bool) -> None:
-        self._extracellular = val
+    extracellular: bool = True
 
 
 enable = _OverrideLockouts()

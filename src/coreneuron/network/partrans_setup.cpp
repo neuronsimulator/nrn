@@ -112,13 +112,13 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
 
     int nhost = nrnmpi_numprocs;
 
-    // sanity check. all the sgids we are asked to send, we actually have
+    // verify: all the sgids we are asked to send, we actually have
     for (int i = 0; i < outsrcdspl_[nhost]; ++i) {
         sgid_t sgid = send_to_want[i];
         assert(src2info.find(sgid) != src2info.end());
     }
 
-    // sanity check. all the sgids we receive, we actually need.
+    // verify: all the sgids we receive, we actually need.
     for (int i = 0; i < insrcdspl_[nhost]; ++i) {
         sgid_t sgid = recv_from_have[i];
         assert(tar2info.find(sgid) != tar2info.end());
