@@ -2152,10 +2152,11 @@ static PyObject* var_of_mech_iter(NPyMechObj* self) {
     CHECK_SEC_INVALID(sec)
 
     // printf("var_of_mech_iter\n");
-    NPyVarOfMechIter* vmi = PyObject_New(NPyVarOfMechIter, pvar_of_mech_iter_generic_type);
     if (!self->prop_) {
+        PyErr_SetString(PyExc_RuntimeError, "mechanism property is null");
         return NULL;
     }
+    NPyVarOfMechIter* vmi = PyObject_New(NPyVarOfMechIter, pvar_of_mech_iter_generic_type);
     Py_INCREF(self);
     vmi->pymech_ = self;
     vmi->msym_ = memb_func[self->prop_->_type].sym;
