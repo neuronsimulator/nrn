@@ -354,6 +354,11 @@ static NPyMechObj* new_pymechobj(NPySegObj* pyseg, Prop* p) {
     if (!m) {
         return NULL;
     }
+    if (!p) {
+        // If p is null, clean up and return null to signal error
+        Py_DECREF(m);
+        return NULL;
+    }
     Py_INCREF(pyseg);
     m->pyseg_ = pyseg;
     m->prop_ = p;
@@ -2134,6 +2139,10 @@ static PyObject* mech_of_seg_next(NPyMechOfSegIter* self) {
                         "mechanism instance became invalid in middle of the mechanism iterator");
         return NULL;
     }
+    if (!m->prop_) {
+        PyErr_SetString(PyExc_ReferenceError, "mechanism property is null");
+        return NULL;
+    }
     Prop* pnext = mech_of_segment_prop(m->prop_->next);
     NPyMechObj* mnext{};
     if (pnext) {
@@ -2493,6 +2502,10 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
         return nullptr;
     }
     // printf("mech_getattro %s\n", n);
+    if (!self->prop_) {
+        PyErr_SetString(PyExc_ReferenceError, "mechanism property is null");
+        return nullptr;
+    }
     nb::object result;
     int isptr = (strncmp(n, "_ref_", 5) == 0);
     Symbol* mechsym = memb_func[self->type_].sym;
@@ -2574,6 +2587,10 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
     Section* sec = self->pyseg_->pysec_->sec_;
     if (!sec->prop) {
         PyErr_SetString(PyExc_ReferenceError, "nrn.Mechanism can't access a deleted section");
+        return -1;
+    }
+    if (!self->prop_) {
+        PyErr_SetString(PyExc_ReferenceError, "mechanism property is null");
         return -1;
     }
 
