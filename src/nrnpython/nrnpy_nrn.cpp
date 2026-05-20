@@ -409,8 +409,8 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
         delete[] self->name_;
         self->name_ = 0;
         self->cell_weakref_ = 0;
-        char* name = 0;
-        PyObject* cell = 0;
+        const char* name = nullptr;
+        PyObject* cell = nullptr;
         // avoid "warning: deprecated conversion from string constant to char*"
         // someday eliminate the (char**) when python changes their prototype
         if (!PyArg_ParseTupleAndKeywords(args, kwds, "|sO", (char**) kwlist, &name, &cell)) {
@@ -1982,7 +1982,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
     PyObject* rv;
     auto _pyname_tracker = nb::borrow(pyname);  // keep refcount+1 during use
     auto name = Py2NRNString::as_ascii(pyname);
-    char* n = name.c_str();
+    const char* n = name.c_str();
     if (!name.is_valid()) {
         Py2NRNString::set_pyerr(PyExc_TypeError, "attribute name must be a string");
         return nullptr;

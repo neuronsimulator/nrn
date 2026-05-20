@@ -480,8 +480,8 @@ int hocobj_pushargs(PyObject* args, std::vector<neuron::unique_cstr>& s2free) {
     return tup.size();
 }
 
-static Symbol* getsym(char* name, Object* ho, int fail) {
-    Symbol* sym = 0;
+static Symbol* getsym(const char* name, Object* ho, int fail) {
+    Symbol* sym = nullptr;
     if (ho) {
         sym = hoc_table_lookup(name, ho->ctemplate->symtable);
         if (!sym && strcmp(name, "delay") == 0) {
@@ -496,7 +496,7 @@ static Symbol* getsym(char* name, Object* ho, int fail) {
         }
     }
     if (sym && sym->type == UNDEF) {
-        sym = 0;
+        sym = nullptr;
     }
     if (!sym && fail) {
         PyErr_Format(PyExc_LookupError, "'%s' is not a defined hoc variable name.", name);
@@ -2501,7 +2501,7 @@ static PyObject* hocobj_same_safe(PyHocObject* pself, PyObject* args) {
 }
 
 static char* double_array_interface(PyObject* po, long& stride) {
-    void* data = 0;
+    void* data = nullptr;
     if (PyObject_HasAttrString(po, "__array_interface__")) {
         auto ai = nb::borrow(po).attr("__array_interface__");
         auto typestr = Py2NRNString::as_ascii(ai["typestr"].ptr());
@@ -2510,7 +2510,7 @@ static char* double_array_interface(PyObject* po, long& stride) {
             data = PyLong_AsVoidPtr(PyTuple_GetItem(data_tuple.ptr(), 0));
             // printf("double_array_interface idata = %ld\n", idata);
             if (PyErr_Occurred()) {
-                data = 0;
+                data = nullptr;
             }
             auto pstride = ai["strides"];
             if (pstride.is_none()) {
@@ -2523,14 +2523,14 @@ static char* double_array_interface(PyObject* po, long& stride) {
                     } else {
                         PyErr_SetString(PyExc_TypeError,
                                         "array_interface stride element of invalid type.");
-                        data = 0;
+                        data = nullptr;
                     }
-
-                } else
-                    data = 0;  // don't handle >1 dimensions
+                } else {
+                    data = nullptr;  // don't handle >1 dimensions
+                }
             } else {
                 PyErr_SetString(PyExc_TypeError, "array_interface stride object of invalid type.");
-                data = 0;
+                data = nullptr;
             }
         }
     }
