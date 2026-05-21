@@ -5,7 +5,7 @@ def simplevolume(flist: list, distances: list, voxel: tuple, g: dict) -> float:
     """estimate the volume by the fraction of interior points"""
     res = options.ics_partial_volume_resolution
     distance_threshold = options.ics_distance_threshold
-    
+
     dx, dy, dz = g["dx"], g["dy"], g["dz"]
     sx, sy, sz = dx / res, dy / res, dz / res
 
