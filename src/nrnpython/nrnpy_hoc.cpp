@@ -3600,11 +3600,11 @@ static int nrnpy_call_obj_method_(Object* obj, const char* method, Object* obj2)
         py_arg = Py_None;
         Py_INCREF(py_arg);
     }
-    
+
     if (!py_arg) {
         return 0;
     }
-    
+
     int result = nrnpy_call_obj_method_helper_(obj, method, py_arg);
     Py_DECREF(py_arg);
     return result;
