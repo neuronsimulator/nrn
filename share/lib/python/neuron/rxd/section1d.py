@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Any
+from typing import TYPE_CHECKING, Optional, Any, ItemsView
 
 if TYPE_CHECKING:
     from .species import Species
@@ -53,7 +53,7 @@ class _SectionLookup:
     def values(self) -> Any:
         return _SectionLookup._instance.rxd_sec_list.values()
 
-    def items(self) -> dict:
+    def items(self) -> ItemsView[nrn.Section, list["Section1D"]]:
         res = {}
         for sec in _SectionLookup._instance.nrn_sec_list:
             res[sec] = _SectionLookup._instance.rxd_sec_list[sec.hoc_internal_name()]

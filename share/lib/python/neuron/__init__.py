@@ -356,7 +356,7 @@ from neuron.hclass3 import HocBaseObject, hclass
 nrn_dll_loaded = []
 
 
-def load_mechanisms(path: str, warn_if_already_loaded: bool = True) -> None:
+def load_mechanisms(path: str, warn_if_already_loaded: bool = True) -> bool:
     """
     load_mechanisms(path)
 
