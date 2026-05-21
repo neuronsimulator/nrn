@@ -10,6 +10,7 @@ from . import options
 from .rxdException import RxDException
 from . import initializer
 from collections.abc import Callable
+from typing import Any, Optional
 
 
 import ctypes

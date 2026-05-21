@@ -5,6 +5,7 @@ from .generalizedReaction import (
     get_scheme_rate1_rate2_regions_custom_dynamics_mass_action,
 )
 from .rxdException import RxDException
+from typing import Any
 
 
 class Reaction(GeneralizedReaction):

@@ -7,6 +7,7 @@ import weakref
 from .rxdException import RxDException
 import warnings
 import ctypes
+from typing import Any
 
 from collections.abc import Callable
 
