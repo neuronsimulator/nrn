@@ -3611,20 +3611,18 @@ static int nrnpy_call_obj_method_(Object* obj, const char* method, Object* obj2)
 }
 
 static int nrnpy_call_obj_method_double_(Object* obj, const char* method, double value) {
-    // Convert double to PyObject. If the double is finite and very close to
-    // an integer value (within floating point tolerance) then pass a Python
-    // integer. This preserves expected semantics for libraries (e.g. RxD)
-    // that treat integer stoichiometric coefficients specially while still
-    // allowing non-integer values to be passed as floats.
+    // Convert double to PyObject. Pass as Python int if the value is exactly
+    // equal to its floor (i.e., has no fractional part), otherwise pass as float.
+    // This preserves integer semantics for libraries like RxD that distinguish
+    // between integer and float coefficients.
     PyObject* py_arg = nullptr;
-    if (std::isfinite(value)) {
-        double intpart;
-        double frac = std::modf(value, &intpart);
-        if (std::fabs(frac) < 1e-12) {
-            long long vll = (long long)intpart;
-            if ((double)vll == intpart) {
-                py_arg = PyLong_FromLongLong(vll);
-            }
+    
+    if (value == floor(value)) {
+        // Value has no fractional part, try to convert to integer
+        long long vll = (long long)value;
+        // Verify the conversion is exact (handles very large values)
+        if ((double)vll == value) {
+            py_arg = PyLong_FromLongLong(vll);
         }
     }
 
