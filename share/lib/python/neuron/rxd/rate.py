@@ -5,6 +5,7 @@ from .rangevar import RangeVar
 import itertools
 import warnings
 from .generalizedReaction import GeneralizedReaction
+from typing import Union, Optional, Any
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _itertools_chain = itertools.chain
@@ -26,7 +27,13 @@ class Rate(GeneralizedReaction):
     the same species, then their effects are summed.
     """
 
-    def __init__(self, species, rate, regions=None, membrane_flux: bool = False):
+    def __init__(
+        self,
+        species: Any,
+        rate: Any,
+        regions: Optional[Union[list, Any]] = None,
+        membrane_flux: bool = False,
+    ) -> None:
         """create a rate of change for a species on a given region or set of regions
 
         if regions is None, then does it on all regions"""
@@ -159,7 +166,7 @@ class Rate(GeneralizedReaction):
                 self._membrane_flux,
             )
 
-    def _rate_from_rangevar(self, *args):
+    def _rate_from_rangevar(self, *args: Any) -> Any:
         return self._original_rate._rangevar_vec()
 
     def _update_indices(self) -> None:

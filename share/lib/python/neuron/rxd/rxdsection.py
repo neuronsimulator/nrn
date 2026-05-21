@@ -11,7 +11,7 @@ class RxDSection:
 
     __slots__ = ()
 
-    def name(self):
+    def name(self) -> str:
         """The name of the section, as defined by HOC."""
         return self._sec.name()
 

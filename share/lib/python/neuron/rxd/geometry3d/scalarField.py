@@ -72,7 +72,7 @@ class ScalarField:
         This is a convenience property and is equal to self._values.shape."""
         return self._values.shape
 
-    def __getitem__(self, *args):
+    def __getitem__(self, *args: Any) -> Any:
         """
         Indexing in to the values of the mesh. This is a syntactic shorthand for `values[indices]`.
 

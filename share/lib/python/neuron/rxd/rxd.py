@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 from neuron import h, nrn, nrn_dll_sym
 from . import species, node, section1d, region, generalizedReaction, constants
 from .node import _point_indices
@@ -274,7 +274,7 @@ _diffusion_p = None
 _diffusion_a_ptr, _diffusion_b_ptr, _diffusion_p_ptr = None, None, None
 
 
-def _domain_lookup(sec, dim=None):
+def _domain_lookup(sec: nrn.Section, dim: Optional[int] = None) -> int:
     for d, sl in _dimensions.items():
         if sec in sl:
             if dim is not None and d != dim:
@@ -286,7 +286,13 @@ def _domain_lookup(sec, dim=None):
     return dimension
 
 
-def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=None):
+def set_solve_type(
+    domain: Optional[Any] = None,
+    dimension: Optional[int] = None,
+    dx: Optional[float] = None,
+    nsubseg: Optional[int] = None,
+    method: Optional[str] = None,
+) -> None:
     """Specify the numerical discretization and solver options.
 
     domain -- a section or Python iterable of sections"""
@@ -1082,7 +1088,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
             and _point_indices[region][point] not in indices3d
         ):
             indices3d.append(_point_indices[region][point])
-            vols3d.append(surf[point][0] if point in surf else region.dx ** 3)
+            vols3d.append(surf[point][0] if point in surf else region.dx**3)
             # print f'found node {node._index} with coordinates ({node.x3d:g}, {node.y3d:g}, {node.z3d:g})'
     # discard duplicates...
     # TODO: really, need to figure out all the 3d nodes connecting to a given 1d endpoint, then unique that

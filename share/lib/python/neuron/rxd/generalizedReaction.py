@@ -4,6 +4,7 @@ import weakref
 import itertools
 from .rxdException import RxDException
 from .species import xyz_by_index
+from typing import Any, Optional, Union
 
 _weakref_ref = weakref.ref
 
@@ -12,7 +13,7 @@ _itertools_chain = itertools.chain
 _numpy_array = numpy.array
 
 
-def ref_list_with_mult(obj):
+def ref_list_with_mult(obj: dict) -> list:
     result = []
     for i, p in zip(list(obj.keys()), list(obj.values())):
         w = _weakref_ref(i)
@@ -20,7 +21,9 @@ def ref_list_with_mult(obj):
     return result
 
 
-def get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(args, kwargs):
+def get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(
+    args: tuple, kwargs: dict
+) -> tuple:
     """Parse the arguments to a rxd.Reaction or rxd.MultiCompartmentReaction.
 
     There are four valid options, two for historical
@@ -98,7 +101,7 @@ class GeneralizedReaction(object):
                     node_indices_append(seg.node_index())
         self._do_memb_scales(cur_map)
 
-    def _get_args(self, states):
+    def _get_args(self, states: Any) -> Optional[list]:
         args = []
         args_append = args.append
         self_indices_dict = self._indices_dict
@@ -109,7 +112,7 @@ class GeneralizedReaction(object):
             args_append(states[self_indices_dict[s]])
         return args
 
-    def _update_indices(self):
+    def _update_indices(self) -> None:
         # this is called anytime the geometry changes as well as at init
         from . import species
 

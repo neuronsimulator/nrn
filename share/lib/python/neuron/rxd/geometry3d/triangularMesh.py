@@ -2,6 +2,7 @@ import neuron
 import os
 import numpy
 import numpy.linalg
+from typing import Any, Optional
 
 
 class TriangularMesh:
@@ -9,7 +10,7 @@ class TriangularMesh:
     A triangular mesh, typically of a surface.
     """
 
-    def __init__(self, data):
+    def __init__(self, data: Any) -> None:
         """
         Parameters
         ----------
@@ -19,26 +20,26 @@ class TriangularMesh:
         self.data = data
 
     @property
-    def x(self):
+    def x(self) -> Any:
         """The x coordinates of the vertices."""
         return self.data[0::3]
 
     @property
-    def y(self):
+    def y(self) -> Any:
         """The y coordinates of the vertices."""
         return self.data[1::3]
 
     @property
-    def z(self):
+    def z(self) -> Any:
         """The z coordinates of the vertices."""
         return self.data[2::3]
 
     @property
-    def faces(self):
+    def faces(self) -> list:
         """A list of the triangles, described as lists of the indices of three points."""
         return [(i, i + 1, i + 2) for i in range(0, len(self.data) / 3, 3)]
 
-    def has_unmatched_edge(self, precision=3):
+    def has_unmatched_edge(self, precision: int = 3) -> bool:
         """Checks for edges that belong to only one triangle. True if they exist; else False.
 
         Parameters

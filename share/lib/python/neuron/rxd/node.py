@@ -10,7 +10,6 @@ import ctypes
 
 from collections.abc import Callable
 
-
 # function to change extracellular diffusion
 set_diffusion = nrn_dll_sym("set_diffusion")
 set_diffusion.argtypes = [
@@ -38,15 +37,15 @@ _molecule_node = 1
 _floor = numpy.floor
 
 
-def _get_data():
+def _get_data() -> tuple:
     return (_volumes, _surface_area, _diffs)
 
 
-def _get_states():
+def _get_states() -> numpy.ndarray:
     return _states
 
 
-def _allocate(num):
+def _allocate(num: int) -> int:
     """allocate storage for num more nodes, return the starting index
 
     Note: no guarantee is made of preserving previous _ref
@@ -61,7 +60,7 @@ def _allocate(num):
     return start_index
 
 
-def _remove(start, stop):
+def _remove(start: int, stop: int) -> None:
     """delete old volumes, surface areas and diff values in from global arrays"""
     global _volumes, _surface_area, _diffs, _states, _node_fluxes, _has_node_fluxes
     # Remove entries that have to be recalculated
@@ -91,7 +90,7 @@ def _remove(start, stop):
                 del lst[i]
 
 
-def _replace(old_offset, old_nseg, new_offset, new_nseg):
+def _replace(old_offset: int, old_nseg: int, new_offset: int, new_nseg: int) -> None:
     """delete old volumes, surface areas and diff values in from global arrays
     move states so that the new segment value is equal to the old segment
     value that contains its centre"""
@@ -154,7 +153,7 @@ class Node(object):
             return self.region == condition
         raise RxDException(f"selector {condition!r} not supported for this node type")
 
-    def _safe_satisfies(self, condition):
+    def _safe_satisfies(self, condition: Any) -> bool:
         """Tests if a Node satisfies a given condition.
 
         Works the same as node.satisfies but replaces RxDException with False
@@ -165,7 +164,7 @@ class Node(object):
             return False
 
     @property
-    def _ref_concentration(self):
+    def _ref_concentration(self) -> Any:
         """Returns a NEURON reference to the Node's concentration
 
         (The node must store concentration data. Use _ref_molecules for nodes
@@ -180,7 +179,7 @@ class Node(object):
             )
 
     @property
-    def _ref_molecules(self):
+    def _ref_molecules(self) -> Any:
         """Returns a NEURON reference to the Node's concentration
 
         (The node must store molecule counts. Use _ref_concentrations for nodes
@@ -198,7 +197,7 @@ class Node(object):
         return _diffs[self._index]
 
     @d.setter
-    def d(self, value):
+    def d(self, value: float) -> None:
         """Sets the diffusion rate within the compartment."""
         from . import rxd
 
@@ -208,7 +207,7 @@ class Node(object):
         rxd._setup_matrices()
 
     @property
-    def concentration(self):
+    def concentration(self) -> float:
         """Gets the concentration at the Node."""
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
@@ -221,7 +220,7 @@ class Node(object):
             )
 
     @concentration.setter
-    def concentration(self, value):
+    def concentration(self, value: float) -> None:
         """Sets the concentration at the Node"""
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
@@ -234,7 +233,7 @@ class Node(object):
             )
 
     @property
-    def molecules(self):
+    def molecules(self) -> float:
         """Gets the molecule count at the Node."""
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
@@ -247,7 +246,7 @@ class Node(object):
             )
 
     @molecules.setter
-    def molecules(self, value):
+    def molecules(self, value: float) -> None:
         """Sets the molecule count at the Node"""
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
@@ -265,7 +264,7 @@ class Node(object):
         return _states[self._index]
 
     @value.setter
-    def value(self, v):
+    def value(self, v: float) -> None:
         """Sets the value associated with this Node.
 
         For Species nodes belonging to a deterministic simulation, this is a concentration.
@@ -274,11 +273,11 @@ class Node(object):
         _states[self._index] = v
 
     @property
-    def _ref_value(self):
+    def _ref_value(self) -> Any:
         """Returns a NEURON reference to the Node's value"""
         return _numpy_element_ref(_states, self._index)
 
-    def include_flux(self, *args, **kwargs):
+    def include_flux(self, *args: Any, **kwargs: Any) -> None:
         """Include a flux contribution to a specific node.
 
         The flux can be described as a NEURON reference, a point process and a

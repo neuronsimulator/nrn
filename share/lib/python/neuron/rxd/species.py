@@ -15,7 +15,6 @@ from collections.abc import Callable
 import ctypes
 import re
 
-
 # Now set in rxd.py
 # set_nonvint_block = neuron.nrn_dll_sym('set_nonvint_block')
 
@@ -211,6 +210,7 @@ _ontology_id = re.compile(
 
 class _SpeciesMathable(object):
     __slots__ = ()
+
     # support arithmeticing
     def __neg__(self):
         return -1 * _Arithmeticed(self)
@@ -408,7 +408,7 @@ class SpeciesOnExtracellular(_SpeciesMathable):
             self._extracellular()._region,
         )
 
-    def alpha_by_location(self, locs):
+    def alpha_by_location(self, locs: list) -> Any:
         """Return a single alpha value for a homogeneous volume fraction of a list of alpha values for an inhomogeneous volume fraction at grid locations given in a list (locs)."""
         e = self._extracellular()._region
         if numpy.isscalar(e.alpha):
@@ -424,7 +424,7 @@ class SpeciesOnExtracellular(_SpeciesMathable):
                 alphas.append(e.alpha[i, j, k])
         return numpy.array(alphas)
 
-    def node_by_ijk(self, i, j, k):
+    def node_by_ijk(self, i: int, j: int, k: int) -> Any:
         index = 0
         s = self._extracellular()
         for ecs in self._species()._extracellular_instances.values():
@@ -462,7 +462,7 @@ class SpeciesOnExtracellular(_SpeciesMathable):
             ]
         )
 
-    def _semi_compile(self, reg, instruction):
+    def _semi_compile(self, reg: Any, instruction: str) -> str:
         # This will always be an ecs_instance
         # reg = self._extracellular()._region
         # ecs_instance = self._species()._extracellular_instances[reg]
@@ -474,20 +474,20 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         return self._extracellular()._d
 
     @d.setter
-    def d(self, value):
+    def d(self, value: float) -> None:
         self._extracellular().d = value
 
-    def defined_on_region(self, r):
+    def defined_on_region(self, r: Any) -> bool:
         return r == self._extracellular()
 
 
 class SpeciesOnRegion(_SpeciesMathable):
-    def __init__(self, species, region):
+    def __init__(self, species: Any, region: Any) -> None:
         """The restriction of a Species to a Region."""
         self._species = weakref.ref(species)
         self._region = weakref.ref(region)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         """test for equality.
 
         Two SpeciesOnRegion objects are equal if they refer to the same species
@@ -500,20 +500,20 @@ class SpeciesOnRegion(_SpeciesMathable):
             and (self._region() is not None)
         )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         # TODO: replace this to reduce collision risk; how much of a problme is that?
         return 1000 * (hash(self._species()) % 1000) + (hash(self._region()) % 1000)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "%r[%r]" % (self._species(), self._region())
 
-    def _short_repr(self):
+    def _short_repr(self) -> str:
         return "%s[%s]" % (self._species()._short_repr(), self._region()._short_repr())
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "%s[%s]" % (self._species()._short_repr(), self._region()._short_repr())
 
-    def indices(self, r=None, secs=None):
+    def indices(self, r: Optional[Any] = None, secs: Optional[Any] = None) -> list:
         """If no Region is specified or if r is the Region specified in the constructor,
         returns a list of the indices of state variables corresponding
         to the Species when restricted to the Region defined in the constructor.
@@ -529,7 +529,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         else:
             return self._species().indices(self._region(), secs)
 
-    def __getitem__(self, r):
+    def __getitem__(self, r: Any) -> "SpeciesOnRegion":
         """Return a reference to those members of this species lying on the specific region @varregion.
         The resulting object is a SpeciesOnRegion.
         This is useful for defining reaction schemes for MultiCompartmentReaction.

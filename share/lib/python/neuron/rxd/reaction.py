@@ -8,7 +8,7 @@ from .rxdException import RxDException
 
 
 class Reaction(GeneralizedReaction):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Specify a reaction to be added to the system.
 
         Examples:
