@@ -2129,9 +2129,10 @@ void* nrn_opaque_obj2pyobj(Object* ho) {
     return nullptr;
 }
 
-// Object arithmetic functions that call HOC object methods
-void hoc_object_add() {
-    // Pop two objects from the stack properly
+// Helper functions for object arithmetic operations
+
+// Helper for object-object binary operations
+static void hoc_object_binary_op_helper(const char* method_name) {
     Object** obj2_ptr = hoc_objpop();  // Second operand
     Object** obj1_ptr = hoc_objpop();  // First operand (the one that has the method)
 
@@ -2143,24 +2144,22 @@ void hoc_object_add() {
     }
 
     // Try Python first if available
-    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__add__", obj2) != 0) {
+    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, method_name, obj2) != 0) {
         // Python handled the operation, result is on the stack
         hoc_tobj_unref(obj1_ptr);
         hoc_tobj_unref(obj2_ptr);
         return;
     }
 
-    // Look up the __add__ method
-    Symbol* method_sym = nrn_method_symbol(obj1, "__add__");
+    // Look up the method
+    Symbol* method_sym = nrn_method_symbol(obj1, method_name);
     if (!method_sym) {
-        hoc_execerror_fmt("Object arithmetic: method '__add__' not found in object '{}'",
-                          obj1->ctemplate->sym->name);
+        hoc_execerror_fmt("Object arithmetic: method '{}' not found in object '{}'",
+                          method_name, obj1->ctemplate->sym->name);
     }
 
-    // Push the second object as argument for the method call
+    // Call the HOC method: obj1.method(obj2)
     hoc_pushobj(obj2_ptr);
-
-    // Call the method: obj1.__add__(obj2)
     nrn_method_call(obj1, method_sym, 1);
 
     // Clean up temporary object references
@@ -2168,226 +2167,185 @@ void hoc_object_add() {
     hoc_tobj_unref(obj2_ptr);
 }
 
-void hoc_object_sub() {
-    Object** obj2_ptr = hoc_objpop();
-    Object** obj1_ptr = hoc_objpop();
+// Helper for object-number binary operations (object op number)
+static void hoc_object_number_binary_op_helper(const char* method_name) {
+    double d = hoc_xpop();            // Second operand (number)
+    Object** obj_ptr = hoc_objpop();  // First operand (object)
 
-    Object* obj1 = *obj1_ptr;
-    Object* obj2 = *obj2_ptr;
-
-    if (!obj1) {
-        hoc_execerror("Object arithmetic: first operand is null", nullptr);
+    Object* obj = *obj_ptr;
+    if (!obj) {
+        hoc_execerror("Object arithmetic: object operand is null", nullptr);
     }
 
     // Try Python first if available
-    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__sub__", obj2) != 0) {
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, method_name, d) != 0) {
         // Python handled the operation, result is on the stack
-        hoc_tobj_unref(obj1_ptr);
-        hoc_tobj_unref(obj2_ptr);
+        hoc_tobj_unref(obj_ptr);
         return;
     }
 
-
-    Symbol* method_sym = nrn_method_symbol(obj1, "__sub__");
+    Symbol* method_sym = nrn_method_symbol(obj, method_name);
     if (!method_sym) {
-        hoc_execerror_fmt("Object arithmetic: method '__sub__' not found in object '{}'",
-                          obj1->ctemplate->sym->name);
+        hoc_execerror_fmt("Object arithmetic: method '{}' not found in object '{}'",
+                          method_name, obj->ctemplate->sym->name);
     }
 
-    hoc_pushobj(obj2_ptr);
-    nrn_method_call(obj1, method_sym, 1);
-    hoc_tobj_unref(obj1_ptr);
-    hoc_tobj_unref(obj2_ptr);
+    // Push the number as argument for the method call
+    hoc_pushx(d);
+
+    // Call the method: obj.method(number)
+    nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
+}
+
+// Helper for number-object binary operations (number op object)
+// This uses the reverse magic method (e.g., __radd__ for addition)
+static void hoc_number_object_binary_op_helper(const char* method_name) {
+    Object** obj_ptr = hoc_objpop();  // Second operand (object)
+    double d = hoc_xpop();            // First operand (number)
+
+    Object* obj = *obj_ptr;
+    if (!obj) {
+        hoc_execerror("Object arithmetic: object operand is null", nullptr);
+    }
+
+    // Try Python first if available
+    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, method_name, d) != 0) {
+        // Python handled the operation, result is on the stack
+        hoc_tobj_unref(obj_ptr);
+        return;
+    }
+
+    Symbol* method_sym = nrn_method_symbol(obj, method_name);
+    if (!method_sym) {
+        hoc_execerror_fmt("Object arithmetic: method '{}' not found in object '{}'",
+                          method_name, obj->ctemplate->sym->name);
+    }
+
+    // Push the number as argument for the method call
+    hoc_pushx(d);
+
+    // Call the method: obj.method(number)
+    nrn_method_call(obj, method_sym, 1);
+    hoc_tobj_unref(obj_ptr);
+}
+
+// Object arithmetic functions that call HOC object methods
+void hoc_object_add() {
+    hoc_object_binary_op_helper("__add__");
+}
+
+void hoc_object_sub() {
+    hoc_object_binary_op_helper("__sub__");
 }
 
 void hoc_object_mul() {
-    Object** obj2_ptr = hoc_objpop();
-    Object** obj1_ptr = hoc_objpop();
-
-    Object* obj1 = *obj1_ptr;
-    Object* obj2 = *obj2_ptr;
-
-    if (!obj1) {
-        hoc_execerror("Object arithmetic: first operand is null", nullptr);
-    }
-
-    Symbol* method_sym = nrn_method_symbol(obj1, "__mul__");
-    if (!method_sym) {
-        hoc_execerror_fmt("Object arithmetic: method '__mul__' not found in object '{}'",
-                          obj1->ctemplate->sym->name);
-    }
-
-    // Try Python first if available
-    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__mul__", obj2) != 0) {
-        // Python handled the operation, result is on the stack
-        hoc_tobj_unref(obj1_ptr);
-        hoc_tobj_unref(obj2_ptr);
-        return;
-    }
-
-
-    hoc_pushobj(obj2_ptr);
-    nrn_method_call(obj1, method_sym, 1);
-    hoc_tobj_unref(obj1_ptr);
-    hoc_tobj_unref(obj2_ptr);
+    hoc_object_binary_op_helper("__mul__");
 }
 
 void hoc_object_div() {
-    Object** obj2_ptr = hoc_objpop();
-    Object** obj1_ptr = hoc_objpop();
-
-    Object* obj1 = *obj1_ptr;
-    Object* obj2 = *obj2_ptr;
-
-    if (!obj1) {
-        hoc_execerror("Object arithmetic: first operand is null", nullptr);
-    }
-
-    // Try Python first if available
-    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__div__", obj2) != 0) {
-        // Python handled the operation, result is on the stack
-        hoc_tobj_unref(obj1_ptr);
-        hoc_tobj_unref(obj2_ptr);
-        return;
-    }
-
-
-    Symbol* method_sym = nrn_method_symbol(obj1, "__div__");
-    if (!method_sym) {
-        hoc_execerror_fmt("Object arithmetic: method '__div__' not found in object '{}'",
-                          obj1->ctemplate->sym->name);
-    }
-
-    hoc_pushobj(obj2_ptr);
-    nrn_method_call(obj1, method_sym, 1);
-    hoc_tobj_unref(obj1_ptr);
-    hoc_tobj_unref(obj2_ptr);
+    hoc_object_binary_op_helper("__div__");
 }
 
 void hoc_object_pow() {
-    Object** obj2_ptr = hoc_objpop();
-    Object** obj1_ptr = hoc_objpop();
+    hoc_object_binary_op_helper("__pow__");
+}
 
-    Object* obj1 = *obj1_ptr;
-    Object* obj2 = *obj2_ptr;
+// Helper for comparison operations
+// Handles common setup, null checks, and Python attempts
+// Returns true if the operation was handled (caller should return)
+// Returns false if caller needs to handle HOC method lookup
+static bool hoc_object_comparison_setup(Object** &obj1_ptr, Object** &obj2_ptr, 
+                                         Object* &obj1, Object* &obj2,
+                                         const char* method_name, bool is_equality) {
+    obj2_ptr = hoc_objpop();  // Second operand
+    obj1_ptr = hoc_objpop();  // First operand
 
-    if (!obj1) {
-        hoc_execerror("Object arithmetic: first operand is null", nullptr);
+    obj1 = *obj1_ptr;
+    obj2 = *obj2_ptr;
+
+    // Handle null object cases with pointer comparison fallback
+    if (!obj1 || !obj2) {
+        double result = is_equality ? ((*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0) 
+                                    : ((*obj1_ptr != *obj2_ptr) ? 1.0 : 0.0);
+        hoc_tobj_unref(obj1_ptr);
+        hoc_tobj_unref(obj2_ptr);
+        hoc_pushx(result);
+        return true;  // Handled
     }
 
     // Try Python first if available
-    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__pow__", obj2) != 0) {
+    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, method_name, obj2) != 0) {
         // Python handled the operation, result is on the stack
         hoc_tobj_unref(obj1_ptr);
         hoc_tobj_unref(obj2_ptr);
-        return;
+        return true;  // Handled
     }
 
-    Symbol* method_sym = nrn_method_symbol(obj1, "__pow__");
-    if (!method_sym) {
-        hoc_execerror_fmt("Object arithmetic: method '__pow__' not found in object '{}'",
-                          obj1->ctemplate->sym->name);
-    }
+    return false;  // Not handled, caller should proceed with HOC method lookup
+}
 
+// Helper to call a comparison method and cleanup
+static void hoc_object_comparison_call(Object** obj1_ptr, Object** obj2_ptr, 
+                                        Object* obj1, Symbol* method_sym) {
     hoc_pushobj(obj2_ptr);
     nrn_method_call(obj1, method_sym, 1);
     hoc_tobj_unref(obj1_ptr);
     hoc_tobj_unref(obj2_ptr);
 }
 
+// Helper for pointer comparison fallback
+static void hoc_object_comparison_fallback(Object** obj1_ptr, Object** obj2_ptr, bool is_equality) {
+    double result = is_equality ? ((*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0) 
+                                : ((*obj1_ptr != *obj2_ptr) ? 1.0 : 0.0);
+    hoc_tobj_unref(obj1_ptr);
+    hoc_tobj_unref(obj2_ptr);
+    hoc_pushx(result);
+}
+
 void hoc_object_eq() {
-    // Pop two objects from the stack properly
-    Object** obj2_ptr = hoc_objpop();  // Second operand
-    Object** obj1_ptr = hoc_objpop();  // First operand (the one that has the method)
+    Object** obj1_ptr;
+    Object** obj2_ptr;
+    Object* obj1;
+    Object* obj2;
 
-    Object* obj1 = *obj1_ptr;
-    Object* obj2 = *obj2_ptr;
-
-    // Handle null object cases with pointer equality fallback
-    if (!obj1 || !obj2) {
-        double result = (*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0;
-        hoc_tobj_unref(obj1_ptr);
-        hoc_tobj_unref(obj2_ptr);
-        hoc_pushx(result);
-        return;
+    if (hoc_object_comparison_setup(obj1_ptr, obj2_ptr, obj1, obj2, "__eq__", true)) {
+        return;  // Already handled by setup (Python or null case)
     }
-
-    // Try Python first if available
-    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__eq__", obj2) != 0) {
-        // Python handled the operation, result is on the stack
-        hoc_tobj_unref(obj1_ptr);
-        hoc_tobj_unref(obj2_ptr);
-        return;
-    }
-
 
     // Look up the __eq__ method
     Symbol* method_sym = nrn_method_symbol(obj1, "__eq__");
     if (!method_sym) {
         // No __eq__ method found, fall back to pointer equality
-        double result = (*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0;
-        hoc_tobj_unref(obj1_ptr);
-        hoc_tobj_unref(obj2_ptr);
-        hoc_pushx(result);
+        hoc_object_comparison_fallback(obj1_ptr, obj2_ptr, true);
         return;
     }
 
-    // Push the second object as argument for the method call
-    hoc_pushobj(obj2_ptr);
-
-    // Call the method: obj1.__eq__(obj2)
-    nrn_method_call(obj1, method_sym, 1);
-
-    // Clean up temporary object references
-    hoc_tobj_unref(obj1_ptr);
-    hoc_tobj_unref(obj2_ptr);
+    // Call the method and cleanup
+    hoc_object_comparison_call(obj1_ptr, obj2_ptr, obj1, method_sym);
 }
 
 void hoc_object_ne() {
-    // Pop two objects from the stack properly
-    Object** obj2_ptr = hoc_objpop();  // Second operand
-    Object** obj1_ptr = hoc_objpop();  // First operand (the one that has the method)
+    Object** obj1_ptr;
+    Object** obj2_ptr;
+    Object* obj1;
+    Object* obj2;
 
-    Object* obj1 = *obj1_ptr;
-    Object* obj2 = *obj2_ptr;
-
-    // Handle null object cases with pointer equality fallback
-    if (!obj1 || !obj2) {
-        double result = (*obj1_ptr != *obj2_ptr) ? 1.0 : 0.0;
-        hoc_tobj_unref(obj1_ptr);
-        hoc_tobj_unref(obj2_ptr);
-        hoc_pushx(result);
-        return;
+    if (hoc_object_comparison_setup(obj1_ptr, obj2_ptr, obj1, obj2, "__ne__", false)) {
+        return;  // Already handled by setup (Python or null case)
     }
-
-    // Try Python first if available
-    if (nrnpy_call_obj_method && nrnpy_call_obj_method(obj1, "__ne__", obj2) != 0) {
-        // Python handled the operation, result is on the stack
-        hoc_tobj_unref(obj1_ptr);
-        hoc_tobj_unref(obj2_ptr);
-        return;
-    }
-
 
     // Look up the __ne__ method first
     Symbol* method_sym = nrn_method_symbol(obj1, "__ne__");
     if (method_sym) {
-        // Push the second object as argument for the method call
-        hoc_pushobj(obj2_ptr);
-        // Call the method: obj1.__ne__(obj2)
-        nrn_method_call(obj1, method_sym, 1);
-        // Clean up temporary object references
-        hoc_tobj_unref(obj1_ptr);
-        hoc_tobj_unref(obj2_ptr);
+        hoc_object_comparison_call(obj1_ptr, obj2_ptr, obj1, method_sym);
         return;
     }
 
     // No __ne__ method, try __eq__ method and negate result
     method_sym = nrn_method_symbol(obj1, "__eq__");
     if (method_sym) {
-        // Push the second object as argument for the method call
         hoc_pushobj(obj2_ptr);
-        // Call the method: obj1.__eq__(obj2)
         nrn_method_call(obj1, method_sym, 1);
         // Negate the result
         double eq_result = hoc_xpop();
@@ -2398,298 +2356,46 @@ void hoc_object_ne() {
     }
 
     // No magic methods found, fall back to pointer inequality
-    double result = (*obj1_ptr != *obj2_ptr) ? 1.0 : 0.0;
-    hoc_tobj_unref(obj1_ptr);
-    hoc_tobj_unref(obj2_ptr);
-    hoc_pushx(result);
+    hoc_object_comparison_fallback(obj1_ptr, obj2_ptr, false);
 }
 
 // Mixed-type arithmetic functions (object with number)
 void hoc_object_add_number() {
-    // object + number: call obj.__add__(number)
-    double d = hoc_xpop();            // Second operand (number)
-    Object** obj_ptr = hoc_objpop();  // First operand (object)
-
-    Object* obj = *obj_ptr;
-    if (!obj) {
-        hoc_execerror("Object arithmetic: object operand is null", nullptr);
-    }
-
-    // Try Python first if available
-    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__add__", d) != 0) {
-        // Python handled the operation, result is on the stack
-        hoc_tobj_unref(obj_ptr);
-        return;
-    }
-
-    Symbol* method_sym = nrn_method_symbol(obj, "__add__");
-    if (!method_sym) {
-        hoc_execerror_fmt("Object arithmetic: method '__add__' not found in object '{}'",
-                          obj->ctemplate->sym->name);
-    }
-
-    // Push the number as argument for the method call
-    hoc_pushx(d);
-
-    // Call the method: obj.__add__(number)
-    nrn_method_call(obj, method_sym, 1);
-    hoc_tobj_unref(obj_ptr);
+    hoc_object_number_binary_op_helper("__add__");
 }
 
 void hoc_number_add_object() {
-    // number + object: call obj.__radd__(number)
-    Object** obj_ptr = hoc_objpop();  // Second operand (object)
-    double d = hoc_xpop();            // First operand (number)
-
-    Object* obj = *obj_ptr;
-    if (!obj) {
-        hoc_execerror("Object arithmetic: object operand is null", nullptr);
-    }
-
-    // Try Python first if available
-    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__radd__", d) != 0) {
-        // Python handled the operation, result is on the stack
-        hoc_tobj_unref(obj_ptr);
-        return;
-    }
-
-
-    Symbol* method_sym = nrn_method_symbol(obj, "__radd__");
-    if (!method_sym) {
-        hoc_execerror_fmt("Object arithmetic: method '__radd__' not found in object '{}'",
-                          obj->ctemplate->sym->name);
-    }
-
-    // Push the number as argument for the method call
-    hoc_pushx(d);
-
-    // Call the method: obj.__radd__(number)
-    nrn_method_call(obj, method_sym, 1);
-    hoc_tobj_unref(obj_ptr);
+    hoc_number_object_binary_op_helper("__radd__");
 }
 
 void hoc_object_sub_number() {
-    // object - number: call obj.__sub__(number)
-    double d = hoc_xpop();
-    Object** obj_ptr = hoc_objpop();
-
-    Object* obj = *obj_ptr;
-    if (!obj) {
-        hoc_execerror("Object arithmetic: object operand is null", nullptr);
-    }
-
-    // Try Python first if available
-    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__sub__", d) != 0) {
-        // Python handled the operation, result is on the stack
-        hoc_tobj_unref(obj_ptr);
-        return;
-    }
-
-    Symbol* method_sym = nrn_method_symbol(obj, "__sub__");
-    if (!method_sym) {
-        hoc_execerror_fmt("Object arithmetic: method '__sub__' not found in object '{}'",
-                          obj->ctemplate->sym->name);
-    }
-
-    hoc_pushx(d);
-    nrn_method_call(obj, method_sym, 1);
-    hoc_tobj_unref(obj_ptr);
+    hoc_object_number_binary_op_helper("__sub__");
 }
 
 void hoc_number_sub_object() {
-    // number - object: call obj.__rsub__(number)
-    Object** obj_ptr = hoc_objpop();
-    double d = hoc_xpop();
-
-    Object* obj = *obj_ptr;
-    if (!obj) {
-        hoc_execerror("Object arithmetic: object operand is null", nullptr);
-    }
-
-    // Try Python first if available
-    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__rsub__", d) != 0) {
-        // Python handled the operation, result is on the stack
-        hoc_tobj_unref(obj_ptr);
-        return;
-    }
-
-    Symbol* method_sym = nrn_method_symbol(obj, "__rsub__");
-    if (!method_sym) {
-        hoc_execerror_fmt("Object arithmetic: method '__rsub__' not found in object '{}'",
-                          obj->ctemplate->sym->name);
-    }
-
-    hoc_pushx(d);
-    nrn_method_call(obj, method_sym, 1);
-    hoc_tobj_unref(obj_ptr);
+    hoc_number_object_binary_op_helper("__rsub__");
 }
 
 void hoc_object_mul_number() {
-    // object * number: call obj.__mul__(number)
-    double d = hoc_xpop();
-    Object** obj_ptr = hoc_objpop();
-
-    Object* obj = *obj_ptr;
-    if (!obj) {
-        hoc_execerror("Object arithmetic: object operand is null", nullptr);
-    }
-
-    // Try Python first if available
-    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__mul__", d) != 0) {
-        // Python handled the operation, result is on the stack
-        hoc_tobj_unref(obj_ptr);
-        return;
-    }
-
-
-    Symbol* method_sym = nrn_method_symbol(obj, "__mul__");
-    if (!method_sym) {
-        hoc_execerror_fmt("Object arithmetic: method '__mul__' not found in object '{}'",
-                          obj->ctemplate->sym->name);
-    }
-
-    hoc_pushx(d);
-    nrn_method_call(obj, method_sym, 1);
-    hoc_tobj_unref(obj_ptr);
+    hoc_object_number_binary_op_helper("__mul__");
 }
 
 void hoc_number_mul_object() {
-    // number * object: call obj.__rmul__(number)
-    Object** obj_ptr = hoc_objpop();
-    double d = hoc_xpop();
-
-    Object* obj = *obj_ptr;
-    if (!obj) {
-        hoc_execerror("Object arithmetic: object operand is null", nullptr);
-    }
-
-    // Try Python first if available
-    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__rmul__", d) != 0) {
-        // Python handled the operation, result is on the stack
-        hoc_tobj_unref(obj_ptr);
-        return;
-    }
-
-    Symbol* method_sym = nrn_method_symbol(obj, "__rmul__");
-    if (!method_sym) {
-        hoc_execerror_fmt("Object arithmetic: method '__rmul__' not found in object '{}'",
-                          obj->ctemplate->sym->name);
-    }
-
-    hoc_pushx(d);
-    nrn_method_call(obj, method_sym, 1);
-    hoc_tobj_unref(obj_ptr);
+    hoc_number_object_binary_op_helper("__rmul__");
 }
 
 void hoc_object_div_number() {
-    // object / number: call obj.__div__(number)
-    double d = hoc_xpop();
-    Object** obj_ptr = hoc_objpop();
-
-    Object* obj = *obj_ptr;
-    if (!obj) {
-        hoc_execerror("Object arithmetic: object operand is null", nullptr);
-    }
-
-    // Try Python first if available
-    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__div__", d) != 0) {
-        // Python handled the operation, result is on the stack
-        hoc_tobj_unref(obj_ptr);
-        return;
-    }
-
-    Symbol* method_sym = nrn_method_symbol(obj, "__div__");
-    if (!method_sym) {
-        hoc_execerror_fmt("Object arithmetic: method '__div__' not found in object '{}'",
-                          obj->ctemplate->sym->name);
-    }
-
-    hoc_pushx(d);
-    nrn_method_call(obj, method_sym, 1);
-    hoc_tobj_unref(obj_ptr);
+    hoc_object_number_binary_op_helper("__div__");
 }
 
 void hoc_number_div_object() {
-    // number / object: call obj.__rdiv__(number)
-    Object** obj_ptr = hoc_objpop();
-    double d = hoc_xpop();
-
-    Object* obj = *obj_ptr;
-    if (!obj) {
-        hoc_execerror("Object arithmetic: object operand is null", nullptr);
-    }
-
-    // Try Python first if available
-    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__rdiv__", d) != 0) {
-        // Python handled the operation, result is on the stack
-        hoc_tobj_unref(obj_ptr);
-        return;
-    }
-
-    Symbol* method_sym = nrn_method_symbol(obj, "__rdiv__");
-    if (!method_sym) {
-        hoc_execerror_fmt("Object arithmetic: method '__rdiv__' not found in object '{}'",
-                          obj->ctemplate->sym->name);
-    }
-
-    hoc_pushx(d);
-    nrn_method_call(obj, method_sym, 1);
-    hoc_tobj_unref(obj_ptr);
+    hoc_number_object_binary_op_helper("__rdiv__");
 }
 
 void hoc_object_pow_number() {
-    // object ^ number: call obj.__pow__(number)
-    double d = hoc_xpop();
-    Object** obj_ptr = hoc_objpop();
-
-    Object* obj = *obj_ptr;
-    if (!obj) {
-        hoc_execerror("Object arithmetic: object operand is null", nullptr);
-    }
-
-    // Try Python first if available
-    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__pow__", d) != 0) {
-        // Python handled the operation, result is on the stack
-        hoc_tobj_unref(obj_ptr);
-        return;
-    }
-
-
-    Symbol* method_sym = nrn_method_symbol(obj, "__pow__");
-    if (!method_sym) {
-        hoc_execerror_fmt("Object arithmetic: method '__pow__' not found in object '{}'",
-                          obj->ctemplate->sym->name);
-    }
-
-    hoc_pushx(d);
-    nrn_method_call(obj, method_sym, 1);
-    hoc_tobj_unref(obj_ptr);
+    hoc_object_number_binary_op_helper("__pow__");
 }
 
 void hoc_number_pow_object() {
-    // number ^ object: call obj.__rpow__(number)
-    Object** obj_ptr = hoc_objpop();
-    double d = hoc_xpop();
-
-    Object* obj = *obj_ptr;
-    if (!obj) {
-        hoc_execerror("Object arithmetic: object operand is null", nullptr);
-    }
-
-    // Try Python first if available
-    if (nrnpy_call_obj_method_double && nrnpy_call_obj_method_double(obj, "__rpow__", d) != 0) {
-        // Python handled the operation, result is on the stack
-        hoc_tobj_unref(obj_ptr);
-        return;
-    }
-
-    Symbol* method_sym = nrn_method_symbol(obj, "__rpow__");
-    if (!method_sym) {
-        hoc_execerror_fmt("Object arithmetic: method '__rpow__' not found in object '{}'",
-                          obj->ctemplate->sym->name);
-    }
-
-    hoc_pushx(d);
-    nrn_method_call(obj, method_sym, 1);
-    hoc_tobj_unref(obj_ptr);
+    hoc_number_object_binary_op_helper("__rpow__");
 }
