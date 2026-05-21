@@ -1082,7 +1082,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
             and _point_indices[region][point] not in indices3d
         ):
             indices3d.append(_point_indices[region][point])
-            vols3d.append(surf[point][0] if point in surf else region.dx**3)
+            vols3d.append(surf[point][0] if point in surf else region.dx ** 3)
             # print f'found node {node._index} with coordinates ({node.x3d:g}, {node.y3d:g}, {node.z3d:g})'
     # discard duplicates...
     # TODO: really, need to figure out all the 3d nodes connecting to a given 1d endpoint, then unique that
