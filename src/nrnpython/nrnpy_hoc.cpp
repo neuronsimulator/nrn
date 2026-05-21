@@ -562,6 +562,7 @@ int nrnpy_numbercheck(PyObject* po) {
     return rval;
 }
 
+// Returns a new reference.
 PyObject* nrnpy_ho2po(Object* o) {
     // o may be NULLobject, or encapsulate a Python object (via
     // the PythonObject class in hoc (see Py2Nrn in nrnpy_p2h.cpp),
@@ -587,6 +588,7 @@ PyObject* nrnpy_ho2po(Object* o) {
     return po.release().ptr();
 }
 
+// not static because it's used in nrnpy_nrn.cpp
 Object* nrnpy_po2ho(PyObject* po) {
     // po may be None, or encapsulate a hoc object (via the
     // PyHocObject, or be a native Python instance such as [1,2,3]
@@ -1198,7 +1200,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             }
         } else if (self->type_ == PyHoc::HocTopLevelInterpreter &&
                    strncmp(n, "__nrnsec_0x", 11) == 0) {
-            Section* sec = (Section*) hoc_sec_internal_name2ptr(n, nullptr);
+            Section* sec = (Section*) hoc_sec_internal_name2ptr(n, 0);
             if (!sec) {
                 PyErr_SetString(PyExc_NameError, n);
             } else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX].get<void*>()) {
