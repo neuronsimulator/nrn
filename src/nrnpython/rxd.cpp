@@ -614,8 +614,10 @@ static void free_currents() {
     for (i = 0; i < _memb_count; i++) {
         for (j = 0; j < _memb_species_count[i]; j++) {
             free(_memb_cur_mapped[i][j]);
+            free(_memb_cur_mapped_ecs[i][j]);
         }
         free(_memb_cur_mapped[i]);
+        free(_memb_cur_mapped_ecs[i]);
     }
     _memb_cur_ptrs.clear();
     free(_memb_cur_mapped);
@@ -973,6 +975,8 @@ extern "C" NRN_EXPORT void register_rate(int nspecies,
         react->flux = (double**) malloc(react->icsN * sizeof(double*));
         for (i = 0; i < react->icsN; i++)
             react->flux[i] = (double*) malloc(react->num_regions * sizeof(double));
+    } else {
+        react->flux = NULL;
     }
     react->states_for_reaction = (double**) malloc(react->num_species * sizeof(double*));
     react->states_for_reaction_dx = (double**) malloc(react->num_species * sizeof(double*));
@@ -1015,20 +1019,22 @@ extern "C" NRN_EXPORT void clear_rates() {
         if (react->vptrs != NULL)
             free(react->vptrs);
         for (i = 0; i < react->num_segments; i++) {
-            for (j = 0; j < react->num_species; j++) {
+            for (j = 0; j < react->num_species + react->num_params; j++) {
                 free(react->state_idx[i][j]);
             }
             free(react->state_idx[i]);
 
             if (react->num_ecs_species + react->num_ecs_params > 0) {
                 free(react->ecs_state[i]);
+                free(react->ecs_index[i]);
             }
         }
+        free(react->state_idx);
         if (react->num_ecs_species + react->num_ecs_params > 0) {
             free(react->ecs_index);
             free(react->ecs_state);
-            free(react->state_idx);
             free(react->ecs_offset_index);
+            free(react->ecs_grid);
         }
         if (react->num_mult > 0) {
             for (i = 0; i < react->num_mult; i++)
@@ -1040,7 +1046,7 @@ extern "C" NRN_EXPORT void clear_rates() {
 
         if (react->num_mult > 0)
             free(react->mc_mult);
-        if (_membrane_flux) {
+        if (react->flux != NULL) {
             for (i = 0; i < react->icsN; i++)
                 free(react->flux[i]);
             free(react->flux);
@@ -1483,7 +1489,8 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
                 react->ecs_params_for_reaction[k] = NAN;
             }
         }
-        memset(react->ecs_result, 0, react->num_ecs_species * sizeof(double));
+        if (react->num_ecs_species > 0)
+            memset(react->ecs_result, 0, react->num_ecs_species * sizeof(double));
 
         for (i = 0; i < react->num_mult; i++) {
             react->mc_mult[i] = react->mc_multiplier[i][segment];

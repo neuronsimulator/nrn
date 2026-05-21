@@ -1103,6 +1103,9 @@ void ECS_Grid_node::clear_multicompartment_reaction() {
     } else {
         free(reaction_indices);
     }
+    free(induced_currents);
+    induced_currents = NULL;
+    local_induced_currents = NULL;
     all_reaction_indices = NULL;
     all_reaction_states = NULL;
     reaction_indices = NULL;
@@ -1268,10 +1271,13 @@ ECS_Grid_node::~ECS_Grid_node() {
 #endif
     free(all_reaction_indices);
     reaction_indices = NULL;
+    free(react_offsets);
     free(all_currents);
     free(ecs_adi_dir_x);
     free(ecs_adi_dir_y);
     free(ecs_adi_dir_z);
+    if (get_alpha == get_alpha_scalar)
+        free(alpha);
     if (node_flux_count > 0) {
         free(node_flux_idx);
         free(node_flux_scale);
