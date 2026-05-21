@@ -2155,7 +2155,8 @@ static void hoc_object_binary_op_helper(const char* method_name) {
     Symbol* method_sym = nrn_method_symbol(obj1, method_name);
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '{}' not found in object '{}'",
-                          method_name, obj1->ctemplate->sym->name);
+                          method_name,
+                          obj1->ctemplate->sym->name);
     }
 
     // Call the HOC method: obj1.method(obj2)
@@ -2187,7 +2188,8 @@ static void hoc_object_number_binary_op_helper(const char* method_name) {
     Symbol* method_sym = nrn_method_symbol(obj, method_name);
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '{}' not found in object '{}'",
-                          method_name, obj->ctemplate->sym->name);
+                          method_name,
+                          obj->ctemplate->sym->name);
     }
 
     // Push the number as argument for the method call
@@ -2219,7 +2221,8 @@ static void hoc_number_object_binary_op_helper(const char* method_name) {
     Symbol* method_sym = nrn_method_symbol(obj, method_name);
     if (!method_sym) {
         hoc_execerror_fmt("Object arithmetic: method '{}' not found in object '{}'",
-                          method_name, obj->ctemplate->sym->name);
+                          method_name,
+                          obj->ctemplate->sym->name);
     }
 
     // Push the number as argument for the method call
@@ -2255,9 +2258,12 @@ void hoc_object_pow() {
 // Handles common setup, null checks, and Python attempts
 // Returns true if the operation was handled (caller should return)
 // Returns false if caller needs to handle HOC method lookup
-static bool hoc_object_comparison_setup(Object** &obj1_ptr, Object** &obj2_ptr, 
-                                         Object* &obj1, Object* &obj2,
-                                         const char* method_name, bool is_equality) {
+static bool hoc_object_comparison_setup(Object**& obj1_ptr,
+                                        Object**& obj2_ptr,
+                                        Object*& obj1,
+                                        Object*& obj2,
+                                        const char* method_name,
+                                        bool is_equality) {
     obj2_ptr = hoc_objpop();  // Second operand
     obj1_ptr = hoc_objpop();  // First operand
 
@@ -2266,7 +2272,7 @@ static bool hoc_object_comparison_setup(Object** &obj1_ptr, Object** &obj2_ptr,
 
     // Handle null object cases with pointer comparison fallback
     if (!obj1 || !obj2) {
-        double result = is_equality ? ((*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0) 
+        double result = is_equality ? ((*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0)
                                     : ((*obj1_ptr != *obj2_ptr) ? 1.0 : 0.0);
         hoc_tobj_unref(obj1_ptr);
         hoc_tobj_unref(obj2_ptr);
@@ -2286,8 +2292,10 @@ static bool hoc_object_comparison_setup(Object** &obj1_ptr, Object** &obj2_ptr,
 }
 
 // Helper to call a comparison method and cleanup
-static void hoc_object_comparison_call(Object** obj1_ptr, Object** obj2_ptr, 
-                                        Object* obj1, Symbol* method_sym) {
+static void hoc_object_comparison_call(Object** obj1_ptr,
+                                       Object** obj2_ptr,
+                                       Object* obj1,
+                                       Symbol* method_sym) {
     hoc_pushobj(obj2_ptr);
     nrn_method_call(obj1, method_sym, 1);
     hoc_tobj_unref(obj1_ptr);
@@ -2296,7 +2304,7 @@ static void hoc_object_comparison_call(Object** obj1_ptr, Object** obj2_ptr,
 
 // Helper for pointer comparison fallback
 static void hoc_object_comparison_fallback(Object** obj1_ptr, Object** obj2_ptr, bool is_equality) {
-    double result = is_equality ? ((*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0) 
+    double result = is_equality ? ((*obj1_ptr == *obj2_ptr) ? 1.0 : 0.0)
                                 : ((*obj1_ptr != *obj2_ptr) ? 1.0 : 0.0);
     hoc_tobj_unref(obj1_ptr);
     hoc_tobj_unref(obj2_ptr);
