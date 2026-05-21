@@ -3532,38 +3532,38 @@ static int nrnpy_call_obj_method_helper_(Object* obj, const char* method, PyObje
     if (!obj || obj->ctemplate->sym != nrnpy_pyobj_sym_) {
         return 0;
     }
-    
+
     // Convert obj to PyObject
     PyObject* py_obj = nrnpy_hoc2pyobject(obj);
     if (!py_obj) {
         return 0;
     }
-    
+
     // Check if method exists and is callable
     if (!PyObject_HasAttrString(py_obj, method)) {
         return 0;
     }
-    
+
     PyObject* py_method = PyObject_GetAttrString(py_obj, method);
     if (!py_method) {
         PyErr_Clear();
         return 0;
     }
-    
+
     if (!PyCallable_Check(py_method)) {
         Py_DECREF(py_method);
         return 0;
     }
-    
+
     // Call the method
     auto result = nb::steal(PyObject_CallFunctionObjArgs(py_method, py_arg, nullptr));
     Py_DECREF(py_method);
-    
+
     if (!result) {
         PyErr_Clear();
         return 0;
     }
-    
+
     // Check return type and push to stack
     if (PyNumber_Check(result.ptr())) {
         // Push number to stack
@@ -3581,7 +3581,7 @@ static int nrnpy_call_obj_method_helper_(Object* obj, const char* method, PyObje
             hoc_obj_unref(result_obj);
         }
     }
-    
+
     return 1;
 }
 
@@ -3616,12 +3616,12 @@ static int nrnpy_call_obj_method_double_(Object* obj, const char* method, double
     // This preserves integer semantics for libraries like RxD that distinguish
     // between integer and float coefficients.
     PyObject* py_arg = nullptr;
-    
+
     if (value == floor(value)) {
         // Value has no fractional part, try to convert to integer
-        long long vll = (long long)value;
+        long long vll = (long long) value;
         // Verify the conversion is exact (handles very large values)
-        if ((double)vll == value) {
+        if ((double) vll == value) {
             py_arg = PyLong_FromLongLong(vll);
         }
     }
