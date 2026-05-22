@@ -2,6 +2,7 @@ from neuron import h, hoc
 import numpy
 import neuron
 from .rxdException import RxDException
+from typing import Any, Optional
 
 regions = {}
 
@@ -22,7 +23,7 @@ h.load_file("stdlib.hoc")
 default_region = {"morphology": "No Sections", "geometry": "Inside"}
 
 
-def _instantiate_regions(regions):
+def _instantiate_regions(regions: dict) -> None:
     seclist_names, seclist_map = get_sectionlists()
     for name, data in zip(list(regions.keys()), list(regions.values())):
         seclist = data.get("morphology", "No Sections")
@@ -57,7 +58,7 @@ def _instantiate_regions(regions):
         exec(command, globals())
 
 
-def _instantiate_species(species):
+def _instantiate_species(species: dict) -> None:
     for name, data in zip(list(species.keys()), list(species.values())):
         regions = data.get("regions", [])
         regions = f"[{','.join(regions)}]"
@@ -65,7 +66,7 @@ def _instantiate_species(species):
         exec(command, globals())
 
 
-def _construct_side(items):
+def _construct_side(items: list) -> str:
     result = []
     for term, multiplicity in items:
         if multiplicity == 1:
@@ -75,11 +76,11 @@ def _construct_side(items):
     return " + ".join(result)
 
 
-def _construct_schema(lhs, rhs):
+def _construct_schema(lhs: list, rhs: list) -> str:
     return f"{_construct_side(lhs)} <> {_construct_side(rhs)}"
 
 
-def _instantiate_reactions(reactions):
+def _instantiate_reactions(reactions: dict) -> None:
     for name, data in zip(list(reactions.keys()), list(reactions.values())):
         reaction_spec = ""
         if "type" not in data:
@@ -97,7 +98,7 @@ def _instantiate_reactions(reactions):
         exec(command, globals())
 
 
-def _instantiate():
+def _instantiate() -> None:
     global has_instantiated
     if has_instantiated:
         h.continue_dialog("Cannot reinstantiate yet.")

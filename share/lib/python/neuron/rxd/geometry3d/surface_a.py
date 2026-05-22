@@ -3,13 +3,13 @@ import numpy
 from .. import options
 from neuron import nrn_dll_sym
 from ctypes import c_double, POINTER
-
+from typing import Any
 
 """Function to take any surface vox with information on distance of each vertex from surface 
 and output approx. surface area contained in that vox"""
 
 
-def surface_area(itemlist, vox, grid):
+def surface_area(itemlist: list, vox: tuple, grid: dict) -> float:
     res = options.ics_partial_surface_resolution
     i0, j0, k0 = vox
     rng = range(res + 1)
@@ -50,8 +50,23 @@ def surface_area(itemlist, vox, grid):
     return area
 
 
-def sub_surface_area(v0, v1, v2, v3, v4, v5, v6, v7, x0, x1, y0, y1, z0, z1):
-    def allornone(lst):
+def sub_surface_area(
+    v0: float,
+    v1: float,
+    v2: float,
+    v3: float,
+    v4: float,
+    v5: float,
+    v6: float,
+    v7: float,
+    x0: float,
+    x1: float,
+    y0: float,
+    y1: float,
+    z0: float,
+    z1: float,
+) -> float:
+    def allornone(lst: list) -> bool:
         return all(lst) or not any(lst)
 
     # if all corners are inside -- return 0
