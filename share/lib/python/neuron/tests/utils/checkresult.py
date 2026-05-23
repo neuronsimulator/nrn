@@ -1,5 +1,7 @@
 import json
 import math
+import os
+
 from neuron import h, hoc
 
 
@@ -17,7 +19,6 @@ class Chk:
         A temporary must_exist=False provides a simple way for the test
         author to bootstrap the file.
         """
-        import os
 
         self.fname = fname
         self.d = {}
@@ -49,33 +50,29 @@ class Chk:
                 assert type(a) == type(b)
                 if type(a) in (float, int):
                     match = math.isclose(a, b, rel_tol=tol)
-                    if not match:
-                        print(a, b, "diff", abs(a - b) / max(abs(a), abs(b)), ">", tol)
+                    assert (
+                        match
+                    ), f"{a}, {b}, diff = {abs(a - b) / max(abs(a), abs(b))} > {tol}"
                     return match
                 elif type(a) == str:
                     match = a == b
-                    if not match:
-                        print("strdiff", a, b)
+                    assert match, f"strdiff: {a} != {b}"
                     return match
                 elif type(a) == list:
                     # List comprehension avoids short-circuit, so the "diff"
                     # message just above is printed for all elements
-                    return all([equal(aa, bb) for aa, bb in zip(a, b)])
+                    return all(equal(aa, bb) for aa, bb in zip(a, b))
                 elif type(a) == dict:
                     assert a.keys() == b.keys()
-                    return all([equal(a[k], b[k]) for k in a.keys()])
+                    return all(equal(a[k], b[k]) for k in a.keys())
                 raise Exception(
                     "Don't know how to compare objects of type " + str(type(a))
                 )
 
             match = equal(value, self.d[key])
-            if not match:
-                print(key, "difference")
-                print("std = ", self.d[key])
-                print("val = ", value)
-            assert match
+            assert match, f"{key=}, difference:\nstd = {self.d[key]}\n{value=}"
         else:
-            print("{} added {}".format(self, key))
+            print(f"{self} added {key}")
             if isinstance(value, hoc.Vector):
                 self.d[key] = value.to_python()
             else:
