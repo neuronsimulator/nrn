@@ -4,6 +4,8 @@
 NEURON is a simulator for models of neurons and networks of neuron. See [nrn.readthedocs.io](https://nrn.readthedocs.io) for documentation, tutorials, and announcements of courses and conferences. Installers are available on [GitHub Releases](https://github.com/neuronsimulator/nrn/releases) and the source code on [GitHub](https://github.com/neuronsimulator/nrn).
 Ask questions on our [Discussion Forum](https://github.com/neuronsimulator/nrn/discussions).
 
+This comment represents a dummy commit to introduce a tag.
+
 ## Installing NEURON
 
 NEURON provides binary installers for Linux, Mac and Windows platforms. You can find the latest
