@@ -100,21 +100,11 @@ void start_profile(int i) {}
 void add_profile(int i) {}
 void pr_profile(void) {}
 
-#if OCSMALL
-#define READLINE 0
-#endif
-
-#ifndef READLINE
-#define READLINE 1
-#endif
-
-#if READLINE
 extern "C" {
 extern char* readline(const char* prompt);
 extern void rl_deprep_terminal(void);
 extern void add_history(const char*);
 }
-#endif
 
 int nrn_nobanner_;
 int hoc_pipeflag;
@@ -958,7 +948,7 @@ void hoc_final_exit(void) {
     /* Don't close the plots for the sub-processes when they finish,
        by default they are then closed when the master process ends */
     hoc_close_plot();
-#if READLINE && !defined(MINGW)
+#if !defined(MINGW)
     rl_deprep_terminal();
 #endif
     ivoc_cleanup();
@@ -1482,7 +1472,6 @@ extern int run_til_stdin(); /* runs the interviews event loop. Returns 1
 
 extern void hoc_notify_value(void);
 
-#if READLINE
 #ifdef MINGW
 extern "C" int (*rl_getc_function)(void);
 extern "C" int rl_getc(void);
@@ -1551,7 +1540,6 @@ static int event_hook(void) {
 #endif /* not use_rl_getc_function */
 
 #endif /* not MINGW */
-#endif /* READLINE */
 #endif /* INTERVIEWS */
 
 /*
@@ -1629,7 +1617,6 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
             return EOF;
         }
     } else {
-#if READLINE
         if (nrn_fw_eq(hoc_fin, stdin) && nrn_istty_) {
             char* line;
             int n;
@@ -1691,27 +1678,6 @@ int hoc_get_line(void) { /* supports re-entry. fill hoc_cbuf with next line */
                 return EOF;
             }
         }
-#else  // READLINE
-#if INTERVIEWS
-        if (nrn_fw_eq(hoc_fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
-            run_til_stdin());
-        }
-#endif  // INTERVIEWS
-#if defined(WIN32)
-        if (nrn_fw_eq(hoc_fin, stdin)) {
-            if (gets(hoc_cbuf) == (char*) 0) {
-                /*DebugMessage("gets returned NULL\n");*/
-                return EOF;
-            }
-            strcat(hoc_cbuf, "\n");
-        } else
-#endif  // WIN32
-        {
-            if (hoc_fgets_unlimited(hoc_cbufstr, hoc_fin) == (char*) 0) {
-                return EOF;
-            }
-        }
-#endif  // READLINE
     }
     errno = 0;
     hoc_lineno++;
