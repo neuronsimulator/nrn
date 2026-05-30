@@ -224,7 +224,7 @@ code-loading
             Loading only takes place if the name has not previously been defined. 
             The search path consists of the current working directory, followed by 
             the paths in the environment variable HOC_LIBRARY_PATH (space separated), 
-            followed by `$NEURONHOME/lib/hoc <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/lib/hoc>`_. 
+            followed by `$NEURONHOME/lib/hoc <https://github.com/neuronsimulator/nrn/tree/master/share/lib/hoc>`_. 
             Remember that only entire files are loaded-- not just the definition of 
             the name. And nothing is loaded if the name is already defined. 
             Inadvertent recursion will use up all the file descriptors. 

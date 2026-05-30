@@ -1,5 +1,6 @@
 from .rxdException import RxDException
 from neuron import h
+from typing import Optional, Any, Union
 
 try:
     from . import geometry3d
@@ -22,7 +23,7 @@ _c_region_lookup = (
 )
 
 
-def _sort_secs(secs):
+def _sort_secs(secs) -> list:
     # sort the sections
     root_secs = h.SectionList()
     root_secs.allroots()
@@ -77,7 +78,7 @@ class _c_region:
         "_vptrs",
     )
 
-    def __init__(self, regions):
+    def __init__(self, regions: Any) -> None:
         global _c_region_lookup
         self._regions = [weakref.ref(r) for r in regions]
         self._overlap = self._regions[0]()._secs1d
@@ -158,7 +159,7 @@ class _c_region:
         self.num_ecs_species = len(self._ecs_react_species)
         self._initialized = False
 
-    def get_ecs_index(self):
+    def get_ecs_index(self) -> Any:
         if not self._initialized:
             self._initalize()
         if self.ecs_location_index is None:
@@ -166,12 +167,12 @@ class _c_region:
         else:
             return self.ecs_location_index.flatten()
 
-    def get_state_index(self):
+    def get_state_index(self) -> Any:
         if not self._initialized:
             self._initalize()
         return self.location_index.flatten()
 
-    def get_ecs_species_ids(self):
+    def get_ecs_species_ids(self) -> Any:
         ret = numpy.ndarray(self.num_ecs_species + self.num_ecs_params, ctypes.c_int)
         if self.num_ecs_species + self.num_ecs_params > 0:
             for i in self._ecs_species_ids:
@@ -180,7 +181,7 @@ class _c_region:
                 ret[self._ecs_params_ids[i] + self.num_ecs_species] = i
         return ret
 
-    def _ecs_initalize(self):
+    def _ecs_initalize(self) -> None:
         from . import species
 
         self.ecs_location_index = -numpy.ones(
@@ -189,14 +190,18 @@ class _c_region:
         )
 
         self._ecs_react_species.sort(
-            key=lambda sp: sp()._extracellular()._grid_id
-            if isinstance(sp(), species.SpeciesOnExtracellular)
-            else sp()._grid_id
+            key=lambda sp: (
+                sp()._extracellular()._grid_id
+                if isinstance(sp(), species.SpeciesOnExtracellular)
+                else sp()._grid_id
+            )
         )
         self._ecs_react_params.sort(
-            key=lambda sp: sp()._extracellular()._grid_id
-            if isinstance(sp(), species.ParameterOnExtracellular)
-            else sp()._grid_id
+            key=lambda sp: (
+                sp()._extracellular()._grid_id
+                if isinstance(sp(), species.ParameterOnExtracellular)
+                else sp()._grid_id
+            )
         )
 
         # Set the local ids of the regions and species involved in the reactions
@@ -212,7 +217,7 @@ class _c_region:
             seg_idx = 0
             for sec in self._overlap:
                 for seg in sec:
-                    (x, y, z) = species._xyz(seg)
+                    x, y, z = species._xyz(seg)
                     self.ecs_location_index[sid][seg_idx] = s().index_from_xyz(x, y, z)
                     seg_idx += 1
         self.ecs_location_index = self.ecs_location_index.transpose()
@@ -232,14 +237,14 @@ class _c_region:
         self._params_ids = {}
         self._region_ids = {}
         self._react_species.sort(
-            key=lambda sp: sp()._species()._id
-            if isinstance(sp(), SpeciesOnRegion)
-            else sp()._id
+            key=lambda sp: (
+                sp()._species()._id if isinstance(sp(), SpeciesOnRegion) else sp()._id
+            )
         )
         self._react_params.sort(
-            key=lambda sp: sp()._species()._id
-            if isinstance(sp(), ParameterOnRegion)
-            else sp()._id
+            key=lambda sp: (
+                sp()._species()._id if isinstance(sp(), ParameterOnRegion) else sp()._id
+            )
         )
 
         self._regions.sort(key=lambda rp: rp()._id)

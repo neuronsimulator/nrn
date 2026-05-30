@@ -6380,7 +6380,7 @@ bool Cvode::is_owner(neuron::container::data_handle<double> const& handle) {
     for (int it = 0; it < nrn_nthread; ++it) {
         CvodeThreadData& z = CTD(it);
         NrnThread* nt_ = nrn_threads + it;
-        // ugly start but include root in single for loop
+        // inelegant start but include root in single for loop
         for (int i = -1; i < z.vnode_end_index_; ++i) {
             int in = (i == -1) ? z.rootnode_begin_index_ : i;
             if (i == -1) {

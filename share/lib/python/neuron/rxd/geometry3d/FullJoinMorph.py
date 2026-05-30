@@ -1,5 +1,6 @@
 import numpy
 import math
+from typing import Any, Optional
 
 from .ctng import constructive_neuronal_geometry
 from .graphicsPrimitives import (
@@ -21,7 +22,7 @@ import warnings
 from neuron import h, _sec_db
 
 
-def find_parent_seg(join, sdict, objects):
+def find_parent_seg(join: list, sdict: dict, objects: list) -> Any:
     root = None
     pseg = None
     closest = float("inf")
@@ -37,18 +38,24 @@ def find_parent_seg(join, sdict, objects):
     return pseg
 
 
-def all_in(dist):
+def all_in(dist: list) -> bool:
     for i in dist:
         if i > ics_distance_threshold:
             return False
     return True
 
 
-def sort_spheres_last(item):
+def sort_spheres_last(item: Any) -> int:
     return 1 if isinstance(item, Sphere) else 0
 
 
-def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
+def fullmorph(
+    source: Any,
+    dx: float,
+    soma_step: int = 100,
+    mesh_grid: Optional[dict] = None,
+    relevant_pts: Optional[Any] = None,
+) -> tuple:
     """Input: object source; arguments to pass to ctng
     Output: all voxels with SA and volume associated, categorized by segment"""
     source = list(source)

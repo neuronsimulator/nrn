@@ -25,6 +25,7 @@ add_library(
   localize_visitor.cpp
   longitudinal_diffusion_visitor.cpp
   loop_unroll_visitor.cpp
+  matexp_visitor.cpp
   neuron_solve_visitor.cpp
   perf_visitor.cpp
   rename_visitor.cpp
