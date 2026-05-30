@@ -34,7 +34,7 @@ export originalPYTHONPATH="$PYTHONPATH"
 export originalLDLIBRARYPATH="$LD_LIBRARY_PATH"
 
 # list the Python versions that this NEURON build supports
-# the format is {major}.{minor}, i.e. 3.8, 3.9, 3.10, ...
+# the format is {major}.{minor}, i.e. 3.10, 3.11, 3.12, ...
 _this_neuron_py_versions=(@NRN_PYTHON_VERSIONS_STRING@)
 
 # order of preference is: -pyexe, $NRN_PYTHONEXE, python, python3,
