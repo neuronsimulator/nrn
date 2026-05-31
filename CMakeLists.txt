@@ -39,11 +39,11 @@ if(POLICY CMP0177)
   cmake_policy(SET CMP0177 NEW)
 endif()
 
-# customizable install path to Python components. Mostly useful for Spack builds
+# customizable install path to Python components. Mostly useful for Spack & venv builds
 set(NRN_INSTALL_PYTHON_PREFIX
     "lib/python/neuron/"
     CACHE STRING
-          "Path where NEURON Python components will be installed (relative to CMAKE_INSTALL_PREFIX)"
+          "Path where NEURON Python components will be installed"
 )
 
 # if we're building a wheel, we have a different layout of files
@@ -63,6 +63,11 @@ if(SKBUILD)
   set(IV_BIN_INSTALL_DIR "${NRN_INSTALL_DATA_PREFIX}/bin")
 else()
   set(NRN_INSTALL_DATA_PREFIX)
+endif()
+
+# Make python install path relative to CMAKE_INSTALL_PREFIX
+if(IS_ABSOLUTE "${NRN_INSTALL_PYTHON_PREFIX}")
+    cmake_path(RELATIVE_PATH NRN_INSTALL_PYTHON_PREFIX BASE_DIRECTORY "${CMAKE_INSTALL_PREFIX}")
 endif()
 
 # =============================================================================

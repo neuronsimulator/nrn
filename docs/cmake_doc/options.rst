@@ -310,8 +310,6 @@ NRN_INSTALL_PYTHON_PREFIX:STRING="lib/python/neuron/"
 -----------------------------------------------------
   Path where NEURON Python components will be installed
 
-  Must be relative to CMAKE_INSTALL_PREFIX
-
   This option is ignored when building a wheel, in which case the value is forced to "neuron/"
 
   Environment variable PYTHONPATH must contain the real path to NRN_INSTALL_PYTHON_PREFIX in order for python to find neuron.
