@@ -29,8 +29,6 @@ ivlibdir=$4
 NRN_UNIVERSAL_BUILD=$5
 export CPU
 export NRN_SRC
-NSRC=$NRN_SRC
-export NSRC #needed by nrnversion.sh
 
 # Equivalent to install from the Makefile.am
 S="modlunit.sh mknrndll.sh nrngui.sh neurondemo.sh mos2nrn.sh"

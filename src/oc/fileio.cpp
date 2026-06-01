@@ -4,6 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstdarg>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <locale>
+#include <optional>
+#include <regex>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -13,6 +19,7 @@
 #include "hocparse.h"
 #include <errno.h>
 #include "nrnfilewrap.h"
+#include <fmt/format.h>
 
 extern char* neuron_home;
 
@@ -344,7 +351,9 @@ void hoc_Getstr(void) /* read a line (or word) from input file */
     }
     if (word) {
         buf = hoc_tmpbuf->buf;
-        if (nrn_fw_fscanf(fi, "%s", buf) != 1) {
+        char format[32];
+        snprintf(format, sizeof(format), "%%%zus", hoc_tmpbuf->size - 1);
+        if (nrn_fw_fscanf(fi, format, buf) != 1) {
             hoc_execerror("EOF in getstr", (char*) 0);
         }
     } else {
@@ -473,61 +482,116 @@ void hoc_sprint1(char** ppbuf, int argn) { /* convert args to right type for con
     *ppbuf = hs->buf;
 }
 
+
+// Split a string containing an env variable into multiple paths (OS-specific)
+// and return a container with the results
+static auto split_paths(const std::string& input) {
+    // separator for items in env variables
 #if defined(WIN32)
-static FILE* oc_popen(char const* const cmd, char const* const type) {
-    FILE* fp;
-    char buf[1024];
-    assert(strlen(cmd) + 20 < 1024);
-    Sprintf(buf, "sh %s > hocload.tmp", cmd);
-    if (system(buf) != 0) {
-        return (FILE*) 0;
-    } else if ((fp = fopen("hocload.tmp", "r")) == (FILE*) 0) {
-        return (FILE*) 0;
-    } else {
-        return fp;
-    }
-}
-static void oc_pclose(FILE* fp) {
-    fclose(fp);
-    unlink("hocload.tmp");
-}
+    static constexpr auto os_pathsep = ";";
 #else
-#define oc_popen  popen
-#define oc_pclose pclose
+    static constexpr auto os_pathsep = ":";
 #endif
+
+    std::vector<std::string> result;
+    std::size_t start = 0;
+    std::size_t end = 0;
+
+    while ((end = input.find(os_pathsep, start)) != std::string::npos) {
+        if (end > start) {
+            result.push_back(input.substr(start, end - start));
+        }
+        start = end + 1;
+    }
+
+    // Add the last segment if it's non-empty
+    if (start < input.size()) {
+        result.push_back(input.substr(start));
+    }
+
+    return result;
+}
+
+// return the default search paths for loading files
+static auto default_search_paths() {
+    auto result = std::vector<std::string>({"."});
+
+    // insert hoc paths (if any)
+    auto hoc_library_path = getenv("HOC_LIBRARY_PATH");
+    if (hoc_library_path) {
+        auto paths = split_paths(std::string(hoc_library_path));
+        std::copy(begin(paths), end(paths), back_inserter(result));
+    }
+
+    // insert home path
+    auto home_path = fmt::format("{}/lib/hoc", std::string(neuron_home));
+    result.push_back(home_path);
+
+    return result;
+}
+
+// look for regex ``pattern`` in ``paths`` (non-recursively);
+// if there is no match, return empty value
+// if there is a match, return the path of the first file containing the match
+static std::optional<std::string> search_hoc_files_regex(const std::regex& pattern,
+                                                         const std::vector<std::string>& paths) {
+    namespace fs = std::filesystem;
+    for (const auto& path: paths) {
+        // construct a list containing names of, in this order:
+        // - `.oc` files (sorted according to locale)
+        // - `.hoc` files (sorted according to locale)
+        std::vector<std::string> paths_oc;
+        std::vector<std::string> paths_hoc;
+        for (const auto& entry: fs::directory_iterator(path)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".oc") {
+                paths_oc.push_back(entry.path().string());
+            } else if (entry.is_regular_file() && entry.path().extension() == ".hoc") {
+                paths_hoc.push_back(entry.path().string());
+            }
+        }
+        std::sort(paths_oc.begin(), paths_oc.end(), std::locale());
+        std::sort(paths_hoc.begin(), paths_hoc.end(), std::locale());
+
+        std::vector<std::string> result;
+        std::merge(paths_oc.begin(),
+                   paths_oc.end(),
+                   paths_hoc.begin(),
+                   paths_hoc.end(),
+                   back_inserter(result));
+
+        for (const auto& entry: result) {
+            auto file = std::ifstream(entry);
+            if (!file.is_open())
+                continue;
+
+            std::string line;
+            while (std::getline(file, line)) {
+                if (std::regex_search(line, pattern)) {
+                    return entry;
+                }
+            }
+        }
+    }
+    return {};
+}
 
 static int hoc_Load_file(int, const char*);
 
 static void hoc_load(const char* stype) {
     int i = 1;
-    char* s;
-    Symbol* sym;
-    char cmd[1024];
-    FILE* p;
-    char file[1024], *f;
 
     while (ifarg(i)) {
-        s = gargstr(i);
+        const char* s = gargstr(i);
         ++i;
-        sym = hoc_lookup(s);
+        const Symbol* sym = hoc_lookup(s);
         if (!sym || sym->type == UNDEF) {
-            assert(strlen(stype) + strlen(s) + 50 < 1024);
-            Sprintf(cmd, "$NEURONHOME/lib/hocload.sh %s %s %d", stype, s, hoc_pid());
-            p = oc_popen(cmd, "r");
-            if (p) {
-                f = fgets(file, 1024, p);
-                if (f) {
-                    f[strlen(f) - 1] = '\0';
-                }
-                oc_pclose(p);
-                if (f) {
-                    fprintf(stderr, "Getting %s from %s\n", s, f);
-                    hoc_Load_file(0, f);
-                } else {
-                    fprintf(stderr, "Couldn't find a file that declares %s\n", s);
-                }
+            auto pattern = std::regex(fmt::format("^{} {}", stype, s));
+            auto file = search_hoc_files_regex(pattern, default_search_paths());
+            if (file) {
+                fprintf(stderr, "Getting %s from %s\n", s, file->c_str());
+                hoc_Load_file(0, file->c_str());
             } else {
-                hoc_execerror("can't run:", cmd);
+                fprintf(stderr, "Couldn't find a file that declares %s\n", s);
             }
         }
     }

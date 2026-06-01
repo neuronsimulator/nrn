@@ -121,17 +121,13 @@ OcSectionBrowser::OcSectionBrowser(Object* ob)
             psec_[scnt_++] = sec;
         }
     } else {
-        struct hoc_Item* qsec;
         scnt_ = 0;
-        // ForAllSections(sec)  //{
-        ITERATE(qsec, section_list) {
+        for (const Section* sec: range_sec(section_list)) {
             ++scnt_;
         }
         psec_ = new Section*[scnt_];
         scnt_ = 0;
-        // ForAllSections(sec)  //{
-        ITERATE(qsec, section_list) {
-            Section* sec = hocSEC(qsec);
+        for (Section* sec: range_sec(section_list)) {
             psec_[scnt_++] = sec;
         }
     }
@@ -359,18 +355,13 @@ void BrowserAccept::execute() {
 }
 
 SectionBrowserImpl::SectionBrowserImpl() {
-    struct hoc_Item* qsec;
     scnt_ = 0;
-    // ForAllSections(sec)  //{
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (const Section* sec: range_sec(section_list)) {
         ++scnt_;
     }
     psec_ = new Section*[scnt_];
     scnt_ = 0;
-    // ForAllSections(sec)  //{
-    ITERATE(qsec, section_list) {
-        Section* sec = hocSEC(qsec);
+    for (Section* sec: range_sec(section_list)) {
         psec_[scnt_++] = sec;
         section_ref(sec);
     }

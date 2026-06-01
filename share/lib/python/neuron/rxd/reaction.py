@@ -5,10 +5,11 @@ from .generalizedReaction import (
     get_scheme_rate1_rate2_regions_custom_dynamics_mass_action,
 )
 from .rxdException import RxDException
+from typing import Any
 
 
 class Reaction(GeneralizedReaction):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Specify a reaction to be added to the system.
 
         Examples:
@@ -95,34 +96,25 @@ class Reaction(GeneralizedReaction):
         if initializer.is_initialized():
             self._do_init()
 
-    def _do_init(self):
+    def _do_init(self) -> None:
         self._update_rates()
         self._update_indices()
 
-    def _update_rates(self):
+    def _update_rates(self) -> None:
         lhs = self._scheme._lhs._items
         rhs = self._scheme._rhs._items
-        if self._dir == "<":
-            # TODO: remove this limitation (probably means doing with rate_b what done with rate_f and making sure _sources and _dests are correct
-            raise RxDException(
-                "pure reverse reaction currently not supported; reformulate as a forward reaction"
-            )
 
         rate_f = rxdmath._ensure_arithmeticed(self._original_rate_f)
         rate_b = rxdmath._ensure_arithmeticed(self._original_rate_b)
 
         if not self._custom_dynamics:
-            for k, v in zip(list(lhs.keys()), list(lhs.values())):
-                if v == 1:
-                    rate_f *= k
-                else:
-                    rate_f *= k**v
-            if self._dir == "<>":
+            if ">" in self._dir:
+                for k, v in lhs.items():
+                    rate_f *= k if v == 1 else k**v
+            if "<" in self._dir:
                 for k, v in rhs.items():
-                    if v == 1:
-                        rate_b *= k
-                    else:
-                        rate_b *= k**v
+                    rate_b *= k if v == 1 else k**v
+
         rate = rate_f - rate_b
         self._rate_arithmeticed = rate
 
@@ -244,7 +236,7 @@ class Reaction(GeneralizedReaction):
         self._original_rate_b = value
         self._update_rates()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         short_f = (
             self._original_rate_f._short_repr()
             if hasattr(self._original_rate_f, "_short_repr")
@@ -260,21 +252,10 @@ class Reaction(GeneralizedReaction):
             regions_short = (
                 "[" + ", ".join(r._short_repr() for r in self._regions) + "]"
             )
-            return "Reaction(%s, %s, rate_b=%s, regions=%s, custom_dynamics=%r)" % (
-                self._scheme,
-                short_f,
-                short_b,
-                regions_short,
-                self._custom_dynamics,
-            )
+            return f"Reaction({self._scheme}, {short_f}, rate_b={short_b}, regions={regions_short}, custom_dynamics={self._custom_dynamics!r})"
         else:
-            return "Reaction(%s, %s, rate_b=%s, custom_dynamics=%r)" % (
-                self._scheme,
-                short_f,
-                short_b,
-                self._custom_dynamics,
-            )
+            return f"Reaction({self._scheme}, {short_f}, rate_b={short_b}, custom_dynamics={self._custom_dynamics!r})"
 
-    def _do_memb_scales(self):
+    def _do_memb_scales(self) -> None:
         # nothing to do since NEVER a membrane flux
         pass

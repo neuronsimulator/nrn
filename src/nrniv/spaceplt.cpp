@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
 #include "classreg.h"
+#include "code.h"
 
 
 #include <vector>
@@ -19,7 +20,6 @@
 extern int nrn_multisplit_active_;
 extern int hoc_execerror_messages;
 extern int nrn_shape_changed_;
-extern int hoc_return_type_code;
 Object* (*nrnpy_rvp_rxd_to_callable)(Object*) = 0;
 
 class SecPos {
@@ -161,7 +161,7 @@ static double s_list(void* v) {
 
 static double s_color(void* v) {
     RangeVarPlot* me = (RangeVarPlot*) v;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     int old_color = me->get_color();
     if (ifarg(1)) {
         me->set_color((int) chkarg(1, 0, 100));
@@ -437,25 +437,15 @@ void RangeVarPlot::request(Requisition& req) const {
 
 #if HAVE_IV
 void RangeVarPlot::save(std::ostream& o) {
-    char buf[256];
     o << "objectvar rvp_" << std::endl;
-    Sprintf(buf, "rvp_ = new RangeVarPlot(\"%s\")", expr_.c_str());
-    o << buf << std::endl;
-    Sprintf(buf, "%s rvp_.begin(%g)", hoc_section_pathname(begin_section_), x_begin_);
-    o << buf << std::endl;
-    Sprintf(buf, "%s rvp_.end(%g)", hoc_section_pathname(end_section_), x_end_);
-    o << buf << std::endl;
-    Sprintf(buf, "rvp_.origin(%g)", origin_);
-    o << buf << std::endl;
+    o << "rvp_ = new RangeVarPlot(\"" << expr_ << "\")" << std::endl;
+    o << hoc_section_pathname(begin_section_) << " rvp_.begin(" << x_begin_ << ")" << std::endl;
+    o << hoc_section_pathname(end_section_) << " rvp_.end(" << x_end_ << ")" << std::endl;
+    o << "rvp_.origin(" << origin_ << ")" << std::endl;
     Coord x, y;
     label_loc(x, y);
-    Sprintf(buf,
-            "save_window_.addobject(rvp_, %d, %d, %g, %g)",
-            colors->color(color()),
-            brushes->brush(brush()),
-            x,
-            y);
-    o << buf << std::endl;
+    o << "save_window_.addobject(rvp_, " << colors->color(color()) << ", "
+      << brushes->brush(brush()) << ", " << x << ", " << y << ")" << std::endl;
 }
 #endif
 

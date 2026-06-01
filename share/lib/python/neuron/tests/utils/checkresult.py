@@ -42,6 +42,7 @@ class Chk:
             if isinstance(value, hoc.Vector):
                 # Convert to list to keep the `equal` method below simple
                 value = list(value)
+
             # Hand-rolled comparison that uses `tol` for arithmetic values
             # buried inside lists of lists.
             def equal(a, b):

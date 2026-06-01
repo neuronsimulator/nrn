@@ -1,4 +1,4 @@
-from neuron import h
+from neuron import n
 import neuron
 import unittest
 import sys
@@ -22,19 +22,19 @@ test_data = json.load(open(os.path.join(fdir, "test_rxd.json"), "r"))
 def scalar_bistable(lock, path=None):
     from neuron import rxd
 
-    h.load_file("stdrun.hoc")
-    s = h.Section(name="s")
+    n.load_file("stdrun.hoc")
+    s = n.Section(name="s")
     s.nseg = 101
-    cyt = rxd.Region(h.allsec())
+    cyt = rxd.Region(n.allsec())
     c = rxd.Species(
         cyt, name="c", initial=lambda node: 1 if 0.4 < node.x < 0.6 else 0, d=1
     )
     r = rxd.Rate(c, -c * (1 - c) * (0.3 - c))
-    h.finitialize()
-    h.run()
+    n.finitialize()
+    n.run()
 
     # check the results
-    result = h.Vector(c.nodes.concentration)
+    result = n.Vector(c.nodes.concentration)
     if path is not None:
         lock.acquire()
         if os.path.exists(path):
@@ -45,7 +45,7 @@ def scalar_bistable(lock, path=None):
         json.dump(data, open(path, "w"), indent=4)
         lock.release()
     else:
-        cmpV = h.Vector(test_data["scalar_bistable_data"])
+        cmpV = n.Vector(test_data["scalar_bistable_data"])
         cmpV.sub(result)
         cmpV.abs()
         if cmpV.sum() >= 1e-6:
@@ -59,16 +59,16 @@ def trivial_ecs(scale, lock, path=None):
     import warnings
 
     warnings.simplefilter("ignore", UserWarning)
-    h.load_file("stdrun.hoc")
+    n.load_file("stdrun.hoc")
     tstop = 10
     if scale:  # variable step case
-        h.CVode().active(True)
-        h.CVode().event(tstop)
+        n.CVode().active(True)
+        n.CVode().event(tstop)
     else:  # fixed step case
-        h.CVode().active(False)
-        h.dt = 0.1
+        n.CVode().active(False)
+        n.dt = 0.1
 
-    sec = h.Section()  # NEURON requires at least 1 section
+    sec = n.Section()  # NEURON requires at least 1 section
 
     # enable extracellular RxD
     rxd.options.enable.extracellular = True
@@ -104,10 +104,10 @@ def trivial_ecs(scale, lock, path=None):
     )
 
     # record the concentration at (0,0,0)
-    ecs_vec = h.Vector()
+    ecs_vec = n.Vector()
     ecs_vec.record(k_rxd[extracellular].node_by_location(0, 0, 0)._ref_value)
-    h.finitialize()
-    h.continuerun(tstop)  # run the simulation
+    n.finitialize()
+    n.continuerun(tstop)  # run the simulation
 
     if path is not None:
         lock.acquire()
@@ -122,7 +122,7 @@ def trivial_ecs(scale, lock, path=None):
         lock.release()
     else:
         # compare with previous solution
-        ecs_vec.sub(h.Vector(test_data["trivial_ecs_data"][str(scale)]))
+        ecs_vec.sub(n.Vector(test_data["trivial_ecs_data"][str(scale)]))
         ecs_vec.abs()
         if ecs_vec.sum() > 1e-9:
             sys.exit(-1)

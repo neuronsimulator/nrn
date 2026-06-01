@@ -13,7 +13,6 @@ static PyType_Slot nrnpy_HocObjectType_slots[] = {
     {Py_tp_methods, (void*) hocobj_methods},
     {Py_tp_init, (void*) hocobj_init},
     {Py_tp_new, (void*) hocobj_new},
-    {Py_tp_doc, (void*) hocobj_docstring},
     {Py_nb_bool, (void*) hocobj_nonzero},
     {Py_sq_length, (void*) hocobj_len},
     {Py_mp_subscript, (void*) hocobj_slice_getitem},

@@ -161,7 +161,7 @@ This Python code checks for pt3d diameters smaller than 0.1 μm, and reports whe
 .. code::
     python
 
-    for sec in h.allsec():
+    for sec in n.allsec():
         for i in range(sec.n3d()):
             if sec.diam3d(i) < 0.1:
                 print(f'{sec} {i} {sec.diam3d(i)}')

@@ -22,6 +22,10 @@ The ``nrnivmodl`` executable translates the ``MOD`` files from the ``NMODL`` lan
 .. raw:: html
     :file: mechanism_registration.svg
 
+.. note::
+
+   Have a look at :doc:`nrnivmodl-cmake` for a more modern (experimental!) way of building mechanisms.
+
 Circuit creation
 ^^^^^^^^^^^^^^^^
 

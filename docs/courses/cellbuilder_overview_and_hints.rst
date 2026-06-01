@@ -34,7 +34,7 @@ Got to the working directory of your choice, start python, and enter the command
 .. code::
     python
 
-    from neuron import h, gui
+    from neuron import n, gui
 
 The get a CellBuilder by selecting :menuselection:`NEURONMainMenu --> Build --> Cell Builder`
 
@@ -43,8 +43,8 @@ The get a CellBuilder by selecting :menuselection:`NEURONMainMenu --> Build --> 
     .. code::
         python
 
-        h.load_file('celbild.hoc') # load the library
-        h.makecellbuilder()
+        n.load_file('celbild.hoc') # load the library
+        n.makecellbuilder()
 
 Either way, a new CellBuilder will appear:
 

@@ -7,7 +7,7 @@ include(FetchContent)
 FetchContent_Declare(
   ringtest
   GIT_REPOSITORY https://github.com/neuronsimulator/ringtest
-  GIT_TAG 7d1aee72939f6dfcb2a14db4c7b00725d9e485fa
+  GIT_TAG 72aa8682c80098ceb0684fb19d2661d1a2ff9a74
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/ringtest)
 
 FetchContent_Declare(
@@ -19,7 +19,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   nrntest
   GIT_REPOSITORY https://github.com/neuronsimulator/nrntest
-  GIT_TAG 5365349e238885a4d78c663e8b7b8bf360f3aff0
+  GIT_TAG 94078e88b305f1581ccf0c74bd15316f5351c179 # hines/update-t12
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/nrntest)
 
 FetchContent_Declare(

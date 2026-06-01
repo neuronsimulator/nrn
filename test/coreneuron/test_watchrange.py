@@ -30,11 +30,11 @@ class Cell:
             self.syn.ran.set_ids(gid, 0, 1)
         pc.cell(gid, h.NetCon(self.soma(0.5)._ref_v, None, sec=self.soma))
         self.t1vec = h.Vector()
-        self.t1vec.record(self.syn._ref_t1, sec=self.soma)
+        self.t1vec.record(self.syn, self.syn._ref_t1, sec=self.soma)
         self.xvec = h.Vector()
-        self.xvec.record(self.syn._ref_x, sec=self.soma)
+        self.xvec.record(self.syn, self.syn._ref_x, sec=self.soma)
         self.rvec = h.Vector()
-        self.rvec.record(self.syn._ref_r, sec=self.soma)
+        self.rvec.record(self.syn, self.syn._ref_r, sec=self.soma)
 
     def result(self):
         return (
@@ -160,8 +160,43 @@ def watchrange():
     return stdlist, tvec
 
 
+def watchrange2():
+    # #3291 introduced a use of freed memory bug. Reverted by #3496
+    # Other fix attempts #3492 and #3495 did not succeed.
+
+    pc.gid_clear()
+
+    ncell = 10
+    gids = range(pc.id(), ncell, pc.nhost())  # round robin
+
+    cells = [Cell(gid) for gid in gids]
+
+    def run(method, nthread):
+        print(f"run {method} {nthread}")
+        h.cvode_active(method[0])
+        h.cvode_local(method[1])
+        pc.nthread(nthread)
+        pc.set_maxstep(10)
+        h.finitialize()  # one more line of lvardt coverage
+        h.run()
+
+    def series():
+        # the extra (0, 0) tests transition from fixed step 4 threads
+        # to fixed step 1 thread.
+        for method in [(0, 0), (0, 0), (1, 0), (1, 1)]:
+            for nthread in [1, 4]:
+                run(method, nthread)
+
+    series()
+    return cells
+
+
 def test_watchrange():
     watchrange()
+
+
+def test_watchrange2():
+    watchrange2()
 
 
 if __name__ == "__main__":
@@ -174,4 +209,7 @@ if __name__ == "__main__":
         print(result[0], result[1], result[2])
         result[4].line(g, tvec, i, 2)
     g.exec_menu("View = plot")
+
+    watchrange2()
+
     h.quit()

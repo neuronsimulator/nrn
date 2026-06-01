@@ -882,7 +882,7 @@ struct soa {
 
     template <typename Callable, typename Tag, typename... RemainingTags>
     Callable for_each_tag_vector_impl(Callable callable) const {
-        Callable tmp_callable = std::get<tag_index_v<Tag>>(m_data).template for_each_vector(
+        Callable tmp_callable = std::get<tag_index_v<Tag>>(m_data).template for_each_vector<>(
             callable);
         return for_each_tag_vector_impl<Callable, RemainingTags...>(tmp_callable);
     }

@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include "code.h"
 #include "ocmatrix.h"
 #include "oc2iv.h"
 #include "parse.hpp"
@@ -12,8 +13,6 @@
 
 #define EPS hoc_epsilon
 Symbol* nrn_matrix_sym;  // also used in oc/hoc_oop.cpp
-
-extern int hoc_return_type_code;
 
 extern double hoc_scan(FILE*);
 extern Object** hoc_temp_objptr(Object*);
@@ -51,13 +50,13 @@ static Object** temp_objvar(Matrix* m) {
 }
 
 static double m_nrow(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     Matrix* m = (Matrix*) v;
     return (double) m->nrow();
 }
 
 static double m_ncol(void* v) {
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     Matrix* m = (Matrix*) v;
     return (double) m->ncol();
 }
@@ -82,7 +81,7 @@ static double m_getval(void* v) {
 static double m_sprowlen(void* v) {
     Matrix* m = (Matrix*) v;
     int i;
-    hoc_return_type_code = 1;  // integer
+    hoc_return_type_code = HocReturnType::integer;
     i = (int) chkarg(1, 0, m->nrow() - 1);
     return double(m->sprowlen(i));
 }

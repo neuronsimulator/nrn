@@ -34,7 +34,7 @@ fi
     && ./configure --prefix="${NRNWHEEL_DIR}/ncurses" --without-shared CFLAGS="-fPIC" \
     && make -j install)
 
-(curl -L -o readline-7.0.tar.gz https://ftp.gnu.org/gnu/readline/readline-7.0.tar.gz \
+(curl -L -o readline-7.0.tar.gz https://ftpmirror.gnu.org/gnu/readline/readline-7.0.tar.gz \
     && tar -xvzf readline-7.0.tar.gz \
     && cd readline-7.0  \
     && ./configure --prefix="${NRNWHEEL_DIR}/readline" --disable-shared CFLAGS="-fPIC" \

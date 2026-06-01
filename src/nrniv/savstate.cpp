@@ -594,11 +594,10 @@ void SaveState::ssfree() {
 }
 
 void SaveState::save() {
-    NrnThread* nt;
     if (!check(false)) {
         alloc();
     }
-    FOR_THREADS(nt) {
+    for (const NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         assert(t == nt->_t);
     }
     t_ = t;
@@ -673,12 +672,11 @@ void SaveState::saveacell(ACellState& ac, int type) {
 }
 
 void SaveState::restore(int type) {
-    NrnThread* nt;
     if (!check(true)) {
         hoc_execerror("SaveState:", "Stored state inconsistent with current neuron structure");
     }
     t = t_;
-    FOR_THREADS(nt) {
+    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         nt->_t = t_;
     }
     for (int isec = 0; isec < nsec_; ++isec) {
@@ -948,8 +946,7 @@ void SaveState::savenet() {
     }
     alloc_tq();
     tqcnt_ = 0;
-    NrnThread* nt;
-    FOR_THREADS(nt) {
+    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         TQueue* tq = net_cvode_instance_event_queue(nt);
         this_savestate = this;
         callback_mode = 1;
@@ -1195,8 +1192,7 @@ void SaveState::free_tq() {
 void SaveState::alloc_tq() {
     free_tq();
     tqcnt_ = 0;
-    NrnThread* nt;
-    FOR_THREADS(nt) {
+    for (NrnThread* nt: for_threads(nrn_threads, nrn_nthread)) {
         TQueue* tq = net_cvode_instance_event_queue(nt);
         this_savestate = this;
         callback_mode = 0;

@@ -821,7 +821,7 @@ Description:
         .. code-block::
             python
 
-            syn = h.Syn(section(0.8)) 
+            syn = n.Syn(section(0.8)) 
             syn._ref_vpre = axon(1)._ref_v
 
     .. tab:: HOC
@@ -872,6 +872,6 @@ Description:
 
         .. note::
 
-            For density mechanisms, one cannot pass in e.g. ``h.hh`` as this raises 
+            For density mechanisms, one cannot pass in e.g. ``n.hh`` as this raises 
             a TypeError; one can, however, pass in ``nrn.hh`` where ``nrn`` is defined
             via ``from neuron import nrn``.

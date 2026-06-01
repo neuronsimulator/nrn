@@ -18,8 +18,9 @@ else
 fi
 
 if [ -z ${CORENRNHOME+x} ] ; then
-  # CORENRNHOME wasn't set, use the install prefix
-  cnrn_prefix=@cnrn_prefix@
+  # CORENRNHOME wasn't set, use the directory with the current script (they
+  # are shipped together)
+  cnrn_prefix="$(dirname "${0}")/../"
 else
   cnrn_prefix="${CORENRNHOME}"
 fi

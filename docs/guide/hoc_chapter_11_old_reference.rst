@@ -31,7 +31,7 @@ When NEURON is installed, four programs are constructed from the combinations of
 
 **ivoc**
 
-    OC with C++ classes and graphical interface (which is written in C++). This is the best starting place for building non-neural applications. These C++ classes are implemented in :file:`ivoc/SRC`. The files here are of general use apart from the neuron simulation domain and generally implement the graphical interface, eg. :hoc:class:`Graph`, :hoc:func:`xpanel`, :hoc:class:`VBox`, etc. However the :hoc:class:`File`, :hoc:class:`List`, :hoc:class:`Vector`, and :hoc:class:`Random` class are very useful even if no window manager is present.
+    OC with C++ classes and graphical interface (which is written in C++). This is the best starting place for building non-neural applications. These C++ classes are implemented in :file:`ivoc/SRC`. The files here are of general use apart from the neuron simulation domain and generally implement the graphical interface, eg. :class:`Graph`, :func:`xpanel`, :class:`VBox`, etc. However the :class:`File`, :class:`List`, :class:`Vector`, and :class:`Random` class are very useful even if no window manager is present.
 
 **nrniv**
 
@@ -360,7 +360,7 @@ Names introduced by nrnoc
 	VClamp	SVClamp	IClamp	AlphaSynapse
 	APCount
 
-Missing from the above list are the built-in object classes such as :hoc:class:`List`, :hoc:class:`Graph`, :hoc:class:`HBox`, :hoc:class:`File`, :hoc:class:`Deck`, :hoc:class:`Random`, :hoc:class:`Vector` and some new functions such as :hoc:class:`fit\_praxis`, :hoc:class:`xmenu`, :hoc:class:`xbutton`, etc, as well as neuron specific classes such as :hoc:class:`Shape`, :hoc:class:`SectionList`, etc. The help files in :hoc:class:`NEURONHOME/lib/help` are kept up to date but this file tends to lag behind the current version.
+Missing from the above list are the built-in object classes such as :class:`List`, :class:`Graph`, :class:`HBox`, :class:`File`, :class:`Deck`, :class:`Random`, :class:`Vector` and some new functions such as :class:`fit\_praxis`, :class:`xmenu`, :class:`xbutton`, etc, as well as neuron specific classes such as :class:`Shape`, :class:`SectionList`, etc. The help files in :class:`NEURONHOME/lib/help` are kept up to date but this file tends to lag behind the current version.
 
 Variables
 ---------
@@ -612,7 +612,7 @@ As a trivial example of a function definition, consider:
         return $1 * $1 
     } 
 
-This defines the function :hoc:class:`f(arg1)` which returns the square of its argument. User defined functions can be used in any expression.
+This defines the function :class:`f(arg1)` which returns the square of its argument. User defined functions can be used in any expression.
 
 Functions can be called recursively. For example, the factorial function, can be defined as
 

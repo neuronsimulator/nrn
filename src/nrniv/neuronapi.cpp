@@ -10,6 +10,9 @@
 #include "ocjump.h"
 #include "parse.hpp"
 #include "section.h"
+#include "shapeplt.h"
+#include <cstring>
+#include <exception>
 
 /// A public face of hoc_Item
 struct nrn_Item: public hoc_Item {};
@@ -26,7 +29,7 @@ struct SectionListIterator {
 
 struct SymbolTableIterator {
     explicit SymbolTableIterator(Symlist*);
-    char const* next(void);
+    Symbol* next(void);
     int done(void) const;
 
   private:
@@ -71,12 +74,15 @@ void nrn_stdout_redirect(int (*myprint)(int, char*)) {
 
 Section* nrn_section_new(char const* const name) {
     auto* symbol = new Symbol;
+    auto pitm = new hoc_Item*;
     symbol->name = strdup(name);
     symbol->type = 1;
     symbol->u.oboff = 0;
     symbol->arayinfo = 0;
     hoc_install_object_data_index(symbol);
-    return section_new(symbol);
+    hoc_top_level_data[symbol->u.oboff].psecitm = pitm;
+    new_sections(nullptr, symbol, pitm, 1);
+    return (*pitm)->element.sec;
 }
 
 void nrn_section_connect(Section* child_sec, double child_x, Section* parent_sec, double parent_x) {
@@ -114,6 +120,17 @@ void nrn_section_Ra_set(Section* sec, double const val) {
     sec->recalc_area_ = 1;
 }
 
+double nrn_section_rallbranch_get(const Section* sec) {
+    return sec->prop->dparam[4].get<double>();
+}
+
+void nrn_section_rallbranch_set(Section* sec, double const val) {
+    // TODO: is there a named constant so we don't have to use the magic number 4?
+    sec->prop->dparam[4] = val;
+    diam_changed = 1;
+    sec->recalc_area_ = 1;
+}
+
 char const* nrn_secname(Section* sec) {
     return secname(sec);
 }
@@ -131,11 +148,31 @@ void nrn_mechanism_insert(Section* sec, const Symbol* mechanism) {
     mech_insert1(sec, mechanism->subtype);
 }
 
+bool nrn_section_is_active(const Section* sec) {
+    if (!sec->prop) {
+        return false;
+    }
+    return true;
+}
+
+void nrn_section_ref(Section* sec) {
+    section_ref(sec);
+}
+
+void nrn_section_unref(Section* sec) {
+    section_unref(sec);
+}
+
+Section* nrn_cas(void) {
+    Section* sec = nrn_noerr_access();
+    return sec;
+}
+
 /****************************************
  * Segments
  ****************************************/
 
-int nrn_nseg_get(Section const* sec) {
+int nrn_nseg_get(const Section* sec) {
     // always one more node than nseg
     return sec->nnode - 1;
 }
@@ -157,6 +194,16 @@ void nrn_segment_diam_set(Section* const sec, const double x, const double diam)
     }
 }
 
+double nrn_segment_diam_get(Section* const sec, const double x) {
+    Node* const node = node_exact(sec, x);
+    for (auto prop = node->prop; prop; prop = prop->next) {
+        if (prop->_type == MORPHOLOGY) {
+            return prop->param(0);
+        }
+    }
+    return 0.0;
+}
+
 double nrn_rangevar_get(Symbol* sym, Section* sec, double x) {
     return *nrn_rangepointer(sec, sym, x);
 }
@@ -173,7 +220,7 @@ nrn_Item* nrn_allsec(void) {
     return static_cast<nrn_Item*>(section_list);
 }
 
-nrn_Item* nrn_sectionlist_data(Object* obj) {
+nrn_Item* nrn_sectionlist_data(const Object* obj) {
     // TODO: verify the obj is in fact a SectionList
     return (nrn_Item*) obj->u.this_pointer;
 }
@@ -186,10 +233,22 @@ Symbol* nrn_symbol(char const* const name) {
     return hoc_lookup(name);
 }
 
-int nrn_symbol_type(Symbol const* sym) {
+int nrn_symbol_type(const Symbol* sym) {
     // TODO: these types are in parse.hpp and are not the same between versions,
     // so we really should wrap
     return sym->type;
+}
+
+int nrn_symbol_subtype(const Symbol* sym) {
+    return sym->subtype;
+}
+
+double* nrn_symbol_dataptr(const Symbol* sym) {
+    return sym->u.pval;
+}
+
+bool nrn_symbol_is_array(const Symbol* sym) {
+    return sym->arayinfo != nullptr;
 }
 
 void nrn_symbol_push(Symbol* sym) {
@@ -216,7 +275,7 @@ void nrn_str_push(char** str) {
     hoc_pushstr(str);
 }
 
-char** nrn_pop_str(void) {
+char** nrn_str_pop(void) {
     return hoc_strpop();
 }
 
@@ -286,7 +345,7 @@ Object* nrn_object_new(Symbol* sym, int narg) {
     return hoc_newobj1(sym, narg);
 }
 
-Symbol* nrn_method_symbol(Object* obj, char const* const name) {
+Symbol* nrn_method_symbol(const Object* obj, char const* const name) {
     return hoc_table_lookup(name, obj->ctemplate->symtable);
 }
 
@@ -298,6 +357,58 @@ void nrn_function_call(Symbol* sym, int narg) {
     // NOTE: this differs from hoc_call_func in that the response remains on the
     // stack
     OcJump::execute_throw_on_exception(sym, narg);
+}
+
+int nrn_method_call_nothrow(Object* obj,
+                            Symbol* method_sym,
+                            int narg,
+                            char* error_msg,
+                            size_t error_msg_size) {
+    // Initialize error message buffer
+    if (error_msg && error_msg_size > 0) {
+        error_msg[0] = '\0';
+    }
+
+    try {
+        OcJump::execute_throw_on_exception(obj, method_sym, narg);
+        return 0;  // Success
+    } catch (const std::exception& e) {
+        if (error_msg && error_msg_size > 0) {
+            strncpy(error_msg, e.what(), error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;  // Error
+    } catch (...) {
+        if (error_msg && error_msg_size > 0) {
+            strncpy(error_msg, "Unknown exception occurred", error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;  // Error
+    }
+}
+
+int nrn_function_call_nothrow(Symbol* sym, int narg, char* error_msg, size_t error_msg_size) {
+    // Initialize error message buffer
+    if (error_msg && error_msg_size > 0) {
+        error_msg[0] = '\0';
+    }
+
+    try {
+        OcJump::execute_throw_on_exception(sym, narg);
+        return 0;  // Success
+    } catch (const std::exception& e) {
+        if (error_msg && error_msg_size > 0) {
+            strncpy(error_msg, e.what(), error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;  // Error
+    } catch (...) {
+        if (error_msg && error_msg_size > 0) {
+            strncpy(error_msg, "Unknown exception occurred", error_msg_size - 1);
+            error_msg[error_msg_size - 1] = '\0';
+        }
+        return 1;  // Error
+    }
 }
 
 void nrn_object_ref(Object* obj) {
@@ -312,6 +423,45 @@ char const* nrn_class_name(const Object* obj) {
     return obj->ctemplate->sym->name;
 }
 
+bool nrn_prop_exists(const Object* obj) {
+    return ob2pntproc_0(const_cast<Object*>(obj))->prop;
+}
+
+double nrn_distance(Section* sec0, double x0, Section* sec1, double x1) {
+    Node* node0 = node_exact(sec0, x0);
+    Node* node1 = node_exact(sec1, x1);
+    Section* dummy_sec = nullptr;
+    Node* dummy_node = nullptr;
+    return topol_distance(sec0, node0, sec1, node1, &dummy_sec, &dummy_node);
+}
+
+/****************************************
+ * Plot Shape
+ ****************************************/
+
+ShapePlotInterface* nrn_get_plotshape_interface(Object* ps) {
+    ShapePlotInterface* spi;
+    hoc_Item** my_section_list;
+    spi = ((ShapePlotInterface*) ps->u.this_pointer);
+    return spi;
+}
+
+Object* nrn_get_plotshape_section_list(ShapePlotInterface* spi) {
+    return spi->neuron_section_list();
+}
+
+const char* nrn_get_plotshape_varname(ShapePlotInterface* spi) {
+    return spi->varname();
+}
+
+float nrn_get_plotshape_low(ShapePlotInterface* spi) {
+    return spi->low();
+}
+
+float nrn_get_plotshape_high(ShapePlotInterface* spi) {
+    return spi->high();
+}
+
 /****************************************
  * Miscellaneous
  ****************************************/
@@ -323,22 +473,35 @@ SectionListIterator::SectionListIterator(nrn_Item* my_sectionlist)
     : initial(my_sectionlist)
     , current(my_sectionlist->next) {}
 
-Section* SectionListIterator::next(void) {
-    // NOTE: if no next element, returns nullptr
-    while (true) {
-        Section* sec = current->element.sec;
-
-        if (sec->prop) {
-            current = current->next;
-            return sec;
-        }
-        hoc_l_delete(current);
-        section_unref(sec);
-        current = current->next;
-        if (current == initial) {
-            return nullptr;
-        }
+Section* SectionListIterator::next() {
+    if (!current) {
+        return nullptr;
     }
+
+    Section* sec = nullptr;
+    while (current != initial) {
+        // Save next pointer before possibly deleting current
+        auto* q = current;
+        current = current->next;
+        sec = q->element.sec;
+
+        // Check if the section is still valid
+        if (!sec || sec->prop == nullptr) {
+            // Unlink and delete invalid section
+            if (q->prev) {
+                q->prev->next = q->next;
+            }
+            if (q->next) {
+                q->next->prev = q->prev;
+            }
+            delete q;
+            continue;  // Try next
+        }
+
+        return sec;
+    }
+
+    return nullptr;
 }
 
 int SectionListIterator::done(void) const {
@@ -351,8 +514,8 @@ int SectionListIterator::done(void) const {
 SymbolTableIterator::SymbolTableIterator(Symlist* list)
     : current(list->first) {}
 
-char const* SymbolTableIterator::next(void) {
-    auto result = current->name;
+Symbol* SymbolTableIterator::next(void) {
+    Symbol* result = current;
     current = current->next;
     return result;
 }
@@ -390,7 +553,7 @@ void nrn_symbol_table_iterator_free(SymbolTableIterator* st) {
     delete st;
 }
 
-char const* nrn_symbol_table_iterator_next(SymbolTableIterator* st) {
+Symbol* nrn_symbol_table_iterator_next(SymbolTableIterator* st) {
     return st->next();
 }
 
@@ -398,7 +561,7 @@ int nrn_symbol_table_iterator_done(SymbolTableIterator* st) {
     return st->done();
 }
 
-int nrn_vector_capacity(Object const* vec) {
+int nrn_vector_capacity(const Object* vec) {
     // TODO: throw exception if vec is not a Vector
     return vector_capacity((IvocVect*) vec->u.this_pointer);
 }
@@ -408,7 +571,7 @@ double* nrn_vector_data(Object* vec) {
     return vector_vec((IvocVect*) vec->u.this_pointer);
 }
 
-double nrn_property_get(Object const* obj, const char* name) {
+double nrn_property_get(const Object* obj, const char* name) {
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
         hoc_pushs(sym);
@@ -421,7 +584,7 @@ double nrn_property_get(Object const* obj, const char* name) {
     }
 }
 
-double nrn_property_array_get(Object const* obj, const char* name, int i) {
+double nrn_property_array_get(const Object* obj, const char* name, int i) {
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
         hoc_pushs(sym);
@@ -460,11 +623,6 @@ void nrn_property_array_set(Object* obj, const char* name, int i, double value) 
     }
 }
 
-void nrn_pp_property_array_set(Object* pp, const char* name, int i, double value) {
-    int index = hoc_table_lookup(name, pp->ctemplate->symtable)->u.rng.index;
-    ob2pntproc_0(pp)->prop->param_legacy(index + i) = value;
-}
-
 void nrn_property_push(Object* obj, const char* name) {
     auto sym = hoc_table_lookup(name, obj->ctemplate->symtable);
     if (!obj->ctemplate->is_point_) {
@@ -494,7 +652,7 @@ char const* nrn_symbol_name(const Symbol* sym) {
     return sym->name;
 }
 
-Symlist* nrn_symbol_table(Symbol* sym) {
+Symlist* nrn_symbol_table(const Symbol* sym) {
     // TODO: ensure sym is an object or class
     // NOTE: to use with an object, call nrn_get_symbol(nrn_class_name(obj))
     return sym->u.ctemplate->symtable;
@@ -502,5 +660,69 @@ Symlist* nrn_symbol_table(Symbol* sym) {
 
 Symlist* nrn_global_symbol_table(void) {
     return hoc_built_in_symlist;
+}
+
+Symlist* nrn_top_level_symbol_table(void) {
+    return hoc_top_level_symlist;
+}
+
+int nrn_symbol_array_length(const Symbol* sym) {
+    return sym->arayinfo->sub[0];
+}
+
+// Function to register function/object in hoc
+void nrn_register_function(void (*proc)(), const char* func_name, int type) {
+    Symbol* sym;
+    sym = hoc_install(func_name, type, 0, &hoc_top_level_symlist);
+    sym->u.u_proc->defn.pf = proc;
+    sym->u.u_proc->nauto = 0;
+    sym->u.u_proc->nobjauto = 0;
+}
+
+void nrn_hoc_ret() {
+    hoc_ret();
+}
+
+/****************************************
+ * Parameter-reading functions
+ ****************************************/
+Object** nrn_objgetarg(int arg) {
+    return hoc_objgetarg(arg);
+}
+
+char* nrn_gargstr(int arg) {
+    return hoc_gargstr(arg);
+}
+
+double* nrn_getarg(int arg) {
+    return hoc_getarg(arg);
+}
+
+std::FILE* nrn_obj_file_arg(int i) {
+    return hoc_obj_file_arg(i);
+}
+
+bool nrn_ifarg(int arg) {
+    return ifarg(arg);
+}
+
+
+bool nrn_is_object_arg(int arg) {
+    return hoc_is_object_arg(arg);
+}
+
+
+bool nrn_is_str_arg(int arg) {
+    return hoc_is_str_arg(arg);
+}
+
+
+bool nrn_is_double_arg(int arg) {
+    return hoc_is_double_arg(arg);
+}
+
+
+bool nrn_is_pdouble_arg(int arg) {
+    return hoc_is_pdouble_arg(arg);
 }
 }

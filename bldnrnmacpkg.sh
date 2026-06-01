@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -ex
 
-default_pythons="python3.9 python3.10 python3.11 python3.12 python3.13"
+default_pythons="python3.10 python3.11 python3.12 python3.13"
 # distribution built with
 # bash bldnrnmacpkgcmake.sh
 # without args, default are the pythons above.
@@ -78,6 +78,11 @@ NRN_BLD=$NRN_SRC/build
 NSRC=$NRN_SRC
 export NSRC
 
+if [ "$(git -C "${NRN_SRC}" rev-parse --is-shallow-repository)" = 'true' ]; then
+    printf 'ERROR: repository at path %s is shallow, please unshallow it (possibly via `git [pull|fetch] --unshallow`)\n' "${NRN_SRC}"
+    exit 1
+fi
+
 NRN_INSTALL=/Applications/NEURON
 export PATH=$NRN_INSTALL/bin:$PATH
 
@@ -151,7 +156,7 @@ for i in $args ; do
   chk $i
 done
 
-describe="`sh $NRN_SRC/nrnversion.sh describe`"
+describe="$(git -C "${NRN_SRC}" describe)"
 macos=macos${MACOSX_DEPLOYMENT_TARGET}
 PACKAGE_FULL_NAME=nrn-${describe}-${mac_platform}-${PYVS}.pkg
 PACKAGE_FILE_NAME=$NRN_BLD/src/mac/build/NEURON.pkg

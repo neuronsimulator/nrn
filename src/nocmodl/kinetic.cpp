@@ -987,7 +987,7 @@ int genconservterms(int eqnum, Reaction* r, int fn, Rlist* rlst) {
         Sprintf(eqstr, "%d(%d", fn, eqnum);
         eqnum++;
     }
-    Sprintf(buf, "_RHS%s) = %s;\n", eqstr, r->krate[0]);
+    SprintfAsrt(buf, "_RHS%s) = %s;\n", eqstr, r->krate[0]);
     Insertstr(q, buf);
     for (rt = r->rterm[0]; rt; rt = rt->rnext) {
         char buf1[NRN_BUFSIZE];
@@ -1004,19 +1004,19 @@ int genconservterms(int eqnum, Reaction* r, int fn, Rlist* rlst) {
                 Sprintf(buf, "_i = %s;\n", rt->str);
                 Insertstr(q, buf);
             }
-            Sprintf(buf,
-                    "_MATELM%s, %d + %s) = %d%s;\n",
-                    eqstr,
-                    rt->sym->varnum,
-                    rt->str,
-                    rt->num,
-                    buf1);
+            SprintfAsrt(buf,
+                        "_MATELM%s, %d + %s) = %d%s;\n",
+                        eqstr,
+                        rt->sym->varnum,
+                        rt->str,
+                        rt->num,
+                        buf1);
             Insertstr(q, buf);
-            Sprintf(buf, "_RHS%s) -= %s[%s]%s", eqstr, rt->sym->name, rt->str, buf1);
+            SprintfAsrt(buf, "_RHS%s) -= %s[%s]%s", eqstr, rt->sym->name, rt->str, buf1);
         } else {
-            Sprintf(buf, "_MATELM%s, %d) = %d%s;\n", eqstr, rt->sym->varnum, rt->num, buf1);
+            SprintfAsrt(buf, "_MATELM%s, %d) = %d%s;\n", eqstr, rt->sym->varnum, rt->num, buf1);
             Insertstr(q, buf);
-            Sprintf(buf, "_RHS%s) -= %s%s", eqstr, rt->sym->name, buf1);
+            SprintfAsrt(buf, "_RHS%s) -= %s%s", eqstr, rt->sym->name, buf1);
         }
         Insertstr(q, buf);
         if (rt->num != 1) {

@@ -39,26 +39,17 @@ if(CORENRN_ENABLE_GPU)
   if(CORENRN_ENABLE_CUDA_UNIFIED_MEMORY)
     list(APPEND CORENRN_COMPILE_DEFS CORENEURON_UNIFIED_MEMORY)
   endif()
-  if(${CMAKE_VERSION} VERSION_LESS 3.17)
-    # Hopefully we can drop this soon. Parse ${CMAKE_CUDA_COMPILER_VERSION} into a shorter X.Y
-    # version without any patch version.
-    if(NOT ${CMAKE_CUDA_COMPILER_ID} STREQUAL "NVIDIA")
-      message(FATAL_ERROR "Unsupported CUDA compiler ${CMAKE_CUDA_COMPILER_ID}")
-    endif()
-    cnrn_parse_version(${CMAKE_CUDA_COMPILER_VERSION} OUTPUT_MAJOR_MINOR CORENRN_CUDA_VERSION_SHORT)
-  else()
-    # This is a lazy way of getting the major/minor versions separately without parsing
-    # ${CMAKE_CUDA_COMPILER_VERSION}
-    find_package(CUDAToolkit 9.0 REQUIRED)
-    # Be a bit paranoid
-    if(NOT ${CMAKE_CUDA_COMPILER_VERSION} STREQUAL ${CUDAToolkit_VERSION})
-      message(
-        FATAL_ERROR
-          "CUDA compiler (${CMAKE_CUDA_COMPILER_VERSION}) and toolkit (${CUDAToolkit_VERSION}) versions are not the same!"
-      )
-    endif()
-    set(CORENRN_CUDA_VERSION_SHORT "${CUDAToolkit_VERSION_MAJOR}.${CUDAToolkit_VERSION_MINOR}")
+  # This is a lazy way of getting the major/minor versions separately without parsing
+  # ${CMAKE_CUDA_COMPILER_VERSION}
+  find_package(CUDAToolkit 9.0 REQUIRED)
+  # Be a bit paranoid
+  if(NOT ${CMAKE_CUDA_COMPILER_VERSION} STREQUAL ${CUDAToolkit_VERSION})
+    message(
+      FATAL_ERROR
+        "CUDA compiler (${CMAKE_CUDA_COMPILER_VERSION}) and toolkit (${CUDAToolkit_VERSION}) versions are not the same!"
+    )
   endif()
+  set(CORENRN_CUDA_VERSION_SHORT "${CUDAToolkit_VERSION_MAJOR}.${CUDAToolkit_VERSION_MINOR}")
   # -cuda links CUDA libraries and also seems to be important to make the NVHPC do the device code
   # linking. Without this, we had problems with linking between the explicit CUDA (.cu) device code
   # and offloaded OpenACC/OpenMP code. Using -cuda when compiling seems to improve error messages in

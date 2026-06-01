@@ -12,7 +12,7 @@
 # ~~~
 # =============================================================================
 execute_process(
-  COMMAND ${executable} ${exec_arg}
+  COMMAND ${CMAKE_COMMAND} -E env HOC_LIBRARY_PATH=${hoc_library_path} ${executable} ${exec_arg}
   WORKING_DIRECTORY ${work_dir}
   RESULT_VARIABLE status)
 if(status)

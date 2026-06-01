@@ -1,5 +1,6 @@
 from .rxdException import RxDException
 from neuron import h
+from typing import Optional, Any, Union
 
 try:
     from . import geometry3d
@@ -22,7 +23,7 @@ _c_region_lookup = (
 )
 
 
-def _sort_secs(secs):
+def _sort_secs(secs) -> list:
     # sort the sections
     root_secs = h.SectionList()
     root_secs.allroots()
@@ -51,7 +52,33 @@ class _c_region:
     regions - a set of regions that occur in the same sections
     """
 
-    def __init__(self, regions):
+    __slots__ = (
+        "_regions",
+        "_overlap",
+        "num_regions",
+        "num_species",
+        "num_params",
+        "num_ecs_species",
+        "num_ecs_params",
+        "num_segments",
+        "_ecs_react_species",
+        "_ecs_react_params",
+        "_react_species",
+        "_react_params",
+        "_react_regions",
+        "_initialized",
+        "location_index",
+        "ecs_location_index",
+        "_ecs_species_ids",
+        "_ecs_params_ids",
+        "_species_ids",
+        "_params_ids",
+        "_region_ids",
+        "_voltage_dependent",
+        "_vptrs",
+    )
+
+    def __init__(self, regions: Any) -> None:
         global _c_region_lookup
         self._regions = [weakref.ref(r) for r in regions]
         self._overlap = self._regions[0]()._secs1d
@@ -77,10 +104,7 @@ class _c_region:
             self._overlap = h.SectionList(
                 [sec for sec in r._secs1d if sec in self._overlap]
             )
-            if r in _c_region_lookup:
-                _c_region_lookup[rptr].append(self)
-            else:
-                _c_region_lookup[rptr] = [self]
+            _c_region_lookup.setdefault(rptr, []).append(self)
 
     def add_reaction(self, rptr, region):
         # for multicompartment reaction -- check all regions are present
@@ -118,7 +142,7 @@ class _c_region:
                 self._react_species.append(weakref.ref(s))
         self.num_params = len(self._react_params)
         self.num_species = len(self._react_species)
-        self._initilized = False
+        self._initialized = False
 
     def add_ecs_species(self, species_set):
         from .species import ParameterOnExtracellular
@@ -135,7 +159,7 @@ class _c_region:
         self.num_ecs_species = len(self._ecs_react_species)
         self._initialized = False
 
-    def get_ecs_index(self):
+    def get_ecs_index(self) -> Any:
         if not self._initialized:
             self._initalize()
         if self.ecs_location_index is None:
@@ -143,12 +167,12 @@ class _c_region:
         else:
             return self.ecs_location_index.flatten()
 
-    def get_state_index(self):
+    def get_state_index(self) -> Any:
         if not self._initialized:
             self._initalize()
         return self.location_index.flatten()
 
-    def get_ecs_species_ids(self):
+    def get_ecs_species_ids(self) -> Any:
         ret = numpy.ndarray(self.num_ecs_species + self.num_ecs_params, ctypes.c_int)
         if self.num_ecs_species + self.num_ecs_params > 0:
             for i in self._ecs_species_ids:
@@ -157,7 +181,7 @@ class _c_region:
                 ret[self._ecs_params_ids[i] + self.num_ecs_species] = i
         return ret
 
-    def _ecs_initalize(self):
+    def _ecs_initalize(self) -> None:
         from . import species
 
         self.ecs_location_index = -numpy.ones(
@@ -166,14 +190,18 @@ class _c_region:
         )
 
         self._ecs_react_species.sort(
-            key=lambda sp: sp()._extracellular()._grid_id
-            if isinstance(sp(), species.SpeciesOnExtracellular)
-            else sp()._grid_id
+            key=lambda sp: (
+                sp()._extracellular()._grid_id
+                if isinstance(sp(), species.SpeciesOnExtracellular)
+                else sp()._grid_id
+            )
         )
         self._ecs_react_params.sort(
-            key=lambda sp: sp()._extracellular()._grid_id
-            if isinstance(sp(), species.ParameterOnExtracellular)
-            else sp()._grid_id
+            key=lambda sp: (
+                sp()._extracellular()._grid_id
+                if isinstance(sp(), species.ParameterOnExtracellular)
+                else sp()._grid_id
+            )
         )
 
         # Set the local ids of the regions and species involved in the reactions
@@ -189,7 +217,7 @@ class _c_region:
             seg_idx = 0
             for sec in self._overlap:
                 for seg in sec:
-                    (x, y, z) = species._xyz(seg)
+                    x, y, z = species._xyz(seg)
                     self.ecs_location_index[sid][seg_idx] = s().index_from_xyz(x, y, z)
                     seg_idx += 1
         self.ecs_location_index = self.ecs_location_index.transpose()
@@ -209,14 +237,14 @@ class _c_region:
         self._params_ids = {}
         self._region_ids = {}
         self._react_species.sort(
-            key=lambda sp: sp()._species()._id
-            if isinstance(sp(), SpeciesOnRegion)
-            else sp()._id
+            key=lambda sp: (
+                sp()._species()._id if isinstance(sp(), SpeciesOnRegion) else sp()._id
+            )
         )
         self._react_params.sort(
-            key=lambda sp: sp()._species()._id
-            if isinstance(sp(), ParameterOnRegion)
-            else sp()._id
+            key=lambda sp: (
+                sp()._species()._id if isinstance(sp(), ParameterOnRegion) else sp()._id
+            )
         )
 
         self._regions.sort(key=lambda rp: rp()._id)
@@ -296,8 +324,7 @@ class Extracellular:
             self._dx = dx
         else:
             raise RxDException(
-                "Extracellular region dx=%s is invalid, dx should be a number or a tuple (dx,dy,dz) for the length, width and height of the voxels"
-                % repr(dx)
+                f"Extracellular region dx={dx!r} is invalid, dx should be a number or a tuple (dx,dy,dz) for the length, width and height of the voxels"
             )
 
         self._nx = int(math.ceil(float(xhi - xlo) / self._dx[0]))
@@ -328,19 +355,7 @@ class Extracellular:
             )
 
     def __repr__(self):
-        return (
-            "Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)"
-            % (
-                self._xlo,
-                self._ylo,
-                self._zlo,
-                self._xhi,
-                self._yhi,
-                self._zhi,
-                self.tortuosity,
-                self.alpha,
-            )
-        )
+        return f"Extracellular(xlo={self._xlo!r}, ylo={self._ylo!r}, zlo={self._zlo!r}, xhi={self._xhi!r}, yhi={self._yhi!r}, zhi={self._zhi!r}, tortuosity={self.tortuosity!r}, volume_fraction={self.alpha!r})"
 
     def _short_repr(self):
         return "Extracellular"
@@ -452,7 +467,6 @@ class Extracellular:
         return parsed_value, ecs_permeability
 
     def _parse_volume_fraction(self, volume_fraction):
-
         if numpy.isscalar(volume_fraction):
             alpha = float(volume_fraction)
             alpha = alpha
@@ -610,14 +624,7 @@ class Region(object):
     """
 
     def __repr__(self):
-        # Note: this used to print out dimension, but that's now on a per-segment basis
-        # TODO: remove the note when that is fully true
-        return "Region(..., nrn_region=%r, geometry=%r, dx=%r, name=%r)" % (
-            self.nrn_region,
-            self._geometry,
-            self.dx,
-            self._name,
-        )
+        return f"Region(..., nrn_region={self.nrn_region!r}, geometry={self._geometry!r}, dx={self.dx!r}, name={self._name!r})"
 
     def __contains__(self, item):
         try:
@@ -798,8 +805,7 @@ class Region(object):
             raise RxDException("should never get here")
         if nx == 0 and ny == 0 and nz == 0:
             raise RxDException(
-                "The 3D/1D join on section %r cannot be calculated from identical 3d points %g, %g, %g"
-                % (sec, x, y, z)
+                f"The 3D/1D join on section {sec!r} cannot be calculated from identical 3d points {x:g}, {y:g}, {z:g}"
             )
         # dn = (nx**2 + ny**2 + nz**2)**0.5
         # nx, ny, nz = nx/dn, ny/dn, nz/dn
@@ -861,15 +867,12 @@ class Region(object):
         secs=None,
         nrn_region=None,
         geometry=None,
-        dimension=None,
         dx=None,
         name=None,
     ):
         """
         In NEURON 7.4+, secs is optional at initial region declaration, but it
         must be specified before the reaction-diffusion model is instantiated.
-
-        .. note:: dimension and dx will be deprecated in a future version
         """
         self._allow_setting = True
         if hasattr(secs, "__len__"):
@@ -892,13 +895,6 @@ class Region(object):
         self._name = name
         self.nrn_region = nrn_region
 
-        if dimension is not None:
-            warnings.warn(
-                "dimension argument was a development feature only; use set_solve_type instead... the current version sets all the sections to your requested dimension, but this will override any previous settings"
-            )
-            import neuron
-
-            neuron.rxd.set_solve_type(secs, dimension=dimension)
         if dx is not None:
             try:
                 dx = float(dx)

@@ -17,6 +17,7 @@ namespace neuron {
  */
 class NRN_EXPORT unique_cstr {
   public:
+    unique_cstr() = default;
     unique_cstr(const unique_cstr&) = delete;
     unique_cstr(unique_cstr&& other) noexcept {
         *this = std::move(other);

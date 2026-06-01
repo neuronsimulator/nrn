@@ -2,61 +2,62 @@ import math
 import numpy
 from .rxdException import RxDException
 from . import initializer
+from typing import Union, Any, Callable, Optional
 
 
-def _vectorized(f, objs):
+def _vectorized(f: Callable, objs: Any) -> Any:
     if hasattr(objs, "__len__"):
         return numpy.array([f(obj) for obj in objs])
     else:
         return f(objs)
 
 
-def _vectorized2(f, objs1, objs2):
+def _vectorized2(f: Callable, objs1: Any, objs2: Any) -> Any:
     if hasattr(objs1, "__len__"):
         return numpy.array([f(objA, objB) for objA, objB in zip(objs1, objs2)])
     else:
         return f(objs1, objs2)
 
 
-def _erf(objs):
+def _erf(objs: Any) -> Any:
     return _vectorized(math.erf, objs)
 
 
-def _erfc(objs):
+def _erfc(objs: Any) -> Any:
     return _vectorized(math.erfc, objs)
 
 
-def _factorial(objs):
+def _factorial(objs: Any) -> Any:
     return _vectorized(math.factorial, objs)
 
 
-def _gamma(objs):
+def _gamma(objs: Any) -> Any:
     return _vectorized(math.gamma, objs)
 
 
-def _lgamma(objs):
+def _lgamma(objs: Any) -> Any:
     return _vectorized(math.lgamma, objs)
 
 
-def _power(objs1, objs2):
+def _power(objs1: Any, objs2: Any) -> Any:
     # TODO? assumes numpy arrays; won't work for lists
     return objs1**objs2
 
 
-def _neg(objs):
+def _neg(objs: Any) -> Any:
     return -objs
 
 
-def analyze_reaction(r):
+def analyze_reaction(r: Any) -> None:
     if not isinstance(r, _Reaction):
-        print(("%r is not a reaction" % r))
+        print(f"{r!r} is not a reaction")
     else:
-        print(("%r is a reaction:" % r))
+        print(f"{r!r} is a reaction:")
         print(
             (
                 "   lhs: ",
                 ", ".join(
-                    "%s[%d]" % (sp, c)
+                    f"{sp}[{c:d}]"
                     for sp, c in zip(
                         list(r._lhs._items.keys()), list(r._lhs._items.values())
                     )
@@ -67,7 +68,7 @@ def analyze_reaction(r):
             (
                 "   rhs: ",
                 ", ".join(
-                    "%s[%d]" % (sp, c)
+                    f"{sp}[{c:d}]"
                     for sp, c in zip(
                         list(r._rhs._items.keys()), list(r._rhs._items.values())
                     )
@@ -80,7 +81,7 @@ def analyze_reaction(r):
 # TODO: change this so that inputs are all automatically converted to numpy.array(s)
 # _compile is called by the reaction (Reaction._update_rates)
 # returns the rate and the species involved
-def _compile(arith, region):
+def _compile(arith: Any, region: list) -> tuple:
     initializer._do_init()
     # for extracellular reactions ensure the species are _ExtracellularSpecies
     arith = _ensure_arithmeticed(arith)
@@ -140,7 +141,7 @@ def _compile(arith, region):
     # (functools.partial(eval(command), numpy, sys.modules[__name__]), species_dict.values())
 
 
-def _ensure_arithmeticed(other):
+def _ensure_arithmeticed(other: Any) -> Any:
     from . import species
 
     if isinstance(other, species._SpeciesMathable):
@@ -152,34 +153,34 @@ def _ensure_arithmeticed(other):
     return other
 
 
-def _validate_reaction_terms(r1, r2):
+def _validate_reaction_terms(r1: Any, r2: Any) -> None:
     if not (r1._valid_reaction_term or r2._valid_reaction_term):
-        raise RxDException("lhs=%r and rhs=%r not valid in a reaction" % (r1, r2))
+        raise RxDException(f"lhs={r1!r} and rhs={r2!r} not valid in a reaction")
     elif not r1._valid_reaction_term:
-        raise RxDException("lhs=%r not valid in a reaction" % r1)
+        raise RxDException(f"lhs={r1!r} not valid in a reaction")
     elif not r2._valid_reaction_term:
-        raise RxDException("rhs=%r not valid in a reaction" % r2)
+        raise RxDException(f"rhs={r2!r} not valid in a reaction")
 
 
 class _Function:
-    def __init__(self, obj, f, fname):
+    def __init__(self, obj: Any, f: Callable, fname: str) -> None:
         self._obj = _ensure_arithmeticed(obj)
         self._f = f
         self._fname = fname
 
-    def __repr__(self):
-        return "%s(%r)" % (self._fname, self._obj)
+    def __repr__(self) -> str:
+        return f"{self._fname}({self._obj!r})"
 
-    def _short_repr(self):
+    def _short_repr(self) -> str:
         try:
-            return "%s(%s)" % (self._fname, self._obj._short_repr())
+            return f"{self._fname}({self._obj._short_repr()})"
         except:
             return self.__repr__()
 
-    def _semi_compile(self, region, instruction):
-        return "%s(%s)" % (self._fname, self._obj._semi_compile(region, instruction))
+    def _semi_compile(self, region: Any, instruction: Optional[str]) -> str:
+        return f"{self._fname}({self._obj._semi_compile(region, instruction)})"
 
-    def _involved_species(self, the_dict):
+    def _involved_species(self, the_dict: dict) -> None:
         self._obj._involved_species(the_dict)
 
     def _ensure_extracellular(self, extracellular=None):
@@ -202,33 +203,27 @@ class _Function:
 
 
 class _Function2:
-    def __init__(self, obj1, obj2, f, fname):
+    def __init__(self, obj1: Any, obj2: Any, f: Callable, fname: str) -> None:
         self._obj1 = _ensure_arithmeticed(obj1)
         self._obj2 = _ensure_arithmeticed(obj2)
         self._f = f
         self._fname = fname
 
-    def __repr__(self):
-        return "%s(%r, %r)" % (self._fname, self._obj1, self._obj2)
+    def __repr__(self) -> str:
+        return f"{self._fname}({self._obj1!r}, {self._obj2!r})"
 
-    def _short_repr(self):
+    def _short_repr(self) -> str:
         try:
-            return "%s(%s, %s)" % (
-                self._fname,
-                self._obj1._short_repr(),
-                self._obj2._short_repr(),
+            return (
+                f"{self._fname}({self._obj1._short_repr()}, {self._obj2._short_repr()})"
             )
         except:
             return self.__repr__()
 
-    def _semi_compile(self, region, instruction):
-        return "%s(%s, %s)" % (
-            self._fname,
-            self._obj1._semi_compile(region, instruction),
-            self._obj2._semi_compile(region, instruction),
-        )
+    def _semi_compile(self, region: Any, instruction: Optional[str]) -> str:
+        return f"{self._fname}({self._obj1._semi_compile(region, instruction)}, {self._obj2._semi_compile(region, instruction)})"
 
-    def _involved_species(self, the_dict):
+    def _involved_species(self, the_dict: dict) -> None:
         self._obj1._involved_species(the_dict)
         self._obj2._involved_species(the_dict)
 
@@ -480,7 +475,7 @@ class _Product:
         self._b = b
 
     def __repr__(self):
-        return "(%r)*(%r)" % (self._a, self._b)
+        return f"({self._a!r})*({self._b!r})"
 
     # Change any Species to _ExtracellularSpecies so _semi_compile gives the
     # _grid_id and not the species _id
@@ -529,10 +524,7 @@ class _Product:
         return False
 
     def _semi_compile(self, region, instruction):
-        return "(%s)*(%s)" % (
-            self._a._semi_compile(region, instruction),
-            self._b._semi_compile(region, instruction),
-        )
+        return f"({self._a._semi_compile(region, instruction)})*({self._b._semi_compile(region, instruction)})"
 
     def _involved_species(self, the_dict):
         self._a._involved_species(the_dict)
@@ -545,7 +537,7 @@ class _Quotient:
         self._b = b
 
     def __repr__(self):
-        return "(%r)/(%r)" % (self._a, self._b)
+        return f"({self._a!r})/({self._b!r})"
 
     # Change any Species to _ExtracellularSpecies so _semi_compile gives the
     # _grid_id and not the species _id
@@ -586,10 +578,7 @@ class _Quotient:
         return False
 
     def _semi_compile(self, region, instruction):
-        return "(%s)/(%s)" % (
-            self._a._semi_compile(region, instruction),
-            self._b._semi_compile(region, instruction),
-        )
+        return f"({self._a._semi_compile(region, instruction)})/({self._b._semi_compile(region, instruction)})"
 
     def _involved_species(self, the_dict):
         self._a._involved_species(the_dict)
@@ -603,7 +592,7 @@ class _Reaction:
         self._dir = direction
 
     def __repr__(self):
-        return "%s%s%s" % (str(self._lhs), self._dir, str(self._rhs))
+        return f"{str(self._lhs)}{self._dir}{str(self._rhs)}"
 
     def __bool__(self):
         return False
@@ -690,7 +679,6 @@ class _Arithmeticed:
         return new_arith
 
     def _short_repr(self):
-
         items = []
         counts = []
         for item, count in self._items.items():
@@ -700,15 +688,15 @@ class _Arithmeticed:
         result = ""
         for i, c in zip(items, counts):
             try:
-                short_i = "%s" % i._short_repr()
+                short_i = f"{i._short_repr()}"
             except:
-                short_i = "%r" % i
+                short_i = f"{i!r}"
             if result and c > 0:
                 result += "+"
             if c == -1:
-                result += "-(%s)" % short_i
+                result += f"-({short_i})"
             elif c != 1:
-                result += "%d*(%s)" % (c, short_i)
+                result += f"{c:d}*({short_i})"
             elif c == 1:
                 result += short_i
         if not result:
@@ -733,9 +721,9 @@ class _Arithmeticed:
             if result and c > 0:
                 result += "+"
             if c == -1:
-                result += "-(%s)" % i
+                result += f"-({i})"
             elif c != 1:
-                result += "%d*(%s)" % (c, i)
+                result += f"{c:d}*({i})"
             elif c == 1:
                 result += i
         if not result:
@@ -762,16 +750,16 @@ class _Arithmeticed:
                 try:
                     items_append(item._semi_compile(region, instruction))
                 except AttributeError:
-                    items_append("%r" % item)
+                    items_append(f"{item!r}")
                 counts_append(count)
         result = ""
         for i, c in zip(items, counts):
             if result and c > 0:
                 result += "+"
             if c == -1:
-                result += "-(%s)" % i
+                result += f"-({i})"
             elif c != 1:
-                result += "%d*(%s)" % (c, i)
+                result += f"{c:d}*({i})"
             elif c == 1:
                 result += i
         if not result:

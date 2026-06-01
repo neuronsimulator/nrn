@@ -1,0 +1,7 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/nmodlTargets.cmake")
+
+set(nmodl_BINARY ${PACKAGE_PREFIX_DIR}/@nmodl_BINARY@)
+
+check_required_components(nmodl)

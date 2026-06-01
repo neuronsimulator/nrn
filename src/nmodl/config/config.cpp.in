@@ -1,0 +1,32 @@
+/*
+ * Copyright 2023 Blue Brain Project, EPFL.
+ * See the top-level LICENSE file for details.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "config/config.h"
+
+/// Git version of the project
+const std::string nmodl::Version::GIT_REVISION = "@NMODL_GIT_REVISION@";
+
+/// NMODL version
+const std::string nmodl::Version::NMODL_VERSION = "@PROJECT_VERSION@";
+
+const std::string nmodl::CMakeInfo::SHARED_LIBRARY_SUFFIX = "@CMAKE_SHARED_LIBRARY_SUFFIX@";
+
+/// If none of the paths below work, we use the embedded version
+const std::string_view nmodl::NrnUnitsLib::embedded_nrnunits =
+#include "embedded_nrnunits.lib"
+;
+
+/**
+ * \brief Path of nrnutils.lib file
+ *
+ * nrnunits.lib need to be loaded at runtime. Before project is
+ * installed it needs to be read from NMODL_PROJECT_PLATLIB_BINARY_DIR and later
+ * from CMAKE_INSTALL_PREFIX. Note that this use of NMODL_PROJECT_PLATLIB_BINARY_DIR
+ * will cause ccache misses when the build prefix is changed.
+ */
+std::vector<std::string> nmodl::NrnUnitsLib::NRNUNITSLIB_PATH =
+    {"@CMAKE_INSTALL_PREFIX@/share/nmodl/nrnunits.lib", "@NMODL_PROJECT_PLATLIB_BINARY_DIR@/share/nmodl/nrnunits.lib"};

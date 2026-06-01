@@ -7,19 +7,19 @@ optionally plot fi curve
 """
 
 from mpi4py import MPI
-from neuron import h
+from neuron import n
 import time
 
 # need the standard run system (didn't have to do this before, because this
 # is loaded whenever we import the gui)
-h.load_file("stdrun.hoc")
+n.load_file("stdrun.hoc")
 
 # create ParallelContext instance here so it exists whenever we need it
-pc = h.ParallelContext()
+pc = n.ParallelContext()
 
 # Simulation parameters
 
-h.tstop = 500  # ms, more than long enough for 15 spikes at ISI = 25 ms
+n.tstop = 500  # ms, more than long enough for 15 spikes at ISI = 25 ms
 AMP0 = 0.1  # nA -- minimum stimulus
 D_AMP = 0.02  # nA -- stim increment between runs
 NRUNS = 30
@@ -32,7 +32,7 @@ cell = Cell()
 # instrumentation
 
 # experimental manipulations
-stim = h.IClamp(cell.soma(0.5))
+stim = n.IClamp(cell.soma(0.5))
 stim.delay = 1  # ms
 stim.dur = 1e9
 stim.amp = 0.1  # nA
@@ -51,9 +51,9 @@ def set_params(run_id):
 # data recording and analysis
 
 # count only those spikes that get to distal end of dend
-nc = h.NetCon(cell.dend(1)._ref_v, None, sec=cell.dend)
+nc = n.NetCon(cell.dend(1)._ref_v, None, sec=cell.dend)
 nc.threshold = -10  # mV
-spvec = h.Vector()
+spvec = n.Vector()
 nc.record(spvec)
 
 NSETTLE = 5  # ignore the first NSETTLE ISI (allow freq to stablize)
@@ -80,7 +80,7 @@ def fi(run_id):
     """set params, execute a simulation, analyze and return results"""
     # NB: run_id is sent via NEURON, which turns it into a float
     set_params(run_id)
-    h.run()
+    n.run()
     return (int(run_id), stim.amp, get_frequency(spvec))
 
 
