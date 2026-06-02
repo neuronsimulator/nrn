@@ -94,7 +94,25 @@ void nrnbbcore_register_mapping() {
     Vect* sec = vector_arg(3);
     Vect* seg = vector_arg(4);
     Vect* lfp = ifarg(5) ? vector_arg(5) : new Vect();
-    int electrodes_per_segment = ifarg(6) ? *hoc_getarg(6) : 0;
+
+    // Argument 6: electrode offsets vector (CSR-style partial sums, e.g. [0, N])
+    std::vector<int> electrode_offsets;
+    if (ifarg(6)) {
+        Vect* offsets_vec = vector_arg(6);
+        int n = vector_capacity(offsets_vec);
+        double* vals = vector_vec(offsets_vec);
+        electrode_offsets.reserve(n);
+        for (int i = 0; i < n; i++) {
+            electrode_offsets.push_back(static_cast<int>(vals[i]));
+        }
+        // Validate monotonically non-decreasing
+        for (int i = 1; i < static_cast<int>(electrode_offsets.size()); i++) {
+            if (electrode_offsets[i] < electrode_offsets[i - 1]) {
+                Printf("Error: electrode_offsets must be monotonically non-decreasing!\n");
+                abort();
+            }
+        }
+    }
 
     double* sections = vector_vec(sec);
     double* segments = vector_vec(seg);
@@ -116,9 +134,7 @@ void nrnbbcore_register_mapping() {
     smap->sections.assign(sections, sections + nseg);
     smap->segments.assign(segments, segments + nseg);
     smap->seglfp_factors.assign(seg_lfp_factors, seg_lfp_factors + nlfp);
-    if (electrodes_per_segment > 0) {
-        smap->electrode_offsets = {0, electrodes_per_segment};
-    }
+    smap->electrode_offsets = std::move(electrode_offsets);
 
     // store mapping information
     mapinfo.add_sec_mapping(gid, smap);
