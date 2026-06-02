@@ -108,11 +108,6 @@ struct CellMapping {
         return electrode_offsets.empty() ? 0 : electrode_offsets.back();
     }
 
-    /** @brief Set electrode offsets from transfer data */
-    void set_electrode_offsets(std::vector<int> offsets) {
-        electrode_offsets = std::move(offsets);
-    }
-
     /** @brief number of section lists */
     size_t size() const noexcept {
         return sec_mappings.size();

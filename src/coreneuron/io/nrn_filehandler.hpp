@@ -130,24 +130,17 @@ class FileHandler {
         nrn_assert(!iss.fail());
 
         // Optional 6th field: offset_count, followed by offset values
-        std::vector<int> electrode_offsets;
         int offset_count = 0;
         if (iss >> offset_count && offset_count > 0) {
-            electrode_offsets.resize(offset_count);
+            cmap->electrode_offsets.resize(offset_count);
             for (int k = 0; k < offset_count; k++) {
-                iss >> electrode_offsets[k];
+                iss >> cmap->electrode_offsets[k];
             }
             nrn_assert(!iss.fail());
-            nrn_assert(electrode_offsets.back() == num_electrodes);
-        } else {
+            nrn_assert(cmap->electrode_offsets.back() == num_electrodes);
+        } else if (num_electrodes > 0) {
             // Old format or single report: synthesize offsets
-            if (num_electrodes > 0) {
-                electrode_offsets = {0, num_electrodes};
-            }
-        }
-
-        if (!electrode_offsets.empty()) {
-            cmap->set_electrode_offsets(electrode_offsets);
+            cmap->electrode_offsets = {0, num_electrodes};
         }
 
         mapinfo->type = section_type_from_string(name_str);

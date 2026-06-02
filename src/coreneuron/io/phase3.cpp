@@ -97,7 +97,7 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping, const NrnThread& nt) {
                 }
             }
             if (!electrode_offsets.empty()) {
-                cmap->set_electrode_offsets(electrode_offsets);
+                cmap->electrode_offsets = electrode_offsets;
             }
             cmap->add_sec_map(smap);
         }
