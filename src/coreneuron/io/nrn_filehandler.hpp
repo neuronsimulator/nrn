@@ -119,13 +119,15 @@ class FileHandler {
                           NrnThreadMappingInfo* ntmapping,
                           std::shared_ptr<CellMapping> cmap,
                           const NrnThread& nt) {
-        char line_buf[max_line_length];
-        F.getline(line_buf, sizeof(line_buf));
+        std::string line;
+        std::getline(F, line);
 
-        std::istringstream iss(line_buf);
+        std::istringstream iss(line);
         std::string name_str;
-        int nsec, nseg, num_electrodes;
-        size_t total_lfp_factors;
+        int nsec = 0;
+        int nseg = 0;
+        int num_electrodes = 0;
+        size_t total_lfp_factors = 0;
         iss >> name_str >> nsec >> nseg >> total_lfp_factors >> num_electrodes;
         nrn_assert(!iss.fail());
 
