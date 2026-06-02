@@ -76,6 +76,10 @@ struct CellMapping {
     /** map containing segment ids an its respective lfp factors */
     std::unordered_map<int, std::vector<double>> lfp_factors;
 
+    /** Electrode offsets as partial sums (CSR-style).
+     *  For a single report with N electrodes: [0, N]. Empty if no electrodes. */
+    std::vector<int> electrode_offsets;
+
     CellMapping(int g)
         : gid(g) {}
 
@@ -99,13 +103,14 @@ struct CellMapping {
                                });
     }
 
-    /** @brief return the number of electrodes in the lfp_factors map **/
+    /** @brief return the total number of electrodes (derived from offsets) **/
     int num_electrodes() const {
-        int num_electrodes = 0;
-        if (!lfp_factors.empty()) {
-            num_electrodes = lfp_factors.begin()->second.size();
-        }
-        return num_electrodes;
+        return electrode_offsets.empty() ? 0 : electrode_offsets.back();
+    }
+
+    /** @brief Set electrode offsets from transfer data */
+    void set_electrode_offsets(std::vector<int> offsets) {
+        electrode_offsets = std::move(offsets);
     }
 
     /** @brief number of section lists */
