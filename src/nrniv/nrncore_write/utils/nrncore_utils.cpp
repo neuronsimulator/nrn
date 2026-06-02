@@ -116,7 +116,9 @@ void nrnbbcore_register_mapping() {
     smap->sections.assign(sections, sections + nseg);
     smap->segments.assign(segments, segments + nseg);
     smap->seglfp_factors.assign(seg_lfp_factors, seg_lfp_factors + nlfp);
-    smap->num_electrodes = electrodes_per_segment;
+    if (electrodes_per_segment > 0) {
+        smap->electrode_offsets = {0, electrodes_per_segment};
+    }
 
     // store mapping information
     mapinfo.add_sec_mapping(gid, smap);

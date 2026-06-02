@@ -25,12 +25,19 @@ struct SecMapping {
     /** list of lfp factors associated with each segment */
     std::vector<double> seglfp_factors;
 
-    /** Number of electrodes per segment */
-    int num_electrodes;
+    /** Electrode offsets as partial sums (CSR-style).
+     *  For a single report with N electrodes: [0, N].
+     *  Empty when no electrodes are associated. */
+    std::vector<int> electrode_offsets;
 
     SecMapping(int n, std::string s)
         : nsec(n)
         , name(s) {}
+
+    /** @brief Total electrode count (derived from offsets) */
+    int total_electrodes() const {
+        return electrode_offsets.empty() ? 0 : electrode_offsets.back();
+    }
 
     size_t size() {
         return segments.size();
