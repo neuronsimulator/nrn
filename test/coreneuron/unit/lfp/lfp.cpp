@@ -143,6 +143,25 @@ TEST_CASE("LFP_ReportEvent") {
     REQUIRE(c42->lfp_factors.size() == 5);
     REQUIRE(c134->num_electrodes() == 2);
 
+    // Property tests for num_electrodes() derivation from electrode_offsets
+    {
+        // Property 1: offsets [0, N] → num_electrodes() == N
+        auto ctest = std::make_shared<CellMapping>(999);
+        ctest->electrode_offsets = {0, 5};
+        REQUIRE(ctest->num_electrodes() == 5);
+
+        ctest->electrode_offsets = {0, 1};
+        REQUIRE(ctest->num_electrodes() == 1);
+
+        // Multi-report offsets [0, 2, 5] → num_electrodes() == 5 (total)
+        ctest->electrode_offsets = {0, 2, 5};
+        REQUIRE(ctest->num_electrodes() == 5);
+
+        // Property 5: empty offsets → num_electrodes() == 0
+        ctest->electrode_offsets = {};
+        REQUIRE(ctest->num_electrodes() == 0);
+    }
+
     // Pass _lfp variable to vars_to_report
     size_t offset_lfp = 0;
     VarsToReport vars_to_report;
