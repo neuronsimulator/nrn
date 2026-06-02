@@ -455,8 +455,10 @@ endif()
 find_package(SUNDIALS REQUIRED)
 add_dependencies(nrniv_lib SUNDIALS)
 target_link_libraries(
-  nrniv_lib PRIVATE ${SUNDIALS_LIB_DIR}/libsundials_ida.a ${SUNDIALS_LIB_DIR}/libsundials_cvode.a
-  ${SUNDIALS_LIB_DIR}/libsundials_nvecpthreads.a ${SUNDIALS_LIB_DIR}/libsundials_nvecserial.a)
+  nrniv_lib
+  PRIVATE ${SUNDIALS_LIB_DIR}/libsundials_ida.a ${SUNDIALS_LIB_DIR}/libsundials_cvode.a
+          ${SUNDIALS_LIB_DIR}/libsundials_nvecpthreads.a
+          ${SUNDIALS_LIB_DIR}/libsundials_nvecserial.a)
 target_include_directories(nrniv_lib PRIVATE $<BUILD_INTERFACE:${SUNDIALS_INCLUDE_DIR}>)
 
 set_target_properties(nrniv_lib PROPERTIES EXPORT_NAME nrniv OUTPUT_NAME nrniv)
