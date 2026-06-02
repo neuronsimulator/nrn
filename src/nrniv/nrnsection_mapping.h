@@ -35,7 +35,7 @@ struct SecMapping {
         , name(s) {}
 
     /** @brief Total electrode count (derived from offsets) */
-    int total_electrodes() const {
+    int num_electrodes() const {
         return electrode_offsets.empty() ? 0 : electrode_offsets.back();
     }
 
