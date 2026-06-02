@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <cmath>
 #include <sys/stat.h>
@@ -118,43 +119,17 @@ class FileHandler {
                           NrnThreadMappingInfo* ntmapping,
                           std::shared_ptr<CellMapping> cmap,
                           const NrnThread& nt) {
-        int nsec, nseg, n_scan;
-        size_t total_lfp_factors;
-        int offset_count;
-        char line_buf[max_line_length], name[max_line_length];
-
+        char line_buf[max_line_length];
         F.getline(line_buf, sizeof(line_buf));
-        n_scan = sscanf(
-            line_buf, "%s %d %d %zd %d", name, &nsec, &nseg, &total_lfp_factors, &offset_count);
 
-        nrn_assert(n_scan == 5);
+        std::istringstream iss(line_buf);
+        std::string name_str;
+        int nsec, nseg, offset_count;
+        size_t total_lfp_factors;
+        iss >> name_str >> nsec >> nseg >> total_lfp_factors >> offset_count;
+        nrn_assert(!iss.fail());
 
-        // Parse electrode_offsets from remainder of line
-        std::vector<int> electrode_offsets(offset_count);
-        if (offset_count > 0) {
-            // Find the position after the 5 parsed fields to read offsets
-            const char* p = line_buf;
-            for (int skip = 0; skip < 5; skip++) {
-                while (*p && std::isspace(*p))
-                    p++;
-                while (*p && !std::isspace(*p))
-                    p++;
-            }
-            for (int k = 0; k < offset_count; k++) {
-                while (*p && std::isspace(*p))
-                    p++;
-                electrode_offsets[k] = std::atoi(p);
-                while (*p && !std::isspace(*p))
-                    p++;
-            }
-        }
-        int num_electrodes = electrode_offsets.empty() ? 0 : electrode_offsets.back();
-
-        if (!electrode_offsets.empty()) {
-            cmap->set_electrode_offsets(electrode_offsets);
-        }
-
-        mapinfo->type = section_type_from_string(name);
+        mapinfo->type = section_type_from_string(name_str);
 
         if (nseg) {
             auto sec = read_vector<int>(nseg);
@@ -169,12 +144,19 @@ class FileHandler {
                 lfp_factors = read_vector<double>(total_lfp_factors);
             }
 
+            // Read electrode offsets array (binary, after lfp_factors)
+            std::vector<int> electrode_offsets;
+            if (offset_count > 0) {
+                electrode_offsets = read_vector<int>(offset_count);
+                cmap->set_electrode_offsets(electrode_offsets);
+            }
+            int num_electrodes = electrode_offsets.empty() ? 0 : electrode_offsets.back();
+
             for (int i = 0; i < nseg; i++) {
                 mapinfo->add_segment(sec[i], seg[i]);
                 ntmapping->add_segment_id(seg[i]);
-                int factor_offset = i * num_electrodes;
                 if (total_lfp_factors > 0) {
-                    // Abort if the factors contains a NaN
+                    int factor_offset = i * num_electrodes;
                     nrn_assert(count_if(lfp_factors.begin(), lfp_factors.end(), [](double d) {
                                    return std::isnan(d);
                                }) == 0);

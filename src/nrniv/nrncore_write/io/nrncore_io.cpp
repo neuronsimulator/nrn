@@ -581,18 +581,14 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
                                       data_seg,
                                       data_lfp);
             /** section list name, number of sections, number of segments,
-             *  total lfp factors, offset count followed by offset values */
+             *  total lfp factors, electrode offsets count */
             fprintf(f,
-                    "%s %d %d %zd %d",
+                    "%s %d %d %zd %d\n",
                     sclname.c_str(),
                     nsec,
                     nseg,
                     total_lfp_factors,
                     static_cast<int>(electrode_offsets.size()));
-            for (int off: electrode_offsets) {
-                fprintf(f, " %d", off);
-            }
-            fprintf(f, "\n");
 
             /** section - segment mapping */
             if (nseg) {
@@ -601,6 +597,10 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
                 if (total_lfp_factors) {
                     writedbl(&(data_lfp.front()), total_lfp_factors);
                 }
+            }
+            /** electrode offsets array */
+            if (!electrode_offsets.empty()) {
+                writeint(&(electrode_offsets.front()), electrode_offsets.size());
             }
         }
     }
