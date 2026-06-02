@@ -133,6 +133,7 @@ TEST_CASE("LFP_ReportEvent") {
             std::vector<double> lfp_factors{segment + 1.0, segment + 2.0};
             cmap->add_segment_lfp_factor(segment, lfp_factors);
         }
+        cmap->electrode_offsets = {0, 2};
     }
     mapinfo->prepare_lfp();
     // Total number of electrodes 2 gids * 2 factors
