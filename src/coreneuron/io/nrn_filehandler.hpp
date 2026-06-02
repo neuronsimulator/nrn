@@ -124,10 +124,31 @@ class FileHandler {
 
         std::istringstream iss(line_buf);
         std::string name_str;
-        int nsec, nseg, offset_count;
+        int nsec, nseg, num_electrodes;
         size_t total_lfp_factors;
-        iss >> name_str >> nsec >> nseg >> total_lfp_factors >> offset_count;
+        iss >> name_str >> nsec >> nseg >> total_lfp_factors >> num_electrodes;
         nrn_assert(!iss.fail());
+
+        // Optional 6th field: offset_count, followed by offset values
+        std::vector<int> electrode_offsets;
+        int offset_count = 0;
+        if (iss >> offset_count && offset_count > 0) {
+            electrode_offsets.resize(offset_count);
+            for (int k = 0; k < offset_count; k++) {
+                iss >> electrode_offsets[k];
+            }
+            nrn_assert(!iss.fail());
+            nrn_assert(electrode_offsets.back() == num_electrodes);
+        } else {
+            // Old format or single report: synthesize offsets
+            if (num_electrodes > 0) {
+                electrode_offsets = {0, num_electrodes};
+            }
+        }
+
+        if (!electrode_offsets.empty()) {
+            cmap->set_electrode_offsets(electrode_offsets);
+        }
 
         mapinfo->type = section_type_from_string(name_str);
 
@@ -143,14 +164,6 @@ class FileHandler {
             if (total_lfp_factors > 0) {
                 lfp_factors = read_vector<double>(total_lfp_factors);
             }
-
-            // Read electrode offsets array (binary, after lfp_factors)
-            std::vector<int> electrode_offsets;
-            if (offset_count > 0) {
-                electrode_offsets = read_vector<int>(offset_count);
-                cmap->set_electrode_offsets(electrode_offsets);
-            }
-            int num_electrodes = electrode_offsets.empty() ? 0 : electrode_offsets.back();
 
             for (int i = 0; i < nseg; i++) {
                 mapinfo->add_segment(sec[i], seg[i]);
