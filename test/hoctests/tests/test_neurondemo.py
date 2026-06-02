@@ -196,7 +196,7 @@ def special_run(key, demo_index, pre_run_stmts):
 
 
 # For full coverage of #3454, do another run of Dynamic Clamp with cvode active.
-cover3454 = "cover3454" # for old cvode version 2
+cover3454 = "cover3454"  # for old cvode version 2
 cv = n.CVode()
 if hasattr(cv, "version"):
     cover3454 += f"-cv{cv.version()[0]}"

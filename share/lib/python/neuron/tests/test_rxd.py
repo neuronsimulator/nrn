@@ -98,9 +98,13 @@ def trivial_ecs(scale, lock, path=None):
         d=2.62,
         charge=1,
         atolscale=scale,
-        initial=lambda nd: 1.0
-        if abs(nd.x3d) <= L / 2.0 and abs(nd.y3d) <= L / 2.0 and abs(nd.z3d) <= L / 2.0
-        else 0.0,
+        initial=lambda nd: (
+            1.0
+            if abs(nd.x3d) <= L / 2.0
+            and abs(nd.y3d) <= L / 2.0
+            and abs(nd.z3d) <= L / 2.0
+            else 0.0
+        ),
     )
 
     # record the concentration at (0,0,0)
