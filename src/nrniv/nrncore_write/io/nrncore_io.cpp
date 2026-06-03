@@ -580,7 +580,7 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
                                       data_sec,
                                       data_seg,
                                       data_lfp);
-            int n_electrodes = electrode_offsets.empty() ? 0 : electrode_offsets.back();
+            const int n_electrodes = electrode_offsets.empty() ? 0 : electrode_offsets.back();
             /** section list name, number of sections, number of segments,
              *  total lfp factors, num_electrodes [, offset_count, offsets...] */
             fprintf(f,

@@ -60,7 +60,6 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping, const NrnThread& nt) {
             std::string sclname;
             int n_sec;
             int n_seg;
-            std::vector<int> electrode_offsets;
             size_t total_lfp_factors;
             std::vector<int> data_sec;
             std::vector<int> data_seg;
@@ -71,11 +70,11 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping, const NrnThread& nt) {
                                           n_sec,
                                           n_seg,
                                           total_lfp_factors,
-                                          electrode_offsets,
+                                          cmap->electrode_offsets,
                                           data_sec,
                                           data_seg,
                                           data_lfp);
-            int n_electrodes = electrode_offsets.empty() ? 0 : electrode_offsets.back();
+            const int n_electrodes = cmap->num_electrodes();
             if (nt._permute) {
                 node_permute(data_seg.data(), data_seg.size(), nt._permute);
             }
@@ -95,9 +94,6 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping, const NrnThread& nt) {
                                                             n_electrodes);
                     cmap->add_segment_lfp_factor(data_seg[i_seg], segment_factors);
                 }
-            }
-            if (!electrode_offsets.empty()) {
-                cmap->electrode_offsets = electrode_offsets;
             }
             cmap->add_sec_map(smap);
         }
