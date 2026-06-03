@@ -72,24 +72,18 @@ int count_distinct(double* data, int len) {
 }
 
 
-/** @brief Parse and validate electrode offsets from a HOC Vector.
- *  Converts doubles to ints and validates monotonically non-decreasing order.
- */
-static std::vector<int> parse_electrode_offsets(Vect* offsets_vec) {
-    const int n = vector_capacity(offsets_vec);
-    const double* vals = vector_vec(offsets_vec);
-    std::vector<int> offsets;
-    offsets.reserve(n);
-    for (int i = 0; i < n; i++) {
-        offsets.push_back(static_cast<int>(vals[i]));
-    }
-    for (int i = 1; i < static_cast<int>(offsets.size()); i++) {
-        if (offsets[i] < offsets[i - 1]) {
+/** @brief Validate electrode offsets: non-negative and monotonically non-decreasing. */
+static void validate_electrode_offsets(const std::vector<int>& offsets) {
+    for (int i = 0; i < static_cast<int>(offsets.size()); i++) {
+        if (offsets[i] < 0) {
+            Printf("Error: electrode_offsets values must be non-negative!\n");
+            abort();
+        }
+        if (i > 0 && offsets[i] < offsets[i - 1]) {
             Printf("Error: electrode_offsets must be monotonically non-decreasing!\n");
             abort();
         }
     }
-    return offsets;
 }
 
 /** @brief For BBP use case, we want to write section-segment
@@ -118,7 +112,12 @@ void nrnbbcore_register_mapping() {
     // Argument 6: electrode offsets vector (CSR-style partial sums, e.g. [0, N])
     std::vector<int> electrode_offsets;
     if (ifarg(6)) {
-        electrode_offsets = parse_electrode_offsets(vector_arg(6));
+        Vect* offsets_vec = vector_arg(6);
+        const int n = vector_capacity(offsets_vec);
+        const double* vals = vector_vec(offsets_vec);
+        electrode_offsets.resize(n);
+        std::transform(vals, vals + n, electrode_offsets.begin(), [](double v) { return static_cast<int>(v); });
+        validate_electrode_offsets(electrode_offsets);
     }
 
     double* sections = vector_vec(sec);
