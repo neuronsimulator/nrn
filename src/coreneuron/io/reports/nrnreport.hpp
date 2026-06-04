@@ -258,6 +258,7 @@ struct ReportConfiguration {
     std::vector<int> point_compartment_ids;  // list of compartment_ids for this compartment set
                                              // report (empty otherwise)
     Scaling scaling;
+    int lfp_report_index = 0;  // index of this LFP report among all LFP reports (for electrode slicing)
 };
 
 void setup_report_engine(double dt_report, double mindelay);
