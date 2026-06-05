@@ -79,6 +79,9 @@ struct CellMapping {
     /** flat array of lfp factors: stride = num_electrodes, indexed as [i * stride + e] */
     std::vector<double> lfp_factors_flat;
 
+    /** number of electrodes (stride), set on first insertion and validated thereafter */
+    size_t num_electrodes_ = 0;
+
     CellMapping(int g)
         : gid(g) {}
 
@@ -103,11 +106,8 @@ struct CellMapping {
     }
 
     /** @brief return the number of electrodes per segment **/
-    int num_electrodes() const {
-        if (lfp_segment_ids.empty()) {
-            return 0;
-        }
-        return static_cast<int>(lfp_factors_flat.size() / lfp_segment_ids.size());
+    size_t num_electrodes() const {
+        return num_electrodes_;
     }
 
     /** @brief number of section lists */
@@ -151,6 +151,17 @@ struct CellMapping {
 
     /** @brief add the lfp electrode factors of a segment_id */
     void add_segment_lfp_factor(const int segment_id, std::vector<double>& factors) {
+        const size_t n = factors.size();
+        if (n == 0) {
+            return;
+        }
+        if (num_electrodes_ == 0) {
+            num_electrodes_ = n;
+        } else if (n != num_electrodes_) {
+            std::cerr << "[ERROR] LFP factor count mismatch for gid " << gid
+                      << ": expected " << num_electrodes_ << ", got " << n << '\n';
+            nrn_abort(1);
+        }
         lfp_segment_ids.push_back(segment_id);
         lfp_factors_flat.insert(lfp_factors_flat.end(), factors.begin(), factors.end());
     }
