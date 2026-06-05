@@ -2,6 +2,7 @@
 
 #include "multicore.h"
 #include "section.h"
+#include "ocmatrix.h"
 
 #include <cassert>
 
@@ -48,6 +49,13 @@ double& _nrn_mechanism_access_rhs(Node* node) {
 }
 double& _nrn_mechanism_access_voltage(Node* node) {
     return node->v();
+}
+int _nrn_mechanism_access_index(const Node* node) {
+    return node->eqn_index_;
+}
+double& _nrn_mechanism_get_matrix_elem(NrnThread* nt, int i, int j) {
+    OcMatrix& m = *nt->_sp13mat;
+    return m.coeff(i, j);
 }
 neuron::container::data_handle<double> _nrn_mechanism_get_area_handle(Node* node) {
     if (node) {
