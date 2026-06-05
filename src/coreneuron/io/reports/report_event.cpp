@@ -83,27 +83,31 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
     auto& summation_report = nt->summation_report_handler_->summation_reports_[report_path];
     for (const auto& kv: vars_to_report) {
         int gid = kv.first;
-        const auto& to_report = kv.second;
+        const auto& electrode_outputs = kv.second;
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
-        const int n_electrodes = cell_mapping->num_electrodes();
-        const int n_segments = static_cast<int>(cell_mapping->lfp_segment_ids.size());
+        const auto n_electrodes = cell_mapping->num_electrodes();
+        const auto n_segments = cell_mapping->lfp_segment_ids.size();
         std::vector<double> lfp_values(n_electrodes, 0.0);
-        for (int i = 0; i < n_segments; i++) {
-            int segment_id = cell_mapping->lfp_segment_ids[i];
-            const double* factors = &cell_mapping->lfp_factors_flat[i * n_electrodes];
+        for (size_t i = 0; i < n_segments; i++) {
+            const auto segment_id = cell_mapping->lfp_segment_ids[i];
+
+            // compute iclamp + imem
             double iclamp = 0.0;
             for (const auto& value: summation_report.currents_[segment_id]) {
                 double current_value = *value.first;
                 int scale = value.second;
                 iclamp += current_value * scale;
             }
-            double imem = fast_imem_rhs[segment_id] + iclamp;
-            for (int e = 0; e < n_electrodes; e++) {
+            const double imem = fast_imem_rhs[segment_id] + iclamp;
+
+            // dot product with the factors
+            const double* factors = &cell_mapping->lfp_factors_flat[i * n_electrodes];
+            for (size_t e = 0; e < n_electrodes; e++) {
                 lfp_values[e] += imem * factors[e];
             }
         }
-        for (size_t i = 0; i < to_report.size(); i++) {
-            *(to_report[i].var_value) = lfp_values[i];
+        for (size_t e = 0; e < electrode_outputs.size(); e++) {
+            *(electrode_outputs[e].var_value) = lfp_values[e];
         }
     }
 }
