@@ -154,8 +154,8 @@ struct CellMapping {
         }
         const auto curr_n_electrodes = num_electrodes();
         if (curr_n_electrodes > 0 && n != curr_n_electrodes) {
-            std::cerr << "[ERROR] LFP factor count mismatch for gid " << gid
-                      << ": expected " << curr_n_electrodes << ", got " << n << '\n';
+            std::cerr << "[ERROR] LFP factor count mismatch for gid " << gid << ": expected "
+                      << curr_n_electrodes << ", got " << n << '\n';
             nrn_abort(1);
         }
         lfp_segment_ids.push_back(segment_id);
