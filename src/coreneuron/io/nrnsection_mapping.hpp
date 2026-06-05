@@ -73,8 +73,11 @@ struct CellMapping {
     /** list of section lists (like soma, axon, apic) */
     std::vector<std::shared_ptr<SecMapping>> sec_mappings;
 
-    /** map containing segment ids an its respective lfp factors */
-    std::unordered_map<int, std::vector<double>> lfp_factors;
+    /** segment ids for lfp factors (one per compartment with LFP data) */
+    std::vector<int> lfp_segment_ids;
+
+    /** flat array of lfp factors: stride = num_electrodes, indexed as [i * stride + e] */
+    std::vector<double> lfp_factors_flat;
 
     CellMapping(int g)
         : gid(g) {}
@@ -99,13 +102,12 @@ struct CellMapping {
                                });
     }
 
-    /** @brief return the number of electrodes in the lfp_factors map **/
+    /** @brief return the number of electrodes per segment **/
     int num_electrodes() const {
-        int num_electrodes = 0;
-        if (!lfp_factors.empty()) {
-            num_electrodes = lfp_factors.begin()->second.size();
+        if (lfp_segment_ids.empty()) {
+            return 0;
         }
-        return num_electrodes;
+        return static_cast<int>(lfp_factors_flat.size() / lfp_segment_ids.size());
     }
 
     /** @brief number of section lists */
@@ -149,7 +151,8 @@ struct CellMapping {
 
     /** @brief add the lfp electrode factors of a segment_id */
     void add_segment_lfp_factor(const int segment_id, std::vector<double>& factors) {
-        lfp_factors.insert({segment_id, factors});
+        lfp_segment_ids.push_back(segment_id);
+        lfp_factors_flat.insert(lfp_factors_flat.end(), factors.begin(), factors.end());
     }
 };
 

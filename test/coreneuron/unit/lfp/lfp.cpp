@@ -139,7 +139,7 @@ TEST_CASE("LFP_ReportEvent") {
 
     auto c42 = mapinfo->get_cell_mapping(42);
     auto c134 = mapinfo->get_cell_mapping(134);
-    REQUIRE(c42->lfp_factors.size() == 5);
+    REQUIRE(c42->lfp_segment_ids.size() == 5);
     REQUIRE(c134->num_electrodes() == 2);
 
     // Pass _lfp variable to vars_to_report

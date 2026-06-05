@@ -85,24 +85,24 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
         int gid = kv.first;
         const auto& to_report = kv.second;
         const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
-        int num_electrodes = cell_mapping->num_electrodes();
-        std::vector<double> lfp_values(num_electrodes, 0.0);
-        for (const auto& kv: cell_mapping->lfp_factors) {
-            int segment_id = kv.first;
-            const auto& factors = kv.second;
-            int electrode_id = 0;
-            for (const auto& factor: factors) {
-                double iclamp = 0.0;
-                for (const auto& value: summation_report.currents_[segment_id]) {
-                    double current_value = *value.first;
-                    int scale = value.second;
-                    iclamp += current_value * scale;
-                }
-                lfp_values[electrode_id] += (fast_imem_rhs[segment_id] + iclamp) * factor;
-                electrode_id++;
+        const int n_electrodes = cell_mapping->num_electrodes();
+        const int n_segments = static_cast<int>(cell_mapping->lfp_segment_ids.size());
+        std::vector<double> lfp_values(n_electrodes, 0.0);
+        for (int i = 0; i < n_segments; i++) {
+            int segment_id = cell_mapping->lfp_segment_ids[i];
+            const double* factors = &cell_mapping->lfp_factors_flat[i * n_electrodes];
+            double iclamp = 0.0;
+            for (const auto& value: summation_report.currents_[segment_id]) {
+                double current_value = *value.first;
+                int scale = value.second;
+                iclamp += current_value * scale;
+            }
+            double imem = fast_imem_rhs[segment_id] + iclamp;
+            for (int e = 0; e < n_electrodes; e++) {
+                lfp_values[e] += imem * factors[e];
             }
         }
-        for (int i = 0; i < to_report.size(); i++) {
+        for (size_t i = 0; i < to_report.size(); i++) {
             *(to_report[i].var_value) = lfp_values[i];
         }
     }
