@@ -129,18 +129,18 @@ TEST_CASE("LFP_ReportEvent") {
     for (const auto& gid: gids) {
         auto cmap = std::make_shared<CellMapping>(gid);
         mapinfo->add_cell_mapping(cmap);
+        cmap->electrode_offsets = {0, 2};
         for (const auto& segment: segment_ids) {
             std::vector<double> lfp_factors{segment + 1.0, segment + 2.0};
-            cmap->add_segment_lfp_factor(segment, lfp_factors);
+            cmap->add_segment_lfp_factor(segment, lfp_factors.begin(), lfp_factors.end());
         }
-        cmap->electrode_offsets = {0, 2};
     }
     mapinfo->prepare_lfp();
     // Total number of electrodes 2 gids * 2 factors
 
     auto c42 = mapinfo->get_cell_mapping(42);
     auto c134 = mapinfo->get_cell_mapping(134);
-    REQUIRE(c42->lfp_factors.size() == 5);
+    REQUIRE(c42->lfp_segment_ids.size() == 5);
     REQUIRE(c134->num_electrodes() == 2);
 
     // Property tests for num_electrodes() derivation from electrode_offsets

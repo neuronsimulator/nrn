@@ -172,10 +172,8 @@ class FileHandler {
                     nrn_assert(count_if(lfp_factors.begin(), lfp_factors.end(), [](double d) {
                                    return std::isnan(d);
                                }) == 0);
-                    std::vector<double> segment_factors(lfp_factors.begin() + factor_offset,
-                                                        lfp_factors.begin() + factor_offset +
-                                                            num_electrodes);
-                    cmap->add_segment_lfp_factor(seg[i], segment_factors);
+                    auto begin = lfp_factors.begin() + i * num_electrodes;
+                    cmap->add_segment_lfp_factor(seg[i], begin, begin + num_electrodes);
                 }
             }
         }
