@@ -144,20 +144,16 @@ class FileHandler {
                 lfp_factors = read_vector<double>(total_lfp_factors);
             }
 
-            int factor_offset = 0;
             for (int i = 0; i < nseg; i++) {
                 mapinfo->add_segment(sec[i], seg[i]);
                 ntmapping->add_segment_id(seg[i]);
-                int factor_offset = i * num_electrodes;
                 if (total_lfp_factors > 0) {
                     // Abort if the factors contains a NaN
                     nrn_assert(count_if(lfp_factors.begin(), lfp_factors.end(), [](double d) {
                                    return std::isnan(d);
                                }) == 0);
-                    std::vector<double> segment_factors(lfp_factors.begin() + factor_offset,
-                                                        lfp_factors.begin() + factor_offset +
-                                                            num_electrodes);
-                    cmap->add_segment_lfp_factor(seg[i], segment_factors);
+                    auto begin = lfp_factors.begin() + i * num_electrodes;
+                    cmap->add_segment_lfp_factor(seg[i], begin, begin + num_electrodes);
                 }
             }
         }
