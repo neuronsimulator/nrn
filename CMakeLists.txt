@@ -42,7 +42,9 @@ endif()
 # customizable install path to Python components. Mostly useful for Spack & venv builds
 set(NRN_INSTALL_PYTHON_PREFIX
     "lib/python/neuron/"
-    CACHE STRING "Path where NEURON Python components will be installed")
+    CACHE STRING
+          "Path where NEURON Python components will be installed (relative to CMAKE_INSTALL_PREFIX)"
+)
 
 # if we're building a wheel, we have a different layout of files
 if(SKBUILD)
