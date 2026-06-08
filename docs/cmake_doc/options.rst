@@ -308,19 +308,27 @@ NRN_ENABLE_PYTHON:BOOL=ON
 
 NRN_INSTALL_PYTHON_PREFIX:STRING="lib/python/neuron/"
 -----------------------------------------------------
-  Path where NEURON Python components will be installed
-
-  This option is ignored when building a wheel, in which case the value is forced to "neuron/"
+  Path where NEURON Python components will be installed, relative to CMAKE_INSTALL_PREFIX. Must end with a directory named "neuron"
 
   Environment variable PYTHONPATH must contain the real path to NRN_INSTALL_PYTHON_PREFIX in order for python to find neuron.
 
-  Note: To find python's default install directory for user packages, run the command:
+  This path must end with a directory named "neuron"
+
+  For venv's, configure cmake with:
 
   .. code-block:: shell
 
-    python -m site --user-site
+    -DCMAKE_INSTALL_PREFIX=$(python -c "import sysconfig; print(sysconfig.get_path('data', 'venv'))") \
+    -DNRN_INSTALL_PYTHON_PREFIX=$(python -c "import sysconfig; print(sysconfig.get_path('platlib', 'venv') + '/neuron')")
 
-  Note: Non-standard installations (such as python virtual environments) have non-standard install paths.
+  To install to your home directory, configure cmake with:
+
+  .. code-block:: shell
+
+    -DCMAKE_INSTALL_PREFIX=$(python3 -m site --user-base) \
+    -DNRN_INSTALL_PYTHON_PREFIX=$(python3 -m site --user-site)/neuron
+
+  This option is ignored when building a wheel, in which case the value is forced to "neuron/"
 
 .. _cmake_nrn_enable_python_dynamic:
 NRN_ENABLE_PYTHON_DYNAMIC:BOOL=OFF
