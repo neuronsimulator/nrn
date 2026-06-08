@@ -7,6 +7,9 @@
 */
 
 #include "report_event.hpp"
+
+#include <numeric>
+
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/io/reports/nrnreport.hpp"
 #include "coreneuron/utils/nrn_assert.h"
@@ -77,6 +80,12 @@ void ReportEvent::summation_alu(NrnThread* nt) {
     }
 }
 
+/** @brief Compute Local Field Potentials (LFP) for each cell.
+ *
+ * For every segment of a cell, computes the total membrane current (imem + iclamp)
+ * and accumulates the weighted contribution to each electrode using precomputed
+ * transfer factors. Results are written into the report output buffers.
+ */
 void ReportEvent::lfp_calc(NrnThread* nt) {
     auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt->mapping);
     double* fast_imem_rhs = nt->nrn_fast_imem->nrn_sav_rhs;
@@ -92,12 +101,13 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
             const auto segment_id = cell_mapping->lfp_segment_ids[i];
 
             // compute iclamp + imem
-            double iclamp = 0.0;
-            for (const auto& value: summation_report.currents_[segment_id]) {
-                double current_value = *value.first;
-                int scale = value.second;
-                iclamp += current_value * scale;
-            }
+            double iclamp = std::accumulate(
+                summation_report.currents_[segment_id].begin(),
+                summation_report.currents_[segment_id].end(),
+                0.0,
+                [](double sum, const auto& value) {
+                    return sum + *value.first * value.second;
+                });
             const double imem = fast_imem_rhs[segment_id] + iclamp;
 
             // dot product with the factors
@@ -106,6 +116,8 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
                 lfp_values[e] += imem * factors[e];
             }
         }
+
+        // write LFP values to report output buffers
         for (size_t e = 0; e < electrode_outputs.size(); e++) {
             *(electrode_outputs[e].var_value) = lfp_values[e];
         }
