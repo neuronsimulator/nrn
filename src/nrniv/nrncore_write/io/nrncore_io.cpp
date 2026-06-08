@@ -583,13 +583,8 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
             const int n_electrodes = electrode_offsets.empty() ? 0 : electrode_offsets.back();
             /** section list name, number of sections, number of segments,
              *  total lfp factors, num_electrodes [, offset_count, offsets...] */
-            fprintf(f,
-                    "%s %d %d %zd %d",
-                    sclname.c_str(),
-                    nsec,
-                    nseg,
-                    total_lfp_factors,
-                    n_electrodes);
+            fprintf(
+                f, "%s %d %d %zd %d", sclname.c_str(), nsec, nseg, total_lfp_factors, n_electrodes);
             if (electrode_offsets.size() > 2) {
                 // Multi-report: append offset_count and offsets inline
                 fprintf(f, " %d", static_cast<int>(electrode_offsets.size()));

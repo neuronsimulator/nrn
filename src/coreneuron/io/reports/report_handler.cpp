@@ -688,8 +688,11 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
         }
         case ReportType::LFP: {
             mapinfo->prepare_lfp();
-            vars_to_report =
-                get_lfp_vars_to_report(nt, intersection_ids, report_config, mapinfo->_lfp.data(), report_config.lfp_report_index);
+            vars_to_report = get_lfp_vars_to_report(nt,
+                                                    intersection_ids,
+                                                    report_config,
+                                                    mapinfo->_lfp.data(),
+                                                    report_config.lfp_report_index);
             register_section_report(nt, report_config, vars_to_report, is_soma_target);
             break;
         }

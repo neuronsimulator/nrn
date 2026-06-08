@@ -116,7 +116,9 @@ void nrnbbcore_register_mapping() {
         const int n = vector_capacity(offsets_vec);
         const double* vals = vector_vec(offsets_vec);
         electrode_offsets.resize(n);
-        std::transform(vals, vals + n, electrode_offsets.begin(), [](double v) { return static_cast<int>(v); });
+        std::transform(vals, vals + n, electrode_offsets.begin(), [](double v) {
+            return static_cast<int>(v);
+        });
         validate_electrode_offsets(electrode_offsets);
     }
 
