@@ -131,7 +131,7 @@ TEST_CASE("LFP_ReportEvent") {
         mapinfo->add_cell_mapping(cmap);
         for (const auto& segment: segment_ids) {
             std::vector<double> lfp_factors{segment + 1.0, segment + 2.0};
-            cmap->add_segment_lfp_factor(segment, lfp_factors);
+            cmap->add_segment_lfp_factor(segment, lfp_factors.begin(), lfp_factors.end());
         }
     }
     mapinfo->prepare_lfp();

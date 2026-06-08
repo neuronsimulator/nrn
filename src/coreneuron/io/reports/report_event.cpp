@@ -100,14 +100,13 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
         for (size_t i = 0; i < n_segments; i++) {
             const auto segment_id = cell_mapping->lfp_segment_ids[i];
 
-            // compute iclamp + imem
-            double iclamp = std::accumulate(summation_report.currents_[segment_id].begin(),
-                                            summation_report.currents_[segment_id].end(),
-                                            0.0,
-                                            [](double sum, const auto& value) {
-                                                return sum + *value.first * value.second;
-                                            });
-            const double imem = fast_imem_rhs[segment_id] + iclamp;
+            // compute imem + iclamp
+            const double imem = std::accumulate(summation_report.currents_[segment_id].begin(),
+                                                summation_report.currents_[segment_id].end(),
+                                                fast_imem_rhs[segment_id],
+                                                [](double sum, const auto& value) {
+                                                    return sum + *value.first * value.second;
+                                                });
 
             // dot product with the factors
             const double* factors = &cell_mapping->lfp_factors_flat[i * n_electrodes];

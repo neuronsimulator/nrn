@@ -148,8 +148,10 @@ struct CellMapping {
     }
 
     /** @brief add the lfp electrode factors of a segment_id */
-    void add_segment_lfp_factor(const int segment_id, const std::vector<double>& factors) {
-        const size_t n = factors.size();
+    void add_segment_lfp_factor(const int segment_id,
+                                std::vector<double>::const_iterator begin,
+                                std::vector<double>::const_iterator end) {
+        const size_t n = std::distance(begin, end);
         if (n == 0) {
             return;
         }
@@ -157,7 +159,7 @@ struct CellMapping {
         // All segments must have the same number of electrode factors
         nrn_assert(curr_n_electrodes == 0 || n == curr_n_electrodes);
         lfp_segment_ids.push_back(segment_id);
-        lfp_factors_flat.insert(lfp_factors_flat.end(), factors.begin(), factors.end());
+        lfp_factors_flat.insert(lfp_factors_flat.end(), begin, end);
     }
 };
 
