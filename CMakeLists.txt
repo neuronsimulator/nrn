@@ -949,21 +949,42 @@ add_custom_target(
   COMMAND ${PROJECT_SOURCE_DIR}/external/coding-conventions/bin/format
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
-# Prepare a shell script to format only files modified with respect to master branch
+# Prepare a shell script to format only files modified with respect to master/main branch that still
+# exist on disk (filters out deleted files).
 file(
   WRITE ${CMAKE_CURRENT_BINARY_DIR}/format-pr.sh
-  "\
-#!bash\n\
-set -e\n\
-cmd='cd ${PROJECT_SOURCE_DIR} && external/coding-conventions/bin/format `git diff --name-only master`'\n\
-echo $cmd\n\
-cd ${PROJECT_SOURCE_DIR} && external/coding-conventions/bin/format `git diff --name-only master`\n\
+  "#!/bin/bash
+set -euo pipefail
+
+# Try 'main' first, then fall back to 'master'
+for base in main master; do
+    if git rev-parse --verify \"\$base\" >/dev/null 2>&1; then
+        BASE_BRANCH=\"\$base\"
+        break
+    fi
+done
+
+if [ -z \"\${BASE_BRANCH:-}\" ]; then
+    echo \"Error: Neither 'main' nor 'master' branch found.\" >&2
+    exit 1
+fi
+
+echo \"Formatting changes vs '\$BASE_BRANCH' (existing files only)...\" >&2
+
+# Get changed files, but only pass files that still exist
+git diff --name-only \"\$BASE_BRANCH\" | \\
+while read -r file; do
+    if [ -e \"\$file\" ]; then
+        printf '%s\\n' \"\$file\"
+    fi
+done | \\
+xargs --no-run-if-empty external/coding-conventions/bin/format \"\$@\"
 ")
 
 add_custom_target(
   format-pr
   COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/format-pr.sh
-  COMMENT "Format only files modified with respect to master branch."
+  COMMENT "Format only files modified with respect to main/master (existing files only)"
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 # =============================================================================
