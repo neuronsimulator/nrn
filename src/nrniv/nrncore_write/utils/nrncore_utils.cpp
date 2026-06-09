@@ -109,17 +109,33 @@ void nrnbbcore_register_mapping() {
     Vect* seg = vector_arg(4);
     Vect* lfp = ifarg(5) ? vector_arg(5) : new Vect();
 
-    // Argument 6: electrode offsets vector (CSR-style partial sums, e.g. [0, N])
+    // Argument 6: either a scalar num_electrodes (legacy) or a Vector of
+    // electrode offsets (CSR-style partial sums, e.g. [0, N]).
+    // Legacy callers pass a double; new callers pass a Vector directly.
+    // If a scalar is provided, we assume a single report and synthesize
+    // offsets as [0, num_electrodes].
+    // Future expansion: additional arguments can be appended after arg 6.
     std::vector<int> electrode_offsets;
     if (ifarg(6)) {
-        Vect* offsets_vec = vector_arg(6);
-        const int n = vector_capacity(offsets_vec);
-        const double* vals = vector_vec(offsets_vec);
-        electrode_offsets.resize(n);
-        std::transform(vals, vals + n, electrode_offsets.begin(), [](double v) {
-            return static_cast<int>(v);
-        });
-        validate_electrode_offsets(electrode_offsets);
+        if (hoc_is_double_arg(6)) {
+            // Legacy API: scalar num_electrodes (assumes single report)
+            int num_electrodes = static_cast<int>(*hoc_getarg(6));
+            if (num_electrodes > 0) {
+                electrode_offsets = {0, num_electrodes};
+            }
+        } else {
+            // New API: Vector of offsets passed directly
+            Vect* offsets_vec = vector_arg(6);
+            const int n = vector_capacity(offsets_vec);
+            const double* vals = vector_vec(offsets_vec);
+            electrode_offsets.resize(n);
+            std::transform(vals, vals + n, electrode_offsets.begin(), [](double v) {
+                return static_cast<int>(v);
+            });
+        }
+        if (!electrode_offsets.empty()) {
+            validate_electrode_offsets(electrode_offsets);
+        }
     }
 
     double* sections = vector_vec(sec);
