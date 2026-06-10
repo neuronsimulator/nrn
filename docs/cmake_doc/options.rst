@@ -309,9 +309,9 @@ NRN_ENABLE_PYTHON:BOOL=ON
 NRN_INSTALL_PYTHON_PREFIX:STRING="lib/python/neuron/"
 -----------------------------------------------------
   Path where NEURON Python components will be installed, relative to
-  CMAKE_INSTALL_PREFIX. Must end with a directory named "neuron".
-  Environment variable PYTHONPATH must contain the real path to
-  NRN_INSTALL_PYTHON_PREFIX in order for python to find neuron.
+  ``CMAKE_INSTALL_PREFIX``. Must end with a directory named "neuron".
+  Environment variable ``PYTHONPATH`` must contain the real path to
+  ``NRN_INSTALL_PYTHON_PREFIX`` in order for python to find neuron.
 
   For venv's, configure cmake with:
 
