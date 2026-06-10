@@ -905,9 +905,10 @@ Functions, objects, and the stack
         
         // Create current clamp at soma
         Symbol* iclamp_sym = nrn_symbol("IClamp");
-        nrn_object_push((Object*)soma);  // Push soma as object
+        nrn_section_push(soma);          // specify the section separately
         nrn_double_push(0.0);            // Push location (0.0)
         Object* iclamp = nrn_object_new(iclamp_sym, 2);
+        nrn_section_pop();
 
     **Python Equivalent:**
     
@@ -1966,8 +1967,10 @@ Here we stimulate the cell with a :class:`IClamp` at time 1 ms.
         nrn_mechanism_insert(soma, nrn_symbol("hh"));
 
         // current clamp at soma(0.5)
+        nrn_section_push(soma);          // specify the section separately
         nrn_double_push(0.5);
         Object* iclamp = nrn_object_new(nrn_symbol("IClamp"), 1);
+        nrn_section_pop();
         for (const auto& [property, value] : {pair{"amp", 0.3}, pair{"del", 1.0}, pair{"dur", 0.1}}) {
             nrn_property_set(iclamp, property, value);
         }
