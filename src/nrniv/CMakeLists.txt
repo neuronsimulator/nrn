@@ -220,8 +220,7 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_BINARY_DIR}/src/nrnpython
     ${PROJECT_BINARY_DIR}/src/oc
     ${PROJECT_BINARY_DIR}/src/parallel
-    ${PROJECT_BINARY_DIR}/src/sundials
-    ${PROJECT_BINARY_DIR}/src/sundials/shared
+    ${PROJECT_SOURCE_DIR}/external/Random123/include
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/src/gnu
     ${PROJECT_SOURCE_DIR}/src/nrncvode
@@ -230,11 +229,7 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}/src/parallel
     ${PROJECT_SOURCE_DIR}/src/scopmath
     ${PROJECT_SOURCE_DIR}/src/sparse
-    ${PROJECT_SOURCE_DIR}/src/sparse13
-    ${PROJECT_SOURCE_DIR}/src/sundials
-    ${PROJECT_SOURCE_DIR}/src/sundials/cvodes
-    ${PROJECT_SOURCE_DIR}/src/sundials/ida
-    ${PROJECT_SOURCE_DIR}/src/sundials/shared)
+    ${PROJECT_SOURCE_DIR}/src/sparse13)
 
 if(NRN_ENABLE_MUSIC)
   list(APPEND NRN_INCLUDE_DIRS ${NRN_MUSIC_SRC_DIR})
@@ -247,9 +242,6 @@ set(NRN_INCLUDE_DIRS
 # =============================================================================
 # Helper commands : generate various headers
 # =============================================================================
-
-# avoid error with nvector_serial.cpp for #include <../../../nrnconf.h>
-file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 
 # generate hocusr.h
 add_custom_command(
@@ -460,6 +452,14 @@ endif()
 if(NRN_ENABLE_PROFILING)
   target_link_libraries(nrniv_lib PRIVATE ${likwid_LIBRARIES} ${CALIPER_LIB} ${LIKWID_LIB})
 endif()
+find_package(SUNDIALS REQUIRED)
+add_dependencies(nrniv_lib SUNDIALS)
+target_link_libraries(
+  nrniv_lib
+  PRIVATE ${SUNDIALS_LIB_DIR}/libsundials_ida.a ${SUNDIALS_LIB_DIR}/libsundials_cvode.a
+          ${SUNDIALS_LIB_DIR}/libsundials_nvecpthreads.a
+          ${SUNDIALS_LIB_DIR}/libsundials_nvecserial.a)
+target_include_directories(nrniv_lib PRIVATE $<BUILD_INTERFACE:${SUNDIALS_INCLUDE_DIR}>)
 
 set_target_properties(nrniv_lib PROPERTIES EXPORT_NAME nrniv OUTPUT_NAME nrniv)
 target_compile_features(nrniv_lib PUBLIC cxx_std_17)

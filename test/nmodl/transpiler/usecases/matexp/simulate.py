@@ -6,6 +6,7 @@ This simulates two formulations of the same Hodgkin-Huxley model.
 * A modified HH model solved by MATEXP, where each gate (M, H, N) is replaced by
   an equivalent two state Markov model.
 """
+
 import numpy as np
 
 from neuron import gui, h
