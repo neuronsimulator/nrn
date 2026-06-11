@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <cmath>
 #include <sys/stat.h>
@@ -118,18 +119,37 @@ class FileHandler {
                           NrnThreadMappingInfo* ntmapping,
                           std::shared_ptr<CellMapping> cmap,
                           const NrnThread& nt) {
-        int nsec, nseg, n_scan;
-        size_t total_lfp_factors;
-        int num_electrodes;
-        char line_buf[max_line_length], name[max_line_length];
+        std::string line;
+        std::getline(F, line);
 
-        F.getline(line_buf, sizeof(line_buf));
-        n_scan = sscanf(
-            line_buf, "%s %d %d %zd %d", name, &nsec, &nseg, &total_lfp_factors, &num_electrodes);
+        std::istringstream iss(line);
+        std::string name_str;
+        int nsec = 0;
+        int nseg = 0;
+        int num_electrodes = 0;
+        size_t total_lfp_factors = 0;
+        iss >> name_str >> nsec >> nseg >> total_lfp_factors >> num_electrodes;
+        nrn_assert(!iss.fail());
 
-        nrn_assert(n_scan == 5);
+        // Optional 6th field: offset_count, followed by offset values
+        int offset_count = 0;
+        if (iss >> offset_count) {
+            // 6th field present
+            nrn_assert(offset_count > 0 || num_electrodes == 0);
+            if (offset_count > 0) {
+                cmap->electrode_offsets.resize(offset_count);
+                for (int k = 0; k < offset_count; k++) {
+                    iss >> cmap->electrode_offsets[k];
+                }
+                nrn_assert(!iss.fail());
+                nrn_assert(cmap->electrode_offsets.back() == num_electrodes);
+            }
+        } else if (num_electrodes > 0) {
+            // Old format (no 6th field): synthesize offsets
+            cmap->electrode_offsets = {0, num_electrodes};
+        }
 
-        mapinfo->type = section_type_from_string(name);
+        mapinfo->type = section_type_from_string(name_str);
 
         if (nseg) {
             auto sec = read_vector<int>(nseg);
@@ -148,7 +168,7 @@ class FileHandler {
                 mapinfo->add_segment(sec[i], seg[i]);
                 ntmapping->add_segment_id(seg[i]);
                 if (total_lfp_factors > 0) {
-                    // Abort if the factors contains a NaN
+                    int factor_offset = i * num_electrodes;
                     nrn_assert(count_if(lfp_factors.begin(), lfp_factors.end(), [](double d) {
                                    return std::isnan(d);
                                }) == 0);

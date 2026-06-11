@@ -80,6 +80,10 @@ struct CellMapping {
     /** flat array of lfp factors: stride = num_electrodes, indexed as [i * stride + e] */
     std::vector<double> lfp_factors_flat;
 
+    /** Electrode offsets as partial sums (CSR-style).
+     *  For a single report with N electrodes: [0, N]. Empty if no electrodes. */
+    std::vector<int> electrode_offsets;
+
     CellMapping(int g)
         : gid(g) {}
 
@@ -103,9 +107,9 @@ struct CellMapping {
                                });
     }
 
-    /** @brief return the number of electrodes per segment **/
+    /** @brief return the total number of electrodes (derived from offsets) **/
     size_t num_electrodes() const {
-        return lfp_segment_ids.empty() ? 0 : lfp_factors_flat.size() / lfp_segment_ids.size();
+        return electrode_offsets.empty() ? 0 : static_cast<size_t>(electrode_offsets.back());
     }
 
     /** @brief number of section lists */

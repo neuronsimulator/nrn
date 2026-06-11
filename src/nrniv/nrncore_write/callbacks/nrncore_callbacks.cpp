@@ -249,7 +249,7 @@ void nrnthread_dat3_secmapping(int i_c,
                                int& nsec,
                                int& nseg,
                                size_t& total_lfp_factors,
-                               int& n_electrodes,
+                               std::vector<int>& electrode_offsets,
                                std::vector<int>& data_sec,
                                std::vector<int>& data_seg,
                                std::vector<double>& data_lfp) {
@@ -259,7 +259,7 @@ void nrnthread_dat3_secmapping(int i_c,
     nsec = s->nsec;
     nseg = s->size();
     total_lfp_factors = s->seglfp_factors.size();
-    n_electrodes = s->num_electrodes;
+    electrode_offsets = s->electrode_offsets;
     data_sec = s->sections;
     data_seg = s->segments;
     data_lfp = s->seglfp_factors;

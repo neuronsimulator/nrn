@@ -598,7 +598,8 @@ static VarsToReport get_synapse_vars_to_report(const NrnThread& nt,
 static VarsToReport get_lfp_vars_to_report(const NrnThread& nt,
                                            const std::vector<int>& intersection_ids,
                                            ReportConfiguration& report,
-                                           double* report_variable) {
+                                           double* report_variable,
+                                           int lfp_report_index) {
     const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
     if (!mapinfo) {
         std::cerr << "[ERROR] : LFP report mapping information is missing for a Cell group "
@@ -617,8 +618,14 @@ static VarsToReport get_lfp_vars_to_report(const NrnThread& nt,
             nrn_abort(1);
         }
         std::vector<VarWithMapping> to_report;
-        int num_electrodes = cell_mapping->num_electrodes();
-        for (int electrode_id = 0; electrode_id < num_electrodes; electrode_id++) {
+        const auto& offsets = cell_mapping->electrode_offsets;
+        int start = 0;
+        int end = cell_mapping->num_electrodes();
+        if (static_cast<int>(offsets.size()) > lfp_report_index + 1) {
+            start = offsets[lfp_report_index];
+            end = offsets[lfp_report_index + 1];
+        }
+        for (int electrode_id = start; electrode_id < end; electrode_id++) {
             to_report.emplace_back(VarWithMapping(electrode_id, report_variable + offset_lfp));
             offset_lfp++;
         }
@@ -681,8 +688,11 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
         }
         case ReportType::LFP: {
             mapinfo->prepare_lfp();
-            vars_to_report =
-                get_lfp_vars_to_report(nt, intersection_ids, report_config, mapinfo->_lfp.data());
+            vars_to_report = get_lfp_vars_to_report(nt,
+                                                    intersection_ids,
+                                                    report_config,
+                                                    mapinfo->_lfp.data(),
+                                                    report_config.lfp_report_index);
             register_section_report(nt, report_config, vars_to_report, is_soma_target);
             break;
         }

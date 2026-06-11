@@ -565,7 +565,7 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
             std::string sclname;
             int nsec;
             int nseg;
-            int n_electrodes;
+            std::vector<int> electrode_offsets;
             size_t total_lfp_factors;
             std::vector<int> data_sec;
             std::vector<int> data_seg;
@@ -576,18 +576,23 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
                                       nsec,
                                       nseg,
                                       total_lfp_factors,
-                                      n_electrodes,
+                                      electrode_offsets,
                                       data_sec,
                                       data_seg,
                                       data_lfp);
-            /** section list name, number of sections, number of segments */
-            fprintf(f,
-                    "%s %d %d %zd %d\n",
-                    sclname.c_str(),
-                    nsec,
-                    nseg,
-                    total_lfp_factors,
-                    n_electrodes);
+            const int n_electrodes = electrode_offsets.empty() ? 0 : electrode_offsets.back();
+            /** section list name, number of sections, number of segments,
+             *  total lfp factors, num_electrodes [, offset_count, offsets...] */
+            fprintf(
+                f, "%s %d %d %zd %d", sclname.c_str(), nsec, nseg, total_lfp_factors, n_electrodes);
+            if (electrode_offsets.size() > 2) {
+                // Multi-report: append offset_count and offsets inline
+                fprintf(f, " %d", static_cast<int>(electrode_offsets.size()));
+                for (int off: electrode_offsets) {
+                    fprintf(f, " %d", off);
+                }
+            }
+            fprintf(f, "\n");
 
             /** section - segment mapping */
             if (nseg) {
