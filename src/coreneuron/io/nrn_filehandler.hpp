@@ -35,7 +35,8 @@ const int max_line_length = 1024;
 
 class FileHandler {
     std::fstream F;                        //!< File stream associated with reader.
-    std::ios_base::openmode current_mode;  //!< File open mode (not stored in fstream)
+    std::string current_filename;          //!< Filename associated with the file stream.
+    std::ios_base::openmode current_mode;  //!< File open mode (not stored in fstream).
     int chkpnt;                            //!< Current checkpoint number state.
     int stored_chkpnt;                     //!< last "remembered" checkpoint number state.
     /** Read a checkpoint line, bump our chkpnt counter, and assert equality.
