@@ -30,8 +30,8 @@ namespace fs = std::filesystem;
 static char nmodl_version_[] = "7.7.0";
 
 static char banner[] =
-    "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2022\n\
-See http://neuron.yale.edu/neuron/credits\n";
+    "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2026\n\
+See https://github.com/neuronsimulator/nrn/graphs/contributors?all=1\n";
 
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
 extern const char* nrn_mech_dll;      /* declared in hoc_init.cpp so ivocmain.cpp can see it */
