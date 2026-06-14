@@ -167,7 +167,7 @@ static char* pysec_name(Section* sec) {
         }
         return buf;
     }
-    return 0;
+    return nullptr;
 }
 
 static Object* pysec_cell(Section* sec) {
@@ -200,7 +200,7 @@ static Object* pysec_cell(Section* sec) {
 #endif
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 static int NpySObj_contains(PyObject* s, PyObject* obj, const char* string) {
@@ -404,25 +404,25 @@ static void NPyVarOfMechIter_dealloc_safe(NPyVarOfMechIter* self) {
 
 static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
     // printf("NPySecObj_init %p %p\n", self, self->sec_);
-    static const char* kwlist[] = {"name", "cell", NULL};
-    if (self != NULL && !self->sec_) {
+    static const char* kwlist[] = {"name", "cell", nullptr};
+    if (self && !self->sec_) {
         delete[] self->name_;
-        self->name_ = 0;
-        self->cell_weakref_ = 0;
-        char* name = 0;
-        PyObject* cell = 0;
+        self->name_ = nullptr;
+        self->cell_weakref_ = nullptr;
+        char* name = nullptr;
+        PyObject* cell = nullptr;
         // avoid "warning: deprecated conversion from string constant to char*"
         // someday eliminate the (char**) when python changes their prototype
         if (!PyArg_ParseTupleAndKeywords(args, kwds, "|sO", (char**) kwlist, &name, &cell)) {
             return -1;
         }
         if (cell && cell != Py_None) {
-            self->cell_weakref_ = PyWeakref_NewRef(cell, NULL);
+            self->cell_weakref_ = PyWeakref_NewRef(cell, nullptr);
             if (!self->cell_weakref_) {
                 return -1;
             }
         } else {
-            cell = 0;
+            cell = nullptr;
         }
         if (name) {
             size_t n = strlen(name) + 1;  // include terminator
@@ -464,7 +464,7 @@ static int NPySecObj_init_safe(NPySecObj* self, PyObject* args, PyObject* kwds) 
 static int NPyAllSegOfSecIter_init(NPyAllSegOfSecIter* self, PyObject* args, PyObject* /* kwds */) {
     NPySecObj* pysec;
     // printf("NPyAllSegOfSecIter_init %p %p\n", self, self->sec_);
-    if (self != NULL && !self->pysec_) {
+    if (self && !self->pysec_) {
         if (!PyArg_ParseTuple(args, "O!", psection_type, &pysec)) {
             return -1;
         }
@@ -521,19 +521,19 @@ static PyObject* NPySegObj_new(PyTypeObject* type, PyObject* args, PyObject* /* 
     NPySecObj* pysec;
     double x;
     if (!PyArg_ParseTuple(args, "O!d", psection_type, &pysec, &x)) {
-        return NULL;
+        return nullptr;
     }
     if (x > 1.0 && x < 1.0001) {
         x = 1.0;
     }
     if (x < 0. || x > 1.0) {
         PyErr_SetString(PyExc_ValueError, "segment position range is 0 <= x <= 1");
-        return NULL;
+        return nullptr;
     }
     NPySegObj* self;
     self = (NPySegObj*) type->tp_alloc(type, 0);
     // printf("NPySegObj_new %p\n", self);
-    if (self != NULL) {
+    if (self) {
         Py_INCREF(pysec);
         self->pysec_ = pysec;
         self->x_ = x;
@@ -548,13 +548,13 @@ static PyObject* NPySegObj_new_safe(PyTypeObject* type, PyObject* args, PyObject
 static PyObject* NPyMechObj_new(PyTypeObject* type, PyObject* args, PyObject* /* kwds */) {
     NPySegObj* pyseg;
     if (!PyArg_ParseTuple(args, "O!", psegment_type, &pyseg)) {
-        return NULL;
+        return nullptr;
     }
     NPyMechObj* self;
     self = (NPyMechObj*) type->tp_alloc(type, 0);
     // printf("NPyMechObj_new %p %s\n", self,
     // ((PyObject*)self)->ob_type->tp_name);
-    if (self != NULL) {
+    if (self) {
         new (self) NPyMechObj;
         Py_INCREF(pyseg);
         self->pyseg_ = pyseg;
@@ -578,9 +578,9 @@ static int NPySegObj_contains_safe(PyObject* segment, PyObject* obj) {
 static PyObject* NPyRangeVar_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
     NPyRangeVar* self;
     self = (NPyRangeVar*) type->tp_alloc(type, 0);
-    if (self != NULL) {
-        self->pymech_ = NULL;
-        self->sym_ = NULL;
+    if (self) {
+        self->pymech_ = nullptr;
+        self->sym_ = nullptr;
         self->isptr_ = 0;
         self->attr_from_sec_ = 0;
     }
@@ -611,11 +611,11 @@ static int ob_is_seg(Object* o) {
 
 static Section* o2sec(Object* o) {
     if (o->ctemplate->sym != nrnpy_pyobj_sym_) {
-        hoc_execerror("not a Python nrn.Section", 0);
+        hoc_execerror("not a Python nrn.Section", nullptr);
     }
     PyObject* po = nrnpy_hoc2pyobject(o);
     if (!PyObject_TypeCheck(po, psection_type)) {
-        hoc_execerror("not a Python nrn.Section", 0);
+        hoc_execerror("not a Python nrn.Section", nullptr);
     }
     auto* pysec = (NPySecObj*) po;
     return pysec->sec_;
@@ -623,11 +623,11 @@ static Section* o2sec(Object* o) {
 
 static void o2loc(Object* o, Section** psec, double* px) {
     if (o->ctemplate->sym != nrnpy_pyobj_sym_) {
-        hoc_execerror("not a Python nrn.Segment", 0);
+        hoc_execerror("not a Python nrn.Segment", nullptr);
     }
     PyObject* po = nrnpy_hoc2pyobject(o);
     if (!PyObject_TypeCheck(po, psegment_type)) {
-        hoc_execerror("not a Python nrn.Segment", 0);
+        hoc_execerror("not a Python nrn.Segment", nullptr);
     }
     auto* pyseg = (NPySegObj*) po;
     *psec = pyseg->pysec_->sec_;
@@ -642,7 +642,7 @@ inline nb::object obj_get_segment(nb::object py_obj) {
     if (PyList_Check(py_obj.ptr())) {
         nb::list obj_list{std::move(py_obj)};
         if (obj_list.size() != 1) {
-            hoc_execerror("If a list is supplied, it must be of length 1", 0);
+            hoc_execerror("If a list is supplied, it must be of length 1", nullptr);
         }
         py_obj = obj_list[0];
     }
@@ -883,8 +883,8 @@ static Pt3d* get_pt3d_from_python_args(NPySecObj* self, PyObject* args) {
 static PyObject* NPySecObj_x3d(NPySecObj* self,
                                PyObject* args) {  // returns x value at index of 3d list
     Pt3d* pt3d = get_pt3d_from_python_args(self, args);
-    if (pt3d == NULL) {
-        return NULL;
+    if (!pt3d) {
+        return nullptr;
     }
     return PyFloat_FromDouble((double) pt3d->x);
 }
@@ -896,8 +896,8 @@ static PyObject* NPySecObj_x3d_safe(NPySecObj* self, PyObject* args) {
 static PyObject* NPySecObj_y3d(NPySecObj* self,
                                PyObject* args) {  // returns y value at index of 3d list
     Pt3d* pt3d = get_pt3d_from_python_args(self, args);
-    if (pt3d == NULL) {
-        return NULL;
+    if (!pt3d) {
+        return nullptr;
     }
     return PyFloat_FromDouble((double) pt3d->y);
 }
@@ -909,8 +909,8 @@ static PyObject* NPySecObj_y3d_safe(NPySecObj* self, PyObject* args) {
 static PyObject* NPySecObj_z3d(NPySecObj* self,
                                PyObject* args) {  // returns z value at index of 3d list
     Pt3d* pt3d = get_pt3d_from_python_args(self, args);
-    if (pt3d == NULL) {
-        return NULL;
+    if (!pt3d) {
+        return nullptr;
     }
     return PyFloat_FromDouble((double) pt3d->z);
 }
@@ -922,8 +922,8 @@ static PyObject* NPySecObj_z3d_safe(NPySecObj* self, PyObject* args) {
 // returns arc position value at index of 3d list
 static PyObject* NPySecObj_arc3d(NPySecObj* self, PyObject* args) {
     Pt3d* pt3d = get_pt3d_from_python_args(self, args);
-    if (pt3d == NULL) {
-        return NULL;
+    if (!pt3d) {
+        return nullptr;
     }
     return PyFloat_FromDouble((double) pt3d->arc);
 }
@@ -935,8 +935,8 @@ static PyObject* NPySecObj_arc3d_safe(NPySecObj* self, PyObject* args) {
 static PyObject* NPySecObj_diam3d(NPySecObj* self,
                                   PyObject* args) {  // returns diam value at index of 3d list
     Pt3d* pt3d = get_pt3d_from_python_args(self, args);
-    if (pt3d == NULL) {
-        return NULL;
+    if (!pt3d) {
+        return nullptr;
     }
     return PyFloat_FromDouble((double) fabs(pt3d->d));
 }
@@ -948,7 +948,7 @@ static PyObject* NPySecObj_diam3d_safe(NPySecObj* self, PyObject* args) {
 // returns True/False depending on if spine present
 static PyObject* NPySecObj_spine3d(NPySecObj* self, PyObject* args) {
     Pt3d* pt3d = get_pt3d_from_python_args(self, args);
-    if (pt3d == nullptr) {
+    if (!pt3d) {
         return nullptr;
     }
     return PyBool_FromLong(pt3d->d < 0);
@@ -1061,8 +1061,8 @@ NPySecObj* newpysechelp(Section* sec) {
 
 static PyObject* newpyseghelp(Section* sec, double x) {
     NPySegObj* seg = (NPySegObj*) PyObject_New(NPySegObj, psegment_type);
-    if (seg == NULL) {
-        return NULL;
+    if (!seg) {
+        return nullptr;
     }
     seg->x_ = x;
     seg->pysec_ = newpysechelp(sec);
@@ -1082,7 +1082,7 @@ static PyObject* pysec_disconnect_safe(NPySecObj* self) {
 static PyObject* pysec_parentseg(NPySecObj* self) {
     CHECK_SEC_INVALID(self->sec_);
     Section* psec = self->sec_->parentsec;
-    if (psec == NULL || psec->prop == NULL) {
+    if (!psec || !psec->prop) {
         Py_RETURN_NONE;
     }
     double x = nrn_connection_position(self->sec_);
@@ -1098,7 +1098,7 @@ static PyObject* pysec_trueparentseg(NPySecObj* self) {
     CHECK_SEC_INVALID(sec);
     Section* psec = NULL;
     for (psec = sec->parentsec; psec; psec = psec->parentsec) {
-        if (psec == NULL || psec->prop == NULL) {
+        if (!psec || !psec->prop) {
             Py_RETURN_NONE;
         }
         if (nrn_at_beginning(sec)) {
@@ -1107,7 +1107,7 @@ static PyObject* pysec_trueparentseg(NPySecObj* self) {
             break;
         }
     }
-    if (psec == NULL) {
+    if (!psec) {
         Py_RETURN_NONE;
     }
 
@@ -1355,7 +1355,7 @@ static PyObject* NPyMechFunc_call(NPyMechFunc* self, PyObject* args) {
     hoc_push_frame(&sym, narg);  // get_argument uses the current frame
     try {
         double x = (f) (self->pymech_->prop_);
-        result = nb::steal(Py_BuildValue("d", x));
+        result = nb::cast(x);
     } catch (std::exception const& e) {
         std::ostringstream oss;
         oss << "mechanism.function call error: " << e.what();
@@ -1462,7 +1462,7 @@ static PyObject* NPySecObj_connect(NPySecObj* self, PyObject* args) {
     parentx = -1000.;
     childend = 0.;
     if (!PyArg_ParseTuple(args, "O|dd", &p, &parentx, &childend)) {
-        return NULL;
+        return nullptr;
     }
     if (PyObject_TypeCheck(p, psection_type)) {
         parent = (NPySecObj*) p;
@@ -1477,7 +1477,7 @@ static PyObject* NPySecObj_connect(NPySecObj* self, PyObject* args) {
         parentx = ((NPySegObj*) p)->x_;
     } else {
         PyErr_SetString(PyExc_TypeError, "first arg not a nrn.Section or nrn.Segment");
-        return NULL;
+        return nullptr;
     }
     CHECK_SEC_INVALID(parent->sec_);
 
@@ -1610,8 +1610,8 @@ static PyObject* seg_of_section_iter(NPySecObj* self) {  // iterates over segmen
     // printf("section_iter\n");
     NPySegOfSecIter* segiter;
     segiter = PyObject_New(NPySegOfSecIter, pseg_of_sec_iter_type);
-    if (segiter == NULL) {
-        return NULL;
+    if (!segiter) {
+        return nullptr;
     }
 
     segiter->seg_iter_ = 0;
@@ -1653,12 +1653,12 @@ static PyObject* allseg_of_sec_next(NPyAllSegOfSecIter* self) {
     int n1 = self->pysec_->sec_->nnode - 1;
     if (self->allseg_iter_ > n1) {
         // end of iteration
-        return NULL;
+        return nullptr;
     }
     seg = PyObject_New(NPySegObj, psegment_type);
-    if (seg == NULL) {
+    if (!seg) {
         // error
-        return NULL;
+        return nullptr;
     }
     Py_INCREF(self->pysec_);
     seg->pysec_ = self->pysec_;
@@ -1682,12 +1682,12 @@ static PyObject* seg_of_sec_next(NPySegOfSecIter* self) {
     int n1 = self->pysec_->sec_->nnode - 1;
     if (self->seg_iter_ >= n1) {
         // end of iteration
-        return NULL;
+        return nullptr;
     }
     seg = PyObject_New(NPySegObj, psegment_type);
-    if (seg == NULL) {
+    if (!seg) {
         // error
-        return NULL;
+        return nullptr;
     }
     Py_INCREF(self->pysec_);
     seg->pysec_ = self->pysec_;
@@ -1916,7 +1916,7 @@ static Object* seg_from_sec_x(Section* sec, double x) {
 static Object** pp_get_segment(void* vptr) {
     Point_process* pnt = (Point_process*) vptr;
     // printf("pp_get_segment %s\n", hoc_object_name(pnt->ob));
-    Object* ho = NULL;
+    Object* ho = nullptr;
     if (pnt->prop) {
         Section* sec = pnt->sec;
         double x = nrn_arc_position(sec, pnt->node);
@@ -1996,12 +1996,12 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
     // printf("section_getattr %s\n", n);
     nb::object result;
     if (strcmp(n, "L") == 0) {
-        result = nb::steal(Py_BuildValue("d", section_length(sec)));
+        result = nb::cast(section_length(sec));
     } else if (strcmp(n, "Ra") == 0) {
-        result = nb::steal(Py_BuildValue("d", nrn_ra(sec)));
+        result = nb::cast(nrn_ra(sec));
     } else if (strcmp(n, "nseg") == 0) {
-        result = nb::steal(Py_BuildValue("i", sec->nnode - 1));
-    } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
+        result = nb::cast(sec->nnode - 1);
+    } else if ((rv = PyDict_GetItemString(rangevars_, n))) {
         Symbol* sym = ((NPyRangeVar*) rv)->sym_;
         if (is_array(*sym)) {
             result = nb::steal((PyObject*) rvnew(sym, self, 0.5));
@@ -2019,7 +2019,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
             }
         }
     } else if (strcmp(n, "rallbranch") == 0) {
-        result = nb::steal(Py_BuildValue("d", sec->prop->dparam[4].get<double>()));
+        result = nb::cast(sec->prop->dparam[4].get<double>());
     } else if (strcmp(n, "__dict__") == 0) {
         nb::dict out_dict{};
         out_dict["L"] = nb::none();
@@ -2086,7 +2086,7 @@ static int section_setattro(NPySecObj* self, PyObject* pyname, PyObject* value) 
         }
         // printf("section_setattro err=%d nseg=%d nnode\n", err, nseg,
         // sec->nnode);
-    } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
+    } else if ((rv = PyDict_GetItemString(rangevars_, n))) {
         Symbol* sym = ((NPyRangeVar*) rv)->sym_;
         if (is_array(*sym)) {
             PyErr_SetString(PyExc_IndexError, "missing index");
@@ -2130,15 +2130,15 @@ static int section_setattro_safe(NPySecObj* self, PyObject* pyname, PyObject* va
 
 static PyObject* mech_of_seg_next(NPyMechOfSegIter* self) {
     // printf("mech_of_seg_next\n");
-    // The return on this iteration is self->pymech_. NULL means it's over.
+    // The return on this iteration is self->pymech_. nullptr means it's over.
     NPyMechObj* m = self->pymech_;
     if (!m) {
-        return NULL;
+        return nullptr;
     }
     if (!m->prop_id_) {
         PyErr_SetString(PyExc_ReferenceError,
                         "mechanism instance became invalid in middle of the mechanism iterator");
-        return NULL;
+        return nullptr;
     }
     Prop* pnext = mech_of_segment_prop(m->prop_->next);
     NPyMechObj* mnext{};
@@ -2160,7 +2160,7 @@ static PyObject* var_of_mech_iter(NPyMechObj* self) {
     // printf("var_of_mech_iter\n");
     NPyVarOfMechIter* vmi = PyObject_New(NPyVarOfMechIter, pvar_of_mech_iter_generic_type);
     if (!self->prop_) {
-        return NULL;
+        return nullptr;
     }
     Py_INCREF(self);
     vmi->pymech_ = self;
@@ -2175,7 +2175,7 @@ static PyObject* var_of_mech_iter_safe(NPyMechObj* self) {
 
 static PyObject* var_of_mech_next(NPyVarOfMechIter* self) {
     if (self->i_ >= self->msym_->s_varn) {
-        return NULL;
+        return nullptr;
     }
     // printf("var_of_mech_next %d %s\n", self->i_, self->msym_->name);
     Symbol* sym = self->msym_->u.ppsym[self->i_];
@@ -2208,12 +2208,12 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
     }
     // printf("segment_getattr %s\n", n);
     nb::object result;
-    PyObject* otype = NULL;
-    PyObject* rv = NULL;
+    PyObject* otype = nullptr;
+    PyObject* rv = nullptr;
     if (strcmp(n, "v") == 0) {
         Node* nd = node_exact(sec, self->x_);
-        result = nb::steal(Py_BuildValue("d", NODEV(nd)));
-    } else if ((otype = PyDict_GetItemString(pmech_types, n)) != NULL) {
+        result = nb::cast(NODEV(nd));
+    } else if ((otype = PyDict_GetItemString(pmech_types, n))) {
         int type = PyInt_AsLong(otype);
         // printf("segment_getattr type=%d\n", type);
         Node* nd = node_exact(sec, self->x_);
@@ -2224,7 +2224,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
         } else {
             result = nb::steal((PyObject*) new_pymechobj(self, p));
         }
-    } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
+    } else if ((rv = PyDict_GetItemString(rangevars_, n))) {
         sym = ((NPyRangeVar*) rv)->sym_;
         if (sym->type == RANGEOBJ) {
             int mtype = sym->u.rng.type;
@@ -2364,7 +2364,7 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname, PyObject* value) 
             PyErr_SetString(PyExc_ValueError, "x must be in range 0. to 1.");
             return -1;
         }
-    } else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
+    } else if ((rv = PyDict_GetItemString(rangevars_, n))) {
         sym = ((NPyRangeVar*) rv)->sym_;
         if (is_array(*sym)) {
             PyErr_Format(PyExc_IndexError, "%s needs an index for assignment", sym->name);

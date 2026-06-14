@@ -2,52 +2,53 @@ import math
 import numpy
 from .rxdException import RxDException
 from . import initializer
+from typing import Union, Any, Callable, Optional
 
 
-def _vectorized(f, objs):
+def _vectorized(f: Callable, objs: Any) -> Any:
     if hasattr(objs, "__len__"):
         return numpy.array([f(obj) for obj in objs])
     else:
         return f(objs)
 
 
-def _vectorized2(f, objs1, objs2):
+def _vectorized2(f: Callable, objs1: Any, objs2: Any) -> Any:
     if hasattr(objs1, "__len__"):
         return numpy.array([f(objA, objB) for objA, objB in zip(objs1, objs2)])
     else:
         return f(objs1, objs2)
 
 
-def _erf(objs):
+def _erf(objs: Any) -> Any:
     return _vectorized(math.erf, objs)
 
 
-def _erfc(objs):
+def _erfc(objs: Any) -> Any:
     return _vectorized(math.erfc, objs)
 
 
-def _factorial(objs):
+def _factorial(objs: Any) -> Any:
     return _vectorized(math.factorial, objs)
 
 
-def _gamma(objs):
+def _gamma(objs: Any) -> Any:
     return _vectorized(math.gamma, objs)
 
 
-def _lgamma(objs):
+def _lgamma(objs: Any) -> Any:
     return _vectorized(math.lgamma, objs)
 
 
-def _power(objs1, objs2):
+def _power(objs1: Any, objs2: Any) -> Any:
     # TODO? assumes numpy arrays; won't work for lists
     return objs1**objs2
 
 
-def _neg(objs):
+def _neg(objs: Any) -> Any:
     return -objs
 
 
-def analyze_reaction(r):
+def analyze_reaction(r: Any) -> None:
     if not isinstance(r, _Reaction):
         print(f"{r!r} is not a reaction")
     else:
@@ -80,7 +81,7 @@ def analyze_reaction(r):
 # TODO: change this so that inputs are all automatically converted to numpy.array(s)
 # _compile is called by the reaction (Reaction._update_rates)
 # returns the rate and the species involved
-def _compile(arith, region):
+def _compile(arith: Any, region: list) -> tuple:
     initializer._do_init()
     # for extracellular reactions ensure the species are _ExtracellularSpecies
     arith = _ensure_arithmeticed(arith)
@@ -140,7 +141,7 @@ def _compile(arith, region):
     # (functools.partial(eval(command), numpy, sys.modules[__name__]), species_dict.values())
 
 
-def _ensure_arithmeticed(other):
+def _ensure_arithmeticed(other: Any) -> Any:
     from . import species
 
     if isinstance(other, species._SpeciesMathable):
@@ -152,7 +153,7 @@ def _ensure_arithmeticed(other):
     return other
 
 
-def _validate_reaction_terms(r1, r2):
+def _validate_reaction_terms(r1: Any, r2: Any) -> None:
     if not (r1._valid_reaction_term or r2._valid_reaction_term):
         raise RxDException(f"lhs={r1!r} and rhs={r2!r} not valid in a reaction")
     elif not r1._valid_reaction_term:
@@ -162,24 +163,24 @@ def _validate_reaction_terms(r1, r2):
 
 
 class _Function:
-    def __init__(self, obj, f, fname):
+    def __init__(self, obj: Any, f: Callable, fname: str) -> None:
         self._obj = _ensure_arithmeticed(obj)
         self._f = f
         self._fname = fname
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self._fname}({self._obj!r})"
 
-    def _short_repr(self):
+    def _short_repr(self) -> str:
         try:
             return f"{self._fname}({self._obj._short_repr()})"
         except:
             return self.__repr__()
 
-    def _semi_compile(self, region, instruction):
+    def _semi_compile(self, region: Any, instruction: Optional[str]) -> str:
         return f"{self._fname}({self._obj._semi_compile(region, instruction)})"
 
-    def _involved_species(self, the_dict):
+    def _involved_species(self, the_dict: dict) -> None:
         self._obj._involved_species(the_dict)
 
     def _ensure_extracellular(self, extracellular=None):
@@ -202,16 +203,16 @@ class _Function:
 
 
 class _Function2:
-    def __init__(self, obj1, obj2, f, fname):
+    def __init__(self, obj1: Any, obj2: Any, f: Callable, fname: str) -> None:
         self._obj1 = _ensure_arithmeticed(obj1)
         self._obj2 = _ensure_arithmeticed(obj2)
         self._f = f
         self._fname = fname
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self._fname}({self._obj1!r}, {self._obj2!r})"
 
-    def _short_repr(self):
+    def _short_repr(self) -> str:
         try:
             return (
                 f"{self._fname}({self._obj1._short_repr()}, {self._obj2._short_repr()})"
@@ -219,10 +220,10 @@ class _Function2:
         except:
             return self.__repr__()
 
-    def _semi_compile(self, region, instruction):
+    def _semi_compile(self, region: Any, instruction: Optional[str]) -> str:
         return f"{self._fname}({self._obj1._semi_compile(region, instruction)}, {self._obj2._semi_compile(region, instruction)})"
 
-    def _involved_species(self, the_dict):
+    def _involved_species(self, the_dict: dict) -> None:
         self._obj1._involved_species(the_dict)
         self._obj2._involved_species(the_dict)
 

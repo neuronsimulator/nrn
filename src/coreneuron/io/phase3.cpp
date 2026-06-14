@@ -83,16 +83,13 @@ void Phase3::read_direct(NrnThreadMappingInfo* ntmapping, const NrnThread& nt) {
             for (int i_seg = 0; i_seg < n_seg; i_seg++) {
                 smap->add_segment(data_sec[i_seg], data_seg[i_seg]);
                 ntmapping->add_segment_id(data_seg[i_seg]);
-                int factor_offset = i_seg * n_electrodes;
                 if (total_lfp_factors > 0) {
                     // Abort if the factors contains a NaN
                     nrn_assert(count_if(data_lfp.begin(), data_lfp.end(), [](double d) {
                                    return std::isnan(d);
                                }) == 0);
-                    std::vector<double> segment_factors(data_lfp.begin() + factor_offset,
-                                                        data_lfp.begin() + factor_offset +
-                                                            n_electrodes);
-                    cmap->add_segment_lfp_factor(data_seg[i_seg], segment_factors);
+                    auto begin = data_lfp.begin() + i_seg * n_electrodes;
+                    cmap->add_segment_lfp_factor(data_seg[i_seg], begin, begin + n_electrodes);
                 }
             }
             cmap->add_sec_map(smap);

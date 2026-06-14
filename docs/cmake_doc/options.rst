@@ -306,6 +306,30 @@ NRN_ENABLE_PYTHON:BOOL=ON
   Enable Python interpreter support
   (default python, fallback to python3, but see PYTHON_EXECUTABLE below)
 
+NRN_INSTALL_PYTHON_PREFIX:STRING="lib/python/neuron/"
+-----------------------------------------------------
+  Path where NEURON Python components will be installed, relative to CMAKE_INSTALL_PREFIX. Must end with a directory named "neuron"
+
+  Environment variable PYTHONPATH must contain the real path to NRN_INSTALL_PYTHON_PREFIX in order for python to find neuron.
+
+  This path must end with a directory named "neuron"
+
+  For venv's, configure cmake with:
+
+  .. code-block:: shell
+
+    -DCMAKE_INSTALL_PREFIX=$(python -c "import sysconfig; print(sysconfig.get_path('data', 'venv'))") \
+    -DNRN_INSTALL_PYTHON_PREFIX=$(python -c "import sysconfig; print(sysconfig.get_path('platlib', 'venv') + '/neuron')")
+
+  To install to your home directory, configure cmake with:
+
+  .. code-block:: shell
+
+    -DCMAKE_INSTALL_PREFIX=$(python3 -m site --user-base) \
+    -DNRN_INSTALL_PYTHON_PREFIX=$(python3 -m site --user-site)/neuron
+
+  This option is ignored when building a wheel, in which case the value is forced to "neuron/"
+
 .. _cmake_nrn_enable_python_dynamic:
 NRN_ENABLE_PYTHON_DYNAMIC:BOOL=OFF
 ----------------------------------
@@ -544,7 +568,7 @@ NRN_ENABLE_TESTS:BOOL=OFF
     python3 -m pytest test_currents.py
 
 NRN_ENABLE_COVERAGE:BOOL=OFF
----------------------------
+----------------------------
   Enable code coverage
 
   Requires ``lcov`` (e.g. ``sudo apt install lcov``).
@@ -677,7 +701,7 @@ NRN_ENABLE_DIGEST:BOOL=OFF
   Requires libcrypto
 
 NRN_ENABLE_ARCH_INDEP_EXP_POW:BOOL=OFF
----------------------------------
+--------------------------------------
   Provides \ :func:`use_exp_pow_precision` function so that exp and pow produce
   same results on all platforms.
 
