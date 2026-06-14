@@ -83,10 +83,10 @@ class NeuronTestCase(unittest.TestCase):
     def testSegIterator(self) -> None:
         """Test iterating through mechanisms, including when none exist"""
         soma = n.Section("soma")
-        assert(len(list(soma(0.5))) == 0)
+        assert len(list(soma(0.5))) == 0
         # inserting HH inserts 3 mechanisms: hh, na_ion, k_ion
         soma.insert(n.hh)
-        assert(len(list(soma(0.5))) == 3)
+        assert len(list(soma(0.5))) == 3
 
     def testIterators(self):
         """Test section, segment, mechanism, rangevar iterators."""
