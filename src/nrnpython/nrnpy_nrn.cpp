@@ -1887,11 +1887,17 @@ static PyObject* mech_of_segment_iter(NPySegObj* self) {
     if (!mi) {
         return nullptr;
     }
-    auto m = nb::steal((PyObject*) new_pymechobj(self, p));
-    if (!m) {
-        return nullptr;
+    // Initialize pymech_ immediately so NPyMechOfSegIter_dealloc is safe on any
+    // early return below (PyObject_New does not zero-initialize struct fields).
+    ((NPyMechOfSegIter*) mi.ptr())->pymech_ = nullptr;
+    NPyMechObj* mnew = nullptr;
+    if (p) {
+        mnew = new_pymechobj(self, p);
+        if (!mnew) {
+            return nullptr;
+        }
     }
-    ((NPyMechOfSegIter*) mi.ptr())->pymech_ = (NPyMechObj*) m.release().ptr();
+    ((NPyMechOfSegIter*) mi.ptr())->pymech_ = mnew;
     return mi.release().ptr();
 }
 
