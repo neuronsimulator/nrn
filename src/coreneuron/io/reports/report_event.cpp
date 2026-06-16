@@ -117,7 +117,7 @@ void ReportEvent::lfp_calc(NrnThread* nt) {
 
         // write LFP values to report output buffers
         for (size_t e = 0; e < electrode_outputs.size(); e++) {
-            *(electrode_outputs[e].var_value) = lfp_values[e];
+            *(electrode_outputs[e].var_value) = lfp_values[electrode_outputs[e].id];
         }
     }
 }
