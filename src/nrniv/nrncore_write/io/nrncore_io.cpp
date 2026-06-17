@@ -527,20 +527,17 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append) {
     }
 }
 
-/** @brief Write the section-list header line (with optional multi-report offsets) */
+/** @brief Write the section-list header line with electrode offsets */
 static void write_seclist_header(FILE* f,
                                  const std::string& name,
                                  int nsec,
                                  int nseg,
                                  size_t total_lfp_factors,
                                  const std::vector<int>& electrode_offsets) {
-    const int n_electrodes = electrode_offsets.empty() ? 0 : electrode_offsets.back();
-    fprintf(f, "%s %d %d %zd %d", name.c_str(), nsec, nseg, total_lfp_factors, n_electrodes);
-    if (electrode_offsets.size() > 2) {
-        fprintf(f, " %d", static_cast<int>(electrode_offsets.size()));
-        for (int off: electrode_offsets) {
-            fprintf(f, " %d", off);
-        }
+    const int offset_count = static_cast<int>(electrode_offsets.size());
+    fprintf(f, "%s %d %d %zd %d", name.c_str(), nsec, nseg, total_lfp_factors, offset_count);
+    for (int off: electrode_offsets) {
+        fprintf(f, " %d", off);
     }
     fprintf(f, "\n");
 }

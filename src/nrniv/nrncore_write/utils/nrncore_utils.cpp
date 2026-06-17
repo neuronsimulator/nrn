@@ -74,13 +74,15 @@ int count_distinct(double* data, int len) {
 
 /** @brief Validate electrode offsets: non-negative and monotonically non-decreasing. */
 static void validate_electrode_offsets(const std::vector<int>& offsets) {
-    for (int i = 0; i < static_cast<int>(offsets.size()); i++) {
-        if (offsets[i] < 0) {
+    int prev = 0;
+    for (int off: offsets) {
+        if (off < 0) {
             hoc_execerror("electrode_offsets values must be non-negative", nullptr);
         }
-        if (i > 0 && offsets[i] < offsets[i - 1]) {
+        if (off < prev) {
             hoc_execerror("electrode_offsets must be monotonically non-decreasing", nullptr);
         }
+        prev = off;
     }
 }
 
@@ -107,29 +109,22 @@ void nrnbbcore_register_mapping() {
     Vect* seg = vector_arg(4);
     Vect* lfp = ifarg(5) ? vector_arg(5) : new Vect();
 
-    // Argument 6: either a scalar num_electrodes (legacy) or a Vector of
-    // electrode offsets (CSR-style partial sums, e.g. [0, N]).
+    // Argument 6: Vector of electrode offsets (CSR-style partial sums, e.g. [0, N]).
     std::vector<int> electrode_offsets;
     if (ifarg(6)) {
         if (hoc_is_double_arg(6)) {
-            // Legacy API: scalar num_electrodes
-            int num_electrodes = static_cast<int>(*hoc_getarg(6));
-            if (num_electrodes > 0) {
-                electrode_offsets = {0, num_electrodes};
-            }
-        } else {
-            // New API: Vector of offsets passed directly
-            Vect* offsets_vec = vector_arg(6);
-            const int n = vector_capacity(offsets_vec);
-            const double* vals = vector_vec(offsets_vec);
-            electrode_offsets.resize(n);
-            std::transform(vals, vals + n, electrode_offsets.begin(), [](double v) {
-                return static_cast<int>(v);
-            });
+            hoc_execerror(
+                "nrnbbcore_register_mapping: arg 6 must be a Vector of electrode offsets.",
+                "Version mismatch: update neurodamus or downgrade NEURON.");
         }
-        if (!electrode_offsets.empty()) {
-            validate_electrode_offsets(electrode_offsets);
-        }
+        Vect* offsets_vec = vector_arg(6);
+        const int n = vector_capacity(offsets_vec);
+        const double* vals = vector_vec(offsets_vec);
+        electrode_offsets.resize(n);
+        std::transform(vals, vals + n, electrode_offsets.begin(), [](double v) {
+            return static_cast<int>(v);
+        });
+        validate_electrode_offsets(electrode_offsets);
     }
 
     double* sections = vector_vec(sec);

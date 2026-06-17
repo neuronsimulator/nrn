@@ -126,27 +126,17 @@ class FileHandler {
         std::string name_str;
         int nsec = 0;
         int nseg = 0;
-        int num_electrodes = 0;
         size_t total_lfp_factors = 0;
-        iss >> name_str >> nsec >> nseg >> total_lfp_factors >> num_electrodes;
+        int offset_count = 0;
+        iss >> name_str >> nsec >> nseg >> total_lfp_factors >> offset_count;
         nrn_assert(!iss.fail());
 
-        // Optional 6th field: offset_count, followed by offset values
-        int offset_count = 0;
-        if (iss >> offset_count) {
-            // 6th field present
-            nrn_assert(offset_count > 0 || num_electrodes == 0);
-            if (offset_count > 0) {
-                cmap->electrode_offsets.resize(offset_count);
-                for (int k = 0; k < offset_count; k++) {
-                    iss >> cmap->electrode_offsets[k];
-                }
-                nrn_assert(!iss.fail());
-                nrn_assert(cmap->electrode_offsets.back() == num_electrodes);
+        if (offset_count > 0) {
+            cmap->electrode_offsets.resize(offset_count);
+            for (int k = 0; k < offset_count; k++) {
+                iss >> cmap->electrode_offsets[k];
             }
-        } else if (num_electrodes > 0) {
-            // Old format (no 6th field): synthesize offsets
-            cmap->electrode_offsets = {0, num_electrodes};
+            nrn_assert(!iss.fail());
         }
 
         mapinfo->type = section_type_from_string(name_str);
@@ -168,6 +158,7 @@ class FileHandler {
                 mapinfo->add_segment(sec[i], seg[i]);
                 ntmapping->add_segment_id(seg[i]);
                 if (total_lfp_factors > 0) {
+                    const auto num_electrodes = cmap->num_electrodes();
                     nrn_assert(count_if(lfp_factors.begin(), lfp_factors.end(), [](double d) {
                                    return std::isnan(d);
                                }) == 0);
